@@ -1,0 +1,369 @@
+`timescale 1ns/1ps
+`default_nettype none
+
+module bedrock_full_decode
+  import bedrock_pkg::*;
+  import bedrock_decode_pkg::*;
+  import bedrock_prefix_decode_pkg::*;
+  import bedrock_ea_decode_pkg::*;
+  import bedrock_agu_pkg::*;
+(
+  input  logic [MAX_INSTRUCTION_WORDS*WORD_BITS-1:0] words_i,
+
+  output logic                      valid_o,
+  output logic                      prefix_present_o,
+  output logic                      prefix_valid_o,
+  output logic                      decode_valid_o,
+  output logic                      undersized_o,
+  output instruction_length_t       length_words_o,
+  output logic [3:0]                required_words_o,
+
+  output bedrock_form_id_e          form_id_o,
+  output bedrock_ext_root_e         ext_root_o,
+  output logic                      needs_extension_o,
+  output logic                      alias_o,
+
+  output logic                      nospec_o,
+  output logic                      saturate_o,
+  output logic                      nontemporal_o,
+  output bedrock_update_mode_e      update_mode_o,
+  output bedrock_repeat_kind_e      repeat_kind_o,
+  output logic [3:0]                repeat_condition_o,
+  output logic [2:0]                repeat_counter_o,
+  output logic                      end_group_o,
+  output logic                      repcc_allowed_o,
+  output logic                      repg_allowed_o,
+  output logic                      repg_fast_candidate_o,
+  output logic                      repcc_valid_o,
+  output logic                      repg_valid_o,
+  output logic                      repeat_present_o,
+  output logic                      repeat_valid_o,
+  output logic                      repeat_invalid_o,
+
+  output logic [BEDROCK_DECODE_FIELD_SLOTS-1:0] field_valid_o,
+  output bedrock_decode_field_kind_e            field_kind_o [BEDROCK_DECODE_FIELD_SLOTS],
+  output bedrock_decode_field_source_e          field_source_o [BEDROCK_DECODE_FIELD_SLOTS],
+  output logic [1:0]                            field_token_o [BEDROCK_DECODE_FIELD_SLOTS],
+  output logic [3:0]                            field_low_bit_o [BEDROCK_DECODE_FIELD_SLOTS],
+  output logic [4:0]                            field_width_o [BEDROCK_DECODE_FIELD_SLOTS],
+  output logic [15:0]                           field_value_o [BEDROCK_DECODE_FIELD_SLOTS],
+
+  output logic [1:0]                 ea_present_o,
+  output logic [5:0]                 ea_value_o [2],
+  output logic [3:0]                 ea_descriptor_token_o [2],
+  output logic                       ea_valid_o [2],
+  output logic                       ea_reserved_o [2],
+  output logic                       ea_needs_descriptor_o [2],
+  output bedrock_ea_form_e           ea_form_o [2],
+  output logic                       ea_is_register_o [2],
+  output logic                       ea_is_memory_o [2],
+  output logic                       ea_is_immediate_o [2],
+  output logic                       ea_update_eligible_o [2],
+  output bedrock_ea_segment_e        ea_segment_o [2],
+  output bedrock_ea_base_e           ea_base_o [2],
+  output logic [2:0]                 ea_base_reg_o [2],
+  output logic [2:0]                 ea_index_reg_o [2],
+  output logic [1:0]                 ea_scale_log2_o [2],
+  output logic [2:0]                 ea_payload_words_o [2],
+
+  output bedrock_agu_request_t       agu_request_o [2]
+);
+
+  word_t word0;
+  primary_payload_t primary_payload;
+  word_t prefix_word;
+  word_t extension_word;
+  logic prefix_decode_valid;
+  logic instruction_decode_valid;
+  logic [3:0] form_required_words;
+  logic [3:0] field_token_words;
+  logic [3:0] dynamic_required_words;
+  logic [3:0] total_required_words;
+  logic [3:0] ea_payload_words_sum;
+  logic all_ea_valid;
+  logic base_valid;
+  logic [3:0] ea_count;
+  logic [3:0] ea_descriptor_base_token;
+  logic [3:0] ea0_descriptor_token;
+  logic [3:0] ea1_descriptor_token;
+  logic ea_signed32_index_escape [2];
+  logic ea_segment_selectable [2];
+  logic ea_segment_valid [2];
+  logic ea_has_base_reg [2];
+  logic ea_has_index_reg [2];
+  logic ea_has_displacement [2];
+  logic ea_has_absolute [2];
+  logic [2:0] ea_displacement_words [2];
+
+  function automatic word_t physical_word_at(input int unsigned index);
+    if (index < MAX_INSTRUCTION_WORDS) begin
+      physical_word_at = words_i[index*WORD_BITS +: WORD_BITS];
+    end else begin
+      physical_word_at = word_t'(16'h0000);
+    end
+  endfunction
+
+  function automatic word_t logical_token_word(input logic [3:0] token);
+    int unsigned physical_index;
+    begin
+      if (token == 4'd0) begin
+        physical_index = 0;
+      end else begin
+        physical_index = int'(token) + (prefix_present_o ? 1 : 0);
+      end
+      logical_token_word = physical_word_at(physical_index);
+    end
+  endfunction
+
+  function automatic logic [15:0] field_mask(input logic [4:0] width);
+    unique case (width)
+      5'd0: field_mask = 16'h0000;
+      5'd1: field_mask = 16'h0001;
+      5'd2: field_mask = 16'h0003;
+      5'd3: field_mask = 16'h0007;
+      5'd4: field_mask = 16'h000f;
+      5'd5: field_mask = 16'h001f;
+      5'd6: field_mask = 16'h003f;
+      5'd7: field_mask = 16'h007f;
+      5'd8: field_mask = 16'h00ff;
+      5'd9: field_mask = 16'h01ff;
+      5'd10: field_mask = 16'h03ff;
+      5'd11: field_mask = 16'h07ff;
+      5'd12: field_mask = 16'h0fff;
+      5'd13: field_mask = 16'h1fff;
+      5'd14: field_mask = 16'h3fff;
+      5'd15: field_mask = 16'h7fff;
+      default: field_mask = 16'hffff;
+    endcase
+  endfunction
+
+  function automatic logic [15:0] extract_field(input bedrock_decode_field_meta_t meta);
+    word_t token_word;
+    begin
+      token_word = logical_token_word({2'b00, meta.token});
+      extract_field = (token_word >> meta.low_bit) & field_mask(meta.width);
+    end
+  endfunction
+
+  assign word0 = physical_word_at(0);
+  assign prefix_present_o = word0_prefix_present(word0);
+  assign length_words_o = word0_length_words(word0);
+  assign primary_payload = word0_primary_payload(word0);
+  assign prefix_word = prefix_present_o ? physical_word_at(1) : word_t'(16'h0000);
+  assign extension_word = logical_token_word(4'd1);
+
+  bedrock_prefix_decode prefix_decode (
+    .prefix_word_i(prefix_word),
+    .valid_o(prefix_decode_valid),
+    .nospec_o(nospec_o),
+    .saturate_o(saturate_o),
+    .nontemporal_o(nontemporal_o),
+    .update_mode_o(update_mode_o),
+    .repeat_kind_o(repeat_kind_o),
+    .repeat_condition_o(repeat_condition_o),
+    .repeat_counter_o(repeat_counter_o),
+    .end_group_o(end_group_o)
+  );
+
+  bedrock_decode decode (
+    .primary_payload_i(primary_payload),
+    .extension_word_i(extension_word),
+    .valid_o(instruction_decode_valid),
+    .needs_extension_o(needs_extension_o),
+    .alias_o(alias_o),
+    .form_id_o(form_id_o),
+    .ext_root_o(ext_root_o),
+    .repcc_allowed_o(repcc_allowed_o),
+    .repg_allowed_o(repg_allowed_o),
+    .repg_fast_candidate_o(repg_fast_candidate_o)
+  );
+
+  always_comb begin
+    bedrock_decode_field_meta_t meta;
+
+    ea_count = 4'd0;
+    ea_present_o = 2'b00;
+    ea_value_o[0] = 6'd0;
+    ea_value_o[1] = 6'd0;
+
+    for (int index = 0; index < BEDROCK_DECODE_FIELD_SLOTS; index++) begin
+      meta = bedrock_decode_form_field(form_id_o, index[2:0]);
+      field_valid_o[index] = instruction_decode_valid && meta.valid;
+      field_kind_o[index] = meta.kind;
+      field_source_o[index] = meta.source;
+      field_token_o[index] = meta.token;
+      field_low_bit_o[index] = meta.low_bit;
+      field_width_o[index] = meta.width;
+      field_value_o[index] = field_valid_o[index] ? extract_field(meta) : 16'h0000;
+
+      if (
+        field_valid_o[index]
+        && (
+          meta.kind == BR_FIELD_EA
+          || meta.kind == BR_FIELD_IMM_EA
+        )
+        && ea_count < 4'd2
+      ) begin
+        if (ea_count == 4'd0) begin
+          ea_present_o[0] = 1'b1;
+          ea_value_o[0] = field_value_o[index][5:0];
+        end else begin
+          ea_present_o[1] = 1'b1;
+          ea_value_o[1] = field_value_o[index][5:0];
+        end
+        ea_count = ea_count + 4'd1;
+      end
+    end
+  end
+
+  assign form_required_words = bedrock_decode_form_required_words(form_id_o);
+  assign field_token_words = bedrock_decode_form_field_token_words(form_id_o);
+  assign ea_descriptor_base_token = field_token_words;
+  assign ea0_descriptor_token = ea_descriptor_base_token;
+  assign ea1_descriptor_token = ea_descriptor_base_token + {1'b0, ea_payload_words_o[0]};
+  assign ea_descriptor_token_o[0] = ea0_descriptor_token;
+  assign ea_descriptor_token_o[1] = ea1_descriptor_token;
+
+  bedrock_ea_decode ea0_decode (
+    .ea_i(ea_value_o[0]),
+    .descriptor_i(logical_token_word(ea0_descriptor_token)),
+    .valid_o(ea_valid_o[0]),
+    .reserved_o(ea_reserved_o[0]),
+    .needs_descriptor_o(ea_needs_descriptor_o[0]),
+    .form_o(ea_form_o[0]),
+    .is_register_o(ea_is_register_o[0]),
+    .is_memory_o(ea_is_memory_o[0]),
+    .is_immediate_o(ea_is_immediate_o[0]),
+    .update_eligible_o(ea_update_eligible_o[0]),
+    .signed32_index_escape_o(ea_signed32_index_escape[0]),
+    .segment_selectable_o(ea_segment_selectable[0]),
+    .segment_valid_o(ea_segment_valid[0]),
+    .has_base_reg_o(ea_has_base_reg[0]),
+    .has_index_reg_o(ea_has_index_reg[0]),
+    .has_displacement_o(ea_has_displacement[0]),
+    .has_absolute_o(ea_has_absolute[0]),
+    .segment_o(ea_segment_o[0]),
+    .base_o(ea_base_o[0]),
+    .base_reg_o(ea_base_reg_o[0]),
+    .index_reg_o(ea_index_reg_o[0]),
+    .scale_log2_o(ea_scale_log2_o[0]),
+    .displacement_words_o(ea_displacement_words[0]),
+    .payload_words_o(ea_payload_words_o[0])
+  );
+
+  bedrock_ea_decode ea1_decode (
+    .ea_i(ea_value_o[1]),
+    .descriptor_i(logical_token_word(ea1_descriptor_token)),
+    .valid_o(ea_valid_o[1]),
+    .reserved_o(ea_reserved_o[1]),
+    .needs_descriptor_o(ea_needs_descriptor_o[1]),
+    .form_o(ea_form_o[1]),
+    .is_register_o(ea_is_register_o[1]),
+    .is_memory_o(ea_is_memory_o[1]),
+    .is_immediate_o(ea_is_immediate_o[1]),
+    .update_eligible_o(ea_update_eligible_o[1]),
+    .signed32_index_escape_o(ea_signed32_index_escape[1]),
+    .segment_selectable_o(ea_segment_selectable[1]),
+    .segment_valid_o(ea_segment_valid[1]),
+    .has_base_reg_o(ea_has_base_reg[1]),
+    .has_index_reg_o(ea_has_index_reg[1]),
+    .has_displacement_o(ea_has_displacement[1]),
+    .has_absolute_o(ea_has_absolute[1]),
+    .segment_o(ea_segment_o[1]),
+    .base_o(ea_base_o[1]),
+    .base_reg_o(ea_base_reg_o[1]),
+    .index_reg_o(ea_index_reg_o[1]),
+    .scale_log2_o(ea_scale_log2_o[1]),
+    .displacement_words_o(ea_displacement_words[1]),
+    .payload_words_o(ea_payload_words_o[1])
+  );
+
+  bedrock_agu_request_build agu0_request (
+    .ea_present_i(ea_present_o[0]),
+    .ea_value_i(ea_value_o[0]),
+    .descriptor_token_i(ea_descriptor_token_o[0]),
+    .ea_valid_i(ea_valid_o[0]),
+    .ea_reserved_i(ea_reserved_o[0]),
+    .ea_needs_descriptor_i(ea_needs_descriptor_o[0]),
+    .ea_form_i(ea_form_o[0]),
+    .ea_is_register_i(ea_is_register_o[0]),
+    .ea_is_memory_i(ea_is_memory_o[0]),
+    .ea_is_immediate_i(ea_is_immediate_o[0]),
+    .ea_update_eligible_i(ea_update_eligible_o[0]),
+    .ea_signed32_index_escape_i(ea_signed32_index_escape[0]),
+    .ea_segment_selectable_i(ea_segment_selectable[0]),
+    .ea_segment_valid_i(ea_segment_valid[0]),
+    .ea_has_base_reg_i(ea_has_base_reg[0]),
+    .ea_has_index_reg_i(ea_has_index_reg[0]),
+    .ea_has_displacement_i(ea_has_displacement[0]),
+    .ea_has_absolute_i(ea_has_absolute[0]),
+    .ea_segment_i(ea_segment_o[0]),
+    .ea_base_i(ea_base_o[0]),
+    .ea_base_reg_i(ea_base_reg_o[0]),
+    .ea_index_reg_i(ea_index_reg_o[0]),
+    .ea_scale_log2_i(ea_scale_log2_o[0]),
+    .ea_displacement_words_i(ea_displacement_words[0]),
+    .ea_payload_words_i(ea_payload_words_o[0]),
+    .update_mode_i(update_mode_o),
+    .request_o(agu_request_o[0])
+  );
+
+  bedrock_agu_request_build agu1_request (
+    .ea_present_i(ea_present_o[1]),
+    .ea_value_i(ea_value_o[1]),
+    .descriptor_token_i(ea_descriptor_token_o[1]),
+    .ea_valid_i(ea_valid_o[1]),
+    .ea_reserved_i(ea_reserved_o[1]),
+    .ea_needs_descriptor_i(ea_needs_descriptor_o[1]),
+    .ea_form_i(ea_form_o[1]),
+    .ea_is_register_i(ea_is_register_o[1]),
+    .ea_is_memory_i(ea_is_memory_o[1]),
+    .ea_is_immediate_i(ea_is_immediate_o[1]),
+    .ea_update_eligible_i(ea_update_eligible_o[1]),
+    .ea_signed32_index_escape_i(ea_signed32_index_escape[1]),
+    .ea_segment_selectable_i(ea_segment_selectable[1]),
+    .ea_segment_valid_i(ea_segment_valid[1]),
+    .ea_has_base_reg_i(ea_has_base_reg[1]),
+    .ea_has_index_reg_i(ea_has_index_reg[1]),
+    .ea_has_displacement_i(ea_has_displacement[1]),
+    .ea_has_absolute_i(ea_has_absolute[1]),
+    .ea_segment_i(ea_segment_o[1]),
+    .ea_base_i(ea_base_o[1]),
+    .ea_base_reg_i(ea_base_reg_o[1]),
+    .ea_index_reg_i(ea_index_reg_o[1]),
+    .ea_scale_log2_i(ea_scale_log2_o[1]),
+    .ea_displacement_words_i(ea_displacement_words[1]),
+    .ea_payload_words_i(ea_payload_words_o[1]),
+    .update_mode_i(update_mode_o),
+    .request_o(agu_request_o[1])
+  );
+
+  assign prefix_valid_o = !prefix_present_o || prefix_decode_valid;
+  assign decode_valid_o = instruction_decode_valid;
+  assign repeat_present_o = prefix_present_o && (repeat_kind_o != BR_REPEAT_NONE);
+  assign repcc_valid_o = base_valid && (repeat_kind_o == BR_REPEAT_REPCC) && repcc_allowed_o;
+  assign repg_valid_o = base_valid && (repeat_kind_o == BR_REPEAT_REPG) && repg_allowed_o;
+  assign repeat_valid_o = !repeat_present_o || repcc_valid_o || repg_valid_o;
+  assign repeat_invalid_o = repeat_present_o && !repeat_valid_o;
+  assign all_ea_valid =
+    (!ea_present_o[0] || (ea_valid_o[0] && !ea_reserved_o[0]))
+    && (!ea_present_o[1] || (ea_valid_o[1] && !ea_reserved_o[1]));
+  assign ea_payload_words_sum =
+    (ea_present_o[0] ? {1'b0, ea_payload_words_o[0]} : 4'd0)
+    + (ea_present_o[1] ? {1'b0, ea_payload_words_o[1]} : 4'd0);
+  assign dynamic_required_words =
+    ((field_token_words + ea_payload_words_sum) > form_required_words)
+      ? (field_token_words + ea_payload_words_sum)
+      : form_required_words;
+  assign total_required_words = dynamic_required_words + (prefix_present_o ? 4'd1 : 4'd0);
+  assign required_words_o = total_required_words;
+  assign undersized_o = length_words_o < total_required_words;
+  assign base_valid =
+    prefix_valid_o
+    && decode_valid_o
+    && all_ea_valid
+    && !undersized_o;
+  assign valid_o = base_valid && !repeat_invalid_o;
+endmodule
+
+`default_nettype wire

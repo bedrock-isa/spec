@@ -1,0 +1,38 @@
+version: draft-v1
+
+word_size: 16
+max_instruction_words: 8
+
+word0:
+  prefix_present:
+    bit: 15
+  length_minus_one:
+    bits: [14, 12]
+  payload:
+    bits: [11, 0]
+
+sentinels:
+  - id: HALT_SENTINEL
+    name: HALT
+    pattern: "---- 0000 0000 0000"
+    privilege: supervisor
+    behavior: halt
+    effects: halt until event
+    flags: unchanged
+    override_decode: true
+  - id: ILLEGAL_SENTINEL
+    name: ILLEGAL
+    pattern: "---- 1111 1111 1111"
+    behavior: illegal instruction
+    override_decode: true
+
+canonical_rules:
+  - id: MOV_DREG_TO_DREG_CANONICAL
+    canonical: MOV_EA_TO_D
+    noncanonical: MOV_D_TO_EA
+    when:
+      source: DREG
+      destination: DREG
+    action: reject noncanonical form when strict canonical encoding is requested
+
+reserved: []

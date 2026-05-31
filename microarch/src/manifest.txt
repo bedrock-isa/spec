@@ -1,0 +1,11 @@
+# Ordered source fragments for the synthesized microarchitecture document.
+00_title.md
+01_design_intent.md
+02_pipeline_overview.md
+03_frontend.md
+04_decode_uop.md
+05_ea_translation.md
+06_execution_memory.md
+07_repeat_engines.md
+08_retirement_exceptions.md
+09_initial_core.md

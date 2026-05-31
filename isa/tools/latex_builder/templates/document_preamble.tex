@@ -1,0 +1,77 @@
+\documentclass[10pt,twoside]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage{geometry}
+\geometry{paperwidth=6.93in,paperheight=9.11in,inner=0.56in,outer=0.46in,top=0.66in,bottom=0.66in,headheight=14pt}
+\usepackage{amsmath}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{tabularx}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{decorations.pathreplacing,decorations.pathmorphing}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{needspace}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=black,urlcolor=black,pdfauthor={ISA tooling},pdftitle={@MANUAL_TITLE@}}
+\makeatletter
+\renewcommand{\@pnumwidth}{2.2em}
+\renewcommand{\@tocrmarg}{3.0em}
+\makeatother
+\definecolor{RuleGray}{gray}{0.18}
+\definecolor{LightRule}{gray}{0.80}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{4pt}
+\setlength{\tabcolsep}{2pt}
+\sloppy
+\emergencystretch=2em
+\clubpenalty=10000
+\widowpenalty=10000
+\displaywidowpenalty=10000
+\brokenpenalty=10000
+\raggedbottom
+\setlist[itemize]{leftmargin=1.0em,itemsep=1pt,topsep=2pt}
+\renewcommand{\arraystretch}{1.12}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[LE]{\small @ARCH_NAME@}
+\fancyhead[RO]{\small PROGRAMMER'S REFERENCE MANUAL}
+\fancyfoot[LE,RO]{\small\thepage}
+\fancyfoot[LO,RE]{\small @ARCH_NAME@ ARCHITECTURE}
+\renewcommand{\headrulewidth}{0.35pt}
+\renewcommand{\footrulewidth}{0pt}
+\titleformat{\section}{\large\bfseries\MakeUppercase}{\thesection}{0.7em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{0.6em}{}
+\titlespacing*{\section}{0pt}{1.2em}{0.7em}
+\titlespacing*{\subsection}{0pt}{1.0em}{0.45em}
+\newcounter{manualfigure}[section]
+\newcounter{manualtable}[section]
+\renewcommand{\themanualfigure}{\thesection-\arabic{manualfigure}}
+\renewcommand{\themanualtable}{\thesection-\arabic{manualtable}}
+\newcommand{\manualfield}[2]{%
+  \par\noindent\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{1.46in}X@{}}%
+  \textbf{#1} & #2%
+  \end{tabularx}\par\vspace{2pt}}
+\newcommand{\manualcaption}[1]{\par\smallskip\centerline{\small\bfseries #1}\smallskip}
+\newcommand{\manualfigurecaption}[1]{%
+  \refstepcounter{manualfigure}\phantomsection\addcontentsline{lof}{figure}{\protect\numberline{\themanualfigure}#1}%
+  \par\smallskip\centerline{\small\bfseries Figure \themanualfigure. #1}\smallskip}
+\newcommand{\manualtablecaption}[1]{%
+  \refstepcounter{manualtable}\phantomsection\addcontentsline{lot}{table}{\protect\numberline{\themanualtable}#1}%
+  \par\smallskip\centerline{\small\bfseries Table \themanualtable. #1}\smallskip}
+\newcommand{\instrhead}[3]{%
+  \clearpage
+  \Needspace{1.3in}
+  \noindent\begin{tabular*}{\linewidth}{@{}l@{\extracolsep{\fill}}c r@{}}%
+  {\Large\bfseries #1} & {\bfseries #2} & {\Large\bfseries #1}\\%
+  \end{tabular*}
+  \vspace{4pt}\hrule height 0.45pt\vspace{9pt}}
+\newenvironment{manualcode}{\par\small\ttfamily\begin{tabularx}{\linewidth}{@{}X@{}}}{\end{tabularx}\par}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcolumntype{Z}{>{\raggedright\arraybackslash\ttfamily\footnotesize}X}
+\begin{document}

@@ -1,0 +1,941 @@
+version: draft-v1
+
+register_classes:
+  D:
+    count: 8
+    width: 64
+    allocatable: true
+    role: data
+  A:
+    count: 8
+    width: 64
+    allocatable: true
+    role: address
+  SP:
+    count: 1
+    width: 64
+    allocatable: false
+    role: stack pointer
+  PC:
+    count: 1
+    width: 64
+    allocatable: false
+    role: program counter
+  F:
+    count: 32
+    width: 64
+    allocatable: true
+    role: floating-point
+
+special_register_classes:
+  S:
+    width: 64
+    encoding_bits: 3
+    role: segment and state
+    registers: [CS, DS, SS, GS0, GS1, FLAGS, STATUS]
+    reserved_values: [7]
+    encoding:
+      - value: 0
+        bits: "000"
+        register: CS
+      - value: 1
+        bits: "001"
+        register: DS
+      - value: 2
+        bits: "010"
+        register: SS
+      - value: 3
+        bits: "011"
+        register: GS0
+      - value: 4
+        bits: "100"
+        register: GS1
+      - value: 5
+        bits: "101"
+        register: FLAGS
+      - value: 6
+        bits: "110"
+        register: STATUS
+      - value: 7
+        bits: "111"
+        register: reserved
+        access_fault: INVALID_OPCODE
+
+control_register_classes:
+  CR:
+    width: 64
+    encoding_bits: 16
+    role: control
+    registers:
+      - PTCR
+      - ASCR
+      - ICR
+      - SPC
+      - SCS
+      - SDS
+      - BOOTPC
+      - BOOTCFG
+      - PTC
+      - PMC
+      - SSS0
+      - SSP0
+      - SSS1
+      - SSP1
+      - SSS2
+      - SSP2
+      - SSS3
+      - SSP3
+    selector_groups:
+      - name: translation
+        range: [0x0000, 0x00ff]
+        selectors:
+          - value: 0x0000
+            register: PTCR
+          - value: 0x0001
+            register: ASCR
+          - value: 0x0002
+            register: ICR
+      - name: supervisor_entry
+        range: [0x0100, 0x01ff]
+        selectors:
+          - value: 0x0100
+            register: SPC
+          - value: 0x0101
+            register: SCS
+          - value: 0x0102
+            register: SDS
+      - name: interrupt stack banks
+        range: [0x0200, 0x02ff]
+        selectors:
+          - value: 0x0200
+            register: SSS0
+          - value: 0x0201
+            register: SSP0
+          - value: 0x0210
+            register: SSS1
+          - value: 0x0211
+            register: SSP1
+          - value: 0x0220
+            register: SSS2
+          - value: 0x0221
+            register: SSP2
+          - value: 0x0230
+            register: SSS3
+          - value: 0x0231
+            register: SSP3
+      - name: boot
+        range: [0x1000, 0x10ff]
+        selectors:
+          - value: 0x1000
+            register: BOOTPC
+          - value: 0x1001
+            register: BOOTCFG
+      - name: counters
+        range: [0x1100, 0x11ff]
+        selectors:
+          - value: 0x1100
+            register: PTC
+          - value: 0x1101
+            register: PMC
+    reserved_selector_fault: INVALID_CONTROL_STATE
+
+floating_point_register_model:
+  registers:
+    count: 32
+    width: 64
+    names: F0-F31
+    scalar_formats: [S, D]
+  fflags:
+    width: 5
+    reset: 0
+    bits:
+      NV:
+        bit: 4
+        description: invalid operation
+      DZ:
+        bit: 3
+        description: divide by zero
+      OF:
+        bit: 2
+        description: overflow
+      UF:
+        bit: 1
+        description: underflow
+      NX:
+        bit: 0
+        description: inexact
+  unavailable_exception: EXTENSION_UNAVAILABLE
+
+special_registers:
+  - name: PC
+    width: 64
+    class: PC
+    implicit: true
+  - name: SP
+    width: 64
+    class: SP
+    implicit: true
+  - name: CS
+    width: 64
+    class: S
+    access_width: 64
+    access_size: Q
+    role: segment
+    write_policy: control transfer only
+    note: use LJMP, LCALL, LRET, SYSRET, or IRET for CS-changing control transfer
+  - name: DS
+    width: 64
+    class: S
+    access_width: 64
+    access_size: Q
+    role: segment
+  - name: SS
+    width: 64
+    class: S
+    access_width: 64
+    access_size: Q
+    role: segment
+  - name: GS0
+    width: 64
+    class: S
+    access_width: 64
+    access_size: Q
+    role: segment
+  - name: GS1
+    width: 64
+    class: S
+    access_width: 64
+    access_size: Q
+    role: segment
+  - name: FLAGS
+    width: 16
+    class: S
+    access_width: 64
+    access_size: Q
+    role: state
+    nonzero_bits: 4
+    valid_bits: [Z, N, C, V]
+    layout:
+      Z:
+        bit: 3
+        description: zero
+      N:
+        bit: 2
+        description: negative
+      C:
+        bit: 1
+        description: carry or borrow
+      V:
+        bit: 0
+        description: overflow
+    implicit: true
+  - name: STATUS
+    width: 16
+    class: S
+    access_width: 64
+    access_size: Q
+    role: state
+    nonzero_bits: 7
+    valid_bits: [IE, PM, RF, TF, UA, NI, IN]
+    layout:
+      IE:
+        bit: 6
+        description: interrupt enable
+      PM:
+        bit: 5
+        description: privileged mode; 0 = user, 1 = supervisor
+      RF:
+        bit: 4
+        description: resume flag
+      TF:
+        bit: 3
+        description: trap flag
+      UA:
+        bit: 2
+        description: user-memory access enable; 0 = disabled, 1 = enabled
+      NI:
+        bit: 1
+        description: NMI in-progress
+      IN:
+        bit: 0
+        description: interrupt nesting enable
+    privilege: supervisor
+  - name: SPC
+    width: 64
+    class: CR
+    role: control
+    description: supervisor entry program counter
+    privilege: supervisor
+  - name: SCS
+    width: 64
+    class: CR
+    role: control
+    description: supervisor entry code segment selector
+    privilege: supervisor
+  - name: SDS
+    width: 64
+    class: CR
+    role: control
+    description: supervisor entry data segment selector
+    privilege: supervisor
+  - name: SSS0
+    width: 64
+    class: CR
+    role: interrupt stack segment bank
+    description: interrupt stack segment selector bank 0
+    privilege: supervisor
+  - name: SSP0
+    width: 64
+    class: CR
+    role: interrupt stack pointer bank
+    description: interrupt stack pointer bank 0
+    privilege: supervisor
+  - name: SSS1
+    width: 64
+    class: CR
+    role: interrupt stack segment bank
+    description: interrupt stack segment selector bank 1
+    privilege: supervisor
+  - name: SSP1
+    width: 64
+    class: CR
+    role: interrupt stack pointer bank
+    description: interrupt stack pointer bank 1
+    privilege: supervisor
+  - name: SSS2
+    width: 64
+    class: CR
+    role: interrupt stack segment bank
+    description: interrupt stack segment selector bank 2
+    privilege: supervisor
+  - name: SSP2
+    width: 64
+    class: CR
+    role: interrupt stack pointer bank
+    description: interrupt stack pointer bank 2
+    privilege: supervisor
+  - name: SSS3
+    width: 64
+    class: CR
+    role: interrupt stack segment bank
+    description: interrupt stack segment selector bank 3
+    privilege: supervisor
+  - name: SSP3
+    width: 64
+    class: CR
+    role: interrupt stack pointer bank
+    description: interrupt stack pointer bank 3
+    privilege: supervisor
+  - name: PTCR
+    width: 64
+    class: CR
+    role: control
+    privilege: supervisor
+    layout:
+      root_page:
+        bits: [63, 12]
+        description: page-table root physical frame number
+      PABITS_SEL:
+        bits: [11, 8]
+        description: physical address width selector
+      LA57:
+        bit: 7
+        description: 5-level paging enable
+      reserved:
+        bits: [6, 1]
+      PE:
+        bit: 0
+        description: page-table translation enable
+  - name: ASCR
+    width: 64
+    class: CR
+    role: control
+    privilege: supervisor
+    layout:
+      reserved_high:
+        bits: [63, 32]
+      ASID:
+        bits: [31, 16]
+        description: current address-space identifier
+      reserved_low:
+        bits: [15, 1]
+      AE:
+        bit: 0
+        description: ASID enable
+  - name: ICR
+    width: 64
+    class: CR
+    role: control
+    privilege: supervisor
+    layout:
+      ivt_page:
+        bits: [63, 12]
+        description: interrupt vector table frame number / page number
+      MAX_IDEPTH:
+        bits: [11, 8]
+        description: maximum maskable interrupt nesting depth
+      NMI_PENDING:
+        bit: 7
+        description: hardware-managed NMI pending bit
+      NMI_LATCH:
+        bit: 6
+        description: latch NMI while STATUS.NI is set
+      DF_ENABLE:
+        bit: 5
+        description: double-fault handling enable
+      reserved:
+        bits: [4, 1]
+      IVT_VALID:
+        bit: 0
+        description: interrupt vector table valid
+  - name: BOOTPC
+    width: 64
+    class: CR
+    role: control
+    privilege: supervisor
+  - name: BOOTCFG
+    width: 64
+    class: CR
+    role: control
+    privilege: supervisor
+  - name: PTC
+    width: 64
+    class: CR
+    role: control
+    privilege: supervisor
+  - name: PMC
+    width: 64
+    class: CR
+    role: control
+    privilege: supervisor
+
+translation_control:
+  PTCR:
+    PABITS_SEL:
+      - selector: 0
+        physical_address_bits: 48
+      - selector: 1
+        physical_address_bits: 56
+      - selector: 2..15
+        physical_address_bits: reserved
+        access_fault: INVALID_CONTROL_STATE
+    paging_modes:
+      LA57_0: 4-level paging, 48-bit canonical linear address
+      LA57_1: 5-level paging, 57-bit canonical linear address
+    PE_0: page-table translation disabled; use the segment pre-translation result as the linear address directly
+    PE_1: page-table translation enabled; root_page points to the page table root
+    address_flow:
+      - EA
+      - segment pre-translation
+      - linear address
+      - if PTCR.PE = 1: page table translation
+      - if PTCR.PE = 0: linear address directly
+  ASCR:
+    AE: ASID enable
+    ASID: current address-space identifier
+  page_table_entry:
+    low_attribute_bits:
+      P:
+        bit: 0
+        description: Present
+      W:
+        bit: 1
+        description: Writable
+      X:
+        bit: 2
+        description: Executable
+      U:
+        bit: 3
+        description: User accessible
+      G:
+        bit: 4
+        description: Global TLB entry
+      A:
+        bit: 5
+        description: Accessed
+      D:
+        bit: 6
+        description: Dirty
+      AT:
+        bit: 7
+        description: Addressing type
+      CP:
+        bits: [9, 8]
+        description: Cache policy
+      SW0:
+        bit: 10
+        description: Software-defined
+      T:
+        bit: 11
+        description: Table / non-leaf entry
+    ranges:
+      architectural_low_attributes: PTE[0..11]
+      physical_frame_number: PTE[12..PABITS-1]
+      software_defined: PTE[PABITS..63]
+    addressing_type:
+      0: byte-addressed memory
+      1: externally acknowledged / bus-sized addressing
+    cache_policy:
+      0b00: cacheable
+      0b01: uncacheable
+      0b10: write-through
+      0b11: reserved
+    table_bit:
+      0: leaf PTE
+      1: next-level table entry
+    walk_level_rules:
+      large_pages: unsupported
+      non_leaf_levels: for every level above L1, P must be 1 and T must be 1; any other value causes PAGE_FAULT
+      leaf_level: at L1, P must be 1 and T must be 0; any other value causes PAGE_FAULT
+    non_leaf_attributes:
+      PFN: physical frame number of the next-level table
+      W_X_U: constrain descendant leaf permissions; access is allowed only if every traversed entry and the leaf permit the requested access
+      A: set when the entry is successfully traversed
+      D: leaf-only, must be zero in non-leaf entries
+      G: leaf-only, must be zero in non-leaf entries
+      CP: cache policy used for hardware table-walk memory accesses to the next-level table
+      AT: must be 0 for non-leaf entries; page tables are byte-addressed memory
+      SW0: software-defined and ignored by hardware
+    leaf_attributes:
+      PFN: physical frame number of the mapped page
+      W_X_U: access permissions for stores, instruction fetches, and user-mode access
+      A: set when the leaf mapping is successfully used
+      D: set on a successful store through the leaf mapping
+      G: marks the resulting translation as global
+      CP: cache policy for the mapped access
+      AT: addressing type for the mapped access; does not change PFN plus offset address formation
+      SW0: software-defined and ignored by hardware
+    permission_rules:
+      - mode: user
+        condition: effective U permission is 0
+        result: PRIVILEGE_FAULT
+      - mode: user
+        condition: effective U permission is 1
+        result: allowed subject to present, W/X, and access-type checks
+      - mode: supervisor
+        condition: effective U permission is 0
+        result: allowed subject to present, W/X, and access-type checks
+      - mode: supervisor
+        condition: effective U permission is 1 and STATUS.UA is 0
+        result: PAGE_FAULT
+      - mode: supervisor
+        condition: effective U permission is 1 and STATUS.UA is 1
+        result: allowed subject to present, W/X, and access-type checks
+  ICR:
+    MAX_IDEPTH_0: maskable interrupt nesting disabled
+    MAX_IDEPTH_n: maximum hidden_current_idepth is n; when hidden_current_idepth equals MAX_IDEPTH, maskable interrupts are implicitly masked
+  privileged_programming_model:
+    normative_rules:
+      - topic: privilege mode encoding
+        rule: STATUS.PM=0 is user mode; STATUS.PM=1 is supervisor mode
+      - topic: user-memory access control
+        rule: STATUS.UA=0 disables supervisor access to user pages; STATUS.UA=1 enables it
+      - topic: saved STATUS return
+        rule: STATUS is restored verbatim from the saved frame image; SYSCALL, trap, interrupt, and exception entry set STATUS.PM=1 only and do not mask interrupts
+      - topic: SYSCALL frame and entry
+        rule: SYSCALL saves SS:SP, CS:PC, DS, and FLAGS/STATUS, then uses a 32-byte supervisor-entry table with 16-byte entry-address alignment
+      - topic: return instruction split
+        rule: SYSRET is only for SYSCALL return; IRET is for interrupt, trap, and exception return
+      - topic: IRET restore policy
+        rule: IRET restores all saved interrupt-frame state and does not validate FRAME_INFO.frame_type
+      - topic: malformed return frames
+        rule: malformed frames are software errors and do not raise a separate architectural exception
+      - topic: NMI and double-fault stacks
+        rule: NMI and DOUBLE_FAULT use the SN field of their IVT entries
+      - topic: interrupt nesting limit
+        rule: when hidden_current_idepth equals ICR.MAX_IDEPTH, maskable interrupts are implicitly masked
+      - topic: control-register access
+        rule: RDCR and WRCR are always privileged; user-visible control state uses dedicated gated instructions
+      - topic: reserved CPU vectors
+        rule: reserved CPU vectors have no frame type; attempted delivery immediately becomes DOUBLE_FAULT
+    privilege_state:
+      PM:
+        0: user mode
+        1: supervisor mode
+      UA:
+        0: user-memory access disabled
+        1: user-memory access enabled
+    entry_status_policy:
+      saved_status_return: restored verbatim from the saved frame image
+      entry_status_changes:
+        - set STATUS.PM to 1
+      interrupt_masking_on_entry: false
+      note: syscall, trap, interrupt, and exception entry do not automatically clear STATUS.IE
+    syscall:
+      vector: none
+      entry_registers: [SPC, SCS, SDS]
+      frame_style: expanded long-call frame
+      entry_table_size_bytes: 32
+      entry_address_alignment_bytes: 16
+      saved_state: [SS:SP, CS:PC, DS, FLAGS_STATUS]
+      status_change: set STATUS.PM to 1 only
+      return_instruction: SYSRET
+      return_policy: read the syscall frame as written and return
+    interrupt_exception_entry:
+      exception_model: synchronous_restartable
+      restart_policy: >
+        CPU exceptions are reported at a restartable architectural boundary.
+        The operating system decides whether to retry, emulate, signal, or terminate.
+      status_change: set STATUS.PM to 1 only
+      interrupt_masking: no automatic interrupt masking on entry
+      stack_selection: IVT entry SN selects SSSn:SSPn
+      nmi_stack_selection: use the IVT entry SN field
+      double_fault_stack_selection: use the IVT entry SN field
+      frame_save: atomic
+      frame: supervisor stack frame
+    return_rules:
+      SYSRET: syscall frame only
+      IRET: restore all saved interrupt frame state; frame_type is not validated by hardware
+      malformed_frame: software error; no architectural exception is raised
+    interrupt_nesting:
+      max_idepth_rule: when hidden_current_idepth equals ICR.MAX_IDEPTH, maskable interrupts are implicitly masked
+    control_register_access:
+      RDCR: supervisor
+      WRCR: supervisor
+      user_access_policy: user-visible control state must use dedicated instructions gated by control-register policy bits
+  exception_processing:
+    cpu_exception_model: synchronous, restartable
+    restart_policy: >
+      CPU exceptions identify the faulting instruction or operation at a restartable
+      boundary. The operating system decides whether the saved context should be
+      retried, emulated, reported to user space, or terminated.
+    interrupt_frame_save: atomic
+    handler_absent_behavior: IVT HP=0 immediately becomes DOUBLE_FAULT
+    reserved_cpu_vector_behavior: reserved CPU vectors have no frame type; attempted delivery immediately becomes DOUBLE_FAULT
+    status_on_entry: set STATUS.PM to 1 only; do not automatically mask interrupts
+    status_on_return: restore saved STATUS image verbatim
+    malformed_return_frame: software error; no separate architectural exception
+    iret_frame_type_check: none; IRET does not validate FRAME_INFO.frame_type
+    fault_priority:
+      - privilege fault
+      - page fault
+    collapsed_fault_classes:
+      length_fault: invalid instruction encoding; no separate vector
+      segment_fault: reported as PAGE_FAULT
+      canonical_address_fault: reported as PAGE_FAULT
+    address_fault_vector: PAGE_FAULT
+  interrupt_vector_assignment:
+    policy: >
+      Vectors 0x00..0x1F are owned by the CPU architecture. Assigned CPU
+      vectors are grouped by supervisor stack frame type. Reserved CPU vectors
+      do not predefine a frame type. TRAP and TRAPcc use vector 0x05 in the
+      BASIC-frame group. PRIVILEGE_FAULT is ordered before PAGE_FAULT.
+      Length, segment, and canonical-address faults do not have separate CPU
+      vectors; invalid length is an invalid instruction encoding, and segment
+      or canonical-address failures are reported through PAGE_FAULT. Vectors
+      0x20..0x3F are reserved for future architectural use. Operating systems,
+      platforms, and devices may assign vectors 0x40..0xFF.
+    syscall_vector: none
+    syscall_entry: SPC/SCS/SDS supervisor-entry path
+    ranges:
+      - range: [0x00, 0x05]
+        owner: CPU
+        meaning: assigned BASIC-frame CPU exceptions and traps
+      - range: [0x06, 0x07]
+        owner: CPU
+        meaning: reserved CPU vectors; frame type not predefined
+      - range: [0x08, 0x0E]
+        owner: CPU
+        meaning: assigned ERROR/PAGE_FAULT-frame CPU exceptions
+      - range: [0x0F, 0x0F]
+        owner: CPU
+        meaning: reserved CPU vector; frame type not predefined
+      - range: [0x10, 0x17]
+        owner: CPU
+        meaning: reserved CPU vectors; frame type not predefined
+      - range: [0x18, 0x1A]
+        owner: CPU
+        meaning: assigned AUX_FAULT-frame CPU exceptions
+      - range: [0x1B, 0x1F]
+        owner: CPU
+        meaning: reserved CPU vectors; frame type not predefined
+      - range: [0x20, 0x3F]
+        owner: CPU
+        meaning: reserved for future architectural vectors
+      - range: [0x40, 0xFF]
+        owner: OS/platform/device
+        meaning: assignable interrupt and event vectors
+    vectors:
+      - vector: 0x00
+        name: DEBUG_TRACE
+        source: debug, trace, watchpoint, or single-step entry
+        frame_type: BASIC
+      - vector: 0x01
+        name: NMI
+        source: non-maskable interrupt
+        frame_type: BASIC
+      - vector: 0x02
+        name: BREAKPOINT
+        source: BKPT instruction
+        frame_type: BASIC
+      - vector: 0x03
+        name: INVALID_OPCODE
+        source: illegal, undefined, or reserved instruction encoding
+        frame_type: BASIC
+      - vector: 0x04
+        name: EXTENSION_UNAVAILABLE
+        source: unavailable FPU, SIMD, or architectural extension
+        frame_type: BASIC
+      - vector: 0x05
+        name: TRAP
+        source: TRAP instruction or true TRAPcc condition
+        frame_type: BASIC
+      - vector: 0x06
+        name: RESERVED_CPU_06
+        source: reserved CPU vector
+      - vector: 0x07
+        name: RESERVED_CPU_07
+        source: reserved CPU vector
+      - vector: 0x08
+        name: PRIVILEGE_FAULT
+        source: privileged instruction, CR access, or supervisor-only state violation
+        frame_type: ERROR
+      - vector: 0x09
+        name: PAGE_FAULT
+        source: segment pre-translation, canonical address when paging is enabled, page-table translation, permission, presence, or stack memory translation failure
+        frame_type: PAGE_FAULT
+      - vector: 0x0A
+        name: DIVIDE_ERROR
+        source: integer divide, modulo, or quotient overflow
+        frame_type: ERROR
+      - vector: 0x0B
+        name: ARITHMETIC_TRAP
+        source: reserved arithmetic trap class
+        frame_type: ERROR
+      - vector: 0x0C
+        name: BOUNDS_FAULT
+        source: bounds-check exception class
+        frame_type: ERROR
+      - vector: 0x0D
+        name: INVALID_CONTROL_STATE
+        source: invalid control-register, status, or return state
+        frame_type: ERROR
+      - vector: 0x0E
+        name: FLOATING_POINT_FAULT
+        source: floating-point exception trap
+        frame_type: ERROR
+      - vector: 0x0F
+        name: RESERVED_CPU_0F
+        source: reserved CPU vector
+      - vector: 0x10
+        name: RESERVED_CPU_10
+        source: reserved CPU vector
+      - vector: 0x11
+        name: RESERVED_CPU_11
+        source: reserved CPU vector
+      - vector: 0x12
+        name: RESERVED_CPU_12
+        source: reserved CPU vector
+      - vector: 0x13
+        name: RESERVED_CPU_13
+        source: reserved CPU vector
+      - vector: 0x14
+        name: RESERVED_CPU_14
+        source: reserved CPU vector
+      - vector: 0x15
+        name: RESERVED_CPU_15
+        source: reserved CPU vector
+      - vector: 0x16
+        name: RESERVED_CPU_16
+        source: reserved CPU vector
+      - vector: 0x17
+        name: RESERVED_CPU_17
+        source: reserved CPU vector
+      - vector: 0x18
+        name: DOUBLE_FAULT
+        source: fault during exception delivery, reserved CPU vector delivery, or IVT HP=0
+        frame_type: AUX_FAULT
+      - vector: 0x19
+        name: MACHINE_CHECK
+        source: machine-check or hardware integrity failure
+        frame_type: AUX_FAULT
+      - vector: 0x1A
+        name: BUS_ERROR
+        source: externally acknowledged or bus-sized access failure
+        frame_type: AUX_FAULT
+      - vector: 0x1B
+        name: RESERVED_CPU_1B
+        source: reserved CPU vector
+      - vector: 0x1C
+        name: RESERVED_CPU_1C
+        source: reserved CPU vector
+      - vector: 0x1D
+        name: RESERVED_CPU_1D
+        source: reserved CPU vector
+      - vector: 0x1E
+        name: RESERVED_CPU_1E
+        source: reserved CPU vector
+      - vector: 0x1F
+        name: RESERVED_CPU_1F
+        source: reserved CPU vector
+  interrupt_vector_table:
+    entries: 256
+    entry_size_bytes: 16
+    table_size_bytes: 4096
+    base_address: ICR.ivt_page * 4096
+    entry_index: interrupt vector number
+    entry_layout:
+      handler_address:
+        bytes: [0, 7]
+        width: 64
+        description: interrupt handler address
+      control_byte:
+        byte: 8
+        fields:
+          HP:
+            bit: 0
+            description: handler present; if clear, delivery becomes DOUBLE_FAULT
+          reserved_low:
+            bit: 1
+            description: reserved
+          SN:
+            bits: [3, 2]
+            description: selects SSSn:SSPn interrupt stack set
+            values:
+              0: SSS0:SSP0
+              1: SSS1:SSP1
+              2: SSS2:SSP2
+              3: SSS3:SSP3
+          reserved_high:
+            bits: [7, 4]
+            description: reserved
+      reserved:
+        bytes: [9, 15]
+        description: reserved, must be zero
+  supervisor_stack_frame:
+    slot_size_bytes: 8
+    base_size_bytes: 64
+    frame_size_unit_bytes: 8
+    description: >
+      Supervisor entry records interrupted state in fixed 64-bit slots.
+      Offsets are measured from the base of the saved frame. The fixed frame
+      contains FRAME_INFO, reserved space, FLAGS/STATUS state, and the saved
+      control registers. Exception-specific error and fault payload slots are
+      appended after the fixed frame according to the FRAME_INFO frame type code.
+    layout:
+      - offset: 0x00
+        name: FRAME_INFO
+        description: frame metadata and entry flags
+      - offset: 0x08
+        name: RESERVED
+        description: reserved, must be zero
+      - offset: 0x10
+        name: FLAGS_STATUS
+        description: saved FLAGS and STATUS state
+      - offset: 0x18
+        name: SAVED_PC
+        description: saved program counter
+      - offset: 0x20
+        name: SAVED_SP
+        description: saved stack pointer
+      - offset: 0x28
+        name: SAVED_CS
+        description: saved code segment selector
+      - offset: 0x30
+        name: SAVED_DS
+        description: saved data segment selector
+      - offset: 0x38
+        name: SAVED_SS
+        description: saved stack segment selector
+    payload_slots:
+      ERROR_CODE:
+        description: exception-specific error code
+      FAULT_EA:
+        description: faulting effective-address operand information
+      FAULT_LINEAR:
+        description: faulting linear address
+      FAULT_AUX:
+        description: auxiliary fault information
+    repeat_fault_aux:
+      description: >
+        FAULT_AUX layout used when FRAME_INFO.rep_fault is set. Ordinary REP and
+        REPcc faults use the same counter-register field and set
+        group_start_delta_words to zero. REPG-general and REPG-fast faults
+        additionally encode the group-start location as a small negative
+        displacement from the saved fault_pc, avoiding a full saved
+        group_start_pc. repeat_kind distinguishes scalar/general grouped repeat
+        continuation from fast grouped-repeat continuation.
+      fields:
+        counter_register:
+          bits: [0, 2]
+          description: D-register counter number, D0-D7
+        group_start_delta_words:
+          bits: [3, 7]
+          description: >
+            REPG-general/REPG-fast unsigned negative displacement in 16-bit
+            words from the saved fault_pc to the first grouped instruction;
+            0..31 words covers one 64-byte grouping window
+        repeat_kind:
+          bits: [8, 9]
+          description: repeat context kind
+          values:
+            0: REP_or_REPcc
+            1: REPG-general
+            2: REPG-fast
+            3: reserved
+        reserved:
+          bits: [10, 63]
+          description: reserved, must be zero
+      formulas:
+        group_start_pc: fault_pc - 2 * group_start_delta_words
+      resume_rule: >
+        IRET resumes at the saved fault_pc under the active repeat continuation
+        state. For REPG-general, execution continues through the remaining
+        grouped instructions, updates the counter only after the whole group
+        iteration succeeds, and then continues with the next iteration if the
+        counter is not zero. For REPG-fast, the saved continuation represents a
+        fast grouped-repeat continuation point selected by the implementation;
+        software may distinguish it from REPG-general by repeat_kind before
+        choosing to resume, abandon, or emulate the repeated operation.
+    frame_types:
+      - code: 0x0
+        name: BASIC
+        payload: []
+        description: fixed frame only
+      - code: 0x1
+        name: ERROR
+        payload: [ERROR_CODE]
+        description: fixed frame plus exception error code
+      - code: 0x2
+        name: PAGE_FAULT
+        payload: [ERROR_CODE, FAULT_EA, FAULT_LINEAR]
+        description: fixed frame plus page-fault code, effective-address context, and linear address
+      - code: 0x3
+        name: AUX_FAULT
+        payload: [ERROR_CODE, FAULT_EA, FAULT_LINEAR, FAULT_AUX]
+        description: fixed frame plus full auxiliary fault context
+    frame_info:
+      vector:
+        bits: [0, 7]
+        description: interrupt, exception, or trap vector number
+      frame_size_units:
+        bits: [8, 15]
+        description: total frame size in 8-byte units
+      saved_idepth:
+        bits: [16, 19]
+        description: saved interrupt nesting depth
+      frame_type:
+        bits: [20, 23]
+        description: supervisor stack frame type code
+      from_user:
+        bit: 24
+        description: entry was taken from user mode
+      nmi_frame:
+        bit: 25
+        description: frame was created by NMI entry
+      rep_fault:
+        bit: 26
+        description: fault occurred during REP, REPcc, or REPG repeated execution
+      reserved:
+        bits: [27, 63]
+        description: reserved, must be zero
+  reset_state:
+    ICR: 0
+    ICR.IVT_VALID: 0
+    STATUS.IE: 0
+    STATUS.IN: 0
+    STATUS.NI: 0
+    hidden_current_idepth: 0
+    hidden_nmi_pending: 0
+    PTCR.PE: 0
+    ASCR: 0

@@ -1,0 +1,380 @@
+document:
+  title: Bedrock C ABI
+  subtitle: C Language Binding
+  architecture: Bedrock
+  version: 0.1
+scope:
+  summary: The Bedrock C ABI defines the C data model, register convention, function call contract, aggregate
+    passing rules, variadic call rules, return-value assignment, and compiler-runtime obligations for
+    C-family toolchains. It builds on the Bedrock language-neutral ELF ABI for object files, relocation,
+    loading, dynamic linking, TLS, and code models.
+  profiles:
+    - name: bedrock-c
+      description: C-family language binding layered on the Bedrock language-neutral ELF ABI.
+abi_hierarchy:
+  current_layer: language ABI
+  current_document_scope: >
+    This document specifies one language ABI layer: the Bedrock C language
+    binding. It relies on the language-neutral ELF ABI for object files,
+    relocation, loading, dynamic linking, TLS, and code models, while leaving
+    process-entry policy to an OS ABI.
+terminology:
+  summary: >
+    These terms are specific to the C binding. ELF and address-space terms keep
+    the meanings defined by the language-neutral ABI and the architecture
+    manual.
+  terms:
+    - term: object pointer
+      definition: >
+        A 64-bit pre-segment address value that designates an object or one-past
+        an object according to the C abstract machine.
+
+    - term: function pointer
+      definition: >
+        A 64-bit pre-segment code address naming a near-call entry point. It is
+        not a CS:PC pair, far descriptor, or runtime-private veneer descriptor.
+
+    - term: caller-saved register
+      definition: >
+        A register whose value may be overwritten by a call unless the caller
+        saves it before the call.
+
+    - term: callee-saved register
+      definition: >
+        A register whose incoming value must be preserved by the called function
+        if the function uses it.
+
+    - term: sret buffer
+      definition: >
+        Caller-allocated storage used to receive a return value that is too
+        large or unsuitable for the normal return registers.
+
+    - term: addressable by-value argument
+      definition: >
+        A by-value aggregate argument that is passed through caller-owned stack
+        storage because the callee may need an address for the object.
+data_model:
+  name: LP64
+  byte_order: little_endian
+  instruction_word_bits: 16
+  stack_alignment_bytes: 16
+  aggregate_alignment_max_bytes: 16
+  pointer:
+    bits: 64
+    alignment: 8
+  scalar_types:
+    - name: bool
+      bits: 8
+      alignment: 1
+    - name: char
+      bits: 8
+      alignment: 1
+    - name: short
+      bits: 16
+      alignment: 2
+    - name: int
+      bits: 32
+      alignment: 4
+    - name: long
+      bits: 64
+      alignment: 8
+    - name: long_long
+      bits: 64
+      alignment: 8
+    - name: int128
+      bits: 128
+      alignment: 16
+    - name: uint128
+      bits: 128
+      alignment: 16
+    - name: pointer
+      bits: 64
+      alignment: 8
+    - name: float
+      bits: 32
+      alignment: 4
+    - name: double
+      bits: 64
+      alignment: 8
+  layout_rules:
+    - Integer and pointer objects are stored little-endian.
+    - Pointer values are pre-segment virtual address values. Memory accesses apply segment pre-translation
+      when the pointer is used as part of an effective address.
+    - C function pointers are ordinary 64-bit pre-segment code addresses naming near-call entry points.
+      They are not CS:PC pairs or far-call descriptors.
+    - Multiword immediate data and data directives store the least significant 16-bit word first.
+    - Struct fields are laid out in declaration order with natural alignment up to the aggregate maximum.
+    - Unions have the size and alignment of their most strictly aligned member, rounded up to that alignment.
+    - Arrays store elements contiguously with each element using the ABI size of its type.
+    - Aggregate object size is rounded up to the aggregate object's alignment.
+    - Boolean objects store the truth value in bit 0; upper bits are ignored by consumers.
+register_convention:
+  integer_registers:
+    caller_saved:
+      - D0
+      - D1
+      - D2
+      - D3
+      - D4
+      - D5
+    callee_saved:
+      - D6
+      - D7
+    c_scalar_return: D0
+    c_128_bit_scalar_return: D1:D0
+    integer_arguments:
+      - D0
+      - D1
+      - D2
+      - D3
+      - D4
+      - D5
+  address_registers:
+    caller_saved:
+      - A0
+      - A1
+      - A2
+      - A3
+      - A4
+      - A5
+    callee_saved:
+      - A6
+      - A7
+    pointer_arguments:
+      - A0
+      - A1
+      - A2
+      - A3
+      - A4
+      - A5
+    c_pointer_return: A0
+    conditional_sret_buffer_argument: A5
+    sret_result_return: A0
+  floating_point_registers:
+    caller_saved:
+      - F0
+      - F1
+      - F2
+      - F3
+      - F4
+      - F5
+      - F6
+      - F7
+    callee_saved: []
+    floating_point_arguments:
+      - F0
+      - F1
+      - F2
+      - F3
+      - F4
+      - F5
+      - F6
+      - F7
+    c_floating_point_return: F0
+  stack_register:
+    name: SP
+    role: architectural stack pointer
+    preserved_by_callee: true
+  flags:
+    caller_saved:
+      - FLAGS
+    callee_obligation: callees may clobber condition codes
+calling_convention:
+  stack:
+    grows: downward
+    entry_alignment: 16
+    pre_call_alignment: Before CALL, the caller adjusts SP so that the callee observes a 16-byte-aligned
+      SP after the architectural return address has been pushed.
+    red_zone: none
+  return_address:
+    size_bytes: 8
+    location_at_entry: '[SP]'
+  argument_passing:
+    order: source_order
+    integer_registers:
+      - D0
+      - D1
+      - D2
+      - D3
+      - D4
+      - D5
+    pointer_registers:
+      - A0
+      - A1
+      - A2
+      - A3
+      - A4
+      - A5
+    floating_point_registers:
+      - F0
+      - F1
+      - F2
+      - F3
+      - F4
+      - F5
+      - F6
+      - F7
+    stack_arguments: right_to_left
+    stack_argument_alignment: 16
+    stack_argument_slot_size: 16
+    sret_register_use: A5 carries the hidden sret buffer argument only for calls that use sret; otherwise
+      A5 is the sixth ordinary address argument register.
+  return_values:
+    c_binding:
+      integer_scalar: D0
+      pointer_or_address_scalar: A0
+      floating_point_scalar: F0
+      scalar_128_bit: D1:D0
+      small_aggregate_up_to_16_bytes: D1:D0
+      aggregate_larger_than_16_bytes: sret buffer pointer passed in A5 and returned in A0
+  aggregate_passing:
+    summary: Aggregate arguments and aggregate return values use explicit addressable storage only when
+      register passing is not suitable. Addressable by-value arguments are passed as pointers to caller
+      owned stack copies; large return values use a caller-allocated return buffer.
+    rules:
+      c_by_value_arguments: caller-owned stack copy address
+      argument_copy_alignment: 16
+      argument_copy_register_class: A
+      argument_copy_registers:
+        - A0
+        - A1
+        - A2
+        - A3
+        - A4
+        - A5
+      argument_copy_stack_fallback: stack slot contains the copy address
+      c_return: caller-allocated return buffer
+      conditional_sret_buffer_argument_register: A5
+      return_buffer_alignment: 16
+      return_register_result: A0 contains the return buffer address
+      small_aggregate_register_return: D1:D0 for aggregate size at most 16 bytes
+      small_aggregate_layout: low-address bytes in D0, then high-address bytes in D1
+    details:
+      - The caller places an aligned by-value aggregate copy in caller owned stack storage and passes
+        the address of the first byte.
+      - The passed address names the call copy, not the original source object.
+      - Caller-owned by-value aggregate copies remain valid until the call returns.
+      - By-value aggregate argument copies are not heap allocations.
+      - The callee may allocate its own local stack copy if it needs a private writable object.
+      - For a large aggregate return, the caller allocates the return buffer, passes its address in A5,
+        and the callee returns the same address in A0 after storing the result.
+      - In calls that do not use sret, A5 remains an ordinary address argument register.
+  varargs:
+    summary: Variadic calls materialize the variable argument list in uniform stack slots so va_list traversal
+      does not depend on the fixed-argument register assignment.
+    rules:
+      fixed_named_arguments: normal argument assignment
+      variable_arguments: stack only
+      unprototyped_call_arguments: stack only
+      integer_narrow_variadic_arguments: zero-extended to stack slot
+      floating_point_variadic_arguments: stored without widening
+      aggregate_variadic_arguments: stack slot contains the copy address
+      variadic_stack_slot_size: 16
+      variadic_stack_slot_alignment: 16
+      va_list: pointer to the next variadic stack slot
+    details:
+      - Fixed named arguments use the normal non-variadic assignment rules.
+      - Each variable argument occupies one 16-byte stack slot.
+      - Narrow integer variable arguments are zero-extended into their stack slot; a callee that needs
+        a signed interpretation extends after loading.
+      - Floating-point variable arguments are stored at their source width without implicit widening.
+      - Aggregate variable argument slots contain the address of the aggregate copy.
+  frame_pointer:
+    default: omitted
+    conventional_register: A7
+    note: A7 is used as a frame pointer when a function elects to maintain one.
+examples:
+  c_return_values:
+    introduction: The C binding uses a single return value class. Integer scalars return in D0, pointer
+      and address scalars return in A0, and 128-bit integer scalars return in D1:D0 with the low 64 bits
+      in D0. Aggregates up to 16 bytes return in D1:D0; larger aggregates use a caller-allocated return
+      buffer.
+    cases:
+      - title: Integer scalar return
+        source: uint64_t add64(uint64_t a, uint64_t b);
+        result:
+          - D0 = return value
+      - title: Pointer return
+        source: void *find_byte(void *base, uint64_t len, int byte);
+        result:
+          - A0 = return pointer
+      - title: Floating-point scalar return
+        source: double hypot2(double x, double y);
+        result:
+          - F0 = return value
+      - title: 128-bit scalar return
+        source: unsigned __int128 multiply_wide(uint64_t a, uint64_t b);
+        result:
+          - D0 = low 64 bits
+          - D1 = high 64 bits
+      - title: Small aggregate return
+        source: struct pair make_pair(uint64_t first, uint64_t second);
+        result:
+          - D0 = low-address 64 bits
+          - D1 = high-address 64 bits
+      - title: Large aggregate return
+        source: struct triple make_triple(uint64_t a, uint64_t b, uint64_t c);
+        result:
+          - caller allocates the return buffer and passes its pointer in A5
+          - callee stores the aggregate into the buffer named by A5 at entry
+          - callee returns the same buffer pointer in A0
+freestanding_c:
+  summary: Freestanding C uses the Bedrock C data and call ABI together with the language-neutral ELF
+    ABI. It is sufficient for compiler output, static objects, and runtime-provided helper calls, but
+    does not define process startup or hosted library behavior.
+  rules:
+    entry_point: The ELF entry field is validated as an object-loading field; _start, initial stack contents,
+      argc/argv/envp/auxv, and process entry are OS ABI responsibilities.
+    bss_zero_fill: Zero fill is provided by ELF program loading for PT_LOAD file-size to memory-size gaps.
+    integer_128_operations: 128-bit integer arithmetic is lowered to compiler-runtime library calls unless
+      a compiler deliberately selects target instructions for a specific operation.
+    instruction_relaxation: Instruction relaxation is selected by assembler and linker policy under the
+      active code model.
+    hosted_interfaces: Hosted C library entry, process environment, filesystem, and syscall bindings are
+      outside the freestanding C ABI.
+memory_model:
+  summary: The C ABI defines the memory guarantees that C-family toolchains may assume when lowering normal
+    memory accesses, C atomic operations, volatile accesses, and compiler-runtime helper calls. It does
+    not define device ordering policy or process-wide memory mapping policy.
+  normal_memory:
+    aligned_1_byte_load_store: tear-free
+    aligned_2_byte_load_store: tear-free
+    aligned_4_byte_load_store: tear-free
+    aligned_8_byte_load_store: tear-free
+    sixteen_byte_or_larger_access: not atomic
+    unaligned_access: no tear-free guarantee
+  c_atomics:
+    lock_free_widths_bytes:
+      - 1
+      - 2
+      - 4
+      - 8
+    memory_order_mapping:
+      relaxed: relaxed
+      consume: acquire
+      acquire: acquire
+      release: release
+      acq_rel: acqrel
+      seq_cst: seqcst
+    integer_128_bit_atomic: libatomic or compiler-rt helper
+    wider_atomic_objects: library or runtime helper
+    compare_exchange_widths_bytes:
+      - 1
+      - 2
+      - 4
+      - 8
+  volatile:
+    access_preservation: Volatile accesses are preserved as observable abstract-machine accesses.
+    ordering: Volatile is not an ordering primitive and does not imply acquire, release, sequential consistency,
+      cache synchronization, or device ordering.
+  device_memory:
+    mmio_ordering: MMIO and device ordering are defined by the OS ABI, loader profile, or mapped memory
+      attributes rather than by the C ABI.
+    volatile_mmio: Volatile may be used to preserve accesses to an object, but ordering still comes from
+      explicit fences, atomics, or mapped memory attributes.
+  executable_memory:
+    dynamic_code_patch: Changes to executable memory after relocation, dynamic code patching, or JIT-style
+      writes require explicit instruction/data cache synchronization before execution observes the modified
+      instructions.
+    relocation_patch_visibility: A loader or runtime that modifies executable mappings is responsible for
+      performing the required cache synchronization before transferring control to patched code.

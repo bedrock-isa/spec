@@ -1,0 +1,277 @@
+version: draft-v1
+
+prefix_word:
+  bytes_per_instruction: 2
+  fill_order:
+    - low
+    - high
+  decode_order:
+    - low
+    - high
+  unused_slot_encoding: NPX
+  conflict_resolution: last prefix wins
+  conflict_note: >
+    Prefix effects are applied in byte order. If two prefixes in the same
+    semantic group or otherwise conflicting prefixes appear in the prefix word,
+    the later decoded prefix overrides the earlier one.
+
+prefixes:
+  - name: NPX
+    value: 0x00
+    group: neutral
+    semantics: no effect
+    description: >
+      No-prefix operation. NPX is used as the neutral prefix byte and as the
+      canonical filler for an unused prefix slot.
+  - name: NOSPEC
+    value: 0x01
+    group: speculation
+    semantics: speculation-restricted execution
+    description: >
+      Restricts speculative execution of the following instruction. The exact
+      microarchitectural mechanism is implementation-defined, but architecturally
+      NOSPEC marks the instruction as a speculation boundary or speculation-limited
+      operation.
+  - name: SATURATE
+    value: 0x02
+    group: arithmetic_mode
+    semantics: saturating arithmetic
+    applies_to:
+      - arithmetic
+    description: >
+      Requests saturating arithmetic for arithmetic instructions that define a
+      saturating form. Instead of wrapping on overflow, the result clamps to the
+      signed or unsigned range selected by the operation.
+  - name: NONTEMPORAL
+    value: 0x0b
+    group: memory_hint
+    semantics: non-temporal access hint
+    applies_to:
+      - memory
+    description: >
+      Provides a cache-allocation hint for memory operations. It does not change
+      the architectural value loaded or stored, and an implementation may treat
+      it as a hint.
+  - name: POSTINC
+    value: 0x04
+    group: ea_update
+    semantics: post-increment address register
+    requires:
+      update_eligible_ea: true
+    description: >
+      Address-update pseudo-prefix for update-eligible indirect EA forms. The
+      effective address is used first, then the address register is incremented
+      after a successful access.
+  - name: PREINC
+    value: 0x05
+    group: ea_update
+    semantics: pre-increment address register
+    requires:
+      update_eligible_ea: true
+    description: >
+      Address-update pseudo-prefix for update-eligible indirect EA forms. The
+      address register is incremented first, then the updated address is used for
+      the access.
+  - name: POSTDEC
+    value: 0x06
+    group: ea_update
+    semantics: post-decrement address register
+    requires:
+      update_eligible_ea: true
+    description: >
+      Address-update pseudo-prefix for update-eligible indirect EA forms. The
+      effective address is used first, then the address register is decremented
+      after a successful access.
+  - name: PREDEC
+    value: 0x07
+    group: ea_update
+    semantics: pre-decrement address register
+    requires:
+      update_eligible_ea: true
+    description: >
+      Address-update pseudo-prefix for update-eligible indirect EA forms. The
+      address register is decremented first, then the updated address is used for
+      the access.
+  - name: REPcc
+    pattern: "1ccc cddd"
+    group: repeat
+    syntax:
+      mnemonic_template: "REP{condition}"
+      condition_suffix: concatenated
+      dot_suffix_reserved_for_instruction_size: true
+      applies_to_following_instruction: true
+      separator: comma
+      examples:
+        - "REP D0, EXTZL.B [A0 + D0 * 1], [A1 + D0 * 4]"
+      aliases:
+        REP: REPT
+    description: >
+      Repeats the following eligible instruction using Dn as an ordinary signed
+      two's-complement repeat counter and a full condition-code selector. A zero
+      counter performs no iteration. Positive counters are decremented toward
+      zero and negative counters are incremented toward zero only after a
+      completed iteration whose REP condition remains true. A completed
+      terminating iteration whose REP condition is false commits its ordinary
+      instruction side effects but leaves the counter unchanged. REP is the alias
+      for REPT. The condition is evaluated from the iteration observed value
+      rather than from the incoming FLAGS alone, which lets REPcc express
+      string-like copy, compare, test, and bulk extension loops as one prefixed
+      instruction.
+    condition:
+      type: condition_code
+      field: c
+      values_from: conditions.yaml
+      full_set: true
+    operand:
+      type: DREG
+      field: d
+      range: D0-D7
+      role: counter
+    eligible_operation_attribute: repeatable_operation
+    fpu_conditional_mnemonics: [FCMP, FTEST, FBNDII, FBNDIX, FBNDXI, FBNDXX]
+    excluded_categories: [control_flow, system, atomic]
+    indexed_ea_counter_use:
+      allowed: true
+      counter_value: architectural signed counter value before iteration update
+      note: >
+        the counter D register may also appear as an indexed-EA index operand;
+        EA evaluation uses the same architectural signed D-register value that
+        REP tests before any condition-true counter update
+    counter_encoding:
+      interpretation: signed two's-complement
+      value_bits: 63..0
+      zero_rule: zero counter performs no iteration
+      index_value: architectural counter value before iteration update
+      update_after_condition_true_iteration: positive counters decrement and negative counters increment toward zero
+      condition_false_iteration_counter_rule: counter is not updated
+      completion_rule: counter is zero or the REP condition is false
+      fault_restart_rule: remaining signed count is preserved
+    observed_value:
+      MOV: source value
+      CMP: right operand minus left operand
+      TEST: left operand bitwise-and right operand
+      EXTSW: result value
+      EXTZW: result value
+      EXTSL: result value
+      EXTZL: result value
+      EXTSQ: result value
+      EXTZQ: result value
+    repflags:
+      MOV: set Z/N from observed value and clear C/V
+      CMP: compute subtract flags from right operand minus left operand
+      TEST: set Z/N from observed value and clear C/V
+      EXTSW: set Z/N from observed value and clear C/V
+      EXTZW: set Z/N from observed value and clear C/V
+      EXTSL: set Z/N from observed value and clear C/V
+      EXTZL: set Z/N from observed value and clear C/V
+      EXTSQ: set Z/N from observed value and clear C/V
+      EXTZQ: set Z/N from observed value and clear C/V
+    counter_direction: signed counter moves toward zero
+    commit_rule: a condition-false terminating iteration commits the body and leaves the counter unchanged
+    semantics: repeat instruction while counter and condition remain active
+
+  - name: REPG
+    pattern: "0110 0ddd"
+    group: repeat
+    syntax:
+      mnemonic_template: "REPG"
+      fast_contract_template: "REPGF"
+      block: true
+      block_template: "REPG Dn, { <instruction>; ... }"
+      fast_contract_block_template: "REPGF Dn, { <instruction>; ... }"
+      applies_to_grouped_instructions: true
+      terminator_prefix: ENDG
+      examples:
+        - "REPG D0, { FMOV.S [A0++], F0; FMADD.S [A1++], F0, F1; FMOV.S F1, [A2++]; }"
+        - "REPGF D0, { FMOV.S [A0 + D0.L * 4], F0; FADD.S [A1 + D0.L * 4], F0; }"
+    description: >
+      Repeats an ENDG-terminated group of eligible instructions using Dn as the
+      repeat counter. The grouped instructions execute in program order and the
+      counter is updated after a successful group iteration. REPG has no
+      condition-code selector; conditional repetition remains the role of REPcc.
+      The first grouped instruction carries the REPG prefix; the final grouped
+      instruction carries the ENDG prefix. Instructions between those endpoints
+      are ordinary instruction records with their own word 0 length fields. The
+      complete grouped instruction sequence must be contained within one
+      naturally aligned 64-byte grouping window, but the first instruction does
+      not need to start at the beginning of the window. A zero counter performs no group iterations;
+      positive and negative counters both move toward zero after each successful
+      group iteration. The group is discovered by walking explicit word 0
+      lengths within the current grouping window until ENDG is found. REPG has two
+      optimization classes. REPG-fast is available when the group has regular
+      memory behavior and does not write the selected counter register.
+      REPG-general preserves exact scalar semantics for less regular groups,
+      including groups that read or write the selected counter register.
+      REPGF is a source-level fast-contract spelling for the same encoded REPG
+      prefix. It emits the same prefix byte as REPG, but the assembler must
+      reject the group unless the source satisfies the REPG-fast syntactic
+      eligibility rules it can prove.
+    operand:
+      type: DREG
+      field: d
+      range: D0-D7
+      role: counter
+    eligible_operation_attribute: repeatable_operation
+    streaming_candidate_attribute: streaming_candidate
+    forbidden_instruction_classes:
+      - control flow
+      - system
+      - atomic
+      - stack operation
+      - TLB operation
+      - cache operation
+      - fence operation
+      - nested repeat
+    fast_contract_alias:
+      mnemonic: REPGF
+      emits: same encoded prefix as REPG
+      assembler_requirement: >
+        The assembler rejects REPGF if a grouped instruction violates the base
+        REPG legality rules, writes the selected counter register, or uses
+        PC-relative addressing.
+    counter_encoding:
+      interpretation: signed two's-complement
+      value_bits: 63..0
+      zero_rule: zero counter performs no iteration
+      update_after_successful_group_iteration: positive counters decrement and negative counters increment toward zero
+      completion_rule: final counter is zero
+      fault_restart_rule: remaining signed count is preserved
+      update_on_faulting_iteration: counter updates only after the whole group iteration completes
+    fault_behavior:
+      precise_at: faulting_grouped_instruction
+      commit_rule: completed iterations and completed prior group instructions commit
+      faulting_instruction_rule: ordinary scalar fault rule
+      later_grouped_instructions: later grouped instructions are not executed
+      continuation_state:
+        saved_pc: faulting_grouped_instruction
+        group_start:
+          bits: 5
+          range_words: 0..31
+        counter_register:
+          bits: 3
+    alignment:
+      grouping_window_bytes: 64
+    encoding_scope:
+      group_termination: ENDG_prefix
+    fflags_accumulation: OR completed iterations
+    commit_rule: only successful iterations and completed group instructions commit
+    semantics: repeat grouped instructions using the selected counter
+  - name: ENDG
+    value: 0x68
+    group: repeat_boundary
+    semantics: end grouped repeat
+    syntax:
+      assembler_generated: true
+      closes: REPG
+    description: >
+      Terminates a REPG group. ENDG is carried as a prefix byte on the final
+      instruction in the grouped sequence; ordinary assembly source normally
+      emits it through the closing brace of a REPG block rather than spelling it
+      as a standalone prefix.
+
+mutually_exclusive_groups:
+  - ea_update
+  - arithmetic_mode
+  - speculation
+  - memory_hint
+  - repeat

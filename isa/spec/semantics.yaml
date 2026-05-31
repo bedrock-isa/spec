@@ -1,0 +1,45 @@
+version: draft-v1
+
+common_fields:
+  size_bwlq: [B, W, L, Q]
+  size_lq: [L, Q]
+  size_wl: [W, L]
+  cc: condition_code
+  ea: effective_address
+  dreg: D0-D7
+  areg: A0-A7
+  sreg: CS,DS,SS,GS0,GS1,FLAGS,STATUS
+  imm: immediate
+  memory_order: relaxed,acquire,release,acqrel,seqcst
+  bitmap16: D0-D7,A0-A7
+
+common_constraints:
+  overlong_encoding: allowed; extra trailing words are padding payload
+  undersized_encoding: illegal
+  memory_memory:
+    allowed_only_for: [MOV, CMP, EXTSW, EXTZW, EXTSL, EXTZL, EXTSQ, EXTZQ]
+  address_update_prefix:
+    applies_to:
+      - plain indirect A
+      - segment-qualified plain indirect A
+    disallowed_for:
+      - A_plus_disp
+      - PC_relative
+      - SP_relative
+      - absolute
+      - immediate
+      - indexed_ea
+  repeat_prefixes:
+    authoritative_source: instructions.yaml:operation_semantics.repeat_prefixes
+    members: [REPcc, REPG]
+  MOV_D_to_D:
+    canonical_form: MOV <ea=Dsrc>, Ddst
+    noncanonical_store_form: extended opcode entry
+  long_control_transfer:
+    rationale: CS and PC must be changed as one architectural commit point
+    disallow_general_CS_write: true
+    segment_operand: DREG
+    target_operand: EA
+    segment_immediate_plus_offset_immediate:
+      allowed: false
+      reason: 64-bit CS immediate plus 64-bit PC immediate would exceed the 8-word instruction limit

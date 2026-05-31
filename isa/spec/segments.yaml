@@ -1,0 +1,62 @@
+version: draft-v1
+
+segment_registers:
+  - name: CS
+    selector: code
+    width: 64
+  - name: DS
+    selector: data
+    width: 64
+  - name: SS
+    selector: stack
+    width: 64
+  - name: GS0
+    selector: general
+    width: 64
+  - name: GS1
+    selector: general
+    width: 64
+
+layout:
+  base_page:
+    bits: [63, 12]
+    unit_bytes: 4096
+    description: page-unit segment base index
+  exponent:
+    bits: [11, 7]
+    field_name: e
+    description: segment size exponent
+  mantissa:
+    bits: [6, 1]
+    field_name: m
+    description: segment size mantissa
+  bounds_only:
+    bits: [0, 0]
+    field_name: b
+    description: bounds-only mode enable; check segment bounds without adding the segment base address
+
+disabled_when:
+  mantissa: 0
+
+semantics:
+  purpose: memory_window_and_simple_address_translation
+  not_a_protection_mechanism: true
+  protection_and_final_translation: paging
+  enabled_when: m != 0
+  translation_order_when_enabled:
+    - segmentation
+    - paging
+  bounds_only_mode:
+    field: b
+    effect: check bounds without adding the segment base
+  formulas:
+    base_byte_address: base_page * 4096
+    segment_size_bytes: m * 2^e * 4096
+    limit_byte_address: (base_page + m * 2^e) * 4096
+  arithmetic:
+    domain: unsigned integer domain wide enough to represent the full 64-bit architectural linear-address space plus one
+    overflow_rule: if base + segment_size exceeds 2^64, the segment register image is invalid and any access through it reports PAGE_FAULT
+  modes:
+    disabled: m = 0; no segment-window check and no base addition
+    translated_window: m != 0 and b = 0; check offset within span, then add base
+    bounds_only_window: m != 0 and b = 1; check the already-linear address within the window, without adding base

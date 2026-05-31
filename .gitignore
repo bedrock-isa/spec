@@ -1,0 +1,51 @@
+# Local build products
+/build/
+/outputs/
+/a.out
+*.o
+*.a
+*.so
+*.dylib
+*.dSYM/
+
+# Generated helper binaries inside vendored trees
+/qbe/obj/
+/qbe/minic/minic
+/qbe/minic/minic.dSYM/
+/qbe/.git-upstream/
+
+# Local reference documents and generated PDFs
+/*.pdf
+
+# Python cache and test/tooling scratch
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# LaTeX scratch files, in case a local build writes outside build/
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.idx
+*.ilg
+*.ind
+*.lof
+*.log
+*.lot
+*.out
+*.run.xml
+*.synctex.gz
+*.toc
+*.xdv
+
+# macOS / editor noise
+.DS_Store
+._*
+*.swp
+*.swo
+*~

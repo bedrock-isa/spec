@@ -1,0 +1,148 @@
+summary: >
+  This section fixes the vocabulary used by the Bedrock ISA reference. Unless a
+  later section explicitly narrows a term, these definitions apply throughout
+  the architecture manual and to ABI documents that use the same term.
+
+groups:
+  - name: Address Values
+    terms:
+      - term: effective address (EA)
+        definition: >
+          The address value or operand designator produced by an addressing mode
+          before segment pre-translation. Memory EA forms produce an address
+          value; register and immediate EA forms name non-memory operands.
+
+      - term: pre-segment virtual address
+        definition: >
+          The ABI-visible address value before segment pre-translation. Ordinary
+          pointers, ELF symbol values, near CALL targets, and near JMP targets
+          use this address space unless a rule explicitly says otherwise.
+
+      - term: linear address
+        definition: >
+          The address produced by segment pre-translation. If paging is enabled,
+          the page-table walker consumes the linear address. If paging is
+          disabled, the linear address is used directly by the memory system.
+
+      - term: physical address
+        definition: >
+          A byte-addressed memory address derived by page-table translation for
+          ordinary byte-addressed memory. When paging is disabled, the linear
+          address is not called a physical address by this specification; it is
+          used directly as the memory-system address.
+
+      - term: memory-system address
+        definition: >
+          The address value presented to the memory subsystem after all active
+          architectural translation stages. With paging enabled this value is
+          produced from the PTE frame number and page offset. With paging
+          disabled, the linear address is used directly as the memory-system
+          address. The memory-system address may be interpreted as an ordinary
+          byte address or as an externally acknowledged bus-sized access
+          according to the final access attributes.
+
+      - term: address generation
+        definition: >
+          The instruction-local calculation that combines registers,
+          displacement, index, scale, and immediate fields to produce an
+          effective-address value. Address generation does not by itself read
+          memory.
+
+  - name: Segmentation And Paging
+    terms:
+      - term: segment pre-translation
+        definition: >
+          The stage between effective-address calculation and paging. Disabled
+          segments perform no segment-window check and no base addition.
+          Translated-window segments check an offset within the segment span and
+          add the segment base. Bounds-only segments check an already-linear
+          address without adding the segment base.
+
+      - term: segment register image
+        definition: >
+          The 64-bit architectural value stored in a segment register. It
+          contains the segment base page, size exponent, size mantissa, and
+          bounds-only enable bit.
+
+      - term: disabled segment
+        definition: >
+          A segment whose size mantissa is zero. A disabled segment performs no
+          segment-window check and passes the effective-address value through as
+          the linear address.
+
+      - term: translated segment
+        definition: >
+          An enabled segment with bounds-only mode clear. The effective-address
+          value is checked as an offset within the segment span, then the
+          segment base is added.
+
+      - term: bounds-only segment
+        definition: >
+          An enabled segment with bounds-only mode set. The effective-address
+          value is already treated as a linear address; the segment only checks
+          that it lies inside the segment window.
+
+      - term: page-table translation
+        definition: >
+          The optional translation stage controlled by PTCR.PE. It maps a
+          canonical linear address to a physical frame and applies PTE
+          permissions, cache policy, and addressing type.
+
+      - term: PFN
+        definition: >
+          Physical frame number. A leaf PTE supplies the PFN used with the page
+          offset to form the physical address.
+
+  - name: Control Flow And Linkage
+    terms:
+      - term: near control transfer
+        definition: >
+          A CALL, RET, JMP, or conditional branch that changes only PC within
+          the current code-segment context.
+
+      - term: segment-changing control transfer
+        definition: >
+          A control transfer that updates CS and PC as one architectural commit.
+          Long calls and long returns belong to this category.
+
+      - term: linkage domain
+        definition: >
+          An ABI-visible region in which ordinary code addresses name near-call
+          entry points and function pointers do not carry an explicit CS value.
+
+      - term: veneer
+        definition: >
+          A small runtime-generated or linker-generated near-call entry point
+          that hides a more complex transfer sequence from ordinary callers.
+
+  - name: Architectural State
+    terms:
+      - term: data register
+        definition: >
+          A D-class general-purpose integer register.
+
+      - term: address register
+        definition: >
+          An A-class general-purpose register used preferentially for address
+          values and pointer arguments.
+
+      - term: stack pointer register
+        definition: >
+          The SP register. SP is its own register class and is not an A-class
+          register.
+
+      - term: special register
+        definition: >
+          A named architectural state register exposed through the S operand
+          class, such as FLAGS, STATUS, SS, or segment registers.
+
+      - term: control register
+        definition: >
+          A privileged architectural register exposed through the CR operand
+          class, such as PTCR, ASCR, ICR, SPC, SCS, and SDS.
+
+      - term: prefix
+        definition: >
+          An 8-bit modifier stored in the optional prefix word. Prefix bytes are
+          interpreted from low byte to high byte; when two prefixes conflict,
+          the later prefix overrides the earlier one.

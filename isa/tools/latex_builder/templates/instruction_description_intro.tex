@@ -1,0 +1,51 @@
+\subsection{Reading an Instruction Description}
+The instruction pages below use a common layout. The shortened example shows how
+to read the fields before the alphabetical instruction descriptions begin. It is
+a reading guide; the generated form tables and diagrams on each instruction page
+are the normative encoding reference.
+
+\Needspace{3.9in}
+\noindent\begin{minipage}{\linewidth}
+\noindent\begin{tabular*}{\linewidth}{@{}l@{\extracolsep{\fill}}c r@{}}
+{\Large\bfseries ADD} & {\bfseries Add} & {\Large\bfseries ADD}\\
+\end{tabular*}
+\vspace{4pt}\hrule height 0.45pt\vspace{9pt}
+\manualfield{Summary:}{Adds the source operand to the destination operand.}
+\manualfield{Operation:}{Read the source and destination values, add them, write the result, and update FLAGS according to the form.}
+\manualfield{Assembler Syntax:}{\texttt{ADD.\textless{}L/Q\textgreater{} Dn, Dn} \quad \texttt{ADD.\textless{}B/W/L/Q\textgreater{} \textless{}ea\textgreater{}, Dn}}
+\manualfield{Attributes:}{Size, word length, privilege, prefix availability, and flag behavior for the listed forms.}
+\manualfield{Description:}{Longer prose records form-specific behavior and alias notes that do not fit in the summary line.}
+
+\manualfield{Condition Codes:}{\begin{tabular}[t]{@{}cccc@{}}
+\textbf{Z} & \textbf{N} & \textbf{C} & \textbf{V}\\
+* & * & * & *
+\end{tabular}\quad A star marks a flag that may be updated; a dash marks an unchanged flag.}
+
+\par\vspace{6pt}\noindent\textbf{Instruction Forms:}\par
+\par\vspace{7pt}\noindent\begin{minipage}{\linewidth}\footnotesize
+\textbf{\texttt{ADD.X(z:L/Q) Dn(d), Dn(D)}}\par
+\vspace{2pt}
+\begin{tabularx}{\linewidth}{@{}p{0.88in}X@{}}
+\textbf{Form} & \texttt{Dn(d), Dn(D)}\\
+\textbf{Encoding} & compact primary or extended opcode form, depending on the generated allocation\\
+\textbf{Words} & minimum and maximum instruction length in 16-bit words\\
+\textbf{Privilege} & user/supervisor policy for this form\\
+\textbf{Operands} & source operand is \texttt{d}; destination operand is \texttt{D}\\
+\textbf{Notes} & payload words, EA words, padding, or descriptor requirements\\
+\end{tabularx}\par
+\par\smallskip
+\begin{tabularx}{\linewidth}{@{}p{0.28in}X@{}}
+\texttt{d} & symbolic source-register field used by this form.\\
+\texttt{D} & symbolic destination-register field used by this form.\\
+\texttt{z} & symbolic size selector used by this form.\\
+\end{tabularx}\par
+\end{minipage}
+\end{minipage}
+
+\begin{itemize}[leftmargin=0.25in]
+\item The page header repeats the mnemonic on both sides and places the instruction title in the center.
+\item The assembler syntax block shows programmer-facing spellings. Size suffixes appear after the dot.
+\item The instruction forms are grouped by allocated encoding form. Each form begins with the full assembler syntax, then lists the operand shape, length range, privilege rule, and notes.
+\item Field names in parentheses, such as \texttt{d}, \texttt{D}, \texttt{e}, \texttt{s}, or \texttt{z}, are symbolic encoding fields. The diagram and field list under each form map those symbols to exact bit positions.
+\item Opcode roots and ranges are allocation details; the visible contract is mnemonic, operands, sizes, privilege, flags, and EA legality.
+\end{itemize}

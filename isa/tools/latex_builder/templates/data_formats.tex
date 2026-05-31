@@ -1,0 +1,125 @@
+\subsection{Integer Data Sizes}
+Integer operands use four architectural sizes. The size suffix selects the number of low-order
+bits used by the operation and the number of bytes transferred for memory operands.
+
+\manualtablecaption{Integer Data Sizes}
+\begingroup\footnotesize
+\begin{longtable}{@{}p{0.75in}p{0.75in}p{0.75in}p{2.5in}@{}}
+\toprule
+\textbf{Suffix} & \textbf{Bits} & \textbf{Bytes} & \textbf{Name}\\
+\midrule
+\endhead
+\texttt{B} & 8 & 1 & byte\\
+\texttt{W} & 16 & 2 & word\\
+\texttt{L} & 32 & 4 & long word\\
+\texttt{Q} & 64 & 8 & quad word\\
+\bottomrule
+\end{longtable}
+\endgroup
+
+\begin{center}
+\begin{tikzpicture}[x=0.078in,y=0.30in,every node/.style={font=\scriptsize}]
+\foreach \x/\label in {0/63,32/31,48/15,56/7,64/0} {
+  \node[anchor=south] at (\x,0.08) {\label};
+}
+\draw (0,-1) rectangle (64,0);
+\node at (32,-0.5) {Q operand bits 63..0};
+\node[anchor=east] at (-1.2,-0.5) {Q};
+\draw (0,-2.2) rectangle (32,-1.2);
+\node at (16,-1.7) {unchanged / instruction-defined};
+\draw (32,-2.2) rectangle (64,-1.2);
+\node at (48,-1.7) {L operand bits 31..0};
+\node[anchor=east] at (-1.2,-1.7) {L};
+\draw (0,-3.4) rectangle (48,-2.4);
+\node at (24,-2.9) {unchanged / instruction-defined};
+\draw (48,-3.4) rectangle (64,-2.4);
+\node at (56,-2.9) {W bits 15..0};
+\node[anchor=east] at (-1.2,-2.9) {W};
+\draw (0,-4.6) rectangle (56,-3.6);
+\node at (28,-4.1) {unchanged / instruction-defined};
+\draw (56,-4.6) rectangle (64,-3.6);
+\node at (60,-4.1) {B bits 7..0};
+\node[anchor=east] at (-1.2,-4.1) {B};
+\end{tikzpicture}
+\manualfigurecaption{Integer Register Operand Subfields}
+\end{center}
+
+Byte, word, and long operations use the low-order subfield of the selected register. Q-sized
+operations use the full 64-bit register. Instructions that explicitly extend a value define
+whether the upper bits are sign-extended or zero-extended; otherwise, the instruction semantics
+define whether upper bits are preserved, cleared, or replaced.
+
+\subsection{Little-Endian Memory Organization}
+Bedrock data memory is little-endian. For an N-byte integer value stored at byte address A, byte
+A contains bits 7..0, byte A+1 contains bits 15..8, and so on. The least significant byte is
+stored at the lowest address.
+
+\begin{center}
+\begin{tikzpicture}[x=0.54in,y=0.34in,every node/.style={font=\scriptsize}]
+\foreach \x/\addr/\bits in {0/A+0/7..0,1/A+1/15..8,2/A+2/23..16,3/A+3/31..24,4/A+4/39..32,5/A+5/47..40,6/A+6/55..48,7/A+7/63..56} {
+  \draw (\x,0) rectangle (\x+1,1);
+  \node at (\x+0.5,0.62) {$V[\bits]$};
+  \node[anchor=north] at (\x+0.5,-0.04) {\texttt{\addr}};
+}
+\node[anchor=east] at (-0.15,0.62) {byte};
+\node[anchor=east] at (-0.15,-0.20) {address};
+\draw[->] (0,-0.70) -- node[below] {increasing addresses} (8,-0.70);
+\node[anchor=west] at (0,1.22) {least significant byte first};
+\node[anchor=east] at (8,1.22) {most significant byte last};
+\end{tikzpicture}
+\manualfigurecaption{Little-Endian Byte Order for a 64-Bit Value}
+\end{center}
+
+\[
+\mathit{mem}[A+i] = (\mathit{value} \gg (8i)) \mathbin{\&} 255,\qquad 0 \le i < N
+\]
+
+The same byte order is used for instruction words, immediate payloads, displacement payloads,
+absolute-address payloads, and data transferred by load/store instructions.
+
+\begin{center}
+\begin{tikzpicture}[x=0.72in,y=0.34in,every node/.style={font=\scriptsize}]
+\draw (0,0) rectangle (1,1);
+\draw (1,0) rectangle (2,1);
+\node at (0.5,0.62) {$word[7:0]$};
+\node at (1.5,0.62) {$word[15:8]$};
+\node[anchor=north] at (0.5,-0.04) {\texttt{PC+0}};
+\node[anchor=north] at (1.5,-0.04) {\texttt{PC+1}};
+\node[anchor=east] at (-0.18,0.62) {instruction word};
+\draw[->] (0,-0.70) -- node[below] {instruction stream byte order} (2,-0.70);
+\end{tikzpicture}
+\manualfigurecaption{Instruction Word Storage in Memory}
+\end{center}
+
+\subsection{Instruction Payload Ordering}
+Instruction length is measured in 16-bit words, but each instruction word is itself stored in
+little-endian byte order. Word 0 occupies the first two bytes of the instruction. If a prefix
+word, descriptor word, immediate, displacement, or bitmap follows, those words occupy increasing
+addresses in decode order.
+
+\manualtablecaption{Immediate and Displacement Payload Order}
+\begingroup\footnotesize
+\begin{longtable}{@{}p{0.85in}p{0.85in}p{3.8in}@{}}
+\toprule
+\textbf{Payload} & \textbf{Words} & \textbf{Memory Order}\\
+\midrule
+\endhead
+\texttt{imm16} & 1 word & bits 7..0 at the lower byte, bits 15..8 at the next byte\\
+\texttt{imm32} & 2 words & least significant word first, then most significant word\\
+\texttt{imm64} & 4 words & least significant word first through most significant word\\
+\texttt{disp16} & 1 word & signed two's-complement value\\
+\texttt{disp32} & 2 words & signed two's-complement value, least significant word first\\
+\texttt{disp64} & 4 words & signed two's-complement value, least significant word first\\
+\bottomrule
+\end{longtable}
+\endgroup
+
+Multiword immediates and displacements are stored least significant word first. Signed displacement
+payloads use two's-complement representation at their declared width before any sign extension
+performed by the consuming instruction or effective-address form.
+
+\subsection{Floating-Point Data Formats}
+Floating-point scalar formats are little-endian in memory as well. The S format is 32 bits and the
+D format is 64 bits. The bit-level floating-point encoding, NaN policy, exception flags, and
+rounding behavior are described by the floating-point programming model and instruction metadata;
+their memory byte order follows the same least-significant-byte-first rule as integer data.
