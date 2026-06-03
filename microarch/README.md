@@ -1,19 +1,11 @@
 # Bedrock Microarchitecture Notes
 
-This directory contains source fragments for Bedrock microarchitecture design
-notes. The generated document is intentionally separate from the ISA reference:
-it describes candidate implementation structure, not architectural software
-semantics.
+This directory contains the Dolomite0 microarchitecture note for Bedrock. The
+document is intentionally separate from the ISA reference: it describes one
+implementation profile, not architectural software semantics.
 
-Build the synthesized document with:
-
-```sh
-make -C microarch doc
-```
-
-The output is written to:
+The source document is:
 
 ```text
-build/microarch/bedrock_microarchitecture.md
+microarch/dolomite0/README.md
 ```
-

@@ -588,8 +588,8 @@ def validate_prefixes(spec: dict[str, Any], result: ValidationResult) -> None:
         operand = repg.get("operand") or {}
         alignment = repg.get("alignment") or {}
         encoding_scope = repg.get("encoding_scope") or {}
-        if repg.get("pattern") != "0110 0ddd":
-            result.error("REPG pattern must be 0110 0ddd")
+        if repg.get("pattern") != "0111 0ddd":
+            result.error("REPG pattern must be 0111 0ddd")
         if not isinstance(syntax, dict) or not syntax.get("block") or syntax.get("terminator_prefix") != "ENDG":
             result.error("REPG syntax must declare an ENDG-terminated block")
         if operand.get("type") != "DREG" or operand.get("field") != "d" or operand.get("range") != "D0-D7":
@@ -617,8 +617,8 @@ def validate_prefixes(spec: dict[str, Any], result: ValidationResult) -> None:
 
     endg = prefix_by_name.get("ENDG")
     if isinstance(endg, dict):
-        if int(endg.get("value", -1) or -1) != 0x68:
-            result.error("ENDG prefix value must be 0x68")
+        if int(endg.get("value", -1) or -1) != 0x78:
+            result.error("ENDG prefix value must be 0x78")
         syntax = endg.get("syntax") or {}
         if endg.get("group") != "repeat_boundary" or syntax.get("closes") != "REPG":
             result.error("ENDG must be a repeat-boundary prefix that closes REPG")

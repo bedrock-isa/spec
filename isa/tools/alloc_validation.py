@@ -53,7 +53,7 @@ def audit_alignment(spec: dict[str, Any], entries: list[PatternEntry], candidate
     endg = prefix_by_name.get("ENDG", {})
     add(
         "REPG/ENDG group prefix",
-        repg.get("pattern") == "0110 0ddd"
+        repg.get("pattern") == "0111 0ddd"
         and repg_operand.get("range") == "D0-D7"
         and repg_operand.get("field") == "d"
         and bool(repg_syntax.get("block"))
@@ -61,7 +61,7 @@ def audit_alignment(spec: dict[str, Any], entries: list[PatternEntry], candidate
         and int(repg_alignment.get("grouping_window_bytes", 0) or 0) == 64
         and repg_scope.get("group_termination") == "ENDG_prefix"
         and isinstance(endg, dict)
-        and int(endg.get("value", -1) or -1) == 0x68
+        and int(endg.get("value", -1) or -1) == 0x78
         and endg.get("group") == "repeat_boundary",
         (
             f"REPG pattern={repg.get('pattern')}, terminator={repg_syntax.get('terminator_prefix')}, "

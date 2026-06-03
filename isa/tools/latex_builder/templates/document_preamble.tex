@@ -65,7 +65,7 @@
   \refstepcounter{manualtable}\phantomsection\addcontentsline{lot}{table}{\protect\numberline{\themanualtable}#1}%
   \par\smallskip\centerline{\small\bfseries Table \themanualtable. #1}\smallskip}
 \newcommand{\instrhead}[3]{%
-  \clearpage
+  \phantomsection#3%
   \Needspace{1.3in}
   \noindent\begin{tabular*}{\linewidth}{@{}l@{\extracolsep{\fill}}c r@{}}%
   {\Large\bfseries #1} & {\bfseries #2} & {\Large\bfseries #1}\\%

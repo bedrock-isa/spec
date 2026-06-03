@@ -426,7 +426,16 @@ def build_candidate(
         mnemonic=mnemonic,
         category=category,
         group=group,
-        extension_family=str(body.get("extension_family", "")),
+        extension_family=candidate_extension_family(
+            allocation,
+            mnemonic=mnemonic,
+            category=category,
+            group=group,
+            body=body,
+            compact_fields=compact_fields,
+            descriptor_fields=descriptor_fields,
+            operands=operands,
+        ),
         operands=operands,
         origin=origin,
         compact_fields=compact_fields,
@@ -445,7 +454,42 @@ def build_candidate(
         allow_memory_memory=allows_memory_memory(body),
         fixed_size_suffix=fixed_size_suffix(body),
         privilege=candidate_privilege(body),
+        allocation_cluster=candidate_allocation_cluster(body),
     )
+
+
+def candidate_allocation_cluster(body: dict[str, Any]) -> str:
+    value = body.get("allocation_cluster") or body.get("primary_cluster")
+    return str(value) if value else ""
+
+
+def candidate_extension_family(
+    allocation: dict[str, Any],
+    *,
+    mnemonic: str,
+    category: str,
+    group: str,
+    body: dict[str, Any],
+    compact_fields: tuple[Field, ...],
+    descriptor_fields: tuple[Field, ...],
+    operands: tuple[str, ...],
+) -> str:
+    context = allocation_match_context(
+        mnemonic=mnemonic,
+        category=category,
+        group=group,
+        body=body,
+        compact_fields=compact_fields,
+        descriptor_fields=descriptor_fields,
+        operands=operands,
+    )
+    for rule in allocation.get("extension_family_rules", []) or []:
+        if not isinstance(rule, dict) or not allocation_rule_matches(rule, context):
+            continue
+        value = rule.get("extension_family")
+        if value:
+            return str(value)
+    return str(body.get("extension_family", ""))
 
 
 def candidate_privilege(body: dict[str, Any]) -> str:
@@ -501,6 +545,9 @@ def allocation_compact_action(
     descriptor_fields: tuple[Field, ...],
     operands: tuple[str, ...],
 ) -> str:
+    body_compact = str(body.get("compact", "")).lower()
+    if body_compact in {"required", "never"}:
+        return body_compact
     model = allocation.get("frequency_model", {}) if isinstance(allocation, dict) else {}
     context = allocation_match_context(
         mnemonic=mnemonic,
@@ -606,7 +653,7 @@ def generate_fields(
     size = size_field(body, mode)
     if size is not None:
         fields.append(size)
-    fields.extend(semantic_encoding_fields(mnemonic, body, mode))
+    fields.extend(semantic_encoding_fields(mnemonic, body, mode, operands))
     norms = [operand_norm(str(operand)) for operand in operands]
     allow_memory_memory = allows_memory_memory(body)
     explicit_ea_count = sum(1 for norm in norms if is_ea_operand(norm) or "MEMORY" in norm)
@@ -713,7 +760,9 @@ def fixed_size_suffix(body: dict[str, Any]) -> str:
     return ""
 
 
-def semantic_encoding_fields(mnemonic: str, body: dict[str, Any], mode: str) -> list[Field]:
+def semantic_encoding_fields(
+    mnemonic: str, body: dict[str, Any], mode: str, operands: tuple[str, ...]
+) -> list[Field]:
     specs = body.get("encoding_fields", []) or []
     if not isinstance(specs, list):
         return []
@@ -721,6 +770,8 @@ def semantic_encoding_fields(mnemonic: str, body: dict[str, Any], mode: str) -> 
     fields: list[Field] = []
     for spec in specs:
         if not isinstance(spec, dict):
+            continue
+        if not semantic_encoding_spec_matches(spec, mnemonic, body, operands):
             continue
         values = spec.get("values", [])
         width = int(spec.get("width", bits_needed(len(values) if isinstance(values, list) else 0)) or 0)
@@ -742,11 +793,50 @@ def semantic_encoding_fields(mnemonic: str, body: dict[str, Any], mode: str) -> 
     return fields
 
 
+def semantic_encoding_spec_matches(
+    spec: dict[str, Any], mnemonic: str, body: dict[str, Any], operands: tuple[str, ...]
+) -> bool:
+    match = spec.get("match")
+    if not isinstance(match, dict):
+        return True
+    context = {
+        "mnemonic": mnemonic,
+        "semantic_family": str(body.get("semantic_family") or "").split(".", 1)[0],
+        "profile": form_name(operands) or "NO_OPERANDS",
+        "size": size_tag(body),
+    }
+    for key, expected in match.items():
+        actual = context.get(str(key), "")
+        if isinstance(expected, list):
+            if str(actual).upper() not in {str(item).upper() for item in expected}:
+                return False
+            continue
+        if str(actual).upper() != str(expected).upper():
+            return False
+    return True
+
+
 def semantic_encoding_value(mnemonic: str, spec: dict[str, Any]) -> tuple[int | None, str]:
     values = spec.get("values", [])
+    if "value" in spec:
+        raw_value = spec["value"]
+        if isinstance(raw_value, int):
+            return int(raw_value), str(raw_value)
+        label = str(raw_value)
+        if isinstance(values, list):
+            for index, value in enumerate(values):
+                if label.upper() == str(value).upper():
+                    return index, str(value)
+        return int(label, 0), label
     if not isinstance(values, list):
         return None, ""
     derive = str(spec.get("derive", ""))
+    if derive == "mnemonic":
+        upper = mnemonic.upper()
+        for index, value in enumerate(values):
+            label = str(value)
+            if upper == label.upper():
+                return index, label
     if derive == "mnemonic_suffix":
         upper = mnemonic.upper()
         for index, value in enumerate(values):
@@ -779,8 +869,14 @@ def operand_fields(
         return [Field("o", "memory_order", 3, source, "payload")]
     if "CONDITION" in norm or norm in {"CC"}:
         return [Field("c", "condition", 4, source, storage)]
+    if is_dbank_operand(norm, source_norm):
+        return [Field("k", "DBANK", 4, source, storage)]
     if norm in {"DREG_OR_AREG"}:
         return [Field("r", "D_or_A", 4, source, storage)]
+    if source_norm in {"COUNT", "BIT_INDEX"} and norm in {"SELECTOR_IMM6", "IMM6_SELECTOR"}:
+        return [Field("n", "selector6", 6, source, storage)]
+    if source_norm in {"COUNT", "BIT_INDEX"} and is_d_operand(norm):
+        return [Field("n", "DREG", 3, source, storage)]
     if is_d_operand(norm):
         return [Field("d", "DREG", 3, source, storage)]
     if is_a_operand(norm):
@@ -796,13 +892,9 @@ def operand_fields(
     if is_ea_operand(norm) or "MEMORY" in norm:
         return [Field("e", "EA", 6, source, storage)]
     if is_selector_operand(norm, source_norm):
-        width = (
-            4
-            if norm in {"SELECTOR", "DREG_OR_IMM", "REG_OR_IMM"}
-            or source_norm in {"COUNT", "BIT_INDEX", "OFFSET", "WIDTH"}
-            else 3
-        )
-        return [Field("n", "small_selector", width, source, storage)]
+        if source_norm in {"COUNT", "BIT_INDEX"}:
+            return [Field("n", "selector6", 6, source, storage)]
+        return [Field("n", "small_selector", 4, source, storage)]
     if "BITMAP" in norm:
         return [Field("b", "bitmap16", 16, source, "payload")]
     if "IMM" in norm or "ASID" in norm or norm in {"CR", "CREG", "CONTROL_REGISTER"}:
@@ -893,6 +985,17 @@ def is_d_operand(norm: str) -> bool:
     return norm in {"DREG", "DLO", "DX", "DHI"} or (
         norm.startswith("D") and any(key in norm for key in ("REG", "SRC", "DST", "COUNTER"))
     )
+
+
+def is_dbank_operand(norm: str, source_norm: str = "") -> bool:
+    return norm in {"DBANK", "DATA_BANK", "DATA_REGISTER_BANK"} or source_norm in {
+        "BANK",
+        "SRC_BANK",
+        "DST_BANK",
+        "BANK_A",
+        "BANK_B",
+        "DBANK",
+    }
 
 
 def is_a_operand(norm: str) -> bool:
@@ -989,6 +1092,9 @@ def instruction_candidate_id(entry: PatternEntry, operands: tuple[str, ...]) -> 
 def semantic_candidate_id(
     mnemonic: str, operands: tuple[str, ...] | list[str], body: dict[str, Any], *, force_size_suffix: bool = False
 ) -> str:
+    explicit_profile = body.get("profile")
+    if explicit_profile:
+        return f"{mnemonic}.{str(explicit_profile).replace('-', '_').replace('/', '_').upper()}"
     form = form_name(operands)
     ident = mnemonic if not form else f"{mnemonic}.{form}"
     tag = size_tag(body)
@@ -1009,6 +1115,8 @@ def form_name(operands: tuple[str, ...] | list[str]) -> str:
             continue
         if is_immediate_ea_operand(norm):
             parts.append("IMM")
+        elif is_dbank_operand(norm, source):
+            parts.append("DB")
         elif is_ea_operand(norm):
             parts.append("EA")
         elif is_d_operand(norm):
@@ -1023,6 +1131,8 @@ def form_name(operands: tuple[str, ...] | list[str]) -> str:
             parts.append("F")
         elif "MEMORY" in norm:
             parts.append("MEM")
+        elif norm in {"SELECTOR_IMM6", "IMM6_SELECTOR"}:
+            parts.append("I6")
         elif "IMM" in norm:
             parts.append("IMM")
         elif "BITMAP" in norm:
@@ -1121,5 +1231,34 @@ def normalize_operand_alternatives(value: Any) -> list[tuple[str, ...]]:
     if not value:
         return [()]
     if all(isinstance(item, list) for item in value):
-        return [tuple(operand_spec_text(part) for part in item) for item in value]
-    return [tuple(operand_spec_text(item) for item in value)]
+        alternatives = [tuple(operand_spec_text(part) for part in item) for item in value]
+    else:
+        alternatives = [tuple(operand_spec_text(item) for item in value)]
+    return [
+        expanded
+        for alternative in alternatives
+        for expanded in expand_selector_operand_variants(alternative)
+    ]
+
+
+def expand_selector_operand_variants(operands: tuple[str, ...]) -> list[tuple[str, ...]]:
+    has_ea_destination = any(
+        operand_source(str(operand)) == "DST" and is_ea_operand(operand_norm(str(operand)))
+        for operand in operands
+    )
+    variants: list[tuple[str, ...]] = [()]
+    for operand in operands:
+        source, typ = split_operand_spec(str(operand))
+        source_norm = source.replace("-", "_").replace("/", "_").upper()
+        typ_norm = typ.replace("-", "_").replace("/", "_").upper()
+        choices = [str(operand)]
+        if typ_norm == "SELECTOR" and source_norm == "COUNT":
+            choices = [f"{source}:DREG"]
+            if has_ea_destination:
+                choices.insert(0, f"{source}:selector_imm6")
+        elif typ_norm == "SELECTOR" and source_norm == "BIT_INDEX":
+            choices = [f"{source}:DREG"]
+            if has_ea_destination:
+                choices.insert(0, f"{source}:selector_imm6")
+        variants = [prefix + (choice,) for prefix in variants for choice in choices]
+    return variants

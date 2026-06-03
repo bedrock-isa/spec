@@ -56,8 +56,8 @@ module decode_tb;
 
     check_decode(12'h000, 16'h0000, 1'b1, 1'b0); // HALT sentinel
     check_decode(12'hfff, 16'h0000, 1'b1, 1'b0); // ILLEGAL sentinel
-    check_decode(12'heb1, 16'h0104, 1'b1, 1'b1); // EXT.integer_alu ADD.EA_TO_D.BWLQ in current allocation
-    check_decode(12'heb1, 16'h0118, 1'b0, 1'b1); // valid extension root, unallocated extension opcode
+    check_decode(12'hef1, 16'h0104, 1'b1, 1'b1); // EXT.integer_alu ADD.EA_TO_D.BWLQ in current allocation
+    check_decode(12'hef1, 16'h0118, 1'b0, 1'b1); // valid extension root, unallocated extension opcode
 
     if (failures != 0) begin
       $fatal(1, "decode_tb failed with %0d failure(s)", failures);

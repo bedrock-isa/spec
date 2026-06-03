@@ -134,7 +134,14 @@ def base_kind(form: dict[str, Any]) -> str:
 def segment_kind(form: dict[str, Any]) -> str:
     if form.get("fixed_segment"):
         return str(form["fixed_segment"])
-    return "DEFAULT"
+    if form.get("default_segment"):
+        return str(form["default_segment"])
+    base = str(form.get("base", ""))
+    if base == "PC":
+        return "CS"
+    if base == "SP":
+        return "SS"
+    return "DS"
 
 
 def is_register_form(form: dict[str, Any]) -> bool:
@@ -249,13 +256,13 @@ def emit_prefix_package(spec: dict[str, Any]) -> str:
         "      8'h00: begin r.valid = 1'b1; r.kind = BR_PREFIX_NPX; end",
         "      8'h01: begin r.valid = 1'b1; r.kind = BR_PREFIX_NOSPEC; end",
         "      8'h02: begin r.valid = 1'b1; r.kind = BR_PREFIX_SATURATE; end",
-        "      8'h0b: begin r.valid = 1'b1; r.kind = BR_PREFIX_NONTEMPORAL; end",
+        "      8'h03: begin r.valid = 1'b1; r.kind = BR_PREFIX_NONTEMPORAL; end",
         "      8'h04: begin r.valid = 1'b1; r.kind = BR_PREFIX_POSTINC; end",
         "      8'h05: begin r.valid = 1'b1; r.kind = BR_PREFIX_PREINC; end",
         "      8'h06: begin r.valid = 1'b1; r.kind = BR_PREFIX_POSTDEC; end",
         "      8'h07: begin r.valid = 1'b1; r.kind = BR_PREFIX_PREDEC; end",
-        "      8'b0110_0???: begin r.valid = 1'b1; r.kind = BR_PREFIX_REPG; r.counter = prefix_byte[2:0]; end",
-        "      8'h68: begin r.valid = 1'b1; r.kind = BR_PREFIX_ENDG; end",
+        "      8'b0111_0???: begin r.valid = 1'b1; r.kind = BR_PREFIX_REPG; r.counter = prefix_byte[2:0]; end",
+        "      8'h78: begin r.valid = 1'b1; r.kind = BR_PREFIX_ENDG; end",
         "      8'b1???_????: begin r.valid = 1'b1; r.kind = BR_PREFIX_REPCC; r.condition = prefix_byte[6:3]; r.counter = prefix_byte[2:0]; end",
         "      default: begin r.kind = BR_PREFIX_INVALID; end",
         "    endcase",
@@ -380,13 +387,14 @@ def emit_ea_package(spec: dict[str, Any]) -> str:
             "bedrock_ea_segment_e",
             3,
             [
-                ("BR_EA_SEG_DEFAULT", ""),
                 ("BR_EA_SEG_CS", ""),
                 ("BR_EA_SEG_DS", ""),
                 ("BR_EA_SEG_SS", ""),
                 ("BR_EA_SEG_GS0", ""),
                 ("BR_EA_SEG_GS1", ""),
-                ("BR_EA_SEG_RESERVED", ""),
+                ("BR_EA_SEG_GS2", ""),
+                ("BR_EA_SEG_GS3", ""),
+                ("BR_EA_SEG_GS4", ""),
             ],
         ),
         "",
@@ -417,13 +425,14 @@ def emit_ea_package(spec: dict[str, Any]) -> str:
         "",
         "  function automatic bedrock_ea_segment_e bedrock_ea_segment_decode(input logic [2:0] segment);",
         "    unique case (segment)",
-        "      3'd0: bedrock_ea_segment_decode = BR_EA_SEG_DEFAULT;",
-        "      3'd1: bedrock_ea_segment_decode = BR_EA_SEG_CS;",
-        "      3'd2: bedrock_ea_segment_decode = BR_EA_SEG_DS;",
-        "      3'd3: bedrock_ea_segment_decode = BR_EA_SEG_SS;",
-        "      3'd4: bedrock_ea_segment_decode = BR_EA_SEG_GS0;",
-        "      3'd5: bedrock_ea_segment_decode = BR_EA_SEG_GS1;",
-        "      default: bedrock_ea_segment_decode = BR_EA_SEG_RESERVED;",
+        "      3'd0: bedrock_ea_segment_decode = BR_EA_SEG_CS;",
+        "      3'd1: bedrock_ea_segment_decode = BR_EA_SEG_DS;",
+        "      3'd2: bedrock_ea_segment_decode = BR_EA_SEG_SS;",
+        "      3'd3: bedrock_ea_segment_decode = BR_EA_SEG_GS0;",
+        "      3'd4: bedrock_ea_segment_decode = BR_EA_SEG_GS1;",
+        "      3'd5: bedrock_ea_segment_decode = BR_EA_SEG_GS2;",
+        "      3'd6: bedrock_ea_segment_decode = BR_EA_SEG_GS3;",
+        "      default: bedrock_ea_segment_decode = BR_EA_SEG_GS4;",
         "    endcase",
         "  endfunction",
         "",
@@ -473,7 +482,7 @@ def emit_ea_package(spec: dict[str, Any]) -> str:
         "    segment = descriptor[10:8];",
         "    extra = descriptor[7:0];",
         "    r.segment = bedrock_ea_segment_decode(segment);",
-        "    r.segment_valid = (segment <= 3'd5);",
+        "    r.segment_valid = 1'b1;",
         "    unique case (mode)",
     ]
     for mode_value, mode_forms in extended_ea_forms_by_mode(spec).items():
@@ -486,11 +495,11 @@ def emit_ea_package(spec: dict[str, Any]) -> str:
             lines += ea_assignment_lines(form, form_names[name], compact=False, indent="          ")
             if form.get("segment_field") == "reserved_zero":
                 lines.append("          r.segment_valid = (segment == 3'd0);")
-                fixed = str(form.get("fixed_segment", "DEFAULT"))
+                fixed = str(form.get("fixed_segment", "DS"))
                 lines.append(f"          r.segment = {segment_enum(fixed)};")
             elif form.get("segment_selectable"):
                 lines.append("          r.segment = bedrock_ea_segment_decode(segment);")
-                lines.append("          r.segment_valid = (segment <= 3'd5);")
+                lines.append("          r.segment_valid = 1'b1;")
             lines.append("        end")
         lines += [
             "        else begin",
@@ -526,14 +535,16 @@ def emit_ea_package(spec: dict[str, Any]) -> str:
 
 def segment_enum(name: str) -> str:
     mapping = {
-        "DEFAULT": "BR_EA_SEG_DEFAULT",
         "CS": "BR_EA_SEG_CS",
         "DS": "BR_EA_SEG_DS",
         "SS": "BR_EA_SEG_SS",
         "GS0": "BR_EA_SEG_GS0",
         "GS1": "BR_EA_SEG_GS1",
+        "GS2": "BR_EA_SEG_GS2",
+        "GS3": "BR_EA_SEG_GS3",
+        "GS4": "BR_EA_SEG_GS4",
     }
-    return mapping.get(name.upper(), "BR_EA_SEG_DEFAULT")
+    return mapping.get(name.upper(), "BR_EA_SEG_DS")
 
 
 def base_enum(name: str) -> str:
@@ -685,13 +696,13 @@ def emit_prefix_synth() -> str:
             "        8'h00: begin end",
             "        8'h01: nospec_o = 1'b1;",
             "        8'h02: saturate_o = 1'b1;",
-            "        8'h0b: nontemporal_o = 1'b1;",
+            "        8'h03: nontemporal_o = 1'b1;",
             "        8'h04: update_mode_o = 3'd1;",
             "        8'h05: update_mode_o = 3'd2;",
             "        8'h06: update_mode_o = 3'd3;",
             "        8'h07: update_mode_o = 3'd4;",
-            "        8'b0110_0???: begin repeat_kind_o = 2'd2; repeat_counter_o = p[2:0]; end",
-            "        8'h68: end_group_o = 1'b1;",
+            "        8'b0111_0???: begin repeat_kind_o = 2'd2; repeat_counter_o = p[2:0]; end",
+            "        8'h78: end_group_o = 1'b1;",
             "        8'b1???_????: begin repeat_kind_o = 2'd1; repeat_condition_o = p[6:3]; repeat_counter_o = p[2:0]; end",
             "        default: valid_o = 1'b0;",
             "      endcase",
@@ -833,12 +844,11 @@ def emit_ea_synth(spec: dict[str, Any]) -> str:
             if form.get("segment_field") == "reserved_zero":
                 lines.append("            valid_o = valid_o && (seg == 3'd0);")
                 lines.append("            segment_valid_o = (seg == 3'd0);")
-                lines.append(f"            segment_o = {segment_synth_value(str(form.get('fixed_segment', 'DEFAULT')))};")
+                lines.append(f"            segment_o = {segment_synth_value(str(form.get('fixed_segment', 'DS')))};")
             else:
                 if form.get("segment_selectable"):
                     lines.append("            segment_o = seg;")
-                lines.append("            valid_o = valid_o && (seg <= 3'd5);")
-                lines.append("            segment_valid_o = (seg <= 3'd5);")
+                lines.append("            segment_valid_o = 1'b1;")
             lines.append("          end")
         lines += ["          else begin reserved_o = 1'b1; end", "        end"]
     lines += [
@@ -856,13 +866,15 @@ def emit_ea_synth(spec: dict[str, Any]) -> str:
 
 def segment_synth_value(name: str) -> str:
     return {
-        "DEFAULT": "3'd0",
-        "CS": "3'd1",
-        "DS": "3'd2",
-        "SS": "3'd3",
-        "GS0": "3'd4",
-        "GS1": "3'd5",
-    }.get(name.upper(), "3'd0")
+        "CS": "3'd0",
+        "DS": "3'd1",
+        "SS": "3'd2",
+        "GS0": "3'd3",
+        "GS1": "3'd4",
+        "GS2": "3'd5",
+        "GS3": "3'd6",
+        "GS4": "3'd7",
+    }.get(name.upper(), "3'd1")
 
 
 def base_synth_value(name: str) -> str:

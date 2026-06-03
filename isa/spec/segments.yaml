@@ -16,6 +16,15 @@ segment_registers:
   - name: GS1
     selector: general
     width: 64
+  - name: GS2
+    selector: general
+    width: 64
+  - name: GS3
+    selector: general
+    width: 64
+  - name: GS4
+    selector: general
+    width: 64
 
 layout:
   base_page:

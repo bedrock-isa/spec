@@ -38,7 +38,6 @@ The base, span, and limit are computed in an unsigned domain wide enough to repr
 the full 64-bit linear-address space plus one. If \(\mathit{limit} > 2^{64}\), the
 segment register image is invalid and any access through it reports \texttt{PAGE\_FAULT}.
 
-\manualtablecaption{Segment Pre-Translation Modes}
 \begingroup\footnotesize
 \begin{longtable}{@{}p{1.15in}p{1.0in}p{1.55in}p{1.80in}@{}}
 \toprule
@@ -50,6 +49,7 @@ translated window & \texttt{m!=0, b=0} & \(0 \le x < \mathit{span}\) & \(\mathit
 bounds-only window & \texttt{m!=0, b=1} & \(\mathit{base} \le x < \mathit{limit}\) & \(\mathit{linear}=x\)\\
 \bottomrule
 \end{longtable}
+\manualtablecaption{Segment Pre-Translation Modes}
 \endgroup
 
 The translated-window mode is useful when an address is interpreted as an offset inside
@@ -58,7 +58,6 @@ a linear address but should still be constrained to the segment window. In both 
 segment modes, a failed segment-window check is reported through the page-fault exception
 class.
 
-\manualtablecaption{Segment and Paging Composition}
 \begingroup\footnotesize
 \begin{longtable}{@{}p{1.15in}p{1.05in}p{3.25in}@{}}
 \toprule
@@ -72,6 +71,7 @@ class.
 \(\mathit{linear}=x\) from bounds-only segment & either state & The segment constrains the already-linear address to the selected window. If paging is enabled, the checked linear address is then translated by the page tables; otherwise it is used directly.\\
 \bottomrule
 \end{longtable}
+\manualtablecaption{Segment and Paging Composition}
 \endgroup
 
 When paging is enabled, PTE permissions are evaluated after segment pre-translation.

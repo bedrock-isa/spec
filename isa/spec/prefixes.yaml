@@ -43,7 +43,7 @@ prefixes:
       saturating form. Instead of wrapping on overflow, the result clamps to the
       signed or unsigned range selected by the operation.
   - name: NONTEMPORAL
-    value: 0x0b
+    value: 0x03
     group: memory_hint
     semantics: non-temporal access hint
     applies_to:
@@ -171,7 +171,7 @@ prefixes:
     semantics: repeat instruction while counter and condition remain active
 
   - name: REPG
-    pattern: "0110 0ddd"
+    pattern: "0111 0ddd"
     group: repeat
     syntax:
       mnemonic_template: "REPG"
@@ -257,7 +257,7 @@ prefixes:
     commit_rule: only successful iterations and completed group instructions commit
     semantics: repeat grouped instructions using the selected counter
   - name: ENDG
-    value: 0x68
+    value: 0x78
     group: repeat_boundary
     semantics: end grouped repeat
     syntax:

@@ -2,137 +2,287 @@ version: draft-v1
 
 cpuid:
   calling_convention:
-    inputs:
-      D0: leaf
-      D1: subleaf
-    outputs: [D0, D1, D2, D3]
-    unsupported_leaf: D0..D3 = 0
-    unsupported_subleaf: D0..D3 = 0
+    syntax: CPUID Dn
+    input: Dn contains the CPUID query selector
+    output: Dn receives one selected 64-bit result
+    query_selector:
+      bits:
+        - {range: [0, 15], name: index, description: result index within the selected leaf}
+        - {range: [16, 31], name: leaf, description: information leaf within the selected class}
+        - {range: [32, 63], name: class, description: CPUID information class}
+    unsupported_class: result = 0
+    unsupported_leaf: result = 0
+    unsupported_index: result = 0
+    privilege: unprivileged
+    serialization: not serializing
+    reserved_result_bits: software must ignore
+    runtime_mutability: static after reset unless a leaf explicitly says otherwise
 
   policy:
     base_profile:
       name: Bedrock base ISA
+      class: 0x00000000
       description: >
-        All non-FPU instructions currently defined by this manual are part of
-        the base Bedrock ISA profile. Programs do not query REP, REPcc, REPG,
-        atomics, fences, cache/TLB management instructions, segmentation,
-        paging, or control-register access as independently optional
-        instruction-set fragments.
+        The base Bedrock ISA profile contains the ordinary integer, data
+        movement, data-register banking, control-flow, atomic, cache/TLB,
+        segmentation, paging, control-register, and repeat-prefix instruction
+        groups. Optional instruction groups that have their own CPUID leaves
+        are not implied by the base profile.
     optional_extensions:
-      range: [0x00010000, 0x0001ffff]
+      class: 0x00000001
       description: >
-        Optional extension leaves describe architectural features that may be
+        Optional extension class 1 describes architectural features that may be
         absent while the base ISA remains usable. The initial optional
-        extension is floating-point execution.
+        extensions are floating-point execution, floating-point transcendental
+        operations, and virtualization acceleration.
+      unsupported_instruction_exception: ILLEGAL_INSTRUCTION
     implementation_properties:
-      range: [0x00020000, 0x0002ffff]
+      class: 0x00000002
       description: >
-        Implementation-property leaves expose only information that software can
-        reasonably use when choosing code paths or tuning algorithms. Internal
-        structures such as register renaming, reorder buffers, issue queues, or
-        physical-register files are not exposed as architectural discovery bits.
+        Implementation-property class 2 exposes only information that software
+        can reasonably use when choosing code paths or tuning algorithms.
+        Internal structures such as register renaming, reorder buffers, issue
+        queues, or physical-register files are not exposed as architectural
+        discovery bits.
 
-  leaf_ranges:
-    - range: [0x00000000, 0x0000ffff]
+  classes:
+    - class: 0x00000000
       name: standard
-      description: basic identification and base-profile constants
-    - range: [0x00010000, 0x0001ffff]
-      name: optional ISA extensions
+      description: basic identification, vendor strings, and base-profile constants
+      leaves:
+        - leaf: 0x0000
+          name: STANDARD_ROOT
+          summary: Standard CPUID root.
+          results:
+            - index: 0
+              description: maximum supported standard leaf in class 0
+              bits:
+                - {range: [0, 15], name: MAX_STANDARD_LEAF, description: maximum supported standard leaf in class 0}
+                - {range: [16, 63], name: reserved, description: "reserved, reads as zero"}
+            - index: 1
+              description: architecture revision and base profile identifier
+              bits:
+                - {range: [0, 15], name: ARCH_REVISION, description: Bedrock architecture revision identifier}
+                - {range: [16, 31], name: BASE_PROFILE_ID, description: base ISA profile identifier}
+                - {range: [32, 63], name: reserved, description: "reserved, reads as zero"}
+            - index: 2
+              bits:
+                - {range: [0, 7], name: MAX_INSTRUCTION_WORDS, description: maximum architectural instruction length in 16-bit words}
+                - {range: [8, 15], name: WORD_BITS, description: instruction word size in bits}
+                - {range: [16, 23], name: MAX_PREFIX_WORDS, description: maximum prefix words per instruction}
+                - {range: [24, 31], name: MAX_PREFIX_BYTES, description: maximum prefix bytes per instruction}
+                - {range: [32, 63], name: reserved, description: "reserved, reads as zero"}
+
+        - leaf: 0x0001
+          name: VENDOR_STRING
+          summary: Vendor or implementation identifier string.
+          results:
+            - index: 0..n
+              description: >
+                Vendor or implementation identifier string chunk. Each result
+                returns up to eight bytes in little-endian byte order. The string
+                is zero-terminated; indexes beyond the end return zero.
+              bits:
+                - {range: [0, 63], name: VENDOR_BYTES, description: eight-byte little-endian vendor string chunk}
+
+    - class: 0x00000001
+      name: isa extensions
       description: optional architectural extensions outside the base ISA
-    - range: [0x00020000, 0x0002ffff]
+      leaves:
+        - leaf: 0x0000
+          name: EXTENSION_ROOT
+          summary: Optional ISA extension root.
+          results:
+            - index: 0
+              description: maximum supported optional-extension leaf in class 1
+              bits:
+                - {range: [0, 15], name: MAX_EXTENSION_LEAF, description: maximum supported optional-extension leaf in class 1}
+                - {range: [16, 63], name: reserved, description: "reserved, reads as zero"}
+
+        - leaf: 0x0001
+          name: OPTIONAL_EXTENSION_FEATURES
+          summary: Optional ISA extension availability.
+          results:
+            - index: 0
+              bits:
+                - bit: 0
+                  name: FP
+                  description: >
+                    The base floating-point extension is available. When set,
+                    the implementation supports the Bedrock floating-point
+                    register model, FSTATUS, FFLAGS, S and D scalar formats,
+                    floating-point moves, compares, arithmetic, fused
+                    multiply-add/subtract, conversion, classification, bounds,
+                    conditional move, and ordinary floating-point
+                    memory/register forms.
+                - bit: 1
+                  name: FPTRANS
+                  description: >
+                    The floating-point transcendental operation group is
+                    available. This covers FSIN, FCOS, FSINCOS, FTAN, inverse
+                    trigonometric, hyperbolic, logarithmic, and exponential
+                    floating-point operations.
+                - bit: 2
+                  name: VIRTACCEL
+                  description: >
+                    The virtualization acceleration instruction group is
+                    available. This group includes ENCINST for canonical
+                    instruction emission by hypervisors, JITs, and binary
+                    translators.
+                - {range: [3, 63], name: reserved, description: "reserved, reads as zero"}
+
+    - class: 0x00000002
       name: implementation properties
       description: program-visible implementation properties and tuning hints
-    - range: [0x00030000, 0x0003ffff]
+      leaves:
+        - leaf: 0x0000
+          name: IMPLEMENTATION_ROOT
+          summary: Implementation-property root.
+          results:
+            - index: 0
+              description: maximum supported implementation-property leaf in class 2
+              bits:
+                - {range: [0, 15], name: MAX_IMPLEMENTATION_LEAF, description: maximum supported implementation-property leaf in class 2}
+                - {range: [16, 63], name: reserved, description: "reserved, reads as zero"}
+
+        - leaf: 0x0001
+          name: EXECUTION_PROPERTIES
+          summary: Program-visible execution properties.
+          results:
+            - index: 0
+              bits:
+                - bit: 0
+                  name: OUT_OF_ORDER
+                  description: >
+                    The implementation may execute independent architectural
+                    instruction instances out of program order while preserving
+                    the architectural exception and retirement model. If clear,
+                    no out-of-order execution property is advertised.
+                - {range: [1, 63], name: reserved, description: "reserved, reads as zero"}
+
+        - leaf: 0x0002
+          name: DATA_REGISTER_BANKS
+          summary: Implemented data-register bank resources.
+          results:
+            - index: 0
+              bits:
+                - {range: [0, 7], name: DBANK_COUNT, description: number of implemented D-register banks including bank 0}
+                - {range: [8, 11], name: DBANK_SELECTOR_BITS, description: implemented selector width; at most the 4-bit architectural DBANK namespace}
+                - {range: [12, 15], name: DBANK_TIER, description: "0=DBANK1, 1=DBANK4, 2=DBANK16, other values reserved"}
+                - {range: [16, 63], name: reserved, description: "reserved, reads as zero"}
+
+        - leaf: 0x0003
+          name: PROCESSOR_TOPOLOGY
+          summary: Processor topology and current hardware-thread identity.
+          description: >
+            Processor topology is reported as a stable implementation-property
+            leaf. Index 0 reports topology metadata and the total number of
+            exposed hardware threads in this CPUID namespace. Index 1 identifies
+            the current hardware thread. Indexes 2..n describe the contiguous
+            bit fields inside the current topology id. Software may use this
+            information for scheduling, locality decisions, and per-thread data
+            placement. The processor id and topology id are not memory addresses
+            and are not required to match interrupt-controller numbering or an
+            operating system CPU number. The hardware-thread count is not an
+            operating system online-CPU count.
+          topology_level_types:
+            0: invalid
+            1: hardware_thread
+            2: core
+            3: cluster
+            4: die
+            5: package
+          results:
+            - index: 0
+              description: topology metadata and total exposed hardware-thread count
+              bits:
+                - {range: [0, 7], name: MAX_TOPOLOGY_INDEX, description: highest supported result index for this leaf; 1 means no detailed topology descriptors}
+                - {range: [8, 15], name: TOPOLOGY_ID_BITS, description: number of valid low bits in CURRENT_TOPOLOGY_ID}
+                - {range: [16, 23], name: PROCESSOR_ID_BITS, description: number of valid low bits in CURRENT_PROCESSOR_ID}
+                - {range: [24, 31], name: reserved, description: "reserved, reads as zero"}
+                - {range: [32, 63], name: HARDWARE_THREAD_COUNT, description: total exposed hardware threads in this CPUID namespace; not an OS online-CPU count}
+            - index: 1
+              description: current hardware-thread identity
+              bits:
+                - {range: [0, 31], name: CURRENT_PROCESSOR_ID, description: stable implementation-assigned id of the current hardware thread}
+                - {range: [32, 63], name: CURRENT_TOPOLOGY_ID, description: implementation-assigned topology id of the current hardware thread}
+            - index: 2..n
+              description: topology level descriptor
+              bits:
+                - {range: [0, 7], name: LEVEL_TYPE, description: "topology level type; 1=hardware thread, 2=core, 3=cluster, 4=die, 5=package"}
+                - {range: [8, 15], name: LEVEL_SHIFT, description: low bit position of this level inside CURRENT_TOPOLOGY_ID}
+                - {range: [16, 23], name: LEVEL_WIDTH, description: number of bits occupied by this level; zero marks an unused descriptor}
+                - {range: [24, 39], name: UNITS_IN_PARENT, description: number of units of this level in the immediately containing parent for the current topology}
+                - {range: [40, 55], name: THREADS_IN_UNIT, description: "number of hardware threads contained in one unit of this level, including lower levels"}
+                - {range: [56, 63], name: reserved, description: "reserved, reads as zero"}
+              extraction: >
+                level_id = (CURRENT_TOPOLOGY_ID >> LEVEL_SHIFT) &
+                ((1 << LEVEL_WIDTH) - 1). Descriptors are ordered from the
+                finest level to the coarsest level. Unknown or unused descriptor
+                indexes return zero.
+
+        - leaf: 0x0004
+          name: SAVE_AREA_LAYOUT
+          summary: Processor-state save area layout.
+          description: >
+            SAVE and RESTORE use a fixed 0x100-byte base save area followed by
+            CPUID-described extension component slots. The base area contains a
+            base save-slot valid bitmap, bank-0 D registers, A registers, and
+            GS segment registers. PC, SP, CS, DS, SS, FLAGS, STATUS, and the
+            current DBANK selector are carried by the architectural
+            exception/syscall stack frame and are not duplicated in the SAVE
+            area. The save-area base address must be 4 KiB aligned.
+            Extension component slots are described by numeric byte offsets and
+            may include additional data-register banks, floating-point state,
+            and later architectural extension state. The first extension
+            component begins no earlier than byte offset 0x1000. CPUID component
+            descriptor index order is the architectural extension-component
+            order; component offsets must be strictly increasing in that order.
+            Each extension component begins with a component-defined,
+            component-local validity bitmap for the state slots inside that
+            component. The memory image does not contain a per-component size
+            table. SAVE may skip architecturally clean components, using an
+            XSAVEOPT-like policy across both base and extension state. There is
+            no architectural upper bound on SAVE_AREA_SIZE; software must
+            allocate the maximum save area size reported by this leaf for the
+            selected implementation/profile.
+          results:
+            - index: 0
+              description: save area size requirement
+              bits:
+                - {range: [0, 63], name: SAVE_AREA_SIZE, description: "maximum bytes required for the CPUID-defined save area layout; Bedrock defines no smaller architectural upper bound"}
+            - index: 1
+              description: save area fixed-header and state-component metadata
+              bits:
+                - {range: [0, 15], name: SAVE_HEADER_SIZE, description: bytes occupied by the fixed base save area; base Bedrock reports 0x100}
+                - {range: [16, 31], name: SAVE_COMPONENT_COUNT, description: "number of CPUID-described extension components after the fixed base area, in canonical descriptor order"}
+                - {range: [32, 47], name: SAVE_BITMAP_WORDS, description: number of 64-bit fixed-base validity bitmap words; base Bedrock uses one word at offset 0x000}
+                - {range: [48, 63], name: reserved, description: "reserved, reads as zero"}
+            - index: 2..n
+              description: save component descriptor
+              bits:
+                - {range: [0, 15], name: COMPONENT_ID, description: save component identifier}
+                - {range: [16, 31], name: COMPONENT_FLAGS, description: component property flags}
+                - {range: [32, 63], name: COMPONENT_OFFSET, description: byte offset of the component slot in the CPUID-defined save area}
+              extraction: >
+                Component descriptors are indexed from 2 upward. Descriptor
+                index order is the architectural extension-component order, and
+                COMPONENT_OFFSET values must be strictly increasing in that
+                order. Offsets are numeric byte offsets from the save-area base;
+                the save image itself does not contain a variable component
+                table. Each extension component begins with a component-defined,
+                component-local validity bitmap.
+                Known extension component identifiers include additional
+                data-register banks and floating-point state.
+
+    - class: 0x00000003
       name: memory topology
       description: cache, TLB, and memory-topology discovery
-    - range: [0x40000000, 0x4fffffff]
+
+    - class: 0x40000000
       name: implementation private
       description: implementation-defined leaves
-    - range: [0x80000000, 0x8fffffff]
+
+    - class: 0x80000000
       name: extended identification
       description: extended brand/model strings and long-form identification
-
-  leaves:
-    - leaf: 0x00000000
-      name: STANDARD_ROOT
-      summary: Standard CPUID root.
-      outputs:
-        D0: maximum supported standard leaf
-        D1: vendor or implementation identifier, low word
-        D2: vendor or implementation identifier, middle word
-        D3: vendor or implementation identifier, high word
-
-    - leaf: 0x00000001
-      name: BASE_PROFILE
-      summary: Base Bedrock profile constants.
-      outputs:
-        D0: architecture revision and base profile identifier
-        D1:
-          bits:
-            - {range: [0, 7], name: MAX_INSTRUCTION_WORDS, description: maximum architectural instruction length in 16-bit words}
-            - {range: [8, 15], name: WORD_BITS, description: instruction word size in bits}
-            - {range: [16, 23], name: MAX_PREFIX_WORDS, description: maximum prefix words per instruction}
-            - {range: [24, 31], name: MAX_PREFIX_BYTES, description: maximum prefix bytes per instruction}
-        D2: reserved, zero
-        D3: reserved, zero
-
-    - leaf: 0x00010000
-      name: EXTENSION_ROOT
-      summary: Optional ISA extension root.
-      outputs:
-        D0: maximum supported optional-extension leaf
-        D1: reserved, zero
-        D2: reserved, zero
-        D3: reserved, zero
-
-    - leaf: 0x00010001
-      name: FLOATING_POINT_EXTENSION
-      summary: Floating-point extension availability.
-      outputs:
-        D0:
-          bits:
-            - bit: 0
-              name: FP_AVAILABLE
-              description: >
-                The base floating-point extension is available. When set, the
-                implementation supports the Bedrock floating-point register
-                model, FFLAGS, S and D scalar formats, floating-point moves,
-                compares, arithmetic, fused multiply-add/subtract, conversion,
-                classification, bounds, conditional move, and ordinary
-                floating-point memory/register forms.
-            - bit: 1
-              name: FP_TRANSCENDENTAL_AVAILABLE
-              description: >
-                The floating-point transcendental operation group is available.
-                This covers FSIN, FCOS, FSINCOS, FTAN, inverse trigonometric,
-                hyperbolic, logarithmic, and exponential floating-point
-                operations.
-        D1: reserved, zero
-        D2: reserved, zero
-        D3: reserved, zero
-
-    - leaf: 0x00020000
-      name: IMPLEMENTATION_ROOT
-      summary: Implementation-property root.
-      outputs:
-        D0: maximum supported implementation-property leaf
-        D1: reserved, zero
-        D2: reserved, zero
-        D3: reserved, zero
-
-    - leaf: 0x00020001
-      name: EXECUTION_PROPERTIES
-      summary: Program-visible execution properties.
-      outputs:
-        D0:
-          bits:
-            - bit: 0
-              name: OUT_OF_ORDER
-              description: >
-                The implementation may execute independent architectural
-                instruction instances out of program order while preserving the
-                architectural exception and retirement model. If clear, no
-                out-of-order execution property is advertised.
-        D1: reserved, zero
-        D2: reserved, zero
-        D3: reserved, zero

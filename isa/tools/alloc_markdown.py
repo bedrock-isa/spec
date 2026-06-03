@@ -4,6 +4,29 @@ from __future__ import annotations
 
 from typing import Any
 
+
+def compact_hex_ranges(values: list[Any]) -> str:
+    ints = sorted({int(str(value), 16) for value in values})
+    if not ints:
+        return ""
+    ranges: list[tuple[int, int]] = []
+    start = previous = ints[0]
+    for value in ints[1:]:
+        if value == previous + 1:
+            previous = value
+            continue
+        ranges.append((start, previous))
+        start = previous = value
+    ranges.append((start, previous))
+    parts = []
+    for start, end in ranges:
+        if start == end:
+            parts.append(f"`0x{start:03x}`")
+        else:
+            parts.append(f"`0x{start:03x}`..`0x{end:03x}`")
+    return ", ".join(parts)
+
+
 def render_markdown(plan: dict[str, Any]) -> str:
     solver = plan["solver"]
     lines = [
@@ -146,6 +169,9 @@ def render_markdown(plan: dict[str, Any]) -> str:
             payload = f"`{allocation['start_payload']}`"
         else:
             payload = f"`{allocation['start_payload']}`..`{allocation['end_payload']}`"
+        if allocation.get("reclaimed_payloads"):
+            reclaimed = compact_hex_ranges(allocation.get("reclaimed_payloads", []))
+            payload = f"{payload} (reclaims {reclaimed})"
         operands = ", ".join(allocation["operands"])
         lines.append(
             f"| {payload} | {allocation['slots']} | `{allocation['id']}` | "
@@ -227,7 +253,7 @@ def render_markdown(plan: dict[str, Any]) -> str:
     )
     for allocation in solver["extended_allocations"]:
         compact_cost = allocation["primary_slots_if_one_word"]
-        compact_cost_text = "too wide" if compact_cost is None else str(compact_cost)
+        compact_cost_text = str(allocation.get("eviction_reason", "not compact")) if compact_cost is None else str(compact_cost)
         spill_note = " spilled" if allocation.get("operand_descriptor_spilled") else ""
         lines.append(
             f"| `{allocation['extension_root']}` | "

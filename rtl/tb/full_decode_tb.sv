@@ -202,7 +202,7 @@ module full_decode_tb;
 
     // Extended ADD.L D2,D3 through the EA_TO_D form with a DREG EA source.
     clear_words();
-    set_word(0, 16'h2eb1);
+    set_word(0, 16'h2ef1);
     set_word(1, 16'h0104);
     set_word(2, 16'h04c2);
     #1;
@@ -223,8 +223,8 @@ module full_decode_tb;
 
     // Extended MOV.L D1,[A0 + disp16] has two EA operands and one EA payload word.
     clear_words();
-    set_word(0, 16'h2eb6);
-    set_word(1, 16'h5881);
+    set_word(0, 16'h2f47);
+    set_word(1, 16'h6601);
     set_word(2, 16'h0020);
     #1;
     expect_logic("mov ea ea valid", valid, 1'b1);

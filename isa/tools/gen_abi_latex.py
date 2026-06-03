@@ -325,6 +325,7 @@ def render_object_format(abi: dict[str, Any]) -> str:
     program_header = obj.get("program_header", {})
     section_header = obj.get("section_header", {})
     symbol_values = obj.get("symbol_values", {})
+    extension_attributes = obj.get("extension_attributes", {})
     rows = [
         [tex_escape("Format"), tex_code_value(obj.get("format", ""))],
         [tex_escape("ELF Class"), tex_code_value(obj.get("elf_class", ""))],
@@ -406,7 +407,77 @@ def render_object_format(abi: dict[str, Any]) -> str:
                 table(["Field", "Rule"], rows2, ["1.75in", "3.75in"], "ELF Section and Symbol Rules"),
             ]
         )
+    if extension_attributes:
+        attr_rows = []
+        for name, body in extension_attributes.items():
+            if not isinstance(body, dict):
+                continue
+            attr_rows.append(
+                [
+                    tex_code(name),
+                    tex_escape(readable(body.get("encoding", ""))),
+                    tex_escape(readable(body.get("default", ""))),
+                    tex_escape(readable(body.get("meaning", ""))),
+                ]
+            )
+        parts.extend(
+            [
+                subsection("Bedrock Object Attributes"),
+                table(["Attribute", "Encoding", "Default", "Meaning"], attr_rows, ["1.65in", "1.0in", "0.65in", "2.20in"], "Bedrock ELF Attribute Notes"),
+            ]
+        )
     return "\n".join(parts)
+
+
+def render_register_banking(abi: dict[str, Any]) -> str:
+    banking = abi.get("register_banking", {})
+    if not banking:
+        return ""
+    arch = banking.get("architectural_model", {})
+    attributes = banking.get("object_attribute_rules", {})
+    parts = [
+        section("Data Register Banking"),
+        tex_escape(readable(banking.get("summary", ""))),
+    ]
+    if arch:
+        parts.extend(
+            [
+                subsection("Architectural ABI Model"),
+                table(
+                    ["Item", "Rule"],
+                    mapping_rows(arch, {"selector"}),
+                    ["1.9in", "3.6in"],
+                    "Data Register Bank Model",
+                ),
+            ]
+        )
+    if banking.get("boundary_rules"):
+        parts.extend(
+            [
+                subsection("DBANK-neutral Boundaries"),
+                bullet_list(banking.get("boundary_rules", [])),
+            ]
+        )
+    if attributes:
+        parts.extend(
+            [
+                subsection("Object Attribute Rules"),
+                table(
+                    ["Rule", "Value"],
+                    mapping_rows(attributes, {"required_attribute"}),
+                    ["2.05in", "3.45in"],
+                    "DBANK Object Attribute Rules",
+                ),
+            ]
+        )
+    if banking.get("recommended_use"):
+        parts.extend(
+            [
+                subsection("Recommended Uses"),
+                bullet_list(banking.get("recommended_use", [])),
+            ]
+        )
+    return "\n".join(part for part in parts if part)
 
 
 def render_program_loading(abi: dict[str, Any]) -> str:
@@ -463,12 +534,43 @@ def render_program_loading(abi: dict[str, Any]) -> str:
 def register_rows(registers: dict[str, Any]) -> list[list[str]]:
     rows: list[list[str]] = []
     for group_name, group in registers.items():
+        if group_name == "data_register_banking":
+            continue
         if isinstance(group, dict):
             for key, value in group.items():
                 rows.append([tex_table_value(group_name), tex_table_value(key), tex_table_value(value)])
         else:
             rows.append([tex_table_value(group_name), tex_escape("-"), tex_table_value(group)])
     return rows
+
+
+def render_data_register_banking_convention(registers: dict[str, Any]) -> str:
+    banking = registers.get("data_register_banking", {})
+    if not banking:
+        return ""
+    rows = [
+        [tex_table_value(key), tex_table_value(value)]
+        for key, value in banking.items()
+        if key not in {"summary", "recommended_compiler_policy"}
+    ]
+    parts = [
+        subsection("Data Register Banking"),
+        tex_escape(readable(banking.get("summary", ""))),
+        table(
+            ["Rule", "Value"],
+            rows,
+            ["2.0in", "3.5in"],
+            "C ABI Data Register Banking Rules",
+        ),
+    ]
+    if banking.get("recommended_compiler_policy"):
+        parts.extend(
+            [
+                r"\noindent\textbf{Recommended compiler policy.}",
+                bullet_list(banking.get("recommended_compiler_policy", [])),
+            ]
+        )
+    return "\n".join(part for part in parts if part)
 
 
 def render_register_convention(abi: dict[str, Any]) -> str:
@@ -479,6 +581,7 @@ def render_register_convention(abi: dict[str, Any]) -> str:
         [
             section("Register Convention"),
             table(["Group", "Rule", "Registers / Meaning"], register_rows(registers), ["1.35in", "1.55in", "2.6in"], "Register Preservation and Assignment"),
+            render_data_register_banking_convention(registers),
         ]
     )
 
@@ -864,6 +967,7 @@ def render(abi: dict[str, Any]) -> str:
         render_scope(abi),
         render_terminology(abi),
         render_object_format(abi),
+        render_register_banking(abi),
         render_program_loading(abi),
         render_data_model(abi),
         render_register_convention(abi),

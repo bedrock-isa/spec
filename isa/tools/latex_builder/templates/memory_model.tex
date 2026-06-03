@@ -10,7 +10,6 @@ All instruction fetch, data, stack, and device accesses use the same effective-a
 and address-translation pipeline. The final page-table attributes classify the access
 domain.
 
-\manualtablecaption{Memory Access Domains}
 \begingroup\footnotesize
 \begin{longtable}{@{}p{1.25in}p{1.55in}p{2.7in}@{}}
 \toprule
@@ -22,9 +21,10 @@ domain.
 \texttt{PTE.CP=00} & cacheable & Normal coherent cacheable memory.\\
 \texttt{PTE.CP=01} & uncacheable & Accesses are not allocated into normal data caches.\\
 \texttt{PTE.CP=10} & write-through & Stores become visible through a write-through cache policy.\\
-\texttt{PTE.CP=11} & reserved & Reserved cache-policy encoding.\\
+\texttt{PTE.CP=11} & write-combining & Stores may be gathered and combined before visibility; explicit ordering is required when software depends on completion order.\\
 \bottomrule
 \end{longtable}
+\manualtablecaption{Memory Access Domains}
 \endgroup
 
 Externally acknowledged memory is not treated as ordinary cacheable memory. An implementation
@@ -38,7 +38,6 @@ attributes and explicit fence or cache-synchronization instructions.
 The architectural scalar memory sizes are byte, word, long word, and quad word. A memory
 access of size \(N\) bytes is naturally aligned when its byte address is a multiple of \(N\).
 
-\manualtablecaption{Scalar Access Sizes and Alignment}
 \begingroup\footnotesize
 \begin{longtable}{@{}p{0.75in}p{0.85in}p{1.25in}p{2.65in}@{}}
 \toprule
@@ -51,6 +50,7 @@ access of size \(N\) bytes is naturally aligned when its byte address is a multi
 \texttt{Q} & 8 & address divisible by 8 & aligned normal-memory load/store is tear-free\\
 \bottomrule
 \end{longtable}
+\manualtablecaption{Scalar Access Sizes and Alignment}
 \endgroup
 
 Unaligned ordinary memory accesses are architecturally permitted. An unaligned load or
@@ -75,7 +75,6 @@ can access the same physical location. Atomic read-modify-write instructions car
 memory-order selector as part of the atomic instruction format. The selector constrains
 visibility ordering around the indivisible update; it is not a general-purpose prefix.
 
-\manualtablecaption{Atomic Memory-Order Selectors}
 \begingroup\footnotesize
 \begin{longtable}{@{}p{0.9in}p{0.75in}p{3.8in}@{}}
 \toprule
@@ -90,6 +89,7 @@ visibility ordering around the indivisible update; it is not a general-purpose p
 reserved & 5--7 & Reserved selector encodings; using one is invalid for the atomic form.\\
 \bottomrule
 \end{longtable}
+\manualtablecaption{Atomic Memory-Order Selectors}
 \endgroup
 
 The \texttt{consume} memory order is not a separate architectural selector. Software that
@@ -104,7 +104,6 @@ consistent with the coherence order for that location. The ISA does not require 
 ordinary loads and stores to become visible to other agents in program order unless an
 instruction dependency, an atomic operation, or a fence instruction imposes that order.
 
-\manualtablecaption{Fence Instructions}
 \begingroup\footnotesize
 \begin{longtable}{@{}p{0.95in}p{4.45in}@{}}
 \toprule
@@ -116,6 +115,7 @@ instruction dependency, an atomic operation, or a fence instruction imposes that
 \texttt{AFENCE} & Orders prior memory operations before later memory operations issued by the same hardware thread.\\
 \bottomrule
 \end{longtable}
+\manualtablecaption{Fence Instructions}
 \endgroup
 
 Fence instructions constrain visibility ordering. They do not perform cache-line writeback,

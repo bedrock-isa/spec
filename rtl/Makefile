@@ -6,11 +6,13 @@ BUILD_DIR ?= ../build/verilator
 YOSYS_BUILD_DIR ?= ../build/yosys
 GEN_DIR ?= ../build/generated
 COMMON_DIR := common
+DOLOMITE0_DIR := dolomite0
 FRONTEND_DIR := frontend
 EXECUTE_DIR := execute
 TB_DIR := tb
 
 RTL_SRCS := $(COMMON_DIR)/bedrock_pkg.sv $(FRONTEND_DIR)/bedrock_predecode.sv $(FRONTEND_DIR)/bedrock_line_predecode.sv
+DOLOMITE0_SRCS := $(COMMON_DIR)/bedrock_pkg.sv $(DOLOMITE0_DIR)/bedrock_core_pkg.sv
 DECODE_SRCS := $(COMMON_DIR)/bedrock_pkg.sv $(GEN_DIR)/bedrock_decode_pkg.sv $(GEN_DIR)/bedrock_decode.sv
 DECODE_SYNTH_SRC := $(GEN_DIR)/bedrock_decode_synth.sv
 PREFIX_DECODE_SRCS := $(GEN_DIR)/bedrock_prefix_decode_pkg.sv $(GEN_DIR)/bedrock_prefix_decode.sv
@@ -51,13 +53,14 @@ AGU_SV2V := $(YOSYS_BUILD_DIR)/bedrock_agu_sv2v.v
 
 VERILATORFLAGS ?= -sv -Wall -Wno-UNUSEDPARAM -Wno-UNUSEDSIGNAL --timing --assert
 
-.PHONY: help lint test predecode-synth decode-lint decode-test decode-synth execute-lint execute-test execute-synth clean
+.PHONY: help lint test predecode-synth core-lint decode-lint decode-test decode-synth execute-lint execute-test execute-synth clean
 
 help:
 	@printf '%s\n' 'RTL targets:'
 	@printf '  %-10s %s\n' 'lint' 'Lint SystemVerilog RTL with Verilator.'
 	@printf '  %-10s %s\n' 'test' 'Build and run SystemVerilog testbench with Verilator.'
 	@printf '  %-10s %s\n' 'predecode-synth' 'Synthesize line predecoder with Yosys and report generic cell stats.'
+	@printf '  %-10s %s\n' 'core-lint' 'Lint baseline scalar core packages.'
 	@printf '  %-10s %s\n' 'decode-lint' 'Lint generated instruction/prefix/EA decoders with Verilator.'
 	@printf '  %-10s %s\n' 'decode-test' 'Build and run generated decoder and full-decode smoke testbenches.'
 	@printf '  %-10s %s\n' 'decode-synth' 'Synthesize generated decoders with Yosys and report generic cell stats.'
@@ -69,6 +72,9 @@ help:
 lint: $(RTL_SRCS)
 	$(VERILATOR) $(VERILATORFLAGS) --lint-only --top-module $(LINT_TOP) $(RTL_SRCS)
 	$(VERILATOR) $(VERILATORFLAGS) --lint-only --top-module bedrock_line_predecode $(RTL_SRCS)
+
+core-lint: $(DOLOMITE0_SRCS)
+	$(VERILATOR) $(VERILATORFLAGS) --lint-only $(DOLOMITE0_SRCS)
 
 decode-lint: $(DECODE_SRCS)
 	$(VERILATOR) $(VERILATORFLAGS) --lint-only --top-module bedrock_decode $(DECODE_SRCS)

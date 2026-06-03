@@ -4,8 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define BEDROCK_REPG_START_PREFIX 0x60u
-#define BEDROCK_REPG_END_PREFIX 0x68u
+#define BEDROCK_REPG_START_PREFIX 0x70u
+#define BEDROCK_REPG_END_PREFIX 0x78u
 #define BEDROCK_REPG_MAX_GROUP_INSTRUCTIONS 32u
 
 static int is_ident_char(int ch)
@@ -587,11 +587,6 @@ static int find_instruction_reloc(BedrockAsm *ctx, char *line, BedrockExpr *expr
         ++operand_start;
     }
 
-    if (ieq(mnemonic_base, "CALL") && start == operand_start) {
-        snprintf(out, out_size, "%s [PC + %s]%s", mnemonic, placeholder, end);
-        return 1;
-    }
-
     saved = *start;
     *start = '\0';
     snprintf(out, out_size, "%s%s%s", line, placeholder, end);
@@ -619,7 +614,7 @@ static void emit_instruction_words(BedrockAsm *ctx, const uint16_t *words, size_
 
 static int prefix_is_repeat(uint16_t prefix)
 {
-    return prefix >= 0x80u || (prefix >= 0x60u && prefix <= 0x7fu);
+    return prefix >= 0x80u || (prefix >= 0x70u && prefix <= 0x78u);
 }
 
 static int prefix_word_has_repeat(uint16_t word)

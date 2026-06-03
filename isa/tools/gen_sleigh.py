@@ -130,6 +130,8 @@ def infer_operand_kind(operand: str, field: dict[str, Any] | None = None) -> str
         return "condition"
     if upper in {"SP", "SPREG", "STACK_POINTER", "STACK_REGISTER"} or source in {"SP", "STACK_POINTER", "STACK_REGISTER"}:
         return "SPREG"
+    if upper in {"DBANK", "DATA_BANK", "DATA_REGISTER_BANK"} or source in {"BANK", "SRC_BANK", "DST_BANK", "BANK_A", "BANK_B", "DBANK"}:
+        return "DBANK"
     if upper in {"DREG", "DLO", "DX", "DHI"} or upper.startswith("D") or source.startswith("D"):
         return "DREG"
     if upper in {"AREG"} or upper.startswith("A") or source.startswith("A"):
@@ -154,9 +156,13 @@ def infer_operand_kind(operand: str, field: dict[str, Any] | None = None) -> str
         return "imm32"
     if "IMM16" in upper or "IMM16" in source:
         return "imm16"
+    if upper in {"SELECTOR_IMM6", "IMM6_SELECTOR"}:
+        return "selector6"
     if "IMM" in upper or "IMM" in source or source == "VALUE":
         return "imm"
-    if any(key in upper or key in source for key in ("COUNT", "OFFSET", "WIDTH", "BIT_INDEX", "SELECTOR")):
+    if any(key in upper or key in source for key in ("COUNT", "BIT_INDEX")):
+        return "selector6"
+    if any(key in upper or key in source for key in ("OFFSET", "WIDTH", "SELECTOR")):
         return "small_selector"
     return typ
 
@@ -212,6 +218,8 @@ def field_prefix(kind: str, source: str = "") -> str:
         return "z" if upper in {"LQ", "WL", "S_D"} else "s"
     if upper == "DREG":
         return "d"
+    if upper == "DBANK":
+        return "db"
     if upper == "AREG":
         return "a"
     if upper == "SPREG":
@@ -639,6 +647,7 @@ def render_attaches(spec: dict[str, Any], fields: dict[str, SField]) -> str:
             by_kind.setdefault(field.kind, []).append(field.name)
     lines: list[str] = []
     d_fields = sorted(by_kind.get("DREG", []))
+    db_fields = sorted(by_kind.get("DBANK", []))
     a_fields = sorted(by_kind.get("AREG", []))
     s_fields = sorted(by_kind.get("SREG", []))
     f_fields = sorted(by_kind.get("FREG", []))
@@ -646,6 +655,9 @@ def render_attaches(spec: dict[str, Any], fields: dict[str, SField]) -> str:
     order_fields = sorted(by_kind.get("memory_order", []))
     if d_fields:
         lines.append(f"attach variables [ {' '.join(d_fields)} ] [ {' '.join(register_names('D', 8))} ];")
+    if db_fields:
+        db_names = " ".join(f'"DB{i}"' for i in range(16))
+        lines.append(f"attach names [ {' '.join(db_fields)} ] [ {db_names} ];")
     if a_fields:
         lines.append(f"attach variables [ {' '.join(a_fields)} ] [ {' '.join(register_names('A', 8))} ];")
     if s_fields:

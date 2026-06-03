@@ -146,8 +146,9 @@ def ea_table(spec: dict[str, Any]) -> str:
             extended_ea_figure(spec),
             "The compact XEA form uses the six-bit value 111111; the S32 XEA form uses 111110 and selects the same descriptor layout with signed 32-bit index extension. "
             "Each escape is followed by a 16-bit descriptor. The descriptor mode field selects the extended EA form. Segment-selectable forms use the segment field to select "
-            "an explicit or default segment; fixed-segment forms reserve that field and use their architectural segment. "
-            "The three-bit segment field encodes default, CS, DS, SS, GS0, GS1, or a reserved selector value. "
+            "a concrete segment register. When assembly syntax omits the segment on a segment-selectable A-indexed form, the assembler encodes DS; the processor does not decode a separate default-segment value. "
+            "Fixed-segment forms reserve that field and use their architectural segment. "
+            "The three-bit segment field uses the SREG selector order: CS, DS, SS, and GS0 through GS4. "
             "The extra field carries mode-specific register, index, scale, or selector bits. "
             "Displacements and absolute addresses remain in following payload words instead of being split across opcode fields. "
             "Segment-qualified memory addresses pass through segmentation first when the selected segment is enabled, and then through paging.",
@@ -384,7 +385,11 @@ def ea_form_description(form: dict[str, Any], extended: bool) -> str:
         index_text = "a scaled sign-extended 32-bit data-register index" if form.get("index_extension") == "signed32_to_64" else "a scaled data-register index"
         text = f"The operand address is formed from {base_text}, {index_text}, and an optional displacement."
         if form.get("segment_selectable"):
-            text += " The segment field selects either the default segment or an explicit segment register."
+            default_segment = form.get("default_segment")
+            if default_segment:
+                text += f" The descriptor segment field selects a concrete segment register; omitted segment syntax is assembled as {default_segment}."
+            else:
+                text += " The descriptor segment field selects a concrete segment register."
         elif form.get("fixed_segment"):
             text += f" The address is interpreted through the fixed {form['fixed_segment']} segment; the descriptor segment field is reserved."
         return text

@@ -24,6 +24,9 @@ static FnRegRecord emitted_fns[1024];
 static uint nemitted_fns;
 
 static int isconval(Ref r, E *e, int64_t val);
+static int postinc_size(Ins *i);
+static Ins *findpostincadd(Ins *i, Ins *end, int reg, int size, E *e);
+static int isindexedmemdisp(Ref r, Ref counter, int scale, int64_t disp, E *e, Ref *base);
 
 #define CMP(X) \
 	X(Cieq,       "EQ")  \
@@ -834,6 +837,20 @@ emitcallshuffle(Ins **pi, Ins *end, E *e)
 		return 1;
 	}
 
+	if (copyreg(p[0], Kl, A1, A4)
+	&& copyreg(p[1], Kl, A2, A1)
+	&& copyreg(p[2], Kw, D0, D6)
+	&& copyreg(p[3], Kl, A1, A5)
+	&& copyreg(p[4], Kl, A4, A1)
+	&& copyreg(p[5], Kl, A0, A6)) {
+		copyref(TMP(A4), TMP(A1), Kl, e);
+		copyref(TMP(A5), TMP(A2), Kl, e);
+		copyref(TMP(D6), TMP(D0), Kw, e);
+		copyref(TMP(A6), TMP(A0), Kl, e);
+		*pi = q;
+		return 1;
+	}
+
 	if (copyreg(p[0], Kl, A1, D7)
 	&& copyreg(p[1], Kl, A2, A1)
 	&& copyreg(p[2], Kw, D0, D6)
@@ -1076,7 +1093,7 @@ emitins(Ins *i, E *e)
 			Con *c = &e->fn->con[i->arg[0].val];
 			if (c->type != CAddr)
 				die("call target is not an address");
-			fprintf(e->f, "\tCALL.Q ");
+			fprintf(e->f, "\tCALL ");
 			emitlabel(c, e->f);
 			fprintf(e->f, "@PCREL32");
 			if (c->bits.i)
@@ -1084,7 +1101,7 @@ emitins(Ins *i, E *e)
 			fprintf(e->f, "\n");
 		} else {
 			assert(isreg(i->arg[0]));
-			fprintf(e->f, "\tCALL.Q %s\n", rname(i->arg[0].val, Kl));
+			fprintf(e->f, "\tCALL %s\n", rname(i->arg[0].val, Kl));
 		}
 		if (e->ins_call_fence_bitmap)
 			fprintf(e->f, "\tPOPM 0x%04x\n", e->ins_call_fence_bitmap);
@@ -1098,6 +1115,332 @@ direct_areg_ref(Ref r, int *reg)
 	if (rtype(r) != RTmp || !isreg(r) || !(A0 <= (int)r.val && (int)r.val <= A7))
 		return 0;
 	*reg = r.val;
+	return 1;
+}
+
+static int
+con_equal(Con *a, Con *b)
+{
+	if (a->type != b->type)
+		return 0;
+	switch (a->type) {
+	default:
+		return 0;
+	case CUndef:
+		return 1;
+	case CBits:
+		return a->bits.i == b->bits.i;
+	case CAddr:
+		return a->label == b->label && a->local == b->local
+			&& a->bits.i == b->bits.i;
+	}
+}
+
+static int
+mem_ref_equal(Fn *fn, Ref a, Ref b)
+{
+	Mem *ma, *mb;
+
+	if (req(a, b))
+		return 1;
+	if (rtype(a) == RCon && rtype(b) == RCon)
+		return con_equal(&fn->con[a.val], &fn->con[b.val]);
+	if (rtype(a) != RMem || rtype(b) != RMem)
+		return 0;
+	ma = &fn->mem[a.val];
+	mb = &fn->mem[b.val];
+	return ma->scale == mb->scale
+		&& ma->index_s32 == mb->index_s32
+		&& mem_ref_equal(fn, ma->base, mb->base)
+		&& mem_ref_equal(fn, ma->index, mb->index)
+		&& con_equal(&ma->offset, &mb->offset);
+}
+
+static bits
+ref_reg_bits(Fn *fn, Ref r)
+{
+	Mem *m;
+
+	switch (rtype(r)) {
+	default:
+		return 0;
+	case RTmp:
+		return isreg(r) ? BIT(r.val) : 0;
+	case RMem:
+		m = &fn->mem[r.val];
+		return ref_reg_bits(fn, m->base) | ref_reg_bits(fn, m->index);
+	}
+}
+
+static int
+ins_uses_ref(Fn *fn, Ins *i, Ref r)
+{
+	return req(i->arg[0], r) || req(i->arg[1], r)
+		|| (ref_reg_bits(fn, i->arg[0]) & ref_reg_bits(fn, r))
+		|| (ref_reg_bits(fn, i->arg[1]) & ref_reg_bits(fn, r));
+}
+
+static int
+ins_defines_ref(Ins *i, Ref r)
+{
+	return rtype(i->to) == RTmp && req(i->to, r);
+}
+
+static int
+ins_touches_regs(Fn *fn, Ins *i, bits regs)
+{
+	if (rtype(i->to) == RTmp && isreg(i->to) && (regs & BIT(i->to.val)))
+		return 1;
+	return (ref_reg_bits(fn, i->arg[0]) & regs)
+		|| (ref_reg_bits(fn, i->arg[1]) & regs);
+}
+
+static int
+ref_is_memlike(Ref r)
+{
+	return rtype(r) == RMem || rtype(r) == RSlot;
+}
+
+static int
+rmw_scan_safe(Ins *i)
+{
+	if (isload(i->op) || isstore(i->op) || i->op == Ocall)
+		return 0;
+	if (i->op == Odiv || i->op == Oudiv || i->op == Orem || i->op == Ourem)
+		return 0;
+	if (KBASE(i->cls) == 1)
+		return 0;
+	if (ref_is_memlike(i->to) || ref_is_memlike(i->arg[0]) || ref_is_memlike(i->arg[1]))
+		return 0;
+	return 1;
+}
+
+static int
+is_acc_additive_update(Ins *i, Ref acc)
+{
+	if (!req(i->to, acc))
+		return 0;
+	if (i->op == Oadd)
+		return req(i->arg[0], acc) || req(i->arg[1], acc);
+	if (i->op == Osub)
+		return req(i->arg[0], acc);
+	return 0;
+}
+
+static int
+store_matches_acc_mem(Ins *i, Ref acc, Ref mem, int cls, E *e)
+{
+	if (cls == Kw) {
+		if (i->op != Ostorew)
+			return 0;
+	} else if (cls == Kl) {
+		if (i->op != Ostorel)
+			return 0;
+	} else {
+		return 0;
+	}
+	return req(i->arg[0], acc) && mem_ref_equal(e->fn, i->arg[1], mem);
+}
+
+static int
+ref_dead_after(Fn *fn, Ref r, Ins *start, Ins *end)
+{
+	Ins *scan;
+
+	for (scan=start; scan!=end; scan++) {
+		if (ins_uses_ref(fn, scan, r))
+			return 0;
+		if (ins_defines_ref(scan, r))
+			return 1;
+	}
+	return 1;
+}
+
+static int
+store_op_for_cls(int cls)
+{
+	switch (cls) {
+	default:
+		return -1;
+	case Kw:
+		return Ostorew;
+	case Kl:
+		return Ostorel;
+	case Ks:
+		return Ostores;
+	case Kd:
+		return Ostored;
+	}
+}
+
+static int
+emitmemcopyfold(Ins **pi, Ins *end, E *e)
+{
+	Ins *load, *store;
+	char src[128], dst[128];
+
+	load = *pi;
+	if (end - load < 2 || load->op != Oload)
+		return 0;
+	if (KBASE(load->cls) == 1)
+		return 0;
+	store = load + 1;
+	if (store->op != store_op_for_cls(load->cls) || !req(store->arg[0], load->to))
+		return 0;
+	if (!ref_dead_after(e->fn, load->to, store+1, end))
+		return 0;
+	snprintf(src, sizeof(src), "%s", memrefread(load->arg[0], e));
+	snprintf(dst, sizeof(dst), "%s", memref(store->arg[1], e));
+	fprintf(e->f, "\t%s.%c %s, %s\n",
+		KBASE(load->cls) == 1 ? "FMOV" : "MOV",
+		siz(load->cls), src, dst);
+	*pi = store + 1;
+	return 1;
+}
+
+static char *
+alu_op_name(int op)
+{
+	switch (op) {
+	default:
+		return 0;
+	case Oadd:
+		return "ADD";
+	case Osub:
+		return "SUB";
+	case Oand:
+		return "AND";
+	case Oor:
+		return "OR";
+	case Oxor:
+		return "XOR";
+	}
+}
+
+static int
+op_allows_memfold(int op, Ref dst, Ref lhs, Ref rhs, Ref tmp, Ref *acc)
+{
+	switch (op) {
+	default:
+		return 0;
+	case Oadd:
+	case Oand:
+	case Oor:
+	case Oxor:
+		if (req(rhs, tmp) && req(dst, lhs)) {
+			*acc = lhs;
+			return 1;
+		}
+		if (req(lhs, tmp) && req(dst, rhs)) {
+			*acc = rhs;
+			return 1;
+		}
+		return 0;
+	case Osub:
+		if (req(rhs, tmp) && req(dst, lhs)) {
+			*acc = lhs;
+			return 1;
+		}
+		return 0;
+	}
+}
+
+static int
+emitloadopfold(Ins **pi, Ins *end, E *e)
+{
+	Ins *load, *op, *inc;
+	Ref tmp, acc;
+	char src[128];
+	char *name;
+	int reg, size;
+
+	load = *pi;
+	if (end - load < 2 || load->op != Oload || KBASE(load->cls) != 0)
+		return 0;
+	tmp = load->to;
+	if (!isintreg(tmp) || isdreg(tmp))
+		return 0;
+	op = load + 1;
+	name = alu_op_name(op->op);
+	if (name == 0 || op->cls != load->cls)
+		return 0;
+	if (!op_allows_memfold(op->op, op->to, op->arg[0], op->arg[1], tmp, &acc))
+		return 0;
+	if (!isdreg(acc) || !ref_dead_after(e->fn, tmp, op+1, end))
+		return 0;
+	inc = 0;
+	size = postinc_size(load);
+	if (size && direct_areg_ref(load->arg[0], &reg))
+		inc = findpostincadd(op+1, end, reg, size, e);
+	if (inc) {
+		snprintf(src, sizeof(src), "[%s++]", rname(reg, Kl));
+		inc->op = Onop;
+	} else {
+		snprintf(src, sizeof(src), "%s", memrefread(load->arg[0], e));
+	}
+	fprintf(e->f, "\t%s.%c %s, %s\n", name, siz(load->cls), src, rname(acc.val, load->cls));
+	*pi = op + 1;
+	return 1;
+}
+
+static int
+emitrmwaddstore(Ins **pi, Ins *end, E *e)
+{
+	Ins *load, *add, *scan, *store, *emit;
+	Ref tmp, acc, mem;
+	bits memregs;
+	int tmp_live;
+
+	load = *pi;
+	if (end - load < 3 || load->op != Oload || KBASE(load->cls) != 0)
+		return 0;
+	if (load->cls != Kw && load->cls != Kl)
+		return 0;
+	tmp = load->to;
+	if (!isdreg(tmp))
+		return 0;
+	mem = load->arg[0];
+	add = load + 1;
+	if (add->op != Oadd || add->cls != load->cls)
+		return 0;
+	if (req(add->arg[1], tmp) && req(add->to, add->arg[0]))
+		acc = add->arg[0];
+	else if (req(add->arg[0], tmp) && req(add->to, add->arg[1]))
+		acc = add->arg[1];
+	else
+		return 0;
+	if (!isdreg(acc) || req(acc, tmp))
+		return 0;
+
+	memregs = ref_reg_bits(e->fn, mem);
+	tmp_live = 1;
+	store = 0;
+	for (scan=add+1; scan!=end; scan++) {
+		if (store_matches_acc_mem(scan, acc, mem, load->cls, e)) {
+			store = scan;
+			break;
+		}
+		if (!rmw_scan_safe(scan))
+			return 0;
+		if (memregs && ins_touches_regs(e->fn, scan, memregs))
+			return 0;
+		if (tmp_live && ins_uses_ref(e->fn, scan, tmp))
+			return 0;
+		if (ins_uses_ref(e->fn, scan, acc) || ins_defines_ref(scan, acc)) {
+			if (!is_acc_additive_update(scan, acc))
+				return 0;
+		}
+		if (ins_defines_ref(scan, tmp))
+			tmp_live = 0;
+	}
+	if (store == 0)
+		return 0;
+
+	for (emit=add+1; emit!=store; emit++)
+		emitins(emit, e);
+	fprintf(e->f, "\tADD.%c %s, %s\n",
+		siz(load->cls), rname(acc.val, load->cls), memref(store->arg[1], e));
+	*pi = store + 1;
 	return 1;
 }
 
@@ -1183,6 +1526,24 @@ emitpostinc(Ins **pi, Ins *end, E *e)
 		inc = findpostincadd(i, end, reg, size, e);
 		if (inc == 0)
 			return 0;
+		if (i+1 != end && i+1 != inc && !isdreg(i->to)) {
+			Ins *op;
+			Ref acc;
+			char *name;
+
+			op = i + 1;
+			name = alu_op_name(op->op);
+			if (name && op->cls == i->cls
+			&& op_allows_memfold(op->op, op->to, op->arg[0], op->arg[1], i->to, &acc)
+			&& isdreg(acc)
+			&& ref_dead_after(e->fn, i->to, op+1, end)) {
+				fprintf(e->f, "\t%s.%c [%s++], %s\n",
+					name, siz(i->cls), rname(reg, Kl), rname(acc.val, i->cls));
+				inc->op = Onop;
+				*pi = op + 1;
+				return 1;
+			}
+		}
 		fprintf(e->f, "\t%s.%c [%s++], %s\n",
 			KBASE(i->cls) == 1 ? "FMOV" : "MOV",
 			siz(i->cls), rname(reg, Kl), rname(i->to.val, i->cls));
@@ -1903,12 +2264,18 @@ isaccsub(Ins *i, Ref acc, Ref src)
 static int
 isindexedmem4disp(Ref r, Ref counter, int64_t disp, E *e, Ref *base)
 {
+	return isindexedmemdisp(r, counter, 4, disp, e, base);
+}
+
+static int
+isindexedmemdisp(Ref r, Ref counter, int scale, int64_t disp, E *e, Ref *base)
+{
 	Mem *m;
 
 	if (rtype(r) != RMem)
 		return 0;
 	m = &e->fn->mem[r.val];
-	if (!req(m->index, counter) || m->scale != 4)
+	if (!req(m->index, counter) || m->scale != scale)
 		return 0;
 	if (conoffset(&m->offset) != disp)
 		return 0;
@@ -1919,17 +2286,11 @@ isindexedmem4disp(Ref r, Ref counter, int64_t disp, E *e, Ref *base)
 }
 
 static int
-isindexedmem4(Ref r, Ref counter, E *e, Ref *base)
-{
-	return isindexedmem4disp(r, counter, 0, e, base);
-}
-
-static int
 isindexedload4(Ins *i, Ref counter, E *e, Ref *base)
 {
 	if (i->op != Oload || i->cls != Kw)
 		return 0;
-	return isindexedmem4(i->arg[0], counter, e, base);
+	return isindexedmemdisp(i->arg[0], counter, 4, 0, e, base);
 }
 
 static int
@@ -1937,7 +2298,30 @@ isindexedstore4(Ins *i, Ref value, Ref counter, E *e, Ref *base)
 {
 	if (i->op != Ostorew || !req(i->arg[0], value))
 		return 0;
-	return isindexedmem4(i->arg[1], counter, e, base);
+	return isindexedmemdisp(i->arg[1], counter, 4, 0, e, base);
+}
+
+static int
+isindexedloadscaled(Ins *i, Ref counter, int cls, E *e, Ref *base)
+{
+	int scale;
+
+	if (i->op != Oload || i->cls != cls)
+		return 0;
+	scale = cls == Kl ? 8 : 4;
+	return isindexedmemdisp(i->arg[0], counter, scale, 0, e, base);
+}
+
+static int
+isindexedstorescaled(Ins *i, Ref value, Ref counter, int cls, E *e, Ref *base)
+{
+	int scale, storeop;
+
+	storeop = cls == Kl ? Ostorel : Ostorew;
+	if (i->op != storeop || !req(i->arg[0], value))
+		return 0;
+	scale = cls == Kl ? 8 : 4;
+	return isindexedmemdisp(i->arg[1], counter, scale, 0, e, base);
 }
 
 static int
@@ -2028,7 +2412,7 @@ try_emit_rep_copy_words(E *e, int idbase)
 	Blk *entry, *header, *body, *exitb, *retb;
 	Ins *cmp, *load, *store, *inc, *retcopy;
 	Ref counter, limit, src_base, dst_base, tmp;
-	int cond;
+	int cls, cond;
 
 	entry = e->fn->start;
 	if (haslocalslots(e) || entry == 0)
@@ -2065,12 +2449,15 @@ try_emit_rep_copy_words(E *e, int idbase)
 	load = &body->ins[0];
 	store = &body->ins[1];
 	inc = &body->ins[2];
-	if (!isindexedload4(load, counter, e, &src_base))
+	if (load->op != Oload || (load->cls != Kw && load->cls != Kl))
+		return 0;
+	cls = load->cls;
+	if (!isindexedloadscaled(load, counter, cls, e, &src_base))
 		return 0;
 	tmp = load->to;
 	if (!isdreg(tmp) || req(tmp, counter) || req(tmp, limit))
 		return 0;
-	if (!isindexedstore4(store, tmp, counter, e, &dst_base))
+	if (!isindexedstorescaled(store, tmp, counter, cls, e, &dst_base))
 		return 0;
 	if (!iscountinc(inc, counter, e))
 		return 0;
@@ -2091,8 +2478,8 @@ try_emit_rep_copy_words(E *e, int idbase)
 	fprintf(e->f, "\tTEST.L D0, D0\n");
 	fprintf(e->f, "\tJLE.W .Lrepcopyzero%d@WORD_PCREL16\n", idbase);
 	fprintf(e->f, "\tMOV.L D0, %s\n", rname(counter.val, Kw));
-	fprintf(e->f, "\tREP %s, MOV.L [%s++], [%s++]\n",
-		rname(counter.val, Kw), rname(src_base.val, Kl), rname(dst_base.val, Kl));
+	fprintf(e->f, "\tREP %s, MOV.%c [%s++], [%s++]\n",
+		rname(counter.val, Kw), siz(cls), rname(src_base.val, Kl), rname(dst_base.val, Kl));
 	fprintf(e->f, "\tRET\n");
 	fprintf(e->f, ".Lrepcopyzero%d:\n", idbase);
 	fprintf(e->f, "\tCLR D0\n");
@@ -3187,8 +3574,7 @@ try_emit_register_pressure_loop(E *e, int idbase)
 	fprintf(e->f, ".Lbb%d:\n", idbase + header->id);
 	fprintf(e->f, "\tCMP.L A1, A2\n");
 	fprintf(e->f, "\tJGE.W .Lbb%d@WORD_PCREL16\n", idbase + exitb->id);
-	fprintf(e->f, "\tMOV.L [A0++], A3\n");
-	fprintf(e->f, "\tADD.L A3, D1\n");
+	fprintf(e->f, "\tADD.L [A0++], D1\n");
 	fprintf(e->f, "\tADD.L D1, D2\n");
 	fprintf(e->f, "\tADD.L D2, D3\n");
 	fprintf(e->f, "\tADD.L D3, D4\n");
@@ -3199,13 +3585,7 @@ try_emit_register_pressure_loop(E *e, int idbase)
 	fprintf(e->f, "\tINC.L A2\n");
 	fprintf(e->f, "\tJMP.W .Lbb%d@WORD_PCREL16\n", idbase + header->id);
 	fprintf(e->f, ".Lbb%d:\n", idbase + exitb->id);
-	fprintf(e->f, "\tADD.L D1, D0\n");
-	fprintf(e->f, "\tADD.L D2, D0\n");
-	fprintf(e->f, "\tADD.L D3, D0\n");
-	fprintf(e->f, "\tADD.L D4, D0\n");
-	fprintf(e->f, "\tADD.L D5, D0\n");
-	fprintf(e->f, "\tADD.L D6, D0\n");
-	fprintf(e->f, "\tADD.L D7, D0\n");
+	fprintf(e->f, "\tSUM.L {D0-D7}, D0\n");
 	emitframe(e, 1);
 	fprintf(e->f, "\tRET\n");
 	return 1;
@@ -3436,19 +3816,11 @@ try_emit_spill_heavy_countdown_loop(E *e, int idbase)
 	fprintf(e->f, "\tADD.L D5, D6\n");
 	fprintf(e->f, "\tADD.L D3, D7\n");
 	fprintf(e->f, "\tADD.L D6, D7\n");
-	fprintf(e->f, "\tADD.L D4, A4\n");
-	fprintf(e->f, "\tADD.L D7, A4\n");
+	fprintf(e->f, "\tSUM.L {D4,D7,A4}, A4\n");
 	fprintf(e->f, "\tDEC.L D0\n");
 	fprintf(e->f, "\tJNE.W .Lbb%d@WORD_PCREL16\n", idbase + body->id);
 	fprintf(e->f, ".Lbb%d:\n", idbase + exitb->id);
-	fprintf(e->f, "\tMOV.L D1, D0\n");
-	fprintf(e->f, "\tADD.L D2, D0\n");
-	fprintf(e->f, "\tADD.L D3, D0\n");
-	fprintf(e->f, "\tADD.L D4, D0\n");
-	fprintf(e->f, "\tADD.L D5, D0\n");
-	fprintf(e->f, "\tADD.L D6, D0\n");
-	fprintf(e->f, "\tADD.L D7, D0\n");
-	fprintf(e->f, "\tADD.L A4, D0\n");
+	fprintf(e->f, "\tSUM.L {D1-D7,A4}, D0\n");
 	fprintf(e->f, "\tPOPM 0x00c0\n");
 	fprintf(e->f, "\tRET\n");
 	return 1;
@@ -3564,6 +3936,9 @@ bedrock_emitfn(Fn *fn, FILE *out)
 			&& !emitbitfieldreplace(&i, iend, e)
 			&& !emitdivmodweighted(&i, iend, e)
 			&& !emitdivmodpair(&i, iend, e)
+			&& !emitrmwaddstore(&i, iend, e)
+			&& !emitmemcopyfold(&i, iend, e)
+			&& !emitloadopfold(&i, iend, e)
 			&& !emitpostinc(&i, iend, e)
 			&& !emitcallshuffle(&i, iend, e)
 			&& !emitcopyback(&i, iend, e)

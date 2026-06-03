@@ -50,8 +50,10 @@ from latex_builder.common import (
     document_preamble,
     instruction_docs,
     latex_longtable,
+    latex_tabular,
     load_allocation,
     listed_figure_caption,
+    hidden_top_section,
     mdash_join,
     normalize_text,
     pretty_key,
@@ -60,6 +62,7 @@ from latex_builder.common import (
     tex_code,
     tex_escape,
     tex_multiline,
+    tex_multiline_latex,
     tex_table_value,
     title_page,
     top_section,
@@ -95,9 +98,14 @@ from latex_builder.instruction_reference import (
     instruction_reference_sections,
     instruction_set_summary_by_class_section,
     instruction_summary,
-    opcode_instruction_format_summary_section,
     render_instruction,
+    runtime_instruction_examples_section,
 )
+
+SEPARATE_INSTRUCTION_GROUPS = [
+    ("Virtualization Acceleration Instructions", {"virtualization_acceleration"}),
+    ("Floating-Point Transcendental Instructions", {"fpu_transcendental"}),
+]
 
 
 
@@ -268,122 +276,477 @@ def cpuid_policy_rows(spec: dict[str, Any]) -> list[list[str]]:
         item = policy.get(key) if isinstance(policy, dict) else {}
         if not isinstance(item, dict):
             continue
+        class_value = item.get("class")
         range_value = item.get("range")
+        namespace = hex_text(class_value) if class_value is not None else cpuid_range_text(range_value)
         rows.append(
             [
                 tex_escape(item.get("name", readable_text(key))),
-                tex_code(cpuid_range_text(range_value)) if range_value is not None else tex_escape("-"),
+                tex_code(namespace) if class_value is not None or range_value is not None else tex_escape("-"),
                 tex_escape(compact_text(item.get("description", ""))),
             ]
         )
     return rows
 
 
-def cpuid_leaf_range_rows(spec: dict[str, Any]) -> list[list[str]]:
+def cpuid_class_rows(spec: dict[str, Any]) -> list[list[str]]:
     rows: list[list[str]] = []
-    for item in cpuid_model(spec).get("leaf_ranges", []) or []:
+    for item in cpuid_model(spec).get("classes", []) or []:
         if not isinstance(item, dict):
             continue
         rows.append(
             [
-                tex_code(cpuid_range_text(item.get("range", "-"))),
+                tex_code(hex_text(item.get("class", "-"))),
                 tex_escape(readable_text(item.get("name", ""))),
+                tex_escape(compact_text(item.get("description", ""))),
+            ]
+        )
+    if rows:
+        return rows
+    return rows
+
+
+def cpuid_selector_rows(spec: dict[str, Any]) -> list[list[str]]:
+    calling = cpuid_model(spec).get("calling_convention") or {}
+    selector = calling.get("query_selector") if isinstance(calling, dict) else {}
+    bits = selector.get("bits", []) if isinstance(selector, dict) else []
+    rows: list[list[str]] = []
+    for item in bits or []:
+        if not isinstance(item, dict):
+            continue
+        if "bit" in item:
+            location = str(item.get("bit"))
+        else:
+            bit_range = item.get("range")
+            location = f"{bit_range[0]}..{bit_range[1]}" if isinstance(bit_range, list) and len(bit_range) == 2 else "-"
+        rows.append(
+            [
+                tex_code(location),
+                tex_code(str(item.get("name", ""))),
                 tex_escape(compact_text(item.get("description", ""))),
             ]
         )
     return rows
 
 
+def cpuid_result_entries(leaf: dict[str, Any]) -> list[dict[str, Any]]:
+    results = leaf.get("results")
+    if isinstance(results, list):
+        return [item for item in results if isinstance(item, dict)]
+    return []
+
+
+def cpuid_index_sort_key(value: Any) -> tuple[int, int, str]:
+    try:
+        return (0, int(value), "")
+    except (TypeError, ValueError):
+        return (1, 0, str(value))
+
+
+def cpuid_identifier_cell(value: Any, limit: int = 18) -> str:
+    text = str(value)
+    if len(text) <= limit:
+        return tex_code(text)
+    parts = text.split("_")
+    if len(parts) <= 1:
+        return tex_code(text)
+    lines: list[str] = []
+    current = parts[0]
+    for part in parts[1:]:
+        candidate = f"{current}_{part}"
+        if len(candidate) <= limit:
+            current = candidate
+            continue
+        lines.append(current + "_")
+        current = part
+    lines.append(current)
+    return tex_multiline_latex([tex_code(line) for line in lines])
+
+
+def latex_itemize_lines(lines: list[str]) -> str:
+    if not lines:
+        return ""
+    body = "\n".join(r"\item " + tex_escape(line) for line in lines)
+    return "\n".join([r"\begin{itemize}[leftmargin=1.4em,itemsep=1pt,topsep=2pt]\raggedright", body, r"\end{itemize}"])
+
+
+def latex_itemize_latex_lines(lines: list[str]) -> str:
+    if not lines:
+        return ""
+    body = "\n".join(r"\item " + line for line in lines)
+    return "\n".join([r"\begin{itemize}[leftmargin=1.4em,itemsep=1pt,topsep=2pt]\raggedright", body, r"\end{itemize}"])
+
+
+def cpuid_leaf_iter(spec: dict[str, Any]) -> list[tuple[Any, dict[str, Any], dict[str, Any]]]:
+    classes = cpuid_model(spec).get("classes")
+    if isinstance(classes, list) and classes:
+        out: list[tuple[Any, dict[str, Any], dict[str, Any]]] = []
+        for class_entry in classes:
+            if not isinstance(class_entry, dict):
+                continue
+            class_value = class_entry.get("class", "-")
+            for leaf in class_entry.get("leaves", []) or []:
+                if isinstance(leaf, dict):
+                    out.append((class_value, class_entry, leaf))
+        return out
+    return []
+
+
+def cpuid_bit_location(bit: dict[str, Any]) -> str:
+    if "bit" in bit:
+        return str(bit.get("bit"))
+    bit_range = bit.get("range")
+    if isinstance(bit_range, list) and len(bit_range) == 2:
+        return f"{bit_range[0]}..{bit_range[1]}"
+    return "-"
+
+
+CPUID_PAYLOAD_LABELS = {
+    "reserved": "0",
+    "MAX_STANDARD_LEAF": "MAX_LEAF",
+    "ARCH_REVISION": "ARCH_REV",
+    "BASE_PROFILE_ID": "PROFILE",
+    "MAX_INSTRUCTION_WORDS": "INST_WORDS",
+    "WORD_BITS": "WORD_BITS",
+    "MAX_PREFIX_WORDS": "PFX_WORDS",
+    "MAX_PREFIX_BYTES": "PFX_BYTES",
+    "VENDOR_BYTES": "BYTE[7:0]",
+    "MAX_EXTENSION_LEAF": "MAX_LEAF",
+    "FP": "F",
+    "FPTRANS": "T",
+    "VIRTACCEL": "V",
+    "MAX_IMPLEMENTATION_LEAF": "MAX_LEAF",
+    "OUT_OF_ORDER": "O",
+    "DBANK_COUNT": "BANK",
+    "DBANK_SELECTOR_BITS": "SEL",
+    "DBANK_TIER": "T",
+    "MAX_TOPOLOGY_INDEX": "MAX_IDX",
+    "TOPOLOGY_ID_BITS": "TOPO_BITS",
+    "PROCESSOR_ID_BITS": "PROC_BITS",
+    "HARDWARE_THREAD_COUNT": "THREADS",
+    "CURRENT_PROCESSOR_ID": "PROC_ID",
+    "CURRENT_TOPOLOGY_ID": "TOPO_ID",
+    "LEVEL_TYPE": "TYPE",
+    "LEVEL_SHIFT": "SHIFT",
+    "LEVEL_WIDTH": "WIDTH",
+    "UNITS_IN_PARENT": "UNITS",
+    "THREADS_IN_UNIT": "THREADS",
+    "SAVE_AREA_SIZE": "SAVE_SIZE",
+    "SAVE_HEADER_SIZE": "HEADER",
+    "SAVE_COMPONENT_COUNT": "COMPONENTS",
+    "SAVE_BITMAP_WORDS": "BITMAPS",
+    "COMPONENT_ID": "ID",
+    "COMPONENT_FLAGS": "FLAGS",
+    "COMPONENT_OFFSET": "OFFSET",
+}
+
+
+def cpuid_bit_bounds(bit: dict[str, Any]) -> tuple[int, int] | None:
+    if "bit" in bit:
+        try:
+            value = int(bit.get("bit"))
+        except (TypeError, ValueError):
+            return None
+        return (value, value)
+    bit_range = bit.get("range")
+    if isinstance(bit_range, list) and len(bit_range) == 2:
+        try:
+            low = int(bit_range[0])
+            high = int(bit_range[1])
+        except (TypeError, ValueError):
+            return None
+        return (min(low, high), max(low, high))
+    return None
+
+
+def cpuid_payload_label(name: Any, width: int) -> str:
+    text = str(name)
+    label = CPUID_PAYLOAD_LABELS.get(text, text)
+    if width <= 1:
+        return label[:1]
+    if width <= 3 and len(label) > 2:
+        return label[:2]
+    if width <= 8 and len(label) > 9:
+        return "".join(part[:1] for part in label.split("_") if part)[:4] or label[:4]
+    return label
+
+
+def cpuid_payload_fields(bits: list[Any]) -> list[tuple[str, int]]:
+    ranges: list[tuple[int, int, str]] = []
+    for bit in bits:
+        if not isinstance(bit, dict):
+            continue
+        bounds = cpuid_bit_bounds(bit)
+        if bounds is None:
+            continue
+        low, high = bounds
+        if low < 0 or high > 63:
+            continue
+        width = high - low + 1
+        ranges.append((high, low, cpuid_payload_label(bit.get("name", ""), width)))
+    if not ranges:
+        return []
+
+    fields: list[tuple[str, int]] = []
+    cursor = 63
+    for high, low, label in sorted(ranges, key=lambda item: (-item[0], -item[1])):
+        if high > cursor:
+            continue
+        if high < cursor:
+            fields.append(("0", cursor - high))
+        fields.append((label, high - low + 1))
+        cursor = low - 1
+    if cursor >= 0:
+        fields.append(("0", cursor + 1))
+    return [(label, width) for label, width in fields if width > 0]
+
+
+def is_single_full_width_cpuid_payload(fields: list[tuple[str, int]], total_bits: int = 64) -> bool:
+    return len(fields) == 1 and fields[0][1] == total_bits
+
+
 def cpuid_leaf_rows(spec: dict[str, Any]) -> list[list[str]]:
     rows: list[list[str]] = []
-    for leaf in cpuid_model(spec).get("leaves", []) or []:
-        if not isinstance(leaf, dict):
-            continue
-        leaf_value = tex_code(hex_text(leaf.get("leaf", "-")))
-        name = tex_code(str(leaf.get("name", "")))
-        outputs = leaf.get("outputs") or {}
-        if not isinstance(outputs, dict):
-            continue
-        for reg in ("D0", "D1", "D2", "D3"):
-            value = outputs.get(reg, "reserved, zero")
-            if isinstance(value, dict):
-                description = "bit fields listed in the next table"
-            else:
-                description = readable_text(value)
-            rows.append([leaf_value, name, tex_code(reg), tex_escape(description)])
+    for class_value, _class_entry, leaf in cpuid_leaf_iter(spec):
+        class_text = tex_code(hex_text(class_value))
+        leaf_value = tex_code(hex_text(leaf.get("leaf", "-"), width=4))
+        results = cpuid_result_entries(leaf)
+        indexes = ", ".join(str(result_entry.get("index", "-")) for result_entry in sorted(results, key=lambda item: cpuid_index_sort_key(item.get("index", "")))) if results else "-"
+        summary = leaf.get("summary") or leaf.get("description") or "-"
+        rows.append([class_text, leaf_value, cpuid_identifier_cell(leaf.get("name", "")), tex_code(indexes), tex_escape(compact_text(summary))])
     return rows
 
 
-def cpuid_bit_field_rows(spec: dict[str, Any]) -> list[list[str]]:
-    rows: list[list[str]] = []
-    for leaf in cpuid_model(spec).get("leaves", []) or []:
-        if not isinstance(leaf, dict):
-            continue
-        outputs = leaf.get("outputs") or {}
-        if not isinstance(outputs, dict):
-            continue
-        for reg, value in outputs.items():
-            if not isinstance(value, dict):
+def cpuid_leaf_detail_blocks(spec: dict[str, Any]) -> str:
+    blocks: list[str] = []
+    for class_value, _class_entry, leaf in cpuid_leaf_iter(spec):
+        name = str(leaf.get("name", ""))
+        selector_text = f"class {hex_text(class_value)}, leaf {hex_text(leaf.get('leaf', '-'), width=4)}"
+        parts = [
+            r"\Needspace{1.35in}",
+            rf"\noindent{{\bfseries {tex_code(name)} ({tex_escape(selector_text)})}}\par",
+        ]
+        summary = leaf.get("summary")
+        if summary:
+            parts.append(tex_escape(compact_text(summary)) + r"\par")
+        description = leaf.get("description")
+        if description:
+            description_text = compact_text(description)
+            if not summary or description_text != compact_text(summary):
+                parts.append(tex_escape(description_text) + r"\par")
+        result_lines: list[str] = []
+        for result_entry in sorted(cpuid_result_entries(leaf), key=lambda item: cpuid_index_sort_key(item.get("index", ""))):
+            index = result_entry.get("index", "-")
+            description_value = result_entry.get("description", result_entry.get("value", ""))
+            if description_value:
+                description_text = readable_text(description_value)
+            elif result_entry.get("bits"):
+                description_text = "fields are described below"
+            else:
+                description_text = "defined by this leaf"
+            result_lines.append(f"index {index}: {description_text}")
+            extraction = result_entry.get("extraction")
+            if extraction:
+                result_lines.append(f"index {index} extraction: {compact_text(extraction)}")
+        if result_lines:
+            parts.append(r"\noindent\textbf{Result Indexes:}\par")
+            parts.append(latex_itemize_lines(result_lines))
+        topology_level_types = leaf.get("topology_level_types")
+        if isinstance(topology_level_types, dict) and topology_level_types:
+            type_lines: list[str] = []
+            for key, value in topology_level_types.items():
+                type_lines.append(f"{key}: {readable_text(value)}")
+            parts.append(r"\noindent\textbf{Topology Level Types:}\par")
+            parts.append(latex_itemize_lines(type_lines))
+        blocks.append("\n".join(parts))
+    if not blocks:
+        return ""
+    return "\n".join([r"\subsection*{CPUID Leaf Details}", *blocks])
+
+
+def cpuid_bit_field_leaf_blocks(spec: dict[str, Any]) -> str:
+    blocks: list[str] = []
+    for class_value, _class_entry, leaf in cpuid_leaf_iter(spec):
+        result_blocks: list[str] = []
+        leaf_name = str(leaf.get("name", ""))
+        for result_entry in sorted(cpuid_result_entries(leaf), key=lambda item: cpuid_index_sort_key(item.get("index", ""))):
+            bits = result_entry.get("bits")
+            if not isinstance(bits, list) or not bits:
                 continue
-            for bit in value.get("bits", []) or []:
+            index = str(result_entry.get("index", "-"))
+            fields = cpuid_payload_fields(bits)
+            rows: list[str] = []
+            for bit in bits:
                 if not isinstance(bit, dict):
                     continue
-                if "bit" in bit:
-                    bit_text = str(bit.get("bit"))
-                else:
-                    bit_range = bit.get("range")
-                    bit_text = f"{bit_range[0]}..{bit_range[1]}" if isinstance(bit_range, list) and len(bit_range) == 2 else "-"
-                rows.append(
-                    [
-                        tex_code(hex_text(leaf.get("leaf", "-"))),
-                        tex_code(str(reg)),
-                        tex_code(bit_text),
-                        tex_code(str(bit.get("name", ""))),
-                        tex_escape(compact_text(bit.get("description", ""))),
-                    ]
+                location = cpuid_bit_location(bit)
+                name = str(bit.get("name", ""))
+                description = compact_text(bit.get("description", ""))
+                if description:
+                    rows.append(
+                        rf"{tex_code(location)} & {cpuid_identifier_cell(name, limit=22)} & {tex_escape(description)}\\"
+                    )
+                    rows.append(r"\hline")
+            if not rows:
+                continue
+            block_parts = [
+                r"\Needspace{2.35in}",
+                rf"\noindent\textbf{{Result index {tex_escape(index)}}}\par",
+            ]
+            if fields and not is_single_full_width_cpuid_payload(fields):
+                block_parts.append(
+                    bit_field_figure(
+                        fields,
+                        f"CPUID Payload: {leaf_name} index {index}",
+                        "result[63:0]",
+                        64,
+                        top_labels=bit_index_labels(64, [63, 48, 32, 16, 0]),
+                    )
                 )
-    return rows
+            block_parts.extend(
+                [
+                    r"\begingroup\footnotesize\renewcommand{\arraystretch}{1.08}",
+                    r"\begin{tabularx}{0.985\linewidth}{|p{0.72in}|p{1.80in}|X|}",
+                    r"\hline",
+                    r"\textbf{Bits} & \textbf{Field} & \textbf{Meaning}\\",
+                    r"\hline",
+                    *rows,
+                    r"\end{tabularx}\endgroup\par\smallskip",
+                ]
+            )
+            result_blocks.append("\n".join(block_parts))
+        if not result_blocks:
+            continue
+        selector_text = f"class {hex_text(class_value)}, leaf {hex_text(leaf.get('leaf', '-'), width=4)}"
+        parts = [
+            r"\Needspace{2.35in}",
+            rf"\noindent{{\bfseries {tex_code(leaf_name)} ({tex_escape(selector_text)})}}\par",
+            *result_blocks,
+        ]
+        blocks.append("\n".join(parts))
+    if not blocks:
+        return ""
+    return "\n".join([r"\subsection*{CPUID Bit Field Layouts}", *blocks])
 
 
 def cpuid_feature_discovery_section(spec: dict[str, Any]) -> str:
     model = cpuid_model(spec)
     calling = model.get("calling_convention") or {}
-    inputs = calling.get("inputs", {}) if isinstance(calling, dict) else {}
-    unsupported_leaf = calling.get("unsupported_leaf", "D0..D3 = 0") if isinstance(calling, dict) else "D0..D3 = 0"
-    unsupported_subleaf = calling.get("unsupported_subleaf", "D0..D3 = 0") if isinstance(calling, dict) else "D0..D3 = 0"
+    unsupported_class = calling.get("unsupported_class", "result = 0") if isinstance(calling, dict) else "result = 0"
+    unsupported_leaf = calling.get("unsupported_leaf", "result = 0") if isinstance(calling, dict) else "result = 0"
+    unsupported_index = calling.get("unsupported_index", "result = 0") if isinstance(calling, dict) else "result = 0"
+    syntax = calling.get("syntax", "CPUID Dn") if isinstance(calling, dict) else "CPUID Dn"
+    privilege = calling.get("privilege", "unprivileged") if isinstance(calling, dict) else "unprivileged"
+    serialization = calling.get("serialization", "not serializing") if isinstance(calling, dict) else "not serializing"
+    runtime_mutability = calling.get("runtime_mutability", "static after reset unless a leaf explicitly says otherwise") if isinstance(calling, dict) else "static after reset unless a leaf explicitly says otherwise"
+
+    def labeled_paragraph(label: str, text: str) -> str:
+        return rf"\noindent\textbf{{{tex_escape(label)}.}} {text}"
+
+    unsupported_values = {str(unsupported_class), str(unsupported_leaf), str(unsupported_index)}
+    if len(unsupported_values) == 1:
+        unsupported_text = f"Unsupported classes, leaves, and indexes return {tex_code(unsupported_class)}."
+    else:
+        unsupported_text = (
+            f"Unsupported classes return {tex_code(unsupported_class)}, unsupported leaves return "
+            f"{tex_code(unsupported_leaf)}, and unsupported indexes return {tex_code(unsupported_index)}."
+        )
     parts = [
-        "CPUID is the architectural discovery instruction. It is intended to expose base-profile identity, "
-        "optional architectural extensions, and program-visible tuning properties. It is not a dump of internal "
-        "microarchitectural structures.",
-        f"The input register {tex_code('D0')} contains the {tex_escape(inputs.get('D0', 'leaf'))}; "
-        f"{tex_code('D1')} contains the {tex_escape(inputs.get('D1', 'subleaf'))}. "
-        f"Results are returned in {tex_code('D0')} through {tex_code('D3')}. "
-        f"Unsupported leaves and unsupported subleaves return {tex_code(unsupported_leaf)} and "
-        f"{tex_code(unsupported_subleaf)}, respectively.",
-        "All non-FPU instructions defined by this manual are part of the base Bedrock ISA profile. "
-        "REP, REPcc, REPG, atomics, fences, cache and TLB management instructions, segmentation, paging, "
-        "and control-register access are therefore not advertised as independently optional instruction fragments.",
-        "Floating-point discovery is intentionally coarse. An implementation reports whether the base floating-point "
-        "extension is available, and separately whether the transcendental floating-point group is available. "
-        "Double precision, fused multiply-add/subtract, floating-point conditional move, conversion, classification, "
-        "and ordinary floating-point memory/register forms are base features of the floating-point extension.",
-        "Implementation-property leaves expose only information a program can reasonably use to select code paths or "
-        "tune algorithms. Structures such as register renaming, reorder buffers, issue queues, and physical register "
-        f"files are not architectural discovery bits. The initial execution-property leaf exposes only {tex_code('OUT_OF_ORDER')}.",
+        r"\subsection{Overview}",
+        "\n\n".join(
+            [
+                "CPUID is the architectural discovery instruction. It exposes base-profile identity, optional "
+                "architectural extensions, and program-visible tuning properties. It is not a dump of internal "
+                "microarchitectural structures.",
+                "A leaf describes one meaningful information group. The result index selects one Q-sized result "
+                "from that group.",
+            ]
+        ),
+        r"\subsection{Query Model}",
+        (
+            f"The instruction form is {tex_code(syntax)}. The selected D register contains a 64-bit query selector "
+            "before execution and receives the selected 64-bit result after execution. The selector is divided into "
+            "a 32-bit class, a 16-bit leaf within that class, and a 16-bit result index."
+        ),
+        unsupported_text,
+        (
+            f"CPUID is {tex_escape(privilege)} and {tex_escape(serialization)}. Reserved CPUID result bits must be "
+            f"ignored by software. CPUID results are {tex_escape(runtime_mutability)}."
+        ),
     ]
+    selector_rows = cpuid_selector_rows(spec)
+    if selector_rows:
+        parts.append(latex_longtable(["Bits", "Field", "Meaning"], selector_rows, ["0.70in", "1.20in", "3.60in"], "CPUID Query Selector"))
+    parts.extend(
+        [
+            r"\subsection{Discovery Classes}",
+            labeled_paragraph(
+                "Base profile",
+                "The base Bedrock ISA profile contains ordinary integer, data movement, control-flow, atomic, "
+                "data-register banking, cache/TLB, segmentation, paging, control-register, and repeat-prefix "
+                "instruction groups. Instruction groups with their own optional-extension leaves, such as "
+                "virtualization acceleration, are not implied by the base profile."
+            ),
+            labeled_paragraph(
+                "Floating-point",
+                "Floating-point discovery is intentionally coarse. An implementation reports whether the base "
+                "floating-point extension is available, and separately whether the transcendental floating-point "
+                "group is available. Double precision, fused multiply-add/subtract, floating-point conditional "
+                "move, conversion, classification, and ordinary floating-point memory/register forms are base "
+                "features of the floating-point extension."
+            ),
+            labeled_paragraph(
+                "Data-register banking",
+                "Data-register banking instructions are part of the base instruction set. DBANK "
+                "implementation-property discovery reports the implemented bank count and selector width; object "
+                "attributes record the minimum bank count required by a linked image. Source-language ABIs still "
+                "normalize DBANK to zero at public boundaries."
+            ),
+            labeled_paragraph(
+                "Virtualization acceleration",
+                "ENCINST availability is discovered through the optional-extension class. The instruction reference "
+                "groups ENCINST under Virtualization Acceleration because it supports canonical binary emission for "
+                "JITs, hypervisors, and binary translators rather than ordinary application execution."
+            ),
+            labeled_paragraph(
+                "Unavailable optional groups",
+                f"If an optional instruction group is not reported by CPUID, executing an instruction from that "
+                f"group raises {tex_code('ILLEGAL_INSTRUCTION')}. Bedrock does not define a separate exception for "
+                "extension availability."
+            ),
+            labeled_paragraph(
+                "Implementation properties",
+                "Implementation-property leaves expose only information a program can reasonably use to select code "
+                "paths or tune algorithms. Structures such as register renaming, reorder buffers, issue queues, and "
+                f"physical register files are not architectural discovery bits. The initial execution-property leaf "
+                f"exposes only {tex_code('OUT_OF_ORDER')}. Processor-topology discovery reports the total exposed "
+                "hardware-thread count and the current hardware-thread identity; it does not report the set of CPUs "
+                "currently online under an operating system."
+            ),
+        ]
+    )
     policy_rows = cpuid_policy_rows(spec)
     if policy_rows:
-        parts.append(latex_longtable(["Policy", "Range", "Meaning"], policy_rows, ["1.25in", "1.45in", "2.80in"], "CPUID Discovery Policy"))
-    range_rows = cpuid_leaf_range_rows(spec)
-    if range_rows:
-        parts.append(latex_longtable(["Leaf Range", "Name", "Meaning"], range_rows, ["1.45in", "1.35in", "2.70in"], "CPUID Leaf Ranges"))
+        parts.append(latex_longtable(["Policy", "Class", "Meaning"], policy_rows, ["1.25in", "1.15in", "3.10in"], "CPUID Discovery Policy"))
+    class_rows = cpuid_class_rows(spec)
+    if class_rows:
+        parts.append(latex_longtable(["Class", "Name", "Meaning"], class_rows, ["1.15in", "1.45in", "2.90in"], "CPUID Classes"))
+    parts.append(r"\subsection{Leaf Directory}")
     leaf_rows = cpuid_leaf_rows(spec)
     if leaf_rows:
-        parts.append(latex_longtable(["Leaf", "Name", "Reg", "Output"], leaf_rows, ["0.95in", "1.65in", "0.45in", "2.45in"], "CPUID Leaves"))
-    bit_rows = cpuid_bit_field_rows(spec)
-    if bit_rows:
-        parts.append(latex_longtable(["Leaf", "Reg", "Bits", "Name", "Meaning"], bit_rows, ["0.95in", "0.45in", "0.55in", "1.85in", "1.70in"], "CPUID Bit Fields"))
-    return "\n".join(parts)
+        parts.append(latex_longtable(["Class", "Leaf", "Name", "Indexes", "Summary"], leaf_rows, ["0.85in", "0.60in", "1.35in", "0.72in", "1.98in"], "CPUID Leaves"))
+    leaf_details = cpuid_leaf_detail_blocks(spec)
+    if leaf_details:
+        parts.append(leaf_details)
+    parts.append(r"\subsection{Bit Fields}")
+    bit_field_blocks = cpuid_bit_field_leaf_blocks(spec)
+    if bit_field_blocks:
+        parts.append(bit_field_blocks)
+    return "\n\n".join(parts)
+
+
+def compatibility_rules_section() -> str:
+    return render_latex_template("compatibility_rules.tex")
 
 
 def overview_sections(spec: dict[str, Any], plan: dict[str, Any], mnemonic_count: int, form_count: int) -> str:
@@ -391,6 +754,7 @@ def overview_sections(spec: dict[str, Any], plan: dict[str, Any], mnemonic_count
         architecture_overview_section(spec, plan, mnemonic_count, form_count),
         top_section("Terminology"),
         terminology_section(spec),
+        compatibility_rules_section(),
         top_section("Programming Model"),
         register_tables(spec),
         top_section("CPUID Feature Discovery"),
@@ -434,12 +798,34 @@ def register_tables(spec: dict[str, Any]) -> str:
                 tex_table_value(body.get("allocatable", "-")),
             ]
         )
+    for name, body in (registers.get("special_register_classes") or {}).items():
+        rows.append(
+            [
+                tex_code(name),
+                tex_table_value(len(body.get("registers", []) or [])),
+                tex_table_value(body.get("width", "-")),
+                tex_table_value(body.get("role", "-")),
+                tex_table_value(False),
+            ]
+        )
+    for name, body in (registers.get("control_register_classes") or {}).items():
+        rows.append(
+            [
+                tex_code(name),
+                tex_table_value(len(body.get("registers", []) or [])),
+                tex_table_value(body.get("width", "-")),
+                tex_table_value(body.get("role", "-")),
+                tex_table_value(False),
+            ]
+        )
     parts = [
         r"\subsection{Register Model}",
-        "The programming model exposes separate data, address, stack-pointer, program-counter, and floating-point register classes. "
-        "SP is an independent stack register, not an alias of the A-register class.",
+        "The programming model exposes separate data, address, stack-pointer, program-counter, floating-point, segment-register, and control-register classes. "
+        "SP is an independent stack register, not an alias of the A-register class. "
+        "The S class is used by RDSEG and WRSEG, while the CR class is used by RDCR and WRCR.",
         register_model_figure(spec),
-        latex_longtable(["Class", "Count", "Width", "Role", "Allocatable"], rows, ["0.7in", "0.65in", "0.65in", "1.45in", "1.2in"], "Table 2-1. Register Classes"),
+        latex_tabular(["Class", "Count", "Width", "Role", "Allocatable"], rows, ["0.7in", "0.65in", "0.65in", "1.45in", "1.2in"], "Table 2-1. Register Classes"),
+        data_register_banking_section(spec),
         state_register_format_section(spec),
         floating_point_register_section(spec),
         segment_register_section(spec),
@@ -459,11 +845,12 @@ def register_tables(spec: dict[str, Any]) -> str:
     if srows:
         parts.extend(
             [
-                r"\subsection{Special Register Classes}",
-                "The S class is the Q-sized state/segment-register operand class used by MOV, AND, and OR state-register forms. "
-                "It includes the SS segment register; SS is distinct from the SP stack-pointer register.",
-                latex_longtable(["Class", "Width", "Bits", "Role", "Registers"], srows, ["0.55in", "0.55in", "0.45in", "1.05in", "2.8in"], "Table 2-2. Special Register Classes"),
-                latex_longtable(["Bits", "Register", "Reserved Access"], sreg_selector_rows(spec), ["0.55in", "1.0in", "3.90in"], "S Register Selector Encoding"),
+                r"\subsection{Segment Register Operand Class}",
+                "The S class is the Q-sized segment-register operand class used by RDSEG and WRSEG. "
+                "It names CS, DS, SS, and GS0 through GS4. SS is distinct from the SP stack-pointer register, "
+                "and FLAGS and STATUS are accessed through dedicated RD/WR instructions.",
+                latex_longtable(["Class", "Width", "Bits", "Role", "Registers"], srows, ["0.55in", "0.55in", "0.45in", "1.05in", "2.8in"], "Table 2-2. Segment Register Operand Class"),
+                latex_longtable(["Bits", "Register", "Reserved Access"], sreg_selector_rows(spec), ["0.55in", "1.0in", "3.90in"], "RDSEG/WRSEG Segment Register Selector Encoding"),
             ]
         )
 
@@ -472,6 +859,8 @@ def register_tables(spec: dict[str, Any]) -> str:
         if not isinstance(reg, dict):
             continue
         if is_control_register(reg):
+            continue
+        if str(reg.get("class", "")).upper() == "S" or str(reg.get("role", "")).lower() == "segment":
             continue
         special.append(
             [
@@ -493,32 +882,110 @@ def register_tables(spec: dict[str, Any]) -> str:
     return "\n".join(parts)
 
 
+def cpuid_discovery_text(value: Any) -> str:
+    if isinstance(value, dict):
+        class_name = value.get("cpuid_class")
+        leaf_name = value.get("cpuid_leaf")
+        if class_name and leaf_name:
+            return f"CPUID {class_name}.{leaf_name}"
+        if leaf_name:
+            return f"CPUID {leaf_name}"
+    return compact_text(value)
+
+
+def data_register_banking_section(spec: dict[str, Any]) -> str:
+    banking = spec.get("registers", {}).get("data_register_banking") or {}
+    if not isinstance(banking, dict) or not banking:
+        return ""
+    selector = banking.get("selector") or {}
+    model = banking.get("model") or {}
+    tiers = banking.get("tiers") or []
+    selector_rows = [
+        [tex_escape("Selector"), tex_code(selector.get("name", "DBANK"))],
+        [tex_escape("Selector width"), tex_escape(f"{selector.get('width', 4)} bits")],
+        [tex_escape("Architectural namespace"), tex_escape(f"{selector.get('architectural_namespace', 16)} banks")],
+        [tex_escape("Base required count"), tex_escape(selector.get("required_base_count", 1))],
+        [tex_escape("Discovery"), tex_escape(cpuid_discovery_text(selector.get("discovery", "CPUID")))],
+        [tex_escape("Object attribute"), tex_code(str(banking.get("object_attribute", "BEDROCK_ATTR_REQUIRED_DBANK_COUNT")))],
+    ]
+    model_rows = [
+        [tex_escape("Visible D register"), tex_code(model.get("visible_register_rule", "Dn names D[DBANK][n]"))],
+        [tex_escape("Ordinary D operands"), tex_escape(model.get("ordinary_instruction_rule", "ordinary DREG operands use the current DBANK selector"))],
+        [tex_escape("Bank 0"), tex_escape(model.get("bank_zero_role", "ABI-visible data-register bank"))],
+        [tex_escape("Public ABI boundary"), tex_escape(model.get("public_boundary_rule", "DBANK must be 0 at public ABI boundaries"))],
+        [tex_escape("Handler entry"), tex_escape(model.get("handler_entry_rule", "handlers execute with DBANK set to 0"))],
+        [tex_escape("Saved state"), tex_escape(model.get("saved_state_rule", "entry frames save the interrupted DBANK selector"))],
+    ]
+    tier_rows = []
+    for tier in tiers:
+        if not isinstance(tier, dict):
+            continue
+        tier_rows.append(
+            [
+                tex_code(tier.get("name", "")),
+                tex_escape(tier.get("required_banks", "-")),
+                tex_escape(compact_text(tier.get("description", ""))),
+            ]
+        )
+    parts = [
+        r"\subsection{Data Register Banks}",
+        "D-register banking extends the data-register file without changing the 3-bit DREG fields used by ordinary instructions. "
+        "The current DBANK selector chooses which physical D0 through D7 bank is visible. Source-language ABIs do not expose DBANK; "
+        "compilers, runtimes, hand-written assembly, and repeat/block optimizers may use nonzero banks when the target profile provides them.",
+        latex_longtable(["Property", "Value"], selector_rows, ["1.55in", "3.95in"], "Data Register Bank Selector"),
+        latex_longtable(["Rule", "Meaning"], model_rows, ["1.55in", "3.95in"], "Data Register Bank Rules"),
+    ]
+    if tier_rows:
+        parts.append(latex_longtable(["Tier", "Banks", "Meaning"], tier_rows, ["0.85in", "0.65in", "4.00in"], "Data Register Bank Availability Tiers"))
+    return "\n".join(parts)
+
+
 def is_control_register(reg: dict[str, Any]) -> bool:
     return str(reg.get("role", "")).lower() == "control" or str(reg.get("class", "")).upper() in {"C", "CR"}
 
 
 def control_register_rows(spec: dict[str, Any]) -> list[list[str]]:
     registers = spec.get("registers", {})
-    class_order: list[str] = []
-    for body in (registers.get("control_register_classes") or {}).values():
-        if isinstance(body, dict):
-            class_order.extend(str(item) for item in body.get("registers", []) or [])
     by_name = {
         str(reg.get("name", "")): reg
         for reg in registers.get("special_registers", []) or []
         if isinstance(reg, dict) and is_control_register(reg)
     }
-    names = class_order + sorted(name for name in by_name if name not in class_order)
+    cr_class = ((registers.get("control_register_classes") or {}).get("CR") or {})
+    groups = cr_class.get("selector_groups") if isinstance(cr_class, dict) else []
+    grouped: set[str] = set()
     rows: list[list[str]] = []
-    for name in names:
-        reg = by_name.get(name)
-        if not reg:
+    for group in groups or []:
+        if not isinstance(group, dict):
             continue
+        selectors = [item for item in group.get("selectors", []) or [] if isinstance(item, dict)]
+        names = [str(item.get("register", "-")) for item in selectors]
+        grouped.update(name for name in names if name != "-")
+        if str(group.get("name", "")) == "interrupt stack banks":
+            names = [f"SSS{i} / SSP{i}" for i in range(4)]
+        roles = []
+        for name in names:
+            if "/" in name:
+                roles.append("interrupt stack segment/pointer bank")
+                continue
+            reg = by_name.get(name)
+            roles.append(compact_text(reg.get("description", reg.get("role", "-"))) if reg else "-")
         rows.append(
             [
+                tex_escape(readable_text(group.get("name", "-"))),
+                tex_multiline_latex([tex_code(name) for name in names]),
+                tex_escape("64"),
+                tex_escape("supervisor"),
+                tex_multiline(roles),
+            ]
+        )
+    for name in sorted(name for name in by_name if name not in grouped):
+        reg = by_name[name]
+        rows.append(
+            [
+                tex_escape("unclassified"),
                 tex_code(name),
                 tex_escape(reg.get("width", "-")),
-                tex_escape(reg.get("class", "-")),
                 tex_escape(reg.get("privilege", "any")),
                 tex_escape(compact_text(reg.get("description", reg.get("role", "-")))),
             ]
@@ -552,9 +1019,9 @@ def sreg_selector_rows(spec: dict[str, Any]) -> list[list[str]]:
             {"value": 2, "bits": "010", "register": "SS"},
             {"value": 3, "bits": "011", "register": "GS0"},
             {"value": 4, "bits": "100", "register": "GS1"},
-            {"value": 5, "bits": "101", "register": "FLAGS"},
-            {"value": 6, "bits": "110", "register": "STATUS"},
-            {"value": 7, "bits": "111", "register": "reserved", "access_fault": "INVALID_OPCODE"},
+            {"value": 5, "bits": "101", "register": "GS2"},
+            {"value": 6, "bits": "110", "register": "GS3"},
+            {"value": 7, "bits": "111", "register": "GS4"},
         ]
     rows: list[list[str]] = []
     for item in encoding:
@@ -565,7 +1032,7 @@ def sreg_selector_rows(spec: dict[str, Any]) -> list[list[str]]:
             bits = f"{int(item['value']):03b}"
         fault = item.get("access_fault")
         if not fault and str(item.get("register", "")).lower() == "reserved":
-            fault = "INVALID_OPCODE"
+            fault = "ILLEGAL_INSTRUCTION"
         rows.append(
             [
                 tex_code(str(bits if bits is not None else "-")),
@@ -593,25 +1060,30 @@ def control_register_selector_rows(spec: dict[str, Any]) -> list[list[str]]:
         if not isinstance(group, dict):
             continue
         group_name = readable_text(group.get("name", ""))
-        group_range = selector_range_text(group.get("range", "-"), width=4)
         selectors = group.get("selectors") or []
+        if group_name == "interrupt stack banks":
+            pairs: list[str] = []
+            for bank in range(4):
+                base = 0x0200 + bank * 0x10
+                pairs.append(
+                    f"{tex_code(numeric_selector_text(base, width=4))}/{tex_code(numeric_selector_text(base + 1, width=4))} "
+                    f"{tex_code(f'SSS{bank}')}/{tex_code(f'SSP{bank}')}"
+                )
+            rows.append([tex_escape(group_name), tex_multiline_latex(pairs)])
+            continue
+        entries = []
         for selector in selectors:
-            if not isinstance(selector, dict):
-                continue
-            rows.append(
-                [
-                    tex_escape(group_name),
-                    tex_code(group_range),
-                    tex_code(numeric_selector_text(selector.get("value", "-"), width=4)),
-                    tex_code(str(selector.get("register", "-"))),
-                ]
-            )
+            if isinstance(selector, dict):
+                entries.append(
+                    f"{tex_code(numeric_selector_text(selector.get('value', '-'), width=4))} "
+                    f"{tex_code(str(selector.get('register', '-')))}"
+                )
+        if entries:
+            rows.append([tex_escape(group_name), tex_multiline_latex(entries)])
     rows.append(
         [
             tex_escape("unassigned"),
-            tex_code("all other selectors"),
-            tex_escape("-"),
-            tex_code(str(reserved_fault)),
+            tex_multiline_latex([tex_escape("all other selectors"), tex_code(str(reserved_fault))]),
         ]
     )
     return rows
@@ -649,9 +1121,9 @@ def state_register_format_section(spec: dict[str, Any]) -> str:
         else:
             status_rows.append([tex_code(name), tex_escape(body), tex_escape("-")])
     access_text = (
-        "FLAGS and STATUS are accessed through 64-bit Q-sized state-register operations, "
-        "but the architectural registers are 16 bits wide. Reserved bits read as zero and must remain zero; "
-        "FLAGS has four meaningful bits and STATUS has seven meaningful bits."
+        "FLAGS and STATUS are accessed through dedicated 16-bit W-sized read/write instructions, "
+        "not through the S segment-register operand class. "
+        "Reserved bits read as zero and must remain zero; FLAGS has four meaningful bits and STATUS has seven meaningful bits."
     )
     return "\n".join(
         [
@@ -671,29 +1143,70 @@ def floating_point_register_section(spec: dict[str, Any]) -> str:
         return ""
     regs = fpu.get("registers") or {}
     fflags = fpu.get("fflags") or {}
+    fstatus = fpu.get("fstatus") or {}
     if not isinstance(regs, dict):
         regs = {}
     if not isinstance(fflags, dict):
         fflags = {}
+    if not isinstance(fstatus, dict):
+        fstatus = {}
     register_rows = [
         [tex_escape("Registers"), tex_code(str(regs.get("names", "F0-F31")))],
         [tex_escape("Count"), tex_escape(regs.get("count", 32))],
         [tex_escape("Architectural width"), tex_escape(f"{regs.get('width', 64)} bits")],
         [tex_escape("Scalar formats"), tex_table_value(regs.get("scalar_formats", ["S", "D"]))],
-        [tex_escape("Unavailable extension"), tex_code(str(fpu.get("unavailable_exception", "EXTENSION_UNAVAILABLE")))],
+        [tex_escape("FFLAGS width"), tex_escape(f"{fflags.get('width', 16)} bits")],
+        [tex_escape("FSTATUS width"), tex_escape(f"{fstatus.get('width', 16)} bits")],
+        [tex_escape("FFLAGS reset"), tex_code(str(fflags.get("reset", 0)))],
+        [tex_escape("FSTATUS reset"), tex_code(str(fstatus.get("reset", 0)))],
+        [tex_escape("Unsupported extension instruction"), tex_code(str(fpu.get("unsupported_instruction_exception", "ILLEGAL_INSTRUCTION")))],
     ]
     flag_rows = []
     for name, body in (fflags.get("bits") or {}).items():
         if not isinstance(body, dict):
             continue
         flag_rows.append([tex_code(name), tex_escape(body.get("bit", "-")), tex_escape(body.get("description", "-"))])
+    fstatus_rows = []
+    for name, body in (fstatus.get("fields") or {}).items():
+        if not isinstance(body, dict):
+            continue
+        if "bit" in body:
+            position = str(body.get("bit"))
+        else:
+            bits = body.get("bits", "-")
+            position = f"{bits[0]}:{bits[1]}" if isinstance(bits, list) and len(bits) == 2 else str(bits)
+        fstatus_rows.append([tex_code(name), tex_escape(position), tex_escape(body.get("description", "-"))])
+    rounding_rows = []
+    for value, meaning in (fstatus.get("rounding_modes") or {}).items():
+        rounding_rows.append([tex_code(str(value)), tex_escape(meaning)])
+    exception_rule = fstatus.get("exception_rule") or {}
+    ieee_default = fstatus.get("ieee_754_default") or {}
+    write_policy = fstatus.get("write_policy") or {}
+    reserved_bits_text = str(write_policy.get("reserved_bits", "must be zero")).replace("_", " ") if isinstance(write_policy, dict) else "must be zero"
+    reserved_fault_text = str(write_policy.get("reserved_write_exception", "INVALID_CONTROL_STATE")) if isinstance(write_policy, dict) else "INVALID_CONTROL_STATE"
+    fflags_description = str(fflags.get("description", "accrued floating-point exception flags")).rstrip(".")
+    fstatus_description = str(fstatus.get("description", "floating-point control and status-mode state")).rstrip(".")
+    fstatus_notes = [
+        f"FFLAGS contains {fflags_description}.",
+        f"FSTATUS contains {fstatus_description}.",
+        exception_rule.get("trap_disabled", "trap-disabled exceptions set FFLAGS and continue") if isinstance(exception_rule, dict) else "",
+        exception_rule.get("trap_enabled", "trap-enabled exceptions raise FLOATING_POINT_FAULT") if isinstance(exception_rule, dict) else "",
+        f"Reserved FSTATUS bits {reserved_bits_text}; nonzero reserved writes raise {reserved_fault_text}." if isinstance(write_policy, dict) else "",
+        ieee_default.get("rule", "FSTATUS=0 selects the default IEEE-compatible mode") if isinstance(ieee_default, dict) else "",
+    ]
+    fstatus_notes = [part for part in fstatus_notes if part]
     return "\n".join(
         [
             r"\subsection{Floating-Point Register Model}",
             "The floating-point extension defines 32 Q-sized floating-point registers, F0 through F31. "
-            "Single-precision and double-precision operations use the same register file; floating-point exception status is recorded in FFLAGS.",
-            latex_longtable(["Property", "Value"], register_rows, ["1.55in", "3.95in"], "Floating-Point Register File"),
-            latex_longtable(["Bit", "Position", "Meaning"], flag_rows, ["0.55in", "0.65in", "4.05in"], "FFLAGS Bits"),
+            "Single-precision and double-precision operations use the same register file. "
+            "FFLAGS holds accrued floating-point exception flags. FSTATUS holds floating-point control "
+            "and status-mode state, including trap enables, rounding mode, and non-default arithmetic modes.",
+            latex_tabular(["Property", "Value"], register_rows, ["1.55in", "3.95in"], "Floating-Point Register File"),
+            latex_tabular(["Bit", "Position", "Meaning"], flag_rows, ["0.55in", "0.65in", "4.05in"], "FFLAGS Bits"),
+            latex_tabular(["Field", "Position", "Meaning"], fstatus_rows, ["0.85in", "0.75in", "3.90in"], "FSTATUS Fields") if fstatus_rows else "",
+            latex_tabular(["Value", "Rounding Mode"], rounding_rows, ["0.65in", "4.85in"], "FSTATUS Rounding Modes") if rounding_rows else "",
+            latex_itemize_lines(fstatus_notes),
         ]
     )
 
@@ -759,9 +1272,9 @@ def translation_control_section(spec: dict[str, Any]) -> str:
             "and privileged-entry state. PTCR and ASCR configure the memory-address translation pipeline described "
             "in the Memory Address Translation section; ICR configures interrupt-vector state; SPC, SCS, and SDS "
             "hold supervisor-entry control state.",
-            latex_longtable(["Name", "Width", "Class", "Privilege", "Role"], control_register_rows(spec), ["0.75in", "0.55in", "0.55in", "1.0in", "2.45in"], "Table 2-8. Control Registers"),
+            latex_tabular(["Group", "Register(s)", "Width", "Privilege", "Role"], control_register_rows(spec), ["1.05in", "1.0in", "0.55in", "0.85in", "2.10in"], "Table 2-8. Control Registers"),
             "RDCR and WRCR use 16-bit control-register selectors. Selectors are grouped by function, leaving space inside each group for related control state.",
-            latex_longtable(["Group", "Group Range", "Selector", "Register / Fault"], control_register_selector_rows(spec), ["1.35in", "1.05in", "0.85in", "2.25in"], "Control Register Selector Encoding"),
+            latex_tabular(["Group", "Selector / Register"], control_register_selector_rows(spec), ["1.35in", "4.15in"], "Control Register Selector Encoding"),
             ptcr_register_figure(),
             latex_longtable(["Field", "Bits", "Meaning"], ptcr_field_rows(), ["0.95in", "0.65in", "3.85in"], "Table 2-9. PTCR Fields"),
             latex_longtable(["Selector", "PABITS", "Reserved Access"], pabits_selector_rows(spec), ["0.80in", "0.85in", "3.85in"], "PTCR PABITS Selector Encoding"),
@@ -821,7 +1334,8 @@ def privileged_model_rule_rows(model: dict[str, Any]) -> list[list[str]]:
             {"topic": "privilege mode encoding", "rule": "STATUS.PM=0 is user mode; STATUS.PM=1 is supervisor mode"},
             {"topic": "user-memory access control", "rule": "STATUS.UA=0 disables supervisor access to user pages; STATUS.UA=1 enables it"},
             {"topic": "saved STATUS return", "rule": "STATUS is restored verbatim from the saved frame image; entry sets STATUS.PM=1 only and does not mask interrupts"},
-            {"topic": "SYSCALL frame and entry", "rule": "SYSCALL saves SS:SP, CS:PC, DS, and FLAGS/STATUS, then uses a 32-byte entry table with 16-byte entry-address alignment"},
+            {"topic": "supervisor entry DBANK normalization", "rule": "entry saves the interrupted DBANK selector and then sets DBANK=0 before fetching the handler"},
+            {"topic": "SYSCALL frame and entry", "rule": "SYSCALL saves SS:SP, CS:PC, DS, FLAGS/STATUS, and DBANK, then uses a 32-byte entry table with 16-byte entry-address alignment"},
             {"topic": "return instruction split", "rule": "SYSRET is only for SYSCALL return; IRET is for interrupt, trap, and exception return"},
             {"topic": "IRET restore policy", "rule": "IRET restores all saved interrupt-frame state and does not validate FRAME_INFO.frame_type"},
             {"topic": "malformed return frames", "rule": "malformed frames are software errors and do not raise a separate architectural exception"},
@@ -849,7 +1363,7 @@ def syscall_model_rows(model: dict[str, Any]) -> list[list[str]]:
     if not isinstance(syscall, dict):
         syscall = {}
     entry_registers = syscall.get("entry_registers") or ["SPC", "SCS", "SDS"]
-    saved_state = syscall.get("saved_state") or ["SS:SP", "CS:PC", "DS", "FLAGS_STATUS"]
+    saved_state = syscall.get("saved_state") or ["SS:SP", "CS:PC", "DS", "FLAGS_STATUS", "DBANK"]
     return [
         [tex_escape("Entry vector"), tex_escape(syscall.get("vector", "none"))],
         [tex_escape("Entry target"), tex_table_value(entry_registers)],
@@ -858,8 +1372,9 @@ def syscall_model_rows(model: dict[str, Any]) -> list[list[str]]:
         [tex_escape("Entry table size"), tex_escape(f"{syscall.get('entry_table_size_bytes', 32)} bytes")],
         [tex_escape("Entry address alignment"), tex_escape(f"{syscall.get('entry_address_alignment_bytes', 16)} bytes")],
         [tex_escape("Entry STATUS change"), tex_escape(syscall.get("status_change", "set STATUS.PM to 1 only"))],
+        [tex_escape("Entry DBANK change"), tex_escape(syscall.get("dbank_change", "save interrupted DBANK selector and set DBANK to 0"))],
         [tex_escape("Return instruction"), tex_code(syscall.get("return_instruction", "SYSRET"))],
-        [tex_escape("Return policy"), tex_escape(syscall.get("return_policy", "read the syscall frame as written and return"))],
+        [tex_escape("Return policy"), tex_escape(syscall.get("return_policy", "read the syscall frame as written, restore saved DBANK, and return"))],
     ]
 
 
@@ -872,6 +1387,7 @@ def privileged_rule_rows(model: dict[str, Any]) -> list[list[str]]:
     entry_changes = entry.get("entry_status_changes", ["set STATUS.PM to 1"]) if isinstance(entry, dict) else ["set STATUS.PM to 1"]
     return [
         [tex_escape("Entry STATUS update"), tex_table_value(entry_changes)],
+        [tex_escape("Entry DBANK update"), tex_escape(entry.get("entry_dbank_change", "save interrupted DBANK selector and set DBANK to 0") if isinstance(entry, dict) else "save interrupted DBANK selector and set DBANK to 0")],
         [tex_escape("Saved STATUS return"), tex_escape(entry.get("saved_status_return", "restored verbatim from the saved frame image") if isinstance(entry, dict) else "restored verbatim from the saved frame image")],
         [tex_escape("Entry interrupt masking"), tex_escape("no automatic masking" if not (entry.get("interrupt_masking_on_entry", False) if isinstance(entry, dict) else False) else "mask on entry")],
         [tex_escape("Interrupt stack selection"), tex_escape(irq.get("stack_selection", "IVT entry SN selects SSSn:SSPn") if isinstance(irq, dict) else "IVT entry SN selects SSSn:SSPn")],
@@ -972,7 +1488,7 @@ def pte_field_rows() -> list[list[str]]:
         [tex_code("A"), tex_escape("5"), tex_escape("Accessed")],
         [tex_code("D"), tex_escape("6"), tex_escape("Dirty")],
         [tex_code("AT"), tex_escape("7"), tex_escape("0 = byte-addressed memory; 1 = externally acknowledged / bus-sized addressing")],
-        [tex_code("CP"), tex_escape("9:8"), tex_escape("00 = cacheable; 01 = uncacheable; 10 = write-through; 11 = reserved")],
+        [tex_code("CP"), tex_escape("9:8"), tex_escape("00 = cacheable; 01 = uncacheable; 10 = write-through; 11 = write-combining")],
         [tex_code("SW0"), tex_escape("10"), tex_escape("software-defined")],
         [tex_code("T"), tex_escape("11"), tex_escape("0 = leaf PTE; 1 = next-level table entry")],
     ]
@@ -1247,7 +1763,9 @@ def interrupt_vector_assignment(control: dict[str, Any]) -> dict[str, Any]:
         "syscall_vector": "none",
         "syscall_entry": "SPC/SCS/SDS supervisor-entry path",
         "ranges": [
-            {"range": [0x00, 0x05], "owner": "CPU", "meaning": "assigned BASIC-frame CPU exceptions and traps"},
+            {"range": [0x00, 0x03], "owner": "CPU", "meaning": "assigned BASIC-frame CPU exceptions"},
+            {"range": [0x04, 0x04], "owner": "CPU", "meaning": "reserved CPU vector; frame type not predefined"},
+            {"range": [0x05, 0x05], "owner": "CPU", "meaning": "assigned BASIC-frame CPU trap"},
             {"range": [0x06, 0x07], "owner": "CPU", "meaning": "reserved CPU vectors; frame type not predefined"},
             {"range": [0x08, 0x0E], "owner": "CPU", "meaning": "assigned ERROR/PAGE_FAULT-frame CPU exceptions"},
             {"range": [0x0F, 0x0F], "owner": "CPU", "meaning": "reserved CPU vector; frame type not predefined"},
@@ -1316,6 +1834,8 @@ def exception_processing_rows(control: dict[str, Any]) -> list[list[str]]:
         [tex_escape("Interrupt frame save"), tex_escape(model.get("interrupt_frame_save", "atomic"))],
         [tex_escape("Entry STATUS update"), tex_escape(model.get("status_on_entry", "set STATUS.PM to 1 only; do not automatically mask interrupts"))],
         [tex_escape("Return STATUS update"), tex_escape(model.get("status_on_return", "restore saved STATUS image verbatim"))],
+        [tex_escape("Entry DBANK update"), tex_escape(model.get("dbank_on_entry", "save interrupted DBANK selector and set DBANK to 0 before handler fetch"))],
+        [tex_escape("Return DBANK update"), tex_escape(model.get("dbank_on_return", "restore saved DBANK selector from the interrupt frame"))],
         [tex_code("SYSRET"), tex_escape(returns.get("SYSRET", "syscall frame only") if isinstance(returns, dict) else "syscall frame only")],
         [tex_code("IRET"), tex_escape(returns.get("IRET", "restore all saved interrupt frame state; frame_type is not validated by hardware") if isinstance(returns, dict) else "restore all saved interrupt frame state; frame_type is not validated by hardware")],
         [tex_escape("IRET frame-type check"), tex_escape(model.get("iret_frame_type_check", "none; IRET does not validate FRAME_INFO.frame_type"))],
@@ -1364,9 +1884,10 @@ def interrupt_model_section(spec: dict[str, Any]) -> str:
             latex_longtable(["Vector", "Name", "Source", "Frame"], interrupt_vector_rows(control), ["0.55in", "1.65in", "2.20in", "1.00in"], "Table 4-3. CPU-Owned Interrupt Vectors"),
             r"\subsection{Entry and Return Rules}",
             "The processor changes only the privilege bit on entry: STATUS.PM is set to supervisor mode. "
+            "It also saves the interrupted DBANK selector and sets DBANK to zero before fetching the handler. "
             "Interrupts are not automatically masked merely because an exception or interrupt was taken. "
             "The interrupt stack frame is saved atomically. When returning, the saved STATUS image is restored exactly "
-            "as recorded in the frame.",
+            "as recorded in the frame, and the saved DBANK selector is restored from the frame.",
             latex_longtable(["Rule", "Meaning"], exception_processing_rows(control), ["1.55in", "3.90in"], "Table 4-4. Exception Entry and Return Rules"),
             r"\clearpage",
             r"\subsection{Supervisor Entry Stack Frame}",
@@ -2005,18 +2526,20 @@ def shared_execution_entries(groups: dict[str, Any]) -> list[tuple[str, list[str
     if not isinstance(groups, dict):
         return []
     specs = [
-        ("integer_alu", "Integer ALU", ("memory", "flags", "state_register_forms")),
+        ("integer_alu", "Integer ALU", ("memory", "flags")),
         ("integer_compare", "Compare/Test", ("memory", "flags_by_mnemonic", "repeat_observed_value_by_mnemonic")),
         ("integer_extend", "Extension", ("memory", "source_sizes_by_destination", "flags")),
-        ("data_movement", "Data Movement", ("memory_by_mnemonic", "state_registers", "flags")),
+        ("data_movement", "Data Movement", ("memory_by_mnemonic", "flags")),
+        ("data_register_banking", "Data Register Banking", ("flags",)),
         ("control_flow", "Control Transfer", ("long_transfer_operands", "atomic_cs_pc_commit", "flags")),
         ("atomics", "Atomics", ("atomic", "memory")),
         ("system_registers", "Control Registers", ("privilege_by_mnemonic", "flags")),
+        ("virtualization_acceleration", "Virtualization Acceleration", ("cpuid_feature", "memory", "privilege", "flags")),
         ("tlb_context", "TLB and Context", ("privilege",)),
         ("cache", "Cache", ("privilege_by_mnemonic", "flags")),
         ("fpu_move_compare", "Floating-Point Move/Compare", ("fp_flags_by_mnemonic",)),
         ("fpu_arithmetic", "Floating-Point Arithmetic", ("fp_flags_by_mnemonic",)),
-        ("fpu_transcendental", "Floating-Point Transcendental", ("implementation", "fp_flags_by_mnemonic")),
+        ("fpu_transcendental", "Floating-Point Transcendental", ("cpuid_feature", "implementation", "fp_flags_by_mnemonic")),
     ]
     entries: list[tuple[str, list[str]]] = []
     for group_name, label, keys in specs:
@@ -2050,13 +2573,14 @@ def shared_rule_label(key: str) -> str:
         "fp_flags_by_mnemonic": "FFLAGS",
         "memory": "Memory operands",
         "memory_by_mnemonic": "Memory operands",
+        "cpuid_feature": "CPUID feature",
+        "extension": "Extension",
         "privilege": "Privilege",
         "privilege_by_mnemonic": "Privilege",
         "implementation": "Implementation",
         "long_transfer_operands": "Long transfer operands",
         "source_sizes_by_destination": "Source sizes",
-        "state_register_forms": "State-register forms",
-        "state_registers": "State-register operands",
+        "segment_registers": "Segment-register operands",
         "repeat_observed_value_by_mnemonic": "REP observed value",
     }
     return labels.get(key, semantic_label(key))
@@ -2067,10 +2591,10 @@ def shared_dict_lines(key: str, value: dict[str, Any]) -> list[str]:
         return [f"{shared_rule_label(key)}: varies by mnemonic"]
     if key == "source_sizes_by_destination":
         return [f"Source sizes for {subkey} destination: {readable_text(subvalue)}" for subkey, subvalue in value.items()]
-    if key == "state_register_forms":
-        return [f"{subkey} state-register form: {readable_text(subvalue)}" for subkey, subvalue in value.items()]
-    if key == "state_registers":
-        return [f"{subkey} state-register operands: {readable_text(subvalue)}" for subkey, subvalue in value.items()]
+    if key == "segment_register_forms":
+        return [f"{subkey} segment-register form: {readable_text(subvalue)}" for subkey, subvalue in value.items()]
+    if key == "segment_registers":
+        return [f"{subkey} segment-register operands: {readable_text(subvalue)}" for subkey, subvalue in value.items()]
     if len(value) > 4:
         return [f"{shared_rule_label(key)}: listed per mnemonic"]
     return [f"{shared_rule_label(key)} {subkey}: {readable_text(subvalue)}" for subkey, subvalue in value.items()]
@@ -2153,6 +2677,51 @@ def repflags_rule_text(value: Any) -> str:
     return mappings.get(text, readable_text(text))
 
 
+def reference_group_mnemonics(
+    all_mnemonics: list[str],
+    operations: dict[str, list[dict[str, Any]]],
+    group_names: set[str],
+) -> list[str]:
+    selected: set[str] = set()
+    for mnemonic, entries in operations.items():
+        if any(str(entry.get("group", "")) in group_names for entry in entries):
+            selected.add(mnemonic)
+    return [mnemonic for mnemonic in all_mnemonics if mnemonic in selected]
+
+
+def instruction_reference_groups(
+    spec: dict[str, Any],
+    mnemonics: list[str],
+    records: dict[str, list[dict[str, Any]]],
+    operations: dict[str, list[dict[str, Any]]],
+    items_by_mnemonic: dict[str, list[dict[str, Any]]],
+) -> list[tuple[str, list[str]]]:
+    special_groups: list[tuple[str, list[str]]] = []
+    claimed: set[str] = set()
+    for title, group_names in SEPARATE_INSTRUCTION_GROUPS:
+        selected = reference_group_mnemonics(mnemonics, operations, group_names)
+        if selected:
+            special_groups.append((title, selected))
+            claimed.update(selected)
+
+    fpu_set = fpu_mnemonics(spec, records, operations, items_by_mnemonic)
+    general_mnemonics = [mnemonic for mnemonic in mnemonics if mnemonic not in claimed and mnemonic not in fpu_set]
+    base_fpu_mnemonics = [mnemonic for mnemonic in mnemonics if mnemonic not in claimed and mnemonic in fpu_set]
+
+    groups: list[tuple[str, list[str]]] = []
+    if general_mnemonics:
+        groups.append(("General Instructions", general_mnemonics))
+    for title, selected in special_groups:
+        if not title.startswith("Floating-Point"):
+            groups.append((title, selected))
+    if base_fpu_mnemonics:
+        groups.append(("Floating-Point Instructions", base_fpu_mnemonics))
+    for title, selected in special_groups:
+        if title.startswith("Floating-Point"):
+            groups.append((title, selected))
+    return groups
+
+
 
 def render_manual(plan: dict[str, Any], spec: dict[str, Any], lengths: dict[tuple[str, str], tuple[int, int]]) -> str:
     items = allocation_items(plan)
@@ -2165,9 +2734,7 @@ def render_manual(plan: dict[str, Any], spec: dict[str, Any], lengths: dict[tupl
     aliases = aliases_by_mnemonic(spec, items)
     docs = instruction_docs(spec)
     mnemonics = sorted(set(records) | set(operations) | set(items_by_mnemonic) | set(aliases))
-    fpu_set = fpu_mnemonics(spec, records, operations, items_by_mnemonic)
-    general_mnemonics = [mnemonic for mnemonic in mnemonics if mnemonic not in fpu_set]
-    fpu_mnemonic_list = [mnemonic for mnemonic in mnemonics if mnemonic in fpu_set]
+    reference_groups = instruction_reference_groups(spec, mnemonics, records, operations, items_by_mnemonic)
 
     parts = [
         document_preamble(),
@@ -2178,12 +2745,23 @@ def render_manual(plan: dict[str, Any], spec: dict[str, Any], lengths: dict[tupl
         top_section("Condition Code Computation"),
         condition_code_computation_section(),
     ]
-    parts.extend(instruction_reference_sections("General Instructions", general_mnemonics, records, operations, items_by_mnemonic, aliases, lengths, docs))
-    parts.extend(instruction_reference_sections("Floating-Point Instructions", fpu_mnemonic_list, records, operations, items_by_mnemonic, aliases, lengths, docs))
+    for title, group_mnemonics in reference_groups:
+        parts.extend(
+            instruction_reference_sections(
+                title,
+                group_mnemonics,
+                records,
+                operations,
+                items_by_mnemonic,
+                aliases,
+                lengths,
+                docs,
+            )
+        )
     parts.append(top_section("C Library Instruction Examples"))
     parts.append(c_library_instruction_examples_section())
-    parts.append(top_section("Opcode / Instruction Format Summary Appendix"))
-    parts.append(opcode_instruction_format_summary_section(plan))
+    parts.append(top_section("Runtime Instruction Examples"))
+    parts.append(runtime_instruction_examples_section())
     parts.append(document_end())
     return "\n".join(parts)
 
@@ -2225,9 +2803,7 @@ def manual_preview_sections(
     aliases = aliases_by_mnemonic(spec, items)
     docs = instruction_docs(spec)
     mnemonics = sorted(set(records) | set(operations) | set(items_by_mnemonic) | set(aliases))
-    fpu_set = fpu_mnemonics(spec, records, operations, items_by_mnemonic)
-    general_mnemonics = [mnemonic for mnemonic in mnemonics if mnemonic not in fpu_set]
-    fpu_mnemonic_list = [mnemonic for mnemonic in mnemonics if mnemonic in fpu_set]
+    reference_groups = instruction_reference_groups(spec, mnemonics, records, operations, items_by_mnemonic)
 
     entries: list[tuple[str, str, str]] = []
 
@@ -2236,6 +2812,7 @@ def manual_preview_sections(
 
     add("Overview", architecture_overview_section(spec, plan, len(mnemonics), len(items)))
     add("Terminology", "\n".join([top_section("Terminology"), terminology_section(spec)]))
+    add("Reserved and Compatibility Rules", compatibility_rules_section())
     add("Programming Model", "\n".join([top_section("Programming Model"), register_tables(spec)]))
     add("CPUID Feature Discovery", "\n".join([top_section("CPUID Feature Discovery"), cpuid_feature_discovery_section(spec)]))
     add("Data Formats", "\n".join([top_section("Data Formats"), data_format_section()]))
@@ -2262,30 +2839,31 @@ def manual_preview_sections(
         ),
     )
     add("Condition Code Computation", "\n".join([top_section("Condition Code Computation"), condition_code_computation_section()]))
-    add(
-        "General Instructions Summary",
-        "\n".join(
-            [
-                top_section("General Instructions Summary"),
-                instruction_summary(
-                    general_mnemonics,
-                    records,
-                    operations,
-                    items_by_mnemonic,
-                    docs,
-                    "Table 9-1. General Instructions Summary",
-                ),
-            ]
-        ),
-    )
-    add(
-        "General Instructions Descriptions",
-        "\n".join(
-            [
-                top_section("General Instructions Descriptions"),
-                instruction_description_intro_section(),
-            ]
-            + [
+    for title, group_mnemonics in reference_groups:
+        add(
+            f"{title} Summary",
+            "\n".join(
+                [
+                    top_section(f"{title} Summary"),
+                    instruction_summary(
+                        group_mnemonics,
+                        records,
+                        operations,
+                        items_by_mnemonic,
+                        docs,
+                        f"{title} Summary",
+                    ),
+                ]
+            ),
+        )
+        description_intro = [instruction_description_intro_section()] if title.startswith("General") else []
+        instruction_pages: list[str] = []
+        if description_intro:
+            instruction_pages.append(r"\clearpage")
+        for index, mnemonic in enumerate(group_mnemonics):
+            if index:
+                instruction_pages.append(r"\clearpage")
+            instruction_pages.append(
                 render_instruction(
                     mnemonic,
                     records.get(mnemonic, []),
@@ -2295,49 +2873,17 @@ def manual_preview_sections(
                     lengths,
                     docs,
                 )
-                for mnemonic in general_mnemonics
-            ]
-        ),
-    )
-    add(
-        "Floating-Point Instructions Summary",
-        "\n".join(
-            [
-                top_section("Floating-Point Instructions Summary"),
-                instruction_summary(
-                    fpu_mnemonic_list,
-                    records,
-                    operations,
-                    items_by_mnemonic,
-                    docs,
-                    "Table 10-1. Floating-Point Instructions Summary",
-                ),
-            ]
-        ),
-    )
-    add(
-        "Floating-Point Instructions Descriptions",
-        "\n".join(
-            [top_section("Floating-Point Instructions Descriptions")]
-            + [
-                render_instruction(
-                    mnemonic,
-                    records.get(mnemonic, []),
-                    operations.get(mnemonic, []),
-                    items_by_mnemonic.get(mnemonic, []),
-                    aliases.get(mnemonic, []),
-                    lengths,
-                    docs,
-                )
-                for mnemonic in fpu_mnemonic_list
-            ]
-        ),
-    )
+            )
+        add(
+            f"{title} Descriptions",
+            "\n".join(
+                [hidden_top_section(f"{title} Descriptions")]
+                + description_intro
+                + instruction_pages
+            ),
+        )
     add("C Library Instruction Examples", "\n".join([top_section("C Library Instruction Examples"), c_library_instruction_examples_section()]))
-    add(
-        "Opcode / Instruction Format Summary Appendix",
-        "\n".join([top_section("Opcode / Instruction Format Summary Appendix"), opcode_instruction_format_summary_section(plan)]),
-    )
+    add("Runtime Instruction Examples", "\n".join([top_section("Runtime Instruction Examples"), runtime_instruction_examples_section()]))
     return entries
 
 

@@ -3,7 +3,6 @@ the Z, N, C, and V bits from a temporary result, update only a subset, or leave 
 Unless an instruction description says otherwise, unmentioned FLAGS bits are preserved.
 
 \subsection{Flag Meanings}
-\manualtablecaption{Integer Condition-Code Bits}
 \begingroup\footnotesize
 \begin{longtable}{@{}p{0.55in}p{1.15in}p{3.75in}@{}}
 \toprule
@@ -16,6 +15,7 @@ Unless an instruction description says otherwise, unmentioned FLAGS bits are pre
 \texttt{V} & overflow & Set on signed overflow, or by instructions that explicitly report exceptional conditions through V.\\
 \bottomrule
 \end{longtable}
+\manualtablecaption{Integer Condition-Code Bits}
 \endgroup
 
 \subsection{Common Integer Rules}
@@ -24,7 +24,6 @@ instruction explicitly defines a wider intermediate. The sign bit is bit \(n-1\)
 below describe the ordinary integer ALU rules; individual instruction pages remain authoritative
 for special cases.
 
-\manualtablecaption{Common Integer Flag Computation}
 \begingroup\footnotesize
 \begin{longtable}{@{}p{1.15in}p{4.25in}@{}}
 \toprule
@@ -41,6 +40,7 @@ CLR & Writes zero and leaves FLAGS unchanged in the current Bedrock definition.\
 Bounds checks & Set V when the value is outside the encoded interval; Z, N, and C are unchanged.\\
 \bottomrule
 \end{longtable}
+\manualtablecaption{Common Integer Flag Computation}
 \endgroup
 
 \subsection{Shift, Rotate, and Bit Operations}
@@ -49,7 +49,6 @@ in bits. A zero shift count leaves the destination and FLAGS unchanged. For rota
 architectural count is first reduced to an effective count; an effective count of zero also
 leaves the destination and FLAGS unchanged.
 
-\manualtablecaption{Shift and Rotate Count Rules}
 \begingroup\footnotesize
 \begin{longtable}{@{}p{1.25in}p{4.15in}@{}}
 \toprule
@@ -61,9 +60,9 @@ leaves the destination and FLAGS unchanged.
 \texttt{RCL}, \texttt{RCR} & The carry bit is part of the rotate ring. The effective count is \(\mathit{count} \bmod (W + 1)\). Effective count zero leaves the destination and FLAGS unchanged.\\
 \bottomrule
 \end{longtable}
+\manualtablecaption{Shift and Rotate Count Rules}
 \endgroup
 
-\manualtablecaption{Shift and Rotate Flag Computation}
 \begingroup\footnotesize
 \begin{longtable}{@{}p{0.75in}p{4.65in}@{}}
 \toprule
@@ -78,6 +77,7 @@ leaves the destination and FLAGS unchanged.
 \texttt{RCL}, \texttt{RCR} & Z and N come from the result. C is the carry slot after the through-carry rotate. V is cleared.\\
 \bottomrule
 \end{longtable}
+\manualtablecaption{Shift and Rotate Flag Computation}
 \endgroup
 
 Bit test/set/clear/change instructions observe the selected bit before modifying it. They set

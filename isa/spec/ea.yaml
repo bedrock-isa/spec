@@ -206,6 +206,9 @@ ea_forms:
       extension: true
       update_eligible: false
 
+reserved_forms_behavior:
+  exception: ILLEGAL_INSTRUCTION
+
 reserved_forms:
   - name: EA_RESERVED_101011
     pattern: "101011"
@@ -237,16 +240,20 @@ extended_ea_descriptor:
     extra:
       bits: [7, 0]
   segment_values:
-    0: default
-    1: CS
-    2: DS
-    3: SS
-    4: GS0
-    5: GS1
-    6: reserved
-    7: reserved
+    0: CS
+    1: DS
+    2: SS
+    3: GS0
+    4: GS1
+    5: GS2
+    6: GS3
+    7: GS4
   reserved_modes:
     pattern: "1xxxx"
+    exception: ILLEGAL_INSTRUCTION
+  reserved_segment_field:
+    required_value: 0
+    exception: ILLEGAL_INSTRUCTION
   compact_escapes:
     EXTENDED:
       ea_value: 0x3f
@@ -263,6 +270,7 @@ extended_ea_forms:
     class: memory
     segment_selectable: true
     default_segment_allowed: true
+    default_segment: DS
     base: A
     index: D
     scale: [1, 2, 4, 8]
@@ -278,6 +286,7 @@ extended_ea_forms:
     class: memory
     segment_selectable: true
     default_segment_allowed: true
+    default_segment: DS
     base: A
     index: D
     scale: [1, 2, 4, 8]
@@ -293,6 +302,7 @@ extended_ea_forms:
     class: memory
     segment_selectable: true
     default_segment_allowed: true
+    default_segment: DS
     base: A
     index: D
     scale: [1, 2, 4, 8]
@@ -308,6 +318,7 @@ extended_ea_forms:
     class: memory
     segment_selectable: true
     default_segment_allowed: true
+    default_segment: DS
     base: A
     index: D
     scale: [1, 2, 4, 8]
@@ -472,6 +483,7 @@ extended_ea_forms:
     class: memory
     segment_selectable: true
     default_segment_allowed: true
+    default_segment: DS
     base: A
     index: D
     index_extension: signed32_to_64
@@ -489,6 +501,7 @@ extended_ea_forms:
     class: memory
     segment_selectable: true
     default_segment_allowed: true
+    default_segment: DS
     base: A
     index: D
     index_extension: signed32_to_64
@@ -506,6 +519,7 @@ extended_ea_forms:
     class: memory
     segment_selectable: true
     default_segment_allowed: true
+    default_segment: DS
     base: A
     index: D
     index_extension: signed32_to_64
@@ -523,6 +537,7 @@ extended_ea_forms:
     class: memory
     segment_selectable: true
     default_segment_allowed: true
+    default_segment: DS
     base: A
     index: D
     index_extension: signed32_to_64
@@ -1279,6 +1294,19 @@ instruction_ea_constraints:
   MOVcc:
     src_ea_set: full
     dst_ea_set: store_destination
+
+  ENCINST:
+    dst_ea_set: addressable_memory_only
+    require_memory_operand: true
+    disallow_update_prefix: true
+    disallow:
+      - DREG
+      - AREG
+      - SPREG
+      - IMM16
+      - IMM32
+      - IMM64
+      - PC_relative
 
   EXTEND:
     src_ea_set: full

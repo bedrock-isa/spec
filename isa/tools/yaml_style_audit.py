@@ -50,6 +50,12 @@ PROSE_OR_CODE_KEYS = {
 
 ALLOW_KEYS = DOC_KEYS | PROSE_OR_CODE_KEYS
 
+MACHINE_TOKEN_KEYS = {
+    "dst_ea_set",
+    "extension_family",
+    "extension_requirement",
+}
+
 CODEGEN_PATHS = {
     # EA constraints reference named EA sets; validators check these strings.
     ("instruction_ea_constraints",),
@@ -93,6 +99,8 @@ def is_allowed_context(path: list[Any]) -> bool:
         if all(part in key_path for part in allowed):
             return True
     if any(key.endswith(("_description", "_summary", "_note", "_notes", "_reason")) for key in keys):
+        return True
+    if keys & MACHINE_TOKEN_KEYS:
         return True
     return bool(keys & ALLOW_KEYS)
 

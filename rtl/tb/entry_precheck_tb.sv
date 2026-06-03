@@ -117,14 +117,14 @@ module entry_precheck_tb;
     expect_entry(4, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b0, 1'b1, 1'b0);
 
     // CPUID is a REPG-general state query, but not a REPcc operation.
-    set_line_word(6, 16'haed3);
+    set_line_word(6, 16'haf63);
     set_line_word(7, 16'h0060);
-    set_line_word(8, 16'h0013);
+    set_line_word(8, 16'h001b);
     expect_entry(6, 1'b1, 1'b1, 1'b0, 1'b0, 1'b1, 1'b0, 1'b0, 1'b1, 1'b0);
 
-    set_line_word(9, 16'haed3);
+    set_line_word(9, 16'haf63);
     set_line_word(10, 16'h0080);
-    set_line_word(11, 16'h0013);
+    set_line_word(11, 16'h001b);
     expect_entry(9, 1'b1, 1'b1, 1'b0, 1'b0, 1'b1, 1'b0, 1'b0, 1'b0, 1'b1);
 
     // Stack operations are excluded from REPG.

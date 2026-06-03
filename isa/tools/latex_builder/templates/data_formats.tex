@@ -2,7 +2,6 @@
 Integer operands use four architectural sizes. The size suffix selects the number of low-order
 bits used by the operation and the number of bytes transferred for memory operands.
 
-\manualtablecaption{Integer Data Sizes}
 \begingroup\footnotesize
 \begin{longtable}{@{}p{0.75in}p{0.75in}p{0.75in}p{2.5in}@{}}
 \toprule
@@ -15,6 +14,7 @@ bits used by the operation and the number of bytes transferred for memory operan
 \texttt{Q} & 64 & 8 & quad word\\
 \bottomrule
 \end{longtable}
+\manualtablecaption{Integer Data Sizes}
 \endgroup
 
 \begin{center}
@@ -97,7 +97,6 @@ little-endian byte order. Word 0 occupies the first two bytes of the instruction
 word, descriptor word, immediate, displacement, or bitmap follows, those words occupy increasing
 addresses in decode order.
 
-\manualtablecaption{Immediate and Displacement Payload Order}
 \begingroup\footnotesize
 \begin{longtable}{@{}p{0.85in}p{0.85in}p{3.8in}@{}}
 \toprule
@@ -112,6 +111,7 @@ addresses in decode order.
 \texttt{disp64} & 4 words & signed two's-complement value, least significant word first\\
 \bottomrule
 \end{longtable}
+\manualtablecaption{Immediate and Displacement Payload Order}
 \endgroup
 
 Multiword immediates and displacements are stored least significant word first. Signed displacement

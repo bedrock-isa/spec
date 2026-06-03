@@ -212,6 +212,17 @@ def top_section(title: str) -> str:
     return "\n".join([r"\clearpage", rf"\section{{{tex_escape(title)}}}"])
 
 
+def hidden_top_section(title: str) -> str:
+    return "\n".join(
+        [
+            r"\clearpage",
+            r"\phantomsection",
+            r"\refstepcounter{section}",
+            rf"\addcontentsline{{toc}}{{section}}{{\protect\numberline{{\thesection}}{tex_escape(title)}}}",
+        ]
+    )
+
+
 def latex_longtable(
     headers: list[str],
     rows: list[list[str]],
@@ -221,13 +232,19 @@ def latex_longtable(
     if not rows:
         return "No entries.\\par\n"
     if widths:
-        spec = "@{}" + "".join(f"p{{{width}}}" for width in widths) + "@{}"
+        spec = "@{}" + "".join(rf">{{\raggedright\arraybackslash}}p{{{width}}}" for width in widths) + "@{}"
     else:
         spec = "@{}" + " ".join("l" for _ in headers) + "@{}"
     out = []
-    if caption:
-        out.append(rf"\manualtablecaption{{{tex_escape(caption_title(caption))}}}")
-    out.extend(["\\begingroup\\footnotesize", f"\\begin{{longtable}}{{{spec}}}", "\\toprule"])
+    out.extend(
+        [
+            "\\begingroup\\footnotesize",
+            r"\setlength{\LTpre}{2pt}",
+            r"\setlength{\LTpost}{2pt}",
+            f"\\begin{{longtable}}{{{spec}}}",
+            "\\toprule",
+        ]
+    )
     out.append(" & ".join(r"\textbf{" + tex_escape(header) + "}" for header in headers) + r"\\")
     out.append("\\midrule")
     out.append("\\endhead")
@@ -235,5 +252,42 @@ def latex_longtable(
         out.append(" & ".join(row) + r"\\")
     out.append("\\bottomrule")
     out.append("\\end{longtable}")
+    if caption:
+        out.append(rf"\manualtablecaption{{{tex_escape(caption_title(caption))}}}")
     out.append("\\endgroup")
+    return "\n".join(out) + "\n"
+
+
+def latex_tabular(
+    headers: list[str],
+    rows: list[list[str]],
+    widths: list[str] | None = None,
+    caption: str | None = None,
+) -> str:
+    if not rows:
+        return "No entries.\\par\n"
+    if widths:
+        spec = "@{}" + "".join(rf">{{\raggedright\arraybackslash}}p{{{width}}}" for width in widths) + "@{}"
+    else:
+        spec = "@{}" + " ".join("l" for _ in headers) + "@{}"
+    out = [
+        r"\Needspace{1.25in}",
+        r"\begingroup\footnotesize",
+        r"\begin{center}",
+        f"\\begin{{tabular}}{{{spec}}}",
+        r"\toprule",
+        " & ".join(r"\textbf{" + tex_escape(header) + "}" for header in headers) + r"\\",
+        r"\midrule",
+    ]
+    for row in rows:
+        out.append(" & ".join(row) + r"\\")
+    out.extend(
+        [
+            r"\bottomrule",
+            r"\end{tabular}",
+        ]
+    )
+    if caption:
+        out.append(rf"\manualtablecaption{{{tex_escape(caption_title(caption))}}}")
+    out.extend([r"\end{center}", r"\endgroup"])
     return "\n".join(out) + "\n"

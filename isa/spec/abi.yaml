@@ -64,6 +64,16 @@ terminology:
         A set of placement and relocation assumptions used by code generation to
         choose direct displacement forms, GOT/PLT forms, or full-width address
         materialization.
+
+    - term: active data-register bank
+      definition: >
+        The D-register bank selected by the DBANK architectural selector. An
+        ordinary Dn operand names D[DBANK][n] while the selector is active.
+
+    - term: DBANK-neutral boundary
+      definition: >
+        An ABI boundary that is entered and left with DBANK equal to zero, so
+        ordinary ABI code observes the bank-zero D0-D7 register set.
 object_format:
   format: ELF64
   elf_ident:
@@ -86,6 +96,15 @@ object_format:
     e_flags: 0
     unknown_nonzero_e_flags: reject
     extension_metadata: .note.bedrock
+  extension_attributes:
+    BEDROCK_ATTR_REQUIRED_DBANK_COUNT:
+      encoding: unsigned integer
+      default: 1
+      meaning: >
+        Minimum number of architectural D-register banks required by this
+        object. Objects that never select a nonzero DBANK record 1. Loaders may
+        reject an image when CPUID reports fewer implemented banks than the
+        maximum required value across the linked image.
   header_sizes:
     e_ehsize: 64
     e_phentsize: 56
@@ -127,6 +146,51 @@ object_format:
     string_table: .strtab
     symbol_table: .symtab
     relocation_prefix: .rela
+register_banking:
+  summary: >
+    Bedrock implementations may provide multiple architectural D-register
+    banks. The data-register banking instructions are part of the base ISA;
+    CPUID reports how many banks are implemented, and ELF attributes record
+    whether a linked image requires more than bank zero. The language-neutral
+    ABI preserves bank zero as the ordinary ABI-visible D0-D7 register set.
+  architectural_model:
+    selector: DBANK
+    selector_width_bits: 4
+    architectural_namespace: 16 banks
+    bank_zero: ABI-visible D0-D7
+    ordinary_d_operand: Dn names D[DBANK][n]
+    discovery: CPUID DATA_REGISTER_BANKS leaf
+  boundary_rules:
+    - Linked ELF entry points, PLT entries, TLSDESC resolvers, IFUNC resolvers,
+      and language ABI function boundaries are DBANK-neutral unless a higher
+      layer defines a private convention.
+    - A DBANK-neutral boundary is entered with DBANK = 0 and must return or
+      tail-transfer with DBANK = 0.
+    - Nonzero bank contents are volatile across DBANK-neutral boundaries.
+    - Bank-zero D0-D7 preservation and argument rules are defined by the active
+      language ABI, not by this language-neutral object ABI.
+    - Code may use nonzero banks inside a function, veneer, or runtime-private
+      region when it restores DBANK before crossing a DBANK-neutral boundary.
+  object_attribute_rules:
+    required_attribute: BEDROCK_ATTR_REQUIRED_DBANK_COUNT
+    default_required_count: 1
+    explicit_bank_use: >
+      An object that names DBn explicitly must require at least n + 1 banks.
+    dynamic_bank_select: >
+      Code that selects DBANK from a register operand cannot be inferred
+      precisely from syntax; the producer must record an attribute large enough
+      for every runtime-selected bank that may be used.
+    link_rule: >
+      The linked image requirement is the maximum required DBANK count across
+      all input objects.
+    load_rule: >
+      A loader may reject an image when CPUID reports fewer implemented banks
+      than the linked image requires.
+  recommended_use:
+    - spill avoidance inside hot leaf regions
+    - loop-local accumulators for REP or REPG lowering
+    - JIT or interpreter register caching
+    - runtime-private veneers that restore DBANK before ordinary ABI transfer
 sections:
   summary: Bedrock uses ordinary ELF sections. The names below are the standard section conventions for
     conforming Bedrock ELF objects.
@@ -274,7 +338,8 @@ program_loading:
       ABI.
   initial_state:
     FLAGS: 0
-    FFLAGS: all exception/status bits clear
+    FSTATUS: 0
+    FFLAGS: 0
 dynamic_linking:
   summary: Dynamic objects use a fixed Bedrock GOT and PLT contract so that linkers, loaders, and position-independent
     code agree on lazy binding and resolver state.

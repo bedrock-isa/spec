@@ -85,7 +85,6 @@ identifies groups that are suitable for internal SIMD or streaming recognition.
 REPG-general preserves exact scalar semantics for less regular groups, including
 groups with selected-counter dependencies.
 
-\manualtablecaption{REPG Prefix Rules}
 \begingroup\small
 \begin{longtable}{@{}p{1.35in}p{4.45in}@{}}
 \toprule
@@ -104,9 +103,9 @@ Fault continuation & saved PC is the faulting grouped instruction; group-start d
 FFLAGS & OR of completed iterations\\
 \bottomrule
 \end{longtable}
+\manualtablecaption{REPG Prefix Rules}
 \endgroup
 
-\manualtablecaption{REPG Optimization Classes}
 \begingroup\small
 \begin{longtable}{@{}p{0.95in}p{2.15in}p{2.55in}@{}}
 \toprule
@@ -130,6 +129,7 @@ examples: WAIT, CPUID
 & exact scalar semantics, with no fast streaming guarantee\\
 \bottomrule
 \end{longtable}
+\manualtablecaption{REPG Optimization Classes}
 \endgroup
 
 \paragraph{Example.}

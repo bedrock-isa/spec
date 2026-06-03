@@ -112,21 +112,28 @@ INTEGER_MUL_DIV_COMPACT_ORDER = ("MULU", "MULS", "DIVU", "DIVS", "MODU", "MODS")
 EXTENSION_FAMILY_RANK = {
     "integer_alu": 0,
     "integer_bounds": 1,
-    "integer_mul_div": 2,
-    "integer_mac": 3,
-    "integer_bitfield": 4,
-    "data_movement": 5,
-    "ea_utility": 6,
-    "control_flow": 7,
-    "conditional_control": 8,
-    "atomic_memory": 9,
-    "cache_hint": 10,
-    "tlb_cache": 11,
-    "system_core": 12,
-    "fpu_move_compare": 13,
-    "fpu_arithmetic": 14,
-    "fpu_transcendental": 15,
-    "misc": 16,
+    "integer_bounds_signed": 2,
+    "integer_bounds_unsigned": 3,
+    "integer_mul_div": 4,
+    "integer_mac": 5,
+    "integer_bitfield": 6,
+    "integer_bitfield_bit_imm": 7,
+    "integer_bitfield_rotate_imm": 8,
+    "integer_bitfield_shift_imm": 9,
+    "data_movement": 10,
+    "data_register_banking": 11,
+    "ea_utility": 12,
+    "control_flow": 13,
+    "conditional_control": 14,
+    "atomic_memory": 15,
+    "cache_hint": 16,
+    "tlb_cache": 17,
+    "system_core": 18,
+    "virtualization_acceleration": 19,
+    "fpu_move_compare": 20,
+    "fpu_arithmetic": 21,
+    "fpu_transcendental": 22,
+    "misc": 23,
 }
 
 EXTENSION_PROFILE_RANK = {
@@ -175,6 +182,7 @@ class Candidate:
     allow_memory_memory: bool
     fixed_size_suffix: str
     privilege: str
+    allocation_cluster: str
 
 def profile_form_parts(fields: tuple[Field, ...]) -> list[str]:
     parts = []
@@ -194,6 +202,8 @@ def profile_part_for_field(field: Field) -> str:
         return "IMM"
     if field.kind == "DREG":
         return "D"
+    if field.kind == "DBANK":
+        return "DB"
     if field.kind == "AREG":
         return "A"
     if field.kind == "SREG":
@@ -204,6 +214,8 @@ def profile_part_for_field(field: Field) -> str:
         return "F"
     if field.kind == "D_or_A":
         return "R"
+    if field.kind == "selector6":
+        return "I6"
     if field.kind == "small_selector":
         return "N"
     if field.kind == "memory_order":
@@ -230,6 +242,10 @@ def profile_candidate_id(candidate: Candidate, fields: tuple[Field, ...]) -> str
         ident = f"{ident}.{tag}"
     elif not tag and candidate.fixed_size_suffix:
         ident = f"{ident}.{candidate.fixed_size_suffix}"
+    if candidate.id.startswith(f"{ident}.") and candidate.id != ident:
+        return candidate.id
+    if ident.endswith(".IMM") and candidate.id.startswith(ident) and candidate.id != ident:
+        return candidate.id
     return ident
 
 
@@ -240,5 +256,6 @@ def default_field_layout_policy() -> dict[str, Any]:
             "default_multiplier": 1,
             "signature_multipliers": {"default": 1},
         },
+        "explicit_signature_order": [],
         "subfield_affinities": [],
     }

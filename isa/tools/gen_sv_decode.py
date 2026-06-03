@@ -213,7 +213,32 @@ def extended_items(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return [item for item in items if str(item.get("kind")) in {"extended", "extended_alias"}]
 
 
-def decode_priority(item: dict[str, Any]) -> tuple[int, int, int, str]:
+def decode_case_priority(item: dict[str, Any]) -> tuple[int, int, int, int, str]:
+    p_start, p_end = primary_range(item)
+    e_start, _ = extended_range(item)
+    alias_priority = 0 if str(item.get("kind")).endswith("_alias") else 1
+    span = p_end - p_start
+    return p_start, e_start, alias_priority, span, str(item.get("id", ""))
+
+
+def unique_decode_patterns(
+    item: dict[str, Any],
+    width: int,
+    start: int,
+    end: int,
+    emitted: set[str],
+) -> list[str]:
+    patterns = exact_or_range_patterns(width, exact_primary_values(item), start, end)
+    out: list[str] = []
+    for pattern in patterns:
+        if pattern in emitted:
+            continue
+        emitted.add(pattern)
+        out.append(pattern)
+    return out
+
+
+def decode_priority(item: dict[str, Any]) -> tuple[int, int, int, int, str]:
     p_start, _ = primary_range(item)
     e_start, _ = extended_range(item)
     alias_priority = 0 if str(item.get("kind")).endswith("_alias") else 1
@@ -258,6 +283,7 @@ FIELD_KIND_ALIASES = {
     "cr": "CR",
     "memory_order": "MEMORY_ORDER",
     "small_selector": "SMALL_SELECTOR",
+    "selector6": "SELECTOR6",
 }
 
 
@@ -437,10 +463,10 @@ def emit_package(plan: dict[str, Any], repeat_policy: dict[str, set[str]]) -> st
 
     lines.extend(["    priority casez (payload)"])
 
-    for item in sorted(compact_items(forms), key=decode_priority):
+    emitted_primary_patterns: set[str] = set()
+    for item in sorted(compact_items(forms), key=decode_case_priority):
         p_start, p_end = primary_range(item)
-        values = exact_primary_values(item)
-        for pattern in exact_or_range_patterns(12, values, p_start, p_end):
+        for pattern in unique_decode_patterns(item, 12, p_start, p_end, emitted_primary_patterns):
             lines.append(f"      {pattern}: begin // {item.get('id', '')}")
             emit_form_assignment(lines, item, form_names, "        ")
             lines.append("      end")
@@ -789,10 +815,10 @@ def emit_synth_module(plan: dict[str, Any], repeat_policy: dict[str, set[str]]) 
         ]
     )
 
-    for item in sorted(compact_items(forms), key=decode_priority):
+    emitted_primary_patterns = set()
+    for item in sorted(compact_items(forms), key=decode_case_priority):
         p_start, p_end = primary_range(item)
-        values = exact_primary_values(item)
-        for pattern in exact_or_range_patterns(12, values, p_start, p_end):
+        for pattern in unique_decode_patterns(item, 12, p_start, p_end, emitted_primary_patterns):
             lines.extend(
                 [
                     f"      {pattern}: begin // {item.get('id', '')}",

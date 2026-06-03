@@ -22,6 +22,7 @@ from alloc_candidates import (
     alias_rules_by_target,
     all_direct_d,
     allocation_params,
+    allocation_rule_matches,
     canonical_alias_family_mnemonics,
     canonical_alias_rules,
     ceil_words,
@@ -82,6 +83,9 @@ def normalize_compact_policy(raw_policy: dict[str, Any]) -> dict[str, Any]:
         "decode_cost_policy": raw_policy.get("decode_cost_policy", default_decode_cost_policy()),
         "extension_root_policy": raw_policy.get("extension_root_policy", default_extension_root_policy()),
         "extension_roots": raw_policy.get("extension_roots", default_extension_roots_policy()),
+        "primary_clusters": raw_policy.get("primary_clusters", default_primary_clusters_policy()),
+        "condition_field": raw_policy.get("condition_field", {}),
+        "field_reclaim": raw_policy.get("field_reclaim", {}),
         "field_layout": raw_policy.get("field_layout", default_field_layout_policy()),
     }
 
@@ -120,6 +124,12 @@ def default_extension_roots_policy() -> dict[str, Any]:
     return {
         "group_by": "semantic_family",
         "condition_field_in_primary": True,
+    }
+
+
+def default_primary_clusters_policy() -> dict[str, Any]:
+    return {
+        "order": ["bitmap_ops", "direct_call", "stack_ops", "core_control"],
     }
 
 
@@ -383,7 +393,7 @@ def compact_dp_items(
         items.append(
             {
                 "ids": tuple(candidate.id for candidate in members),
-                "cost": sum(int(candidate.compact_slots or 0) for candidate in members),
+                "cost": sum(compact_slot_cost(candidate, compact_policy) for candidate in members),
                 "value": compact_family_item_value(family, members, compact_policy),
             }
         )
@@ -393,11 +403,149 @@ def compact_dp_items(
         items.append(
             {
                 "ids": (candidate.id,),
-                "cost": int(candidate.compact_slots or 0),
+                "cost": compact_slot_cost(candidate, compact_policy),
                 "value": compact_value(candidate, compact_policy),
             }
         )
     return items
+
+
+def condition_reclaim_policy(compact_policy: dict[str, Any]) -> dict[str, Any]:
+    policy = compact_policy.get("condition_field", {})
+    if not isinstance(policy, dict):
+        return {}
+    reclaim = policy.get("reclaim_never_taken", {})
+    return reclaim if isinstance(reclaim, dict) else {}
+
+
+def reclaimed_condition_value(candidate: Candidate, compact_policy: dict[str, Any]) -> int | None:
+    reclaim = condition_reclaim_policy(compact_policy)
+    mnemonics = {str(item).upper() for item in reclaim.get("mnemonics", []) or []}
+    if candidate.mnemonic.upper() not in mnemonics:
+        return None
+    value = reclaim.get("condition_value")
+    if value is None:
+        return None
+    return int(str(value), 0)
+
+
+def field_reclaim_policy(compact_policy: dict[str, Any]) -> dict[str, Any]:
+    policy = compact_policy.get("field_reclaim", {})
+    return policy if isinstance(policy, dict) else {}
+
+
+def candidate_policy_context(candidate: Candidate) -> dict[str, str]:
+    return {
+        "mnemonic": candidate.mnemonic,
+        "category": candidate.category,
+        "semantic_family": candidate.group.split(".", 1)[0],
+        "group": candidate.group,
+        "profile": "_TO_".join(profile_form_parts(candidate.compact_fields)) or "NO_OPERANDS",
+        "size": size_tag_from_fields(candidate.compact_fields),
+    }
+
+
+def compact_reclaim_filters(candidate: Candidate, compact_policy: dict[str, Any]) -> list[dict[str, Any]]:
+    filters: list[dict[str, Any]] = []
+    condition_value = reclaimed_condition_value(candidate, compact_policy)
+    if condition_value is not None:
+        filters.append(
+            {
+                "field_kind": "condition",
+                "values": (condition_value,),
+                "reason": "reclaimed condition value",
+            }
+        )
+
+    policy = field_reclaim_policy(compact_policy)
+    context = candidate_policy_context(candidate)
+    for rule in policy.get("invalid_values", []) or []:
+        if not isinstance(rule, dict) or not allocation_rule_matches(rule, context):
+            continue
+        values = tuple(int(str(value), 0) for value in rule.get("values", []) or [])
+        if not values:
+            continue
+        filters.append(
+            {
+                "field_source": str(rule.get("field_source", "")),
+                "field_name": str(rule.get("field_name", "")),
+                "field_kind": str(rule.get("field_kind", "")),
+                "values": values,
+                "reason": str(rule.get("reason", "reclaimed invalid field value")),
+            }
+        )
+    return filters
+
+
+def field_get(field: Field | dict[str, Any], name: str, default: Any = "") -> Any:
+    if isinstance(field, dict):
+        return field.get(name, default)
+    return getattr(field, name, default)
+
+
+def field_matches_reclaim_filter(field: Field | dict[str, Any], reclaim_filter: dict[str, Any]) -> bool:
+    source = str(reclaim_filter.get("field_source", ""))
+    name = str(reclaim_filter.get("field_name", ""))
+    kind = str(reclaim_filter.get("field_kind", ""))
+    if source and str(field_get(field, "source", "")) != source:
+        return False
+    if name and str(field_get(field, "name", "")) != name:
+        return False
+    if kind and str(field_get(field, "kind", "")) != kind:
+        return False
+    return bool(source or name or kind)
+
+
+def reclaim_filter_field_width(candidate: Candidate, reclaim_filter: dict[str, Any]) -> int:
+    matches = [
+        field
+        for field in candidate.compact_fields
+        if field.storage == "primary" and field.value is None and field_matches_reclaim_filter(field, reclaim_filter)
+    ]
+    if len(matches) != 1:
+        return 0
+    return int(matches[0].width)
+
+
+def compact_slot_cost(candidate: Candidate, compact_policy: dict[str, Any]) -> int:
+    slots = int(candidate.compact_slots or 0)
+    if slots <= 0:
+        return slots
+    filters = compact_reclaim_filters(candidate, compact_policy)
+    if not filters:
+        return slots
+    cost = slots
+    seen_fields: set[tuple[str, str, str]] = set()
+    for reclaim_filter in filters:
+        key = (
+            str(reclaim_filter.get("field_source", "")),
+            str(reclaim_filter.get("field_name", "")),
+            str(reclaim_filter.get("field_kind", "")),
+        )
+        if key in seen_fields:
+            continue
+        seen_fields.add(key)
+        width = reclaim_filter_field_width(candidate, reclaim_filter)
+        if width <= 0:
+            continue
+        invalid_values = {int(value) for value in reclaim_filter.get("values", ())}
+        invalid_count = len([value for value in invalid_values if 0 <= value < (1 << width)])
+        if invalid_count <= 0:
+            continue
+        cost = cost * ((1 << width) - invalid_count) // (1 << width)
+    return cost
+
+
+def payload_matches_reclaim_filter(payload: int, fields: list[dict[str, Any]], reclaim_filter: dict[str, Any]) -> bool:
+    matches = [field for field in fields if field_matches_reclaim_filter(field, reclaim_filter)]
+    if len(matches) != 1:
+        return False
+    field = matches[0]
+    low_bit = int(field["low_bit"])
+    width = int(field["width"])
+    mask = (1 << width) - 1
+    value = (payload >> low_bit) & mask
+    return value in {int(item) for item in reclaim_filter.get("values", ())}
 
 
 def candidate_sort_key(candidate: Candidate) -> tuple[int, int, int, str]:
@@ -434,7 +582,9 @@ def solve_allocation(
 
     solver = z3.Solver()
     compact_slot_sum = sum(
-        candidate.compact_slots or PRIMARY_SLOTS + 1 for candidate in candidates if candidate.id in selected_compact
+        compact_slot_cost(candidate, compact_policy) if candidate.compact_slots is not None else PRIMARY_SLOTS + 1
+        for candidate in candidates
+        if candidate.id in selected_compact
     )
     extension_root_slots = sum(int(root["slots"]) for root in extension_roots)
     solver.add(compact_slot_sum + extension_root_slots + PRIMARY_EXTENSION_HEADROOM_SLOTS <= PRIMARY_SLOTS)
@@ -502,7 +652,7 @@ def solve_allocation(
 
 def select_compact_profiles(candidates: list[Candidate], compact_policy: dict[str, Any]) -> set[str]:
     selected = {candidate.id for candidate in candidates if candidate.must_compact}
-    fixed_slots = sum(candidate.compact_slots or 0 for candidate in candidates if candidate.id in selected)
+    fixed_slots = sum(compact_slot_cost(candidate, compact_policy) for candidate in candidates if candidate.id in selected)
     capacity = PRIMARY_SLOTS - fixed_slots - PRIMARY_EXTENSION_HEADROOM_SLOTS
     if capacity < 0:
         raise ValueError("mandatory compact candidates leave no primary headroom")
@@ -565,7 +715,10 @@ def enforce_primary_capacity(
     by_id = {candidate.id: candidate for candidate in candidates}
     while True:
         compact_slots = sum(
-            by_id[ident].compact_slots or PRIMARY_SLOTS + 1 for ident in selected_compact
+            compact_slot_cost(by_id[ident], compact_policy)
+            if by_id[ident].compact_slots is not None
+            else PRIMARY_SLOTS + 1
+            for ident in selected_compact
         )
         root_slots = sum(int(root["slots"]) for root in extension_roots)
         if compact_slots + root_slots + PRIMARY_EXTENSION_HEADROOM_SLOTS <= PRIMARY_SLOTS:
@@ -592,7 +745,7 @@ def choose_capacity_eviction(
     return min(
         optional,
         key=lambda candidate: (
-            compact_value(candidate, compact_policy) / max(1, int(candidate.compact_slots or 1)),
+            compact_value(candidate, compact_policy) / max(1, compact_slot_cost(candidate, compact_policy)),
             compact_value(candidate, compact_policy),
             candidate.id,
         ),
@@ -618,6 +771,8 @@ def has_regular_primary_layout(fields: tuple[Field, ...]) -> bool:
 
 
 def primary_cluster_name(candidate: Candidate) -> str:
+    if candidate.allocation_cluster:
+        return candidate.allocation_cluster
     mnemonic = candidate.mnemonic
     if mnemonic in {"PUSHM", "POPM", "MOVSETAD", "MOVSETDA", "XCHGSETAD", "XCHGSETDA"}:
         return "bitmap_ops"
@@ -630,6 +785,8 @@ def primary_cluster_name(candidate: Candidate) -> str:
 
 def primary_cluster_sort_key(candidate: Candidate) -> tuple[int, str]:
     order = {
+        "CALL.IMM32": -2,
+        "CALL.IMM64": -1,
         "PUSHM": 0,
         "POPM": 1,
         "MOVSETAD": 2,
@@ -647,11 +804,19 @@ def primary_cluster_sort_key(candidate: Candidate) -> tuple[int, str]:
         return (order[candidate.mnemonic], candidate.id)
     if candidate.mnemonic in {"PUSH", "POP"} and profile == "A":
         return (order[candidate.mnemonic] + 1, candidate.id)
-    return (order.get(candidate.mnemonic, 99), candidate.id)
+    return (order.get(candidate.id, order.get(candidate.mnemonic, 99)), candidate.id)
 
 
-def ordered_primary_variables(candidates: list[Candidate]) -> list[Candidate]:
-    clusters = ["bitmap_ops", "stack_ops", "core_control"]
+def primary_cluster_order(compact_policy: dict[str, Any]) -> list[str]:
+    policy = compact_policy.get("primary_clusters", {})
+    order = policy.get("order", []) if isinstance(policy, dict) else []
+    if isinstance(order, list):
+        return [str(item) for item in order]
+    return default_primary_clusters_policy()["order"]
+
+
+def ordered_primary_variables(candidates: list[Candidate], compact_policy: dict[str, Any]) -> list[Candidate]:
+    clusters = primary_cluster_order(compact_policy)
     out: list[Candidate] = []
     used: set[str] = set()
     for cluster in clusters:
@@ -659,6 +824,19 @@ def ordered_primary_variables(candidates: list[Candidate]) -> list[Candidate]:
         members.sort(key=primary_cluster_sort_key)
         out.extend(members)
         used.update(candidate.id for candidate in members)
+    extra_clusters = sorted(
+        {
+            primary_cluster_name(candidate)
+            for candidate in candidates
+            if candidate.id not in used and primary_cluster_name(candidate)
+        }
+    )
+    for cluster in extra_clusters:
+        members = [candidate for candidate in candidates if candidate.id not in used and primary_cluster_name(candidate) == cluster]
+        members.sort(key=primary_cluster_sort_key)
+        out.extend(members)
+        used.update(candidate.id for candidate in members)
+
     remaining = [candidate for candidate in candidates if candidate.id not in used]
     remaining.sort(key=lambda candidate: (-(candidate.compact_slots or 0), candidate_sort_key(candidate)))
     out.extend(remaining)
@@ -711,15 +889,28 @@ def pack_primary_allocations(
             by_id[ident]
             for ident in selected_compact
             if by_id[ident].fixed_payload is None
-        ]
+        ],
+        compact_policy,
     )
     for candidate in variable:
-        slots = int(candidate.compact_slots or 0)
-        start = find_free_range(used, slots, alignment=max(1, slots), limit=PRIMARY_SLOTS)
-        end = start + slots - 1
-        for payload in range(start, end + 1):
-            used.add(payload)
-        allocations.append(primary_allocation_dict(candidate, start, end, "compact", field_layout_model))
+        span_slots = int(candidate.compact_slots or 0)
+        start = find_free_range(used, span_slots, alignment=max(1, span_slots), limit=PRIMARY_SLOTS)
+        end = start + span_slots - 1
+        allocation = primary_allocation_dict(candidate, start, end, "compact", field_layout_model)
+        exact_payloads = compact_exact_primary_payloads(candidate, allocation, compact_policy)
+        if exact_payloads:
+            reclaimed = sorted(set(range(start, end + 1)) - set(exact_payloads))
+            allocation["primary_payloads"] = [f"0x{payload:03x}" for payload in exact_payloads]
+            allocation["reclaimed_payloads"] = [f"0x{payload:03x}" for payload in reclaimed]
+            allocation["slots"] = len(exact_payloads)
+            if reclaimed:
+                allocation["field_layout"] = f"{allocation['field_layout']} ; reclaims {len(reclaimed)} invalid payload slots"
+            for payload in exact_payloads:
+                used.add(payload)
+        else:
+            for payload in range(start, end + 1):
+                used.add(payload)
+        allocations.append(allocation)
 
     packed_roots = []
     root_cursor = extension_root_region_start(compact_policy)
@@ -780,6 +971,22 @@ def primary_allocation_dict(
         "privilege": candidate.privilege,
         **({"fixed_size_suffix": candidate.fixed_size_suffix} if candidate.fixed_size_suffix else {}),
     }
+
+
+def compact_exact_primary_payloads(
+    candidate: Candidate, allocation: dict[str, Any], compact_policy: dict[str, Any]
+) -> list[int]:
+    filters = compact_reclaim_filters(candidate, compact_policy)
+    if not filters:
+        return []
+    start = int(str(allocation["start_payload"]), 16)
+    end = int(str(allocation["end_payload"]), 16)
+    fields = list(allocation.get("fields", []) or [])
+    return [
+        payload
+        for payload in range(start, end + 1)
+        if not any(payload_matches_reclaim_filter(payload, fields, reclaim_filter) for reclaim_filter in filters)
+    ]
 
 
 
@@ -897,36 +1104,50 @@ def extension_root_allocation_dict(root: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def extended_pair_rank(candidate: Candidate) -> tuple[int, str]:
+def extended_pair_profile(candidate: Candidate) -> str:
+    if candidate.mnemonic in {"FCMP", "FTEST"}:
+        return candidate.id.replace(candidate.mnemonic, "FCMP_FTEST", 1)
+    return candidate.id
+
+
+def extended_pair_rank(candidate: Candidate) -> tuple[int, int, str, int, str]:
+    if candidate.mnemonic in {"FCMP", "FTEST"}:
+        return (
+            0,
+            -extended_opcode_bits(candidate, spilled=False),
+            extended_pair_profile(candidate),
+            0 if candidate.mnemonic == "FCMP" else 1,
+            candidate.id,
+        )
     order = {
-        "FCMP": 0,
-        "FTEST": 1,
         "FMOV": 2,
         "RDCR": 10,
         "WRCR": 11,
-        "SAVECTX": 20,
-        "RESTORECTX": 21,
-        "SAVEX": 22,
-        "RESTOREX": 23,
+        "RDSEG": 12,
+        "WRSEG": 13,
+        "RDFLAGS": 14,
+        "WRFLAGS": 15,
+        "RDSTATUS": 16,
+        "WRSTATUS": 17,
+        "SAVE": 20,
+        "RESTORE": 21,
         "INVTLB": 30,
         "INVPAGE": 31,
         "INVASID": 32,
         "SWPT": 40,
         "SWPTA": 41,
-        "SETSTATUS": 50,
-        "RSTSTATUS": 51,
         "INVDCACHE": 60,
         "WRBKDCACHE": 61,
         "FLSHDCACHE": 62,
         "INVICACHE": 63,
         "SYNCCACHE": 64,
     }
-    return (order.get(candidate.mnemonic, 100), candidate.id)
+    return (order.get(candidate.mnemonic, 100), 0, candidate.id, 0, candidate.id)
 
 
 def extended_candidate_sort_key(
     candidate: Candidate, compact_policy: dict[str, Any]
-) -> tuple[int, str, tuple[int, str], tuple[int, int, int, str]]:
+) -> tuple[int, str, tuple[int, int, str, int, str], tuple[int, int, int, str]]:
     family = extension_family_name(candidate)
     return (
         EXTENSION_FAMILY_RANK.get(family, 99),
@@ -1489,10 +1710,16 @@ def decode_cost_audit(
         for item in primary_allocations
         if item.get("kind") == "compact" and int(item.get("slots", 0)) > 1
     ]
+
+    def allocation_alignment_span(item: dict[str, Any]) -> int:
+        if item.get("primary_payloads"):
+            return allocation_end(item) - allocation_start(item) + 1
+        return int(item["slots"])
+
     misaligned = [
-        f"{item['id']}@{item['start_payload']}/{item['slots']}"
+        f"{item['id']}@{item['start_payload']}/{allocation_alignment_span(item)}"
         for item in large_ranges
-        if allocation_start(item) % int(item["slots"]) != 0
+        if allocation_start(item) % allocation_alignment_span(item) != 0
     ]
     add(
         "aligned_large_ranges",
@@ -1662,6 +1889,14 @@ def symmetry_audit(
         f"span={stack['span']} slots={stack['slots']} count={stack['count']}",
     )
 
+    direct_call = primary_cluster_span(primary_allocations, {"CALL"})
+    add(
+        "direct_call_immediates_clustered",
+        direct_call["count"] == 2 and direct_call["span"] == direct_call["slots"],
+        f"span={direct_call['span']} slots={direct_call['slots']} count={direct_call['count']}",
+        severity="low",
+    )
+
     bitmap = primary_cluster_span(primary_allocations, {"PUSHM", "POPM", "MOVSETAD", "MOVSETDA", "XCHGSETAD", "XCHGSETDA"})
     add(
         "bitmap_ops_clustered",
@@ -1758,6 +1993,8 @@ def eviction_report(
 
 def eviction_reason(candidate: Candidate) -> str:
     if candidate.compact_slots is None:
+        if candidate.compact_bits <= PRIMARY_BITS:
+            return "compact form disabled by allocation policy"
         return f"requires {candidate.compact_bits} one-word field bits, exceeding {PRIMARY_BITS}"
     return f"compact form costs {candidate.compact_slots} primary slots; lower weighted than selected compact set"
 
@@ -1861,6 +2098,18 @@ def main(argv: list[str] | None = None) -> int:
     field_layout_policy = allocation.get("field_layout", {}) if isinstance(allocation, dict) else {}
     if isinstance(field_layout_policy, dict):
         compact_policy["field_layout"] = field_layout_policy
+    condition_field_policy = allocation.get("condition_field", {}) if isinstance(allocation, dict) else {}
+    if isinstance(condition_field_policy, dict):
+        compact_policy["condition_field"] = condition_field_policy
+    field_reclaim_policy_value = allocation.get("field_reclaim", {}) if isinstance(allocation, dict) else {}
+    if isinstance(field_reclaim_policy_value, dict):
+        compact_policy["field_reclaim"] = field_reclaim_policy_value
+    primary_clusters_policy = allocation.get("primary_clusters", {}) if isinstance(allocation, dict) else {}
+    if isinstance(primary_clusters_policy, dict):
+        compact_policy["primary_clusters"] = {
+            **compact_policy.get("primary_clusters", {}),
+            **primary_clusters_policy,
+        }
     alias_rules = canonical_alias_rules(spec)
     compact_policy["alias_form_mnemonics"] = canonical_alias_family_mnemonics(spec)
     solver_result = solve_allocation(candidates, z3, compact_policy, alias_rules)

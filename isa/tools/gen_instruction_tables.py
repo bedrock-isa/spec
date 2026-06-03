@@ -111,6 +111,8 @@ def field_for_operand(fields: list[dict[str, Any]], operand: str) -> dict[str, A
         kind = str(field.get("kind", "")).upper()
         if names_ea_operand(upper) and kind == "EA":
             return field
+        if (upper in {"DBANK", "DATA_BANK", "DATA_REGISTER_BANK"} or "BANK" in upper) and kind == "DBANK":
+            return field
         if upper.startswith("D") and kind == "DREG":
             return field
         if upper.startswith("A") and kind == "AREG":
@@ -138,6 +140,8 @@ def infer_operand_kind(operand: str, field: dict[str, Any] | None) -> str:
         return "condition"
     if upper in {"SP", "SPREG", "STACK_POINTER", "STACK_REGISTER"} or source in {"SP", "STACK_POINTER", "STACK_REGISTER"}:
         return "SPREG"
+    if upper in {"DBANK", "DATA_BANK", "DATA_REGISTER_BANK"} or source in {"BANK", "SRC_BANK", "DST_BANK", "BANK_A", "BANK_B", "DBANK"}:
+        return "DBANK"
     if upper in {"DREG", "DLO", "DX", "DHI"} or upper.startswith("D") or source.startswith("D"):
         return "DREG"
     if upper in {"AREG"} or upper.startswith("A") or source.startswith("A"):
@@ -160,6 +164,8 @@ def infer_operand_kind(operand: str, field: dict[str, Any] | None) -> str:
         return "imm32"
     if "IMM16" in upper or "IMM16" in source:
         return "imm16"
+    if upper in {"SELECTOR_IMM6", "IMM6_SELECTOR"}:
+        return "selector6"
     if "IMM" in upper or "IMM" in source or source in {"TARGET", "VALUE"}:
         return "imm"
     if (
@@ -178,6 +184,8 @@ def operand_placeholder(kind: str, operand: str) -> str:
     name, _typ = split_operand(operand)
     if kind == "DREG":
         return "Dn"
+    if kind == "DBANK":
+        return "DBn"
     if kind == "AREG":
         return "An"
     if kind == "SPREG":
@@ -208,9 +216,10 @@ def operand_placeholder(kind: str, operand: str) -> str:
         return "<imm16>"
     if "imm" in lower:
         return "<imm>"
-    if kind == "small_selector":
+    if kind in {"small_selector", "selector6"}:
         if name.lower() in SELECTOR_SOURCES:
-            return f"<{name}:Dn|imm>"
+            suffix = "imm6" if kind == "selector6" else "Dn|imm"
+            return f"<{name}:{suffix}>"
         return "<n>"
     return f"<{name}>"
 
@@ -334,6 +343,8 @@ def line_operand_placeholder(kind: str, operand: str, field: dict[str, Any] | No
     name, _typ = split_operand(operand)
     if kind == "DREG":
         return f"Dn{suffix}"
+    if kind == "DBANK":
+        return f"DBn{suffix}"
     if kind == "AREG":
         return f"An{suffix}"
     if kind == "SPREG":
@@ -364,7 +375,7 @@ def line_operand_placeholder(kind: str, operand: str, field: dict[str, Any] | No
         return "imm16"
     if "imm" in kind.lower():
         return "imm"
-    if kind == "small_selector":
+    if kind in {"small_selector", "selector6"}:
         return f"<{name}{suffix}>"
     return f"<{name}{suffix}>"
 
@@ -424,6 +435,8 @@ def field_symbol(field: dict[str, Any] | None) -> str:
         return "e"
     if kind == "DREG":
         return "d"
+    if kind == "DBANK":
+        return "k"
     if kind == "AREG":
         return "a"
     if kind == "SREG":
@@ -432,7 +445,7 @@ def field_symbol(field: dict[str, Any] | None) -> str:
         return "f"
     if kind == "condition":
         return "c"
-    if kind == "small_selector":
+    if kind in {"small_selector", "selector6"}:
         return "n"
     if kind in SIZE_KINDS:
         return "s"
@@ -626,8 +639,13 @@ def payload_token_for_kind(kind: str) -> str:
 
 def encoding_pattern_tokens(item: dict[str, Any], fields: list[dict[str, Any]]) -> list[str]:
     if item.get("kind") in {"compact", "compact_alias"}:
-        if item.get("kind") == "compact_alias" and item.get("alias_payloads"):
-            payload_values = [int(str(value), 16) for value in item.get("alias_payloads", [])]
+        alias_payloads = item.get("alias_payloads") if item.get("kind") == "compact_alias" else None
+        exact_payloads = alias_payloads or item.get("primary_payloads")
+        if exact_payloads:
+            payload_values = [
+                int(str(value), 16)
+                for value in exact_payloads
+            ]
             start, end = min(payload_values), max(payload_values)
         else:
             start, end = parse_range(str(item["start_payload"]) if item["start_payload"] == item["end_payload"] else f"{item['start_payload']}..{item['end_payload']}")
@@ -651,6 +669,28 @@ def encoding_pattern_tokens(item: dict[str, Any], fields: list[dict[str, Any]]) 
     return tokens
 
 
+def compact_hex_ranges(values: list[Any]) -> str:
+    ints = sorted({int(str(value), 16) for value in values})
+    if not ints:
+        return ""
+    ranges: list[tuple[int, int]] = []
+    start = previous = ints[0]
+    for value in ints[1:]:
+        if value == previous + 1:
+            previous = value
+            continue
+        ranges.append((start, previous))
+        start = previous = value
+    ranges.append((start, previous))
+    parts = []
+    for start, end in ranges:
+        if start == end:
+            parts.append(f"0x{start:03x}")
+        else:
+            parts.append(f"0x{start:03x}..0x{end:03x}")
+    return ", ".join(parts)
+
+
 def encoding_line(item: dict[str, Any]) -> str:
     fields = line_fields(item)
     tokens = encoding_pattern_tokens(item, fields)
@@ -664,6 +704,9 @@ def encoding_text(item: dict[str, Any]) -> str:
         start = str(item["start_payload"])
         end = str(item["end_payload"])
         payload = start if start == end else f"{start}..{end}"
+        if item.get("reclaimed_payloads"):
+            reclaimed = compact_hex_ranges(item.get("reclaimed_payloads", []))
+            return f"primary {payload}; reclaimed {reclaimed}"
         return f"primary {payload}"
     if item.get("kind") == "compact_alias":
         payloads = ", ".join(str(payload) for payload in item.get("alias_payloads", []))
@@ -784,7 +827,8 @@ def operand_encoding_summary(kind: str, spec: dict[str, Any] | None = None) -> s
         return "implicit SP register operand"
     if kind == "SREG":
         names = sreg_names(spec or {})
-        return f"3-bit S register field ({'/'.join(names)}; remaining values reserved)"
+        suffix = "" if len(names) >= 8 else "; remaining values reserved"
+        return f"3-bit S segment-register field ({'/'.join(names)}{suffix})"
     if kind == "FREG":
         return "5-bit F register field"
     if kind == "EA":
@@ -797,6 +841,8 @@ def operand_encoding_summary(kind: str, spec: dict[str, Any] | None = None) -> s
         return "3-bit atomic memory-order field"
     if kind in {"BITMAP16", "bitmap16"}:
         return "16-bit D/A register bitmap payload"
+    if kind == "selector6":
+        return "6-bit immediate selector field carrying values 0..63"
     if kind == "small_selector":
         return "3- or 4-bit selector field; count/bit_index/offset/width may select D register or immediate"
     if "cr" in kind.lower():
@@ -815,7 +861,7 @@ def operand_encoding_summary(kind: str, spec: dict[str, Any] | None = None) -> s
 
 
 def operand_default_words(kind: str) -> str:
-    if kind in {"DREG", "AREG", "SPREG", "SREG", "FREG", "condition", "small_selector", "memory_order"}:
+    if kind in {"DREG", "AREG", "SPREG", "SREG", "FREG", "condition", "small_selector", "selector6", "memory_order"}:
         return "+0 when packed in primary/descriptor"
     if kind == "EA":
         return "+0 for register/simple EA; varies by EA form"

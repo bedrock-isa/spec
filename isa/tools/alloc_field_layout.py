@@ -67,10 +67,23 @@ def build_field_layout_model(
                     affinity_examples[key].append(profile_candidate_id(candidate, fields))
 
     ordered = sorted(scores, key=lambda sig: (-scores[sig], -widths[sig], sig))
+    explicit_order = explicit_signature_order(compact_policy)
+    if explicit_order:
+        explicit_rank = {signature: index for index, signature in enumerate(explicit_order)}
+        ordered = sorted(
+            scores,
+            key=lambda sig: (
+                explicit_rank.get(sig, explicit_rank.get(sig.split("#", 1)[0], len(explicit_rank) + 1_000)),
+                -scores[sig],
+                -widths[sig],
+                sig,
+            ),
+        )
     order = {signature: index for index, signature in enumerate(ordered)}
     ranking_model = {
         "order": order,
         "subfield_affinity_relations": affinity_rules,
+        "explicit_signature_order": explicit_order,
     }
     format_counts = {}
     format_weights = {}
@@ -92,6 +105,7 @@ def build_field_layout_model(
         "format_weights": format_weights,
         "format_examples": format_examples,
         "score_model": score_model,
+        "explicit_signature_order": explicit_order,
         "format_similarity": operand_format_similarity_report(
             format_counts,
             format_weights,
@@ -129,6 +143,7 @@ def field_layout_model_report(model: dict[str, Any]) -> dict[str, Any]:
         ],
         "operand_format_similarity": model.get("format_similarity", []),
         "field_score_model": model.get("score_model", {}),
+        "explicit_signature_order": list(model.get("explicit_signature_order", [])),
         "subfield_affinities": [
             {
                 "container": container,
@@ -143,6 +158,16 @@ def field_layout_model_report(model: dict[str, Any]) -> dict[str, Any]:
             )
         ],
     }
+
+
+def explicit_signature_order(compact_policy: dict[str, Any]) -> list[str]:
+    policy = compact_policy.get("field_layout", {})
+    if not isinstance(policy, dict):
+        return list(default_field_layout_policy().get("explicit_signature_order", []))
+    raw_order = policy.get("explicit_signature_order", default_field_layout_policy().get("explicit_signature_order", []))
+    if not isinstance(raw_order, list):
+        return []
+    return [str(signature) for signature in raw_order if str(signature)]
 
 
 def field_score_model(compact_policy: dict[str, Any]) -> dict[str, Any]:
@@ -295,7 +320,7 @@ def field_base_signature(field: Field) -> str:
         return f"EA{field.width}"
     if field.kind == "condition":
         return f"COND{field.width}"
-    if field.kind == "small_selector":
+    if field.kind in {"small_selector", "selector6"}:
         return f"SEL{field.width}"
     if field.kind == "memory_order":
         return f"ORDER{field.width}"

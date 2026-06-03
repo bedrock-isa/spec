@@ -109,6 +109,25 @@ data_model:
     - Aggregate object size is rounded up to the aggregate object's alignment.
     - Boolean objects store the truth value in bit 0; upper bits are ignored by consumers.
 register_convention:
+  data_register_banking:
+    summary: >
+      The C ABI is DBANK-neutral. C function calls use bank zero as the
+      ABI-visible D-register file; nonzero data-register banks are optional
+      target resources for compiler-generated temporaries and specialized
+      runtime code.
+    public_boundary: DBANK must be 0 on C function entry and return
+    call_boundary: A caller must issue an ordinary C call with DBANK = 0; a callee must return with DBANK = 0
+    source_language_visibility: DBANK is not visible to the C abstract machine
+    bank_zero: D0-D7 in bank 0 are the ABI-visible integer registers listed below
+    nonzero_banks: caller-managed volatile scratch state when enabled by the target object attributes
+    preservation: no nonzero bank is callee-saved by the C ABI
+    live_across_call: C code must not keep a live value only in a nonzero DBANK across an ordinary C call
+    target_feature_gate: use of DBANK beyond zero requires the language-neutral ELF DBANK object attribute
+    recommended_compiler_policy:
+      - Do not use DBANK in the baseline C code-generation mode.
+      - Enable DBANK use only under an explicit target feature or optimization option.
+      - Prefer nonzero banks for leaf hot regions, spill-heavy loops, and REP or REPG lowering.
+      - Restore DBANK to zero before calls, returns, tail calls, unwinding edges, and externally visible labels.
   integer_registers:
     caller_saved:
       - D0

@@ -122,6 +122,8 @@ SELECTOR_SOURCES = {"count", "bit_index", "offset", "width"}
 def operand_kind_label(source: str, kind: str) -> str:
     if kind == "small_selector" and source.lower() in SELECTOR_SOURCES:
         return "Dreg|imm"
+    if kind == "selector6" and source.lower() in SELECTOR_SOURCES:
+        return "imm6"
     return kind
 
 

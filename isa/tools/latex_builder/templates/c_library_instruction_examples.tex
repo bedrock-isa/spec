@@ -10,10 +10,10 @@ decremented toward zero; negative counters are incremented toward zero. The same
 architectural D-register value is visible to indexed effective-address calculation, so
 there is no REP-only counter representation for address expressions to reinterpret.
 
-A negative counter can be paired with a one-past-the-end base address to traverse memory
-in increasing address order while the counter moves toward zero. A positive counter can
-be paired with a one-before-the-beginning base address to traverse memory in decreasing
-address order.
+The examples below use a positive count and address-update operands such as
+\texttt{[A0++]}.  The address update is part of the operand syntax: after each
+successful element access, the selected address register advances by the element size.
+Indexed forms remain useful for kernels whose source and destination strides differ.
 
 For C library implementations, ordinary fast paths may normally load a size\_t count
 directly into the REP counter when the implementation's maximum object size fits in the
@@ -22,33 +22,33 @@ that wants to define behavior for larger counts can branch to a slow path or spl
 transfer into multiple chunks.
 
 \subsection{memcpy}
-The forward byte-copy form uses one-past-the-end source and destination bases and a
-negative signed count.
+The forward byte-copy form uses source and destination base pointers and a positive
+signed count.
 
 \par\begingroup\small\ttfamily
 \begin{tabularx}{\linewidth}{@{}X@{}}
 ; memcpy(dst, src, n), byte copy forward\tabularnewline
-; A0 = src + n, A1 = dst + n\tabularnewline
-; D0 = -n\tabularnewline
-REP D0, MOV.B [A0 + D0 * 1], [A1 + D0 * 1]\tabularnewline
+; A0 = src, A1 = dst\tabularnewline
+; D0 = n\tabularnewline
+REP D0, MOV.B [A0++], [A1++]\tabularnewline
 \end{tabularx}
 \endgroup\par
 
 The same shape generalizes to wider element sizes by changing the instruction size and
-index scale.
+therefore the address-update step.
 
 \subsection{memmove}
 memmove chooses direction according to overlap. If the destination is below the source,
 or the ranges do not overlap, it can use the same forward sequence as memcpy. If the
-destination overlaps at a higher address, the copy runs backward using positive index
-values.
+destination overlaps at a higher address, the library uses an analogous reverse
+address-update sequence.
 
 \par\begingroup\small\ttfamily
 \begin{tabularx}{\linewidth}{@{}X@{}}
-; memmove(dst, src, n), overlapping backward byte copy\tabularnewline
-; A0 = src - 1, A1 = dst - 1\tabularnewline
-; D0 = +n\tabularnewline
-REP D0, MOV.B [A0 + D0 * 1], [A1 + D0 * 1]\tabularnewline
+; memmove(dst, src, n), non-overlapping or forward byte copy\tabularnewline
+; A0 = src, A1 = dst\tabularnewline
+; D0 = n\tabularnewline
+REP D0, MOV.B [A0++], [A1++]\tabularnewline
 \end{tabularx}
 \endgroup\par
 
@@ -59,9 +59,9 @@ the same as memcpy forward traversal.
 \par\begingroup\small\ttfamily
 \begin{tabularx}{\linewidth}{@{}X@{}}
 ; memset(dst, c, n), byte fill\tabularnewline
-; A1 = dst + n, D1 = byte c\tabularnewline
-; D0 = -n\tabularnewline
-REP D0, MOV.B D1, [A1 + D0 * 1]\tabularnewline
+; A1 = dst, D1 = byte c\tabularnewline
+; D0 = n\tabularnewline
+REP D0, MOV.B D1, [A1++]\tabularnewline
 \end{tabularx}
 \endgroup\par
 
@@ -75,9 +75,9 @@ unsigned/signed byte policy.
 \par\begingroup\small\ttfamily
 \begin{tabularx}{\linewidth}{@{}X@{}}
 ; memcmp(a, b, n), forward byte compare\tabularnewline
-; A0 = a + n, A1 = b + n\tabularnewline
-; D0 = -n\tabularnewline
-REPEQ D0, CMP.B [A0 + D0 * 1], [A1 + D0 * 1]\tabularnewline
+; A0 = a, A1 = b\tabularnewline
+; D0 = n\tabularnewline
+REPEQ D0, CMP.B [A0++], [A1++]\tabularnewline
 \end{tabularx}
 \endgroup\par
 

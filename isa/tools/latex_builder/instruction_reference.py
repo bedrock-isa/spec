@@ -5,7 +5,6 @@ from __future__ import annotations
 from typing import Any
 import re
 
-from gen_instruction_specs import allocation_items
 from gen_instruction_tables import (
     default_words,
     encoding_pattern_tokens,
@@ -31,9 +30,26 @@ from .common import (
     tex_code,
     tex_escape,
     tex_table_value,
+    hidden_top_section,
     top_section,
 )
 from .diagrams import bit_diagram
+
+
+def instruction_label(mnemonic: str) -> str:
+    slug = re.sub(r"[^a-z0-9]+", "-", mnemonic.lower()).strip("-")
+    return f"instr:{slug or 'unknown'}"
+
+
+def instruction_link(mnemonic: str) -> str:
+    return rf"\hyperref[{instruction_label(mnemonic)}]{{{tex_code(mnemonic)}}}"
+
+
+def instruction_link_list(mnemonics: list[str]) -> str:
+    if not mnemonics:
+        return tex_escape("-")
+    return ", ".join(instruction_link(mnemonic) for mnemonic in mnemonics)
+
 
 def instruction_set_summary_by_class_section(
     spec: dict[str, Any],
@@ -76,7 +92,7 @@ def instruction_class_summary_table(spec: dict[str, Any], mnemonics: list[str]) 
         rows.append(
             [
                 tex_escape(instruction_class_title(str(name))),
-                tex_table_value(listed_members),
+                instruction_link_list(listed_members),
                 tex_escape(instruction_class_note(body)),
             ]
         )
@@ -140,8 +156,8 @@ def instruction_attribute_matrix_table(
         prefix_cells = instruction_prefix_cells(spec, mnemonic, recs, ops, items)
         rows.append(
             [
-                tex_code(mnemonic),
-                tex_escape(instruction_privilege_summary(items, recs, ops)),
+                instruction_link(mnemonic),
+                tex_code(instruction_privilege_summary(items, recs, ops)),
                 *flag_cells,
                 *prefix_cells,
             ]
@@ -208,6 +224,7 @@ def instruction_attribute_matrix_legend() -> str:
     rows = [
         [tex_escape("Priv"), tex_code("U"), tex_escape("all listed forms are unprivileged")],
         [tex_escape("Priv"), tex_code("S"), tex_escape("all listed forms require supervisor privilege")],
+        [tex_escape("Priv"), tex_code("P"), tex_escape("at least one listed form is policy-controlled or configurable")],
         [tex_escape("Priv"), tex_code("mixed"), tex_escape("the mnemonic has both unprivileged and privileged forms")],
         [tex_escape("Flag"), tex_code("Y"), tex_escape("the instruction may update this FLAGS or FFLAGS bit")],
         [tex_escape("Flag"), tex_code("0"), tex_escape("the instruction writes this flag as cleared")],
@@ -245,7 +262,7 @@ def instruction_privilege_summary(
     short = {privilege_code(value) for value in values}
     if len(short) == 1:
         return next(iter(short))
-    if "U" in short and ("S" in short or "policy" in short or "state" in short):
+    if "U" in short and ("S" in short or "P" in short or "state" in short):
         return "mixed"
     return "/".join(sorted(short))
 
@@ -257,9 +274,9 @@ def privilege_code(value: str) -> str:
     if normalized in {"supervisor", "privileged"}:
         return "S"
     if "policy" in normalized or "configurable" in normalized:
-        return "policy"
-    if "state register" in normalized:
-        return "state"
+        return "P"
+    if "segment register" in normalized:
+        return "P"
     if "spr" in normalized or "control register" in normalized:
         return "S"
     return readable_text(value)
@@ -337,10 +354,10 @@ def instruction_flag_cells(records: list[dict[str, Any]], operations: list[dict[
 
 def flag_matrix_cell(mark: str) -> str:
     if mark == "*":
-        return "Y"
+        return tex_code("Y")
     if mark == "0":
-        return "0"
-    return "U"
+        return tex_code("0")
+    return tex_code("U")
 
 
 def instruction_prefix_summary(
@@ -382,7 +399,7 @@ def instruction_prefix_cells(
     def rule_cell(name: str) -> str:
         rule = rules.get(name) if isinstance(rules, dict) else None
         if not isinstance(rule, dict):
-            return "-"
+            return tex_code("-")
         return availability_cell(prefix_rule_applies(rule, mnemonic, attrs, records, operations, items))
 
     return [
@@ -396,7 +413,7 @@ def instruction_prefix_cells(
 
 
 def availability_cell(enabled: bool) -> str:
-    return "Y" if enabled else "-"
+    return tex_code("Y" if enabled else "-")
 
 
 def prefix_rule_applies(
@@ -510,65 +527,16 @@ def c_library_instruction_examples_section() -> str:
     return render_latex_template("c_library_instruction_examples.tex")
 
 
-def opcode_instruction_format_summary_section(plan: dict[str, Any]) -> str:
-    items = allocation_items(plan)
-    primary_allocations = list(plan.get("primary_allocations", []) or [])
-    primary_aliases = list(plan.get("primary_alias_allocations", []) or [])
-    extension_roots = [item for item in primary_allocations if item.get("kind") == "extension_root"]
-    compact_primary = [item for item in primary_allocations if item.get("kind") != "extension_root"] + primary_aliases
-    parts = [
-        "This appendix summarizes the generated opcode and field structure. It is a reading guide for the "
-        "instruction format diagrams and generated encoding tables; the declarative specification remains the source of truth.",
-        r"\subsection{Instruction Word Stack}",
-        "Every instruction starts with word 0. Word 0 supplies the prefix-present bit, the total instruction length, "
-        "and the twelve-bit primary payload. Compact forms decode directly from that payload. Extended forms use a "
-        "primary root and a following 16-bit extended opcode or descriptor word.",
-        latex_longtable(
-            ["Word", "Purpose"],
-            [
-                [tex_escape("word 0"), tex_escape("prefix-present bit, encoded instruction length, and primary payload")],
-                [tex_escape("word 1, when P=1"), tex_escape("two prefix bytes, decoded from low byte to high byte")],
-                [tex_escape("extended opcode word"), tex_escape("family-local subopcode and generated operand descriptor fields")],
-                [tex_escape("payload words"), tex_escape("immediates, displacements, absolute addresses, bitmaps, or extended-EA descriptors")],
-            ],
-            ["1.35in", "4.05in"],
-            "Instruction Word Roles",
-        ),
-        r"\subsection{Primary Payload Map}",
-        primary_payload_overview_text(plan, compact_primary, extension_roots),
-        latex_longtable(
-            ["Payload", "Use", "Form", "Fields"],
-            primary_payload_rows(compact_primary, extension_roots),
-            ["0.75in", "1.35in", "2.25in", "1.10in"],
-            "Primary Payload Summary",
-        ),
-        r"\subsection{Extension Root Summary}",
-        "Extension roots are primary payload entries that open a family-local 16-bit extended opcode space. "
-        "The allocator keeps related roots together so that primary instruction classification can group families before "
-        "examining the extended word.",
-        latex_longtable(
-            ["Root Payload", "Family", "Members", "Root Fields"],
-            extension_root_rows(extension_roots),
-            ["0.78in", "1.65in", "0.62in", "2.35in"],
-            "Extension Roots",
-        ),
-        r"\subsection{Generated Field Catalog}",
-        "The allocator places conceptual fields in reusable bit positions when doing so improves decode regularity. "
-        "The table below lists the field kinds that appear in allocated forms and the storage locations observed in the generated layouts.",
-        latex_longtable(
-            ["Field Kind", "Width", "Common Storage", "Typical Roles"],
-            field_catalog_rows(items),
-            ["1.05in", "0.55in", "2.15in", "1.75in"],
-            "Generated Operand Field Catalog",
-        ),
-    ]
-    return "\n".join(parts)
+def runtime_instruction_examples_section() -> str:
+    return render_latex_template("runtime_instruction_examples.tex")
 
 
 def primary_payload_overview_text(
     plan: dict[str, Any],
     compact_primary: list[dict[str, Any]],
     extension_roots: list[dict[str, Any]],
+    *,
+    escaped: bool = True,
 ) -> str:
     target = plan.get("target_space", {}) or {}
     solver = plan.get("solver", {}) or {}
@@ -586,7 +554,657 @@ def primary_payload_overview_text(
     )
     if used is not None and free is not None:
         summary += f" It uses {used} primary payload slots and leaves {free} unallocated slots."
-    return tex_escape(summary)
+    return tex_escape(summary) if escaped else summary
+
+
+def ragged_paragraph(text: str) -> str:
+    return r"\begingroup\raggedright " + tex_escape(text) + r"\par\endgroup"
+
+
+def prefix_byte_matrix(spec: dict[str, Any]) -> str:
+    prefixes = (spec.get("prefixes") or {}).get("prefixes") or []
+    cells: dict[int, tuple[str, str]] = {}
+    for prefix in prefixes:
+        if not isinstance(prefix, dict):
+            continue
+        label = prefix_grid_label(prefix)
+        color = prefix_grid_color(str(prefix.get("group", "")))
+        for value in prefix_values(prefix):
+            cells[value] = (label, color)
+    return "\n".join(
+        [
+            matrix_legend(prefix_grid_legend_rows()),
+            opcode_grid_picture(
+                "Prefix byte values",
+                cells,
+                "prefix[7:4]",
+                "prefix[3:0]",
+                cell_size="0.48cm",
+                min_label_area=4,
+                label_singletons=True,
+                label_as_code=True,
+            ),
+        ]
+    )
+
+
+def primary_payload_matrices(compact_primary: list[dict[str, Any]], extension_roots: list[dict[str, Any]]) -> str:
+    cells: dict[int, tuple[str, str]] = {}
+    for item in sorted(compact_primary + extension_roots, key=payload_sort_key):
+        label = primary_grid_label(item)
+        color = primary_grid_color(item)
+        for value in primary_payload_values(item):
+            if 0 <= value <= 0xFFF:
+                cells[value] = (label, color)
+    solid_pages: dict[int, tuple[str, str]] = {}
+    boards: list[str] = []
+    for high in range(0x10):
+        board_cells = {
+            value & 0xFF: cell
+            for value, cell in cells.items()
+            if (value >> 8) == high
+        }
+        if len(board_cells) == 256 and len(set(board_cells.values())) == 1:
+            solid_pages[high] = next(iter(board_cells.values()))
+            continue
+        boards.append(primary_payload_board(high, board_cells))
+    return two_column_boards(
+        "\n".join(
+            [
+                matrix_legend(primary_grid_legend_rows()),
+                r"\par\smallskip",
+                primary_page_strip(solid_pages),
+            ]
+        ),
+        boards,
+    )
+
+
+def two_column_boards(legend: str, boards: list[str]) -> str:
+    lines = [legend, r"\par\smallskip"]
+    for index in range(0, len(boards), 2):
+        left = boards[index]
+        right = boards[index + 1] if index + 1 < len(boards) else ""
+        lines.append(r"\Needspace{3.0in}")
+        lines.append(r"\noindent\begin{minipage}[t]{0.49\linewidth}")
+        lines.append(left)
+        lines.append(r"\end{minipage}")
+        if right:
+            lines.append(r"\hfill\begin{minipage}[t]{0.49\linewidth}")
+            lines.append(right)
+            lines.append(r"\end{minipage}")
+        lines.append(r"\par\smallskip")
+    return "\n".join(lines)
+
+
+def primary_payload_board(high_nibble: int, cells: dict[int, tuple[str, str]]) -> str:
+    title = f"Primary payload 0x{high_nibble:x}00..0x{high_nibble:x}ff"
+    return opcode_grid_picture(
+        title,
+        cells,
+        "bits 7..4",
+        "bits 3..0",
+        cell_size="0.34cm",
+        min_label_area=8,
+        label_singletons=False,
+        label_as_code=True,
+    )
+
+
+def primary_page_strip(solid_pages: dict[int, tuple[str, str]]) -> str:
+    if not solid_pages:
+        return ""
+    rects = matrix_rectangles({page: cell for page, cell in solid_pages.items()})
+    lines = [
+        r"\begingroup\scriptsize",
+        r"\centerline{\textbf{Solid 0xH00 primary pages}}",
+        r"\vspace{2pt}",
+        r"\begin{center}",
+        r"\begin{tikzpicture}[x=0.60cm,y=0.42cm]",
+    ]
+    for page in range(16):
+        lines.append(rf"\node[font=\tiny] at ({page + 0.5:.2f},0.22) {{{page:X}}};")
+    lines.append(r"\draw[black!18,line width=0.10pt] (0,0) grid (16,-1);")
+    for _row0, _row1, col0, col1, label, color in rects:
+        lines.append(
+            rf"\filldraw[fill={color},draw=black,line width=0.28pt] "
+            rf"({col0},0) rectangle ({col1 + 1},-1);"
+        )
+        lines.append(
+            rf"\node[font=\tiny,align=center,inner sep=0.5pt] at "
+            rf"({(col0 + col1 + 1) / 2:.2f},-0.5) {{{matrix_label_code(label)}}};"
+        )
+    lines.extend(
+        [
+            r"\draw[black,line width=0.35pt] (0,0) rectangle (16,-1);",
+            r"\end{tikzpicture}",
+            r"\end{center}",
+            r"\endgroup",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def extended_payload_overview_text(
+    plan: dict[str, Any],
+    extended_items: list[dict[str, Any]],
+    *,
+    escaped: bool = True,
+) -> str:
+    space = plan.get("extended_space", {}) or {}
+    bits = space.get("bits", 16)
+    opcode_range = space.get("opcode_range", "0x0000..0xffff")
+    root_count = len({str(item.get("extension_root", "")) for item in extended_items if item.get("extension_root")})
+    used_slots = sum(int(item.get("extended_opcode_slots", 0) or 0) for item in extended_items)
+    form_count = len([item for item in extended_items if item.get("kind") != "extended_alias"])
+    alias_count = len([item for item in extended_items if item.get("kind") == "extended_alias"])
+    summary = (
+        f"The extended opcode payload is {bits} bits wide and spans {opcode_range} inside each primary extension root. "
+        f"The current generated map contains {form_count} extended forms, {alias_count} extended aliases, "
+        f"and {root_count} root-local payload spaces. Across all roots, allocated forms occupy {used_slots} payload slots."
+    )
+    return tex_escape(summary) if escaped else summary
+
+
+def extended_payload_matrices(extended_items: list[dict[str, Any]]) -> str:
+    if not extended_items:
+        return tex_escape("No extended opcode payload allocations are present.")
+
+    by_root: dict[str, list[dict[str, Any]]] = {}
+    for item in extended_items:
+        root = str(item.get("extension_root", "") or "EXT.unknown")
+        by_root.setdefault(root, []).append(item)
+
+    parts = [matrix_legend(extended_grid_legend_rows())]
+    for root, items in sorted(by_root.items(), key=lambda pair: extended_root_sort_key(pair[1], pair[0])):
+        rendered = extended_root_payload_matrices(root, items)
+        if rendered:
+            parts.append(rendered)
+    return "\n".join(parts)
+
+
+def extended_root_sort_key(items: list[dict[str, Any]], root: str) -> tuple[int, str]:
+    payloads = [parse_hex_int(item.get("extension_root_payload")) for item in items if item.get("extension_root_payload")]
+    return (min(payloads) if payloads else 0xFFFF, root)
+
+
+def extended_root_payload_matrices(root: str, items: list[dict[str, Any]]) -> str:
+    cells: dict[int, tuple[str, str]] = {}
+    for item in sorted(items, key=extended_payload_sort_key):
+        label = extended_grid_label(item)
+        color = extended_grid_color(item)
+        start, end = extended_opcode_range(item)
+        for value in range(max(0, start), min(0xFFFF, end) + 1):
+            cells[value] = (label, color)
+
+    if not cells:
+        return ""
+
+    solid_pages: dict[int, tuple[str, str]] = {}
+    mixed_pages: dict[int, dict[int, tuple[str, str]]] = {}
+    for high_byte in range(0x100):
+        board_cells = {
+            value & 0xFF: cell
+            for value, cell in cells.items()
+            if (value >> 8) == high_byte
+        }
+        if not board_cells:
+            continue
+        if len(board_cells) == 256 and len(set(board_cells.values())) == 1:
+            solid_pages[high_byte] = next(iter(board_cells.values()))
+        else:
+            mixed_pages[high_byte] = board_cells
+
+    page_cells = dict(solid_pages)
+    for high_byte in mixed_pages:
+        page_cells[high_byte] = ("mixed", "gray!16")
+
+    boards = [
+        extended_payload_board(high_byte, board_cells)
+        for high_byte, board_cells in sorted(mixed_pages.items())
+    ]
+    parts = [
+        r"\Needspace{4.4in}",
+        rf"\noindent\textbf{{{tex_code(root)}}}\par",
+        r"\vspace{2pt}",
+        extended_payload_page_overview(root, page_cells),
+    ]
+    if boards:
+        parts.append(two_column_boards("", boards))
+    return "\n".join(parts)
+
+
+def extended_payload_page_overview(root: str, cells: dict[int, tuple[str, str]]) -> str:
+    return opcode_grid_picture(
+        f"{root} extended payload pages",
+        cells,
+        "bits 15..12",
+        "bits 11..8",
+        cell_size="0.32cm",
+        min_label_area=8,
+        label_singletons=False,
+        label_as_code=True,
+    )
+
+
+def extended_payload_board(high_byte: int, cells: dict[int, tuple[str, str]]) -> str:
+    title = f"extended payload 0x{high_byte:02x}00..0x{high_byte:02x}ff"
+    return opcode_grid_picture(
+        title,
+        cells,
+        "bits 7..4",
+        "bits 3..0",
+        cell_size="0.34cm",
+        min_label_area=8,
+        label_singletons=False,
+        label_as_code=True,
+    )
+
+
+def opcode_grid_picture(
+    title: str,
+    cells: dict[int, tuple[str, str]],
+    row_label: str,
+    col_label: str,
+    *,
+    cell_size: str = "0.36cm",
+    min_label_area: int = 4,
+    label_singletons: bool = True,
+    label_as_code: bool = False,
+) -> str:
+    rects = matrix_rectangles(cells)
+    code_by_label: dict[str, str] = {}
+    code_entries: list[tuple[str, str]] = []
+    lines = [
+        r"\begingroup\scriptsize",
+        rf"\centerline{{\textbf{{{tex_escape(title)}}}}}",
+        r"\vspace{2pt}",
+        r"\begin{center}",
+        rf"\begin{{tikzpicture}}[x={cell_size},y={cell_size}]",
+        r"\node[anchor=east,font=\tiny] at (0.75,-8.8) {" + tex_escape(row_label) + r"};",
+        r"\node[anchor=south,font=\tiny] at (9,0.72) {" + tex_escape(col_label) + r"};",
+    ]
+    for col in range(16):
+        lines.append(rf"\node[font=\tiny] at ({1.5 + col:.2f},0.22) {{{col:X}}};")
+    for row in range(16):
+        lines.append(rf"\node[font=\tiny] at (0.55,{-1.5 - row:.2f}) {{{row:X}}};")
+    lines.append(r"\draw[black!14,line width=0.08pt] (1,-1) grid (17,-17);")
+    for guide in range(0, 17, 4):
+        lines.append(rf"\draw[black!35,line width=0.18pt] ({1 + guide},-1) -- ({1 + guide},-17);")
+        lines.append(rf"\draw[black!35,line width=0.18pt] (1,{-1 - guide}) -- (17,{-1 - guide});")
+    for row0, row1, col0, col1, label, color in rects:
+        x0 = 1 + col0
+        x1 = 1 + col1 + 1
+        y0 = -1 - row0
+        y1 = -1 - row1 - 1
+        lines.append(
+            rf"\filldraw[fill={color},draw=black,line width=0.28pt] "
+            rf"({x0},{y0}) rectangle ({x1},{y1});"
+        )
+        area = (row1 - row0 + 1) * (col1 - col0 + 1)
+        width = col1 - col0 + 1
+        height = row1 - row0 + 1
+        if label and should_label_grid_rect(area, width, height, min_label_area, label_singletons):
+            font = r"\tiny"
+            if area >= 24:
+                font = r"\scriptsize"
+            label_text = matrix_label_code(label) if label_as_code else tex_escape(label)
+            lines.append(
+                rf"\node[font={font},align=center,inner sep=0.4pt] at "
+                rf"({(x0 + x1) / 2:.2f},{(y0 + y1) / 2:.2f}) {{{label_text}}};"
+            )
+        elif label:
+            code = code_by_label.get(label)
+            if code is None:
+                code = matrix_code(len(code_by_label))
+                code_by_label[label] = code
+                code_entries.append((code, label))
+            lines.append(
+                rf"\node[font=\tiny,align=center,inner sep=0.1pt] at "
+                rf"({(x0 + x1) / 2:.2f},{(y0 + y1) / 2:.2f}) {{{matrix_label_code(code)}}};"
+            )
+    lines.extend(
+        [
+            r"\draw[black,line width=0.35pt] (1,-1) rectangle (17,-17);",
+            r"\end{tikzpicture}",
+            r"\end{center}",
+            matrix_code_legend(code_entries),
+            r"\endgroup",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def should_label_grid_rect(area: int, width: int, height: int, min_label_area: int, label_singletons: bool) -> bool:
+    if label_singletons and area == 1:
+        return True
+    if area < min_label_area:
+        return False
+    if height == 1:
+        return width >= 6
+    if width == 1:
+        return height >= 6
+    return width >= 3 and height >= 2
+
+
+def matrix_code(index: int) -> str:
+    alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    if index < len(alphabet):
+        return alphabet[index]
+    index -= len(alphabet)
+    return alphabet[index // len(alphabet)] + alphabet[index % len(alphabet)]
+
+
+def matrix_code_legend(entries: list[tuple[str, str]]) -> str:
+    if not entries:
+        return ""
+    rows: list[str] = []
+    for index in range(0, len(entries), 2):
+        left_code, left_label = entries[index]
+        if index + 1 < len(entries):
+            right_code, right_label = entries[index + 1]
+            rows.append(
+                rf"\textbf{{{matrix_label_code(left_code)}}} & {matrix_label_code(left_label)} & "
+                rf"\textbf{{{matrix_label_code(right_code)}}} & {matrix_label_code(right_label)}\\"
+            )
+        else:
+            rows.append(
+                rf"\textbf{{{matrix_label_code(left_code)}}} & {matrix_label_code(left_label)} & "
+                r"\multicolumn{2}{@{}l@{}}{}\\"
+            )
+    return "\n".join(
+        [
+            r"\vspace{-2pt}",
+            r"\begin{center}",
+            r"\begingroup\tiny",
+            r"\begin{tabularx}{0.92\linewidth}{@{}r@{ = }X r@{ = }X@{}}",
+            *rows,
+            r"\end{tabularx}",
+            r"\endgroup",
+            r"\end{center}",
+        ]
+    )
+
+
+def matrix_label_code(label: str) -> str:
+    escaped = tex_escape(label).replace("-", r"\symbol{45}")
+    return rf"\texttt{{{escaped}}}"
+
+
+def matrix_rectangles(cells: dict[int, tuple[str, str]]) -> list[tuple[int, int, int, int, str, str]]:
+    grouped: dict[tuple[str, str], dict[int, list[int]]] = {}
+    for value, (label, color) in cells.items():
+        row = (value >> 4) & 0xF
+        col = value & 0xF
+        grouped.setdefault((label, color), {}).setdefault(row, []).append(col)
+
+    rects: list[tuple[int, int, int, int, str, str]] = []
+    for (label, color), rows in grouped.items():
+        row_intervals = {row: contiguous_intervals(cols) for row, cols in rows.items()}
+        active: dict[tuple[int, int], int] = {}
+        for row in range(17):
+            intervals = set(row_intervals.get(row, [])) if row < 16 else set()
+            for interval, start_row in list(active.items()):
+                if interval not in intervals:
+                    col0, col1 = interval
+                    rects.append((start_row, row - 1, col0, col1, label, color))
+                    del active[interval]
+            for interval in sorted(intervals):
+                if interval not in active:
+                    active[interval] = row
+    return sorted(rects, key=lambda item: (item[0], item[2], item[1], item[3], item[4]))
+
+
+def contiguous_intervals(values: list[int]) -> list[tuple[int, int]]:
+    out: list[tuple[int, int]] = []
+    for value in sorted(set(values)):
+        if not out or value != out[-1][1] + 1:
+            out.append((value, value))
+        else:
+            out[-1] = (out[-1][0], value)
+    return out
+
+
+def matrix_legend(rows: list[tuple[str, str]]) -> str:
+    cells = []
+    for label, color in rows:
+        cells.append(
+            rf"\tikz[baseline=-0.5ex]\draw[fill={color},draw=black,line width=0.2pt] "
+            rf"(0,0) rectangle (0.25,0.11); {tex_escape(label)}"
+        )
+    line1 = cells[:4]
+    line2 = cells[4:]
+    lines = [
+        r"\begingroup\footnotesize",
+        r"\begin{tabularx}{\linewidth}{@{}XXXX@{}}",
+        " & ".join(line1) + r"\\",
+    ]
+    if line2:
+        lines.append(" & ".join(line2 + [""] * (4 - len(line2))) + r"\\")
+    lines.extend([r"\end{tabularx}", r"\endgroup"])
+    return "\n".join(lines)
+
+
+def primary_grid_legend_rows() -> list[tuple[str, str]]:
+    return [
+        ("integer/arithmetic", primary_category_color("integer")),
+        ("data movement", primary_category_color("data_movement")),
+        ("control flow", primary_category_color("control_flow")),
+        ("sentinel/control", primary_category_color("sentinel")),
+        ("extension root", primary_category_color("extended")),
+        ("atomic/system/cache", primary_category_color("system")),
+        ("unallocated", "white"),
+    ]
+
+
+def extended_grid_legend_rows() -> list[tuple[str, str]]:
+    return [
+        ("integer/arithmetic", primary_category_color("integer")),
+        ("data movement", primary_category_color("data_movement")),
+        ("control flow", primary_category_color("control_flow")),
+        ("atomic/system/cache", primary_category_color("system")),
+        ("floating-point", extended_category_color("fpu")),
+        ("mixed page", "gray!16"),
+        ("unallocated", "white"),
+    ]
+
+
+def prefix_grid_legend_rows() -> list[tuple[str, str]]:
+    return [
+        ("neutral", prefix_grid_color("neutral")),
+        ("speculation", prefix_grid_color("speculation")),
+        ("arithmetic mode", prefix_grid_color("arithmetic_mode")),
+        ("memory hint", prefix_grid_color("memory_hint")),
+        ("EA update", prefix_grid_color("ea_update")),
+        ("repeat", prefix_grid_color("repeat")),
+        ("repeat boundary", prefix_grid_color("repeat_boundary")),
+        ("unallocated", "white"),
+    ]
+
+
+def primary_grid_color(item: dict[str, Any]) -> str:
+    if item.get("kind") == "extension_root":
+        return primary_category_color("extended")
+    category = str(item.get("category", item.get("group", "")))
+    group = str(item.get("group", ""))
+    if category in {"atomic", "system", "cache", "tlb"} or any(key in group for key in ("atomic", "system", "cache", "tlb")):
+        return primary_category_color("system")
+    return primary_category_color(category)
+
+
+def extended_grid_color(item: dict[str, Any]) -> str:
+    category = str(item.get("category", item.get("group", ""))).lower()
+    root = str(item.get("extension_root", "")).lower()
+    if category.startswith("fpu") or ".fpu_" in root or root.startswith("ext.fpu"):
+        return extended_category_color("fpu")
+    return primary_grid_color(item)
+
+
+def primary_category_color(category: str) -> str:
+    normalized = category.lower()
+    if normalized in {"integer", "arithmetic"}:
+        return "green!22"
+    if normalized in {"data_movement", "data movement"}:
+        return "red!18"
+    if normalized in {"control_flow", "control flow"}:
+        return "violet!20"
+    if normalized in {"sentinel", "control"}:
+        return "gray!28"
+    if normalized == "extended":
+        return "gray!18"
+    if normalized == "system":
+        return "cyan!18"
+    return "yellow!18"
+
+
+def extended_category_color(category: str) -> str:
+    if category.lower() == "fpu":
+        return "blue!14"
+    return primary_category_color(category)
+
+
+def prefix_grid_color(group: str) -> str:
+    return {
+        "neutral": "gray!25",
+        "speculation": "violet!18",
+        "arithmetic_mode": "green!22",
+        "memory_hint": "yellow!22",
+        "ea_update": "cyan!20",
+        "repeat": "orange!24",
+        "repeat_boundary": "gray!35",
+    }.get(group, "white")
+
+
+def primary_grid_label(item: dict[str, Any]) -> str:
+    if item.get("kind") == "extension_root":
+        return extension_root_grid_label(str(item.get("group", item.get("id", ""))))
+    return compact_primary_grid_label(item)
+
+
+def extended_grid_label(item: dict[str, Any]) -> str:
+    mnemonic = str(item.get("mnemonic", item.get("id", "")))
+    item_id = str(item.get("id", mnemonic))
+    form = item_id
+    if mnemonic and item_id.startswith(mnemonic + "."):
+        form = item_id[len(mnemonic) + 1 :]
+    form = re.sub(r"\.(BWLQ|BWL|BW|LQ|WL|SD|S/D|Q|L|W|B)$", "", form)
+    form = form.replace("_TO_", "->")
+    form = form.replace("_OR_", "/")
+    form = form.replace("_AND_", "&")
+    form = form.replace("_", " ")
+    return f"{mnemonic} {form}".strip() if form and form != item_id else mnemonic
+
+
+def compact_primary_grid_label(item: dict[str, Any]) -> str:
+    mnemonic = str(item.get("mnemonic", item.get("id", "")))
+    item_id = str(item.get("id", mnemonic))
+    if "D_TO_EA" in item_id:
+        return f"{mnemonic} D->EA"
+    if "EA_TO_D" in item_id:
+        return f"{mnemonic} EA->D"
+    if "D_TO_D" in item_id:
+        return f"{mnemonic} D,D"
+    if "IMM_TO_D" in item_id:
+        return f"{mnemonic} imm,D"
+    if "IMM_TO_A" in item_id:
+        return f"{mnemonic} imm,A"
+    if item_id.endswith(".D"):
+        return f"{mnemonic} D"
+    if item_id.endswith(".A"):
+        return f"{mnemonic} A"
+    if ".IMM" in item_id:
+        suffix = item_id.split(".IMM", 1)[1]
+        return f"{mnemonic} imm{suffix}".strip()
+    if ".BITMAP" in item_id:
+        return f"{mnemonic} map"
+    return mnemonic[:10]
+
+
+def extension_root_grid_label(group: str) -> str:
+    labels = {
+        "integer_alu": "EXT ALU",
+        "integer_bounds_signed": "EXT BND.S",
+        "integer_bounds_unsigned": "EXT BND.U",
+        "integer_mul_div": "EXT MUL",
+        "integer_mac": "EXT MAC",
+        "integer_bitfield": "EXT BIT",
+        "integer_bitfield_bit_imm": "EXT BIT.I",
+        "integer_bitfield_rotate_imm": "EXT ROT.I",
+        "integer_bitfield_shift_imm": "EXT SHF.I",
+        "data_movement": "EXT MOV",
+        "data_register_banking": "EXT BANK",
+        "ea_utility": "EXT EA",
+        "control_flow": "EXT CTRL",
+        "conditional_control": "EXT COND",
+        "atomic_memory": "EXT ATOM",
+        "cache_hint": "EXT PREF",
+        "tlb_cache": "EXT TLB",
+        "system_core": "EXT SYS",
+        "virtualization_acceleration": "EXT VIRT",
+        "fpu_move_compare": "EXT F.MOV",
+        "fpu_arithmetic": "EXT F.ALU",
+        "fpu_transcendental": "EXT F.TR",
+    }
+    return labels.get(group, "EXT")
+
+
+def prefix_grid_label(prefix: dict[str, Any]) -> str:
+    name = str(prefix.get("name", ""))
+    labels = {
+        "NOSPEC": "NS",
+        "SATURATE": "SAT",
+        "NONTEMPORAL": "NT",
+        "POSTINC": "A++",
+        "PREINC": "++A",
+        "POSTDEC": "A--",
+        "PREDEC": "--A",
+    }
+    if name in labels:
+        return labels[name]
+    if name == "SATURATE":
+        return "SAT"
+    return name[:8]
+
+
+def primary_payload_values(item: dict[str, Any]) -> list[int]:
+    payloads = item.get("primary_payloads")
+    if isinstance(payloads, list) and payloads:
+        return [parse_hex_int(value) for value in payloads]
+    start = parse_hex_int(item.get("start_payload", "0x0"))
+    end = parse_hex_int(item.get("end_payload", item.get("start_payload", "0x0")))
+    reclaimed = {
+        parse_hex_int(value)
+        for value in item.get("reclaimed_payloads", []) or []
+    }
+    return [value for value in range(start, end + 1) if value not in reclaimed]
+
+
+def prefix_values(prefix: dict[str, Any]) -> list[int]:
+    if "value" in prefix:
+        return [parse_hex_int(prefix.get("value")) & 0xFF]
+    pattern = prefix.get("pattern")
+    if isinstance(pattern, str):
+        return pattern_values(pattern, 8)
+    return []
+
+
+def pattern_values(pattern: str, width: int) -> list[int]:
+    bits = "".join(ch for ch in pattern if not ch.isspace())
+    if len(bits) != width:
+        return []
+    values = []
+    for value in range(1 << width):
+        ok = True
+        for index, bit in enumerate(bits):
+            if bit not in "01":
+                continue
+            actual = (value >> (width - index - 1)) & 1
+            if actual != int(bit):
+                ok = False
+                break
+        if ok:
+            values.append(value)
+    return values
 
 
 def primary_payload_rows(compact_primary: list[dict[str, Any]], extension_roots: list[dict[str, Any]]) -> list[list[str]]:
@@ -651,8 +1269,132 @@ def field_catalog_rows(items: list[dict[str, Any]]) -> list[list[str]]:
     return rows
 
 
+def field_catalog_diagrams(items: list[dict[str, Any]]) -> str:
+    entries = field_catalog_entries(items)
+    if not entries:
+        return tex_escape("No operand fields are present.")
+    return "\n".join(field_catalog_diagram(entry) for entry in entries)
+
+
+def field_catalog_entries(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    catalog: dict[tuple[str, int], dict[str, Any]] = {}
+    for item in items:
+        for field in item.get("fields", []) or []:
+            kind = str(field.get("kind", field.get("name", "")))
+            width = field_width(field)
+            key = (kind, width)
+            entry = catalog.setdefault(
+                key,
+                {
+                    "kind": kind,
+                    "width": width,
+                    "storage": set(),
+                    "roles": set(),
+                    "symbols": set(),
+                },
+            )
+            entry["storage"].add(field_storage_text(field))
+            entry["roles"].add(role_name(str(field.get("source", field.get("name", "")))))
+            entry["symbols"].add(field_symbol(field))
+    return [
+        catalog[key]
+        for key in sorted(catalog, key=lambda pair: (field_catalog_sort_group(pair[0]), pair[0], pair[1]))
+    ]
+
+
+def field_catalog_sort_group(kind: str) -> int:
+    normalized = kind.lower()
+    if normalized in {"ea", "imm_ea"}:
+        return 0
+    if normalized.endswith("reg") or normalized in {"sreg", "cr", "dbank"}:
+        return 1
+    if normalized in {"condition"}:
+        return 2
+    if normalized in {"bw", "bwl", "bwlq", "lq", "s_d", "wl"}:
+        return 3
+    if "group" in normalized or "selector" in normalized or normalized == "memory_order":
+        return 4
+    return 5
+
+
+def field_catalog_diagram(entry: dict[str, Any]) -> str:
+    kind = str(entry["kind"])
+    width = int(entry["width"])
+    symbol = field_catalog_symbol(kind, entry["symbols"])
+    token = symbol * max(width, 1)
+    caption = f"{kind_description(kind)} ({kind}, {width} bit{'s' if width != 1 else ''})"
+    labels = [f"{kind}[{width - 1}:0]" if width > 1 else f"{kind}[0]"]
+    storage = sorted(entry["storage"])
+    roles = sorted(entry["roles"])
+    symbols = sorted(str(value) for value in entry["symbols"] if value)
+    return "\n".join(
+        [
+            r"\Needspace{2.05in}",
+            rf"\noindent\textbf{{{tex_code(kind)}}} "
+            rf"\hfill {tex_escape(str(width))} {tex_escape('bits' if width != 1 else 'bit')}\par",
+            bit_diagram([token], caption, labels),
+            field_catalog_note_line("Symbols", ", ".join(tex_code(value) for value in symbols) or tex_escape("-")),
+            field_catalog_note_line("Common storage", ", ".join(tex_code(value) for value in storage) or tex_escape("-")),
+            field_catalog_note_line("Typical roles", tex_escape(", ".join(roles) or "-")),
+            r"\par\medskip",
+        ]
+    )
+
+
+def field_catalog_symbol(kind: str, symbols: set[str]) -> str:
+    preferred = {
+        "AREG": "a",
+        "DREG": "d",
+        "EA": "e",
+        "FREG": "f",
+        "SREG": "g",
+        "DBANK": "k",
+        "condition": "c",
+        "bitmap16": "b",
+        "selector6": "n",
+        "memory_order": "o",
+        "bit_group": "o",
+        "rotate_group": "o",
+        "shift_group": "o",
+    }
+    if kind in preferred:
+        return preferred[kind]
+    for candidate in ("s", "z", "i", "o", "n", "d", "a", "e", "c", "b", "g", "k", "f"):
+        if candidate in symbols:
+            return candidate
+    for symbol in sorted(symbols):
+        if len(symbol) == 1 and symbol.isalpha():
+            return symbol
+    return "x"
+
+
+def field_catalog_note_line(label: str, value: str) -> str:
+    return (
+        r"\begingroup\footnotesize\noindent"
+        rf"\textbf{{{tex_escape(label)}:}} {value}\par\endgroup"
+    )
+
+
 def payload_sort_key(item: dict[str, Any]) -> tuple[int, str]:
     return (parse_hex_int(item.get("start_payload", "0x0")), str(item.get("id", "")))
+
+
+def extended_payload_sort_key(item: dict[str, Any]) -> tuple[int, int, str]:
+    start, end = extended_opcode_range(item)
+    return (start, end, str(item.get("id", "")))
+
+
+def extended_opcode_range(item: dict[str, Any]) -> tuple[int, int]:
+    if item.get("extended_opcode_start") is not None:
+        start = parse_hex_int(item.get("extended_opcode_start"))
+        end = parse_hex_int(item.get("extended_opcode_end", item.get("extended_opcode_start")))
+        return start, end
+    text = str(item.get("extended_opcode", "0x0000") or "0x0000")
+    if ".." in text:
+        start_text, end_text = text.split("..", 1)
+        return parse_hex_int(start_text), parse_hex_int(end_text)
+    value = parse_hex_int(text)
+    return value, value
 
 
 def payload_range_text(item: dict[str, Any]) -> str:
@@ -707,9 +1449,11 @@ def field_storage_text(field: dict[str, Any]) -> str:
 
 
 def parse_hex_int(value: Any) -> int:
+    if isinstance(value, int):
+        return value
     text = str(value or "0")
     try:
-        return int(text, 16)
+        return int(text, 16) if text.lower().startswith("0x") else int(text, 10)
     except ValueError:
         return 0
 
@@ -729,11 +1473,14 @@ def instruction_reference_sections(
     parts = [
         top_section(f"{title} Summary"),
         instruction_summary(mnemonics, records, operations, items_by_mnemonic, docs, summary_caption),
-        top_section(f"{title} Descriptions"),
+        hidden_top_section(f"{title} Descriptions"),
     ]
     if title.startswith("General"):
         parts.append(instruction_description_intro_section())
-    for mnemonic in mnemonics:
+        parts.append(r"\clearpage")
+    for index, mnemonic in enumerate(mnemonics):
+        if index:
+            parts.append(r"\clearpage")
         parts.append(
             render_instruction(
                 mnemonic,
@@ -809,7 +1556,7 @@ def instruction_summary(
     for mnemonic in mnemonics:
         rows.append(
             [
-                tex_code(mnemonic),
+                instruction_link(mnemonic),
                 tex_escape(doc_title(mnemonic, docs, records.get(mnemonic, []), operations.get(mnemonic, []))),
                 tex_escape(len(items_by_mnemonic.get(mnemonic, []))),
             ]
@@ -832,12 +1579,13 @@ def render_instruction(
     docs: dict[str, dict[str, Any]],
 ) -> str:
     title = doc_title(mnemonic, docs, records, operations)
-    lines = [rf"\instrhead{{{tex_escape(mnemonic)}}}{{{tex_escape(title)}}}{{}}"]
+    lines = [rf"\instrhead{{{tex_escape(mnemonic)}}}{{{tex_escape(title)}}}{{\label{{{instruction_label(mnemonic)}}}}}"]
     lines.append(rf"\manualfield{{Summary:}}{{{tex_escape(doc_summary(mnemonic, docs, records, operations, items))}}}")
     lines.append(rf"\manualfield{{Operation:}}{{{operation_latex(operations)}}}")
     lines.append(rf"\manualfield{{Assembler Syntax:}}{{{syntax_block(items)}}}")
     lines.append(rf"\manualfield{{Attributes:}}{{{attribute_text(items, records, operations, lengths)}}}")
     lines.append(rf"\manualfield{{Description:}}{{{doc_description(mnemonic, docs, records, operations, aliases)}}}")
+    lines.append(save_area_format_section(mnemonic, docs))
     lines.append(condition_code_section(records, operations))
     lines.append(instruction_forms_section(items, lengths, records, operations))
     return "\n".join(lines)
@@ -882,6 +1630,267 @@ def doc_description(
             text += " " + alias_description(aliases)
         return tex_escape(text)
     return description_text(records, operations, aliases)
+
+
+def save_area_format_section(mnemonic: str, docs: dict[str, dict[str, Any]]) -> str:
+    entry = docs.get(mnemonic, {})
+    layout = entry.get("save_area_format")
+    if not isinstance(layout, dict):
+        return ""
+
+    def offset_text(value: Any) -> str:
+        if isinstance(value, int):
+            return f"0x{value:03x}"
+        return str(value)
+
+    def map_row(label: str, offset: str) -> str:
+        return rf"\multicolumn{{8}}{{|c|}}{{{tex_escape(label)}}} & \textbf{{{tex_escape(offset)}}}\\"
+
+    def slot_row(slot: dict[str, Any]) -> str:
+        offset = offset_text(slot.get("offset", "-"))
+        cells = slot.get("cells")
+        if not isinstance(cells, list) or not cells:
+            return map_row(str(slot.get("field", "-")), offset)
+        pieces: list[str] = []
+        consumed = 0
+        for cell in cells:
+            if not isinstance(cell, dict):
+                continue
+            span = int(cell.get("span", 1))
+            if span < 1:
+                continue
+            consumed += span
+            left_rule = "|" if not pieces else ""
+            pieces.append(rf"\multicolumn{{{span}}}{{{left_rule}c|}}{{{tex_escape(str(cell.get('field', '-')))}}}")
+        if consumed != 8:
+            return map_row(str(slot.get("field", "-")), offset)
+        return " & ".join(pieces) + rf" & \textbf{{{tex_escape(offset)}}}\\"
+
+    def component_offset_text(value: Any) -> str:
+        if isinstance(value, int):
+            return f"+0x{value:03x}"
+        return str(value)
+
+    def component_id_text(value: Any) -> str:
+        if isinstance(value, int):
+            return f"0x{value:04x}"
+        return str(value)
+
+    def repeat_rows(spec: dict[str, Any]) -> list[tuple[str, str, str]]:
+        count = int(spec.get("count", 0))
+        start = spec.get("offset_start", 0)
+        stride = spec.get("offset_stride", 0)
+        n_start = int(spec.get("n_start", 0))
+        field_template = str(spec.get("field_template", "entry {n}"))
+        meaning_template = str(spec.get("meaning_template", ""))
+        rows: list[tuple[str, str, str]] = []
+        if not isinstance(start, int) or not isinstance(stride, int):
+            return rows
+        for index in range(count):
+            n = n_start + index
+            rows.append(
+                (
+                    component_offset_text(start + index * stride),
+                    field_template.format(n=n),
+                    meaning_template.format(n=n),
+                )
+            )
+        return rows
+
+    def component_slot_rows(component: dict[str, Any]) -> list[tuple[str, str, str]]:
+        rows: list[tuple[str, str, str]] = []
+        for slot in component.get("slots", []) or []:
+            if not isinstance(slot, dict):
+                continue
+            repeat = slot.get("repeat")
+            if isinstance(repeat, dict):
+                rows.extend(repeat_rows(repeat))
+                continue
+            rows.append(
+                (
+                    component_offset_text(slot.get("offset", "-")),
+                    str(slot.get("field", "-")),
+                    str(slot.get("meaning", "")),
+                )
+            )
+        return rows
+
+    def component_format_section(component: dict[str, Any]) -> str:
+        title = str(component.get("title", component.get("name", "Extension Component")))
+        name = str(component.get("name", title))
+        description = compact_text(component.get("description", ""))
+        validity = compact_text(component.get("validity", ""))
+        size = component.get("size", "-")
+        rows = component_slot_rows(component)
+        if not rows:
+            return ""
+        bitmap_bits = component.get("component_bitmap_bits", []) or []
+        bitmap_description = ""
+        bitmap_reserved = ""
+        bitmap_items: list[Any] = []
+        if isinstance(bitmap_bits, dict):
+            bitmap_description = compact_text(bitmap_bits.get("description", ""))
+            bitmap_reserved = compact_text(bitmap_bits.get("reserved_bits", ""))
+            bitmap_items = bitmap_bits.get("mappings", []) or []
+        elif isinstance(bitmap_bits, list):
+            bitmap_items = bitmap_bits
+        component_bitmap_rows = [
+            (
+                str(item.get("bits", "-")),
+                str(item.get("slot", item.get("field", "-"))),
+                str(item.get("meaning", "")),
+            )
+            for item in bitmap_items
+            if isinstance(item, dict)
+        ]
+        lines = [
+            r"\par\smallskip\Needspace{2.4in}",
+            rf"\noindent\textbf{{Extension Component: {tex_escape(title)}}}\par\smallskip",
+            r"\begingroup\footnotesize",
+            r"\begin{tabularx}{0.985\linewidth}{@{}p{1.35in}X@{}}",
+            rf"\textbf{{Component ID}} & {tex_escape(component_id_text(component.get('component_id', '-')))}\\",
+            rf"\textbf{{Component Name}} & {tex_code(name)}\\",
+            rf"\textbf{{Component Size}} & {tex_escape(component_id_text(size) if isinstance(size, int) else str(size))}\\",
+            r"\end{tabularx}\endgroup\par\smallskip",
+        ]
+        if description:
+            lines.append(rf"\noindent {tex_escape(description)}\par\smallskip")
+        if validity:
+            lines.append(rf"\noindent {tex_escape(validity)}\par\smallskip")
+        if component_bitmap_rows:
+            lines.append(r"\noindent\textbf{Component-Local Valid Bitmap:}\par\smallskip\noindent")
+            if bitmap_description:
+                lines.append(rf"{tex_escape(bitmap_description)}\par\smallskip\noindent")
+            lines.extend(
+                [
+                    r"\begingroup\footnotesize\renewcommand{\arraystretch}{1.08}",
+                    r"\begin{tabularx}{0.985\linewidth}{|p{0.62in}|p{1.85in}|X|}",
+                    r"\hline",
+                    r"\textbf{Set Bit} & \textbf{Component Slot} & \textbf{Meaning}\\",
+                    r"\hline",
+                ]
+            )
+            for bits, slot, meaning in component_bitmap_rows:
+                lines.append(rf"{tex_escape(bits)} & {tex_escape(slot)} & {tex_escape(meaning)}\\")
+                lines.append(r"\hline")
+            lines.append(r"\end{tabularx}\endgroup\par\smallskip")
+            if bitmap_reserved:
+                lines.append(rf"\noindent {tex_escape(bitmap_reserved)}\par\smallskip")
+        table_rows = [
+            [tex_escape(offset), tex_escape(field), tex_escape(meaning)]
+            for offset, field, meaning in rows
+        ]
+        if len(table_rows) > 14:
+            lines.append(
+                latex_longtable(
+                    ["Offset", "Saved State", "Meaning"],
+                    table_rows,
+                    ["0.72in", "1.85in", "3.0in"],
+                )
+            )
+            lines.append(r"\smallskip")
+        else:
+            lines.extend(
+                [
+                    r"\begingroup\footnotesize\renewcommand{\arraystretch}{1.08}",
+                    r"\begin{tabularx}{0.985\linewidth}{|p{0.72in}|p{1.85in}|X|}",
+                    r"\hline",
+                    r"\textbf{Offset} & \textbf{Saved State} & \textbf{Meaning}\\",
+                    r"\hline",
+                ]
+            )
+            for offset, field, meaning in table_rows:
+                lines.append(rf"{offset} & {field} & {meaning}\\")
+                lines.append(r"\hline")
+            lines.append(r"\end{tabularx}\endgroup\par\smallskip")
+        return "\n".join(lines)
+
+    rows = [slot for slot in layout.get("fixed_slots", []) or [] if isinstance(slot, dict)]
+    if not rows:
+        return ""
+    bitmap_bits = layout.get("base_bitmap_bits", []) or []
+    bitmap_description = ""
+    bitmap_reserved = ""
+    bitmap_items: list[Any] = []
+    if isinstance(bitmap_bits, dict):
+        bitmap_description = compact_text(bitmap_bits.get("description", ""))
+        bitmap_reserved = compact_text(bitmap_bits.get("reserved_bits", ""))
+        bitmap_items = bitmap_bits.get("mappings", []) or []
+    elif isinstance(bitmap_bits, list):
+        bitmap_items = bitmap_bits
+    bitmap_rows = [
+        (
+            str(item.get("bits", "-")),
+            str(item.get("slot", item.get("field", "-"))),
+            str(item.get("meaning", "")),
+        )
+        for item in bitmap_items
+        if isinstance(item, dict)
+    ]
+    behavior = compact_text(layout.get("behavior", ""))
+    extension_text = compact_text(layout.get("extension_components", ""))
+    extension_order_text = compact_text(layout.get("extension_component_order", ""))
+
+    lines = [
+        r"\par\smallskip\Needspace{6.6in}\noindent\textbf{Save Area Format:}\par\smallskip\noindent",
+        r"\begingroup\footnotesize\renewcommand{\arraystretch}{1.08}",
+        r"\begin{tabularx}{0.985\linewidth}{|*{8}{>{\centering\arraybackslash}X|}p{0.56in}|}",
+        r"\hline",
+        r"\multicolumn{8}{|c|}{\textbf{Save-area bytes}} & \textbf{Offset}\\",
+        r"\hline",
+        r"\textbf{63..56} & \textbf{55..48} & \textbf{47..40} & \textbf{39..32} & \textbf{31..24} & \textbf{23..16} & \textbf{15..8} & \textbf{7..0} & \\",
+        r"\hline",
+    ]
+    for slot in rows:
+        lines.append(slot_row(slot))
+        lines.append(r"\hline")
+    lines.extend(
+        [
+            r"\end{tabularx}\endgroup\par\smallskip",
+        ]
+    )
+    if bitmap_rows:
+        lines.extend(
+            [
+                r"\noindent\textbf{Base Save-Slot Valid Bitmap:}\par\smallskip\noindent",
+            ]
+        )
+        if bitmap_description:
+            lines.append(rf"{tex_escape(bitmap_description)}\par\smallskip\noindent")
+        lines.extend(
+            [
+                r"\begingroup\footnotesize\renewcommand{\arraystretch}{1.08}",
+                r"\begin{tabularx}{0.985\linewidth}{|p{0.62in}|p{1.55in}|X|}",
+                r"\hline",
+                r"\textbf{Set Bit} & \textbf{Base Save Slot} & \textbf{Meaning}\\",
+                r"\hline",
+            ]
+        )
+        for bits, slot, meaning in bitmap_rows:
+            lines.append(rf"{tex_escape(bits)} & {tex_escape(slot)} & {tex_escape(meaning)}\\")
+            lines.append(r"\hline")
+        lines.append(r"\end{tabularx}\endgroup\par\smallskip")
+        if bitmap_reserved:
+            lines.append(rf"\noindent {tex_escape(bitmap_reserved)}\par\smallskip")
+    if behavior:
+        lines.append(rf"\noindent {tex_escape(behavior)}\par")
+    if extension_text:
+        lines.append(rf"\noindent {tex_escape(extension_text)}\par")
+    if extension_order_text:
+        lines.append(rf"\noindent {tex_escape(extension_order_text)}\par")
+    extension_formats = [
+        component
+        for component in layout.get("extension_component_formats", []) or []
+        if isinstance(component, dict)
+    ]
+    if extension_formats:
+        lines.append(r"\par\smallskip\noindent\textbf{Extension Component Formats:}\par")
+        for component in extension_formats:
+            rendered = component_format_section(component)
+            if rendered:
+                lines.append(rendered)
+    lines.append(r"\smallskip")
+    return "\n".join(lines)
 
 
 def alias_description(aliases: list[str]) -> str:
@@ -1222,10 +2231,8 @@ def pcode_primitive_text(value: Any) -> str:
         "invalidate_tlb_page": "Invalidate the selected TLB page entry",
         "invalidate_tlb_asid": "Invalidate TLB entries for the selected ASID",
         "perform_page_walk": "Perform a page-table walk",
-        "store_core_context": "Store the core context",
-        "load_core_context": "Load the core context",
-        "store_extended_context": "Store the dirty extended context",
-        "load_extended_context": "Load the dirty extended context",
+        "save_modified_processor_state": "Save modified base and extension state",
+        "restore_processor_state": "Restore base and extension state",
         "prefetch_memory": "Issue a prefetch hint",
         "invalidate_data_cache": "Invalidate data cache state",
         "invalidate_instruction_cache": "Invalidate instruction cache state",
@@ -1474,9 +2481,9 @@ def item_privilege(
         return value
     operands = [str(operand) for operand in item.get("operands", []) or []]
     if any(operand.endswith(":SREG") or ":SREG" in operand for operand in operands):
-        if any(operand.startswith("dst:SREG") for operand in operands):
-            return "policy_controlled"
-        return "depends_on_state_register"
+        if any(operand.startswith("seg:SREG") for operand in operands):
+            return "depends_on_segment_register"
+        return "policy_controlled"
     for record in operations + records:
         spec = record.get("spec", {})
         value = spec.get("privilege")
@@ -1525,8 +2532,8 @@ def description_text(records: list[dict[str, Any]], operations: list[dict[str, A
             "destination_size_by_mnemonic",
             "source_sizes_by_destination",
             "memory",
-            "state_register_forms",
-            "state_registers",
+            "segment_register_forms",
+            "segment_registers",
             "implementation",
             "privilege",
             "traps",
@@ -1558,7 +2565,7 @@ def description_text(records: list[dict[str, Any]], operations: list[dict[str, A
             "stack_register",
             "bitmap",
             "valid_bits",
-            "state_register_access",
+            "segment_register_access",
             "prefixes",
             "source_size",
             "destination_size",
@@ -1641,7 +2648,7 @@ def kind_description(kind: str) -> str:
         "DREG": "data register number",
         "AREG": "address register number",
         "SPREG": "stack pointer register",
-        "SREG": "state register number",
+        "SREG": "segment register selector",
         "CR": "control-register selector",
         "memory_order": "atomic memory-order value",
         "cr": "control-register selector",

@@ -27,7 +27,7 @@ CLANG_TARGETS: dict[str, dict[str, list[str] | str]] = {
 }
 
 GCC_TARGETS: dict[str, dict[str, list[str] | str]] = {
-    "m68k": {"compiler_arg": "m68k_gcc", "compiler_default": "m68k-elf-gcc", "extra": ["-m68000"]},
+    "m68k": {"compiler_arg": "m68k_gcc", "compiler_default": "m68k-elf-gcc", "extra": ["-m68030"]},
 }
 
 DEFAULT_TARGETS = ("bedrock", "m68k", "x86_64", "aarch64", "rv64gc")
@@ -46,7 +46,7 @@ TARGET_CODE_MODEL: dict[str, str] = {
 }
 TARGET_ISA_OPTIONS: dict[str, str] = {
     "bedrock": "ELF64",
-    "m68k": "`-m68000`",
+    "m68k": "`-m68030`",
     "x86_64": "default",
     "aarch64": "default",
     "rv64gc": "`-march=rv64gc`, `-mabi=lp64d`",
@@ -457,6 +457,8 @@ def main(argv: list[str] | None = None) -> int:
             require_tool(getattr(args, str(GCC_TARGETS[target]["compiler_arg"])), target)
 
     out_dir = Path(args.out_dir)
+    if out_dir.exists():
+        shutil.rmtree(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     cases = discover_cases(args.cases)
     rows: list[Row] = []

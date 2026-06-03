@@ -8,7 +8,7 @@ common_fields:
   ea: effective_address
   dreg: D0-D7
   areg: A0-A7
-  sreg: CS,DS,SS,GS0,GS1,FLAGS,STATUS
+  sreg: CS,DS,SS,GS0,GS1,GS2,GS3,GS4
   imm: immediate
   memory_order: relaxed,acquire,release,acqrel,seqcst
   bitmap16: D0-D7,A0-A7
@@ -43,3 +43,57 @@ common_constraints:
     segment_immediate_plus_offset_immediate:
       allowed: false
       reason: 64-bit CS immediate plus 64-bit PC immediate would exceed the 8-word instruction limit
+
+compatibility_rules:
+  reserved_fields:
+    architected_register_bits:
+      read: zero
+      write: must_be_zero
+    control_register_bits:
+      read: zero
+      write: must_be_zero
+      write_exception: INVALID_CONTROL_STATE
+    selector_values:
+      exception: INVALID_CONTROL_STATE
+    page_table_bits:
+      consumed_exception: PAGE_FAULT
+    interrupt_vector_table_bits:
+      write: must_be_zero
+    supervisor_frame_bits:
+      write: must_be_zero
+    software_defined_bits:
+      hardware_use: ignored
+      software_use: allowed
+  reserved_encodings:
+    instruction_opcode:
+      exception: ILLEGAL_INSTRUCTION
+    extension_suboperation:
+      exception: ILLEGAL_INSTRUCTION
+    prefix_value:
+      exception: ILLEGAL_INSTRUCTION
+    effective_address_form:
+      exception: ILLEGAL_INSTRUCTION
+    unsupported_optional_instruction_group:
+      exception: ILLEGAL_INSTRUCTION
+    extension_unavailable_exception:
+      defined: false
+  canonical_encoding:
+    assembler_default: canonical
+    disassembler_default: canonical
+    noncanonical_default:
+      exception: ILLEGAL_INSTRUCTION
+    explicit_alias_or_priority:
+      allowed: true
+  cpuid:
+    unknown_class:
+      result: zero
+    unknown_leaf:
+      result: zero
+    unknown_index:
+      result: zero
+    reserved_result_bits:
+      software_action: ignore
+    privilege: unprivileged
+    serialization: none
+    runtime_mutability:
+      stable_after_reset: true

@@ -87,6 +87,8 @@ def all_fields(item: dict[str, Any]) -> list[dict[str, Any]]:
 def exact_primary_values(item: dict[str, Any]) -> list[int]:
     values = item.get("alias_payloads") if item.get("kind") in {"compact_alias", "extended_alias"} else None
     if not values:
+        values = item.get("primary_payloads")
+    if not values:
         return []
     return sorted({int(str(value), 16) for value in values})
 
@@ -481,6 +483,25 @@ static int bedrock_parse_numbered_register(const char *text, char prefix, unsign
     return 1;
 }
 
+static int bedrock_parse_dbank_selector(const char *text, uint64_t *value)
+{
+    char compact[32];
+    uint64_t number;
+    bedrock_compact_copy(compact, sizeof(compact), text);
+    if (bedrock_starts_ci(compact, "DB", 2u)) {
+        if (!bedrock_parse_u64(compact + 2, &number) || number > 15u) {
+            return 0;
+        }
+        *value = number;
+        return 1;
+    }
+    if (!bedrock_parse_u64(compact, &number) || number > 15u) {
+        return 0;
+    }
+    *value = number;
+    return 1;
+}
+
 static void bedrock_payload_from_u64(uint64_t value, uint16_t *payload, size_t words)
 {
     size_t index;
@@ -516,6 +537,18 @@ static size_t bedrock_bits_for_size_suffix(char suffix)
     default:
         return 64;
     }
+}
+
+static int bedrock_value_fits_signed_or_unsigned_bits(uint64_t value, unsigned bits)
+{
+    uint64_t unsigned_max;
+    uint64_t signed_min_encoded;
+    if (bits >= 64u) {
+        return 1;
+    }
+    unsigned_max = (1ull << bits) - 1ull;
+    signed_min_encoded = (~0ull << (bits - 1u));
+    return value <= unsigned_max || value >= signed_min_encoded;
 }
 
 static int bedrock_choose_compact_immediate_ea(int64_t signed_value, uint64_t unsigned_value, char size_suffix, bedrock_text_operand *out)
@@ -625,15 +658,20 @@ static int bedrock_scale_code(uint64_t scale, uint16_t *code)
 
 static int bedrock_segment_code(const char *segment, uint16_t *code)
 {
-    if (segment == 0 || *segment == '\0' || bedrock_streq_ci(segment, "DEFAULT")) {
+    if (segment == 0 || *segment == '\0') {
+        return 0;
+    }
+    if (bedrock_streq_ci(segment, "CS")) {
         *code = 0;
         return 1;
     }
-    if (bedrock_streq_ci(segment, "CS")) { *code = 1; return 1; }
-    if (bedrock_streq_ci(segment, "DS")) { *code = 2; return 1; }
-    if (bedrock_streq_ci(segment, "SS")) { *code = 3; return 1; }
-    if (bedrock_streq_ci(segment, "GS0")) { *code = 4; return 1; }
-    if (bedrock_streq_ci(segment, "GS1")) { *code = 5; return 1; }
+    if (bedrock_streq_ci(segment, "DS")) { *code = 1; return 1; }
+    if (bedrock_streq_ci(segment, "SS")) { *code = 2; return 1; }
+    if (bedrock_streq_ci(segment, "GS0")) { *code = 3; return 1; }
+    if (bedrock_streq_ci(segment, "GS1")) { *code = 4; return 1; }
+    if (bedrock_streq_ci(segment, "GS2")) { *code = 5; return 1; }
+    if (bedrock_streq_ci(segment, "GS3")) { *code = 6; return 1; }
+    if (bedrock_streq_ci(segment, "GS4")) { *code = 7; return 1; }
     return 0;
 }
 
@@ -678,7 +716,7 @@ static int bedrock_parse_extended_indexed_ea(char *compact, bedrock_text_operand
     char *colon;
     uint64_t base_reg = 0;
     uint16_t mode = 0;
-    uint16_t segment = 0;
+    uint16_t segment = 1;
     uint16_t index = 0;
     uint16_t scale = 0;
     uint16_t extra = 0;
@@ -911,9 +949,9 @@ static int bedrock_parse_line_text(const char *line, bedrock_text_line *parsed)
             return 0;
         }
         while (*cursor != '\0') {
-            if (*cursor == '[') {
+            if (*cursor == '[' || *cursor == '{') {
                 ++depth;
-            } else if (*cursor == ']') {
+            } else if (*cursor == ']' || *cursor == '}') {
                 --depth;
             } else if (*cursor == ',' && depth == 0) {
                 break;
@@ -1139,11 +1177,30 @@ static int bedrock_parse_compact_ea(const char *text, bedrock_text_operand *out,
     return 0;
 }
 
+static int bedrock_parse_bitmap_register(const char *text, char *kind, unsigned *index)
+{
+    uint64_t value;
+    if (text[0] == '\0' || !isdigit((unsigned char)text[1])) {
+        return 0;
+    }
+    if (!bedrock_char_ieq(text[0], 'D') && !bedrock_char_ieq(text[0], 'A')) {
+        return 0;
+    }
+    if (!bedrock_parse_u64(text + 1, &value) || value > 7u) {
+        return 0;
+    }
+    *kind = (char)bedrock_ascii_upper((unsigned char)text[0]);
+    *index = (unsigned)value;
+    return 1;
+}
+
 static int bedrock_parse_bitmap16(const char *text, uint64_t *value)
 {
-    char compact[96];
-    uint64_t numeric;
+    char compact[128];
+    char token[32];
     char *cursor;
+    int braced = 0;
+    int closed = 0;
     uint64_t bitmap = 0;
     if (bedrock_parse_u64(text, value)) {
         return *value <= 0xffffu;
@@ -1151,29 +1208,51 @@ static int bedrock_parse_bitmap16(const char *text, uint64_t *value)
     bedrock_compact_copy(compact, sizeof(compact), text);
     cursor = compact;
     if (*cursor == '{') {
+        braced = 1;
         ++cursor;
     }
     while (*cursor != '\0') {
-        uint64_t reg;
+        char *start = cursor;
+        char *dash;
+        char lo_kind, hi_kind;
+        unsigned lo_index, hi_index, reg;
         if (*cursor == '}') {
+            closed = 1;
+            ++cursor;
             break;
-        }
-        if (bedrock_parse_numbered_register(cursor, 'D', 7, &reg)) {
-            bitmap |= 1ull << reg;
-        } else if (bedrock_parse_numbered_register(cursor, 'A', 7, &reg)) {
-            bitmap |= 1ull << (8u + reg);
-        } else {
-            return 0;
         }
         while (*cursor != '\0' && *cursor != ',' && *cursor != '}') {
             ++cursor;
+        }
+        bedrock_trim_copy(token, sizeof(token), start, cursor);
+        if (token[0] == '\0') {
+            return 0;
+        }
+        dash = strchr(token, '-');
+        if (dash != 0) {
+            *dash = '\0';
+            if (!bedrock_parse_bitmap_register(token, &lo_kind, &lo_index)
+                || !bedrock_parse_bitmap_register(dash + 1, &hi_kind, &hi_index)
+                || lo_kind != hi_kind || lo_index > hi_index) {
+                return 0;
+            }
+            for (reg = lo_index; reg <= hi_index; ++reg) {
+                bitmap |= 1ull << (reg + (lo_kind == 'A' ? 8u : 0u));
+            }
+        } else {
+            if (!bedrock_parse_bitmap_register(token, &lo_kind, &lo_index)) {
+                return 0;
+            }
+            bitmap |= 1ull << (lo_index + (lo_kind == 'A' ? 8u : 0u));
         }
         if (*cursor == ',') {
             ++cursor;
         }
     }
+    if ((braced && !closed) || (!braced && closed) || *cursor != '\0') {
+        return 0;
+    }
     *value = bitmap;
-    (void)numeric;
     return 1;
 }
 
@@ -1184,6 +1263,9 @@ static int bedrock_parse_operand_for_kind(const bedrock_operand_desc *desc, cons
     bedrock_trim_copy(out->text, sizeof(out->text), text, text + strlen(text));
     if (strcmp(desc->kind, "DREG") == 0) {
         return bedrock_parse_numbered_register(out->text, 'D', 7, &out->value);
+    }
+    if (strcmp(desc->kind, "DBANK") == 0) {
+        return bedrock_parse_dbank_selector(out->text, &out->value);
     }
     if (strcmp(desc->kind, "AREG") == 0) {
         return bedrock_parse_numbered_register(out->text, 'A', 7, &out->value);
@@ -1249,6 +1331,18 @@ static int bedrock_parse_operand_for_kind(const bedrock_operand_desc *desc, cons
         out->payload[0] = (uint16_t)out->value;
         return 1;
     }
+    if (strcmp(desc->kind, "small_selector") == 0) {
+        if (bedrock_parse_numbered_register(out->text, 'D', 7, &out->value)) {
+            return 1;
+        }
+        return bedrock_parse_u64(out->text, &out->value);
+    }
+    if (strcmp(desc->kind, "selector6") == 0 || strcmp(desc->declared_kind, "selector6") == 0) {
+        if (!bedrock_parse_u64(out->text, &out->value) || out->value > 63u) {
+            return 0;
+        }
+        return 1;
+    }
     if (strstr(desc->kind, "imm") != 0 || strstr(desc->declared_kind, "imm") != 0 || strstr(desc->kind, "asid") != 0) {
         size_t words = bedrock_words_for_size_suffix(size_suffix);
         size_t forced_words = 0;
@@ -1275,15 +1369,15 @@ static int bedrock_parse_operand_for_kind(const bedrock_operand_desc *desc, cons
             }
             words = forced_words;
         }
+        if (words == 1u && !bedrock_value_fits_signed_or_unsigned_bits(out->value, 16u)) {
+            return 0;
+        }
+        if (words == 2u && !bedrock_value_fits_signed_or_unsigned_bits(out->value, 32u)) {
+            return 0;
+        }
         out->payload_count = words;
         bedrock_payload_from_u64(out->value, out->payload, words);
         return 1;
-    }
-    if (strcmp(desc->kind, "small_selector") == 0) {
-        if (bedrock_parse_numbered_register(out->text, 'D', 7, &out->value)) {
-            return 1;
-        }
-        return bedrock_parse_u64(out->text, &out->value);
     }
     return bedrock_parse_u64(out->text, &out->value);
 }
@@ -1507,6 +1601,10 @@ int bedrock_assemble_line(const char *line, uint16_t *out_words, size_t out_word
         if (!ok) {
             continue;
         }
+        score += (int)form->required_words;
+        if (bedrock_form_is_extended(form)) {
+            score += 4;
+        }
         if (score < best_score) {
             best_score = score;
             best_form = form;
@@ -1619,6 +1717,62 @@ static int bedrock_append_hex64(char *out, size_t out_size, size_t *used, uint64
     return bedrock_append_text(out, out_size, used, buf);
 }
 
+static int bedrock_append_selector6(char *out, size_t out_size, size_t *used, uint64_t value)
+{
+    return bedrock_append_format(out, out_size, used, "%u", (unsigned)(value & 0x3fu));
+}
+
+static int bedrock_append_bitmap_item(char *out, size_t out_size, size_t *used, int *first, char kind, unsigned start, unsigned end)
+{
+    char buf[32];
+    int written;
+    if (!*first && !bedrock_append_text(out, out_size, used, ",")) {
+        return 0;
+    }
+    *first = 0;
+    if (start == end) {
+        written = snprintf(buf, sizeof(buf), "%c%u", kind, start);
+    } else {
+        written = snprintf(buf, sizeof(buf), "%c%u-%c%u", kind, start, kind, end);
+    }
+    if (written < 0 || (size_t)written >= sizeof(buf)) {
+        return 0;
+    }
+    return bedrock_append_text(out, out_size, used, buf);
+}
+
+static int bedrock_append_bitmap16(char *out, size_t out_size, size_t *used, uint64_t value)
+{
+    int first = 1;
+    char kind;
+    unsigned base;
+    if (!bedrock_append_text(out, out_size, used, "{")) {
+        return 0;
+    }
+    for (kind = 'D', base = 0; base <= 8u; kind = 'A', base = 8u) {
+        unsigned index = 0;
+        while (index < 8u) {
+            unsigned start;
+            if ((value & (1ull << (base + index))) == 0u) {
+                ++index;
+                continue;
+            }
+            start = index;
+            while (index + 1u < 8u && (value & (1ull << (base + index + 1u))) != 0u) {
+                ++index;
+            }
+            if (!bedrock_append_bitmap_item(out, out_size, used, &first, kind, start, index)) {
+                return 0;
+            }
+            ++index;
+        }
+        if (base == 8u) {
+            break;
+        }
+    }
+    return bedrock_append_text(out, out_size, used, "}");
+}
+
 static uint64_t bedrock_read_payload_words(const uint16_t *words, size_t start, size_t count)
 {
     uint64_t value = 0;
@@ -1688,7 +1842,7 @@ int bedrock_disassemble_line(const uint16_t *words, size_t word_count, char *out
             if (payload_cursor >= declared_words) {
                 return BEDROCK_ERR_UNDERSIZED_ENCODING;
             }
-            if (!bedrock_append_hex64(out_text, out_text_size, &used, words[payload_cursor++])) {
+            if (!bedrock_append_bitmap16(out_text, out_text_size, &used, words[payload_cursor++])) {
                 return BEDROCK_ERR_BUFFER_TOO_SMALL;
             }
             cursor += 8;
@@ -1754,7 +1908,7 @@ int bedrock_disassemble_line(const uint16_t *words, size_t word_count, char *out
             cursor += 11;
             continue;
         }
-        if ((strncmp(cursor, "Dn(", 3) == 0 || strncmp(cursor, "An(", 3) == 0 || strncmp(cursor, "Fn(", 3) == 0 || strncmp(cursor, "Sreg(", 5) == 0 || strncmp(cursor, "ORDER(", 6) == 0 || strncmp(cursor, "order(", 6) == 0 || strncmp(cursor, "<ea(", 4) == 0 || strncmp(cursor, "<imm(", 5) == 0 || strncmp(cursor, "<cr(", 4) == 0)) {
+        if ((strncmp(cursor, "Dn(", 3) == 0 || strncmp(cursor, "DBn(", 4) == 0 || strncmp(cursor, "An(", 3) == 0 || strncmp(cursor, "Fn(", 3) == 0 || strncmp(cursor, "Sreg(", 5) == 0 || strncmp(cursor, "ORDER(", 6) == 0 || strncmp(cursor, "order(", 6) == 0 || strncmp(cursor, "<ea(", 4) == 0 || strncmp(cursor, "<imm(", 5) == 0 || strncmp(cursor, "<cr(", 4) == 0 || strncmp(cursor, "<count(", 7) == 0 || strncmp(cursor, "<bit_index(", 11) == 0)) {
             const char *open = strchr(cursor, '(');
             const char *close = open != 0 ? strchr(open, ')') : 0;
             char symbol[16];
@@ -1773,6 +1927,8 @@ int bedrock_disassemble_line(const uint16_t *words, size_t word_count, char *out
             value = bedrock_extract_field(words, field);
             if (strncmp(cursor, "Dn(", 3) == 0) {
                 if (!bedrock_append_format(out_text, out_text_size, &used, "D%u", (unsigned)value)) { return BEDROCK_ERR_BUFFER_TOO_SMALL; }
+            } else if (strncmp(cursor, "DBn(", 4) == 0) {
+                if (!bedrock_append_format(out_text, out_text_size, &used, "DB%u", (unsigned)value)) { return BEDROCK_ERR_BUFFER_TOO_SMALL; }
             } else if (strncmp(cursor, "An(", 3) == 0) {
                 if (!bedrock_append_format(out_text, out_text_size, &used, "A%u", (unsigned)value)) { return BEDROCK_ERR_BUFFER_TOO_SMALL; }
             } else if (strncmp(cursor, "Fn(", 3) == 0) {
@@ -1783,6 +1939,10 @@ int bedrock_disassemble_line(const uint16_t *words, size_t word_count, char *out
                 if (!bedrock_append_text(out_text, out_text_size, &used, bedrock_name_for_value(bedrock_cr_names, bedrock_cr_names_count, (uint16_t)value))) { return BEDROCK_ERR_BUFFER_TOO_SMALL; }
             } else if (strncmp(cursor, "ORDER(", 6) == 0 || strncmp(cursor, "order(", 6) == 0) {
                 if (!bedrock_append_text(out_text, out_text_size, &used, bedrock_name_for_value(bedrock_memory_order_names, bedrock_memory_order_names_count, (uint16_t)value))) { return BEDROCK_ERR_BUFFER_TOO_SMALL; }
+            } else if (strcmp(field->kind, "selector6") == 0) {
+                if (!bedrock_append_selector6(out_text, out_text_size, &used, value)) { return BEDROCK_ERR_BUFFER_TOO_SMALL; }
+            } else if (strcmp(field->kind, "small_selector") == 0) {
+                if (!bedrock_append_format(out_text, out_text_size, &used, "%u", (unsigned)value)) { return BEDROCK_ERR_BUFFER_TOO_SMALL; }
             } else {
                 char ea_text[64];
                 if (!bedrock_format_ea_value(value, ea_text, sizeof(ea_text)) || !bedrock_append_text(out_text, out_text_size, &used, ea_text)) { return BEDROCK_ERR_BUFFER_TOO_SMALL; }
@@ -2267,6 +2427,9 @@ def render_source(model: dict[str, Any], header_name: str, named_values: dict[st
             "        if (status != BEDROCK_OK) {",
             "            return status;",
             "        }",
+            "    }",
+            "    if (!bedrock_primary_matches(form, bedrock_word0_payload(out_words[0]))) {",
+            "        return BEDROCK_ERR_INVALID_ARGUMENT;",
             "    }",
             "    if (written_words != 0) {",
             "        *written_words = required;",
