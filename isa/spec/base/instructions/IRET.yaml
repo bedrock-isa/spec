@@ -1,0 +1,40 @@
+mnemonic: IRET
+doc:
+  title: Interrupt Return
+  summary: Restore all saved control state from an interrupt return frame.
+  description: Restore all saved control state from an interrupt return frame. IRET is the interrupt, trap, and 
+    exception return instruction. It restores all saved interrupt-frame state, including the saved DBANK selector, and 
+    does not validate FRAME_INFO.frame_type; malformed return frames are software errors and do not raise a separate 
+    architectural exception.
+  instruction_family: core_control
+  instruction_class: system
+behavior:
+  group: core_control
+  output: none
+  operation:
+  - local frame_base_v:8 = SP;
+  - local saved_flags_status_v:8 = *:8 (frame_base_v + 0x10);
+  - local return_pc_v:8 = *:8 (frame_base_v + 0x18);
+  - local return_sp_v:8 = *:8 (frame_base_v + 0x20);
+  - local return_cs_v:8 = *:8 (frame_base_v + 0x28);
+  - local return_ds_v:8 = *:8 (frame_base_v + 0x30);
+  - local return_ss_v:8 = *:8 (frame_base_v + 0x38);
+  - DBANK = *:8 (frame_base_v + 0x08) & 0xf;
+  - tmp_v = saved_flags_status_v & 0xffff;
+  - ZF = (tmp_v >> 3) & 1;
+  - NF = (tmp_v >> 2) & 1;
+  - CF = (tmp_v >> 1) & 1;
+  - VF = tmp_v & 1;
+  - STATUS = (saved_flags_status_v >> 16) & 0xffff;
+  - CS = return_cs_v;
+  - DS = return_ds_v;
+  - SS = return_ss_v;
+  - SP = return_sp_v;
+  - return [return_pc_v];
+attributes:
+  privilege: supervisor
+  serializing: true
+allocation:
+  catalog_section: compact_primary
+forms:
+  operands: []

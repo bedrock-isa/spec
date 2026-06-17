@@ -1,0 +1,82 @@
+mnemonic: SUM
+doc:
+  title: Register Set Sum
+  summary: Sums selected D/A registers into a register.
+  description: Sums the selected D0-D7 and A0-A7 register values into a D- or A-register destination. The bitmap uses 
+    the same bit numbering as PUSHM and MOVSET operations. All selected source register values are read before the 
+    destination is written, so selecting the destination register includes its original value.
+  instruction_family: integer_alu
+  instruction_class: integer
+behavior:
+  group: integer_alu
+  inputs:
+  - regs
+  input_output: dst
+  operation:
+  - result_v = 0;
+  - if ((regs_v & 0x0001) == 0) goto <sum_d0_done>;
+  - result_v = result_v + D0;
+  - <sum_d0_done>
+  - if ((regs_v & 0x0002) == 0) goto <sum_d1_done>;
+  - result_v = result_v + D1;
+  - <sum_d1_done>
+  - if ((regs_v & 0x0004) == 0) goto <sum_d2_done>;
+  - result_v = result_v + D2;
+  - <sum_d2_done>
+  - if ((regs_v & 0x0008) == 0) goto <sum_d3_done>;
+  - result_v = result_v + D3;
+  - <sum_d3_done>
+  - if ((regs_v & 0x0010) == 0) goto <sum_d4_done>;
+  - result_v = result_v + D4;
+  - <sum_d4_done>
+  - if ((regs_v & 0x0020) == 0) goto <sum_d5_done>;
+  - result_v = result_v + D5;
+  - <sum_d5_done>
+  - if ((regs_v & 0x0040) == 0) goto <sum_d6_done>;
+  - result_v = result_v + D6;
+  - <sum_d6_done>
+  - if ((regs_v & 0x0080) == 0) goto <sum_d7_done>;
+  - result_v = result_v + D7;
+  - <sum_d7_done>
+  - if ((regs_v & 0x0100) == 0) goto <sum_a0_done>;
+  - result_v = result_v + A0;
+  - <sum_a0_done>
+  - if ((regs_v & 0x0200) == 0) goto <sum_a1_done>;
+  - result_v = result_v + A1;
+  - <sum_a1_done>
+  - if ((regs_v & 0x0400) == 0) goto <sum_a2_done>;
+  - result_v = result_v + A2;
+  - <sum_a2_done>
+  - if ((regs_v & 0x0800) == 0) goto <sum_a3_done>;
+  - result_v = result_v + A3;
+  - <sum_a3_done>
+  - if ((regs_v & 0x1000) == 0) goto <sum_a4_done>;
+  - result_v = result_v + A4;
+  - <sum_a4_done>
+  - if ((regs_v & 0x2000) == 0) goto <sum_a5_done>;
+  - result_v = result_v + A5;
+  - <sum_a5_done>
+  - if ((regs_v & 0x4000) == 0) goto <sum_a6_done>;
+  - result_v = result_v + A6;
+  - <sum_a6_done>
+  - if ((regs_v & 0x8000) == 0) goto <sum_a7_done>;
+  - result_v = result_v + A7;
+  - <sum_a7_done>
+  - dst_v = result_v;
+attributes:
+  flags: unchanged
+allocation:
+  catalog_section: integer
+forms:
+  operands:
+  - - name: regs
+      type: bitmap16
+    - name: dst
+      type: DREG
+  - - name: regs
+      type: bitmap16
+    - name: dst
+      type: AREG
+  size: BWLQ
+  compact: false
+  result: destination register

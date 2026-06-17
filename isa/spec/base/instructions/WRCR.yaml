@@ -1,0 +1,29 @@
+mnemonic: WRCR
+doc:
+  title: Write Control Register
+  summary: Write a privileged control register from a D register.
+  description: Write a privileged control register from a D register. WRCR is always a supervisor-only instruction; 
+    user-visible control state must use dedicated instructions gated by control-register policy bits.
+  instruction_family: system_registers
+  instruction_class: system
+behavior:
+  group: system_registers
+  inputs:
+  - src
+  - cr
+  output: none
+  control_register_access:
+    selector: cr
+    write: src
+attributes:
+  privilege: supervisor
+  flags: unchanged
+allocation:
+  catalog_section: system
+  layout_group: CONTROL_REGISTER_ACCESS
+forms:
+  operands:
+  - name: src
+    type: DREG
+  - name: cr
+    type: CR

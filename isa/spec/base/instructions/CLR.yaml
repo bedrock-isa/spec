@@ -1,0 +1,31 @@
+mnemonic: CLR
+doc:
+  title: Clear
+  summary: Performs the clear operation.
+  description: Performs the clear operation.
+  instruction_family: integer_unary
+  instruction_class: integer
+behavior:
+  group: integer_unary
+  output: dst
+  operation:
+  - dst_v = 0;
+attributes:
+  flags: unchanged
+allocation:
+  catalog_section: compact_primary
+forms:
+  compact_forms:
+  - operands:
+    - name: dst
+      type: DREG
+  - operands:
+    - name: dst
+      type: AREG
+  extended_forms:
+  - operands:
+    - name: dst
+      type: EA
+    compact: false
+  size: implicit_Q
+  result: dst = 0

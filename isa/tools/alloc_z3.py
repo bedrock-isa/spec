@@ -43,8 +43,6 @@ from alloc_field_layout import (
 )
 from alloc_validation import audit_alignment, has_alignment_failure
 from alloc_model import (
-    CACHE_MANAGEMENT_MNEMONICS,
-    CORE_CONTROL_COMPACT_MNEMONICS,
     DEFAULT_COMPACT_EXCLUDE,
     DEFAULT_COMPACT_PREFER,
     EXTENDED_BITS,
@@ -52,16 +50,11 @@ from alloc_model import (
     EXTENDED_SPACE_ID,
     EXTENSION_FAMILY_RANK,
     EXTENSION_PROFILE_RANK,
-    FENCE_MNEMONICS,
     HIGH_PRIMARY_PAYLOAD_START,
-    INTEGER_MINMAX_MNEMONICS,
-    INTEGER_MUL_DIV_COMPACT_MNEMONICS,
     PRIMARY_BITS,
     PRIMARY_EXTENSION_HEADROOM_SLOTS,
     PRIMARY_SLOTS,
     PRIMARY_SPACE_ID,
-    TLB_MANAGEMENT_MNEMONICS,
-    TRANSCENDENTAL_FPU,
     Candidate,
     Field,
     default_field_layout_policy,
@@ -87,6 +80,7 @@ def normalize_compact_policy(raw_policy: dict[str, Any]) -> dict[str, Any]:
         "condition_field": raw_policy.get("condition_field", {}),
         "field_reclaim": raw_policy.get("field_reclaim", {}),
         "field_layout": raw_policy.get("field_layout", default_field_layout_policy()),
+        "mnemonic_policy": raw_policy.get("mnemonic_policy", {}),
     }
 
 
@@ -133,6 +127,22 @@ def default_primary_clusters_policy() -> dict[str, Any]:
     }
 
 
+def mnemonic_policy_set(compact_policy: dict[str, Any], key: str) -> set[str]:
+    policy = compact_policy.get("mnemonic_policy", {})
+    if not isinstance(policy, dict):
+        return set()
+    values = policy.get(key, [])
+    if not isinstance(values, list):
+        return set()
+    return {str(item).upper() for item in values}
+
+
+def is_transcendental_fpu_candidate(candidate: Candidate) -> bool:
+    family = str(candidate.extension_family or "").lower()
+    group = str(candidate.group or "").lower()
+    return family == "fpu_transcendental" or group.split(".", 1)[0] == "fpu_transcendental"
+
+
 
 def compact_exclusion_reasons(candidate: Candidate, compact_policy: dict[str, Any]) -> list[str]:
     labels = set(compact_policy["compact_exclude"])
@@ -141,24 +151,27 @@ def compact_exclusion_reasons(candidate: Candidate, compact_policy: dict[str, An
     group = candidate.group.upper()
     if "FPU" in labels and candidate.category == "fpu":
         reasons.append("FPU")
-    if "transcendental_fpu" in labels and mnemonic in TRANSCENDENTAL_FPU:
+    if "transcendental_fpu" in labels and is_transcendental_fpu_candidate(candidate):
         reasons.append("transcendental_fpu")
+    cache_mnemonics = mnemonic_policy_set(compact_policy, "cache_management_mnemonics")
     if "cache_management" in labels and (
-        mnemonic in CACHE_MANAGEMENT_MNEMONICS or "CACHE" in group or mnemonic == "PREFETCH"
+        mnemonic in cache_mnemonics or "CACHE" in group or mnemonic == "PREFETCH"
     ):
         reasons.append("cache_management")
+    tlb_mnemonics = mnemonic_policy_set(compact_policy, "tlb_management_mnemonics")
     if "tlb_management" in labels and (
-        mnemonic in TLB_MANAGEMENT_MNEMONICS
+        mnemonic in tlb_mnemonics
         or "TLB" in group
         or "PAGE" in group
         or "PT" in group
         or mnemonic.startswith("PT")
     ):
         reasons.append("tlb_management")
+    core_control_mnemonics = mnemonic_policy_set(compact_policy, "core_control_compact_mnemonics")
     if (
         "system_core_except_core_control" in labels
         and candidate.category == "system"
-        and mnemonic not in CORE_CONTROL_COMPACT_MNEMONICS
+        and mnemonic not in core_control_mnemonics
     ):
         reasons.append("system_core_except_core_control")
     return reasons
@@ -191,21 +204,21 @@ def compact_preference_reasons(candidate: Candidate, compact_policy: dict[str, A
     for exact in ("CALL", "RET", "NOP", "SYSCALL", "BKPT", "WAIT", "YIELD"):
         if exact in labels and mnemonic == exact:
             reasons.append(exact)
-    if "fences" in labels and mnemonic in FENCE_MNEMONICS:
+    if "fences" in labels and mnemonic.upper() in mnemonic_policy_set(compact_policy, "fence_mnemonics"):
         reasons.append("fences")
     return reasons
 
 
-def is_integer_minmax_d_to_d(candidate: Candidate) -> bool:
+def is_integer_minmax_d_to_d(candidate: Candidate, compact_policy: dict[str, Any]) -> bool:
     return (
-        candidate.mnemonic in INTEGER_MINMAX_MNEMONICS
+        candidate.mnemonic.upper() in mnemonic_policy_set(compact_policy, "integer_minmax_order")
         and "_TO_".join(profile_form_parts(candidate.compact_fields)) == "D_TO_D"
     )
 
 
-def is_integer_mul_div_d_to_d(candidate: Candidate) -> bool:
+def is_integer_mul_div_d_to_d(candidate: Candidate, compact_policy: dict[str, Any]) -> bool:
     return (
-        candidate.mnemonic in INTEGER_MUL_DIV_COMPACT_MNEMONICS
+        candidate.mnemonic.upper() in mnemonic_policy_set(compact_policy, "integer_mul_div_compact_order")
         and "_TO_".join(profile_form_parts(candidate.compact_fields)) == "D_TO_D"
     )
 
@@ -611,7 +624,7 @@ def solve_allocation(
     evictions = eviction_report(candidates, selected_compact, compact_policy)
     policy_report = compact_policy_report(candidates, selected_compact, compact_policy)
     family_symmetry = compact_family_symmetry_audit(candidates, selected_compact, compact_policy)
-    symmetry = symmetry_audit(selected_compact, primary_allocations, extended_allocations)
+    symmetry = symmetry_audit(selected_compact, primary_allocations, extended_allocations, compact_policy)
     alias_audit = conditional_alias_audit(primary_aliases, extended_aliases, alias_rules)
     decode_cost = decode_cost_audit(primary_allocations, compact_policy)
     extended_used_slots = sum(int(item.get("extended_opcode_slots", 1)) for item in extended_allocations)
@@ -1058,7 +1071,7 @@ def extension_family_name(candidate: Candidate) -> str:
     if candidate.category == "control_flow":
         return "control_flow"
     if candidate.category == "fpu":
-        if mnemonic in TRANSCENDENTAL_FPU:
+        if is_transcendental_fpu_candidate(candidate):
             return "fpu_transcendental"
         if any(key in mnemonic for key in ("MOV", "CMP", "TEST", "CLASS", "CVT")):
             return "fpu_move_compare"
@@ -1104,18 +1117,42 @@ def extension_root_allocation_dict(root: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+FPU_COMPARE_PAIR_MNEMONICS = {"FCMP", "FTEST"}
+
+
+def fpu_compare_source_operand(operands: list[Any] | tuple[Any, ...]) -> str:
+    parsed = [(str(operand).split(":", 1)[0].lower(), str(operand)) for operand in operands]
+    for source, operand in parsed:
+        if source == "src":
+            return operand
+    for source, operand in parsed:
+        if source != "dst":
+            return operand
+    return parsed[0][1] if parsed else ""
+
+
+def fpu_compare_source_profile(operands: list[Any] | tuple[Any, ...]) -> str:
+    source = fpu_compare_source_operand(operands)
+    return form_name((source,)) or "NO_SOURCE"
+
+
+def fpu_compare_source_rank(profile: str) -> int:
+    return {"F": 0, "EA": 1}.get(profile, 99)
+
+
 def extended_pair_profile(candidate: Candidate) -> str:
-    if candidate.mnemonic in {"FCMP", "FTEST"}:
-        return candidate.id.replace(candidate.mnemonic, "FCMP_FTEST", 1)
+    if candidate.mnemonic in FPU_COMPARE_PAIR_MNEMONICS:
+        return f"FCMP_FTEST.{fpu_compare_source_profile(candidate.operands)}"
     return candidate.id
 
 
 def extended_pair_rank(candidate: Candidate) -> tuple[int, int, str, int, str]:
-    if candidate.mnemonic in {"FCMP", "FTEST"}:
+    if candidate.mnemonic in FPU_COMPARE_PAIR_MNEMONICS:
+        source_profile = fpu_compare_source_profile(candidate.operands)
         return (
             0,
-            -extended_opcode_bits(candidate, spilled=False),
-            extended_pair_profile(candidate),
+            fpu_compare_source_rank(source_profile),
+            f"FCMP_FTEST.{source_profile}",
             0 if candidate.mnemonic == "FCMP" else 1,
             candidate.id,
         )
@@ -1143,6 +1180,28 @@ def extended_pair_rank(candidate: Candidate) -> tuple[int, int, str, int, str]:
         "SYNCCACHE": 64,
     }
     return (order.get(candidate.mnemonic, 100), 0, candidate.id, 0, candidate.id)
+
+
+def extended_pair_min_start(
+    candidate: Candidate,
+    root_id: str,
+    packed_allocations: list[dict[str, Any]],
+    window_start: int,
+) -> int:
+    if candidate.mnemonic != "FTEST":
+        return window_start
+    source_profile = fpu_compare_source_profile(candidate.operands)
+    predecessors = [
+        item
+        for item in packed_allocations
+        if item.get("extension_root") == root_id
+        and item.get("mnemonic") == "FCMP"
+        and fpu_compare_source_profile(item.get("operands", []) or []) == source_profile
+    ]
+    if not predecessors:
+        return window_start
+    predecessor_end = max(extended_opcode_range(item)[1] for item in predecessors)
+    return max(window_start, predecessor_end + 1)
 
 
 def extended_candidate_sort_key(
@@ -1173,12 +1232,13 @@ def pack_extended_allocations(
         opcode_plan = opcode_plans[candidate.id]
         slots = int(opcode_plan["slots"])
         window_start, window_end = fixed_high_field_window(candidate)
+        min_start = extended_pair_min_start(candidate, str(root["id"]), out, window_start)
         opcode_start = find_free_range(
             used_by_root[root_key],
             slots,
             alignment=max(1, slots),
             limit=window_end + 1,
-            min_start=window_start,
+            min_start=min_start,
         )
         opcode_end = opcode_start + slots - 1
         if opcode_end > window_end:
@@ -1848,6 +1908,7 @@ def symmetry_audit(
     selected_compact: set[str],
     primary_allocations: list[dict[str, Any]],
     extended_allocations: list[dict[str, Any]],
+    compact_policy: dict[str, Any],
 ) -> list[dict[str, Any]]:
     checks: list[dict[str, Any]] = []
 
@@ -1855,23 +1916,25 @@ def symmetry_audit(
         checks.append({"name": name, "status": "pass" if ok else "fail", "severity": severity, "detail": detail})
 
     _ = selected_compact
+    minmax_mnemonics = mnemonic_policy_set(compact_policy, "integer_minmax_order")
     minmax_selected = sorted(
         str(item["id"])
         for item in primary_allocations
-        if str(item.get("mnemonic")) in INTEGER_MINMAX_MNEMONICS and str(item.get("id", "")).endswith(".D_TO_D")
+        if str(item.get("mnemonic")).upper() in minmax_mnemonics and str(item.get("id", "")).endswith(".D_TO_D")
     )
     add(
         "integer_minmax_all_or_none",
-        len(minmax_selected) in {0, len(INTEGER_MINMAX_MNEMONICS)},
+        len(minmax_selected) in {0, len(minmax_mnemonics)},
         "no integer min/max D_TO_D forms selected compact"
         if not minmax_selected
         else f"compact min/max forms={minmax_selected}",
     )
 
+    mul_div_mnemonics = mnemonic_policy_set(compact_policy, "integer_mul_div_compact_order")
     mul_div_selected = sorted(
         str(item["id"])
         for item in primary_allocations
-        if str(item.get("mnemonic")) in INTEGER_MUL_DIV_COMPACT_MNEMONICS
+        if str(item.get("mnemonic")).upper() in mul_div_mnemonics
         and str(item.get("id", "")).endswith(".D_TO_D")
     )
     add(
@@ -1944,19 +2007,40 @@ def symmetry_audit(
         ),
     )
 
-    for root in sorted({str(item["extension_root"]) for item in extended_allocations if item.get("mnemonic") in {"FCMP", "FTEST"}}):
+    for root in sorted(
+        {
+            str(item["extension_root"])
+            for item in extended_allocations
+            if item.get("mnemonic") in FPU_COMPARE_PAIR_MNEMONICS
+        }
+    ):
         pairs = []
         ok = True
+        tests_by_source: dict[str, list[dict[str, Any]]] = {}
+        for test_item in extended_allocations:
+            if test_item.get("extension_root") != root or test_item.get("mnemonic") != "FTEST":
+                continue
+            source_profile = fpu_compare_source_profile(test_item.get("operands", []) or [])
+            tests_by_source.setdefault(source_profile, []).append(test_item)
+        for items in tests_by_source.values():
+            items.sort(key=lambda item: str(item["id"]))
         for cmp_item in sorted(
             (item for item in extended_allocations if item.get("extension_root") == root and item.get("mnemonic") == "FCMP"),
-            key=lambda item: str(item["id"]),
+            key=lambda item: (
+                fpu_compare_source_rank(fpu_compare_source_profile(item.get("operands", []) or [])),
+                str(item["id"]),
+            ),
         ):
-            test_id = str(cmp_item["id"]).replace("FCMP", "FTEST", 1)
-            test_item = by_id.get(test_id)
-            pair_ok = test_item is not None and str(test_item.get("extension_root")) == root and opcode_ranges_touch(cmp_item, test_item)
+            source_profile = fpu_compare_source_profile(cmp_item.get("operands", []) or [])
+            candidates = tests_by_source.get(source_profile, [])
+            test_item = next((item for item in candidates if opcode_ranges_touch(cmp_item, item)), None)
+            if test_item is None and candidates:
+                test_item = candidates[0]
+            test_id = str(test_item["id"]) if test_item else f"FTEST.{source_profile}"
+            pair_ok = test_item is not None and opcode_ranges_touch(cmp_item, test_item)
             ok = ok and pair_ok
             pairs.append(
-                f"{cmp_item['id']}={opcode_range_text(cmp_item)} "
+                f"{cmp_item['id']}[{source_profile}]={opcode_range_text(cmp_item)} "
                 f"{test_id}={opcode_range_text(test_item) if test_item else 'missing'}"
             )
         add(
@@ -2081,8 +2165,8 @@ def main(argv: list[str] | None = None) -> int:
         print("Alignment audit failed; allocation solve was not run.", file=sys.stderr)
         return 1
 
-    compact_policy = normalize_compact_policy({})
     allocation = allocation_params(spec)
+    compact_policy = normalize_compact_policy(allocation)
     root_policy = allocation.get("extension_roots", {}) if isinstance(allocation, dict) else {}
     if isinstance(root_policy, dict):
         compact_policy["extension_roots"] = {

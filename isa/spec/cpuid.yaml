@@ -66,6 +66,7 @@ cpuid:
                 - {range: [16, 31], name: BASE_PROFILE_ID, description: base ISA profile identifier}
                 - {range: [32, 63], name: reserved, description: "reserved, reads as zero"}
             - index: 2
+              description: instruction stream and prefix geometry limits
               bits:
                 - {range: [0, 7], name: MAX_INSTRUCTION_WORDS, description: maximum architectural instruction length in 16-bit words}
                 - {range: [8, 15], name: WORD_BITS, description: instruction word size in bits}
@@ -104,6 +105,7 @@ cpuid:
           summary: Optional ISA extension availability.
           results:
             - index: 0
+              description: optional extension availability feature bits
               bits:
                 - bit: 0
                   name: FP
@@ -150,6 +152,7 @@ cpuid:
           summary: Program-visible execution properties.
           results:
             - index: 0
+              description: program-visible execution property feature bits
               bits:
                 - bit: 0
                   name: OUT_OF_ORDER
@@ -165,6 +168,7 @@ cpuid:
           summary: Implemented data-register bank resources.
           results:
             - index: 0
+              description: implemented data-register bank count, selector width, and availability tier
               bits:
                 - {range: [0, 7], name: DBANK_COUNT, description: number of implemented D-register banks including bank 0}
                 - {range: [8, 11], name: DBANK_SELECTOR_BITS, description: implemented selector width; at most the 4-bit architectural DBANK namespace}
@@ -233,11 +237,12 @@ cpuid:
             exception/syscall stack frame and are not duplicated in the SAVE
             area. The save-area base address must be 4 KiB aligned.
             Extension component slots are described by numeric byte offsets and
-            may include additional data-register banks, floating-point state,
-            and later architectural extension state. The first extension
-            component begins no earlier than byte offset 0x1000. CPUID component
-            descriptor index order is the architectural extension-component
-            order; component offsets must be strictly increasing in that order.
+            may include additional data-register banks and extension-owned
+            architectural state. The first extension
+            component begins no earlier than SAVE_HEADER_SIZE, 0x100 for the
+            base profile. CPUID component descriptor index order is the
+            architectural extension-component order; component offsets must be
+            strictly increasing in that order.
             Each extension component begins with a component-defined,
             component-local validity bitmap for the state slots inside that
             component. The memory image does not contain a per-component size
@@ -272,8 +277,9 @@ cpuid:
                 the save image itself does not contain a variable component
                 table. Each extension component begins with a component-defined,
                 component-local validity bitmap.
-                Known extension component identifiers include additional
-                data-register banks and floating-point state.
+                Known base-defined extension component identifiers include
+                additional data-register banks. Optional extensions define
+                their own state component identifiers.
 
     - class: 0x00000003
       name: memory topology

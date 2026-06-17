@@ -26,25 +26,25 @@ from gen_instruction_tables import (
     line_fields,
     line_syntax_text,
     operand_types_text,
+    set_active_spec as set_instruction_table_spec,
     syntax_text,
 )
 from isa_spec import load_and_validate, print_result
+from spec_model.encoding import (
+    named_value_set,
+    special_register_encoding,
+    special_register_layout,
+)
 from latex_builder.diagrams import (
-    abbreviated_bit_field_figure,
     bit_diagram,
     bit_field_figure,
     bit_index_labels,
-    paging_mode_figure,
 )
 
 
 from latex_builder.common import (
     ARCH_NAME,
-    FFLAG_MEANINGS,
-    FFLAG_ORDER,
-    FLAG_ORDER,
     MANUAL_TITLE,
-    SIZE_NAMES,
     compact_text,
     document_end,
     document_preamble,
@@ -52,8 +52,8 @@ from latex_builder.common import (
     latex_longtable,
     latex_tabular,
     load_allocation,
-    listed_figure_caption,
     hidden_top_section,
+    memory_rule_text,
     mdash_join,
     normalize_text,
     pretty_key,
@@ -69,25 +69,9 @@ from latex_builder.common import (
 )
 from latex_builder.effective_address import ea_table
 from latex_builder.arch_diagrams import (
-    ascr_register_figure,
-    flags_register_figure,
-    frame_info_figure,
-    icr_register_figure,
-    ivt_control_byte_figure,
-    ivt_entry_figure,
-    la48_paging_figure,
-    la57_paging_figure,
-    prefix_word_figure,
-    primary_word_figure,
-    ptcr_register_figure,
-    pte_attribute_figure,
     register_model_figure,
-    segment_register_figure,
     stack_frame_figure,
     supervisor_stack_frame,
-    status_register_figure,
-    translation_pipeline_figure,
-    word0_overview_figure,
 )
 from latex_builder.instruction_reference import (
     c_library_instruction_examples_section,
@@ -100,6 +84,7 @@ from latex_builder.instruction_reference import (
     instruction_summary,
     render_instruction,
     runtime_instruction_examples_section,
+    save_area_format_reference_sections,
 )
 
 SEPARATE_INSTRUCTION_GROUPS = [
@@ -113,107 +98,66 @@ def data_format_section() -> str:
     return render_latex_template("data_formats.tex")
 
 
-def memory_model_section() -> str:
-    return render_latex_template("memory_model.tex")
+def memory_order_rows(spec: dict[str, Any]) -> list[list[str]]:
+    body = named_value_set(spec, "memory_order")
+    rows: list[list[str]] = []
+    for key, selector in (("values", tex_code), ("reserved_values", tex_escape)):
+        for item in body.get(key, []) or []:
+            if not isinstance(item, dict):
+                continue
+            rows.append(
+                [
+                    selector(item.get("name", "")),
+                    tex_code(item.get("value", "")),
+                    tex_escape(item.get("description", "")),
+                ]
+            )
+    return rows
 
 
-def segment_paging_interaction_section() -> str:
-    return render_latex_template("segment_paging_interaction.tex")
+def memory_model_section(spec: dict[str, Any]) -> str:
+    return render_latex_template(
+        "memory_model.tex",
+        {
+            "MEMORY_ORDER_TABLE": latex_longtable(
+                ["Selector", "Code", "Architectural Ordering Effect"],
+                memory_order_rows(spec),
+                ["0.9in", "0.75in", "3.8in"],
+                "Atomic Memory-Order Selectors",
+            )
+        },
+    )
 
 
 def streaming_execution_model_section() -> str:
     return render_latex_template("streaming_execution_model.tex")
 
 
-def prefix_model_paragraph(spec: dict[str, Any]) -> str:
+def prefix_model_table(spec: dict[str, Any]) -> str:
     prefix_word = (spec.get("prefixes") or {}).get("prefix_word") or {}
-    unused = str(prefix_word.get("unused_slot_encoding", "NPX"))
-    conflict = readable_text(prefix_word.get("conflict_resolution", "last_prefix_wins"))
-    note = compact_text(prefix_word.get("conflict_note", ""))
-    details = (
-        f"If P is set, word 1 is a prefix word containing two independent 8-bit prefix slots. "
-        f"The low byte, bits 7..0, is {tex_code('prefix0')} and is filled and decoded first. "
-        f"The high byte, bits 15..8, is {tex_code('prefix1')} and is filled and decoded second. "
-        f"An unused slot is encoded as {tex_code(unused)}. Prefixes do not determine instruction length."
+    rows = (
+        ("Prefix bytes", prefix_word.get("bytes_per_instruction", "-")),
+        ("Fill order", prefix_word.get("fill_order", "-")),
+        ("Decode order", prefix_word.get("decode_order", "-")),
+        ("Unused slot encoding", prefix_word.get("unused_slot_encoding", "-")),
+        ("Conflict resolution", prefix_word.get("conflict_resolution", "-")),
+        ("Conflict note", prefix_word.get("conflict_note", "-")),
     )
-    if note:
-        details += " " + tex_escape(note)
-    elif conflict:
-        details += f" Prefix effects are applied in this byte order; conflicting effects use {tex_escape(conflict)}."
-    return details
-
-
-def length_encoding_table() -> str:
-    rows = []
-    for value in range(8):
-        words = value + 1
-        rows.append([tex_code(f"{value:03b}"), tex_escape(words), tex_escape(words * 2)])
     return latex_longtable(
-        ["L Field", "Total Words", "Total Bytes"],
-        rows,
-        ["1.2in", "1.35in", "1.35in"],
-        "Table 1-1. Instruction Length Encoding",
+        ["Property", "Spec Value"],
+        [[tex_escape(label), tex_table_value(value)] for label, value in rows],
+        ["1.55in", "3.95in"],
+        "Prefix Word Rules",
     )
 
 
 def architecture_overview_section(spec: dict[str, Any], plan: dict[str, Any], mnemonic_count: int, form_count: int) -> str:
-    return "\n".join(
-        [
-            top_section("Overview"),
-            f"{ARCH_NAME} defines a bounded, 16-bit-word-oriented CISC instruction set architecture. "
-            "It includes selected register-memory forms, compact register-register forms, explicit instruction lengths, "
-            "and a fixed maximum instruction size.",
-            f"The base architecture combines simplified effective addressing with page-granular segmented "
-            "address pre-translation, optional page-table translation, and ordinary memory-mapped device access.",
-            r"\subsection{Design Goals}",
-            f"{ARCH_NAME} is intended for high-performance general-purpose systems rather than as a minimal "
-            "embedded instruction set. The architecture keeps the visible programming model scalar and bounded, "
-            "while giving implementations explicit repeated-operation structures that may be executed by "
-            "microarchitectural streaming or internal SIMD machinery.",
-            r"\begin{itemize}",
-            r"\item preserve selected CISC code-density advantages without unbounded instruction forms",
-            r"\item make instruction boundaries and maximum instruction size explicit",
-            r"\item support register-memory operations and compact hot-path register-register operations",
-            r"\item expose scalar architectural state while allowing wider internal execution resources",
-            r"\item accelerate fast, regular loops through REP, REPcc, REPG, and update-eligible effective addresses",
-            r"\item let common loop kernels scale with implementation width without adding programmer-visible vector state or width-specific opcode families",
-            r"\item avoid making vector width or internal streaming resources part of the architectural ABI",
-            r"\item leave specialized cryptographic, image, matrix, tensor, and accelerator workloads to extensions or devices",
-            r"\end{itemize}",
-            r"\subsection{Architectural Profile}",
-            r"\begin{itemize}",
-            r"\item 16-bit instruction words",
-            r"\item explicit instruction length encoded in word 0",
-            r"\item maximum instruction length of eight words",
-            r"\item at most one prefix word containing two prefix bytes",
-            r"\item register-register and register-memory instruction forms",
-            r"\item bounded compact and extended effective-address forms",
-            r"\item page-granular segment pre-translation before optional paging",
-            r"\item memory-mapped device access through the normal memory map",
-            r"\item no separate I/O port address space",
-            r"\item no direct physical-memory load/store instructions",
-            r"\end{itemize}",
-            r"\subsection{Instruction Stream}",
-            "The instruction stream is composed of 16-bit words. Instructions are aligned to 16-bit boundaries. "
-            "The program counter addresses bytes, but instruction length is defined in units of 16-bit words.",
-            r"\[",
-            r"\mathit{next\_pc} = \mathit{pc} + 2 \times \mathit{instruction\_length\_in\_words}",
-            r"\]",
-            "The maximum instruction length is eight words, or 16 bytes. No instruction may exceed this bound.",
-            r"\subsection{Word 0 Format}",
-            "Every instruction begins with word 0. The instruction boundary is determined from word 0 alone.",
-            word0_overview_figure(),
-            r"\manualfield{P:}{Prefix-present bit. If set, word 1 is interpreted as the prefix word.}",
-            r"\manualfield{L:}{Total instruction length encoded as length minus one.}",
-            length_encoding_table(),
-            r"\[",
-            r"\mathit{length} = \mathit{word0.L} + 1 \qquad "
-            r"\mathit{next\_pc} = \mathit{pc} + 2 \times \mathit{length}",
-            r"\]",
-            r"\subsection{Prefix Model}",
-            prefix_model_paragraph(spec),
-            prefix_word_figure(),
-        ]
+    return render_latex_template(
+        "architecture_overview.tex",
+        {
+            "ARCH_NAME": ARCH_NAME,
+            "PREFIX_MODEL_TABLE": prefix_model_table(spec),
+        },
     )
 
 
@@ -538,12 +482,9 @@ def cpuid_leaf_detail_blocks(spec: dict[str, Any]) -> str:
         for result_entry in sorted(cpuid_result_entries(leaf), key=lambda item: cpuid_index_sort_key(item.get("index", ""))):
             index = result_entry.get("index", "-")
             description_value = result_entry.get("description", result_entry.get("value", ""))
-            if description_value:
-                description_text = readable_text(description_value)
-            elif result_entry.get("bits"):
-                description_text = "fields are described below"
-            else:
-                description_text = "defined by this leaf"
+            if not description_value:
+                raise ValueError(f"cpuid leaf {name} result index {index} is missing description")
+            description_text = readable_text(description_value)
             result_lines.append(f"index {index}: {description_text}")
             extraction = result_entry.get("extraction")
             if extraction:
@@ -632,121 +573,108 @@ def cpuid_bit_field_leaf_blocks(spec: dict[str, Any]) -> str:
 def cpuid_feature_discovery_section(spec: dict[str, Any]) -> str:
     model = cpuid_model(spec)
     calling = model.get("calling_convention") or {}
-    unsupported_class = calling.get("unsupported_class", "result = 0") if isinstance(calling, dict) else "result = 0"
-    unsupported_leaf = calling.get("unsupported_leaf", "result = 0") if isinstance(calling, dict) else "result = 0"
-    unsupported_index = calling.get("unsupported_index", "result = 0") if isinstance(calling, dict) else "result = 0"
     syntax = calling.get("syntax", "CPUID Dn") if isinstance(calling, dict) else "CPUID Dn"
-    privilege = calling.get("privilege", "unprivileged") if isinstance(calling, dict) else "unprivileged"
-    serialization = calling.get("serialization", "not serializing") if isinstance(calling, dict) else "not serializing"
-    runtime_mutability = calling.get("runtime_mutability", "static after reset unless a leaf explicitly says otherwise") if isinstance(calling, dict) else "static after reset unless a leaf explicitly says otherwise"
+    calling_rows = []
+    if isinstance(calling, dict):
+        for key in (
+            "input",
+            "output",
+            "unsupported_class",
+            "unsupported_leaf",
+            "unsupported_index",
+            "privilege",
+            "serialization",
+            "reserved_result_bits",
+            "runtime_mutability",
+        ):
+            if key in calling:
+                calling_rows.append([tex_escape(readable_text(key)), tex_escape(compact_text(calling[key]))])
+    calling_table = latex_longtable(
+        ["Property", "Spec Value"],
+        calling_rows,
+        ["1.60in", "3.85in"],
+        "CPUID Calling Convention",
+    ) if calling_rows else ""
 
-    def labeled_paragraph(label: str, text: str) -> str:
-        return rf"\noindent\textbf{{{tex_escape(label)}.}} {text}"
-
-    unsupported_values = {str(unsupported_class), str(unsupported_leaf), str(unsupported_index)}
-    if len(unsupported_values) == 1:
-        unsupported_text = f"Unsupported classes, leaves, and indexes return {tex_code(unsupported_class)}."
-    else:
-        unsupported_text = (
-            f"Unsupported classes return {tex_code(unsupported_class)}, unsupported leaves return "
-            f"{tex_code(unsupported_leaf)}, and unsupported indexes return {tex_code(unsupported_index)}."
-        )
-    parts = [
-        r"\subsection{Overview}",
-        "\n\n".join(
-            [
-                "CPUID is the architectural discovery instruction. It exposes base-profile identity, optional "
-                "architectural extensions, and program-visible tuning properties. It is not a dump of internal "
-                "microarchitectural structures.",
-                "A leaf describes one meaningful information group. The result index selects one Q-sized result "
-                "from that group.",
-            ]
-        ),
-        r"\subsection{Query Model}",
-        (
-            f"The instruction form is {tex_code(syntax)}. The selected D register contains a 64-bit query selector "
-            "before execution and receives the selected 64-bit result after execution. The selector is divided into "
-            "a 32-bit class, a 16-bit leaf within that class, and a 16-bit result index."
-        ),
-        unsupported_text,
-        (
-            f"CPUID is {tex_escape(privilege)} and {tex_escape(serialization)}. Reserved CPUID result bits must be "
-            f"ignored by software. CPUID results are {tex_escape(runtime_mutability)}."
-        ),
-    ]
     selector_rows = cpuid_selector_rows(spec)
+    selector_table = ""
     if selector_rows:
-        parts.append(latex_longtable(["Bits", "Field", "Meaning"], selector_rows, ["0.70in", "1.20in", "3.60in"], "CPUID Query Selector"))
-    parts.extend(
-        [
-            r"\subsection{Discovery Classes}",
-            labeled_paragraph(
-                "Base profile",
-                "The base Bedrock ISA profile contains ordinary integer, data movement, control-flow, atomic, "
-                "data-register banking, cache/TLB, segmentation, paging, control-register, and repeat-prefix "
-                "instruction groups. Instruction groups with their own optional-extension leaves, such as "
-                "virtualization acceleration, are not implied by the base profile."
-            ),
-            labeled_paragraph(
-                "Floating-point",
-                "Floating-point discovery is intentionally coarse. An implementation reports whether the base "
-                "floating-point extension is available, and separately whether the transcendental floating-point "
-                "group is available. Double precision, fused multiply-add/subtract, floating-point conditional "
-                "move, conversion, classification, and ordinary floating-point memory/register forms are base "
-                "features of the floating-point extension."
-            ),
-            labeled_paragraph(
-                "Data-register banking",
-                "Data-register banking instructions are part of the base instruction set. DBANK "
-                "implementation-property discovery reports the implemented bank count and selector width; object "
-                "attributes record the minimum bank count required by a linked image. Source-language ABIs still "
-                "normalize DBANK to zero at public boundaries."
-            ),
-            labeled_paragraph(
-                "Virtualization acceleration",
-                "ENCINST availability is discovered through the optional-extension class. The instruction reference "
-                "groups ENCINST under Virtualization Acceleration because it supports canonical binary emission for "
-                "JITs, hypervisors, and binary translators rather than ordinary application execution."
-            ),
-            labeled_paragraph(
-                "Unavailable optional groups",
-                f"If an optional instruction group is not reported by CPUID, executing an instruction from that "
-                f"group raises {tex_code('ILLEGAL_INSTRUCTION')}. Bedrock does not define a separate exception for "
-                "extension availability."
-            ),
-            labeled_paragraph(
-                "Implementation properties",
-                "Implementation-property leaves expose only information a program can reasonably use to select code "
-                "paths or tune algorithms. Structures such as register renaming, reorder buffers, issue queues, and "
-                f"physical register files are not architectural discovery bits. The initial execution-property leaf "
-                f"exposes only {tex_code('OUT_OF_ORDER')}. Processor-topology discovery reports the total exposed "
-                "hardware-thread count and the current hardware-thread identity; it does not report the set of CPUs "
-                "currently online under an operating system."
-            ),
-        ]
-    )
+        selector_table = latex_longtable(["Bits", "Field", "Meaning"], selector_rows, ["0.70in", "1.20in", "3.60in"], "CPUID Query Selector")
+
     policy_rows = cpuid_policy_rows(spec)
+    policy_table = ""
     if policy_rows:
-        parts.append(latex_longtable(["Policy", "Class", "Meaning"], policy_rows, ["1.25in", "1.15in", "3.10in"], "CPUID Discovery Policy"))
+        policy_table = latex_longtable(["Policy", "Class", "Meaning"], policy_rows, ["1.25in", "1.15in", "3.10in"], "CPUID Discovery Policy")
     class_rows = cpuid_class_rows(spec)
+    class_table = ""
     if class_rows:
-        parts.append(latex_longtable(["Class", "Name", "Meaning"], class_rows, ["1.15in", "1.45in", "2.90in"], "CPUID Classes"))
-    parts.append(r"\subsection{Leaf Directory}")
+        class_table = latex_longtable(["Class", "Name", "Meaning"], class_rows, ["1.15in", "1.45in", "2.90in"], "CPUID Classes")
     leaf_rows = cpuid_leaf_rows(spec)
+    leaf_table = ""
     if leaf_rows:
-        parts.append(latex_longtable(["Class", "Leaf", "Name", "Indexes", "Summary"], leaf_rows, ["0.85in", "0.60in", "1.35in", "0.72in", "1.98in"], "CPUID Leaves"))
+        leaf_table = latex_longtable(["Class", "Leaf", "Name", "Indexes", "Summary"], leaf_rows, ["0.85in", "0.60in", "1.35in", "0.72in", "1.98in"], "CPUID Leaves")
     leaf_details = cpuid_leaf_detail_blocks(spec)
-    if leaf_details:
-        parts.append(leaf_details)
-    parts.append(r"\subsection{Bit Fields}")
     bit_field_blocks = cpuid_bit_field_leaf_blocks(spec)
-    if bit_field_blocks:
-        parts.append(bit_field_blocks)
-    return "\n\n".join(parts)
+    return render_latex_template(
+        "cpuid_feature_discovery.tex",
+        {
+            "SYNTAX": tex_code(syntax),
+            "CALLING_CONVENTION_TABLE": calling_table,
+            "SELECTOR_TABLE": selector_table,
+            "POLICY_TABLE": policy_table,
+            "CLASS_TABLE": class_table,
+            "LEAF_TABLE": leaf_table,
+            "LEAF_DETAILS": leaf_details,
+            "BIT_FIELD_BLOCKS": bit_field_blocks,
+        },
+    )
 
 
-def compatibility_rules_section() -> str:
-    return render_latex_template("compatibility_rules.tex")
+def compatibility_rule_value(rules: dict[str, Any], path: list[str], default: Any) -> Any:
+    value: Any = rules
+    for key in path:
+        if not isinstance(value, dict) or key not in value:
+            return default
+        value = value[key]
+    return value
+
+
+def compatibility_policy_rows(rules: dict[str, Any]) -> list[list[str]]:
+    rows = [
+        ("Reserved opcode exception", ["instruction_encoding_faults", "reserved_opcode", "exception"], "ILLEGAL_INSTRUCTION"),
+        ("Reserved extension opcode exception", ["instruction_encoding_faults", "reserved_extension_opcode", "exception"], "ILLEGAL_INSTRUCTION"),
+        ("Reserved EA form exception", ["instruction_encoding_faults", "reserved_effective_address_form", "exception"], "ILLEGAL_INSTRUCTION"),
+        ("Unsupported optional group exception", ["instruction_encoding_faults", "unsupported_optional_instruction_group", "exception"], "ILLEGAL_INSTRUCTION"),
+        ("Extension unavailable exception defined", ["instruction_encoding_faults", "extension_unavailable_exception", "defined"], False),
+        ("Unassigned prefix exception", ["prefix_values", "unassigned", "exception"], "none"),
+        ("Unassigned prefix behavior", ["prefix_values", "unassigned", "behavior"], "no_architectural_effect"),
+        ("Unknown CPUID class result", ["cpuid", "unknown_class", "result"], "zero"),
+        ("Unknown CPUID leaf result", ["cpuid", "unknown_leaf", "result"], "zero"),
+        ("Unknown CPUID index result", ["cpuid", "unknown_index", "result"], "zero"),
+        ("Reserved CPUID result bit software action", ["cpuid", "reserved_result_bits", "software_action"], "ignore"),
+        ("CPUID privilege", ["cpuid", "privilege"], "unprivileged"),
+        ("CPUID serialization", ["cpuid", "serialization"], "none"),
+        ("CPUID stable after reset", ["cpuid", "runtime_mutability", "stable_after_reset"], True),
+    ]
+    return [
+        [tex_escape(label), tex_code(compatibility_rule_value(rules, path, default))]
+        for label, path, default in rows
+    ]
+
+
+def compatibility_rules_section(spec: dict[str, Any]) -> str:
+    rules = (spec.get("semantics") or {}).get("compatibility_rules") or {}
+    return render_latex_template(
+        "compatibility_rules.tex",
+        {
+            "COMPATIBILITY_POLICY_TABLE": latex_longtable(
+                ["Rule", "Spec Value"],
+                compatibility_policy_rows(rules),
+                ["2.35in", "2.95in"],
+                "Compatibility Policy Values",
+            ),
+        },
+    )
 
 
 def overview_sections(spec: dict[str, Any], plan: dict[str, Any], mnemonic_count: int, form_count: int) -> str:
@@ -754,11 +682,12 @@ def overview_sections(spec: dict[str, Any], plan: dict[str, Any], mnemonic_count
         architecture_overview_section(spec, plan, mnemonic_count, form_count),
         top_section("Terminology"),
         terminology_section(spec),
-        compatibility_rules_section(),
+        compatibility_rules_section(spec),
         top_section("Programming Model"),
         register_tables(spec),
         top_section("CPUID Feature Discovery"),
         cpuid_feature_discovery_section(spec),
+        save_area_reference_section(spec),
         top_section("Data Formats"),
         data_format_section(),
         top_section("Condition Codes"),
@@ -770,7 +699,7 @@ def overview_sections(spec: dict[str, Any], plan: dict[str, Any], mnemonic_count
         top_section("Memory Address Translation"),
         memory_address_translation_section(spec),
         top_section("Memory Model"),
-        memory_model_section(),
+        memory_model_section(spec),
         top_section("Supervisor / Privileged Programming Model"),
         privileged_programming_model_section(spec),
         top_section("Exception Processing Reference"),
@@ -783,6 +712,30 @@ def overview_sections(spec: dict[str, Any], plan: dict[str, Any], mnemonic_count
         streaming_execution_model_section(),
     ]
     return "\n".join(lines)
+
+
+def save_area_reference_section(spec: dict[str, Any]) -> str:
+    save_area_formats = ((spec.get("instructions") or {}).get("save_area_formats") or {})
+    if not isinstance(save_area_formats, dict) or not save_area_formats:
+        return ""
+    applies_to = sorted(
+        {
+            str(mnemonic)
+            for layout in save_area_formats.values()
+            if isinstance(layout, dict)
+            for mnemonic in (layout.get("applies_to", []) or [])
+        }
+    )
+    sections = save_area_format_reference_sections(
+        save_area_formats,
+        applies_to or ["SAVE", "RESTORE"],
+        include_titles=False,
+    )
+    if not sections:
+        return ""
+    first_layout = next((layout for layout in save_area_formats.values() if isinstance(layout, dict)), {})
+    title = str(first_layout.get("title") or "SAVE/RESTORE Processor-State Save Area")
+    return "\n".join([top_section(title)] + sections)
 
 
 def register_tables(spec: dict[str, Any]) -> str:
@@ -818,19 +771,7 @@ def register_tables(spec: dict[str, Any]) -> str:
                 tex_table_value(False),
             ]
         )
-    parts = [
-        r"\subsection{Register Model}",
-        "The programming model exposes separate data, address, stack-pointer, program-counter, floating-point, segment-register, and control-register classes. "
-        "SP is an independent stack register, not an alias of the A-register class. "
-        "The S class is used by RDSEG and WRSEG, while the CR class is used by RDCR and WRCR.",
-        register_model_figure(spec),
-        latex_tabular(["Class", "Count", "Width", "Role", "Allocatable"], rows, ["0.7in", "0.65in", "0.65in", "1.45in", "1.2in"], "Table 2-1. Register Classes"),
-        data_register_banking_section(spec),
-        state_register_format_section(spec),
-        floating_point_register_section(spec),
-        segment_register_section(spec),
-    ]
-
+    segment_register_operand_class = ""
     srows = []
     for name, body in (registers.get("special_register_classes") or {}).items():
         srows.append(
@@ -843,15 +784,22 @@ def register_tables(spec: dict[str, Any]) -> str:
             ]
         )
     if srows:
-        parts.extend(
-            [
-                r"\subsection{Segment Register Operand Class}",
-                "The S class is the Q-sized segment-register operand class used by RDSEG and WRSEG. "
-                "It names CS, DS, SS, and GS0 through GS4. SS is distinct from the SP stack-pointer register, "
-                "and FLAGS and STATUS are accessed through dedicated RD/WR instructions.",
-                latex_longtable(["Class", "Width", "Bits", "Role", "Registers"], srows, ["0.55in", "0.55in", "0.45in", "1.05in", "2.8in"], "Table 2-2. Segment Register Operand Class"),
-                latex_longtable(["Bits", "Register", "Reserved Access"], sreg_selector_rows(spec), ["0.55in", "1.0in", "3.90in"], "RDSEG/WRSEG Segment Register Selector Encoding"),
-            ]
+        segment_register_operand_class = render_latex_template(
+            "segment_register_operand_class.tex",
+            {
+                "SEGMENT_REGISTER_CLASS_TABLE": latex_longtable(
+                    ["Class", "Width", "Bits", "Role", "Registers"],
+                    srows,
+                    ["0.55in", "0.55in", "0.45in", "1.05in", "2.8in"],
+                    "Table 2-2. Segment Register Operand Class",
+                ),
+                "SEGMENT_REGISTER_SELECTOR_TABLE": latex_longtable(
+                    ["Bits", "Register", "Reserved Access"],
+                    sreg_selector_rows(spec),
+                    ["0.55in", "1.0in", "3.90in"],
+                    "RDSEG/WRSEG Segment Register Selector Encoding",
+                ),
+            },
         )
 
     special = []
@@ -872,14 +820,30 @@ def register_tables(spec: dict[str, Any]) -> str:
                 tex_table_value(reg.get("implicit", False)),
             ]
         )
-    parts.extend(
-        [
-            r"\subsection{Special Registers}",
-            latex_longtable(["Name", "Width", "Class", "Role", "Privilege", "Implicit"], special, ["0.7in", "0.5in", "0.5in", "0.8in", "0.9in", "0.65in"], "Table 2-3. Special Registers"),
-            translation_control_section(spec),
-        ]
+    return render_latex_template(
+        "register_model.tex",
+        {
+            "REGISTER_MODEL_FIGURE": register_model_figure(spec),
+            "REGISTER_CLASS_TABLE": latex_tabular(
+                ["Class", "Count", "Width", "Role", "Allocatable"],
+                rows,
+                ["0.7in", "0.65in", "0.65in", "1.45in", "1.2in"],
+                "Table 2-1. Register Classes",
+            ),
+            "DATA_REGISTER_BANKING": data_register_banking_section(spec),
+            "STATE_REGISTER_FORMATS": state_register_format_section(spec),
+            "FLOATING_POINT_REGISTER_MODEL": floating_point_register_section(spec),
+            "SEGMENT_REGISTER_FORMATS": segment_register_section(spec),
+            "SEGMENT_REGISTER_OPERAND_CLASS": segment_register_operand_class,
+            "SPECIAL_REGISTER_TABLE": latex_longtable(
+                ["Name", "Width", "Class", "Role", "Privilege", "Implicit"],
+                special,
+                ["0.7in", "0.5in", "0.5in", "0.8in", "0.9in", "0.65in"],
+                "Table 2-3. Special Registers",
+            ),
+            "TRANSLATION_CONTROL": translation_control_section(spec),
+        },
     )
-    return "\n".join(parts)
 
 
 def cpuid_discovery_text(value: Any) -> str:
@@ -901,20 +865,20 @@ def data_register_banking_section(spec: dict[str, Any]) -> str:
     model = banking.get("model") or {}
     tiers = banking.get("tiers") or []
     selector_rows = [
-        [tex_escape("Selector"), tex_code(selector.get("name", "DBANK"))],
-        [tex_escape("Selector width"), tex_escape(f"{selector.get('width', 4)} bits")],
-        [tex_escape("Architectural namespace"), tex_escape(f"{selector.get('architectural_namespace', 16)} banks")],
-        [tex_escape("Base required count"), tex_escape(selector.get("required_base_count", 1))],
-        [tex_escape("Discovery"), tex_escape(cpuid_discovery_text(selector.get("discovery", "CPUID")))],
-        [tex_escape("Object attribute"), tex_code(str(banking.get("object_attribute", "BEDROCK_ATTR_REQUIRED_DBANK_COUNT")))],
+        [tex_escape("Selector"), tex_code(selector.get("name", "-"))],
+        [tex_escape("Selector width"), tex_escape(bit_count_text(selector.get("width")))],
+        [tex_escape("Architectural namespace"), tex_escape(bank_count_text(selector.get("architectural_namespace")))],
+        [tex_escape("Base required count"), tex_escape(selector.get("required_base_count", "-"))],
+        [tex_escape("Discovery"), tex_escape(cpuid_discovery_text(selector.get("discovery", "-")))],
+        [tex_escape("Object attribute"), tex_code(str(banking.get("object_attribute", "-")))],
     ]
     model_rows = [
-        [tex_escape("Visible D register"), tex_code(model.get("visible_register_rule", "Dn names D[DBANK][n]"))],
-        [tex_escape("Ordinary D operands"), tex_escape(model.get("ordinary_instruction_rule", "ordinary DREG operands use the current DBANK selector"))],
-        [tex_escape("Bank 0"), tex_escape(model.get("bank_zero_role", "ABI-visible data-register bank"))],
-        [tex_escape("Public ABI boundary"), tex_escape(model.get("public_boundary_rule", "DBANK must be 0 at public ABI boundaries"))],
-        [tex_escape("Handler entry"), tex_escape(model.get("handler_entry_rule", "handlers execute with DBANK set to 0"))],
-        [tex_escape("Saved state"), tex_escape(model.get("saved_state_rule", "entry frames save the interrupted DBANK selector"))],
+        [tex_escape("Visible D register"), tex_code(model.get("visible_register_rule", "-"))],
+        [tex_escape("Ordinary D operands"), tex_escape(model.get("ordinary_instruction_rule", "-"))],
+        [tex_escape("Bank 0"), tex_escape(model.get("bank_zero_role", "-"))],
+        [tex_escape("Public ABI boundary"), tex_escape(model.get("public_boundary_rule", "-"))],
+        [tex_escape("Handler entry"), tex_escape(model.get("handler_entry_rule", "-"))],
+        [tex_escape("Saved state"), tex_escape(model.get("saved_state_rule", "-"))],
     ]
     tier_rows = []
     for tier in tiers:
@@ -927,17 +891,25 @@ def data_register_banking_section(spec: dict[str, Any]) -> str:
                 tex_escape(compact_text(tier.get("description", ""))),
             ]
         )
-    parts = [
-        r"\subsection{Data Register Banks}",
-        "D-register banking extends the data-register file without changing the 3-bit DREG fields used by ordinary instructions. "
-        "The current DBANK selector chooses which physical D0 through D7 bank is visible. Source-language ABIs do not expose DBANK; "
-        "compilers, runtimes, hand-written assembly, and repeat/block optimizers may use nonzero banks when the target profile provides them.",
-        latex_longtable(["Property", "Value"], selector_rows, ["1.55in", "3.95in"], "Data Register Bank Selector"),
-        latex_longtable(["Rule", "Meaning"], model_rows, ["1.55in", "3.95in"], "Data Register Bank Rules"),
-    ]
+    tier_table = ""
     if tier_rows:
-        parts.append(latex_longtable(["Tier", "Banks", "Meaning"], tier_rows, ["0.85in", "0.65in", "4.00in"], "Data Register Bank Availability Tiers"))
-    return "\n".join(parts)
+        tier_table = latex_longtable(["Tier", "Banks", "Meaning"], tier_rows, ["0.85in", "0.65in", "4.00in"], "Data Register Bank Availability Tiers")
+    return render_latex_template(
+        "data_register_banks.tex",
+        {
+            "SELECTOR_TABLE": latex_longtable(["Property", "Value"], selector_rows, ["1.55in", "3.95in"], "Data Register Bank Selector"),
+            "MODEL_TABLE": latex_longtable(["Rule", "Meaning"], model_rows, ["1.55in", "3.95in"], "Data Register Bank Rules"),
+            "TIER_TABLE": tier_table,
+        },
+    )
+
+
+def bit_count_text(value: Any) -> str:
+    return "-" if value is None else f"{value} bits"
+
+
+def bank_count_text(value: Any) -> str:
+    return "-" if value is None else f"{value} banks"
 
 
 def is_control_register(reg: dict[str, Any]) -> bool:
@@ -961,13 +933,8 @@ def control_register_rows(spec: dict[str, Any]) -> list[list[str]]:
         selectors = [item for item in group.get("selectors", []) or [] if isinstance(item, dict)]
         names = [str(item.get("register", "-")) for item in selectors]
         grouped.update(name for name in names if name != "-")
-        if str(group.get("name", "")) == "interrupt stack banks":
-            names = [f"SSS{i} / SSP{i}" for i in range(4)]
         roles = []
         for name in names:
-            if "/" in name:
-                roles.append("interrupt stack segment/pointer bank")
-                continue
             reg = by_name.get(name)
             roles.append(compact_text(reg.get("description", reg.get("role", "-"))) if reg else "-")
         rows.append(
@@ -1010,23 +977,8 @@ def selector_range_text(value: Any, *, width: int = 4) -> str:
 
 
 def sreg_selector_rows(spec: dict[str, Any]) -> list[list[str]]:
-    sclass = ((spec.get("registers", {}).get("special_register_classes") or {}).get("S") or {})
-    encoding = sclass.get("encoding") if isinstance(sclass, dict) else None
-    if not isinstance(encoding, list) or not encoding:
-        encoding = [
-            {"value": 0, "bits": "000", "register": "CS"},
-            {"value": 1, "bits": "001", "register": "DS"},
-            {"value": 2, "bits": "010", "register": "SS"},
-            {"value": 3, "bits": "011", "register": "GS0"},
-            {"value": 4, "bits": "100", "register": "GS1"},
-            {"value": 5, "bits": "101", "register": "GS2"},
-            {"value": 6, "bits": "110", "register": "GS3"},
-            {"value": 7, "bits": "111", "register": "GS4"},
-        ]
     rows: list[list[str]] = []
-    for item in encoding:
-        if not isinstance(item, dict):
-            continue
+    for item in special_register_encoding(spec, "S"):
         bits = item.get("bits")
         if bits is None and isinstance(item.get("value"), int):
             bits = f"{int(item['value']):03b}"
@@ -1047,13 +999,7 @@ def control_register_selector_rows(spec: dict[str, Any]) -> list[list[str]]:
     cr_class = ((spec.get("registers", {}).get("control_register_classes") or {}).get("CR") or {})
     groups = cr_class.get("selector_groups") if isinstance(cr_class, dict) else None
     if not isinstance(groups, list) or not groups:
-        groups = [
-            {"name": "translation", "range": [0x0000, 0x00FF], "selectors": [{"value": 0x0000, "register": "PTCR"}, {"value": 0x0001, "register": "ASCR"}, {"value": 0x0002, "register": "ICR"}]},
-            {"name": "supervisor_entry", "range": [0x0100, 0x01FF], "selectors": [{"value": 0x0100, "register": "SPC"}, {"value": 0x0101, "register": "SCS"}, {"value": 0x0102, "register": "SDS"}]},
-            {"name": "interrupt stack banks", "range": [0x0200, 0x02FF], "selectors": []},
-            {"name": "boot", "range": [0x1000, 0x10FF], "selectors": [{"value": 0x1000, "register": "BOOTPC"}, {"value": 0x1001, "register": "BOOTCFG"}]},
-            {"name": "counters", "range": [0x1100, 0x11FF], "selectors": [{"value": 0x1100, "register": "PTC"}, {"value": 0x1101, "register": "PMC"}]},
-        ]
+        raise ValueError("registers.control_register_classes.CR.selector_groups is required")
     rows: list[list[str]] = []
     reserved_fault = cr_class.get("reserved_selector_fault", "INVALID_CONTROL_STATE") if isinstance(cr_class, dict) else "INVALID_CONTROL_STATE"
     for group in groups:
@@ -1061,16 +1007,6 @@ def control_register_selector_rows(spec: dict[str, Any]) -> list[list[str]]:
             continue
         group_name = readable_text(group.get("name", ""))
         selectors = group.get("selectors") or []
-        if group_name == "interrupt stack banks":
-            pairs: list[str] = []
-            for bank in range(4):
-                base = 0x0200 + bank * 0x10
-                pairs.append(
-                    f"{tex_code(numeric_selector_text(base, width=4))}/{tex_code(numeric_selector_text(base + 1, width=4))} "
-                    f"{tex_code(f'SSS{bank}')}/{tex_code(f'SSP{bank}')}"
-                )
-            rows.append([tex_escape(group_name), tex_multiline_latex(pairs)])
-            continue
         entries = []
         for selector in selectors:
             if isinstance(selector, dict):
@@ -1093,26 +1029,20 @@ def special_register_by_name(spec: dict[str, Any], name: str) -> dict[str, Any]:
     for reg in spec.get("registers", {}).get("special_registers", []) or []:
         if isinstance(reg, dict) and reg.get("name") == name:
             return reg
-    return {}
+    raise ValueError(f"registers.special_registers must define {name}")
 
 
 def state_register_format_section(spec: dict[str, Any]) -> str:
     flags = special_register_by_name(spec, "FLAGS")
     status = special_register_by_name(spec, "STATUS")
-    flag_meanings = {
-        "Z": "zero",
-        "N": "negative",
-        "C": "carry or borrow",
-        "V": "overflow",
-    }
     flags_rows = []
     for name, body in (flags.get("layout") or {}).items():
         if isinstance(body, dict):
             bit = body.get("bit", "-")
-            meaning = body.get("description", flag_meanings.get(str(name), "condition-code bit"))
+            meaning = body.get("description", "")
         else:
             bit = body
-            meaning = flag_meanings.get(str(name), "condition-code bit")
+            meaning = ""
         flags_rows.append([tex_code(name), tex_escape(bit), tex_escape(meaning)])
     status_rows = []
     for name, body in (status.get("layout") or {}).items():
@@ -1120,20 +1050,13 @@ def state_register_format_section(spec: dict[str, Any]) -> str:
             status_rows.append([tex_code(name), tex_escape(body.get("bit", "-")), tex_escape(body.get("description", "-"))])
         else:
             status_rows.append([tex_code(name), tex_escape(body), tex_escape("-")])
-    access_text = (
-        "FLAGS and STATUS are accessed through dedicated 16-bit W-sized read/write instructions, "
-        "not through the S segment-register operand class. "
-        "Reserved bits read as zero and must remain zero; FLAGS has four meaningful bits and STATUS has seven meaningful bits."
-    )
-    return "\n".join(
-        [
-            r"\subsection{FLAGS and STATUS Registers}",
-            access_text,
-            flags_register_figure(),
-            latex_longtable(["Bit", "Position", "Meaning"], flags_rows, ["0.55in", "0.65in", "4.05in"], "Table 2-4. FLAGS Bits"),
-            status_register_figure(),
-            latex_longtable(["Bit", "Position", "Meaning"], status_rows, ["0.55in", "0.65in", "4.05in"], "Table 2-5. STATUS Bits"),
-        ]
+    return render_latex_template(
+        "state_register_formats.tex",
+        {
+            "STATUS_MEANINGFUL_BITS": tex_escape(status.get("nonzero_bits", 0)),
+            "FLAGS_TABLE": latex_longtable(["Bit", "Position", "Meaning"], flags_rows, ["0.55in", "0.65in", "4.05in"], "Table 2-4. FLAGS Bits"),
+            "STATUS_TABLE": latex_longtable(["Bit", "Position", "Meaning"], status_rows, ["0.55in", "0.65in", "4.05in"], "Table 2-5. STATUS Bits"),
+        },
     )
 
 
@@ -1144,22 +1067,18 @@ def floating_point_register_section(spec: dict[str, Any]) -> str:
     regs = fpu.get("registers") or {}
     fflags = fpu.get("fflags") or {}
     fstatus = fpu.get("fstatus") or {}
-    if not isinstance(regs, dict):
-        regs = {}
-    if not isinstance(fflags, dict):
-        fflags = {}
-    if not isinstance(fstatus, dict):
-        fstatus = {}
+    if not isinstance(regs, dict) or not isinstance(fflags, dict) or not isinstance(fstatus, dict):
+        raise ValueError("registers.floating_point_register_model must define registers, fflags, and fstatus")
     register_rows = [
-        [tex_escape("Registers"), tex_code(str(regs.get("names", "F0-F31")))],
-        [tex_escape("Count"), tex_escape(regs.get("count", 32))],
-        [tex_escape("Architectural width"), tex_escape(f"{regs.get('width', 64)} bits")],
-        [tex_escape("Scalar formats"), tex_table_value(regs.get("scalar_formats", ["S", "D"]))],
-        [tex_escape("FFLAGS width"), tex_escape(f"{fflags.get('width', 16)} bits")],
-        [tex_escape("FSTATUS width"), tex_escape(f"{fstatus.get('width', 16)} bits")],
-        [tex_escape("FFLAGS reset"), tex_code(str(fflags.get("reset", 0)))],
-        [tex_escape("FSTATUS reset"), tex_code(str(fstatus.get("reset", 0)))],
-        [tex_escape("Unsupported extension instruction"), tex_code(str(fpu.get("unsupported_instruction_exception", "ILLEGAL_INSTRUCTION")))],
+        [tex_escape("Registers"), tex_code(str(regs["names"]))],
+        [tex_escape("Count"), tex_escape(regs["count"])],
+        [tex_escape("Architectural width"), tex_escape(f"{regs['width']} bits")],
+        [tex_escape("Scalar formats"), tex_table_value(regs["scalar_formats"])],
+        [tex_escape("FFLAGS width"), tex_escape(f"{fflags['width']} bits")],
+        [tex_escape("FSTATUS width"), tex_escape(f"{fstatus['width']} bits")],
+        [tex_escape("FFLAGS reset"), tex_code(str(fflags["reset"]))],
+        [tex_escape("FSTATUS reset"), tex_code(str(fstatus["reset"]))],
+        [tex_escape("Unsupported extension instruction"), tex_code(str(fpu["unsupported_instruction_exception"]))],
     ]
     flag_rows = []
     for name, body in (fflags.get("bits") or {}).items():
@@ -1182,32 +1101,22 @@ def floating_point_register_section(spec: dict[str, Any]) -> str:
     exception_rule = fstatus.get("exception_rule") or {}
     ieee_default = fstatus.get("ieee_754_default") or {}
     write_policy = fstatus.get("write_policy") or {}
-    reserved_bits_text = str(write_policy.get("reserved_bits", "must be zero")).replace("_", " ") if isinstance(write_policy, dict) else "must be zero"
-    reserved_fault_text = str(write_policy.get("reserved_write_exception", "INVALID_CONTROL_STATE")) if isinstance(write_policy, dict) else "INVALID_CONTROL_STATE"
-    fflags_description = str(fflags.get("description", "accrued floating-point exception flags")).rstrip(".")
-    fstatus_description = str(fstatus.get("description", "floating-point control and status-mode state")).rstrip(".")
     fstatus_notes = [
-        f"FFLAGS contains {fflags_description}.",
-        f"FSTATUS contains {fstatus_description}.",
-        exception_rule.get("trap_disabled", "trap-disabled exceptions set FFLAGS and continue") if isinstance(exception_rule, dict) else "",
-        exception_rule.get("trap_enabled", "trap-enabled exceptions raise FLOATING_POINT_FAULT") if isinstance(exception_rule, dict) else "",
-        f"Reserved FSTATUS bits {reserved_bits_text}; nonzero reserved writes raise {reserved_fault_text}." if isinstance(write_policy, dict) else "",
-        ieee_default.get("rule", "FSTATUS=0 selects the default IEEE-compatible mode") if isinstance(ieee_default, dict) else "",
+        exception_rule.get("trap_disabled", "") if isinstance(exception_rule, dict) else "",
+        exception_rule.get("trap_enabled", "") if isinstance(exception_rule, dict) else "",
+        write_policy.get("description", "") if isinstance(write_policy, dict) else "",
+        ieee_default.get("rule", "") if isinstance(ieee_default, dict) else "",
     ]
     fstatus_notes = [part for part in fstatus_notes if part]
-    return "\n".join(
-        [
-            r"\subsection{Floating-Point Register Model}",
-            "The floating-point extension defines 32 Q-sized floating-point registers, F0 through F31. "
-            "Single-precision and double-precision operations use the same register file. "
-            "FFLAGS holds accrued floating-point exception flags. FSTATUS holds floating-point control "
-            "and status-mode state, including trap enables, rounding mode, and non-default arithmetic modes.",
-            latex_tabular(["Property", "Value"], register_rows, ["1.55in", "3.95in"], "Floating-Point Register File"),
-            latex_tabular(["Bit", "Position", "Meaning"], flag_rows, ["0.55in", "0.65in", "4.05in"], "FFLAGS Bits"),
-            latex_tabular(["Field", "Position", "Meaning"], fstatus_rows, ["0.85in", "0.75in", "3.90in"], "FSTATUS Fields") if fstatus_rows else "",
-            latex_tabular(["Value", "Rounding Mode"], rounding_rows, ["0.65in", "4.85in"], "FSTATUS Rounding Modes") if rounding_rows else "",
-            latex_itemize_lines(fstatus_notes),
-        ]
+    return render_latex_template(
+        "floating_point_register_model.tex",
+        {
+            "REGISTER_TABLE": latex_tabular(["Property", "Value"], register_rows, ["1.55in", "3.95in"], "Floating-Point Register File"),
+            "FFLAGS_TABLE": latex_tabular(["Bit", "Position", "Meaning"], flag_rows, ["0.55in", "0.65in", "4.05in"], "FFLAGS Bits"),
+            "FSTATUS_TABLE": latex_tabular(["Field", "Position", "Meaning"], fstatus_rows, ["0.85in", "0.75in", "3.90in"], "FSTATUS Fields") if fstatus_rows else "",
+            "ROUNDING_TABLE": latex_tabular(["Value", "Rounding Mode"], rounding_rows, ["0.65in", "4.85in"], "FSTATUS Rounding Modes") if rounding_rows else "",
+            "FSTATUS_NOTES": latex_itemize_lines(fstatus_notes),
+        },
     )
 
 
@@ -1224,39 +1133,38 @@ def segment_register_section(spec: dict[str, Any]) -> str:
                 tex_escape(reg.get("width", "-")),
             ]
         )
-    field_rows = [
-        [tex_code("base_page"), tex_escape("63:12"), tex_escape("page-unit segment base index")],
-        [tex_code("e"), tex_escape("11:7"), tex_escape("segment size exponent")],
-        [tex_code("m"), tex_escape("6:1"), tex_escape("segment size mantissa")],
-        [tex_code("b"), tex_escape("0"), tex_escape("bounds-only mode; check bounds without adding the base address")],
-    ]
-    return "\n".join(
-        [
-            r"\Needspace{3.8in}",
-            r"\subsection{Segment Registers}",
-            "Segment registers define a currently addressable memory window plus a simple address translation step. "
-            "They are not the memory-protection mechanism; paging supplies memory access permissions and final address translation. "
-            "When the segment mantissa field is zero, the segment entry is disabled. When the mantissa is nonzero, "
-            "an address passes through segmentation first and then through paging.",
-            "The bounds-only bit enables a check-only mode for segment translation: the segment bounds are tested, "
-            "but the segment base address is not added to the translated address.",
-            latex_longtable(["Register", "Selector", "Width"], rows, ["0.75in", "1.1in", "0.65in"], "Table 2-6. Segment Registers"),
-            segment_register_figure(),
-            latex_longtable(["Field", "Bits", "Meaning"], field_rows, ["0.85in", "0.65in", "3.75in"], "Table 2-7. Segment Register Fields"),
-            r"\begin{align*}",
-            r"\text{base byte address} &= \mathit{base\_page} \times 4096\\",
-            r"\text{segment size} &= m \times 2^e \times 4096\\",
-            r"\text{limit byte address} &= (\mathit{base\_page} + m \times 2^e) \times 4096\\",
-            r"b=0:\quad \text{segmented address} &= \text{base byte address} + \text{offset},\quad 0 \le \text{offset} < \text{segment size}\\",
-            r"b=1:\quad \text{segmented address} &= \text{offset},\quad \text{base byte address} \le \text{offset} < \text{limit byte address}",
-            r"\end{align*}",
-            r"The base, segment size, and limit are computed in an unsigned domain wide enough to represent the full 64-bit linear-address space plus one. "
-            r"If the limit exceeds \(2^{64}\), the segment register image is invalid and any access through it reports \texttt{PAGE\_FAULT}.",
-            "If m is zero, segmentation is disabled for that segment selector and the effective address is already the linear address. "
-            "If m is nonzero, the segment bounds are checked before paging. In normal mode (b = 0), the segment base is added to "
-            "the offset after the bounds check. In bounds-only mode (b = 1), the base is not added; the segment only constrains "
-            "which linear-address window may be accessed.",
-        ]
+    field_rows = []
+    for name, field in (segments.get("layout") or {}).items():
+        if not isinstance(field, dict):
+            continue
+        bits = field.get("bits", "-")
+        if isinstance(bits, list) and len(bits) == 2:
+            bit_text = str(bits[0]) if bits[0] == bits[1] else f"{bits[0]}:{bits[1]}"
+        else:
+            bit_text = str(bits)
+        field_rows.append(
+            [
+                tex_code(field.get("field_name") or name),
+                tex_escape(bit_text),
+                tex_escape(field.get("description", "")),
+            ]
+        )
+    return render_latex_template(
+        "segment_registers.tex",
+        {
+            "REGISTER_TABLE": latex_longtable(
+                ["Register", "Selector", "Width"],
+                rows,
+                ["0.75in", "1.1in", "0.65in"],
+                "Table 2-6. Segment Registers",
+            ),
+            "FIELD_TABLE": latex_longtable(
+                ["Field", "Bits", "Meaning"],
+                field_rows,
+                ["0.85in", "0.65in", "3.75in"],
+                "Table 2-7. Segment Register Fields",
+            ),
+        },
     )
 
 
@@ -1265,45 +1173,44 @@ def translation_control_section(spec: dict[str, Any]) -> str:
     control = registers.get("translation_control") or {}
     if not isinstance(control, dict):
         control = {}
-    return "\n".join(
-        [
-            r"\subsection{Control Registers}",
-            "Control registers are Q-sized privileged registers used for translation, interrupt, boot, counter, "
-            "and privileged-entry state. PTCR and ASCR configure the memory-address translation pipeline described "
-            "in the Memory Address Translation section; ICR configures interrupt-vector state; SPC, SCS, and SDS "
-            "hold supervisor-entry control state.",
-            latex_tabular(["Group", "Register(s)", "Width", "Privilege", "Role"], control_register_rows(spec), ["1.05in", "1.0in", "0.55in", "0.85in", "2.10in"], "Table 2-8. Control Registers"),
-            "RDCR and WRCR use 16-bit control-register selectors. Selectors are grouped by function, leaving space inside each group for related control state.",
-            latex_tabular(["Group", "Selector / Register"], control_register_selector_rows(spec), ["1.35in", "4.15in"], "Control Register Selector Encoding"),
-            ptcr_register_figure(),
-            latex_longtable(["Field", "Bits", "Meaning"], ptcr_field_rows(), ["0.95in", "0.65in", "3.85in"], "Table 2-9. PTCR Fields"),
-            latex_longtable(["Selector", "PABITS", "Reserved Access"], pabits_selector_rows(spec), ["0.80in", "0.85in", "3.85in"], "PTCR PABITS Selector Encoding"),
-            ascr_register_figure(),
-            "ASCR holds the current address-space identifier. SWPT Dn performs an ASID-non-aware page-table swap: "
-            "PTCR is updated and ASCR is cleared. SWPTA Dn, imm16 performs an ASID-aware page-table swap: "
-            "PTCR is updated, ASCR.ASID is set from the immediate ASID selector, and ASCR.AE is set.",
-            latex_longtable(["Field", "Bits", "Meaning"], ascr_field_rows(), ["0.95in", "0.65in", "3.85in"], "Table 2-10. ASCR Fields"),
-            icr_register_figure(),
-            latex_longtable(["Field", "Bits", "Meaning"], icr_field_rows(), ["0.95in", "0.65in", "3.85in"], "Table 2-11. ICR Fields"),
-            "The detailed interrupt-vector and supervisor-entry frame layouts are described in the Exception Processing Reference section.",
-        ]
+    return render_latex_template(
+        "translation_control.tex",
+        {
+            "CONTROL_REGISTER_TABLE": latex_tabular(
+                ["Group", "Register(s)", "Width", "Privilege", "Role"],
+                control_register_rows(spec),
+                ["1.05in", "1.0in", "0.55in", "0.85in", "2.10in"],
+                "Table 2-8. Control Registers",
+            ),
+            "CONTROL_REGISTER_SELECTOR_TABLE": latex_tabular(
+                ["Group", "Selector / Register"],
+                control_register_selector_rows(spec),
+                ["1.35in", "4.15in"],
+                "Control Register Selector Encoding",
+            ),
+            "PTCR_FIELD_TABLE": latex_longtable(["Field", "Bits", "Meaning"], ptcr_field_rows(spec), ["0.95in", "0.65in", "3.85in"], "Table 2-9. PTCR Fields"),
+            "PABITS_SELECTOR_TABLE": latex_longtable(["Selector", "PABITS", "Reserved Access"], pabits_selector_rows(spec), ["0.80in", "0.85in", "3.85in"], "PTCR PABITS Selector Encoding"),
+            "ASCR_FIELD_TABLE": latex_longtable(["Field", "Bits", "Meaning"], ascr_field_rows(spec), ["0.95in", "0.65in", "3.85in"], "Table 2-10. ASCR Fields"),
+            "ICR_FIELD_TABLE": latex_longtable(["Field", "Bits", "Meaning"], icr_field_rows(spec), ["0.95in", "0.65in", "3.85in"], "Table 2-11. ICR Fields"),
+        },
     )
 
 
+def control_model(spec: dict[str, Any]) -> dict[str, Any]:
+    model = spec.get("interrupts") or {}
+    if not isinstance(model, dict) or not model:
+        raise ValueError("interrupts model is required")
+    return model
+
+
 def privileged_programming_model(spec: dict[str, Any]) -> dict[str, Any]:
-    registers = spec.get("registers", {})
-    control = registers.get("translation_control") or {}
-    if not isinstance(control, dict):
-        return {}
+    control = control_model(spec)
     model = control.get("privileged_programming_model") or {}
     return model if isinstance(model, dict) else {}
 
 
 def exception_processing_model(spec: dict[str, Any]) -> dict[str, Any]:
-    registers = spec.get("registers", {})
-    control = registers.get("translation_control") or {}
-    if not isinstance(control, dict):
-        return {}
+    control = control_model(spec)
     model = control.get("exception_processing") or {}
     return model if isinstance(model, dict) else {}
 
@@ -1311,39 +1218,20 @@ def exception_processing_model(spec: dict[str, Any]) -> dict[str, Any]:
 def privilege_state_rows(model: dict[str, Any]) -> list[list[str]]:
     state = model.get("privilege_state") if isinstance(model, dict) else {}
     rows: list[list[str]] = []
-    for field in ("PM", "UA"):
+    for field in ("PM", "access_domain"):
         values = (state or {}).get(field) if isinstance(state, dict) else {}
         if not isinstance(values, dict):
             continue
         for value, meaning in values.items():
-            rows.append([tex_code(f"STATUS.{field}"), tex_code(value), tex_escape(meaning)])
-    if rows:
-        return rows
-    return [
-        [tex_code("STATUS.PM"), tex_code("0"), tex_escape("user mode")],
-        [tex_code("STATUS.PM"), tex_code("1"), tex_escape("supervisor mode")],
-        [tex_code("STATUS.UA"), tex_code("0"), tex_escape("user-memory access disabled")],
-        [tex_code("STATUS.UA"), tex_code("1"), tex_escape("user-memory access enabled")],
-    ]
+            field_name = f"STATUS.{field}" if field == "PM" else "access domain"
+            rows.append([tex_code(field_name), tex_code(value), tex_escape(meaning)])
+    return rows
 
 
 def privileged_model_rule_rows(model: dict[str, Any]) -> list[list[str]]:
     rules = model.get("normative_rules") if isinstance(model, dict) else None
-    if not isinstance(rules, list) or not rules:
-        rules = [
-            {"topic": "privilege mode encoding", "rule": "STATUS.PM=0 is user mode; STATUS.PM=1 is supervisor mode"},
-            {"topic": "user-memory access control", "rule": "STATUS.UA=0 disables supervisor access to user pages; STATUS.UA=1 enables it"},
-            {"topic": "saved STATUS return", "rule": "STATUS is restored verbatim from the saved frame image; entry sets STATUS.PM=1 only and does not mask interrupts"},
-            {"topic": "supervisor entry DBANK normalization", "rule": "entry saves the interrupted DBANK selector and then sets DBANK=0 before fetching the handler"},
-            {"topic": "SYSCALL frame and entry", "rule": "SYSCALL saves SS:SP, CS:PC, DS, FLAGS/STATUS, and DBANK, then uses a 32-byte entry table with 16-byte entry-address alignment"},
-            {"topic": "return instruction split", "rule": "SYSRET is only for SYSCALL return; IRET is for interrupt, trap, and exception return"},
-            {"topic": "IRET restore policy", "rule": "IRET restores all saved interrupt-frame state and does not validate FRAME_INFO.frame_type"},
-            {"topic": "malformed return frames", "rule": "malformed frames are software errors and do not raise a separate architectural exception"},
-            {"topic": "NMI and double-fault stacks", "rule": "NMI and DOUBLE_FAULT use the SN field of their IVT entries"},
-            {"topic": "interrupt nesting limit", "rule": "when hidden_current_idepth equals ICR.MAX_IDEPTH, maskable interrupts are implicitly masked"},
-            {"topic": "control-register access", "rule": "RDCR and WRCR are always privileged; user-visible control state uses dedicated gated instructions"},
-            {"topic": "reserved CPU vectors", "rule": "reserved CPU vectors have no frame type; attempted delivery immediately becomes DOUBLE_FAULT"},
-        ]
+    if not isinstance(rules, list):
+        rules = []
     rows = []
     for index, item in enumerate(rules, 1):
         if not isinstance(item, dict):
@@ -1362,19 +1250,19 @@ def syscall_model_rows(model: dict[str, Any]) -> list[list[str]]:
     syscall = model.get("syscall") if isinstance(model, dict) else {}
     if not isinstance(syscall, dict):
         syscall = {}
-    entry_registers = syscall.get("entry_registers") or ["SPC", "SCS", "SDS"]
-    saved_state = syscall.get("saved_state") or ["SS:SP", "CS:PC", "DS", "FLAGS_STATUS", "DBANK"]
+    entry_registers = syscall.get("entry_registers") or []
+    saved_state = syscall.get("saved_state") or []
     return [
-        [tex_escape("Entry vector"), tex_escape(syscall.get("vector", "none"))],
+        [tex_escape("Entry vector"), tex_escape(syscall.get("vector", "-"))],
         [tex_escape("Entry target"), tex_table_value(entry_registers)],
-        [tex_escape("Frame style"), tex_escape(syscall.get("frame_style", "expanded long-call frame"))],
+        [tex_escape("Frame style"), tex_escape(syscall.get("frame_style", "-"))],
         [tex_escape("Saved state"), tex_table_value(saved_state)],
-        [tex_escape("Entry table size"), tex_escape(f"{syscall.get('entry_table_size_bytes', 32)} bytes")],
-        [tex_escape("Entry address alignment"), tex_escape(f"{syscall.get('entry_address_alignment_bytes', 16)} bytes")],
-        [tex_escape("Entry STATUS change"), tex_escape(syscall.get("status_change", "set STATUS.PM to 1 only"))],
-        [tex_escape("Entry DBANK change"), tex_escape(syscall.get("dbank_change", "save interrupted DBANK selector and set DBANK to 0"))],
-        [tex_escape("Return instruction"), tex_code(syscall.get("return_instruction", "SYSRET"))],
-        [tex_escape("Return policy"), tex_escape(syscall.get("return_policy", "read the syscall frame as written, restore saved DBANK, and return"))],
+        [tex_escape("Entry table size"), tex_escape(f"{syscall.get('entry_table_size_bytes', '-')} bytes")],
+        [tex_escape("Entry address alignment"), tex_escape(f"{syscall.get('entry_address_alignment_bytes', '-')} bytes")],
+        [tex_escape("Entry STATUS change"), tex_escape(syscall.get("status_change", "-"))],
+        [tex_escape("Entry DBANK change"), tex_escape(syscall.get("dbank_change", "-"))],
+        [tex_escape("Return instruction"), tex_code(syscall.get("return_instruction", "-"))],
+        [tex_escape("Return policy"), tex_escape(syscall.get("return_policy", "-"))],
     ]
 
 
@@ -1384,74 +1272,76 @@ def privileged_rule_rows(model: dict[str, Any]) -> list[list[str]]:
     returns = model.get("return_rules") if isinstance(model, dict) else {}
     nesting = model.get("interrupt_nesting") if isinstance(model, dict) else {}
     access = model.get("control_register_access") if isinstance(model, dict) else {}
-    entry_changes = entry.get("entry_status_changes", ["set STATUS.PM to 1"]) if isinstance(entry, dict) else ["set STATUS.PM to 1"]
+    entry_changes = entry.get("entry_status_changes", []) if isinstance(entry, dict) else []
     return [
         [tex_escape("Entry STATUS update"), tex_table_value(entry_changes)],
-        [tex_escape("Entry DBANK update"), tex_escape(entry.get("entry_dbank_change", "save interrupted DBANK selector and set DBANK to 0") if isinstance(entry, dict) else "save interrupted DBANK selector and set DBANK to 0")],
-        [tex_escape("Saved STATUS return"), tex_escape(entry.get("saved_status_return", "restored verbatim from the saved frame image") if isinstance(entry, dict) else "restored verbatim from the saved frame image")],
+        [tex_escape("Entry DBANK update"), tex_escape(entry.get("entry_dbank_change", "-") if isinstance(entry, dict) else "-")],
+        [tex_escape("Saved STATUS return"), tex_escape(entry.get("saved_status_return", "-") if isinstance(entry, dict) else "-")],
         [tex_escape("Entry interrupt masking"), tex_escape("no automatic masking" if not (entry.get("interrupt_masking_on_entry", False) if isinstance(entry, dict) else False) else "mask on entry")],
-        [tex_escape("Interrupt stack selection"), tex_escape(irq.get("stack_selection", "IVT entry SN selects SSSn:SSPn") if isinstance(irq, dict) else "IVT entry SN selects SSSn:SSPn")],
-        [tex_escape("NMI stack selection"), tex_escape(irq.get("nmi_stack_selection", "use the IVT entry SN field") if isinstance(irq, dict) else "use the IVT entry SN field")],
-        [tex_escape("Double-fault stack selection"), tex_escape(irq.get("double_fault_stack_selection", "use the IVT entry SN field") if isinstance(irq, dict) else "use the IVT entry SN field")],
-        [tex_escape("Interrupt frame save"), tex_escape(irq.get("frame_save", "atomic") if isinstance(irq, dict) else "atomic")],
-        [tex_code("SYSRET"), tex_escape(returns.get("SYSRET", "syscall frame only") if isinstance(returns, dict) else "syscall frame only")],
-        [tex_code("IRET"), tex_escape(returns.get("IRET", "restore all saved interrupt frame state; frame_type is not validated by hardware") if isinstance(returns, dict) else "restore all saved interrupt frame state; frame_type is not validated by hardware")],
-        [tex_escape("Malformed return frame"), tex_escape(returns.get("malformed_frame", "software error; no architectural exception is raised") if isinstance(returns, dict) else "software error; no architectural exception is raised")],
-        [tex_code("ICR.MAX_IDEPTH"), tex_escape(nesting.get("max_idepth_rule", "when hidden_current_idepth equals ICR.MAX_IDEPTH, maskable interrupts are implicitly masked") if isinstance(nesting, dict) else "when hidden_current_idepth equals ICR.MAX_IDEPTH, maskable interrupts are implicitly masked")],
-        [tex_code("RDCR/WRCR"), tex_escape(f"RDCR = {access.get('RDCR', 'supervisor')}; WRCR = {access.get('WRCR', 'supervisor')}" if isinstance(access, dict) else "supervisor only")],
-        [tex_escape("User-visible control state"), tex_escape(access.get("user_access_policy", "use dedicated instructions gated by control-register policy bits") if isinstance(access, dict) else "use dedicated instructions gated by control-register policy bits")],
+        [tex_escape("Interrupt stack selection"), tex_escape(irq.get("stack_selection", "-") if isinstance(irq, dict) else "-")],
+        [tex_escape("NMI stack selection"), tex_escape(irq.get("nmi_stack_selection", "-") if isinstance(irq, dict) else "-")],
+        [tex_escape("Double-fault stack selection"), tex_escape(irq.get("double_fault_stack_selection", "-") if isinstance(irq, dict) else "-")],
+        [tex_escape("Interrupt frame save"), tex_escape(irq.get("frame_save", "-") if isinstance(irq, dict) else "-")],
+        [tex_code("SYSRET"), tex_escape(returns.get("SYSRET", "-") if isinstance(returns, dict) else "-")],
+        [tex_code("IRET"), tex_escape(returns.get("IRET", "-") if isinstance(returns, dict) else "-")],
+        [tex_escape("Malformed return frame"), tex_escape(returns.get("malformed_frame", "-") if isinstance(returns, dict) else "-")],
+        [tex_code("ICR.MAX_IDEPTH"), tex_escape(nesting.get("max_idepth_rule", "-") if isinstance(nesting, dict) else "-")],
+        [tex_code("RDCR/WRCR"), tex_escape(f"RDCR = {access.get('RDCR', '-')}; WRCR = {access.get('WRCR', '-')}" if isinstance(access, dict) else "-")],
+        [tex_escape("User-visible control state"), tex_escape(access.get("user_access_policy", "-") if isinstance(access, dict) else "-")],
     ]
 
 
 def privileged_programming_model_section(spec: dict[str, Any]) -> str:
     model = privileged_programming_model(spec)
-    return "\n".join(
-        [
-            "The privileged programming model defines how execution moves between user mode and supervisor mode, "
-            "which saved state is used for return, and which control state is directly accessible.",
-            r"\subsection{Privileged Model Rules}",
-            "The following rules define the supervisor and exception-control behavior used by the rest of this manual.",
-            latex_longtable(["No.", "Subject", "Rule"], privileged_model_rule_rows(model), ["0.35in", "1.45in", "3.65in"], "Table 8-1. Privileged Model Rules"),
-            r"\subsection{Privilege State}",
-            f"{tex_code('STATUS.PM')} selects the current privilege level. {tex_code('STATUS.UA')} controls supervisor access to user memory: "
-            f"a clear {tex_code('UA')} bit disables supervisor access to user pages, while a set {tex_code('UA')} bit enables it.",
-            latex_longtable(["Field", "Value", "Meaning"], privilege_state_rows(model), ["1.10in", "0.55in", "3.80in"], "Table 8-2. Privilege State Bits"),
-            r"\subsection{SYSCALL and SYSRET}",
-            f"{tex_code('SYSCALL')} is an explicit supervisor-entry path rather than an IVT-vector event. "
-            "It behaves like an extended long call: it saves the user control state, uses a 32-byte supervisor-entry "
-            "table with 16-byte entry-address alignment, loads the supervisor entry state from SPC/SCS/SDS, "
-            "and sets STATUS.PM to supervisor mode. "
-            f"{tex_code('SYSRET')} is the matching return instruction and is only for this syscall frame shape.",
-            latex_longtable(["Property", "Rule"], syscall_model_rows(model), ["1.55in", "3.90in"], "Table 8-3. SYSCALL/SYSRET Rules"),
-            r"\subsection{Interrupt and Control-State Rules}",
-            "Trap, interrupt, and exception entry also set STATUS.PM to supervisor mode, but do not automatically mask interrupts. "
-            "The saved STATUS image is restored verbatim by the matching return path. Malformed return frames are software errors; "
-            "the architecture does not raise a second exception merely because the return frame is nonsensical.",
-            latex_longtable(["Rule", "Meaning"], privileged_rule_rows(model), ["1.65in", "3.80in"], "Table 8-4. Privileged Execution Rules"),
-        ]
+    return render_latex_template(
+        "privileged_programming_model.tex",
+        {
+            "PRIVILEGED_RULE_TABLE": latex_longtable(["No.", "Subject", "Rule"], privileged_model_rule_rows(model), ["0.35in", "1.45in", "3.65in"], "Table 8-1. Privileged Model Rules"),
+            "PRIVILEGE_STATE_TABLE": latex_longtable(["Field", "Value", "Meaning"], privilege_state_rows(model), ["1.15in", "0.55in", "3.75in"], "Table 8-2. Privilege State and Access Domains"),
+            "SYSCALL_TABLE": latex_longtable(["Property", "Rule"], syscall_model_rows(model), ["1.55in", "3.90in"], "Table 8-3. SYSCALL/SYSRET Rules"),
+            "PRIVILEGED_EXECUTION_TABLE": latex_longtable(["Rule", "Meaning"], privileged_rule_rows(model), ["1.65in", "3.80in"], "Table 8-4. Privileged Execution Rules"),
+        },
     )
 
 
-def ptcr_field_rows() -> list[list[str]]:
-    return [
-        [tex_code("root_page"), tex_escape("63:12"), tex_escape("page-table root physical frame number")],
-        [tex_code("PABITS_SEL"), tex_escape("11:8"), tex_escape("physical address width selector; see the selector table below")],
-        [tex_code("LA57"), tex_escape("7"), tex_escape("0 = 4-level paging with 48-bit canonical linear addresses; 1 = 5-level paging with 57-bit canonical linear addresses")],
-        [tex_code("reserved"), tex_escape("6:1"), tex_escape("reserved, must be zero")],
-        [tex_code("PE"), tex_escape("0"), tex_escape("page-table translation enable")],
-    ]
+def field_bits_text(field: dict[str, Any]) -> str:
+    if "bit" in field:
+        return str(field.get("bit"))
+    bits = field.get("bits")
+    if isinstance(bits, list) and len(bits) == 2:
+        return str(bits[0]) if bits[0] == bits[1] else f"{bits[0]}:{bits[1]}"
+    return "-"
+
+
+def layout_field_rows(layout: dict[str, Any]) -> list[list[str]]:
+    rows: list[list[str]] = []
+    for name, field in sorted(
+        layout.items(),
+        key=lambda item: max(item[1].get("bits", [item[1].get("bit", 0)]) if isinstance(item[1], dict) else [0]),
+        reverse=True,
+    ):
+        if not isinstance(field, dict):
+            continue
+        rows.append(
+            [
+                tex_code(name),
+                tex_escape(field_bits_text(field)),
+                tex_escape(field.get("description", "")),
+            ]
+        )
+    return rows
+
+
+def ptcr_field_rows(spec: dict[str, Any]) -> list[list[str]]:
+    return layout_field_rows(special_register_layout(spec, "PTCR"))
 
 
 def pabits_selector_rows(spec: dict[str, Any]) -> list[list[str]]:
     control = spec.get("registers", {}).get("translation_control") or {}
     ptcr = control.get("PTCR") if isinstance(control, dict) else {}
     entries = (ptcr or {}).get("PABITS_SEL") if isinstance(ptcr, dict) else None
-    if not isinstance(entries, list) or not entries:
-        entries = [
-            {"selector": 0, "physical_address_bits": 48},
-            {"selector": 1, "physical_address_bits": 56},
-            {"selector": "2..15", "physical_address_bits": "reserved", "access_fault": "INVALID_CONTROL_STATE"},
-        ]
+    if not isinstance(entries, list):
+        entries = []
     rows: list[list[str]] = []
     for item in entries:
         if not isinstance(item, dict):
@@ -1469,79 +1359,44 @@ def pabits_selector_rows(spec: dict[str, Any]) -> list[list[str]]:
     return rows
 
 
-def ascr_field_rows() -> list[list[str]]:
-    return [
-        [tex_code("reserved"), tex_escape("63:32"), tex_escape("reserved, must be zero")],
-        [tex_code("ASID"), tex_escape("31:16"), tex_escape("current address-space identifier")],
-        [tex_code("reserved"), tex_escape("15:1"), tex_escape("reserved, must be zero")],
-        [tex_code("AE"), tex_escape("0"), tex_escape("ASID enable")],
-    ]
+def ascr_field_rows(spec: dict[str, Any]) -> list[list[str]]:
+    return layout_field_rows(special_register_layout(spec, "ASCR"))
 
 
-def pte_field_rows() -> list[list[str]]:
-    return [
-        [tex_code("P"), tex_escape("0"), tex_escape("Present")],
-        [tex_code("W"), tex_escape("1"), tex_escape("Writable")],
-        [tex_code("X"), tex_escape("2"), tex_escape("Executable")],
-        [tex_code("U"), tex_escape("3"), tex_escape("User accessible")],
-        [tex_code("G"), tex_escape("4"), tex_escape("Global TLB entry")],
-        [tex_code("A"), tex_escape("5"), tex_escape("Accessed")],
-        [tex_code("D"), tex_escape("6"), tex_escape("Dirty")],
-        [tex_code("AT"), tex_escape("7"), tex_escape("0 = byte-addressed memory; 1 = externally acknowledged / bus-sized addressing")],
-        [tex_code("CP"), tex_escape("9:8"), tex_escape("00 = cacheable; 01 = uncacheable; 10 = write-through; 11 = write-combining")],
-        [tex_code("SW0"), tex_escape("10"), tex_escape("software-defined")],
-        [tex_code("T"), tex_escape("11"), tex_escape("0 = leaf PTE; 1 = next-level table entry")],
-    ]
+def pte_field_rows(spec: dict[str, Any]) -> list[list[str]]:
+    control = spec.get("registers", {}).get("translation_control") or {}
+    pte = (control.get("page_table_entry") or {}) if isinstance(control, dict) else {}
+    fields = pte.get("low_attribute_bits") if isinstance(pte, dict) else None
+    if not isinstance(fields, dict):
+        raise ValueError("registers.translation_control.page_table_entry.low_attribute_bits is required")
+    return layout_field_rows(fields)
 
 
-def pte_walk_rule_rows() -> list[list[str]]:
-    return [
-        [
-            tex_escape("Non-leaf levels"),
-            tex_escape("P must be 1 and T must be 1. The PFN names the next-level table frame. Large pages are not defined; T=0 above L1 reports PAGE_FAULT."),
-        ],
-        [
-            tex_escape("L1 leaf level"),
-            tex_escape("P must be 1 and T must be 0. The PFN names the mapped 4 KiB page frame. T=1 at L1 reports PAGE_FAULT."),
-        ],
-        [
-            tex_escape("Not-present entries"),
-            tex_escape("P=0 at any walk level reports PAGE_FAULT before the entry is used."),
-        ],
-    ]
+def page_table_entry_spec(spec: dict[str, Any]) -> dict[str, Any]:
+    control = spec.get("registers", {}).get("translation_control") or {}
+    pte = (control.get("page_table_entry") or {}) if isinstance(control, dict) else {}
+    if not isinstance(pte, dict):
+        raise ValueError("registers.translation_control.page_table_entry is required")
+    return pte
 
 
-def pte_attribute_rule_rows() -> list[list[str]]:
-    return [
-        [
-            tex_code("W/X/U"),
-            tex_escape("Permission bits are accumulated across the walk. A store, instruction fetch, or user access is allowed only if every traversed entry and the leaf permit it."),
-        ],
-        [
-            tex_code("A"),
-            tex_escape("Set on each non-leaf entry successfully traversed and on the leaf entry successfully used."),
-        ],
-        [
-            tex_code("D"),
-            tex_escape("Leaf-only dirty bit. Set on a successful store through the leaf mapping; must be zero in non-leaf entries."),
-        ],
-        [
-            tex_code("G"),
-            tex_escape("Leaf-only global-translation marker; must be zero in non-leaf entries."),
-        ],
-        [
-            tex_code("CP"),
-            tex_escape("For non-leaf entries, selects the cache policy for hardware table-walk accesses to the next-level table. For leaf entries, selects the cache policy for the mapped access."),
-        ],
-        [
-            tex_code("AT"),
-            tex_escape("Must be zero in non-leaf entries. In leaf entries it is an access attribute only: address formation remains PFN plus page offset."),
-        ],
-        [
-            tex_code("SW0"),
-            tex_escape("Software-defined and ignored by hardware at every level."),
-        ],
-    ]
+def pte_walk_rule_rows(spec: dict[str, Any]) -> list[list[str]]:
+    rules = page_table_entry_spec(spec).get("walk_level_rules")
+    if not isinstance(rules, dict):
+        raise ValueError("registers.translation_control.page_table_entry.walk_level_rules is required")
+    return [[tex_escape(readable_text(key)), tex_escape(value)] for key, value in rules.items()]
+
+
+def pte_attribute_rule_rows(spec: dict[str, Any]) -> list[list[str]]:
+    pte = page_table_entry_spec(spec)
+    rows: list[list[str]] = []
+    for section_name in ("non_leaf_attributes", "leaf_attributes"):
+        attributes = pte.get(section_name)
+        if not isinstance(attributes, dict):
+            raise ValueError(f"registers.translation_control.page_table_entry.{section_name} is required")
+        for field, rule in attributes.items():
+            rows.append([tex_code(f"{readable_text(section_name)}.{field}"), tex_escape(rule)])
+    return rows
 
 
 def pte_permission_rule_rows(spec: dict[str, Any]) -> list[list[str]]:
@@ -1549,13 +1404,7 @@ def pte_permission_rule_rows(spec: dict[str, Any]) -> list[list[str]]:
     pte = (control.get("page_table_entry") or {}) if isinstance(control, dict) else {}
     rules = pte.get("permission_rules") if isinstance(pte, dict) else None
     if not isinstance(rules, list) or not rules:
-        rules = [
-            {"mode": "user", "condition": "effective U permission is 0", "result": "PRIVILEGE_FAULT"},
-            {"mode": "user", "condition": "effective U permission is 1", "result": "allowed subject to present, W/X, and access-type checks"},
-            {"mode": "supervisor", "condition": "effective U permission is 0", "result": "allowed subject to present, W/X, and access-type checks"},
-            {"mode": "supervisor", "condition": "effective U permission is 1 and STATUS.UA is 0", "result": "PAGE_FAULT"},
-            {"mode": "supervisor", "condition": "effective U permission is 1 and STATUS.UA is 1", "result": "allowed subject to present, W/X, and access-type checks"},
-        ]
+        raise ValueError("registers.translation_control.page_table_entry.permission_rules is required")
     rows: list[list[str]] = []
     for item in rules:
         if not isinstance(item, dict):
@@ -1570,39 +1419,63 @@ def pte_permission_rule_rows(spec: dict[str, Any]) -> list[list[str]]:
     return rows
 
 
-def icr_field_rows() -> list[list[str]]:
-    return [
-        [tex_code("ivt_page"), tex_escape("63:12"), tex_escape("interrupt vector table frame number / page number")],
-        [tex_code("MAX_IDEPTH"), tex_escape("11:8"), tex_escape("0 disables maskable interrupt nesting; n is the maximum hidden_current_idepth; equality implicitly masks maskable interrupts")],
-        [tex_code("NMI_PENDING"), tex_escape("7"), tex_escape("hardware-managed NMI pending bit")],
-        [tex_code("NMI_LATCH"), tex_escape("6"), tex_escape("latch NMI while STATUS.NI = 1")],
-        [tex_code("DF_ENABLE"), tex_escape("5"), tex_escape("double-fault handling enable")],
-        [tex_code("reserved"), tex_escape("4:1"), tex_escape("reserved, must be zero")],
-        [tex_code("IVT_VALID"), tex_escape("0"), tex_escape("interrupt vector table valid")],
-    ]
+def icr_field_rows(spec: dict[str, Any]) -> list[list[str]]:
+    return layout_field_rows(special_register_layout(spec, "ICR"))
 
 
-def ivt_entry_rows() -> list[list[str]]:
-    return [
-        [tex_code("handler"), tex_escape("bytes 0..7"), tex_escape("64-bit interrupt handler address")],
-        [tex_code("HP"), tex_escape("byte 8 bit 0"), tex_escape("handler present; if clear, delivery becomes DOUBLE_FAULT")],
-        [tex_code("reserved"), tex_escape("byte 8 bit 1"), tex_escape("reserved, must be zero")],
-        [
-            tex_code("SN"),
-            tex_escape("byte 8 bits 3:2"),
-            tex_multiline(
+def byte_range_text(value: Any) -> str:
+    if isinstance(value, list) and len(value) == 2:
+        return f"bytes {value[0]}..{value[1]}"
+    return f"byte {value}"
+
+
+def ivt_entry_rows(spec: dict[str, Any]) -> list[list[str]]:
+    table = spec.get("interrupts", {}).get("interrupt_vector_table") or {}
+    layout = table.get("entry_layout") if isinstance(table, dict) else {}
+    if not isinstance(layout, dict):
+        raise ValueError("interrupts.interrupt_vector_table.entry_layout is required")
+    rows: list[list[str]] = []
+    handler = layout.get("handler_address")
+    if isinstance(handler, dict):
+        rows.append(
+            [
+                tex_code("handler_address"),
+                tex_escape(byte_range_text(handler.get("bytes"))),
+                tex_escape(handler.get("description", "")),
+            ]
+        )
+    control = layout.get("control_byte")
+    if isinstance(control, dict):
+        byte = control.get("byte", "-")
+        fields = control.get("fields") or {}
+        if not isinstance(fields, dict):
+            raise ValueError("interrupts.interrupt_vector_table.entry_layout.control_byte.fields is required")
+        for name, field in fields.items():
+            if not isinstance(field, dict):
+                continue
+            description = str(field.get("description", ""))
+            values = field.get("values")
+            if isinstance(values, dict):
+                description = tex_multiline([description, *[f"{key} = {value}" for key, value in values.items()]])
+            else:
+                description = tex_escape(description)
+            rows.append(
                 [
-                    "selects interrupt stack bank:",
-                    "0 = SSS0:SSP0",
-                    "1 = SSS1:SSP1",
-                    "2 = SSS2:SSP2",
-                    "3 = SSS3:SSP3",
+                    tex_code(name),
+                    tex_escape(f"byte {byte} bit {field_bits_text(field)}"),
+                    description,
                 ]
-            ),
-        ],
-        [tex_code("reserved"), tex_escape("byte 8 bits 7:4"), tex_escape("reserved, must be zero")],
-        [tex_code("reserved"), tex_escape("bytes 9..15"), tex_escape("reserved, must be zero")],
-    ]
+            )
+    reserved = layout.get("reserved")
+    if isinstance(reserved, dict):
+        rows.append(
+            [
+                tex_code("reserved"),
+                tex_escape(byte_range_text(reserved.get("bytes"))),
+                tex_escape(reserved.get("description", "")),
+            ]
+        )
+    return rows
 
 
 
@@ -1646,17 +1519,8 @@ def frame_type_rows(control: dict[str, Any]) -> list[list[str]]:
 
 def frame_info_rows(control: dict[str, Any]) -> list[list[str]]:
     frame_info = (supervisor_stack_frame(control).get("frame_info") or {}) if isinstance(control, dict) else {}
-    if not isinstance(frame_info, dict) or not frame_info:
-        frame_info = {
-            "vector": {"bits": [0, 7], "description": "interrupt, exception, or trap vector number"},
-            "frame_size_units": {"bits": [8, 15], "description": "total frame size in 8-byte units"},
-            "saved_idepth": {"bits": [16, 19], "description": "saved interrupt nesting depth"},
-            "frame_type": {"bits": [20, 23], "description": "supervisor stack frame type code"},
-            "from_user": {"bit": 24, "description": "entry was taken from user mode"},
-            "nmi_frame": {"bit": 25, "description": "frame was created by NMI entry"},
-            "rep_fault": {"bit": 26, "description": "fault occurred during REP, REPcc, or REPG repeated execution"},
-            "reserved": {"bits": [27, 63], "description": "reserved, must be zero"},
-        }
+    if not isinstance(frame_info, dict):
+        frame_info = {}
     rows = []
     for name, field in frame_info.items():
         if not isinstance(field, dict):
@@ -1691,21 +1555,7 @@ def repeat_fault_aux_rows(control: dict[str, Any]) -> list[list[str]]:
     frame = supervisor_stack_frame(control)
     aux = frame.get("repeat_fault_aux") if isinstance(frame, dict) else None
     if not isinstance(aux, dict):
-        aux = {
-            "fields": {
-                "counter_register": {"bits": [0, 2], "description": "D-register counter number, D0-D7"},
-                "group_start_delta_words": {
-                    "bits": [3, 7],
-                    "description": "REPG-general/REPG-fast unsigned negative displacement in 16-bit words from fault_pc to group start",
-                },
-                "repeat_kind": {
-                    "bits": [8, 9],
-                    "description": "repeat context kind",
-                    "values": {0: "REP_or_REPcc", 1: "REPG-general", 2: "REPG-fast", 3: "reserved"},
-                },
-                "reserved": {"bits": [10, 63], "description": "reserved, must be zero"},
-            }
-        }
+        aux = {}
     fields = aux.get("fields") or {}
     rows: list[list[str]] = []
     if not isinstance(fields, dict):
@@ -1758,29 +1608,7 @@ def interrupt_vector_assignment(control: dict[str, Any]) -> dict[str, Any]:
     assignment = (control.get("interrupt_vector_assignment") or {}) if isinstance(control, dict) else {}
     if isinstance(assignment, dict) and assignment:
         return assignment
-    return {
-            "policy": "Vectors 0x00..0x1F are CPU-owned. Assigned CPU vectors are grouped by supervisor stack frame type; reserved CPU vectors do not predefine a frame type. PRIVILEGE_FAULT precedes PAGE_FAULT. Length and segment faults have no separate CPU vectors; canonical-address faults report as PAGE_FAULT when paging is enabled. Vectors 0x20..0x3F are reserved for future architecture; 0x40..0xFF are OS/platform/device assignable.",
-        "syscall_vector": "none",
-        "syscall_entry": "SPC/SCS/SDS supervisor-entry path",
-        "ranges": [
-            {"range": [0x00, 0x03], "owner": "CPU", "meaning": "assigned BASIC-frame CPU exceptions"},
-            {"range": [0x04, 0x04], "owner": "CPU", "meaning": "reserved CPU vector; frame type not predefined"},
-            {"range": [0x05, 0x05], "owner": "CPU", "meaning": "assigned BASIC-frame CPU trap"},
-            {"range": [0x06, 0x07], "owner": "CPU", "meaning": "reserved CPU vectors; frame type not predefined"},
-            {"range": [0x08, 0x0E], "owner": "CPU", "meaning": "assigned ERROR/PAGE_FAULT-frame CPU exceptions"},
-            {"range": [0x0F, 0x0F], "owner": "CPU", "meaning": "reserved CPU vector; frame type not predefined"},
-            {"range": [0x10, 0x17], "owner": "CPU", "meaning": "reserved CPU vectors; frame type not predefined"},
-            {"range": [0x18, 0x1A], "owner": "CPU", "meaning": "assigned AUX_FAULT-frame CPU exceptions"},
-            {"range": [0x1B, 0x1F], "owner": "CPU", "meaning": "reserved CPU vectors; frame type not predefined"},
-            {"range": [0x20, 0x3F], "owner": "CPU", "meaning": "reserved for future architectural vectors"},
-            {"range": [0x40, 0xFF], "owner": "OS/platform/device", "meaning": "assignable interrupt and event vectors"},
-        ],
-        "vectors": [
-            {"vector": 0x05, "name": "TRAP", "source": "TRAP instruction or true TRAPcc condition", "frame_type": "BASIC"},
-            {"vector": 0x08, "name": "PRIVILEGE_FAULT", "source": "privileged instruction, CR access, or supervisor-only state violation", "frame_type": "ERROR"},
-            {"vector": 0x09, "name": "PAGE_FAULT", "source": "segment, paging-enabled canonical-address, page-table, permission, presence, or stack-memory translation failure", "frame_type": "PAGE_FAULT"},
-        ],
-    }
+    return {}
 
 
 def interrupt_vector_range_rows(control: dict[str, Any]) -> list[list[str]]:
@@ -1827,175 +1655,74 @@ def exception_processing_rows(control: dict[str, Any]) -> list[list[str]]:
     if isinstance(collapsed, dict) and collapsed:
         collapsed_text = "; ".join(f"{key}: {value}" for key, value in collapsed.items())
     else:
-        collapsed_text = "length fault has no separate vector; segment failures and paging-enabled canonical-address failures report as PAGE_FAULT"
+        collapsed_text = "-"
     return [
-        [tex_escape("CPU exception model"), tex_escape(model.get("cpu_exception_model", "synchronous, restartable"))],
-        [tex_escape("Restart policy"), tex_escape(model.get("restart_policy", "the OS decides whether to retry, emulate, report, or terminate"))],
-        [tex_escape("Interrupt frame save"), tex_escape(model.get("interrupt_frame_save", "atomic"))],
-        [tex_escape("Entry STATUS update"), tex_escape(model.get("status_on_entry", "set STATUS.PM to 1 only; do not automatically mask interrupts"))],
-        [tex_escape("Return STATUS update"), tex_escape(model.get("status_on_return", "restore saved STATUS image verbatim"))],
-        [tex_escape("Entry DBANK update"), tex_escape(model.get("dbank_on_entry", "save interrupted DBANK selector and set DBANK to 0 before handler fetch"))],
-        [tex_escape("Return DBANK update"), tex_escape(model.get("dbank_on_return", "restore saved DBANK selector from the interrupt frame"))],
-        [tex_code("SYSRET"), tex_escape(returns.get("SYSRET", "syscall frame only") if isinstance(returns, dict) else "syscall frame only")],
-        [tex_code("IRET"), tex_escape(returns.get("IRET", "restore all saved interrupt frame state; frame_type is not validated by hardware") if isinstance(returns, dict) else "restore all saved interrupt frame state; frame_type is not validated by hardware")],
-        [tex_escape("IRET frame-type check"), tex_escape(model.get("iret_frame_type_check", "none; IRET does not validate FRAME_INFO.frame_type"))],
-        [tex_escape("Malformed return frame"), tex_escape(model.get("malformed_return_frame", "software error; no separate architectural exception"))],
-        [tex_escape("Absent IVT handler"), tex_escape(model.get("handler_absent_behavior", "IVT HP=0 immediately becomes DOUBLE_FAULT"))],
-        [tex_escape("Reserved CPU vector"), tex_escape(model.get("reserved_cpu_vector_behavior", "reserved CPU vectors have no frame type; attempted delivery immediately becomes DOUBLE_FAULT"))],
-        [tex_escape("Fault priority"), tex_table_value(priority or "privilege fault, page fault")],
+        [tex_escape("CPU exception model"), tex_escape(model.get("cpu_exception_model", "-"))],
+        [tex_escape("Restart policy"), tex_escape(model.get("restart_policy", "-"))],
+        [tex_escape("Interrupt frame save"), tex_escape(model.get("interrupt_frame_save", "-"))],
+        [tex_escape("Entry STATUS update"), tex_escape(model.get("status_on_entry", "-"))],
+        [tex_escape("Return STATUS update"), tex_escape(model.get("status_on_return", "-"))],
+        [tex_escape("Entry DBANK update"), tex_escape(model.get("dbank_on_entry", "-"))],
+        [tex_escape("Return DBANK update"), tex_escape(model.get("dbank_on_return", "-"))],
+        [tex_code("SYSRET"), tex_escape(returns.get("SYSRET", "-") if isinstance(returns, dict) else "-")],
+        [tex_code("IRET"), tex_escape(returns.get("IRET", "-") if isinstance(returns, dict) else "-")],
+        [tex_escape("IRET frame-type check"), tex_escape(model.get("iret_frame_type_check", "-"))],
+        [tex_escape("Malformed return frame"), tex_escape(model.get("malformed_return_frame", "-"))],
+        [tex_escape("Absent IVT handler"), tex_escape(model.get("handler_absent_behavior", "-"))],
+        [tex_escape("Reserved CPU vector"), tex_escape(model.get("reserved_cpu_vector_behavior", "-"))],
+        [tex_escape("Fault priority"), tex_table_value(priority or "-")],
         [tex_escape("Collapsed fault classes"), tex_escape(collapsed_text)],
-        [tex_escape("Address fault vector"), tex_escape(model.get("address_fault_vector", "PAGE_FAULT"))],
+        [tex_escape("Address fault vector"), tex_escape(model.get("address_fault_vector", "-"))],
     ]
 
 
 def interrupt_model_section(spec: dict[str, Any]) -> str:
-    registers = spec.get("registers", {})
-    control = registers.get("translation_control") or {}
-    if not isinstance(control, dict):
-        control = {}
+    control = control_model(spec)
     frame = supervisor_stack_frame(control)
     assignment = interrupt_vector_assignment(control)
     unit = int(frame.get("frame_size_unit_bytes", 8))
     base_size = int(frame.get("base_size_bytes", 96))
     fixed_slots = len(frame.get("layout") or [])
-    return "\n".join(
-        [
-            "Exception processing covers synchronous restartable CPU exceptions, traps, NMIs, external interrupts, and the "
-            "supervisor-entry state needed to return from them. The processor records a restartable context for CPU exceptions; "
-            "the operating system decides whether that context is retried, emulated, reported, or terminated. ICR selects the "
-            "interrupt vector table page and controls interrupt nesting; each IVT entry selects a handler and one of the "
-            "supervisor stack banks.",
-            r"\subsection{Interrupt Vector Table}",
-            r"The interrupt vector table occupies one 4096-byte page selected by \texttt{ICR.ivt\_page}. It contains 256 fixed-size "
-            r"entries, each 16 bytes. The vector number selects the entry at \texttt{ICR.ivt\_page} * 4096 + vector * 16.",
-            ivt_entry_figure(),
-            "Bytes 0 through 7 contain the 64-bit interrupt handler address. Byte 8 is the entry control byte. "
-            f"HP is the handler-present bit; if it is clear, delivery immediately becomes {tex_code('DOUBLE_FAULT')}. SN selects one of "
-            "four interrupt stack banks, SSS0:SSP0 through SSS3:SSP3. Byte 8 bit 1 and bits 7 through 4 are reserved, "
-            "and bytes 9 through 15 are reserved.",
-            ivt_control_byte_figure(),
-            latex_longtable(["Field", "Location", "Meaning"], ivt_entry_rows(), ["0.95in", "0.85in", "3.65in"], "Table 4-1. Interrupt Vector Table Entry Fields"),
-            r"\Needspace{3.4in}",
-            r"\subsection{Vector Assignment}",
-            tex_escape(assignment.get("policy", "")),
-            f"{tex_code('SYSCALL')} does not allocate or consume an IVT vector. It enters supervisor mode through the "
-            f"{tex_code(str(assignment.get('syscall_entry', 'SPC/SCS/SDS supervisor-entry path')))}.",
-            latex_longtable(["Range", "Owner", "Meaning"], interrupt_vector_range_rows(control), ["0.85in", "1.35in", "3.30in"], "Table 4-2. Interrupt Vector Ranges"),
-            latex_longtable(["Vector", "Name", "Source", "Frame"], interrupt_vector_rows(control), ["0.55in", "1.65in", "2.20in", "1.00in"], "Table 4-3. CPU-Owned Interrupt Vectors"),
-            r"\subsection{Entry and Return Rules}",
-            "The processor changes only the privilege bit on entry: STATUS.PM is set to supervisor mode. "
-            "It also saves the interrupted DBANK selector and sets DBANK to zero before fetching the handler. "
-            "Interrupts are not automatically masked merely because an exception or interrupt was taken. "
-            "The interrupt stack frame is saved atomically. When returning, the saved STATUS image is restored exactly "
-            "as recorded in the frame, and the saved DBANK selector is restored from the frame.",
-            latex_longtable(["Rule", "Meaning"], exception_processing_rows(control), ["1.55in", "3.90in"], "Table 4-4. Exception Entry and Return Rules"),
-            r"\clearpage",
-            r"\subsection{Supervisor Entry Stack Frame}",
-            f"The fixed supervisor-entry frame is {base_size} bytes: {fixed_slots} 64-bit slots. "
-            f"{tex_code('FRAME_INFO.frame_size_units')} records the total frame size in {unit}-byte units, so the base frame records "
-            f"{base_size // unit} units before any optional payload. Offsets are measured from the saved stack pointer.",
-            stack_frame_figure(control),
-            latex_longtable(["Offset", "Slot", "Meaning"], stack_frame_rows(control), ["0.70in", "1.20in", "3.60in"], "Table 4-5. Supervisor Entry Stack Frame"),
-            f"{tex_code('FRAME_INFO.frame_type')} documents the stack frame format, M68000-style. "
-            "Payload slots, if any, are appended after the fixed frame in the order listed for the selected type. "
-            f"{tex_code('FRAME_INFO.frame_size_units')} gives the total number of {unit}-byte slots, and the "
-            "frame type code determines how software interprets the appended slots. IRET does not validate the frame type.",
-            latex_longtable(["Code", "Type", "Payload", "Meaning"], frame_type_rows(control), ["0.45in", "1.10in", "1.65in", "2.30in"], "Table 4-6. Supervisor Stack Frame Types"),
-            frame_info_figure(),
-            latex_longtable(["Field", "Bits", "Meaning"], frame_info_rows(control), ["1.35in", "0.60in", "3.55in"], "Table 4-7. FRAME_INFO Fields"),
-            r"\paragraph{Repeat Fault Continuation.}",
-            f"When {tex_code('FRAME_INFO.rep_fault')} is set, the {tex_code('FAULT_AUX')} payload records the active repeat context. "
-            f"{tex_code('FAULT_AUX.repeat_kind')} distinguishes {tex_code('REP')}/{tex_code('REPcc')}, "
-            f"{tex_code('REPG-general')}, and {tex_code('REPG-fast')} continuations. "
-            f"For {tex_code('REPG')}, the saved {tex_code('PC')} is the faulting grouped instruction, and the group start is reconstructed as "
-            f"{tex_code('group_start_pc = fault_pc - 2 * group_start_delta_words')}. "
-            "The delta is an unsigned negative displacement measured in 16-bit words, so five bits cover the full 64-byte grouping window. "
-            "Returning with IRET preserves the continuation state: execution resumes at the saved faulting instruction under the active repeat context. "
-            "Software that wants to abandon or emulate the repeated operation may edit the frame before returning.",
-            latex_longtable(["Field", "Bits", "Meaning"], repeat_fault_aux_rows(control), ["1.55in", "0.60in", "3.35in"], "Table 4-8. Repeat Fault Auxiliary Fields"),
-            r"\subsection{Interrupt Reset State}",
-            latex_longtable(["State", "Reset Value"], reset_state_rows(control), ["2.1in", "2.4in"], "Table 4-9. Interrupt and Translation Reset State"),
-        ]
+    return render_latex_template(
+        "interrupt_model.tex",
+        {
+            "IVT_ENTRY_TABLE": latex_longtable(["Field", "Location", "Meaning"], ivt_entry_rows(spec), ["0.95in", "0.85in", "3.65in"], "Table 4-1. Interrupt Vector Table Entry Fields"),
+            "VECTOR_ASSIGNMENT_POLICY": tex_escape(assignment.get("policy", "")),
+            "SYSCALL_ENTRY_PATH": tex_code(str(assignment.get("syscall_entry", "-"))),
+            "VECTOR_RANGE_TABLE": latex_longtable(["Range", "Owner", "Meaning"], interrupt_vector_range_rows(control), ["0.85in", "1.35in", "3.30in"], "Table 4-2. Interrupt Vector Ranges"),
+            "CPU_VECTOR_TABLE": latex_longtable(["Vector", "Name", "Source", "Frame"], interrupt_vector_rows(control), ["0.55in", "1.65in", "2.20in", "1.00in"], "Table 4-3. CPU-Owned Interrupt Vectors"),
+            "EXCEPTION_ENTRY_TABLE": latex_longtable(["Rule", "Meaning"], exception_processing_rows(control), ["1.55in", "3.90in"], "Table 4-4. Exception Entry and Return Rules"),
+            "BASE_FRAME_SIZE": tex_escape(base_size),
+            "FIXED_SLOT_COUNT": tex_escape(fixed_slots),
+            "FRAME_SIZE_UNIT_BYTES": tex_escape(unit),
+            "BASE_FRAME_UNITS": tex_escape(base_size // unit),
+            "STACK_FRAME_FIGURE": stack_frame_figure(control),
+            "STACK_FRAME_TABLE": latex_longtable(["Offset", "Slot", "Meaning"], stack_frame_rows(control), ["0.70in", "1.20in", "3.60in"], "Table 4-5. Supervisor Entry Stack Frame"),
+            "FRAME_TYPE_TABLE": latex_longtable(["Code", "Type", "Payload", "Meaning"], frame_type_rows(control), ["0.45in", "1.10in", "1.65in", "2.30in"], "Table 4-6. Supervisor Stack Frame Types"),
+            "FRAME_INFO_TABLE": latex_longtable(["Field", "Bits", "Meaning"], frame_info_rows(control), ["1.35in", "0.60in", "3.55in"], "Table 4-7. FRAME_INFO Fields"),
+            "REPEAT_FAULT_AUX_TABLE": latex_longtable(["Field", "Bits", "Meaning"], repeat_fault_aux_rows(control), ["1.55in", "0.60in", "3.35in"], "Table 4-8. Repeat Fault Auxiliary Fields"),
+            "RESET_STATE_TABLE": latex_longtable(["State", "Reset Value"], reset_state_rows(control), ["2.1in", "2.4in"], "Table 4-9. Interrupt and Translation Reset State"),
+        },
     )
 
 
 def reset_state_rows(control: dict[str, Any]) -> list[list[str]]:
     reset = (control.get("reset_state") or {}) if isinstance(control, dict) else {}
     rows = [[tex_code(key), tex_table_value(value)] for key, value in reset.items()]
-    if rows:
-        return rows
-    return [
-        [tex_code("ICR"), tex_escape("0")],
-        [tex_code("ICR.IVT_VALID"), tex_escape("0")],
-        [tex_code("STATUS.IE"), tex_escape("0")],
-        [tex_code("STATUS.IN"), tex_escape("0")],
-        [tex_code("STATUS.NI"), tex_escape("0")],
-        [tex_code("hidden_current_idepth"), tex_escape("0")],
-        [tex_code("hidden_nmi_pending"), tex_escape("0")],
-        [tex_code("PTCR.PE"), tex_escape("0")],
-        [tex_code("ASCR"), tex_escape("0")],
-    ]
+    if not rows:
+        raise ValueError("interrupts.reset_state is required")
+    return rows
 
 
 def memory_address_translation_section(spec: dict[str, Any]) -> str:
-    return "\n".join(
-        [
-            "Memory address translation is a separate pipeline after effective-address calculation. "
-            "Effective-address evaluation produces an EA value or address expression; segmentation optionally turns that value into "
-            "a linear address, and paging optionally turns the linear address into a memory-system address.",
-            translation_pipeline_figure(),
-            r"\subsection{Translation Pipeline}",
-            latex_longtable(
-                ["Stage", "Result"],
-                [
-                    [tex_escape("Effective address"), tex_escape("address generated by the selected EA form")],
-                    [tex_escape("Segment pre-translation"), tex_escape("disabled segment passes the address through; enabled segment checks a byte-addressed window with page-granular base and span")],
-                    [tex_escape("Linear address"), tex_escape("segment output, or the EA directly when segmentation is disabled")],
-                    [tex_escape("Paging, PTCR.PE = 1"), tex_escape("walk page tables from PTCR.root_page and apply PTE attributes")],
-                    [tex_escape("Paging, PTCR.PE = 0"), tex_escape("use the linear address directly")],
-                ],
-                ["1.65in", "3.85in"],
-                "Table 3-1. Address Translation Stages",
-            ),
-            segment_paging_interaction_section(),
-            r"\subsection{Segmentation Stage}",
-            "Segmentation is a page-granular address-window and pre-translation mechanism, not the primary memory-protection mechanism. "
-            "A segment with m = 0 is disabled and passes the effective-address result through unchanged. "
-            "A translated segment checks an offset against the segment span and then adds the segment base. "
-            "A bounds-only segment checks an already-linear address against the segment window without adding the base.",
-            r"\begin{align*}",
-            r"\mathit{base} &= \mathit{base\_page} \times 4096\\",
-            r"\mathit{span} &= m \times 2^e \times 4096\\",
-            r"\mathit{limit} &= \mathit{base} + \mathit{span}\\",
-            r"m=0:\quad \mathit{linear} &= x\\",
-            r"m\ne0,\ b=0:\quad 0 \le x < \mathit{span},\quad \mathit{linear} &= \mathit{base}+x\\",
-            r"m\ne0,\ b=1:\quad \mathit{base} \le x < \mathit{limit},\quad \mathit{linear} &= x",
-            r"\end{align*}",
-            r"The base, span, and limit are computed in an unsigned domain wide enough to represent the full 64-bit linear-address space plus one. "
-            r"If \(\mathit{limit} > 2^{64}\), the segment register image is invalid and any access through it reports \texttt{PAGE\_FAULT}.",
-            r"\subsection{Paging Stage}",
-            "Paging performs final address translation and supplies the protection attributes. LA57 selects either four-level paging "
-            "with 48-bit canonical linear addresses or five-level paging with 57-bit canonical linear addresses. PTE[0..11] are "
-            "architecturally assigned low attribute bits, PTE[12..PABITS-1] contains the physical frame number or next-table frame number, "
-            "and PTE[PABITS..63] is software-defined. Bit 10 is reserved for software use.",
-            r"\clearpage",
-            r"\subsection{LA48 Four-Level Paging}",
-            "When PTCR.LA57 is zero, paging uses a 48-bit canonical linear address. Bits 63..48 must be the canonical sign extension of bit 47. "
-            "The remaining address bits select four nine-bit page-table indexes followed by a twelve-bit page offset.",
-            la48_paging_figure(),
-            r"\clearpage",
-            r"\subsection{LA57 Five-Level Paging}",
-            "When PTCR.LA57 is one, paging uses a 57-bit canonical linear address. Bits 63..57 must be the canonical sign extension of bit 56. "
-            "The additional L5 index selects the top-level table before the same L4 through L1 walk used by LA48.",
-            la57_paging_figure(),
-            r"\clearpage",
-            r"\subsection{Page-Table Entry Format}",
-            pte_attribute_figure(),
-            latex_longtable(["Field", "Bits", "Meaning"], pte_field_rows(), ["0.55in", "0.65in", "4.25in"], "Table 3-2. Page-Table Entry Low Attribute Bits"),
-            latex_longtable(["Level", "Rule"], pte_walk_rule_rows(), ["1.15in", "4.35in"], "Table 3-3. Page-Walk Level Rules"),
-            latex_longtable(["Field", "Rule"], pte_attribute_rule_rows(), ["0.75in", "4.75in"], "Table 3-4. PTE Attribute Semantics"),
-            latex_longtable(["Mode", "Condition", "Result"], pte_permission_rule_rows(spec), ["0.85in", "2.35in", "2.30in"], "PTE User-Permission Rules"),
-        ]
+    return render_latex_template(
+        "memory_address_translation.tex",
+        {
+            "PTE_FIELD_TABLE": latex_longtable(["Field", "Bits", "Meaning"], pte_field_rows(spec), ["0.55in", "0.65in", "4.25in"], "Table 3-2. Page-Table Entry Low Attribute Bits"),
+            "PTE_WALK_RULE_TABLE": latex_longtable(["Level", "Rule"], pte_walk_rule_rows(spec), ["1.15in", "4.35in"], "Table 3-3. Page-Walk Level Rules"),
+            "PTE_ATTRIBUTE_RULE_TABLE": latex_longtable(["Field", "Rule"], pte_attribute_rule_rows(spec), ["0.75in", "4.75in"], "Table 3-4. PTE Attribute Semantics"),
+            "PTE_PERMISSION_RULE_TABLE": latex_longtable(["Mode", "Condition", "Result"], pte_permission_rule_rows(spec), ["0.85in", "2.35in", "2.30in"], "PTE User-Permission Rules"),
+        },
     )
 
 
@@ -2011,16 +1738,11 @@ def condition_table(spec: dict[str, Any]) -> str:
                 tex_code(condition.get("expression", "")),
             ]
         )
-    intro = (
-        "Conditional instructions encode a four-bit condition code. The zero-valued condition is T, "
-        "which is also used for canonical aliases such as JMP for Jcc.T and TRAP for TRAPcc.T. "
-        "The condition-code bits are the low four meaningful bits of FLAGS, as shown in the Register Model section."
-    )
-    return "\n".join(
-        [
-            intro,
-            latex_longtable(["Code", "Value", "Aliases", "Expression"], rows, ["0.65in", "0.65in", "1.05in", "2.95in"], "Table 4-1. Condition Codes"),
-        ]
+    return render_latex_template(
+        "condition_codes.tex",
+        {
+            "CONDITION_TABLE": latex_longtable(["Code", "Value", "Aliases", "Expression"], rows, ["0.65in", "0.65in", "1.05in", "2.95in"], "Table 4-1. Condition Codes"),
+        },
     )
 
 
@@ -2031,7 +1753,7 @@ def prefix_semantics_block(prefix: dict[str, Any]) -> str:
         detail += r"\newline " + tex_escape("Applies to: " + ", ".join(str(item) for item in applies_to))
     requires = prefix.get("requires")
     if isinstance(requires, dict):
-        require_text = ", ".join(f"{key}={value}" for key, value in requires.items())
+        require_text = ", ".join(f"{key}={prefix_requirement_text(value)}" for key, value in requires.items())
         detail += r"\newline " + tex_escape("Requires: " + require_text)
     eligible = prefix.get("eligible_mnemonics") or []
     if eligible:
@@ -2048,12 +1770,14 @@ def prefix_semantics_block(prefix: dict[str, Any]) -> str:
     return detail
 
 
+def prefix_requirement_text(value: Any) -> str:
+    if isinstance(value, list):
+        return "/".join(str(item) for item in value)
+    return str(value)
+
+
 def prefix_semantics_section(spec: dict[str, Any]) -> str:
-    lines = [
-        r"\subsection{Prefix Semantics}",
-        "Prefix bytes are interpreted as modifiers of the immediately following instruction only. "
-        "Assemblers should avoid redundant or contradictory prefixes, but architectural prefix interpretation remains deterministic because later prefix slots override earlier conflicting effects.",
-    ]
+    lines = []
     for prefix in spec.get("prefixes", {}).get("prefixes", []) or []:
         if not isinstance(prefix, dict):
             continue
@@ -2062,11 +1786,15 @@ def prefix_semantics_section(spec: dict[str, Any]) -> str:
         if prefix.get("group") in {"ea_update", "repeat_boundary"}:
             continue
         lines.append(rf"\Needspace{{0.75in}}\manualfield{{{tex_code(prefix.get('name', ''))}:}}{{{prefix_semantics_block(prefix)}}}")
-    return "\n".join(lines)
+    return render_latex_template("prefix_semantics.tex", {"PREFIX_FIELD_BLOCKS": "\n".join(lines)})
 
 
 def prefix_is_address_update(prefix: dict[str, Any]) -> bool:
     return prefix.get("group") == "ea_update"
+
+
+def prefix_is_access_domain(prefix: dict[str, Any]) -> bool:
+    return prefix.get("group") == "access_domain"
 
 
 def prefix_encoding_text(prefix: dict[str, Any]) -> str:
@@ -2086,6 +1814,8 @@ def prefix_syntax_text(prefix: dict[str, Any]) -> str:
     if name == "ENDG":
         return "ENDG"
     if isinstance(syntax, dict):
+        if syntax.get("operand_annotation"):
+            return str(syntax.get("operand_annotation"))
         if syntax.get("assembler_generated"):
             return "(generated)"
         if syntax.get("block"):
@@ -2102,20 +1832,11 @@ def prefix_syntax_text(prefix: dict[str, Any]) -> str:
 
 def address_update_operand_syntax(name: str) -> str:
     return {
-        "POSTINC": "[A++]",
-        "PREINC": "[++A]",
-        "POSTDEC": "[A--]",
-        "PREDEC": "[--A]",
+        "POSTINC": "[An++]",
+        "PREINC": "[++An]",
+        "POSTDEC": "[An--]",
+        "PREDEC": "[--An]",
     }.get(name, name)
-
-
-def address_update_description(name: str) -> str:
-    return {
-        "POSTINC": "use EA, then increment",
-        "PREINC": "increment, then use EA",
-        "POSTDEC": "use EA, then decrement",
-        "PREDEC": "decrement, then use EA",
-    }.get(name, readable_text(name))
 
 
 def address_update_operand_table(spec: dict[str, Any]) -> str:
@@ -2124,29 +1845,56 @@ def address_update_operand_table(spec: dict[str, Any]) -> str:
         if not isinstance(prefix, dict) or not prefix_is_address_update(prefix):
             continue
         name = str(prefix.get("name", ""))
+        description = compact_text(prefix.get("description", ""))
+        if not description:
+            raise ValueError(f"prefixes.yaml {name} is missing description")
         rows.append(
             [
                 tex_code(address_update_operand_syntax(name)),
                 tex_code(prefix_encoding_text(prefix)),
-                tex_escape(address_update_description(name)),
+                tex_escape(description),
             ]
         )
     if not rows:
         return ""
-    return "\n".join(
-        [
-            r"\subsection{Address-Update Operand Syntax}",
-            "Address update is selected by the memory operand spelling, not by a standalone prefix mnemonic. "
-            "The assembler emits the corresponding prefix byte only for update-eligible indirect EA forms. "
-            "Because legality depends on the selected EA form, address update is not listed as a separate "
-            "per-mnemonic column in the instruction attribute matrix.",
-            latex_longtable(
+    return render_latex_template(
+        "address_update_operands.tex",
+        {
+            "ADDRESS_UPDATE_TABLE": latex_longtable(
                 ["Operand Syntax", "Byte", "Update"],
                 rows,
                 ["1.25in", "0.75in", "3.1in"],
                 "Address-Update Encodings",
             ),
-        ]
+        },
+    )
+
+
+def access_domain_operand_table(spec: dict[str, Any]) -> str:
+    rows = []
+    for prefix in spec.get("prefixes", {}).get("prefixes", []) or []:
+        if not isinstance(prefix, dict) or not prefix_is_access_domain(prefix):
+            continue
+        syntax = prefix.get("syntax") if isinstance(prefix.get("syntax"), dict) else {}
+        rows.append(
+            [
+                tex_code(str(syntax.get("operand_annotation", prefix.get("name", "")))),
+                tex_code(prefix_encoding_text(prefix)),
+                tex_escape(compact_text(prefix.get("semantics", ""))),
+            ]
+        )
+    if not rows:
+        return ""
+    return render_latex_template(
+        "access_domain_operands.tex",
+        {
+            "ACCESS_DOMAIN_TABLE": latex_longtable(
+                ["Operand Domains", "Byte", "Encoded Meaning"],
+                rows,
+                ["1.65in", "0.75in", "3.0in"],
+                "User-Access Operand Encodings",
+            ),
+        },
     )
 
 
@@ -2157,6 +1905,8 @@ def prefix_table(spec: dict[str, Any]) -> str:
             continue
         if prefix_is_address_update(prefix):
             continue
+        if prefix_is_access_domain(prefix):
+            continue
         rows.append(
             [
                 tex_code(prefix_syntax_text(prefix)),
@@ -2164,26 +1914,21 @@ def prefix_table(spec: dict[str, Any]) -> str:
                 tex_table_value(prefix.get("semantics", "-")),
             ]
         )
-    text = (
-        "Prefix words modify the following instruction. One prefix word contains two 8-bit slots; "
-        "the low byte is filled and decoded first, and the high byte is filled and decoded second. "
-        "The table below lists standalone prefix spellings and assembler-generated repeat-boundary bytes. "
-        "Address-update forms are shown separately because they are selected by operand syntax."
-    )
-    return "\n".join(
-        [
-            text,
-            latex_longtable(
+    return render_latex_template(
+        "prefixes.tex",
+        {
+            "PREFIX_TABLE": latex_longtable(
                 ["Syntax", "Byte/Pattern", "Meaning"],
                 rows,
                 ["1.45in", "0.95in", "3.0in"],
                 "Prefix Encodings",
             ),
-            address_update_operand_table(spec),
-            prefix_semantics_section(spec),
-            repcc_prefix_section(spec),
-            repg_prefix_section(spec),
-        ]
+            "ADDRESS_UPDATE_OPERANDS": address_update_operand_table(spec),
+            "ACCESS_DOMAIN_OPERANDS": access_domain_operand_table(spec),
+            "PREFIX_SEMANTICS": prefix_semantics_section(spec),
+            "REPCC_SECTION": repcc_prefix_section(spec),
+            "REPG_SECTION": repg_prefix_section(spec),
+        },
     )
 
 
@@ -2229,29 +1974,23 @@ def repcc_prefix_section(spec: dict[str, Any]) -> str:
         [tex_escape("Architectural flags"), tex_table_value(repeat.get("architectural_flags", "-"))],
         [tex_escape("FFLAGS"), tex_table_value(repeat.get("fflags_accumulation", "-"))],
     ]
-    parts = [
-        r"\subsection{Conditional Repeat Prefix REPcc}",
-        "REPcc is the conditional repeat prefix family. It combines a D-register repeat counter with a full condition-code selector, "
-        "then applies that repeat contract to the following eligible instruction. "
-        "REP is the canonical alias for REPT.",
-        "The selected D register remains an ordinary signed two's-complement value. "
-        "REP/REPcc tests that value for zero before each iteration. "
-        "After the instruction body completes, REPFLAGS are computed from the observed value; the counter moves one step toward zero only when the selected REP condition remains true. "
-        "A completed terminating iteration whose REP condition is false commits the instruction body's ordinary side effects but leaves the counter unchanged. "
-        "If the same D register appears in an indexed effective address, EA evaluation uses the same architectural value before the iteration update.",
-        latex_longtable(
-            ["Item", "Value"],
-            rep_rows,
-            ["1.35in", "4.1in"],
-            "REPcc Prefix Rules",
-        ),
-        rep_execution_sequence(repeat),
-    ]
-    observed_rows = rep_observed_rows(repeat)
+    observed_rows = rep_observed_rows(repeat, prefix)
+    observed_table = ""
     if observed_rows:
-        parts.append(latex_longtable(["Mnemonic", "Observed Value", "REPFLAGS Rule"], observed_rows, ["0.85in", "1.95in", "2.65in"], "REPcc Observed Values"))
-    parts.append(render_latex_template("repcc_behavior_examples.tex"))
-    return "\n".join(parts)
+        observed_table = latex_longtable(["Mnemonic", "Observed Value", "REPFLAGS Rule"], observed_rows, ["0.85in", "1.95in", "2.65in"], "REPcc Observed Values")
+    return render_latex_template(
+        "repcc_prefix.tex",
+        {
+            "REP_RULE_TABLE": latex_longtable(
+                ["Item", "Value"],
+                rep_rows,
+                ["1.35in", "4.1in"],
+                "REPcc Prefix Rules",
+            ),
+            "REP_EXECUTION_SEQUENCE": rep_execution_sequence(repeat, prefix),
+            "OBSERVED_VALUE_TABLE": observed_table,
+        },
+    )
 
 
 def repg_prefix_section(spec: dict[str, Any]) -> str:
@@ -2279,72 +2018,54 @@ def encoding_overview_section(plan: dict[str, Any]) -> str:
             fields = line_fields(item)
             samples.append((form_label(item, fields), encoding_pattern_tokens(item, fields), line_syntax_text(item, fields)))
 
-    parts = [
-        "The first instruction word contains a four-bit prefix/length area and a twelve-bit primary payload. "
-        "Compact instructions place operand fields directly in this primary payload when the field set fits. "
-        "Extended instructions use a primary root and a following descriptor/opcode word, with more payload words added only when needed.",
-        primary_word_figure(),
-    ]
+    sample_parts = []
     if samples:
-        parts.append(r"\subsection{Representative Encodings}")
+        sample_parts.append(r"\subsection{Representative Encodings}")
         for name, tokens, syntax in samples:
-            parts.append(rf"\Needspace{{1.6in}}\noindent\textbf{{{tex_escape(name)}}}: {tex_code(syntax)}")
-            parts.append(bit_diagram(tokens, f"Encoding layout for {syntax}", [f"word {index}" for index in range(len(tokens))], listed=True))
-    return "\n".join(parts)
+            sample_parts.append(rf"\Needspace{{1.6in}}\noindent\textbf{{{tex_escape(name)}}}: {tex_code(syntax)}")
+            sample_parts.append(bit_diagram(tokens, f"Encoding layout for {syntax}", [f"word {index}" for index in range(len(tokens))], listed=True))
+    return render_latex_template(
+        "encoding_overview.tex",
+        {
+            "REPRESENTATIVE_ENCODINGS": "\n".join(sample_parts),
+        },
+    )
 
 
 def execution_model_section(spec: dict[str, Any]) -> str:
     instructions = spec.get("instructions") or {}
     semantics = instructions.get("operation_semantics") or {}
+    labels = terminology_display_labels(spec)
     defaults = semantics.get("defaults") or {}
     notation = semantics.get("notation") or {}
     syntax_policy = semantics.get("syntax_policy") or {}
     groups = semantics.get("groups") or {}
-    parts = [
-        "This section defines the common execution contract used by the instruction descriptions. "
-        "An individual instruction may add stricter rules, but it does not silently replace the rules below. "
-        "The purpose of this section is to make operand evaluation, side effects, repetition, and status updates readable before the per-instruction pages.",
-        r"\subsection{Instruction Boundary and Default Execution Rules}",
-        "The instruction boundary is fixed by word 0 before operand evaluation begins. "
-        "An implementation may reject an instruction before any architectural state is changed if the encoded length cannot contain the selected form.",
-    ]
-    default_rows = execution_default_rows(defaults)
+    default_rows = execution_default_rows(defaults, labels)
+    default_rule_table = ""
     if default_rows:
-        parts.append(latex_longtable(["Topic", "Architectural Rule"], default_rows, ["1.45in", "4.0in"], "Execution Defaults"))
-    suffix_rows = condition_suffix_rows(syntax_policy)
+        default_rule_table = latex_longtable(["Topic", "Spec Value"], default_rows, ["1.45in", "4.0in"], "Execution Defaults")
+    suffix_rows = condition_suffix_rows(syntax_policy, labels)
+    suffix_rule_table = ""
     if suffix_rows:
-        parts.extend(
-            [
-                r"\subsection{Mnemonic Suffix Rules}",
-                "Conditional mnemonic forms use the condition names listed in the Condition Codes section.",
-                latex_longtable(["Rule", "Value"], suffix_rows, ["1.55in", "3.9in"], "Conditional Mnemonic Suffix Rules"),
-            ]
-        )
+        suffix_rule_table = latex_longtable(["Rule", "Value"], suffix_rows, ["1.55in", "3.9in"], "Conditional Mnemonic Suffix Rules")
+    notation_table = ""
     if notation:
-        parts.extend(
-            [
-                r"\subsection{Operand and Status Notation}",
-                "The generated operation fields use compact notation. "
-                "The following terms define when an operand is only addressed, when it is read, and which status register is affected.",
-                latex_longtable(
-                    ["Term", "Meaning"],
-                    [[tex_escape(semantic_label(str(key))), semantic_cell(value)] for key, value in notation.items()],
-                    ["1.45in", "4.0in"],
-                    "Semantic Notation",
-                ),
-            ]
+        notation_table = latex_longtable(
+            ["Term", "Meaning"],
+            [[tex_escape(semantic_label(str(key), labels)), semantic_cell(value, labels)] for key, value in notation.items()],
+            ["1.45in", "4.0in"],
+            "Semantic Notation",
         )
-    shared_block = shared_execution_block(groups)
-    if shared_block:
-        parts.extend(
-            [
-                r"\subsection{Shared Side-Effect Rules}",
-                "These rows summarize execution rules that apply to whole instruction families. "
-                "The instruction descriptions list exact forms and operands; this block records the common side-effect model.",
-                shared_block,
-            ]
-        )
-    return "\n".join(parts)
+    shared_block = shared_execution_block(groups, labels)
+    return render_latex_template(
+        "execution_model.tex",
+        {
+            "DEFAULT_RULE_TABLE": default_rule_table,
+            "SUFFIX_RULE_TABLE": suffix_rule_table,
+            "NOTATION_TABLE": notation_table,
+            "SHARED_SIDE_EFFECT_BLOCK": shared_block,
+        },
+    )
 
 
 def repeat_counter_encoding_rows(repeat: dict[str, Any]) -> list[list[str]]:
@@ -2390,126 +2111,69 @@ def repeat_counter_encoding_rows(repeat: dict[str, Any]) -> list[list[str]]:
 
 
 def rep_rule_text(value: Any) -> str:
-    mappings = {
-        "signed_twos_complement": "signed two's-complement",
-        "signed_zero_means_no_iteration": "signed zero means no iteration",
-        "toward_zero": "positive counters decrement; negative counters increment toward zero",
-        "move_signed_counter_one_step_toward_zero": "positive counters decrement; negative counters increment toward zero",
-        "counter_not_updated": "counter is not updated",
-        "zero_or_condition_false": "counter is zero or the REP condition is false",
-        "counter_zero_or_condition_false": "counter is zero or the REP condition is false",
-        "preserve_remaining_signed_count": "preserve remaining signed count",
-        "pre_update": "architectural counter value before iteration update",
-        "architectural_counter_value_before_iteration_update": "architectural counter value before iteration update",
-        "pre_update_signed": "architectural signed counter before iteration update",
-        "architectural_signed_counter_before_iteration_update": "architectural signed counter before iteration update",
-        "condition_false_commits_body": "condition-false terminating iteration commits the body and leaves the counter unchanged",
-        "last_completed_body": "body instruction rules apply to the last completed iteration",
-        "after_group_completion_only": "counter is updated only after the whole group iteration completes",
-        "prior_group_instructions_commit": "completed iterations and completed prior group instructions commit",
-        "completed_iterations_and_prior_group_instructions": "completed iterations and completed prior group instructions commit",
-        "completed_group_prefix": "successful iterations and completed group instructions only commit",
-        "last_completed_group_instruction": "grouped instruction rules apply to the last completed group instruction",
-        "signed_toward_zero": "signed counter moves toward zero",
-        "final_counter_zero": "final counter is written as zero",
-    }
-    text = str(value)
-    return mappings.get(text, readable_text(text))
+    return readable_text(value)
 
 
-def execution_default_rows(defaults: dict[str, Any]) -> list[list[str]]:
-    labels = {
-        "overlong_encoding": "Overlong Encoding",
-        "undersized_encoding": "Undersized Encoding",
-        "memory_memory": "Memory-Memory Operands",
-        "unmentioned_flags": "Unmentioned FLAGS/FFLAGS",
-        "operand_evaluation_order": "Operand Evaluation Order",
-    }
-    rows: list[list[str]] = [
-        [
-            tex_escape("Instruction boundary"),
-            tex_escape("word 0 length selects the instruction boundary; prefixes and extension words never extend it implicitly"),
-        ],
-        [
-            tex_escape("Operand evaluation"),
-            tex_escape("operands are decoded in instruction order; source reads complete before the final destination write unless an atomic form says otherwise"),
-        ],
-        [
-            tex_escape("Effective address"),
-            tex_escape("EA calculation may produce an address without reading memory; memory is read only when the operation needs the operand value"),
-        ],
-    ]
-    meanings = {
-        "overlong_encoding": "extra trailing words within the encoded length are padding payload",
-        "undersized_encoding": "the encoded length must contain all required opcode, descriptor, immediate, displacement, and prefix words",
-        "memory_memory": "memory-memory operands are rejected unless the operation explicitly allows them",
-        "unmentioned_flags": "status bits not named by the instruction remain unchanged",
-        "operand_evaluation_order": "the generated operand order is the architectural operand evaluation order",
-    }
+def execution_default_rows(defaults: dict[str, Any], labels: dict[str, str]) -> list[list[str]]:
+    rows: list[list[str]] = []
     for key, value in defaults.items():
-        value_text = readable_text(value)
-        meaning = meanings.get(str(key))
-        if meaning:
-            text = f"{value_text}; {meaning}"
-        else:
-            text = value_text
-        rows.append([tex_escape(labels.get(str(key), semantic_label(str(key)))), tex_escape(text)])
+        value_text = memory_rule_text(value) if key == "memory_memory" else readable_text(value)
+        rows.append([tex_escape(semantic_label(str(key), labels)), tex_escape(value_text)])
     return rows
 
 
-def condition_suffix_rows(policy: dict[str, Any]) -> list[list[str]]:
+def condition_suffix_rows(policy: dict[str, Any], labels: dict[str, str]) -> list[list[str]]:
     condition = policy.get("condition_code") if isinstance(policy, dict) else None
     if not isinstance(condition, dict):
         return []
     rows: list[list[str]] = []
     for key in ("placement",):
         if key in condition:
-            rows.append([tex_escape(semantic_label(key)), tex_escape(readable_text(condition[key]))])
+            rows.append([tex_escape(semantic_label(key, labels)), tex_escape(readable_text(condition[key]))])
     applies = condition.get("applies_to")
     if applies:
-        rows.append([tex_escape("Applies To"), tex_table_value(applies)])
+        rows.append([tex_escape(semantic_label("applies_to", labels)), tex_table_value(applies)])
     return rows
 
 
-def semantic_cell(value: Any) -> str:
+def semantic_cell(value: Any, labels: dict[str, str]) -> str:
     if isinstance(value, dict):
-        lines = [f"{semantic_label(str(key))}: {readable_text(item)}" for key, item in value.items()]
+        lines = [f"{semantic_label(str(key), labels)}: {readable_text(item)}" for key, item in value.items()]
         return tex_multiline(lines)
     if isinstance(value, list):
         return tex_multiline([readable_text(item) for item in value])
     return tex_escape(readable_text(value))
 
 
-def semantic_label(key: str) -> str:
-    replacements = {
-        "EA": "EA",
-        "ZNCV": "ZNCV",
-        "NV": "NV",
-        "DZ": "DZ",
-        "OF": "OF",
-        "UF": "UF",
-        "NX": "NX",
-        "FP": "FP",
-        "FPU": "FPU",
-        "FFLAGS": "FFLAGS",
-        "FLAGS": "FLAGS",
-        "TLB": "TLB",
-        "CR": "CR",
-        "CS": "CS",
-        "PC": "PC",
-        "REPFLAGS": "REPFLAGS",
-    }
+def terminology_display_labels(spec: dict[str, Any]) -> dict[str, str]:
+    labels = (spec.get("terminology") or {}).get("display_labels") or {}
+    if not isinstance(labels, dict):
+        return {}
+    return {str(key): str(value) for key, value in labels.items()}
+
+
+def semantic_label(key: str, labels: dict[str, str]) -> str:
+    if key in labels:
+        return labels[key]
+    normalized = key.replace("-", "_").replace(".", "_")
+    if normalized in labels:
+        return labels[normalized]
     words: list[str] = []
-    for raw in key.replace("-", "_").replace(".", "_").split("_"):
+    for raw in normalized.split("_"):
         if not raw:
             continue
         upper = raw.upper()
-        words.append(replacements.get(upper, raw.title()))
+        if raw in labels:
+            words.append(labels[raw])
+        elif upper in labels:
+            words.append(labels[upper])
+        else:
+            raise ValueError(f"terminology.display_labels is missing label for {raw!r} from {key!r}")
     return " ".join(words)
 
 
-def shared_execution_block(groups: dict[str, Any]) -> str:
-    entries = shared_execution_entries(groups)
+def shared_execution_block(groups: dict[str, Any], labels: dict[str, str]) -> str:
+    entries = shared_execution_entries(groups, labels)
     if not entries:
         return ""
     out: list[str] = []
@@ -2522,7 +2186,7 @@ def shared_execution_block(groups: dict[str, Any]) -> str:
     return "\n".join(out)
 
 
-def shared_execution_entries(groups: dict[str, Any]) -> list[tuple[str, list[str]]]:
+def shared_execution_entries(groups: dict[str, Any], labels: dict[str, str]) -> list[tuple[str, list[str]]]:
     if not isinstance(groups, dict):
         return []
     specs = [
@@ -2552,43 +2216,29 @@ def shared_execution_entries(groups: dict[str, Any]) -> list[tuple[str, list[str
                 continue
             value = body[key]
             if key.endswith("_by_mnemonic") and isinstance(value, dict):
-                lines.append(f"{shared_rule_label(key)}: varies by mnemonic")
+                lines.append(f"{shared_rule_label(key, labels)}: varies by mnemonic")
             elif isinstance(value, dict):
-                lines.extend(shared_dict_lines(key, value))
-            elif key == "atomic" and value is True:
-                lines.append("Atomic read-modify-write operation")
+                lines.extend(shared_dict_lines(key, value, labels))
+            elif key == "atomic":
+                lines.append(f"{shared_rule_label(key, labels)}: {readable_text(value)}")
             elif key == "atomic_cs_pc_commit":
                 lines.append(f"CS/PC commit is atomic for: {readable_text(value)}")
+            elif key == "memory":
+                lines.append(f"{shared_rule_label(key, labels)}: {memory_rule_text(value)}")
             else:
-                lines.append(f"{shared_rule_label(key)}: {readable_text(value)}")
+                lines.append(f"{shared_rule_label(key, labels)}: {readable_text(value)}")
         if lines:
             entries.append((label, lines))
     return entries
 
 
-def shared_rule_label(key: str) -> str:
-    labels = {
-        "flags": "FLAGS",
-        "flags_by_mnemonic": "FLAGS",
-        "fp_flags_by_mnemonic": "FFLAGS",
-        "memory": "Memory operands",
-        "memory_by_mnemonic": "Memory operands",
-        "cpuid_feature": "CPUID feature",
-        "extension": "Extension",
-        "privilege": "Privilege",
-        "privilege_by_mnemonic": "Privilege",
-        "implementation": "Implementation",
-        "long_transfer_operands": "Long transfer operands",
-        "source_sizes_by_destination": "Source sizes",
-        "segment_registers": "Segment-register operands",
-        "repeat_observed_value_by_mnemonic": "REP observed value",
-    }
-    return labels.get(key, semantic_label(key))
+def shared_rule_label(key: str, labels: dict[str, str]) -> str:
+    return semantic_label(key, labels)
 
 
-def shared_dict_lines(key: str, value: dict[str, Any]) -> list[str]:
+def shared_dict_lines(key: str, value: dict[str, Any], labels: dict[str, str]) -> list[str]:
     if key.endswith("_by_mnemonic"):
-        return [f"{shared_rule_label(key)}: varies by mnemonic"]
+        return [f"{shared_rule_label(key, labels)}: varies by mnemonic"]
     if key == "source_sizes_by_destination":
         return [f"Source sizes for {subkey} destination: {readable_text(subvalue)}" for subkey, subvalue in value.items()]
     if key == "segment_register_forms":
@@ -2596,36 +2246,23 @@ def shared_dict_lines(key: str, value: dict[str, Any]) -> list[str]:
     if key == "segment_registers":
         return [f"{subkey} segment-register operands: {readable_text(subvalue)}" for subkey, subvalue in value.items()]
     if len(value) > 4:
-        return [f"{shared_rule_label(key)}: listed per mnemonic"]
-    return [f"{shared_rule_label(key)} {subkey}: {readable_text(subvalue)}" for subkey, subvalue in value.items()]
+        return [f"{shared_rule_label(key, labels)}: listed per mnemonic"]
+    return [f"{shared_rule_label(key, labels)} {subkey}: {readable_text(subvalue)}" for subkey, subvalue in value.items()]
 
 
-def rep_execution_sequence(repeat: dict[str, Any]) -> str:
+def rep_execution_sequence(repeat: dict[str, Any], prefix: dict[str, Any]) -> str:
     indexed = repeat.get("indexed_ea_counter_use") or {}
+    if not isinstance(indexed, dict):
+        indexed = {}
     example = indexed.get("example") if isinstance(indexed, dict) else None
-    encoding = repeat.get("counter_encoding") or {}
-    interpretation = encoding.get("interpretation") if isinstance(encoding, dict) else None
-    value_bits = encoding.get("value_bits", "63..0") if isinstance(encoding, dict) else "63..0"
-    counter_text = rep_rule_text(interpretation or "signed_twos_complement")
-    lines = [
-        f"Each iteration reads the selected D register as a {counter_text} counter using bits {value_bits}.",
-        "If the counter is zero, the prefixed instruction performs no iteration.",
-        "Indexed effective-address evaluation uses the ordinary architectural D-register value before the iteration update.",
-        "The repeated instruction observes a temporary value selected by mnemonic; REPFLAGS are computed from that observed value.",
-        "The REP condition is tested against REPFLAGS, not against the architectural FLAGS value from before the instruction.",
-        "If the REP condition is true, a positive counter is decremented and a negative counter is incremented, so the counter moves one step toward zero and repetition may continue.",
-        "If the REP condition is false, the terminating instruction body's ordinary side effects remain committed but the counter is not updated.",
-        "If a fault occurs, earlier completed iterations remain committed and the remaining signed count is restartable by software policy.",
-        "The body instruction defines the architectural FLAGS value after the last completed iteration.",
-    ]
-    if isinstance(indexed, dict) and indexed.get("allowed"):
-        counter_value = indexed.get("counter_value", "before_iteration_decrement")
-        lines.append(f"Indexed effective addresses may use the counter value as the {rep_rule_text(counter_value)}.")
-    out = [r"\begin{itemize}"]
-    out.extend(rf"\item {tex_escape(line)}" for line in lines)
-    out.append(r"\end{itemize}")
+    out: list[str] = []
+    description = compact_text(repeat.get("description") or prefix.get("description", ""))
+    if description:
+        out.append(tex_escape(description))
+    indexed_note = compact_text(indexed.get("note", ""))
+    if indexed_note:
+        out.append(tex_escape(indexed_note))
     if example:
-        out.append(r"\noindent Example:\par")
         out.append(r"\begingroup\small\ttfamily")
         out.append(r"\begin{tabularx}{\linewidth}{@{}X@{}}")
         for line in code_example_lines(str(example)):
@@ -2651,30 +2288,39 @@ def code_example_lines(example: str) -> list[str]:
     return [example]
 
 
-def rep_observed_rows(repeat: dict[str, Any]) -> list[list[str]]:
+def rep_observed_rows(repeat: dict[str, Any], prefix: dict[str, Any]) -> list[list[str]]:
     observed = repeat.get("observed_value_by_mnemonic") or {}
     repflags = repeat.get("repflags_by_mnemonic") or {}
+    observed_descriptions = prefix.get("observed_value_descriptions") or repeat.get("observed_value_descriptions") or {}
+    repflags_descriptions = prefix.get("repflags_descriptions") or repeat.get("repflags_descriptions") or {}
     if not isinstance(observed, dict):
-        return []
+        observed = {}
+    if not isinstance(repflags, dict):
+        repflags = {}
+    if not isinstance(observed_descriptions, dict):
+        observed_descriptions = {}
+    if not isinstance(repflags_descriptions, dict):
+        repflags_descriptions = {}
     rows: list[list[str]] = []
-    for mnemonic in sorted(observed):
+    for mnemonic in sorted(set(observed) | set(repflags)):
         rows.append(
             [
                 tex_code(mnemonic),
-                tex_escape(readable_text(observed.get(mnemonic, "-"))),
-                tex_escape(repflags_rule_text(repflags.get(mnemonic, "-") if isinstance(repflags, dict) else "-")),
+                tex_escape(rep_observed_value_text(observed.get(mnemonic, "-"), observed_descriptions)),
+                tex_escape(repflags_rule_text(repflags.get(mnemonic, "-"), repflags_descriptions)),
             ]
         )
     return rows
 
 
-def repflags_rule_text(value: Any) -> str:
-    mappings = {
-        "flags_logic_observed_value": "set Z/N from observed value and clear C/V",
-        "flags_sub_rhs_lhs": "compute subtract flags from rhs - lhs",
-    }
+def rep_observed_value_text(value: Any, descriptions: dict[str, Any]) -> str:
     text = str(value)
-    return mappings.get(text, readable_text(text))
+    return compact_text(descriptions.get(text, readable_text(text)))
+
+
+def repflags_rule_text(value: Any, descriptions: dict[str, Any]) -> str:
+    text = str(value)
+    return compact_text(descriptions.get(text, readable_text(text)))
 
 
 def reference_group_mnemonics(
@@ -2724,6 +2370,7 @@ def instruction_reference_groups(
 
 
 def render_manual(plan: dict[str, Any], spec: dict[str, Any], lengths: dict[tuple[str, str], tuple[int, int]]) -> str:
+    set_instruction_table_spec(spec)
     items = allocation_items(plan)
     items_by_mnemonic: dict[str, list[dict[str, Any]]] = {}
     for item in items:
@@ -2748,6 +2395,7 @@ def render_manual(plan: dict[str, Any], spec: dict[str, Any], lengths: dict[tupl
     for title, group_mnemonics in reference_groups:
         parts.extend(
             instruction_reference_sections(
+                spec,
                 title,
                 group_mnemonics,
                 records,
@@ -2793,6 +2441,7 @@ def manual_preview_sections(
     spec: dict[str, Any],
     lengths: dict[tuple[str, str], tuple[int, int]],
 ) -> list[tuple[str, str, str]]:
+    set_instruction_table_spec(spec)
     items = allocation_items(plan)
     items_by_mnemonic: dict[str, list[dict[str, Any]]] = {}
     for item in items:
@@ -2812,15 +2461,18 @@ def manual_preview_sections(
 
     add("Overview", architecture_overview_section(spec, plan, len(mnemonics), len(items)))
     add("Terminology", "\n".join([top_section("Terminology"), terminology_section(spec)]))
-    add("Reserved and Compatibility Rules", compatibility_rules_section())
+    add("Reserved and Compatibility Rules", compatibility_rules_section(spec))
     add("Programming Model", "\n".join([top_section("Programming Model"), register_tables(spec)]))
     add("CPUID Feature Discovery", "\n".join([top_section("CPUID Feature Discovery"), cpuid_feature_discovery_section(spec)]))
+    save_area_section = save_area_reference_section(spec)
+    if save_area_section:
+        add("SAVE/RESTORE Processor-State Save Area", save_area_section)
     add("Data Formats", "\n".join([top_section("Data Formats"), data_format_section()]))
     add("Condition Codes", "\n".join([top_section("Condition Codes"), condition_table(spec)]))
     add("Prefixes", "\n".join([top_section("Prefixes"), prefix_table(spec)]))
     add("Effective Addressing Modes", "\n".join([top_section("Effective Addressing Modes"), ea_table(spec)]))
     add("Memory Address Translation", "\n".join([top_section("Memory Address Translation"), memory_address_translation_section(spec)]))
-    add("Memory Model", "\n".join([top_section("Memory Model"), memory_model_section()]))
+    add("Memory Model", "\n".join([top_section("Memory Model"), memory_model_section(spec)]))
     add(
         "Supervisor / Privileged Programming Model",
         "\n".join([top_section("Supervisor / Privileged Programming Model"), privileged_programming_model_section(spec)]),

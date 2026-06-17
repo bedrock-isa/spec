@@ -1,0 +1,59 @@
+\Needspace{3.8in}
+\subsection{Segment Registers}
+Segment registers define a currently addressable memory window plus a simple
+address translation step. They are not the memory-protection mechanism; paging
+supplies memory access permissions and final address translation. When the
+segment mantissa field is zero, the segment entry is disabled. When the mantissa
+is nonzero, an address passes through segmentation first and then through
+paging.
+
+The bounds-only bit enables a check-only mode for segment translation: the
+segment bounds are tested, but the segment base address is not added to the
+translated address.
+
+@REGISTER_TABLE@
+
+\Needspace{1.35in}
+\begin{center}\vspace{3pt}
+\begin{tikzpicture}[x=0.420in,y=0.24in,every node/.style={font=\scriptsize}]
+\node[anchor=east] at (-0.35,0.50) {segment[63:0]};
+\node[anchor=south] at (0.00,1.18) {63};
+\node[anchor=south] at (5.40,1.18) {11};
+\node[anchor=south] at (7.10,1.18) {6};
+\node[anchor=south] at (9.30,1.18) {1};
+\node[anchor=south] at (10.40,1.18) {0};
+\draw (0.00,0) rectangle (5.40,1);
+\node at (2.70,0.50) {base\_page};
+\draw[decorate,decoration={zigzag,amplitude=1.0pt,segment length=3pt}] (5.40,0.03) -- (5.40,0.97);
+\draw (5.40,0) rectangle (7.10,1);
+\node at (6.25,0.50) {e};
+\draw (7.10,0) rectangle (9.30,1);
+\node at (8.20,0.50) {m};
+\draw (9.30,0) rectangle (10.40,1);
+\node at (9.85,0.50) {b};
+\end{tikzpicture}
+\manualfigurecaption{Segment Register Format}
+\end{center}
+
+
+@FIELD_TABLE@
+
+\begin{align*}
+\text{base byte address} &= \mathit{base\_page} \times 4096\\
+\text{segment size} &= m \times 2^e \times 4096\\
+\text{limit byte address} &= (\mathit{base\_page} + m \times 2^e) \times 4096\\
+b=0:\quad \text{segmented address} &= \text{base byte address} + \text{offset},\quad 0 \le \text{offset} < \text{segment size}\\
+b=1:\quad \text{segmented address} &= \text{offset},\quad \text{base byte address} \le \text{offset} < \text{limit byte address}
+\end{align*}
+
+The base, segment size, and limit are computed in an unsigned domain wide
+enough to represent the full 64-bit linear-address space plus one. If the limit
+exceeds \(2^{64}\), the segment register image is invalid and any access through
+it reports \texttt{PAGE\_FAULT}.
+
+If m is zero, segmentation is disabled for that segment selector and the
+effective address is already the linear address. If m is nonzero, the segment
+bounds are checked before paging. In normal mode (b = 0), the segment base is
+added to the offset after the bounds check. In bounds-only mode (b = 1), the
+base is not added; the segment only constrains which linear-address window may
+be accessed.

@@ -17,6 +17,15 @@ $(OBJDIR)/$(BIN): $(OBJ) $(OBJDIR)/timestamp
 	@test -z "$(V)" || echo "ld $@"
 	$(V)$(CC) $(LDFLAGS) $(OBJ) -o $@
 
+bedrock: $(OBJDIR)/$(BIN)
+
+help:
+	@printf '%s\n' 'QBE targets:'
+	@printf '  %-10s %s\n' 'bedrock' 'Build the Bedrock-enabled QBE binary.'
+	@printf '  %-10s %s\n' 'check' 'Run the QBE test suite.'
+	@printf '  %-10s %s\n' 'clean' 'Remove QBE build artifacts.'
+	@printf '  %-10s %s\n' 'clean-gen' 'Remove QBE build artifacts and generated config.h.'
+
 $(OBJDIR)/%.o: %.c $(OBJDIR)/timestamp
 	@test -z "$(V)" || echo "cc $<"
 	$(V)$(CC) $(CFLAGS) -c $< -o $@
@@ -59,4 +68,4 @@ src:
 		}" < $$F;                          \
 	done
 
-.PHONY: clean clean-gen check src 80 install uninstall
+.PHONY: help bedrock clean clean-gen check src 80 install uninstall

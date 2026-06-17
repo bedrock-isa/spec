@@ -1,0 +1,83 @@
+mnemonic: MOVSETDA
+doc:
+  title: Move A Registers To D Registers
+  summary: Copies selected A registers to matching D registers in a data-register bank.
+  description: Copies selected A registers to matching D registers. The one-operand form uses the current DBANK 
+    selector. The banked form names an explicit destination DBANK and does not change the current selector.
+  instruction_family: data_movement
+  instruction_class: data_movement
+behavior:
+  group: register_set_transfer
+  inputs:
+  - regs
+  output: none
+  operation_by_form:
+  - operands: [BITMAP16]
+    operation:
+    - if ((regs_v & 0x01) == 0) goto <movsetda_d0_done>;
+    - D0 = A0;
+    - <movsetda_d0_done>
+    - if ((regs_v & 0x02) == 0) goto <movsetda_d1_done>;
+    - D1 = A1;
+    - <movsetda_d1_done>
+    - if ((regs_v & 0x04) == 0) goto <movsetda_d2_done>;
+    - D2 = A2;
+    - <movsetda_d2_done>
+    - if ((regs_v & 0x08) == 0) goto <movsetda_d3_done>;
+    - D3 = A3;
+    - <movsetda_d3_done>
+    - if ((regs_v & 0x10) == 0) goto <movsetda_d4_done>;
+    - D4 = A4;
+    - <movsetda_d4_done>
+    - if ((regs_v & 0x20) == 0) goto <movsetda_d5_done>;
+    - D5 = A5;
+    - <movsetda_d5_done>
+    - if ((regs_v & 0x40) == 0) goto <movsetda_d6_done>;
+    - D6 = A6;
+    - <movsetda_d6_done>
+    - if ((regs_v & 0x80) == 0) goto <movsetda_d7_done>;
+    - D7 = A7;
+    - <movsetda_d7_done>
+  - operands: [DBANK, BITMAP16]
+    operation:
+    - if ((regs_v & 0x01) == 0) goto <movsetda_b0_done>;
+    - arch_dbank_write(dst_bank_v & 0xf, 0:8, A0);
+    - <movsetda_b0_done>
+    - if ((regs_v & 0x02) == 0) goto <movsetda_b1_done>;
+    - arch_dbank_write(dst_bank_v & 0xf, 1:8, A1);
+    - <movsetda_b1_done>
+    - if ((regs_v & 0x04) == 0) goto <movsetda_b2_done>;
+    - arch_dbank_write(dst_bank_v & 0xf, 2:8, A2);
+    - <movsetda_b2_done>
+    - if ((regs_v & 0x08) == 0) goto <movsetda_b3_done>;
+    - arch_dbank_write(dst_bank_v & 0xf, 3:8, A3);
+    - <movsetda_b3_done>
+    - if ((regs_v & 0x10) == 0) goto <movsetda_b4_done>;
+    - arch_dbank_write(dst_bank_v & 0xf, 4:8, A4);
+    - <movsetda_b4_done>
+    - if ((regs_v & 0x20) == 0) goto <movsetda_b5_done>;
+    - arch_dbank_write(dst_bank_v & 0xf, 5:8, A5);
+    - <movsetda_b5_done>
+    - if ((regs_v & 0x40) == 0) goto <movsetda_b6_done>;
+    - arch_dbank_write(dst_bank_v & 0xf, 6:8, A6);
+    - <movsetda_b6_done>
+    - if ((regs_v & 0x80) == 0) goto <movsetda_b7_done>;
+    - arch_dbank_write(dst_bank_v & 0xf, 7:8, A7);
+    - <movsetda_b7_done>
+  banked_forms: Current-bank forms and forms that name DBn explicitly are part of the base register-set transfer group. 
+    Implementations report the number of available data-register banks through CPUID implementation properties.
+allocation:
+  catalog_section: compact_primary
+forms:
+  operands:
+  - name: regs
+    type: bitmap16
+  extended_forms:
+  - operands:
+    - name: dst_bank
+      type: DBANK
+    - name: regs
+      type: bitmap16
+    compact: false
+    extension_family: data_register_banking
+  valid_bits: 0..7

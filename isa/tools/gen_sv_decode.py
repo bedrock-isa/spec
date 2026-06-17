@@ -22,6 +22,8 @@ from gen_asm_disasm_c import (  # noqa: E402
     required_word_count,
 )
 from isa_spec import load_spec  # noqa: E402
+from spec_model.encoding import mnemonic_policy
+from template_utils import render_tool_template  # noqa: E402
 
 
 def load_plan(path: Path) -> dict[str, Any]:
@@ -47,10 +49,18 @@ def load_repeat_policy(spec_path: Path) -> dict[str, set[str]]:
                 out.update(str(item).upper() for item in value)
         return out
 
+    allocation_policy = mnemonic_policy(spec)
+    def policy_set(key: str) -> set[str]:
+        value = allocation_policy.get(key, []) or []
+        return {str(item).upper() for item in value} if isinstance(value, list) else set()
+
     return {
         "repeatable": collect(repeatable, "integer", "fpu"),
         "repg_general_extra": collect(repeatable, "state_query_general_only"),
         "streaming": collect(streaming, "integer", "fpu"),
+        "fence": policy_set("fence_mnemonics"),
+        "cache": policy_set("cache_management_mnemonics"),
+        "tlb": policy_set("tlb_management_mnemonics"),
     }
 
 
@@ -159,29 +169,29 @@ def ranges_overlap(ranges: list[tuple[int, int]]) -> bool:
 
 
 def is_stack_form(item: dict[str, Any]) -> bool:
-    mnemonic = str(item.get("mnemonic", "")).upper()
     group = str(item.get("group", "")).upper()
-    return mnemonic in {"PUSH", "POP", "PUSHM", "POPM"} or group in {"PUSH_POP", "PUSHM_POPM"}
+    return group in {"PUSH_POP", "PUSHM_POPM"}
 
 
-def is_fence_form(item: dict[str, Any]) -> bool:
-    return str(item.get("mnemonic", "")).upper() in {"RFENCE", "WFENCE", "AFENCE"}
+def is_fence_form(item: dict[str, Any], policy: dict[str, set[str]]) -> bool:
+    return str(item.get("mnemonic", "")).upper() in policy["fence"]
 
 
-def is_tlb_cache_form(item: dict[str, Any]) -> bool:
+def is_tlb_cache_form(item: dict[str, Any], policy: dict[str, set[str]]) -> bool:
     group = str(item.get("group", "")).upper()
     mnemonic = str(item.get("mnemonic", "")).upper()
     return (
         "TLB" in group
         or "CACHE" in group
-        or mnemonic in {"INVTLB", "INVPAGE", "INVASID", "INVDCACHE", "INVICACHE", "FLSHDCACHE", "WRBKDCACHE", "SYNCCACHE", "PREFETCH"}
+        or mnemonic in policy["tlb"]
+        or mnemonic in policy["cache"]
     )
 
 
 def is_atomic_form(item: dict[str, Any]) -> bool:
     group = str(item.get("group", "")).upper()
-    mnemonic = str(item.get("mnemonic", "")).upper()
-    return group == "CMPXCHG" or group == "FETCH_OPS" or mnemonic.startswith("FETCH") or mnemonic == "CMPXCHG"
+    category = str(item.get("category", "")).lower()
+    return category == "atomic" or group in {"CMPXCHG", "FETCH_OPS"}
 
 
 def form_repeat_attributes(item: dict[str, Any], policy: dict[str, set[str]]) -> dict[str, bool]:
@@ -189,15 +199,15 @@ def form_repeat_attributes(item: dict[str, Any], policy: dict[str, set[str]]) ->
     category = str(item.get("category", "")).lower()
     repeatable = mnemonic in policy["repeatable"]
     repg_general_extra = mnemonic in policy["repg_general_extra"]
-    base_forbidden = (
+    base_excluded = (
         category == "control_flow"
         or is_atomic_form(item)
         or is_stack_form(item)
-        or is_tlb_cache_form(item)
-        or is_fence_form(item)
+        or is_tlb_cache_form(item, policy)
+        or is_fence_form(item, policy)
     )
     repcc_allowed = repeatable and category not in {"control_flow", "system"} and not is_atomic_form(item)
-    repg_allowed = (repeatable or repg_general_extra) and not base_forbidden
+    repg_allowed = (repeatable or repg_general_extra) and not base_excluded
     return {
         "repcc_allowed": repcc_allowed,
         "repg_allowed": repg_allowed,
@@ -339,6 +349,10 @@ def emit_form_assignment(lines: list[str], item: dict[str, Any], form_names: dic
     )
 
 
+def sv_lines(lines: list[str]) -> str:
+    return "\n".join(lines)
+
+
 def emit_package(plan: dict[str, Any], repeat_policy: dict[str, set[str]]) -> str:
     items = allocation_items(plan)
     forms = sorted(items, key=decode_priority)
@@ -354,48 +368,17 @@ def emit_package(plan: dict[str, Any], repeat_policy: dict[str, set[str]]) -> st
     kind_bits = bits_for_count(len(kind_names))
     source_bits = bits_for_count(len(source_names))
 
-    lines: list[str] = [
-        "`timescale 1ns/1ps",
-        "`default_nettype none",
-        "",
-        "// Generated from build/generated/allocation_plan.json.",
-        "// Do not edit by hand.",
-        "",
-        "package bedrock_decode_pkg;",
-        "  import bedrock_pkg::*;",
-        "",
-        f"  localparam int BEDROCK_DECODE_FORM_COUNT = {len(forms)};",
-        f"  localparam int BEDROCK_DECODE_FORM_ID_BITS = {form_bits};",
-        f"  localparam int BEDROCK_DECODE_EXT_ROOT_COUNT = {len(root_names)};",
-        f"  localparam int BEDROCK_DECODE_EXT_ROOT_BITS = {root_bits};",
-        f"  localparam int BEDROCK_DECODE_FIELD_SLOTS = {max_fields};",
-        f"  localparam int BEDROCK_DECODE_FIELD_KIND_BITS = {kind_bits};",
-        f"  localparam int BEDROCK_DECODE_FIELD_SOURCE_BITS = {source_bits};",
-        "",
-        f"  typedef enum logic [BEDROCK_DECODE_FORM_ID_BITS-1:0] {{",
-        f"    BR_FORM_INVALID = {form_bits}'d0,",
-    ]
+    form_enum_lines: list[str] = []
     for index, item in enumerate(forms, start=1):
         comma = "," if index != len(forms) else ""
-        lines.append(f"    {form_names[str(item.get('id', ''))]} = {form_bits}'d{index}{comma} // {item.get('id', '')}")
-    lines.extend(
-        [
-            "  } bedrock_form_id_e;",
-            "",
-            f"  typedef enum logic [BEDROCK_DECODE_EXT_ROOT_BITS-1:0] {{",
-            f"    BR_EXT_ROOT_NONE = {root_bits}'d0,",
-        ]
-    )
+        form_enum_lines.append(f"    {form_names[str(item.get('id', ''))]} = {form_bits}'d{index}{comma} // {item.get('id', '')}")
+
+    ext_root_enum_lines: list[str] = []
     for index, root in enumerate(sorted(root_names), start=1):
         comma = "," if index != len(root_names) else ""
-        lines.append(f"    {root_names[root]} = {root_bits}'d{index}{comma} // {root}")
-    lines.extend(
-        [
-            "  } bedrock_ext_root_e;",
-            "",
-            f"  typedef enum logic [BEDROCK_DECODE_FIELD_KIND_BITS-1:0] {{",
-        ]
-    )
+        ext_root_enum_lines.append(f"    {root_names[root]} = {root_bits}'d{index}{comma} // {root}")
+
+    field_kind_enum_lines: list[str] = []
     kind_items = [("NONE", "BR_FIELD_NONE")] + sorted(
         [(kind, name) for kind, name in kind_names.items() if kind != "NONE"],
         key=lambda item: item[1],
@@ -403,14 +386,9 @@ def emit_package(plan: dict[str, Any], repeat_policy: dict[str, set[str]]) -> st
     for index, (kind, name) in enumerate(kind_items):
         comma = "," if index != len(kind_items) - 1 else ""
         comment = "" if kind == "NONE" else f" // {kind}"
-        lines.append(f"    {name} = {kind_bits}'d{index}{comma}{comment}")
-    lines.extend(
-        [
-            "  } bedrock_decode_field_kind_e;",
-            "",
-            f"  typedef enum logic [BEDROCK_DECODE_FIELD_SOURCE_BITS-1:0] {{",
-        ]
-    )
+        field_kind_enum_lines.append(f"    {name} = {kind_bits}'d{index}{comma}{comment}")
+
+    field_source_enum_lines: list[str] = []
     source_items = [("NONE", "BR_SOURCE_NONE")] + sorted(
         [(source, name) for source, name in source_names.items() if source != "NONE"],
         key=lambda item: item[1],
@@ -418,63 +396,21 @@ def emit_package(plan: dict[str, Any], repeat_policy: dict[str, set[str]]) -> st
     for index, (source, name) in enumerate(source_items):
         comma = "," if index != len(source_items) - 1 else ""
         comment = "" if source == "NONE" else f" // {source}"
-        lines.append(f"    {name} = {source_bits}'d{index}{comma}{comment}")
-    lines.extend(
-        [
-            "  } bedrock_decode_field_source_e;",
-            "",
-            "  typedef struct packed {",
-            "    logic valid;",
-            "    bedrock_decode_field_kind_e kind;",
-            "    bedrock_decode_field_source_e source;",
-            "    logic [1:0] token;",
-            "    logic [3:0] low_bit;",
-            "    logic [4:0] width;",
-            "  } bedrock_decode_field_meta_t;",
-            "",
-            "  typedef struct packed {",
-            "    logic valid;",
-            "    logic needs_extension;",
-            "    logic is_alias;",
-            "    bedrock_form_id_e form_id;",
-            "    bedrock_ext_root_e ext_root;",
-            "  } bedrock_primary_decode_t;",
-            "",
-            "  typedef struct packed {",
-            "    logic valid;",
-            "    logic is_alias;",
-            "    bedrock_form_id_e form_id;",
-            "  } bedrock_extended_decode_t;",
-            "",
-            "  typedef struct packed {",
-            "    logic repcc_allowed;",
-            "    logic repg_allowed;",
-            "    logic repg_fast_candidate;",
-            "  } bedrock_form_attributes_t;",
-            "",
-            "  function automatic bedrock_primary_decode_t bedrock_decode_primary_payload(input primary_payload_t payload);",
-            "    bedrock_primary_decode_t r;",
-            "    r = '0;",
-            "    r.form_id = BR_FORM_INVALID;",
-            "    r.ext_root = BR_EXT_ROOT_NONE;",
-            "",
-        ]
-    )
+        field_source_enum_lines.append(f"    {name} = {source_bits}'d{index}{comma}{comment}")
 
-    lines.extend(["    priority casez (payload)"])
-
+    primary_decode_lines: list[str] = []
     emitted_primary_patterns: set[str] = set()
     for item in sorted(compact_items(forms), key=decode_case_priority):
         p_start, p_end = primary_range(item)
         for pattern in unique_decode_patterns(item, 12, p_start, p_end, emitted_primary_patterns):
-            lines.append(f"      {pattern}: begin // {item.get('id', '')}")
-            emit_form_assignment(lines, item, form_names, "        ")
-            lines.append("      end")
+            primary_decode_lines.append(f"      {pattern}: begin // {item.get('id', '')}")
+            emit_form_assignment(primary_decode_lines, item, form_names, "        ")
+            primary_decode_lines.append("      end")
 
     for root in sorted(root_names):
         for start, end in root_ranges[root]:
             for pattern in range_patterns(12, start, end):
-                lines.extend(
+                primary_decode_lines.extend(
                     [
                         f"      {pattern}: begin // {root}",
                         "        r.valid = 1'b1;",
@@ -484,149 +420,71 @@ def emit_package(plan: dict[str, Any], repeat_policy: dict[str, set[str]]) -> st
                     ]
                 )
 
-    lines.extend(
-        [
-            "      default: begin",
-            "      end",
-            "    endcase",
-        ]
-    )
-
-    lines.extend(
-        [
-            "",
-            "    return r;",
-            "  endfunction",
-            "",
-            "  function automatic bedrock_extended_decode_t bedrock_decode_extended_opcode(",
-            "    input bedrock_ext_root_e ext_root,",
-            "    input logic [15:0] extension_word",
-            "  );",
-            "    bedrock_extended_decode_t r;",
-            "    r = '0;",
-            "    r.form_id = BR_FORM_INVALID;",
-            "",
-        ]
-    )
-
     extended_by_root: dict[str, list[dict[str, Any]]] = {}
     for item in sorted(extended_items(forms), key=decode_priority):
         extended_by_root.setdefault(str(item.get("extension_root", "")), []).append(item)
 
-    lines.extend(["    unique case (ext_root)"])
+    extended_decode_lines: list[str] = []
     for root in sorted(extended_by_root):
         root_items = extended_by_root[root]
         root_has_priority_overlap = ranges_overlap([extended_range(item) for item in root_items])
-        lines.append(f"      {root_names[root]}: begin // {root}")
+        extended_decode_lines.append(f"      {root_names[root]}: begin // {root}")
         if root_has_priority_overlap:
             first = True
             for item in root_items:
                 e_start, e_end = extended_range(item)
                 keyword = "if" if first else "else if"
                 first = False
-                lines.append(f"        {keyword} {range_condition('extension_word', 16, e_start, e_end)} begin // {item.get('id', '')}")
-                emit_form_assignment(lines, item, form_names, "          ")
-                lines.append("        end")
+                extended_decode_lines.append(f"        {keyword} {range_condition('extension_word', 16, e_start, e_end)} begin // {item.get('id', '')}")
+                emit_form_assignment(extended_decode_lines, item, form_names, "          ")
+                extended_decode_lines.append("        end")
         else:
-            lines.append("        unique casez (extension_word)")
+            extended_decode_lines.append("        unique casez (extension_word)")
             for item in root_items:
                 e_start, e_end = extended_range(item)
                 for pattern in range_patterns(16, e_start, e_end):
-                    lines.append(f"          {pattern}: begin // {item.get('id', '')}")
-                    emit_form_assignment(lines, item, form_names, "            ")
-                    lines.append("          end")
-            lines.extend(
+                    extended_decode_lines.append(f"          {pattern}: begin // {item.get('id', '')}")
+                    emit_form_assignment(extended_decode_lines, item, form_names, "            ")
+                    extended_decode_lines.append("          end")
+            extended_decode_lines.extend(
                 [
                     "          default: begin",
                     "          end",
                     "        endcase",
                 ]
             )
-        lines.append("      end")
+        extended_decode_lines.append("      end")
 
-    lines.extend(
-        [
-            "      default: begin",
-            "      end",
-            "    endcase",
-        ]
-    )
-
-    lines.extend(
-        [
-            "",
-            "    return r;",
-            "  endfunction",
-            "",
-            "  function automatic logic [3:0] bedrock_decode_form_required_words(input bedrock_form_id_e form_id);",
-            "    logic [3:0] r;",
-            "    r = 4'd1;",
-            "    unique case (form_id)",
-        ]
-    )
-
+    required_word_lines: list[str] = []
     for item in forms:
         fields = all_fields(item)
         required = form_required_words(item, fields)
         if required <= 1:
             continue
-        lines.append(f"      {form_names[str(item.get('id', ''))]}: r = 4'd{required}; // {item.get('id', '')}")
+        required_word_lines.append(f"      {form_names[str(item.get('id', ''))]}: r = 4'd{required}; // {item.get('id', '')}")
 
-    lines.extend(
-        [
-            "      default: begin",
-            "      end",
-            "    endcase",
-            "    return r;",
-            "  endfunction",
-            "",
-            "  function automatic logic [3:0] bedrock_decode_form_field_token_words(input bedrock_form_id_e form_id);",
-            "    logic [3:0] r;",
-            "    r = 4'd1;",
-            "    unique case (form_id)",
-        ]
-    )
-
+    field_token_word_lines: list[str] = []
     for item in forms:
         fields = all_fields(item)
         token_words = form_field_token_words(item, fields)
         if token_words <= 1:
             continue
-        lines.append(f"      {form_names[str(item.get('id', ''))]}: r = 4'd{token_words}; // {item.get('id', '')}")
+        field_token_word_lines.append(f"      {form_names[str(item.get('id', ''))]}: r = 4'd{token_words}; // {item.get('id', '')}")
 
-    lines.extend(
-        [
-            "      default: begin",
-            "      end",
-            "    endcase",
-            "    return r;",
-            "  endfunction",
-            "",
-            "  function automatic bedrock_decode_field_meta_t bedrock_decode_form_field(",
-            "    input bedrock_form_id_e form_id,",
-            "    input logic [2:0] field_index",
-            "  );",
-            "    bedrock_decode_field_meta_t r;",
-            "    r = '0;",
-            "    r.kind = BR_FIELD_NONE;",
-            "    r.source = BR_SOURCE_NONE;",
-            "    unique case (form_id)",
-        ]
-    )
-
+    form_field_lines: list[str] = []
     for item in forms:
         fields = all_fields(item)
         if not fields:
             continue
-        lines.append(f"      {form_names[str(item.get('id', ''))]}: begin // {item.get('id', '')}")
-        lines.append("        unique case (field_index)")
+        form_field_lines.append(f"      {form_names[str(item.get('id', ''))]}: begin // {item.get('id', '')}")
+        form_field_lines.append("        unique case (field_index)")
         for index, field in enumerate(fields):
             kind = str(field.get("kind", "")) or "NONE"
             source = str(field.get("source", "")) or "NONE"
             token = int(field.get("token", 0))
             low = int(field.get("low_bit", 0))
             width = int(field.get("width", 0))
-            lines.extend(
+            form_field_lines.extend(
                 [
                     f"          3'd{index}: begin",
                     "            r.valid = 1'b1;",
@@ -638,7 +496,7 @@ def emit_package(plan: dict[str, Any], repeat_policy: dict[str, set[str]]) -> st
                     "          end",
                 ]
             )
-        lines.extend(
+        form_field_lines.extend(
             [
                 "          default: begin",
                 "          end",
@@ -647,110 +505,46 @@ def emit_package(plan: dict[str, Any], repeat_policy: dict[str, set[str]]) -> st
             ]
         )
 
-    lines.extend(
-        [
-            "      default: begin",
-            "      end",
-            "    endcase",
-            "    return r;",
-            "  endfunction",
-            "",
-            "  function automatic bedrock_form_attributes_t bedrock_decode_form_attributes(input bedrock_form_id_e form_id);",
-            "    bedrock_form_attributes_t r;",
-            "    r = '0;",
-            "    unique case (form_id)",
-        ]
-    )
-
+    form_attribute_lines: list[str] = []
     for item in forms:
         attrs = form_repeat_attributes(item, repeat_policy)
         if not any(attrs.values()):
             continue
-        lines.append(f"      {form_names[str(item.get('id', ''))]}: begin // {item.get('id', '')}")
+        form_attribute_lines.append(f"      {form_names[str(item.get('id', ''))]}: begin // {item.get('id', '')}")
         if attrs["repcc_allowed"]:
-            lines.append("        r.repcc_allowed = 1'b1;")
+            form_attribute_lines.append("        r.repcc_allowed = 1'b1;")
         if attrs["repg_allowed"]:
-            lines.append("        r.repg_allowed = 1'b1;")
+            form_attribute_lines.append("        r.repg_allowed = 1'b1;")
         if attrs["repg_fast_candidate"]:
-            lines.append("        r.repg_fast_candidate = 1'b1;")
-        lines.append("      end")
+            form_attribute_lines.append("        r.repg_fast_candidate = 1'b1;")
+        form_attribute_lines.append("      end")
 
-    lines.extend(
-        [
-            "      default: begin",
-            "      end",
-            "    endcase",
-            "    return r;",
-            "  endfunction",
-            "",
-            "endpackage",
-            "",
-            "`default_nettype wire",
-            "",
-        ]
+    return render_tool_template(
+        "bedrock_decode_pkg.sv",
+        {
+            "FORM_COUNT": len(forms),
+            "FORM_BITS": form_bits,
+            "EXT_ROOT_COUNT": len(root_names),
+            "EXT_ROOT_BITS": root_bits,
+            "FIELD_SLOTS": max_fields,
+            "FIELD_KIND_BITS": kind_bits,
+            "FIELD_SOURCE_BITS": source_bits,
+            "FORM_ENUM_ENTRIES": sv_lines(form_enum_lines),
+            "EXT_ROOT_ENUM_ENTRIES": sv_lines(ext_root_enum_lines),
+            "FIELD_KIND_ENUM_ENTRIES": sv_lines(field_kind_enum_lines),
+            "FIELD_SOURCE_ENUM_ENTRIES": sv_lines(field_source_enum_lines),
+            "PRIMARY_DECODE_CASES": sv_lines(primary_decode_lines),
+            "EXTENDED_DECODE_CASES": sv_lines(extended_decode_lines),
+            "REQUIRED_WORD_CASES": sv_lines(required_word_lines),
+            "FIELD_TOKEN_WORD_CASES": sv_lines(field_token_word_lines),
+            "FORM_FIELD_CASES": sv_lines(form_field_lines),
+            "FORM_ATTRIBUTE_CASES": sv_lines(form_attribute_lines),
+        },
     )
-    return "\n".join(lines)
 
 
 def emit_module() -> str:
-    return "\n".join(
-        [
-            "`timescale 1ns/1ps",
-            "`default_nettype none",
-            "",
-            "// Generated decode wrapper. The input extension_word_i is the first",
-            "// opcode/descriptor word after word 0 and after any prefix word.",
-            "",
-            "module bedrock_decode",
-            "  import bedrock_pkg::*;",
-            "  import bedrock_decode_pkg::*;",
-            "(",
-            "  input  primary_payload_t  primary_payload_i,",
-            "  input  logic [15:0]       extension_word_i,",
-            "  output logic              valid_o,",
-            "  output logic              needs_extension_o,",
-            "  output logic              alias_o,",
-            "  output bedrock_form_id_e  form_id_o,",
-            "  output bedrock_ext_root_e ext_root_o,",
-            "  output logic              repcc_allowed_o,",
-            "  output logic              repg_allowed_o,",
-            "  output logic              repg_fast_candidate_o",
-            ");",
-            "",
-            "  bedrock_primary_decode_t primary_decode;",
-            "  bedrock_extended_decode_t extended_decode;",
-            "  bedrock_form_attributes_t attributes;",
-            "",
-            "  always_comb begin",
-            "    primary_decode = bedrock_decode_primary_payload(primary_payload_i);",
-            "    extended_decode = '0;",
-            "    extended_decode.form_id = BR_FORM_INVALID;",
-            "    attributes = '0;",
-            "",
-            "    valid_o = primary_decode.valid;",
-            "    needs_extension_o = primary_decode.needs_extension;",
-            "    alias_o = primary_decode.is_alias;",
-            "    form_id_o = primary_decode.form_id;",
-            "    ext_root_o = primary_decode.ext_root;",
-            "",
-            "    if (primary_decode.needs_extension) begin",
-            "      extended_decode = bedrock_decode_extended_opcode(primary_decode.ext_root, extension_word_i);",
-            "      valid_o = extended_decode.valid;",
-            "      alias_o = extended_decode.is_alias;",
-            "      form_id_o = extended_decode.form_id;",
-            "    end",
-            "",
-            "    attributes = bedrock_decode_form_attributes(form_id_o);",
-            "    repcc_allowed_o = valid_o && attributes.repcc_allowed;",
-            "    repg_allowed_o = valid_o && attributes.repg_allowed;",
-            "    repg_fast_candidate_o = valid_o && attributes.repg_fast_candidate;",
-            "  end",
-            "endmodule",
-            "",
-            "`default_nettype wire",
-            "",
-        ]
-    )
+    return render_tool_template("bedrock_decode.sv", {})
 
 
 def emit_synth_module(plan: dict[str, Any], repeat_policy: dict[str, set[str]]) -> str:
@@ -763,63 +557,21 @@ def emit_synth_module(plan: dict[str, Any], repeat_policy: dict[str, set[str]]) 
     form_bits = bits_for_count(len(forms) + 1)
     root_bits = bits_for_count(len(root_names) + 1)
 
-    lines: list[str] = [
-        "`timescale 1ns/1ps",
-        "`default_nettype none",
-        "",
-        "// Package-free generated decoder for synthesis/statistics tools.",
-        "// The typed integration wrapper is build/generated/bedrock_decode.sv.",
-        "",
-        "module bedrock_decode_synth(",
-        "  input  [11:0] primary_payload_i,",
-        "  input  [15:0] extension_word_i,",
-        "  output reg        valid_o,",
-        "  output reg        needs_extension_o,",
-        "  output reg        alias_o,",
-        f"  output reg [{form_bits - 1}:0] form_id_o,",
-        f"  output reg [{root_bits - 1}:0] ext_root_o,",
-        "  output reg        repcc_allowed_o,",
-        "  output reg        repg_allowed_o,",
-        "  output reg        repg_fast_candidate_o",
-        ");",
-        "",
-        f"  localparam [{form_bits - 1}:0] BR_FORM_INVALID = {form_bits}'d0;",
-    ]
+    form_localparam_lines: list[str] = []
 
     for index, item in enumerate(forms, start=1):
-        lines.append(f"  localparam [{form_bits - 1}:0] {form_names[str(item.get('id', ''))]} = {form_bits}'d{index}; // {item.get('id', '')}")
+        form_localparam_lines.append(f"  localparam [{form_bits - 1}:0] {form_names[str(item.get('id', ''))]} = {form_bits}'d{index}; // {item.get('id', '')}")
 
-    lines.extend(
-        [
-            "",
-            f"  localparam [{root_bits - 1}:0] BR_EXT_ROOT_NONE = {root_bits}'d0;",
-        ]
-    )
+    ext_root_localparam_lines: list[str] = []
     for index, root in enumerate(sorted(root_names), start=1):
-        lines.append(f"  localparam [{root_bits - 1}:0] {root_names[root]} = {root_bits}'d{index}; // {root}")
+        ext_root_localparam_lines.append(f"  localparam [{root_bits - 1}:0] {root_names[root]} = {root_bits}'d{index}; // {root}")
 
-    lines.extend(
-        [
-            "",
-            "  always @* begin",
-            "    valid_o = 1'b0;",
-            "    needs_extension_o = 1'b0;",
-            "    alias_o = 1'b0;",
-            "    form_id_o = BR_FORM_INVALID;",
-            "    ext_root_o = BR_EXT_ROOT_NONE;",
-            "    repcc_allowed_o = 1'b0;",
-            "    repg_allowed_o = 1'b0;",
-            "    repg_fast_candidate_o = 1'b0;",
-            "",
-            "    casez (primary_payload_i)",
-        ]
-    )
-
+    primary_decode_lines: list[str] = []
     emitted_primary_patterns = set()
     for item in sorted(compact_items(forms), key=decode_case_priority):
         p_start, p_end = primary_range(item)
         for pattern in unique_decode_patterns(item, 12, p_start, p_end, emitted_primary_patterns):
-            lines.extend(
+            primary_decode_lines.extend(
                 [
                     f"      {pattern}: begin // {item.get('id', '')}",
                     "        valid_o = 1'b1;",
@@ -832,7 +584,7 @@ def emit_synth_module(plan: dict[str, Any], repeat_policy: dict[str, set[str]]) 
     for root in sorted(root_names):
         for start, end in root_ranges[root]:
             for pattern in range_patterns(12, start, end):
-                lines.extend(
+                primary_decode_lines.extend(
                     [
                         f"      {pattern}: begin // {root}",
                         "        valid_o = 1'b1;",
@@ -842,36 +594,22 @@ def emit_synth_module(plan: dict[str, Any], repeat_policy: dict[str, set[str]]) 
                     ]
                 )
 
-    lines.extend(
-        [
-            "      default: begin",
-            "      end",
-            "    endcase",
-            "",
-            "    if (needs_extension_o) begin",
-            "      valid_o = 1'b0;",
-            "      alias_o = 1'b0;",
-            "      form_id_o = BR_FORM_INVALID;",
-            "",
-            "      case (ext_root_o)",
-        ]
-    )
-
     extended_by_root: dict[str, list[dict[str, Any]]] = {}
     for item in sorted(extended_items(forms), key=decode_priority):
         extended_by_root.setdefault(str(item.get("extension_root", "")), []).append(item)
 
+    extended_decode_lines: list[str] = []
     for root in sorted(extended_by_root):
         root_items = extended_by_root[root]
         root_has_priority_overlap = ranges_overlap([extended_range(item) for item in root_items])
-        lines.append(f"        {root_names[root]}: begin // {root}")
+        extended_decode_lines.append(f"        {root_names[root]}: begin // {root}")
         if root_has_priority_overlap:
             first = True
             for item in root_items:
                 e_start, e_end = extended_range(item)
                 keyword = "if" if first else "else if"
                 first = False
-                lines.extend(
+                extended_decode_lines.extend(
                     [
                         f"          {keyword} {range_condition('extension_word_i', 16, e_start, e_end)} begin // {item.get('id', '')}",
                         "            valid_o = 1'b1;",
@@ -881,11 +619,11 @@ def emit_synth_module(plan: dict[str, Any], repeat_policy: dict[str, set[str]]) 
                     ]
                 )
         else:
-            lines.append("          casez (extension_word_i)")
+            extended_decode_lines.append("          casez (extension_word_i)")
             for item in root_items:
                 e_start, e_end = extended_range(item)
                 for pattern in range_patterns(16, e_start, e_end):
-                    lines.extend(
+                    extended_decode_lines.extend(
                         [
                             f"            {pattern}: begin // {item.get('id', '')}",
                             "              valid_o = 1'b1;",
@@ -894,54 +632,43 @@ def emit_synth_module(plan: dict[str, Any], repeat_policy: dict[str, set[str]]) 
                             "            end",
                         ]
                     )
-            lines.extend(
+            extended_decode_lines.extend(
                 [
                     "            default: begin",
                     "            end",
                     "          endcase",
                 ]
             )
-        lines.append("        end")
+        extended_decode_lines.append("        end")
 
-    lines.extend(
-        [
-            "        default: begin",
-            "        end",
-            "      endcase",
-            "    end",
-            "",
-            "    if (valid_o) begin",
-            "      case (form_id_o)",
-        ]
-    )
-
+    attribute_lines: list[str] = []
     for item in forms:
         attrs = form_repeat_attributes(item, repeat_policy)
         if not any(attrs.values()):
             continue
-        lines.append(f"        {form_names[str(item.get('id', ''))]}: begin // {item.get('id', '')}")
+        attribute_lines.append(f"        {form_names[str(item.get('id', ''))]}: begin // {item.get('id', '')}")
         if attrs["repcc_allowed"]:
-            lines.append("          repcc_allowed_o = 1'b1;")
+            attribute_lines.append("          repcc_allowed_o = 1'b1;")
         if attrs["repg_allowed"]:
-            lines.append("          repg_allowed_o = 1'b1;")
+            attribute_lines.append("          repg_allowed_o = 1'b1;")
         if attrs["repg_fast_candidate"]:
-            lines.append("          repg_fast_candidate_o = 1'b1;")
-        lines.append("        end")
+            attribute_lines.append("          repg_fast_candidate_o = 1'b1;")
+        attribute_lines.append("        end")
 
-    lines.extend(
-        [
-            "        default: begin",
-            "        end",
-            "      endcase",
-            "    end",
-            "  end",
-            "endmodule",
-            "",
-            "`default_nettype wire",
-            "",
-        ]
+    return render_tool_template(
+        "bedrock_decode_synth.sv",
+        {
+            "FORM_ID_MSB": form_bits - 1,
+            "EXT_ROOT_MSB": root_bits - 1,
+            "FORM_BITS": form_bits,
+            "EXT_ROOT_BITS": root_bits,
+            "FORM_LOCALPARAMS": sv_lines(form_localparam_lines),
+            "EXT_ROOT_LOCALPARAMS": sv_lines(ext_root_localparam_lines),
+            "PRIMARY_DECODE_CASES": sv_lines(primary_decode_lines),
+            "EXTENDED_DECODE_CASES": sv_lines(extended_decode_lines),
+            "ATTRIBUTE_CASES": sv_lines(attribute_lines),
+        },
     )
-    return "\n".join(lines)
 
 
 def main(argv: list[str] | None = None) -> int:

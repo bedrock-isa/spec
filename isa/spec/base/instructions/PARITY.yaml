@@ -1,0 +1,46 @@
+mnemonic: PARITY
+doc:
+  title: Parity Test
+  summary: Computes operand parity and writes the predicate to FLAGS.Z.
+  description: Computes the parity of the selected operand size and writes the parity bit directly to FLAGS.Z. Z is set 
+    to popcount(src) & 1, so Z=1 indicates odd parity and Z=0 indicates even parity. No integer destination register is 
+    written. N, C, and V are unchanged.
+  instruction_family: integer_bitfield
+  instruction_class: integer
+behavior:
+  group: bit_counts
+  inputs:
+  - src
+  output: none
+  operation:
+  - tmp_v = src_v;
+  - if (size_v == 8) goto <parity_mask_done>;
+  - if (size_v != 4) goto <parity_not_l>;
+  - tmp_v = tmp_v & 0xffffffff;
+  - goto <parity_mask_done>;
+  - <parity_not_l>
+  - if (size_v != 2) goto <parity_b>;
+  - tmp_v = tmp_v & 0xffff;
+  - goto <parity_mask_done>;
+  - <parity_b>
+  - tmp_v = tmp_v & 0xff;
+  - <parity_mask_done>
+  - result_v = popcount(tmp_v);
+  - ZF = result_v & 1;
+attributes:
+  repeatable: true
+  flags:
+    Z: population_count(src) & 1
+    N: unchanged
+    C: unchanged
+    V: unchanged
+allocation:
+  catalog_section: integer
+forms:
+  operands:
+  - name: src
+    type: EA
+  size: BWLQ
+  compact: false
+  extension_family: integer_bitfield
+  result: FLAGS.Z = popcount(src) & 1

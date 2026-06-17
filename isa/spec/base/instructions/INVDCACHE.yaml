@@ -1,0 +1,25 @@
+mnemonic: INVDCACHE
+doc:
+  title: Invalidate Data Cache
+  summary: Invalidate data cache block or range.
+  description: Invalidate data cache block or range.
+  instruction_family: cache
+  instruction_class: system
+behavior:
+  group: cache
+  inputs:
+  - target
+  output: none
+  operation:
+  - arch_cache_invalidate_data(target_v);
+attributes:
+  privilege:
+    default: supervisor
+    policy_controlled: true
+allocation:
+  catalog_section: system
+  layout_group: CACHE_OPS
+forms:
+  operands:
+  - name: target
+    type: EA_or_range

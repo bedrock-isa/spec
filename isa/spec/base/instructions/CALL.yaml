@@ -1,0 +1,45 @@
+mnemonic: CALL
+doc:
+  title: Call
+  summary: Performs the call operation.
+  description: Performs the call operation.
+  instruction_family: control_flow
+  instruction_class: control_flow
+behavior:
+  group: control_flow
+  inputs:
+  - target
+  output: none
+  operation:
+  - local return_pc_v:8 = inst_next;
+  - SP = SP - 8;
+  - '*:8 SP = return_pc_v;'
+  - call [target_v];
+  long_transfer_operands: LJMP/LCALL take the new CS image from Dn and the target PC value/address from EA
+  atomic_cs_pc_commit:
+  - LJMP
+  - LCALL
+  - LRET
+  - SYSRET
+  - IRET
+allocation:
+  catalog_section: compact_primary
+forms:
+  compact_forms:
+  - profile: IMM32
+    allocation_cluster: direct_call
+    operands:
+    - name: target
+      type: imm32
+  - profile: IMM64
+    allocation_cluster: direct_call
+    operands:
+    - name: target
+      type: imm64
+  extended_forms:
+  - operands:
+    - name: target
+      type: EA
+    compact: false
+  size:
+    fixed: Q

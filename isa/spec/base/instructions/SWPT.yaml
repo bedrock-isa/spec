@@ -1,0 +1,21 @@
+mnemonic: SWPT
+doc:
+  title: Switch Page Table
+  summary: Performs the switch page table operation.
+  description: Performs the switch page table operation.
+  instruction_family: tlb_and_context
+  instruction_class: system
+behavior:
+  group: tlb_context
+  inputs:
+  - new_ptcr
+  output: none
+  operation:
+  - PTCR = new_ptcr_v;
+  - ASCR = 0;
+allocation:
+  catalog_section: system
+forms:
+  operands:
+  - name: new_ptcr
+    type: DREG

@@ -27,19 +27,19 @@ is intended to be the source of truth; generated files are written under
 ## Common Commands
 
 ```sh
-make validate
-make allocation
-make asm-disasm-smoke
-make qbe-bedrock
-make arch-compare
+make -C isa validate
+make -C isa allocation
+make -C isa asm-disasm-smoke
+make -C qbe bedrock
+make -C benchmarks arch-compare
 ```
 
 Optional document and RTL flows:
 
 ```sh
-make manual-pdf
-make abi-all-pdf-final
-make rtl-test
+make -C isa manual-pdf
+make -C isa abi-all-pdf-final
+make -C rtl test
 ```
 
 ## Prerequisites

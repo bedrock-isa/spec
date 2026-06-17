@@ -1,0 +1,48 @@
+mnemonic: CTZ
+doc:
+  title: Count Trailing Zeros
+  summary: Performs the count trailing zeros operation.
+  description: Performs the count trailing zeros operation.
+  instruction_family: integer_bitfield
+  instruction_class: integer
+behavior:
+  group: bit_counts
+  inputs:
+  - src
+  input_output: dst
+  operation:
+  - result_v = 0xffffffffffffffff;
+  - carry_v = size_v << 3;
+  - if (size_v == 8) goto <ctz_mask_done>;
+  - if (size_v != 4) goto <ctz_not_l>;
+  - result_v = 0xffffffff;
+  - goto <ctz_mask_done>;
+  - <ctz_not_l>
+  - if (size_v != 2) goto <ctz_b>;
+  - result_v = 0xffff;
+  - goto <ctz_mask_done>;
+  - <ctz_b>
+  - result_v = 0xff;
+  - <ctz_mask_done>
+  - tmp_v = src_v & result_v;
+  - if (tmp_v != 0) goto <ctz_nonzero>;
+  - dst_v = carry_v;
+  - goto <ctz_done>;
+  - <ctz_nonzero>
+  - borrow_v = tmp_v & -tmp_v;
+  - dst_v = popcount(borrow_v - 1);
+  - <ctz_done>
+attributes:
+  repeatable: true
+  flags: unchanged
+allocation:
+  catalog_section: integer
+  layout_group: BIT_COUNTS
+forms:
+  operands:
+  - name: src
+    type: EA
+  - name: dst
+    type: DREG
+  size: BWLQ
+  zero_input: returns operand width

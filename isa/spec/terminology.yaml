@@ -3,6 +3,61 @@ summary: >
   later section explicitly narrows a term, these definitions apply throughout
   the architecture manual and to ABI documents that use the same term.
 
+display_labels:
+  A: A
+  CR: CR
+  CS: CS
+  CPUID: CPUID
+  DBANK: DBANK
+  DS: DS
+  DZ: DZ
+  EA: EA
+  FFLAGS: FFLAGS
+  FLAGS: FLAGS
+  FP: FP
+  FPU: FPU
+  GS: GS
+  NX: NX
+  NV: NV
+  OF: OF
+  PC: PC
+  REPFLAGS: REPFLAGS
+  SS: SS
+  TLB: TLB
+  UF: UF
+  ZNCV: ZNCV
+  applies_to: Applies To
+  atomic: Atomic
+  atomic_cs_pc_commit: CS/PC commit
+  cpuid_feature: CPUID feature
+  EA_address: EA Address
+  extension: Extension
+  fflags: FFLAGS
+  flags: FLAGS
+  flags_by_mnemonic: FLAGS
+  flags_ZNCV: FLAGS ZNCV
+  fp_flags_by_mnemonic: FFLAGS
+  fp_status: FP Status
+  implementation: Implementation
+  long_transfer_operands: Long transfer operands
+  memory: Memory operands
+  memory_by_mnemonic: Memory operands
+  memory_memory: Memory-Memory Operands
+  operand_evaluation_order: Operand Evaluation Order
+  operand_read: Operand Read
+  operand_write: Operand Write
+  overlong: Overlong
+  overlong_encoding: Overlong Encoding
+  placement: Placement
+  privilege: Privilege
+  privilege_by_mnemonic: Privilege
+  repeat_observed_value_by_mnemonic: REP observed value
+  segment_registers: Segment-register operands
+  selector: Selector
+  source_sizes_by_destination: Source sizes
+  undersized_encoding: Undersized Encoding
+  unmentioned_flags: Unmentioned FLAGS/FFLAGS
+
 groups:
   - name: Address Values
     terms:
@@ -134,8 +189,8 @@ groups:
       - term: segment register operand
         definition: >
           A 64-bit segment register exposed through the S operand class. The S
-          operand class names CS, DS, SS, and GS0 through GS4; it does not name FLAGS,
-          STATUS, PC, or SP.
+          operand class names the segment registers defined by the SREG selector
+          table; it does not name FLAGS, STATUS, PC, or SP.
 
       - term: state register
         definition: >
@@ -198,5 +253,7 @@ groups:
 
       - term: illegal
         definition: >
-          Use of the encoding, field value, selector, or operation raises
-          ILLEGAL_INSTRUCTION unless another exception is explicitly named.
+          Use of a disallowed instruction opcode encoding, effective-address
+          form, selector, or operation raises the exception named by the
+          defining rule. Prefix bytes use the prefix model's own unassigned
+          value rule.

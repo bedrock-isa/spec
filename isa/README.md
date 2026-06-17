@@ -17,7 +17,8 @@ This directory is the declarative source of truth for the evolving ISA.
   catalog, and the allocation result.
 - `tools/decodegen.py`: generates decoder metadata JSON.
 - `tools/encodegen.py`: generates encoder metadata JSON and canonicalization inputs.
-- `tools/gen_sleigh.py`: emits a starter SLEIGH file.
+- `tools/gen_sleigh.py`: emits the Ghidra SLEIGH specification from the
+  allocation result and the instruction `pcode` semantic bodies.
 - `tools/alloc_z3.py`: validates allocator inputs, checks semantic/spec
   alignment, generates operand-field layouts from semantic operands, and uses
   Z3 to choose between one-word primary encodings and generated extended-opcode
@@ -30,37 +31,34 @@ This directory is the declarative source of truth for the evolving ISA.
 
 ## Common Commands
 
-Run these from the repository root:
+Common Make targets:
 
 ```sh
-PYTHONDONTWRITEBYTECODE=1 python3 isa/tools/validate.py isa/spec
-PYTHONDONTWRITEBYTECODE=1 python3 isa/tools/alloc_z3.py isa/spec -o build/generated/allocation_plan.json --md-output build/generated/opcode_table.md
-PYTHONDONTWRITEBYTECODE=1 python3 isa/tools/gen_instruction_tables.py isa/spec --allocation build/generated/allocation_plan.json -o build/generated/instruction_encoding_table.md
-PYTHONDONTWRITEBYTECODE=1 python3 isa/tools/gen_instruction_specs.py isa/spec --allocation build/generated/allocation_plan.json -o build/generated/instruction_specs.md
-PYTHONDONTWRITEBYTECODE=1 python3 isa/tools/gen_tables.py isa/spec --allocation build/generated/allocation_plan.json -o build/generated/opcode_map.md
-PYTHONDONTWRITEBYTECODE=1 python3 isa/tools/decodegen.py isa/spec --allocation build/generated/allocation_plan.json -o build/generated/decoder_table.json
-PYTHONDONTWRITEBYTECODE=1 python3 isa/tools/encodegen.py isa/spec --allocation build/generated/allocation_plan.json -o build/generated/encoder_table.json
-PYTHONDONTWRITEBYTECODE=1 python3 isa/tools/gen_sleigh.py isa/spec --allocation build/generated/allocation_plan.json -o build/generated/isa.slaspec
+make -C isa validate
+make -C isa allocation
+make -C isa opcode-map
+make -C isa sleigh
+make -C isa asm-disasm-smoke
+make -C isa decode-sv
 ```
 
-The LaTeX manual can be built from the repository root:
+The same targets can be run from this directory without `-C isa`.
+
+The LaTeX manual can be built through the ISA Makefile:
 
 ```sh
-make manual-pdf
-make manual-pdf PDF_PASSES=2
-make manual-pdf-final
+make -C isa manual-pdf
+make -C isa manual-pdf-final
 ```
 
-`manual-pdf` defaults to one `pdflatex` pass for quick iteration. Use
-`PDF_PASSES=2` or `manual-pdf-final` when the table of contents, list of
-figures, or list of tables needs a second pass.
+Use `manual-pdf-final` when the table of contents, list of figures, or list of
+tables needs a forced rebuild.
 
 The reference ABI is generated separately from `spec/abi.yaml`:
 
 ```sh
-make abi-pdf
-make abi-pdf PDF_PASSES=2
-make abi-pdf-final
+make -C isa abi-pdf
+make -C isa abi-pdf-final
 ```
 
 Validation runs before generation so generated artifacts are never emitted from

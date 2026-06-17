@@ -23,8 +23,10 @@ from gen_instruction_tables import (
     field_layout_text,
     operand_types_text,
     syntax_text,
+    set_active_spec as set_instruction_table_spec,
 )
 from isa_spec import load_and_validate, print_result
+from spec_model.encoding import fflag_meanings as spec_fflag_meanings, fflag_names as spec_fflag_names
 
 
 FAMILY_SECTIONS = ("compact_primary", "integer", "system", "fpu")
@@ -52,13 +54,19 @@ FRONT_MATTER_KEYS = (
     "traps",
     "privilege",
 )
-FFLAG_MEANINGS = {
-    "NV": "invalid operation",
-    "DZ": "division by zero",
-    "OF": "overflow",
-    "UF": "underflow",
-    "NX": "inexact",
-}
+ACTIVE_SPEC: dict[str, Any] | None = None
+
+
+def set_active_spec(spec: dict[str, Any]) -> None:
+    global ACTIVE_SPEC
+    ACTIVE_SPEC = spec
+    set_instruction_table_spec(spec)
+
+
+def active_spec() -> dict[str, Any]:
+    if ACTIVE_SPEC is None:
+        raise RuntimeError("active ISA spec is not set")
+    return ACTIVE_SPEC
 
 
 def md(text: Any) -> str:
@@ -73,18 +81,20 @@ def markdown_value(key: str, value: Any) -> str:
 
 def fp_flags_markdown(value: Any) -> str:
     if isinstance(value, dict):
+        if "description" in value:
+            return str(value["description"])
         if "update" in value:
-            return "may update " + fflags_list_text(value["update"])
+            return "update: " + fflags_list_text(value["update"])
         if "update_when_required" in value:
-            return "may update " + fflags_list_text(value["update_when_required"]) + " when the operation signals a floating-point exception"
+            return "update when required: " + fflags_list_text(value["update_when_required"])
         if value.get("unchanged") is True:
             return "FFLAGS unchanged"
     if isinstance(value, str) and value == "unchanged":
         return "FFLAGS unchanged"
     if isinstance(value, str) and value == "update_FFLAGS":
-        return "may update " + fflags_list_text(FFLAG_MEANINGS)
+        return "update: " + fflags_list_text(spec_fflag_names(active_spec()))
     if isinstance(value, str) and value == "update_when_conversion_or_compare_requires":
-        return "may update " + fflags_list_text(FFLAG_MEANINGS) + " when the conversion or comparison signals a floating-point exception"
+        return "update when required: " + fflags_list_text(spec_fflag_names(active_spec()))
     return str(value)
 
 
@@ -95,7 +105,8 @@ def fflags_list_text(flags: Any) -> str:
         names = [flags]
     else:
         names = [str(flag) for flag in flags]
-    return ", ".join(f"FFLAGS.{name} ({FFLAG_MEANINGS.get(name, name)})" for name in names)
+    meanings = spec_fflag_meanings(active_spec())
+    return ", ".join(f"FFLAGS.{name} ({meanings.get(name, name)})" for name in names)
 
 
 def anchor(text: str) -> str:
@@ -203,8 +214,8 @@ def operation_records(spec: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
     return by_mnemonic
 
 
-def aliases_by_mnemonic(spec: dict[str, Any], items: list[dict[str, Any]]) -> dict[str, list[str]]:
-    out: dict[str, list[str]] = {}
+def aliases_by_mnemonic(spec: dict[str, Any], items: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
+    out: dict[str, list[dict[str, Any]]] = {}
     instructions = spec.get("instructions") or {}
     for alias in instructions.get("canonical_aliases", []) or []:
         if not isinstance(alias, dict):
@@ -212,21 +223,57 @@ def aliases_by_mnemonic(spec: dict[str, Any], items: list[dict[str, Any]]) -> di
         alias_name = str(alias.get("alias", ""))
         target = str(alias.get("target", ""))
         condition = str(alias.get("condition", ""))
-        text = f"canonical alias of `{target}` when condition `{condition}`"
-        if alias.get("canonical_disassembly"):
-            text += f"; disassembles as `{alias['canonical_disassembly']}`"
-        out.setdefault(alias_name, []).append(text)
+        row = {
+            "kind": "canonical_alias",
+            "alias": alias_name,
+            "target": target,
+            "condition": condition,
+            "canonical_disassembly": alias.get("canonical_disassembly", ""),
+        }
+        out.setdefault(alias_name, []).append(row)
         if target:
-            out.setdefault(target, []).append(f"`{alias_name}` is the canonical spelling for condition `{condition}`")
+            out.setdefault(target, []).append(row)
     for item in items:
         if "alias_of" not in item:
             continue
         mnemonic = str(item.get("mnemonic", ""))
-        text = f"allocated alias of `{item['alias_of']}`"
-        if item.get("alias_condition"):
-            text += f" when condition `{item['alias_condition']}`"
-        out.setdefault(mnemonic, []).append(text)
+        out.setdefault(mnemonic, []).append(
+            {
+                "kind": "allocated_alias",
+                "alias": mnemonic,
+                "target": item.get("alias_of", ""),
+                "condition": item.get("alias_condition", ""),
+                "canonical_disassembly": "",
+            }
+        )
     return out
+
+
+def render_alias_table(aliases: list[dict[str, Any]]) -> list[str]:
+    if not aliases:
+        return []
+    rows = [
+        "| Kind | Alias | Target | Condition | Canonical Disassembly |",
+        "| --- | --- | --- | --- | --- |",
+    ]
+    seen: set[tuple[str, str, str, str, str]] = set()
+    for alias in aliases:
+        key = (
+            str(alias.get("kind", "")),
+            str(alias.get("alias", "")),
+            str(alias.get("target", "")),
+            str(alias.get("condition", "")),
+            str(alias.get("canonical_disassembly", "")),
+        )
+        if key in seen:
+            continue
+        seen.add(key)
+        rows.append(
+            f"| `{md(alias.get('kind', ''))}` | `{md(alias.get('alias', ''))}` | "
+            f"`{md(alias.get('target', ''))}` | `{md(alias.get('condition', ''))}` | "
+            f"`{md(alias.get('canonical_disassembly', ''))}` |"
+        )
+    return rows
 
 
 def compact_yaml(value: Any) -> str:
@@ -323,13 +370,13 @@ def render_instruction(
     records: list[dict[str, Any]],
     operations: list[dict[str, Any]],
     items: list[dict[str, Any]],
-    aliases: list[str],
+    aliases: list[dict[str, Any]],
     lengths: dict[tuple[str, str], tuple[int, int]],
 ) -> str:
     lines = [f"## {mnemonic}", ""]
     if aliases:
         lines.append("Aliases:")
-        lines.extend(f"- {text}" for text in sorted(set(aliases)))
+        lines.extend(render_alias_table(aliases))
         lines.append("")
     lines.extend(render_operation_records(operations))
     if records:
@@ -357,6 +404,7 @@ def render_instruction(
 
 
 def render(plan: dict[str, Any], spec: dict[str, Any], lengths: dict[tuple[str, str], tuple[int, int]]) -> str:
+    set_active_spec(spec)
     items = allocation_items(plan)
     items_by_mnemonic: dict[str, list[dict[str, Any]]] = {}
     for item in items:

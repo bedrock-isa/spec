@@ -19,24 +19,19 @@ A REPG group is discovered entirely from the architectural instruction stream.
 When a REPG prefix is seen, instruction interpretation follows the explicit word
 0 length fields of subsequent instruction records in the same naturally aligned
 64-byte grouping window until it reaches an instruction carrying ENDG. ENDG may
-appear on the same instruction as REPG, which forms a one-instruction group. The
-group is illegal if ENDG is not found before the grouping window ends, if ENDG
-appears without an active REPG group, or if another repeat prefix is nested
-inside the group.
+appear on the same instruction as REPG, which forms a one-instruction group. A
+well-formed REPG group has exactly one active REPG start marker, exactly one ENDG
+terminator, and no nested repeat prefix inside the group.
 
 \paragraph{Fast-Contract Source Form.}
 \texttt{REPGF} is a source-level assertion that uses the same architectural
 encoding as \texttt{REPG}. It does not allocate a second prefix byte and does
-not force a particular implementation strategy. Instead, it asks the assembler
-to reject the group unless the source satisfies the REPG-fast eligibility rules
-that can be checked statically. The assembler checks the grouped instruction
-classes, rejects nested repeat forms, rejects control or state-changing
-operations, and still enforces the grouping-window containment rule for both
-\texttt{REPG} and \texttt{REPGF}. \texttt{REPGF} additionally rejects writes to
-the selected counter register and rejects PC-relative addressing forms. Runtime
-properties such as ordinary
-mapped memory remain architectural preconditions of the fast class rather than
-extra encoded bits.
+not force a particular implementation strategy. It marks the group as a
+REPG-fast candidate: the selected counter register is outside the group writes,
+the effective addresses are regular, and the group avoids control, state, and
+nested-repeat operations. Runtime properties such as ordinary mapped memory
+remain architectural preconditions of the fast class rather than extra encoded
+bits.
 
 \paragraph{Grouping Window.}
 The complete byte range occupied by the grouped instructions must fit within the
@@ -76,9 +71,7 @@ proceeds through the rest of the group.
 A REPG group is intended to be straight-line code. Branches, calls, returns,
 traps, system-call returns, interrupt returns, atomics, stack operations,
 nested repeat prefixes, and state-mutating system, TLB, cache, or fence
-operations are not eligible for the base REPG form. These are base legality
-constraints, so an assembler rejects them for both \texttt{REPG} and
-\texttt{REPGF}.
+operations are outside the REPG group model.
 
 REPG optimization is divided into REPG-fast and REPG-general. REPG-fast
 identifies groups that are suitable for internal SIMD or streaming recognition.

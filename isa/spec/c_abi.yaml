@@ -261,7 +261,7 @@ calling_convention:
         - A3
         - A4
         - A5
-      argument_copy_stack_fallback: stack slot contains the copy address
+      argument_copy_stack_default: stack slot contains the copy address
       c_return: caller-allocated return buffer
       conditional_sret_buffer_argument_register: A5
       return_buffer_alignment: 16

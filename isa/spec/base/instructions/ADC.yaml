@@ -1,0 +1,50 @@
+mnemonic: ADC
+doc:
+  title: Add With Carry
+  summary: Performs the add with carry operation.
+  description: Performs the add with carry operation.
+  instruction_family: integer_alu
+  instruction_class: integer
+behavior:
+  group: integer_carry_alu
+  inputs:
+  - src
+  input_output: dst
+  operation:
+  - carry_v = CF;
+  - tmp_v = dst_v + src_v;
+  - result_v = tmp_v + carry_v;
+  - dst_v = result_v;
+  - ZF = result_v == 0;
+  - NF = result_v s< 0;
+  - CF = carry(dst_old_v, src_v) || carry(tmp_v, carry_v);
+  - VF = scarry(dst_old_v, src_v) || scarry(tmp_v, carry_v);
+attributes:
+  repeatable: true
+  prefix_availability:
+  - SATURATE
+  flags:
+    Z: result == 0
+    N: most_significant_bit(result)
+    C: unsigned carry out
+    V: signed overflow
+allocation:
+  catalog_section: integer
+  layout_group: ADC_SBB
+forms:
+  operands:
+  - - name: src
+      type: EA
+    - name: dst
+      type: DREG
+  - - name: src
+      type: DREG
+    - name: dst
+      type: EA
+  - - name: imm
+      type: IMM_EA
+    - name: dst
+      type: EA
+  size: BWLQ
+  compact: false
+  reads: C

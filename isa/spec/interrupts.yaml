@@ -1,0 +1,4 @@
+version: draft-v1
+
+include:
+  - base/interrupts.yaml

@@ -1,0 +1,88 @@
+mnemonic: PUSHM
+doc:
+  title: Push Multiple
+  summary: Push selected D0-D7 then A0-A7 registers according to bitmap order.
+  description: Push selected D0-D7 then A0-A7 registers according to bitmap order.
+  instruction_family: data_movement
+  instruction_class: data_movement
+behavior:
+  group: stack
+  inputs:
+  - regs
+  output: none
+  operation:
+  - if ((regs_v & 0x0001) == 0) goto <pushm_d0_done>;
+  - SP = SP - 8;
+  - '*:8 SP = D0;'
+  - <pushm_d0_done>
+  - if ((regs_v & 0x0002) == 0) goto <pushm_d1_done>;
+  - SP = SP - 8;
+  - '*:8 SP = D1;'
+  - <pushm_d1_done>
+  - if ((regs_v & 0x0004) == 0) goto <pushm_d2_done>;
+  - SP = SP - 8;
+  - '*:8 SP = D2;'
+  - <pushm_d2_done>
+  - if ((regs_v & 0x0008) == 0) goto <pushm_d3_done>;
+  - SP = SP - 8;
+  - '*:8 SP = D3;'
+  - <pushm_d3_done>
+  - if ((regs_v & 0x0010) == 0) goto <pushm_d4_done>;
+  - SP = SP - 8;
+  - '*:8 SP = D4;'
+  - <pushm_d4_done>
+  - if ((regs_v & 0x0020) == 0) goto <pushm_d5_done>;
+  - SP = SP - 8;
+  - '*:8 SP = D5;'
+  - <pushm_d5_done>
+  - if ((regs_v & 0x0040) == 0) goto <pushm_d6_done>;
+  - SP = SP - 8;
+  - '*:8 SP = D6;'
+  - <pushm_d6_done>
+  - if ((regs_v & 0x0080) == 0) goto <pushm_d7_done>;
+  - SP = SP - 8;
+  - '*:8 SP = D7;'
+  - <pushm_d7_done>
+  - if ((regs_v & 0x0100) == 0) goto <pushm_a0_done>;
+  - SP = SP - 8;
+  - '*:8 SP = A0;'
+  - <pushm_a0_done>
+  - if ((regs_v & 0x0200) == 0) goto <pushm_a1_done>;
+  - SP = SP - 8;
+  - '*:8 SP = A1;'
+  - <pushm_a1_done>
+  - if ((regs_v & 0x0400) == 0) goto <pushm_a2_done>;
+  - SP = SP - 8;
+  - '*:8 SP = A2;'
+  - <pushm_a2_done>
+  - if ((regs_v & 0x0800) == 0) goto <pushm_a3_done>;
+  - SP = SP - 8;
+  - '*:8 SP = A3;'
+  - <pushm_a3_done>
+  - if ((regs_v & 0x1000) == 0) goto <pushm_a4_done>;
+  - SP = SP - 8;
+  - '*:8 SP = A4;'
+  - <pushm_a4_done>
+  - if ((regs_v & 0x2000) == 0) goto <pushm_a5_done>;
+  - SP = SP - 8;
+  - '*:8 SP = A5;'
+  - <pushm_a5_done>
+  - if ((regs_v & 0x4000) == 0) goto <pushm_a6_done>;
+  - SP = SP - 8;
+  - '*:8 SP = A6;'
+  - <pushm_a6_done>
+  - if ((regs_v & 0x8000) == 0) goto <pushm_a7_done>;
+  - SP = SP - 8;
+  - '*:8 SP = A7;'
+  - <pushm_a7_done>
+allocation:
+  catalog_section: compact_primary
+  layout_group: PUSHM_POPM
+forms:
+  operands:
+  - name: regs
+    type: bitmap16
+  bitmap:
+    bits_0_7: D0-D7
+    bits_8_15: A0-A7
+  size_per_register: Q

@@ -1,0 +1,43 @@
+mnemonic: EXTZW
+doc:
+  title: Zero Extend To Word
+  summary: Performs the zero extend to word operation.
+  description: Performs the zero extend to word operation.
+  instruction_family: integer_unary
+  instruction_class: integer
+behavior:
+  group: integer_extend
+  inputs: [src]
+  output: dst
+  operation:
+  - dst_v = 0;
+  - result_v = 0;
+  - tmp_v = size_v;
+  - <zero_extend_mask_loop>
+  - if (tmp_v == 0) goto <zero_extend_mask_done>;
+  - result_v = result_v << 8;
+  - result_v = result_v | 0xff;
+  - tmp_v = tmp_v - 1;
+  - goto <zero_extend_mask_loop>;
+  - <zero_extend_mask_done>
+  - dst_v = src_v & result_v;
+  destination_size: W
+attributes:
+  repeatable: true
+  streaming_candidate: true
+allocation:
+  catalog_section: integer
+  layout_group: EXTEND_TO_W_ZERO
+forms:
+  operands:
+  - - name: src
+      type: EA
+    - name: dst
+      type: EA
+  source_size:
+  - B
+  compact: false
+  memory_memory: true
+  access_width:
+    src: source_size
+    dst: destination_size

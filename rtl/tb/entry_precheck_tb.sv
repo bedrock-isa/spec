@@ -113,23 +113,23 @@ module entry_precheck_tb;
 
     // ADD.D_TO_D with REPG D0 and ENDG on the same instruction.
     set_line_word(4, 16'h9080);
-    set_line_word(5, 16'h6860);
+    set_line_word(5, 16'h7870);
     expect_entry(4, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b0, 1'b1, 1'b0);
 
     // CPUID is a REPG-general state query, but not a REPcc operation.
     set_line_word(6, 16'haf63);
-    set_line_word(7, 16'h0060);
-    set_line_word(8, 16'h001b);
+    set_line_word(7, 16'h0070);
+    set_line_word(8, 16'h0038);
     expect_entry(6, 1'b1, 1'b1, 1'b0, 1'b0, 1'b1, 1'b0, 1'b0, 1'b1, 1'b0);
 
     set_line_word(9, 16'haf63);
     set_line_word(10, 16'h0080);
-    set_line_word(11, 16'h001b);
+    set_line_word(11, 16'h0038);
     expect_entry(9, 1'b1, 1'b1, 1'b0, 1'b0, 1'b1, 1'b0, 1'b0, 1'b0, 1'b1);
 
     // Stack operations are excluded from REPG.
     set_line_word(12, 16'h9008);
-    set_line_word(13, 16'h0060);
+    set_line_word(13, 16'h0070);
     expect_entry(12, 1'b1, 1'b1, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b1);
 
     if (failures != 0) begin

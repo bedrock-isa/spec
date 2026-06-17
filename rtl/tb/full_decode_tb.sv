@@ -24,6 +24,7 @@ module full_decode_tb;
   logic saturate;
   logic nontemporal;
   bedrock_update_mode_e update_mode;
+  bedrock_access_mode_e access_mode;
   bedrock_repeat_kind_e repeat_kind;
   logic [3:0] repeat_condition;
   logic [2:0] repeat_counter;
@@ -80,6 +81,7 @@ module full_decode_tb;
     .saturate_o(saturate),
     .nontemporal_o(nontemporal),
     .update_mode_o(update_mode),
+    .access_mode_o(access_mode),
     .repeat_kind_o(repeat_kind),
     .repeat_condition_o(repeat_condition),
     .repeat_counter_o(repeat_counter),
@@ -223,7 +225,7 @@ module full_decode_tb;
 
     // Extended MOV.L D1,[A0 + disp16] has two EA operands and one EA payload word.
     clear_words();
-    set_word(0, 16'h2f47);
+    set_word(0, 16'h2f48);
     set_word(1, 16'h6601);
     set_word(2, 16'h0020);
     #1;

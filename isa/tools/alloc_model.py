@@ -12,7 +12,6 @@ EXTENDED_SPACE_ID = "EXTENDED_OPCODE_WORD"
 EXTENDED_BITS = 16
 EXTENDED_SLOTS = 1 << EXTENDED_BITS
 PRIMARY_EXTENSION_HEADROOM_SLOTS = 64
-F_REGISTER_BITS = 5
 HIGH_PRIMARY_PAYLOAD_START = PRIMARY_SLOTS * 7 // 8
 
 SEMANTIC_SECTIONS = (
@@ -20,28 +19,6 @@ SEMANTIC_SECTIONS = (
     ("atomic_system_cache_instructions", "system", 55),
     ("fpu.instructions", "fpu", 45),
 )
-
-TRANSCENDENTAL_FPU = {
-    "FSIN",
-    "FCOS",
-    "FSINCOS",
-    "FTAN",
-    "FASIN",
-    "FACOS",
-    "FATAN",
-    "FSINH",
-    "FCOSH",
-    "FTANH",
-    "FATANH",
-    "FLOGN",
-    "FLOGNP1",
-    "FLOG2",
-    "FLOG10",
-    "FETOX",
-    "FETOXM1",
-    "FTWOTOX",
-    "FTENTOX",
-}
 
 DEFAULT_COMPACT_EXCLUDE = (
     "FPU",
@@ -67,47 +44,6 @@ DEFAULT_COMPACT_PREFER = (
     "YIELD",
     "fences",
 )
-
-CORE_CONTROL_COMPACT_MNEMONICS = {
-    "RESET",
-    "SYSRET",
-    "IRET",
-    "NOP",
-    "SYSCALL",
-    "BKPT",
-    "WAIT",
-    "YIELD",
-    "RFENCE",
-    "WFENCE",
-    "AFENCE",
-}
-
-CACHE_MANAGEMENT_MNEMONICS = {
-    "PREFETCH",
-    "INVDCACHE",
-    "INVICACHE",
-    "FLSHDCACHE",
-    "WRBKDCACHE",
-    "SYNCCACHE",
-}
-
-TLB_MANAGEMENT_MNEMONICS = {
-    "SWPT",
-    "SWPTA",
-    "VTOP",
-    "PTATTR",
-    "PTQUERY",
-    "INVTLB",
-    "INVPAGE",
-    "INVASID",
-}
-
-FENCE_MNEMONICS = {"RFENCE", "WFENCE", "AFENCE"}
-
-INTEGER_MINMAX_MNEMONICS = {"MINU", "MINS", "MAXU", "MAXS"}
-INTEGER_MINMAX_ORDER = ("MINU", "MINS", "MAXU", "MAXS")
-INTEGER_MUL_DIV_COMPACT_MNEMONICS = {"MULU", "MULS", "DIVU", "DIVS", "MODU", "MODS"}
-INTEGER_MUL_DIV_COMPACT_ORDER = ("MULU", "MULS", "DIVU", "DIVS", "MODU", "MODS")
 
 EXTENSION_FAMILY_RANK = {
     "integer_alu": 0,

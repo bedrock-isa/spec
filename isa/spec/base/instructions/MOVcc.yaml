@@ -1,0 +1,55 @@
+mnemonic: MOVcc
+doc:
+  title: Move Conditional
+  summary: Performs the move conditional operation.
+  description: Performs the move conditional operation.
+  instruction_family: control_flow
+  instruction_class: control_flow
+behavior:
+  group: control_flow
+  inputs:
+  - cc
+  - src
+  output: dst
+  operation:
+  - if (cc_v == 0) goto <movcc_done>;
+  - dst_v = src_v;
+  - <movcc_done>
+  long_transfer_operands: LJMP/LCALL take the new CS image from Dn and the target PC value/address from EA
+  atomic_cs_pc_commit:
+  - LJMP
+  - LCALL
+  - LRET
+  - SYSRET
+  - IRET
+allocation:
+  catalog_section: compact_primary
+forms:
+  operands:
+  - - name: cc
+      type: condition
+    - name: src
+      type: DREG
+    - name: dst
+      type: EA
+  - - name: cc
+      type: condition
+    - name: src
+      type: EA
+    - name: dst
+      type: DREG
+  - - name: cc
+      type: condition
+    - name: src
+      type: AREG
+    - name: dst
+      type: EA
+  - - name: cc
+      type: condition
+    - name: src
+      type: EA
+    - name: dst
+      type: AREG
+  D_size: BWLQ
+  A_size: Q_only
+  reads: FLAGS

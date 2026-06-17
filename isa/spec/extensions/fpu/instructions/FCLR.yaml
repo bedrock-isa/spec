@@ -1,0 +1,24 @@
+mnemonic: FCLR
+doc:
+  title: Floating-Point Clear
+  summary: Performs the floating-point clear operation.
+  description: Performs the floating-point clear operation.
+  instruction_family: fpu
+  instruction_class: fpu
+behavior:
+  group: fpu_move_compare
+  output: dst
+  operation:
+  - dst_v = 0;
+attributes:
+  repeatable: true
+  fp_flags: unchanged
+allocation:
+  catalog_section: fpu
+forms:
+  operands:
+  - - name: dst
+      type: FREG
+  - - name: dst
+      type: EA
+  result: '+0.0'

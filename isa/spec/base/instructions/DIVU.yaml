@@ -1,0 +1,45 @@
+mnemonic: DIVU
+doc:
+  title: Unsigned Divide
+  summary: Performs the unsigned divide operation.
+  description: Performs the unsigned divide operation.
+  instruction_family: integer_mul_div
+  instruction_class: integer
+behavior:
+  group: multiply_divide
+  inputs:
+  - src
+  input_output: dst
+  operation:
+  - tmp_v = size_v;
+  - carry_v = 0;
+  - <divu_mask_loop>
+  - if (tmp_v == 0) goto <divu_mask_done>;
+  - carry_v = (carry_v << 8) | 0xff;
+  - tmp_v = tmp_v - 1;
+  - goto <divu_mask_loop>;
+  - <divu_mask_done>
+  - local lhs_v:8 = dst_v & carry_v;
+  - local rhs_v:8 = src_v & carry_v;
+  - if (rhs_v != 0) goto <divu_execute>;
+  - arch_raise_divide_by_zero();
+  - goto <div_done>;
+  - <divu_execute>
+  - dst_v = lhs_v / rhs_v;
+  - <div_done>
+attributes:
+  repeatable: true
+allocation:
+  catalog_section: integer
+  layout_group: DIVIDE_MOD
+forms:
+  operands:
+  - - name: src
+      type: EA
+    - name: dst
+      type: DREG
+  - - name: src
+      type: DREG
+    - name: dst
+      type: EA
+  size: BWLQ

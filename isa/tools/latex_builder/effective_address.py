@@ -4,41 +4,12 @@ from __future__ import annotations
 
 from typing import Any
 
-from .common import readable_text, tex_code, tex_escape
+from .common import compact_text, readable_text, render_latex_template, tex_code, tex_escape
 from .diagrams import bit_diagram, bit_field_figure, bit_index_labels
 
 
 def is_immediate_form(form: dict[str, Any]) -> bool:
     return form.get("class") == "immediate" or str(form.get("name", "")).startswith("IMM")
-
-
-def compact_ea_figure() -> str:
-    return bit_field_figure(
-        [("mode", 3), ("register/form", 3)],
-        "Figure 2-1. Compact Effective-Address Field",
-        "EA[5:0]",
-        6,
-        bit_index_labels(6, [5, 2, 0]),
-        listed=True,
-    )
-
-
-def compact_ea_form_map_figure() -> str:
-    return bit_diagram(
-        ["000ddd", "001aaa", "010aaa", "011aaa", "100aaa", "101xxx", "110xxx", "111110", "111111"],
-        "Figure 2-2. Compact EA Form Map",
-        ["DREG", "AREG", "[A]", "[A + disp16]", "[A + disp32]", "PC/SP", "ABS/IMM", "S32 XEA", "XEA"],
-        listed=True,
-    )
-
-
-def compact_ea_sequence_figure() -> str:
-    return bit_diagram(
-        ["mmmmrr", "pppppppppppppppp", "pppppppppppppppp"],
-        "Figure 2-3. Compact EA Payload Sequence",
-        ["EA field", "optional word 1", "optional word 2"],
-        listed=True,
-    )
 
 
 def extended_ea_descriptor_layout(spec: dict[str, Any]) -> list[tuple[str, int]]:
@@ -118,50 +89,34 @@ def ea_table(spec: dict[str, Any]) -> str:
     ea_forms = spec.get("ea", {}).get("ea_forms", []) or []
     compact = ea_forms.get("compact", []) if isinstance(ea_forms, dict) else ea_forms
     for form in compact:
-        compact_entries.append((form, str(form.get("pattern", ""))))
+        compact_entries.append((ea_manual_entry(spec, form), str(form.get("pattern", ""))))
     for form in spec.get("ea", {}).get("extended_ea_forms", []) or []:
-        entry = dict(form)
+        entry = ea_manual_entry(spec, form)
         escape = str(form.get("escape", "EXTENDED"))
         extended_entries.append((entry, f"{escape} mode=0x{int(form.get('value', 0)):x}"))
-    intro = (
-        "Effective-address operands are encoded through a compact six-bit EA field. Most instructions that accept EA "
-        "therefore share the same operand sublayout, which keeps register and memory forms visually regular. "
-        "The high three bits select the addressing family and the low three bits normally carry the register number or a small form selector. "
-        "Forms that need displacement, absolute address, immediate data, or an extended descriptor append payload words after the instruction word."
+    return render_latex_template(
+        "effective_address_modes.tex",
+        {
+            "COMPACT_ADDRESSING_BLOCKS": ea_addressing_blocks(compact_entries, extended=False),
+            "EXTENDED_EA_SEQUENCE": extended_ea_sequence_figure(spec),
+            "EXTENDED_EA_DESCRIPTOR": extended_ea_figure(spec),
+            "EXTENDED_EA_INDEXED_EXTRA": extended_ea_indexed_extra_figure(spec),
+            "EXTENDED_ADDRESSING_BLOCKS": ea_addressing_blocks(extended_entries, extended=True),
+        },
     )
-    return "\n".join(
-        [
-            intro,
-            compact_ea_figure(),
-            compact_ea_form_map_figure(),
-            "Compact EA forms keep the register selector in EA[2:0] whenever the form is register-based. "
-            "The PC/SP, absolute, and immediate groups reuse those low bits as form selectors. "
-            "The S32 XEA and XEA compact forms are escapes to the descriptor shown below.",
-            compact_ea_sequence_figure(),
-            r"\subsection{Compact EA Addressing Modes}",
-            ea_addressing_blocks(compact_entries, extended=False),
-            r"\subsection{Extended EA Descriptor}",
-            r"\Needspace{2.8in}",
-            extended_ea_sequence_figure(spec),
-            extended_ea_figure(spec),
-            "The compact XEA form uses the six-bit value 111111; the S32 XEA form uses 111110 and selects the same descriptor layout with signed 32-bit index extension. "
-            "Each escape is followed by a 16-bit descriptor. The descriptor mode field selects the extended EA form. Segment-selectable forms use the segment field to select "
-            "a concrete segment register. When assembly syntax omits the segment on a segment-selectable A-indexed form, the assembler encodes DS; the processor does not decode a separate default-segment value. "
-            "Fixed-segment forms reserve that field and use their architectural segment. "
-            "The three-bit segment field uses the SREG selector order: CS, DS, SS, and GS0 through GS4. "
-            "The extra field carries mode-specific register, index, scale, or selector bits. "
-            "Displacements and absolute addresses remain in following payload words instead of being split across opcode fields. "
-            "Segment-qualified memory addresses pass through segmentation first when the selected segment is enabled, and then through paging.",
-            extended_ea_indexed_extra_figure(spec),
-            "For indexed extended EA forms, the extra field is interpreted as a compact base/index/scale descriptor. "
-            "The S32 XEA escape uses the same descriptor fields, but sign-extends the low 32 bits of the D-index register before scaling. "
-            "Assembly syntax for indexed EA forms always writes the scale term explicitly, including the scale-one case; "
-            r"\texttt{[A0 + D1 * 1]} is valid, while \texttt{[A0 + D1]} is not an indexed-EA spelling. "
-            "Other extended modes use the same descriptor word but assign the low bits to the fields needed by that mode.",
-            r"\subsection{Extended EA Addressing Modes}",
-            ea_addressing_blocks(extended_entries, extended=True),
-        ]
-    )
+
+
+def ea_manual_entry(spec: dict[str, Any], form: dict[str, Any]) -> dict[str, Any]:
+    entry = dict(form)
+    manual = (spec.get("ea", {}).get("manual_text") or {}) if isinstance(spec.get("ea"), dict) else {}
+    descriptions = manual.get("form_descriptions", {}) if isinstance(manual, dict) else {}
+    payloads = manual.get("payload_descriptions", {}) if isinstance(manual, dict) else {}
+    name = str(form.get("name", ""))
+    if isinstance(descriptions, dict) and name in descriptions:
+        entry["description"] = descriptions[name]
+    if isinstance(payloads, dict) and name in payloads:
+        entry["payload_description"] = payloads[name]
+    return entry
 
 
 def ea_row(form: dict[str, Any], encoding: str) -> list[str]:
@@ -330,23 +285,10 @@ def ea_generation_text(form: dict[str, Any], extended: bool) -> str:
 
 
 def ea_payload_text(form: dict[str, Any], extended: bool) -> str:
-    words = extended_ea_words(form) if extended else ea_extra_words(form)
-    if form.get("name") == "EXTENDED":
-        return "one descriptor word, followed by mode-specific payload words"
-    disp = displacement_token(form.get("displacement", ""))
-    if disp:
-        return f"{words} word(s), carrying {disp}"
-    if form.get("absolute"):
-        return f"{words} word(s), carrying absolute address"
-    if form.get("index") and extended:
-        if words == "+0":
-            return "no displacement payload; base/index/scale are in descriptor extra bits"
-        return f"{words} displacement word(s); base/index/scale are in descriptor extra bits"
-    if extended:
-        if words == "+0":
-            return "no displacement payload; descriptor carries segment and extra fields"
-        return f"{words} displacement word(s); descriptor carries segment and extra fields"
-    return f"{words} extension word(s)"
+    description = compact_text(form.get("payload_description", ""))
+    if not description:
+        raise ValueError(f"ea.yaml manual_text.payload_descriptions must define {form.get('name', '<unknown>')}")
+    return description
 
 
 def register_value_text(register_class: Any) -> str:
@@ -359,51 +301,10 @@ def register_value_text(register_class: Any) -> str:
 
 
 def ea_form_description(form: dict[str, Any], extended: bool) -> str:
-    name = str(form.get("name", ""))
-    if form.get("register_class") == "D":
-        return "This is a direct register operand. The low three EA bits select a data register, and the instruction uses that register value without a memory access."
-    if form.get("register_class") == "A":
-        return "This is a direct register operand. The low three EA bits select an address register, and the instruction uses that register value without a memory access."
-    if form.get("register_class") == "SP":
-        return "This is a direct register operand. The EA code selects the stack pointer, and the instruction uses SP without a memory access."
-    if is_immediate_form(form):
-        return "The operand value is taken from following payload words. The compact EA code selects the immediate payload width; narrower immediates are sign-extended to the instruction operand size."
-    if name in {"EXTENDED", "S32_INDEXED_EXTENDED"}:
-        return "The compact EA field escapes to the extended descriptor. The descriptor chooses a segment-aware or indexed addressing form."
-    if form.get("absolute"):
-        prefix = "The operand address is supplied by following payload words."
-        if form.get("segment_selectable"):
-            prefix += " The selected segment may pre-translate the absolute address before paging."
-        return prefix
-    if form.get("index"):
-        base = form.get("base", "base register")
-        base_text = {
-            "A": "an address register",
-            "SP": "the stack pointer",
-            "PC": "the program counter",
-        }.get(str(base), str(base))
-        index_text = "a scaled sign-extended 32-bit data-register index" if form.get("index_extension") == "signed32_to_64" else "a scaled data-register index"
-        text = f"The operand address is formed from {base_text}, {index_text}, and an optional displacement."
-        if form.get("segment_selectable"):
-            default_segment = form.get("default_segment")
-            if default_segment:
-                text += f" The descriptor segment field selects a concrete segment register; omitted segment syntax is assembled as {default_segment}."
-            else:
-                text += " The descriptor segment field selects a concrete segment register."
-        elif form.get("fixed_segment"):
-            text += f" The address is interpreted through the fixed {form['fixed_segment']} segment; the descriptor segment field is reserved."
-        return text
-    base = form.get("base")
-    if base:
-        text = f"This is an indirect memory operand. The instruction first forms an effective address from {base} and the optional displacement payload, then accesses memory at that address."
-        if form.get("segment_selectable"):
-            text += " Segment pre-translation is applied when the selected segment is enabled."
-        elif form.get("fixed_segment"):
-            text += f" The address is interpreted through the fixed {form['fixed_segment']} segment."
-        if form.get("update_eligible"):
-            text += " Address-update prefixes may use this form."
-        return text
-    return "The effective-address form is selected by the encoded EA mode."
+    description = compact_text(form.get("description", ""))
+    if not description:
+        raise ValueError(f"ea.yaml manual_text.form_descriptions must define {form.get('name', '<unknown>')}")
+    return tex_escape(description)
 
 
 def ea_flow_figure(form: dict[str, Any], title: str, extended: bool) -> str:

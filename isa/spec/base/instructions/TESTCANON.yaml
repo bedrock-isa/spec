@@ -1,0 +1,26 @@
+mnemonic: TESTCANON
+doc:
+  title: Test Canonical Address
+  summary: Compute address and set V if noncanonical; do not read memory.
+  description: Compute address and set V if noncanonical; do not read memory.
+  instruction_family: ea_utility
+  instruction_class: data_movement
+behavior:
+  group: ea_utility
+  inputs: [src]
+  output: none
+  operation:
+  - ZF = src_v == 0;
+  - NF = src_v s< 0;
+  - CF = 0;
+  - VF = 0;
+attributes:
+  flags:
+    V: set when the address is noncanonical
+    ZNC: unchanged
+allocation:
+  catalog_section: compact_primary
+forms:
+  operands:
+  - name: src
+    type: EA

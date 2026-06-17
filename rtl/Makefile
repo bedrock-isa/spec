@@ -22,6 +22,9 @@ EA_DECODE_SYNTH_SRC := $(GEN_DIR)/bedrock_ea_decode_synth.sv
 ENTRY_PRECHECK_SRCS := $(COMMON_DIR)/bedrock_pkg.sv $(GEN_DIR)/bedrock_decode_pkg.sv $(GEN_DIR)/bedrock_prefix_decode_pkg.sv $(GEN_DIR)/bedrock_decode.sv $(GEN_DIR)/bedrock_prefix_decode.sv $(FRONTEND_DIR)/bedrock_line_entry_precheck.sv
 FULL_DECODE_SRCS := $(COMMON_DIR)/bedrock_pkg.sv $(GEN_DIR)/bedrock_decode_pkg.sv $(GEN_DIR)/bedrock_prefix_decode_pkg.sv $(GEN_DIR)/bedrock_ea_decode_pkg.sv $(COMMON_DIR)/bedrock_agu_pkg.sv $(GEN_DIR)/bedrock_decode.sv $(GEN_DIR)/bedrock_prefix_decode.sv $(GEN_DIR)/bedrock_ea_decode.sv $(FRONTEND_DIR)/bedrock_agu_request_build.sv $(FRONTEND_DIR)/bedrock_full_decode.sv
 AGU_SRCS := $(GEN_DIR)/bedrock_prefix_decode_pkg.sv $(GEN_DIR)/bedrock_ea_decode_pkg.sv $(COMMON_DIR)/bedrock_agu_pkg.sv $(EXECUTE_DIR)/bedrock_agu.sv
+ENTRY_PRECHECK_HAND_SRCS := $(COMMON_DIR)/bedrock_pkg.sv $(FRONTEND_DIR)/bedrock_line_entry_precheck.sv
+FULL_DECODE_HAND_SRCS := $(COMMON_DIR)/bedrock_pkg.sv $(COMMON_DIR)/bedrock_agu_pkg.sv $(FRONTEND_DIR)/bedrock_agu_request_build.sv $(FRONTEND_DIR)/bedrock_full_decode.sv
+AGU_HAND_SRCS := $(COMMON_DIR)/bedrock_agu_pkg.sv $(EXECUTE_DIR)/bedrock_agu.sv
 TB_SRCS := $(TB_DIR)/predecode_tb.sv
 DECODE_TB_SRCS := $(TB_DIR)/decode_tb.sv
 PREFIX_EA_TB_SRCS := $(TB_DIR)/prefix_ea_tb.sv
@@ -53,21 +56,22 @@ AGU_SV2V := $(YOSYS_BUILD_DIR)/bedrock_agu_sv2v.v
 
 VERILATORFLAGS ?= -sv -Wall -Wno-UNUSEDPARAM -Wno-UNUSEDSIGNAL --timing --assert
 
-.PHONY: help lint test predecode-synth core-lint decode-lint decode-test decode-synth execute-lint execute-test execute-synth clean
+.PHONY: help lint test predecode-synth core-lint decode-sv decode-lint decode-test decode-synth execute-lint execute-test execute-synth clean
 
 help:
 	@printf '%s\n' 'RTL targets:'
-	@printf '  %-10s %s\n' 'lint' 'Lint SystemVerilog RTL with Verilator.'
-	@printf '  %-10s %s\n' 'test' 'Build and run SystemVerilog testbench with Verilator.'
-	@printf '  %-10s %s\n' 'predecode-synth' 'Synthesize line predecoder with Yosys and report generic cell stats.'
-	@printf '  %-10s %s\n' 'core-lint' 'Lint baseline scalar core packages.'
-	@printf '  %-10s %s\n' 'decode-lint' 'Lint generated instruction/prefix/EA decoders with Verilator.'
-	@printf '  %-10s %s\n' 'decode-test' 'Build and run generated decoder and full-decode smoke testbenches.'
-	@printf '  %-10s %s\n' 'decode-synth' 'Synthesize generated decoders with Yosys and report generic cell stats.'
-	@printf '  %-10s %s\n' 'execute-lint' 'Lint hand-written execute-stage helper units.'
-	@printf '  %-10s %s\n' 'execute-test' 'Build and run execute-stage helper testbenches.'
-	@printf '  %-10s %s\n' 'execute-synth' 'Synthesize hand-written execute-stage helper units.'
-	@printf '  %-10s %s\n' 'clean' 'Remove RTL Verilator build artifacts.'
+	@printf '  %-16s %s\n' 'lint' 'Lint SystemVerilog RTL with Verilator.'
+	@printf '  %-16s %s\n' 'test' 'Build and run SystemVerilog testbench with Verilator.'
+	@printf '  %-16s %s\n' 'predecode-synth' 'Synthesize line predecoder with Yosys and report generic cell stats.'
+	@printf '  %-16s %s\n' 'core-lint' 'Lint baseline scalar core packages.'
+	@printf '  %-16s %s\n' 'decode-sv' 'Generate instruction/prefix/EA decoders through the ISA tooling.'
+	@printf '  %-16s %s\n' 'decode-lint' 'Lint generated instruction/prefix/EA decoders with Verilator.'
+	@printf '  %-16s %s\n' 'decode-test' 'Build and run generated decoder and full-decode smoke testbenches.'
+	@printf '  %-16s %s\n' 'decode-synth' 'Synthesize generated decoders with Yosys and report generic cell stats.'
+	@printf '  %-16s %s\n' 'execute-lint' 'Lint hand-written execute-stage helper units.'
+	@printf '  %-16s %s\n' 'execute-test' 'Build and run execute-stage helper testbenches.'
+	@printf '  %-16s %s\n' 'execute-synth' 'Synthesize hand-written execute-stage helper units.'
+	@printf '  %-16s %s\n' 'clean' 'Remove RTL Verilator build artifacts.'
 
 lint: $(RTL_SRCS)
 	$(VERILATOR) $(VERILATORFLAGS) --lint-only --top-module $(LINT_TOP) $(RTL_SRCS)
@@ -76,7 +80,10 @@ lint: $(RTL_SRCS)
 core-lint: $(DOLOMITE0_SRCS)
 	$(VERILATOR) $(VERILATORFLAGS) --lint-only $(DOLOMITE0_SRCS)
 
-decode-lint: $(DECODE_SRCS)
+decode-sv:
+	$(MAKE) -C ../isa decode-sv
+
+decode-lint: decode-sv
 	$(VERILATOR) $(VERILATORFLAGS) --lint-only --top-module bedrock_decode $(DECODE_SRCS)
 	$(VERILATOR) $(VERILATORFLAGS) --lint-only --top-module bedrock_prefix_decode $(PREFIX_DECODE_SRCS)
 	$(VERILATOR) $(VERILATORFLAGS) --lint-only --top-module bedrock_ea_decode $(EA_DECODE_SRCS)
@@ -99,47 +106,47 @@ $(PREDECODE_SYNTH_REPORT): $(RTL_SRCS)
 	@printf 'wrote %s\n' "$(PREDECODE_SYNTH_REPORT)"
 	@printf 'wrote %s\n' "$(PREDECODE_SYNTH_JSON)"
 
-decode-test: $(DECODE_SRCS) $(DECODE_TB_SRCS) $(PREFIX_DECODE_SRCS) $(EA_DECODE_SRCS) $(PREFIX_EA_TB_SRCS) $(ENTRY_PRECHECK_SRCS) $(ENTRY_PRECHECK_TB_SRCS) $(FULL_DECODE_SRCS) $(FULL_DECODE_TB_SRCS)
+decode-test: decode-sv $(DECODE_TB_SRCS) $(PREFIX_EA_TB_SRCS) $(ENTRY_PRECHECK_TB_SRCS) $(FULL_DECODE_TB_SRCS)
 	$(MAKE) test TEST_TOP=decode_tb RTL_SRCS="$(DECODE_SRCS)" TB_SRCS="$(DECODE_TB_SRCS)"
 	$(MAKE) test TEST_TOP=prefix_ea_tb RTL_SRCS="$(PREFIX_DECODE_SRCS) $(EA_DECODE_SRCS)" TB_SRCS="$(PREFIX_EA_TB_SRCS)"
 	$(MAKE) test TEST_TOP=entry_precheck_tb RTL_SRCS="$(ENTRY_PRECHECK_SRCS)" TB_SRCS="$(ENTRY_PRECHECK_TB_SRCS)"
 	$(MAKE) test TEST_TOP=full_decode_tb RTL_SRCS="$(FULL_DECODE_SRCS)" TB_SRCS="$(FULL_DECODE_TB_SRCS)"
 
-execute-lint: $(AGU_SRCS)
+execute-lint: decode-sv $(AGU_HAND_SRCS)
 	$(VERILATOR) $(VERILATORFLAGS) --lint-only --top-module bedrock_agu $(AGU_SRCS)
 
-execute-test: $(AGU_SRCS) $(AGU_TB_SRCS)
+execute-test: decode-sv $(AGU_HAND_SRCS) $(AGU_TB_SRCS)
 	$(MAKE) test TEST_TOP=agu_tb RTL_SRCS="$(AGU_SRCS)" TB_SRCS="$(AGU_TB_SRCS)"
 
-execute-synth: $(AGU_SYNTH_REPORT)
+execute-synth: decode-sv $(AGU_SYNTH_REPORT)
 	@tail -60 "$(AGU_SYNTH_REPORT)"
 
-decode-synth: $(DECODE_SYNTH_REPORT) $(PREFIX_SYNTH_REPORT) $(EA_SYNTH_REPORT) $(ENTRY_PRECHECK_SYNTH_REPORT) $(FULL_DECODE_SYNTH_REPORT)
+decode-synth: decode-sv $(DECODE_SYNTH_REPORT) $(PREFIX_SYNTH_REPORT) $(EA_SYNTH_REPORT) $(ENTRY_PRECHECK_SYNTH_REPORT) $(FULL_DECODE_SYNTH_REPORT)
 	@tail -80 "$(DECODE_SYNTH_REPORT)"
 	@tail -50 "$(PREFIX_SYNTH_REPORT)"
 	@tail -50 "$(EA_SYNTH_REPORT)"
 	@tail -60 "$(ENTRY_PRECHECK_SYNTH_REPORT)"
 	@tail -60 "$(FULL_DECODE_SYNTH_REPORT)"
 
-$(DECODE_SYNTH_REPORT): $(DECODE_SYNTH_SRC)
+$(DECODE_SYNTH_REPORT): | decode-sv
 	@mkdir -p "$(YOSYS_BUILD_DIR)"
 	$(YOSYS) -Q -p 'read_verilog -sv $(DECODE_SYNTH_SRC); synth -top bedrock_decode_synth; stat -top bedrock_decode_synth; write_json $(DECODE_SYNTH_JSON)' > "$(DECODE_SYNTH_REPORT)"
 	@printf 'wrote %s\n' "$(DECODE_SYNTH_REPORT)"
 	@printf 'wrote %s\n' "$(DECODE_SYNTH_JSON)"
 
-$(PREFIX_SYNTH_REPORT): $(PREFIX_DECODE_SYNTH_SRC)
+$(PREFIX_SYNTH_REPORT): | decode-sv
 	@mkdir -p "$(YOSYS_BUILD_DIR)"
 	$(YOSYS) -Q -p 'read_verilog -sv $(PREFIX_DECODE_SYNTH_SRC); synth -top bedrock_prefix_decode_synth; stat -top bedrock_prefix_decode_synth; write_json $(PREFIX_SYNTH_JSON)' > "$(PREFIX_SYNTH_REPORT)"
 	@printf 'wrote %s\n' "$(PREFIX_SYNTH_REPORT)"
 	@printf 'wrote %s\n' "$(PREFIX_SYNTH_JSON)"
 
-$(EA_SYNTH_REPORT): $(EA_DECODE_SYNTH_SRC)
+$(EA_SYNTH_REPORT): | decode-sv
 	@mkdir -p "$(YOSYS_BUILD_DIR)"
 	$(YOSYS) -Q -p 'read_verilog -sv $(EA_DECODE_SYNTH_SRC); synth -top bedrock_ea_decode_synth; stat -top bedrock_ea_decode_synth; write_json $(EA_SYNTH_JSON)' > "$(EA_SYNTH_REPORT)"
 	@printf 'wrote %s\n' "$(EA_SYNTH_REPORT)"
 	@printf 'wrote %s\n' "$(EA_SYNTH_JSON)"
 
-$(ENTRY_PRECHECK_SV2V): $(ENTRY_PRECHECK_SRCS)
+$(ENTRY_PRECHECK_SV2V): $(ENTRY_PRECHECK_HAND_SRCS) | decode-sv
 	@mkdir -p "$(YOSYS_BUILD_DIR)"
 	$(SV2V) $(ENTRY_PRECHECK_SRCS) > "$(ENTRY_PRECHECK_SV2V)"
 	@printf 'wrote %s\n' "$(ENTRY_PRECHECK_SV2V)"
@@ -150,7 +157,7 @@ $(ENTRY_PRECHECK_SYNTH_REPORT): $(ENTRY_PRECHECK_SV2V)
 	@printf 'wrote %s\n' "$(ENTRY_PRECHECK_SYNTH_REPORT)"
 	@printf 'wrote %s\n' "$(ENTRY_PRECHECK_SYNTH_JSON)"
 
-$(FULL_DECODE_SV2V): $(FULL_DECODE_SRCS)
+$(FULL_DECODE_SV2V): $(FULL_DECODE_HAND_SRCS) | decode-sv
 	@mkdir -p "$(YOSYS_BUILD_DIR)"
 	$(SV2V) $(FULL_DECODE_SRCS) > "$(FULL_DECODE_SV2V)"
 	@printf 'wrote %s\n' "$(FULL_DECODE_SV2V)"
@@ -161,7 +168,7 @@ $(FULL_DECODE_SYNTH_REPORT): $(FULL_DECODE_SV2V)
 	@printf 'wrote %s\n' "$(FULL_DECODE_SYNTH_REPORT)"
 	@printf 'wrote %s\n' "$(FULL_DECODE_SYNTH_JSON)"
 
-$(AGU_SV2V): $(AGU_SRCS)
+$(AGU_SV2V): $(AGU_HAND_SRCS) | decode-sv
 	@mkdir -p "$(YOSYS_BUILD_DIR)"
 	$(SV2V) $(AGU_SRCS) > "$(AGU_SV2V)"
 	@printf 'wrote %s\n' "$(AGU_SV2V)"

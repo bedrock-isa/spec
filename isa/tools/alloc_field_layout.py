@@ -312,7 +312,7 @@ def field_instances_for_layout(
 
 
 def field_base_signature(field: Field) -> str:
-    if field.source == "size" or field.kind in {"BWLQ", "LQ", "WL", "S_D", "BW", "BWL", "BWLX"}:
+    if field.source == "size":
         return f"SIZE{field.width}"
     if field.kind in {"DREG", "AREG", "SREG", "D_or_A"}:
         return f"REG{field.width}"

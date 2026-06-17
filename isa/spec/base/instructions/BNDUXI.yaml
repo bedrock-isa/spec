@@ -1,0 +1,44 @@
+mnemonic: BNDUXI
+doc:
+  title: Unsigned Bounds Check Exclusive-Inclusive
+  summary: Checks unsigned value membership in the exclusive-inclusive interval (lo, hi].
+  description: BNDUXI treats the low bound as exclusive and the high bound as inclusive. It sets V when unsigned(value) 
+    is outside (unsigned(lo), unsigned(hi)]; Z, N, and C are unchanged.
+  instruction_family: bounds
+  instruction_class: integer
+behavior:
+  group: bounds
+  inputs:
+  - hi
+  - lo
+  - value
+  output: none
+  operation:
+  - ZF = 0;
+  - NF = 0;
+  - CF = 0;
+  - VF = 0;
+  - if (value_v <= lo_v) goto <bnduxi_bad>;
+  - if (value_v > hi_v) goto <bnduxi_bad>;
+  - goto <bnduxi_done>;
+  - <bnduxi_bad>
+  - VF = 1;
+  - <bnduxi_done>
+  interval: (lo, hi]
+  signedness: unsigned
+  bounds_mode: XI
+attributes:
+  repeatable: true
+allocation:
+  catalog_section: integer
+  layout_group: BOUNDS_UNSIGNED
+forms:
+  extension_family: integer_bounds_unsigned
+  operands:
+  - name: lo
+    type: DREG
+  - name: value
+    type: EA
+  - name: hi
+    type: DREG
+  size: BWLQ

@@ -1,0 +1,117 @@
+save_area_formats:
+  processor_state:
+    title: SAVE/RESTORE Processor-State Save Area
+    applies_to:
+    - SAVE
+    - RESTORE
+    fixed_base_bytes: 256
+    fixed_slots:
+    - offset: 0
+      field: base save-slot valid bitmap
+    - offset: 8
+      field: D0, bank 0
+    - offset: 16
+      field: D1, bank 0
+    - offset: 24
+      field: D2, bank 0
+    - offset: 32
+      field: D3, bank 0
+    - offset: 40
+      field: D4, bank 0
+    - offset: 48
+      field: D5, bank 0
+    - offset: 56
+      field: D6, bank 0
+    - offset: 64
+      field: D7, bank 0
+    - offset: 72
+      field: A0
+    - offset: 80
+      field: A1
+    - offset: 88
+      field: A2
+    - offset: 96
+      field: A3
+    - offset: 104
+      field: A4
+    - offset: 112
+      field: A5
+    - offset: 120
+      field: A6
+    - offset: 128
+      field: A7
+    - offset: 136
+      field: GS0
+    - offset: 144
+      field: GS1
+    - offset: 152
+      field: GS2
+    - offset: 160
+      field: GS3
+    - offset: 168
+      field: GS4
+    - offset: 176
+      field: reserved padding to end of fixed base area
+    - offset: 256
+      field: extension component area may begin
+    base_bitmap_bits:
+      description: Offset 0x000 contains a 64-bit validity mask for the fixed base save area. A set bit means that the corresponding
+        base slot is present in this save image. SAVE sets a bit when it writes the corresponding slot and may leave architecturally
+        clean slots clear. RESTORE leaves a register or slot unchanged when its bit is clear. PC, SP, CS, DS, SS, FLAGS, STATUS,
+        and the current DBANK selector are not SAVE-area slots; exception and syscall stack frames carry those control-entry
+        fields.
+      reserved_bits: Unlisted bits are reserved; SAVE writes them as zero and RESTORE ignores them.
+      mappings:
+      - bits: n
+        slot: D[n], bank 0
+        meaning: n=0..7; validates Dn at 0x008 + 8*n
+      - bits: 8+n
+        slot: A[n]
+        meaning: n=0..7; validates An at 0x048 + 8*n
+      - bits: 16+n
+        slot: GS[n]
+        meaning: n=0..4; validates GSn at 0x088 + 8*n
+    instruction_behavior:
+      SAVE: SAVE may clear bitmap bits for architecturally clean fixed-base slots.
+      RESTORE: RESTORE ignores fixed-base slots whose bitmap bit is clear.
+    extension_components: Extension component offsets begin no earlier than SAVE_HEADER_SIZE, 0x100 for the base profile,
+      and are reported by CPUID. The save-area base address is 4 KiB aligned. Page-crossing points are statically derived
+      from the aligned base address, CPUID-reported byte offsets, and component formats.
+    extension_component_order: CPUID SAVE_AREA_LAYOUT component descriptors are indexed from 2 upward. That descriptor index
+      order is the architectural extension-component order. COMPONENT_OFFSET values are numeric byte offsets and must be strictly
+      increasing in descriptor order. Base-defined component formats appear first; extension-owned component formats are appended
+      by descriptor order from their owning extension specs. The SAVE area has no architectural total-size upper bound beyond
+      the CPUID-reported SAVE_AREA_SIZE value for the selected implementation/profile.
+    extension_component_formats:
+    - component_id: 1
+      name: DATA_REGISTER_BANKS
+      title: Additional Data-Register Banks
+      validity: Each extension component begins with a component-local validity bitmap. If a register bit is clear, RESTORE
+        leaves that nonzero-bank D register unchanged.
+      description: This component stores data-register banks other than bank 0. Bank 0 is part of the fixed base save area.
+        The 0x40-byte bank record shown below begins after the 128-bit component-local validity bitmap and repeats in increasing
+        bank-number order for b = 1..DBANK_COUNT-1.
+      size: 0x010 + 0x40 * (DBANK_COUNT - 1)
+      component_bitmap_bits:
+        description: Offsets +0x000..+0x00f contain a 128-bit validity mask for individual D-register slots in the architectural
+          DBANK namespace. Bit 8*b+n corresponds to Dn in bank b. Bank 0 bits are reserved because bank 0 lives in the fixed
+          base save area.
+        reserved_bits: Bits for bank 0 and unimplemented banks are reserved; SAVE writes them as zero and RESTORE ignores
+          them.
+        mappings:
+        - bits: 8*b+n
+          slot: D[n], bank b
+          meaning: b=1..DBANK_COUNT-1 and n=0..7; validates Dn at +0x010 + 0x40*(b-1) + 8*n
+      slots:
+      - offset: 0
+        field: component-local valid bitmap[63:0]
+        meaning: low 64 bits of the 128-bit nonzero-bank D-register validity mask
+      - offset: 8
+        field: component-local valid bitmap[127:64]
+        meaning: high 64 bits of the 128-bit nonzero-bank D-register validity mask
+      - repeat:
+          count: 8
+          offset_start: 16
+          offset_stride: 8
+          field_template: D{n}, bank b
+          meaning_template: data register D{n} in data-register bank b

@@ -1,0 +1,37 @@
+mnemonic: MINU
+doc:
+  title: Unsigned Minimum
+  summary: Performs the unsigned minimum operation.
+  description: Performs the unsigned minimum operation.
+  instruction_family: integer_alu
+  instruction_class: integer
+behavior:
+  group: integer_minmax
+  inputs:
+  - src
+  input_output: dst
+  operation:
+  - if (dst_v > src_v) goto <minmax_done>;
+  - dst_v = src_v;
+  - <minmax_done>
+  signedness: unsigned
+attributes:
+  repeatable: true
+  prefix_availability:
+  - SATURATE
+allocation:
+  catalog_section: integer
+  layout_group: MIN_MAX
+forms:
+  operands:
+  - - name: src
+      type: EA
+    - name: dst
+      type: DREG
+  - - name: src
+      type: DREG
+    - name: dst
+      type: EA
+  size: BWLQ
+  compact: false
+  result: second operand

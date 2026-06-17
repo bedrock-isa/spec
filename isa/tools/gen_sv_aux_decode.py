@@ -12,6 +12,22 @@ from typing import Any
 sys.dont_write_bytecode = True
 
 from isa_spec import load_spec  # noqa: E402
+from spec_model.encoding import ea_segment_named_values
+from template_utils import render_tool_template  # noqa: E402
+
+
+ACTIVE_SPEC: dict[str, Any] | None = None
+
+
+def set_active_spec(spec: dict[str, Any]) -> None:
+    global ACTIVE_SPEC
+    ACTIVE_SPEC = spec
+
+
+def active_spec() -> dict[str, Any]:
+    if ACTIVE_SPEC is None:
+        raise RuntimeError("active ISA spec is not set")
+    return ACTIVE_SPEC
 
 
 def sv_ident(prefix: str, text: str, used: set[str]) -> str:
@@ -68,6 +84,180 @@ def enum_lines(type_name: str, width: int, entries: list[tuple[str, str]]) -> li
         suffix = f" // {comment}" if comment else ""
         lines.append(f"    {name} = {width}'d{index}{comma}{suffix}")
     lines.append(f"  }} {type_name};")
+    return lines
+
+
+def enum_width(entries: list[tuple[str, str]]) -> int:
+    return max(1, (len(entries) - 1).bit_length())
+
+
+def prefix_entries(spec: dict[str, Any]) -> list[dict[str, Any]]:
+    entries = list((spec.get("prefixes") or {}).get("prefixes") or [])
+    return sorted(entries, key=lambda item: int(item.get("value", 256)) if "value" in item else 256)
+
+
+def prefix_enum_name(name: str) -> str:
+    return "BR_PREFIX_" + re.sub(r"[^A-Za-z0-9]+", "_", name.upper()).strip("_")
+
+
+def update_enum_name(name: str) -> str:
+    return "BR_UPDATE_" + re.sub(r"[^A-Za-z0-9]+", "_", name.upper()).strip("_")
+
+
+def access_enum_name(name: str) -> str:
+    return "BR_ACCESS_" + re.sub(r"[^A-Za-z0-9]+", "_", name.upper()).strip("_")
+
+
+def repeat_enum_name(name: str) -> str:
+    return "BR_REPEAT_" + re.sub(r"[^A-Za-z0-9]+", "_", name.upper()).strip("_")
+
+
+def prefix_byte_width(spec: dict[str, Any]) -> int:
+    prefix_word = (spec.get("prefixes") or {}).get("prefix_word") or {}
+    word_bits = int(prefix_word.get("bytes_per_instruction", 1)) * 8
+    slot_count = len(prefix_word.get("fill_order") or prefix_word.get("decode_order") or [None])
+    return max(1, word_bits // max(1, slot_count))
+
+
+def prefix_case_literal(prefix: dict[str, Any], width: int) -> str:
+    if "value" in prefix:
+        return hex_lit(width, int(prefix["value"]))
+    pattern = str(prefix.get("pattern", ""))
+    pattern_width, mask, value = parse_bit_pattern(pattern)
+    if pattern_width != width:
+        name = prefix.get("name")
+        raise ValueError(
+            f"prefix pattern width mismatch for {name}: "
+            f"pattern has {pattern_width} bits, prefix byte has {width} bits"
+        )
+    return bin_pattern(pattern_width, mask, value)
+
+
+def pattern_field_positions(pattern: str) -> dict[str, list[int]]:
+    bits = [ch for ch in pattern if ch.isalnum() or ch in "?-"]
+    width = len(bits)
+    positions: dict[str, list[int]] = {}
+    for index, ch in enumerate(bits):
+        if ch.isalpha() and ch not in {"x", "X", "z", "Z"}:
+            positions.setdefault(ch, []).append(width - 1 - index)
+    return positions
+
+
+def field_slice_expr(source: str, pattern: str, field: str) -> str:
+    positions = pattern_field_positions(pattern).get(field, [])
+    if not positions:
+        raise ValueError(f"field {field!r} is not present in prefix pattern {pattern!r}")
+    ordered = sorted(positions, reverse=True)
+    if ordered == list(range(ordered[0], ordered[-1] - 1, -1)):
+        if ordered[0] == ordered[-1]:
+            return f"{source}[{ordered[0]}]"
+        return f"{source}[{ordered[0]}:{ordered[-1]}]"
+    return "{" + ", ".join(f"{source}[{bit}]" for bit in ordered) + "}"
+
+
+def prefix_decode_assignments(prefix: dict[str, Any]) -> list[str]:
+    assignments: list[str] = ["r.valid = 1'b1", f"r.kind = {prefix_enum_name(str(prefix.get('name')))}"]
+    pattern = str(prefix.get("pattern", ""))
+    condition_field = ((prefix.get("condition") or {}) if isinstance(prefix.get("condition"), dict) else {}).get("field")
+    if condition_field and pattern:
+        assignments.append(f"r.condition = {field_slice_expr('prefix_byte', pattern, str(condition_field))}")
+    operand = (prefix.get("operand") or {}) if isinstance(prefix.get("operand"), dict) else {}
+    if operand.get("role") == "counter" and operand.get("field") and pattern:
+        assignments.append(f"r.counter = {field_slice_expr('prefix_byte', pattern, str(operand.get('field')))}")
+    return assignments
+
+
+def sv_statement_block(assignments: list[str]) -> str:
+    return " ".join(f"{assignment};" for assignment in assignments)
+
+
+def prefix_update_entries(prefixes: list[dict[str, Any]]) -> list[tuple[str, str]]:
+    return [("BR_UPDATE_NONE", "")] + [
+        (update_enum_name(str(prefix.get("name"))), "")
+        for prefix in prefixes
+        if prefix.get("group") == "ea_update"
+    ]
+
+
+def prefix_access_entries(prefixes: list[dict[str, Any]]) -> list[tuple[str, str]]:
+    return [("BR_ACCESS_C", "")] + [
+        (access_enum_name(str(prefix.get("name"))), "")
+        for prefix in prefixes
+        if prefix.get("group") == "access_domain"
+    ]
+
+
+def prefix_repeat_entries(prefixes: list[dict[str, Any]]) -> list[tuple[str, str]]:
+    return [("BR_REPEAT_NONE", "")] + [
+        (repeat_enum_name(str(prefix.get("name"))), "")
+        for prefix in prefixes
+        if prefix.get("group") == "repeat"
+    ]
+
+
+def prefix_apply_lines(prefixes: list[dict[str, Any]]) -> list[str]:
+    lines: list[str] = []
+    for prefix in prefixes:
+        name = str(prefix.get("name"))
+        group = str(prefix.get("group", ""))
+        kind = prefix_enum_name(name)
+        if group == "neutral":
+            lines.append(f"      {kind}: begin end")
+        elif name == "NOSPEC":
+            lines.append(f"      {kind}: r.nospec = 1'b1;")
+        elif name == "SATURATE":
+            lines.append(f"      {kind}: r.saturate = 1'b1;")
+        elif name == "NONTEMPORAL":
+            lines.append(f"      {kind}: r.nontemporal = 1'b1;")
+        elif group == "ea_update":
+            lines.append(f"      {kind}: r.update_mode = {update_enum_name(name)};")
+        elif group == "access_domain":
+            lines.append(f"      {kind}: r.access_mode = {access_enum_name(name)};")
+        elif group == "repeat":
+            lines.append(f"      {kind}: begin r.repeat_kind = {repeat_enum_name(name)}; r.repeat_condition = prefix.condition; r.repeat_counter = prefix.counter; end")
+        elif group == "repeat_boundary":
+            lines.append(f"      {kind}: r.end_group = 1'b1;")
+        else:
+            lines.append(f"      {kind}: begin end")
+    return lines
+
+
+def prefix_synth_apply_lines(
+    prefixes: list[dict[str, Any]],
+    prefix_width: int,
+    update_indexes: dict[str, int],
+    access_indexes: dict[str, int],
+    repeat_indexes: dict[str, int],
+) -> list[str]:
+    lines: list[str] = []
+    for prefix in prefixes:
+        name = str(prefix.get("name"))
+        group = str(prefix.get("group", ""))
+        literal = prefix_case_literal(prefix, prefix_width)
+        pattern = str(prefix.get("pattern", ""))
+        if group == "neutral":
+            lines.append(f"        {literal}: begin end")
+        elif name == "NOSPEC":
+            lines.append(f"        {literal}: nospec_o = 1'b1;")
+        elif name == "SATURATE":
+            lines.append(f"        {literal}: saturate_o = 1'b1;")
+        elif name == "NONTEMPORAL":
+            lines.append(f"        {literal}: nontemporal_o = 1'b1;")
+        elif group == "ea_update":
+            lines.append(f"        {literal}: update_mode_o = 3'd{update_indexes[update_enum_name(name)]};")
+        elif group == "access_domain":
+            lines.append(f"        {literal}: access_mode_o = 2'd{access_indexes[access_enum_name(name)]};")
+        elif group == "repeat":
+            operand = (prefix.get("operand") or {}) if isinstance(prefix.get("operand"), dict) else {}
+            counter = field_slice_expr("p", pattern, str(operand.get("field"))) if operand.get("field") else "3'd0"
+            condition_field = ((prefix.get("condition") or {}) if isinstance(prefix.get("condition"), dict) else {}).get("field")
+            condition = field_slice_expr("p", pattern, str(condition_field)) if condition_field else "4'd0"
+            lines.append(
+                f"        {literal}: begin repeat_kind_o = 2'd{repeat_indexes[repeat_enum_name(name)]}; "
+                f"repeat_condition_o = {condition}; repeat_counter_o = {counter}; end"
+            )
+        elif group == "repeat_boundary":
+            lines.append(f"        {literal}: end_group_o = 1'b1;")
     return lines
 
 
@@ -175,389 +365,160 @@ def has_displacement_payload(form: dict[str, Any]) -> bool:
     return bool(displacement) and str(displacement) != "none"
 
 
-def emit_prefix_package(spec: dict[str, Any]) -> str:
-    lines: list[str] = [
-        "`timescale 1ns/1ps",
-        "`default_nettype none",
-        "",
-        "// Generated from isa/spec/prefixes.yaml.",
-        "// Do not edit by hand.",
-        "",
-        "package bedrock_prefix_decode_pkg;",
-        "",
-    ]
-    lines += enum_lines(
-        "bedrock_prefix_kind_e",
-        4,
-        [
-            ("BR_PREFIX_INVALID", ""),
-            ("BR_PREFIX_NPX", "NPX"),
-            ("BR_PREFIX_NOSPEC", "NOSPEC"),
-            ("BR_PREFIX_SATURATE", "SATURATE"),
-            ("BR_PREFIX_NONTEMPORAL", "NONTEMPORAL"),
-            ("BR_PREFIX_POSTINC", "POSTINC"),
-            ("BR_PREFIX_PREINC", "PREINC"),
-            ("BR_PREFIX_POSTDEC", "POSTDEC"),
-            ("BR_PREFIX_PREDEC", "PREDEC"),
-            ("BR_PREFIX_REPCC", "REPcc"),
-            ("BR_PREFIX_REPG", "REPG"),
-            ("BR_PREFIX_ENDG", "ENDG"),
-        ],
-    )
-    lines += [
-        "",
-        *enum_lines(
-            "bedrock_update_mode_e",
-            3,
-            [
-                ("BR_UPDATE_NONE", ""),
-                ("BR_UPDATE_POSTINC", ""),
-                ("BR_UPDATE_PREINC", ""),
-                ("BR_UPDATE_POSTDEC", ""),
-                ("BR_UPDATE_PREDEC", ""),
-            ],
-        ),
-        "",
-        *enum_lines(
-            "bedrock_repeat_kind_e",
-            2,
-            [
-                ("BR_REPEAT_NONE", ""),
-                ("BR_REPEAT_REPCC", ""),
-                ("BR_REPEAT_REPG", ""),
-            ],
-        ),
-        "",
-        "  typedef struct packed {",
-        "    logic valid;",
-        "    bedrock_prefix_kind_e kind;",
-        "    logic [3:0] condition;",
-        "    logic [2:0] counter;",
-        "  } bedrock_prefix_byte_decode_t;",
-        "",
-        "  typedef struct packed {",
-        "    logic valid;",
-        "    bedrock_prefix_byte_decode_t low;",
-        "    bedrock_prefix_byte_decode_t high;",
-        "    logic nospec;",
-        "    logic saturate;",
-        "    logic nontemporal;",
-        "    bedrock_update_mode_e update_mode;",
-        "    bedrock_repeat_kind_e repeat_kind;",
-        "    logic [3:0] repeat_condition;",
-        "    logic [2:0] repeat_counter;",
-        "    logic end_group;",
-        "  } bedrock_prefix_word_decode_t;",
-        "",
-        "  function automatic bedrock_prefix_byte_decode_t bedrock_decode_prefix_byte(input logic [7:0] prefix_byte);",
-        "    bedrock_prefix_byte_decode_t r;",
-        "    r = '0;",
-        "    unique casez (prefix_byte)",
-        "      8'h00: begin r.valid = 1'b1; r.kind = BR_PREFIX_NPX; end",
-        "      8'h01: begin r.valid = 1'b1; r.kind = BR_PREFIX_NOSPEC; end",
-        "      8'h02: begin r.valid = 1'b1; r.kind = BR_PREFIX_SATURATE; end",
-        "      8'h03: begin r.valid = 1'b1; r.kind = BR_PREFIX_NONTEMPORAL; end",
-        "      8'h04: begin r.valid = 1'b1; r.kind = BR_PREFIX_POSTINC; end",
-        "      8'h05: begin r.valid = 1'b1; r.kind = BR_PREFIX_PREINC; end",
-        "      8'h06: begin r.valid = 1'b1; r.kind = BR_PREFIX_POSTDEC; end",
-        "      8'h07: begin r.valid = 1'b1; r.kind = BR_PREFIX_PREDEC; end",
-        "      8'b0111_0???: begin r.valid = 1'b1; r.kind = BR_PREFIX_REPG; r.counter = prefix_byte[2:0]; end",
-        "      8'h78: begin r.valid = 1'b1; r.kind = BR_PREFIX_ENDG; end",
-        "      8'b1???_????: begin r.valid = 1'b1; r.kind = BR_PREFIX_REPCC; r.condition = prefix_byte[6:3]; r.counter = prefix_byte[2:0]; end",
-        "      default: begin r.kind = BR_PREFIX_INVALID; end",
-        "    endcase",
-        "    return r;",
-        "  endfunction",
-        "",
-        "  function automatic bedrock_prefix_word_decode_t bedrock_apply_prefix_byte(",
-        "    input bedrock_prefix_word_decode_t state,",
-        "    input bedrock_prefix_byte_decode_t prefix",
-        "  );",
-        "    bedrock_prefix_word_decode_t r;",
-        "    r = state;",
-        "    r.valid = r.valid && prefix.valid;",
-        "    unique case (prefix.kind)",
-        "      BR_PREFIX_NOSPEC: r.nospec = 1'b1;",
-        "      BR_PREFIX_SATURATE: r.saturate = 1'b1;",
-        "      BR_PREFIX_NONTEMPORAL: r.nontemporal = 1'b1;",
-        "      BR_PREFIX_POSTINC: r.update_mode = BR_UPDATE_POSTINC;",
-        "      BR_PREFIX_PREINC: r.update_mode = BR_UPDATE_PREINC;",
-        "      BR_PREFIX_POSTDEC: r.update_mode = BR_UPDATE_POSTDEC;",
-        "      BR_PREFIX_PREDEC: r.update_mode = BR_UPDATE_PREDEC;",
-        "      BR_PREFIX_REPCC: begin r.repeat_kind = BR_REPEAT_REPCC; r.repeat_condition = prefix.condition; r.repeat_counter = prefix.counter; end",
-        "      BR_PREFIX_REPG: begin r.repeat_kind = BR_REPEAT_REPG; r.repeat_counter = prefix.counter; end",
-        "      BR_PREFIX_ENDG: r.end_group = 1'b1;",
-        "      default: begin",
-        "      end",
-        "    endcase",
-        "    return r;",
-        "  endfunction",
-        "",
-        "  function automatic bedrock_prefix_word_decode_t bedrock_decode_prefix_word(input logic [15:0] prefix_word);",
-        "    bedrock_prefix_word_decode_t r;",
-        "    r = '0;",
-        "    r.valid = 1'b1;",
-        "    r.low = bedrock_decode_prefix_byte(prefix_word[7:0]);",
-        "    r.high = bedrock_decode_prefix_byte(prefix_word[15:8]);",
-        "    r = bedrock_apply_prefix_byte(r, r.low);",
-        "    r = bedrock_apply_prefix_byte(r, r.high);",
-        "    return r;",
-        "  endfunction",
-        "",
-        "endpackage",
-        "",
-        "`default_nettype wire",
-        "",
-    ]
+def sv_lines(lines: list[str]) -> str:
     return "\n".join(lines)
 
 
-def emit_prefix_module() -> str:
-    return "\n".join(
-        [
-            "`timescale 1ns/1ps",
-            "`default_nettype none",
-            "",
-            "module bedrock_prefix_decode",
-            "  import bedrock_prefix_decode_pkg::*;",
-            "(",
-            "  input  logic [15:0] prefix_word_i,",
-            "  output logic        valid_o,",
-            "  output logic        nospec_o,",
-            "  output logic        saturate_o,",
-            "  output logic        nontemporal_o,",
-            "  output bedrock_update_mode_e update_mode_o,",
-            "  output bedrock_repeat_kind_e repeat_kind_o,",
-            "  output logic [3:0] repeat_condition_o,",
-            "  output logic [2:0] repeat_counter_o,",
-            "  output logic        end_group_o",
-            ");",
-            "  bedrock_prefix_word_decode_t decode;",
-            "  always_comb begin",
-            "    decode = bedrock_decode_prefix_word(prefix_word_i);",
-            "    valid_o = decode.valid;",
-            "    nospec_o = decode.nospec;",
-            "    saturate_o = decode.saturate;",
-            "    nontemporal_o = decode.nontemporal;",
-            "    update_mode_o = decode.update_mode;",
-            "    repeat_kind_o = decode.repeat_kind;",
-            "    repeat_condition_o = decode.repeat_condition;",
-            "    repeat_counter_o = decode.repeat_counter;",
-            "    end_group_o = decode.end_group;",
-            "  end",
-            "endmodule",
-            "",
-            "`default_nettype wire",
-            "",
-        ]
+def emit_prefix_package(spec: dict[str, Any]) -> str:
+    prefixes = prefix_entries(spec)
+    prefix_width = prefix_byte_width(spec)
+    kind_entries = [("BR_PREFIX_INVALID", "")] + [
+        (prefix_enum_name(str(prefix.get("name"))), str(prefix.get("name")))
+        for prefix in prefixes
+    ]
+    update_entries = prefix_update_entries(prefixes)
+    access_entries = prefix_access_entries(prefixes)
+    repeat_entries = prefix_repeat_entries(prefixes)
+    decode_cases = [
+        f"      {prefix_case_literal(prefix, prefix_width)}: begin {sv_statement_block(prefix_decode_assignments(prefix))} end"
+        for prefix in prefixes
+    ]
+    return render_tool_template(
+        "bedrock_prefix_decode_pkg.sv",
+        {
+            "KIND_ENUM": sv_lines(enum_lines("bedrock_prefix_kind_e", enum_width(kind_entries), kind_entries)),
+            "UPDATE_ENUM": sv_lines(enum_lines("bedrock_update_mode_e", enum_width(update_entries), update_entries)),
+            "ACCESS_ENUM": sv_lines(enum_lines("bedrock_access_mode_e", enum_width(access_entries), access_entries)),
+            "REPEAT_ENUM": sv_lines(enum_lines("bedrock_repeat_kind_e", enum_width(repeat_entries), repeat_entries)),
+            "PREFIX_DECODE_CASES": sv_lines(decode_cases),
+            "PREFIX_APPLY_CASES": sv_lines(prefix_apply_lines(prefixes)),
+        },
     )
 
 
+def emit_prefix_module() -> str:
+    return render_tool_template("bedrock_prefix_decode.sv", {})
+
+
 def emit_ea_package(spec: dict[str, Any]) -> str:
+    set_active_spec(spec)
     form_names = ea_form_names(spec)
     entries = [("BR_EA_INVALID", "")]
     entries += [(form_names[str(form.get("name", ""))], str(form.get("name", ""))) for form in compact_ea_forms(spec) + extended_ea_forms(spec)]
     width = 6
-    lines: list[str] = [
-        "`timescale 1ns/1ps",
-        "`default_nettype none",
-        "",
-        "// Generated from isa/spec/ea.yaml.",
-        "// Do not edit by hand.",
-        "",
-        "package bedrock_ea_decode_pkg;",
-        "",
-        *enum_lines("bedrock_ea_form_e", width, entries),
-        "",
-        *enum_lines(
-            "bedrock_ea_base_e",
-            3,
-            [
-                ("BR_EA_BASE_NONE", ""),
-                ("BR_EA_BASE_D", ""),
-                ("BR_EA_BASE_A", ""),
-                ("BR_EA_BASE_SP", ""),
-                ("BR_EA_BASE_PC", ""),
-                ("BR_EA_BASE_ABS", ""),
-                ("BR_EA_BASE_IMM", ""),
-            ],
-        ),
-        "",
-        *enum_lines(
-            "bedrock_ea_segment_e",
-            3,
-            [
-                ("BR_EA_SEG_CS", ""),
-                ("BR_EA_SEG_DS", ""),
-                ("BR_EA_SEG_SS", ""),
-                ("BR_EA_SEG_GS0", ""),
-                ("BR_EA_SEG_GS1", ""),
-                ("BR_EA_SEG_GS2", ""),
-                ("BR_EA_SEG_GS3", ""),
-                ("BR_EA_SEG_GS4", ""),
-            ],
-        ),
-        "",
-        "  typedef struct packed {",
-        "    logic valid;",
-        "    logic reserved;",
-        "    logic needs_descriptor;",
-        "    logic signed32_index_escape;",
-        "    bedrock_ea_form_e form;",
-        "    logic is_register;",
-        "    logic is_memory;",
-        "    logic is_immediate;",
-        "    logic update_eligible;",
-        "    logic segment_selectable;",
-        "    logic segment_valid;",
-        "    bedrock_ea_segment_e segment;",
-        "    bedrock_ea_base_e base;",
-        "    logic has_base_reg;",
-        "    logic has_index_reg;",
-        "    logic [2:0] base_reg;",
-        "    logic [2:0] index_reg;",
-        "    logic [1:0] scale_log2;",
-        "    logic has_displacement;",
-        "    logic has_absolute;",
-        "    logic [2:0] displacement_words;",
-        "    logic [2:0] payload_words;",
-        "  } bedrock_ea_decode_t;",
-        "",
-        "  function automatic bedrock_ea_segment_e bedrock_ea_segment_decode(input logic [2:0] segment);",
-        "    unique case (segment)",
-        "      3'd0: bedrock_ea_segment_decode = BR_EA_SEG_CS;",
-        "      3'd1: bedrock_ea_segment_decode = BR_EA_SEG_DS;",
-        "      3'd2: bedrock_ea_segment_decode = BR_EA_SEG_SS;",
-        "      3'd3: bedrock_ea_segment_decode = BR_EA_SEG_GS0;",
-        "      3'd4: bedrock_ea_segment_decode = BR_EA_SEG_GS1;",
-        "      3'd5: bedrock_ea_segment_decode = BR_EA_SEG_GS2;",
-        "      3'd6: bedrock_ea_segment_decode = BR_EA_SEG_GS3;",
-        "      default: bedrock_ea_segment_decode = BR_EA_SEG_GS4;",
-        "    endcase",
-        "  endfunction",
-        "",
-        "  function automatic bedrock_ea_decode_t bedrock_decode_compact_ea(input logic [5:0] ea);",
-        "    bedrock_ea_decode_t r;",
-        "    r = '0;",
-        "    r.segment_valid = 1'b1;",
-        "    unique casez (ea)",
-    ]
+    compact_case_lines: list[str] = []
     for form in compact_ea_forms(spec):
         name = str(form.get("name", ""))
         width_bits, mask, value = parse_bit_pattern(str(form.get("pattern", "")))
         if width_bits != 6:
             raise ValueError(f"compact EA pattern for {name} is {width_bits} bits, expected 6")
-        lines.append(f"      {bin_pattern(6, mask, value)}: begin // {name}")
-        lines += ea_assignment_lines(form, form_names[name], compact=True, indent="        ")
-        lines.append("      end")
+        compact_case_lines.append(f"      {bin_pattern(6, mask, value)}: begin // {name}")
+        compact_case_lines += ea_assignment_lines(form, form_names[name], compact=True, indent="        ")
+        compact_case_lines.append("      end")
+
+    reserved_case_lines: list[str] = []
     for reserved in spec.get("ea", {}).get("reserved_forms", []) or []:
         width_bits, mask, value = parse_bit_pattern(str(reserved.get("pattern", "")))
         if width_bits == 6:
-            lines.extend(
+            reserved_case_lines.extend(
                 [
                     f"      {bin_pattern(6, mask, value)}: begin // {reserved.get('name', '')}",
                     "        r.reserved = 1'b1;",
                     "      end",
                 ]
             )
-    lines += [
-        "      default: begin",
-        "        r.reserved = 1'b1;",
-        "      end",
-        "    endcase",
-        "    return r;",
-        "  endfunction",
-        "",
-        "  function automatic bedrock_ea_decode_t bedrock_decode_extended_ea(",
-        "    input logic signed32_index_escape,",
-        "    input logic [15:0] descriptor",
-        "  );",
-        "    bedrock_ea_decode_t r;",
-        "    logic [4:0] mode;",
-        "    logic [2:0] segment;",
-        "    logic [7:0] extra;",
-        "    r = '0;",
-        "    r.signed32_index_escape = signed32_index_escape;",
-        "    mode = descriptor[15:11];",
-        "    segment = descriptor[10:8];",
-        "    extra = descriptor[7:0];",
-        "    r.segment = bedrock_ea_segment_decode(segment);",
-        "    r.segment_valid = 1'b1;",
-        "    unique case (mode)",
-    ]
+
+    extended_case_lines: list[str] = []
     for mode_value, mode_forms in extended_ea_forms_by_mode(spec).items():
-        lines.append(f"      5'h{mode_value:02x}: begin")
+        extended_case_lines.append(f"      5'h{mode_value:02x}: begin")
         for index, form in enumerate(mode_forms):
             name = str(form.get("name", ""))
             condition = "signed32_index_escape" if form.get("escape") == "S32_INDEXED_EXTENDED" else "!signed32_index_escape"
             keyword = "if" if index == 0 else "else if"
-            lines.append(f"        {keyword} ({condition}) begin // {name}")
-            lines += ea_assignment_lines(form, form_names[name], compact=False, indent="          ")
+            extended_case_lines.append(f"        {keyword} ({condition}) begin // {name}")
+            extended_case_lines += ea_assignment_lines(form, form_names[name], compact=False, indent="          ")
             if form.get("segment_field") == "reserved_zero":
-                lines.append("          r.segment_valid = (segment == 3'd0);")
+                extended_case_lines.append("          r.segment_valid = (segment == 3'd0);")
                 fixed = str(form.get("fixed_segment", "DS"))
-                lines.append(f"          r.segment = {segment_enum(fixed)};")
+                extended_case_lines.append(f"          r.segment = {segment_enum(fixed)};")
             elif form.get("segment_selectable"):
-                lines.append("          r.segment = bedrock_ea_segment_decode(segment);")
-                lines.append("          r.segment_valid = 1'b1;")
-            lines.append("        end")
-        lines += [
+                extended_case_lines.append("          r.segment = bedrock_ea_segment_decode(segment);")
+                extended_case_lines.append("          r.segment_valid = 1'b1;")
+            extended_case_lines.append("        end")
+        extended_case_lines += [
             "        else begin",
             "          r.reserved = 1'b1;",
             "        end",
             "      end",
         ]
-    lines += [
-        "      default: begin",
-        "        r.reserved = 1'b1;",
-        "      end",
-        "    endcase",
-        "    r.valid = r.valid && r.segment_valid;",
-        "    return r;",
-        "  endfunction",
-        "",
-        "  function automatic bedrock_ea_decode_t bedrock_decode_ea(input logic [5:0] ea, input logic [15:0] descriptor);",
-        "    bedrock_ea_decode_t compact;",
-        "    compact = bedrock_decode_compact_ea(ea);",
-        "    if (compact.needs_descriptor) begin",
-        "      return bedrock_decode_extended_ea(compact.signed32_index_escape, descriptor);",
-        "    end",
-        "    return compact;",
-        "  endfunction",
-        "",
-        "endpackage",
-        "",
-        "`default_nettype wire",
-        "",
-    ]
-    return "\n".join(lines)
+
+    return render_tool_template(
+        "bedrock_ea_decode_pkg.sv",
+        {
+            "EA_FORM_ENUM": sv_lines(enum_lines("bedrock_ea_form_e", width, entries)),
+            "EA_BASE_ENUM": sv_lines(
+                enum_lines(
+                    "bedrock_ea_base_e",
+                    enum_width(ea_base_entries(spec)),
+                    ea_base_entries(spec),
+                )
+            ),
+            "EA_SEGMENT_ENUM": sv_lines(
+                enum_lines(
+                    "bedrock_ea_segment_e",
+                    enum_width(ea_segment_entries(spec)),
+                    ea_segment_entries(spec),
+                )
+            ),
+            "EA_SEGMENT_DECODE_CASES": sv_lines(ea_segment_decode_cases(spec)),
+            "COMPACT_EA_CASES": sv_lines(compact_case_lines),
+            "RESERVED_COMPACT_EA_CASES": sv_lines(reserved_case_lines),
+            "EXTENDED_EA_CASES": sv_lines(extended_case_lines),
+        },
+    )
+
+
+def ea_segment_entries(spec: dict[str, Any]) -> list[tuple[str, str]]:
+    return [(f"BR_EA_SEG_{name.upper()}", "") for name, _value in ea_segment_named_values(spec)]
+
+
+def ea_segment_decode_cases(spec: dict[str, Any]) -> list[str]:
+    values = ea_segment_named_values(spec)
+    if not values:
+        raise ValueError("ea.extended_ea_descriptor.segment_values is required")
+    lines = []
+    for name, value in values:
+        lines.append(f"      3'd{value}: bedrock_ea_segment_decode = {segment_enum(name)};")
+    lines.append(f"      default: bedrock_ea_segment_decode = {segment_enum(values[-1][0])};")
+    return lines
+
+
+def ea_base_entries(spec: dict[str, Any]) -> list[tuple[str, str]]:
+    names = ["NONE"]
+    for form in compact_ea_forms(spec) + extended_ea_forms(spec):
+        base = base_kind(form).upper()
+        if base and base not in names:
+            names.append(base)
+    return [(f"BR_EA_BASE_{name}", "") for name in names]
+
+
+def ea_base_names(spec: dict[str, Any]) -> list[str]:
+    return [entry[0].removeprefix("BR_EA_BASE_") for entry in ea_base_entries(spec)]
 
 
 def segment_enum(name: str) -> str:
-    mapping = {
-        "CS": "BR_EA_SEG_CS",
-        "DS": "BR_EA_SEG_DS",
-        "SS": "BR_EA_SEG_SS",
-        "GS0": "BR_EA_SEG_GS0",
-        "GS1": "BR_EA_SEG_GS1",
-        "GS2": "BR_EA_SEG_GS2",
-        "GS3": "BR_EA_SEG_GS3",
-        "GS4": "BR_EA_SEG_GS4",
-    }
-    return mapping.get(name.upper(), "BR_EA_SEG_DS")
+    valid = {segment_name.upper() for segment_name, _value in ea_segment_named_values(active_spec())}
+    upper = name.upper()
+    if upper not in valid:
+        raise ValueError(f"unknown EA segment {name}")
+    return f"BR_EA_SEG_{upper}"
 
 
 def base_enum(name: str) -> str:
-    mapping = {
-        "NONE": "BR_EA_BASE_NONE",
-        "D": "BR_EA_BASE_D",
-        "A": "BR_EA_BASE_A",
-        "SP": "BR_EA_BASE_SP",
-        "PC": "BR_EA_BASE_PC",
-        "ABS": "BR_EA_BASE_ABS",
-        "IMM": "BR_EA_BASE_IMM",
-    }
-    return mapping.get(name.upper(), "BR_EA_BASE_NONE")
+    upper = name.upper()
+    if upper not in ea_base_names(active_spec()):
+        raise ValueError(f"unknown EA base {name}")
+    return f"BR_EA_BASE_{upper}"
 
 
 def ea_assignment_lines(form: dict[str, Any], form_enum: str, compact: bool, indent: str) -> list[str]:
@@ -605,288 +566,95 @@ def ea_assignment_lines(form: dict[str, Any], form_enum: str, compact: bool, ind
 
 
 def emit_ea_module() -> str:
-    return "\n".join(
-        [
-            "`timescale 1ns/1ps",
-            "`default_nettype none",
-            "",
-            "module bedrock_ea_decode",
-            "  import bedrock_ea_decode_pkg::*;",
-            "(",
-            "  input  logic [5:0]  ea_i,",
-            "  input  logic [15:0] descriptor_i,",
-            "  output logic        valid_o,",
-            "  output logic        reserved_o,",
-            "  output logic        needs_descriptor_o,",
-            "  output bedrock_ea_form_e form_o,",
-            "  output logic        is_register_o,",
-            "  output logic        is_memory_o,",
-            "  output logic        is_immediate_o,",
-            "  output logic        update_eligible_o,",
-            "  output logic        signed32_index_escape_o,",
-            "  output logic        segment_selectable_o,",
-            "  output logic        segment_valid_o,",
-            "  output logic        has_base_reg_o,",
-            "  output logic        has_index_reg_o,",
-            "  output logic        has_displacement_o,",
-            "  output logic        has_absolute_o,",
-            "  output bedrock_ea_segment_e segment_o,",
-            "  output bedrock_ea_base_e base_o,",
-            "  output logic [2:0]  base_reg_o,",
-            "  output logic [2:0]  index_reg_o,",
-            "  output logic [1:0]  scale_log2_o,",
-            "  output logic [2:0]  displacement_words_o,",
-            "  output logic [2:0]  payload_words_o",
-            ");",
-            "  bedrock_ea_decode_t decode;",
-            "  always_comb begin",
-            "    decode = bedrock_decode_ea(ea_i, descriptor_i);",
-            "    valid_o = decode.valid;",
-            "    reserved_o = decode.reserved;",
-            "    needs_descriptor_o = decode.needs_descriptor;",
-            "    form_o = decode.form;",
-            "    is_register_o = decode.is_register;",
-            "    is_memory_o = decode.is_memory;",
-            "    is_immediate_o = decode.is_immediate;",
-            "    update_eligible_o = decode.update_eligible;",
-            "    signed32_index_escape_o = decode.signed32_index_escape;",
-            "    segment_selectable_o = decode.segment_selectable;",
-            "    segment_valid_o = decode.segment_valid;",
-            "    has_base_reg_o = decode.has_base_reg;",
-            "    has_index_reg_o = decode.has_index_reg;",
-            "    has_displacement_o = decode.has_displacement;",
-            "    has_absolute_o = decode.has_absolute;",
-            "    segment_o = decode.segment;",
-            "    base_o = decode.base;",
-            "    base_reg_o = decode.base_reg;",
-            "    index_reg_o = decode.index_reg;",
-            "    scale_log2_o = decode.scale_log2;",
-            "    displacement_words_o = decode.displacement_words;",
-            "    payload_words_o = decode.payload_words;",
-            "  end",
-            "endmodule",
-            "",
-            "`default_nettype wire",
-            "",
-        ]
-    )
+    return render_tool_template("bedrock_ea_decode.sv", {})
 
 
-def emit_prefix_synth() -> str:
-    return "\n".join(
-        [
-            "`timescale 1ns/1ps",
-            "`default_nettype none",
-            "",
-            "module bedrock_prefix_decode_synth(",
-            "  input  [15:0] prefix_word_i,",
-            "  output reg        valid_o,",
-            "  output reg        nospec_o,",
-            "  output reg        saturate_o,",
-            "  output reg        nontemporal_o,",
-            "  output reg [2:0]  update_mode_o,",
-            "  output reg [1:0]  repeat_kind_o,",
-            "  output reg [3:0]  repeat_condition_o,",
-            "  output reg [2:0]  repeat_counter_o,",
-            "  output reg        end_group_o",
-            ");",
-            "  task automatic apply_prefix(input [7:0] p);",
-            "    begin",
-            "      casez (p)",
-            "        8'h00: begin end",
-            "        8'h01: nospec_o = 1'b1;",
-            "        8'h02: saturate_o = 1'b1;",
-            "        8'h03: nontemporal_o = 1'b1;",
-            "        8'h04: update_mode_o = 3'd1;",
-            "        8'h05: update_mode_o = 3'd2;",
-            "        8'h06: update_mode_o = 3'd3;",
-            "        8'h07: update_mode_o = 3'd4;",
-            "        8'b0111_0???: begin repeat_kind_o = 2'd2; repeat_counter_o = p[2:0]; end",
-            "        8'h78: end_group_o = 1'b1;",
-            "        8'b1???_????: begin repeat_kind_o = 2'd1; repeat_condition_o = p[6:3]; repeat_counter_o = p[2:0]; end",
-            "        default: valid_o = 1'b0;",
-            "      endcase",
-            "    end",
-            "  endtask",
-            "  always @* begin",
-            "    valid_o = 1'b1;",
-            "    nospec_o = 1'b0;",
-            "    saturate_o = 1'b0;",
-            "    nontemporal_o = 1'b0;",
-            "    update_mode_o = 3'd0;",
-            "    repeat_kind_o = 2'd0;",
-            "    repeat_condition_o = 4'd0;",
-            "    repeat_counter_o = 3'd0;",
-            "    end_group_o = 1'b0;",
-            "    apply_prefix(prefix_word_i[7:0]);",
-            "    apply_prefix(prefix_word_i[15:8]);",
-            "  end",
-            "endmodule",
-            "",
-            "`default_nettype wire",
-            "",
-        ]
+def emit_prefix_synth(spec: dict[str, Any]) -> str:
+    prefixes = prefix_entries(spec)
+    prefix_width = prefix_byte_width(spec)
+    update_entries = prefix_update_entries(prefixes)
+    access_entries = prefix_access_entries(prefixes)
+    repeat_entries = prefix_repeat_entries(prefixes)
+    update_indexes = {name: index for index, (name, _) in enumerate(update_entries)}
+    access_indexes = {name: index for index, (name, _) in enumerate(access_entries)}
+    repeat_indexes = {name: index for index, (name, _) in enumerate(repeat_entries)}
+    return render_tool_template(
+        "bedrock_prefix_decode_synth.sv",
+        {
+            "PREFIX_SYNTH_APPLY_CASES": sv_lines(
+                prefix_synth_apply_lines(prefixes, prefix_width, update_indexes, access_indexes, repeat_indexes)
+            ),
+        },
     )
 
 
 def emit_ea_synth(spec: dict[str, Any]) -> str:
+    set_active_spec(spec)
     form_names = ea_form_names(spec)
-    lines = [
-        "`timescale 1ns/1ps",
-        "`default_nettype none",
-        "",
-        "module bedrock_ea_decode_synth(",
-        "  input  [5:0]  ea_i,",
-        "  input  [15:0] descriptor_i,",
-        "  output reg        valid_o,",
-        "  output reg        reserved_o,",
-        "  output reg        needs_descriptor_o,",
-        "  output reg [5:0]  form_o,",
-        "  output reg        is_register_o,",
-        "  output reg        is_memory_o,",
-        "  output reg        is_immediate_o,",
-        "  output reg        update_eligible_o,",
-        "  output reg        signed32_index_escape_o,",
-        "  output reg        segment_selectable_o,",
-        "  output reg        segment_valid_o,",
-        "  output reg        has_base_reg_o,",
-        "  output reg        has_index_reg_o,",
-        "  output reg        has_displacement_o,",
-        "  output reg        has_absolute_o,",
-        "  output reg [2:0]  segment_o,",
-        "  output reg [2:0]  base_o,",
-        "  output reg [2:0]  base_reg_o,",
-        "  output reg [2:0]  index_reg_o,",
-        "  output reg [1:0]  scale_log2_o,",
-        "  output reg [2:0]  displacement_words_o,",
-        "  output reg [2:0]  payload_words_o",
-        ");",
-    ]
+    form_localparam_lines: list[str] = []
     for index, form in enumerate(compact_ea_forms(spec) + extended_ea_forms(spec), start=1):
-        lines.append(f"  localparam [5:0] {form_names[str(form.get('name', ''))]} = 6'd{index}; // {form.get('name', '')}")
-    lines += [
-        "  wire [4:0] mode = descriptor_i[15:11];",
-        "  wire [2:0] seg = descriptor_i[10:8];",
-        "  wire [7:0] extra = descriptor_i[7:0];",
-        "  reg signed32_escape;",
-        "  always @* begin",
-        "    valid_o = 1'b0;",
-        "    reserved_o = 1'b0;",
-        "    needs_descriptor_o = 1'b0;",
-        "    form_o = 6'd0;",
-        "    is_register_o = 1'b0;",
-        "    is_memory_o = 1'b0;",
-        "    is_immediate_o = 1'b0;",
-        "    update_eligible_o = 1'b0;",
-        "    signed32_index_escape_o = 1'b0;",
-        "    segment_selectable_o = 1'b0;",
-        "    segment_valid_o = 1'b1;",
-        "    has_base_reg_o = 1'b0;",
-        "    has_index_reg_o = 1'b0;",
-        "    has_displacement_o = 1'b0;",
-        "    has_absolute_o = 1'b0;",
-        "    segment_o = 3'd0;",
-        "    base_o = 3'd0;",
-        "    base_reg_o = 3'd0;",
-        "    index_reg_o = 3'd0;",
-        "    scale_log2_o = 2'd0;",
-        "    displacement_words_o = 3'd0;",
-        "    payload_words_o = 3'd0;",
-        "    signed32_escape = 1'b0;",
-        "    casez (ea_i)",
-    ]
+        form_localparam_lines.append(f"  localparam [5:0] {form_names[str(form.get('name', ''))]} = 6'd{index}; // {form.get('name', '')}")
+
+    compact_case_lines: list[str] = []
     for form in compact_ea_forms(spec):
         name = str(form.get("name", ""))
         width_bits, mask, value = parse_bit_pattern(str(form.get("pattern", "")))
         if width_bits == 6:
-            lines.append(f"      {bin_pattern(6, mask, value)}: begin // {name}")
-            lines += ea_synth_assignment_lines(form, form_names[name], compact=True, indent="        ")
-            lines.append("      end")
+            compact_case_lines.append(f"      {bin_pattern(6, mask, value)}: begin // {name}")
+            compact_case_lines += ea_synth_assignment_lines(form, form_names[name], compact=True, indent="        ")
+            compact_case_lines.append("      end")
+
+    reserved_case_lines: list[str] = []
     for reserved in spec.get("ea", {}).get("reserved_forms", []) or []:
         width_bits, mask, value = parse_bit_pattern(str(reserved.get("pattern", "")))
         if width_bits == 6:
-            lines += [f"      {bin_pattern(6, mask, value)}: begin reserved_o = 1'b1; end"]
-    lines += [
-        "      default: begin reserved_o = 1'b1; end",
-        "    endcase",
-        "    if (needs_descriptor_o) begin",
-        "      valid_o = 1'b0;",
-        "      reserved_o = 1'b0;",
-        "      form_o = 6'd0;",
-        "      is_register_o = 1'b0;",
-        "      is_memory_o = 1'b0;",
-        "      is_immediate_o = 1'b0;",
-        "      update_eligible_o = 1'b0;",
-        "      signed32_index_escape_o = signed32_escape;",
-        "      segment_selectable_o = 1'b0;",
-        "      segment_valid_o = 1'b1;",
-        "      has_base_reg_o = 1'b0;",
-        "      has_index_reg_o = 1'b0;",
-        "      has_displacement_o = 1'b0;",
-        "      has_absolute_o = 1'b0;",
-        "      segment_o = seg;",
-        "      base_o = 3'd0;",
-        "      base_reg_o = 3'd0;",
-        "      index_reg_o = 3'd0;",
-        "      scale_log2_o = 2'd0;",
-        "      displacement_words_o = 3'd0;",
-        "      payload_words_o = 3'd0;",
-        "      case (mode)",
-    ]
+            reserved_case_lines.append(f"      {bin_pattern(6, mask, value)}: begin reserved_o = 1'b1; end")
+
+    extended_case_lines: list[str] = []
     for mode_value, mode_forms in extended_ea_forms_by_mode(spec).items():
-        lines.append(f"        5'h{mode_value:02x}: begin")
+        extended_case_lines.append(f"        5'h{mode_value:02x}: begin")
         for index, form in enumerate(mode_forms):
             name = str(form.get("name", ""))
             expected_s32 = bool(form.get("escape") == "S32_INDEXED_EXTENDED")
             keyword = "if" if index == 0 else "else if"
-            lines.append(f"          {keyword} (signed32_escape == 1'b{1 if expected_s32 else 0}) begin // {name}")
-            lines += ea_synth_assignment_lines(form, form_names[name], compact=False, indent="            ")
+            extended_case_lines.append(f"          {keyword} (signed32_escape == 1'b{1 if expected_s32 else 0}) begin // {name}")
+            extended_case_lines += ea_synth_assignment_lines(form, form_names[name], compact=False, indent="            ")
             if form.get("segment_field") == "reserved_zero":
-                lines.append("            valid_o = valid_o && (seg == 3'd0);")
-                lines.append("            segment_valid_o = (seg == 3'd0);")
-                lines.append(f"            segment_o = {segment_synth_value(str(form.get('fixed_segment', 'DS')))};")
+                extended_case_lines.append("            valid_o = valid_o && (seg == 3'd0);")
+                extended_case_lines.append("            segment_valid_o = (seg == 3'd0);")
+                extended_case_lines.append(f"            segment_o = {segment_synth_value(str(form.get('fixed_segment', 'DS')))};")
             else:
                 if form.get("segment_selectable"):
-                    lines.append("            segment_o = seg;")
-                lines.append("            segment_valid_o = 1'b1;")
-            lines.append("          end")
-        lines += ["          else begin reserved_o = 1'b1; end", "        end"]
-    lines += [
-        "        default: begin reserved_o = 1'b1; end",
-        "      endcase",
-        "    end",
-        "  end",
-        "endmodule",
-        "",
-        "`default_nettype wire",
-        "",
-    ]
-    return "\n".join(lines)
+                    extended_case_lines.append("            segment_o = seg;")
+                extended_case_lines.append("            segment_valid_o = 1'b1;")
+            extended_case_lines.append("          end")
+        extended_case_lines += ["          else begin reserved_o = 1'b1; end", "        end"]
+
+    return render_tool_template(
+        "bedrock_ea_decode_synth.sv",
+        {
+            "EA_FORM_LOCALPARAMS": sv_lines(form_localparam_lines),
+            "COMPACT_EA_CASES": sv_lines(compact_case_lines),
+            "RESERVED_COMPACT_EA_CASES": sv_lines(reserved_case_lines),
+            "EXTENDED_EA_CASES": sv_lines(extended_case_lines),
+        },
+    )
 
 
 def segment_synth_value(name: str) -> str:
-    return {
-        "CS": "3'd0",
-        "DS": "3'd1",
-        "SS": "3'd2",
-        "GS0": "3'd3",
-        "GS1": "3'd4",
-        "GS2": "3'd5",
-        "GS3": "3'd6",
-        "GS4": "3'd7",
-    }.get(name.upper(), "3'd1")
+    values = {segment_name.upper(): value for segment_name, value in ea_segment_named_values(active_spec())}
+    upper = name.upper()
+    if upper not in values:
+        raise ValueError(f"unknown EA segment {name}")
+    return f"3'd{values[upper]}"
 
 
 def base_synth_value(name: str) -> str:
-    return {
-        "NONE": "3'd0",
-        "D": "3'd1",
-        "A": "3'd2",
-        "SP": "3'd3",
-        "PC": "3'd4",
-        "ABS": "3'd5",
-        "IMM": "3'd6",
-    }.get(name.upper(), "3'd0")
+    names = ea_base_names(active_spec())
+    upper = name.upper()
+    if upper not in names:
+        raise ValueError(f"unknown EA base {name}")
+    return f"3'd{names.index(upper)}"
 
 
 def ea_synth_assignment_lines(form: dict[str, Any], form_enum: str, compact: bool, indent: str) -> list[str]:
@@ -955,7 +723,7 @@ def main(argv: list[str] | None = None) -> int:
     spec = load_spec(args.spec_dir)
     write(args.prefix_package, emit_prefix_package(spec))
     write(args.prefix_module, emit_prefix_module())
-    write(args.prefix_synth_module, emit_prefix_synth())
+    write(args.prefix_synth_module, emit_prefix_synth(spec))
     write(args.ea_package, emit_ea_package(spec))
     write(args.ea_module, emit_ea_module())
     write(args.ea_synth_module, emit_ea_synth(spec))

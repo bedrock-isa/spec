@@ -68,13 +68,13 @@ make -C rtl decode-test
 make -C rtl execute-test
 ```
 
-The repository root also provides thin forwarding targets:
+From the repository root, the generic dispatcher can run the same targets:
 
 ```sh
-make rtl-lint
-make rtl-test
-make rtl-decode-test
-make rtl-execute-test
+make rtl TARGET=lint
+make rtl TARGET=test
+make rtl TARGET=decode-test
+make rtl TARGET=execute-test
 ```
 
 Generated Verilator artifacts are written under `build/verilator/`.

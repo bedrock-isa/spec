@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
-"""Generate decoder metadata from the declarative ISA spec.
-
-The first generator target is JSON metadata. It keeps the generated shape easy
-to diff while the final C decoder-table format is still evolving.
-"""
+"""Generate decoder metadata from the declarative ISA spec."""
 
 from __future__ import annotations
 

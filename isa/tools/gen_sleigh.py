@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate a Ghidra SLEIGH decode skeleton from the allocated ISA spec."""
+"""Generate a Ghidra SLEIGH specification from the allocated ISA spec."""
 
 from __future__ import annotations
 
@@ -14,43 +14,32 @@ import sys
 sys.dont_write_bytecode = True
 
 from isa_spec import load_and_validate, print_result
+from spec_model.encoding import (
+    condition_named_values,
+    condition_names_by_value as spec_condition_names_by_value,
+    condition_sleigh_checks,
+    flag_pseudo_registers,
+    named_values as spec_named_values,
+    register_names as spec_register_names,
+    size_code_bytes,
+    size_kind_byte_widths,
+    size_kind_field,
+    size_kind_suffixes,
+    size_kind_width,
+    size_kinds as spec_size_kinds,
+    special_register_attach_names,
+    special_register_named_values,
+)
 
 
 PRIMARY_BITS = 12
 WORD_BITS = 16
 MAX_INSTRUCTION_WORDS = 8
-SIZE_NAMES = {
-    "BWLQ": [".B", ".W", ".L", ".Q"],
-    "LQ": [".L", ".Q"],
-    "WL": [".W", ".L"],
-    "S_D": [".S", ".D"],
-    "BW": [".B", ".W"],
-    "BWL": [".B", ".W", ".L", ".invalid"],
-    "BWLX": [".B", ".W", ".L", ".invalid"],
-}
-CONDITION_VALUES = {
-    "T": 0,
-    "F": 1,
-    "EQ": 2,
-    "NE": 3,
-    "ULT": 4,
-    "UGE": 5,
-    "MI": 6,
-    "PL": 7,
-    "VS": 8,
-    "VC": 9,
-    "ULE": 10,
-    "UGT": 11,
-    "LT": 12,
-    "GE": 13,
-    "LE": 14,
-    "GT": 15,
-}
-CONDITIONAL_MNEMONICS = {"Jcc", "DJcc", "SETcc", "MOVcc", "TRAPcc", "FMOVcc"}
+ACTIVE_SPEC: dict[str, Any] | None = None
 
 
 def is_condition_mnemonic(mnemonic: str) -> bool:
-    return mnemonic in CONDITIONAL_MNEMONICS or mnemonic.lower().endswith("cc")
+    return mnemonic.lower().endswith("cc")
 
 
 @dataclass(frozen=True)
@@ -66,6 +55,34 @@ class SField:
     @property
     def mask(self) -> int:
         return ((1 << (self.high - self.low + 1)) - 1) << self.low
+
+
+@dataclass(frozen=True)
+class OperandBinding:
+    role: str
+    kind: str
+    display: str
+    ref: str
+
+
+DIRECT_REGISTER_KINDS = {"DREG", "AREG", "SREG", "FREG", "SPREG"}
+PCODE_SCRATCH_ROLES = {"size", "result", "tmp", "carry", "borrow"}
+PCODE_ROLE_VAR_RE = re.compile(r"\b([a-z][a-z0-9_]*?)_old_v\b|\b([a-z][a-z0-9_]*)_v\b")
+LOCAL_PCODE_VAR_RE = re.compile(r"^\s*local\s+([A-Za-z][A-Za-z0-9_]*)(?::\d+)?\b")
+
+
+def active_spec() -> dict[str, Any]:
+    if ACTIVE_SPEC is None:
+        raise RuntimeError("active spec is not set")
+    return ACTIVE_SPEC
+
+
+def size_kind_names() -> set[str]:
+    return set(spec_size_kinds(active_spec()))
+
+
+def is_size_kind(kind: str) -> bool:
+    return kind.upper() in size_kind_names()
 
 
 def default_allocation_path(spec_dir: str) -> Path:
@@ -120,6 +137,7 @@ def infer_operand_kind(operand: str, field: dict[str, Any] | None = None) -> str
     if field is not None:
         return str(field.get("kind", ""))
     name, typ = split_operand(operand)
+    explicit_type = ":" in operand
     upper = typ.upper()
     source = name.upper()
     if "BITMAP" in upper or "BITMAP" in source:
@@ -132,13 +150,13 @@ def infer_operand_kind(operand: str, field: dict[str, Any] | None = None) -> str
         return "SPREG"
     if upper in {"DBANK", "DATA_BANK", "DATA_REGISTER_BANK"} or source in {"BANK", "SRC_BANK", "DST_BANK", "BANK_A", "BANK_B", "DBANK"}:
         return "DBANK"
-    if upper in {"DREG", "DLO", "DX", "DHI"} or upper.startswith("D") or source.startswith("D"):
+    if upper in {"DREG", "DLO", "DX", "DHI"} or upper.startswith("D") or (not explicit_type and source.startswith("D")):
         return "DREG"
-    if upper in {"AREG"} or upper.startswith("A") or source.startswith("A"):
+    if upper in {"AREG"} or upper.startswith("A") or (not explicit_type and source.startswith("A")):
         return "AREG"
-    if upper in {"SREG", "SEGREG", "SEGMENT_REGISTER"} or source.startswith("SREG") or source.startswith("SEG"):
+    if upper in {"SREG", "SEGREG", "SEGMENT_REGISTER"} or (not explicit_type and (source.startswith("SREG") or source.startswith("SEG"))):
         return "SREG"
-    if upper.startswith("F") or source.startswith("F"):
+    if upper.startswith("F") or (not explicit_type and source.startswith("F")):
         return "FREG"
     if upper in {"IMM_EA", "IMMEDIATE_EA", "IMMEA", "IMMEDIATE_OPERAND_EA"}:
         return "IMM_EA"
@@ -146,8 +164,6 @@ def infer_operand_kind(operand: str, field: dict[str, Any] | None = None) -> str
         return "EA"
     if upper in {"CR", "CREG", "CONTROL_REGISTER"} or source in {"CR", "CONTROL_REGISTER"}:
         return "cr"
-    if "ASID" in upper or "ASID" in source:
-        return "asid"
     if "RELATIVE" in upper or source == "TARGET":
         return "relative_imm"
     if "IMM64" in upper or "IMM64" in source:
@@ -179,16 +195,16 @@ def is_implicit_operand(operand: str) -> bool:
     )
 
 
-def payload_words_for_kind(kind: str, fallback: int = 1) -> int:
+def payload_words_for_kind(kind: str, default_count: int = 1) -> int:
     lower = kind.lower()
-    if "bitmap" in lower or "imm16" in lower or lower == "cr" or "asid" in lower:
+    if "bitmap" in lower or "imm16" in lower or lower == "cr":
         return 1
     if "imm32" in lower:
         return 2
     if "imm64" in lower:
         return 4
     if "relative" in lower or "imm" in lower:
-        return fallback
+        return default_count
     return 0
 
 
@@ -214,8 +230,8 @@ def token_field_name(token: int, low: int, high: int) -> str:
 
 def field_prefix(kind: str, source: str = "") -> str:
     upper = kind.upper()
-    if upper in SIZE_NAMES:
-        return "z" if upper in {"LQ", "WL", "S_D"} else "s"
+    if is_size_kind(upper):
+        return size_kind_field(active_spec(), upper)
     if upper == "DREG":
         return "d"
     if upper == "DBANK":
@@ -254,19 +270,11 @@ def sleigh_field_name(field: dict[str, Any], token: int) -> str:
 
 
 def size_values(kind: str) -> list[str]:
-    return SIZE_NAMES.get(kind.upper(), [])
+    return size_kind_suffixes(active_spec(), kind)
 
 
 def condition_names(spec: dict[str, Any]) -> list[str]:
-    out = ["T", "F", "EQ", "NE", "ULT", "UGE", "MI", "PL", "VS", "VC", "ULE", "UGT", "LT", "GE", "LE", "GT"]
-    for item in spec.get("conditions", {}).get("conditions", []) or []:
-        if not isinstance(item, dict):
-            continue
-        value = int(item.get("value", len(out)))
-        while len(out) <= value:
-            out.append(f"C{len(out)}")
-        out[value] = str(item.get("name", out[value]))
-    return out[:16]
+    return spec_condition_names_by_value(spec)
 
 
 def field_for_operand(fields: list[dict[str, Any]], operand: str) -> dict[str, Any] | None:
@@ -288,18 +296,23 @@ def parse_descriptor_layout(item: dict[str, Any]) -> list[dict[str, Any]]:
     layout = str(item.get("_resolved_descriptor_layout", item.get("descriptor_layout", "")))
     occurrence: dict[tuple[str, str], int] = {}
     by_kind: dict[str, list[dict[str, Any]]] = {}
+    by_name_kind: dict[tuple[str, str], list[dict[str, Any]]] = {}
     for field in raw_fields:
         by_kind.setdefault(str(field.get("kind", "")), []).append(field)
+        by_name_kind.setdefault((str(field.get("name", "")), str(field.get("kind", ""))), []).append(field)
 
     start_token = 2 if item.get("kind") in {"extended", "extended_alias"} else 1
     payload_token = start_token
     payload_bit = 0
 
     def source_for(name: str, kind: str) -> str:
-        key = (name.rstrip("0123456789").lower(), kind)
+        candidates = by_name_kind.get((name, kind))
+        key = (name, kind)
+        if not candidates:
+            key = (name.rstrip("0123456789").lower(), kind)
+            candidates = by_kind.get(kind, [])
         index = occurrence.get(key, 0)
         occurrence[key] = index + 1
-        candidates = by_kind.get(kind, [])
         return str(candidates[index].get("source", name)) if index < len(candidates) else name
 
     out: list[dict[str, Any]] = []
@@ -340,8 +353,7 @@ def parse_descriptor_layout(item: dict[str, Any]) -> list[dict[str, Any]]:
         width = int(match.group("width"))
         where = match.group("where")
         if where == "ext":
-            # Only used by aliases when a concrete alias target layout is not
-            # available. Keep the fallback deterministic and low-bit packed.
+            # Alias-only synthetic layouts stay deterministic and low-bit packed.
             low = payload_bit
             high = low + width - 1
             payload_bit = high + 1
@@ -419,7 +431,7 @@ def payload_tokens(start_word: int, word_count: int) -> list[str]:
     return [f"word{index}" for index in range(start_word, start_word + word_count)]
 
 
-def collect_allocations(plan: dict[str, Any]) -> list[dict[str, Any]]:
+def collect_allocations(spec: dict[str, Any], plan: dict[str, Any]) -> list[dict[str, Any]]:
     solver = plan.get("solver", plan)
     out: list[dict[str, Any]] = []
     out.extend(dict(item) for item in solver.get("primary_allocations", []) if item.get("kind") == "compact")
@@ -430,6 +442,7 @@ def collect_allocations(plan: dict[str, Any]) -> list[dict[str, Any]]:
         out.append(copied)
     out.extend(dict(item) for item in solver.get("extended_alias_allocations", []))
     by_id = {str(item.get("id", "")): item for item in out}
+    condition_values = {name.upper(): value for name, value in condition_named_values(spec)}
     for item in out:
         if item.get("kind") != "extended_alias":
             continue
@@ -442,7 +455,7 @@ def collect_allocations(plan: dict[str, Any]) -> list[dict[str, Any]]:
         alias_target = by_id.get(str(item.get("alias_of", "")))
         if not alias_target:
             continue
-        value = CONDITION_VALUES.get(str(item.get("alias_condition", "")).upper())
+        value = condition_values.get(str(item.get("alias_condition", "")).upper())
         if value is None:
             continue
         fixed_fields = []
@@ -451,6 +464,87 @@ def collect_allocations(plan: dict[str, Any]) -> list[dict[str, Any]]:
                 fixed_fields.append(dict(field, token=0, value=value))
         if fixed_fields:
             item["_fixed_condition_fields"] = fixed_fields
+    return out
+
+
+def pcode_statements(value: Any) -> list[str]:
+    if isinstance(value, str):
+        return [line.rstrip() for line in value.splitlines()]
+    if isinstance(value, list):
+        lines: list[str] = []
+        for item in value:
+            if isinstance(item, str):
+                lines.extend(line.rstrip() for line in item.splitlines())
+        return lines
+    return []
+
+
+def semantic_value_for_mnemonic(group: dict[str, Any], key: str, mnemonic: str) -> Any:
+    by_mnemonic = group.get(f"{key}_by_mnemonic")
+    if isinstance(by_mnemonic, dict) and mnemonic in by_mnemonic:
+        return by_mnemonic[mnemonic]
+    return group.get(key)
+
+
+def operation_semantics_map(spec: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    operation_semantics = (
+        spec.get("instructions", {})
+        .get("operation_semantics", {})
+    )
+    groups = operation_semantics.get("groups", {}) if isinstance(operation_semantics, dict) else {}
+    out: dict[str, dict[str, Any]] = {}
+    if isinstance(groups, dict):
+        for group in groups.values():
+            if not isinstance(group, dict):
+                continue
+            for member in [str(item) for item in group.get("members", []) or []]:
+                entry = out.setdefault(member, {})
+                for key in ("inputs", "input_output", "output"):
+                    value = semantic_value_for_mnemonic(group, key, member)
+                    if value is not None:
+                        entry[key] = value
+    instructions = operation_semantics.get("instructions", {}) if isinstance(operation_semantics, dict) else {}
+    if isinstance(instructions, dict):
+        for mnemonic, entry in instructions.items():
+            if not isinstance(entry, dict):
+                continue
+            target = out.setdefault(str(mnemonic), {})
+            for key in ("inputs", "input_output", "output"):
+                if key in entry:
+                    target[key] = entry[key]
+            if "pcode" in entry:
+                target["pcode"] = pcode_statements(entry["pcode"])
+            if "pcode_by_form" in entry:
+                target["pcode_by_form"] = [
+                    {
+                        **form,
+                        "operation": pcode_statements(form.get("operation")),
+                    }
+                    for form in entry.get("pcode_by_form", []) or []
+                    if isinstance(form, dict)
+                ]
+    return out
+
+
+def role_names(value: Any, available: set[str]) -> list[str]:
+    if value is None:
+        return []
+    if isinstance(value, dict):
+        explicit = value.get("explicit")
+        if isinstance(explicit, str) and explicit in available:
+            return [explicit]
+        return []
+    if isinstance(value, list):
+        return [str(item) for item in value if str(item) in available]
+    text = str(value).strip()
+    if not text or text.lower() == "none":
+        return []
+    if text in available:
+        return [text]
+    out = []
+    for role in sorted(available):
+        if re.search(rf"\b{re.escape(role)}\b", text):
+            out.append(role)
     return out
 
 
@@ -504,7 +598,7 @@ def collect_sleigh_fields(allocations: list[dict[str, Any]]) -> dict[str, SField
             add(0, token_field_name(0, low, high), low, high)
         if item.get("kind") in {"extended", "extended_alias"}:
             ext_start, ext_end = parse_range(str(item.get("extended_opcode", "0x0000")))
-            for low, high in fixed_constraint_ranges(ext_start, ext_end, descriptor_variable_mask(item)):
+            for low, high in fixed_constraint_ranges(ext_start, ext_end, descriptor_variable_mask(item), WORD_BITS):
                 add(1, token_field_name(1, low, high), low, high)
     return fields
 
@@ -576,48 +670,36 @@ def fixed_constraints(start: int, end: int, variable_mask: int, token: int, widt
     return constraints
 
 
-def register_names(prefix: str, count: int) -> list[str]:
-    return [f"{prefix}{index}" for index in range(count)]
-
-
-def sreg_names(spec: dict[str, Any], *, padded: bool = False) -> list[str]:
-    classes = spec.get("registers", {}).get("special_register_classes", {})
-    sreg = classes.get("S", {}) if isinstance(classes, dict) else {}
-    raw_names = sreg.get("registers", []) if isinstance(sreg, dict) else []
-    names = [str(name) for name in raw_names if str(name)]
-    if not names:
-        names = [
-            str(item.get("name", ""))
-            for item in spec.get("segments", {}).get("segment_registers", []) or []
-            if isinstance(item, dict) and item.get("name")
-        ]
-    if padded:
-        target = 1 << max(1, (len(names) - 1).bit_length())
-        names = names + [f"SRES{index}" for index in range(len(names), target)]
-    return names
-
-
 def render_registers(spec: dict[str, Any]) -> str:
-    register_classes = spec.get("registers", {}).get("register_classes", {})
-    d_count = int(register_classes.get("D", {}).get("count", 8) or 8)
-    a_count = int(register_classes.get("A", {}).get("count", 8) or 8)
     names = (
-        register_names("D", d_count)
-        + register_names("A", a_count)
-        + sreg_names(spec)
-        + register_names("F", 32)
+        spec_register_names(spec, "D")
+        + spec_register_names(spec, "A")
+        + [name for name, _value in special_register_named_values(spec, "S")]
+        + spec_register_names(spec, "F")
     )
+    dbank_name = str(
+        spec.get("registers", {})
+        .get("data_register_banking", {})
+        .get("selector", {})
+        .get("name", "")
+    )
+    if dbank_name and dbank_name not in names:
+        names.append(dbank_name)
     for item in spec.get("registers", {}).get("special_registers", []) or []:
         if isinstance(item, dict):
             name = str(item.get("name", ""))
         else:
             name = str(item)
+        if name == "FLAGS":
+            continue
         if name and name not in names:
             names.append(name)
     lines = ["define register offset=0 size=8 ["]
     for index in range(0, len(names), 8):
         lines.append("  " + " ".join(names[index : index + 8]))
     lines.append("];")
+    lines.append("")
+    lines.append(f"define register offset=0x1000 size=1 [ {' '.join(flag_pseudo_registers(spec))} ];")
     return "\n".join(lines)
 
 
@@ -654,24 +736,31 @@ def render_attaches(spec: dict[str, Any], fields: dict[str, SField]) -> str:
     c_fields = sorted(by_kind.get("condition", []))
     order_fields = sorted(by_kind.get("memory_order", []))
     if d_fields:
-        lines.append(f"attach variables [ {' '.join(d_fields)} ] [ {' '.join(register_names('D', 8))} ];")
+        lines.append(f"attach variables [ {' '.join(d_fields)} ] [ {' '.join(spec_register_names(spec, 'D'))} ];")
     if db_fields:
-        db_names = " ".join(f'"DB{i}"' for i in range(16))
+        namespace = int(
+            spec.get("registers", {})
+            .get("data_register_banking", {})
+            .get("selector", {})
+            .get("architectural_namespace", 0)
+        )
+        db_names = " ".join(f'"DB{i}"' for i in range(namespace))
         lines.append(f"attach names [ {' '.join(db_fields)} ] [ {db_names} ];")
     if a_fields:
-        lines.append(f"attach variables [ {' '.join(a_fields)} ] [ {' '.join(register_names('A', 8))} ];")
+        lines.append(f"attach variables [ {' '.join(a_fields)} ] [ {' '.join(spec_register_names(spec, 'A'))} ];")
     if s_fields:
-        names = " ".join(f'"{name}"' for name in sreg_names(spec, padded=True))
-        lines.append(f"attach names [ {' '.join(s_fields)} ] [ {names} ];")
+        names = " ".join(special_register_attach_names(spec, "S"))
+        lines.append(f"attach variables [ {' '.join(s_fields)} ] [ {names} ];")
     if f_fields:
-        lines.append(f"attach variables [ {' '.join(f_fields)} ] [ {' '.join(register_names('F', 32))} ];")
+        lines.append(f"attach variables [ {' '.join(f_fields)} ] [ {' '.join(spec_register_names(spec, 'F'))} ];")
     if c_fields:
         names = " ".join(f'"{name}"' for name in condition_names(spec))
         lines.append(f"attach names [ {' '.join(c_fields)} ] [ {names} ];")
     if order_fields:
-        names = '"RELAXED" "ACQUIRE" "RELEASE" "ACQREL" "SEQCST" "RESERVED5" "RESERVED6" "RESERVED7"'
+        names = " ".join(f'"{name}"' for name, _value in spec_named_values(spec, "memory_order", include_reserved=True))
         lines.append(f"attach names [ {' '.join(order_fields)} ] [ {names} ];")
-    for kind, values in sorted(SIZE_NAMES.items()):
+    for kind in sorted(spec_size_kinds(spec)):
+        values = size_kind_suffixes(spec, kind)
         size_fields = sorted(by_kind.get(kind, []))
         if not size_fields:
             continue
@@ -691,36 +780,70 @@ def payload_table_name(kind: str, start_word: int, word_count: int) -> str:
 def render_operand_tables(fields: dict[str, SField]) -> str:
     lines: list[str] = []
     ea_fields = sorted(
-        (field for field in fields.values() if field.kind == "EA"),
+        (field for field in fields.values() if field.kind in {"EA", "IMM_EA"}),
         key=lambda field: (field.token, field.low, field.high, field.name),
     )
     for field in ea_fields:
         table = ea_table_name(field.name)
-        lines.append(f'{table}: "<ea:"^{field.name}^">" is {field.name} {{ }}')
+        lines.extend(render_ea_table(table, field.name))
     lines.append("")
     payload_tables: set[tuple[str, int, int]] = set()
     for start in range(1, MAX_INSTRUCTION_WORDS):
-        for kind, count in (
-            ("imm16", 1),
-            ("relative_imm", 1),
-            ("bitmap16", 1),
-            ("cr", 1),
-            ("asid", 1),
-            ("imm32", 2),
-            ("imm64", 4),
-            ("payload", 1),
+        for kind in ("imm", "imm16", "relative_imm", "bitmap16", "cr", "payload"):
+            payload_tables.add((kind, start, 1))
+        for kind, counts in (
+            ("imm32", (2,)),
+            ("imm64", (4,)),
+            ("relative_imm", (2, 4)),
         ):
-            if start + count - 1 < MAX_INSTRUCTION_WORDS:
-                payload_tables.add((kind, start, count))
+            for count in counts:
+                if start + count - 1 < MAX_INSTRUCTION_WORDS:
+                    payload_tables.add((kind, start, count))
     for kind, start, count in sorted(payload_tables, key=lambda item: (item[1], item[2], item[0])):
         table = payload_table_name(kind, start, count)
         tokens = " ; ".join(payload_tokens(start, count))
-        if count == 1:
-            display = f"word{start}"
-        else:
-            display = f'"<{kind}>"'
-        lines.append(f"{table}: {display} is {tokens} {{ }}")
+        display = f"word{start}" if count == 1 else f'"<{kind}>"'
+        lines.append(f"{table}: {display} is {tokens} {{ {payload_export_statement(kind, start, count)} }}")
     return "\n".join(lines)
+
+
+def render_ea_table(table: str, field_name: str) -> list[str]:
+    lines: list[str] = []
+    for index in range(8):
+        lines.append(f'{table}: "D{index}" is {field_name}=0x{index:x} {{ export D{index}; }}')
+    for index in range(8):
+        value = 0x08 + index
+        lines.append(f'{table}: "A{index}" is {field_name}=0x{value:x} {{ export A{index}; }}')
+    for index in range(8):
+        value = 0x10 + index
+        lines.append(f'{table}: "[A{index}]" is {field_name}=0x{value:x} {{ export *:8 A{index}; }}')
+    special = {
+        0x2F: ('"SP"', "SP"),
+    }
+    for value, (display, export) in special.items():
+        lines.append(f"{table}: {display} is {field_name}=0x{value:x} {{ export {export}; }}")
+    used = set(range(0x00, 0x18)) | set(special)
+    for value in range(64):
+        if value in used:
+            continue
+        lines.append(
+            f'{table}: "<ea:{value:02x}>" is {field_name}=0x{value:x} '
+            f"{{ ea_tmp:8 = 0x{value:x}; export *[const]:8 ea_tmp; }}"
+        )
+    return lines
+
+
+def payload_export_statement(kind: str, start: int, count: int) -> str:
+    words = [f"word{index}" for index in range(start, start + count)]
+    if count == 1:
+        return f"export *[const]:8 {words[0]};"
+    lines = [f"payload_word0:2 = {words[0]};", "payload_tmp:8 = zext(payload_word0);"]
+    for offset, word in enumerate(words[1:], start=1):
+        lines.append(f"payload_word{offset}:2 = {word};")
+        lines.append(f"payload_part{offset}:8 = zext(payload_word{offset}) << {16 * offset};")
+        lines.append(f"payload_tmp = payload_tmp | payload_part{offset};")
+    lines.append("export *[const]:8 payload_tmp;")
+    return " ".join(lines)
 
 
 def display_name_for_field(field: dict[str, Any], token: int | None = None) -> str:
@@ -732,22 +855,32 @@ def display_name_for_field(field: dict[str, Any], token: int | None = None) -> s
 
 
 def payload_operand_display(kind: str, start_word: int, available_words: int) -> tuple[str, int]:
-    count = payload_words_for_kind(kind, fallback=max(1, available_words))
+    count = payload_words_for_kind(kind, default_count=max(1, available_words))
     if count <= 0:
         count = 1
     count = min(count, max(1, available_words))
     return payload_table_name(kind, start_word, count), count
 
 
-def constructor_display(item: dict[str, Any], fields: list[dict[str, Any]], token: int, payload_count: int) -> tuple[str, list[str]]:
+def raw_field_symbol(field: dict[str, Any], token: int | None = None) -> str:
+    return sleigh_field_name(field, field_token(field, token if token is not None else 0))
+
+
+def constructor_operands(
+    item: dict[str, Any],
+    fields: list[dict[str, Any]],
+    token: int,
+    payload_count: int,
+) -> tuple[str, list[str], dict[str, OperandBinding]]:
     mnemonic = str(item.get("mnemonic", item.get("id", "")))
-    size_field = next((field for field in fields if str(field.get("kind")) in SIZE_NAMES), None)
+    size_field = next((field for field in fields if is_size_kind(str(field.get("kind")))), None)
     fixed_size = str(item.get("fixed_size_suffix", ""))
     suffix = f"^{display_name_for_field(size_field, token)}" if size_field else (f".{fixed_size}" if fixed_size else "")
     condition_suffix = ""
     order_suffix = ""
     operands: list[str] = []
     payload_terms: list[str] = []
+    bindings: dict[str, OperandBinding] = {}
     payload_cursor = 1 if item.get("kind") in {"compact", "compact_alias"} else 2
     field_payload_tokens = {field_token(field, token) for field in fields if field_token(field, token) >= payload_cursor}
     consumed_payload_tokens = set(field_payload_tokens)
@@ -757,25 +890,32 @@ def constructor_display(item: dict[str, Any], fields: list[dict[str, Any]], toke
         operand_text = str(operand)
         if is_implicit_operand(operand_text):
             continue
-        kind = infer_operand_kind(operand_text)
+        role, _typ = split_operand(operand_text)
+        field = field_for_operand(fields, operand_text)
+        kind = infer_operand_kind(operand_text, field)
         if kind == "condition":
-            field = root_field or field_for_operand(fields, operand_text)
+            field = root_field or field
             if field is not None:
                 condition_display = display_name_for_field(field, 0 if field is root_field else token)
+                condition_ref = raw_field_symbol(field, 0 if field is root_field else token)
+                bindings[role] = OperandBinding(role, kind, condition_display, condition_ref)
                 if is_condition_mnemonic(mnemonic):
                     condition_suffix = f"^{condition_display}"
                 else:
                     operands.append(condition_display)
             continue
-        field = field_for_operand(fields, operand_text)
         if field is not None:
+            display = display_name_for_field(field, token)
+            ref = display if kind in {"EA", "IMM_EA"} else raw_field_symbol(field, token)
+            bindings[role] = OperandBinding(role, kind, display, ref)
             if kind == "memory_order":
-                order_suffix = f'"/"^{display_name_for_field(field, token)}'
+                order_suffix = f'"/"^{display}'
                 continue
-            operands.append(display_name_for_field(field, token))
+            operands.append(display)
             continue
         if kind == "SPREG":
             operands.append('"SP"')
+            bindings[role] = OperandBinding(role, kind, "SP", "SP")
             continue
         while payload_cursor in consumed_payload_tokens:
             payload_cursor += 1
@@ -784,11 +924,12 @@ def constructor_display(item: dict[str, Any], fields: list[dict[str, Any]], toke
             symbol, used = payload_operand_display(kind, payload_cursor, available_words)
             operands.append(symbol)
             payload_terms.append(symbol)
+            bindings[role] = OperandBinding(role, kind, symbol, symbol)
             consumed_payload_tokens.update(range(payload_cursor, payload_cursor + used))
             payload_cursor += used
             continue
-        name, _typ = split_operand(operand_text)
-        operands.append(f'"<{sanitize(name).lower()}>"')
+        operands.append(f'"<{sanitize(role).lower()}>"')
+        bindings[role] = OperandBinding(role, kind, "0", "0")
 
     end_payload_token = (1 if item.get("kind") in {"compact", "compact_alias"} else 2) + payload_count
     while payload_cursor < end_payload_token:
@@ -803,7 +944,32 @@ def constructor_display(item: dict[str, Any], fields: list[dict[str, Any]], toke
     if condition_suffix:
         mnemonic = re.sub(r"cc$", condition_suffix, mnemonic, flags=re.IGNORECASE)
     operand_text = "" if not operands else " " + ",".join(operands)
-    return f"{mnemonic}{suffix}{order_suffix}{operand_text}", payload_terms
+    add_canonical_role_aliases(bindings)
+    return f"{mnemonic}{suffix}{order_suffix}{operand_text}", payload_terms, bindings
+
+
+def add_canonical_role_aliases(bindings: dict[str, OperandBinding]) -> None:
+    aliases = (
+        ("src", "imm"),
+        ("src", "lhs"),
+        ("dst", "rhs"),
+        ("constant", "constant_id"),
+        ("page", "src"),
+    )
+    for canonical, alias in aliases:
+        if canonical not in bindings and alias in bindings:
+            aliased = bindings[alias]
+            bindings[canonical] = OperandBinding(
+                role=canonical,
+                kind=aliased.kind,
+                display=aliased.display,
+                ref=aliased.ref,
+            )
+
+
+def constructor_display(item: dict[str, Any], fields: list[dict[str, Any]], token: int, payload_count: int) -> tuple[str, list[str]]:
+    display, payload_terms, _bindings = constructor_operands(item, fields, token, payload_count)
+    return display, payload_terms
 
 
 def item_pattern(item: dict[str, Any], fields: list[dict[str, Any]], payload_terms: list[str]) -> str:
@@ -856,49 +1022,226 @@ def constructor_sort_key(item: dict[str, Any]) -> tuple[int, int, str]:
     return (root_start, ext_start, str(item.get("id", "")))
 
 
-def render_constructors(allocations: list[dict[str, Any]]) -> str:
+def size_expression(item: dict[str, Any], fields: list[dict[str, Any]], token: int) -> str:
+    size_field = next((field for field in fields if is_size_kind(str(field.get("kind")))), None)
+    if size_field is not None:
+        return "8"
+    fixed_size = str(item.get("fixed_size_suffix", "")).upper()
+    return str(size_code_bytes(active_spec(), fixed_size) if fixed_size else 8)
+
+
+def size_init_lines(item: dict[str, Any], fields: list[dict[str, Any]], token: int) -> list[str]:
+    size_field = next((field for field in fields if is_size_kind(str(field.get("kind")))), None)
+    if size_field is None:
+        return [f"local size_v:8 = {size_expression(item, fields, token)};"]
+
+    kind = str(size_field.get("kind", ""))
+    values = size_values(kind)
+    if not values:
+        return ["local size_v:8 = 8;"]
+    ref = raw_field_symbol(size_field, token)
+    byte_widths = dict(size_kind_byte_widths(active_spec(), kind))
+    lines = ["local size_v:8 = 8;", f"local size_code_v:{size_kind_width(active_spec(), kind)} = {ref};"]
+    for value, byte_width in byte_widths.items():
+        next_label = f"<size_next_{value}>"
+        lines.append(f"if (size_code_v != 0x{value:x}) goto {next_label};")
+        lines.append(f"size_v = {byte_width};")
+        lines.append("goto <size_done>;")
+        lines.append(next_label)
+    lines.append("<size_done>")
+    return lines
+
+
+def render_condition_read(role: str, ref: str) -> list[str]:
+    done_label = f"<{role}_condition_done>"
+    checks = condition_sleigh_checks(active_spec())
+    code_var = f"{role}_code_v"
+    lines = [f"local {role}_v:8 = 0;", f"local {code_var}:1 = {ref};"]
+    for value, expr in checks:
+        next_label = f"<{role}_condition_next_{value}>"
+        lines.append(f"if ({code_var} != 0x{value:x}) goto {next_label};")
+        if expr == "1":
+            lines.append(f"{role}_v = 1;")
+        elif expr != "0":
+            false_label = f"<{role}_condition_false_{value}>"
+            lines.append(f"if (!({expr})) goto {false_label};")
+            lines.append(f"{role}_v = 1;")
+            lines.append(false_label)
+        lines.append(f"goto {done_label};")
+        lines.append(next_label)
+    lines.append(done_label)
+    return lines
+
+
+def render_role_read(binding: OperandBinding) -> list[str]:
+    role = sanitize(binding.role)
+    kind = binding.kind
+    if kind == "condition":
+        return render_condition_read(role, binding.ref)
+    if kind == "memory_order":
+        return [f"local {role}_v:8 = {binding.ref};"]
+    if kind in DIRECT_REGISTER_KINDS:
+        return [f"local {role}_v:8 = {binding.ref};"]
+    return [f"local {role}_v:8 = {binding.ref};"]
+
+
+def render_role_init(binding: OperandBinding) -> list[str]:
+    role = sanitize(binding.role)
+    return [f"local {role}_v:8 = 0;"]
+
+
+def render_role_write(binding: OperandBinding) -> list[str]:
+    role = sanitize(binding.role)
+    kind = binding.kind
+    if kind in {"condition", "memory_order"}:
+        return []
+    if kind in DIRECT_REGISTER_KINDS:
+        return [f"{binding.ref} = {role}_v;"]
+    if kind in {"EA", "IMM_EA"}:
+        return [f"{binding.ref} = {role}_v;"]
+    return []
+
+
+def operand_kind_profile(operands: list[Any]) -> list[str]:
+    profile: list[str] = []
+    for operand in operands:
+        _role, kind = split_operand(str(operand))
+        profile.append(infer_operand_kind(kind).upper())
+    return profile
+
+
+def form_pcode_matches(item: dict[str, Any], form: dict[str, Any]) -> bool:
+    expected = [str(kind).upper() for kind in form.get("operands", []) or []]
+    return expected == operand_kind_profile(item.get("operands", []) or [])
+
+
+def select_pcode_body(mnemonic: str, item: dict[str, Any], semantics: dict[str, Any]) -> Any:
+    for form in semantics.get("pcode_by_form", []) or []:
+        if isinstance(form, dict) and form_pcode_matches(item, form):
+            return form.get("operation")
+    return semantics.get("pcode")
+
+
+def pcode_role_references(lines: list[str]) -> set[str]:
+    local_roles: set[str] = set()
+    for line in lines:
+        match = LOCAL_PCODE_VAR_RE.match(line)
+        if match and match.group(1).endswith("_v"):
+            local_roles.add(match.group(1)[:-2])
+
+    out: set[str] = set()
+    for line in lines:
+        for match in PCODE_ROLE_VAR_RE.finditer(line):
+            role = match.group(1) or match.group(2)
+            if role not in PCODE_SCRATCH_ROLES and role not in local_roles:
+                out.add(role)
+    return out
+
+
+def mentioned_roles(lines: list[str], bindings: dict[str, OperandBinding]) -> set[str]:
+    return pcode_role_references(lines) & set(bindings)
+
+
+def render_pcode_body(
+    item: dict[str, Any],
+    fields: list[dict[str, Any]],
+    token: int,
+    bindings: dict[str, OperandBinding],
+    semantics_by_mnemonic: dict[str, dict[str, Any]],
+) -> str:
+    mnemonic = str(item.get("mnemonic", ""))
+    semantics = semantics_by_mnemonic.get(mnemonic, {})
+    body = select_pcode_body(mnemonic, item, semantics)
+    if body is None:
+        raise ValueError(f"missing SLEIGH pcode for {mnemonic}")
+    lines = [line for line in body if line.strip()]
+    if not lines:
+        raise ValueError(f"empty SLEIGH pcode for {mnemonic}")
+    available = set(bindings)
+    input_output_roles = role_names(semantics.get("input_output"), available)
+    read_roles = set(role_names(semantics.get("inputs"), available)) | set(input_output_roles)
+    write_roles = set(role_names(semantics.get("output"), available)) | set(input_output_roles)
+    referenced_roles = pcode_role_references(lines)
+    missing_roles = sorted(referenced_roles - set(bindings))
+    if missing_roles:
+        raise ValueError(
+            f"{mnemonic} SLEIGH pcode references unbound operand roles: "
+            + ", ".join(missing_roles)
+        )
+    mentioned = mentioned_roles(lines, bindings)
+    read_roles |= mentioned - write_roles
+    declared_roles = read_roles | write_roles | mentioned
+
+    rendered: list[str] = [
+        *size_init_lines(item, fields, token),
+        "local result_v:8 = 0;",
+        "local tmp_v:8 = 0;",
+        "local carry_v:8 = 0;",
+        "local borrow_v:8 = 0;",
+    ]
+    for role in sorted(declared_roles):
+        binding = bindings.get(role)
+        if binding is None:
+            raise ValueError(f"{mnemonic} SLEIGH pcode role {role} is not bound")
+        if role in read_roles:
+            rendered.extend(render_role_read(binding))
+        else:
+            rendered.extend(render_role_init(binding))
+        rendered.append(f"local {sanitize(role)}_old_v:8 = {sanitize(role)}_v;")
+    rendered.extend(lines)
+    for role in sorted(write_roles):
+        binding = bindings.get(role)
+        if binding is not None:
+            rendered.extend(render_role_write(binding))
+    return "{\n" + "\n".join(f"  {line}" for line in rendered) + "\n}"
+
+
+def render_constructors(allocations: list[dict[str, Any]], semantics_by_mnemonic: dict[str, dict[str, Any]]) -> str:
     lines = [
-        "# Instruction constructors. Semantics are intentionally stubbed until",
-        "# instruction p-code lowering is specified.",
+        "# Instruction constructors. Semantic bodies come directly from",
+        "# operation_semantics pcode entries.",
     ]
     for item in sorted(allocations, key=constructor_sort_key):
         fields = item_fields(item)
         token = 0 if item.get("kind") in {"compact", "compact_alias"} else 1
         payload_count = payload_word_count(item)
-        display, payload_terms = constructor_display(item, fields, token, payload_count)
+        display, payload_terms, bindings = constructor_operands(item, fields, token, payload_count)
         pattern = item_pattern(item, fields, payload_terms)
-        lines.append(f":{display} is {pattern} {{ isa_unimplemented(); }}")
+        body = render_pcode_body(item, fields, token, bindings, semantics_by_mnemonic)
+        lines.append(f":{display} is {pattern} {body}")
     return "\n".join(lines)
 
 
+def render_tool_template(name: str, values: dict[str, Any]) -> str:
+    text = (Path(__file__).parent / "templates" / name).read_text(encoding="utf-8")
+    for key, value in values.items():
+        text = text.replace(f"@{key}@", str(value))
+    return text
+
+
 def render(spec_dir: str, spec: dict[str, Any], plan: dict[str, Any], allocation_path: Path) -> str:
-    allocations = collect_allocations(plan)
+    global ACTIVE_SPEC
+    ACTIVE_SPEC = spec
+    allocations = collect_allocations(spec, plan)
     fields = collect_sleigh_fields(allocations)
+    semantics_by_mnemonic = operation_semantics_map(spec)
     solver = plan.get("solver", {})
-    header = f"""# Generated SLEIGH specification
-# Source spec: {spec_dir}
-# Source allocation: {allocation_path}
-# Solver status: {solver.get("status", plan.get("solver", "unknown"))}
-# Constructors: {len(allocations)}
-#
-# This is a decode/disassembly skeleton. It follows the allocated opcode map and
-# leaves instruction p-code behind isa_unimplemented() while semantics stabilize.
-
-define endian=little;
-define alignment=2;
-
-define space ram type=ram_space size=8 default;
-define space register type=register_space size=8;
-
-define pcodeop isa_unimplemented;
-"""
+    header = render_tool_template(
+        "sleigh_header.slaspec",
+        {
+            "SPEC_DIR": spec_dir,
+            "ALLOCATION_PATH": allocation_path,
+            "SOLVER_STATUS": solver.get("status", plan.get("solver", "unknown")),
+            "CONSTRUCTOR_COUNT": len(allocations),
+        },
+    )
     sections = [
         header.rstrip(),
         render_registers(spec),
         render_tokens(fields),
         render_attaches(spec, fields),
         render_operand_tables(fields),
-        render_constructors(allocations),
+        render_constructors(allocations, semantics_by_mnemonic),
         "",
     ]
     return "\n\n".join(section for section in sections if section.strip())

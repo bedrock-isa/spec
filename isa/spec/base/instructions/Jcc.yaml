@@ -1,0 +1,43 @@
+mnemonic: Jcc
+doc:
+  title: Jump Conditional
+  summary: Transfers control when the encoded condition is true.
+  description: Transfers control when the encoded condition is true.
+  instruction_family: control_flow
+  instruction_class: control_flow
+behavior:
+  group: control_flow
+  inputs:
+  - cc
+  - target
+  output: none
+  operation:
+  - if (cc_v == 0) goto <jcc_done>;
+  - goto [target_v];
+  - <jcc_done>
+  long_transfer_operands: LJMP/LCALL take the new CS image from Dn and the target PC value/address from EA
+  atomic_cs_pc_commit:
+  - LJMP
+  - LCALL
+  - LRET
+  - SYSRET
+  - IRET
+allocation:
+  catalog_section: compact_primary
+forms:
+  compact_forms:
+  - operands:
+    - name: cc
+      type: condition
+    - name: target
+      type: relative_imm
+    size: WL
+  extended_forms:
+  - operands:
+    - name: cc
+      type: condition
+    - name: target
+      type: EA
+    size: WL
+    compact: false
+  reads: FLAGS

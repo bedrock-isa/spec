@@ -75,22 +75,7 @@ can access the same physical location. Atomic read-modify-write instructions car
 memory-order selector as part of the atomic instruction format. The selector constrains
 visibility ordering around the indivisible update; it is not a general-purpose prefix.
 
-\begingroup\footnotesize
-\begin{longtable}{@{}p{0.9in}p{0.75in}p{3.8in}@{}}
-\toprule
-\textbf{Selector} & \textbf{Code} & \textbf{Architectural Ordering Effect}\\
-\midrule
-\endhead
-\texttt{RELAXED} & 0 & Atomicity only. No ordering is imposed on unrelated memory operations.\\
-\texttt{ACQUIRE} & 1 & Later memory operations by the same hardware thread are ordered after the atomic operation.\\
-\texttt{RELEASE} & 2 & Earlier memory operations by the same hardware thread are ordered before the atomic operation.\\
-\texttt{ACQREL} & 3 & Applies both acquire and release ordering.\\
-\texttt{SEQCST} & 4 & Applies acquire-release ordering and participates in the global sequentially consistent order for atomic operations.\\
-reserved & 5--7 & Reserved selector encodings; using one is invalid for the atomic form.\\
-\bottomrule
-\end{longtable}
-\manualtablecaption{Atomic Memory-Order Selectors}
-\endgroup
+@MEMORY_ORDER_TABLE@
 
 The \texttt{consume} memory order is not a separate architectural selector. Software that
 needs consume-style source semantics uses the acquire selector. A full ordering point for

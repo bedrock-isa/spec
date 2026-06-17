@@ -1,0 +1,31 @@
+mnemonic: FASIN
+doc:
+  title: Floating-Point Arc Sine
+  summary: Performs the floating-point arc sine operation.
+  description: Performs the floating-point arc sine operation.
+  instruction_family: fpu_transcendental
+  instruction_class: fpu
+behavior:
+  group: fpu_transcendental
+  inputs: [src]
+  output: dst
+  operation:
+  - dst_v = fp_asin(src_v);
+attributes:
+  repeatable: true
+  fp_flags:
+    update:
+    - NV
+    - UF
+    - NX
+allocation:
+  catalog_section: fpu
+  layout_group: FP_INV_TRIG
+forms:
+  operands:
+  - name: src
+    type: FREG
+  - name: dst
+    type: FREG
+  size: S_D
+  extension_family: fpu_transcendental

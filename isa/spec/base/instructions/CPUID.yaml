@@ -1,0 +1,25 @@
+mnemonic: CPUID
+doc:
+  title: CPU Identification
+  summary: Queries architectural discovery information through a selected D register.
+  description: Queries architectural discovery information. The selected D register contains the CPUID query selector 
+    before execution and receives the selected 64-bit result after execution.
+  instruction_family: system_registers
+  instruction_class: system
+behavior:
+  group: system_registers
+  input_output: reg
+  operation:
+  - reg_v = arch_cpuid(reg_v);
+attributes:
+  repeatable: state_query_general_only
+  privilege: user allowed
+  flags: unchanged
+allocation:
+  catalog_section: system
+forms:
+  operands:
+  - name: reg
+    type: DREG
+  input: reg contains CPUID query selector
+  output: selected CPUID result is written back to reg

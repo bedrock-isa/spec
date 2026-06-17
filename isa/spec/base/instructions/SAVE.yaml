@@ -1,0 +1,56 @@
+mnemonic: SAVE
+doc:
+  title: Save Processor State
+  summary: Save modified processor state to a CPUID-defined save area.
+  description: 'Save modified processor state to a CPUID-defined save area. SAVE uses an XSAVEOPT-like policy for both base
+    architectural state and enabled extension state: state components that are architecturally clean may be skipped, while
+    modified components are written to their CPUID-defined fixed slots. The memory image does not carry per-component size
+    records; software allocates the maximum required save area size reported by CPUID. The save-area base must be 4 KiB aligned.'
+  instruction_family: tlb_and_context
+  instruction_class: system
+behavior:
+  group: tlb_context
+  inputs:
+  - memory
+  output: none
+  operation:
+  - '*:8 memory_v = 0x1fffff;'
+  - '*:8 (memory_v + 0x008) = D0;'
+  - '*:8 (memory_v + 0x010) = D1;'
+  - '*:8 (memory_v + 0x018) = D2;'
+  - '*:8 (memory_v + 0x020) = D3;'
+  - '*:8 (memory_v + 0x028) = D4;'
+  - '*:8 (memory_v + 0x030) = D5;'
+  - '*:8 (memory_v + 0x038) = D6;'
+  - '*:8 (memory_v + 0x040) = D7;'
+  - '*:8 (memory_v + 0x048) = A0;'
+  - '*:8 (memory_v + 0x050) = A1;'
+  - '*:8 (memory_v + 0x058) = A2;'
+  - '*:8 (memory_v + 0x060) = A3;'
+  - '*:8 (memory_v + 0x068) = A4;'
+  - '*:8 (memory_v + 0x070) = A5;'
+  - '*:8 (memory_v + 0x078) = A6;'
+  - '*:8 (memory_v + 0x080) = A7;'
+  - '*:8 (memory_v + 0x088) = GS0;'
+  - '*:8 (memory_v + 0x090) = GS1;'
+  - '*:8 (memory_v + 0x098) = GS2;'
+  - '*:8 (memory_v + 0x0a0) = GS3;'
+  - '*:8 (memory_v + 0x0a8) = GS4;'
+  - '*:8 (memory_v + 0x0b0) = 0;'
+  - '*:8 (memory_v + 0x0b8) = 0;'
+  - '*:8 (memory_v + 0x0c0) = 0;'
+  - '*:8 (memory_v + 0x0c8) = 0;'
+  - '*:8 (memory_v + 0x0d0) = 0;'
+  - '*:8 (memory_v + 0x0d8) = 0;'
+  - '*:8 (memory_v + 0x0e0) = 0;'
+  - '*:8 (memory_v + 0x0e8) = 0;'
+  - '*:8 (memory_v + 0x0f0) = 0;'
+  - '*:8 (memory_v + 0x0f8) = 0;'
+  - arch_save_extension_state(memory_v);
+allocation:
+  catalog_section: system
+  layout_group: PROCESSOR_STATE_SAVE_RESTORE
+forms:
+  operands:
+  - name: memory
+    type: EA

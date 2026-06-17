@@ -1,0 +1,62 @@
+\subsection{FLAGS and STATUS Registers}
+FLAGS and STATUS are accessed through dedicated 16-bit W-sized read/write instructions, not through the S
+segment-register operand class. Reserved bits read as zero and must remain zero; FLAGS has four meaningful
+bits and STATUS has @STATUS_MEANINGFUL_BITS@ meaningful bits.
+
+\Needspace{1.35in}
+\begin{center}\vspace{3pt}
+\begin{tikzpicture}[x=0.300in,y=0.24in,every node/.style={font=\scriptsize}]
+\node[anchor=east] at (-0.35,0.50) {FLAGS[15:0]};
+\node[anchor=south] at (0.50,1.18) {15};
+\node[anchor=south] at (12.50,1.18) {3};
+\node[anchor=south] at (13.50,1.18) {2};
+\node[anchor=south] at (14.50,1.18) {1};
+\node[anchor=south] at (15.50,1.18) {0};
+\draw (0,0) rectangle (12,1);
+\node at (6.00,0.50) {0};
+\draw (12,0) rectangle (13,1);
+\node at (12.50,0.50) {Z};
+\draw (13,0) rectangle (14,1);
+\node at (13.50,0.50) {N};
+\draw (14,0) rectangle (15,1);
+\node at (14.50,0.50) {C};
+\draw (15,0) rectangle (16,1);
+\node at (15.50,0.50) {V};
+\end{tikzpicture}
+\manualfigurecaption{FLAGS Register Format}
+\end{center}
+
+
+@FLAGS_TABLE@
+
+\Needspace{1.35in}
+\begin{center}\vspace{3pt}
+\begin{tikzpicture}[x=0.300in,y=0.24in,every node/.style={font=\scriptsize}]
+\node[anchor=east] at (-0.35,0.50) {STATUS[15:0]};
+\node[anchor=south] at (0.50,1.18) {15};
+\node[anchor=south] at (10.50,1.18) {5};
+\node[anchor=south] at (11.50,1.18) {4};
+\node[anchor=south] at (12.50,1.18) {3};
+\node[anchor=south] at (13.50,1.18) {2};
+\node[anchor=south] at (14.50,1.18) {1};
+\node[anchor=south] at (15.50,1.18) {0};
+\draw (0,0) rectangle (10,1);
+\node at (5.00,0.50) {0};
+\draw (10,0) rectangle (11,1);
+\node at (10.50,0.50) {IE};
+\draw (11,0) rectangle (12,1);
+\node at (11.50,0.50) {PM};
+\draw (12,0) rectangle (13,1);
+\node at (12.50,0.50) {RF};
+\draw (13,0) rectangle (14,1);
+\node at (13.50,0.50) {TF};
+\draw (14,0) rectangle (15,1);
+\node at (14.50,0.50) {NI};
+\draw (15,0) rectangle (16,1);
+\node at (15.50,0.50) {IN};
+\end{tikzpicture}
+\manualfigurecaption{STATUS Register Format}
+\end{center}
+
+
+@STATUS_TABLE@

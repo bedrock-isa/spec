@@ -1,0 +1,46 @@
+mnemonic: DIVMODU
+doc:
+  title: Unsigned Divide With Remainder
+  summary: Performs the unsigned divide with remainder operation.
+  description: Performs the unsigned divide with remainder operation. The quotient register Dn(q) supplies the dividend 
+    before the operation, then receives the quotient. The remainder register Dn(r) receives the remainder.
+  instruction_family: integer_mul_div
+  instruction_class: integer
+behavior:
+  group: multiply_divide
+  inputs:
+  - src
+  input_output: quotient
+  output: remainder
+  operation:
+  - tmp_v = size_v;
+  - carry_v = 0;
+  - <divmodu_mask_loop>
+  - if (tmp_v == 0) goto <divmodu_mask_done>;
+  - carry_v = (carry_v << 8) | 0xff;
+  - tmp_v = tmp_v - 1;
+  - goto <divmodu_mask_loop>;
+  - <divmodu_mask_done>
+  - local lhs_v:8 = quotient_v & carry_v;
+  - local rhs_v:8 = src_v & carry_v;
+  - if (rhs_v != 0) goto <divmodu_execute>;
+  - arch_raise_divide_by_zero();
+  - goto <divmod_done>;
+  - <divmodu_execute>
+  - remainder_v = lhs_v % rhs_v;
+  - quotient_v = lhs_v / rhs_v;
+  - <divmod_done>
+attributes:
+  repeatable: true
+allocation:
+  catalog_section: integer
+  layout_group: DIVMOD
+forms:
+  operands:
+  - name: src
+    type: EA
+  - name: quotient
+    type: DREG
+  - name: remainder
+    type: DREG
+  size: BWLQ

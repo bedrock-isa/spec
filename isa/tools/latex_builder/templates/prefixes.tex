@@ -1,0 +1,16 @@
+Prefix words modify the following instruction. One prefix word contains two 8-bit slots; the low byte is filled
+and decoded first, and the high byte is filled and decoded second. The table below lists standalone prefix
+spellings and assembler-generated repeat-boundary bytes. Address-update and user-access forms are shown
+separately because they are selected by operand syntax.
+
+@PREFIX_TABLE@
+
+@ADDRESS_UPDATE_OPERANDS@
+
+@ACCESS_DOMAIN_OPERANDS@
+
+@PREFIX_SEMANTICS@
+
+@REPCC_SECTION@
+
+@REPG_SECTION@

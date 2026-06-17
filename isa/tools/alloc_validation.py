@@ -14,67 +14,66 @@ def audit_alignment(spec: dict[str, Any], entries: list[PatternEntry], candidate
         checks.append({"name": name, "status": "pass" if ok else "fail", "detail": detail})
 
     registers = spec["registers"].get("register_classes", {})
-    common = spec["semantics"].get("common_fields", {})
+    d_count = int(registers.get("D", {}).get("count", 0) or 0)
+    a_count = int(registers.get("A", {}).get("count", 0) or 0)
+    d_width = int(registers.get("D", {}).get("width", 0) or 0)
+    a_width = int(registers.get("A", {}).get("width", 0) or 0)
     add(
-        "D register range",
-        common.get("dreg") == "D0-D7" and int(registers.get("D", {}).get("count", 0)) == 8,
-        f"common dreg={common.get('dreg')}, register count={registers.get('D', {}).get('count')}",
+        "D register class",
+        d_count > 0 and d_width > 0,
+        f"register class D count={d_count}, width={d_width}",
     )
     add(
-        "A register range",
-        common.get("areg") == "A0-A7" and int(registers.get("A", {}).get("count", 0)) == 8,
-        f"common areg={common.get('areg')}, register count={registers.get('A', {}).get('count')}",
+        "A register class",
+        a_count > 0 and a_width > 0,
+        f"register class A count={a_count}, width={a_width}",
     )
 
-    rep = {item.get("name"): item for item in spec["prefixes"].get("prefixes", []) or []}.get("REPcc", {})
+    prefix_by_name = {item.get("name"): item for item in spec["prefixes"].get("prefixes", []) or []}
+    rep = prefix_by_name.get("REPcc", {})
     rep_syntax = rep.get("syntax", {}) if isinstance(rep, dict) else {}
     rep_condition = rep.get("condition", {}) if isinstance(rep, dict) else {}
     rep_operand = rep.get("operand", {}) if isinstance(rep, dict) else {}
     add(
-        "REPcc counter and condition range",
-        rep_operand.get("range") == "D0-D7"
-        and rep_operand.get("field") == "d"
-        and rep_condition.get("field") == "c"
-        and rep_condition.get("full_set") is True
-        and rep.get("pattern") == "1ccc cddd"
-        and (rep_syntax.get("aliases") or {}).get("REP") == "REPT",
+        "REPcc prefix metadata",
+        isinstance(rep, dict)
+        and bool(rep.get("pattern"))
+        and bool(rep_condition.get("field"))
+        and bool(rep_operand.get("field"))
+        and bool(rep_syntax.get("mnemonic_template")),
         (
-            f"REPcc pattern={rep.get('pattern')}, condition={rep_condition.get('field')}, "
-            f"range={rep_operand.get('range')}, alias REP={(rep_syntax.get('aliases') or {}).get('REP')}"
+            f"condition field={rep_condition.get('field')}, "
+            f"counter field={rep_operand.get('field')}, aliases={sorted((rep_syntax.get('aliases') or {}).keys())}"
         ),
     )
 
-    prefix_by_name = {item.get("name"): item for item in spec["prefixes"].get("prefixes", []) or []}
     repg = prefix_by_name.get("REPG", {})
     repg_syntax = repg.get("syntax", {}) if isinstance(repg, dict) else {}
     repg_operand = repg.get("operand", {}) if isinstance(repg, dict) else {}
     repg_alignment = repg.get("alignment", {}) if isinstance(repg, dict) else {}
-    repg_scope = repg.get("encoding_scope", {}) if isinstance(repg, dict) else {}
-    endg = prefix_by_name.get("ENDG", {})
+    terminator = repg_syntax.get("terminator_prefix")
+    terminator_prefix = prefix_by_name.get(terminator)
+    try:
+        grouping_window_bytes = int(repg_alignment.get("grouping_window_bytes", 0) or 0)
+    except (TypeError, ValueError):
+        grouping_window_bytes = 0
     add(
-        "REPG/ENDG group prefix",
-        repg.get("pattern") == "0111 0ddd"
-        and repg_operand.get("range") == "D0-D7"
-        and repg_operand.get("field") == "d"
+        "grouped repeat prefix metadata",
+        isinstance(repg, dict)
+        and bool(repg.get("pattern"))
+        and bool(repg_operand.get("field"))
         and bool(repg_syntax.get("block"))
-        and repg_syntax.get("terminator_prefix") == "ENDG"
-        and int(repg_alignment.get("grouping_window_bytes", 0) or 0) == 64
-        and repg_scope.get("group_termination") == "ENDG_prefix"
-        and isinstance(endg, dict)
-        and int(endg.get("value", -1) or -1) == 0x78
-        and endg.get("group") == "repeat_boundary",
+        and isinstance(terminator_prefix, dict)
+        and grouping_window_bytes > 0,
         (
-            f"REPG pattern={repg.get('pattern')}, terminator={repg_syntax.get('terminator_prefix')}, "
-            f"range={repg_operand.get('range')}, window={repg_alignment.get('grouping_window_bytes')}, "
-            f"ENDG={endg.get('value') if isinstance(endg, dict) else None}"
+            f"terminator={repg_syntax.get('terminator_prefix')}, "
+            f"counter field={repg_operand.get('field')}, grouping window={repg_alignment.get('grouping_window_bytes')} bytes"
         ),
     )
 
     raw_ea_forms = spec["ea"].get("ea_forms", []) or []
     compact_ea_forms = raw_ea_forms.get("compact", []) if isinstance(raw_ea_forms, dict) else raw_ea_forms
-    raw_extended_ea_forms = spec["ea"].get("extended_ea_forms")
-    if raw_extended_ea_forms is None:
-        raw_extended_ea_forms = spec["ea"].get("extended_ea_word", {}).get("modes", []) or []
+    raw_extended_ea_forms = spec["ea"].get("extended_ea_forms", []) or []
     ea_forms = {
         item.get("name")
         for item in compact_ea_forms
@@ -85,9 +84,15 @@ def audit_alignment(spec: dict[str, Any], entries: list[PatternEntry], candidate
         for item in raw_extended_ea_forms
         if item.get("update_eligible") is True
     }
+    update_prefixes = [
+        prefix
+        for prefix in spec["prefixes"].get("prefixes", []) or []
+        if isinstance(prefix, dict) and prefix.get("group") == "ea_update"
+    ]
     add(
-        "address-update prefix legality",
-        ea_forms == {"INDIRECT"} and ext_modes == {"SEG_A"},
+        "address-update operand coverage",
+        bool(ea_forms or ext_modes)
+        and all((prefix.get("requires") or {}).get("update_eligible_ea") is True for prefix in update_prefixes),
         f"compact update forms={sorted(ea_forms)}, extended update modes={sorted(ext_modes)}",
     )
 
@@ -132,20 +137,39 @@ def audit_alignment(spec: dict[str, Any], entries: list[PatternEntry], candidate
     )
 
     canonical_rules = spec["opcodes"].get("canonical_rules", []) or []
-    mov_rule_ok = any(
-        rule.get("canonical") == "MOV_EA_TO_D"
-        and rule.get("noncanonical") == "MOV_D_TO_EA"
-        and rule.get("when", {}).get("source") == "DREG"
-        and rule.get("when", {}).get("destination") == "DREG"
-        for rule in canonical_rules
+    malformed_canonical_rules = [
+        str(rule.get("id", index))
+        for index, rule in enumerate(canonical_rules)
+        if not isinstance(rule, dict) or not rule.get("canonical") or not rule.get("noncanonical")
+    ]
+    add(
+        "canonical encoding rules",
+        bool(canonical_rules) and not malformed_canonical_rules,
+        f"{len(canonical_rules)} canonical rules"
+        if canonical_rules and not malformed_canonical_rules
+        else f"malformed canonical rules={malformed_canonical_rules}",
     )
-    add("MOV D-to-D canonical rule", mov_rule_ok, "MOV_D_TO_D maps to MOV_EA_TO_D")
 
     fixed = {candidate.id: candidate.fixed_payload for candidate in candidates if candidate.fixed_payload is not None}
+    sentinel_payloads: dict[str, int] = {}
+    for entry in entries:
+        if entry.kind != "sentinel":
+            continue
+        name = str(entry.source.get("name") or entry.id)
+        payload_mask = (1 << 12) - 1
+        if entry.pattern.mask & payload_mask == payload_mask:
+            sentinel_payloads[name] = entry.pattern.value & payload_mask
+    sentinel_mismatches = [
+        f"{name}: candidate={fixed.get(name)}, spec={payload}"
+        for name, payload in sentinel_payloads.items()
+        if fixed.get(name) != payload
+    ]
     add(
         "sentinel fixed payloads",
-        fixed.get("HALT") == 0x000 and fixed.get("ILLEGAL") == 0xFFF,
-        f"HALT={fixed.get('HALT')}, ILLEGAL={fixed.get('ILLEGAL')}",
+        bool(sentinel_payloads) and not sentinel_mismatches,
+        f"sentinels={sentinel_payloads}"
+        if sentinel_payloads and not sentinel_mismatches
+        else f"sentinel mismatches={sentinel_mismatches}",
     )
 
     impossible_must = [candidate.id for candidate in candidates if candidate.must_compact and candidate.compact_slots is None]

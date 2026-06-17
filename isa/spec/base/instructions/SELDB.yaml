@@ -1,0 +1,32 @@
+mnemonic: SELDB
+doc:
+  title: Select Data Register Bank
+  summary: Selects the current data-register bank.
+  description: Selects the current DBANK. The DBANK form names a literal bank selector. The D-register form takes the 
+    selector from the low bits of the source D register. If the selected bank is not implemented, the instruction 
+    reports INVALID_CONTROL_STATE.
+  instruction_family: data_register_banking
+  instruction_class: data_movement
+behavior:
+  group: data_register_banking
+  output: none
+  operation_by_form:
+  - operands: [DBANK]
+    operation:
+    - DBANK = selector_v & 0xf;
+  - operands: [DREG]
+    operation:
+    - DBANK = selector_v & 0xf;
+attributes:
+  privilege: user allowed
+allocation:
+  catalog_section: integer
+  layout_group: DATA_BANK_SELECT
+forms:
+  operands:
+  - - name: selector
+      type: DBANK
+  - - name: selector
+      type: DREG
+  compact: false
+  extension_family: data_register_banking

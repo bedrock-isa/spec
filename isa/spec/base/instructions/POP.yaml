@@ -1,0 +1,22 @@
+mnemonic: POP
+doc:
+  title: Pop
+  summary: Performs the pop operation.
+  description: Performs the pop operation.
+  instruction_family: data_movement
+  instruction_class: data_movement
+behavior:
+  group: stack
+  output: reg
+  operation:
+  - reg_v = *:8 SP;
+  - SP = SP + 8;
+allocation:
+  catalog_section: compact_primary
+  layout_group: PUSH_POP
+forms:
+  operands:
+  - name: reg
+    type: DREG_OR_AREG
+  compact: required
+  size: Q

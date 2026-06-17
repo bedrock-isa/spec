@@ -1,0 +1,23 @@
+mnemonic: GETDB
+doc:
+  title: Get Data Register Bank
+  summary: Reads the current data-register bank selector into a D register.
+  description: Reads the current DBANK selector into the destination D register. The result is zero-extended.
+  instruction_family: data_register_banking
+  instruction_class: data_movement
+behavior:
+  group: data_register_banking
+  output: dst
+  operation:
+  - dst_v = DBANK & 0xf;
+attributes:
+  privilege: user allowed
+allocation:
+  catalog_section: integer
+  layout_group: DATA_BANK_READ
+forms:
+  operands:
+  - name: dst
+    type: DREG
+  compact: false
+  extension_family: data_register_banking

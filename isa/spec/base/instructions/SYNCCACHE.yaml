@@ -1,0 +1,25 @@
+mnemonic: SYNCCACHE
+doc:
+  title: Synchronize Caches
+  summary: Synchronize instruction/data cache visibility.
+  description: Synchronize instruction/data cache visibility.
+  instruction_family: cache
+  instruction_class: system
+behavior:
+  group: cache
+  inputs:
+  - target
+  output: none
+  operation:
+  - arch_cache_synchronize(target_v);
+attributes:
+  privilege:
+    default: supervisor
+    policy_controlled: true
+allocation:
+  catalog_section: system
+  layout_group: CACHE_OPS
+forms:
+  operands:
+  - name: target
+    type: EA_or_range

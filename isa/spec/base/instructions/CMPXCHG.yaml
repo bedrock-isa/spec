@@ -1,0 +1,64 @@
+mnemonic: CMPXCHG
+doc:
+  title: Compare And Exchange
+  summary: Performs the compare and exchange operation.
+  description: Performs the compare and exchange operation.
+  instruction_family: atomics
+  instruction_class: system
+behavior:
+  group: atomics
+  inputs:
+  - desired
+  - expected
+  input_output: memory
+  operation:
+  - if (memory_v != expected_v) goto <cmpxchg_fail>;
+  - memory_v = desired_v;
+  - ZF = 1;
+  - NF = 0;
+  - CF = 0;
+  - VF = 0;
+  - goto <cmpxchg_done>;
+  - <cmpxchg_fail>
+  - ZF = 0;
+  - NF = 0;
+  - CF = 0;
+  - VF = 0;
+  - <cmpxchg_done>
+attributes:
+  memory_ordering:
+    operand: order
+    type: memory_order
+    encodings:
+      relaxed: 0
+      acquire: 1
+      release: 2
+      acqrel: 3
+      seqcst: 4
+    reserved_encodings:
+    - 5
+    - 6
+    - 7
+    consume: treated as acquire
+    description: The memory-order qualifier controls visibility ordering around the atomic read-modify-write. Relaxed 
+      preserves atomicity only. Acquire orders later memory operations after the atomic operation. Release orders prior 
+      memory operations before it. Acquire-release applies both directions. Sequential consistency additionally 
+      participates in the global sequentially consistent order for atomic operations.
+  flags:
+    Z: result == 0
+    N: most_significant_bit(result)
+    C: unsigned borrow
+    V: signed overflow
+allocation:
+  catalog_section: system
+forms:
+  operands:
+  - name: order
+    type: memory_order
+  - name: expected
+    type: DREG
+  - name: desired
+    type: DREG
+  - name: memory
+    type: EA
+  size: BWLQ

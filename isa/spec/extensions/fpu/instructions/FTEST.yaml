@@ -1,0 +1,35 @@
+mnemonic: FTEST
+doc:
+  title: Floating-Point Test
+  summary: Performs the floating-point test operation.
+  description: Performs the floating-point test operation.
+  instruction_family: fpu
+  instruction_class: fpu
+behavior:
+  group: fpu_move_compare
+  inputs:
+  - src
+  output: none
+  operation:
+  - ZF = src_v f== 0;
+  - NF = src_v f< 0;
+  - CF = 0;
+  - VF = nan(src_v);
+attributes:
+  repeatable: true
+  streaming_candidate: true
+  fp_flags:
+    update_when_required:
+    - NV
+allocation:
+  catalog_section: fpu
+  layout_group: FP_COMPARE
+forms:
+  operands:
+  - - name: src
+      type: FREG
+  - - name: src
+      type: EA
+  size: S_D
+  updates: FLAGS
+  unordered: FLAGS.V = 1

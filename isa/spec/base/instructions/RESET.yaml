@@ -1,0 +1,20 @@
+mnemonic: RESET
+doc:
+  title: Reset
+  summary: Perform warm reset; preserve BOOTPC and BOOTCFG.
+  description: Perform warm reset; preserve BOOTPC and BOOTCFG.
+  instruction_family: core_control
+  instruction_class: system
+behavior:
+  group: core_control
+  output: none
+  operation:
+  - PC = BOOTPC;
+  - goto [PC];
+attributes:
+  privilege: supervisor
+  serializing: true
+allocation:
+  catalog_section: compact_primary
+forms:
+  operands: []

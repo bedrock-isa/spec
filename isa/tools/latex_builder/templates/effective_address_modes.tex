@@ -1,0 +1,157 @@
+Effective-address operands are encoded through a compact six-bit EA field. Most instructions that accept EA
+therefore share the same operand sublayout, which keeps register and memory forms visually regular. The high
+three bits select the addressing family and the low three bits normally carry the register number or a small
+form selector. Forms that need displacement, absolute address, immediate data, or an extended descriptor append
+payload words after the instruction word.
+
+\Needspace{1.35in}
+\begin{center}\vspace{3pt}
+\begin{tikzpicture}[x=0.300in,y=0.24in,every node/.style={font=\scriptsize}]
+\node[anchor=east] at (-0.35,0.50) {EA[5:0]};
+\node[anchor=south] at (0.50,1.18) {5};
+\node[anchor=south] at (3.50,1.18) {2};
+\node[anchor=south] at (5.50,1.18) {0};
+\draw (0,0) rectangle (3,1);
+\node at (1.50,0.50) {mode};
+\draw (3,0) rectangle (6,1);
+\node at (4.50,0.50) {register/form};
+\end{tikzpicture}
+\manualfigurecaption{Compact Effective-Address Field}
+\end{center}
+
+
+\Needspace{4.85in}
+\begin{center}\vspace{3pt}
+\begin{tikzpicture}[x=0.300in,y=0.22in,every node/.style={font=\scriptsize}]
+\node[anchor=east] at (-0.35,0.50) {DREG};
+\node[anchor=south] at (0,1.18) {5};
+\node[anchor=south] at (6,1.18) {0};
+\draw (0,-0.00) rectangle (3,1.00);
+\node at (1.50,0.50) {\texttt{000}};
+\draw (3,-0.00) rectangle (6,1.00);
+\node at (4.50,0.50) {\texttt{d}};
+\node[anchor=east] at (-0.35,-1.58) {AREG};
+\node[anchor=south] at (0,-0.90) {5};
+\node[anchor=south] at (6,-0.90) {0};
+\draw (0,-2.08) rectangle (3,-1.08);
+\node at (1.50,-1.58) {\texttt{001}};
+\draw (3,-2.08) rectangle (6,-1.08);
+\node at (4.50,-1.58) {\texttt{a}};
+\node[anchor=east] at (-0.35,-3.66) {[A]};
+\node[anchor=south] at (0,-2.98) {5};
+\node[anchor=south] at (6,-2.98) {0};
+\draw (0,-4.16) rectangle (3,-3.16);
+\node at (1.50,-3.66) {\texttt{010}};
+\draw (3,-4.16) rectangle (6,-3.16);
+\node at (4.50,-3.66) {\texttt{a}};
+\node[anchor=east] at (-0.35,-5.74) {[A + disp16]};
+\node[anchor=south] at (0,-5.06) {5};
+\node[anchor=south] at (6,-5.06) {0};
+\draw (0,-6.24) rectangle (3,-5.24);
+\node at (1.50,-5.74) {\texttt{011}};
+\draw (3,-6.24) rectangle (6,-5.24);
+\node at (4.50,-5.74) {\texttt{a}};
+\node[anchor=east] at (-0.35,-7.82) {[A + disp32]};
+\node[anchor=south] at (0,-7.14) {5};
+\node[anchor=south] at (6,-7.14) {0};
+\draw (0,-8.32) rectangle (3,-7.32);
+\node at (1.50,-7.82) {\texttt{100}};
+\draw (3,-8.32) rectangle (6,-7.32);
+\node at (4.50,-7.82) {\texttt{a}};
+\node[anchor=east] at (-0.35,-9.90) {PC/SP};
+\node[anchor=south] at (0,-9.22) {5};
+\node[anchor=south] at (6,-9.22) {0};
+\draw (0,-10.40) rectangle (3,-9.40);
+\node at (1.50,-9.90) {\texttt{101}};
+\draw (3,-10.40) rectangle (6,-9.40);
+\node at (4.50,-9.90) {\texttt{x}};
+\node[anchor=east] at (-0.35,-11.98) {ABS/IMM};
+\node[anchor=south] at (0,-11.30) {5};
+\node[anchor=south] at (6,-11.30) {0};
+\draw (0,-12.48) rectangle (3,-11.48);
+\node at (1.50,-11.98) {\texttt{110}};
+\draw (3,-12.48) rectangle (6,-11.48);
+\node at (4.50,-11.98) {\texttt{x}};
+\node[anchor=east] at (-0.35,-14.06) {S32 XEA};
+\node[anchor=south] at (0,-13.38) {5};
+\node[anchor=south] at (6,-13.38) {0};
+\draw (0,-14.56) rectangle (4,-13.56);
+\node at (2.00,-14.06) {\texttt{1111}};
+\draw (4,-14.56) rectangle (6,-13.56);
+\node at (5.00,-14.06) {\texttt{10}};
+\node[anchor=east] at (-0.35,-16.14) {XEA};
+\node[anchor=south] at (0,-15.46) {5};
+\node[anchor=south] at (6,-15.46) {0};
+\draw (0,-16.64) rectangle (4,-15.64);
+\node at (2.00,-16.14) {\texttt{1111}};
+\draw (4,-16.64) rectangle (6,-15.64);
+\node at (5.00,-16.14) {\texttt{11}};
+\end{tikzpicture}
+\manualfigurecaption{Compact EA Form Map}
+\end{center}
+
+
+Compact EA forms keep the register selector in EA[2:0] whenever the form is register-based. The PC/SP, absolute,
+and immediate groups reuse those low bits as form selectors. The S32 XEA and XEA compact forms are escapes to
+the descriptor shown below.
+
+\Needspace{2.15in}
+\begin{center}\vspace{3pt}
+\begin{tikzpicture}[x=0.300in,y=0.22in,every node/.style={font=\scriptsize}]
+\node[anchor=east] at (-0.35,0.50) {EA field};
+\node[anchor=south] at (0,1.18) {5};
+\node[anchor=south] at (6,1.18) {0};
+\draw (0,-0.00) rectangle (4,1.00);
+\node at (2.00,0.50) {\texttt{m}};
+\draw (4,-0.00) rectangle (6,1.00);
+\node at (5.00,0.50) {\texttt{r}};
+\node[anchor=east] at (-0.35,-1.58) {optional word 1};
+\node[anchor=south] at (0,-0.90) {15};
+\node[anchor=south] at (16,-0.90) {0};
+\draw[LightRule] (4,-2.08) -- (4,-1.08);
+\draw[LightRule] (8,-2.08) -- (8,-1.08);
+\draw[LightRule] (12,-2.08) -- (12,-1.08);
+\draw (0,-2.08) rectangle (16,-1.08);
+\node at (8.00,-1.58) {\texttt{p}};
+\node[anchor=east] at (-0.35,-3.66) {optional word 2};
+\node[anchor=south] at (0,-2.98) {15};
+\node[anchor=south] at (16,-2.98) {0};
+\draw[LightRule] (4,-4.16) -- (4,-3.16);
+\draw[LightRule] (8,-4.16) -- (8,-3.16);
+\draw[LightRule] (12,-4.16) -- (12,-3.16);
+\draw (0,-4.16) rectangle (16,-3.16);
+\node at (8.00,-3.66) {\texttt{p}};
+\end{tikzpicture}
+\manualfigurecaption{Compact EA Payload Sequence}
+\end{center}
+
+
+\subsection{Compact EA Addressing Modes}
+@COMPACT_ADDRESSING_BLOCKS@
+
+\subsection{Extended EA Descriptor}
+\Needspace{2.8in}
+@EXTENDED_EA_SEQUENCE@
+
+@EXTENDED_EA_DESCRIPTOR@
+
+The compact XEA form uses the six-bit value 111111; the S32 XEA form uses 111110 and selects the same descriptor
+layout with signed 32-bit index extension. Each escape is followed by a 16-bit descriptor. The descriptor mode
+field selects the extended EA form. Segment-selectable forms use the segment field to select a concrete segment
+register. When assembly syntax omits the segment on a segment-selectable A-indexed form, the assembler encodes
+DS; the processor does not decode a separate default-segment value. Fixed-segment forms reserve that field and
+use their architectural segment. The three-bit segment field uses the SREG selector table. The extra field carries
+mode-specific register, index, scale, or selector bits. Displacements and
+absolute addresses remain in following payload words instead of being split across opcode fields. Segment-qualified
+memory addresses pass through segmentation first when the selected segment is enabled, and then through paging.
+
+@EXTENDED_EA_INDEXED_EXTRA@
+
+For indexed extended EA forms, the extra field is interpreted as a compact base/index/scale descriptor. The S32
+XEA escape uses the same descriptor fields, but sign-extends the low 32 bits of the D-index register before scaling.
+Assembly syntax for indexed EA forms always writes the scale term explicitly, including the scale-one case;
+\texttt{[A0 + D1 * 1]} is valid, while \texttt{[A0 + D1]} is not an indexed-EA spelling. Other extended modes use
+the same descriptor word but assign the low bits to the fields needed by that mode.
+
+\subsection{Extended EA Addressing Modes}
+@EXTENDED_ADDRESSING_BLOCKS@

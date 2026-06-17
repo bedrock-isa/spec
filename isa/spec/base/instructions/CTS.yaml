@@ -1,0 +1,55 @@
+mnemonic: CTS
+doc:
+  title: Count Trailing Sign Bits
+  summary: Performs the count trailing sign bits operation.
+  description: Performs the count trailing sign bits operation.
+  instruction_family: integer_bitfield
+  instruction_class: integer
+behavior:
+  group: bit_counts
+  inputs:
+  - src
+  input_output: dst
+  operation:
+  - result_v = 0xffffffffffffffff;
+  - carry_v = 0x8000000000000000;
+  - borrow_v = size_v << 3;
+  - if (size_v == 8) goto <cts_mask_done>;
+  - if (size_v != 4) goto <cts_not_l>;
+  - result_v = 0xffffffff;
+  - carry_v = 0x80000000;
+  - goto <cts_mask_done>;
+  - <cts_not_l>
+  - if (size_v != 2) goto <cts_b>;
+  - result_v = 0xffff;
+  - carry_v = 0x8000;
+  - goto <cts_mask_done>;
+  - <cts_b>
+  - result_v = 0xff;
+  - carry_v = 0x80;
+  - <cts_mask_done>
+  - tmp_v = src_v & result_v;
+  - if ((tmp_v & carry_v) == 0) goto <cts_count>;
+  - tmp_v = (~tmp_v) & result_v;
+  - <cts_count>
+  - if (tmp_v != 0) goto <cts_nonzero>;
+  - dst_v = borrow_v;
+  - goto <cts_done>;
+  - <cts_nonzero>
+  - carry_v = tmp_v & -tmp_v;
+  - dst_v = popcount(carry_v - 1);
+  - <cts_done>
+attributes:
+  repeatable: true
+  flags: unchanged
+allocation:
+  catalog_section: integer
+  layout_group: BIT_COUNTS
+forms:
+  operands:
+  - name: src
+    type: EA
+  - name: dst
+    type: DREG
+  size: BWLQ
+  zero_input: returns operand width

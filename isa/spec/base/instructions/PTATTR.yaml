@@ -1,0 +1,26 @@
+mnemonic: PTATTR
+doc:
+  title: Page Table Attributes
+  summary: Perform page walk and return page attributes/status.
+  description: Perform page walk and return page attributes/status.
+  instruction_family: tlb_and_context
+  instruction_class: system
+behavior:
+  group: tlb_context
+  inputs:
+  - src
+  output: none
+  operation:
+  - arch_page_attributes(src_v);
+attributes:
+  flags: operation-defined status result
+allocation:
+  catalog_section: system
+  layout_group: PAGE_QUERY
+forms:
+  operands:
+  - name: src
+    type: linear_or_EA
+  - name: outputs
+    type: outputs
+  performs_page_walk: true

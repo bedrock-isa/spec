@@ -1,0 +1,73 @@
+mnemonic: XOR
+doc:
+  title: Bitwise Xor
+  summary: Computes the bitwise XOR of the source and destination operands.
+  description: Computes the bitwise XOR of the source and destination operands.
+  instruction_family: integer_alu
+  instruction_class: integer
+behavior:
+  group: integer_alu
+  inputs:
+  - src
+  input_output: dst
+  operation:
+  - result_v = dst_v ^ src_v;
+  - dst_v = result_v;
+  - ZF = result_v == 0;
+  - NF = result_v s< 0;
+  - CF = 0;
+  - VF = 0;
+attributes:
+  repeatable: true
+  streaming_candidate: true
+  flags:
+    Z: result == 0
+    N: most_significant_bit(result)
+    C: '0'
+    V: '0'
+allocation:
+  catalog_section: compact_primary
+forms:
+  compact_forms:
+  - operands:
+    - name: src
+      type: DREG
+    - name: dst
+      type: DREG
+    size: LQ
+  - operands:
+    - name: imm
+      type: imm
+    - name: dst
+      type: DREG
+    size: WL
+  extended_forms:
+  - operands:
+    - name: src
+      type: EA
+    - name: dst
+      type: DREG
+    size: BWLQ
+    compact: false
+  - operands:
+    - name: src
+      type: DREG
+    - name: dst
+      type: EA
+    size: BWLQ
+    compact: false
+  - operands:
+    - name: imm
+      type: IMM_EA
+    - name: dst
+      type: EA
+    size: BWLQ
+    compact: false
+  form: destructive two-address form
+  result: second operand
+  memory_memory: disallowed
+  prefixes:
+    legal:
+    - NPX
+    - NOSPEC
+    - SATURATE

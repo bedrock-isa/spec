@@ -1,0 +1,37 @@
+mnemonic: FSQRT
+doc:
+  title: Floating-Point Square Root
+  summary: Performs the floating-point square root operation.
+  description: Performs the floating-point square root operation.
+  instruction_family: fpu
+  instruction_class: fpu
+behavior:
+  group: fpu_arithmetic
+  inputs: [src]
+  output: dst
+  operation:
+  - dst_v = sqrt(src_v);
+attributes:
+  repeatable: true
+  fp_flags:
+    update_when_required:
+    - NV
+    - NX
+allocation:
+  catalog_section: fpu
+  layout_group: FP_UNARY
+forms:
+  operands:
+  - - name: src
+      type: FREG
+    - name: dst
+      type: FREG
+  - - name: src
+      type: EA
+    - name: dst
+      type: FREG
+  - - name: src
+      type: FREG
+    - name: dst
+      type: EA
+  size: S_D

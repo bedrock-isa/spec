@@ -1,0 +1,31 @@
+mnemonic: DECN
+doc:
+  title: Decrement Without Flags
+  summary: Performs the decrement without flags operation.
+  description: Performs the decrement without flags operation.
+  instruction_family: integer_unary
+  instruction_class: integer
+behavior:
+  group: integer_unary
+  input_output: dst
+  operation:
+  - dst_v = dst_v - 1;
+attributes:
+  repeatable: true
+  prefix_availability:
+  - SATURATE
+  flags: unchanged
+allocation:
+  catalog_section: compact_primary
+  layout_group: INCN_DECN
+forms:
+  compact_forms:
+  - operands:
+    - name: dst
+      type: DREG
+  extended_forms:
+  - operands:
+    - name: dst
+      type: EA
+    compact: false
+  size: BWLQ

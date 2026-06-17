@@ -15,13 +15,20 @@ from gen_instruction_tables import (
     operand_types_text,
     syntax_text,
 )
+from spec_model.encoding import (
+    fflag_meanings as spec_fflag_meanings,
+    fflag_names as spec_fflag_names,
+    flag_names as spec_flag_names,
+    size_codes,
+    size_code_label,
+    size_kind_entries,
+    size_kind_suffixes,
+    size_kinds as spec_size_kinds,
+)
 from .common import (
-    FFLAG_MEANINGS,
-    FFLAG_ORDER,
-    FLAG_ORDER,
-    SIZE_NAMES,
     compact_text,
     latex_longtable,
+    memory_rule_text,
     mdash_join,
     normalize_text,
     pretty_key,
@@ -34,6 +41,32 @@ from .common import (
     top_section,
 )
 from .diagrams import bit_diagram
+
+
+ACTIVE_SPEC: dict[str, Any] | None = None
+
+
+def set_active_spec(spec: dict[str, Any]) -> None:
+    global ACTIVE_SPEC
+    ACTIVE_SPEC = spec
+
+
+def active_spec() -> dict[str, Any]:
+    if ACTIVE_SPEC is None:
+        raise RuntimeError("active ISA spec is not set")
+    return ACTIVE_SPEC
+
+
+def flag_order() -> list[str]:
+    return spec_flag_names(active_spec())
+
+
+def fflag_order() -> list[str]:
+    return spec_fflag_names(active_spec())
+
+
+def fflag_meanings() -> dict[str, str]:
+    return spec_fflag_meanings(active_spec())
 
 
 def instruction_label(mnemonic: str) -> str:
@@ -58,6 +91,7 @@ def instruction_set_summary_by_class_section(
     operations: dict[str, list[dict[str, Any]]] | None = None,
     items_by_mnemonic: dict[str, list[dict[str, Any]]] | None = None,
 ) -> str:
+    set_active_spec(spec)
     records = records or {}
     operations = operations or {}
     items_by_mnemonic = items_by_mnemonic or {}
@@ -77,12 +111,17 @@ def instruction_set_summary_by_class_section(
 
 
 def instruction_class_summary_table(spec: dict[str, Any], mnemonics: list[str]) -> str:
-    groups = (((spec.get("instructions") or {}).get("operation_semantics") or {}).get("groups") or {})
+    semantics = ((spec.get("instructions") or {}).get("operation_semantics") or {})
+    groups = semantics.get("groups") or {}
     if not isinstance(groups, dict):
         return "No instruction class metadata is available.\\par\n"
+    group_order = [str(name) for name in semantics.get("group_order", []) or []]
+    ordered_names = [name for name in group_order if name in groups]
+    ordered_names.extend(name for name in groups if name not in set(ordered_names))
     known = set(mnemonics)
     rows: list[list[str]] = []
-    for name, body in groups.items():
+    for name in ordered_names:
+        body = groups.get(name)
         if not isinstance(body, dict):
             continue
         members = [str(member) for member in body.get("members", []) or []]
@@ -108,19 +147,23 @@ def instruction_class_note(body: dict[str, Any]) -> str:
     notes: list[str] = []
     for key in ("memory", "atomic", "privilege", "flags", "implementation", "traps", "long_transfer_operands"):
         if key in body:
-            value = integer_flags_text(body[key]) if key == "flags" else readable_text(body[key])
+            if key == "flags":
+                value = integer_flags_text(body[key])
+            elif key == "memory":
+                value = memory_rule_text(body[key])
+            else:
+                value = readable_text(body[key])
             notes.append(f"{pretty_key(key)}: {value}")
-    for key in ("privilege_by_mnemonic", "flags_by_mnemonic", "fp_flags_by_mnemonic"):
+    per_mnemonic_fields = (
+        ("privilege_by_mnemonic", "privilege"),
+        ("flags_by_mnemonic", "flags"),
+        ("fp_flags_by_mnemonic", "fp_flags"),
+    )
+    for key, group_key in per_mnemonic_fields:
         if key in body:
+            if group_key in body:
+                continue
             notes.append(f"{pretty_key(key)}: varies by mnemonic")
-    if "operation_by_mnemonic" in body and not notes:
-        operations = body.get("operation_by_mnemonic") or {}
-        if isinstance(operations, dict):
-            examples = []
-            for mnemonic, operation in list(operations.items())[:3]:
-                examples.append(f"{mnemonic}: {readable_text(operation)}")
-            if examples:
-                notes.append("; ".join(examples))
     return "; ".join(notes) if notes else "See individual instruction descriptions."
 
 
@@ -162,14 +205,7 @@ def instruction_attribute_matrix_table(
                 *prefix_cells,
             ]
         )
-    legend = (
-        r"\subsection{Instruction Attribute Matrix}"
-        "\n"
-        "The following table is a compact availability index. "
-        "NOSPEC is a common prefix and is omitted from the per-instruction prefix list. "
-        "Address-update forms are operand spellings described in the Effective Addressing and Prefix Model sections, "
-        "not a separate per-mnemonic prefix column.\\par\n"
-    )
+    legend = render_latex_template("instruction_attribute_matrix_intro.tex")
     table = latex_longtable(
         [
             "Instr.",
@@ -226,17 +262,17 @@ def instruction_attribute_matrix_legend() -> str:
         [tex_escape("Priv"), tex_code("S"), tex_escape("all listed forms require supervisor privilege")],
         [tex_escape("Priv"), tex_code("P"), tex_escape("at least one listed form is policy-controlled or configurable")],
         [tex_escape("Priv"), tex_code("mixed"), tex_escape("the mnemonic has both unprivileged and privileged forms")],
-        [tex_escape("Flag"), tex_code("Y"), tex_escape("the instruction may update this FLAGS or FFLAGS bit")],
+        [tex_escape("Flag"), tex_code("Y"), tex_escape("update permission for this FLAGS or FFLAGS bit")],
         [tex_escape("Flag"), tex_code("0"), tex_escape("the instruction writes this flag as cleared")],
         [tex_escape("Flag"), tex_code("U"), tex_escape("the flag is unchanged")],
         [tex_escape("Prefix"), tex_code("Y"), tex_escape("at least one form of the mnemonic supports the prefix")],
         [tex_escape("Prefix"), tex_code("-"), tex_escape("the prefix is not applicable to this mnemonic")],
         [tex_code("SAT"), tex_code("Y/-"), tex_escape("SATURATE prefix is applicable or not applicable")],
         [tex_code("NT"), tex_code("Y/-"), tex_escape("NONTEMPORAL hint is applicable or not applicable to memory forms")],
-        [tex_code("REP"), tex_code("Y/-"), tex_escape("unconditional repeat form is legal or not legal")],
-        [tex_code("REPcc"), tex_code("Y/-"), tex_escape("conditional repeat form is legal or not legal")],
-        [tex_code("REPG"), tex_code("Y/-"), tex_escape("grouped repeat form is legal or not legal")],
-        [tex_code("REPGF"), tex_code("Y/-"), tex_escape("fast grouped-repeat contract form is legal or not legal")],
+        [tex_code("REP"), tex_code("Y/-"), tex_escape("unconditional repeat form is applicable or not applicable")],
+        [tex_code("REPcc"), tex_code("Y/-"), tex_escape("conditional repeat form is applicable or not applicable")],
+        [tex_code("REPG"), tex_code("Y/-"), tex_escape("grouped repeat form is applicable or not applicable")],
+        [tex_code("REPGF"), tex_code("Y/-"), tex_escape("fast grouped-repeat contract form is applicable or not applicable")],
     ]
     return latex_longtable(
         ["Column", "Cell", "Meaning"],
@@ -333,7 +369,7 @@ def instruction_fflags_summary(
         return "unchanged" if is_fpu else "-"
     if "unchanged" in text.lower():
         return "unchanged"
-    names = [name for name in FFLAG_ORDER if f"FFLAGS.{name}" in text]
+    names = [name for name in fflag_order() if f"FFLAGS.{name}" in text]
     if names:
         return ",".join(names)
     return abbreviate_text(readable_text(text), 28)
@@ -342,13 +378,13 @@ def instruction_fflags_summary(
 def instruction_flag_cells(records: list[dict[str, Any]], operations: list[dict[str, Any]]) -> list[str]:
     text = flags_text(records, operations)
     if "FFLAGS" in text:
-        integer_marks = {flag: "-" for flag in FLAG_ORDER}
+        integer_marks = {flag: "-" for flag in flag_order()}
         floating_marks = fflag_marks(text)
     else:
         integer_marks = flag_marks(text or "unchanged")
-        floating_marks = {flag: "-" for flag in FFLAG_ORDER}
-    return [flag_matrix_cell(integer_marks[flag]) for flag in FLAG_ORDER] + [
-        flag_matrix_cell(floating_marks[flag]) for flag in FFLAG_ORDER
+        floating_marks = {flag: "-" for flag in fflag_order()}
+    return [flag_matrix_cell(integer_marks[flag]) for flag in flag_order()] + [
+        flag_matrix_cell(floating_marks[flag]) for flag in fflag_order()
     ]
 
 
@@ -492,7 +528,7 @@ def instruction_is_no_memory_access(records: list[dict[str, Any]], operations: l
             return True
         if spec.get("canonical_address_check_only") is True:
             return True
-        pcode = spec.get("pcode") or spec.get("pcode_by_mnemonic") or []
+        pcode = spec.get("pcode") or []
         if isinstance(pcode, list) and pcode and all("read_memory" not in str(line) and "write_memory" not in str(line) for line in pcode):
             if any("effective_address" in str(line) or "segment_translate" in str(line) for line in pcode):
                 return True
@@ -1087,7 +1123,22 @@ def extended_grid_label(item: dict[str, Any]) -> str:
     form = item_id
     if mnemonic and item_id.startswith(mnemonic + "."):
         form = item_id[len(mnemonic) + 1 :]
-    form = re.sub(r"\.(BWLQ|BWL|BW|LQ|WL|SD|S/D|Q|L|W|B)$", "", form)
+    suffixes = sorted(
+        {
+            str(kind).replace("_", "")
+            for kind in spec_size_kinds(active_spec())
+        }
+        | {
+            str(kind).replace("_", "/")
+            for kind in spec_size_kinds(active_spec())
+        }
+        | set(size_codes(active_spec()).keys()),
+        key=len,
+        reverse=True,
+    )
+    if suffixes:
+        suffix_pattern = "|".join(re.escape(suffix) for suffix in suffixes)
+        form = re.sub(rf"\.({suffix_pattern})$", "", form)
     form = form.replace("_TO_", "->")
     form = form.replace("_OR_", "/")
     form = form.replace("_AND_", "&")
@@ -1154,10 +1205,13 @@ def prefix_grid_label(prefix: dict[str, Any]) -> str:
         "NOSPEC": "NS",
         "SATURATE": "SAT",
         "NONTEMPORAL": "NT",
-        "POSTINC": "A++",
-        "PREINC": "++A",
-        "POSTDEC": "A--",
-        "PREDEC": "--A",
+        "POSTINC": "An++",
+        "PREINC": "++An",
+        "POSTDEC": "An--",
+        "PREDEC": "--An",
+        "U2C": "U>C",
+        "C2U": "C>U",
+        "U2U": "U>U",
     }
     if name in labels:
         return labels[name]
@@ -1458,6 +1512,7 @@ def parse_hex_int(value: Any) -> int:
         return 0
 
 def instruction_reference_sections(
+    spec: dict[str, Any],
     title: str,
     mnemonics: list[str],
     records: dict[str, list[dict[str, Any]]],
@@ -1467,6 +1522,7 @@ def instruction_reference_sections(
     lengths: dict[tuple[str, str], tuple[int, int]],
     docs: dict[str, dict[str, Any]],
 ) -> list[str]:
+    set_active_spec(spec)
     if not mnemonics:
         return []
     summary_caption = f"Table {'10-1' if title.startswith('Floating-Point') else '9-1'}. {title} Summary"
@@ -1502,14 +1558,6 @@ def fpu_mnemonics(
     items_by_mnemonic: dict[str, list[dict[str, Any]]],
 ) -> set[str]:
     out: set[str] = set()
-    families = spec.get("instructions", {}).get("instruction_families", {}) or {}
-    if isinstance(families, dict):
-        for family_name, body in families.items():
-            if "fpu" not in str(family_name).lower():
-                continue
-            members = body.get("members", []) if isinstance(body, dict) else body
-            if isinstance(members, list):
-                out.update(str(member) for member in members)
     for mnemonic, items in items_by_mnemonic.items():
         if any(item_is_fpu(item) for item in items):
             out.add(mnemonic)
@@ -1585,7 +1633,6 @@ def render_instruction(
     lines.append(rf"\manualfield{{Assembler Syntax:}}{{{syntax_block(items)}}}")
     lines.append(rf"\manualfield{{Attributes:}}{{{attribute_text(items, records, operations, lengths)}}}")
     lines.append(rf"\manualfield{{Description:}}{{{doc_description(mnemonic, docs, records, operations, aliases)}}}")
-    lines.append(save_area_format_section(mnemonic, docs))
     lines.append(condition_code_section(records, operations))
     lines.append(instruction_forms_section(items, lengths, records, operations))
     return "\n".join(lines)
@@ -1600,7 +1647,7 @@ def doc_title(
     entry = docs.get(mnemonic, {})
     if entry.get("title"):
         return compact_text(entry["title"])
-    return fallback_instruction_title(mnemonic, records, operations)
+    raise ValueError(f"instruction {mnemonic} is missing doc.title")
 
 
 def doc_summary(
@@ -1610,10 +1657,13 @@ def doc_summary(
     operations: list[dict[str, Any]],
     items: list[dict[str, Any]],
 ) -> str:
+    _ = records
+    _ = operations
+    _ = items
     entry = docs.get(mnemonic, {})
     if entry.get("summary"):
         return compact_text(entry["summary"])
-    return short_description_text(mnemonic, records, operations, items)
+    raise ValueError(f"instruction {mnemonic} is missing doc.summary")
 
 
 def doc_description(
@@ -1623,18 +1673,38 @@ def doc_description(
     operations: list[dict[str, Any]],
     aliases: list[str],
 ) -> str:
+    _ = records
+    _ = operations
+    _ = aliases
     entry = docs.get(mnemonic, {})
     if entry.get("description"):
-        text = compact_text(entry["description"])
-        if aliases:
-            text += " " + alias_description(aliases)
-        return tex_escape(text)
-    return description_text(records, operations, aliases)
+        return tex_escape(compact_text(entry["description"]))
+    raise ValueError(f"instruction {mnemonic} is missing doc.description")
 
 
-def save_area_format_section(mnemonic: str, docs: dict[str, dict[str, Any]]) -> str:
-    entry = docs.get(mnemonic, {})
-    layout = entry.get("save_area_format")
+def save_area_format_reference_sections(
+    save_area_formats: dict[str, Any],
+    mnemonics: list[str],
+    *,
+    include_titles: bool = True,
+) -> list[str]:
+    if not isinstance(save_area_formats, dict):
+        return []
+    group_mnemonics = {str(mnemonic) for mnemonic in mnemonics}
+    sections: list[str] = []
+    for layout in save_area_formats.values():
+        if not isinstance(layout, dict):
+            continue
+        applies_to = {str(mnemonic) for mnemonic in layout.get("applies_to", []) or []}
+        if applies_to and not (applies_to & group_mnemonics):
+            continue
+        rendered = save_area_format_section(layout, include_title=include_titles)
+        if rendered:
+            sections.append(rendered)
+    return sections
+
+
+def save_area_format_section(layout: dict[str, Any], *, include_title: bool = True) -> str:
     if not isinstance(layout, dict):
         return ""
 
@@ -1675,6 +1745,67 @@ def save_area_format_section(mnemonic: str, docs: dict[str, dict[str, Any]]) -> 
         if isinstance(value, int):
             return f"0x{value:04x}"
         return str(value)
+
+    def component_offset_value(value: str) -> int | None:
+        text = str(value)
+        try:
+            if text.startswith("+0x"):
+                return int(text[1:], 16)
+            if text.startswith("0x"):
+                return int(text, 16)
+            return int(text, 10)
+        except ValueError:
+            return None
+
+    def byte_grid_row(offset: str, fields: list[str]) -> str:
+        pieces: list[str] = []
+        index = 0
+        while index < len(fields):
+            label = fields[index]
+            span = 1
+            while index + span < len(fields) and fields[index + span] == label:
+                span += 1
+            left_rule = "|" if not pieces else ""
+            text = tex_escape(label or "reserved")
+            pieces.append(rf"\multicolumn{{{span}}}{{{left_rule}c|}}{{{text}}}")
+            index += span
+        return " & ".join(pieces) + rf" & \textbf{{{tex_escape(offset)}}}\\"
+
+    def component_slot_grid_table(rows: list[tuple[str, str, str]]) -> str:
+        lines = [
+            r"\begingroup\footnotesize\renewcommand{\arraystretch}{1.08}",
+            r"\begin{tabularx}{0.985\linewidth}{|*{8}{>{\centering\arraybackslash}X|}p{0.56in}|}",
+            r"\hline",
+            r"\multicolumn{8}{|c|}{\textbf{Component-relative bytes}} & \textbf{Offset}\\",
+            r"\hline",
+            r"\textbf{63..56} & \textbf{55..48} & \textbf{47..40} & \textbf{39..32} & \textbf{31..24} & \textbf{23..16} & \textbf{15..8} & \textbf{7..0} & \\",
+            r"\hline",
+        ]
+        parsed = [(component_offset_value(offset), offset, field) for offset, field, _meaning in rows]
+        if all(offset_value is not None for offset_value, _offset, _field in parsed):
+            numeric_offsets = [int(offset_value) for offset_value, _offset, _field in parsed if offset_value is not None]
+            entries: list[tuple[int, int, int, str]] = []
+            for index, (offset_value, _offset, field) in enumerate(parsed):
+                assert offset_value is not None
+                row_start = offset_value - (offset_value % 8)
+                row_end = row_start + 8
+                later_offsets = [candidate for candidate in numeric_offsets[index + 1 :] if candidate > offset_value]
+                next_offset = later_offsets[0] if later_offsets else row_end
+                size = max(1, min(row_end, next_offset) - offset_value)
+                entries.append((row_start, offset_value - row_start, size, field))
+            for row_start in sorted({entry[0] for entry in entries}):
+                fields = [""] * 8
+                for _row_start, byte_offset, size, field in [entry for entry in entries if entry[0] == row_start]:
+                    for byte in range(byte_offset, min(byte_offset + size, 8)):
+                        fields[7 - byte] = field
+                lines.append(byte_grid_row(component_offset_text(row_start), fields))
+                lines.append(r"\hline")
+        else:
+            for _offset_value, offset, field in parsed:
+                lines.append(byte_grid_row(offset, [field] * 8))
+                lines.append(r"\hline")
+        lines.append(r"\end{tabularx}\endgroup\par\smallskip")
+        return "\n".join(lines)
 
     def repeat_rows(spec: dict[str, Any]) -> list[tuple[str, str, str]]:
         count = int(spec.get("count", 0))
@@ -1720,6 +1851,7 @@ def save_area_format_section(mnemonic: str, docs: dict[str, dict[str, Any]]) -> 
         name = str(component.get("name", title))
         description = compact_text(component.get("description", ""))
         validity = compact_text(component.get("validity", ""))
+        extension_requirement = compact_text(component.get("extension_requirement", ""))
         size = component.get("size", "-")
         rows = component_slot_rows(component)
         if not rows:
@@ -1750,6 +1882,11 @@ def save_area_format_section(mnemonic: str, docs: dict[str, dict[str, Any]]) -> 
             r"\begin{tabularx}{0.985\linewidth}{@{}p{1.35in}X@{}}",
             rf"\textbf{{Component ID}} & {tex_escape(component_id_text(component.get('component_id', '-')))}\\",
             rf"\textbf{{Component Name}} & {tex_code(name)}\\",
+            *(
+                [rf"\textbf{{Extension Requirement}} & {tex_code(extension_requirement)}\\"]
+                if extension_requirement
+                else []
+            ),
             rf"\textbf{{Component Size}} & {tex_escape(component_id_text(size) if isinstance(size, int) else str(size))}\\",
             r"\end{tabularx}\endgroup\par\smallskip",
         ]
@@ -1776,33 +1913,7 @@ def save_area_format_section(mnemonic: str, docs: dict[str, dict[str, Any]]) -> 
             lines.append(r"\end{tabularx}\endgroup\par\smallskip")
             if bitmap_reserved:
                 lines.append(rf"\noindent {tex_escape(bitmap_reserved)}\par\smallskip")
-        table_rows = [
-            [tex_escape(offset), tex_escape(field), tex_escape(meaning)]
-            for offset, field, meaning in rows
-        ]
-        if len(table_rows) > 14:
-            lines.append(
-                latex_longtable(
-                    ["Offset", "Saved State", "Meaning"],
-                    table_rows,
-                    ["0.72in", "1.85in", "3.0in"],
-                )
-            )
-            lines.append(r"\smallskip")
-        else:
-            lines.extend(
-                [
-                    r"\begingroup\footnotesize\renewcommand{\arraystretch}{1.08}",
-                    r"\begin{tabularx}{0.985\linewidth}{|p{0.72in}|p{1.85in}|X|}",
-                    r"\hline",
-                    r"\textbf{Offset} & \textbf{Saved State} & \textbf{Meaning}\\",
-                    r"\hline",
-                ]
-            )
-            for offset, field, meaning in table_rows:
-                lines.append(rf"{offset} & {field} & {meaning}\\")
-                lines.append(r"\hline")
-            lines.append(r"\end{tabularx}\endgroup\par\smallskip")
+        lines.append(component_slot_grid_table(rows))
         return "\n".join(lines)
 
     rows = [slot for slot in layout.get("fixed_slots", []) or [] if isinstance(slot, dict)]
@@ -1827,12 +1938,26 @@ def save_area_format_section(mnemonic: str, docs: dict[str, dict[str, Any]]) -> 
         for item in bitmap_items
         if isinstance(item, dict)
     ]
-    behavior = compact_text(layout.get("behavior", ""))
+    behavior_by_instruction = layout.get("instruction_behavior") or {}
+    if isinstance(behavior_by_instruction, dict):
+        ordered_mnemonics = [str(mnemonic) for mnemonic in layout.get("applies_to", []) or []]
+        ordered_mnemonics.extend(
+            str(mnemonic)
+            for mnemonic in behavior_by_instruction
+            if str(mnemonic) not in set(ordered_mnemonics)
+        )
+        behavior = " ".join(
+            compact_text(behavior_by_instruction[mnemonic])
+            for mnemonic in ordered_mnemonics
+            if behavior_by_instruction.get(mnemonic)
+        )
+    else:
+        behavior = compact_text(layout.get("behavior", ""))
     extension_text = compact_text(layout.get("extension_components", ""))
     extension_order_text = compact_text(layout.get("extension_component_order", ""))
 
     lines = [
-        r"\par\smallskip\Needspace{6.6in}\noindent\textbf{Save Area Format:}\par\smallskip\noindent",
+        r"\par\smallskip\Needspace{6.6in}",
         r"\begingroup\footnotesize\renewcommand{\arraystretch}{1.08}",
         r"\begin{tabularx}{0.985\linewidth}{|*{8}{>{\centering\arraybackslash}X|}p{0.56in}|}",
         r"\hline",
@@ -1841,6 +1966,11 @@ def save_area_format_section(mnemonic: str, docs: dict[str, dict[str, Any]]) -> 
         r"\textbf{63..56} & \textbf{55..48} & \textbf{47..40} & \textbf{39..32} & \textbf{31..24} & \textbf{23..16} & \textbf{15..8} & \textbf{7..0} & \\",
         r"\hline",
     ]
+    if include_title:
+        lines.insert(
+            1,
+            rf"\noindent\textbf{{{tex_escape(str(layout.get('title', 'Save Area Format')))}:}}\par\smallskip\noindent",
+        )
     for slot in rows:
         lines.append(slot_row(slot))
         lines.append(r"\hline")
@@ -1897,21 +2027,6 @@ def alias_description(aliases: list[str]) -> str:
     return "Aliases: " + "; ".join(sorted(set(readable_text(alias) for alias in aliases))) + "."
 
 
-def fallback_instruction_title(
-    mnemonic: str,
-    records: list[dict[str, Any]],
-    operations: list[dict[str, Any]],
-) -> str:
-    name = mnemonic.replace("cc", " Condition")
-    if name.startswith("F") and len(name) > 1:
-        return "Floating " + pretty_key(name[1:])
-    if name.startswith("BND"):
-        return "Bounds Check"
-    if mnemonic:
-        return pretty_key(name)
-    return instruction_title(records, operations)
-
-
 def instruction_title(records: list[dict[str, Any]], operations: list[dict[str, Any]]) -> str:
     for record in records:
         family = str(record.get("family", ""))
@@ -1932,7 +2047,7 @@ def instruction_family(records: list[dict[str, Any]]) -> str:
 
 def operation_text(operations: list[dict[str, Any]]) -> str:
     texts = operation_texts(operations)
-    return "; ".join(dict.fromkeys(texts)) if texts else "Operation is specified by the instruction semantic catalog."
+    return "; ".join(dict.fromkeys(texts))
 
 
 def operation_texts(operations: list[dict[str, Any]]) -> list[str]:
@@ -1956,10 +2071,10 @@ def pcode_operation_texts(operations: list[dict[str, Any]]) -> list[str]:
         if "pcode" not in spec:
             continue
         for statement in pcode_statements(spec["pcode"]):
-            text = pcode_statement_text(statement)
+            text = str(statement).strip()
             if text:
                 lines.append(text)
-    return list(dict.fromkeys(lines))
+    return lines
 
 
 def pcode_statements(value: Any) -> list[Any]:
@@ -1972,315 +2087,21 @@ def pcode_statements(value: Any) -> list[Any]:
     return []
 
 
-def pcode_statement_text(statement: Any) -> str:
-    if isinstance(statement, dict):
-        return pcode_dict_statement_text(statement)
-    text = str(statement).strip()
-    if not text:
-        return ""
-
-    match = re.match(r"^([A-Za-z_][A-Za-z0-9_.]*)\s*=\s*read_operand\((.*)\)$", text)
-    if match:
-        target, args = match.groups()
-        arg_list = pcode_args(args)
-        source = arg_list[0] if arg_list else "operand"
-        return f"Read {pcode_operand_text(source)} into {pcode_name_text(target)}."
-
-    match = re.match(r"^write_operand\((.*)\)$", text)
-    if match:
-        args = pcode_args(match.group(1))
-        destination = pcode_operand_text(args[0]) if args else "destination"
-        value = pcode_expr_text(args[1]) if len(args) > 1 else "the computed value"
-        return f"Write {value} to {destination}."
-
-    match = re.match(r"^([A-Za-z_][A-Za-z0-9_.]*)\s*=\s*read_memory\((.*)\)$", text)
-    if match:
-        target, args = match.groups()
-        location = pcode_memory_location(args)
-        return f"Read memory at {location} into {pcode_name_text(target)}."
-
-    match = re.match(r"^write_memory\((.*)\)$", text)
-    if match:
-        args = pcode_args(match.group(1))
-        location = pcode_memory_location(", ".join(args[:2])) if len(args) >= 2 else "the selected address"
-        value = pcode_expr_text(args[2]) if len(args) > 2 else "the computed value"
-        return f"Write {value} to memory at {location}."
-
-    match = re.match(r"^FLAGS\s*=\s*([A-Za-z_][A-Za-z0-9_]*)\((.*)\)$", text)
-    if match:
-        primitive, args = match.groups()
-        return f"Update FLAGS using {pcode_primitive_text(primitive)} for {pcode_expr_text(args)}."
-
-    match = re.match(r"^raise_?exception\((.*)\)$", text)
-    if match:
-        return f"Raise {readable_text(match.group(1))} exception."
-
-    match = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\((.*)\)$", text)
-    if match:
-        primitive, args = match.groups()
-        if primitive in {"atomic_begin", "atomic_end"}:
-            arg_list = pcode_args(args)
-            location = pcode_operand_text(arg_list[0]) if arg_list else "the memory operand"
-            order = pcode_name_text(arg_list[1]) if len(arg_list) > 1 else "the selected memory-order value"
-            action = pcode_primitive_text(primitive)
-            return f"{action} for {location} with {order}."
-        if primitive == "write_cr":
-            arg_list = pcode_args(args)
-            selector = pcode_operand_text(arg_list[0]) if arg_list else "the selected control register"
-            value = pcode_expr_text(arg_list[1]) if len(arg_list) > 1 else "the value"
-            return f"Write {value} to {selector}."
-        arg_text = pcode_expr_text(args) if args.strip() else ""
-        action = pcode_primitive_text(primitive)
-        return f"{action}." if not arg_text else f"{action} for {arg_text}."
-
-    match = re.match(r"^if\s+(.+?)\s+then\s+write_operand\((.*)\)\s+else\s+(.+)$", text)
-    if match:
-        condition, args, otherwise = match.groups()
-        arg_list = pcode_args(args)
-        destination = pcode_operand_text(arg_list[0]) if arg_list else "destination"
-        value = pcode_expr_text(arg_list[1]) if len(arg_list) > 1 else "the computed value"
-        return (
-            f"If {pcode_expr_text(condition)}, write {value} to {destination}; "
-            f"otherwise {readable_text(otherwise)}."
-        )
-
-    match = re.match(r"^if\s+(.+?)\s+then\s+raise_?exception\((.*)\)\s+else\s+(.+)$", text)
-    if match:
-        condition, exception, otherwise = match.groups()
-        return (
-            f"If {pcode_expr_text(condition)}, raise {readable_text(exception)} exception; "
-            f"otherwise {readable_text(otherwise)}."
-        )
-
-    match = re.match(r"^if\s+(.+?)\s+then\s+(.+?)\s+else\s+(.+)$", text)
-    if match:
-        condition, then_text, otherwise = match.groups()
-        then_rendered = pcode_statement_text(then_text).rstrip(".")
-        return (
-            f"If {pcode_expr_text(condition)}, {then_rendered[0].lower() + then_rendered[1:]}; "
-            f"otherwise {readable_text(otherwise)}."
-        )
-
-    match = re.match(r"^([A-Za-z_][A-Za-z0-9_.]*)\s*=\s*(.+)$", text)
-    if match:
-        target, expr = match.groups()
-        return f"Set {pcode_name_text(target)} to {pcode_expr_text(expr)}."
-
-    match = re.match(r"^(.+?)\s*=\s*(.+)$", text)
-    if match:
-        target, expr = match.groups()
-        return f"Set {pcode_name_text(target)} to {pcode_expr_text(expr)}."
-
-    if text.startswith("for_each_"):
-        return readable_text(text) + "."
-    return readable_text(text) + ("." if not text.endswith(".") else "")
-
-
-def pcode_dict_statement_text(statement: dict[str, Any]) -> str:
-    if "read" in statement:
-        return f"Read {pcode_operand_text(statement.get('from', 'operand'))} into {pcode_name_text(statement['read'])}."
-    if "write" in statement:
-        value = pcode_expr_text(statement.get("value", "the computed value"))
-        return f"Write {value} to {pcode_operand_text(statement['write'])}."
-    if "set" in statement:
-        return f"Set {pcode_name_text(statement['set'])} to {pcode_expr_text(statement.get('expr', 'value'))}."
-    if "flags" in statement:
-        source = statement.get("from", "the result")
-        return f"Update FLAGS using {readable_text(statement['flags'])} from {pcode_expr_text(source)}."
-    if "trap" in statement:
-        prefix = f"If {pcode_expr_text(statement['when'])}, " if statement.get("when") else ""
-        return prefix + f"raise {readable_text(statement['trap'])} exception."
-    if "note" in statement:
-        return readable_text(statement["note"]) + "."
-    return readable_text(statement) + "."
-
-
-def pcode_args(text: Any) -> list[str]:
-    args: list[str] = []
-    current: list[str] = []
-    depth = 0
-    for ch in str(text):
-        if ch == "," and depth == 0:
-            part = "".join(current).strip()
-            if part:
-                args.append(part)
-            current = []
-            continue
-        current.append(ch)
-        if ch in "([{":
-            depth += 1
-        elif ch in ")]}" and depth:
-            depth -= 1
-    part = "".join(current).strip()
-    if part:
-        args.append(part)
-    return args
-
-
-def pcode_memory_location(args_text: Any) -> str:
-    args = pcode_args(args_text)
-    if len(args) >= 2:
-        return f"{pcode_expr_text(args[0])}:{pcode_expr_text(args[1])}"
-    if args:
-        return pcode_expr_text(args[0])
-    return "the selected address"
-
-
-def pcode_operand_text(value: Any) -> str:
+def rep_observed_value_text(value: Any) -> str:
     text = str(value)
     names = {
-        "src": "the source operand",
-        "dst": "the destination operand",
-        "lhs": "the left operand",
-        "rhs": "the right operand",
-        "target": "the target operand",
-        "new_cs": "the new CS operand",
-        "counter": "the counter operand",
-        "count": "the count operand",
-        "bit_index": "the bit-index operand",
-        "lo": "the low-bound operand",
-        "hi": "the high-bound operand",
-        "value": "the value operand",
-        "expected": "the expected operand",
-        "desired": "the desired operand",
-        "memory": "the memory operand",
-        "order": "the memory-order qualifier",
-        "quotient": "the quotient/dividend register",
-        "remainder": "the remainder register",
-        "page": "the page operand",
-        "outputs": "the output operand",
-        "cr": "the control-register selector",
-        "asid": "the ASID operand",
-        "src_or_dst": "the tested operand",
+        "src_value": "source value",
+        "rhs_minus_lhs": "right operand minus left operand",
+        "lhs_bitwise_and_rhs": "left operand bitwise-and right operand",
+        "result_value": "result value",
     }
-    return names.get(text, pcode_expr_text(text))
+    return names.get(text, readable_text(text))
 
 
-def pcode_name_text(value: Any) -> str:
-    text = str(value)
-    names = {
-        "src_v": "the source value",
-        "dst_v": "the destination value",
-        "result, carry": "the result and carry-out",
-        "lhs_v": "the left operand value",
-        "rhs_v": "the right operand value",
-        "result": "the result",
-        "carry": "the carry input",
-        "borrow": "the borrow input",
-        "old": "the old value",
-        "old_bit": "the old bit value",
-        "not old_bit": "not the old bit value",
-        "target": "the target address",
-        "dividend": "the dividend",
-        "quotient_v": "the quotient",
-        "remainder_v": "the remainder",
-        "count_v": "the count value",
-        "bit_index_v": "the bit index",
-        "lo_v": "the low bound",
-        "hi_v": "the high bound",
-        "value_v": "the checked value",
-        "expected_v": "the expected value",
-        "desired_v": "the desired value",
-        "order_v": "the memory-order value",
-        "new_cs_v": "the new CS value",
-        "target_v": "the target address",
-        "return_pc": "the return PC",
-        "return_cs": "the return CS",
-        "counter_v": "the counter value",
-        "counter_next": "the decremented counter",
-        "address": "the effective address",
-        "walk_result": "the page-walk result",
-    }
-    return names.get(text, pcode_expr_text(text))
-
-
-def pcode_primitive_text(value: Any) -> str:
-    names = {
-        "flags_add": "addition flag rules",
-        "flags_sub": "subtraction flag rules",
-        "flags_logic": "logical-result flag rules",
-        "flags_add_with_carry": "add-with-carry flag rules",
-        "flags_sub_with_borrow": "subtract-with-borrow flag rules",
-        "flags_abs": "absolute-value flag rules",
-        "flags_shift_left": "shift-left flag rules",
-        "flags_shift_right": "logical-shift-right flag rules",
-        "flags_shift_arithmetic_right": "arithmetic-shift-right flag rules",
-        "flags_rotate_left": "rotate-left flag rules",
-        "flags_rotate_right": "rotate-right flag rules",
-        "flags_rotate_through_carry_left": "rotate-through-carry-left flag rules",
-        "flags_rotate_through_carry_right": "rotate-through-carry-right flag rules",
-        "floating_compare_flags": "floating-point compare flag rules",
-        "no_state_change": "Make no architectural state change",
-        "enter_halt_state_until_event": "Enter the halted state until an enabled event resumes execution",
-        "perform_warm_reset_preserving_boot_state": "Perform a warm reset while preserving BOOTPC and BOOTCFG",
-        "restore_syscall_frame": "Restore the syscall return frame",
-        "restore_interrupt_frame": "Restore the interrupt return frame",
-        "save_syscall_frame_and_enter_supervisor": "Save the syscall frame and enter the supervisor entry state",
-        "wait_for_event_or_interrupt": "Wait for an event or interrupt according to privilege policy",
-        "yield_hint": "Provide an implementation scheduling hint",
-        "order_reads_before_later_reads": "Order prior reads before later reads",
-        "order_writes_before_later_writes": "Order prior writes before later writes",
-        "order_memory_before_later_memory": "Order prior memory operations before later memory operations",
-        "emit_trace_marker_if_enabled": "Emit a trace marker when tracing is enabled",
-        "atomic_begin": "Begin the atomic read-modify-write sequence",
-        "atomic_end": "Complete the atomic read-modify-write sequence",
-        "write_cr": "Write the selected control register",
-        "serializing_boundary": "Execute a serializing boundary",
-        "update_tlb_context": "Update the active TLB context",
-        "invalidate_tlb_all": "Invalidate all TLB entries",
-        "invalidate_tlb_page": "Invalidate the selected TLB page entry",
-        "invalidate_tlb_asid": "Invalidate TLB entries for the selected ASID",
-        "perform_page_walk": "Perform a page-table walk",
-        "save_modified_processor_state": "Save modified base and extension state",
-        "restore_processor_state": "Restore base and extension state",
-        "prefetch_memory": "Issue a prefetch hint",
-        "invalidate_data_cache": "Invalidate data cache state",
-        "invalidate_instruction_cache": "Invalidate instruction cache state",
-        "flush_data_cache": "Flush data cache state",
-        "writeback_data_cache": "Write back data cache state",
-        "synchronize_instruction_data_caches": "Synchronize instruction and data cache visibility",
-    }
-    return names.get(str(value), readable_text(value))
-
-
-def pcode_expr_text(value: Any) -> str:
-    text = str(value).strip()
-    exact = {
-        "result": "the result",
-        "value": "the value",
-        "selected_register": "the selected register",
-    }
-    if text in exact:
-        return exact[text]
-    replacements = {
-        "src_v": "source value",
-        "dst_v": "destination value",
-        "lhs_v": "left operand value",
-        "rhs_v": "right operand value",
-        "count_v": "count value",
-        "bit_index_v": "bit index",
-        "lo_v": "low bound",
-        "hi_v": "high bound",
-        "value_v": "checked value",
-        "expected_v": "expected value",
-        "desired_v": "desired value",
-        "new_cs_v": "new CS value",
-        "target_v": "target address",
-        "dividend": "dividend",
-        "quotient_v": "quotient",
-        "remainder_v": "remainder",
-        "return_pc": "return PC",
-        "return_cs": "return CS",
-        "counter_v": "counter value",
-        "counter_next": "decremented counter",
-        "FLAGS.C": "FLAGS.C",
-    }
-    for old, new in replacements.items():
-        text = re.sub(rf"\b{re.escape(old)}\b", new, text)
-    text = text.replace(" & ", " bitwise AND ")
-    text = text.replace(" | ", " bitwise OR ")
-    text = text.replace(" ^ ", " bitwise XOR ")
-    return readable_text(text)
+def repeat_observed_metadata_text(value: Any) -> str:
+    if isinstance(value, dict):
+        return "; ".join(f"{key}: {rep_observed_value_text(item)}" for key, item in value.items())
+    return rep_observed_value_text(value)
 
 
 def operation_latex(operations: list[dict[str, Any]]) -> str:
@@ -2289,7 +2110,7 @@ def operation_latex(operations: list[dict[str, Any]]) -> str:
         return wrapped_operation_block([tex_escape(row) for row in pcode])
     texts = operation_texts(operations)
     if not texts:
-        return tex_escape("Operation is specified by the instruction semantic catalog.")
+        return ""
     rows = []
     for text in texts:
         for piece in [part.strip() for part in text.split(";") if part.strip()]:
@@ -2376,37 +2197,6 @@ def math_expression(text: str) -> str:
 def tex_math_symbol(token: str) -> str:
     mapping = {"{": r"\{", "}": r"\}", "#": r"\#", "$": r"\$"}
     return mapping.get(token, tex_escape(token))
-
-
-def short_description_text(
-    mnemonic: str,
-    records: list[dict[str, Any]],
-    operations: list[dict[str, Any]],
-    items: list[dict[str, Any]],
-) -> str:
-    operation = operation_text(operations)
-    if operation and "semantic catalog" not in operation:
-        sentence = readable_text(operation)
-        if not sentence.endswith("."):
-            sentence += "."
-    else:
-        title = instruction_title(records, operations).lower()
-        sentence = f"{mnemonic} is a {title} instruction."
-
-    forms = []
-    seen = set()
-    for item in items:
-        fields = line_fields(item)
-        label = form_label(item, fields)
-        if label in seen:
-            continue
-        seen.add(label)
-        forms.append(label)
-        if len(forms) == 4:
-            break
-    if forms:
-        sentence += " Forms: " + "; ".join(forms) + "."
-    return sentence
 
 
 def syntax_block(items: list[dict[str, Any]]) -> str:
@@ -2507,78 +2297,17 @@ def instruction_rows_for_attrs(items: list[dict[str, Any]]) -> list[dict[str, An
 def size_label(size: str) -> str:
     if "/" in size:
         return size
-    if size in {"BWLQ", "BWLX"}:
-        return "Byte, Word, Long, Quad"
-    if size == "BWL":
-        return "Byte, Word, Long"
-    if size == "BW":
-        return "Byte, Word"
-    if size == "LQ":
-        return "Long, Quad"
-    if size == "WL":
-        return "Word, Long"
-    return SIZE_NAMES.get(size, size)
-
-
-def description_text(records: list[dict[str, Any]], operations: list[dict[str, Any]], aliases: list[str]) -> str:
-    bits = []
-    for record in operations:
-        spec = record.get("spec", {})
-        for key in (
-            "inputs",
-            "output",
-            "source_size_suffix",
-            "destination_size",
-            "destination_size_by_mnemonic",
-            "source_sizes_by_destination",
-            "memory",
-            "segment_register_forms",
-            "segment_registers",
-            "implementation",
-            "privilege",
-            "traps",
-            "updates",
-            "reads",
-            "writes",
-            "repeat_observed_value",
-            "repeat_observed_value_by_mnemonic",
-            "zero_input",
-            "signedness",
-            "bounds_mode",
-            "nan_policy",
-            "commit_rule",
-        ):
-            if key in spec:
-                bits.append(f"{pretty_key(key)}: {readable_text(spec[key])}")
-    for record in records:
-        spec = record.get("spec", {})
-        for key in (
-            "notes",
-            "description",
-            "privilege",
-            "traps",
-            "atomic",
-            "memory_memory",
-            "access_width",
-            "constraint",
-            "stack_segment",
-            "stack_register",
-            "bitmap",
-            "valid_bits",
-            "segment_register_access",
-            "prefixes",
-            "source_size",
-            "destination_size",
-            "source_sizes",
-            "destination_sizes",
-            "source_sizes_by_destination",
-            "destination_size_by_mnemonic",
-        ):
-            if key in spec:
-                bits.append(f"{pretty_key(key)}: {readable_text(spec[key])}")
-    if aliases:
-        bits.append("Aliases: " + "; ".join(sorted(set(aliases))))
-    return tex_escape(" ".join(bits) if bits else "See operation, syntax, and instruction field descriptions.")
+    upper = size.upper()
+    if upper in spec_size_kinds(active_spec()):
+        labels = [
+            size_code_label(active_spec(), str(item.get("code")))
+            for item in size_kind_entries(active_spec(), upper)
+            if item.get("code") is not None
+        ]
+        return ", ".join(labels)
+    if upper in size_codes(active_spec()):
+        return size_code_label(active_spec(), upper)
+    return size
 
 
 def user_encoding_text(item: dict[str, Any]) -> str:
@@ -2657,15 +2386,12 @@ def kind_description(kind: str) -> str:
         "imm16": "16-bit immediate selector",
         "BITMAP16": "16-bit register bitmap",
         "bitmap16": "16-bit register bitmap",
-        "LQ": "size selector",
-        "WL": "size selector",
-        "BW": "size selector",
-        "BWL": "size selector",
-        "BWLQ": "size selector",
-        "S_D": "floating-point size selector",
     }
-    if kind in SIZE_NAMES:
-        return f"fixed {SIZE_NAMES[kind]} size"
+    upper = kind.upper()
+    if upper in spec_size_kinds(active_spec()):
+        return "size selector"
+    if upper in size_codes(active_spec()):
+        return f"fixed {size_code_label(active_spec(), upper)} size"
     return mapping.get(kind, kind.replace("_", " ").lower())
 
 
@@ -2686,7 +2412,7 @@ def field_explanation_lines(item: dict[str, Any], fields: list[dict[str, Any]]) 
             f"({word_name(token)} bits {bit_text})."
         )
         if kind == "EA":
-            line += " Register, memory, immediate, and extended EA forms are selected by this field."
+            line += " EA field selects register, memory, immediate, and extended EA forms."
         lines.append(line)
     if any(str(field.get("kind")) == "EA" for field in fields):
         lines.append("EA selections may append displacement, absolute-address, immediate, or extended-EA payload words.")
@@ -2720,17 +2446,7 @@ def readable_operands_text(item: dict[str, Any]) -> str:
 
 
 def readable_note_text(note: str) -> str:
-    replacements = {
-        "primary root + extended opcode + descriptor": "uses an extended opcode word and an operand descriptor",
-        "primary root + extended opcode": "uses an extended opcode word",
-        "EA forms may add displacement/extended-EA words": "EA forms may add displacement or extended-EA payload words",
-        "EA forms may add words": "EA forms may add extra payload words",
-        "overlong padding allowed": "instruction length may be longer than the minimum; extra words are padding",
-    }
-    text = note
-    for old, new in replacements.items():
-        text = text.replace(old, new)
-    return readable_text(text)
+    return note
 
 
 def flags_text(records: list[dict[str, Any]], operations: list[dict[str, Any]]) -> str:
@@ -2751,11 +2467,9 @@ def flags_text(records: list[dict[str, Any]], operations: list[dict[str, Any]]) 
 
 def integer_flags_text(value: Any) -> str:
     if isinstance(value, dict):
-        if value.get("mode") == "per_shift":
-            return "update ZNCV by shift/rotate count rules"
-        if "status_result" in value:
-            return "operation-defined status result"
-        flag_keys = [key for key in FLAG_ORDER if key in value]
+        if "description" in value:
+            return compact_text(value["description"])
+        flag_keys = [key for key in flag_order() if key in value]
         if flag_keys:
             return "; ".join(f"{key}: {readable_text(value[key])}" for key in flag_keys)
         return readable_text(value)
@@ -2764,10 +2478,12 @@ def integer_flags_text(value: Any) -> str:
 
 def fp_flags_text(value: Any) -> str:
     if isinstance(value, dict):
+        if "description" in value:
+            return compact_text(value["description"])
         if "update" in value:
-            return "may update " + fflags_list_text(value["update"])
+            return "update: " + fflags_list_text(value["update"])
         if "update_when_required" in value:
-            return "may update " + fflags_list_text(value["update_when_required"]) + " when the operation signals a floating-point exception"
+            return "update when required: " + fflags_list_text(value["update_when_required"])
         if value.get("unchanged") is True:
             return "FFLAGS unchanged"
         return readable_text(value)
@@ -2775,14 +2491,15 @@ def fp_flags_text(value: Any) -> str:
     if text == "unchanged":
         return "FFLAGS unchanged"
     if text == "update_FFLAGS":
-        return "may update " + fflags_list_text(FFLAG_ORDER)
+        return "update: " + fflags_list_text(fflag_order())
     if text == "update_when_conversion_or_compare_requires":
-        return "may update " + fflags_list_text(FFLAG_ORDER) + " when the conversion or comparison signals a floating-point exception"
+        return "update when required: " + fflags_list_text(fflag_order())
     if text.startswith("update_FFLAGS_"):
         suffix = text.removeprefix("update_FFLAGS_")
-        names = [part for part in suffix.split("_") if part in FFLAG_MEANINGS]
+        meanings = fflag_meanings()
+        names = [part for part in suffix.split("_") if part in meanings]
         if names:
-            return "may update " + fflags_list_text(names)
+            return "update: " + fflags_list_text(names)
     return readable_text(text)
 
 
@@ -2791,7 +2508,8 @@ def fflags_list_text(flags: Any) -> str:
         names = [flags]
     else:
         names = [str(flag) for flag in flags]
-    expanded = [f"FFLAGS.{name} ({FFLAG_MEANINGS.get(name, name)})" for name in names]
+    meanings = fflag_meanings()
+    expanded = [f"FFLAGS.{name} ({meanings.get(name, name)})" for name in names]
     return ", ".join(expanded)
 
 
@@ -2800,15 +2518,15 @@ def condition_code_section(records: list[dict[str, Any]], operations: list[dict[
     if "FFLAGS" in text:
         flags = fflag_marks(text)
         rows = [
-            " & ".join(r"\textbf{" + flag + "}" for flag in FFLAG_ORDER) + r"\\",
-            " & ".join(tex_escape(flags[flag]) for flag in FFLAG_ORDER) + r"\\",
+            " & ".join(r"\textbf{" + flag + "}" for flag in fflag_order()) + r"\\",
+            " & ".join(tex_escape(flags[flag]) for flag in fflag_order()) + r"\\",
         ]
         table = r"\begin{tabular}[t]{@{}ccccc@{}}" + "\n" + "\n".join(rows) + "\n" + r"\end{tabular}"
         return rf"\manualfield{{Floating-Point Status:}}{{{status_detail_block(table, text)}}}"
     flags = flag_marks(text)
     rows = [
-        " & ".join(r"\textbf{" + flag + "}" for flag in FLAG_ORDER) + r"\\",
-        " & ".join(tex_escape(flags[flag]) for flag in FLAG_ORDER) + r"\\",
+        " & ".join(r"\textbf{" + flag + "}" for flag in flag_order()) + r"\\",
+        " & ".join(tex_escape(flags[flag]) for flag in flag_order()) + r"\\",
     ]
     table = r"\begin{tabular}[t]{@{}cccc@{}}" + "\n" + "\n".join(rows) + "\n" + r"\end{tabular}"
     return rf"\manualfield{{Condition Codes:}}{{{status_detail_block(table, readable_text(text))}}}"
@@ -2826,22 +2544,22 @@ def status_detail_block(table: str, text: str) -> str:
 
 def fflag_marks(text: str) -> dict[str, str]:
     if "unchanged" in text.lower():
-        return {flag: "-" for flag in FFLAG_ORDER}
-    return {flag: "*" if f"FFLAGS.{flag}" in text else "-" for flag in FFLAG_ORDER}
+        return {flag: "-" for flag in fflag_order()}
+    return {flag: "*" if f"FFLAGS.{flag}" in text else "-" for flag in fflag_order()}
 
 
 def flag_marks(text: str) -> dict[str, str]:
     lower = text.lower()
     normalized = lower.replace("-", "_").replace("/", "_").replace(" ", "_")
-    marks = {flag: "-" for flag in FLAG_ORDER}
+    marks = {flag: "-" for flag in flag_order()}
     if "unchanged" in lower:
         return marks
     if "clear_cv" in normalized or "clear_c_v" in normalized:
         marks.update({"Z": "*", "N": "*", "C": "0", "V": "0"})
         return marks
     if "zncv" in lower or "z_n_c_v" in normalized or "subtract" in lower or "compare" in lower:
-        return {flag: "*" for flag in FLAG_ORDER}
-    if "update z/n" in lower or "may update z/n" in lower or "z_n" in normalized or "zn" in lower:
+        return {flag: "*" for flag in flag_order()}
+    if "update z/n" in lower or "z_n" in normalized or "zn" in lower:
         marks.update({"Z": "*", "N": "*"})
     if "set z" in lower or "z:" in lower or "z=" in lower:
         marks["Z"] = "*"

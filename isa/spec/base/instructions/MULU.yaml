@@ -1,0 +1,32 @@
+mnemonic: MULU
+doc:
+  title: Unsigned Multiply
+  summary: Performs the unsigned multiply operation.
+  description: Performs the unsigned multiply operation.
+  instruction_family: integer_mul_div
+  instruction_class: integer
+behavior:
+  group: multiply_divide
+  inputs:
+  - src
+  input_output: dst
+  operation:
+  - dst_v = dst_v * src_v;
+attributes:
+  repeatable: true
+  flags: may update FLAGS
+allocation:
+  catalog_section: integer
+  layout_group: MULTIPLY
+forms:
+  operands:
+  - - name: src
+      type: EA
+    - name: dst
+      type: DREG
+  - - name: src
+      type: DREG
+    - name: dst
+      type: EA
+  size: BWLQ
+  result: low half

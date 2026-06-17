@@ -11,24 +11,91 @@ import sys
 
 import yaml
 
+from isa_spec import load_yaml
+
 sys.dont_write_bytecode = True
 
 TEMPLATE_DIR = Path(__file__).parent / "latex_builder" / "templates"
 TABLE_INLINE_LIST_MAX_CHARS = 32
 TABLE_INLINE_ITEM_MAX_CHARS = 20
 
-ABI_HIERARCHY_SUMMARY = (
-    "Bedrock ABI documents are layered. Lower layers define binary object and "
-    "loader contracts consumed by higher layers. Language ABIs and OS ABIs are "
-    "peer layers above the language-neutral object format; a standard-library "
-    "ABI sits above both."
-)
 ABI_HIERARCHY_LABELS = {
     "standard_library_abi": ["Standard Library ABI"],
     "language_abi": ["Language ABI"],
     "os_abi": ["OS ABI"],
     "language_neutral_object_format": ["Language-neutral", "Object Format ABI"],
 }
+
+class AbiRootSchema:
+    name = "ABI root"
+    keys = {
+        "document",
+        "scope",
+        "abi_hierarchy",
+        "terminology",
+    }
+
+    def matches(self, path: Path, abi: dict[str, Any]) -> bool:
+        return False
+
+    def validate(self, path: Path, abi: Any) -> None:
+        if not isinstance(abi, dict):
+            raise ValueError(f"{path}: ABI document must be a mapping")
+        unknown = sorted(str(key) for key in abi if str(key) not in self.keys)
+        if unknown:
+            raise ValueError(f"{path}: unknown ABI root keys: {', '.join(unknown)}")
+
+
+class LanguageNeutralAbiSchema(AbiRootSchema):
+    name = "language-neutral ABI root"
+    keys = AbiRootSchema.keys | {
+        "object_format",
+        "register_banking",
+        "sections",
+        "symbols",
+        "program_loading",
+        "dynamic_linking",
+        "tls",
+        "code_models",
+        "relocations",
+        "assembler_contract",
+    }
+
+    def matches(self, path: Path, abi: dict[str, Any]) -> bool:
+        return not CAbiSchema().matches(path, abi)
+
+
+class CAbiSchema(AbiRootSchema):
+    name = "C ABI root"
+    keys = AbiRootSchema.keys | {
+        "data_model",
+        "register_convention",
+        "calling_convention",
+        "examples",
+        "freestanding_c",
+        "memory_model",
+        "system_interface",
+    }
+
+    def matches(self, path: Path, abi: dict[str, Any]) -> bool:
+        current_layer = str((abi.get("abi_hierarchy") or {}).get("current_layer", "")).lower()
+        return "language abi" in current_layer or path.name.lower().startswith("c_")
+
+
+class AbiSchema:
+    def __init__(self) -> None:
+        self.candidates: tuple[AbiRootSchema, ...] = (CAbiSchema(), LanguageNeutralAbiSchema())
+
+    def for_document(self, path: Path, abi: Any) -> AbiRootSchema:
+        if not isinstance(abi, dict):
+            return LanguageNeutralAbiSchema()
+        for candidate in self.candidates:
+            if candidate.matches(path, abi):
+                return candidate
+        return LanguageNeutralAbiSchema()
+
+    def validate(self, path: Path, abi: Any) -> None:
+        self.for_document(path, abi).validate(path, abi)
 
 
 def tex_escape(value: Any) -> str:
@@ -224,7 +291,7 @@ def render_abi_hierarchy(abi: dict[str, Any]) -> str:
     current_layer = str(hierarchy.get("current_layer", "language_neutral_object_format"))
     parts = [
         subsection("ABI Hierarchy"),
-        tex_escape(readable(hierarchy.get("summary", ABI_HIERARCHY_SUMMARY))),
+        tex_escape(readable(hierarchy.get("summary", ""))),
         render_abi_hierarchy_diagram(current_layer),
     ]
     current_scope = hierarchy.get("current_document_scope", "")
@@ -993,8 +1060,9 @@ def main() -> int:
     parser.add_argument("-o", "--output", default="build/generated/abi_reference.tex")
     args = parser.parse_args()
 
-    with Path(args.abi_spec).open("r", encoding="utf-8") as fp:
-        abi = yaml.safe_load(fp) or {}
+    abi_path = Path(args.abi_spec)
+    abi = load_yaml(abi_path)
+    AbiSchema().validate(abi_path, abi)
     Path(args.output).parent.mkdir(parents=True, exist_ok=True)
     Path(args.output).write_text(render(abi), encoding="utf-8")
     return 0

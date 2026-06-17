@@ -1,0 +1,33 @@
+families:
+  fpu:
+    registers:
+      F:
+        count: 32
+        width: 64
+        scalar_formats:
+        - S
+        - D
+operation_semantics:
+  syntax_policy:
+    condition_code: {}
+  notation:
+    fp_status: floating-point accrued exception/status bits in FFLAGS
+    fflags:
+      NV: invalid operation
+      DZ: division by zero
+      OF: overflow
+      UF: underflow
+      NX: inexact
+  group_order:
+  - fpu_move_compare
+  - fpu_arithmetic
+  groups:
+    fpu_move_compare: {}
+    fpu_arithmetic: {}
+  repeat_prefixes:
+    REPcc:
+      fpu_condition_domain: FLAGS only
+      fpu_fflags_condition_repeat: not supported
+      fflags_accumulation: bitwise inclusive-or of completed iterations
+    REPG:
+      fflags_accumulation: bitwise inclusive-or of completed iterations

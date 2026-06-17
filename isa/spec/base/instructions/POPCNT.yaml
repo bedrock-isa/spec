@@ -1,0 +1,40 @@
+mnemonic: POPCNT
+doc:
+  title: Population Count
+  summary: Performs the population count operation.
+  description: Performs the population count operation.
+  instruction_family: integer_bitfield
+  instruction_class: integer
+behavior:
+  group: bit_counts
+  inputs:
+  - src
+  input_output: dst
+  operation:
+  - tmp_v = src_v;
+  - if (size_v == 8) goto <popcnt_mask_done>;
+  - if (size_v != 4) goto <popcnt_not_l>;
+  - tmp_v = tmp_v & 0xffffffff;
+  - goto <popcnt_mask_done>;
+  - <popcnt_not_l>
+  - if (size_v != 2) goto <popcnt_b>;
+  - tmp_v = tmp_v & 0xffff;
+  - goto <popcnt_mask_done>;
+  - <popcnt_b>
+  - tmp_v = tmp_v & 0xff;
+  - <popcnt_mask_done>
+  - dst_v = popcount(tmp_v);
+attributes:
+  repeatable: true
+  flags: unchanged
+allocation:
+  catalog_section: integer
+  layout_group: BIT_COUNTS
+forms:
+  operands:
+  - name: src
+    type: EA
+  - name: dst
+    type: DREG
+  size: BWLQ
+  zero_input: returns 0

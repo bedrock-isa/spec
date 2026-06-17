@@ -1,0 +1,27 @@
+mnemonic: RDFSTATUS
+doc:
+  title: Read Floating-Point Status
+  summary: Read the FPU status/control register into a D register.
+  description: RDFSTATUS reads the architectural 16-bit FSTATUS register, zero-extends it to 64 bits, and writes the 
+    result to the destination D register. FSTATUS contains floating-point exception trap enables, rounding mode, and 
+    non-default mode bits. Accrued floating-point exception flags are kept in the separate FFLAGS register. RDFSTATUS 
+    requires the floating-point extension.
+  instruction_family: system_registers
+  instruction_class: system
+behavior:
+  group: system_registers
+  output: dst
+  operation:
+  - dst_v = FSTATUS;
+attributes:
+  privilege: unprivileged
+  flags: unchanged
+  cpuid_feature: OPTIONAL_EXTENSION_FEATURES.FP
+allocation:
+  catalog_section: system
+  layout_group: FSTATUS_ACCESS
+forms:
+  operands:
+  - name: dst
+    type: DREG
+  size: W

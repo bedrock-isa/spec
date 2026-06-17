@@ -1,0 +1,65 @@
+mnemonic: DIVS
+doc:
+  title: Signed Divide
+  summary: Performs the signed divide operation.
+  description: Performs the signed divide operation.
+  instruction_family: integer_mul_div
+  instruction_class: integer
+behavior:
+  group: multiply_divide
+  inputs:
+  - src
+  input_output: dst
+  operation:
+  - tmp_v = size_v;
+  - carry_v = 0;
+  - <divs_mask_loop>
+  - if (tmp_v == 0) goto <divs_mask_done>;
+  - carry_v = (carry_v << 8) | 0xff;
+  - tmp_v = tmp_v - 1;
+  - goto <divs_mask_loop>;
+  - <divs_mask_done>
+  - local lhs_v:8 = dst_v & carry_v;
+  - local rhs_v:8 = src_v & carry_v;
+  - borrow_v = 0x80;
+  - tmp_v = size_v - 1;
+  - <divs_signbit_loop>
+  - if (tmp_v == 0) goto <divs_sign_extend>;
+  - borrow_v = borrow_v << 8;
+  - tmp_v = tmp_v - 1;
+  - goto <divs_signbit_loop>;
+  - <divs_sign_extend>
+  - if ((lhs_v & borrow_v) == 0) goto <divs_rhs_sign>;
+  - lhs_v = lhs_v | ~carry_v;
+  - <divs_rhs_sign>
+  - if ((rhs_v & borrow_v) == 0) goto <divs_check>;
+  - rhs_v = rhs_v | ~carry_v;
+  - <divs_check>
+  - if (rhs_v != 0) goto <divs_overflow_check>;
+  - arch_raise_divide_by_zero();
+  - goto <div_done>;
+  - <divs_overflow_check>
+  - local min_v:8 = borrow_v | ~carry_v;
+  - if (lhs_v != min_v) goto <divs_execute>;
+  - if (rhs_v != 0xffffffffffffffff) goto <divs_execute>;
+  - arch_raise_signed_overflow();
+  - goto <div_done>;
+  - <divs_execute>
+  - dst_v = lhs_v s/ rhs_v;
+  - <div_done>
+attributes:
+  repeatable: true
+allocation:
+  catalog_section: integer
+  layout_group: DIVIDE_MOD
+forms:
+  operands:
+  - - name: src
+      type: EA
+    - name: dst
+      type: DREG
+  - - name: src
+      type: DREG
+    - name: dst
+      type: EA
+  size: BWLQ

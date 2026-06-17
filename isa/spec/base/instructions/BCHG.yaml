@@ -1,0 +1,54 @@
+mnemonic: BCHG
+doc:
+  title: Bit Change
+  summary: Performs the bit change operation.
+  description: Performs the bit change operation.
+  instruction_family: integer_bitfield
+  instruction_class: integer
+behavior:
+  group: bit_ops
+  inputs:
+  - bit_index
+  input_output: dst
+  operation:
+  - tmp_v = 1 << (bit_index_v & 63);
+  - dst_v = dst_v ^ tmp_v;
+  - ZF = dst_v == 0;
+  - NF = dst_v s< 0;
+  - CF = 0;
+  - VF = 0;
+attributes:
+  repeatable: true
+  flags:
+    Z: old_bit == 0
+    N: unchanged
+    C: unchanged
+    V: unchanged
+allocation:
+  catalog_section: integer
+  layout_group: BIT_OPS
+forms:
+  operands:
+  - - name: bit_index
+      type: selector
+    - name: dst
+      type: DREG
+  - - name: bit_index
+      type: selector
+    - name: dst
+      type: EA
+  size: BWLQ
+  compact: false
+  encoding_fields:
+  - field: o
+    kind: bit_group
+    width: 2
+    placement: high
+    values:
+    - BCHG
+    - BCLR
+    - BSET
+    - BTEST
+    derive: mnemonic
+    match:
+      profile: I6_TO_EA

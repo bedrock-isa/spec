@@ -1,0 +1,34 @@
+mnemonic: FCOPYSIGN
+doc:
+  title: Floating-Point Copy Sign
+  summary: Performs the floating-point copy sign operation.
+  description: Performs the floating-point copy sign operation.
+  instruction_family: fpu
+  instruction_class: fpu
+behavior:
+  group: fpu_arithmetic
+  inputs:
+  - sign_src
+  - magnitude_src
+  output: dst
+  operation:
+  - if (size_v != 4) goto <fcopysign_double>;
+  - dst_v = (magnitude_src_v & 0x7fffffff) | (sign_src_v & 0x80000000);
+  - goto <fcopysign_done>;
+  - <fcopysign_double>
+  - dst_v = (magnitude_src_v & 0x7fffffffffffffff) | (sign_src_v & 0x8000000000000000);
+  - <fcopysign_done>
+attributes:
+  repeatable: true
+  fp_flags: unchanged
+allocation:
+  catalog_section: fpu
+forms:
+  operands:
+  - name: sign_src
+    type: FREG
+  - name: magnitude_src
+    type: FREG
+  - name: dst
+    type: FREG
+  size: S_D

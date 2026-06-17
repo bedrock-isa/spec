@@ -1,0 +1,40 @@
+mnemonic: NEG
+doc:
+  title: Negate
+  summary: Performs the negate operation.
+  description: Performs the negate operation.
+  instruction_family: integer_unary
+  instruction_class: integer
+behavior:
+  group: integer_unary
+  input_output: dst
+  operation:
+  - result_v = 0 - dst_v;
+  - dst_v = result_v;
+  - ZF = result_v == 0;
+  - NF = result_v s< 0;
+  - CF = dst_old_v != 0;
+  - VF = sborrow(0:8, dst_old_v);
+attributes:
+  repeatable: true
+  prefix_availability:
+  - SATURATE
+  flags:
+    Z: result == 0
+    N: most_significant_bit(result)
+    C: unsigned borrow
+    V: signed overflow
+allocation:
+  catalog_section: compact_primary
+  layout_group: NEG_ABS
+forms:
+  compact_forms:
+  - operands:
+    - name: dst
+      type: DREG
+  extended_forms:
+  - operands:
+    - name: dst
+      type: EA
+    compact: false
+  size: BWLQ

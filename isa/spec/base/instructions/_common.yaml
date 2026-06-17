@@ -1,0 +1,223 @@
+operation_semantics:
+  syntax_policy:
+    condition_code:
+      placement: mnemonic_suffix
+      spelling: condition suffix is concatenated into the mnemonic
+      dot_suffix_reserved_for: instruction_size
+  notation:
+    operand_read: read operand value after applying its addressing mode and size
+    operand_write: write result back to destination using operand size
+    EA_address: compute effective address without reading memory unless operation says read
+    selector: selector operands may name a D register or an encoded immediate selector
+    overlong: extra trailing instruction words are ignored as padding payload
+    flags_ZNCV: integer flags Z, N, C, V
+  defaults:
+    overlong_encoding: allowed
+    undersized_encoding: length/decode fault
+    memory_memory: operation_opt_in
+    unmentioned_flags: unchanged
+    operand_evaluation_order: decode order
+  group_order:
+  - sentinels
+  - core_control
+  - integer_alu
+  - integer_compare
+  - integer_carry_alu
+  - integer_minmax
+  - data_movement
+  - stack
+  - register_set_transfer
+  - data_register_banking
+  - integer_unary
+  - integer_extend
+  - bit_reverse
+  - shifts_rotates
+  - bit_ops
+  - bit_counts
+  - multiply_divide
+  - bounds
+  - control_flow
+  - ea_utility
+  - atomics
+  - system_registers
+  - tlb_context
+  - cache
+  groups:
+    sentinels:
+      flags: unchanged
+    core_control:
+      flags: unchanged
+    integer_alu:
+      memory: at_most_one_memory_operand
+    integer_compare:
+      memory: memory_memory_explicit_form
+    integer_carry_alu:
+      flags: update Z/N/C/V
+      memory: at_most_one_memory_operand
+    integer_minmax:
+      flags: may update Z/N
+      memory: at_most_one_memory_operand
+    data_movement:
+      flags: unchanged
+    stack:
+      stack_register: SP
+      stack_segment: SS
+      flags: unchanged
+    register_set_transfer:
+      bitmap: bits 0..7 select D/A register pairs; bits outside 0..7 are reserved
+      flags: unchanged
+    data_register_banking:
+      flags: unchanged
+    integer_unary: {}
+    integer_extend:
+      source_size_suffix: instruction size suffix
+      source_sizes_by_destination:
+        W:
+        - B
+        L:
+        - B
+        - W
+        Q:
+        - B
+        - W
+        - L
+      memory: bulk_extend_memory_memory
+      flags: unchanged
+    bit_reverse:
+      flags: unchanged
+    shifts_rotates:
+      flags:
+        mode: per_shift
+    bit_ops:
+      flags: set Z when the old bit was zero; preserve N/C/V
+    bit_counts: {}
+    multiply_divide:
+      traps:
+      - divide_by_zero
+      - signed overflow trap when defined
+    bounds:
+      bounds_mode_names:
+        II: inclusive-inclusive
+        IX: inclusive-exclusive
+        XI: exclusive-inclusive
+        XX: exclusive-exclusive
+      flags:
+        V: set when the value is out of bounds
+        ZNC: unchanged
+    control_flow:
+      flags: unchanged
+    ea_utility: {}
+    atomics:
+      atomic: true
+      memory: addressable_memory_operand_required
+    system_registers: {}
+    tlb_context:
+      privilege: supervisor
+    cache:
+      flags: unchanged
+  operation_attributes:
+    repeatable_operation:
+      excluded_categories:
+      - control flow
+      - state-mutating system
+      - atomic
+  prefix_availability:
+    NOSPEC:
+      table_code: NS
+      scope: all_instructions
+    SATURATE:
+      table_code: SAT
+    NONTEMPORAL:
+      table_code: NT
+      derived_from: memory_operand
+    ADDRESS_UPDATE:
+      table_code: UPD
+      derived_from: update-eligible EA
+    REPcc:
+      table_code: REP
+      operation_attribute: repeatable_operation
+    REPG:
+      table_code: REPG
+      operation_attribute: repeatable_operation
+    REPG_fast:
+      table_code: FAST
+      operation_attribute: streaming_candidate
+  repeat_prefixes:
+    REPcc:
+      syntax: REP{condition} Dn, <instruction>
+      alias: REP = REPT
+      condition_suffix: condition suffix is concatenated into the mnemonic
+      condition_set: full condition-code set
+      counter: DREG
+      counter_direction: signed counter moves toward zero
+      counter_encoding:
+        interpretation: signed two's-complement
+        value_bits: 63..0
+        zero_rule: zero counter performs no iteration
+        index_value: architectural counter value before iteration update
+        update_after_condition_true_iteration: positive counters decrement and negative counters 
+          increment toward zero
+        condition_false_iteration_counter_rule: counter is not updated
+        completion_rule: counter is zero or the REP condition is false
+        fault_restart_rule: remaining signed count is preserved
+      condition_source: REPFLAGS from the iteration observed value
+      eligible_operation_attribute: repeatable_operation
+      excluded_categories:
+      - control_flow
+      - system
+      - atomic
+      nested_repeat_prefixes: repeat prefixes do not nest
+      commit_rule: a condition-false terminating iteration commits the body and leaves the counter 
+        unchanged
+      architectural_flags: body instruction rules apply to the last completed iteration
+      indexed_ea_counter_use:
+        allowed: true
+        counter_value: architectural signed counter value before iteration update
+    REPG:
+      syntax: REPG Dn, { <instruction>; ... }
+      fast_contract_syntax: REPGF Dn, { <instruction>; ... }
+      condition_set: none
+      counter: DREG
+      group_termination: ENDG_prefix
+      fast_contract_alias:
+        mnemonic: REPGF
+        encoding: same as REPG
+        contract: REPG-fast source-level contract
+      counter_encoding:
+        interpretation: signed two's-complement
+        value_bits: 63..0
+        zero_rule: zero counter performs no iteration
+        update_after_successful_group_iteration: positive counters decrement and negative counters 
+          increment toward zero
+        completion_rule: final counter is zero
+        fault_restart_rule: remaining signed count is preserved
+        update_on_faulting_iteration: counter updates only after the whole group iteration completes
+      fault_behavior:
+        precise_at: faulting grouped instruction
+        commit_rule: completed iterations and completed prior group instructions commit
+        faulting_instruction_rule: ordinary scalar fault rule
+        later_grouped_instructions: later grouped instructions are not executed
+        continuation_state:
+          saved_pc: faulting grouped instruction
+          group_start:
+            bits: 5
+            range_words: 0..31
+          counter_register:
+            bits: 3
+      eligible_operation_attribute: repeatable_operation
+      streaming_candidate_attribute: streaming_candidate
+      excluded_instruction_classes:
+      - control flow
+      - system
+      - atomic
+      - stack operation
+      - TLB operation
+      - cache operation
+      - fence operation
+      - nested repeat
+      alignment:
+        grouping_window_bytes: 64
+      encoding_scope:
+        group_termination: ENDG_prefix
+      commit_rule: only successful iterations and completed group instructions commit
+      architectural_flags: grouped instruction rules apply to the last completed group instruction

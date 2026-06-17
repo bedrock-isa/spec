@@ -1,0 +1,50 @@
+mnemonic: ENCINST
+doc:
+  title: Encode Instruction
+  summary: Writes one canonical instruction encoding to a destination effective address.
+  description: ENCINST is an optional virtualization-acceleration instruction for software encoders, runtime code 
+    generators, hypervisors, and binary translation systems. Its only explicit operand is the destination effective 
+    address. The instruction descriptor is supplied through implicit D registers. ENCINST validates the descriptor, 
+    selects the canonical Bedrock encoding, and writes the resulting 16-bit-word instruction image to ordinary memory at
+    the destination EA. Before execution, D0 is split into a high 32-bit form selector and a low 32-bit encode control 
+    word. D0 receives the number of bytes written on success or an implementation-defined negative encode-status value 
+    on descriptor failure. Memory permissions, segmentation, paging, and cache synchronization follow the ordinary store
+    and SYNCCACHE rules.
+  instruction_family: virtualization_acceleration
+  instruction_class: system
+behavior:
+  group: virtualization_acceleration
+  inputs:
+  - dst
+  output: none
+  operation:
+  - D0 = arch_emit_instruction(dst_v, D0, D1, D2, D3);
+  canonicalization: ENCINST accepts semantic instruction descriptors rather than raw opcode bits. It emits only the 
+    canonical encoding selected by the ISA specification after mnemonic, size, condition, prefix, operand type, operand 
+    value, alias, and effective-address choices are resolved.
+  descriptor_payloads: D1-D3 hold compact operand descriptors. Small literal payloads and payload-width selections are 
+    carried directly in the D0 control word when they fit. Larger immediates, displacements, or extended 
+    effective-address descriptors are referenced by an operand descriptor according to the control-word payload mode 
+    instead of consuming additional implicit D registers.
+attributes:
+  cpuid_feature: OPTIONAL_EXTENSION_FEATURES.VIRTACCEL
+  memory: encinst_destination_memory_operand
+  privilege: user allowed when ENCINST is present
+  flags: unchanged
+allocation:
+  catalog_section: system
+forms:
+  operands:
+  - name: dst
+    type: EA
+  compact: false
+  extension_family: virtualization_acceleration
+  implicit_inputs:
+  - D0
+  - D1
+  - D2
+  - D3
+  implicit_outputs:
+  - D0
+  dst_ea_set: addressable_memory_only
+  disallow_update_prefix: true

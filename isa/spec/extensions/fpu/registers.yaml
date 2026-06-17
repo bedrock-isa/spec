@@ -1,0 +1,114 @@
+register_classes:
+  F:
+    count: 32
+    width: 64
+    allocatable: true
+    role: floating-point
+
+
+
+
+floating_point_register_model:
+  registers:
+    count: 32
+    width: 64
+    names: F0-F31
+    scalar_formats: [S, D]
+  fflags:
+    width: 16
+    storage: FFLAGS
+    reset: 0
+    access_width: 16
+    access_size: W
+    description: floating-point accrued exception flags
+    bits:
+      NV:
+        bit: 4
+        description: accrued invalid operation flag
+      DZ:
+        bit: 3
+        description: accrued divide-by-zero flag
+      OF:
+        bit: 2
+        description: accrued overflow flag
+      UF:
+        bit: 1
+        description: accrued underflow flag
+      NX:
+        bit: 0
+        description: accrued inexact flag
+  fstatus:
+    width: 16
+    access_width: 16
+    access_size: W
+    reset: 0
+    privilege: unprivileged
+    extension_requirement: floating_point
+    description: floating-point control and status-mode register
+    fields:
+      NV_EN:
+        bit: 4
+        description: invalid operation trap enable
+      DZ_EN:
+        bit: 3
+        description: divide-by-zero trap enable
+      OF_EN:
+        bit: 2
+        description: overflow trap enable
+      UF_EN:
+        bit: 1
+        description: underflow trap enable
+      NX_EN:
+        bit: 0
+        description: inexact trap enable
+      RM:
+        bits: [6, 5]
+        description: rounding mode
+      FTZ:
+        bit: 7
+        description: flush tiny results to signed zero
+      DAZ:
+        bit: 8
+        description: treat subnormal inputs as signed zero
+      DN:
+        bit: 9
+        description: default NaN result mode
+      reserved:
+        bits: [15, 10]
+        description: reserved, must be zero
+    rounding_modes:
+      0: roundTiesToEven
+      1: roundTowardZero
+      2: roundTowardNegative
+      3: roundTowardPositive
+    exception_rule:
+      trap_enabled: Raise FLOATING_POINT_FAULT when the corresponding exception occurs.
+      trap_disabled: Set the corresponding accrued FFLAGS bit and continue.
+    write_policy:
+      reserved_bits: must be zero
+      reserved_write_exception: INVALID_CONTROL_STATE
+      description: Reserved FSTATUS bits must be zero; nonzero reserved writes raise INVALID_CONTROL_STATE.
+    ieee_754_default:
+      reset_value: 0
+      rule: FSTATUS=0 selects roundTiesToEven, disables exception traps, and leaves FTZ, DAZ, and DN disabled
+  unsupported_instruction_exception: ILLEGAL_INSTRUCTION
+
+
+special_registers:
+  - name: FSTATUS
+    width: 16
+    class: FSTATUS
+    access_width: 16
+    access_size: W
+    role: floating-point control and status mode
+    privilege: unprivileged
+    extension_requirement: floating_point
+    note: controls FP rounding, exception traps, and non-default modes
+  - name: FFLAGS
+    width: 16
+    class: FFLAGS
+    access_width: 16
+    access_size: W
+    role: floating-point accrued exception flags
+    privilege: unprivileged
+    extension_requirement: floating_point

@@ -1,0 +1,52 @@
+mnemonic: CLS
+doc:
+  title: Count Leading Sign Bits
+  summary: Performs the count leading sign bits operation.
+  description: Performs the count leading sign bits operation.
+  instruction_family: integer_bitfield
+  instruction_class: integer
+behavior:
+  group: bit_counts
+  inputs:
+  - src
+  input_output: dst
+  operation:
+  - result_v = 0xffffffffffffffff;
+  - carry_v = 0;
+  - borrow_v = 0x8000000000000000;
+  - if (size_v == 8) goto <cls_mask_done>;
+  - if (size_v != 4) goto <cls_not_l>;
+  - result_v = 0xffffffff;
+  - carry_v = 32;
+  - borrow_v = 0x80000000;
+  - goto <cls_mask_done>;
+  - <cls_not_l>
+  - if (size_v != 2) goto <cls_b>;
+  - result_v = 0xffff;
+  - carry_v = 48;
+  - borrow_v = 0x8000;
+  - goto <cls_mask_done>;
+  - <cls_b>
+  - result_v = 0xff;
+  - carry_v = 56;
+  - borrow_v = 0x80;
+  - <cls_mask_done>
+  - tmp_v = src_v & result_v;
+  - if ((tmp_v & borrow_v) == 0) goto <cls_count>;
+  - tmp_v = (~tmp_v) & result_v;
+  - <cls_count>
+  - dst_v = lzcount(tmp_v) - carry_v;
+attributes:
+  repeatable: true
+  flags: unchanged
+allocation:
+  catalog_section: integer
+  layout_group: BIT_COUNTS
+forms:
+  operands:
+  - name: src
+    type: EA
+  - name: dst
+    type: DREG
+  size: BWLQ
+  zero_input: returns operand width

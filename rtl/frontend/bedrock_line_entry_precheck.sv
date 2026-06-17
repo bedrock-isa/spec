@@ -54,6 +54,7 @@ module bedrock_line_entry_precheck #(
     logic saturate;
     logic nontemporal;
     bedrock_prefix_decode_pkg::bedrock_update_mode_e update_mode;
+    bedrock_prefix_decode_pkg::bedrock_access_mode_e access_mode;
     bedrock_prefix_decode_pkg::bedrock_repeat_kind_e repeat_kind;
     logic [3:0] repeat_condition;
     logic [2:0] repeat_counter;
@@ -75,6 +76,7 @@ module bedrock_line_entry_precheck #(
       .saturate_o(saturate),
       .nontemporal_o(nontemporal),
       .update_mode_o(update_mode),
+      .access_mode_o(access_mode),
       .repeat_kind_o(repeat_kind),
       .repeat_condition_o(repeat_condition),
       .repeat_counter_o(repeat_counter),

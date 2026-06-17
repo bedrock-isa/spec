@@ -92,6 +92,63 @@ prefixes:
       Address-update pseudo-prefix for update-eligible indirect EA forms. The
       address register is decremented first, then the updated address is used for
       the access.
+  - name: U2C
+    value: 0x08
+    group: access_domain
+    semantics: user-domain source access to current-domain destination
+    applies_to:
+      - memory
+    syntax:
+      operand_annotation: "U:[src], C:[dst]"
+      default_domain: C
+      examples:
+        - "MOV.Q U:[A0], D0"
+        - "MOV.B U:[A0++], C:[A1++]"
+    description: >
+      Encoded access-domain prefix for a user-domain source operand and a
+      current-domain destination operand. Assembly source normally selects this
+      prefix with the U: operand annotation rather than spelling U2C directly.
+      C denotes the access domain of the current privilege mode. In user mode
+      C and U are identical, so this prefix has no architectural effect and is
+      normally omitted by assemblers.
+  - name: C2U
+    value: 0x09
+    group: access_domain
+    semantics: current-domain source access to user-domain destination
+    applies_to:
+      - memory
+    syntax:
+      operand_annotation: "C:[src], U:[dst]"
+      default_domain: C
+      examples:
+        - "MOV.Q D0, U:[A1]"
+        - "MOV.B C:[A0++], U:[A1++]"
+    description: >
+      Encoded access-domain prefix for a current-domain source operand and a
+      user-domain destination operand. Assembly source normally selects this
+      prefix with the U: operand annotation on the destination. C denotes the
+      access domain of the current privilege mode. In user mode C and U are
+      identical, so this prefix has no architectural effect and is normally
+      omitted by assemblers.
+  - name: U2U
+    value: 0x0a
+    group: access_domain
+    semantics: user-domain source access to user-domain destination
+    applies_to:
+      - memory
+    syntax:
+      operand_annotation: "U:[src], U:[dst]"
+      default_domain: C
+      examples:
+        - "MOV.B U:[A0++], U:[A1++]"
+        - "INC.L U:[A0]"
+    description: >
+      Encoded access-domain prefix for memory operands that are all interpreted
+      as user-domain accesses. It is used for user-to-user memory operations and
+      for read-modify-write operations on user memory. Assembly source normally
+      selects this prefix with U: operand annotations. In user mode C and U are
+      identical, so this prefix has no architectural effect and is normally
+      omitted by assemblers.
   - name: REPcc
     pattern: "1ccc cddd"
     group: repeat
@@ -147,25 +204,41 @@ prefixes:
       completion_rule: counter is zero or the REP condition is false
       fault_restart_rule: remaining signed count is preserved
     observed_value:
-      MOV: source value
-      CMP: right operand minus left operand
-      TEST: left operand bitwise-and right operand
-      EXTSW: result value
-      EXTZW: result value
-      EXTSL: result value
-      EXTZL: result value
-      EXTSQ: result value
-      EXTZQ: result value
+      MOV: src_value
+      CMP: rhs_minus_lhs
+      TEST: lhs_bitwise_and_rhs
+      EXTSW: result_value
+      EXTZW: result_value
+      EXTSL: result_value
+      EXTZL: result_value
+      EXTSQ: result_value
+      EXTZQ: result_value
+    observed_value_descriptions:
+      src_value: source value
+      rhs_minus_lhs: right operand minus left operand
+      lhs_bitwise_and_rhs: left operand bitwise-and right operand
+      result_value: result value
     repflags:
-      MOV: set Z/N from observed value and clear C/V
-      CMP: compute subtract flags from right operand minus left operand
-      TEST: set Z/N from observed value and clear C/V
-      EXTSW: set Z/N from observed value and clear C/V
-      EXTZW: set Z/N from observed value and clear C/V
-      EXTSL: set Z/N from observed value and clear C/V
-      EXTZL: set Z/N from observed value and clear C/V
-      EXTSQ: set Z/N from observed value and clear C/V
-      EXTZQ: set Z/N from observed value and clear C/V
+      MOV: flags_logic_observed_value
+      CMP: flags_sub_rhs_lhs
+      TEST: flags_logic_observed_value
+      EXTSW: flags_logic_observed_value
+      EXTZW: flags_logic_observed_value
+      EXTSL: flags_logic_observed_value
+      EXTZL: flags_logic_observed_value
+      EXTSQ: flags_logic_observed_value
+      EXTZQ: flags_logic_observed_value
+      FCMP: fpu_compare_flags
+      FTEST: fpu_compare_flags
+      FBNDII: fpu_interval_v_flag
+      FBNDIX: fpu_interval_v_flag
+      FBNDXI: fpu_interval_v_flag
+      FBNDXX: fpu_interval_v_flag
+    repflags_descriptions:
+      flags_logic_observed_value: set Z/N from observed value and clear C/V
+      flags_sub_rhs_lhs: compute subtract flags from rhs - lhs
+      fpu_compare_flags: floating-point compare flag rules
+      fpu_interval_v_flag: set V from interval check
     counter_direction: signed counter moves toward zero
     commit_rule: a condition-false terminating iteration commits the body and leaves the counter unchanged
     semantics: repeat instruction while counter and condition remain active
@@ -203,9 +276,8 @@ prefixes:
       REPG-general preserves exact scalar semantics for less regular groups,
       including groups that read or write the selected counter register.
       REPGF is a source-level fast-contract spelling for the same encoded REPG
-      prefix. It emits the same prefix byte as REPG, but the assembler must
-      reject the group unless the source satisfies the REPG-fast syntactic
-      eligibility rules it can prove.
+      prefix. It emits the same prefix byte as REPG and marks the source group
+      as intended for the REPG-fast optimization class.
     operand:
       type: DREG
       field: d
@@ -213,7 +285,7 @@ prefixes:
       role: counter
     eligible_operation_attribute: repeatable_operation
     streaming_candidate_attribute: streaming_candidate
-    forbidden_instruction_classes:
+    excluded_instruction_classes:
       - control flow
       - system
       - atomic
@@ -225,10 +297,7 @@ prefixes:
     fast_contract_alias:
       mnemonic: REPGF
       emits: same encoded prefix as REPG
-      assembler_requirement: >
-        The assembler rejects REPGF if a grouped instruction violates the base
-        REPG legality rules, writes the selected counter register, or uses
-        PC-relative addressing.
+      contract: REPG-fast source-level contract
     counter_encoding:
       interpretation: signed two's-complement
       value_bits: 63..0
@@ -274,4 +343,5 @@ mutually_exclusive_groups:
   - arithmetic_mode
   - speculation
   - memory_hint
+  - access_domain
   - repeat

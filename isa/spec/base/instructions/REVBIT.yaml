@@ -1,0 +1,45 @@
+mnemonic: REVBIT
+doc:
+  title: Reverse Bits
+  summary: Performs the reverse bits operation.
+  description: Performs the reverse bits operation.
+  instruction_family: integer_alu
+  instruction_class: integer
+behavior:
+  group: bit_reverse
+  inputs: [src]
+  output: dst
+  operation:
+  - dst_v = 0;
+  - tmp_v = src_v;
+  - result_v = size_v << 3;
+  - <revbit_loop>
+  - if (result_v == 0) goto <revbit_done>;
+  - dst_v = dst_v << 1;
+  - borrow_v = tmp_v & 1;
+  - dst_v = dst_v | borrow_v;
+  - tmp_v = tmp_v >> 1;
+  - result_v = result_v - 1;
+  - goto <revbit_loop>;
+  - <revbit_done>
+allocation:
+  catalog_section: integer
+  layout_group: REV
+forms:
+  operands:
+  - - name: src
+      type: DREG
+    - name: dst
+      type: DREG
+  - - name: src
+      type: EA
+    - name: dst
+      type: DREG
+  - - name: src
+      type: DREG
+    - name: dst
+      type: EA
+  size: BWLQ
+  compact: false
+  result: second operand
+  memory_memory: disallowed

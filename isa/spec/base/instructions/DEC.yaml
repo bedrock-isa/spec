@@ -1,0 +1,40 @@
+mnemonic: DEC
+doc:
+  title: Decrement
+  summary: Performs the decrement operation.
+  description: Performs the decrement operation.
+  instruction_family: integer_unary
+  instruction_class: integer
+behavior:
+  group: integer_unary
+  input_output: dst
+  operation:
+  - result_v = dst_v - 1;
+  - dst_v = result_v;
+  - ZF = result_v == 0;
+  - NF = result_v s< 0;
+  - CF = dst_old_v < 1:8;
+  - VF = sborrow(dst_old_v, 1:8);
+attributes:
+  repeatable: true
+  prefix_availability:
+  - SATURATE
+  flags:
+    Z: result == 0
+    N: most_significant_bit(result)
+    C: unsigned borrow
+    V: signed overflow
+allocation:
+  catalog_section: compact_primary
+  layout_group: INC_DEC
+forms:
+  compact_forms:
+  - operands:
+    - name: dst
+      type: DREG
+  extended_forms:
+  - operands:
+    - name: dst
+      type: EA
+    compact: false
+  size: BWLQ

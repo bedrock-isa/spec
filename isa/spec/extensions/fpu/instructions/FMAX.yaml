@@ -1,0 +1,37 @@
+mnemonic: FMAX
+doc:
+  title: Floating-Point Maximum
+  summary: Performs the floating-point maximum operation.
+  description: Performs the floating-point maximum operation.
+  instruction_family: fpu
+  instruction_class: fpu
+behavior:
+  group: fpu_arithmetic
+  inputs:
+  - src
+  input_output: dst
+  operation:
+  - if (dst_v f> src_v) goto <fmax_done>;
+  - dst_v = src_v;
+  - <fmax_done>
+attributes:
+  repeatable: true
+  streaming_candidate: true
+  fp_flags:
+    update_when_required:
+    - NV
+allocation:
+  catalog_section: fpu
+  layout_group: FMIN_FMAX
+forms:
+  operands:
+  - - name: src
+      type: FREG
+    - name: dst
+      type: FREG
+  - - name: src
+      type: EA
+    - name: dst
+      type: FREG
+  size: S_D
+  nan_policy: defined by the floating-point model

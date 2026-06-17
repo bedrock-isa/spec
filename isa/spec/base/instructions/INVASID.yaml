@@ -1,0 +1,23 @@
+mnemonic: INVASID
+doc:
+  title: Invalidate TLB By ASID
+  summary: Invalidate TLB entries for ASID.
+  description: Invalidate TLB entries for ASID.
+  instruction_family: tlb_and_context
+  instruction_class: system
+behavior:
+  group: tlb_context
+  inputs:
+  - asid
+  output: none
+  operation:
+  - arch_tlb_invalidate_asid(asid_v & 0xffff);
+attributes:
+  serializing: true
+allocation:
+  catalog_section: system
+  layout_group: TLB_INVALIDATE
+forms:
+  operands:
+  - name: asid
+    type: imm16

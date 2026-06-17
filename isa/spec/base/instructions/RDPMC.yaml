@@ -1,0 +1,23 @@
+mnemonic: RDPMC
+doc:
+  title: Read Performance Counter
+  summary: Performs the read performance counter operation.
+  description: Performs the read performance counter operation.
+  instruction_family: system_registers
+  instruction_class: system
+behavior:
+  group: system_registers
+  output: dst
+  operation:
+  - dst_v = PMC;
+attributes:
+  privilege: configurable
+  flags: unchanged
+allocation:
+  catalog_section: system
+forms:
+  operands:
+  - name: counter_id
+    type: imm16
+  - name: dst
+    type: DREG

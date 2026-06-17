@@ -1,0 +1,19 @@
+mnemonic: YIELD
+doc:
+  title: Yield
+  summary: Hint scheduler or implementation that the current thread may yield.
+  description: Hint scheduler or implementation that the current thread may yield.
+  instruction_family: core_control
+  instruction_class: system
+behavior:
+  group: core_control
+  output: none
+  operation:
+  - arch_yield();
+attributes:
+  privilege: any
+allocation:
+  catalog_section: compact_primary
+  layout_group: CORE_MISC
+forms:
+  operands: []

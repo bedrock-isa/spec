@@ -9,8 +9,8 @@ REP, REPcc, and REPG are architecturally scalar. Their visible behavior is the
 same as executing the repeated instruction or instruction group in program order
 under the counter and termination rules of the selected repeat prefix. For REPcc,
 the instruction body of the terminating condition-false iteration commits, while
-the repeat counter is left unchanged. The instruction set does not define an
-architected vector register file for these operations, and software must not
+the repeat counter is left unchanged. These operations have no
+architected vector register file, and software must not
 depend on any implementation's internal vector width.
 
 Repeated execution preserves the ordinary instruction semantics:
@@ -76,9 +76,8 @@ REPG group discovery is deliberately bounded by an architectural grouping
 window. Because every instruction record carries an explicit length,
 instruction interpretation can walk from the REPG-marked instruction to the
 ENDG-marked instruction without interpreting the full semantics of each grouped
-instruction. If the ENDG marker is absent before the end of the grouping window,
-the instruction stream is illegal. ENDG by itself is also illegal, because it is
-only a boundary marker for an active REPG group.
+instruction. A well-formed REPG group contains one REPG start marker and one ENDG
+boundary marker inside the grouping window.
 
 The repeat counter is ordinary architectural D-register state. A zero counter
 executes no group iterations. A positive counter moves toward zero by

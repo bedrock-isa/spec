@@ -1,0 +1,3 @@
+include:
+- instructions/_common.yaml
+- instructions/ENCINST.yaml

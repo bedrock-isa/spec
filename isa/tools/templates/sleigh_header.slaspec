@@ -1,0 +1,69 @@
+# Generated SLEIGH specification
+# Source spec: @SPEC_DIR@
+# Source allocation: @ALLOCATION_PATH@
+# Solver status: @SOLVER_STATUS@
+# Constructors: @CONSTRUCTOR_COUNT@
+#
+# This follows the allocated opcode map. Instruction semantic bodies are emitted
+# directly from operation_semantics pcode entries.
+
+define endian=little;
+define alignment=2;
+
+define space ram type=ram_space size=8 default;
+define space register type=register_space size=8;
+
+define pcodeop arch_fence_address;
+define pcodeop arch_fence_read;
+define pcodeop arch_fence_write;
+define pcodeop arch_prefetch;
+define pcodeop arch_wait_for_event;
+define pcodeop arch_yield;
+define pcodeop arch_trace_marker;
+define pcodeop arch_enter_halt;
+define pcodeop arch_raise_breakpoint;
+define pcodeop arch_raise_illegal_instruction;
+define pcodeop arch_raise_trap;
+define pcodeop arch_raise_invalid_control_state;
+define pcodeop arch_raise_divide_by_zero;
+define pcodeop arch_raise_signed_overflow;
+define pcodeop arch_cpuid;
+define pcodeop arch_page_translate;
+define pcodeop arch_page_attributes;
+define pcodeop arch_page_query;
+define pcodeop arch_tlb_invalidate_all;
+define pcodeop arch_tlb_invalidate_page;
+define pcodeop arch_tlb_invalidate_asid;
+define pcodeop arch_cache_invalidate_instruction;
+define pcodeop arch_cache_invalidate_data;
+define pcodeop arch_cache_flush_data;
+define pcodeop arch_cache_writeback_data;
+define pcodeop arch_cache_synchronize;
+define pcodeop arch_save_extension_state;
+define pcodeop arch_restore_extension_state;
+define pcodeop arch_dbank_read;
+define pcodeop arch_dbank_write;
+define pcodeop arch_emit_instruction;
+define pcodeop fp_const;
+define pcodeop fp_mod;
+define pcodeop fp_rem;
+define pcodeop fp_scale;
+define pcodeop fp_acos;
+define pcodeop fp_asin;
+define pcodeop fp_atan;
+define pcodeop fp_atanh;
+define pcodeop fp_cos;
+define pcodeop fp_cosh;
+define pcodeop fp_exp;
+define pcodeop fp_exp10;
+define pcodeop fp_exp2;
+define pcodeop fp_expm1;
+define pcodeop fp_log;
+define pcodeop fp_log10;
+define pcodeop fp_log1p;
+define pcodeop fp_log2;
+define pcodeop fp_sin;
+define pcodeop fp_sincos;
+define pcodeop fp_sinh;
+define pcodeop fp_tan;
+define pcodeop fp_tanh;

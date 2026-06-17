@@ -14,6 +14,36 @@ from isa_spec import (
     parse_pattern,
     semantic_entry_mnemonics,
 )
+from spec_model.encoding import (
+    bitmap_operand,
+    compact_ea_forms,
+    condition_entries,
+    int_value,
+    named_value_width,
+    register_class_count,
+    size_kind_field,
+    size_kind_width,
+    size_kinds as spec_size_kinds,
+    special_register_class,
+)
+
+
+ACTIVE_SPEC: dict[str, Any] | None = None
+
+
+def set_active_spec(spec: dict[str, Any]) -> None:
+    global ACTIVE_SPEC
+    ACTIVE_SPEC = spec
+
+
+def active_spec() -> dict[str, Any]:
+    if ACTIVE_SPEC is None:
+        raise RuntimeError("active ISA spec is not set")
+    return ACTIVE_SPEC
+
+
+def is_declared_size_kind(kind: str) -> bool:
+    return kind.upper() in spec_size_kinds(active_spec())
 
 
 def get_path(data: dict[str, Any], dotted: str) -> Any:
@@ -36,6 +66,41 @@ def bits_needed(count: int) -> int:
     if count <= 1:
         return 0
     return math.ceil(math.log2(count))
+
+
+def register_field_width(class_name: str) -> int:
+    return bits_needed(register_class_count(active_spec(), class_name))
+
+
+def special_register_field_width(class_name: str) -> int:
+    body = special_register_class(active_spec(), class_name)
+    return int(body.get("encoding_bits", bits_needed(len(body.get("encoding", []) or []))))
+
+
+def dbank_field_width() -> int:
+    banking = (active_spec().get("registers", {}) or {}).get("data_register_banking", {})
+    selector = (banking or {}).get("selector", {}) if isinstance(banking, dict) else {}
+    return int(selector.get("width", 0))
+
+
+def condition_field_width() -> int:
+    values = [int_value(item.get("value")) for item in condition_entries(active_spec())]
+    return bits_needed(max(values) + 1) if values else 0
+
+
+def bitmap_field_width(name: str) -> int:
+    return int(bitmap_operand(active_spec(), name).get("width", 0))
+
+
+def ea_field_width() -> int:
+    widths = {len(str(form.get("pattern", "")).replace(" ", "")) for form in compact_ea_forms(active_spec())}
+    if len(widths) != 1:
+        raise ValueError(f"compact EA forms must have one selector width, got {sorted(widths)}")
+    return widths.pop()
+
+
+def data_or_address_field_width() -> int:
+    return 1 + max(register_field_width("D"), register_field_width("A"))
 
 
 def ceil_words(bits: int) -> int:
@@ -123,6 +188,7 @@ def alias_rules_by_target(alias_rules: list[dict[str, Any]]) -> dict[str, dict[s
 
 
 def collect_candidates(spec: dict[str, Any], entries: list[PatternEntry]) -> list[Candidate]:
+    set_active_spec(spec)
     candidates: list[Candidate] = []
     catalog = instruction_catalog(spec)
     allocation = allocation_params(spec)
@@ -190,8 +256,9 @@ def collect_candidates(spec: dict[str, Any], entries: list[PatternEntry]) -> lis
                 if mnemonic in allocated_mnemonics:
                     continue
                 for operands in semantic_operand_alternatives(mnemonic, body):
-                    ident = semantic_candidate_id(mnemonic, operands, body)
-                    item_category = semantic_category_from_body(body, category)
+                    merged = body_with_operation_metadata(spec, mnemonic, body)
+                    ident = semantic_candidate_id(mnemonic, operands, merged)
+                    item_category = semantic_category_from_body(merged, category)
                     candidates.append(
                         build_candidate(
                             ident=ident,
@@ -199,7 +266,7 @@ def collect_candidates(spec: dict[str, Any], entries: list[PatternEntry]) -> lis
                             category=item_category,
                             group=str(group),
                             operands=tuple(operands),
-                            body=body,
+                            body=merged,
                             allocation=allocation,
                             origin="instructions.yaml",
                             shape_hint="semantic_operands",
@@ -215,6 +282,56 @@ def collect_candidates(spec: dict[str, Any], entries: list[PatternEntry]) -> lis
 def allocation_params(spec: dict[str, Any]) -> dict[str, Any]:
     params = instruction_catalog(spec).get("allocation") or {}
     return params if isinstance(params, dict) else {}
+
+
+OPERATION_METADATA_KEYS = (
+    "privilege",
+    "atomic",
+    "memory",
+    "flags",
+    "fp_flags",
+    "serializing",
+    "signedness",
+    "bounds_mode",
+    "interval",
+    "destination_size",
+    "output",
+)
+
+
+def body_with_operation_metadata(
+    spec: dict[str, Any],
+    mnemonic: str,
+    body: dict[str, Any],
+) -> dict[str, Any]:
+    metadata = operation_metadata_for_mnemonic(spec, mnemonic)
+    if not metadata:
+        return dict(body)
+    merged = dict(body)
+    for key, value in metadata.items():
+        merged.setdefault(key, value)
+    return merged
+
+
+def operation_metadata_for_mnemonic(spec: dict[str, Any], mnemonic: str) -> dict[str, Any]:
+    groups = (((spec.get("instructions") or {}).get("operation_semantics") or {}).get("groups") or {})
+    if not isinstance(groups, dict):
+        return {}
+    out: dict[str, Any] = {}
+    for group in groups.values():
+        if not isinstance(group, dict):
+            continue
+        members = {str(member) for member in group.get("members", []) or []}
+        if mnemonic not in members:
+            continue
+        for key in OPERATION_METADATA_KEYS:
+            if key in group:
+                out[key] = group[key]
+            value = group.get(f"{key}_by_mnemonic")
+            if isinstance(value, dict) and mnemonic in value:
+                out[key] = value[mnemonic]
+        return out
+    return out
 
 
 def semantic_extended_form_candidates(
@@ -235,6 +352,7 @@ def semantic_extended_form_candidates(
                 for operands in normalize_operand_alternatives(form.get("operands", [])):
                     merged = dict(body)
                     merged.update(form)
+                    merged = body_with_operation_metadata(spec, mnemonic, merged)
                     force_size_suffix = bool(form.get("force_size_suffix", False))
                     ident = semantic_candidate_id(
                         mnemonic, operands, merged, force_size_suffix=force_size_suffix
@@ -282,6 +400,7 @@ def semantic_compact_primary_candidates(
                         continue
                     merged = dict(body)
                     merged.update(form)
+                    merged = body_with_operation_metadata(spec, mnemonic, merged)
                     for operands in expanded_operand_alternatives(merged):
                         out.append(
                             build_candidate(
@@ -304,16 +423,17 @@ def semantic_compact_primary_candidates(
                         )
                 continue
             for operands in expanded_operand_alternatives(body):
+                merged = body_with_operation_metadata(spec, mnemonic, body)
                 out.append(
                     build_candidate(
-                        ident=semantic_candidate_id(mnemonic, operands, body),
+                        ident=semantic_candidate_id(mnemonic, operands, merged),
                         mnemonic=mnemonic,
                         category=semantic_category_from_body(
-                            body, semantic_compact_category(mnemonic, str(group))
+                            merged, semantic_compact_category(mnemonic, str(group))
                         ),
                         group=str(group),
                         operands=tuple(operands),
-                        body=body,
+                        body=merged,
                         allocation=allocation_params(spec),
                         origin="instructions.yaml",
                         shape_hint="semantic_compact",
@@ -355,9 +475,9 @@ def semantic_compact_category(mnemonic: str, group: str) -> str:
     return "integer"
 
 
-def semantic_category_from_body(body: dict[str, Any], fallback: str) -> str:
+def semantic_category_from_body(body: dict[str, Any], default_category: str) -> str:
     category = body.get("semantic_category") or body.get("category")
-    return str(category) if category else fallback
+    return str(category) if category else default_category
 
 
 def build_candidate(
@@ -579,11 +699,13 @@ def allocation_match_context(
     operands: tuple[str, ...],
 ) -> dict[str, str]:
     _ = descriptor_fields, operands
+    semantic_family = str(body.get("semantic_family") or group).split(".", 1)[0]
+    group_name = str(group).split(".", 1)[0]
     return {
         "mnemonic": mnemonic,
         "category": category,
-        "semantic_family": str(body.get("semantic_family") or group).split(".", 1)[0],
-        "group": group,
+        "semantic_family": semantic_family,
+        "group": group_name,
         "profile": "_TO_".join(profile_form_parts(compact_fields)) or "NO_OPERANDS",
         "size": size_tag_from_fields(compact_fields),
     }
@@ -676,7 +798,7 @@ def generate_fields(
         for field in produced:
             if field.kind == "EA":
                 if not allow_memory_memory and ea_seen >= 1:
-                    normalized.append(Field("d", "DREG", 3, field.source, field.storage))
+                    normalized.append(Field("d", "DREG", register_field_width("D"), field.source, field.storage))
                     continue
                 ea_seen += 1
             normalized.append(field)
@@ -702,9 +824,10 @@ def size_field(body: dict[str, Any], mode: str) -> Field | None:
     width = size_bits(body)
     if width <= 0:
         return None
-    name = "z" if size_tag(body) in {"LQ", "WL", "S_D"} else "s"
+    tag = size_tag(body)
+    name = size_kind_field(active_spec(), tag) if tag and is_declared_size_kind(tag) else "s"
     storage = "primary" if mode == "compact" else "descriptor"
-    return Field(name=name, kind=size_tag(body) or "size", width=width, source="size", storage=storage)
+    return Field(name=name, kind=tag or "size", width=width, source="size", storage=storage)
 
 
 def size_bits(body: dict[str, Any]) -> int:
@@ -718,14 +841,14 @@ def size_bits(body: dict[str, Any]) -> int:
         return bits_needed(len(size))
     if isinstance(size, str):
         normalized = size.replace("/", "_").replace("-", "_").upper()
-        if normalized in {"BWLQ", "B_W_L_Q"}:
-            return 2
-        if normalized in {"LQ", "L_Q", "WL", "W_L", "S_D"}:
-            return 1
+        if normalized in {"B_W_L_Q", "L_Q", "W_L"}:
+            normalized = normalized.replace("_", "")
+        if is_declared_size_kind(normalized):
+            return size_kind_width(active_spec(), normalized)
         if "Q_ONLY" in normalized or "IMPLICIT_Q" in normalized or normalized == "Q":
             return 0
     if body.get("D_size") == "BWLQ":
-        return 2
+        return size_kind_width(active_spec(), "BWLQ")
     if body.get("source_size"):
         values = body.get("source_size")
         if isinstance(values, list):
@@ -736,7 +859,10 @@ def size_bits(body: dict[str, Any]) -> int:
 def size_tag(body: dict[str, Any]) -> str:
     size = body.get("size")
     if isinstance(size, str):
-        return size.replace("/", "_").replace("-", "_").upper()
+        normalized = size.replace("/", "_").replace("-", "_").upper()
+        if normalized in {"B_W_L_Q", "L_Q", "W_L"}:
+            normalized = normalized.replace("_", "")
+        return normalized
     if isinstance(size, dict):
         if size.get("fixed"):
             return str(size["fixed"]).upper()
@@ -866,38 +992,38 @@ def operand_fields(
     if norm in {"", "NONE"}:
         return []
     if norm in {"MEMORY_ORDER", "MEMORYORDER", "ORDER"} or source_norm in {"ORDER", "MEMORY_ORDER"}:
-        return [Field("o", "memory_order", 3, source, "payload")]
+        return [Field("o", "memory_order", named_value_width(active_spec(), "memory_order"), source, "payload")]
     if "CONDITION" in norm or norm in {"CC"}:
-        return [Field("c", "condition", 4, source, storage)]
+        return [Field("c", "condition", condition_field_width(), source, storage)]
     if is_dbank_operand(norm, source_norm):
-        return [Field("k", "DBANK", 4, source, storage)]
+        return [Field("k", "DBANK", dbank_field_width(), source, storage)]
     if norm in {"DREG_OR_AREG"}:
-        return [Field("r", "D_or_A", 4, source, storage)]
+        return [Field("r", "D_or_A", data_or_address_field_width(), source, storage)]
     if source_norm in {"COUNT", "BIT_INDEX"} and norm in {"SELECTOR_IMM6", "IMM6_SELECTOR"}:
         return [Field("n", "selector6", 6, source, storage)]
     if source_norm in {"COUNT", "BIT_INDEX"} and is_d_operand(norm):
-        return [Field("n", "DREG", 3, source, storage)]
+        return [Field("n", "DREG", register_field_width("D"), source, storage)]
     if is_d_operand(norm):
-        return [Field("d", "DREG", 3, source, storage)]
+        return [Field("d", "DREG", register_field_width("D"), source, storage)]
     if is_a_operand(norm):
-        return [Field("a", "AREG", 3, source, storage)]
+        return [Field("a", "AREG", register_field_width("A"), source, storage)]
     if is_sp_operand(norm):
         return [Field("p", "SPREG", 0, source, storage)]
     if is_s_operand(norm):
-        return [Field("g", "SREG", 3, source, storage)]
+        return [Field("g", "SREG", special_register_field_width("S"), source, storage)]
     if is_f_operand(norm):
-        return [Field("f", "FREG", F_REGISTER_BITS, source, storage)]
+        return [Field("f", "FREG", register_field_width("F"), source, storage)]
     if is_immediate_ea_operand(norm):
-        return [Field("i", "IMM_EA", 6, source, storage)]
+        return [Field("i", "IMM_EA", ea_field_width(), source, storage)]
     if is_ea_operand(norm) or "MEMORY" in norm:
-        return [Field("e", "EA", 6, source, storage)]
+        return [Field("e", "EA", ea_field_width(), source, storage)]
     if is_selector_operand(norm, source_norm):
         if source_norm in {"COUNT", "BIT_INDEX"}:
             return [Field("n", "selector6", 6, source, storage)]
         return [Field("n", "small_selector", 4, source, storage)]
     if "BITMAP" in norm:
-        return [Field("b", "bitmap16", 16, source, "payload")]
-    if "IMM" in norm or "ASID" in norm or norm in {"CR", "CREG", "CONTROL_REGISTER"}:
+        return [Field("b", "bitmap16", bitmap_field_width("bitmap16"), source, "payload")]
+    if "IMM" in norm or norm in {"CR", "CREG", "CONTROL_REGISTER"}:
         width = immediate_payload_width(norm)
         return [Field("i", norm.lower(), width, source, "payload")]
     if "OUTPUT" in norm or "LEAF" in norm or "SUBLEAF" in norm:
@@ -929,12 +1055,12 @@ def generic_operand_field(
 ) -> list[Field]:
     if category == "fpu":
         storage = "primary" if mode == "compact" else "descriptor"
-        return [Field("f", "FREG", F_REGISTER_BITS, source, storage)]
+        return [Field("f", "FREG", register_field_width("F"), source, storage)]
     if mode == "compact":
-        return [Field("d", "DREG", 3, source, "primary")]
+        return [Field("d", "DREG", register_field_width("D"), source, "primary")]
     if generic_ea_budget > 0 and index == 0 and not is_destination_like(norm):
-        return [Field("e", "EA", 6, source, "descriptor")]
-    return [Field("d", "DREG", 3, source, "descriptor")]
+        return [Field("e", "EA", ea_field_width(), source, "descriptor")]
+    return [Field("d", "DREG", register_field_width("D"), source, "descriptor")]
 
 
 def is_generic_data_operand(norm: str) -> bool:
@@ -972,7 +1098,7 @@ def is_destination_like(norm: str) -> bool:
 
 
 def immediate_payload_width(norm: str) -> int:
-    if "IMM16" in norm or norm in {"CR", "CREG", "CONTROL_REGISTER"} or "ASID" in norm:
+    if "IMM16" in norm or norm in {"CR", "CREG", "CONTROL_REGISTER"}:
         return 16
     if "IMM32" in norm:
         return 32

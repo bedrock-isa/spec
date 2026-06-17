@@ -14,13 +14,49 @@ import sys
 sys.dont_write_bytecode = True
 
 from isa_spec import cleaned_pattern, load_and_validate, print_result
+from spec_model.encoding import (
+    bitmap_operand_ranges,
+    compact_ea_forms,
+    compact_ea_values_by_name,
+    named_values as spec_named_values,
+    named_value_width,
+    register_class_count,
+    size_codes as spec_size_codes,
+    size_kind_field,
+    size_kind_entries,
+    size_kind_suffixes,
+    size_kinds as spec_size_kinds,
+    special_register_class,
+    special_register_named_values,
+)
 
 
-FIXED_SIZE_KINDS = {"B", "W", "L", "Q"}
-SIZE_KINDS = {"BWLQ", "LQ", "WL", "S_D", "BW", "BWL", "BWLX", *FIXED_SIZE_KINDS}
+ACTIVE_SPEC: dict[str, Any] | None = None
 DEFAULT_MAX_WORDS = 8
 SELECTOR_SOURCES = {"count", "bit_index", "offset", "width"}
-CONDITIONAL_MNEMONICS = {"Jcc", "DJcc", "SETcc", "MOVcc", "TRAPcc", "FMOVcc"}
+
+
+def set_active_spec(spec: dict[str, Any]) -> None:
+    global ACTIVE_SPEC
+    ACTIVE_SPEC = spec
+
+
+def active_spec() -> dict[str, Any]:
+    if ACTIVE_SPEC is None:
+        raise RuntimeError("active ISA spec is not set")
+    return ACTIVE_SPEC
+
+
+def fixed_size_kinds() -> set[str]:
+    return set(spec_size_codes(active_spec()))
+
+
+def size_kind_names() -> set[str]:
+    return set(spec_size_kinds(active_spec()))
+
+
+def is_size_kind_name(kind: str) -> bool:
+    return kind.upper() in size_kind_names()
 
 
 def md(text: Any) -> str:
@@ -156,8 +192,6 @@ def infer_operand_kind(operand: str, field: dict[str, Any] | None) -> str:
         return "EA"
     if upper in {"CR", "CREG", "CONTROL_REGISTER"} or source in {"CR", "CONTROL_REGISTER"}:
         return "CR"
-    if "ASID" in upper or "ASID" in source:
-        return "asid"
     if "IMM64" in upper or "IMM64" in source:
         return "imm64"
     if "IMM32" in upper or "IMM32" in source:
@@ -206,8 +240,6 @@ def operand_placeholder(kind: str, operand: str) -> str:
         return "<bitmap16>"
     if lower == "cr":
         return "<cr>"
-    if "asid" in lower:
-        return "<asid>"
     if "imm64" in lower:
         return "<imm64>"
     if "imm32" in lower:
@@ -226,24 +258,19 @@ def operand_placeholder(kind: str, operand: str) -> str:
 
 def size_text(fields: list[dict[str, Any]], ident: str) -> str:
     for field in fields:
-        if field.get("source") == "size" or str(field.get("kind")) in SIZE_KINDS:
+        if field.get("source") == "size" or is_size_kind_name(str(field.get("kind"))):
             kind = str(field.get("kind"))
-            if kind == "BWLQ":
-                return "B/W/L/Q"
-            if kind == "LQ":
-                return "L/Q"
-            if kind == "WL":
-                return "W/L"
-            if kind == "S_D":
-                return "S/D"
-            if kind == "BW":
-                return "B/W"
-            if kind in FIXED_SIZE_KINDS:
-                return kind
-            return kind
+            if is_size_kind_name(kind):
+                return "/".join(
+                    str(item.get("code"))
+                    for item in size_kind_entries(active_spec(), kind)
+                    if item.get("code") is not None
+                )
+            if kind.upper() in fixed_size_kinds():
+                return kind.upper()
     parts = ident.split(".")
     for part in parts:
-        if part in SIZE_KINDS:
+        if part.upper() in size_kind_names() or part.upper() in fixed_size_kinds():
             return size_text([{"kind": part, "source": "size"}], ident)
     return "-"
 
@@ -251,7 +278,7 @@ def size_text(fields: list[dict[str, Any]], ident: str) -> str:
 def syntax_text(item: dict[str, Any]) -> str:
     fields = item.get("fields", [])
     size = size_text(fields, str(item["id"]))
-    suffix = "" if size == "-" else (f".{size}" if size in FIXED_SIZE_KINDS else f".<{size}>")
+    suffix = "" if size == "-" else (f".{size}" if size in fixed_size_kinds() else f".<{size}>")
     suffix += memory_order_suffix(fields, symbolic=False)
     raw_mnemonic = str(item["mnemonic"])
     mnemonic = display_mnemonic(raw_mnemonic)
@@ -272,7 +299,7 @@ def syntax_text(item: dict[str, Any]) -> str:
 
 def line_syntax_text(item: dict[str, Any], fields: list[dict[str, Any]]) -> str:
     size = size_field_text(fields, str(item["id"]))
-    suffix = "" if not size else (f".{size}" if size in FIXED_SIZE_KINDS else f".X({size})")
+    suffix = "" if not size else (f".{size}" if size in fixed_size_kinds() else f".X({size})")
     suffix += memory_order_suffix(fields, symbolic=True)
     raw_mnemonic = str(item["mnemonic"])
     mnemonic = display_mnemonic(raw_mnemonic)
@@ -305,7 +332,7 @@ def memory_order_suffix(fields: list[dict[str, Any]], *, symbolic: bool) -> str:
 
 
 def is_condition_mnemonic(mnemonic: str) -> bool:
-    return mnemonic in CONDITIONAL_MNEMONICS or mnemonic.lower().endswith("cc")
+    return mnemonic.lower().endswith("cc")
 
 
 def display_mnemonic(mnemonic: str) -> str:
@@ -316,23 +343,16 @@ def display_mnemonic(mnemonic: str) -> str:
 
 def size_field_text(fields: list[dict[str, Any]], ident: str) -> str:
     for field in fields:
-        if field.get("source") == "size" or str(field.get("kind")) in SIZE_KINDS:
+        if field.get("source") == "size" or is_size_kind_name(str(field.get("kind"))):
             kind = str(field.get("kind"))
-            values = {
-                "BWLQ": "B/W/L/Q",
-                "LQ": "L/Q",
-                "WL": "W/L",
-                "S_D": "S/D",
-                "BW": "B/W",
-                "BWL": "B/W/L",
-                "BWLX": "B/W/L/invalid",
-            }.get(kind, kind)
+            values = "/".join(suffix.lstrip(".") for suffix in size_kind_suffixes(active_spec(), kind))
             return f"{field_symbol(field)}:{values}"
     for part in ident.split("."):
-        if part in SIZE_KINDS:
-            if part in FIXED_SIZE_KINDS:
+        upper = part.upper()
+        if upper in size_kind_names() or upper in fixed_size_kinds():
+            if upper in fixed_size_kinds():
                 return part
-            values = size_text([{"kind": part, "source": "size"}], ident)
+            values = size_text([{"kind": upper, "source": "size"}], ident)
             return f"X:{values}"
     return ""
 
@@ -365,8 +385,6 @@ def line_operand_placeholder(kind: str, operand: str, field: dict[str, Any] | No
         return "<bitmap>"
     if kind.lower() == "cr":
         return "<cr>"
-    if "asid" in kind.lower():
-        return "<asid>"
     if "imm64" in kind.lower():
         return "imm64"
     if "imm32" in kind.lower():
@@ -447,8 +465,8 @@ def field_symbol(field: dict[str, Any] | None) -> str:
         return "c"
     if kind in {"small_selector", "selector6"}:
         return "n"
-    if kind in SIZE_KINDS:
-        return "s"
+    if is_size_kind_name(kind):
+        return size_kind_field(active_spec(), kind)
     return "x"
 
 
@@ -624,8 +642,6 @@ def payload_token_for_kind(kind: str) -> str:
         return "<bitmap>"
     if lower == "cr":
         return "<cr>"
-    if "asid" in lower:
-        return "<asid>"
     if "imm64" in lower:
         return "<imm64>"
     if "imm32" in lower:
@@ -710,12 +726,12 @@ def encoding_text(item: dict[str, Any]) -> str:
         return f"primary {payload}"
     if item.get("kind") == "compact_alias":
         payloads = ", ".join(str(payload) for payload in item.get("alias_payloads", []))
-        return f"alias {item['alias_of']} when {item.get('alias_condition', 'T')}; primary {payloads}"
+        return f"alias_of={item['alias_of']}; condition={item.get('alias_condition', 'T')}; primary={payloads}"
     if item.get("kind") == "extended_alias":
         payloads = ", ".join(str(payload) for payload in item.get("alias_payloads", []))
         return (
-            f"alias {item['alias_of']} when {item.get('alias_condition', 'T')}; "
-            f"{item['extension_root']} @ {payloads}; ext {item['extended_opcode']}"
+            f"alias_of={item['alias_of']}; condition={item.get('alias_condition', 'T')}; "
+            f"root={item['extension_root']}@{payloads}; ext={item['extended_opcode']}"
         )
     return (
         f"{item['extension_root']} @ {item['extension_root_payload']}; "
@@ -726,9 +742,9 @@ def encoding_text(item: dict[str, Any]) -> str:
 def default_words(item: dict[str, Any], lengths: dict[tuple[str, str], tuple[int, int]]) -> tuple[int, int, str]:
     if item.get("kind") in {"compact", "compact_alias"}:
         if "min_words" in item and "max_words" in item:
-            note = "canonical alias of " + str(item["alias_of"]) if item.get("kind") == "compact_alias" else ""
+            note = "alias_of=" + str(item["alias_of"]) if item.get("kind") == "compact_alias" else ""
             if not note:
-                note = "EA forms may add displacement/extended-EA words" if has_ea_field(item) else "overlong padding allowed"
+                note = "ea_payload=variable" if has_ea_field(item) else "overlong=padding"
             return int(item["min_words"]), int(item["max_words"]), note
         key = (str(item["mnemonic"]), str(item.get("shape_hint", "")))
         if key in lengths:
@@ -738,17 +754,17 @@ def default_words(item: dict[str, Any], lengths: dict[tuple[str, str], tuple[int
             max_words = DEFAULT_MAX_WORDS
         else:
             min_words, max_words = 1, DEFAULT_MAX_WORDS
-        note = "EA forms may add displacement/extended-EA words" if has_ea_field(item) else "overlong padding allowed"
+        note = "ea_payload=variable" if has_ea_field(item) else "overlong=padding"
         return min_words, max_words, note
     words = 2 + int(item.get("operand_descriptor_words", 0))
     if item.get("kind") == "extended_alias":
-        note = "canonical alias of " + str(item["alias_of"])
+        note = "alias_of=" + str(item["alias_of"])
     else:
-        note = "primary root + extended opcode"
+        note = "encoding=primary_root+extended_opcode"
     if int(item.get("operand_descriptor_words", 0)) and item.get("kind") != "extended_alias":
-        note += " + descriptor"
+        note += "; descriptor=present"
     if has_ea_field(item):
-        note += "; EA forms may add words"
+        note += "; ea_payload=variable"
     return words, DEFAULT_MAX_WORDS, note
 
 
@@ -783,10 +799,7 @@ def instruction_rows(plan: dict[str, Any], lengths: dict[tuple[str, str], tuple[
 
 
 def sreg_names(spec: dict[str, Any]) -> list[str]:
-    classes = spec.get("registers", {}).get("special_register_classes", {})
-    sreg = classes.get("S", {}) if isinstance(classes, dict) else {}
-    names = sreg.get("registers", []) if isinstance(sreg, dict) else []
-    return [str(name) for name in names if str(name)] or ["SREG0"]
+    return [name for name, _value in special_register_named_values(spec, "S")]
 
 
 def operand_type_rows(plan: dict[str, Any], spec: dict[str, Any]) -> list[dict[str, str]]:
@@ -819,36 +832,38 @@ def operand_type_rows(plan: dict[str, Any], spec: dict[str, Any]) -> list[dict[s
 
 
 def operand_encoding_summary(kind: str, spec: dict[str, Any] | None = None) -> str:
+    spec = spec or active_spec()
+    compact_ea_width = max(compact_ea_values_by_name(spec).values()).bit_length()
     if kind == "DREG":
-        return "3-bit D register field"
+        return f"{max(1, (register_class_count(spec, 'D') - 1).bit_length())}-bit D register field"
     if kind == "AREG":
-        return "3-bit A register field"
+        return f"{max(1, (register_class_count(spec, 'A') - 1).bit_length())}-bit A register field"
     if kind == "SPREG":
         return "implicit SP register operand"
     if kind == "SREG":
-        names = sreg_names(spec or {})
-        suffix = "" if len(names) >= 8 else "; remaining values reserved"
-        return f"3-bit S segment-register field ({'/'.join(names)}{suffix})"
+        names = sreg_names(spec)
+        bits = int(special_register_class(spec, "S").get("encoding_bits", 0))
+        suffix = "" if len(names) >= (1 << bits) else "; remaining values reserved"
+        return f"{bits}-bit S segment-register field ({'/'.join(names)}{suffix})"
     if kind == "FREG":
-        return "5-bit F register field"
+        return f"{max(1, (register_class_count(spec, 'F') - 1).bit_length())}-bit F register field"
     if kind == "EA":
-        return "6-bit compact EA selector; EXTENDED escapes to extended EA descriptor"
+        return f"{compact_ea_width}-bit compact EA selector; extended escapes to extended EA descriptor"
     if kind == "IMM_EA":
-        return "6-bit compact EA selector restricted to immediate forms"
+        return f"{compact_ea_width}-bit compact EA selector restricted to immediate forms"
     if kind == "condition":
         return "4-bit condition field"
     if kind == "memory_order":
-        return "3-bit atomic memory-order field"
+        return f"{named_value_width(spec, 'memory_order')}-bit atomic memory-order field"
     if kind in {"BITMAP16", "bitmap16"}:
-        return "16-bit D/A register bitmap payload"
+        width = int((spec.get("instructions", {}).get("operand_schema", {}).get("bitmap_operands", {}).get("bitmap16", {}) or {}).get("width", 0))
+        return f"{width}-bit register bitmap payload"
     if kind == "selector6":
         return "6-bit immediate selector field carrying values 0..63"
     if kind == "small_selector":
         return "3- or 4-bit selector field; count/bit_index/offset/width may select D register or immediate"
     if "cr" in kind.lower():
         return "16-bit control-register selector"
-    if "asid" in kind.lower():
-        return "16-bit ASID payload"
     if "imm64" in kind.lower():
         return "64-bit immediate payload"
     if "imm32" in kind.lower():
@@ -866,7 +881,7 @@ def operand_default_words(kind: str) -> str:
     if kind == "EA":
         return "+0 for register/simple EA; varies by EA form"
     if kind == "IMM_EA":
-        return "varies by selected IMM16/IMM32/IMM64 EA form"
+        return "varies by selected immediate EA form"
     if kind in {"BITMAP16", "bitmap16"}:
         return "+1"
     if "imm64" in kind.lower():
@@ -875,22 +890,34 @@ def operand_default_words(kind: str) -> str:
         return "+2"
     if "imm16" in kind.lower():
         return "+1"
-    if kind.lower() == "cr" or "asid" in kind.lower() or "imm" in kind.lower():
+    if kind.lower() == "cr" or "imm" in kind.lower():
         return "+1 or instruction-defined"
     return "varies"
 
 
 def operand_notes(kind: str, spec: dict[str, Any] | None = None) -> str:
+    spec = spec or active_spec()
     if kind == "EA":
         return "see EA form table"
     if kind == "IMM_EA":
-        return "IMM16/IMM32/IMM64 compact EA forms"
+        return "/".join(
+            str(form.get("name"))
+            for form in compact_ea_forms(spec)
+            if form.get("class") == "immediate"
+        )
     if kind in {"BITMAP16", "bitmap16"}:
-        return "bits 0..7=D0..D7, bits 8..15=A0..A7"
+        ranges = []
+        for item in bitmap_operand_ranges(spec, "bitmap16"):
+            bits = item.get("bits", [])
+            if isinstance(bits, list) and len(bits) == 2:
+                ranges.append(f"bits {bits[0]}..{bits[1]}={item.get('register_class')}0..{item.get('register_class')}{bits[1] - bits[0]}")
+        return ", ".join(ranges)
     if kind == "SREG":
-        return ", ".join(sreg_names(spec or {}))
+        return ", ".join(sreg_names(spec))
     if kind == "memory_order":
-        return "relaxed, acquire, release, acqrel, seqcst; encodings 5..7 reserved"
+        valid = ", ".join(name.lower() for name, _value in spec_named_values(spec, "memory_order"))
+        reserved = ", ".join(str(value) for _name, value in spec_named_values(spec, "memory_order", include_reserved=True) if _name.startswith("RESERVED"))
+        return f"{valid}; encodings {reserved} reserved" if reserved else valid
     if kind == "SPREG":
         return "SP"
     return "-"
@@ -1022,6 +1049,7 @@ def ea_rows(spec: dict[str, Any]) -> list[dict[str, str]]:
 
 
 def render(plan: dict[str, Any], spec: dict[str, Any], lengths: dict[tuple[str, str], tuple[int, int]]) -> str:
+    set_active_spec(spec)
     lines = [
         "# Generated Instruction Encoding Tables",
         "",

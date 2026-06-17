@@ -1,40 +1,40 @@
 version: draft-v1
 
-common_fields:
-  size_bwlq: [B, W, L, Q]
-  size_lq: [L, Q]
-  size_wl: [W, L]
-  cc: condition_code
-  ea: effective_address
-  dreg: D0-D7
-  areg: A0-A7
-  sreg: CS,DS,SS,GS0,GS1,GS2,GS3,GS4
-  imm: immediate
-  memory_order: relaxed,acquire,release,acqrel,seqcst
-  bitmap16: D0-D7,A0-A7
-
-common_constraints:
-  overlong_encoding: allowed; extra trailing words are padding payload
-  undersized_encoding: illegal
-  memory_memory:
-    allowed_only_for: [MOV, CMP, EXTSW, EXTZW, EXTSL, EXTZL, EXTSQ, EXTZQ]
+encoding_rules:
+  instruction_length:
+    overlong_encoding:
+      behavior: allowed
+      payload: extra trailing words are padding payload
+    undersized_encoding:
+      behavior: length/decode fault
+      rule: the encoded length must contain all required opcode, descriptor, immediate, displacement, and prefix words
+  memory_operands:
+    memory_memory_allowed_for: [MOV, CMP, EXTSW, EXTZW, EXTSL, EXTZL, EXTSQ, EXTZQ]
+    default: at_most_one_memory_operand
   address_update_prefix:
     applies_to:
-      - plain indirect A
-      - segment-qualified plain indirect A
+      compact_ea_forms: [INDIRECT]
+      extended_ea_forms: [SEG_A]
     disallowed_for:
-      - A_plus_disp
-      - PC_relative
-      - SP_relative
-      - absolute
-      - immediate
+      - A_DISP16
+      - A_DISP32
+      - PC_DISP16
+      - PC_DISP32
+      - PC_DISP64
+      - SP_DISP16
+      - SP_DISP32
+      - SP_DISP64
+      - ABS32
+      - ABS64
+      - IMM
       - indexed_ea
   repeat_prefixes:
-    authoritative_source: instructions.yaml:operation_semantics.repeat_prefixes
+    authoritative_source: prefixes.yaml
     members: [REPcc, REPG]
-  MOV_D_to_D:
-    canonical_form: MOV <ea=Dsrc>, Ddst
-    noncanonical_store_form: extended opcode entry
+  canonical_forms:
+    MOV_D_TO_D:
+      canonical_form: MOV <ea=Dsrc>, Ddst
+      noncanonical_store_form: extended opcode entry
   long_control_transfer:
     rationale: CS and PC must be changed as one architectural commit point
     disallow_general_CS_write: true
@@ -45,7 +45,7 @@ common_constraints:
       reason: 64-bit CS immediate plus 64-bit PC immediate would exceed the 8-word instruction limit
 
 compatibility_rules:
-  reserved_fields:
+  reserved_bits:
     architected_register_bits:
       read: zero
       write: must_be_zero
@@ -64,20 +64,23 @@ compatibility_rules:
     software_defined_bits:
       hardware_use: ignored
       software_use: allowed
-  reserved_encodings:
-    instruction_opcode:
+  instruction_encoding_faults:
+    reserved_opcode:
       exception: ILLEGAL_INSTRUCTION
-    extension_suboperation:
+    reserved_extension_opcode:
       exception: ILLEGAL_INSTRUCTION
-    prefix_value:
-      exception: ILLEGAL_INSTRUCTION
-    effective_address_form:
+    reserved_effective_address_form:
       exception: ILLEGAL_INSTRUCTION
     unsupported_optional_instruction_group:
       exception: ILLEGAL_INSTRUCTION
     extension_unavailable_exception:
       defined: false
-  canonical_encoding:
+  prefix_values:
+    unassigned:
+      exception: none
+      behavior: no_architectural_effect
+      reserved_for: future_prefix_definition
+  canonical_encodings:
     assembler_default: canonical
     disassembler_default: canonical
     noncanonical_default:

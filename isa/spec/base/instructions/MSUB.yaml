@@ -1,0 +1,35 @@
+mnemonic: MSUB
+doc:
+  title: Multiply Subtract
+  summary: Subtracts the low-half product of a source operand and D register from a D accumulator.
+  description: Subtracts the low-half product of the source operand and multiplier D register from the accumulator D 
+    register. The source operand may use any effective-address form, including direct D-register EA forms. The 
+    accumulator is always a D register and condition codes are unchanged.
+  instruction_family: integer_mul_div
+  instruction_class: integer
+behavior:
+  group: multiply_divide
+  inputs:
+  - multiplier
+  - src
+  input_output: acc
+  operation:
+  - acc_v = acc_v - (src_v * multiplier_v);
+attributes:
+  repeatable: true
+  flags: unchanged
+allocation:
+  catalog_section: integer
+  layout_group: MULTIPLY_ACCUMULATE
+forms:
+  extension_family: integer_mac
+  operands:
+  - name: src
+    type: EA
+  - name: multiplier
+    type: DREG
+  - name: acc
+    type: DREG
+  size: BWLQ
+  compact: false
+  result: accumulator receives the low half of the product

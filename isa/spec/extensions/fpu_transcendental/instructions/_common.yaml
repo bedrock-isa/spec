@@ -1,0 +1,7 @@
+operation_semantics:
+  group_order:
+  - fpu_transcendental
+  groups:
+    fpu_transcendental:
+      cpuid_feature: OPTIONAL_EXTENSION_FEATURES.FPTRANS
+      implementation: hardware implementation or internal assist

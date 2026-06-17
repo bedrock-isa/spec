@@ -1,0 +1,78 @@
+mnemonic: XCHGSETDD
+doc:
+  title: Exchange D Register Sets Between Banks
+  summary: Swaps selected D registers between two data-register banks.
+  description: Swaps selected D registers between two explicitly named DBANK values according to the bitmap operand. The
+    current DBANK selector is not changed.
+  instruction_family: data_register_banking
+  instruction_class: data_movement
+behavior:
+  group: data_register_banking
+  inputs:
+  - bank_a
+  - bank_b
+  - regs
+  output: none
+  operation:
+  - if ((regs_v & 0x01) == 0) goto <xchgsetdd_d0_done>;
+  - tmp_v = arch_dbank_read(bank_a_v & 0xf, 0:8);
+  - result_v = arch_dbank_read(bank_b_v & 0xf, 0:8);
+  - arch_dbank_write(bank_a_v & 0xf, 0:8, result_v);
+  - arch_dbank_write(bank_b_v & 0xf, 0:8, tmp_v);
+  - <xchgsetdd_d0_done>
+  - if ((regs_v & 0x02) == 0) goto <xchgsetdd_d1_done>;
+  - tmp_v = arch_dbank_read(bank_a_v & 0xf, 1:8);
+  - result_v = arch_dbank_read(bank_b_v & 0xf, 1:8);
+  - arch_dbank_write(bank_a_v & 0xf, 1:8, result_v);
+  - arch_dbank_write(bank_b_v & 0xf, 1:8, tmp_v);
+  - <xchgsetdd_d1_done>
+  - if ((regs_v & 0x04) == 0) goto <xchgsetdd_d2_done>;
+  - tmp_v = arch_dbank_read(bank_a_v & 0xf, 2:8);
+  - result_v = arch_dbank_read(bank_b_v & 0xf, 2:8);
+  - arch_dbank_write(bank_a_v & 0xf, 2:8, result_v);
+  - arch_dbank_write(bank_b_v & 0xf, 2:8, tmp_v);
+  - <xchgsetdd_d2_done>
+  - if ((regs_v & 0x08) == 0) goto <xchgsetdd_d3_done>;
+  - tmp_v = arch_dbank_read(bank_a_v & 0xf, 3:8);
+  - result_v = arch_dbank_read(bank_b_v & 0xf, 3:8);
+  - arch_dbank_write(bank_a_v & 0xf, 3:8, result_v);
+  - arch_dbank_write(bank_b_v & 0xf, 3:8, tmp_v);
+  - <xchgsetdd_d3_done>
+  - if ((regs_v & 0x10) == 0) goto <xchgsetdd_d4_done>;
+  - tmp_v = arch_dbank_read(bank_a_v & 0xf, 4:8);
+  - result_v = arch_dbank_read(bank_b_v & 0xf, 4:8);
+  - arch_dbank_write(bank_a_v & 0xf, 4:8, result_v);
+  - arch_dbank_write(bank_b_v & 0xf, 4:8, tmp_v);
+  - <xchgsetdd_d4_done>
+  - if ((regs_v & 0x20) == 0) goto <xchgsetdd_d5_done>;
+  - tmp_v = arch_dbank_read(bank_a_v & 0xf, 5:8);
+  - result_v = arch_dbank_read(bank_b_v & 0xf, 5:8);
+  - arch_dbank_write(bank_a_v & 0xf, 5:8, result_v);
+  - arch_dbank_write(bank_b_v & 0xf, 5:8, tmp_v);
+  - <xchgsetdd_d5_done>
+  - if ((regs_v & 0x40) == 0) goto <xchgsetdd_d6_done>;
+  - tmp_v = arch_dbank_read(bank_a_v & 0xf, 6:8);
+  - result_v = arch_dbank_read(bank_b_v & 0xf, 6:8);
+  - arch_dbank_write(bank_a_v & 0xf, 6:8, result_v);
+  - arch_dbank_write(bank_b_v & 0xf, 6:8, tmp_v);
+  - <xchgsetdd_d6_done>
+  - if ((regs_v & 0x80) == 0) goto <xchgsetdd_d7_done>;
+  - tmp_v = arch_dbank_read(bank_a_v & 0xf, 7:8);
+  - result_v = arch_dbank_read(bank_b_v & 0xf, 7:8);
+  - arch_dbank_write(bank_a_v & 0xf, 7:8, result_v);
+  - arch_dbank_write(bank_b_v & 0xf, 7:8, tmp_v);
+  - <xchgsetdd_d7_done>
+allocation:
+  catalog_section: integer
+  layout_group: DATA_BANK_SET_EXCHANGE
+forms:
+  operands:
+  - name: bank_a
+    type: DBANK
+  - name: bank_b
+    type: DBANK
+  - name: regs
+    type: bitmap16
+  compact: false
+  extension_family: data_register_banking
+  valid_bits: 0..7

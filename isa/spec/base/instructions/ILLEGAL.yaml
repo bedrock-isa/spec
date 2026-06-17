@@ -1,0 +1,12 @@
+mnemonic: ILLEGAL
+doc:
+  title: Illegal Instruction
+  summary: Raise illegal-instruction exception.
+  description: Raise illegal-instruction exception.
+behavior:
+  group: sentinels
+  output: none
+  operation:
+  - arch_raise_illegal_instruction();
+attributes:
+  privilege: any

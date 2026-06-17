@@ -1,0 +1,30 @@
+mnemonic: LRET
+doc:
+  title: Long Return
+  summary: Pops a far return frame and atomically restores CS:PC.
+  description: Long return reads the far return frame from SS:SP and commits CS and PC together. The frame contains the 
+    return PC Q value at the current SP and the return CS Q value at SP+8; after both values are fetched, SP is advanced
+    by 16 bytes and the control state is committed.
+  instruction_family: control_flow
+  instruction_class: control_flow
+behavior:
+  group: control_flow
+  output: none
+  operation:
+  - local return_pc_v:8 = *:8 SP;
+  - local return_cs_v:8 = *:8 (SP + 8);
+  - SP = SP + 16;
+  - CS = return_cs_v;
+  - return [return_pc_v];
+  long_transfer_operands: LJMP/LCALL take the new CS image from Dn and the target PC value/address from EA
+  atomic_cs_pc_commit:
+  - LJMP
+  - LCALL
+  - LRET
+  - SYSRET
+  - IRET
+allocation:
+  catalog_section: compact_primary
+forms:
+  operands: []
+  compact: false

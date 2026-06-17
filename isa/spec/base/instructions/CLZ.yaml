@@ -1,0 +1,44 @@
+mnemonic: CLZ
+doc:
+  title: Count Leading Zeros
+  summary: Performs the count leading zeros operation.
+  description: Performs the count leading zeros operation.
+  instruction_family: integer_bitfield
+  instruction_class: integer
+behavior:
+  group: bit_counts
+  inputs:
+  - src
+  input_output: dst
+  operation:
+  - tmp_v = src_v;
+  - carry_v = 0;
+  - if (size_v == 8) goto <clz_mask_done>;
+  - if (size_v != 4) goto <clz_not_l>;
+  - tmp_v = tmp_v & 0xffffffff;
+  - carry_v = 32;
+  - goto <clz_mask_done>;
+  - <clz_not_l>
+  - if (size_v != 2) goto <clz_b>;
+  - tmp_v = tmp_v & 0xffff;
+  - carry_v = 48;
+  - goto <clz_mask_done>;
+  - <clz_b>
+  - tmp_v = tmp_v & 0xff;
+  - carry_v = 56;
+  - <clz_mask_done>
+  - dst_v = lzcount(tmp_v) - carry_v;
+attributes:
+  repeatable: true
+  flags: unchanged
+allocation:
+  catalog_section: integer
+  layout_group: BIT_COUNTS
+forms:
+  operands:
+  - name: src
+    type: EA
+  - name: dst
+    type: DREG
+  size: BWLQ
+  zero_input: returns operand width

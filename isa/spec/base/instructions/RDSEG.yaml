@@ -1,0 +1,28 @@
+mnemonic: RDSEG
+doc:
+  title: Read Segment Register
+  summary: Read a segment register image into a D register.
+  description: RDSEG reads one of the S-class segment registers and writes the 64-bit segment register image to the 
+    destination D register. The S operand selector encoding is defined by the SREG selector table.
+  instruction_family: system_registers
+  instruction_class: system
+behavior:
+  group: system_registers
+  inputs: [seg]
+  output: dst
+  operation:
+  - dst_v = seg_v;
+attributes:
+  privilege: policy controlled
+  flags: unchanged
+allocation:
+  catalog_section: system
+  layout_group: SEGMENT_REGISTER_ACCESS
+forms:
+  operands:
+  - name: seg
+    type: SREG
+  - name: dst
+    type: DREG
+  size: Q
+  note: general writes to CS are illegal; use CS-changing control transfer instructions

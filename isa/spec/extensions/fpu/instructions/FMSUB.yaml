@@ -1,0 +1,50 @@
+mnemonic: FMSUB
+doc:
+  title: Floating-Point Fused Multiply Subtract
+  summary: Performs the floating-point fused multiply subtract operation.
+  description: Performs the floating-point fused multiply subtract operation.
+  instruction_family: fpu
+  instruction_class: fpu
+behavior:
+  group: fpu_arithmetic
+  inputs:
+  - lhs
+  - rhs
+  input_output: dst
+  operation:
+  - dst_v = dst_v f- (lhs_v f* rhs_v);
+attributes:
+  repeatable: true
+  streaming_candidate: true
+  fp_flags:
+    update:
+    - NV
+    - OF
+    - UF
+    - NX
+allocation:
+  catalog_section: fpu
+  layout_group: FP_FMA
+forms:
+  operands:
+  - - name: lhs
+      type: FREG
+    - name: rhs
+      type: FREG
+    - name: dst
+      type: FREG
+  - - name: lhs
+      type: EA
+    - name: rhs
+      type: FREG
+    - name: dst
+      type: FREG
+  - - name: lhs
+      type: FREG
+    - name: rhs
+      type: EA
+    - name: dst
+      type: FREG
+  size: S_D
+  rounding: single_round
+  memory_operands: at_most_one

@@ -1,0 +1,88 @@
+mnemonic: RESTORE
+doc:
+  title: Restore Processor State
+  summary: Restore processor state from a CPUID-defined save area.
+  description: Restore processor state from a CPUID-defined save area. The save area uses a fixed architectural layout 
+    discovered through CPUID; it does not contain a per-component size table. The save-area base must be 4 KiB aligned. 
+    RESTORE is the matching restore operation for SAVE and may restore base architectural state as well as enabled 
+    extension state from the same save image.
+  instruction_family: tlb_and_context
+  instruction_class: system
+behavior:
+  group: tlb_context
+  inputs:
+  - memory
+  output: none
+  operation:
+  - local base_valid_v:8 = *:8 memory_v;
+  - if ((base_valid_v & 0x000001) == 0) goto <restore_d0_done>;
+  - D0 = *:8 (memory_v + 0x008);
+  - <restore_d0_done>
+  - if ((base_valid_v & 0x000002) == 0) goto <restore_d1_done>;
+  - D1 = *:8 (memory_v + 0x010);
+  - <restore_d1_done>
+  - if ((base_valid_v & 0x000004) == 0) goto <restore_d2_done>;
+  - D2 = *:8 (memory_v + 0x018);
+  - <restore_d2_done>
+  - if ((base_valid_v & 0x000008) == 0) goto <restore_d3_done>;
+  - D3 = *:8 (memory_v + 0x020);
+  - <restore_d3_done>
+  - if ((base_valid_v & 0x000010) == 0) goto <restore_d4_done>;
+  - D4 = *:8 (memory_v + 0x028);
+  - <restore_d4_done>
+  - if ((base_valid_v & 0x000020) == 0) goto <restore_d5_done>;
+  - D5 = *:8 (memory_v + 0x030);
+  - <restore_d5_done>
+  - if ((base_valid_v & 0x000040) == 0) goto <restore_d6_done>;
+  - D6 = *:8 (memory_v + 0x038);
+  - <restore_d6_done>
+  - if ((base_valid_v & 0x000080) == 0) goto <restore_d7_done>;
+  - D7 = *:8 (memory_v + 0x040);
+  - <restore_d7_done>
+  - if ((base_valid_v & 0x000100) == 0) goto <restore_a0_done>;
+  - A0 = *:8 (memory_v + 0x048);
+  - <restore_a0_done>
+  - if ((base_valid_v & 0x000200) == 0) goto <restore_a1_done>;
+  - A1 = *:8 (memory_v + 0x050);
+  - <restore_a1_done>
+  - if ((base_valid_v & 0x000400) == 0) goto <restore_a2_done>;
+  - A2 = *:8 (memory_v + 0x058);
+  - <restore_a2_done>
+  - if ((base_valid_v & 0x000800) == 0) goto <restore_a3_done>;
+  - A3 = *:8 (memory_v + 0x060);
+  - <restore_a3_done>
+  - if ((base_valid_v & 0x001000) == 0) goto <restore_a4_done>;
+  - A4 = *:8 (memory_v + 0x068);
+  - <restore_a4_done>
+  - if ((base_valid_v & 0x002000) == 0) goto <restore_a5_done>;
+  - A5 = *:8 (memory_v + 0x070);
+  - <restore_a5_done>
+  - if ((base_valid_v & 0x004000) == 0) goto <restore_a6_done>;
+  - A6 = *:8 (memory_v + 0x078);
+  - <restore_a6_done>
+  - if ((base_valid_v & 0x008000) == 0) goto <restore_a7_done>;
+  - A7 = *:8 (memory_v + 0x080);
+  - <restore_a7_done>
+  - if ((base_valid_v & 0x010000) == 0) goto <restore_gs0_done>;
+  - GS0 = *:8 (memory_v + 0x088);
+  - <restore_gs0_done>
+  - if ((base_valid_v & 0x020000) == 0) goto <restore_gs1_done>;
+  - GS1 = *:8 (memory_v + 0x090);
+  - <restore_gs1_done>
+  - if ((base_valid_v & 0x040000) == 0) goto <restore_gs2_done>;
+  - GS2 = *:8 (memory_v + 0x098);
+  - <restore_gs2_done>
+  - if ((base_valid_v & 0x080000) == 0) goto <restore_gs3_done>;
+  - GS3 = *:8 (memory_v + 0x0a0);
+  - <restore_gs3_done>
+  - if ((base_valid_v & 0x100000) == 0) goto <restore_gs4_done>;
+  - GS4 = *:8 (memory_v + 0x0a8);
+  - <restore_gs4_done>
+  - arch_restore_extension_state(memory_v);
+allocation:
+  catalog_section: system
+  layout_group: PROCESSOR_STATE_SAVE_RESTORE
+forms:
+  operands:
+  - name: memory
+    type: EA

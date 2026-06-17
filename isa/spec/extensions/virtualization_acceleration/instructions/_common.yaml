@@ -1,0 +1,5 @@
+operation_semantics:
+  group_order:
+  - virtualization_acceleration
+  groups:
+    virtualization_acceleration: {}

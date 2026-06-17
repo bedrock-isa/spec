@@ -1,0 +1,78 @@
+mnemonic: SUB
+doc:
+  title: Subtract
+  summary: Subtracts the source operand from the destination operand.
+  description: Subtracts the source operand from the destination operand.
+  instruction_family: integer_alu
+  instruction_class: integer
+behavior:
+  group: integer_alu
+  inputs:
+  - src
+  input_output: dst
+  operation:
+  - result_v = dst_v - src_v;
+  - dst_v = result_v;
+  - ZF = result_v == 0;
+  - NF = result_v s< 0;
+  - CF = dst_old_v < src_v;
+  - VF = sborrow(dst_old_v, src_v);
+attributes:
+  repeatable: true
+  streaming_candidate: true
+  prefix_availability:
+  - SATURATE
+  flags:
+    Z: result == 0
+    N: most_significant_bit(result)
+    C: unsigned borrow
+    V: signed overflow
+allocation:
+  catalog_section: compact_primary
+  layout_group: ADD_SUB
+forms:
+  compact_forms:
+  - operands:
+    - name: src
+      type: DREG
+    - name: dst
+      type: DREG
+    size: LQ
+  extended_forms:
+  - operands:
+    - name: src
+      type: EA
+    - name: dst
+      type: DREG
+    size: BWLQ
+    compact: false
+  - operands:
+    - name: src
+      type: DREG
+    - name: dst
+      type: EA
+    size: BWLQ
+    compact: false
+  - operands:
+    - name: imm
+      type: IMM_EA
+    - name: dst
+      type: EA
+    size: BWLQ
+    compact: false
+  - operands:
+    - name: src
+      type: EA
+    - name: dst
+      type: AREG
+    size: Q
+    compact: false
+    flags: unchanged
+  form: destructive two-address form
+  result: second operand
+  memory_memory: disallowed
+  prefixes:
+    legal:
+    - NPX
+    - NOSPEC
+    - SATURATE

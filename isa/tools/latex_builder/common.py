@@ -12,16 +12,6 @@ import yaml
 ARCH_NAME = "Bedrock"
 MANUAL_TITLE = "Bedrock Programmer's Reference Manual"
 MANUAL_SUBTITLE = "Bounded Word-Oriented CISC Architecture"
-SIZE_NAMES = {"B": "Byte", "W": "Word", "L": "Long", "Q": "Quad"}
-FLAG_ORDER = ("Z", "N", "C", "V")
-FFLAG_ORDER = ("NV", "DZ", "OF", "UF", "NX")
-FFLAG_MEANINGS = {
-    "NV": "invalid operation",
-    "DZ": "division by zero",
-    "OF": "overflow",
-    "UF": "underflow",
-    "NX": "inexact",
-}
 CAPTION_PREFIX_RE = re.compile(r"^(?:Table|Figure)\s+\d+(?:-\d+)?\.\s*")
 TEMPLATE_DIR = Path(__file__).with_name("templates")
 TABLE_INLINE_LIST_MAX_CHARS = 32
@@ -165,6 +155,10 @@ def compact_text(value: Any) -> str:
 
 def readable_text(value: Any) -> str:
     return compact_text(value).replace("_", " ")
+
+
+def memory_rule_text(value: Any) -> str:
+    return readable_text(value)
 
 
 def latex_paragraph(value: Any) -> str:

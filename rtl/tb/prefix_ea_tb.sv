@@ -11,6 +11,7 @@ import bedrock_ea_decode_pkg::*;
   logic saturate;
   logic nontemporal;
   bedrock_update_mode_e update_mode;
+  bedrock_access_mode_e access_mode;
   bedrock_repeat_kind_e repeat_kind;
   logic [3:0] repeat_condition;
   logic [2:0] repeat_counter;
@@ -49,6 +50,7 @@ import bedrock_ea_decode_pkg::*;
                           .saturate_o(saturate),
                           .nontemporal_o(nontemporal),
                           .update_mode_o(update_mode),
+                          .access_mode_o(access_mode),
                           .repeat_kind_o(repeat_kind),
                           .repeat_condition_o(repeat_condition),
                           .repeat_counter_o(repeat_counter),
@@ -88,6 +90,7 @@ import bedrock_ea_decode_pkg::*;
       input logic expected_nospec,
       input logic expected_saturate,
       input bedrock_update_mode_e expected_update,
+      input bedrock_access_mode_e expected_access,
       input bedrock_repeat_kind_e expected_repeat,
       input logic [3:0] expected_condition,
       input logic [2:0] expected_counter,
@@ -113,6 +116,11 @@ import bedrock_ea_decode_pkg::*;
       if (update_mode !== expected_update)
       begin
         $error("prefix %04h update got %0d expected %0d", prefix_word, update_mode, expected_update);
+        failures++;
+      end
+      if (access_mode !== expected_access)
+      begin
+        $error("prefix %04h access got %0d expected %0d", prefix_word, access_mode, expected_access);
         failures++;
       end
       if (repeat_kind !== expected_repeat)
@@ -204,45 +212,48 @@ import bedrock_ea_decode_pkg::*;
     failures = 0;
 
     prefix_word = 16'h0000;
-    expect_prefix(1'b1, 1'b0, 1'b0, BR_UPDATE_NONE, BR_REPEAT_NONE, 4'd0, 3'd0, 1'b0);
+    expect_prefix(1'b1, 1'b0, 1'b0, BR_UPDATE_NONE, BR_ACCESS_C, BR_REPEAT_NONE, 4'd0, 3'd0, 1'b0);
 
     prefix_word = 16'h0201;
-    expect_prefix(1'b1, 1'b1, 1'b1, BR_UPDATE_NONE, BR_REPEAT_NONE, 4'd0, 3'd0, 1'b0);
+    expect_prefix(1'b1, 1'b1, 1'b1, BR_UPDATE_NONE, BR_ACCESS_C, BR_REPEAT_NONE, 4'd0, 3'd0, 1'b0);
 
     prefix_word = 16'h0604;
-    expect_prefix(1'b1, 1'b0, 1'b0, BR_UPDATE_POSTDEC, BR_REPEAT_NONE, 4'd0, 3'd0, 1'b0);
+    expect_prefix(1'b1, 1'b0, 1'b0, BR_UPDATE_POSTDEC, BR_ACCESS_C, BR_REPEAT_NONE, 4'd0, 3'd0, 1'b0);
 
     prefix_word = 16'h008d;
-    expect_prefix(1'b1, 1'b0, 1'b0, BR_UPDATE_NONE, BR_REPEAT_REPCC, 4'd1, 3'd5, 1'b0);
+    expect_prefix(1'b1, 1'b0, 1'b0, BR_UPDATE_NONE, BR_ACCESS_C, BR_REPEAT_REPCC, 4'd1, 3'd5, 1'b0);
 
-    prefix_word = 16'h0063;
-    expect_prefix(1'b1, 1'b0, 1'b0, BR_UPDATE_NONE, BR_REPEAT_REPG, 4'd0, 3'd3, 1'b0);
+    prefix_word = 16'h0073;
+    expect_prefix(1'b1, 1'b0, 1'b0, BR_UPDATE_NONE, BR_ACCESS_C, BR_REPEAT_REPG, 4'd0, 3'd3, 1'b0);
 
-    prefix_word = 16'h0068;
-    expect_prefix(1'b1, 1'b0, 1'b0, BR_UPDATE_NONE, BR_REPEAT_NONE, 4'd0, 3'd0, 1'b1);
+    prefix_word = 16'h0078;
+    expect_prefix(1'b1, 1'b0, 1'b0, BR_UPDATE_NONE, BR_ACCESS_C, BR_REPEAT_NONE, 4'd0, 3'd0, 1'b1);
 
     prefix_word = 16'h6900;
-    expect_prefix(1'b0, 1'b0, 1'b0, BR_UPDATE_NONE, BR_REPEAT_NONE, 4'd0, 3'd0, 1'b0);
+    expect_prefix(1'b0, 1'b0, 1'b0, BR_UPDATE_NONE, BR_ACCESS_C, BR_REPEAT_NONE, 4'd0, 3'd0, 1'b0);
+
+    prefix_word = 16'h0008;
+    expect_prefix(1'b1, 1'b0, 1'b0, BR_UPDATE_NONE, BR_ACCESS_U2C, BR_REPEAT_NONE, 4'd0, 3'd0, 1'b0);
 
     descriptor = 16'h0000;
     ea = 6'h05;
-    expect_ea(1'b1, 1'b0, BR_EA_DREG, BR_EA_BASE_D, BR_EA_SEG_DEFAULT, 3'd5, 3'd0, 2'd0, 3'd0);
+    expect_ea(1'b1, 1'b0, BR_EA_DREG, BR_EA_BASE_D, BR_EA_SEG_DS, 3'd5, 3'd0, 2'd0, 3'd0);
 
     ea = 6'h1a;
-    expect_ea(1'b1, 1'b0, BR_EA_A_DISP16, BR_EA_BASE_A, BR_EA_SEG_DEFAULT, 3'd2, 3'd0, 2'd0, 3'd1);
+    expect_ea(1'b1, 1'b0, BR_EA_A_DISP16, BR_EA_BASE_A, BR_EA_SEG_DS, 3'd2, 3'd0, 2'd0, 3'd1);
 
     ea = 6'h32;
-    expect_ea(1'b1, 1'b0, BR_EA_IMM16, BR_EA_BASE_IMM, BR_EA_SEG_DEFAULT, 3'd0, 3'd0, 2'd0, 3'd1);
+    expect_ea(1'b1, 1'b0, BR_EA_IMM16, BR_EA_BASE_IMM, BR_EA_SEG_DS, 3'd0, 3'd0, 2'd0, 3'd1);
 
     ea = 6'h2b;
-    expect_ea(1'b0, 1'b1, BR_EA_INVALID, BR_EA_BASE_NONE, BR_EA_SEG_DEFAULT, 3'd0, 3'd0, 2'd0, 3'd0);
+    expect_ea(1'b0, 1'b1, BR_EA_INVALID, BR_EA_BASE_NONE, BR_EA_SEG_CS, 3'd0, 3'd0, 2'd0, 3'd0);
 
     ea = 6'h3f;
-    descriptor = 16'h02d2; // mode 0, DS, A6 + D4 * 4
+    descriptor = 16'h01d2; // mode 0, DS, A6 + D4 * 4
     expect_ea(1'b1, 1'b0, BR_EA_SEG_A_INDEX, BR_EA_BASE_A, BR_EA_SEG_DS, 3'd6, 3'd4, 2'd2, 3'd1);
 
     ea = 6'h3e;
-    descriptor = 16'h02d2; // S32 escape selects signed-32-indexed variant
+    descriptor = 16'h01d2; // S32 escape selects signed-32-indexed variant
     expect_ea(1'b1, 1'b0, BR_EA_S32_SEG_A_INDEX, BR_EA_BASE_A, BR_EA_SEG_DS, 3'd6, 3'd4, 2'd2, 3'd1);
 
     ea = 6'h3f;
