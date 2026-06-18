@@ -12,8 +12,9 @@ module bedrock_decode
   input  logic [15:0]       extension_word_i,
   output logic              valid_o,
   output logic              needs_extension_o,
-  output logic              alias_o,
-  output bedrock_form_id_e  form_id_o,
+  output bedrock_opcode_id_e opcode_id_o,
+  output bedrock_field_format_id_e field_format_id_o,
+  output logic [3:0]        required_words_o,
   output bedrock_ext_root_e ext_root_o,
   output logic              repcc_allowed_o,
   output logic              repg_allowed_o,
@@ -22,28 +23,31 @@ module bedrock_decode
 
   bedrock_primary_decode_t primary_decode;
   bedrock_extended_decode_t extended_decode;
-  bedrock_form_attributes_t attributes;
+  bedrock_opcode_attributes_t attributes;
 
   always_comb begin
     primary_decode = bedrock_decode_primary_payload(primary_payload_i);
     extended_decode = '0;
-    extended_decode.form_id = BR_FORM_INVALID;
+    extended_decode.opcode_id = BR_OPCODE_INVALID;
+    extended_decode.field_format_id = BR_FIELD_FORMAT_NONE;
     attributes = '0;
 
     valid_o = primary_decode.valid;
     needs_extension_o = primary_decode.needs_extension;
-    alias_o = primary_decode.is_alias;
-    form_id_o = primary_decode.form_id;
+    opcode_id_o = primary_decode.opcode_id;
+    field_format_id_o = primary_decode.field_format_id;
+    required_words_o = primary_decode.required_words;
     ext_root_o = primary_decode.ext_root;
 
     if (primary_decode.needs_extension) begin
       extended_decode = bedrock_decode_extended_opcode(primary_decode.ext_root, extension_word_i);
       valid_o = extended_decode.valid;
-      alias_o = extended_decode.is_alias;
-      form_id_o = extended_decode.form_id;
+      opcode_id_o = extended_decode.opcode_id;
+      field_format_id_o = extended_decode.field_format_id;
+      required_words_o = extended_decode.required_words;
     end
 
-    attributes = bedrock_decode_form_attributes(form_id_o);
+    attributes = bedrock_decode_opcode_attributes(opcode_id_o);
     repcc_allowed_o = valid_o && attributes.repcc_allowed;
     repg_allowed_o = valid_o && attributes.repg_allowed;
     repg_fast_candidate_o = valid_o && attributes.repg_fast_candidate;

@@ -38,8 +38,11 @@ from alloc_field_layout import (
     descriptor_layout_text,
     extended_field_layout_text,
     field_dict,
+    field_layout_span_bits,
+    field_layout_variable_mask,
     field_layout_model_report,
     layout_text,
+    primary_span_slots,
 )
 from alloc_validation import audit_alignment, has_alignment_failure
 from alloc_model import (
@@ -63,6 +66,11 @@ from alloc_model import (
     size_tag_from_fields,
 )
 
+
+class PrimaryPackingError(RuntimeError):
+    def __init__(self, candidate_id: str) -> None:
+        super().__init__(f"unable to find primary payload window for {candidate_id}")
+        self.candidate_id = candidate_id
 
 
 def normalize_compact_policy(raw_policy: dict[str, Any]) -> dict[str, Any]:
@@ -607,15 +615,34 @@ def solve_allocation(
     if status != z3.sat:
         return {"status": str(status), "allocations": []}
 
-    field_layout_model = build_field_layout_model(
-        candidates,
-        selected_compact,
-        extended_candidates,
-        compact_policy,
-    )
-    primary_allocations, used, packed_roots = pack_primary_allocations(
-        candidates, selected_compact, extension_roots, compact_policy, field_layout_model
-    )
+    by_id = {candidate.id: candidate for candidate in candidates}
+    for _attempt in range(len(candidates) + 1):
+        field_layout_model = build_field_layout_model(
+            candidates,
+            selected_compact,
+            extended_candidates,
+            compact_policy,
+        )
+        try:
+            primary_allocations, used, packed_roots = pack_primary_allocations(
+                candidates, selected_compact, extension_roots, compact_policy, field_layout_model
+            )
+            break
+        except PrimaryPackingError as error:
+            eviction = by_id.get(error.candidate_id)
+            if eviction is None or eviction.must_compact or eviction.id not in selected_compact:
+                return {"status": "unsat", "reason": str(error)}
+            eviction = choose_primary_packing_eviction(eviction, selected_compact, by_id, compact_policy)
+            if eviction is None:
+                return {"status": "unsat", "reason": str(error)}
+            selected_compact.remove(eviction.id)
+            selected_compact, extended_candidates, extension_roots = enforce_symmetry_and_capacity(
+                candidates,
+                selected_compact,
+                compact_policy,
+            )
+    else:
+        return {"status": "unsat", "reason": "primary payload packing did not converge"}
     extended_allocations = pack_extended_allocations(
         extended_candidates, packed_roots, compact_policy, field_layout_model
     )
@@ -699,6 +726,32 @@ def select_compact_profiles(candidates: list[Candidate], compact_policy: dict[st
     )
     _ = best_used
     return selected | set(best_items)
+
+
+def choose_primary_packing_eviction(
+    failed: Candidate,
+    selected_compact: set[str],
+    by_id: dict[str, Candidate],
+    compact_policy: dict[str, Any],
+) -> Candidate | None:
+    if not compact_preference_reasons(failed, compact_policy):
+        return failed
+    alternatives = [
+        by_id[ident]
+        for ident in selected_compact
+        if ident != failed.id and not by_id[ident].must_compact and by_id[ident].compact_slots is not None
+    ]
+    if not alternatives:
+        return failed
+    return min(
+        alternatives,
+        key=lambda candidate: (
+            1 if compact_preference_reasons(candidate, compact_policy) else 0,
+            compact_value(candidate, compact_policy) / max(1, compact_slot_cost(candidate, compact_policy)),
+            compact_value(candidate, compact_policy),
+            candidate.id,
+        ),
+    )
 
 
 def enforce_symmetry_and_capacity(
@@ -828,32 +881,23 @@ def primary_cluster_order(compact_policy: dict[str, Any]) -> list[str]:
     return default_primary_clusters_policy()["order"]
 
 
-def ordered_primary_variables(candidates: list[Candidate], compact_policy: dict[str, Any]) -> list[Candidate]:
-    clusters = primary_cluster_order(compact_policy)
-    out: list[Candidate] = []
-    used: set[str] = set()
-    for cluster in clusters:
-        members = [candidate for candidate in candidates if primary_cluster_name(candidate) == cluster]
-        members.sort(key=primary_cluster_sort_key)
-        out.extend(members)
-        used.update(candidate.id for candidate in members)
-    extra_clusters = sorted(
-        {
-            primary_cluster_name(candidate)
-            for candidate in candidates
-            if candidate.id not in used and primary_cluster_name(candidate)
-        }
+def ordered_primary_variables(
+    candidates: list[Candidate],
+    compact_policy: dict[str, Any],
+    field_layout_model: dict[str, Any],
+) -> list[Candidate]:
+    clusters = {name: index for index, name in enumerate(primary_cluster_order(compact_policy))}
+    return sorted(
+        candidates,
+        key=lambda candidate: (
+            -primary_span_slots(candidate, field_layout_model),
+            -compact_slot_cost(candidate, compact_policy),
+            -len(compact_preference_reasons(candidate, compact_policy)),
+            clusters.get(primary_cluster_name(candidate), len(clusters)),
+            primary_cluster_sort_key(candidate),
+            candidate_sort_key(candidate),
+        ),
     )
-    for cluster in extra_clusters:
-        members = [candidate for candidate in candidates if candidate.id not in used and primary_cluster_name(candidate) == cluster]
-        members.sort(key=primary_cluster_sort_key)
-        out.extend(members)
-        used.update(candidate.id for candidate in members)
-
-    remaining = [candidate for candidate in candidates if candidate.id not in used]
-    remaining.sort(key=lambda candidate: (-(candidate.compact_slots or 0), candidate_sort_key(candidate)))
-    out.extend(remaining)
-    return out
 
 
 def ordered_extension_root_groups(
@@ -904,20 +948,26 @@ def pack_primary_allocations(
             if by_id[ident].fixed_payload is None
         ],
         compact_policy,
+        field_layout_model,
     )
     for candidate in variable:
-        span_slots = int(candidate.compact_slots or 0)
-        start = find_free_range(used, span_slots, alignment=max(1, span_slots), limit=PRIMARY_SLOTS)
-        end = start + span_slots - 1
+        fields = assign_field_positions(candidate.compact_fields, PRIMARY_BITS, "primary", field_layout_model)
+        span_slots = primary_span_slots(candidate, field_layout_model)
+        start, end, exact_payloads = find_free_primary_window(
+            used,
+            candidate,
+            fields,
+            span_slots,
+            compact_policy,
+        )
         allocation = primary_allocation_dict(candidate, start, end, "compact", field_layout_model)
-        exact_payloads = compact_exact_primary_payloads(candidate, allocation, compact_policy)
         if exact_payloads:
             reclaimed = sorted(set(range(start, end + 1)) - set(exact_payloads))
             allocation["primary_payloads"] = [f"0x{payload:03x}" for payload in exact_payloads]
             allocation["reclaimed_payloads"] = [f"0x{payload:03x}" for payload in reclaimed]
             allocation["slots"] = len(exact_payloads)
             if reclaimed:
-                allocation["field_layout"] = f"{allocation['field_layout']} ; reclaims {len(reclaimed)} invalid payload slots"
+                allocation["field_layout"] = f"{allocation['field_layout']} ; exact_payloads spare={len(reclaimed)}"
             for payload in exact_payloads:
                 used.add(payload)
         else:
@@ -963,6 +1013,7 @@ def primary_allocation_dict(
     candidate: Candidate, start: int, end: int, kind: str, field_layout_model: dict[str, Any]
 ) -> dict[str, Any]:
     fields = assign_field_positions(candidate.compact_fields, PRIMARY_BITS, "primary", field_layout_model)
+    span_bits = field_layout_span_bits(fields)
     return {
         "id": profile_candidate_id(candidate, candidate.compact_fields),
         "kind": kind,
@@ -971,7 +1022,8 @@ def primary_allocation_dict(
         "group": candidate.group,
         "origin": candidate.origin,
         "operands": list(candidate.operands),
-        "primary_bits": candidate.compact_bits,
+        "primary_bits": span_bits,
+        "semantic_primary_bits": candidate.compact_bits,
         "slots": end - start + 1,
         "start_payload": f"0x{start:03x}",
         "end_payload": f"0x{end:03x}",
@@ -986,18 +1038,65 @@ def primary_allocation_dict(
     }
 
 
+def find_free_primary_window(
+    used: set[int],
+    candidate: Candidate,
+    fields: list[dict[str, Any]],
+    span_slots: int,
+    compact_policy: dict[str, Any],
+) -> tuple[int, int, list[int]]:
+    if span_slots <= 0:
+        raise ValueError("primary span slot count must be positive")
+    field_mask = field_layout_variable_mask(fields)
+    for start in range(PRIMARY_SLOTS):
+        if start & field_mask:
+            continue
+        end = start | field_mask
+        if end >= PRIMARY_SLOTS:
+            continue
+        exact_payloads = compact_exact_primary_payloads_for_window(
+            candidate,
+            fields,
+            start,
+            end,
+            compact_policy,
+        )
+        if exact_payloads:
+            if not any(payload in used for payload in exact_payloads):
+                return start, end, exact_payloads
+        elif not any(payload in used for payload in range(start, end + 1)):
+            return start, end, []
+    raise PrimaryPackingError(candidate.id)
+
+
 def compact_exact_primary_payloads(
     candidate: Candidate, allocation: dict[str, Any], compact_policy: dict[str, Any]
 ) -> list[int]:
-    filters = compact_reclaim_filters(candidate, compact_policy)
-    if not filters:
-        return []
     start = int(str(allocation["start_payload"]), 16)
     end = int(str(allocation["end_payload"]), 16)
     fields = list(allocation.get("fields", []) or [])
+    return compact_exact_primary_payloads_for_window(candidate, fields, start, end, compact_policy)
+
+
+def compact_exact_primary_payloads_for_window(
+    candidate: Candidate,
+    fields: list[dict[str, Any]],
+    start: int,
+    end: int,
+    compact_policy: dict[str, Any],
+) -> list[int]:
+    filters = compact_reclaim_filters(candidate, compact_policy)
+    field_mask = field_layout_variable_mask(fields)
+    span_mask = (1 << PRIMARY_BITS) - 1
+    fixed_mask = span_mask & ~field_mask
+    dense_mask = (1 << field_layout_span_bits(fields)) - 1 if fields else 0
+    needs_sparse_payloads = field_mask != dense_mask
+    if not filters and not needs_sparse_payloads:
+        return []
     return [
         payload
         for payload in range(start, end + 1)
+        if (payload & fixed_mask) == (start & fixed_mask)
         if not any(payload_matches_reclaim_filter(payload, fields, reclaim_filter) for reclaim_filter in filters)
     ]
 
@@ -2065,10 +2164,10 @@ def eviction_report(
     return [
         {
             "evicted_instruction": profile_candidate_id(candidate, candidate.descriptor_fields),
-            "replacement_instruction": "higher weighted compact set",
+            "replacement_instruction": "higher-weighted-compact-set",
             "estimated_frequency_delta": candidate.weight,
-            "estimated_code_size_delta": f"compact would require {candidate.compact_slots} primary slots",
-            "decode_complexity_delta": "moved to extended opcode word with generated operand descriptor",
+            "estimated_code_size_delta": f"compact_slots={candidate.compact_slots}",
+            "decode_complexity_delta": "extended-opcode+descriptor",
             "affected_instruction_families": [candidate.group],
         }
         for candidate in evicted[:32]
@@ -2078,9 +2177,9 @@ def eviction_report(
 def eviction_reason(candidate: Candidate) -> str:
     if candidate.compact_slots is None:
         if candidate.compact_bits <= PRIMARY_BITS:
-            return "compact form disabled by allocation policy"
-        return f"requires {candidate.compact_bits} one-word field bits, exceeding {PRIMARY_BITS}"
-    return f"compact form costs {candidate.compact_slots} primary slots; lower weighted than selected compact set"
+            return "policy-disabled"
+        return f"bits={candidate.compact_bits}>{PRIMARY_BITS}"
+    return f"slots={candidate.compact_slots};ranked-out"
 
 
 def find_free_range(used: set[int], slots: int, *, alignment: int, limit: int, min_start: int = 0) -> int:

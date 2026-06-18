@@ -153,7 +153,7 @@ prefixes:
     pattern: "1ccc cddd"
     group: repeat
     syntax:
-      mnemonic_template: "REP{condition}"
+      mnemonic_template: "REPcc"
       condition_suffix: concatenated
       dot_suffix_reserved_for_instruction_size: true
       applies_to_following_instruction: true

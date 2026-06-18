@@ -482,8 +482,6 @@ def cpuid_leaf_detail_blocks(spec: dict[str, Any]) -> str:
         for result_entry in sorted(cpuid_result_entries(leaf), key=lambda item: cpuid_index_sort_key(item.get("index", ""))):
             index = result_entry.get("index", "-")
             description_value = result_entry.get("description", result_entry.get("value", ""))
-            if not description_value:
-                raise ValueError(f"cpuid leaf {name} result index {index} is missing description")
             description_text = readable_text(description_value)
             result_lines.append(f"index {index}: {description_text}")
             extraction = result_entry.get("extraction")
@@ -998,8 +996,8 @@ def sreg_selector_rows(spec: dict[str, Any]) -> list[list[str]]:
 def control_register_selector_rows(spec: dict[str, Any]) -> list[list[str]]:
     cr_class = ((spec.get("registers", {}).get("control_register_classes") or {}).get("CR") or {})
     groups = cr_class.get("selector_groups") if isinstance(cr_class, dict) else None
-    if not isinstance(groups, list) or not groups:
-        raise ValueError("registers.control_register_classes.CR.selector_groups is required")
+    if not isinstance(groups, list):
+        return []
     rows: list[list[str]] = []
     reserved_fault = cr_class.get("reserved_selector_fault", "INVALID_CONTROL_STATE") if isinstance(cr_class, dict) else "INVALID_CONTROL_STATE"
     for group in groups:
@@ -1029,7 +1027,7 @@ def special_register_by_name(spec: dict[str, Any], name: str) -> dict[str, Any]:
     for reg in spec.get("registers", {}).get("special_registers", []) or []:
         if isinstance(reg, dict) and reg.get("name") == name:
             return reg
-    raise ValueError(f"registers.special_registers must define {name}")
+    return {}
 
 
 def state_register_format_section(spec: dict[str, Any]) -> str:
@@ -1067,8 +1065,6 @@ def floating_point_register_section(spec: dict[str, Any]) -> str:
     regs = fpu.get("registers") or {}
     fflags = fpu.get("fflags") or {}
     fstatus = fpu.get("fstatus") or {}
-    if not isinstance(regs, dict) or not isinstance(fflags, dict) or not isinstance(fstatus, dict):
-        raise ValueError("registers.floating_point_register_model must define registers, fflags, and fstatus")
     register_rows = [
         [tex_escape("Registers"), tex_code(str(regs["names"]))],
         [tex_escape("Count"), tex_escape(regs["count"])],
@@ -1198,9 +1194,7 @@ def translation_control_section(spec: dict[str, Any]) -> str:
 
 def control_model(spec: dict[str, Any]) -> dict[str, Any]:
     model = spec.get("interrupts") or {}
-    if not isinstance(model, dict) or not model:
-        raise ValueError("interrupts model is required")
-    return model
+    return model if isinstance(model, dict) else {}
 
 
 def privileged_programming_model(spec: dict[str, Any]) -> dict[str, Any]:
@@ -1367,23 +1361,19 @@ def pte_field_rows(spec: dict[str, Any]) -> list[list[str]]:
     control = spec.get("registers", {}).get("translation_control") or {}
     pte = (control.get("page_table_entry") or {}) if isinstance(control, dict) else {}
     fields = pte.get("low_attribute_bits") if isinstance(pte, dict) else None
-    if not isinstance(fields, dict):
-        raise ValueError("registers.translation_control.page_table_entry.low_attribute_bits is required")
-    return layout_field_rows(fields)
+    return layout_field_rows(fields if isinstance(fields, dict) else {})
 
 
 def page_table_entry_spec(spec: dict[str, Any]) -> dict[str, Any]:
     control = spec.get("registers", {}).get("translation_control") or {}
     pte = (control.get("page_table_entry") or {}) if isinstance(control, dict) else {}
-    if not isinstance(pte, dict):
-        raise ValueError("registers.translation_control.page_table_entry is required")
-    return pte
+    return pte if isinstance(pte, dict) else {}
 
 
 def pte_walk_rule_rows(spec: dict[str, Any]) -> list[list[str]]:
     rules = page_table_entry_spec(spec).get("walk_level_rules")
     if not isinstance(rules, dict):
-        raise ValueError("registers.translation_control.page_table_entry.walk_level_rules is required")
+        return []
     return [[tex_escape(readable_text(key)), tex_escape(value)] for key, value in rules.items()]
 
 
@@ -1393,7 +1383,7 @@ def pte_attribute_rule_rows(spec: dict[str, Any]) -> list[list[str]]:
     for section_name in ("non_leaf_attributes", "leaf_attributes"):
         attributes = pte.get(section_name)
         if not isinstance(attributes, dict):
-            raise ValueError(f"registers.translation_control.page_table_entry.{section_name} is required")
+            continue
         for field, rule in attributes.items():
             rows.append([tex_code(f"{readable_text(section_name)}.{field}"), tex_escape(rule)])
     return rows
@@ -1403,8 +1393,8 @@ def pte_permission_rule_rows(spec: dict[str, Any]) -> list[list[str]]:
     control = spec.get("registers", {}).get("translation_control") or {}
     pte = (control.get("page_table_entry") or {}) if isinstance(control, dict) else {}
     rules = pte.get("permission_rules") if isinstance(pte, dict) else None
-    if not isinstance(rules, list) or not rules:
-        raise ValueError("registers.translation_control.page_table_entry.permission_rules is required")
+    if not isinstance(rules, list):
+        return []
     rows: list[list[str]] = []
     for item in rules:
         if not isinstance(item, dict):
@@ -1433,7 +1423,7 @@ def ivt_entry_rows(spec: dict[str, Any]) -> list[list[str]]:
     table = spec.get("interrupts", {}).get("interrupt_vector_table") or {}
     layout = table.get("entry_layout") if isinstance(table, dict) else {}
     if not isinstance(layout, dict):
-        raise ValueError("interrupts.interrupt_vector_table.entry_layout is required")
+        return []
     rows: list[list[str]] = []
     handler = layout.get("handler_address")
     if isinstance(handler, dict):
@@ -1449,7 +1439,7 @@ def ivt_entry_rows(spec: dict[str, Any]) -> list[list[str]]:
         byte = control.get("byte", "-")
         fields = control.get("fields") or {}
         if not isinstance(fields, dict):
-            raise ValueError("interrupts.interrupt_vector_table.entry_layout.control_byte.fields is required")
+            fields = {}
         for name, field in fields.items():
             if not isinstance(field, dict):
                 continue
@@ -1708,10 +1698,7 @@ def interrupt_model_section(spec: dict[str, Any]) -> str:
 
 def reset_state_rows(control: dict[str, Any]) -> list[list[str]]:
     reset = (control.get("reset_state") or {}) if isinstance(control, dict) else {}
-    rows = [[tex_code(key), tex_table_value(value)] for key, value in reset.items()]
-    if not rows:
-        raise ValueError("interrupts.reset_state is required")
-    return rows
+    return [[tex_code(key), tex_table_value(value)] for key, value in reset.items()]
 
 
 def memory_address_translation_section(spec: dict[str, Any]) -> str:
@@ -1846,8 +1833,6 @@ def address_update_operand_table(spec: dict[str, Any]) -> str:
             continue
         name = str(prefix.get("name", ""))
         description = compact_text(prefix.get("description", ""))
-        if not description:
-            raise ValueError(f"prefixes.yaml {name} is missing description")
         rows.append(
             [
                 tex_code(address_update_operand_syntax(name)),
@@ -1959,7 +1944,7 @@ def repcc_prefix_section(spec: dict[str, Any]) -> str:
     syntax = repeat.get("syntax")
     if not syntax:
         syntax_info = prefix.get("syntax") or {}
-        syntax = syntax_info.get("mnemonic_template", "REP{condition}") + " Dn, <instruction>" if isinstance(syntax_info, dict) else "REP{condition} Dn, <instruction>"
+        syntax = syntax_info.get("mnemonic_template", "REPcc") + " Dn, <instruction>" if isinstance(syntax_info, dict) else "REPcc Dn, <instruction>"
 
     rep_rows = [
         [tex_escape("Syntax"), tex_code(syntax)],

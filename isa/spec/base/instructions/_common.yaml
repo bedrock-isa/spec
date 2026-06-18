@@ -144,7 +144,7 @@ operation_semantics:
       operation_attribute: streaming_candidate
   repeat_prefixes:
     REPcc:
-      syntax: REP{condition} Dn, <instruction>
+      syntax: REPcc Dn, <instruction>
       alias: REP = REPT
       condition_suffix: condition suffix is concatenated into the mnemonic
       condition_set: full condition-code set

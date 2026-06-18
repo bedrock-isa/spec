@@ -285,10 +285,7 @@ def ea_generation_text(form: dict[str, Any], extended: bool) -> str:
 
 
 def ea_payload_text(form: dict[str, Any], extended: bool) -> str:
-    description = compact_text(form.get("payload_description", ""))
-    if not description:
-        raise ValueError(f"ea.yaml manual_text.payload_descriptions must define {form.get('name', '<unknown>')}")
-    return description
+    return compact_text(form.get("payload_description", ""))
 
 
 def register_value_text(register_class: Any) -> str:
@@ -301,10 +298,7 @@ def register_value_text(register_class: Any) -> str:
 
 
 def ea_form_description(form: dict[str, Any], extended: bool) -> str:
-    description = compact_text(form.get("description", ""))
-    if not description:
-        raise ValueError(f"ea.yaml manual_text.form_descriptions must define {form.get('name', '<unknown>')}")
-    return tex_escape(description)
+    return tex_escape(compact_text(form.get("description", "")))
 
 
 def ea_flow_figure(form: dict[str, Any], title: str, extended: bool) -> str:

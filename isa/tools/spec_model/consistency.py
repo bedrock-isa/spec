@@ -21,6 +21,7 @@ from .schemas import (
     REPFLAGS_RULES,
 )
 from .encoding import encoding_schema_errors
+from .declarative_schema import validate_declarative_contracts
 
 
 def validate_spec_consistency(spec: dict[str, Any]) -> tuple[ValidationResult, list[PatternEntry]]:
@@ -33,6 +34,7 @@ def validate_spec_consistency(spec: dict[str, Any]) -> tuple[ValidationResult, l
     check_conditions(spec, result)
     check_effective_addresses(spec, result)
     check_encoding_schema(spec, result)
+    validate_declarative_contracts(spec, result)
 
     opcodes = spec["opcodes"]
     for index, item in enumerate(opcodes.get("sentinels", []) or []):
@@ -1015,12 +1017,12 @@ def check_pcode_by_form_value(value: Any, path: str, result: ValidationResult) -
         if unexpected:
             result.error(f"{item_path} has unexpected keys: {', '.join(unexpected)}")
         operands = item.get("operands")
-        if not isinstance(operands, list) or not operands or not all(isinstance(op, str) for op in operands):
+        if "operands" in item and (
+            not isinstance(operands, list) or not operands or not all(isinstance(op, str) for op in operands)
+        ):
             result.error(f"{item_path}.operands must be a non-empty string list")
-        if "operation" not in item:
-            result.error(f"{item_path}.operation is required")
-            continue
-        check_pcode_value(item["operation"], f"{item_path}.operation", result)
+        if "operation" in item:
+            check_pcode_value(item["operation"], f"{item_path}.operation", result)
 
 
 def pcode_referenced_roles(value: Any) -> set[str]:

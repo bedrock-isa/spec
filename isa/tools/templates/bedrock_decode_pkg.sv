@@ -7,18 +7,24 @@
 package bedrock_decode_pkg;
   import bedrock_pkg::*;
 
-  localparam int BEDROCK_DECODE_FORM_COUNT = @FORM_COUNT@;
-  localparam int BEDROCK_DECODE_FORM_ID_BITS = @FORM_BITS@;
+  localparam int BEDROCK_DECODE_OPCODE_COUNT = @OPCODE_COUNT@;
+  localparam int BEDROCK_DECODE_OPCODE_ID_BITS = @OPCODE_BITS@;
+  localparam int BEDROCK_DECODE_FIELD_FORMAT_COUNT = @FIELD_FORMAT_COUNT@;
+  localparam int BEDROCK_DECODE_FIELD_FORMAT_ID_BITS = @FIELD_FORMAT_BITS@;
   localparam int BEDROCK_DECODE_EXT_ROOT_COUNT = @EXT_ROOT_COUNT@;
   localparam int BEDROCK_DECODE_EXT_ROOT_BITS = @EXT_ROOT_BITS@;
   localparam int BEDROCK_DECODE_FIELD_SLOTS = @FIELD_SLOTS@;
   localparam int BEDROCK_DECODE_FIELD_KIND_BITS = @FIELD_KIND_BITS@;
-  localparam int BEDROCK_DECODE_FIELD_SOURCE_BITS = @FIELD_SOURCE_BITS@;
 
-  typedef enum logic [BEDROCK_DECODE_FORM_ID_BITS-1:0] {
-    BR_FORM_INVALID = @FORM_BITS@'d0,
-@FORM_ENUM_ENTRIES@
-  } bedrock_form_id_e;
+  typedef enum logic [BEDROCK_DECODE_OPCODE_ID_BITS-1:0] {
+    BR_OPCODE_INVALID = @OPCODE_BITS@'d0,
+@OPCODE_ENUM_ENTRIES@
+  } bedrock_opcode_id_e;
+
+  typedef enum logic [BEDROCK_DECODE_FIELD_FORMAT_ID_BITS-1:0] {
+    BR_FIELD_FORMAT_NONE = @FIELD_FORMAT_BITS@'d0,
+@FIELD_FORMAT_ENUM_ENTRIES@
+  } bedrock_field_format_id_e;
 
   typedef enum logic [BEDROCK_DECODE_EXT_ROOT_BITS-1:0] {
     BR_EXT_ROOT_NONE = @EXT_ROOT_BITS@'d0,
@@ -29,14 +35,9 @@ package bedrock_decode_pkg;
 @FIELD_KIND_ENUM_ENTRIES@
   } bedrock_decode_field_kind_e;
 
-  typedef enum logic [BEDROCK_DECODE_FIELD_SOURCE_BITS-1:0] {
-@FIELD_SOURCE_ENUM_ENTRIES@
-  } bedrock_decode_field_source_e;
-
   typedef struct packed {
     logic valid;
     bedrock_decode_field_kind_e kind;
-    bedrock_decode_field_source_e source;
     logic [1:0] token;
     logic [3:0] low_bit;
     logic [4:0] width;
@@ -45,27 +46,31 @@ package bedrock_decode_pkg;
   typedef struct packed {
     logic valid;
     logic needs_extension;
-    logic is_alias;
-    bedrock_form_id_e form_id;
+    bedrock_opcode_id_e opcode_id;
+    bedrock_field_format_id_e field_format_id;
+    logic [3:0] required_words;
     bedrock_ext_root_e ext_root;
   } bedrock_primary_decode_t;
 
   typedef struct packed {
     logic valid;
-    logic is_alias;
-    bedrock_form_id_e form_id;
+    bedrock_opcode_id_e opcode_id;
+    bedrock_field_format_id_e field_format_id;
+    logic [3:0] required_words;
   } bedrock_extended_decode_t;
 
   typedef struct packed {
     logic repcc_allowed;
     logic repg_allowed;
     logic repg_fast_candidate;
-  } bedrock_form_attributes_t;
+  } bedrock_opcode_attributes_t;
 
   function automatic bedrock_primary_decode_t bedrock_decode_primary_payload(input primary_payload_t payload);
     bedrock_primary_decode_t r;
     r = '0;
-    r.form_id = BR_FORM_INVALID;
+    r.opcode_id = BR_OPCODE_INVALID;
+    r.field_format_id = BR_FIELD_FORMAT_NONE;
+    r.required_words = 4'd1;
     r.ext_root = BR_EXT_ROOT_NONE;
 
     priority casez (payload)
@@ -83,7 +88,9 @@ package bedrock_decode_pkg;
   );
     bedrock_extended_decode_t r;
     r = '0;
-    r.form_id = BR_FORM_INVALID;
+    r.opcode_id = BR_OPCODE_INVALID;
+    r.field_format_id = BR_FIELD_FORMAT_NONE;
+    r.required_words = 4'd2;
 
     unique case (ext_root)
 @EXTENDED_DECODE_CASES@
@@ -94,49 +101,39 @@ package bedrock_decode_pkg;
     return r;
   endfunction
 
-  function automatic logic [3:0] bedrock_decode_form_required_words(input bedrock_form_id_e form_id);
+  function automatic logic [3:0] bedrock_decode_field_format_token_words(
+    input bedrock_field_format_id_e field_format_id
+  );
     logic [3:0] r;
     r = 4'd1;
-    unique case (form_id)
-@REQUIRED_WORD_CASES@
+    unique case (field_format_id)
+@FIELD_FORMAT_TOKEN_WORD_CASES@
       default: begin
       end
     endcase
     return r;
   endfunction
 
-  function automatic logic [3:0] bedrock_decode_form_field_token_words(input bedrock_form_id_e form_id);
-    logic [3:0] r;
-    r = 4'd1;
-    unique case (form_id)
-@FIELD_TOKEN_WORD_CASES@
-      default: begin
-      end
-    endcase
-    return r;
-  endfunction
-
-  function automatic bedrock_decode_field_meta_t bedrock_decode_form_field(
-    input bedrock_form_id_e form_id,
+  function automatic bedrock_decode_field_meta_t bedrock_decode_field_format_field(
+    input bedrock_field_format_id_e field_format_id,
     input logic [2:0] field_index
   );
     bedrock_decode_field_meta_t r;
     r = '0;
     r.kind = BR_FIELD_NONE;
-    r.source = BR_SOURCE_NONE;
-    unique case (form_id)
-@FORM_FIELD_CASES@
+    unique case (field_format_id)
+@FIELD_FORMAT_FIELD_CASES@
       default: begin
       end
     endcase
     return r;
   endfunction
 
-  function automatic bedrock_form_attributes_t bedrock_decode_form_attributes(input bedrock_form_id_e form_id);
-    bedrock_form_attributes_t r;
+  function automatic bedrock_opcode_attributes_t bedrock_decode_opcode_attributes(input bedrock_opcode_id_e opcode_id);
+    bedrock_opcode_attributes_t r;
     r = '0;
-    unique case (form_id)
-@FORM_ATTRIBUTE_CASES@
+    unique case (opcode_id)
+@OPCODE_ATTRIBUTE_CASES@
       default: begin
       end
     endcase

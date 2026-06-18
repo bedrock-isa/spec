@@ -153,10 +153,27 @@ def range_patterns(width: int, start: int, end: int) -> list[str]:
     return [casez_pattern(width, base, size) for base, size in range_blocks(width, start, end)]
 
 
-def exact_or_range_patterns(width: int, values: list[int], start: int, end: int) -> list[str]:
-    if values:
-        return [casez_pattern(width, value, 1) for value in values]
-    return range_patterns(width, start, end)
+def contiguous_ranges(values: list[int]) -> list[tuple[int, int]]:
+    if not values:
+        return []
+    out: list[tuple[int, int]] = []
+    start = values[0]
+    end = values[0]
+    for value in values[1:]:
+        if value == end + 1:
+            end = value
+            continue
+        out.append((start, end))
+        start = end = value
+    out.append((start, end))
+    return out
+
+
+def value_set_patterns(width: int, values: list[int]) -> list[str]:
+    patterns: list[str] = []
+    for start, end in contiguous_ranges(sorted(set(values))):
+        patterns.extend(range_patterns(width, start, end))
+    return patterns
 
 
 def ranges_overlap(ranges: list[tuple[int, int]]) -> bool:
@@ -236,15 +253,20 @@ def unique_decode_patterns(
     width: int,
     start: int,
     end: int,
-    emitted: set[str],
+    emitted_patterns: set[str],
+    emitted_values: set[int],
 ) -> list[str]:
-    patterns = exact_or_range_patterns(width, exact_primary_values(item), start, end)
+    exact_values = exact_primary_values(item)
+    values = exact_values if exact_values else list(range(start, end + 1))
+    active_values = [value for value in sorted(set(values)) if value not in emitted_values]
+    patterns = value_set_patterns(width, active_values)
     out: list[str] = []
     for pattern in patterns:
-        if pattern in emitted:
+        if pattern in emitted_patterns:
             continue
-        emitted.add(pattern)
+        emitted_patterns.add(pattern)
         out.append(pattern)
+    emitted_values.update(active_values)
     return out
 
 
@@ -275,12 +297,91 @@ def root_payload_ranges(items: list[dict[str, Any]]) -> dict[str, list[tuple[int
     return merged
 
 
-def assign_form_ids(items: list[dict[str, Any]]) -> dict[str, str]:
-    used: set[str] = set()
+FieldFormatField = tuple[str, int, int, int]
+FieldFormatSignature = tuple[FieldFormatField, ...]
+
+
+def opcode_key(item: dict[str, Any]) -> str:
+    mnemonic = str(item.get("mnemonic", ""))
+    return mnemonic if mnemonic else str(item.get("id", ""))
+
+
+def assign_opcode_ids(items: list[dict[str, Any]]) -> dict[str, str]:
+    used = {"BR_OPCODE_INVALID"}
     names: dict[str, str] = {}
     for item in sorted(items, key=decode_priority):
-        names[str(item.get("id", ""))] = sv_ident("BR_FORM", str(item.get("id", "")), used)
+        key = opcode_key(item)
+        if key in names:
+            continue
+        names[key] = sv_ident("BR_OPCODE", key, used)
     return names
+
+
+def field_format_signature(item: dict[str, Any]) -> FieldFormatSignature:
+    fields = all_fields(item)
+    return tuple(sorted(
+        {
+            (
+                str(field.get("kind", "")) or "NONE",
+                int(field.get("token", 0)),
+                int(field.get("low_bit", 0)),
+                int(field.get("width", 0)),
+            )
+            for field in fields
+        },
+        key=lambda field: (field[1], field[2], field[0], field[3]),
+    ))
+
+
+def field_format_sort_key(signature: FieldFormatSignature) -> tuple[int, FieldFormatSignature]:
+    return len(signature), signature
+
+
+def field_format_label(signature: FieldFormatSignature) -> str:
+    if not signature:
+        return "NO_FIELDS"
+    parts: list[str] = []
+    for kind, token, low, width in signature:
+        parts.append(f"{kind}{width}@{token}:{low}")
+    return "_".join(parts)
+
+
+def assign_field_format_ids(items: list[dict[str, Any]]) -> dict[FieldFormatSignature, str]:
+    names: dict[FieldFormatSignature, str] = {}
+    signatures = sorted({field_format_signature(item) for item in items}, key=field_format_sort_key)
+    for index, signature in enumerate(signatures, start=1):
+        names[signature] = f"BR_FIELD_FORMAT_F{index:03d}"
+    return names
+
+
+def field_format_fields(signature: FieldFormatSignature) -> list[dict[str, Any]]:
+    return [
+        {
+            "kind": kind,
+            "token": token,
+            "low_bit": low,
+            "width": width,
+        }
+        for kind, token, low, width in signature
+    ]
+
+
+def field_format_token_words(signature: FieldFormatSignature) -> int:
+    if not signature:
+        return 1
+    return max(token for _kind, token, _low, _width in signature) + 1
+
+
+def opcode_attribute_map(items: list[dict[str, Any]], repeat_policy: dict[str, set[str]]) -> dict[str, dict[str, bool]]:
+    out: dict[str, dict[str, bool]] = {}
+    for item in sorted(items, key=decode_priority):
+        key = opcode_key(item)
+        attrs = form_repeat_attributes(item, repeat_policy)
+        previous = out.get(key)
+        if previous is not None and previous != attrs:
+            raise RuntimeError(f"{key}: opcode repeat attributes differ across decoded field formats")
+        out[key] = attrs
+    return out
 
 
 def assign_root_ids(roots: list[str]) -> dict[str, str]:
@@ -316,37 +417,37 @@ def field_kind_names(forms: list[dict[str, Any]]) -> dict[str, str]:
     return out
 
 
-def field_source_names(forms: list[dict[str, Any]]) -> dict[str, str]:
-    sources = {"NONE"}
-    for item in forms:
-        for field in all_fields(item):
-            sources.add(str(field.get("source", "")) or "NONE")
-    used = {"BR_SOURCE_NONE"}
-    out = {"NONE": "BR_SOURCE_NONE"}
-    for source in sorted(s for s in sources if s != "NONE"):
-        out[source] = field_enum_name("BR_SOURCE", source, used)
-    return out
-
-
 def form_required_words(item: dict[str, Any], fields: list[dict[str, Any]]) -> int:
     return max(required_word_count(item, fields), max(1, min(8, int(item.get("min_words", 1)))))
 
 
-def form_field_token_words(item: dict[str, Any], fields: list[dict[str, Any]]) -> int:
-    base_words = 2 if item.get("kind") in {"extended", "extended_alias"} else 1
-    if not fields:
-        return base_words
-    return max(base_words, max(int(field.get("token", 0)) for field in fields) + 1)
+def default_required_words(item: dict[str, Any]) -> int:
+    return 2 if item.get("kind") in {"extended", "extended_alias"} else 1
 
 
-def emit_form_assignment(lines: list[str], item: dict[str, Any], form_names: dict[str, str], indent: str) -> None:
+def append_required_words_override(lines: list[str], item: dict[str, Any], indent: str, target: str) -> None:
+    required = form_required_words(item, all_fields(item))
+    if required != default_required_words(item):
+        lines.append(f"{indent}{target} = 4'd{required};")
+
+
+def emit_decode_assignment(
+    lines: list[str],
+    item: dict[str, Any],
+    opcode_names: dict[str, str],
+    field_format_names: dict[FieldFormatSignature, str],
+    indent: str,
+    *,
+    target_prefix: str = "r.",
+) -> None:
     lines.extend(
         [
-            f"{indent}r.valid = 1'b1;",
-            f"{indent}r.is_alias = 1'b{1 if str(item.get('kind')).endswith('_alias') else 0};",
-            f"{indent}r.form_id = {form_names[str(item.get('id', ''))]};",
+            f"{indent}{target_prefix}valid = 1'b1;",
+            f"{indent}{target_prefix}opcode_id = {opcode_names[opcode_key(item)]};",
+            f"{indent}{target_prefix}field_format_id = {field_format_names[field_format_signature(item)]};",
         ]
     )
+    append_required_words_override(lines, item, indent, f"{target_prefix}required_words")
 
 
 def sv_lines(lines: list[str]) -> str:
@@ -356,22 +457,31 @@ def sv_lines(lines: list[str]) -> str:
 def emit_package(plan: dict[str, Any], repeat_policy: dict[str, set[str]]) -> str:
     items = allocation_items(plan)
     forms = sorted(items, key=decode_priority)
-    form_names = assign_form_ids(forms)
+    opcode_names = assign_opcode_ids(forms)
+    field_format_names = assign_field_format_ids(forms)
     root_ranges = root_payload_ranges(forms)
     root_names = assign_root_ids(list(root_ranges))
     kind_names = field_kind_names(forms)
-    source_names = field_source_names(forms)
-    max_fields = max([len(all_fields(item)) for item in forms] + [0])
+    max_fields = max([len(field_format_fields(signature)) for signature in field_format_names] + [0])
 
-    form_bits = bits_for_count(len(forms) + 1)
+    opcode_bits = bits_for_count(len(opcode_names) + 1)
+    field_format_bits = bits_for_count(len(field_format_names) + 1)
     root_bits = bits_for_count(len(root_names) + 1)
     kind_bits = bits_for_count(len(kind_names))
-    source_bits = bits_for_count(len(source_names))
 
-    form_enum_lines: list[str] = []
-    for index, item in enumerate(forms, start=1):
-        comma = "," if index != len(forms) else ""
-        form_enum_lines.append(f"    {form_names[str(item.get('id', ''))]} = {form_bits}'d{index}{comma} // {item.get('id', '')}")
+    opcode_enum_lines: list[str] = []
+    opcode_items = sorted(opcode_names, key=lambda key: opcode_names[key])
+    for index, key in enumerate(opcode_items, start=1):
+        comma = "," if index != len(opcode_items) else ""
+        opcode_enum_lines.append(f"    {opcode_names[key]} = {opcode_bits}'d{index}{comma} // {key}")
+
+    field_format_enum_lines: list[str] = []
+    field_format_items = sorted(field_format_names, key=field_format_sort_key)
+    for index, signature in enumerate(field_format_items, start=1):
+        comma = "," if index != len(field_format_items) else ""
+        field_format_enum_lines.append(
+            f"    {field_format_names[signature]} = {field_format_bits}'d{index}{comma} // {field_format_label(signature)}"
+        )
 
     ext_root_enum_lines: list[str] = []
     for index, root in enumerate(sorted(root_names), start=1):
@@ -388,23 +498,14 @@ def emit_package(plan: dict[str, Any], repeat_policy: dict[str, set[str]]) -> st
         comment = "" if kind == "NONE" else f" // {kind}"
         field_kind_enum_lines.append(f"    {name} = {kind_bits}'d{index}{comma}{comment}")
 
-    field_source_enum_lines: list[str] = []
-    source_items = [("NONE", "BR_SOURCE_NONE")] + sorted(
-        [(source, name) for source, name in source_names.items() if source != "NONE"],
-        key=lambda item: item[1],
-    )
-    for index, (source, name) in enumerate(source_items):
-        comma = "," if index != len(source_items) - 1 else ""
-        comment = "" if source == "NONE" else f" // {source}"
-        field_source_enum_lines.append(f"    {name} = {source_bits}'d{index}{comma}{comment}")
-
     primary_decode_lines: list[str] = []
     emitted_primary_patterns: set[str] = set()
+    emitted_primary_values: set[int] = set()
     for item in sorted(compact_items(forms), key=decode_case_priority):
         p_start, p_end = primary_range(item)
-        for pattern in unique_decode_patterns(item, 12, p_start, p_end, emitted_primary_patterns):
+        for pattern in unique_decode_patterns(item, 12, p_start, p_end, emitted_primary_patterns, emitted_primary_values):
             primary_decode_lines.append(f"      {pattern}: begin // {item.get('id', '')}")
-            emit_form_assignment(primary_decode_lines, item, form_names, "        ")
+            emit_decode_assignment(primary_decode_lines, item, opcode_names, field_format_names, "        ")
             primary_decode_lines.append("      end")
 
     for root in sorted(root_names):
@@ -436,7 +537,7 @@ def emit_package(plan: dict[str, Any], repeat_policy: dict[str, set[str]]) -> st
                 keyword = "if" if first else "else if"
                 first = False
                 extended_decode_lines.append(f"        {keyword} {range_condition('extension_word', 16, e_start, e_end)} begin // {item.get('id', '')}")
-                emit_form_assignment(extended_decode_lines, item, form_names, "          ")
+                emit_decode_assignment(extended_decode_lines, item, opcode_names, field_format_names, "          ")
                 extended_decode_lines.append("        end")
         else:
             extended_decode_lines.append("        unique casez (extension_word)")
@@ -444,7 +545,7 @@ def emit_package(plan: dict[str, Any], repeat_policy: dict[str, set[str]]) -> st
                 e_start, e_end = extended_range(item)
                 for pattern in range_patterns(16, e_start, e_end):
                     extended_decode_lines.append(f"          {pattern}: begin // {item.get('id', '')}")
-                    emit_form_assignment(extended_decode_lines, item, form_names, "            ")
+                    emit_decode_assignment(extended_decode_lines, item, opcode_names, field_format_names, "            ")
                     extended_decode_lines.append("          end")
             extended_decode_lines.extend(
                 [
@@ -455,48 +556,39 @@ def emit_package(plan: dict[str, Any], repeat_policy: dict[str, set[str]]) -> st
             )
         extended_decode_lines.append("      end")
 
-    required_word_lines: list[str] = []
-    for item in forms:
-        fields = all_fields(item)
-        required = form_required_words(item, fields)
-        if required <= 1:
-            continue
-        required_word_lines.append(f"      {form_names[str(item.get('id', ''))]}: r = 4'd{required}; // {item.get('id', '')}")
-
-    field_token_word_lines: list[str] = []
-    for item in forms:
-        fields = all_fields(item)
-        token_words = form_field_token_words(item, fields)
+    field_format_token_word_lines: list[str] = []
+    for signature in field_format_items:
+        token_words = field_format_token_words(signature)
         if token_words <= 1:
             continue
-        field_token_word_lines.append(f"      {form_names[str(item.get('id', ''))]}: r = 4'd{token_words}; // {item.get('id', '')}")
+        field_format_token_word_lines.append(
+            f"      {field_format_names[signature]}: r = 4'd{token_words}; // {field_format_label(signature)}"
+        )
 
-    form_field_lines: list[str] = []
-    for item in forms:
-        fields = all_fields(item)
+    field_format_field_lines: list[str] = []
+    for signature in field_format_items:
+        fields = field_format_fields(signature)
         if not fields:
             continue
-        form_field_lines.append(f"      {form_names[str(item.get('id', ''))]}: begin // {item.get('id', '')}")
-        form_field_lines.append("        unique case (field_index)")
+        field_format_field_lines.append(f"      {field_format_names[signature]}: begin // {field_format_label(signature)}")
+        field_format_field_lines.append("        unique case (field_index)")
         for index, field in enumerate(fields):
             kind = str(field.get("kind", "")) or "NONE"
-            source = str(field.get("source", "")) or "NONE"
             token = int(field.get("token", 0))
             low = int(field.get("low_bit", 0))
             width = int(field.get("width", 0))
-            form_field_lines.extend(
+            field_format_field_lines.extend(
                 [
                     f"          3'd{index}: begin",
                     "            r.valid = 1'b1;",
                     f"            r.kind = {kind_names[kind]};",
-                    f"            r.source = {source_names[source]};",
                     f"            r.token = 2'd{token};",
                     f"            r.low_bit = 4'd{low};",
                     f"            r.width = 5'd{width};",
                     "          end",
                 ]
             )
-        form_field_lines.extend(
+        field_format_field_lines.extend(
             [
                 "          default: begin",
                 "          end",
@@ -505,40 +597,39 @@ def emit_package(plan: dict[str, Any], repeat_policy: dict[str, set[str]]) -> st
             ]
         )
 
-    form_attribute_lines: list[str] = []
-    for item in forms:
-        attrs = form_repeat_attributes(item, repeat_policy)
+    opcode_attribute_lines: list[str] = []
+    for key, attrs in sorted(opcode_attribute_map(forms, repeat_policy).items(), key=lambda item: opcode_names[item[0]]):
         if not any(attrs.values()):
             continue
-        form_attribute_lines.append(f"      {form_names[str(item.get('id', ''))]}: begin // {item.get('id', '')}")
+        opcode_attribute_lines.append(f"      {opcode_names[key]}: begin // {key}")
         if attrs["repcc_allowed"]:
-            form_attribute_lines.append("        r.repcc_allowed = 1'b1;")
+            opcode_attribute_lines.append("        r.repcc_allowed = 1'b1;")
         if attrs["repg_allowed"]:
-            form_attribute_lines.append("        r.repg_allowed = 1'b1;")
+            opcode_attribute_lines.append("        r.repg_allowed = 1'b1;")
         if attrs["repg_fast_candidate"]:
-            form_attribute_lines.append("        r.repg_fast_candidate = 1'b1;")
-        form_attribute_lines.append("      end")
+            opcode_attribute_lines.append("        r.repg_fast_candidate = 1'b1;")
+        opcode_attribute_lines.append("      end")
 
     return render_tool_template(
         "bedrock_decode_pkg.sv",
         {
-            "FORM_COUNT": len(forms),
-            "FORM_BITS": form_bits,
+            "OPCODE_COUNT": len(opcode_names),
+            "OPCODE_BITS": opcode_bits,
+            "FIELD_FORMAT_COUNT": len(field_format_names),
+            "FIELD_FORMAT_BITS": field_format_bits,
             "EXT_ROOT_COUNT": len(root_names),
             "EXT_ROOT_BITS": root_bits,
             "FIELD_SLOTS": max_fields,
             "FIELD_KIND_BITS": kind_bits,
-            "FIELD_SOURCE_BITS": source_bits,
-            "FORM_ENUM_ENTRIES": sv_lines(form_enum_lines),
+            "OPCODE_ENUM_ENTRIES": sv_lines(opcode_enum_lines),
+            "FIELD_FORMAT_ENUM_ENTRIES": sv_lines(field_format_enum_lines),
             "EXT_ROOT_ENUM_ENTRIES": sv_lines(ext_root_enum_lines),
             "FIELD_KIND_ENUM_ENTRIES": sv_lines(field_kind_enum_lines),
-            "FIELD_SOURCE_ENUM_ENTRIES": sv_lines(field_source_enum_lines),
             "PRIMARY_DECODE_CASES": sv_lines(primary_decode_lines),
             "EXTENDED_DECODE_CASES": sv_lines(extended_decode_lines),
-            "REQUIRED_WORD_CASES": sv_lines(required_word_lines),
-            "FIELD_TOKEN_WORD_CASES": sv_lines(field_token_word_lines),
-            "FORM_FIELD_CASES": sv_lines(form_field_lines),
-            "FORM_ATTRIBUTE_CASES": sv_lines(form_attribute_lines),
+            "FIELD_FORMAT_TOKEN_WORD_CASES": sv_lines(field_format_token_word_lines),
+            "FIELD_FORMAT_FIELD_CASES": sv_lines(field_format_field_lines),
+            "OPCODE_ATTRIBUTE_CASES": sv_lines(opcode_attribute_lines),
         },
     )
 
@@ -550,36 +641,48 @@ def emit_module() -> str:
 def emit_synth_module(plan: dict[str, Any], repeat_policy: dict[str, set[str]]) -> str:
     items = allocation_items(plan)
     forms = sorted(items, key=decode_priority)
-    form_names = assign_form_ids(forms)
+    opcode_names = assign_opcode_ids(forms)
+    field_format_names = assign_field_format_ids(forms)
     root_ranges = root_payload_ranges(forms)
     root_names = assign_root_ids(list(root_ranges))
 
-    form_bits = bits_for_count(len(forms) + 1)
+    opcode_bits = bits_for_count(len(opcode_names) + 1)
+    field_format_bits = bits_for_count(len(field_format_names) + 1)
     root_bits = bits_for_count(len(root_names) + 1)
 
-    form_localparam_lines: list[str] = []
+    opcode_localparam_lines: list[str] = []
+    for index, key in enumerate(sorted(opcode_names, key=lambda key: opcode_names[key]), start=1):
+        opcode_localparam_lines.append(
+            f"  localparam [{opcode_bits - 1}:0] {opcode_names[key]} = {opcode_bits}'d{index}; // {key}"
+        )
 
-    for index, item in enumerate(forms, start=1):
-        form_localparam_lines.append(f"  localparam [{form_bits - 1}:0] {form_names[str(item.get('id', ''))]} = {form_bits}'d{index}; // {item.get('id', '')}")
+    field_format_localparam_lines: list[str] = []
+    for index, signature in enumerate(sorted(field_format_names, key=field_format_sort_key), start=1):
+        field_format_localparam_lines.append(
+            f"  localparam [{field_format_bits - 1}:0] {field_format_names[signature]} = "
+            f"{field_format_bits}'d{index}; // {field_format_label(signature)}"
+        )
 
     ext_root_localparam_lines: list[str] = []
     for index, root in enumerate(sorted(root_names), start=1):
         ext_root_localparam_lines.append(f"  localparam [{root_bits - 1}:0] {root_names[root]} = {root_bits}'d{index}; // {root}")
 
     primary_decode_lines: list[str] = []
-    emitted_primary_patterns = set()
+    emitted_primary_patterns: set[str] = set()
+    emitted_primary_values: set[int] = set()
     for item in sorted(compact_items(forms), key=decode_case_priority):
         p_start, p_end = primary_range(item)
-        for pattern in unique_decode_patterns(item, 12, p_start, p_end, emitted_primary_patterns):
+        for pattern in unique_decode_patterns(item, 12, p_start, p_end, emitted_primary_patterns, emitted_primary_values):
             primary_decode_lines.extend(
                 [
                     f"      {pattern}: begin // {item.get('id', '')}",
                     "        valid_o = 1'b1;",
-                    f"        alias_o = 1'b{1 if str(item.get('kind')).endswith('_alias') else 0};",
-                    f"        form_id_o = {form_names[str(item.get('id', ''))]};",
-                    "      end",
+                    f"        opcode_id_o = {opcode_names[opcode_key(item)]};",
+                    f"        field_format_id_o = {field_format_names[field_format_signature(item)]};",
                 ]
             )
+            append_required_words_override(primary_decode_lines, item, "        ", "required_words_o")
+            primary_decode_lines.append("      end")
 
     for root in sorted(root_names):
         for start, end in root_ranges[root]:
@@ -613,11 +716,12 @@ def emit_synth_module(plan: dict[str, Any], repeat_policy: dict[str, set[str]]) 
                     [
                         f"          {keyword} {range_condition('extension_word_i', 16, e_start, e_end)} begin // {item.get('id', '')}",
                         "            valid_o = 1'b1;",
-                        f"            alias_o = 1'b{1 if str(item.get('kind')).endswith('_alias') else 0};",
-                        f"            form_id_o = {form_names[str(item.get('id', ''))]};",
-                        "          end",
+                        f"            opcode_id_o = {opcode_names[opcode_key(item)]};",
+                        f"            field_format_id_o = {field_format_names[field_format_signature(item)]};",
                     ]
                 )
+                append_required_words_override(extended_decode_lines, item, "            ", "required_words_o")
+                extended_decode_lines.append("          end")
         else:
             extended_decode_lines.append("          casez (extension_word_i)")
             for item in root_items:
@@ -627,11 +731,12 @@ def emit_synth_module(plan: dict[str, Any], repeat_policy: dict[str, set[str]]) 
                         [
                             f"            {pattern}: begin // {item.get('id', '')}",
                             "              valid_o = 1'b1;",
-                            f"              alias_o = 1'b{1 if str(item.get('kind')).endswith('_alias') else 0};",
-                            f"              form_id_o = {form_names[str(item.get('id', ''))]};",
-                            "            end",
+                            f"              opcode_id_o = {opcode_names[opcode_key(item)]};",
+                            f"              field_format_id_o = {field_format_names[field_format_signature(item)]};",
                         ]
                     )
+                    append_required_words_override(extended_decode_lines, item, "              ", "required_words_o")
+                    extended_decode_lines.append("            end")
             extended_decode_lines.extend(
                 [
                     "            default: begin",
@@ -642,11 +747,10 @@ def emit_synth_module(plan: dict[str, Any], repeat_policy: dict[str, set[str]]) 
         extended_decode_lines.append("        end")
 
     attribute_lines: list[str] = []
-    for item in forms:
-        attrs = form_repeat_attributes(item, repeat_policy)
+    for key, attrs in sorted(opcode_attribute_map(forms, repeat_policy).items(), key=lambda item: opcode_names[item[0]]):
         if not any(attrs.values()):
             continue
-        attribute_lines.append(f"        {form_names[str(item.get('id', ''))]}: begin // {item.get('id', '')}")
+        attribute_lines.append(f"        {opcode_names[key]}: begin // {key}")
         if attrs["repcc_allowed"]:
             attribute_lines.append("          repcc_allowed_o = 1'b1;")
         if attrs["repg_allowed"]:
@@ -658,11 +762,14 @@ def emit_synth_module(plan: dict[str, Any], repeat_policy: dict[str, set[str]]) 
     return render_tool_template(
         "bedrock_decode_synth.sv",
         {
-            "FORM_ID_MSB": form_bits - 1,
+            "OPCODE_ID_MSB": opcode_bits - 1,
+            "FIELD_FORMAT_ID_MSB": field_format_bits - 1,
             "EXT_ROOT_MSB": root_bits - 1,
-            "FORM_BITS": form_bits,
+            "OPCODE_BITS": opcode_bits,
+            "FIELD_FORMAT_BITS": field_format_bits,
             "EXT_ROOT_BITS": root_bits,
-            "FORM_LOCALPARAMS": sv_lines(form_localparam_lines),
+            "OPCODE_LOCALPARAMS": sv_lines(opcode_localparam_lines),
+            "FIELD_FORMAT_LOCALPARAMS": sv_lines(field_format_localparam_lines),
             "EXT_ROOT_LOCALPARAMS": sv_lines(ext_root_localparam_lines),
             "PRIMARY_DECODE_CASES": sv_lines(primary_decode_lines),
             "EXTENDED_DECODE_CASES": sv_lines(extended_decode_lines),

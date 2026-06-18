@@ -320,6 +320,11 @@ allocation:
       - 3
       reason: Q-to-Q extension has no architectural effect and its size-field encoding is reclaimed
   field_layout:
+    anchor_strategy:
+      format_order: largest_variable_payload_first
+      placement: first_fit_with_existing_lanes
+      fixed_signatures:
+      - EA6
     explicit_signature_order:
     - COND4
     - EA6

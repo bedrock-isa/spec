@@ -869,6 +869,12 @@ class InstructionAllocationSchema(KeySchema):
         field_layout = value.get("field_layout") or {}
         check_optional_mapping(field_layout, f"{path}.field_layout", InstructionFieldLayoutSchema, errors)
         if isinstance(field_layout, dict):
+            check_optional_mapping(
+                field_layout.get("anchor_strategy"),
+                f"{path}.field_layout.anchor_strategy",
+                InstructionFieldLayoutAnchorStrategySchema,
+                errors,
+            )
             check_optional_mapping(field_layout.get("field_score"), f"{path}.field_layout.field_score", InstructionFieldScoreSchema, errors)
             check_list_items(field_layout.get("subfield_affinities", []), f"{path}.field_layout.subfield_affinities", InstructionSubfieldAffinitySchema, errors)
 
@@ -1315,7 +1321,12 @@ class InstructionFieldReclaimInvalidValueMatchSchema(KeySchema):
 
 class InstructionFieldLayoutSchema(KeySchema):
     name = "instruction field layout"
-    keys = {"explicit_signature_order", "field_score", "subfield_affinities"}
+    keys = {"anchor_strategy", "explicit_signature_order", "field_score", "subfield_affinities"}
+
+
+class InstructionFieldLayoutAnchorStrategySchema(KeySchema):
+    name = "instruction field layout anchor strategy"
+    keys = {"format_order", "placement", "fixed_signatures"}
 
 
 class InstructionFieldScoreSchema(KeySchema):

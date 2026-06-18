@@ -294,6 +294,8 @@ def field_for_operand(fields: list[dict[str, Any]], operand: str) -> dict[str, A
 def parse_descriptor_layout(item: dict[str, Any]) -> list[dict[str, Any]]:
     raw_fields = [dict(field) for field in item.get("fields", []) or []]
     layout = str(item.get("_resolved_descriptor_layout", item.get("descriptor_layout", "")))
+    if layout == "none":
+        return []
     occurrence: dict[tuple[str, str], int] = {}
     by_kind: dict[str, list[dict[str, Any]]] = {}
     by_name_kind: dict[tuple[str, str], list[dict[str, Any]]] = {}
@@ -608,6 +610,9 @@ def item_primary_range(item: dict[str, Any]) -> tuple[int, int]:
         return parse_range(str(item.get("extension_root_payload", "0x000")))
     if item.get("kind") == "compact_alias" and item.get("alias_payloads"):
         values = [parse_hex(value) for value in item.get("alias_payloads", [])]
+        return min(values), max(values)
+    if item.get("primary_payloads"):
+        values = [parse_hex(value) for value in item.get("primary_payloads", [])]
         return min(values), max(values)
     return parse_range(str(item.get("start_payload", "0x000")), str(item.get("end_payload", "0x000")))
 

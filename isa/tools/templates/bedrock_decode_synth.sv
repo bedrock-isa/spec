@@ -9,16 +9,20 @@ module bedrock_decode_synth(
   input  [15:0] extension_word_i,
   output reg        valid_o,
   output reg        needs_extension_o,
-  output reg        alias_o,
-  output reg [@FORM_ID_MSB@:0] form_id_o,
+  output reg [@OPCODE_ID_MSB@:0] opcode_id_o,
+  output reg [@FIELD_FORMAT_ID_MSB@:0] field_format_id_o,
+  output reg [3:0]  required_words_o,
   output reg [@EXT_ROOT_MSB@:0] ext_root_o,
   output reg        repcc_allowed_o,
   output reg        repg_allowed_o,
   output reg        repg_fast_candidate_o
 );
 
-  localparam [@FORM_ID_MSB@:0] BR_FORM_INVALID = @FORM_BITS@'d0;
-@FORM_LOCALPARAMS@
+  localparam [@OPCODE_ID_MSB@:0] BR_OPCODE_INVALID = @OPCODE_BITS@'d0;
+@OPCODE_LOCALPARAMS@
+
+  localparam [@FIELD_FORMAT_ID_MSB@:0] BR_FIELD_FORMAT_NONE = @FIELD_FORMAT_BITS@'d0;
+@FIELD_FORMAT_LOCALPARAMS@
 
   localparam [@EXT_ROOT_MSB@:0] BR_EXT_ROOT_NONE = @EXT_ROOT_BITS@'d0;
 @EXT_ROOT_LOCALPARAMS@
@@ -26,8 +30,9 @@ module bedrock_decode_synth(
   always @* begin
     valid_o = 1'b0;
     needs_extension_o = 1'b0;
-    alias_o = 1'b0;
-    form_id_o = BR_FORM_INVALID;
+    opcode_id_o = BR_OPCODE_INVALID;
+    field_format_id_o = BR_FIELD_FORMAT_NONE;
+    required_words_o = 4'd0;
     ext_root_o = BR_EXT_ROOT_NONE;
     repcc_allowed_o = 1'b0;
     repg_allowed_o = 1'b0;
@@ -39,10 +44,15 @@ module bedrock_decode_synth(
       end
     endcase
 
+    if (valid_o && required_words_o == 4'd0) begin
+      required_words_o = 4'd1;
+    end
+
     if (needs_extension_o) begin
       valid_o = 1'b0;
-      alias_o = 1'b0;
-      form_id_o = BR_FORM_INVALID;
+      opcode_id_o = BR_OPCODE_INVALID;
+      field_format_id_o = BR_FIELD_FORMAT_NONE;
+      required_words_o = 4'd2;
 
       case (ext_root_o)
 @EXTENDED_DECODE_CASES@
@@ -52,7 +62,7 @@ module bedrock_decode_synth(
     end
 
     if (valid_o) begin
-      case (form_id_o)
+      case (opcode_id_o)
 @ATTRIBUTE_CASES@
         default: begin
         end

@@ -143,17 +143,19 @@ def stack_frame_figure(control: dict[str, Any]) -> str:
         r"\node[anchor=south] at (0.00,0.26) {63};",
         r"\node[anchor=south] at (4.60,0.26) {0};",
     ]
-    for index, slot in enumerate(slots):
-        y = -0.58 * index
+
+    def draw_slot(row_index: int, offset: int, name: str, *, dashed: bool = False) -> None:
+        y = -0.58 * row_index
+        style = "[densely dashed] " if dashed else " "
+        rows.append(rf"\node[anchor=east] at (-0.28,{y - 0.21:.2f}) {{\texttt{{+0x{offset:02X}}}}};")
+        rows.append(rf"\draw{style}(0,{y:.2f}) rectangle (4.60,{y - 0.42:.2f});")
+        rows.append(rf"\node at (2.30,{y - 0.21:.2f}) {{{tex_escape(name)}}};")
+
+    draw_slot(0, base_size, "type-selected payload slots", dashed=True)
+    for index, slot in enumerate(reversed(slots), start=1):
         offset = int(slot.get("offset", 0))
         name = str(slot.get("name", "reserved"))
-        rows.append(rf"\node[anchor=east] at (-0.28,{y - 0.21:.2f}) {{\texttt{{+0x{offset:02X}}}}};")
-        rows.append(rf"\draw (0,{y:.2f}) rectangle (4.60,{y - 0.42:.2f});")
-        rows.append(rf"\node at (2.30,{y - 0.21:.2f}) {{{tex_escape(name)}}};")
-    y = -0.58 * len(slots)
-    rows.append(rf"\node[anchor=east] at (-0.28,{y - 0.21:.2f}) {{\texttt{{+0x{base_size:02X}}}}};")
-    rows.append(rf"\draw[densely dashed] (0,{y:.2f}) rectangle (4.60,{y - 0.42:.2f});")
-    rows.append(rf"\node at (2.30,{y - 0.21:.2f}) {{type-selected payload slots}};")
+        draw_slot(index, offset, name)
     rows.extend(
         [
             r"\end{tikzpicture}",

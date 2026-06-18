@@ -10,25 +10,10 @@ Directory layout:
 - `execute/`: hand-written shared execute-stage helper units.
 - `tb/`: SystemVerilog testbenches.
 
-The initial RTL boundary is the instruction word-0 predecoder and the
-line-wide predecoder built from it:
-
-- extracts the prefix-present bit,
-- extracts the encoded instruction length,
-- computes the total instruction length in 16-bit words,
-- extracts the 12-bit primary payload,
-- identifies the HALT and ILLEGAL sentinel payloads.
-
-`bedrock_line_predecode` applies the same word-0 predecode in parallel across a
-64-byte / 32-word fetch or grouping window. It does not decide instruction
-starts or slot placement; later frontend logic can walk the explicit word-0
-lengths and select the instruction-start words it wants to fully decode.
-
-`bedrock_line_entry_precheck` uses that line view together with the generated
-instruction and prefix decoders. For every possible word entry point, it checks
-the optional prefix word, picks the extension word after the prefix when the
-decoded primary payload needs one, and reports REPcc/REPG validity for the
-decoded form.
+Instruction word 0 carries the prefix-present bit, encoded instruction length,
+and 12-bit primary payload directly. The shared `bedrock_pkg` bitfield helpers
+are the RTL source of truth for those slices; there is no separate predecode
+stage for discovering instruction length.
 
 `bedrock_full_decode` decodes one instruction window into a normalized record:
 word-0 length, prefix state, instruction form, extracted operand fields, up to
@@ -54,7 +39,7 @@ This RTL target is the `Dolomite0` implementation profile: no branch predictor,
 out-of-order machinery, FPU datapath, SIMD datapath, uop cache, or REPG-fast
 folding.
 
-The integrated entry precheck uses typed SystemVerilog packages for lint and
+The integrated decode RTL uses typed SystemVerilog packages for lint and
 simulation. The Yosys synthesis target lowers that same source path through
 `sv2v` before reading it into Yosys, so the synthesized logic follows the
 integration RTL instead of a duplicate package-free wrapper.

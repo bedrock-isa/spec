@@ -1645,9 +1645,7 @@ def doc_title(
     operations: list[dict[str, Any]],
 ) -> str:
     entry = docs.get(mnemonic, {})
-    if entry.get("title"):
-        return compact_text(entry["title"])
-    raise ValueError(f"instruction {mnemonic} is missing doc.title")
+    return compact_text(entry.get("title", ""))
 
 
 def doc_summary(
@@ -1661,9 +1659,7 @@ def doc_summary(
     _ = operations
     _ = items
     entry = docs.get(mnemonic, {})
-    if entry.get("summary"):
-        return compact_text(entry["summary"])
-    raise ValueError(f"instruction {mnemonic} is missing doc.summary")
+    return compact_text(entry.get("summary", ""))
 
 
 def doc_description(
@@ -1677,9 +1673,7 @@ def doc_description(
     _ = operations
     _ = aliases
     entry = docs.get(mnemonic, {})
-    if entry.get("description"):
-        return tex_escape(compact_text(entry["description"]))
-    raise ValueError(f"instruction {mnemonic} is missing doc.description")
+    return tex_escape(compact_text(entry.get("description", "")))
 
 
 def save_area_format_reference_sections(

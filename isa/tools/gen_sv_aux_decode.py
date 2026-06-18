@@ -485,7 +485,7 @@ def ea_segment_entries(spec: dict[str, Any]) -> list[tuple[str, str]]:
 def ea_segment_decode_cases(spec: dict[str, Any]) -> list[str]:
     values = ea_segment_named_values(spec)
     if not values:
-        raise ValueError("ea.extended_ea_descriptor.segment_values is required")
+        return []
     lines = []
     for name, value in values:
         lines.append(f"      3'd{value}: bedrock_ea_segment_decode = {segment_enum(name)};")

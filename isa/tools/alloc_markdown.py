@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 
@@ -25,6 +26,29 @@ def compact_hex_ranges(values: list[Any]) -> str:
         else:
             parts.append(f"`0x{start:03x}`..`0x{end:03x}`")
     return ", ".join(parts)
+
+
+def primary_field_layout_table_text(layout: Any) -> str:
+    text = str(layout or "").split(";", 1)[0].strip()
+    if not text or text == "none":
+        return "none"
+    text = re.sub(r"(?:^|\s)op\[[^\]]+\]", " ", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    return text or "none"
+
+
+def descriptor_layout_table_text(layout: Any) -> str:
+    text = str(layout or "").strip()
+    if not text or text == "none":
+        return "none"
+    return text
+
+
+def compact_cost_table_text(allocation: dict[str, Any]) -> str:
+    compact_cost = allocation["primary_slots_if_one_word"]
+    if compact_cost is not None:
+        return str(compact_cost)
+    return str(allocation.get("eviction_reason", "extended-only"))
 
 
 def render_markdown(plan: dict[str, Any]) -> str:
@@ -165,17 +189,16 @@ def render_markdown(plan: dict[str, Any]) -> str:
         ]
     )
     for allocation in solver["primary_allocations"]:
-        if allocation["start_payload"] == allocation["end_payload"]:
+        if allocation.get("primary_payloads"):
+            payload = compact_hex_ranges(allocation.get("primary_payloads", []))
+        elif allocation["start_payload"] == allocation["end_payload"]:
             payload = f"`{allocation['start_payload']}`"
         else:
             payload = f"`{allocation['start_payload']}`..`{allocation['end_payload']}`"
-        if allocation.get("reclaimed_payloads"):
-            reclaimed = compact_hex_ranges(allocation.get("reclaimed_payloads", []))
-            payload = f"{payload} (reclaims {reclaimed})"
         operands = ", ".join(allocation["operands"])
         lines.append(
             f"| {payload} | {allocation['slots']} | `{allocation['id']}` | "
-            f"{allocation['primary_bits']} | {allocation['field_layout']} | {operands} |"
+            f"{allocation['primary_bits']} | {primary_field_layout_table_text(allocation['field_layout'])} | {operands} |"
         )
 
     lines.extend(
@@ -252,14 +275,16 @@ def render_markdown(plan: dict[str, Any]) -> str:
         ]
     )
     for allocation in solver["extended_allocations"]:
-        compact_cost = allocation["primary_slots_if_one_word"]
-        compact_cost_text = str(allocation.get("eviction_reason", "not compact")) if compact_cost is None else str(compact_cost)
-        spill_note = " spilled" if allocation.get("operand_descriptor_spilled") else ""
+        compact_cost_text = compact_cost_table_text(allocation)
+        payload_bits = str(allocation["operand_payload_bits"])
+        if allocation.get("operand_descriptor_spilled"):
+            payload_bits += "+spill"
         lines.append(
             f"| `{allocation['extension_root']}` | "
             f"`{allocation['extended_opcode']}` | {allocation['extended_opcode_slots']} | `{allocation['id']}` | "
-            f"{allocation['extended_opcode_bits']} | {allocation['operand_payload_bits']}{spill_note} | "
-            f"{allocation['operand_descriptor_words']} | {allocation['descriptor_layout']} | {compact_cost_text} |"
+            f"{allocation['extended_opcode_bits']} | {payload_bits} | "
+            f"{allocation['operand_descriptor_words']} | {descriptor_layout_table_text(allocation['descriptor_layout'])} | "
+            f"{compact_cost_text} |"
         )
 
     lines.extend(

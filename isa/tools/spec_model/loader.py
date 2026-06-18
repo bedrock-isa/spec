@@ -11,6 +11,12 @@ except ImportError as exc:  # pragma: no cover - exercised only on incomplete ho
 
 from .core import SpecError, UniqueKeyLoader, is_scalar_value, schema_keys
 from .catalog import instruction_catalog
+from .declarative_schema import (
+    load_contract_from_root,
+    local_instruction_forms_required,
+    path_value,
+    present,
+)
 from .schemas import (
     CatalogEntrySchema,
     LocalAllocationSchema,
@@ -61,7 +67,11 @@ def load_yaml(path: Path) -> dict[str, Any]:
     return data or {}
 
 
-def expand_local_instruction_fragment(data: dict[str, Any], path: Path) -> dict[str, Any]:
+def expand_local_instruction_fragment(
+    data: dict[str, Any],
+    path: Path,
+    local_instruction_contract: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     if "mnemonic" not in data:
         return data
     mnemonic = str(data.get("mnemonic") or "").strip()
@@ -188,6 +198,14 @@ def expand_local_instruction_fragment(data: dict[str, Any], path: Path) -> dict[
     allocation = data.get("allocation") or {}
     forms = data.get("forms")
     if forms is not None:
+        contract = local_instruction_contract or {}
+        missing_required = [
+            field
+            for field in local_instruction_forms_required(contract)
+            if not present(path_value(data, field))
+        ]
+        if missing_required:
+            raise SpecError(f"{path}: missing required local instruction fields: {', '.join(missing_required)}")
         if not isinstance(allocation, dict):
             raise SpecError(f"{path}: allocation must be a mapping")
         unexpected_allocation = sorted(set(allocation) - schema_keys(LocalAllocationSchema))
@@ -208,10 +226,7 @@ def expand_local_instruction_fragment(data: dict[str, Any], path: Path) -> dict[
             or ""
         ).strip()
         if not family or not category or not section:
-            raise SpecError(
-                f"{path}: doc.instruction_family, doc.instruction_class, "
-                "and allocation.catalog_section are required"
-            )
+            raise SpecError(f"{path}: local instruction classification fields must not be empty")
         entry_group = str(
             allocation.get("layout_group")
             or mnemonic
@@ -378,7 +393,11 @@ def merge_spec_fragment(base: dict[str, Any], fragment: dict[str, Any], path: st
     return merged
 
 
-def load_yaml_with_includes(path: Path, stack: tuple[Path, ...] = ()) -> dict[str, Any]:
+def load_yaml_with_includes(
+    path: Path,
+    stack: tuple[Path, ...] = (),
+    local_instruction_contract: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     resolved = path.resolve()
     if resolved in stack:
         chain = " -> ".join(str(item) for item in (*stack, resolved))
@@ -393,25 +412,27 @@ def load_yaml_with_includes(path: Path, stack: tuple[Path, ...] = ()) -> dict[st
     if not isinstance(includes, list) or not all(isinstance(item, str) for item in includes):
         raise SpecError(f"{path}: include must be a string or a list of strings")
 
-    merged = expand_local_instruction_fragment(deepcopy(data), path)
+    merged = expand_local_instruction_fragment(deepcopy(data), path, local_instruction_contract)
     next_stack = (*stack, resolved)
     for include in includes:
         include_path = (path.parent / include).resolve()
         if not include_path.exists():
             raise SpecError(f"{path}: included spec file not found: {include}")
-        fragment = load_yaml_with_includes(include_path, next_stack)
+        fragment = load_yaml_with_includes(include_path, next_stack, local_instruction_contract)
         merged = merge_spec_fragment(merged, fragment, "")
     return merged
 
 
 def load_spec(spec_dir: str | Path) -> dict[str, Any]:
     root = Path(spec_dir)
+    validation_contract = load_contract_from_root(root, required=True)
+    local_instruction_contract = validation_contract.get("local_instruction") or {}
     spec: dict[str, Any] = {"__dir__": root}
     missing = [name for name in SPEC_FILES if not (root / name).exists()]
     if missing:
         raise SpecError(f"missing spec files: {', '.join(missing)}")
     for name in SPEC_FILES:
-        spec[name[:-5]] = load_yaml_with_includes(root / name)
+        spec[name[:-5]] = load_yaml_with_includes(root / name, local_instruction_contract=local_instruction_contract)
     normalize_loaded_spec(spec)
     SpecDocumentSchema.validate_or_raise(spec)
     return spec

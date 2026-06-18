@@ -336,9 +336,7 @@ def is_condition_mnemonic(mnemonic: str) -> bool:
 
 
 def display_mnemonic(mnemonic: str) -> str:
-    if not is_condition_mnemonic(mnemonic):
-        return mnemonic
-    return re.sub(r"cc$", "{condition}", mnemonic, flags=re.IGNORECASE)
+    return mnemonic
 
 
 def size_field_text(fields: list[dict[str, Any]], ident: str) -> str:
@@ -495,6 +493,8 @@ def parse_descriptor_layout(item: dict[str, Any]) -> list[dict[str, Any]]:
         by_kind.setdefault(str(field.get("kind", "")), []).append(field)
     placed: list[dict[str, Any]] = []
     layout = str(item.get("descriptor_layout", ""))
+    if layout == "none":
+        return []
 
     payload_token = 2
     payload_bit = 0
@@ -581,7 +581,15 @@ def line_fields(item: dict[str, Any]) -> list[dict[str, Any]]:
     return parse_descriptor_layout(item)
 
 
-def bit_pattern(total_bits: int, start: int, end: int, fields: list[dict[str, Any]], *, fill: str = "0") -> str:
+def bit_pattern(
+    total_bits: int,
+    start: int,
+    end: int,
+    fields: list[dict[str, Any]],
+    *,
+    fill: str = "0",
+    exact_values: list[int] | None = None,
+) -> str:
     chars = [fill] * total_bits
     field_by_bit: dict[int, dict[str, Any]] = {}
     for field in fields:
@@ -594,9 +602,13 @@ def bit_pattern(total_bits: int, start: int, end: int, fields: list[dict[str, An
         if field is not None:
             chars[total_bits - 1 - bit] = field_display_name(field)
             continue
-        low_bit = (start >> bit) & 1
-        high_bit = (end >> bit) & 1
-        chars[total_bits - 1 - bit] = str(low_bit) if low_bit == high_bit else "t"
+        if exact_values:
+            values = {(value >> bit) & 1 for value in exact_values}
+            chars[total_bits - 1 - bit] = str(next(iter(values))) if len(values) == 1 else "t"
+        else:
+            low_bit = (start >> bit) & 1
+            high_bit = (end >> bit) & 1
+            chars[total_bits - 1 - bit] = str(low_bit) if low_bit == high_bit else "t"
     return group_bits("".join(chars))
 
 
@@ -666,7 +678,7 @@ def encoding_pattern_tokens(item: dict[str, Any], fields: list[dict[str, Any]]) 
         else:
             start, end = parse_range(str(item["start_payload"]) if item["start_payload"] == item["end_payload"] else f"{item['start_payload']}..{item['end_payload']}")
         primary_fields = [field for field in fields if int(field.get("token", 0)) == 0]
-        return ["---- " + bit_pattern(12, start, end, primary_fields)]
+        return ["---- " + bit_pattern(12, start, end, primary_fields, exact_values=payload_values if exact_payloads else None)]
     root_start, root_end = parse_range(str(item["extension_root_payload"]))
     root_fields = root_fields_for_item(item, root_start, root_end)
     ext_start, ext_end = parse_range(str(item["extended_opcode"]))

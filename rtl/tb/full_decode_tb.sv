@@ -16,10 +16,10 @@ module full_decode_tb;
   logic undersized;
   instruction_length_t length_words;
   logic [3:0] required_words;
-  bedrock_form_id_e form_id;
+  bedrock_opcode_id_e opcode_id;
+  bedrock_field_format_id_e field_format_id;
   bedrock_ext_root_e ext_root;
   logic needs_extension;
-  logic alias_form;
   logic nospec;
   logic saturate;
   logic nontemporal;
@@ -39,7 +39,6 @@ module full_decode_tb;
   logic repeat_invalid;
   logic [BEDROCK_DECODE_FIELD_SLOTS-1:0] field_valid;
   bedrock_decode_field_kind_e field_kind [BEDROCK_DECODE_FIELD_SLOTS];
-  bedrock_decode_field_source_e field_source [BEDROCK_DECODE_FIELD_SLOTS];
   logic [1:0] field_token [BEDROCK_DECODE_FIELD_SLOTS];
   logic [3:0] field_low_bit [BEDROCK_DECODE_FIELD_SLOTS];
   logic [4:0] field_width [BEDROCK_DECODE_FIELD_SLOTS];
@@ -73,10 +72,10 @@ module full_decode_tb;
     .undersized_o(undersized),
     .length_words_o(length_words),
     .required_words_o(required_words),
-    .form_id_o(form_id),
+    .opcode_id_o(opcode_id),
+    .field_format_id_o(field_format_id),
     .ext_root_o(ext_root),
     .needs_extension_o(needs_extension),
-    .alias_o(alias_form),
     .nospec_o(nospec),
     .saturate_o(saturate),
     .nontemporal_o(nontemporal),
@@ -96,7 +95,6 @@ module full_decode_tb;
     .repeat_invalid_o(repeat_invalid),
     .field_valid_o(field_valid),
     .field_kind_o(field_kind),
-    .field_source_o(field_source),
     .field_token_o(field_token),
     .field_low_bit_o(field_low_bit),
     .field_width_o(field_width),
@@ -151,8 +149,8 @@ module full_decode_tb;
     set_word(0, 16'h00d1);
     #1;
     expect_logic("add valid", valid, 1'b1);
-    if (form_id !== BR_FORM_ADD_D_TO_D) begin
-      $error("add form got %0d expected ADD.D_TO_D", form_id);
+    if (opcode_id !== BR_OPCODE_ADD || field_format_id !== BR_FIELD_FORMAT_F035) begin
+      $error("add decode got opcode %0d field format %0d expected ADD/F035", opcode_id, field_format_id);
       failures++;
     end
     expect_u16("add src", field_value[0], 16'd1);
@@ -166,8 +164,8 @@ module full_decode_tb;
     set_word(1, 16'h0010);
     #1;
     expect_logic("mov valid", valid, 1'b1);
-    if (form_id !== BR_FORM_MOV_EA_TO_D) begin
-      $error("mov form got %0d expected MOV.EA_TO_D", form_id);
+    if (opcode_id !== BR_OPCODE_MOV || field_format_id !== BR_FIELD_FORMAT_F040) begin
+      $error("mov decode got opcode %0d field format %0d expected MOV/F040", opcode_id, field_format_id);
       failures++;
     end
     expect_u16("mov ea raw", {10'd0, ea_value[0]}, 16'h0018);
@@ -204,13 +202,13 @@ module full_decode_tb;
 
     // Extended ADD.L D2,D3 through the EA_TO_D form with a DREG EA source.
     clear_words();
-    set_word(0, 16'h2ef1);
+    set_word(0, 16'h2f31);
     set_word(1, 16'h0104);
     set_word(2, 16'h04c2);
     #1;
     expect_logic("extended add valid", valid, 1'b1);
-    if (form_id !== BR_FORM_ADD_EA_TO_D_BWLQ) begin
-      $error("extended add form got %0d expected ADD.EA_TO_D.BWLQ", form_id);
+    if (opcode_id !== BR_OPCODE_ADD || field_format_id !== BR_FIELD_FORMAT_F047) begin
+      $error("extended add decode got opcode %0d field format %0d expected ADD/F047", opcode_id, field_format_id);
       failures++;
     end
     expect_logic("extended add needs extension", needs_extension, 1'b1);
@@ -225,13 +223,13 @@ module full_decode_tb;
 
     // Extended MOV.L D1,[A0 + disp16] has two EA operands and one EA payload word.
     clear_words();
-    set_word(0, 16'h2f48);
+    set_word(0, 16'h2f3a);
     set_word(1, 16'h6601);
     set_word(2, 16'h0020);
     #1;
     expect_logic("mov ea ea valid", valid, 1'b1);
-    if (form_id !== BR_FORM_MOV_EA_TO_EA_BWLQ) begin
-      $error("mov ea ea form got %0d expected MOV.EA_TO_EA.BWLQ", form_id);
+    if (opcode_id !== BR_OPCODE_MOV || field_format_id !== BR_FIELD_FORMAT_F044) begin
+      $error("mov ea ea decode got opcode %0d field format %0d expected MOV/F044", opcode_id, field_format_id);
       failures++;
     end
     if (ea_present !== 2'b11) begin

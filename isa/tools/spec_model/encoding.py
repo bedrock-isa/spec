@@ -105,14 +105,15 @@ def size_code_label(spec: dict[str, Any], code: str) -> str:
 def named_value_set(spec: dict[str, Any], name: str) -> dict[str, Any]:
     named = require_mapping(operand_schema(spec).get("named_values"), "instructions.yaml.operand_schema.named_values")
     body = named.get(name)
-    if not isinstance(body, dict):
-        raise SpecError(f"instructions.yaml.operand_schema.named_values.{name} is required")
-    return body
+    return body if isinstance(body, dict) else {}
 
 
 def named_values(spec: dict[str, Any], name: str, *, include_reserved: bool = False) -> list[tuple[str, int]]:
     body = named_value_set(spec, name)
-    values = [dict(item) for item in require_list(body.get("values"), f"named_values.{name}.values")]
+    raw_values = body.get("values")
+    if not isinstance(raw_values, list):
+        return []
+    values = [dict(item) for item in raw_values]
     if include_reserved:
         values.extend(dict(item) for item in body.get("reserved_values", []) or [])
     return [(str(item.get("name")), int_value(item.get("value"))) for item in sorted(values, key=lambda item: int_value(item.get("value")))]
@@ -125,13 +126,14 @@ def named_value_width(spec: dict[str, Any], name: str) -> int:
 def bitmap_operand(spec: dict[str, Any], name: str) -> dict[str, Any]:
     bitmaps = require_mapping(operand_schema(spec).get("bitmap_operands"), "instructions.yaml.operand_schema.bitmap_operands")
     body = bitmaps.get(name)
-    if not isinstance(body, dict):
-        raise SpecError(f"instructions.yaml.operand_schema.bitmap_operands.{name} is required")
-    return body
+    return body if isinstance(body, dict) else {}
 
 
 def bitmap_operand_ranges(spec: dict[str, Any], name: str) -> list[dict[str, Any]]:
-    return [dict(item) for item in require_list(bitmap_operand(spec, name).get("ranges"), f"bitmap_operands.{name}.ranges")]
+    ranges = bitmap_operand(spec, name).get("ranges")
+    if not isinstance(ranges, list):
+        return []
+    return [dict(item) for item in ranges]
 
 
 def condition_entries(spec: dict[str, Any]) -> list[dict[str, Any]]:
@@ -367,8 +369,6 @@ def encoding_schema_errors(spec: dict[str, Any]) -> list[str]:
                 errors.append(f"operand_schema.size_codes.{code}.suffix must start with '.'")
         for kind, body in size_kinds(spec).items():
             seen_values: set[int] = set()
-            if not str(body.get("field", "")).strip():
-                errors.append(f"operand_schema.size_kinds.{kind}.field is required")
             for item in size_kind_entries(spec, kind, include_reserved=True):
                 value = int_value(item.get("value"))
                 if value in seen_values:

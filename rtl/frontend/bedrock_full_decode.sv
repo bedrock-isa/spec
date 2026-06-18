@@ -18,10 +18,10 @@ module bedrock_full_decode
   output instruction_length_t       length_words_o,
   output logic [3:0]                required_words_o,
 
-  output bedrock_form_id_e          form_id_o,
+  output bedrock_opcode_id_e        opcode_id_o,
+  output bedrock_field_format_id_e  field_format_id_o,
   output bedrock_ext_root_e         ext_root_o,
   output logic                      needs_extension_o,
-  output logic                      alias_o,
 
   output logic                      nospec_o,
   output logic                      saturate_o,
@@ -43,7 +43,6 @@ module bedrock_full_decode
 
   output logic [BEDROCK_DECODE_FIELD_SLOTS-1:0] field_valid_o,
   output bedrock_decode_field_kind_e            field_kind_o [BEDROCK_DECODE_FIELD_SLOTS],
-  output bedrock_decode_field_source_e          field_source_o [BEDROCK_DECODE_FIELD_SLOTS],
   output logic [1:0]                            field_token_o [BEDROCK_DECODE_FIELD_SLOTS],
   output logic [3:0]                            field_low_bit_o [BEDROCK_DECODE_FIELD_SLOTS],
   output logic [4:0]                            field_width_o [BEDROCK_DECODE_FIELD_SLOTS],
@@ -76,7 +75,7 @@ module bedrock_full_decode
   word_t extension_word;
   logic prefix_decode_valid;
   logic instruction_decode_valid;
-  logic [3:0] form_required_words;
+  logic [3:0] decode_required_words;
   logic [3:0] field_token_words;
   logic [3:0] dynamic_required_words;
   logic [3:0] total_required_words;
@@ -172,8 +171,9 @@ module bedrock_full_decode
     .extension_word_i(extension_word),
     .valid_o(instruction_decode_valid),
     .needs_extension_o(needs_extension_o),
-    .alias_o(alias_o),
-    .form_id_o(form_id_o),
+    .opcode_id_o(opcode_id_o),
+    .field_format_id_o(field_format_id_o),
+    .required_words_o(decode_required_words),
     .ext_root_o(ext_root_o),
     .repcc_allowed_o(repcc_allowed_o),
     .repg_allowed_o(repg_allowed_o),
@@ -189,10 +189,9 @@ module bedrock_full_decode
     ea_value_o[1] = 6'd0;
 
     for (int index = 0; index < BEDROCK_DECODE_FIELD_SLOTS; index++) begin
-      meta = bedrock_decode_form_field(form_id_o, index[2:0]);
+      meta = bedrock_decode_field_format_field(field_format_id_o, index[2:0]);
       field_valid_o[index] = instruction_decode_valid && meta.valid;
       field_kind_o[index] = meta.kind;
-      field_source_o[index] = meta.source;
       field_token_o[index] = meta.token;
       field_low_bit_o[index] = meta.low_bit;
       field_width_o[index] = meta.width;
@@ -218,8 +217,7 @@ module bedrock_full_decode
     end
   end
 
-  assign form_required_words = bedrock_decode_form_required_words(form_id_o);
-  assign field_token_words = bedrock_decode_form_field_token_words(form_id_o);
+  assign field_token_words = bedrock_decode_field_format_token_words(field_format_id_o);
   assign ea_descriptor_base_token = field_token_words;
   assign ea0_descriptor_token = ea_descriptor_base_token;
   assign ea1_descriptor_token = ea_descriptor_base_token + {1'b0, ea_payload_words_o[0]};
@@ -354,9 +352,9 @@ module bedrock_full_decode
     (ea_present_o[0] ? {1'b0, ea_payload_words_o[0]} : 4'd0)
     + (ea_present_o[1] ? {1'b0, ea_payload_words_o[1]} : 4'd0);
   assign dynamic_required_words =
-    ((field_token_words + ea_payload_words_sum) > form_required_words)
+    ((field_token_words + ea_payload_words_sum) > decode_required_words)
       ? (field_token_words + ea_payload_words_sum)
-      : form_required_words;
+      : decode_required_words;
   assign total_required_words = dynamic_required_words + (prefix_present_o ? 4'd1 : 4'd0);
   assign required_words_o = total_required_words;
   assign undersized_o = length_words_o < total_required_words;

@@ -187,6 +187,11 @@ def profile_candidate_id(candidate: Candidate, fields: tuple[Field, ...]) -> str
 
 def default_field_layout_policy() -> dict[str, Any]:
     return {
+        "anchor_strategy": {
+            "format_order": "largest_variable_payload_first",
+            "placement": "first_fit_with_existing_lanes",
+            "fixed_signatures": [],
+        },
         "field_score": {
             "formula": "candidate_weight_times_field_width",
             "default_multiplier": 1,
