@@ -41,13 +41,6 @@ module bedrock_full_decode
   output logic                      repeat_valid_o,
   output logic                      repeat_invalid_o,
 
-  output logic [BEDROCK_DECODE_FIELD_SLOTS-1:0] field_valid_o,
-  output bedrock_decode_field_kind_e            field_kind_o [BEDROCK_DECODE_FIELD_SLOTS],
-  output logic [1:0]                            field_token_o [BEDROCK_DECODE_FIELD_SLOTS],
-  output logic [3:0]                            field_low_bit_o [BEDROCK_DECODE_FIELD_SLOTS],
-  output logic [4:0]                            field_width_o [BEDROCK_DECODE_FIELD_SLOTS],
-  output logic [15:0]                           field_value_o [BEDROCK_DECODE_FIELD_SLOTS],
-
   output logic [1:0]                 ea_present_o,
   output logic [5:0]                 ea_value_o [2],
   output logic [3:0]                 ea_descriptor_token_o [2],
@@ -73,6 +66,14 @@ module bedrock_full_decode
   primary_payload_t primary_payload;
   word_t prefix_word;
   word_t extension_word;
+  word_t token0_word;
+  word_t token1_word;
+  word_t token2_word;
+  word_t token3_word;
+  word_t token4_word;
+  word_t token5_word;
+  word_t token6_word;
+  word_t token7_word;
   logic prefix_decode_valid;
   logic instruction_decode_valid;
   logic [3:0] decode_required_words;
@@ -82,10 +83,10 @@ module bedrock_full_decode
   logic [3:0] ea_payload_words_sum;
   logic all_ea_valid;
   logic base_valid;
-  logic [3:0] ea_count;
-  logic [3:0] ea_descriptor_base_token;
   logic [3:0] ea0_descriptor_token;
   logic [3:0] ea1_descriptor_token;
+  word_t ea0_descriptor_word;
+  word_t ea1_descriptor_word;
   logic ea_signed32_index_escape [2];
   logic ea_segment_selectable [2];
   logic ea_segment_valid [2];
@@ -94,6 +95,9 @@ module bedrock_full_decode
   logic ea_has_displacement [2];
   logic ea_has_absolute [2];
   logic [2:0] ea_displacement_words [2];
+  logic [2:0] ea0_payload_words;
+  logic [2:0] ea1_payload_words;
+  bedrock_decode_field_extract_t field_extract;
 
   function automatic word_t physical_word_at(input int unsigned index);
     if (index < MAX_INSTRUCTION_WORDS) begin
@@ -103,54 +107,20 @@ module bedrock_full_decode
     end
   endfunction
 
-  function automatic word_t logical_token_word(input logic [3:0] token);
-    int unsigned physical_index;
-    begin
-      if (token == 4'd0) begin
-        physical_index = 0;
-      end else begin
-        physical_index = int'(token) + (prefix_present_o ? 1 : 0);
-      end
-      logical_token_word = physical_word_at(physical_index);
-    end
-  endfunction
-
-  function automatic logic [15:0] field_mask(input logic [4:0] width);
-    unique case (width)
-      5'd0: field_mask = 16'h0000;
-      5'd1: field_mask = 16'h0001;
-      5'd2: field_mask = 16'h0003;
-      5'd3: field_mask = 16'h0007;
-      5'd4: field_mask = 16'h000f;
-      5'd5: field_mask = 16'h001f;
-      5'd6: field_mask = 16'h003f;
-      5'd7: field_mask = 16'h007f;
-      5'd8: field_mask = 16'h00ff;
-      5'd9: field_mask = 16'h01ff;
-      5'd10: field_mask = 16'h03ff;
-      5'd11: field_mask = 16'h07ff;
-      5'd12: field_mask = 16'h0fff;
-      5'd13: field_mask = 16'h1fff;
-      5'd14: field_mask = 16'h3fff;
-      5'd15: field_mask = 16'h7fff;
-      default: field_mask = 16'hffff;
-    endcase
-  endfunction
-
-  function automatic logic [15:0] extract_field(input bedrock_decode_field_meta_t meta);
-    word_t token_word;
-    begin
-      token_word = logical_token_word({2'b00, meta.token});
-      extract_field = (token_word >> meta.low_bit) & field_mask(meta.width);
-    end
-  endfunction
-
   assign word0 = physical_word_at(0);
   assign prefix_present_o = word0_prefix_present(word0);
   assign length_words_o = word0_length_words(word0);
   assign primary_payload = word0_primary_payload(word0);
   assign prefix_word = prefix_present_o ? physical_word_at(1) : word_t'(16'h0000);
-  assign extension_word = logical_token_word(4'd1);
+  assign token0_word = word0;
+  assign token1_word = prefix_present_o ? physical_word_at(2) : physical_word_at(1);
+  assign token2_word = prefix_present_o ? physical_word_at(3) : physical_word_at(2);
+  assign token3_word = prefix_present_o ? physical_word_at(4) : physical_word_at(3);
+  assign token4_word = prefix_present_o ? physical_word_at(5) : physical_word_at(4);
+  assign token5_word = prefix_present_o ? physical_word_at(6) : physical_word_at(5);
+  assign token6_word = prefix_present_o ? physical_word_at(7) : physical_word_at(6);
+  assign token7_word = prefix_present_o ? physical_word_at(8) : physical_word_at(7);
+  assign extension_word = token1_word;
 
   bedrock_prefix_decode prefix_decode (
     .prefix_word_i(prefix_word),
@@ -180,53 +150,46 @@ module bedrock_full_decode
     .repg_fast_candidate_o(repg_fast_candidate_o)
   );
 
-  always_comb begin
-    bedrock_decode_field_meta_t meta;
+  assign field_extract = bedrock_decode_extract_fields(
+    field_format_id_o,
+    token0_word,
+    token1_word,
+    token2_word,
+    token3_word,
+    token4_word,
+    token5_word,
+    token6_word,
+    token7_word
+  );
 
-    ea_count = 4'd0;
-    ea_present_o = 2'b00;
-    ea_value_o[0] = 6'd0;
-    ea_value_o[1] = 6'd0;
+  assign ea1_descriptor_word = bedrock_decode_ea1_descriptor_word(
+    field_format_id_o,
+    ea0_payload_words,
+    token0_word,
+    token1_word,
+    token2_word,
+    token3_word,
+    token4_word,
+    token5_word,
+    token6_word,
+    token7_word
+  );
 
-    for (int index = 0; index < BEDROCK_DECODE_FIELD_SLOTS; index++) begin
-      meta = bedrock_decode_field_format_field(field_format_id_o, index[2:0]);
-      field_valid_o[index] = instruction_decode_valid && meta.valid;
-      field_kind_o[index] = meta.kind;
-      field_token_o[index] = meta.token;
-      field_low_bit_o[index] = meta.low_bit;
-      field_width_o[index] = meta.width;
-      field_value_o[index] = field_valid_o[index] ? extract_field(meta) : 16'h0000;
-
-      if (
-        field_valid_o[index]
-        && (
-          meta.kind == BR_FIELD_EA
-          || meta.kind == BR_FIELD_IMM_EA
-        )
-        && ea_count < 4'd2
-      ) begin
-        if (ea_count == 4'd0) begin
-          ea_present_o[0] = 1'b1;
-          ea_value_o[0] = field_value_o[index][5:0];
-        end else begin
-          ea_present_o[1] = 1'b1;
-          ea_value_o[1] = field_value_o[index][5:0];
-        end
-        ea_count = ea_count + 4'd1;
-      end
-    end
-  end
-
-  assign field_token_words = bedrock_decode_field_format_token_words(field_format_id_o);
-  assign ea_descriptor_base_token = field_token_words;
-  assign ea0_descriptor_token = ea_descriptor_base_token;
-  assign ea1_descriptor_token = ea_descriptor_base_token + {1'b0, ea_payload_words_o[0]};
+  assign ea_present_o = field_extract.ea_present;
+  assign ea_value_o[0] = field_extract.ea_value[5:0];
+  assign ea_value_o[1] = field_extract.ea_value[11:6];
+  assign field_token_words = field_extract.token_words;
+  assign ea0_descriptor_token = field_token_words;
+  assign ea1_descriptor_token = field_token_words + {1'b0, ea0_payload_words};
+  assign ea0_descriptor_word = field_extract.ea0_descriptor_word;
   assign ea_descriptor_token_o[0] = ea0_descriptor_token;
   assign ea_descriptor_token_o[1] = ea1_descriptor_token;
+  assign ea_payload_words_o[0] = ea0_payload_words;
+  assign ea_payload_words_o[1] = ea1_payload_words;
 
   bedrock_ea_decode ea0_decode (
     .ea_i(ea_value_o[0]),
-    .descriptor_i(logical_token_word(ea0_descriptor_token)),
+    .descriptor_i(ea0_descriptor_word),
     .valid_o(ea_valid_o[0]),
     .reserved_o(ea_reserved_o[0]),
     .needs_descriptor_o(ea_needs_descriptor_o[0]),
@@ -248,12 +211,12 @@ module bedrock_full_decode
     .index_reg_o(ea_index_reg_o[0]),
     .scale_log2_o(ea_scale_log2_o[0]),
     .displacement_words_o(ea_displacement_words[0]),
-    .payload_words_o(ea_payload_words_o[0])
+    .payload_words_o(ea0_payload_words)
   );
 
   bedrock_ea_decode ea1_decode (
     .ea_i(ea_value_o[1]),
-    .descriptor_i(logical_token_word(ea1_descriptor_token)),
+    .descriptor_i(ea1_descriptor_word),
     .valid_o(ea_valid_o[1]),
     .reserved_o(ea_reserved_o[1]),
     .needs_descriptor_o(ea_needs_descriptor_o[1]),
@@ -275,7 +238,7 @@ module bedrock_full_decode
     .index_reg_o(ea_index_reg_o[1]),
     .scale_log2_o(ea_scale_log2_o[1]),
     .displacement_words_o(ea_displacement_words[1]),
-    .payload_words_o(ea_payload_words_o[1])
+    .payload_words_o(ea1_payload_words)
   );
 
   bedrock_agu_request_build agu0_request (
@@ -303,7 +266,7 @@ module bedrock_full_decode
     .ea_index_reg_i(ea_index_reg_o[0]),
     .ea_scale_log2_i(ea_scale_log2_o[0]),
     .ea_displacement_words_i(ea_displacement_words[0]),
-    .ea_payload_words_i(ea_payload_words_o[0]),
+    .ea_payload_words_i(ea0_payload_words),
     .update_mode_i(update_mode_o),
     .request_o(agu_request_o[0])
   );
@@ -333,7 +296,7 @@ module bedrock_full_decode
     .ea_index_reg_i(ea_index_reg_o[1]),
     .ea_scale_log2_i(ea_scale_log2_o[1]),
     .ea_displacement_words_i(ea_displacement_words[1]),
-    .ea_payload_words_i(ea_payload_words_o[1]),
+    .ea_payload_words_i(ea1_payload_words),
     .update_mode_i(update_mode_o),
     .request_o(agu_request_o[1])
   );
@@ -349,8 +312,8 @@ module bedrock_full_decode
     (!ea_present_o[0] || (ea_valid_o[0] && !ea_reserved_o[0]))
     && (!ea_present_o[1] || (ea_valid_o[1] && !ea_reserved_o[1]));
   assign ea_payload_words_sum =
-    (ea_present_o[0] ? {1'b0, ea_payload_words_o[0]} : 4'd0)
-    + (ea_present_o[1] ? {1'b0, ea_payload_words_o[1]} : 4'd0);
+    (ea_present_o[0] ? {1'b0, ea0_payload_words} : 4'd0)
+    + (ea_present_o[1] ? {1'b0, ea1_payload_words} : 4'd0);
   assign dynamic_required_words =
     ((field_token_words + ea_payload_words_sum) > decode_required_words)
       ? (field_token_words + ea_payload_words_sum)

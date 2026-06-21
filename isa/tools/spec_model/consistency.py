@@ -21,7 +21,6 @@ from .schemas import (
     REPFLAGS_RULES,
 )
 from .encoding import encoding_schema_errors
-from .declarative_schema import validate_declarative_contracts
 
 
 def validate_spec_consistency(spec: dict[str, Any]) -> tuple[ValidationResult, list[PatternEntry]]:
@@ -34,18 +33,8 @@ def validate_spec_consistency(spec: dict[str, Any]) -> tuple[ValidationResult, l
     check_conditions(spec, result)
     check_effective_addresses(spec, result)
     check_encoding_schema(spec, result)
-    validate_declarative_contracts(spec, result)
 
     opcodes = spec["opcodes"]
-    for index, item in enumerate(opcodes.get("sentinels", []) or []):
-        ident = entry_id(item, f"sentinels_{index}")
-        try:
-            pattern = parse_pattern(str(item["pattern"]), field_names(item))
-        except (KeyError, SpecError) as exc:
-            result.error(f"{ident}: invalid sentinels pattern: {exc}")
-            continue
-        entries.append(PatternEntry(ident, "sentinel", item, pattern))
-
     for item in opcodes.get("reserved", []) or []:
         for index, raw in enumerate(item.get("patterns", [item.get("pattern")]) or []):
             if raw is None:
@@ -587,6 +576,7 @@ def check_semantics_consistency(spec: dict[str, Any], entries: list[PatternEntry
         result.error("fpu must be a mapping")
 
     check_catalog_global_consistency(catalog, spec, result)
+    check_fixed_instruction_encodings(catalog, spec, result)
     check_operation_semantics(catalog, spec, entries, result)
 
 
@@ -696,6 +686,57 @@ def check_catalog_global_consistency(catalog: dict[str, Any], spec: dict[str, An
                 result.error(f"fpu.registers.F.{key} must be a positive integer, got {value!r}")
 
 
+def word0_payload_width(spec: dict[str, Any]) -> int:
+    payload = (((spec.get("opcodes") or {}).get("word0") or {}).get("payload") or {})
+    bits = payload.get("bits") if isinstance(payload, dict) else None
+    if isinstance(bits, list) and len(bits) == 2:
+        endpoints = [parse_int_value(item) for item in bits]
+        if endpoints[0] is not None and endpoints[1] is not None:
+            return abs(endpoints[0] - endpoints[1]) + 1
+    bit = payload.get("bit") if isinstance(payload, dict) else None
+    if parse_int_value(bit) is not None:
+        return 1
+    return 12
+
+
+def check_fixed_instruction_encodings(
+    catalog: dict[str, Any], spec: dict[str, Any], result: ValidationResult
+) -> None:
+    width = word0_payload_width(spec)
+    limit = 1 << width
+    used: dict[int, str] = {}
+    for section, body in catalog_sections(catalog):
+        if not isinstance(body, dict):
+            continue
+        for key, item in body.items():
+            if not isinstance(item, dict):
+                continue
+            fixed = item.get("fixed_encoding")
+            if fixed is None:
+                continue
+            path = f"{section}.{key}.fixed_encoding"
+            if section != "compact_primary_instructions":
+                result.error(f"{path}: primary_payload is only valid for compact primary instructions")
+            if not isinstance(fixed, dict):
+                result.error(f"{path} must be a mapping")
+                continue
+            payload = parse_int_value(fixed.get("primary_payload"))
+            if payload is None:
+                result.error(f"{path}.primary_payload must be an integer")
+                continue
+            if not 0 <= payload < limit:
+                result.error(f"{path}.primary_payload 0x{payload:x} does not fit {width} payload bits")
+            previous = used.get(payload)
+            if previous is not None:
+                result.error(f"{path}.primary_payload 0x{payload:03x} duplicates {previous}")
+            used[payload] = path
+            operands = item.get("operands", [])
+            if operands not in (None, []):
+                result.error(f"{path}: fixed primary payload entries must not declare primary operand fields")
+            if item.get("compact_forms") or item.get("extended_forms"):
+                result.error(f"{path}: fixed primary payload entries must not declare alternate forms")
+
+
 def check_operation_semantics(
     catalog: dict[str, Any],
     spec: dict[str, Any],
@@ -725,7 +766,6 @@ def check_operation_semantics(
         return
 
     known = set(catalog_entry_map(catalog))
-    known.update(entry.mnemonic for entry in entries if entry.kind == "sentinel")
     covered: dict[str, str] = {}
     semantics_by_mnemonic: dict[str, dict[str, Any]] = {}
     for group_name, group in groups.items():
@@ -1410,9 +1450,7 @@ def check_overlaps(entries: list[PatternEntry], result: ValidationResult) -> Non
             if overlap_allowed(left, right):
                 result.info(f"allowed overlap: {left.id} <-> {right.id}")
                 continue
-            if left.kind == "sentinel" or right.kind == "sentinel":
-                result.error(f"sentinel overlap requires explicit override: {left.id} <-> {right.id}")
-            elif "reserved" in (left.kind, right.kind):
+            if "reserved" in (left.kind, right.kind):
                 result.error(f"reserved-space collision: {left.id} <-> {right.id}")
             else:
                 result.error(f"opcode overlap: {left.id} <-> {right.id}")

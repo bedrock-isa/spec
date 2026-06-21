@@ -27,6 +27,8 @@ module bedrock_decode_synth(
   localparam [@EXT_ROOT_MSB@:0] BR_EXT_ROOT_NONE = @EXT_ROOT_BITS@'d0;
 @EXT_ROOT_LOCALPARAMS@
 
+  reg [3:0] field_format_token_words;
+
   always @* begin
     valid_o = 1'b0;
     needs_extension_o = 1'b0;
@@ -34,6 +36,7 @@ module bedrock_decode_synth(
     field_format_id_o = BR_FIELD_FORMAT_NONE;
     required_words_o = 4'd0;
     ext_root_o = BR_EXT_ROOT_NONE;
+    field_format_token_words = 4'd1;
     repcc_allowed_o = 1'b0;
     repg_allowed_o = 1'b0;
     repg_fast_candidate_o = 1'b0;
@@ -62,11 +65,14 @@ module bedrock_decode_synth(
     end
 
     if (valid_o) begin
-      case (opcode_id_o)
-@ATTRIBUTE_CASES@
+      case (field_format_id_o)
+@FIELD_FORMAT_TOKEN_WORD_CASES@
         default: begin
         end
       endcase
+      if (field_format_token_words > required_words_o) begin
+        required_words_o = field_format_token_words;
+      end
     end
   end
 endmodule

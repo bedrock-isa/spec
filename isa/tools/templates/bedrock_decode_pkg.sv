@@ -13,8 +13,6 @@ package bedrock_decode_pkg;
   localparam int BEDROCK_DECODE_FIELD_FORMAT_ID_BITS = @FIELD_FORMAT_BITS@;
   localparam int BEDROCK_DECODE_EXT_ROOT_COUNT = @EXT_ROOT_COUNT@;
   localparam int BEDROCK_DECODE_EXT_ROOT_BITS = @EXT_ROOT_BITS@;
-  localparam int BEDROCK_DECODE_FIELD_SLOTS = @FIELD_SLOTS@;
-  localparam int BEDROCK_DECODE_FIELD_KIND_BITS = @FIELD_KIND_BITS@;
 
   typedef enum logic [BEDROCK_DECODE_OPCODE_ID_BITS-1:0] {
     BR_OPCODE_INVALID = @OPCODE_BITS@'d0,
@@ -31,17 +29,12 @@ package bedrock_decode_pkg;
 @EXT_ROOT_ENUM_ENTRIES@
   } bedrock_ext_root_e;
 
-  typedef enum logic [BEDROCK_DECODE_FIELD_KIND_BITS-1:0] {
-@FIELD_KIND_ENUM_ENTRIES@
-  } bedrock_decode_field_kind_e;
-
   typedef struct packed {
-    logic valid;
-    bedrock_decode_field_kind_e kind;
-    logic [1:0] token;
-    logic [3:0] low_bit;
-    logic [4:0] width;
-  } bedrock_decode_field_meta_t;
+    logic [3:0] token_words;
+    logic [1:0] ea_present;
+    logic [11:0] ea_value;
+    word_t ea0_descriptor_word;
+  } bedrock_decode_field_extract_t;
 
   typedef struct packed {
     logic valid;
@@ -50,6 +43,9 @@ package bedrock_decode_pkg;
     bedrock_field_format_id_e field_format_id;
     logic [3:0] required_words;
     bedrock_ext_root_e ext_root;
+    logic repcc_allowed;
+    logic repg_allowed;
+    logic repg_fast_candidate;
   } bedrock_primary_decode_t;
 
   typedef struct packed {
@@ -57,13 +53,10 @@ package bedrock_decode_pkg;
     bedrock_opcode_id_e opcode_id;
     bedrock_field_format_id_e field_format_id;
     logic [3:0] required_words;
-  } bedrock_extended_decode_t;
-
-  typedef struct packed {
     logic repcc_allowed;
     logic repg_allowed;
     logic repg_fast_candidate;
-  } bedrock_opcode_attributes_t;
+  } bedrock_extended_decode_t;
 
   function automatic bedrock_primary_decode_t bedrock_decode_primary_payload(input primary_payload_t payload);
     bedrock_primary_decode_t r;
@@ -114,26 +107,45 @@ package bedrock_decode_pkg;
     return r;
   endfunction
 
-  function automatic bedrock_decode_field_meta_t bedrock_decode_field_format_field(
+  function automatic bedrock_decode_field_extract_t bedrock_decode_extract_fields(
     input bedrock_field_format_id_e field_format_id,
-    input logic [2:0] field_index
+    input word_t token0_word,
+    input word_t token1_word,
+    input word_t token2_word,
+    input word_t token3_word,
+    input word_t token4_word,
+    input word_t token5_word,
+    input word_t token6_word,
+    input word_t token7_word
   );
-    bedrock_decode_field_meta_t r;
+    bedrock_decode_field_extract_t r;
     r = '0;
-    r.kind = BR_FIELD_NONE;
+    r.token_words = 4'd1;
+    r.ea0_descriptor_word = word_t'(16'h0000);
     unique case (field_format_id)
-@FIELD_FORMAT_FIELD_CASES@
+@FIELD_FORMAT_EXTRACT_CASES@
       default: begin
       end
     endcase
     return r;
   endfunction
 
-  function automatic bedrock_opcode_attributes_t bedrock_decode_opcode_attributes(input bedrock_opcode_id_e opcode_id);
-    bedrock_opcode_attributes_t r;
-    r = '0;
-    unique case (opcode_id)
-@OPCODE_ATTRIBUTE_CASES@
+  function automatic word_t bedrock_decode_ea1_descriptor_word(
+    input bedrock_field_format_id_e field_format_id,
+    input logic [2:0] ea0_payload_words,
+    input word_t token0_word,
+    input word_t token1_word,
+    input word_t token2_word,
+    input word_t token3_word,
+    input word_t token4_word,
+    input word_t token5_word,
+    input word_t token6_word,
+    input word_t token7_word
+  );
+    word_t r;
+    r = word_t'(16'h0000);
+    unique case (field_format_id)
+@FIELD_FORMAT_EA1_DESCRIPTOR_WORD_CASES@
       default: begin
       end
     endcase

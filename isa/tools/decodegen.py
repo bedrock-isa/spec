@@ -53,7 +53,7 @@ def main(argv: list[str] | None = None) -> int:
         "decoder_entries": [
             entry_dict(entry)
             for entry in entries
-            if entry.kind in {"sentinel", "instruction", "extension_space"}
+            if entry.kind in {"instruction", "extension_space"}
         ]
     }
     text = json_dumps(payload)

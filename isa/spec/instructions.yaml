@@ -142,7 +142,7 @@ operand_schema:
 
 allocation:
   mnemonic_policy:
-    core_control_compact_mnemonics: [RESET, SYSRET, IRET, NOP, SYSCALL, BKPT, WAIT, YIELD, RFENCE, WFENCE, AFENCE]
+    core_control_compact_mnemonics: [HALT, ILLEGAL, RESET, SYSRET, IRET, NOP, SYSCALL, BKPT, WAIT, YIELD, RFENCE, WFENCE, AFENCE]
     cache_management_mnemonics: [PREFETCH, INVDCACHE, INVICACHE, FLSHDCACHE, WRBKDCACHE, SYNCCACHE]
     tlb_management_mnemonics: [SWPT, SWPTA, VTOP, PTATTR, PTQUERY, INVTLB, INVPAGE, INVASID]
     fence_mnemonics: [RFENCE, WFENCE, AFENCE]
@@ -152,7 +152,6 @@ allocation:
     description: Estimated relative dynamic frequency and code-density value used by the opcode allocator.
       Weights are relative tuning parameters, not cycle-accurate measurements.
     default_weight_by_category:
-      sentinel: 10000
       data_movement: 2200
       integer: 900
       control_flow: 1800

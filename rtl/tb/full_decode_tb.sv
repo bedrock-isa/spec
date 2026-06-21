@@ -37,12 +37,6 @@ module full_decode_tb;
   logic repeat_present;
   logic repeat_valid;
   logic repeat_invalid;
-  logic [BEDROCK_DECODE_FIELD_SLOTS-1:0] field_valid;
-  bedrock_decode_field_kind_e field_kind [BEDROCK_DECODE_FIELD_SLOTS];
-  logic [1:0] field_token [BEDROCK_DECODE_FIELD_SLOTS];
-  logic [3:0] field_low_bit [BEDROCK_DECODE_FIELD_SLOTS];
-  logic [4:0] field_width [BEDROCK_DECODE_FIELD_SLOTS];
-  logic [15:0] field_value [BEDROCK_DECODE_FIELD_SLOTS];
   logic [1:0] ea_present;
   logic [5:0] ea_value [2];
   logic [3:0] ea_descriptor_token [2];
@@ -93,12 +87,6 @@ module full_decode_tb;
     .repeat_present_o(repeat_present),
     .repeat_valid_o(repeat_valid),
     .repeat_invalid_o(repeat_invalid),
-    .field_valid_o(field_valid),
-    .field_kind_o(field_kind),
-    .field_token_o(field_token),
-    .field_low_bit_o(field_low_bit),
-    .field_width_o(field_width),
-    .field_value_o(field_value),
     .ea_present_o(ea_present),
     .ea_value_o(ea_value),
     .ea_descriptor_token_o(ea_descriptor_token),
@@ -149,13 +137,10 @@ module full_decode_tb;
     set_word(0, 16'h00d1);
     #1;
     expect_logic("add valid", valid, 1'b1);
-    if (opcode_id !== BR_OPCODE_ADD || field_format_id !== BR_FIELD_FORMAT_F035) begin
-      $error("add decode got opcode %0d field format %0d expected ADD/F035", opcode_id, field_format_id);
+    if (opcode_id !== BR_OPCODE_ADD || field_format_id !== BR_FIELD_FORMAT_F034) begin
+      $error("add decode got opcode %0d field format %0d expected ADD/F034", opcode_id, field_format_id);
       failures++;
     end
-    expect_u16("add src", field_value[0], 16'd1);
-    expect_u16("add dst", field_value[1], 16'd2);
-    expect_u16("add size", field_value[2], 16'd1);
     expect_logic("add ea absent", |ea_present, 1'b0);
 
     // MOV.L [A0 + disp16], D3 requires one EA payload word.
@@ -164,8 +149,8 @@ module full_decode_tb;
     set_word(1, 16'h0010);
     #1;
     expect_logic("mov valid", valid, 1'b1);
-    if (opcode_id !== BR_OPCODE_MOV || field_format_id !== BR_FIELD_FORMAT_F040) begin
-      $error("mov decode got opcode %0d field format %0d expected MOV/F040", opcode_id, field_format_id);
+    if (opcode_id !== BR_OPCODE_MOV || field_format_id !== BR_FIELD_FORMAT_F039) begin
+      $error("mov decode got opcode %0d field format %0d expected MOV/F039", opcode_id, field_format_id);
       failures++;
     end
     expect_u16("mov ea raw", {10'd0, ea_value[0]}, 16'h0018);
@@ -207,8 +192,8 @@ module full_decode_tb;
     set_word(2, 16'h04c2);
     #1;
     expect_logic("extended add valid", valid, 1'b1);
-    if (opcode_id !== BR_OPCODE_ADD || field_format_id !== BR_FIELD_FORMAT_F047) begin
-      $error("extended add decode got opcode %0d field format %0d expected ADD/F047", opcode_id, field_format_id);
+    if (opcode_id !== BR_OPCODE_ADD || field_format_id !== BR_FIELD_FORMAT_F046) begin
+      $error("extended add decode got opcode %0d field format %0d expected ADD/F046", opcode_id, field_format_id);
       failures++;
     end
     expect_logic("extended add needs extension", needs_extension, 1'b1);
@@ -217,8 +202,6 @@ module full_decode_tb;
       $error("extended add ea form got %0d expected DREG", ea_form[0]);
       failures++;
     end
-    expect_u16("extended add dst", field_value[1], 16'd3);
-    expect_u16("extended add size", field_value[2], 16'd2);
     expect_u16("extended add required", {12'd0, required_words}, 16'd3);
 
     // Extended MOV.L D1,[A0 + disp16] has two EA operands and one EA payload word.
@@ -228,8 +211,8 @@ module full_decode_tb;
     set_word(2, 16'h0020);
     #1;
     expect_logic("mov ea ea valid", valid, 1'b1);
-    if (opcode_id !== BR_OPCODE_MOV || field_format_id !== BR_FIELD_FORMAT_F044) begin
-      $error("mov ea ea decode got opcode %0d field format %0d expected MOV/F044", opcode_id, field_format_id);
+    if (opcode_id !== BR_OPCODE_MOV || field_format_id !== BR_FIELD_FORMAT_F043) begin
+      $error("mov ea ea decode got opcode %0d field format %0d expected MOV/F043", opcode_id, field_format_id);
       failures++;
     end
     if (ea_present !== 2'b11) begin

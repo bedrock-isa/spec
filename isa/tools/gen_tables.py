@@ -182,7 +182,6 @@ def default_allocation_path(spec_dir: str | Path) -> Path:
 
 
 def render(entries: list[PatternEntry], allocation: dict[str, Any] | None = None) -> str:
-    sentinels = [entry for entry in entries if entry.kind == "sentinel"]
     extensions = [entry for entry in entries if entry.kind == "extension_space"]
     reserved = [entry for entry in entries if entry.kind == "reserved"]
 
@@ -191,16 +190,7 @@ def render(entries: list[PatternEntry], allocation: dict[str, Any] | None = None
         "",
         "Generated from `isa/spec/*.yaml`. Do not edit by hand.",
         "",
-        "## Sentinels",
-        "",
-        "| Mnemonic | ID | Pattern | Behavior |",
-        "| --- | --- | --- | --- |",
     ]
-    for entry in sentinels:
-        lines.append(
-            f"| `{entry.mnemonic}` | `{entry.id}` | `{entry.pattern.raw}` | "
-            f"{entry.source.get('behavior', '')} |"
-        )
 
     if allocation is not None:
         lines.extend(

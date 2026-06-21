@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 import argparse
@@ -39,20 +40,27 @@ from latex_builder.diagrams import (
     bit_diagram,
     bit_field_figure,
     bit_index_labels,
+    register_model_figure,
+    stack_frame_figure,
+    supervisor_stack_frame,
 )
 
 
 from latex_builder.common import (
     ARCH_NAME,
+    LatexComponent,
+    LatexDocumentEnd,
+    LatexDocumentPreamble,
+    LatexHiddenTopSection,
+    LatexSequence,
+    LatexTitlePage,
+    LatexTopSection,
     MANUAL_TITLE,
     compact_text,
-    document_end,
-    document_preamble,
     instruction_docs,
     latex_longtable,
     latex_tabular,
     load_allocation,
-    hidden_top_section,
     memory_rule_text,
     mdash_join,
     normalize_text,
@@ -64,15 +72,9 @@ from latex_builder.common import (
     tex_multiline,
     tex_multiline_latex,
     tex_table_value,
-    title_page,
     top_section,
 )
 from latex_builder.effective_address import ea_table
-from latex_builder.arch_diagrams import (
-    register_model_figure,
-    stack_frame_figure,
-    supervisor_stack_frame,
-)
 from latex_builder.instruction_reference import (
     c_library_instruction_examples_section,
     condition_code_computation_section,
@@ -91,6 +93,262 @@ SEPARATE_INSTRUCTION_GROUPS = [
     ("Virtualization Acceleration Instructions", {"virtualization_acceleration"}),
     ("Floating-Point Transcendental Instructions", {"fpu_transcendental"}),
 ]
+
+
+@dataclass(frozen=True)
+class ManualRenderContext:
+    plan: dict[str, Any]
+    spec: dict[str, Any]
+    lengths: dict[tuple[str, str], tuple[int, int]]
+    items: list[dict[str, Any]]
+    items_by_mnemonic: dict[str, list[dict[str, Any]]]
+    records: dict[str, list[dict[str, Any]]]
+    operations: dict[str, list[dict[str, Any]]]
+    aliases: dict[str, list[str]]
+    docs: dict[str, dict[str, Any]]
+    mnemonics: list[str]
+    reference_groups: list[tuple[str, list[str]]]
+
+    @classmethod
+    def build(
+        cls,
+        plan: dict[str, Any],
+        spec: dict[str, Any],
+        lengths: dict[tuple[str, str], tuple[int, int]],
+    ) -> ManualRenderContext:
+        set_instruction_table_spec(spec)
+        items = allocation_items(plan)
+        items_by_mnemonic: dict[str, list[dict[str, Any]]] = {}
+        for item in items:
+            items_by_mnemonic.setdefault(str(item.get("mnemonic", item.get("id", ""))), []).append(item)
+
+        records = semantic_records(spec)
+        operations = operation_records(spec)
+        aliases = aliases_by_mnemonic(spec, items)
+        docs = instruction_docs(spec)
+        mnemonics = sorted(set(records) | set(operations) | set(items_by_mnemonic) | set(aliases))
+        reference_groups = instruction_reference_groups(spec, mnemonics, records, operations, items_by_mnemonic)
+        return cls(
+            plan=plan,
+            spec=spec,
+            lengths=lengths,
+            items=items,
+            items_by_mnemonic=items_by_mnemonic,
+            records=records,
+            operations=operations,
+            aliases=aliases,
+            docs=docs,
+            mnemonics=mnemonics,
+            reference_groups=reference_groups,
+        )
+
+
+@dataclass(frozen=True)
+class ManualPreviewSection:
+    slug: str
+    title: str
+    body: str
+
+    def as_tuple(self) -> tuple[str, str, str]:
+        return (self.slug, self.title, self.body)
+
+
+@dataclass(frozen=True)
+class PreviewHeader(LatexComponent):
+    title: str
+
+    def render(self) -> str:
+        return "\n".join(
+            [
+                r"\thispagestyle{empty}",
+                r"\begin{center}",
+                rf"{{\Large\bfseries {tex_escape(MANUAL_TITLE)}}}\\[4pt]",
+                rf"{{\large {tex_escape(self.title)} Preview}}",
+                r"\end{center}",
+                r"\vspace{0.25in}",
+            ]
+        )
+
+
+@dataclass(frozen=True)
+class ManualDocument(LatexComponent):
+    context: ManualRenderContext
+
+    def render(self) -> str:
+        context = self.context
+        parts: list[Any] = [
+            LatexDocumentPreamble(),
+            LatexTitlePage(context.plan, len(context.mnemonics), len(context.items)),
+            overview_sections(context.spec, context.plan, len(context.mnemonics), len(context.items)),
+            LatexTopSection("Instruction Set Summary"),
+            instruction_set_summary_by_class_section(
+                context.spec,
+                context.mnemonics,
+                context.records,
+                context.operations,
+                context.items_by_mnemonic,
+            ),
+            LatexTopSection("Condition Code Computation"),
+            condition_code_computation_section(),
+        ]
+        for title, group_mnemonics in context.reference_groups:
+            parts.extend(
+                instruction_reference_sections(
+                    context.spec,
+                    title,
+                    group_mnemonics,
+                    context.records,
+                    context.operations,
+                    context.items_by_mnemonic,
+                    context.aliases,
+                    context.lengths,
+                    context.docs,
+                )
+            )
+        parts.extend(
+            [
+                LatexTopSection("C Library Instruction Examples"),
+                c_library_instruction_examples_section(),
+                LatexTopSection("Runtime Instruction Examples"),
+                runtime_instruction_examples_section(),
+                LatexDocumentEnd(),
+            ]
+        )
+        return LatexSequence(parts).render()
+
+
+@dataclass(frozen=True)
+class ManualPreviewIndex:
+    context: ManualRenderContext
+
+    def sections(self) -> list[ManualPreviewSection]:
+        context = self.context
+        entries: list[ManualPreviewSection] = []
+
+        def add(title: str, body: str) -> None:
+            entries.append(ManualPreviewSection(slugify(title), title, body))
+
+        add("Overview", architecture_overview_section(context.spec, context.plan, len(context.mnemonics), len(context.items)))
+        add("Terminology", LatexSequence([LatexTopSection("Terminology"), terminology_section(context.spec)]).render())
+        add("Reserved and Compatibility Rules", compatibility_rules_section(context.spec))
+        add("Programming Model", LatexSequence([LatexTopSection("Programming Model"), register_tables(context.spec)]).render())
+        add(
+            "CPUID Feature Discovery",
+            LatexSequence([LatexTopSection("CPUID Feature Discovery"), cpuid_feature_discovery_section(context.spec)]).render(),
+        )
+        save_area_section = save_area_reference_section(context.spec)
+        if save_area_section:
+            add("SAVE/RESTORE Processor-State Save Area", save_area_section)
+        add("Data Formats", LatexSequence([LatexTopSection("Data Formats"), data_format_section()]).render())
+        add("Condition Codes", LatexSequence([LatexTopSection("Condition Codes"), condition_table(context.spec)]).render())
+        add("Prefixes", LatexSequence([LatexTopSection("Prefixes"), prefix_table(context.spec)]).render())
+        add("Effective Addressing Modes", LatexSequence([LatexTopSection("Effective Addressing Modes"), ea_table(context.spec)]).render())
+        add(
+            "Memory Address Translation",
+            LatexSequence([LatexTopSection("Memory Address Translation"), memory_address_translation_section(context.spec)]).render(),
+        )
+        add("Memory Model", LatexSequence([LatexTopSection("Memory Model"), memory_model_section(context.spec)]).render())
+        add(
+            "Supervisor / Privileged Programming Model",
+            LatexSequence(
+                [
+                    LatexTopSection("Supervisor / Privileged Programming Model"),
+                    privileged_programming_model_section(context.spec),
+                ]
+            ).render(),
+        )
+        add(
+            "Exception Processing Reference",
+            LatexSequence([LatexTopSection("Exception Processing Reference"), interrupt_model_section(context.spec)]).render(),
+        )
+        add("Instruction Word Formats", LatexSequence([LatexTopSection("Instruction Word Formats"), encoding_overview_section(context.plan)]).render())
+        add("Instruction Execution Model", LatexSequence([LatexTopSection("Instruction Execution Model"), execution_model_section(context.spec)]).render())
+        add("Streaming Execution Model", LatexSequence([LatexTopSection("Streaming Execution Model"), streaming_execution_model_section()]).render())
+        add(
+            "Instruction Set Summary",
+            LatexSequence(
+                [
+                    LatexTopSection("Instruction Set Summary"),
+                    instruction_set_summary_by_class_section(
+                        context.spec,
+                        context.mnemonics,
+                        context.records,
+                        context.operations,
+                        context.items_by_mnemonic,
+                    ),
+                ]
+            ).render(),
+        )
+        add(
+            "Condition Code Computation",
+            LatexSequence([LatexTopSection("Condition Code Computation"), condition_code_computation_section()]).render(),
+        )
+        for title, group_mnemonics in context.reference_groups:
+            add(
+                f"{title} Summary",
+                LatexSequence(
+                    [
+                        LatexTopSection(f"{title} Summary"),
+                        instruction_summary(
+                            group_mnemonics,
+                            context.records,
+                            context.operations,
+                            context.items_by_mnemonic,
+                            context.docs,
+                            f"{title} Summary",
+                        ),
+                    ]
+                ).render(),
+            )
+            description_intro = [instruction_description_intro_section()] if title.startswith("General") else []
+            instruction_pages: list[str] = []
+            if description_intro:
+                instruction_pages.append(r"\clearpage")
+            for index, mnemonic in enumerate(group_mnemonics):
+                if index:
+                    instruction_pages.append(r"\clearpage")
+                instruction_pages.append(
+                    render_instruction(
+                        mnemonic,
+                        context.records.get(mnemonic, []),
+                        context.operations.get(mnemonic, []),
+                        context.items_by_mnemonic.get(mnemonic, []),
+                        context.aliases.get(mnemonic, []),
+                        context.lengths,
+                        context.docs,
+                    )
+                )
+            add(
+                f"{title} Descriptions",
+                LatexSequence(
+                    [LatexHiddenTopSection(f"{title} Descriptions")]
+                    + description_intro
+                    + instruction_pages
+                ).render(),
+            )
+        add(
+            "C Library Instruction Examples",
+            LatexSequence([LatexTopSection("C Library Instruction Examples"), c_library_instruction_examples_section()]).render(),
+        )
+        add(
+            "Runtime Instruction Examples",
+            LatexSequence([LatexTopSection("Runtime Instruction Examples"), runtime_instruction_examples_section()]).render(),
+        )
+        return entries
+
+
+@dataclass(frozen=True)
+class ManualPreviewDocument(LatexComponent):
+    context: ManualRenderContext
+    requested: str
+
+    def render(self) -> str:
+        sections = ManualPreviewIndex(self.context).sections()
+        selected = select_preview_section([section.as_tuple() for section in sections], self.requested)
+        index = [section.as_tuple() for section in sections].index(selected)
+        _slug, title, body = selected
+        body = f"\\setcounter{{section}}{{{index}}}\n" + body
+        return LatexSequence([LatexDocumentPreamble(), PreviewHeader(title), body, LatexDocumentEnd()]).render()
 
 
 
@@ -2355,48 +2613,7 @@ def instruction_reference_groups(
 
 
 def render_manual(plan: dict[str, Any], spec: dict[str, Any], lengths: dict[tuple[str, str], tuple[int, int]]) -> str:
-    set_instruction_table_spec(spec)
-    items = allocation_items(plan)
-    items_by_mnemonic: dict[str, list[dict[str, Any]]] = {}
-    for item in items:
-        items_by_mnemonic.setdefault(str(item.get("mnemonic", item.get("id", ""))), []).append(item)
-
-    records = semantic_records(spec)
-    operations = operation_records(spec)
-    aliases = aliases_by_mnemonic(spec, items)
-    docs = instruction_docs(spec)
-    mnemonics = sorted(set(records) | set(operations) | set(items_by_mnemonic) | set(aliases))
-    reference_groups = instruction_reference_groups(spec, mnemonics, records, operations, items_by_mnemonic)
-
-    parts = [
-        document_preamble(),
-        title_page(plan, len(mnemonics), len(items)),
-        overview_sections(spec, plan, len(mnemonics), len(items)),
-        top_section("Instruction Set Summary"),
-        instruction_set_summary_by_class_section(spec, mnemonics, records, operations, items_by_mnemonic),
-        top_section("Condition Code Computation"),
-        condition_code_computation_section(),
-    ]
-    for title, group_mnemonics in reference_groups:
-        parts.extend(
-            instruction_reference_sections(
-                spec,
-                title,
-                group_mnemonics,
-                records,
-                operations,
-                items_by_mnemonic,
-                aliases,
-                lengths,
-                docs,
-            )
-        )
-    parts.append(top_section("C Library Instruction Examples"))
-    parts.append(c_library_instruction_examples_section())
-    parts.append(top_section("Runtime Instruction Examples"))
-    parts.append(runtime_instruction_examples_section())
-    parts.append(document_end())
-    return "\n".join(parts)
+    return ManualDocument(ManualRenderContext.build(plan, spec, lengths)).render()
 
 
 def slugify(value: str) -> str:
@@ -2405,20 +2622,11 @@ def slugify(value: str) -> str:
 
 
 def preview_header(title: str) -> str:
-    return "\n".join(
-        [
-            r"\thispagestyle{empty}",
-            r"\begin{center}",
-            rf"{{\Large\bfseries {tex_escape(MANUAL_TITLE)}}}\\[4pt]",
-            rf"{{\large {tex_escape(title)} Preview}}",
-            r"\end{center}",
-            r"\vspace{0.25in}",
-        ]
-    )
+    return PreviewHeader(title).render()
 
 
 def preview_document(title: str, body: str) -> str:
-    return "\n".join([document_preamble(), preview_header(title), body, document_end()])
+    return LatexSequence([LatexDocumentPreamble(), PreviewHeader(title), body, LatexDocumentEnd()]).render()
 
 
 def manual_preview_sections(
@@ -2426,102 +2634,8 @@ def manual_preview_sections(
     spec: dict[str, Any],
     lengths: dict[tuple[str, str], tuple[int, int]],
 ) -> list[tuple[str, str, str]]:
-    set_instruction_table_spec(spec)
-    items = allocation_items(plan)
-    items_by_mnemonic: dict[str, list[dict[str, Any]]] = {}
-    for item in items:
-        items_by_mnemonic.setdefault(str(item.get("mnemonic", item.get("id", ""))), []).append(item)
-
-    records = semantic_records(spec)
-    operations = operation_records(spec)
-    aliases = aliases_by_mnemonic(spec, items)
-    docs = instruction_docs(spec)
-    mnemonics = sorted(set(records) | set(operations) | set(items_by_mnemonic) | set(aliases))
-    reference_groups = instruction_reference_groups(spec, mnemonics, records, operations, items_by_mnemonic)
-
-    entries: list[tuple[str, str, str]] = []
-
-    def add(title: str, body: str) -> None:
-        entries.append((slugify(title), title, body))
-
-    add("Overview", architecture_overview_section(spec, plan, len(mnemonics), len(items)))
-    add("Terminology", "\n".join([top_section("Terminology"), terminology_section(spec)]))
-    add("Reserved and Compatibility Rules", compatibility_rules_section(spec))
-    add("Programming Model", "\n".join([top_section("Programming Model"), register_tables(spec)]))
-    add("CPUID Feature Discovery", "\n".join([top_section("CPUID Feature Discovery"), cpuid_feature_discovery_section(spec)]))
-    save_area_section = save_area_reference_section(spec)
-    if save_area_section:
-        add("SAVE/RESTORE Processor-State Save Area", save_area_section)
-    add("Data Formats", "\n".join([top_section("Data Formats"), data_format_section()]))
-    add("Condition Codes", "\n".join([top_section("Condition Codes"), condition_table(spec)]))
-    add("Prefixes", "\n".join([top_section("Prefixes"), prefix_table(spec)]))
-    add("Effective Addressing Modes", "\n".join([top_section("Effective Addressing Modes"), ea_table(spec)]))
-    add("Memory Address Translation", "\n".join([top_section("Memory Address Translation"), memory_address_translation_section(spec)]))
-    add("Memory Model", "\n".join([top_section("Memory Model"), memory_model_section(spec)]))
-    add(
-        "Supervisor / Privileged Programming Model",
-        "\n".join([top_section("Supervisor / Privileged Programming Model"), privileged_programming_model_section(spec)]),
-    )
-    add("Exception Processing Reference", "\n".join([top_section("Exception Processing Reference"), interrupt_model_section(spec)]))
-    add("Instruction Word Formats", "\n".join([top_section("Instruction Word Formats"), encoding_overview_section(plan)]))
-    add("Instruction Execution Model", "\n".join([top_section("Instruction Execution Model"), execution_model_section(spec)]))
-    add("Streaming Execution Model", "\n".join([top_section("Streaming Execution Model"), streaming_execution_model_section()]))
-    add(
-        "Instruction Set Summary",
-        "\n".join(
-            [
-                top_section("Instruction Set Summary"),
-                instruction_set_summary_by_class_section(spec, mnemonics, records, operations, items_by_mnemonic),
-            ]
-        ),
-    )
-    add("Condition Code Computation", "\n".join([top_section("Condition Code Computation"), condition_code_computation_section()]))
-    for title, group_mnemonics in reference_groups:
-        add(
-            f"{title} Summary",
-            "\n".join(
-                [
-                    top_section(f"{title} Summary"),
-                    instruction_summary(
-                        group_mnemonics,
-                        records,
-                        operations,
-                        items_by_mnemonic,
-                        docs,
-                        f"{title} Summary",
-                    ),
-                ]
-            ),
-        )
-        description_intro = [instruction_description_intro_section()] if title.startswith("General") else []
-        instruction_pages: list[str] = []
-        if description_intro:
-            instruction_pages.append(r"\clearpage")
-        for index, mnemonic in enumerate(group_mnemonics):
-            if index:
-                instruction_pages.append(r"\clearpage")
-            instruction_pages.append(
-                render_instruction(
-                    mnemonic,
-                    records.get(mnemonic, []),
-                    operations.get(mnemonic, []),
-                    items_by_mnemonic.get(mnemonic, []),
-                    aliases.get(mnemonic, []),
-                    lengths,
-                    docs,
-                )
-            )
-        add(
-            f"{title} Descriptions",
-            "\n".join(
-                [hidden_top_section(f"{title} Descriptions")]
-                + description_intro
-                + instruction_pages
-            ),
-        )
-    add("C Library Instruction Examples", "\n".join([top_section("C Library Instruction Examples"), c_library_instruction_examples_section()]))
-    add("Runtime Instruction Examples", "\n".join([top_section("Runtime Instruction Examples"), runtime_instruction_examples_section()]))
-    return entries
+    context = ManualRenderContext.build(plan, spec, lengths)
+    return [section.as_tuple() for section in ManualPreviewIndex(context).sections()]
 
 
 def select_preview_section(sections: list[tuple[str, str, str]], requested: str) -> tuple[str, str, str]:
@@ -2545,12 +2659,7 @@ def render_manual_preview(
     lengths: dict[tuple[str, str], tuple[int, int]],
     requested: str,
 ) -> str:
-    sections = manual_preview_sections(plan, spec, lengths)
-    selected = select_preview_section(sections, requested)
-    index = sections.index(selected)
-    _, title, body = selected
-    body = f"\\setcounter{{section}}{{{index}}}\n" + body
-    return preview_document(title, body)
+    return ManualPreviewDocument(ManualRenderContext.build(plan, spec, lengths), requested).render()
 
 
 

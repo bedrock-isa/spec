@@ -25,6 +25,28 @@ class LocalInstructionSchema(KeySchema):
         "forms",
     }
 
+    @classmethod
+    def validate(cls, value: Any, path: str, errors: list[str]) -> None:
+        check_allowed_keys(value, path, cls, errors)
+        if not isinstance(value, dict):
+            return
+        if "doc" in value:
+            LocalDocSchema.validate(value.get("doc"), f"{path}.doc", errors)
+        if "behavior" in value:
+            LocalBehaviorSchema.validate(value.get("behavior"), f"{path}.behavior", errors)
+        if "attributes" in value:
+            LocalAttributesSchema.validate(value.get("attributes"), f"{path}.attributes", errors)
+        if "allocation" in value:
+            LocalAllocationSchema.validate(value.get("allocation"), f"{path}.allocation", errors)
+        if "forms" in value:
+            require_nested_fields(
+                value,
+                path,
+                ["doc.instruction_family", "doc.instruction_class", "allocation.catalog_section"],
+                errors,
+            )
+            CatalogEntrySchema.validate(value.get("forms"), f"{path}.forms", errors)
+
 
 class LocalDocSchema(KeySchema):
     name = "local instruction documentation"
@@ -148,6 +170,38 @@ def check_operand_alternatives(value: Any, path: str, errors: list[str]) -> None
     errors.append(f"{path} must be either an operand list or a list of operand-list alternatives")
 
 
+def present(value: Any) -> bool:
+    return value not in (None, "", [], {})
+
+
+def nested_value(value: Any, dotted: str) -> Any:
+    current = value
+    for part in dotted.split("."):
+        if not isinstance(current, dict):
+            return None
+        current = current.get(part)
+    return current
+
+
+def require_fields(value: dict[str, Any], path: str, fields: list[str], errors: list[str]) -> None:
+    for field in fields:
+        if not present(value.get(field)):
+            errors.append(f"{path}.{field} is required")
+
+
+def require_nested_fields(value: dict[str, Any], path: str, fields: list[str], errors: list[str]) -> None:
+    missing = [field for field in fields if not present(nested_value(value, field))]
+    if missing:
+        errors.append(f"{path}: missing required fields: {', '.join(missing)}")
+
+
+def require_mapping_value(value: Any, path: str, errors: list[str]) -> bool:
+    if not isinstance(value, dict) or not value:
+        errors.append(f"{path} must be a non-empty mapping")
+        return False
+    return True
+
+
 class RegistersRootSchema(KeySchema):
     name = "registers root"
     keys = {
@@ -185,7 +239,8 @@ class RegistersRootSchema(KeySchema):
                 check_named_field_map(reg.get("layout"), f"{path}.special_registers[{index}].layout", errors)
         DataRegisterBankingSchema.validate(value.get("data_register_banking"), f"{path}.data_register_banking", errors)
         FloatingPointRegisterModelSchema.validate(value.get("floating_point_register_model"), f"{path}.floating_point_register_model", errors)
-        TranslationControlSchema.validate(value.get("translation_control"), f"{path}.translation_control", errors)
+        if require_mapping_value(value.get("translation_control"), f"{path}.translation_control", errors):
+            TranslationControlSchema.validate(value.get("translation_control"), f"{path}.translation_control", errors)
 
 
 class SegmentsRootSchema(KeySchema):
@@ -301,9 +356,11 @@ class EffectiveAddressRootSchema(KeySchema):
             if isinstance(form, dict) and isinstance(form.get("operands"), list):
                 check_list_items(form["operands"], f"{path}.ea_forms.compact[{index}].operands", CompactEaOperandSchema, errors)
         descriptor = value.get("extended_ea_descriptor")
-        check_optional_mapping(descriptor, f"{path}.extended_ea_descriptor", ExtendedEaDescriptorSchema, errors)
+        if require_mapping_value(descriptor, f"{path}.extended_ea_descriptor", errors):
+            check_allowed_keys(descriptor, f"{path}.extended_ea_descriptor", ExtendedEaDescriptorSchema, errors)
         if isinstance(descriptor, dict):
             check_mapping_item_keys(descriptor.get("fields"), f"{path}.extended_ea_descriptor.fields", EaDescriptorFieldSchema, errors)
+            require_mapping_value(descriptor.get("segment_values"), f"{path}.extended_ea_descriptor.segment_values", errors)
             check_optional_mapping(descriptor.get("reserved_modes"), f"{path}.extended_ea_descriptor.reserved_modes", EaReservedModesSchema, errors)
             check_optional_mapping(descriptor.get("reserved_segment_field"), f"{path}.extended_ea_descriptor.reserved_segment_field", EaReservedSegmentFieldSchema, errors)
             check_mapping_item_keys(descriptor.get("compact_escapes"), f"{path}.extended_ea_descriptor.compact_escapes", EaCompactEscapeSchema, errors)
@@ -329,6 +386,32 @@ class EffectiveAddressRootSchema(KeySchema):
         constraints = value.get("instruction_ea_constraints") or {}
         if isinstance(constraints, dict):
             check_mapping_values(constraints, f"{path}.instruction_ea_constraints", InstructionEaConstraintSchema, errors)
+        cls.validate_manual_text_coverage(value, path, errors)
+
+    @classmethod
+    def validate_manual_text_coverage(cls, value: dict[str, Any], path: str, errors: list[str]) -> None:
+        manual_text = value.get("manual_text")
+        if not isinstance(manual_text, dict):
+            errors.append(f"{path}.manual_text must be a mapping")
+            return
+        expected = [
+            str(form.get("name"))
+            for form in ((value.get("ea_forms") or {}).get("compact", []) if isinstance(value.get("ea_forms"), dict) else [])
+            if isinstance(form, dict) and form.get("name")
+        ]
+        expected.extend(
+            str(form.get("name"))
+            for form in value.get("extended_ea_forms", []) or []
+            if isinstance(form, dict) and form.get("name")
+        )
+        for key in ("form_descriptions", "payload_descriptions"):
+            mapping = manual_text.get(key)
+            if not isinstance(mapping, dict):
+                errors.append(f"{path}.manual_text.{key} must be a mapping")
+                continue
+            missing = sorted(name for name in expected if not present(mapping.get(name)))
+            if missing:
+                errors.append(f"{path}.manual_text.{key} is missing entries for: {', '.join(missing)}")
 
 
 class InstructionsRootSchema(KeySchema):
@@ -371,6 +454,38 @@ class InstructionsRootSchema(KeySchema):
         operation = value.get("operation_semantics") or {}
         if isinstance(operation, dict):
             OperationSemanticsRootSchema.validate(operation, f"{path}.operation_semantics", errors)
+        cls.validate_instruction_doc_coverage(value, path, errors)
+
+    @classmethod
+    def validate_instruction_doc_coverage(cls, value: dict[str, Any], path: str, errors: list[str]) -> None:
+        docs = value.get("instruction_docs") or {}
+        if not isinstance(docs, dict):
+            errors.append(f"{path}.instruction_docs must be a mapping")
+            return
+        expected: set[str] = set()
+        families = value.get("families") or {}
+        if isinstance(families, dict):
+            for family in families.values():
+                if not isinstance(family, dict):
+                    continue
+                for section_name in ("compact_primary", "integer", "system", "fpu"):
+                    section = family.get(section_name)
+                    if not isinstance(section, dict):
+                        continue
+                    entries = section.get("entries") if isinstance(section.get("entries"), dict) else {
+                        key: item for key, item in section.items() if key not in {"description", "notes", "category", "registers"}
+                    }
+                    for entry_key, entry in entries.items():
+                        if not isinstance(entry, dict):
+                            continue
+                        names = entry.get("mnemonics")
+                        if isinstance(names, list):
+                            expected.update(str(name) for name in names if present(name))
+                        elif "_" not in str(entry_key) or str(entry_key).upper() != str(entry_key):
+                            expected.add(str(entry_key).split(".")[-1])
+        missing = sorted(name for name in expected if name not in docs or not present(docs.get(name)))
+        if missing:
+            errors.append(f"{path}.instruction_docs is missing entries for: {', '.join(missing)}")
 
 
 class OpcodesRootSchema(KeySchema):
@@ -380,7 +495,6 @@ class OpcodesRootSchema(KeySchema):
         "word_size",
         "max_instruction_words",
         "word0",
-        "sentinels",
         "reserved",
         "canonical_rules",
     }
@@ -389,7 +503,6 @@ class OpcodesRootSchema(KeySchema):
     def validate(cls, value: Any, path: str, errors: list[str]) -> None:
         check_allowed_keys(value, path, cls, errors)
         if isinstance(value, dict):
-            check_list_items(value.get("sentinels", []), f"{path}.sentinels", OpcodeSentinelSchema, errors)
             check_list_items(value.get("canonical_rules", []), f"{path}.canonical_rules", OpcodeCanonicalRuleSchema, errors)
 
 
@@ -498,20 +611,25 @@ class InterruptsRootSchema(KeySchema):
             check_list_items(assignment.get("vectors", []), f"{path}.interrupt_vector_assignment.vectors", InterruptVectorSchema, errors)
 
         table = value.get("interrupt_vector_table")
-        check_optional_mapping(table, f"{path}.interrupt_vector_table", InterruptVectorTableSchema, errors)
+        if require_mapping_value(table, f"{path}.interrupt_vector_table", errors):
+            InterruptVectorTableSchema.validate(table, f"{path}.interrupt_vector_table", errors)
         if isinstance(table, dict):
             layout = table.get("entry_layout") or {}
-            check_optional_mapping(layout, f"{path}.interrupt_vector_table.entry_layout", InterruptVectorTableEntryLayoutSchema, errors)
+            if require_mapping_value(layout, f"{path}.interrupt_vector_table.entry_layout", errors):
+                check_allowed_keys(layout, f"{path}.interrupt_vector_table.entry_layout", InterruptVectorTableEntryLayoutSchema, errors)
             if isinstance(layout, dict):
                 check_optional_mapping(layout.get("handler_address"), f"{path}.interrupt_vector_table.entry_layout.handler_address", InterruptVectorHandlerAddressSchema, errors)
                 control = layout.get("control_byte") or {}
-                check_optional_mapping(control, f"{path}.interrupt_vector_table.entry_layout.control_byte", InterruptVectorControlByteSchema, errors)
+                if require_mapping_value(control, f"{path}.interrupt_vector_table.entry_layout.control_byte", errors):
+                    check_allowed_keys(control, f"{path}.interrupt_vector_table.entry_layout.control_byte", InterruptVectorControlByteSchema, errors)
                 if isinstance(control, dict):
-                    check_named_field_map(control.get("fields"), f"{path}.interrupt_vector_table.entry_layout.control_byte.fields", errors)
+                    if require_mapping_value(control.get("fields"), f"{path}.interrupt_vector_table.entry_layout.control_byte.fields", errors):
+                        check_named_field_map(control.get("fields"), f"{path}.interrupt_vector_table.entry_layout.control_byte.fields", errors)
                 check_optional_mapping(layout.get("reserved"), f"{path}.interrupt_vector_table.entry_layout.reserved", InterruptVectorReservedBytesSchema, errors)
 
         frame = value.get("supervisor_stack_frame")
         SupervisorStackFrameSchema.validate(frame, f"{path}.supervisor_stack_frame", errors)
+        require_mapping_value(value.get("reset_state"), f"{path}.reset_state", errors)
 
 
 class CpuidRootSchema(KeySchema):
@@ -640,6 +758,14 @@ class PrefixEntrySchema(KeySchema):
         "fault_behavior",
     }
 
+    @classmethod
+    def validate(cls, value: Any, path: str, errors: list[str]) -> None:
+        check_allowed_keys(value, path, cls, errors)
+        if not isinstance(value, dict):
+            return
+        if value.get("group") == "ea_update" and not present(value.get("description")):
+            errors.append(f"{path}.description is required for EA-update prefixes")
+
 
 class PrefixSyntaxSchema(KeySchema):
     name = "prefix syntax"
@@ -697,6 +823,7 @@ class CatalogEntrySchema(KeySchema):
         "no_memory_access",
         "canonical_check",
         "page_walk",
+        "fixed_encoding",
         "if_trace_disabled",
         "compact",
         "zero_input",
@@ -737,6 +864,7 @@ class CatalogEntrySchema(KeySchema):
                 check_allowed_keys(form, f"{path}.{form_key}[{index}]", InstructionFormSchema, errors)
                 if "operands" in form:
                     check_flat_operand_list(form["operands"], f"{path}.{form_key}[{index}].operands", errors)
+        check_optional_mapping(value.get("fixed_encoding"), f"{path}.fixed_encoding", FixedEncodingSchema, errors)
 
 
 class OperationGroupSchema(KeySchema):
@@ -787,7 +915,13 @@ class OperationGroupSchema(KeySchema):
 
 class LocalAllocationSchema(KeySchema):
     name = "local instruction allocation"
-    keys = {"catalog_section", "layout_group"}
+    keys = {"catalog_section", "layout_group", "fixed_encoding"}
+
+    @classmethod
+    def validate(cls, value: Any, path: str, errors: list[str]) -> None:
+        check_allowed_keys(value, path, cls, errors)
+        if isinstance(value, dict):
+            check_optional_mapping(value.get("fixed_encoding"), f"{path}.fixed_encoding", FixedEncodingSchema, errors)
 
 
 class InstructionFormSchema(KeySchema):
@@ -809,6 +943,11 @@ class InstructionFormSchema(KeySchema):
 class OperandSchema(KeySchema):
     name = "operand"
     keys = {"name", "type"}
+
+
+class FixedEncodingSchema(KeySchema):
+    name = "fixed instruction encoding"
+    keys = {"primary_payload"}
 
 
 class BitFieldSchema(KeySchema):
@@ -1026,11 +1165,17 @@ class InstructionOperandSchemaDeclaration(KeySchema):
                 check_list_items(kind.get("values", []), f"{path}.size_kinds.{name}.values", SizeKindValueSchema, errors)
                 check_list_items(kind.get("reserved_values", []), f"{path}.size_kinds.{name}.reserved_values", ReservedNamedValueSchema, errors)
         check_mapping_values(value.get("named_values", {}), f"{path}.named_values", NamedValueSetSchema, errors)
+        named_values = value.get("named_values") or {}
+        if isinstance(named_values, dict) and "memory_order" not in named_values:
+            errors.append(f"{path}.named_values is missing keys: memory_order")
         for name, named in (value.get("named_values") or {}).items():
             if isinstance(named, dict):
                 check_list_items(named.get("values", []), f"{path}.named_values.{name}.values", NamedValueSchema, errors)
                 check_list_items(named.get("reserved_values", []), f"{path}.named_values.{name}.reserved_values", ReservedNamedValueSchema, errors)
         check_mapping_values(value.get("bitmap_operands", {}), f"{path}.bitmap_operands", BitmapOperandSchema, errors)
+        bitmap_operands = value.get("bitmap_operands") or {}
+        if isinstance(bitmap_operands, dict) and "bitmap16" not in bitmap_operands:
+            errors.append(f"{path}.bitmap_operands is missing keys: bitmap16")
         for name, bitmap in (value.get("bitmap_operands") or {}).items():
             if isinstance(bitmap, dict):
                 check_list_items(bitmap.get("ranges", []), f"{path}.bitmap_operands.{name}.ranges", BitmapOperandRangeSchema, errors)
@@ -1040,10 +1185,22 @@ class SizeCodeSchema(KeySchema):
     name = "instruction size code"
     keys = {"suffix", "bytes", "label"}
 
+    @classmethod
+    def validate(cls, value: Any, path: str, errors: list[str]) -> None:
+        check_allowed_keys(value, path, cls, errors)
+        if isinstance(value, dict):
+            require_fields(value, path, ["suffix", "bytes", "label"], errors)
+
 
 class SizeKindSchema(KeySchema):
     name = "instruction size kind"
     keys = {"field", "values", "reserved_values"}
+
+    @classmethod
+    def validate(cls, value: Any, path: str, errors: list[str]) -> None:
+        check_allowed_keys(value, path, cls, errors)
+        if isinstance(value, dict):
+            require_fields(value, path, ["field", "values"], errors)
 
 
 class SizeKindValueSchema(KeySchema):
@@ -1054,6 +1211,12 @@ class SizeKindValueSchema(KeySchema):
 class NamedValueSetSchema(KeySchema):
     name = "named operand value set"
     keys = {"width", "values", "reserved_values"}
+
+    @classmethod
+    def validate(cls, value: Any, path: str, errors: list[str]) -> None:
+        check_allowed_keys(value, path, cls, errors)
+        if isinstance(value, dict):
+            require_fields(value, path, ["width", "values"], errors)
 
 
 class NamedValueSchema(KeySchema):
@@ -1069,6 +1232,12 @@ class ReservedNamedValueSchema(KeySchema):
 class BitmapOperandSchema(KeySchema):
     name = "bitmap operand"
     keys = {"width", "ranges"}
+
+    @classmethod
+    def validate(cls, value: Any, path: str, errors: list[str]) -> None:
+        check_allowed_keys(value, path, cls, errors)
+        if isinstance(value, dict):
+            require_fields(value, path, ["width", "ranges"], errors)
 
 
 class BitmapOperandRangeSchema(KeySchema):
@@ -1090,6 +1259,12 @@ class InstructionDocSchema(KeySchema):
         "instruction_family",
         "instruction_class",
     }
+
+    @classmethod
+    def validate(cls, value: Any, path: str, errors: list[str]) -> None:
+        check_allowed_keys(value, path, cls, errors)
+        if isinstance(value, dict):
+            require_fields(value, path, ["title", "summary", "description"], errors)
 
 
 class SaveAreaFormatSchema(KeySchema):
@@ -1245,6 +1420,7 @@ class OperationSemanticsRootSchema(KeySchema):
             check_mapping_values(prefix_availability, f"{path}.prefix_availability", PrefixAvailabilitySchema, errors)
         if isinstance(value.get("groups"), dict):
             check_mapping_values(value["groups"], f"{path}.groups", OperationGroupSchema, errors)
+        check_mapping_values(value.get("instructions", {}), f"{path}.instructions", OperationInstructionSchema, errors)
 
 
 class InstructionFrequencyModelSchema(KeySchema):
@@ -1370,6 +1546,36 @@ class OperationAttributesSchema(KeySchema):
 class OperationAttributeSchema(KeySchema):
     name = "operation attribute"
     keys = {"integer", "fpu", "excluded_categories", "state_query_general_only"}
+
+
+class OperationInstructionSchema(KeySchema):
+    name = "operation semantics instruction entry"
+    keys = {"pcode", "pcode_by_form"}
+
+    @classmethod
+    def validate(cls, value: Any, path: str, errors: list[str]) -> None:
+        check_allowed_keys(value, path, cls, errors)
+        if not isinstance(value, dict):
+            return
+        pcode_by_form = value.get("pcode_by_form")
+        if pcode_by_form is None:
+            return
+        if not isinstance(pcode_by_form, list):
+            errors.append(f"{path}.pcode_by_form must be a list")
+            return
+        for index, form in enumerate(pcode_by_form):
+            OperationPcodeFormSchema.validate(form, f"{path}.pcode_by_form[{index}]", errors)
+
+
+class OperationPcodeFormSchema(KeySchema):
+    name = "operation semantics pcode form"
+    keys = {"operands", "operation"}
+
+    @classmethod
+    def validate(cls, value: Any, path: str, errors: list[str]) -> None:
+        check_allowed_keys(value, path, cls, errors)
+        if isinstance(value, dict):
+            require_fields(value, path, ["operands", "operation"], errors)
 
 
 class PrefixAvailabilitySchema(KeySchema):
@@ -1620,7 +1826,9 @@ class DataRegisterBankingSchema(KeySchema):
 
     @classmethod
     def validate(cls, value: Any, path: str, errors: list[str]) -> None:
-        check_optional_mapping(value, path, cls, errors)
+        if value is None:
+            return
+        check_allowed_keys(value, path, cls, errors)
         if not isinstance(value, dict):
             return
         check_optional_mapping(value.get("selector"), f"{path}.selector", DataRegisterBankingSelectorSchema, errors)
@@ -1664,9 +1872,12 @@ class FloatingPointRegisterModelSchema(KeySchema):
 
     @classmethod
     def validate(cls, value: Any, path: str, errors: list[str]) -> None:
-        check_optional_mapping(value, path, cls, errors)
+        if value is None:
+            return
+        check_allowed_keys(value, path, cls, errors)
         if not isinstance(value, dict):
             return
+        require_fields(value, path, ["registers", "fflags", "fstatus"], errors)
         check_optional_mapping(value.get("registers"), f"{path}.registers", FloatingPointRegistersSchema, errors)
         check_optional_mapping(value.get("fflags"), f"{path}.fflags", FflagsSchema, errors)
         fflags = value.get("fflags") or {}
@@ -1730,9 +1941,12 @@ class TranslationControlSchema(KeySchema):
 
     @classmethod
     def validate(cls, value: Any, path: str, errors: list[str]) -> None:
-        check_optional_mapping(value, path, cls, errors)
+        if value is None:
+            return
+        check_allowed_keys(value, path, cls, errors)
         if not isinstance(value, dict):
             return
+        require_fields(value, path, ["page_table_entry"], errors)
         ptcr = value.get("PTCR") or {}
         check_optional_mapping(ptcr, f"{path}.PTCR", PtcrSchema, errors)
         if isinstance(ptcr, dict):
@@ -1779,9 +1993,12 @@ class PageTableEntrySchema(KeySchema):
 
     @classmethod
     def validate(cls, value: Any, path: str, errors: list[str]) -> None:
-        check_optional_mapping(value, path, cls, errors)
+        if value is None:
+            return
+        check_allowed_keys(value, path, cls, errors)
         if not isinstance(value, dict):
             return
+        require_fields(value, path, ["low_attribute_bits", "walk_level_rules", "non_leaf_attributes", "leaf_attributes", "permission_rules"], errors)
         check_named_field_map(value.get("low_attribute_bits"), f"{path}.low_attribute_bits", errors)
         check_optional_mapping(value.get("ranges"), f"{path}.ranges", PageTableEntryRangesSchema, errors)
         check_optional_mapping(value.get("walk_level_rules"), f"{path}.walk_level_rules", PageTableWalkLevelRulesSchema, errors)
@@ -2151,7 +2368,9 @@ class SupervisorStackFrameSchema(KeySchema):
 
     @classmethod
     def validate(cls, value: Any, path: str, errors: list[str]) -> None:
-        check_optional_mapping(value, path, cls, errors)
+        if value is None:
+            return
+        check_allowed_keys(value, path, cls, errors)
         if not isinstance(value, dict):
             return
         check_list_items(value.get("layout", []), f"{path}.layout", SupervisorStackFrameLayoutSlotSchema, errors)
@@ -2246,6 +2465,12 @@ class CpuidResultSchema(KeySchema):
     name = "CPUID result"
     keys = {"index", "description", "bits", "extraction"}
 
+    @classmethod
+    def validate(cls, value: Any, path: str, errors: list[str]) -> None:
+        check_allowed_keys(value, path, cls, errors)
+        if isinstance(value, dict):
+            require_fields(value, path, ["description"], errors)
+
 
 class CpuidObjectSchema(KeySchema):
     name = "CPUID object"
@@ -2265,11 +2490,6 @@ class ConditionSchema(KeySchema):
 class SegmentRegisterSchema(KeySchema):
     name = "segment register"
     keys = {"name", "selector", "width"}
-
-
-class OpcodeSentinelSchema(KeySchema):
-    name = "opcode sentinel"
-    keys = {"id", "name", "pattern", "behavior", "override_decode", "privilege", "effects", "flags"}
 
 
 class OpcodeCanonicalRuleSchema(KeySchema):

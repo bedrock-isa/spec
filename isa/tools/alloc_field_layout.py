@@ -689,10 +689,28 @@ def primary_span_slots(candidate: Candidate, field_layout_model: dict[str, Any])
 
 
 def extended_field_layout_text(
-    fields: tuple[Field, ...], field_layout_model: dict[str, Any], spilled: bool
+    fields: tuple[Field, ...],
+    field_layout_model: dict[str, Any],
+    opcode_fields: tuple[Field, ...] | None = None,
 ) -> str:
     parts = []
-    placed = assign_field_positions(fields, EXTENDED_BITS, "descriptor", field_layout_model, spilled=spilled)
+    if opcode_fields is None:
+        opcode_field_set = {
+            field
+            for field in fields
+            if field.storage == "descriptor"
+            and field.kind != "condition"
+            and field.value is None
+        }
+    else:
+        opcode_field_set = set(opcode_fields)
+    opcode_layout_fields = tuple(
+        field
+        for field in fields
+        if field.storage == "descriptor"
+        and (field.value is not None or field in opcode_field_set)
+    )
+    placed = assign_field_positions(opcode_layout_fields, EXTENDED_BITS, "descriptor", field_layout_model)
     for field in sorted(placed, key=lambda item: item["low_bit"]):
         if field.get("value") is not None:
             label = field.get("value_label", field.get("value"))
@@ -700,24 +718,20 @@ def extended_field_layout_text(
         else:
             parts.append(f"{field['name']}:{field['kind']}{field['range']}")
     payload_fields = [field for field in fields if field.storage == "payload"]
-    if spilled:
-        payload_fields.extend(
-            field
-            for _signature, field in ordered_field_instances(
-                field_instances_for_layout(fields, "descriptor", spilled=False),
-                field_layout_model,
-            )
-            if field.kind != "condition" and field.value is None
+    payload_fields.extend(
+        field
+        for _signature, field in ordered_field_instances(
+            field_instances_for_layout(fields, "descriptor", spilled=False),
+            field_layout_model,
         )
+        if field.kind != "condition" and field.value is None and field not in opcode_field_set
+    )
     payload_name_counts: dict[str, int] = {}
     for field in payload_fields:
-        if field.storage == "payload" or (
-            spilled and field.storage == "descriptor" and field.kind != "condition" and field.value is None
-        ):
-            count = payload_name_counts.get(field.name, 0) + 1
-            payload_name_counts[field.name] = count
-            name = duplicate_field_name(field.name, count)
-            parts.append(f"{name}:{field.kind}/{field.width}@payload")
+        count = payload_name_counts.get(field.name, 0) + 1
+        payload_name_counts[field.name] = count
+        name = duplicate_field_name(field.name, count)
+        parts.append(f"{name}:{field.kind}/{field.width}@payload")
     for field in fields:
         if field.kind == "condition":
             parts.append(f"{field.name}:{field.kind}/{field.width}@root")

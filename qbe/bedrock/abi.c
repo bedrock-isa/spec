@@ -2,7 +2,7 @@
 
 static int gpreg[] = {D0, D1, D2, D3, D4, D5};
 static int apreg[] = {A0, A1, A2, A3, A4, A5};
-static int fpreg[] = {F0, F1, F2, F3, F4, F5, F6};
+static int fpreg[] = {F0, F1, F2, F3, F4, F5, F6, F7};
 
 bits
 bedrock_retregs(Ref r, int p[2])

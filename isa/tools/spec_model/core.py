@@ -160,7 +160,7 @@ def check_mapping_values(
         return
     for key, item in value.items():
         if isinstance(item, dict):
-            check_allowed_keys(item, f"{path}.{key}", allowed, errors)
+            allowed.validate(item, f"{path}.{key}", errors)
 
 
 def check_list_items(
@@ -174,7 +174,7 @@ def check_list_items(
         return
     for index, item in enumerate(value):
         if isinstance(item, dict):
-            check_allowed_keys(item, f"{path}[{index}]", allowed, errors)
+            allowed.validate(item, f"{path}[{index}]", errors)
 
 
 def check_optional_mapping(
@@ -185,7 +185,7 @@ def check_optional_mapping(
 ) -> None:
     if value is None:
         return
-    check_allowed_keys(value, path, allowed, errors)
+    allowed.validate(value, path, errors)
 
 
 def check_mapping_item_keys(

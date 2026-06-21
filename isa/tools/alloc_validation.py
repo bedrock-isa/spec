@@ -151,25 +151,15 @@ def audit_alignment(spec: dict[str, Any], entries: list[PatternEntry], candidate
     )
 
     fixed = {candidate.id: candidate.fixed_payload for candidate in candidates if candidate.fixed_payload is not None}
-    sentinel_payloads: dict[str, int] = {}
-    for entry in entries:
-        if entry.kind != "sentinel":
-            continue
-        name = str(entry.source.get("name") or entry.id)
-        payload_mask = (1 << 12) - 1
-        if entry.pattern.mask & payload_mask == payload_mask:
-            sentinel_payloads[name] = entry.pattern.value & payload_mask
-    sentinel_mismatches = [
-        f"{name}: candidate={fixed.get(name)}, spec={payload}"
-        for name, payload in sentinel_payloads.items()
-        if fixed.get(name) != payload
-    ]
+    fixed_values = [int(value) for value in fixed.values() if value is not None]
+    fixed_in_range = [value for value in fixed_values if 0 <= value < (1 << 12)]
+    duplicate_fixed = sorted({value for value in fixed_values if fixed_values.count(value) > 1})
     add(
-        "sentinel fixed payloads",
-        bool(sentinel_payloads) and not sentinel_mismatches,
-        f"sentinels={sentinel_payloads}"
-        if sentinel_payloads and not sentinel_mismatches
-        else f"sentinel mismatches={sentinel_mismatches}",
+        "fixed primary payloads",
+        len(fixed_in_range) == len(fixed_values) and not duplicate_fixed,
+        f"fixed={fixed}"
+        if len(fixed_in_range) == len(fixed_values) and not duplicate_fixed
+        else f"duplicate_or_out_of_range={duplicate_fixed}",
     )
 
     impossible_must = [candidate.id for candidate in candidates if candidate.must_compact and candidate.compact_slots is None]

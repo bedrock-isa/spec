@@ -18,7 +18,6 @@ operation_semantics:
     unmentioned_flags: unchanged
     operand_evaluation_order: decode order
   group_order:
-  - sentinels
   - core_control
   - integer_alu
   - integer_compare
@@ -43,8 +42,6 @@ operation_semantics:
   - tlb_context
   - cache
   groups:
-    sentinels:
-      flags: unchanged
     core_control:
       flags: unchanged
     integer_alu:

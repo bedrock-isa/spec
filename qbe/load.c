@@ -399,7 +399,7 @@ loadopt(Fn *fn)
 		}
 	qsort(ilog, nlog, sizeof ilog[0], icmp);
 	vgrow(&ilog, nlog+1);
-	ilog[nlog].bid = fn->nblk; /* add a sentinel */
+	ilog[nlog].bid = fn->nblk; /* add a terminator */
 	ib = vnew(0, sizeof(Ins), Pheap);
 	for (ist=ilog, n=0; n<fn->nblk; ++n) {
 		b = fn->rpo[n];

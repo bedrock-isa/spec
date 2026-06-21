@@ -113,7 +113,7 @@ execution.
 | --- | --- | --- |
 | `F0` | Fetch Address | Select the next fetch PC from sequential flow, redirects, exception entry, or return from a flushed path. |
 | `F1` | Fetch Window | Read an aligned instruction fetch window. The initial RTL uses the same 64-byte window size used by grouping-window rules. |
-| `P0` | Predecode | Extract word-0 length metadata, prefix-present state, primary payload, sentinel class, and possible entry-point metadata. |
+| `P0` | Predecode | Extract word-0 length metadata, prefix-present state, primary payload, and possible entry-point metadata. |
 | `D0` | Full Decode | Decode primary and extended opcodes, decode prefixes, classify operands, decode EA fields, and construct normalized instruction records. |
 | `R0` | Register Read | Read architectural register operands and gather immediate, displacement, descriptor, and overlong payload words needed by the instruction. |
 | `X0` | Execute / AGU | Run integer ALU operations, evaluate branch conditions, form effective addresses, and prepare memory requests. |
@@ -180,8 +180,7 @@ Word 0 is the natural frontend boundary. The predecoder extracts:
 - `P`, the prefix-present bit,
 - `L`, the encoded instruction length,
 - total instruction length in words,
-- the 12-bit primary payload,
-- HALT and ILLEGAL sentinel payloads.
+- the 12-bit primary payload.
 
 Instruction boundaries are computed without walking operand encodings. This
 keeps fetch simple even when an instruction contains an extended EA descriptor or
@@ -198,7 +197,6 @@ prefix_word_valid
 prefix_word
 payload_words
 primary_payload
-sentinel_class
 ```
 
 Later implementations may cache predecode metadata beside instruction memory:

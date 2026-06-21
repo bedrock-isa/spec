@@ -335,8 +335,6 @@ def compact_family_exception_for_candidate(candidate: Candidate, compact_policy:
     mnemonic = candidate.mnemonic.upper()
     if candidate.must_compact and "mandatory_compact" in exceptions:
         return "mandatory_compact"
-    if mnemonic in exceptions.get("sentinel_or_control_singletons", set()):
-        return "sentinel_or_control_singletons"
     alias_forms = {str(item).upper() for item in compact_policy.get("alias_form_mnemonics", [])}
     if mnemonic in alias_forms and "alias_forms" in exceptions:
         return "alias_forms"
@@ -571,13 +569,12 @@ def payload_matches_reclaim_filter(payload: int, fields: list[dict[str, Any]], r
 
 def candidate_sort_key(candidate: Candidate) -> tuple[int, int, int, str]:
     rank = {
-        "sentinel": 0,
-        "integer": 1,
-        "data_movement": 2,
-        "control_flow": 3,
-        "system": 4,
-        "fpu": 5,
-        "misc": 6,
+        "integer": 0,
+        "data_movement": 1,
+        "control_flow": 2,
+        "system": 3,
+        "fpu": 4,
+        "misc": 5,
     }
     slots = candidate.compact_slots if candidate.compact_slots is not None else PRIMARY_SLOTS + 1
     return (rank.get(candidate.category, 99), -candidate.weight, slots, candidate.id)
@@ -1344,10 +1341,12 @@ def pack_extended_allocations(
             raise RuntimeError(f"unable to pack {candidate.id} inside fixed-field extension window")
         for opcode in range(opcode_start, opcode_end + 1):
             used_by_root[root_key].add(opcode)
+        opcode_fields = tuple(opcode_plan["opcode_fields"])
+        payload_bits = extended_payload_bits(candidate, opcode_fields)
         descriptor_layout = extended_field_layout_text(
             candidate.descriptor_fields,
             field_layout_model,
-            bool(opcode_plan["spilled"]),
+            opcode_fields,
         )
         out.append(
             {
@@ -1359,8 +1358,8 @@ def pack_extended_allocations(
                 "extended_opcode_end": f"0x{opcode_end:04x}",
                 "extended_opcode_slots": slots,
                 "extended_opcode_bits": int(opcode_plan["opcode_bits"]),
-                "operand_payload_bits": int(opcode_plan["payload_bits"]),
-                "operand_descriptor_spilled": bool(opcode_plan["spilled"]),
+                "operand_payload_bits": payload_bits,
+                "operand_descriptor_spilled": descriptor_spills_to_payload(candidate, opcode_fields),
                 "extended_selector": f"{root['id']}:{extended_opcode_text(opcode_start, opcode_end)}",
                 "id": profile_candidate_id(candidate, candidate.descriptor_fields),
                 "mnemonic": candidate.mnemonic,
@@ -1369,7 +1368,7 @@ def pack_extended_allocations(
                 "origin": candidate.origin,
                 "operands": list(candidate.operands),
                 "operand_descriptor_bits": candidate.descriptor_bits,
-                "operand_descriptor_words": ceil_words(int(opcode_plan["payload_bits"])),
+                "operand_descriptor_words": ceil_words(payload_bits),
                 "descriptor_layout": descriptor_layout,
                 "fields": [field_dict(field) for field in candidate.descriptor_fields],
                 "weight": candidate.weight,
@@ -1425,80 +1424,146 @@ def fixed_high_field_layout(candidate: Candidate) -> str:
 
 def build_extended_opcode_plans(
     candidates: list[Candidate], compact_policy: dict[str, Any]
-) -> dict[str, dict[str, int | bool]]:
+) -> dict[str, dict[str, Any]]:
     grouped: dict[str, list[Candidate]] = {}
     for candidate in candidates:
         grouped.setdefault(extension_root_key(candidate, compact_policy), []).append(candidate)
 
-    plans: dict[str, dict[str, int | bool]] = {}
+    plans: dict[str, dict[str, Any]] = {}
     for root_key, members in grouped.items():
-        spilled: set[str] = set()
+        level_index = {
+            candidate.id: len(extended_opcode_budget_levels(candidate)) - 1
+            for candidate in members
+        }
         while True:
             total = 0
-            impossible: list[Candidate] = []
             for candidate in members:
-                bits = extended_opcode_bits(candidate, candidate.id in spilled)
-                if bits > EXTENDED_BITS:
-                    impossible.append(candidate)
-                    continue
+                budget = extended_opcode_budget_levels(candidate)[level_index[candidate.id]]
+                bits = extended_opcode_bits(candidate, descriptor_opcode_fields(candidate, budget))
                 total += 1 << bits
-            if not impossible and total <= EXTENDED_SLOTS:
+            if total <= EXTENDED_SLOTS:
                 break
-            spill = choose_extended_spill_candidate(members, spilled)
+            spill = choose_extended_spill_candidate(members, level_index)
             if spill is None:
                 raise RuntimeError(f"extension root {root_key} is full")
-            spilled.add(spill.id)
+            level_index[spill.id] -= 1
 
         for candidate in members:
-            is_spilled = candidate.id in spilled
-            opcode_bits = extended_opcode_bits(candidate, is_spilled)
-            payload_bits = extended_payload_bits(candidate, is_spilled)
+            budget = extended_opcode_budget_levels(candidate)[level_index[candidate.id]]
+            opcode_fields = descriptor_opcode_fields(candidate, budget)
+            opcode_bits = extended_opcode_bits(candidate, opcode_fields)
             plans[candidate.id] = {
                 "opcode_bits": opcode_bits,
-                "payload_bits": payload_bits,
                 "slots": 1 << opcode_bits,
-                "spilled": is_spilled,
+                "opcode_fields": opcode_fields,
             }
     return plans
 
 
-def choose_extended_spill_candidate(members: list[Candidate], spilled: set[str]) -> Candidate | None:
-    candidates = [candidate for candidate in members if candidate.id not in spilled]
+def choose_extended_spill_candidate(members: list[Candidate], level_index: dict[str, int]) -> Candidate | None:
+    candidates = [candidate for candidate in members if level_index[candidate.id] > 0]
     if not candidates:
         return None
 
     def spill_key(candidate: Candidate) -> tuple[float, int, int, str]:
-        bits = extended_opcode_bits(candidate, spilled=False)
-        savings = max(1, (1 << min(bits, EXTENDED_BITS + 1)) - 1)
+        levels = extended_opcode_budget_levels(candidate)
+        old_budget = levels[level_index[candidate.id]]
+        new_budget = levels[level_index[candidate.id] - 1]
+        old_bits = extended_opcode_bits(candidate, descriptor_opcode_fields(candidate, old_budget))
+        new_bits = extended_opcode_bits(candidate, descriptor_opcode_fields(candidate, new_budget))
+        savings = max(1, (1 << old_bits) - (1 << new_bits))
+        old_words = ceil_words(extended_payload_bits(candidate, descriptor_opcode_fields(candidate, old_budget)))
+        new_words = ceil_words(extended_payload_bits(candidate, descriptor_opcode_fields(candidate, new_budget)))
+        word_penalty = max(0, new_words - old_words)
         return (
-            candidate.weight / savings,
+            (candidate.weight * (word_penalty + 1)) / savings,
             candidate.weight,
-            -bits,
+            -savings,
             candidate.id,
         )
 
     return min(candidates, key=spill_key)
 
 
-def extended_opcode_bits(candidate: Candidate, spilled: bool) -> int:
-    if spilled:
-        return 0
+def descriptor_variable_fields(candidate: Candidate) -> tuple[Field, ...]:
+    return tuple(
+        field
+        for field in candidate.descriptor_fields
+        if field.storage == "descriptor"
+        and field.kind != "condition"
+        and field.value is None
+        and field.width > 0
+    )
+
+
+def descriptor_field_preference(field: Field) -> int:
+    if field.source == "size":
+        return 1000
+    if field.kind in {"small_selector", "selector6", "memory_order"}:
+        return 800
+    if field.kind in {"DREG", "AREG", "FREG", "SREG", "D_or_A"}:
+        return 500
+    if field.kind in {"EA", "IMM_EA"}:
+        return 400
+    return 100
+
+
+def descriptor_opcode_fields(candidate: Candidate, budget: int) -> tuple[Field, ...]:
+    fields = descriptor_variable_fields(candidate)
+    if budget <= 0 or not fields:
+        return ()
+    best: dict[int, tuple[int, tuple[Field, ...]]] = {0: (0, ())}
+    for field in fields:
+        for bits, (score, selected) in list(best.items()):
+            new_bits = bits + field.width
+            if new_bits > budget:
+                continue
+            new_score = score + descriptor_field_preference(field)
+            current = best.get(new_bits)
+            if current is None or (new_score, -len(selected)) > (current[0], -len(current[1])):
+                best[new_bits] = (new_score, selected + (field,))
+    if budget in best:
+        return best[budget][1]
+    bits = max(best)
+    return best[bits][1]
+
+
+def extended_opcode_budget_levels(candidate: Candidate) -> list[int]:
+    fields = descriptor_variable_fields(candidate)
+    possible = {0}
+    for field in fields:
+        for bits in list(possible):
+            new_bits = bits + field.width
+            if new_bits <= EXTENDED_BITS:
+                possible.add(new_bits)
+    descriptor_bits = sum(field.width for field in fields)
+    payload_base = sum(field.width for field in candidate.descriptor_fields if field.storage == "payload")
+    best_for_words: dict[int, int] = {}
+    for bits in possible:
+        words = ceil_words(payload_base + descriptor_bits - bits)
+        if words not in best_for_words or bits < best_for_words[words]:
+            best_for_words[words] = bits
+    return sorted(set(best_for_words.values()))
+
+
+def extended_opcode_bits(candidate: Candidate, opcode_fields: tuple[Field, ...]) -> int:
     return sum(
         field.width
-        for field in candidate.descriptor_fields
+        for field in opcode_fields
         if field.storage == "descriptor" and field.kind != "condition" and field.value is None
     )
 
 
-def extended_payload_bits(candidate: Candidate, spilled: bool) -> int:
+def extended_payload_bits(candidate: Candidate, opcode_fields: tuple[Field, ...]) -> int:
+    opcode_field_set = set(opcode_fields)
     payload = sum(field.width for field in candidate.descriptor_fields if field.storage == "payload")
-    if spilled:
-        payload += sum(
-            field.width
-            for field in candidate.descriptor_fields
-            if field.storage == "descriptor" and field.kind != "condition" and field.value is None
-        )
+    payload += sum(field.width for field in descriptor_variable_fields(candidate) if field not in opcode_field_set)
     return payload
+
+
+def descriptor_spills_to_payload(candidate: Candidate, opcode_fields: tuple[Field, ...]) -> bool:
+    opcode_field_set = set(opcode_fields)
+    return any(field not in opcode_field_set for field in descriptor_variable_fields(candidate))
 
 
 def extended_opcode_text(start: int, end: int) -> str:

@@ -186,21 +186,55 @@ def condition_sleigh_checks(spec: dict[str, Any]) -> list[tuple[int, str]]:
     ]
 
 
-def register_class_count(spec: dict[str, Any], name: str) -> int:
+def register_class(spec: dict[str, Any], name: str) -> dict[str, Any]:
     classes = require_mapping(require_mapping(spec.get("registers"), "registers.yaml").get("register_classes"), "registers.yaml.register_classes")
-    body = require_mapping(classes.get(name), f"registers.yaml.register_classes.{name}")
-    return int(body.get("count", 0))
+    return require_mapping(classes.get(name), f"registers.yaml.register_classes.{name}")
+
+
+def register_class_count(spec: dict[str, Any], name: str) -> int:
+    return int(register_class(spec, name).get("count", 0))
+
+
+def register_class_width(spec: dict[str, Any], name: str) -> int:
+    return int(register_class(spec, name).get("width", 0))
+
+
+def data_register_banking_selector_name(spec: dict[str, Any]) -> str:
+    banking = require_mapping(
+        require_mapping(spec.get("registers"), "registers.yaml").get("data_register_banking"),
+        "registers.yaml.data_register_banking",
+    )
+    selector = require_mapping(banking.get("selector"), "registers.yaml.data_register_banking.selector")
+    name = str(selector.get("name", "")).strip()
+    if not name:
+        raise SpecError("registers.yaml.data_register_banking.selector.name is required")
+    return name
 
 
 def register_names(spec: dict[str, Any], class_name: str) -> list[str]:
     return [f"{class_name}{index}" for index in range(register_class_count(spec, class_name))]
 
 
+def register_class_names(spec: dict[str, Any], class_name: str) -> list[str]:
+    count = register_class_count(spec, class_name)
+    if count == 1:
+        return [class_name]
+    return register_names(spec, class_name)
+
+
 def special_register_by_name(spec: dict[str, Any], name: str) -> dict[str, Any]:
-    for reg in require_mapping(spec.get("registers"), "registers.yaml").get("special_registers", []) or []:
+    registers = require_list(
+        require_mapping(spec.get("registers"), "registers.yaml").get("special_registers"),
+        "registers.yaml.special_registers",
+    )
+    for reg in registers:
         if isinstance(reg, dict) and reg.get("name") == name:
             return reg
     raise SpecError(f"registers.yaml.special_registers has no {name}")
+
+
+def special_register_width(spec: dict[str, Any], name: str) -> int:
+    return int(special_register_by_name(spec, name).get("width", 0))
 
 
 def special_register_layout(spec: dict[str, Any], name: str) -> dict[str, dict[str, Any]]:
@@ -257,6 +291,15 @@ def special_register_class(spec: dict[str, Any], class_name: str) -> dict[str, A
     return require_mapping(classes.get(class_name), f"registers.yaml.special_register_classes.{class_name}")
 
 
+def special_register_class_registers(spec: dict[str, Any], class_name: str) -> list[str]:
+    body = special_register_class(spec, class_name)
+    return [str(name) for name in require_list(body.get("registers"), f"special_register_classes.{class_name}.registers")]
+
+
+def special_register_class_width(spec: dict[str, Any], class_name: str) -> int:
+    return int(special_register_class(spec, class_name).get("width", 0))
+
+
 def special_register_encoding(spec: dict[str, Any], class_name: str) -> list[dict[str, Any]]:
     body = special_register_class(spec, class_name)
     return sorted(
@@ -288,12 +331,25 @@ def special_register_attach_names(spec: dict[str, Any], class_name: str) -> list
     return [values[value] for value in range(1 << width)]
 
 
-def control_register_selectors(spec: dict[str, Any], class_name: str = "CR") -> list[tuple[int, str]]:
+def control_register_class(spec: dict[str, Any], class_name: str = "CR") -> dict[str, Any]:
     classes = require_mapping(
         require_mapping(spec.get("registers"), "registers.yaml").get("control_register_classes"),
         "registers.yaml.control_register_classes",
     )
-    body = require_mapping(classes.get(class_name), f"registers.yaml.control_register_classes.{class_name}")
+    return require_mapping(classes.get(class_name), f"registers.yaml.control_register_classes.{class_name}")
+
+
+def control_register_class_registers(spec: dict[str, Any], class_name: str = "CR") -> list[str]:
+    body = control_register_class(spec, class_name)
+    return [str(name) for name in require_list(body.get("registers"), f"control_register_classes.{class_name}.registers")]
+
+
+def control_register_class_width(spec: dict[str, Any], class_name: str = "CR") -> int:
+    return int(control_register_class(spec, class_name).get("width", 0))
+
+
+def control_register_selectors(spec: dict[str, Any], class_name: str = "CR") -> list[tuple[int, str]]:
+    body = control_register_class(spec, class_name)
     out: list[tuple[int, str]] = []
     for group in body.get("selector_groups", []) or []:
         if not isinstance(group, dict):

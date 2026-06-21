@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 import json
@@ -25,16 +26,6 @@ def load_allocation(path: Path) -> dict[str, Any]:
 
 def latex_template(name: str) -> str:
     return (TEMPLATE_DIR / name).read_text(encoding="utf-8")
-
-
-def render_latex_template(name: str, values: dict[str, Any] | None = None) -> str:
-    text = latex_template(name)
-    for key, value in (values or {}).items():
-        text = text.replace(f"@{key}@", str(value))
-    unresolved = sorted(set(re.findall(r"@[A-Z0-9_]+@", text)))
-    if unresolved:
-        raise ValueError(f"unresolved LaTeX template placeholders in {name}: {', '.join(unresolved)}")
-    return text
 
 
 def tex_escape(value: Any) -> str:
@@ -172,49 +163,205 @@ def instruction_docs(spec: dict[str, Any]) -> dict[str, dict[str, Any]]:
     return {str(key): value for key, value in docs.items() if isinstance(value, dict)}
 
 
+class LatexComponent:
+    """Renderable LaTeX component."""
+
+    def render(self) -> str:
+        raise NotImplementedError
+
+    def __str__(self) -> str:
+        return self.render()
+
+
+def render_component(value: Any) -> str:
+    if isinstance(value, LatexComponent):
+        return value.render()
+    return str(value)
+
+
+@dataclass(frozen=True)
+class LatexTemplate(LatexComponent):
+    name: str
+    values: dict[str, Any] | None = None
+
+    def render(self) -> str:
+        text = latex_template(self.name)
+        for key, value in (self.values or {}).items():
+            text = text.replace(f"@{key}@", render_component(value))
+        unresolved = sorted(set(re.findall(r"@[A-Z0-9_]+@", text)))
+        if unresolved:
+            raise ValueError(f"unresolved LaTeX template placeholders in {self.name}: {', '.join(unresolved)}")
+        return text
+
+
+@dataclass(frozen=True)
+class LatexSequence(LatexComponent):
+    parts: list[Any]
+    separator: str = "\n"
+
+    def render(self) -> str:
+        return self.separator.join(render_component(part) for part in self.parts if part is not None)
+
+
+@dataclass(frozen=True)
+class LatexDocumentPreamble(LatexComponent):
+    def render(self) -> str:
+        return LatexTemplate(
+            "document_preamble.tex",
+            {
+                "ARCH_NAME": ARCH_NAME,
+                "MANUAL_TITLE": MANUAL_TITLE,
+            },
+        ).render()
+
+
+@dataclass(frozen=True)
+class LatexDocumentEnd(LatexComponent):
+    def render(self) -> str:
+        return LatexTemplate("document_end.tex").render()
+
+
+@dataclass(frozen=True)
+class LatexTitlePage(LatexComponent):
+    plan: dict[str, Any]
+    mnemonic_count: int
+    form_count: int
+
+    def render(self) -> str:
+        solver = self.plan.get("solver", {})
+        return LatexTemplate(
+            "title_page.tex",
+            {
+                "MNEMONIC_COUNT": self.mnemonic_count,
+                "FORM_COUNT": self.form_count,
+                "SOLVER_STATUS": tex_escape(solver.get("status", "unknown")),
+                "ARCH_NAME": ARCH_NAME,
+                "ARCH_NAME_UPPER": ARCH_NAME.upper(),
+                "MANUAL_TITLE": MANUAL_TITLE,
+                "MANUAL_SUBTITLE": MANUAL_SUBTITLE,
+            },
+        ).render()
+
+
+@dataclass(frozen=True)
+class LatexTopSection(LatexComponent):
+    title: str
+
+    def render(self) -> str:
+        return "\n".join([r"\clearpage", rf"\section{{{tex_escape(self.title)}}}"])
+
+
+@dataclass(frozen=True)
+class LatexHiddenTopSection(LatexComponent):
+    title: str
+
+    def render(self) -> str:
+        return "\n".join(
+            [
+                r"\clearpage",
+                r"\phantomsection",
+                r"\refstepcounter{section}",
+                rf"\addcontentsline{{toc}}{{section}}{{\protect\numberline{{\thesection}}{tex_escape(self.title)}}}",
+            ]
+        )
+
+
+@dataclass(frozen=True)
+class LatexLongTable(LatexComponent):
+    headers: list[str]
+    rows: list[list[str]]
+    widths: list[str] | None = None
+    caption: str | None = None
+
+    def render(self) -> str:
+        if not self.rows:
+            return "No entries.\\par\n"
+        if self.widths:
+            spec = "@{}" + "".join(rf">{{\raggedright\arraybackslash}}p{{{width}}}" for width in self.widths) + "@{}"
+        else:
+            spec = "@{}" + " ".join("l" for _ in self.headers) + "@{}"
+        out = []
+        out.extend(
+            [
+                "\\begingroup\\footnotesize",
+                r"\setlength{\LTpre}{2pt}",
+                r"\setlength{\LTpost}{2pt}",
+                f"\\begin{{longtable}}{{{spec}}}",
+                "\\toprule",
+            ]
+        )
+        out.append(" & ".join(r"\textbf{" + tex_escape(header) + "}" for header in self.headers) + r"\\")
+        out.append("\\midrule")
+        out.append("\\endhead")
+        for row in self.rows:
+            out.append(" & ".join(row) + r"\\")
+        out.append("\\bottomrule")
+        out.append("\\end{longtable}")
+        if self.caption:
+            out.append(rf"\manualtablecaption{{{tex_escape(caption_title(self.caption))}}}")
+        out.append("\\endgroup")
+        return "\n".join(out) + "\n"
+
+
+@dataclass(frozen=True)
+class LatexTabular(LatexComponent):
+    headers: list[str]
+    rows: list[list[str]]
+    widths: list[str] | None = None
+    caption: str | None = None
+
+    def render(self) -> str:
+        if not self.rows:
+            return "No entries.\\par\n"
+        if self.widths:
+            spec = "@{}" + "".join(rf">{{\raggedright\arraybackslash}}p{{{width}}}" for width in self.widths) + "@{}"
+        else:
+            spec = "@{}" + " ".join("l" for _ in self.headers) + "@{}"
+        out = [
+            r"\Needspace{1.25in}",
+            r"\begingroup\footnotesize",
+            r"\begin{center}",
+            f"\\begin{{tabular}}{{{spec}}}",
+            r"\toprule",
+            " & ".join(r"\textbf{" + tex_escape(header) + "}" for header in self.headers) + r"\\",
+            r"\midrule",
+        ]
+        for row in self.rows:
+            out.append(" & ".join(row) + r"\\")
+        out.extend(
+            [
+                r"\bottomrule",
+                r"\end{tabular}",
+            ]
+        )
+        if self.caption:
+            out.append(rf"\manualtablecaption{{{tex_escape(caption_title(self.caption))}}}")
+        out.extend([r"\end{center}", r"\endgroup"])
+        return "\n".join(out) + "\n"
+
+
+def render_latex_template(name: str, values: dict[str, Any] | None = None) -> str:
+    return LatexTemplate(name, values).render()
+
+
 def document_preamble() -> str:
-    return render_latex_template(
-        "document_preamble.tex",
-        {
-            "ARCH_NAME": ARCH_NAME,
-            "MANUAL_TITLE": MANUAL_TITLE,
-        },
-    )
+    return LatexDocumentPreamble().render()
 
 
 def document_end() -> str:
-    return render_latex_template("document_end.tex")
+    return LatexDocumentEnd().render()
 
 
 def title_page(plan: dict[str, Any], mnemonic_count: int, form_count: int) -> str:
-    solver = plan.get("solver", {})
-    return render_latex_template(
-        "title_page.tex",
-        {
-            "MNEMONIC_COUNT": mnemonic_count,
-            "FORM_COUNT": form_count,
-            "SOLVER_STATUS": tex_escape(solver.get("status", "unknown")),
-            "ARCH_NAME": ARCH_NAME,
-            "ARCH_NAME_UPPER": ARCH_NAME.upper(),
-            "MANUAL_TITLE": MANUAL_TITLE,
-            "MANUAL_SUBTITLE": MANUAL_SUBTITLE,
-        },
-    )
+    return LatexTitlePage(plan, mnemonic_count, form_count).render()
 
 
 def top_section(title: str) -> str:
-    return "\n".join([r"\clearpage", rf"\section{{{tex_escape(title)}}}"])
+    return LatexTopSection(title).render()
 
 
 def hidden_top_section(title: str) -> str:
-    return "\n".join(
-        [
-            r"\clearpage",
-            r"\phantomsection",
-            r"\refstepcounter{section}",
-            rf"\addcontentsline{{toc}}{{section}}{{\protect\numberline{{\thesection}}{tex_escape(title)}}}",
-        ]
-    )
+    return LatexHiddenTopSection(title).render()
 
 
 def latex_longtable(
@@ -223,33 +370,7 @@ def latex_longtable(
     widths: list[str] | None = None,
     caption: str | None = None,
 ) -> str:
-    if not rows:
-        return "No entries.\\par\n"
-    if widths:
-        spec = "@{}" + "".join(rf">{{\raggedright\arraybackslash}}p{{{width}}}" for width in widths) + "@{}"
-    else:
-        spec = "@{}" + " ".join("l" for _ in headers) + "@{}"
-    out = []
-    out.extend(
-        [
-            "\\begingroup\\footnotesize",
-            r"\setlength{\LTpre}{2pt}",
-            r"\setlength{\LTpost}{2pt}",
-            f"\\begin{{longtable}}{{{spec}}}",
-            "\\toprule",
-        ]
-    )
-    out.append(" & ".join(r"\textbf{" + tex_escape(header) + "}" for header in headers) + r"\\")
-    out.append("\\midrule")
-    out.append("\\endhead")
-    for row in rows:
-        out.append(" & ".join(row) + r"\\")
-    out.append("\\bottomrule")
-    out.append("\\end{longtable}")
-    if caption:
-        out.append(rf"\manualtablecaption{{{tex_escape(caption_title(caption))}}}")
-    out.append("\\endgroup")
-    return "\n".join(out) + "\n"
+    return LatexLongTable(headers, rows, widths, caption).render()
 
 
 def latex_tabular(
@@ -258,30 +379,4 @@ def latex_tabular(
     widths: list[str] | None = None,
     caption: str | None = None,
 ) -> str:
-    if not rows:
-        return "No entries.\\par\n"
-    if widths:
-        spec = "@{}" + "".join(rf">{{\raggedright\arraybackslash}}p{{{width}}}" for width in widths) + "@{}"
-    else:
-        spec = "@{}" + " ".join("l" for _ in headers) + "@{}"
-    out = [
-        r"\Needspace{1.25in}",
-        r"\begingroup\footnotesize",
-        r"\begin{center}",
-        f"\\begin{{tabular}}{{{spec}}}",
-        r"\toprule",
-        " & ".join(r"\textbf{" + tex_escape(header) + "}" for header in headers) + r"\\",
-        r"\midrule",
-    ]
-    for row in rows:
-        out.append(" & ".join(row) + r"\\")
-    out.extend(
-        [
-            r"\bottomrule",
-            r"\end{tabular}",
-        ]
-    )
-    if caption:
-        out.append(rf"\manualtablecaption{{{tex_escape(caption_title(caption))}}}")
-    out.extend([r"\end{center}", r"\endgroup"])
-    return "\n".join(out) + "\n"
+    return LatexTabular(headers, rows, widths, caption).render()

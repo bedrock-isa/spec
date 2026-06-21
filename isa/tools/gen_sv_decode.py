@@ -347,8 +347,11 @@ def field_format_label(signature: FieldFormatSignature) -> str:
 
 
 def assign_field_format_ids(items: list[dict[str, Any]]) -> dict[FieldFormatSignature, str]:
-    names: dict[FieldFormatSignature, str] = {}
-    signatures = sorted({field_format_signature(item) for item in items}, key=field_format_sort_key)
+    names: dict[FieldFormatSignature, str] = {(): "BR_FIELD_FORMAT_NONE"}
+    signatures = sorted(
+        {field_format_signature(item) for item in items if field_format_signature(item)},
+        key=field_format_sort_key,
+    )
     for index, signature in enumerate(signatures, start=1):
         names[signature] = f"BR_FIELD_FORMAT_F{index:03d}"
     return names
@@ -372,49 +375,36 @@ def field_format_token_words(signature: FieldFormatSignature) -> int:
     return max(token for _kind, token, _low, _width in signature) + 1
 
 
-def opcode_attribute_map(items: list[dict[str, Any]], repeat_policy: dict[str, set[str]]) -> dict[str, dict[str, bool]]:
-    out: dict[str, dict[str, bool]] = {}
-    for item in sorted(items, key=decode_priority):
-        key = opcode_key(item)
-        attrs = form_repeat_attributes(item, repeat_policy)
-        previous = out.get(key)
-        if previous is not None and previous != attrs:
-            raise RuntimeError(f"{key}: opcode repeat attributes differ across decoded field formats")
-        out[key] = attrs
-    return out
+def sv_packed_slice(slot: int, width: int) -> str:
+    low = slot * width
+    high = low + width - 1
+    return f"[{high}:{low}]"
+
+
+def token_word_name(token: int) -> str:
+    if token < 0 or token > 7:
+        raise RuntimeError(f"field token {token} is outside the full-decode extraction window")
+    return f"token{token}_word"
+
+
+def word_part_expr(token: int, low: int, width: int) -> str:
+    word = token_word_name(token)
+    if width == 1:
+        return f"{word}[{low}]"
+    return f"{word}[{low + width - 1}:{low}]"
+
+
+def zero_extend_expr(expr: str, width: int, target_width: int) -> str:
+    if width == target_width:
+        return expr
+    if width > target_width:
+        return f"{expr}[{target_width - 1}:0]"
+    return f"{{{target_width - width}'d0, {expr}}}"
 
 
 def assign_root_ids(roots: list[str]) -> dict[str, str]:
     used = {"BR_EXT_ROOT_NONE"}
     return {root: sv_ident("BR_EXT_ROOT", root.removeprefix("EXT."), used) for root in sorted(roots)}
-
-
-FIELD_KIND_ALIASES = {
-    "condition": "COND",
-    "cr": "CR",
-    "memory_order": "MEMORY_ORDER",
-    "small_selector": "SMALL_SELECTOR",
-    "selector6": "SELECTOR6",
-}
-
-
-def field_enum_name(prefix: str, text: str, used: set[str] | None = None) -> str:
-    normalized = FIELD_KIND_ALIASES.get(str(text), str(text))
-    if used is None:
-        used = set()
-    return sv_ident(prefix, normalized, used)
-
-
-def field_kind_names(forms: list[dict[str, Any]]) -> dict[str, str]:
-    kinds = {"NONE"}
-    for item in forms:
-        for field in all_fields(item):
-            kinds.add(str(field.get("kind", "")) or "NONE")
-    used = {"BR_FIELD_NONE"}
-    out = {"NONE": "BR_FIELD_NONE"}
-    for kind in sorted(k for k in kinds if k != "NONE"):
-        out[kind] = field_enum_name("BR_FIELD", kind, used)
-    return out
 
 
 def form_required_words(item: dict[str, Any], fields: list[dict[str, Any]]) -> int:
@@ -427,8 +417,28 @@ def default_required_words(item: dict[str, Any]) -> int:
 
 def append_required_words_override(lines: list[str], item: dict[str, Any], indent: str, target: str) -> None:
     required = form_required_words(item, all_fields(item))
-    if required != default_required_words(item):
+    field_token_words = field_format_token_words(field_format_signature(item))
+    decode_baseline = max(default_required_words(item), field_token_words)
+    if required > decode_baseline:
         lines.append(f"{indent}{target} = 4'd{required};")
+
+
+def append_repeat_attribute_assignments(
+    lines: list[str],
+    item: dict[str, Any],
+    repeat_policy: dict[str, set[str]],
+    indent: str,
+    *,
+    target_prefix: str = "r.",
+    target_suffix: str = "",
+) -> None:
+    attrs = form_repeat_attributes(item, repeat_policy)
+    if attrs["repcc_allowed"]:
+        lines.append(f"{indent}{target_prefix}repcc_allowed{target_suffix} = 1'b1;")
+    if attrs["repg_allowed"]:
+        lines.append(f"{indent}{target_prefix}repg_allowed{target_suffix} = 1'b1;")
+    if attrs["repg_fast_candidate"]:
+        lines.append(f"{indent}{target_prefix}repg_fast_candidate{target_suffix} = 1'b1;")
 
 
 def emit_decode_assignment(
@@ -436,6 +446,7 @@ def emit_decode_assignment(
     item: dict[str, Any],
     opcode_names: dict[str, str],
     field_format_names: dict[FieldFormatSignature, str],
+    repeat_policy: dict[str, set[str]],
     indent: str,
     *,
     target_prefix: str = "r.",
@@ -448,6 +459,7 @@ def emit_decode_assignment(
         ]
     )
     append_required_words_override(lines, item, indent, f"{target_prefix}required_words")
+    append_repeat_attribute_assignments(lines, item, repeat_policy, indent, target_prefix=target_prefix)
 
 
 def sv_lines(lines: list[str]) -> str:
@@ -461,13 +473,14 @@ def emit_package(plan: dict[str, Any], repeat_policy: dict[str, set[str]]) -> st
     field_format_names = assign_field_format_ids(forms)
     root_ranges = root_payload_ranges(forms)
     root_names = assign_root_ids(list(root_ranges))
-    kind_names = field_kind_names(forms)
-    max_fields = max([len(field_format_fields(signature)) for signature in field_format_names] + [0])
+    field_format_items = sorted(
+        (signature for signature in field_format_names if signature),
+        key=field_format_sort_key,
+    )
 
     opcode_bits = bits_for_count(len(opcode_names) + 1)
-    field_format_bits = bits_for_count(len(field_format_names) + 1)
+    field_format_bits = bits_for_count(len(field_format_names))
     root_bits = bits_for_count(len(root_names) + 1)
-    kind_bits = bits_for_count(len(kind_names))
 
     opcode_enum_lines: list[str] = []
     opcode_items = sorted(opcode_names, key=lambda key: opcode_names[key])
@@ -476,7 +489,6 @@ def emit_package(plan: dict[str, Any], repeat_policy: dict[str, set[str]]) -> st
         opcode_enum_lines.append(f"    {opcode_names[key]} = {opcode_bits}'d{index}{comma} // {key}")
 
     field_format_enum_lines: list[str] = []
-    field_format_items = sorted(field_format_names, key=field_format_sort_key)
     for index, signature in enumerate(field_format_items, start=1):
         comma = "," if index != len(field_format_items) else ""
         field_format_enum_lines.append(
@@ -488,16 +500,6 @@ def emit_package(plan: dict[str, Any], repeat_policy: dict[str, set[str]]) -> st
         comma = "," if index != len(root_names) else ""
         ext_root_enum_lines.append(f"    {root_names[root]} = {root_bits}'d{index}{comma} // {root}")
 
-    field_kind_enum_lines: list[str] = []
-    kind_items = [("NONE", "BR_FIELD_NONE")] + sorted(
-        [(kind, name) for kind, name in kind_names.items() if kind != "NONE"],
-        key=lambda item: item[1],
-    )
-    for index, (kind, name) in enumerate(kind_items):
-        comma = "," if index != len(kind_items) - 1 else ""
-        comment = "" if kind == "NONE" else f" // {kind}"
-        field_kind_enum_lines.append(f"    {name} = {kind_bits}'d{index}{comma}{comment}")
-
     primary_decode_lines: list[str] = []
     emitted_primary_patterns: set[str] = set()
     emitted_primary_values: set[int] = set()
@@ -505,7 +507,7 @@ def emit_package(plan: dict[str, Any], repeat_policy: dict[str, set[str]]) -> st
         p_start, p_end = primary_range(item)
         for pattern in unique_decode_patterns(item, 12, p_start, p_end, emitted_primary_patterns, emitted_primary_values):
             primary_decode_lines.append(f"      {pattern}: begin // {item.get('id', '')}")
-            emit_decode_assignment(primary_decode_lines, item, opcode_names, field_format_names, "        ")
+            emit_decode_assignment(primary_decode_lines, item, opcode_names, field_format_names, repeat_policy, "        ")
             primary_decode_lines.append("      end")
 
     for root in sorted(root_names):
@@ -537,7 +539,7 @@ def emit_package(plan: dict[str, Any], repeat_policy: dict[str, set[str]]) -> st
                 keyword = "if" if first else "else if"
                 first = False
                 extended_decode_lines.append(f"        {keyword} {range_condition('extension_word', 16, e_start, e_end)} begin // {item.get('id', '')}")
-                emit_decode_assignment(extended_decode_lines, item, opcode_names, field_format_names, "          ")
+                emit_decode_assignment(extended_decode_lines, item, opcode_names, field_format_names, repeat_policy, "          ")
                 extended_decode_lines.append("        end")
         else:
             extended_decode_lines.append("        unique casez (extension_word)")
@@ -545,7 +547,7 @@ def emit_package(plan: dict[str, Any], repeat_policy: dict[str, set[str]]) -> st
                 e_start, e_end = extended_range(item)
                 for pattern in range_patterns(16, e_start, e_end):
                     extended_decode_lines.append(f"          {pattern}: begin // {item.get('id', '')}")
-                    emit_decode_assignment(extended_decode_lines, item, opcode_names, field_format_names, "            ")
+                    emit_decode_assignment(extended_decode_lines, item, opcode_names, field_format_names, repeat_policy, "            ")
                     extended_decode_lines.append("          end")
             extended_decode_lines.extend(
                 [
@@ -565,50 +567,51 @@ def emit_package(plan: dict[str, Any], repeat_policy: dict[str, set[str]]) -> st
             f"      {field_format_names[signature]}: r = 4'd{token_words}; // {field_format_label(signature)}"
         )
 
-    field_format_field_lines: list[str] = []
+    field_format_extract_lines: list[str] = []
+    field_format_ea1_descriptor_word_lines: list[str] = []
     for signature in field_format_items:
         fields = field_format_fields(signature)
-        if not fields:
-            continue
-        field_format_field_lines.append(f"      {field_format_names[signature]}: begin // {field_format_label(signature)}")
-        field_format_field_lines.append("        unique case (field_index)")
-        for index, field in enumerate(fields):
+        token_words = field_format_token_words(signature)
+        field_format_extract_lines.append(f"      {field_format_names[signature]}: begin // {field_format_label(signature)}")
+        field_format_extract_lines.append(f"        r.token_words = 4'd{token_words};")
+        ea_index = 0
+        for field in fields:
             kind = str(field.get("kind", "")) or "NONE"
             token = int(field.get("token", 0))
             low = int(field.get("low_bit", 0))
             width = int(field.get("width", 0))
-            field_format_field_lines.extend(
+            if kind in {"EA", "IMM_EA"} and ea_index < 2:
+                ea_value = zero_extend_expr(word_part_expr(token, low, width), width, 6)
+                field_format_extract_lines.extend(
+                    [
+                        f"        r.ea_present[{ea_index}] = 1'b1;",
+                        f"        r.ea_value{sv_packed_slice(ea_index, 6)} = {ea_value};",
+                    ]
+                )
+                if ea_index == 0:
+                    field_format_extract_lines.append(
+                        f"        r.ea0_descriptor_word = {token_word_name(token_words)};"
+                    )
+                ea_index += 1
+        field_format_extract_lines.append("      end")
+
+        if ea_index >= 2:
+            field_format_ea1_descriptor_word_lines.append(
+                f"      {field_format_names[signature]}: begin // {field_format_label(signature)}"
+            )
+            field_format_ea1_descriptor_word_lines.append("        unique case (ea0_payload_words)")
+            for payload_words in range(0, 8 - token_words):
+                field_format_ea1_descriptor_word_lines.append(
+                    f"          3'd{payload_words}: r = {token_word_name(token_words + payload_words)};"
+                )
+            field_format_ea1_descriptor_word_lines.extend(
                 [
-                    f"          3'd{index}: begin",
-                    "            r.valid = 1'b1;",
-                    f"            r.kind = {kind_names[kind]};",
-                    f"            r.token = 2'd{token};",
-                    f"            r.low_bit = 4'd{low};",
-                    f"            r.width = 5'd{width};",
+                    "          default: begin",
                     "          end",
+                    "        endcase",
+                    "      end",
                 ]
             )
-        field_format_field_lines.extend(
-            [
-                "          default: begin",
-                "          end",
-                "        endcase",
-                "      end",
-            ]
-        )
-
-    opcode_attribute_lines: list[str] = []
-    for key, attrs in sorted(opcode_attribute_map(forms, repeat_policy).items(), key=lambda item: opcode_names[item[0]]):
-        if not any(attrs.values()):
-            continue
-        opcode_attribute_lines.append(f"      {opcode_names[key]}: begin // {key}")
-        if attrs["repcc_allowed"]:
-            opcode_attribute_lines.append("        r.repcc_allowed = 1'b1;")
-        if attrs["repg_allowed"]:
-            opcode_attribute_lines.append("        r.repg_allowed = 1'b1;")
-        if attrs["repg_fast_candidate"]:
-            opcode_attribute_lines.append("        r.repg_fast_candidate = 1'b1;")
-        opcode_attribute_lines.append("      end")
 
     return render_tool_template(
         "bedrock_decode_pkg.sv",
@@ -619,17 +622,14 @@ def emit_package(plan: dict[str, Any], repeat_policy: dict[str, set[str]]) -> st
             "FIELD_FORMAT_BITS": field_format_bits,
             "EXT_ROOT_COUNT": len(root_names),
             "EXT_ROOT_BITS": root_bits,
-            "FIELD_SLOTS": max_fields,
-            "FIELD_KIND_BITS": kind_bits,
             "OPCODE_ENUM_ENTRIES": sv_lines(opcode_enum_lines),
             "FIELD_FORMAT_ENUM_ENTRIES": sv_lines(field_format_enum_lines),
             "EXT_ROOT_ENUM_ENTRIES": sv_lines(ext_root_enum_lines),
-            "FIELD_KIND_ENUM_ENTRIES": sv_lines(field_kind_enum_lines),
             "PRIMARY_DECODE_CASES": sv_lines(primary_decode_lines),
             "EXTENDED_DECODE_CASES": sv_lines(extended_decode_lines),
             "FIELD_FORMAT_TOKEN_WORD_CASES": sv_lines(field_format_token_word_lines),
-            "FIELD_FORMAT_FIELD_CASES": sv_lines(field_format_field_lines),
-            "OPCODE_ATTRIBUTE_CASES": sv_lines(opcode_attribute_lines),
+            "FIELD_FORMAT_EXTRACT_CASES": sv_lines(field_format_extract_lines),
+            "FIELD_FORMAT_EA1_DESCRIPTOR_WORD_CASES": sv_lines(field_format_ea1_descriptor_word_lines),
         },
     )
 
@@ -645,9 +645,13 @@ def emit_synth_module(plan: dict[str, Any], repeat_policy: dict[str, set[str]]) 
     field_format_names = assign_field_format_ids(forms)
     root_ranges = root_payload_ranges(forms)
     root_names = assign_root_ids(list(root_ranges))
+    field_format_items = sorted(
+        (signature for signature in field_format_names if signature),
+        key=field_format_sort_key,
+    )
 
     opcode_bits = bits_for_count(len(opcode_names) + 1)
-    field_format_bits = bits_for_count(len(field_format_names) + 1)
+    field_format_bits = bits_for_count(len(field_format_names))
     root_bits = bits_for_count(len(root_names) + 1)
 
     opcode_localparam_lines: list[str] = []
@@ -657,7 +661,7 @@ def emit_synth_module(plan: dict[str, Any], repeat_policy: dict[str, set[str]]) 
         )
 
     field_format_localparam_lines: list[str] = []
-    for index, signature in enumerate(sorted(field_format_names, key=field_format_sort_key), start=1):
+    for index, signature in enumerate(field_format_items, start=1):
         field_format_localparam_lines.append(
             f"  localparam [{field_format_bits - 1}:0] {field_format_names[signature]} = "
             f"{field_format_bits}'d{index}; // {field_format_label(signature)}"
@@ -682,6 +686,14 @@ def emit_synth_module(plan: dict[str, Any], repeat_policy: dict[str, set[str]]) 
                 ]
             )
             append_required_words_override(primary_decode_lines, item, "        ", "required_words_o")
+            append_repeat_attribute_assignments(
+                primary_decode_lines,
+                item,
+                repeat_policy,
+                "        ",
+                target_prefix="",
+                target_suffix="_o",
+            )
             primary_decode_lines.append("      end")
 
     for root in sorted(root_names):
@@ -721,6 +733,14 @@ def emit_synth_module(plan: dict[str, Any], repeat_policy: dict[str, set[str]]) 
                     ]
                 )
                 append_required_words_override(extended_decode_lines, item, "            ", "required_words_o")
+                append_repeat_attribute_assignments(
+                    extended_decode_lines,
+                    item,
+                    repeat_policy,
+                    "            ",
+                    target_prefix="",
+                    target_suffix="_o",
+                )
                 extended_decode_lines.append("          end")
         else:
             extended_decode_lines.append("          casez (extension_word_i)")
@@ -736,6 +756,14 @@ def emit_synth_module(plan: dict[str, Any], repeat_policy: dict[str, set[str]]) 
                         ]
                     )
                     append_required_words_override(extended_decode_lines, item, "              ", "required_words_o")
+                    append_repeat_attribute_assignments(
+                        extended_decode_lines,
+                        item,
+                        repeat_policy,
+                        "              ",
+                        target_prefix="",
+                        target_suffix="_o",
+                    )
                     extended_decode_lines.append("            end")
             extended_decode_lines.extend(
                 [
@@ -746,18 +774,14 @@ def emit_synth_module(plan: dict[str, Any], repeat_policy: dict[str, set[str]]) 
             )
         extended_decode_lines.append("        end")
 
-    attribute_lines: list[str] = []
-    for key, attrs in sorted(opcode_attribute_map(forms, repeat_policy).items(), key=lambda item: opcode_names[item[0]]):
-        if not any(attrs.values()):
+    field_format_token_word_lines: list[str] = []
+    for signature in field_format_items:
+        token_words = field_format_token_words(signature)
+        if token_words <= 1:
             continue
-        attribute_lines.append(f"        {opcode_names[key]}: begin // {key}")
-        if attrs["repcc_allowed"]:
-            attribute_lines.append("          repcc_allowed_o = 1'b1;")
-        if attrs["repg_allowed"]:
-            attribute_lines.append("          repg_allowed_o = 1'b1;")
-        if attrs["repg_fast_candidate"]:
-            attribute_lines.append("          repg_fast_candidate_o = 1'b1;")
-        attribute_lines.append("        end")
+        field_format_token_word_lines.append(
+            f"        {field_format_names[signature]}: field_format_token_words = 4'd{token_words}; // {field_format_label(signature)}"
+        )
 
     return render_tool_template(
         "bedrock_decode_synth.sv",
@@ -773,7 +797,7 @@ def emit_synth_module(plan: dict[str, Any], repeat_policy: dict[str, set[str]]) 
             "EXT_ROOT_LOCALPARAMS": sv_lines(ext_root_localparam_lines),
             "PRIMARY_DECODE_CASES": sv_lines(primary_decode_lines),
             "EXTENDED_DECODE_CASES": sv_lines(extended_decode_lines),
-            "ATTRIBUTE_CASES": sv_lines(attribute_lines),
+            "FIELD_FORMAT_TOKEN_WORD_CASES": sv_lines(field_format_token_word_lines),
         },
     )
 

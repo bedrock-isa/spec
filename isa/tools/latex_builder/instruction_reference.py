@@ -1026,7 +1026,7 @@ def primary_grid_legend_rows() -> list[tuple[str, str]]:
         ("integer/arithmetic", primary_category_color("integer")),
         ("data movement", primary_category_color("data_movement")),
         ("control flow", primary_category_color("control_flow")),
-        ("sentinel/control", primary_category_color("sentinel")),
+        ("system/control", primary_category_color("system")),
         ("extension root", primary_category_color("extended")),
         ("atomic/system/cache", primary_category_color("system")),
         ("unallocated", "white"),
@@ -1084,7 +1084,7 @@ def primary_category_color(category: str) -> str:
         return "red!18"
     if normalized in {"control_flow", "control flow"}:
         return "violet!20"
-    if normalized in {"sentinel", "control"}:
+    if normalized == "control":
         return "gray!28"
     if normalized == "extended":
         return "gray!18"

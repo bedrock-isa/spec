@@ -2,8 +2,8 @@
 
 int bedrock_rsave[] = {
 	D0, D1, D2, D3, D4, D5,
-	A0, A1, A2, A3,
-	F0, F1, F2, F3, F4, F5, F6,
+	A0, A1, A2, A3, A4, A5,
+	F0, F1, F2, F3, F4, F5, F6, F7,
 	-1
 };
 

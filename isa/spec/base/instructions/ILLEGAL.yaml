@@ -3,10 +3,19 @@ doc:
   title: Illegal Instruction
   summary: Raise illegal-instruction exception.
   description: Raise illegal-instruction exception.
+  instruction_family: core_control
+  instruction_class: system
 behavior:
-  group: sentinels
+  group: core_control
   output: none
   operation:
   - arch_raise_illegal_instruction();
 attributes:
   privilege: any
+allocation:
+  catalog_section: compact_primary
+  layout_group: CORE_MISC
+  fixed_encoding:
+    primary_payload: 0xfff
+forms:
+  operands: []

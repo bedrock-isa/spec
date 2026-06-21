@@ -9,9 +9,7 @@ from alloc_model import *
 from isa_spec import (
     PatternEntry,
     cleaned_pattern,
-    field_names,
     instruction_catalog,
-    parse_pattern,
     semantic_entry_mnemonics,
 )
 from spec_model.encoding import (
@@ -53,13 +51,6 @@ def get_path(data: dict[str, Any], dotted: str) -> Any:
             return None
         current = current.get(part)
     return current
-
-
-def first_word_pattern(raw: str) -> str:
-    bits = cleaned_pattern(raw)
-    if len(bits) < 16:
-        raise ValueError(f"pattern is shorter than one word: {raw}")
-    return bits[:16]
 
 
 def bits_needed(count: int) -> int:
@@ -109,12 +100,14 @@ def ceil_words(bits: int) -> int:
     return (bits + 15) // 16
 
 
-def payload_fixed_value(entry: PatternEntry) -> int | None:
-    word = parse_pattern(first_word_pattern(str(entry.source["pattern"])), field_names(entry.source))
-    payload_mask = word.mask & 0x0FFF
-    if payload_mask != 0x0FFF:
+def fixed_primary_payload(body: dict[str, Any]) -> int | None:
+    fixed = body.get("fixed_encoding")
+    if not isinstance(fixed, dict) or "primary_payload" not in fixed:
         return None
-    return word.value & 0x0FFF
+    value = fixed["primary_payload"]
+    if isinstance(value, int):
+        return value
+    return int(str(value), 0)
 
 
 def instruction_operands(entry: PatternEntry) -> tuple[str, ...]:
@@ -196,30 +189,11 @@ def collect_candidates(spec: dict[str, Any], entries: list[PatternEntry]) -> lis
     allocated_mnemonics = {
         entry.mnemonic
         for entry in entries
-        if entry.kind in {"instruction", "sentinel"}
+        if entry.kind == "instruction"
     }
 
     for entry in entries:
         if entry.kind in {"reserved", "extension_space"}:
-            continue
-        if entry.kind == "sentinel":
-            fixed = payload_fixed_value(entry)
-            candidates.append(
-                build_candidate(
-                    ident=entry.mnemonic,
-                    mnemonic=entry.mnemonic,
-                    category="sentinel",
-                    group=entry.mnemonic,
-                    operands=(),
-                    body=entry.source,
-                    allocation=allocation,
-                    origin="opcodes.yaml",
-                    shape_hint=str(entry.source.get("pattern", "sentinel")),
-                    must_compact=True,
-                    can_extend=False,
-                    fixed_payload=fixed,
-                )
-            )
             continue
         if entry.kind != "instruction":
             continue
@@ -239,7 +213,7 @@ def collect_candidates(spec: dict[str, Any], entries: list[PatternEntry]) -> lis
                 shape_hint=str(entry.source.get("pattern", "")),
                 must_compact=False,
                 can_extend=True,
-                fixed_payload=None,
+                fixed_payload=fixed_primary_payload(entry.source),
             )
         )
 
@@ -271,8 +245,8 @@ def collect_candidates(spec: dict[str, Any], entries: list[PatternEntry]) -> lis
                             origin="instructions.yaml",
                             shape_hint="semantic_operands",
                             must_compact=False,
-                            can_extend=True,
-                            fixed_payload=None,
+                            can_extend=fixed_primary_payload(merged) is None,
+                            fixed_payload=fixed_primary_payload(merged),
                             default_weight=default_weight,
                         )
                     )
@@ -416,8 +390,8 @@ def semantic_compact_primary_candidates(
                                 origin="instructions.yaml",
                                 shape_hint="semantic_compact",
                                 must_compact=False,
-                                can_extend=True,
-                                fixed_payload=None,
+                                can_extend=fixed_primary_payload(merged) is None,
+                                fixed_payload=fixed_primary_payload(merged),
                                 default_weight=80,
                             )
                         )
@@ -438,8 +412,8 @@ def semantic_compact_primary_candidates(
                         origin="instructions.yaml",
                         shape_hint="semantic_compact",
                         must_compact=False,
-                        can_extend=True,
-                        fixed_payload=None,
+                        can_extend=fixed_primary_payload(merged) is None,
+                        fixed_payload=fixed_primary_payload(merged),
                         default_weight=80,
                     )
                 )
@@ -513,10 +487,14 @@ def build_candidate(
         descriptor_fields=descriptor_fields,
         operands=operands,
     )
+    fixed_primary = fixed_payload is not None
     compact_disabled = (
-        body.get("compact") is False
-        or str(body.get("compact_preference", "")).lower() == "extended"
-        or compact_action == "never"
+        not fixed_primary
+        and (
+            body.get("compact") is False
+            or str(body.get("compact_preference", "")).lower() == "extended"
+            or compact_action == "never"
+        )
     )
     compact_slots = (1 << compact_bits) if not compact_disabled and compact_bits <= PRIMARY_BITS else None
     descriptor_bits = sum(
@@ -565,8 +543,8 @@ def build_candidate(
         descriptor_bits=descriptor_bits,
         descriptor_words=ceil_words(descriptor_bits),
         weight=weight,
-        must_compact=must_compact or compact_action == "required",
-        can_extend=can_extend,
+        must_compact=must_compact or compact_action == "required" or fixed_primary,
+        can_extend=can_extend and not fixed_primary,
         fixed_payload=fixed_payload,
         shape_hint=shape_hint,
         min_words=min_words,
@@ -1294,8 +1272,6 @@ def instruction_weight(
     default_weight: int,
 ) -> int:
     _ = mnemonic, ident
-    if category == "sentinel":
-        return 10000
     if category == "data_movement" and has_ea_register_mix(operands):
         return 9000
     if category == "integer" and all_direct_d(operands):

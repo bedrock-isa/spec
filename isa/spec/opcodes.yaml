@@ -11,21 +11,6 @@ word0:
   payload:
     bits: [11, 0]
 
-sentinels:
-  - id: HALT_SENTINEL
-    name: HALT
-    pattern: "---- 0000 0000 0000"
-    privilege: supervisor
-    behavior: halt
-    effects: halt until event
-    flags: unchanged
-    override_decode: true
-  - id: ILLEGAL_SENTINEL
-    name: ILLEGAL
-    pattern: "---- 1111 1111 1111"
-    behavior: illegal instruction
-    override_decode: true
-
 canonical_rules:
   - id: MOV_DREG_TO_DREG_CANONICAL
     canonical: MOV_EA_TO_D

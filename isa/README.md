@@ -24,8 +24,8 @@ This directory is the declarative source of truth for the evolving ISA.
   Z3 to choose between one-word primary encodings and generated extended-opcode
   descriptor forms. It generates natural primary extension roots from semantic
   families and operand layouts, while preserving primary headroom for later
-  growth. Sentinel payloads remain explicit; instruction opcode placements do
-  not.
+  growth. Instruction-owned fixed encodings remain explicit; generated opcode
+  placements do not.
 - `../build/generated/`: generated artifacts derived from `spec/`.
 - `tests/`: reserved for decode, encode, canonicalization, and overlap regression cases.
 
