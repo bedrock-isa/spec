@@ -83,6 +83,23 @@ def bitmap_field_width(name: str) -> int:
     return int(bitmap_operand(active_spec(), name).get("width", 0))
 
 
+def bitmap_operand_names() -> set[str]:
+    bitmaps = (
+        active_spec()
+        .get("instructions", {})
+        .get("operand_schema", {})
+        .get("bitmap_operands", {})
+    )
+    return set(bitmaps) if isinstance(bitmaps, dict) else set()
+
+
+def bitmap_operand_name(norm: str) -> str:
+    lower = norm.lower()
+    if lower in bitmap_operand_names():
+        return lower
+    return "bitmap16"
+
+
 def ea_field_width() -> int:
     widths = {len(str(form.get("pattern", "")).replace(" ", "")) for form in compact_ea_forms(active_spec())}
     if len(widths) != 1:
@@ -1000,7 +1017,8 @@ def operand_fields(
             return [Field("n", "selector6", 6, source, storage)]
         return [Field("n", "small_selector", 4, source, storage)]
     if "BITMAP" in norm:
-        return [Field("b", "bitmap16", bitmap_field_width("bitmap16"), source, "payload")]
+        bitmap_name = bitmap_operand_name(norm)
+        return [Field("b", bitmap_name, bitmap_field_width(bitmap_name), source, "payload")]
     if "IMM" in norm or norm in {"CR", "CREG", "CONTROL_REGISTER"}:
         width = immediate_payload_width(norm)
         return [Field("i", norm.lower(), width, source, "payload")]

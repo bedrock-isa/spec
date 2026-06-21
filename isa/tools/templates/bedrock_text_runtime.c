@@ -869,7 +869,18 @@ static int bedrock_parse_compact_ea(const char *text, bedrock_text_operand *out,
     return 0;
 }
 
-static int bedrock_parse_bitmap_register(const char *text, char *kind, unsigned *index)
+static int bedrock_is_bitmap_kind(const char *kind)
+{
+    size_t range_index;
+    for (range_index = 0; range_index < bedrock_bitmap_ranges_count; ++range_index) {
+        if (strcmp(kind, bedrock_bitmap_ranges[range_index].kind) == 0) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+static int bedrock_parse_bitmap_register(const char *bitmap_kind, const char *text, char *kind, unsigned *index)
 {
     size_t range_index;
     uint64_t value;
@@ -879,10 +890,14 @@ static int bedrock_parse_bitmap_register(const char *text, char *kind, unsigned 
     if (!bedrock_parse_u64(text + 1, &value)) {
         return 0;
     }
-    for (range_index = 0; range_index < bedrock_bitmap16_ranges_count; ++range_index) {
-        unsigned max_index = (unsigned)(bedrock_bitmap16_ranges[range_index].high_bit - bedrock_bitmap16_ranges[range_index].low_bit);
-        if (bedrock_char_ieq(text[0], bedrock_bitmap16_ranges[range_index].reg_prefix) && value <= max_index) {
-            *kind = bedrock_bitmap16_ranges[range_index].reg_prefix;
+    for (range_index = 0; range_index < bedrock_bitmap_ranges_count; ++range_index) {
+        unsigned max_index;
+        if (strcmp(bitmap_kind, bedrock_bitmap_ranges[range_index].kind) != 0) {
+            continue;
+        }
+        max_index = (unsigned)(bedrock_bitmap_ranges[range_index].high_bit - bedrock_bitmap_ranges[range_index].low_bit);
+        if (bedrock_char_ieq(text[0], bedrock_bitmap_ranges[range_index].reg_prefix) && value <= max_index) {
+            *kind = bedrock_bitmap_ranges[range_index].reg_prefix;
             *index = (unsigned)value;
             return 1;
         }
@@ -890,20 +905,24 @@ static int bedrock_parse_bitmap_register(const char *text, char *kind, unsigned 
     return 0;
 }
 
-static int bedrock_bitmap_bit_for_register(char kind, unsigned index, unsigned *bit)
+static int bedrock_bitmap_bit_for_register(const char *bitmap_kind, char kind, unsigned index, unsigned *bit)
 {
     size_t range_index;
-    for (range_index = 0; range_index < bedrock_bitmap16_ranges_count; ++range_index) {
-        unsigned max_index = (unsigned)(bedrock_bitmap16_ranges[range_index].high_bit - bedrock_bitmap16_ranges[range_index].low_bit);
-        if (bedrock_char_ieq(kind, bedrock_bitmap16_ranges[range_index].reg_prefix) && index <= max_index) {
-            *bit = (unsigned)bedrock_bitmap16_ranges[range_index].low_bit + index;
+    for (range_index = 0; range_index < bedrock_bitmap_ranges_count; ++range_index) {
+        unsigned max_index;
+        if (strcmp(bitmap_kind, bedrock_bitmap_ranges[range_index].kind) != 0) {
+            continue;
+        }
+        max_index = (unsigned)(bedrock_bitmap_ranges[range_index].high_bit - bedrock_bitmap_ranges[range_index].low_bit);
+        if (bedrock_char_ieq(kind, bedrock_bitmap_ranges[range_index].reg_prefix) && index <= max_index) {
+            *bit = (unsigned)bedrock_bitmap_ranges[range_index].low_bit + index;
             return 1;
         }
     }
     return 0;
 }
 
-static int bedrock_parse_bitmap16(const char *text, uint64_t *value)
+static int bedrock_parse_bitmap16(const char *bitmap_kind, const char *text, uint64_t *value)
 {
     char compact[128];
     char token[32];
@@ -940,24 +959,24 @@ static int bedrock_parse_bitmap16(const char *text, uint64_t *value)
         dash = strchr(token, '-');
         if (dash != 0) {
             *dash = '\0';
-            if (!bedrock_parse_bitmap_register(token, &lo_kind, &lo_index)
-                || !bedrock_parse_bitmap_register(dash + 1, &hi_kind, &hi_index)
+            if (!bedrock_parse_bitmap_register(bitmap_kind, token, &lo_kind, &lo_index)
+                || !bedrock_parse_bitmap_register(bitmap_kind, dash + 1, &hi_kind, &hi_index)
                 || lo_kind != hi_kind || lo_index > hi_index) {
                 return 0;
             }
             for (reg = lo_index; reg <= hi_index; ++reg) {
                 unsigned bit;
-                if (!bedrock_bitmap_bit_for_register(lo_kind, reg, &bit)) {
+                if (!bedrock_bitmap_bit_for_register(bitmap_kind, lo_kind, reg, &bit)) {
                     return 0;
                 }
                 bitmap |= 1ull << bit;
             }
         } else {
             unsigned bit;
-            if (!bedrock_parse_bitmap_register(token, &lo_kind, &lo_index)) {
+            if (!bedrock_parse_bitmap_register(bitmap_kind, token, &lo_kind, &lo_index)) {
                 return 0;
             }
-            if (!bedrock_bitmap_bit_for_register(lo_kind, lo_index, &bit)) {
+            if (!bedrock_bitmap_bit_for_register(bitmap_kind, lo_kind, lo_index, &bit)) {
                 return 0;
             }
             bitmap |= 1ull << bit;
@@ -1040,8 +1059,9 @@ static int bedrock_parse_operand_for_kind(const bedrock_operand_desc *desc, cons
         }
         return 0;
     }
-    if (strcmp(desc->kind, "BITMAP16") == 0 || strcmp(desc->kind, "bitmap16") == 0) {
-        if (!bedrock_parse_bitmap16(out->text, &out->value)) {
+    if (bedrock_is_bitmap_kind(desc->kind) || bedrock_is_bitmap_kind(desc->declared_kind)) {
+        const char *bitmap_kind = bedrock_is_bitmap_kind(desc->kind) ? desc->kind : desc->declared_kind;
+        if (!bedrock_parse_bitmap16(bitmap_kind, out->text, &out->value)) {
             return 0;
         }
         out->payload_count = 1;
@@ -1457,17 +1477,23 @@ static int bedrock_append_bitmap_item(char *out, size_t out_size, size_t *used, 
     return bedrock_append_text(out, out_size, used, buf);
 }
 
-static int bedrock_append_bitmap16(char *out, size_t out_size, size_t *used, uint64_t value)
+static int bedrock_append_bitmap16(const char *bitmap_kind, char *out, size_t out_size, size_t *used, uint64_t value)
 {
     int first = 1;
     if (!bedrock_append_text(out, out_size, used, "{")) {
         return 0;
     }
-    for (size_t range_index = 0; range_index < bedrock_bitmap16_ranges_count; ++range_index) {
-        char kind = bedrock_bitmap16_ranges[range_index].reg_prefix;
-        unsigned base = bedrock_bitmap16_ranges[range_index].low_bit;
-        unsigned max_index = (unsigned)(bedrock_bitmap16_ranges[range_index].high_bit - bedrock_bitmap16_ranges[range_index].low_bit);
+    for (size_t range_index = 0; range_index < bedrock_bitmap_ranges_count; ++range_index) {
+        char kind;
+        unsigned base;
+        unsigned max_index;
         unsigned index = 0;
+        if (strcmp(bitmap_kind, bedrock_bitmap_ranges[range_index].kind) != 0) {
+            continue;
+        }
+        kind = bedrock_bitmap_ranges[range_index].reg_prefix;
+        base = bedrock_bitmap_ranges[range_index].low_bit;
+        max_index = (unsigned)(bedrock_bitmap_ranges[range_index].high_bit - bedrock_bitmap_ranges[range_index].low_bit);
         while (index <= max_index) {
             unsigned start;
             if ((value & (1ull << (base + index))) == 0u) {
@@ -1485,6 +1511,21 @@ static int bedrock_append_bitmap16(char *out, size_t out_size, size_t *used, uin
         }
     }
     return bedrock_append_text(out, out_size, used, "}");
+}
+
+static const char *bedrock_form_bitmap_kind(const bedrock_form_desc *form)
+{
+    size_t index;
+    for (index = 0; index < form->operand_count; ++index) {
+        const bedrock_operand_desc *operand = &bedrock_operands[form->operand_index + index];
+        if (bedrock_is_bitmap_kind(operand->kind)) {
+            return operand->kind;
+        }
+        if (bedrock_is_bitmap_kind(operand->declared_kind)) {
+            return operand->declared_kind;
+        }
+    }
+    return "bitmap16";
 }
 
 static uint64_t bedrock_read_payload_words(const uint16_t *words, size_t start, size_t count)
@@ -1556,7 +1597,7 @@ int bedrock_disassemble_line(const uint16_t *words, size_t word_count, char *out
             if (payload_cursor >= declared_words) {
                 return BEDROCK_ERR_UNDERSIZED_ENCODING;
             }
-            if (!bedrock_append_bitmap16(out_text, out_text_size, &used, words[payload_cursor++])) {
+            if (!bedrock_append_bitmap16(bedrock_form_bitmap_kind(form), out_text, out_text_size, &used, words[payload_cursor++])) {
                 return BEDROCK_ERR_BUFFER_TOO_SMALL;
             }
             cursor += 8;

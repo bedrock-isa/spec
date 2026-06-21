@@ -14,6 +14,7 @@ operand_schema:
   - EA_or_range
   - IMM_EA
   - FREG
+  - fbitmap16
   - CR
   - SPREG
   - SREG
@@ -139,6 +140,10 @@ operand_schema:
       ranges:
       - {bits: [0, 7], register_class: D}
       - {bits: [8, 15], register_class: A}
+    fbitmap16:
+      width: 16
+      ranges:
+      - {bits: [0, 15], register_class: F}
 
 allocation:
   mnemonic_policy:
@@ -330,9 +335,9 @@ allocation:
     - REG3
     - REG3#2
     - EA6#2
-    - FREG:5
-    - FREG:5#2
-    - FREG:5#3
+    - FREG:4
+    - FREG:4#2
+    - FREG:4#3
     - SEL6
     - SEL4
     - DBANK:4

@@ -275,7 +275,7 @@ def render_source(model: dict[str, Any], header_name: str, named_values: dict[st
 
     lines.append("typedef struct bedrock_size_code_desc { char code; char suffix; uint8_t bytes; } bedrock_size_code_desc;")
     lines.append("typedef struct bedrock_size_kind_value_desc { const char *kind; uint16_t value; char code; } bedrock_size_kind_value_desc;")
-    lines.append("typedef struct bedrock_bitmap_range_desc { uint8_t low_bit; uint8_t high_bit; char reg_prefix; } bedrock_bitmap_range_desc;")
+    lines.append("typedef struct bedrock_bitmap_range_desc { const char *kind; uint8_t low_bit; uint8_t high_bit; char reg_prefix; } bedrock_bitmap_range_desc;")
     lines.append("")
 
     for prefix_name in ("POSTINC", "PREINC", "POSTDEC", "PREDEC"):
@@ -298,11 +298,19 @@ def render_source(model: dict[str, Any], header_name: str, named_values: dict[st
     lines.append("};")
     lines.append("")
 
-    lines.append("const bedrock_bitmap_range_desc bedrock_bitmap16_ranges[] = {")
-    for item in bitmap_operand_ranges(model["spec"], "bitmap16"):
-        bits = item.get("bits", [])
-        reg_class = str(item.get("register_class"))
-        lines.append(f"    {{{int(bits[0])}u, {int(bits[1])}u, '{reg_class[0]}'}},")
+    lines.append("const bedrock_bitmap_range_desc bedrock_bitmap_ranges[] = {")
+    bitmap_operands = (
+        model["spec"]
+        .get("instructions", {})
+        .get("operand_schema", {})
+        .get("bitmap_operands", {})
+    )
+    bitmap_names = sorted(bitmap_operands) if isinstance(bitmap_operands, dict) else ["bitmap16"]
+    for bitmap_name in bitmap_names:
+        for item in bitmap_operand_ranges(model["spec"], bitmap_name):
+            bits = item.get("bits", [])
+            reg_class = str(item.get("register_class"))
+            lines.append(f"    {{{cstr(bitmap_name)}, {int(bits[0])}u, {int(bits[1])}u, '{reg_class[0]}'}},")
     lines.append("};")
     lines.append("")
 
@@ -410,7 +418,7 @@ def render_source(model: dict[str, Any], header_name: str, named_values: dict[st
             "const size_t bedrock_memory_order_names_count = sizeof(bedrock_memory_order_names) / sizeof(bedrock_memory_order_names[0]);",
             "const size_t bedrock_size_codes_count = sizeof(bedrock_size_codes) / sizeof(bedrock_size_codes[0]);",
             "const size_t bedrock_size_kind_values_count = sizeof(bedrock_size_kind_values) / sizeof(bedrock_size_kind_values[0]);",
-            "const size_t bedrock_bitmap16_ranges_count = sizeof(bedrock_bitmap16_ranges) / sizeof(bedrock_bitmap16_ranges[0]);",
+            "const size_t bedrock_bitmap_ranges_count = sizeof(bedrock_bitmap_ranges) / sizeof(bedrock_bitmap_ranges[0]);",
         ]
     )
     return render_tool_template(

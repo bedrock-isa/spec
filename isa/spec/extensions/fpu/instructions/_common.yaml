@@ -2,7 +2,7 @@ families:
   fpu:
     registers:
       F:
-        count: 32
+        count: 16
         width: 64
         scalar_formats:
         - S

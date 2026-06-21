@@ -47,6 +47,24 @@ def active_spec() -> dict[str, Any]:
     return ACTIVE_SPEC
 
 
+def bitmap_operand_names(spec: dict[str, Any] | None = None) -> set[str]:
+    spec = spec or active_spec()
+    bitmaps = (
+        spec.get("instructions", {})
+        .get("operand_schema", {})
+        .get("bitmap_operands", {})
+    )
+    return set(bitmaps) if isinstance(bitmaps, dict) else set()
+
+
+def is_bitmap_kind(kind: str, spec: dict[str, Any] | None = None) -> bool:
+    return kind in bitmap_operand_names(spec) or kind.upper() == "BITMAP16"
+
+
+def bitmap_kind_name(kind: str, spec: dict[str, Any] | None = None) -> str:
+    return kind if kind in bitmap_operand_names(spec) else "bitmap16"
+
+
 def fixed_size_kinds() -> set[str]:
     return set(spec_size_codes(active_spec()))
 
@@ -169,6 +187,9 @@ def infer_operand_kind(operand: str, field: dict[str, Any] | None) -> str:
     upper = typ.upper()
     source = name.upper()
     if "BITMAP" in upper or "BITMAP" in source:
+        lower = typ.lower()
+        if lower in bitmap_operand_names():
+            return lower
         return "BITMAP16"
     if upper in {"MEMORY_ORDER", "MEMORYORDER", "ORDER"} or source in {"ORDER", "MEMORY_ORDER"}:
         return "memory_order"
@@ -236,7 +257,7 @@ def operand_placeholder(kind: str, operand: str) -> str:
         return "cc"
     if kind == "memory_order":
         return "order"
-    if kind == "BITMAP16" or kind == "bitmap16":
+    if is_bitmap_kind(kind):
         return "<bitmap16>"
     if lower == "cr":
         return "<cr>"
@@ -379,7 +400,7 @@ def line_operand_placeholder(kind: str, operand: str, field: dict[str, Any] | No
         return f"cc{suffix}"
     if kind == "memory_order":
         return f"order{suffix}"
-    if kind in {"BITMAP16", "bitmap16"}:
+    if is_bitmap_kind(kind):
         return "<bitmap>"
     if kind.lower() == "cr":
         return "<cr>"
@@ -867,8 +888,9 @@ def operand_encoding_summary(kind: str, spec: dict[str, Any] | None = None) -> s
         return "4-bit condition field"
     if kind == "memory_order":
         return f"{named_value_width(spec, 'memory_order')}-bit atomic memory-order field"
-    if kind in {"BITMAP16", "bitmap16"}:
-        width = int((spec.get("instructions", {}).get("operand_schema", {}).get("bitmap_operands", {}).get("bitmap16", {}) or {}).get("width", 0))
+    if is_bitmap_kind(kind, spec):
+        bitmap_name = bitmap_kind_name(kind, spec)
+        width = int((spec.get("instructions", {}).get("operand_schema", {}).get("bitmap_operands", {}).get(bitmap_name, {}) or {}).get("width", 0))
         return f"{width}-bit register bitmap payload"
     if kind == "selector6":
         return "6-bit immediate selector field carrying values 0..63"
@@ -894,7 +916,7 @@ def operand_default_words(kind: str) -> str:
         return "+0 for register/simple EA; varies by EA form"
     if kind == "IMM_EA":
         return "varies by selected immediate EA form"
-    if kind in {"BITMAP16", "bitmap16"}:
+    if is_bitmap_kind(kind):
         return "+1"
     if "imm64" in kind.lower():
         return "+4"
@@ -917,9 +939,9 @@ def operand_notes(kind: str, spec: dict[str, Any] | None = None) -> str:
             for form in compact_ea_forms(spec)
             if form.get("class") == "immediate"
         )
-    if kind in {"BITMAP16", "bitmap16"}:
+    if is_bitmap_kind(kind, spec):
         ranges = []
-        for item in bitmap_operand_ranges(spec, "bitmap16"):
+        for item in bitmap_operand_ranges(spec, bitmap_kind_name(kind, spec)):
             bits = item.get("bits", [])
             if isinstance(bits, list) and len(bits) == 2:
                 ranges.append(f"bits {bits[0]}..{bits[1]}={item.get('register_class')}0..{item.get('register_class')}{bits[1] - bits[0]}")

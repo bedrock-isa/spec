@@ -8,7 +8,9 @@ int bedrock_rsave[] = {
 };
 
 int bedrock_rclob[] = {
-	D6, D7, A6, -1
+	D6, D7, A6,
+	F8, F9, F10, F11, F12, F13, F14, F15,
+	-1
 };
 
 int bedrock_cmodel = BEDROCK_CMODEL_LARGE;

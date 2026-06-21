@@ -1,0 +1,87 @@
+mnemonic: FPOPM
+doc:
+  title: Floating-Point Pop Multiple
+  summary: Pop selected F15-F0 registers in inverse bitmap order.
+  description: Pop selected F15-F0 registers in inverse bitmap order. Bit n names Fn.
+  instruction_family: fpu
+  instruction_class: fpu
+behavior:
+  group: fpu_stack
+  inputs:
+  - regs
+  output: none
+  operation:
+  - if ((regs_v & 0x8000) == 0) goto <fpopm_f15_done>;
+  - F15 = *:8 SP;
+  - SP = SP + 8;
+  - <fpopm_f15_done>
+  - if ((regs_v & 0x4000) == 0) goto <fpopm_f14_done>;
+  - F14 = *:8 SP;
+  - SP = SP + 8;
+  - <fpopm_f14_done>
+  - if ((regs_v & 0x2000) == 0) goto <fpopm_f13_done>;
+  - F13 = *:8 SP;
+  - SP = SP + 8;
+  - <fpopm_f13_done>
+  - if ((regs_v & 0x1000) == 0) goto <fpopm_f12_done>;
+  - F12 = *:8 SP;
+  - SP = SP + 8;
+  - <fpopm_f12_done>
+  - if ((regs_v & 0x0800) == 0) goto <fpopm_f11_done>;
+  - F11 = *:8 SP;
+  - SP = SP + 8;
+  - <fpopm_f11_done>
+  - if ((regs_v & 0x0400) == 0) goto <fpopm_f10_done>;
+  - F10 = *:8 SP;
+  - SP = SP + 8;
+  - <fpopm_f10_done>
+  - if ((regs_v & 0x0200) == 0) goto <fpopm_f9_done>;
+  - F9 = *:8 SP;
+  - SP = SP + 8;
+  - <fpopm_f9_done>
+  - if ((regs_v & 0x0100) == 0) goto <fpopm_f8_done>;
+  - F8 = *:8 SP;
+  - SP = SP + 8;
+  - <fpopm_f8_done>
+  - if ((regs_v & 0x0080) == 0) goto <fpopm_f7_done>;
+  - F7 = *:8 SP;
+  - SP = SP + 8;
+  - <fpopm_f7_done>
+  - if ((regs_v & 0x0040) == 0) goto <fpopm_f6_done>;
+  - F6 = *:8 SP;
+  - SP = SP + 8;
+  - <fpopm_f6_done>
+  - if ((regs_v & 0x0020) == 0) goto <fpopm_f5_done>;
+  - F5 = *:8 SP;
+  - SP = SP + 8;
+  - <fpopm_f5_done>
+  - if ((regs_v & 0x0010) == 0) goto <fpopm_f4_done>;
+  - F4 = *:8 SP;
+  - SP = SP + 8;
+  - <fpopm_f4_done>
+  - if ((regs_v & 0x0008) == 0) goto <fpopm_f3_done>;
+  - F3 = *:8 SP;
+  - SP = SP + 8;
+  - <fpopm_f3_done>
+  - if ((regs_v & 0x0004) == 0) goto <fpopm_f2_done>;
+  - F2 = *:8 SP;
+  - SP = SP + 8;
+  - <fpopm_f2_done>
+  - if ((regs_v & 0x0002) == 0) goto <fpopm_f1_done>;
+  - F1 = *:8 SP;
+  - SP = SP + 8;
+  - <fpopm_f1_done>
+  - if ((regs_v & 0x0001) == 0) goto <fpopm_f0_done>;
+  - F0 = *:8 SP;
+  - SP = SP + 8;
+  - <fpopm_f0_done>
+allocation:
+  catalog_section: fpu
+  layout_group: FPUSHM_FPOPM
+forms:
+  operands:
+  - name: regs
+    type: fbitmap16
+  bitmap:
+    bits_0_15: F0-F15
+  size_per_register: Q

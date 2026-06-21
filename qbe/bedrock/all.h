@@ -36,30 +36,14 @@ enum BedrockReg {
 	F13,
 	F14,
 	F15,
-	F16,
-	F17,
-	F18,
-	F19,
-	F20,
-	F21,
-	F22,
-	F23,
-	F24,
-	F25,
-	F26,
-	F27,
-	F28,
-	F29,
-	F30,
-	F31,
 
 	NGPR = A7 - D0 + 1,
-	NFPR = F30 - F0 + 1,
+	NFPR = F15 - F0 + 1,
 	NGPS = (D5 - D0 + 1) + (A5 - A0 + 1),
 	NFPS = F7 - F0 + 1,
-	NCLR = 3,
+	NCLR = 11,
 };
-MAKESURE(reg_not_tmp, F31 < (int)Tmp0);
+MAKESURE(reg_not_tmp, F15 < (int)Tmp0);
 
 enum BedrockCodeModel {
 	BEDROCK_CMODEL_LARGE,

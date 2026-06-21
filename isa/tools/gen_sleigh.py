@@ -141,6 +141,15 @@ def infer_operand_kind(operand: str, field: dict[str, Any] | None = None) -> str
     upper = typ.upper()
     source = name.upper()
     if "BITMAP" in upper or "BITMAP" in source:
+        bitmaps = (
+            active_spec()
+            .get("instructions", {})
+            .get("operand_schema", {})
+            .get("bitmap_operands", {})
+        )
+        lower = typ.lower()
+        if isinstance(bitmaps, dict) and lower in bitmaps:
+            return lower
         return "bitmap16"
     if upper in {"MEMORY_ORDER", "MEMORYORDER", "ORDER"} or source in {"ORDER", "MEMORY_ORDER"}:
         return "memory_order"
@@ -793,8 +802,15 @@ def render_operand_tables(fields: dict[str, SField]) -> str:
         lines.extend(render_ea_table(table, field.name))
     lines.append("")
     payload_tables: set[tuple[str, int, int]] = set()
+    bitmap_kinds = (
+        active_spec()
+        .get("instructions", {})
+        .get("operand_schema", {})
+        .get("bitmap_operands", {})
+    )
+    bitmap_kind_names = sorted(bitmap_kinds) if isinstance(bitmap_kinds, dict) else ["bitmap16"]
     for start in range(1, MAX_INSTRUCTION_WORDS):
-        for kind in ("imm", "imm16", "relative_imm", "bitmap16", "cr", "payload"):
+        for kind in ("imm", "imm16", "relative_imm", "cr", "payload", *bitmap_kind_names):
             payload_tables.add((kind, start, 1))
         for kind, counts in (
             ("imm32", (2,)),

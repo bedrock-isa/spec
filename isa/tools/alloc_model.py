@@ -156,7 +156,7 @@ def profile_part_for_field(field: Field) -> str:
         return "N"
     if field.kind == "memory_order":
         return ""
-    if field.kind == "bitmap16":
+    if field.kind.endswith("bitmap16"):
         return "BITMAP"
     if "imm" in field.kind.lower():
         return "IMM"

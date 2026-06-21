@@ -1355,6 +1355,10 @@ def floating_point_register_section(spec: dict[str, Any]) -> str:
     exception_rule = fstatus.get("exception_rule") or {}
     ieee_default = fstatus.get("ieee_754_default") or {}
     write_policy = fstatus.get("write_policy") or {}
+    register_summary = (
+        "The floating-point extension defines "
+        f"{regs['count']} Q-sized floating-point registers, {regs['names']}."
+    )
     fstatus_notes = [
         exception_rule.get("trap_disabled", "") if isinstance(exception_rule, dict) else "",
         exception_rule.get("trap_enabled", "") if isinstance(exception_rule, dict) else "",
@@ -1365,6 +1369,7 @@ def floating_point_register_section(spec: dict[str, Any]) -> str:
     return render_latex_template(
         "floating_point_register_model.tex",
         {
+            "REGISTER_MODEL_SUMMARY": tex_escape(register_summary),
             "REGISTER_TABLE": latex_tabular(["Property", "Value"], register_rows, ["1.55in", "3.95in"], "Floating-Point Register File"),
             "FFLAGS_TABLE": latex_tabular(["Bit", "Position", "Meaning"], flag_rows, ["0.55in", "0.65in", "4.05in"], "FFLAGS Bits"),
             "FSTATUS_TABLE": latex_tabular(["Field", "Position", "Meaning"], fstatus_rows, ["0.85in", "0.75in", "3.90in"], "FSTATUS Fields") if fstatus_rows else "",

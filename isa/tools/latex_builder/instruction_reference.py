@@ -1405,6 +1405,7 @@ def field_catalog_symbol(kind: str, symbols: set[str]) -> str:
         "DBANK": "k",
         "condition": "c",
         "bitmap16": "b",
+        "fbitmap16": "b",
         "selector6": "n",
         "memory_order": "o",
         "bit_group": "o",
@@ -2380,6 +2381,7 @@ def kind_description(kind: str) -> str:
         "imm16": "16-bit immediate selector",
         "BITMAP16": "16-bit register bitmap",
         "bitmap16": "16-bit register bitmap",
+        "fbitmap16": "16-bit floating-point register bitmap",
     }
     upper = kind.upper()
     if upper in spec_size_kinds(active_spec()):

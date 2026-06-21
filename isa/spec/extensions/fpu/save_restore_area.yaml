@@ -10,7 +10,7 @@ save_area_formats:
       description: This component stores the floating-point accrued exception flags, the floating-point status/control-mode
         word, and the architectural floating-point register file. FFLAGS and FSTATUS are separate 16-bit architectural state.
         The F register file remains Q-sized and starts on the next 8-byte boundary.
-      size: 272
+      size: 144
       component_bitmap_bits:
         description: Offset +0x000 contains a 64-bit validity mask for the floating-point state slots stored in this component.
           A set bit means that the corresponding state item is present in the save image.
@@ -24,7 +24,7 @@ save_area_formats:
           meaning: validates FSTATUS at +0x00a
         - bits: 2+n
           slot: F[n]
-          meaning: n=0..31; validates Fn at +0x010 + 8*n
+          meaning: n=0..15; validates Fn at +0x010 + 8*n
       slots:
       - offset: 0
         field: component-local valid bitmap
@@ -39,7 +39,7 @@ save_area_formats:
         field: reserved padding
         meaning: reserved padding to align the F register file
       - repeat:
-          count: 32
+          count: 16
           offset_start: 16
           offset_stride: 8
           field_template: F{n}

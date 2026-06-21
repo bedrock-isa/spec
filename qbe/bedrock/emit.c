@@ -69,7 +69,7 @@ rname(int r, int k)
 	} else if (r == SP) {
 		(void)k;
 		sprintf(b, "SP");
-	} else if (F0 <= r && r <= F31) {
+	} else if (F0 <= r && r <= F15) {
 		(void)k;
 		sprintf(b, "F%d", r-F0);
 	} else
@@ -346,7 +346,7 @@ isintreg(Ref r)
 static int
 isfreg(Ref r)
 {
-	return rtype(r) == RTmp && isreg(r) && F0 <= (int)r.val && (int)r.val <= F31;
+	return rtype(r) == RTmp && isreg(r) && F0 <= (int)r.val && (int)r.val <= F15;
 }
 
 static char *
@@ -540,25 +540,38 @@ copyref(Ref dst, Ref src, int k, E *e)
 }
 
 static int
-scratchreg(int k)
+scratchreg(int k, bits avoid)
 {
-	return KBASE(k) == 1 ? F31 : D7;
+	int r;
+
+	if (KBASE(k) == 1) {
+		for (r=F15; r>=F0; r--)
+			if (!(avoid & BIT(r)))
+				return r;
+	} else {
+		for (r=D7; r>=D0; r--)
+			if (!(avoid & BIT(r)))
+				return r;
+	}
+	die("no scratch register available");
 }
 
 static void
-savescratch(int k, E *e)
+savescratch(int r, int k, E *e)
 {
 	if (KBASE(k) == 1)
-		return;
-	fprintf(e->f, "\tPUSH D7\n");
+		fprintf(e->f, "\tFPUSHM 0x%04x\n", 1u << (r - F0));
+	else
+		fprintf(e->f, "\tPUSH %s\n", rname(r, Kl));
 }
 
 static void
-restorescratch(int k, E *e)
+restorescratch(int r, int k, E *e)
 {
 	if (KBASE(k) == 1)
-		return;
-	fprintf(e->f, "\tPOP D7\n");
+		fprintf(e->f, "\tFPOPM 0x%04x\n", 1u << (r - F0));
+	else
+		fprintf(e->f, "\tPOP %s\n", rname(r, Kl));
 }
 
 static void
@@ -638,12 +651,17 @@ emitbin(char *op, Ins *i, E *e, int commutative)
 		return;
 	}
 	if (!commutative && req(i->to, i->arg[1])) {
-		scratch = TMP(scratchreg(i->cls));
-		savescratch(i->cls, e);
+		bits avoid = 0;
+		if (isreg(i->to))
+			avoid |= BIT(i->to.val);
+		if (isreg(i->arg[0]))
+			avoid |= BIT(i->arg[0].val);
+		scratch = TMP(scratchreg(i->cls, avoid));
+		savescratch(scratch.val, i->cls, e);
 		copyref(scratch, i->arg[1], i->cls, e);
 		copyref(i->to, i->arg[0], i->cls, e);
 		emitop2ref(op, i->cls, scratch, i->to, e);
-		restorescratch(i->cls, e);
+		restorescratch(scratch.val, i->cls, e);
 		return;
 	}
 	if (commutative && rtype(i->arg[0]) == RCon && rtype(i->arg[1]) != RCon) {
@@ -3145,7 +3163,7 @@ framelayout(E *e)
 }
 
 static unsigned
-saved_reg_bitmap(E *e)
+saved_gpr_bitmap(E *e)
 {
 	unsigned bm;
 	int i, r;
@@ -3159,7 +3177,7 @@ saved_reg_bitmap(E *e)
 			bm |= 1u << (r - D0);
 		else if (A0 <= r && r <= A7)
 			bm |= 1u << (8 + r - A0);
-		else
+		else if (!(F0 <= r && r <= F15))
 			die("cannot save register with PUSHM");
 	}
 	if (e->uses_ascratch)
@@ -3172,6 +3190,21 @@ saved_reg_bitmap(E *e)
 			bm |= 1u << (8 + r - A0);
 		else
 			die("cannot save register with PUSHM");
+	}
+	return bm;
+}
+
+static unsigned
+saved_freg_bitmap(E *e)
+{
+	unsigned bm;
+	int i, r;
+
+	bm = 0;
+	for (i=0; bedrock_rclob[i]>=0; i++) {
+		r = bedrock_rclob[i];
+		if ((e->reg & BIT(r)) && F0 <= r && r <= F15)
+			bm |= 1u << (r - F0);
 	}
 	return bm;
 }
@@ -3194,42 +3227,50 @@ static void
 emitcallee_saves(E *e)
 {
 	int i;
-	unsigned bm;
+	unsigned gpr_bm, fpr_bm;
 
-	bm = saved_reg_bitmap(e);
-	if (popcount16(bm) > 1) {
-		fprintf(e->f, "\tPUSHM 0x%04x\n", bm);
-		return;
+	gpr_bm = saved_gpr_bitmap(e);
+	fpr_bm = saved_freg_bitmap(e);
+	if (popcount16(gpr_bm) > 1) {
+		fprintf(e->f, "\tPUSHM 0x%04x\n", gpr_bm);
+	} else {
+		for (i=0; bedrock_rclob[i]>=0; i++)
+			if ((e->reg & BIT(bedrock_rclob[i]))
+			&& D0 <= bedrock_rclob[i] && bedrock_rclob[i] <= A7)
+				fprintf(e->f, "\tPUSH %s\n", rname(bedrock_rclob[i], Kl));
+		if (e->uses_ascratch)
+			fprintf(e->f, "\tPUSH A7\n");
+		if (e->save_pad_reg >= 0)
+			fprintf(e->f, "\tPUSH %s\n", rname(e->save_pad_reg, Kl));
 	}
-	for (i=0; bedrock_rclob[i]>=0; i++)
-		if (e->reg & BIT(bedrock_rclob[i]))
-			fprintf(e->f, "\tPUSH %s\n", rname(bedrock_rclob[i], Kl));
-	if (e->uses_ascratch)
-		fprintf(e->f, "\tPUSH A7\n");
-	if (e->save_pad_reg >= 0)
-		fprintf(e->f, "\tPUSH %s\n", rname(e->save_pad_reg, Kl));
+	if (fpr_bm)
+		fprintf(e->f, "\tFPUSHM 0x%04x\n", fpr_bm);
 }
 
 static void
 emitcallee_restores(E *e)
 {
 	int i;
-	unsigned bm;
+	unsigned gpr_bm, fpr_bm;
 
-	bm = saved_reg_bitmap(e);
-	if (popcount16(bm) > 1) {
-		fprintf(e->f, "\tPOPM 0x%04x\n", bm);
-		return;
+	gpr_bm = saved_gpr_bitmap(e);
+	fpr_bm = saved_freg_bitmap(e);
+	if (fpr_bm)
+		fprintf(e->f, "\tFPOPM 0x%04x\n", fpr_bm);
+	if (popcount16(gpr_bm) > 1) {
+		fprintf(e->f, "\tPOPM 0x%04x\n", gpr_bm);
+	} else {
+		if (e->uses_ascratch)
+			fprintf(e->f, "\tPOP A7\n");
+		if (e->save_pad_reg >= 0)
+			fprintf(e->f, "\tPOP %s\n", rname(e->save_pad_reg, Kl));
+		for (i=0; bedrock_rclob[i]>=0; i++)
+			;
+		while (i-- > 0)
+			if ((e->reg & BIT(bedrock_rclob[i]))
+			&& D0 <= bedrock_rclob[i] && bedrock_rclob[i] <= A7)
+				fprintf(e->f, "\tPOP %s\n", rname(bedrock_rclob[i], Kl));
 	}
-	if (e->uses_ascratch)
-		fprintf(e->f, "\tPOP A7\n");
-	if (e->save_pad_reg >= 0)
-		fprintf(e->f, "\tPOP %s\n", rname(e->save_pad_reg, Kl));
-	for (i=0; bedrock_rclob[i]>=0; i++)
-		;
-	while (i-- > 0)
-		if (e->reg & BIT(bedrock_rclob[i]))
-			fprintf(e->f, "\tPOP %s\n", rname(bedrock_rclob[i], Kl));
 }
 
 static void

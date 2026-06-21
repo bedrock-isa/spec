@@ -67,7 +67,9 @@ repg_mem:
         MOV.L A3, [A0++]
     }
     FADD.S [A0], F1
-    FMADD.S [A0], F1, F2
+    FMADD.S [A0], F15, F2
+    FPUSHM {F8-F15}
+    FPOPM {F8-F15}
     JEQ.W done@WORD_PCREL16
     JMP.L done@WORD_PCREL32
     CALL ext_func@PLT32

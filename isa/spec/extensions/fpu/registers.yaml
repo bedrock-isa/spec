@@ -1,6 +1,6 @@
 register_classes:
   F:
-    count: 32
+    count: 16
     width: 64
     allocatable: true
     role: floating-point
@@ -10,9 +10,9 @@ register_classes:
 
 floating_point_register_model:
   registers:
-    count: 32
+    count: 16
     width: 64
-    names: F0-F31
+    names: F0-F15
     scalar_formats: [S, D]
   fflags:
     width: 16

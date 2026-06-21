@@ -179,7 +179,18 @@ register_convention:
       - F5
       - F6
       - F7
-    callee_saved: []
+    callee_saved:
+      - F8
+      - F9
+      - F10
+      - F11
+      - F12
+      - F13
+      - F14
+      - F15
+    callee_save_mechanism:
+      instruction_pair: FPUSHM/FPOPM
+      bitmap_rule: bits 0..15 name F0-F15; C ABI prologues and epilogues normally set only bits for clobbered F8-F15
     floating_point_arguments:
       - F0
       - F1

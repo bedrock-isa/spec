@@ -114,7 +114,10 @@ int main(void)
     failed |= check_line("CMPXCHG.Q/ACQREL D0, D1, [A2]", "CMPXCHG.D_TO_D_TO_EA");
     failed |= check_line("FETCHADD.L/RELEASE D2, [A3]", "FETCHADD.D_TO_EA");
     failed |= check_line("FADD.S [A0], F1", "FADD.EA_TO_F");
-    failed |= check_line("FMADD.S [A0], F1, F2", "FMADD.EA_TO_F_TO_F");
+    failed |= check_line("FMADD.S [A0], F15, F2", "FMADD.EA_TO_F_TO_F");
+    failed |= check_rejected_line("FMADD.S [A0], F16, F2");
+    failed |= check_line("FPUSHM {F8-F15}", "FPUSHM.BITMAP");
+    failed |= check_line("FPOPM {F8-F15}", "FPOPM.BITMAP");
     failed |= check_line("SHL.Q 63, D0", "SHL.I6_TO_EA");
     failed |= check_line("SHR.L D1, [A0]", "SHR.D_TO_EA");
     failed |= check_rejected_line("SHL.Q 64, D0");
