@@ -20,6 +20,8 @@ allocation:
   catalog_section: system
   layout_group: CACHE_OPS
 forms:
+  target_ea_set: memory_only
+  require_memory_operand: true
   operands:
   - name: target
     type: EA_or_range

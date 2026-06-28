@@ -30,6 +30,7 @@ allocation:
   catalog_section: integer
   layout_group: EXTEND_TO_W_ZERO
 forms:
+  dst_ea_set: store_destination
   operands:
   - - name: src
       type: EA

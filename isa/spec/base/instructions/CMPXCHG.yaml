@@ -52,6 +52,8 @@ attributes:
 allocation:
   catalog_section: system
 forms:
+  memory_operand_ea_set: addressable_memory_only
+  require_memory_operand: true
   operands:
   - name: order
     type: memory_order

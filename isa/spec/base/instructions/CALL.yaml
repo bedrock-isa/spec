@@ -25,6 +25,7 @@ behavior:
 allocation:
   catalog_section: compact_primary
 forms:
+  target_ea_set: call_target
   compact_forms:
   - profile: IMM32
     allocation_cluster: direct_call

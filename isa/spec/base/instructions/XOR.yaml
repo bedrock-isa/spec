@@ -27,6 +27,7 @@ attributes:
 allocation:
   catalog_section: compact_primary
 forms:
+  dst_ea_set: store_destination
   compact_forms:
   - operands:
     - name: src

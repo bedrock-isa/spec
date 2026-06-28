@@ -21,6 +21,8 @@ attributes:
 allocation:
   catalog_section: compact_primary
 forms:
+  src_ea_set: pure_address_calculation
   operands:
   - name: src
     type: EA
+  no_memory_access: true

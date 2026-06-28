@@ -416,18 +416,6 @@ def emit_ea_package(spec: dict[str, Any]) -> str:
         compact_case_lines += ea_assignment_lines(form, form_names[name], compact=True, indent="        ")
         compact_case_lines.append("      end")
 
-    reserved_case_lines: list[str] = []
-    for reserved in spec.get("ea", {}).get("reserved_forms", []) or []:
-        width_bits, mask, value = parse_bit_pattern(str(reserved.get("pattern", "")))
-        if width_bits == 6:
-            reserved_case_lines.extend(
-                [
-                    f"      {bin_pattern(6, mask, value)}: begin // {reserved.get('name', '')}",
-                    "        r.reserved = 1'b1;",
-                    "      end",
-                ]
-            )
-
     extended_case_lines: list[str] = []
     for mode_value, mode_forms in extended_ea_forms_by_mode(spec).items():
         extended_case_lines.append(f"      5'h{mode_value:02x}: begin")
@@ -472,7 +460,7 @@ def emit_ea_package(spec: dict[str, Any]) -> str:
             ),
             "EA_SEGMENT_DECODE_CASES": sv_lines(ea_segment_decode_cases(spec)),
             "COMPACT_EA_CASES": sv_lines(compact_case_lines),
-            "RESERVED_COMPACT_EA_CASES": sv_lines(reserved_case_lines),
+            "RESERVED_COMPACT_EA_CASES": "",
             "EXTENDED_EA_CASES": sv_lines(extended_case_lines),
         },
     )
@@ -604,12 +592,6 @@ def emit_ea_synth(spec: dict[str, Any]) -> str:
             compact_case_lines += ea_synth_assignment_lines(form, form_names[name], compact=True, indent="        ")
             compact_case_lines.append("      end")
 
-    reserved_case_lines: list[str] = []
-    for reserved in spec.get("ea", {}).get("reserved_forms", []) or []:
-        width_bits, mask, value = parse_bit_pattern(str(reserved.get("pattern", "")))
-        if width_bits == 6:
-            reserved_case_lines.append(f"      {bin_pattern(6, mask, value)}: begin reserved_o = 1'b1; end")
-
     extended_case_lines: list[str] = []
     for mode_value, mode_forms in extended_ea_forms_by_mode(spec).items():
         extended_case_lines.append(f"        5'h{mode_value:02x}: begin")
@@ -635,7 +617,7 @@ def emit_ea_synth(spec: dict[str, Any]) -> str:
         {
             "EA_FORM_LOCALPARAMS": sv_lines(form_localparam_lines),
             "COMPACT_EA_CASES": sv_lines(compact_case_lines),
-            "RESERVED_COMPACT_EA_CASES": sv_lines(reserved_case_lines),
+            "RESERVED_COMPACT_EA_CASES": "",
             "EXTENDED_EA_CASES": sv_lines(extended_case_lines),
         },
     )

@@ -21,6 +21,7 @@ behavior:
 allocation:
   catalog_section: compact_primary
 forms:
+  dst_ea_set: store_destination
   operands:
   - name: cc
     type: condition

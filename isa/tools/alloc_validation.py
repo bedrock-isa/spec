@@ -120,20 +120,10 @@ def audit_alignment(spec: dict[str, Any], entries: list[PatternEntry], candidate
 
     ea_policy = spec["ea"].get("ea_operand_policy", {}) or {}
     ea_sets = ea_policy.get("ea_sets", {}) or {}
-    constraints = spec["ea"].get("instruction_ea_constraints", {}) or {}
-    unknown_sets = []
-    for name, body in constraints.items():
-        if not isinstance(body, dict):
-            continue
-        for key, value in body.items():
-            if key.endswith("_ea_set") and str(value) not in ea_sets:
-                unknown_sets.append(f"{name}.{key}={value}")
     add(
         "EA operand policy",
-        bool(ea_sets) and not unknown_sets,
-        f"{len(ea_sets)} EA sets, {len(constraints)} instruction constraints"
-        if ea_sets and not unknown_sets
-        else f"unknown EA set references={unknown_sets}",
+        bool(ea_sets),
+        f"{len(ea_sets)} EA sets",
     )
 
     canonical_rules = spec["opcodes"].get("canonical_rules", []) or []

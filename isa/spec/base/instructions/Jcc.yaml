@@ -25,6 +25,7 @@ behavior:
 allocation:
   catalog_section: compact_primary
 forms:
+  target_ea_set: branch_target
   compact_forms:
   - operands:
     - name: cc

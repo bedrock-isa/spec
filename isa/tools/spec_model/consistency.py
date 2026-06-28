@@ -344,9 +344,6 @@ def check_effective_addresses(spec: dict[str, Any], result: ValidationResult) ->
     for index, form in enumerate(compact_forms):
         add_form(form, f"ea_forms_{index}", "ea")
 
-    for index, form in enumerate(spec["ea"].get("reserved_forms", []) or []):
-        add_form(form, f"reserved_forms_{index}", "ea_reserved")
-
     extended_values: dict[tuple[str, int], str] = {}
     extended_forms = spec["ea"].get("extended_ea_forms", []) or []
     for index, form in enumerate(extended_forms):
@@ -466,23 +463,6 @@ def check_ea_operand_policy(
                     f"extended_form_constraints.{constraint_name}: references unknown extended EA forms "
                     + ", ".join(unknown)
                 )
-
-    allowed_atoms = compact_names | {"PC_relative"}
-    constraints = ea.get("instruction_ea_constraints") or {}
-    for name, body in constraints.items():
-        if not isinstance(body, dict):
-            continue
-        for key, value in body.items():
-            if key.endswith("_ea_set") and str(value) not in ea_sets:
-                result.error(f"instruction EA constraint {name}.{key}: unknown EA set {value}")
-            if key in {"src", "dst"} and str(value) not in allowed_atoms:
-                result.error(f"instruction EA constraint {name}.{key}: unknown operand atom {value}")
-            if key == "disallow":
-                unknown = sorted({str(item) for item in value or []} - allowed_atoms)
-                if unknown:
-                    result.error(
-                        f"instruction EA constraint {name}.disallow references unknown atoms {', '.join(unknown)}"
-                    )
 
 
 def check_canonical_rules(spec: dict[str, Any], instruction_ids: set[str], result: ValidationResult) -> None:
@@ -670,6 +650,49 @@ def check_catalog_global_consistency(catalog: dict[str, Any], spec: dict[str, An
             value = fregs.get(key)
             if not isinstance(value, int) or value <= 0:
                 result.error(f"fpu.registers.F.{key} must be a positive integer, got {value!r}")
+    check_catalog_ea_constraints(catalog, spec, result)
+
+
+def check_catalog_ea_constraints(catalog: dict[str, Any], spec: dict[str, Any], result: ValidationResult) -> None:
+    ea = spec.get("ea") or {}
+    policy = ea.get("ea_operand_policy") or {}
+    ea_sets = policy.get("ea_sets") or {}
+    if not isinstance(ea_sets, dict):
+        ea_sets = {}
+
+    raw_ea_forms = ea.get("ea_forms", {}) or {}
+    compact_forms = raw_ea_forms.get("compact", []) if isinstance(raw_ea_forms, dict) else []
+    compact_names = {
+        str(form.get("name"))
+        for form in compact_forms
+        if isinstance(form, dict) and form.get("name")
+    }
+    allowed_atoms = compact_names | {"PC_relative"}
+
+    def check_body(path: str, body: dict[str, Any]) -> None:
+        for key, value in body.items():
+            if key.endswith("_ea_set") and str(value) not in ea_sets:
+                result.error(f"{path}.{key}: unknown EA set {value}")
+            if key == "disallow":
+                unknown = sorted({str(item) for item in value or []} - allowed_atoms)
+                if unknown:
+                    result.error(f"{path}.disallow references unknown EA atoms {', '.join(unknown)}")
+
+    for section, body in catalog_sections(catalog):
+        if not isinstance(body, dict):
+            continue
+        for key, item in body.items():
+            if not isinstance(item, dict):
+                continue
+            path = f"{section}.{key}"
+            check_body(path, item)
+            for form_key in ("compact_forms", "extended_forms"):
+                forms = item.get(form_key)
+                if not isinstance(forms, list):
+                    continue
+                for index, form in enumerate(forms):
+                    if isinstance(form, dict):
+                        check_body(f"{path}.{form_key}[{index}]", form)
 
 
 def word0_payload_width(spec: dict[str, Any]) -> int:

@@ -30,6 +30,7 @@ allocation:
   catalog_section: compact_primary
   layout_group: EXTEND_TO_Q
 forms:
+  dst_ea_set: store_destination
   compact_forms:
   - operands:
     - name: src

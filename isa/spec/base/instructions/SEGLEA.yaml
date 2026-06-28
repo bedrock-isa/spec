@@ -18,6 +18,7 @@ attributes:
 allocation:
   catalog_section: compact_primary
 forms:
+  src_ea_set: pure_address_calculation
   operands:
   - name: src
     type: EA
@@ -25,3 +26,5 @@ forms:
     type: AREG
   canonical_check: false
   page_walk: false
+  no_memory_access: true
+  segment_translation_only: true

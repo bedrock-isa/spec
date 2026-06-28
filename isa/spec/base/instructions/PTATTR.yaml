@@ -18,6 +18,8 @@ allocation:
   catalog_section: system
   layout_group: PAGE_QUERY
 forms:
+  src_ea_set: pure_address_calculation
+  require_address_value: true
   operands:
   - name: src
     type: linear_or_EA

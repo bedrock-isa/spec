@@ -28,6 +28,7 @@ allocation:
   catalog_section: compact_primary
   layout_group: AND_OR
 forms:
+  dst_ea_set: store_destination
   compact_forms:
   - operands:
     - name: src

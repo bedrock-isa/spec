@@ -305,8 +305,6 @@ class EffectiveAddressRootSchema(KeySchema):
         "version",
         "fields",
         "ea_forms",
-        "reserved_forms_behavior",
-        "reserved_forms",
         "extended_ea_descriptor",
         "extended_ea_forms",
         "manual_text",
@@ -316,7 +314,6 @@ class EffectiveAddressRootSchema(KeySchema):
         "update_ineligible",
         "ea_coverage_audit",
         "ea_operand_policy",
-        "instruction_ea_constraints",
     }
 
     @classmethod
@@ -332,7 +329,6 @@ class EffectiveAddressRootSchema(KeySchema):
         check_list_items(value.get("extended_ea_forms", []), f"{path}.extended_ea_forms", ExtendedEaFormSchema, errors)
         manual_text = value.get("manual_text")
         check_optional_mapping(manual_text, f"{path}.manual_text", EaManualTextSchema, errors)
-        check_list_items(value.get("reserved_forms", []), f"{path}.reserved_forms", ReservedEaFormSchema, errors)
         compact_forms = value.get("ea_forms", {}).get("compact", []) if isinstance(value.get("ea_forms"), dict) else []
         for index, form in enumerate(compact_forms):
             if isinstance(form, dict) and isinstance(form.get("operands"), list):
@@ -365,9 +361,6 @@ class EffectiveAddressRootSchema(KeySchema):
         if isinstance(policy, dict):
             check_mapping_item_keys(policy.get("ea_sets"), f"{path}.ea_operand_policy.ea_sets", EaSetSchema, errors)
             check_mapping_item_keys(policy.get("extended_form_constraints"), f"{path}.ea_operand_policy.extended_form_constraints", EaExtendedFormConstraintSchema, errors)
-        constraints = value.get("instruction_ea_constraints") or {}
-        if isinstance(constraints, dict):
-            check_mapping_values(constraints, f"{path}.instruction_ea_constraints", InstructionEaConstraintSchema, errors)
         cls.validate_manual_text_coverage(value, path, errors)
 
     @classmethod
@@ -854,7 +847,23 @@ class CatalogEntrySchema(KeySchema):
         "aliases",
         "disallow_segment_immediate",
         "disallow_update_prefix",
+        "src_ea_set",
         "dst_ea_set",
+        "lhs_ea_set",
+        "rhs_ea_set",
+        "target_ea_set",
+        "memory_operand_ea_set",
+        "require_memory_operand",
+        "require_address_value",
+        "segment_translation_only",
+        "disallow",
+        "segment_operand",
+        "atomic_cs_pc_update",
+        "disallow_immediate_segment_plus_immediate_offset",
+        "stack_register",
+        "stack_segment",
+        "source_width",
+        "destination_width",
         "encoding_fields",
         "extension_family",
         "implicit_inputs",
@@ -954,6 +963,25 @@ class InstructionFormSchema(KeySchema):
         "extension_family",
         "allocation_cluster",
         "profile",
+        "src_ea_set",
+        "dst_ea_set",
+        "lhs_ea_set",
+        "rhs_ea_set",
+        "target_ea_set",
+        "memory_operand_ea_set",
+        "require_memory_operand",
+        "require_address_value",
+        "no_memory_access",
+        "segment_translation_only",
+        "disallow_update_prefix",
+        "disallow",
+        "segment_operand",
+        "atomic_cs_pc_update",
+        "disallow_immediate_segment_plus_immediate_offset",
+        "stack_register",
+        "stack_segment",
+        "source_width",
+        "destination_width",
     }
 
 
@@ -1830,34 +1858,6 @@ class EaSetSchema(KeySchema):
 class EaExtendedFormConstraintSchema(KeySchema):
     name = "EA extended form constraint"
     keys = {"includes", "excludes", "rationale"}
-
-
-class InstructionEaConstraintSchema(KeySchema):
-    name = "instruction EA constraint"
-    keys = {
-        "src_ea_set",
-        "dst_ea_set",
-        "lhs_ea_set",
-        "rhs_ea_set",
-        "target_ea_set",
-        "memory_operand_ea_set",
-        "allow_memory_memory",
-        "require_memory_operand",
-        "require_address_value",
-        "no_memory_access",
-        "segment_translation_only",
-        "src",
-        "dst",
-        "disallow",
-        "segment_operand",
-        "atomic_cs_pc_update",
-        "disallow_immediate_segment_plus_immediate_offset",
-        "stack_register",
-        "stack_segment",
-        "disallow_update_prefix",
-        "source_width",
-        "destination_width",
-    }
 
 
 class RegisterClassSchema(KeySchema):

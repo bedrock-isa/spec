@@ -31,6 +31,10 @@ behavior:
 allocation:
   catalog_section: compact_primary
 forms:
+  segment_operand: DREG
+  target_ea_set: long_control_target
+  atomic_cs_pc_update: true
+  disallow_immediate_segment_plus_immediate_offset: true
   operands:
   - name: new_cs
     type: DREG

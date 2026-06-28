@@ -31,6 +31,7 @@ allocation:
   catalog_section: integer
   layout_group: ADC_SBB
 forms:
+  dst_ea_set: store_destination
   operands:
   - - name: src
       type: EA

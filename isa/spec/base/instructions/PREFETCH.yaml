@@ -17,6 +17,8 @@ attributes:
 allocation:
   catalog_section: system
 forms:
+  src_ea_set: memory_only
+  require_memory_operand: true
   operands:
   - name: src
     type: EA
