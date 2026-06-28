@@ -16,7 +16,6 @@ behavior:
   operation:
   - acc_v = acc_v - (src_v * multiplier_v);
 attributes:
-  repeatable: true
   flags: unchanged
 allocation:
   catalog_section: integer

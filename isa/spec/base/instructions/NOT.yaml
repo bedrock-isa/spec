@@ -15,7 +15,6 @@ behavior:
   - CF = 0;
   - VF = 0;
 attributes:
-  repeatable: true
   flags:
     Z: result == 0
     N: most_significant_bit(result)

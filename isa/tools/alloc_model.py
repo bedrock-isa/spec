@@ -1,84 +1,9 @@
-"""Shared allocation data model and constants."""
+"""Shared allocation data model."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Any
-
-PRIMARY_SPACE_ID = "PRIMARY_PAYLOAD"
-PRIMARY_BITS = 12
-PRIMARY_SLOTS = 1 << PRIMARY_BITS
-EXTENDED_SPACE_ID = "EXTENDED_OPCODE_WORD"
-EXTENDED_BITS = 16
-EXTENDED_SLOTS = 1 << EXTENDED_BITS
-PRIMARY_EXTENSION_HEADROOM_SLOTS = 64
-HIGH_PRIMARY_PAYLOAD_START = PRIMARY_SLOTS * 7 // 8
-
-SEMANTIC_SECTIONS = (
-    ("integer_instructions", "integer", 70),
-    ("atomic_system_cache_instructions", "system", 55),
-    ("fpu.instructions", "fpu", 45),
-)
-
-DEFAULT_COMPACT_EXCLUDE = (
-    "FPU",
-    "cache_management",
-    "tlb_management",
-    "system_core_except_core_control",
-    "transcendental_fpu",
-)
-
-DEFAULT_COMPACT_PREFER = (
-    "D_D_integer_alu",
-    "MOV_LQ_EA_D",
-    "MOV_LQ_D_EA",
-    "INC_DEC_D",
-    "PUSH_POP",
-    "Jcc",
-    "CALL",
-    "RET",
-    "NOP",
-    "SYSCALL",
-    "BKPT",
-    "WAIT",
-    "YIELD",
-    "fences",
-)
-
-EXTENSION_FAMILY_RANK = {
-    "integer_alu": 0,
-    "integer_bounds": 1,
-    "integer_bounds_signed": 2,
-    "integer_bounds_unsigned": 3,
-    "integer_mul_div": 4,
-    "integer_mac": 5,
-    "integer_bitfield": 6,
-    "integer_bitfield_bit_imm": 7,
-    "integer_bitfield_rotate_imm": 8,
-    "integer_bitfield_shift_imm": 9,
-    "data_movement": 10,
-    "data_register_banking": 11,
-    "ea_utility": 12,
-    "control_flow": 13,
-    "conditional_control": 14,
-    "atomic_memory": 15,
-    "cache_hint": 16,
-    "tlb_cache": 17,
-    "system_core": 18,
-    "virtualization_acceleration": 19,
-    "fpu_move_compare": 20,
-    "fpu_arithmetic": 21,
-    "fpu_transcendental": 22,
-    "misc": 23,
-}
-
-EXTENSION_PROFILE_RANK = {
-    "integer_alu": {
-        "EA_TO_D": 0,
-        "EA_TO_A": 1,
-        "D_TO_EA": 3,
-    }
-}
 
 
 @dataclass(frozen=True)
@@ -119,6 +44,92 @@ class Candidate:
     fixed_size_suffix: str
     privilege: str
     allocation_cluster: str
+
+
+@dataclass(frozen=True)
+class OpcodeSpace:
+    id: str
+    bits: int
+
+    @property
+    def slots(self) -> int:
+        return 1 << self.bits
+
+
+@dataclass(frozen=True)
+class SemanticSection:
+    path: str
+    category: str
+    default_weight: int
+
+
+@dataclass(frozen=True)
+class AllocationModel:
+    primary: OpcodeSpace
+    extended: OpcodeSpace
+    primary_extension_headroom_slots: int
+    high_primary_payload_start: int
+    semantic_sections: tuple[SemanticSection, ...]
+    compact_exclude: tuple[str, ...]
+    compact_prefer: tuple[str, ...]
+    extension_family_rank: dict[str, int]
+    extension_profile_rank: dict[str, dict[str, int]]
+
+
+def allocation_model(spec: dict[str, Any]) -> AllocationModel:
+    opcodes = spec.get("opcodes") or {}
+    instructions = spec.get("instructions") or {}
+    allocation = instructions.get("allocation") or {}
+    spaces = opcodes.get("opcode_spaces") or {}
+    primary_space = spaces.get("primary") or {}
+    extended_space = spaces.get("extended") or {}
+    compactness = allocation.get("compactness_policy") or {}
+
+    primary_bits = bit_range_width(((opcodes.get("word0") or {}).get("payload") or {}).get("bits"))
+    primary = OpcodeSpace(id=str(primary_space["id"]), bits=primary_bits)
+    extended = OpcodeSpace(id=str(extended_space["id"]), bits=int(extended_space["bits"]))
+
+    high_region = primary_space.get("extension_root_region") or {}
+    start_fraction = high_region.get("start_fraction") or [0, 1]
+    if not isinstance(start_fraction, list) or len(start_fraction) != 2:
+        raise ValueError("opcodes.opcode_spaces.primary.extension_root_region.start_fraction must be [numerator, denominator]")
+    high_start = primary.slots * int(start_fraction[0]) // int(start_fraction[1])
+
+    semantic_sections = tuple(
+        SemanticSection(
+            path=str(section["path"]),
+            category=str(section["category"]),
+            default_weight=int(section["default_weight"]),
+        )
+        for section in allocation.get("semantic_sections", []) or []
+    )
+    return AllocationModel(
+        primary=primary,
+        extended=extended,
+        primary_extension_headroom_slots=int(primary_space["reserved_unallocated_headroom_slots"]),
+        high_primary_payload_start=high_start,
+        semantic_sections=semantic_sections,
+        compact_exclude=tuple(str(item) for item in compactness.get("exclude", []) or []),
+        compact_prefer=tuple(str(item) for item in compactness.get("prefer", []) or []),
+        extension_family_rank=rank_map(allocation.get("extension_family_order", []) or []),
+        extension_profile_rank={
+            str(family): rank_map(profiles)
+            for family, profiles in (allocation.get("extension_profile_order", {}) or {}).items()
+            if isinstance(profiles, list)
+        },
+    )
+
+
+def bit_range_width(value: Any) -> int:
+    if not isinstance(value, list) or len(value) != 2:
+        raise ValueError("opcode payload bits must be a [high, low] range")
+    high = int(value[0])
+    low = int(value[1])
+    return abs(high - low) + 1
+
+
+def rank_map(values: list[Any]) -> dict[str, int]:
+    return {str(value): index for index, value in enumerate(values)}
 
 def profile_form_parts(fields: tuple[Field, ...]) -> list[str]:
     parts = []
@@ -183,20 +194,3 @@ def profile_candidate_id(candidate: Candidate, fields: tuple[Field, ...]) -> str
     if ident.endswith(".IMM") and candidate.id.startswith(ident) and candidate.id != ident:
         return candidate.id
     return ident
-
-
-def default_field_layout_policy() -> dict[str, Any]:
-    return {
-        "anchor_strategy": {
-            "format_order": "largest_variable_payload_first",
-            "placement": "first_fit_with_existing_lanes",
-            "fixed_signatures": [],
-        },
-        "field_score": {
-            "formula": "candidate_weight_times_field_width",
-            "default_multiplier": 1,
-            "signature_multipliers": {"default": 1},
-        },
-        "explicit_signature_order": [],
-        "subfield_affinities": [],
-    }

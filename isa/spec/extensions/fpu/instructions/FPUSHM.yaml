@@ -11,70 +11,11 @@ behavior:
   - regs
   output: none
   operation:
-  - if ((regs_v & 0x0001) == 0) goto <fpushm_f0_done>;
-  - SP = SP - 8;
-  - '*:8 SP = F0;'
-  - <fpushm_f0_done>
-  - if ((regs_v & 0x0002) == 0) goto <fpushm_f1_done>;
-  - SP = SP - 8;
-  - '*:8 SP = F1;'
-  - <fpushm_f1_done>
-  - if ((regs_v & 0x0004) == 0) goto <fpushm_f2_done>;
-  - SP = SP - 8;
-  - '*:8 SP = F2;'
-  - <fpushm_f2_done>
-  - if ((regs_v & 0x0008) == 0) goto <fpushm_f3_done>;
-  - SP = SP - 8;
-  - '*:8 SP = F3;'
-  - <fpushm_f3_done>
-  - if ((regs_v & 0x0010) == 0) goto <fpushm_f4_done>;
-  - SP = SP - 8;
-  - '*:8 SP = F4;'
-  - <fpushm_f4_done>
-  - if ((regs_v & 0x0020) == 0) goto <fpushm_f5_done>;
-  - SP = SP - 8;
-  - '*:8 SP = F5;'
-  - <fpushm_f5_done>
-  - if ((regs_v & 0x0040) == 0) goto <fpushm_f6_done>;
-  - SP = SP - 8;
-  - '*:8 SP = F6;'
-  - <fpushm_f6_done>
-  - if ((regs_v & 0x0080) == 0) goto <fpushm_f7_done>;
-  - SP = SP - 8;
-  - '*:8 SP = F7;'
-  - <fpushm_f7_done>
-  - if ((regs_v & 0x0100) == 0) goto <fpushm_f8_done>;
-  - SP = SP - 8;
-  - '*:8 SP = F8;'
-  - <fpushm_f8_done>
-  - if ((regs_v & 0x0200) == 0) goto <fpushm_f9_done>;
-  - SP = SP - 8;
-  - '*:8 SP = F9;'
-  - <fpushm_f9_done>
-  - if ((regs_v & 0x0400) == 0) goto <fpushm_f10_done>;
-  - SP = SP - 8;
-  - '*:8 SP = F10;'
-  - <fpushm_f10_done>
-  - if ((regs_v & 0x0800) == 0) goto <fpushm_f11_done>;
-  - SP = SP - 8;
-  - '*:8 SP = F11;'
-  - <fpushm_f11_done>
-  - if ((regs_v & 0x1000) == 0) goto <fpushm_f12_done>;
-  - SP = SP - 8;
-  - '*:8 SP = F12;'
-  - <fpushm_f12_done>
-  - if ((regs_v & 0x2000) == 0) goto <fpushm_f13_done>;
-  - SP = SP - 8;
-  - '*:8 SP = F13;'
-  - <fpushm_f13_done>
-  - if ((regs_v & 0x4000) == 0) goto <fpushm_f14_done>;
-  - SP = SP - 8;
-  - '*:8 SP = F14;'
-  - <fpushm_f14_done>
-  - if ((regs_v & 0x8000) == 0) goto <fpushm_f15_done>;
-  - SP = SP - 8;
-  - '*:8 SP = F15;'
-  - <fpushm_f15_done>
+  - arch_fpushm(regs_v);
+  operation_text: >
+    For each set bit in the bitmap, FPUSHM pushes the corresponding 64-bit F register value onto the stack. F registers
+    are processed in increasing order from F0 through F15. Each selected register decrements SP by 8 before storing the
+    register value at the new SP.
 allocation:
   catalog_section: fpu
   layout_group: FPUSHM_FPOPM

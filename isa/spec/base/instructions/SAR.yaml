@@ -31,8 +31,6 @@ behavior:
     N: most significant result bit
     C: last bit shifted out, or original sign bit for count greater than operand width
     V: 0
-attributes:
-  repeatable: true
 allocation:
   catalog_section: integer
   layout_group: SHIFTS

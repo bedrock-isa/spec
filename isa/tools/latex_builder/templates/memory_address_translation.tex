@@ -184,67 +184,7 @@ When PTCR.LA57 is zero, paging uses a 48-bit canonical linear address. Bits
 bits select four nine-bit page-table indexes followed by a twelve-bit page
 offset.
 
-\begin{center}\vspace{3pt}
-\begin{tikzpicture}[x=1in,y=1in,every node/.style={font=\scriptsize},>=stealth]
-\node[anchor=east] at (0.49,6.22) {LA48};
-\node[anchor=south west] at (0.55,6.46) {63};
-\node[anchor=south east] at (1.84,6.46) {48};
-\draw (0.55,6.02) rectangle (1.84,6.42);
-\node[align=center] at (1.19,6.22) {sign};
-\node[anchor=south west] at (1.84,6.46) {47};
-\node[anchor=south east] at (2.56,6.46) {39};
-\draw (1.84,6.02) rectangle (2.56,6.42);
-\node[align=center] at (2.20,6.22) {L4 idx};
-\node[anchor=south west] at (2.56,6.46) {38};
-\node[anchor=south east] at (3.29,6.46) {30};
-\draw (2.56,6.02) rectangle (3.29,6.42);
-\node[align=center] at (2.92,6.22) {L3 idx};
-\node[anchor=south west] at (3.29,6.46) {29};
-\node[anchor=south east] at (4.01,6.46) {21};
-\draw (3.29,6.02) rectangle (4.01,6.42);
-\node[align=center] at (3.65,6.22) {L2 idx};
-\node[anchor=south west] at (4.01,6.46) {20};
-\node[anchor=south east] at (4.73,6.46) {12};
-\draw (4.01,6.02) rectangle (4.73,6.42);
-\node[align=center] at (4.37,6.22) {L1 idx};
-\node[anchor=south west] at (4.73,6.46) {11};
-\node[anchor=south east] at (5.70,6.46) {0};
-\draw (4.73,6.02) rectangle (5.70,6.42);
-\node[align=center] at (5.22,6.22) {offset};
-\node[draw,align=center,minimum width=0.78in,minimum height=0.30in] (canon) at (0.95,5.42) {canonical\\check};
-\draw[->,black,densely dashed,line width=0.35pt] (1.19,6.02) -- (1.19,5.62) -- (canon.north);
-\node[draw,align=center,minimum width=0.82in,minimum height=0.34in,inner sep=1.5pt] (tbl0) at (1.75,4.78) {L4\\table page};
-\node[draw,align=center,minimum width=1.12in,minimum height=0.42in,inner sep=1.5pt] (ent0) at (3.25,4.78) {selected\\L4 entry\\next table};
-\node[draw,align=center,minimum width=0.72in,minimum height=0.34in,inner sep=1.5pt] (root) at (0.70,4.78) {PTCR\\root\_page};
-\draw[->] (root.east) -- (tbl0.west);
-\draw[->] (tbl0.east) -- node[above,align=center,font=\tiny] {L4 idx\\bits 47..39} (ent0.west);
-\draw[->,black,densely dashed,line width=0.35pt] (2.20,6.02) -- (2.20,5.86) -- (3.93,5.86) -- (3.93,4.78) -- (ent0.east);
-\node[draw,align=center,minimum width=0.82in,minimum height=0.34in,inner sep=1.5pt] (tbl1) at (1.75,4.11) {L3\\table page};
-\node[draw,align=center,minimum width=1.12in,minimum height=0.42in,inner sep=1.5pt] (ent1) at (3.25,4.11) {selected\\L3 entry\\next table};
-\draw[->] (ent0.south) -- (3.25,4.43) -- (1.75,4.43) -- (tbl1.north);
-\draw[->] (tbl1.east) -- node[above,align=center,font=\tiny] {L3 idx\\bits 38..30} (ent1.west);
-\draw[->,black,densely dashed,line width=0.35pt] (2.92,6.02) -- (2.92,5.82) -- (4.03,5.82) -- (4.03,4.11) -- (ent1.east);
-\node[draw,align=center,minimum width=0.82in,minimum height=0.34in,inner sep=1.5pt] (tbl2) at (1.75,3.44) {L2\\table page};
-\node[draw,align=center,minimum width=1.12in,minimum height=0.42in,inner sep=1.5pt] (ent2) at (3.25,3.44) {selected\\L2 entry\\next table};
-\draw[->] (ent1.south) -- (3.25,3.76) -- (1.75,3.76) -- (tbl2.north);
-\draw[->] (tbl2.east) -- node[above,align=center,font=\tiny] {L2 idx\\bits 29..21} (ent2.west);
-\draw[->,black,densely dashed,line width=0.35pt] (3.65,6.02) -- (3.65,5.78) -- (4.13,5.78) -- (4.13,3.44) -- (ent2.east);
-\node[draw,align=center,minimum width=0.82in,minimum height=0.34in,inner sep=1.5pt] (tbl3) at (1.75,2.77) {L1\\table page};
-\node[draw,align=center,minimum width=1.12in,minimum height=0.42in,inner sep=1.5pt] (ent3) at (3.25,2.77) {selected\\L1 leaf PTE\\PFN + flags};
-\draw[->] (ent2.south) -- (3.25,3.08) -- (1.75,3.08) -- (tbl3.north);
-\draw[->] (tbl3.east) -- node[above,align=center,font=\tiny] {L1 idx\\bits 20..12} (ent3.west);
-\draw[->,black,densely dashed,line width=0.35pt] (4.37,6.02) -- (4.37,5.74) -- (4.23,5.74) -- (4.23,2.77) -- (ent3.east);
-\node[draw,align=center,minimum width=1.10in,minimum height=0.36in] (frame) at (1.75,2.03) {physical\\page frame};
-\draw[->] (ent3.south) -- (3.25,2.38) -- (1.75,2.38) -- (frame.north);
-\node[draw,circle,inner sep=1.8pt] (plus) at (3.12,2.03) {+};
-\node[draw,align=center,minimum width=1.03in,minimum height=0.36in] (phys) at (4.55,2.03) {physical\\address};
-\draw[->] (frame.east) -- node[above] {PFN} (plus.west);
-\draw[->] (plus.east) -- (phys.west);
-\draw[->,black,densely dashed,line width=0.35pt] (5.22,6.02) -- (5.22,5.70) -- (4.33,5.70) -- (4.33,2.23) -- (3.12,2.23) -- (plus.north);
-\node[draw,align=left,minimum width=4.55in,inner sep=2.5pt] at (3.02,1.45) {Each index selects one entry in its table. Non-leaf entries point to the next table;\\the leaf PTE supplies the physical frame number and access attributes.};
-\end{tikzpicture}
-\manualfigurecaption{LA48 Four-Level Page Walk}
-\end{center}
+@LA48_PAGE_WALK@
 
 
 \clearpage
@@ -253,112 +193,12 @@ When PTCR.LA57 is one, paging uses a 57-bit canonical linear address. Bits
 63..57 must be the canonical sign extension of bit 56. The additional L5 index
 selects the top-level table before the same L4 through L1 walk used by LA48.
 
-\begin{center}\vspace{3pt}
-\begin{tikzpicture}[x=1in,y=1in,every node/.style={font=\scriptsize},>=stealth]
-\node[anchor=east] at (0.49,6.22) {LA57};
-\node[anchor=south west] at (0.55,6.46) {63};
-\node[anchor=south east] at (1.11,6.46) {57};
-\draw (0.55,6.02) rectangle (1.11,6.42);
-\node[align=center] at (0.83,6.22) {sign};
-\node[anchor=south west] at (1.11,6.46) {56};
-\node[anchor=south east] at (1.84,6.46) {48};
-\draw (1.11,6.02) rectangle (1.84,6.42);
-\node[align=center] at (1.48,6.22) {L5 idx};
-\node[anchor=south west] at (1.84,6.46) {47};
-\node[anchor=south east] at (2.56,6.46) {39};
-\draw (1.84,6.02) rectangle (2.56,6.42);
-\node[align=center] at (2.20,6.22) {L4 idx};
-\node[anchor=south west] at (2.56,6.46) {38};
-\node[anchor=south east] at (3.29,6.46) {30};
-\draw (2.56,6.02) rectangle (3.29,6.42);
-\node[align=center] at (2.92,6.22) {L3 idx};
-\node[anchor=south west] at (3.29,6.46) {29};
-\node[anchor=south east] at (4.01,6.46) {21};
-\draw (3.29,6.02) rectangle (4.01,6.42);
-\node[align=center] at (3.65,6.22) {L2 idx};
-\node[anchor=south west] at (4.01,6.46) {20};
-\node[anchor=south east] at (4.73,6.46) {12};
-\draw (4.01,6.02) rectangle (4.73,6.42);
-\node[align=center] at (4.37,6.22) {L1 idx};
-\node[anchor=south west] at (4.73,6.46) {11};
-\node[anchor=south east] at (5.70,6.46) {0};
-\draw (4.73,6.02) rectangle (5.70,6.42);
-\node[align=center] at (5.22,6.22) {offset};
-\node[draw,align=center,minimum width=0.78in,minimum height=0.30in] (canon) at (0.95,5.42) {canonical\\check};
-\draw[->,black,densely dashed,line width=0.35pt] (0.83,6.02) -- (0.83,5.62) -- (canon.north);
-\node[draw,align=center,minimum width=0.82in,minimum height=0.34in,inner sep=1.5pt] (tbl0) at (1.75,4.78) {L5\\table page};
-\node[draw,align=center,minimum width=1.12in,minimum height=0.42in,inner sep=1.5pt] (ent0) at (3.25,4.78) {selected\\L5 entry\\next table};
-\node[draw,align=center,minimum width=0.72in,minimum height=0.34in,inner sep=1.5pt] (root) at (0.70,4.78) {PTCR\\root\_page};
-\draw[->] (root.east) -- (tbl0.west);
-\draw[->] (tbl0.east) -- node[above,align=center,font=\tiny] {L5 idx\\bits 56..48} (ent0.west);
-\draw[->,black,densely dashed,line width=0.35pt] (1.48,6.02) -- (1.48,5.86) -- (3.93,5.86) -- (3.93,4.78) -- (ent0.east);
-\node[draw,align=center,minimum width=0.82in,minimum height=0.34in,inner sep=1.5pt] (tbl1) at (1.75,4.11) {L4\\table page};
-\node[draw,align=center,minimum width=1.12in,minimum height=0.42in,inner sep=1.5pt] (ent1) at (3.25,4.11) {selected\\L4 entry\\next table};
-\draw[->] (ent0.south) -- (3.25,4.43) -- (1.75,4.43) -- (tbl1.north);
-\draw[->] (tbl1.east) -- node[above,align=center,font=\tiny] {L4 idx\\bits 47..39} (ent1.west);
-\draw[->,black,densely dashed,line width=0.35pt] (2.20,6.02) -- (2.20,5.82) -- (4.03,5.82) -- (4.03,4.11) -- (ent1.east);
-\node[draw,align=center,minimum width=0.82in,minimum height=0.34in,inner sep=1.5pt] (tbl2) at (1.75,3.44) {L3\\table page};
-\node[draw,align=center,minimum width=1.12in,minimum height=0.42in,inner sep=1.5pt] (ent2) at (3.25,3.44) {selected\\L3 entry\\next table};
-\draw[->] (ent1.south) -- (3.25,3.76) -- (1.75,3.76) -- (tbl2.north);
-\draw[->] (tbl2.east) -- node[above,align=center,font=\tiny] {L3 idx\\bits 38..30} (ent2.west);
-\draw[->,black,densely dashed,line width=0.35pt] (2.92,6.02) -- (2.92,5.78) -- (4.13,5.78) -- (4.13,3.44) -- (ent2.east);
-\node[draw,align=center,minimum width=0.82in,minimum height=0.34in,inner sep=1.5pt] (tbl3) at (1.75,2.77) {L2\\table page};
-\node[draw,align=center,minimum width=1.12in,minimum height=0.42in,inner sep=1.5pt] (ent3) at (3.25,2.77) {selected\\L2 entry\\next table};
-\draw[->] (ent2.south) -- (3.25,3.08) -- (1.75,3.08) -- (tbl3.north);
-\draw[->] (tbl3.east) -- node[above,align=center,font=\tiny] {L2 idx\\bits 29..21} (ent3.west);
-\draw[->,black,densely dashed,line width=0.35pt] (3.65,6.02) -- (3.65,5.74) -- (4.23,5.74) -- (4.23,2.77) -- (ent3.east);
-\node[draw,align=center,minimum width=0.82in,minimum height=0.34in,inner sep=1.5pt] (tbl4) at (1.75,2.10) {L1\\table page};
-\node[draw,align=center,minimum width=1.12in,minimum height=0.42in,inner sep=1.5pt] (ent4) at (3.25,2.10) {selected\\L1 leaf PTE\\PFN + flags};
-\draw[->] (ent3.south) -- (3.25,2.42) -- (1.75,2.42) -- (tbl4.north);
-\draw[->] (tbl4.east) -- node[above,align=center,font=\tiny] {L1 idx\\bits 20..12} (ent4.west);
-\draw[->,black,densely dashed,line width=0.35pt] (4.37,6.02) -- (4.37,5.70) -- (4.33,5.70) -- (4.33,2.10) -- (ent4.east);
-\node[draw,align=center,minimum width=1.10in,minimum height=0.36in] (frame) at (1.75,1.36) {physical\\page frame};
-\draw[->] (ent4.south) -- (3.25,1.72) -- (1.75,1.72) -- (frame.north);
-\node[draw,circle,inner sep=1.8pt] (plus) at (3.12,1.36) {+};
-\node[draw,align=center,minimum width=1.03in,minimum height=0.36in] (phys) at (4.55,1.36) {physical\\address};
-\draw[->] (frame.east) -- node[above] {PFN} (plus.west);
-\draw[->] (plus.east) -- (phys.west);
-\draw[->,black,densely dashed,line width=0.35pt] (5.22,6.02) -- (5.22,5.66) -- (4.43,5.66) -- (4.43,1.56) -- (3.12,1.56) -- (plus.north);
-\node[draw,align=left,minimum width=4.55in,inner sep=2.5pt] at (3.02,0.78) {Each index selects one entry in its table. Non-leaf entries point to the next table;\\the leaf PTE supplies the physical frame number and access attributes.};
-\end{tikzpicture}
-\manualfigurecaption{LA57 Five-Level Page Walk}
-\end{center}
+@LA57_PAGE_WALK@
 
 
 \clearpage
 \subsection{Page-Table Entry Format}
-\Needspace{1.35in}
-\begin{center}\vspace{3pt}
-\begin{tikzpicture}[x=0.300in,y=0.24in,every node/.style={font=\scriptsize}]
-\node[anchor=east] at (-0.35,0.50) {PTE[11:0]};
-\node[anchor=south] at (0.50,1.18) {11};
-\node[anchor=south] at (4.50,1.18) {7};
-\node[anchor=south] at (11.50,1.18) {0};
-\draw (0,0) rectangle (1,1);
-\node at (0.50,0.50) {T};
-\draw (1,0) rectangle (2,1);
-\node at (1.50,0.50) {SW0};
-\draw (2,0) rectangle (4,1);
-\node at (3.00,0.50) {CP};
-\draw (4,0) rectangle (5,1);
-\node at (4.50,0.50) {AT};
-\draw (5,0) rectangle (6,1);
-\node at (5.50,0.50) {D};
-\draw (6,0) rectangle (7,1);
-\node at (6.50,0.50) {A};
-\draw (7,0) rectangle (8,1);
-\node at (7.50,0.50) {G};
-\draw (8,0) rectangle (9,1);
-\node at (8.50,0.50) {U};
-\draw (9,0) rectangle (10,1);
-\node at (9.50,0.50) {X};
-\draw (10,0) rectangle (11,1);
-\node at (10.50,0.50) {W};
-\draw (11,0) rectangle (12,1);
-\node at (11.50,0.50) {P};
-\end{tikzpicture}
-\manualfigurecaption{PTE Low Attribute Bits}
-\end{center}
+@PTE_LOW_ATTRIBUTE_FIGURE@
 
 
 @PTE_FIELD_TABLE@

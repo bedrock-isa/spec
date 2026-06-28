@@ -12,7 +12,6 @@ behavior:
   operation:
   - dst_v = src_v;
 attributes:
-  repeatable: true
   streaming_candidate: true
   fp_flags: unchanged
   flags: unchanged

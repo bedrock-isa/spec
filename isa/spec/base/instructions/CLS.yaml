@@ -37,7 +37,6 @@ behavior:
   - <cls_count>
   - dst_v = lzcount(tmp_v) - carry_v;
 attributes:
-  repeatable: true
   flags: unchanged
 allocation:
   catalog_section: integer

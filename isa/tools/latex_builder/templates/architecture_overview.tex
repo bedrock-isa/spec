@@ -58,48 +58,23 @@ exceed this bound.
 Every instruction begins with word 0. The instruction boundary is determined
 from word 0 alone.
 
-\Needspace{1.35in}
-\begin{center}\vspace{3pt}
-\begin{tikzpicture}[x=0.300in,y=0.24in,every node/.style={font=\scriptsize}]
-\node[anchor=east] at (-0.35,0.50) {word 0};
-\node[anchor=south] at (0.50,1.18) {15};
-\node[anchor=south] at (1.50,1.18) {14};
-\node[anchor=south] at (4.50,1.18) {11};
-\node[anchor=south] at (15.50,1.18) {0};
-\draw (0,0) rectangle (1,1);
-\node at (0.50,0.50) {P};
-\draw (1,0) rectangle (4,1);
-\node at (2.50,0.50) {L};
-\draw (4,0) rectangle (16,1);
-\node at (10.00,0.50) {primary opcode/fields};
-\end{tikzpicture}
-\manualfigurecaption{Word 0 Format}
-\end{center}
+\begin{manuallistedbitdiagram}{Word 0 Format}
+\manualbitfieldrow{word 0}{%
+\manualbitlabel{15}
+\manualbitlabel{14}
+\manualbitlabel{11}
+\manualbitlabel{0}
+}{%
+\manualbitfieldtext{P}{1}
+\manualbitfieldtext{L}{3}
+\manualbitfieldtext{primary opcode/fields}{12}
+}
+\end{manuallistedbitdiagram}
 
 
-\manualfield{P:}{Prefix-present bit. If set, word 1 is interpreted as the prefix word.}
-\manualfield{L:}{Total instruction length encoded as length minus one.}
+@WORD0_FIELD_TABLE@
 
-\begingroup\footnotesize
-\setlength{\LTpre}{2pt}
-\setlength{\LTpost}{2pt}
-\begin{longtable}{@{}>{\raggedright\arraybackslash}p{1.2in}>{\raggedright\arraybackslash}p{1.35in}>{\raggedright\arraybackslash}p{1.35in}@{}}
-\toprule
-\textbf{L Field} & \textbf{Total Words} & \textbf{Total Bytes}\\
-\midrule
-\endhead
-\texttt{000} & 1 & 2\\
-\texttt{001} & 2 & 4\\
-\texttt{010} & 3 & 6\\
-\texttt{011} & 4 & 8\\
-\texttt{100} & 5 & 10\\
-\texttt{101} & 6 & 12\\
-\texttt{110} & 7 & 14\\
-\texttt{111} & 8 & 16\\
-\bottomrule
-\end{longtable}
-\manualtablecaption{Instruction Length Encoding}
-\endgroup
+@INSTRUCTION_LENGTH_TABLE@
 
 
 \[
@@ -114,19 +89,14 @@ The low byte, bits 7..0, is \texttt{prefix0}; the high byte, bits 15..8, is
 
 @PREFIX_MODEL_TABLE@
 
-\Needspace{1.35in}
-\begin{center}\vspace{3pt}
-\begin{tikzpicture}[x=0.300in,y=0.24in,every node/.style={font=\scriptsize}]
-\node[anchor=east] at (-0.35,0.50) {word 1};
-\node[anchor=south] at (0.50,1.18) {15};
-\node[anchor=south] at (7.50,1.18) {8};
-\node[anchor=south] at (8.50,1.18) {7};
-\node[anchor=south] at (15.50,1.18) {0};
-\draw (0,0) rectangle (8,1);
-\node at (4.00,0.50) {prefix1};
-\draw (8,0) rectangle (16,1);
-\node at (12.00,0.50) {prefix0};
-\end{tikzpicture}
-\manualfigurecaption{Prefix Word Format}
-\end{center}
-
+\begin{manuallistedbitdiagram}{Prefix Word Format}
+\manualbitfieldrow{word 1}{%
+\manualbitlabel{15}
+\manualbitlabel{8}
+\manualbitlabel{7}
+\manualbitlabel{0}
+}{%
+\manualbitfieldtext{prefix1}{8}
+\manualbitfieldtext{prefix0}{8}
+}
+\end{manuallistedbitdiagram}

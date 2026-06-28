@@ -18,6 +18,15 @@ from spec_model.encoding import (
 from .common import LatexComponent, caption_title, listed_figure_caption, tex_escape
 
 
+def manual_tikz_environment(listed: bool) -> str:
+    return "manuallistedtikzdiagram" if listed else "manualtikzdiagram"
+
+
+def begin_manual_tikz_diagram(needspace: str, x_scale: str, y_scale: str, caption: str, listed: bool) -> str:
+    environment = manual_tikz_environment(listed)
+    return rf"\begin{{{environment}}}{{{needspace}}}{{{x_scale}}}{{{y_scale}}}{{{tex_escape(caption_title(caption))}}}"
+
+
 def bit_segments(bits: str) -> list[tuple[str, str, int]]:
     """Return (kind, label, width) segments for a compact bit-field drawing."""
     clean = "".join(ch for ch in bits if not ch.isspace())
@@ -53,20 +62,12 @@ def bit_segments(bits: str) -> list[tuple[str, str, int]]:
     return out
 
 
-def bit_row_commands(bits: str, y: float, label: str, total_bits: int) -> list[str]:
-    commands: list[str] = []
-    x = 0
-    commands.append(rf"\node[anchor=east] at (-0.35,{y + 0.5:.2f}) {{{tex_escape(label)}}};")
-    commands.append(rf"\node[anchor=south] at (0,{y + 1.18:.2f}) {{{total_bits - 1}}};")
-    commands.append(rf"\node[anchor=south] at ({total_bits},{y + 1.18:.2f}) {{0}};")
-    if total_bits >= 16:
-        for tick in range(4, total_bits, 4):
-            commands.append(rf"\draw[LightRule] ({tick},{y:.2f}) -- ({tick},{y + 1:.2f});")
-    for _kind, raw_label, width in bit_segments(bits):
-        commands.append(rf"\draw ({x},{y:.2f}) rectangle ({x + width},{y + 1:.2f});")
-        commands.append(rf"\node at ({x + width / 2:.2f},{y + 0.5:.2f}) {{\texttt{{{tex_escape(raw_label)}}}}};")
-        x += width
-    return commands
+def bit_field_macros(bits: str) -> list[str]:
+    return [rf"\manualbitfieldcode{{{tex_escape(raw_label)}}}{{{width}}}" for _kind, raw_label, width in bit_segments(bits)]
+
+
+def named_bit_field_macros(fields: list[tuple[str, int]]) -> list[str]:
+    return [rf"\manualbitfieldtext{{{tex_escape(label)}}}{{{width}}}" for label, width in fields]
 
 
 @dataclass(frozen=True)
@@ -84,20 +85,15 @@ class BitDiagram(LatexComponent):
             labels = [f"word {index}" for index in range(len(clean_tokens))]
         if not clean_tokens:
             return ""
-        max_bits = max(len(token) for token in clean_tokens)
-        x_scale = min(0.30, 4.85 / max_bits)
-        needspace = 0.80 + 0.45 * len(clean_tokens)
-        rows.append(rf"\Needspace{{{needspace:.2f}in}}")
-        rows.append(r"\begin{center}\vspace{3pt}")
-        rows.append(rf"\begin{{tikzpicture}}[x={x_scale:.3f}in,y=0.22in,every node/.style={{font=\scriptsize}}]")
+        environment = "manuallistedbitdiagram" if self.listed else "manualbitdiagram"
+        rows.append(rf"\begin{{{environment}}}{{{tex_escape(caption_title(self.caption))}}}")
         for index, token in enumerate(clean_tokens):
-            total_bits = len(token)
-            y = -2.08 * index
-            rows.extend(bit_row_commands(token, y, labels[index] if index < len(labels) else f"word {index}", total_bits))
-        rows.append(r"\end{tikzpicture}")
-        caption_macro = "manualfigurecaption" if self.listed else "manualcaption"
-        rows.append(rf"\{caption_macro}{{{tex_escape(caption_title(self.caption))}}}")
-        rows.append(r"\end{center}")
+            label = labels[index] if index < len(labels) else f"word {index}"
+            fields = "\n".join(bit_field_macros(token))
+            rows.append(rf"\manualbitrow{{{tex_escape(label)}}}{{%")
+            rows.append(fields)
+            rows.append("}")
+        rows.append(rf"\end{{{environment}}}")
         return "\n".join(rows) + "\n"
 
 
@@ -105,8 +101,9 @@ def bit_diagram(tokens: list[str], caption: str, labels: list[str] | None = None
     return BitDiagram(tokens, caption, labels, listed).render()
 
 
-def bit_index_labels(total_bits: int, bits: list[int]) -> list[tuple[float, str]]:
-    return [(total_bits - bit - 0.5, str(bit)) for bit in bits]
+def bit_index_labels(_total_bits: int, bits: list[int]) -> list[int]:
+    """Return bit indices to label; LaTeX computes their positions from row width."""
+    return [int(bit) for bit in bits]
 
 
 @dataclass(frozen=True)
@@ -115,36 +112,32 @@ class BitFieldFigure(LatexComponent):
     caption: str
     row_label: str
     total_bits: int
-    top_labels: list[tuple[float, str]] | None = None
+    top_labels: list[int] | None = None
     listed: bool = False
 
     def render(self) -> str:
         if not self.fields:
             return ""
-        x_scale = min(0.30, 4.85 / self.total_bits)
-        rows = [
-            r"\Needspace{1.35in}",
-            r"\begin{center}\vspace{3pt}",
-            rf"\begin{{tikzpicture}}[x={x_scale:.3f}in,y=0.24in,every node/.style={{font=\scriptsize}}]",
-            rf"\node[anchor=east] at (-0.35,0.50) {{{tex_escape(self.row_label)}}};",
-        ]
+        field_bits = sum(width for _label, width in self.fields)
+        if field_bits != self.total_bits:
+            raise ValueError(
+                f"bit field figure {self.caption!r} declares {self.total_bits} bits but fields sum to {field_bits}"
+            )
+        environment = "manuallistedbitdiagram" if self.listed else "manualbitdiagram"
         top_labels = self.top_labels
         if top_labels is None:
             top_labels = bit_index_labels(self.total_bits, [self.total_bits - 1, 0])
-        for x, text in top_labels:
-            rows.append(rf"\node[anchor=south] at ({x:.2f},{1.18:.2f}) {{{tex_escape(text)}}};")
-        x = 0
-        for label, width in self.fields:
-            rows.append(rf"\draw ({x},0) rectangle ({x + width},1);")
-            rows.append(rf"\node at ({x + width / 2:.2f},0.50) {{{tex_escape(label)}}};")
-            x += width
-        rows.extend(
-            [
-                r"\end{tikzpicture}",
-                rf"\{'manualfigurecaption' if self.listed else 'manualcaption'}{{{tex_escape(caption_title(self.caption))}}}",
-                r"\end{center}",
-            ]
-        )
+        label_macros = "\n".join(rf"\manualbitlabel{{{bit}}}" for bit in top_labels)
+        field_macros = "\n".join(named_bit_field_macros(self.fields))
+        rows = [
+            rf"\begin{{{environment}}}{{{tex_escape(caption_title(self.caption))}}}",
+            rf"\manualbitfieldrow{{{tex_escape(self.row_label)}}}{{%",
+            label_macros,
+            "}{%",
+            field_macros,
+            "}",
+            rf"\end{{{environment}}}",
+        ]
         return "\n".join(rows) + "\n"
 
 
@@ -153,7 +146,7 @@ def bit_field_figure(
     caption: str,
     row_label: str,
     total_bits: int,
-    top_labels: list[tuple[float, str]] | None = None,
+    top_labels: list[int] | None = None,
     listed: bool = False,
 ) -> str:
     return BitFieldFigure(fields, caption, row_label, total_bits, top_labels, listed).render()
@@ -173,10 +166,9 @@ class AbbreviatedBitFieldFigure(LatexComponent):
             return ""
         total_units = sum(width for _label, width in self.fields)
         x_scale = min(0.42, 4.85 / total_units)
+        environment = manual_tikz_environment(self.listed)
         rows = [
-            r"\Needspace{1.35in}",
-            r"\begin{center}\vspace{3pt}",
-            rf"\begin{{tikzpicture}}[x={x_scale:.3f}in,y=0.24in,every node/.style={{font=\scriptsize}}]",
+            begin_manual_tikz_diagram("1.35in", f"{x_scale:.3f}in", "0.24in", self.caption, self.listed),
             rf"\node[anchor=east] at (-0.35,0.50) {{{tex_escape(self.row_label)}}};",
         ]
         for x, text in self.top_labels:
@@ -193,9 +185,7 @@ class AbbreviatedBitFieldFigure(LatexComponent):
                 )
         rows.extend(
             [
-                r"\end{tikzpicture}",
-                rf"\{'manualfigurecaption' if self.listed else 'manualcaption'}{{{tex_escape(caption_title(self.caption))}}}",
-                r"\end{center}",
+                rf"\end{{{environment}}}",
             ]
         )
         return "\n".join(rows) + "\n"
@@ -466,7 +456,7 @@ def register_model_figure(spec: dict[str, Any]) -> str:
 
     right_row = 0
     f_display_regs = compact_registers(f_regs, limit=5)
-    emit_group(right_x, right_row, f_display_regs, "F\\REGISTERS", width_bits=f_width)
+    emit_group(right_x, right_row, f_display_regs, "FLOATING-POINT\\REGISTERS", width_bits=f_width)
     right_row += len(f_display_regs) + 1
     emit_group(right_x, right_row, fpu_state_regs, "FPU\\STATE", midline=False, width_bits=fpu_state_width, align="right")
     right_row += 3
@@ -493,36 +483,53 @@ def supervisor_stack_frame(control: dict[str, Any]) -> dict[str, Any]:
     return {}
 
 
+@dataclass(frozen=True)
+class StackFrameSlot:
+    offset: int
+    name: str
+    is_payload: bool = False
+
+
+@dataclass(frozen=True)
+class StackFrameFigure(LatexComponent):
+    slots: list[StackFrameSlot]
+    caption: str
+    listed: bool = True
+
+    def render(self) -> str:
+        if not self.slots:
+            return ""
+        environment = "manuallistedstackframediagram" if self.listed else "manualstackframediagram"
+        rows = [rf"\begin{{{environment}}}{{{tex_escape(caption_title(self.caption))}}}"]
+        for slot in self.slots:
+            if slot.is_payload:
+                command = "manualstackframepayload"
+            elif slot.offset == 0:
+                command = "manualstackframespslot"
+            else:
+                command = "manualstackframeslot"
+            rows.append(rf"\{command}{{{tex_escape(f'+0x{slot.offset:02X}')}}}{{{tex_escape(slot.name)}}}")
+        rows.append(rf"\end{{{environment}}}")
+        return "\n".join(rows) + "\n"
+
+
 def stack_frame_figure(control: dict[str, Any]) -> str:
     frame = supervisor_stack_frame(control)
-    slots = frame.get("layout") or []
-    if not slots:
+    layout = frame.get("layout") or []
+    if not layout:
         return ""
-    base_size = int(frame.get("base_size_bytes", len(slots) * int(frame.get("slot_size_bytes", 8))))
-    rows = [
-        r"\begin{center}\vspace{3pt}",
-        r"\begin{tikzpicture}[x=1in,y=0.23in,every node/.style={font=\scriptsize}]",
-        r"\node[anchor=south] at (0.00,0.26) {63};",
-        r"\node[anchor=south] at (4.60,0.26) {0};",
+    base_size = int(frame.get("base_size_bytes", len(layout) * int(frame.get("slot_size_bytes", 8))))
+    fixed_slots = [
+        StackFrameSlot(int(slot.get("offset", 0)), str(slot.get("name", "reserved")))
+        for slot in layout
+        if isinstance(slot, dict)
     ]
-
-    def draw_slot(row_index: int, offset: int, name: str, *, dashed: bool = False) -> None:
-        y = -0.58 * row_index
-        style = "[densely dashed] " if dashed else " "
-        rows.append(rf"\node[anchor=east] at (-0.28,{y - 0.21:.2f}) {{\texttt{{+0x{offset:02X}}}}};")
-        rows.append(rf"\draw{style}(0,{y:.2f}) rectangle (4.60,{y - 0.42:.2f});")
-        rows.append(rf"\node at (2.30,{y - 0.21:.2f}) {{{tex_escape(name)}}};")
-
-    draw_slot(0, base_size, "type-selected payload slots", dashed=True)
-    for index, slot in enumerate(reversed(slots), start=1):
-        offset = int(slot.get("offset", 0))
-        name = str(slot.get("name", "reserved"))
-        draw_slot(index, offset, name)
-    rows.extend(
-        [
-            r"\end{tikzpicture}",
-            listed_figure_caption("Supervisor Entry Stack Frame"),
-            r"\end{center}",
-        ]
+    payload_block_size = int(frame.get("payload_block_size_bytes", 0))
+    payload_label = (
+        f"type-selected {payload_block_size}-byte payload blocks"
+        if payload_block_size
+        else "type-selected payload slots"
     )
-    return "\n".join(rows) + "\n"
+    slots = [StackFrameSlot(base_size, payload_label, is_payload=True)]
+    slots.extend(sorted(fixed_slots, key=lambda slot: slot.offset, reverse=True))
+    return StackFrameFigure(slots, "Supervisor Entry Stack Frame").render()

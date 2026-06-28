@@ -42,5 +42,5 @@ forms:
       type: EA
   size: BWLQ
   compact: false
-  result: second operand
   memory_memory: disallowed
+  result: second operand

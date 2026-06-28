@@ -11,57 +11,29 @@ inside each group for related control state.
 
 @CONTROL_REGISTER_SELECTOR_TABLE@
 
-\Needspace{1.35in}
-\begin{center}\vspace{3pt}
-\begin{tikzpicture}[x=0.409in,y=0.24in,every node/.style={font=\scriptsize}]
-\node[anchor=east] at (-0.35,0.50) {PTCR[63:0]};
-\node[anchor=south] at (0.00,1.18) {63};
-\node[anchor=south] at (5.20,1.18) {11};
-\node[anchor=south] at (7.50,1.18) {7};
-\node[anchor=south] at (8.85,1.18) {6};
-\node[anchor=south] at (10.75,1.18) {1};
-\node[anchor=south] at (11.85,1.18) {0};
-\draw (0.00,0) rectangle (5.20,1);
-\node at (2.60,0.50) {root\_page};
-\draw[decorate,decoration={zigzag,amplitude=1.0pt,segment length=3pt}] (5.20,0.03) -- (5.20,0.97);
-\draw (5.20,0) rectangle (7.50,1);
-\node at (6.35,0.50) {PABITS};
-\draw (7.50,0) rectangle (8.85,1);
-\node at (8.18,0.50) {LA57};
-\draw (8.85,0) rectangle (10.75,1);
-\node at (9.80,0.50) {reserved};
-\draw (10.75,0) rectangle (11.85,1);
-\node at (11.30,0.50) {PE};
-\end{tikzpicture}
-\manualfigurecaption{PTCR Format}
-\end{center}
+\begin{manuallistedformatdiagram}{PTCR Format}{8}
+\manualformatrow{PTCR[63:0]}{%
+\manualformatfield{root\_page}{52}
+\manualformatfield{PABITS}{5}
+\manualformatfield{LA57}{1}
+\manualformatfield{reserved}{5}
+\manualformatfield{PE}{1}
+}
+\end{manuallistedformatdiagram}
 
 
 @PTCR_FIELD_TABLE@
 
 @PABITS_SELECTOR_TABLE@
 
-\Needspace{1.35in}
-\begin{center}\vspace{3pt}
-\begin{tikzpicture}[x=0.420in,y=0.24in,every node/.style={font=\scriptsize}]
-\node[anchor=east] at (-0.35,0.50) {ASCR[63:0]};
-\node[anchor=south] at (0.00,1.18) {63};
-\node[anchor=south] at (4.20,1.18) {31};
-\node[anchor=south] at (7.00,1.18) {15};
-\node[anchor=south] at (9.80,1.18) {1};
-\node[anchor=south] at (11.00,1.18) {0};
-\draw (0.00,0) rectangle (4.20,1);
-\node at (2.10,0.50) {reserved};
-\draw[decorate,decoration={zigzag,amplitude=1.0pt,segment length=3pt}] (4.20,0.03) -- (4.20,0.97);
-\draw (4.20,0) rectangle (7.00,1);
-\node at (5.60,0.50) {ASID};
-\draw (7.00,0) rectangle (9.80,1);
-\node at (8.40,0.50) {reserved};
-\draw (9.80,0) rectangle (11.00,1);
-\node at (10.40,0.50) {AE};
-\end{tikzpicture}
-\manualfigurecaption{ASCR Format}
-\end{center}
+\begin{manuallistedformatdiagram}{ASCR Format}{8}
+\manualformatrow{ASCR[63:0]}{%
+\manualformatfield{reserved}{32}
+\manualformatfield{ASID}{16}
+\manualformatfield{reserved}{15}
+\manualformatfield{AE}{1}
+}
+\end{manuallistedformatdiagram}
 
 
 ASCR holds the current address-space identifier. SWPT Dn performs a page-table swap that clears ASCR.
@@ -70,36 +42,17 @@ low 16 bits of the second data-register operand, and ASCR.AE is set.
 
 @ASCR_FIELD_TABLE@
 
-\Needspace{1.35in}
-\begin{center}\vspace{3pt}
-\begin{tikzpicture}[x=0.355in,y=0.24in,every node/.style={font=\scriptsize}]
-\node[anchor=east] at (-0.35,0.50) {ICR[63:0]};
-\node[anchor=south] at (0.00,1.18) {63};
-\node[anchor=south] at (5.00,1.18) {11};
-\node[anchor=south] at (7.35,1.18) {7};
-\node[anchor=south] at (8.70,1.18) {6};
-\node[anchor=south] at (10.05,1.18) {5};
-\node[anchor=south] at (11.10,1.18) {4};
-\node[anchor=south] at (12.70,1.18) {1};
-\node[anchor=south] at (13.65,1.18) {0};
-\draw (0.00,0) rectangle (5.00,1);
-\node at (2.50,0.50) {ivt\_page};
-\draw[decorate,decoration={zigzag,amplitude=1.0pt,segment length=3pt}] (5.00,0.03) -- (5.00,0.97);
-\draw (5.00,0) rectangle (7.35,1);
-\node at (6.17,0.50) {MAX\_IDEPTH};
-\draw (7.35,0) rectangle (8.70,1);
-\node at (8.03,0.50) {NMI\_P};
-\draw (8.70,0) rectangle (10.05,1);
-\node at (9.38,0.50) {NMI\_L};
-\draw (10.05,0) rectangle (11.10,1);
-\node at (10.57,0.50) {DF};
-\draw (11.10,0) rectangle (12.70,1);
-\node at (11.90,0.50) {reserved};
-\draw (12.70,0) rectangle (13.65,1);
-\node at (13.17,0.50) {V};
-\end{tikzpicture}
-\manualfigurecaption{ICR Format}
-\end{center}
+\begin{manuallistedformatdiagram}{ICR Format}{8}
+\manualformatrow{ICR[63:0]}{%
+\manualformatfield{ivt\_page}{52}
+\manualformatfield{MAX\_IDEPTH}{5}
+\manualformatfield{NMI\_P}{1}
+\manualformatfield{NMI\_L}{1}
+\manualformatfield{DF}{1}
+\manualformatfield{reserved}{3}
+\manualformatfield{V}{1}
+}
+\end{manuallistedformatdiagram}
 
 
 @ICR_FIELD_TABLE@

@@ -11,7 +11,6 @@ behavior:
   operation:
   - arch_wait_for_event();
 attributes:
-  repeatable: state_query_general_only
   privilege: policy_controlled
 allocation:
   catalog_section: compact_primary

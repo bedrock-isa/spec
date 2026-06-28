@@ -14,7 +14,6 @@ behavior:
   operation:
   - dst_v = dst_v f- (lhs_v f* rhs_v);
 attributes:
-  repeatable: true
   streaming_candidate: true
   fp_flags:
     update:

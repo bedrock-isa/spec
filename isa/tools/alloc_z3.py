@@ -46,21 +46,10 @@ from alloc_field_layout import (
 )
 from alloc_validation import audit_alignment, has_alignment_failure
 from alloc_model import (
-    DEFAULT_COMPACT_EXCLUDE,
-    DEFAULT_COMPACT_PREFER,
-    EXTENDED_BITS,
-    EXTENDED_SLOTS,
-    EXTENDED_SPACE_ID,
-    EXTENSION_FAMILY_RANK,
-    EXTENSION_PROFILE_RANK,
-    HIGH_PRIMARY_PAYLOAD_START,
-    PRIMARY_BITS,
-    PRIMARY_EXTENSION_HEADROOM_SLOTS,
-    PRIMARY_SLOTS,
-    PRIMARY_SPACE_ID,
+    AllocationModel,
     Candidate,
     Field,
-    default_field_layout_policy,
+    allocation_model,
     profile_candidate_id,
     profile_form_parts,
     size_tag_from_fields,
@@ -73,66 +62,31 @@ class PrimaryPackingError(RuntimeError):
         self.candidate_id = candidate_id
 
 
-def normalize_compact_policy(raw_policy: dict[str, Any]) -> dict[str, Any]:
+def normalize_compact_policy(raw_policy: dict[str, Any], model: AllocationModel) -> dict[str, Any]:
     compactness = raw_policy.get("compactness_policy", raw_policy)
     return {
-        "compact_exclude": tuple(str(item) for item in compactness.get("compact_exclude", DEFAULT_COMPACT_EXCLUDE)),
-        "compact_prefer": tuple(str(item) for item in compactness.get("compact_prefer", DEFAULT_COMPACT_PREFER)),
+        "allocation_model": model,
+        "compact_exclude": tuple(str(item) for item in compactness.get("exclude", model.compact_exclude)),
+        "compact_prefer": tuple(str(item) for item in compactness.get("prefer", model.compact_prefer)),
         "compact_family_symmetry": raw_policy.get("compact_family_symmetry", {}),
         "instruction_families": raw_policy.get("instruction_families", {}),
-        "family_locality": raw_policy.get("family_locality", default_family_locality_policy()),
-        "decode_cost_policy": raw_policy.get("decode_cost_policy", default_decode_cost_policy()),
-        "extension_root_policy": raw_policy.get("extension_root_policy", default_extension_root_policy()),
-        "extension_roots": raw_policy.get("extension_roots", default_extension_roots_policy()),
-        "primary_clusters": raw_policy.get("primary_clusters", default_primary_clusters_policy()),
+        "family_locality": raw_policy.get("family_locality", {}),
+        "decode_cost_policy": raw_policy.get("decode_cost_policy", {}),
+        "extension_root_policy": raw_policy.get("extension_root_policy", {}),
+        "extension_roots": raw_policy.get("extension_roots", {}),
+        "primary_clusters": raw_policy.get("primary_clusters", {}),
         "condition_field": raw_policy.get("condition_field", {}),
         "field_reclaim": raw_policy.get("field_reclaim", {}),
-        "field_layout": raw_policy.get("field_layout", default_field_layout_policy()),
+        "field_layout": raw_policy.get("field_layout", {}),
         "mnemonic_policy": raw_policy.get("mnemonic_policy", {}),
     }
 
 
-def default_family_locality_policy() -> dict[str, Any]:
-    return {
-        "integer_alu": {
-            "prefer_contiguous_roots": True,
-            "roots": ["EA_TO_D", "EA_TO_A", "D_TO_EA"],
-        }
-    }
-
-
-def default_decode_cost_policy() -> dict[str, Any]:
-    return {
-        "priority_order": [
-            "aligned_large_ranges",
-            "shared_field_layout",
-            "family_locality",
-            "fewer_singletons",
-            "compact_hot_path",
-            "visual_symmetry",
-        ]
-    }
-
-
-def default_extension_root_policy() -> dict[str, Any]:
-    return {
-        "preferred_region": "high_primary_payload",
-        "prefer_contiguous_family_roots": True,
-        "allow_low_payload_roots": False,
-    }
-
-
-def default_extension_roots_policy() -> dict[str, Any]:
-    return {
-        "group_by": "semantic_family",
-        "condition_field_in_primary": True,
-    }
-
-
-def default_primary_clusters_policy() -> dict[str, Any]:
-    return {
-        "order": ["bitmap_ops", "direct_call", "stack_ops", "core_control"],
-    }
+def policy_model(compact_policy: dict[str, Any]) -> AllocationModel:
+    model = compact_policy.get("allocation_model")
+    if not isinstance(model, AllocationModel):
+        raise RuntimeError("allocation model is not attached to compact policy")
+    return model
 
 
 def mnemonic_policy_set(compact_policy: dict[str, Any], key: str) -> set[str]:
@@ -250,7 +204,7 @@ def extension_root_policy(compact_policy: dict[str, Any]) -> dict[str, Any]:
 def extension_root_region_start(compact_policy: dict[str, Any]) -> int:
     policy = extension_root_policy(compact_policy)
     if str(policy.get("preferred_region", "")).lower() == "high_primary_payload":
-        return HIGH_PRIMARY_PAYLOAD_START
+        return policy_model(compact_policy).high_primary_payload_start
     return 0
 
 
@@ -567,7 +521,7 @@ def payload_matches_reclaim_filter(payload: int, fields: list[dict[str, Any]], r
     return value in {int(item) for item in reclaim_filter.get("values", ())}
 
 
-def candidate_sort_key(candidate: Candidate) -> tuple[int, int, int, str]:
+def candidate_sort_key(candidate: Candidate, compact_policy: dict[str, Any]) -> tuple[int, int, int, str]:
     rank = {
         "integer": 0,
         "data_movement": 1,
@@ -576,7 +530,7 @@ def candidate_sort_key(candidate: Candidate) -> tuple[int, int, int, str]:
         "fpu": 4,
         "misc": 5,
     }
-    slots = candidate.compact_slots if candidate.compact_slots is not None else PRIMARY_SLOTS + 1
+    slots = candidate.compact_slots if candidate.compact_slots is not None else policy_model(compact_policy).primary.slots + 1
     return (rank.get(candidate.category, 99), -candidate.weight, slots, candidate.id)
 
 
@@ -586,6 +540,7 @@ def solve_allocation(
     compact_policy: dict[str, Any],
     alias_rules: list[dict[str, Any]],
 ) -> dict[str, Any]:
+    model = policy_model(compact_policy)
     selected_compact = select_compact_profiles(candidates, compact_policy)
     selected_compact, extended_candidates, extension_roots = enforce_symmetry_and_capacity(
         candidates, selected_compact, compact_policy
@@ -593,21 +548,21 @@ def solve_allocation(
     if any(not candidate.can_extend for candidate in extended_candidates):
         bad = [candidate.id for candidate in extended_candidates if not candidate.can_extend]
         return {"status": "unsat", "reason": f"non-extendable candidates not compact: {', '.join(bad)}"}
-    overfull_roots = [root for root in extension_roots if len(root["members"]) > EXTENDED_SLOTS]
+    overfull_roots = [root for root in extension_roots if len(root["members"]) > model.extended.slots]
     if overfull_roots:
         names = ", ".join(str(root["id"]) for root in overfull_roots)
         return {"status": "unsat", "reason": f"extended roots are full: {names}"}
 
     solver = z3.Solver()
     compact_slot_sum = sum(
-        compact_slot_cost(candidate, compact_policy) if candidate.compact_slots is not None else PRIMARY_SLOTS + 1
+        compact_slot_cost(candidate, compact_policy) if candidate.compact_slots is not None else model.primary.slots + 1
         for candidate in candidates
         if candidate.id in selected_compact
     )
     extension_root_slots = sum(int(root["slots"]) for root in extension_roots)
-    solver.add(compact_slot_sum + extension_root_slots + PRIMARY_EXTENSION_HEADROOM_SLOTS <= PRIMARY_SLOTS)
+    solver.add(compact_slot_sum + extension_root_slots + model.primary_extension_headroom_slots <= model.primary.slots)
     for root in extension_roots:
-        solver.add(len(root["members"]) <= EXTENDED_SLOTS)
+        solver.add(len(root["members"]) <= model.extended.slots)
     status = solver.check()
     if status != z3.sat:
         return {"status": str(status), "allocations": []}
@@ -643,7 +598,7 @@ def solve_allocation(
     extended_allocations = pack_extended_allocations(
         extended_candidates, packed_roots, compact_policy, field_layout_model
     )
-    primary_aliases = compact_conditional_alias_allocations(primary_allocations, alias_rules)
+    primary_aliases = compact_conditional_alias_allocations(primary_allocations, alias_rules, compact_policy)
     extended_aliases = extended_conditional_alias_allocations(extended_allocations, alias_rules)
     evictions = eviction_report(candidates, selected_compact, compact_policy)
     policy_report = compact_policy_report(candidates, selected_compact, compact_policy)
@@ -652,24 +607,24 @@ def solve_allocation(
     alias_audit = conditional_alias_audit(primary_aliases, extended_aliases, alias_rules)
     decode_cost = decode_cost_audit(primary_allocations, compact_policy)
     extended_used_slots = sum(int(item.get("extended_opcode_slots", 1)) for item in extended_allocations)
-    extended_total_slots = len(extension_roots) * EXTENDED_SLOTS
+    extended_total_slots = len(extension_roots) * model.extended.slots
 
     return {
         "status": str(status),
-        "slot_count": PRIMARY_SLOTS,
+        "slot_count": model.primary.slots,
         "candidate_count": len(candidates),
         "primary_used_slot_count": len(used),
-        "primary_free_slot_count": PRIMARY_SLOTS - len(used),
-        "primary_headroom_target": PRIMARY_EXTENSION_HEADROOM_SLOTS,
+        "primary_free_slot_count": model.primary.slots - len(used),
+        "primary_headroom_target": model.primary_extension_headroom_slots,
         "compact_count": sum(1 for item in primary_allocations if item["kind"] == "compact"),
         "extended_count": len(extended_allocations),
         "extension_root_count": len(extension_roots),
         "extension_root_slot_count": extension_root_slots,
-        "extended_opcode_slot_count": EXTENDED_SLOTS,
+        "extended_opcode_slot_count": model.extended.slots,
         "extended_total_opcode_slot_count": extended_total_slots,
         "extended_used_opcode_count": extended_used_slots,
         "extended_free_opcode_count": extended_total_slots - extended_used_slots,
-        "extension_root_usage": extension_root_usage(packed_roots, extended_allocations),
+        "extension_root_usage": extension_root_usage(packed_roots, extended_allocations, compact_policy),
         "profile_selection": "weighted_compact_knapsack_with_z3_capacity_check",
         "compact_policy": policy_report,
         "decode_cost_audit": decode_cost,
@@ -677,7 +632,7 @@ def solve_allocation(
         "compact_family_symmetry_audit": family_symmetry,
         "symmetry_audit": symmetry,
         "conditional_alias_audit": alias_audit,
-        "free_ranges": free_ranges(used, PRIMARY_SLOTS),
+        "free_ranges": free_ranges(used, model.primary.slots),
         "primary_allocations": primary_allocations,
         "primary_alias_allocations": primary_aliases,
         "extension_roots": packed_roots,
@@ -688,15 +643,16 @@ def solve_allocation(
 
 
 def select_compact_profiles(candidates: list[Candidate], compact_policy: dict[str, Any]) -> set[str]:
+    model = policy_model(compact_policy)
     selected = {candidate.id for candidate in candidates if candidate.must_compact}
     fixed_slots = sum(compact_slot_cost(candidate, compact_policy) for candidate in candidates if candidate.id in selected)
-    capacity = PRIMARY_SLOTS - fixed_slots - PRIMARY_EXTENSION_HEADROOM_SLOTS
+    capacity = model.primary.slots - fixed_slots - model.primary_extension_headroom_slots
     if capacity < 0:
         raise ValueError("mandatory compact candidates leave no primary headroom")
 
     optional = [
         candidate
-        for candidate in sorted(candidates, key=candidate_sort_key)
+        for candidate in sorted(candidates, key=lambda candidate: candidate_sort_key(candidate, compact_policy))
         if candidate.id not in selected
         and candidate.compact_slots is not None
         and compact_allowed(candidate, compact_policy)
@@ -775,16 +731,17 @@ def enforce_primary_capacity(
     extension_roots: list[dict[str, Any]],
     compact_policy: dict[str, Any],
 ) -> tuple[set[str], list[Candidate], list[dict[str, Any]]]:
+    model = policy_model(compact_policy)
     by_id = {candidate.id: candidate for candidate in candidates}
     while True:
         compact_slots = sum(
             compact_slot_cost(by_id[ident], compact_policy)
             if by_id[ident].compact_slots is not None
-            else PRIMARY_SLOTS + 1
+            else model.primary.slots + 1
             for ident in selected_compact
         )
         root_slots = sum(int(root["slots"]) for root in extension_roots)
-        if compact_slots + root_slots + PRIMARY_EXTENSION_HEADROOM_SLOTS <= PRIMARY_SLOTS:
+        if compact_slots + root_slots + model.primary_extension_headroom_slots <= model.primary.slots:
             return selected_compact, extended_candidates, extension_roots
 
         eviction = choose_capacity_eviction(selected_compact, by_id, compact_policy)
@@ -875,7 +832,7 @@ def primary_cluster_order(compact_policy: dict[str, Any]) -> list[str]:
     order = policy.get("order", []) if isinstance(policy, dict) else []
     if isinstance(order, list):
         return [str(item) for item in order]
-    return default_primary_clusters_policy()["order"]
+    return []
 
 
 def ordered_primary_variables(
@@ -892,7 +849,7 @@ def ordered_primary_variables(
             -len(compact_preference_reasons(candidate, compact_policy)),
             clusters.get(primary_cluster_name(candidate), len(clusters)),
             primary_cluster_sort_key(candidate),
-            candidate_sort_key(candidate),
+            candidate_sort_key(candidate, compact_policy),
         ),
     )
 
@@ -903,15 +860,15 @@ def ordered_extension_root_groups(
     if not extension_roots_prefer_family_contiguity(compact_policy):
         return [[root] for root in sorted(extension_roots, key=extension_root_sort_key)]
     groups: dict[str, list[dict[str, Any]]] = {}
-    for root in sorted(extension_roots, key=extension_root_sort_key):
+    for root in sorted(extension_roots, key=lambda root: extension_root_sort_key(root, compact_policy)):
         groups.setdefault(str(root["family"]), []).append(root)
     return [
         sorted(
             members,
-            key=lambda root: (-int(root.get("slots", 1)), extension_root_sort_key(root)),
+            key=lambda root: (-int(root.get("slots", 1)), extension_root_sort_key(root, compact_policy)),
         )
         for _family, members in sorted(
-            groups.items(), key=lambda item: (EXTENSION_FAMILY_RANK.get(item[0], 99), item[0])
+            groups.items(), key=lambda item: (policy_model(compact_policy).extension_family_rank.get(item[0], 99), item[0])
         )
     ]
 
@@ -936,7 +893,7 @@ def pack_primary_allocations(
         if payload in used:
             raise RuntimeError(f"fixed payload collision at 0x{payload:03x}")
         used.add(payload)
-        allocations.append(primary_allocation_dict(candidate, payload, payload, "compact", field_layout_model))
+        allocations.append(primary_allocation_dict(candidate, payload, payload, "compact", compact_policy, field_layout_model))
 
     variable = ordered_primary_variables(
         [
@@ -948,7 +905,7 @@ def pack_primary_allocations(
         field_layout_model,
     )
     for candidate in variable:
-        fields = assign_field_positions(candidate.compact_fields, PRIMARY_BITS, "primary", field_layout_model)
+        fields = assign_field_positions(candidate.compact_fields, policy_model(compact_policy).primary.bits, "primary", field_layout_model)
         span_slots = primary_span_slots(candidate, field_layout_model)
         start, end, exact_payloads = find_free_primary_window(
             used,
@@ -957,7 +914,7 @@ def pack_primary_allocations(
             span_slots,
             compact_policy,
         )
-        allocation = primary_allocation_dict(candidate, start, end, "compact", field_layout_model)
+        allocation = primary_allocation_dict(candidate, start, end, "compact", compact_policy, field_layout_model)
         if exact_payloads:
             reclaimed = sorted(set(range(start, end + 1)) - set(exact_payloads))
             allocation["primary_payloads"] = [f"0x{payload:03x}" for payload in exact_payloads]
@@ -978,11 +935,11 @@ def pack_primary_allocations(
         total_slots = sum(int(root["slots"]) for root in group)
         alignment = max(1, max(int(root["slots"]) for root in group))
         try:
-            start = find_free_range(used, total_slots, alignment=alignment, limit=PRIMARY_SLOTS, min_start=root_cursor)
+            start = find_free_range(used, total_slots, alignment=alignment, limit=policy_model(compact_policy).primary.slots, min_start=root_cursor)
         except RuntimeError:
             if not extension_roots_allow_low_payload(compact_policy):
                 raise
-            start = find_free_range(used, total_slots, alignment=alignment, limit=PRIMARY_SLOTS)
+            start = find_free_range(used, total_slots, alignment=alignment, limit=policy_model(compact_policy).primary.slots)
         offset = start
         for root in group:
             slots = int(root["slots"])
@@ -1007,9 +964,14 @@ def pack_primary_allocations(
 
 
 def primary_allocation_dict(
-    candidate: Candidate, start: int, end: int, kind: str, field_layout_model: dict[str, Any]
+    candidate: Candidate,
+    start: int,
+    end: int,
+    kind: str,
+    compact_policy: dict[str, Any],
+    field_layout_model: dict[str, Any],
 ) -> dict[str, Any]:
-    fields = assign_field_positions(candidate.compact_fields, PRIMARY_BITS, "primary", field_layout_model)
+    fields = assign_field_positions(candidate.compact_fields, policy_model(compact_policy).primary.bits, "primary", field_layout_model)
     span_bits = field_layout_span_bits(fields)
     return {
         "id": profile_candidate_id(candidate, candidate.compact_fields),
@@ -1024,7 +986,7 @@ def primary_allocation_dict(
         "slots": end - start + 1,
         "start_payload": f"0x{start:03x}",
         "end_payload": f"0x{end:03x}",
-        "field_layout": layout_text(fields),
+        "field_layout": layout_text(fields, policy_model(compact_policy).primary.bits),
         "fields": fields,
         "weight": candidate.weight,
         "shape_hint": candidate.shape_hint,
@@ -1042,14 +1004,15 @@ def find_free_primary_window(
     span_slots: int,
     compact_policy: dict[str, Any],
 ) -> tuple[int, int, list[int]]:
+    primary_slots = policy_model(compact_policy).primary.slots
     if span_slots <= 0:
         raise ValueError("primary span slot count must be positive")
     field_mask = field_layout_variable_mask(fields)
-    for start in range(PRIMARY_SLOTS):
+    for start in range(primary_slots):
         if start & field_mask:
             continue
         end = start | field_mask
-        if end >= PRIMARY_SLOTS:
+        if end >= primary_slots:
             continue
         exact_payloads = compact_exact_primary_payloads_for_window(
             candidate,
@@ -1084,7 +1047,7 @@ def compact_exact_primary_payloads_for_window(
 ) -> list[int]:
     filters = compact_reclaim_filters(candidate, compact_policy)
     field_mask = field_layout_variable_mask(fields)
-    span_mask = (1 << PRIMARY_BITS) - 1
+    span_mask = (1 << policy_model(compact_policy).primary.bits) - 1
     fixed_mask = span_mask & ~field_mask
     dense_mask = (1 << field_layout_span_bits(fields)) - 1 if fields else 0
     needs_sparse_payloads = field_mask != dense_mask
@@ -1106,7 +1069,7 @@ def build_extension_roots(candidates: list[Candidate], compact_policy: dict[str,
         if key not in roots:
             roots[key] = extension_root_dict(key, candidate, compact_policy)
         roots[key]["members"].append(profile_candidate_id(candidate, candidate.descriptor_fields))
-    return sorted(roots.values(), key=extension_root_sort_key)
+    return sorted(roots.values(), key=lambda root: extension_root_sort_key(root, compact_policy))
 
 
 def extension_root_key(candidate: Candidate, compact_policy: dict[str, Any]) -> str:
@@ -1127,13 +1090,15 @@ def extension_root_key(candidate: Candidate, compact_policy: dict[str, Any]) -> 
 
 
 def extension_root_dict(key: str, candidate: Candidate, compact_policy: dict[str, Any]) -> dict[str, Any]:
-    carries_condition = any(field.kind == "condition" for field in candidate.descriptor_fields)
+    condition_fields = [field for field in candidate.descriptor_fields if field.kind == "condition"]
+    carries_condition = bool(condition_fields)
     root_policy = compact_policy.get("extension_roots", {})
     condition_in_primary = bool(root_policy.get("condition_field_in_primary", True)) if isinstance(root_policy, dict) else True
-    slots = 16 if carries_condition and condition_in_primary else 1
-    primary_bits = 4 if carries_condition and condition_in_primary else 0
+    condition_bits = max((field.width for field in condition_fields), default=0)
+    slots = (1 << condition_bits) if carries_condition and condition_in_primary else 1
+    primary_bits = condition_bits if carries_condition and condition_in_primary else 0
     layout = (
-        "c[3:0] subop/operands in following word"
+        f"c[{condition_bits - 1}:0] subop/operands in following word"
         if carries_condition and condition_in_primary
         else "subop/operands in following word"
     )
@@ -1147,7 +1112,7 @@ def extension_root_dict(key: str, candidate: Candidate, compact_policy: dict[str
         "primary_bits": primary_bits,
         "field_layout": layout,
         "members": [],
-        "opcode_capacity": EXTENDED_SLOTS,
+        "opcode_capacity": policy_model(compact_policy).extended.slots,
     }
 
 
@@ -1187,11 +1152,12 @@ def extension_family_name(candidate: Candidate) -> str:
     return "misc"
 
 
-def extension_root_sort_key(root: dict[str, Any]) -> tuple[int, int, int, str]:
+def extension_root_sort_key(root: dict[str, Any], compact_policy: dict[str, Any]) -> tuple[int, int, int, str]:
     family = str(root["family"])
     profile = str(root["profile"])
-    profile_rank = EXTENSION_PROFILE_RANK.get(family, {}).get(profile, 99)
-    return (EXTENSION_FAMILY_RANK.get(family, 99), profile_rank, -len(root["members"]), str(root["key"]))
+    model = policy_model(compact_policy)
+    profile_rank = model.extension_profile_rank.get(family, {}).get(profile, 99)
+    return (model.extension_family_rank.get(family, 99), profile_rank, -len(root["members"]), str(root["key"]))
 
 
 def extension_root_allocation_dict(root: dict[str, Any]) -> dict[str, Any]:
@@ -1304,11 +1270,12 @@ def extended_candidate_sort_key(
     candidate: Candidate, compact_policy: dict[str, Any]
 ) -> tuple[int, str, tuple[int, int, str, int, str], tuple[int, int, int, str]]:
     family = extension_family_name(candidate)
+    model = policy_model(compact_policy)
     return (
-        EXTENSION_FAMILY_RANK.get(family, 99),
+        model.extension_family_rank.get(family, 99),
         extension_root_key(candidate, compact_policy),
         extended_pair_rank(candidate),
-        candidate_sort_key(candidate),
+        candidate_sort_key(candidate, compact_policy),
     )
 
 
@@ -1327,7 +1294,7 @@ def pack_extended_allocations(
         root = root_by_key[root_key]
         opcode_plan = opcode_plans[candidate.id]
         slots = int(opcode_plan["slots"])
-        window_start, window_end = fixed_high_field_window(candidate)
+        window_start, window_end = fixed_high_field_window(candidate, compact_policy)
         min_start = extended_pair_min_start(candidate, str(root["id"]), out, window_start)
         opcode_start = find_free_range(
             used_by_root[root_key],
@@ -1374,7 +1341,7 @@ def pack_extended_allocations(
                 "weight": candidate.weight,
                 "compact_bits_if_one_word": candidate.compact_bits,
                 "primary_slots_if_one_word": candidate.compact_slots,
-                "eviction_reason": eviction_reason(candidate),
+                "eviction_reason": eviction_reason(candidate, compact_policy),
                 "shape_hint": candidate.shape_hint,
                 "min_words": candidate.min_words,
                 "max_words": candidate.max_words,
@@ -1392,13 +1359,13 @@ def pack_extended_allocations(
     )
 
 
-def fixed_high_field_window(candidate: Candidate) -> tuple[int, int]:
+def fixed_high_field_window(candidate: Candidate, compact_policy: dict[str, Any]) -> tuple[int, int]:
     prefix = 0
     prefix_bits = 0
     for field in fixed_high_fields(candidate):
         prefix = (prefix << field.width) | int(field.value or 0)
         prefix_bits += field.width
-    remaining = EXTENDED_BITS - prefix_bits
+    remaining = policy_model(compact_policy).extended.bits - prefix_bits
     start = prefix << remaining
     return start, start + (1 << remaining) - 1
 
@@ -1411,9 +1378,9 @@ def fixed_high_fields(candidate: Candidate) -> list[Field]:
     ]
 
 
-def fixed_high_field_layout(candidate: Candidate) -> str:
+def fixed_high_field_layout(candidate: Candidate, compact_policy: dict[str, Any]) -> str:
     parts = []
-    high = EXTENDED_BITS - 1
+    high = policy_model(compact_policy).extended.bits - 1
     for field in fixed_high_fields(candidate):
         low = high - field.width + 1
         label = field.value_label or str(field.value)
@@ -1432,24 +1399,24 @@ def build_extended_opcode_plans(
     plans: dict[str, dict[str, Any]] = {}
     for root_key, members in grouped.items():
         level_index = {
-            candidate.id: len(extended_opcode_budget_levels(candidate)) - 1
+            candidate.id: len(extended_opcode_budget_levels(candidate, compact_policy)) - 1
             for candidate in members
         }
         while True:
             total = 0
             for candidate in members:
-                budget = extended_opcode_budget_levels(candidate)[level_index[candidate.id]]
+                budget = extended_opcode_budget_levels(candidate, compact_policy)[level_index[candidate.id]]
                 bits = extended_opcode_bits(candidate, descriptor_opcode_fields(candidate, budget))
                 total += 1 << bits
-            if total <= EXTENDED_SLOTS:
+            if total <= policy_model(compact_policy).extended.slots:
                 break
-            spill = choose_extended_spill_candidate(members, level_index)
+            spill = choose_extended_spill_candidate(members, level_index, compact_policy)
             if spill is None:
                 raise RuntimeError(f"extension root {root_key} is full")
             level_index[spill.id] -= 1
 
         for candidate in members:
-            budget = extended_opcode_budget_levels(candidate)[level_index[candidate.id]]
+            budget = extended_opcode_budget_levels(candidate, compact_policy)[level_index[candidate.id]]
             opcode_fields = descriptor_opcode_fields(candidate, budget)
             opcode_bits = extended_opcode_bits(candidate, opcode_fields)
             plans[candidate.id] = {
@@ -1460,13 +1427,15 @@ def build_extended_opcode_plans(
     return plans
 
 
-def choose_extended_spill_candidate(members: list[Candidate], level_index: dict[str, int]) -> Candidate | None:
+def choose_extended_spill_candidate(
+    members: list[Candidate], level_index: dict[str, int], compact_policy: dict[str, Any]
+) -> Candidate | None:
     candidates = [candidate for candidate in members if level_index[candidate.id] > 0]
     if not candidates:
         return None
 
     def spill_key(candidate: Candidate) -> tuple[float, int, int, str]:
-        levels = extended_opcode_budget_levels(candidate)
+        levels = extended_opcode_budget_levels(candidate, compact_policy)
         old_budget = levels[level_index[candidate.id]]
         new_budget = levels[level_index[candidate.id] - 1]
         old_bits = extended_opcode_bits(candidate, descriptor_opcode_fields(candidate, old_budget))
@@ -1528,13 +1497,14 @@ def descriptor_opcode_fields(candidate: Candidate, budget: int) -> tuple[Field, 
     return best[bits][1]
 
 
-def extended_opcode_budget_levels(candidate: Candidate) -> list[int]:
+def extended_opcode_budget_levels(candidate: Candidate, compact_policy: dict[str, Any]) -> list[int]:
     fields = descriptor_variable_fields(candidate)
+    extended_bits = policy_model(compact_policy).extended.bits
     possible = {0}
     for field in fields:
         for bits in list(possible):
             new_bits = bits + field.width
-            if new_bits <= EXTENDED_BITS:
+            if new_bits <= extended_bits:
                 possible.add(new_bits)
     descriptor_bits = sum(field.width for field in fields)
     payload_base = sum(field.width for field in candidate.descriptor_fields if field.storage == "payload")
@@ -1573,7 +1543,9 @@ def extended_opcode_text(start: int, end: int) -> str:
 
 
 def compact_conditional_alias_allocations(
-    primary_allocations: list[dict[str, Any]], alias_rules: list[dict[str, Any]]
+    primary_allocations: list[dict[str, Any]],
+    alias_rules: list[dict[str, Any]],
+    compact_policy: dict[str, Any],
 ) -> list[dict[str, Any]]:
     aliases: list[dict[str, Any]] = []
     rules_by_target = alias_rules_by_target(alias_rules)
@@ -1605,7 +1577,7 @@ def compact_conditional_alias_allocations(
             "alias_of": allocation["id"],
             "alias_condition": rule["condition"],
             "canonical_disassembly": alias_mnemonic,
-            "field_layout": alias_field_layout(allocation.get("fields", []), rule),
+            "field_layout": alias_field_layout(allocation.get("fields", []), rule, compact_policy),
             "fields": fields,
         }
         aliases.append(alias)
@@ -1682,7 +1654,7 @@ def alias_id(target_id: str, alias_mnemonic: str, target_mnemonic: str) -> str:
     return alias_mnemonic
 
 
-def alias_field_layout(fields: list[dict[str, Any]], rule: dict[str, Any]) -> str:
+def alias_field_layout(fields: list[dict[str, Any]], rule: dict[str, Any], compact_policy: dict[str, Any]) -> str:
     layout_fields = [field for field in fields if field.get("kind") != "condition"]
     condition_high = max(
         (int(field.get("high_bit", -1)) for field in fields if field.get("kind") == "condition"),
@@ -1694,8 +1666,9 @@ def alias_field_layout(fields: list[dict[str, Any]], rule: dict[str, Any]) -> st
         for field in sorted(layout_fields, key=lambda item: int(item.get("low_bit", 0)))
     )
     highest = max([condition_high] + [int(field.get("high_bit", -1)) for field in layout_fields])
-    if highest + 1 < PRIMARY_BITS:
-        parts.append(f"op[{PRIMARY_BITS - 1}:{highest + 1}]")
+    primary_bits = policy_model(compact_policy).primary.bits
+    if highest + 1 < primary_bits:
+        parts.append(f"op[{primary_bits - 1}:{highest + 1}]")
     return " ".join(parts)
 
 
@@ -1717,8 +1690,9 @@ def root_payload_text(root: dict[str, Any]) -> str:
 
 
 def extension_root_usage(
-    roots: list[dict[str, Any]], allocations: list[dict[str, Any]]
+    roots: list[dict[str, Any]], allocations: list[dict[str, Any]], compact_policy: dict[str, Any]
 ) -> list[dict[str, Any]]:
+    extended_slots = policy_model(compact_policy).extended.slots
     counts = {str(root["id"]): 0 for root in roots}
     members = {str(root["id"]): 0 for root in roots}
     for allocation in allocations:
@@ -1733,8 +1707,8 @@ def extension_root_usage(
             "profile": root["profile"],
             "members": members[str(root["id"])],
             "used": counts[str(root["id"])],
-            "capacity": EXTENDED_SLOTS,
-            "free": EXTENDED_SLOTS - counts[str(root["id"])],
+            "capacity": extended_slots,
+            "free": extended_slots - counts[str(root["id"])],
         }
         for root in roots
     ]
@@ -2239,11 +2213,12 @@ def eviction_report(
     ]
 
 
-def eviction_reason(candidate: Candidate) -> str:
+def eviction_reason(candidate: Candidate, compact_policy: dict[str, Any]) -> str:
     if candidate.compact_slots is None:
-        if candidate.compact_bits <= PRIMARY_BITS:
+        primary_bits = policy_model(compact_policy).primary.bits
+        if candidate.compact_bits <= primary_bits:
             return "policy-disabled"
-        return f"bits={candidate.compact_bits}>{PRIMARY_BITS}"
+        return f"bits={candidate.compact_bits}>{primary_bits}"
     return f"slots={candidate.compact_slots};ranked-out"
 
 
@@ -2330,7 +2305,8 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     allocation = allocation_params(spec)
-    compact_policy = normalize_compact_policy(allocation)
+    model = allocation_model(spec)
+    compact_policy = normalize_compact_policy(allocation, model)
     root_policy = allocation.get("extension_roots", {}) if isinstance(allocation, dict) else {}
     if isinstance(root_policy, dict):
         compact_policy["extension_roots"] = {
@@ -2378,16 +2354,16 @@ def main(argv: list[str] | None = None) -> int:
     plan = {
         "z3_version": z3.get_version_string(),
         "target_space": {
-            "id": PRIMARY_SPACE_ID,
-            "bits": PRIMARY_BITS,
-            "payload_range": "0x000..0xfff",
-            "reserved_unallocated_headroom_slots": PRIMARY_EXTENSION_HEADROOM_SLOTS,
+            "id": model.primary.id,
+            "bits": model.primary.bits,
+            "payload_range": f"0x000..0x{model.primary.slots - 1:03x}",
+            "reserved_unallocated_headroom_slots": model.primary_extension_headroom_slots,
         },
         "extended_space": {
-            "id": EXTENDED_SPACE_ID,
-            "bits": EXTENDED_BITS,
+            "id": model.extended.id,
+            "bits": model.extended.bits,
             "root_model": "natural_family_roots",
-            "opcode_range": "0x0000..0xffff",
+            "opcode_range": f"0x0000..0x{model.extended.slots - 1:04x}",
         },
         "all_candidates_same_allocation_pool": True,
         "objectives": [

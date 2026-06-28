@@ -29,7 +29,6 @@ behavior:
   - <clz_mask_done>
   - dst_v = lzcount(tmp_v) - carry_v;
 attributes:
-  repeatable: true
   flags: unchanged
 allocation:
   catalog_section: integer

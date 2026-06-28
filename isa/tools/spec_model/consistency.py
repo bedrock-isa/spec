@@ -283,20 +283,6 @@ def check_prefix_model(spec: dict[str, Any], result: ValidationResult) -> None:
                 if bit_count <= 0:
                     result.error(f"prefix {name}: continuation field {field_name} must have a positive bit width")
 
-        if name == "REPcc":
-            check_rule_id_map(
-                prefix.get("observed_value"),
-                f"prefix {name}.observed_value",
-                REP_OBSERVED_VALUE_RULES,
-                result,
-            )
-            check_rule_id_map(
-                prefix.get("repflags"),
-                f"prefix {name}.repflags",
-                REPFLAGS_RULES,
-                result,
-            )
-
 
 def check_conditions(spec: dict[str, Any], result: ValidationResult) -> None:
     values: dict[int, str] = {}
@@ -767,7 +753,7 @@ def check_operation_semantics(
 
     known = set(catalog_entry_map(catalog))
     covered: dict[str, str] = {}
-    semantics_by_mnemonic: dict[str, dict[str, Any]] = {}
+    mnemonic_semantics: dict[str, dict[str, Any]] = {}
     for group_name, group in groups.items():
         if not isinstance(group, dict):
             result.error(f"operation_semantics.groups.{group_name} must be a mapping")
@@ -792,25 +778,10 @@ def check_operation_semantics(
                 )
             covered[mnemonic] = str(group_name)
         for mnemonic in member_names & known:
-            target = semantics_by_mnemonic.setdefault(mnemonic, {})
+            target = mnemonic_semantics.setdefault(mnemonic, {})
             for semantic_key in ("inputs", "input_output", "output"):
-                by_mnemonic = group.get(f"{semantic_key}_by_mnemonic")
-                if isinstance(by_mnemonic, dict) and mnemonic in by_mnemonic:
-                    target[semantic_key] = by_mnemonic[mnemonic]
-                elif semantic_key in group:
+                if semantic_key in group:
                     target[semantic_key] = group[semantic_key]
-        for key, value in group.items():
-            if not key.endswith("_by_mnemonic"):
-                continue
-            if not isinstance(value, dict):
-                result.error(f"operation_semantics.groups.{group_name}.{key} must be a mapping")
-                continue
-            unknown_keys = sorted({str(name) for name in value} - member_names)
-            if unknown_keys:
-                result.error(
-                    f"operation_semantics.groups.{group_name}.{key} contains non-member keys "
-                    + ", ".join(unknown_keys)
-                )
         if "memory" in group:
             check_rule_id_value(
                 group.get("memory"),
@@ -818,12 +789,20 @@ def check_operation_semantics(
                 MEMORY_RULES,
                 result,
             )
-        check_rule_id_map(
-            group.get("memory_by_mnemonic"),
-            f"operation_semantics.groups.{group_name}.memory_by_mnemonic",
-            MEMORY_RULES,
-            result,
-        )
+        if "repeat_observed_value" in group:
+            check_rule_id_value(
+                group.get("repeat_observed_value"),
+                f"operation_semantics.groups.{group_name}.repeat_observed_value",
+                REP_OBSERVED_VALUE_RULES,
+                result,
+            )
+        if "repflags" in group:
+            check_rule_id_value(
+                group.get("repflags"),
+                f"operation_semantics.groups.{group_name}.repflags",
+                REPFLAGS_RULES,
+                result,
+            )
 
     explicit = operation_semantics.get("instructions") or {}
     if explicit and not isinstance(explicit, dict):
@@ -836,6 +815,12 @@ def check_operation_semantics(
             + ", ".join(unknown_explicit)
         )
     for mnemonic, entry in explicit.items():
+        if isinstance(entry, dict) and "operation_text" in entry:
+            operation_text = entry.get("operation_text")
+            if not isinstance(operation_text, str) or not operation_text.strip():
+                result.error(
+                    f"operation_semantics.instructions.{mnemonic}.operation_text must be a non-empty string"
+                )
         if isinstance(entry, dict) and "pcode" in entry:
             check_pcode_value(
                 entry["pcode"],
@@ -849,10 +834,31 @@ def check_operation_semantics(
                 result,
             )
         if isinstance(entry, dict):
-            target = semantics_by_mnemonic.setdefault(str(mnemonic), {})
-            for semantic_key in ("inputs", "input_output", "output", "pcode", "pcode_by_form"):
+            target = mnemonic_semantics.setdefault(str(mnemonic), {})
+            for semantic_key in ("inputs", "input_output", "output", "pcode", "pcode_by_form", "operation_text"):
                 if semantic_key in entry:
                     target[semantic_key] = entry[semantic_key]
+            if "memory" in entry:
+                check_rule_id_value(
+                    entry.get("memory"),
+                    f"operation_semantics.instructions.{mnemonic}.memory",
+                    MEMORY_RULES,
+                    result,
+                )
+            if "repeat_observed_value" in entry:
+                check_rule_id_value(
+                    entry.get("repeat_observed_value"),
+                    f"operation_semantics.instructions.{mnemonic}.repeat_observed_value",
+                    REP_OBSERVED_VALUE_RULES,
+                    result,
+                )
+            if "repflags" in entry:
+                check_rule_id_value(
+                    entry.get("repflags"),
+                    f"operation_semantics.instructions.{mnemonic}.repflags",
+                    REPFLAGS_RULES,
+                    result,
+                )
 
     covered.update({str(name): "instruction_override" for name in explicit if str(name) in known})
     missing = sorted(known - set(covered))
@@ -863,8 +869,8 @@ def check_operation_semantics(
         )
     missing_pcode = sorted(
         mnemonic for mnemonic in known
-        if "pcode" not in semantics_by_mnemonic.get(mnemonic, {})
-        and "pcode_by_form" not in semantics_by_mnemonic.get(mnemonic, {})
+        if "pcode" not in mnemonic_semantics.get(mnemonic, {})
+        and "pcode_by_form" not in mnemonic_semantics.get(mnemonic, {})
     )
     if missing_pcode:
         result.error(
@@ -872,7 +878,7 @@ def check_operation_semantics(
             + ", ".join(missing_pcode)
         )
     catalog_entries = catalog_entry_map(catalog)
-    for mnemonic, semantics in sorted(semantics_by_mnemonic.items()):
+    for mnemonic, semantics in sorted(mnemonic_semantics.items()):
         entry = catalog_entries.get(mnemonic)
         if entry is not None:
             check_pcode_form_role_bindings(mnemonic, entry, semantics, result)
@@ -888,14 +894,14 @@ def check_repeat_prefix_semantics(operation_semantics: dict[str, Any], result: V
         result.error("operation_semantics.repeat_prefixes.REPcc must be a mapping")
         return
     check_rule_id_map(
-        repcc.get("observed_value_by_mnemonic"),
-        "operation_semantics.repeat_prefixes.REPcc.observed_value_by_mnemonic",
+        repcc.get("observed_values"),
+        "operation_semantics.repeat_prefixes.REPcc.observed_values",
         REP_OBSERVED_VALUE_RULES,
         result,
     )
     check_rule_id_map(
-        repcc.get("repflags_by_mnemonic"),
-        "operation_semantics.repeat_prefixes.REPcc.repflags_by_mnemonic",
+        repcc.get("repflag_rules"),
+        "operation_semantics.repeat_prefixes.REPcc.repflag_rules",
         REPFLAGS_RULES,
         result,
     )

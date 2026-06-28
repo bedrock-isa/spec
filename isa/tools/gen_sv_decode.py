@@ -22,7 +22,6 @@ from gen_asm_disasm_c import (  # noqa: E402
     required_word_count,
 )
 from isa_spec import load_spec  # noqa: E402
-from spec_model.encoding import mnemonic_policy
 from template_utils import render_tool_template  # noqa: E402
 
 
@@ -31,14 +30,13 @@ def load_plan(path: Path) -> dict[str, Any]:
         return json.load(fp)
 
 
-def load_repeat_policy(spec_path: Path) -> dict[str, set[str]]:
+def load_repg_fast_policy(spec_path: Path) -> dict[str, set[str]]:
     spec = load_spec(spec_path)
     attributes = (
         spec.get("instructions", {})
         .get("operation_semantics", {})
         .get("operation_attributes", {})
     )
-    repeatable = attributes.get("repeatable_operation", {}) or {}
     streaming = attributes.get("streaming_candidate", {}) or {}
 
     def collect(mapping: dict[str, Any], *keys: str) -> set[str]:
@@ -49,18 +47,8 @@ def load_repeat_policy(spec_path: Path) -> dict[str, set[str]]:
                 out.update(str(item).upper() for item in value)
         return out
 
-    allocation_policy = mnemonic_policy(spec)
-    def policy_set(key: str) -> set[str]:
-        value = allocation_policy.get(key, []) or []
-        return {str(item).upper() for item in value} if isinstance(value, list) else set()
-
     return {
-        "repeatable": collect(repeatable, "integer", "fpu"),
-        "repg_general_extra": collect(repeatable, "state_query_general_only"),
         "streaming": collect(streaming, "integer", "fpu"),
-        "fence": policy_set("fence_mnemonics"),
-        "cache": policy_set("cache_management_mnemonics"),
-        "tlb": policy_set("tlb_management_mnemonics"),
     }
 
 
@@ -185,50 +173,10 @@ def ranges_overlap(ranges: list[tuple[int, int]]) -> bool:
     return False
 
 
-def is_stack_form(item: dict[str, Any]) -> bool:
-    group = str(item.get("group", "")).upper()
-    return group in {"PUSH_POP", "PUSHM_POPM"}
-
-
-def is_fence_form(item: dict[str, Any], policy: dict[str, set[str]]) -> bool:
-    return str(item.get("mnemonic", "")).upper() in policy["fence"]
-
-
-def is_tlb_cache_form(item: dict[str, Any], policy: dict[str, set[str]]) -> bool:
-    group = str(item.get("group", "")).upper()
+def form_repg_fast_attributes(item: dict[str, Any], policy: dict[str, set[str]]) -> dict[str, bool]:
     mnemonic = str(item.get("mnemonic", "")).upper()
-    return (
-        "TLB" in group
-        or "CACHE" in group
-        or mnemonic in policy["tlb"]
-        or mnemonic in policy["cache"]
-    )
-
-
-def is_atomic_form(item: dict[str, Any]) -> bool:
-    group = str(item.get("group", "")).upper()
-    category = str(item.get("category", "")).lower()
-    return category == "atomic" or group in {"CMPXCHG", "FETCH_OPS"}
-
-
-def form_repeat_attributes(item: dict[str, Any], policy: dict[str, set[str]]) -> dict[str, bool]:
-    mnemonic = str(item.get("mnemonic", "")).upper()
-    category = str(item.get("category", "")).lower()
-    repeatable = mnemonic in policy["repeatable"]
-    repg_general_extra = mnemonic in policy["repg_general_extra"]
-    base_excluded = (
-        category == "control_flow"
-        or is_atomic_form(item)
-        or is_stack_form(item)
-        or is_tlb_cache_form(item, policy)
-        or is_fence_form(item, policy)
-    )
-    repcc_allowed = repeatable and category not in {"control_flow", "system"} and not is_atomic_form(item)
-    repg_allowed = (repeatable or repg_general_extra) and not base_excluded
     return {
-        "repcc_allowed": repcc_allowed,
-        "repg_allowed": repg_allowed,
-        "repg_fast_candidate": repg_allowed and mnemonic in policy["streaming"],
+        "repg_fast_candidate": mnemonic in policy["streaming"],
     }
 
 
@@ -423,20 +371,16 @@ def append_required_words_override(lines: list[str], item: dict[str, Any], inden
         lines.append(f"{indent}{target} = 4'd{required};")
 
 
-def append_repeat_attribute_assignments(
+def append_repg_fast_assignments(
     lines: list[str],
     item: dict[str, Any],
-    repeat_policy: dict[str, set[str]],
+    repg_fast_policy: dict[str, set[str]],
     indent: str,
     *,
     target_prefix: str = "r.",
     target_suffix: str = "",
 ) -> None:
-    attrs = form_repeat_attributes(item, repeat_policy)
-    if attrs["repcc_allowed"]:
-        lines.append(f"{indent}{target_prefix}repcc_allowed{target_suffix} = 1'b1;")
-    if attrs["repg_allowed"]:
-        lines.append(f"{indent}{target_prefix}repg_allowed{target_suffix} = 1'b1;")
+    attrs = form_repg_fast_attributes(item, repg_fast_policy)
     if attrs["repg_fast_candidate"]:
         lines.append(f"{indent}{target_prefix}repg_fast_candidate{target_suffix} = 1'b1;")
 
@@ -446,7 +390,7 @@ def emit_decode_assignment(
     item: dict[str, Any],
     opcode_names: dict[str, str],
     field_format_names: dict[FieldFormatSignature, str],
-    repeat_policy: dict[str, set[str]],
+    repg_fast_policy: dict[str, set[str]],
     indent: str,
     *,
     target_prefix: str = "r.",
@@ -459,14 +403,14 @@ def emit_decode_assignment(
         ]
     )
     append_required_words_override(lines, item, indent, f"{target_prefix}required_words")
-    append_repeat_attribute_assignments(lines, item, repeat_policy, indent, target_prefix=target_prefix)
+    append_repg_fast_assignments(lines, item, repg_fast_policy, indent, target_prefix=target_prefix)
 
 
 def sv_lines(lines: list[str]) -> str:
     return "\n".join(lines)
 
 
-def emit_package(plan: dict[str, Any], repeat_policy: dict[str, set[str]]) -> str:
+def emit_package(plan: dict[str, Any], repg_fast_policy: dict[str, set[str]]) -> str:
     items = allocation_items(plan)
     forms = sorted(items, key=decode_priority)
     opcode_names = assign_opcode_ids(forms)
@@ -507,7 +451,7 @@ def emit_package(plan: dict[str, Any], repeat_policy: dict[str, set[str]]) -> st
         p_start, p_end = primary_range(item)
         for pattern in unique_decode_patterns(item, 12, p_start, p_end, emitted_primary_patterns, emitted_primary_values):
             primary_decode_lines.append(f"      {pattern}: begin // {item.get('id', '')}")
-            emit_decode_assignment(primary_decode_lines, item, opcode_names, field_format_names, repeat_policy, "        ")
+            emit_decode_assignment(primary_decode_lines, item, opcode_names, field_format_names, repg_fast_policy, "        ")
             primary_decode_lines.append("      end")
 
     for root in sorted(root_names):
@@ -539,7 +483,7 @@ def emit_package(plan: dict[str, Any], repeat_policy: dict[str, set[str]]) -> st
                 keyword = "if" if first else "else if"
                 first = False
                 extended_decode_lines.append(f"        {keyword} {range_condition('extension_word', 16, e_start, e_end)} begin // {item.get('id', '')}")
-                emit_decode_assignment(extended_decode_lines, item, opcode_names, field_format_names, repeat_policy, "          ")
+                emit_decode_assignment(extended_decode_lines, item, opcode_names, field_format_names, repg_fast_policy, "          ")
                 extended_decode_lines.append("        end")
         else:
             extended_decode_lines.append("        unique casez (extension_word)")
@@ -547,7 +491,7 @@ def emit_package(plan: dict[str, Any], repeat_policy: dict[str, set[str]]) -> st
                 e_start, e_end = extended_range(item)
                 for pattern in range_patterns(16, e_start, e_end):
                     extended_decode_lines.append(f"          {pattern}: begin // {item.get('id', '')}")
-                    emit_decode_assignment(extended_decode_lines, item, opcode_names, field_format_names, repeat_policy, "            ")
+                    emit_decode_assignment(extended_decode_lines, item, opcode_names, field_format_names, repg_fast_policy, "            ")
                     extended_decode_lines.append("          end")
             extended_decode_lines.extend(
                 [
@@ -638,7 +582,7 @@ def emit_module() -> str:
     return render_tool_template("bedrock_decode.sv", {})
 
 
-def emit_synth_module(plan: dict[str, Any], repeat_policy: dict[str, set[str]]) -> str:
+def emit_synth_module(plan: dict[str, Any], repg_fast_policy: dict[str, set[str]]) -> str:
     items = allocation_items(plan)
     forms = sorted(items, key=decode_priority)
     opcode_names = assign_opcode_ids(forms)
@@ -686,10 +630,10 @@ def emit_synth_module(plan: dict[str, Any], repeat_policy: dict[str, set[str]]) 
                 ]
             )
             append_required_words_override(primary_decode_lines, item, "        ", "required_words_o")
-            append_repeat_attribute_assignments(
+            append_repg_fast_assignments(
                 primary_decode_lines,
                 item,
-                repeat_policy,
+                repg_fast_policy,
                 "        ",
                 target_prefix="",
                 target_suffix="_o",
@@ -733,10 +677,10 @@ def emit_synth_module(plan: dict[str, Any], repeat_policy: dict[str, set[str]]) 
                     ]
                 )
                 append_required_words_override(extended_decode_lines, item, "            ", "required_words_o")
-                append_repeat_attribute_assignments(
+                append_repg_fast_assignments(
                     extended_decode_lines,
                     item,
-                    repeat_policy,
+                    repg_fast_policy,
                     "            ",
                     target_prefix="",
                     target_suffix="_o",
@@ -756,10 +700,10 @@ def emit_synth_module(plan: dict[str, Any], repeat_policy: dict[str, set[str]]) 
                         ]
                     )
                     append_required_words_override(extended_decode_lines, item, "              ", "required_words_o")
-                    append_repeat_attribute_assignments(
+                    append_repg_fast_assignments(
                         extended_decode_lines,
                         item,
-                        repeat_policy,
+                        repg_fast_policy,
                         "              ",
                         target_prefix="",
                         target_suffix="_o",
@@ -812,16 +756,16 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     plan = load_plan(Path(args.allocation))
-    repeat_policy = load_repeat_policy(Path(args.spec))
+    repg_fast_policy = load_repg_fast_policy(Path(args.spec))
     package_path = Path(args.package)
     module_path = Path(args.module)
     synth_module_path = Path(args.synth_module)
     package_path.parent.mkdir(parents=True, exist_ok=True)
     module_path.parent.mkdir(parents=True, exist_ok=True)
     synth_module_path.parent.mkdir(parents=True, exist_ok=True)
-    package_path.write_text(emit_package(plan, repeat_policy), encoding="utf-8")
+    package_path.write_text(emit_package(plan, repg_fast_policy), encoding="utf-8")
     module_path.write_text(emit_module(), encoding="utf-8")
-    synth_module_path.write_text(emit_synth_module(plan, repeat_policy), encoding="utf-8")
+    synth_module_path.write_text(emit_synth_module(plan, repg_fast_policy), encoding="utf-8")
     print(f"wrote {package_path}")
     print(f"wrote {module_path}")
     print(f"wrote {synth_module_path}")

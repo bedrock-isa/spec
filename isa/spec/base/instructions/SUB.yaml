@@ -18,7 +18,6 @@ behavior:
   - CF = dst_old_v < src_v;
   - VF = sborrow(dst_old_v, src_v);
 attributes:
-  repeatable: true
   streaming_candidate: true
   prefix_availability:
   - SATURATE

@@ -34,15 +34,13 @@ display_labels:
   extension: Extension
   fflags: FFLAGS
   flags: FLAGS
-  flags_by_mnemonic: FLAGS
   flags_ZNCV: FLAGS ZNCV
-  fp_flags_by_mnemonic: FFLAGS
   fp_status: FP Status
   implementation: Implementation
   long_transfer_operands: Long transfer operands
   memory: Memory operands
-  memory_by_mnemonic: Memory operands
   memory_memory: Memory-Memory Operands
+  observed_values: REP observed values
   operand_evaluation_order: Operand Evaluation Order
   operand_read: Operand Read
   operand_write: Operand Write
@@ -50,8 +48,8 @@ display_labels:
   overlong_encoding: Overlong Encoding
   placement: Placement
   privilege: Privilege
-  privilege_by_mnemonic: Privilege
-  repeat_observed_value_by_mnemonic: REP observed value
+  repeat_observed_value: REP observed value
+  repflag_rules: REPFLAGS rules
   segment_registers: Segment-register operands
   selector: Selector
   source_sizes_by_destination: Source sizes

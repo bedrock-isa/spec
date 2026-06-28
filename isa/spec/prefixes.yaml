@@ -159,21 +159,19 @@ prefixes:
       applies_to_following_instruction: true
       separator: comma
       examples:
-        - "REP D0, EXTZL.B [A0 + D0 * 1], [A1 + D0 * 4]"
+        - "REP D0, EXTZL.B [A0++], [A1++]"
       aliases:
         REP: REPT
     description: >
-      Repeats the following eligible instruction using Dn as an ordinary signed
+      Repeats the following instruction using Dn as an ordinary signed
       two's-complement repeat counter and a full condition-code selector. A zero
       counter performs no iteration. Positive counters are decremented toward
       zero and negative counters are incremented toward zero only after a
       completed iteration whose REP condition remains true. A completed
       terminating iteration whose REP condition is false commits its ordinary
       instruction side effects but leaves the counter unchanged. REP is the alias
-      for REPT. The condition is evaluated from the iteration observed value
-      rather than from the incoming FLAGS alone, which lets REPcc express
-      string-like copy, compare, test, and bulk extension loops as one prefixed
-      instruction.
+      for REPT. The condition is evaluated from REPFLAGS produced by the
+      completed iteration according to the body instruction's repeat metadata.
     condition:
       type: condition_code
       field: c
@@ -184,9 +182,7 @@ prefixes:
       field: d
       range: D0-D7
       role: counter
-    eligible_operation_attribute: repeatable_operation
     fpu_conditional_mnemonics: [FCMP, FTEST, FBNDII, FBNDIX, FBNDXI, FBNDXX]
-    excluded_categories: [control_flow, system, atomic]
     indexed_ea_counter_use:
       allowed: true
       counter_value: architectural signed counter value before iteration update
@@ -203,42 +199,6 @@ prefixes:
       condition_false_iteration_counter_rule: counter is not updated
       completion_rule: counter is zero or the REP condition is false
       fault_restart_rule: remaining signed count is preserved
-    observed_value:
-      MOV: src_value
-      CMP: rhs_minus_lhs
-      TEST: lhs_bitwise_and_rhs
-      EXTSW: result_value
-      EXTZW: result_value
-      EXTSL: result_value
-      EXTZL: result_value
-      EXTSQ: result_value
-      EXTZQ: result_value
-    observed_value_descriptions:
-      src_value: source value
-      rhs_minus_lhs: right operand minus left operand
-      lhs_bitwise_and_rhs: left operand bitwise-and right operand
-      result_value: result value
-    repflags:
-      MOV: flags_logic_observed_value
-      CMP: flags_sub_rhs_lhs
-      TEST: flags_logic_observed_value
-      EXTSW: flags_logic_observed_value
-      EXTZW: flags_logic_observed_value
-      EXTSL: flags_logic_observed_value
-      EXTZL: flags_logic_observed_value
-      EXTSQ: flags_logic_observed_value
-      EXTZQ: flags_logic_observed_value
-      FCMP: fpu_compare_flags
-      FTEST: fpu_compare_flags
-      FBNDII: fpu_interval_v_flag
-      FBNDIX: fpu_interval_v_flag
-      FBNDXI: fpu_interval_v_flag
-      FBNDXX: fpu_interval_v_flag
-    repflags_descriptions:
-      flags_logic_observed_value: set Z/N from observed value and clear C/V
-      flags_sub_rhs_lhs: compute subtract flags from rhs - lhs
-      fpu_compare_flags: floating-point compare flag rules
-      fpu_interval_v_flag: set V from interval check
     counter_direction: signed counter moves toward zero
     commit_rule: a condition-false terminating iteration commits the body and leaves the counter unchanged
     semantics: repeat instruction while counter and condition remain active
@@ -258,7 +218,7 @@ prefixes:
         - "REPG D0, { FMOV.S [A0++], F0; FMADD.S [A1++], F0, F1; FMOV.S F1, [A2++]; }"
         - "REPGF D0, { FMOV.S [A0 + D0.L * 4], F0; FADD.S [A1 + D0.L * 4], F0; }"
     description: >
-      Repeats an ENDG-terminated group of eligible instructions using Dn as the
+      Repeats an ENDG-terminated group of instructions using Dn as the
       repeat counter. The grouped instructions execute in program order and the
       counter is updated after a successful group iteration. REPG has no
       condition-code selector; conditional repetition remains the role of REPcc.
@@ -283,17 +243,7 @@ prefixes:
       field: d
       range: D0-D7
       role: counter
-    eligible_operation_attribute: repeatable_operation
     streaming_candidate_attribute: streaming_candidate
-    excluded_instruction_classes:
-      - control flow
-      - system
-      - atomic
-      - stack operation
-      - TLB operation
-      - cache operation
-      - fence operation
-      - nested repeat
     fast_contract_alias:
       mnemonic: REPGF
       emits: same encoded prefix as REPG

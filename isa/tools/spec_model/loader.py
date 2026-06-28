@@ -19,8 +19,6 @@ from .schemas import (
     LocalDocSchema,
     LocalInstructionSchema,
     SpecDocumentSchema,
-    LOCAL_OPERATION_BY_MNEMONIC_KEYS,
-    LOCAL_OPERATION_CANONICAL_KEYS,
     MEMORY_RULES,
     REP_OBSERVED_VALUE_RULES,
     REPFLAGS_RULES,
@@ -121,35 +119,18 @@ def expand_local_instruction_fragment(
             if key != "group"
         }
         local_operation = body.pop("operation", None)
+        local_operation_text = body.pop("operation_text", None)
         local_operation_by_form = body.pop("operation_by_form", None)
         local_meta = {
             key: body.pop(key)
             for key in (
                 "prefix_availability",
-                "repeatable",
                 "streaming_candidate",
             )
             if key in body
         }
-        canonical_keys = sorted(key for key in body if key in LOCAL_OPERATION_CANONICAL_KEYS)
-        if canonical_keys:
-            raise SpecError(
-                f"{path}: local behavior/attributes must use per-instruction keys, not "
-                + ", ".join(canonical_keys)
-            )
-        for local_key, canonical_key in LOCAL_OPERATION_BY_MNEMONIC_KEYS.items():
-            if local_key not in body:
-                continue
-            if canonical_key in body:
-                raise SpecError(
-                    f"{path}: semantics.{local_key} conflicts with semantics.{canonical_key}"
-                )
-            body[canonical_key] = {mnemonic: body.pop(local_key)}
-        if "memory_by_mnemonic" in body:
-            body["memory_by_mnemonic"][mnemonic] = checked_memory_rule(
-                body["memory_by_mnemonic"][mnemonic],
-                path,
-            )
+        if "memory" in body:
+            body["memory"] = checked_memory_rule(body["memory"], path)
         local_operation_metadata = local_operation_metadata_fragment(
             mnemonic,
             local_meta,
@@ -158,34 +139,22 @@ def expand_local_instruction_fragment(
         )
         if local_operation_metadata:
             out = merge_spec_fragment(out, local_operation_metadata, "")
-        body["members"] = [mnemonic]
         out = merge_spec_fragment(
             out,
-            {"operation_semantics": {"groups": {group_name: body}}},
+            {"operation_semantics": {"groups": {group_name: {"members": [mnemonic]}}}},
             "",
         )
+        instruction_entry = deepcopy(body)
         if local_operation is not None:
-            out = merge_spec_fragment(
-                out,
-                {
-                    "operation_semantics": {
-                        "instructions": {
-                            mnemonic: {"pcode": deepcopy(local_operation)}
-                        }
-                    }
-                },
-                "",
-            )
+            instruction_entry["pcode"] = deepcopy(local_operation)
+        if local_operation_text is not None:
+            instruction_entry["operation_text"] = deepcopy(local_operation_text)
         if local_operation_by_form is not None:
+            instruction_entry["pcode_by_form"] = deepcopy(local_operation_by_form)
+        if instruction_entry:
             out = merge_spec_fragment(
                 out,
-                {
-                    "operation_semantics": {
-                        "instructions": {
-                            mnemonic: {"pcode_by_form": deepcopy(local_operation_by_form)}
-                        }
-                    }
-                },
+                {"operation_semantics": {"instructions": {mnemonic: instruction_entry}}},
                 "",
             )
 
@@ -253,36 +222,6 @@ def local_operation_metadata_fragment(
     def merge(value: dict[str, Any]) -> None:
         nonlocal fragment
         fragment = merge_spec_fragment(fragment, value, "")
-
-    repeatable = meta.get("repeatable")
-    if repeatable not in (None, False):
-        if repeatable is True:
-            domain = operation_attribute_domain(doc_info, path)
-            merge(
-                {
-                    "operation_semantics": {
-                        "operation_attributes": {
-                            "repeatable_operation": {domain: [mnemonic]}
-                        }
-                    }
-                }
-            )
-        elif str(repeatable) == "state_query_general_only":
-            merge(
-                {
-                    "operation_semantics": {
-                        "operation_attributes": {
-                            "repeatable_operation": {
-                                "state_query_general_only": [mnemonic]
-                            }
-                        }
-                    }
-                }
-            )
-        else:
-            raise SpecError(
-                f"{path}: repeatable must be true or state_query_general_only"
-            )
 
     streaming_candidate = meta.get("streaming_candidate")
     if streaming_candidate not in (None, False):
@@ -470,18 +409,18 @@ def derive_repeat_prefix_semantics(spec: dict[str, Any]) -> None:
     if not isinstance(repcc, dict):
         raise SpecError("operation_semantics.repeat_prefixes.REPcc must be a mapping")
 
-    derive_repeat_rule_map(
+    derive_repeat_rule_map_from_instructions(
         repcc,
-        repcc_prefix,
-        "observed_value",
-        "observed_value_by_mnemonic",
+        operation_semantics,
+        "repeat_observed_value",
+        "observed_values",
         REP_OBSERVED_VALUE_RULES,
     )
-    derive_repeat_rule_map(
+    derive_repeat_rule_map_from_instructions(
         repcc,
-        repcc_prefix,
+        operation_semantics,
         "repflags",
-        "repflags_by_mnemonic",
+        "repflag_rules",
         REPFLAGS_RULES,
     )
     fpu_conditional = repcc_prefix.get("fpu_conditional_mnemonics")
@@ -491,32 +430,44 @@ def derive_repeat_prefix_semantics(spec: dict[str, Any]) -> None:
         set_derived_repeat_value(repcc, "fpu_conditional_mnemonics", list(fpu_conditional))
 
 
-def derive_repeat_rule_map(
+def derive_repeat_rule_map_from_instructions(
     repcc: dict[str, Any],
-    prefix: dict[str, Any],
+    operation_semantics: dict[str, Any],
     source_key: str,
     target_key: str,
     allowed: set[str],
 ) -> None:
-    source = prefix.get(source_key)
-    if source is None:
+    instructions = operation_semantics.get("instructions") or {}
+    if not isinstance(instructions, dict):
         return
-    if not isinstance(source, dict):
-        raise SpecError(f"prefixes.yaml REPcc.{source_key} must be a mapping")
     derived: dict[str, str] = {}
-    for mnemonic, rule in source.items():
-        derived[str(mnemonic)] = checked_rule_id(
-            rule,
-            "prefixes.yaml",
-            f"REPcc.{source_key}.{mnemonic}",
+    for mnemonic, entry in instructions.items():
+        if not isinstance(entry, dict):
+            continue
+        source = entry.get(source_key)
+        if source is None:
+            continue
+        mnemonic_key = str(mnemonic)
+        rule_id = checked_rule_id(
+            source,
+            "instruction semantics",
+            f"instructions.{mnemonic_key}.{source_key}",
             allowed,
         )
-    set_derived_repeat_value(repcc, target_key, derived)
+        previous = derived.get(mnemonic_key)
+        if previous is not None and previous != rule_id:
+            raise SpecError(
+                f"operation_semantics instructions define conflicting REPcc {source_key} "
+                f"rules for {mnemonic_key}: {previous} and {rule_id}"
+            )
+        derived[mnemonic_key] = rule_id
+    if derived:
+        set_derived_repeat_value(repcc, target_key, derived, source_key)
 
 
-def set_derived_repeat_value(repcc: dict[str, Any], key: str, value: Any) -> None:
+def set_derived_repeat_value(repcc: dict[str, Any], key: str, value: Any, source: str = "derived metadata") -> None:
     if key in repcc and repcc[key] != value:
-        raise SpecError(f"operation_semantics.repeat_prefixes.REPcc.{key} conflicts with prefixes.yaml")
+        raise SpecError(f"operation_semantics.repeat_prefixes.REPcc.{key} conflicts with {source}")
     repcc[key] = value
 
 
@@ -580,27 +531,20 @@ def derive_control_register_access_pcode(spec: dict[str, Any]) -> None:
     operation_semantics = (spec.get("instructions") or {}).get("operation_semantics") or {}
     if not isinstance(operation_semantics, dict):
         return
-    groups = operation_semantics.get("groups") or {}
-    if not isinstance(groups, dict):
-        return
     explicit = operation_semantics.setdefault("instructions", {})
     if not isinstance(explicit, dict):
         raise SpecError("operation_semantics.instructions must be a mapping")
-    for group in groups.values():
-        if not isinstance(group, dict):
+    for mnemonic, entry in explicit.items():
+        if not isinstance(entry, dict):
             continue
-        by_mnemonic = group.get("control_register_access_by_mnemonic") or {}
-        if not isinstance(by_mnemonic, dict):
+        access = entry.get("control_register_access")
+        if access is None:
             continue
-        for mnemonic, access in by_mnemonic.items():
-            if not isinstance(access, dict):
-                raise SpecError(f"{mnemonic}: control_register_access must be a mapping")
-            entry = explicit.setdefault(str(mnemonic), {})
-            if not isinstance(entry, dict):
-                raise SpecError(f"operation_semantics.instructions.{mnemonic} must be a mapping")
-            if "pcode" in entry or "pcode_by_form" in entry:
-                raise SpecError(f"{mnemonic}: control_register_access conflicts with explicit pcode")
-            entry["pcode"] = control_register_access_pcode(spec, str(mnemonic), access)
+        if not isinstance(access, dict):
+            raise SpecError(f"{mnemonic}: control_register_access must be a mapping")
+        if "pcode" in entry or "pcode_by_form" in entry:
+            raise SpecError(f"{mnemonic}: control_register_access conflicts with explicit pcode")
+        entry["pcode"] = control_register_access_pcode(spec, str(mnemonic), access)
 
 
 def derive_condition_code_applies_to(spec: dict[str, Any]) -> None:
@@ -616,7 +560,7 @@ def derive_condition_code_applies_to(spec: dict[str, Any]) -> None:
 
     applies_to: list[str] = []
     try:
-        entries = catalog_entries_by_mnemonic(instruction_catalog(spec))
+        entries = mnemonic_catalog_entries(instruction_catalog(spec))
     except SpecError:
         entries = {}
     for mnemonic, item in entries.items():
@@ -650,7 +594,7 @@ def entry_has_operand_type(value: Any, operand_type: str) -> bool:
     return False
 
 
-def catalog_entries_by_mnemonic(catalog: dict[str, Any]) -> dict[str, dict[str, Any]]:
+def mnemonic_catalog_entries(catalog: dict[str, Any]) -> dict[str, dict[str, Any]]:
     entries: dict[str, dict[str, Any]] = {}
     sections = [
         catalog.get("compact_primary_instructions"),

@@ -55,8 +55,6 @@ def iter_fflags_specs(value: Any) -> list[Any]:
         for key, item in value.items():
             if key == "fp_flags":
                 specs.append(item)
-            elif key == "fp_flags_by_mnemonic" and isinstance(item, dict):
-                specs.extend(item.values())
             else:
                 specs.extend(iter_fflags_specs(item))
     elif isinstance(value, list):

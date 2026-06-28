@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Callable
 import re
 
 from gen_instruction_tables import (
@@ -89,12 +89,12 @@ def instruction_set_summary_by_class_section(
     mnemonics: list[str],
     records: dict[str, list[dict[str, Any]]] | None = None,
     operations: dict[str, list[dict[str, Any]]] | None = None,
-    items_by_mnemonic: dict[str, list[dict[str, Any]]] | None = None,
+    mnemonic_items: dict[str, list[dict[str, Any]]] | None = None,
 ) -> str:
     set_active_spec(spec)
     records = records or {}
     operations = operations or {}
-    items_by_mnemonic = items_by_mnemonic or {}
+    mnemonic_items = mnemonic_items or {}
     return render_latex_template(
         "instruction_set_summary.tex",
         {
@@ -104,7 +104,7 @@ def instruction_set_summary_by_class_section(
                 mnemonics,
                 records,
                 operations,
-                items_by_mnemonic,
+                mnemonic_items,
             ),
         },
     )
@@ -154,17 +154,7 @@ def instruction_class_note(body: dict[str, Any]) -> str:
             else:
                 value = readable_text(body[key])
             notes.append(f"{pretty_key(key)}: {value}")
-    per_mnemonic_fields = (
-        ("privilege_by_mnemonic", "privilege"),
-        ("flags_by_mnemonic", "flags"),
-        ("fp_flags_by_mnemonic", "fp_flags"),
-    )
-    for key, group_key in per_mnemonic_fields:
-        if key in body:
-            if group_key in body:
-                continue
-            notes.append(f"{pretty_key(key)}: varies by mnemonic")
-    return "; ".join(notes) if notes else "See individual instruction descriptions."
+    return "; ".join(notes)
 
 
 def instruction_class_title(name: str) -> str:
@@ -186,13 +176,13 @@ def instruction_attribute_matrix_table(
     mnemonics: list[str],
     records: dict[str, list[dict[str, Any]]],
     operations: dict[str, list[dict[str, Any]]],
-    items_by_mnemonic: dict[str, list[dict[str, Any]]],
+    mnemonic_items: dict[str, list[dict[str, Any]]],
 ) -> str:
     rows: list[list[str]] = []
     for mnemonic in mnemonics:
         recs = records.get(mnemonic, [])
         ops = operations.get(mnemonic, [])
-        items = items_by_mnemonic.get(mnemonic, [])
+        items = mnemonic_items.get(mnemonic, [])
         if not (recs or ops or items):
             continue
         flag_cells = instruction_flag_cells(recs, ops)
@@ -221,10 +211,6 @@ def instruction_attribute_matrix_table(
             "NX",
             "SAT",
             "NT",
-            "REP",
-            "REPcc",
-            "REPG",
-            "REPGF",
         ],
         rows,
         [
@@ -241,17 +227,9 @@ def instruction_attribute_matrix_table(
             "0.18in",
             "0.22in",
             "0.18in",
-            "0.22in",
-            "0.32in",
-            "0.30in",
-            "0.34in",
         ],
         "Instruction Attribute Matrix",
-    )
-    table = table.replace(
-        r"\begingroup\footnotesize",
-        r"\begingroup\scriptsize\setlength{\tabcolsep}{2pt}",
-        1,
+        style="dense",
     )
     return legend + instruction_attribute_matrix_legend() + table
 
@@ -259,6 +237,7 @@ def instruction_attribute_matrix_table(
 def instruction_attribute_matrix_legend() -> str:
     rows = [
         [tex_escape("Priv"), tex_code("U"), tex_escape("all listed forms are unprivileged")],
+        [tex_escape("Priv"), tex_code("U*"), tex_escape("all listed forms are user-accessible under a listed architectural condition")],
         [tex_escape("Priv"), tex_code("S"), tex_escape("all listed forms require supervisor privilege")],
         [tex_escape("Priv"), tex_code("P"), tex_escape("at least one listed form is policy-controlled or configurable")],
         [tex_escape("Priv"), tex_code("mixed"), tex_escape("the mnemonic has both unprivileged and privileged forms")],
@@ -269,10 +248,6 @@ def instruction_attribute_matrix_legend() -> str:
         [tex_escape("Prefix"), tex_code("-"), tex_escape("the prefix is not applicable to this mnemonic")],
         [tex_code("SAT"), tex_code("Y/-"), tex_escape("SATURATE prefix is applicable or not applicable")],
         [tex_code("NT"), tex_code("Y/-"), tex_escape("NONTEMPORAL hint is applicable or not applicable to memory forms")],
-        [tex_code("REP"), tex_code("Y/-"), tex_escape("unconditional repeat form is applicable or not applicable")],
-        [tex_code("REPcc"), tex_code("Y/-"), tex_escape("conditional repeat form is applicable or not applicable")],
-        [tex_code("REPG"), tex_code("Y/-"), tex_escape("grouped repeat form is applicable or not applicable")],
-        [tex_code("REPGF"), tex_code("Y/-"), tex_escape("fast grouped-repeat contract form is applicable or not applicable")],
     ]
     return latex_longtable(
         ["Column", "Cell", "Meaning"],
@@ -298,13 +273,15 @@ def instruction_privilege_summary(
     short = {privilege_code(value) for value in values}
     if len(short) == 1:
         return next(iter(short))
-    if "U" in short and ("S" in short or "P" in short or "state" in short):
+    if ("U" in short or "U*" in short) and ("S" in short or "P" in short or "state" in short):
         return "mixed"
     return "/".join(sorted(short))
 
 
 def privilege_code(value: str) -> str:
     normalized = readable_text(value).lower()
+    if normalized.startswith("user allowed when"):
+        return "U*"
     if normalized in {"unprivileged", "user allowed", "any"}:
         return "U"
     if normalized in {"supervisor", "privileged"}:
@@ -407,14 +384,13 @@ def instruction_prefix_summary(
     rules = semantics.get("prefix_availability") or {}
     if not isinstance(rules, dict):
         return "-"
-    attrs = semantics.get("operation_attributes") or {}
     codes: list[str] = []
     for name, rule in rules.items():
         if not isinstance(rule, dict):
             continue
         if rule.get("scope") == "all_instructions":
             continue
-        if prefix_rule_applies(rule, mnemonic, attrs, records, operations, items):
+        if prefix_rule_applies(rule, mnemonic, records, operations, items):
             codes.append(str(rule.get("table_code") or name))
     return ", ".join(codes) if codes else "-"
 
@@ -428,23 +404,16 @@ def instruction_prefix_cells(
 ) -> list[str]:
     semantics = ((spec.get("instructions") or {}).get("operation_semantics") or {})
     rules = semantics.get("prefix_availability") or {}
-    attrs = semantics.get("operation_attributes") or {}
-    repeatable = mnemonic in operation_attribute_members(attrs, "repeatable_operation")
-    streaming = mnemonic in operation_attribute_members(attrs, "streaming_candidate")
 
     def rule_cell(name: str) -> str:
         rule = rules.get(name) if isinstance(rules, dict) else None
         if not isinstance(rule, dict):
             return tex_code("-")
-        return availability_cell(prefix_rule_applies(rule, mnemonic, attrs, records, operations, items))
+        return availability_cell(prefix_rule_applies(rule, mnemonic, records, operations, items))
 
     return [
         rule_cell("SATURATE"),
         rule_cell("NONTEMPORAL"),
-        availability_cell(repeatable),
-        availability_cell(repeatable),
-        availability_cell(repeatable),
-        availability_cell(streaming),
     ]
 
 
@@ -455,7 +424,6 @@ def availability_cell(enabled: bool) -> str:
 def prefix_rule_applies(
     rule: dict[str, Any],
     mnemonic: str,
-    attributes: dict[str, Any],
     records: list[dict[str, Any]],
     operations: list[dict[str, Any]],
     items: list[dict[str, Any]],
@@ -464,9 +432,6 @@ def prefix_rule_applies(
         return True
     explicit = {str(value) for value in rule.get("mnemonics", []) or []}
     if mnemonic in explicit:
-        return True
-    attr_name = rule.get("operation_attribute")
-    if attr_name and mnemonic in operation_attribute_members(attributes, str(attr_name)):
         return True
     general_only = {str(value) for value in rule.get("general_only_mnemonics", []) or []}
     if mnemonic in general_only:
@@ -477,26 +442,6 @@ def prefix_rule_applies(
     if derived in {"update_eligible_ea", "update-eligible EA"}:
         return instruction_has_update_prefix_candidate(mnemonic, records, operations, items)
     return False
-
-
-def operation_attribute_members(attributes: dict[str, Any], name: str) -> set[str]:
-    return collect_attribute_mnemonics(
-        attributes.get(name),
-        skip_keys={"excluded_categories", "state_query_general_only"},
-    )
-
-
-def collect_attribute_mnemonics(value: Any, skip_keys: set[str]) -> set[str]:
-    if isinstance(value, list):
-        return {str(item) for item in value if isinstance(item, str) and item[:1].isupper()}
-    if isinstance(value, dict):
-        out: set[str] = set()
-        for key, child in value.items():
-            if str(key) in skip_keys:
-                continue
-            out.update(collect_attribute_mnemonics(child, skip_keys))
-        return out
-    return set()
 
 
 def instruction_has_memory_prefix_candidate(
@@ -1518,7 +1463,7 @@ def instruction_reference_sections(
     mnemonics: list[str],
     records: dict[str, list[dict[str, Any]]],
     operations: dict[str, list[dict[str, Any]]],
-    items_by_mnemonic: dict[str, list[dict[str, Any]]],
+    mnemonic_items: dict[str, list[dict[str, Any]]],
     aliases: dict[str, list[str]],
     lengths: dict[tuple[str, str], tuple[int, int]],
     docs: dict[str, dict[str, Any]],
@@ -1529,7 +1474,7 @@ def instruction_reference_sections(
     summary_caption = f"Table {'10-1' if title.startswith('Floating-Point') else '9-1'}. {title} Summary"
     parts = [
         top_section(f"{title} Summary"),
-        instruction_summary(mnemonics, records, operations, items_by_mnemonic, docs, summary_caption),
+        instruction_summary(mnemonics, records, operations, mnemonic_items, docs, summary_caption),
         hidden_top_section(f"{title} Descriptions"),
     ]
     if title.startswith("General"):
@@ -1543,7 +1488,7 @@ def instruction_reference_sections(
                 mnemonic,
                 records.get(mnemonic, []),
                 operations.get(mnemonic, []),
-                items_by_mnemonic.get(mnemonic, []),
+                mnemonic_items.get(mnemonic, []),
                 aliases.get(mnemonic, []),
                 lengths,
                 docs,
@@ -1556,10 +1501,10 @@ def fpu_mnemonics(
     spec: dict[str, Any],
     records: dict[str, list[dict[str, Any]]],
     operations: dict[str, list[dict[str, Any]]],
-    items_by_mnemonic: dict[str, list[dict[str, Any]]],
+    mnemonic_items: dict[str, list[dict[str, Any]]],
 ) -> set[str]:
     out: set[str] = set()
-    for mnemonic, items in items_by_mnemonic.items():
+    for mnemonic, items in mnemonic_items.items():
         if any(item_is_fpu(item) for item in items):
             out.add(mnemonic)
     for mnemonic, entries in records.items():
@@ -1597,7 +1542,7 @@ def instruction_summary(
     mnemonics: list[str],
     records: dict[str, list[dict[str, Any]]],
     operations: dict[str, list[dict[str, Any]]],
-    items_by_mnemonic: dict[str, list[dict[str, Any]]],
+    mnemonic_items: dict[str, list[dict[str, Any]]],
     docs: dict[str, dict[str, Any]],
     caption: str | None = None,
 ) -> str:
@@ -1607,7 +1552,7 @@ def instruction_summary(
             [
                 instruction_link(mnemonic),
                 tex_escape(doc_title(mnemonic, docs, records.get(mnemonic, []), operations.get(mnemonic, []))),
-                tex_escape(len(items_by_mnemonic.get(mnemonic, []))),
+                tex_escape(len(mnemonic_items.get(mnemonic, []))),
             ]
         )
     return latex_longtable(
@@ -1628,14 +1573,17 @@ def render_instruction(
     docs: dict[str, dict[str, Any]],
 ) -> str:
     title = doc_title(mnemonic, docs, records, operations)
-    lines = [rf"\instrhead{{{tex_escape(mnemonic)}}}{{{tex_escape(title)}}}{{\label{{{instruction_label(mnemonic)}}}}}"]
-    lines.append(rf"\manualfield{{Summary:}}{{{tex_escape(doc_summary(mnemonic, docs, records, operations, items))}}}")
-    lines.append(rf"\manualfield{{Operation:}}{{{operation_latex(operations)}}}")
-    lines.append(rf"\manualfield{{Assembler Syntax:}}{{{syntax_block(items)}}}")
-    lines.append(rf"\manualfield{{Attributes:}}{{{attribute_text(items, records, operations, lengths)}}}")
-    lines.append(rf"\manualfield{{Description:}}{{{doc_description(mnemonic, docs, records, operations, aliases)}}}")
+    lines = [
+        rf"\begin{{manualinstruction}}{{{tex_escape(mnemonic)}}}{{{tex_escape(title)}}}{{{instruction_label(mnemonic)}}}"
+    ]
+    lines.append(rf"\manualinstructionfield{{Summary}}{{{tex_escape(doc_summary(mnemonic, docs, records, operations, items))}}}")
+    lines.append(rf"\manualinstructionfield{{Operation}}{{{operation_latex(operations)}}}")
+    lines.append(rf"\manualinstructionfield{{Assembler Syntax}}{{{syntax_block(items)}}}")
+    lines.append(rf"\manualinstructionfield{{Attributes}}{{{attribute_text(items, records, operations, lengths)}}}")
+    lines.append(rf"\manualinstructionfield{{Description}}{{{doc_description(mnemonic, docs, records, operations, aliases)}}}")
     lines.append(condition_code_section(records, operations))
     lines.append(instruction_forms_section(items, lengths, records, operations))
+    lines.append(r"\end{manualinstruction}")
     return "\n".join(lines)
 
 
@@ -1708,29 +1656,6 @@ def save_area_format_section(layout: dict[str, Any], *, include_title: bool = Tr
             return f"0x{value:03x}"
         return str(value)
 
-    def map_row(label: str, offset: str) -> str:
-        return rf"\multicolumn{{8}}{{|c|}}{{{tex_escape(label)}}} & \textbf{{{tex_escape(offset)}}}\\"
-
-    def slot_row(slot: dict[str, Any]) -> str:
-        offset = offset_text(slot.get("offset", "-"))
-        cells = slot.get("cells")
-        if not isinstance(cells, list) or not cells:
-            return map_row(str(slot.get("field", "-")), offset)
-        pieces: list[str] = []
-        consumed = 0
-        for cell in cells:
-            if not isinstance(cell, dict):
-                continue
-            span = int(cell.get("span", 1))
-            if span < 1:
-                continue
-            consumed += span
-            left_rule = "|" if not pieces else ""
-            pieces.append(rf"\multicolumn{{{span}}}{{{left_rule}c|}}{{{tex_escape(str(cell.get('field', '-')))}}}")
-        if consumed != 8:
-            return map_row(str(slot.get("field", "-")), offset)
-        return " & ".join(pieces) + rf" & \textbf{{{tex_escape(offset)}}}\\"
-
     def component_offset_text(value: Any) -> str:
         if isinstance(value, int):
             return f"+0x{value:03x}"
@@ -1752,34 +1677,113 @@ def save_area_format_section(layout: dict[str, Any], *, include_title: bool = Tr
         except ValueError:
             return None
 
-    def byte_grid_row(offset: str, fields: list[str]) -> str:
-        pieces: list[str] = []
+    def bit_range_value(value: Any) -> tuple[int, int] | None:
+        if isinstance(value, int):
+            return value, value
+        text = str(value).strip()
+        if re.fullmatch(r"\d+", text):
+            bit = int(text)
+            return bit, bit
+        match = re.fullmatch(r"(\d+)\s*\.\.\s*(\d+)", text)
+        if not match:
+            return None
+        first = int(match.group(1))
+        second = int(match.group(2))
+        return min(first, second), max(first, second)
+
+    def header_format_rows(owner: dict[str, Any], offset_formatter: Callable[[Any], str]) -> list[tuple[str, list[tuple[str, int]]]]:
+        grouped: dict[Any, list[tuple[int, int, str]]] = {}
+        for field in owner.get("header_fields", []) or []:
+            if not isinstance(field, dict):
+                continue
+            bit_range = bit_range_value(field.get("bits"))
+            if bit_range is None:
+                continue
+            low, high = bit_range
+            if low < 0 or high > 63:
+                continue
+            grouped.setdefault(field.get("offset", "-"), []).append((low, high, str(field.get("field", "-"))))
+
+        def offset_sort_key(offset: Any) -> tuple[int, int, str]:
+            offset_label = offset_formatter(offset)
+            offset_value = component_offset_value(offset_label)
+            return (0 if offset_value is not None else 1, offset_value or 0, str(offset_label))
+
+        rows: list[tuple[str, list[tuple[str, int]]]] = []
+        for offset in sorted(grouped, key=offset_sort_key):
+            fields = sorted(grouped[offset], key=lambda item: item[1], reverse=True)
+            expected_high = 63
+            pieces: list[tuple[str, int]] = []
+            for low, high, name in fields:
+                if high > expected_high:
+                    raise ValueError(f"overlapping save-area header field at {offset_formatter(offset)}")
+                if high < expected_high:
+                    pieces.append(("reserved", expected_high - high))
+                pieces.append((name, high - low + 1))
+                expected_high = low - 1
+            if expected_high >= 0:
+                pieces.append(("reserved", expected_high + 1))
+            rows.append((offset_formatter(offset), pieces))
+        return rows
+
+    def field_display_label(name: str, width: int) -> str:
+        if name == "reserved" and width <= 2:
+            return ""
+        if name == "reserved" and width <= 6:
+            return "rsv"
+        return name
+
+    def field_node_option(width: int) -> str:
+        if width < 4:
+            return "[scale=0.56]"
+        if width < 6:
+            return "[scale=0.64]"
+        if width < 10:
+            return "[scale=0.76]"
+        return ""
+
+    def byte_cells(fields: list[str]) -> list[tuple[str, int]]:
+        cells: list[tuple[str, int]] = []
         index = 0
         while index < len(fields):
-            label = fields[index]
+            label = fields[index] or "reserved"
             span = 1
-            while index + span < len(fields) and fields[index + span] == label:
+            while index + span < len(fields) and (fields[index + span] or "reserved") == label:
                 span += 1
-            left_rule = "|" if not pieces else ""
-            text = tex_escape(label or "reserved")
-            pieces.append(rf"\multicolumn{{{span}}}{{{left_rule}c|}}{{{text}}}")
+            cells.append((label, span * 8))
             index += span
-        return " & ".join(pieces) + rf" & \textbf{{{tex_escape(offset)}}}\\"
+        return cells
 
-    def component_slot_grid_table(rows: list[tuple[str, str, str]]) -> str:
-        lines = [
-            r"\begingroup\footnotesize\renewcommand{\arraystretch}{1.08}",
-            r"\begin{tabularx}{0.985\linewidth}{|*{8}{>{\centering\arraybackslash}X|}p{0.56in}|}",
-            r"\hline",
-            r"\multicolumn{8}{|c|}{\textbf{Component-relative bytes}} & \textbf{Offset}\\",
-            r"\hline",
-            r"\textbf{63..56} & \textbf{55..48} & \textbf{47..40} & \textbf{39..32} & \textbf{31..24} & \textbf{23..16} & \textbf{15..8} & \textbf{7..0} & \\",
-            r"\hline",
-        ]
+    def slot_layout_row(slot: dict[str, Any]) -> tuple[str, str | list[tuple[str, int]], str]:
+        offset = offset_text(slot.get("offset", "-"))
+        cells = slot.get("cells")
+        if isinstance(cells, list) and cells:
+            pieces: list[tuple[str, int]] = []
+            consumed = 0
+            for cell in cells:
+                if not isinstance(cell, dict):
+                    continue
+                span = int(cell.get("span", 1))
+                if span < 1:
+                    continue
+                consumed += span
+                pieces.append((str(cell.get("field", "-")), span * 8))
+            if consumed == 8:
+                return offset, pieces, str(slot.get("meaning", ""))
+        return offset, str(slot.get("field", "-")), str(slot.get("meaning", ""))
+
+    def normalize_layout_rows(
+        rows: list[tuple[str, str | list[tuple[str, int]], str]],
+        offset_formatter: Callable[[Any], str],
+    ) -> list[tuple[str, list[tuple[str, int]]]]:
+        if not rows:
+            return []
         parsed = [(component_offset_value(offset), offset, field) for offset, field, _meaning in rows]
+        normalized: list[tuple[str, list[tuple[str, int]]]] = []
         if all(offset_value is not None for offset_value, _offset, _field in parsed):
+            parsed = sorted(parsed, key=lambda item: (int(item[0] or 0), str(item[1])))
             numeric_offsets = [int(offset_value) for offset_value, _offset, _field in parsed if offset_value is not None]
-            entries: list[tuple[int, int, int, str]] = []
+            entries: list[tuple[int, int, int, str | list[tuple[str, int]]]] = []
             for index, (offset_value, _offset, field) in enumerate(parsed):
                 assert offset_value is not None
                 row_start = offset_value - (offset_value % 8)
@@ -1789,17 +1793,74 @@ def save_area_format_section(layout: dict[str, Any], *, include_title: bool = Tr
                 size = max(1, min(row_end, next_offset) - offset_value)
                 entries.append((row_start, offset_value - row_start, size, field))
             for row_start in sorted({entry[0] for entry in entries}):
-                fields = [""] * 8
-                for _row_start, byte_offset, size, field in [entry for entry in entries if entry[0] == row_start]:
+                row_entries = [entry for entry in entries if entry[0] == row_start]
+                if len(row_entries) == 1 and isinstance(row_entries[0][3], list):
+                    normalized.append((offset_formatter(row_start), row_entries[0][3]))
+                    continue
+                fields = ["reserved"] * 8
+                for _row_start, byte_offset, size, field in row_entries:
+                    if isinstance(field, list):
+                        continue
                     for byte in range(byte_offset, min(byte_offset + size, 8)):
                         fields[7 - byte] = field
-                lines.append(byte_grid_row(component_offset_text(row_start), fields))
-                lines.append(r"\hline")
+                normalized.append((offset_formatter(row_start), byte_cells(fields)))
         else:
             for _offset_value, offset, field in parsed:
-                lines.append(byte_grid_row(offset, [field] * 8))
-                lines.append(r"\hline")
-        lines.append(r"\end{tabularx}\endgroup\par\smallskip")
+                if isinstance(field, list):
+                    normalized.append((offset, field))
+                else:
+                    normalized.append((offset, [(field, 64)]))
+        return normalized
+
+    def layout_grid_table(
+        title: str,
+        rows: list[tuple[str, str | list[tuple[str, int]], str]],
+        offset_formatter: Callable[[Any], str],
+    ) -> str:
+        layout_rows = normalize_layout_rows(rows, offset_formatter)
+        if not layout_rows:
+            return ""
+        needspace = min(6.7, 0.48 + 0.20 * (len(layout_rows) + 2))
+        lines = [
+            rf"\Needspace{{{needspace:.2f}in}}",
+            r"\noindent\begin{tikzpicture}[x=0.01368\linewidth,y=0.19in,every node/.style={font=\footnotesize,inner sep=1pt,align=center}]",
+            r"\draw[line width=0.35pt] (0,0) rectangle (64,-1);",
+            r"\node[font=\bfseries\footnotesize] at (32,-0.5) {" + tex_escape(title) + r"};",
+            r"\draw[line width=0.35pt] (64,0) rectangle (72,-1);",
+            r"\node[font=\bfseries\footnotesize] at (68,-0.5) {Offset};",
+        ]
+        bit_labels = ["63..56", "55..48", "47..40", "39..32", "31..24", "23..16", "15..8", "7..0"]
+        for index, label in enumerate(bit_labels):
+            x0 = index * 8
+            x1 = x0 + 8
+            lines.append(rf"\draw[line width=0.35pt] ({x0},-1) rectangle ({x1},-2);")
+            lines.append(rf"\node[font=\bfseries\footnotesize] at ({x0 + 4},-1.5) {{{tex_escape(label)}}};")
+        lines.extend(
+            [
+                r"\draw[line width=0.35pt] (64,-1) rectangle (72,-2);",
+            ]
+        )
+        for row_index, (offset, fields) in enumerate(layout_rows, start=2):
+            y_top = -row_index
+            y_bottom = -(row_index + 1)
+            x = 0
+            for label, width in fields:
+                if width <= 0:
+                    continue
+                x_end = x + width
+                display = field_display_label(label or "reserved", width)
+                lines.append(rf"\draw[line width=0.35pt] ({x},{y_top}) rectangle ({x_end},{y_bottom});")
+                if display:
+                    node_option = field_node_option(width)
+                    lines.append(
+                        rf"\node{node_option} at ({x + width / 2:.2f},{y_top - 0.5:.2f}) {{{tex_escape(display)}}};"
+                    )
+                x = x_end
+            if x < 64:
+                lines.append(rf"\draw[line width=0.35pt] ({x},{y_top}) rectangle (64,{y_bottom});")
+            lines.append(rf"\draw[line width=0.35pt] (64,{y_top}) rectangle (72,{y_bottom});")
+            lines.append(rf"\node[font=\bfseries\footnotesize] at (68,{y_top - 0.5:.2f}) {{{tex_escape(offset)}}};")
+        lines.append(r"\end{tikzpicture}\par\smallskip")
         return "\n".join(lines)
 
     def repeat_rows(spec: dict[str, Any]) -> list[tuple[str, str, str]]:
@@ -1823,8 +1884,11 @@ def save_area_format_section(layout: dict[str, Any], *, include_title: bool = Tr
             )
         return rows
 
-    def component_slot_rows(component: dict[str, Any]) -> list[tuple[str, str, str]]:
-        rows: list[tuple[str, str, str]] = []
+    def component_slot_rows(component: dict[str, Any]) -> list[tuple[str, str | list[tuple[str, int]], str]]:
+        rows: list[tuple[str, str | list[tuple[str, int]], str]] = [
+            (offset, fields, "")
+            for offset, fields in header_format_rows(component, component_offset_text)
+        ]
         for slot in component.get("slots", []) or []:
             if not isinstance(slot, dict):
                 continue
@@ -1841,6 +1905,42 @@ def save_area_format_section(layout: dict[str, Any], *, include_title: bool = Tr
             )
         return rows
 
+    def header_field_rows(owner: dict[str, Any], offset_formatter: Callable[[Any], str]) -> list[tuple[str, str, str, str]]:
+        rows: list[tuple[str, str, str, str]] = []
+        for field in owner.get("header_fields", []) or []:
+            if not isinstance(field, dict):
+                continue
+            rows.append(
+                (
+                    offset_formatter(field.get("offset", "-")),
+                    str(field.get("bits", "-")),
+                    str(field.get("field", "-")),
+                    str(field.get("meaning", "")),
+                )
+            )
+        return rows
+
+    def header_field_table(rows: list[tuple[str, str, str, str]], title: str) -> str:
+        if not rows:
+            return ""
+        needspace = min(2.4, 0.55 + 0.24 * len(rows))
+        lines = [
+            rf"\Needspace{{{needspace:.2f}in}}",
+            rf"\noindent\textbf{{{tex_escape(title)}:}}\par\smallskip\noindent",
+            r"\begingroup\footnotesize\renewcommand{\arraystretch}{1.08}",
+            r"\begin{tabularx}{0.985\linewidth}{|p{0.56in}|p{0.62in}|p{1.35in}|X|}",
+            r"\hline",
+            r"\textbf{Offset} & \textbf{Bits} & \textbf{Field} & \textbf{Meaning}\\",
+            r"\hline",
+        ]
+        for offset, bits, field, meaning in rows:
+            lines.append(
+                rf"{tex_escape(offset)} & {tex_escape(bits)} & {tex_escape(field)} & {tex_escape(meaning)}\\"
+            )
+            lines.append(r"\hline")
+        lines.append(r"\end{tabularx}\endgroup\par\smallskip")
+        return "\n".join(lines)
+
     def component_format_section(component: dict[str, Any]) -> str:
         title = str(component.get("title", component.get("name", "Extension Component")))
         name = str(component.get("name", title))
@@ -1848,28 +1948,10 @@ def save_area_format_section(layout: dict[str, Any], *, include_title: bool = Tr
         validity = compact_text(component.get("validity", ""))
         extension_requirement = compact_text(component.get("extension_requirement", ""))
         size = component.get("size", "-")
-        rows = component_slot_rows(component)
-        if not rows:
+        slot_rows = component_slot_rows(component)
+        component_header_rows = header_field_rows(component, component_offset_text)
+        if not (slot_rows or component_header_rows):
             return ""
-        bitmap_bits = component.get("component_bitmap_bits", []) or []
-        bitmap_description = ""
-        bitmap_reserved = ""
-        bitmap_items: list[Any] = []
-        if isinstance(bitmap_bits, dict):
-            bitmap_description = compact_text(bitmap_bits.get("description", ""))
-            bitmap_reserved = compact_text(bitmap_bits.get("reserved_bits", ""))
-            bitmap_items = bitmap_bits.get("mappings", []) or []
-        elif isinstance(bitmap_bits, list):
-            bitmap_items = bitmap_bits
-        component_bitmap_rows = [
-            (
-                str(item.get("bits", "-")),
-                str(item.get("slot", item.get("field", "-"))),
-                str(item.get("meaning", "")),
-            )
-            for item in bitmap_items
-            if isinstance(item, dict)
-        ]
         lines = [
             r"\par\smallskip\Needspace{2.4in}",
             rf"\noindent\textbf{{Extension Component: {tex_escape(title)}}}\par\smallskip",
@@ -1889,50 +1971,20 @@ def save_area_format_section(layout: dict[str, Any], *, include_title: bool = Tr
             lines.append(rf"\noindent {tex_escape(description)}\par\smallskip")
         if validity:
             lines.append(rf"\noindent {tex_escape(validity)}\par\smallskip")
-        if component_bitmap_rows:
-            lines.append(r"\noindent\textbf{Component-Local Valid Bitmap:}\par\smallskip\noindent")
-            if bitmap_description:
-                lines.append(rf"{tex_escape(bitmap_description)}\par\smallskip\noindent")
-            lines.extend(
-                [
-                    r"\begingroup\footnotesize\renewcommand{\arraystretch}{1.08}",
-                    r"\begin{tabularx}{0.985\linewidth}{|p{0.62in}|p{1.85in}|X|}",
-                    r"\hline",
-                    r"\textbf{Set Bit} & \textbf{Component Slot} & \textbf{Meaning}\\",
-                    r"\hline",
-                ]
-            )
-            for bits, slot, meaning in component_bitmap_rows:
-                lines.append(rf"{tex_escape(bits)} & {tex_escape(slot)} & {tex_escape(meaning)}\\")
-                lines.append(r"\hline")
-            lines.append(r"\end{tabularx}\endgroup\par\smallskip")
-            if bitmap_reserved:
-                lines.append(rf"\noindent {tex_escape(bitmap_reserved)}\par\smallskip")
-        lines.append(component_slot_grid_table(rows))
+        slot_table = layout_grid_table("Component-relative bytes", slot_rows, component_offset_text)
+        if slot_table:
+            lines.append(slot_table)
+        header_table = header_field_table(component_header_rows, "Component Header Fields")
+        if header_table:
+            lines.append(header_table)
         return "\n".join(lines)
 
     rows = [slot for slot in layout.get("fixed_slots", []) or [] if isinstance(slot, dict)]
     if not rows:
         return ""
-    bitmap_bits = layout.get("base_bitmap_bits", []) or []
-    bitmap_description = ""
-    bitmap_reserved = ""
-    bitmap_items: list[Any] = []
-    if isinstance(bitmap_bits, dict):
-        bitmap_description = compact_text(bitmap_bits.get("description", ""))
-        bitmap_reserved = compact_text(bitmap_bits.get("reserved_bits", ""))
-        bitmap_items = bitmap_bits.get("mappings", []) or []
-    elif isinstance(bitmap_bits, list):
-        bitmap_items = bitmap_bits
-    bitmap_rows = [
-        (
-            str(item.get("bits", "-")),
-            str(item.get("slot", item.get("field", "-"))),
-            str(item.get("meaning", "")),
-        )
-        for item in bitmap_items
-        if isinstance(item, dict)
-    ]
+    base_header_rows = header_field_rows(layout, offset_text)
+    base_header_format_rows = header_format_rows(layout, offset_text)
+    base_header_offsets = {offset for offset, _fields in base_header_format_rows}
     behavior_by_instruction = layout.get("instruction_behavior") or {}
     if isinstance(behavior_by_instruction, dict):
         ordered_mnemonics = [str(mnemonic) for mnemonic in layout.get("applies_to", []) or []]
@@ -1952,51 +2004,24 @@ def save_area_format_section(layout: dict[str, Any], *, include_title: bool = Tr
     extension_order_text = compact_text(layout.get("extension_component_order", ""))
 
     lines = [
-        r"\par\smallskip\Needspace{6.6in}",
-        r"\begingroup\footnotesize\renewcommand{\arraystretch}{1.08}",
-        r"\begin{tabularx}{0.985\linewidth}{|*{8}{>{\centering\arraybackslash}X|}p{0.56in}|}",
-        r"\hline",
-        r"\multicolumn{8}{|c|}{\textbf{Save-area bytes}} & \textbf{Offset}\\",
-        r"\hline",
-        r"\textbf{63..56} & \textbf{55..48} & \textbf{47..40} & \textbf{39..32} & \textbf{31..24} & \textbf{23..16} & \textbf{15..8} & \textbf{7..0} & \\",
-        r"\hline",
+        r"\par\smallskip",
     ]
     if include_title:
-        lines.insert(
-            1,
-            rf"\noindent\textbf{{{tex_escape(str(layout.get('title', 'Save Area Format')))}:}}\par\smallskip\noindent",
-        )
+        lines.append(rf"\noindent\textbf{{{tex_escape(str(layout.get('title', 'Save Area Format')))}:}}\par\smallskip")
+    base_layout_rows: list[tuple[str, str | list[tuple[str, int]], str]] = [
+        (offset, fields, "")
+        for offset, fields in base_header_format_rows
+    ]
     for slot in rows:
-        lines.append(slot_row(slot))
-        lines.append(r"\hline")
-    lines.extend(
-        [
-            r"\end{tabularx}\endgroup\par\smallskip",
-        ]
-    )
-    if bitmap_rows:
-        lines.extend(
-            [
-                r"\noindent\textbf{Base Save-Slot Valid Bitmap:}\par\smallskip\noindent",
-            ]
-        )
-        if bitmap_description:
-            lines.append(rf"{tex_escape(bitmap_description)}\par\smallskip\noindent")
-        lines.extend(
-            [
-                r"\begingroup\footnotesize\renewcommand{\arraystretch}{1.08}",
-                r"\begin{tabularx}{0.985\linewidth}{|p{0.62in}|p{1.55in}|X|}",
-                r"\hline",
-                r"\textbf{Set Bit} & \textbf{Base Save Slot} & \textbf{Meaning}\\",
-                r"\hline",
-            ]
-        )
-        for bits, slot, meaning in bitmap_rows:
-            lines.append(rf"{tex_escape(bits)} & {tex_escape(slot)} & {tex_escape(meaning)}\\")
-            lines.append(r"\hline")
-        lines.append(r"\end{tabularx}\endgroup\par\smallskip")
-        if bitmap_reserved:
-            lines.append(rf"\noindent {tex_escape(bitmap_reserved)}\par\smallskip")
+        if offset_text(slot.get("offset", "-")) in base_header_offsets:
+            continue
+        base_layout_rows.append(slot_layout_row(slot))
+    base_layout_table = layout_grid_table("Save-area bytes", base_layout_rows, offset_text)
+    if base_layout_table:
+        lines.append(base_layout_table)
+    base_header_table = header_field_table(base_header_rows, "Base Header Fields")
+    if base_header_table:
+        lines.append(base_header_table)
     if behavior:
         lines.append(rf"\noindent {tex_escape(behavior)}\par")
     if extension_text:
@@ -2046,6 +2071,9 @@ def operation_text(operations: list[dict[str, Any]]) -> str:
 
 
 def operation_texts(operations: list[dict[str, Any]]) -> list[str]:
+    explicit = explicit_operation_texts(operations)
+    if explicit:
+        return explicit
     pcode = pcode_operation_texts(operations)
     if pcode:
         return pcode
@@ -2056,6 +2084,17 @@ def operation_texts(operations: list[dict[str, Any]]) -> list[str]:
             if key in spec:
                 texts.append(compact_text(spec[key]))
                 break
+    return list(dict.fromkeys(texts))
+
+
+def explicit_operation_texts(operations: list[dict[str, Any]]) -> list[str]:
+    texts: list[str] = []
+    for record in operations:
+        spec = record.get("spec", {})
+        if "operation_text" in spec:
+            text = compact_text(spec["operation_text"])
+            if text:
+                texts.append(text)
     return list(dict.fromkeys(texts))
 
 
@@ -2100,6 +2139,9 @@ def repeat_observed_metadata_text(value: Any) -> str:
 
 
 def operation_latex(operations: list[dict[str, Any]]) -> str:
+    explicit = explicit_operation_texts(operations)
+    if explicit:
+        return wrapped_operation_block([tex_escape(text) for text in explicit])
     pcode = pcode_operation_texts(operations)
     if pcode:
         return wrapped_operation_block([tex_escape(row) for row in pcode])
@@ -2117,7 +2159,7 @@ def wrapped_operation_block(rows: list[str]) -> str:
     if not rows:
         return ""
     body = r"\par ".join(r"\noindent " + row for row in rows)
-    return r"\begin{minipage}[t]{\hsize}\raggedright " + body + r"\end{minipage}"
+    return r"\begin{manualraggedblock}" + body + r"\end{manualraggedblock}"
 
 
 def operation_piece_latex(text: str) -> str:
@@ -2208,6 +2250,14 @@ def syntax_block(items: list[dict[str, Any]]) -> str:
     return r"\begin{tabular}[t]{@{}l@{}}" + r"\\".join(syntaxes) + r"\end{tabular}"
 
 
+def wrapped_line_block(lines: list[str]) -> str:
+    body = "".join(
+        r"\noindent " + tex_escape(line) + r"\par "
+        for line in lines
+    )
+    return r"\begin{manualraggedblock}" + body + r"\end{manualraggedblock}"
+
+
 def attribute_text(
     items: list[dict[str, Any]],
     records: list[dict[str, Any]],
@@ -2235,7 +2285,7 @@ def attribute_text(
             attrs.append("Flags = " + readable_text(flags))
     if not attrs:
         return tex_escape("No explicit attributes.")
-    return r"\begin{tabular}[t]{@{}l@{}}" + r"\\".join(tex_escape(attr) for attr in attrs) + r"\end{tabular}"
+    return wrapped_line_block(attrs)
 
 
 def privilege_text(value: str) -> str:
@@ -2518,23 +2568,23 @@ def condition_code_section(records: list[dict[str, Any]], operations: list[dict[
             " & ".join(tex_escape(flags[flag]) for flag in fflag_order()) + r"\\",
         ]
         table = r"\begin{tabular}[t]{@{}ccccc@{}}" + "\n" + "\n".join(rows) + "\n" + r"\end{tabular}"
-        return rf"\manualfield{{Floating-Point Status:}}{{{status_detail_block(table, text)}}}"
+        return rf"\manualinstructionstatus{{Floating-Point Status}}{{{status_detail_block(table, text)}}}"
     flags = flag_marks(text)
     rows = [
         " & ".join(r"\textbf{" + flag + "}" for flag in flag_order()) + r"\\",
         " & ".join(tex_escape(flags[flag]) for flag in flag_order()) + r"\\",
     ]
     table = r"\begin{tabular}[t]{@{}cccc@{}}" + "\n" + "\n".join(rows) + "\n" + r"\end{tabular}"
-    return rf"\manualfield{{Condition Codes:}}{{{status_detail_block(table, readable_text(text))}}}"
+    return rf"\manualinstructionstatus{{Condition Codes}}{{{status_detail_block(table, readable_text(text))}}}"
 
 
 def status_detail_block(table: str, text: str) -> str:
     return (
-        r"\begin{minipage}[t]{\hsize}"
+        r"\begin{manualraggedblock}"
         + table
         + r"\par\smallskip "
         + tex_escape(text)
-        + r"\end{minipage}"
+        + r"\end{manualraggedblock}"
     )
 
 
@@ -2566,20 +2616,20 @@ def flag_marks(text: str) -> dict[str, str]:
 
 def instruction_format_section(items: list[dict[str, Any]]) -> str:
     if not items:
-        return r"\manualfield{Instruction Format:}{No allocated instruction format.}"
-    blocks = [r"\par\noindent\textbf{Instruction Format:}\par"]
+        return r"\manualinstructionfield{Instruction Format}{No allocated instruction format.}"
+    blocks = [r"\begin{manualinstructionformat}"]
     for item in items:
         fields = line_fields(item)
         syntax = line_syntax_text(item, fields)
         tokens = encoding_pattern_tokens(item, fields)
         labels = [f"word {index}" for index in range(len(tokens))]
-        blocks.append(r"\Needspace{1.8in}")
-        blocks.append(r"\par\vspace{7pt}\noindent\begin{minipage}{\linewidth}\footnotesize")
+        blocks.append(r"\begin{manualformblock}{1.8in}")
         blocks.append(rf"\textbf{{Form:}} {tex_escape(form_label(item, fields))}\par")
         blocks.append(rf"\textbf{{Syntax:}} {tex_code(syntax)}\par")
         blocks.append(bit_diagram(tokens, f"Instruction format for {syntax}", labels))
         blocks.append(field_explanation_block(item, fields))
-        blocks.append(r"\end{minipage}\par")
+        blocks.append(r"\end{manualformblock}")
+    blocks.append(r"\end{manualinstructionformat}")
     return "\n".join(blocks)
 
 
@@ -2590,16 +2640,15 @@ def instruction_forms_section(
     operations: list[dict[str, Any]],
 ) -> str:
     if not items:
-        return r"\manualfield{Instruction Forms:}{No allocated instruction forms.}"
-    blocks = [r"\par\vspace{6pt}\noindent\textbf{Instruction Forms:}\par"]
+        return r"\manualinstructionfield{Instruction Forms}{No allocated instruction forms.}"
+    blocks = [r"\begin{manualinstructionforms}"]
     for item in items:
         min_words, max_words, note = default_words(item, lengths)
         fields = line_fields(item)
         syntax = line_syntax_text(item, fields)
         tokens = encoding_pattern_tokens(item, fields)
         labels = [f"word {index}" for index in range(len(tokens))]
-        blocks.append(r"\Needspace{2.9in}")
-        blocks.append(r"\par\vspace{7pt}\noindent\begin{minipage}{\linewidth}\footnotesize")
+        blocks.append(r"\begin{manualformblock}{2.9in}")
         blocks.append(rf"\textbf{{{tex_code(syntax)}}}\par")
         blocks.append(r"\vspace{2pt}")
         blocks.append(r"\begin{tabularx}{\linewidth}{@{}p{0.88in}X@{}}")
@@ -2612,7 +2661,8 @@ def instruction_forms_section(
         blocks.append(r"\end{tabularx}\par")
         blocks.append(bit_diagram(tokens, f"Instruction format for {syntax}", labels))
         blocks.append(field_explanation_block(item, fields))
-        blocks.append(r"\end{minipage}\par")
+        blocks.append(r"\end{manualformblock}")
+    blocks.append(r"\end{manualinstructionforms}")
     return "\n".join(blocks)
 
 

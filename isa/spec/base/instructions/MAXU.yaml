@@ -16,7 +16,6 @@ behavior:
   - <minmax_done>
   signedness: unsigned
 attributes:
-  repeatable: true
   prefix_availability:
   - SATURATE
 allocation:

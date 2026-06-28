@@ -16,7 +16,6 @@ behavior:
   - CF = dst_old_v != 0;
   - VF = sborrow(0:8, dst_old_v);
 attributes:
-  repeatable: true
   prefix_availability:
   - SATURATE
   flags:

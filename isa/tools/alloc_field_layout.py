@@ -5,13 +5,28 @@ from __future__ import annotations
 from typing import Any
 
 from alloc_model import (
-    EXTENDED_BITS,
-    PRIMARY_BITS,
     Candidate,
     Field,
-    default_field_layout_policy,
     profile_candidate_id,
 )
+
+
+def policy_primary_bits(compact_policy: dict[str, Any]) -> int:
+    model = compact_policy.get("allocation_model")
+    return int(model.primary.bits)
+
+
+def policy_extended_bits(compact_policy: dict[str, Any]) -> int:
+    model = compact_policy.get("allocation_model")
+    return int(model.extended.bits)
+
+
+def layout_model_primary_bits(field_layout_model: dict[str, Any]) -> int:
+    return int(field_layout_model["primary_bits"])
+
+
+def layout_model_extended_bits(field_layout_model: dict[str, Any]) -> int:
+    return int(field_layout_model["extended_bits"])
 
 def build_field_layout_model(
     candidates: list[Candidate],
@@ -99,6 +114,8 @@ def build_field_layout_model(
         if len(format_examples[signature_tuple]) < 4:
             format_examples[signature_tuple].append(profile_candidate_id(candidate, fields))
     return {
+        "primary_bits": policy_primary_bits(compact_policy),
+        "extended_bits": policy_extended_bits(compact_policy),
         "order": order,
         "scores": scores,
         "widths": widths,
@@ -178,8 +195,8 @@ def field_layout_model_report(model: dict[str, Any]) -> dict[str, Any]:
 def explicit_signature_order(compact_policy: dict[str, Any]) -> list[str]:
     policy = compact_policy.get("field_layout", {})
     if not isinstance(policy, dict):
-        return list(default_field_layout_policy().get("explicit_signature_order", []))
-    raw_order = policy.get("explicit_signature_order", default_field_layout_policy().get("explicit_signature_order", []))
+        return []
+    raw_order = policy.get("explicit_signature_order", [])
     if not isinstance(raw_order, list):
         return []
     return [str(signature) for signature in raw_order if str(signature)]
@@ -188,17 +205,16 @@ def explicit_signature_order(compact_policy: dict[str, Any]) -> list[str]:
 def field_score_model(compact_policy: dict[str, Any]) -> dict[str, Any]:
     policy = compact_policy.get("field_layout", {})
     if not isinstance(policy, dict):
-        return dict(default_field_layout_policy()["field_score"])
+        return {}
     raw_model = policy.get("field_score", {})
     if not isinstance(raw_model, dict):
         raw_model = {}
-    default = default_field_layout_policy()["field_score"]
-    signature_multipliers = raw_model.get("signature_multipliers", default["signature_multipliers"])
+    signature_multipliers = raw_model.get("signature_multipliers", {})
     if not isinstance(signature_multipliers, dict):
-        signature_multipliers = default["signature_multipliers"]
+        signature_multipliers = {}
     return {
-        "formula": str(raw_model.get("formula", default["formula"])),
-        "default_multiplier": float(raw_model.get("default_multiplier", default["default_multiplier"])),
+        "formula": str(raw_model.get("formula", "")),
+        "default_multiplier": float(raw_model.get("default_multiplier", 1)),
         "signature_multipliers": {
             str(signature): float(multiplier)
             for signature, multiplier in signature_multipliers.items()
@@ -232,18 +248,17 @@ def field_score_multiplier(signature: str, score_model: dict[str, Any]) -> float
 
 def field_layout_anchor_strategy(compact_policy: dict[str, Any]) -> dict[str, Any]:
     policy = compact_policy.get("field_layout", {})
-    default = default_field_layout_policy()["anchor_strategy"]
     if not isinstance(policy, dict):
-        return dict(default)
+        return {}
     raw_strategy = policy.get("anchor_strategy", {})
     if not isinstance(raw_strategy, dict):
         raw_strategy = {}
     return {
-        "format_order": str(raw_strategy.get("format_order", default["format_order"])),
-        "placement": str(raw_strategy.get("placement", default["placement"])),
+        "format_order": str(raw_strategy.get("format_order", "")),
+        "placement": str(raw_strategy.get("placement", "")),
         "fixed_signatures": [
             str(signature)
-            for signature in raw_strategy.get("fixed_signatures", default.get("fixed_signatures", []))
+            for signature in raw_strategy.get("fixed_signatures", [])
             if str(signature)
         ]
     }
@@ -267,7 +282,7 @@ def build_field_lanes(
     ):
         if storage != "primary":
             continue
-        total_bits = PRIMARY_BITS if storage == "primary" else EXTENDED_BITS
+        total_bits = policy_primary_bits(compact_policy) if storage == "primary" else policy_extended_bits(compact_policy)
         limit = variable_field_limit(fields, storage, total_bits)
         ordered = [
             (signature, field)
@@ -638,9 +653,11 @@ def field_dict(field: Field) -> dict[str, Any]:
     }
 
 
-def layout_text(fields: list[dict[str, Any]], total_bits: int = PRIMARY_BITS) -> str:
+def layout_text(fields: list[dict[str, Any]], total_bits: int | None = None) -> str:
     if not fields:
         return "none"
+    if total_bits is None:
+        total_bits = max(int(field["high_bit"]) for field in fields) + 1
     by_low = {int(field["low_bit"]): field for field in fields}
     parts = []
     bit = 0
@@ -679,7 +696,7 @@ def field_layout_span_bits(fields: list[dict[str, Any]]) -> int:
 
 
 def primary_span_bits(candidate: Candidate, field_layout_model: dict[str, Any]) -> int:
-    fields = assign_field_positions(candidate.compact_fields, PRIMARY_BITS, "primary", field_layout_model)
+    fields = assign_field_positions(candidate.compact_fields, layout_model_primary_bits(field_layout_model), "primary", field_layout_model)
     return field_layout_span_bits(fields)
 
 
@@ -710,7 +727,7 @@ def extended_field_layout_text(
         if field.storage == "descriptor"
         and (field.value is not None or field in opcode_field_set)
     )
-    placed = assign_field_positions(opcode_layout_fields, EXTENDED_BITS, "descriptor", field_layout_model)
+    placed = assign_field_positions(opcode_layout_fields, layout_model_extended_bits(field_layout_model), "descriptor", field_layout_model)
     for field in sorted(placed, key=lambda item: item["low_bit"]):
         if field.get("value") is not None:
             label = field.get("value_label", field.get("value"))

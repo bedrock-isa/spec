@@ -13,8 +13,8 @@ import sys
 sys.dont_write_bytecode = True
 
 from gen_instruction_specs import (
-    aliases_by_mnemonic,
     allocation_items,
+    mnemonic_aliases,
     operation_records,
     semantic_records,
 )
@@ -40,6 +40,7 @@ from latex_builder.diagrams import (
     bit_diagram,
     bit_field_figure,
     bit_index_labels,
+    paging_mode_figure,
     register_model_figure,
     stack_frame_figure,
     supervisor_stack_frame,
@@ -101,7 +102,7 @@ class ManualRenderContext:
     spec: dict[str, Any]
     lengths: dict[tuple[str, str], tuple[int, int]]
     items: list[dict[str, Any]]
-    items_by_mnemonic: dict[str, list[dict[str, Any]]]
+    mnemonic_items: dict[str, list[dict[str, Any]]]
     records: dict[str, list[dict[str, Any]]]
     operations: dict[str, list[dict[str, Any]]]
     aliases: dict[str, list[str]]
@@ -118,22 +119,22 @@ class ManualRenderContext:
     ) -> ManualRenderContext:
         set_instruction_table_spec(spec)
         items = allocation_items(plan)
-        items_by_mnemonic: dict[str, list[dict[str, Any]]] = {}
+        mnemonic_items: dict[str, list[dict[str, Any]]] = {}
         for item in items:
-            items_by_mnemonic.setdefault(str(item.get("mnemonic", item.get("id", ""))), []).append(item)
+            mnemonic_items.setdefault(str(item.get("mnemonic", item.get("id", ""))), []).append(item)
 
         records = semantic_records(spec)
         operations = operation_records(spec)
-        aliases = aliases_by_mnemonic(spec, items)
+        aliases = mnemonic_aliases(spec, items)
         docs = instruction_docs(spec)
-        mnemonics = sorted(set(records) | set(operations) | set(items_by_mnemonic) | set(aliases))
-        reference_groups = instruction_reference_groups(spec, mnemonics, records, operations, items_by_mnemonic)
+        mnemonics = sorted(set(records) | set(operations) | set(mnemonic_items) | set(aliases))
+        reference_groups = instruction_reference_groups(spec, mnemonics, records, operations, mnemonic_items)
         return cls(
             plan=plan,
             spec=spec,
             lengths=lengths,
             items=items,
-            items_by_mnemonic=items_by_mnemonic,
+            mnemonic_items=mnemonic_items,
             records=records,
             operations=operations,
             aliases=aliases,
@@ -186,7 +187,7 @@ class ManualDocument(LatexComponent):
                 context.mnemonics,
                 context.records,
                 context.operations,
-                context.items_by_mnemonic,
+                context.mnemonic_items,
             ),
             LatexTopSection("Condition Code Computation"),
             condition_code_computation_section(),
@@ -199,7 +200,7 @@ class ManualDocument(LatexComponent):
                     group_mnemonics,
                     context.records,
                     context.operations,
-                    context.items_by_mnemonic,
+                    context.mnemonic_items,
                     context.aliases,
                     context.lengths,
                     context.docs,
@@ -274,7 +275,7 @@ class ManualPreviewIndex:
                         context.mnemonics,
                         context.records,
                         context.operations,
-                        context.items_by_mnemonic,
+                        context.mnemonic_items,
                     ),
                 ]
             ).render(),
@@ -293,7 +294,7 @@ class ManualPreviewIndex:
                             group_mnemonics,
                             context.records,
                             context.operations,
-                            context.items_by_mnemonic,
+                            context.mnemonic_items,
                             context.docs,
                             f"{title} Summary",
                         ),
@@ -312,7 +313,7 @@ class ManualPreviewIndex:
                         mnemonic,
                         context.records.get(mnemonic, []),
                         context.operations.get(mnemonic, []),
-                        context.items_by_mnemonic.get(mnemonic, []),
+                        context.mnemonic_items.get(mnemonic, []),
                         context.aliases.get(mnemonic, []),
                         context.lengths,
                         context.docs,
@@ -409,11 +410,73 @@ def prefix_model_table(spec: dict[str, Any]) -> str:
     )
 
 
+def bit_field_width(field: dict[str, Any]) -> int:
+    if "bit" in field:
+        return 1
+    bits = field.get("bits")
+    if isinstance(bits, list) and len(bits) == 2:
+        return abs(int(bits[0]) - int(bits[1])) + 1
+    return 0
+
+
+def word0_field_rows(spec: dict[str, Any]) -> list[list[str]]:
+    word0 = ((spec.get("opcodes") or {}).get("word0") or {})
+    rows: list[list[str]] = []
+    for key in ("prefix_present", "length_minus_one", "payload"):
+        field = word0.get(key)
+        if not isinstance(field, dict):
+            continue
+        name = str(field.get("name") or key)
+        name_cell = tex_code(name) if re.fullmatch(r"[A-Za-z0-9_]+", name) else tex_escape(name)
+        rows.append(
+            [
+                name_cell,
+                tex_escape(field_bits_text(field)),
+                tex_escape(field.get("description", "")),
+            ]
+        )
+    return rows
+
+
+def word0_field_table(spec: dict[str, Any]) -> str:
+    return latex_longtable(
+        ["Field", "Bits", "Meaning"],
+        word0_field_rows(spec),
+        ["1.20in", "0.65in", "3.65in"],
+        "Word 0 Fields",
+    )
+
+
+def instruction_length_rows(spec: dict[str, Any]) -> list[list[str]]:
+    opcodes = spec.get("opcodes") or {}
+    length_field = ((opcodes.get("word0") or {}).get("length_minus_one") or {})
+    width = bit_field_width(length_field)
+    word_size = int(opcodes.get("word_size", 16))
+    byte_count_exact = word_size % 8 == 0
+    rows: list[list[str]] = []
+    for encoded in range(1 << width):
+        words = encoded + 1
+        byte_text = str(words * word_size // 8) if byte_count_exact else f"{words * word_size} bits"
+        rows.append([tex_code(f"{encoded:0{width}b}"), tex_escape(words), tex_escape(byte_text)])
+    return rows
+
+
+def instruction_length_table(spec: dict[str, Any]) -> str:
+    return latex_longtable(
+        ["L Field", "Total Words", "Total Bytes"],
+        instruction_length_rows(spec),
+        ["1.20in", "1.35in", "1.35in"],
+        "Instruction Length Encoding",
+    )
+
+
 def architecture_overview_section(spec: dict[str, Any], plan: dict[str, Any], mnemonic_count: int, form_count: int) -> str:
     return render_latex_template(
         "architecture_overview.tex",
         {
             "ARCH_NAME": ARCH_NAME,
+            "WORD0_FIELD_TABLE": word0_field_table(spec),
+            "INSTRUCTION_LENGTH_TABLE": instruction_length_table(spec),
             "PREFIX_MODEL_TABLE": prefix_model_table(spec),
         },
     )
@@ -1627,6 +1690,54 @@ def pte_field_rows(spec: dict[str, Any]) -> list[list[str]]:
     return layout_field_rows(fields if isinstance(fields, dict) else {})
 
 
+def field_bit_range(field: dict[str, Any]) -> tuple[int, int]:
+    if "bit" in field:
+        bit = int(field["bit"])
+        return bit, bit
+    bits = field.get("bits")
+    if isinstance(bits, list) and len(bits) == 2:
+        high = int(bits[0])
+        low = int(bits[1])
+        return high, low
+    raise ValueError(f"field does not declare bit or bits: {field!r}")
+
+
+def pte_low_attribute_fields(spec: dict[str, Any]) -> list[tuple[str, int]]:
+    pte = page_table_entry_spec(spec)
+    fields = pte.get("low_attribute_bits")
+    if not isinstance(fields, dict):
+        return []
+    ranges = []
+    for name, field in fields.items():
+        if not isinstance(field, dict):
+            continue
+        high, low = field_bit_range(field)
+        ranges.append((str(name), high, low))
+    ranges.sort(key=lambda item: item[1], reverse=True)
+    if not ranges:
+        return []
+    expected_high = ranges[0][1]
+    low_bit = ranges[-1][2]
+    if low_bit != 0:
+        raise ValueError("PTE low attribute diagram expects fields to end at bit 0")
+    out: list[tuple[str, int]] = []
+    for name, high, low in ranges:
+        if high != expected_high:
+            raise ValueError("PTE low attribute fields must be contiguous")
+        out.append((name, high - low + 1))
+        expected_high = low - 1
+    return out
+
+
+def pte_low_attribute_figure(spec: dict[str, Any]) -> str:
+    fields = pte_low_attribute_fields(spec)
+    if not fields:
+        return ""
+    total_bits = sum(width for _name, width in fields)
+    top_labels = [total_bits - 1, 7, 0] if total_bits > 7 else [total_bits - 1, 0]
+    return bit_field_figure(fields, "PTE Low Attribute Bits", "PTE[11:0]", total_bits, top_labels, listed=True)
+
+
 def page_table_entry_spec(spec: dict[str, Any]) -> dict[str, Any]:
     control = spec.get("registers", {}).get("translation_control") or {}
     pte = (control.get("page_table_entry") or {}) if isinstance(control, dict) else {}
@@ -1643,12 +1754,16 @@ def pte_walk_rule_rows(spec: dict[str, Any]) -> list[list[str]]:
 def pte_attribute_rule_rows(spec: dict[str, Any]) -> list[list[str]]:
     pte = page_table_entry_spec(spec)
     rows: list[list[str]] = []
+    section_labels = {
+        "non_leaf_attributes": "non-leaf",
+        "leaf_attributes": "leaf",
+    }
     for section_name in ("non_leaf_attributes", "leaf_attributes"):
         attributes = pte.get(section_name)
         if not isinstance(attributes, dict):
             continue
         for field, rule in attributes.items():
-            rows.append([tex_code(f"{readable_text(section_name)}.{field}"), tex_escape(rule)])
+            rows.append([tex_multiline_latex([tex_escape(section_labels[section_name]), tex_code(field)]), tex_escape(rule)])
     return rows
 
 
@@ -1759,10 +1874,12 @@ def frame_type_rows(control: dict[str, Any]) -> list[list[str]]:
         else:
             code_text = str(code)
         payload = frame_type.get("payload") or []
+        payload_blocks = frame_type.get("payload_blocks", 0)
         rows.append(
             [
                 tex_code(code_text),
                 tex_code(str(frame_type.get("name", ""))),
+                tex_escape(str(payload_blocks)),
                 tex_table_value(payload or "none"),
                 tex_table_value(frame_type.get("description", "")),
             ]
@@ -1770,12 +1887,32 @@ def frame_type_rows(control: dict[str, Any]) -> list[list[str]]:
     return rows
 
 
-def frame_info_rows(control: dict[str, Any]) -> list[list[str]]:
-    frame_info = (supervisor_stack_frame(control).get("frame_info") or {}) if isinstance(control, dict) else {}
-    if not isinstance(frame_info, dict):
-        frame_info = {}
+def payload_slot_rows(control: dict[str, Any]) -> list[list[str]]:
+    frame = supervisor_stack_frame(control)
+    payload_slots = frame.get("payload_slots") if isinstance(frame, dict) else {}
+    if not isinstance(payload_slots, dict):
+        payload_slots = {}
     rows = []
-    for name, field in frame_info.items():
+    for name, slot in payload_slots.items():
+        if not isinstance(slot, dict):
+            continue
+        offset = int(slot.get("offset", 0))
+        rows.append(
+            [
+                tex_code(f"+0x{offset:02X}"),
+                tex_code(str(name)),
+                tex_escape(slot.get("description", "")),
+            ]
+        )
+    return rows
+
+
+def frame_control_rows(control: dict[str, Any]) -> list[list[str]]:
+    frame_control = (supervisor_stack_frame(control).get("frame_control") or {}) if isinstance(control, dict) else {}
+    if not isinstance(frame_control, dict):
+        frame_control = {}
+    rows = []
+    for name, field in frame_control.items():
         if not isinstance(field, dict):
             continue
         if "bit" in field:
@@ -1935,6 +2072,7 @@ def interrupt_model_section(spec: dict[str, Any]) -> str:
     assignment = interrupt_vector_assignment(control)
     unit = int(frame.get("frame_size_unit_bytes", 8))
     base_size = int(frame.get("base_size_bytes", 96))
+    payload_block_size = int(frame.get("payload_block_size_bytes", base_size))
     fixed_slots = len(frame.get("layout") or [])
     return render_latex_template(
         "interrupt_model.tex",
@@ -1949,12 +2087,14 @@ def interrupt_model_section(spec: dict[str, Any]) -> str:
             "FIXED_SLOT_COUNT": tex_escape(fixed_slots),
             "FRAME_SIZE_UNIT_BYTES": tex_escape(unit),
             "BASE_FRAME_UNITS": tex_escape(base_size // unit),
+            "PAYLOAD_BLOCK_SIZE": tex_escape(payload_block_size),
             "STACK_FRAME_FIGURE": stack_frame_figure(control),
             "STACK_FRAME_TABLE": latex_longtable(["Offset", "Slot", "Meaning"], stack_frame_rows(control), ["0.70in", "1.20in", "3.60in"], "Table 4-5. Supervisor Entry Stack Frame"),
-            "FRAME_TYPE_TABLE": latex_longtable(["Code", "Type", "Payload", "Meaning"], frame_type_rows(control), ["0.45in", "1.10in", "1.65in", "2.30in"], "Table 4-6. Supervisor Stack Frame Types"),
-            "FRAME_INFO_TABLE": latex_longtable(["Field", "Bits", "Meaning"], frame_info_rows(control), ["1.35in", "0.60in", "3.55in"], "Table 4-7. FRAME_INFO Fields"),
-            "REPEAT_FAULT_AUX_TABLE": latex_longtable(["Field", "Bits", "Meaning"], repeat_fault_aux_rows(control), ["1.55in", "0.60in", "3.35in"], "Table 4-8. Repeat Fault Auxiliary Fields"),
-            "RESET_STATE_TABLE": latex_longtable(["State", "Reset Value"], reset_state_rows(control), ["2.1in", "2.4in"], "Table 4-9. Interrupt and Translation Reset State"),
+            "FRAME_TYPE_TABLE": latex_longtable(["Code", "Type", "Payload Blocks", "Payload", "Meaning"], frame_type_rows(control), ["0.45in", "0.95in", "0.65in", "1.35in", "2.10in"], "Table 4-6. Supervisor Stack Frame Types"),
+            "PAYLOAD_SLOT_TABLE": latex_longtable(["Offset", "Slot", "Meaning"], payload_slot_rows(control), ["0.70in", "1.20in", "3.60in"], "Table 4-7. Supervisor Payload Block Slots"),
+            "FRAME_CONTROL_TABLE": latex_longtable(["Field", "Bits", "Meaning"], frame_control_rows(control), ["1.35in", "0.60in", "3.55in"], "Table 4-8. FRAME_CONTROL Fields"),
+            "REPEAT_FAULT_AUX_TABLE": latex_longtable(["Field", "Bits", "Meaning"], repeat_fault_aux_rows(control), ["1.55in", "0.60in", "3.35in"], "Table 4-9. Repeat Fault Auxiliary Fields"),
+            "RESET_STATE_TABLE": latex_longtable(["State", "Reset Value"], reset_state_rows(control), ["2.1in", "2.4in"], "Table 4-10. Interrupt and Translation Reset State"),
         },
     )
 
@@ -1968,9 +2108,22 @@ def memory_address_translation_section(spec: dict[str, Any]) -> str:
     return render_latex_template(
         "memory_address_translation.tex",
         {
+            "LA48_PAGE_WALK": paging_mode_figure(
+                "LA48",
+                [("sign", 16), ("L4 idx", 9), ("L3 idx", 9), ("L2 idx", 9), ("L1 idx", 9), ("offset", 12)],
+                ["L4", "L3", "L2", "L1"],
+                "LA48 Four-Level Page Walk",
+            ),
+            "LA57_PAGE_WALK": paging_mode_figure(
+                "LA57",
+                [("sign", 7), ("L5 idx", 9), ("L4 idx", 9), ("L3 idx", 9), ("L2 idx", 9), ("L1 idx", 9), ("offset", 12)],
+                ["L5", "L4", "L3", "L2", "L1"],
+                "LA57 Five-Level Page Walk",
+            ),
+            "PTE_LOW_ATTRIBUTE_FIGURE": pte_low_attribute_figure(spec),
             "PTE_FIELD_TABLE": latex_longtable(["Field", "Bits", "Meaning"], pte_field_rows(spec), ["0.55in", "0.65in", "4.25in"], "Table 3-2. Page-Table Entry Low Attribute Bits"),
             "PTE_WALK_RULE_TABLE": latex_longtable(["Level", "Rule"], pte_walk_rule_rows(spec), ["1.15in", "4.35in"], "Table 3-3. Page-Walk Level Rules"),
-            "PTE_ATTRIBUTE_RULE_TABLE": latex_longtable(["Field", "Rule"], pte_attribute_rule_rows(spec), ["0.75in", "4.75in"], "Table 3-4. PTE Attribute Semantics"),
+            "PTE_ATTRIBUTE_RULE_TABLE": latex_longtable(["Field", "Rule"], pte_attribute_rule_rows(spec), ["0.95in", "4.55in"], "Table 3-4. PTE Attribute Semantics"),
             "PTE_PERMISSION_RULE_TABLE": latex_longtable(["Mode", "Condition", "Result"], pte_permission_rule_rows(spec), ["0.85in", "2.35in", "2.30in"], "PTE User-Permission Rules"),
         },
     )
@@ -2005,9 +2158,6 @@ def prefix_semantics_block(prefix: dict[str, Any]) -> str:
     if isinstance(requires, dict):
         require_text = ", ".join(f"{key}={prefix_requirement_text(value)}" for key, value in requires.items())
         detail += r"\newline " + tex_escape("Requires: " + require_text)
-    eligible = prefix.get("eligible_mnemonics") or []
-    if eligible:
-        detail += r"\newline " + tex_escape("Eligible instructions: " + ", ".join(str(item) for item in eligible))
     syntax = prefix.get("syntax")
     if isinstance(syntax, dict):
         aliases = syntax.get("aliases") or {}
@@ -2195,11 +2345,6 @@ def repcc_prefix_section(spec: dict[str, Any]) -> str:
     if not repeat and not prefix:
         return ""
 
-    eligible = repeat.get("eligible_mnemonics", prefix.get("eligible_mnemonics", [])) or []
-    eligible_text = eligible if eligible else repeat.get(
-        "eligible_operation_attribute",
-        prefix.get("eligible_operation_attribute", "-"),
-    )
     fpu_conditional = repeat.get(
         "fpu_conditional_mnemonics",
         prefix.get("fpu_conditional_mnemonics", []),
@@ -2212,7 +2357,6 @@ def repcc_prefix_section(spec: dict[str, Any]) -> str:
     rep_rows = [
         [tex_escape("Syntax"), tex_code(syntax)],
         [tex_escape("Alias"), tex_table_value(repeat.get("alias", "REP = REPT"))],
-        [tex_escape("Eligible instructions"), tex_table_value(eligible_text)],
         [tex_escape("FPU conditional subset"), tex_table_value(fpu_conditional or "-")],
         [tex_escape("FPU status predicates"), tex_table_value(repeat.get("fpu_fflags_condition_repeat", "not supported"))],
         [tex_escape("Counter"), tex_escape(f"{repeat.get('counter', 'DREG')}, {readable_text(repeat.get('counter_direction', 'signed_toward_zero'))}")],
@@ -2439,19 +2583,19 @@ def shared_execution_entries(groups: dict[str, Any], labels: dict[str, str]) -> 
         return []
     specs = [
         ("integer_alu", "Integer ALU", ("memory", "flags")),
-        ("integer_compare", "Compare/Test", ("memory", "flags_by_mnemonic", "repeat_observed_value_by_mnemonic")),
+        ("integer_compare", "Compare/Test", ("memory",)),
         ("integer_extend", "Extension", ("memory", "source_sizes_by_destination", "flags")),
-        ("data_movement", "Data Movement", ("memory_by_mnemonic", "flags")),
+        ("data_movement", "Data Movement", ("memory", "flags")),
         ("data_register_banking", "Data Register Banking", ("flags",)),
         ("control_flow", "Control Transfer", ("long_transfer_operands", "atomic_cs_pc_commit", "flags")),
         ("atomics", "Atomics", ("atomic", "memory")),
-        ("system_registers", "Control Registers", ("privilege_by_mnemonic", "flags")),
+        ("system_registers", "Control Registers", ("privilege", "flags")),
         ("virtualization_acceleration", "Virtualization Acceleration", ("cpuid_feature", "memory", "privilege", "flags")),
         ("tlb_context", "TLB and Context", ("privilege",)),
-        ("cache", "Cache", ("privilege_by_mnemonic", "flags")),
-        ("fpu_move_compare", "Floating-Point Move/Compare", ("fp_flags_by_mnemonic",)),
-        ("fpu_arithmetic", "Floating-Point Arithmetic", ("fp_flags_by_mnemonic",)),
-        ("fpu_transcendental", "Floating-Point Transcendental", ("cpuid_feature", "implementation", "fp_flags_by_mnemonic")),
+        ("cache", "Cache", ("privilege", "flags")),
+        ("fpu_move_compare", "Floating-Point Move/Compare", ("fp_flags",)),
+        ("fpu_arithmetic", "Floating-Point Arithmetic", ("fp_flags",)),
+        ("fpu_transcendental", "Floating-Point Transcendental", ("cpuid_feature", "implementation", "fp_flags")),
     ]
     entries: list[tuple[str, list[str]]] = []
     for group_name, label, keys in specs:
@@ -2463,9 +2607,7 @@ def shared_execution_entries(groups: dict[str, Any], labels: dict[str, str]) -> 
             if key not in body:
                 continue
             value = body[key]
-            if key.endswith("_by_mnemonic") and isinstance(value, dict):
-                lines.append(f"{shared_rule_label(key, labels)}: varies by mnemonic")
-            elif isinstance(value, dict):
+            if isinstance(value, dict):
                 lines.extend(shared_dict_lines(key, value, labels))
             elif key == "atomic":
                 lines.append(f"{shared_rule_label(key, labels)}: {readable_text(value)}")
@@ -2485,8 +2627,6 @@ def shared_rule_label(key: str, labels: dict[str, str]) -> str:
 
 
 def shared_dict_lines(key: str, value: dict[str, Any], labels: dict[str, str]) -> list[str]:
-    if key.endswith("_by_mnemonic"):
-        return [f"{shared_rule_label(key, labels)}: varies by mnemonic"]
     if key == "source_sizes_by_destination":
         return [f"Source sizes for {subkey} destination: {readable_text(subvalue)}" for subkey, subvalue in value.items()]
     if key == "segment_register_forms":
@@ -2537,8 +2677,8 @@ def code_example_lines(example: str) -> list[str]:
 
 
 def rep_observed_rows(repeat: dict[str, Any], prefix: dict[str, Any]) -> list[list[str]]:
-    observed = repeat.get("observed_value_by_mnemonic") or {}
-    repflags = repeat.get("repflags_by_mnemonic") or {}
+    observed = repeat.get("observed_values") or {}
+    repflags = repeat.get("repflag_rules") or {}
     observed_descriptions = prefix.get("observed_value_descriptions") or repeat.get("observed_value_descriptions") or {}
     repflags_descriptions = prefix.get("repflags_descriptions") or repeat.get("repflags_descriptions") or {}
     if not isinstance(observed, dict):
@@ -2563,12 +2703,24 @@ def rep_observed_rows(repeat: dict[str, Any], prefix: dict[str, Any]) -> list[li
 
 def rep_observed_value_text(value: Any, descriptions: dict[str, Any]) -> str:
     text = str(value)
-    return compact_text(descriptions.get(text, readable_text(text)))
+    names = {
+        "src_value": "source value",
+        "rhs_minus_lhs": "right operand minus left operand",
+        "lhs_bitwise_and_rhs": "left operand bitwise-and right operand",
+        "result_value": "result value",
+    }
+    return compact_text(descriptions.get(text, names.get(text, readable_text(text))))
 
 
 def repflags_rule_text(value: Any, descriptions: dict[str, Any]) -> str:
     text = str(value)
-    return compact_text(descriptions.get(text, readable_text(text)))
+    names = {
+        "flags_logic_observed_value": "set Z/N from observed value and clear C/V",
+        "flags_sub_rhs_lhs": "compute subtract flags from right operand minus left operand",
+        "fpu_compare_flags": "floating-point compare flag rules",
+        "fpu_interval_v_flag": "set V from interval check",
+    }
+    return compact_text(descriptions.get(text, names.get(text, readable_text(text))))
 
 
 def reference_group_mnemonics(
@@ -2588,7 +2740,7 @@ def instruction_reference_groups(
     mnemonics: list[str],
     records: dict[str, list[dict[str, Any]]],
     operations: dict[str, list[dict[str, Any]]],
-    items_by_mnemonic: dict[str, list[dict[str, Any]]],
+    mnemonic_items: dict[str, list[dict[str, Any]]],
 ) -> list[tuple[str, list[str]]]:
     special_groups: list[tuple[str, list[str]]] = []
     claimed: set[str] = set()
@@ -2598,7 +2750,7 @@ def instruction_reference_groups(
             special_groups.append((title, selected))
             claimed.update(selected)
 
-    fpu_set = fpu_mnemonics(spec, records, operations, items_by_mnemonic)
+    fpu_set = fpu_mnemonics(spec, records, operations, mnemonic_items)
     general_mnemonics = [mnemonic for mnemonic in mnemonics if mnemonic not in claimed and mnemonic not in fpu_set]
     base_fpu_mnemonics = [mnemonic for mnemonic in mnemonics if mnemonic not in claimed and mnemonic in fpu_set]
 

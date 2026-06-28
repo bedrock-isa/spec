@@ -29,8 +29,6 @@ module full_decode_tb;
   logic [3:0] repeat_condition;
   logic [2:0] repeat_counter;
   logic end_group;
-  logic repcc_allowed;
-  logic repg_allowed;
   logic repg_fast_candidate;
   logic repcc_valid;
   logic repg_valid;
@@ -79,8 +77,6 @@ module full_decode_tb;
     .repeat_condition_o(repeat_condition),
     .repeat_counter_o(repeat_counter),
     .end_group_o(end_group),
-    .repcc_allowed_o(repcc_allowed),
-    .repg_allowed_o(repg_allowed),
     .repg_fast_candidate_o(repg_fast_candidate),
     .repcc_valid_o(repcc_valid),
     .repg_valid_o(repg_valid),
@@ -137,8 +133,8 @@ module full_decode_tb;
     set_word(0, 16'h00d1);
     #1;
     expect_logic("add valid", valid, 1'b1);
-    if (opcode_id !== BR_OPCODE_ADD || field_format_id !== BR_FIELD_FORMAT_F034) begin
-      $error("add decode got opcode %0d field format %0d expected ADD/F034", opcode_id, field_format_id);
+    if (opcode_id !== BR_OPCODE_ADD || field_format_id !== BR_FIELD_FORMAT_F035) begin
+      $error("add decode got opcode %0d field format %0d expected ADD/F035", opcode_id, field_format_id);
       failures++;
     end
     expect_logic("add ea absent", |ea_present, 1'b0);
@@ -149,8 +145,8 @@ module full_decode_tb;
     set_word(1, 16'h0010);
     #1;
     expect_logic("mov valid", valid, 1'b1);
-    if (opcode_id !== BR_OPCODE_MOV || field_format_id !== BR_FIELD_FORMAT_F039) begin
-      $error("mov decode got opcode %0d field format %0d expected MOV/F039", opcode_id, field_format_id);
+    if (opcode_id !== BR_OPCODE_MOV || field_format_id !== BR_FIELD_FORMAT_F040) begin
+      $error("mov decode got opcode %0d field format %0d expected MOV/F040", opcode_id, field_format_id);
       failures++;
     end
     expect_u16("mov ea raw", {10'd0, ea_value[0]}, 16'h0018);
@@ -192,8 +188,8 @@ module full_decode_tb;
     set_word(2, 16'h04c2);
     #1;
     expect_logic("extended add valid", valid, 1'b1);
-    if (opcode_id !== BR_OPCODE_ADD || field_format_id !== BR_FIELD_FORMAT_F046) begin
-      $error("extended add decode got opcode %0d field format %0d expected ADD/F046", opcode_id, field_format_id);
+    if (opcode_id !== BR_OPCODE_ADD || field_format_id !== BR_FIELD_FORMAT_F047) begin
+      $error("extended add decode got opcode %0d field format %0d expected ADD/F047", opcode_id, field_format_id);
       failures++;
     end
     expect_logic("extended add needs extension", needs_extension, 1'b1);
@@ -211,8 +207,8 @@ module full_decode_tb;
     set_word(2, 16'h0020);
     #1;
     expect_logic("mov ea ea valid", valid, 1'b1);
-    if (opcode_id !== BR_OPCODE_MOV || field_format_id !== BR_FIELD_FORMAT_F043) begin
-      $error("mov ea ea decode got opcode %0d field format %0d expected MOV/F043", opcode_id, field_format_id);
+    if (opcode_id !== BR_OPCODE_MOV || field_format_id !== BR_FIELD_FORMAT_F044) begin
+      $error("mov ea ea decode got opcode %0d field format %0d expected MOV/F044", opcode_id, field_format_id);
       failures++;
     end
     if (ea_present !== 2'b11) begin

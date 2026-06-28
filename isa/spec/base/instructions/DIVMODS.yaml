@@ -13,45 +13,9 @@ behavior:
   input_output: quotient
   output: remainder
   operation:
-  - tmp_v = size_v;
-  - carry_v = 0;
-  - <divmods_mask_loop>
-  - if (tmp_v == 0) goto <divmods_mask_done>;
-  - carry_v = (carry_v << 8) | 0xff;
-  - tmp_v = tmp_v - 1;
-  - goto <divmods_mask_loop>;
-  - <divmods_mask_done>
-  - local lhs_v:8 = quotient_v & carry_v;
-  - local rhs_v:8 = src_v & carry_v;
-  - borrow_v = 0x80;
-  - tmp_v = size_v - 1;
-  - <divmods_signbit_loop>
-  - if (tmp_v == 0) goto <divmods_sign_extend>;
-  - borrow_v = borrow_v << 8;
-  - tmp_v = tmp_v - 1;
-  - goto <divmods_signbit_loop>;
-  - <divmods_sign_extend>
-  - if ((lhs_v & borrow_v) == 0) goto <divmods_rhs_sign>;
-  - lhs_v = lhs_v | ~carry_v;
-  - <divmods_rhs_sign>
-  - if ((rhs_v & borrow_v) == 0) goto <divmods_check>;
-  - rhs_v = rhs_v | ~carry_v;
-  - <divmods_check>
-  - if (rhs_v != 0) goto <divmods_overflow_check>;
-  - arch_raise_divide_by_zero();
-  - goto <divmod_done>;
-  - <divmods_overflow_check>
-  - local min_v:8 = borrow_v | ~carry_v;
-  - if (lhs_v != min_v) goto <divmods_execute>;
-  - if (rhs_v != 0xffffffffffffffff) goto <divmods_execute>;
-  - arch_raise_signed_overflow();
-  - goto <divmod_done>;
-  - <divmods_execute>
-  - remainder_v = lhs_v s% rhs_v;
-  - quotient_v = lhs_v s/ rhs_v;
-  - <divmod_done>
-attributes:
-  repeatable: true
+  - tmp_v = arch_signed_modulo(quotient_v, src_v, size_v);
+  - quotient_v = arch_signed_divide(quotient_v, src_v, size_v);
+  - remainder_v = tmp_v;
 allocation:
   catalog_section: integer
   layout_group: DIVMOD

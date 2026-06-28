@@ -13,7 +13,6 @@ behavior:
   operation:
   - dst_v = dst_v * src_v;
 attributes:
-  repeatable: true
   flags: may update FLAGS
 allocation:
   catalog_section: integer

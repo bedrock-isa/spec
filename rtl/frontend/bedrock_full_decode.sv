@@ -32,8 +32,6 @@ module bedrock_full_decode
   output logic [3:0]                repeat_condition_o,
   output logic [2:0]                repeat_counter_o,
   output logic                      end_group_o,
-  output logic                      repcc_allowed_o,
-  output logic                      repg_allowed_o,
   output logic                      repg_fast_candidate_o,
   output logic                      repcc_valid_o,
   output logic                      repg_valid_o,
@@ -145,8 +143,6 @@ module bedrock_full_decode
     .field_format_id_o(field_format_id_o),
     .required_words_o(decode_required_words),
     .ext_root_o(ext_root_o),
-    .repcc_allowed_o(repcc_allowed_o),
-    .repg_allowed_o(repg_allowed_o),
     .repg_fast_candidate_o(repg_fast_candidate_o)
   );
 
@@ -304,8 +300,8 @@ module bedrock_full_decode
   assign prefix_valid_o = !prefix_present_o || prefix_decode_valid;
   assign decode_valid_o = instruction_decode_valid;
   assign repeat_present_o = prefix_present_o && (repeat_kind_o != BR_REPEAT_NONE);
-  assign repcc_valid_o = base_valid && (repeat_kind_o == BR_REPEAT_REPCC) && repcc_allowed_o;
-  assign repg_valid_o = base_valid && (repeat_kind_o == BR_REPEAT_REPG) && repg_allowed_o;
+  assign repcc_valid_o = base_valid && (repeat_kind_o == BR_REPEAT_REPCC);
+  assign repg_valid_o = base_valid && (repeat_kind_o == BR_REPEAT_REPG);
   assign repeat_valid_o = !repeat_present_o || repcc_valid_o || repg_valid_o;
   assign repeat_invalid_o = repeat_present_o && !repeat_valid_o;
   assign all_ea_valid =

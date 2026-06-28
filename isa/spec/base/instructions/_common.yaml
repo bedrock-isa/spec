@@ -112,12 +112,6 @@ operation_semantics:
       privilege: supervisor
     cache:
       flags: unchanged
-  operation_attributes:
-    repeatable_operation:
-      excluded_categories:
-      - control flow
-      - state-mutating system
-      - atomic
   prefix_availability:
     NOSPEC:
       table_code: NS
@@ -130,15 +124,6 @@ operation_semantics:
     ADDRESS_UPDATE:
       table_code: UPD
       derived_from: update-eligible EA
-    REPcc:
-      table_code: REP
-      operation_attribute: repeatable_operation
-    REPG:
-      table_code: REPG
-      operation_attribute: repeatable_operation
-    REPG_fast:
-      table_code: FAST
-      operation_attribute: streaming_candidate
   repeat_prefixes:
     REPcc:
       syntax: REPcc Dn, <instruction>
@@ -155,14 +140,9 @@ operation_semantics:
         update_after_condition_true_iteration: positive counters decrement and negative counters 
           increment toward zero
         condition_false_iteration_counter_rule: counter is not updated
-        completion_rule: counter is zero or the REP condition is false
-        fault_restart_rule: remaining signed count is preserved
+      completion_rule: counter is zero or the REP condition is false
+      fault_restart_rule: remaining signed count is preserved
       condition_source: REPFLAGS from the iteration observed value
-      eligible_operation_attribute: repeatable_operation
-      excluded_categories:
-      - control_flow
-      - system
-      - atomic
       nested_repeat_prefixes: repeat prefixes do not nest
       commit_rule: a condition-false terminating iteration commits the body and leaves the counter 
         unchanged
@@ -201,17 +181,7 @@ operation_semantics:
             range_words: 0..31
           counter_register:
             bits: 3
-      eligible_operation_attribute: repeatable_operation
       streaming_candidate_attribute: streaming_candidate
-      excluded_instruction_classes:
-      - control flow
-      - system
-      - atomic
-      - stack operation
-      - TLB operation
-      - cache operation
-      - fence operation
-      - nested repeat
       alignment:
         grouping_window_bytes: 64
       encoding_scope:

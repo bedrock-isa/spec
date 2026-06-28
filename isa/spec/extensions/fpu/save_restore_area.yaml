@@ -5,42 +5,37 @@ save_area_formats:
       name: FLOATING_POINT
       title: Floating-Point State
       extension_requirement: floating_point
-      validity: Each extension component begins with a component-local validity bitmap. If a state bit is clear, RESTORE leaves
-        that floating-point state item unchanged.
+      validity: The component header contains the F-register validity bitmap. FFLAGS and FSTATUS are present whenever
+        the floating-point state block is present.
       description: This component stores the floating-point accrued exception flags, the floating-point status/control-mode
-        word, and the architectural floating-point register file. FFLAGS and FSTATUS are separate 16-bit architectural state.
-        The F register file remains Q-sized and starts on the next 8-byte boundary.
-      size: 144
-      component_bitmap_bits:
-        description: Offset +0x000 contains a 64-bit validity mask for the floating-point state slots stored in this component.
-          A set bit means that the corresponding state item is present in the save image.
-        reserved_bits: Unlisted bits are reserved; SAVE writes them as zero and RESTORE ignores them.
-        mappings:
-        - bits: '0'
-          slot: FFLAGS
-          meaning: validates FFLAGS at +0x008
-        - bits: '1'
-          slot: FSTATUS
-          meaning: validates FSTATUS at +0x00a
-        - bits: 2+n
-          slot: F[n]
-          meaning: n=0..15; validates Fn at +0x010 + 8*n
-      slots:
+        word, and the architectural floating-point register file. The first 64-bit word packs the F-register validity bitmap
+        together with FFLAGS and FSTATUS. The F register file starts at +0x008 and the component storage size is rounded up
+        to a 64-byte boundary.
+      size: 0x0c0
+      header_fields:
       - offset: 0
-        field: component-local valid bitmap
-        meaning: validity mask for floating-point state slots
-      - offset: 8
-        field: FFLAGS[15:0]
-        meaning: floating-point accrued exception flags
-      - offset: 10
-        field: FSTATUS[15:0]
-        meaning: floating-point control and status-mode register
-      - offset: 12
-        field: reserved padding
-        meaning: reserved padding to align the F register file
+        bits: 0..15
+        field: F_VALID
+        meaning: bit n validates Fn at +0x008 + 8*n
+      - offset: 0
+        bits: 16..31
+        field: reserved
+        meaning: SAVE writes zero and RESTORE ignores
+      - offset: 0
+        bits: 32..47
+        field: FFLAGS
+        meaning: floating-point accrued exception flags, always present when this state block is present
+      - offset: 0
+        bits: 48..63
+        field: FSTATUS
+        meaning: floating-point control and status-mode register, always present when this state block is present
+      slots:
       - repeat:
           count: 16
-          offset_start: 16
+          offset_start: 8
           offset_stride: 8
           field_template: F{n}
           meaning_template: floating-point register F{n}
+      - offset: 136
+        field: reserved padding to 0x0c0
+        meaning: reserved padding to the 64-byte component-size boundary

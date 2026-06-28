@@ -18,7 +18,6 @@ behavior:
   - CF = 0;
   - VF = 0;
 attributes:
-  repeatable: true
   flags:
     Z: old_bit == 0
     N: unchanged

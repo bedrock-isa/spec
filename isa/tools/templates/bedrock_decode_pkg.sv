@@ -43,8 +43,6 @@ package bedrock_decode_pkg;
     bedrock_field_format_id_e field_format_id;
     logic [3:0] required_words;
     bedrock_ext_root_e ext_root;
-    logic repcc_allowed;
-    logic repg_allowed;
     logic repg_fast_candidate;
   } bedrock_primary_decode_t;
 
@@ -53,8 +51,6 @@ package bedrock_decode_pkg;
     bedrock_opcode_id_e opcode_id;
     bedrock_field_format_id_e field_format_id;
     logic [3:0] required_words;
-    logic repcc_allowed;
-    logic repg_allowed;
     logic repg_fast_candidate;
   } bedrock_extended_decode_t;
 

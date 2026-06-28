@@ -15,7 +15,6 @@ behavior:
   - dst_v = src_v;
   - <fmin_done>
 attributes:
-  repeatable: true
   streaming_candidate: true
   fp_flags:
     update_when_required:

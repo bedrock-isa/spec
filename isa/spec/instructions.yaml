@@ -146,6 +146,84 @@ operand_schema:
       - {bits: [0, 15], register_class: F}
 
 allocation:
+  semantic_sections:
+  - path: integer_instructions
+    category: integer
+    default_weight: 70
+  - path: atomic_system_cache_instructions
+    category: system
+    default_weight: 55
+  - path: fpu.instructions
+    category: fpu
+    default_weight: 45
+  compactness_policy:
+    exclude:
+    - FPU
+    - cache_management
+    - tlb_management
+    - system_core_except_core_control
+    - transcendental_fpu
+    prefer:
+    - D_D_integer_alu
+    - MOV_LQ_EA_D
+    - MOV_LQ_D_EA
+    - INC_DEC_D
+    - PUSH_POP
+    - Jcc
+    - CALL
+    - RET
+    - NOP
+    - SYSCALL
+    - BKPT
+    - WAIT
+    - YIELD
+    - fences
+  extension_family_order:
+  - integer_alu
+  - integer_bounds
+  - integer_bounds_signed
+  - integer_bounds_unsigned
+  - integer_mul_div
+  - integer_mac
+  - integer_bitfield
+  - integer_bitfield_bit_imm
+  - integer_bitfield_rotate_imm
+  - integer_bitfield_shift_imm
+  - data_movement
+  - data_register_banking
+  - ea_utility
+  - control_flow
+  - conditional_control
+  - atomic_memory
+  - cache_hint
+  - tlb_cache
+  - system_core
+  - virtualization_acceleration
+  - fpu_move_compare
+  - fpu_arithmetic
+  - fpu_transcendental
+  - misc
+  extension_profile_order:
+    integer_alu:
+    - EA_TO_D
+    - EA_TO_A
+    - D_TO_EA
+  family_locality:
+    integer_alu:
+      prefer_contiguous_roots: true
+      roots: [EA_TO_D, EA_TO_A, D_TO_EA]
+  decode_cost_policy:
+    priority_order:
+    - aligned_large_ranges
+    - shared_field_layout
+    - family_locality
+    - fewer_singletons
+    - compact_hot_path
+    - visual_symmetry
+  extension_root_policy:
+    preferred_region: high_primary_payload
+    prefer_contiguous_family_roots: true
+    allow_low_payload_roots: false
   mnemonic_policy:
     core_control_compact_mnemonics: [HALT, ILLEGAL, RESET, SYSRET, IRET, NOP, SYSCALL, BKPT, WAIT, YIELD, RFENCE, WFENCE, AFENCE]
     cache_management_mnemonics: [PREFETCH, INVDCACHE, INVICACHE, FLSHDCACHE, WRBKDCACHE, SYNCCACHE]

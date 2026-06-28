@@ -14,38 +14,10 @@ behavior:
   - regs
   output: none
   operation:
-  - if ((regs_v & 0x01) == 0) goto <movsetdd_d0_done>;
-  - tmp_v = arch_dbank_read(src_bank_v & 0xf, 0:8);
-  - arch_dbank_write(dst_bank_v & 0xf, 0:8, tmp_v);
-  - <movsetdd_d0_done>
-  - if ((regs_v & 0x02) == 0) goto <movsetdd_d1_done>;
-  - tmp_v = arch_dbank_read(src_bank_v & 0xf, 1:8);
-  - arch_dbank_write(dst_bank_v & 0xf, 1:8, tmp_v);
-  - <movsetdd_d1_done>
-  - if ((regs_v & 0x04) == 0) goto <movsetdd_d2_done>;
-  - tmp_v = arch_dbank_read(src_bank_v & 0xf, 2:8);
-  - arch_dbank_write(dst_bank_v & 0xf, 2:8, tmp_v);
-  - <movsetdd_d2_done>
-  - if ((regs_v & 0x08) == 0) goto <movsetdd_d3_done>;
-  - tmp_v = arch_dbank_read(src_bank_v & 0xf, 3:8);
-  - arch_dbank_write(dst_bank_v & 0xf, 3:8, tmp_v);
-  - <movsetdd_d3_done>
-  - if ((regs_v & 0x10) == 0) goto <movsetdd_d4_done>;
-  - tmp_v = arch_dbank_read(src_bank_v & 0xf, 4:8);
-  - arch_dbank_write(dst_bank_v & 0xf, 4:8, tmp_v);
-  - <movsetdd_d4_done>
-  - if ((regs_v & 0x20) == 0) goto <movsetdd_d5_done>;
-  - tmp_v = arch_dbank_read(src_bank_v & 0xf, 5:8);
-  - arch_dbank_write(dst_bank_v & 0xf, 5:8, tmp_v);
-  - <movsetdd_d5_done>
-  - if ((regs_v & 0x40) == 0) goto <movsetdd_d6_done>;
-  - tmp_v = arch_dbank_read(src_bank_v & 0xf, 6:8);
-  - arch_dbank_write(dst_bank_v & 0xf, 6:8, tmp_v);
-  - <movsetdd_d6_done>
-  - if ((regs_v & 0x80) == 0) goto <movsetdd_d7_done>;
-  - tmp_v = arch_dbank_read(src_bank_v & 0xf, 7:8);
-  - arch_dbank_write(dst_bank_v & 0xf, 7:8, tmp_v);
-  - <movsetdd_d7_done>
+  - arch_movsetdd(dst_bank_v, src_bank_v, regs_v);
+  operation_text: >
+    MOVSETDD copies each selected D register from the source data-register bank to the destination data-register bank. Bits
+    0 through 7 select D0 through D7 respectively. The current DBANK selector is not changed.
 allocation:
   catalog_section: integer
   layout_group: DATA_BANK_SET_COPY

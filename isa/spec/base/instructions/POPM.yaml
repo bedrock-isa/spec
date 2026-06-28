@@ -11,70 +11,11 @@ behavior:
   - regs
   output: none
   operation:
-  - if ((regs_v & 0x8000) == 0) goto <popm_a7_done>;
-  - A7 = *:8 SP;
-  - SP = SP + 8;
-  - <popm_a7_done>
-  - if ((regs_v & 0x4000) == 0) goto <popm_a6_done>;
-  - A6 = *:8 SP;
-  - SP = SP + 8;
-  - <popm_a6_done>
-  - if ((regs_v & 0x2000) == 0) goto <popm_a5_done>;
-  - A5 = *:8 SP;
-  - SP = SP + 8;
-  - <popm_a5_done>
-  - if ((regs_v & 0x1000) == 0) goto <popm_a4_done>;
-  - A4 = *:8 SP;
-  - SP = SP + 8;
-  - <popm_a4_done>
-  - if ((regs_v & 0x0800) == 0) goto <popm_a3_done>;
-  - A3 = *:8 SP;
-  - SP = SP + 8;
-  - <popm_a3_done>
-  - if ((regs_v & 0x0400) == 0) goto <popm_a2_done>;
-  - A2 = *:8 SP;
-  - SP = SP + 8;
-  - <popm_a2_done>
-  - if ((regs_v & 0x0200) == 0) goto <popm_a1_done>;
-  - A1 = *:8 SP;
-  - SP = SP + 8;
-  - <popm_a1_done>
-  - if ((regs_v & 0x0100) == 0) goto <popm_a0_done>;
-  - A0 = *:8 SP;
-  - SP = SP + 8;
-  - <popm_a0_done>
-  - if ((regs_v & 0x0080) == 0) goto <popm_d7_done>;
-  - D7 = *:8 SP;
-  - SP = SP + 8;
-  - <popm_d7_done>
-  - if ((regs_v & 0x0040) == 0) goto <popm_d6_done>;
-  - D6 = *:8 SP;
-  - SP = SP + 8;
-  - <popm_d6_done>
-  - if ((regs_v & 0x0020) == 0) goto <popm_d5_done>;
-  - D5 = *:8 SP;
-  - SP = SP + 8;
-  - <popm_d5_done>
-  - if ((regs_v & 0x0010) == 0) goto <popm_d4_done>;
-  - D4 = *:8 SP;
-  - SP = SP + 8;
-  - <popm_d4_done>
-  - if ((regs_v & 0x0008) == 0) goto <popm_d3_done>;
-  - D3 = *:8 SP;
-  - SP = SP + 8;
-  - <popm_d3_done>
-  - if ((regs_v & 0x0004) == 0) goto <popm_d2_done>;
-  - D2 = *:8 SP;
-  - SP = SP + 8;
-  - <popm_d2_done>
-  - if ((regs_v & 0x0002) == 0) goto <popm_d1_done>;
-  - D1 = *:8 SP;
-  - SP = SP + 8;
-  - <popm_d1_done>
-  - if ((regs_v & 0x0001) == 0) goto <popm_d0_done>;
-  - D0 = *:8 SP;
-  - SP = SP + 8;
-  - <popm_d0_done>
+  - arch_popm(regs_v);
+  operation_text: >
+    For each set bit in the bitmap, POPM pops one 64-bit stack slot into the corresponding register. Registers are processed
+    in inverse bitmap order, A7 through A0 followed by D7 through D0. Each selected register is loaded from SP before SP is
+    incremented by 8.
 allocation:
   catalog_section: compact_primary
   layout_group: PUSHM_POPM

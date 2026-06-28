@@ -32,8 +32,6 @@ behavior:
     N: most significant result bit
     C: most significant result bit
     V: 0
-attributes:
-  repeatable: true
 allocation:
   catalog_section: integer
   layout_group: ROTATES

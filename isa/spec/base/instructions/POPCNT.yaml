@@ -25,7 +25,6 @@ behavior:
   - <popcnt_mask_done>
   - dst_v = popcount(tmp_v);
 attributes:
-  repeatable: true
   flags: unchanged
 allocation:
   catalog_section: integer

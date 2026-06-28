@@ -18,7 +18,6 @@ behavior:
   - CF = 0;
   - VF = 0;
 attributes:
-  repeatable: true
   streaming_candidate: true
   flags:
     Z: result == 0

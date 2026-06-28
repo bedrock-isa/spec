@@ -40,7 +40,6 @@ behavior:
   - dst_v = popcount(carry_v - 1);
   - <cts_done>
 attributes:
-  repeatable: true
   flags: unchanged
 allocation:
   catalog_section: integer

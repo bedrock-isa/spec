@@ -1,6 +1,6 @@
 This section defines the architectural role of repeated scalar execution in
 Bedrock. The architecture exposes scalar register state and bounded repeated
-instruction forms. A high-performance implementation may recognize eligible
+instruction forms. A high-performance implementation may recognize regular
 repeated operations and execute them with wider internal datapaths, but that
 internal width is not architectural state.
 
@@ -43,7 +43,7 @@ regular memory access. Typical candidates include contiguous copies and fills,
 integer reductions, bulk extension or conversion, floating-point arithmetic,
 and fused multiply-add loops.
 
-REPG optimization is divided into two architectural availability classes:
+REPG optimization is divided into two execution classes:
 \begin{description}[style=nextline,leftmargin=1.35in,labelwidth=1.2in,itemsep=3pt,topsep=3pt]
 \item[REPG-fast]
 The selected D register used as the repeat counter is not written by the group
@@ -54,15 +54,16 @@ ties a memory reference to the location of a grouped instruction rather than to
 the repeated data stream.
 An implementation may recognize this form as a candidate for internal SIMD or
 streaming execution. Source may spell the group as \texttt{REPGF} when the
-programmer wants the assembler to enforce these static fast-eligibility rules;
+programmer wants the assembler to enforce these static fast-contract rules;
 \texttt{REPGF} emits the same instruction encoding as \texttt{REPG}.
 \item[REPG-general]
 The selected counter register may be read or written inside the group body, and
 effective-address or data dependencies may be less regular than the fast class.
-The base REPG legality rules still apply: control flow, atomics, stack
+The base REPG group model still applies: control flow, atomics, stack
 operations, nested repeat, and state-changing system, TLB, cache, or fence
-operations are not grouped. The implementation must preserve exact scalar REPG
-semantics, but no fast streaming execution is guaranteed.
+operations are outside the grouped execution model. The implementation must
+preserve exact scalar REPG semantics, but no fast streaming execution is
+guaranteed.
 \end{description}
 
 The REPG prefix is encoded on the first instruction in the group, and the ENDG
@@ -88,7 +89,7 @@ instruction inside the group.
 
 Within one iteration, grouped instructions execute in program order. Each
 instruction keeps its normal operand rules, effective-address calculation,
-prefix legality, privilege checks, FLAGS or FFLAGS behavior, and memory side
+prefix effects, privilege checks, FLAGS or FFLAGS behavior, and memory side
 effects. This means a REPG group can be reasoned about as a scalar loop first;
 any internal SIMD or streaming treatment is an implementation choice layered
 under the same architectural retirement rules.
@@ -136,8 +137,8 @@ is profitable to execute with internal SIMD resources.
 
 The preferred lowering order is:
 \begin{itemize}
-\item use REP for a single repeatable operation;
-\item use REPG for a short, bounded group of repeatable operations;
+\item use REP for a single counted operation;
+\item use REPG for a short, bounded group of counted operations;
 \item prefer REPG-fast when the counter register can stay outside the group
 dataflow;
 \item use REPG-general when correctness needs counter-register dependencies or

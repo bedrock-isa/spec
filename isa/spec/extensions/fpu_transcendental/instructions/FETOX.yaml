@@ -12,7 +12,6 @@ behavior:
   operation:
   - dst_v = fp_exp(src_v);
 attributes:
-  repeatable: true
   fp_flags:
     update:
     - NV

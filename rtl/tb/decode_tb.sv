@@ -13,8 +13,6 @@ module decode_tb;
   bedrock_field_format_id_e field_format_id;
   logic [3:0] required_words;
   bedrock_ext_root_e ext_root;
-  logic repcc_allowed;
-  logic repg_allowed;
   logic repg_fast_candidate;
   int failures;
 
@@ -27,8 +25,6 @@ module decode_tb;
     .field_format_id_o(field_format_id),
     .required_words_o(required_words),
     .ext_root_o(ext_root),
-    .repcc_allowed_o(repcc_allowed),
-    .repg_allowed_o(repg_allowed),
     .repg_fast_candidate_o(repg_fast_candidate)
   );
 

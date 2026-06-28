@@ -17,7 +17,6 @@ behavior:
   - CF = 0;
   - VF = 0;
 attributes:
-  repeatable: true
   prefix_availability:
   - SATURATE
   flags:

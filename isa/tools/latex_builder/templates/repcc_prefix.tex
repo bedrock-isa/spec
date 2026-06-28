@@ -1,6 +1,6 @@
 \subsection{Conditional Repeat Prefix REPcc}
 REPcc is the conditional repeat prefix family. It combines a D-register repeat counter with a full
-condition-code selector, then applies that repeat contract to the following eligible instruction. REP is the
+condition-code selector, then applies that repeat contract to the following instruction. REP is the
 canonical alias for REPT.
 
 The selected D register remains an ordinary signed two's-complement value. REP/REPcc tests that value for zero
@@ -106,8 +106,8 @@ form can stop when a converted value matches the selected condition.
 \begin{quote}
 \begingroup\small\ttfamily
 \begin{tabular}{@{}l@{}}
-; D0 = -n, A0 = byte source + n, A1 = long destination + 4*n\\
-REP D0, EXTZL.B [A0 + D0 * 1], [A1 + D0 * 4]\\
+; D0 = n, A0 = byte source, A1 = long destination\\
+REP D0, EXTZL.B [A0++], [A1++]\\
 \end{tabular}
 \endgroup
 \end{quote}
@@ -115,4 +115,3 @@ REP D0, EXTZL.B [A0 + D0 * 1], [A1 + D0 * 4]\\
 The source byte is read, zero-extended to a long value, and written to the
 destination element. Because REP is REPT, every completed conversion updates the
 counter.
-

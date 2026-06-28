@@ -16,16 +16,12 @@ module bedrock_decode
   output bedrock_field_format_id_e field_format_id_o,
   output logic [3:0]        required_words_o,
   output bedrock_ext_root_e ext_root_o,
-  output logic              repcc_allowed_o,
-  output logic              repg_allowed_o,
   output logic              repg_fast_candidate_o
 );
 
   bedrock_primary_decode_t primary_decode;
   bedrock_extended_decode_t extended_decode;
   logic [3:0] field_format_token_words;
-  logic repcc_allowed;
-  logic repg_allowed;
   logic repg_fast_candidate;
 
   always_comb begin
@@ -41,8 +37,6 @@ module bedrock_decode
     field_format_id_o = primary_decode.field_format_id;
     required_words_o = primary_decode.required_words;
     ext_root_o = primary_decode.ext_root;
-    repcc_allowed = primary_decode.repcc_allowed;
-    repg_allowed = primary_decode.repg_allowed;
     repg_fast_candidate = primary_decode.repg_fast_candidate;
 
     if (primary_decode.needs_extension) begin
@@ -51,8 +45,6 @@ module bedrock_decode
       opcode_id_o = extended_decode.opcode_id;
       field_format_id_o = extended_decode.field_format_id;
       required_words_o = extended_decode.required_words;
-      repcc_allowed = extended_decode.repcc_allowed;
-      repg_allowed = extended_decode.repg_allowed;
       repg_fast_candidate = extended_decode.repg_fast_candidate;
     end
 
@@ -62,8 +54,6 @@ module bedrock_decode
         required_words_o = field_format_token_words;
       end
     end
-    repcc_allowed_o = valid_o && repcc_allowed;
-    repg_allowed_o = valid_o && repg_allowed;
     repg_fast_candidate_o = valid_o && repg_fast_candidate;
   end
 endmodule

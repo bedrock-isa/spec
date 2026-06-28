@@ -59,29 +59,10 @@ class LocalDocSchema(KeySchema):
     }
 
 
-LOCAL_OPERATION_BY_MNEMONIC_KEYS = {
-    "inputs": "inputs_by_mnemonic",
-    "input_output": "input_output_by_mnemonic",
-    "flags": "flags_by_mnemonic",
-    "fp_flags": "fp_flags_by_mnemonic",
-    "privilege": "privilege_by_mnemonic",
-    "memory": "memory_by_mnemonic",
-    "serializing": "serializing_by_mnemonic",
-    "signedness": "signedness_by_mnemonic",
-    "bounds_mode": "bounds_mode_by_mnemonic",
-    "interval": "interval_by_mnemonic",
-    "destination_size": "destination_size_by_mnemonic",
-    "output": "output_by_mnemonic",
-    "count_rules": "count_rules_by_mnemonic",
-    "flag_rules": "flag_rules_by_mnemonic",
-    "control_register_access": "control_register_access_by_mnemonic",
-}
-
-
-LOCAL_OPERATION_CANONICAL_KEYS = set(LOCAL_OPERATION_BY_MNEMONIC_KEYS.values())
 LOCAL_BEHAVIOR_KEYS = {
     "group",
     "operation",
+    "operation_text",
     "operation_by_form",
     "inputs",
     "input_output",
@@ -93,6 +74,8 @@ LOCAL_BEHAVIOR_KEYS = {
     "count_rules",
     "flag_rules",
     "control_register_access",
+    "repeat_observed_value",
+    "repflags",
     "banked_forms",
     "long_transfer_operands",
     "atomic_cs_pc_commit",
@@ -109,7 +92,6 @@ LOCAL_ATTRIBUTE_KEYS = {
     "serializing",
     "cpuid_feature",
     "prefix_availability",
-    "repeatable",
     "streaming_candidate",
 }
 REP_OBSERVED_VALUE_RULES = {
@@ -488,6 +470,51 @@ class InstructionsRootSchema(KeySchema):
             errors.append(f"{path}.instruction_docs is missing entries for: {', '.join(missing)}")
 
 
+class OpcodePrimaryExtensionRootRegionSchema(KeySchema):
+    name = "primary opcode extension root region"
+    keys = {"name", "start_fraction"}
+
+
+class OpcodePrimarySpaceSchema(KeySchema):
+    name = "primary opcode space"
+    keys = {"id", "source", "reserved_unallocated_headroom_slots", "extension_root_region"}
+
+    @classmethod
+    def validate(cls, value: Any, path: str, errors: list[str]) -> None:
+        check_allowed_keys(value, path, cls, errors)
+        if isinstance(value, dict):
+            check_optional_mapping(value.get("extension_root_region"), f"{path}.extension_root_region", OpcodePrimaryExtensionRootRegionSchema, errors)
+
+
+class OpcodeExtendedSpaceSchema(KeySchema):
+    name = "extended opcode space"
+    keys = {"id", "bits"}
+
+
+class OpcodeSpacesSchema(KeySchema):
+    name = "opcode spaces"
+    keys = {"primary", "extended"}
+
+    @classmethod
+    def validate(cls, value: Any, path: str, errors: list[str]) -> None:
+        check_allowed_keys(value, path, cls, errors)
+        if isinstance(value, dict):
+            check_optional_mapping(value.get("primary"), f"{path}.primary", OpcodePrimarySpaceSchema, errors)
+            check_optional_mapping(value.get("extended"), f"{path}.extended", OpcodeExtendedSpaceSchema, errors)
+
+
+class OpcodeWord0Schema(KeySchema):
+    name = "opcode word 0"
+    keys = {"prefix_present", "length_minus_one", "payload"}
+
+    @classmethod
+    def validate(cls, value: Any, path: str, errors: list[str]) -> None:
+        check_allowed_keys(value, path, cls, errors)
+        if isinstance(value, dict):
+            for name in ("prefix_present", "length_minus_one", "payload"):
+                check_optional_mapping(value.get(name), f"{path}.{name}", BitFieldSchema, errors)
+
+
 class OpcodesRootSchema(KeySchema):
     name = "opcodes root"
     keys = {
@@ -495,6 +522,7 @@ class OpcodesRootSchema(KeySchema):
         "word_size",
         "max_instruction_words",
         "word0",
+        "opcode_spaces",
         "reserved",
         "canonical_rules",
     }
@@ -503,6 +531,8 @@ class OpcodesRootSchema(KeySchema):
     def validate(cls, value: Any, path: str, errors: list[str]) -> None:
         check_allowed_keys(value, path, cls, errors)
         if isinstance(value, dict):
+            check_optional_mapping(value.get("word0"), f"{path}.word0", OpcodeWord0Schema, errors)
+            check_optional_mapping(value.get("opcode_spaces"), f"{path}.opcode_spaces", OpcodeSpacesSchema, errors)
             check_list_items(value.get("canonical_rules", []), f"{path}.canonical_rules", OpcodeCanonicalRuleSchema, errors)
 
 
@@ -738,19 +768,12 @@ class PrefixEntrySchema(KeySchema):
         "description",
         "condition",
         "operand",
-        "eligible_operation_attribute",
         "fpu_conditional_mnemonics",
-        "excluded_categories",
         "indexed_ea_counter_use",
         "counter_encoding",
-        "observed_value",
-        "observed_value_descriptions",
-        "repflags",
-        "repflags_descriptions",
         "counter_direction",
         "commit_rule",
         "streaming_candidate_attribute",
-        "excluded_instruction_classes",
         "fast_contract_alias",
         "alignment",
         "encoding_scope",
@@ -872,34 +895,28 @@ class OperationGroupSchema(KeySchema):
     keys = {
         "members",
         "inputs",
-        "inputs_by_mnemonic",
         "input_output",
-        "input_output_by_mnemonic",
         "output",
-        "output_by_mnemonic",
         "flags",
-        "flags_by_mnemonic",
-        "fp_flags_by_mnemonic",
+        "fp_flags",
         "privilege",
-        "privilege_by_mnemonic",
         "memory",
-        "memory_by_mnemonic",
         "memory_ordering",
         "atomic",
-        "serializing_by_mnemonic",
+        "serializing",
         "traps",
-        "signedness_by_mnemonic",
-        "bounds_mode_by_mnemonic",
+        "signedness",
+        "bounds_mode",
         "bounds_mode_names",
-        "interval_by_mnemonic",
-        "destination_size_by_mnemonic",
+        "interval",
+        "destination_size",
         "source_size_suffix",
         "source_sizes_by_destination",
         "count_rules",
-        "count_rules_by_mnemonic",
         "flag_rules",
-        "flag_rules_by_mnemonic",
-        "control_register_access_by_mnemonic",
+        "control_register_access",
+        "repeat_observed_value",
+        "repflags",
         "bitmap",
         "banked_forms",
         "long_transfer_operands",
@@ -963,6 +980,13 @@ class DescribedFieldSchema(KeySchema):
 class InstructionAllocationSchema(KeySchema):
     name = "instruction allocation policy"
     keys = {
+        "semantic_sections",
+        "compactness_policy",
+        "extension_family_order",
+        "extension_profile_order",
+        "family_locality",
+        "decode_cost_policy",
+        "extension_root_policy",
         "mnemonic_policy",
         "frequency_model",
         "extension_roots",
@@ -980,6 +1004,10 @@ class InstructionAllocationSchema(KeySchema):
         check_allowed_keys(value, path, cls, errors)
         if not isinstance(value, dict):
             return
+        check_list_items(value.get("semantic_sections", []), f"{path}.semantic_sections", InstructionSemanticSectionSchema, errors)
+        check_optional_mapping(value.get("compactness_policy"), f"{path}.compactness_policy", InstructionCompactnessPolicySchema, errors)
+        check_optional_mapping(value.get("decode_cost_policy"), f"{path}.decode_cost_policy", InstructionDecodeCostPolicySchema, errors)
+        check_optional_mapping(value.get("extension_root_policy"), f"{path}.extension_root_policy", InstructionExtensionRootPolicySchema, errors)
         check_optional_mapping(value.get("mnemonic_policy"), f"{path}.mnemonic_policy", InstructionMnemonicPolicySchema, errors)
         frequency = value.get("frequency_model")
         check_optional_mapping(frequency, f"{path}.frequency_model", InstructionFrequencyModelSchema, errors)
@@ -1044,6 +1072,10 @@ class SemanticsCompatibilityRulesSchema(KeySchema):
 class LocalBehaviorSchema(KeySchema):
     name = "local instruction behavior"
     keys = LOCAL_BEHAVIOR_KEYS
+
+    @classmethod
+    def validate(cls, value: Any, path: str, errors: list[str]) -> None:
+        check_allowed_keys(value, path, cls, errors)
 
 
 class LocalAttributesSchema(KeySchema):
@@ -1273,8 +1305,11 @@ class SaveAreaFormatSchema(KeySchema):
         "title",
         "applies_to",
         "fixed_base_bytes",
+        "save_area_alignment_bytes",
+        "state_block_alignment_bytes",
+        "state_block_bitmap_words",
         "fixed_slots",
-        "base_bitmap_bits",
+        "header_fields",
         "instruction_behavior",
         "extension_components",
         "extension_component_order",
@@ -1288,9 +1323,18 @@ class SaveAreaFormatSchema(KeySchema):
             return
         if "fixed_slots" in value:
             check_mapping_list_items(value["fixed_slots"], f"{path}.fixed_slots", SaveAreaFixedSlotSchema, errors)
-        bitmap = value.get("base_bitmap_bits")
-        if bitmap is not None:
-            SaveAreaBitmapSchema.validate(bitmap, f"{path}.base_bitmap_bits", errors)
+        if "header_fields" in value:
+            check_mapping_list_items(value["header_fields"], f"{path}.header_fields", SaveAreaHeaderFieldSchema, errors)
+        fixed_base_bytes = value.get("fixed_base_bytes")
+        state_block_alignment = value.get("state_block_alignment_bytes")
+        if isinstance(fixed_base_bytes, int) and isinstance(state_block_alignment, int):
+            if state_block_alignment <= 0:
+                errors.append(f"{path}.state_block_alignment_bytes must be positive")
+            elif fixed_base_bytes % state_block_alignment != 0:
+                errors.append(f"{path}.fixed_base_bytes must be a multiple of state_block_alignment_bytes")
+        bitmap_words = value.get("state_block_bitmap_words")
+        if isinstance(bitmap_words, int) and bitmap_words <= 0:
+            errors.append(f"{path}.state_block_bitmap_words must be positive")
         if "extension_component_formats" in value:
             check_mapping_list_items(
                 value["extension_component_formats"],
@@ -1310,25 +1354,25 @@ class SaveAreaFormatSchema(KeySchema):
 
 class SaveAreaFixedSlotSchema(KeySchema):
     name = "save area fixed slot"
-    keys = {"offset", "field"}
-
-
-class SaveAreaBitmapSchema(KeySchema):
-    name = "save area bitmap"
-    keys = {"description", "reserved_bits", "mappings"}
+    keys = {"offset", "field", "cells"}
 
     @classmethod
     def validate(cls, value: Any, path: str, errors: list[str]) -> None:
         check_allowed_keys(value, path, cls, errors)
         if not isinstance(value, dict):
             return
-        if "mappings" in value:
-            check_mapping_list_items(value["mappings"], f"{path}.mappings", SaveAreaBitmapMappingSchema, errors)
+        if "cells" in value:
+            check_mapping_list_items(value["cells"], f"{path}.cells", SaveAreaSlotCellSchema, errors)
 
 
-class SaveAreaBitmapMappingSchema(KeySchema):
-    name = "save area bitmap mapping"
-    keys = {"bits", "slot", "meaning"}
+class SaveAreaSlotCellSchema(KeySchema):
+    name = "save area fixed slot cell"
+    keys = {"span", "field"}
+
+
+class SaveAreaHeaderFieldSchema(KeySchema):
+    name = "save area header field"
+    keys = {"offset", "bits", "field", "meaning"}
 
 
 class SaveAreaExtensionComponentSchema(KeySchema):
@@ -1341,7 +1385,7 @@ class SaveAreaExtensionComponentSchema(KeySchema):
         "validity",
         "description",
         "size",
-        "component_bitmap_bits",
+        "header_fields",
         "slots",
     }
 
@@ -1350,9 +1394,8 @@ class SaveAreaExtensionComponentSchema(KeySchema):
         check_allowed_keys(value, path, cls, errors)
         if not isinstance(value, dict):
             return
-        bitmap = value.get("component_bitmap_bits")
-        if bitmap is not None:
-            SaveAreaBitmapSchema.validate(bitmap, f"{path}.component_bitmap_bits", errors)
+        if "header_fields" in value:
+            check_mapping_list_items(value["header_fields"], f"{path}.header_fields", SaveAreaHeaderFieldSchema, errors)
         if "slots" in value:
             check_mapping_list_items(value["slots"], f"{path}.slots", SaveAreaComponentSlotSchema, errors)
             if isinstance(value["slots"], list):
@@ -1376,7 +1419,7 @@ class SaveAreaComponentSlotSchema(KeySchema):
 
 class SaveAreaComponentSlotRepeatSchema(KeySchema):
     name = "save area component slot repeat"
-    keys = {"count", "offset_start", "offset_stride", "field_template", "meaning_template"}
+    keys = {"count", "n_start", "offset_start", "offset_stride", "field_template", "meaning_template"}
 
 
 class InstructionFamilySchema(KeySchema):
@@ -1413,8 +1456,7 @@ class OperationSemanticsRootSchema(KeySchema):
         attrs = value.get("operation_attributes") or {}
         check_optional_mapping(attrs, f"{path}.operation_attributes", OperationAttributesSchema, errors)
         if isinstance(attrs, dict):
-            for name in ("repeatable_operation", "streaming_candidate"):
-                check_optional_mapping(attrs.get(name), f"{path}.operation_attributes.{name}", OperationAttributeSchema, errors)
+            check_optional_mapping(attrs.get("streaming_candidate"), f"{path}.operation_attributes.streaming_candidate", OperationAttributeSchema, errors)
         prefix_availability = value.get("prefix_availability")
         if isinstance(prefix_availability, dict):
             check_mapping_values(prefix_availability, f"{path}.prefix_availability", PrefixAvailabilitySchema, errors)
@@ -1426,6 +1468,26 @@ class OperationSemanticsRootSchema(KeySchema):
 class InstructionFrequencyModelSchema(KeySchema):
     name = "instruction allocation frequency model"
     keys = {"description", "default_weight_by_category", "rules"}
+
+
+class InstructionSemanticSectionSchema(KeySchema):
+    name = "instruction allocation semantic section"
+    keys = {"path", "category", "default_weight"}
+
+
+class InstructionCompactnessPolicySchema(KeySchema):
+    name = "instruction allocation compactness policy"
+    keys = {"exclude", "prefer"}
+
+
+class InstructionDecodeCostPolicySchema(KeySchema):
+    name = "instruction allocation decode cost policy"
+    keys = {"priority_order"}
+
+
+class InstructionExtensionRootPolicySchema(KeySchema):
+    name = "instruction allocation extension root placement policy"
+    keys = {"preferred_region", "prefer_contiguous_family_roots", "allow_low_payload_roots"}
 
 
 class InstructionMnemonicPolicySchema(KeySchema):
@@ -1540,17 +1602,46 @@ class ConditionCodeSyntaxSchema(KeySchema):
 
 class OperationAttributesSchema(KeySchema):
     name = "operation attributes"
-    keys = {"repeatable_operation", "streaming_candidate"}
+    keys = {"streaming_candidate"}
 
 
 class OperationAttributeSchema(KeySchema):
     name = "operation attribute"
-    keys = {"integer", "fpu", "excluded_categories", "state_query_general_only"}
+    keys = {"integer", "fpu"}
 
 
 class OperationInstructionSchema(KeySchema):
     name = "operation semantics instruction entry"
-    keys = {"pcode", "pcode_by_form"}
+    keys = {
+        "pcode",
+        "operation_text",
+        "pcode_by_form",
+        "inputs",
+        "input_output",
+        "output",
+        "signedness",
+        "bounds_mode",
+        "interval",
+        "destination_size",
+        "count_rules",
+        "flag_rules",
+        "control_register_access",
+        "repeat_observed_value",
+        "repflags",
+        "banked_forms",
+        "long_transfer_operands",
+        "atomic_cs_pc_commit",
+        "canonicalization",
+        "descriptor_payloads",
+        "flags",
+        "fp_flags",
+        "privilege",
+        "memory",
+        "memory_ordering",
+        "atomic",
+        "serializing",
+        "cpuid_feature",
+    }
 
     @classmethod
     def validate(cls, value: Any, path: str, errors: list[str]) -> None:
@@ -1580,7 +1671,7 @@ class OperationPcodeFormSchema(KeySchema):
 
 class PrefixAvailabilitySchema(KeySchema):
     name = "prefix availability"
-    keys = {"table_code", "derived_from", "scope", "operation_attribute", "mnemonics"}
+    keys = {"table_code", "derived_from", "scope", "mnemonics"}
 
 
 class EaFieldSchema(KeySchema):
@@ -2364,7 +2455,19 @@ class InterruptVectorReservedBytesSchema(KeySchema):
 
 class SupervisorStackFrameSchema(KeySchema):
     name = "supervisor stack frame"
-    keys = {"slot_size_bytes", "base_size_bytes", "frame_size_unit_bytes", "description", "layout", "payload_slots", "repeat_fault_aux", "frame_types", "frame_info"}
+    keys = {
+        "slot_size_bytes",
+        "base_size_bytes",
+        "frame_size_unit_bytes",
+        "payload_block_size_bytes",
+        "payload_block_rule",
+        "description",
+        "layout",
+        "payload_slots",
+        "repeat_fault_aux",
+        "frame_types",
+        "frame_control",
+    }
 
     @classmethod
     def validate(cls, value: Any, path: str, errors: list[str]) -> None:
@@ -2374,19 +2477,43 @@ class SupervisorStackFrameSchema(KeySchema):
         if not isinstance(value, dict):
             return
         check_list_items(value.get("layout", []), f"{path}.layout", SupervisorStackFrameLayoutSlotSchema, errors)
-        check_mapping_item_keys(value.get("payload_slots"), f"{path}.payload_slots", DescribedFieldSchema, errors)
+        check_mapping_item_keys(value.get("payload_slots"), f"{path}.payload_slots", SupervisorStackFramePayloadSlotSchema, errors)
         repeat = value.get("repeat_fault_aux") or {}
         check_optional_mapping(repeat, f"{path}.repeat_fault_aux", RepeatFaultAuxSchema, errors)
         if isinstance(repeat, dict):
             check_named_field_map(repeat.get("fields"), f"{path}.repeat_fault_aux.fields", errors)
             check_optional_mapping(repeat.get("formulas"), f"{path}.repeat_fault_aux.formulas", RepeatFaultAuxFormulasSchema, errors)
         check_list_items(value.get("frame_types", []), f"{path}.frame_types", FrameTypeSchema, errors)
-        check_named_field_map(value.get("frame_info"), f"{path}.frame_info", errors)
+        check_named_field_map(value.get("frame_control"), f"{path}.frame_control", errors)
+
+        base_size = value.get("base_size_bytes")
+        block_size = value.get("payload_block_size_bytes")
+        if isinstance(base_size, int) and isinstance(block_size, int):
+            if block_size <= 0:
+                errors.append(f"{path}.payload_block_size_bytes must be positive")
+            elif base_size % block_size != 0:
+                errors.append(f"{path}.base_size_bytes must be a multiple of payload_block_size_bytes")
+        for index, frame_type in enumerate(value.get("frame_types", []) or []):
+            if not isinstance(frame_type, dict):
+                continue
+            payload = frame_type.get("payload") or []
+            blocks = frame_type.get("payload_blocks")
+            if payload and not isinstance(blocks, int):
+                errors.append(f"{path}.frame_types[{index}].payload_blocks is required when payload is non-empty")
+            elif isinstance(blocks, int) and blocks < 0:
+                errors.append(f"{path}.frame_types[{index}].payload_blocks must be non-negative")
+            elif payload and blocks == 0:
+                errors.append(f"{path}.frame_types[{index}].payload_blocks must be positive when payload is non-empty")
 
 
 class SupervisorStackFrameLayoutSlotSchema(KeySchema):
     name = "supervisor stack frame layout slot"
     keys = {"offset", "name", "description"}
+
+
+class SupervisorStackFramePayloadSlotSchema(KeySchema):
+    name = "supervisor stack frame payload slot"
+    keys = {"offset", "description"}
 
 
 class RepeatFaultAuxSchema(KeySchema):
@@ -2401,7 +2528,7 @@ class RepeatFaultAuxFormulasSchema(KeySchema):
 
 class FrameTypeSchema(KeySchema):
     name = "frame type"
-    keys = {"code", "name", "payload", "description"}
+    keys = {"code", "name", "payload", "payload_blocks", "description"}
 
 
 class CpuidCallingConventionSchema(KeySchema):

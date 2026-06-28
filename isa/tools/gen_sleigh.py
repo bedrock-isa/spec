@@ -32,9 +32,6 @@ from spec_model.encoding import (
 )
 
 
-PRIMARY_BITS = 12
-WORD_BITS = 16
-MAX_INSTRUCTION_WORDS = 8
 ACTIVE_SPEC: dict[str, Any] | None = None
 
 
@@ -75,6 +72,26 @@ def active_spec() -> dict[str, Any]:
     if ACTIVE_SPEC is None:
         raise RuntimeError("active spec is not set")
     return ACTIVE_SPEC
+
+
+def primary_bits_from_plan(plan: dict[str, Any]) -> int:
+    return int((plan.get("target_space") or {})["bits"])
+
+
+def word_bits_from_spec(spec: dict[str, Any]) -> int:
+    return int((spec.get("opcodes") or {})["word_size"])
+
+
+def max_instruction_words_from_spec(spec: dict[str, Any]) -> int:
+    return int((spec.get("opcodes") or {})["max_instruction_words"])
+
+
+def active_word_bits() -> int:
+    return word_bits_from_spec(active_spec())
+
+
+def active_max_instruction_words() -> int:
+    return max_instruction_words_from_spec(active_spec())
 
 
 def size_kind_names() -> set[str]:
@@ -370,7 +387,7 @@ def parse_descriptor_layout(item: dict[str, Any]) -> list[dict[str, Any]]:
             payload_bit = high + 1
             token = 1
         else:
-            if payload_bit + width > WORD_BITS:
+            if payload_bit + width > active_word_bits():
                 payload_token += 1
                 payload_bit = 0
             low = payload_bit
@@ -490,13 +507,6 @@ def pcode_statements(value: Any) -> list[str]:
     return []
 
 
-def semantic_value_for_mnemonic(group: dict[str, Any], key: str, mnemonic: str) -> Any:
-    by_mnemonic = group.get(f"{key}_by_mnemonic")
-    if isinstance(by_mnemonic, dict) and mnemonic in by_mnemonic:
-        return by_mnemonic[mnemonic]
-    return group.get(key)
-
-
 def operation_semantics_map(spec: dict[str, Any]) -> dict[str, dict[str, Any]]:
     operation_semantics = (
         spec.get("instructions", {})
@@ -511,9 +521,8 @@ def operation_semantics_map(spec: dict[str, Any]) -> dict[str, dict[str, Any]]:
             for member in [str(item) for item in group.get("members", []) or []]:
                 entry = out.setdefault(member, {})
                 for key in ("inputs", "input_output", "output"):
-                    value = semantic_value_for_mnemonic(group, key, member)
-                    if value is not None:
-                        entry[key] = value
+                    if key in group:
+                        entry[key] = group[key]
     instructions = operation_semantics.get("instructions", {}) if isinstance(operation_semantics, dict) else {}
     if isinstance(instructions, dict):
         for mnemonic, entry in instructions.items():
@@ -523,6 +532,8 @@ def operation_semantics_map(spec: dict[str, Any]) -> dict[str, dict[str, Any]]:
             for key in ("inputs", "input_output", "output"):
                 if key in entry:
                     target[key] = entry[key]
+            if "operation_text" in entry:
+                target["operation_text"] = entry["operation_text"]
             if "pcode" in entry:
                 target["pcode"] = pcode_statements(entry["pcode"])
             if "pcode_by_form" in entry:
@@ -559,18 +570,23 @@ def role_names(value: Any, available: set[str]) -> list[str]:
     return out
 
 
-def collect_sleigh_fields(allocations: list[dict[str, Any]]) -> dict[str, SField]:
+def collect_sleigh_fields(
+    allocations: list[dict[str, Any]],
+    primary_bits: int,
+    word_bits: int,
+    max_instruction_words: int,
+) -> dict[str, SField]:
     fields: dict[str, SField] = {}
 
     def add(token: int, name: str, low: int, high: int, kind: str = "", source: str = "") -> None:
         fields.setdefault(name, SField(token=token, name=name, low=low, high=high, kind=kind, source=source, width=high - low + 1))
 
-    for bit in range(PRIMARY_BITS):
+    for bit in range(primary_bits):
         add(0, token_field_name(0, bit, bit), bit, bit)
-    add(0, token_field_name(0, 0, PRIMARY_BITS - 1), 0, PRIMARY_BITS - 1)
-    for token in range(1, MAX_INSTRUCTION_WORDS):
-        add(token, f"word{token}", 0, WORD_BITS - 1)
-        add(token, token_field_name(token, 0, WORD_BITS - 1), 0, WORD_BITS - 1)
+    add(0, token_field_name(0, 0, primary_bits - 1), 0, primary_bits - 1)
+    for token in range(1, max_instruction_words):
+        add(token, f"word{token}", 0, word_bits - 1)
+        add(token, token_field_name(token, 0, word_bits - 1), 0, word_bits - 1)
 
     for item in allocations:
         for field in item_fields(item):
@@ -605,11 +621,11 @@ def collect_sleigh_fields(allocations: list[dict[str, Any]]) -> dict[str, SField
                 str(field.get("source", "cc")),
             )
         start, end = item_primary_range(item)
-        for low, high in fixed_constraint_ranges(start, end, primary_variable_mask(item)):
+        for low, high in fixed_constraint_ranges(start, end, primary_variable_mask(item), primary_bits):
             add(0, token_field_name(0, low, high), low, high)
         if item.get("kind") in {"extended", "extended_alias"}:
             ext_start, ext_end = parse_range(str(item.get("extended_opcode", "0x0000")))
-            for low, high in fixed_constraint_ranges(ext_start, ext_end, descriptor_variable_mask(item), WORD_BITS):
+            for low, high in fixed_constraint_ranges(ext_start, ext_end, descriptor_variable_mask(item), word_bits):
                 add(1, token_field_name(1, low, high), low, high)
     return fields
 
@@ -649,11 +665,8 @@ def descriptor_variable_mask(item: dict[str, Any]) -> int:
     return field_mask([field for field in item_fields(item) if field_token(field, 1) == 1])
 
 
-def fixed_constraint_ranges(start: int, end: int, variable_mask: int, width: int = PRIMARY_BITS) -> list[tuple[int, int]]:
-    if width == WORD_BITS:
-        bit_limit = WORD_BITS
-    else:
-        bit_limit = PRIMARY_BITS
+def fixed_constraint_ranges(start: int, end: int, variable_mask: int, width: int) -> list[tuple[int, int]]:
+    bit_limit = width
     fixed_mask = ((1 << bit_limit) - 1) ^ variable_mask
     if (start & fixed_mask) != (end & fixed_mask):
         return [(0, bit_limit - 1)]
@@ -809,7 +822,8 @@ def render_operand_tables(fields: dict[str, SField]) -> str:
         .get("bitmap_operands", {})
     )
     bitmap_kind_names = sorted(bitmap_kinds) if isinstance(bitmap_kinds, dict) else ["bitmap16"]
-    for start in range(1, MAX_INSTRUCTION_WORDS):
+    max_instruction_words = active_max_instruction_words()
+    for start in range(1, max_instruction_words):
         for kind in ("imm", "imm16", "relative_imm", "cr", "payload", *bitmap_kind_names):
             payload_tables.add((kind, start, 1))
         for kind, counts in (
@@ -818,7 +832,7 @@ def render_operand_tables(fields: dict[str, SField]) -> str:
             ("relative_imm", (2, 4)),
         ):
             for count in counts:
-                if start + count - 1 < MAX_INSTRUCTION_WORDS:
+                if start + count - 1 < max_instruction_words:
                     payload_tables.add((kind, start, count))
     for kind, start, count in sorted(payload_tables, key=lambda item: (item[1], item[2], item[0])):
         table = payload_table_name(kind, start, count)
@@ -993,7 +1007,13 @@ def constructor_display(item: dict[str, Any], fields: list[dict[str, Any]], toke
     return display, payload_terms
 
 
-def item_pattern(item: dict[str, Any], fields: list[dict[str, Any]], payload_terms: list[str]) -> str:
+def item_pattern(
+    item: dict[str, Any],
+    fields: list[dict[str, Any]],
+    payload_terms: list[str],
+    primary_bits: int,
+    word_bits: int,
+) -> str:
     fields_by_token: dict[int, list[dict[str, Any]]] = {}
     for field in fields:
         fields_by_token.setdefault(field_token(field, 0 if item.get("kind") in {"compact", "compact_alias"} else 1), []).append(field)
@@ -1004,7 +1024,7 @@ def item_pattern(item: dict[str, Any], fields: list[dict[str, Any]], payload_ter
 
     if item.get("kind") in {"compact", "compact_alias"}:
         start, end = item_primary_range(item)
-        terms = fixed_constraints(start, end, primary_variable_mask(item), 0, PRIMARY_BITS)
+        terms = fixed_constraints(start, end, primary_variable_mask(item), 0, primary_bits)
         terms.extend(fixed_condition_terms)
         terms.extend(display_name_for_field(field, 0) for field in fields_by_token.get(0, []))
         pattern = " & ".join(terms) if terms else "epsilon"
@@ -1017,11 +1037,11 @@ def item_pattern(item: dict[str, Any], fields: list[dict[str, Any]], payload_ter
 
     primary_start, primary_end = item_primary_range(item)
     root = root_condition_field(item)
-    root_terms = fixed_constraints(primary_start, primary_end, primary_variable_mask(item), 0, PRIMARY_BITS)
+    root_terms = fixed_constraints(primary_start, primary_end, primary_variable_mask(item), 0, primary_bits)
     if root:
         root_terms.append(display_name_for_field(root, 0))
     ext_start, ext_end = parse_range(str(item.get("extended_opcode", "0x0000")))
-    ext_terms = fixed_constraints(ext_start, ext_end, descriptor_variable_mask(item), 1, WORD_BITS)
+    ext_terms = fixed_constraints(ext_start, ext_end, descriptor_variable_mask(item), 1, word_bits)
     ext_terms.extend(display_name_for_field(field, 1) for field in fields_by_token.get(1, []))
     primary = " & ".join(root_terms) if root_terms else "epsilon"
     ext = " & ".join(ext_terms) if ext_terms else "epsilon"
@@ -1168,10 +1188,10 @@ def render_pcode_body(
     fields: list[dict[str, Any]],
     token: int,
     bindings: dict[str, OperandBinding],
-    semantics_by_mnemonic: dict[str, dict[str, Any]],
+    mnemonic_semantics: dict[str, dict[str, Any]],
 ) -> str:
     mnemonic = str(item.get("mnemonic", ""))
-    semantics = semantics_by_mnemonic.get(mnemonic, {})
+    semantics = mnemonic_semantics.get(mnemonic, {})
     body = select_pcode_body(mnemonic, item, semantics)
     if body is None:
         raise ValueError(f"missing SLEIGH pcode for {mnemonic}")
@@ -1217,18 +1237,23 @@ def render_pcode_body(
     return "{\n" + "\n".join(f"  {line}" for line in rendered) + "\n}"
 
 
-def render_constructors(allocations: list[dict[str, Any]], semantics_by_mnemonic: dict[str, dict[str, Any]]) -> str:
+def render_constructors(
+    allocations: list[dict[str, Any]],
+    mnemonic_semantics: dict[str, dict[str, Any]],
+    primary_bits: int,
+    word_bits: int,
+) -> str:
     lines = [
-        "# Instruction constructors. Semantic bodies come directly from",
-        "# operation_semantics pcode entries.",
+        "# Instruction constructors. Semantic bodies come from operation_semantics pcode;",
+        "# operation_text only overrides the manual's Operation prose.",
     ]
     for item in sorted(allocations, key=constructor_sort_key):
         fields = item_fields(item)
         token = 0 if item.get("kind") in {"compact", "compact_alias"} else 1
         payload_count = payload_word_count(item)
         display, payload_terms, bindings = constructor_operands(item, fields, token, payload_count)
-        pattern = item_pattern(item, fields, payload_terms)
-        body = render_pcode_body(item, fields, token, bindings, semantics_by_mnemonic)
+        pattern = item_pattern(item, fields, payload_terms, primary_bits, word_bits)
+        body = render_pcode_body(item, fields, token, bindings, mnemonic_semantics)
         lines.append(f":{display} is {pattern} {body}")
     return "\n".join(lines)
 
@@ -1244,8 +1269,11 @@ def render(spec_dir: str, spec: dict[str, Any], plan: dict[str, Any], allocation
     global ACTIVE_SPEC
     ACTIVE_SPEC = spec
     allocations = collect_allocations(spec, plan)
-    fields = collect_sleigh_fields(allocations)
-    semantics_by_mnemonic = operation_semantics_map(spec)
+    primary_bits = primary_bits_from_plan(plan)
+    word_bits = word_bits_from_spec(spec)
+    max_instruction_words = max_instruction_words_from_spec(spec)
+    fields = collect_sleigh_fields(allocations, primary_bits, word_bits, max_instruction_words)
+    mnemonic_semantics = operation_semantics_map(spec)
     solver = plan.get("solver", {})
     header = render_tool_template(
         "sleigh_header.slaspec",
@@ -1262,7 +1290,7 @@ def render(spec_dir: str, spec: dict[str, Any], plan: dict[str, Any], allocation
         render_tokens(fields),
         render_attaches(spec, fields),
         render_operand_tables(fields),
-        render_constructors(allocations, semantics_by_mnemonic),
+        render_constructors(allocations, mnemonic_semantics, primary_bits, word_bits),
         "",
     ]
     return "\n\n".join(section for section in sections if section.strip())

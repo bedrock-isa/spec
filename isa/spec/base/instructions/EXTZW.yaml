@@ -22,8 +22,9 @@ behavior:
   - <zero_extend_mask_done>
   - dst_v = src_v & result_v;
   destination_size: W
+  repeat_observed_value: result_value
+  repflags: flags_logic_observed_value
 attributes:
-  repeatable: true
   streaming_candidate: true
 allocation:
   catalog_section: integer

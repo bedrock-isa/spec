@@ -24,8 +24,8 @@ behavior:
   - <fbndix_bad>
   - VF = 1;
   - <fbndix_done>
+  repflags: fpu_interval_v_flag
 attributes:
-  repeatable: true
   fp_flags:
     update_when_required:
     - NV

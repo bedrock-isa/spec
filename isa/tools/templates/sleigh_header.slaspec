@@ -5,7 +5,7 @@
 # Constructors: @CONSTRUCTOR_COUNT@
 #
 # This follows the allocated opcode map. Instruction semantic bodies are emitted
-# directly from operation_semantics pcode entries.
+# from operation_semantics pcode entries; operation_text only overrides manual text.
 
 define endian=little;
 define alignment=2;
@@ -27,6 +27,15 @@ define pcodeop arch_raise_trap;
 define pcodeop arch_raise_invalid_control_state;
 define pcodeop arch_raise_divide_by_zero;
 define pcodeop arch_raise_signed_overflow;
+define pcodeop arch_signed_divide;
+define pcodeop arch_signed_modulo;
+define pcodeop arch_unsigned_divide;
+define pcodeop arch_unsigned_modulo;
+define pcodeop arch_signed_multiply_high;
+define pcodeop arch_signed_unsigned_multiply_high;
+define pcodeop arch_unsigned_multiply_high;
+define pcodeop arch_carryless_multiply_low;
+define pcodeop arch_carryless_multiply_high;
 define pcodeop arch_cpuid;
 define pcodeop arch_page_translate;
 define pcodeop arch_page_attributes;
@@ -39,10 +48,30 @@ define pcodeop arch_cache_invalidate_data;
 define pcodeop arch_cache_flush_data;
 define pcodeop arch_cache_writeback_data;
 define pcodeop arch_cache_synchronize;
+define pcodeop arch_save_processor_state;
+define pcodeop arch_restore_processor_state;
 define pcodeop arch_save_extension_state;
 define pcodeop arch_restore_extension_state;
 define pcodeop arch_dbank_read;
 define pcodeop arch_dbank_write;
+define pcodeop arch_register_set_sum;
+define pcodeop arch_pushm;
+define pcodeop arch_popm;
+define pcodeop arch_movsetad;
+define pcodeop arch_movsetad_bank;
+define pcodeop arch_movsetda;
+define pcodeop arch_movsetda_bank;
+define pcodeop arch_movsetdd;
+define pcodeop arch_xchgsetad;
+define pcodeop arch_xchgsetad_bank;
+define pcodeop arch_xchgsetda;
+define pcodeop arch_xchgsetda_bank;
+define pcodeop arch_xchgsetdd;
+define pcodeop arch_syscall;
+define pcodeop arch_sysret;
+define pcodeop arch_fclass;
+define pcodeop arch_fpushm;
+define pcodeop arch_fpopm;
 define pcodeop arch_emit_instruction;
 define pcodeop fp_const;
 define pcodeop fp_mod;

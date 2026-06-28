@@ -140,20 +140,13 @@ def resolve_mnemonic_specific_values(entry: dict[str, Any], mnemonic: str) -> di
         value = resolved.get(key)
         if isinstance(value, dict) and mnemonic in value:
             resolved[key] = value[mnemonic]
-    for key, value in list(resolved.items()):
-        if not key.endswith("_by_mnemonic"):
-            continue
-        resolved.pop(key, None)
-        base_key = key[: -len("_by_mnemonic")]
-        if isinstance(value, dict) and mnemonic in value:
-            resolved[base_key] = value[mnemonic]
     return resolved
 
 
 def semantic_records(spec: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
     instructions = spec.get("instructions") or {}
     families = instructions.get("families") or {}
-    by_mnemonic: dict[str, list[dict[str, Any]]] = {}
+    mnemonic_records: dict[str, list[dict[str, Any]]] = {}
     for family_name, family in families.items():
         if not isinstance(family, dict):
             continue
@@ -171,7 +164,7 @@ def semantic_records(spec: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
                 for mnemonic in mnemonic_list(str(entry_key), raw_entry):
                     entry = resolve_mnemonic_specific_values(raw_entry, mnemonic)
                     entry.pop("mnemonics", None)
-                    by_mnemonic.setdefault(mnemonic, []).append(
+                    mnemonic_records.setdefault(mnemonic, []).append(
                         {
                             "family": str(family_name),
                             "category": category,
@@ -180,27 +173,18 @@ def semantic_records(spec: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
                             "spec": entry,
                         }
                     )
-    return by_mnemonic
+    return mnemonic_records
 
 
 def operation_records(spec: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
     instructions = spec.get("instructions") or {}
     operation_semantics = instructions.get("operation_semantics") or {}
-    by_mnemonic: dict[str, list[dict[str, Any]]] = {}
+    mnemonic_records: dict[str, list[dict[str, Any]]] = {}
 
     def add_record(mnemonic: str, group_name: str, raw: dict[str, Any]) -> None:
         record = deepcopy(raw)
         record.pop("members", None)
-        resolved: dict[str, Any] = {}
-        for key, value in list(record.items()):
-            if not key.endswith("_by_mnemonic"):
-                continue
-            record.pop(key, None)
-            base_key = key[: -len("_by_mnemonic")]
-            if isinstance(value, dict) and mnemonic in value:
-                resolved[base_key] = value[mnemonic]
-        record.update(resolved)
-        by_mnemonic.setdefault(mnemonic, []).append({"group": group_name, "spec": record})
+        mnemonic_records.setdefault(mnemonic, []).append({"group": group_name, "spec": record})
 
     for group_name, raw_group in (operation_semantics.get("groups") or {}).items():
         if not isinstance(raw_group, dict):
@@ -210,11 +194,11 @@ def operation_records(spec: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
 
     for mnemonic, raw_entry in (operation_semantics.get("instructions") or {}).items():
         if isinstance(raw_entry, dict):
-            by_mnemonic.setdefault(str(mnemonic), []).append({"group": "instruction_override", "spec": deepcopy(raw_entry)})
-    return by_mnemonic
+            mnemonic_records.setdefault(str(mnemonic), []).append({"group": "instruction_override", "spec": deepcopy(raw_entry)})
+    return mnemonic_records
 
 
-def aliases_by_mnemonic(spec: dict[str, Any], items: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
+def mnemonic_aliases(spec: dict[str, Any], items: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
     out: dict[str, list[dict[str, Any]]] = {}
     instructions = spec.get("instructions") or {}
     for alias in instructions.get("canonical_aliases", []) or []:
@@ -406,13 +390,13 @@ def render_instruction(
 def render(plan: dict[str, Any], spec: dict[str, Any], lengths: dict[tuple[str, str], tuple[int, int]]) -> str:
     set_active_spec(spec)
     items = allocation_items(plan)
-    items_by_mnemonic: dict[str, list[dict[str, Any]]] = {}
+    mnemonic_items: dict[str, list[dict[str, Any]]] = {}
     for item in items:
-        items_by_mnemonic.setdefault(str(item.get("mnemonic", item.get("id", ""))), []).append(item)
+        mnemonic_items.setdefault(str(item.get("mnemonic", item.get("id", ""))), []).append(item)
     records = semantic_records(spec)
     operations = operation_records(spec)
-    aliases = aliases_by_mnemonic(spec, items)
-    mnemonics = sorted(set(records) | set(operations) | set(items_by_mnemonic) | set(aliases))
+    aliases = mnemonic_aliases(spec, items)
+    mnemonics = sorted(set(records) | set(operations) | set(mnemonic_items) | set(aliases))
     operation_coverage = len([mnemonic for mnemonic in mnemonics if operations.get(mnemonic)])
 
     lines = [
@@ -429,7 +413,7 @@ def render(plan: dict[str, Any], spec: dict[str, Any], lengths: dict[tuple[str, 
         "",
     ]
     for mnemonic in mnemonics:
-        form_count = len(items_by_mnemonic.get(mnemonic, []))
+        form_count = len(mnemonic_items.get(mnemonic, []))
         family_names = sorted({record["family"] for record in records.get(mnemonic, [])})
         family_text = ", ".join(family_names) if family_names else "-"
         lines.append(f"- [{mnemonic}](#{anchor(mnemonic)}) — {form_count} form(s), {family_text}")
@@ -440,7 +424,7 @@ def render(plan: dict[str, Any], spec: dict[str, Any], lengths: dict[tuple[str, 
                 mnemonic,
                 records.get(mnemonic, []),
                 operations.get(mnemonic, []),
-                items_by_mnemonic.get(mnemonic, []),
+                mnemonic_items.get(mnemonic, []),
                 aliases.get(mnemonic, []),
                 lengths,
             )

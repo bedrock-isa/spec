@@ -89,8 +89,8 @@ natural kernel for ASCII or byte-string to UTF-32 expansion.
 \par\begingroup\small\ttfamily
 \begin{tabularx}{\linewidth}{@{}X@{}}
 ; widen n bytes to n 32-bit elements\tabularnewline
-; A0 = src + n, A1 = dst + 4*n\tabularnewline
-; D0 = -n\tabularnewline
-REP D0, EXTZL.B [A0 + D0 * 1], [A1 + D0 * 4]\tabularnewline
+; A0 = src, A1 = dst\tabularnewline
+; D0 = n\tabularnewline
+REP D0, EXTZL.B [A0++], [A1++]\tabularnewline
 \end{tabularx}
 \endgroup\par

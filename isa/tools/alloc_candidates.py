@@ -202,6 +202,7 @@ def collect_candidates(spec: dict[str, Any], entries: list[PatternEntry]) -> lis
     candidates: list[Candidate] = []
     catalog = instruction_catalog(spec)
     allocation = allocation_params(spec)
+    model = allocation_model(spec)
     alias_sources = canonical_alias_sources(spec)
     allocated_mnemonics = {
         entry.mnemonic
@@ -226,6 +227,7 @@ def collect_candidates(spec: dict[str, Any], entries: list[PatternEntry]) -> lis
                 operands=operands,
                 body=entry.source,
                 allocation=allocation,
+                primary_bits=model.primary.bits,
                 origin="instructions.yaml",
                 shape_hint=str(entry.source.get("pattern", "")),
                 must_compact=False,
@@ -236,8 +238,8 @@ def collect_candidates(spec: dict[str, Any], entries: list[PatternEntry]) -> lis
 
     candidates.extend(semantic_compact_primary_candidates(spec, allocated_mnemonics, alias_sources))
     candidates.extend(semantic_extended_form_candidates(spec, allocated_mnemonics))
-    for section_path, category, default_weight in SEMANTIC_SECTIONS:
-        section = get_path(catalog, section_path)
+    for semantic_section in model.semantic_sections:
+        section = get_path(catalog, semantic_section.path)
         if not isinstance(section, dict):
             continue
         for group, body in section.items():
@@ -249,7 +251,7 @@ def collect_candidates(spec: dict[str, Any], entries: list[PatternEntry]) -> lis
                 for operands in semantic_operand_alternatives(mnemonic, body):
                     merged = body_with_operation_metadata(spec, mnemonic, body)
                     ident = semantic_candidate_id(mnemonic, operands, merged)
-                    item_category = semantic_category_from_body(merged, category)
+                    item_category = semantic_category_from_body(merged, semantic_section.category)
                     candidates.append(
                         build_candidate(
                             ident=ident,
@@ -259,12 +261,13 @@ def collect_candidates(spec: dict[str, Any], entries: list[PatternEntry]) -> lis
                             operands=tuple(operands),
                             body=merged,
                             allocation=allocation,
+                            primary_bits=model.primary.bits,
                             origin="instructions.yaml",
                             shape_hint="semantic_operands",
                             must_compact=False,
                             can_extend=fixed_primary_payload(merged) is None,
                             fixed_payload=fixed_primary_payload(merged),
-                            default_weight=default_weight,
+                            default_weight=semantic_section.default_weight,
                         )
                     )
     return uniquify_candidate_ids(candidates)
@@ -273,6 +276,16 @@ def collect_candidates(spec: dict[str, Any], entries: list[PatternEntry]) -> lis
 def allocation_params(spec: dict[str, Any]) -> dict[str, Any]:
     params = instruction_catalog(spec).get("allocation") or {}
     return params if isinstance(params, dict) else {}
+
+
+def category_default_weight(allocation: dict[str, Any], category: str) -> int:
+    model = allocation.get("frequency_model", {}) if isinstance(allocation, dict) else {}
+    weights = model.get("default_weight_by_category", {}) if isinstance(model, dict) else {}
+    if category in weights:
+        return int(weights[category])
+    if "misc" in weights:
+        return int(weights["misc"])
+    return 1
 
 
 OPERATION_METADATA_KEYS = (
@@ -305,23 +318,27 @@ def body_with_operation_metadata(
 
 
 def operation_metadata_for_mnemonic(spec: dict[str, Any], mnemonic: str) -> dict[str, Any]:
-    groups = (((spec.get("instructions") or {}).get("operation_semantics") or {}).get("groups") or {})
-    if not isinstance(groups, dict):
-        return {}
+    operation_semantics = ((spec.get("instructions") or {}).get("operation_semantics") or {})
+    groups = operation_semantics.get("groups") or {}
+    instructions = operation_semantics.get("instructions") or {}
     out: dict[str, Any] = {}
-    for group in groups.values():
-        if not isinstance(group, dict):
-            continue
-        members = {str(member) for member in group.get("members", []) or []}
-        if mnemonic not in members:
-            continue
-        for key in OPERATION_METADATA_KEYS:
-            if key in group:
-                out[key] = group[key]
-            value = group.get(f"{key}_by_mnemonic")
-            if isinstance(value, dict) and mnemonic in value:
-                out[key] = value[mnemonic]
-        return out
+    if isinstance(groups, dict):
+        for group in groups.values():
+            if not isinstance(group, dict):
+                continue
+            members = {str(member) for member in group.get("members", []) or []}
+            if mnemonic not in members:
+                continue
+            for key in OPERATION_METADATA_KEYS:
+                if key in group:
+                    out[key] = group[key]
+            break
+    if isinstance(instructions, dict):
+        entry = instructions.get(mnemonic)
+        if isinstance(entry, dict):
+            for key in OPERATION_METADATA_KEYS:
+                if key in entry:
+                    out[key] = entry[key]
     return out
 
 
@@ -329,6 +346,7 @@ def semantic_extended_form_candidates(
     spec: dict[str, Any], allocated_mnemonics: set[str]
 ) -> list[Candidate]:
     out: list[Candidate] = []
+    model = allocation_model(spec)
     compact = instruction_catalog(spec).get("compact_primary_instructions", {}) or {}
     for group, body in compact.items():
         if not isinstance(body, dict):
@@ -360,12 +378,13 @@ def semantic_extended_form_candidates(
                             operands=operands,
                             body=merged,
                             allocation=allocation_params(spec),
+                            primary_bits=model.primary.bits,
                             origin="instructions.yaml",
                             shape_hint="declared_extended_form",
                             must_compact=False,
                             can_extend=True,
                             fixed_payload=None,
-                            default_weight=70 if category == "integer" else 55,
+                            default_weight=category_default_weight(allocation_params(spec), category),
                         )
                     )
     return out
@@ -375,6 +394,7 @@ def semantic_compact_primary_candidates(
     spec: dict[str, Any], allocated_mnemonics: set[str], alias_sources: set[str]
 ) -> list[Candidate]:
     out: list[Candidate] = []
+    model = allocation_model(spec)
     compact = instruction_catalog(spec).get("compact_primary_instructions", {}) or {}
     if not isinstance(compact, dict):
         return out
@@ -393,45 +413,49 @@ def semantic_compact_primary_candidates(
                     merged.update(form)
                     merged = body_with_operation_metadata(spec, mnemonic, merged)
                     for operands in expanded_operand_alternatives(merged):
+                        category = semantic_category_from_body(
+                            merged, semantic_compact_category(mnemonic, str(group))
+                        )
                         out.append(
                             build_candidate(
                                 ident=semantic_candidate_id(mnemonic, operands, merged),
                                 mnemonic=mnemonic,
-                                category=semantic_category_from_body(
-                                    merged, semantic_compact_category(mnemonic, str(group))
-                                ),
+                                category=category,
                                 group=str(group),
                                 operands=tuple(operands),
                                 body=merged,
                                 allocation=allocation_params(spec),
+                                primary_bits=model.primary.bits,
                                 origin="instructions.yaml",
                                 shape_hint="semantic_compact",
                                 must_compact=False,
                                 can_extend=fixed_primary_payload(merged) is None,
                                 fixed_payload=fixed_primary_payload(merged),
-                                default_weight=80,
+                                default_weight=category_default_weight(allocation_params(spec), category),
                             )
                         )
                 continue
             for operands in expanded_operand_alternatives(body):
                 merged = body_with_operation_metadata(spec, mnemonic, body)
+                category = semantic_category_from_body(
+                    merged, semantic_compact_category(mnemonic, str(group))
+                )
                 out.append(
                     build_candidate(
                         ident=semantic_candidate_id(mnemonic, operands, merged),
                         mnemonic=mnemonic,
-                        category=semantic_category_from_body(
-                            merged, semantic_compact_category(mnemonic, str(group))
-                        ),
+                        category=category,
                         group=str(group),
                         operands=tuple(operands),
                         body=merged,
                         allocation=allocation_params(spec),
+                        primary_bits=model.primary.bits,
                         origin="instructions.yaml",
                         shape_hint="semantic_compact",
                         must_compact=False,
                         can_extend=fixed_primary_payload(merged) is None,
                         fixed_payload=fixed_primary_payload(merged),
-                        default_weight=80,
+                        default_weight=category_default_weight(allocation_params(spec), category),
                     )
                 )
     return out
@@ -480,6 +504,7 @@ def build_candidate(
     operands: tuple[str, ...],
     body: dict[str, Any],
     allocation: dict[str, Any],
+    primary_bits: int,
     origin: str,
     shape_hint: str,
     must_compact: bool,
@@ -513,7 +538,7 @@ def build_candidate(
             or compact_action == "never"
         )
     )
-    compact_slots = (1 << compact_bits) if not compact_disabled and compact_bits <= PRIMARY_BITS else None
+    compact_slots = (1 << compact_bits) if not compact_disabled and compact_bits <= primary_bits else None
     descriptor_bits = sum(
         field.width
         for field in descriptor_fields

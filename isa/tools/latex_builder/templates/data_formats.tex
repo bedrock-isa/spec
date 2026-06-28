@@ -17,32 +17,23 @@ bits used by the operation and the number of bytes transferred for memory operan
 \manualtablecaption{Integer Data Sizes}
 \endgroup
 
-\begin{center}
-\begin{tikzpicture}[x=0.078in,y=0.30in,every node/.style={font=\scriptsize}]
-\foreach \x/\label in {0/63,32/31,48/15,56/7,64/0} {
-  \node[anchor=south] at (\x,0.08) {\label};
+\begin{manuallistedformatdiagram}{Integer Register Operand Subfields}{4}
+\manualformatrow{Q}{%
+\manualformatfield{Q operand bits 63..0}{64}
 }
-\draw (0,-1) rectangle (64,0);
-\node at (32,-0.5) {Q operand bits 63..0};
-\node[anchor=east] at (-1.2,-0.5) {Q};
-\draw (0,-2.2) rectangle (32,-1.2);
-\node at (16,-1.7) {unchanged / instruction-defined};
-\draw (32,-2.2) rectangle (64,-1.2);
-\node at (48,-1.7) {L operand bits 31..0};
-\node[anchor=east] at (-1.2,-1.7) {L};
-\draw (0,-3.4) rectangle (48,-2.4);
-\node at (24,-2.9) {unchanged / instruction-defined};
-\draw (48,-3.4) rectangle (64,-2.4);
-\node at (56,-2.9) {W bits 15..0};
-\node[anchor=east] at (-1.2,-2.9) {W};
-\draw (0,-4.6) rectangle (56,-3.6);
-\node at (28,-4.1) {unchanged / instruction-defined};
-\draw (56,-4.6) rectangle (64,-3.6);
-\node at (60,-4.1) {B bits 7..0};
-\node[anchor=east] at (-1.2,-4.1) {B};
-\end{tikzpicture}
-\manualfigurecaption{Integer Register Operand Subfields}
-\end{center}
+\manualformatrow{L}{%
+\manualformatfield{unchanged / instruction-defined}{32}
+\manualformatfield{L operand bits 31..0}{32}
+}
+\manualformatrow{W}{%
+\manualformatfield{unchanged / instruction-defined}{48}
+\manualformatfield{W bits 15..0}{16}
+}
+\manualformatrow{B}{%
+\manualformatfield{unchanged / instruction-defined}{56}
+\manualformatfield{B bits 7..0}{8}
+}
+\end{manuallistedformatdiagram}
 
 Byte, word, and long operations use the low-order subfield of the selected register. Q-sized
 operations use the full 64-bit register. Instructions that explicitly extend a value define
@@ -54,21 +45,16 @@ Bedrock data memory is little-endian. For an N-byte integer value stored at byte
 A contains bits 7..0, byte A+1 contains bits 15..8, and so on. The least significant byte is
 stored at the lowest address.
 
-\begin{center}
-\begin{tikzpicture}[x=0.54in,y=0.34in,every node/.style={font=\scriptsize}]
-\foreach \x/\addr/\bits in {0/A+0/7..0,1/A+1/15..8,2/A+2/23..16,3/A+3/31..24,4/A+4/39..32,5/A+5/47..40,6/A+6/55..48,7/A+7/63..56} {
-  \draw (\x,0) rectangle (\x+1,1);
-  \node at (\x+0.5,0.62) {$V[\bits]$};
-  \node[anchor=north] at (\x+0.5,-0.04) {\texttt{\addr}};
-}
-\node[anchor=east] at (-0.15,0.62) {byte};
-\node[anchor=east] at (-0.15,-0.20) {address};
-\draw[->] (0,-0.70) -- node[below] {increasing addresses} (8,-0.70);
-\node[anchor=west] at (0,1.22) {least significant byte first};
-\node[anchor=east] at (8,1.22) {most significant byte last};
-\end{tikzpicture}
-\manualfigurecaption{Little-Endian Byte Order for a 64-Bit Value}
-\end{center}
+\begin{manuallistedbyteorderdiagram}{Little-Endian Byte Order for a 64-Bit Value}{byte}{address}{increasing addresses}{least significant byte first}{most significant byte last}
+\manualbytecell{$V[7..0]$}{A+0}
+\manualbytecell{$V[15..8]$}{A+1}
+\manualbytecell{$V[23..16]$}{A+2}
+\manualbytecell{$V[31..24]$}{A+3}
+\manualbytecell{$V[39..32]$}{A+4}
+\manualbytecell{$V[47..40]$}{A+5}
+\manualbytecell{$V[55..48]$}{A+6}
+\manualbytecell{$V[63..56]$}{A+7}
+\end{manuallistedbyteorderdiagram}
 
 \[
 \mathit{mem}[A+i] = (\mathit{value} \gg (8i)) \mathbin{\&} 255,\qquad 0 \le i < N
@@ -77,19 +63,10 @@ stored at the lowest address.
 The same byte order is used for instruction words, immediate payloads, displacement payloads,
 absolute-address payloads, and data transferred by load/store instructions.
 
-\begin{center}
-\begin{tikzpicture}[x=0.72in,y=0.34in,every node/.style={font=\scriptsize}]
-\draw (0,0) rectangle (1,1);
-\draw (1,0) rectangle (2,1);
-\node at (0.5,0.62) {$word[7:0]$};
-\node at (1.5,0.62) {$word[15:8]$};
-\node[anchor=north] at (0.5,-0.04) {\texttt{PC+0}};
-\node[anchor=north] at (1.5,-0.04) {\texttt{PC+1}};
-\node[anchor=east] at (-0.18,0.62) {instruction word};
-\draw[->] (0,-0.70) -- node[below] {instruction stream byte order} (2,-0.70);
-\end{tikzpicture}
-\manualfigurecaption{Instruction Word Storage in Memory}
-\end{center}
+\begin{manuallistedbyteorderdiagram}{Instruction Word Storage in Memory}{instruction word}{}{instruction stream byte order}{}{}
+\manualbytecell{$word[7:0]$}{PC+0}
+\manualbytecell{$word[15:8]$}{PC+1}
+\end{manuallistedbyteorderdiagram}
 
 \subsection{Instruction Payload Ordering}
 Instruction length is measured in 16-bit words, but each instruction word is itself stored in

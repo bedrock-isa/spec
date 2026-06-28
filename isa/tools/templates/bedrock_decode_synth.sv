@@ -13,8 +13,6 @@ module bedrock_decode_synth(
   output reg [@FIELD_FORMAT_ID_MSB@:0] field_format_id_o,
   output reg [3:0]  required_words_o,
   output reg [@EXT_ROOT_MSB@:0] ext_root_o,
-  output reg        repcc_allowed_o,
-  output reg        repg_allowed_o,
   output reg        repg_fast_candidate_o
 );
 
@@ -37,8 +35,6 @@ module bedrock_decode_synth(
     required_words_o = 4'd0;
     ext_root_o = BR_EXT_ROOT_NONE;
     field_format_token_words = 4'd1;
-    repcc_allowed_o = 1'b0;
-    repg_allowed_o = 1'b0;
     repg_fast_candidate_o = 1'b0;
 
     casez (primary_payload_i)

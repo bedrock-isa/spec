@@ -54,7 +54,8 @@ def tex_escape(value: Any) -> str:
 
 
 def tex_code(value: Any) -> str:
-    return r"\texttt{" + tex_escape(value) + "}"
+    escaped = tex_escape(value).replace("--", r"{-}{-}")
+    return r"\texttt{" + escaped + "}"
 
 
 def tex_multiline(lines: list[str]) -> str:
@@ -272,6 +273,7 @@ class LatexLongTable(LatexComponent):
     rows: list[list[str]]
     widths: list[str] | None = None
     caption: str | None = None
+    style: str = "default"
 
     def render(self) -> str:
         if not self.rows:
@@ -280,13 +282,17 @@ class LatexLongTable(LatexComponent):
             spec = "@{}" + "".join(rf">{{\raggedright\arraybackslash}}p{{{width}}}" for width in self.widths) + "@{}"
         else:
             spec = "@{}" + " ".join("l" for _ in self.headers) + "@{}"
+        environments = {
+            "default": "manuallongtable",
+            "dense": "manualdenselongtable",
+        }
+        if self.style not in environments:
+            raise ValueError(f"unknown longtable style: {self.style}")
+        environment = environments[self.style]
         out = []
         out.extend(
             [
-                "\\begingroup\\footnotesize",
-                r"\setlength{\LTpre}{2pt}",
-                r"\setlength{\LTpost}{2pt}",
-                f"\\begin{{longtable}}{{{spec}}}",
+                rf"\begin{{{environment}}}{{{spec}}}",
                 "\\toprule",
             ]
         )
@@ -296,10 +302,9 @@ class LatexLongTable(LatexComponent):
         for row in self.rows:
             out.append(" & ".join(row) + r"\\")
         out.append("\\bottomrule")
-        out.append("\\end{longtable}")
+        out.append(rf"\end{{{environment}}}")
         if self.caption:
             out.append(rf"\manualtablecaption{{{tex_escape(caption_title(self.caption))}}}")
-        out.append("\\endgroup")
         return "\n".join(out) + "\n"
 
 
@@ -318,10 +323,7 @@ class LatexTabular(LatexComponent):
         else:
             spec = "@{}" + " ".join("l" for _ in self.headers) + "@{}"
         out = [
-            r"\Needspace{1.25in}",
-            r"\begingroup\footnotesize",
-            r"\begin{center}",
-            f"\\begin{{tabular}}{{{spec}}}",
+            rf"\begin{{manualtabular}}{{{spec}}}",
             r"\toprule",
             " & ".join(r"\textbf{" + tex_escape(header) + "}" for header in self.headers) + r"\\",
             r"\midrule",
@@ -331,12 +333,11 @@ class LatexTabular(LatexComponent):
         out.extend(
             [
                 r"\bottomrule",
-                r"\end{tabular}",
+                r"\end{manualtabular}",
             ]
         )
         if self.caption:
             out.append(rf"\manualtablecaption{{{tex_escape(caption_title(self.caption))}}}")
-        out.extend([r"\end{center}", r"\endgroup"])
         return "\n".join(out) + "\n"
 
 
@@ -369,8 +370,10 @@ def latex_longtable(
     rows: list[list[str]],
     widths: list[str] | None = None,
     caption: str | None = None,
+    *,
+    style: str = "default",
 ) -> str:
-    return LatexLongTable(headers, rows, widths, caption).render()
+    return LatexLongTable(headers, rows, widths, caption, style).render()
 
 
 def latex_tabular(

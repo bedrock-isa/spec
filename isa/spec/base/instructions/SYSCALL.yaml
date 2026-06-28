@@ -3,42 +3,20 @@ doc:
   title: System Call
   summary: Enter supervisor mode through SPC/SCS/SDS.
   description: Enter supervisor mode through the SPC/SCS/SDS supervisor-entry path. SYSCALL does not consume an 
-    interrupt vector. It saves SS:SP, CS:PC, DS, FLAGS/STATUS state, and the interrupted DBANK selector, then sets DBANK
-    to zero before entering the handler. It aligns the supervisor-entry address to 16 bytes, uses a 32-byte entry table,
-    and sets STATUS.PM to one without automatically masking interrupts.
+    interrupt vector. It saves FRAME_CONTROL, SS:SP, CS:PC, and DS, then sets DBANK to zero before entering the handler.
+    It aligns the supervisor-entry address to 16 bytes, uses a 32-byte entry table, and sets STATUS.PM to one without
+    automatically masking interrupts.
   instruction_family: core_control
   instruction_class: system
 behavior:
   group: core_control
   output: none
   operation:
-  - local saved_sp_v:8 = SP;
-  - local saved_status_v:8 = STATUS;
-  - local saved_flags_v:8 = zext(ZF) << 3;
-  - tmp_v = zext(NF) << 2;
-  - saved_flags_v = saved_flags_v | tmp_v;
-  - tmp_v = zext(CF) << 1;
-  - saved_flags_v = saved_flags_v | tmp_v;
-  - saved_flags_v = saved_flags_v | zext(VF);
-  - local frame_info_v:8 = 0x800;
-  - if ((saved_status_v & 0x10) != 0) goto <syscall_frame_info_done>;
-  - frame_info_v = frame_info_v | 0x1000000;
-  - <syscall_frame_info_done>
-  - SP = SP - 0x40;
-  - '*:8 SP = frame_info_v;'
-  - '*:8 (SP + 0x08) = DBANK & 0xf;'
-  - '*:8 (SP + 0x10) = (saved_flags_v & 0xffff) | ((saved_status_v & 0xffff) << 16);'
-  - '*:8 (SP + 0x18) = inst_next;'
-  - '*:8 (SP + 0x20) = saved_sp_v;'
-  - '*:8 (SP + 0x28) = CS;'
-  - '*:8 (SP + 0x30) = DS;'
-  - '*:8 (SP + 0x38) = SS;'
-  - DBANK = 0;
-  - STATUS = STATUS | 0x10;
-  - CS = SCS;
-  - DS = SDS;
-  - local handler_pc_v:8 = SPC & 0xfffffffffffffff0;
-  - call [handler_pc_v];
+  - arch_syscall();
+  operation_text: >
+    SYSCALL enters supervisor mode through the SPC/SCS/SDS supervisor-entry path. It writes a syscall stack frame containing
+    the saved control state and return PC, resets DBANK to zero, sets STATUS.PM, loads CS from SCS and DS from SDS, and
+    transfers control to SPC aligned to a 16-byte boundary.
 attributes:
   privilege: any
   serializing: true

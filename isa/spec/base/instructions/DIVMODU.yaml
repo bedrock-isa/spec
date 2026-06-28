@@ -13,25 +13,9 @@ behavior:
   input_output: quotient
   output: remainder
   operation:
-  - tmp_v = size_v;
-  - carry_v = 0;
-  - <divmodu_mask_loop>
-  - if (tmp_v == 0) goto <divmodu_mask_done>;
-  - carry_v = (carry_v << 8) | 0xff;
-  - tmp_v = tmp_v - 1;
-  - goto <divmodu_mask_loop>;
-  - <divmodu_mask_done>
-  - local lhs_v:8 = quotient_v & carry_v;
-  - local rhs_v:8 = src_v & carry_v;
-  - if (rhs_v != 0) goto <divmodu_execute>;
-  - arch_raise_divide_by_zero();
-  - goto <divmod_done>;
-  - <divmodu_execute>
-  - remainder_v = lhs_v % rhs_v;
-  - quotient_v = lhs_v / rhs_v;
-  - <divmod_done>
-attributes:
-  repeatable: true
+  - tmp_v = arch_unsigned_modulo(quotient_v, src_v, size_v);
+  - quotient_v = arch_unsigned_divide(quotient_v, src_v, size_v);
+  - remainder_v = tmp_v;
 allocation:
   catalog_section: integer
   layout_group: DIVMOD

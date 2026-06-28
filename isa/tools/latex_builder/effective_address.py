@@ -8,8 +8,15 @@ from .common import compact_text, readable_text, render_latex_template, tex_code
 from .diagrams import bit_diagram, bit_field_figure, bit_index_labels
 
 
+EA_FORM_TEXT_NEEDSPACE_IN = 2.35
+
+
 def is_immediate_form(form: dict[str, Any]) -> bool:
     return form.get("class") == "immediate" or str(form.get("name", "")).startswith("IMM")
+
+
+def is_compact_ea_escape(form: dict[str, Any]) -> bool:
+    return str(form.get("name", "")) in {"EXTENDED", "S32_INDEXED_EXTENDED"}
 
 
 def extended_ea_descriptor_layout(spec: dict[str, Any]) -> list[tuple[str, int]]:
@@ -89,7 +96,10 @@ def ea_table(spec: dict[str, Any]) -> str:
     ea_forms = spec.get("ea", {}).get("ea_forms", []) or []
     compact = ea_forms.get("compact", []) if isinstance(ea_forms, dict) else ea_forms
     for form in compact:
-        compact_entries.append((ea_manual_entry(spec, form), str(form.get("pattern", ""))))
+        entry = ea_manual_entry(spec, form)
+        if is_compact_ea_escape(entry):
+            continue
+        compact_entries.append((entry, str(form.get("pattern", ""))))
     for form in spec.get("ea", {}).get("extended_ea_forms", []) or []:
         entry = ea_manual_entry(spec, form)
         escape = str(form.get("escape", "EXTENDED"))
@@ -191,16 +201,19 @@ def ea_addressing_block(form: dict[str, Any], encoding: str, extended: bool) -> 
 
 
 def ea_block_needspace(form: dict[str, Any]) -> float:
-    name = str(form.get("name", ""))
-    if name in {"EXTENDED", "S32_INDEXED_EXTENDED"}:
-        return 2.1
-    if form.get("index"):
-        return 5.3
+    return EA_FORM_TEXT_NEEDSPACE_IN + ea_flow_needspace(form)
+
+
+def ea_flow_needspace(form: dict[str, Any]) -> float:
+    if is_compact_ea_escape(form):
+        return 0.0
     if form.get("register_class") or is_immediate_form(form):
-        return 3.6
+        return 1.55
+    if form.get("index"):
+        return 3.30
     if displacement_token(form.get("displacement", "")):
-        return 4.4
-    return 3.6
+        return 2.35
+    return 2.10
 
 
 def compact_ea_form_label(form: dict[str, Any]) -> str:
@@ -222,10 +235,6 @@ def compact_ea_form_label(form: dict[str, Any]) -> str:
         return "Absolute Memory" + absolute_suffix(form.get("absolute"))
     if is_immediate_form(form):
         return "Immediate Operand " + name.removeprefix("IMM")
-    if name == "EXTENDED":
-        return "Extended Effective Address Escape"
-    if name == "S32_INDEXED_EXTENDED":
-        return "Signed 32-bit Indexed Extended Effective Address Escape"
     return readable_text(name)
 
 
@@ -266,10 +275,6 @@ def ea_generation_text(form: dict[str, Any], extended: bool) -> str:
         return "operand = contents(SP)"
     if is_immediate_form(form):
         return "operand = immediate payload"
-    if name == "EXTENDED":
-        return "decode descriptor and selected extended EA payload"
-    if name == "S32_INDEXED_EXTENDED":
-        return "decode descriptor and sign-extend D-index low 32 bits before scaling"
     if form.get("absolute"):
         return "EA = absolute payload"
     base = str(form.get("base", ""))
@@ -302,22 +307,8 @@ def ea_form_description(form: dict[str, Any], extended: bool) -> str:
 
 
 def ea_flow_figure(form: dict[str, Any], title: str, extended: bool) -> str:
-    commands = ea_flow_commands(form, extended)
-    if not commands:
-        return ""
-    lines = [
-        r"\begin{center}\vspace{2pt}",
-        r"\begin{tikzpicture}[x=1in,y=1in,every node/.style={font=\scriptsize},>=stealth]",
-    ]
-    lines.extend(commands)
-    lines.extend(
-        [
-            r"\end{tikzpicture}",
-            rf"\manualcaption{{{tex_escape(ea_flow_caption(form, title))}}}",
-            r"\end{center}",
-        ]
-    )
-    return "\n".join(lines)
+    flow = ea_flow_macro_call(form, title, extended)
+    return flow + "\n" if flow else ""
 
 
 def ea_flow_caption(form: dict[str, Any], title: str) -> str:
@@ -326,308 +317,73 @@ def ea_flow_caption(form: dict[str, Any], title: str) -> str:
     return f"Address calculation for {title}"
 
 
-def prm_row_label(label: str, y: float, x_start: float = 1.55, x_end: float = 2.15) -> list[str]:
-    return [
-        rf"\node[anchor=west] at (0.02,{y:.2f}) {{{tex_escape(label)}}};",
-        rf"\draw ({x_start:.2f},{y:.2f}) -- ({x_end:.2f},{y:.2f});",
-    ]
+def latex_macro_call(name: str, *args: Any) -> str:
+    return "\\" + name + "".join("{" + tex_escape(arg) + "}" for arg in args)
 
 
-def prm_box(
-    name: str,
-    x: float,
-    y: float,
-    width: float,
-    label: str,
-    height: float = 0.26,
-    bits: bool = True,
-) -> list[str]:
-    out = [
-        rf"\node[draw,align=center,minimum width={width:.2f}in,minimum height={height:.2f}in] "
-        rf"({name}) at ({x:.2f},{y:.2f}) {{{tex_escape(label)}}};"
-    ]
-    if bits:
-        left = x - width / 2
-        right = x + width / 2
-        out.append(rf"\node[anchor=south] at ({left:.2f},{y + height / 2 + 0.03:.2f}) {{63}};")
-        out.append(rf"\node[anchor=south] at ({right:.2f},{y + height / 2 + 0.03:.2f}) {{0}};")
-    return out
-
-
-def prm_labeled_box(
-    row_label: str,
-    node_name: str,
-    y: float,
-    text: str,
-    x: float = 3.82,
-    width: float = 3.05,
-    bits: bool = True,
-) -> list[str]:
-    left = x - width / 2
-    return prm_row_label(row_label, y, x_end=left) + prm_box(node_name, x, y, width, text, bits=bits)
-
-
-def prm_circle(name: str, x: float, y: float, text: str) -> str:
-    return rf"\node[draw,circle,inner sep=0pt,minimum size=0.27in] ({name}) at ({x:.2f},{y:.2f}) {{{tex_escape(text)}}};"
-
-
-def prm_memory_tail(pointer_node: str = "ptr", memory_y: float = -1.62, x: float = 3.82, width: float = 3.10) -> list[str]:
-    return [
-        *prm_labeled_box("MEMORY", "mem", memory_y, "OPERAND", x=x, width=width, bits=False),
-        rf"\draw[->] ({pointer_node}.south) -- node[midway,right] {{POINTS TO}} (mem.north);",
-    ]
-
-
-def ea_uses_segment_stage(form: dict[str, Any]) -> bool:
-    return bool(form.get("segment_selectable") or form.get("fixed_segment"))
-
-
-def ea_segment_stage_label(form: dict[str, Any]) -> str:
-    fixed = form.get("fixed_segment")
-    if fixed:
-        return f"{fixed} CHECK / TRANSLATE"
-    return "CHECK / TRANSLATE"
-
-
-def direct_register_flow(form: dict[str, Any]) -> list[str]:
+def ea_register_source(form: dict[str, Any]) -> tuple[str, str]:
     reg_class = str(form.get("register_class"))
-    row = "DATA REGISTER" if reg_class == "D" else "ADDRESS REGISTER"
-    reg_name = "Dn" if reg_class == "D" else "An"
-    return [
-        *prm_labeled_box(row, "reg", 0.18, f"{reg_name} CONTENTS"),
-        *prm_labeled_box("OPERAND", "operand", -0.62, "REGISTER VALUE", x=3.82, width=3.05, bits=False),
-        r"\draw[->] (reg.south) -- (operand.north);",
-    ]
+    if reg_class == "D":
+        return "DATA REGISTER", "Dn CONTENTS"
+    if reg_class == "A":
+        return "ADDRESS REGISTER", "An CONTENTS"
+    if reg_class == "SP":
+        return "STACK POINTER", "SP CONTENTS"
+    return "REGISTER", f"{reg_class} CONTENTS"
 
 
-def immediate_flow() -> list[str]:
-    return [
-        *prm_labeled_box("IMMEDIATE DATA", "imm", 0.20, "PAYLOAD VALUE", x=3.82, width=3.05),
-        *prm_labeled_box("OPERAND", "operand", -0.62, "IMMEDIATE VALUE", x=3.82, width=3.05, bits=False),
-        r"\draw[->] (imm.south) -- (operand.north);",
-    ]
+def ea_base_source(form: dict[str, Any]) -> tuple[str, str]:
+    if form.get("absolute"):
+        return "ABSOLUTE ADDRESS", "ADDRESS PAYLOAD"
+    base = str(form.get("base", ""))
+    rows = {"A": "ADDRESS REGISTER", "SP": "STACK POINTER", "PC": "PROGRAM COUNTER"}
+    texts = {"A": "An CONTENTS", "PC": "PC", "SP": "SP CONTENTS"}
+    return rows.get(base, "BASE REGISTER"), texts.get(base, f"{base} CONTENTS")
 
 
-def extended_escape_flow() -> list[str]:
-    return [
-        *prm_labeled_box("EA FIELD", "escape", 0.42, "111111", x=2.92, width=0.82, bits=False),
-        *prm_labeled_box("DESCRIPTOR", "desc", -0.20, "MODE / SEGMENT / EXTRA", x=3.82, width=3.05, bits=False),
-        *prm_labeled_box("SELECTED FORM", "selected", -0.88, "EXTENDED EA MODE", x=3.82, width=3.05, bits=False),
-        r"\draw[->] (escape.south) -- (desc.north);",
-        r"\draw[->] (desc.south) -- (selected.north);",
-    ]
+def ea_index_text(form: dict[str, Any]) -> str:
+    if form.get("index_extension") == "signed32_to_64":
+        return "SIGN-EXTEND Dn[31:0]"
+    return "Dn CONTENTS"
 
 
-def simple_memory_flow(form: dict[str, Any]) -> list[str]:
-    commands = []
-    base = form.get("base")
-    absolute = form.get("absolute")
-    if absolute:
-        commands.extend(prm_labeled_box("ABSOLUTE ADDRESS", "src", 0.18, "ADDRESS PAYLOAD"))
-    else:
-        row = {"A": "ADDRESS REGISTER", "SP": "STACK POINTER", "PC": "PROGRAM COUNTER"}.get(str(base), "BASE REGISTER")
-        text = {"PC": "PC", "SP": "SP CONTENTS"}.get(str(base), f"{base}n CONTENTS")
-        commands.extend(prm_labeled_box(row, "src", 0.18, text))
-    if ea_uses_segment_stage(form):
-        commands.extend(prm_labeled_box("SEGMENT", "seg", -0.62, ea_segment_stage_label(form), x=3.82, width=3.05, bits=False))
-        commands.extend(prm_labeled_box("OPERAND POINTER", "ptr", -1.32, "LINEAR ADDRESS", x=3.82, width=3.05))
-        commands.extend(
-            [
-                r"\draw[->] (src.south) -- (seg.north);",
-                r"\draw[->] (seg.south) -- (ptr.north);",
-                *prm_memory_tail("ptr", -2.10),
-            ]
-        )
-        return commands
-    commands.extend(prm_labeled_box("OPERAND POINTER", "ptr", -0.64, "EFFECTIVE ADDRESS", x=3.82, width=3.05))
-    commands.extend(
-        [
-            r"\draw[->] (src.south) -- (ptr.north);",
-            *prm_memory_tail("ptr", -1.42),
-        ]
-    )
-    return commands
-
-
-def additive_memory_flow(form: dict[str, Any]) -> list[str]:
-    commands = []
-    base = form.get("base")
-    row = {"A": "ADDRESS REGISTER", "SP": "STACK POINTER", "PC": "PROGRAM COUNTER"}.get(str(base), "BASE REGISTER")
-    text = {"PC": "PC", "SP": "SP CONTENTS"}.get(str(base), f"{base}n CONTENTS")
-    disp = displacement_token(form.get("displacement", ""))
-    add_x = 4.62
-    commands.extend(prm_labeled_box(row, "base", 0.72, text, x=add_x, width=2.25))
-    commands.extend(prm_labeled_box("DISPLACEMENT", "disp", -0.10, f"SIGN-EXTENDED {disp}", x=3.20, width=2.05))
-    commands.append(prm_circle("add", add_x, -0.10, "+"))
-    commands.extend(
-        [
-            r"\draw[->] (base.south) -- (add.north);",
-            r"\draw[->] (disp.east) -- (add.west);",
-        ]
-    )
-    if ea_uses_segment_stage(form):
-        commands.extend(prm_labeled_box("SEGMENT", "seg", -0.86, ea_segment_stage_label(form), x=add_x, width=2.25, bits=False))
-        commands.extend(prm_labeled_box("OPERAND POINTER", "ptr", -1.56, "LINEAR ADDRESS", x=add_x, width=2.25))
-        commands.extend(
-            [
-                r"\draw[->] (add.south) -- (seg.north);",
-                r"\draw[->] (seg.south) -- (ptr.north);",
-                *prm_memory_tail("ptr", -2.34, x=add_x, width=2.25),
-            ]
-        )
-        return commands
-    commands.extend(prm_labeled_box("OPERAND POINTER", "ptr", -0.94, "EFFECTIVE ADDRESS", x=add_x, width=2.25))
-    commands.extend(
-        [
-            r"\draw[->] (add.south) -- (ptr.north);",
-            *prm_memory_tail("ptr", -1.72, x=add_x, width=2.25),
-        ]
-    )
-    return commands
-
-
-def indexed_memory_flow(form: dict[str, Any]) -> list[str]:
-    commands = []
-    base = form.get("base")
-    disp = displacement_token(form.get("displacement", ""))
-    add_x = 4.48
-    mul_x = 3.42
-    row = {"A": "ADDRESS REGISTER", "SP": "STACK POINTER", "PC": "PROGRAM COUNTER"}.get(str(base), "BASE REGISTER")
-    text = {"A": "An CONTENTS", "PC": "PC", "SP": "SP CONTENTS"}.get(str(base), f"{base} CONTENTS")
-    commands.extend(prm_labeled_box(row, "base", 0.92, text, x=add_x, width=2.38))
-    if disp:
-        commands.extend(prm_labeled_box("DISPLACEMENT", "disp", 0.22, f"SIGN-EXTENDED {disp}", x=3.22, width=2.15))
-    index_label = "SIGN-EXTEND Dn[31:0]" if form.get("index_extension") == "signed32_to_64" else "Dn CONTENTS"
-    commands.extend(prm_labeled_box("INDEX REGISTER", "idx", -0.48, index_label, x=mul_x, width=1.85))
-    commands.extend(prm_labeled_box("SCALE", "scale", -1.18, "SCALE VALUE", x=2.48, width=1.35, bits=False))
-    commands.append(prm_circle("mul", mul_x, -1.18, "x"))
-    commands.append(prm_circle("add_index", add_x, -1.18, "+"))
-    if disp:
-        commands.append(prm_circle("add_base", add_x, 0.22, "+"))
-        commands.extend(
-            [
-                r"\draw[->] (base.south) -- (add_base.north);",
-                r"\draw[->] (disp.east) -- (add_base.west);",
-                r"\draw[->] (add_base.south) -- (add_index.north);",
-            ]
-        )
-    else:
-        commands.append(r"\draw[->] (base.south) -- (add_index.north);")
-    commands.extend(
-        [
-            r"\draw[->] (idx.south) -- (mul.north);",
-            r"\draw[->] (scale.east) -- (mul.west);",
-            r"\draw[->] (mul.east) -- (add_index.west);",
-        ]
-    )
-    if ea_uses_segment_stage(form):
-        commands.extend(prm_labeled_box("SEGMENT", "seg", -1.52, ea_segment_stage_label(form), x=add_x, width=2.38, bits=False))
-        commands.extend(prm_labeled_box("OPERAND POINTER", "ptr", -2.22, "LINEAR ADDRESS", x=add_x, width=2.38))
-        commands.extend(
-            [
-                r"\draw[->] (add_index.south) -- (seg.north);",
-                r"\draw[->] (seg.south) -- (ptr.north);",
-                *prm_memory_tail("ptr", -3.00, x=add_x, width=2.38),
-            ]
-        )
-        return commands
-    commands.extend(prm_labeled_box("OPERAND POINTER", "ptr", -1.62, "EFFECTIVE ADDRESS", x=add_x, width=2.38))
-    commands.extend(
-        [
-            r"\draw[->] (add_index.south) -- (ptr.north);",
-            *prm_memory_tail("ptr", -2.40, x=add_x, width=2.38),
-        ]
-    )
-    return commands
-
-
-def ea_flow_commands(form: dict[str, Any], extended: bool) -> list[str]:
-    name = str(form.get("name", ""))
+def ea_flow_macro_call(form: dict[str, Any], title: str, extended: bool) -> str:
+    if is_compact_ea_escape(form):
+        return ""
+    caption = ea_flow_caption(form, title)
     if form.get("register_class"):
-        return direct_register_flow(form)
+        row, source = ea_register_source(form)
+        return latex_macro_call("manualeadirectflow", caption, row, source, "REGISTER VALUE")
     if is_immediate_form(form):
-        return immediate_flow()
-    if name in {"EXTENDED", "S32_INDEXED_EXTENDED"}:
-        return []
-    if form.get("index"):
-        return indexed_memory_flow(form)
-    if displacement_token(form.get("displacement", "")):
-        return additive_memory_flow(form)
-    return simple_memory_flow(form)
-
-
-def ea_address_terms(form: dict[str, Any]) -> list[tuple[list[str], str]]:
-    terms: list[tuple[list[str], str]] = []
-    if form.get("absolute"):
-        terms.append((["absolute", "payload"], "absolute"))
-        return terms
-    base = form.get("base")
-    if base:
-        terms.append(([register_value_text(base)], "base"))
-    if form.get("index"):
-        terms.append((["Dn * scale", "index term"], "index"))
+        return latex_macro_call("manualeaimmediateflow", caption, "PAYLOAD VALUE", "IMMEDIATE VALUE")
+    row, source = ea_base_source(form)
     disp = displacement_token(form.get("displacement", ""))
-    if disp:
-        terms.append(([disp, "payload"], "disp"))
-    return terms
-
-
-def needs_add_node(form: dict[str, Any]) -> bool:
-    if form.get("absolute"):
-        return False
-    count = 0
-    if form.get("base"):
-        count += 1
     if form.get("index"):
-        count += 1
-    if displacement_token(form.get("displacement", "")):
-        count += 1
-    return count >= 2
-
-
-def source_y_positions(count: int) -> list[float]:
-    if count <= 1:
-        return [0.0]
-    if count == 2:
-        return [0.42, -0.42]
-    if count == 3:
-        return [0.68, 0.0, -0.68]
-    return [0.86, 0.29, -0.29, -0.86]
-
-
-def ea_flow_steps(form: dict[str, Any], extended: bool) -> list[str]:
-    name = str(form.get("name", ""))
-    disp = displacement_token(form.get("displacement", ""))
-    if form.get("register_class") == "D":
-        return ["EA[2:0]", "Dn", "operand"]
-    if form.get("register_class") == "A":
-        return ["EA[2:0]", "An", "operand"]
-    if is_immediate_form(form):
-        return ["payload", "immediate", "operand"]
-    if name == "EXTENDED":
-        return ["EA=111111", "descriptor", "extended EA"]
-    if name == "S32_INDEXED_EXTENDED":
-        return ["EA=111110", "descriptor", "signed 32-bit indexed extended EA"]
-    if form.get("absolute"):
-        steps = ["absolute payload"]
-        if ea_uses_segment_stage(form):
-            steps.append(str(form.get("fixed_segment") or "segment"))
-        steps.append("memory operand")
-        return steps
-    steps = []
-    base = form.get("base")
-    if base:
-        steps.append(register_value_text(base))
-    if form.get("index"):
-        steps.append("sign_extend(Dn[31:0]) * scale" if form.get("index_extension") == "signed32_to_64" else "Dn * scale")
+        return latex_macro_call(
+            "manualeaindexedmemoryflow",
+            caption,
+            row,
+            source,
+            f"SIGN-EXTENDED {disp}" if disp else "",
+            ea_index_text(form),
+            "EFFECTIVE ADDRESS",
+        )
     if disp:
-        steps.append(disp)
-    if len(steps) > 1:
-        steps.append("sum")
-    if ea_uses_segment_stage(form):
-        steps.append(str(form.get("fixed_segment") or "segment"))
-    steps.append("memory operand")
-    return steps
+        return latex_macro_call(
+            "manualeaadditivememoryflow",
+            caption,
+            row,
+            source,
+            f"SIGN-EXTENDED {disp}",
+            "EFFECTIVE ADDRESS",
+        )
+    return latex_macro_call(
+        "manualeasimplememoryflow",
+        caption,
+        row,
+        source,
+        "EFFECTIVE ADDRESS",
+    )
 
 
 def extended_ea_syntax_cell(form: dict[str, Any]) -> str:

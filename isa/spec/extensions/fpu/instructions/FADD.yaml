@@ -13,7 +13,6 @@ behavior:
   operation:
   - dst_v = dst_v f+ src_v;
 attributes:
-  repeatable: true
   streaming_candidate: true
   fp_flags:
     update:

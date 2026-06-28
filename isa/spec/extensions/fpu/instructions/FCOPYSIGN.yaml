@@ -19,7 +19,6 @@ behavior:
   - dst_v = (magnitude_src_v & 0x7fffffffffffffff) | (sign_src_v & 0x8000000000000000);
   - <fcopysign_done>
 attributes:
-  repeatable: true
   fp_flags: unchanged
 allocation:
   catalog_section: fpu

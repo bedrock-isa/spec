@@ -31,8 +31,6 @@ behavior:
     N: most significant result bit
     C: last bit shifted out, or zero for count greater than operand width
     V: signed source value multiplied by 2^count is not representable in the operand width
-attributes:
-  repeatable: true
 allocation:
   catalog_section: integer
   layout_group: SHIFTS

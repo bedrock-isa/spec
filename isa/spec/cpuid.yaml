@@ -229,28 +229,30 @@ cpuid:
           name: SAVE_AREA_LAYOUT
           summary: Processor-state save area layout.
           description: >
-            SAVE and RESTORE use a fixed 0x100-byte base save area followed by
-            CPUID-described extension component slots. The base area contains a
-            base save-slot valid bitmap, bank-0 D registers, A registers, and
-            GS segment registers. PC, SP, CS, DS, SS, FLAGS, STATUS, and the
-            current DBANK selector are carried by the architectural
-            exception/syscall stack frame and are not duplicated in the SAVE
-            area. The save-area base address must be 4 KiB aligned.
+            SAVE and RESTORE use a fixed 0x0c0-byte base save area followed by
+            CPUID-described 64-byte-aligned extension component slots. The base
+            area contains base header fields, a state-block bitmap, bank-0 D
+            registers, A registers, and GS segment registers. FLAGS, STATUS,
+            and the current DBANK selector are packed into the base header
+            fields. PC, SP, CS, DS, and SS are carried by architectural control
+            transfers or supervisor-entry stack frames and are not duplicated in
+            the SAVE area. The save-area base address must be 4 KiB aligned.
             Extension component slots are described by numeric byte offsets and
             may include additional data-register banks and extension-owned
             architectural state. The first extension
-            component begins no earlier than SAVE_HEADER_SIZE, 0x100 for the
+            component begins no earlier than SAVE_HEADER_SIZE, 0x0c0 for the
             base profile. CPUID component descriptor index order is the
             architectural extension-component order; component offsets must be
-            strictly increasing in that order.
-            Each extension component begins with a component-defined,
-            component-local validity bitmap for the state slots inside that
-            component. The memory image does not contain a per-component size
-            table. SAVE may skip architecturally clean components, using an
-            XSAVEOPT-like policy across both base and extension state. There is
-            no architectural upper bound on SAVE_AREA_SIZE; software must
-            allocate the maximum save area size reported by this leaf for the
-            selected implementation/profile.
+            strictly increasing in that order and must be 64-byte aligned. The
+            fixed state-block bitmap at offset 0x008 uses bit i for descriptor
+            index 2+i, so SAVE_COMPONENT_COUNT must be no larger than 64.
+            Each extension component begins with component-defined header
+            fields for the state inside that component. The memory image does
+            not contain a per-component size table. SAVE may skip
+            architecturally clean components, using an XSAVEOPT-like policy
+            for extension state blocks. There is no architectural upper bound
+            on SAVE_AREA_SIZE; software must allocate the maximum save area
+            size reported by this leaf for the selected implementation/profile.
           results:
             - index: 0
               description: save area size requirement
@@ -259,24 +261,24 @@ cpuid:
             - index: 1
               description: save area fixed-header and state-component metadata
               bits:
-                - {range: [0, 15], name: SAVE_HEADER_SIZE, description: bytes occupied by the fixed base save area; base Bedrock reports 0x100}
-                - {range: [16, 31], name: SAVE_COMPONENT_COUNT, description: "number of CPUID-described extension components after the fixed base area, in canonical descriptor order"}
-                - {range: [32, 47], name: SAVE_BITMAP_WORDS, description: number of 64-bit fixed-base validity bitmap words; base Bedrock uses one word at offset 0x000}
+                - {range: [0, 15], name: SAVE_HEADER_SIZE, description: bytes occupied by the fixed base save area; base Bedrock reports 0x0c0}
+                - {range: [16, 31], name: SAVE_COMPONENT_COUNT, description: "number of CPUID-described extension components after the fixed base area, in canonical descriptor order; must be no larger than 64"}
+                - {range: [32, 47], name: SAVE_BITMAP_WORDS, description: number of 64-bit state-block bitmap words in the fixed base area; base Bedrock uses one word at offset 0x008}
                 - {range: [48, 63], name: reserved, description: "reserved, reads as zero"}
             - index: 2..n
               description: save component descriptor
               bits:
                 - {range: [0, 15], name: COMPONENT_ID, description: save component identifier}
                 - {range: [16, 31], name: COMPONENT_FLAGS, description: component property flags}
-                - {range: [32, 63], name: COMPONENT_OFFSET, description: byte offset of the component slot in the CPUID-defined save area}
+                - {range: [32, 63], name: COMPONENT_OFFSET, description: 64-byte-aligned byte offset of the component slot in the CPUID-defined save area}
               extraction: >
                 Component descriptors are indexed from 2 upward. Descriptor
                 index order is the architectural extension-component order, and
                 COMPONENT_OFFSET values must be strictly increasing in that
-                order. Offsets are numeric byte offsets from the save-area base;
-                the save image itself does not contain a variable component
-                table. Each extension component begins with a component-defined,
-                component-local validity bitmap.
+                order. Offsets are 64-byte-aligned numeric byte offsets from
+                the save-area base; the save image itself does not contain a
+                variable component table. Each extension component begins with
+                component-defined header fields.
                 Known base-defined extension component identifiers include
                 additional data-register banks. Optional extensions define
                 their own state component identifiers.

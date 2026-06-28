@@ -28,7 +28,6 @@ behavior:
   - result_v = popcount(tmp_v);
   - ZF = result_v & 1;
 attributes:
-  repeatable: true
   flags:
     Z: population_count(src) & 1
     N: unchanged

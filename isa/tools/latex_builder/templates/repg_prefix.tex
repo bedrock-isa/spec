@@ -1,5 +1,5 @@
 \subsection{Grouped Repeat Prefix REPG}
-REPG repeats an ENDG-terminated block of eligible instructions with a D-register
+REPG repeats an ENDG-terminated block of instructions with a D-register
 counter. The first grouped instruction carries the REPG prefix byte; the final
 grouped instruction carries the ENDG prefix byte. Instructions between those
 endpoints are ordinary instruction records with their own word 0 length fields.
@@ -67,7 +67,7 @@ The group index is not saved. If the handler returns without editing the frame,
 IRET resumes at the saved PC under the active REPG continuation and then
 proceeds through the rest of the group.
 
-\paragraph{Legality.}
+\paragraph{Group Model.}
 A REPG group is intended to be straight-line code. Branches, calls, returns,
 traps, system-call returns, interrupt returns, atomics, stack operations,
 nested repeat prefixes, and state-mutating system, TLB, cache, or fence
@@ -88,8 +88,7 @@ Fast-contract syntax & source may use \texttt{REPGF Dn,} followed by a braced in
 Condition selector & none\\
 Counter & D register\\
 Group termination & ENDG prefix on the final grouped instruction\\
-Eligible instructions & repeatable operations allowed by the instruction metadata\\
-Streaming candidate marker & REPG-fast candidate when the group satisfies the fast rules\\
+Fast-contract marker & REPG-fast candidate when the group satisfies the fast rules\\
 Grouping window & grouped instruction bytes must fit in one naturally aligned 64-byte window\\
 Commit rule & completed iterations and completed prior group instructions commit\\
 Fault continuation & saved PC is the faulting grouped instruction; group-start delta is a 5-bit negative word displacement; no group index is saved\\

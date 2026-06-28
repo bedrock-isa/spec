@@ -17,8 +17,9 @@ behavior:
   - NF = result_v s< 0;
   - CF = dst_v < src_v;
   - VF = sborrow(dst_v, src_v);
+  repeat_observed_value: rhs_minus_lhs
+  repflags: flags_sub_rhs_lhs
 attributes:
-  repeatable: true
   streaming_candidate: true
   flags:
     Z: result == 0

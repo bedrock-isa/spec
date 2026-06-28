@@ -11,21 +11,7 @@ behavior:
   - src
   input_output: dst
   operation:
-  - local width_v:8 = size_v << 3;
-  - tmp_v = size_v;
-  - carry_v = 0;
-  - <mulhu_mask_loop>
-  - if (tmp_v == 0) goto <mulhu_mask_done>;
-  - carry_v = (carry_v << 8) | 0xff;
-  - tmp_v = tmp_v - 1;
-  - goto <mulhu_mask_loop>;
-  - <mulhu_mask_done>
-  - local lhs_v:8 = dst_v & carry_v;
-  - local rhs_v:8 = src_v & carry_v;
-  - local product_v:16 = zext(lhs_v) * zext(rhs_v);
-  - dst_v = product_v >> width_v;
-attributes:
-  repeatable: true
+  - dst_v = arch_unsigned_multiply_high(dst_v, src_v, size_v);
 allocation:
   catalog_section: integer
   layout_group: MULTIPLY_HIGH

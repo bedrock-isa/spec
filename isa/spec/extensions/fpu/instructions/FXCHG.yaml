@@ -15,7 +15,6 @@ behavior:
   - lhs_v = rhs_v;
   - rhs_v = tmp_v;
 attributes:
-  repeatable: true
   fp_flags: unchanged
 allocation:
   catalog_section: fpu

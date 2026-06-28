@@ -11,31 +11,7 @@ behavior:
   - src
   input_output: dst
   operation:
-  - local count_v:8 = size_v << 3;
-  - tmp_v = size_v;
-  - carry_v = 0;
-  - <clmul_mask_loop>
-  - if (tmp_v == 0) goto <clmul_mask_done>;
-  - carry_v = (carry_v << 8) | 0xff;
-  - tmp_v = tmp_v - 1;
-  - goto <clmul_mask_loop>;
-  - <clmul_mask_done>
-  - local multiplicand_v:8 = dst_v & carry_v;
-  - borrow_v = src_v & carry_v;
-  - result_v = 0;
-  - <clmul_loop>
-  - if (count_v == 0) goto <clmul_done>;
-  - if ((borrow_v & 1) == 0) goto <clmul_skip_xor>;
-  - result_v = result_v ^ multiplicand_v;
-  - <clmul_skip_xor>
-  - multiplicand_v = multiplicand_v << 1;
-  - borrow_v = borrow_v >> 1;
-  - count_v = count_v - 1;
-  - goto <clmul_loop>;
-  - <clmul_done>
-  - dst_v = result_v & carry_v;
-attributes:
-  repeatable: true
+  - dst_v = arch_carryless_multiply_low(dst_v, src_v, size_v);
 allocation:
   catalog_section: integer
   layout_group: CARRYLESS_MULTIPLY

@@ -3,38 +3,18 @@ instructions place operand fields directly in this primary payload when the fiel
 instructions use a primary root and a following descriptor/opcode word, with more payload words added only
 when needed.
 
-\Needspace{2.15in}
-\begin{center}\vspace{3pt}
-\begin{tikzpicture}[x=0.300in,y=0.22in,every node/.style={font=\scriptsize}]
-\node[anchor=east] at (-0.35,0.50) {primary};
-\node[anchor=south] at (0,1.18) {15};
-\node[anchor=south] at (16,1.18) {0};
-\draw[LightRule] (4,-0.00) -- (4,1.00);
-\draw[LightRule] (8,-0.00) -- (8,1.00);
-\draw[LightRule] (12,-0.00) -- (12,1.00);
-\draw (0,-0.00) rectangle (4,1.00);
-\node at (2.00,0.50) {\texttt{----}};
-\draw (4,-0.00) rectangle (16,1.00);
-\node at (10.00,0.50) {\texttt{p}};
-\node[anchor=east] at (-0.35,-1.58) {descriptor};
-\node[anchor=south] at (0,-0.90) {15};
-\node[anchor=south] at (16,-0.90) {0};
-\draw[LightRule] (4,-2.08) -- (4,-1.08);
-\draw[LightRule] (8,-2.08) -- (8,-1.08);
-\draw[LightRule] (12,-2.08) -- (12,-1.08);
-\draw (0,-2.08) rectangle (16,-1.08);
-\node at (8.00,-1.58) {\texttt{s}};
-\node[anchor=east] at (-0.35,-3.66) {payload};
-\node[anchor=south] at (0,-2.98) {15};
-\node[anchor=south] at (16,-2.98) {0};
-\draw[LightRule] (4,-4.16) -- (4,-3.16);
-\draw[LightRule] (8,-4.16) -- (8,-3.16);
-\draw[LightRule] (12,-4.16) -- (12,-3.16);
-\draw (0,-4.16) rectangle (16,-3.16);
-\node at (8.00,-3.66) {\texttt{x}};
-\end{tikzpicture}
-\manualfigurecaption{Instruction Word Format Families}
-\end{center}
+\begin{manuallistedbitdiagram}{Instruction Word Format Families}
+\manualbitrow{primary}{%
+\manualbitfieldcode{----}{4}
+\manualbitfieldcode{p}{12}
+}
+\manualbitrow{descriptor}{%
+\manualbitfieldcode{s}{16}
+}
+\manualbitrow{payload}{%
+\manualbitfieldcode{x}{16}
+}
+\end{manuallistedbitdiagram}
 
 
 @REPRESENTATIVE_ENCODINGS@

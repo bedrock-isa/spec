@@ -33,7 +33,6 @@ behavior:
   - dst_v = popcount(borrow_v - 1);
   - <ctz_done>
 attributes:
-  repeatable: true
   flags: unchanged
 allocation:
   catalog_section: integer

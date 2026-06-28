@@ -27,8 +27,6 @@ behavior:
   interval: '[lo, hi]'
   signedness: signed
   bounds_mode: II
-attributes:
-  repeatable: true
 allocation:
   catalog_section: integer
   layout_group: BOUNDS_SIGNED

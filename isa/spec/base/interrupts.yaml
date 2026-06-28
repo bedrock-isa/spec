@@ -9,11 +9,11 @@ privileged_programming_model:
     - topic: supervisor entry DBANK normalization
       rule: SYSCALL, trap, interrupt, and exception entry save the interrupted DBANK selector and then set DBANK=0 before fetching the handler
     - topic: SYSCALL frame and entry
-      rule: SYSCALL saves SS:SP, CS:PC, DS, FLAGS/STATUS, and DBANK, then sets DBANK=0 and uses a 32-byte supervisor-entry table with 16-byte entry-address alignment
+      rule: SYSCALL saves FRAME_CONTROL, SS:SP, CS:PC, and DS, then sets DBANK=0 and uses a 32-byte supervisor-entry table with 16-byte entry-address alignment
     - topic: return instruction split
       rule: SYSRET is only for SYSCALL return; IRET is for interrupt, trap, and exception return
     - topic: IRET restore policy
-      rule: IRET restores all saved interrupt-frame state and does not validate FRAME_INFO.frame_type
+      rule: IRET restores all saved interrupt-frame state and does not validate FRAME_CONTROL.frame_type
     - topic: malformed return frames
       rule: malformed frames are software errors and do not raise a separate architectural exception
     - topic: NMI and double-fault stacks
@@ -44,7 +44,7 @@ privileged_programming_model:
     frame_style: expanded long-call frame
     entry_table_size_bytes: 32
     entry_address_alignment_bytes: 16
-    saved_state: [SS:SP, CS:PC, DS, FLAGS_STATUS, DBANK]
+    saved_state: [FRAME_CONTROL, SS:SP, CS:PC, DS]
     status_change: set STATUS.PM to 1 only
     dbank_change: save interrupted DBANK selector and set DBANK to 0
     return_instruction: SYSRET
@@ -86,7 +86,7 @@ exception_processing:
   reserved_cpu_vector_behavior: reserved CPU vectors have no frame type; attempted delivery immediately becomes DOUBLE_FAULT
   status_on_return: restore saved STATUS image verbatim
   malformed_return_frame: software error; no separate architectural exception
-  iret_frame_type_check: none; IRET does not validate FRAME_INFO.frame_type
+  iret_frame_type_check: none; IRET does not validate FRAME_CONTROL.frame_type
   fault_priority:
     - privilege fault
     - page fault
@@ -289,23 +289,29 @@ supervisor_stack_frame:
   slot_size_bytes: 8
   base_size_bytes: 64
   frame_size_unit_bytes: 8
+  payload_block_size_bytes: 64
+  payload_block_rule: >
+    Optional payload is appended after the fixed frame in whole 64-byte
+    blocks. Unused bytes in an allocated payload block are reserved and must
+    be zero.
   description: >
     Supervisor entry records interrupted state in fixed 64-bit slots.
     Offsets are measured from the base of the saved frame. The fixed frame
-    contains FRAME_INFO, the interrupted DBANK selector, FLAGS/STATUS state,
-    and the saved control registers. Exception-specific error and fault
-    payload slots are appended after the fixed frame according to the
-    FRAME_INFO frame type code.
+    contains FRAME_CONTROL, two reserved extension slots, and the saved
+    control registers. FRAME_CONTROL packs the frame metadata, interrupted
+    DBANK selector, FLAGS image, and STATUS image. Exception-specific error
+    and fault payload slots are appended after the fixed frame according to
+    the FRAME_CONTROL frame type code.
   layout:
     - offset: 0x00
-      name: FRAME_INFO
-      description: frame metadata and entry flags
+      name: FRAME_CONTROL
+      description: frame metadata, entry flags, saved DBANK, saved FLAGS, and saved STATUS
     - offset: 0x08
-      name: SAVED_DBANK
-      description: saved interrupted DBANK selector in bits 3..0; bits 63..4 are reserved, must be zero
+      name: FRAME_EXT0
+      description: reserved for future architected base-frame state, must be zero
     - offset: 0x10
-      name: FLAGS_STATUS
-      description: saved FLAGS and STATUS state
+      name: FRAME_EXT1
+      description: reserved for future architected base-frame state, must be zero
     - offset: 0x18
       name: SAVED_PC
       description: saved program counter
@@ -323,16 +329,20 @@ supervisor_stack_frame:
       description: saved stack segment selector
   payload_slots:
     ERROR_CODE:
+      offset: 0x00
       description: exception-specific error code
     FAULT_EA:
+      offset: 0x08
       description: faulting effective-address operand information
     FAULT_LINEAR:
+      offset: 0x10
       description: faulting linear address
     FAULT_AUX:
+      offset: 0x18
       description: auxiliary fault information
   repeat_fault_aux:
     description: >
-      FAULT_AUX layout used when FRAME_INFO.rep_fault is set. Ordinary REP and
+      FAULT_AUX layout used when FRAME_CONTROL.rep_fault is set. Ordinary REP and
       REPcc faults use the same counter-register field and set
       group_start_delta_words to zero. REPG-general and REPG-fast faults
       additionally encode the group-start location as a small negative
@@ -375,20 +385,24 @@ supervisor_stack_frame:
     - code: 0x0
       name: BASIC
       payload: []
+      payload_blocks: 0
       description: fixed frame only
     - code: 0x1
       name: ERROR
       payload: [ERROR_CODE]
-      description: fixed frame plus exception error code
+      payload_blocks: 1
+      description: fixed frame plus one 64-byte payload block containing the exception error code
     - code: 0x2
       name: PAGE_FAULT
       payload: [ERROR_CODE, FAULT_EA, FAULT_LINEAR]
-      description: fixed frame plus page-fault code, effective-address context, and linear address
+      payload_blocks: 1
+      description: fixed frame plus one 64-byte payload block containing page-fault code, effective-address context, and linear address
     - code: 0x3
       name: AUX_FAULT
       payload: [ERROR_CODE, FAULT_EA, FAULT_LINEAR, FAULT_AUX]
-      description: fixed frame plus full auxiliary fault context
-  frame_info:
+      payload_blocks: 1
+      description: fixed frame plus one 64-byte payload block containing full auxiliary fault context
+  frame_control:
     vector:
       bits: [0, 7]
       description: interrupt, exception, or trap vector number
@@ -410,9 +424,18 @@ supervisor_stack_frame:
     rep_fault:
       bit: 26
       description: fault occurred during REP, REPcc, or REPG repeated execution
+    saved_dbank:
+      bits: [27, 30]
+      description: saved interrupted DBANK selector
     reserved:
-      bits: [27, 63]
+      bit: 31
       description: reserved, must be zero
+    flags:
+      bits: [32, 47]
+      description: saved FLAGS image
+    status:
+      bits: [48, 63]
+      description: saved STATUS image
 reset_state:
   ICR: 0
   ICR.IVT_VALID: 0

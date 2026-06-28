@@ -11,50 +11,7 @@ behavior:
   - src
   input_output: dst
   operation:
-  - local count_v:8 = size_v << 3;
-  - tmp_v = size_v;
-  - carry_v = 0;
-  - <clmulh_mask_loop>
-  - if (tmp_v == 0) goto <clmulh_mask_done>;
-  - carry_v = (carry_v << 8) | 0xff;
-  - tmp_v = tmp_v - 1;
-  - goto <clmulh_mask_loop>;
-  - <clmulh_mask_done>
-  - local multiplicand_lo_v:8 = dst_v & carry_v;
-  - local multiplicand_hi_v:8 = 0;
-  - local high_v:8 = 0;
-  - local shifted_carry_v:8 = 0;
-  - borrow_v = src_v & carry_v;
-  - result_v = 0;
-  - <clmulh_loop>
-  - if (count_v == 0) goto <clmulh_select>;
-  - if ((borrow_v & 1) == 0) goto <clmulh_skip_xor>;
-  - result_v = result_v ^ multiplicand_lo_v;
-  - high_v = high_v ^ multiplicand_hi_v;
-  - <clmulh_skip_xor>
-  - shifted_carry_v = (multiplicand_lo_v >> 63) & 1;
-  - multiplicand_lo_v = multiplicand_lo_v << 1;
-  - multiplicand_hi_v = (multiplicand_hi_v << 1) | shifted_carry_v;
-  - borrow_v = borrow_v >> 1;
-  - count_v = count_v - 1;
-  - goto <clmulh_loop>;
-  - <clmulh_select>
-  - if (size_v != 8) goto <clmulh_not_q>;
-  - dst_v = high_v;
-  - goto <clmulh_done>;
-  - <clmulh_not_q>
-  - if (size_v != 4) goto <clmulh_not_l>;
-  - dst_v = result_v >> 32;
-  - goto <clmulh_done>;
-  - <clmulh_not_l>
-  - if (size_v != 2) goto <clmulh_b>;
-  - dst_v = result_v >> 16;
-  - goto <clmulh_done>;
-  - <clmulh_b>
-  - dst_v = result_v >> 8;
-  - <clmulh_done>
-attributes:
-  repeatable: true
+  - dst_v = arch_carryless_multiply_high(dst_v, src_v, size_v);
 allocation:
   catalog_section: integer
   layout_group: CARRYLESS_MULTIPLY

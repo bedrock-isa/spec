@@ -88,8 +88,8 @@ form can stop when a converted value matches the selected condition.
 \begin{quote}
 \begingroup\small\ttfamily
 \begin{tabular}{@{}l@{}}
-; D0 = -n, A0 = byte source + n, A1 = long destination + 4*n\\
-REP D0, EXTZL.B [A0 + D0 * 1], [A1 + D0 * 4]\\
+; D0 = n, A0 = byte source, A1 = long destination\\
+REP D0, EXTZL.B [A0++], [A1++]\\
 \end{tabular}
 \endgroup
 \end{quote}

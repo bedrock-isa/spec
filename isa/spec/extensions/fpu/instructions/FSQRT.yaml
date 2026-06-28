@@ -12,7 +12,6 @@ behavior:
   operation:
   - dst_v = sqrt(src_v);
 attributes:
-  repeatable: true
   fp_flags:
     update_when_required:
     - NV
