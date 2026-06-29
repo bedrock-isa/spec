@@ -2,7 +2,6 @@ mnemonic: DJcc
 doc:
   title: Decrement And Jump Conditional
   summary: Performs the decrement and jump conditional operation.
-  description: Performs the decrement and jump conditional operation.
   instruction_family: control_flow
   instruction_class: control_flow
 behavior:
@@ -17,13 +16,6 @@ behavior:
   - if (cc_v == 0) goto <djcc_done>;
   - goto [target_v];
   - <djcc_done>
-  long_transfer_operands: LJMP/LCALL take the new CS image from Dn and the target PC value/address from EA
-  atomic_cs_pc_commit:
-  - LJMP
-  - LCALL
-  - LRET
-  - SYSRET
-  - IRET
 allocation:
   catalog_section: compact_primary
 forms:

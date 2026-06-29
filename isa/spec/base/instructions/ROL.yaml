@@ -2,7 +2,6 @@ mnemonic: ROL
 doc:
   title: Rotate Left
   summary: Performs the rotate left operation.
-  description: Performs the rotate left operation.
   instruction_family: integer_bitfield
   instruction_class: integer
 behavior:

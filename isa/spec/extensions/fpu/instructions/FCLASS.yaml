@@ -2,7 +2,6 @@ mnemonic: FCLASS
 doc:
   title: Floating-Point Classify
   summary: Performs the floating-point classify operation.
-  description: Performs the floating-point classify operation.
   instruction_family: fpu
   instruction_class: fpu
 behavior:

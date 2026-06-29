@@ -2,7 +2,6 @@ mnemonic: CALL
 doc:
   title: Call
   summary: Performs the call operation.
-  description: Performs the call operation.
   instruction_family: control_flow
   instruction_class: control_flow
 behavior:
@@ -15,13 +14,6 @@ behavior:
   - SP = SP - 8;
   - '*:8 SP = return_pc_v;'
   - call [target_v];
-  long_transfer_operands: LJMP/LCALL take the new CS image from Dn and the target PC value/address from EA
-  atomic_cs_pc_commit:
-  - LJMP
-  - LCALL
-  - LRET
-  - SYSRET
-  - IRET
 allocation:
   catalog_section: compact_primary
 forms:

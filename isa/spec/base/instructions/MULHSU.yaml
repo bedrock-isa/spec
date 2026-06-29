@@ -2,7 +2,6 @@ mnemonic: MULHSU
 doc:
   title: Signed By Unsigned Multiply High
   summary: Performs the signed by unsigned multiply high operation.
-  description: Performs the signed by unsigned multiply high operation.
   instruction_family: integer_mul_div
   instruction_class: integer
 behavior:

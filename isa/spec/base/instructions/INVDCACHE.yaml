@@ -2,7 +2,6 @@ mnemonic: INVDCACHE
 doc:
   title: Invalidate Data Cache
   summary: Invalidate data cache block or range.
-  description: Invalidate data cache block or range.
   instruction_family: cache
   instruction_class: system
 behavior:

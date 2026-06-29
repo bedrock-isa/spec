@@ -2,7 +2,6 @@ mnemonic: FETCHXOR
 doc:
   title: Atomic Fetch Xor
   summary: Performs the atomic fetch xor operation.
-  description: Performs the atomic fetch xor operation.
   instruction_family: atomics
   instruction_class: system
 behavior:

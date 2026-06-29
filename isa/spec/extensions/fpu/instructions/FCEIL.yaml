@@ -2,7 +2,6 @@ mnemonic: FCEIL
 doc:
   title: Floating-Point Ceiling
   summary: Performs the floating-point ceiling operation.
-  description: Performs the floating-point ceiling operation.
   instruction_family: fpu
   instruction_class: fpu
 behavior:

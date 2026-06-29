@@ -2,7 +2,6 @@ mnemonic: FETCHOR
 doc:
   title: Atomic Fetch Or
   summary: Performs the atomic fetch or operation.
-  description: Performs the atomic fetch or operation.
   instruction_family: atomics
   instruction_class: system
 behavior:

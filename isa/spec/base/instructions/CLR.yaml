@@ -2,7 +2,6 @@ mnemonic: CLR
 doc:
   title: Clear
   summary: Performs the clear operation.
-  description: Performs the clear operation.
   instruction_family: integer_unary
   instruction_class: integer
 behavior:

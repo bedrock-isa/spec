@@ -2,7 +2,6 @@ mnemonic: TRACE
 doc:
   title: Trace Marker
   summary: Performs the trace marker operation.
-  description: Performs the trace marker operation.
   instruction_family: control_flow
   instruction_class: control_flow
 behavior:
@@ -12,13 +11,6 @@ behavior:
   output: none
   operation:
   - arch_trace_marker(marker_v & 0xffff);
-  long_transfer_operands: LJMP/LCALL take the new CS image from Dn and the target PC value/address from EA
-  atomic_cs_pc_commit:
-  - LJMP
-  - LCALL
-  - LRET
-  - SYSRET
-  - IRET
 allocation:
   catalog_section: compact_primary
 forms:

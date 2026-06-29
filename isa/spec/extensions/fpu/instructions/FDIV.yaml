@@ -2,7 +2,6 @@ mnemonic: FDIV
 doc:
   title: Floating-Point Divide
   summary: Performs the floating-point divide operation.
-  description: Performs the floating-point divide operation.
   instruction_family: fpu
   instruction_class: fpu
 behavior:

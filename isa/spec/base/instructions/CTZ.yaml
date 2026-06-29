@@ -2,7 +2,8 @@ mnemonic: CTZ
 doc:
   title: Count Trailing Zeros
   summary: Performs the count trailing zeros operation.
-  description: Performs the count trailing zeros operation.
+  description: Counts the trailing zero bits within the selected operand size and writes the count to the destination
+    register. A zero operand returns the operand width in bits.
   instruction_family: integer_bitfield
   instruction_class: integer
 behavior:
@@ -11,27 +12,7 @@ behavior:
   - src
   input_output: dst
   operation:
-  - result_v = 0xffffffffffffffff;
-  - carry_v = size_v << 3;
-  - if (size_v == 8) goto <ctz_mask_done>;
-  - if (size_v != 4) goto <ctz_not_l>;
-  - result_v = 0xffffffff;
-  - goto <ctz_mask_done>;
-  - <ctz_not_l>
-  - if (size_v != 2) goto <ctz_b>;
-  - result_v = 0xffff;
-  - goto <ctz_mask_done>;
-  - <ctz_b>
-  - result_v = 0xff;
-  - <ctz_mask_done>
-  - tmp_v = src_v & result_v;
-  - if (tmp_v != 0) goto <ctz_nonzero>;
-  - dst_v = carry_v;
-  - goto <ctz_done>;
-  - <ctz_nonzero>
-  - borrow_v = tmp_v & -tmp_v;
-  - dst_v = popcount(borrow_v - 1);
-  - <ctz_done>
+  - dst_v = arch_count_trailing_zeros(src_v, size_v);
 attributes:
   flags: unchanged
 allocation:

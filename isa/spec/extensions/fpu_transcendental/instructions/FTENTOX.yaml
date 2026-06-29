@@ -2,7 +2,6 @@ mnemonic: FTENTOX
 doc:
   title: Floating-Point 10 To x
   summary: Performs the floating-point 10 to x operation.
-  description: Performs the floating-point 10 to x operation.
   instruction_family: fpu_transcendental
   instruction_class: fpu
 behavior:

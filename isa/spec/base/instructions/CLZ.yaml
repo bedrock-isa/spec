@@ -2,7 +2,8 @@ mnemonic: CLZ
 doc:
   title: Count Leading Zeros
   summary: Performs the count leading zeros operation.
-  description: Performs the count leading zeros operation.
+  description: Counts the leading zero bits within the selected operand size and writes the count to the destination
+    register. A zero operand returns the operand width in bits.
   instruction_family: integer_bitfield
   instruction_class: integer
 behavior:
@@ -11,23 +12,7 @@ behavior:
   - src
   input_output: dst
   operation:
-  - tmp_v = src_v;
-  - carry_v = 0;
-  - if (size_v == 8) goto <clz_mask_done>;
-  - if (size_v != 4) goto <clz_not_l>;
-  - tmp_v = tmp_v & 0xffffffff;
-  - carry_v = 32;
-  - goto <clz_mask_done>;
-  - <clz_not_l>
-  - if (size_v != 2) goto <clz_b>;
-  - tmp_v = tmp_v & 0xffff;
-  - carry_v = 48;
-  - goto <clz_mask_done>;
-  - <clz_b>
-  - tmp_v = tmp_v & 0xff;
-  - carry_v = 56;
-  - <clz_mask_done>
-  - dst_v = lzcount(tmp_v) - carry_v;
+  - dst_v = arch_count_leading_zeros(src_v, size_v);
 attributes:
   flags: unchanged
 allocation:

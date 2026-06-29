@@ -2,7 +2,6 @@ mnemonic: TESTCANON
 doc:
   title: Test Canonical Address
   summary: Compute address and set V if noncanonical; do not read memory.
-  description: Compute address and set V if noncanonical; do not read memory.
   instruction_family: ea_utility
   instruction_class: data_movement
 behavior:

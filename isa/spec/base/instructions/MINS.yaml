@@ -2,7 +2,6 @@ mnemonic: MINS
 doc:
   title: Signed Minimum
   summary: Performs the signed minimum operation.
-  description: Performs the signed minimum operation.
   instruction_family: integer_alu
   instruction_class: integer
 behavior:

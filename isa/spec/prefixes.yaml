@@ -19,83 +19,42 @@ prefixes:
   - name: NPX
     value: 0x00
     group: neutral
-    semantics: no effect
-    description: >
-      No-prefix operation. NPX is used as the neutral prefix byte and as the
-      canonical filler for an unused prefix slot.
   - name: NOSPEC
     value: 0x01
     group: speculation
-    semantics: speculation-restricted execution
-    description: >
-      Restricts speculative execution of the following instruction. The exact
-      microarchitectural mechanism is implementation-defined, but architecturally
-      NOSPEC marks the instruction as a speculation boundary or speculation-limited
-      operation.
   - name: SATURATE
     value: 0x02
     group: arithmetic_mode
-    semantics: saturating arithmetic
     applies_to:
       - arithmetic
-    description: >
-      Requests saturating arithmetic for arithmetic instructions that define a
-      saturating form. Instead of wrapping on overflow, the result clamps to the
-      signed or unsigned range selected by the operation.
   - name: NONTEMPORAL
     value: 0x03
     group: memory_hint
-    semantics: non-temporal access hint
     applies_to:
       - memory
-    description: >
-      Provides a cache-allocation hint for memory operations. It does not change
-      the architectural value loaded or stored, and an implementation may treat
-      it as a hint.
   - name: POSTINC
     value: 0x04
     group: ea_update
-    semantics: post-increment address register
     requires:
       update_eligible_ea: true
-    description: >
-      Address-update pseudo-prefix for update-eligible indirect EA forms. The
-      effective address is used first, then the address register is incremented
-      after a successful access.
   - name: PREINC
     value: 0x05
     group: ea_update
-    semantics: pre-increment address register
     requires:
       update_eligible_ea: true
-    description: >
-      Address-update pseudo-prefix for update-eligible indirect EA forms. The
-      address register is incremented first, then the updated address is used for
-      the access.
   - name: POSTDEC
     value: 0x06
     group: ea_update
-    semantics: post-decrement address register
     requires:
       update_eligible_ea: true
-    description: >
-      Address-update pseudo-prefix for update-eligible indirect EA forms. The
-      effective address is used first, then the address register is decremented
-      after a successful access.
   - name: PREDEC
     value: 0x07
     group: ea_update
-    semantics: pre-decrement address register
     requires:
       update_eligible_ea: true
-    description: >
-      Address-update pseudo-prefix for update-eligible indirect EA forms. The
-      address register is decremented first, then the updated address is used for
-      the access.
   - name: U2C
     value: 0x08
     group: access_domain
-    semantics: user-domain source access to current-domain destination
     applies_to:
       - memory
     syntax:
@@ -104,17 +63,9 @@ prefixes:
       examples:
         - "MOV.Q U:[A0], D0"
         - "MOV.B U:[A0++], C:[A1++]"
-    description: >
-      Encoded access-domain prefix for a user-domain source operand and a
-      current-domain destination operand. Assembly source normally selects this
-      prefix with the U: operand annotation rather than spelling U2C directly.
-      C denotes the access domain of the current privilege mode. In user mode
-      C and U are identical, so this prefix has no architectural effect and is
-      normally omitted by assemblers.
   - name: C2U
     value: 0x09
     group: access_domain
-    semantics: current-domain source access to user-domain destination
     applies_to:
       - memory
     syntax:
@@ -123,17 +74,9 @@ prefixes:
       examples:
         - "MOV.Q D0, U:[A1]"
         - "MOV.B C:[A0++], U:[A1++]"
-    description: >
-      Encoded access-domain prefix for a current-domain source operand and a
-      user-domain destination operand. Assembly source normally selects this
-      prefix with the U: operand annotation on the destination. C denotes the
-      access domain of the current privilege mode. In user mode C and U are
-      identical, so this prefix has no architectural effect and is normally
-      omitted by assemblers.
   - name: U2U
     value: 0x0a
     group: access_domain
-    semantics: user-domain source access to user-domain destination
     applies_to:
       - memory
     syntax:
@@ -142,13 +85,6 @@ prefixes:
       examples:
         - "MOV.B U:[A0++], U:[A1++]"
         - "INC.L U:[A0]"
-    description: >
-      Encoded access-domain prefix for memory operands that are all interpreted
-      as user-domain accesses. It is used for user-to-user memory operations and
-      for read-modify-write operations on user memory. Assembly source normally
-      selects this prefix with U: operand annotations. In user mode C and U are
-      identical, so this prefix has no architectural effect and is normally
-      omitted by assemblers.
   - name: REPcc
     pattern: "1ccc cddd"
     group: repeat
@@ -162,16 +98,6 @@ prefixes:
         - "REP D0, EXTZL.B [A0++], [A1++]"
       aliases:
         REP: REPT
-    description: >
-      Repeats the following instruction using Dn as an ordinary signed
-      two's-complement repeat counter and a full condition-code selector. A zero
-      counter performs no iteration. Positive counters are decremented toward
-      zero and negative counters are incremented toward zero only after a
-      completed iteration whose REP condition remains true. A completed
-      terminating iteration whose REP condition is false commits its ordinary
-      instruction side effects but leaves the counter unchanged. REP is the alias
-      for REPT. The condition is evaluated from REPFLAGS produced by the
-      completed iteration according to the body instruction's repeat metadata.
     condition:
       type: condition_code
       field: c
@@ -201,7 +127,6 @@ prefixes:
       fault_restart_rule: remaining signed count is preserved
     counter_direction: signed counter moves toward zero
     commit_rule: a condition-false terminating iteration commits the body and leaves the counter unchanged
-    semantics: repeat instruction while counter and condition remain active
 
   - name: REPG
     pattern: "0111 0ddd"
@@ -217,27 +142,6 @@ prefixes:
       examples:
         - "REPG D0, { FMOV.S [A0++], F0; FMADD.S [A1++], F0, F1; FMOV.S F1, [A2++]; }"
         - "REPGF D0, { FMOV.S [A0 + D0.L * 4], F0; FADD.S [A1 + D0.L * 4], F0; }"
-    description: >
-      Repeats an ENDG-terminated group of instructions using Dn as the
-      repeat counter. The grouped instructions execute in program order and the
-      counter is updated after a successful group iteration. REPG has no
-      condition-code selector; conditional repetition remains the role of REPcc.
-      The first grouped instruction carries the REPG prefix; the final grouped
-      instruction carries the ENDG prefix. Instructions between those endpoints
-      are ordinary instruction records with their own word 0 length fields. The
-      complete grouped instruction sequence must be contained within one
-      naturally aligned 64-byte grouping window, but the first instruction does
-      not need to start at the beginning of the window. A zero counter performs no group iterations;
-      positive and negative counters both move toward zero after each successful
-      group iteration. The group is discovered by walking explicit word 0
-      lengths within the current grouping window until ENDG is found. REPG has two
-      optimization classes. REPG-fast is available when the group has regular
-      memory behavior and does not write the selected counter register.
-      REPG-general preserves exact scalar semantics for less regular groups,
-      including groups that read or write the selected counter register.
-      REPGF is a source-level fast-contract spelling for the same encoded REPG
-      prefix. It emits the same prefix byte as REPG and marks the source group
-      as intended for the REPG-fast optimization class.
     operand:
       type: DREG
       field: d
@@ -274,19 +178,12 @@ prefixes:
       group_termination: ENDG_prefix
     fflags_accumulation: OR completed iterations
     commit_rule: only successful iterations and completed group instructions commit
-    semantics: repeat grouped instructions using the selected counter
   - name: ENDG
     value: 0x78
     group: repeat_boundary
-    semantics: end grouped repeat
     syntax:
       assembler_generated: true
       closes: REPG
-    description: >
-      Terminates a REPG group. ENDG is carried as a prefix byte on the final
-      instruction in the grouped sequence; ordinary assembly source normally
-      emits it through the closing brace of a REPG block rather than spelling it
-      as a standalone prefix.
 
 mutually_exclusive_groups:
   - ea_update

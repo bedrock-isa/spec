@@ -36,6 +36,7 @@ include:
 - instructions/DIVS.yaml
 - instructions/DIVU.yaml
 - instructions/DJcc.yaml
+- instructions/IJcc.yaml
 - instructions/EXTSL.yaml
 - instructions/EXTSQ.yaml
 - instructions/EXTSW.yaml

@@ -2,7 +2,6 @@ mnemonic: MAXU
 doc:
   title: Unsigned Maximum
   summary: Performs the unsigned maximum operation.
-  description: Performs the unsigned maximum operation.
   instruction_family: integer_alu
   instruction_class: integer
 behavior:

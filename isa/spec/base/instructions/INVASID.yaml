@@ -2,7 +2,6 @@ mnemonic: INVASID
 doc:
   title: Invalidate TLB By ASID
   summary: Invalidate TLB entries for ASID.
-  description: Invalidate TLB entries for ASID.
   instruction_family: tlb_and_context
   instruction_class: system
 behavior:

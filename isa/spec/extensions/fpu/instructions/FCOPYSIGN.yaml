@@ -2,7 +2,6 @@ mnemonic: FCOPYSIGN
 doc:
   title: Floating-Point Copy Sign
   summary: Performs the floating-point copy sign operation.
-  description: Performs the floating-point copy sign operation.
   instruction_family: fpu
   instruction_class: fpu
 behavior:

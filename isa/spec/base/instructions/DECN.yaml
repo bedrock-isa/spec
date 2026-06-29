@@ -2,7 +2,6 @@ mnemonic: DECN
 doc:
   title: Decrement Without Flags
   summary: Performs the decrement without flags operation.
-  description: Performs the decrement without flags operation.
   instruction_family: integer_unary
   instruction_class: integer
 behavior:

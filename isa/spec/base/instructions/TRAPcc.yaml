@@ -2,7 +2,6 @@ mnemonic: TRAPcc
 doc:
   title: Trap Conditional
   summary: Raises architectural TRAP vector 0x05 when the encoded condition is true.
-  description: Raises architectural TRAP vector 0x05 when the encoded condition is true.
   instruction_family: control_flow
   instruction_class: control_flow
 behavior:
@@ -14,13 +13,6 @@ behavior:
   - if (cc_v == 0) goto <trapcc_done>;
   - arch_raise_trap(5:8);
   - <trapcc_done>
-  long_transfer_operands: LJMP/LCALL take the new CS image from Dn and the target PC value/address from EA
-  atomic_cs_pc_commit:
-  - LJMP
-  - LCALL
-  - LRET
-  - SYSRET
-  - IRET
 allocation:
   catalog_section: compact_primary
 forms:

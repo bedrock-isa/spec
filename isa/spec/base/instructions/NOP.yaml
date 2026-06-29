@@ -2,7 +2,6 @@ mnemonic: NOP
 doc:
   title: No Operation
   summary: No architectural state change.
-  description: No architectural state change.
   instruction_family: core_control
   instruction_class: system
 behavior:

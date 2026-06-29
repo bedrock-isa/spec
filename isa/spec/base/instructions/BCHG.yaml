@@ -2,7 +2,6 @@ mnemonic: BCHG
 doc:
   title: Bit Change
   summary: Performs the bit change operation.
-  description: Performs the bit change operation.
   instruction_family: integer_bitfield
   instruction_class: integer
 behavior:

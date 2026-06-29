@@ -2,7 +2,6 @@ mnemonic: REVBIT
 doc:
   title: Reverse Bits
   summary: Performs the reverse bits operation.
-  description: Performs the reverse bits operation.
   instruction_family: integer_alu
   instruction_class: integer
 behavior:

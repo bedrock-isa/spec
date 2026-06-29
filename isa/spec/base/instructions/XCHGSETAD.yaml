@@ -2,7 +2,6 @@ mnemonic: XCHGSETAD
 doc:
   title: Exchange D And A Register Set
   summary: 'For each selected i: swap A[i] and D[i].'
-  description: 'For each selected i: swap A[i] and D[i].'
   instruction_family: data_movement
   instruction_class: data_movement
 behavior:

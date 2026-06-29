@@ -2,7 +2,6 @@ mnemonic: FINTRZ
 doc:
   title: Floating-Point Integral Toward Zero
   summary: Performs the floating-point integral toward zero operation.
-  description: Performs the floating-point integral toward zero operation.
   instruction_family: fpu
   instruction_class: fpu
 behavior:

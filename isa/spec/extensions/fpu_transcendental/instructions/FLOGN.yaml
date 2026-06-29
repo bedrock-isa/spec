@@ -2,7 +2,6 @@ mnemonic: FLOGN
 doc:
   title: Floating-Point Natural Log
   summary: Performs the floating-point natural log operation.
-  description: Performs the floating-point natural log operation.
   instruction_family: fpu_transcendental
   instruction_class: fpu
 behavior:

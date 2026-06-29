@@ -1,8 +1,3 @@
-summary: >
-  This section fixes the vocabulary used by the Bedrock ISA reference. Unless a
-  later section explicitly narrows a term, these definitions apply throughout
-  the architecture manual and to ABI documents that use the same term.
-
 display_labels:
   A: A
   CR: CR
@@ -28,7 +23,6 @@ display_labels:
   ZNCV: ZNCV
   applies_to: Applies To
   atomic: Atomic
-  atomic_cs_pc_commit: CS/PC commit
   cpuid_feature: CPUID feature
   EA_address: EA Address
   extension: Extension
@@ -37,7 +31,6 @@ display_labels:
   flags_ZNCV: FLAGS ZNCV
   fp_status: FP Status
   implementation: Implementation
-  long_transfer_operands: Long transfer operands
   memory: Memory operands
   memory_memory: Memory-Memory Operands
   observed_values: REP observed values

@@ -2,7 +2,6 @@ mnemonic: FCMP
 doc:
   title: Floating-Point Compare
   summary: Performs the floating-point compare operation.
-  description: Performs the floating-point compare operation.
   instruction_family: fpu
   instruction_class: fpu
 behavior:

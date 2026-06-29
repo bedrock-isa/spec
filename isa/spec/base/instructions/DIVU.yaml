@@ -2,7 +2,6 @@ mnemonic: DIVU
 doc:
   title: Unsigned Divide
   summary: Performs the unsigned divide operation.
-  description: Performs the unsigned divide operation.
   instruction_family: integer_mul_div
   instruction_class: integer
 behavior:

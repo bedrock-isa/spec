@@ -2,7 +2,6 @@ mnemonic: MULHS
 doc:
   title: Signed Multiply High
   summary: Performs the signed multiply high operation.
-  description: Performs the signed multiply high operation.
   instruction_family: integer_mul_div
   instruction_class: integer
 behavior:

@@ -2,7 +2,6 @@ mnemonic: BKPT
 doc:
   title: Breakpoint
   summary: Raise breakpoint/debug exception.
-  description: Raise breakpoint/debug exception.
   instruction_family: core_control
   instruction_class: system
 behavior:

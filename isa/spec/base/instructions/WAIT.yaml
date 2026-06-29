@@ -2,7 +2,6 @@ mnemonic: WAIT
 doc:
   title: Wait
   summary: Wait until event or interrupt according to privilege policy.
-  description: Wait until event or interrupt according to privilege policy.
   instruction_family: core_control
   instruction_class: system
 behavior:

@@ -2,7 +2,6 @@ mnemonic: FETCHADD
 doc:
   title: Atomic Fetch Add
   summary: Performs the atomic fetch add operation.
-  description: Performs the atomic fetch add operation.
   instruction_family: atomics
   instruction_class: system
 behavior:

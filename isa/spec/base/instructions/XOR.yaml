@@ -2,7 +2,6 @@ mnemonic: XOR
 doc:
   title: Bitwise Xor
   summary: Computes the bitwise XOR of the source and destination operands.
-  description: Computes the bitwise XOR of the source and destination operands.
   instruction_family: integer_alu
   instruction_class: integer
 behavior:

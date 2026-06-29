@@ -2,7 +2,6 @@ mnemonic: FMADD
 doc:
   title: Floating-Point Fused Multiply Add
   summary: Performs the floating-point fused multiply add operation.
-  description: Performs the floating-point fused multiply add operation.
   instruction_family: fpu
   instruction_class: fpu
 behavior:

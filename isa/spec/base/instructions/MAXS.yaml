@@ -2,7 +2,6 @@ mnemonic: MAXS
 doc:
   title: Signed Maximum
   summary: Performs the signed maximum operation.
-  description: Performs the signed maximum operation.
   instruction_family: integer_alu
   instruction_class: integer
 behavior:

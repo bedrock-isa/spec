@@ -2,7 +2,6 @@ mnemonic: MOVcc
 doc:
   title: Move Conditional
   summary: Performs the move conditional operation.
-  description: Performs the move conditional operation.
   instruction_family: control_flow
   instruction_class: control_flow
 behavior:
@@ -15,13 +14,6 @@ behavior:
   - if (cc_v == 0) goto <movcc_done>;
   - dst_v = src_v;
   - <movcc_done>
-  long_transfer_operands: LJMP/LCALL take the new CS image from Dn and the target PC value/address from EA
-  atomic_cs_pc_commit:
-  - LJMP
-  - LCALL
-  - LRET
-  - SYSRET
-  - IRET
 allocation:
   catalog_section: compact_primary
 forms:

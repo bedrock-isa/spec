@@ -2,7 +2,6 @@ mnemonic: POPM
 doc:
   title: Pop Multiple
   summary: Pop selected A7-A0 then D7-D0 registers in inverse bitmap order.
-  description: Pop selected A7-A0 then D7-D0 registers in inverse bitmap order.
   instruction_family: data_movement
   instruction_class: data_movement
 behavior:

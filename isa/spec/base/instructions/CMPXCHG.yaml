@@ -2,7 +2,6 @@ mnemonic: CMPXCHG
 doc:
   title: Compare And Exchange
   summary: Performs the compare and exchange operation.
-  description: Performs the compare and exchange operation.
   instruction_family: atomics
   instruction_class: system
 behavior:

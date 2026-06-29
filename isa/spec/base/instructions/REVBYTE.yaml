@@ -2,7 +2,6 @@ mnemonic: REVBYTE
 doc:
   title: Reverse Bytes
   summary: Performs the reverse bytes operation.
-  description: Performs the reverse bytes operation.
   instruction_family: integer_alu
   instruction_class: integer
 behavior:

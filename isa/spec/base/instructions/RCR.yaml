@@ -2,7 +2,6 @@ mnemonic: RCR
 doc:
   title: Rotate Through Carry Right
   summary: Performs the rotate through carry right operation.
-  description: Performs the rotate through carry right operation.
   instruction_family: integer_bitfield
   instruction_class: integer
 behavior:

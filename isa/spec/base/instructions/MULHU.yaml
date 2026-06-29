@@ -2,7 +2,6 @@ mnemonic: MULHU
 doc:
   title: Unsigned Multiply High
   summary: Performs the unsigned multiply high operation.
-  description: Performs the unsigned multiply high operation.
   instruction_family: integer_mul_div
   instruction_class: integer
 behavior:

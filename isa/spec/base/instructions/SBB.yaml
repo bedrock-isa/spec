@@ -2,7 +2,6 @@ mnemonic: SBB
 doc:
   title: Subtract With Borrow
   summary: Performs the subtract with borrow operation.
-  description: Performs the subtract with borrow operation.
   instruction_family: integer_alu
   instruction_class: integer
 behavior:

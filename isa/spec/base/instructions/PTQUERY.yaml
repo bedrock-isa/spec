@@ -2,7 +2,6 @@ mnemonic: PTQUERY
 doc:
   title: Page Table Query
   summary: Perform page walk and return query result/status.
-  description: Perform page walk and return query result/status.
   instruction_family: tlb_and_context
   instruction_class: system
 behavior:

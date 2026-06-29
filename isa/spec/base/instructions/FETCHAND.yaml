@@ -2,7 +2,6 @@ mnemonic: FETCHAND
 doc:
   title: Atomic Fetch And
   summary: Performs the atomic fetch and operation.
-  description: Performs the atomic fetch and operation.
   instruction_family: atomics
   instruction_class: system
 behavior:

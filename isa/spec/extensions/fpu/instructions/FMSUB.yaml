@@ -2,7 +2,6 @@ mnemonic: FMSUB
 doc:
   title: Floating-Point Fused Multiply Subtract
   summary: Performs the floating-point fused multiply subtract operation.
-  description: Performs the floating-point fused multiply subtract operation.
   instruction_family: fpu
   instruction_class: fpu
 behavior:

@@ -2,7 +2,6 @@ mnemonic: FGETMAN
 doc:
   title: Floating-Point Get Mantissa
   summary: Performs the floating-point get mantissa operation.
-  description: Performs the floating-point get mantissa operation.
   instruction_family: fpu
   instruction_class: fpu
 behavior:

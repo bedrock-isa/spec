@@ -2,7 +2,6 @@ mnemonic: FLOG10
 doc:
   title: Floating-Point Log Base 10
   summary: Performs the floating-point log base 10 operation.
-  description: Performs the floating-point log base 10 operation.
   instruction_family: fpu_transcendental
   instruction_class: fpu
 behavior:

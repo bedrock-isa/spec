@@ -2,7 +2,6 @@ mnemonic: FCOSH
 doc:
   title: Floating-Point Hyperbolic Cosine
   summary: Performs the floating-point hyperbolic cosine operation.
-  description: Performs the floating-point hyperbolic cosine operation.
   instruction_family: fpu_transcendental
   instruction_class: fpu
 behavior:

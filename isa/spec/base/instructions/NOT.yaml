@@ -2,7 +2,6 @@ mnemonic: NOT
 doc:
   title: Bitwise Not
   summary: Performs the bitwise not operation.
-  description: Performs the bitwise not operation.
   instruction_family: integer_unary
   instruction_class: integer
 behavior:

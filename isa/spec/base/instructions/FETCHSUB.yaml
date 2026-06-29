@@ -2,7 +2,6 @@ mnemonic: FETCHSUB
 doc:
   title: Atomic Fetch Subtract
   summary: Performs the atomic fetch subtract operation.
-  description: Performs the atomic fetch subtract operation.
   instruction_family: atomics
   instruction_class: system
 behavior:

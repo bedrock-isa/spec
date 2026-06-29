@@ -2,7 +2,6 @@ mnemonic: FTANH
 doc:
   title: Floating-Point Hyperbolic Tangent
   summary: Performs the floating-point hyperbolic tangent operation.
-  description: Performs the floating-point hyperbolic tangent operation.
   instruction_family: fpu_transcendental
   instruction_class: fpu
 behavior:

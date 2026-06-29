@@ -2,7 +2,6 @@ mnemonic: FTRUNC
 doc:
   title: Floating-Point Truncate
   summary: Performs the floating-point truncate operation.
-  description: Performs the floating-point truncate operation.
   instruction_family: fpu
   instruction_class: fpu
 behavior:

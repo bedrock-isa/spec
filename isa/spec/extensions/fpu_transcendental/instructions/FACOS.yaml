@@ -2,7 +2,6 @@ mnemonic: FACOS
 doc:
   title: Floating-Point Arc Cosine
   summary: Performs the floating-point arc cosine operation.
-  description: Performs the floating-point arc cosine operation.
   instruction_family: fpu_transcendental
   instruction_class: fpu
 behavior:

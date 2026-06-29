@@ -500,7 +500,7 @@ def terminology_description_list(terms: list[dict[str, Any]]) -> str:
 def terminology_section(spec: dict[str, Any]) -> str:
     terminology = spec.get("terminology") or {}
     groups = terminology.get("groups") or []
-    parts = [tex_escape(compact_text(terminology.get("summary", "")))]
+    parts: list[str] = []
     for group in groups:
         if not isinstance(group, dict):
             continue
@@ -2150,7 +2150,7 @@ def condition_table(spec: dict[str, Any]) -> str:
 
 
 def prefix_semantics_block(prefix: dict[str, Any]) -> str:
-    detail = tex_escape(prefix.get("description") or readable_text(prefix.get("semantics", "-")))
+    detail = tex_escape(prefix_detail_text(prefix))
     applies_to = prefix.get("applies_to") or []
     if applies_to:
         detail += r"\newline " + tex_escape("Applies to: " + ", ".join(str(item) for item in applies_to))
@@ -2174,6 +2174,55 @@ def prefix_requirement_text(value: Any) -> str:
     if isinstance(value, list):
         return "/".join(str(item) for item in value)
     return str(value)
+
+
+def prefix_meaning_text(prefix: dict[str, Any]) -> str:
+    name = str(prefix.get("name", ""))
+    group = str(prefix.get("group", ""))
+    meanings = {
+        "NPX": "no effect",
+        "NOSPEC": "speculation boundary",
+        "SATURATE": "saturating arithmetic",
+        "NONTEMPORAL": "non-temporal memory hint",
+        "POSTINC": "post-increment address register",
+        "PREINC": "pre-increment address register",
+        "POSTDEC": "post-decrement address register",
+        "PREDEC": "pre-decrement address register",
+        "U2C": "user-domain source to current-domain destination",
+        "C2U": "current-domain source to user-domain destination",
+        "U2U": "user-domain memory operands",
+        "REPcc": "repeat while counter and condition remain active",
+        "REPG": "repeat grouped instructions using the selected counter",
+        "ENDG": "end grouped repeat",
+    }
+    return meanings.get(name, readable_text(group or name))
+
+
+def prefix_detail_text(prefix: dict[str, Any]) -> str:
+    name = str(prefix.get("name", ""))
+    if name == "NPX":
+        return "Neutral prefix byte and canonical filler for an unused prefix slot."
+    if name == "NOSPEC":
+        return "Marks the following instruction as a speculation boundary or speculation-limited operation."
+    if name == "SATURATE":
+        return "Requests the saturating form of arithmetic instructions that define one."
+    if name == "NONTEMPORAL":
+        return "Provides a cache-allocation hint for memory operations without changing the architectural loaded or stored value."
+    if name in {"POSTINC", "PREINC", "POSTDEC", "PREDEC"}:
+        when = "after" if name.startswith("POST") else "before"
+        direction = "incremented" if name.endswith("INC") else "decremented"
+        return f"Address-update prefix for update-eligible indirect EA forms; the address register is {direction} {when} the access."
+    if name in {"U2C", "C2U", "U2U"}:
+        syntax = prefix.get("syntax") if isinstance(prefix.get("syntax"), dict) else {}
+        annotation = syntax.get("operand_annotation", name)
+        return f"Access-domain prefix selected by the {annotation} operand annotation."
+    if name == "REPcc":
+        return "Repeats the following instruction using the selected D-register counter and condition-code selector."
+    if name == "REPG":
+        return "Repeats an ENDG-terminated instruction group using the selected D-register counter."
+    if name == "ENDG":
+        return "Terminator prefix carried by the final instruction in a REPG group."
+    return prefix_meaning_text(prefix)
 
 
 def prefix_semantics_section(spec: dict[str, Any]) -> str:
@@ -2245,12 +2294,11 @@ def address_update_operand_table(spec: dict[str, Any]) -> str:
         if not isinstance(prefix, dict) or not prefix_is_address_update(prefix):
             continue
         name = str(prefix.get("name", ""))
-        description = compact_text(prefix.get("description", ""))
         rows.append(
             [
                 tex_code(address_update_operand_syntax(name)),
                 tex_code(prefix_encoding_text(prefix)),
-                tex_escape(description),
+                tex_escape(prefix_detail_text(prefix)),
             ]
         )
     if not rows:
@@ -2278,7 +2326,7 @@ def access_domain_operand_table(spec: dict[str, Any]) -> str:
             [
                 tex_code(str(syntax.get("operand_annotation", prefix.get("name", "")))),
                 tex_code(prefix_encoding_text(prefix)),
-                tex_escape(compact_text(prefix.get("semantics", ""))),
+                tex_escape(prefix_meaning_text(prefix)),
             ]
         )
     if not rows:
@@ -2309,7 +2357,7 @@ def prefix_table(spec: dict[str, Any]) -> str:
             [
                 tex_code(prefix_syntax_text(prefix)),
                 tex_code(prefix_encoding_text(prefix)),
-                tex_table_value(prefix.get("semantics", "-")),
+                tex_escape(prefix_meaning_text(prefix)),
             ]
         )
     return render_latex_template(
@@ -2587,7 +2635,7 @@ def shared_execution_entries(groups: dict[str, Any], labels: dict[str, str]) -> 
         ("integer_extend", "Extension", ("memory", "source_sizes_by_destination", "flags")),
         ("data_movement", "Data Movement", ("memory", "flags")),
         ("data_register_banking", "Data Register Banking", ("flags",)),
-        ("control_flow", "Control Transfer", ("long_transfer_operands", "atomic_cs_pc_commit", "flags")),
+        ("control_flow", "Control Transfer", ("flags",)),
         ("atomics", "Atomics", ("atomic", "memory")),
         ("system_registers", "Control Registers", ("privilege", "flags")),
         ("virtualization_acceleration", "Virtualization Acceleration", ("cpuid_feature", "memory", "privilege", "flags")),
@@ -2611,8 +2659,6 @@ def shared_execution_entries(groups: dict[str, Any], labels: dict[str, str]) -> 
                 lines.extend(shared_dict_lines(key, value, labels))
             elif key == "atomic":
                 lines.append(f"{shared_rule_label(key, labels)}: {readable_text(value)}")
-            elif key == "atomic_cs_pc_commit":
-                lines.append(f"CS/PC commit is atomic for: {readable_text(value)}")
             elif key == "memory":
                 lines.append(f"{shared_rule_label(key, labels)}: {memory_rule_text(value)}")
             else:
@@ -2644,7 +2690,7 @@ def rep_execution_sequence(repeat: dict[str, Any], prefix: dict[str, Any]) -> st
         indexed = {}
     example = indexed.get("example") if isinstance(indexed, dict) else None
     out: list[str] = []
-    description = compact_text(repeat.get("description") or prefix.get("description", ""))
+    description = compact_text(repeat.get("description") or prefix_detail_text(prefix))
     if description:
         out.append(tex_escape(description))
     indexed_note = compact_text(indexed.get("note", ""))

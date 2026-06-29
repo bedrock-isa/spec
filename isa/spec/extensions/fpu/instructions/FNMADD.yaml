@@ -2,7 +2,6 @@ mnemonic: FNMADD
 doc:
   title: Floating-Point Fused Negative Multiply Add
   summary: Performs the floating-point fused negative multiply add operation.
-  description: Performs the floating-point fused negative multiply add operation.
   instruction_family: fpu
   instruction_class: fpu
 behavior:

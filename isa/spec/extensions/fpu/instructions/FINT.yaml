@@ -2,7 +2,6 @@ mnemonic: FINT
 doc:
   title: Floating-Point Integral Value
   summary: Performs the floating-point integral value operation.
-  description: Performs the floating-point integral value operation.
   instruction_family: fpu
   instruction_class: fpu
 behavior:

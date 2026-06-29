@@ -145,7 +145,7 @@ def instruction_class_summary_table(spec: dict[str, Any], mnemonics: list[str]) 
 
 def instruction_class_note(body: dict[str, Any]) -> str:
     notes: list[str] = []
-    for key in ("memory", "atomic", "privilege", "flags", "implementation", "traps", "long_transfer_operands"):
+    for key in ("memory", "atomic", "privilege", "flags", "implementation", "traps"):
         if key in body:
             if key == "flags":
                 value = integer_flags_text(body[key])
@@ -1580,7 +1580,9 @@ def render_instruction(
     lines.append(rf"\manualinstructionfield{{Operation}}{{{operation_latex(operations)}}}")
     lines.append(rf"\manualinstructionfield{{Assembler Syntax}}{{{syntax_block(items)}}}")
     lines.append(rf"\manualinstructionfield{{Attributes}}{{{attribute_text(items, records, operations, lengths)}}}")
-    lines.append(rf"\manualinstructionfield{{Description}}{{{doc_description(mnemonic, docs, records, operations, aliases)}}}")
+    description = doc_description(mnemonic, docs, records, operations, aliases)
+    if description:
+        lines.append(rf"\manualinstructionfield{{Description}}{{{description}}}")
     lines.append(condition_code_section(records, operations))
     lines.append(instruction_forms_section(items, lengths, records, operations))
     lines.append(r"\end{manualinstruction}")
@@ -1944,8 +1946,6 @@ def save_area_format_section(layout: dict[str, Any], *, include_title: bool = Tr
     def component_format_section(component: dict[str, Any]) -> str:
         title = str(component.get("title", component.get("name", "Extension Component")))
         name = str(component.get("name", title))
-        description = compact_text(component.get("description", ""))
-        validity = compact_text(component.get("validity", ""))
         extension_requirement = compact_text(component.get("extension_requirement", ""))
         size = component.get("size", "-")
         slot_rows = component_slot_rows(component)
@@ -1967,10 +1967,6 @@ def save_area_format_section(layout: dict[str, Any], *, include_title: bool = Tr
             rf"\textbf{{Component Size}} & {tex_escape(component_id_text(size) if isinstance(size, int) else str(size))}\\",
             r"\end{tabularx}\endgroup\par\smallskip",
         ]
-        if description:
-            lines.append(rf"\noindent {tex_escape(description)}\par\smallskip")
-        if validity:
-            lines.append(rf"\noindent {tex_escape(validity)}\par\smallskip")
         slot_table = layout_grid_table("Component-relative bytes", slot_rows, component_offset_text)
         if slot_table:
             lines.append(slot_table)
@@ -1985,23 +1981,6 @@ def save_area_format_section(layout: dict[str, Any], *, include_title: bool = Tr
     base_header_rows = header_field_rows(layout, offset_text)
     base_header_format_rows = header_format_rows(layout, offset_text)
     base_header_offsets = {offset for offset, _fields in base_header_format_rows}
-    behavior_by_instruction = layout.get("instruction_behavior") or {}
-    if isinstance(behavior_by_instruction, dict):
-        ordered_mnemonics = [str(mnemonic) for mnemonic in layout.get("applies_to", []) or []]
-        ordered_mnemonics.extend(
-            str(mnemonic)
-            for mnemonic in behavior_by_instruction
-            if str(mnemonic) not in set(ordered_mnemonics)
-        )
-        behavior = " ".join(
-            compact_text(behavior_by_instruction[mnemonic])
-            for mnemonic in ordered_mnemonics
-            if behavior_by_instruction.get(mnemonic)
-        )
-    else:
-        behavior = compact_text(layout.get("behavior", ""))
-    extension_text = compact_text(layout.get("extension_components", ""))
-    extension_order_text = compact_text(layout.get("extension_component_order", ""))
 
     lines = [
         r"\par\smallskip",
@@ -2022,12 +2001,6 @@ def save_area_format_section(layout: dict[str, Any], *, include_title: bool = Tr
     base_header_table = header_field_table(base_header_rows, "Base Header Fields")
     if base_header_table:
         lines.append(base_header_table)
-    if behavior:
-        lines.append(rf"\noindent {tex_escape(behavior)}\par")
-    if extension_text:
-        lines.append(rf"\noindent {tex_escape(extension_text)}\par")
-    if extension_order_text:
-        lines.append(rf"\noindent {tex_escape(extension_order_text)}\par")
     extension_formats = [
         component
         for component in layout.get("extension_component_formats", []) or []

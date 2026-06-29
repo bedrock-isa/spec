@@ -2,7 +2,6 @@ mnemonic: AND
 doc:
   title: Bitwise And
   summary: Computes the bitwise AND of the source and destination operands.
-  description: Computes the bitwise AND of the source and destination operands.
   instruction_family: integer_alu
   instruction_class: integer
 behavior:

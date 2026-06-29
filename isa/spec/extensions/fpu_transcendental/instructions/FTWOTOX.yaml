@@ -2,7 +2,6 @@ mnemonic: FTWOTOX
 doc:
   title: Floating-Point 2 To x
   summary: Performs the floating-point 2 to x operation.
-  description: Performs the floating-point 2 to x operation.
   instruction_family: fpu_transcendental
   instruction_class: fpu
 behavior:

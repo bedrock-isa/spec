@@ -2,7 +2,6 @@ mnemonic: MULS
 doc:
   title: Signed Multiply
   summary: Performs the signed multiply operation.
-  description: Performs the signed multiply operation.
   instruction_family: integer_mul_div
   instruction_class: integer
 behavior:

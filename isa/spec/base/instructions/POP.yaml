@@ -2,7 +2,6 @@ mnemonic: POP
 doc:
   title: Pop
   summary: Performs the pop operation.
-  description: Performs the pop operation.
   instruction_family: data_movement
   instruction_class: data_movement
 behavior:

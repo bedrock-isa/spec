@@ -2,7 +2,6 @@ mnemonic: FCLR
 doc:
   title: Floating-Point Clear
   summary: Performs the floating-point clear operation.
-  description: Performs the floating-point clear operation.
   instruction_family: fpu
   instruction_class: fpu
 behavior:

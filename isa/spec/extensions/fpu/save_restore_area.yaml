@@ -5,12 +5,6 @@ save_area_formats:
       name: FLOATING_POINT
       title: Floating-Point State
       extension_requirement: floating_point
-      validity: The component header contains the F-register validity bitmap. FFLAGS and FSTATUS are present whenever
-        the floating-point state block is present.
-      description: This component stores the floating-point accrued exception flags, the floating-point status/control-mode
-        word, and the architectural floating-point register file. The first 64-bit word packs the F-register validity bitmap
-        together with FFLAGS and FSTATUS. The F register file starts at +0x008 and the component storage size is rounded up
-        to a 64-byte boundary.
       size: 0x0c0
       header_fields:
       - offset: 0

@@ -2,7 +2,6 @@ mnemonic: PUSHM
 doc:
   title: Push Multiple
   summary: Push selected D0-D7 then A0-A7 registers according to bitmap order.
-  description: Push selected D0-D7 then A0-A7 registers according to bitmap order.
   instruction_family: data_movement
   instruction_class: data_movement
 behavior:

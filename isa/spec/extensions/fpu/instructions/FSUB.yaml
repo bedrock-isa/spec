@@ -2,7 +2,6 @@ mnemonic: FSUB
 doc:
   title: Floating-Point Subtract
   summary: Subtracts the source operand from the destination operand.
-  description: Subtracts the source operand from the destination operand.
   instruction_family: fpu
   instruction_class: fpu
 behavior:

@@ -2,7 +2,6 @@ mnemonic: CLMUL
 doc:
   title: Carryless Multiply
   summary: Performs the carryless multiply operation.
-  description: Performs the carryless multiply operation.
   instruction_family: integer_mul_div
   instruction_class: integer
 behavior:

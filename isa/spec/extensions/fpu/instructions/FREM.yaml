@@ -2,7 +2,6 @@ mnemonic: FREM
 doc:
   title: Floating-Point Remainder
   summary: Performs the floating-point remainder operation.
-  description: Performs the floating-point remainder operation.
   instruction_family: fpu
   instruction_class: fpu
 behavior:

@@ -2,7 +2,6 @@ mnemonic: PUSH
 doc:
   title: Push
   summary: Performs the push operation.
-  description: Performs the push operation.
   instruction_family: data_movement
   instruction_class: data_movement
 behavior:

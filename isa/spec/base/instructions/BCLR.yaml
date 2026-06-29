@@ -2,7 +2,6 @@ mnemonic: BCLR
 doc:
   title: Bit Clear
   summary: Performs the bit clear operation.
-  description: Performs the bit clear operation.
   instruction_family: integer_bitfield
   instruction_class: integer
 behavior:

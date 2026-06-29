@@ -2,7 +2,6 @@ mnemonic: SUB
 doc:
   title: Subtract
   summary: Subtracts the source operand from the destination operand.
-  description: Subtracts the source operand from the destination operand.
   instruction_family: integer_alu
   instruction_class: integer
 behavior:

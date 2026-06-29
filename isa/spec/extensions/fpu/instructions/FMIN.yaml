@@ -2,7 +2,6 @@ mnemonic: FMIN
 doc:
   title: Floating-Point Minimum
   summary: Performs the floating-point minimum operation.
-  description: Performs the floating-point minimum operation.
   instruction_family: fpu
   instruction_class: fpu
 behavior:

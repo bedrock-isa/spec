@@ -2,7 +2,6 @@ mnemonic: INVTLB
 doc:
   title: Invalidate TLB
   summary: Invalidate all TLB entries.
-  description: Invalidate all TLB entries.
   instruction_family: tlb_and_context
   instruction_class: system
 behavior:

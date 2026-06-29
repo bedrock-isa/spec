@@ -2,7 +2,6 @@ mnemonic: FNOP
 doc:
   title: Floating-Point No Operation
   summary: Performs the floating-point no operation operation.
-  description: Performs the floating-point no operation operation.
   instruction_family: fpu
   instruction_class: fpu
 behavior:

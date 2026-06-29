@@ -2,7 +2,6 @@ mnemonic: FMOVcc
 doc:
   title: Floating-Point Conditional Move
   summary: Performs the floating-point conditional move operation.
-  description: Performs the floating-point conditional move operation.
   instruction_family: fpu
   instruction_class: fpu
 behavior:

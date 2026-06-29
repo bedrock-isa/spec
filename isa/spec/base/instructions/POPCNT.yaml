@@ -2,7 +2,6 @@ mnemonic: POPCNT
 doc:
   title: Population Count
   summary: Performs the population count operation.
-  description: Performs the population count operation.
   instruction_family: integer_bitfield
   instruction_class: integer
 behavior:

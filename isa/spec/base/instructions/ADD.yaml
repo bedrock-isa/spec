@@ -2,7 +2,6 @@ mnemonic: ADD
 doc:
   title: Add
   summary: Adds the source operand to the destination operand.
-  description: Adds the source operand to the destination operand.
   instruction_family: integer_alu
   instruction_class: integer
 behavior:

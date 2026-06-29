@@ -2,7 +2,6 @@ mnemonic: FMOVCR
 doc:
   title: Floating-Point Move Constant
   summary: Performs the floating-point move constant operation.
-  description: Performs the floating-point move constant operation.
   instruction_family: fpu
   instruction_class: fpu
 behavior:

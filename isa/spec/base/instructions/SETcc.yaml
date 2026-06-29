@@ -2,7 +2,6 @@ mnemonic: SETcc
 doc:
   title: Set Conditional
   summary: Performs the set conditional operation.
-  description: Performs the set conditional operation.
   instruction_family: control_flow
   instruction_class: control_flow
 behavior:
@@ -11,13 +10,6 @@ behavior:
   output: dst
   operation:
   - dst_v = cc_v;
-  long_transfer_operands: LJMP/LCALL take the new CS image from Dn and the target PC value/address from EA
-  atomic_cs_pc_commit:
-  - LJMP
-  - LCALL
-  - LRET
-  - SYSRET
-  - IRET
 allocation:
   catalog_section: compact_primary
 forms:

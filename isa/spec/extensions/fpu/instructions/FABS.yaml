@@ -2,7 +2,6 @@ mnemonic: FABS
 doc:
   title: Floating-Point Absolute Value
   summary: Performs the floating-point absolute value operation.
-  description: Performs the floating-point absolute value operation.
   instruction_family: fpu
   instruction_class: fpu
 behavior:

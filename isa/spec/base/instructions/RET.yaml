@@ -2,7 +2,6 @@ mnemonic: RET
 doc:
   title: Return
   summary: Performs the return operation.
-  description: Performs the return operation.
   instruction_family: control_flow
   instruction_class: control_flow
 behavior:
@@ -12,13 +11,6 @@ behavior:
   - local return_pc_v:8 = *:8 SP;
   - SP = SP + 8;
   - return [return_pc_v];
-  long_transfer_operands: LJMP/LCALL take the new CS image from Dn and the target PC value/address from EA
-  atomic_cs_pc_commit:
-  - LJMP
-  - LCALL
-  - LRET
-  - SYSRET
-  - IRET
 allocation:
   catalog_section: compact_primary
 forms:

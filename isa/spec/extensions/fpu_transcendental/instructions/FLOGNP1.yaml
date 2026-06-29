@@ -2,7 +2,6 @@ mnemonic: FLOGNP1
 doc:
   title: Floating-Point Natural Log Plus One
   summary: Performs the floating-point natural log plus one operation.
-  description: Performs the floating-point natural log plus one operation.
   instruction_family: fpu_transcendental
   instruction_class: fpu
 behavior:

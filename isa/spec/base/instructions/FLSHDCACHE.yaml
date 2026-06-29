@@ -2,7 +2,6 @@ mnemonic: FLSHDCACHE
 doc:
   title: Flush Data Cache
   summary: Performs the flush data cache operation.
-  description: Performs the flush data cache operation.
   instruction_family: cache
   instruction_class: system
 behavior:

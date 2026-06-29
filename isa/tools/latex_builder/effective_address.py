@@ -117,16 +117,7 @@ def ea_table(spec: dict[str, Any]) -> str:
 
 
 def ea_manual_entry(spec: dict[str, Any], form: dict[str, Any]) -> dict[str, Any]:
-    entry = dict(form)
-    manual = (spec.get("ea", {}).get("manual_text") or {}) if isinstance(spec.get("ea"), dict) else {}
-    descriptions = manual.get("form_descriptions", {}) if isinstance(manual, dict) else {}
-    payloads = manual.get("payload_descriptions", {}) if isinstance(manual, dict) else {}
-    name = str(form.get("name", ""))
-    if isinstance(descriptions, dict) and name in descriptions:
-        entry["description"] = descriptions[name]
-    if isinstance(payloads, dict) and name in payloads:
-        entry["payload_description"] = payloads[name]
-    return entry
+    return dict(form)
 
 
 def ea_row(form: dict[str, Any], encoding: str) -> list[str]:
@@ -290,7 +281,25 @@ def ea_generation_text(form: dict[str, Any], extended: bool) -> str:
 
 
 def ea_payload_text(form: dict[str, Any], extended: bool) -> str:
-    return compact_text(form.get("payload_description", ""))
+    if is_compact_ea_escape(form):
+        if form.get("index_extension") == "signed32_to_64":
+            return "one descriptor word followed by signed-32 indexed mode payload words"
+        return "one descriptor word followed by mode-specific payload words"
+    displacement = form.get("displacement")
+    absolute = form.get("absolute")
+    if displacement and str(displacement) != "none":
+        words = payload_word_count(form)
+        return payload_with_descriptor(extended, f"{word_count_text(words)} {signed_size_text(displacement, 'displacement')} {plural(words, 'word')}")
+    if absolute:
+        return payload_with_descriptor(extended, f"a {word_count_text(payload_word_count(form))}-word {signed_size_text(absolute, 'absolute address')}")
+    words = payload_word_count(form)
+    if extended and words == 0:
+        return "descriptor word only"
+    if is_immediate_form(form):
+        return f"{word_count_text(words)} immediate payload {plural(words, 'word')}"
+    if words > 0:
+        return payload_with_descriptor(extended, f"{word_count_text(words)} payload {plural(words, 'word')}")
+    return "no payload words"
 
 
 def register_value_text(register_class: Any) -> str:
@@ -303,7 +312,107 @@ def register_value_text(register_class: Any) -> str:
 
 
 def ea_form_description(form: dict[str, Any], extended: bool) -> str:
-    return tex_escape(compact_text(form.get("description", "")))
+    return tex_escape(compact_text(ea_form_description_text(form, extended)))
+
+
+def ea_form_description_text(form: dict[str, Any], extended: bool) -> str:
+    if is_compact_ea_escape(form):
+        if form.get("index_extension") == "signed32_to_64":
+            return "Compact escape to the signed-32 indexed extended EA descriptor."
+        return "Compact escape to the extended EA descriptor."
+    register_class = form.get("register_class")
+    if register_class:
+        register_labels = {"D": "data-register", "A": "address-register", "SP": "stack-pointer"}
+        register_names = {"D": "Dn", "A": "An", "SP": "SP"}
+        label = register_labels.get(str(register_class), f"{register_class}-register")
+        selected = register_names.get(str(register_class), str(register_class))
+        return f"Direct {label} operand. The EA field selects {selected} and does not imply a memory access."
+    if is_immediate_form(form):
+        text = "Immediate operand supplied by following payload words."
+        if form.get("sign_extension") == "operand_size":
+            text += " The value is sign-extended to the instruction operand size."
+        elif form.get("sign_extension") == "none":
+            text += " The value is not sign-extended."
+        return text
+    pieces: list[str] = []
+    if form.get("absolute"):
+        pieces.append(("Segment-selectable " if form.get("segment_selectable") else "") + "absolute memory operand")
+        pieces.append(f"using a {signed_size_text(form['absolute'], 'address payload')}")
+    elif form.get("index"):
+        prefix = "Segment-selectable " if form.get("segment_selectable") else ""
+        if form.get("index_extension") == "signed32_to_64":
+            prefix += "signed-32 indexed "
+        else:
+            prefix += "indexed "
+        pieces.append(prefix + "memory operand")
+        pieces.append(f"using {base_operand_text(form)}, {index_operand_text(form)}, and scale")
+    elif form.get("base"):
+        prefix = "Segment-selectable " if form.get("segment_selectable") else ""
+        pieces.append(prefix + base_memory_text(form))
+    if displacement_token(form.get("displacement", "")):
+        pieces.append(f"with a {signed_size_text(form['displacement'], 'displacement payload')}")
+    if form.get("fixed_segment"):
+        pieces.append(f"using fixed {form['fixed_segment']} segment selection")
+    if form.get("segment_field") == "reserved_zero":
+        pieces.append("with the descriptor segment field reserved")
+    if form.get("default_segment_syntax"):
+        pieces.append("omitted segment syntax assembles to the default data segment")
+    if form.get("update_eligible"):
+        pieces.append("address-update prefixes may use this form")
+    return ". ".join(piece.rstrip(".") for piece in pieces if piece) + "."
+
+
+def payload_with_descriptor(extended: bool, text: str) -> str:
+    return f"descriptor word plus {text}" if extended else text
+
+
+def payload_word_count(form: dict[str, Any]) -> int:
+    words = form.get("extra_words")
+    if isinstance(words, int):
+        return words
+    if words is not None and str(words).isdigit():
+        return int(str(words))
+    extra = ea_extra_words(form)
+    if extra.startswith("+") and extra[1:].isdigit():
+        return int(extra[1:])
+    return 0
+
+
+def word_count_text(words: int) -> str:
+    names = {0: "zero", 1: "one", 2: "two", 4: "four"}
+    return names.get(words, str(words))
+
+
+def plural(count: int, noun: str) -> str:
+    return noun if count == 1 else noun + "s"
+
+
+def signed_size_text(value: Any, noun: str) -> str:
+    text = str(value)
+    sign = "signed" if text.startswith("signed") else "unsigned" if text.startswith("unsigned") else ""
+    bits = "".join(ch for ch in text if ch.isdigit())
+    return " ".join(part for part in (sign, f"{bits}-bit" if bits else "", noun) if part)
+
+
+def base_operand_text(form: dict[str, Any]) -> str:
+    base = str(form.get("base", ""))
+    return {"A": "An", "SP": "SP", "PC": "PC"}.get(base, base)
+
+
+def index_operand_text(form: dict[str, Any]) -> str:
+    return "Dn[31:0]" if form.get("index_extension") == "signed32_to_64" else "Dn"
+
+
+def base_memory_text(form: dict[str, Any]) -> str:
+    base = str(form.get("base", ""))
+    disp = displacement_token(form.get("displacement", ""))
+    if base == "A":
+        return "address-register relative memory operand" if disp else "address-register indirect memory operand"
+    if base == "PC":
+        return "program-counter relative memory operand"
+    if base == "SP":
+        return "stack-pointer relative memory operand"
+    return readable_text(base) + " memory operand"
 
 
 def ea_flow_figure(form: dict[str, Any], title: str, extended: bool) -> str:

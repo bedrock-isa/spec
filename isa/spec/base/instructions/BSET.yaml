@@ -2,7 +2,6 @@ mnemonic: BSET
 doc:
   title: Bit Set
   summary: Performs the bit set operation.
-  description: Performs the bit set operation.
   instruction_family: integer_bitfield
   instruction_class: integer
 behavior:

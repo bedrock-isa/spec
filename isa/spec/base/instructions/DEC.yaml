@@ -2,7 +2,6 @@ mnemonic: DEC
 doc:
   title: Decrement
   summary: Performs the decrement operation.
-  description: Performs the decrement operation.
   instruction_family: integer_unary
   instruction_class: integer
 behavior:

@@ -2,7 +2,6 @@ mnemonic: DIVS
 doc:
   title: Signed Divide
   summary: Performs the signed divide operation.
-  description: Performs the signed divide operation.
   instruction_family: integer_mul_div
   instruction_class: integer
 behavior:

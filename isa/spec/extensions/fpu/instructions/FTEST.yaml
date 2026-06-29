@@ -2,7 +2,6 @@ mnemonic: FTEST
 doc:
   title: Floating-Point Test
   summary: Performs the floating-point test operation.
-  description: Performs the floating-point test operation.
   instruction_family: fpu
   instruction_class: fpu
 behavior:

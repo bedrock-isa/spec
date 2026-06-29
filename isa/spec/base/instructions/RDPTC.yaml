@@ -2,7 +2,6 @@ mnemonic: RDPTC
 doc:
   title: Read Page Table Counter
   summary: Performs the read page table counter operation.
-  description: Performs the read page table counter operation.
   instruction_family: system_registers
   instruction_class: system
 behavior:

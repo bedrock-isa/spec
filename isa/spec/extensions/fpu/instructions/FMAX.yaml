@@ -2,7 +2,6 @@ mnemonic: FMAX
 doc:
   title: Floating-Point Maximum
   summary: Performs the floating-point maximum operation.
-  description: Performs the floating-point maximum operation.
   instruction_family: fpu
   instruction_class: fpu
 behavior:

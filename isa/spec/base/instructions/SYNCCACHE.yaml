@@ -2,7 +2,6 @@ mnemonic: SYNCCACHE
 doc:
   title: Synchronize Caches
   summary: Synchronize instruction/data cache visibility.
-  description: Synchronize instruction/data cache visibility.
   instruction_family: cache
   instruction_class: system
 behavior:

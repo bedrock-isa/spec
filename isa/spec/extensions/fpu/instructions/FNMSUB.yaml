@@ -2,7 +2,6 @@ mnemonic: FNMSUB
 doc:
   title: Floating-Point Fused Negative Multiply Subtract
   summary: Performs the floating-point fused negative multiply subtract operation.
-  description: Performs the floating-point fused negative multiply subtract operation.
   instruction_family: fpu
   instruction_class: fpu
 behavior:

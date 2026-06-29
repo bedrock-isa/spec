@@ -2,7 +2,6 @@ mnemonic: MINU
 doc:
   title: Unsigned Minimum
   summary: Performs the unsigned minimum operation.
-  description: Performs the unsigned minimum operation.
   instruction_family: integer_alu
   instruction_class: integer
 behavior:

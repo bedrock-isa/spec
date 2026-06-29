@@ -2,7 +2,6 @@ mnemonic: SHL
 doc:
   title: Shift Left
   summary: Performs the shift left operation.
-  description: Performs the shift left operation.
   instruction_family: integer_bitfield
   instruction_class: integer
 behavior:

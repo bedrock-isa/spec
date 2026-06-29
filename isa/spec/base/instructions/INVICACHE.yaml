@@ -2,7 +2,6 @@ mnemonic: INVICACHE
 doc:
   title: Invalidate Instruction Cache
   summary: Invalidate instruction cache block or range.
-  description: Invalidate instruction cache block or range.
   instruction_family: cache
   instruction_class: system
 behavior:

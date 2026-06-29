@@ -2,7 +2,6 @@ mnemonic: PREFETCH
 doc:
   title: Prefetch
   summary: Hint that EA will be read soon; no architectural fault unless policy says otherwise.
-  description: Hint that EA will be read soon; no architectural fault unless policy says otherwise.
   instruction_family: cache
   instruction_class: system
 behavior:

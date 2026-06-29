@@ -2,7 +2,6 @@ mnemonic: MOV
 doc:
   title: Move
   summary: Copies the source operand to the destination operand.
-  description: Copies the source operand to the destination operand.
   instruction_family: data_movement
   instruction_class: data_movement
 behavior:

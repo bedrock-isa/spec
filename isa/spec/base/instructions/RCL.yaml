@@ -2,7 +2,6 @@ mnemonic: RCL
 doc:
   title: Rotate Through Carry Left
   summary: Performs the rotate through carry left operation.
-  description: Performs the rotate through carry left operation.
   instruction_family: integer_bitfield
   instruction_class: integer
 behavior:

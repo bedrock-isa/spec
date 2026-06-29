@@ -2,7 +2,6 @@ mnemonic: FMOV
 doc:
   title: Floating-Point Move
   summary: Copies the source operand to the destination operand.
-  description: Copies the source operand to the destination operand.
   instruction_family: fpu
   instruction_class: fpu
 behavior:

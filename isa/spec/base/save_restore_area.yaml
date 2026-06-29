@@ -101,33 +101,10 @@ save_area_formats:
       bits: all other bits
       field: reserved
       meaning: SAVE writes zero and RESTORE ignores
-    instruction_behavior:
-      SAVE: SAVE always writes the base header fields, state block bitmap, bank-0 D registers, A registers, FLAGS, STATUS,
-        and DBANK selector. SAVE may clear GS validity bits for architecturally clean GS slots and may clear state-block
-        bitmap bits for architecturally clean extension blocks.
-      RESTORE: RESTORE always restores bank-0 D registers, A registers, FLAGS, and DBANK from the fixed base block. RESTORE
-        updates only GS slots whose GS validity bit is set. User-mode RESTORE ignores the STATUS field and does not validate
-        STATUS reserved bits; supervisor RESTORE restores STATUS under the normal STATUS write rules. RESTORE processes
-        extension blocks whose state-block bitmap bit is set and ignores blocks whose bit is clear.
-    extension_components: Extension component offsets begin no earlier than SAVE_HEADER_SIZE, 0x0c0 for the base profile,
-      and are reported by CPUID. The save-area base address is 4 KiB aligned. Every component offset and component storage
-      size is a multiple of 64 bytes so state blocks are cache-line aligned.
-    extension_component_order: CPUID SAVE_AREA_LAYOUT component descriptors are indexed from 2 upward. That descriptor index
-      order is the architectural extension-component order and is the bit order used by the fixed state block bitmap at
-      offset 0x008. COMPONENT_OFFSET values are numeric byte offsets and must be strictly increasing in descriptor order.
-      Base-defined component formats appear first; extension-owned component formats are appended by descriptor order from
-      their owning extension specs. The SAVE area has no architectural total-size upper bound beyond the CPUID-reported
-      SAVE_AREA_SIZE value for the selected implementation/profile, but SAVE_COMPONENT_COUNT is limited to 64 by the fixed
-      state block bitmap.
     extension_component_formats:
     - component_id: 1
       name: DATA_REGISTER_BANKS
       title: Additional Data-Register Banks
-      validity: The component header fields contain a bank-level validity bitmap. If a bank bit is clear, RESTORE leaves
-        that nonzero D-register bank unchanged.
-      description: This component stores data-register banks other than bank 0. Bank 0 is part of the fixed base block.
-        The first 64 bytes are the component header. Each following 0x40-byte bank record stores D0-D7 for the matching
-        bank number and begins on a 64-byte boundary.
       size: 0x40 * DBANK_COUNT
       header_fields:
       - offset: 0

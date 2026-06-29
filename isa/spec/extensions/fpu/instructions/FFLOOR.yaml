@@ -2,7 +2,6 @@ mnemonic: FFLOOR
 doc:
   title: Floating-Point Floor
   summary: Performs the floating-point floor operation.
-  description: Performs the floating-point floor operation.
   instruction_family: fpu
   instruction_class: fpu
 behavior:

@@ -2,7 +2,6 @@ mnemonic: FMOD
 doc:
   title: Floating-Point Modulo
   summary: Performs the floating-point modulo operation.
-  description: Performs the floating-point modulo operation.
   instruction_family: fpu
   instruction_class: fpu
 behavior:

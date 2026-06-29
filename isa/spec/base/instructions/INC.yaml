@@ -2,7 +2,6 @@ mnemonic: INC
 doc:
   title: Increment
   summary: Performs the increment operation.
-  description: Performs the increment operation.
   instruction_family: integer_unary
   instruction_class: integer
 behavior:

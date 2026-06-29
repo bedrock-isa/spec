@@ -967,7 +967,7 @@ def prefix_rows(spec: dict[str, Any]) -> list[dict[str, str]]:
         aliases = prefix_aliases(prefix)
         encoding = str(prefix.get("pattern", f"0x{int(prefix.get('value', 0)):02x}"))
         operand = prefix_operand(prefix)
-        semantics = str(prefix.get("semantics", "-"))
+        semantics = prefix_meaning(prefix)
         raw_syntax = prefix.get("syntax", {})
         examples = raw_syntax.get("examples", []) if isinstance(raw_syntax, dict) else []
         rows.append(
@@ -1019,6 +1019,28 @@ def prefix_operand(prefix: dict[str, Any]) -> str:
     else:
         text = f"<{typ.lower()}>" if typ else "-"
     return text if not role else f"{text}:{role}"
+
+
+def prefix_meaning(prefix: dict[str, Any]) -> str:
+    name = str(prefix.get("name", ""))
+    group = str(prefix.get("group", ""))
+    meanings = {
+        "NPX": "no effect",
+        "NOSPEC": "speculation boundary",
+        "SATURATE": "saturating arithmetic",
+        "NONTEMPORAL": "non-temporal memory hint",
+        "POSTINC": "post-increment address register",
+        "PREINC": "pre-increment address register",
+        "POSTDEC": "post-decrement address register",
+        "PREDEC": "pre-decrement address register",
+        "U2C": "user-domain source to current-domain destination",
+        "C2U": "current-domain source to user-domain destination",
+        "U2U": "user-domain memory operands",
+        "REPcc": "repeat while counter and condition remain active",
+        "REPG": "repeat grouped instructions using the selected counter",
+        "ENDG": "end grouped repeat",
+    }
+    return meanings.get(name, group.replace("_", " ") or "-")
 
 
 def compact_ea_extra_words(form: dict[str, Any]) -> str:

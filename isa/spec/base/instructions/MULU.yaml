@@ -2,7 +2,6 @@ mnemonic: MULU
 doc:
   title: Unsigned Multiply
   summary: Performs the unsigned multiply operation.
-  description: Performs the unsigned multiply operation.
   instruction_family: integer_mul_div
   instruction_class: integer
 behavior:

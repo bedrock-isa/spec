@@ -2,7 +2,6 @@ mnemonic: WRBKDCACHE
 doc:
   title: Write Back Data Cache
   summary: Write back data cache block or range.
-  description: Write back data cache block or range.
   instruction_family: cache
   instruction_class: system
 behavior:

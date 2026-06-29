@@ -2,7 +2,6 @@ mnemonic: FETOXM1
 doc:
   title: Floating-Point e To x Minus One
   summary: Performs the floating-point e to x minus one operation.
-  description: Performs the floating-point e to x minus one operation.
   instruction_family: fpu_transcendental
   instruction_class: fpu
 behavior:

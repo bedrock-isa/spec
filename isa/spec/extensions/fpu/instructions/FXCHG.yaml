@@ -2,7 +2,6 @@ mnemonic: FXCHG
 doc:
   title: Floating-Point Exchange
   summary: Performs the floating-point exchange operation.
-  description: Performs the floating-point exchange operation.
   instruction_family: fpu
   instruction_class: fpu
 behavior:

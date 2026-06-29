@@ -2,7 +2,6 @@ mnemonic: FTAN
 doc:
   title: Floating-Point Tangent
   summary: Performs the floating-point tangent operation.
-  description: Performs the floating-point tangent operation.
   instruction_family: fpu_transcendental
   instruction_class: fpu
 behavior:

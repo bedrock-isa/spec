@@ -2,7 +2,6 @@ mnemonic: BTEST
 doc:
   title: Bit Test
   summary: Performs the bit test operation.
-  description: Performs the bit test operation.
   instruction_family: integer_bitfield
   instruction_class: integer
 behavior:

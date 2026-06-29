@@ -2,7 +2,6 @@ mnemonic: ABS
 doc:
   title: Absolute Value
   summary: Performs the absolute value operation.
-  description: Performs the absolute value operation.
   instruction_family: integer_unary
   instruction_class: integer
 behavior:

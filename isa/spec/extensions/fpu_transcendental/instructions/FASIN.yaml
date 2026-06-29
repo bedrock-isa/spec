@@ -2,7 +2,6 @@ mnemonic: FASIN
 doc:
   title: Floating-Point Arc Sine
   summary: Performs the floating-point arc sine operation.
-  description: Performs the floating-point arc sine operation.
   instruction_family: fpu_transcendental
   instruction_class: fpu
 behavior:

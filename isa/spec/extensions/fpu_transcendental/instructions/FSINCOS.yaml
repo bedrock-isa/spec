@@ -2,7 +2,6 @@ mnemonic: FSINCOS
 doc:
   title: Floating-Point Sine And Cosine
   summary: Performs the floating-point sine and cosine operation.
-  description: Performs the floating-point sine and cosine operation.
   instruction_family: fpu_transcendental
   instruction_class: fpu
 behavior:

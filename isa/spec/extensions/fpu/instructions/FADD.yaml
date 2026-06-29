@@ -2,7 +2,6 @@ mnemonic: FADD
 doc:
   title: Floating-Point Add
   summary: Adds the source operand to the destination operand.
-  description: Adds the source operand to the destination operand.
   instruction_family: fpu
   instruction_class: fpu
 behavior:

@@ -2,7 +2,6 @@ mnemonic: ADC
 doc:
   title: Add With Carry
   summary: Performs the add with carry operation.
-  description: Performs the add with carry operation.
   instruction_family: integer_alu
   instruction_class: integer
 behavior:

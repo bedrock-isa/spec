@@ -2,7 +2,6 @@ mnemonic: RDPMC
 doc:
   title: Read Performance Counter
   summary: Performs the read performance counter operation.
-  description: Performs the read performance counter operation.
   instruction_family: system_registers
   instruction_class: system
 behavior:

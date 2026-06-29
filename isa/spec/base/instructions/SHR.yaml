@@ -2,7 +2,6 @@ mnemonic: SHR
 doc:
   title: Shift Right
   summary: Performs the shift right operation.
-  description: Performs the shift right operation.
   instruction_family: integer_bitfield
   instruction_class: integer
 behavior:

@@ -2,7 +2,6 @@ mnemonic: FCVT
 doc:
   title: Floating-Point Convert Signed
   summary: Performs the floating-point convert signed operation.
-  description: Performs the floating-point convert signed operation.
   instruction_family: fpu
   instruction_class: fpu
 behavior:

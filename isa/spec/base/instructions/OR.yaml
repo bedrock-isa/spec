@@ -2,7 +2,6 @@ mnemonic: OR
 doc:
   title: Bitwise Or
   summary: Computes the bitwise OR of the source and destination operands.
-  description: Computes the bitwise OR of the source and destination operands.
   instruction_family: integer_alu
   instruction_class: integer
 behavior:

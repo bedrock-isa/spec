@@ -2,7 +2,6 @@ mnemonic: FSQRT
 doc:
   title: Floating-Point Square Root
   summary: Performs the floating-point square root operation.
-  description: Performs the floating-point square root operation.
   instruction_family: fpu
   instruction_class: fpu
 behavior:

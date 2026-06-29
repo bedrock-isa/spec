@@ -2,7 +2,6 @@ mnemonic: FATAN
 doc:
   title: Floating-Point Arc Tangent
   summary: Performs the floating-point arc tangent operation.
-  description: Performs the floating-point arc tangent operation.
   instruction_family: fpu_transcendental
   instruction_class: fpu
 behavior:

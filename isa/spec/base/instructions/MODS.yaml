@@ -2,7 +2,6 @@ mnemonic: MODS
 doc:
   title: Signed Modulo
   summary: Performs the signed modulo operation.
-  description: Performs the signed modulo operation.
   instruction_family: integer_mul_div
   instruction_class: integer
 behavior:

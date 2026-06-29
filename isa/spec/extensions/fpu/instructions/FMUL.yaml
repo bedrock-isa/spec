@@ -2,7 +2,6 @@ mnemonic: FMUL
 doc:
   title: Floating-Point Multiply
   summary: Performs the floating-point multiply operation.
-  description: Performs the floating-point multiply operation.
   instruction_family: fpu
   instruction_class: fpu
 behavior:

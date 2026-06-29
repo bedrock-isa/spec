@@ -2,7 +2,6 @@ mnemonic: FATANH
 doc:
   title: Floating-Point Hyperbolic Arc Tangent
   summary: Performs the floating-point hyperbolic arc tangent operation.
-  description: Performs the floating-point hyperbolic arc tangent operation.
   instruction_family: fpu_transcendental
   instruction_class: fpu
 behavior:

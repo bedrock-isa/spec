@@ -2,7 +2,6 @@ mnemonic: INCN
 doc:
   title: Increment Without Flags
   summary: Performs the increment without flags operation.
-  description: Performs the increment without flags operation.
   instruction_family: integer_unary
   instruction_class: integer
 behavior:

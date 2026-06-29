@@ -2,7 +2,8 @@ mnemonic: EXTZW
 doc:
   title: Zero Extend To Word
   summary: Performs the zero extend to word operation.
-  description: Performs the zero extend to word operation.
+  description: Zero-extends the source operand from byte size to word size. The low byte of the source is copied into
+    the destination, and the remaining high destination bits are filled with zero.
   instruction_family: integer_unary
   instruction_class: integer
 behavior:
@@ -10,17 +11,7 @@ behavior:
   inputs: [src]
   output: dst
   operation:
-  - dst_v = 0;
-  - result_v = 0;
-  - tmp_v = size_v;
-  - <zero_extend_mask_loop>
-  - if (tmp_v == 0) goto <zero_extend_mask_done>;
-  - result_v = result_v << 8;
-  - result_v = result_v | 0xff;
-  - tmp_v = tmp_v - 1;
-  - goto <zero_extend_mask_loop>;
-  - <zero_extend_mask_done>
-  - dst_v = src_v & result_v;
+  - dst_v = arch_zero_extend(src_v, size_v, 2);
   destination_size: W
   repeat_observed_value: result_value
   repflags: flags_logic_observed_value

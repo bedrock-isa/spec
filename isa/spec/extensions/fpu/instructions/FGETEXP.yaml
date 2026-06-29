@@ -2,7 +2,6 @@ mnemonic: FGETEXP
 doc:
   title: Floating-Point Get Exponent
   summary: Performs the floating-point get exponent operation.
-  description: Performs the floating-point get exponent operation.
   instruction_family: fpu
   instruction_class: fpu
 behavior:

@@ -2,7 +2,6 @@ mnemonic: ILLEGAL
 doc:
   title: Illegal Instruction
   summary: Raise illegal-instruction exception.
-  description: Raise illegal-instruction exception.
   instruction_family: core_control
   instruction_class: system
 behavior:

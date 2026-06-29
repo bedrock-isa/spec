@@ -2,7 +2,6 @@ mnemonic: NEG
 doc:
   title: Negate
   summary: Performs the negate operation.
-  description: Performs the negate operation.
   instruction_family: integer_unary
   instruction_class: integer
 behavior:

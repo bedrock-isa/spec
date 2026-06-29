@@ -2,7 +2,6 @@ mnemonic: FSINH
 doc:
   title: Floating-Point Hyperbolic Sine
   summary: Performs the floating-point hyperbolic sine operation.
-  description: Performs the floating-point hyperbolic sine operation.
   instruction_family: fpu_transcendental
   instruction_class: fpu
 behavior:

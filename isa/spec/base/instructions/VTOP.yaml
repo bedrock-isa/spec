@@ -2,7 +2,6 @@ mnemonic: VTOP
 doc:
   title: Virtual To Physical Query
   summary: Perform page walk and return translated physical address/status.
-  description: Perform page walk and return translated physical address/status.
   instruction_family: tlb_and_context
   instruction_class: system
 behavior:

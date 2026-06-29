@@ -2,7 +2,6 @@ mnemonic: LEA
 doc:
   title: Load Effective Address
   summary: Performs the load effective address operation.
-  description: Performs the load effective address operation.
   instruction_family: ea_utility
   instruction_class: data_movement
 behavior:

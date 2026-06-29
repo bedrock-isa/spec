@@ -2,7 +2,6 @@ mnemonic: HALT
 doc:
   title: Halt
   summary: Enter halted supervisor state until an enabled event resumes execution.
-  description: Enter halted supervisor state until an enabled event resumes execution.
   instruction_family: core_control
   instruction_class: system
 behavior:

@@ -2,7 +2,6 @@ mnemonic: FNEG
 doc:
   title: Floating-Point Negate
   summary: Performs the floating-point negate operation.
-  description: Performs the floating-point negate operation.
   instruction_family: fpu
   instruction_class: fpu
 behavior:

@@ -2,7 +2,6 @@ mnemonic: SEGLEA
 doc:
   title: Segment Load Effective Address
   summary: Performs the segment load effective address operation.
-  description: Performs the segment load effective address operation.
   instruction_family: ea_utility
   instruction_class: data_movement
 behavior:

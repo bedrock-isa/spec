@@ -2,7 +2,6 @@ mnemonic: XCHG
 doc:
   title: Exchange
   summary: Performs the exchange operation.
-  description: Performs the exchange operation.
   instruction_family: data_movement
   instruction_class: data_movement
 behavior:

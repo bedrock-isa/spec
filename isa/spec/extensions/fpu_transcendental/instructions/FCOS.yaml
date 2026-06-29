@@ -2,7 +2,6 @@ mnemonic: FCOS
 doc:
   title: Floating-Point Cosine
   summary: Performs the floating-point cosine operation.
-  description: Performs the floating-point cosine operation.
   instruction_family: fpu_transcendental
   instruction_class: fpu
 behavior:

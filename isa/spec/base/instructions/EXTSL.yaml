@@ -2,7 +2,9 @@ mnemonic: EXTSL
 doc:
   title: Sign Extend To Long
   summary: Performs the sign extend to long operation.
-  description: Performs the sign extend to long operation.
+  description: Sign-extends the source operand from the instruction size to long size. The low source-size bytes of
+    the source are copied into the destination, and the remaining high destination bits are filled with the source sign
+    bit.
   instruction_family: integer_unary
   instruction_class: integer
 behavior:
@@ -10,21 +12,7 @@ behavior:
   inputs: [src]
   output: dst
   operation:
-  - dst_v = 0;
-  - result_v = 0;
-  - tmp_v = size_v;
-  - <sign_extend_mask_loop>
-  - if (tmp_v == 0) goto <sign_extend_mask_done>;
-  - result_v = result_v << 8;
-  - result_v = result_v | 0xff;
-  - tmp_v = tmp_v - 1;
-  - goto <sign_extend_mask_loop>;
-  - <sign_extend_mask_done>
-  - dst_v = src_v & result_v;
-  - carry_v = (result_v + 1) >> 1;
-  - if ((dst_v & carry_v) == 0) goto <sign_extend_done>;
-  - dst_v = dst_v | ~result_v;
-  - <sign_extend_done>
+  - dst_v = arch_sign_extend(src_v, size_v, 4);
   destination_size: L
   repeat_observed_value: result_value
   repflags: flags_logic_observed_value

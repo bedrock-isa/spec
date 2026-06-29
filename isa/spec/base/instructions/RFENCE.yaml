@@ -2,7 +2,6 @@ mnemonic: RFENCE
 doc:
   title: Read Fence
   summary: Order prior reads before later reads.
-  description: Order prior reads before later reads.
   instruction_family: core_control
   instruction_class: system
 behavior:

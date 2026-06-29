@@ -77,8 +77,6 @@ LOCAL_BEHAVIOR_KEYS = {
     "repeat_observed_value",
     "repflags",
     "banked_forms",
-    "long_transfer_operands",
-    "atomic_cs_pc_commit",
     "canonicalization",
     "descriptor_payloads",
 }
@@ -227,7 +225,7 @@ class RegistersRootSchema(KeySchema):
 
 class SegmentsRootSchema(KeySchema):
     name = "segments root"
-    keys = {"version", "segment_registers", "layout", "disabled_when", "semantics"}
+    keys = {"version", "segment_registers", "layout", "disabled_when"}
 
     @classmethod
     def validate(cls, value: Any, path: str, errors: list[str]) -> None:
@@ -239,14 +237,6 @@ class SegmentsRootSchema(KeySchema):
         if isinstance(layout, dict):
             check_mapping_values(layout, f"{path}.layout", SegmentLayoutFieldSchema, errors)
         check_optional_mapping(value.get("disabled_when"), f"{path}.disabled_when", SegmentDisabledWhenSchema, errors)
-        semantics = value.get("semantics")
-        check_optional_mapping(semantics, f"{path}.semantics", SegmentSemanticsSchema, errors)
-        if not isinstance(semantics, dict):
-            return
-        check_optional_mapping(semantics.get("bounds_only_mode"), f"{path}.semantics.bounds_only_mode", SegmentBoundsOnlyModeSchema, errors)
-        check_optional_mapping(semantics.get("formulas"), f"{path}.semantics.formulas", SegmentFormulasSchema, errors)
-        check_optional_mapping(semantics.get("arithmetic"), f"{path}.semantics.arithmetic", SegmentArithmeticSchema, errors)
-        check_optional_mapping(semantics.get("modes"), f"{path}.semantics.modes", SegmentModesSchema, errors)
 
 
 class PrefixesRootSchema(KeySchema):
@@ -307,7 +297,6 @@ class EffectiveAddressRootSchema(KeySchema):
         "ea_forms",
         "extended_ea_descriptor",
         "extended_ea_forms",
-        "manual_text",
         "immediate_rules",
         "indexed_ea_rules",
         "update_eligible",
@@ -327,8 +316,6 @@ class EffectiveAddressRootSchema(KeySchema):
             check_allowed_keys(ea_forms, f"{path}.ea_forms", EaFormsSchema, errors)
             check_list_items(ea_forms.get("compact", []), f"{path}.ea_forms.compact", CompactEaFormSchema, errors)
         check_list_items(value.get("extended_ea_forms", []), f"{path}.extended_ea_forms", ExtendedEaFormSchema, errors)
-        manual_text = value.get("manual_text")
-        check_optional_mapping(manual_text, f"{path}.manual_text", EaManualTextSchema, errors)
         compact_forms = value.get("ea_forms", {}).get("compact", []) if isinstance(value.get("ea_forms"), dict) else []
         for index, form in enumerate(compact_forms):
             if isinstance(form, dict) and isinstance(form.get("operands"), list):
@@ -361,32 +348,6 @@ class EffectiveAddressRootSchema(KeySchema):
         if isinstance(policy, dict):
             check_mapping_item_keys(policy.get("ea_sets"), f"{path}.ea_operand_policy.ea_sets", EaSetSchema, errors)
             check_mapping_item_keys(policy.get("extended_form_constraints"), f"{path}.ea_operand_policy.extended_form_constraints", EaExtendedFormConstraintSchema, errors)
-        cls.validate_manual_text_coverage(value, path, errors)
-
-    @classmethod
-    def validate_manual_text_coverage(cls, value: dict[str, Any], path: str, errors: list[str]) -> None:
-        manual_text = value.get("manual_text")
-        if not isinstance(manual_text, dict):
-            errors.append(f"{path}.manual_text must be a mapping")
-            return
-        expected = [
-            str(form.get("name"))
-            for form in ((value.get("ea_forms") or {}).get("compact", []) if isinstance(value.get("ea_forms"), dict) else [])
-            if isinstance(form, dict) and form.get("name")
-        ]
-        expected.extend(
-            str(form.get("name"))
-            for form in value.get("extended_ea_forms", []) or []
-            if isinstance(form, dict) and form.get("name")
-        )
-        for key in ("form_descriptions", "payload_descriptions"):
-            mapping = manual_text.get(key)
-            if not isinstance(mapping, dict):
-                errors.append(f"{path}.manual_text.{key} must be a mapping")
-                continue
-            missing = sorted(name for name in expected if not present(mapping.get(name)))
-            if missing:
-                errors.append(f"{path}.manual_text.{key} is missing entries for: {', '.join(missing)}")
 
 
 class InstructionsRootSchema(KeySchema):
@@ -694,7 +655,7 @@ class CpuidRootSchema(KeySchema):
 
 class TerminologyRootSchema(KeySchema):
     name = "terminology root"
-    keys = {"summary", "display_labels", "groups"}
+    keys = {"display_labels", "groups"}
 
     @classmethod
     def validate(cls, value: Any, path: str, errors: list[str]) -> None:
@@ -754,11 +715,9 @@ class PrefixEntrySchema(KeySchema):
         "value",
         "pattern",
         "group",
-        "semantics",
         "applies_to",
         "requires",
         "syntax",
-        "description",
         "condition",
         "operand",
         "fpu_conditional_mnemonics",
@@ -777,10 +736,6 @@ class PrefixEntrySchema(KeySchema):
     @classmethod
     def validate(cls, value: Any, path: str, errors: list[str]) -> None:
         check_allowed_keys(value, path, cls, errors)
-        if not isinstance(value, dict):
-            return
-        if value.get("group") == "ea_update" and not present(value.get("description")):
-            errors.append(f"{path}.description is required for EA-update prefixes")
 
 
 class PrefixSyntaxSchema(KeySchema):
@@ -928,8 +883,6 @@ class OperationGroupSchema(KeySchema):
         "repflags",
         "bitmap",
         "banked_forms",
-        "long_transfer_operands",
-        "atomic_cs_pc_commit",
         "stack_segment",
         "stack_register",
         "canonicalization",
@@ -1324,7 +1277,7 @@ class InstructionDocSchema(KeySchema):
     def validate(cls, value: Any, path: str, errors: list[str]) -> None:
         check_allowed_keys(value, path, cls, errors)
         if isinstance(value, dict):
-            require_fields(value, path, ["title", "summary", "description"], errors)
+            require_fields(value, path, ["title", "summary"], errors)
 
 
 class SaveAreaFormatSchema(KeySchema):
@@ -1338,9 +1291,6 @@ class SaveAreaFormatSchema(KeySchema):
         "state_block_bitmap_words",
         "fixed_slots",
         "header_fields",
-        "instruction_behavior",
-        "extension_components",
-        "extension_component_order",
         "extension_component_formats",
     }
 
@@ -1410,8 +1360,6 @@ class SaveAreaExtensionComponentSchema(KeySchema):
         "name",
         "title",
         "extension_requirement",
-        "validity",
-        "description",
         "size",
         "header_fields",
         "slots",
@@ -1657,8 +1605,6 @@ class OperationInstructionSchema(KeySchema):
         "repeat_observed_value",
         "repflags",
         "banked_forms",
-        "long_transfer_operands",
-        "atomic_cs_pc_commit",
         "canonicalization",
         "descriptor_payloads",
         "flags",
@@ -1762,11 +1708,6 @@ class ExtendedEaFormSchema(KeySchema):
         "index_extension",
         "store_allowed",
     }
-
-
-class EaManualTextSchema(KeySchema):
-    name = "EA manual text"
-    keys = {"form_descriptions", "payload_descriptions"}
 
 
 class ReservedEaFormSchema(KeySchema):
@@ -2126,41 +2067,6 @@ class SegmentLayoutFieldSchema(KeySchema):
 class SegmentDisabledWhenSchema(KeySchema):
     name = "segment disabled condition"
     keys = {"mantissa"}
-
-
-class SegmentSemanticsSchema(KeySchema):
-    name = "segment semantics"
-    keys = {
-        "purpose",
-        "not_a_protection_mechanism",
-        "protection_and_final_translation",
-        "translation_order_when_enabled",
-        "enabled_when",
-        "bounds_only_mode",
-        "formulas",
-        "arithmetic",
-        "modes",
-    }
-
-
-class SegmentBoundsOnlyModeSchema(KeySchema):
-    name = "segment bounds-only mode"
-    keys = {"field", "effect"}
-
-
-class SegmentFormulasSchema(KeySchema):
-    name = "segment formulas"
-    keys = {"base_byte_address", "limit_byte_address", "segment_size_bytes"}
-
-
-class SegmentArithmeticSchema(KeySchema):
-    name = "segment arithmetic"
-    keys = {"domain", "overflow_rule"}
-
-
-class SegmentModesSchema(KeySchema):
-    name = "segment modes"
-    keys = {"disabled", "translated_window", "bounds_only_window"}
 
 
 class InstructionLengthSchema(KeySchema):
