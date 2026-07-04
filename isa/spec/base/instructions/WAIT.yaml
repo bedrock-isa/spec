@@ -14,5 +14,14 @@ attributes:
 allocation:
   catalog_section: compact_primary
   layout_group: CORE_MISC
+  encoding:
+  - id: WAIT
+    kind: compact
+    start_payload: '0xed1'
+    end_payload: '0xed1'
+    slots: 1
+    primary_bits: 0
+    field_layout: none
+    fields: []
 forms:
   operands: []

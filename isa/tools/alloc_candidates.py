@@ -248,6 +248,18 @@ def collect_candidates(spec: dict[str, Any], entries: list[PatternEntry]) -> lis
             for mnemonic in semantic_entry_mnemonics(str(group), body):
                 if mnemonic in allocated_mnemonics:
                     continue
+                explicit_candidates = semantic_section_explicit_form_candidates(
+                    spec=spec,
+                    model=model,
+                    mnemonic=mnemonic,
+                    group=str(group),
+                    body=body,
+                    category=semantic_section.category,
+                    default_weight=semantic_section.default_weight,
+                )
+                if explicit_candidates:
+                    candidates.extend(explicit_candidates)
+                    continue
                 for operands in semantic_operand_alternatives(mnemonic, body):
                     merged = body_with_operation_metadata(spec, mnemonic, body)
                     ident = semantic_candidate_id(mnemonic, operands, merged)
@@ -387,6 +399,61 @@ def semantic_extended_form_candidates(
                             default_weight=category_default_weight(allocation_params(spec), category),
                         )
                     )
+    return out
+
+
+def semantic_section_explicit_form_candidates(
+    *,
+    spec: dict[str, Any],
+    model: Any,
+    mnemonic: str,
+    group: str,
+    body: dict[str, Any],
+    category: str,
+    default_weight: int,
+) -> list[Candidate]:
+    out: list[Candidate] = []
+    for form_key in ("compact_forms", "extended_forms"):
+        forms = body.get(form_key)
+        if not isinstance(forms, list):
+            continue
+        for form in forms:
+            if not isinstance(form, dict):
+                continue
+            merged = dict(body)
+            merged.update(form)
+            merged = body_with_operation_metadata(spec, mnemonic, merged)
+            force_size_suffix = bool(form.get("force_size_suffix", False))
+            item_category = semantic_category_from_body(merged, category)
+            shape_hint = (
+                "semantic_operands"
+                if form_key == "extended_forms"
+                else "semantic_compact"
+            )
+            for operands in expanded_operand_alternatives(merged):
+                out.append(
+                    build_candidate(
+                        ident=semantic_candidate_id(
+                            mnemonic,
+                            operands,
+                            merged,
+                            force_size_suffix=force_size_suffix,
+                        ),
+                        mnemonic=mnemonic,
+                        category=item_category,
+                        group=f"{group}.{form_key}",
+                        operands=tuple(operands),
+                        body=merged,
+                        allocation=allocation_params(spec),
+                        primary_bits=model.primary.bits,
+                        origin="instructions.yaml",
+                        shape_hint=shape_hint,
+                        must_compact=False,
+                        can_extend=fixed_primary_payload(merged) is None,
+                        fixed_payload=fixed_primary_payload(merged),
+                        default_weight=default_weight,
+                    )
+                )
     return out
 
 
@@ -1033,8 +1100,8 @@ def operand_fields(
         return [Field("g", "SREG", special_register_field_width("S"), source, storage)]
     if is_f_operand(norm):
         return [Field("f", "FREG", register_field_width("F"), source, storage)]
-    if is_immediate_ea_operand(norm):
-        return [Field("i", "IMM_EA", ea_field_width(), source, storage)]
+    if norm == "IMM6":
+        return [Field("i", "IMM6", 6, source, storage)]
     if is_ea_operand(norm) or "MEMORY" in norm:
         return [Field("e", "EA", ea_field_width(), source, storage)]
     if is_selector_operand(norm, source_norm):
@@ -1046,7 +1113,7 @@ def operand_fields(
         return [Field("b", bitmap_name, bitmap_field_width(bitmap_name), source, "payload")]
     if "IMM" in norm or norm in {"CR", "CREG", "CONTROL_REGISTER"}:
         width = immediate_payload_width(norm)
-        return [Field("i", norm.lower(), width, source, "payload")]
+        return [Field("i", immediate_field_kind(norm), width, source, "payload")]
     if "OUTPUT" in norm or "LEAF" in norm or "SUBLEAF" in norm:
         return []
     if is_generic_data_operand(norm):
@@ -1128,6 +1195,20 @@ def immediate_payload_width(norm: str) -> int:
     return 16
 
 
+def immediate_field_kind(norm: str) -> str:
+    if norm in {"CR", "CREG", "CONTROL_REGISTER"}:
+        return "CR"
+    if "RELATIVE" in norm:
+        return "RELATIVE_IMM"
+    if "IMM64" in norm:
+        return "IMM64"
+    if "IMM32" in norm:
+        return "IMM32"
+    if "IMM16" in norm:
+        return "IMM16"
+    return "IMM"
+
+
 def is_d_operand(norm: str) -> bool:
     return norm in {"DREG", "DLO", "DX", "DHI"} or (
         norm.startswith("D") and any(key in norm for key in ("REG", "SRC", "DST", "COUNTER"))
@@ -1179,10 +1260,6 @@ def is_ea_operand(norm: str) -> bool:
         or "_EA_" in norm
         or norm in {"LINEAR_OR_EA", "EA_OR_RANGE", "EA_OR_D"}
     )
-
-
-def is_immediate_ea_operand(norm: str) -> bool:
-    return norm in {"IMM_EA", "IMMEDIATE_EA", "IMMEA", "IMMEDIATE_OPERAND_EA"}
 
 
 def uniquify_candidate_ids(candidates: list[Candidate]) -> list[Candidate]:
@@ -1239,15 +1316,12 @@ def instruction_candidate_id(entry: PatternEntry, operands: tuple[str, ...]) -> 
 def semantic_candidate_id(
     mnemonic: str, operands: tuple[str, ...] | list[str], body: dict[str, Any], *, force_size_suffix: bool = False
 ) -> str:
+    _ = force_size_suffix
     explicit_profile = body.get("profile")
     if explicit_profile:
         return f"{mnemonic}.{str(explicit_profile).replace('-', '_').replace('/', '_').upper()}"
     form = form_name(operands)
-    ident = mnemonic if not form else f"{mnemonic}.{form}"
-    tag = size_tag(body)
-    if force_size_suffix and tag and tag not in {"LQ", "Q"}:
-        ident = f"{ident}.{tag}"
-    return ident
+    return mnemonic if not form else f"{mnemonic}.{form}"
 
 
 def form_name(operands: tuple[str, ...] | list[str]) -> str:
@@ -1260,9 +1334,9 @@ def form_name(operands: tuple[str, ...] | list[str]) -> str:
         source = operand_source(str(operand))
         if "CONDITION" in norm:
             continue
-        if is_immediate_ea_operand(norm):
-            parts.append("IMM")
-        elif is_dbank_operand(norm, source):
+        if norm in {"MEMORY_ORDER", "MEMORYORDER", "ORDER"} or source in {"ORDER", "MEMORY_ORDER"}:
+            continue
+        if is_dbank_operand(norm, source):
             parts.append("DB")
         elif is_ea_operand(norm):
             parts.append("EA")

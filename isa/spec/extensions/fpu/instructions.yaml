@@ -34,7 +34,6 @@ include:
 - instructions/FNEG.yaml
 - instructions/FNMADD.yaml
 - instructions/FNMSUB.yaml
-- instructions/FNOP.yaml
 - instructions/FREM.yaml
 - instructions/FROUND.yaml
 - instructions/FSCALE.yaml

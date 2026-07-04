@@ -13,5 +13,16 @@ behavior:
   - return [return_pc_v];
 allocation:
   catalog_section: compact_primary
+  fixed_encoding:
+    primary_payload: 0xf30
+  encoding:
+  - id: RET
+    kind: compact
+    start_payload: '0xf30'
+    end_payload: '0xf30'
+    slots: 1
+    primary_bits: 0
+    field_layout: none
+    fields: []
 forms:
   operands: []

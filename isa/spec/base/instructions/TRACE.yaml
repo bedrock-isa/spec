@@ -13,6 +13,15 @@ behavior:
   - arch_trace_marker(marker_v & 0xffff);
 allocation:
   catalog_section: compact_primary
+  encoding:
+  - id: TRACE.IMM
+    kind: compact
+    start_payload: '0xf3b'
+    end_payload: '0xf3b'
+    slots: 1
+    primary_bits: 0
+    field_layout: none
+    fields: []
 forms:
   operands:
   - name: marker

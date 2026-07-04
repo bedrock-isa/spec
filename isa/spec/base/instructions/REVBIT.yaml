@@ -24,6 +24,97 @@ behavior:
 allocation:
   catalog_section: integer
   layout_group: REV
+  encoding:
+  - id: REVBIT.D_TO_D
+    extension_root: EXT.integer_bitfield
+    extension_root_payload: '0xf46'
+    extension_family: integer_bitfield
+    extended_opcode: 0x0700..0x07ff
+    extended_opcode_start: '0x0700'
+    extended_opcode_end: '0x07ff'
+    extended_opcode_slots: 256
+    extended_opcode_bits: 8
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: d:DREG[2:0], D:DREG[5:3], s:BWLQ[7:6]
+    fields:
+    - name: s
+      kind: BWLQ
+      source: size
+      storage: descriptor
+      width: 2
+    - name: d
+      kind: DREG
+      source: src
+      storage: descriptor
+      width: 3
+    - name: d
+      kind: DREG
+      source: dst
+      storage: descriptor
+      width: 3
+    kind: extended
+  - id: REVBIT.D_TO_EA
+    extension_root: EXT.integer_bitfield
+    extension_root_payload: '0xf46'
+    extension_family: integer_bitfield
+    extended_opcode: 0x6000..0x67ff
+    extended_opcode_start: '0x6000'
+    extended_opcode_end: '0x67ff'
+    extended_opcode_slots: 2048
+    extended_opcode_bits: 11
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: e:EA[5:0], d:DREG[8:6], s:BWLQ[10:9]
+    fields:
+    - name: s
+      kind: BWLQ
+      source: size
+      storage: descriptor
+      width: 2
+    - name: d
+      kind: DREG
+      source: src
+      storage: descriptor
+      width: 3
+    - name: e
+      kind: EA
+      source: dst
+      storage: descriptor
+      width: 6
+    kind: extended
+  - id: REVBIT.EA_TO_D
+    extension_root: EXT.integer_bitfield
+    extension_root_payload: '0xf46'
+    extension_family: integer_bitfield
+    extended_opcode: 0x6800..0x6fff
+    extended_opcode_start: '0x6800'
+    extended_opcode_end: '0x6fff'
+    extended_opcode_slots: 2048
+    extended_opcode_bits: 11
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: e:EA[5:0], d:DREG[8:6], s:BWLQ[10:9]
+    fields:
+    - name: s
+      kind: BWLQ
+      source: size
+      storage: descriptor
+      width: 2
+    - name: e
+      kind: EA
+      source: src
+      storage: descriptor
+      width: 6
+    - name: d
+      kind: DREG
+      source: dst
+      storage: descriptor
+      width: 3
+    kind: extended
 forms:
   operands:
   - - name: src

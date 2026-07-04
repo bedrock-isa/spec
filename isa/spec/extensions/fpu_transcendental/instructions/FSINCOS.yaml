@@ -20,6 +20,37 @@ attributes:
 allocation:
   catalog_section: fpu
   layout_group: FP_TRIG
+  encoding:
+  - id: FSINCOS.F_TO_F
+    extension_root: EXT.fpu_transcendental
+    extension_root_payload: '0xf68'
+    extension_family: fpu_transcendental
+    extended_opcode: 0x1a00..0x1bff
+    extended_opcode_start: '0x1a00'
+    extended_opcode_end: '0x1bff'
+    extended_opcode_slots: 512
+    extended_opcode_bits: 9
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: f:FREG[3:0], F:FREG[7:4], z:S_D[8]
+    fields:
+    - name: z
+      kind: S_D
+      source: size
+      storage: descriptor
+      width: 1
+    - name: f
+      kind: FREG
+      source: src
+      storage: descriptor
+      width: 4
+    - name: f
+      kind: FREG
+      source: dst
+      storage: descriptor
+      width: 4
+    kind: extended
 forms:
   operands:
   - name: src

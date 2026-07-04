@@ -20,6 +20,322 @@ attributes:
 allocation:
   catalog_section: compact_primary
   layout_group: EXTEND_TO_Q
+  encoding:
+  - id: EXTZQ.D_TO_D
+    kind: compact
+    start_payload: '0x200'
+    end_payload: '0x2ff'
+    slots: 192
+    primary_bits: 8
+    field_layout: d[2:0] D[5:3] s[7:6] op[11:8] ; exact_payloads spare=64
+    fields:
+    - name: d
+      kind: DREG
+      source: src
+      storage: primary
+      width: 3
+      low_bit: 0
+      high_bit: 2
+      range: '[2:0]'
+    - name: D
+      kind: DREG
+      source: dst
+      storage: primary
+      width: 3
+      low_bit: 3
+      high_bit: 5
+      range: '[5:3]'
+    - name: s
+      kind: BWL
+      source: size
+      storage: primary
+      width: 2
+      low_bit: 6
+      high_bit: 7
+      range: '[7:6]'
+    primary_payloads:
+    - '0x200'
+    - '0x201'
+    - '0x202'
+    - '0x203'
+    - '0x204'
+    - '0x205'
+    - '0x206'
+    - '0x207'
+    - '0x208'
+    - '0x209'
+    - '0x20a'
+    - '0x20b'
+    - '0x20c'
+    - '0x20d'
+    - '0x20e'
+    - '0x20f'
+    - '0x210'
+    - '0x211'
+    - '0x212'
+    - '0x213'
+    - '0x214'
+    - '0x215'
+    - '0x216'
+    - '0x217'
+    - '0x218'
+    - '0x219'
+    - '0x21a'
+    - '0x21b'
+    - '0x21c'
+    - '0x21d'
+    - '0x21e'
+    - '0x21f'
+    - '0x220'
+    - '0x221'
+    - '0x222'
+    - '0x223'
+    - '0x224'
+    - '0x225'
+    - '0x226'
+    - '0x227'
+    - '0x228'
+    - '0x229'
+    - '0x22a'
+    - '0x22b'
+    - '0x22c'
+    - '0x22d'
+    - '0x22e'
+    - '0x22f'
+    - '0x230'
+    - '0x231'
+    - '0x232'
+    - '0x233'
+    - '0x234'
+    - '0x235'
+    - '0x236'
+    - '0x237'
+    - '0x238'
+    - '0x239'
+    - '0x23a'
+    - '0x23b'
+    - '0x23c'
+    - '0x23d'
+    - '0x23e'
+    - '0x23f'
+    - '0x240'
+    - '0x241'
+    - '0x242'
+    - '0x243'
+    - '0x244'
+    - '0x245'
+    - '0x246'
+    - '0x247'
+    - '0x248'
+    - '0x249'
+    - '0x24a'
+    - '0x24b'
+    - '0x24c'
+    - '0x24d'
+    - '0x24e'
+    - '0x24f'
+    - '0x250'
+    - '0x251'
+    - '0x252'
+    - '0x253'
+    - '0x254'
+    - '0x255'
+    - '0x256'
+    - '0x257'
+    - '0x258'
+    - '0x259'
+    - '0x25a'
+    - '0x25b'
+    - '0x25c'
+    - '0x25d'
+    - '0x25e'
+    - '0x25f'
+    - '0x260'
+    - '0x261'
+    - '0x262'
+    - '0x263'
+    - '0x264'
+    - '0x265'
+    - '0x266'
+    - '0x267'
+    - '0x268'
+    - '0x269'
+    - '0x26a'
+    - '0x26b'
+    - '0x26c'
+    - '0x26d'
+    - '0x26e'
+    - '0x26f'
+    - '0x270'
+    - '0x271'
+    - '0x272'
+    - '0x273'
+    - '0x274'
+    - '0x275'
+    - '0x276'
+    - '0x277'
+    - '0x278'
+    - '0x279'
+    - '0x27a'
+    - '0x27b'
+    - '0x27c'
+    - '0x27d'
+    - '0x27e'
+    - '0x27f'
+    - '0x280'
+    - '0x281'
+    - '0x282'
+    - '0x283'
+    - '0x284'
+    - '0x285'
+    - '0x286'
+    - '0x287'
+    - '0x288'
+    - '0x289'
+    - '0x28a'
+    - '0x28b'
+    - '0x28c'
+    - '0x28d'
+    - '0x28e'
+    - '0x28f'
+    - '0x290'
+    - '0x291'
+    - '0x292'
+    - '0x293'
+    - '0x294'
+    - '0x295'
+    - '0x296'
+    - '0x297'
+    - '0x298'
+    - '0x299'
+    - '0x29a'
+    - '0x29b'
+    - '0x29c'
+    - '0x29d'
+    - '0x29e'
+    - '0x29f'
+    - '0x2a0'
+    - '0x2a1'
+    - '0x2a2'
+    - '0x2a3'
+    - '0x2a4'
+    - '0x2a5'
+    - '0x2a6'
+    - '0x2a7'
+    - '0x2a8'
+    - '0x2a9'
+    - '0x2aa'
+    - '0x2ab'
+    - '0x2ac'
+    - '0x2ad'
+    - '0x2ae'
+    - '0x2af'
+    - '0x2b0'
+    - '0x2b1'
+    - '0x2b2'
+    - '0x2b3'
+    - '0x2b4'
+    - '0x2b5'
+    - '0x2b6'
+    - '0x2b7'
+    - '0x2b8'
+    - '0x2b9'
+    - '0x2ba'
+    - '0x2bb'
+    - '0x2bc'
+    - '0x2bd'
+    - '0x2be'
+    - '0x2bf'
+  - id: EXTZQ.D_TO_EA
+    extension_root: EXT.integer_alu
+    extension_root_payload: '0xf3c'
+    extension_family: integer_alu
+    extended_opcode: 0x4800..0x4fff
+    extended_opcode_start: '0x4800'
+    extended_opcode_end: '0x4fff'
+    extended_opcode_slots: 2048
+    extended_opcode_bits: 11
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: e:EA[5:0], d:DREG[8:6], s:BWL[10:9]
+    fields:
+    - name: s
+      kind: BWL
+      source: size
+      storage: descriptor
+      width: 2
+    - name: d
+      kind: DREG
+      source: src
+      storage: descriptor
+      width: 3
+    - name: e
+      kind: EA
+      source: dst
+      storage: descriptor
+      width: 6
+    kind: extended
+  - id: EXTZQ.EA_TO_D
+    extension_root: EXT.integer_alu
+    extension_root_payload: '0xf3c'
+    extension_family: integer_alu
+    extended_opcode: 0x5000..0x57ff
+    extended_opcode_start: '0x5000'
+    extended_opcode_end: '0x57ff'
+    extended_opcode_slots: 2048
+    extended_opcode_bits: 11
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: e:EA[5:0], d:DREG[8:6], s:BWL[10:9]
+    fields:
+    - name: s
+      kind: BWL
+      source: size
+      storage: descriptor
+      width: 2
+    - name: e
+      kind: EA
+      source: src
+      storage: descriptor
+      width: 6
+    - name: d
+      kind: DREG
+      source: dst
+      storage: descriptor
+      width: 3
+    kind: extended
+  - id: EXTZQ.EA_TO_EA
+    extension_root: EXT.integer_extend_ea_wide
+    extension_root_payload: '0xf41'
+    extension_family: integer_extend_ea_wide
+    extended_opcode: 0xc000..0xffff
+    extended_opcode_start: '0xc000'
+    extended_opcode_end: '0xffff'
+    extended_opcode_slots: 16384
+    extended_opcode_bits: 14
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: e:EA[5:0], E:EA[11:6], s:BWL[13:12]
+    fields:
+    - name: s
+      kind: BWL
+      source: size
+      storage: descriptor
+      width: 2
+    - name: e
+      kind: EA
+      source: src
+      storage: descriptor
+      width: 6
+    - name: e
+      kind: EA
+      source: dst
+      storage: descriptor
+      width: 6
+    kind: extended
 forms:
   dst_ea_set: store_destination
   compact_forms:

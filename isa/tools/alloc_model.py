@@ -74,6 +74,7 @@ class AllocationModel:
     compact_prefer: tuple[str, ...]
     extension_family_rank: dict[str, int]
     extension_profile_rank: dict[str, dict[str, int]]
+    extension_member_rank: dict[str, dict[str, int]]
 
 
 def allocation_model(spec: dict[str, Any]) -> AllocationModel:
@@ -117,6 +118,11 @@ def allocation_model(spec: dict[str, Any]) -> AllocationModel:
             for family, profiles in (allocation.get("extension_profile_order", {}) or {}).items()
             if isinstance(profiles, list)
         },
+        extension_member_rank={
+            str(family): rank_map(members)
+            for family, members in (allocation.get("extension_member_order", {}) or {}).items()
+            if isinstance(members, list)
+        },
     )
 
 
@@ -145,8 +151,6 @@ def profile_form_parts(fields: tuple[Field, ...]) -> list[str]:
 def profile_part_for_field(field: Field) -> str:
     if field.kind == "EA":
         return "EA"
-    if field.kind == "IMM_EA":
-        return "IMM"
     if field.kind == "DREG":
         return "D"
     if field.kind == "DBANK":
@@ -184,13 +188,6 @@ def size_tag_from_fields(fields: tuple[Field, ...]) -> str:
 def profile_candidate_id(candidate: Candidate, fields: tuple[Field, ...]) -> str:
     parts = profile_form_parts(fields)
     ident = candidate.mnemonic if not parts else f"{candidate.mnemonic}.{ '_TO_'.join(parts) }"
-    tag = size_tag_from_fields(fields)
-    if candidate.shape_hint == "declared_extended_form" and tag and tag not in {"Q", "LQ"}:
-        ident = f"{ident}.{tag}"
-    elif not tag and candidate.fixed_size_suffix:
-        ident = f"{ident}.{candidate.fixed_size_suffix}"
-    if candidate.id.startswith(f"{ident}.") and candidate.id != ident:
-        return candidate.id
-    if ident.endswith(".IMM") and candidate.id.startswith(ident) and candidate.id != ident:
+    if candidate.id != ident and candidate.id.startswith(f"{candidate.mnemonic}."):
         return candidate.id
     return ident

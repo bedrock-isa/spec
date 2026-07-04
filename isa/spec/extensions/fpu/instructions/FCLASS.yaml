@@ -19,6 +19,37 @@ attributes:
   fp_flags: unchanged
 allocation:
   catalog_section: fpu
+  encoding:
+  - id: FCLASS.F_TO_D
+    extension_root: EXT.fpu_move_compare
+    extension_root_payload: '0xf65'
+    extension_family: fpu_move_compare
+    extended_opcode: 0x0300..0x03ff
+    extended_opcode_start: '0x0300'
+    extended_opcode_end: '0x03ff'
+    extended_opcode_slots: 256
+    extended_opcode_bits: 8
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: d:DREG[2:0], f:FREG[6:3], z:S_D[7]
+    fields:
+    - name: z
+      kind: S_D
+      source: size
+      storage: descriptor
+      width: 1
+    - name: f
+      kind: FREG
+      source: src
+      storage: descriptor
+      width: 4
+    - name: d
+      kind: DREG
+      source: dst
+      storage: descriptor
+      width: 3
+    kind: extended
 forms:
   operands:
   - name: src

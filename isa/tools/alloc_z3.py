@@ -45,6 +45,7 @@ from alloc_field_layout import (
     primary_span_slots,
 )
 from alloc_validation import audit_alignment, has_alignment_failure
+from allocation_lock import allocation_lock_errors, spec_encoding_rows
 from alloc_model import (
     AllocationModel,
     Candidate,
@@ -1268,12 +1269,14 @@ def extended_pair_min_start(
 
 def extended_candidate_sort_key(
     candidate: Candidate, compact_policy: dict[str, Any]
-) -> tuple[int, str, tuple[int, int, str, int, str], tuple[int, int, int, str]]:
+) -> tuple[int, str, int, tuple[int, int, str, int, str], tuple[int, int, int, str]]:
     family = extension_family_name(candidate)
     model = policy_model(compact_policy)
+    member_id = profile_candidate_id(candidate, candidate.descriptor_fields)
     return (
         model.extension_family_rank.get(family, 99),
         extension_root_key(candidate, compact_policy),
+        model.extension_member_rank.get(family, {}).get(member_id, 10000),
         extended_pair_rank(candidate),
         candidate_sort_key(candidate, compact_policy),
     )
@@ -1472,7 +1475,7 @@ def descriptor_field_preference(field: Field) -> int:
         return 800
     if field.kind in {"DREG", "AREG", "FREG", "SREG", "D_or_A"}:
         return 500
-    if field.kind in {"EA", "IMM_EA"}:
+    if field.kind == "EA" or (field.kind.lower().startswith("imm") and field.width == 6):
         return 400
     return 100
 
@@ -1756,6 +1759,15 @@ def allocation_end(allocation: dict[str, Any]) -> int:
 
 def primary_cluster_span(primary_allocations: list[dict[str, Any]], mnemonics: set[str]) -> dict[str, Any]:
     items = [item for item in primary_allocations if item.get("mnemonic") in mnemonics and item.get("kind") == "compact"]
+    return primary_items_span(items)
+
+
+def primary_id_span(primary_allocations: list[dict[str, Any]], ids: set[str]) -> dict[str, Any]:
+    items = [item for item in primary_allocations if item.get("id") in ids and item.get("kind") == "compact"]
+    return primary_items_span(items)
+
+
+def primary_items_span(items: list[dict[str, Any]]) -> dict[str, Any]:
     if not items:
         return {"count": 0, "span": 0, "slots": 0}
     start = min(allocation_start(item) for item in items)
@@ -2090,7 +2102,7 @@ def symmetry_audit(
         f"span={stack['span']} slots={stack['slots']} count={stack['count']}",
     )
 
-    direct_call = primary_cluster_span(primary_allocations, {"CALL"})
+    direct_call = primary_id_span(primary_allocations, {"CALL.IMM32", "CALL.IMM64"})
     add(
         "direct_call_immediates_clustered",
         direct_call["count"] == 2 and direct_call["span"] == direct_call["slots"],
@@ -2282,6 +2294,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("spec_dir", nargs="?", default="isa/spec")
     parser.add_argument("-o", "--output", default="build/generated/allocation_plan.json")
     parser.add_argument("--md-output", default="build/generated/opcode_allocation.md")
+    parser.add_argument(
+        "--skip-instruction-encoding-audit",
+        action="store_true",
+        help="allow generating a new allocation plan before refreshing per-instruction encoding entries",
+    )
     args = parser.parse_args(argv)
 
     spec, result, entries = load_and_validate(args.spec_dir)
@@ -2340,6 +2357,27 @@ def main(argv: list[str] | None = None) -> int:
     if solver_result["status"] != "sat":
         print(f"Z3 allocation failed: {solver_result.get('reason', solver_result['status'])}", file=sys.stderr)
         return 1
+    lock = spec_encoding_rows(spec)
+    lock_errors = allocation_lock_errors(lock, solver_result)
+    if lock_errors and not args.skip_instruction_encoding_audit:
+        print("Encoding lock mismatch; allocation output no longer matches per-instruction encoding entries.", file=sys.stderr)
+        for error in lock_errors[:80]:
+            print(f"  - {error}", file=sys.stderr)
+        if len(lock_errors) > 80:
+            print(f"  ... {len(lock_errors) - 80} more mismatches", file=sys.stderr)
+        return 1
+    if lock and args.skip_instruction_encoding_audit:
+        solver_result["instruction_encoding_audit"] = {
+            "status": "skipped",
+            "source": "per-instruction allocation.encoding entries",
+            "mismatch_count": len(lock_errors),
+        }
+    elif lock:
+        solver_result["instruction_encoding_audit"] = {
+            "status": "pass",
+            "source": "per-instruction allocation.encoding entries",
+            "instruction_encoding_rows": len(lock),
+        }
     failed_alias_checks = [
         item for item in solver_result.get("conditional_alias_audit", []) if item.get("status") != "pass"
     ]

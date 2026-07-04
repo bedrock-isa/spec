@@ -26,6 +26,40 @@ behavior:
     Implementations report the number of available data-register banks through CPUID implementation properties.
 allocation:
   catalog_section: compact_primary
+  encoding:
+  - id: MOVSETDA.BITMAP
+    kind: compact
+    start_payload: '0xf35'
+    end_payload: '0xf35'
+    slots: 1
+    primary_bits: 0
+    field_layout: none
+    fields: []
+  - id: MOVSETDA.DB_TO_BITMAP
+    extension_root: EXT.data_register_banking
+    extension_root_payload: '0xf4b'
+    extension_family: data_register_banking
+    extended_opcode: 0x0020..0x002f
+    extended_opcode_start: '0x0020'
+    extended_opcode_end: '0x002f'
+    extended_opcode_slots: 16
+    extended_opcode_bits: 4
+    operand_payload_bits: 16
+    operand_descriptor_words: 1
+    operand_descriptor_spilled: false
+    descriptor_layout: k:DBANK[3:0], b:bitmap16/16@payload
+    fields:
+    - name: k
+      kind: DBANK
+      source: dst_bank
+      storage: descriptor
+      width: 4
+    - name: b
+      kind: bitmap16
+      source: regs
+      storage: payload
+      width: 16
+    kind: extended
 forms:
   operands:
   - name: regs

@@ -473,7 +473,7 @@ def field_base_signature(field: Field) -> str:
         return f"SIZE{field.width}"
     if field.kind in {"DREG", "AREG", "SREG", "D_or_A"}:
         return f"REG{field.width}"
-    if field.kind in {"EA", "IMM_EA"}:
+    if field.kind == "EA":
         return f"EA{field.width}"
     if field.kind == "condition":
         return f"COND{field.width}"

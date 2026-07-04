@@ -15,5 +15,14 @@ attributes:
 allocation:
   catalog_section: compact_primary
   layout_group: CORE_MISC
+  encoding:
+  - id: BKPT
+    kind: compact
+    start_payload: '0x004'
+    end_payload: '0x004'
+    slots: 1
+    primary_bits: 0
+    field_layout: none
+    fields: []
 forms:
   operands: []

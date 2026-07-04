@@ -16,5 +16,14 @@ allocation:
   layout_group: CORE_MISC
   fixed_encoding:
     primary_payload: 0xfff
+  encoding:
+  - id: ILLEGAL
+    kind: compact
+    start_payload: '0xfff'
+    end_payload: '0xfff'
+    slots: 1
+    primary_bits: 0
+    field_layout: none
+    fields: []
 forms:
   operands: []

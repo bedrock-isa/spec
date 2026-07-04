@@ -18,6 +18,15 @@ behavior:
 allocation:
   catalog_section: compact_primary
   layout_group: PUSHM_POPM
+  encoding:
+  - id: PUSHM.BITMAP
+    kind: compact
+    start_payload: '0xf32'
+    end_payload: '0xf32'
+    slots: 1
+    primary_bits: 0
+    field_layout: none
+    fields: []
 forms:
   operands:
   - name: regs

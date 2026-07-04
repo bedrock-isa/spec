@@ -20,6 +20,32 @@ attributes:
 allocation:
   catalog_section: system
   layout_group: CONTROL_REGISTER_ACCESS
+  encoding:
+  - id: RDCR.D
+    extension_root: EXT.system_core
+    extension_root_payload: '0xf63'
+    extension_family: system_core
+    extended_opcode: 0x0000..0x0007
+    extended_opcode_start: '0x0000'
+    extended_opcode_end: '0x0007'
+    extended_opcode_slots: 8
+    extended_opcode_bits: 3
+    operand_payload_bits: 16
+    operand_descriptor_words: 1
+    operand_descriptor_spilled: false
+    descriptor_layout: d:DREG[2:0], i:CR/16@payload
+    fields:
+    - name: i
+      kind: CR
+      source: cr
+      storage: payload
+      width: 16
+    - name: d
+      kind: DREG
+      source: dst
+      storage: descriptor
+      width: 3
+    kind: extended
 forms:
   operands:
   - name: cr

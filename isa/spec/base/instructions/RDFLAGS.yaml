@@ -22,6 +22,27 @@ attributes:
 allocation:
   catalog_section: system
   layout_group: FLAGS_ACCESS
+  encoding:
+  - id: RDFLAGS.D
+    extension_root: EXT.system_core
+    extension_root_payload: '0xf63'
+    extension_family: system_core
+    extended_opcode: 0x0010..0x0017
+    extended_opcode_start: '0x0010'
+    extended_opcode_end: '0x0017'
+    extended_opcode_slots: 8
+    extended_opcode_bits: 3
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: d:DREG[2:0]
+    fields:
+    - name: d
+      kind: DREG
+      source: dst
+      storage: descriptor
+      width: 3
+    kind: extended
 forms:
   operands:
   - name: dst

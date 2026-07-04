@@ -14,5 +14,16 @@ attributes:
 allocation:
   catalog_section: compact_primary
   layout_group: CORE_MISC
+  fixed_encoding:
+    primary_payload: 0x005
+  encoding:
+  - id: AFENCE
+    kind: compact
+    start_payload: '0x005'
+    end_payload: '0x005'
+    slots: 1
+    primary_bits: 0
+    field_layout: none
+    fields: []
 forms:
   operands: []

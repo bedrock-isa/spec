@@ -16,9 +16,61 @@ behavior:
   - call [target_v];
 allocation:
   catalog_section: compact_primary
+  encoding:
+  - id: CALL.IMM16
+    kind: compact
+    start_payload: '0x003'
+    end_payload: '0x003'
+    slots: 1
+    primary_bits: 0
+    field_layout: none
+    fields: []
+  - id: CALL.IMM32
+    kind: compact
+    start_payload: '0x001'
+    end_payload: '0x001'
+    slots: 1
+    primary_bits: 0
+    field_layout: none
+    fields: []
+  - id: CALL.IMM64
+    kind: compact
+    start_payload: '0x002'
+    end_payload: '0x002'
+    slots: 1
+    primary_bits: 0
+    field_layout: none
+    fields: []
+  - id: CALL.EA
+    extension_root: EXT.control_flow
+    extension_root_payload: '0xf4d'
+    extension_family: control_flow
+    extended_opcode: 0x0000..0x003f
+    extended_opcode_start: '0x0000'
+    extended_opcode_end: '0x003f'
+    extended_opcode_slots: 64
+    extended_opcode_bits: 6
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: e:EA[5:0]
+    fields:
+    - name: e
+      kind: EA
+      source: target
+      storage: descriptor
+      width: 6
+    kind: extended
 forms:
   target_ea_set: call_target
   compact_forms:
+  - profile: IMM16
+    allocation_cluster: direct_call
+    fixed_encoding:
+      primary_payload: 0x003
+    operands:
+    - name: target
+      type: imm16
   - profile: IMM32
     allocation_cluster: direct_call
     operands:

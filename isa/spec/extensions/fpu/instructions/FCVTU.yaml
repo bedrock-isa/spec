@@ -35,6 +35,82 @@ attributes:
 allocation:
   catalog_section: fpu
   layout_group: FCVT_FCVTU
+  encoding:
+  - id: FCVTU.D_TO_F
+    extension_root: EXT.fpu_move_compare
+    extension_root_payload: '0xf65'
+    extension_family: fpu_move_compare
+    extended_opcode: 0x0680..0x06ff
+    extended_opcode_start: '0x0680'
+    extended_opcode_end: '0x06ff'
+    extended_opcode_slots: 128
+    extended_opcode_bits: 7
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: d:DREG[2:0], f:FREG[6:3]
+    fields:
+    - name: d
+      kind: DREG
+      source: src
+      storage: descriptor
+      width: 3
+    - name: f
+      kind: FREG
+      source: dst
+      storage: descriptor
+      width: 4
+    kind: extended
+  - id: FCVTU.F_TO_D
+    extension_root: EXT.fpu_move_compare
+    extension_root_payload: '0xf65'
+    extension_family: fpu_move_compare
+    extended_opcode: 0x1080..0x10ff
+    extended_opcode_start: '0x1080'
+    extended_opcode_end: '0x10ff'
+    extended_opcode_slots: 128
+    extended_opcode_bits: 7
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: d:DREG[2:0], f:FREG[6:3]
+    fields:
+    - name: f
+      kind: FREG
+      source: src
+      storage: descriptor
+      width: 4
+    - name: d
+      kind: DREG
+      source: dst
+      storage: descriptor
+      width: 3
+    kind: extended
+  - id: FCVTU.F_TO_F
+    extension_root: EXT.fpu_move_compare
+    extension_root_payload: '0xf65'
+    extension_family: fpu_move_compare
+    extended_opcode: 0x1100..0x11ff
+    extended_opcode_start: '0x1100'
+    extended_opcode_end: '0x11ff'
+    extended_opcode_slots: 256
+    extended_opcode_bits: 8
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: f:FREG[3:0], F:FREG[7:4]
+    fields:
+    - name: f
+      kind: FREG
+      source: src
+      storage: descriptor
+      width: 4
+    - name: f
+      kind: FREG
+      source: dst
+      storage: descriptor
+      width: 4
+    kind: extended
 forms:
   operands:
   - - name: src

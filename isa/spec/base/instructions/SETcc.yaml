@@ -12,6 +12,37 @@ behavior:
   - dst_v = cc_v;
 allocation:
   catalog_section: compact_primary
+  encoding:
+  - id: SETcc.EA
+    extension_root: EXT.conditional_control.cc
+    extension_root_payload: 0xf50..0xf5f
+    extension_family: conditional_control
+    extended_opcode: 0x0a00..0x0aff
+    extended_opcode_start: '0x0a00'
+    extended_opcode_end: '0x0aff'
+    extended_opcode_slots: 256
+    extended_opcode_bits: 8
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: e:EA[5:0], s:BWLQ[7:6], c:condition/4@root
+    fields:
+    - name: s
+      kind: BWLQ
+      source: size
+      storage: descriptor
+      width: 2
+    - name: c
+      kind: condition
+      source: cc
+      storage: descriptor
+      width: 4
+    - name: e
+      kind: EA
+      source: dst
+      storage: descriptor
+      width: 6
+    kind: extended
 forms:
   dst_ea_set: store_destination
   operands:

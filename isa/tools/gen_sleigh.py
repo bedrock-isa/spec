@@ -15,6 +15,7 @@ sys.dont_write_bytecode = True
 
 from isa_spec import load_and_validate, print_result
 from spec_model.encoding import (
+    compact_ea_forms,
     condition_named_values,
     condition_names_by_value as spec_condition_names_by_value,
     condition_sleigh_checks,
@@ -72,6 +73,28 @@ def active_spec() -> dict[str, Any]:
     if ACTIVE_SPEC is None:
         raise RuntimeError("active spec is not set")
     return ACTIVE_SPEC
+
+
+def compact_ea_selector_width() -> int:
+    widths = {
+        len(str(form.get("pattern", "")).replace(" ", ""))
+        for form in compact_ea_forms(active_spec())
+    }
+    return widths.pop() if len(widths) == 1 else 0
+
+
+def is_compact_immediate_selector_kind(kind: str, width: int) -> bool:
+    return kind.upper() in {"IMM16", "IMM32", "IMM64"} and width == compact_ea_selector_width()
+
+
+def is_compact_ea_selector_field(field: dict[str, Any]) -> bool:
+    kind = str(field.get("kind", ""))
+    width = int(field.get("width", 0))
+    return kind == "EA" or is_compact_immediate_selector_kind(kind, width)
+
+
+def is_compact_ea_selector_sfield(field: SField) -> bool:
+    return field.kind == "EA" or is_compact_immediate_selector_kind(field.kind, field.width)
 
 
 def primary_bits_from_plan(plan: dict[str, Any]) -> int:
@@ -184,14 +207,14 @@ def infer_operand_kind(operand: str, field: dict[str, Any] | None = None) -> str
         return "SREG"
     if upper.startswith("F") or (not explicit_type and source.startswith("F")):
         return "FREG"
-    if upper in {"IMM_EA", "IMMEDIATE_EA", "IMMEA", "IMMEDIATE_OPERAND_EA"}:
-        return "IMM_EA"
     if is_ea_operand(typ) or is_ea_operand(name) or "MEMORY" in upper or "MEMORY" in source:
         return "EA"
     if upper in {"CR", "CREG", "CONTROL_REGISTER"} or source in {"CR", "CONTROL_REGISTER"}:
         return "cr"
     if "RELATIVE" in upper or source == "TARGET":
         return "relative_imm"
+    if upper == "IMM6" or source == "IMM6":
+        return "IMM6"
     if "IMM64" in upper or "IMM64" in source:
         return "imm64"
     if "IMM32" in upper or "IMM32" in source:
@@ -223,6 +246,8 @@ def is_implicit_operand(operand: str) -> bool:
 
 def payload_words_for_kind(kind: str, default_count: int = 1) -> int:
     lower = kind.lower()
+    if lower == "imm6":
+        return 0
     if "bitmap" in lower or "imm16" in lower or lower == "cr":
         return 1
     if "imm32" in lower:
@@ -270,7 +295,7 @@ def field_prefix(kind: str, source: str = "") -> str:
         return "g"
     if upper == "FREG":
         return "f"
-    if upper in {"EA", "IMM_EA"}:
+    if upper == "EA":
         return "ea"
     if upper == "CONDITION":
         return "c"
@@ -807,7 +832,7 @@ def payload_table_name(kind: str, start_word: int, word_count: int) -> str:
 def render_operand_tables(fields: dict[str, SField]) -> str:
     lines: list[str] = []
     ea_fields = sorted(
-        (field for field in fields.values() if field.kind in {"EA", "IMM_EA"}),
+        (field for field in fields.values() if is_compact_ea_selector_sfield(field)),
         key=lambda field: (field.token, field.low, field.high, field.name),
     )
     for field in ea_fields:
@@ -884,7 +909,7 @@ def payload_export_statement(kind: str, start: int, count: int) -> str:
 def display_name_for_field(field: dict[str, Any], token: int | None = None) -> str:
     effective_token = field_token(field, token if token is not None else 0)
     name = sleigh_field_name(field, effective_token)
-    if str(field.get("kind")) in {"EA", "IMM_EA"}:
+    if is_compact_ea_selector_field(field):
         return ea_table_name(name)
     return name
 
@@ -941,7 +966,7 @@ def constructor_operands(
             continue
         if field is not None:
             display = display_name_for_field(field, token)
-            ref = display if kind in {"EA", "IMM_EA"} else raw_field_symbol(field, token)
+            ref = display if is_compact_ea_selector_field(field) else raw_field_symbol(field, token)
             bindings[role] = OperandBinding(role, kind, display, ref)
             if kind == "memory_order":
                 order_suffix = f'"/"^{display}'
@@ -1138,7 +1163,7 @@ def render_role_write(binding: OperandBinding) -> list[str]:
         return []
     if kind in DIRECT_REGISTER_KINDS:
         return [f"{binding.ref} = {role}_v;"]
-    if kind in {"EA", "IMM_EA"}:
+    if kind == "EA":
         return [f"{binding.ref} = {role}_v;"]
     return []
 

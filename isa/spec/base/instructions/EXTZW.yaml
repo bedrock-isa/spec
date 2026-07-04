@@ -20,6 +20,32 @@ attributes:
 allocation:
   catalog_section: integer
   layout_group: EXTEND_TO_W_ZERO
+  encoding:
+  - id: EXTZW.EA_TO_EA
+    extension_root: EXT.integer_extend_ea_wide
+    extension_root_payload: '0xf41'
+    extension_family: integer_extend_ea_wide
+    extended_opcode: 0x3000..0x3fff
+    extended_opcode_start: '0x3000'
+    extended_opcode_end: '0x3fff'
+    extended_opcode_slots: 4096
+    extended_opcode_bits: 12
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: e:EA[5:0], E:EA[11:6]
+    fields:
+    - name: e
+      kind: EA
+      source: src
+      storage: descriptor
+      width: 6
+    - name: e
+      kind: EA
+      source: dst
+      storage: descriptor
+      width: 6
+    kind: extended
 forms:
   dst_ea_set: store_destination
   operands:

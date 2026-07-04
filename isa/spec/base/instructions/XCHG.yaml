@@ -18,6 +18,67 @@ attributes:
   atomic: false
 allocation:
   catalog_section: integer
+  encoding:
+  - id: XCHG.D_TO_EA
+    extension_root: EXT.data_movement
+    extension_root_payload: '0xf4a'
+    extension_family: data_movement
+    extended_opcode: 0x1000..0x17ff
+    extended_opcode_start: '0x1000'
+    extended_opcode_end: '0x17ff'
+    extended_opcode_slots: 2048
+    extended_opcode_bits: 11
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: e:EA[5:0], d:DREG[8:6], s:BWLQ[10:9]
+    fields:
+    - name: s
+      kind: BWLQ
+      source: size
+      storage: descriptor
+      width: 2
+    - name: d
+      kind: DREG
+      source: lhs
+      storage: descriptor
+      width: 3
+    - name: e
+      kind: EA
+      source: rhs
+      storage: descriptor
+      width: 6
+    kind: extended
+  - id: XCHG.EA_TO_D
+    extension_root: EXT.data_movement
+    extension_root_payload: '0xf4a'
+    extension_family: data_movement
+    extended_opcode: 0x1800..0x1fff
+    extended_opcode_start: '0x1800'
+    extended_opcode_end: '0x1fff'
+    extended_opcode_slots: 2048
+    extended_opcode_bits: 11
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: e:EA[5:0], d:DREG[8:6], s:BWLQ[10:9]
+    fields:
+    - name: s
+      kind: BWLQ
+      source: size
+      storage: descriptor
+      width: 2
+    - name: e
+      kind: EA
+      source: lhs
+      storage: descriptor
+      width: 6
+    - name: d
+      kind: DREG
+      source: rhs
+      storage: descriptor
+      width: 3
+    kind: extended
 forms:
   operands:
   - - name: lhs

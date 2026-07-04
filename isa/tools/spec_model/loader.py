@@ -192,6 +192,9 @@ def expand_local_instruction_fragment(
             raise SpecError(f"{path}: unexpected forms keys: {', '.join(unexpected_forms)}")
         if "fixed_encoding" in allocation:
             body["fixed_encoding"] = deepcopy(allocation["fixed_encoding"])
+        if "encoding" in allocation:
+            body["encoding"] = deepcopy(allocation["encoding"])
+        body.setdefault("semantic_family", family)
         body.setdefault("mnemonics", [mnemonic])
         entry_key = mnemonic if entry_group == mnemonic else f"{entry_group}.{mnemonic}"
         family_body: dict[str, Any] = {section: {entry_key: body}}

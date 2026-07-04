@@ -16,6 +16,92 @@ behavior:
   - <jcc_done>
 allocation:
   catalog_section: compact_primary
+  encoding:
+  - id: Jcc.IMM
+    kind: compact
+    start_payload: '0xec0'
+    end_payload: '0xedf'
+    slots: 30
+    primary_bits: 5
+    field_layout: c[3:0] z[4] op[11:5] ; exact_payloads spare=2
+    fields:
+    - name: c
+      kind: condition
+      source: cc
+      storage: primary
+      width: 4
+      low_bit: 0
+      high_bit: 3
+      range: '[3:0]'
+    - name: z
+      kind: WL
+      source: size
+      storage: primary
+      width: 1
+      low_bit: 4
+      high_bit: 4
+      range: '[4]'
+    primary_payloads:
+    - '0xec0'
+    - '0xec2'
+    - '0xec3'
+    - '0xec4'
+    - '0xec5'
+    - '0xec6'
+    - '0xec7'
+    - '0xec8'
+    - '0xec9'
+    - '0xeca'
+    - '0xecb'
+    - '0xecc'
+    - '0xecd'
+    - '0xece'
+    - '0xecf'
+    - '0xed0'
+    - '0xed2'
+    - '0xed3'
+    - '0xed4'
+    - '0xed5'
+    - '0xed6'
+    - '0xed7'
+    - '0xed8'
+    - '0xed9'
+    - '0xeda'
+    - '0xedb'
+    - '0xedc'
+    - '0xedd'
+    - '0xede'
+    - '0xedf'
+  - id: Jcc.EA
+    extension_root: EXT.conditional_control.cc
+    extension_root_payload: 0xf50..0xf5f
+    extension_family: conditional_control
+    extended_opcode: 0x0980..0x09ff
+    extended_opcode_start: '0x0980'
+    extended_opcode_end: '0x09ff'
+    extended_opcode_slots: 128
+    extended_opcode_bits: 7
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: e:EA[5:0], z:WL[6], c:condition/4@root
+    fields:
+    - name: z
+      kind: WL
+      source: size
+      storage: descriptor
+      width: 1
+    - name: c
+      kind: condition
+      source: cc
+      storage: descriptor
+      width: 4
+    - name: e
+      kind: EA
+      source: target
+      storage: descriptor
+      width: 6
+    kind: extended
 forms:
   target_ea_set: branch_target
   compact_forms:

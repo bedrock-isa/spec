@@ -54,6 +54,21 @@ static int bedrock_starts_ci(const char *text, const char *prefix, size_t prefix
     return 1;
 }
 
+static int bedrock_contains_ci(const char *text, const char *needle)
+{
+    size_t needle_len = strlen(needle);
+    if (needle_len == 0u) {
+        return 1;
+    }
+    while (*text != '\0') {
+        if (bedrock_starts_ci(text, needle, needle_len)) {
+            return 1;
+        }
+        ++text;
+    }
+    return 0;
+}
+
 static void bedrock_trim_copy(char *dst, size_t dst_size, const char *start, const char *end)
 {
     size_t len;
@@ -992,9 +1007,42 @@ static int bedrock_parse_bitmap16(const char *bitmap_kind, const char *text, uin
     return 1;
 }
 
+static unsigned bedrock_immediate_kind_bits(const char *kind)
+{
+    if (bedrock_contains_ci(kind, "imm64")) {
+        return 64u;
+    }
+    if (bedrock_contains_ci(kind, "imm32")) {
+        return 32u;
+    }
+    return 16u;
+}
+
+static const bedrock_field_desc *bedrock_operand_field(const bedrock_operand_desc *desc)
+{
+    if (desc->field_index == BEDROCK_NO_FIELD || desc->field_index >= bedrock_fields_count) {
+        return 0;
+    }
+    return &bedrock_fields[desc->field_index];
+}
+
+static int bedrock_field_is_compact_immediate_selector(const bedrock_field_desc *field)
+{
+    if (field == 0 || !bedrock_contains_ci(field->kind, "imm")) {
+        return 0;
+    }
+    if (!bedrock_contains_ci(field->kind, "imm16")
+        && !bedrock_contains_ci(field->kind, "imm32")
+        && !bedrock_contains_ci(field->kind, "imm64")) {
+        return 0;
+    }
+    return field->width > 0u && field->width < bedrock_immediate_kind_bits(field->kind);
+}
+
 static int bedrock_parse_operand_for_kind(const bedrock_operand_desc *desc, const char *text, char size_suffix, bedrock_text_operand *out)
 {
     uint16_t named;
+    const bedrock_field_desc *field = bedrock_operand_field(desc);
     memset(out, 0, sizeof(*out));
     bedrock_trim_copy(out->text, sizeof(out->text), text, text + strlen(text));
     if (strcmp(desc->kind, "DREG") == 0) {
@@ -1041,14 +1089,7 @@ static int bedrock_parse_operand_for_kind(const bedrock_operand_desc *desc, cons
         out->value = named;
         return 1;
     }
-    if (strcmp(desc->kind, "EA") == 0) {
-        int ok = bedrock_parse_compact_ea(out->text, out, size_suffix);
-        if (ok && strcmp(desc->role, "dst") == 0 && ((out->value >= BEDROCK_EA_DREG && out->value < BEDROCK_EA_INDIRECT) || out->value == BEDROCK_EA_SPREG)) {
-            out->cost += 3;
-        }
-        return ok;
-    }
-    if (strcmp(desc->kind, "IMM_EA") == 0) {
+    if (bedrock_field_is_compact_immediate_selector(field)) {
         int ok = bedrock_parse_compact_ea(out->text, out, size_suffix);
         if (!ok) {
             return 0;
@@ -1058,6 +1099,13 @@ static int bedrock_parse_operand_for_kind(const bedrock_operand_desc *desc, cons
             return 1;
         }
         return 0;
+    }
+    if (strcmp(desc->kind, "EA") == 0) {
+        int ok = bedrock_parse_compact_ea(out->text, out, size_suffix);
+        if (ok && strcmp(desc->role, "dst") == 0 && ((out->value >= BEDROCK_EA_DREG && out->value < BEDROCK_EA_INDIRECT) || out->value == BEDROCK_EA_SPREG)) {
+            out->cost += 3;
+        }
+        return ok;
     }
     if (bedrock_is_bitmap_kind(desc->kind) || bedrock_is_bitmap_kind(desc->declared_kind)) {
         const char *bitmap_kind = bedrock_is_bitmap_kind(desc->kind) ? desc->kind : desc->declared_kind;
@@ -1080,26 +1128,32 @@ static int bedrock_parse_operand_for_kind(const bedrock_operand_desc *desc, cons
         }
         return 1;
     }
-    if (strstr(desc->kind, "imm") != 0 || strstr(desc->declared_kind, "imm") != 0) {
+    if (strcmp(desc->kind, "IMM6") == 0 || strcmp(desc->declared_kind, "imm6") == 0) {
+        if (!bedrock_parse_u64(out->text, &out->value) || out->value > 63u) {
+            return 0;
+        }
+        return 1;
+    }
+    if (bedrock_contains_ci(desc->kind, "imm") || bedrock_contains_ci(desc->declared_kind, "imm")) {
         size_t words = bedrock_words_for_size_suffix(size_suffix);
         size_t forced_words = 0;
-        if (strstr(desc->kind, "imm16") != 0 || strstr(desc->declared_kind, "imm16") != 0) {
+        if (bedrock_contains_ci(desc->kind, "imm16") || bedrock_contains_ci(desc->declared_kind, "imm16")) {
             words = 1;
-        } else if (strstr(desc->kind, "imm32") != 0 || strstr(desc->declared_kind, "imm32") != 0) {
+        } else if (bedrock_contains_ci(desc->kind, "imm32") || bedrock_contains_ci(desc->declared_kind, "imm32")) {
             words = 2;
-        } else if (strstr(desc->kind, "imm64") != 0 || strstr(desc->declared_kind, "imm64") != 0) {
+        } else if (bedrock_contains_ci(desc->kind, "imm64") || bedrock_contains_ci(desc->declared_kind, "imm64")) {
             words = 4;
         }
         if (!bedrock_parse_immediate_payload_text(out->text, &out->value, &forced_words)) {
             return 0;
         }
         if (forced_words != 0u) {
-            int fixed_width = strstr(desc->kind, "imm16") != 0
-                || strstr(desc->declared_kind, "imm16") != 0
-                || strstr(desc->kind, "imm32") != 0
-                || strstr(desc->declared_kind, "imm32") != 0
-                || strstr(desc->kind, "imm64") != 0
-                || strstr(desc->declared_kind, "imm64") != 0;
+            int fixed_width = bedrock_contains_ci(desc->kind, "imm16")
+                || bedrock_contains_ci(desc->declared_kind, "imm16")
+                || bedrock_contains_ci(desc->kind, "imm32")
+                || bedrock_contains_ci(desc->declared_kind, "imm32")
+                || bedrock_contains_ci(desc->kind, "imm64")
+                || bedrock_contains_ci(desc->declared_kind, "imm64");
             if (fixed_width && forced_words != words) {
                 return 0;
             }
@@ -1285,6 +1339,7 @@ int bedrock_assemble_line(const char *line, uint16_t *out_words, size_t out_word
                 break;
             }
             score += parsed_operands[operand_index].cost;
+            score += (int)parsed_operands[operand_index].payload_count;
         }
         if (!ok) {
             continue;
@@ -1695,6 +1750,8 @@ int bedrock_disassemble_line(const uint16_t *words, size_t word_count, char *out
             } else if (strncmp(cursor, "ORDER(", 6) == 0 || strncmp(cursor, "order(", 6) == 0) {
                 if (!bedrock_append_text(out_text, out_text_size, &used, bedrock_name_for_value(bedrock_memory_order_names, bedrock_memory_order_names_count, (uint16_t)value))) { return BEDROCK_ERR_BUFFER_TOO_SMALL; }
             } else if (strcmp(field->kind, "selector6") == 0) {
+                if (!bedrock_append_selector6(out_text, out_text_size, &used, value)) { return BEDROCK_ERR_BUFFER_TOO_SMALL; }
+            } else if (strcmp(field->kind, "IMM6") == 0) {
                 if (!bedrock_append_selector6(out_text, out_text_size, &used, value)) { return BEDROCK_ERR_BUFFER_TOO_SMALL; }
             } else if (strcmp(field->kind, "small_selector") == 0) {
                 if (!bedrock_append_format(out_text, out_text_size, &used, "%u", (unsigned)value)) { return BEDROCK_ERR_BUFFER_TOO_SMALL; }

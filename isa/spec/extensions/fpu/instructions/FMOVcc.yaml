@@ -19,12 +19,133 @@ attributes:
   flags: unchanged
 allocation:
   catalog_section: fpu
+  encoding:
+  - id: FMOVcc.EA_TO_F
+    extension_root: EXT.conditional_control.cc
+    extension_root_payload: 0xf50..0xf5f
+    extension_family: conditional_control
+    extended_opcode: 0x5000..0x57ff
+    extended_opcode_start: '0x5000'
+    extended_opcode_end: '0x57ff'
+    extended_opcode_slots: 2048
+    extended_opcode_bits: 11
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: e:EA[5:0], f:FREG[9:6], z:S_D[10], c:condition/4@root
+    fields:
+    - name: z
+      kind: S_D
+      source: size
+      storage: descriptor
+      width: 1
+    - name: c
+      kind: condition
+      source: cc
+      storage: descriptor
+      width: 4
+    - name: e
+      kind: EA
+      source: src
+      storage: descriptor
+      width: 6
+    - name: f
+      kind: FREG
+      source: dst
+      storage: descriptor
+      width: 4
+    kind: extended
+  - id: FMOVcc.F_TO_EA
+    extension_root: EXT.conditional_control.cc
+    extension_root_payload: 0xf50..0xf5f
+    extension_family: conditional_control
+    extended_opcode: 0x5800..0x5fff
+    extended_opcode_start: '0x5800'
+    extended_opcode_end: '0x5fff'
+    extended_opcode_slots: 2048
+    extended_opcode_bits: 11
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: e:EA[5:0], f:FREG[9:6], z:S_D[10], c:condition/4@root
+    fields:
+    - name: z
+      kind: S_D
+      source: size
+      storage: descriptor
+      width: 1
+    - name: c
+      kind: condition
+      source: cc
+      storage: descriptor
+      width: 4
+    - name: f
+      kind: FREG
+      source: src
+      storage: descriptor
+      width: 4
+    - name: e
+      kind: EA
+      source: dst
+      storage: descriptor
+      width: 6
+    kind: extended
+  - id: FMOVcc.F_TO_F
+    extension_root: EXT.conditional_control.cc
+    extension_root_payload: 0xf50..0xf5f
+    extension_family: conditional_control
+    extended_opcode: 0x0800..0x08ff
+    extended_opcode_start: '0x0800'
+    extended_opcode_end: '0x08ff'
+    extended_opcode_slots: 256
+    extended_opcode_bits: 8
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: f:FREG[3:0], F:FREG[7:4], c:condition/4@root
+    fields:
+    - name: c
+      kind: condition
+      source: cc
+      storage: descriptor
+      width: 4
+    - name: f
+      kind: FREG
+      source: src
+      storage: descriptor
+      width: 4
+    - name: f
+      kind: FREG
+      source: dst
+      storage: descriptor
+      width: 4
+    kind: extended
 forms:
-  operands:
-  - name: cc
-    type: condition
-  - name: src
-    type: FREG
-  - name: dst
-    type: FREG
+  extended_forms:
+  - operands:
+    - name: cc
+      type: condition
+    - name: src
+      type: FREG
+    - name: dst
+      type: FREG
+    compact: false
+  - operands:
+    - name: cc
+      type: condition
+    - name: src
+      type: EA
+    - name: dst
+      type: FREG
+    size: S_D
+    compact: false
+  - operands:
+    - name: cc
+      type: condition
+    - name: src
+      type: FREG
+    - name: dst
+      type: EA
+    size: S_D
+    compact: false
   reads: FLAGS

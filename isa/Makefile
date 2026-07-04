@@ -14,10 +14,12 @@ ISA_TOOLS_DIR := tools
 ISA_SPEC_YAML := $(shell find $(ISA_SPEC_DIR) -type f -name '*.yaml' 2>/dev/null | sort)
 LATEX_BUILDER_PY := $(wildcard $(ISA_TOOLS_DIR)/latex_builder/*.py)
 LATEX_TEMPLATES := $(wildcard $(ISA_TOOLS_DIR)/latex_builder/templates/*.tex)
+ABI_LATEX_TEMPLATES := $(ISA_TOOLS_DIR)/latex_builder/templates/abi_document_preamble.tex $(ISA_TOOLS_DIR)/latex_builder/templates/abi_title_page.tex
+C_ABI_LATEX_TEMPLATES := $(ABI_LATEX_TEMPLATES) $(ISA_TOOLS_DIR)/latex_builder/templates/c_abi_calling_convention.tex $(ISA_TOOLS_DIR)/latex_builder/templates/c_abi_freestanding.tex $(ISA_TOOLS_DIR)/latex_builder/templates/c_abi_memory_model.tex
 ASM_DISASM_C_TEMPLATES := $(ISA_TOOLS_DIR)/templates/bedrock_asm_disasm.h $(ISA_TOOLS_DIR)/templates/bedrock_asm_disasm.c $(ISA_TOOLS_DIR)/templates/bedrock_asm_disasm_core.c $(ISA_TOOLS_DIR)/templates/bedrock_text_runtime.c
 DECODE_SV_TEMPLATES := $(ISA_TOOLS_DIR)/templates/bedrock_decode_pkg.sv $(ISA_TOOLS_DIR)/templates/bedrock_decode.sv $(ISA_TOOLS_DIR)/templates/bedrock_decode_synth.sv
 AUX_DECODE_SV_TEMPLATES := $(ISA_TOOLS_DIR)/templates/bedrock_prefix_decode_pkg.sv $(ISA_TOOLS_DIR)/templates/bedrock_prefix_decode.sv $(ISA_TOOLS_DIR)/templates/bedrock_prefix_decode_synth.sv $(ISA_TOOLS_DIR)/templates/bedrock_ea_decode_pkg.sv $(ISA_TOOLS_DIR)/templates/bedrock_ea_decode.sv $(ISA_TOOLS_DIR)/templates/bedrock_ea_decode_synth.sv
-ALLOCATION_TOOL_PY := $(ISA_TOOLS_DIR)/alloc_z3.py $(ISA_TOOLS_DIR)/alloc_candidates.py $(ISA_TOOLS_DIR)/alloc_field_layout.py $(ISA_TOOLS_DIR)/alloc_model.py $(ISA_TOOLS_DIR)/alloc_markdown.py
+ALLOCATION_TOOL_PY := $(ISA_TOOLS_DIR)/alloc_z3.py $(ISA_TOOLS_DIR)/alloc_candidates.py $(ISA_TOOLS_DIR)/alloc_field_layout.py $(ISA_TOOLS_DIR)/alloc_model.py $(ISA_TOOLS_DIR)/alloc_markdown.py $(ISA_TOOLS_DIR)/allocation_lock.py
 ISA_GENERATED_DIR := $(BUILD_DIR)/generated
 GENERATED_CPPFLAGS := -I$(ISA_GENERATED_DIR)
 
@@ -195,7 +197,7 @@ manual-section-pdf-final:
 
 abi-tex: $(ABI_REFERENCE_TEX)
 
-$(ABI_REFERENCE_TEX): $(ABI_SPEC) $(ISA_TOOLS_DIR)/gen_abi_latex.py
+$(ABI_REFERENCE_TEX): $(ABI_SPEC) $(ISA_TOOLS_DIR)/gen_abi_latex.py $(ABI_LATEX_TEMPLATES)
 	@mkdir -p "$(ISA_GENERATED_DIR)"
 	PYTHONDONTWRITEBYTECODE=$(PYTHONDONTWRITEBYTECODE) $(PYTHON) $(ISA_TOOLS_DIR)/gen_abi_latex.py $(ABI_SPEC) -o $(ABI_REFERENCE_TEX)
 
@@ -211,7 +213,7 @@ abi-pdf-final:
 
 c-abi-tex: $(C_ABI_REFERENCE_TEX)
 
-$(C_ABI_REFERENCE_TEX): $(C_ABI_SPEC) $(ISA_TOOLS_DIR)/gen_abi_latex.py
+$(C_ABI_REFERENCE_TEX): $(C_ABI_SPEC) $(ISA_TOOLS_DIR)/gen_abi_latex.py $(C_ABI_LATEX_TEMPLATES)
 	@mkdir -p "$(ISA_GENERATED_DIR)"
 	PYTHONDONTWRITEBYTECODE=$(PYTHONDONTWRITEBYTECODE) $(PYTHON) $(ISA_TOOLS_DIR)/gen_abi_latex.py $(C_ABI_SPEC) -o $(C_ABI_REFERENCE_TEX)
 

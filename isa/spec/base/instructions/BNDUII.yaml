@@ -30,6 +30,42 @@ behavior:
 allocation:
   catalog_section: integer
   layout_group: BOUNDS_UNSIGNED
+  encoding:
+  - id: BNDUII.D_TO_EA_TO_D
+    extension_root: EXT.integer_bounds_unsigned
+    extension_root_payload: '0xf43'
+    extension_family: integer_bounds_unsigned
+    extended_opcode: 0x0000..0x3fff
+    extended_opcode_start: '0x0000'
+    extended_opcode_end: '0x3fff'
+    extended_opcode_slots: 16384
+    extended_opcode_bits: 14
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: e:EA[5:0], d:DREG[8:6], D:DREG[11:9], s:BWLQ[13:12]
+    fields:
+    - name: s
+      kind: BWLQ
+      source: size
+      storage: descriptor
+      width: 2
+    - name: d
+      kind: DREG
+      source: lo
+      storage: descriptor
+      width: 3
+    - name: e
+      kind: EA
+      source: value
+      storage: descriptor
+      width: 6
+    - name: d
+      kind: DREG
+      source: hi
+      storage: descriptor
+      width: 3
+    kind: extended
 forms:
   extension_family: integer_bounds_unsigned
   operands:

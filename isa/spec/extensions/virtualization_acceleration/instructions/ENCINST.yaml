@@ -33,6 +33,27 @@ attributes:
   flags: unchanged
 allocation:
   catalog_section: system
+  encoding:
+  - id: ENCINST.EA
+    extension_root: EXT.virtualization_acceleration
+    extension_root_payload: '0xf64'
+    extension_family: virtualization_acceleration
+    extended_opcode: 0x0000..0x003f
+    extended_opcode_start: '0x0000'
+    extended_opcode_end: '0x003f'
+    extended_opcode_slots: 64
+    extended_opcode_bits: 6
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: e:EA[5:0]
+    fields:
+    - name: e
+      kind: EA
+      source: dst
+      storage: descriptor
+      width: 6
+    kind: extended
 forms:
   require_memory_operand: true
   operands:

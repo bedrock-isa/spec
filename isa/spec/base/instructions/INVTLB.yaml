@@ -14,5 +14,21 @@ attributes:
 allocation:
   catalog_section: system
   layout_group: TLB_INVALIDATE
+  encoding:
+  - id: INVTLB
+    extension_root: EXT.tlb_cache
+    extension_root_payload: '0xf62'
+    extension_family: tlb_cache
+    extended_opcode: '0x0000'
+    extended_opcode_start: '0x0000'
+    extended_opcode_end: '0x0000'
+    extended_opcode_slots: 1
+    extended_opcode_bits: 0
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: none
+    fields: []
+    kind: extended
 forms:
   operands: []

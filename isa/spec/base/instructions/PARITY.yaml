@@ -35,6 +35,32 @@ attributes:
     V: unchanged
 allocation:
   catalog_section: integer
+  encoding:
+  - id: PARITY.EA
+    extension_root: EXT.integer_bitfield
+    extension_root_payload: '0xf46'
+    extension_family: integer_bitfield
+    extended_opcode: 0x0400..0x04ff
+    extended_opcode_start: '0x0400'
+    extended_opcode_end: '0x04ff'
+    extended_opcode_slots: 256
+    extended_opcode_bits: 8
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: e:EA[5:0], s:BWLQ[7:6]
+    fields:
+    - name: s
+      kind: BWLQ
+      source: size
+      storage: descriptor
+      width: 2
+    - name: e
+      kind: EA
+      source: src
+      storage: descriptor
+      width: 6
+    kind: extended
 forms:
   operands:
   - name: src

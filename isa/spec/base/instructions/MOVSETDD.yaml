@@ -21,6 +21,37 @@ behavior:
 allocation:
   catalog_section: integer
   layout_group: DATA_BANK_SET_COPY
+  encoding:
+  - id: MOVSETDD.DB_TO_DB_TO_BITMAP
+    extension_root: EXT.data_register_banking
+    extension_root_payload: '0xf4b'
+    extension_family: data_register_banking
+    extended_opcode: 0x0100..0x01ff
+    extended_opcode_start: '0x0100'
+    extended_opcode_end: '0x01ff'
+    extended_opcode_slots: 256
+    extended_opcode_bits: 8
+    operand_payload_bits: 16
+    operand_descriptor_words: 1
+    operand_descriptor_spilled: false
+    descriptor_layout: k:DBANK[3:0], K:DBANK[7:4], b:bitmap16/16@payload
+    fields:
+    - name: k
+      kind: DBANK
+      source: dst_bank
+      storage: descriptor
+      width: 4
+    - name: k
+      kind: DBANK
+      source: src_bank
+      storage: descriptor
+      width: 4
+    - name: b
+      kind: bitmap16
+      source: regs
+      storage: payload
+      width: 16
+    kind: extended
 forms:
   operands:
   - name: dst_bank

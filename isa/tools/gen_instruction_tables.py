@@ -16,7 +16,6 @@ sys.dont_write_bytecode = True
 from isa_spec import cleaned_pattern, load_and_validate, print_result
 from spec_model.encoding import (
     bitmap_operand_ranges,
-    compact_ea_forms,
     compact_ea_values_by_name,
     named_values as spec_named_values,
     named_value_width,
@@ -207,12 +206,12 @@ def infer_operand_kind(operand: str, field: dict[str, Any] | None) -> str:
         return "SREG"
     if upper.startswith("F") or source.startswith("F"):
         return "FREG"
-    if upper in {"IMM_EA", "IMMEDIATE_EA", "IMMEA", "IMMEDIATE_OPERAND_EA"}:
-        return "IMM_EA"
     if names_ea_operand(typ) or names_ea_operand(name) or "MEMORY" in upper or "MEMORY" in source:
         return "EA"
     if upper in {"CR", "CREG", "CONTROL_REGISTER"} or source in {"CR", "CONTROL_REGISTER"}:
         return "CR"
+    if upper == "IMM6" or source == "IMM6":
+        return "IMM6"
     if "IMM64" in upper or "IMM64" in source:
         return "imm64"
     if "IMM32" in upper or "IMM32" in source:
@@ -251,8 +250,6 @@ def operand_placeholder(kind: str, operand: str) -> str:
         return "Fn"
     if kind == "EA":
         return "<ea>"
-    if kind == "IMM_EA":
-        return "imm"
     if kind == "condition":
         return "cc"
     if kind == "memory_order":
@@ -261,6 +258,8 @@ def operand_placeholder(kind: str, operand: str) -> str:
         return "<bitmap16>"
     if lower == "cr":
         return "<cr>"
+    if lower == "imm6":
+        return "<imm6>"
     if "imm64" in lower:
         return "<imm64>"
     if "imm32" in lower:
@@ -394,8 +393,6 @@ def line_operand_placeholder(kind: str, operand: str, field: dict[str, Any] | No
         return f"Fn{suffix}"
     if kind == "EA":
         return f"<ea{suffix}>"
-    if kind == "IMM_EA":
-        return f"<imm{suffix}>"
     if kind == "condition":
         return f"cc{suffix}"
     if kind == "memory_order":
@@ -404,6 +401,8 @@ def line_operand_placeholder(kind: str, operand: str, field: dict[str, Any] | No
         return "<bitmap>"
     if kind.lower() == "cr":
         return "<cr>"
+    if kind.lower() == "imm6":
+        return f"<imm{suffix}>"
     if "imm64" in kind.lower():
         return "imm64"
     if "imm32" in kind.lower():
@@ -551,7 +550,7 @@ def parse_descriptor_layout(item: dict[str, Any]) -> list[dict[str, Any]]:
                     "name": name,
                     "kind": kind,
                     "source": source_for(name, kind),
-                    "storage": "descriptor",
+                    "storage": "ext",
                     "token": 1,
                     "width": high - low + 1,
                     "low_bit": low,
@@ -588,7 +587,7 @@ def parse_descriptor_layout(item: dict[str, Any]) -> list[dict[str, Any]]:
                 "name": name,
                 "kind": kind,
                 "source": source_for(name, kind),
-                "storage": "descriptor",
+                "storage": "ext" if where == "ext" else "payload",
                 "token": token,
                 "width": high - low + 1,
                 "low_bit": low,
@@ -675,6 +674,8 @@ def payload_token_for_kind(kind: str) -> str:
         return "<bitmap>"
     if lower == "cr":
         return "<cr>"
+    if lower == "imm6":
+        return ""
     if "imm64" in lower:
         return "<imm64>"
     if "imm32" in lower:
@@ -776,8 +777,6 @@ def default_words(item: dict[str, Any], lengths: dict[tuple[str, str], tuple[int
     if item.get("kind") in {"compact", "compact_alias"}:
         if "min_words" in item and "max_words" in item:
             note = "alias_of=" + str(item["alias_of"]) if item.get("kind") == "compact_alias" else ""
-            if not note:
-                note = "ea_payload=variable" if has_ea_field(item) else "overlong=padding"
             return int(item["min_words"]), int(item["max_words"]), note
         key = (str(item["mnemonic"]), str(item.get("shape_hint", "")))
         if key in lengths:
@@ -787,17 +786,12 @@ def default_words(item: dict[str, Any], lengths: dict[tuple[str, str], tuple[int
             max_words = DEFAULT_MAX_WORDS
         else:
             min_words, max_words = 1, DEFAULT_MAX_WORDS
-        note = "ea_payload=variable" if has_ea_field(item) else "overlong=padding"
-        return min_words, max_words, note
+        return min_words, max_words, ""
     words = 2 + int(item.get("operand_descriptor_words", 0))
     if item.get("kind") == "extended_alias":
         note = "alias_of=" + str(item["alias_of"])
     else:
-        note = "encoding=primary_root+extended_opcode"
-    if int(item.get("operand_descriptor_words", 0)) and item.get("kind") != "extended_alias":
-        note += "; descriptor=present"
-    if has_ea_field(item):
-        note += "; ea_payload=variable"
+        note = ""
     return words, DEFAULT_MAX_WORDS, note
 
 
@@ -882,8 +876,6 @@ def operand_encoding_summary(kind: str, spec: dict[str, Any] | None = None) -> s
         return f"{max(1, (register_class_count(spec, 'F') - 1).bit_length())}-bit F register field"
     if kind == "EA":
         return f"{compact_ea_width}-bit compact EA selector; extended escapes to extended EA descriptor"
-    if kind == "IMM_EA":
-        return f"{compact_ea_width}-bit compact EA selector restricted to immediate forms"
     if kind == "condition":
         return "4-bit condition field"
     if kind == "memory_order":
@@ -892,6 +884,8 @@ def operand_encoding_summary(kind: str, spec: dict[str, Any] | None = None) -> s
         bitmap_name = bitmap_kind_name(kind, spec)
         width = int((spec.get("instructions", {}).get("operand_schema", {}).get("bitmap_operands", {}).get(bitmap_name, {}) or {}).get("width", 0))
         return f"{width}-bit register bitmap payload"
+    if kind == "IMM6":
+        return "6-bit immediate literal"
     if kind == "selector6":
         return "6-bit immediate selector field carrying values 0..63"
     if kind == "small_selector":
@@ -905,17 +899,15 @@ def operand_encoding_summary(kind: str, spec: dict[str, Any] | None = None) -> s
     if "imm16" in kind.lower():
         return "16-bit immediate payload"
     if "imm" in kind.lower():
-        return "immediate payload or EA IMM form"
+        return "immediate payload"
     return "descriptor or payload field"
 
 
 def operand_default_words(kind: str) -> str:
-    if kind in {"DREG", "AREG", "SPREG", "SREG", "FREG", "condition", "small_selector", "selector6", "memory_order"}:
+    if kind in {"DREG", "AREG", "SPREG", "SREG", "FREG", "condition", "small_selector", "selector6", "memory_order", "IMM6"}:
         return "+0 when packed in primary/descriptor"
     if kind == "EA":
         return "+0 for register/simple EA; varies by EA form"
-    if kind == "IMM_EA":
-        return "varies by selected immediate EA form"
     if is_bitmap_kind(kind):
         return "+1"
     if "imm64" in kind.lower():
@@ -933,12 +925,6 @@ def operand_notes(kind: str, spec: dict[str, Any] | None = None) -> str:
     spec = spec or active_spec()
     if kind == "EA":
         return "see EA form table"
-    if kind == "IMM_EA":
-        return "/".join(
-            str(form.get("name"))
-            for form in compact_ea_forms(spec)
-            if form.get("class") == "immediate"
-        )
     if is_bitmap_kind(kind, spec):
         ranges = []
         for item in bitmap_operand_ranges(spec, bitmap_kind_name(kind, spec)):

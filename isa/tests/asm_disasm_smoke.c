@@ -3,7 +3,7 @@
 
 #include "bedrock_asm_disasm.h"
 
-static int check_line(const char *input, const char *expected_form)
+static int check_line_words(const char *input, const char *expected_form, size_t expected_words)
 {
     uint16_t words[BEDROCK_MAX_INSTRUCTION_WORDS];
     size_t written_words = 0;
@@ -25,6 +25,16 @@ static int check_line(const char *input, const char *expected_form)
         );
         return 1;
     }
+    if (expected_words != 0u && written_words != expected_words) {
+        fprintf(
+            stderr,
+            "unexpected word count for %s: got %zu, expected %zu\n",
+            input,
+            written_words,
+            expected_words
+        );
+        return 1;
+    }
     status = bedrock_disassemble_line(words, written_words, disassembled, sizeof(disassembled), &decoded_form);
     if (status != BEDROCK_OK) {
         fprintf(stderr, "disassemble failed (%d): %s\n", status, input);
@@ -36,6 +46,11 @@ static int check_line(const char *input, const char *expected_form)
     }
     printf("%-24s -> %-22s -> %s\n", input, assembled_form->id, disassembled);
     return 0;
+}
+
+static int check_line(const char *input, const char *expected_form)
+{
+    return check_line_words(input, expected_form, 0);
 }
 
 static int check_prefixed_line(const char *input, const char *expected_form)
@@ -89,31 +104,36 @@ int main(void)
     failed |= check_line("MOV.L [A1], D0", "MOV.EA_TO_D");
     failed |= check_line("MOV.Q D0, SP", "MOV.D_TO_EA");
     failed |= check_line("MOV.Q SP, D0", "MOV.EA_TO_D");
-    failed |= check_line("MOV.Q 16, SP", "MOV.EA_TO_EA.BWLQ");
-    failed |= check_line("CMP.L [A0], [A1]", "CMP.EA_TO_EA.BWLQ");
+    failed |= check_line("MOV.Q 16, SP", "MOV.EA_TO_EA");
+    failed |= check_line("CMP.L [A0], [A1]", "CMP.EA_TO_EA");
     failed |= check_line("ADD.Q D0, A1", "ADD.EA_TO_A");
-    failed |= check_line("ADD.Q D0, SP", "ADD.D_TO_EA.BWLQ");
-    failed |= check_line("ADD.Q 16.W, SP", "ADD.IMM_TO_EA.BWLQ");
-    failed |= check_line("SUB.Q D0, SP", "SUB.D_TO_EA.BWLQ");
-    failed |= check_line("SUB.Q 8.W, SP", "SUB.IMM_TO_EA.BWLQ");
-    failed |= check_line("AND.L 1.W, [A1]", "AND.IMM_TO_EA.BWLQ");
+    failed |= check_line("ADD.Q D0, SP", "ADD.D_TO_EA");
+    failed |= check_line_words("ADD.Q 16, SP", "ADD.IMM_TO_EA", 2);
+    failed |= check_rejected_line("ADD.Q 64, SP");
+    failed |= check_rejected_line("ADD.Q 16.W, SP");
+    failed |= check_line("SUB.Q D0, SP", "SUB.D_TO_EA");
+    failed |= check_line_words("SUB.Q 8, SP", "SUB.IMM_TO_EA", 2);
+    failed |= check_line_words("AND.L 1, [A1]", "AND.IMM_TO_EA", 2);
     failed |= check_line("AND.L 999.W, D1", "AND.IMM_TO_D");
     failed |= check_line("AND.L -993.W, D0", "AND.IMM_TO_D");
     failed |= check_line("OR.L 1.W, D0", "OR.IMM_TO_D");
     failed |= check_line("XOR.L 1.W, D0", "XOR.IMM_TO_D");
-    failed |= check_line("CMP.L 9.W, SP", "CMP.IMM_TO_EA.BWLQ");
+    failed |= check_line_words("CMP.L 9, SP", "CMP.IMM_TO_EA", 2);
     failed |= check_line("MOV.L [A0 + D1.L * 4], D0", "MOV.EA_TO_D");
     failed |= check_line("MOV.L [GS4:A0 + D1.L * 4], D0", "MOV.EA_TO_D");
     failed |= check_line("ADC.Q D1, [A2]", "ADC.D_TO_EA");
-    failed |= check_line("EXTSW.B D1, D2", "EXTSW.D_TO_D.B");
+    failed |= check_line("EXTSW.B D1, D2", "EXTSW.D_TO_D");
     failed |= check_line("EXTSQ.L D1, D2", "EXTSQ.D_TO_D");
     failed |= check_line("EXTZQ.L D1, D2", "EXTZQ.D_TO_D");
     failed |= check_rejected_line("EXTZQ.Q D1, D2");
-    failed |= check_line("EXTZL.W [A0], D3", "EXTZL.EA_TO_D.BW");
-    failed |= check_line("EXTZW.B [A0], D3", "EXTZW.EA_TO_EA.B");
+    failed |= check_line("EXTZL.W [A0], D3", "EXTZL.EA_TO_D");
+    failed |= check_line("EXTZW.B [A0], D3", "EXTZW.EA_TO_EA");
     failed |= check_line("CMPXCHG.Q/ACQREL D0, D1, [A2]", "CMPXCHG.D_TO_D_TO_EA");
     failed |= check_line("FETCHADD.L/RELEASE D2, [A3]", "FETCHADD.D_TO_EA");
     failed |= check_line("FADD.S [A0], F1", "FADD.EA_TO_F");
+    failed |= check_line("FMOVEQ F1, F2", "FMOVcc.F_TO_F");
+    failed |= check_line("FMOVEQ.S [A0], F1", "FMOVcc.EA_TO_F");
+    failed |= check_line("FMOVNE.D F1, [A0]", "FMOVcc.F_TO_EA");
     failed |= check_line("FMADD.S [A0], F15, F2", "FMADD.EA_TO_F_TO_F");
     failed |= check_rejected_line("FMADD.S [A0], F16, F2");
     failed |= check_line("FPUSHM {F8-F15}", "FPUSHM.BITMAP");
@@ -130,6 +150,7 @@ int main(void)
     failed |= check_line("JEQ.W 16", "Jcc.IMM");
     failed |= check_line("JMP.W 16", "JMP.IMM");
     failed |= check_rejected_line("JF.W 16");
+    failed |= check_line_words("CALL 0x1234", "CALL.IMM16", 2);
     failed |= check_line("CALL 0x10000", "CALL.IMM32");
     failed |= check_line("CALL 0x100000000", "CALL.IMM64");
     failed |= check_line("CALL [A0]", "CALL.EA");
@@ -158,8 +179,8 @@ int main(void)
     failed |= check_line("CPUID D0", "CPUID.D");
     failed |= check_prefixed_line("MOV.L [A1++], D2", "MOV.EA_TO_D");
     failed |= check_prefixed_line("MOV.L D2, [A0++]", "MOV.D_TO_EA");
-    failed |= check_prefixed_line("REP D0, ADD.L [A0 + D0.L * 4 - 4], D1", "ADD.EA_TO_D.BWLQ");
-    failed |= check_prefixed_line("REPEQ D2, CMP.L [A0 + D2.L * 4 - 4], D1", "CMP.EA_TO_D.BWLQ");
+    failed |= check_prefixed_line("REP D0, ADD.L [A0 + D0.L * 4 - 4], D1", "ADD.EA_TO_D");
+    failed |= check_prefixed_line("REPEQ D2, CMP.L [A0 + D2.L * 4 - 4], D1", "CMP.EA_TO_D");
     failed |= check_rejected_line("MOV.L [A0 + D1.L], D0");
     return failed ? 1 : 0;
 }

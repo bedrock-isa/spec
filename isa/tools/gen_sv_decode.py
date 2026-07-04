@@ -56,6 +56,20 @@ def bits_for_count(count: int) -> int:
     return max(1, math.ceil(math.log2(max(2, count))))
 
 
+def immediate_payload_width(kind: str) -> int:
+    lower = kind.lower()
+    if "64" in lower:
+        return 64
+    if "32" in lower:
+        return 32
+    return 16
+
+
+def is_compact_ea_selector_kind(kind: str, width: int) -> bool:
+    lower = kind.lower()
+    return kind == "EA" or (kind.upper() in {"IMM16", "IMM32", "IMM64"} and 0 < width < immediate_payload_width(kind))
+
+
 def sv_ident(prefix: str, text: str, used: set[str]) -> str:
     body = re.sub(r"[^A-Za-z0-9]+", "_", text.upper()).strip("_")
     if not body:
@@ -524,7 +538,7 @@ def emit_package(plan: dict[str, Any], repg_fast_policy: dict[str, set[str]]) ->
             token = int(field.get("token", 0))
             low = int(field.get("low_bit", 0))
             width = int(field.get("width", 0))
-            if kind in {"EA", "IMM_EA"} and ea_index < 2:
+            if is_compact_ea_selector_kind(kind, width) and ea_index < 2:
                 ea_value = zero_extend_expr(word_part_expr(token, low, width), width, 6)
                 field_format_extract_lines.extend(
                     [

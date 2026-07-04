@@ -281,8 +281,6 @@ symbols:
     - file
   rules:
     - Function symbols name the first instruction of the callable entry point.
-    - A function that contains a REPG or REPGF grouped-repeat sequence must have a 64-byte-aligned
-      entry address.
     - Object symbols name the first byte of the object storage.
     - ELF st_value stores a byte offset relative to the symbol's defining section.
 program_loading:
@@ -839,8 +837,6 @@ assembler_contract:
     - Pure ISA syntax is accepted.
     - Ambiguous symbolic operands require an explicit relocation annotation.
     - Noncanonical encodings are rejected.
-    - Object producers must emit 64-byte function-entry alignment for any function body that contains
-      a REPG or REPGF grouped-repeat sequence.
   relaxation:
     - Short and long branches may be selected automatically when the target is known.
     - Overlong encodings are emitted only when explicitly requested.

@@ -35,6 +35,42 @@ attributes:
 allocation:
   catalog_section: system
   layout_group: FETCH_OPS
+  encoding:
+  - id: FETCHSUB.D_TO_EA
+    extension_root: EXT.atomic_memory
+    extension_root_payload: '0xf60'
+    extension_family: atomic_memory
+    extended_opcode: '0x0007'
+    extended_opcode_start: '0x0007'
+    extended_opcode_end: '0x0007'
+    extended_opcode_slots: 1
+    extended_opcode_bits: 0
+    operand_payload_bits: 14
+    operand_descriptor_words: 1
+    operand_descriptor_spilled: true
+    descriptor_layout: o:memory_order/3@payload, e:EA/6@payload, d:DREG/3@payload, s:BWLQ/2@payload
+    fields:
+    - name: s
+      kind: BWLQ
+      source: size
+      storage: descriptor
+      width: 2
+    - name: o
+      kind: memory_order
+      source: order
+      storage: payload
+      width: 3
+    - name: d
+      kind: DREG
+      source: src
+      storage: descriptor
+      width: 3
+    - name: e
+      kind: EA
+      source: memory
+      storage: descriptor
+      width: 6
+    kind: extended
 forms:
   memory_operand_ea_set: addressable_memory_only
   require_memory_operand: true

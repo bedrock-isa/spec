@@ -35,6 +35,77 @@ attributes:
 allocation:
   catalog_section: fpu
   layout_group: FP_BOUNDS
+  encoding:
+  - id: FBNDXX.F_TO_EA_TO_F
+    extension_root: EXT.fpu_arithmetic
+    extension_root_payload: '0xf67'
+    extension_family: fpu_arithmetic
+    extended_opcode: '0x0406'
+    extended_opcode_start: '0x0406'
+    extended_opcode_end: '0x0406'
+    extended_opcode_slots: 1
+    extended_opcode_bits: 0
+    operand_payload_bits: 15
+    operand_descriptor_words: 1
+    operand_descriptor_spilled: true
+    descriptor_layout: e:EA/6@payload, f:FREG/4@payload, F:FREG/4@payload, z:S_D/1@payload
+    fields:
+    - name: z
+      kind: S_D
+      source: size
+      storage: descriptor
+      width: 1
+    - name: f
+      kind: FREG
+      source: lo
+      storage: descriptor
+      width: 4
+    - name: e
+      kind: EA
+      source: value
+      storage: descriptor
+      width: 6
+    - name: f
+      kind: FREG
+      source: hi
+      storage: descriptor
+      width: 4
+    kind: extended
+  - id: FBNDXX.F_TO_F_TO_F
+    extension_root: EXT.fpu_arithmetic
+    extension_root_payload: '0xf67'
+    extension_family: fpu_arithmetic
+    extended_opcode: '0x0407'
+    extended_opcode_start: '0x0407'
+    extended_opcode_end: '0x0407'
+    extended_opcode_slots: 1
+    extended_opcode_bits: 0
+    operand_payload_bits: 13
+    operand_descriptor_words: 1
+    operand_descriptor_spilled: true
+    descriptor_layout: f:FREG/4@payload, F:FREG/4@payload, f3:FREG/4@payload, z:S_D/1@payload
+    fields:
+    - name: z
+      kind: S_D
+      source: size
+      storage: descriptor
+      width: 1
+    - name: f
+      kind: FREG
+      source: lo
+      storage: descriptor
+      width: 4
+    - name: f
+      kind: FREG
+      source: value
+      storage: descriptor
+      width: 4
+    - name: f
+      kind: FREG
+      source: hi
+      storage: descriptor
+      width: 4
+    kind: extended
 forms:
   operands:
   - - name: lo

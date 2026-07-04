@@ -12,7 +12,6 @@ operand_schema:
   - DREG_OR_AREG
   - EA
   - EA_or_range
-  - IMM_EA
   - FREG
   - fbitmap16
   - CR
@@ -21,6 +20,7 @@ operand_schema:
   - bitmap16
   - condition
   - imm
+  - imm6
   - imm16
   - imm32
   - imm64
@@ -180,6 +180,11 @@ allocation:
     - fences
   extension_family_order:
   - integer_alu
+  - integer_alu_reg_ea_wide
+  - integer_alu_imm_ea_arith_wide
+  - integer_alu_imm_ea_logic_wide
+  - integer_alu_cmp_ea_wide
+  - integer_extend_ea_wide
   - integer_bounds
   - integer_bounds_signed
   - integer_bounds_unsigned
@@ -200,6 +205,7 @@ allocation:
   - system_core
   - virtualization_acceleration
   - fpu_move_compare
+  - fpu_arithmetic_ea_wide
   - fpu_arithmetic
   - fpu_transcendental
   - misc
@@ -208,6 +214,20 @@ allocation:
     - EA_TO_D
     - EA_TO_A
     - D_TO_EA
+  extension_member_order:
+    conditional_control:
+    - DJcc.D_TO_EA
+    - FMOVcc.F_TO_F
+    - Jcc.EA.WL
+    - TRAPcc
+    - SETcc.EA
+    - MOVcc.A_TO_EA
+    - MOVcc.D_TO_EA
+    - IJcc.D_TO_D_TO_EA
+    - MOVcc.EA_TO_A
+    - MOVcc.EA_TO_D
+    - FMOVcc.EA_TO_F
+    - FMOVcc.F_TO_EA
   family_locality:
     integer_alu:
       prefer_contiguous_roots: true
@@ -359,12 +379,62 @@ allocation:
       weight: 80
       compact: never
       reason: rare system/cache/TLB operations should not consume primary payload
+    - id: CORE_CONTROL_COMPACT
+      match:
+        semantic_family: core_control
+      weight: 120
+      compact: required
+      reason: core-control no-operand operations are compact primary operations
   extension_roots:
     group_by: semantic_family
     condition_field_in_primary: true
     preferred_region: high_primary_payload
     allow_low_payload_roots: false
   extension_family_rules:
+  - match:
+      mnemonic:
+      - ADC
+      - ADD
+      profile:
+      - D_TO_EA
+      - EA_TO_D
+    extension_family: integer_alu_reg_ea_wide
+  - match:
+      mnemonic: AND
+      profile: D_TO_EA
+    extension_family: integer_alu_reg_ea_wide
+  - match:
+      mnemonic:
+      - ADC
+      - ADD
+      - SBB
+      - SUB
+      profile: IMM_TO_EA
+    extension_family: integer_alu_imm_ea_arith_wide
+  - match:
+      mnemonic:
+      - AND
+      - OR
+      - TEST
+      - XOR
+      profile: IMM_TO_EA
+    extension_family: integer_alu_imm_ea_logic_wide
+  - match:
+      mnemonic: CMP
+      profile:
+      - EA_TO_EA
+      - IMM_TO_EA
+    extension_family: integer_alu_cmp_ea_wide
+  - match:
+      mnemonic:
+      - EXTSL
+      - EXTSQ
+      - EXTSW
+      - EXTZL
+      - EXTZQ
+      - EXTZW
+      profile: EA_TO_EA
+    extension_family: integer_extend_ea_wide
   - match:
       group: BIT_OPS
       profile: I6_TO_EA
@@ -377,6 +447,14 @@ allocation:
       group: SHIFTS
       profile: I6_TO_EA
     extension_family: integer_bitfield_shift_imm
+  - match:
+      mnemonic:
+      - FABS
+      - FADD
+      profile:
+      - EA_TO_F
+      - F_TO_EA
+    extension_family: fpu_arithmetic_ea_wide
   primary_clusters:
     order:
     - bitmap_ops
@@ -420,6 +498,7 @@ allocation:
     - SEL4
     - DBANK:4
     - SIZE2
+    - IMM6:6
     - SIZE1
     field_score:
       formula: candidate_weight_times_field_width

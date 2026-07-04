@@ -13,6 +13,47 @@ attributes:
   fp_flags: unchanged
 allocation:
   catalog_section: fpu
+  encoding:
+  - id: FCLR.EA
+    extension_root: EXT.fpu_arithmetic
+    extension_root_payload: '0xf67'
+    extension_family: fpu_arithmetic
+    extended_opcode: 0x0440..0x047f
+    extended_opcode_start: '0x0440'
+    extended_opcode_end: '0x047f'
+    extended_opcode_slots: 64
+    extended_opcode_bits: 6
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: e:EA[5:0]
+    fields:
+    - name: e
+      kind: EA
+      source: dst
+      storage: descriptor
+      width: 6
+    kind: extended
+  - id: FCLR.F
+    extension_root: EXT.fpu_arithmetic
+    extension_root_payload: '0xf67'
+    extension_family: fpu_arithmetic
+    extended_opcode: 0x0410..0x041f
+    extended_opcode_start: '0x0410'
+    extended_opcode_end: '0x041f'
+    extended_opcode_slots: 16
+    extended_opcode_bits: 4
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: f:FREG[3:0]
+    fields:
+    - name: f
+      kind: FREG
+      source: dst
+      storage: descriptor
+      width: 4
+    kind: extended
 forms:
   operands:
   - - name: dst

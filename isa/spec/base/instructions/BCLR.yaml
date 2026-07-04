@@ -25,6 +25,105 @@ attributes:
 allocation:
   catalog_section: integer
   layout_group: BIT_OPS
+  encoding:
+  - id: BCLR.D_TO_D
+    extension_root: EXT.integer_bitfield
+    extension_root_payload: '0xf46'
+    extension_family: integer_bitfield
+    extended_opcode: 0x0100..0x01ff
+    extended_opcode_start: '0x0100'
+    extended_opcode_end: '0x01ff'
+    extended_opcode_slots: 256
+    extended_opcode_bits: 8
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: n:DREG[2:0], d:DREG[5:3], s:BWLQ[7:6]
+    fields:
+    - name: s
+      kind: BWLQ
+      source: size
+      storage: descriptor
+      width: 2
+    - name: n
+      kind: DREG
+      source: bit_index
+      storage: descriptor
+      width: 3
+    - name: d
+      kind: DREG
+      source: dst
+      storage: descriptor
+      width: 3
+    kind: extended
+  - id: BCLR.D_TO_EA
+    extension_root: EXT.integer_bitfield
+    extension_root_payload: '0xf46'
+    extension_family: integer_bitfield
+    extended_opcode: 0x1000..0x17ff
+    extended_opcode_start: '0x1000'
+    extended_opcode_end: '0x17ff'
+    extended_opcode_slots: 2048
+    extended_opcode_bits: 11
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: e:EA[5:0], n:DREG[8:6], s:BWLQ[10:9]
+    fields:
+    - name: s
+      kind: BWLQ
+      source: size
+      storage: descriptor
+      width: 2
+    - name: n
+      kind: DREG
+      source: bit_index
+      storage: descriptor
+      width: 3
+    - name: e
+      kind: EA
+      source: dst
+      storage: descriptor
+      width: 6
+    kind: extended
+  - id: BCLR.I6_TO_EA
+    extension_root: EXT.integer_bitfield_bit_imm
+    extension_root_payload: '0xf47'
+    extension_family: integer_bitfield_bit_imm
+    extended_opcode: 0x4000..0x7fff
+    extended_opcode_start: '0x4000'
+    extended_opcode_end: '0x7fff'
+    extended_opcode_slots: 16384
+    extended_opcode_bits: 14
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: e:EA[5:0], n:selector6[11:6], s:BWLQ[13:12], o:bit_group=BCLR[15:14]
+    fields:
+    - name: s
+      kind: BWLQ
+      source: size
+      storage: descriptor
+      width: 2
+    - name: o
+      kind: bit_group
+      source: semantic
+      storage: descriptor
+      width: 2
+      value: 1
+      value_label: BCLR
+      placement: high
+    - name: n
+      kind: selector6
+      source: bit_index
+      storage: descriptor
+      width: 6
+    - name: e
+      kind: EA
+      source: dst
+      storage: descriptor
+      width: 6
+    kind: extended
 forms:
   operands:
   - - name: bit_index

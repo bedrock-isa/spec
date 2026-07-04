@@ -21,6 +21,27 @@ attributes:
 allocation:
   catalog_section: system
   layout_group: FSTATUS_ACCESS
+  encoding:
+  - id: WRFSTATUS.D
+    extension_root: EXT.system_core
+    extension_root_payload: '0xf63'
+    extension_family: system_core
+    extended_opcode: 0x0148..0x014f
+    extended_opcode_start: '0x0148'
+    extended_opcode_end: '0x014f'
+    extended_opcode_slots: 8
+    extended_opcode_bits: 3
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: d:DREG[2:0]
+    fields:
+    - name: d
+      kind: DREG
+      source: src
+      storage: descriptor
+      width: 3
+    kind: extended
 forms:
   operands:
   - name: src

@@ -22,6 +22,47 @@ attributes:
 allocation:
   catalog_section: integer
   layout_group: DATA_BANK_SELECT
+  encoding:
+  - id: SELDB.D
+    extension_root: EXT.data_register_banking
+    extension_root_payload: '0xf4b'
+    extension_family: data_register_banking
+    extended_opcode: 0x0008..0x000f
+    extended_opcode_start: '0x0008'
+    extended_opcode_end: '0x000f'
+    extended_opcode_slots: 8
+    extended_opcode_bits: 3
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: d:DREG[2:0]
+    fields:
+    - name: d
+      kind: DREG
+      source: selector
+      storage: descriptor
+      width: 3
+    kind: extended
+  - id: SELDB.DB
+    extension_root: EXT.data_register_banking
+    extension_root_payload: '0xf4b'
+    extension_family: data_register_banking
+    extended_opcode: 0x0030..0x003f
+    extended_opcode_start: '0x0030'
+    extended_opcode_end: '0x003f'
+    extended_opcode_slots: 16
+    extended_opcode_bits: 4
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: k:DBANK[3:0]
+    fields:
+    - name: k
+      kind: DBANK
+      source: selector
+      storage: descriptor
+      width: 4
+    kind: extended
 forms:
   operands:
   - - name: selector

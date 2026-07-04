@@ -16,6 +16,32 @@ behavior:
   - ASCR = ((asid_v & 0xffff) << 16) | 1;
 allocation:
   catalog_section: system
+  encoding:
+  - id: SWPTA.D_TO_D
+    extension_root: EXT.tlb_cache
+    extension_root_payload: '0xf62'
+    extension_family: tlb_cache
+    extended_opcode: 0x0080..0x00bf
+    extended_opcode_start: '0x0080'
+    extended_opcode_end: '0x00bf'
+    extended_opcode_slots: 64
+    extended_opcode_bits: 6
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: d:DREG[2:0], D:DREG[5:3]
+    fields:
+    - name: d
+      kind: DREG
+      source: new_ptcr
+      storage: descriptor
+      width: 3
+    - name: d
+      kind: DREG
+      source: asid
+      storage: descriptor
+      width: 3
+    kind: extended
 forms:
   operands:
   - name: new_ptcr

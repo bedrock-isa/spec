@@ -17,6 +17,32 @@ attributes:
   fp_flags: unchanged
 allocation:
   catalog_section: fpu
+  encoding:
+  - id: FXCHG.F_TO_F
+    extension_root: EXT.fpu_arithmetic
+    extension_root_payload: '0xf67'
+    extension_family: fpu_arithmetic
+    extended_opcode: 0x0500..0x05ff
+    extended_opcode_start: '0x0500'
+    extended_opcode_end: '0x05ff'
+    extended_opcode_slots: 256
+    extended_opcode_bits: 8
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: f:FREG[3:0], F:FREG[7:4]
+    fields:
+    - name: f
+      kind: FREG
+      source: lhs
+      storage: descriptor
+      width: 4
+    - name: f
+      kind: FREG
+      source: rhs
+      storage: descriptor
+      width: 4
+    kind: extended
 forms:
   operands:
   - name: lhs

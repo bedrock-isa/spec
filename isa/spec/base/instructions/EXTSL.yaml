@@ -21,6 +21,127 @@ attributes:
 allocation:
   catalog_section: compact_primary
   layout_group: EXTEND_TO_L
+  encoding:
+  - id: EXTSL.D_TO_D
+    extension_root: EXT.integer_alu
+    extension_root_payload: '0xf3c'
+    extension_family: integer_alu
+    extended_opcode: 0x0180..0x01ff
+    extended_opcode_start: '0x0180'
+    extended_opcode_end: '0x01ff'
+    extended_opcode_slots: 128
+    extended_opcode_bits: 7
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: d:DREG[2:0], D:DREG[5:3], s:BW[6]
+    fields:
+    - name: s
+      kind: BW
+      source: size
+      storage: descriptor
+      width: 1
+    - name: d
+      kind: DREG
+      source: src
+      storage: descriptor
+      width: 3
+    - name: d
+      kind: DREG
+      source: dst
+      storage: descriptor
+      width: 3
+    kind: extended
+  - id: EXTSL.D_TO_EA
+    extension_root: EXT.integer_alu
+    extension_root_payload: '0xf3c'
+    extension_family: integer_alu
+    extended_opcode: 0x2000..0x23ff
+    extended_opcode_start: '0x2000'
+    extended_opcode_end: '0x23ff'
+    extended_opcode_slots: 1024
+    extended_opcode_bits: 10
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: e:EA[5:0], d:DREG[8:6], s:BW[9]
+    fields:
+    - name: s
+      kind: BW
+      source: size
+      storage: descriptor
+      width: 1
+    - name: d
+      kind: DREG
+      source: src
+      storage: descriptor
+      width: 3
+    - name: e
+      kind: EA
+      source: dst
+      storage: descriptor
+      width: 6
+    kind: extended
+  - id: EXTSL.EA_TO_D
+    extension_root: EXT.integer_alu
+    extension_root_payload: '0xf3c'
+    extension_family: integer_alu
+    extended_opcode: 0x2400..0x27ff
+    extended_opcode_start: '0x2400'
+    extended_opcode_end: '0x27ff'
+    extended_opcode_slots: 1024
+    extended_opcode_bits: 10
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: e:EA[5:0], d:DREG[8:6], s:BW[9]
+    fields:
+    - name: s
+      kind: BW
+      source: size
+      storage: descriptor
+      width: 1
+    - name: e
+      kind: EA
+      source: src
+      storage: descriptor
+      width: 6
+    - name: d
+      kind: DREG
+      source: dst
+      storage: descriptor
+      width: 3
+    kind: extended
+  - id: EXTSL.EA_TO_EA
+    extension_root: EXT.integer_extend_ea_wide
+    extension_root_payload: '0xf41'
+    extension_family: integer_extend_ea_wide
+    extended_opcode: 0x0000..0x1fff
+    extended_opcode_start: '0x0000'
+    extended_opcode_end: '0x1fff'
+    extended_opcode_slots: 8192
+    extended_opcode_bits: 13
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: e:EA[5:0], E:EA[11:6], s:BW[12]
+    fields:
+    - name: s
+      kind: BW
+      source: size
+      storage: descriptor
+      width: 1
+    - name: e
+      kind: EA
+      source: src
+      storage: descriptor
+      width: 6
+    - name: e
+      kind: EA
+      source: dst
+      storage: descriptor
+      width: 6
+    kind: extended
 forms:
   dst_ea_set: store_destination
   compact_forms:

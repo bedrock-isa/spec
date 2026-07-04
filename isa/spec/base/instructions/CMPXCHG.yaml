@@ -2,23 +2,32 @@ mnemonic: CMPXCHG
 doc:
   title: Compare And Exchange
   summary: Performs the compare and exchange operation.
+  description: >
+    Compares memory with the expected D register and conditionally stores the
+    desired D register. After the operation, expected contains the observed old
+    memory value. ZF=1 means the store happened; ZF=0 means memory was left
+    unchanged.
   instruction_family: atomics
   instruction_class: system
 behavior:
   group: atomics
   inputs:
   - desired
+  input_output:
   - expected
-  input_output: memory
+  - memory
   operation:
-  - if (memory_v != expected_v) goto <cmpxchg_fail>;
+  - tmp_v = memory_v;
+  - if (tmp_v != expected_v) goto <cmpxchg_fail>;
   - memory_v = desired_v;
+  - expected_v = tmp_v;
   - ZF = 1;
   - NF = 0;
   - CF = 0;
   - VF = 0;
   - goto <cmpxchg_done>;
   - <cmpxchg_fail>
+  - expected_v = tmp_v;
   - ZF = 0;
   - NF = 0;
   - CF = 0;
@@ -44,12 +53,53 @@ attributes:
       memory operations before it. Acquire-release applies both directions. Sequential consistency additionally 
       participates in the global sequentially consistent order for atomic operations.
   flags:
-    Z: result == 0
-    N: most_significant_bit(result)
-    C: unsigned borrow
-    V: signed overflow
+    Z: store succeeded
+    N: cleared
+    C: cleared
+    V: cleared
 allocation:
   catalog_section: system
+  encoding:
+  - id: CMPXCHG.D_TO_D_TO_EA
+    extension_root: EXT.atomic_memory
+    extension_root_payload: '0xf60'
+    extension_family: atomic_memory
+    extended_opcode: 0x0000..0x0003
+    extended_opcode_start: '0x0000'
+    extended_opcode_end: '0x0003'
+    extended_opcode_slots: 4
+    extended_opcode_bits: 2
+    operand_payload_bits: 15
+    operand_descriptor_words: 1
+    operand_descriptor_spilled: true
+    descriptor_layout: s:BWLQ[1:0], o:memory_order/3@payload, e:EA/6@payload, d:DREG/3@payload, D:DREG/3@payload
+    fields:
+    - name: s
+      kind: BWLQ
+      source: size
+      storage: descriptor
+      width: 2
+    - name: o
+      kind: memory_order
+      source: order
+      storage: payload
+      width: 3
+    - name: d
+      kind: DREG
+      source: expected
+      storage: descriptor
+      width: 3
+    - name: d
+      kind: DREG
+      source: desired
+      storage: descriptor
+      width: 3
+    - name: e
+      kind: EA
+      source: memory
+      storage: descriptor
+      width: 6
+    kind: extended
 forms:
   memory_operand_ea_set: addressable_memory_only
   require_memory_operand: true

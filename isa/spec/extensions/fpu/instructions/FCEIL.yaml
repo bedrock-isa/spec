@@ -18,6 +18,97 @@ attributes:
 allocation:
   catalog_section: fpu
   layout_group: FP_INTEGRAL_ROUND
+  encoding:
+  - id: FCEIL.EA_TO_F
+    extension_root: EXT.fpu_arithmetic
+    extension_root_payload: '0xf67'
+    extension_family: fpu_arithmetic
+    extended_opcode: 0x0800..0x0fff
+    extended_opcode_start: '0x0800'
+    extended_opcode_end: '0x0fff'
+    extended_opcode_slots: 2048
+    extended_opcode_bits: 11
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: e:EA[5:0], f:FREG[9:6], z:S_D[10]
+    fields:
+    - name: z
+      kind: S_D
+      source: size
+      storage: descriptor
+      width: 1
+    - name: e
+      kind: EA
+      source: src
+      storage: descriptor
+      width: 6
+    - name: f
+      kind: FREG
+      source: dst
+      storage: descriptor
+      width: 4
+    kind: extended
+  - id: FCEIL.F_TO_EA
+    extension_root: EXT.fpu_arithmetic
+    extension_root_payload: '0xf67'
+    extension_family: fpu_arithmetic
+    extended_opcode: 0x1000..0x17ff
+    extended_opcode_start: '0x1000'
+    extended_opcode_end: '0x17ff'
+    extended_opcode_slots: 2048
+    extended_opcode_bits: 11
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: e:EA[5:0], f:FREG[9:6], z:S_D[10]
+    fields:
+    - name: z
+      kind: S_D
+      source: size
+      storage: descriptor
+      width: 1
+    - name: f
+      kind: FREG
+      source: src
+      storage: descriptor
+      width: 4
+    - name: e
+      kind: EA
+      source: dst
+      storage: descriptor
+      width: 6
+    kind: extended
+  - id: FCEIL.F_TO_F
+    extension_root: EXT.fpu_arithmetic
+    extension_root_payload: '0xf67'
+    extension_family: fpu_arithmetic
+    extended_opcode: 0x0600..0x07ff
+    extended_opcode_start: '0x0600'
+    extended_opcode_end: '0x07ff'
+    extended_opcode_slots: 512
+    extended_opcode_bits: 9
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: f:FREG[3:0], F:FREG[7:4], z:S_D[8]
+    fields:
+    - name: z
+      kind: S_D
+      source: size
+      storage: descriptor
+      width: 1
+    - name: f
+      kind: FREG
+      source: src
+      storage: descriptor
+      width: 4
+    - name: f
+      kind: FREG
+      source: dst
+      storage: descriptor
+      width: 4
+    kind: extended
 forms:
   operands:
   - - name: src

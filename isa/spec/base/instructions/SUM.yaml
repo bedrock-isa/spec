@@ -22,6 +22,67 @@ attributes:
   flags: unchanged
 allocation:
   catalog_section: integer
+  encoding:
+  - id: SUM.BITMAP_TO_A
+    extension_root: EXT.integer_alu
+    extension_root_payload: '0xf3c'
+    extension_family: integer_alu
+    extended_opcode: 0x0140..0x015f
+    extended_opcode_start: '0x0140'
+    extended_opcode_end: '0x015f'
+    extended_opcode_slots: 32
+    extended_opcode_bits: 5
+    operand_payload_bits: 16
+    operand_descriptor_words: 1
+    operand_descriptor_spilled: false
+    descriptor_layout: a:AREG[2:0], s:BWLQ[4:3], b:bitmap16/16@payload
+    fields:
+    - name: s
+      kind: BWLQ
+      source: size
+      storage: descriptor
+      width: 2
+    - name: b
+      kind: bitmap16
+      source: regs
+      storage: payload
+      width: 16
+    - name: a
+      kind: AREG
+      source: dst
+      storage: descriptor
+      width: 3
+    kind: extended
+  - id: SUM.BITMAP_TO_D
+    extension_root: EXT.integer_alu
+    extension_root_payload: '0xf3c'
+    extension_family: integer_alu
+    extended_opcode: 0x0160..0x017f
+    extended_opcode_start: '0x0160'
+    extended_opcode_end: '0x017f'
+    extended_opcode_slots: 32
+    extended_opcode_bits: 5
+    operand_payload_bits: 16
+    operand_descriptor_words: 1
+    operand_descriptor_spilled: false
+    descriptor_layout: d:DREG[2:0], s:BWLQ[4:3], b:bitmap16/16@payload
+    fields:
+    - name: s
+      kind: BWLQ
+      source: size
+      storage: descriptor
+      width: 2
+    - name: b
+      kind: bitmap16
+      source: regs
+      storage: payload
+      width: 16
+    - name: d
+      kind: DREG
+      source: dst
+      storage: descriptor
+      width: 3
+    kind: extended
 forms:
   operands:
   - - name: regs

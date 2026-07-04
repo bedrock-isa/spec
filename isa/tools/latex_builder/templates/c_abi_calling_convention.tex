@@ -1,0 +1,122 @@
+\subsection{Stack and Calls}
+The stack grows @STACK_DIRECTION@. An architectural \texttt{CALL} pushes an
+@RETURN_ADDRESS_SIZE@-byte return address at @RETURN_ADDRESS_LOCATION@, and
+callers align \texttt{SP} before the call so callee entry observes
+@STACK_ENTRY_ALIGNMENT@-byte alignment. The ABI reserves no red zone and no
+mandatory outgoing argument home area. A callee that needs stricter local
+alignment realigns its own frame and restores the incoming \texttt{SP} before
+return.
+
+\subsection{Argument Assignment}
+Arguments are assigned in source order. Scalar integer values use the D-register
+class, pointer and address values use the A-register class, and floating-point
+values use the F-register class. Arguments that exhaust their register class are
+placed in 16-byte stack slots.
+
+\manualtablecaption{C Argument Register Classes}
+\begingroup\footnotesize
+\setlength{\tabcolsep}{2pt}
+\begin{longtable}{@{}p{1.45in}p{4.05in}@{}}
+\toprule
+\textbf{Class} & \textbf{Registers}\\
+\midrule
+\endhead
+Integer scalar & @INTEGER_ARGUMENT_REGISTERS@\\
+Pointer/address & @POINTER_ARGUMENT_REGISTERS@\\
+Floating-point & @FP_ARGUMENT_REGISTERS@\\
+\bottomrule
+\end{longtable}
+\endgroup
+
+\manualtablecaption{C Stack Argument Rules}
+\begingroup\footnotesize
+\setlength{\tabcolsep}{2pt}
+\begin{longtable}{@{}p{1.85in}p{3.65in}@{}}
+\toprule
+\textbf{Rule} & \textbf{Value}\\
+\midrule
+\endhead
+Stack order & @STACK_ARGUMENT_ORDER@\\
+Slot size & @STACK_ARGUMENT_SLOT_SIZE@ bytes\\
+Slot alignment & @STACK_ARGUMENT_ALIGNMENT@ bytes\\
+Narrow signed integer & sign-extend to 64 bits\\
+Narrow unsigned integer and \texttt{\_Bool} & zero-extend to 64 bits\\
+\texttt{\_\_int128} register pair & @I128_REGISTERS@, with low bits in @I128_LOW_REGISTER@ and high bits in @I128_HIGH_REGISTER@\\
+\texttt{\_\_int128} stack alignment & @I128_STACK_ALIGNMENT@ bytes\\
+Stack value placement & @STACK_VALUE_PLACEMENT@\\
+\bottomrule
+\end{longtable}
+\endgroup
+
+\subsection{C Return Values}
+\manualtablecaption{C Return Register Assignment}
+\begingroup\footnotesize
+\setlength{\tabcolsep}{2pt}
+\begin{longtable}{@{}p{2.15in}p{3.35in}@{}}
+\toprule
+\textbf{Result Class} & \textbf{Register Rule}\\
+\midrule
+\endhead
+Integer scalar & @INTEGER_RETURN@\\
+Pointer/address scalar & @POINTER_RETURN@\\
+Floating-point scalar & @FP_RETURN@\\
+\texttt{long double} scalar & @LONG_DOUBLE_RETURN@\\
+\texttt{\_\_int128} scalar & @I128_RETURN@\\
+Small aggregate & @SMALL_AGG_RETURN@\\
+Large aggregate & sret pointer in @SRET_REGISTER@, result pointer returned in @SRET_RETURN_REGISTER@\\
+\bottomrule
+\end{longtable}
+\endgroup
+
+\subsection{Aggregate Passing}
+By-value aggregate arguments are addressable call copies. The caller creates the
+copy, passes its address, and keeps the copy valid until the call returns. Mixed
+integer/floating-point aggregates, packed aggregates, bitfield-containing
+aggregates, and under-aligned aggregates use the same addressable-copy argument
+rule.
+
+\manualtablecaption{Aggregate Argument and Return Rules}
+\begingroup\footnotesize
+\setlength{\tabcolsep}{2pt}
+\begin{longtable}{@{}p{2.2in}p{3.3in}@{}}
+\toprule
+\textbf{Rule} & \textbf{Value}\\
+\midrule
+\endhead
+By-value argument copy alignment & @AGG_COPY_ALIGNMENT@ bytes\\
+Copy address registers & @AGG_COPY_REGISTERS@\\
+Aggregate register arguments & @AGG_REGISTER_ARGUMENTS@\\
+Small aggregate return & @SMALL_AGGREGATE_MAX_SIZE@ bytes or smaller in @SMALL_AGGREGATE_REGISTERS@\\
+Small aggregate byte layout & @SMALL_AGGREGATE_LAYOUT@\\
+Large aggregate return buffer alignment & @RETURN_BUFFER_ALIGNMENT@ bytes\\
+sret hidden pointer register & @SRET_REGISTER@\\
+sret result return register & @SRET_RETURN_REGISTER@\\
+\bottomrule
+\end{longtable}
+\endgroup
+
+\subsection{Variadic Calls}
+Fixed named arguments use the normal assignment rules. Unnamed variadic
+arguments and old-style unprototyped call arguments are materialized in uniform
+stack slots, so \texttt{va\_list} traversal does not depend on the fixed
+argument register assignment.
+
+\manualtablecaption{Variadic Argument Rules}
+\begingroup\footnotesize
+\setlength{\tabcolsep}{2pt}
+\begin{longtable}{@{}p{2.0in}p{3.5in}@{}}
+\toprule
+\textbf{Rule} & \textbf{Value}\\
+\midrule
+\endhead
+Variable arguments & stack only\\
+Register save area & @VARARG_REGISTER_SAVE_AREA@\\
+Variadic slot size & @VARARG_SLOT_SIZE@ bytes\\
+Variadic slot alignment & @VARARG_SLOT_ALIGNMENT@ bytes\\
+\texttt{long double} variable argument & 8-byte binary64 value in one 16-byte slot\\
+Aggregate variable argument & copy address in slot\\
+\texttt{va\_arg} alignment & @VA_ARG_ALIGNMENT@ bytes\\
+\texttt{va\_list} & @VA_LIST@\\
+\bottomrule
+\end{longtable}
+\endgroup

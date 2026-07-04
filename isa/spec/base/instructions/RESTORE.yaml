@@ -26,6 +26,27 @@ attributes:
 allocation:
   catalog_section: system
   layout_group: PROCESSOR_STATE_SAVE_RESTORE
+  encoding:
+  - id: RESTORE.EA
+    extension_root: EXT.system_core
+    extension_root_payload: '0xf63'
+    extension_family: system_core
+    extended_opcode: 0x0100..0x013f
+    extended_opcode_start: '0x0100'
+    extended_opcode_end: '0x013f'
+    extended_opcode_slots: 64
+    extended_opcode_bits: 6
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: e:EA[5:0]
+    fields:
+    - name: e
+      kind: EA
+      source: memory
+      storage: descriptor
+      width: 6
+    kind: extended
 forms:
   operands:
   - name: memory

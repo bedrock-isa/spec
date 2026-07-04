@@ -63,10 +63,16 @@ data_model:
     bits: 64
     alignment: 8
   scalar_types:
-    - name: bool
+    - name: _Bool
       bits: 8
       alignment: 1
     - name: char
+      bits: 8
+      alignment: 1
+    - name: signed char
+      bits: 8
+      alignment: 1
+    - name: unsigned char
       bits: 8
       alignment: 1
     - name: short
@@ -78,30 +84,98 @@ data_model:
     - name: long
       bits: 64
       alignment: 8
-    - name: long_long
+    - name: long long
       bits: 64
       alignment: 8
-    - name: int128
+    - name: __int128
       bits: 128
       alignment: 16
-    - name: uint128
+    - name: unsigned __int128
       bits: 128
       alignment: 16
     - name: pointer
       bits: 64
       alignment: 8
+    - name: size_t
+      bits: 64
+      alignment: 8
+    - name: ptrdiff_t
+      bits: 64
+      alignment: 8
+    - name: wchar_t
+      bits: 32
+      alignment: 4
+    - name: char16_t
+      bits: 16
+      alignment: 2
+    - name: char32_t
+      bits: 32
+      alignment: 4
     - name: float
       bits: 32
       alignment: 4
     - name: double
       bits: 64
       alignment: 8
+    - name: long double
+      bits: 64
+      alignment: 8
+  scalar_type_policies:
+    basic_c_types:
+      plain_char_signedness: signed
+      size_t: unsigned long
+      ptrdiff_t: long
+      enum_default_type: int
+      enum_default_size_bytes: 4
+      enum_default_alignment_bytes: 4
+      _Bool_values: stored as 0 or 1 in bit 0
+      wchar_t: signed 32-bit integer
+      char16_t: unsigned 16-bit integer
+      char32_t: unsigned 32-bit integer
+    int128:
+      c_types:
+        - __int128
+        - unsigned __int128
+      size_bytes: 16
+      alignment_bytes: 16
+      object_representation: little_endian
+      low_64_bits: lower_address
+      register_pair: D1:D0
+      low_register: D0
+      high_register: D1
+      stack_slot_alignment_bytes: 16
+      load_store_atomicity: not atomic; may use two 64-bit memory operations
+      atomic_lock_free: false
+      atomic_lowering: libatomic or compiler-runtime helper
+    long_double:
+      c_type: long double
+      storage_format: IEEE-754 binary64
+      size_bytes: 8
+      alignment_bytes: 8
+      argument_register_class: floating_point
+      return_register: F0
+      variadic_slot_size_bytes: 16
+      variadic_value_storage: 8-byte binary64 value without widening
+      c_type_identity: distinct C type
+      calling_convention_compatibility: ABI-compatible with double
+    unsupported_extended_scalars:
+      _Float16: not part of the baseline bedrock-c ABI
+      __bf16: not part of the baseline bedrock-c ABI
+      vector_types: not part of the baseline bedrock-c ABI; a target extension must define its own classification
   layout_rules:
     - Integer and pointer objects are stored little-endian.
+    - Plain char is signed. signed char, unsigned char, and plain char remain distinct C types.
+    - The default enum representation is the 32-bit int representation with 4-byte alignment.
+    - _Bool stores canonical values as 0 or 1 in bit 0; upper bits are ignored by consumers.
+    - __int128 and unsigned __int128 objects are stored little-endian; the low 64 bits live at
+      the lower address.
+    - long double uses the same 8-byte IEEE-754 binary64 storage format as double.
     - Pointer values are pre-segment virtual address values. Memory accesses apply segment pre-translation
       when the pointer is used as part of an effective address.
     - C function pointers are ordinary 64-bit pre-segment code addresses naming near-call entry points.
       They are not CS:PC pairs or far-call descriptors.
+    - Object pointers and function pointers have the same size and alignment but remain distinct C
+      pointer categories.
     - Multiword immediate data and data directives store the least significant 16-bit word first.
     - Struct fields are laid out in declaration order with natural alignment up to the aggregate maximum.
     - Unions have the size and alignment of their most strictly aligned member, rounded up to that alignment.
@@ -205,17 +279,28 @@ register_convention:
     name: SP
     role: architectural stack pointer
     preserved_by_callee: true
+    ordinary_c_use: stack pointer only; not available as a general C temporary
+  program_counter:
+    name: PC
+    role: architectural instruction pointer
+    ordinary_c_use: control-flow target only; not available as a general C temporary
   flags:
     caller_saved:
       - FLAGS
     callee_obligation: callees may clobber condition codes
+  status_registers:
+    STATUS: not part of the C abstract machine; ordinary C code may access it only through target-specific intrinsics or runtime code
+    FSTATUS: not part of the C abstract machine; floating-point environment support is a higher-level runtime contract
+    FFLAGS: not part of the C abstract machine; floating-point exception flag handling is a higher-level runtime contract
 calling_convention:
   stack:
     grows: downward
     entry_alignment: 16
-    pre_call_alignment: Before CALL, the caller adjusts SP so that the callee observes a 16-byte-aligned
-      SP after the architectural return address has been pushed.
+    pre_call_alignment: callee_entry_aligned_after_call_push
+    call_return_address_push: true
     red_zone: none
+    outgoing_argument_area: none
+    dynamic_realignment: callee_realigns_and_restores_incoming_sp
   return_address:
     size_bytes: 8
     location_at_entry: '[SP]'
@@ -247,22 +332,35 @@ calling_convention:
     stack_arguments: right_to_left
     stack_argument_alignment: 16
     stack_argument_slot_size: 16
-    sret_register_use: A5 carries the hidden sret buffer argument only for calls that use sret; otherwise
-      A5 is the sixth ordinary address argument register.
+    narrow_integer_extension:
+      signed: sign_extend_to_64
+      unsigned: zero_extend_to_64
+      _Bool: zero_extend_to_64
+      plain_char: sign_extend_to_64
+    pointer_argument_rule: address_registers_then_stack
+    floating_point_argument_rule: fp_registers_then_stack
+    scalar_128_bit_integer_register_pair:
+      registers: D1:D0
+      low_register: D0
+      high_register: D1
+    scalar_128_bit_stack_slot_alignment: 16
+    stack_argument_value_placement: low_address_bytes
+    register_overflow: stack_argument_area
+    sret_register_use: A5_when_sret_else_ordinary_argument
   return_values:
     c_binding:
       integer_scalar: D0
       pointer_or_address_scalar: A0
       floating_point_scalar: F0
+      long_double_scalar: F0
       scalar_128_bit: D1:D0
       small_aggregate_up_to_16_bytes: D1:D0
-      aggregate_larger_than_16_bytes: sret buffer pointer passed in A5 and returned in A0
+      small_aggregate_layout: low_address_bytes_D0_then_D1
+      mixed_int_float_aggregate_up_to_16_bytes: D1:D0_raw_bytes
+      aggregate_larger_than_16_bytes: sret_A5_return_A0
   aggregate_passing:
-    summary: Aggregate arguments and aggregate return values use explicit addressable storage only when
-      register passing is not suitable. Addressable by-value arguments are passed as pointers to caller
-      owned stack copies; large return values use a caller-allocated return buffer.
     rules:
-      c_by_value_arguments: caller-owned stack copy address
+      c_by_value_arguments: caller_owned_stack_copy_address
       argument_copy_alignment: 16
       argument_copy_register_class: A
       argument_copy_registers:
@@ -272,43 +370,38 @@ calling_convention:
         - A3
         - A4
         - A5
-      argument_copy_stack_default: stack slot contains the copy address
-      c_return: caller-allocated return buffer
+      argument_copy_stack_default: copy_address
+      aggregate_register_arguments: none
+      mixed_int_float_aggregate_arguments: caller_owned_stack_copy_address
+      packed_aggregate_arguments: caller_owned_stack_copy_address
+      bitfield_aggregate_arguments: caller_owned_stack_copy_address
+      unaligned_aggregate_arguments: caller_owned_stack_copy_address
+      c_return: caller_allocated_return_buffer
       conditional_sret_buffer_argument_register: A5
       return_buffer_alignment: 16
-      return_register_result: A0 contains the return buffer address
-      small_aggregate_register_return: D1:D0 for aggregate size at most 16 bytes
-      small_aggregate_layout: low-address bytes in D0, then high-address bytes in D1
-    details:
-      - The caller places an aligned by-value aggregate copy in caller owned stack storage and passes
-        the address of the first byte.
-      - The passed address names the call copy, not the original source object.
-      - Caller-owned by-value aggregate copies remain valid until the call returns.
-      - By-value aggregate argument copies are not heap allocations.
-      - The callee may allocate its own local stack copy if it needs a private writable object.
-      - For a large aggregate return, the caller allocates the return buffer, passes its address in A5,
-        and the callee returns the same address in A0 after storing the result.
-      - In calls that do not use sret, A5 remains an ordinary address argument register.
+      return_register_result: A0
+      small_aggregate_register_return:
+        max_size_bytes: 16
+        registers: D1:D0
+      small_aggregate_layout: low_address_bytes_D0_then_D1
+      packed_aggregate_return: size_based_raw_bytes
+      bitfield_aggregate_return: size_based_raw_bytes
+      unaligned_aggregate_return: size_based_raw_bytes
   varargs:
-    summary: Variadic calls materialize the variable argument list in uniform stack slots so va_list traversal
-      does not depend on the fixed-argument register assignment.
     rules:
-      fixed_named_arguments: normal argument assignment
-      variable_arguments: stack only
-      unprototyped_call_arguments: stack only
-      integer_narrow_variadic_arguments: zero-extended to stack slot
-      floating_point_variadic_arguments: stored without widening
-      aggregate_variadic_arguments: stack slot contains the copy address
+      fixed_named_arguments: normal_assignment
+      variable_arguments: stack_only
+      unprototyped_call_arguments: stack_only
+      integer_narrow_variadic_arguments: zero_extend_to_slot
+      floating_point_variadic_arguments: source_width_without_widening
+      long_double_variadic_arguments: binary64_in_one_16_byte_slot
+      aggregate_variadic_arguments: copy_address_in_slot
+      register_save_area: none
       variadic_stack_slot_size: 16
       variadic_stack_slot_alignment: 16
-      va_list: pointer to the next variadic stack slot
-    details:
-      - Fixed named arguments use the normal non-variadic assignment rules.
-      - Each variable argument occupies one 16-byte stack slot.
-      - Narrow integer variable arguments are zero-extended into their stack slot; a callee that needs
-        a signed interpretation extends after loading.
-      - Floating-point variable arguments are stored at their source width without implicit widening.
-      - Aggregate variable argument slots contain the address of the aggregate copy.
+      va_arg_alignment: 16
+      va_arg_value_placement: low_address_bytes
+      va_list: next_variadic_stack_slot_pointer
   frame_pointer:
     default: omitted
     conventional_register: A7
@@ -353,19 +446,54 @@ freestanding_c:
     ABI. It is sufficient for compiler output, static objects, and runtime-provided helper calls, but
     does not define process startup or hosted library behavior.
   rules:
-    entry_point: The ELF entry field is validated as an object-loading field; _start, initial stack contents,
-      argc/argv/envp/auxv, and process entry are OS ABI responsibilities.
-    bss_zero_fill: Zero fill is provided by ELF program loading for PT_LOAD file-size to memory-size gaps.
-    integer_128_operations: 128-bit integer arithmetic is lowered to compiler-runtime library calls unless
-      a compiler deliberately selects target instructions for a specific operation.
-    instruction_relaxation: Instruction relaxation is selected by assembler and linker policy under the
-      active code model.
-    hosted_interfaces: Hosted C library entry, process environment, filesystem, and syscall bindings are
-      outside the freestanding C ABI.
+    entry_point_owner: OS ABI
+    bss_zero_fill_owner: language-neutral ELF ABI
+    integer_128_simple_operations:
+      - add
+      - subtract
+      - negate
+      - bitwise
+      - shift
+      - compare
+      - truncation
+      - extension
+    integer_128_helper_operations:
+      - multiply
+      - signed_divide
+      - unsigned_divide
+      - signed_remainder
+      - unsigned_remainder
+      - integer_float_conversion
+    integer_128_inline_guarantee: none
+    compiler_runtime_helper_calls: normal_c_abi
+    runtime_helper_symbol_policy: compiler_rt_libgcc_compatible
+    floating_point_helpers: allowed_when_target_lacks_operation
+    tls_boundary: OS_ABI_or_loader_profile_required
+    tls_relocations_owner: language-neutral ELF ABI
+    function_pointer_representation: pre_segment_near_call_address_64
+    code_data_pointer_relationship: same_size_alignment_distinct_categories
+    common_symbol_alignment: declared_type_abi_alignment
+    externally_visible_object_alignment: declared_type_abi_alignment_capped_by_aggregate_maximum
+    c_call_relocation_default:
+      direct: R_BEDROCK_CALL_TARGET
+      external_plt: active_code_model_plt_relocation
+    instruction_relaxation: assembler_linker_policy
+    hosted_interfaces: outside_freestanding_c_abi
+  runtime_helpers:
+    integer_128:
+      multiply: __multi3
+      signed_divide: __divti3
+      unsigned_divide: __udivti3
+      signed_remainder: __modti3
+      unsigned_remainder: __umodti3
+      shift_left: __ashlti3
+      arithmetic_shift_right: __ashrti3
+      logical_shift_right: __lshrti3
+    helper_call_abi: normal_c_abi
+    int128_argument_rule: ordinary_int128_argument_rule
+    int128_return_rule: D1:D0
 memory_model:
-  summary: The C ABI defines the memory guarantees that C-family toolchains may assume when lowering normal
-    memory accesses, C atomic operations, volatile accesses, and compiler-runtime helper calls. It does
-    not define device ordering policy or process-wide memory mapping policy.
+  summary: c_toolchain_memory_contract
   normal_memory:
     aligned_1_byte_load_store: tear-free
     aligned_2_byte_load_store: tear-free
@@ -374,11 +502,20 @@ memory_model:
     sixteen_byte_or_larger_access: not atomic
     unaligned_access: no tear-free guarantee
   c_atomics:
+    lock_free_object_kinds:
+      - integer
+      - pointer
     lock_free_widths_bytes:
       - 1
       - 2
       - 4
       - 8
+    lock_free_alignment: natural
+    unaligned_atomic_objects: not lock-free
+    integer_128_bit_atomic: helper
+    sixteen_byte_atomic_objects: not lock-free
+    wider_than_8_byte_atomic_objects: helper
+    __atomic_always_lock_free: naturally_aligned_1_2_4_8_only
     memory_order_mapping:
       relaxed: relaxed
       consume: acquire
@@ -386,25 +523,48 @@ memory_model:
       release: release
       acq_rel: acqrel
       seq_cst: seqcst
-    integer_128_bit_atomic: libatomic or compiler-rt helper
-    wider_atomic_objects: library or runtime helper
+    native_load_store_widths_bytes:
+      - 1
+      - 2
+      - 4
+      - 8
+    native_load_store_access: ordinary_load_store
+    native_load_store_atomicity_source: tear_free_aligned_1_2_4_8
+    load_store_ordering:
+      relaxed: no fence
+      consume_load: load_then_AFENCE
+      acquire_load: load_then_AFENCE
+      release_store: AFENCE_then_store
+      seq_cst_load: AFENCE_load_AFENCE
+      seq_cst_store: AFENCE_store_AFENCE
+    thread_fence_lowering:
+      relaxed: no-op
+      consume: AFENCE
+      acquire: AFENCE
+      release: AFENCE
+      acq_rel: AFENCE
+      seq_cst: AFENCE
+    fetch_add_lowering: FETCHADD
+    fetch_sub_lowering: FETCHSUB
+    fetch_and_lowering: FETCHAND
+    fetch_or_lowering: FETCHOR
+    fetch_xor_lowering: FETCHXOR
+    exchange_lowering: compare_exchange_loop
     compare_exchange_widths_bytes:
       - 1
       - 2
       - 4
       - 8
+    compare_exchange_lowering: CMPXCHG
+    compare_exchange_order_selection: satisfy_success_and_failure_after_consume_to_acquire
+    atomic_helper_abi: normal_c_abi
+    atomic_helper_symbol_policy: compiler_runtime_provider
   volatile:
-    access_preservation: Volatile accesses are preserved as observable abstract-machine accesses.
-    ordering: Volatile is not an ordering primitive and does not imply acquire, release, sequential consistency,
-      cache synchronization, or device ordering.
+    access_preservation: preserve_observable_accesses
+    ordering: not_an_ordering_primitive
   device_memory:
-    mmio_ordering: MMIO and device ordering are defined by the OS ABI, loader profile, or mapped memory
-      attributes rather than by the C ABI.
-    volatile_mmio: Volatile may be used to preserve accesses to an object, but ordering still comes from
-      explicit fences, atomics, or mapped memory attributes.
+    mmio_ordering: OS_ABI_loader_or_mapping_attributes
+    volatile_mmio: preserves_accesses_not_ordering
   executable_memory:
-    dynamic_code_patch: Changes to executable memory after relocation, dynamic code patching, or JIT-style
-      writes require explicit instruction/data cache synchronization before execution observes the modified
-      instructions.
-    relocation_patch_visibility: A loader or runtime that modifies executable mappings is responsible for
-      performing the required cache synchronization before transferring control to patched code.
+    dynamic_code_patch: requires_explicit_cache_synchronization
+    relocation_patch_visibility: patching_agent_synchronizes_before_transfer

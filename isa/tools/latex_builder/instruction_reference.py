@@ -1303,7 +1303,7 @@ def field_catalog_entries(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 def field_catalog_sort_group(kind: str) -> int:
     normalized = kind.lower()
-    if normalized in {"ea", "imm_ea"}:
+    if normalized == "ea":
         return 0
     if normalized.endswith("reg") or normalized in {"sreg", "cr", "dbank"}:
         return 1
@@ -1583,10 +1583,17 @@ def render_instruction(
     description = doc_description(mnemonic, docs, records, operations, aliases)
     if description:
         lines.append(rf"\manualinstructionfield{{Description}}{{{description}}}")
+    lines.extend(instruction_body_extra_fields(mnemonic))
     lines.append(condition_code_section(records, operations))
     lines.append(instruction_forms_section(items, lengths, records, operations))
     lines.append(r"\end{manualinstruction}")
     return "\n".join(lines)
+
+
+def instruction_body_extra_fields(mnemonic: str) -> list[str]:
+    if mnemonic == "FCLASS":
+        return [rf"\manualinstructionfield{{Result Bitmap}}{{{render_latex_template('fclass_result_bitmap.tex')}}}"]
+    return []
 
 
 def doc_title(
@@ -2352,11 +2359,12 @@ def form_label(item: dict[str, Any], fields: list[dict[str, Any]] | None = None)
     return syntax.split(" ", 1)[1]
 
 
-def word_name(token: int) -> str:
+def word_name(token: int, storage: str = "") -> str:
     if token == 0:
         return "primary word"
     if token == 1:
-        return "descriptor word"
+        return "extended opcode word"
+    _ = storage
     return f"payload word {token - 1}"
 
 
@@ -2401,6 +2409,7 @@ def kind_description(kind: str) -> str:
         "cr": "control-register selector",
         "FREG": "floating-point register number",
         "condition": "condition-code selector",
+        "IMM6": "6-bit immediate literal",
         "imm16": "16-bit immediate selector",
         "BITMAP16": "16-bit register bitmap",
         "bitmap16": "16-bit register bitmap",
@@ -2426,9 +2435,10 @@ def field_explanation_lines(item: dict[str, Any], fields: list[dict[str, Any]]) 
         symbol = field_symbol(field)
         source = str(field.get("source", field.get("name", "")))
         kind = str(field.get("kind", ""))
+        storage = str(field.get("storage", ""))
         line = (
             f"{symbol}: {kind_description(kind)} for the {role_name(source)} "
-            f"({word_name(token)} bits {bit_text})."
+            f"({word_name(token, storage)} bits {bit_text})."
         )
         if kind == "EA":
             line += " EA field selects register, memory, immediate, and extended EA forms."
@@ -2630,7 +2640,8 @@ def instruction_forms_section(
         blocks.append(rf"\textbf{{Words}} & {tex_escape(f'{min_words}-{max_words}')}\\")
         blocks.append(rf"\textbf{{Privilege}} & {tex_escape(privilege_text(item_privilege(item, records, operations)))}\\")
         blocks.append(rf"\textbf{{Operands}} & {tex_escape(readable_operands_text(item))}\\")
-        blocks.append(rf"\textbf{{Notes}} & {tex_escape(readable_note_text(note))}\\")
+        if note:
+            blocks.append(rf"\textbf{{Notes}} & {tex_escape(readable_note_text(note))}\\")
         blocks.append(r"\end{tabularx}\par")
         blocks.append(bit_diagram(tokens, f"Instruction format for {syntax}", labels))
         blocks.append(field_explanation_block(item, fields))
@@ -2658,7 +2669,8 @@ def instruction_fields_section(
         blocks.append(rf"\textbf{{Words}} & {tex_escape(f'{min_words}-{max_words}')}\\")
         blocks.append(rf"\textbf{{Privilege}} & {tex_escape(privilege_text(item_privilege(item, records, operations)))}\\")
         blocks.append(rf"\textbf{{Operands}} & {tex_escape(readable_operands_text(item))}\\")
-        blocks.append(rf"\textbf{{Notes}} & {tex_escape(readable_note_text(note))}\\")
+        if note:
+            blocks.append(rf"\textbf{{Notes}} & {tex_escape(readable_note_text(note))}\\")
         blocks.append(r"\end{tabularx}\par")
     return "\n".join(blocks)
 
@@ -2671,7 +2683,7 @@ def field_summary_text(item: dict[str, Any]) -> str:
     pieces = []
     for field in fields:
         token = int(field.get("token", 0))
-        word = "word0" if token == 0 else ("descriptor" if token == 1 else f"payload{token - 1}")
+        word = word_name(token, str(field.get("storage", "")))
         high = int(field.get("high_bit", 0))
         low = int(field.get("low_bit", 0))
         bit_text = str(low) if high == low else f"{high}:{low}"

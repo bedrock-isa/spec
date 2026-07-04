@@ -18,6 +18,42 @@ behavior:
   - <djcc_done>
 allocation:
   catalog_section: compact_primary
+  encoding:
+  - id: DJcc.D_TO_EA
+    extension_root: EXT.conditional_control.cc
+    extension_root_payload: 0xf50..0xf5f
+    extension_family: conditional_control
+    extended_opcode: 0x0000..0x07ff
+    extended_opcode_start: '0x0000'
+    extended_opcode_end: '0x07ff'
+    extended_opcode_slots: 2048
+    extended_opcode_bits: 11
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: e:EA[5:0], d:DREG[8:6], s:BWLQ[10:9], c:condition/4@root
+    fields:
+    - name: s
+      kind: BWLQ
+      source: size
+      storage: descriptor
+      width: 2
+    - name: c
+      kind: condition
+      source: cc
+      storage: descriptor
+      width: 4
+    - name: d
+      kind: DREG
+      source: counter
+      storage: descriptor
+      width: 3
+    - name: e
+      kind: EA
+      source: target
+      storage: descriptor
+      width: 6
+    kind: extended
 forms:
   operands:
   - name: cc

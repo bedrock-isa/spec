@@ -19,6 +19,27 @@ behavior:
 allocation:
   catalog_section: fpu
   layout_group: FPUSHM_FPOPM
+  encoding:
+  - id: FPUSHM.BITMAP
+    extension_root: EXT.fpu_arithmetic
+    extension_root_payload: '0xf67'
+    extension_family: fpu_arithmetic
+    extended_opcode: '0x0426'
+    extended_opcode_start: '0x0426'
+    extended_opcode_end: '0x0426'
+    extended_opcode_slots: 1
+    extended_opcode_bits: 0
+    operand_payload_bits: 16
+    operand_descriptor_words: 1
+    operand_descriptor_spilled: false
+    descriptor_layout: b:fbitmap16/16@payload
+    fields:
+    - name: b
+      kind: fbitmap16
+      source: regs
+      storage: payload
+      width: 16
+    kind: extended
 forms:
   operands:
   - name: regs

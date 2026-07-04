@@ -13,6 +13,59 @@ attributes:
   flags: unchanged
 allocation:
   catalog_section: compact_primary
+  encoding:
+  - id: CLR.A
+    kind: compact
+    start_payload: '0xf18'
+    end_payload: '0xf1f'
+    slots: 8
+    primary_bits: 3
+    field_layout: a[2:0] op[11:3]
+    fields:
+    - name: a
+      kind: AREG
+      source: dst
+      storage: primary
+      width: 3
+      low_bit: 0
+      high_bit: 2
+      range: '[2:0]'
+  - id: CLR.D
+    kind: compact
+    start_payload: '0xf20'
+    end_payload: '0xf27'
+    slots: 8
+    primary_bits: 3
+    field_layout: d[2:0] op[11:3]
+    fields:
+    - name: d
+      kind: DREG
+      source: dst
+      storage: primary
+      width: 3
+      low_bit: 0
+      high_bit: 2
+      range: '[2:0]'
+  - id: CLR.EA
+    extension_root: EXT.integer_alu
+    extension_root_payload: '0xf3c'
+    extension_family: integer_alu
+    extended_opcode: 0x0100..0x013f
+    extended_opcode_start: '0x0100'
+    extended_opcode_end: '0x013f'
+    extended_opcode_slots: 64
+    extended_opcode_bits: 6
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: e:EA[5:0]
+    fields:
+    - name: e
+      kind: EA
+      source: dst
+      storage: descriptor
+      width: 6
+    kind: extended
 forms:
   compact_forms:
   - operands:

@@ -828,6 +828,8 @@ class CatalogEntrySchema(KeySchema):
         "note",
         "output",
         "size_per_register",
+        "semantic_family",
+        "encoding",
     }
 
     @classmethod
@@ -851,7 +853,12 @@ class CatalogEntrySchema(KeySchema):
                 check_allowed_keys(form, f"{path}.{form_key}[{index}]", InstructionFormSchema, errors)
                 if "operands" in form:
                     check_flat_operand_list(form["operands"], f"{path}.{form_key}[{index}].operands", errors)
+                check_optional_mapping(form.get("fixed_encoding"), f"{path}.{form_key}[{index}].fixed_encoding", FixedEncodingSchema, errors)
         check_optional_mapping(value.get("fixed_encoding"), f"{path}.fixed_encoding", FixedEncodingSchema, errors)
+        check_list_items(value.get("encoding", []), f"{path}.encoding", InstructionEncodingRowSchema, errors)
+        for index, row in enumerate(value.get("encoding", []) or []):
+            if isinstance(row, dict):
+                check_list_items(row.get("fields", []), f"{path}.encoding[{index}].fields", InstructionEncodingFieldSchema, errors)
 
 
 class OperationGroupSchema(KeySchema):
@@ -894,13 +901,17 @@ class OperationGroupSchema(KeySchema):
 
 class LocalAllocationSchema(KeySchema):
     name = "local instruction allocation"
-    keys = {"catalog_section", "layout_group", "fixed_encoding"}
+    keys = {"catalog_section", "layout_group", "fixed_encoding", "encoding"}
 
     @classmethod
     def validate(cls, value: Any, path: str, errors: list[str]) -> None:
         check_allowed_keys(value, path, cls, errors)
         if isinstance(value, dict):
             check_optional_mapping(value.get("fixed_encoding"), f"{path}.fixed_encoding", FixedEncodingSchema, errors)
+            check_list_items(value.get("encoding", []), f"{path}.encoding", InstructionEncodingRowSchema, errors)
+            for index, row in enumerate(value.get("encoding", []) or []):
+                if isinstance(row, dict):
+                    check_list_items(row.get("fields", []), f"{path}.encoding[{index}].fields", InstructionEncodingFieldSchema, errors)
 
 
 class InstructionFormSchema(KeySchema):
@@ -915,6 +926,7 @@ class InstructionFormSchema(KeySchema):
         "force_size_suffix",
         "extension_family",
         "allocation_cluster",
+        "fixed_encoding",
         "profile",
         "src_ea_set",
         "dst_ea_set",
@@ -965,6 +977,7 @@ class InstructionAllocationSchema(KeySchema):
         "compactness_policy",
         "extension_family_order",
         "extension_profile_order",
+        "extension_member_order",
         "family_locality",
         "decode_cost_policy",
         "extension_root_policy",
@@ -1025,6 +1038,53 @@ class InstructionAllocationSchema(KeySchema):
             )
             check_optional_mapping(field_layout.get("field_score"), f"{path}.field_layout.field_score", InstructionFieldScoreSchema, errors)
             check_list_items(field_layout.get("subfield_affinities", []), f"{path}.field_layout.subfield_affinities", InstructionSubfieldAffinitySchema, errors)
+
+class InstructionEncodingRowSchema(KeySchema):
+    name = "instruction encoding row"
+    keys = {
+        "id",
+        "kind",
+        "start_payload",
+        "end_payload",
+        "slots",
+        "primary_bits",
+        "field_layout",
+        "extension_root",
+        "extension_root_payload",
+        "extension_family",
+        "extended_opcode",
+        "extended_opcode_start",
+        "extended_opcode_end",
+        "extended_opcode_slots",
+        "extended_opcode_bits",
+        "operand_payload_bits",
+        "operand_descriptor_words",
+        "operand_descriptor_spilled",
+        "descriptor_layout",
+        "fields",
+        "primary_payloads",
+        "alias_payloads",
+        "alias_of",
+        "alias_condition",
+        "canonical_disassembly",
+    }
+
+
+class InstructionEncodingFieldSchema(KeySchema):
+    name = "instruction encoding field"
+    keys = {
+        "name",
+        "kind",
+        "source",
+        "storage",
+        "width",
+        "low_bit",
+        "high_bit",
+        "range",
+        "value",
+        "value_label",
+        "placement",
+    }
 
 
 class SemanticsEncodingRulesSchema(KeySchema):
@@ -1500,7 +1560,7 @@ class InstructionExtensionFamilyRuleSchema(KeySchema):
 
 class InstructionExtensionFamilyRuleMatchSchema(KeySchema):
     name = "instruction extension family rule match"
-    keys = {"group", "profile"}
+    keys = {"mnemonic", "profile", "size", "category", "semantic_family", "group"}
 
 
 class InstructionPrimaryClustersSchema(KeySchema):

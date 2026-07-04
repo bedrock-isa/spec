@@ -653,51 +653,77 @@ def render_register_convention(abi: dict[str, Any]) -> str:
     )
 
 
+def bytes_value(value: Any) -> str:
+    return tex_escape(str(value))
+
+
+def rule_value(mapping: dict[str, Any], key: str, default: Any = "") -> Any:
+    return mapping.get(key, default)
+
+
+def render_calling_convention_template(call: dict[str, Any]) -> str:
+    stack = call.get("stack", {})
+    return_address = call.get("return_address", {})
+    arguments = call.get("argument_passing", {})
+    returns = (call.get("return_values", {}) or {}).get("c_binding", {})
+    aggregate_rules = (call.get("aggregate_passing", {}) or {}).get("rules", {})
+    varargs_rules = (call.get("varargs", {}) or {}).get("rules", {})
+    i128_pair = arguments.get("scalar_128_bit_integer_register_pair", {})
+    if not isinstance(i128_pair, dict):
+        i128_pair = {"registers": i128_pair, "low_register": "D0", "high_register": "D1"}
+    small_aggregate = aggregate_rules.get("small_aggregate_register_return", {})
+    if not isinstance(small_aggregate, dict):
+        small_aggregate = {"max_size_bytes": 16, "registers": small_aggregate}
+
+    return template(
+        "c_abi_calling_convention.tex",
+        {
+            "STACK_DIRECTION": tex_escape(readable(rule_value(stack, "grows"))),
+            "RETURN_ADDRESS_SIZE": bytes_value(rule_value(return_address, "size_bytes")),
+            "RETURN_ADDRESS_LOCATION": tex_code(rule_value(return_address, "location_at_entry")),
+            "STACK_ENTRY_ALIGNMENT": bytes_value(rule_value(stack, "entry_alignment")),
+            "INTEGER_ARGUMENT_REGISTERS": tex_code_value(rule_value(arguments, "integer_registers", [])),
+            "POINTER_ARGUMENT_REGISTERS": tex_code_value(rule_value(arguments, "pointer_registers", [])),
+            "FP_ARGUMENT_REGISTERS": tex_code_value(rule_value(arguments, "floating_point_registers", [])),
+            "STACK_ARGUMENT_ORDER": tex_escape(readable(rule_value(arguments, "stack_arguments"))),
+            "STACK_ARGUMENT_SLOT_SIZE": bytes_value(rule_value(arguments, "stack_argument_slot_size")),
+            "STACK_ARGUMENT_ALIGNMENT": bytes_value(rule_value(arguments, "stack_argument_alignment")),
+            "I128_REGISTERS": tex_code(rule_value(i128_pair, "registers")),
+            "I128_LOW_REGISTER": tex_code(rule_value(i128_pair, "low_register")),
+            "I128_HIGH_REGISTER": tex_code(rule_value(i128_pair, "high_register")),
+            "I128_STACK_ALIGNMENT": bytes_value(rule_value(arguments, "scalar_128_bit_stack_slot_alignment")),
+            "STACK_VALUE_PLACEMENT": tex_escape(readable(rule_value(arguments, "stack_argument_value_placement"))),
+            "INTEGER_RETURN": tex_code(rule_value(returns, "integer_scalar")),
+            "POINTER_RETURN": tex_code(rule_value(returns, "pointer_or_address_scalar")),
+            "FP_RETURN": tex_code(rule_value(returns, "floating_point_scalar")),
+            "LONG_DOUBLE_RETURN": tex_code(rule_value(returns, "long_double_scalar")),
+            "I128_RETURN": tex_code(rule_value(returns, "scalar_128_bit")),
+            "SMALL_AGG_RETURN": tex_code(rule_value(returns, "small_aggregate_up_to_16_bytes")),
+            "SRET_REGISTER": tex_code(rule_value(aggregate_rules, "conditional_sret_buffer_argument_register")),
+            "SRET_RETURN_REGISTER": tex_code(rule_value(aggregate_rules, "return_register_result")),
+            "AGG_COPY_ALIGNMENT": bytes_value(rule_value(aggregate_rules, "argument_copy_alignment")),
+            "AGG_COPY_REGISTERS": tex_code_value(rule_value(aggregate_rules, "argument_copy_registers", [])),
+            "AGG_REGISTER_ARGUMENTS": tex_escape(readable(rule_value(aggregate_rules, "aggregate_register_arguments"))),
+            "SMALL_AGGREGATE_MAX_SIZE": bytes_value(rule_value(small_aggregate, "max_size_bytes")),
+            "SMALL_AGGREGATE_REGISTERS": tex_code(rule_value(small_aggregate, "registers")),
+            "SMALL_AGGREGATE_LAYOUT": tex_escape(readable(rule_value(aggregate_rules, "small_aggregate_layout"))),
+            "RETURN_BUFFER_ALIGNMENT": bytes_value(rule_value(aggregate_rules, "return_buffer_alignment")),
+            "VARARG_REGISTER_SAVE_AREA": tex_escape(readable(rule_value(varargs_rules, "register_save_area"))),
+            "VARARG_SLOT_SIZE": bytes_value(rule_value(varargs_rules, "variadic_stack_slot_size")),
+            "VARARG_SLOT_ALIGNMENT": bytes_value(rule_value(varargs_rules, "variadic_stack_slot_alignment")),
+            "VA_ARG_ALIGNMENT": bytes_value(rule_value(varargs_rules, "va_arg_alignment")),
+            "VA_LIST": tex_escape(readable(rule_value(varargs_rules, "va_list"))),
+        },
+    )
+
+
 def render_calling_convention(abi: dict[str, Any]) -> str:
     call = abi.get("calling_convention", {})
     if not call:
         return ""
-    return_values = call.get("return_values", {})
-    aggregate = call.get("aggregate_passing", {})
-    varargs = call.get("varargs", {})
-    rows: list[list[str]] = []
-    for group_name, group in call.items():
-        if group_name in {"return_values", "aggregate_passing", "varargs"}:
-            continue
-        if isinstance(group, dict):
-            for key, value in group.items():
-                rows.append([tex_table_value(group_name), tex_table_value(key), tex_table_value(value)])
-        else:
-            rows.append([tex_table_value(group_name), tex_escape("-"), tex_table_value(group)])
-    c_rows = [
-        [tex_table_value(key), tex_table_value(value)]
-        for key, value in (return_values.get("c_binding") or {}).items()
-    ]
-    aggregate_rules = aggregate.get("rules", aggregate)
-    varargs_rules = varargs.get("rules", varargs)
-    aggregate_rows = [
-        [tex_table_value(key), tex_table_value(value)]
-        for key, value in aggregate_rules.items()
-        if key not in {"summary", "details"}
-    ]
-    varargs_rows = [
-        [tex_table_value(key), tex_table_value(value)]
-        for key, value in varargs_rules.items()
-        if key not in {"summary", "details"}
-    ]
     parts = [
         section("Calling Convention"),
-        table(["Area", "Rule", "Value"], rows, ["1.35in", "1.55in", "2.6in"], "Function Call Contract"),
-        subsection("C Return Values"),
-        table(["Result Class", "Register Rule"], c_rows, ["2.15in", "3.35in"], "C Return Register Assignment"),
-        subsection("Aggregate Passing"),
-        tex_escape(readable(aggregate.get("summary", ""))),
-        table(["Rule", "Value"], aggregate_rows, ["2.25in", "3.25in"], "Aggregate Argument and Return Rules"),
-        bullet_list(aggregate.get("details", [])),
-        subsection("Variadic Calls"),
-        tex_escape(readable(varargs.get("summary", ""))),
-        table(["Rule", "Value"], varargs_rows, ["2.25in", "3.25in"], "Varargs Register and Stack Rules"),
-        bullet_list(varargs.get("details", [])),
+        render_calling_convention_template(call),
     ]
     return "\n".join(part for part in parts if part)
 
@@ -929,6 +955,30 @@ def render_assembler_contract(abi: dict[str, Any]) -> str:
     )
 
 
+def render_freestanding_c_template(freestanding: dict[str, Any]) -> str:
+    rules = freestanding.get("rules", {})
+    helpers = freestanding.get("runtime_helpers", {})
+    i128_helpers = helpers.get("integer_128", {})
+    call_reloc = rules.get("c_call_relocation_default", {})
+    if not isinstance(call_reloc, dict):
+        call_reloc = {"direct": call_reloc, "external_plt": ""}
+    return template(
+        "c_abi_freestanding.tex",
+        {
+            "I128_RETURN": tex_code(helpers.get("int128_return_rule", "D1:D0")),
+            "I128_HELPER_MULTIPLY": tex_code(i128_helpers.get("multiply", "")),
+            "I128_HELPER_SIGNED_DIVIDE": tex_code(i128_helpers.get("signed_divide", "")),
+            "I128_HELPER_UNSIGNED_DIVIDE": tex_code(i128_helpers.get("unsigned_divide", "")),
+            "I128_HELPER_SIGNED_REMAINDER": tex_code(i128_helpers.get("signed_remainder", "")),
+            "I128_HELPER_UNSIGNED_REMAINDER": tex_code(i128_helpers.get("unsigned_remainder", "")),
+            "I128_HELPER_SHIFT_LEFT": tex_code(i128_helpers.get("shift_left", "")),
+            "I128_HELPER_ARITH_SHIFT_RIGHT": tex_code(i128_helpers.get("arithmetic_shift_right", "")),
+            "I128_HELPER_LOGICAL_SHIFT_RIGHT": tex_code(i128_helpers.get("logical_shift_right", "")),
+            "DIRECT_CALL_RELOCATION": tex_code(call_reloc.get("direct", "")),
+        },
+    )
+
+
 def render_freestanding_c(abi: dict[str, Any]) -> str:
     freestanding = abi.get("freestanding_c", {})
     if not freestanding:
@@ -936,14 +986,31 @@ def render_freestanding_c(abi: dict[str, Any]) -> str:
     return "\n".join(
         [
             section("Freestanding C Binding"),
-            tex_escape(readable(freestanding.get("summary", ""))),
-            table(
-                ["Rule", "Value"],
-                mapping_rows(freestanding.get("rules", {}), code_label_keys={"entry_point"}),
-                ["1.65in", "3.85in"],
-                "Freestanding C Boundary",
-            ),
+            render_freestanding_c_template(freestanding),
         ]
+    )
+
+
+def render_memory_model_template(model: dict[str, Any]) -> str:
+    atomics = model.get("c_atomics", {})
+    order = atomics.get("memory_order_mapping", {})
+    return template(
+        "c_abi_memory_model.tex",
+        {
+            "LOCK_FREE_WIDTHS": tex_escape(", ".join(str(item) for item in atomics.get("lock_free_widths_bytes", []))),
+            "ORDER_RELAXED": tex_code(order.get("relaxed", "")),
+            "ORDER_CONSUME": tex_code(order.get("consume", "")),
+            "ORDER_ACQUIRE": tex_code(order.get("acquire", "")),
+            "ORDER_RELEASE": tex_code(order.get("release", "")),
+            "ORDER_ACQ_REL": tex_code(order.get("acq_rel", "")),
+            "ORDER_SEQ_CST": tex_code(order.get("seq_cst", "")),
+            "FETCH_ADD": tex_escape(atomics.get("fetch_add_lowering", "")),
+            "FETCH_SUB": tex_escape(atomics.get("fetch_sub_lowering", "")),
+            "FETCH_AND": tex_escape(atomics.get("fetch_and_lowering", "")),
+            "FETCH_OR": tex_escape(atomics.get("fetch_or_lowering", "")),
+            "FETCH_XOR": tex_escape(atomics.get("fetch_xor_lowering", "")),
+            "CMPXCHG": tex_escape(atomics.get("compare_exchange_lowering", "")),
+        },
     )
 
 
@@ -951,24 +1018,7 @@ def render_memory_model(abi: dict[str, Any]) -> str:
     model = abi.get("memory_model", {})
     if not model:
         return ""
-    sections = [
-        ("Normal Memory", "normal_memory"),
-        ("C Atomics", "c_atomics"),
-        ("Volatile Accesses", "volatile"),
-        ("Device Memory", "device_memory"),
-        ("Executable Memory", "executable_memory"),
-    ]
-    parts = [section("C Memory Model"), tex_escape(readable(model.get("summary", "")))]
-    for title, key in sections:
-        body = model.get(key, {})
-        if not body:
-            continue
-        parts.extend(
-            [
-                subsection(title),
-                table(["Rule", "Value"], mapping_rows(body), ["1.9in", "3.6in"], f"{title} Rules"),
-            ]
-        )
+    parts = [section("C Memory Model"), render_memory_model_template(model)]
     return "\n".join(part for part in parts if part)
 
 

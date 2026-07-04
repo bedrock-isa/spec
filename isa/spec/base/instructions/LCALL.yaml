@@ -23,6 +23,32 @@ behavior:
   - call [target_v];
 allocation:
   catalog_section: compact_primary
+  encoding:
+  - id: LCALL.D_TO_EA
+    extension_root: EXT.control_flow
+    extension_root_payload: '0xf4d'
+    extension_family: control_flow
+    extended_opcode: 0x0200..0x03ff
+    extended_opcode_start: '0x0200'
+    extended_opcode_end: '0x03ff'
+    extended_opcode_slots: 512
+    extended_opcode_bits: 9
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: e:EA[5:0], d:DREG[8:6]
+    fields:
+    - name: d
+      kind: DREG
+      source: new_cs
+      storage: descriptor
+      width: 3
+    - name: e
+      kind: EA
+      source: target
+      storage: descriptor
+      width: 6
+    kind: extended
 forms:
   segment_operand: DREG
   target_ea_set: long_control_target

@@ -27,6 +27,184 @@ attributes:
     V: signed overflow
 allocation:
   catalog_section: compact_primary
+  encoding:
+  - id: CMP.D_TO_D
+    kind: compact
+    start_payload: '0x380'
+    end_payload: '0x3ff'
+    slots: 128
+    primary_bits: 7
+    field_layout: d[2:0] D[5:3] z[6] op[11:7]
+    fields:
+    - name: d
+      kind: DREG
+      source: src
+      storage: primary
+      width: 3
+      low_bit: 0
+      high_bit: 2
+      range: '[2:0]'
+    - name: D
+      kind: DREG
+      source: dst
+      storage: primary
+      width: 3
+      low_bit: 3
+      high_bit: 5
+      range: '[5:3]'
+    - name: z
+      kind: LQ
+      source: size
+      storage: primary
+      width: 1
+      low_bit: 6
+      high_bit: 6
+      range: '[6]'
+  - id: CMP.D_TO_EA
+    extension_root: EXT.integer_alu
+    extension_root_payload: '0xf3c'
+    extension_family: integer_alu
+    extended_opcode: 0x1000..0x17ff
+    extended_opcode_start: '0x1000'
+    extended_opcode_end: '0x17ff'
+    extended_opcode_slots: 2048
+    extended_opcode_bits: 11
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: e:EA[5:0], d:DREG[8:6], s:BWLQ[10:9]
+    fields:
+    - name: s
+      kind: BWLQ
+      source: size
+      storage: descriptor
+      width: 2
+    - name: d
+      kind: DREG
+      source: lhs
+      storage: descriptor
+      width: 3
+    - name: e
+      kind: EA
+      source: rhs
+      storage: descriptor
+      width: 6
+    kind: extended
+  - id: CMP.EA_TO_A
+    extension_root: EXT.integer_alu
+    extension_root_payload: '0xf3c'
+    extension_family: integer_alu
+    extended_opcode: 0x0400..0x05ff
+    extended_opcode_start: '0x0400'
+    extended_opcode_end: '0x05ff'
+    extended_opcode_slots: 512
+    extended_opcode_bits: 9
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: e:EA[5:0], a:AREG[8:6]
+    fields:
+    - name: e
+      kind: EA
+      source: lhs
+      storage: descriptor
+      width: 6
+    - name: a
+      kind: AREG
+      source: rhs
+      storage: descriptor
+      width: 3
+    kind: extended
+  - id: CMP.EA_TO_D
+    extension_root: EXT.integer_alu
+    extension_root_payload: '0xf3c'
+    extension_family: integer_alu
+    extended_opcode: 0x1800..0x1fff
+    extended_opcode_start: '0x1800'
+    extended_opcode_end: '0x1fff'
+    extended_opcode_slots: 2048
+    extended_opcode_bits: 11
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: e:EA[5:0], d:DREG[8:6], s:BWLQ[10:9]
+    fields:
+    - name: s
+      kind: BWLQ
+      source: size
+      storage: descriptor
+      width: 2
+    - name: e
+      kind: EA
+      source: lhs
+      storage: descriptor
+      width: 6
+    - name: d
+      kind: DREG
+      source: rhs
+      storage: descriptor
+      width: 3
+    kind: extended
+  - id: CMP.EA_TO_EA
+    extension_root: EXT.integer_alu_cmp_ea_wide
+    extension_root_payload: '0xf40'
+    extension_family: integer_alu_cmp_ea_wide
+    extended_opcode: 0x0000..0x3fff
+    extended_opcode_start: '0x0000'
+    extended_opcode_end: '0x3fff'
+    extended_opcode_slots: 16384
+    extended_opcode_bits: 14
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: e:EA[5:0], E:EA[11:6], s:BWLQ[13:12]
+    fields:
+    - name: s
+      kind: BWLQ
+      source: size
+      storage: descriptor
+      width: 2
+    - name: e
+      kind: EA
+      source: lhs
+      storage: descriptor
+      width: 6
+    - name: e
+      kind: EA
+      source: rhs
+      storage: descriptor
+      width: 6
+    kind: extended
+  - id: CMP.IMM_TO_EA
+    extension_root: EXT.integer_alu_cmp_ea_wide
+    extension_root_payload: '0xf40'
+    extension_family: integer_alu_cmp_ea_wide
+    extended_opcode: 0x4000..0x7fff
+    extended_opcode_start: '0x4000'
+    extended_opcode_end: '0x7fff'
+    extended_opcode_slots: 16384
+    extended_opcode_bits: 14
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: e:EA[5:0], s:BWLQ[7:6], i:IMM6[13:8]
+    fields:
+    - name: s
+      kind: BWLQ
+      source: size
+      storage: descriptor
+      width: 2
+    - name: i
+      kind: IMM6
+      source: imm
+      storage: descriptor
+      width: 6
+    - name: e
+      kind: EA
+      source: rhs
+      storage: descriptor
+      width: 6
+    kind: extended
 forms:
   compact_forms:
   - operands:
@@ -52,7 +230,7 @@ forms:
     compact: false
   - operands:
     - name: imm
-      type: IMM_EA
+      type: imm6
     - name: rhs
       type: EA
     size: BWLQ

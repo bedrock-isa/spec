@@ -29,6 +29,97 @@ attributes:
 allocation:
   catalog_section: integer
   layout_group: ADC_SBB
+  encoding:
+  - id: SBB.D_TO_EA
+    extension_root: EXT.integer_alu
+    extension_root_payload: '0xf3c'
+    extension_family: integer_alu
+    extended_opcode: 0xc000..0xc7ff
+    extended_opcode_start: '0xc000'
+    extended_opcode_end: '0xc7ff'
+    extended_opcode_slots: 2048
+    extended_opcode_bits: 11
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: e:EA[5:0], d:DREG[8:6], s:BWLQ[10:9]
+    fields:
+    - name: s
+      kind: BWLQ
+      source: size
+      storage: descriptor
+      width: 2
+    - name: d
+      kind: DREG
+      source: src
+      storage: descriptor
+      width: 3
+    - name: e
+      kind: EA
+      source: dst
+      storage: descriptor
+      width: 6
+    kind: extended
+  - id: SBB.EA_TO_D
+    extension_root: EXT.integer_alu
+    extension_root_payload: '0xf3c'
+    extension_family: integer_alu
+    extended_opcode: 0xc800..0xcfff
+    extended_opcode_start: '0xc800'
+    extended_opcode_end: '0xcfff'
+    extended_opcode_slots: 2048
+    extended_opcode_bits: 11
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: e:EA[5:0], d:DREG[8:6], s:BWLQ[10:9]
+    fields:
+    - name: s
+      kind: BWLQ
+      source: size
+      storage: descriptor
+      width: 2
+    - name: e
+      kind: EA
+      source: src
+      storage: descriptor
+      width: 6
+    - name: d
+      kind: DREG
+      source: dst
+      storage: descriptor
+      width: 3
+    kind: extended
+  - id: SBB.IMM_TO_EA
+    extension_root: EXT.integer_alu_imm_ea_arith_wide
+    extension_root_payload: '0xf3e'
+    extension_family: integer_alu_imm_ea_arith_wide
+    extended_opcode: 0x8000..0xbfff
+    extended_opcode_start: '0x8000'
+    extended_opcode_end: '0xbfff'
+    extended_opcode_slots: 16384
+    extended_opcode_bits: 14
+    operand_payload_bits: 0
+    operand_descriptor_words: 0
+    operand_descriptor_spilled: false
+    descriptor_layout: e:EA[5:0], s:BWLQ[7:6], i:IMM6[13:8]
+    fields:
+    - name: s
+      kind: BWLQ
+      source: size
+      storage: descriptor
+      width: 2
+    - name: i
+      kind: IMM6
+      source: imm
+      storage: descriptor
+      width: 6
+    - name: e
+      kind: EA
+      source: dst
+      storage: descriptor
+      width: 6
+    kind: extended
 forms:
   dst_ea_set: store_destination
   operands:
@@ -41,7 +132,7 @@ forms:
     - name: dst
       type: EA
   - - name: imm
-      type: IMM_EA
+      type: imm6
     - name: dst
       type: EA
   size: BWLQ
