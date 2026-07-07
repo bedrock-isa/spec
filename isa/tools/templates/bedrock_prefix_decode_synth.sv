@@ -11,8 +11,7 @@ module bedrock_prefix_decode_synth(
   output reg [1:0]  access_mode_o,
   output reg [1:0]  repeat_kind_o,
   output reg [3:0]  repeat_condition_o,
-  output reg [2:0]  repeat_counter_o,
-  output reg        end_group_o
+  output reg [2:0]  repeat_counter_o
 );
   task automatic apply_prefix(input [7:0] p);
     begin
@@ -32,7 +31,6 @@ module bedrock_prefix_decode_synth(
     repeat_kind_o = 2'd0;
     repeat_condition_o = 4'd0;
     repeat_counter_o = 3'd0;
-    end_group_o = 1'b0;
     apply_prefix(prefix_word_i[7:0]);
     apply_prefix(prefix_word_i[15:8]);
   end

@@ -12,6 +12,7 @@ behavior:
   operation:
   - arch_page_translate(src_v);
 attributes:
+  privilege: supervisor
   flags: operation-defined status result
 allocation:
   catalog_section: system

@@ -11,6 +11,8 @@ behavior:
   input_output: dst
   operation:
   - dst_v = arch_signed_divide(dst_v, src_v, size_v);
+attributes:
+  privilege: unprivileged
 allocation:
   catalog_section: integer
   layout_group: DIVIDE_MOD

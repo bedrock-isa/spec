@@ -10,6 +10,7 @@ behavior:
   operation:
   - dst_v = dst_v + 1;
 attributes:
+  privilege: unprivileged
   prefix_availability:
   - SATURATE
   flags: unchanged

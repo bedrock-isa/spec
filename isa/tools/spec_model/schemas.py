@@ -36,6 +36,7 @@ class LocalInstructionSchema(KeySchema):
             LocalBehaviorSchema.validate(value.get("behavior"), f"{path}.behavior", errors)
         if "attributes" in value:
             LocalAttributesSchema.validate(value.get("attributes"), f"{path}.attributes", errors)
+        require_nested_fields(value, path, ["attributes.privilege"], errors)
         if "allocation" in value:
             LocalAllocationSchema.validate(value.get("allocation"), f"{path}.allocation", errors)
         if "forms" in value:
@@ -808,6 +809,7 @@ class CatalogEntrySchema(KeySchema):
         "rhs_ea_set",
         "target_ea_set",
         "memory_operand_ea_set",
+        "length",
         "require_memory_operand",
         "require_address_value",
         "segment_translation_only",
@@ -1038,6 +1040,17 @@ class InstructionAllocationSchema(KeySchema):
             )
             check_optional_mapping(field_layout.get("field_score"), f"{path}.field_layout.field_score", InstructionFieldScoreSchema, errors)
             check_list_items(field_layout.get("subfield_affinities", []), f"{path}.field_layout.subfield_affinities", InstructionSubfieldAffinitySchema, errors)
+            check_list_items(field_layout.get("overrides", []), f"{path}.field_layout.overrides", InstructionFieldLayoutOverrideSchema, errors)
+            for index, rule in enumerate(field_layout.get("overrides", []) or []):
+                if isinstance(rule, dict) and isinstance(rule.get("match"), dict):
+                    check_allowed_keys(rule["match"], f"{path}.field_layout.overrides[{index}].match", InstructionFieldLayoutOverrideMatchSchema, errors)
+                if isinstance(rule, dict):
+                    check_list_items(
+                        rule.get("field_positions", []),
+                        f"{path}.field_layout.overrides[{index}].field_positions",
+                        InstructionFieldLayoutOverridePositionSchema,
+                        errors,
+                    )
 
 class InstructionEncodingRowSchema(KeySchema):
     name = "instruction encoding row"
@@ -1220,6 +1233,7 @@ class InstructionOperandSchemaDeclaration(KeySchema):
         "condition_role",
         "selector_roles",
         "types",
+        "immediate_operands",
         "size_codes",
         "size_kinds",
         "named_values",
@@ -1231,6 +1245,7 @@ class InstructionOperandSchemaDeclaration(KeySchema):
         check_allowed_keys(value, path, cls, errors)
         if not isinstance(value, dict):
             return
+        check_mapping_values(value.get("immediate_operands", {}), f"{path}.immediate_operands", ImmediateOperandSchema, errors)
         check_mapping_values(value.get("size_codes", {}), f"{path}.size_codes", SizeCodeSchema, errors)
         check_mapping_values(value.get("size_kinds", {}), f"{path}.size_kinds", SizeKindSchema, errors)
         for name, kind in (value.get("size_kinds") or {}).items():
@@ -1252,6 +1267,39 @@ class InstructionOperandSchemaDeclaration(KeySchema):
         for name, bitmap in (value.get("bitmap_operands") or {}).items():
             if isinstance(bitmap, dict):
                 check_list_items(bitmap.get("ranges", []), f"{path}.bitmap_operands.{name}.ranges", BitmapOperandRangeSchema, errors)
+
+
+class ImmediateOperandSchema(KeySchema):
+    name = "immediate operand"
+    keys = {"width", "signed", "range", "operation_size_extension", "applies_when", "description"}
+
+    @classmethod
+    def validate(cls, value: Any, path: str, errors: list[str]) -> None:
+        check_allowed_keys(value, path, cls, errors)
+        if not isinstance(value, dict):
+            return
+        require_fields(value, path, ["width", "signed", "operation_size_extension"], errors)
+        width = value.get("width")
+        if isinstance(width, int):
+            if width <= 0:
+                errors.append(f"{path}.width must be positive")
+        elif width is not None:
+            errors.append(f"{path}.width must be an integer")
+        if "signed" in value and not isinstance(value.get("signed"), bool):
+            errors.append(f"{path}.signed must be a boolean")
+        if "range" in value:
+            range_value = value.get("range")
+            if not (
+                isinstance(range_value, list)
+                and len(range_value) == 2
+                and all(isinstance(item, int) for item in range_value)
+            ):
+                errors.append(f"{path}.range must be [min, max]")
+            elif range_value[0] > range_value[1]:
+                errors.append(f"{path}.range minimum must not exceed maximum")
+        extension = value.get("operation_size_extension")
+        if extension not in {"zero_extend", "sign_extend", "none"}:
+            errors.append(f"{path}.operation_size_extension must be zero_extend, sign_extend, or none")
 
 
 class SizeCodeSchema(KeySchema):
@@ -1595,7 +1643,7 @@ class InstructionFieldReclaimInvalidValueMatchSchema(KeySchema):
 
 class InstructionFieldLayoutSchema(KeySchema):
     name = "instruction field layout"
-    keys = {"anchor_strategy", "explicit_signature_order", "field_score", "subfield_affinities"}
+    keys = {"anchor_strategy", "explicit_signature_order", "field_score", "subfield_affinities", "overrides"}
 
 
 class InstructionFieldLayoutAnchorStrategySchema(KeySchema):
@@ -1619,6 +1667,21 @@ class InstructionSubfieldAffinitySchema(KeySchema):
         "score_multiplier",
         "reason",
     }
+
+
+class InstructionFieldLayoutOverrideSchema(KeySchema):
+    name = "instruction field layout override"
+    keys = {"match", "field_positions", "reason"}
+
+
+class InstructionFieldLayoutOverrideMatchSchema(KeySchema):
+    name = "instruction field layout override match"
+    keys = {"mnemonic", "profile", "size", "category", "semantic_family", "group", "id"}
+
+
+class InstructionFieldLayoutOverridePositionSchema(KeySchema):
+    name = "instruction field layout override position"
+    keys = {"signature", "field_source", "field_name", "field_kind", "low_bit", "reason"}
 
 
 class OperationDefaultsSchema(KeySchema):

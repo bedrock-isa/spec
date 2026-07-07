@@ -15,6 +15,7 @@ behavior:
   - <minmax_done>
   signedness: signed
 attributes:
+  privilege: unprivileged
   prefix_availability:
   - SATURATE
 allocation:

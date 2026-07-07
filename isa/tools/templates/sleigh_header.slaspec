@@ -57,6 +57,7 @@ define pcodeop arch_dbank_write;
 define pcodeop arch_register_set_sum;
 define pcodeop arch_pushm;
 define pcodeop arch_popm;
+define pcodeop arch_repg;
 define pcodeop arch_movsetad;
 define pcodeop arch_movsetad_bank;
 define pcodeop arch_movsetda;

@@ -13,8 +13,7 @@ module bedrock_prefix_decode
   output bedrock_access_mode_e access_mode_o,
   output bedrock_repeat_kind_e repeat_kind_o,
   output logic [3:0] repeat_condition_o,
-  output logic [2:0] repeat_counter_o,
-  output logic        end_group_o
+  output logic [2:0] repeat_counter_o
 );
   bedrock_prefix_word_decode_t decode;
   always_comb begin
@@ -28,7 +27,6 @@ module bedrock_prefix_decode
     repeat_kind_o = decode.repeat_kind;
     repeat_condition_o = decode.repeat_condition;
     repeat_counter_o = decode.repeat_counter;
-    end_group_o = decode.end_group;
   end
 endmodule
 

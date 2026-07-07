@@ -16,6 +16,7 @@ behavior:
   repeat_observed_value: result_value
   repflags: flags_logic_observed_value
 attributes:
+  privilege: unprivileged
   streaming_candidate: true
 allocation:
   catalog_section: integer

@@ -15,6 +15,8 @@ behavior:
   operation_text: >
     For each set bit in the bitmap, FPOPM pops one 64-bit stack slot into the corresponding F register. F registers are
     processed in inverse order from F15 through F0. Each selected register is loaded from SP before SP is incremented by 8.
+attributes:
+  privilege: unprivileged
 allocation:
   catalog_section: fpu
   layout_group: FPUSHM_FPOPM

@@ -1023,8 +1023,6 @@ def prefix_meaning(prefix: dict[str, Any]) -> str:
         "C2U": "current-domain source to user-domain destination",
         "U2U": "user-domain memory operands",
         "REPcc": "repeat while counter and condition remain active",
-        "REPG": "repeat grouped instructions using the selected counter",
-        "ENDG": "end grouped repeat",
     }
     return meanings.get(name, group.replace("_", " ") or "-")
 

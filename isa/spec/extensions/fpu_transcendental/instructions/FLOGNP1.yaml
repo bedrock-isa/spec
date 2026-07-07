@@ -11,6 +11,7 @@ behavior:
   operation:
   - dst_v = fp_log1p(src_v);
 attributes:
+  privilege: unprivileged
   fp_flags:
     update:
     - NV

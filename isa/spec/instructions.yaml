@@ -30,6 +30,14 @@ operand_schema:
   - relative_imm
   - selector
   - selector_imm6
+  immediate_operands:
+    imm6:
+      width: 6
+      signed: false
+      range: [0, 63]
+      operation_size_extension: zero_extend
+      applies_when: integer forms with an explicit B/W/L/Q operation size
+      description: Inline 6-bit immediate literals are unsigned values. When the instruction operation size is wider than 6 bits, the immediate value is zero-extended to the operation size before use.
   condition_role: cc
   selector_roles:
   - count
@@ -301,6 +309,18 @@ allocation:
       weight: 40000
       compact: required
       reason: compact logical immediates avoid EA-immediate descriptor overhead in mask-heavy code
+    - id: INTEGER_COMPARE_ARITH_IMM_TO_D
+      match:
+        mnemonic:
+        - ADD
+        - SUB
+        - TEST
+        - CMP
+        profile: IMM_TO_D
+        size: WL
+      weight: 40000
+      compact: required
+      reason: reclaimed MOV register-destination primary space is used for compact W/L arithmetic and compare immediates
     - id: EXTZQ_D_TO_D_FAST_PATH
       match:
         mnemonic:
@@ -479,7 +499,39 @@ allocation:
       values:
       - 3
       reason: Q-to-Q extension has no architectural effect and its size-field encoding is reclaimed
+    - match:
+        mnemonic: MOV
+        profile: D_TO_EA
+        size: LQ
+      field_source: dst
+      values:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      reason: MOV DREG to DREG is canonicalized through MOV.EA_TO_D, so the DREG destination subrange is reclaimed
   field_layout:
+    overrides:
+    - match:
+        mnemonic:
+        - ADD
+        - SUB
+        - TEST
+        - CMP
+        profile: IMM_TO_D
+        size: WL
+      field_positions:
+      - signature: REG3
+        low_bit: 6
+        reason: align destination register with the reclaimed MOV.D_TO_EA source-register lane
+      - signature: SIZE1
+        low_bit: 9
+        reason: align W/L size with the reclaimed MOV.D_TO_EA size lane
+      reason: place compact W/L immediate-to-D forms into MOV.D_TO_EA DREG-destination reclaimed primary lanes
     anchor_strategy:
       format_order: largest_variable_payload_first
       placement: first_fit_with_existing_lanes

@@ -99,10 +99,10 @@ The fixed frame also reserves two 64-bit extension slots for future architected 
 When \texttt{FRAME\_CONTROL.rep\_fault} is set, the \texttt{FAULT\_AUX} payload records the active repeat context.
 \texttt{FAULT\_AUX.repeat\_kind} distinguishes \texttt{REP}/\texttt{REPcc}, \texttt{REPG-general}, and \texttt{REPG-fast} continuations.
 For \texttt{REPG}, the saved \texttt{PC} is the faulting grouped instruction, and the group start is reconstructed
-as \texttt{group\_start\_pc = fault\_pc - 2 * group\_start\_delta\_words}. The delta is an unsigned negative displacement measured in 16-bit words, so five bits cover
-the full 64-byte grouping window. Returning with IRET preserves the continuation state: execution resumes at the
-saved faulting instruction under the active repeat context. Software that wants to abandon or emulate the repeated
-operation may edit the frame before returning.
+as \texttt{group\_start\_pc = fault\_pc - body\_start\_delta\_bytes}. The auxiliary word also records the
+\texttt{REPG} body byte count, so returning with IRET preserves the continuation state: execution resumes at the
+saved faulting instruction under the active repeat context and eventually repeats or exits through the byte-counted
+body. Software that wants to abandon or emulate the repeated operation may edit the frame before returning.
 
 @REPEAT_FAULT_AUX_TABLE@
 

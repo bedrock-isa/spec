@@ -12,6 +12,7 @@ behavior:
   operation:
   - dst_v = dst_v * src_v;
 attributes:
+  privilege: unprivileged
   flags: may update FLAGS
 allocation:
   catalog_section: integer

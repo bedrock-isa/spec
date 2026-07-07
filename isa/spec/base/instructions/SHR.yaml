@@ -30,6 +30,8 @@ behavior:
     N: most significant result bit
     C: last bit shifted out, or zero for count greater than operand width
     V: 0
+attributes:
+  privilege: unprivileged
 allocation:
   catalog_section: integer
   layout_group: SHIFTS

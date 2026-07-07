@@ -344,40 +344,46 @@ supervisor_stack_frame:
     description: >
       FAULT_AUX layout used when FRAME_CONTROL.rep_fault is set. Ordinary REP and
       REPcc faults use the same counter-register field and set
-      group_start_delta_words to zero. REPG-general and REPG-fast faults
-      additionally encode the group-start location as a small negative
-      displacement from the saved fault_pc, avoiding a full saved
-      group_start_pc. repeat_kind distinguishes scalar/general grouped repeat
-      continuation from fast grouped-repeat continuation.
+      body_start_delta_bytes and body_bytes to zero. REPG-general and REPG-fast
+      faults additionally encode the grouped body start as a byte displacement
+      from the saved fault_pc and record the REPG imm16 body length in bytes.
+      repeat_kind distinguishes scalar/general grouped repeat continuation from
+      fast grouped-repeat continuation.
     fields:
       counter_register:
         bits: [0, 2]
         description: D-register counter number, D0-D7
-      group_start_delta_words:
-        bits: [3, 7]
-        description: >
-          REPG-general/REPG-fast unsigned negative displacement in 16-bit
-          words from the saved fault_pc to the first grouped instruction;
-          0..31 words covers one 64-byte grouping window
       repeat_kind:
-        bits: [8, 9]
+        bits: [3, 4]
         description: repeat context kind
         values:
           0: REP_or_REPcc
           1: REPG-general
           2: REPG-fast
           3: reserved
+      body_start_delta_bytes:
+        bits: [5, 20]
+        description: >
+          REPG-general/REPG-fast unsigned byte displacement from the saved
+          fault_pc to the first grouped instruction; the value is even and is
+          zero for ordinary REP/REPcc continuations
+      body_bytes:
+        bits: [21, 36]
+        description: >
+          REPG imm16 body length in bytes; the value is even, nonzero for REPG
+          continuations, and zero for ordinary REP/REPcc continuations
       reserved:
-        bits: [10, 63]
+        bits: [37, 63]
         description: reserved, must be zero
     formulas:
-      group_start_pc: fault_pc - 2 * group_start_delta_words
+      group_start_pc: fault_pc - body_start_delta_bytes
     resume_rule: >
       IRET resumes at the saved fault_pc under the active repeat continuation
       state. For REPG-general, execution continues through the remaining
       grouped instructions, updates the counter only after the whole group
-      iteration succeeds, and then continues with the next iteration if the
-      counter is not zero. For REPG-fast, the saved continuation represents a
+      iteration succeeds, and then either repeats the byte-counted body from
+      group_start_pc or resumes after group_start_pc + body_bytes when the
+      counter reaches zero. For REPG-fast, the saved continuation represents a
       fast grouped-repeat continuation point selected by the implementation;
       software may distinguish it from REPG-general by repeat_kind before
       choosing to resume, abandon, or emulate the repeated operation.

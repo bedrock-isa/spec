@@ -12,6 +12,7 @@ behavior:
   operation:
   - arch_tlb_invalidate_page(page_v);
 attributes:
+  privilege: supervisor
   serializing: true
 allocation:
   catalog_section: system

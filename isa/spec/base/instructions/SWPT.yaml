@@ -12,6 +12,8 @@ behavior:
   operation:
   - PTCR = new_ptcr_v;
   - ASCR = 0;
+attributes:
+  privilege: supervisor
 allocation:
   catalog_section: system
   encoding:

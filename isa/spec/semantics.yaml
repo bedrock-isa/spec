@@ -30,7 +30,7 @@ encoding_rules:
       - indexed_ea
   repeat_prefixes:
     authoritative_source: prefixes.yaml
-    members: [REPcc, REPG]
+    members: [REPcc]
   canonical_forms:
     MOV_D_TO_D:
       canonical_form: MOV <ea=Dsrc>, Ddst

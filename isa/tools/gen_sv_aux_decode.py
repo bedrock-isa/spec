@@ -215,8 +215,6 @@ def prefix_apply_lines(prefixes: list[dict[str, Any]]) -> list[str]:
             lines.append(f"      {kind}: r.access_mode = {access_enum_name(name)};")
         elif group == "repeat":
             lines.append(f"      {kind}: begin r.repeat_kind = {repeat_enum_name(name)}; r.repeat_condition = prefix.condition; r.repeat_counter = prefix.counter; end")
-        elif group == "repeat_boundary":
-            lines.append(f"      {kind}: r.end_group = 1'b1;")
         else:
             lines.append(f"      {kind}: begin end")
     return lines
@@ -256,8 +254,6 @@ def prefix_synth_apply_lines(
                 f"        {literal}: begin repeat_kind_o = 2'd{repeat_indexes[repeat_enum_name(name)]}; "
                 f"repeat_condition_o = {condition}; repeat_counter_o = {counter}; end"
             )
-        elif group == "repeat_boundary":
-            lines.append(f"        {literal}: end_group_o = 1'b1;")
     return lines
 
 

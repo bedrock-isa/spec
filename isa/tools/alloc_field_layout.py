@@ -8,6 +8,8 @@ from alloc_model import (
     Candidate,
     Field,
     profile_candidate_id,
+    profile_form_parts,
+    size_tag_from_fields,
 )
 
 
@@ -126,6 +128,7 @@ def build_field_layout_model(
         "format_examples": format_examples,
         "score_model": score_model,
         "anchor_strategy": field_layout_anchor_strategy(compact_policy),
+        "overrides": field_layout_override_rules(compact_policy),
         "explicit_signature_order": explicit_order,
         "format_similarity": operand_format_similarity_report(
             format_counts,
@@ -165,6 +168,7 @@ def field_layout_model_report(model: dict[str, Any]) -> dict[str, Any]:
         "operand_format_similarity": model.get("format_similarity", []),
         "field_score_model": model.get("score_model", {}),
         "anchor_strategy": dict(model.get("anchor_strategy", {})),
+        "overrides": list(model.get("overrides", [])),
         "field_lanes": [
             {
                 "storage": storage,
@@ -262,6 +266,46 @@ def field_layout_anchor_strategy(compact_policy: dict[str, Any]) -> dict[str, An
             if str(signature)
         ]
     }
+
+
+def field_layout_override_rules(compact_policy: dict[str, Any]) -> list[dict[str, Any]]:
+    policy = compact_policy.get("field_layout", {})
+    if not isinstance(policy, dict):
+        return []
+    raw_rules = policy.get("overrides", [])
+    if not isinstance(raw_rules, list):
+        return []
+    rules: list[dict[str, Any]] = []
+    for raw_rule in raw_rules:
+        if not isinstance(raw_rule, dict):
+            continue
+        positions = raw_rule.get("field_positions", [])
+        if not isinstance(positions, list):
+            continue
+        normalized_positions = []
+        for position in positions:
+            if not isinstance(position, dict) or "low_bit" not in position:
+                continue
+            normalized_positions.append(
+                {
+                    "signature": str(position.get("signature", "")),
+                    "field_source": str(position.get("field_source", "")),
+                    "field_name": str(position.get("field_name", "")),
+                    "field_kind": str(position.get("field_kind", "")),
+                    "low_bit": int(position["low_bit"]),
+                    "reason": str(position.get("reason", "")),
+                }
+            )
+        if not normalized_positions:
+            continue
+        rules.append(
+            {
+                "match": dict(raw_rule.get("match", {})) if isinstance(raw_rule.get("match"), dict) else {},
+                "field_positions": normalized_positions,
+                "reason": str(raw_rule.get("reason", "")),
+            }
+        )
+    return rules
 
 
 def build_field_lanes(
@@ -490,6 +534,7 @@ def assign_field_positions(
     storage: str,
     field_layout_model: dict[str, Any],
     *,
+    candidate: Candidate | None = None,
     spilled: bool = False,
 ) -> list[dict[str, Any]]:
     fixed_high = [
@@ -508,10 +553,45 @@ def assign_field_positions(
     lanes = (field_layout_model.get("lanes", {}) or {}).get(storage, {})
     present_signatures = {signature for signature, _field in ordered_instances}
     name_counts: dict[str, int] = {}
+    named_instances: list[tuple[str, Field, str]] = []
     for signature, field in ordered_instances:
         count = name_counts.get(field.name, 0) + 1
         name_counts[field.name] = count
         name = duplicate_field_name(field.name, count)
+        named_instances.append((signature, field, name))
+    override_lows = field_position_overrides(
+        candidate,
+        named_instances,
+        storage,
+        field_layout_model,
+    )
+    deferred_instances: list[tuple[str, Field, str]] = []
+    for index, (signature, field, name) in enumerate(named_instances):
+        if index not in override_lows:
+            deferred_instances.append((signature, field, name))
+            continue
+        low = int(override_lows[index])
+        high = low + field.width - 1
+        if high >= variable_limit:
+            raise RuntimeError(
+                f"field layout override places {signature} past primary field limit"
+            )
+        if ranges_overlap(occupied, low, high):
+            raise RuntimeError(
+                f"field layout override overlaps existing field for {signature}"
+            )
+        placed.append(
+            {
+                **field_dict(field),
+                "name": name,
+                "low_bit": low,
+                "high_bit": high,
+                "range": bit_range(high, low),
+            }
+        )
+        occupied.append((low, high))
+
+    for signature, field, name in deferred_instances:
         lane_low = lanes.get(signature) if isinstance(lanes, dict) else None
         if lane_low is not None:
             low = int(lane_low)
@@ -562,6 +642,90 @@ def assign_field_positions(
     if variable_highs and max(variable_highs) > high_cursor:
         raise RuntimeError("field layout overlaps fixed high semantic fields")
     return placed
+
+
+def field_position_overrides(
+    candidate: Candidate | None,
+    named_instances: list[tuple[str, Field, str]],
+    storage: str,
+    field_layout_model: dict[str, Any],
+) -> dict[int, int]:
+    if candidate is None or storage != "primary":
+        return {}
+    context = field_layout_candidate_context(candidate)
+    out: dict[int, int] = {}
+    for rule in field_layout_model.get("overrides", []) or []:
+        if not isinstance(rule, dict) or not layout_rule_matches(rule, context):
+            continue
+        positions = rule.get("field_positions", [])
+        if not isinstance(positions, list):
+            continue
+        for index, (signature, field, _name) in enumerate(named_instances):
+            for position in positions:
+                if not isinstance(position, dict):
+                    continue
+                if not field_position_rule_matches(position, signature, field):
+                    continue
+                if index in out and out[index] != int(position["low_bit"]):
+                    raise RuntimeError(
+                        f"conflicting field layout overrides for {candidate.id}:{signature}"
+                    )
+                out[index] = int(position["low_bit"])
+                break
+    return out
+
+
+def field_layout_candidate_context(candidate: Candidate) -> dict[str, str]:
+    return {
+        "id": profile_candidate_id(candidate, candidate.compact_fields),
+        "mnemonic": candidate.mnemonic,
+        "category": candidate.category,
+        "semantic_family": candidate.group.split(".", 1)[0],
+        "group": candidate.group.split(".", 1)[0],
+        "profile": "_TO_".join(profile_form_parts(candidate.compact_fields)) or "NO_OPERANDS",
+        "size": size_tag_from_fields(candidate.compact_fields),
+    }
+
+
+def layout_rule_matches(rule: dict[str, Any], context: dict[str, str]) -> bool:
+    match = rule.get("match", {})
+    if not isinstance(match, dict):
+        return False
+    for key, expected in match.items():
+        actual = context.get(str(key), "")
+        if isinstance(expected, list):
+            if str(actual).upper() not in {str(item).upper() for item in expected}:
+                return False
+            continue
+        if str(actual).upper() != str(expected).upper():
+            return False
+    return True
+
+
+def field_position_rule_matches(position: dict[str, Any], signature: str, field: Field) -> bool:
+    expected_signature = str(position.get("signature", ""))
+    if expected_signature and signature != expected_signature:
+        return False
+    if not field_attr_matches(position.get("field_source", ""), field.source):
+        return False
+    if not field_attr_matches(position.get("field_name", ""), field.name):
+        return False
+    if not field_attr_matches(position.get("field_kind", ""), field.kind):
+        return False
+    return bool(
+        expected_signature
+        or position.get("field_source")
+        or position.get("field_name")
+        or position.get("field_kind")
+    )
+
+
+def field_attr_matches(expected: Any, actual: str) -> bool:
+    if expected in (None, ""):
+        return True
+    if isinstance(expected, list):
+        return str(actual).upper() in {str(item).upper() for item in expected}
+    return str(actual).upper() == str(expected).upper()
 
 
 def preferred_subfield_low(
@@ -696,7 +860,13 @@ def field_layout_span_bits(fields: list[dict[str, Any]]) -> int:
 
 
 def primary_span_bits(candidate: Candidate, field_layout_model: dict[str, Any]) -> int:
-    fields = assign_field_positions(candidate.compact_fields, layout_model_primary_bits(field_layout_model), "primary", field_layout_model)
+    fields = assign_field_positions(
+        candidate.compact_fields,
+        layout_model_primary_bits(field_layout_model),
+        "primary",
+        field_layout_model,
+        candidate=candidate,
+    )
     return field_layout_span_bits(fields)
 
 

@@ -12,6 +12,7 @@ behavior:
   operation:
   - arch_tlb_invalidate_asid(asid_v & 0xffff);
 attributes:
+  privilege: supervisor
   serializing: true
 allocation:
   catalog_section: system

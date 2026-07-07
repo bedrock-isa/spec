@@ -17,6 +17,8 @@ behavior:
   - if (cc_v == 0) goto <ijcc_done>;
   - goto [target_v];
   - <ijcc_done>
+attributes:
+  privilege: unprivileged
 allocation:
   catalog_section: compact_primary
   encoding:

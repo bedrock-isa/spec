@@ -33,7 +33,6 @@ package bedrock_prefix_decode_pkg;
     bedrock_repeat_kind_e repeat_kind;
     logic [3:0] repeat_condition;
     logic [2:0] repeat_counter;
-    logic end_group;
   } bedrock_prefix_word_decode_t;
 
   function automatic bedrock_prefix_byte_decode_t bedrock_decode_prefix_byte(input logic [7:0] prefix_byte);

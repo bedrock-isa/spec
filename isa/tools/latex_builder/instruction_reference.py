@@ -998,7 +998,6 @@ def prefix_grid_legend_rows() -> list[tuple[str, str]]:
         ("memory hint", prefix_grid_color("memory_hint")),
         ("EA update", prefix_grid_color("ea_update")),
         ("repeat", prefix_grid_color("repeat")),
-        ("repeat boundary", prefix_grid_color("repeat_boundary")),
         ("unallocated", "white"),
     ]
 
@@ -1052,7 +1051,6 @@ def prefix_grid_color(group: str) -> str:
         "memory_hint": "yellow!22",
         "ea_update": "cyan!20",
         "repeat": "orange!24",
-        "repeat_boundary": "gray!35",
     }.get(group, "white")
 
 
@@ -2398,6 +2396,10 @@ def role_name(source: str) -> str:
 
 
 def kind_description(kind: str) -> str:
+    immediate = immediate_operand_metadata(kind)
+    if immediate:
+        signed_text = "signed" if immediate.get("signed") else "unsigned"
+        return f"{signed_text} {immediate.get('width')}-bit immediate literal"
     mapping = {
         "EA": "compact effective-address field",
         "DREG": "data register number",
@@ -2409,8 +2411,7 @@ def kind_description(kind: str) -> str:
         "cr": "control-register selector",
         "FREG": "floating-point register number",
         "condition": "condition-code selector",
-        "IMM6": "6-bit immediate literal",
-        "imm16": "16-bit immediate selector",
+        "imm16": "16-bit immediate literal",
         "BITMAP16": "16-bit register bitmap",
         "bitmap16": "16-bit register bitmap",
         "fbitmap16": "16-bit floating-point register bitmap",
@@ -2421,6 +2422,28 @@ def kind_description(kind: str) -> str:
     if upper in size_codes(active_spec()):
         return f"fixed {size_code_label(active_spec(), upper)} size"
     return mapping.get(kind, kind.replace("_", " ").lower())
+
+
+def immediate_operand_metadata(kind: str) -> dict[str, Any]:
+    operand_schema = ((active_spec().get("instructions") or {}).get("operand_schema") or {})
+    immediate_operands = operand_schema.get("immediate_operands") or {}
+    if not isinstance(immediate_operands, dict):
+        return {}
+    body = immediate_operands.get(kind) or immediate_operands.get(kind.lower())
+    return body if isinstance(body, dict) else {}
+
+
+def immediate_operation_size_note(kind: str) -> str:
+    immediate = immediate_operand_metadata(kind)
+    if not immediate:
+        return ""
+    extension = str(immediate.get("operation_size_extension") or "")
+    applies_when = str(immediate.get("applies_when") or "operation-size forms")
+    if extension == "zero_extend":
+        return f" The encoded value is zero-extended before use for {applies_when}."
+    if extension == "sign_extend":
+        return f" The encoded value is sign-extended before use for {applies_when}."
+    return ""
 
 
 def field_explanation_lines(item: dict[str, Any], fields: list[dict[str, Any]]) -> list[str]:
@@ -2442,6 +2465,7 @@ def field_explanation_lines(item: dict[str, Any], fields: list[dict[str, Any]]) 
         )
         if kind == "EA":
             line += " EA field selects register, memory, immediate, and extended EA forms."
+        line += immediate_operation_size_note(kind)
         lines.append(line)
     if any(str(field.get("kind")) == "EA" for field in fields):
         lines.append("EA selections may append displacement, absolute-address, immediate, or extended-EA payload words.")
@@ -2479,13 +2503,17 @@ def readable_note_text(note: str) -> str:
 
 
 def flags_text(records: list[dict[str, Any]], operations: list[dict[str, Any]]) -> str:
-    for record in operations:
+    for record in records:
         spec = record.get("spec", {})
         if "flags" in spec:
             return integer_flags_text(spec["flags"])
         if "fp_flags" in spec:
             return fp_flags_text(spec["fp_flags"])
-    for record in records:
+    ordered_operations = sorted(
+        operations,
+        key=lambda record: 0 if record.get("group") == "instruction_override" else 1,
+    )
+    for record in ordered_operations:
         spec = record.get("spec", {})
         if "flags" in spec:
             return integer_flags_text(spec["flags"])

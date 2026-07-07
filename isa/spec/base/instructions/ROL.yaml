@@ -31,6 +31,8 @@ behavior:
     N: most significant result bit
     C: least significant result bit
     V: 0
+attributes:
+  privilege: unprivileged
 allocation:
   catalog_section: integer
   layout_group: ROTATES

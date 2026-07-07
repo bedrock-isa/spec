@@ -47,27 +47,27 @@ def audit_alignment(spec: dict[str, Any], entries: list[PatternEntry], candidate
         ),
     )
 
-    repg = prefix_by_name.get("REPG", {})
-    repg_syntax = repg.get("syntax", {}) if isinstance(repg, dict) else {}
-    repg_operand = repg.get("operand", {}) if isinstance(repg, dict) else {}
-    repg_alignment = repg.get("alignment", {}) if isinstance(repg, dict) else {}
-    terminator = repg_syntax.get("terminator_prefix")
-    terminator_prefix = prefix_by_name.get(terminator)
-    try:
-        grouping_window_bytes = int(repg_alignment.get("grouping_window_bytes", 0) or 0)
-    except (TypeError, ValueError):
-        grouping_window_bytes = 0
+    repg_candidates = [candidate for candidate in candidates if candidate.mnemonic.upper() == "REPG"]
+    repg_candidate = repg_candidates[0] if repg_candidates else None
+    repg_primary_fields = [
+        field for field in (repg_candidate.compact_fields if repg_candidate else ())
+        if field.kind == "DREG" and field.storage == "primary"
+    ]
+    repg_payload_fields = [
+        field for field in (repg_candidate.compact_fields if repg_candidate else ())
+        if field.kind == "IMM16" and field.storage == "payload"
+    ]
     add(
-        "grouped repeat prefix metadata",
-        isinstance(repg, dict)
-        and bool(repg.get("pattern"))
-        and bool(repg_operand.get("field"))
-        and bool(repg_syntax.get("block"))
-        and isinstance(terminator_prefix, dict)
-        and grouping_window_bytes > 0,
+        "REPG instruction metadata",
+        repg_candidate is not None
+        and len(repg_primary_fields) == 1
+        and len(repg_payload_fields) == 1
+        and repg_candidate.min_words == 2,
         (
-            f"terminator={repg_syntax.get('terminator_prefix')}, "
-            f"counter field={repg_operand.get('field')}, grouping window={repg_alignment.get('grouping_window_bytes')} bytes"
+            f"candidates={len(repg_candidates)}, "
+            f"primary_fields={[field.kind for field in repg_primary_fields]}, "
+            f"payload_fields={[field.kind for field in repg_payload_fields]}, "
+            f"min_words={repg_candidate.min_words if repg_candidate else '-'}"
         ),
     )
 

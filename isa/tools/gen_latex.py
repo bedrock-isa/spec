@@ -240,7 +240,7 @@ class ManualPreviewIndex:
         save_area_section = save_area_reference_section(context.spec)
         if save_area_section:
             add("SAVE/RESTORE Processor-State Save Area", save_area_section)
-        add("Data Formats", LatexSequence([LatexTopSection("Data Formats"), data_format_section()]).render())
+        add("Data Formats", LatexSequence([LatexTopSection("Data Formats"), data_format_section(context.spec)]).render())
         add("Condition Codes", LatexSequence([LatexTopSection("Condition Codes"), condition_table(context.spec)]).render())
         add("Prefixes", LatexSequence([LatexTopSection("Prefixes"), prefix_table(context.spec)]).render())
         add("Effective Addressing Modes", LatexSequence([LatexTopSection("Effective Addressing Modes"), ea_table(context.spec)]).render())
@@ -353,8 +353,52 @@ class ManualPreviewDocument(LatexComponent):
 
 
 
-def data_format_section() -> str:
-    return render_latex_template("data_formats.tex")
+def data_format_section(spec: dict[str, Any]) -> str:
+    return render_latex_template(
+        "data_formats.tex",
+        {
+            "IMMEDIATE_OPERAND_TABLE": immediate_operand_interpretation_table(spec),
+        },
+    )
+
+
+def immediate_operand_interpretation_table(spec: dict[str, Any]) -> str:
+    operand_schema = (spec.get("instructions") or {}).get("operand_schema") or {}
+    immediate_operands = operand_schema.get("immediate_operands") or {}
+    if not isinstance(immediate_operands, dict) or not immediate_operands:
+        return ""
+    extension_text = {
+        "zero_extend": "zero-extend to the operation size",
+        "sign_extend": "sign-extend to the operation size",
+        "none": "no operation-size extension",
+    }
+    rows: list[list[str]] = []
+    for name, body in sorted(immediate_operands.items()):
+        if not isinstance(body, dict):
+            continue
+        range_value = body.get("range")
+        if isinstance(range_value, list) and len(range_value) == 2:
+            range_text = f"{range_value[0]}..{range_value[1]}"
+        else:
+            range_text = "-"
+        rows.append(
+            [
+                tex_code(name),
+                tex_escape(str(body.get("width", "-"))),
+                tex_escape("signed" if body.get("signed") else "unsigned"),
+                tex_escape(range_text),
+                tex_escape(extension_text.get(str(body.get("operation_size_extension")), str(body.get("operation_size_extension", "-")))),
+                tex_escape(str(body.get("applies_when", "-"))),
+            ]
+        )
+    if not rows:
+        return ""
+    return latex_longtable(
+        ["Operand", "Bits", "Value", "Range", "Operation-Size Rule", "Applies When"],
+        rows,
+        ["0.70in", "0.45in", "0.70in", "0.75in", "1.55in", "1.35in"],
+        "Immediate Operand Interpretation",
+    )
 
 
 def memory_order_rows(spec: dict[str, Any]) -> list[list[str]]:
@@ -1008,7 +1052,7 @@ def overview_sections(spec: dict[str, Any], plan: dict[str, Any], mnemonic_count
         cpuid_feature_discovery_section(spec),
         save_area_reference_section(spec),
         top_section("Data Formats"),
-        data_format_section(),
+        data_format_section(spec),
         top_section("Condition Codes"),
         condition_table(spec),
         top_section("Prefixes"),
@@ -2192,8 +2236,6 @@ def prefix_meaning_text(prefix: dict[str, Any]) -> str:
         "C2U": "current-domain source to user-domain destination",
         "U2U": "user-domain memory operands",
         "REPcc": "repeat while counter and condition remain active",
-        "REPG": "repeat grouped instructions using the selected counter",
-        "ENDG": "end grouped repeat",
     }
     return meanings.get(name, readable_text(group or name))
 
@@ -2218,10 +2260,6 @@ def prefix_detail_text(prefix: dict[str, Any]) -> str:
         return f"Access-domain prefix selected by the {annotation} operand annotation."
     if name == "REPcc":
         return "Repeats the following instruction using the selected D-register counter and condition-code selector."
-    if name == "REPG":
-        return "Repeats an ENDG-terminated instruction group using the selected D-register counter."
-    if name == "ENDG":
-        return "Terminator prefix carried by the final instruction in a REPG group."
     return prefix_meaning_text(prefix)
 
 
@@ -2230,9 +2268,9 @@ def prefix_semantics_section(spec: dict[str, Any]) -> str:
     for prefix in spec.get("prefixes", {}).get("prefixes", []) or []:
         if not isinstance(prefix, dict):
             continue
-        if prefix.get("name") in {"REPcc", "REPG"}:
+        if prefix.get("name") == "REPcc":
             continue
-        if prefix.get("group") in {"ea_update", "repeat_boundary"}:
+        if prefix.get("group") == "ea_update":
             continue
         lines.append(rf"\Needspace{{0.75in}}\manualfield{{{tex_code(prefix.get('name', ''))}:}}{{{prefix_semantics_block(prefix)}}}")
     return render_latex_template("prefix_semantics.tex", {"PREFIX_FIELD_BLOCKS": "\n".join(lines)})
@@ -2258,17 +2296,13 @@ def prefix_syntax_text(prefix: dict[str, Any]) -> str:
     syntax = prefix.get("syntax")
     if name == "REPcc":
         return "REP{cc} Dn, instr"
-    if name == "REPG":
-        return "REPG Dn, {...}"
-    if name == "ENDG":
-        return "ENDG"
     if isinstance(syntax, dict):
         if syntax.get("operand_annotation"):
             return str(syntax.get("operand_annotation"))
         if syntax.get("assembler_generated"):
             return "(generated)"
         if syntax.get("block"):
-            return str(syntax.get("block_template", "REPG Dn, { ... }"))
+            return str(syntax.get("block_template", "block"))
         template = str(syntax.get("mnemonic_template", name))
         if syntax.get("applies_to_following_instruction"):
             return f"{template} Dn, instr"
@@ -2373,7 +2407,6 @@ def prefix_table(spec: dict[str, Any]) -> str:
             "ACCESS_DOMAIN_OPERANDS": access_domain_operand_table(spec),
             "PREFIX_SEMANTICS": prefix_semantics_section(spec),
             "REPCC_SECTION": repcc_prefix_section(spec),
-            "REPG_SECTION": repg_prefix_section(spec),
         },
     )
 
@@ -2431,20 +2464,6 @@ def repcc_prefix_section(spec: dict[str, Any]) -> str:
             "OBSERVED_VALUE_TABLE": observed_table,
         },
     )
-
-
-def repg_prefix_section(spec: dict[str, Any]) -> str:
-    prefix = next(
-        (
-            candidate
-            for candidate in spec.get("prefixes", {}).get("prefixes", []) or []
-            if isinstance(candidate, dict) and candidate.get("name") == "REPG"
-        ),
-        {},
-    )
-    if not prefix:
-        return ""
-    return render_latex_template("repg_prefix.tex")
 
 
 def encoding_overview_section(plan: dict[str, Any]) -> str:

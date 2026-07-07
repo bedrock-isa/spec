@@ -19,6 +19,7 @@ behavior:
   repeat_observed_value: rhs_minus_lhs
   repflags: flags_sub_rhs_lhs
 attributes:
+  privilege: unprivileged
   streaming_candidate: true
   flags:
     Z: result == 0
@@ -60,6 +61,47 @@ allocation:
       low_bit: 6
       high_bit: 6
       range: '[6]'
+  - id: CMP.IMM_TO_D
+    kind: compact
+    start_payload: '0x401'
+    end_payload: '0x7c1'
+    slots: 16
+    primary_bits: 10
+    field_layout: op[5:0] d[8:6] z[9] op[11:10] ; exact_payloads spare=945
+    fields:
+    - name: d
+      kind: DREG
+      source: rhs
+      storage: primary
+      width: 3
+      low_bit: 6
+      high_bit: 8
+      range: '[8:6]'
+    - name: z
+      kind: WL
+      source: size
+      storage: primary
+      width: 1
+      low_bit: 9
+      high_bit: 9
+      range: '[9]'
+    primary_payloads:
+    - '0x401'
+    - '0x441'
+    - '0x481'
+    - '0x4c1'
+    - '0x501'
+    - '0x541'
+    - '0x581'
+    - '0x5c1'
+    - '0x601'
+    - '0x641'
+    - '0x681'
+    - '0x6c1'
+    - '0x701'
+    - '0x741'
+    - '0x781'
+    - '0x7c1'
   - id: CMP.D_TO_EA
     extension_root: EXT.integer_alu
     extension_root_payload: '0xf3c'
@@ -213,6 +255,12 @@ forms:
     - name: dst
       type: DREG
     size: LQ
+  - operands:
+    - name: imm
+      type: imm
+    - name: rhs
+      type: DREG
+    size: WL
   extended_forms:
   - operands:
     - name: lhs

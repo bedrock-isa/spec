@@ -27,6 +27,8 @@ behavior:
   interval: (lo, hi)
   signedness: unsigned
   bounds_mode: XX
+attributes:
+  privilege: unprivileged
 allocation:
   catalog_section: integer
   layout_group: BOUNDS_UNSIGNED

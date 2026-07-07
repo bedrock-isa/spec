@@ -16,6 +16,7 @@ behavior:
     negative subnormal, negative zero, positive zero, positive subnormal, positive normal, positive infinity, signaling NaN,
     and quiet NaN.
 attributes:
+  privilege: unprivileged
   fp_flags: unchanged
 allocation:
   catalog_section: fpu

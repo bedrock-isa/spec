@@ -21,6 +21,8 @@ behavior:
   - result_v = result_v - 1;
   - goto <revbit_loop>;
   - <revbit_done>
+attributes:
+  privilege: unprivileged
 allocation:
   catalog_section: integer
   layout_group: REV

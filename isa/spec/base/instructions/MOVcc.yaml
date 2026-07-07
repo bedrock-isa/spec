@@ -14,6 +14,8 @@ behavior:
   - if (cc_v == 0) goto <movcc_done>;
   - dst_v = src_v;
   - <movcc_done>
+attributes:
+  privilege: unprivileged
 allocation:
   catalog_section: compact_primary
   encoding:

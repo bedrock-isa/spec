@@ -5,10 +5,10 @@ foo:
     ADD.L D1, D2
     ABS.L D2
     ADD.Q D0, SP
-    ADD.Q 16.W, SP
+    ADD.Q 16, SP
     SUB.Q D0, SP
-    SUB.Q 8.W, SP
-    AND.L 1.W, [A1]
+    SUB.Q 8, SP
+    AND.L 1, [A1]
     CMP.L 9.W, SP
     MOV.Q D0, SP
     MOV.Q SP, D0
@@ -23,23 +23,20 @@ foo:
     REPGT D2, CMP.L [A0++], D1
     DJLT.L D1, done@WORD_PCREL16
     SETGE.L D3
-    REPG D0, {
-        ADD.L D1, D2
-        SUB.L D3, D4
-        INC.L D5
-        DEC.L D6
-    }
-    REPG D4, {
-        CLR D5
-        MADD.L [A1++], D1, D5
-        MADD.L [A1], D2, D5
-        MADD.L [A1 + 4], D3, D5
-        MOV.L D5, [A0++]
-    }
-    REPGF D0, {
-        ADD.L [A0 + D0.L * 4 - 4], D1
-        MOV.L D1, [A1 + D0.L * 4 - 4]
-    }
+    REPG D0, 8
+    ADD.L D1, D2
+    SUB.L D3, D4
+    INC.L D5
+    DEC.L D6
+    REPG D4, 10
+    CLR D5
+    ADD.L D1, D5
+    SUB.L D2, D5
+    INC.L D5
+    DEC.L D5
+    REPG D0, 4
+    ADD.L D2, D1
+    SUB.L D3, D1
     MOV.L [A1++], D2
     MOV.L D2, [A0++]
     MOVSETAD 0x0003
@@ -61,11 +58,10 @@ foo:
     LEA [A2 + D2.L * 4 + 1], A3
     .balign 64
 repg_mem:
-    REPG D0, {
-        MOV.L [A1++], D2
-        LEA [A2 + D2.L * 4 + 1], A3
-        MOV.L A3, [A0++]
-    }
+    REPG D0, 6
+    ADD.L D1, D2
+    SUB.L D3, D4
+    INC.L D5
     FADD.S [A0], F1
     FMADD.S [A0], F15, F2
     FPUSHM {F8-F15}

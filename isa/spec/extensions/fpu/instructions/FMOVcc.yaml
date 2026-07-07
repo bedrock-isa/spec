@@ -15,6 +15,7 @@ behavior:
   - dst_v = src_v;
   - <fmovcc_done>
 attributes:
+  privilege: unprivileged
   fp_flags: unchanged
   flags: unchanged
 allocation:

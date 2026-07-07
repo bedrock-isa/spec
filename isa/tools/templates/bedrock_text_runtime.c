@@ -1292,6 +1292,24 @@ static int bedrock_apply_prefix_word(uint16_t prefix_word, uint16_t *out_words, 
     return BEDROCK_OK;
 }
 
+static int bedrock_validate_form_operands(const bedrock_form_desc *form, const bedrock_text_operand *operands)
+{
+    if (form == 0 || operands == 0) {
+        return 0;
+    }
+    if (bedrock_streq_ci(form->mnemonic, "REPG")) {
+        uint64_t body_bytes;
+        if (form->operand_count != 2u) {
+            return 0;
+        }
+        body_bytes = operands[1].value;
+        if (body_bytes == 0u || (body_bytes & 1u) != 0u) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
 int bedrock_assemble_line(const char *line, uint16_t *out_words, size_t out_word_count, size_t *written_words, const bedrock_form_desc **matched_form)
 {
     bedrock_text_line parsed;
@@ -1404,6 +1422,9 @@ int bedrock_assemble_line(const char *line, uint16_t *out_words, size_t out_word
         }
     }
     if (best_form == 0) {
+        return BEDROCK_ERR_NO_MATCH;
+    }
+    if (!bedrock_validate_form_operands(best_form, best_operands)) {
         return BEDROCK_ERR_NO_MATCH;
     }
     {

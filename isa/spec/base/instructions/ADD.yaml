@@ -17,6 +17,7 @@ behavior:
   - CF = carry(dst_old_v, src_v);
   - VF = scarry(dst_old_v, src_v);
 attributes:
+  privilege: unprivileged
   streaming_candidate: true
   prefix_availability:
   - SATURATE
@@ -61,6 +62,47 @@ allocation:
       low_bit: 6
       high_bit: 6
       range: '[6]'
+  - id: ADD.IMM_TO_D
+    kind: compact
+    start_payload: '0x400'
+    end_payload: '0x7c0'
+    slots: 16
+    primary_bits: 10
+    field_layout: op[5:0] d[8:6] z[9] op[11:10] ; exact_payloads spare=945
+    fields:
+    - name: d
+      kind: DREG
+      source: dst
+      storage: primary
+      width: 3
+      low_bit: 6
+      high_bit: 8
+      range: '[8:6]'
+    - name: z
+      kind: WL
+      source: size
+      storage: primary
+      width: 1
+      low_bit: 9
+      high_bit: 9
+      range: '[9]'
+    primary_payloads:
+    - '0x400'
+    - '0x440'
+    - '0x480'
+    - '0x4c0'
+    - '0x500'
+    - '0x540'
+    - '0x580'
+    - '0x5c0'
+    - '0x600'
+    - '0x640'
+    - '0x680'
+    - '0x6c0'
+    - '0x700'
+    - '0x740'
+    - '0x780'
+    - '0x7c0'
   - id: ADD.D_TO_EA
     extension_root: EXT.integer_alu_reg_ea_wide
     extension_root_payload: '0xf3d'
@@ -185,6 +227,12 @@ forms:
     - name: dst
       type: DREG
     size: LQ
+  - operands:
+    - name: imm
+      type: imm
+    - name: dst
+      type: DREG
+    size: WL
   extended_forms:
   - operands:
     - name: src

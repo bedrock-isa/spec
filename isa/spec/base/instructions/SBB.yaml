@@ -19,6 +19,7 @@ behavior:
   - CF = (dst_old_v < src_v) || (tmp_v < borrow_v);
   - VF = sborrow(dst_old_v, src_v) || sborrow(tmp_v, borrow_v);
 attributes:
+  privilege: unprivileged
   prefix_availability:
   - SATURATE
   flags:

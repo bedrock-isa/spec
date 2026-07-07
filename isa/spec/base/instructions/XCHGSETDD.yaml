@@ -18,6 +18,8 @@ behavior:
   operation_text: >
     XCHGSETDD swaps each selected D register between the two explicitly named data-register banks. Bits 0 through 7
     select D0 through D7 respectively. The current DBANK selector is not changed.
+attributes:
+  privilege: unprivileged
 allocation:
   catalog_section: integer
   layout_group: DATA_BANK_SET_EXCHANGE

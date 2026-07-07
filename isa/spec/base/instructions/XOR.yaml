@@ -17,6 +17,7 @@ behavior:
   - CF = 0;
   - VF = 0;
 attributes:
+  privilege: unprivileged
   streaming_candidate: true
   flags:
     Z: result == 0

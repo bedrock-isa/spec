@@ -17,6 +17,7 @@ behavior:
   - CF = 0;
   - VF = 0;
 attributes:
+  privilege: unprivileged
   flags:
     Z: old_bit == 0
     N: unchanged

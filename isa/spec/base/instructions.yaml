@@ -106,6 +106,7 @@ include:
 - instructions/RDPTC.yaml
 - instructions/RDSEG.yaml
 - instructions/RDSTATUS.yaml
+- instructions/REPG.yaml
 - instructions/RESET.yaml
 - instructions/RESTORE.yaml
 - instructions/RET.yaml

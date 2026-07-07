@@ -17,6 +17,7 @@ behavior:
   - VF = nan(dst_v) || nan(src_v);
   repflags: fpu_compare_flags
 attributes:
+  privilege: unprivileged
   streaming_candidate: true
   fp_flags:
     update_when_required:

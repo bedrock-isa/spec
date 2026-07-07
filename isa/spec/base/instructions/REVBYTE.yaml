@@ -22,6 +22,8 @@ behavior:
   - result_v = result_v - 1;
   - goto <revbyte_loop>;
   - <revbyte_done>
+attributes:
+  privilege: unprivileged
 allocation:
   catalog_section: integer
   layout_group: REV

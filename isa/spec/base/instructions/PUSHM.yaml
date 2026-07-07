@@ -15,6 +15,8 @@ behavior:
     For each set bit in the bitmap, PUSHM pushes the corresponding 64-bit register value onto the stack. Registers are
     processed in increasing bitmap order, D0 through D7 followed by A0 through A7. Each selected register decrements SP by
     8 before storing the register value at the new SP.
+attributes:
+  privilege: unprivileged
 allocation:
   catalog_section: compact_primary
   layout_group: PUSHM_POPM

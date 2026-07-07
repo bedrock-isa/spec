@@ -10,6 +10,7 @@ behavior:
   operation:
   - dst_v = 0;
 attributes:
+  privilege: unprivileged
   fp_flags: unchanged
 allocation:
   catalog_section: fpu

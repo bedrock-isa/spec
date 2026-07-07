@@ -19,6 +19,7 @@ behavior:
     the accumulated sum to the destination register. All selected source register values are read before the destination is
     written, so selecting the destination includes its original value.
 attributes:
+  privilege: unprivileged
   flags: unchanged
 allocation:
   catalog_section: integer

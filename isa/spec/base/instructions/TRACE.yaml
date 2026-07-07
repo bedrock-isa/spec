@@ -11,6 +11,8 @@ behavior:
   output: none
   operation:
   - arch_trace_marker(marker_v & 0xffff);
+attributes:
+  privilege: unprivileged
 allocation:
   catalog_section: compact_primary
   encoding:

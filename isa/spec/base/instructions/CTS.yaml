@@ -14,6 +14,7 @@ behavior:
   operation:
   - dst_v = arch_count_trailing_ones(src_v, size_v);
 attributes:
+  privilege: unprivileged
   flags: unchanged
 allocation:
   catalog_section: integer

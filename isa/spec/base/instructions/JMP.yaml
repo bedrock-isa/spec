@@ -11,6 +11,8 @@ behavior:
   output: none
   operation:
   - goto [target_v];
+attributes:
+  privilege: unprivileged
 allocation:
   catalog_section: compact_primary
   encoding:

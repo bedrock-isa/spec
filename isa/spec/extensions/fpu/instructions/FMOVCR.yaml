@@ -10,6 +10,7 @@ behavior:
   operation:
   - dst_v = fp_const(constant_v & 0xffff);
 attributes:
+  privilege: unprivileged
   fp_flags: unchanged
   flags: unchanged
 allocation:

@@ -14,6 +14,7 @@ behavior:
   - tmp_v = (dst_v >> (bit_index_v & 63)) & 1;
   - ZF = tmp_v == 0;
 attributes:
+  privilege: unprivileged
   flags:
     Z: old_bit == 0
     N: unchanged

@@ -17,6 +17,7 @@ behavior:
   - CF = dst_old_v < src_v;
   - VF = sborrow(dst_old_v, src_v);
 attributes:
+  privilege: unprivileged
   streaming_candidate: true
   prefix_availability:
   - SATURATE
@@ -61,6 +62,47 @@ allocation:
       low_bit: 6
       high_bit: 6
       range: '[6]'
+  - id: SUB.IMM_TO_D
+    kind: compact
+    start_payload: '0x402'
+    end_payload: '0x7c2'
+    slots: 16
+    primary_bits: 10
+    field_layout: op[5:0] d[8:6] z[9] op[11:10] ; exact_payloads spare=945
+    fields:
+    - name: d
+      kind: DREG
+      source: dst
+      storage: primary
+      width: 3
+      low_bit: 6
+      high_bit: 8
+      range: '[8:6]'
+    - name: z
+      kind: WL
+      source: size
+      storage: primary
+      width: 1
+      low_bit: 9
+      high_bit: 9
+      range: '[9]'
+    primary_payloads:
+    - '0x402'
+    - '0x442'
+    - '0x482'
+    - '0x4c2'
+    - '0x502'
+    - '0x542'
+    - '0x582'
+    - '0x5c2'
+    - '0x602'
+    - '0x642'
+    - '0x682'
+    - '0x6c2'
+    - '0x702'
+    - '0x742'
+    - '0x782'
+    - '0x7c2'
   - id: SUB.D_TO_EA
     extension_root: EXT.integer_alu
     extension_root_payload: '0xf3c'
@@ -185,6 +227,12 @@ forms:
     - name: dst
       type: DREG
     size: LQ
+  - operands:
+    - name: imm
+      type: imm
+    - name: dst
+      type: DREG
+    size: WL
   extended_forms:
   - operands:
     - name: src

@@ -15,6 +15,7 @@ behavior:
   - CF = carry(dst_old_v, 1:8);
   - VF = scarry(dst_old_v, 1:8);
 attributes:
+  privilege: unprivileged
   prefix_availability:
   - SATURATE
   flags:

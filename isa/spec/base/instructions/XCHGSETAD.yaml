@@ -22,6 +22,8 @@ behavior:
     through 7 select register numbers 0 through 7.
   banked_forms: Current-bank forms and forms that name DBn explicitly are part of the base register-set transfer group. 
     Implementations report the number of available data-register banks through CPUID implementation properties.
+attributes:
+  privilege: unprivileged
 allocation:
   catalog_section: compact_primary
   encoding:

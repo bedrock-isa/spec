@@ -16,6 +16,8 @@ behavior:
     For each set bit in the bitmap, FPUSHM pushes the corresponding 64-bit F register value onto the stack. F registers
     are processed in increasing order from F0 through F15. Each selected register decrements SP by 8 before storing the
     register value at the new SP.
+attributes:
+  privilege: unprivileged
 allocation:
   catalog_section: fpu
   layout_group: FPUSHM_FPOPM

@@ -13,6 +13,7 @@ behavior:
   operation:
   - dst_v = dst_v f- (lhs_v f* rhs_v);
 attributes:
+  privilege: unprivileged
   streaming_candidate: true
   fp_flags:
     update:

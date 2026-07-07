@@ -10,6 +10,8 @@ behavior:
   operation:
   - reg_v = *:8 SP;
   - SP = SP + 8;
+attributes:
+  privilege: unprivileged
 allocation:
   catalog_section: compact_primary
   layout_group: PUSH_POP

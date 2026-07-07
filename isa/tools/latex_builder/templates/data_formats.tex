@@ -95,6 +95,13 @@ Multiword immediates and displacements are stored least significant word first. 
 payloads use two's-complement representation at their declared width before any sign extension
 performed by the consuming instruction or effective-address form.
 
+When an instruction operand has an explicit operation size and encodes an immediate operand narrower
+than that operation size, the operand kind defines how the encoded value is extended before use.
+Immediate operands on forms without an operation size are interpreted by that instruction form rather
+than by this operation-size rule.
+
+@IMMEDIATE_OPERAND_TABLE@
+
 \subsection{Floating-Point Data Formats}
 Floating-point scalar formats are little-endian in memory as well. The S format is 32 bits and the
 D format is 64 bits. The bit-level floating-point encoding, NaN policy, exception flags, and

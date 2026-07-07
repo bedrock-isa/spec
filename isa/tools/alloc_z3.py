@@ -543,6 +543,7 @@ def solve_allocation(
 ) -> dict[str, Any]:
     model = policy_model(compact_policy)
     selected_compact = select_compact_profiles(candidates, compact_policy)
+    selected_compact |= locked_compact_candidate_ids(candidates, compact_policy)
     selected_compact, extended_candidates, extension_roots = enforce_symmetry_and_capacity(
         candidates, selected_compact, compact_policy
     )
@@ -655,6 +656,7 @@ def select_compact_profiles(candidates: list[Candidate], compact_policy: dict[st
         candidate
         for candidate in sorted(candidates, key=lambda candidate: candidate_sort_key(candidate, compact_policy))
         if candidate.id not in selected
+        and candidate.id not in extended_encoding_locks(compact_policy)
         and candidate.compact_slots is not None
         and compact_allowed(candidate, compact_policy)
     ]
@@ -682,21 +684,57 @@ def select_compact_profiles(candidates: list[Candidate], compact_policy: dict[st
     return selected | set(best_items)
 
 
+def encoding_locks(compact_policy: dict[str, Any]) -> list[dict[str, Any]]:
+    rows = compact_policy.get("encoding_locks", [])
+    return [row for row in rows if isinstance(row, dict)] if isinstance(rows, list) else []
+
+
+def compact_encoding_locks(compact_policy: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    out: dict[str, dict[str, Any]] = {}
+    for row in encoding_locks(compact_policy):
+        if row.get("kind") != "compact":
+            continue
+        ident = str(row.get("id", ""))
+        if ident:
+            out[ident] = row
+    return out
+
+
+def extended_encoding_locks(compact_policy: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    out: dict[str, dict[str, Any]] = {}
+    for row in encoding_locks(compact_policy):
+        if row.get("kind") != "extended":
+            continue
+        ident = str(row.get("id", ""))
+        if ident:
+            out[ident] = row
+    return out
+
+
+def locked_compact_candidate_ids(candidates: list[Candidate], compact_policy: dict[str, Any]) -> set[str]:
+    candidate_ids = {candidate.id for candidate in candidates if candidate.compact_slots is not None}
+    return set(compact_encoding_locks(compact_policy)) & candidate_ids
+
+
 def choose_primary_packing_eviction(
     failed: Candidate,
     selected_compact: set[str],
     by_id: dict[str, Candidate],
     compact_policy: dict[str, Any],
 ) -> Candidate | None:
-    if not compact_preference_reasons(failed, compact_policy):
+    failed_locked = failed.id in compact_encoding_locks(compact_policy)
+    if not failed_locked and not compact_preference_reasons(failed, compact_policy):
         return failed
     alternatives = [
         by_id[ident]
         for ident in selected_compact
-        if ident != failed.id and not by_id[ident].must_compact and by_id[ident].compact_slots is not None
+        if ident != failed.id
+        and ident not in compact_encoding_locks(compact_policy)
+        and not by_id[ident].must_compact
+        and by_id[ident].compact_slots is not None
     ]
     if not alternatives:
-        return failed
+        return None if failed_locked else failed
     return min(
         alternatives,
         key=lambda candidate: (
@@ -759,7 +797,9 @@ def choose_capacity_eviction(
     optional = [
         by_id[ident]
         for ident in selected_compact
-        if not by_id[ident].must_compact and by_id[ident].compact_slots is not None
+        if ident not in compact_encoding_locks(compact_policy)
+        and not by_id[ident].must_compact
+        and by_id[ident].compact_slots is not None
     ]
     if not optional:
         return None
@@ -884,29 +924,60 @@ def pack_primary_allocations(
     used: set[int] = set()
     allocations: list[dict[str, Any]] = []
     by_id = {candidate.id: candidate for candidate in candidates}
+    locks = compact_encoding_locks(compact_policy)
+
+    locked = sorted(
+        [
+            by_id[ident]
+            for ident in selected_compact
+            if ident in by_id and ident in locks
+        ],
+        key=lambda candidate: int(str(locks[candidate.id].get("start_payload", "0")), 16),
+    )
+    for candidate in locked:
+        allocation = locked_primary_allocation_dict(
+            candidate,
+            locks[candidate.id],
+            compact_policy,
+            field_layout_model,
+        )
+        mark_primary_allocation_used(allocation, used)
+        allocations.append(allocation)
 
     fixed = sorted(
-        [candidate for candidate in candidates if candidate.id in selected_compact and candidate.fixed_payload is not None],
+        [
+            candidate
+            for candidate in candidates
+            if candidate.id in selected_compact
+            and candidate.id not in locks
+            and candidate.fixed_payload is not None
+        ],
         key=lambda candidate: int(candidate.fixed_payload or 0),
     )
     for candidate in fixed:
         payload = int(candidate.fixed_payload or 0)
-        if payload in used:
-            raise RuntimeError(f"fixed payload collision at 0x{payload:03x}")
-        used.add(payload)
-        allocations.append(primary_allocation_dict(candidate, payload, payload, "compact", compact_policy, field_layout_model))
+        allocation = primary_allocation_dict(candidate, payload, payload, "compact", compact_policy, field_layout_model)
+        mark_primary_allocation_used(allocation, used)
+        allocations.append(allocation)
 
     variable = ordered_primary_variables(
         [
             by_id[ident]
             for ident in selected_compact
             if by_id[ident].fixed_payload is None
+            and ident not in locks
         ],
         compact_policy,
         field_layout_model,
     )
     for candidate in variable:
-        fields = assign_field_positions(candidate.compact_fields, policy_model(compact_policy).primary.bits, "primary", field_layout_model)
+        fields = assign_field_positions(
+            candidate.compact_fields,
+            policy_model(compact_policy).primary.bits,
+            "primary",
+            field_layout_model,
+            candidate=candidate,
+        )
         span_slots = primary_span_slots(candidate, field_layout_model)
         start, end, exact_payloads = find_free_primary_window(
             used,
@@ -915,7 +986,7 @@ def pack_primary_allocations(
             span_slots,
             compact_policy,
         )
-        allocation = primary_allocation_dict(candidate, start, end, "compact", compact_policy, field_layout_model)
+        allocation = primary_allocation_dict(candidate, start, end, "compact", compact_policy, field_layout_model, fields=fields)
         if exact_payloads:
             reclaimed = sorted(set(range(start, end + 1)) - set(exact_payloads))
             allocation["primary_payloads"] = [f"0x{payload:03x}" for payload in exact_payloads]
@@ -971,8 +1042,16 @@ def primary_allocation_dict(
     kind: str,
     compact_policy: dict[str, Any],
     field_layout_model: dict[str, Any],
+    fields: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
-    fields = assign_field_positions(candidate.compact_fields, policy_model(compact_policy).primary.bits, "primary", field_layout_model)
+    if fields is None:
+        fields = assign_field_positions(
+            candidate.compact_fields,
+            policy_model(compact_policy).primary.bits,
+            "primary",
+            field_layout_model,
+            candidate=candidate,
+        )
     span_bits = field_layout_span_bits(fields)
     return {
         "id": profile_candidate_id(candidate, candidate.compact_fields),
@@ -996,6 +1075,76 @@ def primary_allocation_dict(
         "privilege": candidate.privilege,
         **({"fixed_size_suffix": candidate.fixed_size_suffix} if candidate.fixed_size_suffix else {}),
     }
+
+
+def locked_primary_allocation_dict(
+    candidate: Candidate,
+    lock: dict[str, Any],
+    compact_policy: dict[str, Any],
+    field_layout_model: dict[str, Any],
+) -> dict[str, Any]:
+    start = int(str(lock["start_payload"]), 16)
+    end = int(str(lock["end_payload"]), 16)
+    fields = [dict(field) for field in lock.get("fields", []) or [] if isinstance(field, dict)]
+    if not fields:
+        fields = assign_field_positions(
+            candidate.compact_fields,
+            policy_model(compact_policy).primary.bits,
+            "primary",
+            field_layout_model,
+            candidate=candidate,
+        )
+    allocation = primary_allocation_dict(
+        candidate,
+        start,
+        end,
+        "compact",
+        compact_policy,
+        field_layout_model,
+        fields=fields,
+    )
+    exact_payloads = compact_exact_primary_payloads_for_window(
+        candidate,
+        fields,
+        start,
+        end,
+        compact_policy,
+    )
+    if exact_payloads:
+        apply_exact_primary_payloads(allocation, start, end, exact_payloads)
+    elif lock.get("primary_payloads"):
+        exact_payloads = [int(str(payload), 16) for payload in lock.get("primary_payloads", []) or []]
+        apply_exact_primary_payloads(allocation, start, end, exact_payloads)
+    return allocation
+
+
+def apply_exact_primary_payloads(
+    allocation: dict[str, Any],
+    start: int,
+    end: int,
+    exact_payloads: list[int],
+) -> None:
+    exact = sorted(set(exact_payloads))
+    reclaimed = sorted(set(range(start, end + 1)) - set(exact))
+    allocation["primary_payloads"] = [f"0x{payload:03x}" for payload in exact]
+    allocation["reclaimed_payloads"] = [f"0x{payload:03x}" for payload in reclaimed]
+    allocation["slots"] = len(exact)
+    if reclaimed and "exact_payloads spare=" not in str(allocation.get("field_layout", "")):
+        allocation["field_layout"] = f"{allocation['field_layout']} ; exact_payloads spare={len(reclaimed)}"
+
+
+def mark_primary_allocation_used(allocation: dict[str, Any], used: set[int]) -> None:
+    payloads = allocation.get("primary_payloads")
+    if payloads:
+        values = [int(str(payload), 16) for payload in payloads]
+    else:
+        start = int(str(allocation["start_payload"]), 16)
+        end = int(str(allocation["end_payload"]), 16)
+        values = list(range(start, end + 1))
+    collision = next((payload for payload in values if payload in used), None)
+    if collision is not None:
+        raise RuntimeError(f"primary payload collision at 0x{collision:03x}")
+    used.update(values)
 
 
 def find_free_primary_window(
@@ -2353,11 +2502,12 @@ def main(argv: list[str] | None = None) -> int:
         }
     alias_rules = canonical_alias_rules(spec)
     compact_policy["alias_form_mnemonics"] = canonical_alias_family_mnemonics(spec)
+    lock = spec_encoding_rows(spec)
+    compact_policy["encoding_locks"] = lock
     solver_result = solve_allocation(candidates, z3, compact_policy, alias_rules)
     if solver_result["status"] != "sat":
         print(f"Z3 allocation failed: {solver_result.get('reason', solver_result['status'])}", file=sys.stderr)
         return 1
-    lock = spec_encoding_rows(spec)
     lock_errors = allocation_lock_errors(lock, solver_result)
     if lock_errors and not args.skip_instruction_encoding_audit:
         print("Encoding lock mismatch; allocation output no longer matches per-instruction encoding entries.", file=sys.stderr)

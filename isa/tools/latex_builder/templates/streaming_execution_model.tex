@@ -6,9 +6,9 @@ internal width is not architectural state.
 
 \subsection{Architectural Scalar Semantics}
 REP, REPcc, and REPG are architecturally scalar. Their visible behavior is the
-same as executing the repeated instruction or instruction group in program order
-under the counter and termination rules of the selected repeat prefix. For REPcc,
-the instruction body of the terminating condition-false iteration commits, while
+same as executing the repeated instruction or byte-counted instruction group in
+program order under the selected counter and termination rules. For REPcc, the
+instruction body of the terminating condition-false iteration commits, while
 the repeat counter is left unchanged. These operations have no
 architected vector register file, and software must not
 depend on any implementation's internal vector width.
@@ -22,7 +22,7 @@ executed the scalar instruction;
 \item faults and exceptions are precise at the repeated-operation boundary
 defined by the REP or REPG rules;
 \item FLAGS and FFLAGS are updated according to the repeated instruction's
-metadata and repeat-prefix accumulation rules.
+metadata and repeated-execution accumulation rules.
 \end{itemize}
 
 \subsection{Implementation Freedom}
@@ -53,9 +53,7 @@ PC-relative addressing is not part of the fast-contract source form, because it
 ties a memory reference to the location of a grouped instruction rather than to
 the repeated data stream.
 An implementation may recognize this form as a candidate for internal SIMD or
-streaming execution. Source may spell the group as \texttt{REPGF} when the
-programmer wants the assembler to enforce these static fast-contract rules;
-\texttt{REPGF} emits the same instruction encoding as \texttt{REPG}.
+streaming execution.
 \item[REPG-general]
 The selected counter register may be read or written inside the group body, and
 effective-address or data dependencies may be less regular than the fast class.
@@ -66,19 +64,18 @@ preserve exact scalar REPG semantics, but no fast streaming execution is
 guaranteed.
 \end{description}
 
-The REPG prefix is encoded on the first instruction in the group, and the ENDG
-prefix is encoded on the final instruction. Instructions between those endpoints
-keep their own word 0 length fields and are decoded as ordinary instruction
-records under the active REPG group. The group may start at any address, but the
-complete grouped instruction sequence must fit within one naturally aligned
-64-byte grouping window.
+\texttt{REPG Dn, imm16} is a compact instruction immediately followed by the
+grouped instruction body. The immediate is an unsigned byte count, not a word
+count. It must be nonzero and even, and the byte-counted body end must land on
+an instruction boundary. Instructions inside the body keep their own word 0
+length fields and are decoded as ordinary instruction records under the active
+REPG group.
 
-REPG group discovery is deliberately bounded by an architectural grouping
-window. Because every instruction record carries an explicit length,
-instruction interpretation can walk from the REPG-marked instruction to the
-ENDG-marked instruction without interpreting the full semantics of each grouped
-instruction. A well-formed REPG group contains one REPG start marker and one ENDG
-boundary marker inside the grouping window.
+REPG group discovery is bounded by the explicit byte count rather than by an
+instruction-cache-line window. Because every instruction record carries an
+explicit length, instruction interpretation can walk from the first body
+instruction through exactly \texttt{imm16} body bytes without interpreting the
+full semantics of each grouped instruction.
 
 The repeat counter is ordinary architectural D-register state. A zero counter
 executes no group iterations. A positive counter moves toward zero by
@@ -98,10 +95,9 @@ under the same architectural retirement rules.
 \footnotesize\ttfamily
 \begin{tabular}{@{}l@{}}
 REP D0, ADD.L [A0++], D1\\[3pt]
-REPGF D0, \{\\
-\quad FMOV.S  [A0++], F0\\
-\quad FMADD.S [A1++], F0, F1\\
-\}\\
+REPG D0, 4\\
+\quad ADD.L D1, D2\\
+\quad SUB.L D3, D4\\
 \end{tabular}
 \end{quote}
 
@@ -118,11 +114,11 @@ ordinary scalar semantics, and the fault is reported at the faulting grouped
 instruction. The architectural counter update for the current iteration has not
 completed unless the whole group iteration completed. For REPG, the saved PC is
 the faulting grouped instruction. The repeat-fault auxiliary state records the
-selected counter register and a five-bit unsigned negative displacement from the
-saved PC back to the first grouped instruction:
+selected counter register, the REPG body length in bytes, and a byte
+displacement from the saved PC back to the first grouped instruction:
 \[
 \mathit{group\_start\_pc} =
-\mathit{fault\_pc} - 2 \times \mathit{group\_start\_delta\_words}.
+\mathit{fault\_pc} - \mathit{body\_start\_delta\_bytes}.
 \]
 The group index is not saved. Returning with the frame unchanged resumes at the
 saved PC under the active REPG continuation; software may instead edit the frame
@@ -138,13 +134,12 @@ is profitable to execute with internal SIMD resources.
 The preferred lowering order is:
 \begin{itemize}
 \item use REP for a single counted operation;
-\item use REPG for a short, bounded group of counted operations;
+\item use REPG for a byte-counted group of counted operations;
 \item prefer REPG-fast when the counter register can stay outside the group
 dataflow;
 \item use REPG-general when correctness needs counter-register dependencies or
 less regular scalar dataflow;
 \item prefer update-eligible effective-address forms for linear streams;
-\item keep the whole group inside one naturally aligned 64-byte grouping window;
 \item keep the group small and regular enough for implementation recognition;
 \item fall back to an ordinary scalar loop when ordering, aliasing, or exception
 semantics cannot be preserved.

@@ -15,6 +15,8 @@ behavior:
     For each set bit in the bitmap, POPM pops one 64-bit stack slot into the corresponding register. Registers are processed
     in inverse bitmap order, A7 through A0 followed by D7 through D0. Each selected register is loaded from SP before SP is
     incremented by 8.
+attributes:
+  privilege: unprivileged
 allocation:
   catalog_section: compact_primary
   layout_group: PUSHM_POPM

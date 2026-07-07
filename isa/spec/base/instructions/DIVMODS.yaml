@@ -16,6 +16,8 @@ behavior:
   - tmp_v = arch_signed_modulo(quotient_v, src_v, size_v);
   - quotient_v = arch_signed_divide(quotient_v, src_v, size_v);
   - remainder_v = tmp_v;
+attributes:
+  privilege: unprivileged
 allocation:
   catalog_section: integer
   layout_group: DIVMOD

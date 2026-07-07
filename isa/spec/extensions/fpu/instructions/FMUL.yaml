@@ -12,6 +12,7 @@ behavior:
   operation:
   - dst_v = dst_v f* src_v;
 attributes:
+  privilege: unprivileged
   streaming_candidate: true
   fp_flags:
     update:

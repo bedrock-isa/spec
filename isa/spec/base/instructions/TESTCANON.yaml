@@ -14,6 +14,7 @@ behavior:
   - CF = 0;
   - VF = 0;
 attributes:
+  privilege: unprivileged
   flags:
     V: set when the address is noncanonical
     ZNC: unchanged

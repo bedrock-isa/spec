@@ -11,6 +11,7 @@ behavior:
   operation:
   - dst_v = abs(src_v);
 attributes:
+  privilege: unprivileged
   fp_flags: unchanged
 allocation:
   catalog_section: fpu

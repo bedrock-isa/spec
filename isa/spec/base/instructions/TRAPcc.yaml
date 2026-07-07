@@ -13,6 +13,8 @@ behavior:
   - if (cc_v == 0) goto <trapcc_done>;
   - arch_raise_trap(5:8);
   - <trapcc_done>
+attributes:
+  privilege: unprivileged
 allocation:
   catalog_section: compact_primary
   encoding:
