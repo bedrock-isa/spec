@@ -1,0 +1,61 @@
+mnemonic: SHR
+doc:
+  title: Shift Right
+  summary: Performs the shift right operation.
+  instruction_family: integer_bitfield
+  instruction_class: integer
+behavior:
+  group: shifts_rotates
+  inputs:
+  - count
+  input_output: dst
+  operation:
+  - dst_v = dst_v >> count_v;
+  - ZF = dst_v == 0;
+  - NF = dst_v s< 0;
+  - CF = 0;
+  - VF = 0;
+  count_rules:
+    shifts:
+      zero_count: count=0 leaves the destination and FLAGS unchanged
+      over_width: result is zero; C is zero when count is greater than operand width
+    rotates:
+      effective_count: count modulo operand width
+      zero_effective_count: destination and FLAGS unchanged
+    carry_rotates:
+      effective_count: count modulo operand width plus carry slot
+      zero_effective_count: destination and FLAGS unchanged
+  flag_rules:
+    Z: result == 0
+    N: most significant result bit
+    C: last bit shifted out, or zero for count greater than operand width
+    V: 0
+attributes:
+  privilege: unprivileged
+forms:
+  operands:
+  - - name: count
+      type: selector
+    - name: dst
+      type: Rn
+  - - name: count
+      type: selector
+    - name: dst
+      type: EA
+  size: BWLQ
+  compact: false
+  encoding_fields:
+  - field: o
+    kind: shift_group
+    width: 2
+    placement: high
+    values:
+    - SHL
+    - SHR
+    - SAR
+    - DYN
+    derive: mnemonic
+    match:
+      profile: I6_TO_EA
+definition_status:
+  allocation: 'external: isa/alloc'

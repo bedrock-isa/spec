@@ -1,0 +1,35 @@
+mnemonic: FMIN
+doc:
+  title: Floating-Point Minimum
+  summary: Performs the floating-point minimum operation.
+  instruction_family: fpu
+  instruction_class: fpu
+behavior:
+  group: fpu_arithmetic
+  inputs:
+  - src
+  input_output: dst
+  operation:
+  - if (dst_v f< src_v) goto <fmin_done>;
+  - dst_v = src_v;
+  - <fmin_done>
+attributes:
+  privilege: unprivileged
+  streaming_candidate: true
+  fp_flags:
+    update_when_required:
+    - NV
+forms:
+  operands:
+  - - name: src
+      type: FREG
+    - name: dst
+      type: FREG
+  - - name: src
+      type: EA
+    - name: dst
+      type: FREG
+  size: S_D
+  nan_policy: defined by the floating-point model
+definition_status:
+  allocation: 'external: isa/alloc'

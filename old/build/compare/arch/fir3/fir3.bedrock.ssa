@@ -1,0 +1,81 @@
+export function w $fir_three(p %t0, p %t1, w %t2, w %t3, w %t4, w %t5) {
+@l0
+	%dst =p alloc8 8
+	storel %t0, %dst
+	%src =p alloc8 8
+	storel %t1, %src
+	%n =p alloc4 4
+	storew %t2, %n
+	%ca =p alloc4 4
+	storew %t3, %ca
+	%cb =p alloc4 4
+	storew %t4, %cb
+	%cc =p alloc4 4
+	storew %t5, %cc
+	%i =p alloc4 4
+	%va =p alloc4 4
+	%vb =p alloc4 4
+	%vc =p alloc4 4
+	%out =p alloc4 4
+	storew 0, %i
+@l1
+	%t9 =w loadw %i
+	%t10 =w loadw %n
+	%t8 =w csltw %t9, %t10
+	jnz %t8, @l2, @l3
+@l2
+	%t14 =p loadl %src
+	%t15 =w loadw %i
+	%t16 =l extsw %t15
+	%t17 =l mul 4, %t16
+	%t13 =p add %t14, %t17
+	%t12 =w loadw %t13
+	storew %t12, %va
+	%t21 =p loadl %src
+	%t23 =w loadw %i
+	%t22 =w add %t23, 1
+	%t25 =l extsw %t22
+	%t26 =l mul 4, %t25
+	%t20 =p add %t21, %t26
+	%t19 =w loadw %t20
+	storew %t19, %vb
+	%t30 =p loadl %src
+	%t32 =w loadw %i
+	%t31 =w add %t32, 2
+	%t34 =l extsw %t31
+	%t35 =l mul 4, %t34
+	%t29 =p add %t30, %t35
+	%t28 =w loadw %t29
+	storew %t28, %vc
+	%t38 =w loadw %va
+	%t39 =w loadw %ca
+	%t37 =w mul %t38, %t39
+	storew %t37, %out
+	%t42 =w loadw %out
+	%t44 =w loadw %vb
+	%t45 =w loadw %cb
+	%t43 =w mul %t44, %t45
+	%t41 =w add %t42, %t43
+	storew %t41, %out
+	%t48 =w loadw %out
+	%t50 =w loadw %vc
+	%t51 =w loadw %cc
+	%t49 =w mul %t50, %t51
+	%t47 =w add %t48, %t49
+	storew %t47, %out
+	%t53 =w loadw %out
+	%t55 =p loadl %dst
+	%t56 =w loadw %i
+	%t57 =l extsw %t56
+	%t58 =l mul 4, %t57
+	%t54 =p add %t55, %t58
+	storew %t53, %t54
+	%t61 =w loadw %i
+	%t60 =w add %t61, 1
+	storew %t60, %i
+	jmp @l1
+@l3
+	%t63 =w loadw %i
+	ret %t63
+}
+

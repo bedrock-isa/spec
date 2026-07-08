@@ -1,0 +1,23 @@
+mnemonic: FMOVCR
+doc:
+  title: Floating-Point Move Constant
+  summary: Performs the floating-point move constant operation.
+  instruction_family: fpu
+  instruction_class: fpu
+behavior:
+  group: fpu_move_compare
+  output: dst
+  operation:
+  - dst_v = fp_const(constant_v & 0xffff);
+attributes:
+  privilege: unprivileged
+  fp_flags: unchanged
+  flags: unchanged
+forms:
+  operands:
+  - name: constant_id
+    type: imm16
+  - name: dst
+    type: FREG
+definition_status:
+  allocation: 'external: isa/alloc'

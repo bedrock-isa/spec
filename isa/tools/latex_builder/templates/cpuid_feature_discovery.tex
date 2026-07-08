@@ -1,61 +1,48 @@
 \subsection{Overview}
-CPUID is the architectural discovery instruction. It exposes base-profile identity, optional
-architectural extensions, and program-visible tuning properties. It is not a dump of internal
-microarchitectural structures.
+CPUID is the architectural discovery interface for optional instruction groups, processor-state save areas,
+implementation limits, and feature-specific parameters.
 
-A leaf describes one meaningful information group. The result index selects one Q-sized result
-from that group.
+The CPUID instruction uses a selected Rn register as both query selector and result register. Software writes the
+selector before execution and reads the returned 64-bit value after execution.
+
+CPUID exposes program-visible architectural information. It is not a dump of internal microarchitectural queues,
+rename files, reorder buffers, or other implementation-private structures.
+
+@CPUID_INSTRUCTION_TABLE@
 
 \subsection{Query Model}
-The instruction form is @SYNTAX@. The selected D register contains a 64-bit query selector
-before execution and receives the selected 64-bit result after execution. The selector is divided into
-a 32-bit class, a 16-bit leaf within that class, and a 16-bit result index.
+A query selector identifies a discovery class, leaf, and optional result index. The selector is a Q-sized value held
+in the selected Rn register.
 
-@CALLING_CONVENTION_TABLE@
+CPUID is unprivileged and non-serializing in the current compatibility rules. CPUID results are stable after reset
+unless a future feature explicitly defines a mutable result.
 
 @SELECTOR_TABLE@
 
+@QUERY_DEFAULTS_TABLE@
+
 \subsection{Discovery Classes}
-\noindent\textbf{Base profile.} The base Bedrock ISA profile contains ordinary integer, data movement,
-control-flow, atomic, data-register banking, cache/TLB, segmentation, paging, control-register, and
-repeat-prefix instruction groups. Instruction groups with their own optional-extension leaves, such as
-virtualization acceleration, are not implied by the base profile.
+Discovery classes partition architectural information by compatibility purpose. Software first checks the class and
+leaf directory before consuming optional feature bits.
 
-\noindent\textbf{Floating-point.} Floating-point discovery is intentionally coarse. An implementation reports
-whether the base floating-point extension is available, and separately whether the transcendental
-floating-point group is available. Double precision, fused multiply-add/subtract, floating-point
-conditional move, conversion, classification, and ordinary floating-point memory/register forms are base
-features of the floating-point extension.
-
-\noindent\textbf{Data-register banking.} Data-register banking instructions are part of the base instruction set.
-DBANK implementation-property discovery reports the implemented bank count and selector width; object
-attributes record the minimum bank count required by a linked image. Source-language ABIs still normalize
-DBANK to zero at public boundaries.
-
-\noindent\textbf{Virtualization acceleration.} ENCINST availability is discovered through the optional-extension
-class. The instruction reference groups ENCINST under Virtualization Acceleration because it supports
-canonical binary emission for JITs, hypervisors, and binary translators rather than ordinary application
-execution.
-
-\noindent\textbf{Unavailable optional groups.} If an optional instruction group is not reported by CPUID,
-executing an instruction from that group raises \texttt{ILLEGAL\_INSTRUCTION}. Extension availability uses the
-ordinary instruction-encoding fault policy.
-
-\noindent\textbf{Implementation properties.} Implementation-property leaves expose only information a program can
-reasonably use to select code paths or tune algorithms. Structures such as register renaming, reorder buffers,
-issue queues, and physical register files are not architectural discovery bits. The initial execution-property
-leaf exposes only \texttt{OUT\_OF\_ORDER}. Processor-topology discovery reports the total exposed hardware-thread
-count and the current hardware-thread identity; it does not report the set of CPUs currently online under an
-operating system.
+The base class describes the unified Rn register model and mandatory scalar ISA. Optional groups are reported
+separately so that binaries can test for them without probing instruction faults.
 
 @POLICY_TABLE@
 
-@CLASS_TABLE@
-
 \subsection{Leaf Directory}
+Each discovery class may expose a leaf directory. A directory leaf reports which subordinate leaves are defined and
+how indexed leaves should be enumerated.
+
+Software must treat an absent leaf as zero and must ignore reserved bits in a present leaf.
+
 @LEAF_TABLE@
 
-@LEAF_DETAILS@
-
 \subsection{Bit Fields}
-@BIT_FIELD_BLOCKS@
+CPUID bit fields are feature predicates unless the leaf description says they encode a numeric value. Reserved
+result bits are ignored by software.
+
+A set feature bit only permits software to use the corresponding architectural behavior; the instruction's normal
+privilege, operand, and compatibility checks still apply.
+
+@BIT_FIELD_TABLE@

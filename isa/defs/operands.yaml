@@ -1,0 +1,189 @@
+version: rewrite-draft-v1
+source: old/isa/spec/instructions.yaml:operand_schema
+operand_schema:
+  role_name_pattern: ^[a-z][a-z0-9_]*$
+  types:
+  - Rn
+  - EA
+  - EA_or_range
+  - FREG
+  - fbitmap16
+  - CR
+  - SPREG
+  - SREG
+  - bitmap16
+  - condition
+  - imm
+  - imm6
+  - imm7
+  - imm16
+  - imm32
+  - imm64
+  - linear_or_EA
+  - memory_order
+  - outputs
+  - relative_imm
+  - selector
+  - selector_imm6
+  immediate_operands:
+    imm6:
+      width: 6
+      signed: false
+      range:
+      - 0
+      - 63
+      operation_size_extension: zero_extend
+      applies_when: integer forms with an explicit B/W/L/Q operation size
+      description: Inline 6-bit immediate literals are unsigned values. When the instruction operation
+        size is wider than 6 bits, the immediate value is zero-extended to the operation size before use.
+    imm7:
+      width: 7
+      signed: false
+      range:
+      - 0
+      - 127
+      operation_size_extension: zero_extend
+      applies_when: EXTRACT register-pair forms
+      description: Inline 7-bit immediate literals are unsigned values used as EXTRACT offsets.
+  condition_role: cc
+  selector_roles:
+  - count
+  - bit_index
+  - offset
+  - width
+  size_codes:
+    B:
+      suffix: .B
+      bytes: 1
+      label: Byte
+    W:
+      suffix: .W
+      bytes: 2
+      label: Word
+    L:
+      suffix: .L
+      bytes: 4
+      label: Long
+    Q:
+      suffix: .Q
+      bytes: 8
+      label: Quad
+    S:
+      suffix: .S
+      bytes: 4
+      label: Single
+    D:
+      suffix: .D
+      bytes: 8
+      label: Double
+  size_kinds:
+    BWLQ:
+      field: s
+      values:
+      - value: 0
+        code: B
+      - value: 1
+        code: W
+      - value: 2
+        code: L
+      - value: 3
+        code: Q
+    LQ:
+      field: z
+      values:
+      - value: 0
+        code: L
+      - value: 1
+        code: Q
+    WL:
+      field: z
+      values:
+      - value: 0
+        code: W
+      - value: 1
+        code: L
+    BW:
+      field: s
+      values:
+      - value: 0
+        code: B
+      - value: 1
+        code: W
+    BWL:
+      field: s
+      values:
+      - value: 0
+        code: B
+      - value: 1
+        code: W
+      - value: 2
+        code: L
+      reserved_values:
+      - value: 3
+        name: invalid
+    BWLX:
+      field: s
+      values:
+      - value: 0
+        code: B
+      - value: 1
+        code: W
+      - value: 2
+        code: L
+      reserved_values:
+      - value: 3
+        name: invalid
+    S_D:
+      field: z
+      values:
+      - value: 0
+        code: S
+      - value: 1
+        code: D
+  named_values:
+    memory_order:
+      width: 3
+      values:
+      - value: 0
+        name: RELAXED
+        description: Atomicity only. No ordering is imposed on unrelated memory operations.
+      - value: 1
+        name: ACQUIRE
+        description: Later memory operations by the same hardware thread are ordered after the atomic
+          operation.
+      - value: 2
+        name: RELEASE
+        description: Earlier memory operations by the same hardware thread are ordered before the atomic
+          operation.
+      - value: 3
+        name: ACQREL
+        description: Applies both acquire and release ordering.
+      - value: 4
+        name: SEQCST
+        description: Applies acquire-release ordering and participates in the global sequentially consistent
+          order for atomic operations.
+      reserved_values:
+      - value: 5
+        name: RESERVED5
+        description: Reserved selector encoding; using it is invalid for the atomic form.
+      - value: 6
+        name: RESERVED6
+        description: Reserved selector encoding; using it is invalid for the atomic form.
+      - value: 7
+        name: RESERVED7
+        description: Reserved selector encoding; using it is invalid for the atomic form.
+  bitmap_operands:
+    bitmap16:
+      width: 16
+      ranges:
+      - bits:
+        - 0
+        - 15
+        register_class: Rn
+    fbitmap16:
+      width: 16
+      ranges:
+      - bits:
+        - 0
+        - 15
+        register_class: F

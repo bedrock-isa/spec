@@ -11,20 +11,43 @@ import sys
 
 import yaml
 
-from isa_spec import load_yaml
-
 sys.dont_write_bytecode = True
 
 TEMPLATE_DIR = Path(__file__).parent / "latex_builder" / "templates"
 TABLE_INLINE_LIST_MAX_CHARS = 32
 TABLE_INLINE_ITEM_MAX_CHARS = 20
+REGISTER_LIST_RE = re.compile(r"(?:R|F)\d{1,2}|SP|PC|CS|DS|SS|GS\d")
 
 ABI_HIERARCHY_LABELS = {
     "standard_library_abi": ["Standard Library ABI"],
     "language_abi": ["Language ABI"],
     "os_abi": ["OS ABI"],
-    "language_neutral_object_format": ["Language-neutral", "Object Format ABI"],
+    "language_neutral_object_format": ["ELF ABI"],
 }
+
+ABI_LAYER_ALIASES = {
+    "elf abi": "language_neutral_object_format",
+    "elf": "language_neutral_object_format",
+    "object format abi": "language_neutral_object_format",
+    "language-neutral object format": "language_neutral_object_format",
+    "language_neutral_object_format": "language_neutral_object_format",
+    "language abi": "language_abi",
+    "language_abi": "language_abi",
+    "os abi": "os_abi",
+    "os_abi": "os_abi",
+    "standard library abi": "standard_library_abi",
+    "standard_library_abi": "standard_library_abi",
+}
+
+
+def load_yaml(path: Path) -> Any:
+    with path.open(encoding="utf-8") as f:
+        return yaml.safe_load(f)
+
+
+def abi_layer_id(value: Any) -> str:
+    key = str(value or "elf abi").strip().lower().replace("_", " ")
+    return ABI_LAYER_ALIASES.get(key, str(value or "language_neutral_object_format"))
 
 class AbiRootSchema:
     name = "ABI root"
@@ -47,7 +70,7 @@ class AbiRootSchema:
 
 
 class LanguageNeutralAbiSchema(AbiRootSchema):
-    name = "language-neutral ABI root"
+    name = "ELF ABI root"
     keys = AbiRootSchema.keys | {
         "object_format",
         "register_banking",
@@ -129,7 +152,14 @@ def tex_cell_lines(lines: list[str]) -> str:
     return r"\begin{tabular}[t]{@{}l@{}}" + body + r"\end{tabular}"
 
 
+def is_register_name_list(items: list[Any], text_fn: Any = str) -> bool:
+    texts = [" ".join(str(text_fn(item)).split()) for item in items]
+    return bool(texts) and all(REGISTER_LIST_RE.fullmatch(text) for text in texts)
+
+
 def table_list_should_stack(items: list[Any], text_fn: Any = str) -> bool:
+    if is_register_name_list(items, text_fn):
+        return False
     texts = [" ".join(str(text_fn(item)).split()) for item in items]
     joined = ", ".join(texts)
     return (
@@ -254,6 +284,7 @@ def abi_layer_style(current_layer: str, layer_id: str) -> str:
 
 
 def render_abi_hierarchy_diagram(current_layer: str) -> str:
+    current_layer = abi_layer_id(current_layer)
     style = {
         layer_id: abi_layer_style(current_layer, layer_id)
         for layer_id in ABI_HIERARCHY_LABELS
@@ -288,7 +319,7 @@ def render_abi_hierarchy(abi: dict[str, Any]) -> str:
     if not hierarchy:
         return ""
 
-    current_layer = str(hierarchy.get("current_layer", "language_neutral_object_format"))
+    current_layer = abi_layer_id(hierarchy.get("current_layer", "elf abi"))
     parts = [
         subsection("ABI Hierarchy"),
         tex_escape(readable(hierarchy.get("summary", ""))),
@@ -363,11 +394,12 @@ def render_data_model(abi: dict[str, Any]) -> str:
         ]
         for item in model.get("scalar_types", [])
     ]
+    header_size = model.get("instruction_header_bits", "")
     parts = [
         section("Data Model"),
         field("Model", model.get("name", "")),
         field("Byte Order", model.get("byte_order", "")),
-        field("Instruction Word", f"{model.get('instruction_word_bits', '')} bits"),
+        field("Instruction Header", f"{header_size} bits" if header_size != "" else ""),
         field("Stack Alignment", f"{model.get('stack_alignment_bytes', '')} bytes"),
         field("Aggregate Maximum Alignment", f"{model.get('aggregate_alignment_max_bytes', '')} bytes"),
         subsection("Scalar Types"),
@@ -503,7 +535,7 @@ def render_register_banking(abi: dict[str, Any]) -> str:
     arch = banking.get("architectural_model", {})
     attributes = banking.get("object_attribute_rules", {})
     parts = [
-        section("Data Register Banking"),
+        section(banking.get("title", "Register Banking")),
         tex_escape(readable(banking.get("summary", ""))),
     ]
     if arch:
@@ -514,14 +546,14 @@ def render_register_banking(abi: dict[str, Any]) -> str:
                     ["Item", "Rule"],
                     mapping_rows(arch, {"selector"}),
                     ["1.9in", "3.6in"],
-                    "Data Register Bank Model",
+                    banking.get("model_caption", "Register Banking Model"),
                 ),
             ]
         )
     if banking.get("boundary_rules"):
         parts.extend(
             [
-                subsection("DBANK-neutral Boundaries"),
+                subsection(banking.get("boundary_title", "ABI Boundaries")),
                 bullet_list(banking.get("boundary_rules", [])),
             ]
         )
@@ -533,7 +565,7 @@ def render_register_banking(abi: dict[str, Any]) -> str:
                     ["Rule", "Value"],
                     mapping_rows(attributes, {"required_attribute"}),
                     ["2.05in", "3.45in"],
-                    "DBANK Object Attribute Rules",
+                    banking.get("attribute_caption", "Register Banking Object Attribute Rules"),
                 ),
             ]
         )
@@ -621,13 +653,13 @@ def render_data_register_banking_convention(registers: dict[str, Any]) -> str:
         if key not in {"summary", "recommended_compiler_policy"}
     ]
     parts = [
-        subsection("Data Register Banking"),
+        subsection(banking.get("title", "Register Banking")),
         tex_escape(readable(banking.get("summary", ""))),
         table(
             ["Rule", "Value"],
             rows,
             ["2.0in", "3.5in"],
-            "C ABI Data Register Banking Rules",
+            banking.get("caption", "C ABI Register Banking Rules"),
         ),
     ]
     if banking.get("recommended_compiler_policy"):
@@ -668,12 +700,15 @@ def render_calling_convention_template(call: dict[str, Any]) -> str:
     returns = (call.get("return_values", {}) or {}).get("c_binding", {})
     aggregate_rules = (call.get("aggregate_passing", {}) or {}).get("rules", {})
     varargs_rules = (call.get("varargs", {}) or {}).get("rules", {})
+    frame_pointer = call.get("frame_pointer", {})
     i128_pair = arguments.get("scalar_128_bit_integer_register_pair", {})
     if not isinstance(i128_pair, dict):
-        i128_pair = {"registers": i128_pair, "low_register": "D0", "high_register": "D1"}
+        i128_pair = {"registers": i128_pair, "low_register": "", "high_register": ""}
     small_aggregate = aggregate_rules.get("small_aggregate_register_return", {})
     if not isinstance(small_aggregate, dict):
         small_aggregate = {"max_size_bytes": 16, "registers": small_aggregate}
+    general_argument_registers = rule_value(arguments, "general_registers", [])
+    general_return = rule_value(returns, "general_scalar")
 
     return template(
         "c_abi_calling_convention.tex",
@@ -682,8 +717,10 @@ def render_calling_convention_template(call: dict[str, Any]) -> str:
             "RETURN_ADDRESS_SIZE": bytes_value(rule_value(return_address, "size_bytes")),
             "RETURN_ADDRESS_LOCATION": tex_code(rule_value(return_address, "location_at_entry")),
             "STACK_ENTRY_ALIGNMENT": bytes_value(rule_value(stack, "entry_alignment")),
-            "INTEGER_ARGUMENT_REGISTERS": tex_code_value(rule_value(arguments, "integer_registers", [])),
-            "POINTER_ARGUMENT_REGISTERS": tex_code_value(rule_value(arguments, "pointer_registers", [])),
+            "FRAME_POINTER_DEFAULT": tex_escape(readable(rule_value(frame_pointer, "default"))),
+            "FRAME_POINTER_REGISTER": tex_code(rule_value(frame_pointer, "conventional_register")),
+            "FRAME_POINTER_NOTE": tex_escape(readable(rule_value(frame_pointer, "note"))),
+            "GENERAL_ARGUMENT_REGISTERS": tex_code_value(general_argument_registers),
             "FP_ARGUMENT_REGISTERS": tex_code_value(rule_value(arguments, "floating_point_registers", [])),
             "STACK_ARGUMENT_ORDER": tex_escape(readable(rule_value(arguments, "stack_arguments"))),
             "STACK_ARGUMENT_SLOT_SIZE": bytes_value(rule_value(arguments, "stack_argument_slot_size")),
@@ -693,8 +730,7 @@ def render_calling_convention_template(call: dict[str, Any]) -> str:
             "I128_HIGH_REGISTER": tex_code(rule_value(i128_pair, "high_register")),
             "I128_STACK_ALIGNMENT": bytes_value(rule_value(arguments, "scalar_128_bit_stack_slot_alignment")),
             "STACK_VALUE_PLACEMENT": tex_escape(readable(rule_value(arguments, "stack_argument_value_placement"))),
-            "INTEGER_RETURN": tex_code(rule_value(returns, "integer_scalar")),
-            "POINTER_RETURN": tex_code(rule_value(returns, "pointer_or_address_scalar")),
+            "GENERAL_RETURN": tex_code(general_return),
             "FP_RETURN": tex_code(rule_value(returns, "floating_point_scalar")),
             "LONG_DOUBLE_RETURN": tex_code(rule_value(returns, "long_double_scalar")),
             "I128_RETURN": tex_code(rule_value(returns, "scalar_128_bit")),
@@ -965,7 +1001,7 @@ def render_freestanding_c_template(freestanding: dict[str, Any]) -> str:
     return template(
         "c_abi_freestanding.tex",
         {
-            "I128_RETURN": tex_code(helpers.get("int128_return_rule", "D1:D0")),
+            "I128_RETURN": tex_code(helpers.get("int128_return_rule", "")),
             "I128_HELPER_MULTIPLY": tex_code(i128_helpers.get("multiply", "")),
             "I128_HELPER_SIGNED_DIVIDE": tex_code(i128_helpers.get("signed_divide", "")),
             "I128_HELPER_UNSIGNED_DIVIDE": tex_code(i128_helpers.get("unsigned_divide", "")),
@@ -1068,7 +1104,7 @@ def render(abi: dict[str, Any]) -> str:
         template(
             "abi_document_preamble.tex",
             {
-                "ABI_TITLE": tex_escape(document.get("title", "Bedrock Reference ABI")),
+                "ABI_TITLE": tex_escape(document.get("title", "Bedrock ELF ABI")),
                 "ARCH_NAME": tex_escape(arch),
             },
         ),
@@ -1076,8 +1112,8 @@ def render(abi: dict[str, Any]) -> str:
             "abi_title_page.tex",
             {
                 "ARCH_NAME_UPPER": tex_escape(str(arch).upper()),
-                "ABI_TITLE": tex_escape(document.get("title", "Bedrock Reference ABI")),
-                "ABI_SUBTITLE": tex_escape(document.get("subtitle", "Application Binary Interface")),
+                "ABI_TITLE": tex_escape(document.get("title", "Bedrock ELF ABI")),
+                "ABI_SUBTITLE": tex_escape(document.get("subtitle", "ELF Application Binary Interface")),
                 "ABI_VERSION": tex_escape(document.get("version", "0.1")),
             },
         ),
@@ -1106,8 +1142,8 @@ def render(abi: dict[str, Any]) -> str:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("abi_spec", nargs="?", default="isa/spec/abi.yaml")
-    parser.add_argument("-o", "--output", default="build/generated/abi_reference.tex")
+    parser.add_argument("abi_spec", nargs="?", default="isa/abi/elf.yaml")
+    parser.add_argument("-o", "--output", default="build/latex/elf_abi/elf_abi.tex")
     args = parser.parse_args()
 
     abi_path = Path(args.abi_spec)

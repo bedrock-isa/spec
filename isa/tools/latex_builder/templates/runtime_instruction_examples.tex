@@ -1,17 +1,16 @@
-This section shows how runtime support code can combine architectural discovery
-instructions with state-management instructions. The examples are schematic C helpers,
-not ABI-mandated entry points.
+This section shows how runtime support code can combine architectural discovery instructions with
+state-management instructions. The examples are schematic C helpers, not ABI-mandated entry points.
 
 \subsection{CPUID-Defined Program Context Save}
-SAVE and RESTORE use a CPUID-described memory image. A runtime that wants to save
-program-visible register and extension state first queries the required save-area size
-and component descriptors, then supplies a 4 KiB-aligned buffer to SAVE. The continuation
-state that is not part of the SAVE area, such as a scheduler or setjmp return point, is
-managed by the runtime layer that calls this helper.
+SAVE and RESTORE use a CPUID-described memory image. A runtime that wants to save program-visible register and
+extension state first queries the required save-area size and component descriptors, then supplies a
+4 KiB-aligned buffer to SAVE.
 
-The following C example is schematic. The two target hooks are ordinary runtime entry
-points implemented with the architectural \texttt{CPUID Dn} and
-\texttt{SAVE \textless{}ea\textgreater{}} instructions.
+The continuation state that is not part of the SAVE area, such as a scheduler or setjmp return point, is managed
+by the runtime layer that calls this helper.
+
+The two target hooks below are ordinary runtime entry points implemented with the architectural \texttt{CPUID Rn}
+and \texttt{SAVE \textless{}ea\textgreater{}} instructions.
 
 \par\begingroup\footnotesize
 \begin{verbatim}
@@ -123,6 +122,6 @@ int br_save_program_context(struct br_program_context *ctx,
 \end{verbatim}
 \endgroup\par
 
-The component array is not part of the SAVE image. It is ordinary runtime metadata
-derived from CPUID so the context owner can inspect, copy, or migrate extension
-components without hard-coding implementation-specific offsets.
+The component array is not part of the SAVE image. It is ordinary runtime metadata derived from CPUID so the
+context owner can inspect, copy, or migrate extension components without hard-coding implementation-specific
+offsets.

@@ -1,0 +1,17 @@
+mnemonic: WAIT
+doc:
+  title: Wait
+  summary: Wait until event or interrupt according to privilege policy.
+  instruction_family: core_control
+  instruction_class: system
+behavior:
+  group: core_control
+  output: none
+  operation:
+  - arch_wait_for_event();
+attributes:
+  privilege: policy_controlled
+forms:
+  operands: []
+definition_status:
+  allocation: 'external: isa/alloc'

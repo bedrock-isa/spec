@@ -1,0 +1,49 @@
+export function w $dot_product(p %t0, p %t1, w %t2) {
+@l0
+	%a =p alloc8 8
+	storel %t0, %a
+	%b =p alloc8 8
+	storel %t1, %b
+	%n =p alloc4 4
+	storew %t2, %n
+	%i =p alloc4 4
+	%acc =p alloc4 4
+	%av =p alloc4 4
+	%bv =p alloc4 4
+	storew 0, %i
+	storew 0, %acc
+@l1
+	%t8 =w loadw %i
+	%t9 =w loadw %n
+	%t7 =w csltw %t8, %t9
+	jnz %t7, @l2, @l3
+@l2
+	%t13 =p loadl %a
+	%t14 =w loadw %i
+	%t15 =l extsw %t14
+	%t16 =l mul 4, %t15
+	%t12 =p add %t13, %t16
+	%t11 =w loadw %t12
+	storew %t11, %av
+	%t20 =p loadl %b
+	%t21 =w loadw %i
+	%t22 =l extsw %t21
+	%t23 =l mul 4, %t22
+	%t19 =p add %t20, %t23
+	%t18 =w loadw %t19
+	storew %t18, %bv
+	%t26 =w loadw %acc
+	%t28 =w loadw %av
+	%t29 =w loadw %bv
+	%t27 =w mul %t28, %t29
+	%t25 =w add %t26, %t27
+	storew %t25, %acc
+	%t32 =w loadw %i
+	%t31 =w add %t32, 1
+	storew %t31, %i
+	jmp @l1
+@l3
+	%t34 =w loadw %acc
+	ret %t34
+}
+

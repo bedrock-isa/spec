@@ -1,0 +1,922 @@
+# Generated mechanically from docs/isa_reform_plan.md during the ISA rewrite.
+# Edit this file as the allocation source of truth going forward.
+class: medium
+payload_bits: 18
+entries:
+  - id: medium.reserved
+    status: reserved
+    bits: "0000?0?????1101000"
+    text: "reserved"
+  - id: medium.reserved.2
+    status: reserved
+    bits: "0????1?????1101000"
+    text: "reserved"
+  - id: medium.reserved.3
+    status: reserved
+    bits: "00??10011000000001"
+    text: "reserved"
+  - id: medium.jmp_ea
+    status: allocated
+    bits: "000010011000000000"
+    text: "JMP <imm16s>"
+  - id: medium.jcc_ea
+    status: allocated
+    bits: "00001001100000cccc"
+    text: "Jcc <imm16s>  ; cccc = 0010..1111"
+    fields:
+      c: {kind: condition, width: 4}
+    constraints:
+      - {field: c, allow: [0x2..0xf], reason: condition_true_false_reclaimed}
+  - id: medium.jmp_ea.2
+    status: allocated
+    bits: "000110011000000000"
+    text: "JMP <imm32s>"
+  - id: medium.jcc_ea.2
+    status: allocated
+    bits: "00011001100000cccc"
+    text: "Jcc <imm32s>  ; cccc = 0010..1111"
+    fields:
+      c: {kind: condition, width: 4}
+    constraints:
+      - {field: c, allow: [0x2..0xf], reason: condition_true_false_reclaimed}
+  - id: medium.call_ea
+    status: allocated
+    bits: "001010011000000000"
+    text: "CALL <imm16s>"
+  - id: medium.callcc_ea
+    status: allocated
+    bits: "00101001100000cccc"
+    text: "CALLcc <imm16s>  ; cccc = 0010..1111"
+    fields:
+      c: {kind: condition, width: 4}
+    constraints:
+      - {field: c, allow: [0x2..0xf], reason: condition_true_false_reclaimed}
+  - id: medium.call_ea.2
+    status: allocated
+    bits: "001110011000000000"
+    text: "CALL <imm32s>"
+  - id: medium.callcc_ea.2
+    status: allocated
+    bits: "00111001100000cccc"
+    text: "CALLcc <imm32s>  ; cccc = 0010..1111"
+    fields:
+      c: {kind: condition, width: 4}
+    constraints:
+      - {field: c, allow: [0x2..0xf], reason: condition_true_false_reclaimed}
+  - id: medium.sum_x_ea_rn_d
+    status: allocated
+    bits: "01zz1001100000dddd"
+    text: "SUM.X(z:B/W/L/Q) <imm16/bitmap>, Rn(d)"
+    fields:
+      z: {kind: size, width: 2}
+      d: {kind: rn, width: 4}
+  - id: medium.repg_rn_r_ea
+    status: allocated
+    bits: "00001001101000rrrr"
+    text: "REPG Rn(r), <imm16>"
+    fields:
+      r: {kind: rn, width: 4}
+  - id: medium.cpuid_rn_r
+    status: allocated
+    bits: "00001001110000rrrr"
+    text: "CPUID Rn(r)"
+    fields:
+      r: {kind: rn, width: 4}
+  - id: medium.add_q_ea_sp
+    status: allocated
+    bits: "000010011110000000"
+    text: "ADD.Q <imm16s>, SP"
+  - id: medium.add_q_ea_sp.2
+    status: allocated
+    bits: "000010011110000001"
+    text: "ADD.Q <imm32s>, SP"
+  - id: medium.sub_q_ea_sp
+    status: allocated
+    bits: "000010011110000010"
+    text: "SUB.Q <imm16s>, SP"
+  - id: medium.sub_q_ea_sp.2
+    status: allocated
+    bits: "000010011110000011"
+    text: "SUB.Q <imm32s>, SP"
+  - id: medium.pushm_ea
+    status: allocated
+    bits: "000010011110000100"
+    text: "PUSHM <imm16/bitmap>"
+  - id: medium.popm_ea
+    status: allocated
+    bits: "000010011110000101"
+    text: "POPM <imm16/bitmap>"
+  - id: medium.trace_ea
+    status: allocated
+    bits: "000010011110000110"
+    text: "TRACE <imm16>"
+  - id: medium.reserved.4
+    status: reserved
+    bits: "000010011110000111"
+    text: "reserved"
+  - id: medium.reserved.5
+    status: reserved
+    bits: "000010011110001???"
+    text: "reserved"
+  - id: medium.inc_x_ea
+    status: allocated
+    bits: "0eee10z0000000eeee"
+    text: "INC.X(z:B/W) <ea>"
+    fields:
+      e: {kind: ea7, width: 7}
+      z: {kind: size, width: 1}
+  - id: medium.inc_x_ea.2
+    status: allocated
+    bits: "0eee10z0001000eeee"
+    text: "INC.X(z:L/Q) <ea>  ; <ea>[6:4] = 001..111"
+    fields:
+      e: {kind: ea7, width: 7}
+      z: {kind: size, width: 1}
+    constraints:
+      - {field: e, allow: [0x10..0x7f], reason: register_direct_reclaimed}
+  - id: medium.dec_x_ea
+    status: allocated
+    bits: "0eee10z0010000eeee"
+    text: "DEC.X(z:B/W) <ea>"
+    fields:
+      e: {kind: ea7, width: 7}
+      z: {kind: size, width: 1}
+  - id: medium.dec_x_ea.2
+    status: allocated
+    bits: "0eee10z0011000eeee"
+    text: "DEC.X(z:L/Q) <ea>  ; <ea>[6:4] = 001..111"
+    fields:
+      e: {kind: ea7, width: 7}
+      z: {kind: size, width: 1}
+    constraints:
+      - {field: e, allow: [0x10..0x7f], reason: register_direct_reclaimed}
+  - id: medium.neg_x_ea
+    status: allocated
+    bits: "0eee10z0100000eeee"
+    text: "NEG.X(z:B/W) <ea>"
+    fields:
+      e: {kind: ea7, width: 7}
+      z: {kind: size, width: 1}
+  - id: medium.neg_x_ea.2
+    status: allocated
+    bits: "0eee10z0101000eeee"
+    text: "NEG.X(z:L/Q) <ea>  ; <ea>[6:4] = 001..111"
+    fields:
+      e: {kind: ea7, width: 7}
+      z: {kind: size, width: 1}
+    constraints:
+      - {field: e, allow: [0x10..0x7f], reason: register_direct_reclaimed}
+  - id: medium.clr_x_ea
+    status: allocated
+    bits: "0eee10z0110000eeee"
+    text: "CLR.X(z:B/W) <ea>"
+    fields:
+      e: {kind: ea7, width: 7}
+      z: {kind: size, width: 1}
+  - id: medium.clr_x_ea.2
+    status: allocated
+    bits: "0eee10z0111000eeee"
+    text: "CLR.X(z:L/Q) <ea>  ; <ea>[6:4] = 001..111"
+    fields:
+      e: {kind: ea7, width: 7}
+      z: {kind: size, width: 1}
+    constraints:
+      - {field: e, allow: [0x10..0x7f], reason: register_direct_reclaimed}
+  - id: medium.abs_x_ea
+    status: allocated
+    bits: "0eee10z1000000eeee"
+    text: "ABS.X(z:B/W) <ea>"
+    fields:
+      e: {kind: ea7, width: 7}
+      z: {kind: size, width: 1}
+  - id: medium.abs_x_ea.2
+    status: allocated
+    bits: "0eee10z1001000eeee"
+    text: "ABS.X(z:L/Q) <ea>  ; <ea>[6:4] = 001..111"
+    fields:
+      e: {kind: ea7, width: 7}
+      z: {kind: size, width: 1}
+    constraints:
+      - {field: e, allow: [0x10..0x7f], reason: register_direct_reclaimed}
+  - id: medium.not_x_ea
+    status: allocated
+    bits: "0eee10z1010000eeee"
+    text: "NOT.X(z:B/W) <ea>"
+    fields:
+      e: {kind: ea7, width: 7}
+      z: {kind: size, width: 1}
+  - id: medium.not_x_ea.2
+    status: allocated
+    bits: "0eee10z1011000eeee"
+    text: "NOT.X(z:L/Q) <ea>  ; <ea>[6:4] = 001..111"
+    fields:
+      e: {kind: ea7, width: 7}
+      z: {kind: size, width: 1}
+    constraints:
+      - {field: e, allow: [0x10..0x7f], reason: register_direct_reclaimed}
+  - id: medium.revbyte_w_ea
+    status: allocated
+    bits: "0eee1001101000eeee"
+    text: "REVBYTE.W <ea>  ; <ea>[6:4] = 001..111"
+    fields:
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x7f], reason: register_direct_reclaimed}
+  - id: medium.revbyte_l_ea
+    status: allocated
+    bits: "0eee1001110000eeee"
+    text: "REVBYTE.L <ea>  ; <ea>[6:4] = 001..111"
+    fields:
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x7f], reason: register_direct_reclaimed}
+  - id: medium.revbyte_q_ea
+    status: allocated
+    bits: "0eee1001111000eeee"
+    text: "REVBYTE.Q <ea>  ; <ea>[6:4] = 001..111"
+    fields:
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x7f], reason: register_direct_reclaimed}
+  - id: medium.lea_x_ea_rn
+    status: allocated
+    bits: "0eeez1zdddd000eeee"
+    text: "LEA.X(z:B/W/L/Q) <ea>, Rn"
+    fields:
+      e: {kind: ea7, width: 7}
+      z: {kind: size, width: 2}
+      d: {kind: rn, width: 4}
+  - id: medium.mov_x_rn_s_ea_e
+    status: allocated
+    bits: "000000zsssseeeeeee"
+    text: "MOV.X(z:B/W) Rn(s), <ea>(e)  ; <ea> = 0000000..1100111 + 1101001..1111111"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x00..0x67, 0x69..0x7f], reason: sp_direct_reclaimed}
+  - id: medium.mov_x_rn_s_ea_e.2
+    status: allocated
+    bits: "000001zsssseeeeeee"
+    text: "MOV.X(z:L/Q) Rn(s), <ea>(e)  ; <ea> = 0010000..1100111 + 1101001..1111111"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x67, 0x69..0x7f], reason: register_direct_and_sp_direct_reclaimed}
+  - id: medium.mov_x_ea_e_rn_d
+    status: allocated
+    bits: "000010zddddeeeeeee"
+    text: "MOV.X(z:B/W) <ea>(e), Rn(d)  ; <ea> = 0010000..1100111 + 1101001..1111111"
+    fields:
+      z: {kind: size, width: 1}
+      d: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x67, 0x69..0x7f], reason: register_direct_and_sp_direct_reclaimed}
+  - id: medium.mov_x_ea_e_rn_d.2
+    status: allocated
+    bits: "000011zddddeeeeeee"
+    text: "MOV.X(z:L/Q) <ea>(e), Rn(d)  ; <ea> = 0010000..1100111 + 1101001..1111111"
+    fields:
+      z: {kind: size, width: 1}
+      d: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x67, 0x69..0x7f], reason: register_direct_and_sp_direct_reclaimed}
+  - id: medium.add_x_rn_s_ea_e
+    status: allocated
+    bits: "000100zsssseeeeeee"
+    text: "ADD.X(z:B/W) Rn(s), <ea>(e)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+  - id: medium.add_x_rn_s_ea_e.2
+    status: allocated
+    bits: "000101zsssseeeeeee"
+    text: "ADD.X(z:L/Q) Rn(s), <ea>(e)  ; <ea> = 0010000..1100111 + 1101001..1111111"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x67, 0x69..0x7f], reason: register_direct_and_sp_direct_reclaimed}
+  - id: medium.add_x_ea_e_rn_d
+    status: allocated
+    bits: "000110zddddeeeeeee"
+    text: "ADD.X(z:B/W) <ea>(e), Rn(d)  ; <ea>[6:4] = 001..111"
+    fields:
+      z: {kind: size, width: 1}
+      d: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x7f], reason: register_direct_reclaimed}
+  - id: medium.add_x_ea_e_rn_d.2
+    status: allocated
+    bits: "000111zddddeeeeeee"
+    text: "ADD.X(z:L/Q) <ea>(e), Rn(d)  ; <ea> = 0010000..1100111 + 1101001..1111111"
+    fields:
+      z: {kind: size, width: 1}
+      d: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x67, 0x69..0x7f], reason: register_direct_and_sp_direct_reclaimed}
+  - id: medium.sub_x_rn_s_ea_e
+    status: allocated
+    bits: "001000zsssseeeeeee"
+    text: "SUB.X(z:B/W) Rn(s), <ea>(e)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+  - id: medium.sub_x_rn_s_ea_e.2
+    status: allocated
+    bits: "001001zsssseeeeeee"
+    text: "SUB.X(z:L/Q) Rn(s), <ea>(e)  ; <ea> = 0010000..1100111 + 1101001..1111111"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x67, 0x69..0x7f], reason: register_direct_and_sp_direct_reclaimed}
+  - id: medium.sub_x_ea_e_rn_d
+    status: allocated
+    bits: "001010zddddeeeeeee"
+    text: "SUB.X(z:B/W) <ea>(e), Rn(d)  ; <ea>[6:4] = 001..111"
+    fields:
+      z: {kind: size, width: 1}
+      d: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x7f], reason: register_direct_reclaimed}
+  - id: medium.sub_x_ea_e_rn_d.2
+    status: allocated
+    bits: "001011zddddeeeeeee"
+    text: "SUB.X(z:L/Q) <ea>(e), Rn(d)  ; <ea> = 0010000..1100111 + 1101001..1111111"
+    fields:
+      z: {kind: size, width: 1}
+      d: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x67, 0x69..0x7f], reason: register_direct_and_sp_direct_reclaimed}
+  - id: medium.and_x_rn_s_ea_e
+    status: allocated
+    bits: "001100zsssseeeeeee"
+    text: "AND.X(z:B/W) Rn(s), <ea>(e)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+  - id: medium.and_x_rn_s_ea_e.2
+    status: allocated
+    bits: "001101zsssseeeeeee"
+    text: "AND.X(z:L/Q) Rn(s), <ea>(e)  ; <ea> = 0010000..1100111 + 1101001..1111111"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x67, 0x69..0x7f], reason: register_direct_and_sp_direct_reclaimed}
+  - id: medium.and_x_ea_e_rn_d
+    status: allocated
+    bits: "001110zddddeeeeeee"
+    text: "AND.X(z:B/W) <ea>(e), Rn(d)  ; <ea>[6:4] = 001..111"
+    fields:
+      z: {kind: size, width: 1}
+      d: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x7f], reason: register_direct_reclaimed}
+  - id: medium.and_x_ea_e_rn_d.2
+    status: allocated
+    bits: "001111zddddeeeeeee"
+    text: "AND.X(z:L/Q) <ea>(e), Rn(d)  ; <ea> = 0010000..1100111 + 1101001..1111111"
+    fields:
+      z: {kind: size, width: 1}
+      d: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x67, 0x69..0x7f], reason: register_direct_and_sp_direct_reclaimed}
+  - id: medium.or_x_rn_s_ea_e
+    status: allocated
+    bits: "010000zsssseeeeeee"
+    text: "OR.X(z:B/W) Rn(s), <ea>(e)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+  - id: medium.or_x_rn_s_ea_e.2
+    status: allocated
+    bits: "010001zsssseeeeeee"
+    text: "OR.X(z:L/Q) Rn(s), <ea>(e)  ; <ea> = 0010000..1100111 + 1101001..1111111"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x67, 0x69..0x7f], reason: register_direct_and_sp_direct_reclaimed}
+  - id: medium.or_x_ea_e_rn_d
+    status: allocated
+    bits: "010010zddddeeeeeee"
+    text: "OR.X(z:B/W) <ea>(e), Rn(d)  ; <ea>[6:4] = 001..111"
+    fields:
+      z: {kind: size, width: 1}
+      d: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x7f], reason: register_direct_reclaimed}
+  - id: medium.or_x_ea_e_rn_d.2
+    status: allocated
+    bits: "010011zddddeeeeeee"
+    text: "OR.X(z:L/Q) <ea>(e), Rn(d)  ; <ea> = 0010000..1100111 + 1101001..1111111"
+    fields:
+      z: {kind: size, width: 1}
+      d: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x67, 0x69..0x7f], reason: register_direct_and_sp_direct_reclaimed}
+  - id: medium.xor_x_rn_s_ea_e
+    status: allocated
+    bits: "010100zsssseeeeeee"
+    text: "XOR.X(z:B/W) Rn(s), <ea>(e)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+  - id: medium.xor_x_rn_s_ea_e.2
+    status: allocated
+    bits: "010101zsssseeeeeee"
+    text: "XOR.X(z:L/Q) Rn(s), <ea>(e)  ; <ea> = 0010000..1100111 + 1101001..1111111"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x67, 0x69..0x7f], reason: register_direct_and_sp_direct_reclaimed}
+  - id: medium.xor_x_ea_e_rn_d
+    status: allocated
+    bits: "010110zddddeeeeeee"
+    text: "XOR.X(z:B/W) <ea>(e), Rn(d)  ; <ea>[6:4] = 001..111"
+    fields:
+      z: {kind: size, width: 1}
+      d: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x7f], reason: register_direct_reclaimed}
+  - id: medium.xor_x_ea_e_rn_d.2
+    status: allocated
+    bits: "010111zddddeeeeeee"
+    text: "XOR.X(z:L/Q) <ea>(e), Rn(d)  ; <ea> = 0010000..1100111 + 1101001..1111111"
+    fields:
+      z: {kind: size, width: 1}
+      d: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x67, 0x69..0x7f], reason: register_direct_and_sp_direct_reclaimed}
+  - id: medium.test_x_rn_s_ea_e
+    status: allocated
+    bits: "011000zsssseeeeeee"
+    text: "TEST.X(z:B/W) Rn(s), <ea>(e)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+  - id: medium.test_x_rn_s_ea_e.2
+    status: allocated
+    bits: "011001zsssseeeeeee"
+    text: "TEST.X(z:L/Q) Rn(s), <ea>(e)  ; <ea> = 0010000..1100111 + 1101001..1111111"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x67, 0x69..0x7f], reason: register_direct_and_sp_direct_reclaimed}
+  - id: medium.test_x_ea_e_rn_d
+    status: allocated
+    bits: "011010zddddeeeeeee"
+    text: "TEST.X(z:B/W) <ea>(e), Rn(d)  ; <ea>[6:4] = 001..111"
+    fields:
+      z: {kind: size, width: 1}
+      d: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x7f], reason: register_direct_reclaimed}
+  - id: medium.test_x_ea_e_rn_d.2
+    status: allocated
+    bits: "011011zddddeeeeeee"
+    text: "TEST.X(z:L/Q) <ea>(e), Rn(d)  ; <ea> = 0010000..1100111 + 1101001..1111111"
+    fields:
+      z: {kind: size, width: 1}
+      d: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x67, 0x69..0x7f], reason: register_direct_and_sp_direct_reclaimed}
+  - id: medium.cmp_x_rn_s_ea_e
+    status: allocated
+    bits: "011100zsssseeeeeee"
+    text: "CMP.X(z:B/W) Rn(s), <ea>(e)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+  - id: medium.cmp_x_rn_s_ea_e.2
+    status: allocated
+    bits: "011101zsssseeeeeee"
+    text: "CMP.X(z:L/Q) Rn(s), <ea>(e)  ; <ea> = 0010000..1100111 + 1101001..1111111"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x67, 0x69..0x7f], reason: register_direct_and_sp_direct_reclaimed}
+  - id: medium.cmp_x_ea_e_rn_d
+    status: allocated
+    bits: "011110zddddeeeeeee"
+    text: "CMP.X(z:B/W) <ea>(e), Rn(d)  ; <ea>[6:4] = 001..111"
+    fields:
+      z: {kind: size, width: 1}
+      d: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x7f], reason: register_direct_reclaimed}
+  - id: medium.cmp_x_ea_e_rn_d.2
+    status: allocated
+    bits: "011111zddddeeeeeee"
+    text: "CMP.X(z:L/Q) <ea>(e), Rn(d)  ; <ea> = 0010000..1100111 + 1101001..1111111"
+    fields:
+      z: {kind: size, width: 1}
+      d: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x67, 0x69..0x7f], reason: register_direct_and_sp_direct_reclaimed}
+  - id: medium.xchg_x_rn_s_ea_e
+    status: allocated
+    bits: "100000zsssseeeeeee"
+    text: "XCHG.X(z:B/W) Rn(s), <ea>(e)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+  - id: medium.xchg_x_rn_s_ea_e.2
+    status: allocated
+    bits: "100001zsssseeeeeee"
+    text: "XCHG.X(z:L/Q) Rn(s), <ea>(e)  ; <ea> = 0010000..1100111 + 1101001..1111111"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x67, 0x69..0x7f], reason: register_direct_and_sp_direct_reclaimed}
+  - id: medium.xchg_x_ea_e_rn_d
+    status: allocated
+    bits: "100010zddddeeeeeee"
+    text: "XCHG.X(z:B/W) <ea>(e), Rn(d)  ; <ea>[6:4] = 001..111"
+    fields:
+      z: {kind: size, width: 1}
+      d: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x7f], reason: register_direct_reclaimed}
+  - id: medium.xchg_x_ea_e_rn_d.2
+    status: allocated
+    bits: "100011zddddeeeeeee"
+    text: "XCHG.X(z:L/Q) <ea>(e), Rn(d)  ; <ea> = 0010000..1100111 + 1101001..1111111"
+    fields:
+      z: {kind: size, width: 1}
+      d: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x67, 0x69..0x7f], reason: register_direct_and_sp_direct_reclaimed}
+  - id: medium.reserved.6
+    status: reserved
+    bits: "100111?????000????"
+    text: "reserved"
+  - id: medium.reserved.7
+    status: reserved
+    bits: "101??1?????000????"
+    text: "reserved"
+  - id: medium.rol_x_rn_s_ea_e
+    status: allocated
+    bits: "100110zsssseeeeeee"
+    text: "ROL.X(z:B/W) Rn(s), <ea>(e)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+  - id: medium.rol_x_rn_s_ea_e.2
+    status: allocated
+    bits: "100111zsssseeeeeee"
+    text: "ROL.X(z:L/Q) Rn(s), <ea>(e)  ; <ea>[6:4] = 001..111"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x7f], reason: register_direct_reclaimed}
+  - id: medium.ror_x_rn_s_ea_e
+    status: allocated
+    bits: "101000zsssseeeeeee"
+    text: "ROR.X(z:B/W) Rn(s), <ea>(e)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+  - id: medium.ror_x_rn_s_ea_e.2
+    status: allocated
+    bits: "101001zsssseeeeeee"
+    text: "ROR.X(z:L/Q) Rn(s), <ea>(e)  ; <ea>[6:4] = 001..111"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x7f], reason: register_direct_reclaimed}
+  - id: medium.shl_x_rn_s_ea_e
+    status: allocated
+    bits: "101010zsssseeeeeee"
+    text: "SHL.X(z:B/W) Rn(s), <ea>(e)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+  - id: medium.shl_x_rn_s_ea_e.2
+    status: allocated
+    bits: "101011zsssseeeeeee"
+    text: "SHL.X(z:L/Q) Rn(s), <ea>(e)  ; <ea>[6:4] = 001..111"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x7f], reason: register_direct_reclaimed}
+  - id: medium.shr_x_rn_s_ea_e
+    status: allocated
+    bits: "101100zsssseeeeeee"
+    text: "SHR.X(z:B/W) Rn(s), <ea>(e)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+  - id: medium.shr_x_rn_s_ea_e.2
+    status: allocated
+    bits: "101101zsssseeeeeee"
+    text: "SHR.X(z:L/Q) Rn(s), <ea>(e)  ; <ea>[6:4] = 001..111"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x7f], reason: register_direct_reclaimed}
+  - id: medium.sar_x_rn_s_ea_e
+    status: allocated
+    bits: "101110zsssseeeeeee"
+    text: "SAR.X(z:B/W) Rn(s), <ea>(e)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+  - id: medium.sar_x_rn_s_ea_e.2
+    status: allocated
+    bits: "101111zsssseeeeeee"
+    text: "SAR.X(z:L/Q) Rn(s), <ea>(e)  ; <ea>[6:4] = 001..111"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x7f], reason: register_direct_reclaimed}
+  - id: medium.adc_x_rn_s_rn_d
+    status: allocated
+    bits: "1100zz1ssss000dddd"
+    text: "ADC.X(z:B/W/L/Q) Rn(s), Rn(d)"
+    fields:
+      z: {kind: size, width: 2}
+      s: {kind: rn, width: 4}
+      d: {kind: rn, width: 4}
+  - id: medium.reserved.8
+    status: reserved
+    bits: "110?110????000????"
+    text: "reserved"
+  - id: medium.reserved.9
+    status: reserved
+    bits: "1110??1????000????"
+    text: "reserved"
+  - id: medium.extsw_b_rn_s_ea_e
+    status: allocated
+    bits: "1100000sssseeeeeee"
+    text: "EXTSW.B Rn(s), <ea>(e)"
+    fields:
+      s: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+  - id: medium.extsw_b_ea_e_rn_d
+    status: allocated
+    bits: "1100001ddddeeeeeee"
+    text: "EXTSW.B <ea>(e), Rn(d)  ; <ea>[6:4] = 001..111"
+    fields:
+      d: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x7f], reason: register_direct_reclaimed}
+  - id: medium.extsq_b_rn_s_ea_e
+    status: allocated
+    bits: "1100010sssseeeeeee"
+    text: "EXTSQ.B Rn(s), <ea>(e)"
+    fields:
+      s: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+  - id: medium.extsq_b_ea_e_rn_d
+    status: allocated
+    bits: "1100011ddddeeeeeee"
+    text: "EXTSQ.B <ea>(e), Rn(d)  ; <ea>[6:4] = 001..111"
+    fields:
+      d: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x7f], reason: register_direct_reclaimed}
+  - id: medium.extsq_w_rn_s_ea_e
+    status: allocated
+    bits: "1100100sssseeeeeee"
+    text: "EXTSQ.W Rn(s), <ea>(e)"
+    fields:
+      s: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+  - id: medium.extsq_w_ea_e_rn_d
+    status: allocated
+    bits: "1100101ddddeeeeeee"
+    text: "EXTSQ.W <ea>(e), Rn(d)  ; <ea>[6:4] = 001..111"
+    fields:
+      d: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x7f], reason: register_direct_reclaimed}
+  - id: medium.extsq_l_rn_s_ea_e
+    status: allocated
+    bits: "1100110sssseeeeeee"
+    text: "EXTSQ.L Rn(s), <ea>(e)  ; <ea>[6:4] = 001..111"
+    fields:
+      s: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x7f], reason: register_direct_reclaimed}
+  - id: medium.extsq_l_ea_e_rn_d
+    status: allocated
+    bits: "1100111ddddeeeeeee"
+    text: "EXTSQ.L <ea>(e), Rn(d)  ; <ea>[6:4] = 001..111"
+    fields:
+      d: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x7f], reason: register_direct_reclaimed}
+  - id: medium.sbb_x_rn_s_rn_d
+    status: allocated
+    bits: "1101zz1ssss000dddd"
+    text: "SBB.X(z:B/W/L/Q) Rn(s), Rn(d)"
+    fields:
+      z: {kind: size, width: 2}
+      s: {kind: rn, width: 4}
+      d: {kind: rn, width: 4}
+  - id: medium.extzw_b_rn_s_ea_e
+    status: allocated
+    bits: "1101000sssseeeeeee"
+    text: "EXTZW.B Rn(s), <ea>(e)"
+    fields:
+      s: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+  - id: medium.extzw_b_ea_e_rn_d
+    status: allocated
+    bits: "1101001ddddeeeeeee"
+    text: "EXTZW.B <ea>(e), Rn(d)  ; <ea>[6:4] = 001..111"
+    fields:
+      d: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x7f], reason: register_direct_reclaimed}
+  - id: medium.extzq_b_rn_s_ea_e
+    status: allocated
+    bits: "1101010sssseeeeeee"
+    text: "EXTZQ.B Rn(s), <ea>(e)"
+    fields:
+      s: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+  - id: medium.extzq_b_ea_e_rn_d
+    status: allocated
+    bits: "1101011ddddeeeeeee"
+    text: "EXTZQ.B <ea>(e), Rn(d)  ; <ea>[6:4] = 001..111"
+    fields:
+      d: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x7f], reason: register_direct_reclaimed}
+  - id: medium.extzq_w_rn_s_ea_e
+    status: allocated
+    bits: "1101100sssseeeeeee"
+    text: "EXTZQ.W Rn(s), <ea>(e)"
+    fields:
+      s: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+  - id: medium.extzq_w_ea_e_rn_d
+    status: allocated
+    bits: "1101101ddddeeeeeee"
+    text: "EXTZQ.W <ea>(e), Rn(d)  ; <ea>[6:4] = 001..111"
+    fields:
+      d: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x7f], reason: register_direct_reclaimed}
+  - id: medium.extzq_l_rn_s_ea_e
+    status: allocated
+    bits: "1101110sssseeeeeee"
+    text: "EXTZQ.L Rn(s), <ea>(e)  ; <ea>[6:4] = 001..111"
+    fields:
+      s: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x7f], reason: register_direct_reclaimed}
+  - id: medium.extzq_l_ea_e_rn_d
+    status: allocated
+    bits: "1101111ddddeeeeeee"
+    text: "EXTZQ.L <ea>(e), Rn(d)  ; <ea>[6:4] = 001..111"
+    fields:
+      d: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x7f], reason: register_direct_reclaimed}
+  - id: medium.extsl_b_rn_s_ea_e
+    status: allocated
+    bits: "1110000sssseeeeeee"
+    text: "EXTSL.B Rn(s), <ea>(e)  ; <ea>[6:4] = 001..111"
+    fields:
+      s: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x7f], reason: register_direct_reclaimed}
+  - id: medium.extsl_b_ea_e_rn_d
+    status: allocated
+    bits: "1110001ddddeeeeeee"
+    text: "EXTSL.B <ea>(e), Rn(d)  ; <ea>[6:4] = 001..111"
+    fields:
+      d: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x7f], reason: register_direct_reclaimed}
+  - id: medium.extsl_w_rn_s_ea_e
+    status: allocated
+    bits: "1110010sssseeeeeee"
+    text: "EXTSL.W Rn(s), <ea>(e)  ; <ea>[6:4] = 001..111"
+    fields:
+      s: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x7f], reason: register_direct_reclaimed}
+  - id: medium.extsl_w_ea_e_rn_d
+    status: allocated
+    bits: "1110011ddddeeeeeee"
+    text: "EXTSL.W <ea>(e), Rn(d)  ; <ea>[6:4] = 001..111"
+    fields:
+      d: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x7f], reason: register_direct_reclaimed}
+  - id: medium.extzl_b_rn_s_ea_e
+    status: allocated
+    bits: "1110100sssseeeeeee"
+    text: "EXTZL.B Rn(s), <ea>(e)  ; <ea>[6:4] = 001..111"
+    fields:
+      s: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x7f], reason: register_direct_reclaimed}
+  - id: medium.extzl_b_ea_e_rn_d
+    status: allocated
+    bits: "1110101ddddeeeeeee"
+    text: "EXTZL.B <ea>(e), Rn(d)  ; <ea>[6:4] = 001..111"
+    fields:
+      d: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x7f], reason: register_direct_reclaimed}
+  - id: medium.extzl_w_rn_s_ea_e
+    status: allocated
+    bits: "1110110sssseeeeeee"
+    text: "EXTZL.W Rn(s), <ea>(e)  ; <ea>[6:4] = 001..111"
+    fields:
+      s: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x7f], reason: register_direct_reclaimed}
+  - id: medium.extzl_w_ea_e_rn_d
+    status: allocated
+    bits: "1110111ddddeeeeeee"
+    text: "EXTZL.W <ea>(e), Rn(d)  ; <ea>[6:4] = 001..111"
+    fields:
+      d: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, allow: [0x10..0x7f], reason: register_direct_reclaimed}
+  - id: medium.long_extralong_escape
+    status: escape
+    bits: "1111??????????????"
+    text: "long/extralong escape"

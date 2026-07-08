@@ -1,0 +1,62 @@
+mnemonic: FCVTU
+doc:
+  title: Floating-Point Convert Unsigned
+  summary: Performs the floating-point convert unsigned operation.
+  instruction_family: fpu
+  instruction_class: fpu
+behavior:
+  group: fpu_move_compare
+  inputs:
+  - src
+  output: dst
+  operation_by_form:
+  - operands:
+    - FREG
+    - FREG
+    operation:
+    - dst_v = float2float(src_v);
+  - operands:
+    - FREG
+    - Rn
+    operation:
+    - local integral_v:8 = trunc(src_v);
+    - dst_v = integral_v;
+  - operands:
+    - Rn
+    - FREG
+    operation:
+    - dst_v = int2float(src_v);
+    - if ((src_v & 0x8000000000000000) == 0) goto <fcvtu_done>;
+    - result_v = src_v >> 1;
+    - result_v = result_v | (src_v & 1);
+    - dst_v = int2float(result_v) f* int2float(2:8);
+    - <fcvtu_done>
+attributes:
+  privilege: unprivileged
+  streaming_candidate: true
+  fp_flags:
+    update_when_required:
+    - NV
+    - OF
+    - UF
+    - NX
+forms:
+  operands:
+  - - name: src
+      type: FREG
+    - name: dst
+      type: FREG
+  - - name: src
+      type: FREG
+    - name: dst
+      type: Rn
+  - - name: src
+      type: Rn
+    - name: dst
+      type: FREG
+  conversions:
+  - F32 <-> F64
+  - signed int32/int64 <-> F32/F64
+  - unsigned int32/int64 <-> F32/F64
+definition_status:
+  allocation: 'external: isa/alloc'

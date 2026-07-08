@@ -1,0 +1,21 @@
+include:
+- instructions/_common.yaml
+- instructions/FACOS.yaml
+- instructions/FASIN.yaml
+- instructions/FATAN.yaml
+- instructions/FATANH.yaml
+- instructions/FCOS.yaml
+- instructions/FCOSH.yaml
+- instructions/FETOX.yaml
+- instructions/FETOXM1.yaml
+- instructions/FLOG10.yaml
+- instructions/FLOG2.yaml
+- instructions/FLOGN.yaml
+- instructions/FLOGNP1.yaml
+- instructions/FSIN.yaml
+- instructions/FSINCOS.yaml
+- instructions/FSINH.yaml
+- instructions/FTAN.yaml
+- instructions/FTANH.yaml
+- instructions/FTENTOX.yaml
+- instructions/FTWOTOX.yaml

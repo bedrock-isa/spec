@@ -1,0 +1,35 @@
+mnemonic: MINS
+doc:
+  title: Signed Minimum
+  summary: Performs the signed minimum operation.
+  instruction_family: integer_alu
+  instruction_class: integer
+behavior:
+  group: integer_minmax
+  inputs:
+  - src
+  input_output: dst
+  operation:
+  - if (dst_v s> src_v) goto <minmax_done>;
+  - dst_v = src_v;
+  - <minmax_done>
+  signedness: signed
+attributes:
+  privilege: unprivileged
+  prefix_availability:
+  - SATURATE
+forms:
+  operands:
+  - - name: src
+      type: EA
+    - name: dst
+      type: Rn
+  - - name: src
+      type: Rn
+    - name: dst
+      type: EA
+  size: BWLQ
+  compact: false
+  result: second operand
+definition_status:
+  allocation: 'external: isa/alloc'

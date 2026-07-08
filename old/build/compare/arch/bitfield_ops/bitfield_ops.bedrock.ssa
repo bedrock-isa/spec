@@ -1,0 +1,29 @@
+export function w $bitfield_ops(w %t0, w %t1) {
+@l0
+	%x =p alloc4 4
+	storew %t0, %x
+	%y =p alloc4 4
+	storew %t1, %y
+	%field =p alloc4 4
+	%cleared =p alloc4 4
+	%insert =p alloc4 4
+	%t5 =w loadw %x
+	%t4 =w sar %t5, 5
+	%t3 =w and %t4, 31
+	storew %t3, %field
+	%t10 =w loadw %y
+	%t11 =w sub 0, 993
+	%t9 =w and %t10, %t11
+	storew %t9, %cleared
+	%t16 =w loadw %field
+	%t15 =w shl %t16, 5
+	storew %t15, %insert
+	%t20 =w loadw %cleared
+	%t21 =w loadw %insert
+	%t19 =w or %t20, %t21
+	%t23 =w loadw %x
+	%t22 =w and %t23, 7
+	%t18 =w or %t19, %t22
+	ret %t18
+}
+

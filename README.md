@@ -1,72 +1,37 @@
-# Bedrock ISA Design
+# ISA Design Rewrite
 
-Bedrock is a draft instruction-set architecture and tooling workspace for a
-bounded, 16-bit-word-oriented CISC design. The repository contains the
-declarative ISA specification, allocation and validation tools, generated
-assembler/disassembler infrastructure, a Bedrock QBE backend experiment, RTL
-frontend/execute helper work, and microarchitecture notes.
+This repository is being rewritten around hand-authored ISA allocation tables.
+The previous implementation, generated artifacts, and reference material live
+under `old/`.
 
-The architecture is still evolving. The YAML specification under `isa/spec/`
-is intended to be the source of truth; generated files are written under
-`build/` and are not tracked.
+Current active sources:
 
-## Repository Layout
-
-- `isa/spec/`: declarative ISA, ABI, C ABI, register, prefix, EA, and semantic
-  descriptions.
-- `isa/tools/`: validators, opcode allocator, documentation generators, SLEIGH
-  generator, C assembler/disassembler table generator, and RTL decode
-  generators.
-- `isa/asm/`: standalone Bedrock ELF assembler support code.
-- `qbe/`: vendored QBE tree with the experimental Bedrock target backend.
-- `benchmarks/arch_compare/`: small code-density comparison kernels.
-- `tools/compare_arch.py`: cross-target code-density comparison runner.
-- `rtl/`: SystemVerilog decode/predecode/AGU and execute helper experiments.
-- `microarch/`: source fragments for implementation-oriented design notes.
-
-## Common Commands
-
-```sh
-make -C isa validate
-make -C isa allocation
-make -C isa asm-disasm-smoke
-make -C qbe bedrock
-make -C benchmarks arch-compare
+```text
+docs/isa_reform_plan.md      design notes and current architectural direction
+isa/defs/*.yaml              instruction semantics and architectural definitions
+isa/alloc/*.yaml             opcode allocation source of truth
+isa/tools/validate_defs.py   definition include/family consistency validator
+isa/tools/validate_alloc.py  allocation collision and cardinality validator
+isa/tools/validate_isa.py    definition/allocation join validator
+isa/tools/gen_docs.py        draft reference document generator
 ```
 
-Optional document and RTL flows:
+Run the current checks with:
 
 ```sh
-make -C isa manual-pdf
-make -C isa abi-all-pdf-final
-make -C rtl test
+python3 isa/tools/validate_defs.py
+python3 isa/tools/validate_alloc.py
+python3 isa/tools/validate_isa.py
 ```
 
-## Prerequisites
-
-Core tooling:
-
-- Python 3
-- Python packages from `requirements.txt`
-- a C compiler and `make`
+Generate the draft reference document with:
 
 ```sh
-python3 -m pip install -r requirements.txt
+python3 isa/tools/gen_docs.py -o build/isa_reference.md
 ```
 
-Optional flows use additional tools:
+The generator can also emit a preview TeX file:
 
-- `latexmk`/`pdflatex` for generated PDF manuals
-- Verilator/Yosys for RTL lint, tests, and synthesis reports
-- cross compilers or Clang targets for architecture code-density comparisons
-
-## Generated And Local Files
-
-`build/`, `outputs/`, local PDFs, Python caches, and local compiler products are
-ignored. Reference PDFs used during design are not part of the repository; keep
-them outside version control or add them locally as needed.
-
-## License
-
-No repository-wide license has been selected yet. The vendored QBE sources in
-`qbe/` retain their own license in `qbe/LICENSE`.
+```sh
+python3 isa/tools/gen_docs.py --format latex -o build/isa_reference.tex
+```

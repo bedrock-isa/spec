@@ -1,0 +1,28 @@
+mnemonic: DIVU
+doc:
+  title: Unsigned Divide
+  summary: Performs the unsigned divide operation.
+  instruction_family: integer_mul_div
+  instruction_class: integer
+behavior:
+  group: multiply_divide
+  inputs:
+  - src
+  input_output: dst
+  operation:
+  - dst_v = arch_unsigned_divide(dst_v, src_v, size_v);
+attributes:
+  privilege: unprivileged
+forms:
+  operands:
+  - - name: src
+      type: EA
+    - name: dst
+      type: Rn
+  - - name: src
+      type: Rn
+    - name: dst
+      type: EA
+  size: BWLQ
+definition_status:
+  allocation: 'external: isa/alloc'

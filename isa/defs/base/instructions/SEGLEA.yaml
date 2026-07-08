@@ -1,0 +1,31 @@
+mnemonic: SEGLEA
+doc:
+  title: Segment Load Effective Address
+  summary: Performs the segment load effective address operation.
+  instruction_family: ea_utility
+  instruction_class: data_movement
+behavior:
+  group: ea_utility
+  inputs:
+  - src
+  output: dst
+  operation:
+  - dst_v = src_v;
+attributes:
+  privilege: unprivileged
+  flags:
+    V: set when segment bounds check fails
+    ZNC: unchanged
+forms:
+  src_ea_set: pure_address_calculation
+  operands:
+  - name: src
+    type: EA
+  - name: dst
+    type: Rn
+  canonical_check: false
+  page_walk: false
+  no_memory_access: true
+  segment_translation_only: true
+definition_status:
+  allocation: 'external: isa/alloc'

@@ -1,0 +1,23 @@
+mnemonic: PREFETCH
+doc:
+  title: Prefetch
+  summary: Hint that EA will be read soon; no architectural fault unless policy says otherwise.
+  instruction_family: cache
+  instruction_class: system
+behavior:
+  group: cache
+  inputs:
+  - src
+  output: none
+  operation:
+  - arch_prefetch(src_v);
+attributes:
+  privilege: user allowed
+forms:
+  src_ea_set: memory_only
+  require_memory_operand: true
+  operands:
+  - name: src
+    type: EA
+definition_status:
+  allocation: 'external: isa/alloc'

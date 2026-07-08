@@ -1,0 +1,68 @@
+mnemonic: TEST
+doc:
+  title: Test
+  summary: Computes a comparison result and updates condition codes without storing the temporary value.
+  instruction_family: integer_alu
+  instruction_class: integer
+behavior:
+  group: integer_compare
+  inputs:
+  - dst
+  - src
+  output: none
+  operation:
+  - result_v = dst_v & src_v;
+  - ZF = result_v == 0;
+  - NF = result_v s< 0;
+  - CF = 0;
+  - VF = 0;
+  repeat_observed_value: lhs_bitwise_and_rhs
+  repflags: flags_logic_observed_value
+attributes:
+  privilege: unprivileged
+  streaming_candidate: true
+  flags:
+    Z: result == 0
+    N: most_significant_bit(result)
+    C: '0'
+    V: '0'
+forms:
+  compact_forms:
+  - operands:
+    - name: src
+      type: Rn
+    - name: dst
+      type: Rn
+    size: LQ
+  - operands:
+    - name: imm
+      type: imm
+    - name: rhs
+      type: Rn
+    size: WL
+  extended_forms:
+  - operands:
+    - name: lhs
+      type: EA
+    - name: rhs
+      type: Rn
+    size: BWLQ
+    compact: false
+  - operands:
+    - name: lhs
+      type: Rn
+    - name: rhs
+      type: EA
+    size: BWLQ
+    compact: false
+  - operands:
+    - name: imm
+      type: imm6
+    - name: rhs
+      type: EA
+    size: BWLQ
+    compact: false
+  result: none
+  memory_memory: disallowed
+definition_status:
+  allocation: 'external: isa/alloc'

@@ -1,0 +1,18 @@
+mnemonic: NOP
+doc:
+  title: No Operation
+  summary: No architectural state change.
+  instruction_family: core_control
+  instruction_class: system
+behavior:
+  group: core_control
+  output: none
+  operation:
+  - goto <nop_done>;
+  - <nop_done>
+attributes:
+  privilege: any
+forms:
+  operands: []
+definition_status:
+  allocation: 'external: isa/alloc'

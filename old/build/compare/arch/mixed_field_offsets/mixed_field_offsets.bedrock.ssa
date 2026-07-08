@@ -1,0 +1,58 @@
+export function w $mixed_field_offsets(p %t0, p %t1, w %t2) {
+@l0
+	%ip =p alloc8 8
+	storel %t0, %ip
+	%lp =p alloc8 8
+	storel %t1, %lp
+	%n =p alloc4 4
+	storew %t2, %n
+	%a =p alloc4 4
+	%b =p alloc4 4
+	%x =p alloc8 8
+	%y =p alloc8 8
+	%t6 =p loadl %ip
+	%t5 =p add %t6, 4
+	%t4 =w loadw %t5
+	storew %t4, %a
+	%t11 =p loadl %ip
+	%t10 =p add %t11, 28
+	%t9 =w loadw %t10
+	storew %t9, %b
+	%t16 =p loadl %lp
+	%t15 =p add %t16, 16
+	%t14 =l loadl %t15
+	storel %t14, %x
+	%t21 =p loadl %lp
+	%t20 =p add %t21, 40
+	%t19 =l loadl %t20
+	storel %t19, %y
+	%t27 =l loadl %x
+	%t28 =l loadl %y
+	%t26 =l add %t27, %t28
+	%t29 =w loadw %a
+	%t30 =l extsw %t29
+	%t25 =l add %t26, %t30
+	%t31 =w loadw %n
+	%t32 =l extsw %t31
+	%t24 =l add %t25, %t32
+	%t34 =p loadl %lp
+	%t33 =p add %t34, 40
+	storel %t24, %t33
+	%t39 =w loadw %a
+	%t40 =w loadw %b
+	%t38 =w add %t39, %t40
+	%t41 =w loadw %n
+	%t37 =w add %t38, %t41
+	%t43 =p loadl %ip
+	%t42 =p add %t43, 28
+	storew %t37, %t42
+	%t48 =p loadl %ip
+	%t47 =p add %t48, 0
+	%t46 =w loadw %t47
+	%t52 =p loadl %ip
+	%t51 =p add %t52, 28
+	%t50 =w loadw %t51
+	%t45 =w add %t46, %t50
+	ret %t45
+}
+

@@ -1,0 +1,34 @@
+mnemonic: FSCALE
+doc:
+  title: Floating-Point Scale
+  summary: Performs the floating-point scale operation.
+  instruction_family: fpu
+  instruction_class: fpu
+behavior:
+  group: fpu_arithmetic
+  inputs:
+  - src
+  input_output: dst
+  operation:
+  - dst_v = fp_scale(dst_v, src_v);
+attributes:
+  privilege: unprivileged
+  fp_flags:
+    update:
+    - NV
+    - OF
+    - UF
+    - NX
+forms:
+  operands:
+  - - name: src
+      type: FREG
+    - name: dst
+      type: FREG
+  - - name: src
+      type: EA
+    - name: dst
+      type: FREG
+  size: S_D
+definition_status:
+  allocation: 'external: isa/alloc'

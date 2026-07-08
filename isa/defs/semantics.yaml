@@ -1,0 +1,100 @@
+version: draft-v1
+encoding_rules:
+  instruction_length:
+    overlong_encoding:
+      behavior: allowed
+      payload: extra trailing words are padding payload
+    undersized_encoding:
+      behavior: length/decode fault
+      rule: the encoded length must contain all required opcode, descriptor, immediate, displacement,
+        and prefix words
+  memory_operands:
+    memory_memory_allowed_for:
+    - MOV
+    - CMP
+    - EXTSW
+    - EXTZW
+    - EXTSL
+    - EXTZL
+    - EXTSQ
+    - EXTZQ
+    default: at_most_one_memory_operand
+  auto_update_ea:
+    authoritative_source: ea.yaml
+    modes:
+    - postincrement
+    - predecrement
+    prefix_based_update: false
+    commit_rule: register updates become architectural only at instruction commit
+  repeat_prefixes:
+    authoritative_source: prefixes.yaml
+    members:
+    - REPcc
+  canonical_forms:
+    MOV_RN_TO_RN:
+      canonical_form: MOV Rn(src), Rn(dst)
+      noncanonical_store_form: reclaimed from wider register/EA forms
+  long_control_transfer:
+    rationale: CS and PC must be changed as one architectural commit point
+    disallow_general_CS_write: true
+    segment_operand: Rn
+    target_operand: EA
+    segment_immediate_plus_offset_immediate:
+      allowed: false
+      reason: 64-bit CS immediate plus 64-bit PC immediate would exceed the 8-word instruction limit
+compatibility_rules:
+  reserved_bits:
+    architected_register_bits:
+      read: zero
+      write: must_be_zero
+    control_register_bits:
+      read: zero
+      write: must_be_zero
+      write_exception: INVALID_CONTROL_STATE
+    selector_values:
+      exception: INVALID_CONTROL_STATE
+    page_table_bits:
+      consumed_exception: PAGE_FAULT
+    interrupt_vector_table_bits:
+      write: must_be_zero
+    supervisor_frame_bits:
+      write: must_be_zero
+    software_defined_bits:
+      hardware_use: ignored
+      software_use: allowed
+  instruction_encoding_faults:
+    reserved_opcode:
+      exception: ILLEGAL_INSTRUCTION
+    reserved_extension_opcode:
+      exception: ILLEGAL_INSTRUCTION
+    reserved_effective_address_form:
+      exception: ILLEGAL_INSTRUCTION
+    unsupported_optional_instruction_group:
+      exception: ILLEGAL_INSTRUCTION
+    extension_unavailable_exception:
+      defined: false
+  prefix_values:
+    unassigned:
+      exception: none
+      behavior: no_architectural_effect
+      reserved_for: future_prefix_definition
+  canonical_encodings:
+    assembler_default: canonical
+    disassembler_default: canonical
+    noncanonical_default:
+      exception: ILLEGAL_INSTRUCTION
+    explicit_alias_or_priority:
+      allowed: true
+  cpuid:
+    unknown_class:
+      result: zero
+    unknown_leaf:
+      result: zero
+    unknown_index:
+      result: zero
+    reserved_result_bits:
+      software_action: ignore
+    privilege: unprivileged
+    serialization: none
+    runtime_mutability:
+      stable_after_reset: true

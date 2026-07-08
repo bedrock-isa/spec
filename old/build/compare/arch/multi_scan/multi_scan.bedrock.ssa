@@ -1,0 +1,160 @@
+export function w $ms_find_zero(p %t0, w %t1) {
+@l0
+	%p =p alloc8 8
+	storel %t0, %p
+	%n =p alloc4 4
+	storew %t1, %n
+	%i =p alloc4 4
+	%v =p alloc4 4
+	storew 0, %i
+@l1
+	%t5 =w loadw %i
+	%t6 =w loadw %n
+	%t4 =w csltw %t5, %t6
+	jnz %t4, @l2, @l3
+@l2
+	%t10 =p loadl %p
+	%t11 =w loadw %i
+	%t12 =l extsw %t11
+	%t13 =l mul 4, %t12
+	%t9 =p add %t10, %t13
+	%t8 =w loadw %t9
+	storew %t8, %v
+	%t15 =w loadw %v
+	%t14 =w ceqw %t15, 0
+	jnz %t14, @l4, @l5
+@l4
+	%t17 =w loadw %i
+	ret %t17
+@l5
+	%t20 =w loadw %i
+	%t19 =w add %t20, 1
+	storew %t19, %i
+	jmp @l1
+@l3
+	%t22 =w loadw %i
+	ret %t22
+}
+
+export function w $ms_count_ge(p %t0, w %t1, w %t2) {
+@l7
+	%p =p alloc8 8
+	storel %t0, %p
+	%n =p alloc4 4
+	storew %t1, %n
+	%threshold =p alloc4 4
+	storew %t2, %threshold
+	%i =p alloc4 4
+	%v =p alloc4 4
+	storew 0, %i
+@l8
+	%t6 =w loadw %i
+	%t7 =w loadw %n
+	%t5 =w csltw %t6, %t7
+	jnz %t5, @l9, @l10
+@l9
+	%t11 =p loadl %p
+	%t12 =w loadw %i
+	%t13 =l extsw %t12
+	%t14 =l mul 4, %t13
+	%t10 =p add %t11, %t14
+	%t9 =w loadw %t10
+	storew %t9, %v
+	%t17 =w loadw %i
+	%t16 =w add %t17, 1
+	storew %t16, %i
+	%t20 =w loadw %threshold
+	%t21 =w loadw %v
+	%t19 =w cslew %t20, %t21
+	jnz %t19, @l11, @l12
+@l11
+	jmp @l10
+@l12
+	jmp @l8
+@l10
+	%t22 =w loadw %i
+	ret %t22
+}
+
+export function w $ms_copy_prefix(p %t0, p %t1, w %t2) {
+@l14
+	%dst =p alloc8 8
+	storel %t0, %dst
+	%src =p alloc8 8
+	storel %t1, %src
+	%n =p alloc4 4
+	storew %t2, %n
+	%i =p alloc4 4
+	%v =p alloc4 4
+	storew 0, %i
+@l15
+	%t6 =w loadw %i
+	%t7 =w loadw %n
+	%t5 =w csltw %t6, %t7
+	jnz %t5, @l16, @l17
+@l16
+	%t11 =p loadl %src
+	%t12 =w loadw %i
+	%t13 =l extsw %t12
+	%t14 =l mul 4, %t13
+	%t10 =p add %t11, %t14
+	%t9 =w loadw %t10
+	storew %t9, %v
+	%t16 =w loadw %v
+	%t18 =p loadl %dst
+	%t19 =w loadw %i
+	%t20 =l extsw %t19
+	%t21 =l mul 4, %t20
+	%t17 =p add %t18, %t21
+	storew %t16, %t17
+	%t23 =w loadw %v
+	%t22 =w ceqw %t23, 0
+	jnz %t22, @l18, @l19
+@l18
+	%t25 =w loadw %i
+	ret %t25
+@l19
+	%t28 =w loadw %i
+	%t27 =w add %t28, 1
+	storew %t27, %i
+	jmp @l15
+@l17
+	%t30 =w loadw %i
+	ret %t30
+}
+
+export function w $ms_pipeline(p %t0, p %t1, w %t2, w %t3) {
+@l21
+	%dst =p alloc8 8
+	storel %t0, %dst
+	%src =p alloc8 8
+	storel %t1, %src
+	%n =p alloc4 4
+	storew %t2, %n
+	%threshold =p alloc4 4
+	storew %t3, %threshold
+	%z =p alloc4 4
+	%c =p alloc4 4
+	%copied =p alloc4 4
+	%t6 =p loadl %src
+	%t7 =w loadw %n
+	%t5 =w call $ms_find_zero(p %t6, w %t7)
+	storew %t5, %z
+	%t10 =p loadl %src
+	%t11 =w loadw %n
+	%t12 =w loadw %threshold
+	%t9 =w call $ms_count_ge(p %t10, w %t11, w %t12)
+	storew %t9, %c
+	%t15 =p loadl %dst
+	%t16 =p loadl %src
+	%t17 =w loadw %n
+	%t14 =w call $ms_copy_prefix(p %t15, p %t16, w %t17)
+	storew %t14, %copied
+	%t20 =w loadw %z
+	%t21 =w loadw %c
+	%t19 =w add %t20, %t21
+	%t22 =w loadw %copied
+	%t18 =w add %t19, %t22
+	ret %t18
+}
+

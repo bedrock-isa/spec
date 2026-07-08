@@ -1,0 +1,23 @@
+mnemonic: SET
+doc:
+  title: Set True
+  summary: Writes integer one to the destination operand.
+  instruction_family: control_flow
+  instruction_class: control_flow
+behavior:
+  group: control_flow
+  output: dst
+  operation:
+  - dst_v = 1;
+attributes:
+  privilege: unprivileged
+forms:
+  dst_ea_set: store_destination
+  operands:
+  - name: dst
+    type: EA
+  size: BWLQ
+  writes: 1
+definition_status:
+  allocation: 'external: isa/alloc'
+

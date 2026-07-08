@@ -1,0 +1,102 @@
+\clearpage
+\section{Overview}
+
+@ARCH_NAME@ defines a bounded, 16-bit-word-oriented CISC instruction set
+architecture. It includes selected register-memory forms, compact
+register-register forms, explicit instruction lengths, and a fixed maximum
+instruction size.
+
+The base architecture combines simplified effective addressing with
+page-granular segmented address pre-translation, optional page-table
+translation, and ordinary memory-mapped device access.
+
+\subsection{Design Goals}
+@ARCH_NAME@ is intended for high-performance general-purpose systems rather
+than as a minimal embedded instruction set. The architecture keeps the visible
+programming model scalar and bounded, while giving implementations explicit
+repeated-operation structures that may be executed by microarchitectural
+streaming or internal SIMD machinery.
+
+\begin{itemize}
+\item preserve selected CISC code-density advantages without unbounded instruction forms
+\item make instruction boundaries and maximum instruction size explicit
+\item support register-memory operations and compact hot-path register-register operations
+\item expose scalar architectural state while allowing wider internal execution resources
+\item accelerate fast, regular loops through REP, REPcc, REPG, and update-eligible effective addresses
+\item let common loop kernels scale with implementation width without adding programmer-visible vector state or width-specific opcode families
+\item avoid making vector width or internal streaming resources part of the architectural ABI
+\item leave specialized cryptographic, image, matrix, tensor, and accelerator workloads to extensions or devices
+\end{itemize}
+
+\subsection{Architectural Profile}
+\begin{itemize}
+\item 16-bit instruction words
+\item explicit instruction length encoded in word 0
+\item maximum instruction length of eight words
+\item at most one prefix word containing two prefix bytes
+\item register-register and register-memory instruction forms
+\item bounded compact and extended effective-address forms
+\item page-granular segment pre-translation before optional paging
+\item memory-mapped device access through the normal memory map
+\item no separate I/O port address space
+\item no direct physical-memory load/store instructions
+\end{itemize}
+
+\subsection{Instruction Stream}
+The instruction stream is composed of 16-bit words. Instructions are aligned to
+16-bit boundaries. The program counter addresses bytes, but instruction length
+is defined in units of 16-bit words.
+
+\[
+\mathit{next\_pc} = \mathit{pc} + 2 \times \mathit{instruction\_length\_in\_words}
+\]
+
+The maximum instruction length is eight words, or 16 bytes. No instruction may
+exceed this bound.
+
+\subsection{Word 0 Format}
+Every instruction begins with word 0. The instruction boundary is determined
+from word 0 alone.
+
+\begin{manuallistedbitdiagram}{Word 0 Format}
+\manualbitfieldrow{word 0}{%
+\manualbitlabel{15}
+\manualbitlabel{14}
+\manualbitlabel{11}
+\manualbitlabel{0}
+}{%
+\manualbitfieldtext{P}{1}
+\manualbitfieldtext{L}{3}
+\manualbitfieldtext{primary opcode/fields}{12}
+}
+\end{manuallistedbitdiagram}
+
+
+@WORD0_FIELD_TABLE@
+
+@INSTRUCTION_LENGTH_TABLE@
+
+
+\[
+\mathit{length} = \mathit{word0.L} + 1 \qquad
+\mathit{next\_pc} = \mathit{pc} + 2 \times \mathit{length}
+\]
+
+\subsection{Prefix Model}
+If P is set, word 1 is a prefix word containing two independent 8-bit prefix slots.
+The low byte, bits 7..0, is \texttt{prefix0}; the high byte, bits 15..8, is
+\texttt{prefix1}. Prefixes do not determine instruction length.
+
+@PREFIX_MODEL_TABLE@
+
+\begin{manuallistedbitdiagram}{Prefix Word Format}
+\manualbitfieldrow{word 1}{%
+\manualbitlabel{15}
+\manualbitlabel{8}
+\manualbitlabel{7}
+\manualbitlabel{0}
+}{%
+\manualbitfieldtext{prefix1}{8}
+\manualbitfieldtext{prefix0}{8}
+}
+\end{manuallistedbitdiagram}

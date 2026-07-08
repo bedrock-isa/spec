@@ -1,0 +1,60 @@
+export function w $clamp_store(p %t0, p %t1, w %t2, w %t3, w %t4) {
+@l0
+	%dst =p alloc8 8
+	storel %t0, %dst
+	%src =p alloc8 8
+	storel %t1, %src
+	%n =p alloc4 4
+	storew %t2, %n
+	%lo =p alloc4 4
+	storew %t3, %lo
+	%hi =p alloc4 4
+	storew %t4, %hi
+	%i =p alloc4 4
+	%v =p alloc4 4
+	storew 0, %i
+@l1
+	%t8 =w loadw %i
+	%t9 =w loadw %n
+	%t7 =w csltw %t8, %t9
+	jnz %t7, @l2, @l3
+@l2
+	%t13 =p loadl %src
+	%t14 =w loadw %i
+	%t15 =l extsw %t14
+	%t16 =l mul 4, %t15
+	%t12 =p add %t13, %t16
+	%t11 =w loadw %t12
+	storew %t11, %v
+	%t18 =w loadw %v
+	%t19 =w loadw %lo
+	%t17 =w csltw %t18, %t19
+	jnz %t17, @l4, @l5
+@l4
+	%t21 =w loadw %lo
+	storew %t21, %v
+@l5
+	%t23 =w loadw %hi
+	%t24 =w loadw %v
+	%t22 =w csltw %t23, %t24
+	jnz %t22, @l7, @l8
+@l7
+	%t26 =w loadw %hi
+	storew %t26, %v
+@l8
+	%t28 =w loadw %v
+	%t30 =p loadl %dst
+	%t31 =w loadw %i
+	%t32 =l extsw %t31
+	%t33 =l mul 4, %t32
+	%t29 =p add %t30, %t33
+	storew %t28, %t29
+	%t36 =w loadw %i
+	%t35 =w add %t36, 1
+	storew %t35, %i
+	jmp @l1
+@l3
+	%t38 =w loadw %i
+	ret %t38
+}
+

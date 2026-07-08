@@ -1,0 +1,35 @@
+version: rewrite-draft-v1
+general_registers:
+- {name: R0, encoding: 0, width: 64}
+- {name: R1, encoding: 1, width: 64}
+- {name: R2, encoding: 2, width: 64}
+- {name: R3, encoding: 3, width: 64}
+- {name: R4, encoding: 4, width: 64}
+- {name: R5, encoding: 5, width: 64}
+- {name: R6, encoding: 6, width: 64}
+- {name: R7, encoding: 7, width: 64}
+- {name: R8, encoding: 8, width: 64}
+- {name: R9, encoding: 9, width: 64}
+- {name: R10, encoding: 10, width: 64}
+- {name: R11, encoding: 11, width: 64}
+- {name: R12, encoding: 12, width: 64}
+- {name: R13, encoding: 13, width: 64}
+- {name: R14, encoding: 14, width: 64}
+- {name: R15, encoding: 15, width: 64}
+special_registers:
+- name: SP
+  width: 64
+  fixed_segment: SS
+  ea_encoding: 0b1101000
+- name: PC
+  width: 64
+  fixed_segment: CS
+  ea_encoding: implicit
+model:
+  general_register_field_width: 4
+  no_address_data_split: true
+  no_data_register_bank: true
+  notes:
+  - SP and PC are special architectural registers outside the 4-bit Rn namespace.
+  - SP-relative memory forms use SS by default.
+  - PC-relative memory forms use CS by default.

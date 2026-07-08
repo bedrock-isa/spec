@@ -1,0 +1,17 @@
+SAVE and RESTORE use a CPUID-defined memory image. The save-area base is 4 KiB aligned, and extension component
+slots are 64-byte aligned.
+
+The fixed base block records the architectural integer state required for user-level context save. Extension
+components are present only when the state-block bitmap and CPUID component description indicate that the component
+is enabled and saved.
+
+RESTORE is the inverse operation for a valid save image. User-mode RESTORE ignores saved supervisor-only STATUS
+state; supervisor RESTORE applies the normal STATUS write rules.
+
+@SAVE_AREA_DIAGRAM@
+
+@SAVE_RESTORE_INSTRUCTION_TABLE@
+
+@SAVE_AREA_COMPONENT_TABLE@
+
+@SAVE_RESTORE_RULE_TABLE@

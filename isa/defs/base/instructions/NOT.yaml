@@ -1,0 +1,35 @@
+mnemonic: NOT
+doc:
+  title: Bitwise Not
+  summary: Performs the bitwise not operation.
+  instruction_family: integer_unary
+  instruction_class: integer
+behavior:
+  group: integer_unary
+  input_output: dst
+  operation:
+  - dst_v = ~dst_v;
+  - ZF = dst_v == 0;
+  - NF = dst_v s< 0;
+  - CF = 0;
+  - VF = 0;
+attributes:
+  privilege: unprivileged
+  flags:
+    Z: result == 0
+    N: most_significant_bit(result)
+    C: '0'
+    V: '0'
+forms:
+  compact_forms:
+  - operands:
+    - name: dst
+      type: Rn
+  extended_forms:
+  - operands:
+    - name: dst
+      type: EA
+    compact: false
+  size: BWLQ
+definition_status:
+  allocation: 'external: isa/alloc'

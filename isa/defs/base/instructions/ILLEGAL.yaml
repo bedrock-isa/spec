@@ -1,0 +1,17 @@
+mnemonic: ILLEGAL
+doc:
+  title: Illegal Instruction
+  summary: Raise illegal-instruction exception.
+  instruction_family: core_control
+  instruction_class: system
+behavior:
+  group: core_control
+  output: none
+  operation:
+  - arch_raise_illegal_instruction();
+attributes:
+  privilege: any
+forms:
+  operands: []
+definition_status:
+  allocation: 'external: isa/alloc'

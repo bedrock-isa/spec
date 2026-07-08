@@ -1,0 +1,31 @@
+mnemonic: FTAN
+doc:
+  title: Floating-Point Tangent
+  summary: Performs the floating-point tangent operation.
+  instruction_family: fpu_transcendental
+  instruction_class: fpu
+behavior:
+  group: fpu_transcendental
+  inputs:
+  - src
+  output: dst
+  operation:
+  - dst_v = fp_tan(src_v);
+attributes:
+  privilege: unprivileged
+  fp_flags:
+    update:
+    - NV
+    - OF
+    - UF
+    - NX
+forms:
+  operands:
+  - name: src
+    type: FREG
+  - name: dst
+    type: FREG
+  size: S_D
+  extension_family: fpu_transcendental
+definition_status:
+  allocation: 'external: isa/alloc'

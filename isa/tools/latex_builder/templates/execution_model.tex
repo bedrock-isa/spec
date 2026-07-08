@@ -1,34 +1,54 @@
 This section defines the common execution contract used by the instruction descriptions. An individual
-instruction may add stricter rules, but it does not silently replace the rules below. The purpose of this
-section is to make operand evaluation, side effects, repetition, and status updates readable before the
-per-instruction pages.
+instruction may add stricter rules, but it does not silently replace the rules below. The purpose of this section
+is to make operand evaluation, side effects, repetition, and status updates readable before the per-instruction
+pages.
 
 \subsection{Instruction Boundary and Default Execution Rules}
-The instruction boundary is fixed by word 0 before operand evaluation begins. An implementation may reject an
-instruction before any architectural state is changed if the encoded length cannot contain the selected form.
+The instruction boundary is fixed by the first two instruction bytes before operand evaluation begins. An
+implementation may reject an instruction before any architectural state is changed if the encoded length cannot
+contain the selected form.
 
-@DEFAULT_RULE_TABLE@
+The encoded length must contain every required opcode byte, prefix word, descriptor, immediate, displacement,
+bitmap, and instruction-specific payload. Extra payload bytes are part of the instruction record but have no
+implicit extension meaning unless the selected instruction form consumes them.
+
+@EXECUTION_DEFAULTS_TABLE@
+
+@INSTRUCTION_BOUNDARY_TABLE@
 
 \subsection{Instruction Boundary, Operand Evaluation, and EA Defaults}
-\begin{itemize}
-\item Word 0 length selects the instruction boundary; prefixes and extension words never extend it implicitly.
-\item Operands are decoded in instruction order; source reads complete before the final destination write unless an atomic form says otherwise.
-\item EA calculation may produce an address without reading memory; memory is read only when the operation needs the operand value.
-\end{itemize}
+Operands are decoded in instruction order. Source reads complete before the final destination write unless an
+atomic form says otherwise. Effective-address calculation may produce an address without reading memory.
+
+Auto-update EA forms update a temporary operand-evaluation image. The architectural register update becomes
+visible only when the instruction commits.
+
+@OPERAND_DEFAULTS_TABLE@
 
 \subsection{Mnemonic Suffix Rules}
+The B, W, L, and Q suffixes select 8-, 16-, 32-, and 64-bit integer operation size. S and D suffixes select
+32- and 64-bit floating-point scalar size where the floating-point instruction group defines them.
+
+If an instruction form encodes a size selector z, the instruction definition maps z to the suffix set shown by
+that form. A mnemonic without a size suffix has a single architecturally defined size or no data-size operand.
 Conditional mnemonic forms use the condition names listed in the Condition Codes section.
 
-@SUFFIX_RULE_TABLE@
+@MNEMONIC_SUFFIX_TABLE@
 
 \subsection{Operand and Status Notation}
-The generated operation fields use compact notation. The following terms define when an operand is only
-addressed, when it is read, and which status register is affected.
+Rn names a general-purpose register. SP and PC are special registers outside the Rn encoding namespace. An
+\texttt{<ea>} operand names a compact effective-address field and any appended EA payload required by that field.
 
-@NOTATION_TABLE@
+FLAGS, STATUS, FFLAGS, and FSTATUS are architectural state registers. Instruction descriptions state whether a
+form updates, preserves, reads, or ignores each status field.
+
+@SEMANTIC_NOTATION_TABLE@
 
 \subsection{Shared Side-Effect Rules}
-These rows summarize execution rules that apply to whole instruction families. The instruction descriptions
-list exact forms and operands; this block records the common side-effect model.
+An instruction that faults before commit leaves destination registers, destination memory, and auto-update
+register effects unchanged unless the instruction explicitly defines partial completion.
 
-@SHARED_SIDE_EFFECT_BLOCK@
+Atomic read-modify-write forms have a single architectural commit point for the memory update and any associated
+register result. Cache, TLB, and system-state instructions describe their own serialization and visibility rules.
+
+@SHARED_SIDE_EFFECT_TABLE@

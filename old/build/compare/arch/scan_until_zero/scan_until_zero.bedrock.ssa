@@ -1,0 +1,38 @@
+export function w $scan_until_zero(p %t0, w %t1) {
+@l0
+	%p =p alloc8 8
+	storel %t0, %p
+	%n =p alloc4 4
+	storew %t1, %n
+	%i =p alloc4 4
+	%v =p alloc4 4
+	storew 0, %i
+@l1
+	%t5 =w loadw %i
+	%t6 =w loadw %n
+	%t4 =w csltw %t5, %t6
+	jnz %t4, @l2, @l3
+@l2
+	%t10 =p loadl %p
+	%t11 =w loadw %i
+	%t12 =l extsw %t11
+	%t13 =l mul 4, %t12
+	%t9 =p add %t10, %t13
+	%t8 =w loadw %t9
+	storew %t8, %v
+	%t15 =w loadw %v
+	%t14 =w ceqw %t15, 0
+	jnz %t14, @l4, @l5
+@l4
+	%t17 =w loadw %i
+	ret %t17
+@l5
+	%t20 =w loadw %i
+	%t19 =w add %t20, 1
+	storew %t19, %i
+	jmp @l1
+@l3
+	%t22 =w loadw %i
+	ret %t22
+}
+

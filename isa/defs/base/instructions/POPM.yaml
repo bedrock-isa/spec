@@ -1,0 +1,29 @@
+mnemonic: POPM
+doc:
+  title: Pop Multiple
+  summary: Pop selected R15-R0 registers in inverse bitmap order.
+  instruction_family: data_movement
+  instruction_class: data_movement
+behavior:
+  group: stack
+  inputs:
+  - regs
+  output: none
+  operation:
+  - arch_popm(regs_v);
+  operation_text: 'For each set bit in the bitmap, POPM pops one 64-bit stack slot into the corresponding
+    register. Registers are processed in inverse bitmap order, R15 through R0. Each selected register
+    is loaded from SP before SP is incremented by 8.
+
+    '
+attributes:
+  privilege: unprivileged
+forms:
+  operands:
+  - name: regs
+    type: bitmap16
+  bitmap:
+    bits_0_15: R0-R15
+  size_per_register: Q
+definition_status:
+  allocation: 'external: isa/alloc'

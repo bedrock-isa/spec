@@ -1,0 +1,17 @@
+mnemonic: RFENCE
+doc:
+  title: Read Fence
+  summary: Order prior reads before later reads.
+  instruction_family: core_control
+  instruction_class: system
+behavior:
+  group: core_control
+  output: none
+  operation:
+  - arch_fence_read();
+attributes:
+  privilege: any
+forms:
+  operands: []
+definition_status:
+  allocation: 'external: isa/alloc'

@@ -1,0 +1,29 @@
+mnemonic: PUSHM
+doc:
+  title: Push Multiple
+  summary: Push selected R0-R15 registers according to bitmap order.
+  instruction_family: data_movement
+  instruction_class: data_movement
+behavior:
+  group: stack
+  inputs:
+  - regs
+  output: none
+  operation:
+  - arch_pushm(regs_v);
+  operation_text: 'For each set bit in the bitmap, PUSHM pushes the corresponding 64-bit register value
+    onto the stack. Registers are processed in increasing bitmap order, R0 through R15. Each selected
+    register decrements SP by 8 before storing the register value at the new SP.
+
+    '
+attributes:
+  privilege: unprivileged
+forms:
+  operands:
+  - name: regs
+    type: bitmap16
+  bitmap:
+    bits_0_15: R0-R15
+  size_per_register: Q
+definition_status:
+  allocation: 'external: isa/alloc'

@@ -1,0 +1,354 @@
+version: rewrite-draft-v1
+source: docs/isa_reform_plan.md
+description: Rn-based effective-address encoding for the ISA rewrite.
+
+ea_field:
+  width: 7
+  notation: eeeeeee
+
+scale_rule:
+  indexed_scale_source: instruction_implicit
+  default: memory operand element size in bytes
+  lea: instruction suffix selects the element size
+  unscaled_index_forms: not_allocated
+  notes:
+  - Byte, word, long, and quad operation sizes imply scales 1, 2, 4, and 8.
+  - Instructions without a normal memory element size must define their own scale rule.
+
+segments:
+  field_width: 3
+  values:
+    0: CS
+    1: DS
+    2: SS
+    3: GS0
+    4: GS1
+    5: GS2
+    6: GS3
+    7: GS4
+  compact_rn_memory_default: operation default data segment
+  sp_fixed_segment: SS
+  pc_fixed_segment: CS
+  ext0_default_segment: none
+
+displacements:
+  disp8s:
+    bytes: 1
+    signed: true
+  disp16s:
+    bytes: 2
+    signed: true
+  disp32s:
+    bytes: 4
+    signed: true
+  disp64:
+    bytes: 8
+    signed: false
+
+compact_ea:
+- bits: 000rrrr
+  syntax: Rn(r)
+  class: register
+  register: Rn
+  memory: false
+- bits: 001rrrr
+  syntax: "[Rn(r)]"
+  class: memory
+  base: Rn
+  memory: true
+- bits: 010rrrr
+  syntax: "[Rn(r) + disp8s]"
+  class: memory
+  base: Rn
+  displacement: disp8s
+  memory: true
+- bits: 011rrrr
+  syntax: "[Rn(r) + disp16s]"
+  class: memory
+  base: Rn
+  displacement: disp16s
+  memory: true
+- bits: 100rrrr
+  syntax: "[Rn(r) + disp32s]"
+  class: memory
+  base: Rn
+  displacement: disp32s
+  memory: true
+- bits: 101rrrr
+  syntax: "[Rn(r) + disp64]"
+  class: memory
+  base: Rn
+  displacement: disp64
+  memory: true
+- bits: "1100000"
+  syntax: "[SP + disp8s]"
+  class: memory
+  base: SP
+  fixed_segment: SS
+  displacement: disp8s
+  memory: true
+- bits: "1100001"
+  syntax: "[SP + disp16s]"
+  class: memory
+  base: SP
+  fixed_segment: SS
+  displacement: disp16s
+  memory: true
+- bits: "1100010"
+  syntax: "[SP + disp32s]"
+  class: memory
+  base: SP
+  fixed_segment: SS
+  displacement: disp32s
+  memory: true
+- bits: "1100011"
+  syntax: "[SP + disp64]"
+  class: memory
+  base: SP
+  fixed_segment: SS
+  displacement: disp64
+  memory: true
+- bits: "1100100"
+  syntax: "[PC + disp8s]"
+  class: memory
+  base: PC
+  fixed_segment: CS
+  displacement: disp8s
+  memory: true
+- bits: "1100101"
+  syntax: "[PC + disp16s]"
+  class: memory
+  base: PC
+  fixed_segment: CS
+  displacement: disp16s
+  memory: true
+- bits: "1100110"
+  syntax: "[PC + disp32s]"
+  class: memory
+  base: PC
+  fixed_segment: CS
+  displacement: disp32s
+  memory: true
+- bits: "1100111"
+  syntax: "[PC + disp64]"
+  class: memory
+  base: PC
+  fixed_segment: CS
+  displacement: disp64
+  memory: true
+- bits: "1101000"
+  syntax: SP
+  class: register
+  register: SP
+  memory: false
+- bits: "1101001"
+  syntax: "[SP]"
+  class: memory
+  base: SP
+  fixed_segment: SS
+  memory: true
+- bits: "1101010"
+  syntax: "[abs32s]"
+  class: memory
+  absolute: abs32s
+  memory: true
+- bits: "1101011"
+  syntax: "[abs64]"
+  class: memory
+  absolute: abs64
+  memory: true
+- bits: "1101100"
+  syntax: imm8s
+  class: immediate
+  immediate: imm8s
+  memory: false
+- bits: "1101101"
+  syntax: imm16s
+  class: immediate
+  immediate: imm16s
+  memory: false
+- bits: "1101110"
+  syntax: imm32s
+  class: immediate
+  immediate: imm32s
+  memory: false
+- bits: "1101111"
+  syntax: imm64
+  class: immediate
+  immediate: imm64
+  memory: false
+- bits: "1110000"
+  syntax: EXT0/disp8s
+  class: ext0_escape
+  displacement: disp8s
+- bits: "1110001"
+  syntax: EXT0/disp16s
+  class: ext0_escape
+  displacement: disp16s
+- bits: "1110010"
+  syntax: EXT0/disp32s
+  class: ext0_escape
+  displacement: disp32s
+- bits: "1110011"
+  syntax: EXT0/disp64
+  class: ext0_escape
+  displacement: disp64
+- bits: "1110100"
+  syntax: EXT0
+  class: ext0_escape
+  displacement: none
+- bits: "1110101..1111111"
+  class: reserved
+
+canonical_encoding:
+  unqualified_rn_memory: prefer compact forms where available
+  ext0_use: explicit segment, indexed, zero-base, SP/PC indexed, and auto-update forms
+
+ext0:
+  descriptor_segment_default: none
+  forms:
+  - bits: 0sssbbbb
+    syntax: "[SEG(s):Rn(b) + displacement]"
+    class: memory
+    segment: explicit
+    base: Rn
+  - bits: 1sss0000_bbbbiiii
+    syntax: "[SEG(s):Rn(b) + Rn(i)++ * scale + displacement]"
+    class: memory
+    segment: explicit
+    base: Rn
+    index: Rn
+    index_update: postincrement
+  - bits: 1sss0001_bbbbiiii
+    syntax: "[SEG(s):Rn(b) + --Rn(i) * scale + displacement]"
+    class: memory
+    segment: explicit
+    base: Rn
+    index: Rn
+    index_update: predecrement
+  - bits: 1sss0010_bbbbiiii
+    syntax: "[SEG(s):Rn(b) + Rn(i) * scale + displacement]"
+    class: memory
+    segment: explicit
+    base: Rn
+    index: Rn
+  - bits: 1sss0011
+    syntax: "[SEG(s):0 + displacement]"
+    class: memory
+    segment: explicit
+    base: zero
+  - bits: 1sss1000_bbbb0000
+    syntax: "[SEG(s):Rn(b)++ + displacement]"
+    class: memory
+    segment: explicit
+    base: Rn
+    base_update: postincrement
+  - bits: 1sss1000_bbbb0001
+    syntax: "[SEG(s):--Rn(b) + displacement]"
+    class: memory
+    segment: explicit
+    base: Rn
+    base_update: predecrement
+  - bits: 1sss1001_0000iiii
+    syntax: "[SEG(s):0 + Rn(i)++ * scale + displacement]"
+    class: memory
+    segment: explicit
+    base: zero
+    index: Rn
+    index_update: postincrement
+  - bits: 1sss1001_0001iiii
+    syntax: "[SEG(s):0 + --Rn(i) * scale + displacement]"
+    class: memory
+    segment: explicit
+    base: zero
+    index: Rn
+    index_update: predecrement
+  - bits: 1sss1001_0010iiii
+    syntax: "[SEG(s):0 + Rn(i) * scale + displacement]"
+    class: memory
+    segment: explicit
+    base: zero
+    index: Rn
+  - bits: 10001010_0000iiii
+    syntax: "[SP + Rn(i)++ * scale + displacement]"
+    class: memory
+    base: SP
+    fixed_segment: SS
+    index: Rn
+    index_update: postincrement
+  - bits: 10001010_0001iiii
+    syntax: "[SP + --Rn(i) * scale + displacement]"
+    class: memory
+    base: SP
+    fixed_segment: SS
+    index: Rn
+    index_update: predecrement
+  - bits: 10001010_0010iiii
+    syntax: "[SP + Rn(i) * scale + displacement]"
+    class: memory
+    base: SP
+    fixed_segment: SS
+    index: Rn
+  - bits: 10001011_0000iiii
+    syntax: "[PC + Rn(i)++ * scale + displacement]"
+    class: memory
+    base: PC
+    fixed_segment: CS
+    index: Rn
+    index_update: postincrement
+  - bits: 10001011_0001iiii
+    syntax: "[PC + --Rn(i) * scale + displacement]"
+    class: memory
+    base: PC
+    fixed_segment: CS
+    index: Rn
+    index_update: predecrement
+  - bits: 10001011_0010iiii
+    syntax: "[PC + Rn(i) * scale + displacement]"
+    class: memory
+    base: PC
+    fixed_segment: CS
+    index: Rn
+  - bits: 1bbbb100
+    syntax: "[Rn(b)++ + displacement]"
+    class: memory
+    base: Rn
+    base_update: postincrement
+    segment: default
+  - bits: 1bbbb101
+    syntax: "[--Rn(b) + displacement]"
+    class: memory
+    base: Rn
+    base_update: predecrement
+    segment: default
+  reserved_holes:
+  - 1sss0100..1sss0111
+  - unused 1sss1000 low-bit combinations
+  - unused 1sss1001 submodes
+  - unused SP/PC exact submodes
+
+auto_update_semantics:
+  modes:
+    postincrement: term uses the current temporary value, then updates the temporary value upward
+    predecrement: temporary value is updated downward first, then the term uses the updated value
+  deltas:
+    base_update: memory access size in bytes
+    index_update: one element before scaling
+  evaluation_model:
+  - Snapshot architectural registers into a temporary operand-evaluation image.
+  - Evaluate operands in defined instruction operand order.
+  - Within one EA, evaluate base term, then index term, then displacement.
+  - Auto-update addressing modes update only the temporary image.
+  - Memory reads and writes are collected as instruction side effects.
+  - No architectural register or memory side effect becomes visible before commit.
+  - If the instruction faults before commit, architectural state is unchanged except for exception entry state.
+  same_register_examples:
+  - syntax: "[R1 + R1++ * scale]"
+    meaning:
+    - Base term uses current temporary R1.
+    - Index term uses current temporary R1, then increments temporary R1 by one element.
+  - syntax: "[R1 + --R1 * scale]"
+    meaning:
+    - Base term uses current temporary R1.
+    - Index term decrements temporary R1 by one element, then uses the updated temporary R1.
+  rep_interaction: each REP iteration commits independently

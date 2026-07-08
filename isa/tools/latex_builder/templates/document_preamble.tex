@@ -95,9 +95,9 @@
   \endgroup}
 \newenvironment{manualformblock}[1]{%
   \Needspace{#1}%
-  \par\vspace{7pt}\begingroup\footnotesize
+  \par\vspace{7pt}\noindent\begin{minipage}{\linewidth}\footnotesize
 }{%
-  \par\endgroup}
+  \par\end{minipage}\par}
 \newenvironment{manualtikzdiagram}[4]{%
   \begingroup
   \Needspace{#1}%
@@ -138,6 +138,13 @@
     \node at ({\the\manualbitfieldx + #2/2},{\manualbitrowy + 0.5}) {#1};
     \advance\manualbitfieldx by \manualbitfieldwidth
   \fi}
+\newcommand{\manualbitgap}[1]{%
+  \manualbitfieldwidth=#1\relax
+  \ifmanualbitrowmeasuring
+    \advance\manualbitrowbits by \manualbitfieldwidth
+  \else
+    \advance\manualbitfieldx by \manualbitfieldwidth
+  \fi}
 \newcommand{\manualbitfieldcode}[2]{\manualbitfield{\texttt{#1}}{#2}}
 \newcommand{\manualbitfieldtext}[2]{\manualbitfield{#1}{#2}}
 \newcommand{\manualbitlabel}[1]{%
@@ -149,6 +156,20 @@
 \newcommand{\manualbitdefaultlabels}{%
   \node[anchor=south] at (0,{\manualbitrowy + 1.18}) {\the\numexpr\manualbitrowbits-1\relax};%
   \node[anchor=south] at (\the\manualbitrowbits,{\manualbitrowy + 1.18}) {0};%
+}
+\newcommand{\manualbytepairlabels}{%
+  \node[anchor=south] at (0.5,{\manualbitrowy + 1.18}) {7};%
+  \node[anchor=south] at (7.5,{\manualbitrowy + 1.18}) {0};%
+  \node[anchor=south] at (9.5,{\manualbitrowy + 1.18}) {7};%
+  \node[anchor=south] at (16.5,{\manualbitrowy + 1.18}) {0};%
+  \node[anchor=south] at (4,{\manualbitrowy + 1.50}) {byte 0};%
+  \node[anchor=south] at (13,{\manualbitrowy + 1.50}) {byte 1};%
+}
+\newcommand{\manualbytepairbitlabels}{%
+  \node[anchor=south] at (0.5,{\manualbitrowy + 1.18}) {7};%
+  \node[anchor=south] at (7.5,{\manualbitrowy + 1.18}) {0};%
+  \node[anchor=south] at (9.5,{\manualbitrowy + 1.18}) {7};%
+  \node[anchor=south] at (16.5,{\manualbitrowy + 1.18}) {0};%
 }
 \newcommand{\manualbitrowbody}[4]{%
   \manualbitrowbits=0
@@ -464,6 +485,9 @@
   \par\smallskip\centerline{\small\bfseries Figure \themanualfigure. #1}\smallskip}
 \newcommand{\manualtablecaption}[1]{%
   \refstepcounter{manualtable}\phantomsection\addcontentsline{lot}{table}{\protect\numberline{\themanualtable}#1}%
+  \par\smallskip\centerline{\small\bfseries Table \themanualtable. #1}\smallskip}
+\newcommand{\manualunlistedtablecaption}[1]{%
+  \refstepcounter{manualtable}%
   \par\smallskip\centerline{\small\bfseries Table \themanualtable. #1}\smallskip}
 \newcommand{\instrhead}[3]{%
   \phantomsection#3%

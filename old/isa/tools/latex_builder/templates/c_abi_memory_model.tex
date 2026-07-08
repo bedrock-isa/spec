@@ -1,0 +1,86 @@
+The C ABI defines the memory guarantees that C-family toolchains may assume
+when lowering normal memory accesses, C atomic operations, volatile accesses,
+and compiler-runtime helper calls. It does not define device ordering policy or
+process-wide memory mapping policy.
+
+\subsection{Normal Memory}
+Naturally aligned 1, 2, 4, and 8 byte normal-memory loads and stores are
+tear-free. Unaligned accesses have no tear-free guarantee, and 16-byte or wider
+ordinary accesses are not atomic as single C ABI operations.
+
+\subsection{C Atomics}
+Native lock-free C atomics are available only for naturally aligned integer and
+pointer objects with sizes @LOCK_FREE_WIDTHS@ bytes. Unaligned atomic objects,
+16-byte atomic objects, \texttt{\_Atomic \_\_int128}, and wider objects lower to
+libatomic or compiler-runtime helpers.
+\texttt{\_\_atomic\_always\_lock\_free} returns true only for naturally aligned
+1, 2, 4, and 8 byte objects.
+
+Atomic loads and stores of native lock-free widths use ordinary Bedrock
+load/store instructions for the memory access; the ABI tear-free guarantee for
+aligned 1, 2, 4, and 8 byte accesses is the source of atomicity. Relaxed
+load/store operations require no fence. Consume is treated as acquire. Acquire
+loads use a load followed by \texttt{AFENCE}; release stores use
+\texttt{AFENCE} followed by the store; sequentially consistent loads and stores
+use \texttt{AFENCE} on both sides until the ISA memory model defines a cheaper
+rule.
+
+\manualtablecaption{C Atomic Memory Order Mapping}
+\begingroup\footnotesize
+\setlength{\tabcolsep}{2pt}
+\begin{longtable}{@{}p{1.55in}p{3.95in}@{}}
+\toprule
+\textbf{C order} & \textbf{Bedrock order or sequence}\\
+\midrule
+\endhead
+relaxed & @ORDER_RELAXED@\\
+consume & @ORDER_CONSUME@\\
+acquire & @ORDER_ACQUIRE@\\
+release & @ORDER_RELEASE@\\
+acq\_rel & @ORDER_ACQ_REL@\\
+seq\_cst & @ORDER_SEQ_CST@\\
+\bottomrule
+\end{longtable}
+\endgroup
+
+Non-relaxed C fences lower to \texttt{AFENCE}; a relaxed thread fence is a
+no-op. Read-modify-write operations use the matching Bedrock atomic instruction
+for naturally aligned 1, 2, 4, and 8 byte objects.
+
+\manualtablecaption{C Atomic RMW Lowering}
+\begingroup\footnotesize
+\setlength{\tabcolsep}{2pt}
+\begin{longtable}{@{}p{2.15in}p{3.35in}@{}}
+\toprule
+\textbf{C operation} & \textbf{Lowering}\\
+\midrule
+\endhead
+\texttt{atomic\_fetch\_add} & \texttt{@FETCH_ADD@}\\
+\texttt{atomic\_fetch\_sub} & \texttt{@FETCH_SUB@}\\
+\texttt{atomic\_fetch\_and} & \texttt{@FETCH_AND@}\\
+\texttt{atomic\_fetch\_or} & \texttt{@FETCH_OR@}\\
+\texttt{atomic\_fetch\_xor} & \texttt{@FETCH_XOR@}\\
+\texttt{atomic\_exchange} & compare-exchange loop\\
+\texttt{atomic\_compare\_exchange} & \texttt{@CMPXCHG@}\\
+\bottomrule
+\end{longtable}
+\endgroup
+
+LLVM compare-exchange has separate success and failure orderings. The compiler
+selects the single Bedrock memory-order field that satisfies both after consume
+is mapped to acquire. Atomic helper names and exact helper signatures are owned
+by the compiler-runtime provider; once selected, helper calls use the normal
+Bedrock C ABI.
+
+\subsection{Volatile, Device, and Executable Memory}
+Volatile accesses are preserved as observable abstract-machine accesses, but
+volatile is not an ordering primitive and does not imply acquire, release,
+sequential consistency, cache synchronization, or device ordering. MMIO and
+device ordering are defined by the OS ABI, loader profile, or mapped memory
+attributes rather than by the C ABI.
+
+Changes to executable memory after relocation, dynamic code patching, or
+JIT-style writes require explicit instruction/data cache synchronization before
+execution observes the modified instructions. A loader or runtime that modifies
+executable mappings is responsible for synchronization before transferring
+control to patched code.

@@ -1,99 +1,86 @@
-\paragraph{REPcc Operation Examples.}
-The following examples show how the observed value, REPFLAGS, counter update,
-and terminating iteration interact for common operation classes. In each case,
-the counter is tested before the body executes. The body then computes an
-observed value, derives REPFLAGS from that value, and updates the counter only
-when the selected REP condition remains true.
+\subsection{REPcc Operation Examples}
+The following examples show how the observed value, REPFLAGS, counter update, and terminating iteration interact
+for common operation classes. In each case, the counter is tested before the body executes. The body then
+computes an observed value, derives REPFLAGS from that value, and updates the counter only when the selected REP
+condition remains true.
 
 \paragraph{Counted Move.}
-Plain REP is the REPT alias, so the condition is always true. This form copies
-exactly the requested count, and the counter reaches zero when the transfer
-finishes.
+Plain REP is the REPT alias, so the condition is always true. This form copies exactly the requested count, and
+the counter reaches zero when the transfer finishes.
 
 \begin{quote}
 \begingroup\small\ttfamily
 \begin{tabular}{@{}l@{}}
-; D0 = -n, A0 = src + n, A1 = dst + n\\
-REP D0, MOV.B [A0 + D0 * 1], [A1 + D0 * 1]\\
+; R0 = src, R1 = dst, R2 = count\\
+REP R2, MOV.B [R0++], [R1++]\\
 \end{tabular}
 \endgroup
 \end{quote}
 
-For MOV, the observed value is the source value. REPT does not use it to stop;
-the body commits and the counter moves toward zero after every completed
-iteration.
+For MOV, the observed value is the source value. REPT does not use it to stop; the body commits and the counter
+moves toward zero after every completed iteration.
 
 \paragraph{Scan Until Zero.}
-MOV can also be used with REPNE to scan a stream while the loaded value remains
-nonzero.
+MOV can also be used with REPNE to scan a stream while the loaded value remains nonzero.
 
 \begin{quote}
 \begingroup\small\ttfamily
 \begin{tabular}{@{}l@{}}
-; D0 = n, A0 = base\\
-MOV.L D0, D1\\
-REPNE D1, MOV.L [A0++], D2\\
-SUB.L D1, D0\\
+; R0 = base, R2 = count\\
+REPNE R2, MOV.L [R0++], R3\\
 \end{tabular}
 \endgroup
 \end{quote}
 
-The MOV body loads the candidate element into D2 and uses that loaded value as
-the observed value. If the value is nonzero, REPNE is true and D1 is decremented.
-If the value is zero, the load and address update still commit, but D1 is not
-decremented. The final subtraction therefore produces the zero element index
-without a separate off-by-one correction.
+The MOV body loads the candidate element into R3 and uses that loaded value as the observed value. If the value
+is nonzero, REPNE is true and R2 is decremented. If the value is zero, the load and address update still commit,
+but R2 is not decremented.
 
 \paragraph{Compare While Equal.}
-CMP uses the subtraction result as the observed value. REPEQ continues while the
-comparison is equal and stops on the first non-equal comparison or when the
-counter reaches zero.
+CMP uses the subtraction result as the observed value. REPEQ continues while the comparison is equal and stops
+on the first non-equal comparison or when the counter reaches zero.
 
 \begin{quote}
 \begingroup\small\ttfamily
 \begin{tabular}{@{}l@{}}
-; D0 = -n, A0 = a + n, A1 = b + n\\
-REPEQ D0, CMP.B [A0 + D0 * 1], [A1 + D0 * 1]\\
+; R0 = a, R1 = b, R2 = count\\
+REPEQ R2, CMP.B [R0++], [R1++]\\
 \end{tabular}
 \endgroup
 \end{quote}
 
-When a mismatch is found, the terminating CMP commits its FLAGS result and the
-counter is not updated for that terminating iteration. Software can use the final
-FLAGS state to derive the ordered result.
+When a mismatch is found, the terminating CMP commits its FLAGS result and the counter is not updated for that
+terminating iteration. Software can use the final FLAGS state to derive the ordered result.
 
 \paragraph{Test While Nonzero.}
-TEST derives REPFLAGS from the logical test result. A memory scan can therefore
-continue while a masked value remains nonzero, or stop when a selected bit range
-clears.
+TEST derives REPFLAGS from the logical test result. A memory scan can therefore continue while a masked value
+remains nonzero, or stop when a selected bit range clears.
 
 \begin{quote}
 \begingroup\small\ttfamily
 \begin{tabular}{@{}l@{}}
-; D0 = n, A0 = base, D3 = mask\\
-REPNE D0, TEST.L [A0++], D3\\
+; R0 = base, R2 = count, R3 = mask\\
+REPNE R2, TEST.L [R0++], R3\\
 \end{tabular}
 \endgroup
 \end{quote}
 
-The memory operand and mask are tested each iteration. A nonzero tested result
-updates the counter and continues; a zero tested result commits the TEST FLAGS
-and leaves the counter at the terminating element.
+The memory operand and mask are tested each iteration. A nonzero tested result updates the counter and
+continues; a zero tested result commits the TEST FLAGS and leaves the counter at the terminating element.
 
 \paragraph{Bulk Extension.}
-The EXTS and EXTZ memory forms use the widened result as the observed value. An
-unconditional REP form expresses a compact bulk conversion, while a conditional
-form can stop when a converted value matches the selected condition.
+The EXTS and EXTZ memory forms use the widened result as the observed value. An unconditional REP form expresses
+a compact bulk conversion, while a conditional form can stop when a converted value matches the selected
+condition.
 
 \begin{quote}
 \begingroup\small\ttfamily
 \begin{tabular}{@{}l@{}}
-; D0 = n, A0 = byte source, A1 = long destination\\
-REP D0, EXTZL.B [A0++], [A1++]\\
+; R0 = byte source, R1 = long destination, R2 = count\\
+REP R2, EXTZL.B [R0++], [R1++]\\
 \end{tabular}
 \endgroup
 \end{quote}
 
-The source byte is read, zero-extended to a long value, and written to the
-destination element. Because REP is REPT, every completed conversion updates the
-counter.
+The source byte is read, zero-extended to a long value, and written to the destination element. Because REP is
+REPT, every completed conversion updates the counter.

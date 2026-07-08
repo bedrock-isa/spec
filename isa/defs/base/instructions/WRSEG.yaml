@@ -1,0 +1,29 @@
+mnemonic: WRSEG
+doc:
+  title: Write Segment Register
+  summary: Write a segment register image from an Rn register.
+  description: WRSEG writes a 64-bit segment register image from the source Rn register to an S-class segment
+    register. The S operand selector encoding is defined by the SREG selector table. General writes to
+    CS are illegal; use LJMP, LCALL, LRET, SYSRET, or IRET for CS-changing control transfer.
+  instruction_family: system_registers
+  instruction_class: system
+behavior:
+  group: system_registers
+  inputs:
+  - src
+  output: seg
+  operation:
+  - seg_v = src_v;
+attributes:
+  privilege: policy controlled
+  flags: unchanged
+forms:
+  operands:
+  - name: src
+    type: Rn
+  - name: seg
+    type: SREG
+  size: Q
+  note: general writes to CS are illegal; use CS-changing control transfer instructions
+definition_status:
+  allocation: 'external: isa/alloc'

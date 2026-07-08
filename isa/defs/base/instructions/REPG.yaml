@@ -1,0 +1,43 @@
+mnemonic: REPG
+doc:
+  title: Grouped Repeat
+  summary: Repeats the following straight-line instruction body using an Rn counter.
+  description: 'REPG takes an Rn counter and an unsigned 16-bit body byte count. The body starts
+    at the next instruction after REPG and extends for exactly body_bytes bytes. body_bytes is encoded
+    in bytes, not words; zero and odd byte counts are invalid encodings, and the body end must land on
+    an instruction boundary.
+
+    '
+  instruction_family: control_flow
+  instruction_class: control_flow
+behavior:
+  group: control_flow
+  inputs:
+  - body_bytes
+  input_output: counter
+  operation:
+  - counter_v = arch_repg(counter_v, body_bytes_v);
+  operation_text: 'If counter is zero, no grouped instruction is executed and execution resumes after
+    the body. If counter is positive, one successful body iteration decrements it; if counter is negative,
+    one successful body iteration increments it. The update occurs only after the whole grouped body iteration
+    succeeds. Completed prior body instructions in a faulting iteration remain committed, later body instructions
+    do not execute, and the saved repeat-fault continuation records the selected counter, the body start
+    delta, and body_bytes. FLAGS and FFLAGS follow the rules of the last completed grouped instruction;
+    FFLAGS from completed floating-point operations are accumulated by bitwise inclusive-or.
+
+    '
+attributes:
+  privilege: unprivileged
+  flags: grouped instruction rules apply
+forms:
+  length:
+    words: 2
+  compact_forms:
+  - operands:
+    - name: counter
+      type: Rn
+    - name: body_bytes
+      type: imm16
+    compact: required
+definition_status:
+  allocation: 'external: isa/alloc'

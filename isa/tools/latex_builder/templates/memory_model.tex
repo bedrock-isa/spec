@@ -1,151 +1,19 @@
-\subsection{Scope}
-The memory model defines the architectural behavior of instruction fetches, loads,
-stores, atomic read-modify-write operations, cache maintenance, and translation-cache
-maintenance after effective-address calculation and address translation. Language
-rules such as C \texttt{volatile}, C atomics, and process startup policy are ABI
-concerns; this section describes the guarantees provided directly by the ISA.
+The memory model defines instruction fetches, loads, stores, atomic read-modify-write operations, cache maintenance,
+and translation-cache maintenance after EA calculation and address translation.
 
-\subsection{Memory Access Domains}
-All instruction fetch, data, stack, and device accesses use the same effective-address
-and address-translation pipeline. The final page-table attributes classify the access
-domain.
+Unaligned ordinary memory accesses are architecturally permitted, but may be implemented as multiple aligned memory
+beats and have no tear-free or atomicity guarantee.
 
-\begingroup\footnotesize
-\begin{longtable}{@{}p{1.25in}p{1.55in}p{2.7in}@{}}
-\toprule
-\textbf{Attribute} & \textbf{Domain} & \textbf{Architectural Meaning}\\
-\midrule
-\endhead
-\texttt{PTE.AT=0} & byte-addressed memory & Normal memory is addressed in bytes and may be cached according to \texttt{PTE.CP}.\\
-\texttt{PTE.AT=1} & externally acknowledged memory & The access is acknowledged by an external memory or device agent and may have bus-sized side effects.\\
-\texttt{PTE.CP=00} & cacheable & Normal coherent cacheable memory.\\
-\texttt{PTE.CP=01} & uncacheable & Accesses are not allocated into normal data caches.\\
-\texttt{PTE.CP=10} & write-through & Stores become visible through a write-through cache policy.\\
-\texttt{PTE.CP=11} & write-combining & Stores may be gathered and combined before visibility; explicit ordering is required when software depends on completion order.\\
-\bottomrule
-\end{longtable}
-\manualtablecaption{Memory Access Domains}
-\endgroup
+Atomic read-modify-write instructions require naturally aligned memory operands. A misaligned atomic operand is
+invalid for the atomic operation and must not complete as a non-atomic update.
 
-Externally acknowledged memory is not treated as ordinary cacheable memory. An implementation
-must not silently replace an externally acknowledged access with an unrelated cached access.
-The translated address is still formed as PFN plus page offset; \texttt{PTE.AT=1}
-changes the memory transaction domain and acknowledgement behavior, not the address
-arithmetic. Ordering requirements for device protocols are expressed with mapped memory
-attributes and explicit fence or cache-synchronization instructions.
+Stores to memory that is later executed as instructions are ordinary data stores until an explicit synchronization
+sequence makes the modified bytes visible to instruction fetch.
 
-\subsection{Access Size, Alignment, and Tearing}
-The architectural scalar memory sizes are byte, word, long word, and quad word. A memory
-access of size \(N\) bytes is naturally aligned when its byte address is a multiple of \(N\).
+@SCALAR_ACCESS_TABLE@
 
-\begingroup\footnotesize
-\begin{longtable}{@{}p{0.75in}p{0.85in}p{1.25in}p{2.65in}@{}}
-\toprule
-\textbf{Suffix} & \textbf{Bytes} & \textbf{Natural Alignment} & \textbf{Tear-Free Guarantee}\\
-\midrule
-\endhead
-\texttt{B} & 1 & any byte address & aligned normal-memory load/store is tear-free\\
-\texttt{W} & 2 & address divisible by 2 & aligned normal-memory load/store is tear-free\\
-\texttt{L} & 4 & address divisible by 4 & aligned normal-memory load/store is tear-free\\
-\texttt{Q} & 8 & address divisible by 8 & aligned normal-memory load/store is tear-free\\
-\bottomrule
-\end{longtable}
-\manualtablecaption{Scalar Access Sizes and Alignment}
-\endgroup
-
-Unaligned ordinary memory accesses are architecturally permitted. An unaligned load or
-store does not fault merely because of its alignment, although it may still fault because
-one of the bytes it touches fails address translation, permission checking, or device
-acknowledgement. Unaligned accesses may be implemented as multiple aligned memory beats
-and have no tear-free or atomicity guarantee.
-
-Architectural accesses wider than eight bytes, including block transfers and repeated
-string-like operations, are not single atomic memory accesses. They are described as a
-sequence of scalar accesses unless a specific instruction form states otherwise.
-
-\subsection{Atomic Access Requirements}
-Atomic instructions require a naturally aligned memory operand for the selected operand
-size. A misaligned atomic memory operand is invalid for the atomic operation and must not
-complete as a non-atomic read-modify-write. If a fault is reported for such an instruction,
-the fault is precise and the atomic memory location is not updated.
-
-For an aligned atomic read-modify-write instruction, the read, modification, and write of
-the selected memory location are observed as one indivisible operation by other agents that
-can access the same physical location. Atomic read-modify-write instructions carry a
-memory-order selector as part of the atomic instruction format. The selector constrains
-visibility ordering around the indivisible update; it is not a general-purpose prefix.
-
+\subsection{Atomic Memory-Order Selectors}
 @MEMORY_ORDER_TABLE@
 
-The \texttt{consume} memory order is not a separate architectural selector. Software that
-needs consume-style source semantics uses the acquire selector. A full ordering point for
-ordinary unrelated accesses can also be expressed with \texttt{AFENCE} when the program
-needs one independently of an atomic operation.
-
-\subsection{Visibility and Ordering}
-Normal cacheable memory is coherent at the architectural level: once a store becomes visible
-to another agent, later coherent accesses to the same physical location observe a value
-consistent with the coherence order for that location. The ISA does not require independent
-ordinary loads and stores to become visible to other agents in program order unless an
-instruction dependency, an atomic operation, or a fence instruction imposes that order.
-
-\begingroup\footnotesize
-\begin{longtable}{@{}p{0.95in}p{4.45in}@{}}
-\toprule
-\textbf{Instruction} & \textbf{Ordering Effect}\\
-\midrule
-\endhead
-\texttt{RFENCE} & Orders prior reads before later reads issued by the same hardware thread.\\
-\texttt{WFENCE} & Orders prior writes before later writes issued by the same hardware thread.\\
-\texttt{AFENCE} & Orders prior memory operations before later memory operations issued by the same hardware thread.\\
-\bottomrule
-\end{longtable}
-\manualtablecaption{Fence Instructions}
-\endgroup
-
-Fence instructions constrain visibility ordering. They do not perform cache-line writeback,
-cache invalidation, TLB invalidation, or instruction-cache synchronization by themselves
-unless the instruction description explicitly says so.
-
-\subsection{Fault and Partial-Commit Rules}
-Memory faults are precise with respect to the faulting instruction. A faulting load does
-not update its destination register. A faulting scalar store does not commit bytes of that
-store. Atomic read-modify-write instructions either complete the whole aligned atomic
-operation or leave the memory location unchanged.
-
-Repeated operations commit completed instruction bodies only. For \texttt{REPcc}, a
-completed terminating iteration whose repeat condition is false still commits the
-instruction body's ordinary side effects, but it does not update the repeat counter. If a
-\texttt{REP} or \texttt{REPcc} operation faults after some iterations have completed, the
-completed iterations remain committed and the saved restart state describes the remaining
-work.
-\texttt{REPG} uses the same precise-fault rule, extended to the current grouped
-iteration: completed prior group instructions in the faulting iteration remain
-committed, later group instructions do not execute, and the counter is not
-updated until the whole group iteration succeeds. The repeat-fault auxiliary
-state allows return from the fault to continue at the faulting grouped
-instruction under the active REPG context.
-
-\subsection{Instruction Fetch and Self-Modifying Code}
-Stores to memory that is later executed as instructions are ordinary data stores until an
-explicit synchronization sequence makes the modified bytes visible to instruction fetch.
-Code patching, dynamic relocation into executable mappings, and JIT-style code generation
-therefore require instruction/data cache synchronization before execution may rely on the
-new instruction bytes.
-
-\texttt{SYNCCACHE} synchronizes instruction/data cache visibility for modified executable
-memory. \texttt{INVICACHE}, \texttt{INVDCACHE}, \texttt{FLSHDCACHE}, and \texttt{WRBKDCACHE}
-provide explicit cache-maintenance operations for the cache block or range selected by their
-operands.
-
-\subsection{Address-Translation Coherency}
-Page-table memory is ordinary memory until a page-table update is made visible to the
-translation machinery. Software that modifies page tables must order the page-table stores
-before invalidating or replacing translation-cache entries. \texttt{INVTLB}, \texttt{INVPAGE},
-\texttt{INVASID}, \texttt{SWPT}, and \texttt{SWPTA} define the architectural translation-cache
-maintenance operations.
-
-When ASID matching is enabled, address-space identifiers participate in translation-cache
-lookup. Global entries are matched according to the page-table attributes described in the
-Memory Address Translation section. When ASID matching is disabled, translation-cache entries
-are matched without an address-space identifier.
+\subsection{Fence Instructions}
+@FENCE_INSTRUCTION_TABLE@

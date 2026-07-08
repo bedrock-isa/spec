@@ -1,0 +1,28 @@
+mnemonic: CLZ
+doc:
+  title: Count Leading Zeros
+  summary: Performs the count leading zeros operation.
+  description: Counts the leading zero bits within the selected operand size and writes the count to the
+    destination register. A zero operand returns the operand width in bits.
+  instruction_family: integer_bitfield
+  instruction_class: integer
+behavior:
+  group: bit_counts
+  inputs:
+  - src
+  input_output: dst
+  operation:
+  - dst_v = arch_count_leading_zeros(src_v, size_v);
+attributes:
+  privilege: unprivileged
+  flags: unchanged
+forms:
+  operands:
+  - name: src
+    type: EA
+  - name: dst
+    type: Rn
+  size: BWLQ
+  zero_input: returns operand width
+definition_status:
+  allocation: 'external: isa/alloc'

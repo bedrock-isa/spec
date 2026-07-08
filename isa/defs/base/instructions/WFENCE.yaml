@@ -1,0 +1,17 @@
+mnemonic: WFENCE
+doc:
+  title: Write Fence
+  summary: Order prior writes before later writes.
+  instruction_family: core_control
+  instruction_class: system
+behavior:
+  group: core_control
+  output: none
+  operation:
+  - arch_fence_write();
+attributes:
+  privilege: any
+forms:
+  operands: []
+definition_status:
+  allocation: 'external: isa/alloc'

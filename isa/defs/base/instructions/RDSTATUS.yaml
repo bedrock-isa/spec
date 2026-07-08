@@ -1,0 +1,24 @@
+mnemonic: RDSTATUS
+doc:
+  title: Read Status
+  summary: Read the processor STATUS register into an Rn register.
+  description: RDSTATUS reads the architectural 16-bit STATUS register, zero-extends it to 64 bits, and
+    writes the result to the destination Rn register. Reading STATUS is unprivileged; writing STATUS remains
+    supervisor-only. STATUS is not part of the S segment-register operand class.
+  instruction_family: system_registers
+  instruction_class: system
+behavior:
+  group: system_registers
+  output: dst
+  operation:
+  - dst_v = STATUS;
+attributes:
+  privilege: unprivileged
+  flags: unchanged
+forms:
+  operands:
+  - name: dst
+    type: Rn
+  size: W
+definition_status:
+  allocation: 'external: isa/alloc'

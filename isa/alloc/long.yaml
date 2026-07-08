@@ -1,0 +1,716 @@
+# Generated mechanically from docs/isa_reform_plan.md during the ISA rewrite.
+# Edit this file as the allocation source of truth going forward.
+class: long
+payload_bits: 26
+namespace:
+  - "111100????????????????????"
+  - "111101????????????????????"
+  - "111110????????????????????"
+entries:
+  - id: long.adc_x_rn_s_ea_e
+    status: allocated
+    bits: "1111000000zz000sssseeeeeee"
+    text: "ADC.X(z:B/W/L/Q) Rn(s), <ea>(e)  ; reclaim e.rn, dst !imm"
+    fields:
+      z: {kind: size, width: 2}
+      s: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: rn_direct, reason: canonical_form_reclaim}
+      - {destination: true, exclude: immediate, reason: invalid_destination}
+  - id: long.adc_x_ea_e_rn_s
+    status: allocated
+    bits: "1111000000zz001sssseeeeeee"
+    text: "ADC.X(z:B/W/L/Q) <ea>(e), Rn(s)  ; reclaim e.rn"
+    fields:
+      z: {kind: size, width: 2}
+      s: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: rn_direct, reason: canonical_form_reclaim}
+  - id: long.sbb_x_rn_s_ea_e
+    status: allocated
+    bits: "1111000000zz010sssseeeeeee"
+    text: "SBB.X(z:B/W/L/Q) Rn(s), <ea>(e)  ; reclaim e.rn, dst !imm"
+    fields:
+      z: {kind: size, width: 2}
+      s: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: rn_direct, reason: canonical_form_reclaim}
+      - {destination: true, exclude: immediate, reason: invalid_destination}
+  - id: long.sbb_x_ea_e_rn_s
+    status: allocated
+    bits: "1111000000zz011sssseeeeeee"
+    text: "SBB.X(z:B/W/L/Q) <ea>(e), Rn(s)  ; reclaim e.rn"
+    fields:
+      z: {kind: size, width: 2}
+      s: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: rn_direct, reason: canonical_form_reclaim}
+  - id: long.clz_x_ea_e_rn_d
+    status: allocated
+    bits: "1111000000zz100ddddeeeeeee"
+    text: "CLZ.X(z:B/W/L/Q) <ea>(e), Rn(d)"
+    fields:
+      z: {kind: size, width: 2}
+      d: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+  - id: long.ctz_x_ea_e_rn_d
+    status: allocated
+    bits: "1111000000zz101ddddeeeeeee"
+    text: "CTZ.X(z:B/W/L/Q) <ea>(e), Rn(d)"
+    fields:
+      z: {kind: size, width: 2}
+      d: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+  - id: long.cls_x_ea_e_rn_d
+    status: allocated
+    bits: "1111000000zz110ddddeeeeeee"
+    text: "CLS.X(z:B/W/L/Q) <ea>(e), Rn(d)"
+    fields:
+      z: {kind: size, width: 2}
+      d: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+  - id: long.cts_x_ea_e_rn_d
+    status: allocated
+    bits: "1111000000zz111ddddeeeeeee"
+    text: "CTS.X(z:B/W/L/Q) <ea>(e), Rn(d)"
+    fields:
+      z: {kind: size, width: 2}
+      d: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+  - id: long.minu_x_ea_e_rn_d
+    status: allocated
+    bits: "1111000001zz000ddddeeeeeee"
+    text: "MINU.X(z:B/W/L/Q) <ea>(e), Rn(d)"
+    fields:
+      z: {kind: size, width: 2}
+      d: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+  - id: long.minu_x_rn_s_ea_e
+    status: allocated
+    bits: "1111000001zz001sssseeeeeee"
+    text: "MINU.X(z:B/W/L/Q) Rn(s), <ea>(e)  ; reclaim e.rn, dst !imm"
+    fields:
+      z: {kind: size, width: 2}
+      s: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: rn_direct, reason: canonical_form_reclaim}
+      - {destination: true, exclude: immediate, reason: invalid_destination}
+  - id: long.mins_x_ea_e_rn_d
+    status: allocated
+    bits: "1111000001zz010ddddeeeeeee"
+    text: "MINS.X(z:B/W/L/Q) <ea>(e), Rn(d)"
+    fields:
+      z: {kind: size, width: 2}
+      d: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+  - id: long.mins_x_rn_s_ea_e
+    status: allocated
+    bits: "1111000001zz011sssseeeeeee"
+    text: "MINS.X(z:B/W/L/Q) Rn(s), <ea>(e)  ; reclaim e.rn, dst !imm"
+    fields:
+      z: {kind: size, width: 2}
+      s: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: rn_direct, reason: canonical_form_reclaim}
+      - {destination: true, exclude: immediate, reason: invalid_destination}
+  - id: long.maxu_x_ea_e_rn_d
+    status: allocated
+    bits: "1111000001zz100ddddeeeeeee"
+    text: "MAXU.X(z:B/W/L/Q) <ea>(e), Rn(d)"
+    fields:
+      z: {kind: size, width: 2}
+      d: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+  - id: long.maxu_x_rn_s_ea_e
+    status: allocated
+    bits: "1111000001zz101sssseeeeeee"
+    text: "MAXU.X(z:B/W/L/Q) Rn(s), <ea>(e)  ; reclaim e.rn, dst !imm"
+    fields:
+      z: {kind: size, width: 2}
+      s: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: rn_direct, reason: canonical_form_reclaim}
+      - {destination: true, exclude: immediate, reason: invalid_destination}
+  - id: long.maxs_x_ea_e_rn_d
+    status: allocated
+    bits: "1111000001zz110ddddeeeeeee"
+    text: "MAXS.X(z:B/W/L/Q) <ea>(e), Rn(d)"
+    fields:
+      z: {kind: size, width: 2}
+      d: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+  - id: long.maxs_x_rn_s_ea_e
+    status: allocated
+    bits: "1111000001zz111sssseeeeeee"
+    text: "MAXS.X(z:B/W/L/Q) Rn(s), <ea>(e)  ; reclaim e.rn, dst !imm"
+    fields:
+      z: {kind: size, width: 2}
+      s: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: rn_direct, reason: canonical_form_reclaim}
+      - {destination: true, exclude: immediate, reason: invalid_destination}
+  - id: long.popcnt_x_ea_e_rn_d
+    status: allocated
+    bits: "1111000010zz000ddddeeeeeee"
+    text: "POPCNT.X(z:B/W/L/Q) <ea>(e), Rn(d)"
+    fields:
+      z: {kind: size, width: 2}
+      d: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+  - id: long.parity_x_ea_e_rn_d
+    status: allocated
+    bits: "1111000010zz001ddddeeeeeee"
+    text: "PARITY.X(z:B/W/L/Q) <ea>(e), Rn(d)"
+    fields:
+      z: {kind: size, width: 2}
+      d: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+  - id: long.mul_x_ea_e_rn_d
+    status: allocated
+    bits: "1111000010zz010ddddeeeeeee"
+    text: "MUL.X(z:B/W/L/Q) <ea>(e), Rn(d)"
+    fields:
+      z: {kind: size, width: 2}
+      d: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+  - id: long.clmul_x_ea_e_rn_d
+    status: allocated
+    bits: "1111000010zz011ddddeeeeeee"
+    text: "CLMUL.X(z:B/W/L/Q) <ea>(e), Rn(d)"
+    fields:
+      z: {kind: size, width: 2}
+      d: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+  - id: long.divu_x_ea_e_rn_d
+    status: allocated
+    bits: "1111000010zz100ddddeeeeeee"
+    text: "DIVU.X(z:B/W/L/Q) <ea>(e), Rn(d)"
+    fields:
+      z: {kind: size, width: 2}
+      d: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+  - id: long.divs_x_ea_e_rn_d
+    status: allocated
+    bits: "1111000010zz101ddddeeeeeee"
+    text: "DIVS.X(z:B/W/L/Q) <ea>(e), Rn(d)"
+    fields:
+      z: {kind: size, width: 2}
+      d: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+  - id: long.modu_x_ea_e_rn_d
+    status: allocated
+    bits: "1111000010zz110ddddeeeeeee"
+    text: "MODU.X(z:B/W/L/Q) <ea>(e), Rn(d)"
+    fields:
+      z: {kind: size, width: 2}
+      d: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+  - id: long.mods_x_ea_e_rn_d
+    status: allocated
+    bits: "1111000010zz111ddddeeeeeee"
+    text: "MODS.X(z:B/W/L/Q) <ea>(e), Rn(d)"
+    fields:
+      z: {kind: size, width: 2}
+      d: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+  - id: long.btest_rn_b_ea_e
+    status: allocated
+    bits: "111100001100000bbbbeeeeeee"
+    text: "BTEST Rn(b), <ea>(e)"
+    fields:
+      b: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+  - id: long.bset_rn_b_ea_e
+    status: allocated
+    bits: "111100001100001bbbbeeeeeee"
+    text: "BSET Rn(b), <ea>(e)  ; dst !imm"
+    fields:
+      b: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {destination: true, exclude: immediate, reason: invalid_destination}
+  - id: long.bclr_rn_b_ea_e
+    status: allocated
+    bits: "111100001100010bbbbeeeeeee"
+    text: "BCLR Rn(b), <ea>(e)  ; dst !imm"
+    fields:
+      b: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {destination: true, exclude: immediate, reason: invalid_destination}
+  - id: long.bchg_rn_b_ea_e
+    status: allocated
+    bits: "111100001100011bbbbeeeeeee"
+    text: "BCHG Rn(b), <ea>(e)  ; dst !imm"
+    fields:
+      b: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {destination: true, exclude: immediate, reason: invalid_destination}
+  - id: long.djcc_rn_c_ea_e
+    status: allocated
+    bits: "111100001100100cccceeeeeee"
+    text: "DJcc Rn(c), <ea>(e)"
+    fields:
+      c: {kind: condition, width: 4}
+      e: {kind: ea7, width: 7}
+  - id: long.lcall_rn_r_ea_e
+    status: allocated
+    bits: "111100001100101rrrreeeeeee"
+    text: "LCALL Rn(r), <ea>(e)"
+    fields:
+      r: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+  - id: long.ljmp_rn_r_ea_e
+    status: allocated
+    bits: "111100001100110rrrreeeeeee"
+    text: "LJMP Rn(r), <ea>(e)"
+    fields:
+      r: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+  - id: long.clmulh_q_ea_e_rn_d
+    status: allocated
+    bits: "111100001100111ddddeeeeeee"
+    text: "CLMULH.Q <ea>(e), Rn(d)"
+    fields:
+      d: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+  - id: long.seglea_x_ea_e
+    status: allocated
+    bits: "1111000100zz1100000eeeeeee"
+    text: "SEGLEA.X(z:B/W/L/Q) <ea>(e)"
+    fields:
+      z: {kind: size, width: 2}
+      e: {kind: ea7, width: 7}
+  - id: long.incn_x_rn_r
+    status: allocated
+    bits: "1111000100zz1100001000rrrr"
+    text: "INCN.X(z:B/W/L/Q) Rn(r)"
+    fields:
+      z: {kind: size, width: 2}
+      r: {kind: rn, width: 4}
+  - id: long.decn_x_rn_r
+    status: allocated
+    bits: "1111000100zz1100001001rrrr"
+    text: "DECN.X(z:B/W/L/Q) Rn(r)"
+    fields:
+      z: {kind: size, width: 2}
+      r: {kind: rn, width: 4}
+  - id: long.mov_x_ea_s_ea_d
+    status: allocated
+    bits: "1111100000zzsssssssddddddd"
+    text: "MOV.X(z:B/W/L/Q) <ea>(s), <ea>(d)  ; reclaim s.reg | d.reg, dst !imm"
+    fields:
+      z: {kind: size, width: 2}
+      s: {kind: ea7, width: 7}
+      d: {kind: ea7, width: 7}
+    constraints:
+      - {field: s, exclude: reg_direct, reason: canonical_form_reclaim}
+      - {field: d, exclude: reg_direct, reason: canonical_form_reclaim}
+      - {destination: true, exclude: immediate, reason: invalid_destination}
+  - id: long.cmp_x_ea_s_ea_d
+    status: allocated
+    bits: "1111100001zzsssssssddddddd"
+    text: "CMP.X(z:B/W/L/Q) <ea>(s), <ea>(d)  ; reclaim s.reg | d.reg"
+    fields:
+      z: {kind: size, width: 2}
+      s: {kind: ea7, width: 7}
+      d: {kind: ea7, width: 7}
+    constraints:
+      - {field: s, exclude: reg_direct, reason: canonical_form_reclaim}
+      - {field: d, exclude: reg_direct, reason: canonical_form_reclaim}
+  - id: long.extsw_b_ea_s_ea_d
+    status: allocated
+    bits: "111110100000sssssssddddddd"
+    text: "EXTSW.B <ea>(s), <ea>(d)  ; reclaim s.reg | d.reg, dst !imm"
+    fields:
+      s: {kind: ea7, width: 7}
+      d: {kind: ea7, width: 7}
+    constraints:
+      - {field: s, exclude: reg_direct, reason: canonical_form_reclaim}
+      - {field: d, exclude: reg_direct, reason: canonical_form_reclaim}
+      - {destination: true, exclude: immediate, reason: invalid_destination}
+  - id: long.extsq_b_ea_s_ea_d
+    status: allocated
+    bits: "111110100001sssssssddddddd"
+    text: "EXTSQ.B <ea>(s), <ea>(d)  ; reclaim s.reg | d.reg, dst !imm"
+    fields:
+      s: {kind: ea7, width: 7}
+      d: {kind: ea7, width: 7}
+    constraints:
+      - {field: s, exclude: reg_direct, reason: canonical_form_reclaim}
+      - {field: d, exclude: reg_direct, reason: canonical_form_reclaim}
+      - {destination: true, exclude: immediate, reason: invalid_destination}
+  - id: long.extsq_w_ea_s_ea_d
+    status: allocated
+    bits: "111110100010sssssssddddddd"
+    text: "EXTSQ.W <ea>(s), <ea>(d)  ; reclaim s.reg | d.reg, dst !imm"
+    fields:
+      s: {kind: ea7, width: 7}
+      d: {kind: ea7, width: 7}
+    constraints:
+      - {field: s, exclude: reg_direct, reason: canonical_form_reclaim}
+      - {field: d, exclude: reg_direct, reason: canonical_form_reclaim}
+      - {destination: true, exclude: immediate, reason: invalid_destination}
+  - id: long.extsq_l_ea_s_ea_d
+    status: allocated
+    bits: "111110100011sssssssddddddd"
+    text: "EXTSQ.L <ea>(s), <ea>(d)  ; reclaim s.reg | d.reg, dst !imm"
+    fields:
+      s: {kind: ea7, width: 7}
+      d: {kind: ea7, width: 7}
+    constraints:
+      - {field: s, exclude: reg_direct, reason: canonical_form_reclaim}
+      - {field: d, exclude: reg_direct, reason: canonical_form_reclaim}
+      - {destination: true, exclude: immediate, reason: invalid_destination}
+  - id: long.extzw_b_ea_s_ea_d
+    status: allocated
+    bits: "111110100100sssssssddddddd"
+    text: "EXTZW.B <ea>(s), <ea>(d)  ; reclaim s.reg | d.reg, dst !imm"
+    fields:
+      s: {kind: ea7, width: 7}
+      d: {kind: ea7, width: 7}
+    constraints:
+      - {field: s, exclude: reg_direct, reason: canonical_form_reclaim}
+      - {field: d, exclude: reg_direct, reason: canonical_form_reclaim}
+      - {destination: true, exclude: immediate, reason: invalid_destination}
+  - id: long.extzq_b_ea_s_ea_d
+    status: allocated
+    bits: "111110100101sssssssddddddd"
+    text: "EXTZQ.B <ea>(s), <ea>(d)  ; reclaim s.reg | d.reg, dst !imm"
+    fields:
+      s: {kind: ea7, width: 7}
+      d: {kind: ea7, width: 7}
+    constraints:
+      - {field: s, exclude: reg_direct, reason: canonical_form_reclaim}
+      - {field: d, exclude: reg_direct, reason: canonical_form_reclaim}
+      - {destination: true, exclude: immediate, reason: invalid_destination}
+  - id: long.extzq_w_ea_s_ea_d
+    status: allocated
+    bits: "111110100110sssssssddddddd"
+    text: "EXTZQ.W <ea>(s), <ea>(d)  ; reclaim s.reg | d.reg, dst !imm"
+    fields:
+      s: {kind: ea7, width: 7}
+      d: {kind: ea7, width: 7}
+    constraints:
+      - {field: s, exclude: reg_direct, reason: canonical_form_reclaim}
+      - {field: d, exclude: reg_direct, reason: canonical_form_reclaim}
+      - {destination: true, exclude: immediate, reason: invalid_destination}
+  - id: long.extzq_l_ea_s_ea_d
+    status: allocated
+    bits: "111110100111sssssssddddddd"
+    text: "EXTZQ.L <ea>(s), <ea>(d)  ; reclaim s.reg | d.reg, dst !imm"
+    fields:
+      s: {kind: ea7, width: 7}
+      d: {kind: ea7, width: 7}
+    constraints:
+      - {field: s, exclude: reg_direct, reason: canonical_form_reclaim}
+      - {field: d, exclude: reg_direct, reason: canonical_form_reclaim}
+      - {destination: true, exclude: immediate, reason: invalid_destination}
+  - id: long.extsl_x_ea_s_ea_d
+    status: allocated
+    bits: "11111010100zsssssssddddddd"
+    text: "EXTSL.X(z:B/W) <ea>(s), <ea>(d)  ; reclaim s.reg | d.reg, dst !imm"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: ea7, width: 7}
+      d: {kind: ea7, width: 7}
+    constraints:
+      - {field: s, exclude: reg_direct, reason: canonical_form_reclaim}
+      - {field: d, exclude: reg_direct, reason: canonical_form_reclaim}
+      - {destination: true, exclude: immediate, reason: invalid_destination}
+  - id: long.extzl_x_ea_s_ea_d
+    status: allocated
+    bits: "11111010101zsssssssddddddd"
+    text: "EXTZL.X(z:B/W) <ea>(s), <ea>(d)  ; reclaim s.reg | d.reg, dst !imm"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: ea7, width: 7}
+      d: {kind: ea7, width: 7}
+    constraints:
+      - {field: s, exclude: reg_direct, reason: canonical_form_reclaim}
+      - {field: d, exclude: reg_direct, reason: canonical_form_reclaim}
+      - {destination: true, exclude: immediate, reason: invalid_destination}
+  - id: long.rol_x_imm6_i_ea_e
+    status: allocated
+    bits: "1111101100zz0iiiiiieeeeeee"
+    text: "ROL.X(z:B/W/L/Q) imm6(i), <ea>(e)  ; dst !imm"
+    fields:
+      z: {kind: size, width: 2}
+      i: {kind: immediate, width: 6}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {destination: true, exclude: immediate, reason: invalid_destination}
+  - id: long.ror_x_imm6_i_ea_e
+    status: allocated
+    bits: "1111101100zz1iiiiiieeeeeee"
+    text: "ROR.X(z:B/W/L/Q) imm6(i), <ea>(e)  ; dst !imm"
+    fields:
+      z: {kind: size, width: 2}
+      i: {kind: immediate, width: 6}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {destination: true, exclude: immediate, reason: invalid_destination}
+  - id: long.shl_x_imm6_i_ea_e
+    status: allocated
+    bits: "1111101101zz0iiiiiieeeeeee"
+    text: "SHL.X(z:B/W/L/Q) imm6(i), <ea>(e)  ; dst !imm"
+    fields:
+      z: {kind: size, width: 2}
+      i: {kind: immediate, width: 6}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {destination: true, exclude: immediate, reason: invalid_destination}
+  - id: long.shr_x_imm6_i_ea_e
+    status: allocated
+    bits: "1111101101zz1iiiiiieeeeeee"
+    text: "SHR.X(z:B/W/L/Q) imm6(i), <ea>(e)  ; dst !imm"
+    fields:
+      z: {kind: size, width: 2}
+      i: {kind: immediate, width: 6}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {destination: true, exclude: immediate, reason: invalid_destination}
+  - id: long.sar_x_imm6_i_ea_e
+    status: allocated
+    bits: "1111101110zz0iiiiiieeeeeee"
+    text: "SAR.X(z:B/W/L/Q) imm6(i), <ea>(e)  ; dst !imm"
+    fields:
+      z: {kind: size, width: 2}
+      i: {kind: immediate, width: 6}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {destination: true, exclude: immediate, reason: invalid_destination}
+  - id: long.btest_imm6_i_ea_e
+    status: allocated
+    bits: "1111101110001iiiiiieeeeeee"
+    text: "BTEST imm6(i), <ea>(e)"
+    fields:
+      i: {kind: immediate, width: 6}
+      e: {kind: ea7, width: 7}
+  - id: long.bset_imm6_i_ea_e
+    status: allocated
+    bits: "1111101110011iiiiiieeeeeee"
+    text: "BSET imm6(i), <ea>(e)  ; dst !imm"
+    fields:
+      i: {kind: immediate, width: 6}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {destination: true, exclude: immediate, reason: invalid_destination}
+  - id: long.bclr_imm6_i_ea_e
+    status: allocated
+    bits: "1111101110101iiiiiieeeeeee"
+    text: "BCLR imm6(i), <ea>(e)  ; dst !imm"
+    fields:
+      i: {kind: immediate, width: 6}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {destination: true, exclude: immediate, reason: invalid_destination}
+  - id: long.bchg_imm6_i_ea_e
+    status: allocated
+    bits: "1111101110111iiiiiieeeeeee"
+    text: "BCHG imm6(i), <ea>(e)  ; dst !imm"
+    fields:
+      i: {kind: immediate, width: 6}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {destination: true, exclude: immediate, reason: invalid_destination}
+  - id: long.ptquery_imm3_i_ea_e_rn_d
+    status: allocated
+    bits: "111110111100iiiddddeeeeeee"
+    text: "PTQUERY imm3(i), <ea>(e), Rn(d)"
+    fields:
+      i: {kind: immediate, width: 3}
+      d: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+  - id: long.vtop_rn_v_rn_p
+    status: allocated
+    bits: "111110111101000000vvvvpppp"
+    text: "VTOP Rn(v), Rn(p)"
+    fields:
+      v: {kind: rn, width: 4}
+      p: {kind: rn, width: 4}
+  - id: long.swpta_rn_p_rn_a
+    status: allocated
+    bits: "111110111101000001ppppaaaa"
+    text: "SWPTA Rn(p), Rn(a)"
+    fields:
+      p: {kind: rn, width: 4}
+      a: {kind: rn, width: 4}
+  - id: long.rdseg_sreg_s_rn_d
+    status: allocated
+    bits: "1111101111010000100sssdddd"
+    text: "RDSEG SREG(s), Rn(d)"
+    fields:
+      s: {kind: bits, width: 3}
+      d: {kind: rn, width: 4}
+  - id: long.wrseg_rn_d_sreg_s
+    status: allocated
+    bits: "1111101111010000101sssdddd"
+    text: "WRSEG Rn(d), SREG(s)"
+    fields:
+      s: {kind: bits, width: 3}
+      d: {kind: rn, width: 4}
+  - id: long.invpage_ea_e
+    status: allocated
+    bits: "1111101111010000110eeeeeee"
+    text: "INVPAGE <ea>(e)"
+    fields:
+      e: {kind: ea7, width: 7}
+  - id: long.flshdcache_ea_e
+    status: allocated
+    bits: "1111101111010000111eeeeeee"
+    text: "FLSHDCACHE <ea>(e)"
+    fields:
+      e: {kind: ea7, width: 7}
+  - id: long.invdcache_ea_e
+    status: allocated
+    bits: "1111101111010001000eeeeeee"
+    text: "INVDCACHE <ea>(e)"
+    fields:
+      e: {kind: ea7, width: 7}
+  - id: long.invicache_ea_e
+    status: allocated
+    bits: "1111101111010001001eeeeeee"
+    text: "INVICACHE <ea>(e)"
+    fields:
+      e: {kind: ea7, width: 7}
+  - id: long.prefetch_ea_e
+    status: allocated
+    bits: "1111101111010001010eeeeeee"
+    text: "PREFETCH <ea>(e)"
+    fields:
+      e: {kind: ea7, width: 7}
+  - id: long.synccache_ea_e
+    status: allocated
+    bits: "1111101111010001011eeeeeee"
+    text: "SYNCCACHE <ea>(e)"
+    fields:
+      e: {kind: ea7, width: 7}
+  - id: long.wrbkdcache_ea_e
+    status: allocated
+    bits: "1111101111010001100eeeeeee"
+    text: "WRBKDCACHE <ea>(e)"
+    fields:
+      e: {kind: ea7, width: 7}
+  - id: long.save_ea_e
+    status: allocated
+    bits: "1111101111010001101eeeeeee"
+    text: "SAVE <ea>(e)"
+    fields:
+      e: {kind: ea7, width: 7}
+  - id: long.restore_ea_e
+    status: allocated
+    bits: "1111101111010001110eeeeeee"
+    text: "RESTORE <ea>(e)"
+    fields:
+      e: {kind: ea7, width: 7}
+  - id: long.rdcr_ea_rn_d
+    status: allocated
+    bits: "1111101111010010000000dddd"
+    text: "RDCR <imm16>, Rn(d)"
+    fields:
+      d: {kind: rn, width: 4}
+  - id: long.wrcr_rn_s_ea
+    status: allocated
+    bits: "1111101111010010000001ssss"
+    text: "WRCR Rn(s), <imm16>"
+    fields:
+      s: {kind: rn, width: 4}
+  - id: long.rdflags_rn_d
+    status: allocated
+    bits: "1111101111010010000010dddd"
+    text: "RDFLAGS Rn(d)"
+    fields:
+      d: {kind: rn, width: 4}
+  - id: long.wrflags_rn_s
+    status: allocated
+    bits: "1111101111010010000011ssss"
+    text: "WRFLAGS Rn(s)"
+    fields:
+      s: {kind: rn, width: 4}
+  - id: long.rdfflags_rn_d
+    status: allocated
+    bits: "1111101111010010000100dddd"
+    text: "RDFFLAGS Rn(d)"
+    fields:
+      d: {kind: rn, width: 4}
+  - id: long.wrfflags_rn_s
+    status: allocated
+    bits: "1111101111010010000101ssss"
+    text: "WRFFLAGS Rn(s)"
+    fields:
+      s: {kind: rn, width: 4}
+  - id: long.rdstatus_rn_d
+    status: allocated
+    bits: "1111101111010010000110dddd"
+    text: "RDSTATUS Rn(d)"
+    fields:
+      d: {kind: rn, width: 4}
+  - id: long.wrstatus_rn_s
+    status: allocated
+    bits: "1111101111010010000111ssss"
+    text: "WRSTATUS Rn(s)"
+    fields:
+      s: {kind: rn, width: 4}
+  - id: long.rdfstatus_rn_d
+    status: allocated
+    bits: "1111101111010010001000dddd"
+    text: "RDFSTATUS Rn(d)"
+    fields:
+      d: {kind: rn, width: 4}
+  - id: long.wrfstatus_rn_s
+    status: allocated
+    bits: "1111101111010010001001ssss"
+    text: "WRFSTATUS Rn(s)"
+    fields:
+      s: {kind: rn, width: 4}
+  - id: long.rdpmc_ea_rn_d
+    status: allocated
+    bits: "1111101111010010001010dddd"
+    text: "RDPMC <imm16>, Rn(d)"
+    fields:
+      d: {kind: rn, width: 4}
+  - id: long.swpt_rn_p
+    status: allocated
+    bits: "1111101111010010001011pppp"
+    text: "SWPT Rn(p)"
+    fields:
+      p: {kind: rn, width: 4}
+  - id: long.invasid_ea
+    status: allocated
+    bits: "11111011110100111100000000"
+    text: "INVASID <imm16>"
+  - id: long.invtlb
+    status: allocated
+    bits: "11111011110100111100000001"
+    text: "INVTLB"
+  - id: long.mulhu_q_rn_s_rn_d
+    status: allocated
+    bits: "111110111110000000ssssdddd"
+    text: "MULHU.Q Rn(s), Rn(d)"
+    fields:
+      s: {kind: rn, width: 4}
+      d: {kind: rn, width: 4}
+  - id: long.mulhs_q_rn_s_rn_d
+    status: allocated
+    bits: "111110111110000001ssssdddd"
+    text: "MULHS.Q Rn(s), Rn(d)"
+    fields:
+      s: {kind: rn, width: 4}
+      d: {kind: rn, width: 4}
+  - id: long.mulhsu_q_rn_s_rn_d
+    status: allocated
+    bits: "111110111110000010ssssdddd"
+    text: "MULHSU.Q Rn(s), Rn(d)"
+    fields:
+      s: {kind: rn, width: 4}
+      d: {kind: rn, width: 4}

@@ -1,0 +1,17 @@
+mnemonic: AFENCE
+doc:
+  title: Address Fence
+  summary: Order prior memory operations before later memory operations.
+  instruction_family: core_control
+  instruction_class: system
+behavior:
+  group: core_control
+  output: none
+  operation:
+  - arch_fence_address();
+attributes:
+  privilege: any
+forms:
+  operands: []
+definition_status:
+  allocation: 'external: isa/alloc'

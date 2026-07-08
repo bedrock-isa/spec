@@ -1,0 +1,38 @@
+mnemonic: INC
+doc:
+  title: Increment
+  summary: Performs the increment operation.
+  instruction_family: integer_unary
+  instruction_class: integer
+behavior:
+  group: integer_unary
+  input_output: dst
+  operation:
+  - result_v = dst_v + 1;
+  - dst_v = result_v;
+  - ZF = result_v == 0;
+  - NF = result_v s< 0;
+  - CF = carry(dst_old_v, 1:8);
+  - VF = scarry(dst_old_v, 1:8);
+attributes:
+  privilege: unprivileged
+  prefix_availability:
+  - SATURATE
+  flags:
+    Z: result == 0
+    N: most_significant_bit(result)
+    C: unsigned carry out
+    V: signed overflow
+forms:
+  compact_forms:
+  - operands:
+    - name: dst
+      type: Rn
+  extended_forms:
+  - operands:
+    - name: dst
+      type: EA
+    compact: false
+  size: BWLQ
+definition_status:
+  allocation: 'external: isa/alloc'

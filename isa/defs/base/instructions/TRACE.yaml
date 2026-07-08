@@ -1,0 +1,22 @@
+mnemonic: TRACE
+doc:
+  title: Trace Marker
+  summary: Performs the trace marker operation.
+  instruction_family: control_flow
+  instruction_class: control_flow
+behavior:
+  group: control_flow
+  inputs:
+  - marker
+  output: none
+  operation:
+  - arch_trace_marker(marker_v & 0xffff);
+attributes:
+  privilege: unprivileged
+forms:
+  operands:
+  - name: marker
+    type: imm16
+  if_trace_disabled: nop
+definition_status:
+  allocation: 'external: isa/alloc'

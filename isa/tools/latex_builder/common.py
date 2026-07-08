@@ -274,6 +274,7 @@ class LatexLongTable(LatexComponent):
     widths: list[str] | None = None
     caption: str | None = None
     style: str = "default"
+    listed: bool = True
 
     def render(self) -> str:
         if not self.rows:
@@ -304,7 +305,8 @@ class LatexLongTable(LatexComponent):
         out.append("\\bottomrule")
         out.append(rf"\end{{{environment}}}")
         if self.caption:
-            out.append(rf"\manualtablecaption{{{tex_escape(caption_title(self.caption))}}}")
+            caption_command = "manualtablecaption" if self.listed else "manualunlistedtablecaption"
+            out.append(rf"\{caption_command}{{{tex_escape(caption_title(self.caption))}}}")
         return "\n".join(out) + "\n"
 
 
@@ -314,6 +316,7 @@ class LatexTabular(LatexComponent):
     rows: list[list[str]]
     widths: list[str] | None = None
     caption: str | None = None
+    listed: bool = True
 
     def render(self) -> str:
         if not self.rows:
@@ -337,7 +340,8 @@ class LatexTabular(LatexComponent):
             ]
         )
         if self.caption:
-            out.append(rf"\manualtablecaption{{{tex_escape(caption_title(self.caption))}}}")
+            caption_command = "manualtablecaption" if self.listed else "manualunlistedtablecaption"
+            out.append(rf"\{caption_command}{{{tex_escape(caption_title(self.caption))}}}")
         return "\n".join(out) + "\n"
 
 
@@ -372,8 +376,9 @@ def latex_longtable(
     caption: str | None = None,
     *,
     style: str = "default",
+    listed: bool = True,
 ) -> str:
-    return LatexLongTable(headers, rows, widths, caption, style).render()
+    return LatexLongTable(headers, rows, widths, caption, style, listed).render()
 
 
 def latex_tabular(
@@ -381,5 +386,7 @@ def latex_tabular(
     rows: list[list[str]],
     widths: list[str] | None = None,
     caption: str | None = None,
+    *,
+    listed: bool = True,
 ) -> str:
-    return LatexTabular(headers, rows, widths, caption).render()
+    return LatexTabular(headers, rows, widths, caption, listed).render()

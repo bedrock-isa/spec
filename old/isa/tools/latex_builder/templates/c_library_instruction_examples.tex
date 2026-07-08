@@ -1,0 +1,96 @@
+This section shows how the instruction set maps onto common C library kernels. The
+examples are schematic assembly sequences rather than ABI-mandated entry points. They
+use A0 as a source pointer, A1 as a destination pointer, D0 as the REP counter, and D1
+as a temporary or fill-value register.
+
+\subsection{REP Counter Convention}
+REP and REPcc interpret the selected D register as an ordinary signed
+two's-complement counter. A zero counter performs no iteration. Positive counters are
+decremented toward zero; negative counters are incremented toward zero. The same
+architectural D-register value is visible to indexed effective-address calculation, so
+there is no REP-only counter representation for address expressions to reinterpret.
+
+The examples below use a positive count and address-update operands such as
+\texttt{[A0++]}.  The address update is part of the operand syntax: after each
+successful element access, the selected address register advances by the element size.
+Indexed forms remain useful for kernels whose source and destination strides differ.
+
+For C library implementations, ordinary fast paths may normally load a size\_t count
+directly into the REP counter when the implementation's maximum object size fits in the
+signed count range used by the chosen direction. A strictly conforming implementation
+that wants to define behavior for larger counts can branch to a slow path or split the
+transfer into multiple chunks.
+
+\subsection{memcpy}
+The forward byte-copy form uses source and destination base pointers and a positive
+signed count.
+
+\par\begingroup\small\ttfamily
+\begin{tabularx}{\linewidth}{@{}X@{}}
+; memcpy(dst, src, n), byte copy forward\tabularnewline
+; A0 = src, A1 = dst\tabularnewline
+; D0 = n\tabularnewline
+REP D0, MOV.B [A0++], [A1++]\tabularnewline
+\end{tabularx}
+\endgroup\par
+
+The same shape generalizes to wider element sizes by changing the instruction size and
+therefore the address-update step.
+
+\subsection{memmove}
+memmove chooses direction according to overlap. If the destination is below the source,
+or the ranges do not overlap, it can use the same forward sequence as memcpy. If the
+destination overlaps at a higher address, the library uses an analogous reverse
+address-update sequence.
+
+\par\begingroup\small\ttfamily
+\begin{tabularx}{\linewidth}{@{}X@{}}
+; memmove(dst, src, n), non-overlapping or forward byte copy\tabularnewline
+; A0 = src, A1 = dst\tabularnewline
+; D0 = n\tabularnewline
+REP D0, MOV.B [A0++], [A1++]\tabularnewline
+\end{tabularx}
+\endgroup\par
+
+\subsection{memset}
+memset uses a register source and a memory destination. The counter/address convention is
+the same as memcpy forward traversal.
+
+\par\begingroup\small\ttfamily
+\begin{tabularx}{\linewidth}{@{}X@{}}
+; memset(dst, c, n), byte fill\tabularnewline
+; A1 = dst, D1 = byte c\tabularnewline
+; D0 = n\tabularnewline
+REP D0, MOV.B D1, [A1++]\tabularnewline
+\end{tabularx}
+\endgroup\par
+
+\subsection{memcmp}
+memcmp can use REPEQ to continue while the observed comparison result is equal. The final
+FLAGS value is the result of the last completed comparison, including the terminating
+not-equal comparison when one occurs. The library tail can derive the required negative,
+zero, or positive return value from that final comparison state and the selected
+unsigned/signed byte policy.
+
+\par\begingroup\small\ttfamily
+\begin{tabularx}{\linewidth}{@{}X@{}}
+; memcmp(a, b, n), forward byte compare\tabularnewline
+; A0 = a, A1 = b\tabularnewline
+; D0 = n\tabularnewline
+REPEQ D0, CMP.B [A0++], [A1++]\tabularnewline
+\end{tabularx}
+\endgroup\par
+
+\subsection{Bulk Character Extension}
+The orthogonal EXTS/EXTZ memory forms let a C library or codec routine widen elements
+while copying. The following shape zero-extends bytes into 32-bit elements, which is a
+natural kernel for ASCII or byte-string to UTF-32 expansion.
+
+\par\begingroup\small\ttfamily
+\begin{tabularx}{\linewidth}{@{}X@{}}
+; widen n bytes to n 32-bit elements\tabularnewline
+; A0 = src, A1 = dst\tabularnewline
+; D0 = n\tabularnewline
+REP D0, EXTZL.B [A0++], [A1++]\tabularnewline
+\end{tabularx}
+\endgroup\par

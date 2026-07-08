@@ -1,0 +1,41 @@
+mnemonic: SUM
+doc:
+  title: Register Set Sum
+  summary: Sums selected Rn registers into a register.
+  description: Sums the selected R0-R15 register values into an Rn destination.
+    The bitmap uses the same bit numbering as PUSHM and POPM operations. All selected source register
+    values are read before the destination is written, so selecting the destination register includes
+    its original value.
+  instruction_family: integer_alu
+  instruction_class: integer
+behavior:
+  group: integer_alu
+  inputs:
+  - regs
+  input_output: dst
+  operation:
+  - dst_v = arch_register_set_sum(regs_v, size_v);
+  operation_text: 'SUM reads every Rn register selected by the bitmap, adds the selected values using
+    the instruction size, and writes the accumulated sum to the destination register. All selected source
+    register values are read before the destination is written, so selecting the destination includes
+    its original value.
+
+    '
+attributes:
+  privilege: unprivileged
+  flags: unchanged
+forms:
+  operands:
+  - - name: regs
+      type: bitmap16
+    - name: dst
+      type: Rn
+  - - name: regs
+      type: bitmap16
+    - name: dst
+      type: Rn
+  size: BWLQ
+  compact: false
+  result: destination register
+definition_status:
+  allocation: 'external: isa/alloc'

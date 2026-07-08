@@ -1,0 +1,29 @@
+mnemonic: INCN
+doc:
+  title: Increment Without Flags
+  summary: Performs the increment without flags operation.
+  instruction_family: integer_unary
+  instruction_class: integer
+behavior:
+  group: integer_unary
+  input_output: dst
+  operation:
+  - dst_v = dst_v + 1;
+attributes:
+  privilege: unprivileged
+  prefix_availability:
+  - SATURATE
+  flags: unchanged
+forms:
+  compact_forms:
+  - operands:
+    - name: dst
+      type: Rn
+  extended_forms:
+  - operands:
+    - name: dst
+      type: EA
+    compact: false
+  size: BWLQ
+definition_status:
+  allocation: 'external: isa/alloc'

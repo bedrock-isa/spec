@@ -1,0 +1,2883 @@
+
+-- Running command `read_verilog -sv ../build/generated/bedrock_ea_decode_synth.sv; synth -top bedrock_ea_decode_synth; stat -top bedrock_ea_decode_synth; write_json ../build/yosys/bedrock_ea_decode_synth.json' --
+
+1. Executing Verilog-2005 frontend: ../build/generated/bedrock_ea_decode_synth.sv
+Parsing SystemVerilog input from `../build/generated/bedrock_ea_decode_synth.sv' to AST representation.
+Generating RTLIL representation for module `\bedrock_ea_decode_synth'.
+Successfully finished Verilog frontend.
+
+2. Executing SYNTH pass.
+
+2.1. Executing HIERARCHY pass (managing design hierarchy).
+
+2.1.1. Analyzing design hierarchy..
+Top module:  \bedrock_ea_decode_synth
+
+2.1.2. Analyzing design hierarchy..
+Top module:  \bedrock_ea_decode_synth
+Removed 0 unused modules.
+
+2.2. Executing PROC pass (convert processes to netlists).
+
+2.2.1. Executing PROC_CLEAN pass (remove empty switches from decision trees).
+Cleaned up 0 empty switches.
+
+2.2.2. Executing PROC_RMDEAD pass (remove dead branches from decision trees).
+Removed 1 dead cases from process $proc$../build/generated/bedrock_ea_decode_synth.sv:78$1 in module bedrock_ea_decode_synth.
+Marked 28 switch rules as full_case in process $proc$../build/generated/bedrock_ea_decode_synth.sv:78$1 in module bedrock_ea_decode_synth.
+Removed a total of 1 dead cases.
+
+2.2.3. Executing PROC_PRUNE pass (remove redundant assignments in processes).
+Removed 0 redundant assignments.
+Promoted 23 assignments to connections.
+
+2.2.4. Executing PROC_INIT pass (extract init attributes).
+
+2.2.5. Executing PROC_ARST pass (detect async resets in processes).
+
+2.2.6. Executing PROC_ROM pass (convert switches to ROMs).
+Converted 0 switches.
+<suppressed ~28 debug messages>
+
+2.2.7. Executing PROC_MUX pass (convert decision trees to multiplexers).
+Creating decoders for process `\bedrock_ea_decode_synth.$proc$../build/generated/bedrock_ea_decode_synth.sv:78$1'.
+     1/580: $28\segment_o[2:0]
+     2/580: $27\segment_valid_o[0:0]
+     3/580: $28\valid_o[0:0]
+     4/580: $23\signed32_index_escape_o[0:0]
+     5/580: $23\signed32_escape[0:0]
+     6/580: $22\scale_log2_o[1:0]
+     7/580: $22\index_reg_o[2:0]
+     8/580: $28\payload_words_o[2:0]
+     9/580: $28\displacement_words_o[2:0]
+    10/580: $28\has_absolute_o[0:0]
+    11/580: $28\has_displacement_o[0:0]
+    12/580: $28\has_index_reg_o[0:0]
+    13/580: $28\has_base_reg_o[0:0]
+    14/580: $28\base_o[2:0]
+    15/580: $28\segment_selectable_o[0:0]
+    16/580: $28\update_eligible_o[0:0]
+    17/580: $28\is_immediate_o[0:0]
+    18/580: $28\is_memory_o[0:0]
+    19/580: $28\is_register_o[0:0]
+    20/580: $28\form_o[5:0]
+    21/580: $28\reserved_o[0:0]
+    22/580: $27\segment_o[2:0]
+    23/580: $26\segment_valid_o[0:0]
+    24/580: $27\valid_o[0:0]
+    25/580: $21\scale_log2_o[1:0]
+    26/580: $21\index_reg_o[2:0]
+    27/580: $27\payload_words_o[2:0]
+    28/580: $27\displacement_words_o[2:0]
+    29/580: $27\has_absolute_o[0:0]
+    30/580: $27\has_displacement_o[0:0]
+    31/580: $27\has_index_reg_o[0:0]
+    32/580: $27\has_base_reg_o[0:0]
+    33/580: $27\base_o[2:0]
+    34/580: $27\segment_selectable_o[0:0]
+    35/580: $27\update_eligible_o[0:0]
+    36/580: $27\is_immediate_o[0:0]
+    37/580: $27\is_memory_o[0:0]
+    38/580: $27\is_register_o[0:0]
+    39/580: $27\form_o[5:0]
+    40/580: $22\signed32_escape[0:0]
+    41/580: $22\signed32_index_escape_o[0:0]
+    42/580: $27\reserved_o[0:0]
+    43/580: $26\segment_o[2:0]
+    44/580: $25\segment_valid_o[0:0]
+    45/580: $26\valid_o[0:0]
+    46/580: $21\signed32_index_escape_o[0:0]
+    47/580: $21\signed32_escape[0:0]
+    48/580: $20\scale_log2_o[1:0]
+    49/580: $20\index_reg_o[2:0]
+    50/580: $26\payload_words_o[2:0]
+    51/580: $26\displacement_words_o[2:0]
+    52/580: $26\has_absolute_o[0:0]
+    53/580: $26\has_displacement_o[0:0]
+    54/580: $26\has_index_reg_o[0:0]
+    55/580: $26\has_base_reg_o[0:0]
+    56/580: $26\base_o[2:0]
+    57/580: $26\segment_selectable_o[0:0]
+    58/580: $26\update_eligible_o[0:0]
+    59/580: $26\is_immediate_o[0:0]
+    60/580: $26\is_memory_o[0:0]
+    61/580: $26\is_register_o[0:0]
+    62/580: $26\form_o[5:0]
+    63/580: $26\reserved_o[0:0]
+    64/580: $25\segment_o[2:0]
+    65/580: $24\segment_valid_o[0:0]
+    66/580: $25\valid_o[0:0]
+    67/580: $19\scale_log2_o[1:0]
+    68/580: $19\index_reg_o[2:0]
+    69/580: $25\payload_words_o[2:0]
+    70/580: $25\displacement_words_o[2:0]
+    71/580: $25\has_absolute_o[0:0]
+    72/580: $25\has_displacement_o[0:0]
+    73/580: $25\has_index_reg_o[0:0]
+    74/580: $25\has_base_reg_o[0:0]
+    75/580: $25\base_o[2:0]
+    76/580: $25\segment_selectable_o[0:0]
+    77/580: $25\update_eligible_o[0:0]
+    78/580: $25\is_immediate_o[0:0]
+    79/580: $25\is_memory_o[0:0]
+    80/580: $25\is_register_o[0:0]
+    81/580: $25\form_o[5:0]
+    82/580: $20\signed32_escape[0:0]
+    83/580: $20\signed32_index_escape_o[0:0]
+    84/580: $25\reserved_o[0:0]
+    85/580: $24\segment_o[2:0]
+    86/580: $23\segment_valid_o[0:0]
+    87/580: $24\valid_o[0:0]
+    88/580: $19\signed32_index_escape_o[0:0]
+    89/580: $19\signed32_escape[0:0]
+    90/580: $18\scale_log2_o[1:0]
+    91/580: $18\index_reg_o[2:0]
+    92/580: $24\payload_words_o[2:0]
+    93/580: $24\displacement_words_o[2:0]
+    94/580: $24\has_absolute_o[0:0]
+    95/580: $24\has_displacement_o[0:0]
+    96/580: $24\has_index_reg_o[0:0]
+    97/580: $24\has_base_reg_o[0:0]
+    98/580: $24\base_o[2:0]
+    99/580: $24\segment_selectable_o[0:0]
+   100/580: $24\update_eligible_o[0:0]
+   101/580: $24\is_immediate_o[0:0]
+   102/580: $24\is_memory_o[0:0]
+   103/580: $24\is_register_o[0:0]
+   104/580: $24\form_o[5:0]
+   105/580: $24\reserved_o[0:0]
+   106/580: $23\segment_o[2:0]
+   107/580: $22\segment_valid_o[0:0]
+   108/580: $23\valid_o[0:0]
+   109/580: $17\scale_log2_o[1:0]
+   110/580: $17\index_reg_o[2:0]
+   111/580: $23\payload_words_o[2:0]
+   112/580: $23\displacement_words_o[2:0]
+   113/580: $23\has_absolute_o[0:0]
+   114/580: $23\has_displacement_o[0:0]
+   115/580: $23\has_index_reg_o[0:0]
+   116/580: $23\has_base_reg_o[0:0]
+   117/580: $23\base_o[2:0]
+   118/580: $23\segment_selectable_o[0:0]
+   119/580: $23\update_eligible_o[0:0]
+   120/580: $23\is_immediate_o[0:0]
+   121/580: $23\is_memory_o[0:0]
+   122/580: $23\is_register_o[0:0]
+   123/580: $23\form_o[5:0]
+   124/580: $18\signed32_escape[0:0]
+   125/580: $18\signed32_index_escape_o[0:0]
+   126/580: $23\reserved_o[0:0]
+   127/580: $22\segment_o[2:0]
+   128/580: $21\segment_valid_o[0:0]
+   129/580: $22\valid_o[0:0]
+   130/580: $17\signed32_index_escape_o[0:0]
+   131/580: $17\signed32_escape[0:0]
+   132/580: $16\scale_log2_o[1:0]
+   133/580: $16\index_reg_o[2:0]
+   134/580: $22\payload_words_o[2:0]
+   135/580: $22\displacement_words_o[2:0]
+   136/580: $22\has_absolute_o[0:0]
+   137/580: $22\has_displacement_o[0:0]
+   138/580: $22\has_index_reg_o[0:0]
+   139/580: $22\has_base_reg_o[0:0]
+   140/580: $22\base_o[2:0]
+   141/580: $22\segment_selectable_o[0:0]
+   142/580: $22\update_eligible_o[0:0]
+   143/580: $22\is_immediate_o[0:0]
+   144/580: $22\is_memory_o[0:0]
+   145/580: $22\is_register_o[0:0]
+   146/580: $22\form_o[5:0]
+   147/580: $22\reserved_o[0:0]
+   148/580: $21\segment_o[2:0]
+   149/580: $20\segment_valid_o[0:0]
+   150/580: $21\valid_o[0:0]
+   151/580: $15\scale_log2_o[1:0]
+   152/580: $15\index_reg_o[2:0]
+   153/580: $21\payload_words_o[2:0]
+   154/580: $21\displacement_words_o[2:0]
+   155/580: $21\has_absolute_o[0:0]
+   156/580: $21\has_displacement_o[0:0]
+   157/580: $21\has_index_reg_o[0:0]
+   158/580: $21\has_base_reg_o[0:0]
+   159/580: $21\base_o[2:0]
+   160/580: $21\segment_selectable_o[0:0]
+   161/580: $21\update_eligible_o[0:0]
+   162/580: $21\is_immediate_o[0:0]
+   163/580: $21\is_memory_o[0:0]
+   164/580: $21\is_register_o[0:0]
+   165/580: $21\form_o[5:0]
+   166/580: $16\signed32_escape[0:0]
+   167/580: $16\signed32_index_escape_o[0:0]
+   168/580: $21\reserved_o[0:0]
+   169/580: $20\segment_o[2:0]
+   170/580: $19\segment_valid_o[0:0]
+   171/580: $20\valid_o[0:0]
+   172/580: $15\signed32_index_escape_o[0:0]
+   173/580: $15\signed32_escape[0:0]
+   174/580: $14\scale_log2_o[1:0]
+   175/580: $14\index_reg_o[2:0]
+   176/580: $20\payload_words_o[2:0]
+   177/580: $20\displacement_words_o[2:0]
+   178/580: $20\has_absolute_o[0:0]
+   179/580: $20\has_displacement_o[0:0]
+   180/580: $20\has_index_reg_o[0:0]
+   181/580: $20\has_base_reg_o[0:0]
+   182/580: $20\base_o[2:0]
+   183/580: $20\segment_selectable_o[0:0]
+   184/580: $20\update_eligible_o[0:0]
+   185/580: $20\is_immediate_o[0:0]
+   186/580: $20\is_memory_o[0:0]
+   187/580: $20\is_register_o[0:0]
+   188/580: $20\form_o[5:0]
+   189/580: $20\reserved_o[0:0]
+   190/580: $19\segment_o[2:0]
+   191/580: $18\segment_valid_o[0:0]
+   192/580: $19\valid_o[0:0]
+   193/580: $13\scale_log2_o[1:0]
+   194/580: $13\index_reg_o[2:0]
+   195/580: $19\payload_words_o[2:0]
+   196/580: $19\displacement_words_o[2:0]
+   197/580: $19\has_absolute_o[0:0]
+   198/580: $19\has_displacement_o[0:0]
+   199/580: $19\has_index_reg_o[0:0]
+   200/580: $19\has_base_reg_o[0:0]
+   201/580: $19\base_o[2:0]
+   202/580: $19\segment_selectable_o[0:0]
+   203/580: $19\update_eligible_o[0:0]
+   204/580: $19\is_immediate_o[0:0]
+   205/580: $19\is_memory_o[0:0]
+   206/580: $19\is_register_o[0:0]
+   207/580: $19\form_o[5:0]
+   208/580: $14\signed32_escape[0:0]
+   209/580: $14\signed32_index_escape_o[0:0]
+   210/580: $19\reserved_o[0:0]
+   211/580: $18\segment_o[2:0]
+   212/580: $17\segment_valid_o[0:0]
+   213/580: $18\valid_o[0:0]
+   214/580: $13\signed32_index_escape_o[0:0]
+   215/580: $13\signed32_escape[0:0]
+   216/580: $12\scale_log2_o[1:0]
+   217/580: $12\index_reg_o[2:0]
+   218/580: $18\payload_words_o[2:0]
+   219/580: $18\displacement_words_o[2:0]
+   220/580: $18\has_absolute_o[0:0]
+   221/580: $18\has_displacement_o[0:0]
+   222/580: $18\has_index_reg_o[0:0]
+   223/580: $18\has_base_reg_o[0:0]
+   224/580: $18\base_o[2:0]
+   225/580: $18\segment_selectable_o[0:0]
+   226/580: $18\update_eligible_o[0:0]
+   227/580: $18\is_immediate_o[0:0]
+   228/580: $18\is_memory_o[0:0]
+   229/580: $18\is_register_o[0:0]
+   230/580: $18\form_o[5:0]
+   231/580: $18\reserved_o[0:0]
+   232/580: $17\segment_o[2:0]
+   233/580: $16\segment_valid_o[0:0]
+   234/580: $17\valid_o[0:0]
+   235/580: $11\scale_log2_o[1:0]
+   236/580: $11\index_reg_o[2:0]
+   237/580: $17\payload_words_o[2:0]
+   238/580: $17\displacement_words_o[2:0]
+   239/580: $17\has_absolute_o[0:0]
+   240/580: $17\has_displacement_o[0:0]
+   241/580: $17\has_index_reg_o[0:0]
+   242/580: $17\has_base_reg_o[0:0]
+   243/580: $17\base_o[2:0]
+   244/580: $17\segment_selectable_o[0:0]
+   245/580: $17\update_eligible_o[0:0]
+   246/580: $17\is_immediate_o[0:0]
+   247/580: $17\is_memory_o[0:0]
+   248/580: $17\is_register_o[0:0]
+   249/580: $17\form_o[5:0]
+   250/580: $12\signed32_escape[0:0]
+   251/580: $12\signed32_index_escape_o[0:0]
+   252/580: $17\reserved_o[0:0]
+   253/580: $15\segment_valid_o[0:0]
+   254/580: $16\segment_o[2:0]
+   255/580: $16\payload_words_o[2:0]
+   256/580: $16\displacement_words_o[2:0]
+   257/580: $16\has_absolute_o[0:0]
+   258/580: $16\has_displacement_o[0:0]
+   259/580: $16\has_index_reg_o[0:0]
+   260/580: $16\has_base_reg_o[0:0]
+   261/580: $16\base_o[2:0]
+   262/580: $16\segment_selectable_o[0:0]
+   263/580: $16\update_eligible_o[0:0]
+   264/580: $16\is_immediate_o[0:0]
+   265/580: $16\is_memory_o[0:0]
+   266/580: $16\is_register_o[0:0]
+   267/580: $16\form_o[5:0]
+   268/580: $16\valid_o[0:0]
+   269/580: $16\reserved_o[0:0]
+   270/580: $14\segment_valid_o[0:0]
+   271/580: $15\segment_o[2:0]
+   272/580: $15\payload_words_o[2:0]
+   273/580: $15\displacement_words_o[2:0]
+   274/580: $15\has_absolute_o[0:0]
+   275/580: $15\has_displacement_o[0:0]
+   276/580: $15\has_index_reg_o[0:0]
+   277/580: $15\has_base_reg_o[0:0]
+   278/580: $15\base_o[2:0]
+   279/580: $15\segment_selectable_o[0:0]
+   280/580: $15\update_eligible_o[0:0]
+   281/580: $15\is_immediate_o[0:0]
+   282/580: $15\is_memory_o[0:0]
+   283/580: $15\is_register_o[0:0]
+   284/580: $15\form_o[5:0]
+   285/580: $15\valid_o[0:0]
+   286/580: $15\reserved_o[0:0]
+   287/580: $13\segment_valid_o[0:0]
+   288/580: $14\segment_o[2:0]
+   289/580: $14\base_reg_o[2:0]
+   290/580: $14\payload_words_o[2:0]
+   291/580: $14\displacement_words_o[2:0]
+   292/580: $14\has_absolute_o[0:0]
+   293/580: $14\has_displacement_o[0:0]
+   294/580: $14\has_index_reg_o[0:0]
+   295/580: $14\has_base_reg_o[0:0]
+   296/580: $14\base_o[2:0]
+   297/580: $14\segment_selectable_o[0:0]
+   298/580: $14\update_eligible_o[0:0]
+   299/580: $14\is_immediate_o[0:0]
+   300/580: $14\is_memory_o[0:0]
+   301/580: $14\is_register_o[0:0]
+   302/580: $14\form_o[5:0]
+   303/580: $14\valid_o[0:0]
+   304/580: $14\reserved_o[0:0]
+   305/580: $12\segment_valid_o[0:0]
+   306/580: $13\segment_o[2:0]
+   307/580: $13\base_reg_o[2:0]
+   308/580: $13\payload_words_o[2:0]
+   309/580: $13\displacement_words_o[2:0]
+   310/580: $13\has_absolute_o[0:0]
+   311/580: $13\has_displacement_o[0:0]
+   312/580: $13\has_index_reg_o[0:0]
+   313/580: $13\has_base_reg_o[0:0]
+   314/580: $13\base_o[2:0]
+   315/580: $13\segment_selectable_o[0:0]
+   316/580: $13\update_eligible_o[0:0]
+   317/580: $13\is_immediate_o[0:0]
+   318/580: $13\is_memory_o[0:0]
+   319/580: $13\is_register_o[0:0]
+   320/580: $13\form_o[5:0]
+   321/580: $13\valid_o[0:0]
+   322/580: $13\reserved_o[0:0]
+   323/580: $11\segment_valid_o[0:0]
+   324/580: $12\segment_o[2:0]
+   325/580: $12\base_reg_o[2:0]
+   326/580: $12\payload_words_o[2:0]
+   327/580: $12\displacement_words_o[2:0]
+   328/580: $12\has_absolute_o[0:0]
+   329/580: $12\has_displacement_o[0:0]
+   330/580: $12\has_index_reg_o[0:0]
+   331/580: $12\has_base_reg_o[0:0]
+   332/580: $12\base_o[2:0]
+   333/580: $12\segment_selectable_o[0:0]
+   334/580: $12\update_eligible_o[0:0]
+   335/580: $12\is_immediate_o[0:0]
+   336/580: $12\is_memory_o[0:0]
+   337/580: $12\is_register_o[0:0]
+   338/580: $12\form_o[5:0]
+   339/580: $12\valid_o[0:0]
+   340/580: $12\reserved_o[0:0]
+   341/580: $10\segment_valid_o[0:0]
+   342/580: $11\segment_o[2:0]
+   343/580: $11\signed32_index_escape_o[0:0]
+   344/580: $11\signed32_escape[0:0]
+   345/580: $10\scale_log2_o[1:0]
+   346/580: $10\index_reg_o[2:0]
+   347/580: $11\base_reg_o[2:0]
+   348/580: $11\payload_words_o[2:0]
+   349/580: $11\displacement_words_o[2:0]
+   350/580: $11\has_absolute_o[0:0]
+   351/580: $11\has_displacement_o[0:0]
+   352/580: $11\has_index_reg_o[0:0]
+   353/580: $11\has_base_reg_o[0:0]
+   354/580: $11\base_o[2:0]
+   355/580: $11\segment_selectable_o[0:0]
+   356/580: $11\update_eligible_o[0:0]
+   357/580: $11\is_immediate_o[0:0]
+   358/580: $11\is_memory_o[0:0]
+   359/580: $11\is_register_o[0:0]
+   360/580: $11\form_o[5:0]
+   361/580: $11\valid_o[0:0]
+   362/580: $11\reserved_o[0:0]
+   363/580: $9\segment_valid_o[0:0]
+   364/580: $10\segment_o[2:0]
+   365/580: $9\scale_log2_o[1:0]
+   366/580: $9\index_reg_o[2:0]
+   367/580: $10\base_reg_o[2:0]
+   368/580: $10\payload_words_o[2:0]
+   369/580: $10\displacement_words_o[2:0]
+   370/580: $10\has_absolute_o[0:0]
+   371/580: $10\has_displacement_o[0:0]
+   372/580: $10\has_index_reg_o[0:0]
+   373/580: $10\has_base_reg_o[0:0]
+   374/580: $10\base_o[2:0]
+   375/580: $10\segment_selectable_o[0:0]
+   376/580: $10\update_eligible_o[0:0]
+   377/580: $10\is_immediate_o[0:0]
+   378/580: $10\is_memory_o[0:0]
+   379/580: $10\is_register_o[0:0]
+   380/580: $10\form_o[5:0]
+   381/580: $10\valid_o[0:0]
+   382/580: $10\signed32_escape[0:0]
+   383/580: $10\signed32_index_escape_o[0:0]
+   384/580: $10\reserved_o[0:0]
+   385/580: $8\segment_valid_o[0:0]
+   386/580: $9\segment_o[2:0]
+   387/580: $9\signed32_index_escape_o[0:0]
+   388/580: $9\signed32_escape[0:0]
+   389/580: $8\scale_log2_o[1:0]
+   390/580: $8\index_reg_o[2:0]
+   391/580: $9\base_reg_o[2:0]
+   392/580: $9\payload_words_o[2:0]
+   393/580: $9\displacement_words_o[2:0]
+   394/580: $9\has_absolute_o[0:0]
+   395/580: $9\has_displacement_o[0:0]
+   396/580: $9\has_index_reg_o[0:0]
+   397/580: $9\has_base_reg_o[0:0]
+   398/580: $9\base_o[2:0]
+   399/580: $9\segment_selectable_o[0:0]
+   400/580: $9\update_eligible_o[0:0]
+   401/580: $9\is_immediate_o[0:0]
+   402/580: $9\is_memory_o[0:0]
+   403/580: $9\is_register_o[0:0]
+   404/580: $9\form_o[5:0]
+   405/580: $9\valid_o[0:0]
+   406/580: $9\reserved_o[0:0]
+   407/580: $7\segment_valid_o[0:0]
+   408/580: $8\segment_o[2:0]
+   409/580: $7\scale_log2_o[1:0]
+   410/580: $7\index_reg_o[2:0]
+   411/580: $8\base_reg_o[2:0]
+   412/580: $8\payload_words_o[2:0]
+   413/580: $8\displacement_words_o[2:0]
+   414/580: $8\has_absolute_o[0:0]
+   415/580: $8\has_displacement_o[0:0]
+   416/580: $8\has_index_reg_o[0:0]
+   417/580: $8\has_base_reg_o[0:0]
+   418/580: $8\base_o[2:0]
+   419/580: $8\segment_selectable_o[0:0]
+   420/580: $8\update_eligible_o[0:0]
+   421/580: $8\is_immediate_o[0:0]
+   422/580: $8\is_memory_o[0:0]
+   423/580: $8\is_register_o[0:0]
+   424/580: $8\form_o[5:0]
+   425/580: $8\valid_o[0:0]
+   426/580: $8\signed32_escape[0:0]
+   427/580: $8\signed32_index_escape_o[0:0]
+   428/580: $8\reserved_o[0:0]
+   429/580: $6\segment_valid_o[0:0]
+   430/580: $7\segment_o[2:0]
+   431/580: $7\signed32_index_escape_o[0:0]
+   432/580: $7\signed32_escape[0:0]
+   433/580: $6\scale_log2_o[1:0]
+   434/580: $6\index_reg_o[2:0]
+   435/580: $7\base_reg_o[2:0]
+   436/580: $7\payload_words_o[2:0]
+   437/580: $7\displacement_words_o[2:0]
+   438/580: $7\has_absolute_o[0:0]
+   439/580: $7\has_displacement_o[0:0]
+   440/580: $7\has_index_reg_o[0:0]
+   441/580: $7\has_base_reg_o[0:0]
+   442/580: $7\base_o[2:0]
+   443/580: $7\segment_selectable_o[0:0]
+   444/580: $7\update_eligible_o[0:0]
+   445/580: $7\is_immediate_o[0:0]
+   446/580: $7\is_memory_o[0:0]
+   447/580: $7\is_register_o[0:0]
+   448/580: $7\form_o[5:0]
+   449/580: $7\valid_o[0:0]
+   450/580: $7\reserved_o[0:0]
+   451/580: $5\segment_valid_o[0:0]
+   452/580: $6\segment_o[2:0]
+   453/580: $5\scale_log2_o[1:0]
+   454/580: $5\index_reg_o[2:0]
+   455/580: $6\base_reg_o[2:0]
+   456/580: $6\payload_words_o[2:0]
+   457/580: $6\displacement_words_o[2:0]
+   458/580: $6\has_absolute_o[0:0]
+   459/580: $6\has_displacement_o[0:0]
+   460/580: $6\has_index_reg_o[0:0]
+   461/580: $6\has_base_reg_o[0:0]
+   462/580: $6\base_o[2:0]
+   463/580: $6\segment_selectable_o[0:0]
+   464/580: $6\update_eligible_o[0:0]
+   465/580: $6\is_immediate_o[0:0]
+   466/580: $6\is_memory_o[0:0]
+   467/580: $6\is_register_o[0:0]
+   468/580: $6\form_o[5:0]
+   469/580: $6\valid_o[0:0]
+   470/580: $6\signed32_escape[0:0]
+   471/580: $6\signed32_index_escape_o[0:0]
+   472/580: $6\reserved_o[0:0]
+   473/580: $4\segment_valid_o[0:0]
+   474/580: $5\segment_o[2:0]
+   475/580: $5\signed32_index_escape_o[0:0]
+   476/580: $5\signed32_escape[0:0]
+   477/580: $4\scale_log2_o[1:0]
+   478/580: $4\index_reg_o[2:0]
+   479/580: $5\base_reg_o[2:0]
+   480/580: $5\payload_words_o[2:0]
+   481/580: $5\displacement_words_o[2:0]
+   482/580: $5\has_absolute_o[0:0]
+   483/580: $5\has_displacement_o[0:0]
+   484/580: $5\has_index_reg_o[0:0]
+   485/580: $5\has_base_reg_o[0:0]
+   486/580: $5\base_o[2:0]
+   487/580: $5\segment_selectable_o[0:0]
+   488/580: $5\update_eligible_o[0:0]
+   489/580: $5\is_immediate_o[0:0]
+   490/580: $5\is_memory_o[0:0]
+   491/580: $5\is_register_o[0:0]
+   492/580: $5\form_o[5:0]
+   493/580: $5\valid_o[0:0]
+   494/580: $5\reserved_o[0:0]
+   495/580: $3\segment_valid_o[0:0]
+   496/580: $4\segment_o[2:0]
+   497/580: $3\scale_log2_o[1:0]
+   498/580: $3\index_reg_o[2:0]
+   499/580: $4\base_reg_o[2:0]
+   500/580: $4\payload_words_o[2:0]
+   501/580: $4\displacement_words_o[2:0]
+   502/580: $4\has_absolute_o[0:0]
+   503/580: $4\has_displacement_o[0:0]
+   504/580: $4\has_index_reg_o[0:0]
+   505/580: $4\has_base_reg_o[0:0]
+   506/580: $4\base_o[2:0]
+   507/580: $4\segment_selectable_o[0:0]
+   508/580: $4\update_eligible_o[0:0]
+   509/580: $4\is_immediate_o[0:0]
+   510/580: $4\is_memory_o[0:0]
+   511/580: $4\is_register_o[0:0]
+   512/580: $4\form_o[5:0]
+   513/580: $4\valid_o[0:0]
+   514/580: $4\signed32_escape[0:0]
+   515/580: $4\signed32_index_escape_o[0:0]
+   516/580: $4\reserved_o[0:0]
+   517/580: $3\signed32_escape[0:0]
+   518/580: $3\payload_words_o[2:0]
+   519/580: $3\displacement_words_o[2:0]
+   520/580: $2\scale_log2_o[1:0]
+   521/580: $2\index_reg_o[2:0]
+   522/580: $3\base_reg_o[2:0]
+   523/580: $3\base_o[2:0]
+   524/580: $3\segment_o[2:0]
+   525/580: $3\has_absolute_o[0:0]
+   526/580: $3\has_displacement_o[0:0]
+   527/580: $3\has_index_reg_o[0:0]
+   528/580: $3\has_base_reg_o[0:0]
+   529/580: $2\segment_valid_o[0:0]
+   530/580: $3\segment_selectable_o[0:0]
+   531/580: $3\signed32_index_escape_o[0:0]
+   532/580: $3\update_eligible_o[0:0]
+   533/580: $3\is_immediate_o[0:0]
+   534/580: $3\is_memory_o[0:0]
+   535/580: $3\is_register_o[0:0]
+   536/580: $3\form_o[5:0]
+   537/580: $3\reserved_o[0:0]
+   538/580: $3\valid_o[0:0]
+   539/580: $2\signed32_escape[0:0]
+   540/580: $2\payload_words_o[2:0]
+   541/580: $2\displacement_words_o[2:0]
+   542/580: $1\scale_log2_o[1:0]
+   543/580: $1\index_reg_o[2:0]
+   544/580: $2\base_reg_o[2:0]
+   545/580: $2\base_o[2:0]
+   546/580: $2\segment_o[2:0]
+   547/580: $2\has_absolute_o[0:0]
+   548/580: $2\has_displacement_o[0:0]
+   549/580: $2\has_index_reg_o[0:0]
+   550/580: $2\has_base_reg_o[0:0]
+   551/580: $1\segment_valid_o[0:0]
+   552/580: $2\segment_selectable_o[0:0]
+   553/580: $2\signed32_index_escape_o[0:0]
+   554/580: $2\update_eligible_o[0:0]
+   555/580: $2\is_immediate_o[0:0]
+   556/580: $2\is_memory_o[0:0]
+   557/580: $2\is_register_o[0:0]
+   558/580: $2\form_o[5:0]
+   559/580: $2\reserved_o[0:0]
+   560/580: $2\valid_o[0:0]
+   561/580: $1\base_reg_o[2:0]
+   562/580: $1\payload_words_o[2:0]
+   563/580: $1\displacement_words_o[2:0]
+   564/580: $1\has_absolute_o[0:0]
+   565/580: $1\has_displacement_o[0:0]
+   566/580: $1\has_index_reg_o[0:0]
+   567/580: $1\has_base_reg_o[0:0]
+   568/580: $1\base_o[2:0]
+   569/580: $1\segment_o[2:0]
+   570/580: $1\segment_selectable_o[0:0]
+   571/580: $1\update_eligible_o[0:0]
+   572/580: $1\is_immediate_o[0:0]
+   573/580: $1\is_memory_o[0:0]
+   574/580: $1\is_register_o[0:0]
+   575/580: $1\form_o[5:0]
+   576/580: $1\valid_o[0:0]
+   577/580: $1\signed32_escape[0:0]
+   578/580: $1\signed32_index_escape_o[0:0]
+   579/580: $1\needs_descriptor_o[0:0]
+   580/580: $1\reserved_o[0:0]
+
+2.2.8. Executing PROC_DLATCH pass (convert process syncs to latches).
+No latch inferred for signal `\bedrock_ea_decode_synth.\valid_o' from process `\bedrock_ea_decode_synth.$proc$../build/generated/bedrock_ea_decode_synth.sv:78$1'.
+No latch inferred for signal `\bedrock_ea_decode_synth.\reserved_o' from process `\bedrock_ea_decode_synth.$proc$../build/generated/bedrock_ea_decode_synth.sv:78$1'.
+No latch inferred for signal `\bedrock_ea_decode_synth.\needs_descriptor_o' from process `\bedrock_ea_decode_synth.$proc$../build/generated/bedrock_ea_decode_synth.sv:78$1'.
+No latch inferred for signal `\bedrock_ea_decode_synth.\form_o' from process `\bedrock_ea_decode_synth.$proc$../build/generated/bedrock_ea_decode_synth.sv:78$1'.
+No latch inferred for signal `\bedrock_ea_decode_synth.\is_register_o' from process `\bedrock_ea_decode_synth.$proc$../build/generated/bedrock_ea_decode_synth.sv:78$1'.
+No latch inferred for signal `\bedrock_ea_decode_synth.\is_memory_o' from process `\bedrock_ea_decode_synth.$proc$../build/generated/bedrock_ea_decode_synth.sv:78$1'.
+No latch inferred for signal `\bedrock_ea_decode_synth.\is_immediate_o' from process `\bedrock_ea_decode_synth.$proc$../build/generated/bedrock_ea_decode_synth.sv:78$1'.
+No latch inferred for signal `\bedrock_ea_decode_synth.\update_eligible_o' from process `\bedrock_ea_decode_synth.$proc$../build/generated/bedrock_ea_decode_synth.sv:78$1'.
+No latch inferred for signal `\bedrock_ea_decode_synth.\signed32_index_escape_o' from process `\bedrock_ea_decode_synth.$proc$../build/generated/bedrock_ea_decode_synth.sv:78$1'.
+No latch inferred for signal `\bedrock_ea_decode_synth.\segment_selectable_o' from process `\bedrock_ea_decode_synth.$proc$../build/generated/bedrock_ea_decode_synth.sv:78$1'.
+No latch inferred for signal `\bedrock_ea_decode_synth.\segment_valid_o' from process `\bedrock_ea_decode_synth.$proc$../build/generated/bedrock_ea_decode_synth.sv:78$1'.
+No latch inferred for signal `\bedrock_ea_decode_synth.\has_base_reg_o' from process `\bedrock_ea_decode_synth.$proc$../build/generated/bedrock_ea_decode_synth.sv:78$1'.
+No latch inferred for signal `\bedrock_ea_decode_synth.\has_index_reg_o' from process `\bedrock_ea_decode_synth.$proc$../build/generated/bedrock_ea_decode_synth.sv:78$1'.
+No latch inferred for signal `\bedrock_ea_decode_synth.\has_displacement_o' from process `\bedrock_ea_decode_synth.$proc$../build/generated/bedrock_ea_decode_synth.sv:78$1'.
+No latch inferred for signal `\bedrock_ea_decode_synth.\has_absolute_o' from process `\bedrock_ea_decode_synth.$proc$../build/generated/bedrock_ea_decode_synth.sv:78$1'.
+No latch inferred for signal `\bedrock_ea_decode_synth.\segment_o' from process `\bedrock_ea_decode_synth.$proc$../build/generated/bedrock_ea_decode_synth.sv:78$1'.
+No latch inferred for signal `\bedrock_ea_decode_synth.\base_o' from process `\bedrock_ea_decode_synth.$proc$../build/generated/bedrock_ea_decode_synth.sv:78$1'.
+No latch inferred for signal `\bedrock_ea_decode_synth.\base_reg_o' from process `\bedrock_ea_decode_synth.$proc$../build/generated/bedrock_ea_decode_synth.sv:78$1'.
+No latch inferred for signal `\bedrock_ea_decode_synth.\index_reg_o' from process `\bedrock_ea_decode_synth.$proc$../build/generated/bedrock_ea_decode_synth.sv:78$1'.
+No latch inferred for signal `\bedrock_ea_decode_synth.\scale_log2_o' from process `\bedrock_ea_decode_synth.$proc$../build/generated/bedrock_ea_decode_synth.sv:78$1'.
+No latch inferred for signal `\bedrock_ea_decode_synth.\displacement_words_o' from process `\bedrock_ea_decode_synth.$proc$../build/generated/bedrock_ea_decode_synth.sv:78$1'.
+No latch inferred for signal `\bedrock_ea_decode_synth.\payload_words_o' from process `\bedrock_ea_decode_synth.$proc$../build/generated/bedrock_ea_decode_synth.sv:78$1'.
+No latch inferred for signal `\bedrock_ea_decode_synth.\signed32_escape' from process `\bedrock_ea_decode_synth.$proc$../build/generated/bedrock_ea_decode_synth.sv:78$1'.
+
+2.2.9. Executing PROC_DFF pass (convert process syncs to FFs).
+
+2.2.10. Executing PROC_MEMWR pass (convert process memory writes to cells).
+
+2.2.11. Executing PROC_CLEAN pass (remove empty switches from decision trees).
+Found and cleaned up 28 empty switches in `\bedrock_ea_decode_synth.$proc$../build/generated/bedrock_ea_decode_synth.sv:78$1'.
+Removing empty process `bedrock_ea_decode_synth.$proc$../build/generated/bedrock_ea_decode_synth.sv:78$1'.
+Cleaned up 28 empty switches.
+
+2.2.12. Executing OPT_EXPR pass (perform const folding).
+Optimizing module bedrock_ea_decode_synth.
+<suppressed ~625 debug messages>
+
+2.3. Executing OPT_EXPR pass (perform const folding).
+Optimizing module bedrock_ea_decode_synth.
+
+2.4. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \bedrock_ea_decode_synth..
+Removed 118 unused cells and 1956 unused wires.
+<suppressed ~120 debug messages>
+
+2.5. Executing CHECK pass (checking for obvious problems).
+Checking module bedrock_ea_decode_synth...
+Found and reported 0 problems.
+
+2.6. Executing OPT pass (performing simple optimizations).
+
+2.6.1. Executing OPT_EXPR pass (perform const folding).
+Optimizing module bedrock_ea_decode_synth.
+
+2.6.2. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\bedrock_ea_decode_synth'.
+Computing hashes of 3067 cells of `\bedrock_ea_decode_synth'.
+Finding duplicate cells in `\bedrock_ea_decode_synth'.
+Computing hashes of 1720 cells of `\bedrock_ea_decode_synth'.
+Finding duplicate cells in `\bedrock_ea_decode_synth'.
+<suppressed ~4041 debug messages>
+Removed a total of 1347 cells.
+
+2.6.3. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module \bedrock_ea_decode_synth..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+      Replacing known input bits on port A of cell $procmux$483: $1\signed32_escape[0:0] -> 1'0
+      Replacing known input bits on port A of cell $procmux$102: $1\signed32_escape[0:0] -> 1'0
+      Replacing known input bits on port A of cell $procmux$959: $1\signed32_escape[0:0] -> 1'0
+      Replacing known input bits on port A of cell $procmux$541: $1\signed32_escape[0:0] -> 1'0
+      Replacing known input bits on port A of cell $procmux$1477: $1\signed32_escape[0:0] -> 1'0
+      Replacing known input bits on port A of cell $procmux$1022: $1\signed32_escape[0:0] -> 1'0
+      Replacing known input bits on port A of cell $procmux$2037: $1\signed32_escape[0:0] -> 1'0
+      Replacing known input bits on port A of cell $procmux$1545: $1\signed32_escape[0:0] -> 1'0
+      Replacing known input bits on port A of cell $procmux$2639: $1\signed32_escape[0:0] -> 1'0
+      Replacing known input bits on port A of cell $procmux$2110: $1\signed32_escape[0:0] -> 1'0
+      Replacing known input bits on port A of cell $procmux$3283: $1\signed32_escape[0:0] -> 1'0
+      Replacing known input bits on port A of cell $procmux$2717: $1\signed32_escape[0:0] -> 1'0
+      Replacing known input bits on port A of cell $procmux$5678: $1\signed32_escape[0:0] -> 1'0
+      Replacing known input bits on port A of cell $procmux$4822: $1\signed32_escape[0:0] -> 1'0
+      Replacing known input bits on port A of cell $procmux$6661: $1\signed32_escape[0:0] -> 1'0
+      Replacing known input bits on port A of cell $procmux$5765: $1\signed32_escape[0:0] -> 1'0
+      Replacing known input bits on port A of cell $procmux$7688: $1\signed32_escape[0:0] -> 1'0
+      Replacing known input bits on port A of cell $procmux$6752: $1\signed32_escape[0:0] -> 1'0
+      Replacing known input bits on port A of cell $procmux$8757: $1\signed32_escape[0:0] -> 1'0
+      Replacing known input bits on port A of cell $procmux$7783: $1\signed32_escape[0:0] -> 1'0
+  Analyzing evaluation results.
+    dead port 2/2 on $mux $procmux$8713.
+    dead port 2/2 on $mux $procmux$5983.
+    dead port 2/2 on $mux $procmux$5980.
+    dead port 2/2 on $mux $procmux$5963.
+    dead port 2/2 on $mux $procmux$5961.
+    dead port 2/2 on $mux $procmux$5959.
+    dead port 2/2 on $mux $procmux$5956.
+    dead port 2/2 on $mux $procmux$5939.
+    dead port 2/2 on $mux $procmux$5937.
+    dead port 2/2 on $mux $procmux$5935.
+    dead port 2/2 on $mux $procmux$5916.
+    dead port 2/2 on $mux $procmux$5914.
+    dead port 2/2 on $mux $procmux$8692.
+    dead port 2/2 on $mux $procmux$5912.
+    dead port 2/2 on $mux $procmux$5909.
+    dead port 2/2 on $mux $procmux$5892.
+    dead port 2/2 on $mux $procmux$5890.
+    dead port 2/2 on $mux $procmux$8690.
+    dead port 2/2 on $mux $procmux$5888.
+    dead port 2/2 on $mux $procmux$5885.
+    dead port 2/2 on $mux $procmux$5868.
+    dead port 2/2 on $mux $procmux$5866.
+    dead port 2/2 on $mux $procmux$5864.
+    dead port 2/2 on $mux $procmux$5861.
+    dead port 2/2 on $mux $procmux$5844.
+    dead port 2/2 on $mux $procmux$5842.
+    dead port 2/2 on $mux $procmux$5840.
+    dead port 2/2 on $mux $procmux$5837.
+    dead port 2/2 on $mux $procmux$5820.
+    dead port 2/2 on $mux $procmux$5818.
+    dead port 2/2 on $mux $procmux$8669.
+    dead port 2/2 on $mux $procmux$5816.
+    dead port 2/2 on $mux $procmux$5813.
+    dead port 2/2 on $mux $procmux$8667.
+    dead port 2/2 on $mux $procmux$8646.
+    dead port 2/2 on $mux $procmux$8644.
+    dead port 2/2 on $mux $procmux$5772.
+    dead port 2/2 on $mux $procmux$5770.
+    dead port 2/2 on $mux $procmux$5768.
+    dead port 2/2 on $mux $procmux$5765.
+    dead port 2/2 on $mux $procmux$5748.
+    dead port 2/2 on $mux $procmux$5746.
+    dead port 2/2 on $mux $procmux$5744.
+    dead port 2/2 on $mux $procmux$5725.
+    dead port 2/2 on $mux $procmux$5723.
+    dead port 2/2 on $mux $procmux$8623.
+    dead port 2/2 on $mux $procmux$5721.
+    dead port 2/2 on $mux $procmux$5702.
+    dead port 2/2 on $mux $procmux$5700.
+    dead port 2/2 on $mux $procmux$8621.
+    dead port 2/2 on $mux $procmux$5682.
+    dead port 2/2 on $mux $procmux$5680.
+    dead port 2/2 on $mux $procmux$8929.
+    dead port 2/2 on $mux $procmux$8600.
+    dead port 2/2 on $mux $procmux$8598.
+    dead port 2/2 on $mux $procmux$5642.
+    dead port 2/2 on $mux $procmux$5640.
+    dead port 2/2 on $mux $procmux$5622.
+    dead port 2/2 on $mux $procmux$5620.
+    dead port 2/2 on $mux $procmux$8577.
+    dead port 2/2 on $mux $procmux$5602.
+    dead port 2/2 on $mux $procmux$5600.
+    dead port 2/2 on $mux $procmux$8575.
+    dead port 2/2 on $mux $procmux$5582.
+    dead port 2/2 on $mux $procmux$5580.
+    dead port 2/2 on $mux $procmux$5562.
+    dead port 2/2 on $mux $procmux$5560.
+    dead port 2/2 on $mux $procmux$5542.
+    dead port 2/2 on $mux $procmux$5540.
+    dead port 2/2 on $mux $procmux$8554.
+    dead port 2/2 on $mux $procmux$5522.
+    dead port 2/2 on $mux $procmux$5520.
+    dead port 2/2 on $mux $procmux$8552.
+    dead port 2/2 on $mux $procmux$5502.
+    dead port 2/2 on $mux $procmux$5500.
+    dead port 2/2 on $mux $procmux$5482.
+    dead port 2/2 on $mux $procmux$5480.
+    dead port 2/2 on $mux $procmux$5462.
+    dead port 2/2 on $mux $procmux$5460.
+    dead port 2/2 on $mux $procmux$8531.
+    dead port 2/2 on $mux $procmux$5442.
+    dead port 2/2 on $mux $procmux$5440.
+    dead port 2/2 on $mux $procmux$8529.
+    dead port 2/2 on $mux $procmux$5422.
+    dead port 2/2 on $mux $procmux$5420.
+    dead port 2/2 on $mux $procmux$5402.
+    dead port 2/2 on $mux $procmux$5400.
+    dead port 2/2 on $mux $procmux$5382.
+    dead port 2/2 on $mux $procmux$5380.
+    dead port 2/2 on $mux $procmux$8508.
+    dead port 2/2 on $mux $procmux$5362.
+    dead port 2/2 on $mux $procmux$5360.
+    dead port 2/2 on $mux $procmux$8506.
+    dead port 2/2 on $mux $procmux$5342.
+    dead port 2/2 on $mux $procmux$5340.
+    dead port 2/2 on $mux $procmux$5322.
+    dead port 2/2 on $mux $procmux$5320.
+    dead port 2/2 on $mux $procmux$5302.
+    dead port 2/2 on $mux $procmux$5300.
+    dead port 2/2 on $mux $procmux$8485.
+    dead port 2/2 on $mux $procmux$5282.
+    dead port 2/2 on $mux $procmux$5280.
+    dead port 2/2 on $mux $procmux$8483.
+    dead port 2/2 on $mux $procmux$5262.
+    dead port 2/2 on $mux $procmux$5260.
+    dead port 2/2 on $mux $procmux$5258.
+    dead port 2/2 on $mux $procmux$5255.
+    dead port 2/2 on $mux $procmux$5239.
+    dead port 2/2 on $mux $procmux$5237.
+    dead port 2/2 on $mux $procmux$5235.
+    dead port 2/2 on $mux $procmux$5232.
+    dead port 2/2 on $mux $procmux$5216.
+    dead port 2/2 on $mux $procmux$5214.
+    dead port 2/2 on $mux $procmux$8462.
+    dead port 2/2 on $mux $procmux$5212.
+    dead port 2/2 on $mux $procmux$5209.
+    dead port 2/2 on $mux $procmux$5193.
+    dead port 2/2 on $mux $procmux$5191.
+    dead port 2/2 on $mux $procmux$8460.
+    dead port 2/2 on $mux $procmux$5189.
+    dead port 2/2 on $mux $procmux$5171.
+    dead port 2/2 on $mux $procmux$5169.
+    dead port 2/2 on $mux $procmux$5167.
+    dead port 2/2 on $mux $procmux$5164.
+    dead port 2/2 on $mux $procmux$5148.
+    dead port 2/2 on $mux $procmux$5146.
+    dead port 2/2 on $mux $procmux$5144.
+    dead port 2/2 on $mux $procmux$5126.
+    dead port 2/2 on $mux $procmux$5124.
+    dead port 2/2 on $mux $procmux$8439.
+    dead port 2/2 on $mux $procmux$5122.
+    dead port 2/2 on $mux $procmux$5104.
+    dead port 2/2 on $mux $procmux$5102.
+    dead port 2/2 on $mux $procmux$8437.
+    dead port 2/2 on $mux $procmux$5100.
+    dead port 2/2 on $mux $procmux$5097.
+    dead port 2/2 on $mux $procmux$5081.
+    dead port 2/2 on $mux $procmux$5079.
+    dead port 2/2 on $mux $procmux$9049.
+    dead port 2/2 on $mux $procmux$5077.
+    dead port 2/2 on $mux $procmux$5074.
+    dead port 2/2 on $mux $procmux$5058.
+    dead port 2/2 on $mux $procmux$5056.
+    dead port 2/2 on $mux $procmux$5054.
+    dead port 2/2 on $mux $procmux$5051.
+    dead port 2/2 on $mux $procmux$5035.
+    dead port 2/2 on $mux $procmux$5033.
+    dead port 2/2 on $mux $procmux$8416.
+    dead port 2/2 on $mux $procmux$5031.
+    dead port 2/2 on $mux $procmux$5028.
+    dead port 2/2 on $mux $procmux$5012.
+    dead port 2/2 on $mux $procmux$5010.
+    dead port 2/2 on $mux $procmux$8414.
+    dead port 2/2 on $mux $procmux$5008.
+    dead port 2/2 on $mux $procmux$5005.
+    dead port 2/2 on $mux $procmux$4989.
+    dead port 2/2 on $mux $procmux$4987.
+    dead port 2/2 on $mux $procmux$9164.
+    dead port 2/2 on $mux $procmux$4985.
+    dead port 2/2 on $mux $procmux$4967.
+    dead port 2/2 on $mux $procmux$4965.
+    dead port 2/2 on $mux $procmux$4963.
+    dead port 2/2 on $mux $procmux$4960.
+    dead port 2/2 on $mux $procmux$4944.
+    dead port 2/2 on $mux $procmux$4942.
+    dead port 2/2 on $mux $procmux$8393.
+    dead port 2/2 on $mux $procmux$4940.
+    dead port 2/2 on $mux $procmux$4937.
+    dead port 2/2 on $mux $procmux$4921.
+    dead port 2/2 on $mux $procmux$4919.
+    dead port 2/2 on $mux $procmux$8391.
+    dead port 2/2 on $mux $procmux$4917.
+    dead port 2/2 on $mux $procmux$4914.
+    dead port 2/2 on $mux $procmux$4898.
+    dead port 2/2 on $mux $procmux$4896.
+    dead port 2/2 on $mux $procmux$4894.
+    dead port 2/2 on $mux $procmux$4891.
+    dead port 2/2 on $mux $procmux$4875.
+    dead port 2/2 on $mux $procmux$4873.
+    dead port 2/2 on $mux $procmux$4871.
+    dead port 2/2 on $mux $procmux$4868.
+    dead port 2/2 on $mux $procmux$8370.
+    dead port 2/2 on $mux $procmux$8368.
+    dead port 2/2 on $mux $procmux$8347.
+    dead port 2/2 on $mux $procmux$4829.
+    dead port 2/2 on $mux $procmux$4827.
+    dead port 2/2 on $mux $procmux$8345.
+    dead port 2/2 on $mux $procmux$4825.
+    dead port 2/2 on $mux $procmux$4822.
+    dead port 2/2 on $mux $procmux$4806.
+    dead port 2/2 on $mux $procmux$4804.
+    dead port 2/2 on $mux $procmux$4802.
+    dead port 2/2 on $mux $procmux$4784.
+    dead port 2/2 on $mux $procmux$4782.
+    dead port 2/2 on $mux $procmux$4780.
+    dead port 2/2 on $mux $procmux$4762.
+    dead port 2/2 on $mux $procmux$4760.
+    dead port 2/2 on $mux $procmux$8324.
+    dead port 2/2 on $mux $procmux$4743.
+    dead port 2/2 on $mux $procmux$4741.
+    dead port 2/2 on $mux $procmux$8322.
+    dead port 2/2 on $mux $procmux$4724.
+    dead port 2/2 on $mux $procmux$4722.
+    dead port 2/2 on $mux $procmux$4705.
+    dead port 2/2 on $mux $procmux$4703.
+    dead port 2/2 on $mux $procmux$4687.
+    dead port 2/2 on $mux $procmux$4685.
+    dead port 2/2 on $mux $procmux$8301.
+    dead port 2/2 on $mux $procmux$4668.
+    dead port 2/2 on $mux $procmux$4666.
+    dead port 2/2 on $mux $procmux$8299.
+    dead port 2/2 on $mux $procmux$4650.
+    dead port 2/2 on $mux $procmux$4648.
+    dead port 2/2 on $mux $procmux$4631.
+    dead port 2/2 on $mux $procmux$4629.
+    dead port 2/2 on $mux $procmux$4612.
+    dead port 2/2 on $mux $procmux$4610.
+    dead port 2/2 on $mux $procmux$8278.
+    dead port 2/2 on $mux $procmux$4593.
+    dead port 2/2 on $mux $procmux$4591.
+    dead port 2/2 on $mux $procmux$8276.
+    dead port 2/2 on $mux $procmux$4574.
+    dead port 2/2 on $mux $procmux$4572.
+    dead port 2/2 on $mux $procmux$4556.
+    dead port 2/2 on $mux $procmux$4554.
+    dead port 2/2 on $mux $procmux$8274.
+    dead port 2/2 on $mux $procmux$4538.
+    dead port 2/2 on $mux $procmux$4536.
+    dead port 2/2 on $mux $procmux$8271.
+    dead port 2/2 on $mux $procmux$4520.
+    dead port 2/2 on $mux $procmux$4518.
+    dead port 2/2 on $mux $procmux$8252.
+    dead port 2/2 on $mux $procmux$4502.
+    dead port 2/2 on $mux $procmux$4500.
+    dead port 2/2 on $mux $procmux$8250.
+    dead port 2/2 on $mux $procmux$4483.
+    dead port 2/2 on $mux $procmux$4481.
+    dead port 2/2 on $mux $procmux$4464.
+    dead port 2/2 on $mux $procmux$4462.
+    dead port 2/2 on $mux $procmux$8248.
+    dead port 2/2 on $mux $procmux$4446.
+    dead port 2/2 on $mux $procmux$4444.
+    dead port 2/2 on $mux $procmux$8245.
+    dead port 2/2 on $mux $procmux$4428.
+    dead port 2/2 on $mux $procmux$4426.
+    dead port 2/2 on $mux $procmux$8226.
+    dead port 2/2 on $mux $procmux$4410.
+    dead port 2/2 on $mux $procmux$4408.
+    dead port 2/2 on $mux $procmux$8224.
+    dead port 2/2 on $mux $procmux$4392.
+    dead port 2/2 on $mux $procmux$4390.
+    dead port 2/2 on $mux $procmux$8909.
+    dead port 2/2 on $mux $procmux$4374.
+    dead port 2/2 on $mux $procmux$4372.
+    dead port 2/2 on $mux $procmux$8222.
+    dead port 2/2 on $mux $procmux$4357.
+    dead port 2/2 on $mux $procmux$4355.
+    dead port 2/2 on $mux $procmux$8219.
+    dead port 2/2 on $mux $procmux$4339.
+    dead port 2/2 on $mux $procmux$4337.
+    dead port 2/2 on $mux $procmux$8200.
+    dead port 2/2 on $mux $procmux$4322.
+    dead port 2/2 on $mux $procmux$4320.
+    dead port 2/2 on $mux $procmux$8198.
+    dead port 2/2 on $mux $procmux$4305.
+    dead port 2/2 on $mux $procmux$4303.
+    dead port 2/2 on $mux $procmux$4287.
+    dead port 2/2 on $mux $procmux$4285.
+    dead port 2/2 on $mux $procmux$8196.
+    dead port 2/2 on $mux $procmux$4269.
+    dead port 2/2 on $mux $procmux$4267.
+    dead port 2/2 on $mux $procmux$8175.
+    dead port 2/2 on $mux $procmux$4251.
+    dead port 2/2 on $mux $procmux$4249.
+    dead port 2/2 on $mux $procmux$8173.
+    dead port 2/2 on $mux $procmux$4234.
+    dead port 2/2 on $mux $procmux$4232.
+    dead port 2/2 on $mux $procmux$4216.
+    dead port 2/2 on $mux $procmux$4214.
+    dead port 2/2 on $mux $procmux$8171.
+    dead port 2/2 on $mux $procmux$4199.
+    dead port 2/2 on $mux $procmux$4197.
+    dead port 2/2 on $mux $procmux$8168.
+    dead port 2/2 on $mux $procmux$4181.
+    dead port 2/2 on $mux $procmux$4179.
+    dead port 2/2 on $mux $procmux$8149.
+    dead port 2/2 on $mux $procmux$4163.
+    dead port 2/2 on $mux $procmux$4161.
+    dead port 2/2 on $mux $procmux$8147.
+    dead port 2/2 on $mux $procmux$4145.
+    dead port 2/2 on $mux $procmux$4143.
+    dead port 2/2 on $mux $procmux$4128.
+    dead port 2/2 on $mux $procmux$4126.
+    dead port 2/2 on $mux $procmux$8145.
+    dead port 2/2 on $mux $procmux$4111.
+    dead port 2/2 on $mux $procmux$4109.
+    dead port 2/2 on $mux $procmux$8124.
+    dead port 2/2 on $mux $procmux$4094.
+    dead port 2/2 on $mux $procmux$4092.
+    dead port 2/2 on $mux $procmux$8122.
+    dead port 2/2 on $mux $procmux$4077.
+    dead port 2/2 on $mux $procmux$4075.
+    dead port 2/2 on $mux $procmux$4060.
+    dead port 2/2 on $mux $procmux$4058.
+    dead port 2/2 on $mux $procmux$8120.
+    dead port 2/2 on $mux $procmux$4044.
+    dead port 2/2 on $mux $procmux$4042.
+    dead port 2/2 on $mux $procmux$8099.
+    dead port 2/2 on $mux $procmux$4027.
+    dead port 2/2 on $mux $procmux$4025.
+    dead port 2/2 on $mux $procmux$8097.
+    dead port 2/2 on $mux $procmux$4011.
+    dead port 2/2 on $mux $procmux$4009.
+    dead port 2/2 on $mux $procmux$3995.
+    dead port 2/2 on $mux $procmux$3993.
+    dead port 2/2 on $mux $procmux$8095.
+    dead port 2/2 on $mux $procmux$3978.
+    dead port 2/2 on $mux $procmux$3976.
+    dead port 2/2 on $mux $procmux$8092.
+    dead port 2/2 on $mux $procmux$3961.
+    dead port 2/2 on $mux $procmux$3959.
+    dead port 2/2 on $mux $procmux$8073.
+    dead port 2/2 on $mux $procmux$3944.
+    dead port 2/2 on $mux $procmux$3942.
+    dead port 2/2 on $mux $procmux$8071.
+    dead port 2/2 on $mux $procmux$3928.
+    dead port 2/2 on $mux $procmux$3926.
+    dead port 2/2 on $mux $procmux$3911.
+    dead port 2/2 on $mux $procmux$3909.
+    dead port 2/2 on $mux $procmux$8069.
+    dead port 2/2 on $mux $procmux$3895.
+    dead port 2/2 on $mux $procmux$3893.
+    dead port 2/2 on $mux $procmux$8066.
+    dead port 2/2 on $mux $procmux$3878.
+    dead port 2/2 on $mux $procmux$3876.
+    dead port 2/2 on $mux $procmux$8047.
+    dead port 2/2 on $mux $procmux$3861.
+    dead port 2/2 on $mux $procmux$3859.
+    dead port 2/2 on $mux $procmux$8045.
+    dead port 2/2 on $mux $procmux$3844.
+    dead port 2/2 on $mux $procmux$3842.
+    dead port 2/2 on $mux $procmux$3828.
+    dead port 2/2 on $mux $procmux$3826.
+    dead port 2/2 on $mux $procmux$8043.
+    dead port 2/2 on $mux $procmux$3812.
+    dead port 2/2 on $mux $procmux$3810.
+    dead port 2/2 on $mux $procmux$8040.
+    dead port 2/2 on $mux $procmux$3796.
+    dead port 2/2 on $mux $procmux$3794.
+    dead port 2/2 on $mux $procmux$8021.
+    dead port 2/2 on $mux $procmux$3780.
+    dead port 2/2 on $mux $procmux$3778.
+    dead port 2/2 on $mux $procmux$8019.
+    dead port 2/2 on $mux $procmux$3764.
+    dead port 2/2 on $mux $procmux$3762.
+    dead port 2/2 on $mux $procmux$3749.
+    dead port 2/2 on $mux $procmux$3747.
+    dead port 2/2 on $mux $procmux$8017.
+    dead port 2/2 on $mux $procmux$3733.
+    dead port 2/2 on $mux $procmux$3731.
+    dead port 2/2 on $mux $procmux$8014.
+    dead port 2/2 on $mux $procmux$3718.
+    dead port 2/2 on $mux $procmux$3716.
+    dead port 2/2 on $mux $procmux$7995.
+    dead port 2/2 on $mux $procmux$3703.
+    dead port 2/2 on $mux $procmux$3701.
+    dead port 2/2 on $mux $procmux$7993.
+    dead port 2/2 on $mux $procmux$3687.
+    dead port 2/2 on $mux $procmux$3685.
+    dead port 2/2 on $mux $procmux$3671.
+    dead port 2/2 on $mux $procmux$3669.
+    dead port 2/2 on $mux $procmux$7991.
+    dead port 2/2 on $mux $procmux$3656.
+    dead port 2/2 on $mux $procmux$3654.
+    dead port 2/2 on $mux $procmux$7970.
+    dead port 2/2 on $mux $procmux$3641.
+    dead port 2/2 on $mux $procmux$3639.
+    dead port 2/2 on $mux $procmux$7968.
+    dead port 2/2 on $mux $procmux$3626.
+    dead port 2/2 on $mux $procmux$3624.
+    dead port 2/2 on $mux $procmux$9029.
+    dead port 2/2 on $mux $procmux$3610.
+    dead port 2/2 on $mux $procmux$3608.
+    dead port 2/2 on $mux $procmux$7966.
+    dead port 2/2 on $mux $procmux$3594.
+    dead port 2/2 on $mux $procmux$3592.
+    dead port 2/2 on $mux $procmux$7945.
+    dead port 2/2 on $mux $procmux$3578.
+    dead port 2/2 on $mux $procmux$3576.
+    dead port 2/2 on $mux $procmux$7943.
+    dead port 2/2 on $mux $procmux$3563.
+    dead port 2/2 on $mux $procmux$3561.
+    dead port 2/2 on $mux $procmux$3548.
+    dead port 2/2 on $mux $procmux$3546.
+    dead port 2/2 on $mux $procmux$7941.
+    dead port 2/2 on $mux $procmux$3533.
+    dead port 2/2 on $mux $procmux$3531.
+    dead port 2/2 on $mux $procmux$7920.
+    dead port 2/2 on $mux $procmux$3518.
+    dead port 2/2 on $mux $procmux$3516.
+    dead port 2/2 on $mux $procmux$7918.
+    dead port 2/2 on $mux $procmux$3503.
+    dead port 2/2 on $mux $procmux$3501.
+    dead port 2/2 on $mux $procmux$3489.
+    dead port 2/2 on $mux $procmux$3487.
+    dead port 2/2 on $mux $procmux$7916.
+    dead port 2/2 on $mux $procmux$3474.
+    dead port 2/2 on $mux $procmux$3472.
+    dead port 2/2 on $mux $procmux$7913.
+    dead port 2/2 on $mux $procmux$3460.
+    dead port 2/2 on $mux $procmux$3458.
+    dead port 2/2 on $mux $procmux$7894.
+    dead port 2/2 on $mux $procmux$3446.
+    dead port 2/2 on $mux $procmux$3444.
+    dead port 2/2 on $mux $procmux$7892.
+    dead port 2/2 on $mux $procmux$3431.
+    dead port 2/2 on $mux $procmux$3429.
+    dead port 2/2 on $mux $procmux$9144.
+    dead port 2/2 on $mux $procmux$3416.
+    dead port 2/2 on $mux $procmux$3414.
+    dead port 2/2 on $mux $procmux$7890.
+    dead port 2/2 on $mux $procmux$3402.
+    dead port 2/2 on $mux $procmux$3400.
+    dead port 2/2 on $mux $procmux$7887.
+    dead port 2/2 on $mux $procmux$3388.
+    dead port 2/2 on $mux $procmux$3386.
+    dead port 2/2 on $mux $procmux$7868.
+    dead port 2/2 on $mux $procmux$3374.
+    dead port 2/2 on $mux $procmux$3372.
+    dead port 2/2 on $mux $procmux$7866.
+    dead port 2/2 on $mux $procmux$3359.
+    dead port 2/2 on $mux $procmux$3357.
+    dead port 2/2 on $mux $procmux$3344.
+    dead port 2/2 on $mux $procmux$3342.
+    dead port 2/2 on $mux $procmux$7864.
+    dead port 2/2 on $mux $procmux$3329.
+    dead port 2/2 on $mux $procmux$3327.
+    dead port 2/2 on $mux $procmux$7861.
+    dead port 2/2 on $mux $procmux$3315.
+    dead port 2/2 on $mux $procmux$3313.
+    dead port 2/2 on $mux $procmux$7842.
+    dead port 2/2 on $mux $procmux$3301.
+    dead port 2/2 on $mux $procmux$3299.
+    dead port 2/2 on $mux $procmux$7840.
+    dead port 2/2 on $mux $procmux$3287.
+    dead port 2/2 on $mux $procmux$3285.
+    dead port 2/2 on $mux $procmux$7838.
+    dead port 2/2 on $mux $procmux$7835.
+    dead port 2/2 on $mux $procmux$3259.
+    dead port 2/2 on $mux $procmux$3257.
+    dead port 2/2 on $mux $procmux$8889.
+    dead port 2/2 on $mux $procmux$3245.
+    dead port 2/2 on $mux $procmux$3243.
+    dead port 2/2 on $mux $procmux$3231.
+    dead port 2/2 on $mux $procmux$3229.
+    dead port 2/2 on $mux $procmux$3217.
+    dead port 2/2 on $mux $procmux$3215.
+    dead port 2/2 on $mux $procmux$3203.
+    dead port 2/2 on $mux $procmux$3201.
+    dead port 2/2 on $mux $procmux$7790.
+    dead port 2/2 on $mux $procmux$3189.
+    dead port 2/2 on $mux $procmux$3187.
+    dead port 2/2 on $mux $procmux$7788.
+    dead port 2/2 on $mux $procmux$3175.
+    dead port 2/2 on $mux $procmux$3173.
+    dead port 2/2 on $mux $procmux$3161.
+    dead port 2/2 on $mux $procmux$3159.
+    dead port 2/2 on $mux $procmux$7786.
+    dead port 2/2 on $mux $procmux$3147.
+    dead port 2/2 on $mux $procmux$3145.
+    dead port 2/2 on $mux $procmux$7783.
+    dead port 2/2 on $mux $procmux$3133.
+    dead port 2/2 on $mux $procmux$3131.
+    dead port 2/2 on $mux $procmux$7764.
+    dead port 2/2 on $mux $procmux$3119.
+    dead port 2/2 on $mux $procmux$3117.
+    dead port 2/2 on $mux $procmux$7762.
+    dead port 2/2 on $mux $procmux$3105.
+    dead port 2/2 on $mux $procmux$3103.
+    dead port 2/2 on $mux $procmux$3091.
+    dead port 2/2 on $mux $procmux$3089.
+    dead port 2/2 on $mux $procmux$7760.
+    dead port 2/2 on $mux $procmux$3077.
+    dead port 2/2 on $mux $procmux$3075.
+    dead port 2/2 on $mux $procmux$7739.
+    dead port 2/2 on $mux $procmux$3063.
+    dead port 2/2 on $mux $procmux$3061.
+    dead port 2/2 on $mux $procmux$7737.
+    dead port 2/2 on $mux $procmux$3049.
+    dead port 2/2 on $mux $procmux$3047.
+    dead port 2/2 on $mux $procmux$3035.
+    dead port 2/2 on $mux $procmux$3033.
+    dead port 2/2 on $mux $procmux$7735.
+    dead port 2/2 on $mux $procmux$3021.
+    dead port 2/2 on $mux $procmux$3019.
+    dead port 2/2 on $mux $procmux$7714.
+    dead port 2/2 on $mux $procmux$3007.
+    dead port 2/2 on $mux $procmux$3005.
+    dead port 2/2 on $mux $procmux$7712.
+    dead port 2/2 on $mux $procmux$3003.
+    dead port 2/2 on $mux $procmux$3000.
+    dead port 2/2 on $mux $procmux$2990.
+    dead port 2/2 on $mux $procmux$2988.
+    dead port 2/2 on $mux $procmux$2986.
+    dead port 2/2 on $mux $procmux$2983.
+    dead port 2/2 on $mux $procmux$2973.
+    dead port 2/2 on $mux $procmux$2971.
+    dead port 2/2 on $mux $procmux$2969.
+    dead port 2/2 on $mux $procmux$2957.
+    dead port 2/2 on $mux $procmux$2955.
+    dead port 2/2 on $mux $procmux$7692.
+    dead port 2/2 on $mux $procmux$2953.
+    dead port 2/2 on $mux $procmux$2950.
+    dead port 2/2 on $mux $procmux$2940.
+    dead port 2/2 on $mux $procmux$2938.
+    dead port 2/2 on $mux $procmux$7690.
+    dead port 2/2 on $mux $procmux$2936.
+    dead port 2/2 on $mux $procmux$2924.
+    dead port 2/2 on $mux $procmux$2922.
+    dead port 2/2 on $mux $procmux$2920.
+    dead port 2/2 on $mux $procmux$2908.
+    dead port 2/2 on $mux $procmux$2906.
+    dead port 2/2 on $mux $procmux$2904.
+    dead port 2/2 on $mux $procmux$2892.
+    dead port 2/2 on $mux $procmux$2890.
+    dead port 2/2 on $mux $procmux$2888.
+    dead port 2/2 on $mux $procmux$2885.
+    dead port 2/2 on $mux $procmux$2875.
+    dead port 2/2 on $mux $procmux$2873.
+    dead port 2/2 on $mux $procmux$8869.
+    dead port 2/2 on $mux $procmux$2871.
+    dead port 2/2 on $mux $procmux$2859.
+    dead port 2/2 on $mux $procmux$2857.
+    dead port 2/2 on $mux $procmux$2855.
+    dead port 2/2 on $mux $procmux$2852.
+    dead port 2/2 on $mux $procmux$2842.
+    dead port 2/2 on $mux $procmux$2840.
+    dead port 2/2 on $mux $procmux$2838.
+    dead port 2/2 on $mux $procmux$2835.
+    dead port 2/2 on $mux $procmux$2825.
+    dead port 2/2 on $mux $procmux$2823.
+    dead port 2/2 on $mux $procmux$7648.
+    dead port 2/2 on $mux $procmux$2821.
+    dead port 2/2 on $mux $procmux$2809.
+    dead port 2/2 on $mux $procmux$2807.
+    dead port 2/2 on $mux $procmux$7646.
+    dead port 2/2 on $mux $procmux$2805.
+    dead port 2/2 on $mux $procmux$2802.
+    dead port 2/2 on $mux $procmux$2792.
+    dead port 2/2 on $mux $procmux$2790.
+    dead port 2/2 on $mux $procmux$2788.
+    dead port 2/2 on $mux $procmux$2785.
+    dead port 2/2 on $mux $procmux$2775.
+    dead port 2/2 on $mux $procmux$2773.
+    dead port 2/2 on $mux $procmux$2771.
+    dead port 2/2 on $mux $procmux$2768.
+    dead port 2/2 on $mux $procmux$2758.
+    dead port 2/2 on $mux $procmux$2756.
+    dead port 2/2 on $mux $procmux$7626.
+    dead port 2/2 on $mux $procmux$2754.
+    dead port 2/2 on $mux $procmux$2751.
+    dead port 2/2 on $mux $procmux$7624.
+    dead port 2/2 on $mux $procmux$7604.
+    dead port 2/2 on $mux $procmux$7602.
+    dead port 2/2 on $mux $procmux$2724.
+    dead port 2/2 on $mux $procmux$2722.
+    dead port 2/2 on $mux $procmux$9009.
+    dead port 2/2 on $mux $procmux$2720.
+    dead port 2/2 on $mux $procmux$2717.
+    dead port 2/2 on $mux $procmux$2707.
+    dead port 2/2 on $mux $procmux$2705.
+    dead port 2/2 on $mux $procmux$2703.
+    dead port 2/2 on $mux $procmux$2700.
+    dead port 2/2 on $mux $procmux$2690.
+    dead port 2/2 on $mux $procmux$2688.
+    dead port 2/2 on $mux $procmux$7582.
+    dead port 2/2 on $mux $procmux$2686.
+    dead port 2/2 on $mux $procmux$2683.
+    dead port 2/2 on $mux $procmux$2673.
+    dead port 2/2 on $mux $procmux$2671.
+    dead port 2/2 on $mux $procmux$7580.
+    dead port 2/2 on $mux $procmux$2669.
+    dead port 2/2 on $mux $procmux$2666.
+    dead port 2/2 on $mux $procmux$2656.
+    dead port 2/2 on $mux $procmux$2654.
+    dead port 2/2 on $mux $procmux$2643.
+    dead port 2/2 on $mux $procmux$2641.
+    dead port 2/2 on $mux $procmux$7560.
+    dead port 2/2 on $mux $procmux$7558.
+    dead port 2/2 on $mux $procmux$2617.
+    dead port 2/2 on $mux $procmux$2615.
+    dead port 2/2 on $mux $procmux$7538.
+    dead port 2/2 on $mux $procmux$2604.
+    dead port 2/2 on $mux $procmux$2602.
+    dead port 2/2 on $mux $procmux$7536.
+    dead port 2/2 on $mux $procmux$2591.
+    dead port 2/2 on $mux $procmux$2589.
+    dead port 2/2 on $mux $procmux$2578.
+    dead port 2/2 on $mux $procmux$2576.
+    dead port 2/2 on $mux $procmux$2565.
+    dead port 2/2 on $mux $procmux$2563.
+    dead port 2/2 on $mux $procmux$7516.
+    dead port 2/2 on $mux $procmux$2552.
+    dead port 2/2 on $mux $procmux$2550.
+    dead port 2/2 on $mux $procmux$7514.
+    dead port 2/2 on $mux $procmux$2539.
+    dead port 2/2 on $mux $procmux$2537.
+    dead port 2/2 on $mux $procmux$2526.
+    dead port 2/2 on $mux $procmux$2524.
+    dead port 2/2 on $mux $procmux$2513.
+    dead port 2/2 on $mux $procmux$2511.
+    dead port 2/2 on $mux $procmux$7494.
+    dead port 2/2 on $mux $procmux$2500.
+    dead port 2/2 on $mux $procmux$2498.
+    dead port 2/2 on $mux $procmux$7492.
+    dead port 2/2 on $mux $procmux$2487.
+    dead port 2/2 on $mux $procmux$2485.
+    dead port 2/2 on $mux $procmux$2474.
+    dead port 2/2 on $mux $procmux$2472.
+    dead port 2/2 on $mux $procmux$2461.
+    dead port 2/2 on $mux $procmux$2459.
+    dead port 2/2 on $mux $procmux$7472.
+    dead port 2/2 on $mux $procmux$2448.
+    dead port 2/2 on $mux $procmux$2446.
+    dead port 2/2 on $mux $procmux$7470.
+    dead port 2/2 on $mux $procmux$2435.
+    dead port 2/2 on $mux $procmux$2433.
+    dead port 2/2 on $mux $procmux$9124.
+    dead port 2/2 on $mux $procmux$2422.
+    dead port 2/2 on $mux $procmux$2420.
+    dead port 2/2 on $mux $procmux$2409.
+    dead port 2/2 on $mux $procmux$2407.
+    dead port 2/2 on $mux $procmux$7450.
+    dead port 2/2 on $mux $procmux$2396.
+    dead port 2/2 on $mux $procmux$2394.
+    dead port 2/2 on $mux $procmux$7448.
+    dead port 2/2 on $mux $procmux$2383.
+    dead port 2/2 on $mux $procmux$2381.
+    dead port 2/2 on $mux $procmux$8854.
+    dead port 2/2 on $mux $procmux$2379.
+    dead port 2/2 on $mux $procmux$2376.
+    dead port 2/2 on $mux $procmux$2367.
+    dead port 2/2 on $mux $procmux$2365.
+    dead port 2/2 on $mux $procmux$2363.
+    dead port 2/2 on $mux $procmux$2360.
+    dead port 2/2 on $mux $procmux$2351.
+    dead port 2/2 on $mux $procmux$2349.
+    dead port 2/2 on $mux $procmux$7428.
+    dead port 2/2 on $mux $procmux$2347.
+    dead port 2/2 on $mux $procmux$2336.
+    dead port 2/2 on $mux $procmux$2334.
+    dead port 2/2 on $mux $procmux$7426.
+    dead port 2/2 on $mux $procmux$2332.
+    dead port 2/2 on $mux $procmux$2329.
+    dead port 2/2 on $mux $procmux$2320.
+    dead port 2/2 on $mux $procmux$2318.
+    dead port 2/2 on $mux $procmux$2316.
+    dead port 2/2 on $mux $procmux$2305.
+    dead port 2/2 on $mux $procmux$2303.
+    dead port 2/2 on $mux $procmux$2301.
+    dead port 2/2 on $mux $procmux$2290.
+    dead port 2/2 on $mux $procmux$2288.
+    dead port 2/2 on $mux $procmux$7406.
+    dead port 2/2 on $mux $procmux$2286.
+    dead port 2/2 on $mux $procmux$2275.
+    dead port 2/2 on $mux $procmux$2273.
+    dead port 2/2 on $mux $procmux$7404.
+    dead port 2/2 on $mux $procmux$2271.
+    dead port 2/2 on $mux $procmux$2268.
+    dead port 2/2 on $mux $procmux$2259.
+    dead port 2/2 on $mux $procmux$2257.
+    dead port 2/2 on $mux $procmux$2255.
+    dead port 2/2 on $mux $procmux$2244.
+    dead port 2/2 on $mux $procmux$2242.
+    dead port 2/2 on $mux $procmux$2240.
+    dead port 2/2 on $mux $procmux$2237.
+    dead port 2/2 on $mux $procmux$2228.
+    dead port 2/2 on $mux $procmux$2226.
+    dead port 2/2 on $mux $procmux$7384.
+    dead port 2/2 on $mux $procmux$2224.
+    dead port 2/2 on $mux $procmux$2221.
+    dead port 2/2 on $mux $procmux$2212.
+    dead port 2/2 on $mux $procmux$2210.
+    dead port 2/2 on $mux $procmux$7382.
+    dead port 2/2 on $mux $procmux$2208.
+    dead port 2/2 on $mux $procmux$2197.
+    dead port 2/2 on $mux $procmux$2195.
+    dead port 2/2 on $mux $procmux$2193.
+    dead port 2/2 on $mux $procmux$2190.
+    dead port 2/2 on $mux $procmux$2181.
+    dead port 2/2 on $mux $procmux$2179.
+    dead port 2/2 on $mux $procmux$2177.
+    dead port 2/2 on $mux $procmux$2174.
+    dead port 2/2 on $mux $procmux$2165.
+    dead port 2/2 on $mux $procmux$2163.
+    dead port 2/2 on $mux $procmux$7362.
+    dead port 2/2 on $mux $procmux$2161.
+    dead port 2/2 on $mux $procmux$2158.
+    dead port 2/2 on $mux $procmux$2149.
+    dead port 2/2 on $mux $procmux$2147.
+    dead port 2/2 on $mux $procmux$7360.
+    dead port 2/2 on $mux $procmux$2145.
+    dead port 2/2 on $mux $procmux$2142.
+    dead port 2/2 on $mux $procmux$7340.
+    dead port 2/2 on $mux $procmux$7338.
+    dead port 2/2 on $mux $procmux$2117.
+    dead port 2/2 on $mux $procmux$2115.
+    dead port 2/2 on $mux $procmux$2113.
+    dead port 2/2 on $mux $procmux$2110.
+    dead port 2/2 on $mux $procmux$2101.
+    dead port 2/2 on $mux $procmux$2099.
+    dead port 2/2 on $mux $procmux$7318.
+    dead port 2/2 on $mux $procmux$2097.
+    dead port 2/2 on $mux $procmux$2094.
+    dead port 2/2 on $mux $procmux$2085.
+    dead port 2/2 on $mux $procmux$2083.
+    dead port 2/2 on $mux $procmux$7316.
+    dead port 2/2 on $mux $procmux$2081.
+    dead port 2/2 on $mux $procmux$2078.
+    dead port 2/2 on $mux $procmux$2069.
+    dead port 2/2 on $mux $procmux$2067.
+    dead port 2/2 on $mux $procmux$2065.
+    dead port 2/2 on $mux $procmux$2062.
+    dead port 2/2 on $mux $procmux$2053.
+    dead port 2/2 on $mux $procmux$2051.
+    dead port 2/2 on $mux $procmux$2041.
+    dead port 2/2 on $mux $procmux$2039.
+    dead port 2/2 on $mux $procmux$7296.
+    dead port 2/2 on $mux $procmux$7294.
+    dead port 2/2 on $mux $procmux$7274.
+    dead port 2/2 on $mux $procmux$2017.
+    dead port 2/2 on $mux $procmux$2015.
+    dead port 2/2 on $mux $procmux$7272.
+    dead port 2/2 on $mux $procmux$2005.
+    dead port 2/2 on $mux $procmux$2003.
+    dead port 2/2 on $mux $procmux$1993.
+    dead port 2/2 on $mux $procmux$1991.
+    dead port 2/2 on $mux $procmux$1981.
+    dead port 2/2 on $mux $procmux$1979.
+    dead port 2/2 on $mux $procmux$7252.
+    dead port 2/2 on $mux $procmux$1969.
+    dead port 2/2 on $mux $procmux$1967.
+    dead port 2/2 on $mux $procmux$7250.
+    dead port 2/2 on $mux $procmux$1957.
+    dead port 2/2 on $mux $procmux$1955.
+    dead port 2/2 on $mux $procmux$1945.
+    dead port 2/2 on $mux $procmux$1943.
+    dead port 2/2 on $mux $procmux$1933.
+    dead port 2/2 on $mux $procmux$1931.
+    dead port 2/2 on $mux $procmux$7230.
+    dead port 2/2 on $mux $procmux$1921.
+    dead port 2/2 on $mux $procmux$1919.
+    dead port 2/2 on $mux $procmux$7228.
+    dead port 2/2 on $mux $procmux$1909.
+    dead port 2/2 on $mux $procmux$1907.
+    dead port 2/2 on $mux $procmux$1897.
+    dead port 2/2 on $mux $procmux$1895.
+    dead port 2/2 on $mux $procmux$7226.
+    dead port 2/2 on $mux $procmux$1885.
+    dead port 2/2 on $mux $procmux$1883.
+    dead port 2/2 on $mux $procmux$7223.
+    dead port 2/2 on $mux $procmux$1873.
+    dead port 2/2 on $mux $procmux$1871.
+    dead port 2/2 on $mux $procmux$7205.
+    dead port 2/2 on $mux $procmux$1861.
+    dead port 2/2 on $mux $procmux$1859.
+    dead port 2/2 on $mux $procmux$7203.
+    dead port 2/2 on $mux $procmux$1849.
+    dead port 2/2 on $mux $procmux$1847.
+    dead port 2/2 on $mux $procmux$1837.
+    dead port 2/2 on $mux $procmux$1835.
+    dead port 2/2 on $mux $procmux$7201.
+    dead port 2/2 on $mux $procmux$1825.
+    dead port 2/2 on $mux $procmux$1823.
+    dead port 2/2 on $mux $procmux$7198.
+    dead port 2/2 on $mux $procmux$1813.
+    dead port 2/2 on $mux $procmux$1811.
+    dead port 2/2 on $mux $procmux$7180.
+    dead port 2/2 on $mux $procmux$1801.
+    dead port 2/2 on $mux $procmux$1799.
+    dead port 2/2 on $mux $procmux$7178.
+    dead port 2/2 on $mux $procmux$1797.
+    dead port 2/2 on $mux $procmux$1794.
+    dead port 2/2 on $mux $procmux$1786.
+    dead port 2/2 on $mux $procmux$1784.
+    dead port 2/2 on $mux $procmux$8839.
+    dead port 2/2 on $mux $procmux$1782.
+    dead port 2/2 on $mux $procmux$1779.
+    dead port 2/2 on $mux $procmux$1771.
+    dead port 2/2 on $mux $procmux$1769.
+    dead port 2/2 on $mux $procmux$7176.
+    dead port 2/2 on $mux $procmux$1767.
+    dead port 2/2 on $mux $procmux$1757.
+    dead port 2/2 on $mux $procmux$1755.
+    dead port 2/2 on $mux $procmux$7173.
+    dead port 2/2 on $mux $procmux$1753.
+    dead port 2/2 on $mux $procmux$1750.
+    dead port 2/2 on $mux $procmux$1742.
+    dead port 2/2 on $mux $procmux$1740.
+    dead port 2/2 on $mux $procmux$7155.
+    dead port 2/2 on $mux $procmux$1738.
+    dead port 2/2 on $mux $procmux$1728.
+    dead port 2/2 on $mux $procmux$1726.
+    dead port 2/2 on $mux $procmux$7153.
+    dead port 2/2 on $mux $procmux$1724.
+    dead port 2/2 on $mux $procmux$1714.
+    dead port 2/2 on $mux $procmux$1712.
+    dead port 2/2 on $mux $procmux$1710.
+    dead port 2/2 on $mux $procmux$1700.
+    dead port 2/2 on $mux $procmux$1698.
+    dead port 2/2 on $mux $procmux$7151.
+    dead port 2/2 on $mux $procmux$1696.
+    dead port 2/2 on $mux $procmux$1693.
+    dead port 2/2 on $mux $procmux$1685.
+    dead port 2/2 on $mux $procmux$1683.
+    dead port 2/2 on $mux $procmux$7131.
+    dead port 2/2 on $mux $procmux$1681.
+    dead port 2/2 on $mux $procmux$1671.
+    dead port 2/2 on $mux $procmux$1669.
+    dead port 2/2 on $mux $procmux$7129.
+    dead port 2/2 on $mux $procmux$1667.
+    dead port 2/2 on $mux $procmux$1664.
+    dead port 2/2 on $mux $procmux$1656.
+    dead port 2/2 on $mux $procmux$1654.
+    dead port 2/2 on $mux $procmux$8989.
+    dead port 2/2 on $mux $procmux$1652.
+    dead port 2/2 on $mux $procmux$1649.
+    dead port 2/2 on $mux $procmux$1641.
+    dead port 2/2 on $mux $procmux$1639.
+    dead port 2/2 on $mux $procmux$7127.
+    dead port 2/2 on $mux $procmux$1637.
+    dead port 2/2 on $mux $procmux$1627.
+    dead port 2/2 on $mux $procmux$1625.
+    dead port 2/2 on $mux $procmux$7124.
+    dead port 2/2 on $mux $procmux$1623.
+    dead port 2/2 on $mux $procmux$1620.
+    dead port 2/2 on $mux $procmux$1612.
+    dead port 2/2 on $mux $procmux$1610.
+    dead port 2/2 on $mux $procmux$7106.
+    dead port 2/2 on $mux $procmux$1608.
+    dead port 2/2 on $mux $procmux$1605.
+    dead port 2/2 on $mux $procmux$1597.
+    dead port 2/2 on $mux $procmux$1595.
+    dead port 2/2 on $mux $procmux$7104.
+    dead port 2/2 on $mux $procmux$1593.
+    dead port 2/2 on $mux $procmux$1590.
+    dead port 2/2 on $mux $procmux$1582.
+    dead port 2/2 on $mux $procmux$1580.
+    dead port 2/2 on $mux $procmux$1578.
+    dead port 2/2 on $mux $procmux$1575.
+    dead port 2/2 on $mux $procmux$7102.
+    dead port 2/2 on $mux $procmux$7082.
+    dead port 2/2 on $mux $procmux$7080.
+    dead port 2/2 on $mux $procmux$7078.
+    dead port 2/2 on $mux $procmux$1552.
+    dead port 2/2 on $mux $procmux$1550.
+    dead port 2/2 on $mux $procmux$7058.
+    dead port 2/2 on $mux $procmux$1548.
+    dead port 2/2 on $mux $procmux$1545.
+    dead port 2/2 on $mux $procmux$1537.
+    dead port 2/2 on $mux $procmux$1535.
+    dead port 2/2 on $mux $procmux$7056.
+    dead port 2/2 on $mux $procmux$1533.
+    dead port 2/2 on $mux $procmux$1530.
+    dead port 2/2 on $mux $procmux$1522.
+    dead port 2/2 on $mux $procmux$1520.
+    dead port 2/2 on $mux $procmux$1518.
+    dead port 2/2 on $mux $procmux$1515.
+    dead port 2/2 on $mux $procmux$1507.
+    dead port 2/2 on $mux $procmux$1505.
+    dead port 2/2 on $mux $procmux$7054.
+    dead port 2/2 on $mux $procmux$1503.
+    dead port 2/2 on $mux $procmux$1500.
+    dead port 2/2 on $mux $procmux$1492.
+    dead port 2/2 on $mux $procmux$1490.
+    dead port 2/2 on $mux $procmux$7051.
+    dead port 2/2 on $mux $procmux$1481.
+    dead port 2/2 on $mux $procmux$1479.
+    dead port 2/2 on $mux $procmux$7033.
+    dead port 2/2 on $mux $procmux$7031.
+    dead port 2/2 on $mux $procmux$7029.
+    dead port 2/2 on $mux $procmux$7026.
+    dead port 2/2 on $mux $procmux$1459.
+    dead port 2/2 on $mux $procmux$1457.
+    dead port 2/2 on $mux $procmux$7008.
+    dead port 2/2 on $mux $procmux$1448.
+    dead port 2/2 on $mux $procmux$1446.
+    dead port 2/2 on $mux $procmux$7006.
+    dead port 2/2 on $mux $procmux$1437.
+    dead port 2/2 on $mux $procmux$1435.
+    dead port 2/2 on $mux $procmux$1426.
+    dead port 2/2 on $mux $procmux$1424.
+    dead port 2/2 on $mux $procmux$7004.
+    dead port 2/2 on $mux $procmux$1415.
+    dead port 2/2 on $mux $procmux$1413.
+    dead port 2/2 on $mux $procmux$7001.
+    dead port 2/2 on $mux $procmux$1404.
+    dead port 2/2 on $mux $procmux$1402.
+    dead port 2/2 on $mux $procmux$6983.
+    dead port 2/2 on $mux $procmux$1393.
+    dead port 2/2 on $mux $procmux$1391.
+    dead port 2/2 on $mux $procmux$6981.
+    dead port 2/2 on $mux $procmux$1382.
+    dead port 2/2 on $mux $procmux$1380.
+    dead port 2/2 on $mux $procmux$1371.
+    dead port 2/2 on $mux $procmux$1369.
+    dead port 2/2 on $mux $procmux$6979.
+    dead port 2/2 on $mux $procmux$1360.
+    dead port 2/2 on $mux $procmux$1358.
+    dead port 2/2 on $mux $procmux$6976.
+    dead port 2/2 on $mux $procmux$1349.
+    dead port 2/2 on $mux $procmux$1347.
+    dead port 2/2 on $mux $procmux$6958.
+    dead port 2/2 on $mux $procmux$1338.
+    dead port 2/2 on $mux $procmux$1336.
+    dead port 2/2 on $mux $procmux$6956.
+    dead port 2/2 on $mux $procmux$1327.
+    dead port 2/2 on $mux $procmux$1325.
+    dead port 2/2 on $mux $procmux$9104.
+    dead port 2/2 on $mux $procmux$1316.
+    dead port 2/2 on $mux $procmux$1314.
+    dead port 2/2 on $mux $procmux$6954.
+    dead port 2/2 on $mux $procmux$1305.
+    dead port 2/2 on $mux $procmux$1303.
+    dead port 2/2 on $mux $procmux$6951.
+    dead port 2/2 on $mux $procmux$1294.
+    dead port 2/2 on $mux $procmux$1292.
+    dead port 2/2 on $mux $procmux$6933.
+    dead port 2/2 on $mux $procmux$1283.
+    dead port 2/2 on $mux $procmux$1281.
+    dead port 2/2 on $mux $procmux$6931.
+    dead port 2/2 on $mux $procmux$1272.
+    dead port 2/2 on $mux $procmux$1270.
+    dead port 2/2 on $mux $procmux$1261.
+    dead port 2/2 on $mux $procmux$1259.
+    dead port 2/2 on $mux $procmux$6929.
+    dead port 2/2 on $mux $procmux$1257.
+    dead port 2/2 on $mux $procmux$1254.
+    dead port 2/2 on $mux $procmux$1247.
+    dead port 2/2 on $mux $procmux$1245.
+    dead port 2/2 on $mux $procmux$6909.
+    dead port 2/2 on $mux $procmux$1243.
+    dead port 2/2 on $mux $procmux$1240.
+    dead port 2/2 on $mux $procmux$1233.
+    dead port 2/2 on $mux $procmux$1231.
+    dead port 2/2 on $mux $procmux$6907.
+    dead port 2/2 on $mux $procmux$1229.
+    dead port 2/2 on $mux $procmux$1220.
+    dead port 2/2 on $mux $procmux$1218.
+    dead port 2/2 on $mux $procmux$1216.
+    dead port 2/2 on $mux $procmux$1213.
+    dead port 2/2 on $mux $procmux$1206.
+    dead port 2/2 on $mux $procmux$1204.
+    dead port 2/2 on $mux $procmux$6905.
+    dead port 2/2 on $mux $procmux$1202.
+    dead port 2/2 on $mux $procmux$1193.
+    dead port 2/2 on $mux $procmux$1191.
+    dead port 2/2 on $mux $procmux$6902.
+    dead port 2/2 on $mux $procmux$1189.
+    dead port 2/2 on $mux $procmux$1180.
+    dead port 2/2 on $mux $procmux$1178.
+    dead port 2/2 on $mux $procmux$6884.
+    dead port 2/2 on $mux $procmux$1176.
+    dead port 2/2 on $mux $procmux$1167.
+    dead port 2/2 on $mux $procmux$1165.
+    dead port 2/2 on $mux $procmux$6882.
+    dead port 2/2 on $mux $procmux$1163.
+    dead port 2/2 on $mux $procmux$1160.
+    dead port 2/2 on $mux $procmux$1153.
+    dead port 2/2 on $mux $procmux$1151.
+    dead port 2/2 on $mux $procmux$1149.
+    dead port 2/2 on $mux $procmux$1140.
+    dead port 2/2 on $mux $procmux$1138.
+    dead port 2/2 on $mux $procmux$6880.
+    dead port 2/2 on $mux $procmux$1136.
+    dead port 2/2 on $mux $procmux$1133.
+    dead port 2/2 on $mux $procmux$1126.
+    dead port 2/2 on $mux $procmux$1124.
+    dead port 2/2 on $mux $procmux$6877.
+    dead port 2/2 on $mux $procmux$1122.
+    dead port 2/2 on $mux $procmux$1119.
+    dead port 2/2 on $mux $procmux$1112.
+    dead port 2/2 on $mux $procmux$1110.
+    dead port 2/2 on $mux $procmux$6859.
+    dead port 2/2 on $mux $procmux$1108.
+    dead port 2/2 on $mux $procmux$1099.
+    dead port 2/2 on $mux $procmux$1097.
+    dead port 2/2 on $mux $procmux$6857.
+    dead port 2/2 on $mux $procmux$1095.
+    dead port 2/2 on $mux $procmux$1092.
+    dead port 2/2 on $mux $procmux$1085.
+    dead port 2/2 on $mux $procmux$1083.
+    dead port 2/2 on $mux $procmux$1081.
+    dead port 2/2 on $mux $procmux$1078.
+    dead port 2/2 on $mux $procmux$1071.
+    dead port 2/2 on $mux $procmux$1069.
+    dead port 2/2 on $mux $procmux$6855.
+    dead port 2/2 on $mux $procmux$1067.
+    dead port 2/2 on $mux $procmux$1064.
+    dead port 2/2 on $mux $procmux$1057.
+    dead port 2/2 on $mux $procmux$1055.
+    dead port 2/2 on $mux $procmux$6852.
+    dead port 2/2 on $mux $procmux$1053.
+    dead port 2/2 on $mux $procmux$1050.
+    dead port 2/2 on $mux $procmux$6834.
+    dead port 2/2 on $mux $procmux$6832.
+    dead port 2/2 on $mux $procmux$6830.
+    dead port 2/2 on $mux $procmux$1029.
+    dead port 2/2 on $mux $procmux$1027.
+    dead port 2/2 on $mux $procmux$6827.
+    dead port 2/2 on $mux $procmux$1025.
+    dead port 2/2 on $mux $procmux$1022.
+    dead port 2/2 on $mux $procmux$1015.
+    dead port 2/2 on $mux $procmux$1013.
+    dead port 2/2 on $mux $procmux$6809.
+    dead port 2/2 on $mux $procmux$1011.
+    dead port 2/2 on $mux $procmux$1008.
+    dead port 2/2 on $mux $procmux$1001.
+    dead port 2/2 on $mux $procmux$999.
+    dead port 2/2 on $mux $procmux$6807.
+    dead port 2/2 on $mux $procmux$997.
+    dead port 2/2 on $mux $procmux$994.
+    dead port 2/2 on $mux $procmux$987.
+    dead port 2/2 on $mux $procmux$985.
+    dead port 2/2 on $mux $procmux$983.
+    dead port 2/2 on $mux $procmux$980.
+    dead port 2/2 on $mux $procmux$973.
+    dead port 2/2 on $mux $procmux$971.
+    dead port 2/2 on $mux $procmux$6805.
+    dead port 2/2 on $mux $procmux$963.
+    dead port 2/2 on $mux $procmux$961.
+    dead port 2/2 on $mux $procmux$6802.
+    dead port 2/2 on $mux $procmux$8819.
+    dead port 2/2 on $mux $procmux$9204.
+    dead port 2/2 on $mux $procmux$943.
+    dead port 2/2 on $mux $procmux$941.
+    dead port 2/2 on $mux $procmux$933.
+    dead port 2/2 on $mux $procmux$931.
+    dead port 2/2 on $mux $procmux$6759.
+    dead port 2/2 on $mux $procmux$923.
+    dead port 2/2 on $mux $procmux$921.
+    dead port 2/2 on $mux $procmux$6757.
+    dead port 2/2 on $mux $procmux$913.
+    dead port 2/2 on $mux $procmux$911.
+    dead port 2/2 on $mux $procmux$8969.
+    dead port 2/2 on $mux $procmux$903.
+    dead port 2/2 on $mux $procmux$901.
+    dead port 2/2 on $mux $procmux$6755.
+    dead port 2/2 on $mux $procmux$893.
+    dead port 2/2 on $mux $procmux$891.
+    dead port 2/2 on $mux $procmux$6752.
+    dead port 2/2 on $mux $procmux$883.
+    dead port 2/2 on $mux $procmux$881.
+    dead port 2/2 on $mux $procmux$6734.
+    dead port 2/2 on $mux $procmux$873.
+    dead port 2/2 on $mux $procmux$871.
+    dead port 2/2 on $mux $procmux$6732.
+    dead port 2/2 on $mux $procmux$863.
+    dead port 2/2 on $mux $procmux$861.
+    dead port 2/2 on $mux $procmux$853.
+    dead port 2/2 on $mux $procmux$851.
+    dead port 2/2 on $mux $procmux$6730.
+    dead port 2/2 on $mux $procmux$843.
+    dead port 2/2 on $mux $procmux$841.
+    dead port 2/2 on $mux $procmux$6710.
+    dead port 2/2 on $mux $procmux$833.
+    dead port 2/2 on $mux $procmux$831.
+    dead port 2/2 on $mux $procmux$6708.
+    dead port 2/2 on $mux $procmux$823.
+    dead port 2/2 on $mux $procmux$821.
+    dead port 2/2 on $mux $procmux$813.
+    dead port 2/2 on $mux $procmux$811.
+    dead port 2/2 on $mux $procmux$6706.
+    dead port 2/2 on $mux $procmux$803.
+    dead port 2/2 on $mux $procmux$801.
+    dead port 2/2 on $mux $procmux$6686.
+    dead port 2/2 on $mux $procmux$793.
+    dead port 2/2 on $mux $procmux$791.
+    dead port 2/2 on $mux $procmux$6684.
+    dead port 2/2 on $mux $procmux$783.
+    dead port 2/2 on $mux $procmux$781.
+    dead port 2/2 on $mux $procmux$773.
+    dead port 2/2 on $mux $procmux$771.
+    dead port 2/2 on $mux $procmux$763.
+    dead port 2/2 on $mux $procmux$761.
+    dead port 2/2 on $mux $procmux$6665.
+    dead port 2/2 on $mux $procmux$759.
+    dead port 2/2 on $mux $procmux$756.
+    dead port 2/2 on $mux $procmux$750.
+    dead port 2/2 on $mux $procmux$748.
+    dead port 2/2 on $mux $procmux$6663.
+    dead port 2/2 on $mux $procmux$746.
+    dead port 2/2 on $mux $procmux$743.
+    dead port 2/2 on $mux $procmux$737.
+    dead port 2/2 on $mux $procmux$735.
+    dead port 2/2 on $mux $procmux$733.
+    dead port 2/2 on $mux $procmux$725.
+    dead port 2/2 on $mux $procmux$723.
+    dead port 2/2 on $mux $procmux$721.
+    dead port 2/2 on $mux $procmux$718.
+    dead port 2/2 on $mux $procmux$712.
+    dead port 2/2 on $mux $procmux$710.
+    dead port 2/2 on $mux $procmux$708.
+    dead port 2/2 on $mux $procmux$700.
+    dead port 2/2 on $mux $procmux$698.
+    dead port 2/2 on $mux $procmux$696.
+    dead port 2/2 on $mux $procmux$688.
+    dead port 2/2 on $mux $procmux$686.
+    dead port 2/2 on $mux $procmux$684.
+    dead port 2/2 on $mux $procmux$676.
+    dead port 2/2 on $mux $procmux$674.
+    dead port 2/2 on $mux $procmux$672.
+    dead port 2/2 on $mux $procmux$669.
+    dead port 2/2 on $mux $procmux$663.
+    dead port 2/2 on $mux $procmux$661.
+    dead port 2/2 on $mux $procmux$6623.
+    dead port 2/2 on $mux $procmux$659.
+    dead port 2/2 on $mux $procmux$651.
+    dead port 2/2 on $mux $procmux$649.
+    dead port 2/2 on $mux $procmux$6621.
+    dead port 2/2 on $mux $procmux$647.
+    dead port 2/2 on $mux $procmux$644.
+    dead port 2/2 on $mux $procmux$638.
+    dead port 2/2 on $mux $procmux$636.
+    dead port 2/2 on $mux $procmux$9084.
+    dead port 2/2 on $mux $procmux$634.
+    dead port 2/2 on $mux $procmux$631.
+    dead port 2/2 on $mux $procmux$625.
+    dead port 2/2 on $mux $procmux$623.
+    dead port 2/2 on $mux $procmux$621.
+    dead port 2/2 on $mux $procmux$613.
+    dead port 2/2 on $mux $procmux$611.
+    dead port 2/2 on $mux $procmux$6602.
+    dead port 2/2 on $mux $procmux$609.
+    dead port 2/2 on $mux $procmux$606.
+    dead port 2/2 on $mux $procmux$600.
+    dead port 2/2 on $mux $procmux$598.
+    dead port 2/2 on $mux $procmux$6600.
+    dead port 2/2 on $mux $procmux$596.
+    dead port 2/2 on $mux $procmux$593.
+    dead port 2/2 on $mux $procmux$587.
+    dead port 2/2 on $mux $procmux$585.
+    dead port 2/2 on $mux $procmux$583.
+    dead port 2/2 on $mux $procmux$580.
+    dead port 2/2 on $mux $procmux$574.
+    dead port 2/2 on $mux $procmux$572.
+    dead port 2/2 on $mux $procmux$570.
+    dead port 2/2 on $mux $procmux$567.
+    dead port 2/2 on $mux $procmux$6581.
+    dead port 2/2 on $mux $procmux$6579.
+    dead port 2/2 on $mux $procmux$6560.
+    dead port 2/2 on $mux $procmux$548.
+    dead port 2/2 on $mux $procmux$546.
+    dead port 2/2 on $mux $procmux$6558.
+    dead port 2/2 on $mux $procmux$544.
+    dead port 2/2 on $mux $procmux$541.
+    dead port 2/2 on $mux $procmux$535.
+    dead port 2/2 on $mux $procmux$533.
+    dead port 2/2 on $mux $procmux$531.
+    dead port 2/2 on $mux $procmux$528.
+    dead port 2/2 on $mux $procmux$522.
+    dead port 2/2 on $mux $procmux$520.
+    dead port 2/2 on $mux $procmux$518.
+    dead port 2/2 on $mux $procmux$515.
+    dead port 2/2 on $mux $procmux$509.
+    dead port 2/2 on $mux $procmux$507.
+    dead port 2/2 on $mux $procmux$6539.
+    dead port 2/2 on $mux $procmux$505.
+    dead port 2/2 on $mux $procmux$502.
+    dead port 2/2 on $mux $procmux$496.
+    dead port 2/2 on $mux $procmux$494.
+    dead port 2/2 on $mux $procmux$6537.
+    dead port 2/2 on $mux $procmux$487.
+    dead port 2/2 on $mux $procmux$485.
+    dead port 2/2 on $mux $procmux$6518.
+    dead port 2/2 on $mux $procmux$6516.
+    dead port 2/2 on $mux $procmux$469.
+    dead port 2/2 on $mux $procmux$467.
+    dead port 2/2 on $mux $procmux$460.
+    dead port 2/2 on $mux $procmux$458.
+    dead port 2/2 on $mux $procmux$6497.
+    dead port 2/2 on $mux $procmux$451.
+    dead port 2/2 on $mux $procmux$449.
+    dead port 2/2 on $mux $procmux$6495.
+    dead port 2/2 on $mux $procmux$442.
+    dead port 2/2 on $mux $procmux$440.
+    dead port 2/2 on $mux $procmux$433.
+    dead port 2/2 on $mux $procmux$431.
+    dead port 2/2 on $mux $procmux$424.
+    dead port 2/2 on $mux $procmux$422.
+    dead port 2/2 on $mux $procmux$6476.
+    dead port 2/2 on $mux $procmux$415.
+    dead port 2/2 on $mux $procmux$413.
+    dead port 2/2 on $mux $procmux$6474.
+    dead port 2/2 on $mux $procmux$406.
+    dead port 2/2 on $mux $procmux$404.
+    dead port 2/2 on $mux $procmux$397.
+    dead port 2/2 on $mux $procmux$395.
+    dead port 2/2 on $mux $procmux$388.
+    dead port 2/2 on $mux $procmux$386.
+    dead port 2/2 on $mux $procmux$6455.
+    dead port 2/2 on $mux $procmux$379.
+    dead port 2/2 on $mux $procmux$377.
+    dead port 2/2 on $mux $procmux$6453.
+    dead port 2/2 on $mux $procmux$370.
+    dead port 2/2 on $mux $procmux$368.
+    dead port 2/2 on $mux $procmux$361.
+    dead port 2/2 on $mux $procmux$359.
+    dead port 2/2 on $mux $procmux$352.
+    dead port 2/2 on $mux $procmux$350.
+    dead port 2/2 on $mux $procmux$6434.
+    dead port 2/2 on $mux $procmux$343.
+    dead port 2/2 on $mux $procmux$341.
+    dead port 2/2 on $mux $procmux$6432.
+    dead port 2/2 on $mux $procmux$334.
+    dead port 2/2 on $mux $procmux$332.
+    dead port 2/2 on $mux $procmux$8949.
+    dead port 2/2 on $mux $procmux$325.
+    dead port 2/2 on $mux $procmux$323.
+    dead port 2/2 on $mux $procmux$316.
+    dead port 2/2 on $mux $procmux$314.
+    dead port 2/2 on $mux $procmux$6413.
+    dead port 2/2 on $mux $procmux$307.
+    dead port 2/2 on $mux $procmux$305.
+    dead port 2/2 on $mux $procmux$6411.
+    dead port 2/2 on $mux $procmux$303.
+    dead port 2/2 on $mux $procmux$300.
+    dead port 2/2 on $mux $procmux$295.
+    dead port 2/2 on $mux $procmux$293.
+    dead port 2/2 on $mux $procmux$291.
+    dead port 2/2 on $mux $procmux$288.
+    dead port 2/2 on $mux $procmux$283.
+    dead port 2/2 on $mux $procmux$281.
+    dead port 2/2 on $mux $procmux$279.
+    dead port 2/2 on $mux $procmux$272.
+    dead port 2/2 on $mux $procmux$270.
+    dead port 2/2 on $mux $procmux$6392.
+    dead port 2/2 on $mux $procmux$268.
+    dead port 2/2 on $mux $procmux$265.
+    dead port 2/2 on $mux $procmux$260.
+    dead port 2/2 on $mux $procmux$258.
+    dead port 2/2 on $mux $procmux$6390.
+    dead port 2/2 on $mux $procmux$256.
+    dead port 2/2 on $mux $procmux$249.
+    dead port 2/2 on $mux $procmux$247.
+    dead port 2/2 on $mux $procmux$245.
+    dead port 2/2 on $mux $procmux$238.
+    dead port 2/2 on $mux $procmux$236.
+    dead port 2/2 on $mux $procmux$234.
+    dead port 2/2 on $mux $procmux$227.
+    dead port 2/2 on $mux $procmux$225.
+    dead port 2/2 on $mux $procmux$6371.
+    dead port 2/2 on $mux $procmux$223.
+    dead port 2/2 on $mux $procmux$220.
+    dead port 2/2 on $mux $procmux$215.
+    dead port 2/2 on $mux $procmux$213.
+    dead port 2/2 on $mux $procmux$6369.
+    dead port 2/2 on $mux $procmux$211.
+    dead port 2/2 on $mux $procmux$204.
+    dead port 2/2 on $mux $procmux$202.
+    dead port 2/2 on $mux $procmux$9184.
+    dead port 2/2 on $mux $procmux$200.
+    dead port 2/2 on $mux $procmux$197.
+    dead port 2/2 on $mux $procmux$192.
+    dead port 2/2 on $mux $procmux$190.
+    dead port 2/2 on $mux $procmux$188.
+    dead port 2/2 on $mux $procmux$185.
+    dead port 2/2 on $mux $procmux$180.
+    dead port 2/2 on $mux $procmux$178.
+    dead port 2/2 on $mux $procmux$6350.
+    dead port 2/2 on $mux $procmux$176.
+    dead port 2/2 on $mux $procmux$169.
+    dead port 2/2 on $mux $procmux$167.
+    dead port 2/2 on $mux $procmux$6348.
+    dead port 2/2 on $mux $procmux$165.
+    dead port 2/2 on $mux $procmux$162.
+    dead port 2/2 on $mux $procmux$157.
+    dead port 2/2 on $mux $procmux$155.
+    dead port 2/2 on $mux $procmux$153.
+    dead port 2/2 on $mux $procmux$150.
+    dead port 2/2 on $mux $procmux$145.
+    dead port 2/2 on $mux $procmux$143.
+    dead port 2/2 on $mux $procmux$141.
+    dead port 2/2 on $mux $procmux$138.
+    dead port 2/2 on $mux $procmux$133.
+    dead port 2/2 on $mux $procmux$131.
+    dead port 2/2 on $mux $procmux$6329.
+    dead port 2/2 on $mux $procmux$129.
+    dead port 2/2 on $mux $procmux$126.
+    dead port 2/2 on $mux $procmux$6327.
+    dead port 2/2 on $mux $procmux$6308.
+    dead port 2/2 on $mux $procmux$6306.
+    dead port 2/2 on $mux $procmux$109.
+    dead port 2/2 on $mux $procmux$107.
+    dead port 2/2 on $mux $procmux$105.
+    dead port 2/2 on $mux $procmux$102.
+    dead port 2/2 on $mux $procmux$97.
+    dead port 2/2 on $mux $procmux$95.
+    dead port 2/2 on $mux $procmux$93.
+    dead port 2/2 on $mux $procmux$90.
+    dead port 2/2 on $mux $procmux$85.
+    dead port 2/2 on $mux $procmux$83.
+    dead port 2/2 on $mux $procmux$6287.
+    dead port 2/2 on $mux $procmux$81.
+    dead port 2/2 on $mux $procmux$78.
+    dead port 2/2 on $mux $procmux$73.
+    dead port 2/2 on $mux $procmux$71.
+    dead port 2/2 on $mux $procmux$6285.
+    dead port 2/2 on $mux $procmux$69.
+    dead port 2/2 on $mux $procmux$66.
+    dead port 2/2 on $mux $procmux$8784.
+    dead port 2/2 on $mux $procmux$6266.
+    dead port 2/2 on $mux $procmux$6264.
+    dead port 2/2 on $mux $procmux$8782.
+    dead port 2/2 on $mux $procmux$6245.
+    dead port 2/2 on $mux $procmux$6243.
+    dead port 2/2 on $mux $procmux$6224.
+    dead port 2/2 on $mux $procmux$6222.
+    dead port 2/2 on $mux $procmux$6220.
+    dead port 2/2 on $mux $procmux$6217.
+    dead port 2/2 on $mux $procmux$6200.
+    dead port 2/2 on $mux $procmux$6198.
+    dead port 2/2 on $mux $procmux$8761.
+    dead port 2/2 on $mux $procmux$6196.
+    dead port 2/2 on $mux $procmux$6193.
+    dead port 2/2 on $mux $procmux$6176.
+    dead port 2/2 on $mux $procmux$6174.
+    dead port 2/2 on $mux $procmux$8759.
+    dead port 2/2 on $mux $procmux$6172.
+    dead port 2/2 on $mux $procmux$6169.
+    dead port 2/2 on $mux $procmux$6152.
+    dead port 2/2 on $mux $procmux$6150.
+    dead port 2/2 on $mux $procmux$6148.
+    dead port 2/2 on $mux $procmux$6129.
+    dead port 2/2 on $mux $procmux$6127.
+    dead port 2/2 on $mux $procmux$6125.
+    dead port 2/2 on $mux $procmux$6122.
+    dead port 2/2 on $mux $procmux$6105.
+    dead port 2/2 on $mux $procmux$6103.
+    dead port 2/2 on $mux $procmux$6101.
+    dead port 2/2 on $mux $procmux$6082.
+    dead port 2/2 on $mux $procmux$6080.
+    dead port 2/2 on $mux $procmux$6078.
+    dead port 2/2 on $mux $procmux$6059.
+    dead port 2/2 on $mux $procmux$6057.
+    dead port 2/2 on $mux $procmux$9064.
+    dead port 2/2 on $mux $procmux$6055.
+    dead port 2/2 on $mux $procmux$6052.
+    dead port 2/2 on $mux $procmux$6035.
+    dead port 2/2 on $mux $procmux$6033.
+    dead port 2/2 on $mux $procmux$6031.
+    dead port 2/2 on $mux $procmux$6028.
+    dead port 2/2 on $mux $procmux$6011.
+    dead port 2/2 on $mux $procmux$6009.
+    dead port 2/2 on $mux $procmux$8715.
+    dead port 2/2 on $mux $procmux$6007.
+    dead port 2/2 on $mux $procmux$6004.
+    dead port 2/2 on $mux $procmux$5987.
+    dead port 2/2 on $mux $procmux$5985.
+Removed 1359 multiplexer ports.
+<suppressed ~1698 debug messages>
+
+2.6.4. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module \bedrock_ea_decode_synth.
+    New ctrl vector for $pmux cell $procmux$9572: { $auto$opt_reduce.cc:135:opt_pmux$9873 $procmux$9719_CMP }
+    New ctrl vector for $pmux cell $procmux$9722: { $auto$opt_reduce.cc:135:opt_pmux$9877 $auto$opt_reduce.cc:135:opt_pmux$9875 }
+    New ctrl vector for $pmux cell $procmux$8933: { $procmux$9189_CMP $procmux$9190_CMP $procmux$9191_CMP $procmux$9192_CMP $procmux$9193_CMP $procmux$9194_CMP $procmux$9195_CMP $procmux$9196_CMP $auto$opt_reduce.cc:135:opt_pmux$9879 $procmux$9200_CMP $procmux$9201_CMP $procmux$9202_CMP $procmux$9203_CMP }
+    New ctrl vector for $pmux cell $procmux$9602: { $auto$opt_reduce.cc:135:opt_pmux$9883 $auto$opt_reduce.cc:135:opt_pmux$9881 }
+    New ctrl vector for $pmux cell $procmux$9088: { $procmux$9189_CMP $procmux$9190_CMP $procmux$9191_CMP $procmux$9192_CMP $procmux$9193_CMP $procmux$9194_CMP $auto$opt_reduce.cc:135:opt_pmux$9885 $procmux$9200_CMP $procmux$9201_CMP $procmux$9202_CMP $procmux$9203_CMP }
+    New ctrl vector for $pmux cell $procmux$9542: $auto$opt_reduce.cc:135:opt_pmux$9887
+    New ctrl vector for $pmux cell $procmux$9362: { $auto$opt_reduce.cc:135:opt_pmux$9891 $auto$opt_reduce.cc:135:opt_pmux$9889 }
+    New ctrl vector for $pmux cell $procmux$9332: { $auto$opt_reduce.cc:135:opt_pmux$9899 $auto$opt_reduce.cc:135:opt_pmux$9897 $auto$opt_reduce.cc:135:opt_pmux$9895 $auto$opt_reduce.cc:135:opt_pmux$9893 }
+    New ctrl vector for $pmux cell $procmux$9482: { $auto$opt_reduce.cc:135:opt_pmux$9911 $auto$opt_reduce.cc:135:opt_pmux$9909 $auto$opt_reduce.cc:135:opt_pmux$9907 $auto$opt_reduce.cc:135:opt_pmux$9905 $auto$opt_reduce.cc:135:opt_pmux$9903 $auto$opt_reduce.cc:135:opt_pmux$9901 $procmux$9721_CMP }
+    New ctrl vector for $pmux cell $procmux$9392: { $auto$opt_reduce.cc:135:opt_pmux$9915 $auto$opt_reduce.cc:135:opt_pmux$9913 }
+    New ctrl vector for $pmux cell $procmux$9452: { $auto$opt_reduce.cc:135:opt_pmux$9919 $auto$opt_reduce.cc:135:opt_pmux$9917 }
+    New ctrl vector for $pmux cell $procmux$9013: { $procmux$9189_CMP $procmux$9190_CMP $procmux$9191_CMP $procmux$9192_CMP $procmux$9193_CMP $procmux$9194_CMP $auto$opt_reduce.cc:135:opt_pmux$9921 $procmux$9200_CMP $procmux$9201_CMP $procmux$9202_CMP $procmux$9203_CMP }
+    New ctrl vector for $pmux cell $procmux$9422: $auto$opt_reduce.cc:135:opt_pmux$9923
+    New ctrl vector for $pmux cell $procmux$8953: { $procmux$9189_CMP $procmux$9190_CMP $procmux$9191_CMP $procmux$9192_CMP $procmux$9193_CMP $procmux$9194_CMP $auto$opt_reduce.cc:135:opt_pmux$9925 $procmux$9197_CMP $procmux$9198_CMP $procmux$9200_CMP $procmux$9201_CMP $procmux$9202_CMP $procmux$9203_CMP }
+    New ctrl vector for $pmux cell $procmux$9782: { $auto$opt_reduce.cc:135:opt_pmux$9927 $procmux$9704_CMP }
+    New ctrl vector for $pmux cell $procmux$9632: { $auto$opt_reduce.cc:135:opt_pmux$9931 $auto$opt_reduce.cc:135:opt_pmux$9929 }
+    New ctrl vector for $pmux cell $procmux$9272: { $auto$opt_reduce.cc:135:opt_pmux$9935 $auto$opt_reduce.cc:135:opt_pmux$9933 }
+    New ctrl vector for $pmux cell $procmux$9752: { $auto$opt_reduce.cc:135:opt_pmux$9937 $procmux$9704_CMP }
+    New ctrl vector for $pmux cell $procmux$9128: { $procmux$9189_CMP $procmux$9190_CMP $procmux$9191_CMP $procmux$9192_CMP $procmux$9193_CMP $procmux$9194_CMP $auto$opt_reduce.cc:135:opt_pmux$9939 $procmux$9200_CMP $procmux$9201_CMP $procmux$9202_CMP $procmux$9203_CMP }
+    New ctrl vector for $pmux cell $procmux$8993: { $procmux$9189_CMP $procmux$9190_CMP $procmux$9191_CMP $procmux$9192_CMP $procmux$9193_CMP $procmux$9194_CMP $auto$opt_reduce.cc:135:opt_pmux$9941 $procmux$9197_CMP $procmux$9198_CMP $procmux$9199_CMP $procmux$9200_CMP $procmux$9201_CMP $procmux$9202_CMP $procmux$9203_CMP }
+    New ctrl vector for $pmux cell $procmux$9662: { $auto$opt_reduce.cc:135:opt_pmux$9945 $auto$opt_reduce.cc:135:opt_pmux$9943 }
+    New ctrl vector for $pmux cell $procmux$9812: { $auto$opt_reduce.cc:135:opt_pmux$9949 $auto$opt_reduce.cc:135:opt_pmux$9947 }
+    New ctrl vector for $pmux cell $procmux$8913: { $procmux$9189_CMP $procmux$9190_CMP $procmux$9191_CMP $procmux$9192_CMP $procmux$9193_CMP $procmux$9194_CMP $auto$opt_reduce.cc:135:opt_pmux$9951 $procmux$9200_CMP $procmux$9201_CMP $procmux$9202_CMP $procmux$9203_CMP }
+    New ctrl vector for $pmux cell $procmux$8973: { $procmux$9189_CMP $procmux$9190_CMP $procmux$9191_CMP $procmux$9192_CMP $procmux$9193_CMP $procmux$9194_CMP $auto$opt_reduce.cc:135:opt_pmux$9953 $procmux$9200_CMP $procmux$9201_CMP $procmux$9202_CMP $procmux$9203_CMP }
+    New ctrl vector for $pmux cell $procmux$9302: { $auto$opt_reduce.cc:135:opt_pmux$9961 $auto$opt_reduce.cc:135:opt_pmux$9959 $auto$opt_reduce.cc:135:opt_pmux$9957 $auto$opt_reduce.cc:135:opt_pmux$9955 }
+    New ctrl vector for $pmux cell $procmux$9512: { $auto$opt_reduce.cc:135:opt_pmux$9967 $auto$opt_reduce.cc:135:opt_pmux$9965 $auto$opt_reduce.cc:135:opt_pmux$9963 }
+    New ctrl vector for $pmux cell $procmux$9068: { $procmux$9189_CMP $procmux$9190_CMP $procmux$9191_CMP $procmux$9192_CMP $procmux$9193_CMP $procmux$9194_CMP $auto$opt_reduce.cc:135:opt_pmux$9969 $procmux$9199_CMP $procmux$9200_CMP $procmux$9201_CMP $procmux$9202_CMP $procmux$9203_CMP }
+    New ctrl vector for $pmux cell $procmux$9692: { $auto$opt_reduce.cc:135:opt_pmux$9971 $procmux$9703_CMP $procmux$9704_CMP $procmux$9705_CMP $procmux$9706_CMP $procmux$9707_CMP $procmux$9708_CMP $procmux$9709_CMP $procmux$9710_CMP $procmux$9711_CMP $procmux$9712_CMP $procmux$9713_CMP $procmux$9714_CMP $procmux$9715_CMP $procmux$9716_CMP $procmux$9717_CMP $procmux$9718_CMP $procmux$9719_CMP $procmux$9720_CMP $procmux$9721_CMP }
+    New ctrl vector for $pmux cell $procmux$9842: { $auto$opt_reduce.cc:135:opt_pmux$9975 $auto$opt_reduce.cc:135:opt_pmux$9973 }
+  Optimizing cells in module \bedrock_ea_decode_synth.
+Performed a total of 29 changes.
+
+2.6.5. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\bedrock_ea_decode_synth'.
+Computing hashes of 413 cells of `\bedrock_ea_decode_synth'.
+Finding duplicate cells in `\bedrock_ea_decode_synth'.
+Computing hashes of 180 cells of `\bedrock_ea_decode_synth'.
+Finding duplicate cells in `\bedrock_ea_decode_synth'.
+Computing hashes of 177 cells of `\bedrock_ea_decode_synth'.
+Finding duplicate cells in `\bedrock_ea_decode_synth'.
+<suppressed ~708 debug messages>
+Removed a total of 236 cells.
+
+2.6.6. Executing OPT_DFF pass (perform DFF optimizations).
+
+2.6.7. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \bedrock_ea_decode_synth..
+Removed 0 unused cells and 2942 unused wires.
+<suppressed ~1 debug messages>
+
+2.6.8. Executing OPT_EXPR pass (perform const folding).
+Optimizing module bedrock_ea_decode_synth.
+<suppressed ~13 debug messages>
+
+2.6.9. Rerunning OPT passes. (Maybe there is more to do..)
+
+2.6.10. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module \bedrock_ea_decode_synth..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Removed 0 multiplexer ports.
+<suppressed ~168 debug messages>
+
+2.6.11. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module \bedrock_ea_decode_synth.
+    New ctrl vector for $pmux cell $procmux$9108: { $auto$opt_reduce.cc:135:opt_pmux$9979 $auto$opt_reduce.cc:135:opt_pmux$9977 }
+    New ctrl vector for $pmux cell $procmux$9188: { $auto$opt_reduce.cc:135:opt_pmux$9985 $auto$opt_reduce.cc:135:opt_pmux$9983 $auto$opt_reduce.cc:135:opt_pmux$9981 }
+    New ctrl vector for $pmux cell $procmux$9033: { $auto$opt_reduce.cc:135:opt_pmux$9991 $auto$opt_reduce.cc:135:opt_pmux$9989 $auto$opt_reduce.cc:135:opt_pmux$9987 }
+    New ctrl vector for $pmux cell $procmux$8843: $auto$opt_reduce.cc:135:opt_pmux$9993
+    New ctrl vector for $pmux cell $procmux$8803: { $auto$opt_reduce.cc:135:opt_pmux$10001 $auto$opt_reduce.cc:135:opt_pmux$9999 $auto$opt_reduce.cc:135:opt_pmux$9997 $procmux$3314_CMP $auto$opt_reduce.cc:135:opt_pmux$9995 $procmux$4127_CMP $procmux$4445_CMP $procmux$7738_CMP }
+    New ctrl vector for $pmux cell $procmux$9168: { $auto$opt_reduce.cc:135:opt_pmux$10005 $auto$opt_reduce.cc:135:opt_pmux$10003 }
+    New ctrl vector for $pmux cell $procmux$9128: $auto$opt_reduce.cc:135:opt_pmux$10007
+    New ctrl vector for $pmux cell $procmux$8993: { $auto$opt_reduce.cc:135:opt_pmux$10013 $auto$opt_reduce.cc:135:opt_pmux$10011 $auto$opt_reduce.cc:135:opt_pmux$10009 }
+    New ctrl vector for $pmux cell $procmux$9013: { $auto$opt_reduce.cc:135:opt_pmux$10017 $auto$opt_reduce.cc:135:opt_pmux$10015 }
+    New ctrl vector for $pmux cell $procmux$8913: { $auto$opt_reduce.cc:135:opt_pmux$10023 $auto$opt_reduce.cc:135:opt_pmux$10021 $auto$opt_reduce.cc:135:opt_pmux$10019 }
+    New ctrl vector for $pmux cell $procmux$9053: $auto$opt_reduce.cc:135:opt_pmux$10025
+    New ctrl vector for $pmux cell $procmux$8823: { $auto$opt_reduce.cc:135:opt_pmux$10035 $auto$opt_reduce.cc:135:opt_pmux$10033 $auto$opt_reduce.cc:135:opt_pmux$10031 $procmux$3314_CMP $auto$opt_reduce.cc:135:opt_pmux$10029 $procmux$4127_CMP $auto$opt_reduce.cc:135:opt_pmux$10027 }
+    New ctrl vector for $pmux cell $procmux$8858: $auto$opt_reduce.cc:135:opt_pmux$10037
+    New ctrl vector for $pmux cell $procmux$8973: { $auto$opt_reduce.cc:135:opt_pmux$10039 $auto$opt_reduce.cc:135:opt_pmux$9885 }
+    New ctrl vector for $pmux cell $procmux$8933: { $auto$opt_reduce.cc:135:opt_pmux$10043 $auto$opt_reduce.cc:135:opt_pmux$10041 }
+    New ctrl vector for $pmux cell $procmux$8881: { $auto$opt_reduce.cc:135:opt_pmux$10047 $auto$opt_reduce.cc:135:opt_pmux$10045 }
+    New ctrl vector for $pmux cell $procmux$8893: { $auto$opt_reduce.cc:135:opt_pmux$10057 $auto$opt_reduce.cc:135:opt_pmux$10055 $auto$opt_reduce.cc:135:opt_pmux$10053 $auto$opt_reduce.cc:135:opt_pmux$10051 $auto$opt_reduce.cc:135:opt_pmux$10049 }
+    New ctrl vector for $pmux cell $procmux$8953: { $auto$opt_reduce.cc:135:opt_pmux$10063 $auto$opt_reduce.cc:135:opt_pmux$10061 $auto$opt_reduce.cc:135:opt_pmux$10059 }
+    New ctrl vector for $pmux cell $procmux$9068: { $auto$opt_reduce.cc:135:opt_pmux$10065 $procmux$4445_CMP }
+    New input vector for $reduce_or cell $auto$opt_reduce.cc:129:opt_pmux$10006: { $procmux$7738_CMP $procmux$6709_CMP $procmux$5724_CMP $procmux$4783_CMP $procmux$4445_CMP $procmux$4127_CMP $procmux$3827_CMP $procmux$3562_CMP $procmux$3314_CMP $procmux$2672_CMP $procmux$2068_CMP $procmux$1506_CMP $procmux$1000_CMP $procmux$508_CMP $procmux$108_CMP }
+    New input vector for $reduce_or cell $auto$opt_reduce.cc:129:opt_pmux$10008: { $procmux$3562_CMP $procmux$3314_CMP $procmux$2672_CMP $procmux$2068_CMP $procmux$1506_CMP $procmux$1000_CMP $procmux$508_CMP $procmux$108_CMP }
+    New input vector for $reduce_or cell $auto$opt_reduce.cc:129:opt_pmux$10016: { $procmux$7738_CMP $procmux$6709_CMP $procmux$5724_CMP $procmux$4783_CMP $procmux$4445_CMP $procmux$4127_CMP $procmux$3827_CMP $procmux$3562_CMP $procmux$3314_CMP }
+    New input vector for $reduce_or cell $auto$opt_reduce.cc:129:opt_pmux$10022: { $procmux$7738_CMP $procmux$6709_CMP $procmux$5724_CMP $procmux$4783_CMP $procmux$4445_CMP $procmux$4127_CMP $procmux$3827_CMP $procmux$3562_CMP $procmux$3314_CMP }
+    New input vector for $reduce_or cell $auto$opt_reduce.cc:129:opt_pmux$10042: { $procmux$7738_CMP $procmux$6709_CMP $procmux$5724_CMP $procmux$4783_CMP $procmux$4445_CMP $procmux$4127_CMP $procmux$3827_CMP $procmux$2672_CMP $procmux$2068_CMP $procmux$1506_CMP $procmux$1000_CMP $procmux$508_CMP $procmux$108_CMP }
+    New input vector for $reduce_or cell $auto$opt_reduce.cc:129:opt_pmux$10062: { $procmux$7738_CMP $procmux$4445_CMP $procmux$3562_CMP $procmux$3314_CMP }
+    New input vector for $reduce_or cell $auto$opt_reduce.cc:129:opt_pmux$10064: { $procmux$7738_CMP $procmux$6709_CMP $procmux$5724_CMP $procmux$4783_CMP $procmux$4127_CMP $procmux$3827_CMP $procmux$3562_CMP $procmux$3314_CMP $procmux$2672_CMP $procmux$2068_CMP $procmux$1506_CMP $procmux$1000_CMP $procmux$508_CMP $procmux$108_CMP }
+  Optimizing cells in module \bedrock_ea_decode_synth.
+Performed a total of 26 changes.
+
+2.6.12. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\bedrock_ea_decode_synth'.
+Computing hashes of 209 cells of `\bedrock_ea_decode_synth'.
+Finding duplicate cells in `\bedrock_ea_decode_synth'.
+Computing hashes of 182 cells of `\bedrock_ea_decode_synth'.
+Finding duplicate cells in `\bedrock_ea_decode_synth'.
+<suppressed ~81 debug messages>
+Removed a total of 27 cells.
+
+2.6.13. Executing OPT_DFF pass (perform DFF optimizations).
+
+2.6.14. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \bedrock_ea_decode_synth..
+Removed 2 unused cells and 42 unused wires.
+<suppressed ~3 debug messages>
+
+2.6.15. Executing OPT_EXPR pass (perform const folding).
+Optimizing module bedrock_ea_decode_synth.
+<suppressed ~1 debug messages>
+
+2.6.16. Rerunning OPT passes. (Maybe there is more to do..)
+
+2.6.17. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module \bedrock_ea_decode_synth..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Removed 0 multiplexer ports.
+<suppressed ~128 debug messages>
+
+2.6.18. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module \bedrock_ea_decode_synth.
+Performed a total of 0 changes.
+
+2.6.19. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\bedrock_ea_decode_synth'.
+Computing hashes of 179 cells of `\bedrock_ea_decode_synth'.
+Finding duplicate cells in `\bedrock_ea_decode_synth'.
+Removed a total of 0 cells.
+
+2.6.20. Executing OPT_DFF pass (perform DFF optimizations).
+
+2.6.21. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \bedrock_ea_decode_synth..
+Removed 1 unused cells and 2 unused wires.
+<suppressed ~2 debug messages>
+
+2.6.22. Executing OPT_EXPR pass (perform const folding).
+Optimizing module bedrock_ea_decode_synth.
+
+2.6.23. Rerunning OPT passes. (Maybe there is more to do..)
+
+2.6.24. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module \bedrock_ea_decode_synth..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Removed 0 multiplexer ports.
+<suppressed ~128 debug messages>
+
+2.6.25. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module \bedrock_ea_decode_synth.
+Performed a total of 0 changes.
+
+2.6.26. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\bedrock_ea_decode_synth'.
+Computing hashes of 178 cells of `\bedrock_ea_decode_synth'.
+Finding duplicate cells in `\bedrock_ea_decode_synth'.
+Removed a total of 0 cells.
+
+2.6.27. Executing OPT_DFF pass (perform DFF optimizations).
+
+2.6.28. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \bedrock_ea_decode_synth..
+
+2.6.29. Executing OPT_EXPR pass (perform const folding).
+Optimizing module bedrock_ea_decode_synth.
+
+2.6.30. Finished fast OPT passes. (There is nothing left to do.)
+
+2.7. Executing FSM pass (extract and optimize FSM).
+
+2.7.1. Executing FSM_DETECT pass (finding FSMs in design).
+
+2.7.2. Executing FSM_EXTRACT pass (extracting FSM from design).
+
+2.7.3. Executing FSM_OPT pass (simple optimizations of FSMs).
+
+2.7.4. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \bedrock_ea_decode_synth..
+
+2.7.5. Executing FSM_OPT pass (simple optimizations of FSMs).
+
+2.7.6. Executing FSM_RECODE pass (re-assigning FSM state encoding).
+
+2.7.7. Executing FSM_INFO pass (dumping all available information on FSM cells).
+
+2.7.8. Executing FSM_MAP pass (mapping FSMs to basic logic).
+
+2.8. Executing OPT pass (performing simple optimizations).
+
+2.8.1. Executing OPT_EXPR pass (perform const folding).
+Optimizing module bedrock_ea_decode_synth.
+
+2.8.2. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\bedrock_ea_decode_synth'.
+Computing hashes of 178 cells of `\bedrock_ea_decode_synth'.
+Finding duplicate cells in `\bedrock_ea_decode_synth'.
+Removed a total of 0 cells.
+
+2.8.3. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module \bedrock_ea_decode_synth..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Removed 0 multiplexer ports.
+<suppressed ~128 debug messages>
+
+2.8.4. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module \bedrock_ea_decode_synth.
+Performed a total of 0 changes.
+
+2.8.5. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\bedrock_ea_decode_synth'.
+Computing hashes of 178 cells of `\bedrock_ea_decode_synth'.
+Finding duplicate cells in `\bedrock_ea_decode_synth'.
+Removed a total of 0 cells.
+
+2.8.6. Executing OPT_DFF pass (perform DFF optimizations).
+
+2.8.7. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \bedrock_ea_decode_synth..
+
+2.8.8. Executing OPT_EXPR pass (perform const folding).
+Optimizing module bedrock_ea_decode_synth.
+
+2.8.9. Finished fast OPT passes. (There is nothing left to do.)
+
+2.9. Executing WREDUCE pass (reducing word size of cells).
+Removed top 2 bits (of 6) from mux cell bedrock_ea_decode_synth.$procmux$465 ($mux).
+Removed top 2 bits (of 6) from mux cell bedrock_ea_decode_synth.$procmux$939 ($mux).
+Removed top 2 bits (of 6) from mux cell bedrock_ea_decode_synth.$procmux$1455 ($mux).
+Removed top 1 bits (of 6) from mux cell bedrock_ea_decode_synth.$procmux$3514 ($mux).
+Removed top 1 bits (of 6) from mux cell bedrock_ea_decode_synth.$procmux$3776 ($mux).
+Removed top 1 bits (of 3) from mux cell bedrock_ea_decode_synth.$procmux$3874 ($mux).
+Removed top 1 bits (of 3) from mux cell bedrock_ea_decode_synth.$procmux$3974 ($mux).
+Removed top 1 bits (of 6) from mux cell bedrock_ea_decode_synth.$procmux$4073 ($mux).
+Removed top 2 bits (of 3) from mux cell bedrock_ea_decode_synth.$procmux$4195 ($mux).
+Removed top 1 bits (of 6) from mux cell bedrock_ea_decode_synth.$procmux$4388 ($mux).
+Removed top 1 bits (of 6) from mux cell bedrock_ea_decode_synth.$procmux$4720 ($mux).
+Removed top 1 bits (of 5) from port B of cell bedrock_ea_decode_synth.$procmux$9189_CMP0 ($eq).
+Removed top 1 bits (of 5) from port B of cell bedrock_ea_decode_synth.$procmux$9190_CMP0 ($eq).
+Removed top 1 bits (of 5) from port B of cell bedrock_ea_decode_synth.$procmux$9191_CMP0 ($eq).
+Removed top 1 bits (of 5) from port B of cell bedrock_ea_decode_synth.$procmux$9192_CMP0 ($eq).
+Removed top 1 bits (of 5) from port B of cell bedrock_ea_decode_synth.$procmux$9193_CMP0 ($eq).
+Removed top 1 bits (of 5) from port B of cell bedrock_ea_decode_synth.$procmux$9194_CMP0 ($eq).
+Removed top 1 bits (of 5) from port B of cell bedrock_ea_decode_synth.$procmux$9195_CMP0 ($eq).
+Removed top 2 bits (of 5) from port B of cell bedrock_ea_decode_synth.$procmux$9196_CMP0 ($eq).
+Removed top 2 bits (of 5) from port B of cell bedrock_ea_decode_synth.$procmux$9197_CMP0 ($eq).
+Removed top 2 bits (of 5) from port B of cell bedrock_ea_decode_synth.$procmux$9198_CMP0 ($eq).
+Removed top 2 bits (of 5) from port B of cell bedrock_ea_decode_synth.$procmux$9199_CMP0 ($eq).
+Removed top 3 bits (of 5) from port B of cell bedrock_ea_decode_synth.$procmux$9200_CMP0 ($eq).
+Removed top 3 bits (of 5) from port B of cell bedrock_ea_decode_synth.$procmux$9201_CMP0 ($eq).
+Removed top 4 bits (of 5) from port B of cell bedrock_ea_decode_synth.$procmux$9202_CMP0 ($eq).
+Removed top 1 bits (of 3) from port B of cell bedrock_ea_decode_synth.$procmux$9718_CMP0 ($eq).
+Removed top 1 bits (of 3) from port B of cell bedrock_ea_decode_synth.$procmux$9719_CMP0 ($eq).
+Removed top 2 bits (of 3) from port B of cell bedrock_ea_decode_synth.$procmux$9720_CMP0 ($eq).
+Removed top 1 bits (of 6) from wire bedrock_ea_decode_synth.$13\form_o[5:0].
+Removed top 2 bits (of 3) from wire bedrock_ea_decode_synth.$12\payload_words_o[2:0].
+Removed top 1 bits (of 3) from wire bedrock_ea_decode_synth.$12\base_o[2:0].
+Removed top 1 bits (of 6) from wire bedrock_ea_decode_synth.$16\form_o[5:0].
+Removed top 1 bits (of 6) from wire bedrock_ea_decode_synth.$12\form_o[5:0].
+Removed top 2 bits (of 6) from wire bedrock_ea_decode_synth.$27\form_o[5:0].
+Removed top 1 bits (of 6) from wire bedrock_ea_decode_synth.$15\form_o[5:0].
+Removed top 1 bits (of 3) from wire bedrock_ea_decode_synth.$14\payload_words_o[2:0].
+Removed top 2 bits (of 6) from wire bedrock_ea_decode_synth.$25\form_o[5:0].
+Removed top 2 bits (of 6) from wire bedrock_ea_decode_synth.$23\form_o[5:0].
+Removed top 1 bits (of 6) from wire bedrock_ea_decode_synth.$14\form_o[5:0].
+
+2.10. Executing PEEPOPT pass (run peephole optimizers).
+
+2.11. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \bedrock_ea_decode_synth..
+Removed 0 unused cells and 11 unused wires.
+<suppressed ~1 debug messages>
+
+2.12. Executing ALUMACC pass (create $alu and $macc cells).
+Extracting $alu and $macc cells in module bedrock_ea_decode_synth:
+  created 0 $alu and 0 $macc cells.
+
+2.13. Executing SHARE pass (SAT-based resource sharing).
+
+2.14. Executing OPT pass (performing simple optimizations).
+
+2.14.1. Executing OPT_EXPR pass (perform const folding).
+Optimizing module bedrock_ea_decode_synth.
+
+2.14.2. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\bedrock_ea_decode_synth'.
+Computing hashes of 178 cells of `\bedrock_ea_decode_synth'.
+Finding duplicate cells in `\bedrock_ea_decode_synth'.
+Removed a total of 0 cells.
+
+2.14.3. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module \bedrock_ea_decode_synth..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Removed 0 multiplexer ports.
+<suppressed ~128 debug messages>
+
+2.14.4. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module \bedrock_ea_decode_synth.
+Performed a total of 0 changes.
+
+2.14.5. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\bedrock_ea_decode_synth'.
+Computing hashes of 178 cells of `\bedrock_ea_decode_synth'.
+Finding duplicate cells in `\bedrock_ea_decode_synth'.
+Computing hashes of 177 cells of `\bedrock_ea_decode_synth'.
+Finding duplicate cells in `\bedrock_ea_decode_synth'.
+<suppressed ~3 debug messages>
+Removed a total of 1 cells.
+
+2.14.6. Executing OPT_DFF pass (perform DFF optimizations).
+
+2.14.7. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \bedrock_ea_decode_synth..
+Removed 0 unused cells and 1 unused wires.
+<suppressed ~1 debug messages>
+
+2.14.8. Executing OPT_EXPR pass (perform const folding).
+Optimizing module bedrock_ea_decode_synth.
+
+2.14.9. Rerunning OPT passes. (Maybe there is more to do..)
+
+2.14.10. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module \bedrock_ea_decode_synth..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Removed 0 multiplexer ports.
+<suppressed ~126 debug messages>
+
+2.14.11. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module \bedrock_ea_decode_synth.
+Performed a total of 0 changes.
+
+2.14.12. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\bedrock_ea_decode_synth'.
+Computing hashes of 177 cells of `\bedrock_ea_decode_synth'.
+Finding duplicate cells in `\bedrock_ea_decode_synth'.
+Removed a total of 0 cells.
+
+2.14.13. Executing OPT_DFF pass (perform DFF optimizations).
+
+2.14.14. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \bedrock_ea_decode_synth..
+
+2.14.15. Executing OPT_EXPR pass (perform const folding).
+Optimizing module bedrock_ea_decode_synth.
+
+2.14.16. Finished fast OPT passes. (There is nothing left to do.)
+
+2.15. Executing MEMORY pass.
+
+2.15.1. Executing OPT_MEM pass (optimize memories).
+Performed a total of 0 transformations.
+
+2.15.2. Executing OPT_MEM_PRIORITY pass (removing unnecessary memory write priority relations).
+Performed a total of 0 transformations.
+
+2.15.3. Executing OPT_MEM_FEEDBACK pass (finding memory read-to-write feedback paths).
+
+2.15.4. Executing MEMORY_BMUX2ROM pass (converting muxes to ROMs).
+
+2.15.5. Executing MEMORY_DFF pass (merging $dff cells to $memrd).
+
+2.15.6. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \bedrock_ea_decode_synth..
+
+2.15.7. Executing MEMORY_SHARE pass (consolidating $memrd/$memwr cells).
+
+2.15.8. Executing OPT_MEM_WIDEN pass (optimize memories where all ports are wide).
+Performed a total of 0 transformations.
+
+2.15.9. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \bedrock_ea_decode_synth..
+
+2.15.10. Executing MEMORY_COLLECT pass (generating $mem cells).
+
+2.16. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \bedrock_ea_decode_synth..
+
+2.17. Executing OPT pass (performing simple optimizations).
+
+2.17.1. Executing OPT_EXPR pass (perform const folding).
+Optimizing module bedrock_ea_decode_synth.
+<suppressed ~23 debug messages>
+
+2.17.2. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\bedrock_ea_decode_synth'.
+Computing hashes of 163 cells of `\bedrock_ea_decode_synth'.
+Finding duplicate cells in `\bedrock_ea_decode_synth'.
+Removed a total of 0 cells.
+
+2.17.3. Executing OPT_DFF pass (perform DFF optimizations).
+
+2.17.4. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \bedrock_ea_decode_synth..
+Removed 25 unused cells and 39 unused wires.
+<suppressed ~26 debug messages>
+
+2.17.5. Finished fast OPT passes.
+
+2.18. Executing MEMORY_MAP pass (converting memories to logic and flip-flops).
+
+2.19. Executing OPT pass (performing simple optimizations).
+
+2.19.1. Executing OPT_EXPR pass (perform const folding).
+Optimizing module bedrock_ea_decode_synth.
+<suppressed ~2 debug messages>
+
+2.19.2. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\bedrock_ea_decode_synth'.
+Computing hashes of 138 cells of `\bedrock_ea_decode_synth'.
+Finding duplicate cells in `\bedrock_ea_decode_synth'.
+Removed a total of 0 cells.
+
+2.19.3. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module \bedrock_ea_decode_synth..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Removed 0 multiplexer ports.
+<suppressed ~89 debug messages>
+
+2.19.4. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module \bedrock_ea_decode_synth.
+    Consolidated identical input bits for $mux cell $procmux$3427:
+      Old ports: A=3'101, B=3'000, Y=$15\base_o[2:0]
+      New ports: A=1'1, B=1'0, Y=$15\base_o[2:0] [0]
+      New connections: $15\base_o[2:0] [2:1] = { $15\base_o[2:0] [0] 1'0 }
+    Consolidated identical input bits for $mux cell $procmux$6598:
+      Old ports: A=6'010110, B=6'100101, Y=$8\form_o[5:0]
+      New ports: A=2'10, B=2'01, Y=$8\form_o[5:0] [1:0]
+      New connections: $8\form_o[5:0] [5:2] = { $8\form_o[5:0] [0] $8\form_o[5:0] [1] 2'01 }
+    Consolidated identical input bits for $mux cell $procmux$3776:
+      Old ports: A=5'11011, B=5'00000, Y=$15\form_o[5:0]
+      New ports: A=1'1, B=1'0, Y=$15\form_o[5:0] [0]
+      New connections: $15\form_o[5:0] [4:1] = { $15\form_o[5:0] [0] $15\form_o[5:0] [0] 1'0 $15\form_o[5:0] [0] }
+    Consolidated identical input bits for $mux cell $procmux$2613:
+      Old ports: A=6'011110, B=6'101000, Y=$19\form_o[5:0]
+      New ports: A=2'01, B=2'10, Y={ $19\form_o[5:0] [5] $19\form_o[5:0] [1] }
+      New connections: { $19\form_o[5:0] [4:2] $19\form_o[5:0] [0] } = { $19\form_o[5:0] [1] 1'1 $19\form_o[5:0] [1] 1'0 }
+    Consolidated identical input bits for $mux cell $procmux$3255:
+      Old ports: A=6'011101, B=6'100111, Y=$17\form_o[5:0]
+      New ports: A=2'10, B=2'01, Y={ $17\form_o[5:0] [3] $17\form_o[5:0] [1] }
+      New connections: { $17\form_o[5:0] [5:4] $17\form_o[5:0] [2] $17\form_o[5:0] [0] } = { $17\form_o[5:0] [1] $17\form_o[5:0] [3] 2'11 }
+    Consolidated identical input bits for $mux cell $procmux$3874:
+      Old ports: A=2'11, B=2'00, Y=$14\payload_words_o[2:0]
+      New ports: A=1'1, B=1'0, Y=$14\payload_words_o[2:0] [0]
+      New connections: $14\payload_words_o[2:0] [1] = $14\payload_words_o[2:0] [0]
+    Consolidated identical input bits for $mux cell $procmux$1455:
+      Old ports: A=4'0000, B=4'1010, Y=$23\form_o[5:0]
+      New ports: A=1'0, B=1'1, Y=$23\form_o[5:0] [1]
+      New connections: { $23\form_o[5:0] [3:2] $23\form_o[5:0] [0] } = { $23\form_o[5:0] [1] 2'00 }
+    Consolidated identical input bits for $mux cell $procmux$3355:
+      Old ports: A=3'100, B=3'000, Y=$16\displacement_words_o[2:0]
+      New ports: A=1'1, B=1'0, Y=$16\displacement_words_o[2:0] [2]
+      New connections: $16\displacement_words_o[2:0] [1:0] = 2'00
+    Consolidated identical input bits for $mux cell $procmux$5618:
+      Old ports: A=6'010111, B=6'100110, Y=$10\form_o[5:0]
+      New ports: A=2'01, B=2'10, Y={ $10\form_o[5:0] [5] $10\form_o[5:0] [0] }
+      New connections: $10\form_o[5:0] [4:1] = { $10\form_o[5:0] [0] 3'011 }
+    Consolidated identical input bits for $mux cell $procmux$465:
+      Old ports: A=4'0010, B=4'1100, Y=$27\form_o[5:0]
+      New ports: A=2'01, B=2'10, Y=$27\form_o[5:0] [2:1]
+      New connections: { $27\form_o[5:0] [3] $27\form_o[5:0] [0] } = { $27\form_o[5:0] [2] 1'0 }
+    Consolidated identical input bits for $mux cell $procmux$939:
+      Old ports: A=4'0001, B=4'1011, Y=$25\form_o[5:0]
+      New ports: A=1'0, B=1'1, Y=$25\form_o[5:0] [1]
+      New connections: { $25\form_o[5:0] [3:2] $25\form_o[5:0] [0] } = { $25\form_o[5:0] [1] 2'01 }
+    Consolidated identical input bits for $mux cell $procmux$4720:
+      Old ports: A=5'11000, B=5'00000, Y=$12\form_o[5:0]
+      New ports: A=1'1, B=1'0, Y=$12\form_o[5:0] [3]
+      New connections: { $12\form_o[5:0] [4] $12\form_o[5:0] [2:0] } = { $12\form_o[5:0] [3] 3'000 }
+    Consolidated identical input bits for $mux cell $procmux$7622:
+      Old ports: A=6'010101, B=6'100100, Y=$6\form_o[5:0]
+      New ports: A=2'01, B=2'10, Y={ $6\form_o[5:0] [5] $6\form_o[5:0] [0] }
+      New connections: $6\form_o[5:0] [4:1] = { $6\form_o[5:0] [0] 3'010 }
+    Consolidated identical input bits for $mux cell $procmux$3514:
+      Old ports: A=5'11100, B=5'00000, Y=$16\form_o[5:0]
+      New ports: A=1'1, B=1'0, Y=$16\form_o[5:0] [2]
+      New connections: { $16\form_o[5:0] [4:3] $16\form_o[5:0] [1:0] } = { $16\form_o[5:0] [2] $16\form_o[5:0] [2] 2'00 }
+    Consolidated identical input bits for $mux cell $procmux$8688:
+      Old ports: A=6'010100, B=6'100011, Y=$4\form_o[5:0]
+      New ports: A=2'10, B=2'01, Y={ $4\form_o[5:0] [2] $4\form_o[5:0] [0] }
+      New connections: { $4\form_o[5:0] [5:3] $4\form_o[5:0] [1] } = { $4\form_o[5:0] [0] $4\form_o[5:0] [2] 1'0 $4\form_o[5:0] [0] }
+    Consolidated identical input bits for $pmux cell $procmux$9512:
+      Old ports: A=3'000, B=6'001010, Y=$1\segment_o[2:0]
+      New ports: A=2'00, B=4'0110, Y=$1\segment_o[2:0] [1:0]
+      New connections: $1\segment_o[2:0] [2] = 1'0
+    Consolidated identical input bits for $mux cell $procmux$3974:
+      Old ports: A=2'10, B=2'00, Y=$12\base_o[2:0]
+      New ports: A=1'1, B=1'0, Y=$12\base_o[2:0] [1]
+      New connections: $12\base_o[2:0] [0] = 1'0
+    Consolidated identical input bits for $pmux cell $procmux$9692:
+      Old ports: A=6'000000, B=114'010011010010010001010000001111001110001101001100001011001010001001001000000111000110000101000100000011000010000001, Y=$1\form_o[5:0]
+      New ports: A=5'00000, B=95'10011100101000110000011110111001101011000101101010010010100000111001100010100100000110001000001, Y=$1\form_o[5:0] [4:0]
+      New connections: $1\form_o[5:0] [5] = 1'0
+    Consolidated identical input bits for $mux cell $procmux$2013:
+      Old ports: A=6'011111, B=6'101001, Y=$21\form_o[5:0]
+      New ports: A=2'01, B=2'10, Y={ $21\form_o[5:0] [5] $21\form_o[5:0] [1] }
+      New connections: { $21\form_o[5:0] [4:2] $21\form_o[5:0] [0] } = { $21\form_o[5:0] [1] 1'1 $21\form_o[5:0] [1] 1'1 }
+    Consolidated identical input bits for $mux cell $procmux$4073:
+      Old ports: A=5'11010, B=5'00000, Y=$14\form_o[5:0]
+      New ports: A=1'1, B=1'0, Y=$14\form_o[5:0] [1]
+      New connections: { $14\form_o[5:0] [4:2] $14\form_o[5:0] [0] } = { $14\form_o[5:0] [1] $14\form_o[5:0] [1] 2'00 }
+    Consolidated identical input bits for $mux cell $procmux$4388:
+      Old ports: A=5'11001, B=5'00000, Y=$13\form_o[5:0]
+      New ports: A=1'1, B=1'0, Y=$13\form_o[5:0] [0]
+      New connections: $13\form_o[5:0] [4:1] = { $13\form_o[5:0] [0] $13\form_o[5:0] [0] 2'00 }
+  Optimizing cells in module \bedrock_ea_decode_synth.
+Performed a total of 21 changes.
+
+2.19.5. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\bedrock_ea_decode_synth'.
+Computing hashes of 138 cells of `\bedrock_ea_decode_synth'.
+Finding duplicate cells in `\bedrock_ea_decode_synth'.
+Computing hashes of 123 cells of `\bedrock_ea_decode_synth'.
+Finding duplicate cells in `\bedrock_ea_decode_synth'.
+<suppressed ~45 debug messages>
+Removed a total of 15 cells.
+
+2.19.6. Executing OPT_SHARE pass.
+
+2.19.7. Executing OPT_DFF pass (perform DFF optimizations).
+
+2.19.8. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \bedrock_ea_decode_synth..
+Removed 0 unused cells and 15 unused wires.
+<suppressed ~1 debug messages>
+
+2.19.9. Executing OPT_EXPR pass (perform const folding).
+Optimizing module bedrock_ea_decode_synth.
+<suppressed ~2 debug messages>
+
+2.19.10. Rerunning OPT passes. (Maybe there is more to do..)
+
+2.19.11. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module \bedrock_ea_decode_synth..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Removed 0 multiplexer ports.
+<suppressed ~71 debug messages>
+
+2.19.12. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module \bedrock_ea_decode_synth.
+Performed a total of 0 changes.
+
+2.19.13. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\bedrock_ea_decode_synth'.
+Computing hashes of 122 cells of `\bedrock_ea_decode_synth'.
+Finding duplicate cells in `\bedrock_ea_decode_synth'.
+Computing hashes of 121 cells of `\bedrock_ea_decode_synth'.
+Finding duplicate cells in `\bedrock_ea_decode_synth'.
+<suppressed ~3 debug messages>
+Removed a total of 1 cells.
+
+2.19.14. Executing OPT_SHARE pass.
+
+2.19.15. Executing OPT_DFF pass (perform DFF optimizations).
+
+2.19.16. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \bedrock_ea_decode_synth..
+Removed 0 unused cells and 2 unused wires.
+<suppressed ~1 debug messages>
+
+2.19.17. Executing OPT_EXPR pass (perform const folding).
+Optimizing module bedrock_ea_decode_synth.
+
+2.19.18. Rerunning OPT passes. (Maybe there is more to do..)
+
+2.19.19. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module \bedrock_ea_decode_synth..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Removed 0 multiplexer ports.
+<suppressed ~71 debug messages>
+
+2.19.20. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module \bedrock_ea_decode_synth.
+Performed a total of 0 changes.
+
+2.19.21. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\bedrock_ea_decode_synth'.
+Computing hashes of 121 cells of `\bedrock_ea_decode_synth'.
+Finding duplicate cells in `\bedrock_ea_decode_synth'.
+Removed a total of 0 cells.
+
+2.19.22. Executing OPT_SHARE pass.
+
+2.19.23. Executing OPT_DFF pass (perform DFF optimizations).
+
+2.19.24. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \bedrock_ea_decode_synth..
+
+2.19.25. Executing OPT_EXPR pass (perform const folding).
+Optimizing module bedrock_ea_decode_synth.
+
+2.19.26. Finished fast OPT passes. (There is nothing left to do.)
+
+2.20. Executing TECHMAP pass (map to technology primitives).
+
+2.20.1. Executing Verilog-2005 frontend: /opt/homebrew/bin/../share/yosys/techmap.v
+Parsing Verilog input from `/opt/homebrew/bin/../share/yosys/techmap.v' to AST representation.
+Generating RTLIL representation for module `\_90_simplemap_bool_ops'.
+Generating RTLIL representation for module `\_90_simplemap_reduce_ops'.
+Generating RTLIL representation for module `\_90_simplemap_logic_ops'.
+Generating RTLIL representation for module `\_90_simplemap_compare_ops'.
+Generating RTLIL representation for module `\_90_simplemap_various'.
+Generating RTLIL representation for module `\_90_simplemap_registers'.
+Generating RTLIL representation for module `\_90_shift_ops_shr_shl_sshl_sshr'.
+Generating RTLIL representation for module `\_90_shift_shiftx'.
+Generating RTLIL representation for module `\_90_fa'.
+Generating RTLIL representation for module `\_90_lcu_brent_kung'.
+Generating RTLIL representation for module `\_90_alu'.
+Generating RTLIL representation for module `\_90_macc'.
+Generating RTLIL representation for module `\_90_alumacc'.
+Generating RTLIL representation for module `$__div_mod_u'.
+Generating RTLIL representation for module `$__div_mod_trunc'.
+Generating RTLIL representation for module `\_90_div'.
+Generating RTLIL representation for module `\_90_mod'.
+Generating RTLIL representation for module `$__div_mod_floor'.
+Generating RTLIL representation for module `\_90_divfloor'.
+Generating RTLIL representation for module `\_90_modfloor'.
+Generating RTLIL representation for module `\_90_pow'.
+Generating RTLIL representation for module `\_90_demux'.
+Generating RTLIL representation for module `\_90_lut'.
+Generating RTLIL representation for module `$connect'.
+Generating RTLIL representation for module `$input_port'.
+Successfully finished Verilog frontend.
+
+2.20.2. Continuing TECHMAP pass.
+Using extmapper simplemap for cells of type $reduce_or.
+Using extmapper simplemap for cells of type $logic_not.
+Using extmapper simplemap for cells of type $mux.
+Using extmapper simplemap for cells of type $not.
+Using extmapper simplemap for cells of type $pmux.
+Using extmapper simplemap for cells of type $eq.
+Using extmapper simplemap for cells of type $and.
+No more expansions possible.
+<suppressed ~198 debug messages>
+
+2.21. Executing OPT pass (performing simple optimizations).
+
+2.21.1. Executing OPT_EXPR pass (perform const folding).
+Optimizing module bedrock_ea_decode_synth.
+<suppressed ~573 debug messages>
+
+2.21.2. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\bedrock_ea_decode_synth'.
+Computing hashes of 809 cells of `\bedrock_ea_decode_synth'.
+Finding duplicate cells in `\bedrock_ea_decode_synth'.
+Computing hashes of 594 cells of `\bedrock_ea_decode_synth'.
+Finding duplicate cells in `\bedrock_ea_decode_synth'.
+Computing hashes of 525 cells of `\bedrock_ea_decode_synth'.
+Finding duplicate cells in `\bedrock_ea_decode_synth'.
+Computing hashes of 518 cells of `\bedrock_ea_decode_synth'.
+Finding duplicate cells in `\bedrock_ea_decode_synth'.
+<suppressed ~873 debug messages>
+Removed a total of 291 cells.
+
+2.21.3. Executing OPT_DFF pass (perform DFF optimizations).
+
+2.21.4. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \bedrock_ea_decode_synth..
+Removed 0 unused cells and 586 unused wires.
+<suppressed ~1 debug messages>
+
+2.21.5. Finished fast OPT passes.
+
+2.22. Executing ABC pass (technology mapping using ABC).
+
+2.22.1. Extracting gate netlist of module `\bedrock_ea_decode_synth' to `<abc-temp-dir>/input.blif'..
+
+2.22.1.1. Executed ABC.
+Extracted 518 gates and 542 wires to a netlist network with 22 inputs and 40 outputs.
+Running ABC script: <abc-temp-dir>/abc.script
+ABC: ======== ABC command line "source <abc-temp-dir>/abc.script"
+ABC: + read_blif <abc-temp-dir>/input.blif 
+ABC: + read_library <abc-temp-dir>/stdcells.genlib 
+ABC: + strash 
+ABC: + &get -n 
+ABC: + &fraig -x 
+ABC: + &put 
+ABC: + scorr 
+ABC: Warning: The network is combinational (run "fraig" or "fraig_sweep").
+ABC: + dc2 
+ABC: + dretime 
+ABC: + strash 
+ABC: + &get -n 
+ABC: + &dch -f 
+ABC: + &nf 
+ABC: + &put 
+ABC: + write_blif <abc-temp-dir>/output.blif 
+
+2.22.1.2. Re-integrating ABC results.
+ABC RESULTS:               AND cells:       94
+ABC RESULTS:            ANDNOT cells:       24
+ABC RESULTS:               MUX cells:        4
+ABC RESULTS:              NAND cells:       91
+ABC RESULTS:               NOR cells:       12
+ABC RESULTS:               NOT cells:        6
+ABC RESULTS:                OR cells:       24
+ABC RESULTS:             ORNOT cells:       20
+ABC RESULTS:        internal signals:      480
+ABC RESULTS:           input signals:       22
+ABC RESULTS:          output signals:       40
+Removing temp directory.
+Removing global temp directory.
+
+2.23. Executing OPT pass (performing simple optimizations).
+
+2.23.1. Executing OPT_EXPR pass (perform const folding).
+Optimizing module bedrock_ea_decode_synth.
+
+2.23.2. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `\bedrock_ea_decode_synth'.
+Computing hashes of 275 cells of `\bedrock_ea_decode_synth'.
+Finding duplicate cells in `\bedrock_ea_decode_synth'.
+Computing hashes of 274 cells of `\bedrock_ea_decode_synth'.
+Finding duplicate cells in `\bedrock_ea_decode_synth'.
+<suppressed ~3 debug messages>
+Removed a total of 1 cells.
+
+2.23.3. Executing OPT_DFF pass (perform DFF optimizations).
+
+2.23.4. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module \bedrock_ea_decode_synth..
+Removed 0 unused cells and 402 unused wires.
+<suppressed ~1 debug messages>
+
+2.23.5. Finished fast OPT passes.
+
+2.24. Executing HIERARCHY pass (managing design hierarchy).
+Attribute `top' found on module `bedrock_ea_decode_synth'. Setting top module to bedrock_ea_decode_synth.
+
+2.24.1. Analyzing design hierarchy..
+Top module:  \bedrock_ea_decode_synth
+
+2.24.2. Analyzing design hierarchy..
+Top module:  \bedrock_ea_decode_synth
+Removed 0 unused modules.
+
+2.25. Printing statistics.
+
+=== bedrock_ea_decode_synth ===
+
+        +----------Local Count, excluding submodules.
+        | 
+      262 wires
+      313 wire bits
+       27 public wires
+       78 public wire bits
+       24 ports
+       62 port bits
+      274 cells
+       24   $_ANDNOT_
+       94   $_AND_
+        4   $_MUX_
+       90   $_NAND_
+       12   $_NOR_
+        6   $_NOT_
+       20   $_ORNOT_
+       24   $_OR_
+
+2.26. Executing CHECK pass (checking for obvious problems).
+Checking module bedrock_ea_decode_synth...
+Found and reported 0 problems.
+
+3. Printing statistics.
+
+=== bedrock_ea_decode_synth ===
+
+        +----------Local Count, excluding submodules.
+        | 
+      262 wires
+      313 wire bits
+       27 public wires
+       78 public wire bits
+       24 ports
+       62 port bits
+      274 cells
+       24   $_ANDNOT_
+       94   $_AND_
+        4   $_MUX_
+       90   $_NAND_
+       12   $_NOR_
+        6   $_NOT_
+       20   $_ORNOT_
+       24   $_OR_
+
+4. Executing JSON backend.
+
+End of script. Logfile hash: 837a187325, time: 0.33s, user: 0.24s, system: 0.01s, MEM: 35.52 MB peak
+Yosys 0.65 (git sha1 aec814bdf3071f7e0fd0fbe43f7f711e99d01e24, clang++ 21.0.0 -fPIC -O3)
+Time spent: 29% 1x abc (0 sec), 19% 1x proc_mux (0 sec), ...

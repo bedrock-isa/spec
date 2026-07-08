@@ -1,0 +1,47 @@
+mnemonic: REVBYTE
+doc:
+  title: Reverse Bytes
+  summary: Performs the reverse bytes operation.
+  instruction_family: integer_alu
+  instruction_class: integer
+behavior:
+  group: bit_reverse
+  inputs:
+  - src
+  output: dst
+  operation:
+  - dst_v = 0;
+  - tmp_v = src_v;
+  - result_v = size_v;
+  - <revbyte_loop>
+  - if (result_v == 0) goto <revbyte_done>;
+  - dst_v = dst_v << 8;
+  - carry_v = 0xff;
+  - borrow_v = tmp_v & carry_v;
+  - dst_v = dst_v | borrow_v;
+  - tmp_v = tmp_v >> 8;
+  - result_v = result_v - 1;
+  - goto <revbyte_loop>;
+  - <revbyte_done>
+attributes:
+  privilege: unprivileged
+forms:
+  operands:
+  - - name: src
+      type: Rn
+    - name: dst
+      type: Rn
+  - - name: src
+      type: EA
+    - name: dst
+      type: Rn
+  - - name: src
+      type: Rn
+    - name: dst
+      type: EA
+  size: BWLQ
+  compact: false
+  memory_memory: disallowed
+  result: second operand
+definition_status:
+  allocation: 'external: isa/alloc'

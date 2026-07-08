@@ -1,0 +1,27 @@
+mnemonic: SYSCALL
+doc:
+  title: System Call
+  summary: Enter supervisor mode through SPC/SCS/SDS.
+  description: Enter supervisor mode through the SPC/SCS/SDS supervisor-entry path. SYSCALL does not consume
+    an interrupt vector. It saves FRAME_CONTROL, SS:SP, CS:PC, and DS before entering the handler. It
+    aligns the supervisor-entry address to 16 bytes, uses a 32-byte entry table, and sets STATUS.PM to
+    one without automatically masking interrupts.
+  instruction_family: core_control
+  instruction_class: system
+behavior:
+  group: core_control
+  output: none
+  operation:
+  - arch_syscall();
+  operation_text: 'SYSCALL enters supervisor mode through the SPC/SCS/SDS supervisor-entry path. It writes
+    a syscall stack frame containing the saved control state and return PC, sets STATUS.PM, loads CS
+    from SCS and DS from SDS, and transfers control to SPC aligned to a 16-byte boundary.
+
+    '
+attributes:
+  privilege: any
+  serializing: true
+forms:
+  operands: []
+definition_status:
+  allocation: 'external: isa/alloc'

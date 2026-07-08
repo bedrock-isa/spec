@@ -1,0 +1,34 @@
+mnemonic: XCHG
+doc:
+  title: Exchange
+  summary: Performs the exchange operation.
+  instruction_family: data_movement
+  instruction_class: data_movement
+behavior:
+  group: data_movement
+  input_output:
+  - lhs
+  - rhs
+  operation:
+  - tmp_v = lhs_v;
+  - lhs_v = rhs_v;
+  - rhs_v = tmp_v;
+attributes:
+  privilege: unprivileged
+  memory: at_most_one_memory_operand
+  atomic: false
+forms:
+  operands:
+  - - name: lhs
+      type: EA
+    - name: rhs
+      type: Rn
+  - - name: lhs
+      type: Rn
+    - name: rhs
+      type: EA
+  size: BWLQ
+  memory_memory:
+    allowed: false
+definition_status:
+  allocation: 'external: isa/alloc'

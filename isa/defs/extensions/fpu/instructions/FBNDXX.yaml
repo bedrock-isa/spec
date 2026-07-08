@@ -1,0 +1,52 @@
+mnemonic: FBNDXX
+doc:
+  title: Floating-Point Bounds Check Exclusive-Exclusive
+  summary: Checks floating-point value membership in the exclusive-exclusive interval (lo, hi).
+  description: FBNDXX treats both bounds as exclusive. It sets V when value is unordered or outside (lo,
+    hi); Z, N, and C are unchanged.
+  instruction_family: fpu
+  instruction_class: fpu
+behavior:
+  group: fpu_arithmetic
+  inputs:
+  - hi
+  - lo
+  - value
+  output: none
+  operation:
+  - ZF = 0;
+  - NF = 0;
+  - CF = 0;
+  - VF = 0;
+  - if (value_v <= lo_v) goto <fbndxx_bad>;
+  - if (value_v >= hi_v) goto <fbndxx_bad>;
+  - goto <fbndxx_done>;
+  - <fbndxx_bad>
+  - VF = 1;
+  - <fbndxx_done>
+  repflags: fpu_interval_v_flag
+attributes:
+  privilege: unprivileged
+  fp_flags:
+    update_when_required:
+    - NV
+  flags:
+    V: set when the value is out of bounds or unordered
+    ZNC: unchanged
+forms:
+  operands:
+  - - name: lo
+      type: FREG
+    - name: value
+      type: FREG
+    - name: hi
+      type: FREG
+  - - name: lo
+      type: FREG
+    - name: value
+      type: EA
+    - name: hi
+      type: FREG
+  size: S_D
+definition_status:
+  allocation: 'external: isa/alloc'

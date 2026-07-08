@@ -1,0 +1,25 @@
+mnemonic: WRBKDCACHE
+doc:
+  title: Write Back Data Cache
+  summary: Write back data cache block or range.
+  instruction_family: cache
+  instruction_class: system
+behavior:
+  group: cache
+  inputs:
+  - target
+  output: none
+  operation:
+  - arch_cache_writeback_data(target_v);
+attributes:
+  privilege:
+    default: supervisor
+    policy_controlled: true
+forms:
+  target_ea_set: memory_only
+  require_memory_operand: true
+  operands:
+  - name: target
+    type: EA_or_range
+definition_status:
+  allocation: 'external: isa/alloc'

@@ -1,0 +1,30 @@
+mnemonic: MUL
+doc:
+  title: Multiply Low
+  summary: Multiplies the destination by the source and keeps the low half.
+  description: 'MUL is the shared low-half integer multiply form. Signed and unsigned low-half multiplication
+    produce the same low N result, so the scalar core uses one low-half multiply mnemonic.
+
+    '
+  instruction_family: integer_mul_div
+  instruction_class: integer
+behavior:
+  group: multiply_divide
+  inputs:
+  - src
+  input_output: dst
+  operation:
+  - dst_v = low_N(dst_v * src_v);
+attributes:
+  privilege: unprivileged
+  flags: may update FLAGS
+forms:
+  operands:
+  - - name: src
+      type: EA
+    - name: dst
+      type: Rn
+  size: BWLQ
+  result: low half
+definition_status:
+  allocation: 'external: isa/alloc'

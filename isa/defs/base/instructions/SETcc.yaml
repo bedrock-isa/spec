@@ -1,0 +1,26 @@
+mnemonic: SETcc
+doc:
+  title: Set Conditional
+  summary: Performs the set conditional operation.
+  instruction_family: control_flow
+  instruction_class: control_flow
+behavior:
+  group: control_flow
+  inputs:
+  - cc
+  output: dst
+  operation:
+  - dst_v = cc_v;
+attributes:
+  privilege: unprivileged
+forms:
+  dst_ea_set: store_destination
+  operands:
+  - name: cc
+    type: condition
+  - name: dst
+    type: EA
+  size: BWLQ
+  writes: 0 or 1
+definition_status:
+  allocation: 'external: isa/alloc'

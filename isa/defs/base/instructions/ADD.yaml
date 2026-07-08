@@ -1,0 +1,83 @@
+mnemonic: ADD
+doc:
+  title: Add
+  summary: Adds the source operand to the destination operand.
+  instruction_family: integer_alu
+  instruction_class: integer
+behavior:
+  group: integer_alu
+  inputs:
+  - src
+  input_output: dst
+  operation:
+  - result_v = dst_v + src_v;
+  - dst_v = result_v;
+  - ZF = result_v == 0;
+  - NF = result_v s< 0;
+  - CF = carry(dst_old_v, src_v);
+  - VF = scarry(dst_old_v, src_v);
+attributes:
+  privilege: unprivileged
+  streaming_candidate: true
+  prefix_availability:
+  - SATURATE
+  flags:
+    Z: result == 0
+    N: most_significant_bit(result)
+    C: unsigned carry out
+    V: signed overflow
+forms:
+  dst_ea_set: store_destination
+  compact_forms:
+  - operands:
+    - name: src
+      type: Rn
+    - name: dst
+      type: Rn
+    size: LQ
+  - operands:
+    - name: imm
+      type: imm
+    - name: dst
+      type: Rn
+    size: WL
+  extended_forms:
+  - operands:
+    - name: src
+      type: EA
+    - name: dst
+      type: Rn
+    size: BWLQ
+    compact: false
+  - operands:
+    - name: src
+      type: Rn
+    - name: dst
+      type: EA
+    size: BWLQ
+    compact: false
+  - operands:
+    - name: imm
+      type: imm6
+    - name: dst
+      type: EA
+    size: BWLQ
+    compact: false
+  - operands:
+    - name: src
+      type: EA
+    - name: dst
+      type: Rn
+    size: Q
+    compact: false
+    flags: unchanged
+  form: destructive two-address form
+  result: second operand
+  memory_memory: disallowed
+  prefixes:
+    legal:
+    - NPX
+    - NOSPEC
+    - SATURATE
+definition_status:
+  allocation: 'external: isa/alloc'

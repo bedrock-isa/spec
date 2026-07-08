@@ -1,0 +1,37 @@
+export function w $block_copy_long(p %t0, p %t1, w %t2) {
+@l0
+	%dst =p alloc8 8
+	storel %t0, %dst
+	%src =p alloc8 8
+	storel %t1, %src
+	%n =p alloc4 4
+	storew %t2, %n
+	%i =p alloc4 4
+	storew 0, %i
+@l1
+	%t6 =w loadw %i
+	%t7 =w loadw %n
+	%t5 =w csltw %t6, %t7
+	jnz %t5, @l2, @l3
+@l2
+	%t11 =p loadl %src
+	%t12 =w loadw %i
+	%t13 =l extsw %t12
+	%t14 =l mul 8, %t13
+	%t10 =p add %t11, %t14
+	%t9 =l loadl %t10
+	%t16 =p loadl %dst
+	%t17 =w loadw %i
+	%t18 =l extsw %t17
+	%t19 =l mul 8, %t18
+	%t15 =p add %t16, %t19
+	storel %t9, %t15
+	%t22 =w loadw %i
+	%t21 =w add %t22, 1
+	storew %t21, %i
+	jmp @l1
+@l3
+	%t24 =w loadw %i
+	ret %t24
+}
+

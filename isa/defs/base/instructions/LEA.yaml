@@ -1,0 +1,26 @@
+mnemonic: LEA
+doc:
+  title: Load Effective Address
+  summary: Performs the load effective address operation.
+  instruction_family: ea_utility
+  instruction_class: data_movement
+behavior:
+  group: ea_utility
+  inputs:
+  - src
+  output: dst
+  operation:
+  - dst_v = src_v;
+attributes:
+  privilege: unprivileged
+  flags: unchanged
+forms:
+  src_ea_set: pure_address_calculation
+  operands:
+  - name: src
+    type: EA
+  - name: dst
+    type: Rn
+  no_memory_access: true
+definition_status:
+  allocation: 'external: isa/alloc'

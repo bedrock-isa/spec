@@ -1,0 +1,18 @@
+mnemonic: INVTLB
+doc:
+  title: Invalidate TLB
+  summary: Invalidate all TLB entries.
+  instruction_family: tlb_and_context
+  instruction_class: system
+behavior:
+  group: tlb_context
+  output: none
+  operation:
+  - arch_tlb_invalidate_all();
+attributes:
+  privilege: supervisor
+  serializing: true
+forms:
+  operands: []
+definition_status:
+  allocation: 'external: isa/alloc'

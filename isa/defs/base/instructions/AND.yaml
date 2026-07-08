@@ -1,0 +1,73 @@
+mnemonic: AND
+doc:
+  title: Bitwise And
+  summary: Computes the bitwise AND of the source and destination operands.
+  instruction_family: integer_alu
+  instruction_class: integer
+behavior:
+  group: integer_alu
+  inputs:
+  - src
+  input_output: dst
+  operation:
+  - result_v = dst_v & src_v;
+  - dst_v = result_v;
+  - ZF = result_v == 0;
+  - NF = result_v s< 0;
+  - CF = 0;
+  - VF = 0;
+attributes:
+  privilege: unprivileged
+  streaming_candidate: true
+  flags:
+    Z: result == 0
+    N: most_significant_bit(result)
+    C: '0'
+    V: '0'
+forms:
+  dst_ea_set: store_destination
+  compact_forms:
+  - operands:
+    - name: src
+      type: Rn
+    - name: dst
+      type: Rn
+    size: LQ
+  - operands:
+    - name: imm
+      type: imm
+    - name: dst
+      type: Rn
+    size: WL
+  extended_forms:
+  - operands:
+    - name: src
+      type: EA
+    - name: dst
+      type: Rn
+    size: BWLQ
+    compact: false
+  - operands:
+    - name: src
+      type: Rn
+    - name: dst
+      type: EA
+    size: BWLQ
+    compact: false
+  - operands:
+    - name: imm
+      type: imm6
+    - name: dst
+      type: EA
+    size: BWLQ
+    compact: false
+  form: destructive two-address form
+  result: second operand
+  memory_memory: disallowed
+  prefixes:
+    legal:
+    - NPX
+    - NOSPEC
+    - SATURATE
+definition_status:
+  allocation: 'external: isa/alloc'

@@ -1,0 +1,12 @@
+Ventry_precheck_tb___024root__5.o: \
+  /Users/kms1212/Documents/LocalProjects/isa-design/build/verilator/entry_precheck_tb/Ventry_precheck_tb__pch.h \
+  /opt/homebrew/Cellar/verilator/5.048/share/verilator/include/verilated.h \
+  /opt/homebrew/Cellar/verilator/5.048/share/verilator/include/verilated_config.h \
+  /opt/homebrew/Cellar/verilator/5.048/share/verilator/include/verilatedos.h \
+  /opt/homebrew/Cellar/verilator/5.048/share/verilator/include/verilated_types.h \
+  /opt/homebrew/Cellar/verilator/5.048/share/verilator/include/verilated_funcs.h \
+  /Users/kms1212/Documents/LocalProjects/isa-design/build/verilator/entry_precheck_tb/Ventry_precheck_tb__Syms.h \
+  /Users/kms1212/Documents/LocalProjects/isa-design/build/verilator/entry_precheck_tb/Ventry_precheck_tb.h \
+  /Users/kms1212/Documents/LocalProjects/isa-design/build/verilator/entry_precheck_tb/Ventry_precheck_tb___024root.h \
+  /opt/homebrew/Cellar/verilator/5.048/share/verilator/include/verilated_timing.h \
+  Ventry_precheck_tb___024root__5.cpp Ventry_precheck_tb__pch.h

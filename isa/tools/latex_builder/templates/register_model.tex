@@ -1,23 +1,55 @@
 \subsection{Register Model}
-The programming model exposes separate data, address, stack-pointer, program-counter, floating-point,
-segment-register, and control-register classes. SP is an independent stack register, not an alias of the
-A-register class. The S class is used by RDSEG and WRSEG, while the CR class is used by RDCR and WRCR.
+The integer programming model exposes sixteen 64-bit Rn registers, R0 through R15. The rewrite uses one
+general-purpose register class for integer values, address values, counters, selectors, and temporary data.
 
-@REGISTER_MODEL_FIGURE@
+SP and PC are special architectural registers outside the four-bit Rn namespace. SP-relative memory forms use SS by
+default; PC-relative memory forms use CS by default.
 
-@REGISTER_CLASS_TABLE@
+Segment registers are separate 64-bit architectural registers. Segment-qualified EA forms select them explicitly,
+while SP and PC forms omit the segment field because their segment association is fixed.
 
-@DATA_REGISTER_BANKING@
+@RN_REGISTER_MODEL_FIGURE@
 
-@STATE_REGISTER_FORMATS@
+@GENERAL_REGISTER_TABLE@
 
-@FLOATING_POINT_REGISTER_MODEL@
+\subsection{Unified Integer Register File}
+The current rewrite has no data-register bank mechanism. All integer instructions address the same architectural R0
+through R15 register file.
 
-@SEGMENT_REGISTER_FORMATS@
+Bank-select instructions and banked integer-register control state are outside this ISA definition and are not
+accepted as instruction, prefix, or control-state features.
 
-@SEGMENT_REGISTER_OPERAND_CLASS@
+@STATE_REGISTER_FORMAT_DIAGRAMS@
+
+\subsection{Floating-Point Register Model}
+The floating-point extension exposes F0 through F15 as independent 64-bit registers when the floating-point
+instruction group is implemented.
+
+Floating-point exception and mode state is held separately in FFLAGS and FSTATUS. Their precise bit assignments are
+defined by the floating-point instruction set and compatibility state.
+
+@FLOATING_POINT_REGISTER_TABLE@
+
+\subsection{Segment Registers}
+@SEGMENT_REGISTER_FORMAT_DIAGRAM@
+
+@SEGMENT_REGISTER_TABLE@
+
+\subsection{Segment Register Operand Class}
+Instructions that take an explicit segment-register operand use the three-bit SREG encoding below.
+
+SP-relative EA forms do not carry this field and use SS. PC-relative EA forms do not carry this field and use CS.
+
+@SEGMENT_REGISTER_OPERAND_TABLE@
 
 \subsection{Special Registers}
 @SPECIAL_REGISTER_TABLE@
 
-@TRANSLATION_CONTROL@
+\subsection{Control Registers}
+Control registers are accessed only through the architectural control-register instructions and obey the reserved-bit
+rules in the compatibility section.
+
+The named control registers below define the programmer-visible control-state namespace used by translation,
+interrupts, saved supervisor state, and performance monitoring.
+
+@CONTROL_REGISTER_TABLE@

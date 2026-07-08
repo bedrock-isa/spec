@@ -1,0 +1,33 @@
+mnemonic: FABS
+doc:
+  title: Floating-Point Absolute Value
+  summary: Performs the floating-point absolute value operation.
+  instruction_family: fpu
+  instruction_class: fpu
+behavior:
+  group: fpu_arithmetic
+  inputs:
+  - src
+  output: dst
+  operation:
+  - dst_v = abs(src_v);
+attributes:
+  privilege: unprivileged
+  fp_flags: unchanged
+forms:
+  operands:
+  - - name: src
+      type: FREG
+    - name: dst
+      type: FREG
+  - - name: src
+      type: EA
+    - name: dst
+      type: FREG
+  - - name: src
+      type: FREG
+    - name: dst
+      type: EA
+  size: S_D
+definition_status:
+  allocation: 'external: isa/alloc'

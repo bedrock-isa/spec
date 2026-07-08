@@ -1,0 +1,11 @@
+Auto-update forms are part of EA evaluation, not instruction prefixes. They update a temporary operand-evaluation
+image and become architecturally visible only if the instruction commits.
+
+Base auto-update changes by the memory access size in bytes. Index auto-update changes by one element before
+scaling, so the scale affects address generation but not the architectural index increment amount.
+
+@AUTO_UPDATE_ORDER_TABLE@
+
+@AUTO_UPDATE_DELTA_TABLE@
+
+@AUTO_UPDATE_EXAMPLE_TABLE@

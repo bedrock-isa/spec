@@ -1,0 +1,24 @@
+mnemonic: PUSH
+doc:
+  title: Push
+  summary: Performs the push operation.
+  instruction_family: data_movement
+  instruction_class: data_movement
+behavior:
+  group: stack
+  inputs:
+  - reg
+  output: none
+  operation:
+  - SP = SP - 8;
+  - '*:8 SP = reg_v;'
+attributes:
+  privilege: unprivileged
+forms:
+  operands:
+  - name: reg
+    type: Rn
+  compact: required
+  size: Q
+definition_status:
+  allocation: 'external: isa/alloc'

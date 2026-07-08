@@ -1,0 +1,74 @@
+export function w $pointer_integer_mix(p %t0, p %t1, w %t2, l %t3) {
+@l0
+	%base =p alloc8 8
+	storel %t0, %base
+	%limit =p alloc8 8
+	storel %t1, %limit
+	%n =p alloc4 4
+	storew %t2, %n
+	%byte_bias =p alloc8 8
+	storel %t3, %byte_bias
+	%p =p alloc8 8
+	%q =p alloc8 8
+	%span =p alloc8 8
+	%acc =p alloc4 4
+	%i =p alloc4 4
+	%t6 =p loadl %base
+	%t7 =w loadw %n
+	%t8 =l extsw %t7
+	%t9 =l mul 4, %t8
+	%t5 =p add %t6, %t9
+	storel %t5, %p
+	%t12 =p loadl %base
+	%t14 =l loadl %byte_bias
+	%t16 =l extsw 4
+	%t13 =l div %t14, %t16
+	%t17 =l mul 4, %t13
+	%t11 =p add %t12, %t17
+	storel %t11, %q
+	%t20 =p loadl %limit
+	%t21 =p loadl %base
+	%t19 =l sub %t20, %t21
+	%t22 =l div %t19, 4
+	storel %t22, %span
+	storew 0, %i
+	storew 0, %acc
+@l1
+	%t28 =w loadw %i
+	%t29 =w loadw %n
+	%t27 =w csltw %t28, %t29
+	jnz %t27, @l2, @l3
+@l2
+	%t33 =w loadw %acc
+	%t35 =p loadl %p
+	%t34 =w loadw %t35
+	%t32 =w add %t33, %t34
+	%t37 =p loadl %q
+	%t36 =w loadw %t37
+	%t31 =w add %t32, %t36
+	storew %t31, %acc
+	%t40 =p loadl %p
+	%t39 =p add %t40, 4
+	storel %t39, %p
+	%t44 =p loadl %q
+	%t43 =p add %t44, 4
+	storel %t43, %q
+	%t47 =l loadl %span
+	%t48 =w loadw %i
+	%t49 =l extsw %t48
+	%t46 =w csltl %t47, %t49
+	jnz %t46, @l4, @l5
+@l4
+	%t52 =w loadw %acc
+	%t51 =w add %t52, 1
+	storew %t51, %acc
+@l5
+	%t56 =w loadw %i
+	%t55 =w add %t56, 1
+	storew %t55, %i
+	jmp @l1
+@l3
+	%t58 =w loadw %acc
+	ret %t58
+}
+

@@ -1,0 +1,64 @@
+\section{Reserved and Compatibility Rules}
+This section defines the default compatibility contract for reserved fields, optional
+features, and future architectural growth. A later section may narrow a rule for a
+specific structure, but it must say so explicitly.
+
+\subsection{Terminology}
+\begingroup\footnotesize
+\begin{longtable}{@{}p{1.45in}p{4.05in}@{}}
+\toprule
+\textbf{Term} & \textbf{Meaning}\\
+\midrule
+\endhead
+\texttt{reserved} & Architecturally held for a future definition. Software must not depend on its current value or behavior.\\
+\texttt{must be zero} & Software must write zero. A nonzero value is invalid unless a later architectural revision assigns the field.\\
+\texttt{read-as-zero} & Hardware returns zero for the field on this implementation. Software must still treat the field as reserved unless it is explicitly software-defined.\\
+\texttt{ignored} & Hardware accepts the field but does not use it for the current operation. Ignored fields are not automatically available for software-defined state.\\
+\texttt{preserved} & Software must retain the previous value when rewriting the containing object.\\
+\texttt{software-defined} & Hardware does not interpret the field and reserves it for software use. Future architectural extensions do not consume this field without redefining the containing structure.\\
+\texttt{implementation-defined} & The implementation chooses the value or behavior and exposes the relevant contract through CPUID, fixed documentation, or platform firmware.\\
+\texttt{illegal} & Use of a disallowed instruction opcode encoding, effective-address form, selector, or operation raises the exception named by the defining rule. Prefix bytes use the prefix model's unassigned-value rule.\\
+\bottomrule
+\end{longtable}
+\manualtablecaption{Compatibility Terms}
+\endgroup
+
+\subsection{Reserved Fields}
+Architected registers and architectural memory structures use the following defaults:
+
+\begin{itemize}
+\item Reserved bits in architected registers read as zero and must be written as zero.
+\item Reserved bits in control registers or selector fields cause \texttt{INVALID\_CONTROL\_STATE} when a nonzero or reserved value is written.
+\item Reserved bits in page-table entries cause \texttt{PAGE\_FAULT} when they are consumed by page-table translation.
+\item Reserved bits in interrupt-vector-table entries and supervisor-entry frames must be zero. A reserved CPU vector has no predefined frame type; attempted delivery follows the double-fault rule described by the exception-processing model.
+\item Software-defined fields are not reserved fields. Software may store values in them, and hardware ignores them except where the containing structure explicitly says otherwise.
+\end{itemize}
+
+\subsection{Reserved Encodings}
+Reserved instruction opcodes, reserved extension opcode encodings,
+reserved effective-address forms, and unsupported optional instruction-group encodings raise
+the exception named in the compatibility policy table. Bedrock keeps the decode
+contract simple: if the implementation does not support an optional instruction
+group, encodings from that group are not distinguished from other illegal
+instruction encodings by a separate extension-availability vector.
+
+Prefix bytes are not instruction opcodes. Unassigned prefix values follow the
+prefix policy values in the compatibility policy table and remain reserved for
+future prefix definitions. Prefix bytes are consumed only as prefix metadata;
+instruction decode then proceeds from the following opcode, operands, and
+addressing forms.
+
+Noncanonical encodings are invalid unless the instruction description explicitly defines an
+alias or priority rule. Assemblers must emit canonical encodings by default. Disassemblers
+must prefer canonical spellings when more than one spelling names the same operation.
+
+\subsection{CPUID Compatibility}
+\texttt{CPUID} is the compatibility boundary for optional architectural behavior.
+Software must not use an optional instruction group, optional register state, or optional
+state image unless the corresponding CPUID bit or leaf reports support.
+
+Unknown CPUID selectors, reserved CPUID result bits, privilege, serialization, and
+runtime mutability are governed by the compatibility policy table unless a CPUID
+leaf explicitly gives a narrower rule.
+
+@COMPATIBILITY_POLICY_TABLE@

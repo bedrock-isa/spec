@@ -1,0 +1,32 @@
+mnemonic: DIVMODS
+doc:
+  title: Signed Divide With Remainder
+  summary: Performs the signed divide with remainder operation.
+  description: Performs the signed divide with remainder operation. The quotient register Rn(q) supplies
+    the dividend before the operation, then receives the quotient. The remainder register Rn(r) receives
+    the remainder.
+  instruction_family: integer_mul_div
+  instruction_class: integer
+behavior:
+  group: multiply_divide
+  inputs:
+  - src
+  input_output: quotient
+  output: remainder
+  operation:
+  - tmp_v = arch_signed_modulo(quotient_v, src_v, size_v);
+  - quotient_v = arch_signed_divide(quotient_v, src_v, size_v);
+  - remainder_v = tmp_v;
+attributes:
+  privilege: unprivileged
+forms:
+  operands:
+  - name: src
+    type: EA
+  - name: quotient
+    type: Rn
+  - name: remainder
+    type: Rn
+  size: BWLQ
+definition_status:
+  allocation: 'external: isa/alloc'

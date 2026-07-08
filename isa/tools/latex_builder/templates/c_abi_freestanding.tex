@@ -1,22 +1,13 @@
-Freestanding C uses the Bedrock C data and call ABI together with the
-language-neutral ELF ABI. It is sufficient for compiler output, static objects,
-and runtime-provided helper calls, but it does not define process startup or a
-hosted C library environment.
+Freestanding C behavior is defined by the active C ABI profile and the ELF ABI
+profile it names.
 
 \subsection{Execution Boundary}
-The ELF entry field remains an object-loading field. The initial stack,
-\texttt{\_start} contract, argument vectors, environment vectors, auxiliary
-vectors, and process-entry state are OS ABI responsibilities. Zero-fill for BSS
-storage is provided by ELF program loading for the file-size to memory-size gap
-in loadable segments.
+Execution-boundary ownership, entry state, zero-fill policy, and OS handoff
+rules are supplied by the ABI specification.
 
 \subsection{Compiler Runtime Helpers}
-The baseline backend may expand simple \texttt{\_\_int128} operations into
-64-bit instruction sequences. Multiplication, division, remainder, and
-integer/floating-point conversions may instead lower to compiler-runtime helper
-calls. The ABI fixes the helper call convention, not a hosted runtime library
-surface: helper calls use the normal Bedrock C ABI, and \texttt{\_\_int128}
-helper returns use @I128_RETURN@.
+Compiler-runtime helper names and helper calling rules are supplied by the ABI
+specification. \texttt{\_\_int128} helper returns use @I128_RETURN@.
 
 \manualtablecaption{\texttt{\_\_int128} Runtime Helper Names}
 \begingroup\footnotesize
@@ -38,24 +29,9 @@ Logical shift right & @I128_HELPER_LOGICAL_SHIFT_RIGHT@\\
 \end{longtable}
 \endgroup
 
-Floating-point helper calls may be used when the selected target lacks a
-hardware operation. Those calls also use the normal Bedrock C ABI.
-
 \subsection{TLS and OS ABI Boundary}
-TLS requires an OS ABI, loader profile, or runtime that initializes the
-language-neutral TLS model. An unknown freestanding OS profile may leave TLS
-unsupported. TLSDESC and TLS relocation semantics are owned by the
-language-neutral ELF ABI and resolved by the linker, loader, or OS ABI.
+TLS and OS boundary rules are supplied by the ABI specification.
 
 \subsection{C Linkage}
-C function pointers are 64-bit pre-segment near-call code addresses. Code and
-data pointers have the same size and alignment but remain distinct C pointer
-categories. Common symbols and externally visible objects are aligned to at
-least the ABI alignment of their declared type, subject to the aggregate maximum
-unless stricter alignment is explicitly requested. Direct C calls use
-@DIRECT_CALL_RELOCATION@; PLT-bound external calls use the PLT relocation
-selected by the active code model.
-
-Instruction relaxation is assembler and linker policy under the active code
-model. Hosted C library entry points, process environment, filesystem behavior,
-and syscall bindings are outside the freestanding C ABI.
+C linkage and direct-call relocation rules are supplied by the ABI
+specification. Direct C calls use @DIRECT_CALL_RELOCATION@.

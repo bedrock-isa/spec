@@ -1,0 +1,48 @@
+export function w $branch_mix(p %t0, w %t1) {
+@l0
+	%p =p alloc8 8
+	storel %t0, %p
+	%n =p alloc4 4
+	storew %t1, %n
+	%i =p alloc4 4
+	%acc =p alloc4 4
+	%v =p alloc4 4
+	storew 0, %i
+	storew 0, %acc
+@l1
+	%t7 =w loadw %i
+	%t8 =w loadw %n
+	%t6 =w csltw %t7, %t8
+	jnz %t6, @l2, @l3
+@l2
+	%t12 =p loadl %p
+	%t13 =w loadw %i
+	%t14 =l extsw %t13
+	%t15 =l mul 4, %t14
+	%t11 =p add %t12, %t15
+	%t10 =w loadw %t11
+	storew %t10, %v
+	%t18 =w loadw %v
+	%t16 =w csltw 0, %t18
+	jnz %t16, @l4, @l5
+@l4
+	%t21 =w loadw %acc
+	%t22 =w loadw %v
+	%t20 =w add %t21, %t22
+	storew %t20, %acc
+	jmp @l6
+@l5
+	%t25 =w loadw %acc
+	%t26 =w loadw %v
+	%t24 =w sub %t25, %t26
+	storew %t24, %acc
+@l6
+	%t29 =w loadw %i
+	%t28 =w add %t29, 1
+	storew %t28, %i
+	jmp @l1
+@l3
+	%t31 =w loadw %acc
+	ret %t31
+}
+

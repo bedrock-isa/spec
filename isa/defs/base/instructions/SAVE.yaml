@@ -1,0 +1,34 @@
+mnemonic: SAVE
+doc:
+  title: Save Processor State
+  summary: Save modified processor state to a CPUID-defined save area.
+  description: 'Save modified processor state to a CPUID-defined save area. SAVE uses an XSAVEOPT-like
+    policy for enabled extension state: state blocks that are architecturally clean may be skipped, while
+    modified blocks are written to their CPUID-defined 64-byte-aligned slots. The fixed base block always
+    records R0-R15, FLAGS, and STATUS. The memory image does not carry per-component size records; software
+    allocates the maximum required save area size reported by CPUID. The save-area base must be 4 KiB
+    aligned.'
+  instruction_family: tlb_and_context
+  instruction_class: system
+behavior:
+  group: tlb_context
+  inputs:
+  - memory
+  output: none
+  operation:
+  - arch_save_processor_state(memory_v);
+  operation_text: 'SAVE writes the fixed base block at the selected save-area address. It records the
+    base header fields, the state-block bitmap, R0-R15, GS registers whose validity bits are set, FLAGS,
+    and STATUS according to the SAVE/RESTORE Processor-State Save Area layout. Enabled extension state
+    blocks are written to their CPUID-defined component offsets; architecturally clean extension blocks
+    may be skipped and reported clear in the state-block bitmap.
+
+    '
+attributes:
+  privilege: unprivileged
+forms:
+  operands:
+  - name: memory
+    type: EA
+definition_status:
+  allocation: 'external: isa/alloc'

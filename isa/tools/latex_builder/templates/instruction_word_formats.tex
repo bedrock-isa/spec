@@ -1,0 +1,18 @@
+The first two instruction bytes are the only input needed to find the instruction boundary. Prefix bytes and later
+opcode payload bytes never extend an instruction implicitly.
+
+The base header is described in instruction-stream byte order: byte 0 bit 7 is P, byte 0 bit 6 is X, byte 0 bits
+5..2 are L when X=1, and byte 1 carries payload[7:0].
+
+Short instructions use X=0 and a 14-bit payload. Extended instructions use X=1, a 4-bit byte-length field, and a
+payload namespace decoded as medium, long, or extralong opcode encoding.
+
+@WORD0_BIT_DIAGRAM@
+
+@WORD0_FIELD_TABLE@
+
+@INSTRUCTION_ENCODING_DIAGRAMS@
+
+@SIZE_DECODING_TABLE@
+
+@ENCODING_CLASS_TABLE@

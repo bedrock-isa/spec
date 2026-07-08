@@ -1,0 +1,30 @@
+mnemonic: FPOPM
+doc:
+  title: Floating-Point Pop Multiple
+  summary: Pop selected F15-F0 registers in inverse bitmap order.
+  description: Pop selected F15-F0 registers in inverse bitmap order. Bit n names Fn.
+  instruction_family: fpu
+  instruction_class: fpu
+behavior:
+  group: fpu_stack
+  inputs:
+  - regs
+  output: none
+  operation:
+  - arch_fpopm(regs_v);
+  operation_text: 'For each set bit in the bitmap, FPOPM pops one 64-bit stack slot into the corresponding
+    F register. F registers are processed in inverse order from F15 through F0. Each selected register
+    is loaded from SP before SP is incremented by 8.
+
+    '
+attributes:
+  privilege: unprivileged
+forms:
+  operands:
+  - name: regs
+    type: fbitmap16
+  bitmap:
+    bits_0_15: F0-F15
+  size_per_register: Q
+definition_status:
+  allocation: 'external: isa/alloc'

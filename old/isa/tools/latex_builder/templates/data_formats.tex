@@ -1,0 +1,109 @@
+\subsection{Integer Data Sizes}
+Integer operands use four architectural sizes. The size suffix selects the number of low-order
+bits used by the operation and the number of bytes transferred for memory operands.
+
+\begingroup\footnotesize
+\begin{longtable}{@{}p{0.75in}p{0.75in}p{0.75in}p{2.5in}@{}}
+\toprule
+\textbf{Suffix} & \textbf{Bits} & \textbf{Bytes} & \textbf{Name}\\
+\midrule
+\endhead
+\texttt{B} & 8 & 1 & byte\\
+\texttt{W} & 16 & 2 & word\\
+\texttt{L} & 32 & 4 & long word\\
+\texttt{Q} & 64 & 8 & quad word\\
+\bottomrule
+\end{longtable}
+\manualtablecaption{Integer Data Sizes}
+\endgroup
+
+\begin{manuallistedformatdiagram}{Integer Register Operand Subfields}{4}
+\manualformatrow{Q}{%
+\manualformatfield{Q operand bits 63..0}{64}
+}
+\manualformatrow{L}{%
+\manualformatfield{unchanged / instruction-defined}{32}
+\manualformatfield{L operand bits 31..0}{32}
+}
+\manualformatrow{W}{%
+\manualformatfield{unchanged / instruction-defined}{48}
+\manualformatfield{W bits 15..0}{16}
+}
+\manualformatrow{B}{%
+\manualformatfield{unchanged / instruction-defined}{56}
+\manualformatfield{B bits 7..0}{8}
+}
+\end{manuallistedformatdiagram}
+
+Byte, word, and long operations use the low-order subfield of the selected register. Q-sized
+operations use the full 64-bit register. Instructions that explicitly extend a value define
+whether the upper bits are sign-extended or zero-extended; otherwise, the instruction semantics
+define whether upper bits are preserved, cleared, or replaced.
+
+\subsection{Little-Endian Memory Organization}
+Bedrock data memory is little-endian. For an N-byte integer value stored at byte address A, byte
+A contains bits 7..0, byte A+1 contains bits 15..8, and so on. The least significant byte is
+stored at the lowest address.
+
+\begin{manuallistedbyteorderdiagram}{Little-Endian Byte Order for a 64-Bit Value}{byte}{address}{increasing addresses}{least significant byte first}{most significant byte last}
+\manualbytecell{$V[7..0]$}{A+0}
+\manualbytecell{$V[15..8]$}{A+1}
+\manualbytecell{$V[23..16]$}{A+2}
+\manualbytecell{$V[31..24]$}{A+3}
+\manualbytecell{$V[39..32]$}{A+4}
+\manualbytecell{$V[47..40]$}{A+5}
+\manualbytecell{$V[55..48]$}{A+6}
+\manualbytecell{$V[63..56]$}{A+7}
+\end{manuallistedbyteorderdiagram}
+
+\[
+\mathit{mem}[A+i] = (\mathit{value} \gg (8i)) \mathbin{\&} 255,\qquad 0 \le i < N
+\]
+
+The same byte order is used for instruction words, immediate payloads, displacement payloads,
+absolute-address payloads, and data transferred by load/store instructions.
+
+\begin{manuallistedbyteorderdiagram}{Instruction Word Storage in Memory}{instruction word}{}{instruction stream byte order}{}{}
+\manualbytecell{$word[7:0]$}{PC+0}
+\manualbytecell{$word[15:8]$}{PC+1}
+\end{manuallistedbyteorderdiagram}
+
+\subsection{Instruction Payload Ordering}
+Instruction length is measured in 16-bit words, but each instruction word is itself stored in
+little-endian byte order. Word 0 occupies the first two bytes of the instruction. If a prefix
+word, descriptor word, immediate, displacement, or bitmap follows, those words occupy increasing
+addresses in decode order.
+
+\begingroup\footnotesize
+\begin{longtable}{@{}p{0.85in}p{0.85in}p{3.8in}@{}}
+\toprule
+\textbf{Payload} & \textbf{Words} & \textbf{Memory Order}\\
+\midrule
+\endhead
+\texttt{imm16} & 1 word & bits 7..0 at the lower byte, bits 15..8 at the next byte\\
+\texttt{imm32} & 2 words & least significant word first, then most significant word\\
+\texttt{imm64} & 4 words & least significant word first through most significant word\\
+\texttt{disp16} & 1 word & signed two's-complement value\\
+\texttt{disp32} & 2 words & signed two's-complement value, least significant word first\\
+\texttt{disp64} & 4 words & signed two's-complement value, least significant word first\\
+\bottomrule
+\end{longtable}
+\manualtablecaption{Immediate and Displacement Payload Order}
+\endgroup
+
+Multiword immediates and displacements are stored least significant word first. Signed displacement
+payloads use two's-complement representation at their declared width before any sign extension
+performed by the consuming instruction or effective-address form.
+
+When an instruction operand has an explicit operation size and encodes an immediate operand narrower
+than that operation size, the operand kind defines how the encoded value is extended before use.
+Immediate operands on forms without an operation size are interpreted by that instruction form rather
+than by this operation-size rule.
+
+@IMMEDIATE_OPERAND_TABLE@
+
+\subsection{Floating-Point Data Formats}
+Floating-point scalar formats are little-endian in memory as well. The S format is 32 bits and the
+D format is 64 bits. The bit-level floating-point encoding, NaN policy, exception flags, and
+rounding behavior are described by the floating-point programming model and instruction metadata;
+their memory byte order follows the same least-significant-byte-first rule as integer data.

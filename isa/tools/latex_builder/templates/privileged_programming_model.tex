@@ -1,32 +1,41 @@
-The privileged programming model defines how execution moves between user mode and supervisor mode,
-which saved state is used for return, and which control state is directly accessible.
+The privileged programming model defines how execution moves between user mode and supervisor mode, which saved
+state is used for return, and which control state is directly accessible.
+
+Supervisor entry changes the execution context at a single architectural commit point. If validation of the entry
+target, saved state, or control-state write fails, the partial state transition is not exposed.
 
 \subsection{Privileged Model Rules}
-The following rules define the supervisor and exception-control behavior used by the rest of this manual.
+Privileged state is visible through STATUS, segment registers, control registers, interrupt state, and
+address-translation controls. User-mode instructions may read or write only the state explicitly marked
+unprivileged. Privileged writes validate reserved bits, selector values, and control-state consistency before
+commit.
 
 @PRIVILEGED_RULE_TABLE@
 
 \subsection{Privilege State}
-\texttt{STATUS.PM} selects the current privilege level. Memory operands use the current-domain \texttt{C}
-by default. In supervisor mode, operand annotations such as \texttt{U:[A0]} select user-domain
-access for that instruction only through the encoded \texttt{U2C}, \texttt{C2U}, or \texttt{U2U} prefix.
-In user mode \texttt{C} and \texttt{U} are identical, so these prefixes have no additional
-architectural effect.
+STATUS.PM selects the current privilege level. In user mode, current-domain and user-domain memory accesses are
+identical. In supervisor mode, explicit \texttt{U:} and \texttt{C:} operand annotations determine whether the
+generated prefix asks for user-domain access.
 
 @PRIVILEGE_STATE_TABLE@
 
 \subsection{SYSCALL and SYSRET}
-\texttt{SYSCALL} is an explicit supervisor-entry path rather than an IVT-vector event. It behaves like an
-extended long call: it saves the user control state, uses a 32-byte supervisor-entry table with 16-byte
-entry-address alignment, loads the supervisor entry state from SPC/SCS/SDS, and sets STATUS.PM to
-supervisor mode. \texttt{SYSRET} is the matching return instruction and is only for this syscall frame shape.
+SYSCALL is an explicit supervisor-entry path rather than an IVT-vector event. It saves the user control state,
+loads the supervisor entry state from SPC/SCS/SDS, and sets STATUS.PM to supervisor mode.
+
+SYSRET is the matching return instruction for the syscall frame shape. It restores the saved user execution
+context only after the saved control state has passed return validation. CS and PC changes are a single
+architectural commit point for long control-transfer and supervisor-entry operations.
 
 @SYSCALL_TABLE@
 
+@SUPERVISOR_CONTROL_FLOW_TABLE@
+
 \subsection{Interrupt and Control-State Rules}
-Trap, interrupt, and exception entry also set STATUS.PM to supervisor mode, but do not automatically mask
-interrupts. The saved STATUS image is restored verbatim by the matching return path. Malformed return
-frames are software errors; the architecture does not raise a second exception merely because the return
-frame is nonsensical.
+Interrupt delivery saves the interrupted PC, CS, FLAGS, and STATUS state needed for precise return. The entry
+path validates the target vector and control state before making the supervisor state visible.
+
+Writes to control state that would create an invalid translation, privilege, or interrupt configuration raise the
+architecturally named fault and do not partially update the control register.
 
 @PRIVILEGED_EXECUTION_TABLE@

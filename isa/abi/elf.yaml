@@ -1,0 +1,511 @@
+document:
+  title: Bedrock ELF ABI
+  subtitle: ELF Object, Linking, and Loading ABI
+  architecture: Bedrock
+  version: 0.1
+scope:
+  summary: >
+    The Bedrock ELF ABI defines the object, linking, loading, relocation,
+    dynamic-linking, TLS, and code-model contracts used by conforming
+    assemblers, linkers, loaders, and language runtimes. It does not define a
+    language calling convention, C type layout, process-entry stack, or
+    operating-system argument protocol.
+  profiles:
+    - name: bedrock-elf
+      description: >
+        Conforming Bedrock ELF64 objects using the reference relocation, symbol,
+        section, linking, and loading model.
+abi_hierarchy:
+  current_layer: ELF ABI
+  current_document_scope: >
+    This document specifies the ELF object-format layer. It fixes the ELF,
+    relocation, linking, loading, TLS, dynamic-linking, and code-model contracts
+    consumed by language ABIs, OS ABIs, and standard-library ABIs.
+terminology:
+  summary: >
+    These terms are used by the Bedrock ELF ABI. ISA-level address, register,
+    and effective-address terms keep the meanings defined by the architecture
+    manual.
+  terms:
+    - term: ELF ABI
+      definition: >
+        The ELF, relocation, dynamic-linking, TLS, and code-model contract that
+        is shared by language bindings and operating-system profiles.
+    - term: OS ABI
+      definition: >
+        The operating-system profile layered above this document. It defines
+        process entry, argument vectors, environment state, loader policy,
+        signal or exception delivery policy, and any OS-specific segment setup.
+    - term: pre-segment virtual address
+      definition: >
+        The address value used by ELF symbols, relocations, ordinary function
+        addresses, and ordinary data pointers before segment pre-translation.
+    - term: load base
+      definition: >
+        The runtime address bias applied to a loaded ET_DYN object before its
+        symbol values and relative relocations are interpreted.
+    - term: ABI-visible linkage domain
+      definition: >
+        The region in which ordinary ELF code addresses are near-call entry
+        points and do not carry an explicit CS value.
+    - term: near-call entry address
+      definition: >
+        A pre-segment code address that can be reached with ordinary CALL and
+        returned from with ordinary RET inside the current linkage domain.
+    - term: veneer
+      definition: >
+        A near-call entry point supplied by a linker, loader, runtime, or OS ABI
+        to hide a more complex transfer sequence from ordinary ABI callers.
+    - term: code model
+      definition: >
+        A set of placement and relocation assumptions used by code generation to
+        choose direct displacement forms, GOT/PLT forms, or full-width address
+        materialization.
+object_format:
+  format: ELF64
+  elf_ident:
+    EI_MAG: "0x7f 'E' 'L' 'F'"
+    EI_CLASS: ELFCLASS64
+    EI_DATA: ELFDATA2LSB
+    EI_VERSION: EV_CURRENT
+    EI_OSABI: ELFOSABI_NONE
+    EI_ABIVERSION: 0
+  elf_class: ELFCLASS64
+  data_encoding: ELFDATA2LSB
+  file_type_model:
+    - ET_REL
+    - ET_EXEC
+    - ET_DYN
+  machine:
+    name: EM_BEDROCK
+    value: "0xffb0"
+  flags:
+    e_flags: 0
+    unknown_nonzero_e_flags: reject
+    extension_metadata: .note.bedrock
+  header_sizes:
+    e_ehsize: 64
+    e_phentsize: 56
+    e_shentsize: 64
+  entry_point:
+    ET_REL: 0
+    ET_EXEC: absolute pre-segment virtual byte address
+    "ET_DYN (executable)": >
+      load-bias-relative pre-segment virtual byte address; runtime entry is
+      load_base + e_entry
+    "ET_DYN (shared object without entry)": 0
+  program_header:
+    supported_types:
+      - PT_LOAD
+      - PT_DYNAMIC
+      - PT_INTERP
+      - PT_NOTE
+      - PT_TLS
+    p_flags:
+      PF_X: 1
+      PF_W: 2
+      PF_R: 4
+    p_align:
+      PT_LOAD: page size or larger; minimum 4096
+  section_header:
+    section_types: standard ELF section types
+    section_flags:
+      - SHF_WRITE
+      - SHF_ALLOC
+      - SHF_EXECINSTR
+      - SHF_TLS
+  symbol_values:
+    st_info: standard ELF binding and type
+    st_other: architecture-specific bits reserved; must be zero
+    ET_REL: section-relative byte offset
+    linked_image: pre-segment virtual byte address
+  relocations:
+    encoding: RELA
+    addend_storage: explicit addend
+  sections:
+    string_table: .strtab
+    symbol_table: .symtab
+    relocation_prefix: .rela
+sections:
+  summary: >
+    Bedrock uses ordinary ELF sections. The names below are the standard section
+    conventions for conforming Bedrock ELF objects.
+  standard:
+    - name: .text
+      attributes: [alloc, execute, read]
+    - name: .rodata
+      attributes: [alloc, read]
+    - name: .data
+      attributes: [alloc, read, write]
+    - name: .bss
+      attributes: [alloc, read, write, zero_fill]
+    - name: .init
+      attributes: [alloc, execute, read]
+    - name: .fini
+      attributes: [alloc, execute, read]
+    - name: .got
+      attributes: [alloc, read, write]
+    - name: .got.plt
+      attributes: [alloc, read, write]
+    - name: .plt
+      attributes: [alloc, execute, read]
+    - name: .dynamic
+      attributes: [alloc, dynamic]
+    - name: .dynsym
+      attributes: [alloc, dynamic symbol table]
+    - name: .dynstr
+      attributes: [alloc, dynamic string table]
+    - name: .rela.dyn
+      attributes: [alloc, relocation]
+    - name: .rela.plt
+      attributes: [alloc, relocation]
+    - name: .note.bedrock
+      attributes: [note]
+symbols:
+  binding:
+    - local
+    - global
+    - weak
+  visibility:
+    - default
+    - hidden
+    - protected
+  types:
+    - notype
+    - object
+    - function
+    - ifunc
+    - section
+    - file
+  rules:
+    - Function symbols name the first instruction of the callable entry point.
+    - Object symbols name the first byte of the object storage.
+    - ELF st_value stores a byte offset relative to the symbol's defining section.
+program_loading:
+  summary: >
+    Bedrock ELF program loading follows the ordinary ELF segment model. The ELF
+    ABI defines executable mapping, loader-visible object rules, and the
+    minimum execution environment needed to begin running the image; language
+    runtimes and OS ABIs define their own entry argument protocol above this
+    layer.
+  rules:
+    executable_file_types:
+      - ET_EXEC
+      - ET_DYN
+    segment_alignment: page_size
+    minimum_page_size: 4096
+    PT_INTERP: supported
+    bss_zero_fill: zero bytes through file-size to memory-size gap
+    bss_zero_fill_alignment: 8
+  page_permission_mapping:
+    - p_flags: PF_R
+      pte_flags: [P, U]
+      meaning: readable user page
+    - p_flags: PF_R|PF_W
+      pte_flags: [P, U, W]
+      meaning: readable writable user page
+    - p_flags: PF_R|PF_X
+      pte_flags: [P, U, X]
+      meaning: readable executable user page
+    - p_flags: PF_R|PF_W|PF_X
+      pte_flags: [P, U, W, X]
+      meaning: readable writable executable user page
+  execution_environment:
+    code_fetch: The active code context must permit instruction fetch at the ELF entry address.
+    data_access: The active data context must permit ordinary data access to mapped loadable data regions.
+    stack_access: >
+      The active stack context must permit stack reads and writes for the stack
+      supplied by the OS ABI or loader profile.
+    ordinary_linkage_domain: >
+      Executable images and ordinary shared objects are linked as near-call
+      objects in one ABI-visible linkage domain. ELF function addresses are
+      pre-segment code addresses, not CS:PC pairs.
+    far_segment_crossing: >
+      Segment-changing calls are outside the ordinary ELF dynamic-linking
+      contract. Runtimes or OS ABIs may hide such crossings behind near-call
+      veneers.
+    code_data_stack_context: >
+      CS, DS, SS, and their descriptor values are not fixed by the ELF ABI.
+  initial_state:
+    FLAGS: 0
+    FSTATUS: 0
+    FFLAGS: 0
+dynamic_linking:
+  summary: >
+    Dynamic objects use a fixed Bedrock GOT and PLT contract so that linkers,
+    loaders, and position-independent code agree on lazy binding and resolver
+    state.
+  rules:
+    lazy_binding: allowed
+    ifunc: always_supported
+    copy_relocations: supported
+    irelative_relocations: supported
+    ordinary_shared_object_calls: near CALL/RET within the ABI-visible linkage domain
+    global_offset_table_symbol: _GLOBAL_OFFSET_TABLE_
+    plt_entry_alignment: 16
+    plt_entry_size: 32
+    plt0_size: 32
+  got_reserved_entries:
+    - index: 0
+      name: _DYNAMIC
+      meaning: dynamic section address
+    - index: 1
+      name: loader object handle
+      meaning: dynamic loader object handle for this loaded object
+    - index: 2
+      name: lazy_resolver
+      meaning: dynamic loader lazy binding entry
+  plt_layout:
+    - entry: PLT0
+      effect: receives R0=relocation_index and R1=GOT_base, then transfers to GOT[2]
+    - entry: PLTn_step0
+      effect: indirect branch through GOTPLT slot n
+    - entry: PLTn_step1
+      effect: unresolved slot path sets R0=relocation_index
+    - entry: PLTn_step2
+      effect: unresolved slot path sets R1=GOT_base and branches to PLT0
+tls:
+  summary: >
+    Thread-local storage is addressed through the GS0 segment register. TLS
+    references that remain inside the program and have a link-time constant
+    offset use the local-exec model. TLS references that cross dynamic object
+    boundaries, may be interposed, or otherwise require runtime resolution use
+    the TLSDESC model.
+  rules:
+    tls_base_register: GS0
+    addressing: TLS offsets are translated by GS0 segment pre-translation before page-table translation.
+    local_exec_offset_base: GS0_base
+    program_internal_model: local_exec
+    dynamic_tls_model: TLSDESC
+    local_exec_relocations:
+      - R_BEDROCK_TLS_OFFSET32S
+      - R_BEDROCK_TLS_OFFSET64
+    dynamic_tls_relocations:
+      - R_BEDROCK_TLSDESC_GOTPCREL32S
+      - R_BEDROCK_TLSDESC_GOTPCREL64
+      - R_BEDROCK_TLSDESC_CALL
+      - R_BEDROCK_TLSDESC
+  model_selection:
+    - >
+      A TLS symbol defined in the same program image may use local-exec
+      addressing when its byte offset from GS0 is link-time constant.
+    - A TLS reference from a shared object or to an interposable TLS symbol uses TLSDESC.
+    - >
+      The linker may relax a TLSDESC sequence to local-exec when symbol binding
+      and final placement make the GS0-relative offset constant.
+  tlsdesc_entry:
+    - offset: "+0x00"
+      field: resolver or fast function
+      type: u64
+      meaning: function that resolves the descriptor or a relaxed fast-path implementation
+    - offset: "+0x08"
+      field: argument
+      type: u64
+      meaning: resolver argument or relaxed fast-path payload
+  tlsdesc_call:
+    input: R0 = address of TLSDESC entry
+    output: R0 = signed byte offset from GS0 TLS base
+    clobbers: caller-saved registers only
+  relaxation:
+    - TLSDESC GOTPCREL relocations materialize the address of the descriptor entry.
+    - >
+      The TLSDESC call relocation marks the descriptor call instruction so the
+      linker may replace the call sequence when relaxation is legal.
+    - >
+      The TLSDESC descriptor relocation initializes the two-word descriptor
+      entry used by the dynamic loader.
+code_models:
+  summary: >
+    Code models define placement and locality assumptions that assemblers,
+    linkers, and compilers may use when selecting address materialization,
+    displacement, GOT, PLT, and relocation forms. Bedrock 32-bit displacement
+    and direct control-transfer forms are signed, so direct 32-bit relative
+    references cover a -2 GiB to +2 GiB - 1 window.
+  models:
+    - name: low
+      placement: low static address space
+      direct_range: 0x00000000..0x7fffffff
+      code_references: direct signed 32-bit branch or call payloads
+      data_references: absolute or base-relative signed 32-bit payloads
+      got_plt: not required
+      default_relocations:
+        - R_BEDROCK_ABS32S
+        - R_BEDROCK_IMM32S
+        - R_BEDROCK_DISP32S
+        - R_BEDROCK_BRDISP32S
+        - R_BEDROCK_CALL32S
+      relaxation: may shrink direct branches, calls, or address materialization when the final target fits a shorter encoding.
+      rule: >
+        Static image model for absolute addresses that fit the nonnegative
+        signed 32-bit range. Signed 32-bit absolute, immediate, displacement,
+        branch, and call forms may directly name objects in this range.
+    - name: small
+      placement: local signed 32-bit relative window
+      direct_range: -2GiB..+2GiB-1 from the use site or selected base
+      code_references: direct signed 32-bit branch or call payloads
+      data_references: PC-relative or GOTPCREL signed 32-bit payloads
+      got_plt: within signed 32-bit relative range
+      default_relocations:
+        - R_BEDROCK_BRDISP32S
+        - R_BEDROCK_CALL32S
+        - R_BEDROCK_GOTPCREL32S
+        - R_BEDROCK_PLT32S
+        - R_BEDROCK_TLSDESC_GOTPCREL32S
+      relaxation: >
+        may shrink 32-bit relative forms to shorter encodings, or relax
+        GOT/TLSDESC sequences when the resolved symbol is local and in range.
+      rule: >
+        Position-independent local model where direct code, nearby data, GOT,
+        and PLT references fit signed 32-bit PC-relative, next-instruction
+        relative, or base-relative payloads.
+    - name: medium
+      placement: local code and GOT signed 32-bit window
+      direct_range: code, GOT, and PLT within -2 GiB..+2 GiB - 1
+      code_references: direct signed 32-bit branch or call payloads
+      data_references: GOT-resolved 64-bit address
+      got_plt: within signed 32-bit relative range
+      default_relocations:
+        - R_BEDROCK_BRDISP32S
+        - R_BEDROCK_CALL32S
+        - R_BEDROCK_GOTPCREL32S
+        - R_BEDROCK_GOT64
+        - R_BEDROCK_PLT32S
+        - R_BEDROCK_TLSDESC_GOTPCREL32S
+      relaxation: may relax GOT data references to direct 32-bit relative references when the final data object is in range.
+      rule: >
+        Code, GOT, and PLT references fit signed 32-bit relative payloads, but
+        data objects may be outside that range and are normally addressed
+        through GOT-resolved 64-bit addresses.
+    - name: high
+      placement: high static address space
+      direct_range: internal references within signed 32-bit displacement window
+      code_references: direct signed 32-bit branch or call payloads, or image-base relative addressing
+      data_references: PC-relative GOT or image-base relative when in range
+      got_plt: image-local or base-relative
+      default_relocations:
+        - R_BEDROCK_BRDISP32S
+        - R_BEDROCK_CALL32S
+        - R_BEDROCK_GOTPCREL32S
+        - R_BEDROCK_ABS64
+        - R_BEDROCK_DISP64
+      relaxation: >
+        may use compact internal references when the final reference is within
+        the signed 32-bit window; full-width or base-relative sequences remain
+        valid.
+      rule: >
+        Static high-address image model. The image is placed in a high virtual
+        address region, while internal code and data references are expected to
+        fit signed 32-bit displacements relative to the use site, GOT, or an
+        implementation-defined image base.
+    - name: large
+      placement: full 64-bit address space
+      direct_range: none
+      code_references: full-width address materialization or indirect control transfer
+      data_references: full-width address materialization
+      got_plt: full width
+      default_relocations:
+        - R_BEDROCK_ABS64
+        - R_BEDROCK_PCREL64
+        - R_BEDROCK_GOTPCREL64
+        - R_BEDROCK_PLT64
+        - R_BEDROCK_TLSDESC_GOTPCREL64
+      relaxation: may shrink full-width forms after final placement proves that a shorter form is in range.
+      rule: >
+        No placement assumption is made; full-width address materialization and
+        64-bit relocation forms are used by default.
+relocations:
+  expression_model:
+    canonical_form: symbol + addend
+    address_space: pre-segment virtual byte addresses unless a relocation explicitly names a TLS offset or descriptor
+    section_relative_allowed: true
+    absolute_allowed: true
+    pc_relative_base: P for address materialization; N for direct branch and call payloads
+    overflow_policy: error
+  expression_terms:
+    - name: S
+      meaning: Runtime byte address of the symbol named by the relocation after symbol resolution.
+    - name: A
+      meaning: Explicit addend stored in the ELF64 Rela entry.
+    - name: P
+      meaning: Runtime byte address of the relocation field being patched.
+    - name: N
+      meaning: Runtime byte address of the next instruction after the instruction being patched.
+    - name: SB
+      meaning: Runtime byte address of the beginning of the symbol's defining section.
+    - name: B
+      meaning: Runtime load base address of the loaded object that owns the relocation.
+    - name: GB
+      meaning: Runtime byte address of the global offset table base for the loaded object.
+    - name: GOT(S)
+      meaning: Runtime byte address of the GOT slot allocated for symbol S.
+    - name: PLT(S)
+      meaning: Runtime byte address of the PLT entry allocated for symbol S.
+    - name: TLS(S)
+      meaning: Byte offset of TLS symbol S from the ABI TLS base in GS0.
+    - name: TLSDESC(S)
+      meaning: Runtime byte address of the TLSDESC entry allocated for TLS symbol S.
+    - name: Resolver(X)
+      meaning: Runtime byte address returned by calling the resolver function at address X.
+  got_plt_model:
+    - The global offset table stores 64-bit addresses used by position-independent code and by dynamic symbol binding.
+    - GOT and PLT function addresses are near-call entry addresses in the ABI-visible linkage domain.
+    - A GOT relocation that names a symbol allocates or references one GOT slot for that symbol in the loaded object.
+    - The procedure linkage table contains executable entries used for external function calls through dynamic binding.
+    - A PLT relocation that names a function symbol targets the function's PLT entry instead of the final resolved function address.
+    - Dynamic GOT and PLT relocations are applied by the dynamic loader before control reaches code that depends on the resolved slot.
+  core_set:
+    - {type_id: 0, name: R_BEDROCK_NONE, width_bits: 0, unit: none, signed: false, calculation: none, use: no relocation}
+    - {type_id: 1, name: R_BEDROCK_ABS8, width_bits: 8, unit: byte, signed: false, calculation: S + A, use: absolute data or unsigned 8-bit payload}
+    - {type_id: 2, name: R_BEDROCK_ABS16, width_bits: 16, unit: byte, signed: false, calculation: S + A, use: absolute data or unsigned 16-bit payload}
+    - {type_id: 3, name: R_BEDROCK_ABS32S, width_bits: 32, unit: byte, signed: true, calculation: S + A, use: "compact absolute [abs32s] EA payload or signed 32-bit absolute data"}
+    - {type_id: 4, name: R_BEDROCK_ABS64, width_bits: 64, unit: byte, signed: false, calculation: S + A, use: "absolute pointer data or compact absolute [abs64] EA payload"}
+    - {type_id: 5, name: R_BEDROCK_IMM8S, width_bits: 8, unit: byte, signed: true, calculation: S + A, use: short packed imm8s or EA imm8s payload}
+    - {type_id: 6, name: R_BEDROCK_IMM16S, width_bits: 16, unit: byte, signed: true, calculation: S + A, use: signed 16-bit immediate payload}
+    - {type_id: 7, name: R_BEDROCK_IMM32S, width_bits: 32, unit: byte, signed: true, calculation: S + A, use: signed 32-bit immediate payload}
+    - {type_id: 8, name: R_BEDROCK_IMM64, width_bits: 64, unit: byte, signed: false, calculation: S + A, use: full-width immediate payload}
+    - {type_id: 9, name: R_BEDROCK_DISP8S, width_bits: 8, unit: byte, signed: true, calculation: S + A, use: signed 8-bit EA displacement payload}
+    - {type_id: 10, name: R_BEDROCK_DISP16S, width_bits: 16, unit: byte, signed: true, calculation: S + A, use: signed 16-bit EA displacement payload}
+    - {type_id: 11, name: R_BEDROCK_DISP32S, width_bits: 32, unit: byte, signed: true, calculation: S + A, use: signed 32-bit EA displacement payload}
+    - {type_id: 12, name: R_BEDROCK_DISP64, width_bits: 64, unit: byte, signed: false, calculation: S + A, use: unsigned 64-bit EA displacement payload}
+    - {type_id: 13, name: R_BEDROCK_PCREL8S, width_bits: 8, unit: byte, signed: true, calculation: S + A - P, use: signed 8-bit PC-relative address materialization payload}
+    - {type_id: 14, name: R_BEDROCK_PCREL16S, width_bits: 16, unit: byte, signed: true, calculation: S + A - P, use: signed 16-bit PC-relative address materialization payload}
+    - {type_id: 15, name: R_BEDROCK_PCREL32S, width_bits: 32, unit: byte, signed: true, calculation: S + A - P, use: signed 32-bit PC-relative address materialization payload}
+    - {type_id: 16, name: R_BEDROCK_PCREL64, width_bits: 64, unit: byte, signed: true, calculation: S + A - P, use: full-width PC-relative address materialization payload}
+    - {type_id: 17, name: R_BEDROCK_BRDISP8S, width_bits: 8, unit: byte, signed: true, calculation: S + A - N, use: short JMP/Jcc imm8s direct branch payload}
+    - {type_id: 18, name: R_BEDROCK_BRDISP16S, width_bits: 16, unit: byte, signed: true, calculation: S + A - N, use: medium JMP/Jcc imm16s direct branch payload}
+    - {type_id: 19, name: R_BEDROCK_BRDISP32S, width_bits: 32, unit: byte, signed: true, calculation: S + A - N, use: medium JMP/Jcc imm32s direct branch payload}
+    - {type_id: 20, name: R_BEDROCK_CALL16S, width_bits: 16, unit: byte, signed: true, calculation: S + A - N, use: medium CALL/CALLcc imm16s direct call payload}
+    - {type_id: 21, name: R_BEDROCK_CALL32S, width_bits: 32, unit: byte, signed: true, calculation: S + A - N, use: medium CALL/CALLcc imm32s direct call payload}
+    - {type_id: 22, name: R_BEDROCK_SECTION_REL32, width_bits: 32, unit: byte, signed: false, calculation: S + A - SB, use: 32-bit offset from the start of the defining section}
+    - {type_id: 23, name: R_BEDROCK_SECTION_REL64, width_bits: 64, unit: byte, signed: false, calculation: S + A - SB, use: 64-bit offset from the start of the defining section}
+    - {type_id: 24, name: R_BEDROCK_GOT64, width_bits: 64, unit: byte, signed: false, calculation: GOT(S) + A, use: absolute address of a GOT slot}
+    - {type_id: 25, name: R_BEDROCK_GOTPCREL32S, width_bits: 32, unit: byte, signed: true, calculation: GOT(S) + A - P, use: signed 32-bit PC-relative address of a GOT slot}
+    - {type_id: 26, name: R_BEDROCK_GOTPCREL64, width_bits: 64, unit: byte, signed: true, calculation: GOT(S) + A - P, use: full-width PC-relative address of a GOT slot}
+    - {type_id: 27, name: R_BEDROCK_GOTOFF32S, width_bits: 32, unit: byte, signed: true, calculation: S + A - GB, use: signed 32-bit symbol offset from GOT base}
+    - {type_id: 28, name: R_BEDROCK_GOTOFF64, width_bits: 64, unit: byte, signed: true, calculation: S + A - GB, use: full-width symbol offset from GOT base}
+    - {type_id: 29, name: R_BEDROCK_GOT_BASE_PCREL32S, width_bits: 32, unit: byte, signed: true, calculation: GB + A - P, use: signed 32-bit PC-relative materialization of GOT base}
+    - {type_id: 30, name: R_BEDROCK_GOT_BASE_PCREL64, width_bits: 64, unit: byte, signed: true, calculation: GB + A - P, use: full-width PC-relative materialization of GOT base}
+    - {type_id: 31, name: R_BEDROCK_PLT16S, width_bits: 16, unit: byte, signed: true, calculation: PLT(S) + A - N, use: signed 16-bit direct call or branch to PLT entry}
+    - {type_id: 32, name: R_BEDROCK_PLT32S, width_bits: 32, unit: byte, signed: true, calculation: PLT(S) + A - N, use: signed 32-bit direct call or branch to PLT entry}
+    - {type_id: 33, name: R_BEDROCK_PLT64, width_bits: 64, unit: byte, signed: false, calculation: PLT(S) + A, use: absolute address of a PLT entry}
+    - {type_id: 34, name: R_BEDROCK_RELATIVE, width_bits: 64, unit: byte, signed: false, calculation: B + A, use: dynamic load-base adjustment}
+    - {type_id: 35, name: R_BEDROCK_GLOB_DAT, width_bits: 64, unit: byte, signed: false, calculation: S + A, use: dynamic GOT data symbol resolution}
+    - {type_id: 36, name: R_BEDROCK_JUMP_SLOT, width_bits: 64, unit: byte, signed: false, calculation: S + A, use: dynamic PLT function symbol resolution}
+    - {type_id: 37, name: R_BEDROCK_COPY, width_bits: variable, unit: byte, signed: instruction_defined, calculation: copy symbol size bytes, use: dynamic executable copy relocation}
+    - {type_id: 38, name: R_BEDROCK_IRELATIVE, width_bits: 64, unit: byte, signed: false, calculation: Resolver(B + A), use: dynamic indirect resolver relocation}
+    - {type_id: 39, name: R_BEDROCK_TLS_OFFSET32S, width_bits: 32, unit: byte, signed: true, calculation: TLS(S) + A, use: signed 32-bit GS0-relative TLS offset}
+    - {type_id: 40, name: R_BEDROCK_TLS_OFFSET64, width_bits: 64, unit: byte, signed: true, calculation: TLS(S) + A, use: full-width GS0-relative TLS offset}
+    - {type_id: 41, name: R_BEDROCK_TLSDESC_GOTPCREL32S, width_bits: 32, unit: byte, signed: true, calculation: TLSDESC(S) + A - P, use: signed 32-bit PC-relative address of TLSDESC entry}
+    - {type_id: 42, name: R_BEDROCK_TLSDESC_GOTPCREL64, width_bits: 64, unit: byte, signed: true, calculation: TLSDESC(S) + A - P, use: full-width PC-relative address of TLSDESC entry}
+    - {type_id: 43, name: R_BEDROCK_TLSDESC_CALL, width_bits: 0, unit: none, signed: false, calculation: none, use: marks a TLSDESC resolver call for linker relaxation}
+    - {type_id: 44, name: R_BEDROCK_TLSDESC, width_bits: 128, unit: byte, signed: false, calculation: tlsdesc_init, use: dynamic loader writes resolver or function and argument words for TLS symbol}
+assembler_contract:
+  default_abi: bedrock-elf
+  strict_mode:
+    - Pure ISA syntax is accepted.
+    - Ambiguous symbolic operands require an explicit relocation annotation.
+    - Noncanonical encodings are rejected.
+  relaxation:
+    - Branch and call payload widths may be selected automatically when the target is known.
+    - Address materialization may shrink from 64-bit to 32-bit, 16-bit, or 8-bit payloads when the relocation result fits.
+    - Overlong encodings are emitted only when explicitly requested.

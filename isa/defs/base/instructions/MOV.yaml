@@ -1,0 +1,66 @@
+mnemonic: MOV
+doc:
+  title: Move
+  summary: Copies the source operand to the destination operand.
+  instruction_family: data_movement
+  instruction_class: data_movement
+behavior:
+  group: data_movement
+  inputs:
+  - src
+  output: dst
+  operation:
+  - dst_v = src_v;
+  repeat_observed_value: src_value
+  repflags: flags_logic_observed_value
+attributes:
+  privilege: unprivileged
+  streaming_candidate: true
+forms:
+  dst_ea_set: store_destination
+  compact_forms:
+  - operands:
+    - name: src
+      type: EA
+    - name: dst
+      type: Rn
+    size: LQ
+  - operands:
+    - name: src
+      type: Rn
+    - name: dst
+      type: EA
+    size: LQ
+  - operands:
+    - name: src
+      type: imm64
+    - name: dst
+      type: Rn
+    size: Q
+  extended_forms:
+  - operands:
+    - name: src
+      type: EA
+    - name: dst
+      type: EA
+    size: BWLQ
+    compact: false
+    constraint: memory_memory
+  - operands:
+    - name: src
+      type: EA
+    - name: dst
+      type: Rn
+    profile: EA_TO_D_WIDE
+    size: BWLQ
+    compact: false
+  - operands:
+    - name: src
+      type: Rn
+    - name: dst
+      type: EA
+    profile: D_TO_EA_WIDE
+    size: BWLQ
+    compact: false
+definition_status:
+  allocation: 'external: isa/alloc'

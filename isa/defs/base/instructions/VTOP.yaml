@@ -1,0 +1,27 @@
+mnemonic: VTOP
+doc:
+  title: Virtual To Physical Query
+  summary: Perform page walk and return translated physical address/status.
+  instruction_family: tlb_and_context
+  instruction_class: system
+behavior:
+  group: tlb_context
+  inputs:
+  - src
+  output: none
+  operation:
+  - arch_page_translate(src_v);
+attributes:
+  privilege: supervisor
+  flags: operation-defined status result
+forms:
+  src_ea_set: pure_address_calculation
+  require_address_value: true
+  operands:
+  - name: src
+    type: linear_or_EA
+  - name: outputs
+    type: outputs
+  performs_page_walk: true
+definition_status:
+  allocation: 'external: isa/alloc'

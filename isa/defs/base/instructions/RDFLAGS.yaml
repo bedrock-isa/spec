@@ -1,0 +1,29 @@
+mnemonic: RDFLAGS
+doc:
+  title: Read Flags
+  summary: Read the integer condition-code flags into an Rn register.
+  description: RDFLAGS reads the architectural 16-bit FLAGS register, zero-extends it to 64 bits, and
+    writes the result to the destination Rn register. FLAGS is not part of the S segment-register operand
+    class.
+  instruction_family: system_registers
+  instruction_class: system
+behavior:
+  group: system_registers
+  output: dst
+  operation:
+  - dst_v = zext(ZF) << 3;
+  - tmp_v = zext(NF) << 2;
+  - dst_v = dst_v | tmp_v;
+  - tmp_v = zext(CF) << 1;
+  - dst_v = dst_v | tmp_v;
+  - dst_v = dst_v | zext(VF);
+attributes:
+  privilege: unprivileged
+  flags: unchanged
+forms:
+  operands:
+  - name: dst
+    type: Rn
+  size: W
+definition_status:
+  allocation: 'external: isa/alloc'

@@ -1,0 +1,28 @@
+mnemonic: DIVS
+doc:
+  title: Signed Divide
+  summary: Performs the signed divide operation.
+  instruction_family: integer_mul_div
+  instruction_class: integer
+behavior:
+  group: multiply_divide
+  inputs:
+  - src
+  input_output: dst
+  operation:
+  - dst_v = arch_signed_divide(dst_v, src_v, size_v);
+attributes:
+  privilege: unprivileged
+forms:
+  operands:
+  - - name: src
+      type: EA
+    - name: dst
+      type: Rn
+  - - name: src
+      type: Rn
+    - name: dst
+      type: EA
+  size: BWLQ
+definition_status:
+  allocation: 'external: isa/alloc'
