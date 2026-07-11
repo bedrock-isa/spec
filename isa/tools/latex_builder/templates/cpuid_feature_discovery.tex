@@ -14,7 +14,7 @@ rename files, reorder buffers, or other implementation-private structures.
 A query selector identifies a discovery class, leaf, and optional result index. The selector is a Q-sized value held
 in the selected Rn register.
 
-CPUID is unprivileged and non-serializing in the current compatibility rules. CPUID results are stable after reset
+CPUID is unprivileged and non-serializing under the base compatibility rules. CPUID results are stable after reset
 unless a future feature explicitly defines a mutable result.
 
 @SELECTOR_TABLE@

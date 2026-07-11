@@ -6,16 +6,18 @@ operation_semantics:
       dot_suffix_reserved_for: instruction_size
   notation:
     operand_read: read operand value after applying its addressing mode and size
-    operand_write: write result back to destination using operand size
+    operand_write: write selected-size result to destination; sub-Q Rn writes preserve upper bits unless overridden
     EA_address: compute effective address without reading memory unless operation says read
     selector: selector operands may name an Rn register or an encoded immediate selector
-    overlong: extra trailing instruction words are ignored as padding payload
+    overlong: extra trailing instruction payload bytes are ignored as padding payload
     flags_ZNCV: integer flags Z, N, C, V
+    flags_mask4: 4-bit FLAGS mask with bit 3 selecting Z, bit 2 selecting N, bit 1 selecting C, and bit 0 selecting V
   defaults:
     overlong_encoding: allowed
     undersized_encoding: length/decode fault
     memory_memory: operation_opt_in
     unmentioned_flags: unchanged
+    integer_flags: unchanged unless an instruction explicitly defines a FLAGS write
     operand_evaluation_order: decode order
   group_order:
   - core_control
@@ -44,6 +46,7 @@ operation_semantics:
     core_control:
       flags: unchanged
     integer_alu:
+      flags: unchanged
       memory: at_most_one_memory_operand
     integer_compare:
       memory: memory_memory_explicit_form
@@ -51,7 +54,7 @@ operation_semantics:
       flags: update Z/N/C/V
       memory: at_most_one_memory_operand
     integer_minmax:
-      flags: may update Z/N
+      flags: unchanged
       memory: at_most_one_memory_operand
     data_movement:
       flags: unchanged
@@ -62,7 +65,8 @@ operation_semantics:
     register_set_transfer:
       bitmap: bits 0..15 select R0..R15
       flags: unchanged
-    integer_unary: {}
+    integer_unary:
+      flags: unchanged
     integer_extend:
       source_size_suffix: instruction size suffix
       source_sizes_by_destination:
@@ -80,12 +84,12 @@ operation_semantics:
     bit_reverse:
       flags: unchanged
     shifts_rotates:
-      flags:
-        mode: per_shift
+      flags: unchanged
     bit_ops:
       flags: set Z when the old bit was zero; preserve N/C/V
     bit_counts: {}
     multiply_divide:
+      flags: unchanged
       traps:
       - divide_by_zero
       - signed overflow trap when defined
@@ -109,40 +113,3 @@ operation_semantics:
       privilege: supervisor
     cache:
       flags: unchanged
-  prefix_availability:
-    NOSPEC:
-      table_code: NS
-      scope: all_instructions
-    SATURATE:
-      table_code: SAT
-    NONTEMPORAL:
-      table_code: NT
-      derived_from: memory_operand
-    ADDRESS_UPDATE:
-      table_code: UPD
-      derived_from: update-eligible EA
-  repeat_prefixes:
-    REPcc:
-      syntax: REPcc Rn, <instruction>
-      alias: REP = REPT
-      condition_suffix: condition suffix is concatenated into the mnemonic
-      condition_set: full condition-code set
-      counter: Rn
-      counter_direction: signed counter moves toward zero
-      counter_encoding:
-        interpretation: signed two's-complement
-        value_bits: 63..0
-        zero_rule: zero counter performs no iteration
-        index_value: architectural counter value before iteration update
-        update_after_condition_true_iteration: positive counters decrement and negative counters increment
-          toward zero
-        condition_false_iteration_counter_rule: counter is not updated
-      completion_rule: counter is zero or the REP condition is false
-      fault_restart_rule: remaining signed count is preserved
-      condition_source: REPFLAGS from the iteration observed value
-      nested_repeat_prefixes: repeat prefixes do not nest
-      commit_rule: a condition-false terminating iteration commits the body and leaves the counter unchanged
-      architectural_flags: body instruction rules apply to the last completed iteration
-      indexed_ea_counter_use:
-        allowed: true
-        counter_value: architectural signed counter value before iteration update

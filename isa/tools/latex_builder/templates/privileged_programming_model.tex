@@ -14,8 +14,8 @@ commit.
 
 \subsection{Privilege State}
 STATUS.PM selects the current privilege level. In user mode, current-domain and user-domain memory accesses are
-identical. In supervisor mode, explicit \texttt{U:} and \texttt{C:} operand annotations determine whether the
-generated prefix asks for user-domain access.
+identical. In supervisor mode, ordinary memory operands use current-domain access. Checked user-domain access is
+expressed only by the supervisor-only \texttt{MOVUC}, \texttt{MOVCU}, and \texttt{MOVUU} instructions.
 
 @PRIVILEGE_STATE_TABLE@
 
@@ -36,6 +36,6 @@ Interrupt delivery saves the interrupted PC, CS, FLAGS, and STATUS state needed 
 path validates the target vector and control state before making the supervisor state visible.
 
 Writes to control state that would create an invalid translation, privilege, or interrupt configuration raise the
-architecturally named fault and do not partially update the control register.
+architecturally named fault without committing a partial control-register update.
 
 @PRIVILEGED_EXECUTION_TABLE@

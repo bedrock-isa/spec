@@ -11,13 +11,15 @@ behavior:
   - dst_v = 1;
 attributes:
   privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: true
+    repg: true
 forms:
-  dst_ea_set: store_destination
   operands:
   - name: dst
-    type: EA
-  size: BWLQ
+    type: Rn
+  size: Q
   writes: 1
 definition_status:
   allocation: 'external: isa/alloc'
-

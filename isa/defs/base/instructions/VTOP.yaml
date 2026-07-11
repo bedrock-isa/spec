@@ -7,21 +7,19 @@ doc:
 behavior:
   group: tlb_context
   inputs:
-  - src
-  output: none
+  - virt
+  output: phys
   operation:
-  - arch_page_translate(src_v);
+  - phys_v = arch_page_translate(virt_v);
 attributes:
   privilege: supervisor
   flags: operation-defined status result
 forms:
-  src_ea_set: pure_address_calculation
-  require_address_value: true
   operands:
-  - name: src
-    type: linear_or_EA
-  - name: outputs
-    type: outputs
+  - name: virt
+    type: Rn
+  - name: phys
+    type: Rn
   performs_page_walk: true
 definition_status:
   allocation: 'external: isa/alloc'

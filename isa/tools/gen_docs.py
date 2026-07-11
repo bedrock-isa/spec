@@ -26,6 +26,7 @@ from validate_alloc import (  # noqa: E402
     namespace_patterns,
     validate_file,
 )
+from alloc_notes import allocation_form_text, allocation_note_text  # noqa: E402
 from validate_isa import allocation_mnemonic  # noqa: E402
 from latex_builder.common import (  # noqa: E402
     LatexDocumentEnd,
@@ -34,6 +35,7 @@ from latex_builder.common import (  # noqa: E402
     LatexTitlePage,
     LatexTopSection,
     latex_longtable,
+    latex_tabular,
     render_latex_template,
     tex_code,
     tex_escape as latex_escape,
@@ -46,9 +48,7 @@ ALLOC_ROOT = ROOT / "isa" / "alloc"
 DEFAULT_OUTPUT = ROOT / "build" / "isa_reference.md"
 OLD_LATEX_REFERENCE = ROOT / "old" / "build" / "latex" / "isa_reference" / "isa_reference.tex"
 LEGACY_REFERENCE_SECTION_ALLOWLIST = {
-    "Instruction Execution Model",
     "Memory Address Translation",
-    "Memory Model",
 }
 LEGACY_REFERENCE_REJECT_PATTERNS = [
     r"\bD[nN](?:\b|\()",
@@ -109,7 +109,6 @@ class AllocationEntry:
     cls: str
     payload_bits: int
     entry_id: str
-    status: str
     bits: str
     text: str
     assigned: int
@@ -119,7 +118,7 @@ class AllocationEntry:
 
     @property
     def mnemonic(self) -> str | None:
-        return allocation_mnemonic(self.text)
+        return allocation_mnemonic(allocation_form_text(self.text))
 
 
 @dataclass(frozen=True)
@@ -162,6 +161,63 @@ def compact_clause_text(value: Any) -> str:
     if isinstance(value, list):
         return "; ".join(compact_text(item).rstrip(".") for item in value if compact_text(item)) + "."
     return compact_text(value)
+
+
+def display_text(value: Any) -> str:
+    """Render schema values as reference prose instead of raw YAML tokens."""
+    if isinstance(value, bool):
+        return "yes" if value else "no"
+    text = compact_text(value)
+    mapping = {
+        "at_most_one_memory_operand": "at most one memory operand",
+        "false for every context": "not repeatable unless explicitly marked",
+        "repgf_candidate": "REPGF candidate",
+        "repeat_observed_value": "repeat-observed value",
+        "repeat_flags": "repeat flags",
+        "policy_controlled": "policy-controlled",
+        "policy controlled": "policy-controlled",
+        "memory_memory": "memory-memory form",
+        "src_current_memory_register_or_immediate_dst_user_memory": "source may be current-domain memory, register, or immediate; destination memory uses the user domain",
+        "src_user_memory_dst_current_memory_or_register": "source memory uses the user domain; destination may be current-domain memory or register",
+        "src_user_memory_dst_user_memory": "source and destination memory both use the user domain",
+        "extra trailing payload bytes are padding payload": "extra trailing payload bytes are padding",
+    }
+    return mapping.get(text, text)
+
+
+def privilege_text(value: Any, default: str = "unprivileged") -> str:
+    """Render instruction privilege attributes in reader-facing form."""
+    if isinstance(value, dict):
+        base = compact_text(value.get("default", default)) or default
+        qualifiers: list[str] = []
+        if value.get("policy_controlled"):
+            qualifiers.append("policy-controlled")
+        for key, item in value.items():
+            if key in {"default", "policy_controlled"}:
+                continue
+            item_text = display_text(item)
+            if item_text:
+                qualifiers.append(f"{display_text(key)}: {item_text}")
+        if qualifiers:
+            return f"{base}, " + ", ".join(qualifiers)
+        return base
+    return display_text(value) or default
+
+
+def label_text(value: Any) -> str:
+    text = display_text(value)
+    return text.replace("_", " ")
+
+
+def instruction_set_text(value: Any) -> str:
+    names = {
+        "base": "base",
+        "virtualization_acceleration": "virtualization acceleration",
+        "fpu": "floating-point",
+        "fpu_transcendental": "floating-point transcendental",
+    }
+    text = compact_text(value)
+    return names.get(text, label_text(text))
 
 
 def bits_text(value: Any, width: int | None = None) -> str:
@@ -223,7 +279,6 @@ def load_allocation_class(path: Path) -> AllocationClass:
                 cls=cls,
                 payload_bits=payload_bits,
                 entry_id=str(raw["id"]),
-                status=str(raw["status"]),
                 bits=compact_bits(str(raw["bits"])),
                 text=str(raw.get("text", "")),
                 assigned=len(claims),
@@ -244,7 +299,7 @@ def load_allocation_class(path: Path) -> AllocationClass:
 
 
 def load_allocations(alloc_root: Path) -> list[AllocationClass]:
-    order = {"short": 0, "medium": 1, "long": 2, "extralong": 3}
+    order = {"extrashort": 0, "short": 1, "medium": 2, "long": 3, "extralong": 4}
     classes = [load_allocation_class(path) for path in sorted(alloc_root.glob("*.yaml"))]
     return sorted(classes, key=lambda item: (order.get(item.cls, 99), item.cls))
 
@@ -254,7 +309,6 @@ def load_metadata(defs_root: Path) -> dict[str, Any]:
         "registers",
         "segments",
         "conditions",
-        "prefixes",
         "ea",
         "operands",
         "semantics",
@@ -275,8 +329,6 @@ def load_model(defs_root: Path, alloc_root: Path) -> IsaModel:
     allocated_by_mnemonic: dict[str, list[AllocationEntry]] = defaultdict(list)
     for cls in allocation_classes:
         for entry in cls.entries:
-            if entry.status != "allocated":
-                continue
             mnemonic = entry.mnemonic
             if mnemonic:
                 allocated_by_mnemonic[mnemonic].append(entry)
@@ -348,9 +400,9 @@ def code_block(text: str, lang: str = "text") -> str:
 
 
 def md_paragraphs(title: str, paragraphs: list[str], *, level: int = 2) -> str:
-    prefix = "#" * level
+    heading_marks = "#" * level
     body = "\n\n".join(paragraph.strip() for paragraph in paragraphs if paragraph.strip())
-    return f"{prefix} {title}\n\n{body}\n" if body else f"{prefix} {title}\n"
+    return f"{heading_marks} {title}\n\n{body}\n" if body else f"{heading_marks} {title}\n"
 
 
 def md_bullets(items: list[str]) -> str:
@@ -406,6 +458,38 @@ def operand_list_text(value: Any) -> str:
     return compact_text(value) or "-"
 
 
+def form_attribute_text(key: str, value: Any) -> str:
+    if key == "compact":
+        return "compact form" if value else "extended form only"
+    if key == "flags":
+        return "FLAGS " + display_text(value) if not isinstance(value, dict) else flag_summary(value)
+    if key == "profile":
+        return f"profile: {display_text(value)}"
+    if key == "constraint":
+        return f"constraint: {display_text(value)}"
+    if key == "result":
+        return f"result: {display_text(value)}"
+    return f"{label_text(key)}: {display_text(value)}"
+
+
+def form_size_text(value: Any) -> str:
+    text = compact_text(value)
+    if not text or text == "-":
+        return "-"
+    mapping = {
+        "BWLQ": "B/W/L/Q",
+        "BWL": "B/W/L",
+        "BW": "B/W",
+        "WLQ": "W/L/Q",
+        "WL": "W/L",
+        "LQ": "L/Q",
+        "S_D": "S/D",
+        "implicit_Q": "Q",
+        "fixed: Q": "Q",
+    }
+    return mapping.get(text, text)
+
+
 def form_rows(instruction: InstructionDef) -> list[list[str]]:
     forms = instruction.forms
     rows: list[list[str]] = []
@@ -415,12 +499,12 @@ def form_rows(instruction: InstructionDef) -> list[list[str]]:
         attrs = []
         for key in ("profile", "constraint", "result", "flags", "compact"):
             if key in form:
-                attrs.append(f"{key}={compact_text(form[key])}")
+                attrs.append(form_attribute_text(key, form[key]))
         rows.append(
             [
                 kind,
                 operand_list_text(operands),
-                compact_text(form.get("size", forms.get("size", "-"))) or "-",
+                form_size_text(form.get("size", forms.get("size", "-"))),
                 "; ".join(attrs) or "-",
             ]
         )
@@ -434,9 +518,9 @@ def form_rows(instruction: InstructionDef) -> list[list[str]]:
     if operands is not None:
         if isinstance(operands, list) and operands and all(isinstance(item, list) for item in operands):
             for item in operands:
-                rows.append(["form", operand_list_text(item), compact_text(forms.get("size", "-")) or "-", "-"])
+                rows.append(["form", operand_list_text(item), form_size_text(forms.get("size", "-")), "-"])
         else:
-            rows.append(["form", operand_list_text(operands), compact_text(forms.get("size", "-")) or "-", "-"])
+            rows.append(["form", operand_list_text(operands), form_size_text(forms.get("size", "-")), "-"])
 
     return rows
 
@@ -460,19 +544,19 @@ def iter_instruction_forms(instruction: InstructionDef) -> list[tuple[str, dict[
 
 def instruction_form_count(instruction: InstructionDef, model: IsaModel) -> int:
     allocated_forms = {
-        encoding_text_parts(entry.text)[0]
+        allocation_form_text(entry.text)
         for entry in model.allocated_by_mnemonic.get(instruction.mnemonic, [])
-        if encoding_text_parts(entry.text)[0]
+        if allocation_form_text(entry.text)
     }
     return max(len(allocated_forms), len(iter_instruction_forms(instruction)))
 
 
 def instruction_family(instruction: InstructionDef) -> str:
-    return compact_text(instruction.doc.get("instruction_family", "-")) or "-"
+    return label_text(instruction.doc.get("instruction_family", "-")) or "-"
 
 
 def instruction_class(instruction: InstructionDef) -> str:
-    return compact_text(instruction.doc.get("instruction_class", "-")) or "-"
+    return label_text(instruction.doc.get("instruction_class", "-")) or "-"
 
 
 def allocation_status(instruction: InstructionDef, model: IsaModel) -> str:
@@ -480,18 +564,6 @@ def allocation_status(instruction: InstructionDef, model: IsaModel) -> str:
     if not entries:
         return "-"
     return ", ".join(sorted({entry.cls for entry in entries}))
-
-
-def encoding_text_parts(text: str) -> tuple[str, str]:
-    parts = [part.strip() for part in text.split(";")]
-    form = parts[0] if parts else ""
-    notes = []
-    for note in parts[1:]:
-        normalized = note.lower()
-        if "reclaim" in normalized or "dst !imm" in normalized:
-            continue
-        notes.append(note)
-    return form, "; ".join(notes) or "-"
 
 
 def instruction_set_groups(instructions: list[InstructionDef]) -> list[tuple[str, list[InstructionDef]]]:
@@ -563,16 +635,16 @@ def terminology_groups(model: IsaModel) -> list[dict[str, Any]]:
     return [group for group in data.get("groups", []) or [] if isinstance(group, dict)]
 
 
-def flatten_rule_rows(value: Any, prefix: str = "") -> list[list[str]]:
+def flatten_rule_rows(value: Any, path_key: str = "") -> list[list[str]]:
     rows: list[list[str]] = []
     if isinstance(value, dict):
         for key, body in value.items():
-            name = f"{prefix}.{key}" if prefix else str(key)
+            name = f"{path_key}.{key}" if path_key else str(key)
             rows.extend(flatten_rule_rows(body, name))
     elif isinstance(value, list):
-        rows.append([prefix, ", ".join(compact_text(item) for item in value)])
+        rows.append([path_key, ", ".join(compact_text(item) for item in value)])
     else:
-        rows.append([prefix, compact_text(value)])
+        rows.append([path_key, compact_text(value)])
     return rows
 
 
@@ -595,9 +667,6 @@ def compatibility_rows(model: IsaModel) -> list[list[str]]:
         "instruction_encoding_faults.reserved_effective_address_form.exception": "Reserved EA form",
         "instruction_encoding_faults.unsupported_optional_instruction_group.exception": "Unavailable optional group",
         "instruction_encoding_faults.extension_unavailable_exception.defined": "Extension-unavailable fault",
-        "prefix_values.unassigned.exception": "Unassigned prefix, exception",
-        "prefix_values.unassigned.behavior": "Unassigned prefix, behavior",
-        "prefix_values.unassigned.reserved_for": "Unassigned prefix, reservation",
         "canonical_encodings.assembler_default": "Assembler default",
         "canonical_encodings.disassembler_default": "Disassembler default",
         "canonical_encodings.noncanonical_default.exception": "Noncanonical default",
@@ -609,7 +678,7 @@ def compatibility_rows(model: IsaModel) -> list[list[str]]:
     }
     rows = []
     for key, value in flatten_rule_rows(data):
-        rows.append([label_map.get(key, key.replace("_", " ").replace(".", ", ")), value])
+        rows.append([label_map.get(key, key.replace("_", " ").replace(".", ", ")), policy_value_text(value)])
     return rows
 
 
@@ -623,12 +692,14 @@ def policy_value_text(value: Any) -> str:
         "zero": "zero",
         "must_be_zero": "must be zero",
         "ignored": "ignored",
+        "ignore": "ignore",
         "allowed": "allowed",
         "none": "none",
         "no_architectural_effect": "no architectural effect",
-        "future_prefix_definition": "future prefix definition",
         "canonical": "canonical",
         "unprivileged": "unprivileged",
+        "True": "yes",
+        "False": "no",
     }
     if isinstance(value, bool):
         return "yes" if value else "no"
@@ -646,14 +717,24 @@ def compat_get(data: dict[str, Any], *keys: str, default: Any = "-") -> Any:
 
 def size_decoding_rows() -> list[list[Any]]:
     rows: list[list[Any]] = [
-        [0, 0, "x", "x", "x", "x", 2],
-        [1, 0, "x", "x", "x", "x", 4],
+        ["0xxxxxxx", "-", 1],
+        ["10xxxxxx", "xxxxxxxx", 2],
     ]
-    for p in (0, 1):
-        for length in range(16):
-            bits = f"{length:04b}"
-            rows.append([p, 1, bits[0], bits[1], bits[2], bits[3], 2 + (2 if p else 0) + length + 1])
+    for length in range(16):
+        rows.append([f"11{length:04b}oo", "bbbbxxxx", 3 + length])
     return rows
+
+
+def opcode_length_rows() -> list[list[Any]]:
+    return [
+        ["0xxxxx", "medium", 3, "any extended instruction length"],
+        ["10xxxx", "medium", 3, "any extended instruction length"],
+        ["110xxx", "medium", 3, "any extended instruction length"],
+        ["1110xx", "medium", 3, "any extended instruction length"],
+        ["11110x", "long", 4, "instruction length must be at least 4 bytes"],
+        ["111110", "long", 4, "instruction length must be at least 4 bytes"],
+        ["111111", "extralong", 5, "instruction length must be at least 5 bytes"],
+    ]
 
 
 def instruction_family_rows(instructions: list[InstructionDef]) -> list[list[Any]]:
@@ -665,10 +746,11 @@ def instruction_family_rows(instructions: list[InstructionDef]) -> list[list[Any
 
 def encoding_class_rows(model: IsaModel) -> list[list[Any]]:
     selectors = {
-        "short": "X=0; payload is byte0[5:0] followed by byte1[7:0]",
-        "medium": "X=1; 18-bit extended payload",
-        "long": "extended payload selects the long escape range",
-        "extralong": "extended payload selects the extralong escape range",
+        "extrashort": "byte0[7]=0; payload is byte0[6:0]",
+        "short": "byte0[7:6]=10; payload is byte0[5:0] followed by byte1[7:0]",
+        "medium": "byte0[7:6]=11 and opcode selector is 0xxxxx, 10xxxx, 110xxx, or 1110xx",
+        "long": "byte0[7:6]=11 and opcode selector is 11110x or 111110",
+        "extralong": "byte0[7:6]=11 and opcode selector is 111111",
     }
     return [
         [
@@ -687,7 +769,7 @@ def render_markdown(model: IsaModel, only_allocated: bool = False) -> str:
         if not only_allocated or item.mnemonic in model.allocated_by_mnemonic
     ]
     parts = [
-        "# ISA Reference Draft\n",
+        "# ISA Reference\n",
         render_architecture_overview_md(model, instructions),
         render_terminology_md(model),
         render_compatibility_md(model),
@@ -697,7 +779,6 @@ def render_markdown(model: IsaModel, only_allocated: bool = False) -> str:
         render_segments_md(model),
         render_conditions_md(model),
         render_condition_computation_md(model),
-        render_prefixes_md(model),
         render_ea_md(model),
         render_execution_model_md(model),
         render_streaming_model_md(model),
@@ -729,22 +810,20 @@ def render_architecture_overview_md(model: IsaModel, instructions: list[Instruct
         "Overview",
         [
             "Bedrock defines a bounded, byte-addressed CISC instruction set with explicit instruction lengths, compact hot-path register forms, and selected register-memory and memory-memory forms.",
-            "The rewrite uses a unified 16-entry Rn integer register file. SP and PC are special architectural registers outside the Rn namespace, with SP-relative addressing tied to SS and PC-relative addressing tied to CS.",
-            "The opcode space is split into short, medium, long, and extralong payload classes. The first instruction byte identifies whether a prefix is present, whether the instruction uses the extended length format, and the high length/payload fields.",
+            "Bedrock uses a unified 16-entry Rn integer register file. SP and PC are special architectural registers outside the Rn namespace, with SP-relative addressing tied to SS and PC-relative addressing tied to CS.",
+            "The reference is organized around programmer-visible state, operand formation, execution semantics, and instruction behavior. Byte-level instruction framing is specified separately in the Instruction Header Formats chapter.",
         ],
     )
     body += "\n### Architectural Profile\n\n"
     body += md_bullets(
         [
-            "Two-byte base instruction header; byte 0 bit 7 is the prefix-present bit and byte 0 bit 6 is the extended-format bit.",
-            "Byte-addressed PC; instructions begin on 16-bit boundaries.",
-            "Instruction size is determined from the first two bytes before operand decoding.",
-            "One optional 16-bit prefix word supplies two independent 8-bit prefix slots.",
-            "Instruction length ranges from 2 to 20 bytes, including any prefix word.",
+            "The PC names a byte in the instruction stream; sequential execution advances it by the decoded instruction length.",
+            "Instruction length is explicit and bounded; the base profile defines lengths from 1 to 18 bytes.",
             "Four integer operation sizes: B, W, L, and Q.",
-            "Seven-bit compact EA field, with EXT0 for explicit segments, indexed forms, zero-base forms, SP/PC indexed forms, and auto-update forms.",
+            "The effective-address model covers register, memory, immediate, absolute, segment-qualified, indexed, and auto-update operands.",
             "Segment pre-translation precedes optional page-table translation.",
-            "REPcc and REPG expose scalar repeated execution while leaving internal streaming width implementation-defined.",
+            "User and supervisor modes share the instruction set, with privileged instructions and checked user-access moves defining supervisor-only behavior.",
+            "REP, REPcc, and REPG expose scalar repeated execution while leaving internal streaming width implementation-defined.",
         ]
     )
     return body
@@ -765,8 +844,8 @@ def render_terminology_md(model: IsaModel) -> str:
 
 def render_compatibility_md(model: IsaModel) -> str:
     paragraphs = [
-        "Reserved and unallocated encodings are architecturally held for future definition. Software must not depend on their current behavior.",
-        "The rewrite treats reserved and unallocated as the same architectural category. A concrete future definition may narrow that category, but existing software must assume no operation is available there.",
+        "Reserved and unallocated encodings are held for future architectural definition. Software must not depend on their value, decode result, or behavior.",
+        "This manual treats reserved and unallocated encodings as one architectural category. Future architecture revisions may assign narrower meanings, but existing software must assume no operation is available there.",
         "Noncanonical encodings are invalid unless an instruction description explicitly defines an alias or priority rule. Assemblers should emit canonical encodings and disassemblers should prefer canonical spellings.",
     ]
     rows = compatibility_rows(model)
@@ -778,7 +857,9 @@ def render_data_formats_md(model: IsaModel) -> str:
         "Data Formats",
         [
             "Integer operands use size suffixes to select the low-order subfield of an Rn register and the number of bytes transferred by memory operands.",
-            "Integer data, immediates, displacements, and absolute address payloads are little-endian. The instruction header is byte-coded: byte 0 carries P, X, length, and high payload bits.",
+            "An Rn destination write smaller than Q replaces only the selected low-order subfield and preserves bits above the operation size. Q-sized Rn writes replace all 64 bits. Memory destination writes transfer only the selected number of bytes.",
+            "Instruction-specific full-register writes, zero-extension, sign-extension, or other upper-bit rules override the default subfield write rule.",
+            "Integer data, immediates, displacements, and absolute address payloads are little-endian. Instruction headers are byte-coded in instruction-stream order rather than decoded as little-endian integers.",
         ],
     )
     body += "\n" + md_table(["Code", "Suffix", "Bits", "Bytes", "Name"], size_code_rows(model))
@@ -808,23 +889,25 @@ def render_data_formats_md(model: IsaModel) -> str:
 
 def render_instruction_word_formats_md(model: IsaModel) -> str:
     rows = [
-        ["byte 0 bit 7", "P", "Prefix present. When set, a 16-bit prefix word follows the two-byte base header."],
-        ["byte 0 bit 6", "X", "Extended-length format select."],
-        ["byte 0 bits 5..2", "L / payload", "When X=1, additional instruction bytes minus 1. When X=0, these bits are short payload[13:10]."],
-        ["byte 0 bits 1..0", "payload", "High opcode payload bits: short payload[9:8] or extended payload[9:8]."],
-        ["byte 1 bits 7..0", "payload", "Low opcode payload bits: payload[7:0]."],
+        ["byte 0 bit 7", "class", "0 selects a one-byte extrashort instruction with payload in byte0[6:0]."],
+        ["byte 0 bits 7..6", "class", "10 selects a two-byte short instruction; 11 selects an extended instruction."],
+        ["byte 0 bits 5..2", "L / payload", "For short, payload[13:10]. For extended, L encodes total instruction bytes as 3+L."],
+        ["byte 0 bits 1..0", "opcode", "For short, payload[9:8]. For extended, opcode-stream bits[highest:highest-1]."],
+        ["byte 1 bits 7..0", "opcode", "For short, payload[7:0]. For extended, the next eight opcode-stream bits."],
     ]
     body = md_paragraphs(
         "Instruction Header Formats",
         [
-            "The first two instruction bytes are the only input needed to find the instruction boundary. Prefix bytes and later opcode payload bytes never extend an instruction implicitly.",
-            "The base header is described in instruction-stream byte order: byte 0 bit 7 is P, byte 0 bit 6 is X, byte 0 bits 5..2 are L when X=1, and byte 1 carries payload[7:0].",
-            "Short instructions use X=0 and a 14-bit payload. Extended instructions use X=1, a 4-bit byte-length field, and a payload namespace decoded as medium, long, or extralong opcode encoding.",
+            "Instruction framing is byte-oriented. Byte 0 alone identifies extrashort and short instructions; extended instructions use byte 0 and byte 1 to determine both total instruction length and opcode class.",
+            "Extended byte0[5:2] is L, and the total instruction length is 3+L bytes. The opcode stream begins at byte0[1:0], continues through byte1, and then consumes later bytes as required by the opcode class.",
+            "An extended instruction is invalid if its encoded total length is shorter than the opcode class minimum: 3 bytes for medium, 4 bytes for long, and 5 bytes for extralong.",
         ],
     )
     body += "\n" + md_table(["Bits", "Field", "Meaning"], rows)
-    body += "\n### Size Decoding Truth Table\n\n"
-    body += md_table(["B0.7", "B0.6", "B0.5", "B0.4", "B0.3", "B0.2", "Instruction Bytes"], size_decoding_rows())
+    body += "\n### Instruction Length Truth Table\n\n"
+    body += md_table(["Byte 0 Pattern", "Byte 1 Pattern", "Instruction Bytes"], size_decoding_rows())
+    body += "\n### Opcode Length Truth Table\n\n"
+    body += md_table(["Opcode Selector", "Class", "Opcode Bytes", "Validity"], opcode_length_rows())
     body += "\n### Encoding Classes\n\n"
     body += md_table(["Class", "Payload Bits", "Selection"], encoding_class_rows(model))
     return body
@@ -848,7 +931,7 @@ def render_registers_md(model: IsaModel) -> str:
     body = md_paragraphs(
         "Register Model",
         [
-            "The integer programming model exposes sixteen 64-bit Rn registers, R0 through R15. The rewrite uses one general-purpose register class for integer values, address values, counters, selectors, and temporary data.",
+            "The integer programming model exposes sixteen 64-bit Rn registers, R0 through R15. Bedrock uses one general-purpose register class for integer values, address values, counters, selectors, and temporary data.",
             "SP and PC are special architectural registers outside the four-bit Rn namespace. SP-relative memory forms use SS by default; PC-relative memory forms use CS by default.",
         ],
     )
@@ -879,7 +962,7 @@ def render_condition_computation_md(model: IsaModel) -> str:
     body = md_paragraphs(
         "Condition Code Computation",
         [
-            "Integer condition codes are held in FLAGS. Most integer operations update Z, N, C, and V from a temporary result, update a subset, or leave FLAGS unchanged. Unmentioned FLAGS bits are preserved unless the instruction says otherwise.",
+            "Integer condition codes are held in FLAGS. Integer instructions leave FLAGS unchanged unless their instruction description explicitly defines a FLAGS write. Unmentioned FLAGS bits are preserved unless the instruction says otherwise.",
             "For an operand width of n bits, ordinary integer ALU results are evaluated modulo 2^n unless the instruction explicitly defines a wider intermediate.",
         ],
     )
@@ -895,13 +978,15 @@ def render_condition_computation_md(model: IsaModel) -> str:
     body += "\n" + md_table(
         ["Operation Class", "FLAGS Result"],
         [
-            ["ADD, ADC", "Z and N come from the stored result. C is the unsigned carry out. V reports signed overflow."],
-            ["SUB, SBB, CMP", "Z and N come from the subtraction result. C is the unsigned borrow. V reports signed overflow. CMP does not store the temporary result."],
-            ["AND, OR, XOR, TEST", "Z and N come from the logical result. C and V are cleared. TEST does not store the temporary result."],
-            ["INC, DEC", "Use the ADD or SUB rule with an implicit operand of one when the form updates FLAGS. INCN and DECN leave FLAGS unchanged."],
-            ["NEG", "Computes 0 - dst; FLAGS follow the subtraction rule."],
-            ["ABS", "Updates FLAGS from the absolute-value result and reports overflow for the most negative signed value."],
-            ["CLR", "Writes zero and leaves FLAGS unchanged in the current definition."],
+            ["ADD, SUB, AND, OR, XOR", "Leave FLAGS unchanged."],
+            ["ADC, SBB", "Read C as carry/borrow input and update Z, N, C, and V from the stored result."],
+            ["CMP, TEST", "Update Z, N, C, and V from the temporary result and do not store that result."],
+            ["CMPJcc, TESTJcc", "Compute temporary condition flags for the branch decision and leave architectural FLAGS unchanged."],
+            ["INC, DEC", "Leave FLAGS unchanged."],
+            ["INCF, DECF", "Update Z, N, C, and V from the stored increment/decrement result."],
+            ["SETF, CLRF", "Set or clear selected FLAGS bits from the imm4 mask; unselected FLAGS bits are preserved."],
+            ["NEG, ABS", "Leave FLAGS unchanged."],
+            ["CLR", "Writes zero and leaves FLAGS unchanged."],
             ["Bounds checks", "Set V when the value is outside the selected interval; Z, N, and C are unchanged."],
         ],
     )
@@ -925,59 +1010,12 @@ def render_condition_computation_md(model: IsaModel) -> str:
     return body
 
 
-def render_prefixes_md(model: IsaModel) -> str:
-    data = model.metadata.get("prefixes") or {}
-    rows = []
-    for prefix in data.get("prefixes", []) or []:
-        value = prefix.get("value", prefix.get("pattern", ""))
-        if isinstance(value, int):
-            value = bits_text(value, 8)
-        rows.append([value, prefix.get("name", ""), prefix.get("group", ""), compact_text(prefix.get("applies_to", "-")) or "-"])
-    word = data.get("prefix_word") or {}
-    body = md_paragraphs(
-        "Prefix Encoding",
-        [
-            "A prefix word contains two independent 8-bit slots. Prefix bytes are interpreted from low byte to high byte and modify only the immediately following instruction.",
-            "If two prefixes in the same semantic group conflict, the later decoded prefix overrides the earlier one. Unassigned prefix values have no architectural effect and remain available for future definition.",
-            "Address auto-update is not a prefix effect in the rewrite; postincrement and predecrement are encoded by effective-address forms.",
-        ],
-    )
-    body += "\n" + md_table(
-        ["Property", "Value"],
-        [
-            ["Bytes per instruction", word.get("bytes_per_instruction", "")],
-            ["Fill order", compact_text(word.get("fill_order", ""))],
-            ["Decode order", compact_text(word.get("decode_order", ""))],
-            ["Unused slot encoding", word.get("unused_slot_encoding", "")],
-            ["Conflict resolution", word.get("conflict_resolution", "")],
-        ],
-    )
-    body += "\n" + md_table(["Value/Pattern", "Name", "Group", "Applies To"], rows)
-    repeat = next((item for item in data.get("prefixes", []) or [] if isinstance(item, dict) and item.get("name") == "REPcc"), None)
-    if repeat:
-        counter = repeat.get("counter_encoding") or {}
-        body += "\n### REPcc\n\n"
-        body += md_table(
-            ["Rule", "Value"],
-            [
-                ["Syntax", compact_text((repeat.get("syntax") or {}).get("mnemonic_template", "REPcc"))],
-                ["Condition field", compact_text((repeat.get("condition") or {}).get("field", ""))],
-                ["Counter operand", compact_text((repeat.get("operand") or {}).get("type", ""))],
-                ["Counter range", compact_text((repeat.get("operand") or {}).get("range", ""))],
-                ["Counter interpretation", counter.get("interpretation", "")],
-                ["Zero rule", counter.get("zero_rule", "")],
-                ["Counter update", counter.get("update_after_condition_true_iteration", "")],
-                ["Condition-false terminating iteration", repeat.get("commit_rule", "")],
-            ],
-        )
-    return body
-
-
 def render_ea_md(model: IsaModel) -> str:
     data = model.metadata.get("ea") or {}
     rows = []
     for form in data.get("compact_ea", []) or []:
-        rows.append([form.get("bits", ""), form.get("syntax", form.get("class", "")), form.get("class", ""), form.get("memory", "")])
+        memory = form.get("memory", "")
+        rows.append([form.get("bits", ""), form.get("syntax", form.get("class", "")), form.get("class", ""), display_text(memory)])
     ext_rows = []
     for form in ((data.get("ext0") or {}).get("forms", []) or []):
         ext_rows.append([form.get("bits", ""), form.get("syntax", ""), form.get("base", ""), form.get("index", ""), form.get("segment", form.get("fixed_segment", ""))])
@@ -1000,7 +1038,7 @@ def render_ea_md(model: IsaModel) -> str:
         if examples:
             body += "\n" + md_table(
                 ["Syntax", "Meaning"],
-                [[item.get("syntax", ""), compact_text(item.get("meaning", ""))] for item in examples if isinstance(item, dict)],
+                [[item.get("syntax", ""), compact_clause_text(item.get("meaning", ""))] for item in examples if isinstance(item, dict)],
             )
     return body
 
@@ -1010,33 +1048,116 @@ def render_execution_model_md(model: IsaModel) -> str:
     body = md_paragraphs(
         "Instruction Execution Model",
         [
-            "The instruction boundary is fixed by the first two instruction bytes before operand evaluation begins. An implementation may reject an instruction before any architectural state is changed if the encoded length cannot contain the selected form.",
+            "The instruction boundary is fixed by byte 0 for extrashort and short forms, and by the first two bytes for extended forms, before operand evaluation begins. An implementation may reject an instruction before any architectural state is changed if the encoded length cannot contain the selected form.",
             "Operands are decoded in instruction order. Source reads complete before the final destination write unless an atomic form says otherwise. Effective-address calculation may produce an address without reading memory.",
             "Auto-update EA forms update a temporary operand-evaluation image. The architectural register update becomes visible only when the instruction commits.",
         ],
     )
     rows = [
-        ["Instruction boundary", "The base header length selects the full instruction record; prefixes and later payloads never extend it implicitly."],
-        ["Overlong encoding", compact_text(((rules.get("instruction_length") or {}).get("overlong_encoding") or {}).get("payload", ""))],
-        ["Undersized encoding", compact_text(((rules.get("instruction_length") or {}).get("undersized_encoding") or {}).get("rule", ""))],
-        ["Default memory operands", compact_text((rules.get("memory_operands") or {}).get("default", ""))],
+        ["Instruction boundary", "The instruction header length selects the full instruction record; later payloads never extend it implicitly."],
+        ["Overlong encoding", display_text(((rules.get("instruction_length") or {}).get("overlong_encoding") or {}).get("payload", ""))],
+        ["Undersized encoding", display_text(((rules.get("instruction_length") or {}).get("undersized_encoding") or {}).get("rule", ""))],
+        ["Default memory operands", display_text((rules.get("memory_operands") or {}).get("default", ""))],
         ["Memory-memory exceptions", compact_text((rules.get("memory_operands") or {}).get("memory_memory_allowed_for", ""))],
-        ["Repeat prefixes", compact_text((rules.get("repeat_prefixes") or {}).get("members", ""))],
+        ["Repeat instructions", compact_text((rules.get("repeat_instructions") or {}).get("members", ""))],
     ]
     body += "\n" + md_table(["Rule", "Meaning"], rows)
     return body
 
 
+def repeat_instruction_rules(model: IsaModel) -> dict[str, Any]:
+    rules = (model.metadata.get("semantics") or {}).get("encoding_rules") or {}
+    repeat = rules.get("repeat_instructions") or {}
+    return repeat if isinstance(repeat, dict) else {}
+
+
+def rule_label(key: Any) -> str:
+    return str(key).replace("_", " ")
+
+
+def repeat_syntax_rows(model: IsaModel) -> list[list[Any]]:
+    syntax = repeat_instruction_rules(model).get("syntax") or {}
+    rows = [[name, value] for name, value in syntax.items()]
+    aliases = repeat_instruction_rules(model).get("assembler_checked_aliases") or {}
+    for name, data in aliases.items():
+        if not isinstance(data, dict):
+            continue
+        value = f"{compact_text(data.get('syntax', ''))}; emits {compact_text(data.get('emits', ''))}"
+        requirements: list[str] = []
+        body_candidate = data.get("body_candidate_required")
+        if body_candidate:
+            requirements.append(f"body candidate: {display_text(body_candidate)}")
+        body_constraints = data.get("body_constraints") or []
+        if isinstance(body_constraints, list):
+            requirements.extend(compact_text(item) for item in body_constraints)
+        elif body_constraints:
+            requirements.append(compact_text(body_constraints))
+        if requirements:
+            value += "; requires " + "; ".join(requirements)
+        rows.append([f"{name} assembler alias", value])
+    return rows
+
+
+def repeatable_class_rows(model: IsaModel) -> list[list[Any]]:
+    contexts = repeat_instruction_rules(model).get("repeatable_contexts") or {}
+    constraints = repeat_instruction_rules(model).get("repeatable_constraints") or {}
+    annotations = repeat_instruction_rules(model).get("repeatable_annotations") or {}
+    rows = [[name, display_text(value)] for name, value in contexts.items()]
+    rows.extend([f"constraint: {rule_label(name)}", display_text(value)] for name, value in constraints.items())
+    rows.extend([f"annotation: {rule_label(name)}", display_text(value)] for name, value in annotations.items())
+    return rows
+
+
+def repeat_body_entry_rows(model: IsaModel) -> list[list[Any]]:
+    body = repeat_instruction_rules(model).get("body_entry") or {}
+    return [[rule_label(key), display_text(value)] for key, value in body.items()]
+
+
+def repeat_counter_rows(model: IsaModel) -> list[list[Any]]:
+    counter = repeat_instruction_rules(model).get("counter") or {}
+    condition = repeat_instruction_rules(model).get("condition") or {}
+    rows = [[f"counter: {rule_label(key)}", display_text(value)] for key, value in counter.items()]
+    rows.extend([f"condition: {rule_label(key)}", display_text(value)] for key, value in condition.items())
+    return rows
+
+
+def repeat_legality_rows(model: IsaModel) -> list[list[Any]]:
+    legality = repeat_instruction_rules(model).get("legality") or {}
+    pc = repeat_instruction_rules(model).get("pc_and_interrupts") or {}
+    debug = repeat_instruction_rules(model).get("debugging") or {}
+    rows = [[f"legality: {rule_label(key)}", display_text(value)] for key, value in legality.items()]
+    rows.extend([f"pc: {rule_label(key)}", display_text(value)] for key, value in pc.items())
+    rows.extend([f"debug: {rule_label(key)}", display_text(value)] for key, value in debug.items())
+    return rows
+
+
+def repeat_fault_aux_rows(model: IsaModel) -> list[list[Any]]:
+    fault_aux = repeat_instruction_rules(model).get("fault_aux") or {}
+    fields = fault_aux.get("fields") or []
+    rows: list[list[Any]] = []
+    for field in fields:
+        if not isinstance(field, dict):
+            continue
+        rows.append([field.get("name", ""), field.get("bits", ""), field.get("meaning", "")])
+    return rows
+
+
 def render_streaming_model_md(model: IsaModel) -> str:
-    return md_paragraphs(
+    body = md_paragraphs(
         "Streaming Execution Model",
         [
-            "REPcc and REPG are architecturally scalar. Their visible behavior is the same as executing the repeated instruction or byte-counted instruction group in program order under the selected counter and termination rules.",
+            "REP, REPcc, REPG, and any explicitly defined repeat instruction are architecturally scalar. Their visible behavior is the same as executing the repeated instruction or byte-counted instruction group in program order under the selected counter and termination rules.",
             "An implementation may recognize regular repeated operations and execute them with a micro-loop, loop buffer, streaming engine, or wider internal datapath. That internal width is not architectural state and is not part of the ABI.",
-            "REPG uses an unsigned byte count for the grouped body. The byte count must describe a nonempty body that ends on an instruction boundary. The counter update occurs only after a whole group iteration succeeds.",
+            "The repeated body is decoded when repeat state is entered and remains the body for that repeat context. Body decode and repeatability checks occur before zero-count annulment.",
             "Faults remain precise at the repeated-operation boundary. Completed iterations are committed; an incomplete faulting iteration is reported at the faulting instruction with restart state sufficient to continue or emulate the remaining work.",
         ],
     )
+    body += "\n### Repeat Syntax\n\n" + md_table(["Form", "Syntax"], repeat_syntax_rows(model))
+    body += "\n### Repeatability Contexts\n\n" + md_table(["Context", "Meaning"], repeatable_class_rows(model))
+    body += "\n### Body Entry\n\n" + md_table(["Rule", "Meaning"], repeat_body_entry_rows(model))
+    body += "\n### Counter and Condition\n\n" + md_table(["Rule", "Meaning"], repeat_counter_rows(model))
+    body += "\n### Legality, PC, and Debug\n\n" + md_table(["Rule", "Meaning"], repeat_legality_rows(model))
+    return body
 
 
 def render_memory_translation_md(model: IsaModel) -> str:
@@ -1047,17 +1168,19 @@ def render_memory_translation_md(model: IsaModel) -> str:
     ]
     composition_rows = [
         ["Effective address", "address generated by the selected EA form"],
+        ["Segment image", "base = base_page * 4096; span = (m << e) * 4096; limit = base + span, checked before 64-bit truncation"],
         ["Segment pre-translation", "disabled segments pass the address through; enabled segments check a byte-addressed window with page-granular base and span"],
         ["Linear address", "segment output, or the EA directly when segmentation is disabled"],
         ["Paging enabled", "walk page tables from PTCR.root_page and apply PTE attributes"],
         ["Paging disabled", "use the linear address directly as the memory-system address"],
+        ["Faults", "invalid segment images raise INVALID_CONTROL_STATE on write; bounds and canonical-address failures raise PAGE_FAULT"],
     ]
     body = md_paragraphs(
         "Memory Address Translation",
         [
             "Memory address translation is a separate pipeline after effective-address calculation. Effective-address evaluation produces an address value or operand designator; segmentation optionally turns that value into a linear address, and paging optionally turns the linear address into a memory-system address.",
             "Instruction fetches use CS, stack accesses use SS, and ordinary data accesses use the operation default data segment unless an effective-address form explicitly selects another segment. SP and PC forms use their fixed segments.",
-            "SEGLEA exposes the linear address produced by segment pre-translation when software explicitly needs it; ordinary portable pointers remain pre-segment address values.",
+            "SEGLEA exposes the linear address produced by segment pre-translation when software explicitly needs it. The ISA does not prescribe a language pointer representation; the Bedrock C ABI uses canonical post-segment virtual addresses and restricts C-visible address contexts to disabled or bounds-only modes, with GS0-relative TLS as an explicit exception.",
         ],
     )
     body += "\n" + md_table(["Stage", "Result"], composition_rows)
@@ -1103,7 +1226,7 @@ def render_instruction_set_overview_md(model: IsaModel, instructions: list[Instr
         "Instruction Attribute Matrix",
         [
             "The instruction set is grouped semantically. Each instruction entry carries its own forms, operand rules, and encoding diagrams where those details are architecturally relevant.",
-            "Extension instruction groups are preserved as separate definition sets. Base, floating-point, transcendental floating-point, and virtualization-acceleration definitions are rendered from the same schema.",
+            "Extension instruction groups remain separate architectural definition sets: base, floating-point, transcendental floating-point, and virtualization acceleration.",
         ],
     )
     body += "\n" + md_table(["Class", "Family", "Definitions"], instruction_family_rows(instructions))
@@ -1116,11 +1239,11 @@ def render_instruction_summary_md(model: IsaModel, instructions: list[Instructio
         rows.append(
             [
                 inst.mnemonic,
-                inst.instruction_set,
+                instruction_set_text(inst.instruction_set),
                 instruction_class(inst),
                 instruction_family(inst),
-                inst.behavior.get("group", "-"),
-                inst.attributes.get("privilege", "-"),
+                label_text(inst.behavior.get("group", "-")),
+                privilege_text(inst.attributes.get("privilege", "-"), "-"),
                 allocation_status(inst, model),
                 inst.doc.get("summary", ""),
             ]
@@ -1145,11 +1268,11 @@ def render_instruction_reference_md(model: IsaModel, instructions: list[Instruct
         if description:
             parts.append(md_escape(description) + "\n")
         rows = [
-            ["Set", inst.instruction_set],
+            ["Set", instruction_set_text(inst.instruction_set)],
             ["Class", instruction_class(inst)],
             ["Family", instruction_family(inst)],
-            ["Behavior group", inst.behavior.get("group", "-")],
-            ["Privilege", inst.attributes.get("privilege", "-")],
+            ["Behavior group", label_text(inst.behavior.get("group", "-"))],
+            ["Privilege", privilege_text(inst.attributes.get("privilege", "-"), "-")],
             ["Encoding", allocation_status(inst, model)],
         ]
         parts.append(md_table(["Property", "Value"], rows))
@@ -1164,7 +1287,8 @@ def render_instruction_reference_md(model: IsaModel, instructions: list[Instruct
 
         alloc_rows = []
         for entry in model.allocated_by_mnemonic.get(inst.mnemonic, []):
-            form, notes = encoding_text_parts(entry.text)
+            form = allocation_form_text(entry.text)
+            notes = allocation_note_text(entry)
             alloc_rows.append([entry.cls, entry.bits, form, notes])
         if alloc_rows:
             parts.append(md_table(["Class", "Bits", "Form", "Notes"], alloc_rows))
@@ -1215,15 +1339,11 @@ def latex_attributes_block(inst: InstructionDef, model: IsaModel) -> str:
     lines = [
         rf"{latex_escape('Class')} = {latex_escape(instruction_class(inst))}",
         rf"{latex_escape('Family')} = {latex_escape(instruction_family(inst))}",
-        rf"{latex_escape('Privilege')} = {latex_escape(compact_text(attrs.get('privilege', '-')) or '-')}",
+        rf"{latex_escape('Privilege')} = {latex_escape(privilege_text(attrs.get('privilege', '-'), '-'))}",
     ]
     flags = attrs.get("flags")
     if flags:
         lines.append(rf"{latex_escape('Flags')} = {latex_escape(flag_summary(flags))}")
-    prefixes = ((inst.forms.get("prefixes") or {}) if isinstance(inst.forms.get("prefixes"), dict) else {})
-    legal_prefixes = prefixes.get("legal")
-    if legal_prefixes:
-        lines.append(rf"{latex_escape('Prefixes')} = {latex_escape(compact_text(legal_prefixes))}")
     return latex_ragged_block(lines)
 
 
@@ -1295,7 +1415,7 @@ def assembler_syntax_lines(model: IsaModel, inst: InstructionDef) -> list[str]:
     lines: list[str] = []
     seen: set[str] = set()
     for entry in model.allocated_by_mnemonic.get(inst.mnemonic, []):
-        form, _notes = encoding_text_parts(entry.text)
+        form = allocation_form_text(entry.text)
         if form and form not in seen:
             lines.append(form)
             seen.add(form)
@@ -1402,16 +1522,25 @@ def allocation_encoding_text(entry: AllocationEntry) -> str:
     return f"{entry.cls} opcode form"
 
 
+CLASS_BASE_BYTES = {
+    "extrashort": 1,
+    "short": 2,
+    "medium": 3,
+    "long": 4,
+    "extralong": 5,
+}
+
+
 def allocation_base_bytes(entry: AllocationEntry) -> int:
-    if entry.cls == "short":
-        return 2
+    if entry.cls in CLASS_BASE_BYTES:
+        return CLASS_BASE_BYTES[entry.cls]
     return 2 + (max(0, entry.payload_bits - 10) + 7) // 8
 
 
 def instruction_bytes_text(entry: AllocationEntry, form: str) -> str:
     base = allocation_base_bytes(entry)
     if any((field.get("kind") == "ea7") for field in entry.fields.values() if isinstance(field, dict)):
-        return f"{base}-20"
+        return f"{base}-18"
     extra = 0
     if re.search(r"<imm16|imm16/bitmap", form):
         extra = max(extra, 2)
@@ -1423,10 +1552,12 @@ def instruction_bytes_text(entry: AllocationEntry, form: str) -> str:
 
 
 def allocation_size_bits(entry: AllocationEntry) -> str:
+    if entry.cls == "extrashort":
+        return "0"
     if entry.cls == "short":
-        return "00"
+        return "10"
     l_value = max(0, allocation_base_bytes(entry) - 3)
-    return f"P1{l_value:04b}"
+    return f"11{l_value:04b}"
 
 
 def bit_label(text: str) -> str:
@@ -1515,26 +1646,30 @@ def split_segments_at_width(segments: list[tuple[str, int]], width: int) -> tupl
 
 
 def entry_header_byte_segments(entry: AllocationEntry) -> tuple[list[tuple[str, int]], list[tuple[str, int]]]:
+    if entry.cls == "extrashort":
+        header_segments = [("0", 1), *bit_segments(entry.bits)]
+        byte0, byte1 = split_segments_at_width(header_segments, 8)
+        return byte0, byte1
     if entry.cls == "short":
-        header_segments = [("0", 1), ("0", 1), *bit_segments(entry.bits)]
+        header_segments = [("10", 2), *bit_segments(entry.bits)]
         return split_segments_at_width(header_segments, 8)
     first_payload = entry.bits[:10]
     size_bits = allocation_size_bits(entry)
-    header_segments = [(size_bits[0], 1), (size_bits[1], 1), (size_bits[2:], 4), *bit_segments(first_payload)]
+    header_segments = [(size_bits[:2], 2), (size_bits[2:], 4), *bit_segments(first_payload)]
     return split_segments_at_width(header_segments, 8)
 
 
 def entry_payload_bit_rows(entry: AllocationEntry) -> list[tuple[str, list[tuple[str, int]]]]:
-    if entry.cls == "short":
+    if entry.cls in {"extrashort", "short"}:
         return []
     rows: list[tuple[str, list[tuple[str, int]]]] = []
     remaining = entry.bits[10:]
-    chunk_index = 1
+    byte_index = 2
     while remaining:
-        chunk = remaining[:16]
-        remaining = remaining[16:]
-        rows.append((f"payload {chunk_index}", bit_segments(chunk)))
-        chunk_index += 1
+        chunk = remaining[:8]
+        remaining = remaining[8:]
+        rows.append((f"opcode byte {byte_index}", bit_segments(chunk)))
+        byte_index += 1
     return rows
 
 
@@ -1558,6 +1693,8 @@ def field_bit_text(entry: AllocationEntry, symbol: str) -> str:
     high = max(positions)
     low = min(positions)
     bit_range = str(high) if high == low else f"{high}:{low}"
+    if entry.cls == "extrashort":
+        return f"extrashort opcode payload bits {bit_range}"
     if entry.cls == "short":
         return f"short opcode payload bits {bit_range}"
     return f"opcode payload bits {bit_range}"
@@ -1583,6 +1720,8 @@ def field_description(entry: AllocationEntry, form: str, symbol: str, spec: dict
         )
     if kind == "rn":
         return f"general-purpose register number for the {role} ({bit_text})."
+    if kind == "freg":
+        return f"floating-point register number for the {role} ({bit_text})."
     if kind == "size":
         choices = field_size_choices(form, symbol)
         suffix = f" ({choices})" if choices else ""
@@ -1627,6 +1766,8 @@ def constraint_texts(entry: AllocationEntry) -> list[str]:
             out.append("destination EA excludes immediate forms.")
         elif field and constraint.get("allow") and reason == "condition_true_false_reclaimed":
             out.append(f"{field} uses condition codes 0010..1111; T and F encodings are reserved.")
+        elif field and constraint.get("allow") and reason == "condition_false_reclaimed":
+            out.append(f"{field} uses condition codes 0000 and 0010..1111; F encoding is reserved.")
         elif field and constraint.get("allow"):
             out.append(f"{field} is restricted to {compact_text(constraint.get('allow'))}.")
         elif field and constraint.get("exclude"):
@@ -1656,12 +1797,13 @@ def latex_field_explanation_block(entry: AllocationEntry, form: str) -> str:
 
 
 def latex_allocated_instruction_form_block(inst: InstructionDef, entry: AllocationEntry) -> str:
-    form, notes = encoding_text_parts(entry.text)
+    form = allocation_form_text(entry.text)
+    notes = allocation_note_text(entry)
     rows = [
         ("Form", latex_escape(instruction_form_operands(form))),
         ("Encoding", latex_escape(allocation_encoding_text(entry))),
         ("Bytes", latex_escape(instruction_bytes_text(entry, form))),
-        ("Privilege", latex_escape(compact_text(inst.attributes.get("privilege", "unprivileged")) or "unprivileged")),
+        ("Privilege", latex_escape(privilege_text(inst.attributes.get("privilege", "unprivileged")))),
         ("Operands", latex_escape(readable_operands_from_form(form))),
     ]
     if notes and notes != "-":
@@ -1691,11 +1833,11 @@ def latex_instruction_forms_block(model: IsaModel, inst: InstructionDef) -> str:
             attrs = []
             for key in ("profile", "constraint", "result", "flags", "compact"):
                 if key in form:
-                    attrs.append(f"{key}={compact_text(form[key])}")
+                    attrs.append(form_attribute_text(key, form[key]))
             rows = [
                 ("Form", latex_escape(operand_list_text(form.get("operands", inst.forms.get("operands", []))))),
                 ("Kind", latex_escape(kind)),
-                ("Size", latex_escape(compact_text(form.get("size", inst.forms.get("size", "-"))) or "-")),
+                ("Size", latex_escape(form_size_text(form.get("size", inst.forms.get("size", "-"))))),
             ]
             if attrs:
                 rows.append(("Attributes", latex_escape("; ".join(attrs))))
@@ -1716,7 +1858,6 @@ def render_latex(model: IsaModel, only_allocated: bool = False) -> str:
         entry.assigned
         for cls in model.allocation_classes
         for entry in cls.entries
-        if entry.status == "allocated"
     )
     parts = [
         LatexDocumentPreamble(),
@@ -1729,7 +1870,6 @@ def render_latex(model: IsaModel, only_allocated: bool = False) -> str:
         latex_save_restore_section(model),
         latex_data_formats_section(model),
         latex_condition_section(model),
-        latex_prefix_section(model),
         latex_ea_section(model),
         latex_legacy_reference_section("Memory Address Translation") or latex_memory_translation_section(model),
         latex_legacy_reference_section("Memory Model") or latex_memory_model_section(model),
@@ -1763,6 +1903,23 @@ def latex_table(
         widths,
         caption,
         style=style,
+        listed=listed,
+    )
+
+
+def latex_fixed_table(
+    headers: list[str],
+    rows: list[list[Any]],
+    widths: list[str],
+    caption: str,
+    *,
+    listed: bool = True,
+) -> str:
+    return latex_tabular(
+        headers,
+        [[latex_cell(value) for value in row] for row in rows],
+        widths,
+        caption,
         listed=listed,
     )
 
@@ -1818,22 +1975,6 @@ def latex_operation_block(lines: list[Any]) -> str:
             latex_code_block(lines),
         ]
     )
-
-
-def latex_prefix_word_diagram() -> str:
-    return r"""
-\begin{manuallistedbitdiagram}{Prefix Word Format}
-\manualbitfieldrow{word 1}{%
-\manualbitlabel{15}
-\manualbitlabel{8}
-\manualbitlabel{7}
-\manualbitlabel{0}
-}{%
-\manualbitfieldtext{prefix1}{8}
-\manualbitfieldtext{prefix0}{8}
-}
-\end{manuallistedbitdiagram}
-""".strip()
 
 
 def latex_rn_register_model_figure() -> str:
@@ -2108,6 +2249,24 @@ def latex_frame_control_diagram() -> str:
 """.strip()
 
 
+def latex_repeat_fault_aux_diagram() -> str:
+    return r"""
+\begin{manuallistedformatdiagram}{FAULT\_AUX Repeat Continuation Format}{2}
+\manualformatrowrange{FAULT\_AUX[63:32]}{63}{32}{%
+\manualformatfield{reserved}{16}
+\manualformatfield{body bytes}{16}
+}
+\manualformatrowrange{FAULT\_AUX[31:0]}{31}{0}{%
+\manualformatfield{group start delta}{16}
+\manualformatfield{reserved}{6}
+\manualformatfield{kind}{2}
+\manualformatfield{cc}{4}
+\manualformatfield{reg}{4}
+}
+\end{manuallistedformatdiagram}
+""".strip()
+
+
 def latex_data_byte_order_diagrams() -> str:
     return r"""
 \begin{manuallistedbyteorderdiagram}{Little-Endian Byte Order for a 64-Bit Value}{byte}{address}{increasing addresses}{least significant byte first}{most significant byte last}
@@ -2121,9 +2280,9 @@ def latex_data_byte_order_diagrams() -> str:
 \manualbytecell{$V[63..56]$}{A+7}
 \end{manuallistedbyteorderdiagram}
 
-\begin{manuallistedbyteorderdiagram}{Base Instruction Header Bytes}{header byte}{}{instruction stream byte order}{}{}
-\manualbytecell{\shortstack{P X L/payload\\payload high}}{PC+0}
-\manualbytecell{payload[7:0]}{PC+1}
+\begin{manuallistedbyteorderdiagram}{Instruction Start Bytes}{header byte}{}{instruction stream byte order}{}{}
+\manualbytecell{\shortstack{class/length\\opcode high}}{PC+0}
+\manualbytecell{\shortstack{opcode bits\\if present}}{PC+1}
 \end{manuallistedbyteorderdiagram}
 """.strip()
 
@@ -2131,11 +2290,14 @@ def latex_data_byte_order_diagrams() -> str:
 def latex_instruction_encoding_diagrams() -> str:
     return r"""
 \begin{manuallistedbitdiagram}{Instruction Record Components}
+\manualbitrow{extrashort byte}{%
+\manualbitfieldcode{0}{1}
+\manualbitfieldtext{payload[6:0]}{7}
+}
 \manualbitfieldrow{short header}{%
 \manualbytepairlabels
 }{%
-\manualbitfieldtext{P}{1}
-\manualbitfieldcode{0}{1}
+\manualbitfieldcode{10}{2}
 \manualbitfieldtext{payload[13:8]}{6}
 \manualbitgap{1}
 \manualbitfieldtext{payload[7:0]}{8}
@@ -2143,23 +2305,21 @@ def latex_instruction_encoding_diagrams() -> str:
 \manualbitfieldrow{extended header}{%
 \manualbytepairbitlabels
 }{%
-\manualbitfieldtext{P}{1}
-\manualbitfieldcode{1}{1}
+\manualbitfieldcode{11}{2}
 \manualbitfieldtext{L}{4}
-\manualbitfieldtext{payload[9:8]}{2}
+\manualbitfieldtext{opcode high}{2}
 \manualbitgap{1}
-\manualbitfieldtext{payload[7:0]}{8}
+\manualbitfieldtext{opcode next}{8}
 }
-\manualbitrow{prefix bytes if P=1}{%
-\manualbitfieldtext{prefix slot 0}{8}
-\manualbitfieldtext{prefix slot 1}{8}
-}
-\manualbitrow{extension bytes if X=1}{%
-\manualbitfieldtext{remaining opcode payload and operands}{16}
+\manualbitrow{extended continuation}{%
+\manualbitfieldtext{remaining opcode bytes, EA descriptors, immediates, and displacements}{16}
 }
 \end{manuallistedbitdiagram}
 
 \begin{manuallistedbitdiagram}{Opcode Payload Namespaces}
+\manualbitrow{extrashort}{%
+\manualbitfieldtext{payload[6:0]}{7}
+}
 \manualbitrow{short}{%
 \manualbitfieldtext{payload[13:0]}{14}
 }
@@ -2497,7 +2657,7 @@ def ext0_reference_blocks() -> list[str]:
                 ("Generation", "offset = base_term + displacement."),
                 ("Segment", "Uses the operation default data segment."),
                 ("Payload", "One descriptor byte plus the optional displacement selected by the compact EXT0 escape."),
-                ("Update", "Postincrement uses current temporary Rn(b), then increments it by the memory access size. Predecrement decrements temporary Rn(b) by the memory access size before use."),
+                ("Update", "Postincrement uses the current temporary Rn(b), then increments it by the memory access size. Predecrement decrements temporary Rn(b) by the memory access size before use."),
             ],
             diagram=r"\manualeaadditivememoryflow{EXT0 default-segment base auto-update}{BASE REGISTER}{Rn(b) temporary}{optional displacement}{EFFECTIVE ADDRESS}",
         ),
@@ -2590,7 +2750,6 @@ def latex_compatibility_section(model: IsaModel) -> str:
     rules = compatibility_rules(model)
     reserved = compat_get(rules, "reserved_bits", default={})
     faults = compat_get(rules, "instruction_encoding_faults", default={})
-    prefixes = compat_get(rules, "prefix_values", default={})
     canonical = compat_get(rules, "canonical_encodings", default={})
     cpuid = compat_get(rules, "cpuid", default={})
 
@@ -2642,11 +2801,6 @@ def latex_compatibility_section(model: IsaModel) -> str:
         ["Reserved effective-address form", compat_get(faults, "reserved_effective_address_form", "exception")],
         ["Unsupported optional instruction group", compat_get(faults, "unsupported_optional_instruction_group", "exception")],
     ]
-    prefix_rows = [
-        ["Exception", policy_value_text(compat_get(prefixes, "unassigned", "exception"))],
-        ["Behavior", policy_value_text(compat_get(prefixes, "unassigned", "behavior"))],
-        ["Reserved for", policy_value_text(compat_get(prefixes, "unassigned", "reserved_for"))],
-    ]
     canonical_rows = [
         ["Assembler default", policy_value_text(compat_get(canonical, "assembler_default"))],
         ["Disassembler default", policy_value_text(compat_get(canonical, "disassembler_default"))],
@@ -2673,7 +2827,7 @@ def latex_compatibility_section(model: IsaModel) -> str:
                         [
                             ["reserved", "Held for a future architectural definition. Software must not depend on its current value or behavior."],
                             ["must be zero", "Software writes zero. A nonzero value is invalid unless a later architectural revision assigns the field."],
-                            ["read as zero", "Hardware returns zero for the field on this implementation; software still treats the field as reserved."],
+                            ["read as zero", "Reads of the field return zero; software still treats the field as reserved."],
                             ["ignored", "Hardware accepts the field but does not use it for the current operation."],
                             ["software-defined", "Hardware does not interpret the field and reserves it for software use."],
                             ["illegal", "Use of a disallowed opcode, EA form, selector, or operation raises the named exception."],
@@ -2703,13 +2857,6 @@ def latex_compatibility_section(model: IsaModel) -> str:
                         ["3.55in", "1.85in"],
                         "Reserved Encoding Faults",
                         {1},
-                        listed=False,
-                    ),
-                    "PREFIX_DEFAULTS_TABLE": latex_table(
-                        ["Unassigned Prefix Rule", "Value"],
-                        prefix_rows,
-                        ["1.75in", "3.65in"],
-                        "Unassigned Prefix Defaults",
                         listed=False,
                     ),
                     "CANONICAL_DEFAULTS_TABLE": latex_code_table(
@@ -2747,7 +2894,7 @@ def latex_cpuid_feature_discovery_section(model: IsaModel) -> str:
     ]
     leaf_rows = [
         ["0x00000000", "0x0000", "BASE_IDENTITY", "0..2", "base profile, architectural revision, vendor string, and maximum standard leaf"],
-        ["0x00000000", "0x0001", "BASE_LIMITS", "0", "word size, maximum instruction bytes, prefix-slot count, and Rn register count"],
+        ["0x00000000", "0x0001", "BASE_LIMITS", "0", "word size, maximum instruction bytes, opcode class model, and Rn register count"],
         ["0x00000001", "0x0000", "EXTENSION_DIRECTORY", "0", "availability bits for optional architectural extension groups"],
         ["0x00000002", "0x0000", "EXECUTION_PROPERTIES", "0", "program-visible execution properties such as out-of-order capability"],
         ["0x00000002", "0x0001", "TOPOLOGY", "indexed", "hardware-thread topology and current hardware-thread identity"],
@@ -2814,7 +2961,7 @@ def latex_cpuid_feature_discovery_section(model: IsaModel) -> str:
                     "BIT_FIELD_TABLE": latex_table(
                         ["Field", "Meaning"],
                         bit_rows[1:],
-                        ["1.20in", "4.20in"],
+                        ["1.35in", "4.05in"],
                         "Representative CPUID Result Fields",
                         listed=False,
                     ),
@@ -2929,14 +3076,14 @@ def latex_data_formats_section(model: IsaModel) -> str:
                         [
                             ["imm8", 1, "single byte"],
                             ["imm16", 2, "bits 7..0 at the lower byte, bits 15..8 at the next byte"],
-                            ["imm32", 4, "least significant 16-bit word first, then most significant word"],
-                            ["imm64", 8, "least significant 16-bit word first through most significant word"],
+                            ["imm32", 4, "least significant byte first"],
+                            ["imm64", 8, "least significant byte first"],
                             ["disp8", 1, "single signed two's-complement byte"],
                             ["disp16", 2, "signed two's-complement value, little-endian"],
-                            ["disp32", 4, "signed two's-complement value, least significant word first"],
-                            ["disp64", 8, "declared-width displacement payload, least significant word first"],
-                            ["abs32", 4, "absolute-address payload, least significant word first"],
-                            ["abs64", 8, "absolute-address payload, least significant word first"],
+                            ["disp32", 4, "signed two's-complement value, least significant byte first"],
+                            ["disp64", 8, "declared-width displacement payload, least significant byte first"],
+                            ["abs32", 4, "absolute-address payload, least significant byte first"],
+                            ["abs64", 8, "absolute-address payload, least significant byte first"],
                         ],
                         ["0.75in", "0.45in", "4.20in"],
                         "Immediate, Displacement, and Address Payload Order",
@@ -2952,25 +3099,36 @@ def latex_data_formats_section(model: IsaModel) -> str:
 
 def latex_instruction_word_formats_section(model: IsaModel) -> str:
     bit_diagram = r"""
-\begin{manuallistedbitdiagram}{Base Instruction Header Format}
-\manualbitfieldrow{base header}{%
+\begin{manuallistedbitdiagram}{Instruction Header Byte Formats}
+\manualbitrow{extrashort byte}{%
+\manualbitfieldcode{0}{1}
+\manualbitfieldtext{payload[6:0]}{7}
+}
+\manualbitfieldrow{short bytes}{%
 \manualbytepairlabels
 }{%
-\manualbitfieldtext{P}{1}
-\manualbitfieldtext{X}{1}
-\manualbitfieldtext{L / payload}{4}
-\manualbitfieldtext{payload}{2}
+\manualbitfieldcode{10}{2}
+\manualbitfieldtext{payload[13:8]}{6}
 \manualbitgap{1}
-\manualbitfieldtext{payload}{8}
+\manualbitfieldtext{payload[7:0]}{8}
+}
+\manualbitfieldrow{extended start bytes}{%
+\manualbytepairlabels
+}{%
+\manualbitfieldcode{11}{2}
+\manualbitfieldtext{L}{4}
+\manualbitfieldtext{opcode high}{2}
+\manualbitgap{1}
+\manualbitfieldtext{opcode next}{8}
 }
 \end{manuallistedbitdiagram}
 """.strip()
     field_rows = [
-        ["byte 0 bit 7", "P", "Prefix present. When set, a 16-bit prefix word follows the two-byte base header."],
-        ["byte 0 bit 6", "X", "Extended-length format select."],
-        ["byte 0 bits 5..2", "L / payload", "When X=1, additional instruction bytes minus 1. When X=0, these bits are short payload[13:10]."],
-        ["byte 0 bits 1..0", "payload", "High opcode payload bits: short payload[9:8] or extended payload[9:8]."],
-        ["byte 1 bits 7..0", "payload", "Low opcode payload bits: payload[7:0]."],
+        ["byte 0 bit 7", "class", "0 selects a one-byte extrashort instruction with payload in byte0[6:0]."],
+        ["byte 0 bits 7..6", "class", "10 selects a two-byte short instruction; 11 selects an extended instruction."],
+        ["byte 0 bits 5..2", "L / payload", "For short, payload[13:10]. For extended, L encodes total instruction bytes as 3+L."],
+        ["byte 0 bits 1..0", "opcode", "For short, payload[9:8]. For extended, the first two opcode-stream bits."],
+        ["byte 1 bits 7..0", "opcode", "For short, payload[7:0]. For extended, the next eight opcode-stream bits."],
     ]
     return "\n".join(
         [
@@ -2979,14 +3137,22 @@ def latex_instruction_word_formats_section(model: IsaModel) -> str:
                 "instruction_word_formats.tex",
                 {
                     "WORD0_BIT_DIAGRAM": bit_diagram,
-                    "WORD0_FIELD_TABLE": latex_table(["Bits", "Field", "Meaning"], field_rows, ["1.05in", "0.75in", "3.60in"], "Base Header Fields"),
+                    "WORD0_FIELD_TABLE": latex_table(["Bits", "Field", "Meaning"], field_rows, ["1.05in", "0.75in", "3.60in"], "Instruction Header Fields"),
                     "INSTRUCTION_ENCODING_DIAGRAMS": latex_instruction_encoding_diagrams(),
                     "SIZE_DECODING_TABLE": latex_code_table(
-                        ["B0.7", "B0.6", "B0.5", "B0.4", "B0.3", "B0.2", "Bytes"],
+                        ["Byte 0 Pattern", "Byte 1 Pattern", "Bytes"],
                         size_decoding_rows(),
-                        ["0.34in", "0.34in", "0.34in", "0.34in", "0.34in", "0.34in", "0.45in"],
-                        "Size Decoding Truth Table",
-                        {0, 1, 2, 3, 4, 5},
+                        ["1.25in", "1.25in", "0.55in"],
+                        "Instruction Length Truth Table",
+                        {0, 1},
+                        style="dense",
+                    ),
+                    "OPCODE_LENGTH_TABLE": latex_code_table(
+                        ["Opcode Selector", "Class", "Opcode Bytes", "Validity"],
+                        opcode_length_rows(),
+                        ["0.95in", "0.80in", "0.75in", "2.90in"],
+                        "Opcode Length Truth Table",
+                        {0, 1},
                         style="dense",
                     ),
                     "ENCODING_CLASS_TABLE": latex_table(
@@ -3022,11 +3188,11 @@ def latex_register_section(model: IsaModel) -> str:
         ["CS", "000", "code segment; default for instruction fetch and PC-relative forms"],
         ["DS", "001", "default data segment"],
         ["SS", "010", "stack segment; fixed for SP-relative forms"],
-        ["GS0", "011", "general segment 0"],
+        ["GS0", "011", "TLS context in the ELF and C ABIs"],
         ["GS1", "100", "general segment 1"],
         ["GS2", "101", "general segment 2"],
         ["GS3", "110", "general segment 3"],
-        ["GS4", "111", "general segment 4"],
+        ["GS4", "111", "volatile far-data window in bedrock-c-far; otherwise target-specific"],
     ]
     control_rows = [
         ["PTCR", "page-table control and root"],
@@ -3140,13 +3306,15 @@ def latex_condition_computation_section(model: IsaModel) -> str:
                     "INTEGER_FLAG_RULE_TABLE": latex_table(
                         ["Operation Class", "FLAGS Result"],
                         [
-                            ["ADD, ADC", "Z and N come from the stored result. C is the unsigned carry out. V reports signed overflow."],
-                            ["SUB, SBB, CMP", "Z and N come from the subtraction result. C is the unsigned borrow. V reports signed overflow. CMP does not store the temporary result."],
-                            ["AND, OR, XOR, TEST", "Z and N come from the logical result. C and V are cleared. TEST does not store the temporary result."],
-                            ["INC, DEC", "Use the ADD or SUB rule with an implicit operand of one when the form updates FLAGS. INCN and DECN leave FLAGS unchanged."],
-                            ["NEG", "Computes 0 - dst; FLAGS follow the subtraction rule."],
-                            ["ABS", "Updates FLAGS from the absolute-value result and reports overflow for the most negative signed value."],
-                            ["CLR", "Writes zero and leaves FLAGS unchanged in the current definition."],
+                            ["ADD, SUB, AND, OR, XOR", "Leave FLAGS unchanged."],
+                            ["ADC, SBB", "Read C as carry/borrow input and update Z, N, C, and V from the stored result."],
+                            ["CMP, TEST", "Update Z, N, C, and V from the temporary result and do not store that result."],
+                            ["CMPJcc, TESTJcc", "Compute temporary condition flags for the branch decision and leave architectural FLAGS unchanged."],
+                            ["INC, DEC", "Leave FLAGS unchanged."],
+                            ["INCF, DECF", "Update Z, N, C, and V from the stored increment/decrement result."],
+                            ["SETF, CLRF", "Set or clear selected FLAGS bits from the imm4 mask; unselected FLAGS bits are preserved."],
+                            ["NEG, ABS", "Leave FLAGS unchanged."],
+                            ["CLR", "Writes zero and leaves FLAGS unchanged."],
                             ["Bounds checks", "Set V when the value is outside the selected interval; Z, N, and C are unchanged."],
                         ],
                         ["1.30in", "4.10in"],
@@ -3179,163 +3347,10 @@ def latex_condition_computation_section(model: IsaModel) -> str:
     )
 
 
-def latex_prefix_section(model: IsaModel) -> str:
-    data = model.metadata.get("prefixes") or {}
-    rows = []
-    for prefix in data.get("prefixes", []) or []:
-        value = prefix.get("value", prefix.get("pattern", ""))
-        if isinstance(value, int):
-            value = bits_text(value, 8)
-        rows.append([value, prefix.get("name", ""), prefix.get("group", ""), compact_text(prefix.get("applies_to", "-")) or "-"])
-    word = data.get("prefix_word") or {}
-    access_rows = []
-    for prefix in data.get("prefixes", []) or []:
-        if not isinstance(prefix, dict) or prefix.get("group") != "access_domain":
-            continue
-        syntax = prefix.get("syntax") or {}
-        access_rows.append(
-            [
-                prefix.get("name", ""),
-                bits_text(prefix.get("value", ""), 8) if isinstance(prefix.get("value"), int) else prefix.get("value", ""),
-                syntax.get("operand_annotation", ""),
-                syntax.get("default_domain", ""),
-            ]
-        )
-    address_update_table = latex_code_table(
-        ["Syntax", "Meaning"],
-        [
-            ["[Rn++ + disp]", "use the current Rn as a base term, then advance the temporary base image by the access size"],
-            ["[--Rn + disp]", "decrement the temporary base image by the access size, then use it as a base term"],
-            ["[Rn(base) + Rn(index)++ * scale + disp]", "use the current index term, then advance the temporary index image by one element"],
-            ["[Rn(base) + --Rn(index) * scale + disp]", "decrement the temporary index image by one element, then use it as the index term"],
-        ],
-        ["2.15in", "3.25in"],
-        "Address-Update EA Syntax",
-        {0},
-        listed=False,
-    )
-    access_domain_table = latex_code_table(
-        ["Prefix", "Bits", "Operand Annotation", "Default Domain"],
-        access_rows,
-        ["0.70in", "0.55in", "2.70in", "1.10in"],
-        "Access-Domain Prefix Syntax",
-        {0, 1, 2},
-        listed=False,
-    )
-    prefix_word_rules = latex_table(
-        ["Property", "Value"],
-        [
-            ["Bytes per instruction", word.get("bytes_per_instruction", "")],
-            ["Fill order", compact_text(word.get("fill_order", ""))],
-            ["Decode order", compact_text(word.get("decode_order", ""))],
-            ["Unused slot encoding", word.get("unused_slot_encoding", "")],
-            ["Conflict resolution", word.get("conflict_resolution", "")],
-        ],
-        ["1.65in", "3.75in"],
-        "Prefix Word Rules",
-        listed=False,
-    )
-    prefix_slot_table = latex_code_table(
-        ["Value/Pattern", "Name", "Group", "Applies To"],
-        rows,
-        ["1.15in", "1.0in", "1.25in", "1.75in"],
-        "Prefix Slot Encoding",
-        {0, 1},
-        listed=False,
-    )
-    repeat = next((item for item in data.get("prefixes", []) or [] if isinstance(item, dict) and item.get("name") == "REPcc"), None)
-    repcc_section = ""
-    if repeat:
-        counter = repeat.get("counter_encoding") or {}
-        rep_rule_table = latex_table(
-            ["Rule", "Value"],
-            [
-                ["Syntax", compact_text((repeat.get("syntax") or {}).get("mnemonic_template", "REPcc"))],
-                ["Condition field", compact_text((repeat.get("condition") or {}).get("field", ""))],
-                ["Counter operand", compact_text((repeat.get("operand") or {}).get("type", ""))],
-                ["Counter range", compact_text((repeat.get("operand") or {}).get("range", ""))],
-                ["Counter interpretation", counter.get("interpretation", "")],
-                ["Zero rule", counter.get("zero_rule", "")],
-                ["Counter update", counter.get("update_after_condition_true_iteration", "")],
-                ["Condition-false terminating iteration", repeat.get("commit_rule", "")],
-            ],
-            ["1.80in", "3.60in"],
-            "REPcc Execution Rules",
-            listed=False,
-        )
-        observed_value_table = latex_code_table(
-            ["Mnemonic Class", "Observed Value", "REPFLAGS Rule"],
-            [
-                ["MOV", "source value", "set Z/N from the observed value and clear C/V"],
-                ["CMP", "right operand minus left operand", "compute subtract flags from the comparison result"],
-                ["TEST", "left operand bitwise-and right operand", "set Z/N from the observed value and clear C/V"],
-                ["EXTS/EXTZ", "extended result value", "set Z/N from the extended value and clear C/V"],
-                ["FCMP/FTEST", "floating-point comparison result", "use the floating-point comparison flag rule defined by the FP group"],
-                ["Bounds checks", "interval-check result", "set V when the selected bound check fails"],
-            ],
-            ["0.95in", "1.85in", "2.60in"],
-            "REPcc Observed Values",
-            {0},
-            listed=False,
-        )
-        repcc_section = render_latex_template(
-            "repcc_prefix.tex",
-            {
-                "REP_RULE_TABLE": rep_rule_table,
-                "OBSERVED_VALUE_TABLE": observed_value_table,
-                "REPCC_EXAMPLES": render_latex_template("repcc_behavior_examples.tex"),
-            },
-        )
-    repg_rule_table = latex_code_table(
-        ["Rule", "Value"],
-        [
-            ["Counter", "Rn signed two's-complement counter, updated toward zero after each completed group iteration"],
-            ["Group length", "explicit byte count; zero and non-boundary lengths are invalid"],
-            ["Commit point", "after the whole group iteration succeeds"],
-            ["Restart", "completed iterations remain committed; the remaining counter value identifies unfinished work"],
-            ["Discovery", "the group is decoded from ordinary instruction boundaries for exactly the encoded byte count"],
-            ["Fault PC", "the fault frame names the instruction that faulted inside the current group iteration"],
-        ],
-        ["1.35in", "4.05in"],
-        "REPG Execution Rules",
-        {0},
-        listed=False,
-    )
-    repg_class_table = latex_code_table(
-        ["Class", "Static Requirements", "Implementation Contract"],
-        [
-            ["REPG-fast candidate", "counter Rn is not written by the group, effective addresses are regular, memory is ordinary, and the group has no control or state changes", "implementation may use a streaming engine, loop buffer, or wider internal datapath"],
-            ["REPG-general", "counter Rn may be read or written and dependencies may be less regular, while the group still obeys the straight-line group model", "implementation preserves exact scalar group semantics without a fast-execution promise"],
-        ],
-        ["1.05in", "2.60in", "1.75in"],
-        "REPG Execution Classes",
-        {0},
-        listed=False,
-    )
-    return "\n".join(
-        [
-            str(LatexTopSection("Prefixes")),
-            render_latex_template(
-                "prefixes.tex",
-                {
-                    "ADDRESS_UPDATE_TABLE": address_update_table,
-                    "ACCESS_DOMAIN_TABLE": access_domain_table,
-                    "PREFIX_WORD_DIAGRAM": latex_prefix_word_diagram(),
-                    "PREFIX_WORD_RULES": prefix_word_rules,
-                    "PREFIX_SLOT_TABLE": prefix_slot_table,
-                    "REPCC_SECTION": repcc_section,
-                    "REPG_RULE_TABLE": repg_rule_table,
-                    "REPG_CLASS_TABLE": repg_class_table,
-                },
-            ),
-        ]
-    )
-
-
 def latex_ea_section(model: IsaModel) -> str:
     data = model.metadata.get("ea") or {}
     compact_rows = [
-        [form.get("bits", ""), form.get("syntax", form.get("class", "")), form.get("class", ""), form.get("memory", "")]
+        [form.get("bits", ""), form.get("syntax", form.get("class", "")), form.get("class", ""), display_text(form.get("memory", ""))]
         for form in data.get("compact_ea", []) or []
     ]
     ext_rows = [
@@ -3448,12 +3463,12 @@ def latex_ea_section(model: IsaModel) -> str:
 def latex_execution_model_section(model: IsaModel) -> str:
     rules = (model.metadata.get("semantics") or {}).get("encoding_rules") or {}
     rows = [
-        ["Instruction boundary", "The base header length selects the full instruction record; prefixes and later payloads never extend it implicitly."],
-        ["Overlong encoding", compact_text(((rules.get("instruction_length") or {}).get("overlong_encoding") or {}).get("payload", ""))],
-        ["Undersized encoding", compact_text(((rules.get("instruction_length") or {}).get("undersized_encoding") or {}).get("rule", ""))],
-        ["Default memory operands", compact_text((rules.get("memory_operands") or {}).get("default", ""))],
+        ["Instruction boundary", "The instruction header length selects the full instruction record; later payloads never extend it implicitly."],
+        ["Overlong encoding", display_text(((rules.get("instruction_length") or {}).get("overlong_encoding") or {}).get("payload", ""))],
+        ["Undersized encoding", display_text(((rules.get("instruction_length") or {}).get("undersized_encoding") or {}).get("rule", ""))],
+        ["Default memory operands", display_text((rules.get("memory_operands") or {}).get("default", ""))],
         ["Memory-memory exceptions", compact_text((rules.get("memory_operands") or {}).get("memory_memory_allowed_for", ""))],
-        ["Repeat prefixes", compact_text((rules.get("repeat_prefixes") or {}).get("members", ""))],
+        ["Repeat instructions", compact_text((rules.get("repeat_instructions") or {}).get("members", ""))],
     ]
     execution_defaults_table = latex_table(
         ["Topic", "Spec Value"],
@@ -3474,7 +3489,7 @@ def latex_execution_model_section(model: IsaModel) -> str:
             ["Size suffix placement", "mnemonic suffix"],
             ["Integer suffixes", "B, W, L, Q"],
             ["Floating suffixes", "S, D where the floating-point group defines them"],
-            ["Conditional suffix users", "DJcc, IJcc, Jcc, MOVcc, SETcc, TRAPcc, FMOVcc, REPcc"],
+            ["Conditional suffix users", "CMPJcc, DJcc, IJcc, Jcc, MOVcc, SETcc, TESTJcc, FMOVcc"],
             ["Single-size mnemonics", "omit the suffix when the form has only one architectural size"],
         ],
         ["1.45in", "3.95in"],
@@ -3484,7 +3499,7 @@ def latex_execution_model_section(model: IsaModel) -> str:
         ["Term", "Meaning"],
         [
             ["Operand Read", "read operand value after applying its addressing mode and operation size"],
-            ["Operand Write", "write result back to the destination using the selected operation size"],
+            ["Operand Write", "write the selected-size result to the destination; sub-Q Rn writes preserve upper bits unless the instruction defines another upper-bit rule"],
             ["EA Address", "compute an effective address without reading memory unless the operation needs the memory value"],
             ["Selector", "selector operands may name an Rn register, a segment register, or an encoded immediate selector"],
             ["Overlong", "extra trailing instruction payload bytes are ignored only when the form explicitly permits them"],
@@ -3529,23 +3544,54 @@ def latex_execution_model_section(model: IsaModel) -> str:
 
 
 def latex_streaming_model_section(model: IsaModel) -> str:
+    repeat_syntax_table = latex_table(
+        ["Form", "Syntax"],
+        repeat_syntax_rows(model),
+        ["1.05in", "4.35in"],
+        "Repeat Instruction Syntax",
+    )
+    repeatable_class_table = latex_table(
+        ["Context", "Meaning"],
+        repeatable_class_rows(model),
+        ["0.85in", "4.55in"],
+        "Repeatability Contexts",
+    )
+    repeat_body_entry_table = latex_table(
+        ["Rule", "Meaning"],
+        repeat_body_entry_rows(model),
+        ["1.65in", "3.75in"],
+        "Repeat Body Entry Rules",
+    )
+    repeat_counter_table = latex_table(
+        ["Rule", "Meaning"],
+        repeat_counter_rows(model),
+        ["1.65in", "3.75in"],
+        "Repeat Counter and Condition Rules",
+    )
+    repeat_legality_table = latex_table(
+        ["Rule", "Meaning"],
+        repeat_legality_rows(model),
+        ["1.65in", "3.75in"],
+        "Repeat Legality, PC, and Debug Rules",
+    )
     streaming_candidate_table = latex_table(
         ["Candidate", "Typical Shape"],
         [
-            ["copy/fill", "REP MOV or REP MOV from one Rn-stepped stream to another"],
-            ["scan/compare", "REPcc MOV, TEST, or CMP with terminating condition-false iteration"],
-            ["bulk extension", "REP EXTS/EXTZ with source and destination auto-update"],
-            ["cache maintenance", "REPG or REP over regular cache-line traversal where the instruction definition permits repetition"],
+            ["copy/fill", "REPG over MOV from one Rn-stepped stream to another; REPGF may be used as an assembler-checked spelling"],
+            ["scan/compare", "REPG over TEST or CMP where the grouped body handles termination"],
+            ["bulk extension", "REPG over EXTS/EXTZ with source and destination auto-update"],
+            ["cache maintenance", "REPG over regular cache-line traversal where the instruction definition permits repetition"],
             ["fixed instruction group", "REPG group whose byte count ends on an instruction boundary and whose body is straight-line"],
         ],
         ["1.35in", "4.05in"],
         "Streaming Candidate Shapes",
     )
     repeat_restart_table = latex_table(
-        ["Property", "REPcc", "REPG"],
+        ["Property", "single-instruction repeat", "REPG"],
         [
-            ["Counter test", "before each scalar body iteration", "before each group iteration"],
-            ["Body", "one following instruction", "encoded nonempty byte-counted instruction group"],
+            ["Body decode", "body instruction decoded once when repeat state is entered", "group body decoded once when repeat state is entered"],
+            ["Zero counter", "body checked, then annulled with no side effects", "group checked, then annulled with no side effects"],
+            ["Body", "one following instruction", "encoded byte-counted instruction group"],
             ["Counter update", "after a completed condition-true iteration", "after the whole group iteration succeeds"],
             ["Terminating fault", "reported at the repeated scalar instruction", "reported at the faulting instruction inside the current group iteration"],
             ["Completed work", "completed iterations remain committed", "completed iterations and completed prior group instructions remain committed"],
@@ -3559,6 +3605,11 @@ def latex_streaming_model_section(model: IsaModel) -> str:
             render_latex_template(
                 "streaming_execution_model.tex",
                 {
+                    "REPEAT_SYNTAX_TABLE": repeat_syntax_table,
+                    "REPEATABLE_CLASS_TABLE": repeatable_class_table,
+                    "REPEAT_BODY_ENTRY_TABLE": repeat_body_entry_table,
+                    "REPEAT_COUNTER_TABLE": repeat_counter_table,
+                    "REPEAT_LEGALITY_TABLE": repeat_legality_table,
                     "STREAMING_CANDIDATE_TABLE": streaming_candidate_table,
                     "REPEAT_RESTART_TABLE": repeat_restart_table,
                 },
@@ -3570,10 +3621,12 @@ def latex_streaming_model_section(model: IsaModel) -> str:
 def latex_memory_translation_section(model: IsaModel) -> str:
     composition_rows = [
         ["Effective address", "address generated by the selected EA form"],
+        ["Segment image", "base = base_page * 4096; span = (m << e) * 4096; limit = base + span, checked before 64-bit truncation"],
         ["Segment pre-translation", "disabled segments pass the address through; enabled segments check a byte-addressed window with page-granular base and span"],
         ["Linear address", "segment output, or the EA directly when segmentation is disabled"],
         ["Paging enabled", "walk page tables from PTCR.root_page and apply PTE attributes"],
         ["Paging disabled", "use the linear address directly as the memory-system address"],
+        ["Faults", "invalid segment images raise INVALID_CONTROL_STATE on write; bounds and canonical-address failures raise PAGE_FAULT"],
     ]
     segment_rows = [
         ["disabled", "m = 0", "no segment-window check", "linear = EA"],
@@ -3647,7 +3700,7 @@ def latex_privileged_programming_model_section(model: IsaModel) -> str:
         ["No.", "Subject", "Rule"],
         [
             [1, "privilege mode encoding", "STATUS.PM=0 is user mode; STATUS.PM=1 is supervisor mode."],
-            [2, "access domain", "Supervisor memory accesses use the current domain by default; U2C, C2U, and U2U select user-domain access for annotated memory operands of that instruction only."],
+            [2, "access domain", "Ordinary supervisor memory operands use current-domain access. Checked user-domain memory access is expressed only by MOVUC, MOVCU, and MOVUU."],
             [3, "entry STATUS update", "SYSCALL, trap, interrupt, and exception entry set STATUS.PM to 1 and otherwise use the entry rule defined by the event class."],
             [4, "saved STATUS return", "SYSRET and IRET restore the saved STATUS image after validating that the return state is architecturally permitted."],
             [5, "SYSCALL frame and entry", "SYSCALL saves FRAME_CONTROL, SS:SP, CS:PC, and DS, then loads the supervisor entry target from SPC/SCS/SDS."],
@@ -3669,8 +3722,8 @@ def latex_privileged_programming_model_section(model: IsaModel) -> str:
             ["STATUS.RF", "0/1", "resume flag for exception restart"],
             ["STATUS.NI", "0/1", "nested-interrupt inhibit"],
             ["STATUS.IN", "0/1", "inside interrupt or supervisor entry"],
-            ["access domain C", "-", "current privilege-mode memory access domain"],
-            ["access domain U", "-", "user memory access domain selected per instruction by U2C, C2U, or U2U"],
+            ["current memory domain", "-", "default memory access domain for ordinary memory operands"],
+            ["checked user access", "-", "MOVUC, MOVCU, and MOVUU select user-domain access for their architecturally defined memory operands"],
         ],
         ["1.05in", "0.45in", "3.90in"],
         "Privilege State and Access Domains",
@@ -3768,7 +3821,6 @@ def latex_exception_processing_section(model: IsaModel) -> str:
             ["0x01", "NMI", "non-maskable interrupt", "BASIC"],
             ["0x02", "BREAKPOINT", "BKPT instruction", "BASIC"],
             ["0x03", "ILLEGAL_INSTRUCTION", "illegal, undefined, reserved, noncanonical, or disabled extension encoding", "BASIC"],
-            ["0x05", "TRAP", "TRAP instruction or true TRAPcc condition", "BASIC"],
             ["0x08", "PRIVILEGE_FAULT", "privileged instruction, control-register access, or supervisor-only state violation", "ERROR"],
             ["0x09", "PAGE_FAULT", "segment pre-translation, page-table translation, permission, presence, or stack-memory translation failure", "PAGE_FAULT"],
             ["0x0A", "DIVIDE_ERROR", "integer divide, modulo, or quotient overflow", "ERROR"],
@@ -3780,7 +3832,7 @@ def latex_exception_processing_section(model: IsaModel) -> str:
             ["0x19", "MACHINE_CHECK", "machine-check or hardware integrity failure", "AUX_FAULT"],
             ["0x1A", "BUS_ERROR", "externally acknowledged or bus-sized access failure", "AUX_FAULT"],
         ],
-        ["0.50in", "1.35in", "2.70in", "0.85in"],
+        ["0.50in", "1.55in", "2.50in", "0.85in"],
         "CPU-Owned Interrupt Vectors",
         listed=False,
     )
@@ -3804,7 +3856,7 @@ def latex_exception_processing_section(model: IsaModel) -> str:
     )
     exception_instruction_table = latex_code_table(
         ["Instruction", "Summary"],
-        instruction_brief_rows(model, ["TRAP", "BKPT", "IRET", "RESET"]),
+        instruction_brief_rows(model, ["BKPT", "IRET", "RESET"]),
         ["0.85in", "4.55in"],
         "Exception Processing Instructions",
         {0},
@@ -3859,7 +3911,7 @@ def latex_exception_processing_section(model: IsaModel) -> str:
             ["frame_type", "20..23", "supervisor stack frame type code"],
             ["from_user", "24", "entry was taken from user mode"],
             ["nmi_frame", "25", "frame was created by NMI entry"],
-            ["rep_fault", "26", "fault occurred during REP, REPcc, or REPG repeated execution"],
+            ["rep_fault", "26", "repeat continuation state is saved in FAULT_AUX"],
             ["entry_flags", "27..31", "reserved entry flags for this base profile; must be zero unless defined"],
             ["flags", "32..47", "saved FLAGS image"],
             ["status", "48..63", "saved STATUS image"],
@@ -3868,14 +3920,9 @@ def latex_exception_processing_section(model: IsaModel) -> str:
         "FRAME_CONTROL Fields",
         listed=False,
     )
-    repeat_fault_aux_table = latex_table(
+    repeat_fault_aux_table = latex_fixed_table(
         ["Field", "Bits", "Meaning"],
-        [
-            ["counter_register", "0..3", "Rn counter number used by REP, REPcc, or REPG"],
-            ["group_start_delta_words", "4..8", "REPG unsigned negative displacement in 16-bit words from saved fault_pc to the first grouped instruction"],
-            ["repeat_kind", "9..10", "0: REP/REPcc, 1: REPG-general, 2: REPG-fast, 3: reserved"],
-            ["reserved", "11..63", "reserved, must be zero"],
-        ],
+        repeat_fault_aux_rows(model),
         ["1.55in", "0.60in", "3.35in"],
         "Repeat Fault Auxiliary Fields",
         listed=False,
@@ -3917,6 +3964,7 @@ def latex_exception_processing_section(model: IsaModel) -> str:
                     "PAYLOAD_SLOT_TABLE": payload_slot_table,
                     "FRAME_CONTROL_DIAGRAM": latex_frame_control_diagram(),
                     "FRAME_CONTROL_TABLE": frame_control_table,
+                    "REPEAT_FAULT_AUX_DIAGRAM": latex_repeat_fault_aux_diagram(),
                     "REPEAT_FAULT_AUX_TABLE": repeat_fault_aux_table,
                     "RESET_STATE_TABLE": reset_state_table,
                 },
@@ -3937,7 +3985,7 @@ def latex_c_library_examples_section() -> str:
                             "; memcpy(dst, src, n), byte copy forward",
                             "; R0 = src, R1 = dst",
                             "; R2 = n",
-                            "REP R2, MOV.B [R0++], [R1++]",
+                            "REP R2, (MOV.B [R0++], [R1++])",
                         ]
                     ),
                     "MEMMOVE_EXAMPLE": latex_code_block(
@@ -3945,7 +3993,7 @@ def latex_c_library_examples_section() -> str:
                             "; memmove(dst, src, n), non-overlapping or forward byte copy",
                             "; R0 = src, R1 = dst",
                             "; R2 = n",
-                            "REP R2, MOV.B [R0++], [R1++]",
+                            "REP R2, (MOV.B [R0++], [R1++])",
                         ]
                     ),
                     "MEMSET_EXAMPLE": latex_code_block(
@@ -3953,7 +4001,7 @@ def latex_c_library_examples_section() -> str:
                             "; memset(dst, c, n), byte fill",
                             "; R1 = dst, R3 = byte c",
                             "; R2 = n",
-                            "REP R2, MOV.B R3, [R1++]",
+                            "REP R2, (MOV.B R3, [R1++])",
                         ]
                     ),
                     "MEMCMP_EXAMPLE": latex_code_block(
@@ -3961,7 +4009,7 @@ def latex_c_library_examples_section() -> str:
                             "; memcmp(a, b, n), forward byte compare",
                             "; R0 = a, R1 = b",
                             "; R2 = n",
-                            "REPEQ R2, CMP.B [R0++], [R1++]",
+                            "REPEQ R2, (CMP.B [R0++], [R1++])",
                         ]
                     ),
                     "BULK_EXTENSION_EXAMPLE": latex_code_block(
@@ -3969,7 +4017,7 @@ def latex_c_library_examples_section() -> str:
                             "; widen n bytes to n 32-bit elements",
                             "; R0 = src, R1 = dst",
                             "; R2 = n",
-                            "REP R2, EXTZL.B [R0++], [R1++]",
+                            "REP R2, (EXTZL.B [R0++], [R1++])",
                         ]
                     ),
                 },

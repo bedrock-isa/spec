@@ -13,6 +13,10 @@ behavior:
   - arch_prefetch(src_v);
 attributes:
   privilege: user allowed
+  repeatable:
+    rep: true
+    repcc: false
+    repg: true
 forms:
   src_ea_set: memory_only
   require_memory_operand: true

@@ -1,46 +1,34 @@
+\subsection{Contract Position}
+\BedrockContractDiagram{foundation}
+
 \subsection{Design Goals}
 Bedrock is a bounded, byte-addressed CISC ISA with explicit instruction lengths, compact hot-path register forms,
 and selected register-memory and memory-memory forms.
 
-The rewrite keeps the manual organized around programmer-visible behavior first: architectural state, operand
-encoding, execution semantics, and instruction descriptions. Allocation mechanics stay out of the reference text
-unless they are required to decode an instruction form.
+The manual presents programmer-visible behavior first: architectural state, operand encoding, execution semantics,
+and instruction descriptions. Encoding details appear where they are needed to decode or use an instruction form.
 
 \subsection{Architectural Profile}
-The rewrite uses a unified 16-entry Rn integer register file. SP and PC are special architectural registers outside
-the Rn namespace, with SP-relative addressing tied to SS and PC-relative addressing tied to CS.
+Bedrock uses a unified 16-entry Rn integer register file. SP and PC are special architectural registers outside the
+Rn namespace, with SP-relative addressing tied to SS and PC-relative addressing tied to CS.
 
-The opcode space is split into short, medium, long, and extralong payload classes. The first instruction byte
-identifies whether a prefix is present, whether the instruction uses the extended length format, and the high
-length/payload fields.
+The reference is organized around programmer-visible state, operand formation, execution semantics, and instruction
+behavior. Byte-level instruction framing is specified separately in the Instruction Header Formats chapter.
 
 \begin{itemize}
-\item Two-byte base instruction header; byte 0 bit 7 is the prefix-present bit and byte 0 bit 6 is the extended-format bit.
-\item Byte-addressed PC; instructions begin on 16-bit boundaries.
-\item Instruction size is determined from the first two bytes before operand decoding.
-\item One optional 16-bit prefix word supplies two independent 8-bit prefix slots.
-\item Instruction length ranges from 2 to 20 bytes, including any prefix word.
+\item The PC names a byte in the instruction stream; sequential execution advances it by the decoded instruction length.
+\item Instruction length is explicit and bounded; the base profile defines lengths from 1 to 18 bytes.
 \item Four integer operation sizes: B, W, L, and Q.
-\item Seven-bit compact EA field, with EXT0 for explicit segments, indexed forms, zero-base forms, SP/PC indexed forms, and auto-update forms.
+\item The effective-address model covers register, memory, immediate, absolute, segment-qualified, indexed, and auto-update operands.
 \item Segment pre-translation precedes optional page-table translation.
-\item REPcc and REPG expose scalar repeated execution while leaving internal streaming width implementation-defined.
+\item User and supervisor modes share the instruction set, with privileged instructions and checked user-access moves defining supervisor-only behavior.
+\item REP, REPcc, and REPG expose scalar repeated execution while leaving internal streaming width implementation-defined.
 \end{itemize}
 
 \subsection{Instruction Stream}
-Instructions begin on 16-bit boundaries. The first two instruction bytes determine the complete instruction length
-before operand decoding begins.
+The byte addressed by PC is byte 0 of the current instruction. Instruction decoding determines the complete
+instruction length before operand evaluation begins.
 
-If the prefix-present bit is set, the next 16-bit word contains two prefix slots. Any remaining bytes selected by
-the instruction length belong to the opcode payload, EA descriptors, immediates, displacements, or
-instruction-specific payloads.
-
-\subsection{Base Header Format}
-The base header is described in instruction-stream byte order. Byte 0 bit 7 carries the prefix-present bit, byte 0
-bit 6 carries the extended-format bit, byte 0 bits 5..2 carry the extended length field when present, and byte 1
-carries payload bits 7..0. The detailed size truth table is in the Instruction Header Formats chapter.
-
-\subsection{Prefix Model}
-A prefix word contains two independent 8-bit slots interpreted from low byte to high byte. Prefixes modify only the
-immediately following instruction.
-
-Address auto-update is not a prefix effect in the rewrite; postincrement and predecrement are encoded by EA forms.
+Any remaining bytes selected by the instruction length belong to the opcode payload, EA descriptors, immediates,
+displacements, or instruction-specific payloads. The detailed length and opcode-class truth tables are in the
+Instruction Header Formats chapter.

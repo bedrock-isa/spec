@@ -10,14 +10,16 @@ behavior:
   - src
   input_output: dst
   operation:
-  - if (dst_v s> src_v) goto <minmax_done>;
+  - if (dst_v s<= src_v) goto <minmax_done>;
   - dst_v = src_v;
   - <minmax_done>
   signedness: signed
 attributes:
   privilege: unprivileged
-  prefix_availability:
-  - SATURATE
+  repeatable:
+    rep: true
+    repcc: true
+    repg: true
 forms:
   operands:
   - - name: src

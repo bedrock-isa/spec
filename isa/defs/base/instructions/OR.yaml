@@ -12,18 +12,15 @@ behavior:
   operation:
   - result_v = dst_v | src_v;
   - dst_v = result_v;
-  - ZF = result_v == 0;
-  - NF = result_v s< 0;
-  - CF = 0;
-  - VF = 0;
 attributes:
   privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: true
+    repg: true
+  repgf_candidate: true
   streaming_candidate: true
-  flags:
-    Z: result == 0
-    N: most_significant_bit(result)
-    C: '0'
-    V: '0'
+  flags: unchanged
 forms:
   dst_ea_set: store_destination
   compact_forms:
@@ -64,10 +61,5 @@ forms:
   form: destructive two-address form
   result: second operand
   memory_memory: disallowed
-  prefixes:
-    legal:
-    - NPX
-    - NOSPEC
-    - SATURATE
 definition_status:
   allocation: 'external: isa/alloc'

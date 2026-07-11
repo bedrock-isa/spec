@@ -15,7 +15,7 @@ display_labels:
   NV: NV
   OF: OF
   PC: PC
-  REPFLAGS: REPFLAGS
+  REPEAT_FLAGS: REPEAT_FLAGS
   SS: SS
   TLB: TLB
   UF: UF
@@ -41,7 +41,7 @@ display_labels:
   placement: Placement
   privilege: Privilege
   repeat_observed_value: REP observed value
-  repflag_rules: REPFLAGS rules
+  repeat_flag_rules: REPEAT_FLAGS rules
   segment_registers: Segment-register operands
   selector: Selector
   source_sizes_by_destination: Source sizes
@@ -70,8 +70,7 @@ groups:
       '
   - term: physical address
     definition: 'A byte-addressed memory address derived by page-table translation for ordinary byte-addressed
-      memory. When paging is disabled, the linear address is not called a physical address by this specification;
-      it is used directly as the memory-system address.
+      memory. With paging disabled, the memory system uses the linear address directly.
 
       '
   - term: memory-system address
@@ -135,8 +134,8 @@ groups:
 
       '
   - term: segment-changing control transfer
-    definition: 'A control transfer that updates CS and PC as one architectural commit. Long calls and
-      long returns belong to this category.
+    definition: 'A control transfer that updates CS and PC as one architectural commit. Long jumps, long
+      calls, and long returns belong to this category.
 
       '
   - term: linkage domain
@@ -147,6 +146,19 @@ groups:
   - term: veneer
     definition: 'A small runtime-generated or linker-generated near-call entry point that hides a more
       complex transfer sequence from ordinary callers.
+
+      '
+  - term: far data address
+    definition: 'A C data-address pair containing a canonical post-segment virtual address and a
+      canonical disabled or bounds-only segment image. The optional C far-data profile gives this pair
+      a 128-bit language ABI representation; the base ISA still permits translated segments internally
+      and does not treat the pair as an unforgeable capability.
+
+      '
+  - term: far-data window
+    definition: 'An architectural segment register temporarily loaded from a far data address so an
+      ordinary explicit-segment memory operation can perform the access. The optional C far-data profile
+      assigns this role to GS4.
 
       '
 - name: Architectural State
@@ -183,11 +195,6 @@ groups:
       ASCR, ICR, SPC, SCS, and SDS.
 
       '
-  - term: prefix
-    definition: 'An 8-bit modifier stored in the optional prefix word. Prefix bytes are interpreted from
-      low byte to high byte; when two prefixes conflict, the later prefix overrides the earlier one.
-
-      '
 - name: Compatibility
   terms:
   - term: reserved
@@ -201,8 +208,8 @@ groups:
 
       '
   - term: read-as-zero
-    definition: 'Hardware returns zero for the field on this implementation. Software must still treat
-      the field as reserved unless it is explicitly software-defined.
+    definition: 'Reads of the field return zero. Software must still treat the field as reserved
+      unless it is explicitly software-defined.
 
       '
   - term: ignored
@@ -226,7 +233,6 @@ groups:
       '
   - term: illegal
     definition: 'Use of a disallowed instruction opcode encoding, effective-address form, selector, or
-      operation raises the exception named by the defining rule. Prefix bytes use the prefix model''s
-      own unassigned value rule.
+      operation raises the exception named by the defining rule.
 
       '

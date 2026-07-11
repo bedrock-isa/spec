@@ -11,6 +11,10 @@ behavior:
   - dst_v = fp_const(constant_v & 0xffff);
 attributes:
   privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: false
+    repg: true
   fp_flags: unchanged
   flags: unchanged
 forms:

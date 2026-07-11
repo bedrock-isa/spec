@@ -2,8 +2,8 @@ This section defines the default compatibility contract for reserved fields, opt
 architectural growth. A later section may narrow one of these defaults for a specific structure, but it must say so
 explicitly.
 
-Reserved and unallocated are the same architectural category in this manual: software must not depend on a current
-value, decode result, or behavior for a reserved encoding or field.
+This manual treats reserved and unallocated encodings as one architectural category: software must not depend on their
+value, decode result, or behavior.
 
 \subsection{Terminology}
 @TERMINOLOGY_TABLE@
@@ -28,13 +28,8 @@ use the same illegal-instruction path as other reserved instruction encodings.
 
 @RESERVED_ENCODING_TABLE@
 
-Prefix bytes are metadata, not instruction opcodes. Unassigned prefix values remain reserved for future prefix
-definitions and currently have no architectural effect.
-
 Noncanonical encodings are invalid unless an instruction description explicitly defines an alias or priority rule.
 Assemblers emit canonical encodings by default; disassemblers prefer canonical spellings.
-
-@PREFIX_DEFAULTS_TABLE@
 
 @CANONICAL_DEFAULTS_TABLE@
 

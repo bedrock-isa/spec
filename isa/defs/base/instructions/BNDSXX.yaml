@@ -18,17 +18,21 @@ behavior:
   - NF = 0;
   - CF = 0;
   - VF = 0;
-  - if (value_v <= lo_v) goto <bnduxx_bad>;
-  - if (value_v >= hi_v) goto <bnduxx_bad>;
-  - goto <bnduxx_done>;
-  - <bnduxx_bad>
+  - if (value_v s<= lo_v) goto <bndsxx_bad>;
+  - if (value_v s>= hi_v) goto <bndsxx_bad>;
+  - goto <bndsxx_done>;
+  - <bndsxx_bad>
   - VF = 1;
-  - <bnduxx_done>
+  - <bndsxx_done>
   interval: (lo, hi)
   signedness: signed
   bounds_mode: XX
 attributes:
   privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: true
+    repg: true
 forms:
   extension_family: integer_bounds_signed
   operands:

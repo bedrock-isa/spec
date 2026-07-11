@@ -99,11 +99,11 @@ int br_save_program_context(struct br_program_context *ctx,
     struct br_save_area_info info = br_query_save_area();
     uintptr_t raw = (uintptr_t)storage;
     uintptr_t base = br_align_up(raw, BR_SAVE_ALIGNMENT);
-    size_t prefix = (size_t)(base - raw);
+    size_t leading = (size_t)(base - raw);
 
-    if (prefix > storage_size)
+    if (leading > storage_size)
         return -1;
-    if (info.size > (uint64_t)(storage_size - prefix))
+    if (info.size > (uint64_t)(storage_size - leading))
         return -1;
     if (info.component_count > component_capacity)
         return -1;

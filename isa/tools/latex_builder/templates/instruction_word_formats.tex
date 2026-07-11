@@ -1,11 +1,11 @@
-The first two instruction bytes are the only input needed to find the instruction boundary. Prefix bytes and later
-opcode payload bytes never extend an instruction implicitly.
+Instruction framing is byte-oriented. Byte 0 alone identifies extrashort and short instructions; extended
+instructions use byte 0 and byte 1 to determine both total instruction length and opcode class.
 
-The base header is described in instruction-stream byte order: byte 0 bit 7 is P, byte 0 bit 6 is X, byte 0 bits
-5..2 are L when X=1, and byte 1 carries payload[7:0].
+Extended byte0[5:2] is L, and the total instruction length is 3+L bytes. The opcode stream begins at
+byte0[1:0], continues through byte1, and then consumes later bytes as required by the opcode class.
 
-Short instructions use X=0 and a 14-bit payload. Extended instructions use X=1, a 4-bit byte-length field, and a
-payload namespace decoded as medium, long, or extralong opcode encoding.
+An extended instruction is invalid if its encoded total length is shorter than the opcode class minimum: 3 bytes
+for medium, 4 bytes for long, and 5 bytes for extralong.
 
 @WORD0_BIT_DIAGRAM@
 
@@ -14,5 +14,7 @@ payload namespace decoded as medium, long, or extralong opcode encoding.
 @INSTRUCTION_ENCODING_DIAGRAMS@
 
 @SIZE_DECODING_TABLE@
+
+@OPCODE_LENGTH_TABLE@
 
 @ENCODING_CLASS_TABLE@

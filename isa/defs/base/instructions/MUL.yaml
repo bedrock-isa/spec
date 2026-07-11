@@ -17,7 +17,11 @@ behavior:
   - dst_v = low_N(dst_v * src_v);
 attributes:
   privilege: unprivileged
-  flags: may update FLAGS
+  repeatable:
+    rep: true
+    repcc: true
+    repg: true
+  flags: unchanged
 forms:
   operands:
   - - name: src

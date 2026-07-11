@@ -16,6 +16,11 @@ behavior:
   - dst_v = arch_count_trailing_ones(src_v, size_v);
 attributes:
   privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: true
+    repg: true
+  repgf_candidate: true
   flags: unchanged
 forms:
   operands:

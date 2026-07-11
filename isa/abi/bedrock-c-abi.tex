@@ -1,0 +1,910 @@
+\documentclass[10pt,twoside]{article}
+\newcommand{\BedrockArchitectureName}{Bedrock}
+\newcommand{\BedrockDocumentTitle}{Bedrock C ABI}
+\newcommand{\BedrockRunningTitle}{C ABI}
+\newcommand{\BedrockFooterTitle}{BEDROCK ARCHITECTURE}
+\input{isa/tex/bedrock-reference-common.tex}
+\begin{document}
+\BedrockMakeTitlePage{Bedrock C ABI}{C Language Binding and Far-Pointer Calling Convention}{Version 1.0}
+\BedrockFrontMatter
+
+\clearpage
+\section{Scope and Conformance}
+This document defines the Bedrock C data model, register convention, calling
+convention, far-pointer representation and calls, aggregate and variadic rules,
+compiler-runtime helper ABI, and C memory-model lowering. It depends on the
+Bedrock ELF ABI and the active platform/runtime environment ABI. Source syntax
+and semantics for target-specific C extensions are defined separately.
+
+\subsection{Contract Position}
+\BedrockContractDiagram{language}
+
+\subsection{Profile}
+\manualfield{Profile:}{\texttt{bedrock-c}}
+\manualfield{Defined extended type family:}{\texttt{bedrock-c-far}}
+
+\clearpage
+\section{Terminology}
+These terms are specific to the C binding. ELF and address-space terms keep the meanings defined by the Bedrock ELF ABI and the architecture manual.
+\begin{description}[style=nextline,leftmargin=1.45in,labelwidth=1.35in,itemsep=3pt,topsep=3pt]
+\item[object pointer] A 64-bit post-segment virtual address that designates an object or one-past an object according to the C abstract machine.
+\item[function pointer] A 64-bit post-segment code address naming a near-call entry point. It is not a CS:PC pair, far descriptor, or runtime-private veneer descriptor.
+\item[far data pointer] A 128-bit pointer containing a canonical post-segment virtual address and a disabled or bounds-only segment image.
+\item[far function pointer] A 128-bit function pointer containing a post-segment far-call entry address and a disabled or bounds-only \texttt{CS} image.
+\item[far-call entry] An \texttt{LCALL}/\texttt{LRET} entry point whose incoming stack contains a 16-byte \texttt{PC}:\texttt{CS} return frame.
+\item[caller-saved register] A register whose value may be overwritten by a call unless the caller saves it before the call.
+\item[callee-saved register] A register whose incoming value must be preserved by the called function if the function uses it.
+\item[sret buffer] Caller-allocated storage used to receive a return value that is too large or unsuitable for the normal return registers.
+\item[addressable by-value argument] A by-value aggregate argument that is passed through caller-owned stack storage because the callee may need an address for the object.
+\end{description}
+
+\clearpage
+\section{Data Model}
+\manualfield{Model:}{LP64}
+\manualfield{Byte Order:}{little endian}
+\manualfield{Instruction Header:}{16 bits}
+\manualfield{Internal SP:}{8-byte aligned}
+\manualfield{Function Entry:}{16-byte aligned}
+\manualfield{Before CALL:}{SP mod 16 = 8}
+\manualfield{Aggregate Maximum Alignment:}{16 bytes}
+\subsection{Scalar Types}
+\manualtablecaption{Reference C Data Model}
+\begingroup\footnotesize
+\setlength{\tabcolsep}{2pt}
+\begin{longtable}{@{}p{2.1in}p{1.0in}p{1.0in}@{}}
+\toprule
+\textbf{Type} & \textbf{Bits} & \textbf{Align}\\
+\midrule
+\endhead
+\texttt{\_\allowbreak{}Bool} & 8 & 1\\
+\texttt{char} & 8 & 1\\
+\texttt{signed char} & 8 & 1\\
+\texttt{unsigned char} & 8 & 1\\
+\texttt{short} & 16 & 2\\
+\texttt{int} & 32 & 4\\
+\texttt{long} & 64 & 8\\
+\texttt{long long} & 64 & 8\\
+\texttt{\_\allowbreak{}\_\allowbreak{}int128} & 128 & 16\\
+\texttt{unsigned \_\allowbreak{}\_\allowbreak{}int128} & 128 & 16\\
+\texttt{ordinary pointer} & 64 & 8\\
+\texttt{far data pointer} & 128 & 16\\
+\texttt{far function pointer} & 128 & 16\\
+\texttt{size\_\allowbreak{}t} & 64 & 8\\
+\texttt{ptrdiff\_\allowbreak{}t} & 64 & 8\\
+\texttt{wchar\_\allowbreak{}t} & 32 & 4\\
+\texttt{char16\_\allowbreak{}t} & 16 & 2\\
+\texttt{char32\_\allowbreak{}t} & 32 & 4\\
+\texttt{float} & 32 & 4\\
+\texttt{double} & 64 & 8\\
+\texttt{long double} & 64 & 8\\
+\bottomrule
+\end{longtable}
+\endgroup
+\subsection{Scalar Type Semantics}
+The widths and natural alignments of scalar types are given in
+Table~3-1. The following rules define the type identities and representations
+that are not apparent from those two values.
+
+\paragraph{Integer types and aliases.}
+Plain \texttt{char} is signed. \texttt{size\_t} is an alias for
+\texttt{unsigned long}, and \texttt{ptrdiff\_t} is an alias for
+\texttt{long}. \texttt{wchar\_t} is a signed 32-bit integer;
+\texttt{char16\_t} and \texttt{char32\_t} are unsigned 16-bit and 32-bit
+integers, respectively. In the absence of a separate enum extension, an enum
+has the representation, size, and alignment of \texttt{int}.
+
+A stored \texttt{\_Bool} has the integer value zero or one. False is encoded
+with every object-representation bit clear; true is encoded with bit 0 set and
+every other bit clear.
+
+\paragraph{Ordinary pointers.}
+An ordinary object or function pointer is a 64-bit, 8-byte-aligned canonical
+post-segment virtual address. Object and function pointers remain distinct C
+type categories even though their baseline representations have the same size
+and alignment.
+
+\paragraph{128-bit integers.}
+The types \texttt{\_\_int128} and \texttt{unsigned \_\_int128} are 16-byte,
+16-byte-aligned integers. Their little-endian object representation places the
+low 64-bit word at the lower address. When the calling convention assigns one
+to a GENERAL-PAIR, the low word occupies the lower-numbered even register and
+the high word occupies the following odd register. A returned 128-bit integer
+therefore uses \texttt{R0} for the low word and \texttt{R1} for the high word.
+Its stack slot is 16-byte aligned.
+
+An ordinary 128-bit load or store need not be atomic and may use two 64-bit
+memory operations. A 128-bit C atomic object is not lock-free in the baseline
+profile; this ABI defines neither a native 16-byte atomic operation nor a
+compiler-runtime helper contract for it.
+
+\paragraph{Long double.}
+\texttt{long double} is a distinct C type with the IEEE-754 binary64 object
+representation, 8-byte size, and 8-byte alignment. It uses the floating-point
+argument class and returns in \texttt{F0}, making its call representation
+ABI-compatible with \texttt{double}. In a variadic call it occupies one
+16-byte slot containing an 8-byte binary64 value without widening.
+
+\paragraph{Types outside the baseline.}
+\texttt{\_Float16} and \texttt{\_\_bf16} are not members of the
+\texttt{bedrock-c} profile. Vector types require a separate target extension
+that defines their object representation and argument classification.
+
+\subsection{Far Pointer Representations}
+Far data and function pointers are 16-byte, 16-byte-aligned, little-endian
+two-word scalars with the common object representation shown below.
+
+\begin{manuallistedbitdiagram}{Far Pointer Object Representation}
+\manualbitfieldrow{}{%
+  \node[anchor=south] at (0.5,{\manualbitrowy + 1.18}) {127};%
+  \node[anchor=south] at (127.5,{\manualbitrowy + 1.18}) {0};%
+  \node[anchor=north] at (32,{\manualbitrowy - 0.16}) {offset 8};%
+  \node[anchor=north] at (96,{\manualbitrowy - 0.16}) {offset 0};%
+}{%
+  \manualbitfieldtext{segment image [127:64]}{64}%
+  \manualbitfieldtext{post-segment address [63:0]}{64}}
+\end{manuallistedbitdiagram}
+
+Far data pointers interpret the two words as a canonical virtual byte address
+and data-segment image; far function pointers interpret them as a canonical
+far-call entry address and \texttt{CS} image.
+
+For either pointer kind, an enabled image must be validated and bounds-only,
+and a disabled image must be canonical. The null representation is the
+all-zero pair; an address-zero result canonicalizes the high word to zero.
+Translated-window images are not ABI-valid stored, passed, returned, relocated,
+or GOT-resolved far pointers. An explicitly translated source is linearized to
+its post-segment address and converted to bounds-only mode before becoming a C
+far pointer.
+
+The unsigned raw carriers
+\texttt{\_\_bedrock\_far\_uintptr\_t} and
+\texttt{\_\_bedrock\_far\_func\_uintptr\_t} preserve both words. Far pointer
+metadata is forgeable address metadata, not an unforgeable capability.
+
+\subsection{Aggregate Layout}
+Scalar and pointer object representations are defined in Sections~3.1 through
+3.3. Aggregate layout applies those component sizes and alignments as follows:
+\begin{itemize}
+\item Struct fields are laid out in declaration order with natural alignment up to the aggregate maximum.
+\item Unions have the size and alignment of their most strictly aligned member, rounded up to that alignment.
+\item Arrays store elements contiguously with each element using the ABI size of its type.
+\item Aggregate object size is rounded up to the aggregate object's alignment.
+\end{itemize}
+
+\section{Register Convention}
+This section defines which architectural state survives an ordinary C call.
+Argument and result locations are defined by the assignment procedure in
+Section~5; they are intentionally not duplicated here.
+
+\subsection{Register Preservation}
+The caller shall preserve any live value held in a volatile register before a
+call. A callee that modifies a nonvolatile register shall restore its exact
+incoming value before returning. Registers not listed as nonvolatile carry no
+value across the call unless another rule in this ABI explicitly assigns the
+call result to them.
+
+\manualtablecaption{C Call Preservation Sets}
+\begin{manuallongtable}{@{}p{1.35in}p{2.0in}p{2.05in}@{}}
+\toprule
+\textbf{State} & \textbf{Volatile across a call} & \textbf{Preserved by the callee}\\
+\midrule
+\endhead
+General registers & \texttt{R0}--\texttt{R7} & \texttt{R8}--\texttt{R15}\\
+Floating-point registers & \texttt{F0}--\texttt{F7} & \texttt{F8}--\texttt{F15}\\
+Condition state & \texttt{FLAGS} & none\\
+Segment state & \texttt{GS4} & \texttt{CS}, \texttt{DS}, \texttt{SS}, \texttt{GS0}\\
+\bottomrule
+\end{manuallongtable}
+
+A callee may preserve floating-point registers with \texttt{FPUSHM} and
+\texttt{FPOPM} or with any sequence having the same observable effect. In a
+normal prologue and epilogue, the mask names only the nonvolatile registers
+from \texttt{F8} through \texttt{F15} that the callee modifies. \texttt{R15}
+is an ordinary nonvolatile register unless the function elects to use it as a
+frame pointer.
+
+\subsection{Stack and Control State}
+\texttt{SP} is the architectural stack pointer, not a general C temporary. A
+callee may move it while executing but shall restore the entry value before
+returning; Section~5 defines the additional alignment and frame rules.
+\texttt{PC} is the architectural instruction pointer and is visible to C code
+only as a control-flow target. The call and return instructions, rather than a
+preservation class, define its transition across a call. Condition codes in
+\texttt{FLAGS} are volatile and may be clobbered by every callee.
+
+\subsection{Segment Context}
+An ordinary C call preserves the exact incoming images of \texttt{CS},
+\texttt{DS}, \texttt{SS}, and \texttt{GS0}. The first three establish the
+code, ordinary-data, and stack contexts. \texttt{GS0} establishes the TLS
+context and may use translated-window mode even though translated-window
+\texttt{CS}, \texttt{DS}, and \texttt{SS} are excluded below.
+
+\texttt{GS1} through \texttt{GS3} are platform-owned context. C code
+changes them only through an OS- or runtime-defined interface, and that
+interface defines any preservation effect. \texttt{GS4} is the volatile
+far-data window. A caller may not rely on its value across either a near or far
+call.
+
+\subsection{Far Data Access Window}
+The low word of a far data pointer is already a post-segment address. Before a
+dependent access, generated code establishes \texttt{GS4} from the high
+segment-image word and uses the low word through a \texttt{GS4}-qualified
+effective address. A call or any operation that may clobber \texttt{GS4}
+requires the window to be re-established before the next dependent access.
+
+The established image is disabled or bounds-only, so \texttt{GS4} contributes
+no base translation. Segment-image validation precedes the dependent memory
+access; bounds failure raises \texttt{PAGE\_FAULT}, and page translation
+occurs after segment pre-translation.
+
+\subsection{Ordinary C Address-Space Invariants}
+Ordinary object and function pointers are canonical post-segment virtual
+addresses. Conforming C execution maintains all of the following invariants:
+
+\begin{itemize}
+\item \texttt{CS}, \texttt{DS}, and \texttt{SS} are disabled with a zero
+mantissa or are enabled in bounds-only mode. Translated-window images for these
+three registers are outside the baseline C ABI.
+\item Using an ordinary pointer as an effective address preserves its numeric
+value across segment processing.
+\item \texttt{DS} is disabled or its bounds contain every address that may be
+dereferenced through an ordinary object pointer, including materialized stack
+and TLS addresses.
+\item \texttt{CS} permits near-call reachability for every ordinary function
+entry in the active linkage domain, and \texttt{SS} covers the active stack.
+\item Post-segment virtual address zero is not assigned to a C object or
+function entry.
+\end{itemize}
+
+The active OS ABI selects the initial disabled or bounds-only images and owns
+loader mapping policy. It shall preserve pointer numeric identity, ordinary
+pointer coverage, near-call reachability, and active-stack coverage whenever it
+changes those images.
+
+\subsection{Status Registers}
+\texttt{STATUS} is not part of the C abstract machine; ordinary C code accesses
+it only through target-specific intrinsics or runtime code. Low-level access to
+\texttt{FSTATUS} and \texttt{FFLAGS} uses
+\texttt{<bedrockfpuintrin.h>}. Their baseline call-preservation semantics are
+not defined here: a compiler intrinsic, floating-point environment runtime, or
+OS interface that exposes either register shall define the relevant effect.
+
+\section{Calling Convention}
+This section is normative. A caller and callee conform when they independently
+apply the classification and assignment procedure below and therefore agree on
+every argument location, return location, and stack boundary. Register lists
+are summaries; they do not replace the assignment procedure.
+
+\subsection{Stack and Calls}
+The stack grows downward. An architectural \texttt{CALL} pushes an
+8-byte return address at \texttt{[SP]}, and
+callers align \texttt{SP} before the call so callee entry observes
+16-byte alignment. Between ABI call boundaries, a function
+may adjust \texttt{SP} while keeping it aligned to at least
+8 bytes. Immediately before \texttt{CALL}, the stack
+pointer satisfies SP modulo 16 equals 8 before return address push. After \texttt{CALL} pushes the
+return address, it satisfies SP modulo 16 equals 0 at callee entry.
+
+Each object observes its declared type alignment. In particular, relaxing
+the internal stack-pointer invariant does not relax the 16-byte alignment of
+\texttt{\_\_int128} objects or other objects whose declared alignment is 16
+bytes. The ABI defines no red zone and no fixed outgoing-argument area. A
+callee that dynamically realigns the stack restores the incoming stack
+pointer before returning.
+
+The first stack argument begins at \texttt{[SP+16]} at callee entry. The eight
+bytes at \texttt{[SP+8]} are alignment padding and carry no argument value.
+Each subsequent stack argument occupies the next 16-byte slot.
+
+\begin{manuallistedstackframediagram}{Far-call stack frame at callee entry}
+\manualstackframespslot{+0}{saved return \texttt{PC}}
+\manualstackframeslot{+8}{8-byte alignment padding}
+\manualstackframepayload{+16}{first stack argument, if present}
+\end{manuallistedstackframediagram}
+
+\subsection{Far Calls and Returns}
+A far function pointer supplies a post-segment code address and a canonical
+disabled or bounds-only \texttt{CS} image. Direct calls to far-native entries
+and indirect calls through far function pointers use \texttt{LCALL}; the
+callee returns with \texttt{LRET}. Argument classification, floating-point
+assignment, return values, structure returns, and callee-saved registers are
+otherwise identical to the ordinary convention.
+
+The caller aligns \texttt{SP} to 0 modulo 16 before \texttt{LCALL}. The
+instruction creates a 16-byte return frame, so the callee also observes
+\texttt{SP} modulo 16 equal to zero at entry. The first stack argument begins
+at \texttt{[SP+16]} without the near-call padding slot.
+
+\begin{manuallistedstackframediagram}{Far-call stack at callee entry}
+\manualstackframespslot{+0}{saved return \texttt{PC}}
+\manualstackframeslot{+8}{saved return \texttt{CS}}
+\manualstackframepayload{+16}{first stack argument, if present}
+\end{manuallistedstackframediagram}
+
+\texttt{LCALL} changes \texttt{CS} to the pointer image and preserves
+\texttt{DS}, \texttt{SS}, and \texttt{GS0}. \texttt{GS1} through
+\texttt{GS3} retain their OS-defined meaning and \texttt{GS4} is volatile.
+The callee therefore uses the caller's ordinary data and stack contexts.
+Changing \texttt{DS} or \texttt{SS} requires an OS/runtime call gate and is
+not a C far call.
+
+No fixed general register is reserved for the target operands. The compiler
+may choose temporaries, preserving any nonvolatile register it uses. The
+callee restores its entry \texttt{SP} before \texttt{LRET}.
+
+A compatible far-to-far tail transfer may use \texttt{LJMP} only after
+restoring the entry stack pointer and when argument layout and return
+convention match. Near-to-far and far-to-near tail calls are forbidden. A
+nonreturning far transfer may use \texttt{LJMP}.
+
+Far-frame unwind metadata records saved \texttt{PC} and \texttt{CS} as
+separate words and identifies the 16-byte return frame. A far-aware jump
+environment records \texttt{PC}, \texttt{CS}, \texttt{SP}, and the baseline
+callee-saved set. A near-only jump environment cannot target a far frame.
+
+\subsection{Frame Pointer}
+Frame pointers are omitted by default.  When a function elects to keep a
+frame pointer, it uses \texttt{R15}.  R15 is callee-saved and is used as the frame pointer when a function elects to maintain one.
+
+\Needspace{2.4in}
+\subsection{Argument Classification}
+Classification occurs after the C language has determined the effective type
+of the argument. A named argument to a prototyped function is placed in one of
+four ABI classes:
+
+\begin{description}[style=nextline,leftmargin=1.35in,labelwidth=1.25in,itemsep=3pt,topsep=3pt]
+\item[GENERAL] Integer types no wider than 64 bits and ordinary object or
+function pointers. One general-register location is required.
+\item[GENERAL-PAIR] Signed and unsigned \texttt{\_\_int128}, far data
+pointers, and far function pointers. Two consecutive general registers
+beginning at an even-numbered register are required.
+\item[FLOAT] \texttt{float}, \texttt{double}, and \texttt{long double}. One
+floating-point register is required.
+\item[INDIRECT] Every structure or union argument, regardless of size or
+member composition. The caller creates a 16-byte-aligned by-value copy and
+passes the address of that copy as one GENERAL value.
+\end{description}
+
+Signed GENERAL values narrower than 64 bits are sign-extended when assigned to
+a register. Unsigned values and \texttt{\_Bool} are zero-extended. Plain
+\texttt{char} follows its signed ABI type. A stack slot contains the effective
+type's object representation at its low address; bytes after that
+representation are unspecified.
+
+\subsection{Assignment Procedure}
+The caller shall apply the following procedure. The callee may rely on the
+result without inspecting any unused register or padding byte.
+
+\begin{enumerate}[leftmargin=1.35em,itemsep=3pt,topsep=3pt]
+\item If the result uses an sret buffer, assign its address to \texttt{R0} and
+initialize the general-register cursor to 1. Otherwise initialize it to 0.
+Initialize the floating-point cursor to 0.
+\item Visit arguments in source order. GENERAL and INDIRECT arguments consume
+the register named by the current general cursor and then advance that cursor.
+FLOAT arguments analogously consume \texttt{F0} through \texttt{F7} using the
+independent floating-point cursor.
+\item For a GENERAL-PAIR argument, round the general cursor upward to an even
+register number. If that register and its successor both exist, place the low
+64 bits in the even register, the high 64 bits in the odd register, and advance
+the cursor past the pair. A skipped odd register remains unused.
+\item If an argument cannot be placed completely in the remaining registers of
+its class, place the complete argument in one stack slot and mark that register
+class exhausted. Later arguments of that class also use stack slots; they do
+not backfill a register hole. An argument is never split between registers and
+the stack.
+\item Unnamed variadic arguments and every argument of an unprototyped call are
+forced to stack slots and do not consume register cursors. Apply the default
+argument promotions before assigning those slots.
+\item Assign stack slots to stack-bound arguments in source order beginning at
+\texttt{[SP+16]}. Consequently, a caller that constructs the outgoing area by
+stores or pushes does so from the rightmost stack-bound argument toward the
+leftmost. No register home slots are reserved.
+\end{enumerate}
+
+The general and floating-point classes exhaust independently. Exhausting
+\texttt{R0}--\texttt{R7} does not prevent a later FLOAT argument from using an
+available floating-point register, and the converse also holds.
+
+For a far pointer, the low even register contains the post-segment address and
+the high odd register contains the segment image. The available pairs are
+\texttt{R1:R0}, \texttt{R3:R2}, \texttt{R5:R4}, and
+\texttt{R7:R6}. A stack-assigned or unnamed variadic far pointer occupies one
+16-byte, 16-byte-aligned slot and is never split.
+
+\subsection{C Return Values}
+Scalar results use their natural register class. A \texttt{\_\_int128} result
+places its low word in \texttt{R0} and high word in \texttt{R1}. A structure
+or union of at most 16 bytes is returned as raw object bytes: increasing object
+addresses map first to \texttt{R0} and then to \texttt{R1}. Bytes beyond the
+object size and padding bytes whose values are not defined by C are
+unspecified.
+
+For a larger aggregate, the caller allocates a 16-byte-aligned result buffer
+and passes its address in \texttt{R0} before ordinary argument assignment. The
+callee stores the result in that buffer and returns the same address in
+\texttt{R0}.
+
+A far data or function pointer result uses \texttt{R1:R0}, with its
+post-segment address in \texttt{R0} and segment image in \texttt{R1}.
+
+\manualtablecaption{C Return Register Quick Reference}
+\begingroup\footnotesize
+\setlength{\tabcolsep}{2pt}
+\begin{longtable}{@{}p{2.15in}p{3.35in}@{}}
+\toprule
+\textbf{Result Class} & \textbf{Register Rule}\\
+\midrule
+\endhead
+General scalar & \texttt{R0}\\
+Floating-point scalar & \texttt{F0}\\
+\texttt{long double} scalar & \texttt{F0}\\
+\texttt{\_\_int128} scalar & \texttt{R1:R0}\\
+Far data or function pointer & address in \texttt{R0}, segment image in \texttt{R1}\\
+Small aggregate & \texttt{R1:R0}\\
+Large aggregate & sret pointer in \texttt{R0}, result pointer returned in \texttt{R0}\\
+\bottomrule
+\end{longtable}
+\endgroup
+
+\subsection{Aggregate Passing}
+For every by-value aggregate argument, the caller allocates distinct storage,
+aligns its start to 16 bytes, initializes it with the argument value, and keeps
+it alive until the call returns. The address, rather than the aggregate bytes,
+is assigned by the GENERAL procedure. If GENERAL registers are exhausted, the
+stack argument slot contains that address; it does not contain the aggregate
+itself.
+
+The copy gives the callee an addressable object with the declared aggregate
+type. A callee may modify its private copy without modifying the caller's
+source object. Packed aggregates, aggregates containing bit-fields or
+unaligned members, and mixed integer/floating aggregates use the same INDIRECT
+rule; their member composition never changes argument registers.
+
+\subsection{Variadic Calls}
+Fixed named arguments use the ordinary assignment procedure. Every unnamed
+argument is first subject to the C default argument promotions and is then
+placed in a 16-byte stack slot. In particular, \texttt{float} becomes
+\texttt{double}, and \texttt{\_Bool}, \texttt{char}, \texttt{short}, and their
+signed or unsigned variants promote to \texttt{int} when \texttt{int} can
+represent all values of the source type. \texttt{long double} remains the
+Bedrock binary64 \texttt{long double} type. An aggregate slot contains the
+address of the caller-owned by-value copy described above.
+
+The baseline \texttt{va\_list} representation is one 64-bit pointer to the next
+unnamed argument slot. \texttt{va\_start} initializes it to the first unnamed
+slot after any stack-assigned named arguments. \texttt{va\_arg} reads the
+promoted representation from the low bytes of the current slot, or follows the
+copy address for an aggregate, and then advances the pointer by 16 bytes.
+\texttt{va\_copy} copies the pointer value and \texttt{va\_end} has no machine
+effect. There is no register save area.
+
+An unprototyped call applies the same promotions and places every argument on
+the stack. As required by C, the callee type must be compatible with the
+promoted types.
+
+\section{Freestanding C Binding}
+This section defines the compiler-runtime and ELF linkage obligations of the
+freestanding C profile. It does not define process startup or hosted-library
+behavior.
+
+\subsection{Execution Boundary}
+Process entry belongs to the platform/runtime environment ABI. BSS zero-fill,
+object loading, and relocation belong to the Bedrock ELF ABI. Hosted library
+behavior is outside the freestanding C ABI.
+
+\subsection{Compiler Runtime Helpers}
+The compiler may inline addition, subtraction, negation, bitwise operations,
+shifts, comparisons, truncation, and extension of 128-bit integers. It may call
+a helper for multiplication, division, remainder, or integer/floating
+conversion; this ABI does not guarantee that any such operation is inline.
+Floating-point helpers are also permitted when the selected target lacks the
+required operation.
+
+Every compiler-runtime helper is an ordinary \texttt{bedrock-c} function. Its
+arguments and results therefore follow Section~5, including the
+\texttt{R1:R0} return convention for \texttt{\_\_int128}. The standard helper
+symbols use compiler-rt/libgcc-compatible spellings:
+
+\Needspace{2.7in}
+\manualtablecaption{\texttt{\_\_int128} Runtime Helper Names}
+\begingroup\footnotesize
+\setlength{\tabcolsep}{2pt}
+\begin{longtable}{@{}p{2.25in}p{3.25in}@{}}
+\toprule
+\textbf{Operation} & \textbf{Helper}\\
+\midrule
+\endhead
+Multiply & \texttt{\_\allowbreak{}\_\allowbreak{}multi3}\\
+Signed divide & \texttt{\_\allowbreak{}\_\allowbreak{}divti3}\\
+Unsigned divide & \texttt{\_\allowbreak{}\_\allowbreak{}udivti3}\\
+Signed remainder & \texttt{\_\allowbreak{}\_\allowbreak{}modti3}\\
+Unsigned remainder & \texttt{\_\allowbreak{}\_\allowbreak{}umodti3}\\
+Shift left & \texttt{\_\allowbreak{}\_\allowbreak{}ashlti3}\\
+Arithmetic shift right & \texttt{\_\allowbreak{}\_\allowbreak{}ashrti3}\\
+Logical shift right & \texttt{\_\allowbreak{}\_\allowbreak{}lshrti3}\\
+\bottomrule
+\end{longtable}
+\endgroup
+
+\subsection{Pointers and External Objects}
+A C function pointer is a 64-bit post-segment near-call address. Code and data
+pointers have the same size and alignment, but remain distinct C type
+categories; neither representation creates an interchangeable code/data
+address space.
+
+Far data and function pointers use their distinct 16-byte representations.
+Externally visible far functions have one canonical far-call entry address.
+Near and far entries use distinct symbols and addresses.
+
+A common symbol has the ABI alignment of its declared type. An external
+object retains its declared alignment up to the 16-byte aggregate maximum.
+Stronger placement requirements belong to an explicit extension or platform
+contract.
+
+\subsection{Calls, Relocations, and Relaxation}
+The relocation records the linkage path selected for a C call:
+
+\manualtablecaption{C Call Relocation Quick Reference}
+\begin{manuallongtable}{@{}p{2.15in}p{3.25in}@{}}
+\toprule
+\textbf{Call form} & \textbf{Relocation}\\
+\midrule
+\endhead
+Direct C call & \texttt{R\_BEDROCK\_CALL32S}\\
+External call through the PLT & \texttt{R\_BEDROCK\_PLT32S}\\
+Far symbol address word & \texttt{R\_BEDROCK\_FAR\_ADDR64}\\
+Far symbol segment word & \texttt{R\_BEDROCK\_FAR\_SEGMENT64}\\
+External far call slot & \texttt{R\_BEDROCK\_FAR\_JUMP\_SLOT}\\
+\bottomrule
+\end{manuallongtable}
+
+The assembler and linker may relax an instruction sequence, but relaxation
+must preserve the C call interface, symbol identity, and observable control
+transfer defined by the original relocation. Relaxation is not a distinct C
+calling convention.
+
+For a direct far call, the caller materializes \texttt{SEG(S)} and
+\texttt{FARADDR(S)} and transfers with \texttt{LCALL}. An indirect call loads
+both words from the function pointer. An external dynamic call loads the
+eagerly resolved, immutable 16-byte entry from \texttt{.got.far}; the far
+model has no PLT.
+
+\subsection{Near/Far ABI Veneers}
+Only a compiler with complete function type information may synthesize a
+cross-convention veneer. The linker may redirect or deduplicate an already
+typed veneer but may not infer one.
+
+\begin{itemize}
+\item A near-to-far veneer receives \texttt{CALL}, performs \texttt{LCALL} to
+the far entry, and returns to the near caller with \texttt{RET}.
+\item A far-to-near veneer receives \texttt{LCALL}, performs a near
+\texttt{CALL} to the body, and returns to the far caller with \texttt{LRET}.
+\item Register arguments are forwarded without reclassification. Every stack
+argument is copied or repositioned because the return-frame sizes differ.
+\item Automatic veneers for variadic or unprototyped functions are forbidden.
+\end{itemize}
+
+\subsection{TLS and OS ABI Boundary}
+TLS and OS boundary rules are supplied by the ABI specification.
+
+\section{C Memory Model}
+This section defines how the baseline C memory model maps to Bedrock memory
+operations and ordering instructions.
+
+\subsection{Ordinary Access Atomicity}
+The following guarantees apply to ordinary memory accesses. They do not by
+themselves establish C inter-thread ordering:
+
+\manualtablecaption{Ordinary Memory Access Guarantees}
+\begin{manuallongtable}{@{}p{2.75in}p{2.65in}@{}}
+\toprule
+\textbf{Access} & \textbf{Guarantee}\\
+\midrule
+\endhead
+Aligned 1/2/4/8-byte load or store & tear-free\\
+Access of 16 bytes or more & not atomic\\
+Unaligned access & no tear-free guarantee\\
+\bottomrule
+\end{manuallongtable}
+
+\subsection{Atomic Object Eligibility}
+The native lock-free set consists of integer objects and ordinary 64-bit
+pointer objects whose size is 1, 2, 4, or 8 bytes and whose address satisfies
+the natural alignment for that size. An unaligned atomic object is not
+lock-free. Accordingly, \texttt{\_\_atomic\_always\_lock\_free} returns true
+only for those naturally aligned sizes.
+
+A 128-bit integer atomic, and any atomic object wider than 8 bytes, is outside
+the baseline target contract. Such a declaration is a target constraint
+violation; this ABI defines neither a native operation nor a compiler-runtime
+helper ABI for it.
+
+\subsection{Native Atomic Primitives}
+Once the object satisfies the width and alignment requirements above, the
+compiler uses the following primitive lowering. The ordering sequences are
+defined separately below.
+
+\manualtablecaption{Native Atomic Primitive Quick Reference}
+\begin{manuallongtable}{@{}p{2.15in}p{3.25in}@{}}
+\toprule
+\textbf{C operation} & \textbf{Bedrock primitive}\\
+\midrule
+\endhead
+Atomic load or store & ordinary aligned tear-free access plus the required ordering sequence\\
+Compare-exchange & width-matched \texttt{CMPXCHG}\\
+Exchange & compare-exchange loop using \texttt{CMPXCHG}\\
+\bottomrule
+\end{manuallongtable}
+
+\Needspace{2.6in}
+\subsection{C Atomic Memory Order Mapping}
+\manualtablecaption{C Atomic Memory Order Mapping}
+\begingroup\footnotesize
+\setlength{\tabcolsep}{2pt}
+\begin{longtable}{@{}p{1.55in}p{3.95in}@{}}
+\toprule
+\textbf{C order} & \textbf{Bedrock order or sequence}\\
+\midrule
+\endhead
+relaxed & \texttt{relaxed}\\
+consume & \texttt{acquire}\\
+acquire & \texttt{acquire}\\
+release & \texttt{release}\\
+acq\_rel & \texttt{acqrel}\\
+seq\_cst & \texttt{seqcst}\\
+\bottomrule
+\end{longtable}
+\endgroup
+
+\manualtablecaption{Atomic Load and Store Ordering}
+\begin{manuallongtable}{@{}p{1.55in}p{3.95in}@{}}
+\toprule
+\textbf{Operation} & \textbf{Lowering}\\
+\midrule
+\endhead
+Relaxed load/store & no fence\\
+Consume or acquire load & load, then \texttt{AFENCE}\\
+Release store & \texttt{AFENCE}, then store\\
+Sequentially consistent load & \texttt{AFENCE}, load, \texttt{AFENCE}\\
+Sequentially consistent store & \texttt{AFENCE}, store, \texttt{AFENCE}\\
+\bottomrule
+\end{manuallongtable}
+
+\manualtablecaption{C Thread Fence Lowering}
+\begin{manuallongtable}{@{}p{1.55in}p{3.95in}@{}}
+\toprule
+\textbf{C order} & \textbf{Lowering}\\
+\midrule
+\endhead
+Relaxed & no operation\\
+Consume, acquire, release, or acquire-release & \texttt{AFENCE}\\
+Sequentially consistent & \texttt{AFENCE}\\
+\bottomrule
+\end{manuallongtable}
+
+\subsection{Volatile, Device, and Executable Memory}
+Volatile accesses preserve the observable access count and order but do not
+themselves provide inter-thread or device ordering. MMIO ordering belongs to
+platform/runtime mapping attributes. Dynamic code patching requires
+\texttt{\_\_bedrock\_sync\_cache} or a platform interface with equivalent cache
+synchronization; a relocation agent must synchronize patched instructions
+before transferring control to them.
+
+\subsection{C Fetch RMW Lowering}
+\manualtablecaption{C Fetch RMW Lowering}
+\begingroup\footnotesize
+\setlength{\tabcolsep}{2pt}
+\begin{longtable}{@{}p{2.15in}p{3.35in}@{}}
+\toprule
+\textbf{C operation} & \textbf{Lowering}\\
+\midrule
+\endhead
+\texttt{atomic\_fetch\_add} & \texttt{FETCHADD}\\
+\texttt{atomic\_fetch\_sub} & \texttt{FETCHSUB}\\
+\texttt{atomic\_fetch\_and} & \texttt{FETCHAND}\\
+\texttt{atomic\_fetch\_or} & \texttt{FETCHOR}\\
+\texttt{atomic\_fetch\_xor} & \texttt{FETCHXOR}\\
+\bottomrule
+\end{longtable}
+\endgroup
+
+\clearpage
+\section{Calling Convention Examples}
+The first four cases are inputs to the executable reference model and
+illustrate the assignment procedure. The final two examples are audited output
+from the Bedrock LLVM backend. Examples do not introduce exceptions to the
+normative rules above.
+
+% ABI-CALL-CASE: mixed-register-classes
+\subsection{Independent Register Classes and Pair Alignment}
+\begingroup\small\ttfamily
+\begin{tabularx}{\linewidth}{@{}X@{}}
+struct pair \{ uint64\_t lo, hi; \};\tabularnewline
+uint64\_t mixed(uint64\_t count, double scale,\tabularnewline
+\hspace{1.2em}unsigned \_\_int128 wide, struct pair pair, float bias);\tabularnewline
+\end{tabularx}
+\endgroup
+The general cursor begins at 0 and the floating-point cursor begins at 0.
+\texttt{count} consumes \texttt{R0}; \texttt{scale} independently consumes
+\texttt{F0}. The GENERAL-PAIR argument rounds the general cursor from 1 to 2,
+so \texttt{wide} uses \texttt{R3:R2} and \texttt{R1} remains unused. The
+address of the caller-owned \texttt{pair} copy uses \texttt{R4}, and
+\texttt{bias} uses \texttt{F1}. No stack argument area is required.
+
+% ABI-CALL-CASE: sret-reserves-r0
+\subsection{sret Changes Ordinary Argument Assignment}
+\begingroup\small\ttfamily
+\begin{tabularx}{\linewidth}{@{}X@{}}
+struct triple \{ uint64\_t x, y, z; \};\tabularnewline
+struct triple build(uint64\_t tag, signed \_\_int128 wide,\tabularnewline
+\hspace{1.2em}double factor);\tabularnewline
+\end{tabularx}
+\endgroup
+Because the result is 24 bytes, its buffer address occupies \texttt{R0} and
+the general cursor begins at 1. Thus \texttt{tag} uses \texttt{R1},
+\texttt{wide} uses \texttt{R3:R2}, and \texttt{factor} uses \texttt{F0}.
+The callee stores the result through the entry value of \texttt{R0} and returns
+the same address in \texttt{R0}.
+
+% ABI-CALL-CASE: pair-exhausts-general-class
+\subsection{A Pair That Does Not Fit Exhausts Its Class}
+\begingroup\small\ttfamily
+\begin{tabularx}{\linewidth}{@{}X@{}}
+void pressure(uint64\_t a0, uint64\_t a1, uint64\_t a2,\tabularnewline
+\hspace{1.2em}uint64\_t a3, uint64\_t a4, uint64\_t a5, uint64\_t a6,\tabularnewline
+\hspace{1.2em}unsigned \_\_int128 wide, uint64\_t tail);\tabularnewline
+\end{tabularx}
+\endgroup
+Arguments \texttt{a0} through \texttt{a6} use \texttt{R0} through
+\texttt{R6}. The next even pair would begin past \texttt{R7}, so
+\texttt{wide} is placed completely at \texttt{[SP+16]} and the GENERAL class
+becomes exhausted. \texttt{tail} therefore uses \texttt{[SP+32]}; it does not
+backfill \texttt{R7}.
+
+% ABI-CALL-CASE: variadic-default-promotions
+\subsection{Variadic Promotions and Slot Traversal}
+\begingroup\small\ttfamily
+\begin{tabularx}{\linewidth}{@{}X@{}}
+int trace(const char *format, ...);\tabularnewline
+trace("example", (signed char)-1, (float)1.5, pair);\tabularnewline
+\end{tabularx}
+\endgroup
+The named \texttt{format} argument uses \texttt{R0}. The signed character is
+promoted to \texttt{int} and stored at \texttt{[SP+16]}; the \texttt{float} is
+promoted to \texttt{double} and stored at \texttt{[SP+32]}. The caller creates
+the aggregate copy and stores its address at \texttt{[SP+48]}. A
+\texttt{va\_list} initialized by \texttt{va\_start} visits those three slots in
+that order by adding 16 after each access.
+
+\Needspace{1.8in}
+\subsection{Generated Assembly Conventions}
+The assembly examples are non-normative. They were emitted with \texttt{-Oz}
+by Bedrock LLVM 22.1.8 in round \texttt{187-extrashort-sp-adjust} and then
+checked against the call-assignment model, register-preservation contract, and
+the architectural semantics of \texttt{CALL}, \texttt{RET}, \texttt{PUSHP},
+and \texttt{POPP}. File directives, LLVM basic-block comments, and local labels
+that do not affect the shown control flow are omitted. The scalar leaf example
+also replaces a one-instruction \texttt{REPG} body with the architecturally
+equivalent single-instruction \texttt{REP} spelling; otherwise instruction
+order and operands are unchanged. If an implementation sequence conflicts
+with a normative rule, the rule controls.
+
+The benchmark sources use GNU C89 implicit return types. The declarations below
+show their equivalent explicit C types so that the ABI interface is unambiguous.
+The implementation audit accompanying this document records unsupported and
+nonconforming compiler paths that were excluded from these examples.
+
+% ABI-ASM-EXAMPLE: scalar-leaf
+\subsection{Scalar Leaf Function}
+\begingroup\small\ttfamily
+\begin{tabularx}{\linewidth}{@{}X@{}}
+int sum(int *p, int n);\tabularnewline
+\end{tabularx}
+\endgroup
+
+On entry, \texttt{p} is in \texttt{R0} and the sign-extended value of
+\texttt{n} is in \texttt{R1}. The generated function uses only volatile
+registers, does not change \texttt{SP}, and returns the integer sum in
+\texttt{R0}.
+
+\begin{manualformblock}{2.45in}
+\begingroup\small\ttfamily
+\begin{tabularx}{\linewidth}{@{}X@{}}
+sum:\tabularnewline
+\hspace{1.2em}mov.q\hspace{0.9em}r0, r2\tabularnewline
+\hspace{1.2em}clr.q\hspace{0.9em}r0\tabularnewline
+\hspace{1.2em}maxs.q\hspace{0.65em}r0, r1\tabularnewline
+\hspace{1.2em}rep\hspace{1.05em}r1, add.l [r2++], r0\tabularnewline
+\hspace{1.2em}ret\tabularnewline
+\end{tabularx}
+\endgroup
+\manualfigurecaption{Generated scalar leaf function}
+\end{manualformblock}
+
+% ABI-ASM-EXAMPLE: nonleaf-preservation
+\subsection{Non-Leaf Preservation and Call Alignment}
+\begingroup\small\ttfamily
+\begin{tabularx}{\linewidth}{@{}X@{}}
+int mf\_pipeline(int *tmp, int *dst, int *src, int n,\tabularnewline
+\hspace{1.2em}int ca, int cb, int cc);\tabularnewline
+\end{tabularx}
+\endgroup
+
+The seven arguments occupy \texttt{R0} through \texttt{R6} in source order.
+The generated function keeps \texttt{n}, \texttt{dst}, \texttt{tmp}, and the
+first intermediate result live in nonvolatile \texttt{R8} through
+\texttt{R11}. It therefore saves and restores both canonical register pairs.
+
+\Needspace{5.0in}
+\begingroup\scriptsize\ttfamily
+\begin{tabularx}{\linewidth}{@{}X@{}}
+mf\_pipeline:\tabularnewline
+\hspace{1.2em}pushp\hspace{0.9em}3\tabularnewline
+\hspace{1.2em}pushp\hspace{0.9em}2\tabularnewline
+\hspace{1.2em}sub.q\hspace{0.9em}8, sp\tabularnewline
+\hspace{1.2em}mov.q\hspace{0.9em}r3, r8\tabularnewline
+\hspace{1.2em}mov.q\hspace{0.9em}r1, r9\tabularnewline
+\hspace{1.2em}mov.q\hspace{0.9em}r0, r10\tabularnewline
+\hspace{1.2em}mov.q\hspace{0.9em}r2, r1\tabularnewline
+\hspace{1.2em}mov.q\hspace{0.9em}r8, r2\tabularnewline
+\hspace{1.2em}mov.q\hspace{0.9em}r4, r3\tabularnewline
+\hspace{1.2em}mov.q\hspace{0.9em}r5, r4\tabularnewline
+\hspace{1.2em}mov.q\hspace{0.9em}r6, r5\tabularnewline
+\hspace{1.2em}call\hspace{1.05em}mf\_fir\_three\tabularnewline
+\hspace{1.2em}mov.q\hspace{0.9em}r0, r11\tabularnewline
+\hspace{1.2em}mov.q\hspace{0.9em}r9, r0\tabularnewline
+\hspace{1.2em}mov.q\hspace{0.9em}r10, r1\tabularnewline
+\hspace{1.2em}mov.q\hspace{0.9em}r8, r2\tabularnewline
+\hspace{1.2em}call\hspace{1.05em}mf\_scale\_store\tabularnewline
+\hspace{1.2em}add.l\hspace{0.9em}r11, r0\tabularnewline
+\hspace{1.2em}extzq.l\hspace{0.55em}r0, r2\tabularnewline
+\hspace{1.2em}mov.q\hspace{0.9em}r9, r0\tabularnewline
+\hspace{1.2em}mov.q\hspace{0.9em}r8, r1\tabularnewline
+\hspace{1.2em}add.q\hspace{0.9em}8, sp\tabularnewline
+\hspace{1.2em}popp\hspace{1.0em}2\tabularnewline
+\hspace{1.2em}popp\hspace{1.0em}3\tabularnewline
+\hspace{1.2em}jmp\hspace{1.15em}mf\_bias\_sum\tabularnewline
+\end{tabularx}
+\endgroup
+\manualfigurecaption{Generated non-leaf function with a tail transfer}
+
+Each \texttt{PUSHP} saves 16 bytes, so the pair saves leave the entry alignment
+unchanged. The additional 8-byte subtraction establishes \texttt{SP mod 16 =
+8} before each \texttt{CALL}; the pushed return address therefore gives the
+callee a 16-byte-aligned entry stack. The epilogue removes the padding and
+restores \texttt{R10:R11} before \texttt{R8:R9}. The final \texttt{JMP} is a
+legal tail transfer because the frame and nonvolatile state have already been
+restored, the outgoing arguments have the ordinary ABI layout, and the target's
+\texttt{R0} result is also the result required by \texttt{mf\_pipeline}.
+
+\clearpage
+\section{System Interface Boundary}
+The C ABI does not define a hosted process-entry protocol or system-call ABI. Those contracts belong to the active OS ABI.
+\subsection{SYSCALL Boundary}
+\manualfield{Instruction:}{SYSCALL}
+Ordinary C code reaches SYSCALL only through OS ABI wrappers or target-specific runtime code.
+\subsection{OS ABI Segment Policy}
+\manualtablecaption{OS-Owned C Segment Policy}
+\begingroup\footnotesize
+\setlength{\tabcolsep}{2pt}
+\begin{longtable}{@{}p{1.75in}p{3.75in}@{}}
+\toprule
+\textbf{Rule} & \textbf{Value}\\
+\midrule
+\endhead
+owner & OS ABI\\
+selectable modes & disabled or bounds-only for C-visible CS, DS, and SS\\
+required invariants & post-segment pointer identity, ordinary-pointer DS coverage, near-call CS reachability, active-stack SS coverage, and GS0 TLS semantics\\
+loader policy & the OS ABI defines initial images, executable and shared-object placement, dynamic-loading constraints, and any permitted bounds changes\\
+\bottomrule
+\end{longtable}
+\endgroup
+
+The active OS ABI permits user writes to \texttt{GS4} subject to architectural
+segment-image validation. It saves and restores \texttt{GS4} as architectural
+thread state across context switches and preserves the interrupted value
+across signal or exception delivery. \texttt{GS4} remains volatile at C call
+boundaries and is not part of the \texttt{setjmp}/\texttt{longjmp}
+callee-saved environment.
+
+\end{document}

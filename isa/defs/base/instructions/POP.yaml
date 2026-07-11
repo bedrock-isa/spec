@@ -12,6 +12,10 @@ behavior:
   - SP = SP + 8;
 attributes:
   privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: true
+    repg: true
 forms:
   operands:
   - name: reg

@@ -2,12 +2,13 @@ mnemonic: REPG
 doc:
   title: Grouped Repeat
   summary: Repeats the following straight-line instruction body using an Rn counter.
-  description: 'REPG takes an Rn counter and an unsigned 16-bit body byte count. The body starts
-    at the next instruction after REPG and extends for exactly body_bytes bytes. body_bytes is encoded
-    in bytes, not words; zero and odd byte counts are invalid encodings, and the body end must land on
-    an instruction boundary.
-
-    '
+  description: >
+    REPG takes an Rn counter and an unsigned 16-bit body byte count. The body starts at the next
+    instruction after REPG and extends for exactly body_bytes bytes. body_bytes is an unsigned byte
+    count. A zero body byte count is invalid. A nonzero body byte count is valid only when the selected
+    byte range decodes as a whole number of complete instructions and ends exactly at an instruction
+    boundary. The grouped body is decoded when repeat state is entered and remains the repeated body
+    until the repeat context exits.
   instruction_family: control_flow
   instruction_class: control_flow
 behavior:
@@ -17,21 +18,45 @@ behavior:
   input_output: counter
   operation:
   - counter_v = arch_repg(counter_v, body_bytes_v);
-  operation_text: 'If counter is zero, no grouped instruction is executed and execution resumes after
-    the body. If counter is positive, one successful body iteration decrements it; if counter is negative,
-    one successful body iteration increments it. The update occurs only after the whole grouped body iteration
-    succeeds. Completed prior body instructions in a faulting iteration remain committed, later body instructions
-    do not execute, and the saved repeat-fault continuation records the selected counter, the body start
-    delta, and body_bytes. FLAGS and FFLAGS follow the rules of the last completed grouped instruction;
-    FFLAGS from completed floating-point operations are accumulated by bitwise inclusive-or.
-
-    '
+  operation_text: >
+    The grouped body is decoded and each body instruction is checked for REPG repeatability before
+    the zero-count rule is applied. If the counter is zero, the decoded group is annulled and has no
+    architectural side effects. If the counter is nonzero, one successful whole-group iteration
+    decrements it by one. The update occurs only after the whole grouped body iteration succeeds.
+    A normal REPG body may write the selected counter register; such writes are ordinary
+    architectural writes in the grouped instruction stream and do not modify the captured repeat
+    remaining-count value. At a successful group-iteration boundary, the repeat counter update has
+    final priority for the selected counter register. The REPGF assembler-checked alias rejects
+    bodies that write the selected counter register.
+    Completed prior body instructions in a faulting iteration remain committed, later body
+    instructions do not execute, and the saved repeat continuation records the selected counter,
+    condition T, repeat kind, group_start_delta, and body_bytes in FAULT_AUX. FLAGS and FFLAGS follow
+    the rules of the last completed grouped instruction; FFLAGS from completed floating-point
+    operations are accumulated by bitwise inclusive-or.
 attributes:
   privilege: unprivileged
   flags: grouped instruction rules apply
 forms:
-  length:
-    words: 2
+  syntax: |-
+    REPG Rn, {
+        (instructions...)
+    }
+  body: byte_counted_instruction_group
+  repeatable_required:
+    REPG: repg
+  assembler_checked_aliases:
+    REPGF:
+      emits: REPG
+      syntax: |-
+        REPGF Rn, {
+            (instructions...)
+        }
+      body_candidate_required: repgf_candidate
+      body_constraints:
+      - body must not write the selected counter register
+      architectural_effect: identical to REPG; the machine encoding and repeat-continuation
+        state do not distinguish the alias
+  repeat_state_saved_in: FAULT_AUX
   compact_forms:
   - operands:
     - name: counter

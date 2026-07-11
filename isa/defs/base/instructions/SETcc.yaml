@@ -13,14 +13,17 @@ behavior:
   - dst_v = cc_v;
 attributes:
   privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: true
+    repg: true
 forms:
-  dst_ea_set: store_destination
   operands:
   - name: cc
     type: condition
   - name: dst
-    type: EA
-  size: BWLQ
+    type: Rn
+  size: Q
   writes: 0 or 1
 definition_status:
   allocation: 'external: isa/alloc'

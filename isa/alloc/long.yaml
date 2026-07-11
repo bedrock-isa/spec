@@ -2,15 +2,10 @@
 # Edit this file as the allocation source of truth going forward.
 class: long
 payload_bits: 26
-namespace:
-  - "111100????????????????????"
-  - "111101????????????????????"
-  - "111110????????????????????"
 entries:
   - id: long.adc_x_rn_s_ea_e
-    status: allocated
     bits: "1111000000zz000sssseeeeeee"
-    text: "ADC.X(z:B/W/L/Q) Rn(s), <ea>(e)  ; reclaim e.rn, dst !imm"
+    text: "ADC.X(z:B/W/L/Q) Rn(s), <ea>(e)"
     fields:
       z: {kind: size, width: 2}
       s: {kind: rn, width: 4}
@@ -19,9 +14,8 @@ entries:
       - {field: e, exclude: rn_direct, reason: canonical_form_reclaim}
       - {destination: true, exclude: immediate, reason: invalid_destination}
   - id: long.adc_x_ea_e_rn_s
-    status: allocated
     bits: "1111000000zz001sssseeeeeee"
-    text: "ADC.X(z:B/W/L/Q) <ea>(e), Rn(s)  ; reclaim e.rn"
+    text: "ADC.X(z:B/W/L/Q) <ea>(e), Rn(s)"
     fields:
       z: {kind: size, width: 2}
       s: {kind: rn, width: 4}
@@ -29,9 +23,8 @@ entries:
     constraints:
       - {field: e, exclude: rn_direct, reason: canonical_form_reclaim}
   - id: long.sbb_x_rn_s_ea_e
-    status: allocated
     bits: "1111000000zz010sssseeeeeee"
-    text: "SBB.X(z:B/W/L/Q) Rn(s), <ea>(e)  ; reclaim e.rn, dst !imm"
+    text: "SBB.X(z:B/W/L/Q) Rn(s), <ea>(e)"
     fields:
       z: {kind: size, width: 2}
       s: {kind: rn, width: 4}
@@ -40,9 +33,8 @@ entries:
       - {field: e, exclude: rn_direct, reason: canonical_form_reclaim}
       - {destination: true, exclude: immediate, reason: invalid_destination}
   - id: long.sbb_x_ea_e_rn_s
-    status: allocated
     bits: "1111000000zz011sssseeeeeee"
-    text: "SBB.X(z:B/W/L/Q) <ea>(e), Rn(s)  ; reclaim e.rn"
+    text: "SBB.X(z:B/W/L/Q) <ea>(e), Rn(s)"
     fields:
       z: {kind: size, width: 2}
       s: {kind: rn, width: 4}
@@ -50,7 +42,6 @@ entries:
     constraints:
       - {field: e, exclude: rn_direct, reason: canonical_form_reclaim}
   - id: long.clz_x_ea_e_rn_d
-    status: allocated
     bits: "1111000000zz100ddddeeeeeee"
     text: "CLZ.X(z:B/W/L/Q) <ea>(e), Rn(d)"
     fields:
@@ -58,7 +49,6 @@ entries:
       d: {kind: rn, width: 4}
       e: {kind: ea7, width: 7}
   - id: long.ctz_x_ea_e_rn_d
-    status: allocated
     bits: "1111000000zz101ddddeeeeeee"
     text: "CTZ.X(z:B/W/L/Q) <ea>(e), Rn(d)"
     fields:
@@ -66,7 +56,6 @@ entries:
       d: {kind: rn, width: 4}
       e: {kind: ea7, width: 7}
   - id: long.cls_x_ea_e_rn_d
-    status: allocated
     bits: "1111000000zz110ddddeeeeeee"
     text: "CLS.X(z:B/W/L/Q) <ea>(e), Rn(d)"
     fields:
@@ -74,7 +63,6 @@ entries:
       d: {kind: rn, width: 4}
       e: {kind: ea7, width: 7}
   - id: long.cts_x_ea_e_rn_d
-    status: allocated
     bits: "1111000000zz111ddddeeeeeee"
     text: "CTS.X(z:B/W/L/Q) <ea>(e), Rn(d)"
     fields:
@@ -82,7 +70,6 @@ entries:
       d: {kind: rn, width: 4}
       e: {kind: ea7, width: 7}
   - id: long.minu_x_ea_e_rn_d
-    status: allocated
     bits: "1111000001zz000ddddeeeeeee"
     text: "MINU.X(z:B/W/L/Q) <ea>(e), Rn(d)"
     fields:
@@ -90,9 +77,8 @@ entries:
       d: {kind: rn, width: 4}
       e: {kind: ea7, width: 7}
   - id: long.minu_x_rn_s_ea_e
-    status: allocated
     bits: "1111000001zz001sssseeeeeee"
-    text: "MINU.X(z:B/W/L/Q) Rn(s), <ea>(e)  ; reclaim e.rn, dst !imm"
+    text: "MINU.X(z:B/W/L/Q) Rn(s), <ea>(e)"
     fields:
       z: {kind: size, width: 2}
       s: {kind: rn, width: 4}
@@ -101,7 +87,6 @@ entries:
       - {field: e, exclude: rn_direct, reason: canonical_form_reclaim}
       - {destination: true, exclude: immediate, reason: invalid_destination}
   - id: long.mins_x_ea_e_rn_d
-    status: allocated
     bits: "1111000001zz010ddddeeeeeee"
     text: "MINS.X(z:B/W/L/Q) <ea>(e), Rn(d)"
     fields:
@@ -109,9 +94,8 @@ entries:
       d: {kind: rn, width: 4}
       e: {kind: ea7, width: 7}
   - id: long.mins_x_rn_s_ea_e
-    status: allocated
     bits: "1111000001zz011sssseeeeeee"
-    text: "MINS.X(z:B/W/L/Q) Rn(s), <ea>(e)  ; reclaim e.rn, dst !imm"
+    text: "MINS.X(z:B/W/L/Q) Rn(s), <ea>(e)"
     fields:
       z: {kind: size, width: 2}
       s: {kind: rn, width: 4}
@@ -120,7 +104,6 @@ entries:
       - {field: e, exclude: rn_direct, reason: canonical_form_reclaim}
       - {destination: true, exclude: immediate, reason: invalid_destination}
   - id: long.maxu_x_ea_e_rn_d
-    status: allocated
     bits: "1111000001zz100ddddeeeeeee"
     text: "MAXU.X(z:B/W/L/Q) <ea>(e), Rn(d)"
     fields:
@@ -128,9 +111,8 @@ entries:
       d: {kind: rn, width: 4}
       e: {kind: ea7, width: 7}
   - id: long.maxu_x_rn_s_ea_e
-    status: allocated
     bits: "1111000001zz101sssseeeeeee"
-    text: "MAXU.X(z:B/W/L/Q) Rn(s), <ea>(e)  ; reclaim e.rn, dst !imm"
+    text: "MAXU.X(z:B/W/L/Q) Rn(s), <ea>(e)"
     fields:
       z: {kind: size, width: 2}
       s: {kind: rn, width: 4}
@@ -139,7 +121,6 @@ entries:
       - {field: e, exclude: rn_direct, reason: canonical_form_reclaim}
       - {destination: true, exclude: immediate, reason: invalid_destination}
   - id: long.maxs_x_ea_e_rn_d
-    status: allocated
     bits: "1111000001zz110ddddeeeeeee"
     text: "MAXS.X(z:B/W/L/Q) <ea>(e), Rn(d)"
     fields:
@@ -147,9 +128,8 @@ entries:
       d: {kind: rn, width: 4}
       e: {kind: ea7, width: 7}
   - id: long.maxs_x_rn_s_ea_e
-    status: allocated
     bits: "1111000001zz111sssseeeeeee"
-    text: "MAXS.X(z:B/W/L/Q) Rn(s), <ea>(e)  ; reclaim e.rn, dst !imm"
+    text: "MAXS.X(z:B/W/L/Q) Rn(s), <ea>(e)"
     fields:
       z: {kind: size, width: 2}
       s: {kind: rn, width: 4}
@@ -158,7 +138,6 @@ entries:
       - {field: e, exclude: rn_direct, reason: canonical_form_reclaim}
       - {destination: true, exclude: immediate, reason: invalid_destination}
   - id: long.popcnt_x_ea_e_rn_d
-    status: allocated
     bits: "1111000010zz000ddddeeeeeee"
     text: "POPCNT.X(z:B/W/L/Q) <ea>(e), Rn(d)"
     fields:
@@ -166,7 +145,6 @@ entries:
       d: {kind: rn, width: 4}
       e: {kind: ea7, width: 7}
   - id: long.parity_x_ea_e_rn_d
-    status: allocated
     bits: "1111000010zz001ddddeeeeeee"
     text: "PARITY.X(z:B/W/L/Q) <ea>(e), Rn(d)"
     fields:
@@ -174,7 +152,6 @@ entries:
       d: {kind: rn, width: 4}
       e: {kind: ea7, width: 7}
   - id: long.mul_x_ea_e_rn_d
-    status: allocated
     bits: "1111000010zz010ddddeeeeeee"
     text: "MUL.X(z:B/W/L/Q) <ea>(e), Rn(d)"
     fields:
@@ -182,7 +159,6 @@ entries:
       d: {kind: rn, width: 4}
       e: {kind: ea7, width: 7}
   - id: long.clmul_x_ea_e_rn_d
-    status: allocated
     bits: "1111000010zz011ddddeeeeeee"
     text: "CLMUL.X(z:B/W/L/Q) <ea>(e), Rn(d)"
     fields:
@@ -190,7 +166,6 @@ entries:
       d: {kind: rn, width: 4}
       e: {kind: ea7, width: 7}
   - id: long.divu_x_ea_e_rn_d
-    status: allocated
     bits: "1111000010zz100ddddeeeeeee"
     text: "DIVU.X(z:B/W/L/Q) <ea>(e), Rn(d)"
     fields:
@@ -198,7 +173,6 @@ entries:
       d: {kind: rn, width: 4}
       e: {kind: ea7, width: 7}
   - id: long.divs_x_ea_e_rn_d
-    status: allocated
     bits: "1111000010zz101ddddeeeeeee"
     text: "DIVS.X(z:B/W/L/Q) <ea>(e), Rn(d)"
     fields:
@@ -206,7 +180,6 @@ entries:
       d: {kind: rn, width: 4}
       e: {kind: ea7, width: 7}
   - id: long.modu_x_ea_e_rn_d
-    status: allocated
     bits: "1111000010zz110ddddeeeeeee"
     text: "MODU.X(z:B/W/L/Q) <ea>(e), Rn(d)"
     fields:
@@ -214,7 +187,6 @@ entries:
       d: {kind: rn, width: 4}
       e: {kind: ea7, width: 7}
   - id: long.mods_x_ea_e_rn_d
-    status: allocated
     bits: "1111000010zz111ddddeeeeeee"
     text: "MODS.X(z:B/W/L/Q) <ea>(e), Rn(d)"
     fields:
@@ -222,92 +194,122 @@ entries:
       d: {kind: rn, width: 4}
       e: {kind: ea7, width: 7}
   - id: long.btest_rn_b_ea_e
-    status: allocated
     bits: "111100001100000bbbbeeeeeee"
     text: "BTEST Rn(b), <ea>(e)"
     fields:
       b: {kind: rn, width: 4}
       e: {kind: ea7, width: 7}
   - id: long.bset_rn_b_ea_e
-    status: allocated
     bits: "111100001100001bbbbeeeeeee"
-    text: "BSET Rn(b), <ea>(e)  ; dst !imm"
+    text: "BSET Rn(b), <ea>(e)"
     fields:
       b: {kind: rn, width: 4}
       e: {kind: ea7, width: 7}
     constraints:
       - {destination: true, exclude: immediate, reason: invalid_destination}
   - id: long.bclr_rn_b_ea_e
-    status: allocated
     bits: "111100001100010bbbbeeeeeee"
-    text: "BCLR Rn(b), <ea>(e)  ; dst !imm"
+    text: "BCLR Rn(b), <ea>(e)"
     fields:
       b: {kind: rn, width: 4}
       e: {kind: ea7, width: 7}
     constraints:
       - {destination: true, exclude: immediate, reason: invalid_destination}
   - id: long.bchg_rn_b_ea_e
-    status: allocated
     bits: "111100001100011bbbbeeeeeee"
-    text: "BCHG Rn(b), <ea>(e)  ; dst !imm"
+    text: "BCHG Rn(b), <ea>(e)"
     fields:
       b: {kind: rn, width: 4}
       e: {kind: ea7, width: 7}
     constraints:
       - {destination: true, exclude: immediate, reason: invalid_destination}
-  - id: long.djcc_rn_c_ea_e
-    status: allocated
-    bits: "111100001100100cccceeeeeee"
-    text: "DJcc Rn(c), <ea>(e)"
-    fields:
-      c: {kind: condition, width: 4}
-      e: {kind: ea7, width: 7}
   - id: long.lcall_rn_r_ea_e
-    status: allocated
-    bits: "111100001100101rrrreeeeeee"
+    bits: "111100001100100rrrreeeeeee"
     text: "LCALL Rn(r), <ea>(e)"
     fields:
       r: {kind: rn, width: 4}
       e: {kind: ea7, width: 7}
   - id: long.ljmp_rn_r_ea_e
-    status: allocated
-    bits: "111100001100110rrrreeeeeee"
+    bits: "111100001100101rrrreeeeeee"
     text: "LJMP Rn(r), <ea>(e)"
     fields:
       r: {kind: rn, width: 4}
       e: {kind: ea7, width: 7}
   - id: long.clmulh_q_ea_e_rn_d
-    status: allocated
-    bits: "111100001100111ddddeeeeeee"
+    bits: "111100001100110ddddeeeeeee"
     text: "CLMULH.Q <ea>(e), Rn(d)"
     fields:
       d: {kind: rn, width: 4}
       e: {kind: ea7, width: 7}
-  - id: long.seglea_x_ea_e
-    status: allocated
-    bits: "1111000100zz1100000eeeeeee"
-    text: "SEGLEA.X(z:B/W/L/Q) <ea>(e)"
+  - id: long.seglea_x_ea_e_rn_d
+    bits: "1111000011010zzddddeeeeeee"
+    text: "SEGLEA.X(z:B/W/L/Q) <ea>(e), Rn(d)"
     fields:
       z: {kind: size, width: 2}
+      d: {kind: rn, width: 4}
       e: {kind: ea7, width: 7}
-  - id: long.incn_x_rn_r
-    status: allocated
-    bits: "1111000100zz1100001000rrrr"
-    text: "INCN.X(z:B/W/L/Q) Rn(r)"
+  - id: long.djcc_rn_r_ea_e
+    bits: "11110000111ccccrrrreeeeeee"
+    text: "DJcc Rn(r), <ea>(e)"
+    fields:
+      c: {kind: condition, width: 4}
+      r: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: c, allow: [0x0, 0x2..0xf], reason: condition_false_reclaimed}
+  - id: long.cmpjcc_x_rn_s_rn_d_imm8s
+    bits: "111100010zzccccssss000dddd"
+    text: "CMPJcc.X(z:B/W/L/Q) Rn(s), Rn(d), <imm8s>"
     fields:
       z: {kind: size, width: 2}
-      r: {kind: rn, width: 4}
-  - id: long.decn_x_rn_r
-    status: allocated
-    bits: "1111000100zz1100001001rrrr"
-    text: "DECN.X(z:B/W/L/Q) Rn(r)"
+      c: {kind: condition, width: 4}
+      s: {kind: rn, width: 4}
+      d: {kind: rn, width: 4}
+    constraints:
+      - {field: c, allow: [0x2..0xf], reason: condition_true_false_reclaimed}
+  - id: long.cmpjcc_x_rn_s_rn_d_imm16s
+    bits: "111100010zzccccssss001dddd"
+    text: "CMPJcc.X(z:B/W/L/Q) Rn(s), Rn(d), <imm16s>"
     fields:
       z: {kind: size, width: 2}
-      r: {kind: rn, width: 4}
+      c: {kind: condition, width: 4}
+      s: {kind: rn, width: 4}
+      d: {kind: rn, width: 4}
+    constraints:
+      - {field: c, allow: [0x2..0xf], reason: condition_true_false_reclaimed}
+  - id: long.testjcc_x_rn_s_rn_d_imm8s
+    bits: "111100010zzccccssss010dddd"
+    text: "TESTJcc.X(z:B/W/L/Q) Rn(s), Rn(d), <imm8s>"
+    fields:
+      z: {kind: size, width: 2}
+      c: {kind: condition, width: 4}
+      s: {kind: rn, width: 4}
+      d: {kind: rn, width: 4}
+    constraints:
+      - {field: c, allow: [0x2..0xf], reason: condition_true_false_reclaimed}
+  - id: long.testjcc_x_rn_s_rn_d_imm16s
+    bits: "111100010zzccccssss011dddd"
+    text: "TESTJcc.X(z:B/W/L/Q) Rn(s), Rn(d), <imm16s>"
+    fields:
+      z: {kind: size, width: 2}
+      c: {kind: condition, width: 4}
+      s: {kind: rn, width: 4}
+      d: {kind: rn, width: 4}
+    constraints:
+      - {field: c, allow: [0x2..0xf], reason: condition_true_false_reclaimed}
+  - id: long.movnt_x_rn_s_ea_e
+    bits: "1111001000zz000sssseeeeeee"
+    text: "MOVNT.X(z:B/W/L/Q) Rn(s), <ea>(e)"
+    fields:
+      z: {kind: size, width: 2}
+      s: {kind: rn, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: reg_direct, reason: memory_destination_required}
+      - {destination: true, exclude: immediate, reason: invalid_destination}
   - id: long.mov_x_ea_s_ea_d
-    status: allocated
     bits: "1111100000zzsssssssddddddd"
-    text: "MOV.X(z:B/W/L/Q) <ea>(s), <ea>(d)  ; reclaim s.reg | d.reg, dst !imm"
+    text: "MOV.X(z:B/W/L/Q) <ea>(s), <ea>(d)"
     fields:
       z: {kind: size, width: 2}
       s: {kind: ea7, width: 7}
@@ -317,9 +319,8 @@ entries:
       - {field: d, exclude: reg_direct, reason: canonical_form_reclaim}
       - {destination: true, exclude: immediate, reason: invalid_destination}
   - id: long.cmp_x_ea_s_ea_d
-    status: allocated
     bits: "1111100001zzsssssssddddddd"
-    text: "CMP.X(z:B/W/L/Q) <ea>(s), <ea>(d)  ; reclaim s.reg | d.reg"
+    text: "CMP.X(z:B/W/L/Q) <ea>(s), <ea>(d)"
     fields:
       z: {kind: size, width: 2}
       s: {kind: ea7, width: 7}
@@ -327,10 +328,42 @@ entries:
     constraints:
       - {field: s, exclude: reg_direct, reason: canonical_form_reclaim}
       - {field: d, exclude: reg_direct, reason: canonical_form_reclaim}
+  - id: long.movuc_x_ea_s_ea_d
+    bits: "1111100010zzsssssssddddddd"
+    text: "MOVUC.X(z:B/W/L/Q) <ea>(s), <ea>(d)"
+    fields:
+      z: {kind: size, width: 2}
+      s: {kind: ea7, width: 7}
+      d: {kind: ea7, width: 7}
+    constraints:
+      - {field: s, exclude: reg_direct, reason: user_source_memory_required}
+      - {field: s, exclude: immediate, reason: user_source_memory_required}
+      - {destination: true, exclude: immediate, reason: invalid_destination}
+  - id: long.movcu_x_ea_s_ea_d
+    bits: "1111100011zzsssssssddddddd"
+    text: "MOVCU.X(z:B/W/L/Q) <ea>(s), <ea>(d)"
+    fields:
+      z: {kind: size, width: 2}
+      s: {kind: ea7, width: 7}
+      d: {kind: ea7, width: 7}
+    constraints:
+      - {field: d, exclude: reg_direct, reason: user_destination_memory_required}
+      - {destination: true, exclude: immediate, reason: invalid_destination}
+  - id: long.movuu_x_ea_s_ea_d
+    bits: "1111100100zzsssssssddddddd"
+    text: "MOVUU.X(z:B/W/L/Q) <ea>(s), <ea>(d)"
+    fields:
+      z: {kind: size, width: 2}
+      s: {kind: ea7, width: 7}
+      d: {kind: ea7, width: 7}
+    constraints:
+      - {field: s, exclude: reg_direct, reason: user_source_memory_required}
+      - {field: s, exclude: immediate, reason: user_source_memory_required}
+      - {field: d, exclude: reg_direct, reason: user_destination_memory_required}
+      - {destination: true, exclude: immediate, reason: invalid_destination}
   - id: long.extsw_b_ea_s_ea_d
-    status: allocated
     bits: "111110100000sssssssddddddd"
-    text: "EXTSW.B <ea>(s), <ea>(d)  ; reclaim s.reg | d.reg, dst !imm"
+    text: "EXTSW.B <ea>(s), <ea>(d)"
     fields:
       s: {kind: ea7, width: 7}
       d: {kind: ea7, width: 7}
@@ -339,9 +372,8 @@ entries:
       - {field: d, exclude: reg_direct, reason: canonical_form_reclaim}
       - {destination: true, exclude: immediate, reason: invalid_destination}
   - id: long.extsq_b_ea_s_ea_d
-    status: allocated
     bits: "111110100001sssssssddddddd"
-    text: "EXTSQ.B <ea>(s), <ea>(d)  ; reclaim s.reg | d.reg, dst !imm"
+    text: "EXTSQ.B <ea>(s), <ea>(d)"
     fields:
       s: {kind: ea7, width: 7}
       d: {kind: ea7, width: 7}
@@ -350,9 +382,8 @@ entries:
       - {field: d, exclude: reg_direct, reason: canonical_form_reclaim}
       - {destination: true, exclude: immediate, reason: invalid_destination}
   - id: long.extsq_w_ea_s_ea_d
-    status: allocated
     bits: "111110100010sssssssddddddd"
-    text: "EXTSQ.W <ea>(s), <ea>(d)  ; reclaim s.reg | d.reg, dst !imm"
+    text: "EXTSQ.W <ea>(s), <ea>(d)"
     fields:
       s: {kind: ea7, width: 7}
       d: {kind: ea7, width: 7}
@@ -361,9 +392,8 @@ entries:
       - {field: d, exclude: reg_direct, reason: canonical_form_reclaim}
       - {destination: true, exclude: immediate, reason: invalid_destination}
   - id: long.extsq_l_ea_s_ea_d
-    status: allocated
     bits: "111110100011sssssssddddddd"
-    text: "EXTSQ.L <ea>(s), <ea>(d)  ; reclaim s.reg | d.reg, dst !imm"
+    text: "EXTSQ.L <ea>(s), <ea>(d)"
     fields:
       s: {kind: ea7, width: 7}
       d: {kind: ea7, width: 7}
@@ -372,9 +402,8 @@ entries:
       - {field: d, exclude: reg_direct, reason: canonical_form_reclaim}
       - {destination: true, exclude: immediate, reason: invalid_destination}
   - id: long.extzw_b_ea_s_ea_d
-    status: allocated
     bits: "111110100100sssssssddddddd"
-    text: "EXTZW.B <ea>(s), <ea>(d)  ; reclaim s.reg | d.reg, dst !imm"
+    text: "EXTZW.B <ea>(s), <ea>(d)"
     fields:
       s: {kind: ea7, width: 7}
       d: {kind: ea7, width: 7}
@@ -383,9 +412,8 @@ entries:
       - {field: d, exclude: reg_direct, reason: canonical_form_reclaim}
       - {destination: true, exclude: immediate, reason: invalid_destination}
   - id: long.extzq_b_ea_s_ea_d
-    status: allocated
     bits: "111110100101sssssssddddddd"
-    text: "EXTZQ.B <ea>(s), <ea>(d)  ; reclaim s.reg | d.reg, dst !imm"
+    text: "EXTZQ.B <ea>(s), <ea>(d)"
     fields:
       s: {kind: ea7, width: 7}
       d: {kind: ea7, width: 7}
@@ -394,9 +422,8 @@ entries:
       - {field: d, exclude: reg_direct, reason: canonical_form_reclaim}
       - {destination: true, exclude: immediate, reason: invalid_destination}
   - id: long.extzq_w_ea_s_ea_d
-    status: allocated
     bits: "111110100110sssssssddddddd"
-    text: "EXTZQ.W <ea>(s), <ea>(d)  ; reclaim s.reg | d.reg, dst !imm"
+    text: "EXTZQ.W <ea>(s), <ea>(d)"
     fields:
       s: {kind: ea7, width: 7}
       d: {kind: ea7, width: 7}
@@ -405,9 +432,8 @@ entries:
       - {field: d, exclude: reg_direct, reason: canonical_form_reclaim}
       - {destination: true, exclude: immediate, reason: invalid_destination}
   - id: long.extzq_l_ea_s_ea_d
-    status: allocated
     bits: "111110100111sssssssddddddd"
-    text: "EXTZQ.L <ea>(s), <ea>(d)  ; reclaim s.reg | d.reg, dst !imm"
+    text: "EXTZQ.L <ea>(s), <ea>(d)"
     fields:
       s: {kind: ea7, width: 7}
       d: {kind: ea7, width: 7}
@@ -416,9 +442,8 @@ entries:
       - {field: d, exclude: reg_direct, reason: canonical_form_reclaim}
       - {destination: true, exclude: immediate, reason: invalid_destination}
   - id: long.extsl_x_ea_s_ea_d
-    status: allocated
     bits: "11111010100zsssssssddddddd"
-    text: "EXTSL.X(z:B/W) <ea>(s), <ea>(d)  ; reclaim s.reg | d.reg, dst !imm"
+    text: "EXTSL.X(z:B/W) <ea>(s), <ea>(d)"
     fields:
       z: {kind: size, width: 1}
       s: {kind: ea7, width: 7}
@@ -428,9 +453,8 @@ entries:
       - {field: d, exclude: reg_direct, reason: canonical_form_reclaim}
       - {destination: true, exclude: immediate, reason: invalid_destination}
   - id: long.extzl_x_ea_s_ea_d
-    status: allocated
     bits: "11111010101zsssssssddddddd"
-    text: "EXTZL.X(z:B/W) <ea>(s), <ea>(d)  ; reclaim s.reg | d.reg, dst !imm"
+    text: "EXTZL.X(z:B/W) <ea>(s), <ea>(d)"
     fields:
       z: {kind: size, width: 1}
       s: {kind: ea7, width: 7}
@@ -440,9 +464,8 @@ entries:
       - {field: d, exclude: reg_direct, reason: canonical_form_reclaim}
       - {destination: true, exclude: immediate, reason: invalid_destination}
   - id: long.rol_x_imm6_i_ea_e
-    status: allocated
     bits: "1111101100zz0iiiiiieeeeeee"
-    text: "ROL.X(z:B/W/L/Q) imm6(i), <ea>(e)  ; dst !imm"
+    text: "ROL.X(z:B/W/L/Q) imm6(i), <ea>(e)"
     fields:
       z: {kind: size, width: 2}
       i: {kind: immediate, width: 6}
@@ -450,9 +473,8 @@ entries:
     constraints:
       - {destination: true, exclude: immediate, reason: invalid_destination}
   - id: long.ror_x_imm6_i_ea_e
-    status: allocated
     bits: "1111101100zz1iiiiiieeeeeee"
-    text: "ROR.X(z:B/W/L/Q) imm6(i), <ea>(e)  ; dst !imm"
+    text: "ROR.X(z:B/W/L/Q) imm6(i), <ea>(e)"
     fields:
       z: {kind: size, width: 2}
       i: {kind: immediate, width: 6}
@@ -460,9 +482,8 @@ entries:
     constraints:
       - {destination: true, exclude: immediate, reason: invalid_destination}
   - id: long.shl_x_imm6_i_ea_e
-    status: allocated
     bits: "1111101101zz0iiiiiieeeeeee"
-    text: "SHL.X(z:B/W/L/Q) imm6(i), <ea>(e)  ; dst !imm"
+    text: "SHL.X(z:B/W/L/Q) imm6(i), <ea>(e)"
     fields:
       z: {kind: size, width: 2}
       i: {kind: immediate, width: 6}
@@ -470,9 +491,8 @@ entries:
     constraints:
       - {destination: true, exclude: immediate, reason: invalid_destination}
   - id: long.shr_x_imm6_i_ea_e
-    status: allocated
     bits: "1111101101zz1iiiiiieeeeeee"
-    text: "SHR.X(z:B/W/L/Q) imm6(i), <ea>(e)  ; dst !imm"
+    text: "SHR.X(z:B/W/L/Q) imm6(i), <ea>(e)"
     fields:
       z: {kind: size, width: 2}
       i: {kind: immediate, width: 6}
@@ -480,9 +500,8 @@ entries:
     constraints:
       - {destination: true, exclude: immediate, reason: invalid_destination}
   - id: long.sar_x_imm6_i_ea_e
-    status: allocated
     bits: "1111101110zz0iiiiiieeeeeee"
-    text: "SAR.X(z:B/W/L/Q) imm6(i), <ea>(e)  ; dst !imm"
+    text: "SAR.X(z:B/W/L/Q) imm6(i), <ea>(e)"
     fields:
       z: {kind: size, width: 2}
       i: {kind: immediate, width: 6}
@@ -490,227 +509,898 @@ entries:
     constraints:
       - {destination: true, exclude: immediate, reason: invalid_destination}
   - id: long.btest_imm6_i_ea_e
-    status: allocated
     bits: "1111101110001iiiiiieeeeeee"
     text: "BTEST imm6(i), <ea>(e)"
     fields:
       i: {kind: immediate, width: 6}
       e: {kind: ea7, width: 7}
   - id: long.bset_imm6_i_ea_e
-    status: allocated
     bits: "1111101110011iiiiiieeeeeee"
-    text: "BSET imm6(i), <ea>(e)  ; dst !imm"
+    text: "BSET imm6(i), <ea>(e)"
     fields:
       i: {kind: immediate, width: 6}
       e: {kind: ea7, width: 7}
     constraints:
       - {destination: true, exclude: immediate, reason: invalid_destination}
   - id: long.bclr_imm6_i_ea_e
-    status: allocated
     bits: "1111101110101iiiiiieeeeeee"
-    text: "BCLR imm6(i), <ea>(e)  ; dst !imm"
+    text: "BCLR imm6(i), <ea>(e)"
     fields:
       i: {kind: immediate, width: 6}
       e: {kind: ea7, width: 7}
     constraints:
       - {destination: true, exclude: immediate, reason: invalid_destination}
   - id: long.bchg_imm6_i_ea_e
-    status: allocated
     bits: "1111101110111iiiiiieeeeeee"
-    text: "BCHG imm6(i), <ea>(e)  ; dst !imm"
+    text: "BCHG imm6(i), <ea>(e)"
     fields:
       i: {kind: immediate, width: 6}
       e: {kind: ea7, width: 7}
     constraints:
       - {destination: true, exclude: immediate, reason: invalid_destination}
   - id: long.ptquery_imm3_i_ea_e_rn_d
-    status: allocated
     bits: "111110111100iiiddddeeeeeee"
     text: "PTQUERY imm3(i), <ea>(e), Rn(d)"
     fields:
       i: {kind: immediate, width: 3}
       d: {kind: rn, width: 4}
       e: {kind: ea7, width: 7}
-  - id: long.vtop_rn_v_rn_p
-    status: allocated
-    bits: "111110111101000000vvvvpppp"
-    text: "VTOP Rn(v), Rn(p)"
-    fields:
-      v: {kind: rn, width: 4}
-      p: {kind: rn, width: 4}
-  - id: long.swpta_rn_p_rn_a
-    status: allocated
-    bits: "111110111101000001ppppaaaa"
-    text: "SWPTA Rn(p), Rn(a)"
-    fields:
-      p: {kind: rn, width: 4}
-      a: {kind: rn, width: 4}
   - id: long.rdseg_sreg_s_rn_d
-    status: allocated
-    bits: "1111101111010000100sssdddd"
+    bits: "1111101111010000000sssdddd"
     text: "RDSEG SREG(s), Rn(d)"
     fields:
       s: {kind: bits, width: 3}
       d: {kind: rn, width: 4}
   - id: long.wrseg_rn_d_sreg_s
-    status: allocated
-    bits: "1111101111010000101sssdddd"
+    bits: "1111101111010000001sssdddd"
     text: "WRSEG Rn(d), SREG(s)"
     fields:
       s: {kind: bits, width: 3}
       d: {kind: rn, width: 4}
   - id: long.invpage_ea_e
-    status: allocated
-    bits: "1111101111010000110eeeeeee"
+    bits: "1111101111010000010eeeeeee"
     text: "INVPAGE <ea>(e)"
     fields:
       e: {kind: ea7, width: 7}
   - id: long.flshdcache_ea_e
-    status: allocated
-    bits: "1111101111010000111eeeeeee"
+    bits: "1111101111010000011eeeeeee"
     text: "FLSHDCACHE <ea>(e)"
     fields:
       e: {kind: ea7, width: 7}
   - id: long.invdcache_ea_e
-    status: allocated
-    bits: "1111101111010001000eeeeeee"
+    bits: "1111101111010000100eeeeeee"
     text: "INVDCACHE <ea>(e)"
     fields:
       e: {kind: ea7, width: 7}
+  - id: long.encinst_ea_e
+    bits: "1111101111010001100eeeeeee"
+    text: "ENCINST <ea>(e)"
+    fields:
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: reg_direct, reason: memory_operand_required}
+      - {field: e, exclude: immediate, reason: memory_operand_required}
   - id: long.invicache_ea_e
-    status: allocated
-    bits: "1111101111010001001eeeeeee"
+    bits: "1111101111010000101eeeeeee"
     text: "INVICACHE <ea>(e)"
     fields:
       e: {kind: ea7, width: 7}
   - id: long.prefetch_ea_e
-    status: allocated
-    bits: "1111101111010001010eeeeeee"
+    bits: "1111101111010000110eeeeeee"
     text: "PREFETCH <ea>(e)"
     fields:
       e: {kind: ea7, width: 7}
   - id: long.synccache_ea_e
-    status: allocated
-    bits: "1111101111010001011eeeeeee"
+    bits: "1111101111010000111eeeeeee"
     text: "SYNCCACHE <ea>(e)"
     fields:
       e: {kind: ea7, width: 7}
   - id: long.wrbkdcache_ea_e
-    status: allocated
-    bits: "1111101111010001100eeeeeee"
+    bits: "1111101111010001000eeeeeee"
     text: "WRBKDCACHE <ea>(e)"
     fields:
       e: {kind: ea7, width: 7}
   - id: long.save_ea_e
-    status: allocated
-    bits: "1111101111010001101eeeeeee"
+    bits: "1111101111010001001eeeeeee"
     text: "SAVE <ea>(e)"
     fields:
       e: {kind: ea7, width: 7}
   - id: long.restore_ea_e
-    status: allocated
-    bits: "1111101111010001110eeeeeee"
+    bits: "1111101111010001010eeeeeee"
     text: "RESTORE <ea>(e)"
     fields:
       e: {kind: ea7, width: 7}
+  - id: long.prefetchnt_ea_e
+    bits: "1111101111010001011eeeeeee"
+    text: "PREFETCHNT <ea>(e)"
+    fields:
+      e: {kind: ea7, width: 7}
   - id: long.rdcr_ea_rn_d
-    status: allocated
-    bits: "1111101111010010000000dddd"
+    bits: "1111101111010001110000dddd"
     text: "RDCR <imm16>, Rn(d)"
     fields:
       d: {kind: rn, width: 4}
   - id: long.wrcr_rn_s_ea
-    status: allocated
-    bits: "1111101111010010000001ssss"
+    bits: "1111101111010001110001ssss"
     text: "WRCR Rn(s), <imm16>"
     fields:
       s: {kind: rn, width: 4}
   - id: long.rdflags_rn_d
-    status: allocated
-    bits: "1111101111010010000010dddd"
+    bits: "1111101111010001110010dddd"
     text: "RDFLAGS Rn(d)"
     fields:
       d: {kind: rn, width: 4}
   - id: long.wrflags_rn_s
-    status: allocated
-    bits: "1111101111010010000011ssss"
+    bits: "1111101111010001110011ssss"
     text: "WRFLAGS Rn(s)"
     fields:
       s: {kind: rn, width: 4}
   - id: long.rdfflags_rn_d
-    status: allocated
-    bits: "1111101111010010000100dddd"
+    bits: "1111101111010001110100dddd"
     text: "RDFFLAGS Rn(d)"
     fields:
       d: {kind: rn, width: 4}
   - id: long.wrfflags_rn_s
-    status: allocated
-    bits: "1111101111010010000101ssss"
+    bits: "1111101111010001110101ssss"
     text: "WRFFLAGS Rn(s)"
     fields:
       s: {kind: rn, width: 4}
   - id: long.rdstatus_rn_d
-    status: allocated
-    bits: "1111101111010010000110dddd"
+    bits: "1111101111010001110110dddd"
     text: "RDSTATUS Rn(d)"
     fields:
       d: {kind: rn, width: 4}
   - id: long.wrstatus_rn_s
-    status: allocated
-    bits: "1111101111010010000111ssss"
+    bits: "1111101111010001110111ssss"
     text: "WRSTATUS Rn(s)"
     fields:
       s: {kind: rn, width: 4}
   - id: long.rdfstatus_rn_d
-    status: allocated
-    bits: "1111101111010010001000dddd"
+    bits: "1111101111010001111000dddd"
     text: "RDFSTATUS Rn(d)"
     fields:
       d: {kind: rn, width: 4}
   - id: long.wrfstatus_rn_s
-    status: allocated
-    bits: "1111101111010010001001ssss"
+    bits: "1111101111010001111001ssss"
     text: "WRFSTATUS Rn(s)"
     fields:
       s: {kind: rn, width: 4}
   - id: long.rdpmc_ea_rn_d
-    status: allocated
-    bits: "1111101111010010001010dddd"
+    bits: "1111101111010001111010dddd"
     text: "RDPMC <imm16>, Rn(d)"
     fields:
       d: {kind: rn, width: 4}
   - id: long.swpt_rn_p
-    status: allocated
-    bits: "1111101111010010001011pppp"
+    bits: "1111101111010001111011pppp"
     text: "SWPT Rn(p)"
     fields:
       p: {kind: rn, width: 4}
-  - id: long.invasid_ea
-    status: allocated
-    bits: "11111011110100111100000000"
-    text: "INVASID <imm16>"
-  - id: long.invtlb
-    status: allocated
-    bits: "11111011110100111100000001"
-    text: "INVTLB"
+
+  - id: long.vtop_rn_v_rn_p
+    bits: "111110111101001vvvv000pppp"
+    text: "VTOP Rn(v), Rn(p)"
+    fields:
+      v: {kind: rn, width: 4}
+      p: {kind: rn, width: 4}
+  - id: long.swpta_rn_p_rn_a
+    bits: "111110111101001aaaa001pppp"
+    text: "SWPTA Rn(p), Rn(a)"
+    fields:
+      p: {kind: rn, width: 4}
+      a: {kind: rn, width: 4}
   - id: long.mulhu_q_rn_s_rn_d
-    status: allocated
-    bits: "111110111110000000ssssdddd"
+    bits: "111110111101001ssss100dddd"
     text: "MULHU.Q Rn(s), Rn(d)"
     fields:
       s: {kind: rn, width: 4}
       d: {kind: rn, width: 4}
   - id: long.mulhs_q_rn_s_rn_d
-    status: allocated
-    bits: "111110111110000001ssssdddd"
+    bits: "111110111101001ssss101dddd"
     text: "MULHS.Q Rn(s), Rn(d)"
     fields:
       s: {kind: rn, width: 4}
       d: {kind: rn, width: 4}
   - id: long.mulhsu_q_rn_s_rn_d
-    status: allocated
-    bits: "111110111110000010ssssdddd"
+    bits: "111110111101001ssss110dddd"
     text: "MULHSU.Q Rn(s), Rn(d)"
     fields:
       s: {kind: rn, width: 4}
       d: {kind: rn, width: 4}
+  - id: long.invasid_ea
+    bits: "11111011110100011000000000"
+    text: "INVASID <imm16>"
+  - id: long.invtlb
+    bits: "11111011110100011000000001"
+    text: "INVTLB"
+  - id: long.fbndii_x_fn_l_fn_v_fn_h
+    bits: "1111010000zllllhhhh000vvvv"
+    text: "FBNDII.X(z:S/D) Fn(l), Fn(v), Fn(h)"
+    fields:
+      z: {kind: size, width: 1}
+      l: {kind: freg, width: 4}
+      v: {kind: freg, width: 4}
+      h: {kind: freg, width: 4}
+  - id: long.fbndix_x_fn_l_fn_v_fn_h
+    bits: "1111010000zllllhhhh001vvvv"
+    text: "FBNDIX.X(z:S/D) Fn(l), Fn(v), Fn(h)"
+    fields:
+      z: {kind: size, width: 1}
+      l: {kind: freg, width: 4}
+      v: {kind: freg, width: 4}
+      h: {kind: freg, width: 4}
+  - id: long.fbndxi_x_fn_l_fn_v_fn_h
+    bits: "1111010000zllllhhhh010vvvv"
+    text: "FBNDXI.X(z:S/D) Fn(l), Fn(v), Fn(h)"
+    fields:
+      z: {kind: size, width: 1}
+      l: {kind: freg, width: 4}
+      v: {kind: freg, width: 4}
+      h: {kind: freg, width: 4}
+  - id: long.fbndxx_x_fn_l_fn_v_fn_h
+    bits: "1111010000zllllhhhh011vvvv"
+    text: "FBNDXX.X(z:S/D) Fn(l), Fn(v), Fn(h)"
+    fields:
+      z: {kind: size, width: 1}
+      l: {kind: freg, width: 4}
+      v: {kind: freg, width: 4}
+      h: {kind: freg, width: 4}
+  - id: long.fbndii_x_fn_l_ea_v_fn_h
+    bits: "1111010001zllllhhhhvvvvvvv"
+    text: "FBNDII.X(z:S/D) Fn(l), <ea>(v), Fn(h)"
+    fields:
+      z: {kind: size, width: 1}
+      l: {kind: freg, width: 4}
+      h: {kind: freg, width: 4}
+      v: {kind: ea7, width: 7}
+  - id: long.fbndix_x_fn_l_ea_v_fn_h
+    bits: "1111010010zllllhhhhvvvvvvv"
+    text: "FBNDIX.X(z:S/D) Fn(l), <ea>(v), Fn(h)"
+    fields:
+      z: {kind: size, width: 1}
+      l: {kind: freg, width: 4}
+      h: {kind: freg, width: 4}
+      v: {kind: ea7, width: 7}
+  - id: long.fbndxi_x_fn_l_ea_v_fn_h
+    bits: "1111010011zllllhhhhvvvvvvv"
+    text: "FBNDXI.X(z:S/D) Fn(l), <ea>(v), Fn(h)"
+    fields:
+      z: {kind: size, width: 1}
+      l: {kind: freg, width: 4}
+      h: {kind: freg, width: 4}
+      v: {kind: ea7, width: 7}
+  - id: long.fbndxx_x_fn_l_ea_v_fn_h
+    bits: "1111010100zllllhhhhvvvvvvv"
+    text: "FBNDXX.X(z:S/D) Fn(l), <ea>(v), Fn(h)"
+    fields:
+      z: {kind: size, width: 1}
+      l: {kind: freg, width: 4}
+      h: {kind: freg, width: 4}
+      v: {kind: ea7, width: 7}
+  - id: long.fmadd_x_fn_l_fn_r_fn_d
+    bits: "1111010000zllllrrrr100dddd"
+    text: "FMADD.X(z:S/D) Fn(l), Fn(r), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      l: {kind: freg, width: 4}
+      r: {kind: freg, width: 4}
+      d: {kind: freg, width: 4}
+  - id: long.fmsub_x_fn_l_fn_r_fn_d
+    bits: "1111010000zllllrrrr101dddd"
+    text: "FMSUB.X(z:S/D) Fn(l), Fn(r), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      l: {kind: freg, width: 4}
+      r: {kind: freg, width: 4}
+      d: {kind: freg, width: 4}
+  - id: long.fnmadd_x_fn_l_fn_r_fn_d
+    bits: "1111010000zllllrrrr110dddd"
+    text: "FNMADD.X(z:S/D) Fn(l), Fn(r), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      l: {kind: freg, width: 4}
+      r: {kind: freg, width: 4}
+      d: {kind: freg, width: 4}
+  - id: long.fnmsub_x_fn_l_fn_r_fn_d
+    bits: "1111010000zllllrrrr111dddd"
+    text: "FNMSUB.X(z:S/D) Fn(l), Fn(r), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      l: {kind: freg, width: 4}
+      r: {kind: freg, width: 4}
+      d: {kind: freg, width: 4}
+  - id: long.fmov_x_ea_s_fn_d
+    bits: "1111010101z0000ddddeeeeeee"
+    text: "FMOV.X(z:S/D) <ea>(e), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      d: {kind: freg, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: reg_direct, reason: canonical_form_reclaim}
+  - id: long.fadd_x_ea_s_fn_d
+    bits: "1111010101z0001ddddeeeeeee"
+    text: "FADD.X(z:S/D) <ea>(e), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      d: {kind: freg, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: reg_direct, reason: canonical_form_reclaim}
+  - id: long.fsub_x_ea_s_fn_d
+    bits: "1111010101z0010ddddeeeeeee"
+    text: "FSUB.X(z:S/D) <ea>(e), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      d: {kind: freg, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: reg_direct, reason: canonical_form_reclaim}
+  - id: long.fmul_x_ea_s_fn_d
+    bits: "1111010101z0011ddddeeeeeee"
+    text: "FMUL.X(z:S/D) <ea>(e), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      d: {kind: freg, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: reg_direct, reason: canonical_form_reclaim}
+  - id: long.fdiv_x_ea_s_fn_d
+    bits: "1111010101z0100ddddeeeeeee"
+    text: "FDIV.X(z:S/D) <ea>(e), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      d: {kind: freg, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: reg_direct, reason: canonical_form_reclaim}
+  - id: long.fcmp_x_ea_s_fn_d
+    bits: "1111010101z0101ddddeeeeeee"
+    text: "FCMP.X(z:S/D) <ea>(e), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      d: {kind: freg, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: reg_direct, reason: canonical_form_reclaim}
+  - id: long.fabs_x_ea_s_fn_d
+    bits: "1111010101z0110ddddeeeeeee"
+    text: "FABS.X(z:S/D) <ea>(e), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      d: {kind: freg, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: reg_direct, reason: canonical_form_reclaim}
+  - id: long.fneg_x_ea_s_fn_d
+    bits: "1111010101z0111ddddeeeeeee"
+    text: "FNEG.X(z:S/D) <ea>(e), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      d: {kind: freg, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: reg_direct, reason: canonical_form_reclaim}
+  - id: long.fsqrt_x_ea_s_fn_d
+    bits: "1111010101z1000ddddeeeeeee"
+    text: "FSQRT.X(z:S/D) <ea>(e), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      d: {kind: freg, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: reg_direct, reason: canonical_form_reclaim}
+  - id: long.fmin_x_ea_s_fn_d
+    bits: "1111010101z1001ddddeeeeeee"
+    text: "FMIN.X(z:S/D) <ea>(e), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      d: {kind: freg, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: reg_direct, reason: canonical_form_reclaim}
+  - id: long.fmax_x_ea_s_fn_d
+    bits: "1111010101z1010ddddeeeeeee"
+    text: "FMAX.X(z:S/D) <ea>(e), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      d: {kind: freg, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: reg_direct, reason: canonical_form_reclaim}
+  - id: long.fround_x_ea_s_fn_d
+    bits: "1111010101z1011ddddeeeeeee"
+    text: "FROUND.X(z:S/D) <ea>(e), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      d: {kind: freg, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: reg_direct, reason: canonical_form_reclaim}
+  - id: long.ftrunc_x_ea_s_fn_d
+    bits: "1111010101z1100ddddeeeeeee"
+    text: "FTRUNC.X(z:S/D) <ea>(e), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      d: {kind: freg, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: reg_direct, reason: canonical_form_reclaim}
+  - id: long.fceil_x_ea_s_fn_d
+    bits: "1111010101z1101ddddeeeeeee"
+    text: "FCEIL.X(z:S/D) <ea>(e), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      d: {kind: freg, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: reg_direct, reason: canonical_form_reclaim}
+  - id: long.ffloor_x_ea_s_fn_d
+    bits: "1111010101z1110ddddeeeeeee"
+    text: "FFLOOR.X(z:S/D) <ea>(e), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      d: {kind: freg, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: reg_direct, reason: canonical_form_reclaim}
+  - id: long.fint_x_ea_s_fn_d
+    bits: "1111010101z1111ddddeeeeeee"
+    text: "FINT.X(z:S/D) <ea>(e), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      d: {kind: freg, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: reg_direct, reason: canonical_form_reclaim}
+  - id: long.fint_x_fn_s_fn_d
+    bits: "1111010101z1111dddd000ssss"
+    text: "FINT.X(z:S/D) Fn(s), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: freg, width: 4}
+      d: {kind: freg, width: 4}
+  - id: long.fintrz_x_ea_s_fn_d
+    bits: "1111010110z0000ddddeeeeeee"
+    text: "FINTRZ.X(z:S/D) <ea>(e), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      d: {kind: freg, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: reg_direct, reason: canonical_form_reclaim}
+  - id: long.fintrz_x_fn_s_fn_d
+    bits: "1111010110z0000dddd000ssss"
+    text: "FINTRZ.X(z:S/D) Fn(s), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: freg, width: 4}
+      d: {kind: freg, width: 4}
+  - id: long.fgetexp_x_ea_s_fn_d
+    bits: "1111010110z0001ddddeeeeeee"
+    text: "FGETEXP.X(z:S/D) <ea>(e), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      d: {kind: freg, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: reg_direct, reason: canonical_form_reclaim}
+  - id: long.fgetexp_x_fn_s_fn_d
+    bits: "1111010110z0001dddd000ssss"
+    text: "FGETEXP.X(z:S/D) Fn(s), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: freg, width: 4}
+      d: {kind: freg, width: 4}
+  - id: long.fgetman_x_ea_s_fn_d
+    bits: "1111010110z0010ddddeeeeeee"
+    text: "FGETMAN.X(z:S/D) <ea>(e), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      d: {kind: freg, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: reg_direct, reason: canonical_form_reclaim}
+  - id: long.fgetman_x_fn_s_fn_d
+    bits: "1111010110z0010dddd000ssss"
+    text: "FGETMAN.X(z:S/D) Fn(s), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: freg, width: 4}
+      d: {kind: freg, width: 4}
+  - id: long.fmod_x_ea_s_fn_d
+    bits: "1111010110z0011ddddeeeeeee"
+    text: "FMOD.X(z:S/D) <ea>(e), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      d: {kind: freg, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: reg_direct, reason: canonical_form_reclaim}
+  - id: long.fmod_x_fn_s_fn_d
+    bits: "1111010110z0011dddd000ssss"
+    text: "FMOD.X(z:S/D) Fn(s), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: freg, width: 4}
+      d: {kind: freg, width: 4}
+  - id: long.frem_x_ea_s_fn_d
+    bits: "1111010110z0100ddddeeeeeee"
+    text: "FREM.X(z:S/D) <ea>(e), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      d: {kind: freg, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: reg_direct, reason: canonical_form_reclaim}
+  - id: long.frem_x_fn_s_fn_d
+    bits: "1111010110z0100dddd000ssss"
+    text: "FREM.X(z:S/D) Fn(s), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: freg, width: 4}
+      d: {kind: freg, width: 4}
+  - id: long.fscale_x_ea_s_fn_d
+    bits: "1111010110z0101ddddeeeeeee"
+    text: "FSCALE.X(z:S/D) <ea>(e), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      d: {kind: freg, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: reg_direct, reason: canonical_form_reclaim}
+  - id: long.fscale_x_fn_s_fn_d
+    bits: "1111010110z0101dddd000ssss"
+    text: "FSCALE.X(z:S/D) Fn(s), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: freg, width: 4}
+      d: {kind: freg, width: 4}
+  - id: long.ftest_x_ea_s
+    bits: "1111010110z01100000eeeeeee"
+    text: "FTEST.X(z:S/D) <ea>(e)"
+    fields:
+      z: {kind: size, width: 1}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: rn_direct, reason: canonical_form_reclaim}
+  - id: long.ftest_x_fn_s
+    bits: "1111010110z01100000000ssss"
+    text: "FTEST.X(z:S/D) Fn(s)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: freg, width: 4}
+  - id: long.fmovcr_imm16_fn_d
+    bits: "1111010110001100010000dddd"
+    text: "FMOVCR <imm16>, Fn(d)"
+    fields:
+      d: {kind: freg, width: 4}
+  - id: long.fpushm_imm16_bitmap
+    bits: "11110101100011000110000000"
+    text: "FPUSHM <imm16/bitmap>"
+  - id: long.fpopm_imm16_bitmap
+    bits: "11110101100011000110000001"
+    text: "FPOPM <imm16/bitmap>"
+  - id: long.fcopysign_x_fn_s_fn_m_fn_d
+    bits: "1111010111zssssmmmm011dddd"
+    text: "FCOPYSIGN.X(z:S/D) Fn(s), Fn(m), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: freg, width: 4}
+      m: {kind: freg, width: 4}
+      d: {kind: freg, width: 4}
+  - id: long.fclass_x_fn_s_rn_d
+    bits: "1111010111z0000ssss010dddd"
+    text: "FCLASS.X(z:S/D) Fn(s), Rn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: freg, width: 4}
+      d: {kind: rn, width: 4}
+  - id: long.fcvt_x_fn_s_fn_d
+    bits: "1111010111z0001ssss010dddd"
+    text: "FCVT.X(z:S/D) Fn(s), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: freg, width: 4}
+      d: {kind: freg, width: 4}
+  - id: long.fcvtu_x_fn_s_fn_d
+    bits: "1111010111z0010ssss010dddd"
+    text: "FCVTU.X(z:S/D) Fn(s), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: freg, width: 4}
+      d: {kind: freg, width: 4}
+  - id: long.fcvt_x_fn_s_rn_d
+    bits: "1111010111z0011ssss010dddd"
+    text: "FCVT.X(z:S/D) Fn(s), Rn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: freg, width: 4}
+      d: {kind: rn, width: 4}
+  - id: long.fcvtu_x_fn_s_rn_d
+    bits: "1111010111z0100ssss010dddd"
+    text: "FCVTU.X(z:S/D) Fn(s), Rn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: freg, width: 4}
+      d: {kind: rn, width: 4}
+  - id: long.fcvt_x_rn_s_fn_d
+    bits: "1111010111z0101ssss010dddd"
+    text: "FCVT.X(z:S/D) Rn(s), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: rn, width: 4}
+      d: {kind: freg, width: 4}
+  - id: long.fcvtu_x_rn_s_fn_d
+    bits: "1111010111z0110ssss010dddd"
+    text: "FCVTU.X(z:S/D) Rn(s), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: rn, width: 4}
+      d: {kind: freg, width: 4}
+  - id: long.fmov_x_fn_s_ea_d
+    bits: "1111011000z0000sssseeeeeee"
+    text: "FMOV.X(z:S/D) Fn(s), <ea>(e)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: freg, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: reg_direct, reason: canonical_form_reclaim}
+      - {destination: true, exclude: immediate, reason: invalid_destination}
+  - id: long.fabs_x_fn_s_ea_d
+    bits: "1111011000z0001sssseeeeeee"
+    text: "FABS.X(z:S/D) Fn(s), <ea>(e)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: freg, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: reg_direct, reason: canonical_form_reclaim}
+      - {destination: true, exclude: immediate, reason: invalid_destination}
+  - id: long.fneg_x_fn_s_ea_d
+    bits: "1111011000z0010sssseeeeeee"
+    text: "FNEG.X(z:S/D) Fn(s), <ea>(e)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: freg, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: reg_direct, reason: canonical_form_reclaim}
+      - {destination: true, exclude: immediate, reason: invalid_destination}
+  - id: long.fsqrt_x_fn_s_ea_d
+    bits: "1111011000z0011sssseeeeeee"
+    text: "FSQRT.X(z:S/D) Fn(s), <ea>(e)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: freg, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: reg_direct, reason: canonical_form_reclaim}
+      - {destination: true, exclude: immediate, reason: invalid_destination}
+  - id: long.fround_x_fn_s_ea_d
+    bits: "1111011000z0100sssseeeeeee"
+    text: "FROUND.X(z:S/D) Fn(s), <ea>(e)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: freg, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: reg_direct, reason: canonical_form_reclaim}
+      - {destination: true, exclude: immediate, reason: invalid_destination}
+  - id: long.ftrunc_x_fn_s_ea_d
+    bits: "1111011000z0101sssseeeeeee"
+    text: "FTRUNC.X(z:S/D) Fn(s), <ea>(e)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: freg, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: reg_direct, reason: canonical_form_reclaim}
+      - {destination: true, exclude: immediate, reason: invalid_destination}
+  - id: long.fceil_x_fn_s_ea_d
+    bits: "1111011000z0110sssseeeeeee"
+    text: "FCEIL.X(z:S/D) Fn(s), <ea>(e)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: freg, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: reg_direct, reason: canonical_form_reclaim}
+      - {destination: true, exclude: immediate, reason: invalid_destination}
+  - id: long.ffloor_x_fn_s_ea_d
+    bits: "1111011000z0111sssseeeeeee"
+    text: "FFLOOR.X(z:S/D) Fn(s), <ea>(e)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: freg, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: reg_direct, reason: canonical_form_reclaim}
+      - {destination: true, exclude: immediate, reason: invalid_destination}
+  - id: long.fint_x_fn_s_ea_d
+    bits: "1111011000z1000sssseeeeeee"
+    text: "FINT.X(z:S/D) Fn(s), <ea>(e)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: freg, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: reg_direct, reason: canonical_form_reclaim}
+      - {destination: true, exclude: immediate, reason: invalid_destination}
+  - id: long.fintrz_x_fn_s_ea_d
+    bits: "1111011000z1001sssseeeeeee"
+    text: "FINTRZ.X(z:S/D) Fn(s), <ea>(e)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: freg, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: reg_direct, reason: canonical_form_reclaim}
+      - {destination: true, exclude: immediate, reason: invalid_destination}
+  - id: long.fmovcc_fn_s_fn_d
+    bits: "11110110010ccccssss000dddd"
+    text: "FMOVcc Fn(s), Fn(d)"
+    fields:
+      c: {kind: condition, width: 4}
+      s: {kind: freg, width: 4}
+      d: {kind: freg, width: 4}
+  - id: long.fmovcc_x_ea_s_fn_d
+    bits: "1111011010zccccddddeeeeeee"
+    text: "FMOVcc.X(z:S/D) <ea>(e), Fn(d)"
+    fields:
+      c: {kind: condition, width: 4}
+      z: {kind: size, width: 1}
+      d: {kind: freg, width: 4}
+      e: {kind: ea7, width: 7}
+  - id: long.fmovcc_x_fn_s_ea_d
+    bits: "1111011001zccccsssseeeeeee"
+    text: "FMOVcc.X(z:S/D) Fn(s), <ea>(e)"
+    fields:
+      c: {kind: condition, width: 4}
+      z: {kind: size, width: 1}
+      s: {kind: freg, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: reg_direct, reason: canonical_form_reclaim}
+      - {destination: true, exclude: immediate, reason: invalid_destination}
+  - id: long.extract_x_imm7_i_rn_h_rn_l
+    bits: "111100101zzhhhhlllliiiiiii"
+    text: "EXTRACT.X(z:B/W/L/Q) imm7(i), Rn(h), Rn(l)"
+    fields:
+      z: {kind: size, width: 2}
+      i: {kind: immediate, width: 7}
+      h: {kind: rn, width: 4}
+      l: {kind: rn, width: 4}
+  - id: long.facos_x_fn_s_fn_d
+    bits: "1111011100z0000dddd000ssss"
+    text: "FACOS.X(z:S/D) Fn(s), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: freg, width: 4}
+      d: {kind: freg, width: 4}
+  - id: long.fasin_x_fn_s_fn_d
+    bits: "1111011100z0000dddd001ssss"
+    text: "FASIN.X(z:S/D) Fn(s), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: freg, width: 4}
+      d: {kind: freg, width: 4}
+  - id: long.fatan_x_fn_s_fn_d
+    bits: "1111011100z0000dddd010ssss"
+    text: "FATAN.X(z:S/D) Fn(s), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: freg, width: 4}
+      d: {kind: freg, width: 4}
+  - id: long.fatanh_x_fn_s_fn_d
+    bits: "1111011100z0000dddd011ssss"
+    text: "FATANH.X(z:S/D) Fn(s), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: freg, width: 4}
+      d: {kind: freg, width: 4}
+  - id: long.fcos_x_fn_s_fn_d
+    bits: "1111011100z0000dddd100ssss"
+    text: "FCOS.X(z:S/D) Fn(s), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: freg, width: 4}
+      d: {kind: freg, width: 4}
+  - id: long.fcosh_x_fn_s_fn_d
+    bits: "1111011100z0000dddd101ssss"
+    text: "FCOSH.X(z:S/D) Fn(s), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: freg, width: 4}
+      d: {kind: freg, width: 4}
+  - id: long.fetox_x_fn_s_fn_d
+    bits: "1111011100z0000dddd110ssss"
+    text: "FETOX.X(z:S/D) Fn(s), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: freg, width: 4}
+      d: {kind: freg, width: 4}
+  - id: long.fetoxm1_x_fn_s_fn_d
+    bits: "1111011100z0000dddd111ssss"
+    text: "FETOXM1.X(z:S/D) Fn(s), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: freg, width: 4}
+      d: {kind: freg, width: 4}
+  - id: long.flog10_x_fn_s_fn_d
+    bits: "1111011100z0001dddd000ssss"
+    text: "FLOG10.X(z:S/D) Fn(s), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: freg, width: 4}
+      d: {kind: freg, width: 4}
+  - id: long.flog2_x_fn_s_fn_d
+    bits: "1111011100z0001dddd001ssss"
+    text: "FLOG2.X(z:S/D) Fn(s), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: freg, width: 4}
+      d: {kind: freg, width: 4}
+  - id: long.flogn_x_fn_s_fn_d
+    bits: "1111011100z0001dddd010ssss"
+    text: "FLOGN.X(z:S/D) Fn(s), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: freg, width: 4}
+      d: {kind: freg, width: 4}
+  - id: long.flognp1_x_fn_s_fn_d
+    bits: "1111011100z0001dddd011ssss"
+    text: "FLOGNP1.X(z:S/D) Fn(s), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: freg, width: 4}
+      d: {kind: freg, width: 4}
+  - id: long.fsin_x_fn_s_fn_d
+    bits: "1111011100z0001dddd100ssss"
+    text: "FSIN.X(z:S/D) Fn(s), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: freg, width: 4}
+      d: {kind: freg, width: 4}
+  - id: long.fsincos_x_fn_s_fn_d
+    bits: "1111011100z0001dddd101ssss"
+    text: "FSINCOS.X(z:S/D) Fn(s), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: freg, width: 4}
+      d: {kind: freg, width: 4}
+  - id: long.fsinh_x_fn_s_fn_d
+    bits: "1111011100z0001dddd110ssss"
+    text: "FSINH.X(z:S/D) Fn(s), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: freg, width: 4}
+      d: {kind: freg, width: 4}
+  - id: long.ftan_x_fn_s_fn_d
+    bits: "1111011100z0001dddd111ssss"
+    text: "FTAN.X(z:S/D) Fn(s), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: freg, width: 4}
+      d: {kind: freg, width: 4}
+  - id: long.ftanh_x_fn_s_fn_d
+    bits: "1111011100z0010dddd000ssss"
+    text: "FTANH.X(z:S/D) Fn(s), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: freg, width: 4}
+      d: {kind: freg, width: 4}
+  - id: long.ftentox_x_fn_s_fn_d
+    bits: "1111011100z0010dddd001ssss"
+    text: "FTENTOX.X(z:S/D) Fn(s), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: freg, width: 4}
+      d: {kind: freg, width: 4}
+  - id: long.ftwotox_x_fn_s_fn_d
+    bits: "1111011100z0010dddd010ssss"
+    text: "FTWOTOX.X(z:S/D) Fn(s), Fn(d)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: freg, width: 4}
+      d: {kind: freg, width: 4}

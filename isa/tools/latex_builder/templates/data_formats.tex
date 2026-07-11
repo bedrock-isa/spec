@@ -5,17 +5,21 @@ transferred by memory operands.
 Byte, word, and long operations use the low-order subfield of the selected register. Q-sized operations use the full
 64-bit register.
 
-Instructions that explicitly extend a value define whether upper bits are sign-extended or zero-extended. Otherwise,
-each instruction defines whether upper bits are preserved, cleared, or replaced.
+An Rn destination write smaller than Q replaces only the selected low-order subfield; bits above the operation size
+are preserved. Q-sized Rn writes replace all 64 bits. Memory destination writes transfer only the selected number of
+bytes.
+
+An instruction may explicitly define a full-register write, zero-extension, sign-extension, or another upper-bit
+rule. Such instruction-specific rules override the default subfield write rule.
 
 @INTEGER_SIZE_TABLE@
 
 @INTEGER_REGISTER_SUBFIELD_DIAGRAM@
 
 \subsection{Little-Endian Memory Organization}
-Integer data, immediates, displacements, and absolute address payloads are little-endian. Multiword numeric
-payloads are stored least significant word first. The instruction base header is byte-coded in instruction-stream
-order rather than interpreted as a little-endian integer word.
+Integer data, immediates, displacements, and absolute address payloads are little-endian. Multi-byte numeric
+payloads are stored least significant byte first. The instruction header is byte-coded in instruction-stream
+order rather than interpreted as a little-endian integer.
 
 For an N-byte integer value stored at byte address A, byte A contains bits 7..0, byte A+1 contains bits 15..8, and
 so on.
@@ -23,8 +27,9 @@ so on.
 @BYTE_ORDER_DIAGRAMS@
 
 \subsection{Instruction Payload Ordering}
-The base instruction header occupies the first two bytes of the instruction. If a prefix word, descriptor word,
-immediate, displacement, or bitmap follows, those payload bytes occupy increasing addresses in decode order.
+The instruction header occupies one byte for extrashort forms, two bytes for short forms, and at least two start
+bytes for extended forms. If a descriptor, immediate, displacement, or bitmap follows, those payload bytes
+occupy increasing addresses in decode order.
 
 Signed displacement and immediate payloads use two's-complement representation at their declared width before any
 sign extension performed by the consuming instruction or EA form.

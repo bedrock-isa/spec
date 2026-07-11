@@ -6,7 +6,7 @@ doc:
     architectural control-transfer step, so software does not need to write CS directly while execution
     is still using the old PC. The two-operand form takes the new CS image from Rn and the target offset/address
     from the target EA. A segment-immediate plus offset-immediate form is not encoded because two 64-bit
-    immediates would exceed the 8-word instruction limit.
+    immediates would exceed the instruction-length budget for this form.
   instruction_family: control_flow
   instruction_class: control_flow
 behavior:
@@ -18,8 +18,18 @@ behavior:
   operation:
   - CS = new_cs_v;
   - goto [target_v];
+  fault_order:
+    - Evaluate the target operand completely in the old architectural context.
+    - Validate the complete new CS image.
+    - Validate the target offset against the new CS and probe executable translation at the resulting linear address.
+    - Commit new CS and new PC as one successful control-transfer operation.
+  fault_atomicity: CS and PC remain unchanged when operand evaluation or target validation faults
+  exceptions:
+    invalid_cs_image: INVALID_CONTROL_STATE
+    target_bounds_or_execute_translation: PAGE_FAULT
 attributes:
   privilege: unprivileged
+  privilege_transition: none
 forms:
   segment_operand: Rn
   target_ea_set: long_control_target

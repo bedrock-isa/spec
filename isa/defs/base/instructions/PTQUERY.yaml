@@ -7,10 +7,11 @@ doc:
 behavior:
   group: tlb_context
   inputs:
+  - level
   - src
-  output: none
+  output: dst
   operation:
-  - arch_page_query(src_v);
+  - dst_v = arch_page_query(level_v, src_v);
 attributes:
   privilege: supervisor
   flags: operation-defined status result
@@ -18,10 +19,12 @@ forms:
   src_ea_set: pure_address_calculation
   require_address_value: true
   operands:
+  - name: level
+    type: imm3
   - name: src
-    type: linear_or_EA
-  - name: outputs
-    type: outputs
+    type: EA
+  - name: dst
+    type: Rn
   performs_page_walk: true
 definition_status:
   allocation: 'external: isa/alloc'

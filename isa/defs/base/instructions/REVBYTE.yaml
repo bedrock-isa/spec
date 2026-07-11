@@ -6,12 +6,10 @@ doc:
   instruction_class: integer
 behavior:
   group: bit_reverse
-  inputs:
-  - src
-  output: dst
+  input_output: dst
   operation:
   - dst_v = 0;
-  - tmp_v = src_v;
+  - tmp_v = dst_old_v;
   - result_v = size_v;
   - <revbyte_loop>
   - if (result_v == 0) goto <revbyte_done>;
@@ -25,23 +23,23 @@ behavior:
   - <revbyte_done>
 attributes:
   privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: true
+    repg: true
+  repgf_candidate: true
 forms:
-  operands:
-  - - name: src
-      type: Rn
+  compact_forms:
+  - operands:
     - name: dst
       type: Rn
-  - - name: src
-      type: EA
-    - name: dst
-      type: Rn
-  - - name: src
-      type: Rn
+    size: WLQ
+  extended_forms:
+  - operands:
     - name: dst
       type: EA
-  size: BWLQ
-  compact: false
-  memory_memory: disallowed
-  result: second operand
+    size: WLQ
+    compact: false
+  result: dst = reverse_bytes(dst)
 definition_status:
   allocation: 'external: isa/alloc'

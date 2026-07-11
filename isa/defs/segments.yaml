@@ -51,3 +51,41 @@ layout:
     description: bounds-only mode enable; check segment bounds without adding the segment base address
 disabled_when:
   mantissa: 0
+span:
+  enabled_formula_pages: mantissa << exponent
+  enabled_formula_bytes: (mantissa << exponent) * 4096
+  base_bytes: base_page * 4096
+  limit_bytes: base_bytes + enabled_formula_bytes
+  arithmetic: unsigned mathematical arithmetic checked before truncation to 64 bits
+validation:
+  write_commit: validate the complete image before changing the destination segment register
+  disabled_image: mantissa zero disables checking and base addition; other encoded fields remain readable but have no translation effect
+  enabled_image:
+    - The computed span must be nonzero.
+    - The computed base and exclusive limit must be representable as canonical 64-bit linear addresses.
+    - Base plus span must not wrap the 64-bit linear address space.
+  invalid_image_exception: INVALID_CONTROL_STATE
+  access_bounds_exception: PAGE_FAULT
+  canonical_address_exception: PAGE_FAULT
+  fault_atomicity: a rejected segment-register write or faulting memory access does not partially update architectural state
+access_policy:
+  default:
+    read: policy_controlled
+    write: policy_controlled
+    cs_general_write: forbidden
+  bedrock_c_far:
+    required_user_reads: [DS, GS0, GS4]
+    required_user_writes: [GS4]
+    c_pointer_address_form: canonical post-segment virtual address
+    c_visible_identity_modes: [disabled_mantissa_zero, enabled_bounds_only]
+    cs_ds_ss_rule: translated-window images are outside the C ABI
+    gs0_exception: translated-window mode remains available for direct TLS references only
+    gs4_write_rule: every image is validated before commit; C far-pointer lowering installs only the canonical disabled image or an enabled bounds-only image
+    other_segment_writes: unchanged_from_active_OS_ABI
+abi_roles:
+  GS0: TLS context in the Bedrock ELF and C ABIs
+  GS4: volatile far-data window in the optional bedrock-c-far profile
+  GS1_GS2_GS3: available to an OS ABI or target-specific runtime profile
+context_state:
+  thread_context: all segment registers are architectural thread state
+  asynchronous_entry: an OS ABI that exposes bedrock-c-far preserves interrupted GS4 across handler return

@@ -15,6 +15,10 @@ behavior:
   - ZF = tmp_v == 0;
 attributes:
   privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: true
+    repg: true
   flags:
     Z: old_bit == 0
     N: unchanged

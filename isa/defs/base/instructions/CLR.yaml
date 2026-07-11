@@ -11,21 +11,28 @@ behavior:
   - dst_v = 0;
 attributes:
   privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: true
+    repg: true
+  repgf_candidate: true
   flags: unchanged
 forms:
   compact_forms:
   - operands:
     - name: dst
       type: Rn
+    size: L
   - operands:
     - name: dst
       type: Rn
+    size: Q
   extended_forms:
   - operands:
     - name: dst
       type: EA
+    size: BWLQ
     compact: false
-  size: implicit_Q
   result: dst = 0
 definition_status:
   allocation: 'external: isa/alloc'

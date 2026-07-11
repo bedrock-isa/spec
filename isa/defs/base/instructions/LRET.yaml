@@ -16,10 +16,26 @@ behavior:
   - SP = SP + 16;
   - CS = return_cs_v;
   - return [return_pc_v];
+  fault_order:
+    - Read both 8-byte far-return-frame words through the old SS context without changing SP.
+    - Validate the complete return CS image.
+    - Validate the return PC offset against the return CS and probe executable translation at the resulting linear address.
+    - Commit advanced SP, return CS, and return PC as one successful control-transfer operation.
+  fault_atomicity: SP, CS, and PC remain unchanged when a frame read or return-target validation faults
+  exceptions:
+    frame_translation: PAGE_FAULT
+    invalid_return_cs_image: INVALID_CONTROL_STATE
+    return_target_bounds_or_execute_translation: PAGE_FAULT
 attributes:
   privilege: unprivileged
+  privilege_transition: none
 forms:
   operands: []
   compact: false
+  return_frame:
+    size_bytes: 16
+    return_pc_offset: 0
+    return_cs_offset: 8
+    stack_segment: old_SS
 definition_status:
   allocation: 'external: isa/alloc'

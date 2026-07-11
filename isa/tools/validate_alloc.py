@@ -16,14 +16,10 @@ except ImportError as exc:  # pragma: no cover - environment error path
     raise SystemExit("PyYAML is required to validate allocation YAML files") from exc
 
 
-VALID_STATUSES = {"allocated", "reserved", "escape"}
-
-
 @dataclass(frozen=True)
 class Claim:
     path: Path
     entry_id: str
-    status: str
     text: str
 
 
@@ -158,13 +154,12 @@ def entry_claims(
     entry: dict[str, Any],
 ) -> tuple[list[tuple[int, Claim]], Counter[str]]:
     entry_id = str(entry["id"])
-    status = str(entry["status"])
     text = str(entry.get("text", ""))
     pattern = compact_bits(str(entry["bits"]))
     constraints = entry.get("constraints") or []
 
-    if status not in VALID_STATUSES:
-        raise ValueError(f"{entry_id}: invalid status {status!r}")
+    if ";" in text:
+        raise ValueError(f"{entry_id}: text must not contain semicolon notes; use constraints or notes")
     if len(pattern) != payload_bits:
         raise ValueError(f"{entry_id}: pattern has {len(pattern)} bits, expected {payload_bits}")
 
@@ -180,7 +175,7 @@ def entry_claims(
 
     claims: list[tuple[int, Claim]] = []
     skipped: Counter[str] = Counter()
-    claim = Claim(path=path, entry_id=entry_id, status=status, text=text)
+    claim = Claim(path=path, entry_id=entry_id, text=text)
     for value in expand_pattern(pattern):
         if not any(matches_pattern(value, namespace) for namespace in namespaces):
             raise ValueError(f"{entry_id}: value 0x{value:x} is outside class namespace")
@@ -202,10 +197,35 @@ def entry_claims(
     return claims, skipped
 
 
+def default_namespace_patterns(payload_bits: int, cls: str) -> list[str]:
+    if cls == "medium":
+        if payload_bits != 18:
+            raise ValueError(f"medium payload_bits must be 18, got {payload_bits}")
+        return [
+            "0?????????????????",
+            "10????????????????",
+            "110???????????????",
+            "1110??????????????",
+        ]
+    if cls == "long":
+        if payload_bits != 26:
+            raise ValueError(f"long payload_bits must be 26, got {payload_bits}")
+        return [
+            "111100????????????????????",
+            "111101????????????????????",
+            "111110????????????????????",
+        ]
+    if cls == "extralong":
+        if payload_bits != 34:
+            raise ValueError(f"extralong payload_bits must be 34, got {payload_bits}")
+        return ["111111????????????????????????????"]
+    return ["?" * payload_bits]
+
+
 def namespace_patterns(payload_bits: int, data: dict[str, Any]) -> list[str]:
     raw = data.get("namespace")
     if raw is None:
-        return ["?" * payload_bits]
+        return default_namespace_patterns(payload_bits, str(data.get("class", "")))
     patterns = [compact_bits(str(item)) for item in raw]
     for pattern in patterns:
         if len(pattern) != payload_bits:
@@ -233,6 +253,8 @@ def validate_file(path: Path) -> tuple[str, dict[str, int], Counter[str], list[s
     data = yaml.safe_load(path.read_text())
     if not isinstance(data, dict):
         raise ValueError(f"{path}: expected a mapping")
+    if "escapes" in data:
+        raise ValueError(f"{path}: top-level escapes are no longer supported; use class namespace patterns")
 
     cls = str(data["class"])
     payload_bits = int(data["payload_bits"])
@@ -240,6 +262,7 @@ def validate_file(path: Path) -> tuple[str, dict[str, int], Counter[str], list[s
     total = namespace_size(namespaces)
 
     by_value: dict[int, Claim] = {}
+    allocated_values: set[int] = set()
     skipped: Counter[str] = Counter()
     overlaps: list[str] = []
     for entry in data.get("entries") or []:
@@ -248,24 +271,17 @@ def validate_file(path: Path) -> tuple[str, dict[str, int], Counter[str], list[s
         for value, claim in claims:
             previous = by_value.get(value)
             if previous is not None:
-                overlaps.append(
-                    f"0x{value:x}: {previous.entry_id} ({previous.status}) overlaps "
-                    f"{claim.entry_id} ({claim.status})"
-                )
+                overlaps.append(f"0x{value:x}: {previous.entry_id} overlaps {claim.entry_id}")
                 continue
             by_value[value] = claim
+            allocated_values.add(value)
 
-    counts = Counter(claim.status for claim in by_value.values())
-    assigned = counts["allocated"]
-    reserved_explicit = counts["reserved"]
-    escapes = counts["escape"]
-    reserved_total = total - assigned - escapes
+    assigned = len(allocated_values)
+    reserved_total = total - assigned
     summary = {
         "total": total,
         "allocated": assigned,
-        "reserved_explicit": reserved_explicit,
         "reserved_total": reserved_total,
-        "escape": escapes,
         "claimed": len(by_value),
         "constraint_skipped": sum(skipped.values()),
     }
@@ -296,9 +312,7 @@ def main() -> int:
             had_error = True
         print(f"{path} [{cls}]")
         print(f"  allocated:          {summary['allocated']}")
-        print(f"  escape:             {summary['escape']}")
         print(f"  reserved total:     {summary['reserved_total']}")
-        print(f"  explicit reserved:  {summary['reserved_explicit']}")
         print(f"  constraint skipped: {summary['constraint_skipped']}")
         print(f"  total namespace:    {summary['total']}")
         if skipped:
@@ -313,4 +327,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

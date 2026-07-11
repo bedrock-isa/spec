@@ -12,20 +12,15 @@ behavior:
   operation:
   - result_v = dst_v + src_v;
   - dst_v = result_v;
-  - ZF = result_v == 0;
-  - NF = result_v s< 0;
-  - CF = carry(dst_old_v, src_v);
-  - VF = scarry(dst_old_v, src_v);
 attributes:
   privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: true
+    repg: true
+  repgf_candidate: true
   streaming_candidate: true
-  prefix_availability:
-  - SATURATE
-  flags:
-    Z: result == 0
-    N: most_significant_bit(result)
-    C: unsigned carry out
-    V: signed overflow
+  flags: unchanged
 forms:
   dst_ea_set: store_destination
   compact_forms:
@@ -70,14 +65,8 @@ forms:
       type: Rn
     size: Q
     compact: false
-    flags: unchanged
   form: destructive two-address form
   result: second operand
   memory_memory: disallowed
-  prefixes:
-    legal:
-    - NPX
-    - NOSPEC
-    - SATURATE
 definition_status:
   allocation: 'external: isa/alloc'

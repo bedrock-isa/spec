@@ -14,6 +14,8 @@ operand_schema:
   - bitmap16
   - condition
   - imm
+  - imm3
+  - imm4
   - imm6
   - imm7
   - imm16
@@ -26,6 +28,27 @@ operand_schema:
   - selector
   - selector_imm6
   immediate_operands:
+    imm3:
+      width: 3
+      signed: false
+      range:
+      - 0
+      - 7
+      operation_size_extension: zero_extend
+      applies_when: PUSHP/POPP canonical register-pair selector
+      description: Inline 3-bit immediate literals are unsigned values. PUSHP and POPP interpret
+        the value as a canonical register-pair index, so all encodings 0..7 are valid.
+    imm4:
+      width: 4
+      signed: false
+      range:
+      - 0
+      - 15
+      operation_size_extension: zero_extend
+      applies_when: SETF/CLRF integer FLAGS masks
+      description: Inline 4-bit immediate literals are unsigned masks. For SETF and CLRF, bit 3 selects
+        Z, bit 2 selects N, bit 1 selects C, and bit 0 selects V, matching the architectural FLAGS low
+        nibble exposed by RDFLAGS and WRFLAGS.
     imm6:
       width: 6
       signed: false

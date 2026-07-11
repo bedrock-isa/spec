@@ -2,6 +2,10 @@ mnemonic: SAR
 doc:
   title: Shift Arithmetic Right
   summary: Performs the shift arithmetic right operation.
+  description: >
+    The effective count is the count operand modulo the selected operand width:
+    B uses mod 8, W uses mod 16, L uses mod 32, and Q uses mod 64. If the effective
+    count is zero, the destination is unchanged. FLAGS are unchanged for all counts.
   instruction_family: integer_bitfield
   instruction_class: integer
 behavior:
@@ -10,52 +14,44 @@ behavior:
   - count
   input_output: dst
   operation:
-  - dst_v = dst_v >> count_v;
-  - ZF = dst_v == 0;
-  - NF = dst_v s< 0;
-  - CF = 0;
-  - VF = 0;
+  - width_v = arch_operand_width(size_v);
+  - shift_v = count_v mod width_v;
+  - if shift_v != 0, result_v = arch_arithmetic_shift_right(dst_old_v, shift_v, width_v);
+  - if shift_v != 0, dst_v = result_v;
   count_rules:
-    shifts:
-      zero_count: count=0 leaves the destination and FLAGS unchanged
-      over_width: result is sign fill; C is the original sign bit when count is greater than operand width
-    rotates:
-      effective_count: count modulo operand width
-      zero_effective_count: destination and FLAGS unchanged
-    carry_rotates:
-      effective_count: count modulo operand width plus carry slot
-      zero_effective_count: destination and FLAGS unchanged
-  flag_rules:
-    Z: result == 0
-    N: most significant result bit
-    C: last bit shifted out, or original sign bit for count greater than operand width
-    V: 0
+    effective_count: count modulo selected operand width; B uses mod 8, W uses mod 16, L uses mod 32, Q uses mod 64
+    zero_effective_count: destination unchanged
 attributes:
   privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: true
+    repg: true
+  repgf_candidate: true
+  flags: unchanged
 forms:
-  operands:
-  - - name: count
-      type: selector
+  compact_forms:
+  - operands:
+    - name: count
+      type: Rn
     - name: dst
       type: Rn
-  - - name: count
-      type: selector
+    size: LQ
+    profile: short register count
+  extended_forms:
+  - operands:
+    - name: count
+      type: Rn
     - name: dst
       type: EA
-  size: BWLQ
-  compact: false
-  encoding_fields:
-  - field: o
-    kind: shift_group
-    width: 2
-    placement: high
-    values:
-    - SHL
-    - SHR
-    - SAR
-    - DYN
-    derive: mnemonic
-    match:
-      profile: I6_TO_EA
+    size: BWLQ
+    profile: medium register count
+  - operands:
+    - name: count
+      type: imm6
+    - name: dst
+      type: EA
+    size: BWLQ
+    profile: long immediate count
 definition_status:
   allocation: 'external: isa/alloc'

@@ -16,6 +16,10 @@ behavior:
   - <fmovcc_done>
 attributes:
   privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: false
+    repg: true
   fp_flags: unchanged
   flags: unchanged
 forms:

@@ -18,15 +18,20 @@ behavior:
   - NF = 0;
   - CF = 0;
   - VF = 0;
+  - if (nan(value_v) || nan(lo_v) || nan(hi_v)) goto <fbndii_bad>;
   - if (value_v < lo_v) goto <fbndii_bad>;
   - if (value_v > hi_v) goto <fbndii_bad>;
   - goto <fbndii_done>;
   - <fbndii_bad>
   - VF = 1;
   - <fbndii_done>
-  repflags: fpu_interval_v_flag
+  repeat_flags: fpu_interval_v_flag
 attributes:
   privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: false
+    repg: true
   fp_flags:
     update_when_required:
     - NV
@@ -47,6 +52,12 @@ forms:
       type: EA
     - name: hi
       type: FREG
+  - - name: lo
+      type: EA
+    - name: value
+      type: FREG
+    - name: hi
+      type: EA
   size: S_D
 definition_status:
   allocation: 'external: isa/alloc'

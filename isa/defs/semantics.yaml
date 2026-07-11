@@ -3,14 +3,17 @@ encoding_rules:
   instruction_length:
     overlong_encoding:
       behavior: allowed
-      payload: extra trailing words are padding payload
+      payload: extra trailing payload bytes are padding payload
     undersized_encoding:
       behavior: length/decode fault
       rule: the encoded length must contain all required opcode, descriptor, immediate, displacement,
-        and prefix words
+        and instruction-specific payload bytes
   memory_operands:
     memory_memory_allowed_for:
     - MOV
+    - MOVUC
+    - MOVCU
+    - MOVUU
     - CMP
     - EXTSW
     - EXTZW
@@ -24,12 +27,90 @@ encoding_rules:
     modes:
     - postincrement
     - predecrement
-    prefix_based_update: false
     commit_rule: register updates become architectural only at instruction commit
-  repeat_prefixes:
-    authoritative_source: prefixes.yaml
+  repeat_instructions:
     members:
     - REPcc
+    - REPG
+    syntax:
+      REPcc: REPcc Rn, (instruction)
+      REP: REP Rn, (instruction)
+      REPG: |-
+        REPG Rn, {
+            (instructions...)
+        }
+    assembler_checked_aliases:
+      REPGF:
+        emits: REPG
+        syntax: |-
+          REPGF Rn, {
+              (instructions...)
+          }
+        body_candidate_required: repgf_candidate
+        body_constraints:
+        - body must not write the selected counter register
+        architectural_effect: identical to REPG; the machine encoding, decoded operation,
+          and repeat-continuation state do not distinguish the alias
+    repeatable_contexts:
+      rep: valid under unconditional single-instruction REP
+      repcc: valid under conditional single-instruction REPcc
+      repg: valid inside a general grouped REPG body
+      default: false for every context
+    repeatable_constraints:
+      repcc_requires_rep: true
+    repeatable_annotations:
+      repgf_candidate: assembler may accept this instruction in the REPGF checked alias
+    body_entry:
+      decode_before_zero_count: true
+      repeatability_check_before_zero_count: true
+      malformed_body_faults_when_counter_zero: true
+      repeat_unavailable_body_faults_when_counter_zero: true
+      zero_count_effect: body is decoded and then annulled with no architectural side effects
+    counter:
+      interpretation: selected Rn value is captured as an unsigned remaining-count value when repeat state is entered
+      zero_rule: zero counter performs no body side effects after decode and repeatability checks
+      update: decrement by one after every successfully committed body iteration
+      condition_false_update: terminating condition-false iteration commits the body, decrements the counter, and clears repeat state
+      single_instruction_body_write_to_counter: ignored while REP or REPcc state is active
+      repg_body_write_to_counter: allowed as a normal architectural write, but it does not modify the captured repeat remaining-count value
+      repgf_body_write_to_counter: rejected by the assembler because REPGF is the checked fast REPG alias
+      body_read_of_counter: REP and REPcc body reads observe the iteration-start architectural counter value; REPG body reads follow normal in-group program order
+    condition:
+      source: body repeat-observed value and repeat flag rule
+      instruction_override: instruction definitions may provide an explicit repeat-observed
+        value and repeat flag rule for forms whose repeat condition must not use the generic result rule
+      default_observed_value: primary committed result value; for store-only or no-result
+        data movement, the primary source value
+      default_repeat_flags: committed FLAGS when the instruction updates FLAGS; otherwise
+        logical flags computed from the repeat-observed value
+      observed_value_timing: observed during body execution, not sampled by REP outside the body
+      first_iteration: condition is not tested before the first body iteration
+      commit_atomicity: body commit, observed-condition capture, counter decrement, and continuation PC selection are one precise architectural commit step
+      false_condition: F is reserved for REPcc
+      unconditional: REP is the T-condition spelling
+    legality:
+      nested_repeat: invalid
+      control_flow_in_body: invalid
+      repeat_control_in_body: invalid
+      fpu: valid under REP and REPG only; invalid under REPcc
+    pc_and_interrupts:
+      pc_during_repeat: body instruction boundary
+      handler_entry: repeat state is saved in FAULT_AUX and architectural repeat state is cleared
+      iret: restores saved repeat state atomically with the saved PC and status state
+      body_decode_stability: repeated body is the initially decoded instruction or grouped body
+    debugging:
+      single_step: stops after each architecturally executed body iteration
+      next_instruction: runs the whole repeat operation and stops after repeat state clears
+    fault_aux:
+      indicator: FRAME_CONTROL.rep_fault
+      fields:
+      - {name: rep_reg, bits: 0..3, meaning: general-purpose counter register R0..R15}
+      - {name: rep_cc, bits: 4..7, meaning: condition code for REPcc; T for unconditional REP/REPG}
+      - {name: repeat_kind, bits: 8..9, meaning: '0: REP/REPcc, 1: REPG, 2..3: reserved'}
+      - {name: reserved, bits: 10..15, meaning: reserved, must be zero}
+      - {name: group_start_delta, bits: 16..31, meaning: unsigned byte distance from saved PC back to the first grouped instruction; zero for REP/REPcc}
+      - {name: body_bytes, bits: 32..47, meaning: grouped-repeat body length in bytes; zero for REP/REPcc}
+      - {name: reserved, bits: 48..63, meaning: reserved, must be zero}
   canonical_forms:
     MOV_RN_TO_RN:
       canonical_form: MOV Rn(src), Rn(dst)
@@ -41,7 +122,23 @@ encoding_rules:
     target_operand: EA
     segment_immediate_plus_offset_immediate:
       allowed: false
-      reason: 64-bit CS immediate plus 64-bit PC immediate would exceed the 8-word instruction limit
+      reason: 64-bit CS immediate plus 64-bit PC immediate would exceed the instruction-length budget for this form
+    target_operand_context: evaluate the target EA in the old architectural context before validating the new CS
+    target_validation: validate segment bounds and executable translation in the new CS context before commit
+    invalid_segment_image_exception: INVALID_CONTROL_STATE
+    target_or_stack_translation_exception: PAGE_FAULT
+    privilege_transition: none
+    commit_rule: architectural register changes and any far-return-frame stores become visible only after all validation and probes succeed
+  far_data_access:
+    profile: bedrock-c-far
+    pointer_words: [post_segment_virtual_address, bounds_context_segment_image]
+    architectural_window: GS4
+    segment_mode: C-visible far pointers use only the canonical disabled image or an enabled bounds-only image; translated-window images are rejected or canonicalized before exposure
+    setup: validate and commit the canonical disabled or bounds-only image with WRSEG before the dependent access
+    access: use an explicit GS4 effective-address form with the pointer post-segment virtual address; GS4 checks bounds without adding a base
+    setup_failure: INVALID_CONTROL_STATE
+    bounds_or_canonical_failure: PAGE_FAULT
+    call_boundary: GS4 is volatile and must be re-established after a call before another dependent access
 compatibility_rules:
   reserved_bits:
     architected_register_bits:
@@ -73,11 +170,6 @@ compatibility_rules:
       exception: ILLEGAL_INSTRUCTION
     extension_unavailable_exception:
       defined: false
-  prefix_values:
-    unassigned:
-      exception: none
-      behavior: no_architectural_effect
-      reserved_for: future_prefix_definition
   canonical_encodings:
     assembler_default: canonical
     disassembler_default: canonical

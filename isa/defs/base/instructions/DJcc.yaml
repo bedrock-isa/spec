@@ -26,8 +26,6 @@ forms:
     type: Rn
   - name: target
     type: EA
-  size: BWLQ
   reads: FLAGS
-  updates: Dcounter
 definition_status:
   allocation: 'external: isa/alloc'

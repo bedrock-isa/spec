@@ -13,6 +13,11 @@ behavior:
   - dst_v = src_v;
 attributes:
   privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: true
+    repg: true
+  repgf_candidate: true
   flags:
     V: set when segment bounds check fails
     ZNC: unchanged

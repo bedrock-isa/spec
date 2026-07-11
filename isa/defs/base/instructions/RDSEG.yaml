@@ -17,6 +17,10 @@ behavior:
 attributes:
   privilege: policy controlled
   flags: unchanged
+  profile_access:
+    bedrock_c_far:
+      user_readable: [DS, GS0, GS4]
+      purpose: near-to-far conversion, far TLS construction, and far-window inspection
 forms:
   operands:
   - name: seg
@@ -25,5 +29,6 @@ forms:
     type: Rn
   size: Q
   note: general writes to CS are illegal; use CS-changing control transfer instructions
+  segment_image_validation: not_applicable_to_read
 definition_status:
   allocation: 'external: isa/alloc'

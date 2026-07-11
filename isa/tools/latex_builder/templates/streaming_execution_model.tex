@@ -4,18 +4,35 @@ regular repeated operations and execute them with wider internal datapaths, but 
 architectural state.
 
 \subsection{Architectural Scalar Semantics}
-REPcc and REPG are architecturally scalar. Their visible behavior is the same as executing the repeated
-instruction or byte-counted instruction group in program order under the selected counter and termination rules.
+REP, REPcc, REPG, and any explicitly defined repeat instruction are architecturally scalar. Their visible behavior is
+the same as executing the repeated instruction or byte-counted instruction group in program order under the selected
+counter and termination rules.
 The architectural counter, FLAGS image, memory effects, and auto-update register effects are observed as if each
 committed iteration completed before the next one began.
 
 \begin{itemize}
+\item the repeated body is decoded when repeat state is entered and remains the body for that repeat context;
+\item body decode and repeatability checks occur before zero-count annulment;
 \item register and memory operands are evaluated according to the repeated instruction's normal rules;
 \item auto-update effective-address forms update as if each iteration executed the scalar instruction;
-\item faults and exceptions are precise at the repeated-operation boundary defined by the REPcc or REPG rule;
+\item faults and exceptions are precise at the repeated-operation boundary defined by the repeat instruction rule;
 \item FLAGS and FFLAGS are updated according to the repeated instruction and repeat accumulation rules;
 \item software must not depend on an implementation's internal vector width or streaming datapath width.
 \end{itemize}
+
+\subsection{Repeat Syntax and Body Eligibility}
+
+@REPEAT_SYNTAX_TABLE@
+
+@REPEATABLE_CLASS_TABLE@
+
+@REPEAT_BODY_ENTRY_TABLE@
+
+\subsection{Counter, Condition, and Control Rules}
+
+@REPEAT_COUNTER_TABLE@
+
+@REPEAT_LEGALITY_TABLE@
 
 \subsection{Implementation Freedom}
 An implementation may recognize regular repeated operations and execute them with a micro-loop, loop buffer,
@@ -28,7 +45,7 @@ that can be recognized; it is not a throughput, latency, or vector-width guarant
 
 \subsection{Streaming Candidates}
 Regular memory traversal forms such as MOV, CMP, EXTZ, EXTS, cache maintenance, and selected atomic-free
-transforms are natural streaming candidates when combined with REPcc or REPG. An implementation may also stream
+transforms are natural streaming candidates when combined with a defined repeat instruction or REPG. An implementation may also stream
 fixed-size instruction groups when REPG describes a bounded group that has no unresolved control transfer into or
 out of the group body.
 
@@ -40,8 +57,8 @@ know whether a specific processor executes the loop with scalar issue or a strea
 still preserve aliasing, ordering, and exception behavior exactly as required by the scalar instruction sequence.
 
 \subsection{Relationship to Other Acceleration}
-REPG uses an unsigned byte count for the grouped body. The byte count must describe a nonempty body that ends on
-an instruction boundary. The counter update occurs only after a whole group iteration succeeds.
+REPG uses an unsigned byte count for the grouped body. The byte count must describe a body that ends on an
+instruction boundary. The counter update occurs only after a whole group iteration succeeds.
 
 Faults remain precise at the repeated-operation boundary. Completed iterations are committed; an incomplete
 faulting iteration is reported at the faulting instruction with restart state sufficient to continue or emulate

@@ -5,8 +5,10 @@ paging optionally turns the linear address into a memory-system address.
 Instruction fetches use CS, stack accesses use SS, and ordinary data accesses use the operation default data segment
 unless an effective-address form explicitly selects another segment. SP and PC forms use their fixed segments.
 
-SEGLEA exposes the linear address produced by segment pre-translation when software explicitly needs it; ordinary
-portable pointers remain pre-segment address values.
+SEGLEA exposes the linear address produced by segment pre-translation when software explicitly needs it. The ISA
+does not prescribe a language pointer representation. The Bedrock C ABI uses canonical post-segment virtual
+addresses and restricts C-visible address contexts to disabled or bounds-only modes, with GS0-relative TLS as an
+explicit exception.
 
 @ADDRESS_TRANSLATION_PIPELINE_FIGURE@
 

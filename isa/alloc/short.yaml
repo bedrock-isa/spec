@@ -4,7 +4,6 @@ class: short
 payload_bits: 14
 entries:
   - id: short.mov_x_rn_s_rn_d
-    status: allocated
     bits: "00000zssssdddd"
     text: "MOV.X(z:L/Q) Rn(s), Rn(d)"
     fields:
@@ -12,7 +11,6 @@ entries:
       s: {kind: rn, width: 4}
       d: {kind: rn, width: 4}
   - id: short.add_x_rn_s_rn_d
-    status: allocated
     bits: "00001zssssdddd"
     text: "ADD.X(z:L/Q) Rn(s), Rn(d)"
     fields:
@@ -20,7 +18,6 @@ entries:
       s: {kind: rn, width: 4}
       d: {kind: rn, width: 4}
   - id: short.sub_x_rn_s_rn_d
-    status: allocated
     bits: "00010zssssdddd"
     text: "SUB.X(z:L/Q) Rn(s), Rn(d)"
     fields:
@@ -28,7 +25,6 @@ entries:
       s: {kind: rn, width: 4}
       d: {kind: rn, width: 4}
   - id: short.cmp_x_rn_s_rn_d
-    status: allocated
     bits: "00011zssssdddd"
     text: "CMP.X(z:L/Q) Rn(s), Rn(d)"
     fields:
@@ -36,7 +32,6 @@ entries:
       s: {kind: rn, width: 4}
       d: {kind: rn, width: 4}
   - id: short.and_x_rn_s_rn_d
-    status: allocated
     bits: "00100zssssdddd"
     text: "AND.X(z:L/Q) Rn(s), Rn(d)"
     fields:
@@ -44,7 +39,6 @@ entries:
       s: {kind: rn, width: 4}
       d: {kind: rn, width: 4}
   - id: short.or_x_rn_s_rn_d
-    status: allocated
     bits: "00101zssssdddd"
     text: "OR.X(z:L/Q)  Rn(s), Rn(d)"
     fields:
@@ -52,7 +46,6 @@ entries:
       s: {kind: rn, width: 4}
       d: {kind: rn, width: 4}
   - id: short.xor_x_rn_s_rn_d
-    status: allocated
     bits: "00110zssssdddd"
     text: "XOR.X(z:L/Q) Rn(s), Rn(d)"
     fields:
@@ -60,7 +53,6 @@ entries:
       s: {kind: rn, width: 4}
       d: {kind: rn, width: 4}
   - id: short.test_x_rn_s_rn_d
-    status: allocated
     bits: "00111zssssdddd"
     text: "TEST.X(z:L/Q) Rn(s), Rn(d)"
     fields:
@@ -68,7 +60,6 @@ entries:
       s: {kind: rn, width: 4}
       d: {kind: rn, width: 4}
   - id: short.xchg_x_rn_s_rn_d
-    status: allocated
     bits: "01000zssssdddd"
     text: "XCHG.X(z:L/Q) Rn(s), Rn(d)"
     fields:
@@ -76,7 +67,6 @@ entries:
       s: {kind: rn, width: 4}
       d: {kind: rn, width: 4}
   - id: short.shr_x_rn_s_rn_d
-    status: allocated
     bits: "01001zssssdddd"
     text: "SHR.X(z:L/Q) Rn(s), Rn(d)"
     fields:
@@ -84,7 +74,6 @@ entries:
       s: {kind: rn, width: 4}
       d: {kind: rn, width: 4}
   - id: short.shl_x_rn_s_rn_d
-    status: allocated
     bits: "01010zssssdddd"
     text: "SHL.X(z:L/Q) Rn(s), Rn(d)"
     fields:
@@ -92,7 +81,6 @@ entries:
       s: {kind: rn, width: 4}
       d: {kind: rn, width: 4}
   - id: short.ror_x_rn_s_rn_d
-    status: allocated
     bits: "01011zssssdddd"
     text: "ROR.X(z:L/Q) Rn(s), Rn(d)"
     fields:
@@ -100,7 +88,6 @@ entries:
       s: {kind: rn, width: 4}
       d: {kind: rn, width: 4}
   - id: short.rol_x_rn_s_rn_d
-    status: allocated
     bits: "01100zssssdddd"
     text: "ROL.X(z:L/Q) Rn(s), Rn(d)"
     fields:
@@ -108,7 +95,6 @@ entries:
       s: {kind: rn, width: 4}
       d: {kind: rn, width: 4}
   - id: short.sar_x_rn_s_rn_d
-    status: allocated
     bits: "01101zssssdddd"
     text: "SAR.X(z:L/Q) Rn(s), Rn(d)"
     fields:
@@ -116,7 +102,6 @@ entries:
       s: {kind: rn, width: 4}
       d: {kind: rn, width: 4}
   - id: short.extzl_x_rn_s_rn_d
-    status: allocated
     bits: "01110zssssdddd"
     text: "EXTZL.X(z:B/W) Rn(s), Rn(d)"
     fields:
@@ -124,236 +109,113 @@ entries:
       s: {kind: rn, width: 4}
       d: {kind: rn, width: 4}
   - id: short.extsl_x_rn_s_rn_d
-    status: allocated
     bits: "01111zssssdddd"
     text: "EXTSL.X(z:B/W) Rn(s), Rn(d)"
     fields:
       z: {kind: size, width: 1}
       s: {kind: rn, width: 4}
       d: {kind: rn, width: 4}
-  - id: short.mov_q_rn_s_sp
-    status: allocated
-    bits: "1000000000ssss"
-    text: "MOV.Q Rn(s), SP"
-    fields:
-      s: {kind: rn, width: 4}
-  - id: short.mov_q_sp_rn_d
-    status: allocated
-    bits: "1000000001dddd"
-    text: "MOV.Q SP, Rn(d)"
-    fields:
-      d: {kind: rn, width: 4}
-  - id: short.push_rn_r
-    status: allocated
-    bits: "1000000010rrrr"
-    text: "PUSH Rn(r)"
-    fields:
-      r: {kind: rn, width: 4}
-  - id: short.pop_rn_r
-    status: allocated
-    bits: "1000000011rrrr"
-    text: "POP Rn(r)"
-    fields:
-      r: {kind: rn, width: 4}
-  - id: short.nop
-    status: allocated
-    bits: "10000001000000"
-    text: "NOP"
-  - id: short.ret
-    status: allocated
-    bits: "10000001000001"
-    text: "RET"
-  - id: short.lret
-    status: allocated
-    bits: "10000001000010"
-    text: "LRET"
-  - id: short.syscall
-    status: allocated
-    bits: "10000001000011"
-    text: "SYSCALL"
-  - id: short.sysret
-    status: allocated
-    bits: "10000001000100"
-    text: "SYSRET"
-  - id: short.iret
-    status: allocated
-    bits: "10000001000101"
-    text: "IRET"
-  - id: short.bkpt
-    status: allocated
-    bits: "10000001000110"
-    text: "BKPT"
-  - id: short.wait
-    status: allocated
-    bits: "10000001000111"
-    text: "WAIT"
-  - id: short.yield
-    status: allocated
-    bits: "10000001001000"
-    text: "YIELD"
   - id: short.halt
-    status: allocated
     bits: "10000001001001"
     text: "HALT"
-  - id: short.illegal
-    status: allocated
-    bits: "10000001001010"
-    text: "ILLEGAL"
-  - id: short.rfence
-    status: allocated
-    bits: "10000001001011"
-    text: "RFENCE"
-  - id: short.wfence
-    status: allocated
-    bits: "10000001001100"
-    text: "WFENCE"
-  - id: short.afence
-    status: allocated
-    bits: "10000001001101"
-    text: "AFENCE"
   - id: short.reset
-    status: allocated
     bits: "10000001001110"
     text: "RESET"
-  - id: short.trap
-    status: allocated
-    bits: "10000001010000"
-    text: "TRAP"
-  - id: short.reserved
-    status: reserved
-    bits: "10000001010001"
-    text: "reserved"
-  - id: short.trapcc
-    status: allocated
-    bits: "1000000101cccc"
-    text: "TRAPcc  ; cccc = 0010..1111"
-    fields:
-      c: {kind: condition, width: 4}
-    constraints:
-      - {field: c, allow: [0x2..0xf], reason: condition_true_false_reclaimed}
   - id: short.set_rn_r
-    status: allocated
     bits: "100001rrrr0000"
     text: "SET Rn(r)"
     fields:
       r: {kind: rn, width: 4}
-  - id: short.reserved.2
-    status: reserved
-    bits: "100001rrrr0001"
-    text: "reserved"
-    fields:
-      r: {kind: rn, width: 4}
   - id: short.setcc_rn_r
-    status: allocated
     bits: "100001rrrrcccc"
-    text: "SETcc Rn(r)  ; cccc = 0010..1111"
+    text: "SETcc Rn(r)"
     fields:
       r: {kind: rn, width: 4}
       c: {kind: condition, width: 4}
     constraints:
       - {field: c, allow: [0x2..0xf], reason: condition_true_false_reclaimed}
   - id: short.inc_x_rn_r
-    status: allocated
     bits: "10001z0000rrrr"
     text: "INC.X(z:L/Q) Rn(r)"
     fields:
       z: {kind: size, width: 1}
       r: {kind: rn, width: 4}
   - id: short.dec_x_rn_r
-    status: allocated
     bits: "10001z0001rrrr"
     text: "DEC.X(z:L/Q) Rn(r)"
     fields:
       z: {kind: size, width: 1}
       r: {kind: rn, width: 4}
   - id: short.neg_x_rn_r
-    status: allocated
     bits: "10001z0010rrrr"
     text: "NEG.X(z:L/Q) Rn(r)"
     fields:
       z: {kind: size, width: 1}
       r: {kind: rn, width: 4}
-  - id: short.clr_x_rn_r
-    status: allocated
-    bits: "10001z0011rrrr"
-    text: "CLR.X(z:L/Q) Rn(r)"
+  - id: short.clr_l_rn_r
+    bits: "1000100011rrrr"
+    text: "CLR.L Rn(r)"
     fields:
-      z: {kind: size, width: 1}
       r: {kind: rn, width: 4}
   - id: short.abs_x_rn_r
-    status: allocated
     bits: "10001z0100rrrr"
     text: "ABS.X(z:L/Q) Rn(r)"
     fields:
       z: {kind: size, width: 1}
       r: {kind: rn, width: 4}
   - id: short.not_x_rn_r
-    status: allocated
     bits: "10001z0101rrrr"
     text: "NOT.X(z:L/Q) Rn(r)"
     fields:
       z: {kind: size, width: 1}
       r: {kind: rn, width: 4}
   - id: short.revbyte_w_rn_r
-    status: allocated
     bits: "1000101001rrrr"
     text: "REVBYTE.W Rn(r)"
     fields:
       r: {kind: rn, width: 4}
   - id: short.revbyte_l_rn_r
-    status: allocated
     bits: "1000101010rrrr"
     text: "REVBYTE.L Rn(r)"
     fields:
       r: {kind: rn, width: 4}
   - id: short.revbyte_q_rn_r
-    status: allocated
     bits: "1000101011rrrr"
     text: "REVBYTE.Q Rn(r)"
     fields:
       r: {kind: rn, width: 4}
   - id: short.extzq_l_rn_s_rn_d
-    status: allocated
     bits: "101000ssssdddd"
     text: "EXTZQ.L Rn(s), Rn(d)"
     fields:
       s: {kind: rn, width: 4}
       d: {kind: rn, width: 4}
   - id: short.extsq_l_rn_s_rn_d
-    status: allocated
     bits: "101001ssssdddd"
     text: "EXTSQ.L Rn(s), Rn(d)"
     fields:
       s: {kind: rn, width: 4}
       d: {kind: rn, width: 4}
   - id: short.add_q_imm8_i_sp
-    status: allocated
     bits: "101111iiiiiiii"
     text: "ADD.Q imm8(i), SP"
     fields:
       i: {kind: immediate, width: 8}
   - id: short.jmp_imm8s_i
-    status: allocated
     bits: "110000iiiiiiii"
     text: "JMP imm8s(i)"
     fields:
       i: {kind: immediate, width: 8}
-  - id: short.reserved.3
-    status: reserved
-    bits: "11000100000000"
-    text: "reserved"
   - id: short.sub_q_imm8_i_sp
-    status: allocated
     bits: "110001iiiiiiii"
-    text: "SUB.Q imm8(i), SP  ; i = 00000001..11111111"
+    text: "SUB.Q imm8(i), SP"
     fields:
       i: {kind: immediate, width: 8}
     constraints:
       - {field: i, allow: [0x1..0xff], reason: zero_immediate_reclaimed}
   - id: short.jcc_imm8s_i
-    status: allocated
     bits: "11cccciiiiiiii"
-    text: "Jcc imm8s(i)  ; cccc = 0010..1111"
+    text: "Jcc imm8s(i)"
     fields:
       c: {kind: condition, width: 4}
       i: {kind: immediate, width: 8}

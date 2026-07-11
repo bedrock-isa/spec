@@ -1,8 +1,0 @@
-\subsection{User Access Operand Syntax}
-Memory operands use the current-domain \texttt{C} by default. Assembly source may annotate memory operands
-with \texttt{U:} to request a user-domain access. The assembler maps the annotated source and destination
-domains to one encoded access-domain prefix. Explicit \texttt{C:} is allowed for readability but is
-usually omitted. Operand positions that are not memory accesses do not contribute to prefix selection. If no
-user-domain memory access is present, no access-domain prefix is needed.
-
-@ACCESS_DOMAIN_TABLE@

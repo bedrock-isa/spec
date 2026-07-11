@@ -9,27 +9,25 @@ behavior:
   input_output: dst
   operation:
   - dst_v = ~dst_v;
-  - ZF = dst_v == 0;
-  - NF = dst_v s< 0;
-  - CF = 0;
-  - VF = 0;
 attributes:
   privilege: unprivileged
-  flags:
-    Z: result == 0
-    N: most_significant_bit(result)
-    C: '0'
-    V: '0'
+  repeatable:
+    rep: true
+    repcc: true
+    repg: true
+  repgf_candidate: true
+  flags: unchanged
 forms:
   compact_forms:
   - operands:
     - name: dst
       type: Rn
+    size: LQ
   extended_forms:
   - operands:
     - name: dst
       type: EA
+    size: BWLQ
     compact: false
-  size: BWLQ
 definition_status:
   allocation: 'external: isa/alloc'

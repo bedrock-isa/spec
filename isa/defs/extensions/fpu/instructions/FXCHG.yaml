@@ -15,6 +15,10 @@ behavior:
   - rhs_v = tmp_v;
 attributes:
   privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: false
+    repg: true
   fp_flags: unchanged
 forms:
   operands:

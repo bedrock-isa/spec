@@ -54,7 +54,6 @@ extension_grouping:
     - DJcc.D_TO_EA
     - FMOVcc.F_TO_F
     - Jcc.EA.WL
-    - TRAPcc
     - SETcc.EA
     - MOVcc.A_TO_EA
     - MOVcc.D_TO_EA

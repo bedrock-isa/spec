@@ -17,6 +17,10 @@ behavior:
 attributes:
   privilege: policy controlled
   flags: unchanged
+  profile_access:
+    bedrock_c_far:
+      user_writable: [GS4]
+      other_segment_writes: policy_controlled
 forms:
   operands:
   - name: src
@@ -25,5 +29,9 @@ forms:
     type: SREG
   size: Q
   note: general writes to CS are illegal; use CS-changing control transfer instructions
+  segment_image_validation:
+    before_commit: true
+    invalid_image_exception: INVALID_CONTROL_STATE
+    atomic_destination_update: true
 definition_status:
   allocation: 'external: isa/alloc'

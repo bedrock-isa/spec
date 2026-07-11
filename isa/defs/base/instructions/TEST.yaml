@@ -17,10 +17,15 @@ behavior:
   - CF = 0;
   - VF = 0;
   repeat_observed_value: lhs_bitwise_and_rhs
-  repflags: flags_logic_observed_value
+  repeat_flags: flags_logic_observed_value
 attributes:
   privilege: unprivileged
   streaming_candidate: true
+  repeatable:
+    rep: true
+    repcc: true
+    repg: true
+  repgf_candidate: true
   flags:
     Z: result == 0
     N: most_significant_bit(result)

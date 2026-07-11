@@ -11,29 +11,24 @@ behavior:
   - if (((dst_v >> 63) & 1) == 0) goto <abs_done>;
   - dst_v = 0 - dst_v;
   - <abs_done>
-  - ZF = dst_v == 0;
-  - NF = dst_v s< 0;
-  - CF = 0;
-  - VF = 0;
 attributes:
   privilege: unprivileged
-  prefix_availability:
-  - SATURATE
-  flags:
-    Z: result == 0
-    N: most_significant_bit(result)
-    C: source operand is negative
-    V: source operand is the most negative signed value
+  repeatable:
+    rep: true
+    repcc: true
+    repg: true
+  flags: unchanged
 forms:
   compact_forms:
   - operands:
     - name: dst
       type: Rn
+    size: LQ
   extended_forms:
   - operands:
     - name: dst
       type: EA
+    size: BWLQ
     compact: false
-  size: BWLQ
 definition_status:
   allocation: 'external: isa/alloc'

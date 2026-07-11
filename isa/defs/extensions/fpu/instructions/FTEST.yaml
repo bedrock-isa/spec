@@ -14,10 +14,14 @@ behavior:
   - NF = src_v f< 0;
   - CF = 0;
   - VF = nan(src_v);
-  repflags: fpu_compare_flags
+  repeat_flags: fpu_compare_flags
 attributes:
   privilege: unprivileged
   streaming_candidate: true
+  repeatable:
+    rep: true
+    repcc: false
+    repg: true
   fp_flags:
     update_when_required:
     - NV

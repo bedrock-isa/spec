@@ -13,6 +13,10 @@ behavior:
   - dst_v = ceil(src_v);
 attributes:
   privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: false
+    repg: true
   fp_flags:
     update_when_required:
     - NV

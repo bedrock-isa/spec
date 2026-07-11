@@ -33,6 +33,10 @@ behavior:
     - <fcvtu_done>
 attributes:
   privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: false
+    repg: true
   streaming_candidate: true
   fp_flags:
     update_when_required:

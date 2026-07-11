@@ -204,6 +204,19 @@ canonical_encoding:
   unqualified_rn_memory: prefer compact forms where available
   ext0_use: explicit segment, indexed, zero-base, SP/PC indexed, and auto-update forms
 
+named_operand_sets:
+  long_control_target:
+    consumers: [LCALL, LJMP]
+    allowed_classes: [register, immediate, memory]
+    register_values: [Rn, SP]
+    immediate_values: [imm8s, imm16s, imm32s, imm64]
+    memory_value_size_bytes: 8
+    memory_forms: all architecturally valid compact and EXT0 memory forms
+    memory_context: evaluate segment pre-translation, paging, and the Q-word read in the old architectural context
+    auto_update: allowed and committed only with the successful control transfer
+    result: one 64-bit target pre-segment address value
+    new_code_context: LCALL or LJMP validates and interprets the result through the separately supplied new CS image
+
 ext0:
   descriptor_segment_default: none
   forms:
@@ -345,10 +358,10 @@ auto_update_semantics:
   same_register_examples:
   - syntax: "[R1 + R1++ * scale]"
     meaning:
-    - Base term uses current temporary R1.
-    - Index term uses current temporary R1, then increments temporary R1 by one element.
+    - Base term uses the current temporary R1.
+    - Index term uses the current temporary R1, then increments temporary R1 by one element.
   - syntax: "[R1 + --R1 * scale]"
     meaning:
-    - Base term uses current temporary R1.
+    - Base term uses the current temporary R1.
     - Index term decrements temporary R1 by one element, then uses the updated temporary R1.
   rep_interaction: each REP iteration commits independently

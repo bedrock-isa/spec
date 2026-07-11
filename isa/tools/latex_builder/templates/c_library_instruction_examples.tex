@@ -1,18 +1,19 @@
 This section shows how the instruction set maps onto common C library kernels. The examples are schematic assembly
 sequences rather than ABI-mandated entry points.
 
-The examples use R0 as a source pointer, R1 as a destination pointer, R2 as the REP counter, and R3 as a temporary
-or fill-value register.
+The examples use R0 as a source pointer, R1 as a destination pointer, R2 as the repeat counter, and R3 as a
+temporary or fill-value register.
 
-\subsection{REP Counter Convention}
-REP and REPcc interpret the selected Rn register as an ordinary signed two's-complement counter. A zero counter
-performs no iteration. Positive counters decrement toward zero; negative counters increment toward zero.
+\subsection{Repeat Counter Convention}
+Repeated scalar forms interpret the selected Rn register as an unsigned remaining count. A zero counter decodes
+and checks the body, then annuls it with no architectural side effects. Every completed body iteration decrements
+the counter by one.
 
 The same architectural Rn value is visible to indexed effective-address calculation. Address update is part of the
 EA syntax; after each successful element access, the selected base register advances by the element size.
 
 \subsection{memcpy}
-The forward byte-copy form uses source and destination base pointers and a positive signed count.
+The forward byte-copy form uses source and destination base pointers and an unsigned byte count.
 
 @MEMCPY_EXAMPLE@
 
@@ -29,8 +30,8 @@ forward copy traversal.
 @MEMSET_EXAMPLE@
 
 \subsection{memcmp}
-memcmp can use REPEQ to continue while the observed comparison result is equal. The final FLAGS value is the result
-of the last completed comparison.
+memcmp can use a repeated comparison form to continue while the observed comparison result is equal. The final FLAGS
+value is the result of the last completed comparison.
 
 @MEMCMP_EXAMPLE@
 

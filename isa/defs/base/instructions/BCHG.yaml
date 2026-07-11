@@ -10,14 +10,16 @@ behavior:
   - bit_index
   input_output: dst
   operation:
-  - tmp_v = 1 << (bit_index_v & 63);
-  - dst_v = dst_v ^ tmp_v;
-  - ZF = dst_v == 0;
-  - NF = dst_v s< 0;
-  - CF = 0;
-  - VF = 0;
+  - bit_mask_v = 1 << (bit_index_v & 63);
+  - old_bit_v = (dst_v & bit_mask_v) != 0;
+  - dst_v = dst_v ^ bit_mask_v;
+  - ZF = old_bit_v == 0;
 attributes:
   privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: true
+    repg: true
   flags:
     Z: old_bit == 0
     N: unchanged

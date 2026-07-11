@@ -67,14 +67,21 @@ also reserves two 64-bit extension slots for future architected base-frame state
 
 @FRAME_CONTROL_TABLE@
 
+\Needspace{6.4in}
 \subsection{Repeat Fault Continuation}
-When FRAME\_CONTROL.rep\_fault is set, the FAULT\_AUX payload records the active repeat context. The saved PC is
-the faulting scalar instruction or the faulting instruction inside a REPG group.
+\begin{samepage}
+When FRAME\_CONTROL.rep\_fault is set, the FAULT\_AUX payload records the active repeat context saved by an
+interrupt, exception, or fault. Handler entry clears architectural repeat state; IRET restores the saved repeat
+state together with the saved PC and status state.
 
-For REPG, software reconstructs the group start from the saved fault PC and the encoded group-start delta.
-Returning with IRET preserves the continuation state unless software edits the frame before return.
+During single-instruction repeat, the saved PC is the repeated body instruction boundary. For REPG, software
+reconstructs the group start from the saved PC and the encoded byte-distance group-start delta. Returning with
+IRET preserves the continuation state unless software edits the frame before return.
+
+@REPEAT_FAULT_AUX_DIAGRAM@
 
 @REPEAT_FAULT_AUX_TABLE@
+\end{samepage}
 
 \subsection{Interrupt Reset State}
 

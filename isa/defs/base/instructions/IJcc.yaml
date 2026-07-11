@@ -29,8 +29,6 @@ forms:
     type: Rn
   - name: target
     type: EA
-  size: LQ
   reads: FLAGS
-  updates: Dindex
 definition_status:
   allocation: 'external: isa/alloc'

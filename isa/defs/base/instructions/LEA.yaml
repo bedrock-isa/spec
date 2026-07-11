@@ -13,6 +13,11 @@ behavior:
   - dst_v = src_v;
 attributes:
   privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: true
+    repg: true
+  repgf_candidate: true
   flags: unchanged
 forms:
   src_ea_set: pure_address_calculation

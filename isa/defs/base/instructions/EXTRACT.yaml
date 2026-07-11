@@ -26,6 +26,10 @@ behavior:
     than or equal to `2*width`, the extracted result is zero.
 attributes:
   privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: true
+    repg: true
   flags: unchanged
 forms:
   operands:

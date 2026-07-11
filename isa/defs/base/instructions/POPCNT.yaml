@@ -25,6 +25,11 @@ behavior:
   - dst_v = popcount(tmp_v);
 attributes:
   privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: true
+    repg: true
+  repgf_candidate: true
   flags: unchanged
 forms:
   operands:

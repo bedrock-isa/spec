@@ -24,8 +24,3 @@ operation_semantics:
   groups:
     fpu_move_compare: {}
     fpu_arithmetic: {}
-  repeat_prefixes:
-    REPcc:
-      fpu_condition_domain: FLAGS only
-      fpu_fflags_condition_repeat: not supported
-      fflags_accumulation: bitwise inclusive-or of completed iterations

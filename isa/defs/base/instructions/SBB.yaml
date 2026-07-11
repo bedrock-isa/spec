@@ -20,8 +20,10 @@ behavior:
   - VF = sborrow(dst_old_v, src_v) || sborrow(tmp_v, borrow_v);
 attributes:
   privilege: unprivileged
-  prefix_availability:
-  - SATURATE
+  repeatable:
+    rep: true
+    repcc: true
+    repg: true
   flags:
     Z: result == 0
     N: most_significant_bit(result)

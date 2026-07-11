@@ -1,6 +1,6 @@
 # Instruction Definitions
 
-`isa/defs` contains semantic instruction definitions for the ISA rewrite.
+`isa/defs` contains semantic instruction definitions for the current ISA.
 Concrete opcode placement is intentionally externalized to `isa/alloc`.
 
 The current contents are a first-pass import from `old/isa/spec`:

@@ -29,6 +29,10 @@ behavior:
   bounds_mode: II
 attributes:
   privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: true
+    repg: true
 forms:
   extension_family: integer_bounds_unsigned
   operands:

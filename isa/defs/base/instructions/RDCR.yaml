@@ -11,6 +11,8 @@ behavior:
   inputs:
   - cr
   output: dst
+  operation:
+  - dst_v = arch_read_control_register(cr_v);
   control_register_access:
     selector: cr
     read: dst
@@ -20,7 +22,7 @@ attributes:
 forms:
   operands:
   - name: cr
-    type: CR
+    type: imm16
   - name: dst
     type: Rn
 definition_status:

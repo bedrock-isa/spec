@@ -1,5 +1,0 @@
-version: draft-v1
-
-include:
-  - base/registers.yaml
-  - extensions/fpu/registers.yaml

@@ -13,6 +13,8 @@ behavior:
   - src
   - cr
   output: none
+  operation:
+  - arch_write_control_register(cr_v, src_v);
   control_register_access:
     selector: cr
     write: src
@@ -24,6 +26,6 @@ forms:
   - name: src
     type: Rn
   - name: cr
-    type: CR
+    type: imm16
 definition_status:
   allocation: 'external: isa/alloc'

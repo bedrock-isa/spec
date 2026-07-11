@@ -11,6 +11,10 @@ behavior:
   - dst_v = 0;
 attributes:
   privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: false
+    repg: true
   fp_flags: unchanged
 forms:
   operands:

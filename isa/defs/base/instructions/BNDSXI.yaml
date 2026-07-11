@@ -18,17 +18,21 @@ behavior:
   - NF = 0;
   - CF = 0;
   - VF = 0;
-  - if (value_v <= lo_v) goto <bnduxi_bad>;
-  - if (value_v > hi_v) goto <bnduxi_bad>;
-  - goto <bnduxi_done>;
-  - <bnduxi_bad>
+  - if (value_v s<= lo_v) goto <bndsxi_bad>;
+  - if (value_v s> hi_v) goto <bndsxi_bad>;
+  - goto <bndsxi_done>;
+  - <bndsxi_bad>
   - VF = 1;
-  - <bnduxi_done>
+  - <bndsxi_done>
   interval: (lo, hi]
   signedness: signed
   bounds_mode: XI
 attributes:
   privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: true
+    repg: true
 forms:
   extension_family: integer_bounds_signed
   operands:

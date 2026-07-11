@@ -1,5 +1,5 @@
 \subsection{Register Model}
-The integer programming model exposes sixteen 64-bit Rn registers, R0 through R15. The rewrite uses one
+The integer programming model exposes sixteen 64-bit Rn registers, R0 through R15. Bedrock uses one
 general-purpose register class for integer values, address values, counters, selectors, and temporary data.
 
 SP and PC are special architectural registers outside the four-bit Rn namespace. SP-relative memory forms use SS by
@@ -13,11 +13,11 @@ while SP and PC forms omit the segment field because their segment association i
 @GENERAL_REGISTER_TABLE@
 
 \subsection{Unified Integer Register File}
-The current rewrite has no data-register bank mechanism. All integer instructions address the same architectural R0
+The base architecture has no data-register bank mechanism. All integer instructions address the same architectural R0
 through R15 register file.
 
 Bank-select instructions and banked integer-register control state are outside this ISA definition and are not
-accepted as instruction, prefix, or control-state features.
+accepted as instruction or control-state features.
 
 @STATE_REGISTER_FORMAT_DIAGRAMS@
 

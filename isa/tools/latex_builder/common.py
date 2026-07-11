@@ -12,8 +12,8 @@ import yaml
 
 ARCH_NAME = "Bedrock"
 MANUAL_TITLE = "Bedrock Programmer's Reference Manual"
-MANUAL_SUBTITLE = "Bounded Word-Oriented CISC Architecture"
-CAPTION_PREFIX_RE = re.compile(r"^(?:Table|Figure)\s+\d+(?:-\d+)?\.\s*")
+MANUAL_SUBTITLE = "Bounded Byte-Addressed CISC Architecture"
+CAPTION_LABEL_RE = re.compile(r"^(?:Table|Figure)\s+\d+(?:-\d+)?\.\s*")
 TEMPLATE_DIR = Path(__file__).with_name("templates")
 TABLE_INLINE_LIST_MAX_CHARS = 32
 TABLE_INLINE_ITEM_MAX_CHARS = 20
@@ -112,7 +112,7 @@ def tex_table_code_value(value: Any) -> str:
 
 
 def caption_title(value: Any) -> str:
-    return CAPTION_PREFIX_RE.sub("", str(value)).strip()
+    return CAPTION_LABEL_RE.sub("", str(value)).strip()
 
 
 def listed_figure_caption(caption: str) -> str:

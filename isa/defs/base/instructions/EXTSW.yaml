@@ -16,36 +16,38 @@ behavior:
   - dst_v = arch_sign_extend(src_v, size_v, 2);
   destination_size: W
   repeat_observed_value: result_value
-  repflags: flags_logic_observed_value
+  repeat_flags: flags_logic_observed_value
 attributes:
   privilege: unprivileged
   streaming_candidate: true
+  repeatable:
+    rep: true
+    repcc: true
+    repg: true
+  repgf_candidate: true
 forms:
   dst_ea_set: store_destination
-  compact_forms:
-  - operands:
-    - name: src
-      type: Rn
-    - name: dst
-      type: Rn
   extended_forms:
   - operands:
     - name: src
       type: EA
     - name: dst
       type: Rn
+    size: B
     compact: false
   - operands:
     - name: src
       type: Rn
     - name: dst
       type: EA
+    size: B
     compact: false
   - operands:
     - name: src
       type: EA
     - name: dst
       type: EA
+    size: B
     compact: false
     memory_memory: true
   source_size:

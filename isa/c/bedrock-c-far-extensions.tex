@@ -1,0 +1,262 @@
+\documentclass[10pt,twoside]{article}
+\newcommand{\BedrockArchitectureName}{Bedrock}
+\newcommand{\BedrockDocumentTitle}{Bedrock C Far-Pointer Extensions}
+\newcommand{\BedrockRunningTitle}{C FAR-POINTER EXTENSIONS}
+\newcommand{\BedrockFooterTitle}{BEDROCK ARCHITECTURE}
+\input{isa/tex/bedrock-reference-common.tex}
+\begin{document}
+\BedrockMakeTitlePage{Bedrock C Far-Pointer Extensions}{Source-Language Types and Semantics}{Version 1.0}
+\BedrockFrontMatter
+
+\clearpage
+\section{Scope and Status}
+This document defines the Bedrock-specific C source-language extensions for far
+data pointers, far function pointers, and cross-segment aliasing. It specifies
+declarator syntax, type compatibility, conversions, pointer operations,
+constant construction, compiler memory effects, and diagnostics.
+
+This is not an ABI layer. Object representation, argument and return
+assignment, segment-register preservation, far-call frames, veneers, unwind,
+and dynamic linking are defined by the Bedrock C ABI and Bedrock ELF ABI.
+Compiler builtin and header availability is defined by the Bedrock Target
+Intrinsics document.
+
+\manualfield{Extension name:}{\texttt{bedrock-c-far}}
+\manualfield{Language scope:}{ISO C with Bedrock target extensions}
+\manualfield{Not specified:}{C++ type system, name mangling, or C++ exceptions}
+
+\section{Terminology}
+\begin{description}[style=nextline,leftmargin=1.75in,labelwidth=1.65in,itemsep=3pt,topsep=3pt]
+\item[far data pointer] A C pointer kind carrying a post-segment virtual address
+and the segment metadata whose ABI representation is defined by the Bedrock C
+ABI.
+\item[far function pointer] A C function-pointer kind that selects a far call
+and return convention defined by the Bedrock C ABI.
+\item[canonical address] The post-segment virtual address that establishes C
+pointer identity independently of bounds metadata.
+\item[cross-segment alias barrier] A compiler memory effect that reconciles
+ordinary near and segmented alias domains. It is not a hardware fence.
+\end{description}
+
+\section{Far Pointer Type System}
+
+\subsection{Declarator Binding}
+The implementation provides the pointer-kind qualifier \texttt{\_\_far},
+mapped to compiler address space 1. It applies to the pointer introduced by the
+immediately preceding declarator star, not to the pointed-to type.
+
+\begingroup\small\ttfamily
+\begin{tabularx}{\linewidth}{@{}lX@{}}
+T * \_\_far p; & far pointer to T\\
+const T * \_\_far p; & far pointer to const T\\
+T * const \_\_far p; & const far pointer to T\\
+T (* \_\_far p)[N]; & far pointer to an array\\
+T * \_\_far a[N]; & array of far pointers\\
+R (* \_\_far fn)(Args...); & far function pointer\\
+R \_\_far function(Args...); & far-native function\\
+\end{tabularx}
+\endgroup
+
+The qualifier is valid on every object- or function-pointer kind and composes
+with \texttt{const}, \texttt{volatile}, and \texttt{restrict} using their
+ordinary declarator meanings. Applying it to a pointed-to scalar, array
+element type, or nonpointer object type is a constraint violation.
+
+Typedefs, \texttt{\_Generic}, \texttt{typeof}, and equivalent type queries
+preserve the far pointer kind. \texttt{sizeof} and \texttt{\_Alignof} report
+the size and alignment defined by the C ABI. An array parameter whose elements
+are far pointers adjusts to an ordinary pointer to a far-pointer element;
+\texttt{\_\_far} does not migrate to the adjusted outer pointer.
+
+A far pointer type cannot be the type of an atomic object or an operand of a
+compiler atomic builtin. Access through a far pointer to a pointed-to atomic
+object remains available when the C ABI supports the pointed-to atomic type.
+
+\subsection{Compatibility and Conversions}
+Far \texttt{void *} converts to and from far object pointers without changing
+the represented value. Far object pointers, far function pointers, ordinary
+object pointers, and ordinary function pointers remain distinct categories.
+There is no object/function pointer compatibility and no implicit near/far
+conversion.
+
+Explicit near-to-far conversion retains the near pointer's canonical address
+and attaches the current canonical disabled or bounds-only data context.
+Explicit far-to-near conversion retains the canonical address but succeeds
+only when it is valid in the current ordinary data context.
+
+Every declaration and definition of a far-native function must agree on the
+far function kind. Taking its address produces the corresponding far function
+pointer. A mismatch between near and far declarations requires a diagnostic.
+A known near or far function symbol may cross conventions only through the
+typed veneer defined by the C ABI; a representation-only cast is invalid.
+
+\subsection{Pointer Operations and Identity}
+Pointer arithmetic changes the canonical address while preserving the
+associated bounds context. Pointer difference and relational comparison are
+defined only for pointers into the same C array object and use canonical
+addresses. Equality and hashing likewise use canonical address identity after
+null canonicalization; differing bounds contexts do not make otherwise equal
+pointers unequal.
+
+The builtin
+\texttt{\_\_builtin\_bedrock\_far\_same\_encoding(left,right)} compares the
+complete ABI representation when raw encoding identity is required.
+A non-null value with invalid or noncanonical metadata may be copied, compared,
+or converted to its matching raw carrier without faulting, but dereference or
+call is invalid. The C ABI defines the null and raw-carrier representations.
+
+\subsection{Pointer and Integer Conversion}
+Ordinary \texttt{uintptr\_t} and \texttt{intptr\_t} remain near-pointer
+carriers. Explicit conversion to the matching far raw carrier preserves the
+complete representation; conversion back restores the value and canonicalizes
+a zero canonical address to null. A matching-carrier round trip compares equal
+and retains its bounds context.
+
+The builtin \texttt{\_\_builtin\_bedrock\_far\_address(pointer)} returns the
+canonical 64-bit post-segment address without validation or faulting.
+Conversion through an ordinary 64-bit carrier is rejected unless an explicitly
+implementation-defined truncation operation is requested.
+
+\section{Far Pointer Construction}
+The compiler-owned header \texttt{<bedrockintrin.h>} exposes typed macros over
+the matching target builtins. These operations construct values; they do not
+expose a C structure representation.
+
+\manualtablecaption{Far Pointer Construction Interface}
+\begingroup\footnotesize
+\setlength{\tabcolsep}{2pt}
+\begin{longtable}{@{}p{1.95in}p{2.75in}p{0.85in}@{}}
+\toprule
+\textbf{Macro} & \textbf{Builtin} & \textbf{Input}\\
+\midrule
+\endhead
+\texttt{\_\_BEDROCK\_FAR\_PTR\_INIT} &
+\texttt{\_\_builtin\_bedrock\_far\_ptr\_init} & pair\\
+\texttt{\_\_BEDROCK\_FAR\_FLAT\_PTR\_INIT} &
+\texttt{\_\_builtin\_bedrock\_far\_flat\_ptr\_init} & address\\
+\texttt{\_\_BEDROCK\_FAR\_NULL} &
+\texttt{\_\_builtin\_bedrock\_far\_null} & type\\
+\texttt{\_\_BEDROCK\_FAR\_PTR\_FROM\_SEGMENT} &
+\texttt{\_\_builtin\_bedrock\_far\_ptr\_from\_segment} & pair\\
+\bottomrule
+\end{longtable}
+\endgroup
+
+Each macro's first argument names a far-qualified object or function pointer
+type. The typed initializer accepts a post-segment address and changes a
+nonzero-mantissa image to bounds-only without adding its base. The flat form
+attaches the disabled image. The translated-source form adds base and offset,
+sets bounds-only mode, and preserves validated bounds. The null form produces
+the ABI null value.
+
+Construction writes no segment register, probes no bounds, walks no page
+table, and performs no memory access. Address zero canonicalizes to null. An
+invalid image or base-plus-offset overflow produces an invalid far value
+without raising an exception. A one-past address may therefore be constructed
+without access. Validation and bounds checking occur only at dereference or
+call.
+
+When every value operand is an integer constant expression and the pointer
+type is complete enough for its cast, the macro is an integer
+constant-expression initializer.
+
+\section{Access and Cross-Segment Aliasing}
+
+\subsection{Access Semantics}
+Dereference uses the address and segment metadata carried by the far pointer.
+The implementation must re-establish the C ABI's far-data window after any
+operation that may clobber it and before a dependent access. Invalid metadata
+raises \texttt{INVALID\_CONTROL\_STATE}; a failed bound raises
+\texttt{PAGE\_FAULT}. Ordinary volatile access-count and ordering requirements
+remain in force.
+
+\subsection{Alias Identity}
+Compiler regions with no cross-segment operation may partition near and
+segmented memory into distinct alias domains. A cross-segment operation
+reconciles the affected domains with a cross-segment alias barrier. Two
+accesses alias when their canonical post-segment byte ranges overlap and
+ordinary C effective-type rules permit aliasing. Segment metadata may be
+unknown at compile time, and visible far operations require no source
+annotation.
+
+\Needspace{2.0in}
+\manualtablecaption{Cross-Segment Alias-Barrier Triggers}
+\begingroup\footnotesize
+\setlength{\tabcolsep}{2pt}
+\begin{longtable}{@{}p{1.55in}p{4.0in}@{}}
+\toprule
+\textbf{Trigger} & \textbf{Compiler memory effect}\\
+\midrule
+\endhead
+far data load & reconcile potentially aliased state before the read\\
+far data store & reconcile before the write and invalidate affected cached values afterward\\
+far data RMW & apply both the read and write effects\\
+direct far call & materialize dirty escaped state before the call and invalidate cached escaped state afterward\\
+indirect far call & same escaped-memory effect as a direct far call\\
+hidden access & inline assembly, intrinsic, or external code declared with \texttt{cross\_segment\_access}\\
+\bottomrule
+\end{longtable}
+\endgroup
+
+Pointer construction, copying, arithmetic, conversion, and comparison are not
+triggers. Before a triggering access, dirty potentially aliased escaped state
+must be materialized. After a write, RMW, or far call, potentially aliased
+cached values must be invalidated; lazy reload is permitted. Objects proven
+not to overlap need no spill or invalidation. Adjacent barriers may be
+coalesced only when observable C behavior is unchanged.
+
+A function containing a trigger acquires the inferred
+\texttt{\_\_attribute\_\_((cross\_segment\_access))} property. Explicit use
+declares a hidden effect. The property is not part of the function type and
+does not change calling convention or symbol identity. Its memory summary
+survives inlining and LTO. Contradictory \texttt{readnone}, \texttt{const},
+\texttt{pure}, or equivalent annotations are rejected.
+
+Strict aliasing, \texttt{restrict}, volatile, atomic-object identity, and data
+races are evaluated using canonical address ranges. Different bounds contexts
+may designate the same atomic object. The alias barrier is not a hardware
+memory fence.
+
+\subsection{TLS and Lifetime Semantics}
+A C far pointer never carries TLS selector metadata. Taking the address of a
+TLS object first materializes the concrete post-segment address of the calling
+thread's instance. Explicit conversion attaches ordinary far data metadata.
+Copying the result to another thread still designates the originating instance
+while it is alive; thread exit ends that lifetime. Loader unload likewise ends
+the lifetime of pointers to unloaded data and function entries.
+
+\subsection{Worked Access}
+\begingroup\small\ttfamily
+\begin{tabularx}{\linewidth}{@{}X@{}}
+uint64\_t load\_far\_u64(const uint64\_t * \_\_far p) \{ return *p; \}\tabularnewline
+\end{tabularx}
+\endgroup
+The C ABI assigns the pointer words to the incoming far-pointer locations. The
+compiler establishes the ABI far-data window and emits one dependent load.
+The exact instruction sequence is an implementation choice as long as those
+observable rules hold.
+
+\section{Far Function Language Semantics}
+A far function pointer declaration such as
+\texttt{int (* \_\_far handler)(int)} selects the far function-pointer type.
+Calling through it uses the far-call convention defined by the C ABI. The
+declaration \texttt{int \_\_far handler(int)} defines a far-native entry;
+direct calls to it use the same convention. Ordinary function declarations
+and pointers retain the near convention.
+
+Far function pointers are incompatible with near function pointers and far
+data pointers. Native variadic far functions are supported, but automatic
+variadic or unprototyped cross-convention adaptation is forbidden; source code
+must provide an explicitly typed wrapper.
+
+\subsection{Worked Indirect Call}
+\begingroup\small\ttfamily
+\begin{tabularx}{\linewidth}{@{}X@{}}
+int invoke(int (* \_\_far fn)(int), int value) \{ return fn(value); \}\tabularnewline
+\end{tabularx}
+\endgroup
+The compiler preserves both words of \texttt{fn} while assigning
+\texttt{value} by the ordinary integer argument rules, emits the C ABI far
+call, and expects the target to use the corresponding far return.
+
+\end{document}

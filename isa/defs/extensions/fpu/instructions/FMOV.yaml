@@ -13,6 +13,10 @@ behavior:
   - dst_v = src_v;
 attributes:
   privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: false
+    repg: true
   streaming_candidate: true
   fp_flags: unchanged
   flags: unchanged

@@ -13,16 +13,16 @@ behavior:
   - dst_v = arch_unsigned_modulo(dst_v, src_v, size_v);
 attributes:
   privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: true
+    repg: true
 forms:
   operands:
   - - name: src
       type: EA
     - name: dst
       type: Rn
-  - - name: src
-      type: Rn
-    - name: dst
-      type: EA
   size: BWLQ
 definition_status:
   allocation: 'external: isa/alloc'

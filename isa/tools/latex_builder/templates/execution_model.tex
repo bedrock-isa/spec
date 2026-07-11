@@ -4,13 +4,13 @@ is to make operand evaluation, side effects, repetition, and status updates read
 pages.
 
 \subsection{Instruction Boundary and Default Execution Rules}
-The instruction boundary is fixed by the first two instruction bytes before operand evaluation begins. An
-implementation may reject an instruction before any architectural state is changed if the encoded length cannot
-contain the selected form.
+The instruction boundary is fixed by byte 0 for extrashort and short forms, and by the first two bytes for
+extended forms, before operand evaluation begins. An implementation may reject an instruction before any
+architectural state is changed if the encoded length cannot contain the selected form.
 
-The encoded length must contain every required opcode byte, prefix word, descriptor, immediate, displacement,
-bitmap, and instruction-specific payload. Extra payload bytes are part of the instruction record but have no
-implicit extension meaning unless the selected instruction form consumes them.
+The encoded length must contain every required opcode byte, descriptor, immediate, displacement, bitmap, and
+instruction-specific payload. Extra payload bytes are part of the instruction record but have no implicit extension
+meaning unless the selected instruction form consumes them.
 
 @EXECUTION_DEFAULTS_TABLE@
 

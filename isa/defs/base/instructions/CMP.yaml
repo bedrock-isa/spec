@@ -17,10 +17,15 @@ behavior:
   - CF = dst_v < src_v;
   - VF = sborrow(dst_v, src_v);
   repeat_observed_value: rhs_minus_lhs
-  repflags: flags_sub_rhs_lhs
+  repeat_flags: flags_sub_rhs_lhs
 attributes:
   privilege: unprivileged
   streaming_candidate: true
+  repeatable:
+    rep: true
+    repcc: true
+    repg: true
+  repgf_candidate: true
   flags:
     Z: result == 0
     N: most_significant_bit(result)

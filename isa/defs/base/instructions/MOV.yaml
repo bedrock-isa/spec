@@ -12,16 +12,21 @@ behavior:
   operation:
   - dst_v = src_v;
   repeat_observed_value: src_value
-  repflags: flags_logic_observed_value
+  repeat_flags: flags_logic_observed_value
 attributes:
   privilege: unprivileged
   streaming_candidate: true
+  repeatable:
+    rep: true
+    repcc: true
+    repg: true
+  repgf_candidate: true
 forms:
   dst_ea_set: store_destination
   compact_forms:
   - operands:
     - name: src
-      type: EA
+      type: Rn
     - name: dst
       type: Rn
     size: LQ
@@ -29,11 +34,11 @@ forms:
     - name: src
       type: Rn
     - name: dst
-      type: EA
-    size: LQ
+      type: SP
+    size: Q
   - operands:
     - name: src
-      type: imm64
+      type: SP
     - name: dst
       type: Rn
     size: Q

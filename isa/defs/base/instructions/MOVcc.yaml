@@ -16,6 +16,10 @@ behavior:
   - <movcc_done>
 attributes:
   privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: true
+    repg: true
 forms:
   dst_ea_set: store_destination
   operands:
@@ -31,20 +35,7 @@ forms:
       type: EA
     - name: dst
       type: Rn
-  - - name: cc
-      type: condition
-    - name: src
-      type: Rn
-    - name: dst
-      type: EA
-  - - name: cc
-      type: condition
-    - name: src
-      type: EA
-    - name: dst
-      type: Rn
-  D_size: BWLQ
-  A_size: Q_only
+  size: BWLQ
   reads: FLAGS
 definition_status:
   allocation: 'external: isa/alloc'
