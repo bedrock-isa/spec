@@ -1,0 +1,19 @@
+\subsection{Supervisor Stack Sets}
+The IVT entry SN field selects one of four supervisor stack sets. Each set contains a validated 64-bit stack-segment
+image and a raw 64-bit stack pointer. Interrupt, exception, NMI, and double-fault delivery all use the selected pair.
+
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.55in}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{2.65in}@{}}
+\toprule
+\textbf{SN} & \textbf{Segment} & \textbf{Pointer} & \textbf{Selected stack state}\\
+\midrule
+\texttt{0} & \texttt{SSS0} & \texttt{SSP0} & supervisor stack set 0\\
+\texttt{1} & \texttt{SSS1} & \texttt{SSP1} & supervisor stack set 1\\
+\texttt{2} & \texttt{SSS2} & \texttt{SSP2} & supervisor stack set 2\\
+\texttt{3} & \texttt{SSS3} & \texttt{SSP3} & supervisor stack set 3\\
+\bottomrule
+\end{manualtabular}
+\manualunlistedtablecaption{Supervisor Stack Selection}
+
+Delivery validates the selected segment image before exposing the supervisor transition. Failure to establish the
+selected stack or to store the entry frame enters the double-fault delivery path. A failure while delivering the
+double fault follows the platform's terminal fault policy.

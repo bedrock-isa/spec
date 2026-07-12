@@ -19,6 +19,8 @@ set used for the entry frame. Reserved IVT bits must be written as zero.
 
 \input{isa/tools/latex_builder/templates/fragments/ivt_entry_table.tex}
 
+\input{isa/tools/latex_builder/templates/fragments/supervisor_stack_sets.tex}
+
 \subsection{Vector Assignment}
 Vectors 0x00..0x1F are owned by the CPU architecture. Vectors 0x20..0x3F are reserved for future architectural
 use. Operating systems, platforms, and devices may assign vectors 0x40..0xFF.
@@ -96,7 +98,8 @@ IRET preserves the continuation state unless software edits the frame before ret
 
 \input{isa/tools/latex_builder/templates/fragments/reset_state_table.tex}
 
-Reset initializes the processor into a supervisor-controlled state with interrupts disabled and
-implementation-defined reset vector state supplied by the platform. Software must initialize segment state,
-translation controls, interrupt-vector state, and any enabled extension state before entering ordinary user
-execution.
+Cold reset initializes the processor into a supervisor-controlled state with interrupts disabled. The platform
+supplies BOOTPC and BOOTCFG, clears the remaining resettable state, and begins execution at BOOTPC. The RESET
+instruction performs a warm reset: it preserves BOOTPC and BOOTCFG, clears the remaining resettable state, and resumes
+at BOOTPC. Software must initialize segment state, translation controls, interrupt-vector state, and any enabled
+extension state before entering ordinary user execution.

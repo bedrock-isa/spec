@@ -22,3 +22,48 @@ FLAGS and STATUS are accessed through dedicated read/write instructions. Reserve
 \manualformatfield{IN}{1}
 }
 \end{manuallistedformatdiagram}
+
+\subsection{FFLAGS and FSTATUS Registers}
+FFLAGS holds accrued IEEE-754 exception flags. FSTATUS holds the matching trap enables, rounding mode, and optional
+non-default floating-point modes. Both registers are present only with the floating-point extension and reset to zero.
+
+\begin{manuallistedformatdiagram}{FFLAGS Register Format}{3}
+\manualformatrow{FFLAGS[15:0]}{%
+\manualformatfield{0}{11}
+\manualformatfield{NV}{1}
+\manualformatfield{DZ}{1}
+\manualformatfield{OF}{1}
+\manualformatfield{UF}{1}
+\manualformatfield{NX}{1}
+}
+\end{manuallistedformatdiagram}
+
+\begin{manuallistedformatdiagram}{FSTATUS Register Format}{4}
+\manualformatrow{FSTATUS[15:0]}{%
+\manualformatfield{0}{6}
+\manualformatfield{DN}{1}
+\manualformatfield{DAZ}{1}
+\manualformatfield{FTZ}{1}
+\manualformatfield{RM}{2}
+\manualformatfield{NV\_EN}{1}
+\manualformatfield{DZ\_EN}{1}
+\manualformatfield{OF\_EN}{1}
+\manualformatfield{UF\_EN}{1}
+\manualformatfield{NX\_EN}{1}
+}
+\end{manuallistedformatdiagram}
+
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{3.95in}@{}}
+\toprule
+\textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
+\midrule
+\texttt{NV..NX} & \texttt{4..0} & accrued invalid, divide-by-zero, overflow, underflow, and inexact flags\\
+\texttt{NV\_EN..NX\_EN} & \texttt{4..0} & trap enables corresponding to FFLAGS.NV through FFLAGS.NX\\
+\texttt{RM} & \texttt{6..5} & 0 nearest-even; 1 toward zero; 2 toward negative; 3 toward positive\\
+\texttt{FTZ} & \texttt{7} & flush tiny results to signed zero\\
+\texttt{DAZ} & \texttt{8} & treat subnormal inputs as signed zero\\
+\texttt{DN} & \texttt{9} & produce the architectural default NaN\\
+reserved & \texttt{15..10} & must be zero\\
+\bottomrule
+\end{manualtabular}
+\manualunlistedtablecaption{Floating-Point State Fields}

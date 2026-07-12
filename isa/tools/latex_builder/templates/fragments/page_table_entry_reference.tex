@@ -1,0 +1,46 @@
+\subsection{Paging and Page-Table Entries}
+PTCR.LA57 selects four-level translation with 48-bit canonical linear addresses or five-level translation with
+57-bit canonical linear addresses. Each level consumes a nine-bit index; the low 12 linear-address bits are the page
+offset. Large-page leaves are not defined.
+
+\begin{manualformatdiagram}{Page-Table Entry Low Attributes}{4}
+\manualformatrowrange{PTE[11:0]}{11}{0}{%
+\manualformatfield{T}{1}
+\manualformatfield{SW0}{1}
+\manualformatfield{CP}{2}
+\manualformatfield{AT}{1}
+\manualformatfield{D}{1}
+\manualformatfield{A}{1}
+\manualformatfield{G}{1}
+\manualformatfield{U}{1}
+\manualformatfield{X}{1}
+\manualformatfield{W}{1}
+\manualformatfield{P}{1}
+}
+\end{manualformatdiagram}
+
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{0.85in}>{\raggedright\arraybackslash}p{3.85in}@{}}
+\toprule
+\textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
+\midrule
+\texttt{P} & \texttt{0} & present\\
+\texttt{W} & \texttt{1} & writable\\
+\texttt{X} & \texttt{2} & executable\\
+\texttt{U} & \texttt{3} & user-domain mapping\\
+\texttt{G} & \texttt{4} & global translation\\
+\texttt{A} & \texttt{5} & accessed; set on successful traversal or leaf use\\
+\texttt{D} & \texttt{6} & dirty; leaf-only and set on a successful store\\
+\texttt{AT} & \texttt{7} & 0 byte-addressed; 1 externally acknowledged / bus-sized leaf access\\
+\texttt{CP} & \texttt{9..8} & 0 cacheable; 1 uncacheable; 2 write-through; 3 write-combining\\
+\texttt{SW0} & \texttt{10} & software-defined and ignored by hardware\\
+\texttt{T} & \texttt{11} & one for a non-leaf table pointer; zero for an L1 leaf\\
+\texttt{PFN} & \texttt{PABITS-1..12} & next-table or mapped-page physical frame number\\
+software & \texttt{63..PABITS} & software-defined and ignored by hardware\\
+\bottomrule
+\end{manualtabular}
+\manualunlistedtablecaption{Page-Table Entry Fields}
+
+At every level above L1, P and T must both be one; D, G, and AT must be zero. At L1, P must be one and T must be
+zero. W, X, and U permissions are accumulated across the walk. A reserved or malformed consumed entry raises
+\texttt{PAGE\_FAULT}. Supervisor current-domain access to a user mapping faults; the checked user-domain operations
+select the user-domain permission path explicitly.
