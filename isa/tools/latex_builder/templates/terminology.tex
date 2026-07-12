@@ -60,7 +60,7 @@ function pointers carry no explicit CS value.
 A \emph{veneer} is a small runtime- or linker-generated near-call entry point that hides a more complex transfer
 sequence from ordinary callers.
 
-A \emph{far data address} is a C data-address pair containing a canonical post-segment virtual address and a
+A \emph{far data address} is a C data-address pair containing a canonical pre-segment virtual address and a
 canonical disabled or bounds-only segment image. The optional C far-data profile gives the pair a 128-bit language
 ABI representation; the base ISA still permits translated segments internally and does not make the pair an
 unforgeable capability.

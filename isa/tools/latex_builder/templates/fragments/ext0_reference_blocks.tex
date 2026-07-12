@@ -15,7 +15,7 @@
 \textbf{\texttt{EXT0 Explicit Segment Indexed}}\par
 \vspace{2pt}
 \begin{tabularx}{\linewidth}{@{}p{1.10in}X@{}}
-\textbf{Assembler syntax} & [SEG(s):Rn(b) + Rn(i) * scale + displacement], [SEG(s):Rn(b) + Rn(i)++ * scale + displacement], [SEG(s):Rn(b) + --Rn(i) * scale + displacement]\\
+\textbf{Assembler syntax} & [SEG(s):Rn(b) + Rn(i) * scale + displacement], [SEG(s):Rn(b) + Rn(i)++ * scale + displacement], [SEG(s):Rn(b) + {-}{-}Rn(i) * scale + displacement]\\
 \textbf{Descriptor} & 1sss0010 bbbbiiii for no update; 1sss0000 bbbbiiii for postincrement index; 1sss0001 bbbbiiii for predecrement index. Two bytes.\\
 \textbf{Generation} & offset = temporary Rn(b) + index\_term * scale + displacement.\\
 \textbf{Segment} & SEG(s) selects CS, DS, SS, or GS0..GS4.\\
@@ -42,7 +42,7 @@
 \textbf{\texttt{EXT0 Explicit Segment Base Auto-Update}}\par
 \vspace{2pt}
 \begin{tabularx}{\linewidth}{@{}p{1.10in}X@{}}
-\textbf{Assembler syntax} & [SEG(s):Rn(b)++ + displacement], [SEG(s):--Rn(b) + displacement]\\
+\textbf{Assembler syntax} & [SEG(s):Rn(b)++ + displacement], [SEG(s):{-}{-}Rn(b) + displacement]\\
 \textbf{Descriptor} & 1sss1000 bbbb0000 for base postincrement; 1sss1000 bbbb0001 for base predecrement. Two bytes.\\
 \textbf{Generation} & offset = base\_term + displacement.\\
 \textbf{Segment} & SEG(s) selects CS, DS, SS, or GS0..GS4.\\
@@ -55,7 +55,7 @@
 \textbf{\texttt{EXT0 Explicit Segment Zero-Base Indexed}}\par
 \vspace{2pt}
 \begin{tabularx}{\linewidth}{@{}p{1.10in}X@{}}
-\textbf{Assembler syntax} & [SEG(s):0 + Rn(i) * scale + displacement], [SEG(s):0 + Rn(i)++ * scale + displacement], [SEG(s):0 + --Rn(i) * scale + displacement]\\
+\textbf{Assembler syntax} & [SEG(s):0 + Rn(i) * scale + displacement], [SEG(s):0 + Rn(i)++ * scale + displacement], [SEG(s):0 + {-}{-}Rn(i) * scale + displacement]\\
 \textbf{Descriptor} & 1sss1001 0010iiii for no update; 1sss1001 0000iiii for postincrement index; 1sss1001 0001iiii for predecrement index. Two bytes.\\
 \textbf{Generation} & offset = index\_term * scale + displacement.\\
 \textbf{Segment} & SEG(s) selects CS, DS, SS, or GS0..GS4.\\
@@ -68,7 +68,7 @@
 \textbf{\texttt{EXT0 SP/PC Indexed}}\par
 \vspace{2pt}
 \begin{tabularx}{\linewidth}{@{}p{1.10in}X@{}}
-\textbf{Assembler syntax} & [SP + Rn(i) * scale + displacement], [SP + Rn(i)++ * scale + displacement], [SP + --Rn(i) * scale + displacement], and the matching PC forms.\\
+\textbf{Assembler syntax} & [SP + Rn(i) * scale + displacement], [SP + Rn(i)++ * scale + displacement], [SP + {-}{-}Rn(i) * scale + displacement], and the matching PC forms.\\
 \textbf{Descriptor} & 10001010 0010iiii, 0000iiii, or 0001iiii for SP; 10001011 0010iiii, 0000iiii, or 0001iiii for PC. Two bytes.\\
 \textbf{Generation} & offset = temporary SP or PC term + index\_term * scale + displacement.\\
 \textbf{Segment} & SP forms are fixed to SS. PC forms are fixed to CS.\\
@@ -81,7 +81,7 @@
 \textbf{\texttt{EXT0 Default-Segment Base Auto-Update}}\par
 \vspace{2pt}
 \begin{tabularx}{\linewidth}{@{}p{1.10in}X@{}}
-\textbf{Assembler syntax} & [Rn(b)++ + displacement], [--Rn(b) + displacement]\\
+\textbf{Assembler syntax} & [Rn(b)++ + displacement], [{-}{-}Rn(b) + displacement]\\
 \textbf{Descriptor} & 1bbbb100 for base postincrement; 1bbbb101 for base predecrement. One byte.\\
 \textbf{Generation} & offset = base\_term + displacement.\\
 \textbf{Segment} & Uses the operation default data segment.\\

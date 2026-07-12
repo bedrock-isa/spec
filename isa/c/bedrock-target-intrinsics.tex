@@ -98,6 +98,32 @@ the ISA.
 
 \section{Public Target Interface}
 
+\subsection{Segment-Image Value Macros}
+\manualfield{Header:}{\texttt{<bedrockfarintrin.h>}}
+The public far-pointer header defines the pure value macros
+\texttt{\_\_BEDROCK\_SEGMENT\_IMAGE},
+\texttt{\_\_BEDROCK\_SEGMENT\_IMAGE\_FOR\_BASE}, and
+\texttt{\_\_BEDROCK\_SEGMENT\_DISABLED}. They construct 64-bit segment
+images without reading or writing architectural state and are available
+through \texttt{<bedrockintrin.h>} without exposing the system-register
+interface.
+
+\texttt{\_\_BEDROCK\_SEGMENT\_IMAGE(base\_page,exponent,mantissa,
+bounds\_only)} places the low 52, 5, and 6 bits of the first three operands in
+their architectural fields and normalizes \texttt{bounds\_only} to zero or
+one. Each operand is evaluated once. An ABI-valid enabled image uses an
+exponent from 0 through 31 and a mantissa from 1 through 63. The macro only
+packs fields; it does not validate the resulting base, span, limit, or address
+canonicality.
+
+\texttt{\_\_BEDROCK\_SEGMENT\_IMAGE\_FOR\_BASE(base,...)} accepts a virtual
+byte address and converts it to the base-page field. The base must be aligned
+to 4096 bytes; the macro discards the low 12 bits and does not adjust a later
+offset to compensate for a misaligned base.
+\texttt{\_\_BEDROCK\_SEGMENT\_DISABLED} is the canonical all-zero disabled
+image. ABI-visible disabled images use that constant rather than constructing
+an image with a zero mantissa and nonzero remaining fields.
+
 \subsection{Far Pointer Builtins}
 \manualfield{Header:}{\texttt{<bedrockfarintrin.h>}}
 The four construction operations use the macro spellings
@@ -106,6 +132,13 @@ The four construction operations use the macro spellings
 \texttt{\_\_BEDROCK\_FAR\_NULL}, and
 \texttt{\_\_BEDROCK\_FAR\_PTR\_FROM\_SEGMENT}. Their pointer-type operand is
 handled by the compiler and is not a runtime C value.
+
+\texttt{\_\_BEDROCK\_FAR\_PTR\_FROM\_SEGMENT} accepts an enabled translated
+source image with nonzero mantissa and bounds-only mode clear. It adds the
+encoded base to the supplied offset and converts the image to bounds-only
+form. An already-linear address and bounds-only image instead use
+\texttt{\_\_BEDROCK\_FAR\_PTR\_INIT}; a flat address uses
+\texttt{\_\_BEDROCK\_FAR\_FLAT\_PTR\_INIT}.
 
 \manualtablecaption{Far Pointer Builtins}
 \begingroup\footnotesize

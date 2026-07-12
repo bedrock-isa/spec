@@ -13,7 +13,7 @@ only the computed effective-address point; its size suffix selects the effective
 turn the check into an access-sized byte-range check. A successful SEGLEA writes the segment result and clears V. A
 failed segment-bound check sets V, suppresses the destination-operand write, and does not raise PAGE\_FAULT. The
 failure is a completed non-faulting operation, so effective-address auto-update effects commit normally. The ISA does
-not prescribe a language pointer representation. The Bedrock C ABI uses canonical post-segment virtual addresses and
+not prescribe a language pointer representation. The Bedrock C ABI uses canonical pre-segment virtual addresses and
 restricts C-visible address contexts to disabled or bounds-only modes, with GS0-relative TLS as an explicit exception.
 
 \input{isa/tools/latex_builder/templates/fragments/address_translation_pipeline_figure.tex}

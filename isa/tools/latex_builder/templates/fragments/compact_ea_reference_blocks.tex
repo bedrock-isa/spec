@@ -92,6 +92,6 @@
 \textbf{Generation} & The EXT0 descriptor selects segment, base, index, and auto-update behavior. The compact EA escape selects only the displacement size.\\
 \textbf{Segment} & EXT0 has no implicit segment. Segment-qualified forms encode SEG(s); SP and PC indexed forms use SS and CS; default base-update forms use the operation default data segment.\\
 \textbf{Payload} & Payload order is EXT0 descriptor byte or bytes first, then the optional displacement payload selected by the compact EA escape.\\
-\textbf{Update} & Only EXT0 forms with ++ or -- update the temporary operand-evaluation image.\\
+\textbf{Update} & Only EXT0 forms with ++ or {-}{-} update the temporary operand-evaluation image.\\
 \end{tabularx}\par
 \end{manualformblock}

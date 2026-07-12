@@ -27,10 +27,10 @@ and semantics for target-specific C extensions are defined separately.
 \section{Terminology}
 These terms are specific to the C binding. ELF and address-space terms keep the meanings defined by the Bedrock ELF ABI and the architecture manual.
 \begin{description}[style=nextline,leftmargin=1.45in,labelwidth=1.35in,itemsep=3pt,topsep=3pt]
-\item[object pointer] A 64-bit post-segment virtual address that designates an object or one-past an object according to the C abstract machine.
-\item[function pointer] A 64-bit post-segment code address naming a near-call entry point. It is not a CS:PC pair, far descriptor, or runtime-private veneer descriptor.
-\item[far data pointer] A 128-bit pointer containing a canonical post-segment virtual address and a disabled or bounds-only segment image.
-\item[far function pointer] A 128-bit function pointer containing a post-segment far-call entry address and a disabled or bounds-only \texttt{CS} image.
+\item[object pointer] A 64-bit pre-segment virtual address that designates an object or one-past an object according to the C abstract machine.
+\item[function pointer] A 64-bit pre-segment code address naming a near-call entry point. It is not a CS:PC pair, far descriptor, or runtime-private veneer descriptor.
+\item[far data pointer] A 128-bit pointer containing a canonical pre-segment virtual address and a disabled or bounds-only segment image.
+\item[far function pointer] A 128-bit function pointer containing a pre-segment far-call entry address and a disabled or bounds-only \texttt{CS} image.
 \item[far-call entry] An \texttt{LCALL}/\texttt{LRET} entry point whose incoming stack contains a 16-byte \texttt{PC}:\texttt{CS} return frame.
 \item[caller-saved register] A register whose value may be overwritten by a call unless the caller saves it before the call.
 \item[callee-saved register] A register whose incoming value must be preserved by the called function if the function uses it.
@@ -99,7 +99,7 @@ every other bit clear.
 
 \paragraph{Ordinary pointers.}
 An ordinary object or function pointer is a 64-bit, 8-byte-aligned canonical
-post-segment virtual address. Object and function pointers remain distinct C
+pre-segment virtual address. Object and function pointers remain distinct C
 type categories even though their baseline representations have the same size
 and alignment.
 
@@ -147,7 +147,7 @@ two-word scalars with the common object representation shown below.
   \node[anchor=north] at (96,{\manualbitrowy - 0.16}) {offset 0};%
 }{%
   \manualbitfieldtext{segment image [127:64]}{64}%
-  \manualbitfieldtext{post-segment address [63:0]}{64}}
+  \manualbitfieldtext{pre-segment address [63:0]}{64}}
 \end{manuallistedbitdiagram}
 
 Far data pointers interpret the two words as a canonical virtual byte address
@@ -158,9 +158,10 @@ For either pointer kind, an enabled image must be validated and bounds-only,
 and a disabled image must be canonical. The null representation is the
 all-zero pair; an address-zero result canonicalizes the high word to zero.
 Translated-window images are not ABI-valid stored, passed, returned, relocated,
-or GOT-resolved far pointers. An explicitly translated source is linearized to
-its post-segment address and converted to bounds-only mode before becoming a C
-far pointer.
+or GOT-resolved far pointers. For an explicitly translated source, the segment
+base is applied to obtain a linear address and the image is converted to
+bounds-only mode. That same numeric address is then the pre-segment address word
+of the resulting C far pointer.
 
 The unsigned raw carriers
 \texttt{\_\_bedrock\_far\_uintptr\_t} and
@@ -235,7 +236,7 @@ far-data window. A caller may not rely on its value across either a near or far
 call.
 
 \subsection{Far Data Access Window}
-The low word of a far data pointer is already a post-segment address. Before a
+The low word of a far data pointer is a pre-segment address. Before a
 dependent access, generated code establishes \texttt{GS4} from the high
 segment-image word and uses the low word through a \texttt{GS4}-qualified
 effective address. A call or any operation that may clobber \texttt{GS4}
@@ -247,7 +248,7 @@ access; bounds failure raises \texttt{PAGE\_FAULT}, and page translation
 occurs after segment pre-translation.
 
 \subsection{Ordinary C Address-Space Invariants}
-Ordinary object and function pointers are canonical post-segment virtual
+Ordinary object and function pointers are canonical pre-segment virtual
 addresses. Conforming C execution maintains all of the following invariants:
 
 \begin{itemize}
@@ -261,7 +262,7 @@ dereferenced through an ordinary object pointer, including materialized stack
 and TLS addresses.
 \item \texttt{CS} permits near-call reachability for every ordinary function
 entry in the active linkage domain, and \texttt{SS} covers the active stack.
-\item Post-segment virtual address zero is not assigned to a C object or
+\item Pre-segment virtual address zero is not assigned to a C object or
 function entry.
 \end{itemize}
 
@@ -312,7 +313,7 @@ Each subsequent stack argument occupies the next 16-byte slot.
 \end{manuallistedstackframediagram}
 
 \subsection{Far Calls and Returns}
-A far function pointer supplies a post-segment code address and a canonical
+A far function pointer supplies a pre-segment code address and a canonical
 disabled or bounds-only \texttt{CS} image. Direct calls to far-native entries
 and indirect calls through far function pointers use \texttt{LCALL}; the
 callee returns with \texttt{LRET}. Argument classification, floating-point
@@ -414,7 +415,7 @@ The general and floating-point classes exhaust independently. Exhausting
 \texttt{R0}--\texttt{R7} does not prevent a later FLOAT argument from using an
 available floating-point register, and the converse also holds.
 
-For a far pointer, the low even register contains the post-segment address and
+For a far pointer, the low even register contains the pre-segment address and
 the high odd register contains the segment image. The available pairs are
 \texttt{R1:R0}, \texttt{R3:R2}, \texttt{R5:R4}, and
 \texttt{R7:R6}. A stack-assigned or unnamed variadic far pointer occupies one
@@ -434,7 +435,7 @@ callee stores the result in that buffer and returns the same address in
 \texttt{R0}.
 
 A far data or function pointer result uses \texttt{R1:R0}, with its
-post-segment address in \texttt{R0} and segment image in \texttt{R1}.
+pre-segment address in \texttt{R0} and segment image in \texttt{R1}.
 
 \manualtablecaption{C Return Register Quick Reference}
 \begingroup\footnotesize
@@ -536,7 +537,7 @@ Logical shift right & \texttt{\_\allowbreak{}\_\allowbreak{}lshrti3}\\
 \endgroup
 
 \subsection{Pointers and External Objects}
-A C function pointer is a 64-bit post-segment near-call address. Code and data
+A C function pointer is a 64-bit pre-segment near-call address. Code and data
 pointers have the same size and alignment, but remain distinct C type
 categories; neither representation creates an interchangeable code/data
 address space.
@@ -907,7 +908,7 @@ Ordinary C code reaches SYSCALL only through OS ABI wrappers or target-specific 
 \endhead
 owner & OS ABI\\
 selectable modes & disabled or bounds-only for C-visible CS, DS, and SS\\
-required invariants & post-segment pointer identity, ordinary-pointer DS coverage, near-call CS reachability, active-stack SS coverage, and GS0 TLS semantics\\
+required invariants & pre-segment pointer identity, ordinary-pointer DS coverage, near-call CS reachability, active-stack SS coverage, and GS0 TLS semantics\\
 loader policy & the OS ABI defines initial images, executable and shared-object placement, dynamic-loading constraints, and any permitted bounds changes\\
 \bottomrule
 \end{longtable}

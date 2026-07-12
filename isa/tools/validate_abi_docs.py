@@ -21,6 +21,13 @@ NON_ABI_DOCUMENTS = (
 )
 HEADER_ROOT = ROOT / "isa" / "c" / "include"
 CALL_CASES = ROOT / "isa" / "abi" / "calling_convention_cases.json"
+POINTER_ADDRESS_DOCUMENTS = (
+    ROOT / "isa" / "abi" / "bedrock-elf-abi.tex",
+    ROOT / "isa" / "abi" / "bedrock-c-abi.tex",
+    ROOT / "isa" / "c" / "bedrock-c-far-extensions.tex",
+    ROOT / "isa" / "tools" / "latex_builder" / "templates" / "terminology.tex",
+    ROOT / "isa" / "tools" / "latex_builder" / "templates" / "memory_address_translation.tex",
+)
 
 
 def normalize_tex(text: str) -> str:
@@ -107,6 +114,16 @@ def validate_target_intrinsics() -> None:
         "typedef unsigned __int128 __bedrock_far_func_uintptr_t;",
     ):
         require(declaration in far, f"bedrockfarintrin.h is missing {declaration!r}")
+    for macro in (
+        "__BEDROCK_SEGMENT_IMAGE",
+        "__BEDROCK_SEGMENT_IMAGE_FOR_BASE",
+        "__BEDROCK_SEGMENT_DISABLED",
+    ):
+        require(f"#define {macro}" in far, f"bedrockfarintrin.h is missing {macro}")
+        require(
+            macro in normalize_tex(source),
+            f"{path}: does not document {macro}",
+        )
     for name in (
         "bedrockfarintrin.h", "bedrockcoreintrin.h", "bedrockmemoryintrin.h",
         "bedrockintegerintrin.h", "bedrockfpuintrin.h",
@@ -255,6 +272,17 @@ def validate_document_boundaries() -> None:
         )
 
 
+def validate_pointer_address_stage() -> None:
+    """Keep ABI-visible pointer words on the input side of segment processing."""
+    for path in POINTER_ADDRESS_DOCUMENTS:
+        text = path.read_text(encoding="utf-8")
+        require(
+            "post-segment" not in text,
+            f"{path}: ABI-visible pointers are pre-segment addresses; "
+            "call the segment result a linear address",
+        )
+
+
 def validate_calling_convention_model() -> None:
     documented_cases = abi_call_model.validate_cases(CALL_CASES)
     c_abi_path = ROOT / "isa" / "abi" / "bedrock-c-abi.tex"
@@ -288,6 +316,7 @@ def main() -> int:
     validate_relocations()
     validate_target_intrinsics()
     validate_document_boundaries()
+    validate_pointer_address_stage()
     validate_calling_convention_model()
     validate_codegen_examples()
     print("Document validation passed")

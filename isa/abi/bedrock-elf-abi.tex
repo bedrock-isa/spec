@@ -26,14 +26,14 @@ These terms are used by the Bedrock ELF ABI. ISA-level address, register, and ef
 \begin{description}[style=nextline,leftmargin=1.45in,labelwidth=1.35in,itemsep=3pt,topsep=3pt]
 \item[ELF ABI] The ELF, relocation, dynamic-linking, TLS, and code-model contract that is shared by language bindings and operating-system profiles.
 \item[platform/runtime environment ABI] The lower-layer execution-environment contract that defines process entry, system-call transitions, thread and TLS setup, loader handoff, signal or exception delivery, and platform segment policy.
-\item[pre-segment virtual address] The address value used by ELF symbols, relocations, ordinary function addresses, and ordinary data pointers before segment pre-translation. It is numerically identical to the post-segment virtual address in the disabled and bounds-only contexts required by the Bedrock C ABI.
+\item[pre-segment virtual address] The address value used by ELF symbols, relocations, ordinary function addresses, and ordinary data pointers before segment pre-translation. It is numerically identical to the resulting linear address in the disabled and bounds-only contexts required by the Bedrock C ABI.
 \item[load base] The runtime address bias applied to a loaded ET\_DYN object before its symbol values and relative relocations are interpreted.
 \item[ABI-visible linkage domain] The region in which ordinary ELF code addresses are near-call entry points and do not carry an explicit CS value.
 \item[near-call entry address] A pre-segment code address that can be reached with ordinary CALL and returned from with ordinary RET inside the current linkage domain.
 \item[veneer] A near-call entry point supplied by a linker, loader, runtime, or OS ABI to hide a more complex transfer sequence from ordinary ABI callers.
 \item[code model] A set of placement and relocation assumptions used by code generation to choose direct displacement forms, GOT/PLT forms, or full-width address materialization.
-\item[segment domain] A linker-visible data-address domain whose symbols share one final bounds-only segment register image and use canonical post-segment virtual addresses as their ABI-visible address values.
-\item[far pointer object] A 16-byte object containing a 64-bit canonical post-segment virtual address at byte zero and a 64-bit canonical disabled or bounds-only segment image at byte eight. Data and far function pointers use the same object layout but distinct language types.
+\item[segment domain] A linker-visible data-address domain whose symbols share one final bounds-only segment register image and use canonical pre-segment virtual addresses as their ABI-visible address values.
+\item[far pointer object] A 16-byte object containing a 64-bit canonical pre-segment virtual address at byte zero and a 64-bit canonical disabled or bounds-only segment image at byte eight. Data and far function pointers use the same object layout but distinct language types.
 \end{description}
 
 \clearpage
@@ -128,7 +128,7 @@ descriptors.
 \subsection{Bedrock Object Attributes}
 \texttt{Tag\_Bedrock\_Far\_Model} is a 32-bit architecture attribute. An
 absent attribute has value zero and declares no far-address contract. Value
-one selects the canonical far representation: a post-segment address paired
+one selects the canonical far representation: a pre-segment address paired
 with a disabled or bounds-only segment image. Section~6 defines compatibility
 and rejection rules for this value.
 
@@ -380,7 +380,7 @@ the two words atomically before publication.
 \subsection{Dynamic Link Rules}
 \begin{itemize}
 \item A final ET DYN link emits one PT BEDROCK SEGDOM header per output domain and converts observable far addresses to loader-visible far dynamic relocations or .got.far entries.
-\item A local noninterposable far address applies R BEDROCK RELATIVE to its post-segment address word to add ET DYN load bias and R BEDROCK FAR DOMAIN64 to its bounds-only image word.
+\item A local noninterposable far address applies R BEDROCK RELATIVE to its pre-segment address word to add ET DYN load bias and R BEDROCK FAR DOMAIN64 to its bounds-only image word.
 \item Interposable far data symbols use R BEDROCK FAR GLOB DAT; interposable far function symbols use R BEDROCK FAR JUMP SLOT.
 \item The loader constructs every domain image after load bias is known, applies complete far relocations, then publishes .got.far to application threads.
 \item The loader validates that every published far pair has a canonical disabled or bounds-only image; enabled addresses lie within bounds except for a relocation explicitly recognized as exactly one-past a complete object.
@@ -401,7 +401,7 @@ Every static relocation starts with the canonical expression \texttt{S+A},
 where the symbol and explicit RELA addend are interpreted in the address space
 of the relocation family. Ordinary relocations use ABI symbol addresses, TLS
 relocations use GS0-relative offsets, and far relocations combine a canonical
-post-segment address with a validated bounds-only domain image.
+pre-segment address with a validated bounds-only domain image.
 
 Absolute and section-relative results are permitted when the selected
 relocation type defines them. PC-relative address materialization subtracts
@@ -430,7 +430,7 @@ relocation table is a link error; the linker must not truncate it.
 \texttt{TLS(S)} & Byte offset of TLS symbol S from the ABI TLS base in GS0.\\
 \texttt{TLSDESC(S)} & Runtime byte address of the TLSDESC entry allocated for TLS symbol S.\\
 \texttt{SEG(S)} & Final validated bounds-only segment register image of the segment domain containing non-TLS data or far function symbol S.\\
-\texttt{FARADDR(S)} & Canonical post-segment virtual address S of a non-TLS data symbol or far-call entry in its bounds-only domain.\\
+\texttt{FARADDR(S)} & Canonical pre-segment virtual address S of a non-TLS data symbol or far-call entry in its bounds-only domain.\\
 \texttt{SEGDOM(D)} & Final validated bounds-only segment register image of image-local segment-domain identifier D.\\
 \texttt{FAR(S)} & The ordered 128-bit pair whose low word is FARADDR(S) and whose high word is the canonical bounds-only SEG(S).\\
 \texttt{FarResolver(X)} & The 128-bit far function pair returned in R1:R0 by calling the resolver at near-call address X.\\
@@ -578,7 +578,7 @@ loads the final pair from \texttt{.got.far} and transfers with \texttt{LCALL}.
 \textbf{Offset} & \textbf{Field} & \textbf{Type} & \textbf{Meaning}\\
 \midrule
 \endhead
-\texttt{+0x00} & \texttt{address} & \texttt{u64} & canonical post-segment data address or far-call entry address\\
+\texttt{+0x00} & \texttt{address} & \texttt{u64} & canonical pre-segment data address or far-call entry address\\
 \texttt{+0x08} & \texttt{segment\_\allowbreak{}image} & \texttt{u64} & canonical disabled or bounds-only data image or far-call CS image\\
 \bottomrule
 \end{longtable}
@@ -589,7 +589,7 @@ loads the final pair from \texttt{.got.far} and transfers with \texttt{LCALL}.
 \item A far function GOT entry contains the canonical STT BEDROCK FAR FUNC address and is called with LCALL.
 \item No lazy far PLT state exists; a far-call resolver never consumes or overwrites C argument registers at the call site.
 \item Interposition resolves and writes the complete 16-byte pair before loader publication; the ABI requires no 16-byte atomic store.
-\item STT BEDROCK FAR IFUNC resolvers are called with the normal near C ABI and return a post-segment code address in R0 and a canonical disabled or bounds-only CS image in R1.
+\item STT BEDROCK FAR IFUNC resolvers are called with the normal near C ABI and return a pre-segment code address in R0 and a canonical disabled or bounds-only CS image in R1.
 \item The loader rejects a far resolver result whose image is noncanonical or whose non-null function address lies outside an enabled image's bounds.
 \item Published .got.far entries are immutable; post-publication rebinding or mutation is forbidden.
 \end{itemize}
@@ -620,7 +620,7 @@ TLSDESC & \begin{tabular}[t]{@{}l@{}}\texttt{R\_BEDROCK\_TLSDESC\_GOTPCREL32S}\\
 
 Far TLS relocations and far TLS static initializers are forbidden. Taking the
 address of a TLS object linearizes its GS0-relative address at runtime and
-returns an ordinary post-segment pointer to that thread instance. Explicit far
+returns an ordinary pre-segment pointer to that thread instance. Explicit far
 conversion operates on that already materialized pointer and retains neither a
 GS0 image nor a TLS offset. Copying the pointer to another thread does not
 retarget it; the pointer becomes invalid when its originating thread terminates

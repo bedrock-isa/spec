@@ -27,12 +27,12 @@ Intrinsics document.
 
 \section{Terminology}
 \begin{description}[style=nextline,leftmargin=1.75in,labelwidth=1.65in,itemsep=3pt,topsep=3pt]
-\item[far data pointer] A C pointer kind carrying a post-segment virtual address
+\item[far data pointer] A C pointer kind carrying a pre-segment virtual address
 and the segment metadata whose ABI representation is defined by the Bedrock C
 ABI.
 \item[far function pointer] A C function-pointer kind that selects a far call
 and return convention defined by the Bedrock C ABI.
-\item[canonical address] The post-segment virtual address that establishes C
+\item[canonical address] The pre-segment virtual address that establishes C
 pointer identity independently of bounds metadata.
 \item[cross-segment alias barrier] A compiler memory effect that reconciles
 ordinary near and segmented alias domains. It is not a hardware fence.
@@ -122,7 +122,7 @@ a zero canonical address to null. A matching-carrier round trip compares equal
 and retains its bounds context.
 
 The builtin \texttt{\_\_builtin\_bedrock\_far\_address(pointer)} returns the
-canonical 64-bit post-segment address without validation or faulting.
+canonical 64-bit pre-segment address without validation or faulting.
 Conversion through an ordinary 64-bit carrier is rejected unless an explicitly
 implementation-defined truncation operation is requested.
 
@@ -130,6 +130,17 @@ implementation-defined truncation operation is requested.
 The compiler-owned header \texttt{<bedrockintrin.h>} exposes typed macros over
 the matching target builtins. These operations construct values; they do not
 expose a C structure representation.
+
+The included \texttt{<bedrockfarintrin.h>} also exposes
+\texttt{\_\_BEDROCK\_SEGMENT\_IMAGE},
+\texttt{\_\_BEDROCK\_SEGMENT\_IMAGE\_FOR\_BASE}, and
+\texttt{\_\_BEDROCK\_SEGMENT\_DISABLED}. These are pure 64-bit value
+expressions, not architectural segment-register operations. The first form
+packs the segment fields and normalizes the bounds-only operand to zero or one.
+The second accepts a 4096-byte-aligned virtual byte address and converts it to
+the base-page field. The disabled spelling is the canonical all-zero image.
+The Bedrock Target Intrinsics document defines the complete signatures,
+field-width, alignment, and validation contract.
 
 \manualtablecaption{Far Pointer Construction Interface}
 \begingroup\footnotesize
@@ -152,11 +163,15 @@ expose a C structure representation.
 \endgroup
 
 Each macro's first argument names a far-qualified object or function pointer
-type. The typed initializer accepts a post-segment address and changes a
-nonzero-mantissa image to bounds-only without adding its base. The flat form
-attaches the disabled image. The translated-source form adds base and offset,
-sets bounds-only mode, and preserves validated bounds. The null form produces
-the ABI null value.
+type. The typed initializer accepts a pre-segment address expressed in the
+resulting bounds-only segment's coordinate space and changes a nonzero-mantissa
+image to bounds-only without adding its base. The flat form attaches the
+disabled image. The translated-source form adds base and offset, uses the sum
+as the constructed pointer's pre-segment address, sets bounds-only mode, and
+preserves validated bounds. The null form produces the ABI null value.
+The translated-source form requires an enabled image with nonzero mantissa and
+bounds-only mode clear. An already-linear address paired with a bounds-only
+image uses the typed initializer instead.
 
 Construction writes no segment register, probes no bounds, walks no page
 table, and performs no memory access. Address zero canonicalizes to null. An
@@ -183,7 +198,7 @@ remain in force.
 Compiler regions with no cross-segment operation may partition near and
 segmented memory into distinct alias domains. A cross-segment operation
 reconciles the affected domains with a cross-segment alias barrier. Two
-accesses alias when their canonical post-segment byte ranges overlap and
+accesses alias when their canonical pre-segment byte ranges overlap and
 ordinary C effective-type rules permit aliasing. Segment metadata may be
 unknown at compile time, and visible far operations require no source
 annotation.
@@ -228,7 +243,7 @@ memory fence.
 
 \subsection{TLS and Lifetime Semantics}
 A C far pointer never carries TLS selector metadata. Taking the address of a
-TLS object first materializes the concrete post-segment address of the calling
+TLS object first materializes the concrete pre-segment address of the calling
 thread's instance. Explicit conversion attaches ordinary far data metadata.
 Copying the result to another thread still designates the originating instance
 while it is alive; thread exit ends that lifetime. Loader unload likewise ends
