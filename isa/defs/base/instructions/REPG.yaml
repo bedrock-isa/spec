@@ -30,7 +30,7 @@ behavior:
     bodies that write the selected counter register.
     Completed prior body instructions in a faulting iteration remain committed, later body
     instructions do not execute, and the saved repeat continuation records the selected counter,
-    condition T, repeat kind, group_start_delta, and body_bytes in FAULT_AUX. FLAGS and FFLAGS follow
+    condition T, repeat kind, group_start_delta, and body_bytes in EVENT_AUX. FLAGS and FFLAGS follow
     the rules of the last completed grouped instruction; FFLAGS from completed floating-point
     operations are accumulated by bitwise inclusive-or.
 attributes:
@@ -56,7 +56,7 @@ forms:
       - body must not write the selected counter register
       architectural_effect: identical to REPG; the machine encoding and repeat-continuation
         state do not distinguish the alias
-  repeat_state_saved_in: FAULT_AUX
+  repeat_state_saved_in: EVENT_AUX
   compact_forms:
   - operands:
     - name: counter

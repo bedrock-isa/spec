@@ -1,32 +1,18 @@
 \clearpage
 \section{Supervisor / Privileged Programming Model}
 
-The privileged programming model defines how execution moves between user mode and supervisor mode, which saved
-state is used for return, and which control state is directly accessible.
+The privileged programming model has two independent transitions into supervisor execution. SYSCALL is an explicit
+supervisor call with its own entry state, working stack, and user-return bank. Architectural event delivery handles
+exceptions, maskable interrupts, and NMI through the common EPC/ECS/EDS entry. These paths do not share a return
+instruction or a memory-resident frame.
 
-Supervisor entry changes the execution context at a single architectural commit point. If validation of the entry
-target, saved state, or control-state write fails, the partial state transition is not exposed.
+Supervisor entry changes execution context at a single architectural commit point. Invalid entry targets, segment
+images, saved state, or control-state writes raise the defined exception without exposing a partial transition.
 
-\subsection{Privileged Model Rules}
-Privileged state is visible through STATUS, segment registers, control registers, interrupt state, and
-address-translation controls. User-mode instructions may read or write only the state explicitly marked
-unprivileged. Privileged writes validate reserved bits, selector values, and control-state consistency before
-commit.
-
-STATUS.PM is zero in user mode and one in supervisor mode. SYSCALL, trap, interrupt, and exception entry set it to
-one at the entry commit point. SYSRET and IRET restore a saved STATUS image only after validating that the requested
-return state is architecturally permitted. SYSRET is reserved for the SYSCALL frame shape; interrupt, trap, and
-exception frames return through IRET.
-
-SYSCALL saves FRAME\_CONTROL, SS:SP, CS:PC, and DS before loading the supervisor target from SPC, SCS, and SDS.
-RDCR, WRCR, translation-state changes, interrupt-control changes, and page-table context switches require supervisor
-privilege unless an instruction explicitly says otherwise. Delivery of a reserved CPU-owned vector is invalid and
-enters the double-fault path.
-
-\subsection{Privilege State}
-STATUS.PM selects the current privilege level. In user mode, current-domain and user-domain memory accesses are
-identical. In supervisor mode, ordinary memory operands use current-domain access. Checked user-domain access is
-expressed only by the supervisor-only \texttt{MOVUC}, \texttt{MOVCU}, and \texttt{MOVUU} instructions.
+\subsection{Privilege and Transition State}
+STATUS.PM is zero in user mode and one in supervisor mode. STATUS.EA records only architectural event processing;
+SYSCALL does not set it. STATUS.EA is hardware managed, and WRSTATUS must preserve the current EA value. An attempted
+change raises INVALID\_CONTROL\_STATE without changing STATUS.
 
 \begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{0.45in}>{\raggedright\arraybackslash}p{3.90in}@{}}
 \toprule
@@ -37,39 +23,55 @@ STATUS.PM & 1 & supervisor mode\\
 STATUS.IE & 0/1 & maskable interrupt enable\\
 STATUS.TF & 0/1 & single-step trace control\\
 STATUS.RF & 0/1 & resume flag for exception restart\\
-STATUS.NI & 0/1 & nested-interrupt inhibit\\
-STATUS.IN & 0/1 & inside interrupt or supervisor entry\\
+STATUS.NI & 0/1 & nested-NMI inhibit\\
+STATUS.EA & 0/1 & outside/inside architectural event processing\\
 current memory domain & -- & default domain for ordinary memory operands\\
 checked user access & -- & MOVUC, MOVCU, and MOVUU select user-domain memory access\\
 \bottomrule
 \end{manualtabular}
 \manualunlistedtablecaption{Privilege State and Access Domains}
 
-\subsection{SYSCALL and SYSRET}
-SYSCALL is an explicit supervisor-entry path rather than an IVT-vector event. It saves the user control state,
-loads the supervisor entry state from SPC/SCS/SDS, and sets STATUS.PM to supervisor mode.
+In supervisor mode, ordinary memory operands use current-domain access. Checked user-domain access is expressed only
+by the supervisor-only MOVUC, MOVCU, and MOVUU instructions. RDCR, WRCR, translation-state changes, event-control
+changes, and page-table context switches require supervisor privilege unless an instruction explicitly says
+otherwise.
 
-SYSRET is the matching return instruction for the syscall frame shape. It restores the saved user execution
-context only after the saved control state has passed return validation. CS and PC changes are a single
-architectural commit point for long control-transfer and supervisor-entry operations.
+\subsection{Supervisor Call Entry}
+SYSCALL is valid only in user mode. It first requires URCTL.V to be clear and validates SPC, SCS, SDS, SSS, and SSP.
+SPC is an exact 16-byte-aligned entry address rather than an address that hardware rounds. SSP is a
+64-byte-aligned configured working-stack top.
 
-SYSCALL does not allocate or consume an IVT vector. Its saved frame contains FRAME\_CONTROL, SS:SP, CS:PC, and DS,
-and the entry commit sets STATUS.PM to one. SYSRET reads that exact frame, validates the saved status and segment
-state, and then restores the saved PC and execution context as one architectural transition.
+After validation, SYSCALL writes the address following the instruction to URPC, saves the user SP and CS/DS/SS
+images, and writes FLAGS and STATUS to URCTL with V set. It then loads CS=SCS, DS=SDS, SS=SSS, SP=SSP, and PC=SPC
+and sets STATUS.PM. The entry does not set STATUS.EA and does not change IE, TF, RF, or NI. The complete bank update
+and execution-context transition are one commit.
+
+SYSCALL performs no memory access and creates no stack frame. SSP is not modified by entry or return. Kernel code may
+move SP freely and may execute SYSRET from any supervisor stack position because the return context resides entirely
+in the UR control-register bank. An invalid entry configuration, including an already valid bank, raises
+INVALID\_CONTROL\_STATE at the SYSCALL instruction boundary. Because entry writes no frame memory, it cannot raise a
+stack-storage PAGE\_FAULT.
+
+\subsection{User Return and Context Ownership}
+SYSRET is the only matching return instruction. It is legal only while STATUS.EA is clear and requires URCTL.V to be
+set. It validates the saved user STATUS, all three segment images, PC, and SP before changing architectural state.
+The saved user STATUS must have PM and EA clear and valid reserved bits. A successful return restores FLAGS, STATUS,
+CS, DS, SS, SP, and PC and clears URCTL.V as one commit. A validation failure raises
+INVALID\_CONTROL\_STATE through the event path without modifying the bank or partially returning.
+
+An event taken during a system call switches to ISS:ISP, FSS:FSP, or DSS:DSP according to its event kind. ERET
+returns to the interrupted syscall context and leaves the UR bank unchanged; SYSRET can then return to user mode.
+Supervisor software uses CALL for internal calls and does not recursively execute SYSCALL.
+
+The UR bank is per-logical-processor architectural state. If a system call blocks or is preempted and another thread
+may run on that logical processor, system software saves and restores the bank with the thread's supervisor context.
+Virtualization includes it in guest supervisor state. Signal delivery, system-call restart, tracing, and initial
+user-process entry may inspect or establish the bank through WRCR, subject to the same validation rules.
 
 @SUPERVISOR_CONTROL_FLOW_TABLE@
 
-\subsection{Interrupt and Control-State Rules}
-Interrupt delivery saves the interrupted PC, CS, FLAGS, and STATUS state needed for precise return. The entry
-path validates the target vector and control state before making the supervisor state visible.
-
-Writes to control state that would create an invalid translation, privilege, or interrupt configuration raise the
-architecturally named fault without committing a partial control-register update.
-
-The SN field in each IVT entry selects the supervisor stack set used to construct the entry frame; NMI and
-double-fault delivery use the same mechanism. When the hidden current interrupt depth reaches ICR.MAX\_IDEPTH,
-maskable interrupts are implicitly masked. Reserved control and status bits must validate before commit, and an
-invalid write raises INVALID\_CONTROL\_STATE. User-readable control state is exposed through dedicated gated
-instructions rather than direct control-register access.
-
-\input{isa/tools/latex_builder/templates/fragments/supervisor_stack_sets.tex}
+\subsection{Architectural Event Boundary}
+Exceptions, maskable interrupts, and NMI use the event-entry state and an architectural event frame. Event delivery
+sets STATUS.EA; ERET is its only matching return. ERET is illegal with EA clear, and SYSRET is illegal with EA set.
+This check occurs before either instruction reads its return state. The full delivery, nesting, frame, and return
+rules are specified in the Architectural Event Processing Model section.

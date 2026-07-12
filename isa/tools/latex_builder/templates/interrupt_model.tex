@@ -1,105 +1,138 @@
 \clearpage
-\section{Exception Processing Reference}
+\section{Architectural Event Processing Model}
 
-Exception processing covers synchronous restartable CPU exceptions, traps, NMIs, external interrupts, and the
-supervisor-entry state needed to return from them.
+An \emph{architectural event} is a synchronous or asynchronous condition delivered through the common event-entry
+mechanism. Synchronous exceptions are faults or traps. Asynchronous events are maskable interrupts or NMIs. A fault
+and a trap are exception subtypes, not peers of exception. SYSCALL is not an architectural event: it is an explicit
+call into the supervisor ABI and uses the separate supervisor-call state described in the privileged programming
+model.
 
-The processor records a restartable context for CPU exceptions. The operating system decides whether that
-context is retried, emulated, reported, or terminated.
+Every exception, maskable interrupt, and NMI transfers to the exact program counter in EPC after loading ECS and EDS.
+Hardware supplies an event code and a frame whose payload layout is fixed by the event source. Software begins at one
+common entry point and dispatches by the event code. There is no architectural vector table or per-event hardware
+handler address.
 
-\subsection{Interrupt Vector Table}
-The interrupt vector table occupies one 4096-byte page selected by ICR.ivt\_page. It contains 256 fixed-size
-entries, each 16 bytes. The vector number selects the entry at ICR.ivt\_page * 4096 + vector * 16.
+\subsection{Event Code and Sources}
+Every delivered event carries a 32-bit code. The high byte is the event class and the low 24 bits are an ID in that
+class's namespace.
 
-Bytes 0 through 7 contain the 64-bit interrupt handler address. Byte 8 is the entry control byte. HP is the
-handler-present bit; if it is clear, delivery immediately becomes DOUBLE\_FAULT. SN selects the supervisor stack
-set used for the entry frame. Reserved IVT bits must be written as zero.
+\input{isa/tools/latex_builder/templates/fragments/event_code_reference.tex}
 
-\input{isa/tools/latex_builder/templates/fragments/ivt_entry_diagrams.tex}
+Exception ID 0x01, which was formerly used for NMI, is reserved. Other unassigned base-profile exception IDs are
+also reserved. External interrupt IDs do not share a namespace with exception IDs. Interrupt-controller routing,
+native-ID mapping, ownership, acknowledgement, trigger mode, masking, and end-of-interrupt signaling belong to the
+platform ABI. ERET never performs an implicit EOI. An interrupt ID unknown to software still reaches the common entry;
+the platform dispatcher applies its unhandled or spurious-interrupt policy.
 
-\input{isa/tools/latex_builder/templates/fragments/ivt_entry_table.tex}
+A restartable fault saves the faulting instruction or its architecturally defined restart point. A trap saves the
+following instruction. An interrupt or NMI saves the next instruction that would otherwise execute. An event taken
+during repeat execution saves the active repeat continuation PC and records the remaining repeat state in
+EVENT\_AUX.
 
+\subsection{Entry Admission and Event Depth}
+The event-entry state is usable only while ECR.V is set. A maskable interrupt is admitted only when ECR.V,
+STATUS.IE, and the depth limit all permit it: the current event depth must be less than ECR.MAX\_EDEPTH. Otherwise the
+interrupt remains pending at the interrupt controller. A synchronous exception that requires delivery while ECR.V is
+clear cannot be deferred and enters SHUTDOWN.
+
+Event depth is zero outside event handling. A successful entry saves the old depth in the frame and increments the
+hidden current depth. ECR.MAX\_EDEPTH equal to zero prevents maskable interrupt admission; values 1 through 15 limit
+only maskable interrupts and do not suppress synchronous exceptions or NMI. Depth 15 is representable but terminal:
+any further event requirement enters SHUTDOWN. At depth 14 or less, a delivery failure can still create a
+DOUBLE\_FAULT frame; at depth 15 there is no representable child frame.
+
+\subsection{Supervisor Event Stacks and Nesting}
 \input{isa/tools/latex_builder/templates/fragments/supervisor_stack_sets.tex}
 
-\subsection{Vector Assignment}
-Vectors 0x00..0x1F are owned by the CPU architecture. Vectors 0x20..0x3F are reserved for future architectural
-use. Operating systems, platforms, and devices may assign vectors 0x40..0xFF.
+The double-fault pair remains exclusive to DOUBLE\_FAULT and event-delivery failure. An ordinary exception, NMI, or
+machine check therefore cannot consume the final recovery stack. Current event stack level is meaningful only while
+STATUS.EA is set. ERET validates and restores both saved depth and saved stack level; software cannot use an edited
+frame to manufacture an impossible nesting transition.
 
-SYSCALL does not allocate or consume an IVT vector. It enters supervisor mode through the SPC/SCS/SDS
-supervisor-entry path.
+\subsection{Event Entry State}
+Before making an event visible, hardware validates EPC, ECS, EDS, the selected stack state, and the complete frame
+storage range. It then stores the frame, loads the entry segments and PC, sets STATUS.PM and STATUS.EA, and clears
+STATUS.IE, STATUS.TF, and STATUS.RF as one architectural commit. R0 through R15 and GS0 through GS4 are unchanged;
+the common entry code preserves whatever its software ABI requires.
 
-\input{isa/tools/latex_builder/templates/fragments/vector_range_table.tex}
+NMI entry additionally sets STATUS.NI. Other event classes preserve NI. A further NMI observed while NI is set is
+coalesced into ECR.NMI\_P rather than recursively delivered. ECR.NMI\_P is hardware managed, so WRCR ignores the
+supplied value for that bit. When ERET successfully restores NI to zero, a pending NMI is delivered before the next
+instruction boundary.
 
-\input{isa/tools/latex_builder/templates/fragments/cpu_vector_table.tex}
-
-\subsection{Entry and Return Rules}
-Exception entry is precise at the architectural instruction boundary or at the instruction-defined restart point.
-Completed earlier instructions remain committed; the faulting operation reports enough state for restart or
-emulation.
-
-IRET restores the saved execution context after validating the saved segment and status fields. Invalid saved
-state raises the appropriate control-state exception instead of partially returning.
-
-The frame save and the transition to supervisor mode are atomic with respect to architectural visibility. Entry sets
-STATUS.PM to one at its commit point, and return restores the saved STATUS image only after validation. SYSRET accepts
-only a syscall frame; IRET handles interrupt, trap, and exception frames.
-
-An IVT entry with HP clear immediately redirects delivery to DOUBLE\_FAULT. Attempting to deliver a reserved
-CPU-owned vector has the same result. An invalid instruction length is reported as ILLEGAL\_INSTRUCTION rather than
-as a separate length fault, while segment-bound and canonical-address failures use PAGE\_FAULT.
+STATUS.EA is hardware-managed transition state. WRSTATUS must preserve its current value. An attempt to change EA
+raises INVALID\_CONTROL\_STATE without modifying STATUS. ERET is legal only while EA is one; SYSRET is legal only
+while EA is zero. A mismatch raises INVALID\_CONTROL\_STATE before ERET reads an event frame or SYSRET reads the
+user-return bank.
 
 @EXCEPTION_INSTRUCTION_TABLE@
 
 \clearpage
-\subsection{Supervisor Entry Stack Frame}
-The fixed supervisor-entry frame is 64 bytes: eight 64-bit slots. FRAME\_CONTROL.frame\_size records the total
-frame size in 8-byte units, so the base frame records 8 units before any optional payload.
-
-Offsets are measured from the saved stack pointer. Optional payload, when present, follows the fixed frame in
-whole 64-byte blocks.
+\subsection{Architectural Event Frame}
+Every event frame begins with exactly eight 64-bit slots. EVENT\_INFO contains the event code in bits 31 through 0;
+its upper half is zero. FRAME\_CONTROL contains only frame shape, saved nesting state, saved FLAGS, and saved STATUS.
+Event classification is carried exclusively by EVENT\_INFO.
 
 \input{isa/tools/latex_builder/templates/fragments/supervisor_stack_frame_diagram.tex}
 
 \input{isa/tools/latex_builder/templates/fragments/stack_frame_table.tex}
 
-\texttt{FRAME\_CONTROL.frame\_type} documents the stack frame format. Payload, if any, is appended after the
-fixed frame in whole 64-byte blocks. \texttt{FRAME\_CONTROL.frame\_size} gives the total number of 8-byte slots,
-and the frame type code determines how software interprets the allocated payload blocks. IRET does not validate
-the frame type.
-
-\input{isa/tools/latex_builder/templates/fragments/frame_type_table.tex}
-
-\texttt{FRAME\_CONTROL} packs the saved FLAGS image and STATUS image with the frame metadata. The fixed frame
-also reserves two 64-bit extension slots for future architected base-frame state.
-
-\input{isa/tools/latex_builder/templates/fragments/payload_slot_table.tex}
-
 \input{isa/tools/latex_builder/templates/fragments/frame_control_diagram.tex}
 
 \input{isa/tools/latex_builder/templates/fragments/frame_control_table.tex}
 
+ERET first validates the frame shape and nesting metadata. BASIC requires frame\_size 8, ERROR requires 10, and
+PAGE\_FAULT and AUXILIARY require 12. It also requires saved\_edepth plus one to equal the current depth and requires
+saved\_esl not to exceed the current stack level. If the saved STATUS image has EA clear, both saved values must be
+zero. Saved STATUS.PM determines whether the interrupted context was user or supervisor mode; the frame contains no
+duplicate from-user flag.
+
+Only after those checks does ERET validate the saved control state, segment images, PC, SP, depth, and stack level.
+On success it restores FLAGS, STATUS, CS, DS, SS, SP, PC, event depth, and stack level as one commit. ERET does not
+interpret EVENT\_INFO or the event-specific payload, and it does not modify the SYSCALL user-return bank.
+
+\subsection{Event Payloads}
+Payload starts at offset +0x40. Hardware allocates only the defined payload prefix, rounds it up to a 16-byte
+boundary, and zeros the padding. The frame-size unit remains one 8-byte slot.
+
+\input{isa/tools/latex_builder/templates/fragments/frame_type_table.tex}
+
+\input{isa/tools/latex_builder/templates/fragments/payload_slot_table.tex}
+
+ERROR\_CODE is defined separately by each exception and has zero in every unassigned bit. PAGE\_FAULT extends that
+slot with effective-address and linear-address context. AUXILIARY includes all four named slots and permits
+EVENT\_AUX to describe machine, bus, or saved repeat state without implying that every use is a fault.
+
 \Needspace{6.4in}
-\subsection{Repeat Fault Continuation}
+\subsection{Repeat Continuation}
 \begin{samepage}
-When FRAME\_CONTROL.rep\_fault is set, the FAULT\_AUX payload records the active repeat context saved by an
-interrupt, exception, or fault. Handler entry clears architectural repeat state; IRET restores the saved repeat
-state together with the saved PC and status state.
+When FRAME\_CONTROL.repeat\_saved is set, EVENT\_AUX records the active repeat context. Event entry clears active
+architectural repeat state, and ERET restores it atomically with the saved PC and control state. During
+single-instruction repeat, SAVED\_PC is the repeated body boundary. For REPG, software reconstructs the group start
+from SAVED\_PC and the encoded byte-distance delta. ERET preserves the continuation unless supervisor software edits
+the frame before return.
 
-During single-instruction repeat, the saved PC is the repeated body instruction boundary. For REPG, software
-reconstructs the group start from the saved PC and the encoded byte-distance group-start delta. Returning with
-IRET preserves the continuation state unless software edits the frame before return.
+\input{isa/tools/latex_builder/templates/fragments/repeat_event_aux_diagram.tex}
 
-\input{isa/tools/latex_builder/templates/fragments/repeat_fault_aux_diagram.tex}
-
-\input{isa/tools/latex_builder/templates/fragments/repeat_fault_aux_table.tex}
+\input{isa/tools/latex_builder/templates/fragments/repeat_event_aux_table.tex}
 \end{samepage}
 
-\subsection{Interrupt Reset State}
+\subsection{Delivery Failure and Shutdown}
+Failure to validate the common entry context, establish the selected stack, or store a complete event frame is
+delivered as DOUBLE\_FAULT on DSS:DSP. Failure while DOUBLE\_FAULT is already being delivered enters SHUTDOWN.
+SHUTDOWN retires no further instructions and can be exited only by a platform reset; unlike HALT it is not resumable.
+The frame save and all architectural entry state remain atomic, so a failed attempt never exposes a partially stored
+frame or partially changed execution context.
 
+\Needspace{4.0in}
+\subsection{Event Reset and Context State}
 \input{isa/tools/latex_builder/templates/fragments/reset_state_table.tex}
 
-Cold reset initializes the processor into a supervisor-controlled state with interrupts disabled. The platform
-supplies BOOTPC and BOOTCFG, clears the remaining resettable state, and begins execution at BOOTPC. The RESET
-instruction performs a warm reset: it preserves BOOTPC and BOOTCFG, clears the remaining resettable state, and resumes
-at BOOTPC. Software must initialize segment state, translation controls, interrupt-vector state, and any enabled
-extension state before entering ordinary user execution.
+Cold and warm architectural reset clear event entry, supervisor entry, all four stack pairs, the complete user-return
+bank, event depth and stack-level state, and pending NMI state. BOOTPC and BOOTCFG retain their separately defined
+cold- and warm-reset behavior. Software initializes entry segments, exact entry PCs, and configured stack tops before
+setting ECR.V or entering user mode.
+
+ECR, entry and stack registers, hidden event depth and stack level, and the user-return bank are per-logical-processor
+state. System software and a hypervisor include the applicable state when switching supervisor contexts or virtual
+processors. Event frames are ordinary memory owned by the interrupted supervisor context.

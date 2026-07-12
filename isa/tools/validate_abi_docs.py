@@ -21,6 +21,10 @@ NON_ABI_DOCUMENTS = (
 )
 HEADER_ROOT = ROOT / "isa" / "c" / "include"
 CALL_CASES = ROOT / "isa" / "abi" / "calling_convention_cases.json"
+EVENT_MODEL = ROOT / "isa" / "tools" / "latex_builder" / "templates" / "interrupt_model.tex"
+CONTROL_REGISTER_REFERENCE = (
+    ROOT / "isa" / "tools" / "latex_builder" / "templates" / "fragments" / "control_register_reference.tex"
+)
 POINTER_ADDRESS_DOCUMENTS = (
     ROOT / "isa" / "abi" / "bedrock-elf-abi.tex",
     ROOT / "isa" / "abi" / "bedrock-c-abi.tex",
@@ -134,6 +138,100 @@ def validate_target_intrinsics() -> None:
         "bedrockstateintrin.h", "bedrockvirtintrin.h",
     ):
         require(f"#include <{name}>" in system, f"bedrocksystemintrin.h does not include {name}")
+
+
+def validate_event_model() -> None:
+    """Keep the machine-visible event-model names and selectors synchronized."""
+    instruction_list = (ROOT / "isa" / "defs" / "base" / "instructions.yaml").read_text(encoding="utf-8")
+    allocation = (ROOT / "isa" / "alloc" / "extrashort.yaml").read_text(encoding="utf-8")
+    eret_path = ROOT / "isa" / "defs" / "base" / "instructions" / "ERET.yaml"
+    require(eret_path.is_file(), f"missing ERET definition: {eret_path}")
+    require("- instructions/ERET.yaml" in instruction_list, "base instruction list does not include ERET")
+    require(
+        re.search(
+            r'id:\s*extrashort\.eret\s+bits:\s*"0000100"\s+text:\s*"ERET"',
+            allocation,
+        ) is not None,
+        "ERET must retain extrashort opcode 0000100",
+    )
+    require("mnemonic: ERET" in eret_path.read_text(encoding="utf-8"), "ERET definition has wrong mnemonic")
+
+    expected_selectors = {
+        "PTCR": 0x0000, "ASCR": 0x0001, "ECR": 0x0002,
+        "SPC": 0x0100, "SCS": 0x0101, "SDS": 0x0102,
+        "URPC": 0x0108, "URSP": 0x0109, "URCS": 0x010A,
+        "URDS": 0x010B, "URSS": 0x010C, "URCTL": 0x010D,
+        "EPC": 0x0110, "ECS": 0x0111, "EDS": 0x0112,
+        "SSS": 0x0200, "SSP": 0x0201, "ISS": 0x0210, "ISP": 0x0211,
+        "FSS": 0x0220, "FSP": 0x0221, "DSS": 0x0230, "DSP": 0x0231,
+        "BOOTPC": 0x1000, "BOOTCFG": 0x1001, "PMC": 0x1100,
+    }
+    header_path = HEADER_ROOT / "bedrocksysregintrin.h"
+    header = header_path.read_text(encoding="utf-8")
+    header_selectors = {
+        name: int(value, 16)
+        for name, value in re.findall(r"__BEDROCK_CR_([A-Z0-9]+)\s*=\s*0x([0-9A-Fa-f]+)", header)
+    }
+    require(header_selectors == expected_selectors, f"{header_path}: control-register selector set is stale")
+
+    control_reference = CONTROL_REGISTER_REFERENCE.read_text(encoding="utf-8")
+    documented_selectors = {
+        name: int(value, 16)
+        for value, name in re.findall(
+            r"\\texttt\{0x([0-9A-Fa-f]+)\}\s*&\s*\\texttt\{([A-Z0-9]+)\}",
+            control_reference,
+        )
+    }
+    require(
+        documented_selectors == expected_selectors,
+        f"{CONTROL_REGISTER_REFERENCE}: selector table does not match the public C constants",
+    )
+
+    event_model = EVENT_MODEL.read_text(encoding="utf-8")
+    for required in (
+        r"\section{Architectural Event Processing Model}",
+        "EVENT\\_INFO",
+        "ECR.MAX\\_EDEPTH",
+        "STATUS.EA",
+        "DOUBLE\\_FAULT",
+        "SHUTDOWN",
+        "saved\\_edepth",
+        "saved\\_esl",
+    ):
+        require(required in event_model, f"{EVENT_MODEL}: missing event-model invariant {required!r}")
+
+    legacy_fragments = (
+        "cpu_vector_table.tex", "ivt_entry_diagrams.tex", "ivt_entry_table.tex", "vector_range_table.tex",
+    )
+    fragment_root = EVENT_MODEL.parent / "fragments"
+    for name in legacy_fragments:
+        require(not (fragment_root / name).exists(), f"obsolete event-model fragment remains: {name}")
+
+    scan_paths = [
+        ROOT / "isa" / "defs",
+        ROOT / "isa" / "alloc",
+        ROOT / "isa" / "tools" / "latex_builder" / "templates",
+        HEADER_ROOT,
+    ]
+    legacy_patterns = {
+        "IRET": re.compile(r"\bIRET\b"),
+        "ICR": re.compile(r"\bICR\b"),
+        "numbered supervisor stack": re.compile(r"\b(?:SSS|SSP)[0-3]\b"),
+        "MAX_IDEPTH": re.compile(r"MAX[_\\]IDEPTH"),
+        "saved_idepth": re.compile(r"saved[_\\]idepth"),
+        "rep_fault": re.compile(r"rep[_\\]fault"),
+        "FAULT_AUX": re.compile(r"FAULT[_\\]AUX"),
+        "STATUS.IN": re.compile(r"STATUS\.IN"),
+        "IVT": re.compile(r"\bIVT\b"),
+    }
+    for root in scan_paths:
+        paths = [root] if root.is_file() else [path for path in root.rglob("*") if path.is_file()]
+        for path in paths:
+            if path.suffix not in {".yaml", ".tex", ".h"}:
+                continue
+            text = path.read_text(encoding="utf-8")
+            for label, pattern in legacy_patterns.items():
+                require(pattern.search(text) is None, f"{path}: obsolete event-model term remains: {label}")
 
 
 def validate_document_boundaries() -> None:
@@ -315,6 +413,7 @@ def main() -> int:
     validate_layers()
     validate_relocations()
     validate_target_intrinsics()
+    validate_event_model()
     validate_document_boundaries()
     validate_pointer_address_stage()
     validate_calling_convention_model()

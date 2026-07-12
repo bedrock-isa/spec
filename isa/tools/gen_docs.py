@@ -1191,7 +1191,7 @@ def latex_streaming_model_section(model: IsaModel) -> str:
 def latex_privileged_programming_model_section(model: IsaModel) -> str:
     supervisor_control_flow_table = latex_code_table(
         ["Instruction", "Summary"],
-        instruction_brief_rows(model, ["SYSCALL", "SYSRET", "LRET", "IRET"]),
+        instruction_brief_rows(model, ["SYSCALL", "SYSRET", "LRET", "ERET"]),
         ["0.85in", "4.55in"],
         "Supervisor Control-Flow Instructions",
         {0},
@@ -1206,9 +1206,9 @@ def latex_privileged_programming_model_section(model: IsaModel) -> str:
 def latex_exception_processing_section(model: IsaModel) -> str:
     exception_instruction_table = latex_code_table(
         ["Instruction", "Summary"],
-        instruction_brief_rows(model, ["BKPT", "IRET", "RESET"]),
+        instruction_brief_rows(model, ["BKPT", "ERET", "RESET"]),
         ["0.85in", "4.55in"],
-        "Exception Processing Instructions",
+        "Architectural Event Processing Instructions",
         {0},
         listed=False,
     )

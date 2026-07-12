@@ -10,7 +10,7 @@ The active source tree is:
 docs/isa_architectural_state_recovery_plan.md
                               architectural-state migration recovery plan
 docs/event_processing_model_design.md
-                              approved IVT-to-event-model migration target
+                              implemented architectural event-model design
 isa/defs/*.yaml              instruction semantics and architectural definitions
 isa/alloc/*.yaml             opcode allocation source of truth
 isa/tex/*.tex                shared reference-document components

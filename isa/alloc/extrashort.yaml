@@ -15,9 +15,9 @@ entries:
   - id: extrashort.lret
     bits: "0000011"
     text: "LRET"
-  - id: extrashort.iret
+  - id: extrashort.eret
     bits: "0000100"
-    text: "IRET"
+    text: "ERET"
   - id: extrashort.syscall
     bits: "0000101"
     text: "SYSCALL"

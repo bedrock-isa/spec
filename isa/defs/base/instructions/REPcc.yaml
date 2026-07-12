@@ -8,8 +8,8 @@ doc:
     zero-count annulment, and body repeatability is checked before annulment. REP is the unconditional
     spelling and uses condition T. Condition F is reserved and is not a valid encoding. While repeat
     state is active, architectural PC points at the body instruction boundary. Exceptions and
-    interrupts save repeat state in FAULT_AUX and clear architectural repeat state before entering
-    the handler; IRET restores the saved repeat state with the saved PC and status state.
+    architectural events save repeat state in EVENT_AUX and clear architectural repeat state before
+    entering the handler; ERET restores the saved repeat state with the saved PC and status state.
   instruction_family: control_flow
   instruction_class: control_flow
 behavior:
@@ -39,7 +39,7 @@ forms:
   repeatable_required:
     REP: rep
     REPcc: repcc
-  repeat_state_saved_in: FAULT_AUX
+  repeat_state_saved_in: EVENT_AUX
   operands:
   - name: cc
     type: condition

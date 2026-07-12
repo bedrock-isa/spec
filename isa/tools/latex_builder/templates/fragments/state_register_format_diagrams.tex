@@ -19,9 +19,12 @@ FLAGS and STATUS are accessed through dedicated read/write instructions. Reserve
 \manualformatfield{RF}{1}
 \manualformatfield{TF}{1}
 \manualformatfield{NI}{1}
-\manualformatfield{IN}{1}
+\manualformatfield{EA}{1}
 }
 \end{manuallistedformatdiagram}
+
+STATUS.EA is hardware-managed architectural event-active state. WRSTATUS must preserve its current value; only event
+entry and ERET change it. The remaining writable STATUS fields retain their instruction-defined validation rules.
 
 \subsection{FFLAGS and FSTATUS Registers}
 FFLAGS holds accrued IEEE-754 exception flags. FSTATUS holds the matching trap enables, rounding mode, and optional

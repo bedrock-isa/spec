@@ -263,6 +263,10 @@ remain active.
 \end{longtable}
 \endgroup
 
+The system-register header defines \texttt{\_\_bedrock\_control\_register\_t} constants for every published
+control-register selector. The constants are names for the architectural selector values; they do not weaken the
+privilege, reserved-bit, or per-register validation performed by RDCR and WRCR.
+
 \subsection{Cache-Management Builtins}
 \manualfield{Header:}{\texttt{<bedrockcacheintrin.h>}}
 All range operations evaluate the address once. A zero length is a no-op; a
@@ -359,6 +363,7 @@ an explicit \texttt{SYNCCACHE}.
 \midrule
 \endhead
 \texttt{\_\_bedrock\_segment\_register\_t} & selectors for \texttt{CS}, \texttt{DS}, \texttt{SS}, and \texttt{GS0} through \texttt{GS4}\\
+\texttt{\_\_bedrock\_control\_register\_t} & constants for the architectural RDCR and WRCR selector namespace\\
 \texttt{\_\_bedrock\_query\_result\_t} & \compilerctype{u64 value; u16 flags; u16 reserved[3]}\\
 \texttt{\_\_bedrock\_instruction\_descriptor\_t} & \compilerctype{u64 control, operand1, operand2, operand3}\\
 \bottomrule

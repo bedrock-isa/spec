@@ -58,7 +58,7 @@ T-condition spelling, and F is reserved for REPcc.
 A repeat body may not contain another repeat operation, a repeat-control instruction, or a control transfer.
 Floating-point instructions may be used with REP and REPG, but not with REPcc. While repetition is active, PC names
 the current body instruction, and the initially decoded instruction or group remains fixed. Handler entry saves
-repeat state in FAULT\_AUX and clears the active architectural repeat state; IRET restores that state atomically with
+repeat state in EVENT\_AUX and clears the active architectural repeat state; ERET restores that state atomically with
 the saved PC and status state. Single-step debugging stops after each architecturally executed iteration, whereas a
 next-instruction operation runs the complete repeat and stops after repeat state clears.
 

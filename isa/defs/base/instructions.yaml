@@ -62,7 +62,7 @@ include:
 - instructions/INVICACHE.yaml
 - instructions/INVPAGE.yaml
 - instructions/INVTLB.yaml
-- instructions/IRET.yaml
+- instructions/ERET.yaml
 - instructions/JMP.yaml
 - instructions/Jcc.yaml
 - instructions/LCALL.yaml

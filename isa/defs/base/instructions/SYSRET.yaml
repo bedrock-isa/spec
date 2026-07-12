@@ -1,9 +1,9 @@
 mnemonic: SYSRET
 doc:
   title: System Return
-  summary: Restore user control state from a syscall return frame.
-  description: Restore user control state from a syscall return frame. SYSRET is the matching return instruction
-    for SYSCALL and reads the syscall frame as written, including the saved FRAME_CONTROL state.
+  summary: Return to user mode from the user-return control-register bank.
+  description: Return to user mode from the UR control-register bank. SYSRET is the matching return
+    instruction for SYSCALL and is valid only outside architectural event processing.
   instruction_family: core_control
   instruction_class: system
 behavior:
@@ -11,9 +11,8 @@ behavior:
   output: none
   operation:
   - arch_sysret();
-  operation_text: 'SYSRET restores user control state from the syscall stack frame at SP. It restores
-    FLAGS, STATUS, CS, DS, SS, SP, and the return PC from the frame written by SYSCALL, then resumes execution
-    at the saved return PC.
+  operation_text: 'SYSRET validates the complete UR control-register bank, restores FLAGS, STATUS,
+    CS, DS, SS, SP, and PC as one commit, and clears URCTL.V after a successful return.
 
     '
 attributes:

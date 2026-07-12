@@ -3,14 +3,12 @@
 \textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
 \midrule
 \endhead
-vector & 0..7 & interrupt, exception, or trap vector number\\
-frame\_size & 8..15 & total frame size in 8-byte units\\
-saved\_idepth & 16..19 & saved interrupt nesting depth\\
-frame\_type & 20..23 & supervisor stack frame type code\\
-from\_user & 24 & entry was taken from user mode\\
-nmi\_frame & 25 & frame was created by NMI entry\\
-rep\_fault & 26 & repeat continuation state is saved in FAULT\_AUX\\
-entry\_flags & 27..31 & reserved entry flags for this base profile; must be zero unless defined\\
+frame\_size & 0..7 & total allocated frame size in 8-byte units\\
+frame\_type & 8..11 & optional payload layout code; it does not classify the event\\
+saved\_edepth & 12..15 & event depth before this entry\\
+saved\_esl & 16..17 & event stack level before this entry\\
+repeat\_saved & 18 & repeat continuation state is present in EVENT\_AUX\\
+entry\_flags & 19..31 & reserved entry flags; must be zero unless assigned by a later profile\\
 flags & 32..47 & saved FLAGS image\\
 status & 48..63 & saved STATUS image\\
 \bottomrule
