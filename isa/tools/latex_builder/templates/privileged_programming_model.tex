@@ -1,3 +1,6 @@
+\clearpage
+\section{Supervisor / Privileged Programming Model}
+
 The privileged programming model defines how execution moves between user mode and supervisor mode, which saved
 state is used for return, and which control state is directly accessible.
 
@@ -10,14 +13,37 @@ address-translation controls. User-mode instructions may read or write only the 
 unprivileged. Privileged writes validate reserved bits, selector values, and control-state consistency before
 commit.
 
-@PRIVILEGED_RULE_TABLE@
+STATUS.PM is zero in user mode and one in supervisor mode. SYSCALL, trap, interrupt, and exception entry set it to
+one at the entry commit point. SYSRET and IRET restore a saved STATUS image only after validating that the requested
+return state is architecturally permitted. SYSRET is reserved for the SYSCALL frame shape; interrupt, trap, and
+exception frames return through IRET.
+
+SYSCALL saves FRAME\_CONTROL, SS:SP, CS:PC, and DS before loading the supervisor target from SPC, SCS, and SDS.
+RDCR, WRCR, translation-state changes, interrupt-control changes, and page-table context switches require supervisor
+privilege unless an instruction explicitly says otherwise. Delivery of a reserved CPU-owned vector is invalid and
+enters the double-fault path.
 
 \subsection{Privilege State}
 STATUS.PM selects the current privilege level. In user mode, current-domain and user-domain memory accesses are
 identical. In supervisor mode, ordinary memory operands use current-domain access. Checked user-domain access is
 expressed only by the supervisor-only \texttt{MOVUC}, \texttt{MOVCU}, and \texttt{MOVUU} instructions.
 
-@PRIVILEGE_STATE_TABLE@
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{0.45in}>{\raggedright\arraybackslash}p{3.90in}@{}}
+\toprule
+\textbf{Field} & \textbf{Value} & \textbf{Meaning}\\
+\midrule
+STATUS.PM & 0 & user mode\\
+STATUS.PM & 1 & supervisor mode\\
+STATUS.IE & 0/1 & maskable interrupt enable\\
+STATUS.TF & 0/1 & single-step trace control\\
+STATUS.RF & 0/1 & resume flag for exception restart\\
+STATUS.NI & 0/1 & nested-interrupt inhibit\\
+STATUS.IN & 0/1 & inside interrupt or supervisor entry\\
+current memory domain & -- & default domain for ordinary memory operands\\
+checked user access & -- & MOVUC, MOVCU, and MOVUU select user-domain memory access\\
+\bottomrule
+\end{manualtabular}
+\manualunlistedtablecaption{Privilege State and Access Domains}
 
 \subsection{SYSCALL and SYSRET}
 SYSCALL is an explicit supervisor-entry path rather than an IVT-vector event. It saves the user control state,
@@ -27,7 +53,9 @@ SYSRET is the matching return instruction for the syscall frame shape. It restor
 context only after the saved control state has passed return validation. CS and PC changes are a single
 architectural commit point for long control-transfer and supervisor-entry operations.
 
-@SYSCALL_TABLE@
+SYSCALL does not allocate or consume an IVT vector. Its saved frame contains FRAME\_CONTROL, SS:SP, CS:PC, and DS,
+and the entry commit sets STATUS.PM to one. SYSRET reads that exact frame, validates the saved status and segment
+state, and then restores the saved PC and execution context as one architectural transition.
 
 @SUPERVISOR_CONTROL_FLOW_TABLE@
 
@@ -38,4 +66,8 @@ path validates the target vector and control state before making the supervisor 
 Writes to control state that would create an invalid translation, privilege, or interrupt configuration raise the
 architecturally named fault without committing a partial control-register update.
 
-@PRIVILEGED_EXECUTION_TABLE@
+The SN field in each IVT entry selects the supervisor stack set used to construct the entry frame; NMI and
+double-fault delivery use the same mechanism. When the hidden current interrupt depth reaches ICR.MAX\_IDEPTH,
+maskable interrupts are implicitly masked. Reserved control and status bits must validate before commit, and an
+invalid write raises INVALID\_CONTROL\_STATE. User-readable control state is exposed through dedicated gated
+instructions rather than direct control-register access.

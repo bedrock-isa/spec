@@ -1,6 +1,4 @@
 version: rewrite-draft-v1
-source: old/isa/spec
-description: Instruction definition manifest for the ISA rewrite. Opcode allocation lives in isa/alloc.
 instruction_sets:
 - name: base
   root: base

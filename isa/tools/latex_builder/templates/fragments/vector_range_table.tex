@@ -1,0 +1,18 @@
+\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{0.85in}>{\raggedright\arraybackslash}p{1.35in}>{\raggedright\arraybackslash}p{3.20in}@{}}
+\toprule
+\textbf{Range} & \textbf{Owner} & \textbf{Meaning}\\
+\midrule
+\endhead
+0x00..0x03 & CPU & assigned BASIC-frame CPU exceptions\\
+0x04 & CPU & reserved CPU vector; frame type not predefined\\
+0x05 & CPU & assigned BASIC-frame CPU trap\\
+0x06..0x07 & CPU & reserved CPU vectors; frame type not predefined\\
+0x08..0x0E & CPU & assigned ERROR/PAGE\_FAULT-frame CPU exceptions\\
+0x0F..0x17 & CPU & reserved CPU vectors; frame type not predefined\\
+0x18..0x1A & CPU & assigned AUX\_FAULT-frame CPU exceptions\\
+0x1B..0x1F & CPU & reserved CPU vectors; frame type not predefined\\
+0x20..0x3F & CPU & reserved for future architectural vectors\\
+0x40..0xFF & OS/platform/device & assignable interrupt and event vectors\\
+\bottomrule
+\end{manuallongtable}
+\manualunlistedtablecaption{Interrupt Vector Ranges}

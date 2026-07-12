@@ -1,3 +1,6 @@
+\clearpage
+\section{Programming Model}
+
 \subsection{Register Model}
 The integer programming model exposes sixteen 64-bit Rn registers, R0 through R15. Bedrock uses one
 general-purpose register class for integer values, address values, counters, selectors, and temporary data.
@@ -8,7 +11,7 @@ default; PC-relative memory forms use CS by default.
 Segment registers are separate 64-bit architectural registers. Segment-qualified EA forms select them explicitly,
 while SP and PC forms omit the segment field because their segment association is fixed.
 
-@RN_REGISTER_MODEL_FIGURE@
+\input{isa/tools/latex_builder/templates/fragments/rn_register_model_figure.tex}
 
 @GENERAL_REGISTER_TABLE@
 
@@ -19,7 +22,7 @@ through R15 register file.
 Bank-select instructions and banked integer-register control state are outside this ISA definition and are not
 accepted as instruction or control-state features.
 
-@STATE_REGISTER_FORMAT_DIAGRAMS@
+\input{isa/tools/latex_builder/templates/fragments/state_register_format_diagrams.tex}
 
 \subsection{Floating-Point Register Model}
 The floating-point extension exposes F0 through F15 as independent 64-bit registers when the floating-point
@@ -28,10 +31,20 @@ instruction group is implemented.
 Floating-point exception and mode state is held separately in FFLAGS and FSTATUS. Their precise bit assignments are
 defined by the floating-point instruction set and compatibility state.
 
-@FLOATING_POINT_REGISTER_TABLE@
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.85in}>{\raggedright\arraybackslash}p{0.75in}@{}}
+\toprule
+\textbf{Register} & \textbf{Width}\\
+\midrule
+\texttt{F0} & 64\\ \texttt{F1} & 64\\ \texttt{F2} & 64\\ \texttt{F3} & 64\\
+\texttt{F4} & 64\\ \texttt{F5} & 64\\ \texttt{F6} & 64\\ \texttt{F7} & 64\\
+\texttt{F8} & 64\\ \texttt{F9} & 64\\ \texttt{F10} & 64\\ \texttt{F11} & 64\\
+\texttt{F12} & 64\\ \texttt{F13} & 64\\ \texttt{F14} & 64\\ \texttt{F15} & 64\\
+\bottomrule
+\end{manualtabular}
+\manualtablecaption{Floating-Point Registers}
 
 \subsection{Segment Registers}
-@SEGMENT_REGISTER_FORMAT_DIAGRAM@
+\input{isa/tools/latex_builder/templates/fragments/segment_register_format_diagram.tex}
 
 @SEGMENT_REGISTER_TABLE@
 
@@ -40,7 +53,21 @@ Instructions that take an explicit segment-register operand use the three-bit SR
 
 SP-relative EA forms do not carry this field and use SS. PC-relative EA forms do not carry this field and use CS.
 
-@SEGMENT_REGISTER_OPERAND_TABLE@
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.60in}>{\raggedright\arraybackslash}p{0.50in}>{\raggedright\arraybackslash}p{4.30in}@{}}
+\toprule
+\textbf{SREG} & \textbf{Bits} & \textbf{Use}\\
+\midrule
+\texttt{CS} & \texttt{000} & code segment; instruction fetch and PC-relative default\\
+\texttt{DS} & \texttt{001} & default data segment\\
+\texttt{SS} & \texttt{010} & stack segment; fixed for SP-relative forms\\
+\texttt{GS0} & \texttt{011} & TLS context in the ELF and C ABIs\\
+\texttt{GS1} & \texttt{100} & general segment 1\\
+\texttt{GS2} & \texttt{101} & general segment 2\\
+\texttt{GS3} & \texttt{110} & general segment 3\\
+\texttt{GS4} & \texttt{111} & volatile far-data window in bedrock-c-far; otherwise target-specific\\
+\bottomrule
+\end{manualtabular}
+\manualtablecaption{Segment Register Operand Encoding}
 
 \subsection{Special Registers}
 @SPECIAL_REGISTER_TABLE@
@@ -52,4 +79,17 @@ rules in the compatibility section.
 The named control registers below define the programmer-visible control-state namespace used by translation,
 interrupts, saved supervisor state, and performance monitoring.
 
-@CONTROL_REGISTER_TABLE@
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.85in}>{\raggedright\arraybackslash}p{4.55in}@{}}
+\toprule
+\textbf{Register} & \textbf{Purpose}\\
+\midrule
+PTCR & page-table control and root\\
+ASCR & address-space control\\
+ICR & interrupt control\\
+SPC & saved program counter\\
+SCS & saved code segment\\
+SDS & saved data segment\\
+PMC & performance-monitor control\\
+\bottomrule
+\end{manualtabular}
+\manualtablecaption{Control Register Namespace}

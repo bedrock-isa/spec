@@ -17,7 +17,6 @@ behavior:
 attributes:
   privilege: unprivileged
 forms:
-  target_ea_set: call_target
   compact_forms:
   - profile: IMM16
     allocation_cluster: direct_call

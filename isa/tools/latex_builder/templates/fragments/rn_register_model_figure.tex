@@ -1,0 +1,79 @@
+\begin{center}
+\resizebox{0.98\linewidth}{!}{%
+\begin{tikzpicture}[x=1in,y=1in,every node/.style={font=\scriptsize}]
+\def\regw{1.70}
+\def\rowh{0.18}
+\foreach \i in {0,...,15} {
+  \pgfmathsetmacro{\y}{-0.235*\i}
+  \draw (0,\y) rectangle (\regw,\y-\rowh);
+  \draw (0.85,\y) -- (0.85,\y-\rowh);
+  \draw (1.275,\y) -- (1.275,\y-\rowh);
+  \draw (1.488,\y) -- (1.488,\y-\rowh);
+  \node[anchor=west] at (1.78,\y-\rowh/2) {R\i};
+}
+\node[anchor=south] at (0,0.02) {63};
+\node[anchor=south] at (0.85,0.02) {31};
+\node[anchor=south] at (1.275,0.02) {15};
+\node[anchor=south] at (1.488,0.02) {7};
+\node[anchor=south] at (1.70,0.02) {0};
+\draw (2.28,0) -- (2.42,0) -- (2.42,-3.705) -- (2.28,-3.705);
+\node[anchor=west] at (2.60,-1.85) {\shortstack[l]{GENERAL\\REGISTERS\\R0--R15}};
+
+\draw (0,-4.05) rectangle (\regw,-4.23);
+\node[anchor=west] at (1.78,-4.14) {SP};
+\draw (0,-4.33) rectangle (\regw,-4.51);
+\node[anchor=west] at (1.78,-4.42) {PC};
+\draw (2.28,-4.05) -- (2.42,-4.05) -- (2.42,-4.51) -- (2.28,-4.51);
+\node[anchor=west] at (2.60,-4.28) {\shortstack[l]{SPECIAL\\REGISTERS}};
+
+\draw (1.275,-4.86) rectangle (1.70,-5.04);
+\node[anchor=west] at (1.78,-4.95) {FLAGS};
+\draw (1.275,-5.13) rectangle (1.70,-5.31);
+\node[anchor=west] at (1.78,-5.22) {STATUS};
+\draw (2.28,-4.86) -- (2.42,-4.86) -- (2.42,-5.31) -- (2.28,-5.31);
+\node[anchor=west] at (2.60,-5.08) {\shortstack[l]{INTEGER\\STATE}};
+
+\foreach \i in {0,1,2} {
+  \pgfmathsetmacro{\y}{-0.235*\i}
+  \draw (3.45,\y) rectangle (5.15,\y-\rowh);
+  \draw (4.30,\y) -- (4.30,\y-\rowh);
+  \node[anchor=west] at (5.23,\y-\rowh/2) {F\i};
+}
+\draw (3.45,-0.705) rectangle (5.15,-0.885);
+\draw (4.30,-0.705) -- (4.30,-0.885);
+\node[anchor=west] at (5.23,-0.795) {...};
+\draw (3.45,-0.940) rectangle (5.15,-1.120);
+\draw (4.30,-0.940) -- (4.30,-1.120);
+\node[anchor=west] at (5.23,-1.030) {F15};
+\node[anchor=south] at (3.45,0.02) {63};
+\node[anchor=south] at (4.30,0.02) {31};
+\node[anchor=south] at (5.15,0.02) {0};
+\draw (5.73,0) -- (5.87,0) -- (5.87,-1.120) -- (5.73,-1.120);
+\node[anchor=west] at (6.05,-0.56) {\shortstack[l]{FLOATING-POINT\\REGISTERS}};
+
+\draw (4.725,-1.45) rectangle (5.15,-1.63);
+\node[anchor=west] at (5.23,-1.54) {FFLAGS};
+\draw (4.725,-1.72) rectangle (5.15,-1.90);
+\node[anchor=west] at (5.23,-1.81) {FSTATUS};
+\draw (5.73,-1.45) -- (5.87,-1.45) -- (5.87,-1.90) -- (5.73,-1.90);
+\node[anchor=west] at (6.05,-1.675) {\shortstack[l]{FPU\\STATE}};
+
+\foreach \name/\idx in {CS/0,DS/1,SS/2,GS0/3,GS1/4,GS2/5,GS3/6,GS4/7} {
+  \pgfmathsetmacro{\y}{-2.25-0.235*\idx}
+  \draw (3.45,\y) rectangle (5.15,\y-\rowh);
+  \node[anchor=west] at (5.23,\y-\rowh/2) {\name};
+}
+\draw (5.73,-2.25) -- (5.87,-2.25) -- (5.87,-4.075) -- (5.73,-4.075);
+\node[anchor=west] at (6.05,-3.16) {\shortstack[l]{SEGMENT\\REGISTERS}};
+
+\foreach \name/\idx in {PTCR/0,ASCR/1,ICR/2,SPC/3,SCS/4,SDS/5,PMC/6} {
+  \pgfmathsetmacro{\y}{-4.40-0.235*\idx}
+  \draw (3.45,\y) rectangle (5.15,\y-\rowh);
+  \node[anchor=west] at (5.23,\y-\rowh/2) {\name};
+}
+\draw (5.73,-4.40) -- (5.87,-4.40) -- (5.87,-5.990) -- (5.73,-5.990);
+\node[anchor=west] at (6.05,-5.20) {\shortstack[l]{CONTROL\\REGISTERS}};
+\end{tikzpicture}
+}
+\manualfigurecaption{User Programming Model}
+\end{center}

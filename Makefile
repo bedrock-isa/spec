@@ -1,26 +1,46 @@
 PYTHON ?= python3
 LATEXMK ?= latexmk
+PANDOC ?= pandoc
 LATEX_FLAGS = -pdf -interaction=nonstopmode -halt-on-error
 
-.PHONY: docs isa-reference elf-abi c-abi c-far-extensions target-intrinsics c-extensions compiler-abi intrinsics validate-docs validate-abi-model
+.PHONY: docs docs-markdown abi-markdown isa-reference isa-reference-markdown elf-abi elf-abi-markdown c-abi c-abi-markdown c-far-extensions c-far-extensions-markdown target-intrinsics target-intrinsics-markdown c-extensions compiler-abi intrinsics validate-docs validate-abi-model
 
 docs: isa-reference elf-abi c-abi c-far-extensions target-intrinsics
 
+docs-markdown: isa-reference-markdown elf-abi-markdown c-abi-markdown c-far-extensions-markdown target-intrinsics-markdown
+
+abi-markdown: elf-abi-markdown c-abi-markdown
+
 isa-reference:
-	$(PYTHON) isa/tools/gen_docs.py --format latex -o build/isa_reference.tex
+	$(PYTHON) isa/tools/gen_docs.py -o build/isa_reference.tex
 	$(LATEXMK) $(LATEX_FLAGS) -outdir=build build/isa_reference.tex
+
+isa-reference-markdown:
+	$(PYTHON) isa/tools/gen_docs.py --format markdown --pandoc "$(PANDOC)" -o build/isa_reference.md
 
 elf-abi:
 	$(LATEXMK) $(LATEX_FLAGS) -outdir=build/latex/bedrock-elf-abi isa/abi/bedrock-elf-abi.tex
 
+elf-abi-markdown:
+	$(PYTHON) isa/tools/latex_to_markdown.py --pandoc "$(PANDOC)" isa/abi/bedrock-elf-abi.tex build/markdown/bedrock-elf-abi.md
+
 c-abi:
 	$(LATEXMK) $(LATEX_FLAGS) -outdir=build/latex/bedrock-c-abi isa/abi/bedrock-c-abi.tex
+
+c-abi-markdown:
+	$(PYTHON) isa/tools/latex_to_markdown.py --pandoc "$(PANDOC)" isa/abi/bedrock-c-abi.tex build/markdown/bedrock-c-abi.md
 
 c-far-extensions:
 	$(LATEXMK) $(LATEX_FLAGS) -outdir=build/latex/bedrock-c-far-extensions isa/c/bedrock-c-far-extensions.tex
 
+c-far-extensions-markdown:
+	$(PYTHON) isa/tools/latex_to_markdown.py --pandoc "$(PANDOC)" isa/c/bedrock-c-far-extensions.tex build/markdown/bedrock-c-far-extensions.md
+
 target-intrinsics:
 	$(LATEXMK) $(LATEX_FLAGS) -outdir=build/latex/bedrock-target-intrinsics isa/c/bedrock-target-intrinsics.tex
+
+target-intrinsics-markdown:
+	$(PYTHON) isa/tools/latex_to_markdown.py --pandoc "$(PANDOC)" isa/c/bedrock-target-intrinsics.tex build/markdown/bedrock-target-intrinsics.md
 
 c-extensions: c-far-extensions
 

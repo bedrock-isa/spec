@@ -25,11 +25,3 @@ special_registers:
   width: 64
   fixed_segment: CS
   ea_encoding: implicit
-model:
-  general_register_field_width: 4
-  no_address_data_split: true
-  no_data_register_bank: true
-  notes:
-  - SP and PC are special architectural registers outside the 4-bit Rn namespace.
-  - SP-relative memory forms use SS by default.
-  - PC-relative memory forms use CS by default.

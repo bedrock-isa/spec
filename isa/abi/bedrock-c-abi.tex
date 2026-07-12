@@ -113,9 +113,15 @@ therefore uses \texttt{R0} for the low word and \texttt{R1} for the high word.
 Its stack slot is 16-byte aligned.
 
 An ordinary 128-bit load or store need not be atomic and may use two 64-bit
-memory operations. A 128-bit C atomic object is not lock-free in the baseline
-profile; this ABI defines neither a native 16-byte atomic operation nor a
-compiler-runtime helper contract for it.
+memory operations. The 128-bit integer types are not supported as C atomic
+objects in the baseline profile; this ABI defines neither a native 16-byte
+atomic operation nor a compiler-runtime helper contract for them.
+
+\paragraph{Floating-point profile.}
+The \texttt{bedrock-c} profile requires the base floating-point extension and
+defines no soft-float calling convention. Floating-point helpers may replace
+unavailable operations only when the \texttt{F0}--\texttt{F15} register calling
+convention remains available.
 
 \paragraph{Long double.}
 \texttt{long double} is a distinct C type with the IEEE-754 binary64 object
@@ -159,7 +165,10 @@ far pointer.
 The unsigned raw carriers
 \texttt{\_\_bedrock\_far\_uintptr\_t} and
 \texttt{\_\_bedrock\_far\_func\_uintptr\_t} preserve both words. Far pointer
-metadata is forgeable address metadata, not an unforgeable capability.
+metadata is forgeable address metadata, not an unforgeable capability. Both
+carrier names are aliases of \texttt{unsigned \_\_int128}; the separate names
+document data-pointer and function-pointer use but do not create distinct C
+types.
 
 \subsection{Aggregate Layout}
 Scalar and pointer object representations are defined in Sections~3.1 through
@@ -570,9 +579,15 @@ eagerly resolved, immutable 16-byte entry from \texttt{.got.far}; the far
 model has no PLT.
 
 \subsection{Near/Far ABI Veneers}
-Only a compiler with complete function type information may synthesize a
-cross-convention veneer. The linker may redirect or deduplicate an already
-typed veneer but may not infer one.
+The version 1.0 source profile diagnoses an ordinary/far function-pointer cast
+and does not require automatic veneer synthesis. A cast is not an implicit
+request for a veneer. This subsection instead defines the ABI of a veneer
+supplied through a separately named implementation extension or by runtime
+code.
+
+Only a compiler with complete, prototyped function type information may
+synthesize a cross-convention veneer. The linker may redirect or deduplicate
+an already typed veneer but may not infer one.
 
 \begin{itemize}
 \item A near-to-far veneer receives \texttt{CALL}, performs \texttt{LCALL} to
@@ -711,7 +726,7 @@ before transferring control to them.
 \clearpage
 \section{Calling Convention Examples}
 The first four cases are inputs to the executable reference model and
-illustrate the assignment procedure. The final two examples are audited output
+illustrate the assignment procedure. The final two examples are generated output
 from the Bedrock LLVM backend. Examples do not introduce exceptions to the
 normative rules above.
 
@@ -791,8 +806,6 @@ with a normative rule, the rule controls.
 
 The benchmark sources use GNU C89 implicit return types. The declarations below
 show their equivalent explicit C types so that the ABI interface is unambiguous.
-The implementation audit accompanying this document records unsupported and
-nonconforming compiler paths that were excluded from these examples.
 
 % ABI-ASM-EXAMPLE: scalar-leaf
 \subsection{Scalar Leaf Function}

@@ -1,0 +1,12 @@
+\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{1.20in}>{\raggedright\arraybackslash}p{3.60in}@{}}
+\toprule
+\textbf{Offset} & \textbf{Slot} & \textbf{Meaning}\\
+\midrule
+\endhead
++0x00 & ERROR\_CODE & exception-specific error code\\
++0x08 & FAULT\_EA & faulting effective-address operand information\\
++0x10 & FAULT\_LINEAR & faulting linear address\\
++0x18 & FAULT\_AUX & auxiliary fault information\\
+\bottomrule
+\end{manuallongtable}
+\manualunlistedtablecaption{Supervisor Payload Block Slots}

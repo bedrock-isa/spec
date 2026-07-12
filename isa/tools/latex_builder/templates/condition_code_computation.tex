@@ -1,3 +1,6 @@
+\clearpage
+\section{Condition Code Computation}
+
 \subsection{Flag Meanings}
 Integer condition codes are held in FLAGS. Integer instructions leave FLAGS unchanged unless their instruction
 description explicitly defines a FLAGS write. This keeps ordinary arithmetic and data movement independent from
@@ -11,15 +14,61 @@ SETF, CLRF, WRFLAGS, CMPXCHG, and the bounds-check forms. CMPJcc and TESTJcc com
 for their branch decision and do not update architectural FLAGS. ADD, SUB, logic operations, INC, DEC, shifts,
 rotates, moves, extensions, min/max, and multiply/divide forms leave FLAGS unchanged.
 
-@FLAG_MEANING_TABLE@
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.45in}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{3.90in}@{}}
+\toprule
+\textbf{Bit} & \textbf{Name} & \textbf{Meaning}\\
+\midrule
+Z & zero & Set when the result value is zero.\\
+N & negative & Set from the most significant result bit at the operand size.\\
+C & carry/borrow & Set on unsigned carry out for addition or unsigned borrow for subtraction.\\
+V & overflow & Set on signed overflow or an explicitly reported exceptional condition.\\
+\bottomrule
+\end{manualtabular}
+\manualtablecaption{Integer Condition-Code Bits}
 
 \subsection{Common Integer Rules}
-@INTEGER_FLAG_RULE_TABLE@
+\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{1.30in}>{\raggedright\arraybackslash}p{4.10in}@{}}
+\toprule
+\textbf{Operation Class} & \textbf{FLAGS Result}\\
+\midrule
+\endhead
+ADD, SUB, AND, OR, XOR & Leave FLAGS unchanged.\\
+ADC, SBB & Read C as carry or borrow input and update Z, N, C, and V.\\
+CMP, TEST & Update Z, N, C, and V from a temporary result without storing it.\\
+CMPJcc, TESTJcc & Compute branch flags temporarily and leave architectural FLAGS unchanged.\\
+INC, DEC & Leave FLAGS unchanged.\\
+INCF, DECF & Update Z, N, C, and V from the stored result.\\
+SETF, CLRF & Change selected imm4 mask bits and preserve unselected FLAGS bits.\\
+NEG, ABS & Leave FLAGS unchanged.\\
+CLR & Write zero and leave FLAGS unchanged.\\
+Bounds checks & Set V for an out-of-range value and leave Z, N, and C unchanged.\\
+\bottomrule
+\end{manuallongtable}
+\manualtablecaption{Common Integer Flag Computation}
 
 \subsection{Shift, Rotate, and Bit Operations}
-@SHIFT_COUNT_RULE_TABLE@
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{1.30in}>{\raggedright\arraybackslash}p{4.10in}@{}}
+\toprule
+\textbf{Operation} & \textbf{Count Rule}\\
+\midrule
+SHL, SHR, SAR & Count is not reduced modulo width; oversized counts use defined zero- or sign-fill behavior.\\
+ROL, ROR & Count is reduced modulo width; effective count zero preserves destination and FLAGS.\\
+\bottomrule
+\end{manualtabular}
+\manualtablecaption{Shift and Rotate Count Rules}
 
-@SHIFT_FLAG_RULE_TABLE@
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{4.65in}@{}}
+\toprule
+\textbf{Operation} & \textbf{FLAGS Result for Nonzero Effective Count}\\
+\midrule
+SHL & Z and N from result; C is last shifted bit; V reports signed multiplication overflow.\\
+SHR & Z and N from result; C is last shifted bit; V is clear.\\
+SAR & Z and N from result; C is last shifted bit or original sign for oversized counts; V is clear.\\
+ROL & Z and N from result; C is least significant result bit; V is clear.\\
+ROR & Z and N from result; C is most significant result bit; V is clear.\\
+\bottomrule
+\end{manualtabular}
+\manualtablecaption{Shift and Rotate Flag Computation}
 
 \subsection{Conditional Consumers}
 Conditional branches, calls, traps, sets, and repeat forms consume the condition-code table without recomputing

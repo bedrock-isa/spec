@@ -1,0 +1,35 @@
+\begin{center}\vspace{3pt}
+\begin{tikzpicture}[x=1cm,y=1cm,every node/.style={font=\scriptsize},>=stealth,line width=0.82pt]
+\tikzset{box/.style={draw,align=center,minimum height=0.70cm,inner sep=2pt}, lab/.style={fill=white,inner sep=1pt}}
+\node[box,minimum width=1.15cm] (ea) at (0.55,0) {EA\\address};
+\node[box,minimum width=1.30cm] (sel) at (1.95,0) {select\\segment};
+\node[box,minimum width=1.45cm] (check) at (3.65,0) {enabled\\window\\check};
+\node[box,minimum width=2.45cm] (add) at (6.10,1.55) {$m\ne0$, $b=0$\\linear = base + EA};
+\node[box,minimum width=2.45cm] (keep) at (6.10,0) {$m\ne0$, $b=1$\\linear = EA};
+\node[box,minimum width=2.45cm] (disabled) at (6.10,-1.55) {$m=0$\\linear = EA};
+\node[box,minimum width=1.45cm] (lin) at (8.45,0) {linear\\address};
+\node[box,minimum width=2.00cm] (page) at (10.65,0.95) {PTCR.PE=1\\page-table\\translation};
+\node[box,minimum width=2.00cm] (direct) at (10.65,-0.95) {PTCR.PE=0\\use linear\\directly};
+\node[box,minimum width=1.75cm] (out) at (12.90,0) {memory-system\\address};
+\draw[->] (ea.east) -- (sel.west);
+\coordinate (modebranch) at (2.75,0);
+\draw (sel.east) -- (modebranch);
+\draw[->] (modebranch) -- (check.west);
+\draw[->] (modebranch) |- node[lab,pos=0.20,right] {$m=0$} (disabled.west);
+\coordinate (segbranch) at (4.55,0);
+\draw[->] (check.east) -- (segbranch) |- (add.west);
+\draw[->] (check.east) -- (keep.west);
+\draw[->] (check.south) -- ++(0,-0.58) node[lab,below] {window fail: PAGE\_FAULT};
+\coordinate (linmerge) at (7.45,0);
+\draw (add.east) -- ++(0.34,0) |- (linmerge);
+\draw (keep.east) -- (linmerge);
+\draw (disabled.east) -- ++(0.34,0) |- (linmerge);
+\draw[->] (linmerge) -- (lin.west);
+\coordinate (pebranch) at (9.45,0);
+\draw[->] (lin.east) -- (pebranch) |- (page.west);
+\draw[->] (lin.east) -- (pebranch) |- (direct.west);
+\draw[->] (page.east) -| (out.north);
+\draw[->] (direct.east) -| (out.south);
+\end{tikzpicture}
+\manualfigurecaption{Address Translation Pipeline}
+\end{center}

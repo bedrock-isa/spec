@@ -1,0 +1,8 @@
+\begin{manualformblock}{0.70in}
+\begin{tabular}{@{}l@{}}
+; memset(dst, c, n), byte fill\\
+; R1 = dst, R3 = byte c\\
+; R2 = n\\
+REP R2, (MOV.B R3, [R1++])\\
+\end{tabular}
+\end{manualformblock}

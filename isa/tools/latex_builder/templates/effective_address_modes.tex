@@ -1,3 +1,6 @@
+\clearpage
+\section{Effective Addressing Modes}
+
 An effective-address field is an operand descriptor. It may select a register value, an immediate value, or a memory
 operand pointer. Only memory forms continue into segment pre-translation and paging.
 
@@ -19,7 +22,7 @@ operands, absolute memory operands, immediate operands, and the EXT0 escape.
 Compact memory forms that do not name SP or PC use the operation default data segment. SP memory forms are fixed to
 SS, and PC memory forms are fixed to CS.
 
-@COMPACT_EA_REFERENCE_BLOCKS@
+\input{isa/tools/latex_builder/templates/fragments/compact_ea_reference_blocks.tex}
 
 @COMPACT_EA_TABLE@
 
@@ -31,11 +34,32 @@ segment, base, index, zero-base, SP/PC indexed, and auto-update behavior.
 EXT0 has no default segment as a descriptor class. A concrete descriptor either encodes SEG(s), selects fixed SS/CS
 through SP or PC, or explicitly uses the operation default data segment.
 
-@EA_FIELD_DIAGRAMS@
+\input{isa/tools/latex_builder/templates/fragments/ea_field_diagrams.tex}
 
-@EA_PAYLOAD_CATALOG_TABLE@
+\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{0.95in}>{\raggedright\arraybackslash}p{0.45in}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{3.30in}@{}}
+\toprule
+\textbf{Payload} & \textbf{Bytes} & \textbf{Value} & \textbf{Use}\\
+\midrule
+\endhead
+disp8s & 1 & signed & displacement added to base/index expression\\
+disp16s & 2 & signed & displacement added to base/index expression\\
+disp32s & 4 & signed & displacement added to base/index expression\\
+disp64 & 8 & unsigned & displacement added to base/index expression\\
+abs32s & 4 & signed & absolute address, sign-extended before use\\
+abs64 & 8 & unsigned & absolute address payload\\
+imm8s & 1 & signed & immediate operand payload\\
+imm16s & 2 & signed & immediate operand payload\\
+imm32s & 4 & signed & immediate operand payload\\
+imm64 & 8 & unsigned & immediate operand payload\\
+EXT0 descriptor & 1 or 2 & encoded & extended EA descriptor; present only for EXT0 escapes\\
+\bottomrule
+\end{manuallongtable}
+\manualtablecaption{EA Payload Names}
 
-@EA_PAYLOAD_SEQUENCE_TABLE@
+For a compact displacement, absolute address, or immediate, the selected payload follows the EA field at that
+operand's payload position. EXT0 begins with the compact escape value and one or two descriptor bytes; a displaced
+EXT0 form places its selected displacement after those descriptor bytes. When an instruction has more than one
+payload-bearing EA operand, the decoder consumes each complete EA payload sequence in instruction operand order.
 
 @EXT0_SECTION@
 

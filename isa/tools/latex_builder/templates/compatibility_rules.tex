@@ -1,3 +1,6 @@
+\clearpage
+\section{Reserved and Compatibility Rules}
+
 This section defines the default compatibility contract for reserved fields, optional features, and future
 architectural growth. A later section may narrow one of these defaults for a specific structure, but it must say so
 explicitly.
@@ -6,7 +9,12 @@ This manual treats reserved and unallocated encodings as one architectural categ
 value, decode result, or behavior.
 
 \subsection{Terminology}
-@TERMINOLOGY_TABLE@
+A \emph{reserved} field or encoding is held for a future architectural definition, so software does not depend on
+its current value or behavior. A field described as \emph{must be zero} is written as zero; a nonzero value is
+invalid unless a later architectural revision assigns it. A \emph{read-as-zero} field returns zero but remains
+reserved. An \emph{ignored} field is accepted by hardware without affecting the current operation, whereas a
+\emph{software-defined} field is explicitly available for software use. An \emph{illegal} opcode, EA form,
+selector, or operation raises the exception named by its defining rule.
 
 \subsection{Reserved Fields}
 Architected registers and architectural memory structures use these defaults unless their defining section gives a
@@ -15,9 +23,19 @@ narrower rule.
 Software-defined fields are not reserved fields. Software may store values in them, and hardware ignores them except
 where the containing structure explicitly says otherwise.
 
-@RESERVED_FIELD_TABLE@
-
-@SOFTWARE_DEFINED_TABLE@
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{1.65in}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{1.35in}>{\raggedright\arraybackslash}p{1.65in}@{}}
+\toprule
+\textbf{Field Class} & \textbf{Read Rule} & \textbf{Write or Use Rule} & \textbf{Fault}\\
+\midrule
+Architected register reserved bits & zero & must be zero & --\\
+Control-register reserved bits & zero & must be zero & \texttt{INVALID\_CONTROL\_STATE}\\
+Reserved selector values & -- & invalid selector & \texttt{INVALID\_CONTROL\_STATE}\\
+Consumed reserved PTE bits & -- & invalid translation input & \texttt{PAGE\_FAULT}\\
+Reserved IVT bits & -- & must be zero & --\\
+Reserved supervisor-frame bits & -- & must be zero & --\\
+\bottomrule
+\end{manualtabular}
+\manualunlistedtablecaption{Reserved Field Defaults}
 
 \subsection{Reserved Encodings}
 Reserved instruction opcodes, reserved extension opcodes, reserved effective-address forms, and unsupported optional
@@ -26,12 +44,20 @@ instruction-group encodings are not executable instruction forms.
 There is no separate extension-unavailable exception in this model; unsupported optional instruction-group encodings
 use the same illegal-instruction path as other reserved instruction encodings.
 
-@RESERVED_ENCODING_TABLE@
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{3.55in}>{\raggedright\arraybackslash}p{1.85in}@{}}
+\toprule
+\textbf{Encoding Class} & \textbf{Fault}\\
+\midrule
+Reserved instruction opcode & \texttt{ILLEGAL\_INSTRUCTION}\\
+Reserved extension opcode & \texttt{ILLEGAL\_INSTRUCTION}\\
+Reserved effective-address form & \texttt{ILLEGAL\_INSTRUCTION}\\
+Unsupported optional instruction group & \texttt{ILLEGAL\_INSTRUCTION}\\
+\bottomrule
+\end{manualtabular}
+\manualunlistedtablecaption{Reserved Encoding Faults}
 
 Noncanonical encodings are invalid unless an instruction description explicitly defines an alias or priority rule.
 Assemblers emit canonical encodings by default; disassemblers prefer canonical spellings.
-
-@CANONICAL_DEFAULTS_TABLE@
 
 \Needspace{3.6in}
 \subsection{CPUID Compatibility}
@@ -40,6 +66,5 @@ instruction group, optional register state, or optional state image unless the c
 reports support.
 
 Unknown selectors return zero. Reserved CPUID result bits are ignored by software unless a future architectural
-definition assigns them.
-
-@CPUID_DEFAULTS_TABLE@
+definition assigns them. CPUID is unprivileged and does not serialize execution. Its results remain stable after
+reset unless a future feature explicitly defines a mutable result.

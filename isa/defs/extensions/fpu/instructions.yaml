@@ -1,5 +1,4 @@
 include:
-- save_restore_area.yaml
 - instructions/_common.yaml
 - instructions/FABS.yaml
 - instructions/FADD.yaml

@@ -4,8 +4,17 @@ image and become architecturally visible only if the instruction commits.
 Base auto-update changes by the memory access size in bytes. Index auto-update changes by one element before
 scaling, so the scale affects address generation but not the architectural index increment amount.
 
-@AUTO_UPDATE_ORDER_TABLE@
+EA evaluation begins by copying the architectural registers into a temporary operand-evaluation image. Operands are
+then processed in instruction order. Within one EA, the base term is evaluated before the index term and then the
+displacement. Auto-update changes only the temporary image while operands are being evaluated. Memory reads and
+writes are collected as instruction side effects, and neither those effects nor the register updates become
+architecturally visible until the instruction commits. A fault before commit therefore leaves both register and
+memory state unchanged apart from the exception-entry transition.
 
-@AUTO_UPDATE_DELTA_TABLE@
+Postincrement forms use the current temporary value and update it afterward. Predecrement forms update the temporary
+value first and then use the result. A base register changes by the memory access size in bytes; an index register
+changes by one element before scaling. Each REP iteration applies and commits these rules independently.
 
-@AUTO_UPDATE_EXAMPLE_TABLE@
+When one register supplies both terms in \texttt{[R1 + R1++ * scale]}, the base and index terms use the same
+current temporary R1 before the index update. In \texttt{[R1 + {-}{-}R1 * scale]}, the base uses the current value;
+the index term then decrements temporary R1 and uses the updated value.

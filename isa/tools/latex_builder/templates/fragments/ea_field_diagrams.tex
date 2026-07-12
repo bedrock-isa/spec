@@ -1,0 +1,50 @@
+\begin{manuallistedbitdiagram}{Compact Effective-Address Field}
+\manualbitfieldrow{EA[6:0]}{%
+\manualbitlabel{6}
+\manualbitlabel{4}
+\manualbitlabel{3}
+\manualbitlabel{0}
+}{%
+\manualbitfieldtext{mode}{3}
+\manualbitfieldtext{register/form}{4}
+}
+\end{manuallistedbitdiagram}
+
+\begin{manuallistedbitdiagram}{EXT0 One-Byte Descriptor Forms}
+\manualbitrow{SEG + base}{%
+\manualbitfieldcode{0}{1}
+\manualbitfieldcode{s}{3}
+\manualbitfieldcode{b}{4}
+}
+\manualbitrow{SEG + zero}{%
+\manualbitfieldcode{1}{1}
+\manualbitfieldcode{s}{3}
+\manualbitfieldcode{0011}{4}
+}
+\manualbitrow{default base++}{%
+\manualbitfieldcode{1}{1}
+\manualbitfieldcode{b}{4}
+\manualbitfieldcode{100}{3}
+}
+\manualbitrow{default --base}{%
+\manualbitfieldcode{1}{1}
+\manualbitfieldcode{b}{4}
+\manualbitfieldcode{101}{3}
+}
+\end{manuallistedbitdiagram}
+
+\begin{manuallistedbitdiagram}{EXT0 Two-Byte Indexed Descriptor Forms}
+\manualbitrow{SEG + base + index}{%
+\manualbitfieldcode{1}{1}
+\manualbitfieldcode{s}{3}
+\manualbitfieldcode{mode}{4}
+\manualbitfieldcode{b}{4}
+\manualbitfieldcode{i}{4}
+}
+\manualbitrow{SP/PC + index}{%
+\manualbitfieldcode{1000101}{7}
+\manualbitfieldcode{x}{1}
+\manualbitfieldcode{mode}{4}
+\manualbitfieldcode{i}{4}
+}
+\end{manuallistedbitdiagram}

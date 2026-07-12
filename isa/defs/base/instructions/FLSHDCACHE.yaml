@@ -16,7 +16,6 @@ attributes:
     default: supervisor
     policy_controlled: true
 forms:
-  target_ea_set: memory_only
   require_memory_operand: true
   operands:
   - name: target

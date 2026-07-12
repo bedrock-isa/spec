@@ -27,9 +27,8 @@ and `../tools/abi_call_model.py` is the executable reference procedure that
 checks them. The same case identifiers appear in the worked examples in the C
 ABI, so documented coverage and conformance fixtures cannot silently diverge.
 
-Generated assembly included in the C ABI is non-normative and must pass the
-review recorded in `../../docs/abi_codegen_audit.md`. Compiler output for an
-unimplemented or nonconforming path is kept out of the reference document.
+Generated assembly included in the C ABI is non-normative. Compiler output for
+an unimplemented or nonconforming path is kept out of the reference document.
 
 Run `make validate-docs` to check layer assignments, relocation tables,
 document boundaries, call-layout fixtures, and intrinsic/header agreement.

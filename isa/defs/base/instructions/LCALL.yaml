@@ -37,7 +37,6 @@ attributes:
   privilege_transition: none
 forms:
   segment_operand: Rn
-  target_ea_set: long_control_target
   atomic_cs_pc_update: true
   disallow_immediate_segment_plus_immediate_offset: true
   operands:

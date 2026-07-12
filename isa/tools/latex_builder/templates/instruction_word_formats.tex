@@ -1,3 +1,6 @@
+\clearpage
+\section{Instruction Header Formats}
+
 Instruction framing is byte-oriented. Byte 0 alone identifies extrashort and short instructions; extended
 instructions use byte 0 and byte 1 to determine both total instruction length and opcode class.
 
@@ -7,14 +10,92 @@ byte0[1:0], continues through byte1, and then consumes later bytes as required b
 An extended instruction is invalid if its encoded total length is shorter than the opcode class minimum: 3 bytes
 for medium, 4 bytes for long, and 5 bytes for extralong.
 
-@WORD0_BIT_DIAGRAM@
+\begin{manuallistedbitdiagram}{Instruction Header Byte Formats}
+\manualbitrow{extrashort byte}{%
+\manualbitfieldcode{0}{1}
+\manualbitfieldtext{payload[6:0]}{7}
+}
+\manualbitfieldrow{short bytes}{\manualbytepairlabels}{%
+\manualbitfieldcode{10}{2}
+\manualbitfieldtext{payload[13:8]}{6}
+\manualbitgap{1}
+\manualbitfieldtext{payload[7:0]}{8}
+}
+\manualbitfieldrow{extended start bytes}{\manualbytepairlabels}{%
+\manualbitfieldcode{11}{2}
+\manualbitfieldtext{L}{4}
+\manualbitfieldtext{opcode high}{2}
+\manualbitgap{1}
+\manualbitfieldtext{opcode next}{8}
+}
+\end{manuallistedbitdiagram}
 
-@WORD0_FIELD_TABLE@
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{3.60in}@{}}
+\toprule
+\textbf{Bits} & \textbf{Field} & \textbf{Meaning}\\
+\midrule
+byte 0 bit 7 & class & 0 selects a one-byte extrashort instruction with payload in byte0[6:0].\\
+byte 0 bits 7..6 & class & 10 selects a two-byte short instruction; 11 selects an extended instruction.\\
+byte 0 bits 5..2 & L / payload & For short, payload[13:10]. For extended, L encodes total bytes as 3+L.\\
+byte 0 bits 1..0 & opcode & For short, payload[9:8]. For extended, the first two opcode-stream bits.\\
+byte 1 bits 7..0 & opcode & For short, payload[7:0]. For extended, the next eight opcode-stream bits.\\
+\bottomrule
+\end{manualtabular}
+\manualtablecaption{Instruction Header Fields}
 
-@INSTRUCTION_ENCODING_DIAGRAMS@
+\input{isa/tools/latex_builder/templates/fragments/instruction_encoding_diagrams.tex}
 
-@SIZE_DECODING_TABLE@
+\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{1.25in}>{\raggedright\arraybackslash}p{1.25in}>{\raggedright\arraybackslash}p{0.55in}@{}}
+\toprule
+\textbf{Byte 0 Pattern} & \textbf{Byte 1 Pattern} & \textbf{Bytes}\\
+\midrule
+\endhead
+\texttt{0xxxxxxx} & -- & 1\\
+\texttt{10xxxxxx} & \texttt{xxxxxxxx} & 2\\
+\texttt{110000oo} & \texttt{bbbbxxxx} & 3\\
+\texttt{110001oo} & \texttt{bbbbxxxx} & 4\\
+\texttt{110010oo} & \texttt{bbbbxxxx} & 5\\
+\texttt{110011oo} & \texttt{bbbbxxxx} & 6\\
+\texttt{110100oo} & \texttt{bbbbxxxx} & 7\\
+\texttt{110101oo} & \texttt{bbbbxxxx} & 8\\
+\texttt{110110oo} & \texttt{bbbbxxxx} & 9\\
+\texttt{110111oo} & \texttt{bbbbxxxx} & 10\\
+\texttt{111000oo} & \texttt{bbbbxxxx} & 11\\
+\texttt{111001oo} & \texttt{bbbbxxxx} & 12\\
+\texttt{111010oo} & \texttt{bbbbxxxx} & 13\\
+\texttt{111011oo} & \texttt{bbbbxxxx} & 14\\
+\texttt{111100oo} & \texttt{bbbbxxxx} & 15\\
+\texttt{111101oo} & \texttt{bbbbxxxx} & 16\\
+\texttt{111110oo} & \texttt{bbbbxxxx} & 17\\
+\texttt{111111oo} & \texttt{bbbbxxxx} & 18\\
+\bottomrule
+\end{manuallongtable}
+\manualtablecaption{Instruction Length Truth Table}
 
-@OPCODE_LENGTH_TABLE@
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.95in}>{\raggedright\arraybackslash}p{0.80in}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{2.90in}@{}}
+\toprule
+\textbf{Opcode Selector} & \textbf{Class} & \textbf{Opcode Bytes} & \textbf{Validity}\\
+\midrule
+\texttt{0xxxxx} & \texttt{medium} & 3 & any extended instruction length\\
+\texttt{10xxxx} & \texttt{medium} & 3 & any extended instruction length\\
+\texttt{110xxx} & \texttt{medium} & 3 & any extended instruction length\\
+\texttt{1110xx} & \texttt{medium} & 3 & any extended instruction length\\
+\texttt{11110x} & \texttt{long} & 4 & instruction length at least 4 bytes\\
+\texttt{111110} & \texttt{long} & 4 & instruction length at least 4 bytes\\
+\texttt{111111} & \texttt{extralong} & 5 & instruction length at least 5 bytes\\
+\bottomrule
+\end{manualtabular}
+\manualtablecaption{Opcode Length Truth Table}
 
-@ENCODING_CLASS_TABLE@
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.72in}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{3.20in}@{}}
+\toprule
+\textbf{Class} & \textbf{Payload Bits} & \textbf{Selection}\\
+\midrule
+extrashort & @EXTRASHORT_PAYLOAD_BITS@ & byte0[7]=0; payload is byte0[6:0]\\
+short & @SHORT_PAYLOAD_BITS@ & byte0[7:6]=10; payload is byte0[5:0] followed by byte1[7:0]\\
+medium & @MEDIUM_PAYLOAD_BITS@ & byte0[7:6]=11 and opcode selector is 0xxxxx, 10xxxx, 110xxx, or 1110xx\\
+long & @LONG_PAYLOAD_BITS@ & byte0[7:6]=11 and opcode selector is 11110x or 111110\\
+extralong & @EXTRALONG_PAYLOAD_BITS@ & byte0[7:6]=11 and opcode selector is 111111\\
+\bottomrule
+\end{manualtabular}
+\manualtablecaption{Encoding Class Summary}

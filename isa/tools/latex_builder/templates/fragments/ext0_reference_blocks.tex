@@ -1,0 +1,92 @@
+\begin{manualformblock}{4.75in}
+\textbf{\texttt{EXT0 Explicit Segment Base}}\par
+\vspace{2pt}
+\begin{tabularx}{\linewidth}{@{}p{1.10in}X@{}}
+\textbf{Assembler syntax} & [SEG(s):Rn(b) + displacement]\\
+\textbf{Descriptor} & 0sssbbbb, one byte.\\
+\textbf{Generation} & offset = temporary Rn(b) + displacement.\\
+\textbf{Segment} & SEG(s) selects CS, DS, SS, or GS0..GS4.\\
+\textbf{Payload} & One descriptor byte plus the optional displacement selected by the compact EXT0 escape.\\
+\textbf{Update} & No auto-update.\\
+\end{tabularx}\par
+\manualeaadditivememoryflow{EXT0 explicit segment base}{BASE REGISTER}{Rn(b)}{optional displacement}{EFFECTIVE ADDRESS}
+\end{manualformblock}
+\begin{manualformblock}{6.43in}
+\textbf{\texttt{EXT0 Explicit Segment Indexed}}\par
+\vspace{2pt}
+\begin{tabularx}{\linewidth}{@{}p{1.10in}X@{}}
+\textbf{Assembler syntax} & [SEG(s):Rn(b) + Rn(i) * scale + displacement], [SEG(s):Rn(b) + Rn(i)++ * scale + displacement], [SEG(s):Rn(b) + --Rn(i) * scale + displacement]\\
+\textbf{Descriptor} & 1sss0010 bbbbiiii for no update; 1sss0000 bbbbiiii for postincrement index; 1sss0001 bbbbiiii for predecrement index. Two bytes.\\
+\textbf{Generation} & offset = temporary Rn(b) + index\_term * scale + displacement.\\
+\textbf{Segment} & SEG(s) selects CS, DS, SS, or GS0..GS4.\\
+\textbf{Scale} & Scale is implicit in the consuming instruction. B/W/L/Q normally imply 1/2/4/8.\\
+\textbf{Payload} & Two descriptor bytes plus the optional displacement selected by the compact EXT0 escape.\\
+\textbf{Update} & Index postincrement uses the current temporary Rn(i), then increments it by one element. Index predecrement decrements temporary Rn(i) by one element before use.\\
+\end{tabularx}\par
+\manualeaindexedmemoryflow{EXT0 explicit segment indexed}{BASE REGISTER}{Rn(b)}{optional displacement}{Rn(i)}{EFFECTIVE ADDRESS}
+\end{manualformblock}
+\begin{manualformblock}{4.25in}
+\textbf{\texttt{EXT0 Explicit Segment Zero Base}}\par
+\vspace{2pt}
+\begin{tabularx}{\linewidth}{@{}p{1.10in}X@{}}
+\textbf{Assembler syntax} & [SEG(s):0 + displacement]\\
+\textbf{Descriptor} & 1sss0011, one byte.\\
+\textbf{Generation} & offset = displacement. Without a displacement payload, offset is 0.\\
+\textbf{Segment} & SEG(s) selects CS, DS, SS, or GS0..GS4.\\
+\textbf{Payload} & One descriptor byte plus the optional displacement selected by the compact EXT0 escape.\\
+\textbf{Update} & No auto-update.\\
+\end{tabularx}\par
+\manualeasimplememoryflow{EXT0 zero-base address generation}{ZERO BASE}{0 plus displacement}{EFFECTIVE ADDRESS}
+\end{manualformblock}
+\begin{manualformblock}{5.07in}
+\textbf{\texttt{EXT0 Explicit Segment Base Auto-Update}}\par
+\vspace{2pt}
+\begin{tabularx}{\linewidth}{@{}p{1.10in}X@{}}
+\textbf{Assembler syntax} & [SEG(s):Rn(b)++ + displacement], [SEG(s):--Rn(b) + displacement]\\
+\textbf{Descriptor} & 1sss1000 bbbb0000 for base postincrement; 1sss1000 bbbb0001 for base predecrement. Two bytes.\\
+\textbf{Generation} & offset = base\_term + displacement.\\
+\textbf{Segment} & SEG(s) selects CS, DS, SS, or GS0..GS4.\\
+\textbf{Payload} & Two descriptor bytes plus the optional displacement selected by the compact EXT0 escape.\\
+\textbf{Update} & Base postincrement uses the current temporary Rn(b), then increments it by the memory access size. Base predecrement decrements temporary Rn(b) by the memory access size before use.\\
+\end{tabularx}\par
+\manualeaadditivememoryflow{EXT0 base auto-update}{BASE REGISTER}{Rn(b) temporary}{optional displacement}{EFFECTIVE ADDRESS}
+\end{manualformblock}
+\begin{manualformblock}{6.43in}
+\textbf{\texttt{EXT0 Explicit Segment Zero-Base Indexed}}\par
+\vspace{2pt}
+\begin{tabularx}{\linewidth}{@{}p{1.10in}X@{}}
+\textbf{Assembler syntax} & [SEG(s):0 + Rn(i) * scale + displacement], [SEG(s):0 + Rn(i)++ * scale + displacement], [SEG(s):0 + --Rn(i) * scale + displacement]\\
+\textbf{Descriptor} & 1sss1001 0010iiii for no update; 1sss1001 0000iiii for postincrement index; 1sss1001 0001iiii for predecrement index. Two bytes.\\
+\textbf{Generation} & offset = index\_term * scale + displacement.\\
+\textbf{Segment} & SEG(s) selects CS, DS, SS, or GS0..GS4.\\
+\textbf{Payload} & Two descriptor bytes plus the optional displacement selected by the compact EXT0 escape.\\
+\textbf{Update} & Index update follows the same one-element temporary-image rule as other indexed update forms.\\
+\end{tabularx}\par
+\manualeaindexedmemoryflow{EXT0 zero-base indexed}{ZERO BASE}{0}{optional displacement}{Rn(i)}{EFFECTIVE ADDRESS}
+\end{manualformblock}
+\begin{manualformblock}{6.43in}
+\textbf{\texttt{EXT0 SP/PC Indexed}}\par
+\vspace{2pt}
+\begin{tabularx}{\linewidth}{@{}p{1.10in}X@{}}
+\textbf{Assembler syntax} & [SP + Rn(i) * scale + displacement], [SP + Rn(i)++ * scale + displacement], [SP + --Rn(i) * scale + displacement], and the matching PC forms.\\
+\textbf{Descriptor} & 10001010 0010iiii, 0000iiii, or 0001iiii for SP; 10001011 0010iiii, 0000iiii, or 0001iiii for PC. Two bytes.\\
+\textbf{Generation} & offset = temporary SP or PC term + index\_term * scale + displacement.\\
+\textbf{Segment} & SP forms are fixed to SS. PC forms are fixed to CS.\\
+\textbf{Payload} & Two descriptor bytes plus the optional displacement selected by the compact EXT0 escape.\\
+\textbf{Update} & Only the Rn(i) index register may auto-update; SP and PC are not auto-updated by these forms.\\
+\end{tabularx}\par
+\manualeaindexedmemoryflow{EXT0 SP/PC indexed}{SP OR PC}{SP or PC term}{optional displacement}{Rn(i)}{EFFECTIVE ADDRESS}
+\end{manualformblock}
+\begin{manualformblock}{4.91in}
+\textbf{\texttt{EXT0 Default-Segment Base Auto-Update}}\par
+\vspace{2pt}
+\begin{tabularx}{\linewidth}{@{}p{1.10in}X@{}}
+\textbf{Assembler syntax} & [Rn(b)++ + displacement], [--Rn(b) + displacement]\\
+\textbf{Descriptor} & 1bbbb100 for base postincrement; 1bbbb101 for base predecrement. One byte.\\
+\textbf{Generation} & offset = base\_term + displacement.\\
+\textbf{Segment} & Uses the operation default data segment.\\
+\textbf{Payload} & One descriptor byte plus the optional displacement selected by the compact EXT0 escape.\\
+\textbf{Update} & Postincrement uses the current temporary Rn(b), then increments it by the memory access size. Predecrement decrements temporary Rn(b) by the memory access size before use.\\
+\end{tabularx}\par
+\manualeaadditivememoryflow{EXT0 default-segment base auto-update}{BASE REGISTER}{Rn(b) temporary}{optional displacement}{EFFECTIVE ADDRESS}
+\end{manualformblock}

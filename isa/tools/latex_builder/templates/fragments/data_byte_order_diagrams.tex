@@ -1,0 +1,15 @@
+\begin{manuallistedbyteorderdiagram}{Little-Endian Byte Order for a 64-Bit Value}{byte}{address}{increasing addresses}{least significant byte first}{most significant byte last}
+\manualbytecell{$V[7..0]$}{A+0}
+\manualbytecell{$V[15..8]$}{A+1}
+\manualbytecell{$V[23..16]$}{A+2}
+\manualbytecell{$V[31..24]$}{A+3}
+\manualbytecell{$V[39..32]$}{A+4}
+\manualbytecell{$V[47..40]$}{A+5}
+\manualbytecell{$V[55..48]$}{A+6}
+\manualbytecell{$V[63..56]$}{A+7}
+\end{manuallistedbyteorderdiagram}
+
+\begin{manuallistedbyteorderdiagram}{Instruction Start Bytes}{header byte}{}{instruction stream byte order}{}{}
+\manualbytecell{\shortstack{class/length\\opcode high}}{PC+0}
+\manualbytecell{\shortstack{opcode bits\\if present}}{PC+1}
+\end{manuallistedbyteorderdiagram}

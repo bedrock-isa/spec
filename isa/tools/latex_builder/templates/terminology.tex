@@ -1,0 +1,101 @@
+\clearpage
+\section{Terminology}
+
+\subsection{Address Values}
+
+An \emph{effective address (EA)} is the address value or operand designator produced by an addressing mode before
+segment pre-translation. A memory EA produces an address, while register and immediate EAs name non-memory operands.
+
+A \emph{pre-segment virtual address} is the ABI-visible address before segment pre-translation. Ordinary pointers,
+ELF symbol values, near CALL targets, and near JMP targets use this address space unless a rule says otherwise.
+
+A \emph{linear address} is the result of segment pre-translation. The page-table walker consumes it when paging is
+enabled; otherwise the memory system uses it directly.
+
+A \emph{physical address} is the byte address produced by page-table translation for ordinary byte-addressed memory.
+With paging disabled, the linear address is used directly instead.
+
+A \emph{memory-system address} is the value presented to the memory subsystem after every active architectural
+translation stage. Depending on the final access attributes, the subsystem may interpret it as an ordinary byte
+address or an externally acknowledged bus-sized access.
+
+\emph{Address generation} is the instruction-local calculation that combines registers, displacement, index,
+scale, and immediate fields into an effective address. It does not by itself read memory.
+
+\subsection{Segmentation and Paging}
+
+\emph{Segment pre-translation} is the stage between effective-address calculation and paging. A disabled segment
+passes the EA through. A translated window checks an offset and adds its base, while a bounds-only window checks an
+already-linear address without adding the base.
+
+A \emph{segment register image} is the 64-bit architectural value containing the segment base page, size exponent,
+size mantissa, and bounds-only enable bit.
+
+A \emph{disabled segment} has a zero size mantissa. It performs no segment-window check or base addition and passes
+the effective address through as the linear address.
+
+A \emph{translated segment} is enabled with bounds-only mode clear. It checks the effective address as an offset
+within the segment span and then adds the segment base.
+
+A \emph{bounds-only segment} is enabled with bounds-only mode set. It treats the effective address as already linear
+and checks only that it lies inside the segment window.
+
+\emph{Page-table translation} is the optional \texttt{PTCR.PE}-controlled stage that maps a canonical linear
+address to a physical frame and applies PTE permissions, cache policy, and addressing type.
+
+A \emph{PFN} is a physical frame number. A leaf PTE combines its PFN with the page offset to form the physical
+address.
+
+\subsection{Control Flow and Linkage}
+
+A \emph{near control transfer} is a CALL, RET, JMP, or conditional branch that changes only PC within the current
+code-segment context.
+
+A \emph{segment-changing control transfer} updates CS and PC in one architectural commit. Long jumps, long calls,
+and long returns belong to this category.
+
+A \emph{linkage domain} is an ABI-visible region in which ordinary code addresses name near-call entry points and
+function pointers carry no explicit CS value.
+
+A \emph{veneer} is a small runtime- or linker-generated near-call entry point that hides a more complex transfer
+sequence from ordinary callers.
+
+A \emph{far data address} is a C data-address pair containing a canonical post-segment virtual address and a
+canonical disabled or bounds-only segment image. The optional C far-data profile gives the pair a 128-bit language
+ABI representation; the base ISA still permits translated segments internally and does not make the pair an
+unforgeable capability.
+
+A \emph{far-data window} is an architectural segment register temporarily loaded from a far data address so an
+explicit-segment memory operation can perform the access. The optional C far-data profile assigns this role to GS4.
+
+\subsection{Architectural State}
+
+A \emph{general-purpose register} is one of the sixteen 64-bit Rn integer registers, R0 through R15. Ordinary
+integer register fields name this unified class.
+
+An \emph{Rn register} is a general-purpose integer register selected by a four-bit Rn field. It may hold integers,
+addresses, counters, selectors, or temporary data according to the instruction form.
+
+The \emph{stack pointer register} is SP. It lies outside the four-bit Rn namespace and uses SS as the fixed segment
+for SP-relative addressing.
+
+A \emph{segment register operand} is a 64-bit segment register exposed through the S operand class. That class names
+the segment registers in the SREG selector table, not FLAGS, STATUS, PC, or SP.
+
+A \emph{state register} is named architectural state such as FLAGS or STATUS. Dedicated read and write instructions
+access these registers instead of the S operand class.
+
+A \emph{control register} is a privileged register exposed through the CR operand class, such as PTCR, ASCR, ICR,
+SPC, SCS, and SDS.
+
+\subsection{Compatibility}
+
+\emph{Reserved} means held for a future architectural definition, so software does not depend on the current value
+or behavior. \emph{Must be zero} requires software to write zero, and \emph{read-as-zero} means reads return zero
+while the field remains reserved. \emph{Ignored} means hardware accepts the field without using it for the current
+operation. \emph{Preserved} requires software to retain the previous value when rewriting the containing object.
+
+\emph{Software-defined} state is explicitly reserved for software use and is not consumed by a future extension
+without redefining the containing structure. \emph{Implementation-defined} behavior is selected by the
+implementation and published through CPUID, platform documentation, or firmware. \emph{Illegal} use of an opcode,
+effective-address form, selector, or operation raises the exception named by the defining rule.

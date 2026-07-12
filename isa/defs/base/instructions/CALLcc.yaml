@@ -20,7 +20,6 @@ behavior:
 attributes:
   privilege: unprivileged
 forms:
-  target_ea_set: call_target
   operands:
   - name: cc
     type: condition
@@ -30,4 +29,3 @@ forms:
     fixed: Q
 definition_status:
   allocation: 'external: isa/alloc'
-

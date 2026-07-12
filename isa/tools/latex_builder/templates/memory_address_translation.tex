@@ -1,3 +1,6 @@
+\clearpage
+\section{Memory Address Translation}
+
 Memory address translation is a separate pipeline after effective-address calculation. Effective-address evaluation
 produces an address value or operand designator; segmentation optionally turns that value into a linear address, and
 paging optionally turns the linear address into a memory-system address.
@@ -5,13 +8,34 @@ paging optionally turns the linear address into a memory-system address.
 Instruction fetches use CS, stack accesses use SS, and ordinary data accesses use the operation default data segment
 unless an effective-address form explicitly selects another segment. SP and PC forms use their fixed segments.
 
-SEGLEA exposes the linear address produced by segment pre-translation when software explicitly needs it. The ISA
-does not prescribe a language pointer representation. The Bedrock C ABI uses canonical post-segment virtual
-addresses and restricts C-visible address contexts to disabled or bounds-only modes, with GS0-relative TLS as an
-explicit exception.
+SEGLEA exposes the linear address produced by segment pre-translation when software explicitly needs it. It checks
+only the computed effective-address point; its size suffix selects the effective-address index scale and does not
+turn the check into an access-sized byte-range check. A successful SEGLEA writes the segment result and clears V. A
+failed segment-bound check sets V, suppresses the destination-operand write, and does not raise PAGE\_FAULT. The
+failure is a completed non-faulting operation, so effective-address auto-update effects commit normally. The ISA does
+not prescribe a language pointer representation. The Bedrock C ABI uses canonical post-segment virtual addresses and
+restricts C-visible address contexts to disabled or bounds-only modes, with GS0-relative TLS as an explicit exception.
 
-@ADDRESS_TRANSLATION_PIPELINE_FIGURE@
+\input{isa/tools/latex_builder/templates/fragments/address_translation_pipeline_figure.tex}
 
-@ADDRESS_TRANSLATION_STAGE_TABLE@
+Segment pre-translation interprets the selected 64-bit segment image before paging. Its base is
+\texttt{base\_page} multiplied by 4096, and its span is \texttt{(m << e)} multiplied by 4096. The limit is the
+mathematical sum of base and span and is checked before 64-bit truncation. A disabled segment passes the effective
+address through. An enabled segment either checks the effective address as an offset and adds the base, or checks an
+already-linear address in bounds-only mode.
 
-@SEGMENT_PRETRANSLATION_TABLE@
+The segment result is the linear address. With PTCR.PE set, the page-table walker consumes that address and applies
+the selected PTE frame and attributes. With paging disabled, the memory system receives the linear address directly.
+An invalid segment image raises INVALID\_CONTROL\_STATE when written; a failed segment bound or canonical-address
+check raises PAGE\_FAULT during access.
+
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{1.15in}>{\raggedright\arraybackslash}p{1.55in}>{\raggedright\arraybackslash}p{1.65in}@{}}
+\toprule
+\textbf{Mode} & \textbf{Segment State} & \textbf{Check} & \textbf{Linear Address}\\
+\midrule
+disabled & m = 0 & no segment-window check & linear = EA\\
+translated window & m != 0, b = 0 & 0 <= EA < span & linear = base + EA\\
+bounds-only window & m != 0, b = 1 & base <= EA < limit & linear = EA\\
+\bottomrule
+\end{manualtabular}
+\manualtablecaption{Segment Pre-Translation Modes}

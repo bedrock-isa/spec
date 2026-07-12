@@ -4,6 +4,7 @@ operand_schema:
   role_name_pattern: ^[a-z][a-z0-9_]*$
   types:
   - Rn
+  - SP
   - EA
   - EA_or_range
   - FREG
@@ -35,9 +36,6 @@ operand_schema:
       - 0
       - 7
       operation_size_extension: zero_extend
-      applies_when: PUSHP/POPP canonical register-pair selector
-      description: Inline 3-bit immediate literals are unsigned values. PUSHP and POPP interpret
-        the value as a canonical register-pair index, so all encodings 0..7 are valid.
     imm4:
       width: 4
       signed: false
@@ -45,10 +43,6 @@ operand_schema:
       - 0
       - 15
       operation_size_extension: zero_extend
-      applies_when: SETF/CLRF integer FLAGS masks
-      description: Inline 4-bit immediate literals are unsigned masks. For SETF and CLRF, bit 3 selects
-        Z, bit 2 selects N, bit 1 selects C, and bit 0 selects V, matching the architectural FLAGS low
-        nibble exposed by RDFLAGS and WRFLAGS.
     imm6:
       width: 6
       signed: false
@@ -56,9 +50,6 @@ operand_schema:
       - 0
       - 63
       operation_size_extension: zero_extend
-      applies_when: integer forms with an explicit B/W/L/Q operation size
-      description: Inline 6-bit immediate literals are unsigned values. When the instruction operation
-        size is wider than 6 bits, the immediate value is zero-extended to the operation size before use.
     imm7:
       width: 7
       signed: false
@@ -66,8 +57,6 @@ operand_schema:
       - 0
       - 127
       operation_size_extension: zero_extend
-      applies_when: EXTRACT register-pair forms
-      description: Inline 7-bit immediate literals are unsigned values used as EXTRACT offsets.
   condition_role: cc
   selector_roles:
   - count
@@ -78,27 +67,21 @@ operand_schema:
     B:
       suffix: .B
       bytes: 1
-      label: Byte
     W:
       suffix: .W
       bytes: 2
-      label: Word
     L:
       suffix: .L
       bytes: 4
-      label: Long
     Q:
       suffix: .Q
       bytes: 8
-      label: Quad
     S:
       suffix: .S
       bytes: 4
-      label: Single
     D:
       suffix: .D
       bytes: 8
-      label: Double
   size_kinds:
     BWLQ:
       field: s
@@ -169,32 +152,21 @@ operand_schema:
       values:
       - value: 0
         name: RELAXED
-        description: Atomicity only. No ordering is imposed on unrelated memory operations.
       - value: 1
         name: ACQUIRE
-        description: Later memory operations by the same hardware thread are ordered after the atomic
-          operation.
       - value: 2
         name: RELEASE
-        description: Earlier memory operations by the same hardware thread are ordered before the atomic
-          operation.
       - value: 3
         name: ACQREL
-        description: Applies both acquire and release ordering.
       - value: 4
         name: SEQCST
-        description: Applies acquire-release ordering and participates in the global sequentially consistent
-          order for atomic operations.
       reserved_values:
       - value: 5
         name: RESERVED5
-        description: Reserved selector encoding; using it is invalid for the atomic form.
       - value: 6
         name: RESERVED6
-        description: Reserved selector encoding; using it is invalid for the atomic form.
       - value: 7
         name: RESERVED7
-        description: Reserved selector encoding; using it is invalid for the atomic form.
   bitmap_operands:
     bitmap16:
       width: 16

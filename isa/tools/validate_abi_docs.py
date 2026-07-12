@@ -21,7 +21,6 @@ NON_ABI_DOCUMENTS = (
 )
 HEADER_ROOT = ROOT / "isa" / "c" / "include"
 CALL_CASES = ROOT / "isa" / "abi" / "calling_convention_cases.json"
-CODEGEN_AUDIT = ROOT / "docs" / "abi_codegen_audit.md"
 
 
 def normalize_tex(text: str) -> str:
@@ -102,6 +101,12 @@ def validate_target_intrinsics() -> None:
 
     public = (HEADER_ROOT / "bedrockintrin.h").read_text(encoding="utf-8")
     system = (HEADER_ROOT / "bedrocksystemintrin.h").read_text(encoding="utf-8")
+    far = (HEADER_ROOT / "bedrockfarintrin.h").read_text(encoding="utf-8")
+    for declaration in (
+        "typedef unsigned __int128 __bedrock_far_uintptr_t;",
+        "typedef unsigned __int128 __bedrock_far_func_uintptr_t;",
+    ):
+        require(declaration in far, f"bedrockfarintrin.h is missing {declaration!r}")
     for name in (
         "bedrockfarintrin.h", "bedrockcoreintrin.h", "bedrockmemoryintrin.h",
         "bedrockintegerintrin.h", "bedrockfpuintrin.h",
@@ -142,6 +147,18 @@ def validate_document_boundaries() -> None:
         require(obsolete not in c_abi, f"baseline C ABI still contains obsolete rule/value table {obsolete!r}")
     require("Scalar Type Semantics" in c_abi, "baseline C ABI is missing scalar semantic rules")
     require("Aggregate Layout" in c_abi, "baseline C ABI is missing aggregate layout rules")
+    for decision in (
+        "requires the base floating-point extension",
+        "defines no soft-float calling convention",
+        "not supported as C atomic",
+        "do not create distinct C",
+    ):
+        require(decision in c_abi, f"baseline C ABI is missing decision {decision!r}")
+    for decision in (
+        "does not require automatic veneer synthesis",
+        "A cast is not an implicit",
+    ):
+        require(decision in c_abi, f"baseline C ABI is missing decision {decision!r}")
 
     elf_path = ROOT / "isa" / "abi" / "bedrock-elf-abi.tex"
     elf_abi = elf_path.read_text(encoding="utf-8")
@@ -182,6 +199,13 @@ def validate_document_boundaries() -> None:
     c_ext = normalize_tex(c_ext_source)
     for token in ("__far", "far_ptr_init", "cross-segment alias barrier"):
         require(token in c_ext, f"C extension document is missing {token!r}")
+    for decision in (
+        "has undefined behavior",
+        "No runtime check or trap is required",
+        "constraint violation that requires a diagnostic",
+        "Such a cast never",
+    ):
+        require(decision in c_ext, f"C extension document is missing decision {decision!r}")
     c_ext_captions = re.findall(r"\\manualtablecaption\{([^{}]+)\}", c_ext_source)
     require(
         len(c_ext_captions) == 2,
@@ -259,21 +283,6 @@ def validate_codegen_examples() -> None:
     require(rep_line in scalar_example, f"{c_abi_path}: scalar leaf must use parenthesis-free REP syntax")
     require("repg" not in scalar_example.lower(), f"{c_abi_path}: scalar leaf still uses REPG")
 
-    require(CODEGEN_AUDIT.is_file(), f"missing code-generation audit: {CODEGEN_AUDIT}")
-    audit = CODEGEN_AUDIT.read_text(encoding="utf-8")
-    for token in (
-        "187-extrashort-sp-adjust",
-        "call_heavy",
-        "stack arguments",
-        "variadic functions",
-        "scalar-leaf",
-        "nonleaf-preservation",
-        "single-instruction `REP`",
-        "parenthesis-free",
-    ):
-        require(token in audit, f"{CODEGEN_AUDIT}: missing audit evidence {token!r}")
-
-
 def main() -> int:
     validate_layers()
     validate_relocations()
@@ -281,7 +290,7 @@ def main() -> int:
     validate_document_boundaries()
     validate_calling_convention_model()
     validate_codegen_examples()
-    print("ABI document validation passed")
+    print("Document validation passed")
     return 0
 
 

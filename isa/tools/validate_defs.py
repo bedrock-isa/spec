@@ -104,7 +104,7 @@ def validate_defs(root: Path = ROOT) -> tuple[dict[str, Any], list[str]]:
         mnemonic = data.get("mnemonic")
         if mnemonic is None:
             # Common include files are allowed to carry shared metadata.
-            if path.name not in {"_common.yaml", "save_restore_area.yaml"}:
+            if path.name != "_common.yaml":
                 errors.append(f"{path}: missing mnemonic")
             continue
 

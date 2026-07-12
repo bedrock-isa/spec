@@ -82,13 +82,22 @@ conversion.
 Explicit near-to-far conversion retains the near pointer's canonical address
 and attaches the current canonical disabled or bounds-only data context.
 Explicit far-to-near conversion retains the canonical address but succeeds
-only when it is valid in the current ordinary data context.
+only when it is valid in the current ordinary data context. A null source
+converts to the ordinary null pointer. For a non-null source, evaluating the
+conversion when the canonical address is not admitted by the current ordinary
+data context has undefined behavior. No runtime check or trap is required at
+the conversion point, and the conversion does not probe page translation.
 
 Every declaration and definition of a far-native function must agree on the
 far function kind. Taking its address produces the corresponding far function
 pointer. A mismatch between near and far declarations requires a diagnostic.
-A known near or far function symbol may cross conventions only through the
-typed veneer defined by the C ABI; a representation-only cast is invalid.
+In version 1.0, every explicit conversion or cast between ordinary and far
+function-pointer types is a constraint violation that requires a diagnostic,
+including when the operand names a known function symbol. Such a cast never
+requests a veneer, and a conforming implementation need not synthesize one.
+An implementation may expose a separately named veneer extension for a known,
+prototyped, nonvariadic function; any veneer emitted by that extension follows
+the typed veneer ABI defined by the C ABI.
 
 \subsection{Pointer Operations and Identity}
 Pointer arithmetic changes the canonical address while preserving the

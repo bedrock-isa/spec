@@ -1,3 +1,6 @@
+\clearpage
+\section{Streaming Execution Model}
+
 This section defines the architectural role of repeated scalar execution in Bedrock. The architecture exposes
 scalar register state and bounded repeated instruction forms. A high-performance implementation may recognize
 regular repeated operations and execute them with wider internal datapaths, but that internal width is not
@@ -10,29 +13,54 @@ counter and termination rules.
 The architectural counter, FLAGS image, memory effects, and auto-update register effects are observed as if each
 committed iteration completed before the next one began.
 
-\begin{itemize}
-\item the repeated body is decoded when repeat state is entered and remains the body for that repeat context;
-\item body decode and repeatability checks occur before zero-count annulment;
-\item register and memory operands are evaluated according to the repeated instruction's normal rules;
-\item auto-update effective-address forms update as if each iteration executed the scalar instruction;
-\item faults and exceptions are precise at the repeated-operation boundary defined by the repeat instruction rule;
-\item FLAGS and FFLAGS are updated according to the repeated instruction and repeat accumulation rules;
-\item software must not depend on an implementation's internal vector width or streaming datapath width.
-\end{itemize}
+The body is decoded when repeat state is entered and remains fixed for that repeat context. Each iteration evaluates
+register and memory operands by the body's ordinary rules, including the normal scalar effects of auto-update
+effective addresses. FLAGS and FFLAGS follow the body's instruction semantics and any repeat-specific accumulation
+rule. Faults remain precise at the repeated-operation boundary, regardless of whether an implementation uses scalar
+issue or a wider internal streaming datapath.
 
 \subsection{Repeat Syntax and Body Eligibility}
 
 @REPEAT_SYNTAX_TABLE@
 
-@REPEATABLE_CLASS_TABLE@
+Repeatability is opt-in for each context. An instruction eligible for REP may be used as an unconditional
+single-instruction body. REPcc additionally requires conditional-repeat eligibility, whereas REPG accepts
+instructions eligible for grouped repetition. An instruction without the relevant eligibility is not repeatable in
+that context.
 
-@REPEAT_BODY_ENTRY_TABLE@
+The processor decodes the body and checks its repeat eligibility before applying the zero-count rule. A malformed or
+unavailable body therefore faults even when the captured count is zero. Once a valid body has passed those checks, a
+zero count annuls it without architectural side effects.
+
+REPGF is an assembler-checked spelling of REPG rather than a distinct architectural operation. The assembler accepts
+only candidate bodies that do not write the selected counter register. The emitted encoding, decoded operation, and
+repeat-continuation state are otherwise identical to REPG.
 
 \subsection{Counter, Condition, and Control Rules}
 
-@REPEAT_COUNTER_TABLE@
+Entering repeat state captures the selected Rn value as an unsigned remaining count. Each successfully committed
+iteration decrements that captured count. A condition-false REPcc iteration still commits its body and performs the
+decrement before repeat state is cleared. A valid zero count performs no body side effects after decoding and
+eligibility checks complete.
 
-@REPEAT_LEGALITY_TABLE@
+During REP and REPcc, a body read of the selected counter register observes the iteration-start architectural value,
+while a body write to that register is ignored. REPG executes counter-register reads and writes in normal in-group
+program order, but a write does not replace the separately captured remaining count. The checked REPGF spelling
+rejects such a write at assembly time.
+
+The repeat condition is derived from the body's repeat-observed value and repeat flag rule. Unless an instruction
+overrides that rule, the observed value is its primary committed result, or the primary source value for a store-only
+operation. An instruction that updates FLAGS uses the committed flags; otherwise logical flags are derived from the
+observed value. The first condition test occurs after the first body iteration. Body commit, condition capture,
+counter decrement, and continuation-PC selection form one precise architectural commit step. REP is the unconditional
+T-condition spelling, and F is reserved for REPcc.
+
+A repeat body may not contain another repeat operation, a repeat-control instruction, or a control transfer.
+Floating-point instructions may be used with REP and REPG, but not with REPcc. While repetition is active, PC names
+the current body instruction, and the initially decoded instruction or group remains fixed. Handler entry saves
+repeat state in FAULT\_AUX and clears the active architectural repeat state; IRET restores that state atomically with
+the saved PC and status state. Single-step debugging stops after each architecturally executed iteration, whereas a
+next-instruction operation runs the complete repeat and stops after repeat state clears.
 
 \subsection{Implementation Freedom}
 An implementation may recognize regular repeated operations and execute them with a micro-loop, loop buffer,
@@ -49,7 +77,11 @@ transforms are natural streaming candidates when combined with a defined repeat 
 fixed-size instruction groups when REPG describes a bounded group that has no unresolved control transfer into or
 out of the group body.
 
-@STREAMING_CANDIDATE_TABLE@
+Copy and fill loops commonly use REPG with MOV over one or two Rn-stepped streams. Scan and compare loops use TEST or
+CMP when the grouped body defines termination. Bulk extension combines EXTS or EXTZ with source and destination
+auto-update, while cache-maintenance loops traverse regular cache-line sequences. A fixed instruction group is also a
+candidate when its byte count ends on an instruction boundary and its body is straight-line. These shapes permit
+recognition; they do not guarantee a particular throughput or internal width.
 
 \subsection{Compiler Model}
 Compilers may emit repeated scalar forms for compact code size and predictable restart state. They do not need to
@@ -64,4 +96,17 @@ Faults remain precise at the repeated-operation boundary. Completed iterations a
 faulting iteration is reported at the faulting instruction with restart state sufficient to continue or emulate
 the remaining work.
 
-@REPEAT_RESTART_TABLE@
+\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{1.15in}>{\raggedright\arraybackslash}p{2.10in}>{\raggedright\arraybackslash}p{2.15in}@{}}
+\toprule
+\textbf{Property} & \textbf{Single-instruction repeat} & \textbf{REPG}\\
+\midrule
+\endhead
+Body decode & body instruction decoded once at entry & group body decoded once at entry\\
+Zero counter & body checked, then annulled without side effects & group checked, then annulled without side effects\\
+Body & one following instruction & encoded byte-counted instruction group\\
+Counter update & after a completed condition-true iteration & after the whole group iteration succeeds\\
+Terminating fault & reported at the repeated scalar instruction & reported at the faulting instruction in the group\\
+Completed work & completed iterations remain committed & completed iterations and prior group instructions remain committed\\
+\bottomrule
+\end{manuallongtable}
+\manualtablecaption{Repeat Restart Properties}

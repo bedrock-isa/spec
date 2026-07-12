@@ -1,0 +1,16 @@
+\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{1.20in}>{\raggedright\arraybackslash}p{3.60in}@{}}
+\toprule
+\textbf{Offset} & \textbf{Slot} & \textbf{Meaning}\\
+\midrule
+\endhead
++0x00 & FRAME\_CONTROL & frame metadata, entry flags, saved FLAGS, and saved STATUS\\
++0x08 & FRAME\_EXT0 & reserved for future architected base-frame state; must be zero\\
++0x10 & FRAME\_EXT1 & reserved for future architected base-frame state; must be zero\\
++0x18 & SAVED\_PC & saved program counter\\
++0x20 & SAVED\_SP & saved stack pointer\\
++0x28 & SAVED\_CS & saved code segment selector or image\\
++0x30 & SAVED\_DS & saved data segment selector or image\\
++0x38 & SAVED\_SS & saved stack segment selector or image\\
+\bottomrule
+\end{manuallongtable}
+\manualunlistedtablecaption{Supervisor Entry Stack Frame Fields}

@@ -1,0 +1,12 @@
+\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{0.40in}>{\raggedright\arraybackslash}p{0.82in}>{\raggedright\arraybackslash}p{0.62in}>{\raggedright\arraybackslash}p{1.55in}>{\raggedright\arraybackslash}p{2.00in}@{}}
+\toprule
+\textbf{Code} & \textbf{Type} & \textbf{Payload Blocks} & \textbf{Payload} & \textbf{Meaning}\\
+\midrule
+\endhead
+0x0 & BASIC & 0 & none & fixed frame only\\
+0x1 & ERROR & 1 & ERROR\_CODE & fixed frame plus one 64-byte payload block containing the exception error code\\
+0x2 & PAGE\_FAULT & 1 & ERROR\_CODE, FAULT\_EA, FAULT\_LINEAR & page-fault payload with effective-address context and linear address\\
+0x3 & AUX\_FAULT & 1 & ERROR\_CODE, FAULT\_EA, FAULT\_LINEAR, FAULT\_AUX & auxiliary fault payload for machine-check, bus, or repeat-continuation state\\
+\bottomrule
+\end{manuallongtable}
+\manualunlistedtablecaption{Supervisor Stack Frame Types}

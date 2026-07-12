@@ -1,6 +1,11 @@
 #ifndef __BEDROCKFARINTRIN_H
 #define __BEDROCKFARINTRIN_H
 
+/* The distinct names document data- and function-pointer use; both aliases
+   have the same unsigned 128-bit C type. */
+typedef unsigned __int128 __bedrock_far_uintptr_t;
+typedef unsigned __int128 __bedrock_far_func_uintptr_t;
+
 #define __BEDROCK_FAR_PTR_INIT(pointer_type, address, segment_image) \
   __builtin_bedrock_far_ptr_init(pointer_type, address, segment_image)
 #define __BEDROCK_FAR_FLAT_PTR_INIT(pointer_type, address) \

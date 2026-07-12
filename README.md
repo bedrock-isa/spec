@@ -20,6 +20,7 @@ isa/tools/validate_alloc.py  allocation collision and cardinality validator
 isa/tools/validate_isa.py    definition/allocation join validator
 isa/tools/validate_abi_docs.py ABI document and intrinsic-header validator
 isa/tools/gen_docs.py        reference document generator
+isa/tools/latex_to_markdown.py derived Markdown converter for TeX documents
 isa/tools/gen_alloc_report.py allocation occupancy report generator
 ```
 
@@ -44,16 +45,33 @@ python3 isa/tools/validate_abi_docs.py
 
 ## Reference Documents
 
-Generate Markdown:
+Generate the ISA reference TeX source:
 
 ```sh
-python3 isa/tools/gen_docs.py -o build/isa_reference.md
+python3 isa/tools/gen_docs.py -o build/isa_reference.tex
 ```
 
-Generate TeX:
+Generate derived GitHub-Flavored Markdown with Pandoc:
 
 ```sh
-python3 isa/tools/gen_docs.py --format latex -o build/isa_reference.tex
+python3 isa/tools/gen_docs.py --format markdown -o build/isa_reference.md
+```
+
+The Markdown file is generated from the fully rendered LaTeX document. It is a
+publication artifact, not a second documentation source. No Markdown templates
+are maintained in the repository. Install Pandoc first, or set the `PANDOC`
+environment variable to its executable path.
+
+The directly maintained ABI and compiler-interface TeX documents use the same
+converter. For example:
+
+```sh
+python3 isa/tools/latex_to_markdown.py \
+  isa/abi/bedrock-elf-abi.tex \
+  build/markdown/bedrock-elf-abi.md
+python3 isa/tools/latex_to_markdown.py \
+  isa/abi/bedrock-c-abi.tex \
+  build/markdown/bedrock-c-abi.md
 ```
 
 Build the PDF from the generated TeX:
@@ -72,6 +90,10 @@ make docs
 The four directly maintained TeX documents can be built independently with
 `make elf-abi`, `make c-abi`, `make c-far-extensions`, and
 `make target-intrinsics`.
+
+Use `make isa-reference-markdown` for the ISA reference, `make abi-markdown`
+for both ABI documents, or `make docs-markdown` for all five derived Markdown
+artifacts.
 
 ## Allocation Reports
 

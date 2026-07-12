@@ -10,9 +10,6 @@ import re
 
 import yaml
 
-ARCH_NAME = "Bedrock"
-MANUAL_TITLE = "Bedrock Programmer's Reference Manual"
-MANUAL_SUBTITLE = "Bounded Byte-Addressed CISC Architecture"
 CAPTION_LABEL_RE = re.compile(r"^(?:Table|Figure)\s+\d+(?:-\d+)?\.\s*")
 TEMPLATE_DIR = Path(__file__).with_name("templates")
 TABLE_INLINE_LIST_MAX_CHARS = 32
@@ -205,46 +202,6 @@ class LatexSequence(LatexComponent):
 
 
 @dataclass(frozen=True)
-class LatexDocumentPreamble(LatexComponent):
-    def render(self) -> str:
-        return LatexTemplate(
-            "document_preamble.tex",
-            {
-                "ARCH_NAME": ARCH_NAME,
-                "MANUAL_TITLE": MANUAL_TITLE,
-            },
-        ).render()
-
-
-@dataclass(frozen=True)
-class LatexDocumentEnd(LatexComponent):
-    def render(self) -> str:
-        return LatexTemplate("document_end.tex").render()
-
-
-@dataclass(frozen=True)
-class LatexTitlePage(LatexComponent):
-    plan: dict[str, Any]
-    mnemonic_count: int
-    form_count: int
-
-    def render(self) -> str:
-        solver = self.plan.get("solver", {})
-        return LatexTemplate(
-            "title_page.tex",
-            {
-                "MNEMONIC_COUNT": self.mnemonic_count,
-                "FORM_COUNT": self.form_count,
-                "SOLVER_STATUS": tex_escape(solver.get("status", "unknown")),
-                "ARCH_NAME": ARCH_NAME,
-                "ARCH_NAME_UPPER": ARCH_NAME.upper(),
-                "MANUAL_TITLE": MANUAL_TITLE,
-                "MANUAL_SUBTITLE": MANUAL_SUBTITLE,
-            },
-        ).render()
-
-
-@dataclass(frozen=True)
 class LatexTopSection(LatexComponent):
     title: str
 
@@ -347,18 +304,6 @@ class LatexTabular(LatexComponent):
 
 def render_latex_template(name: str, values: dict[str, Any] | None = None) -> str:
     return LatexTemplate(name, values).render()
-
-
-def document_preamble() -> str:
-    return LatexDocumentPreamble().render()
-
-
-def document_end() -> str:
-    return LatexDocumentEnd().render()
-
-
-def title_page(plan: dict[str, Any], mnemonic_count: int, form_count: int) -> str:
-    return LatexTitlePage(plan, mnemonic_count, form_count).render()
 
 
 def top_section(title: str) -> str:

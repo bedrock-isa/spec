@@ -16,6 +16,14 @@ This import is being migrated to the new architectural model. Base instruction
 operand types use `Rn`; removed legacy core instructions are not kept as
 inactive definitions in this tree.
 
+Definition YAML is reserved for encodings, enumerated values, operand forms,
+and constraints owned by a concrete instruction or format. Cross-cutting
+explanatory prose belongs in the reference templates, not in generic
+`rule`/`meaning`, `topic`/`value`, or similar document-shaped mappings. A
+derived list must be computed from its owning definitions instead of being
+copied into a second YAML source. The `doc` block on an instruction remains the
+intentional home for that instruction's title, summary, and narrative.
+
 Run the definition-layer check with:
 
 ```sh

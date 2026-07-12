@@ -1,0 +1,44 @@
+\begin{manuallistedformatdiagram}{SAVE/RESTORE Base Header}{4}
+\manualformatrowrange{header[63:0]}{63}{0}{%
+\manualformatfield{reserved}{12}
+\manualformatfield{STATUS}{16}
+\manualformatfield{FLAGS}{16}
+\manualformatfield{reserved}{11}
+\manualformatfield{GS\_VALID}{5}
+\manualformatfield{FMT}{4}
+}
+\manualformatrowrange{bitmap[63:0]}{63}{0}{%
+\manualformatfield{state block bitmap}{64}
+}
+\end{manuallistedformatdiagram}
+\begin{manualdenselongtable}{@{}>{\raggedright\arraybackslash}p{0.55in}>{\raggedright\arraybackslash}p{0.90in}>{\raggedright\arraybackslash}p{3.95in}@{}}
+\toprule
+\textbf{Offset} & \textbf{Field} & \textbf{Contents}\\
+\midrule
+\endhead
+\texttt{0x010} & \texttt{R0} & 64-bit general-purpose register image\\
+\texttt{0x018} & \texttt{R1} & 64-bit general-purpose register image\\
+\texttt{0x020} & \texttt{R2} & 64-bit general-purpose register image\\
+\texttt{0x028} & \texttt{R3} & 64-bit general-purpose register image\\
+\texttt{0x030} & \texttt{R4} & 64-bit general-purpose register image\\
+\texttt{0x038} & \texttt{R5} & 64-bit general-purpose register image\\
+\texttt{0x040} & \texttt{R6} & 64-bit general-purpose register image\\
+\texttt{0x048} & \texttt{R7} & 64-bit general-purpose register image\\
+\texttt{0x050} & \texttt{R8} & 64-bit general-purpose register image\\
+\texttt{0x058} & \texttt{R9} & 64-bit general-purpose register image\\
+\texttt{0x060} & \texttt{R10} & 64-bit general-purpose register image\\
+\texttt{0x068} & \texttt{R11} & 64-bit general-purpose register image\\
+\texttt{0x070} & \texttt{R12} & 64-bit general-purpose register image\\
+\texttt{0x078} & \texttt{R13} & 64-bit general-purpose register image\\
+\texttt{0x080} & \texttt{R14} & 64-bit general-purpose register image\\
+\texttt{0x088} & \texttt{R15} & 64-bit general-purpose register image\\
+\texttt{0x090} & \texttt{GS0} & optional segment image; present when the corresponding GS\_VALID bit is set\\
+\texttt{0x098} & \texttt{GS1} & optional segment image; present when the corresponding GS\_VALID bit is set\\
+\texttt{0x0a0} & \texttt{GS2} & optional segment image; present when the corresponding GS\_VALID bit is set\\
+\texttt{0x0a8} & \texttt{GS3} & optional segment image; present when the corresponding GS\_VALID bit is set\\
+\texttt{0x0b0} & \texttt{GS4} & optional segment image; present when the corresponding GS\_VALID bit is set\\
+\texttt{0x0b8} & \texttt{reserved} & reserved fixed-base slot; written as zero\\
+\texttt{0x0c0+} & \texttt{extension state} & CPUID-defined 64-byte-aligned component slots\\
+\bottomrule
+\end{manualdenselongtable}
+\manualunlistedtablecaption{SAVE/RESTORE Fixed Base Block}

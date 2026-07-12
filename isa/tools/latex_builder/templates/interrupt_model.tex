@@ -1,3 +1,6 @@
+\clearpage
+\section{Exception Processing Reference}
+
 Exception processing covers synchronous restartable CPU exceptions, traps, NMIs, external interrupts, and the
 supervisor-entry state needed to return from them.
 
@@ -12,9 +15,9 @@ Bytes 0 through 7 contain the 64-bit interrupt handler address. Byte 8 is the en
 handler-present bit; if it is clear, delivery immediately becomes DOUBLE\_FAULT. SN selects the supervisor stack
 set used for the entry frame. Reserved IVT bits must be written as zero.
 
-@IVT_ENTRY_DIAGRAMS@
+\input{isa/tools/latex_builder/templates/fragments/ivt_entry_diagrams.tex}
 
-@IVT_ENTRY_TABLE@
+\input{isa/tools/latex_builder/templates/fragments/ivt_entry_table.tex}
 
 \subsection{Vector Assignment}
 Vectors 0x00..0x1F are owned by the CPU architecture. Vectors 0x20..0x3F are reserved for future architectural
@@ -23,9 +26,9 @@ use. Operating systems, platforms, and devices may assign vectors 0x40..0xFF.
 SYSCALL does not allocate or consume an IVT vector. It enters supervisor mode through the SPC/SCS/SDS
 supervisor-entry path.
 
-@VECTOR_RANGE_TABLE@
+\input{isa/tools/latex_builder/templates/fragments/vector_range_table.tex}
 
-@CPU_VECTOR_TABLE@
+\input{isa/tools/latex_builder/templates/fragments/cpu_vector_table.tex}
 
 \subsection{Entry and Return Rules}
 Exception entry is precise at the architectural instruction boundary or at the instruction-defined restart point.
@@ -35,7 +38,13 @@ emulation.
 IRET restores the saved execution context after validating the saved segment and status fields. Invalid saved
 state raises the appropriate control-state exception instead of partially returning.
 
-@EXCEPTION_ENTRY_TABLE@
+The frame save and the transition to supervisor mode are atomic with respect to architectural visibility. Entry sets
+STATUS.PM to one at its commit point, and return restores the saved STATUS image only after validation. SYSRET accepts
+only a syscall frame; IRET handles interrupt, trap, and exception frames.
+
+An IVT entry with HP clear immediately redirects delivery to DOUBLE\_FAULT. Attempting to deliver a reserved
+CPU-owned vector has the same result. An invalid instruction length is reported as ILLEGAL\_INSTRUCTION rather than
+as a separate length fault, while segment-bound and canonical-address failures use PAGE\_FAULT.
 
 @EXCEPTION_INSTRUCTION_TABLE@
 
@@ -47,25 +56,25 @@ frame size in 8-byte units, so the base frame records 8 units before any optiona
 Offsets are measured from the saved stack pointer. Optional payload, when present, follows the fixed frame in
 whole 64-byte blocks.
 
-@STACK_FRAME_DIAGRAMS@
+\input{isa/tools/latex_builder/templates/fragments/supervisor_stack_frame_diagram.tex}
 
-@STACK_FRAME_TABLE@
+\input{isa/tools/latex_builder/templates/fragments/stack_frame_table.tex}
 
 \texttt{FRAME\_CONTROL.frame\_type} documents the stack frame format. Payload, if any, is appended after the
 fixed frame in whole 64-byte blocks. \texttt{FRAME\_CONTROL.frame\_size} gives the total number of 8-byte slots,
 and the frame type code determines how software interprets the allocated payload blocks. IRET does not validate
 the frame type.
 
-@FRAME_TYPE_TABLE@
+\input{isa/tools/latex_builder/templates/fragments/frame_type_table.tex}
 
 \texttt{FRAME\_CONTROL} packs the saved FLAGS image and STATUS image with the frame metadata. The fixed frame
 also reserves two 64-bit extension slots for future architected base-frame state.
 
-@PAYLOAD_SLOT_TABLE@
+\input{isa/tools/latex_builder/templates/fragments/payload_slot_table.tex}
 
-@FRAME_CONTROL_DIAGRAM@
+\input{isa/tools/latex_builder/templates/fragments/frame_control_diagram.tex}
 
-@FRAME_CONTROL_TABLE@
+\input{isa/tools/latex_builder/templates/fragments/frame_control_table.tex}
 
 \Needspace{6.4in}
 \subsection{Repeat Fault Continuation}
@@ -78,14 +87,14 @@ During single-instruction repeat, the saved PC is the repeated body instruction 
 reconstructs the group start from the saved PC and the encoded byte-distance group-start delta. Returning with
 IRET preserves the continuation state unless software edits the frame before return.
 
-@REPEAT_FAULT_AUX_DIAGRAM@
+\input{isa/tools/latex_builder/templates/fragments/repeat_fault_aux_diagram.tex}
 
-@REPEAT_FAULT_AUX_TABLE@
+\input{isa/tools/latex_builder/templates/fragments/repeat_fault_aux_table.tex}
 \end{samepage}
 
 \subsection{Interrupt Reset State}
 
-@RESET_STATE_TABLE@
+\input{isa/tools/latex_builder/templates/fragments/reset_state_table.tex}
 
 Reset initializes the processor into a supervisor-controlled state with interrupts disabled and
 implementation-defined reset vector state supplied by the platform. Software must initialize segment state,

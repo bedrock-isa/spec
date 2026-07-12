@@ -1,3 +1,6 @@
+\clearpage
+\section{CPUID Feature Discovery}
+
 \subsection{Overview}
 CPUID is the architectural discovery interface for optional instruction groups, processor-state save areas,
 implementation limits, and feature-specific parameters.
@@ -17,9 +20,19 @@ in the selected Rn register.
 CPUID is unprivileged and non-serializing under the base compatibility rules. CPUID results are stable after reset
 unless a future feature explicitly defines a mutable result.
 
-@SELECTOR_TABLE@
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{0.85in}>{\raggedright\arraybackslash}p{3.90in}@{}}
+\toprule
+\textbf{Bits} & \textbf{Field} & \textbf{Meaning}\\
+\midrule
+\texttt{0..15} & \texttt{index} & result index within the selected leaf\\
+\texttt{16..31} & \texttt{leaf} & information leaf within the selected class\\
+\texttt{32..63} & \texttt{class} & CPUID information class\\
+\bottomrule
+\end{manualtabular}
+\manualunlistedtablecaption{CPUID Query Selector}
 
-@QUERY_DEFAULTS_TABLE@
+An unknown class, leaf, or index returns zero. Software ignores reserved bits in every returned value, so a later
+revision can assign them without invalidating existing discovery code.
 
 \subsection{Discovery Classes}
 Discovery classes partition architectural information by compatibility purpose. Software first checks the class and
@@ -28,7 +41,16 @@ leaf directory before consuming optional feature bits.
 The base class describes the unified Rn register model and mandatory scalar ISA. Optional groups are reported
 separately so that binaries can test for them without probing instruction faults.
 
-@POLICY_TABLE@
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{1.25in}>{\raggedright\arraybackslash}p{1.10in}>{\raggedright\arraybackslash}p{3.05in}@{}}
+\toprule
+\textbf{Policy} & \textbf{Class} & \textbf{Meaning}\\
+\midrule
+Bedrock base ISA & 0x00000000 & base identity, instruction limits, integer registers, condition codes, and mandatory groups\\
+Optional extensions & 0x00000001 & optional floating-point, transcendental, and virtualization-acceleration groups\\
+Implementation properties & 0x00000002 & program-visible limits, topology, and SAVE/RESTORE area layout\\
+\bottomrule
+\end{manualtabular}
+\manualunlistedtablecaption{CPUID Discovery Policy}
 
 \subsection{Leaf Directory}
 Each discovery class may expose a leaf directory. A directory leaf reports which subordinate leaves are defined and
@@ -36,7 +58,20 @@ how indexed leaves should be enumerated.
 
 Software must treat an absent leaf as zero and must ignore reserved bits in a present leaf.
 
-@LEAF_TABLE@
+\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{0.82in}>{\raggedright\arraybackslash}p{0.62in}>{\raggedright\arraybackslash}p{1.35in}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{1.90in}@{}}
+\toprule
+\textbf{Class} & \textbf{Leaf} & \textbf{Name} & \textbf{Indexes} & \textbf{Summary}\\
+\midrule
+\endhead
+\texttt{0x00000000} & \texttt{0x0000} & \texttt{BASE\_IDENTITY} & \texttt{0..2} & profile, revision, vendor string, and maximum standard leaf\\
+\texttt{0x00000000} & \texttt{0x0001} & \texttt{BASE\_LIMITS} & \texttt{0} & word size, maximum instruction bytes, opcode classes, and Rn count\\
+\texttt{0x00000001} & \texttt{0x0000} & \texttt{EXTENSION\_DIRECTORY} & \texttt{0} & availability bits for optional architectural groups\\
+\texttt{0x00000002} & \texttt{0x0000} & \texttt{EXECUTION\_PROPERTIES} & \texttt{0} & program-visible execution properties\\
+\texttt{0x00000002} & \texttt{0x0001} & \texttt{TOPOLOGY} & \texttt{indexed} & hardware-thread topology and current identity\\
+\texttt{0x00000002} & \texttt{0x0004} & \texttt{SAVE\_AREA\_LAYOUT} & \texttt{0..n} & SAVE/RESTORE sizes, bitmap, and component descriptors\\
+\bottomrule
+\end{manuallongtable}
+\manualunlistedtablecaption{CPUID Leaf Directory}
 
 \subsection{Bit Fields}
 CPUID bit fields are feature predicates unless the leaf description says they encode a numeric value. Reserved
@@ -45,4 +80,7 @@ result bits are ignored by software.
 A set feature bit only permits software to use the corresponding architectural behavior; the instruction's normal
 privilege, operand, and compatibility checks still apply.
 
-@BIT_FIELD_TABLE@
+The FP, FPTRANS, and VIRTACCEL predicates report the base floating-point, transcendental floating-point, and
+virtualization-acceleration groups. Numeric fields use names that describe their unit: SAVE\_AREA\_SIZE reports the
+maximum save-area size in bytes, and COMPONENT\_OFFSET gives the 64-byte-aligned offset of an extension-state
+component.
