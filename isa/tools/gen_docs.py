@@ -32,6 +32,7 @@ from validate_isa import allocation_mnemonic  # noqa: E402
 from latex_builder.common import (  # noqa: E402
     LatexHiddenTopSection,
     LatexTopSection,
+    TEMPLATE_DIR,
     latex_longtable,
     latex_tabular,
     render_latex_template,
@@ -1252,6 +1253,26 @@ def instruction_label(mnemonic: str) -> str:
     return f"instr:{slug or 'unknown'}"
 
 
+def instruction_description_tex(inst: InstructionDef) -> str:
+    value = inst.doc.get("description_tex")
+    if value is None:
+        return ""
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"{inst.path}: doc.description_tex must be a non-empty relative .tex path")
+
+    relative = Path(value)
+    if relative.is_absolute() or relative.suffix.lower() != ".tex" or ".." in relative.parts:
+        raise ValueError(f"{inst.path}: unsafe doc.description_tex path: {value!r}")
+
+    template_root = TEMPLATE_DIR.resolve()
+    path = (template_root / relative).resolve()
+    if not path.is_relative_to(template_root):
+        raise ValueError(f"{inst.path}: doc.description_tex escapes the template root: {value!r}")
+    if not path.is_file():
+        raise ValueError(f"{inst.path}: missing doc.description_tex fragment: {value!r}")
+    return path.read_text(encoding="utf-8").strip()
+
+
 def latex_instruction_entry(model: IsaModel, inst: InstructionDef) -> str:
     parts: list[str] = [r"\clearpage"]
     title = compact_text(inst.doc.get("title", inst.mnemonic)) or inst.mnemonic
@@ -1272,6 +1293,9 @@ def latex_instruction_entry(model: IsaModel, inst: InstructionDef) -> str:
     status = latex_flag_status(inst)
     if status:
         parts.append(status)
+    description_tex = instruction_description_tex(inst)
+    if description_tex:
+        parts.append(description_tex)
     forms_block = latex_instruction_forms_block(model, inst)
     if forms_block:
         parts.append(forms_block)

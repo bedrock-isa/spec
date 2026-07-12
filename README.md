@@ -7,7 +7,8 @@ reference-document outputs.
 The active source tree is:
 
 ```text
-docs/isa_reform_plan.md      design notes and current architectural direction
+docs/isa_architectural_state_recovery_plan.md
+                              architectural-state migration recovery plan
 isa/defs/*.yaml              instruction semantics and architectural definitions
 isa/alloc/*.yaml             opcode allocation source of truth
 isa/tex/*.tex                shared reference-document components
