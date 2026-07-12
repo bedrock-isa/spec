@@ -1,6 +1,6 @@
 # ISA Missing-Reference Recovery Plan
 
-Status: implementation plan, 2026-07-13.
+Status: implemented and verified, 2026-07-13.
 
 ## Constraints
 
@@ -43,11 +43,13 @@ RDCR and WRCR share the control-register fragment. RDPMC uses the performance-co
 
 ## Completion Criteria
 
-- No new YAML file and no manifest change.
-- No YAML-to-C generation.
-- RDCR and WRCR show the same full-width CR reference; RDPMC shows its counter reference.
-- PMC uses selector 0x1100; no PTC hole or retired-selector rule remains.
-- Manual C constants match the published instruction reference.
-- Reset, interrupt, translation, FPU, CPUID, and SAVE/RESTORE descriptions are mutually consistent.
-- All validators and document builds pass, and the final PDF has no layout defects.
-- Every patch applies sequentially to a clean HEAD snapshot without writing to `.git`.
+- [x] No new YAML file and no manifest change.
+- [x] No YAML-to-C generation.
+- [x] RDCR and WRCR show the same full-width CR reference; RDPMC shows its counter reference.
+- [x] PMC uses selector 0x1100; no PTC hole or retired-selector rule remains.
+- [x] Manual C constants match the published instruction reference.
+- [x] Reset, interrupt, translation, FPU, CPUID, and SAVE/RESTORE descriptions are mutually consistent.
+- [x] Definition, allocation, ISA-join, ABI, unit, and C compile checks pass.
+- [x] ISA LaTeX, GitHub-Flavored Markdown, and the 437-page PDF build successfully.
+- [x] Rendered reference pages have no clipping, overflow, or instruction-field nesting defects.
+- [x] Every patch applies sequentially to a clean HEAD snapshot without writing to `.git`.

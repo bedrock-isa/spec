@@ -13,6 +13,9 @@ import subprocess
 
 ROOT = Path(__file__).resolve().parents[2]
 LATEX_INPUT_RE = re.compile(r"\\(?:input|include)\{([^{}]+)\}")
+MANUAL_FORM_BLOCK_RE = re.compile(
+    r"\\begin\{manualformblock\}\{[^{}]*\}|\\end\{manualformblock\}"
+)
 
 
 def resolve_latex_input(name: str, current_dir: Path) -> Path:
@@ -55,12 +58,13 @@ def render_markdown_from_latex(
             "Pandoc is required for Markdown output. Install pandoc or set PANDOC to its executable path."
         )
     expanded = expand_latex_inputs(text, current_dir=current_dir)
+    expanded = MANUAL_FORM_BLOCK_RE.sub("", expanded)
     try:
         result = subprocess.run(
             [
                 executable,
                 "--from=latex",
-                "--to=gfm+raw_tex",
+                "--to=gfm",
                 "--wrap=none",
                 "--markdown-headings=atx",
                 f"--resource-path={ROOT}",
