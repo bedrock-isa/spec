@@ -20,6 +20,11 @@ bitmap as authoritative when reconstructing extension state. A user-mode restore
 STATUS state; a supervisor restore validates the saved STATUS image by the ordinary privileged write rules before
 making it visible.
 
+When the floating-point extension is enabled, its CPUID component contains F0 through F15 together with FFLAGS and
+FSTATUS. Other optional extensions receive distinct CPUID component IDs and 64-byte-aligned slots. Software must not
+infer an extension offset from another component's size; it uses the SAVE\_AREA\_LAYOUT descriptors and allocates the
+reported maximum area size.
+
 @SAVE_RESTORE_INSTRUCTION_TABLE@
 
 \input{isa/tools/latex_builder/templates/fragments/save_area_diagram.tex}

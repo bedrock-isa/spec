@@ -68,10 +68,17 @@ Software must treat an absent leaf as zero and must ignore reserved bits in a pr
 \texttt{0x00000001} & \texttt{0x0000} & \texttt{EXTENSION\_DIRECTORY} & \texttt{0} & availability bits for optional architectural groups\\
 \texttt{0x00000002} & \texttt{0x0000} & \texttt{EXECUTION\_PROPERTIES} & \texttt{0} & program-visible execution properties\\
 \texttt{0x00000002} & \texttt{0x0001} & \texttt{TOPOLOGY} & \texttt{indexed} & hardware-thread topology and current identity\\
+\texttt{0x00000002} & \texttt{0x0002} & \texttt{PERFORMANCE\_COUNTERS} & \texttt{0..65535} & presence of the selected RDPMC counter ID\\
 \texttt{0x00000002} & \texttt{0x0004} & \texttt{SAVE\_AREA\_LAYOUT} & \texttt{0..n} & SAVE/RESTORE sizes, bitmap, and component descriptors\\
 \bottomrule
 \end{manuallongtable}
 \manualunlistedtablecaption{CPUID Leaf Directory}
+
+\subsection{Performance-Counter Discovery}
+Class \texttt{0x00000002}, leaf \texttt{0x0002} uses the query index as an RDPMC counter ID. Result bit 0 is
+\texttt{PRESENT}; bits 63..1 are reserved and read as zero. CYCLE, INSTRET, and PTWALK IDs 0, 1, and 2 are mandatory
+and therefore always report present. An implementation-defined ID may be used only when its query reports present.
+The RDPMC instruction description defines counter behavior and unavailable-ID fault handling.
 
 \subsection{Bit Fields}
 CPUID bit fields are feature predicates unless the leaf description says they encode a numeric value. Reserved
