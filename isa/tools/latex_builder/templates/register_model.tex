@@ -76,20 +76,6 @@ SP-relative EA forms do not carry this field and use SS. PC-relative EA forms do
 Control registers are accessed only through the architectural control-register instructions and obey the reserved-bit
 rules in the compatibility section.
 
-The named control registers below define the programmer-visible control-state namespace used by translation,
-interrupts, saved supervisor state, and performance monitoring.
-
-\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.85in}>{\raggedright\arraybackslash}p{4.55in}@{}}
-\toprule
-\textbf{Register} & \textbf{Purpose}\\
-\midrule
-PTCR & page-table control and root\\
-ASCR & address-space control\\
-ICR & interrupt control\\
-SPC & saved program counter\\
-SCS & saved code segment\\
-SDS & saved data segment\\
-PMC & performance-monitor control\\
-\bottomrule
-\end{manualtabular}
-\manualtablecaption{Control Register Namespace}
+The complete selector namespace, field formats, access rules, and reserved-bit behavior are specified in the RDCR and
+WRCR instruction descriptions. The namespace covers translation, interrupt delivery, supervisor entry, boot state,
+and performance monitoring without duplicating the selector table here.

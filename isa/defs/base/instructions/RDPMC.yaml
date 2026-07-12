@@ -1,14 +1,20 @@
 mnemonic: RDPMC
 doc:
   title: Read Performance Counter
-  summary: Performs the read performance counter operation.
+  summary: Read the 64-bit performance counter selected by a constant counter ID.
+  description: RDPMC reads a mandatory or implementation-discovered performance counter. Supervisor mode may
+    read every implemented counter. User-mode access requires PMC.USER to be set; otherwise RDPMC raises
+    PRIVILEGE_FAULT. An unimplemented counter ID raises INVALID_CONTROL_STATE.
+  description_tex: fragments/performance_counter_reference.tex
   instruction_family: system_registers
   instruction_class: system
 behavior:
   group: system_registers
+  inputs:
+  - counter_id
   output: dst
   operation:
-  - dst_v = PMC;
+  - dst_v = arch_read_performance_counter(counter_id_v);
 attributes:
   privilege: configurable
   flags: unchanged

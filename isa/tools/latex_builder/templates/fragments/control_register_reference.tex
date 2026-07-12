@@ -1,0 +1,123 @@
+\subsection{Control-Register Selector Namespace}
+RDCR and WRCR use a 16-bit selector and transfer a 64-bit register image. Both instructions are supervisor-only.
+Selectors not listed below raise \texttt{INVALID\_CONTROL\_STATE}. Reserved register bits read as zero, and a write
+with a nonzero reserved bit raises \texttt{INVALID\_CONTROL\_STATE} without changing the register.
+
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{3.55in}@{}}
+\toprule
+\textbf{Selector} & \textbf{Register} & \textbf{Use}\\
+\midrule
+\texttt{0x0000} & \texttt{PTCR} & page-table root and translation control\\
+\texttt{0x0001} & \texttt{ASCR} & address-space identifier control\\
+\texttt{0x0002} & \texttt{ICR} & interrupt-vector and delivery control\\
+\texttt{0x0100} & \texttt{SPC} & SYSCALL supervisor-entry program counter\\
+\texttt{0x0101} & \texttt{SCS} & SYSCALL supervisor-entry code-segment image\\
+\texttt{0x0102} & \texttt{SDS} & SYSCALL supervisor-entry data-segment image\\
+\texttt{0x0200} & \texttt{SSS0} & supervisor stack-segment image for stack set 0\\
+\texttt{0x0201} & \texttt{SSP0} & supervisor stack pointer for stack set 0\\
+\texttt{0x0210} & \texttt{SSS1} & supervisor stack-segment image for stack set 1\\
+\texttt{0x0211} & \texttt{SSP1} & supervisor stack pointer for stack set 1\\
+\texttt{0x0220} & \texttt{SSS2} & supervisor stack-segment image for stack set 2\\
+\texttt{0x0221} & \texttt{SSP2} & supervisor stack pointer for stack set 2\\
+\texttt{0x0230} & \texttt{SSS3} & supervisor stack-segment image for stack set 3\\
+\texttt{0x0231} & \texttt{SSP3} & supervisor stack pointer for stack set 3\\
+\texttt{0x1000} & \texttt{BOOTPC} & warm-reset target supplied by the platform at cold reset\\
+\texttt{0x1001} & \texttt{BOOTCFG} & opaque platform boot configuration preserved by warm reset\\
+\texttt{0x1100} & \texttt{PMC} & performance-monitor enable and user-access control\\
+\bottomrule
+\end{manualtabular}
+\manualunlistedtablecaption{Control-Register Selectors}
+
+\begin{manualformatdiagram}{PTCR Format}{8}
+\manualformatrow{PTCR[63:0]}{%
+\manualformatfield{root\_page}{52}
+\manualformatfield{PABITS\_SEL}{4}
+\manualformatfield{LA57}{1}
+\manualformatfield{reserved}{6}
+\manualformatfield{PE}{1}
+}
+\end{manualformatdiagram}
+
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{3.65in}@{}}
+\toprule
+\textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
+\midrule
+\texttt{root\_page} & \texttt{63..12} & physical frame number of the page-table root\\
+\texttt{PABITS\_SEL} & \texttt{11..8} & 0 selects 48 physical bits; 1 selects 56; 2..15 are invalid\\
+\texttt{LA57} & \texttt{7} & zero selects four levels; one selects five levels\\
+reserved & \texttt{6..1} & must be zero\\
+\texttt{PE} & \texttt{0} & page-table translation enable\\
+\bottomrule
+\end{manualtabular}
+\manualunlistedtablecaption{PTCR Fields}
+
+\begin{manualformatdiagram}{ASCR Format}{8}
+\manualformatrow{ASCR[63:0]}{%
+\manualformatfield{reserved}{32}
+\manualformatfield{ASID}{16}
+\manualformatfield{reserved}{15}
+\manualformatfield{AE}{1}
+}
+\end{manualformatdiagram}
+
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{3.65in}@{}}
+\toprule
+\textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
+\midrule
+reserved & \texttt{63..32} & must be zero\\
+\texttt{ASID} & \texttt{31..16} & current address-space identifier\\
+reserved & \texttt{15..1} & must be zero\\
+\texttt{AE} & \texttt{0} & address-space identifier matching enable\\
+\bottomrule
+\end{manualtabular}
+\manualunlistedtablecaption{ASCR Fields}
+
+\begin{manualformatdiagram}{ICR Format}{8}
+\manualformatrow{ICR[63:0]}{%
+\manualformatfield{ivt\_page}{52}
+\manualformatfield{MAX\_IDEPTH}{4}
+\manualformatfield{NMI\_P}{1}
+\manualformatfield{NMI\_L}{1}
+\manualformatfield{DF}{1}
+\manualformatfield{reserved}{4}
+\manualformatfield{V}{1}
+}
+\end{manualformatdiagram}
+
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{3.65in}@{}}
+\toprule
+\textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
+\midrule
+\texttt{ivt\_page} & \texttt{63..12} & physical frame number of the interrupt-vector table\\
+\texttt{MAX\_IDEPTH} & \texttt{11..8} & maximum maskable interrupt nesting depth\\
+\texttt{NMI\_P} & \texttt{7} & hardware-managed pending NMI state; WRCR ignores the supplied bit\\
+\texttt{NMI\_L} & \texttt{6} & latch an NMI while nested NMI delivery is inhibited\\
+\texttt{DF} & \texttt{5} & double-fault delivery enable\\
+reserved & \texttt{4..1} & must be zero\\
+\texttt{V} & \texttt{0} & interrupt-vector table valid\\
+\bottomrule
+\end{manualtabular}
+\manualunlistedtablecaption{ICR Fields}
+
+\begin{manualformatdiagram}{PMC Format}{8}
+\manualformatrow{PMC[63:0]}{%
+\manualformatfield{reserved}{62}
+\manualformatfield{USER}{1}
+\manualformatfield{EN}{1}
+}
+\end{manualformatdiagram}
+
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{3.65in}@{}}
+\toprule
+\textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
+\midrule
+reserved & \texttt{63..2} & must be zero\\
+\texttt{USER} & \texttt{1} & permit user-mode RDPMC when set\\
+\texttt{EN} & \texttt{0} & enable performance-counter increments when set\\
+\bottomrule
+\end{manualtabular}
+\manualunlistedtablecaption{PMC Fields}
+
+SPC is consumed according to the SYSCALL entry rules. SCS, SDS, and each SSSn register contain validated 64-bit
+segment images. Each SSPn register contains the raw 64-bit stack pointer used for the selected supervisor stack set.
+BOOTPC and BOOTCFG are initialized by the platform during cold reset and preserved by the RESET instruction.
