@@ -33,17 +33,23 @@
 }
 \end{manuallistedbitdiagram}
 
-\begin{manuallistedbitdiagram}{EXT0 Two-Byte Indexed Descriptor Forms}
-\manualbitrow{SEG + base + index}{%
+\begin{manuallistedbitdiagram}{EXT0 Two-Byte Indexed Descriptor Byte Layouts}
+\manualbitfieldrow{SEG + base + index}{%
+\manualbytepairlabels
+}{%
 \manualbitfieldcode{1}{1}
 \manualbitfieldcode{s}{3}
 \manualbitfieldcode{mode}{4}
+\manualbitgap{1}
 \manualbitfieldcode{b}{4}
 \manualbitfieldcode{i}{4}
 }
-\manualbitrow{SP/PC + index}{%
+\manualbitfieldrow{SP/PC + index}{%
+\manualbytepairlabels
+}{%
 \manualbitfieldcode{1000101}{7}
 \manualbitfieldcode{x}{1}
+\manualbitgap{1}
 \manualbitfieldcode{mode}{4}
 \manualbitfieldcode{i}{4}
 }

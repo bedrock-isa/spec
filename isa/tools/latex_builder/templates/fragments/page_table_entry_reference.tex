@@ -1,7 +1,9 @@
-\subsection{Paging and Page-Table Entries}
-PTCR.LA57 selects four-level translation with 48-bit canonical linear addresses or five-level translation with
-57-bit canonical linear addresses. Each level consumes a nine-bit index; the low 12 linear-address bits are the page
-offset. Large-page leaves are not defined.
+\clearpage
+\subsection{Page-Table Entry Format}
+
+Every page-table entry is 64 bits. The low twelve bits contain hardware-defined traversal, permission, and memory
+attributes. The physical frame number occupies bits \texttt{PABITS-1..12}; bits above the selected physical-address
+width are available to software and ignored by the page-table walker.
 
 \begin{manualformatdiagram}{Page-Table Entry Low Attributes}{4}
 \manualformatrowrange{PTE[11:0]}{11}{0}{%

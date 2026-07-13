@@ -5,7 +5,6 @@ doc:
   description: Write a privileged control register from an Rn register. WRCR is always a supervisor-only
     instruction; user-visible control state must use dedicated instructions gated by control-register
     policy bits.
-  description_tex: fragments/control_register_reference.tex
   instruction_family: system_registers
   instruction_class: system
 behavior:

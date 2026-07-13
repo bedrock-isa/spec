@@ -21,12 +21,15 @@ if str(TOOL_DIR) not in sys.path:
     sys.path.insert(0, str(TOOL_DIR))
 
 from validate_alloc import (  # noqa: E402
+    PREDICATES,
     compact_bits,
     entry_claims,
+    expand_pattern,
     namespace_patterns,
+    parse_range,
     validate_file,
 )
-from alloc_notes import allocation_form_text, allocation_note_text  # noqa: E402
+from alloc_notes import allocation_form_text  # noqa: E402
 from latex_to_markdown import render_markdown_from_latex  # noqa: E402
 from validate_isa import allocation_mnemonic  # noqa: E402
 from latex_builder.common import (  # noqa: E402
@@ -618,7 +621,13 @@ def assembler_syntax_lines(model: IsaModel, inst: InstructionDef) -> list[str]:
     return lines
 
 
-def latex_instruction_form_block(title: str, rows: list[tuple[str, str]], *, needspace: str = "1.45in") -> str:
+def latex_instruction_form_block(
+    title: str,
+    rows: list[tuple[str, str]],
+    *,
+    needspace: str = "1.45in",
+    include_forms_heading: bool = False,
+) -> str:
     rendered_rows = []
     for key, value in rows:
         if not value:
@@ -629,6 +638,7 @@ def latex_instruction_form_block(title: str, rows: list[tuple[str, str]], *, nee
     return "\n".join(
         [
             rf"\begin{{manualformblock}}{{{needspace}}}",
+            *([r"\manualinstructionformsheading"] if include_forms_heading else []),
             rf"\textbf{{{tex_code(title)}}}\par",
             r"\vspace{2pt}",
             r"\begin{tabularx}{\linewidth}{@{}p{0.88in}>{\raggedright\arraybackslash}X@{}}",
@@ -662,14 +672,12 @@ def field_operand(form: str, symbol: str) -> tuple[int, str] | None:
 def operand_role(index: int, operand_count: int) -> str:
     if operand_count == 1:
         return "operand"
-    if index == 0:
-        return "source operand"
-    if index == 1:
-        return "destination operand"
+    if operand_count == 2:
+        return "source operand" if index == 0 else "destination operand"
     return f"operand {index + 1}"
 
 
-CLASS_BASE_BYTES = {
+CLASS_OPCODE_BYTES = {
     "extrashort": 1,
     "short": 2,
     "medium": 3,
@@ -678,33 +686,111 @@ CLASS_BASE_BYTES = {
 }
 
 
-def allocation_base_bytes(entry: AllocationEntry) -> int:
-    if entry.cls in CLASS_BASE_BYTES:
-        return CLASS_BASE_BYTES[entry.cls]
+def allocation_opcode_bytes(entry: AllocationEntry) -> int:
+    if entry.cls in CLASS_OPCODE_BYTES:
+        return CLASS_OPCODE_BYTES[entry.cls]
     return 2 + (max(0, entry.payload_bits - 10) + 7) // 8
 
 
-def instruction_bytes_text(entry: AllocationEntry, form: str) -> str:
-    base = allocation_base_bytes(entry)
-    if any((field.get("kind") == "ea7") for field in entry.fields.values() if isinstance(field, dict)):
-        return f"{base}-18"
-    extra = 0
-    if re.search(r"<imm16|imm16/bitmap", form):
-        extra = max(extra, 2)
-    if re.search(r"<imm32", form):
-        extra = max(extra, 4)
-    if re.search(r"<imm64", form):
-        extra = max(extra, 8)
-    return str(base + extra)
+@dataclass(frozen=True)
+class InstructionLength:
+    opcode_bytes: int
+    required_bytes: tuple[int, ...]
+
+    @property
+    def minimum_required_bytes(self) -> int:
+        return min(self.required_bytes)
+
+    @property
+    def maximum_required_bytes(self) -> int:
+        return max(self.required_bytes)
 
 
-def allocation_size_bits(entry: AllocationEntry) -> str:
-    if entry.cls == "extrashort":
-        return "0"
-    if entry.cls == "short":
-        return "10"
-    l_value = max(0, allocation_base_bytes(entry) - 3)
-    return f"11{l_value:04b}"
+def named_payload_bytes(name: Any, sizes: dict[str, int]) -> int:
+    text = compact_text(name)
+    if not text or text == "none":
+        return 0
+    if text in sizes:
+        return sizes[text]
+    match = re.search(r"(8|16|32|64)", text)
+    if match:
+        return int(match.group(1)) // 8
+    raise ValueError(f"unknown instruction payload size: {text!r}")
+
+
+def ea_payload_byte_lengths(ea_data: Any) -> tuple[int, ...]:
+    if not isinstance(ea_data, dict):
+        raise ValueError("missing EA metadata for instruction length calculation")
+    displacements = ea_data.get("displacements") or {}
+    sizes = {
+        str(name): int(spec["bytes"])
+        for name, spec in displacements.items()
+        if isinstance(spec, dict) and "bytes" in spec
+    }
+    ext0 = ea_data.get("ext0") or {}
+    descriptor_sizes = {
+        (len(re.sub(r"[\s_]", "", str(form.get("bits", "")))) + 7) // 8
+        for form in (ext0.get("forms") or [])
+        if isinstance(form, dict) and form.get("bits")
+    }
+    if not descriptor_sizes:
+        descriptor_sizes = {1}
+
+    lengths: set[int] = set()
+    for form in ea_data.get("compact_ea", []) or []:
+        if not isinstance(form, dict):
+            continue
+        if form.get("class") == "ext0_escape":
+            displacement_bytes = named_payload_bytes(form.get("displacement"), sizes)
+            lengths.update(size + displacement_bytes for size in descriptor_sizes)
+            continue
+        payload_bytes = 0
+        for key in ("displacement", "absolute", "immediate"):
+            if key in form:
+                payload_bytes += named_payload_bytes(form.get(key), sizes)
+        lengths.add(payload_bytes)
+    if not lengths:
+        raise ValueError("EA metadata defines no compact EA payload lengths")
+    return tuple(sorted(lengths))
+
+
+def fixed_form_payload_bytes(form: str) -> int:
+    total = 0
+    for marker in re.findall(r"<([^>]+)>", form):
+        if marker == "ea":
+            continue
+        total += named_payload_bytes(marker, {})
+    return total
+
+
+def instruction_length(entry: AllocationEntry, form: str, ea_data: Any) -> InstructionLength:
+    opcode_bytes = allocation_opcode_bytes(entry)
+    required = {opcode_bytes + fixed_form_payload_bytes(form)}
+    ea_count = sum(
+        1
+        for field in entry.fields.values()
+        if isinstance(field, dict) and field.get("kind") == "ea7"
+    )
+    if ea_count:
+        ea_lengths = ea_payload_byte_lengths(ea_data)
+        for _ in range(ea_count):
+            required = {
+                current + payload
+                for current in required
+                for payload in ea_lengths
+                if current + payload <= 18
+            }
+    if not required:
+        raise ValueError(f"{entry.path}: {form} has no encoding that fits the 18-byte instruction limit")
+    if entry.cls in {"extrashort", "short"} and required != {opcode_bytes}:
+        raise ValueError(f"{entry.path}: {form} appends payload to a fixed-length {entry.cls} encoding")
+    return InstructionLength(opcode_bytes, tuple(sorted(required)))
+
+
+def required_bytes_text(length: InstructionLength) -> str:
+    low = length.minimum_required_bytes
+    high = length.maximum_required_bytes
+    return str(low) if low == high else f"{low}-{high}"
 
 
 def bit_label(text: str) -> str:
@@ -743,31 +829,53 @@ def split_bit_chunk(chunk: str) -> list[tuple[str, int]]:
     return [(bit_label(chunk), len(chunk))]
 
 
-def bit_row_segments(label: str, segments: list[tuple[str, int]]) -> str:
-    fields = [
-        rf"\manualbitfieldcode{{{latex_escape(text)}}}{{{width}}}"
-        for text, width in segments
-        if width > 0
-    ]
-    return "\n".join([rf"\manualbitrow{{{latex_escape(label)}}}{{%", *fields, "}"])
+def normalize_byte_segments(segments: list[tuple[str, int]]) -> list[tuple[str, int]]:
+    """Keep contiguous fixed bits aligned to four-bit groups within a byte."""
+    normalized: list[tuple[str, int]] = []
+    fixed_bits = ""
+
+    def flush_fixed_bits() -> None:
+        nonlocal fixed_bits
+        for index in range(0, len(fixed_bits), 4):
+            chunk = fixed_bits[index : index + 4]
+            normalized.append((chunk, len(chunk)))
+        fixed_bits = ""
+
+    for label, width in segments:
+        if len(label) == width and set(label) <= {"0", "1", "-"}:
+            fixed_bits += label
+            continue
+        flush_fixed_bits()
+        normalized.append((label, width))
+    flush_fixed_bits()
+    return normalized
 
 
-def byte_pair_row_segments(label: str, byte0_segments: list[tuple[str, int]], byte1_segments: list[tuple[str, int]]) -> str:
+def instruction_byte_row_segments(
+    byte_index: int,
+    left_segments: list[tuple[str, int]],
+    right_segments: list[tuple[str, int]] | None = None,
+) -> str:
     fields = [
         rf"\manualbitfieldcode{{{latex_escape(text)}}}{{{width}}}"
-        for text, width in byte0_segments
+        for text, width in left_segments
         if width > 0
     ]
-    fields.append(r"\manualbitgap{1}")
-    fields.extend(
-        rf"\manualbitfieldcode{{{latex_escape(text)}}}{{{width}}}"
-        for text, width in byte1_segments
-        if width > 0
-    )
+    if right_segments is None:
+        labels = rf"\manualsinglebytelabels{{{byte_index}}}"
+        fields.append(r"\manualbitgap{9}")
+    else:
+        labels = rf"\manualbytepairlabelsfor{{{byte_index}}}{{{byte_index + 1}}}"
+        fields.append(r"\manualbitgap{1}")
+        fields.extend(
+            rf"\manualbitfieldcode{{{latex_escape(text)}}}{{{width}}}"
+            for text, width in right_segments
+            if width > 0
+        )
     return "\n".join(
         [
-            rf"\manualbitfieldrow{{{latex_escape(label)}}}{{%",
-            r"\manualbytepairlabels",
+            r"\manualbitfieldrow{}{%",
+            labels,
             r"}{%",
             *fields,
             "}",
@@ -786,8 +894,13 @@ def split_segments_at_width(segments: list[tuple[str, int]], width: int) -> tupl
             left.append((label, segment_width))
             remaining -= segment_width
         else:
-            left.append((label, remaining))
-            right.append((label, segment_width - remaining))
+            left_label = label
+            right_label = label
+            if len(label) == segment_width and set(label) <= {"0", "1", "-"}:
+                left_label = label[:remaining]
+                right_label = label[remaining:]
+            left.append((left_label, remaining))
+            right.append((right_label, segment_width - remaining))
             remaining = 0
     return left, right
 
@@ -801,29 +914,39 @@ def entry_header_byte_segments(entry: AllocationEntry) -> tuple[list[tuple[str, 
         header_segments = [("10", 2), *bit_segments(entry.bits)]
         return split_segments_at_width(header_segments, 8)
     first_payload = entry.bits[:10]
-    size_bits = allocation_size_bits(entry)
-    header_segments = [(size_bits[:2], 2), (size_bits[2:], 4), *bit_segments(first_payload)]
+    header_segments = [("11", 2), ("L", 4), *bit_segments(first_payload)]
     return split_segments_at_width(header_segments, 8)
 
 
-def entry_payload_bit_rows(entry: AllocationEntry) -> list[tuple[str, list[tuple[str, int]]]]:
-    if entry.cls in {"extrashort", "short"}:
-        return []
-    rows: list[tuple[str, list[tuple[str, int]]]] = []
-    remaining = entry.bits[10:]
-    byte_index = 2
-    while remaining:
-        chunk = remaining[:8]
-        remaining = remaining[8:]
-        rows.append((f"opcode byte {byte_index}", bit_segments(chunk)))
-        byte_index += 1
-    return rows
+def entry_byte_segments(entry: AllocationEntry) -> list[list[tuple[str, int]]]:
+    byte0, byte1 = entry_header_byte_segments(entry)
+    byte_segments = [byte0]
+    if byte1:
+        byte_segments.append(byte1)
+    if entry.cls not in {"extrashort", "short"}:
+        remaining = entry.bits[10:]
+        while remaining:
+            chunk = remaining[:8]
+            remaining = remaining[8:]
+            byte_segments.append(bit_segments(chunk))
+    byte_segments = [normalize_byte_segments(segments) for segments in byte_segments]
+    for byte_index, segments in enumerate(byte_segments):
+        width = sum(segment_width for _label, segment_width in segments)
+        if width != 8:
+            raise ValueError(f"{entry.path}: {entry.entry_id} byte {byte_index} has {width} bits, expected 8")
+    return byte_segments
 
 
 def latex_entry_bit_diagram(entry: AllocationEntry, form: str) -> str:
-    byte0, byte1 = entry_header_byte_segments(entry)
-    rows = [byte_pair_row_segments("header", byte0, byte1)]
-    rows.extend(bit_row_segments(label, segments) for label, segments in entry_payload_bit_rows(entry))
+    byte_segments = entry_byte_segments(entry)
+    rows = [
+        instruction_byte_row_segments(
+            index,
+            byte_segments[index],
+            byte_segments[index + 1] if index + 1 < len(byte_segments) else None,
+        )
+        for index in range(0, len(byte_segments), 2)
+    ]
     return "\n".join(
         [
             rf"\begin{{manualbitdiagram}}{{Instruction format for {latex_escape(form)}}}",
@@ -865,56 +988,302 @@ def ordered_entry_fields(entry: AllocationEntry) -> list[tuple[str, dict[str, An
     return out
 
 
-def latex_field_explanation_block(entry: AllocationEntry, form: str) -> str:
-    body_rows: list[str] = []
-    operand_count = len(split_form_operands(form))
-    for symbol, spec in ordered_entry_fields(entry):
-        operand = field_operand(form, symbol)
-        role = operand_role(operand[0], operand_count) if operand else "-"
-        values = field_size_choices(form, symbol) if spec.get("kind") == "size" else "-"
-        body_rows.append(
-            " & ".join(
-                [
-                    tex_code(symbol),
-                    latex_escape(display_text(spec.get("kind", "-"))),
-                    latex_escape(role),
-                    latex_escape(spec.get("width", "-")),
-                    tex_code(field_bit_range(entry, symbol)),
-                    latex_escape(values or "-"),
-                ]
-            )
-            + r"\\"
-        )
-    if not body_rows:
+def constraint_allowed_values(constraint: dict[str, Any]) -> set[int]:
+    allowed: set[int] = set()
+    for item in constraint.get("allow") or []:
+        low, high = parse_range(item)
+        allowed.update(range(low, high + 1))
+    return allowed
+
+
+def decimal_value_ranges(values: set[int]) -> str:
+    if not values:
+        return "-"
+    runs: list[tuple[int, int]] = []
+    start = previous = min(values)
+    for value in sorted(values)[1:]:
+        if value == previous + 1:
+            previous = value
+            continue
+        runs.append((start, previous))
+        start = previous = value
+    runs.append((start, previous))
+    return ", ".join(str(low) if low == high else f"{low}-{high}" for low, high in runs)
+
+
+def field_constraint_values(
+    model: IsaModel,
+    inst: InstructionDef,
+    entry: AllocationEntry,
+    symbol: str,
+    spec: dict[str, Any],
+) -> str:
+    constraints = [
+        constraint
+        for constraint in entry.constraints
+        if constraint.get("field") == symbol and "allow" in constraint
+    ]
+    if not constraints:
         return ""
+    width = int(spec.get("width", 0))
+    allowed = set(range(1 << width)) if width > 0 else set()
+    for constraint in constraints:
+        allowed &= constraint_allowed_values(constraint)
+
+    if spec.get("kind") == "condition":
+        names = {
+            int(condition["value"]): str(condition["name"])
+            for condition in (model.metadata.get("conditions") or {}).get("conditions", [])
+            if isinstance(condition, dict) and "value" in condition and "name" in condition
+        }
+        if allowed <= names.keys():
+            return ", ".join(names[value] for value in sorted(allowed))
+
+    memory_order = inst.attributes.get("memory_ordering") or {}
+    if symbol == "o" and isinstance(memory_order, dict):
+        encodings = memory_order.get("encodings") or {}
+        names = {
+            int(value): display_text(name)
+            for name, value in encodings.items()
+        }
+        if allowed <= names.keys():
+            return ", ".join(names[value] for value in sorted(allowed))
+
+    return decimal_value_ranges(allowed)
+
+
+@dataclass(frozen=True)
+class CompactEaDisplayRow:
+    syntax: str
+    mode_bits: str
+    form_bits: str
+    values: frozenset[int]
+
+
+def compact_ea_display_rows(ea_data: Any) -> list[CompactEaDisplayRow]:
+    if not isinstance(ea_data, dict):
+        raise ValueError("missing EA metadata for addressing-mode table")
+    rows: list[CompactEaDisplayRow] = []
+    for item in ea_data.get("compact_ea", []) or []:
+        if not isinstance(item, dict) or item.get("class") == "reserved":
+            continue
+        bits = compact_bits(str(item.get("bits", "")))
+        syntax = compact_text(item.get("syntax"))
+        if len(bits) != 7 or ".." in bits or not syntax:
+            raise ValueError(f"invalid compact EA display form: bits={bits!r}, syntax={syntax!r}")
+        rows.append(
+            CompactEaDisplayRow(
+                syntax=syntax,
+                mode_bits=bits[:3],
+                form_bits=bits[3:],
+                values=frozenset(expand_pattern(bits)),
+            )
+        )
+    if not rows:
+        raise ValueError("EA metadata defines no displayable compact EA forms")
+    return rows
+
+
+def destination_ea_field(entry: AllocationEntry) -> str | None:
+    for symbol in ("d", "e"):
+        spec = entry.fields.get(symbol)
+        if isinstance(spec, dict) and spec.get("kind") == "ea7":
+            return symbol
+    return None
+
+
+def ea_constraints_for_field(entry: AllocationEntry, symbol: str) -> list[dict[str, Any]]:
+    destination = destination_ea_field(entry)
+    return [
+        constraint
+        for constraint in entry.constraints
+        if constraint.get("field") == symbol
+        or (constraint.get("destination") and symbol == destination)
+    ]
+
+
+def ea_value_allowed(value: int, constraints: list[dict[str, Any]]) -> bool:
+    for constraint in constraints:
+        if "allow" in constraint:
+            ranges = [parse_range(item) for item in constraint.get("allow") or []]
+            if not any(low <= value <= high for low, high in ranges):
+                return False
+        if "exclude" in constraint:
+            predicate_name = str(constraint["exclude"])
+            predicate = PREDICATES.get(predicate_name)
+            if predicate is None:
+                raise ValueError(f"unknown EA constraint predicate: {predicate_name}")
+            if predicate(value):
+                return False
+    return True
+
+
+def entry_ea_fields(entry: AllocationEntry, form: str) -> list[tuple[str, str]]:
+    operand_count = len(split_form_operands(form))
+    fields: list[tuple[str, str]] = []
+    for symbol, spec in ordered_entry_fields(entry):
+        if spec.get("kind") != "ea7":
+            continue
+        operand = field_operand(form, symbol)
+        role = operand_role(operand[0], operand_count) if operand else "operand"
+        fields.append((symbol, role))
+    return fields
+
+
+def latex_ea_mode_row(row: CompactEaDisplayRow, allowed: bool) -> str:
+    unavailable = r"\textemdash{}"
+    mode = tex_code(row.mode_bits) if allowed else unavailable
+    form = tex_code(row.form_bits) if allowed else unavailable
+    return " & ".join([tex_code(row.syntax), mode, form]) + r"\\\hline"
+
+
+def latex_ea_addressing_mode_tables(model: IsaModel, entry: AllocationEntry, symbol: str) -> str:
+    constraints = ea_constraints_for_field(entry, symbol)
+    rendered_rows: list[str] = []
+    for row in compact_ea_display_rows(model.metadata.get("ea")):
+        allowed_values = {
+            value
+            for value in row.values
+            if ea_value_allowed(value, constraints)
+        }
+        if allowed_values and allowed_values != row.values:
+            raise ValueError(
+                f"{entry.path}: {entry.entry_id} partially allows EA form {row.syntax!r} for field {symbol}"
+            )
+        rendered_rows.append(latex_ea_mode_row(row, bool(allowed_values)))
+    split_at = (len(rendered_rows) + 1) // 2
+    left_rows = rendered_rows[:split_at]
+    right_rows = rendered_rows[split_at:]
+    right_rows.extend([r" & & \\\hline"] * (len(left_rows) - len(right_rows)))
+    ea_field_count = sum(
+        1
+        for spec in entry.fields.values()
+        if isinstance(spec, dict) and spec.get("kind") == "ea7"
+    )
     return render_latex_template(
-        "instruction_field_table.tex",
-        {"FIELD_ROWS": "\n".join(body_rows)},
+        "instruction_ea_mode_tables.tex",
+        {
+            "LEFT_ROWS": "\n".join(left_rows),
+            "RIGHT_ROWS": "\n".join(right_rows),
+            "ROW_STRETCH": "1.22",
+            "AFTER_SPACE": "3pt" if ea_field_count > 1 else "4pt",
+        },
     )
 
 
-def latex_allocated_instruction_form_block(inst: InstructionDef, entry: AllocationEntry) -> str:
+def field_description_label(symbol: str, spec: dict[str, Any], inst: InstructionDef) -> str:
+    kind = str(spec.get("kind", "field"))
+    if kind == "size":
+        name = "Size field"
+    elif kind == "ea7":
+        name = "Effective Address field"
+    elif kind in {"rn", "freg", "vreg", "creg", "sreg"}:
+        name = "Register field"
+    elif kind == "condition":
+        name = "Condition field"
+    elif kind == "immediate":
+        name = "Immediate field"
+    elif symbol == "o" and inst.attributes.get("memory_ordering"):
+        name = "Memory-order field"
+    else:
+        name = f"{display_text(kind).capitalize()} field"
+    return f"{latex_escape(name)} {tex_code(symbol)}"
+
+
+def field_description_text(
+    model: IsaModel,
+    inst: InstructionDef,
+    entry: AllocationEntry,
+    form: str,
+    symbol: str,
+    spec: dict[str, Any],
+) -> str:
+    operand = field_operand(form, symbol)
+    role = operand_role(operand[0], len(split_form_operands(form))) if operand else ""
+    kind = spec.get("kind")
+    values = field_constraint_values(model, inst, entry, symbol, spec)
+    if kind == "size":
+        choices = field_size_choices(form, symbol)
+        return latex_escape(f"Selects {choices}." if choices else "Selects the operand size.")
+    if kind == "ea7":
+        target = f"the {role}" if role else "the operand"
+        return latex_escape(
+            f"Specifies {target}. The following tables list every compact addressing mode; "
+            "a dash marks a form unavailable to this field."
+        )
+    if kind in {"rn", "freg", "vreg", "creg", "sreg"}:
+        target = f"the {role}" if role else "a register operand"
+        return latex_escape(f"Selects {target}.")
+    if kind == "condition":
+        text = "Selects the condition code."
+    elif kind == "immediate":
+        text = "Encodes the immediate value."
+    elif symbol == "o" and inst.attributes.get("memory_ordering"):
+        text = "Selects the memory ordering."
+    else:
+        text = f"Encodes the {display_text(kind)} value."
+    if values:
+        text += f" Allowed values: {values}."
+    return latex_escape(text)
+
+
+def latex_field_explanation_block(
+    model: IsaModel,
+    inst: InstructionDef,
+    entry: AllocationEntry,
+    form: str,
+) -> str:
+    parts: list[str] = []
+    if entry.cls not in {"extrashort", "short"}:
+        parts.append(
+            r"\manualinstructionfielddescription{Length field \texttt{L}}"
+            r"{Encodes the total instruction length as $3+L$ bytes. "
+            r"The selected length must cover all required bytes.}"
+        )
+    for symbol, spec in ordered_entry_fields(entry):
+        if spec.get("kind") == "ea7":
+            parts.append(r"\Needspace{2.55in}")
+        parts.append(
+            rf"\manualinstructionfielddescription{{{field_description_label(symbol, spec, inst)}}}"
+            rf"{{{field_description_text(model, inst, entry, form, symbol, spec)}}}"
+        )
+        if spec.get("kind") == "ea7":
+            parts.append(latex_ea_addressing_mode_tables(model, entry, symbol))
+    if not parts:
+        return ""
+    return "\n".join([r"\manualinstructionfieldsheading", *parts])
+
+
+def latex_allocated_instruction_form_block(
+    model: IsaModel,
+    inst: InstructionDef,
+    entry: AllocationEntry,
+    *,
+    include_forms_heading: bool = False,
+) -> str:
     form = allocation_form_text(entry.text)
-    notes = allocation_note_text(entry)
+    length = instruction_length(entry, form, model.metadata.get("ea"))
     rows = [
         ("Form", latex_escape(instruction_form_operands(form))),
         ("Encoding class", latex_escape(entry.cls)),
-        ("Bytes", latex_escape(instruction_bytes_text(entry, form))),
+        ("Required bytes", latex_escape(required_bytes_text(length))),
         ("Privilege", latex_escape(privilege_text(inst.attributes.get("privilege", "unprivileged")))),
     ]
-    if notes and notes != "-":
-        rows.append(("Notes", latex_escape(notes)))
     rendered_rows = [rf"\textbf{{{latex_escape(key)}}} & {value}\\" for key, value in rows if value]
+    ea_field_count = len(entry_ea_fields(entry, form))
+    needspace = "3.2in" if ea_field_count == 0 else "6.5in"
     return "\n".join(
         [
-            r"\begin{manualformblock}{2.9in}",
+            rf"\begin{{manualformblock}}{{{needspace}}}",
+            *([r"\manualinstructionformsheading"] if include_forms_heading else []),
             rf"\textbf{{{tex_code(form)}}}\par",
             r"\vspace{2pt}",
             r"\begin{tabularx}{\linewidth}{@{}p{0.88in}>{\raggedright\arraybackslash}X@{}}",
             *rendered_rows,
             r"\end{tabularx}\par",
+            r"\manualinstructionformatheading",
             latex_entry_bit_diagram(entry, form),
-            latex_field_explanation_block(entry, form),
+            latex_field_explanation_block(model, inst, entry, form),
             r"\end{manualformblock}",
         ]
     )
@@ -923,7 +1292,14 @@ def latex_allocated_instruction_form_block(inst: InstructionDef, entry: Allocati
 def latex_instruction_forms_block(model: IsaModel, inst: InstructionDef) -> str:
     blocks: list[str] = []
     for entry in model.allocated_by_mnemonic.get(inst.mnemonic, []):
-        blocks.append(latex_allocated_instruction_form_block(inst, entry))
+        blocks.append(
+            latex_allocated_instruction_form_block(
+                model,
+                inst,
+                entry,
+                include_forms_heading=not blocks,
+            )
+        )
     if not blocks:
         for kind, form in iter_instruction_forms(inst):
             attrs = []
@@ -937,7 +1313,14 @@ def latex_instruction_forms_block(model: IsaModel, inst: InstructionDef) -> str:
             ]
             if attrs:
                 rows.append(("Attributes", latex_escape("; ".join(attrs))))
-            blocks.append(latex_instruction_form_block(fallback_form_syntax(inst, form), rows, needspace="1.25in"))
+            blocks.append(
+                latex_instruction_form_block(
+                    fallback_form_syntax(inst, form),
+                    rows,
+                    needspace="1.25in",
+                    include_forms_heading=not blocks,
+                )
+            )
     if not blocks:
         return ""
     return "\n".join([r"\begin{manualinstructionforms}", *blocks, r"\end{manualinstructionforms}"])
@@ -1270,7 +1653,14 @@ def instruction_description_tex(inst: InstructionDef) -> str:
         raise ValueError(f"{inst.path}: doc.description_tex escapes the template root: {value!r}")
     if not path.is_file():
         raise ValueError(f"{inst.path}: missing doc.description_tex fragment: {value!r}")
-    return path.read_text(encoding="utf-8").strip()
+    text = path.read_text(encoding="utf-8").strip()
+    numbered_heading = re.search(r"\\(?:sub)*section\s*(?!\*)\{", text)
+    toc_entry = re.search(r"\\addcontentsline\s*\{toc\}", text)
+    if numbered_heading or toc_entry:
+        raise ValueError(
+            f"{inst.path}: doc.description_tex must not create numbered sections or table-of-contents entries"
+        )
+    return text
 
 
 def latex_instruction_entry(model: IsaModel, inst: InstructionDef) -> str:

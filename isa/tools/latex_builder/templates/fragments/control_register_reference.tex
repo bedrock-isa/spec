@@ -1,4 +1,3 @@
-\subsection{Control-Register Selector Namespace}
 RDCR and WRCR use a 16-bit selector and transfer a 64-bit register image. Both instructions are supervisor-only.
 Selectors not listed below raise \texttt{INVALID\_CONTROL\_STATE}. Reserved register bits read as zero, and a write
 with a nonzero reserved bit raises \texttt{INVALID\_CONTROL\_STATE} without changing the register. The entry,

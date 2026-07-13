@@ -248,6 +248,40 @@ entries:
       z: {kind: size, width: 2}
       d: {kind: rn, width: 4}
       e: {kind: ea7, width: 7}
+  - id: long.jmp_x_ea_e
+    bits: "11110000110110z0000eeeeeee"
+    text: "JMP.X(z:W/L) <ea>(e)"
+    fields:
+      z: {kind: size, width: 1}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: immediate, reason: canonical_form_reclaim}
+  - id: long.jcc_x_ea_e
+    bits: "11110000110110zcccceeeeeee"
+    text: "Jcc.X(z:W/L) <ea>(e)"
+    fields:
+      z: {kind: size, width: 1}
+      c: {kind: condition, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: c, allow: [0x2..0xf], reason: condition_true_false_reclaimed}
+      - {field: e, exclude: immediate, reason: canonical_form_reclaim}
+  - id: long.call_ea_e
+    bits: "1111000011011100000eeeeeee"
+    text: "CALL <ea>(e)"
+    fields:
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: immediate, reason: canonical_form_reclaim}
+  - id: long.callcc_ea_e
+    bits: "111100001101110cccceeeeeee"
+    text: "CALLcc <ea>(e)"
+    fields:
+      c: {kind: condition, width: 4}
+      e: {kind: ea7, width: 7}
+    constraints:
+      - {field: c, allow: [0x2..0xf], reason: condition_true_false_reclaimed}
+      - {field: e, exclude: immediate, reason: canonical_form_reclaim}
   - id: long.djcc_rn_r_ea_e
     bits: "11110000111ccccrrrreeeeeee"
     text: "DJcc Rn(r), <ea>(e)"

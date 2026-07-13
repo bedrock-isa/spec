@@ -99,9 +99,9 @@
   \endgroup}
 \newenvironment{manualformblock}[1]{%
   \Needspace{#1}%
-  \par\vspace{7pt}\noindent\begin{minipage}{\linewidth}\footnotesize
+  \par\vspace{7pt}\begingroup\footnotesize
 }{%
-  \par\end{minipage}\par}
+  \par\endgroup\par}
 \newenvironment{manualtikzdiagram}[4]{%
   \begingroup
   \Needspace{#1}%
@@ -161,13 +161,20 @@
   \node[anchor=south] at (0.5,{\manualbitrowy + 1.18}) {\the\numexpr\manualbitrowbits-1\relax};%
   \node[anchor=south] at ({\the\manualbitrowbits - 0.5},{\manualbitrowy + 1.18}) {0};%
 }
-\newcommand{\manualbytepairlabels}{%
+\newcommand{\manualbytepairlabelsfor}[2]{%
   \node[anchor=south] at (0.5,{\manualbitrowy + 1.18}) {7};%
   \node[anchor=south] at (7.5,{\manualbitrowy + 1.18}) {0};%
   \node[anchor=south] at (9.5,{\manualbitrowy + 1.18}) {7};%
   \node[anchor=south] at (16.5,{\manualbitrowy + 1.18}) {0};%
-  \node[anchor=north] at (4,{\manualbitrowy - 0.16}) {byte 0};%
-  \node[anchor=north] at (13,{\manualbitrowy - 0.16}) {byte 1};%
+  \node[anchor=north] at (4,{\manualbitrowy - 0.16}) {byte #1};%
+  \node[anchor=north] at (13,{\manualbitrowy - 0.16}) {byte #2};%
+}
+\newcommand{\manualbytepairlabels}{\manualbytepairlabelsfor{0}{1}}
+\newcommand{\manualsinglebytelabels}[1]{%
+  \path (0,\manualbitrowy) rectangle (17,{\manualbitrowy + 1});%
+  \node[anchor=south] at (0.5,{\manualbitrowy + 1.18}) {7};%
+  \node[anchor=south] at (7.5,{\manualbitrowy + 1.18}) {0};%
+  \node[anchor=north] at (4,{\manualbitrowy - 0.16}) {byte #1};%
 }
 \newcommand{\manualbytepairbitlabels}{%
   \node[anchor=south] at (0.5,{\manualbitrowy + 1.18}) {7};%
@@ -507,13 +514,29 @@
 \newcommand{\manualinstructionfield}[2]{\manualblockfield{#1:}{#2}}
 \newcommand{\manualinstructionstatus}[2]{\manualblockfield{#1:}{#2}}
 \newenvironment{manualinstructionformat}{%
-  \par\noindent\textbf{Instruction Format:}\par
+  \par\Needspace{1.55in}%
+  \noindent\textbf{Instruction Format:}\par
 }{%
   \par}
 \newenvironment{manualinstructionforms}{%
-  \par\vspace{6pt}\noindent\textbf{Instruction Forms:}\par
+  \par
 }{%
   \par}
+\newcommand{\manualinstructionformsheading}{%
+  {\normalsize\bfseries Instruction Forms:\par}\vspace{6pt}}
+\newcommand{\manualinstructionformatheading}{%
+  \par\Needspace{1.25in}%
+  {\normalsize\bfseries Instruction Format:\par}\vspace{3pt}}
+\newcommand{\manualinstructionfieldsheading}{%
+  \par\Needspace{0.70in}%
+  {\normalsize\bfseries Instruction Fields:\par}\vspace{3pt}}
+\newcommand{\manualinstructionfielddescription}[2]{%
+  \par\Needspace{0.36in}%
+  \begingroup\leftskip=0.24in%
+  \noindent\textbf{#1}\textemdash{}#2\par\endgroup\vspace{2pt}}
+\newcommand{\manualinstructiondescriptionheading}[1]{%
+  \par\Needspace{0.80in}%
+  \subsection*{#1}}
 \newenvironment{manualcode}{\par\small\ttfamily\begin{tabularx}{\linewidth}{@{}X@{}}}{\end{tabularx}\par}
 \newcolumntype{Y}{>{\raggedright\arraybackslash}X}
 \newcolumntype{Z}{>{\raggedright\arraybackslash\ttfamily\footnotesize}X}

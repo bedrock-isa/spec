@@ -51,6 +51,7 @@ extension_grouping:
     conditional_control:
     - DJcc.D_TO_EA
     - FMOVcc.F_TO_F
+    - CALLcc.EA
     - Jcc.EA.WL
     - SETcc.EA
     - MOVcc.A_TO_EA

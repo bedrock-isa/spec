@@ -20,12 +20,21 @@ behavior:
 attributes:
   privilege: unprivileged
 forms:
-  operands:
-  - name: cc
-    type: condition
-  - name: target
-    type: relative_imm
+  compact_forms:
+  - operands:
+    - name: cc
+      type: condition
+    - name: target
+      type: relative_imm
+  extended_forms:
+  - operands:
+    - name: cc
+      type: condition
+    - name: target
+      type: EA
+    compact: false
   size:
     fixed: Q
+  reads: FLAGS
 definition_status:
   allocation: 'external: isa/alloc'

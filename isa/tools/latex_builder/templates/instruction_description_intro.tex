@@ -6,5 +6,9 @@ In an encoding diagram, fixed 0 and 1 fields identify opcode bits. Lettered fiel
 immediately below the diagram. An <ea> field is the compact effective-address field and may append EA payload bytes
 in operand order.
 
+For an extended encoding, the four-bit L field selects a total instruction-record length of 3+L bytes. The
+Required bytes value is the space consumed by the opcode and selected operand payloads; an encoded length greater
+than that value contains permitted overlong padding.
+
 Instruction entries are intentionally page-bounded: the next mnemonic starts on a new page so that a form diagram,
 field explanation, and side-effect text are read as a single reference unit.

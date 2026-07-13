@@ -37,7 +37,7 @@ entries:
       l: {kind: ea7, width: 7}
       h: {kind: ea7, width: 7}
   - id: extralong.fmadd_x_ea_l_fn_r_fn_d
-    bits: "1111110000010z00rrrrdddd000lllllll"
+    bits: "1111110000001z00rrrr000ddddlllllll"
     text: "FMADD.X(z:S/D) <ea>(l), Fn(r), Fn(d)"
     fields:
       z: {kind: size, width: 1}
@@ -45,7 +45,7 @@ entries:
       d: {kind: freg, width: 4}
       l: {kind: ea7, width: 7}
   - id: extralong.fmsub_x_ea_l_fn_r_fn_d
-    bits: "1111110000010z01rrrrdddd000lllllll"
+    bits: "1111110000001z00rrrr001ddddlllllll"
     text: "FMSUB.X(z:S/D) <ea>(l), Fn(r), Fn(d)"
     fields:
       z: {kind: size, width: 1}
@@ -53,7 +53,7 @@ entries:
       d: {kind: freg, width: 4}
       l: {kind: ea7, width: 7}
   - id: extralong.fnmadd_x_ea_l_fn_r_fn_d
-    bits: "1111110000010z10rrrrdddd000lllllll"
+    bits: "1111110000001z00rrrr010ddddlllllll"
     text: "FNMADD.X(z:S/D) <ea>(l), Fn(r), Fn(d)"
     fields:
       z: {kind: size, width: 1}
@@ -61,7 +61,7 @@ entries:
       d: {kind: freg, width: 4}
       l: {kind: ea7, width: 7}
   - id: extralong.fnmsub_x_ea_l_fn_r_fn_d
-    bits: "1111110000010z11rrrrdddd000lllllll"
+    bits: "1111110000001z00rrrr011ddddlllllll"
     text: "FNMSUB.X(z:S/D) <ea>(l), Fn(r), Fn(d)"
     fields:
       z: {kind: size, width: 1}
@@ -69,7 +69,7 @@ entries:
       d: {kind: freg, width: 4}
       l: {kind: ea7, width: 7}
   - id: extralong.fmadd_x_fn_l_ea_r_fn_d
-    bits: "1111110000011z00lllldddd000rrrrrrr"
+    bits: "1111110000001z00llll100ddddrrrrrrr"
     text: "FMADD.X(z:S/D) Fn(l), <ea>(r), Fn(d)"
     fields:
       z: {kind: size, width: 1}
@@ -77,7 +77,7 @@ entries:
       d: {kind: freg, width: 4}
       r: {kind: ea7, width: 7}
   - id: extralong.fmsub_x_fn_l_ea_r_fn_d
-    bits: "1111110000011z01lllldddd000rrrrrrr"
+    bits: "1111110000001z00llll101ddddrrrrrrr"
     text: "FMSUB.X(z:S/D) Fn(l), <ea>(r), Fn(d)"
     fields:
       z: {kind: size, width: 1}
@@ -85,7 +85,7 @@ entries:
       d: {kind: freg, width: 4}
       r: {kind: ea7, width: 7}
   - id: extralong.fnmadd_x_fn_l_ea_r_fn_d
-    bits: "1111110000011z10lllldddd000rrrrrrr"
+    bits: "1111110000001z00llll110ddddrrrrrrr"
     text: "FNMADD.X(z:S/D) Fn(l), <ea>(r), Fn(d)"
     fields:
       z: {kind: size, width: 1}
@@ -93,7 +93,7 @@ entries:
       d: {kind: freg, width: 4}
       r: {kind: ea7, width: 7}
   - id: extralong.fnmsub_x_fn_l_ea_r_fn_d
-    bits: "1111110000011z11lllldddd000rrrrrrr"
+    bits: "1111110000001z00llll111ddddrrrrrrr"
     text: "FNMSUB.X(z:S/D) Fn(l), <ea>(r), Fn(d)"
     fields:
       z: {kind: size, width: 1}
@@ -101,7 +101,7 @@ entries:
       d: {kind: freg, width: 4}
       r: {kind: ea7, width: 7}
   - id: extralong.bndsii_x_rn_l_ea_e_rn_h
-    bits: "111111000010zz000llllhhhh00eeeeeee"
+    bits: "111111000001zz00llll000hhhheeeeeee"
     text: "BNDSII.X(z:B/W/L/Q) Rn(l), <ea>(e), Rn(h)"
     fields:
       z: {kind: size, width: 2}
@@ -109,7 +109,7 @@ entries:
       h: {kind: rn, width: 4}
       e: {kind: ea7, width: 7}
   - id: extralong.bndsix_x_rn_l_ea_e_rn_h
-    bits: "111111000010zz001llllhhhh00eeeeeee"
+    bits: "111111000001zz00llll001hhhheeeeeee"
     text: "BNDSIX.X(z:B/W/L/Q) Rn(l), <ea>(e), Rn(h)"
     fields:
       z: {kind: size, width: 2}
@@ -117,7 +117,7 @@ entries:
       h: {kind: rn, width: 4}
       e: {kind: ea7, width: 7}
   - id: extralong.bndsxi_x_rn_l_ea_e_rn_h
-    bits: "111111000010zz010llllhhhh00eeeeeee"
+    bits: "111111000001zz00llll010hhhheeeeeee"
     text: "BNDSXI.X(z:B/W/L/Q) Rn(l), <ea>(e), Rn(h)"
     fields:
       z: {kind: size, width: 2}
@@ -125,7 +125,7 @@ entries:
       h: {kind: rn, width: 4}
       e: {kind: ea7, width: 7}
   - id: extralong.bndsxx_x_rn_l_ea_e_rn_h
-    bits: "111111000010zz011llllhhhh00eeeeeee"
+    bits: "111111000001zz00llll011hhhheeeeeee"
     text: "BNDSXX.X(z:B/W/L/Q) Rn(l), <ea>(e), Rn(h)"
     fields:
       z: {kind: size, width: 2}
@@ -133,7 +133,7 @@ entries:
       h: {kind: rn, width: 4}
       e: {kind: ea7, width: 7}
   - id: extralong.bnduii_x_rn_l_ea_e_rn_h
-    bits: "111111000010zz100llllhhhh00eeeeeee"
+    bits: "111111000001zz00llll100hhhheeeeeee"
     text: "BNDUII.X(z:B/W/L/Q) Rn(l), <ea>(e), Rn(h)"
     fields:
       z: {kind: size, width: 2}
@@ -141,7 +141,7 @@ entries:
       h: {kind: rn, width: 4}
       e: {kind: ea7, width: 7}
   - id: extralong.bnduix_x_rn_l_ea_e_rn_h
-    bits: "111111000010zz101llllhhhh00eeeeeee"
+    bits: "111111000001zz00llll101hhhheeeeeee"
     text: "BNDUIX.X(z:B/W/L/Q) Rn(l), <ea>(e), Rn(h)"
     fields:
       z: {kind: size, width: 2}
@@ -149,7 +149,7 @@ entries:
       h: {kind: rn, width: 4}
       e: {kind: ea7, width: 7}
   - id: extralong.bnduxi_x_rn_l_ea_e_rn_h
-    bits: "111111000010zz110llllhhhh00eeeeeee"
+    bits: "111111000001zz00llll110hhhheeeeeee"
     text: "BNDUXI.X(z:B/W/L/Q) Rn(l), <ea>(e), Rn(h)"
     fields:
       z: {kind: size, width: 2}
@@ -157,7 +157,7 @@ entries:
       h: {kind: rn, width: 4}
       e: {kind: ea7, width: 7}
   - id: extralong.bnduxx_x_rn_l_ea_e_rn_h
-    bits: "111111000010zz111llllhhhh00eeeeeee"
+    bits: "111111000001zz00llll111hhhheeeeeee"
     text: "BNDUXX.X(z:B/W/L/Q) Rn(l), <ea>(e), Rn(h)"
     fields:
       z: {kind: size, width: 2}
@@ -165,7 +165,7 @@ entries:
       h: {kind: rn, width: 4}
       e: {kind: ea7, width: 7}
   - id: extralong.divmodu_x_ea_e_rn_q_rn_r
-    bits: "111111000011zz0qqqqrrrr0000eeeeeee"
+    bits: "111111000010zz00qqqq000rrrreeeeeee"
     text: "DIVMODU.X(z:B/W/L/Q) <ea>(e), Rn(q), Rn(r)"
     fields:
       z: {kind: size, width: 2}
@@ -173,7 +173,7 @@ entries:
       r: {kind: rn, width: 4}
       e: {kind: ea7, width: 7}
   - id: extralong.divmods_x_ea_e_rn_q_rn_r
-    bits: "111111000011zz1qqqqrrrr0000eeeeeee"
+    bits: "111111000010zz00qqqq001rrrreeeeeee"
     text: "DIVMODS.X(z:B/W/L/Q) <ea>(e), Rn(q), Rn(r)"
     fields:
       z: {kind: size, width: 2}
@@ -181,7 +181,7 @@ entries:
       r: {kind: rn, width: 4}
       e: {kind: ea7, width: 7}
   - id: extralong.movcc_x_rn_s_ea_e
-    bits: "1111110001000cccczzssss0000eeeeeee"
+    bits: "111111000011zz00cccc000sssseeeeeee"
     text: "MOVcc.X(z:B/W/L/Q) Rn(s), <ea>(e)"
     fields:
       c: {kind: condition, width: 4}
@@ -191,7 +191,7 @@ entries:
     constraints:
       - {destination: true, exclude: immediate, reason: invalid_destination}
   - id: extralong.movcc_x_ea_e_rn_d
-    bits: "1111110001001cccczzdddd0000eeeeeee"
+    bits: "111111000011zz00cccc001ddddeeeeeee"
     text: "MOVcc.X(z:B/W/L/Q) <ea>(e), Rn(d)"
     fields:
       c: {kind: condition, width: 4}
@@ -199,7 +199,7 @@ entries:
       d: {kind: rn, width: 4}
       e: {kind: ea7, width: 7}
   - id: extralong.ijcc_rn_i_rn_b_ea_e
-    bits: "111111000101cccciiiibbbb000eeeeeee"
+    bits: "111111000100cccciiii000bbbbeeeeeee"
     text: "IJcc Rn(i), Rn(b), <ea>(e)"
     fields:
       c: {kind: condition, width: 4}
@@ -209,7 +209,7 @@ entries:
     constraints:
       - {field: c, allow: [0x0, 0x2..0xf], reason: condition_false_reclaimed}
   - id: extralong.fetchadd_x_order_o_rn_s_ea_e
-    bits: "111111000111zz000ooossss000eeeeeee"
+    bits: "111111000101zz000000ooosssseeeeeee"
     text: "FETCHADD.X(z:B/W/L/Q)/order(o) Rn(s), <ea>(e)"
     fields:
       z: {kind: size, width: 2}
@@ -221,7 +221,7 @@ entries:
       - {field: e, exclude: reg_direct, reason: memory_operand_required}
       - {field: e, exclude: immediate, reason: memory_operand_required}
   - id: extralong.fetchand_x_order_o_rn_s_ea_e
-    bits: "111111000111zz001ooossss000eeeeeee"
+    bits: "111111000101zz000001ooosssseeeeeee"
     text: "FETCHAND.X(z:B/W/L/Q)/order(o) Rn(s), <ea>(e)"
     fields:
       z: {kind: size, width: 2}
@@ -233,7 +233,7 @@ entries:
       - {field: e, exclude: reg_direct, reason: memory_operand_required}
       - {field: e, exclude: immediate, reason: memory_operand_required}
   - id: extralong.fetchor_x_order_o_rn_s_ea_e
-    bits: "111111000111zz010ooossss000eeeeeee"
+    bits: "111111000101zz000010ooosssseeeeeee"
     text: "FETCHOR.X(z:B/W/L/Q)/order(o) Rn(s), <ea>(e)"
     fields:
       z: {kind: size, width: 2}
@@ -245,7 +245,7 @@ entries:
       - {field: e, exclude: reg_direct, reason: memory_operand_required}
       - {field: e, exclude: immediate, reason: memory_operand_required}
   - id: extralong.fetchsub_x_order_o_rn_s_ea_e
-    bits: "111111000111zz011ooossss000eeeeeee"
+    bits: "111111000101zz000011ooosssseeeeeee"
     text: "FETCHSUB.X(z:B/W/L/Q)/order(o) Rn(s), <ea>(e)"
     fields:
       z: {kind: size, width: 2}
@@ -257,7 +257,7 @@ entries:
       - {field: e, exclude: reg_direct, reason: memory_operand_required}
       - {field: e, exclude: immediate, reason: memory_operand_required}
   - id: extralong.fetchxor_x_order_o_rn_s_ea_e
-    bits: "111111000111zz100ooossss000eeeeeee"
+    bits: "111111000101zz000100ooosssseeeeeee"
     text: "FETCHXOR.X(z:B/W/L/Q)/order(o) Rn(s), <ea>(e)"
     fields:
       z: {kind: size, width: 2}
@@ -269,7 +269,7 @@ entries:
       - {field: e, exclude: reg_direct, reason: memory_operand_required}
       - {field: e, exclude: immediate, reason: memory_operand_required}
   - id: extralong.cmpxchg_x_order_o_rn_x_rn_d_ea_e
-    bits: "1111110010000zzoooxxxxdddd0eeeeeee"
+    bits: "111111000101zz01xxxxoooddddeeeeeee"
     text: "CMPXCHG.X(z:B/W/L/Q)/order(o) Rn(x), Rn(d), <ea>(e)"
     fields:
       z: {kind: size, width: 2}

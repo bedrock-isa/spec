@@ -8,8 +8,10 @@ The seven-bit compact EA field is embedded in the opcode payload. Any displaceme
 EXT0 descriptor bytes are appended as EA payload bytes. When an instruction contains multiple payload-bearing
 operands, payloads are consumed in instruction operand order.
 
-All EA payload bytes are little-endian. Payload names ending in s are signed and are sign-extended before use;
-payload names without s are unsigned unless the consuming instruction explicitly says otherwise.
+Multi-byte scalar EA payloads, such as displacements, absolute addresses, and immediates, are little-endian. Payload
+names ending in s are signed and are sign-extended before use; payload names without s are unsigned unless the
+consuming instruction explicitly says otherwise. An EXT0 descriptor is not a multi-byte scalar: its descriptor bytes
+are consumed in the displayed stream order, byte 0 followed by byte 1, and bit numbering restarts at 7 for each byte.
 
 Indexed scale is implicit in the consuming instruction. For ordinary B/W/L/Q memory operations, the scale is 1, 2,
 4, or 8. LEA uses its suffix to select the scale.

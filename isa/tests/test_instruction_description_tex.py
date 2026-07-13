@@ -45,13 +45,17 @@ def instruction(description_tex: object) -> InstructionDef:
 
 class InstructionDescriptionTexTests(unittest.TestCase):
     def test_instruction_without_fragment_has_no_description_tex_output(self) -> None:
-        inst = instruction("instruction_description_intro.tex")
+        inst = instruction("fragments/performance_counter_reference.tex")
         del inst.data["doc"]["description_tex"]
         self.assertEqual(instruction_description_tex(inst), "")
 
     def test_reads_safe_relative_tex_fragment(self) -> None:
-        text = instruction_description_tex(instruction("instruction_description_intro.tex"))
-        self.assertIn("Reading an Instruction Description", text)
+        text = instruction_description_tex(instruction("fragments/performance_counter_reference.tex"))
+        self.assertIn(r"\manualinstructiondescriptionheading{Performance-Counter IDs}", text)
+
+    def test_rejects_numbered_or_toc_listed_fragment_headings(self) -> None:
+        with self.assertRaisesRegex(ValueError, "numbered sections"):
+            instruction_description_tex(instruction("instruction_description_intro.tex"))
 
     def test_rejects_unsafe_or_invalid_paths(self) -> None:
         for value in (
@@ -66,7 +70,7 @@ class InstructionDescriptionTexTests(unittest.TestCase):
                 instruction_description_tex(instruction(value))
 
     def test_inserts_fragment_after_status_and_before_forms(self) -> None:
-        inst = instruction("instruction_description_intro.tex")
+        inst = instruction("fragments/performance_counter_reference.tex")
         model = IsaModel(
             defs_root=ROOT / "isa" / "defs",
             alloc_root=ROOT / "isa" / "alloc",
@@ -77,10 +81,13 @@ class InstructionDescriptionTexTests(unittest.TestCase):
         )
         rendered = latex_instruction_entry(model, inst)
         status_at = rendered.index(r"\manualinstructionstatus{Condition Codes}")
-        fragment_at = rendered.index(r"\subsection{Reading an Instruction Description}")
+        fragment_at = rendered.index(r"\manualinstructiondescriptionheading{Performance-Counter IDs}")
         forms_at = rendered.index(r"\begin{manualinstructionforms}")
+        first_form_at = rendered.index(r"\begin{manualformblock}", forms_at)
+        forms_heading_at = rendered.index(r"\manualinstructionformsheading", first_form_at)
         self.assertLess(status_at, fragment_at)
         self.assertLess(fragment_at, forms_at)
+        self.assertLess(first_form_at, forms_heading_at)
 
 
 if __name__ == "__main__":

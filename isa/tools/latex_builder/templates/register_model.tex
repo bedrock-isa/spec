@@ -73,9 +73,4 @@ SP-relative EA forms do not carry this field and use SS. PC-relative EA forms do
 @SPECIAL_REGISTER_TABLE@
 
 \subsection{Control Registers}
-Control registers are accessed only through the architectural control-register instructions and obey the reserved-bit
-rules in the compatibility section.
-
-The complete selector namespace, field formats, access rules, and reserved-bit behavior are specified in the RDCR and
-WRCR instruction descriptions. The namespace covers translation, architectural event delivery, supervisor entry, boot state,
-and performance monitoring without duplicating the selector table here.
+\input{isa/tools/latex_builder/templates/fragments/control_register_reference.tex}

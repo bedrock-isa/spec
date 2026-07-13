@@ -1,0 +1,23 @@
+\par\vspace{5pt}
+\begingroup\scriptsize
+\setlength{\tabcolsep}{2pt}
+\setlength{\arrayrulewidth}{0.35pt}
+\renewcommand{\arraystretch}{@ROW_STRETCH@}
+\noindent
+\begin{minipage}[t]{0.485\linewidth}
+\vspace{0pt}
+\begin{tabularx}{\linewidth}{|>{\raggedright\arraybackslash}X|>{\centering\arraybackslash}p{0.42in}|>{\centering\arraybackslash}p{0.72in}|}
+\hline
+\multicolumn{1}{|c|}{\textbf{Addressing Mode}} & \textbf{Mode} & \textbf{Register/Form}\\\hline
+@LEFT_ROWS@
+\end{tabularx}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.485\linewidth}
+\vspace{0pt}
+\begin{tabularx}{\linewidth}{|>{\raggedright\arraybackslash}X|>{\centering\arraybackslash}p{0.42in}|>{\centering\arraybackslash}p{0.72in}|}
+\hline
+\multicolumn{1}{|c|}{\textbf{Addressing Mode}} & \textbf{Mode} & \textbf{Register/Form}\\\hline
+@RIGHT_ROWS@
+\end{tabularx}
+\end{minipage}
+\endgroup\par\vspace{@AFTER_SPACE@}

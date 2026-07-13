@@ -16,7 +16,7 @@
 \vspace{2pt}
 \begin{tabularx}{\linewidth}{@{}p{1.10in}X@{}}
 \textbf{Assembler syntax} & [SEG(s):Rn(b) + Rn(i) * scale + displacement], [SEG(s):Rn(b) + Rn(i)++ * scale + displacement], [SEG(s):Rn(b) + {-}{-}Rn(i) * scale + displacement]\\
-\textbf{Descriptor} & 1sss0010 bbbbiiii for no update; 1sss0000 bbbbiiii for postincrement index; 1sss0001 bbbbiiii for predecrement index. Two bytes.\\
+\textbf{Descriptor} & Byte 0 is \texttt{1sss0010}, \texttt{1sss0000}, or \texttt{1sss0001} for no update, postincrement, or predecrement. Byte 1 is \texttt{bbbbiiii}.\\
 \textbf{Generation} & offset = temporary Rn(b) + index\_term * scale + displacement.\\
 \textbf{Segment} & SEG(s) selects CS, DS, SS, or GS0..GS4.\\
 \textbf{Scale} & Scale is implicit in the consuming instruction. B/W/L/Q normally imply 1/2/4/8.\\
@@ -43,7 +43,7 @@
 \vspace{2pt}
 \begin{tabularx}{\linewidth}{@{}p{1.10in}X@{}}
 \textbf{Assembler syntax} & [SEG(s):Rn(b)++ + displacement], [SEG(s):{-}{-}Rn(b) + displacement]\\
-\textbf{Descriptor} & 1sss1000 bbbb0000 for base postincrement; 1sss1000 bbbb0001 for base predecrement. Two bytes.\\
+\textbf{Descriptor} & Byte 0 is \texttt{1sss1000}. Byte 1 is \texttt{bbbb0000} for base postincrement or \texttt{bbbb0001} for base predecrement.\\
 \textbf{Generation} & offset = base\_term + displacement.\\
 \textbf{Segment} & SEG(s) selects CS, DS, SS, or GS0..GS4.\\
 \textbf{Payload} & Two descriptor bytes plus the optional displacement selected by the compact EXT0 escape.\\
@@ -56,7 +56,7 @@
 \vspace{2pt}
 \begin{tabularx}{\linewidth}{@{}p{1.10in}X@{}}
 \textbf{Assembler syntax} & [SEG(s):0 + Rn(i) * scale + displacement], [SEG(s):0 + Rn(i)++ * scale + displacement], [SEG(s):0 + {-}{-}Rn(i) * scale + displacement]\\
-\textbf{Descriptor} & 1sss1001 0010iiii for no update; 1sss1001 0000iiii for postincrement index; 1sss1001 0001iiii for predecrement index. Two bytes.\\
+\textbf{Descriptor} & Byte 0 is \texttt{1sss1001}. Byte 1 is \texttt{0010iiii}, \texttt{0000iiii}, or \texttt{0001iiii} for no update, postincrement, or predecrement.\\
 \textbf{Generation} & offset = index\_term * scale + displacement.\\
 \textbf{Segment} & SEG(s) selects CS, DS, SS, or GS0..GS4.\\
 \textbf{Payload} & Two descriptor bytes plus the optional displacement selected by the compact EXT0 escape.\\
@@ -69,7 +69,7 @@
 \vspace{2pt}
 \begin{tabularx}{\linewidth}{@{}p{1.10in}X@{}}
 \textbf{Assembler syntax} & [SP + Rn(i) * scale + displacement], [SP + Rn(i)++ * scale + displacement], [SP + {-}{-}Rn(i) * scale + displacement], and the matching PC forms.\\
-\textbf{Descriptor} & 10001010 0010iiii, 0000iiii, or 0001iiii for SP; 10001011 0010iiii, 0000iiii, or 0001iiii for PC. Two bytes.\\
+\textbf{Descriptor} & Byte 0 is \texttt{10001010} for SP or \texttt{10001011} for PC. Byte 1 is \texttt{0010iiii}, \texttt{0000iiii}, or \texttt{0001iiii} for no update, postincrement, or predecrement.\\
 \textbf{Generation} & offset = temporary SP or PC term + index\_term * scale + displacement.\\
 \textbf{Segment} & SP forms are fixed to SS. PC forms are fixed to CS.\\
 \textbf{Payload} & Two descriptor bytes plus the optional displacement selected by the compact EXT0 escape.\\
