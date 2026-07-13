@@ -212,16 +212,20 @@ class LatexTopSection(LatexComponent):
 @dataclass(frozen=True)
 class LatexHiddenTopSection(LatexComponent):
     title: str
+    clear_page: bool = True
 
     def render(self) -> str:
-        return "\n".join(
+        lines = []
+        if self.clear_page:
+            lines.append(r"\clearpage")
+        lines.extend(
             [
-                r"\clearpage",
                 r"\phantomsection",
                 r"\refstepcounter{section}",
                 rf"\addcontentsline{{toc}}{{section}}{{\protect\numberline{{\thesection}}{tex_escape(self.title)}}}",
             ]
         )
+        return "\n".join(lines)
 
 
 @dataclass(frozen=True)
@@ -248,22 +252,33 @@ class LatexLongTable(LatexComponent):
             raise ValueError(f"unknown longtable style: {self.style}")
         environment = environments[self.style]
         out = []
+        if self.caption:
+            out.append(rf"\manualtablecaption{{{tex_escape(caption_title(self.caption))}}}")
         out.extend(
             [
                 rf"\begin{{{environment}}}{{{spec}}}",
                 "\\toprule",
+                r"\rowcolor{ManualHeaderFill}",
             ]
         )
-        out.append(" & ".join(r"\textbf{" + tex_escape(header) + "}" for header in self.headers) + r"\\")
+        header = " & ".join(r"\textbf{" + tex_escape(item) + "}" for item in self.headers) + r"\\"
+        out.append(header)
+        out.append("\\midrule")
+        out.append("\\endfirsthead")
+        if self.caption:
+            out.append(
+                rf"\multicolumn{{{len(self.headers)}}}{{@{{}}l}}{{\scriptsize\itshape "
+                rf"Table \themanualtable\ (continued)}}\\"
+            )
+        out.append("\\toprule")
+        out.append(r"\rowcolor{ManualHeaderFill}")
+        out.append(header)
         out.append("\\midrule")
         out.append("\\endhead")
         for row in self.rows:
             out.append(" & ".join(row) + r"\\")
         out.append("\\bottomrule")
         out.append(rf"\end{{{environment}}}")
-        if self.caption:
-            caption_command = "manualtablecaption" if self.listed else "manualunlistedtablecaption"
-            out.append(rf"\{caption_command}{{{tex_escape(caption_title(self.caption))}}}")
         return "\n".join(out) + "\n"
 
 
@@ -282,12 +297,16 @@ class LatexTabular(LatexComponent):
             spec = "@{}" + "".join(rf">{{\raggedright\arraybackslash}}p{{{width}}}" for width in self.widths) + "@{}"
         else:
             spec = "@{}" + " ".join("l" for _ in self.headers) + "@{}"
-        out = [
+        out = []
+        if self.caption:
+            out.append(rf"\manualtablecaption{{{tex_escape(caption_title(self.caption))}}}")
+        out.extend([
             rf"\begin{{manualtabular}}{{{spec}}}",
             r"\toprule",
+            r"\rowcolor{ManualHeaderFill}",
             " & ".join(r"\textbf{" + tex_escape(header) + "}" for header in self.headers) + r"\\",
             r"\midrule",
-        ]
+        ])
         for row in self.rows:
             out.append(" & ".join(row) + r"\\")
         out.extend(
@@ -296,9 +315,6 @@ class LatexTabular(LatexComponent):
                 r"\end{manualtabular}",
             ]
         )
-        if self.caption:
-            caption_command = "manualtablecaption" if self.listed else "manualunlistedtablecaption"
-            out.append(rf"\{caption_command}{{{tex_escape(caption_title(self.caption))}}}")
         return "\n".join(out) + "\n"
 
 

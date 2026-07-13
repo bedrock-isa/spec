@@ -96,8 +96,16 @@ Faults remain precise at the repeated-operation boundary. Completed iterations a
 faulting iteration is reported at the faulting instruction with restart state sufficient to continue or emulate
 the remaining work.
 
+\manualtablecaption{Repeat Restart Properties}
 \begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{1.15in}>{\raggedright\arraybackslash}p{2.10in}>{\raggedright\arraybackslash}p{2.15in}@{}}
 \toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Property} & \textbf{Single-instruction repeat} & \textbf{REPG}\\
+\midrule
+\endfirsthead
+\multicolumn{3}{l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
+\toprule
+\rowcolor{ManualHeaderFill}
 \textbf{Property} & \textbf{Single-instruction repeat} & \textbf{REPG}\\
 \midrule
 \endhead
@@ -109,4 +117,3 @@ Terminating fault & reported at the repeated scalar instruction & reported at th
 Completed work & completed iterations remain committed & completed iterations and prior group instructions remain committed\\
 \bottomrule
 \end{manuallongtable}
-\manualtablecaption{Repeat Restart Properties}

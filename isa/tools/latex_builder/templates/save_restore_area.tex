@@ -1,29 +1,19 @@
 \clearpage
 \section{SAVE/RESTORE Processor-State Save Area}
 
-SAVE and RESTORE use a CPUID-defined memory image. The save-area base is 4 KiB aligned, and extension component
-slots are 64-byte aligned.
+SAVE and RESTORE use a CPUID-defined memory image whose base is 4 KiB aligned. The fixed block contains the base
+header, state-block bitmap, R0 through R15, optional GS0 through GS4 images, and one reserved slot.
 
-The fixed base block records the architectural integer state required for user-level context save. Extension
-components are present only when the state-block bitmap and CPUID component description indicate that the component
-is enabled and saved.
+The header carries FLAGS, STATUS, format, and GS-validity state. \texttt{GS\_VALID} selects which GS images are
+meaningful. SAVE may omit an architecturally clean extension component by clearing its bitmap bit, and RESTORE uses
+that bitmap as authoritative when reconstructing extension state.
 
-RESTORE is the inverse operation for a valid save image. User-mode RESTORE ignores saved supervisor-only STATUS
-state; supervisor RESTORE applies the normal STATUS write rules.
+User-mode RESTORE ignores saved supervisor-only STATUS state. Supervisor RESTORE validates the saved STATUS image by
+the ordinary privileged write rules before making it visible.
 
-The fixed block records R0 through R15, GS validity bits and any implemented GS images, FLAGS, and STATUS. The GS
-validity bitmap determines which GS0 through GS4 images are present. CPUID SAVE\_AREA\_LAYOUT leaves describe the
-offset and maximum size of every extension component, and each extension slot begins on a 64-byte boundary.
-
-SAVE may omit an architecturally clean extension block by clearing its state-block bitmap bit. RESTORE treats the
-bitmap as authoritative when reconstructing extension state. A user-mode restore never imports supervisor-only
-STATUS state; a supervisor restore validates the saved STATUS image by the ordinary privileged write rules before
-making it visible.
-
-When the floating-point extension is enabled, its CPUID component contains F0 through F15 together with FFLAGS and
-FSTATUS. Other optional extensions receive distinct CPUID component IDs and 64-byte-aligned slots. Software must not
-infer an extension offset from another component's size; it uses the SAVE\_AREA\_LAYOUT descriptors and allocates the
-reported maximum area size.
+CPUID \texttt{SAVE\_AREA\_LAYOUT} leaves report every extension component's offset and maximum size. Each component
+starts on a 64-byte boundary; software does not infer one offset from another component's size. When floating-point
+state is enabled, its component contains F0 through F15, FFLAGS, and FSTATUS.
 
 @SAVE_RESTORE_INSTRUCTION_TABLE@
 

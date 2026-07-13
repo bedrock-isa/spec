@@ -14,8 +14,10 @@ SETF, CLRF, WRFLAGS, CMPXCHG, and the bounds-check forms. CMPJcc and TESTJcc com
 for their branch decision and do not update architectural FLAGS. ADD, SUB, logic operations, INC, DEC, shifts,
 rotates, moves, extensions, min/max, and multiply/divide forms leave FLAGS unchanged.
 
+\manualtablecaption{Integer Condition-Code Bits}
 \begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.45in}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{3.90in}@{}}
 \toprule
+\rowcolor{ManualHeaderFill}
 \textbf{Bit} & \textbf{Name} & \textbf{Meaning}\\
 \midrule
 Z & zero & Set when the result value is zero.\\
@@ -24,11 +26,18 @@ C & carry/borrow & Set on unsigned carry out for addition or unsigned borrow for
 V & overflow & Set on signed overflow or an explicitly reported exceptional condition.\\
 \bottomrule
 \end{manualtabular}
-\manualtablecaption{Integer Condition-Code Bits}
 
 \subsection{Common Integer Rules}
+\manualtablecaption{Common Integer Flag Computation}
 \begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{1.30in}>{\raggedright\arraybackslash}p{4.10in}@{}}
 \toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Operation Class} & \textbf{FLAGS Result}\\
+\midrule
+\endfirsthead
+\multicolumn{2}{l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
+\toprule
+\rowcolor{ManualHeaderFill}
 \textbf{Operation Class} & \textbf{FLAGS Result}\\
 \midrule
 \endhead
@@ -44,21 +53,23 @@ CLR & Write zero and leave FLAGS unchanged.\\
 Bounds checks & Set V for an out-of-range value and leave Z, N, and C unchanged.\\
 \bottomrule
 \end{manuallongtable}
-\manualtablecaption{Common Integer Flag Computation}
 
 \subsection{Shift, Rotate, and Bit Operations}
+\manualtablecaption{Shift and Rotate Count Rules}
 \begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{1.30in}>{\raggedright\arraybackslash}p{4.10in}@{}}
 \toprule
+\rowcolor{ManualHeaderFill}
 \textbf{Operation} & \textbf{Count Rule}\\
 \midrule
 SHL, SHR, SAR & Count is not reduced modulo width; oversized counts use defined zero- or sign-fill behavior.\\
 ROL, ROR & Count is reduced modulo width; effective count zero preserves destination and FLAGS.\\
 \bottomrule
 \end{manualtabular}
-\manualtablecaption{Shift and Rotate Count Rules}
 
+\manualtablecaption{Shift and Rotate Flag Computation}
 \begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{4.65in}@{}}
 \toprule
+\rowcolor{ManualHeaderFill}
 \textbf{Operation} & \textbf{FLAGS Result for Nonzero Effective Count}\\
 \midrule
 SHL & Z and N from result; C is last shifted bit; V reports signed multiplication overflow.\\
@@ -68,7 +79,6 @@ ROL & Z and N from result; C is least significant result bit; V is clear.\\
 ROR & Z and N from result; C is most significant result bit; V is clear.\\
 \bottomrule
 \end{manualtabular}
-\manualtablecaption{Shift and Rotate Flag Computation}
 
 \subsection{Conditional Consumers}
 Conditional branches, calls, traps, sets, and repeat forms consume the condition-code table without recomputing

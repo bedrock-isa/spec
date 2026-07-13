@@ -27,6 +27,7 @@ SS, and PC memory forms are fixed to CS.
 \input{isa/tools/latex_builder/templates/fragments/compact_ea_reference_blocks.tex}
 
 @COMPACT_EA_TABLE@
+\label{table:compact-ea-encoding}
 
 \clearpage
 \subsection{Extended EA Descriptor}
@@ -38,8 +39,16 @@ through SP or PC, or explicitly uses the operation default data segment.
 
 \input{isa/tools/latex_builder/templates/fragments/ea_field_diagrams.tex}
 
+\manualtablecaption{EA Payload Names}
 \begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{0.95in}>{\raggedright\arraybackslash}p{0.45in}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{3.30in}@{}}
 \toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Payload} & \textbf{Bytes} & \textbf{Value} & \textbf{Use}\\
+\midrule
+\endfirsthead
+\multicolumn{4}{l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
+\toprule
+\rowcolor{ManualHeaderFill}
 \textbf{Payload} & \textbf{Bytes} & \textbf{Value} & \textbf{Use}\\
 \midrule
 \endhead
@@ -56,7 +65,6 @@ imm64 & 8 & unsigned & immediate operand payload\\
 EXT0 descriptor & 1 or 2 & encoded & extended EA descriptor; present only for EXT0 escapes\\
 \bottomrule
 \end{manuallongtable}
-\manualtablecaption{EA Payload Names}
 
 For a compact displacement, absolute address, or immediate, the selected payload follows the EA field at that
 operand's payload position. EXT0 begins with the compact escape value and one or two descriptor bytes; a displaced

@@ -411,6 +411,17 @@ def instruction_brief_rows(model: IsaModel, mnemonics: list[str]) -> list[list[A
     return rows
 
 
+def latex_instruction_links(model: IsaModel, mnemonics: list[str], lead: str) -> str:
+    links = []
+    for mnemonic in mnemonics:
+        inst = instruction_by_mnemonic(model, mnemonic)
+        if inst is not None:
+            links.append(rf"\hyperref[{instruction_label(inst.mnemonic)}]{{\texttt{{{latex_escape(inst.mnemonic)}}}}}")
+    if not links:
+        return ""
+    return f"{lead} " + ", ".join(links) + r".\par"
+
+
 def operand_schema(model: IsaModel) -> dict[str, Any]:
     data = model.metadata.get("operands") or {}
     schema = data.get("operand_schema")
@@ -439,13 +450,6 @@ def data_format_template_values(model: IsaModel) -> dict[str, Any]:
             rng = f"{rng[0]}..{rng[1]}"
         values[f"{key}_RANGE"] = rng
     return values
-
-
-def instruction_family_rows(instructions: list[InstructionDef]) -> list[list[Any]]:
-    counts: Counter[tuple[str, str]] = Counter()
-    for inst in instructions:
-        counts[(instruction_class(inst), instruction_family(inst))] += 1
-    return [[cls, family, count] for (cls, family), count in sorted(counts.items())]
 
 
 def encoding_class_template_values(model: IsaModel) -> dict[str, Any]:
@@ -531,11 +535,7 @@ def latex_instruction_status(label: str, value_latex: str) -> str:
 def latex_code_line_stack(lines: list[str]) -> str:
     if not lines:
         return tex_code("-")
-    rendered_lines = []
-    for line in lines:
-        rendered = tex_code(line).replace(", ", r",\allowbreak{} ")
-        rendered_lines.append(rf"\noindent {rendered}\par ")
-    return r"\begin{manualraggedblock}" + "".join(rendered_lines) + r"\end{manualraggedblock}"
+    return "\n".join(rf"\manualcodeline{{{latex_escape(line)}}}" for line in lines)
 
 
 def flag_summary(flags: Any) -> str:
@@ -544,24 +544,42 @@ def flag_summary(flags: Any) -> str:
     return compact_text(flags) or "-"
 
 
+def instruction_length_summary(inst: InstructionDef, model: IsaModel) -> str:
+    lengths: set[int] = set()
+    for entry in model.allocated_by_mnemonic.get(inst.mnemonic, []):
+        form = allocation_form_text(entry.text)
+        lengths.update(instruction_length(entry, form, model.metadata.get("ea")).required_bytes)
+    if not lengths:
+        return "variable length"
+    low, high = min(lengths), max(lengths)
+    return f"{low} byte" if low == high == 1 else (f"{low} bytes" if low == high else f"{low}-{high} bytes")
+
+
+def latex_instruction_metadata(inst: InstructionDef, model: IsaModel) -> str:
+    return rf"\manualinstructionmetadata{{{latex_escape(instruction_class(inst))}}}" \
+        rf"{{{latex_escape(instruction_family(inst))}}}" \
+        rf"{{{latex_escape(privilege_text(inst.attributes.get('privilege', '-'), '-'))}}}" \
+        rf"{{{latex_escape(instruction_length_summary(inst, model))}}}"
+
+
 def latex_attributes_block(inst: InstructionDef, model: IsaModel) -> str:
-    attrs = inst.attributes
     lines = [
         rf"{latex_escape('Class')} = {latex_escape(instruction_class(inst))}",
         rf"{latex_escape('Family')} = {latex_escape(instruction_family(inst))}",
-        rf"{latex_escape('Privilege')} = {latex_escape(privilege_text(attrs.get('privilege', '-'), '-'))}",
+        rf"{latex_escape('Privilege')} = "
+        rf"{latex_escape(privilege_text(inst.attributes.get('privilege', '-'), '-'))}",
+        rf"{latex_escape('Length')} = {latex_escape(instruction_length_summary(inst, model))}",
     ]
-    flags = attrs.get("flags")
-    if flags:
-        lines.append(rf"{latex_escape('Flags')} = {latex_escape(flag_summary(flags))}")
     return latex_ragged_block(lines)
 
 
 def latex_operation_field(lines: list[Any]) -> str:
     if not lines:
         return ""
-    escaped_lines = [latex_escape(line) for line in lines]
-    return latex_instruction_field("Operation", latex_ragged_block(escaped_lines))
+    return latex_instruction_field(
+        "Operation",
+        latex_ragged_block([latex_escape(compact_text(line)) for line in lines]),
+    )
 
 
 def latex_flag_status(inst: InstructionDef) -> str:
@@ -570,22 +588,11 @@ def latex_flag_status(inst: InstructionDef) -> str:
         return ""
     names = [name for name in ("Z", "N", "C", "V") if name in flags]
     if names:
-        header = " & ".join(rf"\textbf{{{latex_escape(name)}}}" for name in names)
-        values = " & ".join("*" for _ in names)
-        text = latex_escape(flag_summary(flags))
-        return latex_instruction_status(
-            "Condition Codes",
-            rf"\begin{{manualraggedblock}}\begin{{tabular}}[t]{{@{{}}{'c' * len(names)}@{{}}}}"
-            + "\n"
-            + header
-            + r"\\"
-            + "\n"
-            + values
-            + r"\\"
-            + "\n"
-            + rf"\end{{tabular}}\par\smallskip {text}\end{{manualraggedblock}}",
+        items = "".join(rf"\manualstatusitem{{{latex_escape(name)}}}{{*}}" for name in names)
+        return "\n".join(
+            [r"\begin{manualstatusstrip}", items, rf"\par\textcolor{{ManualMuted}}{{{latex_escape(flag_summary(flags))}}}", r"\end{manualstatusstrip}"]
         )
-    return latex_instruction_status("Status", latex_ragged_block([latex_escape(flag_summary(flags))]))
+    return rf"\begin{{manualstatusstrip}}\textbf{{Status}}\enspace {latex_escape(flag_summary(flags))}\end{{manualstatusstrip}}"
 
 
 def size_suffix(size: Any) -> str:
@@ -628,22 +635,18 @@ def latex_instruction_form_block(
     needspace: str = "1.45in",
     include_forms_heading: bool = False,
 ) -> str:
-    rendered_rows = []
-    for key, value in rows:
-        if not value:
-            continue
-        rendered_rows.append(rf"\textbf{{{latex_escape(key)}}} & {value}\\")
-    if not rendered_rows:
+    values = {key: value for key, value in rows if value and key != "Form"}
+    if not values:
         return ""
+    kind = values.pop("Kind", "form")
+    size = values.pop("Size", "variable length")
+    attributes = values.pop("Attributes", "unprivileged")
     return "\n".join(
         [
             rf"\begin{{manualformblock}}{{{needspace}}}",
             *([r"\manualinstructionformsheading"] if include_forms_heading else []),
             rf"\textbf{{{tex_code(title)}}}\par",
-            r"\vspace{2pt}",
-            r"\begin{tabularx}{\linewidth}{@{}p{0.88in}>{\raggedright\arraybackslash}X@{}}",
-            *rendered_rows,
-            r"\end{tabularx}\par",
+            rf"\manualformmetadata{{{kind}}}{{{size}}}{{{attributes}}}",
             r"\end{manualformblock}",
         ]
     )
@@ -793,6 +796,11 @@ def required_bytes_text(length: InstructionLength) -> str:
     return str(low) if low == high else f"{low}-{high}"
 
 
+def required_bytes_label(length: InstructionLength) -> str:
+    value = required_bytes_text(length)
+    return f"{value} byte" if value == "1" else f"{value} bytes"
+
+
 def bit_label(text: str) -> str:
     if set(text) <= {"0", "1", "?"}:
         return text.replace("?", "-")
@@ -856,8 +864,17 @@ def instruction_byte_row_segments(
     left_segments: list[tuple[str, int]],
     right_segments: list[tuple[str, int]] | None = None,
 ) -> str:
+    def field(text: str, width: int) -> str:
+        if set(text) <= {"0", "1"}:
+            macro = "manualbitfixed"
+        elif set(text) <= {"-"}:
+            macro = "manualbitreserved"
+        else:
+            macro = "manualbitvariable"
+        return rf"\{macro}{{{latex_escape(text)}}}{{{width}}}"
+
     fields = [
-        rf"\manualbitfieldcode{{{latex_escape(text)}}}{{{width}}}"
+        field(text, width)
         for text, width in left_segments
         if width > 0
     ]
@@ -868,7 +885,7 @@ def instruction_byte_row_segments(
         labels = rf"\manualbytepairlabelsfor{{{byte_index}}}{{{byte_index + 1}}}"
         fields.append(r"\manualbitgap{1}")
         fields.extend(
-            rf"\manualbitfieldcode{{{latex_escape(text)}}}{{{width}}}"
+            field(text, width)
             for text, width in right_segments
             if width > 0
         )
@@ -949,7 +966,7 @@ def latex_entry_bit_diagram(entry: AllocationEntry, form: str) -> str:
     ]
     return "\n".join(
         [
-            rf"\begin{{manualbitdiagram}}{{Instruction format for {latex_escape(form)}}}",
+            rf"\begin{{manualbitdiagram}}{{Format \textemdash{{}} Instruction format for {latex_escape(form)}}}",
             *rows,
             r"\end{manualbitdiagram}",
         ]
@@ -1060,6 +1077,37 @@ class CompactEaDisplayRow:
     values: frozenset[int]
 
 
+@dataclass(frozen=True)
+class EAAvailabilityCategory:
+    name: str
+    members: tuple[str, ...]
+    allowed: tuple[str, ...]
+    mode: str
+    exceptions: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class EAAvailabilitySummary:
+    """Lossless, presentation-ready summary of one form's compact-EA availability."""
+
+    categories: tuple[EAAvailabilityCategory, ...]
+    allowed_syntax: frozenset[str]
+
+    def reconstructed_allowed_syntax(self) -> frozenset[str]:
+        reconstructed: set[str] = set()
+        for category in self.categories:
+            members = set(category.members)
+            if category.mode == "all":
+                reconstructed.update(members)
+            elif category.mode == "except":
+                reconstructed.update(members - set(category.exceptions))
+            elif category.mode == "only":
+                reconstructed.update(category.exceptions)
+            elif category.mode != "none":
+                raise ValueError(f"unknown EA availability mode: {category.mode}")
+        return frozenset(reconstructed)
+
+
 def compact_ea_display_rows(ea_data: Any) -> list[CompactEaDisplayRow]:
     if not isinstance(ea_data, dict):
         raise ValueError("missing EA metadata for addressing-mode table")
@@ -1082,6 +1130,69 @@ def compact_ea_display_rows(ea_data: Any) -> list[CompactEaDisplayRow]:
     if not rows:
         raise ValueError("EA metadata defines no displayable compact EA forms")
     return rows
+
+
+def compact_ea_category(syntax: str) -> str:
+    if syntax in {"Rn(r)", "SP"}:
+        return "Register"
+    if syntax.startswith("["):
+        return "Memory"
+    if syntax.startswith("imm"):
+        return "Immediate"
+    if syntax.startswith("EXT0"):
+        return "EXT0"
+    raise ValueError(f"uncategorized compact EA syntax: {syntax!r}")
+
+
+def ea_availability_summary(model: IsaModel, entry: AllocationEntry, symbol: str) -> EAAvailabilitySummary:
+    constraints = ea_constraints_for_field(entry, symbol)
+    rows = compact_ea_display_rows(model.metadata.get("ea"))
+    allowed: set[str] = set()
+    for row in rows:
+        allowed_values = {value for value in row.values if ea_value_allowed(value, constraints)}
+        if allowed_values and allowed_values != row.values:
+            raise ValueError(
+                f"{entry.path}: {entry.entry_id} partially allows EA form {row.syntax!r} for field {symbol}"
+            )
+        if allowed_values:
+            allowed.add(row.syntax)
+    categories: list[EAAvailabilityCategory] = []
+    for name in ("Register", "Memory", "Immediate", "EXT0"):
+        members = tuple(row.syntax for row in rows if compact_ea_category(row.syntax) == name)
+        category_allowed = tuple(item for item in members if item in allowed)
+        excluded = tuple(item for item in members if item not in allowed)
+        if not category_allowed:
+            mode, exceptions = "none", ()
+        elif len(category_allowed) == len(members):
+            mode, exceptions = "all", ()
+        elif len(excluded) <= len(category_allowed):
+            mode, exceptions = "except", excluded
+        else:
+            mode, exceptions = "only", category_allowed
+        categories.append(EAAvailabilityCategory(name, members, category_allowed, mode, exceptions))
+    summary = EAAvailabilitySummary(tuple(categories), frozenset(allowed))
+    if summary.reconstructed_allowed_syntax() != summary.allowed_syntax:
+        raise ValueError(f"{entry.path}: lossy EA summary for {entry.entry_id} field {symbol}")
+    return summary
+
+
+def latex_ea_syntax_list(items: tuple[str, ...]) -> str:
+    return ", ".join(tex_code(item) for item in items)
+
+
+def latex_ea_availability_summary(summary: EAAvailabilitySummary) -> str:
+    allowed_terms: list[str] = []
+    unavailable: list[str] = []
+    for category in summary.categories:
+        if category.mode == "all":
+            allowed_terms.append(category.name)
+        elif category.mode == "except":
+            allowed_terms.append(f"{category.name} except {latex_ea_syntax_list(category.exceptions)}")
+        elif category.mode == "only":
+            allowed_terms.append(f"{category.name} only {latex_ea_syntax_list(category.exceptions)}")
+        else:
+            unavailable.append(category.name)
+    return rf"\manualeasummary{{{'; '.join(allowed_terms) or 'none'}}}{{{', '.join(unavailable)}}}"
 
 
 def destination_ea_field(entry: AllocationEntry) -> str | None:
@@ -1130,45 +1241,8 @@ def entry_ea_fields(entry: AllocationEntry, form: str) -> list[tuple[str, str]]:
     return fields
 
 
-def latex_ea_mode_row(row: CompactEaDisplayRow, allowed: bool) -> str:
-    unavailable = r"\textemdash{}"
-    mode = tex_code(row.mode_bits) if allowed else unavailable
-    form = tex_code(row.form_bits) if allowed else unavailable
-    return " & ".join([tex_code(row.syntax), mode, form]) + r"\\\hline"
-
-
 def latex_ea_addressing_mode_tables(model: IsaModel, entry: AllocationEntry, symbol: str) -> str:
-    constraints = ea_constraints_for_field(entry, symbol)
-    rendered_rows: list[str] = []
-    for row in compact_ea_display_rows(model.metadata.get("ea")):
-        allowed_values = {
-            value
-            for value in row.values
-            if ea_value_allowed(value, constraints)
-        }
-        if allowed_values and allowed_values != row.values:
-            raise ValueError(
-                f"{entry.path}: {entry.entry_id} partially allows EA form {row.syntax!r} for field {symbol}"
-            )
-        rendered_rows.append(latex_ea_mode_row(row, bool(allowed_values)))
-    split_at = (len(rendered_rows) + 1) // 2
-    left_rows = rendered_rows[:split_at]
-    right_rows = rendered_rows[split_at:]
-    right_rows.extend([r" & & \\\hline"] * (len(left_rows) - len(right_rows)))
-    ea_field_count = sum(
-        1
-        for spec in entry.fields.values()
-        if isinstance(spec, dict) and spec.get("kind") == "ea7"
-    )
-    return render_latex_template(
-        "instruction_ea_mode_tables.tex",
-        {
-            "LEFT_ROWS": "\n".join(left_rows),
-            "RIGHT_ROWS": "\n".join(right_rows),
-            "ROW_STRETCH": "1.22",
-            "AFTER_SPACE": "3pt" if ea_field_count > 1 else "4pt",
-        },
-    )
+    return latex_ea_availability_summary(ea_availability_summary(model, entry, symbol))
 
 
 def field_description_label(symbol: str, spec: dict[str, Any], inst: InstructionDef) -> str:
@@ -1208,8 +1282,8 @@ def field_description_text(
     if kind == "ea7":
         target = f"the {role}" if role else "the operand"
         return latex_escape(
-            f"Specifies {target}. The following tables list every compact addressing mode; "
-            "a dash marks a form unavailable to this field."
+            f"Specifies {target}. Availability is summarized by category; compact mode bits are defined by "
+            "Compact EA Encoding, and extended descriptors are defined by the Extended EA profiles."
         )
     if kind in {"rn", "freg", "vreg", "creg", "sreg"}:
         target = f"the {role}" if role else "a register operand"
@@ -1242,7 +1316,7 @@ def latex_field_explanation_block(
         )
     for symbol, spec in ordered_entry_fields(entry):
         if spec.get("kind") == "ea7":
-            parts.append(r"\Needspace{2.55in}")
+            parts.append(r"\Needspace{1.15in}")
         parts.append(
             rf"\manualinstructionfielddescription{{{field_description_label(symbol, spec, inst)}}}"
             rf"{{{field_description_text(model, inst, entry, form, symbol, spec)}}}"
@@ -1264,23 +1338,18 @@ def latex_allocated_instruction_form_block(
     form = allocation_form_text(entry.text)
     length = instruction_length(entry, form, model.metadata.get("ea"))
     rows = [
-        ("Form", latex_escape(instruction_form_operands(form))),
         ("Encoding class", latex_escape(entry.cls)),
-        ("Required bytes", latex_escape(required_bytes_text(length))),
+        ("Required bytes", latex_escape(required_bytes_label(length))),
         ("Privilege", latex_escape(privilege_text(inst.attributes.get("privilege", "unprivileged")))),
     ]
-    rendered_rows = [rf"\textbf{{{latex_escape(key)}}} & {value}\\" for key, value in rows if value]
     ea_field_count = len(entry_ea_fields(entry, form))
-    needspace = "3.2in" if ea_field_count == 0 else "6.5in"
+    needspace = "2.75in" if ea_field_count == 0 else "3.65in"
     return "\n".join(
         [
             rf"\begin{{manualformblock}}{{{needspace}}}",
             *([r"\manualinstructionformsheading"] if include_forms_heading else []),
             rf"\textbf{{{tex_code(form)}}}\par",
-            r"\vspace{2pt}",
-            r"\begin{tabularx}{\linewidth}{@{}p{0.88in}>{\raggedright\arraybackslash}X@{}}",
-            *rendered_rows,
-            r"\end{tabularx}\par",
+            rf"\manualformmetadata{{{rows[0][1]}}}{{{rows[1][1]}}}{{{rows[2][1]}}}",
             r"\manualinstructionformatheading",
             latex_entry_bit_diagram(entry, form),
             latex_field_explanation_block(model, inst, entry, form),
@@ -1346,7 +1415,6 @@ def render_latex(model: IsaModel, only_allocated: bool = False) -> str:
             "INSTRUCTION_WORD_FORMATS_SECTION": latex_instruction_word_formats_section(model),
             "EXECUTION_MODEL_SECTION": latex_execution_model_section(model),
             "STREAMING_EXECUTION_SECTION": latex_streaming_model_section(model),
-            "INSTRUCTION_SUMMARY_SECTION": latex_instruction_summary_section(model, instructions),
             "INSTRUCTION_REFERENCE_SECTION": latex_instruction_reference_section(model, instructions),
         },
     ) + "\n"
@@ -1394,13 +1462,8 @@ def latex_cpuid_feature_discovery_section(model: IsaModel) -> str:
     return render_latex_template(
         "cpuid_feature_discovery.tex",
         {
-            "CPUID_INSTRUCTION_TABLE": latex_code_table(
-                ["Instruction", "Summary"],
-                instruction_brief_rows(model, ["CPUID"]),
-                ["0.85in", "4.55in"],
-                "CPUID Instruction",
-                {0},
-                listed=False,
+            "CPUID_INSTRUCTION_TABLE": latex_instruction_links(
+                model, ["CPUID"], "The normative instruction entry is"
             ),
         },
     )
@@ -1416,13 +1479,8 @@ def latex_save_restore_section(model: IsaModel) -> str:
     return render_latex_template(
         "save_restore_area.tex",
         {
-            "SAVE_RESTORE_INSTRUCTION_TABLE": latex_code_table(
-                ["Instruction", "Summary"],
-                instruction_rows,
-                ["0.85in", "4.55in"],
-                "SAVE/RESTORE Instructions",
-                {0},
-                listed=False,
+            "SAVE_RESTORE_INSTRUCTION_TABLE": latex_instruction_links(
+                model, [row[0] for row in instruction_rows], "The normative instruction entries are"
             ),
         },
     )
@@ -1508,31 +1566,7 @@ def latex_ea_section(model: IsaModel) -> str:
         [form.get("bits", ""), form.get("syntax", form.get("class", "")), form.get("class", ""), display_text(form.get("memory", ""))]
         for form in data.get("compact_ea", []) or []
     ]
-    ext_rows = [
-        [
-            form.get("bits", ""),
-            form.get("syntax", ""),
-            form.get("base", ""),
-            form.get("index", ""),
-            form.get("segment", form.get("fixed_segment", "")),
-        ]
-        for form in ((data.get("ext0") or {}).get("forms", []) or [])
-    ]
-    ext0_section = ""
-    if ext_rows:
-        ext0_section = render_latex_template(
-            "ext0_addressing_modes.tex",
-            {
-                "EXT0_TABLE": latex_code_table(
-                    ["Bits", "Syntax", "Base", "Index", "Segment"],
-                    ext_rows,
-                    ["1.30in", "2.15in", "0.55in", "0.55in", "0.75in"],
-                    "EXT0 Encoding",
-                    {0, 1},
-                    style="dense",
-                ),
-            },
-        )
+    ext0_section = render_latex_template("ext0_addressing_modes.tex", {})
     auto_update_section = render_latex_template("ea_auto_update_semantics.tex", {})
     return render_latex_template(
         "effective_address_modes.tex",
@@ -1572,13 +1606,10 @@ def latex_streaming_model_section(model: IsaModel) -> str:
 
 
 def latex_privileged_programming_model_section(model: IsaModel) -> str:
-    supervisor_control_flow_table = latex_code_table(
-        ["Instruction", "Summary"],
-        instruction_brief_rows(model, ["SYSCALL", "SYSRET", "LRET", "ERET"]),
-        ["0.85in", "4.55in"],
-        "Supervisor Control-Flow Instructions",
-        {0},
-        listed=False,
+    supervisor_control_flow_table = latex_instruction_links(
+        model,
+        ["SYSCALL", "SYSRET", "LRET", "ERET"],
+        "Normative control-flow behavior is defined by",
     )
     return render_latex_template(
         "privileged_programming_model.tex",
@@ -1587,47 +1618,12 @@ def latex_privileged_programming_model_section(model: IsaModel) -> str:
 
 
 def latex_exception_processing_section(model: IsaModel) -> str:
-    exception_instruction_table = latex_code_table(
-        ["Instruction", "Summary"],
-        instruction_brief_rows(model, ["BKPT", "ERET", "RESET"]),
-        ["0.85in", "4.55in"],
-        "Architectural Event Processing Instructions",
-        {0},
-        listed=False,
+    exception_instruction_table = latex_instruction_links(
+        model, ["BKPT", "ERET", "RESET"], "Related normative instruction entries are"
     )
     return render_latex_template(
         "interrupt_model.tex",
         {"EXCEPTION_INSTRUCTION_TABLE": exception_instruction_table},
-    )
-
-
-def latex_instruction_summary_section(model: IsaModel, instructions: list[InstructionDef]) -> str:
-    rows = [
-        [
-            rf"\hyperref[{instruction_label(inst.mnemonic)}]{{{tex_code(inst.mnemonic)}}}",
-            latex_cell(inst.doc.get("summary", inst.doc.get("title", inst.mnemonic))),
-            latex_cell(instruction_form_count(inst, model)),
-        ]
-        for inst in instructions
-    ]
-    return render_latex_template(
-        "instruction_set_summary.tex",
-        {
-            "INSTRUCTION_FAMILY_TABLE": latex_table(
-                ["Class", "Family", "Definitions"],
-                instruction_family_rows(instructions),
-                ["1.25in", "2.90in", "0.75in"],
-                "Instruction Families",
-                style="dense",
-            ),
-            "INSTRUCTION_SUMMARY_TABLE": latex_longtable(
-                ["Mnemonic", "Summary", "Forms"],
-                rows,
-                ["0.82in", "4.18in", "0.42in"],
-                "Instruction Set Summary",
-                listed=False,
-            ),
-        },
     )
 
 
@@ -1663,8 +1659,26 @@ def instruction_description_tex(inst: InstructionDef) -> str:
     return text
 
 
-def latex_instruction_entry(model: IsaModel, inst: InstructionDef) -> str:
-    parts: list[str] = [r"\clearpage"]
+def latex_instruction_summary_table(title: str, instructions: list[InstructionDef]) -> str:
+    rows = []
+    for inst in instructions:
+        summary = compact_text(inst.doc.get("summary", "")) or compact_text(inst.doc.get("title", inst.mnemonic))
+        rows.append(
+            [
+                rf"\manualsummarymnemonic{{{instruction_label(inst.mnemonic)}}}{{{latex_escape(inst.mnemonic)}}}",
+                latex_escape(summary),
+            ]
+        )
+    return latex_longtable(
+        ["Mnemonic", "Brief description"],
+        rows,
+        ["1.05in", "4.35in"],
+        title,
+    )
+
+
+def latex_instruction_entry(model: IsaModel, inst: InstructionDef, *, first_in_group: bool = False) -> str:
+    parts: list[str] = [r"\Needspace{5.5in}" if first_in_group else r"\clearpage"]
     title = compact_text(inst.doc.get("title", inst.mnemonic)) or inst.mnemonic
     parts.append(
         rf"\begin{{manualinstruction}}{{{latex_escape(inst.mnemonic)}}}{{{latex_escape(title)}}}{{{instruction_label(inst.mnemonic)}}}"
@@ -1678,7 +1692,12 @@ def latex_instruction_entry(model: IsaModel, inst: InstructionDef) -> str:
     parts.append(latex_operation_field(list(inst.behavior.get("operation", []) or [])))
     syntax_lines = assembler_syntax_lines(model, inst)
     if syntax_lines:
-        parts.append(latex_instruction_field("Assembler Syntax", latex_code_line_stack(syntax_lines)))
+        parts.append(
+            latex_instruction_field(
+                "Assembler Syntax",
+                latex_ragged_block([tex_code(line) for line in syntax_lines]),
+            )
+        )
     parts.append(latex_instruction_field("Attributes", latex_attributes_block(inst, model)))
     status = latex_flag_status(inst)
     if status:
@@ -1701,30 +1720,19 @@ def latex_instruction_reference_section(model: IsaModel, instructions: list[Inst
     parts: list[str] = []
     for title, group in instruction_set_groups(instructions):
         description_title = title.replace(" Summary", " Descriptions")
-        rows = [
-            [
-                rf"\hyperref[{instruction_label(inst.mnemonic)}]{{{tex_code(inst.mnemonic)}}}",
-                latex_cell(inst.doc.get("summary", inst.doc.get("title", inst.mnemonic))),
-                latex_cell(instruction_form_count(inst, model)),
-            ]
-            for inst in group
-        ]
         parts.extend(
             [
                 str(LatexTopSection(title)),
-                latex_longtable(
-                    ["Mnemonic", "Summary", "Forms"],
-                    rows,
-                    ["0.82in", "4.18in", "0.42in"],
-                    title,
-                    listed=False,
-                ),
-                str(LatexHiddenTopSection(description_title)),
+                latex_instruction_summary_table(title, group),
+                str(LatexHiddenTopSection(description_title, clear_page=False)),
             ]
         )
         if title == "General Instructions Summary":
             parts.append(latex_reading_instruction_description_section())
-        parts.extend(latex_instruction_entry(model, inst) for inst in group)
+        parts.extend(
+            latex_instruction_entry(model, inst, first_in_group=index == 0)
+            for index, inst in enumerate(group)
+        )
     return "\n".join(parts)
 
 

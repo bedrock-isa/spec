@@ -12,24 +12,24 @@
 
 \begin{manuallistedbitdiagram}{EXT0 One-Byte Descriptor Forms}
 \manualbitrow{SEG + base}{%
-\manualbitfieldcode{0}{1}
+\manualbitfixed{0}{1}
 \manualbitfieldcode{s}{3}
 \manualbitfieldcode{b}{4}
 }
 \manualbitrow{SEG + zero}{%
-\manualbitfieldcode{1}{1}
+\manualbitfixed{1}{1}
 \manualbitfieldcode{s}{3}
-\manualbitfieldcode{0011}{4}
+\manualbitfixed{0011}{4}
 }
 \manualbitrow{default base++}{%
-\manualbitfieldcode{1}{1}
+\manualbitfixed{1}{1}
 \manualbitfieldcode{b}{4}
-\manualbitfieldcode{100}{3}
+\manualbitfixed{100}{3}
 }
 \manualbitrow{default {-}{-}base}{%
-\manualbitfieldcode{1}{1}
+\manualbitfixed{1}{1}
 \manualbitfieldcode{b}{4}
-\manualbitfieldcode{101}{3}
+\manualbitfixed{101}{3}
 }
 \end{manuallistedbitdiagram}
 
@@ -37,7 +37,7 @@
 \manualbitfieldrow{SEG + base + index}{%
 \manualbytepairlabels
 }{%
-\manualbitfieldcode{1}{1}
+\manualbitfixed{1}{1}
 \manualbitfieldcode{s}{3}
 \manualbitfieldcode{mode}{4}
 \manualbitgap{1}
@@ -47,7 +47,7 @@
 \manualbitfieldrow{SP/PC + index}{%
 \manualbytepairlabels
 }{%
-\manualbitfieldcode{1000101}{7}
+\manualbitfixed{1000101}{7}
 \manualbitfieldcode{x}{1}
 \manualbitgap{1}
 \manualbitfieldcode{mode}{4}

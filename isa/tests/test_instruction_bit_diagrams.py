@@ -56,7 +56,9 @@ class InstructionBitDiagramTests(unittest.TestCase):
 
     def test_long_renders_two_byte_pairs(self) -> None:
         rendered = latex_entry_bit_diagram(allocation("long", 26), "TEST")
-        self.assertIn(r"\manualbitfieldcode{L}{4}", rendered)
+        self.assertIn(r"\manualbitvariable{L}{4}", rendered)
+        self.assertIn(r"\manualbitfixed{11}{2}", rendered)
+        self.assertIn(r"Format \textemdash{} Instruction format", rendered)
         self.assertIn(r"\manualbytepairlabelsfor{0}{1}", rendered)
         self.assertIn(r"\manualbytepairlabelsfor{2}{3}", rendered)
         self.assertNotIn(r"\manualsinglebytelabels", rendered)

@@ -1,6 +1,7 @@
 \subsection{Reading an Instruction Description}
-Each instruction description starts with assembler syntax and architectural attributes, then lists any
-condition-code effects and the concrete encoded forms allocated to that mnemonic.
+Each instruction description starts with aligned Summary, Description, Operation, Assembler Syntax, and Attributes
+fields. This compact reference layout keeps labels scannable while allowing prose and pseudocode to remain ordinary
+text. Condition-code effects and the concrete encoded forms allocated to the mnemonic follow.
 
 In an encoding diagram, fixed 0 and 1 fields identify opcode bits. Lettered fields are decoded by the field notes
 immediately below the diagram. An <ea> field is the compact effective-address field and may append EA payload bytes

@@ -56,8 +56,10 @@ non-default floating-point modes. Both registers are present only with the float
 }
 \end{manuallistedformatdiagram}
 
+\manualtablecaption{Floating-Point State Fields}
 \begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{3.95in}@{}}
 \toprule
+\rowcolor{ManualHeaderFill}
 \textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
 \midrule
 \texttt{NV..NX} & \texttt{4..0} & accrued invalid, divide-by-zero, overflow, underflow, and inexact flags\\
@@ -69,4 +71,3 @@ non-default floating-point modes. Both registers are present only with the float
 reserved & \texttt{15..10} & must be zero\\
 \bottomrule
 \end{manualtabular}
-\manualunlistedtablecaption{Floating-Point State Fields}

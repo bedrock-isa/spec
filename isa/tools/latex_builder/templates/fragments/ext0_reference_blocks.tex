@@ -1,92 +1,103 @@
 \begin{manualformblock}{4.75in}
 \textbf{\texttt{EXT0 Explicit Segment Base}}\par
 \vspace{2pt}
-\begin{tabularx}{\linewidth}{@{}p{1.10in}X@{}}
-\textbf{Assembler syntax} & [SEG(s):Rn(b) + displacement]\\
-\textbf{Descriptor} & 0sssbbbb, one byte.\\
-\textbf{Generation} & offset = temporary Rn(b) + displacement.\\
-\textbf{Segment} & SEG(s) selects CS, DS, SS, or GS0..GS4.\\
-\textbf{Payload} & One descriptor byte plus the optional displacement selected by the compact EXT0 escape.\\
-\textbf{Update} & No auto-update.\\
-\end{tabularx}\par
+\begin{manualeaprofile}
+\manualeaprofilesyntax{[SEG(s):Rn(b) + displacement]}
+\manualeaprofileline{Descriptor}{0sssbbbb, one byte.}
+\manualeaprofileline{Generation}{offset = temporary Rn(b) + displacement.}
+\manualeaprofileline{Segment}{SEG(s) selects CS, DS, SS, or GS0..GS4.}
+\manualeaprofileline{Payload}{One descriptor byte plus the optional displacement selected by the compact EXT0 escape.}
+\manualeaprofileline{Update}{No auto-update.}
+\end{manualeaprofile}
 \manualeaadditivememoryflow{EXT0 explicit segment base}{BASE REGISTER}{Rn(b)}{optional displacement}{EFFECTIVE ADDRESS}
 \end{manualformblock}
 \begin{manualformblock}{6.43in}
 \textbf{\texttt{EXT0 Explicit Segment Indexed}}\par
 \vspace{2pt}
-\begin{tabularx}{\linewidth}{@{}p{1.10in}X@{}}
-\textbf{Assembler syntax} & [SEG(s):Rn(b) + Rn(i) * scale + displacement], [SEG(s):Rn(b) + Rn(i)++ * scale + displacement], [SEG(s):Rn(b) + {-}{-}Rn(i) * scale + displacement]\\
-\textbf{Descriptor} & Byte 0 is \texttt{1sss0010}, \texttt{1sss0000}, or \texttt{1sss0001} for no update, postincrement, or predecrement. Byte 1 is \texttt{bbbbiiii}.\\
-\textbf{Generation} & offset = temporary Rn(b) + index\_term * scale + displacement.\\
-\textbf{Segment} & SEG(s) selects CS, DS, SS, or GS0..GS4.\\
-\textbf{Scale} & Scale is implicit in the consuming instruction. B/W/L/Q normally imply 1/2/4/8.\\
-\textbf{Payload} & Two descriptor bytes plus the optional displacement selected by the compact EXT0 escape.\\
-\textbf{Update} & Index postincrement uses the current temporary Rn(i), then increments it by one element. Index predecrement decrements temporary Rn(i) by one element before use.\\
-\end{tabularx}\par
+\begin{manualeaprofile}
+\manualeaprofilesyntax{[SEG(s):Rn(b) + Rn(i) * scale + displacement]}
+\manualeaprofilesyntax{[SEG(s):Rn(b) + Rn(i)++ * scale + displacement]}
+\manualeaprofilesyntax{[SEG(s):Rn(b) + {-}{-}Rn(i) * scale + displacement]}
+\manualeaprofileline{Descriptor}{Byte 0 is \texttt{1sss0010}, \texttt{1sss0000}, or \texttt{1sss0001} for no update, postincrement, or predecrement. Byte 1 is \texttt{bbbbiiii}.}
+\manualeaprofileline{Generation}{offset = temporary Rn(b) + index\_term * scale + displacement.}
+\manualeaprofileline{Segment}{SEG(s) selects CS, DS, SS, or GS0..GS4.}
+\manualeaprofileline{Scale}{Scale is implicit in the consuming instruction. B/W/L/Q normally imply 1/2/4/8.}
+\manualeaprofileline{Payload}{Two descriptor bytes plus the optional displacement selected by the compact EXT0 escape.}
+\manualeaprofileline{Update}{Index postincrement uses the current temporary Rn(i), then increments it by one element. Index predecrement decrements temporary Rn(i) by one element before use.}
+\end{manualeaprofile}
 \manualeaindexedmemoryflow{EXT0 explicit segment indexed}{BASE REGISTER}{Rn(b)}{optional displacement}{Rn(i)}{EFFECTIVE ADDRESS}
 \end{manualformblock}
 \begin{manualformblock}{4.25in}
 \textbf{\texttt{EXT0 Explicit Segment Zero Base}}\par
 \vspace{2pt}
-\begin{tabularx}{\linewidth}{@{}p{1.10in}X@{}}
-\textbf{Assembler syntax} & [SEG(s):0 + displacement]\\
-\textbf{Descriptor} & 1sss0011, one byte.\\
-\textbf{Generation} & offset = displacement. Without a displacement payload, offset is 0.\\
-\textbf{Segment} & SEG(s) selects CS, DS, SS, or GS0..GS4.\\
-\textbf{Payload} & One descriptor byte plus the optional displacement selected by the compact EXT0 escape.\\
-\textbf{Update} & No auto-update.\\
-\end{tabularx}\par
+\begin{manualeaprofile}
+\manualeaprofilesyntax{[SEG(s):0 + displacement]}
+\manualeaprofileline{Descriptor}{1sss0011, one byte.}
+\manualeaprofileline{Generation}{offset = displacement. Without a displacement payload, offset is 0.}
+\manualeaprofileline{Segment}{SEG(s) selects CS, DS, SS, or GS0..GS4.}
+\manualeaprofileline{Payload}{One descriptor byte plus the optional displacement selected by the compact EXT0 escape.}
+\manualeaprofileline{Update}{No auto-update.}
+\end{manualeaprofile}
 \manualeasimplememoryflow{EXT0 zero-base address generation}{ZERO BASE}{0 plus displacement}{EFFECTIVE ADDRESS}
 \end{manualformblock}
 \begin{manualformblock}{5.07in}
 \textbf{\texttt{EXT0 Explicit Segment Base Auto-Update}}\par
 \vspace{2pt}
-\begin{tabularx}{\linewidth}{@{}p{1.10in}X@{}}
-\textbf{Assembler syntax} & [SEG(s):Rn(b)++ + displacement], [SEG(s):{-}{-}Rn(b) + displacement]\\
-\textbf{Descriptor} & Byte 0 is \texttt{1sss1000}. Byte 1 is \texttt{bbbb0000} for base postincrement or \texttt{bbbb0001} for base predecrement.\\
-\textbf{Generation} & offset = base\_term + displacement.\\
-\textbf{Segment} & SEG(s) selects CS, DS, SS, or GS0..GS4.\\
-\textbf{Payload} & Two descriptor bytes plus the optional displacement selected by the compact EXT0 escape.\\
-\textbf{Update} & Base postincrement uses the current temporary Rn(b), then increments it by the memory access size. Base predecrement decrements temporary Rn(b) by the memory access size before use.\\
-\end{tabularx}\par
+\begin{manualeaprofile}
+\manualeaprofilesyntax{[SEG(s):Rn(b)++ + displacement]}
+\manualeaprofilesyntax{[SEG(s):{-}{-}Rn(b) + displacement]}
+\manualeaprofileline{Descriptor}{Byte 0 is \texttt{1sss1000}. Byte 1 is \texttt{bbbb0000} for base postincrement or \texttt{bbbb0001} for base predecrement.}
+\manualeaprofileline{Generation}{offset = base\_term + displacement.}
+\manualeaprofileline{Segment}{SEG(s) selects CS, DS, SS, or GS0..GS4.}
+\manualeaprofileline{Payload}{Two descriptor bytes plus the optional displacement selected by the compact EXT0 escape.}
+\manualeaprofileline{Update}{Base postincrement uses the current temporary Rn(b), then increments it by the memory access size. Base predecrement decrements temporary Rn(b) by the memory access size before use.}
+\end{manualeaprofile}
 \manualeaadditivememoryflow{EXT0 base auto-update}{BASE REGISTER}{Rn(b) temporary}{optional displacement}{EFFECTIVE ADDRESS}
 \end{manualformblock}
 \begin{manualformblock}{6.43in}
 \textbf{\texttt{EXT0 Explicit Segment Zero-Base Indexed}}\par
 \vspace{2pt}
-\begin{tabularx}{\linewidth}{@{}p{1.10in}X@{}}
-\textbf{Assembler syntax} & [SEG(s):0 + Rn(i) * scale + displacement], [SEG(s):0 + Rn(i)++ * scale + displacement], [SEG(s):0 + {-}{-}Rn(i) * scale + displacement]\\
-\textbf{Descriptor} & Byte 0 is \texttt{1sss1001}. Byte 1 is \texttt{0010iiii}, \texttt{0000iiii}, or \texttt{0001iiii} for no update, postincrement, or predecrement.\\
-\textbf{Generation} & offset = index\_term * scale + displacement.\\
-\textbf{Segment} & SEG(s) selects CS, DS, SS, or GS0..GS4.\\
-\textbf{Payload} & Two descriptor bytes plus the optional displacement selected by the compact EXT0 escape.\\
-\textbf{Update} & Index update follows the same one-element temporary-image rule as other indexed update forms.\\
-\end{tabularx}\par
+\begin{manualeaprofile}
+\manualeaprofilesyntax{[SEG(s):0 + Rn(i) * scale + displacement]}
+\manualeaprofilesyntax{[SEG(s):0 + Rn(i)++ * scale + displacement]}
+\manualeaprofilesyntax{[SEG(s):0 + {-}{-}Rn(i) * scale + displacement]}
+\manualeaprofileline{Descriptor}{Byte 0 is \texttt{1sss1001}. Byte 1 is \texttt{0010iiii}, \texttt{0000iiii}, or \texttt{0001iiii} for no update, postincrement, or predecrement.}
+\manualeaprofileline{Generation}{offset = index\_term * scale + displacement.}
+\manualeaprofileline{Segment}{SEG(s) selects CS, DS, SS, or GS0..GS4.}
+\manualeaprofileline{Payload}{Two descriptor bytes plus the optional displacement selected by the compact EXT0 escape.}
+\manualeaprofileline{Update}{Index update follows the same one-element temporary-image rule as other indexed update forms.}
+\end{manualeaprofile}
 \manualeaindexedmemoryflow{EXT0 zero-base indexed}{ZERO BASE}{0}{optional displacement}{Rn(i)}{EFFECTIVE ADDRESS}
 \end{manualformblock}
 \begin{manualformblock}{6.43in}
 \textbf{\texttt{EXT0 SP/PC Indexed}}\par
 \vspace{2pt}
-\begin{tabularx}{\linewidth}{@{}p{1.10in}X@{}}
-\textbf{Assembler syntax} & [SP + Rn(i) * scale + displacement], [SP + Rn(i)++ * scale + displacement], [SP + {-}{-}Rn(i) * scale + displacement], and the matching PC forms.\\
-\textbf{Descriptor} & Byte 0 is \texttt{10001010} for SP or \texttt{10001011} for PC. Byte 1 is \texttt{0010iiii}, \texttt{0000iiii}, or \texttt{0001iiii} for no update, postincrement, or predecrement.\\
-\textbf{Generation} & offset = temporary SP or PC term + index\_term * scale + displacement.\\
-\textbf{Segment} & SP forms are fixed to SS. PC forms are fixed to CS.\\
-\textbf{Payload} & Two descriptor bytes plus the optional displacement selected by the compact EXT0 escape.\\
-\textbf{Update} & Only the Rn(i) index register may auto-update; SP and PC are not auto-updated by these forms.\\
-\end{tabularx}\par
+\begin{manualeaprofile}
+\manualeaprofilesyntax{[SP + Rn(i) * scale + displacement]}
+\manualeaprofilesyntax{[SP + Rn(i)++ * scale + displacement]}
+\manualeaprofilesyntax{[SP + {-}{-}Rn(i) * scale + displacement]}
+\manualeaprofilesyntax{[PC + Rn(i) * scale + displacement]}
+\manualeaprofilesyntax{[PC + Rn(i)++ * scale + displacement]}
+\manualeaprofilesyntax{[PC + {-}{-}Rn(i) * scale + displacement]}
+\manualeaprofileline{Descriptor}{Byte 0 is \texttt{10001010} for SP or \texttt{10001011} for PC. Byte 1 is \texttt{0010iiii}, \texttt{0000iiii}, or \texttt{0001iiii} for no update, postincrement, or predecrement.}
+\manualeaprofileline{Generation}{offset = temporary SP or PC term + index\_term * scale + displacement.}
+\manualeaprofileline{Segment}{SP forms are fixed to SS. PC forms are fixed to CS.}
+\manualeaprofileline{Payload}{Two descriptor bytes plus the optional displacement selected by the compact EXT0 escape.}
+\manualeaprofileline{Update}{Only the Rn(i) index register may auto-update; SP and PC are not auto-updated by these forms.}
+\end{manualeaprofile}
 \manualeaindexedmemoryflow{EXT0 SP/PC indexed}{SP OR PC}{SP or PC term}{optional displacement}{Rn(i)}{EFFECTIVE ADDRESS}
 \end{manualformblock}
 \begin{manualformblock}{4.91in}
 \textbf{\texttt{EXT0 Default-Segment Base Auto-Update}}\par
 \vspace{2pt}
-\begin{tabularx}{\linewidth}{@{}p{1.10in}X@{}}
-\textbf{Assembler syntax} & [Rn(b)++ + displacement], [{-}{-}Rn(b) + displacement]\\
-\textbf{Descriptor} & 1bbbb100 for base postincrement; 1bbbb101 for base predecrement. One byte.\\
-\textbf{Generation} & offset = base\_term + displacement.\\
-\textbf{Segment} & Uses the operation default data segment.\\
-\textbf{Payload} & One descriptor byte plus the optional displacement selected by the compact EXT0 escape.\\
-\textbf{Update} & Postincrement uses the current temporary Rn(b), then increments it by the memory access size. Predecrement decrements temporary Rn(b) by the memory access size before use.\\
-\end{tabularx}\par
+\begin{manualeaprofile}
+\manualeaprofilesyntax{[Rn(b)++ + displacement]}
+\manualeaprofilesyntax{[{-}{-}Rn(b) + displacement]}
+\manualeaprofileline{Descriptor}{1bbbb100 for base postincrement; 1bbbb101 for base predecrement. One byte.}
+\manualeaprofileline{Generation}{offset = base\_term + displacement.}
+\manualeaprofileline{Segment}{Uses the operation default data segment.}
+\manualeaprofileline{Payload}{One descriptor byte plus the optional displacement selected by the compact EXT0 escape.}
+\manualeaprofileline{Update}{Postincrement uses the current temporary Rn(b), then increments it by the memory access size. Predecrement decrements temporary Rn(b) by the memory access size before use.}
+\end{manualeaprofile}
 \manualeaadditivememoryflow{EXT0 default-segment base auto-update}{BASE REGISTER}{Rn(b) temporary}{optional displacement}{EFFECTIVE ADDRESS}
 \end{manualformblock}

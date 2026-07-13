@@ -31,8 +31,10 @@ instruction group is implemented.
 Floating-point exception and mode state is held separately in FFLAGS and FSTATUS. Their precise bit assignments are
 defined by the floating-point instruction set and compatibility state.
 
+\manualtablecaption{Floating-Point Registers}
 \begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.85in}>{\raggedright\arraybackslash}p{0.75in}@{}}
 \toprule
+\rowcolor{ManualHeaderFill}
 \textbf{Register} & \textbf{Width}\\
 \midrule
 \texttt{F0} & 64\\ \texttt{F1} & 64\\ \texttt{F2} & 64\\ \texttt{F3} & 64\\
@@ -41,7 +43,6 @@ defined by the floating-point instruction set and compatibility state.
 \texttt{F12} & 64\\ \texttt{F13} & 64\\ \texttt{F14} & 64\\ \texttt{F15} & 64\\
 \bottomrule
 \end{manualtabular}
-\manualtablecaption{Floating-Point Registers}
 
 \subsection{Segment Registers}
 \input{isa/tools/latex_builder/templates/fragments/segment_register_format_diagram.tex}
@@ -53,8 +54,10 @@ Instructions that take an explicit segment-register operand use the three-bit SR
 
 SP-relative EA forms do not carry this field and use SS. PC-relative EA forms do not carry this field and use CS.
 
+\manualtablecaption{Segment Register Operand Encoding}
 \begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.60in}>{\raggedright\arraybackslash}p{0.50in}>{\raggedright\arraybackslash}p{4.30in}@{}}
 \toprule
+\rowcolor{ManualHeaderFill}
 \textbf{SREG} & \textbf{Bits} & \textbf{Use}\\
 \midrule
 \texttt{CS} & \texttt{000} & code segment; instruction fetch and PC-relative default\\
@@ -67,7 +70,6 @@ SP-relative EA forms do not carry this field and use SS. PC-relative EA forms do
 \texttt{GS4} & \texttt{111} & volatile far-data window in bedrock-c-far; otherwise target-specific\\
 \bottomrule
 \end{manualtabular}
-\manualtablecaption{Segment Register Operand Encoding}
 
 \subsection{Special Registers}
 @SPECIAL_REGISTER_TABLE@

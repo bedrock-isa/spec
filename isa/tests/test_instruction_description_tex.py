@@ -80,7 +80,7 @@ class InstructionDescriptionTexTests(unittest.TestCase):
             allocated_by_mnemonic={},
         )
         rendered = latex_instruction_entry(model, inst)
-        status_at = rendered.index(r"\manualinstructionstatus{Condition Codes}")
+        status_at = rendered.index(r"\begin{manualstatusstrip}")
         fragment_at = rendered.index(r"\manualinstructiondescriptionheading{Performance-Counter IDs}")
         forms_at = rendered.index(r"\begin{manualinstructionforms}")
         first_form_at = rendered.index(r"\begin{manualformblock}", forms_at)

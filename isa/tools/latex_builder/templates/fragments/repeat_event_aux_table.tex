@@ -1,5 +1,7 @@
+\manualtablecaption{Repeat Event Auxiliary Fields}
 \begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{1.55in}>{\raggedright\arraybackslash}p{0.60in}>{\raggedright\arraybackslash}p{3.35in}@{}}
 \toprule
+\rowcolor{ManualHeaderFill}
 \textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
 \midrule
 rep\_reg & 0..3 & general-purpose counter register R0..R15\\
@@ -11,4 +13,3 @@ body\_bytes & 32..47 & grouped-repeat body length in bytes; zero for REP/REPcc\\
 reserved & 48..63 & reserved, must be zero\\
 \bottomrule
 \end{manualtabular}
-\manualunlistedtablecaption{Repeat Event Auxiliary Fields}

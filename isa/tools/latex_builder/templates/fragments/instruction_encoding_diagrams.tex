@@ -1,12 +1,12 @@
 \begin{manuallistedbitdiagram}{Instruction Record Components}
 \manualbitrow{extrashort byte}{%
-\manualbitfieldcode{0}{1}
+\manualbitfixed{0}{1}
 \manualbitfieldtext{payload[6:0]}{7}
 }
 \manualbitfieldrow{short header}{%
 \manualbytepairlabels
 }{%
-\manualbitfieldcode{10}{2}
+\manualbitfixed{10}{2}
 \manualbitfieldtext{payload[13:8]}{6}
 \manualbitgap{1}
 \manualbitfieldtext{payload[7:0]}{8}
@@ -14,7 +14,7 @@
 \manualbitfieldrow{extended header}{%
 \manualbytepairbitlabels
 }{%
-\manualbitfieldcode{11}{2}
+\manualbitfixed{11}{2}
 \manualbitfieldtext{L}{4}
 \manualbitfieldtext{opcode high}{2}
 \manualbitgap{1}
@@ -40,11 +40,11 @@
 \manualbitfieldtext{payload[19:0]}{20}
 }
 \manualbitrow{long group 1}{%
-\manualbitfieldcode{111110}{6}
+\manualbitfixed{111110}{6}
 \manualbitfieldtext{payload[19:0]}{20}
 }
 \manualbitrow{extralong}{%
-\manualbitfieldcode{111111}{6}
+\manualbitfixed{111111}{6}
 \manualbitfieldtext{payload[27:0]}{28}
 }
 \end{manuallistedbitdiagram}
@@ -52,8 +52,8 @@
 \subsection{Representative Encodings}
 \begin{manuallistedbitdiagram}{Short Encoding Layout for MOV.X(z:L/Q) Rn(s), Rn(d)}
 \manualbitrow{payload[13:0]}{%
-\manualbitfieldcode{00}{2}
-\manualbitfieldcode{000}{3}
+\manualbitfixed{00}{2}
+\manualbitfixed{000}{3}
 \manualbitfieldcode{z}{1}
 \manualbitfieldcode{s}{4}
 \manualbitfieldcode{d}{4}
@@ -62,8 +62,8 @@
 
 \begin{manuallistedbitdiagram}{Medium Encoding Layout for MOV.X(z:B/W) Rn(s), \textless{}ea\textgreater{}(e)}
 \manualbitrow{payload[17:0]}{%
-\manualbitfieldcode{00}{2}
-\manualbitfieldcode{0000}{4}
+\manualbitfixed{00}{2}
+\manualbitfixed{0000}{4}
 \manualbitfieldcode{z}{1}
 \manualbitfieldcode{s}{4}
 \manualbitfieldcode{e}{7}
@@ -72,9 +72,9 @@
 
 \begin{manuallistedbitdiagram}{Long Encoding Layout for ADC.X(z:B/W/L/Q) Rn(s), \textless{}ea\textgreater{}(e)}
 \manualbitrow{payload[25:0]}{%
-\manualbitfieldcode{1111000000}{10}
+\manualbitfixed{1111000000}{10}
 \manualbitfieldcode{z}{2}
-\manualbitfieldcode{000}{3}
+\manualbitfixed{000}{3}
 \manualbitfieldcode{s}{4}
 \manualbitfieldcode{e}{7}
 }

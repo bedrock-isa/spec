@@ -13,21 +13,27 @@ invalid for the atomic operation and must not complete as a non-atomic update.
 Stores to memory that is later executed as instructions are ordinary data stores until an explicit synchronization
 sequence makes the modified bytes visible to instruction fetch.
 
-\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{0.55in}>{\raggedright\arraybackslash}p{1.45in}>{\raggedright\arraybackslash}p{2.75in}@{}}
+For every scalar size below, a naturally aligned normal-memory load or store is tear-free. Unaligned accesses retain
+the general rule above and have no tear-free guarantee.
+
+\manualtablecaption{Scalar Access Sizes and Alignment}
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{3.95in}@{}}
 \toprule
-\textbf{Suffix} & \textbf{Bytes} & \textbf{Natural Alignment} & \textbf{Tear-Free Guarantee}\\
+\rowcolor{ManualHeaderFill}
+\textbf{Suffix} & \textbf{Bytes} & \textbf{Natural Alignment}\\
 \midrule
-B & 1 & any byte address & aligned normal-memory load/store is tear-free\\
-W & 2 & address divisible by 2 & aligned normal-memory load/store is tear-free\\
-L & 4 & address divisible by 4 & aligned normal-memory load/store is tear-free\\
-Q & 8 & address divisible by 8 & aligned normal-memory load/store is tear-free\\
+B & 1 & any byte address\\
+W & 2 & address divisible by 2\\
+L & 4 & address divisible by 4\\
+Q & 8 & address divisible by 8\\
 \bottomrule
 \end{manualtabular}
-\manualtablecaption{Scalar Access Sizes and Alignment}
 
 \subsection{Atomic Memory-Order Selectors}
+\manualtablecaption{Atomic Memory-Order Selectors}
 \begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.95in}>{\raggedright\arraybackslash}p{0.45in}>{\raggedright\arraybackslash}p{4.00in}@{}}
 \toprule
+\rowcolor{ManualHeaderFill}
 \textbf{Selector} & \textbf{Code} & \textbf{Architectural Ordering Effect}\\
 \midrule
 \texttt{RELAXED} & \texttt{0} & Atomicity only. No ordering is imposed on unrelated memory operations.\\
@@ -40,16 +46,9 @@ Q & 8 & address divisible by 8 & aligned normal-memory load/store is tear-free\\
 \texttt{RESERVED7} & \texttt{7} & Reserved selector encoding; using it is invalid for the atomic form.\\
 \bottomrule
 \end{manualtabular}
-\manualtablecaption{Atomic Memory-Order Selectors}
 
 \subsection{Fence Instructions}
-\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.85in}>{\raggedright\arraybackslash}p{4.55in}@{}}
-\toprule
-\textbf{Instruction} & \textbf{Ordering Effect}\\
-\midrule
-\texttt{RFENCE} & Orders prior reads before later reads issued by the same hardware thread.\\
-\texttt{WFENCE} & Orders prior writes before later writes issued by the same hardware thread.\\
-\texttt{AFENCE} & Orders prior memory operations before later memory operations issued by the same hardware thread.\\
-\bottomrule
-\end{manualtabular}
-\manualtablecaption{Fence Instructions}
+\hyperref[instr:rfence]{\texttt{RFENCE}} orders prior reads before later reads,
+\hyperref[instr:wfence]{\texttt{WFENCE}} orders prior writes before later writes, and
+\hyperref[instr:afence]{\texttt{AFENCE}} orders prior memory operations before later memory operations issued by
+the same hardware thread. The linked instruction entries define the normative ordering behavior.

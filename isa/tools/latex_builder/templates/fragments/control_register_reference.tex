@@ -3,8 +3,16 @@ Selectors not listed below raise \texttt{INVALID\_CONTROL\_STATE}. Reserved regi
 with a nonzero reserved bit raises \texttt{INVALID\_CONTROL\_STATE} without changing the register. The entry,
 stack, and user-return registers are per-logical-processor architectural state.
 
+\manualtablecaption{Control-Register Selectors}
 \begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{3.55in}@{}}
 \toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Selector} & \textbf{Register} & \textbf{Use}\\
+\midrule
+\endfirsthead
+\multicolumn{3}{l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
+\toprule
+\rowcolor{ManualHeaderFill}
 \textbf{Selector} & \textbf{Register} & \textbf{Use}\\
 \midrule
 \endhead
@@ -36,7 +44,6 @@ stack, and user-return registers are per-logical-processor architectural state.
 \texttt{0x1100} & \texttt{PMC} & performance-monitor enable and user-access control\\
 \bottomrule
 \end{manuallongtable}
-\manualunlistedtablecaption{Control-Register Selectors}
 
 \begin{manualformatdiagram}{PTCR Format}{8}
 \manualformatrow{PTCR[63:0]}{%
@@ -48,8 +55,10 @@ stack, and user-return registers are per-logical-processor architectural state.
 }
 \end{manualformatdiagram}
 
+\manualtablecaption{PTCR Fields}
 \begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{3.65in}@{}}
 \toprule
+\rowcolor{ManualHeaderFill}
 \textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
 \midrule
 \texttt{root\_page} & \texttt{63..12} & physical frame number of the page-table root\\
@@ -59,7 +68,6 @@ reserved & \texttt{6..1} & must be zero\\
 \texttt{PE} & \texttt{0} & page-table translation enable\\
 \bottomrule
 \end{manualtabular}
-\manualunlistedtablecaption{PTCR Fields}
 
 \begin{manualformatdiagram}{ASCR Format}{8}
 \manualformatrow{ASCR[63:0]}{%
@@ -70,8 +78,10 @@ reserved & \texttt{6..1} & must be zero\\
 }
 \end{manualformatdiagram}
 
+\manualtablecaption{ASCR Fields}
 \begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{3.65in}@{}}
 \toprule
+\rowcolor{ManualHeaderFill}
 \textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
 \midrule
 reserved & \texttt{63..32} & must be zero\\
@@ -80,7 +90,6 @@ reserved & \texttt{15..1} & must be zero\\
 \texttt{AE} & \texttt{0} & address-space identifier matching enable\\
 \bottomrule
 \end{manualtabular}
-\manualunlistedtablecaption{ASCR Fields}
 
 \begin{manualformatdiagram}{ECR Format}{8}
 \manualformatrow{ECR[63:0]}{%
@@ -92,8 +101,10 @@ reserved & \texttt{15..1} & must be zero\\
 }
 \end{manualformatdiagram}
 
+\manualtablecaption{ECR Fields}
 \begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{3.65in}@{}}
 \toprule
+\rowcolor{ManualHeaderFill}
 \textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
 \midrule
 reserved & \texttt{63..12} & must be zero\\
@@ -103,7 +114,6 @@ reserved & \texttt{6..1} & must be zero\\
 \texttt{V} & \texttt{0} & architectural event-entry state is valid\\
 \bottomrule
 \end{manualtabular}
-\manualunlistedtablecaption{ECR Fields}
 
 \begin{manualformatdiagram}{URCTL Format}{8}
 \manualformatrow{URCTL[63:0]}{%
@@ -114,8 +124,10 @@ reserved & \texttt{6..1} & must be zero\\
 }
 \end{manualformatdiagram}
 
+\manualtablecaption{URCTL Fields}
 \begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{3.65in}@{}}
 \toprule
+\rowcolor{ManualHeaderFill}
 \textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
 \midrule
 reserved & \texttt{63..33} & must be zero\\
@@ -124,7 +136,6 @@ reserved & \texttt{63..33} & must be zero\\
 \texttt{FLAGS} & \texttt{15..0} & saved user FLAGS image\\
 \bottomrule
 \end{manualtabular}
-\manualunlistedtablecaption{URCTL Fields}
 
 \begin{manualformatdiagram}{PMC Format}{8}
 \manualformatrow{PMC[63:0]}{%
@@ -134,8 +145,10 @@ reserved & \texttt{63..33} & must be zero\\
 }
 \end{manualformatdiagram}
 
+\manualtablecaption{PMC Fields}
 \begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{3.65in}@{}}
 \toprule
+\rowcolor{ManualHeaderFill}
 \textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
 \midrule
 reserved & \texttt{63..2} & must be zero\\
@@ -143,7 +156,6 @@ reserved & \texttt{63..2} & must be zero\\
 \texttt{EN} & \texttt{0} & enable performance-counter increments when set\\
 \bottomrule
 \end{manualtabular}
-\manualunlistedtablecaption{PMC Fields}
 
 SPC and EPC are exact entry addresses, must be 16-byte aligned, and must be canonical and executable under SCS and
 ECS respectively. SSP, ISP, FSP, and DSP are 64-byte-aligned configured stack tops and are not modified by entry or

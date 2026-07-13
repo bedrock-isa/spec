@@ -1,8 +1,8 @@
 \begin{manualformblock}{0.70in}
-\begin{tabular}{@{}l@{}}
-; widen n bytes to n 32-bit elements\\
-; R0 = src, R1 = dst\\
-; R2 = n\\
-REP R2, (EXTZL.B [R0++], [R1++])\\
-\end{tabular}
+\begin{manualcode}
+\manualcodeline{; widen n bytes to n 32-bit elements}
+\manualcodeline{; R0 = src, R1 = dst}
+\manualcodeline{; R2 = n}
+\manualcodeline{REP R2, (EXTZL.B [R0++], [R1++])}
+\end{manualcode}
 \end{manualformblock}

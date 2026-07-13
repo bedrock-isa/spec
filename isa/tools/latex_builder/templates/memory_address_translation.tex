@@ -29,8 +29,10 @@ the selected PTE frame and attributes. With paging disabled, the memory system r
 An invalid segment image raises INVALID\_CONTROL\_STATE when written; a failed segment bound or canonical-address
 check raises PAGE\_FAULT during access.
 
+\manualtablecaption{Segment Pre-Translation Modes}
 \begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{1.15in}>{\raggedright\arraybackslash}p{1.55in}>{\raggedright\arraybackslash}p{1.65in}@{}}
 \toprule
+\rowcolor{ManualHeaderFill}
 \textbf{Mode} & \textbf{Segment State} & \textbf{Check} & \textbf{Linear Address}\\
 \midrule
 disabled & m = 0 & no segment-window check & linear = EA\\
@@ -38,7 +40,6 @@ translated window & m != 0, b = 0 & 0 <= EA < span & linear = base + EA\\
 bounds-only window & m != 0, b = 1 & base <= EA < limit & linear = EA\\
 \bottomrule
 \end{manualtabular}
-\manualtablecaption{Segment Pre-Translation Modes}
 
 \input{isa/tools/latex_builder/templates/fragments/page_walk_reference.tex}
 

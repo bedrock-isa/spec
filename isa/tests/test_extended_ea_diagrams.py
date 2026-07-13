@@ -31,8 +31,9 @@ class ExtendedEaDiagramTests(unittest.TestCase):
     def test_two_byte_reference_forms_name_each_byte(self) -> None:
         source = (TEMPLATES / "fragments" / "ext0_reference_blocks.tex").read_text()
 
-        self.assertEqual(source.count(r"\textbf{Descriptor} & Byte 0"), 4)
+        self.assertEqual(source.count(r"\manualeaprofileline{Descriptor}{Byte 0"), 4)
         self.assertGreaterEqual(source.count("Byte 1 is"), 4)
+        self.assertNotIn(r"\begin{tabular", source)
         self.assertNotIn("1sss0010 bbbbiiii", source)
         self.assertNotIn("1sss1000 bbbb0000", source)
 

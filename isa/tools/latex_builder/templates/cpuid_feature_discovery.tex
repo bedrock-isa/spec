@@ -20,8 +20,10 @@ in the selected Rn register.
 CPUID is unprivileged and non-serializing under the base compatibility rules. CPUID results are stable after reset
 unless a future feature explicitly defines a mutable result.
 
+\manualtablecaption{CPUID Query Selector}
 \begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{0.85in}>{\raggedright\arraybackslash}p{3.90in}@{}}
 \toprule
+\rowcolor{ManualHeaderFill}
 \textbf{Bits} & \textbf{Field} & \textbf{Meaning}\\
 \midrule
 \texttt{0..15} & \texttt{index} & result index within the selected leaf\\
@@ -29,7 +31,6 @@ unless a future feature explicitly defines a mutable result.
 \texttt{32..63} & \texttt{class} & CPUID information class\\
 \bottomrule
 \end{manualtabular}
-\manualunlistedtablecaption{CPUID Query Selector}
 
 An unknown class, leaf, or index returns zero. Software ignores reserved bits in every returned value, so a later
 revision can assign them without invalidating existing discovery code.
@@ -41,8 +42,10 @@ leaf directory before consuming optional feature bits.
 The base class describes the unified Rn register model and mandatory scalar ISA. Optional groups are reported
 separately so that binaries can test for them without probing instruction faults.
 
+\manualtablecaption{CPUID Discovery Policy}
 \begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{1.25in}>{\raggedright\arraybackslash}p{1.10in}>{\raggedright\arraybackslash}p{3.05in}@{}}
 \toprule
+\rowcolor{ManualHeaderFill}
 \textbf{Policy} & \textbf{Class} & \textbf{Meaning}\\
 \midrule
 Bedrock base ISA & 0x00000000 & base identity, instruction limits, integer registers, condition codes, and mandatory groups\\
@@ -50,7 +53,6 @@ Optional extensions & 0x00000001 & optional floating-point, transcendental, and 
 Implementation properties & 0x00000002 & program-visible limits, topology, and SAVE/RESTORE area layout\\
 \bottomrule
 \end{manualtabular}
-\manualunlistedtablecaption{CPUID Discovery Policy}
 
 \subsection{Leaf Directory}
 Each discovery class may expose a leaf directory. A directory leaf reports which subordinate leaves are defined and
@@ -58,8 +60,16 @@ how indexed leaves should be enumerated.
 
 Software must treat an absent leaf as zero and must ignore reserved bits in a present leaf.
 
+\manualtablecaption{CPUID Leaf Directory}
 \begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{0.82in}>{\raggedright\arraybackslash}p{0.62in}>{\raggedright\arraybackslash}p{1.35in}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{1.90in}@{}}
 \toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Class} & \textbf{Leaf} & \textbf{Name} & \textbf{Indexes} & \textbf{Summary}\\
+\midrule
+\endfirsthead
+\multicolumn{5}{l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
+\toprule
+\rowcolor{ManualHeaderFill}
 \textbf{Class} & \textbf{Leaf} & \textbf{Name} & \textbf{Indexes} & \textbf{Summary}\\
 \midrule
 \endhead
@@ -72,7 +82,6 @@ Software must treat an absent leaf as zero and must ignore reserved bits in a pr
 \texttt{0x00000002} & \texttt{0x0004} & \texttt{SAVE\_AREA\_LAYOUT} & \texttt{0..n} & SAVE/RESTORE sizes, bitmap, and component descriptors\\
 \bottomrule
 \end{manuallongtable}
-\manualunlistedtablecaption{CPUID Leaf Directory}
 
 \subsection{Performance-Counter Discovery}
 Class \texttt{0x00000002}, leaf \texttt{0x0002} uses the query index as an RDPMC counter ID. Result bit 0 is

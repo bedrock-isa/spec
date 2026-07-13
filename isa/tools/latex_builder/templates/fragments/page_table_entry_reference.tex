@@ -21,8 +21,10 @@ width are available to software and ignored by the page-table walker.
 }
 \end{manualformatdiagram}
 
+\manualtablecaption{Page-Table Entry Fields}
 \begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{0.85in}>{\raggedright\arraybackslash}p{3.85in}@{}}
 \toprule
+\rowcolor{ManualHeaderFill}
 \textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
 \midrule
 \texttt{P} & \texttt{0} & present\\
@@ -40,7 +42,6 @@ width are available to software and ignored by the page-table walker.
 software & \texttt{63..PABITS} & software-defined and ignored by hardware\\
 \bottomrule
 \end{manualtabular}
-\manualunlistedtablecaption{Page-Table Entry Fields}
 
 At every level above L1, P and T must both be one; D, G, and AT must be zero. At L1, P must be one and T must be
 zero. W, X, and U permissions are accumulated across the walk. A reserved or malformed consumed entry raises

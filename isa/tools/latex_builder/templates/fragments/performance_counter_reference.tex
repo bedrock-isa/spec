@@ -2,8 +2,10 @@
 RDPMC selects a 64-bit counter with its 16-bit immediate ID. The three standard counters are mandatory and wrap
 modulo $2^{64}$. Cold reset and warm RESET clear them to zero. PMC.EN controls whether they increment.
 
+\manualtablecaption{Standard Performance Counters}
 \begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.55in}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{3.80in}@{}}
 \toprule
+\rowcolor{ManualHeaderFill}
 \textbf{ID} & \textbf{Name} & \textbf{Increment event}\\
 \midrule
 \texttt{0} & \texttt{CYCLE} & each implementation cycle while PMC.EN is set\\
@@ -11,12 +13,13 @@ modulo $2^{64}$. Cold reset and warm RESET clear them to zero. PMC.EN controls w
 \texttt{2} & \texttt{PTWALK} & start of a hardware page walk after a paging-enabled TLB miss\\
 \bottomrule
 \end{manualtabular}
-\manualunlistedtablecaption{Standard Performance Counters}
 
 Each successfully committed repeat-body iteration contributes one INSTRET event. A faulting instruction does not.
 PTWALK includes a walk that later reports a page fault, but excludes a segment-bound or canonical-address failure
 detected before a walk begins. IDs beyond the standard set are implementation-defined and are discovered through the
 CPUID performance-counter leaf. Reading an unavailable ID raises \texttt{INVALID\_CONTROL\_STATE}.
 
+\begin{manualraggedblock}
 Supervisor mode may read every implemented counter. User-mode RDPMC requires PMC.USER; otherwise it raises
 \texttt{PRIVILEGE\_FAULT}. Clearing PMC.EN freezes the current counter values without clearing them.
+\end{manualraggedblock}

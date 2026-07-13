@@ -14,8 +14,10 @@ STATUS.PM is zero in user mode and one in supervisor mode. STATUS.EA records onl
 SYSCALL does not set it. STATUS.EA is hardware managed, and WRSTATUS must preserve the current EA value. An attempted
 change raises INVALID\_CONTROL\_STATE without changing STATUS.
 
+\manualtablecaption{Privilege State and Access Domains}
 \begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{0.45in}>{\raggedright\arraybackslash}p{3.90in}@{}}
 \toprule
+\rowcolor{ManualHeaderFill}
 \textbf{Field} & \textbf{Value} & \textbf{Meaning}\\
 \midrule
 STATUS.PM & 0 & user mode\\
@@ -29,7 +31,6 @@ current memory domain & -- & default domain for ordinary memory operands\\
 checked user access & -- & MOVUC, MOVCU, and MOVUU select user-domain memory access\\
 \bottomrule
 \end{manualtabular}
-\manualunlistedtablecaption{Privilege State and Access Domains}
 
 In supervisor mode, ordinary memory operands use current-domain access. Checked user-domain access is expressed only
 by the supervisor-only MOVUC, MOVCU, and MOVUU instructions. RDCR, WRCR, translation-state changes, event-control

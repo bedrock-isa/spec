@@ -12,17 +12,17 @@ for medium, 4 bytes for long, and 5 bytes for extralong.
 
 \begin{manuallistedbitdiagram}{Instruction Header Byte Formats}
 \manualbitrow{extrashort byte}{%
-\manualbitfieldcode{0}{1}
+\manualbitfixed{0}{1}
 \manualbitfieldtext{payload[6:0]}{7}
 }
 \manualbitfieldrow{short bytes}{\manualbytepairlabels}{%
-\manualbitfieldcode{10}{2}
+\manualbitfixed{10}{2}
 \manualbitfieldtext{payload[13:8]}{6}
 \manualbitgap{1}
 \manualbitfieldtext{payload[7:0]}{8}
 }
 \manualbitfieldrow{extended start bytes}{\manualbytepairlabels}{%
-\manualbitfieldcode{11}{2}
+\manualbitfixed{11}{2}
 \manualbitfieldtext{L}{4}
 \manualbitfieldtext{opcode high}{2}
 \manualbitgap{1}
@@ -30,23 +30,23 @@ for medium, 4 bytes for long, and 5 bytes for extralong.
 }
 \end{manuallistedbitdiagram}
 
-\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{3.60in}@{}}
-\toprule
-\textbf{Bits} & \textbf{Field} & \textbf{Meaning}\\
-\midrule
-byte 0 bit 7 & class & 0 selects a one-byte extrashort instruction with payload in byte0[6:0].\\
-byte 0 bits 7..6 & class & 10 selects a two-byte short instruction; 11 selects an extended instruction.\\
-byte 0 bits 5..2 & L / payload & For short, payload[13:10]. For extended, L encodes total bytes as 3+L.\\
-byte 0 bits 1..0 & opcode & For short, payload[9:8]. For extended, the first two opcode-stream bits.\\
-byte 1 bits 7..0 & opcode & For short, payload[7:0]. For extended, the next eight opcode-stream bits.\\
-\bottomrule
-\end{manualtabular}
-\manualtablecaption{Instruction Header Fields}
+Figure 14-1 annotations are read from high to low bit. In byte 0, bit 7 distinguishes extrashort framing; bits 7..6
+select short (\texttt{10}) or extended (\texttt{11}) framing. For short instructions, bits 5..2 and 1..0 continue
+the payload. For extended instructions, bits 5..2 are \texttt{L}, bits 1..0 begin the opcode stream, and byte 1
+continues that stream. Thus \texttt{L} encodes the total length as $3+L$ bytes directly in Figure 14-1.
 
 \input{isa/tools/latex_builder/templates/fragments/instruction_encoding_diagrams.tex}
 
+\manualtablecaption{Instruction Length Truth Table}
 \begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{1.25in}>{\raggedright\arraybackslash}p{1.25in}>{\raggedright\arraybackslash}p{0.55in}@{}}
 \toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Byte 0 Pattern} & \textbf{Byte 1 Pattern} & \textbf{Bytes}\\
+\midrule
+\endfirsthead
+\multicolumn{3}{l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
+\toprule
+\rowcolor{ManualHeaderFill}
 \textbf{Byte 0 Pattern} & \textbf{Byte 1 Pattern} & \textbf{Bytes}\\
 \midrule
 \endhead
@@ -70,10 +70,11 @@ byte 1 bits 7..0 & opcode & For short, payload[7:0]. For extended, the next eigh
 \texttt{111111oo} & \texttt{bbbbxxxx} & 18\\
 \bottomrule
 \end{manuallongtable}
-\manualtablecaption{Instruction Length Truth Table}
 
+\manualtablecaption{Opcode Length Truth Table}
 \begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.95in}>{\raggedright\arraybackslash}p{0.80in}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{2.90in}@{}}
 \toprule
+\rowcolor{ManualHeaderFill}
 \textbf{Opcode Selector} & \textbf{Class} & \textbf{Opcode Bytes} & \textbf{Validity}\\
 \midrule
 \texttt{0xxxxx} & \texttt{medium} & 3 & any extended instruction length\\
@@ -85,10 +86,11 @@ byte 1 bits 7..0 & opcode & For short, payload[7:0]. For extended, the next eigh
 \texttt{111111} & \texttt{extralong} & 5 & instruction length at least 5 bytes\\
 \bottomrule
 \end{manualtabular}
-\manualtablecaption{Opcode Length Truth Table}
 
+\manualtablecaption{Encoding Class Summary}
 \begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.72in}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{3.20in}@{}}
 \toprule
+\rowcolor{ManualHeaderFill}
 \textbf{Class} & \textbf{Payload Bits} & \textbf{Selection}\\
 \midrule
 extrashort & @EXTRASHORT_PAYLOAD_BITS@ & byte0[7]=0; payload is byte0[6:0]\\
@@ -98,4 +100,3 @@ long & @LONG_PAYLOAD_BITS@ & byte0[7:6]=11 and opcode selector is 11110x or 1111
 extralong & @EXTRALONG_PAYLOAD_BITS@ & byte0[7:6]=11 and opcode selector is 111111\\
 \bottomrule
 \end{manualtabular}
-\manualtablecaption{Encoding Class Summary}
