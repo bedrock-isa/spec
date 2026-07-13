@@ -86,11 +86,15 @@ class VisualSemanticsTests(unittest.TestCase):
         )
         for title in removed:
             self.assertNotIn(rf"\manualtablecaption{{{title}}}", self.expanded)
-        self.assertEqual(self.expanded.count(r"\manualtablecaption{"), 52)
+        formal_tables = self.expanded.count(r"\manualtablecaption{") + self.expanded.count(
+            r"\begin{manuallistedstructlayout}"
+        )
+        self.assertEqual(formal_tables, 52)
         self.assertNotIn(r"\section{Instruction Set Summary}", self.expanded)
         document_body = self.expanded.split(r"\begin{document}", 1)[1]
-        formal_figures = document_body.count(r"\manualfigurecaption{") + len(
-            re.findall(r"\\begin\{manuallisted[^}]+\}", document_body)
+        listed_visuals = re.findall(r"\\begin\{(manuallisted[^}]+)\}", document_body)
+        formal_figures = document_body.count(r"\manualfigurecaption{") + sum(
+            environment != "manuallistedstructlayout" for environment in listed_visuals
         )
         self.assertEqual(formal_figures, 26)
         removed_caption_macro = "manual" + "unlistedtablecaption"
@@ -124,8 +128,15 @@ class VisualSemanticsTests(unittest.TestCase):
 
     def test_save_context_is_a_compact_layout_not_a_row_per_register_table(self) -> None:
         source = (TEMPLATES / "fragments" / "save_area_diagram.tex").read_text(encoding="utf-8")
-        self.assertIn(r"\manualtablecaption{SAVE/RESTORE Fixed Base Block}", source)
-        self.assertIn("manualLayoutExtension", source)
+        common = (ROOT / "isa" / "tex" / "bedrock-reference-common.tex").read_text(encoding="utf-8")
+        self.assertIn(r"\begin{manuallistedstructlayout}", source)
+        self.assertIn(r"\manualstructextensionfield{8}", source)
+        self.assertIn(r"\NewDocumentEnvironment{manuallistedstructlayout}", common)
+        self.assertIn(r"\newcommand{\manualstructrow}", common)
+        self.assertIn(r"\newcommand{\manualstructslotfield}", common)
+        self.assertNotIn(r"\begin{tikzpicture}", source)
+        self.assertNotIn(r"\path[manualLayout", source)
+        self.assertNotIn(r"\node[", source)
         self.assertNotIn(r"\begin{manualdenselongtable}", source)
         self.assertNotIn(r"\texttt{R15} &", source)
         self.assertIn(r"\manualformatfield{GSV}{5}", source)

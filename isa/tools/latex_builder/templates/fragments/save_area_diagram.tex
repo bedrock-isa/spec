@@ -12,46 +12,30 @@
 }
 \end{manuallistedformatdiagram}
 {\small\texttt{GSV} is the five-bit \texttt{GS\_VALID} bitmap; \texttt{FMT} selects the save-image format.\par}
-\Needspace{2.65in}
-\manualtablecaption{SAVE/RESTORE Fixed Base Block}
-\begin{center}
-\begin{tikzpicture}[x=1in,y=0.40in,every node/.style={font=\scriptsize}]
-\def\manualsaveslot{0.63}
-\node[anchor=west,font=\scriptsize\bfseries] at (0,0.34) {offset from the 4 KiB-aligned save-area base};
-\node[anchor=east,text=ManualMuted] at ({8*\manualsaveslot},0.34) {offsets increase downward};
-
-\node[anchor=east] at (-0.12,-0.40) {\texttt{0x000--0x00f}};
-\path[manualLayoutHeader] (0,0) rectangle ({4*\manualsaveslot},-0.80);
-\node[align=center] at ({2*\manualsaveslot},-0.40) {BASE HEADER\\\texttt{0x000} \textperiodcentered\ 8 bytes};
-\path[manualLayoutHeader] ({4*\manualsaveslot},0) rectangle ({8*\manualsaveslot},-0.80);
-\node[align=center] at ({6*\manualsaveslot},-0.40) {STATE BLOCK BITMAP\\\texttt{0x008} \textperiodcentered\ 8 bytes};
-
-\node[anchor=east] at (-0.12,-1.20) {\texttt{0x010--0x04f}};
-\foreach \reg in {0,...,7} {
-  \path[manualLayoutSlot] ({\reg*\manualsaveslot},-0.80) rectangle ({(\reg+1)*\manualsaveslot},-1.60);
-  \node at ({(\reg+0.5)*\manualsaveslot},-1.20) {\texttt{R\reg}};
+\begin{manuallistedstructlayout}
+  {SAVE/RESTORE Fixed Base Block}
+  {8}
+  {offset from the 4 KiB-aligned save-area base}
+  {offsets increase downward}
+\manualstructrow{0x000--0x00f}{%
+  \manualstructheaderfield{4}{BASE HEADER\\\texttt{0x000} \textperiodcentered\ 8 bytes}
+  \manualstructheaderfield{4}{STATE BLOCK BITMAP\\\texttt{0x008} \textperiodcentered\ 8 bytes}
 }
-
-\node[anchor=east] at (-0.12,-2.00) {\texttt{0x050--0x08f}};
-\foreach \reg [evaluate=\reg as \reglabel using int(\reg+8)] in {0,...,7} {
-  \path[manualLayoutSlot] ({\reg*\manualsaveslot},-1.60) rectangle ({(\reg+1)*\manualsaveslot},-2.40);
-  \node at ({(\reg+0.5)*\manualsaveslot},-2.00) {\texttt{R\reglabel}};
+\manualstructrow{0x010--0x04f}{%
+  \manualstructslotseries{R}{0}{8}
 }
-
-\node[anchor=east] at (-0.12,-2.80) {\texttt{0x090--0x0bf}};
-\foreach \seg in {0,...,4} {
-  \path[manualLayoutOptional] ({\seg*\manualsaveslot},-2.40) rectangle ({(\seg+1)*\manualsaveslot},-3.20);
-  \node at ({(\seg+0.5)*\manualsaveslot},-2.80) {\texttt{GS\seg}};
+\manualstructrow{0x050--0x08f}{%
+  \manualstructslotseries{R}{8}{8}
 }
-\path[manualLayoutReserved] ({5*\manualsaveslot},-2.40) rectangle ({6*\manualsaveslot},-3.20);
-\node[align=center] at ({5.5*\manualsaveslot},-2.80) {reserved\\\texttt{0x0b8}};
-\node[anchor=west,align=left,text=ManualMuted] at ({6.18*\manualsaveslot},-2.80) {GS images are optional\\and selected by \texttt{GS\_VALID}};
-
-\node[anchor=east] at (-0.12,-3.72) {\texttt{0x0c0+}};
-\path[manualLayoutExtension] (0,-3.20) rectangle ({8*\manualsaveslot},-4.24);
-\node[align=center] at ({4*\manualsaveslot},-3.72) {EXTENSION STATE COMPONENTS\\CPUID-defined slots \textperiodcentered\ each component starts on a 64-byte boundary};
-
-\node[anchor=west,text=ManualMuted] at (0,-4.55) {Each \texttt{Rn} and \texttt{GSn} cell is one 8-byte slot.};
-\node[anchor=east,text=ManualMuted] at ({8*\manualsaveslot},-4.55) {\texttt{Rn}=\texttt{0x010}+8n; \texttt{GSn}=\texttt{0x090}+8n.};
-\end{tikzpicture}
-\end{center}
+\manualstructrow{0x090--0x0bf}{%
+  \manualstructoptionalseries{GS}{0}{5}
+  \manualstructreservedfield{1}{reserved\\\texttt{0x0b8}}
+  \manualstructannotationfield{2}{GS images are optional\\and selected by \texttt{GS\_VALID}}
+}
+\manualstructtallrow{0x0c0+}{%
+  \manualstructextensionfield{8}{EXTENSION STATE COMPONENTS\\CPUID-defined slots \textperiodcentered\ each component starts on a 64-byte boundary}
+}
+\manualstructfooter
+  {Each \texttt{Rn} and \texttt{GSn} cell is one 8-byte slot.}
+  {\texttt{Rn}=\texttt{0x010}+8n; \texttt{GSn}=\texttt{0x090}+8n.}
+\end{manuallistedstructlayout}

@@ -377,6 +377,95 @@
 \NewDocumentEnvironment{manuallistedbyteorderdiagram}{m m m m m m +b}{%
   \manualrenderbyteorderdiagram{#1}{#2}{#3}{#4}{#5}{#6}{#7}{\manualfigurecaption}%
 }{}
+\newif\ifmanualstructmeasuring
+\newcount\manualstructtotalunits
+\newcount\manualstructtotalheight
+\newcount\manualstructrowtopunits
+\newcount\manualstructfieldx
+\newcount\manualstructfieldspan
+\newcount\manualstructseriesindex
+\newcount\manualstructseriesremaining
+\newcommand{\manualstructwidth}{5.04}
+\newcommand{\manualstructfieldbody}[3]{%
+  \manualstructfieldspan=#2\relax
+  \pgfmathsetmacro{\manualstructfieldleft}{\the\manualstructfieldx*\manualstructslotwidth}%
+  \pgfmathsetmacro{\manualstructfieldright}{(\the\manualstructfieldx+\the\manualstructfieldspan)*\manualstructslotwidth}%
+  \pgfmathsetmacro{\manualstructfieldmiddle}{(\the\manualstructfieldx+\the\manualstructfieldspan/2)*\manualstructslotwidth}%
+  \path[#1] (\manualstructfieldleft,\manualstructytop) rectangle (\manualstructfieldright,\manualstructybottom);%
+  \node[align=center] at (\manualstructfieldmiddle,\manualstructymiddle) {#3};%
+  \advance\manualstructfieldx by \manualstructfieldspan}
+\newcommand{\manualstructheaderfield}[2]{\manualstructfieldbody{manualLayoutHeader}{#1}{#2}}
+\newcommand{\manualstructslotfield}[2]{\manualstructfieldbody{manualLayoutSlot}{#1}{#2}}
+\newcommand{\manualstructoptionalfield}[2]{\manualstructfieldbody{manualLayoutOptional}{#1}{#2}}
+\newcommand{\manualstructreservedfield}[2]{\manualstructfieldbody{manualLayoutReserved}{#1}{#2}}
+\newcommand{\manualstructextensionfield}[2]{\manualstructfieldbody{manualLayoutExtension}{#1}{#2}}
+\newcommand{\manualstructannotationfield}[2]{%
+  \manualstructfieldspan=#1\relax
+  \pgfmathsetmacro{\manualstructannotationx}{(\the\manualstructfieldx+0.18)*\manualstructslotwidth}%
+  \node[anchor=west,align=left,text=ManualMuted] at (\manualstructannotationx,\manualstructymiddle) {#2};%
+  \advance\manualstructfieldx by \manualstructfieldspan}
+\newcommand{\manualstructseriesbody}[4]{%
+  \manualstructseriesindex=#3\relax
+  \manualstructseriesremaining=#4\relax
+  \def\manualstructseriesfield{#1}%
+  \def\manualstructseriesprefix{#2}%
+  \manualstructseriesnext}
+\newcommand{\manualstructseriesnext}{%
+  \ifnum\manualstructseriesremaining>0
+    \manualstructseriesfield{1}{\texttt{\manualstructseriesprefix\the\manualstructseriesindex}}%
+    \advance\manualstructseriesindex by 1
+    \advance\manualstructseriesremaining by -1
+    \expandafter\manualstructseriesnext
+  \fi}
+\newcommand{\manualstructslotseries}[3]{\manualstructseriesbody{\manualstructslotfield}{#1}{#2}{#3}}
+\newcommand{\manualstructoptionalseries}[3]{\manualstructseriesbody{\manualstructoptionalfield}{#1}{#2}{#3}}
+\newcommand{\manualstructrowbody}[3]{%
+  \ifmanualstructmeasuring
+    \advance\manualstructtotalheight by #2\relax
+  \else
+    \pgfmathsetmacro{\manualstructytop}{-\the\manualstructrowtopunits/100}%
+    \pgfmathsetmacro{\manualstructybottom}{-(\the\manualstructrowtopunits+#2)/100}%
+    \pgfmathsetmacro{\manualstructymiddle}{-(\the\manualstructrowtopunits+#2/2)/100}%
+    \node[anchor=east] at (-0.12,\manualstructymiddle) {\texttt{#1}};%
+    \manualstructfieldx=0
+    #3%
+    \ifnum\manualstructfieldx=\manualstructtotalunits\else
+      \PackageError{bedrock-reference-common}{StructLayout row #1 spans \the\manualstructfieldx\space units; expected \the\manualstructtotalunits}{Adjust the field spans in this StructLayout row.}%
+    \fi
+    \advance\manualstructrowtopunits by #2\relax
+  \fi}
+\newcommand{\manualstructrow}[2]{\manualstructrowbody{#1}{80}{#2}}
+\newcommand{\manualstructtallrow}[2]{\manualstructrowbody{#1}{104}{#2}}
+\newcommand{\manualstructfooter}[2]{%
+  \ifmanualstructmeasuring\else
+    \pgfmathsetmacro{\manualstructfootery}{-\the\manualstructrowtopunits/100-0.31}%
+    \node[anchor=west,text=ManualMuted] at (0,\manualstructfootery) {#1};%
+    \node[anchor=east,text=ManualMuted] at (\manualstructwidth,\manualstructfootery) {#2};%
+  \fi}
+\newcommand{\manualrenderstructlayout}[6]{%
+  \begingroup
+  \manualstructtotalunits=#2\relax
+  \manualstructtotalheight=0
+  \manualstructmeasuringtrue#5\manualstructmeasuringfalse
+  \pgfmathsetmacro{\manualstructneedspace}{0.95 + 0.004*\the\manualstructtotalheight}%
+  \Needspace{\manualstructneedspace in}%
+  #6{#1}%
+  \begin{center}%
+  \begin{tikzpicture}[x=1in,y=0.40in,every node/.style={font=\scriptsize}]%
+  \pgfmathsetmacro{\manualstructslotwidth}{\manualstructwidth/\the\manualstructtotalunits}%
+  \node[anchor=west,font=\scriptsize\bfseries] at (0,0.34) {#3};%
+  \node[anchor=east,text=ManualMuted] at (\manualstructwidth,0.34) {#4};%
+  \manualstructrowtopunits=0
+  #5%
+  \end{tikzpicture}%
+  \end{center}%
+  \endgroup}
+\NewDocumentEnvironment{manualstructlayout}{m m m m +b}{%
+  \manualrenderstructlayout{#1}{#2}{#3}{#4}{#5}{\manualcaption}%
+}{}
+\NewDocumentEnvironment{manuallistedstructlayout}{m m m m +b}{%
+  \manualrenderstructlayout{#1}{#2}{#3}{#4}{#5}{\manualtablecaption}%
+}{}
 \newif\ifmanualstackframemeasuring
 \newcount\manualstackframerows
 \newcount\manualstackframerowindex
