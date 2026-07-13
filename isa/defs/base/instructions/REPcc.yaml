@@ -18,7 +18,17 @@ behavior:
   - cc
   input_output: counter
   operation:
-  - counter_v = arch_repcc(counter_v, cc_v);
+  - fetch and completely decode the instruction at inst_next before testing counter_v;
+  - if the decoded body does not permit REPcc or cc_v is F, raise ILLEGAL_INSTRUCTION;
+  - local body_pc_v = inst_next;
+  - local after_body_pc_v = the instruction boundary following the decoded body;
+  - local remaining_v = counter_v;
+  - if remaining_v == 0, set PC = after_body_pc_v and annul the decoded body;
+  - while remaining_v != 0, execute one body iteration with architectural PC = body_pc_v and capture its repeat-observed value;
+  - after each successful body commit, set remaining_v = remaining_v - 1 and write remaining_v to the selected counter register with priority over any body write to that register;
+  - after each successful body commit, if remaining_v == 0 or condition cc_v is false for the captured repeat-observed value, clear repeat state and set PC = after_body_pc_v;
+  - otherwise retain the decoded body and repeat state and set PC = body_pc_v for the next iteration;
+  - if an event interrupts an active iteration, save the selected counter, cc_v, repeat kind, and body_pc_v continuation in EVENT_AUX and clear active repeat state before event entry;
   operation_text: >
     The body instruction is fetched, decoded, and checked for repeatability before the zero-count
     rule is applied. If the counter is zero, the decoded body is annulled and has no architectural

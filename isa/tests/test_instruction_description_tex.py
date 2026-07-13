@@ -17,6 +17,7 @@ from gen_docs import (  # noqa: E402
     InstructionDef,
     IsaModel,
     instruction_description_tex,
+    latex_instruction_constant_ids,
     latex_instruction_entry,
 )
 
@@ -44,6 +45,28 @@ def instruction(description_tex: object) -> InstructionDef:
 
 
 class InstructionDescriptionTexTests(unittest.TestCase):
+    def test_renders_constant_ids_from_instruction_forms(self) -> None:
+        inst = instruction("fragments/performance_counter_reference.tex")
+        inst.data["forms"]["result_format"] = "IEEE-754 binary64"
+        inst.data["forms"]["constant_ids"] = [
+            {"id": "0x0010", "name": "pi", "value_bits": "0x400921fb54442d18"},
+            {"id": "0x0100", "name": "positive_infinity", "value_bits": "0x7ff0000000000000"},
+        ]
+        rendered = latex_instruction_constant_ids(inst)
+        self.assertIn("TESTDOC Constant IDs (IEEE-754 binary64)", rendered)
+        self.assertIn(r"\texttt{0x0010}", rendered)
+        self.assertIn("positive infinity", rendered)
+        self.assertIn(r"\texttt{0x7ff0000000000000}", rendered)
+
+    def test_rejects_duplicate_constant_ids(self) -> None:
+        inst = instruction("fragments/performance_counter_reference.tex")
+        inst.data["forms"]["constant_ids"] = [
+            {"id": "0x0000", "name": "zero", "value_bits": "0x0"},
+            {"id": "0x0000", "name": "other_zero", "value_bits": "0x0"},
+        ]
+        with self.assertRaisesRegex(ValueError, "duplicate constant ID"):
+            latex_instruction_constant_ids(inst)
+
     def test_instruction_without_fragment_has_no_description_tex_output(self) -> None:
         inst = instruction("fragments/performance_counter_reference.tex")
         del inst.data["doc"]["description_tex"]

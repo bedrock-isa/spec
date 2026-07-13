@@ -8,7 +8,8 @@ behavior:
   group: core_control
   output: none
   operation:
-  - arch_fence_address();
+  - block retirement until every memory read and write issued before AFENCE is ordered before every memory read and write issued after AFENCE by this hardware thread;
+  - AFENCE performs no memory access and changes no architectural register or flag;
 attributes:
   privilege: any
 forms:

@@ -14,9 +14,15 @@ behavior:
   input_output: quotient
   output: remainder
   operation:
-  - tmp_v = arch_unsigned_modulo(quotient_v, src_v, size_v);
-  - quotient_v = arch_unsigned_divide(quotient_v, src_v, size_v);
-  - remainder_v = tmp_v;
+  - local width_v = size_v * 8;
+  - local mask_v = (1 << width_v) - 1;
+  - local dividend_v = quotient_v & mask_v;
+  - local divisor_v = src_v & mask_v;
+  - if divisor_v == 0, raise DIVIDE_ERROR;
+  - local result_quotient_v = dividend_v / divisor_v;
+  - local result_remainder_v = dividend_v - result_quotient_v * divisor_v;
+  - quotient_v = result_quotient_v & mask_v;
+  - remainder_v = result_remainder_v & mask_v;
 attributes:
   privilege: unprivileged
   repeatable:

@@ -104,9 +104,30 @@ An \texttt{imm6} value is zero-extended to the selected operation size before us
 bits. EXTRACT uses \texttt{imm7} as the offset into its concatenated register pair.
 
 \subsection{Floating-Point Data Formats}
-Floating-point scalar formats are little-endian in memory as well. The S format is 32 bits and the D format is 64
-bits.
+Floating-point scalar formats are little-endian in memory as well. S is IEEE-754 binary32 with 24 bits of
+significand precision, minimum normal exponent $-126$, and minimum subnormal quantum $2^{-149}$. D is IEEE-754
+binary64 with 53 bits of significand precision, minimum normal exponent $-1022$, and minimum subnormal quantum
+$2^{-1074}$.
 
 The bit-level floating-point encoding, NaN policy, exception flags, and rounding behavior are defined by the
 floating-point instruction and state descriptions; their memory byte order follows the same
 least-significant-byte-first rule as integer data.
+
+\subsection{FPTRANSA ULP Error Model}
+For an approximate transcendental instruction, $x'$ is the source after \texttt{FSTATUS.DAZ}, $y=f(x')$ is the
+exact real reference value named by its accuracy contract, and $a$ is the approximate result before
+\texttt{FSTATUS.FTZ}. For a format with precision $p$ and minimum normal exponent $e_{\min}$, define
+
+\[
+  \operatorname{ulp}_F(y) =
+  \begin{cases}
+    2^{\max(\lfloor\log_2 |y|\rfloor-p+1,\ e_{\min}-p+1)}, & y\ne0,\\
+    2^{e_{\min}-p+1}, & y=0.
+  \end{cases}
+\]
+
+The measured error is $|a-y|/\operatorname{ulp}_F(y)$. The bound applies only to finite reference values within
+the selected format's finite range; NaN, infinity, and overflow follow the instruction's special-value rules.
+Every present contract guarantees at most 4 ULP for both S and D, corresponding to at least 21 and 50 worst-case
+relative precision bits respectively for nonzero normal results. CPUID may advertise a smaller certified bound.
+The instruction does not compute or return its actual error.

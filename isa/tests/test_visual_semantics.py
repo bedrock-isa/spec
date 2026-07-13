@@ -89,7 +89,7 @@ class VisualSemanticsTests(unittest.TestCase):
         formal_tables = self.expanded.count(r"\manualtablecaption{") + self.expanded.count(
             r"\begin{manuallistedstructlayout}"
         )
-        self.assertEqual(formal_tables, 52)
+        self.assertEqual(formal_tables, 55)
         self.assertNotIn(r"\section{Instruction Set Summary}", self.expanded)
         document_body = self.expanded.split(r"\begin{document}", 1)[1]
         listed_visuals = re.findall(r"\\begin\{(manuallisted[^}]+)\}", document_body)
@@ -107,7 +107,7 @@ class VisualSemanticsTests(unittest.TestCase):
             "General Instructions Summary",
             "Virtualization Acceleration Instructions Summary",
             "Floating-Point Instructions Summary",
-            "Floating-Point Transcendental Instructions Summary",
+            "Approximate Floating-Point Transcendental Instructions Summary",
         ):
             self.assertIn(rf"\manualtablecaption{{{title}}}", self.rendered)
         self.assertEqual(self.rendered.count(r"\manualsummarymnemonic{"), 206)
@@ -115,9 +115,24 @@ class VisualSemanticsTests(unittest.TestCase):
         self.assertNotIn(r"\begin{manualmnemonicindex}", self.rendered)
         self.assertNotIn(r"\textbf{Summary} & \textbf{Forms}", self.rendered)
 
+    def test_fptransa_accuracy_contracts_are_discoverable_and_rendered(self) -> None:
+        self.assertIn(r"\manualtablecaption{FPTRANSA Accuracy Result}", self.rendered)
+        self.assertIn(r"\manualtablecaption{FPTRANSA Accuracy Contracts}", self.rendered)
+        self.assertEqual(self.rendered.count(r"\manualinstructionfield{Approximation Contract}"), 19)
+        self.assertIn(r"\texttt{0x0000000100010000}", self.rendered)
+        self.assertIn(r"\texttt{0x0000000100010042}", self.rendered)
+        self.assertIn(r"\texttt{0x8000000102000180}", self.rendered)
+        self.assertIn(r"\hyperref[instr:fsincosa]{\texttt{FSINCOSA}}", self.rendered)
+        approx_sources = "\n".join(
+            path.read_text(encoding="utf-8")
+            for path in (ROOT / "isa" / "defs" / "extensions" / "fpu_transcendental_approx").rglob("*.yaml")
+        )
+        self.assertNotIn("unbounded precision", approx_sources)
+        self.assertNotIn("using FSTATUS.RM", approx_sources)
+
     def test_diagram_and_condition_code_semantics_are_preserved(self) -> None:
         self.assertEqual(self.rendered.count(r"\begin{manualbitdiagram}"), 399)
-        self.assertEqual(self.rendered.count(r"\begin{manualstatusstrip}"), 18)
+        self.assertEqual(self.rendered.count(r"\begin{manualstatusstrip}"), 20)
         self.assertEqual(self.rendered.count(r"Format \textemdash{} Instruction format"), 399)
 
     def test_every_longtable_has_first_and_continued_headers(self) -> None:

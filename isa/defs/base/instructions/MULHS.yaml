@@ -10,7 +10,15 @@ behavior:
   - src
   input_output: dst
   operation:
-  - dst_v = arch_signed_multiply_high(dst_v, src_v, size_v);
+  - local width_v = size_v * 8;
+  - local modulus_v = 1 << width_v;
+  - local mask_v = modulus_v - 1;
+  - local lhs_v = dst_v & mask_v;
+  - local rhs_v = src_v & mask_v;
+  - if (lhs_v & (1 << (width_v - 1))) != 0, lhs_v = lhs_v - modulus_v;
+  - if (rhs_v & (1 << (width_v - 1))) != 0, rhs_v = rhs_v - modulus_v;
+  - local product_v = lhs_v * rhs_v;
+  - dst_v = (product_v >> width_v) & mask_v;
 attributes:
   privilege: unprivileged
   repeatable:

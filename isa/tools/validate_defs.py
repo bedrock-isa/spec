@@ -17,6 +17,28 @@ except ImportError as exc:  # pragma: no cover - environment error path
 
 ROOT = Path("isa/defs")
 
+FPTRANSA_CONTRACT_IDS = {
+    "FSINA": 0x0000,
+    "FCOSA": 0x0001,
+    "FTANA": 0x0002,
+    "FSINCOSA": 0x0003,
+    "FASINA": 0x0010,
+    "FACOSA": 0x0011,
+    "FATANA": 0x0012,
+    "FSINHA": 0x0020,
+    "FCOSHA": 0x0021,
+    "FTANHA": 0x0022,
+    "FATANHA": 0x0023,
+    "FETOXA": 0x0030,
+    "FETOXM1A": 0x0031,
+    "FTWOTOXA": 0x0032,
+    "FTENTOXA": 0x0033,
+    "FLOGNA": 0x0040,
+    "FLOGNP1A": 0x0041,
+    "FLOG2A": 0x0042,
+    "FLOG10A": 0x0043,
+}
+
 
 def load_yaml(path: Path) -> Any:
     with path.open() as f:
@@ -91,6 +113,7 @@ def validate_defs(root: Path = ROOT) -> tuple[dict[str, Any], list[str]]:
     legacy_operand_files: dict[str, set[Path]] = defaultdict(set)
     unknown_operand_files: dict[str, set[Path]] = defaultdict(set)
     missing_external_allocation: list[Path] = []
+    fptransa_contracts: dict[int, tuple[str, Path]] = {}
 
     for path in instruction_files:
         data = load_yaml(path)
@@ -130,6 +153,48 @@ def validate_defs(root: Path = ROOT) -> tuple[dict[str, Any], list[str]]:
                 extension_families[ext_family] += 1
                 if ext_family not in family_order:
                     errors.append(f"{path}: extension_family {ext_family!r} not present in manifest family_order")
+                if ext_family == "fpu_transcendental_approx":
+                    expected_id = FPTRANSA_CONTRACT_IDS.get(mnemonic)
+                    if expected_id is None:
+                        errors.append(f"{path}: unexpected FPTRANSA mnemonic {mnemonic}")
+                    if forms.get("size") != "S_D":
+                        errors.append(f"{path}: FPTRANSA instructions must support S and D together")
+                    behavior = data.get("behavior") or {}
+                    approximation = behavior.get("approximation") if isinstance(behavior, dict) else None
+                    if not isinstance(approximation, dict):
+                        errors.append(f"{path}: missing behavior.approximation contract")
+                    else:
+                        raw_contract_id = approximation.get("contract_id")
+                        try:
+                            contract_id = int(str(raw_contract_id), 0)
+                        except (TypeError, ValueError):
+                            errors.append(f"{path}: invalid FPTRANSA contract_id {raw_contract_id!r}")
+                        else:
+                            if expected_id is not None and contract_id != expected_id:
+                                errors.append(
+                                    f"{path}: contract_id 0x{contract_id:04x} does not match expected 0x{expected_id:04x}"
+                                )
+                            previous_contract = fptransa_contracts.get(contract_id)
+                            if previous_contract is not None:
+                                errors.append(
+                                    f"duplicate FPTRANSA contract_id 0x{contract_id:04x}: "
+                                    f"{previous_contract[1]} and {path}"
+                                )
+                            fptransa_contracts[contract_id] = (mnemonic, path)
+                        if approximation.get("max_ulp") != {"S": 4, "D": 4}:
+                            errors.append(f"{path}: FPTRANSA max_ulp must be S=4 and D=4")
+                        for key in ("reference_function", "domain", "exact_anchors", "properties"):
+                            if not approximation.get(key):
+                                errors.append(f"{path}: approximation contract is missing {key}")
+                    operation_text = " ".join(str(item) for item in (behavior.get("operation") or []))
+                    if "unbounded precision" in operation_text or "using FSTATUS.RM" in operation_text:
+                        errors.append(f"{path}: correctly-rounded language remains in FPTRANSA operation")
+                    if expected_id is not None and f"FPTRANSA_ACCURACY contract 0x{expected_id:04x}" not in operation_text:
+                        errors.append(f"{path}: operation does not gate execution on its accuracy contract")
+                    fp_flags = data.get("attributes", {}).get("fp_flags", {})
+                    updates = fp_flags.get("update", []) if isinstance(fp_flags, dict) else []
+                    if "NX" in updates:
+                        errors.append(f"{path}: FPTRANSA must leave NX unchanged")
 
         collect_operand_types(data, operand_types)
         file_operand_types = Counter()
@@ -154,6 +219,10 @@ def validate_defs(root: Path = ROOT) -> tuple[dict[str, Any], list[str]]:
     if unknown_operand_files:
         details = ", ".join(f"{key}={len(value)}" for key, value in sorted(unknown_operand_files.items()))
         errors.append(f"instruction files use operand types not listed in operands.yaml: {details}")
+    actual_fptransa = {mnemonic for mnemonic, _path in fptransa_contracts.values()}
+    missing_fptransa = sorted(set(FPTRANSA_CONTRACT_IDS) - actual_fptransa)
+    if missing_fptransa:
+        errors.append("missing FPTRANSA contracts: " + " ".join(missing_fptransa))
 
     summary = {
         "instruction_files": len(instruction_files),

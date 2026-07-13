@@ -8,7 +8,9 @@ behavior:
   group: core_control
   output: none
   operation:
-  - arch_enter_halt();
+  - retire HALT with continuation PC = inst_next and set execution_state = HALTED;
+  - while execution_state == HALTED, fetch and retire no instructions;
+  - when an enabled architectural event is admitted, clear execution_state = HALTED and deliver that event using inst_next as the interrupted continuation;
 attributes:
   privilege: supervisor
 forms:

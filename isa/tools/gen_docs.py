@@ -52,13 +52,13 @@ INSTRUCTION_SET_SECTION_ORDER = [
     "base",
     "virtualization_acceleration",
     "fpu",
-    "fpu_transcendental",
+    "fpu_transcendental_approx",
 ]
 INSTRUCTION_SET_SECTION_TITLES = {
     "base": "General Instructions Summary",
     "virtualization_acceleration": "Virtualization Acceleration Instructions Summary",
     "fpu": "Floating-Point Instructions Summary",
-    "fpu_transcendental": "Floating-Point Transcendental Instructions Summary",
+    "fpu_transcendental_approx": "Approximate Floating-Point Transcendental Instructions Summary",
 }
 
 
@@ -77,6 +77,11 @@ class InstructionDef:
     @property
     def behavior(self) -> dict[str, Any]:
         value = self.data.get("behavior")
+        return value if isinstance(value, dict) else {}
+
+    @property
+    def approximation(self) -> dict[str, Any]:
+        value = self.behavior.get("approximation")
         return value if isinstance(value, dict) else {}
 
     @property
@@ -582,6 +587,31 @@ def latex_operation_field(lines: list[Any]) -> str:
     )
 
 
+def latex_approximation_field(inst: InstructionDef) -> str:
+    approximation = inst.approximation
+    if not approximation:
+        return ""
+    max_ulp = approximation.get("max_ulp") or {}
+    if not isinstance(max_ulp, dict):
+        max_ulp = {}
+    lines = [
+        f"Contract ID: {compact_text(approximation.get('contract_id'))}",
+        f"Reference: {compact_text(approximation.get('reference_function'))}",
+        f"Domain: {compact_text(approximation.get('domain'))}",
+        f"ISA maximum error: S <= {compact_text(max_ulp.get('S'))} ULP; D <= {compact_text(max_ulp.get('D'))} ULP",
+    ]
+    anchors = approximation.get("exact_anchors") or []
+    if anchors:
+        lines.append("Exact anchors: " + "; ".join(compact_text(item) for item in anchors))
+    properties = approximation.get("properties") or []
+    if properties:
+        lines.append("Properties: " + "; ".join(compact_text(item) for item in properties))
+    return latex_instruction_field(
+        "Approximation Contract",
+        latex_ragged_block([latex_escape(line) for line in lines]),
+    )
+
+
 def latex_flag_status(inst: InstructionDef) -> str:
     flags = inst.attributes.get("flags")
     if not isinstance(flags, dict) or not flags:
@@ -593,6 +623,48 @@ def latex_flag_status(inst: InstructionDef) -> str:
             [r"\begin{manualstatusstrip}", items, rf"\par\textcolor{{ManualMuted}}{{{latex_escape(flag_summary(flags))}}}", r"\end{manualstatusstrip}"]
         )
     return rf"\begin{{manualstatusstrip}}\textbf{{Status}}\enspace {latex_escape(flag_summary(flags))}\end{{manualstatusstrip}}"
+
+
+def latex_instruction_constant_ids(inst: InstructionDef) -> str:
+    constants = inst.forms.get("constant_ids")
+    if constants is None:
+        return ""
+    if not isinstance(constants, list) or not constants:
+        raise ValueError(f"{inst.path}: forms.constant_ids must be a non-empty list")
+
+    rows: list[list[str]] = []
+    seen_ids: set[str] = set()
+    for index, item in enumerate(constants):
+        if not isinstance(item, dict):
+            raise ValueError(f"{inst.path}: forms.constant_ids[{index}] must be a mapping")
+        constant_id = compact_text(item.get("id"))
+        name = compact_text(item.get("name"))
+        value_bits = compact_text(item.get("value_bits"))
+        if not constant_id or not name or not value_bits:
+            raise ValueError(
+                f"{inst.path}: forms.constant_ids[{index}] requires id, name, and value_bits"
+            )
+        if constant_id in seen_ids:
+            raise ValueError(f"{inst.path}: duplicate constant ID {constant_id}")
+        seen_ids.add(constant_id)
+        rows.append(
+            [
+                tex_code(constant_id),
+                latex_escape(display_text(name)),
+                tex_code(value_bits),
+            ]
+        )
+
+    result_format = compact_text(inst.forms.get("result_format", ""))
+    title = f"{inst.mnemonic} Constant IDs"
+    if result_format:
+        title += f" ({result_format})"
+    return latex_longtable(
+        ["ID", "Constant", "Result bits"],
+        rows,
+        ["0.75in", "2.35in", "2.30in"],
+        title,
+    )
 
 
 def size_suffix(size: Any) -> str:
@@ -1458,6 +1530,45 @@ def latex_code_table(
     return latex_longtable(headers, rendered_rows, widths, caption, style=style, listed=listed)
 
 
+def fptransa_contracts(model: IsaModel) -> list[tuple[int, InstructionDef, dict[str, Any]]]:
+    contracts: list[tuple[int, InstructionDef, dict[str, Any]]] = []
+    for inst in model.instructions:
+        approximation = inst.approximation
+        if not approximation:
+            continue
+        raw_id = compact_text(approximation.get("contract_id"))
+        try:
+            contract_id = int(raw_id, 0)
+        except ValueError as exc:
+            raise ValueError(f"{inst.path}: invalid approximation contract_id {raw_id!r}") from exc
+        contracts.append((contract_id, inst, approximation))
+    return sorted(contracts, key=lambda item: item[0])
+
+
+def latex_fptransa_contract_table(model: IsaModel) -> str:
+    rows: list[list[str]] = []
+    for contract_id, inst, approximation in fptransa_contracts(model):
+        max_ulp = approximation.get("max_ulp") or {}
+        if not isinstance(max_ulp, dict):
+            max_ulp = {}
+        accuracy = f"S <= {compact_text(max_ulp.get('S'))} ULP; D <= {compact_text(max_ulp.get('D'))} ULP"
+        rows.append(
+            [
+                tex_code(f"0x{contract_id:04x}"),
+                rf"\hyperref[{instruction_label(inst.mnemonic)}]{{{tex_code(inst.mnemonic)}}}",
+                latex_escape(compact_text(approximation.get("reference_function"))),
+                latex_escape(compact_text(approximation.get("domain"))),
+                latex_escape(accuracy),
+            ]
+        )
+    return latex_longtable(
+        ["Contract ID", "Mnemonic", "Reference", "Domain", "ISA maximum"],
+        rows,
+        ["0.72in", "0.78in", "1.20in", "2.05in", "0.90in"],
+        "FPTRANSA Accuracy Contracts",
+    )
+
+
 def latex_cpuid_feature_discovery_section(model: IsaModel) -> str:
     return render_latex_template(
         "cpuid_feature_discovery.tex",
@@ -1465,6 +1576,7 @@ def latex_cpuid_feature_discovery_section(model: IsaModel) -> str:
             "CPUID_INSTRUCTION_TABLE": latex_instruction_links(
                 model, ["CPUID"], "The normative instruction entry is"
             ),
+            "FPTRANSA_CONTRACT_TABLE": latex_fptransa_contract_table(model),
         },
     )
 
@@ -1690,6 +1802,9 @@ def latex_instruction_entry(model: IsaModel, inst: InstructionDef, *, first_in_g
     if description:
         parts.append(latex_instruction_field("Description", latex_escape(description)))
     parts.append(latex_operation_field(list(inst.behavior.get("operation", []) or [])))
+    approximation = latex_approximation_field(inst)
+    if approximation:
+        parts.append(approximation)
     syntax_lines = assembler_syntax_lines(model, inst)
     if syntax_lines:
         parts.append(
@@ -1702,6 +1817,9 @@ def latex_instruction_entry(model: IsaModel, inst: InstructionDef, *, first_in_g
     status = latex_flag_status(inst)
     if status:
         parts.append(status)
+    constant_ids = latex_instruction_constant_ids(inst)
+    if constant_ids:
+        parts.append(constant_ids)
     description_tex = instruction_description_tex(inst)
     if description_tex:
         parts.append(description_tex)

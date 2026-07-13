@@ -12,7 +12,9 @@ behavior:
   - cr
   output: dst
   operation:
-  - dst_v = arch_read_control_register(cr_v);
+  - local selector_v = cr_v & 0xffff;
+  - if selector_v is not assigned by the Control-Register Selectors table, raise INVALID_CONTROL_STATE;
+  - dst_v = the 64-bit image of the control register assigned to selector_v with reserved bits read as zero;
   control_register_access:
     selector: cr
     read: dst

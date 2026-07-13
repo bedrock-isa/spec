@@ -10,7 +10,9 @@ behavior:
   - src
   output: none
   operation:
-  - arch_prefetch(src_v);
+  - compute the effective address of src_ref without performing an architectural data read;
+  - issue an optional temporal read-prefetch hint for the cache line containing that address;
+  - if the hint is ignored or cannot be completed, leave all architectural state unchanged unless the configured prefetch-fault policy requires the corresponding access fault;
 attributes:
   privilege: user allowed
   repeatable:

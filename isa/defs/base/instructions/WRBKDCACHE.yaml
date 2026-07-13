@@ -10,7 +10,10 @@ behavior:
   - target
   output: none
   operation:
-  - arch_cache_writeback_data(target_v);
+  - resolve target_v to the addressed byte range without reading the target bytes;
+  - for each dirty data-cache line intersecting the range, write every dirty byte to the point of coherency;
+  - retain the selected data-cache lines in a clean state;
+  - retire only after all selected writebacks are complete and visible to this hardware thread;
 attributes:
   privilege:
     default: supervisor

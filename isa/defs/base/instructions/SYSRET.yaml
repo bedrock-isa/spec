@@ -10,7 +10,16 @@ behavior:
   group: core_control
   output: none
   operation:
-  - arch_sysret();
+  - if STATUS.PM == 0 or STATUS.EA != 0, raise INVALID_CONTROL_STATE;
+  - if URCTL.V == 0, raise INVALID_CONTROL_STATE;
+  - local return_flags_v = URCTL & 0xffff;
+  - local return_status_v = (URCTL >> 16) & 0xffff;
+  - require return_status_v.PM == 0, return_status_v.EA == 0, and every reserved status bit zero;
+  - validate URCS, URDS, and URSS as user segment images and validate URPC and URSP in those contexts;
+  - require URPC to be canonical and executable under URCS;
+  - atomically set FLAGS = return_flags_v, STATUS = return_status_v, CS = URCS, DS = URDS, SS = URSS, SP = URSP, and PC = URPC;
+  - in the same commit clear URCTL.V while leaving the other user-return bank fields unchanged;
+  - on any validation failure leave the complete user-return bank and execution context unchanged;
   operation_text: 'SYSRET validates the complete UR control-register bank, restores FLAGS, STATUS,
     CS, DS, SS, SP, and PC as one commit, and clears URCTL.V after a successful return.
 

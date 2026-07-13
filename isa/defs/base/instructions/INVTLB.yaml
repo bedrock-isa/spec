@@ -8,7 +8,9 @@ behavior:
   group: tlb_context
   output: none
   operation:
-  - arch_tlb_invalidate_all();
+  - for each cached instruction or data translation on this hardware thread, clear its valid state;
+  - discard any in-progress translation result that was obtained from the invalidated state;
+  - retire only after no later memory access or instruction fetch can use a translation cached before INVTLB;
 attributes:
   privilege: supervisor
   serializing: true

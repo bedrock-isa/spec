@@ -11,7 +11,9 @@ behavior:
   - regs
   output: none
   operation:
-  - arch_fpopm(regs_v);
+  - local selected_count_v = population_count(regs_v & 0xffff);
+  - validate the complete readable stack range SS:SP through SS:(SP + 8 * selected_count_v - 1);
+  - for reg_v = 15 down to 0 with bit reg_v set in regs_v, load F[reg_v] from *:8 SP and then increment SP by 8;
   operation_text: 'For each set bit in the bitmap, FPOPM pops one 64-bit stack slot into the corresponding
     F register. F registers are processed in inverse order from F15 through F0. Each selected register
     is loaded from SP before SP is incremented by 8.

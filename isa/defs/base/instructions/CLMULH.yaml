@@ -10,7 +10,13 @@ behavior:
   - src
   input_output: dst
   operation:
-  - dst_v = arch_carryless_multiply_high(dst_v, src_v, size_v);
+  - local width_v = size_v * 8;
+  - local mask_v = (1 << width_v) - 1;
+  - local multiplicand_v = dst_v & mask_v;
+  - local multiplier_v = src_v & mask_v;
+  - local product_v = 0;
+  - for bit_v = 0 to width_v - 1, if ((multiplier_v >> bit_v) & 1) != 0, product_v = product_v ^ (multiplicand_v << bit_v);
+  - dst_v = (product_v >> width_v) & mask_v;
 attributes:
   privilege: unprivileged
   repeatable:

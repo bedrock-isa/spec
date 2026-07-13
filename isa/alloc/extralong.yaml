@@ -100,6 +100,14 @@ entries:
       l: {kind: freg, width: 4}
       d: {kind: freg, width: 4}
       r: {kind: ea7, width: 7}
+  - id: extralong.fsincosa_x_fn_s_fn_d_fn_c
+    bits: "1111110000001z01ssss000dddd000cccc"
+    text: "FSINCOSA.X(z:S/D) Fn(s), Fn(d), Fn(c)"
+    fields:
+      z: {kind: size, width: 1}
+      s: {kind: freg, width: 4}
+      d: {kind: freg, width: 4}
+      c: {kind: freg, width: 4}
   - id: extralong.bndsii_x_rn_l_ea_e_rn_h
     bits: "111111000001zz00llll000hhhheeeeeee"
     text: "BNDSII.X(z:B/W/L/Q) Rn(l), <ea>(e), Rn(h)"

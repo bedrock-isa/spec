@@ -16,9 +16,11 @@ behavior:
   - high
   input_output: low_dst
   operation:
-  - width_v = arch_operand_width(size_v);
-  - pair_v = arch_concat_pair(high_v, low_dst_v, width_v);
-  - low_dst_v = arch_extract_pair(pair_v, offset_v, width_v);
+  - local width_v = size_v * 8;
+  - local mask_v = (1 << width_v) - 1;
+  - local pair_v = ((high_v & mask_v) << width_v) | (low_dst_v & mask_v);
+  - if offset_v >= 2 * width_v, low_dst_v = 0;
+  - if offset_v < 2 * width_v, low_dst_v = (pair_v >> offset_v) & mask_v;
   operation_text: >
     The operation forms a 2*width temporary value `(Rn(high)[width-1:0] : Rn(low/dest)[width-1:0])`.
     The immediate offset is interpreted as an unsigned 7-bit value. The result is the low `width`

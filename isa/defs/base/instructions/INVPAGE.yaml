@@ -10,7 +10,10 @@ behavior:
   - page
   output: none
   operation:
-  - arch_tlb_invalidate_page(page_v);
+  - compute the linear address of page_ref without reading memory and set linear_page_v = address bits 63..12;
+  - for each cached instruction or data translation on this hardware thread, if its linear page is linear_page_v and it is global or matches the current ASID context, clear its valid state;
+  - discard any in-progress matching translation result;
+  - retire only after no later memory access or instruction fetch can use a matching translation cached before INVPAGE;
 attributes:
   privilege: supervisor
   serializing: true

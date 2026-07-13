@@ -8,7 +8,8 @@ behavior:
   group: core_control
   output: none
   operation:
-  - arch_raise_breakpoint();
+  - raise DEBUG_TRACE with breakpoint cause and saved PC = inst_next;
+  - do not execute the instruction at inst_next before event entry commits;
 attributes:
   privilege: any
   serializing: true

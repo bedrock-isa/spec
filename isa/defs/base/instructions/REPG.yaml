@@ -17,7 +17,18 @@ behavior:
   - body_bytes
   input_output: counter
   operation:
-  - counter_v = arch_repg(counter_v, body_bytes_v);
+  - if body_bytes_v == 0, raise ILLEGAL_INSTRUCTION;
+  - decode exactly body_bytes_v bytes beginning at inst_next and require the range to end on a complete instruction boundary;
+  - if any decoded instruction does not permit REPG, raise ILLEGAL_INSTRUCTION;
+  - local group_start_v = inst_next;
+  - local group_end_v = inst_next + body_bytes_v;
+  - local remaining_v = counter_v;
+  - if remaining_v == 0, set PC = group_end_v and annul every decoded body instruction;
+  - while remaining_v != 0, execute the decoded instructions in order from group_start_v through group_end_v;
+  - if a body instruction faults, retain effects of earlier completed body instructions, execute no later body instruction, and do not decrement remaining_v;
+  - after a complete successful group iteration, set remaining_v = remaining_v - 1 and write remaining_v to the selected counter register with priority over body writes at the group boundary;
+  - if remaining_v == 0, clear repeat state and set PC = group_end_v; otherwise set PC = group_start_v for the next group iteration;
+  - if an event interrupts active grouped repetition, save the selected counter, repeat kind, group-start delta, body_bytes_v, and continuation PC in EVENT_AUX and clear active repeat state before event entry;
   operation_text: >
     The grouped body is decoded and each body instruction is checked for REPG repeatability before
     the zero-count rule is applied. If the counter is zero, the decoded group is annulled and has no

@@ -10,7 +10,10 @@ behavior:
   - marker
   output: none
   operation:
-  - arch_trace_marker(marker_v & 0xffff);
+  - local marker_id_v = marker_v & 0xffff;
+  - if architectural tracing is disabled, goto <trace_done>;
+  - append marker_id_v and the current instruction boundary to the implementation trace stream;
+  - <trace_done>
 attributes:
   privilege: unprivileged
 forms:

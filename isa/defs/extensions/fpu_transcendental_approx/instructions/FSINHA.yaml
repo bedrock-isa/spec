@@ -1,0 +1,60 @@
+mnemonic: FSINHA
+doc:
+  title: Approximate Floating-Point Hyperbolic Sine
+  summary: Performs the bounded approximate floating-point hyperbolic sine operation.
+  instruction_family: fpu_transcendental_approx
+  instruction_class: fpu
+behavior:
+  group: fpu_transcendental_approx
+  inputs:
+  - src
+  output: dst
+  operation:
+  - if CPUID FPTRANSA_ACCURACY contract 0x0020 is not PRESENT, raise ILLEGAL_INSTRUCTION before reading operands or floating-point state;
+  - local pending_exceptions_v = {};
+  - apply FSTATUS.DAZ to a subnormal src_v, preserving its sign;
+  - if src_v is a signaling NaN, add NV to pending_exceptions_v;
+  - if src_v is NaN, set result_v to its quiet NaN result and goto <fsinha_finalize>;
+  - if src_v is infinite or zero, set result_v = src_v;
+  - if src_v is finite and nonzero, set exact_v = sinh(src_v) as the exact real reference value;
+  - if src_v is finite and nonzero, set result_v = fptransa_approximate(0x0020, exact_v, selected S or D format) and add OF or UF to pending_exceptions_v
+    as classified by the common FPTRANSA model;
+  - if FSTATUS.FTZ is set and result_v is subnormal, replace it with signed zero and add UF to pending_exceptions_v;
+  - <fsinha_finalize>
+  - apply FSTATUS.DN to a NaN result and accrue pending_exceptions_v into FFLAGS without changing NX;
+  - if pending_exceptions_v intersects enabled FSTATUS traps, raise FLOATING_POINT_FAULT without writing dst_v; otherwise write result_v to dst_v;
+  approximation:
+    contract_id: '0x0020'
+    reference_function: sinh(x)
+    domain: all finite values and signed infinity after DAZ
+    max_ulp:
+      S: 4
+      D: 4
+    exact_anchors:
+    - sinh(+0) = +0
+    - sinh(-0) = -0
+    - sinh(infinity) = infinity with the input sign
+    properties:
+    - odd
+    - monotonically increasing
+attributes:
+  privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: false
+    repg: true
+  fp_flags:
+    update:
+    - NV
+    - OF
+    - UF
+forms:
+  operands:
+  - name: src
+    type: FREG
+  - name: dst
+    type: FREG
+  size: S_D
+  extension_family: fpu_transcendental_approx
+definition_status:
+  allocation: 'external: isa/alloc'

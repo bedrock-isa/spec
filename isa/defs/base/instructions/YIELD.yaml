@@ -8,7 +8,9 @@ behavior:
   group: core_control
   output: none
   operation:
-  - arch_yield();
+  - notify the implementation that the current hardware thread may be deprioritized or descheduled;
+  - YIELD is not a memory barrier and changes no architectural state;
+  - resume execution at inst_next whenever the implementation next schedules the thread;
 attributes:
   privilege: any
 forms:

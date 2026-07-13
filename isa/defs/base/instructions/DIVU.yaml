@@ -10,7 +10,12 @@ behavior:
   - src
   input_output: dst
   operation:
-  - dst_v = arch_unsigned_divide(dst_v, src_v, size_v);
+  - local width_v = size_v * 8;
+  - local mask_v = (1 << width_v) - 1;
+  - local dividend_v = dst_v & mask_v;
+  - local divisor_v = src_v & mask_v;
+  - if divisor_v == 0, raise DIVIDE_ERROR;
+  - dst_v = (dividend_v / divisor_v) & mask_v;
 attributes:
   privilege: unprivileged
   repeatable:

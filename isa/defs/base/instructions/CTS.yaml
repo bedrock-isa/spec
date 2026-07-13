@@ -13,7 +13,11 @@ behavior:
   - src
   input_output: dst
   operation:
-  - dst_v = arch_count_trailing_ones(src_v, size_v);
+  - local width_v = size_v * 8;
+  - local value_v = src_v & ((1 << width_v) - 1);
+  - local count_v = 0;
+  - for bit_v = 0 to width_v - 1 while ((value_v >> bit_v) & 1) != 0, count_v = count_v + 1;
+  - dst_v = count_v;
 attributes:
   privilege: unprivileged
   repeatable:

@@ -8,7 +8,8 @@ behavior:
   group: core_control
   output: none
   operation:
-  - arch_raise_illegal_instruction();
+  - raise ILLEGAL_INSTRUCTION with saved PC = current instruction boundary;
+  - ILLEGAL does not retire and changes no architectural destination state before event entry;
 attributes:
   privilege: any
 forms:

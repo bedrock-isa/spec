@@ -10,7 +10,10 @@ behavior:
   - asid
   output: none
   operation:
-  - arch_tlb_invalidate_asid(asid_v & 0xffff);
+  - local selected_asid_v = asid_v & 0xffff;
+  - for each non-global cached instruction or data translation on this hardware thread, if its ASID is selected_asid_v, clear its valid state;
+  - discard any in-progress translation result tagged with selected_asid_v;
+  - retire only after no later memory access or instruction fetch can use a non-global translation for selected_asid_v cached before INVASID;
 attributes:
   privilege: supervisor
   serializing: true

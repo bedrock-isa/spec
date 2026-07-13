@@ -14,7 +14,10 @@ behavior:
   - counter_id
   output: dst
   operation:
-  - dst_v = arch_read_performance_counter(counter_id_v);
+  - local selected_id_v = counter_id_v & 0xffff;
+  - if STATUS.PM == 0 and PMC.USER == 0, raise PRIVILEGE_FAULT;
+  - if selected_id_v is not present in the CPUID performance-counter leaf, raise INVALID_CONTROL_STATE;
+  - dst_v = the current 64-bit value of performance_counter[selected_id_v];
 attributes:
   privilege: configurable
   flags: unchanged

@@ -14,7 +14,12 @@ behavior:
   - cr
   output: none
   operation:
-  - arch_write_control_register(cr_v, src_v);
+  - local selector_v = cr_v & 0xffff;
+  - if selector_v is not assigned by the Control-Register Selectors table, raise INVALID_CONTROL_STATE;
+  - if any reserved bit for the selected register is nonzero in src_v, raise INVALID_CONTROL_STATE;
+  - validate every selected-register-specific invariant before changing architectural state;
+  - write src_v to the writable fields of the selected control register, except that hardware-managed fields retain their instruction-defined value;
+  - if validation fails, leave the selected register and all dependent architectural state unchanged;
   control_register_access:
     selector: cr
     write: src

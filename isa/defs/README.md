@@ -24,6 +24,12 @@ derived list must be computed from its owning definitions instead of being
 copied into a second YAML source. The `doc` block on an instruction remains the
 intentional home for that instruction's title, summary, and narrative.
 
+Approximate floating-point instructions additionally own a structured
+`behavior.approximation` block. Its stable contract ID, reference function,
+domain, ISA ULP ceiling, exact anchors, and mathematical properties are the
+source of truth for both the instruction page and CPUID accuracy-contract
+tables. Do not duplicate that mapping in a documentation template.
+
 Run the definition-layer check with:
 
 ```sh

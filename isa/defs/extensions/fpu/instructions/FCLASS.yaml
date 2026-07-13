@@ -10,7 +10,18 @@ behavior:
   - src
   output: dst
   operation:
-  - dst_v = arch_fclass(src_v, size_v);
+  - if size_v == 4, set sign_v = src_v[31], exponent_v = src_v[30:23], fraction_v = src_v[22:0], exponent_max_v = 0xff, and quiet_bit_v = src_v[22];
+  - if size_v == 8, set sign_v = src_v[63], exponent_v = src_v[62:52], fraction_v = src_v[51:0], exponent_max_v = 0x7ff, and quiet_bit_v = src_v[51];
+  - if exponent_v == exponent_max_v and fraction_v != 0 and quiet_bit_v == 0, dst_v = 1 << 8;
+  - if exponent_v == exponent_max_v and fraction_v != 0 and quiet_bit_v != 0, dst_v = 1 << 9;
+  - if exponent_v == exponent_max_v and fraction_v == 0 and sign_v != 0, dst_v = 1 << 0;
+  - if exponent_v != 0 and exponent_v != exponent_max_v and sign_v != 0, dst_v = 1 << 1;
+  - if exponent_v == 0 and fraction_v != 0 and sign_v != 0, dst_v = 1 << 2;
+  - if exponent_v == 0 and fraction_v == 0 and sign_v != 0, dst_v = 1 << 3;
+  - if exponent_v == 0 and fraction_v == 0 and sign_v == 0, dst_v = 1 << 4;
+  - if exponent_v == 0 and fraction_v != 0 and sign_v == 0, dst_v = 1 << 5;
+  - if exponent_v != 0 and exponent_v != exponent_max_v and sign_v == 0, dst_v = 1 << 6;
+  - if exponent_v == exponent_max_v and fraction_v == 0 and sign_v == 0, dst_v = 1 << 7;
   operation_text: 'FCLASS classifies the source floating-point value according to the selected S or D
     format and writes a one-hot classification bitmap to the destination Rn register. The bitmap distinguishes
     negative infinity, negative normal, negative subnormal, negative zero, positive zero, positive subnormal,

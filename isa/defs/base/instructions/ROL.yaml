@@ -14,10 +14,10 @@ behavior:
   - count
   input_output: dst
   operation:
-  - width_v = arch_operand_width(size_v);
-  - shift_v = count_v mod width_v;
-  - if shift_v != 0, result_v = arch_rotate_left(dst_old_v, shift_v, width_v);
-  - if shift_v != 0, dst_v = result_v;
+  - local width_v = size_v * 8;
+  - local mask_v = (1 << width_v) - 1;
+  - local shift_v = count_v mod width_v;
+  - if shift_v != 0, dst_v = (((dst_old_v & mask_v) << shift_v) | ((dst_old_v & mask_v) >> (width_v - shift_v))) & mask_v;
   count_rules:
     effective_count: count modulo selected operand width; B uses mod 8, W uses mod 16, L uses mod 32, Q uses mod 64
     zero_effective_count: destination unchanged

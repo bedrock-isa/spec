@@ -13,7 +13,8 @@ behavior:
   - src
   output: dst
   operation:
-  - dst_v = arch_zero_extend(src_v, size_v, 8);
+  - local source_width_v = size_v * 8;
+  - dst_v = src_v & ((1 << source_width_v) - 1);
   destination_size: Q
   repeat_observed_value: result_value
   repeat_flags: flags_logic_observed_value

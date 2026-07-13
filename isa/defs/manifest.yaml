@@ -6,9 +6,9 @@ instruction_sets:
 - name: fpu
   root: extensions/fpu
   include: extensions/fpu/instructions.yaml
-- name: fpu_transcendental
-  root: extensions/fpu_transcendental
-  include: extensions/fpu_transcendental/instructions.yaml
+- name: fpu_transcendental_approx
+  root: extensions/fpu_transcendental_approx
+  include: extensions/fpu_transcendental_approx/instructions.yaml
 - name: virtualization_acceleration
   root: extensions/virtualization_acceleration
   include: extensions/virtualization_acceleration/instructions.yaml
@@ -40,7 +40,7 @@ extension_grouping:
   - fpu_move_compare
   - fpu_arithmetic_ea_wide
   - fpu_arithmetic
-  - fpu_transcendental
+  - fpu_transcendental_approx
   - misc
   profile_order:
     integer_alu:

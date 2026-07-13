@@ -11,7 +11,9 @@ behavior:
   - regs
   output: none
   operation:
-  - arch_fpushm(regs_v);
+  - local selected_count_v = population_count(regs_v & 0xffff);
+  - validate the complete writable stack range SS:(SP - 8 * selected_count_v) through SS:(SP - 1);
+  - for reg_v = 0 to 15 with bit reg_v set in regs_v, decrement SP by 8 and then store F[reg_v] to *:8 SP;
   operation_text: 'For each set bit in the bitmap, FPUSHM pushes the corresponding 64-bit F register value
     onto the stack. F registers are processed in increasing order from F0 through F15. Each selected register
     decrements SP by 8 before storing the register value at the new SP.

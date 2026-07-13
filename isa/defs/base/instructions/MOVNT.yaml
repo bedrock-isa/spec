@@ -13,7 +13,10 @@ behavior:
   - src
   output: dst
   operation:
-  - arch_nontemporal_store(dst_ref, src_v);
+  - compute the destination effective address and validate a writable current-domain access of size_v bytes;
+  - store the low size_v bytes of src_v to dst_ref as one ordinary architectural store;
+  - mark the store non-temporal so the implementation may minimize cache allocation or retention;
+  - the non-temporal hint adds no ordering beyond an ordinary store and is not a fence;
 attributes:
   privilege: unprivileged
   repeatable:

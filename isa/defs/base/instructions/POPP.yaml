@@ -15,7 +15,14 @@ behavior:
   - pair_index
   output: none
   operation:
-  - arch_popp(pair_index_v);
+  - local first_reg_v = 14 - 2 * (pair_index_v & 7);
+  - local second_reg_v = first_reg_v + 1;
+  - validate readable 8-byte stack slots at SS:SP and SS:(SP + 8);
+  - local second_value_v = *:8 SP;
+  - local first_value_v = *:8 (SP + 8);
+  - R[second_reg_v] = second_value_v;
+  - R[first_reg_v] = first_value_v;
+  - SP = SP + 16;
   operation_text: >
     POPP selects one canonical pair using the unsigned 3-bit pair index and processes
     that pair's registers in reverse listed order. Each register pop loads the 64-bit

@@ -10,7 +10,11 @@ behavior:
   group: system_registers
   input_output: reg
   operation:
-  - reg_v = arch_cpuid(reg_v);
+  - local query_class_v = (reg_v >> 32) & 0xffffffff;
+  - local query_leaf_v = (reg_v >> 16) & 0xffff;
+  - local query_index_v = reg_v & 0xffff;
+  - if the CPUID discovery table defines (query_class_v, query_leaf_v, query_index_v), reg_v = the corresponding 64-bit result with every reserved result bit zero;
+  - if the tuple is not defined, reg_v = 0;
 attributes:
   privilege: user allowed
   flags: unchanged

@@ -18,7 +18,15 @@ behavior:
   - dst
   output: none
   operation:
-  - R0 = arch_emit_instruction(dst_v, R0, R1, R2, R3);
+  - local form_selector_v = (R0 >> 32) & 0xffffffff;
+  - local control_word_v = R0 & 0xffffffff;
+  - decode form_selector_v, control_word_v, and operand descriptors R1-R3 into one semantic instruction descriptor;
+  - validate the mnemonic, extension availability, size, condition, operand count, operand types, operand values, payload widths, aliases, and effective-address choices;
+  - if descriptor validation fails, set R0 to the defined negative encode-status value and leave destination memory unchanged;
+  - select the shortest canonical encoding permitted for the validated descriptor and construct its complete instruction byte sequence;
+  - validate the complete destination store range before writing any byte;
+  - store the byte sequence consecutively at dst_v as one fault-atomic architectural update;
+  - set R0 to the number of instruction bytes written;
   canonicalization: ENCINST accepts semantic instruction descriptors rather than raw opcode bits. It emits
     only the canonical encoding selected by the ISA specification after mnemonic, size, condition, operand
     type, operand value, alias, and effective-address choices are resolved.

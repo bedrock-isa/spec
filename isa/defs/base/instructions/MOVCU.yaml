@@ -14,7 +14,10 @@ behavior:
   - src
   output: dst
   operation:
-  - arch_user_store(dst_ref, src_v);
+  - read src_v through its ordinary current-domain addressing mode;
+  - compute dst_ref and validate a writable user-domain access of size_v bytes;
+  - store the low size_v bytes of src_v to user-domain memory at dst_ref;
+  - if source evaluation or the user-domain access faults, do not modify destination memory or commit auto-update state;
 attributes:
   privilege: supervisor
   repeatable:

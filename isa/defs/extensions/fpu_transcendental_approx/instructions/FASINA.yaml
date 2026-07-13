@@ -1,0 +1,60 @@
+mnemonic: FASINA
+doc:
+  title: Approximate Floating-Point Arc Sine
+  summary: Performs the bounded approximate floating-point arc sine operation.
+  instruction_family: fpu_transcendental_approx
+  instruction_class: fpu
+behavior:
+  group: fpu_transcendental_approx
+  inputs:
+  - src
+  output: dst
+  operation:
+  - if CPUID FPTRANSA_ACCURACY contract 0x0010 is not PRESENT, raise ILLEGAL_INSTRUCTION before reading operands or floating-point state;
+  - local pending_exceptions_v = {};
+  - apply FSTATUS.DAZ to a subnormal src_v, preserving its sign;
+  - if src_v is a signaling NaN, add NV to pending_exceptions_v;
+  - if src_v is NaN, set result_v to its quiet NaN result and goto <fasina_finalize>;
+  - if abs(src_v) > 1, add NV to pending_exceptions_v, set result_v to the architectural default quiet NaN, and goto <fasina_finalize>;
+  - if src_v is zero, set result_v = src_v;
+  - if src_v is nonzero, set exact_v = arcsin(src_v) in radians as the exact real reference value;
+  - if src_v is nonzero, set result_v = fptransa_approximate(0x0010, exact_v, selected S or D format) and add OF or UF to pending_exceptions_v
+    as classified by the common FPTRANSA model;
+  - if FSTATUS.FTZ is set and result_v is subnormal, replace it with signed zero and add UF to pending_exceptions_v;
+  - <fasina_finalize>
+  - apply FSTATUS.DN to a NaN result and accrue pending_exceptions_v into FFLAGS without changing NX;
+  - if pending_exceptions_v intersects enabled FSTATUS traps, raise FLOATING_POINT_FAULT without writing dst_v; otherwise write result_v to dst_v;
+  approximation:
+    contract_id: '0x0010'
+    reference_function: asin(x) in radians
+    domain: finite x with abs(x) <= 1 after DAZ
+    max_ulp:
+      S: 4
+      D: 4
+    exact_anchors:
+    - asin(+0) = +0
+    - asin(-0) = -0
+    properties:
+    - odd
+    - monotonically increasing on [-1, 1]
+    - result is in [-pi/2, pi/2]
+attributes:
+  privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: false
+    repg: true
+  fp_flags:
+    update:
+    - NV
+    - UF
+forms:
+  operands:
+  - name: src
+    type: FREG
+  - name: dst
+    type: FREG
+  size: S_D
+  extension_family: fpu_transcendental_approx
+definition_status:
+  allocation: 'external: isa/alloc'

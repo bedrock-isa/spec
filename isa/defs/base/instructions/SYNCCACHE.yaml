@@ -10,7 +10,10 @@ behavior:
   - target
   output: none
   operation:
-  - arch_cache_synchronize(target_v);
+  - resolve target_v to the addressed byte range without reading the target bytes;
+  - write every dirty byte in intersecting data-cache lines to the point of instruction coherency;
+  - invalidate every intersecting instruction-cache line, decoded instruction, and prefetched instruction byte;
+  - retire only after later instruction fetches by this hardware thread are guaranteed to observe the synchronized bytes;
 attributes:
   privilege:
     default: supervisor

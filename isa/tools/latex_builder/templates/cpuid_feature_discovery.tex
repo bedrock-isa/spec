@@ -76,12 +76,71 @@ Software must treat an absent leaf as zero and must ignore reserved bits in a pr
 \texttt{0x00000000} & \texttt{0x0000} & \texttt{BASE\_IDENTITY} & \texttt{0..2} & profile, revision, vendor string, and maximum standard leaf\\
 \texttt{0x00000000} & \texttt{0x0001} & \texttt{BASE\_LIMITS} & \texttt{0} & word size, maximum instruction bytes, opcode classes, and Rn count\\
 \texttt{0x00000001} & \texttt{0x0000} & \texttt{EXTENSION\_DIRECTORY} & \texttt{0} & availability bits for optional architectural groups\\
+\texttt{0x00000001} & \texttt{0x0001} & \texttt{FPTRANSA\_ACCURACY} & contract ID & per-function presence and certified S/D ULP bounds\\
 \texttt{0x00000002} & \texttt{0x0000} & \texttt{EXECUTION\_PROPERTIES} & \texttt{0} & program-visible execution properties\\
 \texttt{0x00000002} & \texttt{0x0001} & \texttt{TOPOLOGY} & \texttt{indexed} & hardware-thread topology and current identity\\
 \texttt{0x00000002} & \texttt{0x0002} & \texttt{PERFORMANCE\_COUNTERS} & \texttt{0..65535} & presence of the selected RDPMC counter ID\\
 \texttt{0x00000002} & \texttt{0x0004} & \texttt{SAVE\_AREA\_LAYOUT} & \texttt{0..n} & SAVE/RESTORE sizes, bitmap, and component descriptors\\
 \bottomrule
 \end{manuallongtable}
+
+\subsection{Optional-Extension Directory}
+Class \texttt{0x00000001}, leaf \texttt{0x0000}, index zero reports optional architectural groups. The result uses
+bit 0 for \texttt{FP}, bit 1 for \texttt{FPTRANSA}, and bit 2 for \texttt{VIRTACCEL}; bits 63 through 3 are
+reserved and read as zero. \texttt{FPTRANSA} requires \texttt{FP} and is set when at least one approximate
+transcendental contract is present. It does not imply that every contract is present.
+
+\subsection{FPTRANSA Accuracy Discovery}
+Class \texttt{0x00000001}, leaf \texttt{0x0001} uses the query index as a stable 16-bit accuracy-contract ID.
+A contract ID identifies the reference function, input domain, special-value behavior, error metric, exact anchors,
+and mathematical properties; it is independent of instruction encoding placement. An incompatible change receives a
+new ID, and a retired ID is not reused. Revision 1 is the contract revision defined by this specification. Weakening
+a guarantee, changing the domain, or changing the error metric requires a new ID rather than a revision increment.
+An implementation that advertises a smaller certified ULP bound strengthens the existing contract and retains the
+same ID and revision.
+
+The sparse ID space reserves \texttt{0x0000..0x000F} for reduced-domain circular trigonometric functions,
+\texttt{0x0010..0x001F} for inverse trigonometric functions, \texttt{0x0020..0x002F} for hyperbolic and inverse
+hyperbolic functions, \texttt{0x0030..0x003F} for exponential functions, and
+\texttt{0x0040..0x004F} for logarithmic functions. Unassigned values in these ranges are reserved.
+
+\manualtablecaption{FPTRANSA Accuracy Result}
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.78in}>{\raggedright\arraybackslash}p{1.20in}>{\raggedright\arraybackslash}p{3.55in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Bits} & \textbf{Field} & \textbf{Meaning}\\
+\midrule
+\texttt{0..15} & \texttt{S\_MAX\_ULP\_Q8\_8} & certified worst-case S-format ULP bound, rounded upward to unsigned Q8.8\\
+\texttt{16..31} & \texttt{D\_MAX\_ULP\_Q8\_8} & certified worst-case D-format ULP bound, rounded upward to unsigned Q8.8\\
+\texttt{32..39} & \texttt{CONTRACT\_REVISION} & revision 1 for the contracts defined here\\
+\texttt{40..62} & reserved & zero\\
+\texttt{63} & \texttt{PRESENT} & the instruction and both S and D forms are available\\
+\bottomrule
+\end{manualtabular}
+
+For a certified bound $K$, the field value is $\lceil 256K\rceil$ and the advertised bound is the field divided by
+256. Thus 0.5, 1, 1.5, 2, and 4 ULP encode as \texttt{0x0080}, \texttt{0x0100}, \texttt{0x0180},
+\texttt{0x0200}, and \texttt{0x0400}. A present contract has both fields in \texttt{0x0001..0x0400}; an absent or
+unknown contract returns zero. Software that does not recognize the returned revision uses its fallback path.
+
+Software first checks \texttt{FP} and \texttt{FPTRANSA} in \texttt{EXTENSION\_DIRECTORY}, then queries the intended
+contract ID in \texttt{FPTRANSA\_ACCURACY}. It uses the instruction only when \texttt{PRESENT} is set, revision 1 is
+recognized, and the S or D bound required by the call site is no larger than its quality threshold; otherwise it
+uses a software fallback. For example, a D-format \texttt{FLOG2A} path requiring at most 2 ULP accepts selector
+\texttt{0x0000000100010042} only when the returned D field is at most \texttt{0x0200}.
+
+The selector is $(\texttt{0x00000001} \ll 32) \mathbin{|} (\texttt{0x0001} \ll 16) \mathbin{|}
+\textit{contract-id}$. For example, \texttt{FSINA} uses selector \texttt{0x0000000100010000}, and
+\texttt{FLOG2A} uses \texttt{0x0000000100010042}. An implementation that certifies \texttt{FSINA} at 1.5 ULP for
+S and 2 ULP for D returns \texttt{0x8000000102000180}.
+
+\texttt{PRESENT} is an architectural usability guarantee, not a statement that a dedicated hardware unit exists;
+an internal assist is permitted. The returned bounds cover every input in the contract domain and are not average or
+sampled errors. On heterogeneous or virtualized systems they are the worst bounds over the current scheduling or
+vCPU-migration domain. If a contract is absent, executing its instruction raises \texttt{ILLEGAL\_INSTRUCTION}
+before operand or floating-point-state access.
+
+@FPTRANSA_CONTRACT_TABLE@
 
 \subsection{Performance-Counter Discovery}
 Class \texttt{0x00000002}, leaf \texttt{0x0002} uses the query index as an RDPMC counter ID. Result bit 0 is
@@ -96,7 +155,7 @@ result bits are ignored by software.
 A set feature bit only permits software to use the corresponding architectural behavior; the instruction's normal
 privilege, operand, and compatibility checks still apply.
 
-The FP, FPTRANS, and VIRTACCEL predicates report the base floating-point, transcendental floating-point, and
-virtualization-acceleration groups. Numeric fields use names that describe their unit: SAVE\_AREA\_SIZE reports the
-maximum save-area size in bytes, and COMPONENT\_OFFSET gives the 64-byte-aligned offset of an extension-state
-component.
+The FP, FPTRANSA, and VIRTACCEL predicates report the base floating-point, approximate transcendental
+floating-point, and virtualization-acceleration groups. Numeric fields use names that describe their unit:
+SAVE\_AREA\_SIZE reports the maximum save-area size in bytes, and COMPONENT\_OFFSET gives the 64-byte-aligned
+offset of an extension-state component.

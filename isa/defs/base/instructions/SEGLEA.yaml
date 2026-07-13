@@ -18,10 +18,18 @@ behavior:
   - src
   output: dst
   operation:
-  - ea_v = EA_address(src);
-  - segment_result_v, in_bounds_v = arch_segment_translate_point(segment_of(src), ea_v);
+  - local ea_v = effective address of src without reading memory;
+  - local segment_v = the segment image selected by src;
+  - local base_v = segment_v[63:12] << 12;
+  - local exponent_v = segment_v[11:7];
+  - local mantissa_v = segment_v[6:1];
+  - local bounds_only_v = segment_v[0];
+  - local span_v = (mantissa_v << exponent_v) << 12;
+  - if mantissa_v == 0, set segment_result_v = ea_v and in_bounds_v = true;
+  - if mantissa_v != 0 and bounds_only_v == 0, set in_bounds_v = (ea_v < span_v) and segment_result_v = base_v + ea_v;
+  - if mantissa_v != 0 and bounds_only_v != 0, set in_bounds_v = (base_v <= ea_v and ea_v < base_v + span_v) and segment_result_v = ea_v;
   - VF = !in_bounds_v;
-  - if (in_bounds_v), dst_v = segment_result_v;
+  - if in_bounds_v, dst_v = segment_result_v & 0xffffffffffffffff;
 attributes:
   privilege: unprivileged
   repeatable:

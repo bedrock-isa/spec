@@ -10,7 +10,19 @@ behavior:
   group: core_control
   output: none
   operation:
-  - arch_eret();
+  - if STATUS.PM == 0 or STATUS.EA == 0, raise INVALID_CONTROL_STATE;
+  - read FRAME_CONTROL from the 8-byte slot at SS:SP without changing SP;
+  - decode frame_size_v, frame_type_v, saved_edepth_v, saved_esl_v, repeat_saved_v, saved_flags_v, and saved_status_v;
+  - require BASIC size 8, ERROR size 10, PAGE_FAULT size 12, or AUXILIARY size 12 and require every reserved FRAME_CONTROL bit zero;
+  - require saved_edepth_v + 1 == current_event_depth and saved_esl_v <= current_event_stack_level;
+  - if saved_status_v.EA == 0, require saved_edepth_v == 0 and saved_esl_v == 0;
+  - read the complete frame selected by frame_size_v and load saved PC, SP, CS, DS, and SS from offsets 0x18 through 0x38 without changing architectural state;
+  - validate saved_flags_v, saved_status_v, the three saved segment images, saved SP, and a canonical executable saved PC under the saved CS;
+  - if repeat_saved_v != 0, require frame_type_v == AUXILIARY and validate the repeat continuation encoded in EVENT_AUX at offset 0x58;
+  - if repeat_saved_v == 0, prepare cleared architectural repeat state;
+  - atomically restore FLAGS, STATUS, CS, DS, SS, SP, PC, current_event_depth, current_event_stack_level, and the validated repeat state;
+  - do not modify the SYSCALL user-return bank and do not perform an implicit interrupt-controller acknowledgement;
+  - if the restored STATUS.NI is zero and ECR.NMI_P is set, admit the pending NMI before the next instruction boundary;
 attributes:
   privilege: supervisor
   serializing: true

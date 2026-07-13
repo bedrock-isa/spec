@@ -13,7 +13,11 @@ behavior:
   - src
   output: dst
   operation:
-  - dst_v = arch_sign_extend(src_v, size_v, 8);
+  - local source_width_v = size_v * 8;
+  - local source_mask_v = (1 << source_width_v) - 1;
+  - local result_v = src_v & source_mask_v;
+  - if (result_v & (1 << (source_width_v - 1))) != 0, result_v = result_v | (0xffffffffffffffff & ~source_mask_v);
+  - dst_v = result_v & 0xffffffffffffffff;
   destination_size: Q
   repeat_observed_value: result_value
   repeat_flags: flags_logic_observed_value

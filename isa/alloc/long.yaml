@@ -1103,10 +1103,11 @@ entries:
     fields:
       z: {kind: size, width: 1}
       s: {kind: freg, width: 4}
-  - id: long.fmovcr_imm16_fn_d
-    bits: "1111010110001100010000dddd"
-    text: "FMOVCR <imm16>, Fn(d)"
+  - id: long.fmovcr_x_imm16_fn_d
+    bits: "1111010110z01100010000dddd"
+    text: "FMOVCR.X(z:S/D) <imm16>, Fn(d)"
     fields:
+      z: {kind: size, width: 1}
       d: {kind: freg, width: 4}
   - id: long.fpushm_imm16_bitmap
     bits: "11110101100011000110000000"
@@ -1305,135 +1306,128 @@ entries:
       i: {kind: immediate, width: 7}
       h: {kind: rn, width: 4}
       l: {kind: rn, width: 4}
-  - id: long.facos_x_fn_s_fn_d
+  - id: long.facosa_x_fn_s_fn_d
     bits: "1111011100z0000dddd000ssss"
-    text: "FACOS.X(z:S/D) Fn(s), Fn(d)"
+    text: "FACOSA.X(z:S/D) Fn(s), Fn(d)"
     fields:
       z: {kind: size, width: 1}
       s: {kind: freg, width: 4}
       d: {kind: freg, width: 4}
-  - id: long.fasin_x_fn_s_fn_d
+  - id: long.fasina_x_fn_s_fn_d
     bits: "1111011100z0000dddd001ssss"
-    text: "FASIN.X(z:S/D) Fn(s), Fn(d)"
+    text: "FASINA.X(z:S/D) Fn(s), Fn(d)"
     fields:
       z: {kind: size, width: 1}
       s: {kind: freg, width: 4}
       d: {kind: freg, width: 4}
-  - id: long.fatan_x_fn_s_fn_d
+  - id: long.fatana_x_fn_s_fn_d
     bits: "1111011100z0000dddd010ssss"
-    text: "FATAN.X(z:S/D) Fn(s), Fn(d)"
+    text: "FATANA.X(z:S/D) Fn(s), Fn(d)"
     fields:
       z: {kind: size, width: 1}
       s: {kind: freg, width: 4}
       d: {kind: freg, width: 4}
-  - id: long.fatanh_x_fn_s_fn_d
+  - id: long.fatanha_x_fn_s_fn_d
     bits: "1111011100z0000dddd011ssss"
-    text: "FATANH.X(z:S/D) Fn(s), Fn(d)"
+    text: "FATANHA.X(z:S/D) Fn(s), Fn(d)"
     fields:
       z: {kind: size, width: 1}
       s: {kind: freg, width: 4}
       d: {kind: freg, width: 4}
-  - id: long.fcos_x_fn_s_fn_d
+  - id: long.fcosa_x_fn_s_fn_d
     bits: "1111011100z0000dddd100ssss"
-    text: "FCOS.X(z:S/D) Fn(s), Fn(d)"
+    text: "FCOSA.X(z:S/D) Fn(s), Fn(d)"
     fields:
       z: {kind: size, width: 1}
       s: {kind: freg, width: 4}
       d: {kind: freg, width: 4}
-  - id: long.fcosh_x_fn_s_fn_d
+  - id: long.fcosha_x_fn_s_fn_d
     bits: "1111011100z0000dddd101ssss"
-    text: "FCOSH.X(z:S/D) Fn(s), Fn(d)"
+    text: "FCOSHA.X(z:S/D) Fn(s), Fn(d)"
     fields:
       z: {kind: size, width: 1}
       s: {kind: freg, width: 4}
       d: {kind: freg, width: 4}
-  - id: long.fetox_x_fn_s_fn_d
+  - id: long.fetoxa_x_fn_s_fn_d
     bits: "1111011100z0000dddd110ssss"
-    text: "FETOX.X(z:S/D) Fn(s), Fn(d)"
+    text: "FETOXA.X(z:S/D) Fn(s), Fn(d)"
     fields:
       z: {kind: size, width: 1}
       s: {kind: freg, width: 4}
       d: {kind: freg, width: 4}
-  - id: long.fetoxm1_x_fn_s_fn_d
+  - id: long.fetoxm1a_x_fn_s_fn_d
     bits: "1111011100z0000dddd111ssss"
-    text: "FETOXM1.X(z:S/D) Fn(s), Fn(d)"
+    text: "FETOXM1A.X(z:S/D) Fn(s), Fn(d)"
     fields:
       z: {kind: size, width: 1}
       s: {kind: freg, width: 4}
       d: {kind: freg, width: 4}
-  - id: long.flog10_x_fn_s_fn_d
+  - id: long.flog10a_x_fn_s_fn_d
     bits: "1111011100z0001dddd000ssss"
-    text: "FLOG10.X(z:S/D) Fn(s), Fn(d)"
+    text: "FLOG10A.X(z:S/D) Fn(s), Fn(d)"
     fields:
       z: {kind: size, width: 1}
       s: {kind: freg, width: 4}
       d: {kind: freg, width: 4}
-  - id: long.flog2_x_fn_s_fn_d
+  - id: long.flog2a_x_fn_s_fn_d
     bits: "1111011100z0001dddd001ssss"
-    text: "FLOG2.X(z:S/D) Fn(s), Fn(d)"
+    text: "FLOG2A.X(z:S/D) Fn(s), Fn(d)"
     fields:
       z: {kind: size, width: 1}
       s: {kind: freg, width: 4}
       d: {kind: freg, width: 4}
-  - id: long.flogn_x_fn_s_fn_d
+  - id: long.flogna_x_fn_s_fn_d
     bits: "1111011100z0001dddd010ssss"
-    text: "FLOGN.X(z:S/D) Fn(s), Fn(d)"
+    text: "FLOGNA.X(z:S/D) Fn(s), Fn(d)"
     fields:
       z: {kind: size, width: 1}
       s: {kind: freg, width: 4}
       d: {kind: freg, width: 4}
-  - id: long.flognp1_x_fn_s_fn_d
+  - id: long.flognp1a_x_fn_s_fn_d
     bits: "1111011100z0001dddd011ssss"
-    text: "FLOGNP1.X(z:S/D) Fn(s), Fn(d)"
+    text: "FLOGNP1A.X(z:S/D) Fn(s), Fn(d)"
     fields:
       z: {kind: size, width: 1}
       s: {kind: freg, width: 4}
       d: {kind: freg, width: 4}
-  - id: long.fsin_x_fn_s_fn_d
+  - id: long.fsina_x_fn_s_fn_d
     bits: "1111011100z0001dddd100ssss"
-    text: "FSIN.X(z:S/D) Fn(s), Fn(d)"
+    text: "FSINA.X(z:S/D) Fn(s), Fn(d)"
     fields:
       z: {kind: size, width: 1}
       s: {kind: freg, width: 4}
       d: {kind: freg, width: 4}
-  - id: long.fsincos_x_fn_s_fn_d
-    bits: "1111011100z0001dddd101ssss"
-    text: "FSINCOS.X(z:S/D) Fn(s), Fn(d)"
-    fields:
-      z: {kind: size, width: 1}
-      s: {kind: freg, width: 4}
-      d: {kind: freg, width: 4}
-  - id: long.fsinh_x_fn_s_fn_d
+  - id: long.fsinha_x_fn_s_fn_d
     bits: "1111011100z0001dddd110ssss"
-    text: "FSINH.X(z:S/D) Fn(s), Fn(d)"
+    text: "FSINHA.X(z:S/D) Fn(s), Fn(d)"
     fields:
       z: {kind: size, width: 1}
       s: {kind: freg, width: 4}
       d: {kind: freg, width: 4}
-  - id: long.ftan_x_fn_s_fn_d
+  - id: long.ftana_x_fn_s_fn_d
     bits: "1111011100z0001dddd111ssss"
-    text: "FTAN.X(z:S/D) Fn(s), Fn(d)"
+    text: "FTANA.X(z:S/D) Fn(s), Fn(d)"
     fields:
       z: {kind: size, width: 1}
       s: {kind: freg, width: 4}
       d: {kind: freg, width: 4}
-  - id: long.ftanh_x_fn_s_fn_d
+  - id: long.ftanha_x_fn_s_fn_d
     bits: "1111011100z0010dddd000ssss"
-    text: "FTANH.X(z:S/D) Fn(s), Fn(d)"
+    text: "FTANHA.X(z:S/D) Fn(s), Fn(d)"
     fields:
       z: {kind: size, width: 1}
       s: {kind: freg, width: 4}
       d: {kind: freg, width: 4}
-  - id: long.ftentox_x_fn_s_fn_d
+  - id: long.ftentoxa_x_fn_s_fn_d
     bits: "1111011100z0010dddd001ssss"
-    text: "FTENTOX.X(z:S/D) Fn(s), Fn(d)"
+    text: "FTENTOXA.X(z:S/D) Fn(s), Fn(d)"
     fields:
       z: {kind: size, width: 1}
       s: {kind: freg, width: 4}
       d: {kind: freg, width: 4}
-  - id: long.ftwotox_x_fn_s_fn_d
+  - id: long.ftwotoxa_x_fn_s_fn_d
     bits: "1111011100z0010dddd010ssss"
-    text: "FTWOTOX.X(z:S/D) Fn(s), Fn(d)"
+    text: "FTWOTOXA.X(z:S/D) Fn(s), Fn(d)"
     fields:
       z: {kind: size, width: 1}
       s: {kind: freg, width: 4}

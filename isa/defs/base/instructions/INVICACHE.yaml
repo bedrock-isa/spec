@@ -10,7 +10,10 @@ behavior:
   - target
   output: none
   operation:
-  - arch_cache_invalidate_instruction(target_v);
+  - resolve target_v to the addressed byte range without fetching instructions from the range;
+  - for each instruction-cache line intersecting the range, invalidate the line and any decoded instruction derived from it;
+  - discard prefetched instruction bytes from the range and refetch a later execution from coherent memory;
+  - retire only after the selected instruction-stream invalidations are complete;
 attributes:
   privilege:
     default: supervisor
