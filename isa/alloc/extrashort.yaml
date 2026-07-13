@@ -42,6 +42,9 @@ entries:
   - id: extrashort.afence
     bits: "0001100"
     text: "AFENCE"
+  - id: extrashort.push_cs
+    bits: "0001101"
+    text: "PUSH CS"
   - id: extrashort.add_q_8_sp
     bits: "0001110"
     text: "ADD.Q 8, SP"
@@ -83,3 +86,13 @@ entries:
     text: "CLR.Q Rn(r)"
     fields:
       r: {kind: rn, width: 4}
+  - id: extrashort.fpushp_imm3_i
+    bits: "1110iii"
+    text: "FPUSHP imm3(i)"
+    fields:
+      i: {kind: immediate, width: 3}
+  - id: extrashort.fpopp_imm3_i
+    bits: "1111iii"
+    text: "FPOPP imm3(i)"
+    fields:
+      i: {kind: immediate, width: 3}

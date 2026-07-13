@@ -175,6 +175,7 @@ compact_ea:
 
 ext0:
   descriptor_segment_default: none
+  explicit_segment_selector: SREG
   forms:
   - bits: 0sssbbbb
     syntax: "[SEG(s):Rn(b) + displacement]"

@@ -26,8 +26,8 @@ include:
 - instructions/FMOV.yaml
 - instructions/FMOVCR.yaml
 - instructions/FMOVcc.yaml
-- instructions/FPOPM.yaml
-- instructions/FPUSHM.yaml
+- instructions/FPOPP.yaml
+- instructions/FPUSHP.yaml
 - instructions/FMSUB.yaml
 - instructions/FMUL.yaml
 - instructions/FNEG.yaml

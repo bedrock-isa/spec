@@ -17,6 +17,8 @@ from typing import Any
 
 GENERAL_REGISTERS = tuple(f"R{index}" for index in range(8))
 FLOAT_REGISTERS = tuple(f"F{index}" for index in range(8))
+FAR_SEGMENT_REGISTERS = tuple(f"GS{index}" for index in range(2, 6))
+FAR_RETURN_SEGMENT_REGISTER = "GS1"
 FIRST_STACK_ARGUMENT_OFFSET = 16
 STACK_SLOT_SIZE = 16
 
@@ -24,9 +26,10 @@ GENERAL_SCALARS = {
     "bool", "i8", "u8", "i16", "u16", "i32", "u32", "i64", "u64",
     "pointer", "function_pointer",
 }
-GENERAL_PAIRS = {"i128", "u128", "far_data_pointer", "far_function_pointer"}
+GENERAL_PAIRS = {"i128", "u128"}
+FAR_POINTERS = {"far_data_pointer", "far_function_pointer"}
 FLOAT_SCALARS = {"f32", "f64", "long_double"}
-SCALAR_KINDS = GENERAL_SCALARS | GENERAL_PAIRS | FLOAT_SCALARS
+SCALAR_KINDS = GENERAL_SCALARS | GENERAL_PAIRS | FAR_POINTERS | FLOAT_SCALARS
 DEFAULT_PROMOTIONS = {
     "bool": "i32",
     "i8": "i32",
@@ -131,14 +134,34 @@ def _effective_kind(argument: Argument, force_stack: bool) -> str:
     return argument.kind
 
 
+def return_location(value: ReturnValue) -> str | None:
+    """Return the canonical register location for a result value."""
+
+    if value.kind == "void":
+        return None
+    if value.kind in GENERAL_SCALARS:
+        return "R0"
+    if value.kind in GENERAL_PAIRS:
+        return "R1:R0"
+    if value.kind in FAR_POINTERS:
+        return f"{FAR_RETURN_SEGMENT_REGISTER}:R0"
+    if value.kind in FLOAT_SCALARS:
+        return "F0"
+    if value.kind == "aggregate":
+        return "R1:R0" if value.size is not None and value.size <= 16 else "R0"
+    raise AssertionError(f"unhandled return kind: {value.kind}")
+
+
 def layout_call(call: Call) -> dict[str, Any]:
     """Return the canonical location assignment for one call signature."""
 
     uses_sret = _uses_sret(call.return_value)
     general_cursor = 1 if uses_sret else 0
     float_cursor = 0
+    far_segment_cursor = 0
     general_exhausted = False
     float_exhausted = False
+    far_segment_exhausted = False
     next_stack_offset = FIRST_STACK_ARGUMENT_OFFSET
     assignments: list[dict[str, Any]] = []
 
@@ -172,6 +195,23 @@ def layout_call(call: Call) -> dict[str, Any]:
                 general_exhausted = True
                 general_cursor = len(GENERAL_REGISTERS)
                 location = stack_location()
+        elif effective_kind in FAR_POINTERS:
+            has_general = not general_exhausted and general_cursor < len(GENERAL_REGISTERS)
+            has_far_segment = (
+                not far_segment_exhausted and far_segment_cursor < len(FAR_SEGMENT_REGISTERS)
+            )
+            if has_general and has_far_segment:
+                location = f"{FAR_SEGMENT_REGISTERS[far_segment_cursor]}:R{general_cursor}"
+                general_cursor += 1
+                far_segment_cursor += 1
+            else:
+                if not has_general:
+                    general_exhausted = True
+                    general_cursor = len(GENERAL_REGISTERS)
+                if not has_far_segment:
+                    far_segment_exhausted = True
+                    far_segment_cursor = len(FAR_SEGMENT_REGISTERS)
+                location = stack_location()
         elif effective_kind in FLOAT_SCALARS:
             if not float_exhausted and float_cursor < len(FLOAT_REGISTERS):
                 location = FLOAT_REGISTERS[float_cursor]
@@ -196,6 +236,7 @@ def layout_call(call: Call) -> dict[str, Any]:
     stack_size = next_stack_offset - FIRST_STACK_ARGUMENT_OFFSET
     return {
         "sret": "R0" if uses_sret else None,
+        "return_location": return_location(call.return_value),
         "arguments": assignments,
         "stack_size": stack_size,
     }

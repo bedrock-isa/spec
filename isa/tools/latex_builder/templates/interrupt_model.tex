@@ -52,7 +52,7 @@ frame to manufacture an impossible nesting transition.
 \subsection{Event Entry State}
 Before making an event visible, hardware validates EPC, ECS, EDS, the selected stack state, and the complete frame
 storage range. It then stores the frame, loads the entry segments and PC, sets STATUS.PM and STATUS.EA, and clears
-STATUS.IE, STATUS.TF, and STATUS.RF as one architectural commit. R0 through R15 and GS0 through GS4 are unchanged;
+STATUS.IE, STATUS.TF, and STATUS.RF as one architectural commit. R0 through R15 and GS0 through GS5 are unchanged;
 the common entry code preserves whatever its software ABI requires.
 
 NMI entry additionally sets STATUS.NI. Other event classes preserve NI. A further NMI observed while NI is set is

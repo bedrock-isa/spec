@@ -5,6 +5,7 @@ operand_schema:
   types:
   - Rn
   - SP
+  - CS
   - EA
   - EA_or_range
   - FREG

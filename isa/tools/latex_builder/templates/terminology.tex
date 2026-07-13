@@ -65,8 +65,9 @@ canonical disabled or bounds-only segment image. The optional C far-data profile
 ABI representation; the base ISA still permits translated segments internally and does not make the pair an
 unforgeable capability.
 
-A \emph{far-data window} is an architectural segment register temporarily loaded from a far data address so an
-explicit-segment memory operation can perform the access. The optional C far-data profile assigns this role to GS4.
+A \emph{far-segment channel} is an architectural segment register loaded from a far data address so an
+explicit-segment memory operation can perform the access. The optional C far-data profile uses GS2 through GS5 for
+incoming argument channels and GS1 as the scratch and return channel.
 
 \subsection{Architectural State}
 
@@ -80,7 +81,9 @@ The \emph{stack pointer register} is SP. It lies outside the four-bit Rn namespa
 for SP-relative addressing.
 
 A \emph{segment register operand} is a 64-bit segment register exposed through the S operand class. That class names
-the segment registers in the SREG selector table, not FLAGS, STATUS, PC, or SP.
+DS, SS, and GS0 through GS5 from the SREG selector table, not CS, FLAGS, STATUS, PC, or SP.
+CS may appear as the fixed source operand of \texttt{RDSEG CS} and \texttt{PUSH CS}; those forms do not add CS to
+the SREG selector namespace and provide no corresponding write or pop form.
 
 A \emph{state register} is named architectural state such as FLAGS or STATUS. Dedicated read and write instructions
 access these registers instead of the S operand class.

@@ -1,10 +1,10 @@
 mnemonic: WRSEG
 doc:
   title: Write Segment Register
-  summary: Write a segment register image from an Rn register.
-  description: WRSEG writes a 64-bit segment register image from the source Rn register to an S-class segment
-    register. The S operand selector encoding is defined by the SREG selector table. General writes to
-    CS are illegal; use LJMP, LCALL, LRET, SYSRET, or ERET for CS-changing control transfer.
+  summary: Write an SREG segment image from an Rn register.
+  description: WRSEG validates a 64-bit segment register image from the source Rn register and writes it to
+    an SREG-class data, stack, TLS, or general segment register. CS is not an SREG operand and changes only
+    through architectural control-transfer paths that update CS and PC together.
   instruction_family: system_registers
   instruction_class: system
 behavior:
@@ -19,7 +19,7 @@ attributes:
   flags: unchanged
   profile_access:
     bedrock_c_far:
-      user_writable: [GS4]
+      user_writable: [GS1, GS2, GS3, GS4, GS5]
       other_segment_writes: policy_controlled
 forms:
   operands:
@@ -28,7 +28,6 @@ forms:
   - name: seg
     type: SREG
   size: Q
-  note: general writes to CS are illegal; use CS-changing control transfer instructions
   segment_image_validation:
     before_commit: true
     invalid_image_exception: INVALID_CONTROL_STATE

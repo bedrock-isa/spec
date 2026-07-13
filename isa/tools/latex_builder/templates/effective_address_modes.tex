@@ -34,8 +34,8 @@ SS, and PC memory forms are fixed to CS.
 A compact EXT0 EA value selects an extended descriptor and the displacement width. The descriptor bytes then select
 segment, base, index, zero-base, SP/PC indexed, and auto-update behavior.
 
-EXT0 has no default segment as a descriptor class. A concrete descriptor either encodes SEG(s), selects fixed SS/CS
-through SP or PC, or explicitly uses the operation default data segment.
+EXT0 has no default segment as a descriptor class. A concrete descriptor either encodes an SREG SEG(s), selects
+fixed SS/CS through SP or PC, or explicitly uses the operation default data segment.
 
 \input{isa/tools/latex_builder/templates/fragments/ea_field_diagrams.tex}
 

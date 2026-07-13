@@ -1,0 +1,56 @@
+mnemonic: FPUSHP
+doc:
+  title: Floating-Point Push Register Pair
+  summary: Pushes one canonical floating-point register pair selected by an inline pair index.
+  description: >
+    Pushes the canonical floating-point register pair selected by `imm3`. The canonical pair sequence is
+    pair 0 `(F14, F15)`, pair 1 `(F12, F13)`, pair 2 `(F10, F11)`, pair 3 `(F8, F9)`,
+    pair 4 `(F6, F7)`, pair 5 `(F4, F5)`, pair 6 `(F2, F3)`, and pair 7 `(F0, F1)`.
+    All eight immediate encodings are valid and each selects one pair.
+  instruction_family: fpu
+  instruction_class: fpu
+behavior:
+  group: fpu_stack
+  inputs:
+  - pair_index
+  output: none
+  operation:
+  - local first_reg_v = 14 - 2 * (pair_index_v & 7);
+  - local second_reg_v = first_reg_v + 1;
+  - local first_value_v = F[first_reg_v];
+  - local second_value_v = F[second_reg_v];
+  - validate writable 8-byte stack slots at SS:(SP - 8) and SS:(SP - 16);
+  - SP = SP - 8;
+  - '*:8 SP = first_value_v;'
+  - SP = SP - 8;
+  - '*:8 SP = second_value_v;'
+  operation_text: >
+    FPUSHP selects one canonical floating-point pair using the unsigned 3-bit pair index and processes
+    that pair's registers in the listed order. The complete two-slot stack range is validated before
+    either slot or SP is changed. Each register push decrements SP by 8 and then stores the 64-bit
+    floating-point register value at the new SP.
+attributes:
+  privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: true
+    repg: true
+  flags: unchanged
+  fp_flags: unchanged
+forms:
+  operands:
+  - name: pair_index
+    type: imm3
+  canonical_pairs:
+  - {index: 0, registers: [F14, F15]}
+  - {index: 1, registers: [F12, F13]}
+  - {index: 2, registers: [F10, F11]}
+  - {index: 3, registers: [F8, F9]}
+  - {index: 4, registers: [F6, F7]}
+  - {index: 5, registers: [F4, F5]}
+  - {index: 6, registers: [F2, F3]}
+  - {index: 7, registers: [F0, F1]}
+  size_per_register: Q
+  compact: required
+definition_status:
+  allocation: 'external: isa/alloc'

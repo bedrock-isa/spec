@@ -112,7 +112,9 @@ The builtin
 complete ABI representation when raw encoding identity is required.
 A non-null value with invalid or noncanonical metadata may be copied, compared,
 or converted to its matching raw carrier without faulting, but dereference or
-call is invalid. The C ABI defines the null and raw-carrier representations.
+call is invalid. Such a value cannot cross a C ABI argument or return boundary,
+which validates far-pointer images before control transfer. The C ABI defines
+the null and raw-carrier representations.
 
 \subsection{Pointer and Integer Conversion}
 Ordinary \texttt{uintptr\_t} and \texttt{intptr\_t} remain near-pointer
@@ -177,8 +179,9 @@ Construction writes no segment register, probes no bounds, walks no page
 table, and performs no memory access. Address zero canonicalizes to null. An
 invalid image or base-plus-offset overflow produces an invalid far value
 without raising an exception. A one-past address may therefore be constructed
-without access. Validation and bounds checking occur only at dereference or
-call.
+without access. Validation occurs when a value crosses a C ABI argument or
+return boundary and before dereference or call; bounds checking occurs at the
+dependent access or control transfer.
 
 When every value operand is an integer constant expression and the pointer
 type is complete enough for its cast, the macro is an integer
@@ -188,11 +191,13 @@ constant-expression initializer.
 
 \subsection{Access Semantics}
 Dereference uses the address and segment metadata carried by the far pointer.
-The implementation must re-establish the C ABI's far-data window after any
-operation that may clobber it and before a dependent access. Invalid metadata
-raises \texttt{INVALID\_CONTROL\_STATE}; a failed bound raises
-\texttt{PAGE\_FAULT}. Ordinary volatile access-count and ordering requirements
-remain in force.
+An incoming register argument uses its assigned \texttt{GS2} through
+\texttt{GS5} segment channel. A memory, local, or stack value is established in
+scratch \texttt{GS1}. The implementation must re-establish the selected
+caller-saved GS image after any operation that may clobber it and before a
+dependent access. Invalid metadata raises
+\texttt{INVALID\_CONTROL\_STATE}; a failed bound raises \texttt{PAGE\_FAULT}.
+Ordinary volatile access-count and ordering requirements remain in force.
 
 \subsection{Alias Identity}
 Compiler regions with no cross-segment operation may partition near and
@@ -255,10 +260,11 @@ the lifetime of pointers to unloaded data and function entries.
 uint64\_t load\_far\_u64(const uint64\_t * \_\_far p) \{ return *p; \}\tabularnewline
 \end{tabularx}
 \endgroup
-The C ABI assigns the pointer words to the incoming far-pointer locations. The
-compiler establishes the ABI far-data window and emits one dependent load.
-The exact instruction sequence is an implementation choice as long as those
-observable rules hold.
+The C ABI assigns the address to an incoming Rn location and the validated
+segment image to the matching \texttt{GS2} through \texttt{GS5} location. The
+compiler emits one dependent load through that segment register. The exact
+instruction sequence is an implementation choice as long as those observable
+rules hold.
 
 \section{Far Function Language Semantics}
 A far function pointer declaration such as
@@ -279,8 +285,9 @@ must provide an explicitly typed wrapper.
 int invoke(int (* \_\_far fn)(int), int value) \{ return fn(value); \}\tabularnewline
 \end{tabularx}
 \endgroup
-The compiler preserves both words of \texttt{fn} while assigning
-\texttt{value} by the ordinary integer argument rules, emits the C ABI far
-call, and expects the target to use the corresponding far return.
+The compiler preserves the address and segment image of \texttt{fn} while
+assigning \texttt{value} by the ordinary integer argument rules, copies the
+image from its GS channel to the Rn operand required by \texttt{LCALL}, emits
+the C ABI far call, and expects the target to use the corresponding far return.
 
 \end{document}

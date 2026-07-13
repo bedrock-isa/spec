@@ -258,7 +258,8 @@ remain active.
 \compilerbuiltin{read_control_register} & \compilerctype{uint64_t(selector)} & \texttt{RDCR} & Supervisor; selector is a constant in 0 through 65535 naming a defined register.\\
 \compilerbuiltin{write_control_register} & \compilerctype{void(selector,u64)} & \texttt{WRCR} & Supervisor; defined constant selector required; writes the register and clobbers memory.\\
 \compilerbuiltin{read_segment_register} & \compilerctype{uint64_t(selector)} & \texttt{RDSEG} & Policy controlled; selector is a compile-time \texttt{\_\_bedrock\_segment\_register\_t}.\\
-\compilerbuiltin{write_segment_register} & \compilerctype{void(selector,image)} & \texttt{WRSEG} & Policy controlled; general \texttt{CS} writes forbidden; validates the image, changes address interpretation, and fully clobbers memory.\\
+\compilerbuiltin{read_code_segment} & \compilerctype{uint64_t(void)} & \texttt{RDSEG CS} & Unprivileged; reads the current CS image through the dedicated source-only form.\\
+\compilerbuiltin{write_segment_register} & \compilerctype{void(selector,image)} & \texttt{WRSEG} & Policy controlled; validates the SREG image, changes address interpretation, and fully clobbers memory.\\
 \bottomrule
 \end{longtable}
 \endgroup
@@ -362,7 +363,7 @@ an explicit \texttt{SYNCCACHE}.
 \textbf{Type} & \textbf{ABI contract}\\
 \midrule
 \endhead
-\texttt{\_\_bedrock\_segment\_register\_t} & selectors for \texttt{CS}, \texttt{DS}, \texttt{SS}, and \texttt{GS0} through \texttt{GS4}\\
+\texttt{\_\_bedrock\_segment\_register\_t} & selectors for \texttt{DS}, \texttt{SS}, and \texttt{GS0} through \texttt{GS5}; \texttt{CS} instead uses the fixed \texttt{RDSEG CS} source form\\
 \texttt{\_\_bedrock\_control\_register\_t} & constants for the architectural RDCR and WRCR selector namespace\\
 \texttt{\_\_bedrock\_query\_result\_t} & \compilerctype{u64 value; u16 flags; u16 reserved[3]}\\
 \texttt{\_\_bedrock\_instruction\_descriptor\_t} & \compilerctype{u64 control, operand1, operand2, operand3}\\

@@ -58,13 +58,13 @@
 \draw (5.73,-1.45) -- (5.87,-1.45) -- (5.87,-1.90) -- (5.73,-1.90);
 \node[anchor=west] at (6.05,-1.675) {\shortstack[l]{FPU\\STATE}};
 
-\foreach \name/\idx in {CS/0,DS/1,SS/2,GS0/3,GS1/4,GS2/5,GS3/6,GS4/7} {
+\foreach \name/\idx in {CS/0,DS/1,SS/2,GS0/3,GS1/4,GS2/5,GS3/6,GS4/7,GS5/8} {
   \pgfmathsetmacro{\y}{-2.25-0.235*\idx}
   \draw (3.45,\y) rectangle (5.15,\y-\rowh);
   \node[anchor=west] at (5.23,\y-\rowh/2) {\name};
 }
-\draw (5.73,-2.25) -- (5.87,-2.25) -- (5.87,-4.075) -- (5.73,-4.075);
-\node[anchor=west] at (6.05,-3.16) {\shortstack[l]{SEGMENT\\REGISTERS}};
+\draw (5.73,-2.25) -- (5.87,-2.25) -- (5.87,-4.34) -- (5.73,-4.34);
+\node[anchor=west] at (6.05,-3.295) {\shortstack[l]{SEGMENT\\REGISTERS}};
 
 \draw (3.45,-4.40) rectangle (5.15,-5.05);
 \node[align=center] at (4.30,-4.725) {CR namespace\\see RDCR / WRCR};

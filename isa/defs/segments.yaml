@@ -6,21 +6,40 @@ segment_registers:
 - name: DS
   selector: data
   width: 64
+  sreg_encoding: 0
+  sreg_use: default data segment
 - name: SS
   selector: stack
   width: 64
+  sreg_encoding: 1
+  sreg_use: stack segment; fixed for SP-relative forms
 - name: GS0
   selector: general
   width: 64
+  sreg_encoding: 2
+  sreg_use: TLS context in the ELF and C ABIs
 - name: GS1
   selector: general
   width: 64
+  sreg_encoding: 3
+  sreg_use: caller-saved scratch and far-pointer return segment
 - name: GS2
   selector: general
   width: 64
+  sreg_encoding: 4
+  sreg_use: caller-saved far-pointer argument segment 0
 - name: GS3
   selector: general
   width: 64
+  sreg_encoding: 5
+  sreg_use: caller-saved far-pointer argument segment 1
 - name: GS4
   selector: general
   width: 64
+  sreg_encoding: 6
+  sreg_use: caller-saved far-pointer argument segment 2
+- name: GS5
+  selector: general
+  width: 64
+  sreg_encoding: 7
+  sreg_use: caller-saved far-pointer argument segment 3

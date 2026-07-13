@@ -1409,10 +1409,17 @@ def latex_allocated_instruction_form_block(
 ) -> str:
     form = allocation_form_text(entry.text)
     length = instruction_length(entry, form, model.metadata.get("ea"))
+    form_privilege = inst.attributes.get("privilege", "unprivileged")
+    for form_metadata in inst.forms.values():
+        if not isinstance(form_metadata, dict):
+            continue
+        if form_metadata.get("allocation") == entry.entry_id:
+            form_privilege = form_metadata.get("privilege", form_privilege)
+            break
     rows = [
         ("Encoding class", latex_escape(entry.cls)),
         ("Required bytes", latex_escape(required_bytes_label(length))),
-        ("Privilege", latex_escape(privilege_text(inst.attributes.get("privilege", "unprivileged")))),
+        ("Privilege", latex_escape(privilege_text(form_privilege))),
     ]
     ea_field_count = len(entry_ea_fields(entry, form))
     needspace = "2.75in" if ea_field_count == 0 else "3.65in"
@@ -1624,6 +1631,17 @@ def latex_register_section(model: IsaModel) -> str:
         [reg.get("name", ""), reg.get("selector", ""), reg.get("width", "")]
         for reg in segment_data.get("segment_registers", []) or []
     ]
+    sreg_rows = [
+        [reg.get("name", ""), bits_text(reg["sreg_encoding"], 3), reg.get("sreg_use", "")]
+        for reg in sorted(
+            (
+                reg
+                for reg in segment_data.get("segment_registers", []) or []
+                if reg.get("sreg_encoding") is not None
+            ),
+            key=lambda reg: reg["sreg_encoding"],
+        )
+    ]
     return render_latex_template(
         "register_model.tex",
         {
@@ -1640,6 +1658,13 @@ def latex_register_section(model: IsaModel) -> str:
                 ["0.85in", "1.10in", "0.75in"],
                 "Segment Registers",
                 {0},
+            ),
+            "SREG_TABLE": latex_code_table(
+                ["SREG", "Bits", "Use"],
+                sreg_rows,
+                ["0.60in", "0.50in", "4.30in"],
+                "Segment Register Operand Encoding",
+                {0, 1},
             ),
             "SPECIAL_REGISTER_TABLE": latex_code_table(
                 ["Special", "Width", "Fixed Segment", "EA Encoding"],

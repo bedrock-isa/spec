@@ -46,7 +46,7 @@ class VisualSemanticsTests(unittest.TestCase):
         self.assertEqual(self.rendered.count(r"\manualinstructionfield{Assembler Syntax}"), 206)
         self.assertEqual(self.rendered.count(r"\manualinstructionfield{Attributes}"), 206)
         self.assertNotIn(r"\manualinstructionmetadata{", self.rendered)
-        self.assertEqual(self.rendered.count(r"\manualformmetadata{"), 399)
+        self.assertEqual(self.rendered.count(r"\manualformmetadata{"), 403)
         self.assertNotRegex(self.rendered, r"\\begin\{tabularx\}.*p\{0\.88in\}")
 
     def test_ea_profiles_and_code_examples_are_not_tables(self) -> None:
@@ -131,9 +131,14 @@ class VisualSemanticsTests(unittest.TestCase):
         self.assertNotIn("using FSTATUS.RM", approx_sources)
 
     def test_diagram_and_condition_code_semantics_are_preserved(self) -> None:
-        self.assertEqual(self.rendered.count(r"\begin{manualbitdiagram}"), 399)
+        self.assertEqual(self.rendered.count(r"\begin{manualbitdiagram}"), 403)
         self.assertEqual(self.rendered.count(r"\begin{manualstatusstrip}"), 20)
-        self.assertEqual(self.rendered.count(r"Format \textemdash{} Instruction format"), 399)
+        self.assertEqual(self.rendered.count(r"Format \textemdash{} Instruction format"), 403)
+        self.assertRegex(
+            self.rendered,
+            r"(?s)\\textbf\{\\texttt\{RDSEG CS, Rn\(d\)\}\}.*?"
+            r"\\manualformmetadata\{long\}\{4 bytes\}\{unprivileged\}",
+        )
 
     def test_every_longtable_has_first_and_continued_headers(self) -> None:
         longtables = len(re.findall(r"\\begin\{manual(?:dense)?longtable\}", self.expanded))
@@ -154,7 +159,9 @@ class VisualSemanticsTests(unittest.TestCase):
         self.assertNotIn(r"\node[", source)
         self.assertNotIn(r"\begin{manualdenselongtable}", source)
         self.assertNotIn(r"\texttt{R15} &", source)
-        self.assertIn(r"\manualformatfield{GSV}{5}", source)
+        self.assertIn(r"\manualformatfield{GSV}{6}", source)
+        self.assertIn(r"\manualstructoptionalseries{GS}{0}{6}", source)
+        self.assertNotIn(r"\texttt{0x0b8}", source)
 
     def test_frame_control_uses_true_bit_widths_and_ext0_raw_matrix_is_removed(self) -> None:
         frame = (TEMPLATES / "fragments" / "frame_control_diagram.tex").read_text(encoding="utf-8")

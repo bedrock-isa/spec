@@ -1,7 +1,12 @@
 mnemonic: PUSH
 doc:
   title: Push
-  summary: Performs the push operation.
+  summary: Pushes one Rn value, SREG image, or the current CS image onto the stack.
+  description: >
+    PUSH stores one 64-bit general-register value or SREG segment image on the stack. The SREG form
+    accepts DS, SS, and GS0-GS5 and does not assign CS an SREG selector. A separate source-only PUSH CS
+    form stores the current CS image. PUSH SS captures the old SS image and uses that same old SS as the
+    stack context for the store.
   instruction_family: data_movement
   instruction_class: data_movement
 behavior:
@@ -10,8 +15,16 @@ behavior:
   - reg
   output: none
   operation:
-  - SP = SP - 8;
-  - '*:8 SP = reg_v;'
+  - local stack_segment_v = SS;
+  - local stack_pointer_v = SP;
+  - local value_v = reg_v;
+  - validate a writable 8-byte stack slot at stack_segment_v:(stack_pointer_v - 8);
+  - atomically set SP = stack_pointer_v - 8 and store value_v to *:8 stack_segment_v:SP;
+  operation_text: >
+    PUSH captures the source value and current SS:SP before changing architectural state. After the
+    destination stack slot has been validated, it commits the 64-bit store and decremented SP together.
+    A fault before commit leaves memory and SP unchanged. For PUSH SS, both the captured value and the
+    stack access use the old SS image.
 attributes:
   privilege: unprivileged
   repeatable:
@@ -20,9 +33,23 @@ attributes:
     repg: true
 forms:
   operands:
-  - name: reg
-    type: Rn
+  - - name: reg
+      type: Rn
+  - - name: reg
+      type: SREG
+  - - name: reg
+      type: CS
   compact: required
   size: Q
+  sreg_form:
+    selectors: [DS, SS, GS0, GS1, GS2, GS3, GS4, GS5]
+    cs_allowed: false
+    privilege: unprivileged
+  cs_form:
+    allocation: extrashort.push_cs
+    source: CS
+    source_only: true
+    sreg_encoding: none
+    privilege: unprivileged
 definition_status:
   allocation: 'external: isa/alloc'

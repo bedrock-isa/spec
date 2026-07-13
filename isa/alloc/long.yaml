@@ -242,14 +242,14 @@ entries:
       d: {kind: rn, width: 4}
       e: {kind: ea7, width: 7}
   - id: long.seglea_x_ea_e_rn_d
-    bits: "1111000011010zzddddeeeeeee"
+    bits: "111100011zz0000ddddeeeeeee"
     text: "SEGLEA.X(z:B/W/L/Q) <ea>(e), Rn(d)"
     fields:
       z: {kind: size, width: 2}
       d: {kind: rn, width: 4}
       e: {kind: ea7, width: 7}
   - id: long.jmp_x_ea_e
-    bits: "11110000110110z0000eeeeeee"
+    bits: "1111001001z00000000eeeeeee"
     text: "JMP.X(z:W/L) <ea>(e)"
     fields:
       z: {kind: size, width: 1}
@@ -257,7 +257,7 @@ entries:
     constraints:
       - {field: e, exclude: immediate, reason: canonical_form_reclaim}
   - id: long.jcc_x_ea_e
-    bits: "11110000110110zcccceeeeeee"
+    bits: "1111001001z0000cccceeeeeee"
     text: "Jcc.X(z:W/L) <ea>(e)"
     fields:
       z: {kind: size, width: 1}
@@ -584,6 +584,11 @@ entries:
     text: "RDSEG SREG(s), Rn(d)"
     fields:
       s: {kind: bits, width: 3}
+      d: {kind: rn, width: 4}
+  - id: long.rdseg_cs_rn_d
+    bits: "1111101111010001111100dddd"
+    text: "RDSEG CS, Rn(d)"
+    fields:
       d: {kind: rn, width: 4}
   - id: long.wrseg_rn_d_sreg_s
     bits: "1111101111010000001sssdddd"
@@ -1109,12 +1114,6 @@ entries:
     fields:
       z: {kind: size, width: 1}
       d: {kind: freg, width: 4}
-  - id: long.fpushm_imm16_bitmap
-    bits: "11110101100011000110000000"
-    text: "FPUSHM <imm16/bitmap>"
-  - id: long.fpopm_imm16_bitmap
-    bits: "11110101100011000110000001"
-    text: "FPOPM <imm16/bitmap>"
   - id: long.fcopysign_x_fn_s_fn_m_fn_d
     bits: "1111010111zssssmmmm011dddd"
     text: "FCOPYSIGN.X(z:S/D) Fn(s), Fn(m), Fn(d)"

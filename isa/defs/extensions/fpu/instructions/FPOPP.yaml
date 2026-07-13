@@ -1,0 +1,55 @@
+mnemonic: FPOPP
+doc:
+  title: Floating-Point Pop Register Pair
+  summary: Pops one canonical floating-point register pair selected by an inline pair index.
+  description: >
+    Pops the canonical floating-point register pair selected by `imm3`. The canonical pair sequence is
+    pair 0 `(F14, F15)`, pair 1 `(F12, F13)`, pair 2 `(F10, F11)`, pair 3 `(F8, F9)`,
+    pair 4 `(F6, F7)`, pair 5 `(F4, F5)`, pair 6 `(F2, F3)`, and pair 7 `(F0, F1)`.
+    All eight immediate encodings are valid and each selects one pair.
+  instruction_family: fpu
+  instruction_class: fpu
+behavior:
+  group: fpu_stack
+  inputs:
+  - pair_index
+  output: none
+  operation:
+  - local first_reg_v = 14 - 2 * (pair_index_v & 7);
+  - local second_reg_v = first_reg_v + 1;
+  - validate readable 8-byte stack slots at SS:SP and SS:(SP + 8);
+  - local second_value_v = *:8 SP;
+  - local first_value_v = *:8 (SP + 8);
+  - F[second_reg_v] = second_value_v;
+  - F[first_reg_v] = first_value_v;
+  - SP = SP + 16;
+  operation_text: >
+    FPOPP selects one canonical floating-point pair using the unsigned 3-bit pair index and processes
+    that pair's registers in reverse listed order. The complete two-slot stack range is validated and
+    read before either floating-point register or SP is changed. Each register pop loads the 64-bit
+    stack slot at SP and then increments SP by 8.
+attributes:
+  privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: true
+    repg: true
+  flags: unchanged
+  fp_flags: unchanged
+forms:
+  operands:
+  - name: pair_index
+    type: imm3
+  canonical_pairs:
+  - {index: 0, registers: [F14, F15]}
+  - {index: 1, registers: [F12, F13]}
+  - {index: 2, registers: [F10, F11]}
+  - {index: 3, registers: [F8, F9]}
+  - {index: 4, registers: [F6, F7]}
+  - {index: 5, registers: [F4, F5]}
+  - {index: 6, registers: [F2, F3]}
+  - {index: 7, registers: [F0, F1]}
+  size_per_register: Q
+  compact: required
+definition_status:
+  allocation: 'external: isa/alloc'

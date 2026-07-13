@@ -3,15 +3,15 @@
 \manualformatfield{reserved}{12}
 \manualformatfield{STATUS}{16}
 \manualformatfield{FLAGS}{16}
-\manualformatfield{reserved}{11}
-\manualformatfield{GSV}{5}
+\manualformatfield{reserved}{10}
+\manualformatfield{GSV}{6}
 \manualformatfield{FMT}{4}
 }
 \manualformatrowrange{bitmap[63:0]}{63}{0}{%
 \manualformatfield{state block bitmap}{64}
 }
 \end{manuallistedformatdiagram}
-{\small\texttt{GSV} is the five-bit \texttt{GS\_VALID} bitmap; \texttt{FMT} selects the save-image format.\par}
+{\small\texttt{GSV} is the six-bit \texttt{GS\_VALID} bitmap; \texttt{FMT} selects the save-image format.\par}
 \begin{manuallistedstructlayout}
   {SAVE/RESTORE Fixed Base Block}
   {8}
@@ -28,8 +28,7 @@
   \manualstructslotseries{R}{8}{8}
 }
 \manualstructrow{0x090--0x0bf}{%
-  \manualstructoptionalseries{GS}{0}{5}
-  \manualstructreservedfield{1}{reserved\\\texttt{0x0b8}}
+  \manualstructoptionalseries{GS}{0}{6}
   \manualstructannotationfield{2}{GS images are optional\\and selected by \texttt{GS\_VALID}}
 }
 \manualstructtallrow{0x0c0+}{%

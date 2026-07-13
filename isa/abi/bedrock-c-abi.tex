@@ -202,14 +202,18 @@ call result to them.
 General registers & \texttt{R0}--\texttt{R7} & \texttt{R8}--\texttt{R15}\\
 Floating-point registers & \texttt{F0}--\texttt{F7} & \texttt{F8}--\texttt{F15}\\
 Condition state & \texttt{FLAGS} & none\\
-Segment state & \texttt{GS4} & \texttt{CS}, \texttt{DS}, \texttt{SS}, \texttt{GS0}\\
+Segment state & \texttt{GS1}--\texttt{GS5} & \texttt{CS}, \texttt{DS}, \texttt{SS}, \texttt{GS0}\\
 \bottomrule
 \end{manuallongtable}
 
-A callee may preserve floating-point registers with \texttt{FPUSHM} and
-\texttt{FPOPM} or with any sequence having the same observable effect. In a
-normal prologue and epilogue, the mask names only the nonvolatile registers
-from \texttt{F8} through \texttt{F15} that the callee modifies. \texttt{R15}
+A callee may preserve floating-point registers with \texttt{FPUSHP} and
+\texttt{FPOPP} or with any sequence having the same observable effect. Each
+instruction operates on one canonical pair. The nonvolatile pairs are index 0
+for \texttt{F14:F15}, index 1 for \texttt{F12:F13}, index 2 for
+\texttt{F10:F11}, and index 3 for \texttt{F8:F9}. When several pairs are
+saved, a normal prologue pushes them in increasing pair-index order and the
+matching epilogue pops them in decreasing pair-index order. A callee need only
+save the pair containing each nonvolatile register it modifies. \texttt{R15}
 is an ordinary nonvolatile register unless the function elects to use it as a
 frame pointer.
 
@@ -229,23 +233,31 @@ code, ordinary-data, and stack contexts. \texttt{GS0} establishes the TLS
 context and may use translated-window mode even though translated-window
 \texttt{CS}, \texttt{DS}, and \texttt{SS} are excluded below.
 
-\texttt{GS1} through \texttt{GS3} are platform-owned context. C code
-changes them only through an OS- or runtime-defined interface, and that
-interface defines any preservation effect. \texttt{GS4} is the volatile
-far-data window. A caller may not rely on its value across either a near or far
-call.
+\texttt{GS1} is caller-saved scratch and carries a returned far pointer's segment
+image. \texttt{GS2} through \texttt{GS5} are caller-saved far-pointer argument
+segment registers. No incoming value in these five registers is preserved
+across a near or far call. Named arguments define the callee-entry values of
+\texttt{GS2} through \texttt{GS5}; a far-pointer result defines the
+caller-continuation value of \texttt{GS1}.
 
-\subsection{Far Data Access Window}
-The low word of a far data pointer is a pre-segment address. Before a
-dependent access, generated code establishes \texttt{GS4} from the high
-segment-image word and uses the low word through a \texttt{GS4}-qualified
-effective address. A call or any operation that may clobber \texttt{GS4}
-requires the window to be re-established before the next dependent access.
+\subsection{Far Segment Register Channels}
+The low word of a far data pointer is a pre-segment address. A named register
+argument arrives with its address in an Rn register and its validated segment
+image already established in the corresponding \texttt{GS2} through
+\texttt{GS5} argument register. Generated code may use that pair directly in a
+segment-qualified effective address.
 
-The established image is disabled or bounds-only, so \texttt{GS4} contributes
-no base translation. Segment-image validation precedes the dependent memory
-access; bounds failure raises \texttt{PAGE\_FAULT}, and page translation
-occurs after segment pre-translation.
+A far pointer loaded from memory, held locally, or received on the stack uses
+\texttt{GS1} as scratch: generated code writes the high word to \texttt{GS1}
+before the dependent access and uses the low word through a
+\texttt{GS1}-qualified effective address. A call or other operation that may
+clobber the selected caller-saved GS register requires the image to be
+re-established before the next dependent access.
+
+An ABI-valid image is disabled or bounds-only, so the selected GS register
+contributes no base translation. Segment-image validation precedes the
+dependent memory access; bounds failure raises \texttt{PAGE\_FAULT}, and page
+translation occurs after segment pre-translation.
 
 \subsection{Ordinary C Address-Space Invariants}
 Ordinary object and function pointers are canonical pre-segment virtual
@@ -333,14 +345,17 @@ at \texttt{[SP+16]} without the near-call padding slot.
 
 \texttt{LCALL} changes \texttt{CS} to the pointer image and preserves
 \texttt{DS}, \texttt{SS}, and \texttt{GS0}. \texttt{GS1} through
-\texttt{GS3} retain their OS-defined meaning and \texttt{GS4} is volatile.
-The callee therefore uses the caller's ordinary data and stack contexts.
+\texttt{GS5} are caller-saved. The callee therefore uses the caller's ordinary
+data, stack, and TLS contexts while receiving far-pointer segment arguments in
+\texttt{GS2} through \texttt{GS5}.
 Changing \texttt{DS} or \texttt{SS} requires an OS/runtime call gate and is
 not a C far call.
 
-No fixed general register is reserved for the target operands. The compiler
-may choose temporaries, preserving any nonvolatile register it uses. The
-callee restores its entry \texttt{SP} before \texttt{LRET}.
+No fixed general register is reserved for the target operands. Because
+\texttt{LCALL} takes its new-CS image from an Rn operand, an image held in a GS
+register is first copied with \texttt{RDSEG}. The compiler may choose the Rn
+temporary, preserving any nonvolatile register it uses. The callee restores
+its entry \texttt{SP} before \texttt{LRET}.
 
 A compatible far-to-far tail transfer may use \texttt{LJMP} only after
 restoring the entry stack pointer and when argument layout and return
@@ -360,14 +375,16 @@ frame pointer, it uses \texttt{R15}.  R15 is callee-saved and is used as the fra
 \subsection{Argument Classification}
 Classification occurs after the C language has determined the effective type
 of the argument. A named argument to a prototyped function is placed in one of
-four ABI classes:
+five ABI classes:
 
 \begin{description}[style=nextline,leftmargin=1.35in,labelwidth=1.25in,itemsep=3pt,topsep=3pt]
 \item[GENERAL] Integer types no wider than 64 bits and ordinary object or
 function pointers. One general-register location is required.
-\item[GENERAL-PAIR] Signed and unsigned \texttt{\_\_int128}, far data
-pointers, and far function pointers. Two consecutive general registers
-beginning at an even-numbered register are required.
+\item[GENERAL-PAIR] Signed and unsigned \texttt{\_\_int128}. Two consecutive
+general registers beginning at an even-numbered register are required.
+\item[FAR] Far data and far function pointers. One general register carries
+the address and one of \texttt{GS2} through \texttt{GS5} carries the segment
+image.
 \item[FLOAT] \texttt{float}, \texttt{double}, and \texttt{long double}. One
 floating-point register is required.
 \item[INDIRECT] Every structure or union argument, regardless of size or
@@ -388,7 +405,8 @@ result without inspecting any unused register or padding byte.
 \begin{enumerate}[leftmargin=1.35em,itemsep=3pt,topsep=3pt]
 \item If the result uses an sret buffer, assign its address to \texttt{R0} and
 initialize the general-register cursor to 1. Otherwise initialize it to 0.
-Initialize the floating-point cursor to 0.
+Initialize the floating-point cursor to 0 and the far-segment cursor to
+\texttt{GS2}.
 \item Visit arguments in source order. GENERAL and INDIRECT arguments consume
 the register named by the current general cursor and then advance that cursor.
 FLOAT arguments analogously consume \texttt{F0} through \texttt{F7} using the
@@ -397,11 +415,16 @@ independent floating-point cursor.
 register number. If that register and its successor both exist, place the low
 64 bits in the even register, the high 64 bits in the odd register, and advance
 the cursor past the pair. A skipped odd register remains unused.
-\item If an argument cannot be placed completely in the remaining registers of
-its class, place the complete argument in one stack slot and mark that register
-class exhausted. Later arguments of that class also use stack slots; they do
-not backfill a register hole. An argument is never split between registers and
-the stack.
+\item For a FAR argument, use the current general register for the pre-segment
+address and the current far-segment register for the segment image, then
+advance both cursors. No even-register alignment is applied. If either cursor
+has no location, place the complete 16-byte pointer in one stack slot and
+consume neither remaining cursor.
+\item If a non-FAR argument cannot be placed completely in the remaining
+registers of its class, place the complete argument in one stack slot and mark
+that register class exhausted. Later arguments of that class also use stack
+slots; they do not backfill a register hole. An argument is never split between
+registers and the stack.
 \item Unnamed variadic arguments and every argument of an unprototyped call are
 forced to stack slots and do not consume register cursors. Apply the default
 argument promotions before assigning those slots.
@@ -411,15 +434,21 @@ stores or pushes does so from the rightmost stack-bound argument toward the
 leftmost. No register home slots are reserved.
 \end{enumerate}
 
-The general and floating-point classes exhaust independently. Exhausting
-\texttt{R0}--\texttt{R7} does not prevent a later FLOAT argument from using an
-available floating-point register, and the converse also holds.
+The general, floating-point, and far-segment resources exhaust independently.
+Exhausting \texttt{GS2} through \texttt{GS5} sends later FAR arguments to the
+stack but does not prevent an ordinary GENERAL argument from using a remaining
+Rn register. A FAR argument spilled because either resource is unavailable
+does not consume a location from the other resource. A stack-assigned or
+unnamed variadic far pointer occupies one 16-byte, 16-byte-aligned slot and is
+never split.
 
-For a far pointer, the low even register contains the pre-segment address and
-the high odd register contains the segment image. The available pairs are
-\texttt{R1:R0}, \texttt{R3:R2}, \texttt{R5:R4}, and
-\texttt{R7:R6}. A stack-assigned or unnamed variadic far pointer occupies one
-16-byte, 16-byte-aligned slot and is never split.
+Only canonical, validated far pointers cross an ABI call boundary. Loading a
+register-assigned image with \texttt{WRSEG} performs this validation. Before a
+stack-assigned, variadic, or unprototyped far pointer is published, the caller
+validates its image through scratch \texttt{GS1}. Any failed validation raises
+\texttt{INVALID\_CONTROL\_STATE} before the control transfer. Invalid far
+values may still be copied and compared within one function where the language
+extension permits it; they cannot be passed or returned.
 
 \subsection{C Return Values}
 Scalar results use their natural register class. A \texttt{\_\_int128} result
@@ -434,8 +463,10 @@ and passes its address in \texttt{R0} before ordinary argument assignment. The
 callee stores the result in that buffer and returns the same address in
 \texttt{R0}.
 
-A far data or function pointer result uses \texttt{R1:R0}, with its
-pre-segment address in \texttt{R0} and segment image in \texttt{R1}.
+A far data or function pointer result uses \texttt{GS1:R0}, with its
+pre-segment address in \texttt{R0} and validated segment image in
+\texttt{GS1}. A failed \texttt{GS1} write raises
+\texttt{INVALID\_CONTROL\_STATE} before the return transfer.
 
 \manualtablecaption{C Return Register Quick Reference}
 \begingroup\footnotesize
@@ -449,7 +480,7 @@ General scalar & \texttt{R0}\\
 Floating-point scalar & \texttt{F0}\\
 \texttt{long double} scalar & \texttt{F0}\\
 \texttt{\_\_int128} scalar & \texttt{R1:R0}\\
-Far data or function pointer & address in \texttt{R0}, segment image in \texttt{R1}\\
+Far data or function pointer & address in \texttt{R0}, segment image in \texttt{GS1}\\
 Small aggregate & \texttt{R1:R0}\\
 Large aggregate & sret pointer in \texttt{R0}, result pointer returned in \texttt{R0}\\
 \bottomrule
@@ -575,9 +606,10 @@ calling convention.
 
 For a direct far call, the caller materializes \texttt{SEG(S)} and
 \texttt{FARADDR(S)} and transfers with \texttt{LCALL}. An indirect call loads
-both words from the function pointer. An external dynamic call loads the
-eagerly resolved, immutable 16-byte entry from \texttt{.got.far}; the far
-model has no PLT.
+both words from the function pointer; a segment image already held in a GS
+register is copied to the Rn operand required by \texttt{LCALL}. An external
+dynamic call loads the eagerly resolved, immutable 16-byte entry from
+\texttt{.got.far}; the far model has no PLT.
 
 \subsection{Near/Far ABI Veneers}
 The version 1.0 source profile diagnoses an ordinary/far function-pointer cast
@@ -595,8 +627,9 @@ an already typed veneer but may not infer one.
 the far entry, and returns to the near caller with \texttt{RET}.
 \item A far-to-near veneer receives \texttt{LCALL}, performs a near
 \texttt{CALL} to the body, and returns to the far caller with \texttt{LRET}.
-\item Register arguments are forwarded without reclassification. Every stack
-argument is copied or repositioned because the return-frame sizes differ.
+\item Rn, floating-point, and \texttt{GS2}--\texttt{GS5} register arguments
+are forwarded without reclassification. Every stack argument is copied or
+repositioned because the return-frame sizes differ.
 \item Automatic veneers for variadic or unprototyped functions are forbidden.
 \end{itemize}
 
@@ -777,6 +810,20 @@ Arguments \texttt{a0} through \texttt{a6} use \texttt{R0} through
 becomes exhausted. \texttt{tail} therefore uses \texttt{[SP+32]}; it does not
 backfill \texttt{R7}.
 
+% ABI-CALL-CASE: far-pointer-register-channels
+\subsection{Far Pointer Address and Segment Channels}
+\begingroup\small\ttfamily
+\begin{tabularx}{\linewidth}{@{}X@{}}
+far\_data\_pointer bind(uint64\_t tag, far\_data\_pointer data,\tabularnewline
+\hspace{1.2em}far\_function\_pointer function);\tabularnewline
+\end{tabularx}
+\endgroup
+\texttt{tag} uses \texttt{R0}. The address of \texttt{data} uses
+\texttt{R1} and its validated image uses \texttt{GS2}; the address of
+\texttt{function} uses \texttt{R2} and its image uses \texttt{GS3}. No even
+GPR alignment is applied. The returned far pointer uses address register
+\texttt{R0} and segment register \texttt{GS1}.
+
 % ABI-CALL-CASE: variadic-default-promotions
 \subsection{Variadic Promotions and Slot Traversal}
 \begingroup\small\ttfamily
@@ -914,11 +961,12 @@ loader policy & the OS ABI defines initial images, executable and shared-object 
 \end{longtable}
 \endgroup
 
-The active OS ABI permits user writes to \texttt{GS4} subject to architectural
-segment-image validation. It saves and restores \texttt{GS4} as architectural
-thread state across context switches and preserves the interrupted value
-across signal or exception delivery. \texttt{GS4} remains volatile at C call
-boundaries and is not part of the \texttt{setjmp}/\texttt{longjmp}
-callee-saved environment.
+The active OS ABI reserves \texttt{GS0} for TLS and permits user reads and
+writes of \texttt{GS1} through \texttt{GS5} subject to architectural
+segment-image validation. It saves and restores all six GS registers as
+architectural thread state across context switches and preserves interrupted
+values across signal or exception delivery. \texttt{GS1} through
+\texttt{GS5} remain volatile at C call boundaries and are not part of the
+\texttt{setjmp}/\texttt{longjmp} callee-saved environment.
 
 \end{document}

@@ -54,22 +54,11 @@ Instructions that take an explicit segment-register operand use the three-bit SR
 
 SP-relative EA forms do not carry this field and use SS. PC-relative EA forms do not carry this field and use CS.
 
-\manualtablecaption{Segment Register Operand Encoding}
-\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.60in}>{\raggedright\arraybackslash}p{0.50in}>{\raggedright\arraybackslash}p{4.30in}@{}}
-\toprule
-\rowcolor{ManualHeaderFill}
-\textbf{SREG} & \textbf{Bits} & \textbf{Use}\\
-\midrule
-\texttt{CS} & \texttt{000} & code segment; instruction fetch and PC-relative default\\
-\texttt{DS} & \texttt{001} & default data segment\\
-\texttt{SS} & \texttt{010} & stack segment; fixed for SP-relative forms\\
-\texttt{GS0} & \texttt{011} & TLS context in the ELF and C ABIs\\
-\texttt{GS1} & \texttt{100} & general segment 1\\
-\texttt{GS2} & \texttt{101} & general segment 2\\
-\texttt{GS3} & \texttt{110} & general segment 3\\
-\texttt{GS4} & \texttt{111} & volatile far-data window in bedrock-c-far; otherwise target-specific\\
-\bottomrule
-\end{manualtabular}
+CS is not an SREG operand. Instruction fetch and fixed PC-relative addressing select it implicitly;
+the source-only \texttt{RDSEG CS} and \texttt{PUSH CS} forms can copy its current image. Only architectural
+control-transfer paths that update CS and PC together can change it.
+
+@SREG_TABLE@
 
 \subsection{Special Registers}
 @SPECIAL_REGISTER_TABLE@

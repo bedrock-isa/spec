@@ -20,6 +20,7 @@ NON_ABI_DOCUMENTS = (
     ROOT / "isa" / "c" / "bedrock-target-intrinsics.tex",
 )
 HEADER_ROOT = ROOT / "isa" / "c" / "include"
+SEGMENT_DEFS = ROOT / "isa" / "defs" / "segments.yaml"
 CALL_CASES = ROOT / "isa" / "abi" / "calling_convention_cases.json"
 EVENT_MODEL = ROOT / "isa" / "tools" / "latex_builder" / "templates" / "interrupt_model.tex"
 CONTROL_REGISTER_REFERENCE = (
@@ -104,7 +105,7 @@ def validate_target_intrinsics() -> None:
     headers = set()
     for header in sorted(HEADER_ROOT.glob("*.h")):
         headers.update(builtin_tokens(header.read_text(encoding="utf-8")))
-    require(len(headers) == 50, f"{HEADER_ROOT}: expected 50 intrinsic builtins, found {len(headers)}")
+    require(len(headers) == 51, f"{HEADER_ROOT}: expected 51 intrinsic builtins, found {len(headers)}")
     missing = sorted(headers - documented)
     extra = sorted(documented - headers)
     require(not missing, f"{path}: missing header builtins: {', '.join(missing)}")
@@ -138,6 +139,36 @@ def validate_target_intrinsics() -> None:
         "bedrockstateintrin.h", "bedrockvirtintrin.h",
     ):
         require(f"#include <{name}>" in system, f"bedrocksystemintrin.h does not include {name}")
+
+    segment_source = SEGMENT_DEFS.read_text(encoding="utf-8")
+    metadata_selectors: dict[str, int] = {}
+    for match in re.finditer(
+        r"(?ms)^- name: ([A-Z][A-Z0-9]*)\n(?P<body>.*?)(?=^- name:|\Z)",
+        segment_source,
+    ):
+        encoding = re.search(r"(?m)^\s+sreg_encoding:\s*(\d+)\s*$", match.group("body"))
+        if encoding is not None:
+            metadata_selectors[match.group(1)] = int(encoding.group(1))
+
+    sysreg_header_path = HEADER_ROOT / "bedrocksysregintrin.h"
+    sysreg_header = sysreg_header_path.read_text(encoding="utf-8")
+    header_selectors = {
+        name: int(value)
+        for name, value in re.findall(r"__BEDROCK_SEG_([A-Z0-9]+)\s*=\s*(\d+)", sysreg_header)
+    }
+    require(
+        header_selectors == metadata_selectors,
+        f"{sysreg_header_path}: segment-register selector set does not match {SEGMENT_DEFS}",
+    )
+    require("CS" not in metadata_selectors, f"{SEGMENT_DEFS}: CS must not be an SREG operand")
+    require(
+        "__bedrock_read_code_segment()" in sysreg_header,
+        f"{sysreg_header_path}: missing dedicated CS-read wrapper",
+    )
+    require(
+        r"\compilerbuiltin{read_code_segment}" in source and r"\texttt{RDSEG CS}" in source,
+        f"{path}: dedicated CS-read builtin is not documented",
+    )
 
 
 def validate_event_model() -> None:

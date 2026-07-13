@@ -169,6 +169,16 @@ entries:
     fields:
       z: {kind: size, width: 1}
       r: {kind: rn, width: 4}
+  - id: short.push_sreg_s
+    bits: "10001010000sss"
+    text: "PUSH SREG(s)"
+    fields:
+      s: {kind: bits, width: 3}
+  - id: short.pop_sreg_s
+    bits: "10001010001sss"
+    text: "POP SREG(s)"
+    fields:
+      s: {kind: bits, width: 3}
   - id: short.revbyte_w_rn_r
     bits: "1000101001rrrr"
     text: "REVBYTE.W Rn(r)"

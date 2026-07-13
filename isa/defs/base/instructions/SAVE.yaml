@@ -18,15 +18,14 @@ behavior:
   operation:
   - local base_v = effective address of memory without reading memory;
   - if (base_v & 0xfff) != 0, raise INVALID_CONTROL_STATE;
-  - snapshot R0-R15, GS0-GS4, GS_VALID, FLAGS, STATUS, and every enabled extension-state component;
+  - snapshot R0-R15, GS0-GS5, GS_VALID, FLAGS, STATUS, and every enabled extension-state component;
   - local state_bitmap_v = 0;
   - for each enabled extension component in CPUID descriptor order, if the component is architecturally dirty, set its state_bitmap_v bit and select its CPUID-defined component range for writing;
   - validate writable access to the complete fixed base block and every selected extension-component range before storing any byte;
   - '*:8 (base_v + 0x000) = SAVE format, GS_VALID, FLAGS, and STATUS with every reserved header bit zero;'
   - '*:8 (base_v + 0x008) = state_bitmap_v with every unassigned component bit zero;'
   - for reg_v = 0 to 15, *:8 (base_v + 0x010 + 8 * reg_v) = R[reg_v];
-  - for reg_v = 0 to 4 with GS_VALID[reg_v] set, *:8 (base_v + 0x090 + 8 * reg_v) = GS[reg_v];
-  - '*:8 (base_v + 0x0b8) = 0;'
+  - for reg_v = 0 to 5 with GS_VALID[reg_v] set, *:8 (base_v + 0x090 + 8 * reg_v) = GS[reg_v];
   - write each selected extension snapshot to its CPUID-defined 64-byte-aligned component offset in descriptor order;
   - commit the fixed block, selected extension blocks, and their state bitmap as one architectural memory update;
   operation_text: 'SAVE writes the fixed base block at the selected save-area address. It records the

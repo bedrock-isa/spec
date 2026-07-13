@@ -197,8 +197,8 @@ linking contract; a runtime or OS ABI may expose a near-call veneer for such a
 transfer.
 
 A \texttt{bedrock-elf-far} executable additionally requires an OS ABI that
-permits validated user updates to GS4 and preserves GS4 as architectural
-thread state across asynchronous entry and return.
+permits validated user updates to GS1 through GS5 and preserves GS0 through
+GS5 as architectural thread state across asynchronous entry and return.
 \subsection{Initial Non-Segment State}
 Immediately before transfer to the entry point, the loader clears
 \texttt{FLAGS}, \texttt{FSTATUS}, and \texttt{FFLAGS}. Segment-register state
@@ -261,7 +261,7 @@ listed below.
 \midrule
 \endhead
 \texttt{STT\_\allowbreak{}BEDROCK\_\allowbreak{}FAR\_\allowbreak{}FUNC} & 13 & canonical LCALL/LRET far-call entry\\
-\texttt{STT\_\allowbreak{}BEDROCK\_\allowbreak{}FAR\_\allowbreak{}IFUNC} & 14 & near-call resolver returning a canonical far function pair in R1:R0\\
+\texttt{STT\_\allowbreak{}BEDROCK\_\allowbreak{}FAR\_\allowbreak{}IFUNC} & 14 & near-call resolver returning a canonical far function pair in GS1:R0\\
 \bottomrule
 \end{longtable}
 \endgroup
@@ -433,7 +433,7 @@ relocation table is a link error; the linker must not truncate it.
 \texttt{FARADDR(S)} & Canonical pre-segment virtual address S of a non-TLS data symbol or far-call entry in its bounds-only domain.\\
 \texttt{SEGDOM(D)} & Final validated bounds-only segment register image of image-local segment-domain identifier D.\\
 \texttt{FAR(S)} & The ordered 128-bit pair whose low word is FARADDR(S) and whose high word is the canonical bounds-only SEG(S).\\
-\texttt{FarResolver(X)} & The 128-bit far function pair returned in R1:R0 by calling the resolver at near-call address X.\\
+\texttt{FarResolver(X)} & The 128-bit far function pair returned in GS1:R0 by calling the resolver at near-call address X.\\
 \texttt{Resolver(X)} & Runtime byte address returned by calling the resolver function at address X.\\
 \bottomrule
 \end{longtable}
@@ -589,7 +589,7 @@ loads the final pair from \texttt{.got.far} and transfers with \texttt{LCALL}.
 \item A far function GOT entry contains the canonical STT BEDROCK FAR FUNC address and is called with LCALL.
 \item No lazy far PLT state exists; a far-call resolver never consumes or overwrites C argument registers at the call site.
 \item Interposition resolves and writes the complete 16-byte pair before loader publication; the ABI requires no 16-byte atomic store.
-\item STT BEDROCK FAR IFUNC resolvers are called with the normal near C ABI and return a pre-segment code address in R0 and a canonical disabled or bounds-only CS image in R1.
+\item STT BEDROCK FAR IFUNC resolvers are called with the normal near C ABI and return a pre-segment code address in R0 and a canonical disabled or bounds-only CS image in GS1.
 \item The loader rejects a far resolver result whose image is noncanonical or whose non-null function address lies outside an enabled image's bounds.
 \item Published .got.far entries are immutable; post-publication rebinding or mutation is forbidden.
 \end{itemize}
