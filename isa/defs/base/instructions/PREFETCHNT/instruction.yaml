@@ -1,0 +1,27 @@
+mnemonic: PREFETCHNT
+doc:
+  title: Prefetch Non-Temporal
+  summary: Hint that EA will be read with non-temporal locality.
+  instruction_family: cache
+  instruction_class: system
+  description: Computes the source address without an architectural read and issues an optional non-temporal read-prefetch hint. Ignoring the hint has no architectural effect except under an explicitly configured prefetch-fault policy.
+behavior:
+  group: cache
+  inputs:
+  - src
+  output: none
+attributes:
+  privilege: user allowed
+  repeatable:
+    rep: true
+    repcc: false
+    repg: true
+  memory_hint: non_temporal
+forms:
+  src_ea_set: memory_only
+  require_memory_operand: true
+  operands:
+  - name: src
+    type: EA
+definition_status:
+  allocation: 'external: isa/alloc'

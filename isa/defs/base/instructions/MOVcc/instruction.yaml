@@ -1,0 +1,38 @@
+mnemonic: MOVcc
+doc:
+  title: Move Conditional
+  summary: Performs the move conditional operation.
+  instruction_family: control_flow
+  instruction_class: control_flow
+  description: Copies the source value to the destination only when the encoded condition is true.
+behavior:
+  group: control_flow
+  inputs:
+  - cc
+  - src
+  output: dst
+attributes:
+  privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: true
+    repg: true
+forms:
+  dst_ea_set: store_destination
+  operands:
+  - - name: cc
+      type: condition
+    - name: src
+      type: Rn
+    - name: dst
+      type: EA
+  - - name: cc
+      type: condition
+    - name: src
+      type: EA
+    - name: dst
+      type: Rn
+  size: BWLQ
+  reads: FLAGS
+definition_status:
+  allocation: 'external: isa/alloc'

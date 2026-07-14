@@ -112,14 +112,14 @@ class StackPairInstructionTests(unittest.TestCase):
         long_ids = {entry["id"] for entry in self.allocations["long"]["entries"]}
         self.assertNotIn("long.fpushm_imm16_bitmap", long_ids)
         self.assertNotIn("long.fpopm_imm16_bitmap", long_ids)
-        self.assertFalse((self.fpu_dir / "instructions" / "FPUSHM.yaml").exists())
-        self.assertFalse((self.fpu_dir / "instructions" / "FPOPM.yaml").exists())
+        self.assertFalse((self.fpu_dir / "instructions" / "FPUSHM").exists())
+        self.assertFalse((self.fpu_dir / "instructions" / "FPOPM").exists())
 
         manifest = load_yaml(self.fpu_dir / "instructions.yaml")["include"]
-        self.assertIn("instructions/FPUSHP.yaml", manifest)
-        self.assertIn("instructions/FPOPP.yaml", manifest)
-        self.assertNotIn("instructions/FPUSHM.yaml", manifest)
-        self.assertNotIn("instructions/FPOPM.yaml", manifest)
+        self.assertIn("instructions/FPUSHP", manifest)
+        self.assertIn("instructions/FPOPP", manifest)
+        self.assertNotIn("instructions/FPUSHM", manifest)
+        self.assertNotIn("instructions/FPOPM", manifest)
 
     def test_fp_pair_mapping_and_stack_order_match_gpr_pairs(self) -> None:
         expected_pairs = [
@@ -133,9 +133,11 @@ class StackPairInstructionTests(unittest.TestCase):
             {"index": 7, "registers": ["F0", "F1"]},
         ]
         expected_repeat = {"rep": True, "repcc": True, "repg": True}
-        fpushp = load_yaml(self.fpu_dir / "instructions" / "FPUSHP.yaml")
-        fpopp = load_yaml(self.fpu_dir / "instructions" / "FPOPP.yaml")
-        gpr_pairs = load_yaml(self.base_dir / "PUSHP.yaml")["forms"]["canonical_pairs"]
+        fpushp_path = self.fpu_dir / "instructions" / "FPUSHP"
+        fpopp_path = self.fpu_dir / "instructions" / "FPOPP"
+        fpushp = load_yaml(fpushp_path / "instruction.yaml")
+        fpopp = load_yaml(fpopp_path / "instruction.yaml")
+        gpr_pairs = load_yaml(self.base_dir / "PUSHP" / "instruction.yaml")["forms"]["canonical_pairs"]
 
         self.assertEqual(
             [[int(register[1:]) for register in pair["registers"]] for pair in expected_pairs],
@@ -148,17 +150,12 @@ class StackPairInstructionTests(unittest.TestCase):
             self.assertEqual(definition["attributes"]["privilege"], "unprivileged")
             self.assertEqual(definition["attributes"]["repeatable"], expected_repeat)
 
-        push_ops = fpushp["behavior"]["operation"]
-        self.assertLess(push_ops.index("*:8 SP = first_value_v;"), push_ops.index("*:8 SP = second_value_v;"))
-        pop_ops = fpopp["behavior"]["operation"]
-        self.assertLess(
-            pop_ops.index("local second_value_v = *:8 SP;"),
-            pop_ops.index("local first_value_v = *:8 (SP + 8);"),
-        )
-        self.assertLess(
-            pop_ops.index("F[second_reg_v] = second_value_v;"),
-            pop_ops.index("F[first_reg_v] = first_value_v;"),
-        )
+        push_details = (fpushp_path / "details.tex").read_text(encoding="utf-8")
+        pop_details = (fpopp_path / "details.tex").read_text(encoding="utf-8")
+        self.assertIn("processes that pair's registers in the listed order", push_details)
+        self.assertIn("complete two-slot stack range is validated before either slot or SP is changed", push_details)
+        self.assertIn("processes that pair's registers in reverse listed order", pop_details)
+        self.assertIn("validated and read before either floating-point register or SP is changed", pop_details)
 
     def test_sreg_forms_cover_all_three_bit_selectors_and_exclude_cs(self) -> None:
         segments = load_yaml(ROOT / "isa" / "defs" / "segments.yaml")["segment_registers"]
@@ -177,7 +174,7 @@ class StackPairInstructionTests(unittest.TestCase):
             [{"name": "reg", "type": "SREG"}],
         ]
         for mnemonic in ("PUSH", "POP"):
-            definition = load_yaml(self.base_dir / f"{mnemonic}.yaml")
+            definition = load_yaml(self.base_dir / mnemonic / "instruction.yaml")
             if mnemonic == "PUSH":
                 self.assertEqual(
                     definition["forms"]["operands"],
@@ -193,7 +190,7 @@ class StackPairInstructionTests(unittest.TestCase):
             )
             self.assertFalse(definition["forms"]["sreg_form"]["cs_allowed"])
 
-        pop = load_yaml(self.base_dir / "POP.yaml")
+        pop = load_yaml(self.base_dir / "POP" / "instruction.yaml")
         validation = pop["forms"]["sreg_form"]["segment_image_validation"]
         self.assertEqual(validation["invalid_image_exception"], "INVALID_CONTROL_STATE")
         self.assertTrue(validation["before_commit"])

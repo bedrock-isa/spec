@@ -1,0 +1,8 @@
+The operand classes select one of three conversion families.
+
+\begin{itemize}
+\item Fn to Fn converts between S and D floating-point formats.
+\item Fn to Rn truncates toward zero and writes an unsigned integer result.
+\item Rn to Fn converts an unsigned integer to the selected floating-point format. The unsigned Rn-to-Fn conversion covers the full 64-bit source range rather than interpreting bit 63 as a sign.
+\end{itemize}
+Invalid, overflow, underflow, and inexact conditions update NV, OF, UF, and NX as required by the architectural floating-point conversion rules.

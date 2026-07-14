@@ -1,0 +1,1 @@
+POPP selects one canonical pair using the unsigned 3-bit pair index and processes that pair's registers in reverse listed order. Each register pop loads the 64-bit stack slot at SP, writes the register, then increments SP by 8. Multiple POPP instructions can be used in reverse canonical epilogue order to restore multiple pairs.

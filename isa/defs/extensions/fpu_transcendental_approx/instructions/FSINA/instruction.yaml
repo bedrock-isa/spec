@@ -1,0 +1,46 @@
+mnemonic: FSINA
+doc:
+  title: Approximate Floating-Point Sine
+  summary: Performs the bounded approximate floating-point sine operation.
+  instruction_family: fpu_transcendental_approx
+  instruction_class: fpu
+  description: Computes the sin(x) in radians reference over finite x with abs(x) <= pi / 4 after DAZ and writes an implementation-bounded S- or D-format approximation under the selected FPTRANSA accuracy contract.
+behavior:
+  group: fpu_transcendental_approx
+  inputs:
+  - src
+  output: dst
+  approximation:
+    contract_id: '0x0000'
+    reference_function: sin(x) in radians
+    domain: finite x with abs(x) <= pi / 4 after DAZ
+    max_ulp:
+      S: 4
+      D: 4
+    exact_anchors:
+    - sin(+0) = +0
+    - sin(-0) = -0
+    properties:
+    - odd
+    - monotonically increasing on the contract domain
+    - result is in [-sqrt(2)/2, sqrt(2)/2]
+attributes:
+  privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: false
+    repg: true
+  fp_flags:
+    update:
+    - NV
+    - UF
+forms:
+  operands:
+  - name: src
+    type: FREG
+  - name: dst
+    type: FREG
+  size: S_D
+  extension_family: fpu_transcendental_approx
+definition_status:
+  allocation: 'external: isa/alloc'

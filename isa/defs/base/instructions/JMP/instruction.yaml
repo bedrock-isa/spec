@@ -1,0 +1,22 @@
+mnemonic: JMP
+doc:
+  title: Jump
+  summary: Transfers control to the target address.
+  instruction_family: control_flow
+  instruction_class: control_flow
+  description: Validates the target under the current control context and transfers execution to it.
+behavior:
+  group: control_flow
+  inputs:
+  - target
+  output: none
+attributes:
+  privilege: unprivileged
+forms:
+  alias_of: Jcc.T
+  canonical_disassembly: JMP
+  aliases:
+  - Jcc.T relative_imm
+  - Jcc.T EA
+definition_status:
+  allocation: 'external: isa/alloc'

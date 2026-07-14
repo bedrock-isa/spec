@@ -1,0 +1,20 @@
+mnemonic: RESTORE
+doc:
+  title: Restore Processor State
+  summary: Restore processor state from a CPUID-defined save area.
+  description: The save area uses a fixed architectural layout discovered through CPUID; it does not contain a per-component size table. The save-area base must be 4 KiB aligned. RESTORE is the matching restore operation for SAVE and may restore base architectural state as well as enabled extension state from the same save image. User-mode RESTORE ignores the saved STATUS image; supervisor RESTORE applies the normal STATUS write rules.
+  instruction_family: tlb_and_context
+  instruction_class: system
+behavior:
+  group: tlb_context
+  inputs:
+  - memory
+  output: none
+attributes:
+  privilege: unprivileged
+forms:
+  operands:
+  - name: memory
+    type: EA
+definition_status:
+  allocation: 'external: isa/alloc'

@@ -1,0 +1,41 @@
+mnemonic: FDIV
+doc:
+  title: Floating-Point Divide
+  summary: Performs the floating-point divide operation.
+  instruction_family: fpu
+  instruction_class: fpu
+  description: Divides the selected-format floating-point destination value by the source and writes the rounded result under the architectural floating-point environment.
+behavior:
+  group: fpu_arithmetic
+  inputs:
+  - src
+  input_output: dst
+attributes:
+  privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: false
+    repg: true
+  streaming_candidate: true
+  fp_flags:
+    update:
+    - NV
+    - DZ
+    - OF
+    - UF
+    - NX
+forms:
+  operands:
+  - - name: src
+      type: FREG
+    - name: dst
+      type: FREG
+  - - name: src
+      type: EA
+    - name: dst
+      type: FREG
+  size: S_D
+  result: Fdst
+  memory_destination_arithmetic: disallowed
+definition_status:
+  allocation: 'external: isa/alloc'

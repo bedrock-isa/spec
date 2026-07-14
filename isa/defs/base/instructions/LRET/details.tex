@@ -1,0 +1,8 @@
+\begin{enumerate}
+\item Read both 8-byte far-return-frame words through the old SS context without changing SP.
+\item Validate the complete return CS image.
+\item Validate the return PC offset against the return CS and probe executable translation at the resulting linear address.
+\item Commit advanced SP, return CS, and return PC as one successful control-transfer operation.
+\end{enumerate}
+
+\textbf{Fault atomicity.} SP, CS, and PC remain unchanged when a frame read or return-target validation faults.

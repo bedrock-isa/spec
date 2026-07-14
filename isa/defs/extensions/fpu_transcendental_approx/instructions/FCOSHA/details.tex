@@ -1,0 +1,27 @@
+The required FPTRANSA\_ACCURACY contract is \texttt{0x0021}. If PRESENT is clear, the instruction raises \texttt{ILLEGAL\_INSTRUCTION} before reading operands or floating-point state.
+
+After FSTATUS.DAZ processing, the reference function is cosh(x) on all finite values and signed infinity after DAZ. The result error is at most 4 ULP for S and 4 ULP for D.
+
+\textbf{Special values}\par
+\begin{itemize}
+\item When the source is infinite, the result is +infinity.
+\item When the source is zero, the result is positive one.
+\end{itemize}
+
+\textbf{Exact anchors}\par
+\begin{itemize}
+\item cosh(+0) = +1
+\item cosh(-0) = +1
+\item cosh(infinity) = +infinity
+\end{itemize}
+
+\textbf{Required properties}\par
+\begin{itemize}
+\item even
+\item nonincreasing below zero and nondecreasing above zero
+\item result is at least 1
+\end{itemize}
+
+A signaling NaN accrues NV. NaN results are quieted and then processed by FSTATUS.DN. FSTATUS.FTZ replaces a subnormal result with the required signed zero and accrues UF. OF and UF are accrued as specified by the common FPTRANSA model, while NX is unchanged.
+
+If any accrued exception is enabled as a trap, the instruction raises \texttt{FLOATING\_POINT\_FAULT} before writing a destination; otherwise it commits the result and accrued flags together.

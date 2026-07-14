@@ -1,0 +1,17 @@
+mnemonic: SYSRET
+doc:
+  title: System Return
+  summary: Return to user mode from the user-return control-register bank.
+  description: Return to user mode from the UR control-register bank. SYSRET is the matching return instruction for SYSCALL and is valid only outside architectural event processing.
+  instruction_family: core_control
+  instruction_class: system
+behavior:
+  group: core_control
+  output: none
+attributes:
+  privilege: supervisor
+  serializing: true
+forms:
+  operands: []
+definition_status:
+  allocation: 'external: isa/alloc'

@@ -1,0 +1,8 @@
+The operand classes select one of three conversion families.
+
+\begin{itemize}
+\item Fn to Fn converts between S and D floating-point formats.
+\item Fn to Rn truncates toward zero and writes a signed integer result.
+\item Rn to Fn converts a signed integer to the selected floating-point format.
+\end{itemize}
+Invalid, overflow, underflow, and inexact conditions update NV, OF, UF, and NX as required by the architectural floating-point conversion rules.

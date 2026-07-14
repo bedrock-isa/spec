@@ -1,0 +1,5 @@
+Let \(n\) be the selected width, \(d\) and \(s\) the unsigned operand bit patterns, and \(c\) the incoming C flag. The written result is
+\[
+  r = (d + s + c) \bmod 2^n .
+\]
+Z is set when \(r=0\), and N receives the most-significant bit of \(r\). C reports an unsigned carry out of either addition. V reports signed overflow for the complete \(d+s+c\) operation.

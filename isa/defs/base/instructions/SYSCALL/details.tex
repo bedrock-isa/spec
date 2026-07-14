@@ -1,0 +1,3 @@
+Execution is valid only outside supervisor and event-active state and only when URCTL.V is clear. SCS, SDS, and SSS are validated as supervisor segment images; SPC must be an exact 16-byte-aligned executable address under SCS, and SSP an exact 64-byte-aligned stack top under SSS.
+
+On success, the instruction atomically saves the user continuation in URPC, URSP, URCS, URDS, URSS, and URCTL, then loads CS, DS, SS, SP, and PC from the supervisor-call bank and sets STATUS.PM. It preserves IE, TF, RF, NI, and EA, performs no memory access, and creates no stack frame.

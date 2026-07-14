@@ -1,0 +1,28 @@
+The required FPTRANSA\_ACCURACY contract is \texttt{0x0003}. If PRESENT is clear, the instruction raises \texttt{ILLEGAL\_INSTRUCTION} before reading operands or floating-point state.
+
+After FSTATUS.DAZ processing, the reference function is paired sin(x) and cos(x) in radians on finite x with abs(x) \textless{}= pi / 4 after DAZ. The result error is at most 4 ULP for S and 4 ULP for D.
+
+\textbf{Special values}\par
+\begin{itemize}
+\item When the two destinations name the same F register, \texttt{ILLEGAL\_INSTRUCTION} is raised before operands or floating-point state are read.
+\item When the source is infinite or its magnitude exceeds pi / 4, NV is accrued and both results are the architectural default quiet NaN.
+\item When the source is zero, the sine result preserves the source zero and the cosine result is positive one.
+\end{itemize}
+
+\textbf{Exact anchors}\par
+\begin{itemize}
+\item sin(+0) = +0 and cos(+0) = +1
+\item sin(-0) = -0 and cos(-0) = +1
+\end{itemize}
+
+\textbf{Required properties}\par
+\begin{itemize}
+\item the ULP bound applies independently to both results
+\item results need not match separate FSINA and FCOSA executions
+\end{itemize}
+
+For nontrapping execution, the sine and cosine destinations are written atomically.
+
+A signaling NaN accrues NV. NaN results are quieted and then processed by FSTATUS.DN. FSTATUS.FTZ replaces a subnormal result with the required signed zero and accrues UF. OF and UF are accrued as specified by the common FPTRANSA model, while NX is unchanged.
+
+If any accrued exception is enabled as a trap, the instruction raises \texttt{FLOATING\_POINT\_FAULT} before writing a destination; otherwise it commits the result and accrued flags together.

@@ -1,0 +1,30 @@
+mnemonic: CLS
+doc:
+  title: Count Leading Set Bits
+  summary: Performs the count leading set bits operation.
+  description: Counts the leading one bits within the selected operand size and writes the count to the destination register. A zero operand returns 0; an operand whose selected bits are all one returns the operand width in bits.
+  instruction_family: integer_bitfield
+  instruction_class: integer
+behavior:
+  group: bit_counts
+  inputs:
+  - src
+  input_output: dst
+attributes:
+  privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: true
+    repg: true
+  repgf_candidate: true
+  flags: unchanged
+forms:
+  operands:
+  - name: src
+    type: EA
+  - name: dst
+    type: Rn
+  size: BWLQ
+  zero_input: returns 0
+definition_status:
+  allocation: 'external: isa/alloc'

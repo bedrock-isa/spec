@@ -1,0 +1,49 @@
+mnemonic: FSINCOSA
+doc:
+  title: Approximate Floating-Point Sine And Cosine
+  summary: Performs the bounded approximate floating-point sine and cosine operation.
+  instruction_family: fpu_transcendental_approx
+  instruction_class: fpu
+  description: Computes the paired sin(x) and cos(x) in radians reference over finite x with abs(x) <= pi / 4 after DAZ and writes an implementation-bounded S- or D-format approximation under the selected FPTRANSA accuracy contract.
+behavior:
+  group: fpu_transcendental_approx
+  inputs:
+  - src
+  output:
+  - sin_dst
+  - cos_dst
+  approximation:
+    contract_id: '0x0003'
+    reference_function: paired sin(x) and cos(x) in radians
+    domain: finite x with abs(x) <= pi / 4 after DAZ
+    max_ulp:
+      S: 4
+      D: 4
+    exact_anchors:
+    - sin(+0) = +0 and cos(+0) = +1
+    - sin(-0) = -0 and cos(-0) = +1
+    properties:
+    - the ULP bound applies independently to both results
+    - results need not match separate FSINA and FCOSA executions
+attributes:
+  privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: false
+    repg: true
+  fp_flags:
+    update:
+    - NV
+    - UF
+forms:
+  operands:
+  - name: src
+    type: FREG
+  - name: sin_dst
+    type: FREG
+  - name: cos_dst
+    type: FREG
+  size: S_D
+  extension_family: fpu_transcendental_approx
+definition_status:
+  allocation: 'external: isa/alloc'

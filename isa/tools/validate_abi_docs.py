@@ -175,9 +175,9 @@ def validate_event_model() -> None:
     """Keep the machine-visible event-model names and selectors synchronized."""
     instruction_list = (ROOT / "isa" / "defs" / "base" / "instructions.yaml").read_text(encoding="utf-8")
     allocation = (ROOT / "isa" / "alloc" / "extrashort.yaml").read_text(encoding="utf-8")
-    eret_path = ROOT / "isa" / "defs" / "base" / "instructions" / "ERET.yaml"
+    eret_path = ROOT / "isa" / "defs" / "base" / "instructions" / "ERET" / "instruction.yaml"
     require(eret_path.is_file(), f"missing ERET definition: {eret_path}")
-    require("- instructions/ERET.yaml" in instruction_list, "base instruction list does not include ERET")
+    require("- instructions/ERET" in instruction_list, "base instruction list does not include ERET")
     require(
         re.search(
             r'id:\s*extrashort\.eret\s+bits:\s*"0000100"\s+text:\s*"ERET"',

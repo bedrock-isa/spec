@@ -1,0 +1,34 @@
+mnemonic: FGETEXP
+doc:
+  title: Floating-Point Get Exponent
+  summary: Performs the floating-point get exponent operation.
+  instruction_family: fpu
+  instruction_class: fpu
+  description: Extracts the unbiased exponent classification of the selected floating-point source and writes the specified floating-point result for finite and special values.
+behavior:
+  group: fpu_arithmetic
+  inputs:
+  - src
+  output: dst
+attributes:
+  privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: false
+    repg: true
+  fp_flags:
+    update_when_required:
+    - NV
+forms:
+  operands:
+  - - name: src
+      type: FREG
+    - name: dst
+      type: FREG
+  - - name: src
+      type: EA
+    - name: dst
+      type: FREG
+  size: S_D
+definition_status:
+  allocation: 'external: isa/alloc'

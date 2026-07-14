@@ -52,9 +52,7 @@ def contains_writable_ea(value: Any, written_names: set[str]) -> bool:
 
 def writable_ea_mnemonics() -> set[str]:
     result: set[str] = set()
-    for path in sorted((ROOT / "isa" / "defs").glob("**/instructions/*.yaml")):
-        if path.name == "_common.yaml":
-            continue
+    for path in sorted((ROOT / "isa" / "defs").glob("**/instructions/*/instruction.yaml")):
         data = load_yaml(path)
         if not isinstance(data, dict) or "mnemonic" not in data:
             continue

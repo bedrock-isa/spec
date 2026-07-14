@@ -1,0 +1,22 @@
+mnemonic: WRSTATUS
+doc:
+  title: Write Status
+  summary: Write the processor STATUS register from an Rn register.
+  description: WRSTATUS writes the low 16 bits from the source Rn register into the architectural STATUS register. Reserved STATUS bits must be zero. STATUS is not part of the S segment-register operand class.
+  instruction_family: system_registers
+  instruction_class: system
+behavior:
+  group: system_registers
+  inputs:
+  - src
+  output: none
+attributes:
+  privilege: supervisor
+  flags: unchanged
+forms:
+  operands:
+  - name: src
+    type: Rn
+  size: W
+definition_status:
+  allocation: 'external: isa/alloc'

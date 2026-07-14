@@ -1,0 +1,28 @@
+mnemonic: SETcc
+doc:
+  title: Set Conditional
+  summary: Performs the set conditional operation.
+  instruction_family: control_flow
+  instruction_class: control_flow
+  description: Writes one when the encoded condition is true and zero when it is false.
+behavior:
+  group: control_flow
+  inputs:
+  - cc
+  output: dst
+attributes:
+  privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: true
+    repg: true
+forms:
+  operands:
+  - name: cc
+    type: condition
+  - name: dst
+    type: Rn
+  size: Q
+  writes: 0 or 1
+definition_status:
+  allocation: 'external: isa/alloc'

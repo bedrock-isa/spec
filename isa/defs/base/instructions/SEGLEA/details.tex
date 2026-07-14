@@ -1,0 +1,6 @@
+Let \(a\) be the source effective address before a memory read. From the selected segment image, define
+\[
+  b = \mathrm{segment}[63:12] \ll 12,
+  \qquad s = (\mathrm{mantissa} \ll \mathrm{exponent}) \ll 12 .
+\]
+A zero mantissa disables bounds and returns \(a\). In translated mode, \(a\) must satisfy \(0 \le a < s\) and the result is \(b+a\). In bounds-only mode, \(a\) must satisfy \(b \le a < b+s\) and the result remains \(a\). V is set for an out-of-bounds address, in which case the destination is not written.

@@ -1,0 +1,46 @@
+mnemonic: FLOG2A
+doc:
+  title: Approximate Floating-Point Log Base 2
+  summary: Performs the bounded approximate floating-point log base 2 operation.
+  instruction_family: fpu_transcendental_approx
+  instruction_class: fpu
+  description: Computes the log2(x) reference over positive finite values and positive infinity after DAZ; signed zero is the DZ boundary and writes an implementation-bounded S- or D-format approximation under the selected FPTRANSA accuracy contract.
+behavior:
+  group: fpu_transcendental_approx
+  inputs:
+  - src
+  output: dst
+  approximation:
+    contract_id: '0x0042'
+    reference_function: log2(x)
+    domain: positive finite values and positive infinity after DAZ; signed zero is the DZ boundary
+    max_ulp:
+      S: 4
+      D: 4
+    exact_anchors:
+    - log2(+1) = +0
+    - log2(signed 0) = -infinity
+    - log2(+infinity) = +infinity
+    properties:
+    - strictly increasing on the positive domain
+attributes:
+  privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: false
+    repg: true
+  fp_flags:
+    update:
+    - NV
+    - DZ
+    - UF
+forms:
+  operands:
+  - name: src
+    type: FREG
+  - name: dst
+    type: FREG
+  size: S_D
+  extension_family: fpu_transcendental_approx
+definition_status:
+  allocation: 'external: isa/alloc'

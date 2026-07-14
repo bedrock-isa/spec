@@ -1,0 +1,16 @@
+mnemonic: RFENCE
+doc:
+  title: Read Fence
+  summary: Order prior reads before later reads.
+  instruction_family: core_control
+  instruction_class: system
+  description: Prevents retirement until every earlier memory read is ordered before every later memory read on the same hardware thread. It performs no memory access and changes no register or flag.
+behavior:
+  group: core_control
+  output: none
+attributes:
+  privilege: any
+forms:
+  operands: []
+definition_status:
+  allocation: 'external: isa/alloc'

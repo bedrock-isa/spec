@@ -1,0 +1,9 @@
+\begin{enumerate}
+\item Evaluate the target operand completely in the old architectural context.
+\item Validate the complete new CS image.
+\item Validate the target offset against the new CS and probe executable translation at the resulting linear address.
+\item Probe both 8-byte far-return-frame stores through the old SS context.
+\item Commit the two frame stores, decremented SP, new CS, and new PC as one successful control-transfer operation.
+\end{enumerate}
+
+\textbf{Fault atomicity.} No frame word, SP, CS, or PC update is visible when any prior step faults.

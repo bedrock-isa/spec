@@ -1,0 +1,8 @@
+The memory read, optional memory write, expected-register update, and flag update form one atomic read-modify-write operation.
+
+\begin{itemize}
+\item If memory equals the original expected value, the desired value is stored and Z is set.
+\item Otherwise memory is unchanged and Z is cleared.
+\item In both cases the expected register receives the value originally read from memory, and N, C, and V are cleared.
+\end{itemize}
+A memory-access fault exposes none of these updates.

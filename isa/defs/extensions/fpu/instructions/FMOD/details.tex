@@ -1,0 +1,7 @@
+After DAZ processing, let \(x\) be the original destination and \(y\) the source. For finite valid operands, choose \(q\) as \(x/y\) truncated toward zero and compute
+\[
+  r = x - qy
+\]
+with exact intermediate arithmetic. A zero result has the sign of \(x\).
+
+A signaling NaN accrues NV; a NaN input produces the selected quiet NaN. Infinite \(x\) or zero \(y\) accrues NV and produces the architectural default quiet NaN. Infinite \(y\) with finite \(x\) returns \(x\). Enabled traps raise \texttt{FLOATING\_POINT\_FAULT} before the destination write.

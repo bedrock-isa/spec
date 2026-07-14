@@ -1,0 +1,36 @@
+mnemonic: TESTJcc
+doc:
+  title: Test And Jump Conditional
+  summary: Tests two Rn registers and branches on the selected condition without writing FLAGS.
+  description: TESTJcc computes the same temporary logical-test result as TEST for the selected operand size, evaluates the encoded condition from that temporary result, and branches to the relative target when the condition is true. The computed condition is consumed only by the branch decision; architectural FLAGS are not read or written. Conditions T and F are reserved and are not valid encodings.
+  instruction_family: control_flow
+  instruction_class: control_flow
+behavior:
+  group: control_flow
+  inputs:
+  - cc
+  - src
+  - dst
+  - target
+  output: none
+attributes:
+  privilege: unprivileged
+  flags: unchanged
+forms:
+  operands:
+  - name: cc
+    type: condition
+  - name: src
+    type: Rn
+  - name: dst
+    type: Rn
+  - name: target
+    type: relative_imm
+  size: BWLQ
+  target_widths:
+  - imm8s
+  - imm16s
+  reads: none
+  result: branch only
+definition_status:
+  allocation: 'external: isa/alloc'

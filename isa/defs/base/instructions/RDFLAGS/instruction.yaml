@@ -1,0 +1,20 @@
+mnemonic: RDFLAGS
+doc:
+  title: Read Flags
+  summary: Read the integer condition-code flags into an Rn register.
+  description: RDFLAGS reads the architectural 16-bit FLAGS register, zero-extends it to 64 bits, and writes the result to the destination Rn register. FLAGS is not part of the S segment-register operand class.
+  instruction_family: system_registers
+  instruction_class: system
+behavior:
+  group: system_registers
+  output: dst
+attributes:
+  privilege: unprivileged
+  flags: unchanged
+forms:
+  operands:
+  - name: dst
+    type: Rn
+  size: W
+definition_status:
+  allocation: 'external: isa/alloc'

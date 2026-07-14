@@ -109,7 +109,7 @@ class FpuAllocationShapeTests(unittest.TestCase):
 
     def test_instruction_definitions_match_the_expanded_forms(self) -> None:
         fmovcr = load_yaml(
-            ROOT / "isa" / "defs" / "extensions" / "fpu" / "instructions" / "FMOVCR.yaml"
+            ROOT / "isa" / "defs" / "extensions" / "fpu" / "instructions" / "FMOVCR" / "instruction.yaml"
         )
         fsincosa = load_yaml(
             ROOT
@@ -118,7 +118,8 @@ class FpuAllocationShapeTests(unittest.TestCase):
             / "extensions"
             / "fpu_transcendental_approx"
             / "instructions"
-            / "FSINCOSA.yaml"
+            / "FSINCOSA"
+            / "instruction.yaml"
         )
 
         self.assertEqual(fmovcr["forms"]["size"], "S_D")

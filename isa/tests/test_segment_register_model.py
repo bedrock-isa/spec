@@ -46,7 +46,7 @@ class SegmentRegisterModelTests(unittest.TestCase):
         self.assertNotIn(r"\texttt{CS} & \texttt{000}", register_model)
 
     def test_cs_has_dedicated_read_form_without_entering_sreg_namespace(self) -> None:
-        rdseg = (ROOT / "isa" / "defs" / "base" / "instructions" / "RDSEG.yaml").read_text(
+        rdseg = (ROOT / "isa" / "defs" / "base" / "instructions" / "RDSEG" / "instruction.yaml").read_text(
             encoding="utf-8"
         )
         allocation = (ROOT / "isa" / "alloc" / "long.yaml").read_text(encoding="utf-8")
@@ -59,12 +59,14 @@ class SegmentRegisterModelTests(unittest.TestCase):
         self.assertIn(r"\texttt{RDSEG CS}", register_model)
 
     def test_save_restore_uses_six_gs_slots_without_growing_fixed_block(self) -> None:
-        save = (ROOT / "isa" / "defs" / "base" / "instructions" / "SAVE.yaml").read_text(encoding="utf-8")
-        restore = (ROOT / "isa" / "defs" / "base" / "instructions" / "RESTORE.yaml").read_text(encoding="utf-8")
+        save = (ROOT / "isa" / "defs" / "base" / "instructions" / "SAVE" / "instruction.yaml").read_text(encoding="utf-8")
+        restore = (ROOT / "isa" / "defs" / "base" / "instructions" / "RESTORE" / "instruction.yaml").read_text(encoding="utf-8")
+        save_details = (ROOT / "isa" / "defs" / "base" / "instructions" / "SAVE" / "details.tex").read_text(encoding="utf-8")
+        restore_details = (ROOT / "isa" / "defs" / "base" / "instructions" / "RESTORE" / "details.tex").read_text(encoding="utf-8")
         diagram = (TEMPLATES / "fragments" / "save_area_diagram.tex").read_text(encoding="utf-8")
-        self.assertIn("GS0-GS5", save)
-        self.assertIn("reg_v = 0 to 5", save)
-        self.assertIn("reg_v = 0 to 5", restore)
+        self.assertIn("GS0--GS5", save_details)
+        self.assertIn("GS0--GS5", restore_details)
+        self.assertNotIn("reg_v", save + restore + save_details + restore_details)
         self.assertIn(r"\manualformatfield{GSV}{6}", diagram)
         self.assertIn(r"\manualstructoptionalseries{GS}{0}{6}", diagram)
         self.assertIn(r"\manualstructtallrow{0x0c0+}", diagram)

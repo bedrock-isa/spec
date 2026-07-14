@@ -1,0 +1,27 @@
+The required FPTRANSA\_ACCURACY contract is \texttt{0x0041}. If PRESENT is clear, the instruction raises \texttt{ILLEGAL\_INSTRUCTION} before reading operands or floating-point state.
+
+After FSTATUS.DAZ processing, the reference function is ln(1 + x) without an intermediate rounded addition on finite x \textgreater{}= -1 and positive infinity after DAZ; -1 is the DZ boundary. The result error is at most 4 ULP for S and 4 ULP for D.
+
+\textbf{Special values}\par
+\begin{itemize}
+\item When the source equals -1, DZ is accrued and the result is -infinity.
+\item When the source \textless{} -1, NV is accrued and the result is the architectural default quiet NaN.
+\item When the source is +infinity, the result is +infinity.
+\item When the source is zero, the result is the source.
+\end{itemize}
+
+\textbf{Exact anchors}\par
+\begin{itemize}
+\item log1p(+0) = +0
+\item log1p(-0) = -0
+\item log1p(-1) = -infinity
+\end{itemize}
+
+\textbf{Required properties}\par
+\begin{itemize}
+\item strictly increasing on (-1, +infinity)
+\end{itemize}
+
+A signaling NaN accrues NV. NaN results are quieted and then processed by FSTATUS.DN. FSTATUS.FTZ replaces a subnormal result with the required signed zero and accrues UF. OF and UF are accrued as specified by the common FPTRANSA model, while NX is unchanged.
+
+If any accrued exception is enabled as a trap, the instruction raises \texttt{FLOATING\_POINT\_FAULT} before writing a destination; otherwise it commits the result and accrued flags together.

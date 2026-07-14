@@ -1,0 +1,37 @@
+mnemonic: FSCALE
+doc:
+  title: Floating-Point Scale
+  summary: Performs the floating-point scale operation.
+  instruction_family: fpu
+  instruction_class: fpu
+  description: Scales the selected floating-point destination by an integral power of two derived from the source and writes the rounded result.
+behavior:
+  group: fpu_arithmetic
+  inputs:
+  - src
+  input_output: dst
+attributes:
+  privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: false
+    repg: true
+  fp_flags:
+    update:
+    - NV
+    - OF
+    - UF
+    - NX
+forms:
+  operands:
+  - - name: src
+      type: FREG
+    - name: dst
+      type: FREG
+  - - name: src
+      type: EA
+    - name: dst
+      type: FREG
+  size: S_D
+definition_status:
+  allocation: 'external: isa/alloc'

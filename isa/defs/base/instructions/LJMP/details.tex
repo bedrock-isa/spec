@@ -1,0 +1,8 @@
+\begin{enumerate}
+\item Evaluate the target operand completely in the old architectural context.
+\item Validate the complete new CS image.
+\item Validate the target offset against the new CS and probe executable translation at the resulting linear address.
+\item Commit new CS and new PC as one successful control-transfer operation.
+\end{enumerate}
+
+\textbf{Fault atomicity.} CS and PC remain unchanged when operand evaluation or target validation faults.

@@ -1,0 +1,34 @@
+mnemonic: Jcc
+doc:
+  title: Jump Conditional
+  summary: Transfers control when the encoded condition is true.
+  instruction_family: control_flow
+  instruction_class: control_flow
+  description: Transfers execution to the target when the encoded condition is true and otherwise continues at the next instruction.
+behavior:
+  group: control_flow
+  inputs:
+  - cc
+  - target
+  output: none
+attributes:
+  privilege: unprivileged
+forms:
+  compact_forms:
+  - operands:
+    - name: cc
+      type: condition
+    - name: target
+      type: relative_imm
+    size: WL
+  extended_forms:
+  - operands:
+    - name: cc
+      type: condition
+    - name: target
+      type: EA
+    size: WL
+    compact: false
+  reads: FLAGS
+definition_status:
+  allocation: 'external: isa/alloc'

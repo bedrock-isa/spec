@@ -71,8 +71,8 @@ class ControlFlowEaReclaimTests(unittest.TestCase):
 
     def test_control_flow_family_uses_the_reserved_long_block(self) -> None:
         expected = {
-            "long.jmp_x_ea_e": "11110000110110z0000eeeeeee",
-            "long.jcc_x_ea_e": "11110000110110zcccceeeeeee",
+            "long.jmp_x_ea_e": "1111001001z00000000eeeeeee",
+            "long.jcc_x_ea_e": "1111001001z0000cccceeeeeee",
             "long.call_ea_e": "1111000011011100000eeeeeee",
             "long.callcc_ea_e": "111100001101110cccceeeeeee",
         }
@@ -139,7 +139,9 @@ class ControlFlowEaReclaimTests(unittest.TestCase):
                 self.assertEqual(self.claimed_targets(targets), set())
 
     def test_callcc_definition_declares_compact_and_ea_forms(self) -> None:
-        definition = load_yaml(ROOT / "isa" / "defs" / "base" / "instructions" / "CALLcc.yaml")
+        definition = load_yaml(
+            ROOT / "isa" / "defs" / "base" / "instructions" / "CALLcc" / "instruction.yaml"
+        )
         forms = definition["forms"]
 
         self.assertEqual(forms["compact_forms"][0]["operands"][-1]["type"], "relative_imm")

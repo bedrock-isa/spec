@@ -1,0 +1,27 @@
+mnemonic: FXCHG
+doc:
+  title: Floating-Point Exchange
+  summary: Performs the floating-point exchange operation.
+  instruction_family: fpu
+  instruction_class: fpu
+  description: Exchanges the two selected-format floating-point register values.
+behavior:
+  group: fpu_move_compare
+  input_output:
+  - lhs
+  - rhs
+attributes:
+  privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: false
+    repg: true
+  fp_flags: unchanged
+forms:
+  operands:
+  - name: lhs
+    type: FREG
+  - name: rhs
+    type: FREG
+definition_status:
+  allocation: 'external: isa/alloc'

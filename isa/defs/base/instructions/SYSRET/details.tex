@@ -1,0 +1,3 @@
+Execution requires supervisor mode outside event-active state and a valid URCTL bank. The instruction validates the saved FLAGS, STATUS, CS, DS, SS, SP, and executable PC before changing architectural state.
+
+On success, FLAGS, STATUS, CS, DS, SS, SP, and PC are restored as one commit and URCTL.V is cleared. A validation failure leaves both the current state and the user-return bank unchanged.

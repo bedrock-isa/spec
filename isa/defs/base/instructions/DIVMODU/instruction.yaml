@@ -1,0 +1,30 @@
+mnemonic: DIVMODU
+doc:
+  title: Unsigned Divide With Remainder
+  summary: Performs the unsigned divide with remainder operation.
+  description: The quotient register Rn(q) supplies the dividend before the operation, then receives the quotient. The remainder register Rn(r) receives the remainder.
+  instruction_family: integer_mul_div
+  instruction_class: integer
+behavior:
+  group: multiply_divide
+  inputs:
+  - src
+  input_output: quotient
+  output: remainder
+attributes:
+  privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: true
+    repg: true
+forms:
+  operands:
+  - name: src
+    type: EA
+  - name: quotient
+    type: Rn
+  - name: remainder
+    type: Rn
+  size: BWLQ
+definition_status:
+  allocation: 'external: isa/alloc'

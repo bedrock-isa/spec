@@ -90,9 +90,7 @@ class FptransaAccuracyTests(unittest.TestCase):
             / "instructions"
         )
         actual: dict[str, int] = {}
-        for path in instruction_root.glob("*.yaml"):
-            if path.name == "_common.yaml":
-                continue
+        for path in instruction_root.glob("*/instruction.yaml"):
             data = load_yaml(path)
             mnemonic = str(data["mnemonic"])
             approximation = data["behavior"]["approximation"]
@@ -110,14 +108,16 @@ class FptransaAccuracyTests(unittest.TestCase):
             / "extensions"
             / "fpu_transcendental_approx"
             / "instructions"
-            / "FSINCOSA.yaml"
+            / "FSINCOSA"
+            / "instruction.yaml"
         )
         data = load_yaml(path)
-        operation = " ".join(data["behavior"]["operation"])
-        self.assertIn("contract 0x0003", operation)
-        self.assertIn("same F register", operation)
-        self.assertIn("atomically write", operation)
-        self.assertIn("independently to both", operation)
+        details = path.with_name("details.tex").read_text(encoding="utf-8")
+        self.assertIn("0x0003", details)
+        self.assertIn("same F register", details)
+        self.assertIn("written atomically", details)
+        self.assertIn("independently to both", details)
+        self.assertNotIn("operation", data["behavior"])
 
 
 if __name__ == "__main__":

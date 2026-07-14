@@ -1,0 +1,36 @@
+mnemonic: FMIN
+doc:
+  title: Floating-Point Minimum
+  summary: Performs the floating-point minimum operation.
+  instruction_family: fpu
+  instruction_class: fpu
+  description: Selects the lesser floating-point operand according to the architectural NaN and signed-zero rules and writes it to the destination.
+behavior:
+  group: fpu_arithmetic
+  inputs:
+  - src
+  input_output: dst
+attributes:
+  privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: false
+    repg: true
+  streaming_candidate: true
+  fp_flags:
+    update_when_required:
+    - NV
+forms:
+  operands:
+  - - name: src
+      type: FREG
+    - name: dst
+      type: FREG
+  - - name: src
+      type: EA
+    - name: dst
+      type: FREG
+  size: S_D
+  nan_policy: defined by the floating-point model
+definition_status:
+  allocation: 'external: isa/alloc'

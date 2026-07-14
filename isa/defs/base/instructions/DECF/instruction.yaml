@@ -1,0 +1,28 @@
+mnemonic: DECF
+doc:
+  title: Decrement And Set Flags
+  summary: Decrements the destination operand and updates integer FLAGS.
+  instruction_family: integer_unary
+  instruction_class: integer
+  description: Subtracts one from the selected-width destination, writes the modular result, and updates Z, N, C, and V.
+behavior:
+  group: integer_unary
+  input_output: dst
+attributes:
+  privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: true
+    repg: true
+  flags:
+    Z: result == 0
+    N: most_significant_bit(result)
+    C: unsigned borrow
+    V: signed overflow
+forms:
+  operands:
+  - name: dst
+    type: Rn
+  size: BWLQ
+definition_status:
+  allocation: 'external: isa/alloc'

@@ -11,7 +11,7 @@ docs/isa_architectural_state_recovery_plan.md
                               architectural-state migration recovery plan
 docs/event_processing_model_design.md
                               implemented architectural event-model design
-isa/defs/*.yaml              instruction semantics and architectural definitions
+isa/defs/**/instructions/    one directory per instruction, with instruction.yaml and optional details.tex
 isa/alloc/*.yaml             opcode allocation source of truth
 isa/tex/*.tex                shared reference-document components
 isa/abi/bedrock-elf-abi.tex  ELF binary-format ABI source
@@ -28,6 +28,19 @@ isa/tools/gen_alloc_report.py allocation occupancy report generator
 ```
 
 Historical source snapshots and reference material are kept under `old/`.
+
+## Instruction Documentation Sources
+
+Each instruction lives in an `instructions/<MNEMONIC>/` directory. Its
+`instruction.yaml` carries a required, non-normative `doc.summary` for summary
+tables and a required, normative one-paragraph `doc.description`. Instructions
+that need additional normative material place a body-only `details.tex` beside
+the YAML file; the generator supplies the `Detailed Semantics` heading.
+
+Each instruction-set `instructions.yaml` names its shared
+`instructions/_common.yaml` file and explicitly lists instruction directories.
+The loader reads only each directory's `instruction.yaml` and requires the
+directory name to match its `mnemonic`.
 
 ## Validation
 

@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 from collections import Counter, defaultdict
 from pathlib import Path
+import re
 import sys
 from typing import Any
 
@@ -16,6 +17,26 @@ except ImportError as exc:  # pragma: no cover - environment error path
 
 
 ROOT = Path("isa/defs")
+INSTRUCTION_FILENAME = "instruction.yaml"
+INSTRUCTION_DETAILS_FILENAME = "details.tex"
+FORBIDDEN_BEHAVIOR_KEYS = {
+    "operation",
+    "operation_text",
+    "operation_by_form",
+    "fault_order",
+    "fault_atomicity",
+    "canonicalization",
+    "descriptor_payloads",
+}
+EXPECTED_DETAILS_MNEMONICS = {
+    "ADC", "SBB", "CLMUL", "CLMULH", "CMPXCHG", "DIVS", "DIVU", "MODS", "MODU",
+    "DIVMODS", "DIVMODU", "ERET", "EXTRACT", "LCALL", "LJMP", "LRET", "POP", "PUSH",
+    "POPP", "PUSHP", "PTQUERY", "REPG", "REPcc", "SAVE", "RESTORE", "SEGLEA", "SYSCALL",
+    "SYSRET", "VTOP", "RDPMC", "FCLASS", "FCVT", "FCVTU", "FGETEXP", "FGETMAN", "FMOD",
+    "FREM", "FSCALE", "FPOPP", "FPUSHP", "FACOSA", "FASINA", "FATANA", "FATANHA",
+    "FCOSA", "FCOSHA", "FETOXA", "FETOXM1A", "FLOG10A", "FLOG2A", "FLOGNA", "FLOGNP1A",
+    "FSINA", "FSINCOSA", "FSINHA", "FTANA", "FTANHA", "FTENTOXA", "FTWOTOXA", "ENCINST",
+}
 
 FPTRANSA_CONTRACT_IDS = {
     "FSINA": 0x0000,
@@ -77,13 +98,69 @@ def iter_instruction_files(root: Path, manifest: dict[str, Any]) -> tuple[list[P
         if not isinstance(data, dict):
             errors.append(f"{include}: expected mapping")
             continue
-        for item in data.get("include", []):
-            path = include.parent / item
-            if not path.exists():
-                errors.append(f"{include}: missing child include {item}")
+        common = data.get("common")
+        if not isinstance(common, str) or not common.strip():
+            errors.append(f"{include}: missing common metadata path")
+        elif not (include.parent / common).is_file():
+            errors.append(f"{include}: missing common metadata file {common}")
+        include_items = data.get("include")
+        if not isinstance(include_items, list):
+            errors.append(f"{include}: include must be a list of instruction directories")
+            continue
+        for item in include_items:
+            if not isinstance(item, str) or not item.strip():
+                errors.append(f"{include}: instruction include entries must be non-empty strings")
+                continue
+            directory = include.parent / item
+            if not directory.is_dir():
+                errors.append(f"{include}: missing instruction directory {item}")
+                continue
+            path = directory / INSTRUCTION_FILENAME
+            if not path.is_file():
+                errors.append(f"{include}: missing instruction definition {item}/{INSTRUCTION_FILENAME}")
                 continue
             files.append(path)
     return files, errors
+
+
+def normalized_sentence(value: str) -> str:
+    return " ".join(re.sub(r"[^A-Za-z0-9]+", " ", value).lower().split())
+
+
+def forbidden_key_locations(value: Any, prefix: str = "") -> list[str]:
+    locations: list[str] = []
+    if isinstance(value, dict):
+        for key, child in value.items():
+            location = f"{prefix}.{key}" if prefix else str(key)
+            if key in FORBIDDEN_BEHAVIOR_KEYS or key == "description_tex":
+                locations.append(location)
+            locations.extend(forbidden_key_locations(child, location))
+    elif isinstance(value, list):
+        for index, child in enumerate(value):
+            locations.extend(forbidden_key_locations(child, f"{prefix}[{index}]"))
+    return locations
+
+
+def validate_details_tex(path: Path) -> list[str]:
+    if not path.exists():
+        return []
+    if not path.is_file():
+        return [f"{path}: expected a regular details.tex file"]
+    text = path.read_text(encoding="utf-8").strip()
+    errors: list[str] = []
+    if not text:
+        errors.append(f"{path}: details.tex must not be empty")
+    forbidden = (
+        re.search(r"\\(?:sub)*section\s*(?!\*)\{", text)
+        or re.search(r"\\addcontentsline\s*\{toc\}", text)
+        or re.search(
+            r"\\(?:input|include|documentclass)\b|\\begin\s*\{document\}|\\end\s*\{document\}",
+            text,
+        )
+    )
+    if forbidden:
+        errors.append(f"{path}: details.tex contains a forbidden document-structure command")
+    return errors
 
 
 def validate_defs(root: Path = ROOT) -> tuple[dict[str, Any], list[str]]:
@@ -104,6 +181,21 @@ def validate_defs(root: Path = ROOT) -> tuple[dict[str, Any], list[str]]:
     )
     instruction_files, include_errors = iter_instruction_files(root, manifest)
     errors.extend(include_errors)
+    discovered_instruction_files = set(root.glob("**/instructions/*/instruction.yaml"))
+    listed_instruction_files = set(instruction_files)
+    discovered_instruction_dirs = {
+        path for path in root.glob("**/instructions/*") if path.is_dir()
+    }
+    for path in sorted(discovered_instruction_files - listed_instruction_files):
+        errors.append(f"{path}: instruction definition is not listed by a manifest")
+    for path in sorted(listed_instruction_files - discovered_instruction_files):
+        errors.append(f"{path}: listed instruction definition is outside the directory contract")
+    if len(discovered_instruction_files) != 206:
+        errors.append(f"expected 206 instruction.yaml files, found {len(discovered_instruction_files)}")
+    if len(discovered_instruction_dirs) != 206:
+        errors.append(f"expected 206 instruction directories, found {len(discovered_instruction_dirs)}")
+    if discovered_instruction_dirs != {path.parent for path in discovered_instruction_files}:
+        errors.append("instruction directories and instruction.yaml parents do not match exactly")
 
     mnemonics: dict[str, Path] = {}
     counts = Counter()
@@ -114,6 +206,7 @@ def validate_defs(root: Path = ROOT) -> tuple[dict[str, Any], list[str]]:
     unknown_operand_files: dict[str, set[Path]] = defaultdict(set)
     missing_external_allocation: list[Path] = []
     fptransa_contracts: dict[int, tuple[str, Path]] = {}
+    details_count = 0
 
     for path in instruction_files:
         data = load_yaml(path)
@@ -132,6 +225,12 @@ def validate_defs(root: Path = ROOT) -> tuple[dict[str, Any], list[str]]:
             continue
 
         mnemonic = str(mnemonic)
+        for location in forbidden_key_locations(data):
+            errors.append(f"{path}: forbidden field {location}")
+        if path.name != INSTRUCTION_FILENAME:
+            errors.append(f"{path}: instruction definition must be named {INSTRUCTION_FILENAME}")
+        if path.parent.name != mnemonic:
+            errors.append(f"{path}: directory name must match mnemonic {mnemonic}")
         previous = mnemonics.get(mnemonic)
         if previous is not None:
             errors.append(f"duplicate mnemonic {mnemonic}: {previous} and {path}")
@@ -143,8 +242,37 @@ def validate_defs(root: Path = ROOT) -> tuple[dict[str, Any], list[str]]:
             missing_external_allocation.append(path)
         doc = data.get("doc", {})
         if isinstance(doc, dict):
+            summary_text = doc.get("summary")
+            if not isinstance(summary_text, str) or not summary_text.strip():
+                errors.append(f"{path}: doc.summary must be a non-empty string")
+            else:
+                summary_text = " ".join(summary_text.split())
+                if len(summary_text) > 120:
+                    errors.append(f"{path}: doc.summary exceeds 120 characters")
+                if len(re.findall(r"[.!?](?:\s|$)", summary_text)) != 1:
+                    errors.append(f"{path}: doc.summary must contain exactly one sentence")
+            description_text = doc.get("description")
+            if not isinstance(description_text, str) or not description_text.strip():
+                errors.append(f"{path}: doc.description must be a non-empty string")
+            else:
+                if "\n\n" in description_text.strip():
+                    errors.append(f"{path}: doc.description must be a single paragraph")
+                if isinstance(summary_text, str):
+                    summary_norm = normalized_sentence(summary_text)
+                    description_norm = normalized_sentence(description_text)
+                    if summary_norm and description_norm.startswith(summary_norm):
+                        errors.append(f"{path}: doc.description repeats doc.summary as its opening sentence")
             for family in scalar_list(doc.get("instruction_family")):
                 instruction_families[family] += 1
+
+        behavior = data.get("behavior", {})
+        if not isinstance(behavior, dict):
+            errors.append(f"{path}: behavior must be a mapping")
+            behavior = {}
+        details_path = path.with_name(INSTRUCTION_DETAILS_FILENAME)
+        if details_path.exists():
+            details_count += 1
+            errors.extend(validate_details_tex(details_path))
 
         forms = data.get("forms", {})
         if isinstance(forms, dict):
@@ -186,11 +314,19 @@ def validate_defs(root: Path = ROOT) -> tuple[dict[str, Any], list[str]]:
                         for key in ("reference_function", "domain", "exact_anchors", "properties"):
                             if not approximation.get(key):
                                 errors.append(f"{path}: approximation contract is missing {key}")
-                    operation_text = " ".join(str(item) for item in (behavior.get("operation") or []))
-                    if "unbounded precision" in operation_text or "using FSTATUS.RM" in operation_text:
-                        errors.append(f"{path}: correctly-rounded language remains in FPTRANSA operation")
-                    if expected_id is not None and f"FPTRANSA_ACCURACY contract 0x{expected_id:04x}" not in operation_text:
-                        errors.append(f"{path}: operation does not gate execution on its accuracy contract")
+                    documentation_text = " ".join(
+                        [
+                            str(doc.get("description", "")),
+                            details_path.read_text(encoding="utf-8") if details_path.is_file() else "",
+                        ]
+                    )
+                    documentation_plain = documentation_text.replace(r"\_", "_")
+                    if "unbounded precision" in documentation_text or "using FSTATUS.RM" in documentation_text:
+                        errors.append(f"{path}: correctly-rounded language remains in FPTRANSA documentation")
+                    if expected_id is not None and f"0x{expected_id:04x}" not in documentation_text:
+                        errors.append(f"{path}: details do not identify FPTRANSA contract 0x{expected_id:04x}")
+                    if "PRESENT" not in documentation_plain or "ILLEGAL_INSTRUCTION" not in documentation_plain:
+                        errors.append(f"{path}: details do not define unavailable-contract handling")
                     fp_flags = data.get("attributes", {}).get("fp_flags", {})
                     updates = fp_flags.get("update", []) if isinstance(fp_flags, dict) else []
                     if "NX" in updates:
@@ -223,10 +359,23 @@ def validate_defs(root: Path = ROOT) -> tuple[dict[str, Any], list[str]]:
     missing_fptransa = sorted(set(FPTRANSA_CONTRACT_IDS) - actual_fptransa)
     if missing_fptransa:
         errors.append("missing FPTRANSA contracts: " + " ".join(missing_fptransa))
+    discovered_details_paths = set(root.glob("**/instructions/*/details.tex"))
+    actual_details_mnemonics = {path.parent.name for path in discovered_details_paths}
+    if actual_details_mnemonics != EXPECTED_DETAILS_MNEMONICS:
+        missing = sorted(EXPECTED_DETAILS_MNEMONICS - actual_details_mnemonics)
+        extra = sorted(actual_details_mnemonics - EXPECTED_DETAILS_MNEMONICS)
+        errors.append(f"details.tex mnemonic set mismatch: missing={missing}, extra={extra}")
+    if details_count != 60:
+        errors.append(f"expected 60 details.tex files, found {details_count}")
+    if len(discovered_details_paths) != 60:
+        errors.append(f"expected 60 discovered details.tex files, found {len(discovered_details_paths)}")
+    if any(path.parent not in discovered_instruction_dirs for path in discovered_details_paths):
+        errors.append("details.tex found outside a valid instruction directory")
 
     summary = {
         "instruction_files": len(instruction_files),
         "instructions": counts["instructions"],
+        "instruction_details": details_count,
         "instruction_families": dict(sorted(instruction_families.items())),
         "extension_families": dict(sorted(extension_families.items())),
         "operand_types": dict(sorted(operand_types.items())),
@@ -244,7 +393,7 @@ def main() -> int:
     summary, errors = validate_defs(args.root)
 
     print(f"{args.root}")
-    for key in ("instruction_files", "instructions"):
+    for key in ("instruction_files", "instructions", "instruction_details"):
         print(f"  {key}: {summary.get(key, 0)}")
     print("  extension families:", len(summary.get("extension_families", {})))
     print("  instruction families:", len(summary.get("instruction_families", {})))

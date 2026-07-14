@@ -1,0 +1,26 @@
+mnemonic: FCLR
+doc:
+  title: Floating-Point Clear
+  summary: Performs the floating-point clear operation.
+  instruction_family: fpu
+  instruction_class: fpu
+  description: Writes positive floating-point zero in the selected format to the destination.
+behavior:
+  group: fpu_move_compare
+  output: dst
+attributes:
+  privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: false
+    repg: true
+  fp_flags: unchanged
+forms:
+  operands:
+  - - name: dst
+      type: FREG
+  - - name: dst
+      type: EA
+  result: "+0.0"
+definition_status:
+  allocation: 'external: isa/alloc'

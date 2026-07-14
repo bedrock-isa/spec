@@ -1,0 +1,83 @@
+mnemonic: CMP
+doc:
+  title: Compare
+  summary: Computes a comparison result and updates condition codes without storing the temporary value.
+  instruction_family: integer_alu
+  instruction_class: integer
+  description: Subtracts the source from the destination only to derive Z, N, C, and V; the temporary difference is not written to either operand.
+behavior:
+  group: integer_compare
+  inputs:
+  - dst
+  - src
+  output: none
+  repeat_observed_value: rhs_minus_lhs
+  repeat_flags: flags_sub_rhs_lhs
+attributes:
+  privilege: unprivileged
+  streaming_candidate: true
+  repeatable:
+    rep: true
+    repcc: true
+    repg: true
+  repgf_candidate: true
+  flags:
+    Z: result == 0
+    N: most_significant_bit(result)
+    C: unsigned borrow
+    V: signed overflow
+forms:
+  compact_forms:
+  - operands:
+    - name: src
+      type: Rn
+    - name: dst
+      type: Rn
+    size: LQ
+  - operands:
+    - name: imm
+      type: imm
+    - name: rhs
+      type: Rn
+    size: WL
+  extended_forms:
+  - operands:
+    - name: lhs
+      type: EA
+    - name: rhs
+      type: Rn
+    size: BWLQ
+    compact: false
+  - operands:
+    - name: lhs
+      type: Rn
+    - name: rhs
+      type: EA
+    size: BWLQ
+    compact: false
+  - operands:
+    - name: imm
+      type: imm6
+    - name: rhs
+      type: EA
+    size: BWLQ
+    compact: false
+  - operands:
+    - name: lhs
+      type: EA
+    - name: rhs
+      type: EA
+    size: BWLQ
+    compact: false
+    memory_memory: true
+  - operands:
+    - name: lhs
+      type: EA
+    - name: rhs
+      type: Rn
+    size: Q
+    compact: false
+  result: none
+  memory_memory: disallowed
+definition_status:
+  allocation: 'external: isa/alloc'

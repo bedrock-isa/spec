@@ -1,0 +1,8 @@
+Let \(n\) be the selected operand width, \(d\) the signed two's-complement dividend, and \(s\) the signed two's-complement divisor. The quotient and remainder are defined by
+\[
+  q = \operatorname{trunc}(d/s),
+  \qquad r = d - qs .
+\]
+Thus a nonzero remainder has the sign of the dividend. The original quotient operand supplies the dividend. On success the quotient operand receives \(q\), and the separate remainder operand receives \(r\).
+
+A zero divisor and the most-negative value divided by \(-1\) raise \texttt{DIVIDE\_ERROR}; no destination is changed.

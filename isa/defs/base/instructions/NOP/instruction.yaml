@@ -1,0 +1,16 @@
+mnemonic: NOP
+doc:
+  title: No Operation
+  summary: No architectural state change.
+  instruction_family: core_control
+  instruction_class: system
+  description: Retires normally without changing architectural state.
+behavior:
+  group: core_control
+  output: none
+attributes:
+  privilege: any
+forms:
+  operands: []
+definition_status:
+  allocation: 'external: isa/alloc'

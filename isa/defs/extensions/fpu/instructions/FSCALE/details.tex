@@ -1,0 +1,5 @@
+Let \(x\) be the first source after DAZ processing and let \(k\) be the second source rounded to an integer using the current rounding mode. The mathematical result before format rounding is
+\[
+  x \times 2^k .
+\]
+A NaN operand is propagated according to the common floating-point rules. Multiplying zero or infinity by the power of two preserves that value and its sign. Conversion of the scale operand to \(k\) can accrue NX; final rounding can accrue OF, UF, or NX. Enabled exceptions trap before the destination is written.

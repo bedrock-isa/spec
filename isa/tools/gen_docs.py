@@ -60,6 +60,8 @@ INSTRUCTION_SET_SECTION_TITLES = {
     "fpu": "Floating-Point Instructions Summary",
     "fpu_transcendental_approx": "Approximate Floating-Point Transcendental Instructions Summary",
 }
+INSTRUCTION_FILENAME = "instruction.yaml"
+INSTRUCTION_DETAILS_FILENAME = "details.tex"
 
 
 @dataclass(frozen=True)
@@ -93,6 +95,10 @@ class InstructionDef:
     def forms(self) -> dict[str, Any]:
         value = self.data.get("forms")
         return value if isinstance(value, dict) else {}
+
+    @property
+    def details_path(self) -> Path:
+        return self.path.with_name(INSTRUCTION_DETAILS_FILENAME)
 
 
 @dataclass(frozen=True)
@@ -199,10 +205,24 @@ def manifest_instruction_paths(defs_root: Path) -> list[tuple[str, Path]]:
         data = load_yaml(include)
         if not isinstance(data, dict):
             raise ValueError(f"{include}: expected mapping")
-        for item in data.get("include", []) or []:
-            path = include.parent / item
-            if not path.exists():
-                raise FileNotFoundError(path)
+        common = data.get("common")
+        if not isinstance(common, str) or not common.strip():
+            raise ValueError(f"{include}: missing common metadata path")
+        common_path = include.parent / common
+        if not common_path.is_file():
+            raise FileNotFoundError(f"common metadata not found: {common_path}")
+        include_items = data.get("include")
+        if not isinstance(include_items, list):
+            raise ValueError(f"{include}: include must be a list of instruction directories")
+        for item in include_items:
+            if not isinstance(item, str) or not item.strip():
+                raise ValueError(f"{include}: instruction include entries must be non-empty strings")
+            directory = include.parent / item
+            if not directory.is_dir():
+                raise FileNotFoundError(f"instruction directory not found: {directory}")
+            path = directory / INSTRUCTION_FILENAME
+            if not path.is_file():
+                raise FileNotFoundError(f"instruction definition not found: {path}")
             paths.append((name, path))
     return paths
 
@@ -212,10 +232,14 @@ def load_instructions(defs_root: Path) -> list[InstructionDef]:
     for instruction_set, path in manifest_instruction_paths(defs_root):
         data = load_yaml(path)
         if not isinstance(data, dict):
-            continue
+            raise ValueError(f"{path}: expected mapping")
         mnemonic = data.get("mnemonic")
         if not mnemonic:
-            continue
+            raise ValueError(f"{path}: missing mnemonic")
+        if path.parent.name != str(mnemonic):
+            raise ValueError(
+                f"{path}: directory name {path.parent.name!r} does not match mnemonic {mnemonic!r}"
+            )
         instructions.append(InstructionDef(path, instruction_set, str(mnemonic), data))
     return sorted(instructions, key=lambda item: (item.mnemonic.lower(), str(item.path)))
 
@@ -576,15 +600,6 @@ def latex_attributes_block(inst: InstructionDef, model: IsaModel) -> str:
         rf"{latex_escape('Length')} = {latex_escape(instruction_length_summary(inst, model))}",
     ]
     return latex_ragged_block(lines)
-
-
-def latex_operation_field(lines: list[Any]) -> str:
-    if not lines:
-        return ""
-    return latex_instruction_field(
-        "Operation",
-        latex_ragged_block([latex_escape(compact_text(line)) for line in lines]),
-    )
 
 
 def latex_approximation_field(inst: InstructionDef) -> str:
@@ -1769,30 +1784,23 @@ def instruction_label(mnemonic: str) -> str:
     return f"instr:{slug or 'unknown'}"
 
 
-def instruction_description_tex(inst: InstructionDef) -> str:
-    value = inst.doc.get("description_tex")
-    if value is None:
+def instruction_details_tex(inst: InstructionDef) -> str:
+    path = inst.details_path
+    if not path.exists():
         return ""
-    if not isinstance(value, str) or not value.strip():
-        raise ValueError(f"{inst.path}: doc.description_tex must be a non-empty relative .tex path")
-
-    relative = Path(value)
-    if relative.is_absolute() or relative.suffix.lower() != ".tex" or ".." in relative.parts:
-        raise ValueError(f"{inst.path}: unsafe doc.description_tex path: {value!r}")
-
-    template_root = TEMPLATE_DIR.resolve()
-    path = (template_root / relative).resolve()
-    if not path.is_relative_to(template_root):
-        raise ValueError(f"{inst.path}: doc.description_tex escapes the template root: {value!r}")
     if not path.is_file():
-        raise ValueError(f"{inst.path}: missing doc.description_tex fragment: {value!r}")
+        raise ValueError(f"{path}: expected a regular details.tex file")
     text = path.read_text(encoding="utf-8").strip()
+    if not text:
+        raise ValueError(f"{path}: details.tex must not be empty")
     numbered_heading = re.search(r"\\(?:sub)*section\s*(?!\*)\{", text)
     toc_entry = re.search(r"\\addcontentsline\s*\{toc\}", text)
-    if numbered_heading or toc_entry:
-        raise ValueError(
-            f"{inst.path}: doc.description_tex must not create numbered sections or table-of-contents entries"
-        )
+    forbidden_document_command = re.search(
+        r"\\(?:input|include|documentclass)\b|\\begin\s*\{document\}|\\end\s*\{document\}",
+        text,
+    )
+    if numbered_heading or toc_entry or forbidden_document_command:
+        raise ValueError(f"{path}: details.tex contains a forbidden document-structure command")
     return text
 
 
@@ -1820,16 +1828,10 @@ def latex_instruction_entry(model: IsaModel, inst: InstructionDef, *, first_in_g
     parts.append(
         rf"\begin{{manualinstruction}}{{{latex_escape(inst.mnemonic)}}}{{{latex_escape(title)}}}{{{instruction_label(inst.mnemonic)}}}"
     )
-    summary = compact_text(inst.doc.get("summary", ""))
-    if summary:
-        parts.append(latex_instruction_field("Summary", latex_escape(summary)))
     description = compact_text(inst.doc.get("description", ""))
-    if description:
-        parts.append(latex_instruction_field("Description", latex_escape(description)))
-    parts.append(latex_operation_field(list(inst.behavior.get("operation", []) or [])))
-    approximation = latex_approximation_field(inst)
-    if approximation:
-        parts.append(approximation)
+    if not description:
+        raise ValueError(f"{inst.path}: doc.description must be a non-empty string")
+    parts.append(latex_instruction_field("Description", latex_escape(description)))
     syntax_lines = assembler_syntax_lines(model, inst)
     if syntax_lines:
         parts.append(
@@ -1842,12 +1844,16 @@ def latex_instruction_entry(model: IsaModel, inst: InstructionDef, *, first_in_g
     status = latex_flag_status(inst)
     if status:
         parts.append(status)
+    approximation = latex_approximation_field(inst)
+    if approximation:
+        parts.append(approximation)
     constant_ids = latex_instruction_constant_ids(inst)
     if constant_ids:
         parts.append(constant_ids)
-    description_tex = instruction_description_tex(inst)
-    if description_tex:
-        parts.append(description_tex)
+    details_tex = instruction_details_tex(inst)
+    if details_tex:
+        parts.append(r"\manualinstructiondescriptionheading{Detailed Semantics}")
+        parts.append(details_tex)
     forms_block = latex_instruction_forms_block(model, inst)
     if forms_block:
         parts.append(forms_block)

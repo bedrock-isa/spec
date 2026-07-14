@@ -17,6 +17,7 @@ except ImportError as exc:  # pragma: no cover - environment error path
 
 DEF_ROOT = Path("isa/defs")
 ALLOC_ROOT = Path("isa/alloc")
+INSTRUCTION_FILENAME = "instruction.yaml"
 
 
 def load_yaml(path: Path) -> Any:
@@ -31,7 +32,7 @@ def definition_payloads(root: Path) -> dict[str, dict[str, Any]]:
         include = root / spec["include"]
         data = load_yaml(include)
         for item in data.get("include", []):
-            path = include.parent / item
+            path = include.parent / item / INSTRUCTION_FILENAME
             child = load_yaml(path)
             if isinstance(child, dict) and "mnemonic" in child:
                 out[str(child["mnemonic"])] = child

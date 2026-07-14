@@ -1,0 +1,23 @@
+mnemonic: INVDCACHE
+doc:
+  title: Invalidate Data Cache
+  summary: Invalidate data cache block or range.
+  instruction_family: cache
+  instruction_class: system
+  description: Resolves the addressed range without reading it and invalidates every intersecting data-cache line without writing back dirty data before retirement.
+behavior:
+  group: cache
+  inputs:
+  - target
+  output: none
+attributes:
+  privilege:
+    default: supervisor
+    policy_controlled: true
+forms:
+  require_memory_operand: true
+  operands:
+  - name: target
+    type: EA_or_range
+definition_status:
+  allocation: 'external: isa/alloc'

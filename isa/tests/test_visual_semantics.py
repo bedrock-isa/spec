@@ -36,15 +36,19 @@ class VisualSemanticsTests(unittest.TestCase):
         cls.rendered = render_latex(cls.model)
         cls.expanded = expand_inputs(cls.rendered)
 
-    def test_instruction_descriptions_restore_scannable_fields(self) -> None:
+    def test_instruction_descriptions_use_the_new_field_contract(self) -> None:
         described = sum(bool(inst.doc.get("description")) for inst in self.model.instructions)
-        operational = sum(bool(inst.behavior.get("operation")) for inst in self.model.instructions)
         self.assertEqual(self.rendered.count(r"\begin{manualinstruction}"), 206)
-        self.assertEqual(self.rendered.count(r"\manualinstructionfield{Summary}"), 206)
+        self.assertEqual(self.rendered.count(r"\manualinstructionfield{Summary}"), 0)
         self.assertEqual(self.rendered.count(r"\manualinstructionfield{Description}"), described)
-        self.assertEqual(self.rendered.count(r"\manualinstructionfield{Operation}"), operational)
+        self.assertEqual(described, 206)
+        self.assertEqual(self.rendered.count(r"\manualinstructionfield{Operation}"), 0)
         self.assertEqual(self.rendered.count(r"\manualinstructionfield{Assembler Syntax}"), 206)
         self.assertEqual(self.rendered.count(r"\manualinstructionfield{Attributes}"), 206)
+        self.assertEqual(
+            self.rendered.count(r"\manualinstructiondescriptionheading{Detailed Semantics}"),
+            60,
+        )
         self.assertNotIn(r"\manualinstructionmetadata{", self.rendered)
         self.assertEqual(self.rendered.count(r"\manualformmetadata{"), 403)
         self.assertNotRegex(self.rendered, r"\\begin\{tabularx\}.*p\{0\.88in\}")
