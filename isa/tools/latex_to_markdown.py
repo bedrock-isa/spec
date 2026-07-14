@@ -16,6 +16,37 @@ LATEX_INPUT_RE = re.compile(r"\\(?:input|include)\{([^{}]+)\}")
 MANUAL_FORM_BLOCK_RE = re.compile(
     r"\\begin\{manualformblock\}\{[^{}]*\}|\\end\{manualformblock\}"
 )
+LATEX_PART_RE = re.compile(r"\\part(?:\s*\[[^\]]*\])?\s*\{")
+ATX_HEADING_RE = re.compile(r"^(#{3,6})([ \t]+)")
+FENCE_RE = re.compile(r"^[ \t]{0,3}(`{3,}|~{3,})(.*)$")
+
+
+def normalize_part_heading_levels(markdown: str, *, has_parts: bool) -> str:
+    """Collapse Pandoc's unused chapter level below LaTeX part headings."""
+    if not has_parts:
+        return markdown
+
+    lines: list[str] = []
+    fence_character: str | None = None
+    fence_length = 0
+    for line in markdown.splitlines(keepends=True):
+        fence_match = FENCE_RE.match(line.rstrip("\r\n"))
+        if fence_match:
+            marker = fence_match.group(1)
+            suffix = fence_match.group(2)
+            if fence_character is None:
+                fence_character = marker[0]
+                fence_length = len(marker)
+            elif marker[0] == fence_character and len(marker) >= fence_length and not suffix.strip():
+                fence_character = None
+                fence_length = 0
+            lines.append(line)
+            continue
+
+        if fence_character is None:
+            line = ATX_HEADING_RE.sub(lambda match: match.group(1)[1:] + match.group(2), line)
+        lines.append(line)
+    return "".join(lines)
 
 
 def resolve_latex_input(name: str, current_dir: Path) -> Path:
@@ -80,7 +111,8 @@ def render_markdown_from_latex(
     if result.returncode != 0:
         detail = result.stderr.strip() or f"exit status {result.returncode}"
         raise RuntimeError(f"Pandoc failed to generate Markdown: {detail}")
-    return result.stdout.rstrip() + "\n"
+    markdown = result.stdout.rstrip() + "\n"
+    return normalize_part_heading_levels(markdown, has_parts=bool(LATEX_PART_RE.search(expanded)))
 
 
 def main() -> int:

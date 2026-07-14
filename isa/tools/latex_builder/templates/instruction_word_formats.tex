@@ -1,5 +1,5 @@
 \clearpage
-\section{Instruction Header Formats}
+\section{Instruction Encoding}
 
 Instruction framing is byte-oriented. Byte 0 alone identifies extrashort and short instructions; extended
 instructions use byte 0 and byte 1 to determine both total instruction length and opcode class.
@@ -29,11 +29,13 @@ for medium, 4 bytes for long, and 5 bytes for extralong.
 \manualbitfieldtext{opcode next}{8}
 }
 \end{manuallistedbitdiagram}
+\label{fig:instruction-header-byte-formats}
 
-Figure 14-1 annotations are read from high to low bit. In byte 0, bit 7 distinguishes extrashort framing; bits 7..6
+Figure~\ref{fig:instruction-header-byte-formats} annotations are read from high to low bit. In byte 0, bit 7 distinguishes extrashort framing; bits 7..6
 select short (\texttt{10}) or extended (\texttt{11}) framing. For short instructions, bits 5..2 and 1..0 continue
 the payload. For extended instructions, bits 5..2 are \texttt{L}, bits 1..0 begin the opcode stream, and byte 1
-continues that stream. Thus \texttt{L} encodes the total length as $3+L$ bytes directly in Figure 14-1.
+continues that stream. Thus \texttt{L} encodes the total length as $3+L$ bytes directly in
+Figure~\ref{fig:instruction-header-byte-formats}.
 
 \input{isa/tools/latex_builder/templates/fragments/instruction_encoding_diagrams.tex}
 

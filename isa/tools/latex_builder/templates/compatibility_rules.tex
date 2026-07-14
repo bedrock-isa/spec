@@ -1,5 +1,5 @@
 \clearpage
-\section{Reserved and Compatibility Rules}
+\subsection{Compatibility Contract}
 
 This section defines the default compatibility contract for reserved fields, optional features, and future
 architectural growth. A later section may narrow one of these defaults for a specific structure, but it must say so
@@ -7,14 +7,6 @@ explicitly.
 
 This manual treats reserved and unallocated encodings as one architectural category: software must not depend on their
 value, decode result, or behavior.
-
-\subsection{Terminology}
-A \emph{reserved} field or encoding is held for a future architectural definition, so software does not depend on
-its current value or behavior. A field described as \emph{must be zero} is written as zero; a nonzero value is
-invalid unless a later architectural revision assigns it. A \emph{read-as-zero} field returns zero but remains
-reserved. An \emph{ignored} field is accepted by hardware without affecting the current operation, whereas a
-\emph{software-defined} field is explicitly available for software use. An \emph{illegal} opcode, EA form,
-selector, or operation raises the exception named by its defining rule.
 
 \subsection{Reserved Fields}
 Architected registers and architectural memory structures use these defaults unless their defining section gives a

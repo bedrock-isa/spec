@@ -66,8 +66,21 @@
 \fancyfoot[LO,RE]{\small \BedrockFooterTitle}
 \renewcommand{\headrulewidth}{0.35pt}
 \renewcommand{\footrulewidth}{0pt}
+\newcommand{\manualpartlabel}{%
+  \parbox{\textwidth}{%
+    \color{RuleGray}\bfseries\fontsize{22}{26}\selectfont
+    \MakeUppercase{\partname}\ \thepart
+    \hfill\color{ManualMuted}\normalfont\small
+    \MakeUppercase{\BedrockArchitectureName}\ ARCHITECTURE\par}}
+\titleformat{\part}[display]
+  {\raggedright\normalfont}
+  {\manualpartlabel}
+  {1.20em}
+  {\color{RuleGray}\bfseries\fontsize{30}{34}\selectfont}
+  [\vspace{1.05em}{\color{RuleGray}\rule{\textwidth}{0.65pt}}]
 \titleformat{\section}{\large\bfseries\MakeUppercase}{\thesection}{0.7em}{}
 \titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{0.6em}{}
+\titlespacing*{\part}{0pt}{0pt}{0pt}
 \titlespacing*{\section}{0pt}{1.2em}{0.7em}
 \titlespacing*{\subsection}{0pt}{1.0em}{0.45em}
 \newcounter{manualfigure}[section]

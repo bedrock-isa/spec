@@ -16,7 +16,7 @@ Bedrock uses a unified 16-entry Rn integer register file. SP and PC are special 
 Rn namespace, with SP-relative addressing tied to SS and PC-relative addressing tied to CS.
 
 The reference is organized around programmer-visible state, operand formation, execution semantics, and instruction
-behavior. Byte-level instruction framing is specified separately in the Instruction Header Formats chapter.
+behavior. Byte-level instruction framing is specified separately in the Instruction Encoding chapter.
 
 \begin{itemize}
 \item The PC names a byte in the instruction stream; sequential execution advances it by the decoded instruction length.
@@ -34,4 +34,4 @@ instruction length before operand evaluation begins.
 
 Any remaining bytes selected by the instruction length belong to the opcode payload, EA descriptors, immediates,
 displacements, or instruction-specific payloads. The detailed length and opcode-class truth tables are in the
-Instruction Header Formats chapter.
+Instruction Encoding chapter.

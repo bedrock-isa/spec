@@ -33,9 +33,7 @@ from alloc_notes import allocation_form_text  # noqa: E402
 from latex_to_markdown import render_markdown_from_latex  # noqa: E402
 from validate_isa import allocation_mnemonic  # noqa: E402
 from latex_builder.common import (  # noqa: E402
-    LatexHiddenTopSection,
     LatexTopSection,
-    TEMPLATE_DIR,
     latex_longtable,
     latex_tabular,
     render_latex_template,
@@ -55,10 +53,10 @@ INSTRUCTION_SET_SECTION_ORDER = [
     "fpu_transcendental_approx",
 ]
 INSTRUCTION_SET_SECTION_TITLES = {
-    "base": "General Instructions Summary",
-    "virtualization_acceleration": "Virtualization Acceleration Instructions Summary",
-    "fpu": "Floating-Point Instructions Summary",
-    "fpu_transcendental_approx": "Approximate Floating-Point Transcendental Instructions Summary",
+    "base": "General Instructions",
+    "virtualization_acceleration": "Virtualization Acceleration Instructions",
+    "fpu": "Floating-Point Instructions",
+    "fpu_transcendental_approx": "Approximate Floating-Point Transcendental Instructions",
 }
 INSTRUCTION_FILENAME = "instruction.yaml"
 INSTRUCTION_DETAILS_FILENAME = "details.tex"
@@ -1866,18 +1864,15 @@ def latex_reading_instruction_description_section() -> str:
 
 
 def latex_instruction_reference_section(model: IsaModel, instructions: list[InstructionDef]) -> str:
-    parts: list[str] = []
+    parts: list[str] = [latex_reading_instruction_description_section()]
     for title, group in instruction_set_groups(instructions):
-        description_title = title.replace(" Summary", " Descriptions")
         parts.extend(
             [
                 str(LatexTopSection(title)),
-                latex_instruction_summary_table(title, group),
-                str(LatexHiddenTopSection(description_title, clear_page=False)),
+                r"\subsection{Summary}",
+                latex_instruction_summary_table(f"{title} Summary", group),
             ]
         )
-        if title == "General Instructions Summary":
-            parts.append(latex_reading_instruction_description_section())
         parts.extend(
             latex_instruction_entry(model, inst, first_in_group=index == 0)
             for index, inst in enumerate(group)

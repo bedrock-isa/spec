@@ -116,8 +116,63 @@ class VisualSemanticsTests(unittest.TestCase):
             self.assertIn(rf"\manualtablecaption{{{title}}}", self.rendered)
         self.assertEqual(self.rendered.count(r"\manualsummarymnemonic{"), 206)
         self.assertEqual(self.rendered.count(r"\textbf{Mnemonic} & \textbf{Brief description}"), 8)
+        self.assertEqual(self.rendered.count(r"\subsection{Summary}"), 4)
+        self.assertEqual(self.rendered.count(r"\section*{Reading an Instruction Description}"), 1)
         self.assertNotIn(r"\begin{manualmnemonicindex}", self.rendered)
         self.assertNotIn(r"\textbf{Summary} & \textbf{Forms}", self.rendered)
+
+    def test_document_uses_the_part_based_reading_order(self) -> None:
+        body = self.expanded.split(r"\begin{document}", 1)[1].split(r"\end{document}", 1)[0]
+        ordered_headings = (
+            r"\part{Architectural Foundations}",
+            r"\section{Overview}",
+            r"\section{Terminology and Compatibility}",
+            r"\section{Programming Model}",
+            r"\section{Data Formats}",
+            r"\part{Encoding, Addressing, and Execution}",
+            r"\section{Instruction Encoding}",
+            r"\section{Effective Addressing Modes}",
+            r"\section{Memory Address Translation}",
+            r"\section{Instruction Execution Model}",
+            r"\section{Flags and Condition Codes}",
+            r"\section{Memory Model}",
+            r"\section{Streaming Execution Model}",
+            r"\part{System Programming}",
+            r"\section{Privileged Execution Model}",
+            r"\section{Architectural Event Processing Model}",
+            r"\section{CPUID Feature Discovery}",
+            r"\section{Processor-State Save and Restore}",
+            r"\part{Instruction Set Reference}",
+            r"\section*{Reading an Instruction Description}",
+            r"\section{General Instructions}",
+            r"\section{Virtualization Acceleration Instructions}",
+            r"\section{Floating-Point Instructions}",
+            r"\section{Approximate Floating-Point Transcendental Instructions}",
+            r"\part{Examples and Appendices}",
+            r"\appendix",
+            r"\section{C Library Instruction Examples}",
+            r"\section{Runtime Instruction Examples}",
+        )
+        positions = [body.index(heading) for heading in ordered_headings]
+        self.assertEqual(positions, sorted(positions))
+        self.assertEqual(body.count(r"\part{"), 5)
+        document_template = (TEMPLATES / "document.tex").read_text(encoding="utf-8")
+        self.assertEqual(document_template.count(r"\clearpage"), 10)
+        self.assertNotIn(r"\cleardoublepage", document_template)
+        instruction_intro = (TEMPLATES / "instruction_description_intro.tex").read_text(
+            encoding="utf-8"
+        )
+        self.assertNotIn(r"\cleardoublepage", instruction_intro)
+        main_matter, appendices = body.split(r"\appendix", 1)
+        self.assertEqual(len(re.findall(r"(?m)^\\section\{", main_matter)), 19)
+        self.assertEqual(len(re.findall(r"(?m)^\\section\{", appendices)), 2)
+        for removed in (
+            r"\section{Reserved and Compatibility Rules}",
+            r"\section{Condition Code Computation}",
+            "Instructions Descriptions",
+            r"\section{General Instructions Summary}",
+        ):
+            self.assertNotIn(removed, body)
 
     def test_fptransa_accuracy_contracts_are_discoverable_and_rendered(self) -> None:
         self.assertIn(r"\manualtablecaption{FPTRANSA Accuracy Result}", self.rendered)

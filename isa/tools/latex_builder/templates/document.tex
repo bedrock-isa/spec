@@ -1,39 +1,76 @@
 \input{isa/tools/latex_builder/templates/document_preamble.tex}
 \input{isa/tools/latex_builder/templates/title_page.tex}
 
+\clearpage
+\thispagestyle{empty}
+\vspace*{1.45in}
+\part{Architectural Foundations}
+\vspace*{\fill}
+\clearpage
+
 \input{isa/tools/latex_builder/templates/architecture_overview.tex}
 \input{isa/tools/latex_builder/templates/terminology.tex}
 \input{isa/tools/latex_builder/templates/compatibility_rules.tex}
 
 @REGISTER_SECTION@
 
-@CPUID_SECTION@
-
-@SAVE_RESTORE_SECTION@
-
 @DATA_FORMATS_SECTION@
 
-@CONDITION_CODES_SECTION@
+\clearpage
+\thispagestyle{empty}
+\vspace*{1.45in}
+\part{Encoding, Addressing, and Execution}
+\vspace*{\fill}
+\clearpage
+
+@INSTRUCTION_WORD_FORMATS_SECTION@
 
 @EFFECTIVE_ADDRESS_SECTION@
 
 \input{isa/tools/latex_builder/templates/memory_address_translation.tex}
+
+@EXECUTION_MODEL_SECTION@
+
+@CONDITION_CODES_SECTION@
+
+\input{isa/tools/latex_builder/templates/condition_code_computation.tex}
+
 \input{isa/tools/latex_builder/templates/memory_model.tex}
+
+@STREAMING_EXECUTION_SECTION@
+
+\clearpage
+\thispagestyle{empty}
+\vspace*{1.45in}
+\part{System Programming}
+\vspace*{\fill}
+\clearpage
 
 @PRIVILEGED_PROGRAMMING_SECTION@
 
 @EXCEPTION_PROCESSING_SECTION@
 
-@INSTRUCTION_WORD_FORMATS_SECTION@
+@CPUID_SECTION@
 
-@EXECUTION_MODEL_SECTION@
+@SAVE_RESTORE_SECTION@
 
-@STREAMING_EXECUTION_SECTION@
-
-\input{isa/tools/latex_builder/templates/condition_code_computation.tex}
+\clearpage
+\thispagestyle{empty}
+\vspace*{1.45in}
+\part{Instruction Set Reference}
+\vspace*{\fill}
+\clearpage
 
 @INSTRUCTION_REFERENCE_SECTION@
 
+\clearpage
+\thispagestyle{empty}
+\vspace*{1.45in}
+\part{Examples and Appendices}
+\vspace*{\fill}
+\clearpage
+
+\appendix
 \input{isa/tools/latex_builder/templates/c_library_instruction_examples.tex}
 \input{isa/tools/latex_builder/templates/runtime_instruction_examples.tex}
 \input{isa/tools/latex_builder/templates/document_end.tex}
