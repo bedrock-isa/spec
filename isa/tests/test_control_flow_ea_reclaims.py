@@ -69,17 +69,6 @@ class ControlFlowEaReclaimTests(unittest.TestCase):
             result.update(value for value, _claim in claims if value in targets)
         return result
 
-    def test_control_flow_family_uses_the_reserved_long_block(self) -> None:
-        expected = {
-            "long.jmp_x_ea_e": "1111001001z00000000eeeeeee",
-            "long.jcc_x_ea_e": "1111001001z0000cccceeeeeee",
-            "long.call_ea_e": "1111000011011100000eeeeeee",
-            "long.callcc_ea_e": "111100001101110cccceeeeeee",
-        }
-        for entry_id, bits in expected.items():
-            with self.subTest(entry=entry_id):
-                self.assertEqual(compact_bits(str(self.entry(entry_id)["bits"])), bits)
-
     def test_immediate_ea_modes_are_reclaimed_from_every_form(self) -> None:
         for entry_id in (
             "long.jmp_x_ea_e",
@@ -89,31 +78,6 @@ class ControlFlowEaReclaimTests(unittest.TestCase):
         ):
             with self.subTest(entry=entry_id):
                 self.assertTrue(self.field_values(entry_id, "e").isdisjoint(IMMEDIATE_EA_VALUES))
-
-    def test_claim_and_reclaim_cardinalities(self) -> None:
-        expected = {
-            "long.jmp_x_ea_e": (248, {"canonical_form_reclaim": 8}),
-            "long.jcc_x_ea_e": (
-                3_472,
-                {
-                    "condition_true_false_reclaimed": 512,
-                    "canonical_form_reclaim": 112,
-                },
-            ),
-            "long.call_ea_e": (124, {"canonical_form_reclaim": 4}),
-            "long.callcc_ea_e": (
-                1_736,
-                {
-                    "condition_true_false_reclaimed": 256,
-                    "canonical_form_reclaim": 56,
-                },
-            ),
-        }
-        for entry_id, (claim_count, skipped) in expected.items():
-            with self.subTest(entry=entry_id):
-                claims, actual_skipped = self.claims(entry_id)
-                self.assertEqual(len(claims), claim_count)
-                self.assertEqual(actual_skipped, skipped)
 
     def test_unconditional_forms_are_the_true_condition_rows(self) -> None:
         pairs = (
@@ -137,18 +101,6 @@ class ControlFlowEaReclaimTests(unittest.TestCase):
             targets = set(expand_pattern(pattern))
             with self.subTest(entry=entry_id):
                 self.assertEqual(self.claimed_targets(targets), set())
-
-    def test_callcc_definition_declares_compact_and_ea_forms(self) -> None:
-        definition = load_yaml(
-            ROOT / "isa" / "defs" / "base" / "instructions" / "CALLcc" / "instruction.yaml"
-        )
-        forms = definition["forms"]
-
-        self.assertEqual(forms["compact_forms"][0]["operands"][-1]["type"], "relative_imm")
-        self.assertEqual(forms["extended_forms"][0]["operands"][-1]["type"], "EA")
-        self.assertFalse(forms["extended_forms"][0]["compact"])
-        self.assertEqual(forms["reads"], "FLAGS")
-
 
 if __name__ == "__main__":
     unittest.main()

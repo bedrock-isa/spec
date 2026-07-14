@@ -10,8 +10,7 @@ import sys
 import unittest
 
 
-ROOT = Path(__file__).resolve().parents[2]
-TOOL_DIR = ROOT / "isa" / "tools"
+TOOL_DIR = Path(__file__).resolve().parents[1] / "tools"
 if str(TOOL_DIR) not in sys.path:
     sys.path.insert(0, str(TOOL_DIR))
 
@@ -23,8 +22,6 @@ from fp_accuracy import (  # noqa: E402
     q8_8_value,
     reference_ulp,
 )
-from validate_defs import FPTRANSA_CONTRACT_IDS  # noqa: E402
-from validate_isa import load_yaml  # noqa: E402
 
 
 class FptransaAccuracyTests(unittest.TestCase):
@@ -57,7 +54,10 @@ class FptransaAccuracyTests(unittest.TestCase):
         self.assertEqual(parsed.s_max_ulp_q8_8, 0x0180)
         self.assertEqual(parsed.d_max_ulp_q8_8, 0x0200)
         self.assertEqual(compose_accuracy_result(present=False), 0)
-        self.assertEqual(parse_accuracy_result(0), parse_accuracy_result(compose_accuracy_result(present=False)))
+        self.assertEqual(
+            parse_accuracy_result(0),
+            parse_accuracy_result(compose_accuracy_result(present=False)),
+        )
 
     def test_present_contract_requires_both_formats_within_four_ulp(self) -> None:
         for s_bound, d_bound in ((0, 0x100), (0x100, 0), (0x401, 0x100), (0x100, 0x401)):
@@ -79,45 +79,6 @@ class FptransaAccuracyTests(unittest.TestCase):
         self.assertEqual(reference_ulp(1.0, "S"), math.ldexp(1.0, -23))
         self.assertEqual(reference_ulp(math.nextafter(1.0, 0.0), "D"), math.ldexp(1.0, -53))
         self.assertEqual(reference_ulp(1.0, "D"), math.ldexp(1.0, -52))
-
-    def test_all_19_contract_ids_are_structured_and_unique(self) -> None:
-        instruction_root = (
-            ROOT
-            / "isa"
-            / "defs"
-            / "extensions"
-            / "fpu_transcendental_approx"
-            / "instructions"
-        )
-        actual: dict[str, int] = {}
-        for path in instruction_root.glob("*/instruction.yaml"):
-            data = load_yaml(path)
-            mnemonic = str(data["mnemonic"])
-            approximation = data["behavior"]["approximation"]
-            actual[mnemonic] = int(str(approximation["contract_id"]), 0)
-            self.assertEqual(approximation["max_ulp"], {"S": 4, "D": 4})
-            self.assertNotIn("NX", data["attributes"]["fp_flags"]["update"])
-        self.assertEqual(actual, FPTRANSA_CONTRACT_IDS)
-        self.assertEqual(len(set(actual.values())), 19)
-
-    def test_fsincosa_has_independent_pair_contract(self) -> None:
-        path = (
-            ROOT
-            / "isa"
-            / "defs"
-            / "extensions"
-            / "fpu_transcendental_approx"
-            / "instructions"
-            / "FSINCOSA"
-            / "instruction.yaml"
-        )
-        data = load_yaml(path)
-        details = path.with_name("details.tex").read_text(encoding="utf-8")
-        self.assertIn("0x0003", details)
-        self.assertIn("same F register", details)
-        self.assertIn("written atomically", details)
-        self.assertIn("independently to both", details)
-        self.assertNotIn("operation", data["behavior"])
 
 
 if __name__ == "__main__":

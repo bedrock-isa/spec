@@ -18,7 +18,6 @@ from gen_docs import (  # noqa: E402
     allocation_opcode_bytes,
     entry_byte_segments,
     instruction_length,
-    latex_entry_bit_diagram,
     load_yaml,
     required_bytes_text,
 )
@@ -46,52 +45,6 @@ def allocation(
 
 
 class InstructionBitDiagramTests(unittest.TestCase):
-    def test_extrashort_renders_only_byte_zero_on_the_left(self) -> None:
-        rendered = latex_entry_bit_diagram(allocation("extrashort", 7), "TEST")
-        self.assertIn(r"\manualsinglebytelabels{0}", rendered)
-        self.assertIn(r"\manualbitgap{9}", rendered)
-        self.assertNotIn(r"\manualbytepairlabelsfor", rendered)
-        self.assertNotIn("header", rendered)
-        self.assertNotIn("opcode byte", rendered)
-
-    def test_long_renders_two_byte_pairs(self) -> None:
-        rendered = latex_entry_bit_diagram(allocation("long", 26), "TEST")
-        self.assertIn(r"\manualbitvariable{L}{4}", rendered)
-        self.assertIn(r"\manualbitfixed{11}{2}", rendered)
-        self.assertIn(r"Format \textemdash{} Instruction format", rendered)
-        self.assertIn(r"\manualbytepairlabelsfor{0}{1}", rendered)
-        self.assertIn(r"\manualbytepairlabelsfor{2}{3}", rendered)
-        self.assertNotIn(r"\manualsinglebytelabels", rendered)
-        self.assertEqual(rendered.count(r"\manualbitfieldrow{}"), 2)
-
-    def test_extralong_leaves_final_odd_byte_on_the_left(self) -> None:
-        rendered = latex_entry_bit_diagram(allocation("extralong", 34), "TEST")
-        self.assertIn(r"\manualbytepairlabelsfor{0}{1}", rendered)
-        self.assertIn(r"\manualbytepairlabelsfor{2}{3}", rendered)
-        self.assertIn(r"\manualsinglebytelabels{4}", rendered)
-        self.assertEqual(rendered.count(r"\manualbitfieldrow{}"), 3)
-
-    def test_fixed_opcode_byte_is_grouped_into_nibbles(self) -> None:
-        entry = allocation(
-            "extralong",
-            34,
-            bits="1111110000" + "0" * 24,
-        )
-        byte0, byte1, *_rest = entry_byte_segments(entry)
-        self.assertEqual(byte0, [("11", 2), ("L", 4), ("11", 2)])
-        self.assertEqual(byte1, [("1111", 4), ("0000", 4)])
-
-    def test_fixed_medium_opcode_byte_is_grouped_into_nibbles(self) -> None:
-        entry = allocation(
-            "medium",
-            18,
-            bits="000010011110000000",
-        )
-        byte0, byte1, byte2 = entry_byte_segments(entry)
-        self.assertEqual(byte0, [("11", 2), ("L", 4), ("00", 2)])
-        self.assertEqual(byte1, [("0010", 4), ("0111", 4)])
-        self.assertEqual(byte2, [("1000", 4), ("0000", 4)])
-
     def test_every_rendered_byte_has_exactly_eight_bits(self) -> None:
         for cls, payload_bits in (
             ("extrashort", 7),

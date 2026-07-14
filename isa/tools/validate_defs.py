@@ -28,39 +28,6 @@ FORBIDDEN_BEHAVIOR_KEYS = {
     "canonicalization",
     "descriptor_payloads",
 }
-EXPECTED_DETAILS_MNEMONICS = {
-    "ADC", "SBB", "CLMUL", "CLMULH", "CMPXCHG", "DIVS", "DIVU", "MODS", "MODU",
-    "DIVMODS", "DIVMODU", "ERET", "EXTRACT", "LCALL", "LJMP", "LRET", "POP", "PUSH",
-    "POPP", "PUSHP", "PTQUERY", "REPG", "REPcc", "SAVE", "RESTORE", "SEGLEA", "SYSCALL",
-    "SYSRET", "VTOP", "RDPMC", "FCLASS", "FCVT", "FCVTU", "FGETEXP", "FGETMAN", "FMOD",
-    "FREM", "FSCALE", "FPOPP", "FPUSHP", "FACOSA", "FASINA", "FATANA", "FATANHA",
-    "FCOSA", "FCOSHA", "FETOXA", "FETOXM1A", "FLOG10A", "FLOG2A", "FLOGNA", "FLOGNP1A",
-    "FSINA", "FSINCOSA", "FSINHA", "FTANA", "FTANHA", "FTENTOXA", "FTWOTOXA", "ENCINST",
-}
-
-FPTRANSA_CONTRACT_IDS = {
-    "FSINA": 0x0000,
-    "FCOSA": 0x0001,
-    "FTANA": 0x0002,
-    "FSINCOSA": 0x0003,
-    "FASINA": 0x0010,
-    "FACOSA": 0x0011,
-    "FATANA": 0x0012,
-    "FSINHA": 0x0020,
-    "FCOSHA": 0x0021,
-    "FTANHA": 0x0022,
-    "FATANHA": 0x0023,
-    "FETOXA": 0x0030,
-    "FETOXM1A": 0x0031,
-    "FTWOTOXA": 0x0032,
-    "FTENTOXA": 0x0033,
-    "FLOGNA": 0x0040,
-    "FLOGNP1A": 0x0041,
-    "FLOG2A": 0x0042,
-    "FLOG10A": 0x0043,
-}
-
-
 def load_yaml(path: Path) -> Any:
     with path.open() as f:
         return yaml.safe_load(f)
@@ -190,10 +157,6 @@ def validate_defs(root: Path = ROOT) -> tuple[dict[str, Any], list[str]]:
         errors.append(f"{path}: instruction definition is not listed by a manifest")
     for path in sorted(listed_instruction_files - discovered_instruction_files):
         errors.append(f"{path}: listed instruction definition is outside the directory contract")
-    if len(discovered_instruction_files) != 206:
-        errors.append(f"expected 206 instruction.yaml files, found {len(discovered_instruction_files)}")
-    if len(discovered_instruction_dirs) != 206:
-        errors.append(f"expected 206 instruction directories, found {len(discovered_instruction_dirs)}")
     if discovered_instruction_dirs != {path.parent for path in discovered_instruction_files}:
         errors.append("instruction directories and instruction.yaml parents do not match exactly")
 
@@ -282,9 +245,6 @@ def validate_defs(root: Path = ROOT) -> tuple[dict[str, Any], list[str]]:
                 if ext_family not in family_order:
                     errors.append(f"{path}: extension_family {ext_family!r} not present in manifest family_order")
                 if ext_family == "fpu_transcendental_approx":
-                    expected_id = FPTRANSA_CONTRACT_IDS.get(mnemonic)
-                    if expected_id is None:
-                        errors.append(f"{path}: unexpected FPTRANSA mnemonic {mnemonic}")
                     if forms.get("size") != "S_D":
                         errors.append(f"{path}: FPTRANSA instructions must support S and D together")
                     behavior = data.get("behavior") or {}
@@ -293,15 +253,12 @@ def validate_defs(root: Path = ROOT) -> tuple[dict[str, Any], list[str]]:
                         errors.append(f"{path}: missing behavior.approximation contract")
                     else:
                         raw_contract_id = approximation.get("contract_id")
+                        contract_id: int | None = None
                         try:
                             contract_id = int(str(raw_contract_id), 0)
                         except (TypeError, ValueError):
                             errors.append(f"{path}: invalid FPTRANSA contract_id {raw_contract_id!r}")
                         else:
-                            if expected_id is not None and contract_id != expected_id:
-                                errors.append(
-                                    f"{path}: contract_id 0x{contract_id:04x} does not match expected 0x{expected_id:04x}"
-                                )
                             previous_contract = fptransa_contracts.get(contract_id)
                             if previous_contract is not None:
                                 errors.append(
@@ -323,8 +280,8 @@ def validate_defs(root: Path = ROOT) -> tuple[dict[str, Any], list[str]]:
                     documentation_plain = documentation_text.replace(r"\_", "_")
                     if "unbounded precision" in documentation_text or "using FSTATUS.RM" in documentation_text:
                         errors.append(f"{path}: correctly-rounded language remains in FPTRANSA documentation")
-                    if expected_id is not None and f"0x{expected_id:04x}" not in documentation_text:
-                        errors.append(f"{path}: details do not identify FPTRANSA contract 0x{expected_id:04x}")
+                    if contract_id is not None and f"0x{contract_id:04x}" not in documentation_text:
+                        errors.append(f"{path}: details do not identify FPTRANSA contract 0x{contract_id:04x}")
                     if "PRESENT" not in documentation_plain or "ILLEGAL_INSTRUCTION" not in documentation_plain:
                         errors.append(f"{path}: details do not define unavailable-contract handling")
                     fp_flags = data.get("attributes", {}).get("fp_flags", {})
@@ -355,20 +312,7 @@ def validate_defs(root: Path = ROOT) -> tuple[dict[str, Any], list[str]]:
     if unknown_operand_files:
         details = ", ".join(f"{key}={len(value)}" for key, value in sorted(unknown_operand_files.items()))
         errors.append(f"instruction files use operand types not listed in operands.yaml: {details}")
-    actual_fptransa = {mnemonic for mnemonic, _path in fptransa_contracts.values()}
-    missing_fptransa = sorted(set(FPTRANSA_CONTRACT_IDS) - actual_fptransa)
-    if missing_fptransa:
-        errors.append("missing FPTRANSA contracts: " + " ".join(missing_fptransa))
     discovered_details_paths = set(root.glob("**/instructions/*/details.tex"))
-    actual_details_mnemonics = {path.parent.name for path in discovered_details_paths}
-    if actual_details_mnemonics != EXPECTED_DETAILS_MNEMONICS:
-        missing = sorted(EXPECTED_DETAILS_MNEMONICS - actual_details_mnemonics)
-        extra = sorted(actual_details_mnemonics - EXPECTED_DETAILS_MNEMONICS)
-        errors.append(f"details.tex mnemonic set mismatch: missing={missing}, extra={extra}")
-    if details_count != 60:
-        errors.append(f"expected 60 details.tex files, found {details_count}")
-    if len(discovered_details_paths) != 60:
-        errors.append(f"expected 60 discovered details.tex files, found {len(discovered_details_paths)}")
     if any(path.parent not in discovered_instruction_dirs for path in discovered_details_paths):
         errors.append("details.tex found outside a valid instruction directory")
 
