@@ -1,4 +1,4 @@
-version: draft-v1
+version: draft
 segment_registers:
 - name: CS
   selector: code
@@ -17,29 +17,29 @@ segment_registers:
   selector: general
   width: 64
   sreg_encoding: 2
-  sreg_use: TLS context in the ELF and C ABIs
+  sreg_use: general segment register 0
 - name: GS1
   selector: general
   width: 64
   sreg_encoding: 3
-  sreg_use: caller-saved scratch and far-pointer return segment
+  sreg_use: general segment register 1
 - name: GS2
   selector: general
   width: 64
   sreg_encoding: 4
-  sreg_use: caller-saved far-pointer argument segment 0
+  sreg_use: general segment register 2
 - name: GS3
   selector: general
   width: 64
   sreg_encoding: 5
-  sreg_use: caller-saved far-pointer argument segment 1
+  sreg_use: general segment register 3
 - name: GS4
   selector: general
   width: 64
   sreg_encoding: 6
-  sreg_use: caller-saved far-pointer argument segment 2
+  sreg_use: general segment register 4
 - name: GS5
   selector: general
   width: 64
   sreg_encoding: 7
-  sreg_use: caller-saved far-pointer argument segment 3
+  sreg_use: general segment register 5

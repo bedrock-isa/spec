@@ -250,7 +250,7 @@ entries:
       e: {kind: ea7, width: 7}
   - id: long.jmp_x_ea_e
     bits: "1111001001z00000000eeeeeee"
-    text: "JMP.X(z:W/L) <ea>(e)"
+    text: "JMP.X(z:L/Q) <ea>(e)"
     fields:
       z: {kind: size, width: 1}
       e: {kind: ea7, width: 7}
@@ -258,7 +258,7 @@ entries:
       - {field: e, exclude: immediate, reason: canonical_form_reclaim}
   - id: long.jcc_x_ea_e
     bits: "1111001001z0000cccceeeeeee"
-    text: "Jcc.X(z:W/L) <ea>(e)"
+    text: "Jcc.X(z:L/Q) <ea>(e)"
     fields:
       z: {kind: size, width: 1}
       c: {kind: condition, width: 4}
@@ -611,14 +611,6 @@ entries:
     text: "INVDCACHE <ea>(e)"
     fields:
       e: {kind: ea7, width: 7}
-  - id: long.encinst_ea_e
-    bits: "1111101111010001100eeeeeee"
-    text: "ENCINST <ea>(e)"
-    fields:
-      e: {kind: ea7, width: 7}
-    constraints:
-      - {field: e, exclude: reg_direct, reason: memory_operand_required}
-      - {field: e, exclude: immediate, reason: memory_operand_required}
   - id: long.invicache_ea_e
     bits: "1111101111010000101eeeeeee"
     text: "INVICACHE <ea>(e)"

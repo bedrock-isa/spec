@@ -4,9 +4,9 @@
 #include <stdint.h>
 
 typedef enum __bedrock_performance_counter {
-  __BEDROCK_PMC_CYCLE = 0,
-  __BEDROCK_PMC_INSTRET = 1,
-  __BEDROCK_PMC_PTWALK = 2
+  __BEDROCK_PMC_CYCLE = 1,
+  __BEDROCK_PMC_INSTRET = 2,
+  __BEDROCK_PMC_PTWALK = 3
 } __bedrock_performance_counter_t;
 
 static __inline__ uint64_t

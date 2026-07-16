@@ -29,7 +29,8 @@ GENERAL_SCALARS = {
 GENERAL_PAIRS = {"i128", "u128"}
 FAR_POINTERS = {"far_data_pointer", "far_function_pointer"}
 FLOAT_SCALARS = {"f32", "f64", "long_double"}
-SCALAR_KINDS = GENERAL_SCALARS | GENERAL_PAIRS | FAR_POINTERS | FLOAT_SCALARS
+FLOAT_PAIRS = {"complex_f32", "complex_f64", "complex_long_double"}
+SCALAR_KINDS = GENERAL_SCALARS | GENERAL_PAIRS | FAR_POINTERS | FLOAT_SCALARS | FLOAT_PAIRS
 DEFAULT_PROMOTIONS = {
     "bool": "i32",
     "i8": "i32",
@@ -147,6 +148,8 @@ def return_location(value: ReturnValue) -> str | None:
         return f"{FAR_RETURN_SEGMENT_REGISTER}:R0"
     if value.kind in FLOAT_SCALARS:
         return "F0"
+    if value.kind in FLOAT_PAIRS:
+        return "F0(real)+F1(imag)"
     if value.kind == "aggregate":
         return "R1:R0" if value.size is not None and value.size <= 16 else "R0"
     raise AssertionError(f"unhandled return kind: {value.kind}")
@@ -216,6 +219,14 @@ def layout_call(call: Call) -> dict[str, Any]:
             if not float_exhausted and float_cursor < len(FLOAT_REGISTERS):
                 location = FLOAT_REGISTERS[float_cursor]
                 float_cursor += 1
+            else:
+                float_exhausted = True
+                float_cursor = len(FLOAT_REGISTERS)
+                location = stack_location()
+        elif effective_kind in FLOAT_PAIRS:
+            if not float_exhausted and float_cursor + 1 < len(FLOAT_REGISTERS):
+                location = f"F{float_cursor}(real)+F{float_cursor + 1}(imag)"
+                float_cursor += 2
             else:
                 float_exhausted = True
                 float_cursor = len(FLOAT_REGISTERS)

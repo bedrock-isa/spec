@@ -1,0 +1,110 @@
+\subsubsection{Auxiliary Payloads}
+For an AUXILIARY frame, \texttt{ERROR\_CODE} bit 26 is \texttt{EVENT\_AUX\_VALID}. Bits 24 and 25 are
+\texttt{FAULT\_EA\_VALID} and \texttt{FAULT\_LINEAR\_VALID} when the event can supply those addresses. Every
+unassigned bit is zero, and an auxiliary or address value not produced is zero with its validity bit clear.
+
+For \texttt{DOUBLE\_FAULT}, \texttt{ERROR\_CODE[7:0]} identifies the delivery stage:
+
+\manualtablecaption{DOUBLE\_FAULT Delivery Stages}
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{2.15in}>{\raggedright\arraybackslash}p{2.60in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Value} & \textbf{Stage} & \textbf{Failure}\\
+\midrule
+0 & \texttt{ENTRY\_STATE} & entry code or segment state validation\\
+1 & \texttt{STACK\_STATE} & selected event-stack state\\
+2 & \texttt{FRAME\_ADDRESS} & complete frame-address formation or translation\\
+3 & \texttt{FRAME\_STORE} & complete frame storage\\
+\bottomrule
+\end{manualtabular}
+
+When valid, \texttt{EVENT\_AUX[31:0]} contains the event code whose delivery failed and bits 63..32 are zero. A
+\texttt{FRAME\_ADDRESS} or \texttt{FRAME\_STORE} failure supplies \texttt{FAULT\_EA} and \texttt{FAULT\_LINEAR}
+when those values were produced.
+
+For \texttt{MACHINE\_CHECK}, the error code has this layout:
+
+\manualtablecaption{MACHINE\_CHECK ERROR\_CODE Fields}
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{1.35in}>{\raggedright\arraybackslash}p{3.45in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Bits} & \textbf{Field} & \textbf{Meaning}\\
+\midrule
+7..0 & \texttt{SOURCE} & 0 unknown; 1 core; 2 cache; 3 translation; 4 memory; 5 interconnect\\
+9..8 & \texttt{SEVERITY} & 0 corrected; 1 recoverable; 2 fatal; 3 reserved\\
+10 & \texttt{PRECISE} & saved PC identifies the responsible instruction and saved CPU state precedes it\\
+11 & \texttt{RETRY\_SAFE} & retry at that precise boundary cannot duplicate an external effect\\
+23..12 & reserved & zero\\
+24 & \texttt{FAULT\_EA\_VALID} & \texttt{FAULT\_EA} was produced\\
+25 & \texttt{FAULT\_LINEAR\_VALID} & \texttt{FAULT\_LINEAR} was produced\\
+26 & \texttt{EVENT\_AUX\_VALID} & \texttt{EVENT\_AUX} was produced\\
+63..27 & reserved & zero\\
+\bottomrule
+\end{manualtabular}
+
+When valid, \texttt{EVENT\_AUX} contains an implementation-defined syndrome. Associated effective and linear
+addresses are supplied when available.
+
+\texttt{RETRY\_SAFE=1} requires \texttt{PRECISE=1}. The valid severity and continuation combinations are:
+
+\manualtablecaption{MACHINE\_CHECK Valid Continuation Combinations}
+\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{0.95in}>{\raggedright\arraybackslash}p{0.55in}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{3.25in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Severity} & \textbf{PRECISE} & \textbf{RETRY\_SAFE} & \textbf{Saved PC and continuation meaning}\\
+\midrule
+\endfirsthead
+\multicolumn{4}{l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Severity} & \textbf{PRECISE} & \textbf{RETRY\_SAFE} & \textbf{Saved PC and continuation meaning}\\
+\midrule
+\endhead
+corrected & 0 & 0 & Trap; saved PC is the instruction following the corrected operation.\\
+recoverable & 0 & 0 & Saved PC is the next instruction that would execute at the delivery boundary; saved CPU state is the state at that boundary. It does not identify the responsible operation.\\
+recoverable & 1 & 0 & Saved PC identifies the responsible instruction and CPU state precedes it; retry may duplicate an external effect.\\
+recoverable & 1 & 1 & Saved PC identifies the responsible instruction and CPU state precedes it; retry cannot duplicate an external effect.\\
+fatal & 0 & 0 & Saved PC is the next instruction at the delivery boundary and is diagnostic only.\\
+fatal & 1 & 0 & Saved PC identifies the responsible instruction and pre-instruction CPU state for diagnosis only.\\
+\bottomrule
+\end{manuallongtable}
+
+All other combinations are invalid and are not generated. In particular, corrected machine checks never set either
+bit, \texttt{PRECISE=0, RETRY\_SAFE=1} is invalid for every severity, fatal machine checks never set
+\texttt{RETRY\_SAFE}, and severity 3 is reserved. A fatal event provides no reliable continuation even when its
+diagnostic state is precise.
+
+For \texttt{BUS\_ERROR}, the error code has this layout:
+
+\manualtablecaption{BUS\_ERROR ERROR\_CODE Fields}
+\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{1.35in}>{\raggedright\arraybackslash}p{3.45in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Bits} & \textbf{Field} & \textbf{Meaning}\\
+\midrule
+\endfirsthead
+\multicolumn{3}{l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Bits} & \textbf{Field} & \textbf{Meaning}\\
+\midrule
+\endhead
+7..0 & \texttt{CAUSE} & 0 no responder; 1 access denied; 2 timeout; 3 data error; 4 other\\
+9..8 & \texttt{ACCESS} & 0 none, 1 read, 2 write, 3 execute\\
+10 & \texttt{USER\_DOMAIN} & access selected the user-domain permission path\\
+11 & \texttt{ATOMIC} & access was an atomic read-modify-write\\
+14..12 & \texttt{WALK\_LEVEL} & 0 outside a walk; 1 through 5 identify the PTE level\\
+15 & reserved & zero\\
+23..16 & \texttt{OPERAND} & zero-based explicit operand ordinal; \texttt{0xff} for implicit fetch or stack access\\
+24 & \texttt{FAULT\_EA\_VALID} & \texttt{FAULT\_EA} was produced\\
+25 & \texttt{FAULT\_LINEAR\_VALID} & \texttt{FAULT\_LINEAR} was produced\\
+26 & \texttt{EVENT\_AUX\_VALID} & \texttt{EVENT\_AUX} was produced\\
+29..27 & \texttt{ACCESS\_SIZE} & 0 unavailable or inapplicable; 1 B; 2 W; 3 L; 4 Q\\
+30 & \texttt{RETRY\_SAFE} & retry cannot duplicate an external effect\\
+63..31 & reserved & zero\\
+\bottomrule
+\end{manuallongtable}
+
+A bus error during a page walk reports the level whose PTE transaction failed. When valid, \texttt{EVENT\_AUX}
+contains the final memory-system address available for the failed transaction. For a slot-addressed access, this is
+the slot address and not a byte address.

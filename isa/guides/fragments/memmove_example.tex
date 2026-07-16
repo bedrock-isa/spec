@@ -1,6 +1,7 @@
+% Non-normative guide fragment.
 \begin{manualformblock}{0.70in}
 \begin{manualcode}
-\manualcodeline{; memcpy(dst, src, n), byte copy forward}
+\manualcodeline{; memmove(dst, src, n), non-overlapping or forward byte copy}
 \manualcodeline{; R0 = src, R1 = dst}
 \manualcodeline{; R2 = n}
 \manualcodeline{REP R2, (MOV.B [R0++], [R1++])}

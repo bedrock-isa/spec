@@ -16,6 +16,10 @@ are consumed in the displayed stream order, byte 0 followed by byte 1, and bit n
 Indexed scale is implicit in the consuming instruction. For ordinary B/W/L/Q memory operations, the scale is 1, 2,
 4, or 8. LEA uses its suffix to select the scale.
 
+For every compact or EXT0 PC-based EA, the PC term is the architectural PC naming byte 0 of the current instruction.
+It is not the address of the following instruction and not the address of a displacement or relocation field. The PC
+term remains that instruction-start value throughout operand evaluation.
+
 \clearpage
 \subsection{Compact EA Addressing Modes}
 Compact EA forms are the fast-path operand encodings. They cover direct Rn and SP operands, common Rn/SP/PC memory

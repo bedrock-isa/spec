@@ -1,4 +1,4 @@
-version: rewrite-draft-v1
+version: draft
 instruction_sets:
 - name: base
   root: base
@@ -9,9 +9,6 @@ instruction_sets:
 - name: fpu_transcendental_approx
   root: extensions/fpu_transcendental_approx
   include: extensions/fpu_transcendental_approx/instructions.yaml
-- name: virtualization_acceleration
-  root: extensions/virtualization_acceleration
-  include: extensions/virtualization_acceleration/instructions.yaml
 extension_grouping:
   family_order:
   - integer_alu
@@ -36,7 +33,6 @@ extension_grouping:
   - cache_hint
   - tlb_cache
   - system_core
-  - virtualization_acceleration
   - fpu_move_compare
   - fpu_arithmetic_ea_wide
   - fpu_arithmetic

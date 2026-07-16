@@ -7,10 +7,7 @@ reference-document outputs.
 The active source tree is:
 
 ```text
-docs/isa_architectural_state_recovery_plan.md
-                              architectural-state migration recovery plan
-docs/event_processing_model_design.md
-                              implemented architectural event-model design
+isa/memory_model/             draft formal-validation gate and litmus obligations
 isa/defs/**/instructions/    one directory per instruction, with instruction.yaml and optional details.tex
 isa/alloc/*.yaml             opcode allocation source of truth
 isa/tex/*.tex                shared reference-document components
@@ -18,6 +15,7 @@ isa/abi/bedrock-elf-abi.tex  ELF binary-format ABI source
 isa/abi/bedrock-c-abi.tex    C ABI source, including far-pointer ABI
 isa/c/*.tex                  C language-extension and compiler-API sources
 isa/c/include/*.h            target intrinsic header interfaces
+isa/guides/*.tex             non-normative programming and toolchain guides
 isa/tools/validate_defs.py   definition include/family consistency validator
 isa/tools/validate_alloc.py  allocation collision and cardinality validator
 isa/tools/validate_isa.py    definition/allocation join validator
@@ -97,18 +95,18 @@ latexmk -pdf -interaction=nonstopmode -halt-on-error -outdir=build build/isa_ref
 cp build/isa_reference.pdf isa_reference.pdf
 ```
 
-Build all five reference documents:
+Build all six reference documents and guides:
 
 ```sh
 make docs
 ```
 
-The four directly maintained TeX documents can be built independently with
+The five directly maintained TeX documents can be built independently with
 `make elf-abi`, `make c-abi`, `make c-far-extensions`, and
-`make target-intrinsics`.
+`make target-intrinsics`, or `make programming-guide`.
 
 Use `make isa-reference-markdown` for the ISA reference, `make abi-markdown`
-for both ABI documents, or `make docs-markdown` for all five derived Markdown
+for both ABI documents, or `make docs-markdown` for all six derived Markdown
 artifacts.
 
 ## Allocation Reports

@@ -9,15 +9,18 @@ Each page-table level uses a nine-bit address field to select one of 512 64-bit 
 table-page base address (B) and index (i), the selected entry is at (B + 8i). The walker starts at the physical
 table page named by \texttt{PTCR.root\_page}. Because large-page leaves are not defined, every selected entry above
 L1 must point to the next table page. The selected L1 entry is the leaf PTE; its physical frame number is combined
-with linear-address bits \texttt{11..0} to form the physical address:
+with linear-address bits \texttt{11..0} to form the memory-system address. The leaf \texttt{AT} bit determines
+whether that value is a byte address or a slot address:
 
 \[
-  \mathit{physical\_address} = (\mathit{leaf\_PFN} \ll 12) + \mathit{page\_offset}.
+  \mathit{memory\_system\_address} = (\mathit{leaf\_PFN} \ll 12) + \mathit{linear}[11:0].
 \]
 
 The walker validates every consumed entry and accumulates its permissions while descending toward L1. The leaf PTE
 supplies the final frame number and memory attributes. The detailed entry-validity, permission, accessed, and dirty
-rules are specified under Page-Table Entry Format.
+rules are specified under Page-Table Entry Format. At each consumed level, result priority is not-present first,
+structural validity second, and accumulated permission third; the walker resolves those results before consuming a
+lower level.
 
 \clearpage
 \subsection{LA48 Four-Level Paging}

@@ -59,7 +59,7 @@
 \manualeaprofilesyntax{[PC + disp64]}
 \manualeaprofileline{EA encoding}{1100100, 1100101, 1100110, and 1100111 select disp8s, disp16s, disp32s, and disp64.}
 \manualeaprofileline{EA type}{memory operand.}
-\manualeaprofileline{Generation}{offset = temporary PC term + displacement. The PC term is the PC value supplied to operand evaluation by the execution model.}
+\manualeaprofileline{Generation}{offset = instruction-start PC + displacement. PC names byte 0 of the current instruction, not the following instruction or displacement field.}
 \manualeaprofileline{Segment}{Fixed to CS; no segment field is encoded.}
 \manualeaprofileline{Payload}{A displacement payload is always present. Payload is little-endian and has the size named by the EA form.}
 \manualeaprofileline{Update}{No auto-update for PC forms.}

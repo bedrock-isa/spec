@@ -77,7 +77,7 @@ class InstructionEaFormsTests(unittest.TestCase):
         self.assertEqual(rendered.count("Effective Address field"), 2)
         self.assertEqual(rendered.count(r"\manualeasummary"), 2)
 
-    def test_all_249_summaries_reconstruct_the_original_allowed_sets(self) -> None:
+    def test_all_248_summaries_reconstruct_the_original_allowed_sets(self) -> None:
         rows = compact_ea_display_rows(self.model.metadata["ea"])
         self.assertEqual(len(rows), 27)
         summary_count = 0
@@ -110,7 +110,7 @@ class InstructionEaFormsTests(unittest.TestCase):
                     with self.subTest(entry=entry.entry_id, field=symbol):
                         self.assertEqual(summary.allowed_syntax, expected)
                         self.assertEqual(summary.reconstructed_allowed_syntax(), expected)
-        self.assertEqual(summary_count, 249)
+        self.assertEqual(summary_count, 248)
 
 if __name__ == "__main__":
     unittest.main()

@@ -32,9 +32,9 @@ width are available to software and ignored by the page-table walker.
 \texttt{X} & \texttt{2} & executable\\
 \texttt{U} & \texttt{3} & user-domain mapping\\
 \texttt{G} & \texttt{4} & global translation\\
-\texttt{A} & \texttt{5} & accessed; may be set on any consumed entry, including a speculative traversal\\
-\texttt{D} & \texttt{6} & dirty; leaf-only and set exactly when a store or atomic memory update commits\\
-\texttt{AT} & \texttt{7} & 0 byte-addressed; 1 externally acknowledged / bus-sized leaf access\\
+\texttt{A} & \texttt{5} & accessed; may be set on a consumed byte-addressed entry, including a speculative traversal; required one for a slot leaf\\
+\texttt{D} & \texttt{6} & byte-addressed leaf dirty bit, set exactly when a store or atomic update commits; required one for a slot leaf\\
+\texttt{AT} & \texttt{7} & 0 byte-addressed leaf; 1 externally acknowledged slot-addressed leaf\\
 \texttt{CP} & \texttt{9..8} & 0 cacheable; 1 uncacheable; 2 write-through; 3 write-combining\\
 \texttt{SW0} & \texttt{10} & software-defined and ignored by hardware\\
 \texttt{T} & \texttt{11} & one for a non-leaf table pointer; zero for an L1 leaf\\
@@ -47,6 +47,10 @@ At every level above L1, P and T must both be one; D, G, and AT must be zero. At
 zero. W, X, and U permissions are accumulated across the walk. A reserved or malformed consumed entry raises
 \texttt{PAGE\_FAULT}. Supervisor current-domain access to a user mapping faults; the checked user-domain operations
 select the user-domain permission path explicitly.
+
+An \texttt{AT=1} leaf must have \texttt{CP=1} (uncacheable), \texttt{X=0}, \texttt{A=1}, and \texttt{D=1}.
+Any \texttt{AT=1} leaf with inconsistent attributes is a malformed PTE. Because A and D are required to be set in a
+valid slot leaf, an access never performs a speculative A update or a commit-time D update to that leaf.
 
 When hardware changes A or D from zero to one, it performs a conditional 64-bit atomic read-modify-write of the
 complete PTE. The update sets only the required A or D bits and preserves every other bit from the current 64-bit

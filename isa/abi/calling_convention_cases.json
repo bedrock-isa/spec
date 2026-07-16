@@ -143,6 +143,62 @@
       }
     },
     {
+      "id": "complex-floating-pairs",
+      "documented": false,
+      "call": {
+        "return": {"kind": "complex_f64"},
+        "arguments": [
+          {"name": "lead", "kind": "f32"},
+          {"name": "small", "kind": "complex_f32"},
+          {"name": "wide", "kind": "complex_f64"}
+        ]
+      },
+      "expect": {
+        "sret": null,
+        "return_location": "F0(real)+F1(imag)",
+        "arguments": [
+          {"name": "lead", "source_kind": "f32", "effective_kind": "f32", "mode": "value", "location": "F0"},
+          {"name": "small", "source_kind": "complex_f32", "effective_kind": "complex_f32", "mode": "value", "location": "F1(real)+F2(imag)"},
+          {"name": "wide", "source_kind": "complex_f64", "effective_kind": "complex_f64", "mode": "value", "location": "F3(real)+F4(imag)"}
+        ],
+        "stack_size": 0
+      }
+    },
+    {
+      "id": "complex-pair-exhausts-floating-class",
+      "documented": false,
+      "call": {
+        "return": {"kind": "void"},
+        "arguments": [
+          {"name": "f0", "kind": "f64"},
+          {"name": "f1", "kind": "f64"},
+          {"name": "f2", "kind": "f64"},
+          {"name": "f3", "kind": "f64"},
+          {"name": "f4", "kind": "f64"},
+          {"name": "f5", "kind": "f64"},
+          {"name": "f6", "kind": "f64"},
+          {"name": "pair", "kind": "complex_f64"},
+          {"name": "tail", "kind": "f32"}
+        ]
+      },
+      "expect": {
+        "sret": null,
+        "return_location": null,
+        "arguments": [
+          {"name": "f0", "source_kind": "f64", "effective_kind": "f64", "mode": "value", "location": "F0"},
+          {"name": "f1", "source_kind": "f64", "effective_kind": "f64", "mode": "value", "location": "F1"},
+          {"name": "f2", "source_kind": "f64", "effective_kind": "f64", "mode": "value", "location": "F2"},
+          {"name": "f3", "source_kind": "f64", "effective_kind": "f64", "mode": "value", "location": "F3"},
+          {"name": "f4", "source_kind": "f64", "effective_kind": "f64", "mode": "value", "location": "F4"},
+          {"name": "f5", "source_kind": "f64", "effective_kind": "f64", "mode": "value", "location": "F5"},
+          {"name": "f6", "source_kind": "f64", "effective_kind": "f64", "mode": "value", "location": "F6"},
+          {"name": "pair", "source_kind": "complex_f64", "effective_kind": "complex_f64", "mode": "value", "location": "[SP+16]"},
+          {"name": "tail", "source_kind": "f32", "effective_kind": "f32", "mode": "value", "location": "[SP+32]"}
+        ],
+        "stack_size": 32
+      }
+    },
+    {
       "id": "far-pointer-register-channels",
       "documented": true,
       "call": {

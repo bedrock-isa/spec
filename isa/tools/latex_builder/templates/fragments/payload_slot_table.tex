@@ -12,8 +12,8 @@
 \midrule
 \endhead
 +0x40 & ERROR\_CODE & exception-specific error code; unassigned bits are zero\\
-+0x48 & FAULT\_EA & faulting effective-address operand information\\
-+0x50 & FAULT\_LINEAR & faulting linear address\\
-+0x58 & EVENT\_AUX & machine, bus, or saved repeat-continuation information\\
++0x48 & FAULT\_EA & numeric effective address before segment pre-translation\\
++0x50 & FAULT\_LINEAR & address after segment pre-translation\\
++0x58 & EVENT\_AUX & double-fault, machine-check, or bus-error auxiliary information\\
 \bottomrule
 \end{manuallongtable}

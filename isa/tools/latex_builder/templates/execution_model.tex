@@ -6,6 +6,36 @@ instruction may add stricter rules, but it does not silently replace the rules b
 is to make operand evaluation, side effects, repetition, and status updates readable before the per-instruction
 pages.
 
+\subsection{Architectural Result Priority}
+When one instruction could encounter more than one exceptional condition, the architecturally reported result is
+the first applicable condition in the following order. This is a result-priority contract and does not require an
+implementation to serialize its internal pipeline in the same order.
+
+\begin{enumerate}
+\item Instruction fetch and fetch translation.
+\item Instruction framing and acquisition of the complete instruction record.
+\item Opcode recognition.
+\item Availability of every extension required by the decoded operation.
+\item Fixed-field, reserved-field, and effective-address-form legality.
+\item Privilege checks.
+\item Selector, control-image, and other architectural-state validation.
+\item Predicate evaluation for a conditional operation.
+\item Every non-suppressed operand access in architectural access order.
+\item Execution-stage integer and floating-point exceptions.
+\end{enumerate}
+
+A false predicate suppresses the conditional operation's target-memory and implicit stack accesses. It does not
+suppress instruction framing, opcode and extension checks, encoding legality, privilege checks, or control-state
+validation. Explicit operands are accessed in instruction operand order unless an instruction states another order.
+For a memory-to-memory operation, the complete source read precedes access to the destination, so a source-access
+failure has priority over a destination-access failure.
+
+Implicit accesses use the order stated by the instruction. In particular, PUSH captures its source before accessing
+the destination stack slot; POP reads the stack slot before validating or writing its destination; PUSHP uses listed
+register order and POPP uses reverse listed order; CALL validates its target before accessing the return stack; RET
+reads the return stack before validating its target; and the far call, far return, event return, and supervisor-entry
+instructions use the step order in their instruction descriptions.
+
 \subsection{Operand Evaluation and EA Defaults}
 Operands are decoded in instruction order. Source reads complete before the final destination write unless an
 atomic form says otherwise. Effective-address calculation may produce an address without reading memory.
@@ -34,8 +64,10 @@ register-memory, memory-register, and memory-memory conversions; they preserve F
 derived value. Data movement, LEA, and segment-address operations also preserve FLAGS unless their descriptions say
 otherwise.
 
-Control transfers make PC and CS changes at a single control-transfer commit point. Atomic operations require a
-naturally aligned addressable memory operand and commit the read-modify-write as one architectural update. TLB,
+Control transfers make PC and CS changes at a single control-transfer commit point. Atomic operations require an
+addressable memory operand. An \texttt{AT=0} atomic operand must be naturally aligned and commits the
+read-modify-write as one architectural update; an \texttt{AT=1} atomic operand raises \texttt{ADDRESS\_TYPE} and has
+no byte-alignment check. TLB,
 page-table context, and privileged control operations require supervisor privilege. Cache-maintenance operations
 preserve FLAGS and define their own visibility contract. Approximate transcendental floating-point operations are
 available only when CPUID reports \texttt{FPTRANSA} and marks the instruction's accuracy-contract ID present.

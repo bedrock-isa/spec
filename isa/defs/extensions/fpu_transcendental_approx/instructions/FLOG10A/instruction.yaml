@@ -11,7 +11,7 @@ behavior:
   - src
   output: dst
   approximation:
-    contract_id: '0x0043'
+    contract_id: '0x0044'
     reference_function: log10(x)
     domain: positive finite values and positive infinity after DAZ; signed zero is the DZ boundary
     max_ulp:

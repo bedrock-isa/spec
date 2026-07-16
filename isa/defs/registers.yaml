@@ -1,4 +1,4 @@
-version: rewrite-draft-v1
+version: draft
 general_registers:
 - {name: R0, encoding: 0, width: 64}
 - {name: R1, encoding: 1, width: 64}

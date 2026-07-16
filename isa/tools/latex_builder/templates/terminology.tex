@@ -6,8 +6,8 @@
 An \emph{effective address (EA)} is the address value or operand designator produced by an addressing mode before
 segment pre-translation. A memory EA produces an address, while register and immediate EAs name non-memory operands.
 
-A \emph{pre-segment virtual address} is the ABI-visible address before segment pre-translation. Ordinary pointers,
-ELF symbol values, near CALL targets, and near JMP targets use this address space unless a rule says otherwise.
+A \emph{pre-segment virtual address} is a virtual-address value before segment pre-translation. Segment
+pre-translation either converts it to a linear address or reports the architecturally defined fault.
 
 A \emph{linear address} is the result of segment pre-translation. The page-table walker consumes it when paging is
 enabled; otherwise the memory system uses it directly.
@@ -17,7 +17,7 @@ With paging disabled, the linear address is used directly instead.
 
 A \emph{memory-system address} is the value presented to the memory subsystem after every active architectural
 translation stage. Depending on the final access attributes, the subsystem may interpret it as an ordinary byte
-address or an externally acknowledged bus-sized access.
+address or an externally acknowledged slot address.
 
 \emph{Address generation} is the instruction-local calculation that combines registers, displacement, index,
 scale, and immediate fields into an effective address. It does not by itself read memory.
@@ -43,8 +43,8 @@ and checks only that it lies inside the segment window.
 \emph{Page-table translation} is the optional \texttt{PTCR.PE}-controlled stage that maps a canonical linear
 address to a physical frame and applies PTE permissions, cache policy, and addressing type.
 
-A \emph{PFN} is a physical frame number. A leaf PTE combines its PFN with the page offset to form the physical
-address.
+A \emph{PFN} is a physical frame number. A leaf PTE combines its PFN with linear-address bits 11..0 to form a byte
+address when \texttt{AT=0} or a slot address when \texttt{AT=1}.
 
 \subsection{Control Flow}
 

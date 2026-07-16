@@ -5,6 +5,5 @@
 #include <bedrockcacheintrin.h>
 #include <bedrockmmuintrin.h>
 #include <bedrockstateintrin.h>
-#include <bedrockvirtintrin.h>
 
 #endif

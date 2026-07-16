@@ -5,7 +5,7 @@
 \newcommand{\BedrockFooterTitle}{BEDROCK ARCHITECTURE}
 \input{isa/tex/bedrock-reference-common.tex}
 \begin{document}
-\BedrockMakeTitlePage{Bedrock C Far-Pointer Extensions}{Source-Language Types and Semantics}{Version 1.0}
+\BedrockMakeTitlePage{Bedrock C Far-Pointer Extensions}{Source-Language Types and Semantics}{Draft}
 \BedrockFrontMatter
 
 \clearpage
@@ -91,7 +91,7 @@ the conversion point, and the conversion does not probe page translation.
 Every declaration and definition of a far-native function must agree on the
 far function kind. Taking its address produces the corresponding far function
 pointer. A mismatch between near and far declarations requires a diagnostic.
-In version 1.0, every explicit conversion or cast between ordinary and far
+In the current draft, every explicit conversion or cast between ordinary and far
 function-pointer types is a constraint violation that requires a diagnostic,
 including when the operand names a known function symbol. Such a cast never
 requests a veneer, and a conforming implementation need not synthesize one.

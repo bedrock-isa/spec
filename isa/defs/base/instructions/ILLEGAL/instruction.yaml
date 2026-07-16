@@ -4,7 +4,7 @@ doc:
   summary: Raise illegal-instruction exception.
   instruction_family: core_control
   instruction_class: system
-  description: Raises ILLEGAL_INSTRUCTION at the current instruction boundary without retiring or changing architectural destination state before event entry.
+  description: Raises ILLEGAL_INSTRUCTION with the EXPLICIT_ILLEGAL cause at the current instruction boundary without retiring or changing architectural destination state before event entry.
 behavior:
   group: core_control
   output: none

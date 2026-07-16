@@ -9,7 +9,7 @@ integer, and floating-point target interfaces. It deliberately does not include
 privileged or system-management interfaces.
 
 `bedrocksystemintrin.h` is the system umbrella for system-register, cache, MMU,
-processor-state, and virtualization-acceleration interfaces. Every family
+and processor-state interfaces. Every family
 header uses the collision-resistant `bedrock<family>intrin.h` spelling and may
 also be included directly.
 

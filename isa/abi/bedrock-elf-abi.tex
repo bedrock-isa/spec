@@ -5,7 +5,7 @@
 \newcommand{\BedrockFooterTitle}{BEDROCK ARCHITECTURE}
 \input{isa/tex/bedrock-reference-common.tex}
 \begin{document}
-\BedrockMakeTitlePage{Bedrock ELF ABI}{ELF Object, Linking, and Loading ABI}{Version 1.0}
+\BedrockMakeTitlePage{Bedrock ELF ABI}{ELF Object, Linking, and Loading ABI}{Draft}
 \BedrockFrontMatter
 
 \clearpage
@@ -442,8 +442,8 @@ relocation table is a link error; the linker must not truncate it.
 The ordinary GOT stores 64-bit addresses for position-independent code and
 dynamic binding. A GOT relocation allocates or references the symbol's slot in
 the loaded object. The PLT contains executable near-call entries; a PLT
-relocation names that entry rather than the final function address. The loader
-must resolve a slot before control reaches code that depends on it.
+relocation names that entry rather than the final function address. Every
+ordinary PLT slot is resolved before application entry or constructors execute.
 
 GOT and PLT function addresses stay inside the ABI-visible near-call linkage
 domain. The far GOT is a separate table of aligned 16-byte address/image pairs,
@@ -526,15 +526,18 @@ expressed by the calculation alone.
 
 \clearpage
 \section{Dynamic Linking}
-Dynamic objects use a fixed Bedrock GOT and PLT contract so that linkers, loaders, and position-independent code agree on lazy binding and resolver state.
+Dynamic objects use a fixed eager-binding Bedrock GOT and PLT contract. Lazy binding and a runtime PLT resolver protocol are not part of the current draft ELF ABI.
 \subsection{Dynamic Linking Rules}
-Ordinary dynamic linking supports lazy binding, standard and indirect
-functions, copy relocations, and \texttt{R\_BEDROCK\_IRELATIVE}. Shared-object
-calls use near \texttt{CALL}/\texttt{RET} within the ABI-visible linkage
-domain. The GOT base symbol is \texttt{\_GLOBAL\_OFFSET\_TABLE\_}.
+Ordinary dynamic linking supports standard and indirect functions, copy
+relocations, and \texttt{R\_BEDROCK\_IRELATIVE}. The loader resolves every
+ordinary \texttt{R\_BEDROCK\_JUMP\_SLOT} and \texttt{R\_BEDROCK\_IRELATIVE}
+relocation before transferring control to the program entry point or any
+constructor. Shared-object calls use near \texttt{CALL}/\texttt{RET} within
+the ABI-visible linkage domain. The GOT base symbol is
+\texttt{\_GLOBAL\_OFFSET\_TABLE\_}.
 
-Every PLT entry, including PLT0, occupies 32 bytes; ordinary entries have
-16-byte alignment. Far binding is deliberately different: every
+There is no \texttt{PLT0}. Every ordinary PLT entry occupies 32 bytes and has
+16-byte alignment. Far binding uses the same eager publication rule: every
 \texttt{.got.far} entry is a 16-byte aligned 16-byte pair, is bound eagerly,
 and is immutable after publication. There is no far PLT. An external far call
 loads the final pair from \texttt{.got.far} and transfers with \texttt{LCALL}.
@@ -548,8 +551,8 @@ loads the final pair from \texttt{.got.far} and transfers with \texttt{LCALL}.
 \midrule
 \endhead
 0 & \texttt{\_\allowbreak{}DYNAMIC} & dynamic section address\\
-1 & \texttt{loader object handle} & dynamic loader object handle for this loaded object\\
-2 & \texttt{lazy\_\allowbreak{}resolver} & dynamic loader lazy binding entry\\
+1 & reserved & zero; no loader-handle meaning\\
+2 & reserved & zero; no lazy-resolver meaning\\
 \bottomrule
 \end{longtable}
 \endgroup
@@ -557,18 +560,30 @@ loads the final pair from \texttt{.got.far} and transfers with \texttt{LCALL}.
 \manualtablecaption{Procedure Linkage Table Layout}
 \begingroup\footnotesize
 \setlength{\tabcolsep}{2pt}
-\begin{longtable}{@{}p{1.35in}p{4.15in}@{}}
+\begin{longtable}{@{}p{0.75in}p{1.55in}p{3.20in}@{}}
 \toprule
-\textbf{Entry} & \textbf{Effect}\\
+\textbf{Offset} & \textbf{Bytes or field} & \textbf{Effect}\\
 \midrule
 \endhead
-\texttt{PLT0} & receives R0=relocation index and R1=GOT base, then transfers to GOT[2]\\
-\texttt{PLTn\_\allowbreak{}step0} & indirect branch through GOTPLT slot n\\
-\texttt{PLTn\_\allowbreak{}step1} & unresolved slot path sets R0=relocation index\\
-\texttt{PLTn\_\allowbreak{}step2} & unresolved slot path sets R1=GOT base and branches to PLT0\\
+\texttt{+0x00} & \texttt{e7 c9 80 67} & \texttt{JMP.Q [PC + disp64]}\\
+\texttt{+0x04} & \texttt{disp64} & little-endian \texttt{R\_BEDROCK\_GOTPCREL64} relocation field\\
+\texttt{+0x0c} & twenty \texttt{01} bytes & canonical \texttt{NOP} padding through offset \texttt{+0x1f}\\
 \bottomrule
 \end{longtable}
 \endgroup
+
+A PLT relocation uses explicit addend \texttt{+4}. Architectural PC names byte zero of the current instruction,
+whereas relocation place \texttt{P} is the field at entry offset four; therefore
+\texttt{GOT(S)+A-P} evaluates to \texttt{GOT(S)-PLTentry}, the displacement consumed by the PC-relative EA. The
+referenced \texttt{.got.plt} slot is 8-byte aligned and contains the eagerly resolved 64-bit near target. Both the
+PLT entry and its slot must be reachable under the active CS bounds used by that PC-relative EA.
+
+A PLT transfer preserves \texttt{R0} through \texttt{R7}, \texttt{F0} through
+\texttt{F7}, \texttt{GS1} through \texttt{GS5}, \texttt{FLAGS}, and all
+segment state. The loader writes each final \texttt{.got.plt} value before
+publication. Published slots are immutable and may be covered by
+\texttt{PT\_GNU\_RELRO}; no post-publication rebinding is permitted. A later
+lazy-binding facility requires a distinct ELF profile and resolver ABI.
 \subsection{Far GOT Layout}
 \manualtablecaption{Far GOT Entry}
 \begingroup\footnotesize

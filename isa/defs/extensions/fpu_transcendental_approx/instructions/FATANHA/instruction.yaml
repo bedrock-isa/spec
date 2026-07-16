@@ -11,7 +11,7 @@ behavior:
   - src
   output: dst
   approximation:
-    contract_id: '0x0023'
+    contract_id: '0x0024'
     reference_function: atanh(x)
     domain: finite x with abs(x) <= 1 after DAZ
     max_ulp:

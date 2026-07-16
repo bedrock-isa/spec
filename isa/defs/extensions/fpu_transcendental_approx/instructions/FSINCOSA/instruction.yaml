@@ -13,7 +13,7 @@ behavior:
   - sin_dst
   - cos_dst
   approximation:
-    contract_id: '0x0003'
+    contract_id: '0x0004'
     reference_function: paired sin(x) and cos(x) in radians
     domain: finite x with abs(x) <= pi / 4 after DAZ
     max_ulp:

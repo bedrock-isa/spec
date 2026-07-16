@@ -3,11 +3,11 @@ LATEXMK ?= latexmk
 PANDOC ?= pandoc
 LATEX_FLAGS = -pdf -interaction=nonstopmode -halt-on-error
 
-.PHONY: docs docs-markdown abi-markdown isa-reference isa-reference-markdown elf-abi elf-abi-markdown c-abi c-abi-markdown c-far-extensions c-far-extensions-markdown target-intrinsics target-intrinsics-markdown c-extensions compiler-abi intrinsics validate-docs validate-abi-model
+.PHONY: docs docs-markdown abi-markdown isa-reference isa-reference-markdown elf-abi elf-abi-markdown c-abi c-abi-markdown c-far-extensions c-far-extensions-markdown target-intrinsics target-intrinsics-markdown programming-guide programming-guide-markdown c-extensions compiler-abi intrinsics validate-docs validate-abi-model
 
-docs: isa-reference elf-abi c-abi c-far-extensions target-intrinsics
+docs: isa-reference elf-abi c-abi c-far-extensions target-intrinsics programming-guide
 
-docs-markdown: isa-reference-markdown elf-abi-markdown c-abi-markdown c-far-extensions-markdown target-intrinsics-markdown
+docs-markdown: isa-reference-markdown elf-abi-markdown c-abi-markdown c-far-extensions-markdown target-intrinsics-markdown programming-guide-markdown
 
 abi-markdown: elf-abi-markdown c-abi-markdown
 
@@ -41,6 +41,12 @@ target-intrinsics:
 
 target-intrinsics-markdown:
 	$(PYTHON) isa/tools/latex_to_markdown.py --pandoc "$(PANDOC)" isa/c/bedrock-target-intrinsics.tex build/markdown/bedrock-target-intrinsics.md
+
+programming-guide:
+	$(LATEXMK) $(LATEX_FLAGS) -outdir=build/latex/bedrock-programming-toolchain-guide isa/guides/bedrock-programming-toolchain-guide.tex
+
+programming-guide-markdown:
+	$(PYTHON) isa/tools/latex_to_markdown.py --pandoc "$(PANDOC)" isa/guides/bedrock-programming-toolchain-guide.tex build/markdown/bedrock-programming-toolchain-guide.md
 
 c-extensions: c-far-extensions
 

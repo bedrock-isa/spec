@@ -1,0 +1,103 @@
+\subsubsection{Page-Fault Error Code}
+\manualtablecaption{PAGE\_FAULT ERROR\_CODE Fields}
+\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{1.45in}>{\raggedright\arraybackslash}p{3.35in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Bits} & \textbf{Field} & \textbf{Meaning}\\
+\midrule
+\endfirsthead
+\multicolumn{3}{l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Bits} & \textbf{Field} & \textbf{Meaning}\\
+\midrule
+\endhead
+7..0 & \texttt{CAUSE} & page-fault cause listed below\\
+9..8 & \texttt{ACCESS} & 0 none, 1 read, 2 write, 3 execute\\
+10 & \texttt{USER\_DOMAIN} & access selected the user-domain permission path\\
+11 & \texttt{ATOMIC} & access was an atomic read-modify-write\\
+14..12 & \texttt{WALK\_LEVEL} & 0 before or without a walk; 1 through 5 identify the PTE level\\
+15 & reserved & zero\\
+23..16 & \texttt{OPERAND} & zero-based explicit operand ordinal; \texttt{0xff} for implicit fetch or stack access\\
+24 & \texttt{FAULT\_EA\_VALID} & \texttt{FAULT\_EA} was produced\\
+25 & \texttt{FAULT\_LINEAR\_VALID} & \texttt{FAULT\_LINEAR} was produced\\
+26 & reserved & zero\\
+29..27 & \texttt{ACCESS\_SIZE} & 0 unavailable or inapplicable; 1 B; 2 W; 3 L; 4 Q\\
+63..30 & reserved & zero\\
+\bottomrule
+\end{manuallongtable}
+
+\manualtablecaption{PAGE\_FAULT Causes}
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{2.20in}>{\raggedright\arraybackslash}p{2.55in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Value} & \textbf{Cause} & \textbf{Detection class}\\
+\midrule
+0 & \texttt{NOT\_PRESENT} & required PTE is not present\\
+1 & \texttt{PERMISSION} & accumulated permission excludes the access\\
+2 & \texttt{MALFORMED\_PTE} & structurally invalid PTE\\
+3 & \texttt{NONCANONICAL} & noncanonical address\\
+4 & \texttt{SEGMENT\_BOUNDS} & segment bounds failure\\
+5 & \texttt{ATOMIC\_ALIGNMENT} & misaligned byte-addressed (\texttt{AT=0}) atomic operand\\
+6 & \texttt{ADDRESS\_TYPE} & address or memory type rejects the access\\
+\bottomrule
+\end{manualtabular}
+
+The originating privilege is recovered from saved \texttt{STATUS.PM}; it is not duplicated in \texttt{ERROR\_CODE}.
+\texttt{USER\_DOMAIN} instead distinguishes the ordinary user permission path from the checked user-access path used
+by supervisor instructions such as \texttt{MOVUC}, \texttt{MOVCU}, and \texttt{MOVUU}. An atomic read-modify-write
+reports \texttt{ACCESS=write}. \texttt{NOT\_PRESENT} and \texttt{MALFORMED\_PTE} identify the actual PTE level.
+\texttt{PERMISSION} identifies the first level, in root-to-leaf walk order, whose accumulated permissions exclude the
+requested access. A cause detected before a walk reports level zero.
+
+\texttt{ACCESS\_SIZE} records the architectural transfer width when one of the B, W, L, or Q widths applies. It is
+zero when no such width is available or applicable.
+
+\texttt{FAULT\_EA} is the numeric effective address before segment pre-translation. \texttt{FAULT\_LINEAR} is the
+result after segment pre-translation. A value not produced is zero and has its corresponding validity bit clear.
+
+\subsubsection{Other Exception Error Codes}
+\texttt{DIVIDE\_ERROR.ERROR\_CODE[7:0]} is 0 for \texttt{ZERO\_DIVISOR} and 1 for
+\texttt{SIGNED\_OVERFLOW}; bits 63..8 are zero.
+
+\manualtablecaption{ILLEGAL\_INSTRUCTION Causes}
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{2.35in}>{\raggedright\arraybackslash}p{2.40in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Value} & \textbf{Cause} & \textbf{Meaning}\\
+\midrule
+0 & \texttt{INVALID\_OPCODE} & opcode is not assigned\\
+1 & \texttt{INVALID\_EA\_FORM} & effective-address form is not legal for the instruction\\
+2 & \texttt{RESERVED\_ENCODING} & assigned instruction uses a reserved field value\\
+3 & \texttt{UNAVAILABLE\_EXTENSION} & required extension is unavailable\\
+4 & \texttt{EXPLICIT\_ILLEGAL} & architected \texttt{ILLEGAL} instruction\\
+\bottomrule
+\end{manualtabular}
+
+\manualtablecaption{INVALID\_CONTROL\_STATE Causes}
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{2.35in}>{\raggedright\arraybackslash}p{2.40in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Value} & \textbf{Cause} & \textbf{Meaning}\\
+\midrule
+0 & \texttt{INVALID\_SELECTOR} & selector names no available resource\\
+1 & \texttt{RESERVED\_BITS} & reserved bits are nonzero or changed illegally\\
+2 & \texttt{INVALID\_IMAGE} & supplied architectural image is invalid\\
+3 & \texttt{INVALID\_TRANSITION} & requested state transition is illegal\\
+\bottomrule
+\end{manualtabular}
+
+An unavailable \texttt{RDPMC} ID reports \texttt{INVALID\_SELECTOR}; an illegal
+reserved-bit update reports \texttt{RESERVED\_BITS}; an invalid segment,
+control-register, or SAVE/RESTORE image reports \texttt{INVALID\_IMAGE}; and an
+illegal \texttt{ERET}, \texttt{SYSRET}, or privilege-state transition reports
+\texttt{INVALID\_TRANSITION}.
+
+\texttt{FLOATING\_POINT\_FAULT.ERROR\_CODE[4:0]} is a cause bitmap: bits 0 through 4 are \texttt{NV},
+\texttt{DZ}, \texttt{OF}, \texttt{UF}, and \texttt{NX}. All causes generated by the operation are reported together;
+bits 63..5 are zero.
+
+The bounds instructions report failure through \texttt{FLAGS.V} and do not raise \texttt{BOUNDS\_FAULT}; segment
+bounds failures use \texttt{PAGE\_FAULT}. This specification also has no \texttt{ARITHMETIC\_TRAP} producer. Both exception
+IDs remain reserved. \texttt{BKPT} raises \texttt{BREAKPOINT}; \texttt{DEBUG\_TRACE} is generated only by the
+architectural trace mechanism.

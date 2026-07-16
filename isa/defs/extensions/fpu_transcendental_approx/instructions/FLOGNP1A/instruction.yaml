@@ -11,7 +11,7 @@ behavior:
   - src
   output: dst
   approximation:
-    contract_id: '0x0041'
+    contract_id: '0x0042'
     reference_function: ln(1 + x) without an intermediate rounded addition
     domain: finite x >= -1 and positive infinity after DAZ; -1 is the DZ boundary
     max_ulp:

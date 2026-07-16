@@ -1,0 +1,41 @@
+version: draft
+ordinary_plt:
+  entry_size: 32
+  alignment: 16
+  instruction:
+    assembly: JMP.Q [PC + disp64]
+    offset: 0
+    opcode_bytes: [0xe7, 0xc9, 0x80, 0x67]
+    total_bytes: 12
+    displacement:
+      offset: 4
+      width_bits: 64
+      byte_order: little
+  relocation:
+    type: R_BEDROCK_GOTPCREL64
+    place: entry + 4
+    addend: 4
+    calculation: GOT(S) + A - P
+    effective_displacement: GOT(S) - entry
+  padding:
+    offset: 12
+    length: 20
+    byte: 0x01
+  got_slot:
+    size: 8
+    alignment: 8
+    contents: eagerly resolved 64-bit near target
+    immutable_after_publication: true
+  relocation_vectors:
+    - entry_address: 0x1000
+      got_slot_address: 0x2000
+      place: 0x1004
+      addend: 4
+      result: 0x1000
+      encoded_little_endian: [0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+    - entry_address: 0x3000
+      got_slot_address: 0x2000
+      place: 0x3004
+      addend: 4
+      result_signed: -0x1000
+      encoded_little_endian: [0x00, 0xf0, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]

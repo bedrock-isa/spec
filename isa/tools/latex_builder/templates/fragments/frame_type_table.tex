@@ -17,3 +17,24 @@
 0x3 & AUXILIARY & 32 & 32 & 96 & 12 & EVENT\_AUX\\
 \bottomrule
 \end{manuallongtable}
+
+\manualtablecaption{Event-to-Frame-Type Assignment}
+\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{3.75in}>{\raggedright\arraybackslash}p{1.45in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Delivered event} & \textbf{Frame type}\\
+\midrule
+\endfirsthead
+\multicolumn{2}{l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Delivered event} & \textbf{Frame type}\\
+\midrule
+\endhead
+\texttt{DEBUG\_TRACE}, \texttt{BREAKPOINT}, \texttt{PRIVILEGE\_FAULT} & BASIC\\
+\texttt{ILLEGAL\_INSTRUCTION}, \texttt{DIVIDE\_ERROR}, \texttt{INVALID\_CONTROL\_STATE}, \texttt{FLOATING\_POINT\_FAULT} & ERROR\\
+\texttt{PAGE\_FAULT} & PAGE\_FAULT\\
+\texttt{DOUBLE\_FAULT}, \texttt{MACHINE\_CHECK}, \texttt{BUS\_ERROR} & AUXILIARY\\
+interrupt and NMI & BASIC\\
+\bottomrule
+\end{manuallongtable}

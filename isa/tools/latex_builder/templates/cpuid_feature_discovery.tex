@@ -3,7 +3,7 @@
 
 \subsection{Overview}
 CPUID is the architectural discovery interface for optional instruction groups, processor-state save areas,
-implementation limits, and feature-specific parameters.
+implementation properties, and feature-specific parameters.
 
 The CPUID instruction uses a selected Rn register as both query selector and result register. Software writes the
 selector before execution and reads the returned 64-bit value after execution.
@@ -32,14 +32,32 @@ unless a future feature explicitly defines a mutable result.
 \bottomrule
 \end{manualtabular}
 
-An unknown class, leaf, or index returns zero. Software ignores reserved bits in every returned value, so a later
+Index zero of every defined leaf is a common discovery header. Leaf-specific payload begins at index one. An unknown
+class, leaf, or index returns zero; consequently, index zero of an absent leaf also returns zero.
+
+\manualtablecaption{CPUID Common Leaf Header}
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{1.85in}>{\raggedright\arraybackslash}p{1.15in}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{1.05in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Query} & \textbf{Bits 63..32} & \textbf{Bits 31..16} & \textbf{Bits 15..0}\\
+\midrule
+class 0, leaf 0, index 0 & \texttt{MAX\_CLASS} & \texttt{MAX\_LEAF} & \texttt{MAX\_INDEX}\\
+other class, leaf 0, index 0 & reserved, zero & \texttt{MAX\_LEAF} & \texttt{MAX\_INDEX}\\
+any class, leaf 1 or greater, index 0 & reserved, zero & reserved, zero & \texttt{MAX\_INDEX}\\
+\bottomrule
+\end{manualtabular}
+
+\texttt{MAX\_CLASS} is the greatest class recognized by the implementation, \texttt{MAX\_LEAF} is the greatest leaf
+recognized within the selected class, and \texttt{MAX\_INDEX} is the greatest index recognized within the selected
+leaf. Each field is a maximum selector value, not a count. A leaf may be sparse below \texttt{MAX\_INDEX}; software
+must still treat an unassigned selector as absent. Software ignores reserved bits in every returned value, so a later
 revision can assign them without invalidating existing discovery code.
 
 \subsection{Discovery Classes}
 Discovery classes partition architectural information by compatibility purpose. Software first checks the class and
 leaf directory before consuming optional feature bits.
 
-The base class describes the unified Rn register model and mandatory scalar ISA. Optional groups are reported
+The base class describes the mandatory scalar ISA and implementation identity. Optional groups are reported
 separately so that binaries can test for them without probing instruction faults.
 
 \manualtablecaption{CPUID Discovery Policy}
@@ -73,36 +91,69 @@ Software must treat an absent leaf as zero and must ignore reserved bits in a pr
 \textbf{Class} & \textbf{Leaf} & \textbf{Name} & \textbf{Indexes} & \textbf{Summary}\\
 \midrule
 \endhead
-\texttt{0x00000000} & \texttt{0x0000} & \texttt{BASE\_IDENTITY} & \texttt{0..2} & profile, revision, vendor string, and maximum standard leaf\\
-\texttt{0x00000000} & \texttt{0x0001} & \texttt{BASE\_LIMITS} & \texttt{0} & word size, maximum instruction bytes, opcode classes, and Rn count\\
-\texttt{0x00000001} & \texttt{0x0000} & \texttt{EXTENSION\_DIRECTORY} & \texttt{0} & availability bits for optional architectural groups\\
-\texttt{0x00000001} & \texttt{0x0001} & \texttt{FPTRANSA\_ACCURACY} & contract ID & per-function presence and certified S/D ULP bounds\\
-\texttt{0x00000002} & \texttt{0x0000} & \texttt{EXECUTION\_PROPERTIES} & \texttt{0} & program-visible execution properties\\
-\texttt{0x00000002} & \texttt{0x0001} & \texttt{TOPOLOGY} & \texttt{indexed} & hardware-thread topology and current identity\\
-\texttt{0x00000002} & \texttt{0x0002} & \texttt{PERFORMANCE\_COUNTERS} & \texttt{0..65535} & presence of the selected RDPMC counter ID\\
-\texttt{0x00000002} & \texttt{0x0004} & \texttt{SAVE\_AREA\_LAYOUT} & \texttt{0..n} & SAVE/RESTORE sizes, bitmap, and component descriptors\\
+\texttt{0x00000000} & \texttt{0x0000} & \texttt{BASE\_IDENTITY} & \texttt{0..18} & common header, identity, revisions, vendor name, and processor name\\
+\texttt{0x00000001} & \texttt{0x0000} & \texttt{EXTENSION\_DIRECTORY} & \texttt{0..1} & common header and optional architectural-group bits\\
+\texttt{0x00000001} & \texttt{0x0001} & \texttt{FPTRANSA\_ACCURACY} & \texttt{0..0x0044} & common header and sparse per-function accuracy contracts\\
+\texttt{0x00000002} & \texttt{0x0000} & \texttt{EXECUTION\_PROPERTIES} & \texttt{0..1} & common header and program-visible execution properties\\
+\texttt{0x00000002} & \texttt{0x0001} & \texttt{TOPOLOGY} & \texttt{0..n} & common header and hardware-thread topology descriptors\\
+\texttt{0x00000002} & \texttt{0x0002} & \texttt{PERFORMANCE\_COUNTERS} & \texttt{0..3} & common header and standard RDPMC-counter presence\\
+\texttt{0x00000002} & \texttt{0x0004} & \texttt{SAVE\_AREA\_LAYOUT} & \texttt{0..n} & common header, SAVE/RESTORE sizes, bitmap, and component descriptors\\
 \bottomrule
 \end{manuallongtable}
 
+Class 0 has no \texttt{BASE\_LIMITS} leaf. Word size, maximum instruction length, opcode classes, and the Rn count are
+invariants of this specification and are defined by their normative architectural sections rather than by runtime
+discovery. Therefore class 0 \texttt{MAX\_LEAF} is zero in the current draft.
+
+\subsection{Base Identity}
+Class \texttt{0x00000000}, leaf \texttt{0x0000} reports \texttt{MAX\_LEAF=0} and \texttt{MAX\_INDEX=18} in its
+index-zero header. An implementation recognizing only the classes defined by this specification reports
+\texttt{MAX\_CLASS=2}; an implementation that recognizes a higher implementation-defined class reports that greater
+selector. The base-identity payload is:
+
+\manualtablecaption{Base Identity Indexes}
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{4.95in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Index} & \textbf{Contents}\\
+\midrule
+1 & bits 31..0 \texttt{IMPLEMENTATION\_ID}; bits 47..32 \texttt{ARCHITECTURE\_ID}; bits 63..48 \texttt{VENDOR\_ID}\\
+2 & bits 15..0 \texttt{ARCHITECTURE\_REVISION}; bits 31..16 \texttt{IMPLEMENTATION\_REVISION}; bits 63..32 zero\\
+3--10 & 64-byte vendor name\\
+11--18 & 64-byte processor name\\
+\bottomrule
+\end{manualtabular}
+
+The name fields are UTF-8 byte strings in increasing index order. Within each 64-bit result, the first byte occupies
+bits 7..0 and subsequent bytes occupy successively higher bits. A name shorter than 64 bytes is terminated by a zero
+byte and all remaining bytes are zero. A 64-byte name has no terminator. Producers must not split a multi-byte UTF-8
+code point at the field boundary; consumers replace an invalid sequence rather than reading beyond the field.
+
 \subsection{Optional-Extension Directory}
-Class \texttt{0x00000001}, leaf \texttt{0x0000}, index zero reports optional architectural groups. The result uses
+Class \texttt{0x00000001}, leaf \texttt{0x0000}, index one reports optional architectural groups. The index-zero
+header reports \texttt{MAX\_LEAF=1} and \texttt{MAX\_INDEX=1}. The index-one result uses
 bit 0 for \texttt{FP}, bit 1 for \texttt{FPTRANSA}, and bit 2 for \texttt{VIRTACCEL}; bits 63 through 3 are
 reserved and read as zero. \texttt{FPTRANSA} requires \texttt{FP} and is set when at least one approximate
 transcendental contract is present. It does not imply that every contract is present.
+The \texttt{VIRTACCEL} bit denotes the virtualization-acceleration architectural
+group. The current draft defines no member of that group and therefore
+requires the bit to read zero.
 
 \subsection{FPTRANSA Accuracy Discovery}
-Class \texttt{0x00000001}, leaf \texttt{0x0001} uses the query index as a stable 16-bit accuracy-contract ID.
+Class \texttt{0x00000001}, leaf \texttt{0x0001} uses indexes 1 through \texttt{0x0044} as a sparse space of stable
+16-bit accuracy-contract IDs. Index zero is the common header and reports \texttt{MAX\_INDEX=0x0044}.
 A contract ID identifies the reference function, input domain, special-value behavior, error metric, exact anchors,
 and mathematical properties; it is independent of instruction encoding placement. An incompatible change receives a
-new ID, and a retired ID is not reused. Revision 1 is the contract revision defined by this specification. Weakening
+new ID, and a retired ID is not reused. The contracts defined here use \texttt{CONTRACT\_REVISION=1}. Weakening
 a guarantee, changing the domain, or changing the error metric requires a new ID rather than a revision increment.
 An implementation that advertises a smaller certified ULP bound strengthens the existing contract and retains the
 same ID and revision.
 
-The sparse ID space reserves \texttt{0x0000..0x000F} for reduced-domain circular trigonometric functions,
+The sparse ID space reserves \texttt{0x0001..0x000F} for reduced-domain circular trigonometric functions,
 \texttt{0x0010..0x001F} for inverse trigonometric functions, \texttt{0x0020..0x002F} for hyperbolic and inverse
 hyperbolic functions, \texttt{0x0030..0x003F} for exponential functions, and
-\texttt{0x0040..0x004F} for logarithmic functions. Unassigned values in these ranges are reserved.
+\texttt{0x0040..0x004F} for logarithmic functions. The low-nibble-zero selector of each family is unassigned, and
+actual contracts in each family begin at low nibble one. Unassigned values at or below \texttt{0x0044} return zero.
 
 \manualtablecaption{FPTRANSA Accuracy Result}
 \begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.78in}>{\raggedright\arraybackslash}p{1.20in}>{\raggedright\arraybackslash}p{3.55in}@{}}
@@ -112,7 +163,7 @@ hyperbolic functions, \texttt{0x0030..0x003F} for exponential functions, and
 \midrule
 \texttt{0..15} & \texttt{S\_MAX\_ULP\_Q8\_8} & certified worst-case S-format ULP bound, rounded upward to unsigned Q8.8\\
 \texttt{16..31} & \texttt{D\_MAX\_ULP\_Q8\_8} & certified worst-case D-format ULP bound, rounded upward to unsigned Q8.8\\
-\texttt{32..39} & \texttt{CONTRACT\_REVISION} & revision 1 for the contracts defined here\\
+\texttt{32..39} & \texttt{CONTRACT\_REVISION} & value 1 for the contracts defined here\\
 \texttt{40..62} & reserved & zero\\
 \texttt{63} & \texttt{PRESENT} & the instruction and both S and D forms are available\\
 \bottomrule
@@ -124,14 +175,15 @@ For a certified bound $K$, the field value is $\lceil 256K\rceil$ and the advert
 unknown contract returns zero. Software that does not recognize the returned revision uses its fallback path.
 
 Software first checks \texttt{FP} and \texttt{FPTRANSA} in \texttt{EXTENSION\_DIRECTORY}, then queries the intended
-contract ID in \texttt{FPTRANSA\_ACCURACY}. It uses the instruction only when \texttt{PRESENT} is set, revision 1 is
-recognized, and the S or D bound required by the call site is no larger than its quality threshold; otherwise it
+contract ID in \texttt{FPTRANSA\_ACCURACY}. It uses the instruction only when \texttt{PRESENT} is set, the returned
+\texttt{CONTRACT\_REVISION} is 1, and the S or D bound required by the call site is no larger than its quality
+threshold; otherwise it
 uses a software fallback. For example, a D-format \texttt{FLOG2A} path requiring at most 2 ULP accepts selector
-\texttt{0x0000000100010042} only when the returned D field is at most \texttt{0x0200}.
+\texttt{0x0000000100010043} only when the returned D field is at most \texttt{0x0200}.
 
 The selector is $(\texttt{0x00000001} \ll 32) \mathbin{|} (\texttt{0x0001} \ll 16) \mathbin{|}
-\textit{contract-id}$. For example, \texttt{FSINA} uses selector \texttt{0x0000000100010000}, and
-\texttt{FLOG2A} uses \texttt{0x0000000100010042}. An implementation that certifies \texttt{FSINA} at 1.5 ULP for
+\textit{contract-id}$. For example, \texttt{FSINA} uses selector \texttt{0x0000000100010001}, and
+\texttt{FLOG2A} uses \texttt{0x0000000100010043}. An implementation that certifies \texttt{FSINA} at 1.5 ULP for
 S and 2 ULP for D returns \texttt{0x8000000102000180}.
 
 \texttt{PRESENT} is an architectural usability guarantee, not a statement that a dedicated hardware unit exists;
@@ -143,9 +195,11 @@ before operand or floating-point-state access.
 @FPTRANSA_CONTRACT_TABLE@
 
 \subsection{Performance-Counter Discovery}
-Class \texttt{0x00000002}, leaf \texttt{0x0002} uses the query index as an RDPMC counter ID. Result bit 0 is
-\texttt{PRESENT}; bits 63..1 are reserved and read as zero. CYCLE, INSTRET, and PTWALK IDs 0, 1, and 2 are mandatory
-and therefore always report present. An implementation-defined ID may be used only when its query reports present.
+Class \texttt{0x00000002}, leaf \texttt{0x0002} uses indexes 1 through 65535 as RDPMC counter IDs. Index zero is the
+common header. Result bit 0 is \texttt{PRESENT}; bits 63..1 are reserved and read as zero. CYCLE, INSTRET, and PTWALK
+IDs 1, 2, and 3 are mandatory and therefore always report present; the index-zero header reports
+\texttt{MAX\_INDEX=3} when no implementation-defined counter has a greater ID. An implementation-defined ID may be
+used only when its query reports present.
 The RDPMC instruction description defines counter behavior and unavailable-ID fault handling.
 
 \subsection{Bit Fields}

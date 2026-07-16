@@ -22,5 +22,4 @@ It ignores \texttt{FSTATUS.RM} and formats its implementation-defined approximat
 The approximation is deterministic for the same implementation, input, format, and relevant FSTATUS mode, but need
 not be bit-identical across implementations. DN and FTZ retain their ordinary meanings. FPTRANSA may accrue NV, DZ,
 OF, and UF as its instruction contract requires, but it leaves the accrued NX flag unchanged and never takes an NX
-trap. Strict language-library operations may use FPTRANSA only through an explicit approximate intrinsic or a
-compiler mode that permits approximate math; strict \texttt{libm} lowering is not valid.
+trap.

@@ -5,7 +5,7 @@
 \newcommand{\BedrockFooterTitle}{BEDROCK ARCHITECTURE}
 \input{isa/tex/bedrock-reference-common.tex}
 \begin{document}
-\BedrockMakeTitlePage{Bedrock C ABI}{C Language Binding and Far-Pointer Calling Convention}{Version 1.0}
+\BedrockMakeTitlePage{Bedrock C ABI}{C Language Binding and Far-Pointer Calling Convention}{Draft}
 \BedrockFrontMatter
 
 \clearpage
@@ -77,6 +77,9 @@ These terms are specific to the C binding. ELF and address-space terms keep the 
 \texttt{float} & 32 & 4\\
 \texttt{double} & 64 & 8\\
 \texttt{long double} & 64 & 8\\
+\texttt{float \_Complex} & 64 & 4\\
+\texttt{double \_Complex} & 128 & 8\\
+\texttt{long double \_Complex} & 128 & 8\\
 \bottomrule
 \end{longtable}
 \endgroup
@@ -130,6 +133,13 @@ argument class and returns in \texttt{F0}, making its call representation
 ABI-compatible with \texttt{double}. In a variadic call it occupies one
 16-byte slot containing an 8-byte binary64 value without widening.
 
+\paragraph{Complex types.}
+A complex object contains its real component first and its imaginary component
+second, each using the corresponding real type's representation. Therefore
+\texttt{float \_Complex} has size 8 and alignment 4, while
+\texttt{double \_Complex} and \texttt{long double \_Complex} have size 16 and
+alignment 8.
+
 \paragraph{Types outside the baseline.}
 \texttt{\_Float16} and \texttt{\_\_bf16} are not members of the
 \texttt{bedrock-c} profile. Vector types require a separate target extension
@@ -180,6 +190,31 @@ Scalar and pointer object representations are defined in Sections~3.1 through
 \item Arrays store elements contiguously with each element using the ABI size of its type.
 \item Aggregate object size is rounded up to the aggregate object's alignment.
 \end{itemize}
+
+\paragraph{Bit-fields.}
+A bit-field allocation unit has the size and alignment of its declared base
+type. Within the little-endian unit, allocation begins at the low bit. A field
+never crosses an allocation-unit boundary, and only consecutive fields whose
+base types are identical after typedef expansion may share a unit. A base-type
+change or a field that does not fit closes the current unit and begins a new
+naturally aligned unit. A field width may not exceed the representation width
+of its base type.
+
+An unnamed nonzero-width field consumes space normally. A zero-width field
+closes the current unit and advances layout to the next boundary for its base
+type without adding storage of its own. Ordinary aggregate alignment,
+tail-padding, and size-rounding rules still apply after bit-field allocation.
+
+\paragraph{Flexible arrays and excluded extensions.}
+A flexible array member contributes no element storage to \texttt{sizeof} its
+containing structure. Its offset is aligned for the element type, and that
+element alignment participates in the structure's alignment calculation.
+
+Packed aggregates and \texttt{\#pragma pack} are not baseline ABI facilities.
+A compiler may expose them only as an extension, and such a type may not cross
+an external ABI boundary without a separately documented compatible extension
+ABI. Empty structures and zero-length arrays are likewise excluded from the
+baseline profile.
 
 \section{Register Convention}
 This section defines which architectural state survives an ordinary C call.
@@ -371,11 +406,49 @@ callee-saved set. A near-only jump environment cannot target a far frame.
 Frame pointers are omitted by default.  When a function elects to keep a
 frame pointer, it uses \texttt{R15}.  R15 is callee-saved and is used as the frame pointer when a function elects to maintain one.
 
+\subsection{DWARF Register Numbering and Unwind}
+\manualtablecaption{Bedrock DWARF Register Numbers}
+\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{1.10in}>{\raggedright\arraybackslash}p{1.75in}>{\raggedright\arraybackslash}p{2.55in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Numbers} & \textbf{Registers} & \textbf{Status}\\
+\midrule
+\endfirsthead
+\multicolumn{3}{l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Numbers} & \textbf{Registers} & \textbf{Status}\\
+\midrule
+\endhead
+0..15 & \texttt{R0}..\texttt{R15} & assigned\\
+16 & \texttt{SP} & assigned\\
+17 & \texttt{PC} & assigned; CIE return-address register\\
+18 & \texttt{FLAGS} & assigned\\
+19 & \texttt{STATUS} & assigned\\
+20..31 & --- & reserved\\
+32..47 & \texttt{F0}..\texttt{F15} & assigned\\
+48 & \texttt{CS} & assigned\\
+49 & \texttt{DS} & assigned\\
+50 & \texttt{SS} & assigned\\
+51..56 & \texttt{GS0}..\texttt{GS5} & assigned\\
+57 & \texttt{FFLAGS} & assigned\\
+58 & \texttt{FSTATUS} & assigned\\
+59 and greater & --- & reserved\\
+\bottomrule
+\end{manuallongtable}
+
+At near-call entry, the canonical frame address is entry \texttt{SP+8}; saved
+\texttt{PC} is at CFA minus 8 and \texttt{CS} has a same-value rule. At
+far-call entry, the CFA is entry \texttt{SP+16}; saved \texttt{PC} is at CFA
+minus 16 and saved \texttt{CS} is at CFA minus 8. Standard DWARF CFI rules
+recover both registers; Bedrock defines no target-specific CFI opcode. Signal
+and architectural event-frame unwind conventions belong to the active OS ABI.
+
 \Needspace{2.4in}
 \subsection{Argument Classification}
 Classification occurs after the C language has determined the effective type
 of the argument. A named argument to a prototyped function is placed in one of
-five ABI classes:
+six ABI classes:
 
 \begin{description}[style=nextline,leftmargin=1.35in,labelwidth=1.25in,itemsep=3pt,topsep=3pt]
 \item[GENERAL] Integer types no wider than 64 bits and ordinary object or
@@ -387,6 +460,9 @@ the address and one of \texttt{GS2} through \texttt{GS5} carries the segment
 image.
 \item[FLOAT] \texttt{float}, \texttt{double}, and \texttt{long double}. One
 floating-point register is required.
+\item[FLOAT-PAIR] \texttt{float \_Complex}, \texttt{double \_Complex}, and
+\texttt{long double \_Complex}. Two consecutive floating-point registers are
+required, with no even-register alignment.
 \item[INDIRECT] Every structure or union argument, regardless of size or
 member composition. The caller creates a 16-byte-aligned by-value copy and
 passes the address of that copy as one GENERAL value.
@@ -411,6 +487,11 @@ Initialize the floating-point cursor to 0 and the far-segment cursor to
 the register named by the current general cursor and then advance that cursor.
 FLOAT arguments analogously consume \texttt{F0} through \texttt{F7} using the
 independent floating-point cursor.
+\item For a FLOAT-PAIR argument, use the current floating-point register for
+the real component and the next register for the imaginary component, then
+advance the cursor by two. No even-register alignment is applied. If both
+registers are not available, place the complete complex value in one stack
+slot and mark the floating-point class exhausted.
 \item For a GENERAL-PAIR argument, round the general cursor upward to an even
 register number. If that register and its successor both exist, place the low
 64 bits in the even register, the high 64 bits in the odd register, and advance
@@ -458,6 +539,9 @@ addresses map first to \texttt{R0} and then to \texttt{R1}. Bytes beyond the
 object size and padding bytes whose values are not defined by C are
 unspecified.
 
+A complex result places its real component in \texttt{F0} and its imaginary
+component in \texttt{F1}.
+
 For a larger aggregate, the caller allocates a 16-byte-aligned result buffer
 and passes its address in \texttt{R0} before ordinary argument assignment. The
 callee stores the result in that buffer and returns the same address in
@@ -479,6 +563,7 @@ pre-segment address in \texttt{R0} and validated segment image in
 General scalar & \texttt{R0}\\
 Floating-point scalar & \texttt{F0}\\
 \texttt{long double} scalar & \texttt{F0}\\
+Complex scalar & real component in \texttt{F0}, imaginary component in \texttt{F1}\\
 \texttt{\_\_int128} scalar & \texttt{R1:R0}\\
 Far data or function pointer & address in \texttt{R0}, segment image in \texttt{GS1}\\
 Small aggregate & \texttt{R1:R0}\\
@@ -497,9 +582,11 @@ itself.
 
 The copy gives the callee an addressable object with the declared aggregate
 type. A callee may modify its private copy without modifying the caller's
-source object. Packed aggregates, aggregates containing bit-fields or
-unaligned members, and mixed integer/floating aggregates use the same INDIRECT
-rule; their member composition never changes argument registers.
+source object. Baseline aggregates containing bit-fields and mixed
+integer/floating aggregates use the same INDIRECT rule; their member
+composition never changes argument registers. An extension aggregate with
+packed or unaligned members cannot cross this external ABI boundary unless a
+separate extension ABI permits it.
 
 \subsection{Variadic Calls}
 Fixed named arguments use the ordinary assignment procedure. Every unnamed
@@ -612,7 +699,7 @@ dynamic call loads the eagerly resolved, immutable 16-byte entry from
 \texttt{.got.far}; the far model has no PLT.
 
 \subsection{Near/Far ABI Veneers}
-The version 1.0 source profile diagnoses an ordinary/far function-pointer cast
+The current draft source profile diagnoses an ordinary/far function-pointer cast
 and does not require automatic veneer synthesis. A cast is not an implicit
 request for a veneer. This subsection instead defines the ABI of a veneer
 supplied through a separately named implementation extension or by runtime
@@ -704,6 +791,15 @@ seq\_cst & \texttt{seqcst}\\
 \bottomrule
 \end{longtable}
 \endgroup
+
+For C compare-exchange, the compiler selects the join of the success and
+failure orders; it does not compare their numeric encodings. Consume is
+treated as acquire, acquire joined with release is acquire-release, and
+sequential consistency dominates every other order. A failure performs no
+write. Any release component introduced by the joined instruction therefore
+creates neither a write nor a release sequence on failure, while a failed
+\texttt{CMPXCHG.SEQCST} still participates in the global SC order as an SC
+load.
 
 \manualtablecaption{Atomic Load and Store Ordering}
 \begin{manuallongtable}{@{}p{1.55in}p{3.95in}@{}}
@@ -961,9 +1057,11 @@ loader policy & the OS ABI defines initial images, executable and shared-object 
 \end{longtable}
 \endgroup
 
-The active OS ABI reserves \texttt{GS0} for TLS and permits user reads and
-writes of \texttt{GS1} through \texttt{GS5} subject to architectural
-segment-image validation. It saves and restores all six GS registers as
+The active OS ABI reserves \texttt{GS0} for TLS, permits user reads of
+\texttt{DS} and \texttt{GS0} through \texttt{GS5}, and permits user writes of
+\texttt{GS1} through \texttt{GS5}, subject to architectural segment-image
+validation. The dedicated \texttt{RDSEG CS} form is unprivileged as specified
+by the ISA. The OS ABI saves and restores all six GS registers as
 architectural thread state across context switches and preserves interrupted
 values across signal or exception delivery. \texttt{GS1} through
 \texttt{GS5} remain volatile at C call boundaries and are not part of the

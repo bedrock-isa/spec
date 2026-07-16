@@ -15,6 +15,8 @@ Source-language and compiler-facing contracts are kept outside the ABI stack:
 - `../c/bedrock-target-intrinsics.tex` specifies compiler builtins and target
   header interfaces.
 - `../c/include/` contains the corresponding compiler-facing target headers.
+- `../guides/bedrock-programming-toolchain-guide.tex` contains non-normative
+  C-library, compiler, and runtime examples.
 
 All reference documents use `../tex/bedrock-reference-common.tex`. The ISA
 reference remains generated from the architectural definition and allocation
@@ -33,4 +35,5 @@ an unimplemented or nonconforming path is kept out of the reference document.
 Run `make validate-docs` to check layer assignments, relocation tables,
 document boundaries, call-layout fixtures, and intrinsic/header agreement.
 Run `make validate-abi-model` to check only the executable calling-convention
-model. Run `make docs` to build the complete five-document reference set.
+model. Run `make docs` to build the complete six-document reference and guide
+set.

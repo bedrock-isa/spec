@@ -48,13 +48,11 @@ ALLOC_ROOT = ROOT / "isa" / "alloc"
 DEFAULT_OUTPUT = ROOT / "build" / "isa_reference.tex"
 INSTRUCTION_SET_SECTION_ORDER = [
     "base",
-    "virtualization_acceleration",
     "fpu",
     "fpu_transcendental_approx",
 ]
 INSTRUCTION_SET_SECTION_TITLES = {
     "base": "General Instructions",
-    "virtualization_acceleration": "Virtualization Acceleration Instructions",
     "fpu": "Floating-Point Instructions",
     "fpu_transcendental_approx": "Approximate Floating-Point Transcendental Instructions",
 }

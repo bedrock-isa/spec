@@ -2,7 +2,7 @@ mnemonic: VTOP
 doc:
   title: Virtual To Physical Query
   summary: Non-destructively queries the current translation of a linear address.
-  description: VTOP translates the supplied linear address with the current PTCR configuration without performing an architectural memory access. With paging disabled, the address is returned unchanged. With paging enabled, the instruction performs the configured LA48 or LA57 walk. Translation failures are reported through the integer flags instead of raising PAGE_FAULT. A successful query returns the physical address and reports the accumulated U, W, and X permissions. The query never sets PTE A or D, fills or modifies a TLB entry, or otherwise changes translation state.
+  description: VTOP translates the supplied linear address with the current PTCR configuration without performing an architectural memory access. With paging disabled, the address is returned unchanged. With paging enabled, the instruction performs the configured LA48 or LA57 walk. Translation failures are reported through the integer flags instead of raising PAGE_FAULT. A successful query returns the byte address for an AT=0 leaf or the slot address for an AT=1 leaf and reports the accumulated U, W, and X permissions. The query issues no slot transaction and never sets PTE A or D, fills or modifies a TLB entry, or otherwise changes translation state.
   instruction_family: tlb_and_context
   instruction_class: system
 behavior:
@@ -26,6 +26,7 @@ forms:
   performs_page_walk: true
   input_address_stage: linear address; segment pre-translation is not applied
   paging_disabled_result: input linear address unchanged
+  slot_leaf_result: slot address; no slot transaction
   failure_result: zero
   page_fault_on_translation_failure: false
   mutates_pte_accessed_or_dirty: false

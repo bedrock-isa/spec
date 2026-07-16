@@ -80,7 +80,7 @@
 \manualeaprofilesyntax{[PC + Rn(i)++ * scale + displacement]}
 \manualeaprofilesyntax{[PC + {-}{-}Rn(i) * scale + displacement]}
 \manualeaprofileline{Descriptor}{Byte 0 is \texttt{10001010} for SP or \texttt{10001011} for PC. Byte 1 is \texttt{0010iiii}, \texttt{0000iiii}, or \texttt{0001iiii} for no update, postincrement, or predecrement.}
-\manualeaprofileline{Generation}{offset = temporary SP or PC term + index\_term * scale + displacement.}
+\manualeaprofileline{Generation}{offset = temporary SP or instruction-start PC + index\_term * scale + displacement. A PC term names byte 0 of the current instruction.}
 \manualeaprofileline{Segment}{SP forms are fixed to SS. PC forms are fixed to CS.}
 \manualeaprofileline{Payload}{Two descriptor bytes plus the optional displacement selected by the compact EXT0 escape.}
 \manualeaprofileline{Update}{Only the Rn(i) index register may auto-update; SP and PC are not auto-updated by these forms.}

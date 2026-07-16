@@ -2,7 +2,7 @@ mnemonic: RDSEG
 doc:
   title: Read Segment Register
   summary: Read an SREG or the current CS image into an Rn register.
-  description: RDSEG reads one of the SREG-class data, stack, TLS, or general segment registers and writes its 64-bit image to the destination Rn register. The dedicated RDSEG CS form reads the current CS image without assigning CS an SREG selector. CS remains unavailable to WRSEG and explicit EA selection.
+  description: RDSEG reads the 64-bit image of an SREG-class segment register into the destination Rn register. The dedicated RDSEG CS form reads the current CS image without assigning CS an SREG selector. CS remains unavailable to WRSEG and explicit EA selection.
   instruction_family: system_registers
   instruction_class: system
 behavior:
@@ -13,18 +13,6 @@ behavior:
 attributes:
   privilege: policy controlled
   flags: unchanged
-  profile_access:
-    bedrock_c_far:
-      user_readable:
-      - CS
-      - DS
-      - GS0
-      - GS1
-      - GS2
-      - GS3
-      - GS4
-      - GS5
-      purpose: current-context inspection, near-to-far conversion, TLS inspection, and far-pointer register transport
 forms:
   operands:
   - - name: seg

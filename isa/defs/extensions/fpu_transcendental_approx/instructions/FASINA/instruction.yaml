@@ -11,7 +11,7 @@ behavior:
   - src
   output: dst
   approximation:
-    contract_id: '0x0010'
+    contract_id: '0x0011'
     reference_function: asin(x) in radians
     domain: finite x with abs(x) <= 1 after DAZ
     max_ulp:

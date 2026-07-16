@@ -32,7 +32,6 @@ forms:
       body_constraints:
       - body must not write the selected counter register
       architectural_effect: identical to REPG; the machine encoding and repeat-continuation state do not distinguish the alias
-  repeat_state_saved_in: EVENT_AUX
   compact_forms:
   - operands:
     - name: counter

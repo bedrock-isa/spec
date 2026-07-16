@@ -11,7 +11,7 @@ behavior:
   - src
   output: dst
   approximation:
-    contract_id: '0x0033'
+    contract_id: '0x0034'
     reference_function: 10 ** x
     domain: all finite values and signed infinity after DAZ
     max_ulp:

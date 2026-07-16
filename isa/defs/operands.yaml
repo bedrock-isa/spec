@@ -1,4 +1,4 @@
-version: rewrite-draft-v1
+version: draft
 source: old/isa/spec/instructions.yaml:operand_schema
 operand_schema:
   role_name_pattern: ^[a-z][a-z0-9_]*$

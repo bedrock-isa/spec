@@ -13,6 +13,29 @@ FPTRANSA_CPUID_CLASS = 0x00000001
 FPTRANSA_ACCURACY_LEAF = 0x0001
 FPTRANSA_CONTRACT_REVISION = 1
 FPTRANSA_MAX_ULP_Q8_8 = 0x0400
+FPTRANSA_MAX_ASSIGNED_CONTRACT_ID = 0x0044
+
+FPTRANSA_CONTRACT_IDS = {
+    "FSINA": 0x0001,
+    "FCOSA": 0x0002,
+    "FTANA": 0x0003,
+    "FSINCOSA": 0x0004,
+    "FASINA": 0x0011,
+    "FACOSA": 0x0012,
+    "FATANA": 0x0013,
+    "FSINHA": 0x0021,
+    "FCOSHA": 0x0022,
+    "FTANHA": 0x0023,
+    "FATANHA": 0x0024,
+    "FETOXA": 0x0031,
+    "FETOXM1A": 0x0032,
+    "FTWOTOXA": 0x0033,
+    "FTENTOXA": 0x0034,
+    "FLOGNA": 0x0041,
+    "FLOGNP1A": 0x0042,
+    "FLOG2A": 0x0043,
+    "FLOG10A": 0x0044,
+}
 
 FORMAT_PARAMETERS = {
     "S": {"precision_bits": 24, "minimum_normal_exponent": -126},
@@ -47,8 +70,8 @@ def q8_8_value(encoded: int) -> Fraction:
 
 
 def cpuid_selector(contract_id: int) -> int:
-    if not 0 <= contract_id <= 0xFFFF:
-        raise ValueError("contract ID must be a 16-bit unsigned integer")
+    if not 1 <= contract_id <= 0xFFFF:
+        raise ValueError("contract ID must be a nonzero 16-bit unsigned integer")
     return (FPTRANSA_CPUID_CLASS << 32) | (FPTRANSA_ACCURACY_LEAF << 16) | contract_id
 
 

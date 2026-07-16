@@ -18,6 +18,15 @@ or fence, loads and stores to different locations may be issued, completed, and 
 program order. Coherence and multi-copy atomicity do not by themselves order accesses to different locations.
 Platform-defined device memory may impose additional rules outside this normal-memory model.
 
+\subsection{Slot-Addressed Transactions}
+An \texttt{AT=1} load or store is an acknowledged slot transaction rather than a normal-memory byte access. Multiple
+transactions to different slot addresses may be outstanding. Transactions to the same slot address preserve program
+order. A store does not retire until its acknowledgement is received.
+
+AFENCE orders completion of all earlier slot transactions before any later slot transaction and orders slot
+transactions with byte-addressed memory operations according to its full cumulative-fence rules. Device-specific
+effects of different widths at the same slot remain part of the platform or device contract.
+
 \subsection{Access Atomicity and Alignment}
 Unaligned ordinary memory accesses are architecturally permitted and may be implemented as multiple aligned memory
 beats. A successfully completed unaligned access has no tear-free guarantee; each visible store beat is separately
@@ -28,9 +37,11 @@ would raise a synchronous fault, no byte of the store becomes architecturally vi
 multiple beats must validate, buffer, or roll back those beats to preserve this rule. This fault atomicity does not
 make a successfully completed unaligned store tear-free.
 
-Atomic read-modify-write instructions require naturally aligned memory operands. A misaligned atomic operand raises
-\texttt{PAGE\_FAULT} with the \texttt{ALIGNMENT\_ATOMIC} subtype before any memory update or architectural result
-commits; it must not complete as a non-atomic update.
+Atomic read-modify-write instructions require natural alignment only for an \texttt{AT=0} byte-addressed operand.
+A misaligned \texttt{AT=0} atomic operand raises \texttt{PAGE\_FAULT} with the \texttt{ATOMIC\_ALIGNMENT} cause
+before any memory update or architectural result commits; it must not complete as a non-atomic update. An
+\texttt{AT=1} operand has no byte-alignment property and every atomic operation through it instead raises
+\texttt{ADDRESS\_TYPE}, regardless of the numeric slot address.
 
 Stores to memory that is later executed as instructions are ordinary data stores until an explicit synchronization
 sequence makes the modified bytes visible to instruction fetch.
@@ -63,7 +74,7 @@ Q & 8 & address divisible by 8\\
 \texttt{ACQUIRE} & \texttt{1} & Later memory operations by the same hardware thread are ordered after the atomic operation.\\
 \texttt{RELEASE} & \texttt{2} & Earlier memory operations by the same hardware thread are ordered before the atomic operation.\\
 \texttt{ACQREL} & \texttt{3} & Applies both acquire and release ordering.\\
-\texttt{SEQCST} & \texttt{4} & Applies acquire-release ordering and participates in the global sequentially consistent order for atomic operations.\\
+\texttt{SEQCST} & \texttt{4} & Applies acquire-release ordering and participates in the single global sequentially consistent order.\\
 \texttt{RESERVED5} & \texttt{5} & Reserved selector encoding; using it is invalid for the atomic form.\\
 \texttt{RESERVED6} & \texttt{6} & Reserved selector encoding; using it is invalid for the atomic form.\\
 \texttt{RESERVED7} & \texttt{7} & Reserved selector encoding; using it is invalid for the atomic form.\\
@@ -74,4 +85,20 @@ Q & 8 & address divisible by 8\\
 \hyperref[instr:rfence]{\texttt{RFENCE}} orders prior reads before later reads,
 \hyperref[instr:wfence]{\texttt{WFENCE}} orders prior writes before later writes, and
 \hyperref[instr:afence]{\texttt{AFENCE}} orders prior memory operations before later memory operations issued by
-the same hardware thread. The linked instruction entries define the normative ordering behavior.
+the same hardware thread. \texttt{AFENCE} is cumulative: memory effects observed before the fence are propagated
+before effects ordered after it, including through another hardware thread. The linked instruction entries define the
+normative ordering behavior.
+
+\subsection{Global Sequentially Consistent Order}
+All \texttt{AFENCE} operations and all \texttt{SEQCST} atomic operations participate in one global total order that is
+consistent with each hardware thread's ordered-before relation and with per-location coherence. A failed
+\texttt{CMPXCHG.SEQCST} participates in that order as an SC load even though it performs no write.
+
+A naturally aligned tear-free scalar load or store also participates as an SC operation when it is the only memory
+access between its immediately surrounding \texttt{AFENCE} operations in memory-event order. Thus
+\texttt{AFENCE; access; AFENCE} is the architectural sequence for an SC scalar load or store. The access and both
+fences occupy their required positions in the same global order; the sequence cannot be satisfied by two unrelated
+per-thread barriers.
+
+Acquire and release operations may be strengthened with \texttt{AFENCE}; the resulting instruction sequence has the
+union of the ordering constraints imposed by its operations.

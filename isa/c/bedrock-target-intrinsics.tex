@@ -7,7 +7,7 @@
 \newcommand{\compilerctype}[1]{\texttt{\detokenize{#1}}}
 \input{isa/tex/bedrock-reference-common.tex}
 \begin{document}
-\BedrockMakeTitlePage{Bedrock Target Intrinsics}{C Compiler Builtins and Header Interfaces}{Version 1.0}
+\BedrockMakeTitlePage{Bedrock Target Intrinsics}{C Compiler Builtins and Header Interfaces}{Draft}
 \BedrockFrontMatter
 
 \clearpage
@@ -69,7 +69,6 @@ system registers & \texttt{<bedrocksysregintrin.h>} & system & supervisor or pol
 cache & \texttt{<bedrockcacheintrin.h>} & system & cache management\\
 MMU & \texttt{<bedrockmmuintrin.h>} & system & supervisor translation operations\\
 processor state & \texttt{<bedrockstateintrin.h>} & system & runtime state management\\
-virtualization & \texttt{<bedrockvirtintrin.h>} & system & optional virtualization acceleration\\
 \bottomrule
 \end{longtable}
 \endgroup
@@ -170,7 +169,7 @@ form. An already-linear address and bounds-only image instead use
 \endhead
 \compilerbuiltin{cpuid} & \compilerctype{u64(u64 selector)} & \texttt{CPUID} & User allowed; reads discovery state and not C memory.\\
 \compilerbuiltin{read_status} & \compilerctype{uint16_t(void)} & \texttt{RDSTATUS} & Unprivileged; reads \texttt{STATUS} and not C memory.\\
-\compilerbuiltin{rdpmc} & \compilerctype{uint64_t(counter_id)} & \texttt{RDPMC} & Policy controlled; ID is a constant in 0 through 65535; reads the selected counter.\\
+\compilerbuiltin{rdpmc} & \compilerctype{uint64_t(counter_id)} & \texttt{RDPMC} & Policy controlled; ID is a constant in 0 through 65535; zero and unavailable IDs fault with \texttt{INVALID\_SELECTOR}.\\
 \compilerbuiltin{breakpoint} & \compilerctype{void(void)} & \texttt{BKPT} & Any privilege; always raises the architectural breakpoint/debug exception.\\
 \compilerbuiltin{trace} & \compilerctype{void(marker)} & \texttt{TRACE} & Unprivileged; marker is a constant in 0 through 65535; emits a marker when enabled and otherwise acts as a NOP.\\
 \compilerbuiltin{yield} & \compilerctype{void(void)} & \texttt{YIELD} & Any privilege; scheduling hint, not a compiler or memory barrier.\\
@@ -237,6 +236,13 @@ form. An already-linear address and bounds-only image instead use
 \bottomrule
 \end{longtable}
 \endgroup
+
+\subsection{Approximate Transcendental Lowering Policy}
+A strict language-library operation shall not be lowered to an FPTRANSA
+instruction. A compiler may select FPTRANSA only when the source uses a
+separately defined approximate interface or an active compiler mode permits
+approximate mathematics. The selected instruction remains subject to its ISA
+accuracy, special-value, and floating-point exception contract.
 
 \section{System Target Interface}
 The system umbrella is separate so ordinary source inclusion does not
@@ -333,27 +339,6 @@ Both operations are unprivileged, but restoration of \texttt{STATUS} remains
 privilege-restricted. The backend must model every restored register
 explicitly rather than treating restore as an opaque call or memory effect.
 
-\subsection{Virtualization-Acceleration Builtin}
-\manualfield{Header:}{\texttt{<bedrockvirtintrin.h>}}
-\manualtablecaption{Virtualization-Acceleration Builtin}
-\begingroup\footnotesize
-\setlength{\tabcolsep}{2pt}
-\begin{longtable}{@{}p{1.45in}p{1.45in}p{0.8in}p{1.9in}@{}}
-\toprule
-\textbf{Name} & \textbf{C interface} & \textbf{Lowering} & \textbf{Availability, constraint, and effect}\\
-\midrule
-\endhead
-\compilerbuiltin{encode_instruction} & \compilerctype{intptr_t(dst,c,o1,o2,o3)} & \texttt{ENCINST} & \texttt{VIRTACCEL} required; initialized descriptor and sufficient destination space; writes canonical instruction bytes.\\
-\bottomrule
-\end{longtable}
-\endgroup
-
-The wrapper accepts a
-\texttt{\_\_bedrock\_instruction\_descriptor\_t}, assigns its control and
-three operand words to the builtin's implicit \texttt{R0--R3} inputs, and
-captures the \texttt{R0} result. Executing newly written code still requires
-an explicit \texttt{SYNCCACHE}.
-
 \section{Shared Header Types and Exclusions}
 \manualtablecaption{Target Intrinsic Shared Types}
 \begingroup\footnotesize
@@ -377,7 +362,8 @@ an explicit \texttt{SYNCCACHE}.
 No target builtin is defined for near/far conversion or far-address
 truncation; \texttt{EXTRACT}, \texttt{CLMULH}, \texttt{MULHS},
 \texttt{MULHSU}, or \texttt{MULHU}; raw integer \texttt{FLAGS} manipulation;
-or call, return, stack, and repeat-control instructions.
+call, return, stack, and repeat-control instructions; or the current draft
+virtualization-acceleration group.
 \endgroup
 
 \end{document}

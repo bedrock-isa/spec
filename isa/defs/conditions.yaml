@@ -1,4 +1,4 @@
-version: draft-v1
+version: draft
 conditions:
 - name: T
   value: 0

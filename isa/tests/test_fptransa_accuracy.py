@@ -15,6 +15,8 @@ if str(TOOL_DIR) not in sys.path:
     sys.path.insert(0, str(TOOL_DIR))
 
 from fp_accuracy import (  # noqa: E402
+    FPTRANSA_CONTRACT_IDS,
+    FPTRANSA_MAX_ASSIGNED_CONTRACT_ID,
     compose_accuracy_result,
     cpuid_selector,
     parse_accuracy_result,
@@ -40,8 +42,10 @@ class FptransaAccuracyTests(unittest.TestCase):
                 self.assertGreaterEqual(q8_8_value(expected), Fraction(str(value)))
 
     def test_cpuid_selector_and_documented_result(self) -> None:
-        self.assertEqual(cpuid_selector(0x0000), 0x0000000100010000)
-        self.assertEqual(cpuid_selector(0x0042), 0x0000000100010042)
+        self.assertEqual(cpuid_selector(FPTRANSA_CONTRACT_IDS["FSINA"]), 0x0000000100010001)
+        self.assertEqual(cpuid_selector(FPTRANSA_CONTRACT_IDS["FLOG2A"]), 0x0000000100010043)
+        with self.assertRaises(ValueError):
+            cpuid_selector(0)
         result = compose_accuracy_result(
             present=True,
             s_max_ulp_q8_8=0x0180,
@@ -58,6 +62,11 @@ class FptransaAccuracyTests(unittest.TestCase):
             parse_accuracy_result(0),
             parse_accuracy_result(compose_accuracy_result(present=False)),
         )
+
+    def test_assigned_contract_ids_leave_family_zero_selectors_unassigned(self) -> None:
+        self.assertEqual(max(FPTRANSA_CONTRACT_IDS.values()), FPTRANSA_MAX_ASSIGNED_CONTRACT_ID)
+        self.assertEqual(len(FPTRANSA_CONTRACT_IDS), len(set(FPTRANSA_CONTRACT_IDS.values())))
+        self.assertTrue(all(contract_id & 0xF for contract_id in FPTRANSA_CONTRACT_IDS.values()))
 
     def test_present_contract_requires_both_formats_within_four_ulp(self) -> None:
         for s_bound, d_bound in ((0, 0x100), (0x100, 0), (0x401, 0x100), (0x100, 0x401)):

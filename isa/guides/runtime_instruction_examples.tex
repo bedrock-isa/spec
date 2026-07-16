@@ -79,10 +79,10 @@ static struct br_save_area_info br_query_save_area(void)
 {
     uint64_t r0 = bedrock_cpuid(
         br_cpuid_selector(BR_CPUID_CLASS_IMPL,
-                          BR_CPUID_SAVE_AREA_LAYOUT, 0));
+                          BR_CPUID_SAVE_AREA_LAYOUT, 1));
     uint64_t r1 = bedrock_cpuid(
         br_cpuid_selector(BR_CPUID_CLASS_IMPL,
-                          BR_CPUID_SAVE_AREA_LAYOUT, 1));
+                          BR_CPUID_SAVE_AREA_LAYOUT, 2));
     struct br_save_area_info info;
 
     info.size = r0;
@@ -99,7 +99,7 @@ static void br_query_save_components(struct br_save_component *out,
         uint64_t r = bedrock_cpuid(
             br_cpuid_selector(BR_CPUID_CLASS_IMPL,
                               BR_CPUID_SAVE_AREA_LAYOUT,
-                              (uint16_t)(2u + i)));
+                              (uint16_t)(3u + i)));
         out[i].id = (uint16_t)(r & 0xffffu);
         out[i].flags = (uint16_t)((r >> 16) & 0xffffu);
         out[i].offset = (uint32_t)(r >> 32);

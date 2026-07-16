@@ -58,7 +58,7 @@ T-condition spelling, and F is reserved for REPcc.
 A repeat body may not contain another repeat operation, a repeat-control instruction, or a control transfer.
 Floating-point instructions may be used with REP and REPG, but not with REPcc. While repetition is active, PC names
 the current body instruction, and the initially decoded instruction or group remains fixed. Handler entry saves
-repeat state in EVENT\_AUX and clears the active architectural repeat state; ERET restores that state atomically with
+repeat state in FRAME\_EXT1 and clears the active architectural repeat state; ERET restores that state atomically with
 the saved PC and status state. Single-step debugging stops after each architecturally executed iteration, whereas a
 next-instruction operation runs the complete repeat and stops after repeat state clears.
 
@@ -73,7 +73,7 @@ that can be recognized; it is not a throughput, latency, or vector-width guarant
 
 \subsection{Fault and Restart Semantics}
 A fault during repeated execution preserves committed work and saves the state needed to resume or emulate the
-remainder. Event entry records the active repeat context in EVENT\_AUX and clears active repeat state. The Repeat
+remainder. Event entry records the active repeat context in FRAME\_EXT1 and clears active repeat state. The Repeat
 Continuation subsection of the Architectural Event Processing Model defines the saved format and ERET restoration.
 
 REP and REPcc atomically commit the one-instruction body, repeat-observed condition, counter decrement, and

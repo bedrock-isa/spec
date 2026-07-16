@@ -8,16 +8,18 @@ modulo $2^{64}$. Cold reset and warm RESET clear them to zero. PMC.EN controls w
 \rowcolor{ManualHeaderFill}
 \textbf{ID} & \textbf{Name} & \textbf{Increment event}\\
 \midrule
-\texttt{0} & \texttt{CYCLE} & each implementation cycle while PMC.EN is set\\
-\texttt{1} & \texttt{INSTRET} & each successfully committed architectural instruction\\
-\texttt{2} & \texttt{PTWALK} & start of a hardware page walk after a paging-enabled TLB miss\\
+\texttt{1} & \texttt{CYCLE} & each implementation cycle while PMC.EN is set\\
+\texttt{2} & \texttt{INSTRET} & each successfully committed architectural instruction\\
+\texttt{3} & \texttt{PTWALK} & start of a hardware page walk after a paging-enabled TLB miss\\
 \bottomrule
 \end{manualtabular}
 
 Each successfully committed repeat-body iteration contributes one INSTRET event. A faulting instruction does not.
 PTWALK includes a walk that later reports a page fault, but excludes a segment-bound or canonical-address failure
-detected before a walk begins. IDs beyond the standard set are implementation-defined and are discovered through the
-CPUID performance-counter leaf. Reading an unavailable ID raises \texttt{INVALID\_CONTROL\_STATE}.
+detected before a walk begins. ID zero is unavailable because index zero of the CPUID performance-counter leaf is its
+common discovery header. Other IDs beyond the standard set are implementation-defined and are discovered through that
+leaf. Reading ID zero or any other unavailable ID raises \texttt{INVALID\_CONTROL\_STATE} with the same
+unavailable-counter behavior.
 
 \begin{manualraggedblock}
 Supervisor mode may read every implemented counter. User-mode RDPMC requires PMC.USER; otherwise it raises

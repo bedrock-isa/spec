@@ -11,7 +11,7 @@ behavior:
   - src
   output: dst
   approximation:
-    contract_id: '0x0002'
+    contract_id: '0x0003'
     reference_function: tan(x) in radians
     domain: finite x with abs(x) <= pi / 4 after DAZ
     max_ulp:

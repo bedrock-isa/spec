@@ -13,7 +13,7 @@
 \endhead
 +0x00 & FRAME\_CONTROL & frame shape, nesting metadata, saved FLAGS, and saved STATUS\\
 +0x08 & EVENT\_INFO & event code in bits 31..0; bits 63..32 are zero\\
-+0x10 & FRAME\_EXT1 & reserved for future architected base-frame state; zero on entry\\
++0x10 & FRAME\_EXT1 & repeat continuation when \texttt{repeat\_saved} is one; otherwise zero\\
 +0x18 & SAVED\_PC & saved program counter\\
 +0x20 & SAVED\_SP & saved stack pointer\\
 +0x28 & SAVED\_CS & saved code-segment image\\

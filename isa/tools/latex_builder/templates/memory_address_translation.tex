@@ -22,11 +22,15 @@ mathematical sum of base and span and is checked before 64-bit truncation. A dis
 address through. An enabled segment either checks the effective address as an offset and adds the base, or checks an
 already-linear address in bounds-only mode.
 
-For an actual instruction fetch, load, store, or atomic access of $n$ bytes, where $n \ge 1$, segment bounds cover
-the complete half-open byte range $[a,a+n)$. The addition is mathematical: wraparound does not make an out-of-range
-access valid. Translated-window mode requires $0 \le a$ and $a+n \le \mathit{span}$; bounds-only mode requires
-$\mathit{base} \le a$ and $a+n \le \mathit{limit}$. Failure of any byte in the range raises PAGE\_FAULT before
-paging or memory access begins.
+Address validation begins by forming the starting EA and its segment-pretranslated linear value. The starting point
+must be within the selected segment. With paging enabled, the starting linear value must then be canonical and the
+starting leaf translation is resolved far enough to determine its \texttt{AT} value. That value selects the complete
+bounds, alignment, translation, and address-type checks described under Leaf Address Types. This ordering defines
+which result is reported; it does not require a serial implementation pipeline. With paging disabled, no leaf type
+exists and the ordinary \texttt{AT=0} byte-addressed range rules apply.
+
+Complete range additions are mathematical: 64-bit wraparound never makes an out-of-range access valid. A range
+failure raises \texttt{PAGE\_FAULT} before an architectural memory transaction begins.
 
 The segment result is the linear address. With PTCR.PE set, the page-table walker consumes that address and applies
 the selected PTE frame and attributes. With paging disabled, the memory system receives the linear address directly.
@@ -41,11 +45,47 @@ check raises PAGE\_FAULT during access.
 \textbf{Mode} & \textbf{Segment State} & \textbf{Check} & \textbf{Linear Address}\\
 \midrule
 disabled & m = 0 & no segment-window check & linear = EA\\
-translated window & m != 0, b = 0 & $0 \le \mathrm{EA}$ and $\mathrm{EA}+n \le \mathrm{span}$ & linear = base + EA\\
-bounds-only window & m != 0, b = 1 & $\mathrm{base} \le \mathrm{EA}$ and $\mathrm{EA}+n \le \mathrm{limit}$ & linear = EA\\
+translated window & m != 0, b = 0 & starting point $0 \le \mathrm{EA}<\mathrm{span}$; complete range selected by leaf \texttt{AT} & linear = base + EA\\
+bounds-only window & m != 0, b = 1 & starting point $\mathrm{base}\le\mathrm{EA}<\mathrm{limit}$; complete range selected by leaf \texttt{AT} & linear = EA\\
 \bottomrule
 \end{manualtabular}
 
 \input{isa/tools/latex_builder/templates/fragments/page_walk_reference.tex}
 
 \input{isa/tools/latex_builder/templates/fragments/page_table_entry_reference.tex}
+
+\subsection{Leaf Address Types and Access Ranges}
+The leaf \texttt{AT} bit selects the meaning of the low twelve linear-address bits and the memory-system address:
+
+\[
+\begin{aligned}
+\texttt{AT=0:}\quad \mathit{byte\_address} &= (\mathit{PFN}\ll12)\mathbin{|}\mathit{linear}[11:0],\\
+\texttt{AT=1:}\quad \mathit{slot\_address} &= (\mathit{PFN}\ll12)\mathbin{|}\mathit{linear}[11:0].
+\end{aligned}
+\]
+
+For \texttt{AT=0}, the low bits are a byte offset and a width-$n$ access covers the half-open interval
+$[a,a+n)$. For \texttt{AT=1}, the low bits are a slot index and every B, W, L, or Q access covers exactly one
+addressable unit, $[a,a+1)$. Here $a$ is the value at the applicable stage: EA for segment bounds, linear address
+for paging coverage, and byte or slot address after translation. All leaves consumed by an \texttt{AT=0} byte range
+must also be byte-addressed; an address-type mismatch raises \texttt{PAGE\_FAULT} with cause
+\texttt{ADDRESS\_TYPE}.
+
+An \texttt{AT=1} transaction carries the slot address, transfer width, read/write direction, and write data. Width
+does not scale the slot address: for example, \texttt{Q [0]} and \texttt{Q [1]} select distinct slots, and
+\texttt{Q [4095]} remains one access to the last slot of the leaf. Slot accesses have no byte-alignment rule and no
+width-induced cross-page condition. Different widths at one slot remain transactions to that same slot; their
+device-visible relationship is defined by the applicable platform or device contract, not by normal-memory byte
+aliasing.
+
+Ordinary B, W, L, and Q loads and stores are valid through an \texttt{AT=1} leaf. Instruction fetch and every atomic
+read-modify-write through such a leaf raise \texttt{ADDRESS\_TYPE}. A prefetch produces no slot transaction. A cache
+maintenance operation has no slot-side effect. PTQUERY and VTOP report the translation without issuing a slot
+transaction; VTOP returns the slot address for an \texttt{AT=1} leaf.
+
+Address type is selected before applying the alignment rule appropriate to that type. Consequently, an atomic whose
+starting leaf has \texttt{AT=1} raises \texttt{ADDRESS\_TYPE} even when the numeric slot address would be misaligned
+under byte-addressed rules. \texttt{ATOMIC\_ALIGNMENT} applies only after an \texttt{AT=0} leaf has been selected.
+
+A slot store retires only after the transaction is acknowledged. The ordering and completion rules for slot
+transactions, including AFENCE, are defined by the Memory Model.

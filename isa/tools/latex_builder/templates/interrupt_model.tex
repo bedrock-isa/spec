@@ -26,8 +26,8 @@ the platform dispatcher applies its unhandled or spurious-interrupt policy.
 
 A restartable fault saves the faulting instruction or its architecturally defined restart point. A trap saves the
 following instruction. An interrupt or NMI saves the next instruction that would otherwise execute. An event taken
-during repeat execution saves the active repeat continuation PC and records the remaining repeat state in
-EVENT\_AUX.
+during repeat execution saves the active repeat continuation PC and records the remaining repeat state in the
+always-present \texttt{FRAME\_EXT1} slot.
 
 \subsection{Entry Admission and Event Depth}
 The event-entry state is usable only while ECR.V is set. A maskable interrupt is admitted only when ECR.V,
@@ -99,19 +99,44 @@ boundary, and zeros the padding. The frame-size unit remains one 8-byte slot.
 
 \input{isa/tools/latex_builder/templates/fragments/payload_slot_table.tex}
 
-ERROR\_CODE is defined separately by each exception and has zero in every unassigned bit. PAGE\_FAULT extends that
-slot with effective-address and linear-address context. AUXILIARY includes all four named slots and permits
-EVENT\_AUX to describe machine, bus, or saved repeat state without implying that every use is a fault.
+The frame type is fixed by the delivered event and never changes because repeat state was interrupted. ERROR\_CODE is
+defined separately by each exception and has zero in every unassigned bit. PAGE\_FAULT extends that slot with
+effective-address and linear-address context. AUXILIARY includes all four named slots and permits EVENT\_AUX to
+describe double-fault, machine-check, or bus-error state.
 
-A misaligned atomic memory operand uses the PAGE\_FAULT frame with ERROR\_CODE subtype
-\texttt{ALIGNMENT\_ATOMIC}. FAULT\_EA identifies the misaligned effective-address operand and FAULT\_LINEAR contains
+A misaligned \texttt{AT=0} atomic memory operand uses the PAGE\_FAULT frame with ERROR\_CODE subtype
+\texttt{ATOMIC\_ALIGNMENT}. FAULT\_EA identifies the misaligned effective-address operand and FAULT\_LINEAR contains
 its segment-pretranslated starting address. The fault is reported before the atomic instruction performs a memory
 read, memory write, or architectural result update.
+
+\input{isa/tools/latex_builder/templates/fragments/event_error_codes.tex}
+
+\input{isa/tools/latex_builder/templates/fragments/event_auxiliary_payloads.tex}
+
+\subsection{Machine-Check and Bus-Error Continuation}
+A corrected \texttt{MACHINE\_CHECK} is a trap, has both \texttt{PRECISE} and \texttt{RETRY\_SAFE} clear, and saves
+the following instruction. A recoverable machine check uses the valid combinations in the auxiliary-payload table.
+When \texttt{PRECISE} is one, the saved PC identifies the responsible instruction boundary and CPU architectural
+state is the state from before that instruction. When it is zero, the saved PC is the next instruction that would
+execute at the delivery boundary and CPU state corresponds to that boundary; neither identifies the responsible
+operation. \texttt{RETRY\_SAFE} may be one only with \texttt{PRECISE=1} and additionally guarantees that returning
+to the responsible boundary cannot duplicate an external effect. A fatal machine check always clears
+\texttt{RETRY\_SAFE}; \texttt{PRECISE} then describes diagnostic location quality and never guarantees reliable
+continuation.
+
+\texttt{BUS\_ERROR} is a synchronous precise fault. CPU architectural state remains uncommitted and the saved PC
+identifies the responsible instruction boundary. Its separate \texttt{RETRY\_SAFE} bit states whether an external
+effect might already have occurred. Page-walk bus errors and ordinary byte-addressed-memory bus errors are retry-safe.
+A slot transaction reports the value determined by its acknowledgement result.
+
+ERET restores any structurally valid frame mechanically and does not interpret these policy bits. Software decides
+whether retry or continuation is permitted from the event payload.
 
 \Needspace{6.4in}
 \subsection{Repeat Continuation}
 \begin{samepage}
-When FRAME\_CONTROL.repeat\_saved is set, EVENT\_AUX records the active repeat context. Event entry clears active
+When FRAME\_CONTROL.repeat\_saved is set, FRAME\_EXT1 records the active repeat context. When the bit is clear,
+FRAME\_EXT1 is zero. Event entry clears active
 architectural repeat state, and ERET restores it atomically with the saved PC and control state. During
 single-instruction repeat, SAVED\_PC is the repeated body boundary. For REPG, software reconstructs the group start
 from SAVED\_PC and the encoded byte-distance delta. ERET preserves the continuation unless supervisor software edits
