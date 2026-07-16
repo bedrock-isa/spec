@@ -58,6 +58,9 @@ INSTRUCTION_SET_SECTION_TITLES = {
     "fpu": "Floating-Point Instructions",
     "fpu_transcendental_approx": "Approximate Floating-Point Transcendental Instructions",
 }
+INSTRUCTION_SET_SECTION_INTRO_TEMPLATES = {
+    "fpu_transcendental_approx": "approximate_floating_point_intro.tex",
+}
 INSTRUCTION_FILENAME = "instruction.yaml"
 INSTRUCTION_DETAILS_FILENAME = "details.tex"
 
@@ -407,7 +410,7 @@ def instruction_class(instruction: InstructionDef) -> str:
     return label_text(instruction.doc.get("instruction_class", "-")) or "-"
 
 
-def instruction_set_groups(instructions: list[InstructionDef]) -> list[tuple[str, list[InstructionDef]]]:
+def instruction_set_groups(instructions: list[InstructionDef]) -> list[tuple[str, str, list[InstructionDef]]]:
     by_set: dict[str, list[InstructionDef]] = defaultdict(list)
     for inst in instructions:
         by_set[inst.instruction_set].append(inst)
@@ -415,7 +418,11 @@ def instruction_set_groups(instructions: list[InstructionDef]) -> list[tuple[str
     ordered_sets = [name for name in INSTRUCTION_SET_SECTION_ORDER if name in by_set]
     ordered_sets.extend(sorted(name for name in by_set if name not in set(ordered_sets)))
     return [
-        (INSTRUCTION_SET_SECTION_TITLES.get(name, f"{name.replace('_', ' ').title()} Instructions Summary"), by_set[name])
+        (
+            name,
+            INSTRUCTION_SET_SECTION_TITLES.get(name, f"{name.replace('_', ' ').title()} Instructions Summary"),
+            by_set[name],
+        )
         for name in ordered_sets
     ]
 
@@ -1623,9 +1630,14 @@ def latex_data_formats_section(model: IsaModel) -> str:
 
 
 def latex_instruction_word_formats_section(model: IsaModel) -> str:
+    values = encoding_class_template_values(model)
+    values["INSTRUCTION_PAYLOAD_ORDERING_SECTION"] = render_latex_template(
+        "fragments/instruction_payload_ordering.tex",
+        data_format_template_values(model),
+    )
     return render_latex_template(
         "instruction_word_formats.tex",
-        encoding_class_template_values(model),
+        values,
     )
 
 
@@ -1865,10 +1877,13 @@ def latex_reading_instruction_description_section() -> str:
 
 def latex_instruction_reference_section(model: IsaModel, instructions: list[InstructionDef]) -> str:
     parts: list[str] = [latex_reading_instruction_description_section()]
-    for title, group in instruction_set_groups(instructions):
+    for set_name, title, group in instruction_set_groups(instructions):
+        parts.append(str(LatexTopSection(title)))
+        intro_template = INSTRUCTION_SET_SECTION_INTRO_TEMPLATES.get(set_name)
+        if intro_template:
+            parts.append(render_latex_template(intro_template))
         parts.extend(
             [
-                str(LatexTopSection(title)),
                 r"\subsection{Summary}",
                 latex_instruction_summary_table(f"{title} Summary", group),
             ]

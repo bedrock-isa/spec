@@ -6,20 +6,7 @@ instruction may add stricter rules, but it does not silently replace the rules b
 is to make operand evaluation, side effects, repetition, and status updates readable before the per-instruction
 pages.
 
-\subsection{Instruction Boundary and Default Execution Rules}
-The instruction boundary is fixed by byte 0 for extrashort and short forms, and by the first two bytes for
-extended forms, before operand evaluation begins. An implementation may reject an instruction before any
-architectural state is changed if the encoded length cannot contain the selected form.
-
-The encoded length must contain every required opcode byte, descriptor, immediate, displacement, bitmap, and
-instruction-specific payload. Extra payload bytes are part of the instruction record but have no implicit extension
-meaning unless the selected instruction form consumes them.
-
-An overlong record is valid only when the selected form explicitly treats the extra trailing bytes as padding. An
-undersized record faults during length and decode validation, before any architectural state changes. Later payload
-bytes never extend an instruction implicitly.
-
-\subsection{Instruction Boundary, Operand Evaluation, and EA Defaults}
+\subsection{Operand Evaluation and EA Defaults}
 Operands are decoded in instruction order. Source reads complete before the final destination write unless an
 atomic form says otherwise. Effective-address calculation may produce an address without reading memory.
 
@@ -33,31 +20,6 @@ rules defined in the Streaming Execution Model.
 FLAGS and FFLAGS fields that an instruction does not mention remain unchanged. Operand evaluation follows
 instruction operand order, and an instruction has one architectural commit point unless its description explicitly
 defines partial completion.
-
-\subsection{Mnemonic Suffix Rules}
-The B, W, L, and Q suffixes select 8-, 16-, 32-, and 64-bit integer operation size. S and D suffixes select
-32- and 64-bit floating-point scalar size where the floating-point instruction group defines them.
-
-If an instruction form encodes a size selector z, the instruction definition maps z to the suffix set shown by
-that form. A mnemonic without a size suffix has a single architecturally defined size or no data-size operand.
-Conditional mnemonic forms use the condition names listed in the Flags and Condition Codes chapter.
-
-CMPJcc, DJcc, IJcc, Jcc, MOVcc, SETcc, TESTJcc, and FMOVcc place the condition suffix in the mnemonic. A form with
-only one architectural size omits the size suffix.
-
-\subsection{Operand and Status Notation}
-Rn names a general-purpose register. SP and PC are special registers outside the Rn encoding namespace. An
-\texttt{<ea>} operand names a compact effective-address field and any appended EA payload required by that field.
-
-FLAGS, STATUS, FFLAGS, and FSTATUS are architectural state registers. Instruction descriptions state whether a
-form updates, preserves, reads, or ignores each status field.
-
-In instruction pseudocode, Operand Read means reading a value after applying its addressing mode and operation size.
-Operand Write stores the selected-size result; a sub-Q Rn write preserves upper bits unless the instruction defines
-another rule. EA Address computes an address without reading memory unless the operation itself needs the value at
-that address. Selector operands may name an Rn register, a segment register, or an encoded immediate selector.
-FLAGS ZNCV refers to the integer Z, N, C, and V bits, while FFLAGS names the accrued floating-point exception and
-status bits.
 
 \subsection{Shared Side-Effect Rules}
 An instruction that faults before commit leaves destination registers, destination memory, and auto-update
@@ -77,11 +39,3 @@ naturally aligned addressable memory operand and commit the read-modify-write as
 page-table context, and privileged control operations require supervisor privilege. Cache-maintenance operations
 preserve FLAGS and define their own visibility contract. Approximate transcendental floating-point operations are
 available only when CPUID reports \texttt{FPTRANSA} and marks the instruction's accuracy-contract ID present.
-
-FPTRANSA applies DAZ before forming the exact reference input and measures its advertised ULP error before FTZ.
-It ignores \texttt{FSTATUS.RM} and formats its implementation-defined approximation with nearest-even rounding.
-The approximation is deterministic for the same implementation, input, format, and relevant FSTATUS mode, but need
-not be bit-identical across implementations. DN and FTZ retain their ordinary meanings. FPTRANSA may accrue NV, DZ,
-OF, and UF as its instruction contract requires, but it leaves the accrued NX flag unchanged and never takes an NX
-trap. Strict language-library operations may use FPTRANSA only through an explicit approximate intrinsic or a
-compiler mode that permits approximate math; strict \texttt{libm} lowering is not valid.

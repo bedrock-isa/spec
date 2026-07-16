@@ -103,6 +103,11 @@ ERROR\_CODE is defined separately by each exception and has zero in every unassi
 slot with effective-address and linear-address context. AUXILIARY includes all four named slots and permits
 EVENT\_AUX to describe machine, bus, or saved repeat state without implying that every use is a fault.
 
+A misaligned atomic memory operand uses the PAGE\_FAULT frame with ERROR\_CODE subtype
+\texttt{ALIGNMENT\_ATOMIC}. FAULT\_EA identifies the misaligned effective-address operand and FAULT\_LINEAR contains
+its segment-pretranslated starting address. The fault is reported before the atomic instruction performs a memory
+read, memory write, or architectural result update.
+
 \Needspace{6.4in}
 \subsection{Repeat Continuation}
 \begin{samepage}

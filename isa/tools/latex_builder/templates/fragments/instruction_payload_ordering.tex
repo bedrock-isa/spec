@@ -1,0 +1,60 @@
+\subsection{Instruction Payload Ordering}
+The instruction header occupies one byte for extrashort forms, two bytes for short forms, and at least two start
+bytes for extended forms. If a descriptor, immediate, displacement, or bitmap follows, those payload bytes
+occupy increasing addresses in decode order.
+
+Signed displacement and immediate payloads use two's-complement representation at their declared width before any
+sign extension performed by the consuming instruction or EA form.
+
+\manualtablecaption{Immediate, Displacement, and Address Payload Order}
+\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{0.45in}>{\raggedright\arraybackslash}p{4.20in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Payload} & \textbf{Bytes} & \textbf{Memory Order}\\
+\midrule
+\endfirsthead
+\multicolumn{3}{l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Payload} & \textbf{Bytes} & \textbf{Memory Order}\\
+\midrule
+\endhead
+\texttt{imm8} & 1 & single byte\\
+\texttt{imm16} & 2 & bits 7..0 at the lower byte, then bits 15..8\\
+\texttt{imm32} & 4 & least significant byte first\\
+\texttt{imm64} & 8 & least significant byte first\\
+\texttt{disp8} & 1 & single signed two's-complement byte\\
+\texttt{disp16} & 2 & signed two's-complement value, little-endian\\
+\texttt{disp32} & 4 & signed value, least significant byte first\\
+\texttt{disp64} & 8 & declared-width payload, least significant byte first\\
+\texttt{abs32} & 4 & absolute-address payload, least significant byte first\\
+\texttt{abs64} & 8 & absolute-address payload, least significant byte first\\
+\bottomrule
+\end{manuallongtable}
+
+\manualtablecaption{Immediate Operand Interpretation}
+\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{0.38in}>{\raggedright\arraybackslash}p{0.62in}>{\raggedright\arraybackslash}p{0.62in}>{\raggedright\arraybackslash}p{0.90in}>{\raggedright\arraybackslash}p{2.00in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Operand} & \textbf{Bits} & \textbf{Value} & \textbf{Range} & \textbf{Extension} & \textbf{Applies When}\\
+\midrule
+\endfirsthead
+\multicolumn{6}{l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Operand} & \textbf{Bits} & \textbf{Value} & \textbf{Range} & \textbf{Extension} & \textbf{Applies When}\\
+\midrule
+\endhead
+\texttt{imm3} & @IMM3_WIDTH@ & unsigned & @IMM3_RANGE@ & zero-extend & PUSHP/POPP canonical register-pair selector\\
+\texttt{imm4} & @IMM4_WIDTH@ & unsigned & @IMM4_RANGE@ & zero-extend & SETF/CLRF integer FLAGS masks\\
+\texttt{imm6} & @IMM6_WIDTH@ & unsigned & @IMM6_RANGE@ & zero-extend & integer forms with an explicit B/W/L/Q operation size\\
+\texttt{imm7} & @IMM7_WIDTH@ & unsigned & @IMM7_RANGE@ & zero-extend & EXTRACT register-pair forms\\
+\bottomrule
+\end{manuallongtable}
+
+PUSHP and POPP interpret \texttt{imm3} as a canonical register-pair index, so every encoding from 0 through 7 is valid.
+SETF and CLRF interpret \texttt{imm4} as the low FLAGS nibble: bit 3 selects Z, bit 2 selects N, bit 1 selects C,
+and bit 0 selects V.
+
+An \texttt{imm6} value is zero-extended to the selected operation size before use when that size is wider than six
+bits. EXTRACT uses \texttt{imm7} as the offset into its concatenated register pair.

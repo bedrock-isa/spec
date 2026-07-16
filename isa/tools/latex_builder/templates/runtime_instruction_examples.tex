@@ -1,8 +1,26 @@
 \clearpage
 \section{Runtime Instruction Examples}
 
-This section shows how runtime support code can combine architectural discovery instructions with
-state-management instructions. The examples are schematic C helpers, not ABI-mandated entry points.
+This section shows how compilers and runtime support code can use repeated scalar execution, architectural discovery,
+and state-management instructions. The examples and candidate shapes are guidance, not ABI-mandated entry points or
+implementation-performance guarantees.
+
+\subsection{Repeat and Streaming Candidates}
+Regular memory traversal forms such as MOV, CMP, EXTZ, EXTS, cache maintenance, and selected atomic-free
+transforms are natural streaming candidates when combined with a defined repeat instruction or REPG. An implementation may also stream
+fixed-size instruction groups when REPG describes a bounded group that has no unresolved control transfer into or
+out of the group body.
+
+Copy and fill loops commonly use REPG with MOV over one or two Rn-stepped streams. Scan and compare loops use TEST or
+CMP when the grouped body defines termination. Bulk extension combines EXTS or EXTZ with source and destination
+auto-update, while cache-maintenance loops traverse regular cache-line sequences. A fixed instruction group is also a
+candidate when its byte count ends on an instruction boundary and its body is straight-line. These shapes permit
+recognition; they do not guarantee a particular throughput or internal width.
+
+\subsection{Compiler Use}
+Compilers may emit repeated scalar forms for compact code size and predictable restart state. They do not need to
+know whether a specific processor executes the loop with scalar issue or a streaming engine. Generated code must
+still preserve aliasing, ordering, and exception behavior exactly as required by the scalar instruction sequence.
 
 \subsection{CPUID-Defined Program Context Save}
 SAVE and RESTORE use a CPUID-described memory image. A runtime that wants to save program-visible register and

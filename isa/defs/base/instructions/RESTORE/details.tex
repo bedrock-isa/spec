@@ -1,3 +1,5 @@
 RESTORE reads the fixed base block from the selected save-area address. It restores R0-R15 and FLAGS from the fixed base block; GS0--GS5 are restored only when their GS\_VALID bits are set. User-mode RESTORE ignores the saved STATUS image, while supervisor RESTORE applies the normal STATUS write rules. Extension components whose state-block bitmap bits are set are restored from their CPUID-defined component offsets.
 
-The complete selected memory range is validated before architectural state is committed. Any access, format, reserved-bit, or component-validation fault leaves the architectural register state and save area unchanged.
+Before reading any extension component or changing architectural state, RESTORE validates the complete base header and bitmap. An unrecognized format, a nonzero reserved bit, or any set bitmap bit without a matching CPUID component descriptor raises INVALID\_CONTROL\_STATE. RESTORE does not ignore, skip, or zero-fill unknown components.
+
+The complete selected memory range is validated before architectural state is committed. Any access or validation fault leaves the architectural register state and save area unchanged.

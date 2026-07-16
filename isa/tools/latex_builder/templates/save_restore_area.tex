@@ -8,6 +8,11 @@ The header carries FLAGS, STATUS, format, and GS-validity state. \texttt{GS\_VAL
 meaningful. SAVE may omit an architecturally clean extension component by clearing its bitmap bit, and RESTORE uses
 that bitmap as authoritative when reconstructing extension state.
 
+SAVE writes a format value recognized by the current implementation and sets bitmap bits only for components
+described by its CPUID \texttt{SAVE\_AREA\_LAYOUT} leaves. RESTORE accepts only a recognized format and only bitmap
+bits that name CPUID-described components for that format. An unknown format or component is not ignored, skipped,
+or treated as clean: RESTORE raises \texttt{INVALID\_CONTROL\_STATE} before changing architectural state.
+
 User-mode RESTORE ignores saved supervisor-only STATUS state. Supervisor RESTORE validates the saved STATUS image by
 the ordinary privileged write rules before making it visible.
 

@@ -1,6 +1,28 @@
 \clearpage
 \section{Instruction Encoding}
 
+\subsection{Instruction Stream and Record Boundary}
+The byte addressed by PC is byte 0 of the current instruction. Instruction decoding determines the complete
+instruction length before operand evaluation begins.
+
+Any remaining bytes selected by the instruction length belong to the opcode payload, EA descriptors, immediates,
+displacements, or instruction-specific payloads. The detailed length and opcode-class truth tables are in this
+chapter.
+
+The instruction boundary is fixed by byte 0 for extrashort and short forms, and by the first two bytes for
+extended forms, before operand evaluation begins. An implementation may reject an instruction before any
+architectural state is changed if the encoded length cannot contain the selected form.
+
+The encoded length must contain every required opcode byte, descriptor, immediate, displacement, bitmap, and
+instruction-specific payload. Extra payload bytes are part of the instruction record but have no implicit extension
+meaning unless the selected instruction form consumes them.
+
+An overlong record is valid only when the selected form explicitly treats the extra trailing bytes as padding. An
+undersized record faults during length and decode validation, before any architectural state changes. Later payload
+bytes never extend an instruction implicitly.
+
+\subsection{Instruction Header Formats}
+
 Instruction framing is byte-oriented. Byte 0 alone identifies extrashort and short instructions; extended
 instructions use byte 0 and byte 1 to determine both total instruction length and opcode class.
 
@@ -102,3 +124,7 @@ long & @LONG_PAYLOAD_BITS@ & byte0[7:6]=11 and opcode selector is 11110x or 1111
 extralong & @EXTRALONG_PAYLOAD_BITS@ & byte0[7:6]=11 and opcode selector is 111111\\
 \bottomrule
 \end{manualtabular}
+
+@INSTRUCTION_PAYLOAD_ORDERING_SECTION@
+
+\input{isa/tools/latex_builder/templates/fragments/representative_instruction_encodings.tex}

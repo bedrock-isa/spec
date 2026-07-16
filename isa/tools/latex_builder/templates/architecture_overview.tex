@@ -27,11 +27,3 @@ behavior. Byte-level instruction framing is specified separately in the Instruct
 \item User and supervisor modes share the instruction set, with privileged instructions and checked user-access moves defining supervisor-only behavior.
 \item REP, REPcc, and REPG expose scalar repeated execution while leaving internal streaming width implementation-defined.
 \end{itemize}
-
-\subsection{Instruction Stream}
-The byte addressed by PC is byte 0 of the current instruction. Instruction decoding determines the complete
-instruction length before operand evaluation begins.
-
-Any remaining bytes selected by the instruction length belong to the opcode payload, EA descriptors, immediates,
-displacements, or instruction-specific payloads. The detailed length and opcode-class truth tables are in the
-Instruction Encoding chapter.

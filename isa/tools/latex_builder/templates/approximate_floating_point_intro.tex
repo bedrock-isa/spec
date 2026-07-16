@@ -1,0 +1,26 @@
+\subsection{FPTRANSA ULP Error Model}
+For an approximate transcendental instruction, $x'$ is the source after \texttt{FSTATUS.DAZ}, $y=f(x')$ is the
+exact real reference value named by its accuracy contract, and $a$ is the approximate result before
+\texttt{FSTATUS.FTZ}. For a format with precision $p$ and minimum normal exponent $e_{\min}$, define
+
+\[
+  \operatorname{ulp}_F(y) =
+  \begin{cases}
+    2^{\max(\lfloor\log_2 |y|\rfloor-p+1,\ e_{\min}-p+1)}, & y\ne0,\\
+    2^{e_{\min}-p+1}, & y=0.
+  \end{cases}
+\]
+
+The measured error is $|a-y|/\operatorname{ulp}_F(y)$. The bound applies only to finite reference values within
+the selected format's finite range; NaN, infinity, and overflow follow the instruction's special-value rules.
+Every present contract guarantees at most 4 ULP for both S and D, corresponding to at least 21 and 50 worst-case
+relative precision bits respectively for nonzero normal results. CPUID may advertise a smaller certified bound.
+The instruction does not compute or return its actual error.
+
+FPTRANSA applies DAZ before forming the exact reference input and measures its advertised ULP error before FTZ.
+It ignores \texttt{FSTATUS.RM} and formats its implementation-defined approximation with nearest-even rounding.
+The approximation is deterministic for the same implementation, input, format, and relevant FSTATUS mode, but need
+not be bit-identical across implementations. DN and FTZ retain their ordinary meanings. FPTRANSA may accrue NV, DZ,
+OF, and UF as its instruction contract requires, but it leaves the accrued NX flag unchanged and never takes an NX
+trap. Strict language-library operations may use FPTRANSA only through an explicit approximate intrinsic or a
+compiler mode that permits approximate math; strict \texttt{libm} lowering is not valid.

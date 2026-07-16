@@ -4,18 +4,41 @@
 The memory model defines instruction fetches, loads, stores, atomic read-modify-write operations, cache maintenance,
 and translation-cache maintenance after EA calculation and address translation.
 
-Unaligned ordinary memory accesses are architecturally permitted, but may be implemented as multiple aligned memory
-beats and have no tear-free or atomicity guarantee.
+\subsection{Baseline Ordering}
+Normal memory is coherent. Every hardware thread observes writes to a given byte in one common coherence order, and
+writes by one hardware thread to that byte enter the order in program order. A naturally aligned tear-free scalar
+store enters that order as one write event.
 
-Atomic read-modify-write instructions require naturally aligned memory operands. A misaligned atomic operand is
-invalid for the atomic operation and must not complete as a non-atomic update.
+Normal-memory writes are multi-copy atomic. When a write event becomes observable by a hardware thread other than
+the writer, it becomes observable to all such threads at the same architectural point. An implementation may still
+forward a hardware thread's own pending store to its later loads before that store is globally observable.
+
+The baseline ordering is weak. Except for same-byte coherence or ordering imposed by an atomic memory-order selector
+or fence, loads and stores to different locations may be issued, completed, and observed in an order different from
+program order. Coherence and multi-copy atomicity do not by themselves order accesses to different locations.
+Platform-defined device memory may impose additional rules outside this normal-memory model.
+
+\subsection{Access Atomicity and Alignment}
+Unaligned ordinary memory accesses are architecturally permitted and may be implemented as multiple aligned memory
+beats. A successfully completed unaligned access has no tear-free guarantee; each visible store beat is separately
+coherent and multi-copy atomic.
+
+An unaligned store is nevertheless fault-atomic for synchronous faults. If any byte of the complete store range
+would raise a synchronous fault, no byte of the store becomes architecturally visible. An implementation that uses
+multiple beats must validate, buffer, or roll back those beats to preserve this rule. This fault atomicity does not
+make a successfully completed unaligned store tear-free.
+
+Atomic read-modify-write instructions require naturally aligned memory operands. A misaligned atomic operand raises
+\texttt{PAGE\_FAULT} with the \texttt{ALIGNMENT\_ATOMIC} subtype before any memory update or architectural result
+commits; it must not complete as a non-atomic update.
 
 Stores to memory that is later executed as instructions are ordinary data stores until an explicit synchronization
 sequence makes the modified bytes visible to instruction fetch.
 
 For every scalar size below, a naturally aligned normal-memory load or store is tear-free. Unaligned accesses retain
-the general rule above and have no tear-free guarantee.
+the successful-access and synchronous-fault rules above.
 
+\Needspace{2.3in}
 \manualtablecaption{Scalar Access Sizes and Alignment}
 \begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{3.95in}@{}}
 \toprule

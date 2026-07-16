@@ -1,0 +1,30 @@
+\subsection{Representative Encodings}
+\begin{manuallistedbitdiagram}{Short Encoding Layout for MOV.X(z:L/Q) Rn(s), Rn(d)}
+\manualbitrow{payload[13:0]}{%
+\manualbitfixed{00}{2}
+\manualbitfixed{000}{3}
+\manualbitfieldcode{z}{1}
+\manualbitfieldcode{s}{4}
+\manualbitfieldcode{d}{4}
+}
+\end{manuallistedbitdiagram}
+
+\begin{manuallistedbitdiagram}{Medium Encoding Layout for MOV.X(z:B/W) Rn(s), \textless{}ea\textgreater{}(e)}
+\manualbitrow{payload[17:0]}{%
+\manualbitfixed{00}{2}
+\manualbitfixed{0000}{4}
+\manualbitfieldcode{z}{1}
+\manualbitfieldcode{s}{4}
+\manualbitfieldcode{e}{7}
+}
+\end{manuallistedbitdiagram}
+
+\begin{manuallistedbitdiagram}{Long Encoding Layout for ADC.X(z:B/W/L/Q) Rn(s), \textless{}ea\textgreater{}(e)}
+\manualbitrow{payload[25:0]}{%
+\manualbitfixed{1111000000}{10}
+\manualbitfieldcode{z}{2}
+\manualbitfixed{000}{3}
+\manualbitfieldcode{s}{4}
+\manualbitfieldcode{e}{7}
+}
+\end{manuallistedbitdiagram}

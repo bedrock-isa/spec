@@ -71,49 +71,19 @@ exposing partial updates within an iteration.
 An implementation may also choose scalar execution for any repeated operation. A streaming candidate is a shape
 that can be recognized; it is not a throughput, latency, or vector-width guarantee.
 
-\subsection{Streaming Candidates}
-Regular memory traversal forms such as MOV, CMP, EXTZ, EXTS, cache maintenance, and selected atomic-free
-transforms are natural streaming candidates when combined with a defined repeat instruction or REPG. An implementation may also stream
-fixed-size instruction groups when REPG describes a bounded group that has no unresolved control transfer into or
-out of the group body.
+\subsection{Fault and Restart Semantics}
+A fault during repeated execution preserves committed work and saves the state needed to resume or emulate the
+remainder. Event entry records the active repeat context in EVENT\_AUX and clears active repeat state. The Repeat
+Continuation subsection of the Architectural Event Processing Model defines the saved format and ERET restoration.
 
-Copy and fill loops commonly use REPG with MOV over one or two Rn-stepped streams. Scan and compare loops use TEST or
-CMP when the grouped body defines termination. Bulk extension combines EXTS or EXTZ with source and destination
-auto-update, while cache-maintenance loops traverse regular cache-line sequences. A fixed instruction group is also a
-candidate when its byte count ends on an instruction boundary and its body is straight-line. These shapes permit
-recognition; they do not guarantee a particular throughput or internal width.
+REP and REPcc atomically commit the one-instruction body, repeat-observed condition, counter decrement, and
+continuation-PC selection. If the body faults, that iteration does not commit and the fault is reported at the body
+instruction. Every committed iteration decrements the counter, including a condition-false iteration that terminates
+REPcc; earlier iterations remain committed.
 
-\subsection{Compiler Model}
-Compilers may emit repeated scalar forms for compact code size and predictable restart state. They do not need to
-know whether a specific processor executes the loop with scalar issue or a streaming engine. Generated code must
-still preserve aliasing, ordering, and exception behavior exactly as required by the scalar instruction sequence.
-
-\subsection{Relationship to Other Acceleration}
-REPG uses an unsigned byte count for the grouped body. The byte count must describe a body that ends on an
-instruction boundary. The counter update occurs only after a whole group iteration succeeds.
-
-Faults remain precise at the repeated-operation boundary. Completed iterations are committed; an incomplete
-faulting iteration is reported at the faulting instruction with restart state sufficient to continue or emulate
-the remaining work.
-
-\manualtablecaption{Repeat Restart Properties}
-\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{1.15in}>{\raggedright\arraybackslash}p{2.10in}>{\raggedright\arraybackslash}p{2.15in}@{}}
-\toprule
-\rowcolor{ManualHeaderFill}
-\textbf{Property} & \textbf{Single-instruction repeat} & \textbf{REPG}\\
-\midrule
-\endfirsthead
-\multicolumn{3}{l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
-\toprule
-\rowcolor{ManualHeaderFill}
-\textbf{Property} & \textbf{Single-instruction repeat} & \textbf{REPG}\\
-\midrule
-\endhead
-Body decode & body instruction decoded once at entry & group body decoded once at entry\\
-Zero counter & body checked, then annulled without side effects & group checked, then annulled without side effects\\
-Body & one following instruction & encoded byte-counted instruction group\\
-Counter update & after a completed condition-true iteration & after the whole group iteration succeeds\\
-Terminating fault & reported at the repeated scalar instruction & reported at the faulting instruction in the group\\
-Completed work & completed iterations remain committed & completed iterations and prior group instructions remain committed\\
-\bottomrule
-\end{manuallongtable}
+For REPG, the unsigned body byte count must describe a group that ends on an instruction boundary. Instructions in
+the group commit in program order. If an instruction faults, earlier completed instructions in the current group
+iteration remain committed and later instructions do not execute. The fault is reported at the faulting instruction,
+and the repeat counter is not decremented for the incomplete group iteration; it is decremented only after the whole
+group iteration succeeds. The saved PC and repeat continuation retain the information required to reconstruct the
+group and continue the remaining work.

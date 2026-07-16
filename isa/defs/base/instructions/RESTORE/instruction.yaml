@@ -2,7 +2,7 @@ mnemonic: RESTORE
 doc:
   title: Restore Processor State
   summary: Restore processor state from a CPUID-defined save area.
-  description: The save area uses a fixed architectural layout discovered through CPUID; it does not contain a per-component size table. The save-area base must be 4 KiB aligned. RESTORE is the matching restore operation for SAVE and may restore base architectural state as well as enabled extension state from the same save image. User-mode RESTORE ignores the saved STATUS image; supervisor RESTORE applies the normal STATUS write rules.
+  description: The save area uses a fixed architectural layout discovered through CPUID; it does not contain a per-component size table. The save-area base must be 4 KiB aligned. RESTORE is the matching restore operation for SAVE and may restore base architectural state as well as enabled extension state from the same save image. RESTORE raises INVALID_CONTROL_STATE for an unrecognized format or any set bitmap bit that does not name a CPUID-described component; it never ignores or skips an unknown component. User-mode RESTORE ignores the saved STATUS image; supervisor RESTORE applies the normal STATUS write rules.
   instruction_family: tlb_and_context
   instruction_class: system
 behavior:

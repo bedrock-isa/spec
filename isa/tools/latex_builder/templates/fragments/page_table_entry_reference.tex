@@ -32,8 +32,8 @@ width are available to software and ignored by the page-table walker.
 \texttt{X} & \texttt{2} & executable\\
 \texttt{U} & \texttt{3} & user-domain mapping\\
 \texttt{G} & \texttt{4} & global translation\\
-\texttt{A} & \texttt{5} & accessed; set on successful traversal or leaf use\\
-\texttt{D} & \texttt{6} & dirty; leaf-only and set on a successful store\\
+\texttt{A} & \texttt{5} & accessed; may be set on any consumed entry, including a speculative traversal\\
+\texttt{D} & \texttt{6} & dirty; leaf-only and set exactly when a store or atomic memory update commits\\
 \texttt{AT} & \texttt{7} & 0 byte-addressed; 1 externally acknowledged / bus-sized leaf access\\
 \texttt{CP} & \texttt{9..8} & 0 cacheable; 1 uncacheable; 2 write-through; 3 write-combining\\
 \texttt{SW0} & \texttt{10} & software-defined and ignored by hardware\\
@@ -47,3 +47,15 @@ At every level above L1, P and T must both be one; D, G, and AT must be zero. At
 zero. W, X, and U permissions are accumulated across the walk. A reserved or malformed consumed entry raises
 \texttt{PAGE\_FAULT}. Supervisor current-domain access to a user mapping faults; the checked user-domain operations
 select the user-domain permission path explicitly.
+
+When hardware changes A or D from zero to one, it performs a conditional 64-bit atomic read-modify-write of the
+complete PTE. The update sets only the required A or D bits and preserves every other bit from the current 64-bit
+value. It succeeds only if the translation-relevant PTE value still matches the value that was validated. If a
+concurrent write changes that value first, the walker must re-read and revalidate the entry; it must not write back
+stale PTE fields.
+
+A may be set after a structurally valid entry is consumed by a speculative walk even when the initiating
+instruction is later squashed or faults after that traversal. D is exact rather than speculative: a failed,
+squashed, permission-denied, or non-storing operation must not change D. A store or successful atomic memory update
+may become architecturally visible only if any required D update also succeeds. PTQUERY and VTOP retain their
+instruction-specific rule that they never modify A or D.
