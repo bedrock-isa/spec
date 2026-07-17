@@ -43,7 +43,7 @@ class InstructionEaFormsTests(unittest.TestCase):
         )
 
     def instruction(self, mnemonic: str) -> InstructionDef:
-        path = ROOT / "isa" / "defs" / "base" / "instructions" / mnemonic / "instruction.yaml"
+        path = ROOT / "isa" / "defs" / "instructions" / mnemonic / "instruction.yaml"
         return InstructionDef(path, "base", mnemonic, load_yaml(path))
 
     def allocation(self, entry_id: str) -> AllocationEntry:

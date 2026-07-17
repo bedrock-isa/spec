@@ -1,0 +1,24 @@
+mnemonic: RDCR
+doc:
+  title: Read Control Register
+  summary: Read a privileged control register.
+  description: RDCR is always a supervisor-only instruction; user-visible control state must use dedicated instructions gated by control-register policy bits.
+  instruction_family: system_registers
+  instruction_class: system
+behavior:
+  group: system_registers
+  inputs:
+  - cr
+  output: dst
+  control_register_access:
+    selector: cr
+    read: dst
+attributes:
+  privilege: supervisor
+  flags: unchanged
+forms:
+  operands:
+  - name: cr
+    type: imm16
+  - name: dst
+    type: Rn

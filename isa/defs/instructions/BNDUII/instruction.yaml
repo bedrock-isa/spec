@@ -1,0 +1,33 @@
+mnemonic: BNDUII
+doc:
+  title: Unsigned Bounds Check Inclusive-Inclusive
+  summary: Checks unsigned value membership in the inclusive-inclusive interval [lo, hi].
+  description: BNDUII treats both bounds as inclusive. It sets V when unsigned(value) is outside [unsigned(lo), unsigned(hi)]; Z, N, and C are unchanged.
+  instruction_family: bounds
+  instruction_class: integer
+behavior:
+  group: bounds
+  inputs:
+  - hi
+  - lo
+  - value
+  output: none
+  interval: "[lo, hi]"
+  signedness: unsigned
+  bounds_mode: II
+attributes:
+  privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: true
+    repg: true
+forms:
+  extension_family: integer_bounds_unsigned
+  operands:
+  - name: lo
+    type: Rn
+  - name: value
+    type: EA
+  - name: hi
+    type: Rn
+  size: BWLQ

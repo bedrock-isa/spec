@@ -10,10 +10,15 @@ import re
 import sys
 from typing import Any
 
-try:
-    import yaml
-except ImportError as exc:  # pragma: no cover - environment error path
-    raise SystemExit("PyYAML is required to validate definition YAML files") from exc
+from defs_loader import (
+    InstructionSetDef,
+    load_extension_catalog,
+    load_extensions,
+    load_instruction_sets,
+    load_operand_types,
+    load_register_groups,
+    load_yaml,
+)
 
 
 ROOT = Path("isa/defs")
@@ -28,9 +33,6 @@ FORBIDDEN_BEHAVIOR_KEYS = {
     "canonicalization",
     "descriptor_payloads",
 }
-def load_yaml(path: Path) -> Any:
-    with path.open() as f:
-        return yaml.safe_load(f)
 
 
 def scalar_list(value: Any) -> list[str]:
@@ -53,11 +55,13 @@ def collect_operand_types(value: Any, out: Counter[str]) -> None:
             collect_operand_types(child, out)
 
 
-def iter_instruction_files(root: Path, manifest: dict[str, Any]) -> tuple[list[Path], list[str]]:
+def iter_instruction_files(
+    instruction_sets: list[InstructionSetDef],
+) -> tuple[list[Path], list[str]]:
     errors: list[str] = []
     files: list[Path] = []
-    for spec in manifest.get("instruction_sets", []):
-        include = root / spec["include"]
+    for instruction_set in instruction_sets:
+        include = instruction_set.include
         if not include.exists():
             errors.append(f"missing include file: {include}")
             continue
@@ -65,11 +69,6 @@ def iter_instruction_files(root: Path, manifest: dict[str, Any]) -> tuple[list[P
         if not isinstance(data, dict):
             errors.append(f"{include}: expected mapping")
             continue
-        common = data.get("common")
-        if not isinstance(common, str) or not common.strip():
-            errors.append(f"{include}: missing common metadata path")
-        elif not (include.parent / common).is_file():
-            errors.append(f"{include}: missing common metadata file {common}")
         include_items = data.get("include")
         if not isinstance(include_items, list):
             errors.append(f"{include}: include must be a list of instruction directories")
@@ -131,22 +130,53 @@ def validate_details_tex(path: Path) -> list[str]:
 
 
 def validate_defs(root: Path = ROOT) -> tuple[dict[str, Any], list[str]]:
-    manifest_path = root / "manifest.yaml"
+    catalog_path = root / "extensions.yaml"
     errors: list[str] = []
-    if not manifest_path.exists():
-        return {}, [f"missing manifest: {manifest_path}"]
+    if not catalog_path.exists():
+        return {}, [f"missing extension catalog: {catalog_path}"]
 
-    manifest = load_yaml(manifest_path)
-    if not isinstance(manifest, dict):
-        return {}, [f"{manifest_path}: expected mapping"]
+    catalog = load_extension_catalog(root)
+    try:
+        extensions = load_extensions(root, catalog)
+    except (OSError, ValueError) as exc:
+        extensions = {}
+        errors.append(str(exc))
+    try:
+        register_groups = load_register_groups(root, extensions)
+    except (OSError, ValueError) as exc:
+        register_groups = {}
+        errors.append(str(exc))
+    try:
+        instruction_sets = load_instruction_sets(root, extensions)
+    except (OSError, ValueError) as exc:
+        instruction_sets = []
+        errors.append(str(exc))
 
-    family_order = set(manifest.get("extension_grouping", {}).get("family_order", []))
-    operands_path = root / "operands.yaml"
-    operand_schema = load_yaml(operands_path) if operands_path.exists() else {}
-    allowed_operand_types = set(
-        (operand_schema.get("operand_schema", {}) if isinstance(operand_schema, dict) else {}).get("types", [])
+    fptransa_extension = extensions.get("fpu.transcendental_approx")
+    fptransa_model = (
+        fptransa_extension.data.get("approximation_model")
+        if fptransa_extension is not None
+        else None
     )
-    instruction_files, include_errors = iter_instruction_files(root, manifest)
+    if fptransa_extension is not None and not isinstance(fptransa_model, dict):
+        errors.append(f"{fptransa_extension.path}: missing approximation_model mapping")
+        fptransa_model = None
+    fptransa_max_ulp = (
+        fptransa_model.get("baseline_max_ulp")
+        if isinstance(fptransa_model, dict)
+        else None
+    )
+    if fptransa_extension is not None and not isinstance(fptransa_max_ulp, dict):
+        errors.append(f"{fptransa_extension.path}: missing approximation_model.baseline_max_ulp mapping")
+        fptransa_max_ulp = None
+
+    try:
+        declared_operand_types = load_operand_types(root, extensions)
+    except (OSError, ValueError) as exc:
+        declared_operand_types = {}
+        errors.append(str(exc))
+    allowed_operand_types = set(declared_operand_types)
+    instruction_files, include_errors = iter_instruction_files(instruction_sets)
     errors.extend(include_errors)
     discovered_instruction_files = set(root.glob("**/instructions/*/instruction.yaml"))
     listed_instruction_files = set(instruction_files)
@@ -154,7 +184,7 @@ def validate_defs(root: Path = ROOT) -> tuple[dict[str, Any], list[str]]:
         path for path in root.glob("**/instructions/*") if path.is_dir()
     }
     for path in sorted(discovered_instruction_files - listed_instruction_files):
-        errors.append(f"{path}: instruction definition is not listed by a manifest")
+        errors.append(f"{path}: instruction definition is not listed by an instructions.yaml index")
     for path in sorted(listed_instruction_files - discovered_instruction_files):
         errors.append(f"{path}: listed instruction definition is outside the directory contract")
     if discovered_instruction_dirs != {path.parent for path in discovered_instruction_files}:
@@ -167,7 +197,6 @@ def validate_defs(root: Path = ROOT) -> tuple[dict[str, Any], list[str]]:
     extension_families = Counter()
     legacy_operand_files: dict[str, set[Path]] = defaultdict(set)
     unknown_operand_files: dict[str, set[Path]] = defaultdict(set)
-    missing_external_allocation: list[Path] = []
     fptransa_contracts: dict[int, tuple[str, Path]] = {}
     details_count = 0
 
@@ -182,9 +211,7 @@ def validate_defs(root: Path = ROOT) -> tuple[dict[str, Any], list[str]]:
 
         mnemonic = data.get("mnemonic")
         if mnemonic is None:
-            # Common include files are allowed to carry shared metadata.
-            if path.name != "_common.yaml":
-                errors.append(f"{path}: missing mnemonic")
+            errors.append(f"{path}: missing mnemonic")
             continue
 
         mnemonic = str(mnemonic)
@@ -200,9 +227,6 @@ def validate_defs(root: Path = ROOT) -> tuple[dict[str, Any], list[str]]:
         mnemonics[mnemonic] = path
         counts["instructions"] += 1
 
-        status = data.get("definition_status", {})
-        if not isinstance(status, dict) or status.get("allocation") != "external: isa/alloc":
-            missing_external_allocation.append(path)
         doc = data.get("doc", {})
         if isinstance(doc, dict):
             summary_text = doc.get("summary")
@@ -242,10 +266,8 @@ def validate_defs(root: Path = ROOT) -> tuple[dict[str, Any], list[str]]:
             ext_family = forms.get("extension_family")
             if isinstance(ext_family, str):
                 extension_families[ext_family] += 1
-                if ext_family not in family_order:
-                    errors.append(f"{path}: extension_family {ext_family!r} not present in manifest family_order")
                 if ext_family == "fpu_transcendental_approx":
-                    if forms.get("size") != "S_D":
+                    if forms.get("size") != "SD":
                         errors.append(f"{path}: FPTRANSA instructions must support S and D together")
                     behavior = data.get("behavior") or {}
                     approximation = behavior.get("approximation") if isinstance(behavior, dict) else None
@@ -266,8 +288,11 @@ def validate_defs(root: Path = ROOT) -> tuple[dict[str, Any], list[str]]:
                                     f"{previous_contract[1]} and {path}"
                                 )
                             fptransa_contracts[contract_id] = (mnemonic, path)
-                        if approximation.get("max_ulp") != {"S": 4, "D": 4}:
-                            errors.append(f"{path}: FPTRANSA max_ulp must be S=4 and D=4")
+                        if fptransa_max_ulp is not None and approximation.get("max_ulp") != fptransa_max_ulp:
+                            errors.append(
+                                f"{path}: FPTRANSA max_ulp must match "
+                                f"{fptransa_extension.path}: {fptransa_max_ulp}"
+                            )
                         for key in ("reference_function", "domain", "exact_anchors", "properties"):
                             if not approximation.get(key):
                                 errors.append(f"{path}: approximation contract is missing {key}")
@@ -301,11 +326,6 @@ def validate_defs(root: Path = ROOT) -> tuple[dict[str, Any], list[str]]:
                 if typ not in allowed_operand_types:
                     unknown_operand_files[typ].add(path)
 
-    if missing_external_allocation:
-        sample = ", ".join(str(path) for path in missing_external_allocation[:5])
-        errors.append(
-            f"{len(missing_external_allocation)} instruction files lack definition_status allocation marker: {sample}"
-        )
     if legacy_operand_files:
         details = ", ".join(f"{key}={len(value)}" for key, value in sorted(legacy_operand_files.items()))
         errors.append(f"instruction files still use legacy operand types: {details}")
@@ -317,6 +337,8 @@ def validate_defs(root: Path = ROOT) -> tuple[dict[str, Any], list[str]]:
         errors.append("details.tex found outside a valid instruction directory")
 
     summary = {
+        "extension_definitions": len(extensions),
+        "register_groups": len(register_groups),
         "instruction_files": len(instruction_files),
         "instructions": counts["instructions"],
         "instruction_details": details_count,
@@ -337,7 +359,13 @@ def main() -> int:
     summary, errors = validate_defs(args.root)
 
     print(f"{args.root}")
-    for key in ("instruction_files", "instructions", "instruction_details"):
+    for key in (
+        "extension_definitions",
+        "register_groups",
+        "instruction_files",
+        "instructions",
+        "instruction_details",
+    ):
         print(f"  {key}: {summary.get(key, 0)}")
     print("  extension families:", len(summary.get("extension_families", {})))
     print("  instruction families:", len(summary.get("instruction_families", {})))

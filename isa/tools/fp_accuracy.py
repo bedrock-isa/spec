@@ -6,14 +6,23 @@ from __future__ import annotations
 from dataclasses import dataclass
 from fractions import Fraction
 import math
+from pathlib import Path
 from typing import SupportsFloat
 
+from defs_loader import load_extensions
 
-FPTRANSA_CPUID_CLASS = 0x00000001
-FPTRANSA_ACCURACY_LEAF = 0x0001
-FPTRANSA_CONTRACT_REVISION = 1
-FPTRANSA_MAX_ULP_Q8_8 = 0x0400
-FPTRANSA_MAX_ASSIGNED_CONTRACT_ID = 0x0044
+
+DEF_ROOT = Path(__file__).resolve().parents[1] / "defs"
+FPTRANSA_EXTENSION = load_extensions(DEF_ROOT)["fpu.transcendental_approx"].data
+FPTRANSA_CPUID = FPTRANSA_EXTENSION["cpuid"]
+FPTRANSA_APPROXIMATION_MODEL = FPTRANSA_EXTENSION["approximation_model"]
+
+FPTRANSA_CPUID_CLASS = int(FPTRANSA_CPUID["class"])
+FPTRANSA_ACCURACY_LEAF = int(FPTRANSA_CPUID["accuracy_leaf"])
+FPTRANSA_CONTRACT_REVISION = int(FPTRANSA_APPROXIMATION_MODEL["contract_revision"])
+FPTRANSA_MAX_ULP_Q8_8 = max(
+    int(bound) for bound in FPTRANSA_APPROXIMATION_MODEL["baseline_max_ulp"].values()
+) * 0x100
 
 FPTRANSA_CONTRACT_IDS = {
     "FSINA": 0x0001,
@@ -36,10 +45,14 @@ FPTRANSA_CONTRACT_IDS = {
     "FLOG2A": 0x0043,
     "FLOG10A": 0x0044,
 }
+FPTRANSA_MAX_ASSIGNED_CONTRACT_ID = max(FPTRANSA_CONTRACT_IDS.values())
 
 FORMAT_PARAMETERS = {
-    "S": {"precision_bits": 24, "minimum_normal_exponent": -126},
-    "D": {"precision_bits": 53, "minimum_normal_exponent": -1022},
+    name: {
+        "precision_bits": int(parameters["precision_bits"]),
+        "minimum_normal_exponent": int(parameters["minimum_normal_exponent"]),
+    }
+    for name, parameters in FPTRANSA_APPROXIMATION_MODEL["formats"].items()
 }
 
 

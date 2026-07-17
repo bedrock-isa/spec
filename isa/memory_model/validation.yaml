@@ -1,4 +1,3 @@
-schema_version: 1
 status: pending_formal_proof
 target:
   afence_is_full_cumulative: true

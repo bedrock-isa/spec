@@ -56,17 +56,7 @@ fixed SS/CS through SP or PC, or explicitly uses the operation default data segm
 \textbf{Payload} & \textbf{Bytes} & \textbf{Value} & \textbf{Use}\\
 \midrule
 \endhead
-disp8s & 1 & signed & displacement added to base/index expression\\
-disp16s & 2 & signed & displacement added to base/index expression\\
-disp32s & 4 & signed & displacement added to base/index expression\\
-disp64 & 8 & unsigned & displacement added to base/index expression\\
-abs32s & 4 & signed & absolute address, sign-extended before use\\
-abs64 & 8 & unsigned & absolute address payload\\
-imm8s & 1 & signed & immediate operand payload\\
-imm16s & 2 & signed & immediate operand payload\\
-imm32s & 4 & signed & immediate operand payload\\
-imm64 & 8 & unsigned & immediate operand payload\\
-EXT0 descriptor & 1 or 2 & encoded & extended EA descriptor; present only for EXT0 escapes\\
+@EA_PAYLOAD_ROWS@
 \bottomrule
 \end{manuallongtable}
 

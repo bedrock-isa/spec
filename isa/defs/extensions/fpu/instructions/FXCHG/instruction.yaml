@@ -20,8 +20,6 @@ attributes:
 forms:
   operands:
   - name: lhs
-    type: FREG
+    type: Fn
   - name: rhs
-    type: FREG
-definition_status:
-  allocation: 'external: isa/alloc'
+    type: Fn

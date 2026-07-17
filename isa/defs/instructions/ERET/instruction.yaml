@@ -1,0 +1,15 @@
+mnemonic: ERET
+doc:
+  title: Event Return
+  summary: Return from an architectural event frame.
+  description: Return from the active architectural event after validating the saved event frame and return state. ERET is valid only while event-active state is set.
+  instruction_family: core_control
+  instruction_class: system
+behavior:
+  group: core_control
+  output: none
+attributes:
+  privilege: supervisor
+  serializing: true
+forms:
+  operands: []

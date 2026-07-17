@@ -46,7 +46,7 @@ def instruction(path: Path) -> InstructionDef:
 
 class InstructionDetailsTexTests(unittest.TestCase):
     def test_renders_constant_ids_from_instruction_forms(self) -> None:
-        inst = instruction(Path("isa/defs/base/instructions/TESTDOC/instruction.yaml"))
+        inst = instruction(Path("isa/defs/instructions/TESTDOC/instruction.yaml"))
         inst.data["forms"]["result_format"] = "IEEE-754 binary64"
         inst.data["forms"]["constant_ids"] = [
             {"id": "0x0010", "name": "pi", "value_bits": "0x400921fb54442d18"},
@@ -59,7 +59,7 @@ class InstructionDetailsTexTests(unittest.TestCase):
         self.assertIn(r"\texttt{0x7ff0000000000000}", rendered)
 
     def test_rejects_duplicate_constant_ids(self) -> None:
-        inst = instruction(Path("isa/defs/base/instructions/TESTDOC/instruction.yaml"))
+        inst = instruction(Path("isa/defs/instructions/TESTDOC/instruction.yaml"))
         inst.data["forms"]["constant_ids"] = [
             {"id": "0x0000", "name": "zero", "value_bits": "0x0"},
             {"id": "0x0000", "name": "other_zero", "value_bits": "0x0"},
@@ -68,7 +68,7 @@ class InstructionDetailsTexTests(unittest.TestCase):
             latex_instruction_constant_ids(inst)
 
     def test_instruction_without_sibling_body_has_no_details_output(self) -> None:
-        inst = instruction(Path("isa/defs/base/instructions/TESTDOC/instruction.yaml"))
+        inst = instruction(Path("isa/defs/instructions/TESTDOC/instruction.yaml"))
         self.assertEqual(instruction_details_tex(inst), "")
 
     def test_rejects_forbidden_document_structure(self) -> None:

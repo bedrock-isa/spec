@@ -1,0 +1,27 @@
+mnemonic: IJcc
+doc:
+  title: Increment And Jump Conditional
+  summary: Performs the increment and jump conditional operation.
+  instruction_family: control_flow
+  instruction_class: control_flow
+  description: Increments the index and transfers control only when the new index differs from the bound and the encoded condition is true.
+behavior:
+  group: control_flow
+  inputs:
+  - cc
+  - bound
+  - target
+  input_output: index
+attributes:
+  privilege: unprivileged
+forms:
+  operands:
+  - name: cc
+    type: condition
+  - name: index
+    type: Rn
+  - name: bound
+    type: Rn
+  - name: target
+    type: EA
+  reads: FLAGS

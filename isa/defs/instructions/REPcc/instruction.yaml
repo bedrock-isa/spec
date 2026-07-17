@@ -1,0 +1,31 @@
+mnemonic: REPcc
+doc:
+  title: Repeat Conditional
+  summary: Repeats the next instruction while the counter and condition remain active.
+  description: REPcc installs repeat state for the following single instruction. The selected counter register is interpreted as an unsigned remaining count. The body instruction is decoded before zero-count annulment, and body repeatability is checked before annulment. REP is the unconditional spelling and uses condition T. Condition F is reserved and is not a valid encoding. While repeat state is active, architectural PC points at the body instruction boundary. Exceptions and architectural events save repeat state in FRAME_EXT1 and clear architectural repeat state before entering the handler; ERET restores the saved repeat state with the saved PC and status state.
+  instruction_family: control_flow
+  instruction_class: control_flow
+behavior:
+  group: control_flow
+  inputs:
+  - cc
+  input_output: counter
+attributes:
+  privilege: unprivileged
+  repeat_control: true
+  flags: body instruction rules apply
+forms:
+  syntax: REPcc Rn, (instruction)
+  body: next_instruction
+  repeatable_required:
+    REP: rep
+    REPcc: repcc
+  operands:
+  - name: cc
+    type: condition
+  - name: counter
+    type: Rn
+  alias:
+    REP: REP.T
+  invalid_conditions:
+  - F

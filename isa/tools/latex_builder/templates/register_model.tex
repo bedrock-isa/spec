@@ -31,18 +31,7 @@ instruction group is implemented.
 Floating-point exception and mode state is held separately in FFLAGS and FSTATUS. Their precise bit assignments are
 defined by the floating-point instruction set and compatibility state.
 
-\manualtablecaption{Floating-Point Registers}
-\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.85in}>{\raggedright\arraybackslash}p{0.75in}@{}}
-\toprule
-\rowcolor{ManualHeaderFill}
-\textbf{Register} & \textbf{Width}\\
-\midrule
-\texttt{F0} & 64\\ \texttt{F1} & 64\\ \texttt{F2} & 64\\ \texttt{F3} & 64\\
-\texttt{F4} & 64\\ \texttt{F5} & 64\\ \texttt{F6} & 64\\ \texttt{F7} & 64\\
-\texttt{F8} & 64\\ \texttt{F9} & 64\\ \texttt{F10} & 64\\ \texttt{F11} & 64\\
-\texttt{F12} & 64\\ \texttt{F13} & 64\\ \texttt{F14} & 64\\ \texttt{F15} & 64\\
-\bottomrule
-\end{manualtabular}
+@FLOATING_REGISTER_TABLE@
 
 \subsection{Segment Registers}
 \input{isa/tools/latex_builder/templates/fragments/segment_register_format_diagram.tex}

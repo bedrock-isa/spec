@@ -35,10 +35,12 @@ tables and a required, normative one-paragraph `doc.description`. Instructions
 that need additional normative material place a body-only `details.tex` beside
 the YAML file; the generator supplies the `Detailed Semantics` heading.
 
-Each instruction-set `instructions.yaml` names its shared
-`instructions/_common.yaml` file and explicitly lists instruction directories.
-The loader reads only each directory's `instruction.yaml` and requires the
-directory name to match its `mnemonic`.
+Each instruction-set `instructions.yaml` explicitly lists instruction
+directories. Extension-wide architectural metadata lives in an
+`extension.yaml`; `extensions.yaml` lists root extension names and each
+extension may list its own sub-extensions. The loader traverses that hierarchy
+separately from the per-instruction definitions. Each listed directory must
+contain an `instruction.yaml` whose `mnemonic` matches the directory name.
 
 ## Validation
 

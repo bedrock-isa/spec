@@ -1,0 +1,5 @@
+operand_types:
+  Fn:
+    kind: register
+    register_group: floating_point
+    field_width: 4

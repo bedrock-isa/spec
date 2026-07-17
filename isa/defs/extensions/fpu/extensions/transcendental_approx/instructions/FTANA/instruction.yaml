@@ -1,0 +1,44 @@
+mnemonic: FTANA
+doc:
+  title: Approximate Floating-Point Tangent
+  summary: Performs the bounded approximate floating-point tangent operation.
+  instruction_family: fpu_transcendental_approx
+  instruction_class: fpu
+  description: Computes the tan(x) in radians reference over finite x with abs(x) <= pi / 4 after DAZ and writes an implementation-bounded S- or D-format approximation under the selected FPTRANSA accuracy contract.
+behavior:
+  group: fpu_transcendental_approx
+  inputs:
+  - src
+  output: dst
+  approximation:
+    contract_id: '0x0003'
+    reference_function: tan(x) in radians
+    domain: finite x with abs(x) <= pi / 4 after DAZ
+    max_ulp:
+      S: 4
+      D: 4
+    exact_anchors:
+    - tan(+0) = +0
+    - tan(-0) = -0
+    properties:
+    - odd
+    - monotonically increasing on the contract domain
+    - result is in [-1, 1]
+attributes:
+  privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: false
+    repg: true
+  fp_flags:
+    update:
+    - NV
+    - UF
+forms:
+  operands:
+  - name: src
+    type: Fn
+  - name: dst
+    type: Fn
+  size: SD
+  extension_family: fpu_transcendental_approx

@@ -1,0 +1,32 @@
+mnemonic: MINU
+doc:
+  title: Unsigned Minimum
+  summary: Performs the unsigned minimum operation.
+  instruction_family: integer_alu
+  instruction_class: integer
+  description: Compares the selected-width operands as unsigned integers and writes the lesser value to the destination.
+behavior:
+  group: integer_minmax
+  inputs:
+  - src
+  input_output: dst
+  signedness: unsigned
+attributes:
+  privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: true
+    repg: true
+forms:
+  operands:
+  - - name: src
+      type: EA
+    - name: dst
+      type: Rn
+  - - name: src
+      type: Rn
+    - name: dst
+      type: EA
+  size: BWLQ
+  compact: false
+  result: second operand

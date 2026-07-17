@@ -1,0 +1,25 @@
+mnemonic: JMP
+doc:
+  title: Jump
+  summary: Transfers control to the target address.
+  instruction_family: control_flow
+  instruction_class: control_flow
+  description: Validates the target under the current control context and transfers execution to it. For the extended EA form, JMP.L reads the low 32-bit target from its register or memory EA and zero-extends it to the 64-bit near target; JMP.Q uses the complete 64-bit target.
+behavior:
+  group: control_flow
+  inputs:
+  - target
+  output: none
+attributes:
+  privilege: unprivileged
+forms:
+  alias_of: Jcc.T
+  canonical_disassembly: JMP
+  aliases:
+  - Jcc.T imm8s
+  - Jcc.T imm16s
+  - Jcc.T imm32s
+  - Jcc.T EA
+  extended_target_interpretation:
+    L: zero-extend 32-bit operand value to 64-bit near target
+    Q: use complete 64-bit operand value as near target

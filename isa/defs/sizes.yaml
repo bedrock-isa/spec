@@ -1,0 +1,53 @@
+size_codes:
+  B:
+    suffix: .B
+    bytes: 1
+  W:
+    suffix: .W
+    bytes: 2
+  L:
+    suffix: .L
+    bytes: 4
+  Q:
+    suffix: .Q
+    bytes: 8
+
+size_kinds:
+  BWLQ:
+    field: s
+    values:
+    - {value: 0, code: B}
+    - {value: 1, code: W}
+    - {value: 2, code: L}
+    - {value: 3, code: Q}
+  LQ:
+    field: z
+    values:
+    - {value: 0, code: L}
+    - {value: 1, code: Q}
+  WL:
+    field: z
+    values:
+    - {value: 0, code: W}
+    - {value: 1, code: L}
+  BW:
+    field: s
+    values:
+    - {value: 0, code: B}
+    - {value: 1, code: W}
+  BWL:
+    field: s
+    values:
+    - {value: 0, code: B}
+    - {value: 1, code: W}
+    - {value: 2, code: L}
+    reserved_values:
+    - {value: 3, name: invalid}
+  WLQ:
+    field: s
+    values:
+    - {value: 1, code: W}
+    - {value: 2, code: L}
+    - {value: 3, code: Q}
+    reserved_values:
+    - {value: 0, name: invalid}

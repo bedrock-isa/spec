@@ -7,11 +7,12 @@ from pathlib import Path
 import re
 
 import abi_call_model
+from defs_loader import load_yaml
 
 
 ROOT = Path(__file__).resolve().parents[2]
 HEADER_ROOT = ROOT / "isa" / "c" / "include"
-SEGMENT_DEFS = ROOT / "isa" / "defs" / "segments.yaml"
+REGISTER_DEFS = ROOT / "isa" / "defs" / "registers.yaml"
 CALL_CASES = ROOT / "isa" / "abi" / "calling_convention_cases.json"
 CONTROL_REGISTER_REFERENCE = (
     ROOT
@@ -59,16 +60,14 @@ def builtin_tokens(text: str) -> set[str]:
 
 
 def segment_selectors_from_metadata() -> dict[str, int]:
-    source = SEGMENT_DEFS.read_text(encoding="utf-8")
-    selectors: dict[str, int] = {}
-    for match in re.finditer(
-        r"(?ms)^- name: ([A-Z][A-Z0-9]*)\n(?P<body>.*?)(?=^- name:|\Z)",
-        source,
-    ):
-        encoding = re.search(r"(?m)^\s+sreg_encoding:\s*(\d+)\s*$", match.group("body"))
-        if encoding is not None:
-            selectors[match.group(1)] = int(encoding.group(1))
-    return selectors
+    data = load_yaml(REGISTER_DEFS)
+    groups = data.get("registers") or {}
+    entries = (groups.get("segment") or {}).get("entries") or []
+    return {
+        str(entry["name"]): int(entry["encoding"])
+        for entry in entries
+        if entry.get("encoding") is not None
+    }
 
 
 def validate_target_intrinsics() -> None:
@@ -96,7 +95,7 @@ def validate_target_intrinsics() -> None:
     metadata_selectors = segment_selectors_from_metadata()
     require(
         header_selectors == metadata_selectors,
-        f"{header_path}: segment-register selector set does not match {SEGMENT_DEFS}",
+        f"{header_path}: segment-register selector set does not match {REGISTER_DEFS}",
     )
 
 

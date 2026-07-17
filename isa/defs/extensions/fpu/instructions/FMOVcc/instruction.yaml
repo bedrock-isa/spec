@@ -25,9 +25,9 @@ forms:
     - name: cc
       type: condition
     - name: src
-      type: FREG
+      type: Fn
     - name: dst
-      type: FREG
+      type: Fn
     compact: false
   - operands:
     - name: cc
@@ -35,18 +35,16 @@ forms:
     - name: src
       type: EA
     - name: dst
-      type: FREG
-    size: S_D
+      type: Fn
+    size: SD
     compact: false
   - operands:
     - name: cc
       type: condition
     - name: src
-      type: FREG
+      type: Fn
     - name: dst
       type: EA
-    size: S_D
+    size: SD
     compact: false
   reads: FLAGS
-definition_status:
-  allocation: 'external: isa/alloc'

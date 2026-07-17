@@ -1,0 +1,45 @@
+mnemonic: FSINHA
+doc:
+  title: Approximate Floating-Point Hyperbolic Sine
+  summary: Performs the bounded approximate floating-point hyperbolic sine operation.
+  instruction_family: fpu_transcendental_approx
+  instruction_class: fpu
+  description: Computes the sinh(x) reference over all finite values and signed infinity after DAZ and writes an implementation-bounded S- or D-format approximation under the selected FPTRANSA accuracy contract.
+behavior:
+  group: fpu_transcendental_approx
+  inputs:
+  - src
+  output: dst
+  approximation:
+    contract_id: '0x0021'
+    reference_function: sinh(x)
+    domain: all finite values and signed infinity after DAZ
+    max_ulp:
+      S: 4
+      D: 4
+    exact_anchors:
+    - sinh(+0) = +0
+    - sinh(-0) = -0
+    - sinh(infinity) = infinity with the input sign
+    properties:
+    - odd
+    - monotonically increasing
+attributes:
+  privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: false
+    repg: true
+  fp_flags:
+    update:
+    - NV
+    - OF
+    - UF
+forms:
+  operands:
+  - name: src
+    type: Fn
+  - name: dst
+    type: Fn
+  size: SD
+  extension_family: fpu_transcendental_approx

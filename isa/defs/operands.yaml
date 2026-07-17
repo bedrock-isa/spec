@@ -1,185 +1,101 @@
-version: draft
-source: old/isa/spec/instructions.yaml:operand_schema
-operand_schema:
-  role_name_pattern: ^[a-z][a-z0-9_]*$
-  types:
-  - Rn
-  - SP
-  - CS
-  - EA
-  - EA_or_range
-  - FREG
-  - fbitmap16
-  - CR
-  - SPREG
-  - SREG
-  - bitmap16
-  - condition
-  - imm
-  - imm3
-  - imm4
-  - imm6
-  - imm7
-  - imm16
-  - imm32
-  - imm64
-  - linear_or_EA
-  - memory_order
-  - outputs
-  - relative_imm
-  - selector
-  - selector_imm6
-  immediate_operands:
-    imm3:
-      width: 3
-      signed: false
-      range:
-      - 0
-      - 7
-      operation_size_extension: zero_extend
-    imm4:
-      width: 4
-      signed: false
-      range:
-      - 0
-      - 15
-      operation_size_extension: zero_extend
-    imm6:
-      width: 6
-      signed: false
-      range:
-      - 0
-      - 63
-      operation_size_extension: zero_extend
-    imm7:
-      width: 7
-      signed: false
-      range:
-      - 0
-      - 127
-      operation_size_extension: zero_extend
-  condition_role: cc
-  selector_roles:
-  - count
-  - bit_index
-  - offset
-  - width
-  size_codes:
-    B:
-      suffix: .B
-      bytes: 1
-    W:
-      suffix: .W
-      bytes: 2
-    L:
-      suffix: .L
-      bytes: 4
-    Q:
-      suffix: .Q
-      bytes: 8
-    S:
-      suffix: .S
-      bytes: 4
-    D:
-      suffix: .D
-      bytes: 8
-  size_kinds:
-    BWLQ:
-      field: s
-      values:
-      - value: 0
-        code: B
-      - value: 1
-        code: W
-      - value: 2
-        code: L
-      - value: 3
-        code: Q
-    LQ:
-      field: z
-      values:
-      - value: 0
-        code: L
-      - value: 1
-        code: Q
-    WL:
-      field: z
-      values:
-      - value: 0
-        code: W
-      - value: 1
-        code: L
-    BW:
-      field: s
-      values:
-      - value: 0
-        code: B
-      - value: 1
-        code: W
-    BWL:
-      field: s
-      values:
-      - value: 0
-        code: B
-      - value: 1
-        code: W
-      - value: 2
-        code: L
-      reserved_values:
-      - value: 3
-        name: invalid
-    BWLX:
-      field: s
-      values:
-      - value: 0
-        code: B
-      - value: 1
-        code: W
-      - value: 2
-        code: L
-      reserved_values:
-      - value: 3
-        name: invalid
-    S_D:
-      field: z
-      values:
-      - value: 0
-        code: S
-      - value: 1
-        code: D
-  named_values:
-    memory_order:
-      width: 3
-      values:
-      - value: 0
-        name: RELAXED
-      - value: 1
-        name: ACQUIRE
-      - value: 2
-        name: RELEASE
-      - value: 3
-        name: ACQREL
-      - value: 4
-        name: SEQCST
-      reserved_values:
-      - value: 5
-        name: RESERVED5
-      - value: 6
-        name: RESERVED6
-      - value: 7
-        name: RESERVED7
-  bitmap_operands:
-    bitmap16:
-      width: 16
-      ranges:
-      - bits:
-        - 0
-        - 15
-        register_class: Rn
-    fbitmap16:
-      width: 16
-      ranges:
-      - bits:
-        - 0
-        - 15
-        register_class: F
+operand_types:
+  Rn:
+    kind: register
+    register_group: general
+    field_width: 4
+  SP:
+    kind: fixed_register
+    register: SP
+    field_width: 0
+  CS:
+    kind: fixed_register
+    register: CS
+    field_width: 0
+  EA:
+    kind: effective_address
+    encoding_ref: ea.yaml#compact
+    field_width: 7
+  SREG:
+    kind: register
+    register_group: segment
+    field_width: 3
+  condition:
+    kind: enum
+    values_ref: conditions.yaml#conditions
+    field_width: 4
+  imm:
+    kind: ea_immediate
+    encoding_ref: ea.yaml#compact/forms
+    field_width: 7
+  pair_id:
+    kind: identifier
+    field_width: 3
+    signed: false
+  pt_level:
+    kind: enum
+    field_width: 3
+    values:
+    - {value: 1, name: L1}
+    - {value: 2, name: L2}
+    - {value: 3, name: L3}
+    - {value: 4, name: L4}
+    - {value: 5, name: L5}
+    reserved_values:
+    - {value: 0, name: RESERVED0}
+    - {value: 6, name: RESERVED6}
+    - {value: 7, name: RESERVED7}
+  flags_bitmap:
+    kind: bitmap
+    field_width: 4
+    bits:
+    - {bit: 3, name: Z}
+    - {bit: 2, name: N}
+    - {bit: 1, name: C}
+    - {bit: 0, name: V}
+  imm6:
+    kind: immediate
+    field_width: 6
+    signed: false
+    operation_size_extension: zero_extend
+  imm7:
+    kind: immediate
+    field_width: 7
+    signed: false
+    operation_size_extension: zero_extend
+  imm16:
+    kind: immediate
+    field_width: 16
+    signed: false
+  imm32:
+    kind: immediate
+    field_width: 32
+    signed: false
+  imm64:
+    kind: immediate
+    field_width: 64
+    signed: false
+  imm8s:
+    kind: relative_immediate
+    field_width: 8
+    signed: true
+  imm16s:
+    kind: relative_immediate
+    field_width: 16
+    signed: true
+  imm32s:
+    kind: relative_immediate
+    field_width: 32
+    signed: true
+  memory_order:
+    kind: enum
+    field_width: 3
+    values:
+    - {value: 0, name: RELAXED}
+    - {value: 1, name: ACQUIRE}
+    - {value: 2, name: RELEASE}
+    - {value: 3, name: ACQREL}
+    - {value: 4, name: SEQCST}
+    reserved_values:
+    - {value: 5, name: RESERVED5}
+    - {value: 6, name: RESERVED6}
+    - {value: 7, name: RESERVED7}

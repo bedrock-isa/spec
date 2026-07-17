@@ -1,0 +1,14 @@
+mnemonic: HALT
+doc:
+  title: Halt
+  summary: Enter halted supervisor state until an enabled event resumes execution.
+  instruction_family: core_control
+  instruction_class: system
+  description: Retires with the next instruction as its continuation, enters the halted state, and fetches no further instructions until an enabled architectural event resumes execution.
+behavior:
+  group: core_control
+  output: none
+attributes:
+  privilege: supervisor
+forms:
+  operands: []

@@ -1,0 +1,14 @@
+mnemonic: WAIT
+doc:
+  title: Wait
+  summary: Wait until event or interrupt according to privilege policy.
+  instruction_family: core_control
+  instruction_class: system
+  description: Retires with the next instruction as its continuation, stops fetching while waiting, and resumes or enters an event when a policy-permitted wake source becomes pending.
+behavior:
+  group: core_control
+  output: none
+attributes:
+  privilege: policy_controlled
+forms:
+  operands: []

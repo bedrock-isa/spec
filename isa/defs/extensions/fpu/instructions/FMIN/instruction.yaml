@@ -23,14 +23,12 @@ attributes:
 forms:
   operands:
   - - name: src
-      type: FREG
+      type: Fn
     - name: dst
-      type: FREG
+      type: Fn
   - - name: src
       type: EA
     - name: dst
-      type: FREG
-  size: S_D
+      type: Fn
+  size: SD
   nan_policy: defined by the floating-point model
-definition_status:
-  allocation: 'external: isa/alloc'

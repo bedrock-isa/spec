@@ -38,7 +38,14 @@ EXPECTED_CONTRACT_IDS = {
 class V1DecisionIntegrationTests(unittest.TestCase):
     def test_fptransa_contract_ids_match_definitions_and_details(self) -> None:
         instruction_root = (
-            ROOT / "isa" / "defs" / "extensions" / "fpu_transcendental_approx" / "instructions"
+            ROOT
+            / "isa"
+            / "defs"
+            / "extensions"
+            / "fpu"
+            / "extensions"
+            / "transcendental_approx"
+            / "instructions"
         )
         actual: dict[str, int] = {}
         for mnemonic, expected_id in EXPECTED_CONTRACT_IDS.items():
@@ -74,24 +81,26 @@ class V1DecisionIntegrationTests(unittest.TestCase):
         for mnemonic in ("REPcc", "REPG"):
             definition = yaml.safe_load(
                 (
-                    ROOT / "isa" / "defs" / "base" / "instructions" / mnemonic / "instruction.yaml"
+                    ROOT / "isa" / "defs" / "instructions" / mnemonic / "instruction.yaml"
                 ).read_text(encoding="utf-8")
             )
 
         allocation = (ROOT / "isa" / "alloc" / "long.yaml").read_text(encoding="utf-8")
-        manifest = (ROOT / "isa" / "defs" / "manifest.yaml").read_text(encoding="utf-8")
+        extension_catalog = (ROOT / "isa" / "defs" / "extensions.yaml").read_text(
+            encoding="utf-8"
+        )
         cpuid = (
             ROOT / "isa" / "tools" / "latex_builder" / "templates" / "cpuid_feature_discovery.tex"
         ).read_text(encoding="utf-8")
         self.assertNotIn("ENCINST", allocation)
-        self.assertNotIn("virtualization_acceleration", manifest)
+        self.assertNotIn("virtualization_acceleration", extension_catalog)
         self.assertIn("VIRTACCEL", cpuid)
 
         repg_details = (
-            ROOT / "isa" / "defs" / "base" / "instructions" / "REPG" / "details.tex"
+            ROOT / "isa" / "defs" / "instructions" / "REPG" / "details.tex"
         ).read_text(encoding="utf-8")
         eret_details = (
-            ROOT / "isa" / "defs" / "base" / "instructions" / "ERET" / "details.tex"
+            ROOT / "isa" / "defs" / "instructions" / "ERET" / "details.tex"
         ).read_text(encoding="utf-8")
         self.assertIn(r"FRAME\_EXT1", repg_details)
         self.assertNotIn(r"EVENT\_AUX", repg_details)
@@ -239,7 +248,7 @@ class V1DecisionIntegrationTests(unittest.TestCase):
 
         jcc_definition = yaml.safe_load(
             (
-                ROOT / "isa" / "defs" / "base" / "instructions" / "Jcc" / "instruction.yaml"
+                ROOT / "isa" / "defs" / "instructions" / "Jcc" / "instruction.yaml"
             ).read_text(encoding="utf-8")
         )
         self.assertEqual(jcc_definition["forms"]["compact_forms"][0]["size"], "WL")

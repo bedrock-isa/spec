@@ -27,25 +27,23 @@ attributes:
 forms:
   operands:
   - - name: lhs
-      type: FREG
+      type: Fn
     - name: rhs
-      type: FREG
+      type: Fn
     - name: dst
-      type: FREG
+      type: Fn
   - - name: lhs
       type: EA
     - name: rhs
-      type: FREG
+      type: Fn
     - name: dst
-      type: FREG
+      type: Fn
   - - name: lhs
-      type: FREG
+      type: Fn
     - name: rhs
       type: EA
     - name: dst
-      type: FREG
-  size: S_D
+      type: Fn
+  size: SD
   rounding: single_round
   memory_operands: at_most_one
-definition_status:
-  allocation: 'external: isa/alloc'

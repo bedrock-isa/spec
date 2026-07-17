@@ -1,0 +1,14 @@
+mnemonic: WFENCE
+doc:
+  title: Write Fence
+  summary: Order prior writes before later writes.
+  instruction_family: core_control
+  instruction_class: system
+  description: Prevents retirement until every earlier memory write is ordered before every later memory write on the same hardware thread. It performs no memory access and changes no register or flag.
+behavior:
+  group: core_control
+  output: none
+attributes:
+  privilege: any
+forms:
+  operands: []

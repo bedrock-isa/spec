@@ -25,15 +25,13 @@ attributes:
 forms:
   operands:
   - - name: src
-      type: FREG
+      type: Fn
     - name: dst
-      type: FREG
+      type: Fn
   - - name: src
       type: EA
     - name: dst
-      type: FREG
-  size: S_D
+      type: Fn
+  size: SD
   updates: FLAGS
   unordered: FLAGS.V = 1
-definition_status:
-  allocation: 'external: isa/alloc'

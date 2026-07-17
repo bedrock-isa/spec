@@ -23,8 +23,8 @@ forms:
   - name: constant_id
     type: imm16
   - name: dst
-    type: FREG
-  size: S_D
+    type: Fn
+  size: SD
   result_format: IEEE-754 binary64
   constant_ids:
   - id: '0x0000'
@@ -147,5 +147,3 @@ forms:
   - id: '0x0118'
     name: maximum_negative_subnormal
     value_bits: '0x800fffffffffffff'
-definition_status:
-  allocation: 'external: isa/alloc'

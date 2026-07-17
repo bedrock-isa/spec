@@ -1,298 +1,396 @@
-version: draft
-
-ea_field:
-  width: 7
-  notation: eeeeeee
-
-displacements:
+payloads:
   disp8s:
-    bytes: 1
+    kind: displacement
+    field_width: 8
     signed: true
   disp16s:
-    bytes: 2
+    kind: displacement
+    field_width: 16
     signed: true
   disp32s:
-    bytes: 4
+    kind: displacement
+    field_width: 32
     signed: true
   disp64:
-    bytes: 8
+    kind: displacement
+    field_width: 64
+    signed: false
+  abs32s:
+    kind: absolute
+    field_width: 32
+    signed: true
+  abs64:
+    kind: absolute
+    field_width: 64
+    signed: false
+  imm8s:
+    kind: immediate
+    field_width: 8
+    signed: true
+  imm16s:
+    kind: immediate
+    field_width: 16
+    signed: true
+  imm32s:
+    kind: immediate
+    field_width: 32
+    signed: true
+  imm64:
+    kind: immediate
+    field_width: 64
     signed: false
 
-compact_ea:
-- bits: 000rrrr
-  syntax: Rn(r)
-  class: register
-  register: Rn
-  memory: false
-- bits: 001rrrr
-  syntax: "[Rn(r)]"
-  class: memory
-  base: Rn
-  memory: true
-- bits: 010rrrr
-  syntax: "[Rn(r) + disp8s]"
-  class: memory
-  base: Rn
-  displacement: disp8s
-  memory: true
-- bits: 011rrrr
-  syntax: "[Rn(r) + disp16s]"
-  class: memory
-  base: Rn
-  displacement: disp16s
-  memory: true
-- bits: 100rrrr
-  syntax: "[Rn(r) + disp32s]"
-  class: memory
-  base: Rn
-  displacement: disp32s
-  memory: true
-- bits: 101rrrr
-  syntax: "[Rn(r) + disp64]"
-  class: memory
-  base: Rn
-  displacement: disp64
-  memory: true
-- bits: "1100000"
-  syntax: "[SP + disp8s]"
-  class: memory
-  base: SP
-  fixed_segment: SS
-  displacement: disp8s
-  memory: true
-- bits: "1100001"
-  syntax: "[SP + disp16s]"
-  class: memory
-  base: SP
-  fixed_segment: SS
-  displacement: disp16s
-  memory: true
-- bits: "1100010"
-  syntax: "[SP + disp32s]"
-  class: memory
-  base: SP
-  fixed_segment: SS
-  displacement: disp32s
-  memory: true
-- bits: "1100011"
-  syntax: "[SP + disp64]"
-  class: memory
-  base: SP
-  fixed_segment: SS
-  displacement: disp64
-  memory: true
-- bits: "1100100"
-  syntax: "[PC + disp8s]"
-  class: memory
-  base: PC
-  fixed_segment: CS
-  displacement: disp8s
-  memory: true
-- bits: "1100101"
-  syntax: "[PC + disp16s]"
-  class: memory
-  base: PC
-  fixed_segment: CS
-  displacement: disp16s
-  memory: true
-- bits: "1100110"
-  syntax: "[PC + disp32s]"
-  class: memory
-  base: PC
-  fixed_segment: CS
-  displacement: disp32s
-  memory: true
-- bits: "1100111"
-  syntax: "[PC + disp64]"
-  class: memory
-  base: PC
-  fixed_segment: CS
-  displacement: disp64
-  memory: true
-- bits: "1101000"
-  syntax: SP
-  class: register
-  register: SP
-  memory: false
-- bits: "1101001"
-  syntax: "[SP]"
-  class: memory
-  base: SP
-  fixed_segment: SS
-  memory: true
-- bits: "1101010"
-  syntax: "[abs32s]"
-  class: memory
-  absolute: abs32s
-  memory: true
-- bits: "1101011"
-  syntax: "[abs64]"
-  class: memory
-  absolute: abs64
-  memory: true
-- bits: "1101100"
-  syntax: imm8s
-  class: immediate
-  immediate: imm8s
-  memory: false
-- bits: "1101101"
-  syntax: imm16s
-  class: immediate
-  immediate: imm16s
-  memory: false
-- bits: "1101110"
-  syntax: imm32s
-  class: immediate
-  immediate: imm32s
-  memory: false
-- bits: "1101111"
-  syntax: imm64
-  class: immediate
-  immediate: imm64
-  memory: false
-- bits: "1110000"
-  syntax: EXT0/disp8s
-  class: ext0_escape
-  displacement: disp8s
-- bits: "1110001"
-  syntax: EXT0/disp16s
-  class: ext0_escape
-  displacement: disp16s
-- bits: "1110010"
-  syntax: EXT0/disp32s
-  class: ext0_escape
-  displacement: disp32s
-- bits: "1110011"
-  syntax: EXT0/disp64
-  class: ext0_escape
-  displacement: disp64
-- bits: "1110100"
-  syntax: EXT0
-  class: ext0_escape
-  displacement: none
-- bits: "1110101..1111111"
-  class: reserved
+compact:
+  field_width: 7
+  forms:
+  - name: register
+    pattern: "000rrrr"
+    syntax: Rn(r)
+    kind: register
+    fields:
+      r: {type: Rn, role: value}
+  - name: register_indirect
+    pattern: "001rrrr"
+    syntax: "[Rn(r)]"
+    kind: memory
+    fields:
+      r: {type: Rn, role: base}
+    segment: default
+  - name: register_disp8s
+    pattern: "010rrrr"
+    syntax: "[Rn(r) + disp8s]"
+    kind: memory
+    fields:
+      r: {type: Rn, role: base}
+    segment: default
+    payload: disp8s
+  - name: register_disp16s
+    pattern: "011rrrr"
+    syntax: "[Rn(r) + disp16s]"
+    kind: memory
+    fields:
+      r: {type: Rn, role: base}
+    segment: default
+    payload: disp16s
+  - name: register_disp32s
+    pattern: "100rrrr"
+    syntax: "[Rn(r) + disp32s]"
+    kind: memory
+    fields:
+      r: {type: Rn, role: base}
+    segment: default
+    payload: disp32s
+  - name: register_disp64
+    pattern: "101rrrr"
+    syntax: "[Rn(r) + disp64]"
+    kind: memory
+    fields:
+      r: {type: Rn, role: base}
+    segment: default
+    payload: disp64
+  - name: stack_pointer_disp8s
+    pattern: "1100000"
+    syntax: "[SP + disp8s]"
+    kind: memory
+    base: SP
+    segment: SS
+    payload: disp8s
+  - name: stack_pointer_disp16s
+    pattern: "1100001"
+    syntax: "[SP + disp16s]"
+    kind: memory
+    base: SP
+    segment: SS
+    payload: disp16s
+  - name: stack_pointer_disp32s
+    pattern: "1100010"
+    syntax: "[SP + disp32s]"
+    kind: memory
+    base: SP
+    segment: SS
+    payload: disp32s
+  - name: stack_pointer_disp64
+    pattern: "1100011"
+    syntax: "[SP + disp64]"
+    kind: memory
+    base: SP
+    segment: SS
+    payload: disp64
+  - name: program_counter_disp8s
+    pattern: "1100100"
+    syntax: "[PC + disp8s]"
+    kind: memory
+    base: PC
+    segment: CS
+    payload: disp8s
+  - name: program_counter_disp16s
+    pattern: "1100101"
+    syntax: "[PC + disp16s]"
+    kind: memory
+    base: PC
+    segment: CS
+    payload: disp16s
+  - name: program_counter_disp32s
+    pattern: "1100110"
+    syntax: "[PC + disp32s]"
+    kind: memory
+    base: PC
+    segment: CS
+    payload: disp32s
+  - name: program_counter_disp64
+    pattern: "1100111"
+    syntax: "[PC + disp64]"
+    kind: memory
+    base: PC
+    segment: CS
+    payload: disp64
+  - name: stack_pointer
+    pattern: "1101000"
+    syntax: SP
+    kind: register
+    register: SP
+  - name: stack_pointer_indirect
+    pattern: "1101001"
+    syntax: "[SP]"
+    kind: memory
+    base: SP
+    segment: SS
+  - name: absolute_32s
+    pattern: "1101010"
+    syntax: "[abs32s]"
+    kind: memory
+    segment: default
+    payload: abs32s
+  - name: absolute_64
+    pattern: "1101011"
+    syntax: "[abs64]"
+    kind: memory
+    segment: default
+    payload: abs64
+  - name: immediate_8s
+    pattern: "1101100"
+    syntax: imm8s
+    kind: immediate
+    payload: imm8s
+  - name: immediate_16s
+    pattern: "1101101"
+    syntax: imm16s
+    kind: immediate
+    payload: imm16s
+  - name: immediate_32s
+    pattern: "1101110"
+    syntax: imm32s
+    kind: immediate
+    payload: imm32s
+  - name: immediate_64
+    pattern: "1101111"
+    syntax: imm64
+    kind: immediate
+    payload: imm64
+  - name: ext0_disp8s
+    pattern: "1110000"
+    syntax: EXT0/disp8s
+    kind: escape
+    descriptor: ext0
+    payload: disp8s
+  - name: ext0_disp16s
+    pattern: "1110001"
+    syntax: EXT0/disp16s
+    kind: escape
+    descriptor: ext0
+    payload: disp16s
+  - name: ext0_disp32s
+    pattern: "1110010"
+    syntax: EXT0/disp32s
+    kind: escape
+    descriptor: ext0
+    payload: disp32s
+  - name: ext0_disp64
+    pattern: "1110011"
+    syntax: EXT0/disp64
+    kind: escape
+    descriptor: ext0
+    payload: disp64
+  - name: ext0
+    pattern: "1110100"
+    syntax: EXT0
+    kind: escape
+    descriptor: ext0
 
 ext0:
-  descriptor_segment_default: none
-  explicit_segment_selector: SREG
+  kind: memory
   forms:
-  - bits: 0sssbbbb
+  - name: explicit_segment_base
+    pattern:
+    - "0sssbbbb"
     syntax: "[SEG(s):Rn(b) + displacement]"
-    class: memory
+    fields:
+      s: {type: SREG, role: segment}
+      b: {type: Rn, role: base}
     segment: explicit
-    base: Rn
-  - bits: 1sss0000_bbbbiiii
+  - name: explicit_segment_index_postincrement
+    pattern:
+    - "1sss0000"
+    - "bbbbiiii"
     syntax: "[SEG(s):Rn(b) + Rn(i)++ * scale + displacement]"
-    class: memory
+    fields:
+      s: {type: SREG, role: segment}
+      b: {type: Rn, role: base}
+      i: {type: Rn, role: index}
     segment: explicit
-    base: Rn
-    index: Rn
-    index_update: postincrement
-  - bits: 1sss0001_bbbbiiii
+    update: {target: i, mode: postincrement}
+  - name: explicit_segment_index_predecrement
+    pattern:
+    - "1sss0001"
+    - "bbbbiiii"
     syntax: "[SEG(s):Rn(b) + --Rn(i) * scale + displacement]"
-    class: memory
+    fields:
+      s: {type: SREG, role: segment}
+      b: {type: Rn, role: base}
+      i: {type: Rn, role: index}
     segment: explicit
-    base: Rn
-    index: Rn
-    index_update: predecrement
-  - bits: 1sss0010_bbbbiiii
+    update: {target: i, mode: predecrement}
+  - name: explicit_segment_index
+    pattern:
+    - "1sss0010"
+    - "bbbbiiii"
     syntax: "[SEG(s):Rn(b) + Rn(i) * scale + displacement]"
-    class: memory
+    fields:
+      s: {type: SREG, role: segment}
+      b: {type: Rn, role: base}
+      i: {type: Rn, role: index}
     segment: explicit
-    base: Rn
-    index: Rn
-  - bits: 1sss0011
+  - name: explicit_segment_zero_base
+    pattern:
+    - "1sss0011"
     syntax: "[SEG(s):0 + displacement]"
-    class: memory
-    segment: explicit
+    fields:
+      s: {type: SREG, role: segment}
     base: zero
-  - bits: 1sss1000_bbbb0000
+    segment: explicit
+  - name: explicit_segment_base_postincrement
+    pattern:
+    - "1sss1000"
+    - "bbbb0000"
     syntax: "[SEG(s):Rn(b)++ + displacement]"
-    class: memory
+    fields:
+      s: {type: SREG, role: segment}
+      b: {type: Rn, role: base}
     segment: explicit
-    base: Rn
-    base_update: postincrement
-  - bits: 1sss1000_bbbb0001
+    update: {target: b, mode: postincrement}
+  - name: explicit_segment_base_predecrement
+    pattern:
+    - "1sss1000"
+    - "bbbb0001"
     syntax: "[SEG(s):--Rn(b) + displacement]"
-    class: memory
+    fields:
+      s: {type: SREG, role: segment}
+      b: {type: Rn, role: base}
     segment: explicit
-    base: Rn
-    base_update: predecrement
-  - bits: 1sss1001_0000iiii
+    update: {target: b, mode: predecrement}
+  - name: explicit_segment_zero_base_index_postincrement
+    pattern:
+    - "1sss1001"
+    - "0000iiii"
     syntax: "[SEG(s):0 + Rn(i)++ * scale + displacement]"
-    class: memory
-    segment: explicit
+    fields:
+      s: {type: SREG, role: segment}
+      i: {type: Rn, role: index}
     base: zero
-    index: Rn
-    index_update: postincrement
-  - bits: 1sss1001_0001iiii
+    segment: explicit
+    update: {target: i, mode: postincrement}
+  - name: explicit_segment_zero_base_index_predecrement
+    pattern:
+    - "1sss1001"
+    - "0001iiii"
     syntax: "[SEG(s):0 + --Rn(i) * scale + displacement]"
-    class: memory
-    segment: explicit
+    fields:
+      s: {type: SREG, role: segment}
+      i: {type: Rn, role: index}
     base: zero
-    index: Rn
-    index_update: predecrement
-  - bits: 1sss1001_0010iiii
+    segment: explicit
+    update: {target: i, mode: predecrement}
+  - name: explicit_segment_zero_base_index
+    pattern:
+    - "1sss1001"
+    - "0010iiii"
     syntax: "[SEG(s):0 + Rn(i) * scale + displacement]"
-    class: memory
-    segment: explicit
+    fields:
+      s: {type: SREG, role: segment}
+      i: {type: Rn, role: index}
     base: zero
-    index: Rn
-  - bits: 10001010_0000iiii
+    segment: explicit
+  - name: stack_pointer_index_postincrement
+    pattern:
+    - "10001010"
+    - "0000iiii"
     syntax: "[SP + Rn(i)++ * scale + displacement]"
-    class: memory
+    fields:
+      i: {type: Rn, role: index}
     base: SP
-    fixed_segment: SS
-    index: Rn
-    index_update: postincrement
-  - bits: 10001010_0001iiii
+    segment: SS
+    update: {target: i, mode: postincrement}
+  - name: stack_pointer_index_predecrement
+    pattern:
+    - "10001010"
+    - "0001iiii"
     syntax: "[SP + --Rn(i) * scale + displacement]"
-    class: memory
+    fields:
+      i: {type: Rn, role: index}
     base: SP
-    fixed_segment: SS
-    index: Rn
-    index_update: predecrement
-  - bits: 10001010_0010iiii
+    segment: SS
+    update: {target: i, mode: predecrement}
+  - name: stack_pointer_index
+    pattern:
+    - "10001010"
+    - "0010iiii"
     syntax: "[SP + Rn(i) * scale + displacement]"
-    class: memory
+    fields:
+      i: {type: Rn, role: index}
     base: SP
-    fixed_segment: SS
-    index: Rn
-  - bits: 10001011_0000iiii
+    segment: SS
+  - name: program_counter_index_postincrement
+    pattern:
+    - "10001011"
+    - "0000iiii"
     syntax: "[PC + Rn(i)++ * scale + displacement]"
-    class: memory
+    fields:
+      i: {type: Rn, role: index}
     base: PC
-    fixed_segment: CS
-    index: Rn
-    index_update: postincrement
-  - bits: 10001011_0001iiii
+    segment: CS
+    update: {target: i, mode: postincrement}
+  - name: program_counter_index_predecrement
+    pattern:
+    - "10001011"
+    - "0001iiii"
     syntax: "[PC + --Rn(i) * scale + displacement]"
-    class: memory
+    fields:
+      i: {type: Rn, role: index}
     base: PC
-    fixed_segment: CS
-    index: Rn
-    index_update: predecrement
-  - bits: 10001011_0010iiii
+    segment: CS
+    update: {target: i, mode: predecrement}
+  - name: program_counter_index
+    pattern:
+    - "10001011"
+    - "0010iiii"
     syntax: "[PC + Rn(i) * scale + displacement]"
-    class: memory
+    fields:
+      i: {type: Rn, role: index}
     base: PC
-    fixed_segment: CS
-    index: Rn
-  - bits: 1bbbb100
+    segment: CS
+  - name: default_segment_base_postincrement
+    pattern:
+    - "1bbbb100"
     syntax: "[Rn(b)++ + displacement]"
-    class: memory
-    base: Rn
-    base_update: postincrement
+    fields:
+      b: {type: Rn, role: base}
     segment: default
-  - bits: 1bbbb101
+    update: {target: b, mode: postincrement}
+  - name: default_segment_base_predecrement
+    pattern:
+    - "1bbbb101"
     syntax: "[--Rn(b) + displacement]"
-    class: memory
-    base: Rn
-    base_update: predecrement
+    fields:
+      b: {type: Rn, role: base}
     segment: default
-  reserved_holes:
-  - 1sss0100..1sss0111
-  - unused 1sss1000 low-bit combinations
-  - unused 1sss1001 submodes
-  - unused SP/PC exact submodes
+    update: {target: b, mode: predecrement}

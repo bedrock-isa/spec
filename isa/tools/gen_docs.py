@@ -30,6 +30,14 @@ from validate_alloc import (  # noqa: E402
     validate_file,
 )
 from alloc_notes import allocation_form_text  # noqa: E402
+from defs_loader import (  # noqa: E402
+    load_extensions,
+    load_instruction_sets,
+    load_operand_types,
+    load_register_groups,
+    load_size_definitions,
+    load_yaml,
+)
 from latex_to_markdown import render_markdown_from_latex  # noqa: E402
 from validate_isa import allocation_mnemonic  # noqa: E402
 from latex_builder.common import (  # noqa: E402
@@ -46,18 +54,19 @@ ROOT = Path(__file__).resolve().parents[2]
 DEF_ROOT = ROOT / "isa" / "defs"
 ALLOC_ROOT = ROOT / "isa" / "alloc"
 DEFAULT_OUTPUT = ROOT / "build" / "isa_reference.tex"
+EA_FRAGMENT_DIR = ROOT / "isa" / "tools" / "latex_builder" / "templates" / "fragments"
 INSTRUCTION_SET_SECTION_ORDER = [
     "base",
     "fpu",
-    "fpu_transcendental_approx",
+    "fpu.transcendental_approx",
 ]
 INSTRUCTION_SET_SECTION_TITLES = {
     "base": "General Instructions",
     "fpu": "Floating-Point Instructions",
-    "fpu_transcendental_approx": "Approximate Floating-Point Transcendental Instructions",
+    "fpu.transcendental_approx": "Approximate Floating-Point Transcendental Instructions",
 }
 INSTRUCTION_SET_SECTION_INTRO_TEMPLATES = {
-    "fpu_transcendental_approx": "approximate_floating_point_intro.tex",
+    "fpu.transcendental_approx": "approximate_floating_point_intro.tex",
 }
 INSTRUCTION_FILENAME = "instruction.yaml"
 INSTRUCTION_DETAILS_FILENAME = "details.tex"
@@ -139,11 +148,6 @@ class IsaModel:
     allocated_by_mnemonic: dict[str, list[AllocationEntry]]
 
 
-def load_yaml(path: Path) -> Any:
-    with path.open(encoding="utf-8") as f:
-        return yaml.safe_load(f)
-
-
 def compact_text(value: Any) -> str:
     if value is None:
         return ""
@@ -192,24 +196,16 @@ def bits_text(value: Any, width: int | None = None) -> str:
     return str(value)
 
 
-def manifest_instruction_paths(defs_root: Path) -> list[tuple[str, Path]]:
-    manifest = load_yaml(defs_root / "manifest.yaml")
-    if not isinstance(manifest, dict):
-        raise ValueError(f"{defs_root / 'manifest.yaml'}: expected mapping")
+def instruction_definition_paths(defs_root: Path) -> list[tuple[str, Path]]:
+    extensions = load_extensions(defs_root)
 
     paths: list[tuple[str, Path]] = []
-    for spec in manifest.get("instruction_sets", []):
-        name = str(spec["name"])
-        include = defs_root / spec["include"]
+    for instruction_set in load_instruction_sets(defs_root, extensions):
+        name = instruction_set.name
+        include = instruction_set.include
         data = load_yaml(include)
         if not isinstance(data, dict):
             raise ValueError(f"{include}: expected mapping")
-        common = data.get("common")
-        if not isinstance(common, str) or not common.strip():
-            raise ValueError(f"{include}: missing common metadata path")
-        common_path = include.parent / common
-        if not common_path.is_file():
-            raise FileNotFoundError(f"common metadata not found: {common_path}")
         include_items = data.get("include")
         if not isinstance(include_items, list):
             raise ValueError(f"{include}: include must be a list of instruction directories")
@@ -228,7 +224,7 @@ def manifest_instruction_paths(defs_root: Path) -> list[tuple[str, Path]]:
 
 def load_instructions(defs_root: Path) -> list[InstructionDef]:
     instructions: list[InstructionDef] = []
-    for instruction_set, path in manifest_instruction_paths(defs_root):
+    for instruction_set, path in instruction_definition_paths(defs_root):
         data = load_yaml(path)
         if not isinstance(data, dict):
             raise ValueError(f"{path}: expected mapping")
@@ -288,18 +284,22 @@ def load_allocations(alloc_root: Path) -> list[AllocationClass]:
 
 def load_metadata(defs_root: Path) -> dict[str, Any]:
     names = [
-        "registers",
-        "segments",
         "conditions",
         "ea",
-        "operands",
-        "manifest",
     ]
     out: dict[str, Any] = {}
     for name in names:
         path = defs_root / f"{name}.yaml"
         if path.exists():
             out[name] = load_yaml(path)
+    extensions = load_extensions(defs_root)
+    out["operand_types"] = load_operand_types(defs_root, extensions)
+    out["sizes"] = load_size_definitions(defs_root, extensions)
+    out["extensions"] = {
+        name: extension.data
+        for name, extension in extensions.items()
+    }
+    out["registers"] = {"registers": load_register_groups(defs_root, extensions)}
     return out
 
 
@@ -367,7 +367,7 @@ def form_size_text(value: Any) -> str:
         "WLQ": "W/L/Q",
         "WL": "W/L",
         "LQ": "L/Q",
-        "S_D": "S/D",
+        "SD": "S/D",
         "implicit_Q": "Q",
         "fixed: Q": "Q",
     }
@@ -454,15 +454,9 @@ def latex_instruction_links(model: IsaModel, mnemonics: list[str], lead: str) ->
     return f"{lead} " + ", ".join(links) + r".\par"
 
 
-def operand_schema(model: IsaModel) -> dict[str, Any]:
-    data = model.metadata.get("operands") or {}
-    schema = data.get("operand_schema")
-    return schema if isinstance(schema, dict) else {}
-
-
 def data_format_template_values(model: IsaModel) -> dict[str, Any]:
-    schema = operand_schema(model)
-    size_codes = schema.get("size_codes") or {}
+    sizes = model.metadata.get("sizes") or {}
+    size_codes = sizes.get("size_codes") or {}
     values: dict[str, Any] = {}
     for code in ("B", "W", "L", "Q", "S", "D"):
         body = size_codes.get(code)
@@ -472,15 +466,29 @@ def data_format_template_values(model: IsaModel) -> dict[str, Any]:
         values[f"{code}_SUFFIX"] = body.get("suffix", f".{code}")
         values[f"{code}_BITS"] = byte_count * 8
         values[f"{code}_BYTES"] = byte_count
-    for name, spec in (schema.get("immediate_operands") or {}).items():
+    operand_types = model.metadata.get("operand_types") or {}
+    for name in ("pair_id", "pt_level", "flags_bitmap", "imm6", "imm7"):
+        spec = operand_types.get(name)
         if not isinstance(spec, dict):
             continue
         key = str(name).upper()
-        values[f"{key}_WIDTH"] = spec.get("width", "")
-        rng = spec.get("range", "-")
-        if isinstance(rng, list) and len(rng) == 2:
-            rng = f"{rng[0]}..{rng[1]}"
-        values[f"{key}_RANGE"] = rng
+        field_width = int(spec.get("field_width", 0) or 0)
+        values[f"{key}_WIDTH"] = field_width
+        enum_values = [
+            item.get("value")
+            for item in (spec.get("values") or [])
+            if isinstance(item, dict) and isinstance(item.get("value"), int)
+        ]
+        if enum_values:
+            values[f"{key}_RANGE"] = f"{min(enum_values)}..{max(enum_values)}"
+        elif field_width <= 0:
+            values[f"{key}_RANGE"] = "-"
+        elif spec.get("signed"):
+            values[f"{key}_RANGE"] = (
+                f"{-1 << (field_width - 1)}..{(1 << (field_width - 1)) - 1}"
+            )
+        else:
+            values[f"{key}_RANGE"] = f"0..{(1 << field_width) - 1}"
     return values
 
 
@@ -814,33 +822,34 @@ def named_payload_bytes(name: Any, sizes: dict[str, int]) -> int:
 def ea_payload_byte_lengths(ea_data: Any) -> tuple[int, ...]:
     if not isinstance(ea_data, dict):
         raise ValueError("missing EA metadata for instruction length calculation")
-    displacements = ea_data.get("displacements") or {}
-    sizes = {
-        str(name): int(spec["bytes"])
-        for name, spec in displacements.items()
-        if isinstance(spec, dict) and "bytes" in spec
-    }
+    payloads = ea_data.get("payloads") or {}
+    sizes: dict[str, int] = {}
+    for name, spec in payloads.items():
+        if not isinstance(spec, dict) or "field_width" not in spec:
+            raise ValueError(f"invalid EA payload definition: {name!r}")
+        field_width = int(spec["field_width"])
+        if field_width <= 0 or field_width % 8:
+            raise ValueError(f"EA payload {name!r} must have a positive byte-aligned field width")
+        sizes[str(name)] = field_width // 8
+
     ext0 = ea_data.get("ext0") or {}
     descriptor_sizes = {
-        (len(re.sub(r"[\s_]", "", str(form.get("bits", "")))) + 7) // 8
+        len(form.get("pattern") or [])
         for form in (ext0.get("forms") or [])
-        if isinstance(form, dict) and form.get("bits")
+        if isinstance(form, dict) and isinstance(form.get("pattern"), list) and form.get("pattern")
     }
     if not descriptor_sizes:
         descriptor_sizes = {1}
 
+    compact = ea_data.get("compact") or {}
     lengths: set[int] = set()
-    for form in ea_data.get("compact_ea", []) or []:
+    for form in compact.get("forms", []) or []:
         if not isinstance(form, dict):
             continue
-        if form.get("class") == "ext0_escape":
-            displacement_bytes = named_payload_bytes(form.get("displacement"), sizes)
-            lengths.update(size + displacement_bytes for size in descriptor_sizes)
+        payload_bytes = named_payload_bytes(form.get("payload"), sizes)
+        if form.get("kind") == "escape":
+            lengths.update(size + payload_bytes for size in descriptor_sizes)
             continue
-        payload_bytes = 0
-        for key in ("displacement", "absolute", "immediate"):
-            if key in form:
-                payload_bytes += named_payload_bytes(form.get(key), sizes)
         lengths.add(payload_bytes)
     if not lengths:
         raise ValueError("EA metadata defines no compact EA payload lengths")
@@ -1162,6 +1171,7 @@ def field_constraint_values(
 @dataclass(frozen=True)
 class CompactEaDisplayRow:
     syntax: str
+    kind: str
     mode_bits: str
     form_bits: str
     values: frozenset[int]
@@ -1202,16 +1212,19 @@ def compact_ea_display_rows(ea_data: Any) -> list[CompactEaDisplayRow]:
     if not isinstance(ea_data, dict):
         raise ValueError("missing EA metadata for addressing-mode table")
     rows: list[CompactEaDisplayRow] = []
-    for item in ea_data.get("compact_ea", []) or []:
-        if not isinstance(item, dict) or item.get("class") == "reserved":
+    compact = ea_data.get("compact") or {}
+    for item in compact.get("forms", []) or []:
+        if not isinstance(item, dict):
             continue
-        bits = compact_bits(str(item.get("bits", "")))
+        bits = compact_bits(str(item.get("pattern", "")))
         syntax = compact_text(item.get("syntax"))
+        kind = compact_text(item.get("kind"))
         if len(bits) != 7 or ".." in bits or not syntax:
             raise ValueError(f"invalid compact EA display form: bits={bits!r}, syntax={syntax!r}")
         rows.append(
             CompactEaDisplayRow(
                 syntax=syntax,
+                kind=kind,
                 mode_bits=bits[:3],
                 form_bits=bits[3:],
                 values=frozenset(expand_pattern(bits)),
@@ -1222,16 +1235,17 @@ def compact_ea_display_rows(ea_data: Any) -> list[CompactEaDisplayRow]:
     return rows
 
 
-def compact_ea_category(syntax: str) -> str:
-    if syntax in {"Rn(r)", "SP"}:
-        return "Register"
-    if syntax.startswith("["):
-        return "Memory"
-    if syntax.startswith("imm"):
-        return "Immediate"
-    if syntax.startswith("EXT0"):
-        return "EXT0"
-    raise ValueError(f"uncategorized compact EA syntax: {syntax!r}")
+def compact_ea_category(kind: str) -> str:
+    categories = {
+        "register": "Register",
+        "memory": "Memory",
+        "immediate": "Immediate",
+        "escape": "EXT0",
+    }
+    try:
+        return categories[kind]
+    except KeyError as exc:
+        raise ValueError(f"uncategorized compact EA kind: {kind!r}") from exc
 
 
 def ea_availability_summary(model: IsaModel, entry: AllocationEntry, symbol: str) -> EAAvailabilitySummary:
@@ -1248,7 +1262,7 @@ def ea_availability_summary(model: IsaModel, entry: AllocationEntry, symbol: str
             allowed.add(row.syntax)
     categories: list[EAAvailabilityCategory] = []
     for name in ("Register", "Memory", "Immediate", "EXT0"):
-        members = tuple(row.syntax for row in rows if compact_ea_category(row.syntax) == name)
+        members = tuple(row.syntax for row in rows if compact_ea_category(row.kind) == name)
         category_allowed = tuple(item for item in members if item in allowed)
         excluded = tuple(item for item in members if item not in allowed)
         if not category_allowed:
@@ -1641,28 +1655,36 @@ def latex_instruction_word_formats_section(model: IsaModel) -> str:
 
 def latex_register_section(model: IsaModel) -> str:
     data = model.metadata.get("registers") or {}
+    register_groups = data.get("registers") or {}
+    general_registers = (register_groups.get("general") or {}).get("entries") or []
+    special_registers = (register_groups.get("special") or {}).get("entries") or []
+    floating_registers = (register_groups.get("floating_point") or {}).get("entries") or []
+    segment_registers = (register_groups.get("segment") or {}).get("entries") or []
     reg_rows = [
         [reg.get("name", ""), bits_text(reg.get("encoding", ""), 4), reg.get("width", "")]
-        for reg in data.get("general_registers", []) or []
+        for reg in general_registers
     ]
     special_rows = [
-        [reg.get("name", ""), reg.get("width", ""), reg.get("fixed_segment", ""), bits_text(reg.get("ea_encoding", ""), 7)]
-        for reg in data.get("special_registers", []) or []
+        [reg.get("name", ""), reg.get("width", "")]
+        for reg in special_registers
     ]
-    segment_data = model.metadata.get("segments") or {}
+    floating_rows = [
+        [reg.get("name", ""), bits_text(reg.get("encoding", ""), 4), reg.get("width", "")]
+        for reg in floating_registers
+    ]
     segment_rows = [
-        [reg.get("name", ""), reg.get("selector", ""), reg.get("width", "")]
-        for reg in segment_data.get("segment_registers", []) or []
+        [reg.get("name", ""), reg.get("role", ""), reg.get("width", "")]
+        for reg in segment_registers
     ]
     sreg_rows = [
-        [reg.get("name", ""), bits_text(reg["sreg_encoding"], 3), reg.get("sreg_use", "")]
+        [reg.get("name", ""), bits_text(reg["encoding"], 3), reg.get("description", "")]
         for reg in sorted(
             (
                 reg
-                for reg in segment_data.get("segment_registers", []) or []
-                if reg.get("sreg_encoding") is not None
+                for reg in segment_registers
+                if reg.get("encoding") is not None
             ),
-            key=lambda reg: reg["sreg_encoding"],
+            key=lambda reg: reg["encoding"],
         )
     ]
     return render_latex_template(
@@ -1675,8 +1697,15 @@ def latex_register_section(model: IsaModel) -> str:
                 "General Register Encoding",
                 {0, 1},
             ),
+            "FLOATING_REGISTER_TABLE": latex_code_table(
+                ["Register", "Encoding", "Width"],
+                floating_rows,
+                ["0.85in", "1.10in", "0.75in"],
+                "Floating-Point Registers",
+                {0, 1},
+            ),
             "SEGMENT_REGISTER_TABLE": latex_code_table(
-                ["Segment", "Selector", "Width"],
+                ["Segment", "Role", "Width"],
                 segment_rows,
                 ["0.85in", "1.10in", "0.75in"],
                 "Segment Registers",
@@ -1690,11 +1719,11 @@ def latex_register_section(model: IsaModel) -> str:
                 {0, 1},
             ),
             "SPECIAL_REGISTER_TABLE": latex_code_table(
-                ["Special", "Width", "Fixed Segment", "EA Encoding"],
+                ["Special", "Width"],
                 special_rows,
-                ["0.85in", "0.75in", "1.15in", "1.25in"],
+                ["0.85in", "0.75in"],
                 "Special Registers",
-                {0, 2, 3},
+                {0},
             ),
         },
     )
@@ -1720,12 +1749,259 @@ def latex_condition_section(model: IsaModel) -> str:
     )
 
 
+def latex_ea_payload_rows(data: dict[str, Any]) -> str:
+    rows: list[str] = []
+    for name, spec in (data.get("payloads") or {}).items():
+        if not isinstance(spec, dict):
+            continue
+        kind = compact_text(spec.get("kind"))
+        field_width = int(spec.get("field_width", 0))
+        byte_width = field_width // 8
+        signed = bool(spec.get("signed"))
+        value = "signed" if signed else "unsigned"
+        if kind == "displacement":
+            use = "displacement added to base/index expression"
+        elif kind == "absolute" and signed:
+            use = "absolute address, sign-extended before use"
+        elif kind == "absolute":
+            use = "absolute address payload"
+        elif kind == "immediate":
+            use = "immediate operand payload"
+        else:
+            raise ValueError(f"unknown EA payload kind: {kind!r}")
+        rows.append(f"{name} & {byte_width} & {value} & {use}\\\\")
+    rows.append(
+        "EXT0 descriptor & 1 or 2 & encoded & extended EA descriptor; present only for EXT0 escapes\\\\"
+    )
+    return "\n".join(rows)
+
+
+def ea_form_index(data: dict[str, Any], section: str) -> dict[str, dict[str, Any]]:
+    section_data = data.get(section) or {}
+    return {
+        str(form["name"]): form
+        for form in section_data.get("forms", []) or []
+        if isinstance(form, dict) and form.get("name")
+    }
+
+
+def latex_ea_syntax(forms: list[dict[str, Any]]) -> str:
+    return "\n".join(
+        rf"\manualeaprofilesyntax{{{compact_text(form.get('syntax')).replace('--', '{-}{-}')}}}"
+        for form in forms
+    )
+
+
+def latex_ea_encoding(text: str, label: str = "EA encoding") -> str:
+    return rf"\manualeaprofileline{{{label}}}{{{text}}}"
+
+
+def joined_words(items: list[str], conjunction: str = "and") -> str:
+    if len(items) == 1:
+        return items[0]
+    if len(items) == 2:
+        return f"{items[0]} {conjunction} {items[1]}"
+    return f"{', '.join(items[:-1])}, {conjunction} {items[-1]}"
+
+
+def compact_ea_fragment_values(data: dict[str, Any]) -> dict[str, str]:
+    forms = ea_form_index(data, "compact")
+
+    def selected(*names: str) -> list[dict[str, Any]]:
+        return [forms[name] for name in names]
+
+    register = selected("register", "stack_pointer")
+    rn_memory = selected(
+        "register_indirect",
+        "register_disp8s",
+        "register_disp16s",
+        "register_disp32s",
+        "register_disp64",
+    )
+    sp_memory = selected(
+        "stack_pointer_indirect",
+        "stack_pointer_disp8s",
+        "stack_pointer_disp16s",
+        "stack_pointer_disp32s",
+        "stack_pointer_disp64",
+    )
+    pc_memory = selected(
+        "program_counter_disp8s",
+        "program_counter_disp16s",
+        "program_counter_disp32s",
+        "program_counter_disp64",
+    )
+    absolute = selected("absolute_32s", "absolute_64")
+    immediate = selected("immediate_8s", "immediate_16s", "immediate_32s", "immediate_64")
+    ext0 = selected("ext0", "ext0_disp8s", "ext0_disp16s", "ext0_disp32s", "ext0_disp64")
+
+    def patterns(items: list[dict[str, Any]]) -> list[str]:
+        return [compact_text(item.get("pattern")) for item in items]
+
+    def payloads(items: list[dict[str, Any]]) -> list[str]:
+        return [compact_text(item.get("payload")) for item in items]
+
+    return {
+        "REGISTER_DIRECT_SYNTAX": latex_ea_syntax(register),
+        "REGISTER_DIRECT_ENCODING": latex_ea_encoding(
+            f"{patterns(register)[0]} selects {compact_text(register[0].get('syntax'))}; "
+            f"{patterns(register)[1]} selects {compact_text(register[1].get('syntax'))}."
+        ),
+        "RN_MEMORY_SYNTAX": latex_ea_syntax(rn_memory),
+        "RN_MEMORY_ENCODING": latex_ea_encoding(
+            f"{patterns(rn_memory)[0]} has no displacement; "
+            f"{joined_words(patterns(rn_memory[1:]))} select {joined_words(payloads(rn_memory[1:]))}."
+        ),
+        "SP_MEMORY_SYNTAX": latex_ea_syntax(sp_memory),
+        "SP_MEMORY_ENCODING": latex_ea_encoding(
+            f"{patterns(sp_memory)[0]} has no displacement; "
+            f"{joined_words(patterns(sp_memory[1:]))} select {joined_words(payloads(sp_memory[1:]))}."
+        ),
+        "PC_MEMORY_SYNTAX": latex_ea_syntax(pc_memory),
+        "PC_MEMORY_ENCODING": latex_ea_encoding(
+            f"{joined_words(patterns(pc_memory))} select {joined_words(payloads(pc_memory))}."
+        ),
+        "ABSOLUTE_MEMORY_SYNTAX": latex_ea_syntax(absolute),
+        "ABSOLUTE_MEMORY_ENCODING": latex_ea_encoding(
+            f"{patterns(absolute)[0]} selects {payloads(absolute)[0]}; "
+            f"{patterns(absolute)[1]} selects {payloads(absolute)[1]}."
+        ),
+        "IMMEDIATE_SYNTAX": latex_ea_syntax(immediate),
+        "IMMEDIATE_ENCODING": latex_ea_encoding(
+            f"{joined_words(patterns(immediate))} select {joined_words(payloads(immediate))}."
+        ),
+        "EXT0_ESCAPE_SYNTAX": latex_ea_syntax(ext0),
+        "EXT0_ESCAPE_ENCODING": latex_ea_encoding(
+            f"{patterns(ext0)[0]} selects no displacement; "
+            f"{joined_words(patterns(ext0[1:]))} select {joined_words(payloads(ext0[1:]))}."
+        ),
+    }
+
+
+def ext0_fragment_values(data: dict[str, Any]) -> dict[str, str]:
+    forms = ea_form_index(data, "ext0")
+
+    def selected(*names: str) -> list[dict[str, Any]]:
+        return [forms[name] for name in names]
+
+    def descriptor_parts(form: dict[str, Any]) -> list[str]:
+        pattern = form.get("pattern") or []
+        return [compact_text(byte) for byte in pattern]
+
+    explicit_base = selected("explicit_segment_base")
+    explicit_indexed = selected(
+        "explicit_segment_index",
+        "explicit_segment_index_postincrement",
+        "explicit_segment_index_predecrement",
+    )
+    explicit_zero = selected("explicit_segment_zero_base")
+    explicit_base_update = selected(
+        "explicit_segment_base_postincrement",
+        "explicit_segment_base_predecrement",
+    )
+    explicit_zero_indexed = selected(
+        "explicit_segment_zero_base_index",
+        "explicit_segment_zero_base_index_postincrement",
+        "explicit_segment_zero_base_index_predecrement",
+    )
+    sp_pc_indexed = selected(
+        "stack_pointer_index",
+        "stack_pointer_index_postincrement",
+        "stack_pointer_index_predecrement",
+        "program_counter_index",
+        "program_counter_index_postincrement",
+        "program_counter_index_predecrement",
+    )
+    default_base_update = selected(
+        "default_segment_base_postincrement",
+        "default_segment_base_predecrement",
+    )
+
+    return {
+        "EXPLICIT_SEGMENT_BASE_SYNTAX": latex_ea_syntax(explicit_base),
+        "EXPLICIT_SEGMENT_BASE_DESCRIPTOR": latex_ea_encoding(
+            f"{descriptor_parts(explicit_base[0])[0]}, one byte.", "Descriptor"
+        ),
+        "EXPLICIT_SEGMENT_INDEXED_SYNTAX": latex_ea_syntax(explicit_indexed),
+        "EXPLICIT_SEGMENT_INDEXED_DESCRIPTOR": latex_ea_encoding(
+            "Byte 0 is "
+            + joined_words(
+                [rf"\texttt{{{descriptor_parts(form)[0]}}}" for form in explicit_indexed],
+                "or",
+            )
+            + " for no update, postincrement, or predecrement. Byte 1 is "
+            + rf"\texttt{{{descriptor_parts(explicit_indexed[0])[1]}}}.",
+            "Descriptor",
+        ),
+        "EXPLICIT_SEGMENT_ZERO_BASE_SYNTAX": latex_ea_syntax(explicit_zero),
+        "EXPLICIT_SEGMENT_ZERO_BASE_DESCRIPTOR": latex_ea_encoding(
+            f"{descriptor_parts(explicit_zero[0])[0]}, one byte.", "Descriptor"
+        ),
+        "EXPLICIT_SEGMENT_BASE_UPDATE_SYNTAX": latex_ea_syntax(explicit_base_update),
+        "EXPLICIT_SEGMENT_BASE_UPDATE_DESCRIPTOR": latex_ea_encoding(
+            rf"Byte 0 is \texttt{{{descriptor_parts(explicit_base_update[0])[0]}}}. Byte 1 is "
+            rf"\texttt{{{descriptor_parts(explicit_base_update[0])[1]}}} for base postincrement or "
+            rf"\texttt{{{descriptor_parts(explicit_base_update[1])[1]}}} for base predecrement.",
+            "Descriptor",
+        ),
+        "EXPLICIT_SEGMENT_ZERO_BASE_INDEXED_SYNTAX": latex_ea_syntax(explicit_zero_indexed),
+        "EXPLICIT_SEGMENT_ZERO_BASE_INDEXED_DESCRIPTOR": latex_ea_encoding(
+            rf"Byte 0 is \texttt{{{descriptor_parts(explicit_zero_indexed[0])[0]}}}. Byte 1 is "
+            + joined_words(
+                [rf"\texttt{{{descriptor_parts(form)[1]}}}" for form in explicit_zero_indexed],
+                "or",
+            )
+            + " for no update, postincrement, or predecrement.",
+            "Descriptor",
+        ),
+        "SP_PC_INDEXED_SYNTAX": latex_ea_syntax(sp_pc_indexed),
+        "SP_PC_INDEXED_DESCRIPTOR": latex_ea_encoding(
+            rf"Byte 0 is \texttt{{{descriptor_parts(sp_pc_indexed[0])[0]}}} for SP or "
+            rf"\texttt{{{descriptor_parts(sp_pc_indexed[3])[0]}}} for PC. Byte 1 is "
+            + joined_words(
+                [rf"\texttt{{{descriptor_parts(form)[1]}}}" for form in sp_pc_indexed[:3]],
+                "or",
+            )
+            + " for no update, postincrement, or predecrement.",
+            "Descriptor",
+        ),
+        "DEFAULT_SEGMENT_BASE_UPDATE_SYNTAX": latex_ea_syntax(default_base_update),
+        "DEFAULT_SEGMENT_BASE_UPDATE_DESCRIPTOR": latex_ea_encoding(
+            f"{descriptor_parts(default_base_update[0])[0]} for base postincrement; "
+            f"{descriptor_parts(default_base_update[1])[0]} for base predecrement. One byte.",
+            "Descriptor",
+        ),
+    }
+
+
+def write_ea_reference_fragments(data: dict[str, Any]) -> None:
+    outputs = {
+        "compact_ea_reference_blocks.tex": render_latex_template(
+            "fragments/compact_ea_reference_blocks.tex.in",
+            compact_ea_fragment_values(data),
+        ),
+        "ext0_reference_blocks.tex": render_latex_template(
+            "fragments/ext0_reference_blocks.tex.in",
+            ext0_fragment_values(data),
+        ),
+    }
+    for name, text in outputs.items():
+        path = EA_FRAGMENT_DIR / name
+        if not path.exists() or path.read_text(encoding="utf-8") != text:
+            path.write_text(text, encoding="utf-8")
+
+
 def latex_ea_section(model: IsaModel) -> str:
     data = model.metadata.get("ea") or {}
-    compact_rows = [
-        [form.get("bits", ""), form.get("syntax", form.get("class", "")), form.get("class", ""), display_text(form.get("memory", ""))]
-        for form in data.get("compact_ea", []) or []
-    ]
+    compact = data.get("compact") or {}
+    compact_rows = []
+    for form in compact.get("forms", []) or []:
+        kind = compact_text(form.get("kind"))
+        table_class = "ext0_escape" if kind == "escape" else kind
+        memory = kind == "memory" if kind in {"register", "memory", "immediate"} else ""
+        compact_rows.append(
+            [form.get("pattern", ""), form.get("syntax", table_class), table_class, display_text(memory)]
+        )
     ext0_section = render_latex_template("ext0_addressing_modes.tex", {})
     auto_update_section = render_latex_template("ea_auto_update_semantics.tex", {})
     return render_latex_template(
@@ -1738,6 +2014,7 @@ def latex_ea_section(model: IsaModel) -> str:
                 "Compact EA Encoding",
                 {0, 1},
             ),
+            "EA_PAYLOAD_ROWS": latex_ea_payload_rows(data),
             "EXT0_SECTION": ext0_section,
             "AUTO_UPDATE_SECTION": auto_update_section,
         },
@@ -1910,6 +2187,8 @@ def main() -> int:
     args = parser.parse_args()
 
     model = load_model(args.defs, args.alloc)
+    if args.defs.resolve() == DEF_ROOT.resolve():
+        write_ea_reference_fragments(model.metadata.get("ea") or {})
     latex = render_latex(model, only_allocated=args.only_allocated)
     fmt = infer_format(args.output, args.format)
     text = render_markdown_from_latex(latex, args.pandoc) if fmt == "markdown" else latex

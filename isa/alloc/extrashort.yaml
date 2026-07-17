@@ -51,14 +51,14 @@ entries:
   - id: extrashort.sub_q_8_sp
     bits: "0001111"
     text: "SUB.Q 8, SP"
-  - id: extrashort.pushp_imm3_i
+  - id: extrashort.pushp_pair_id_i
     bits: "0010iii"
-    text: "PUSHP imm3(i)"
+    text: "PUSHP pair_id(i)"
     fields:
       i: {kind: immediate, width: 3}
-  - id: extrashort.popp_imm3_i
+  - id: extrashort.popp_pair_id_i
     bits: "0011iii"
-    text: "POPP imm3(i)"
+    text: "POPP pair_id(i)"
     fields:
       i: {kind: immediate, width: 3}
   - id: extrashort.push_rn_r
@@ -86,13 +86,13 @@ entries:
     text: "CLR.Q Rn(r)"
     fields:
       r: {kind: rn, width: 4}
-  - id: extrashort.fpushp_imm3_i
+  - id: extrashort.fpushp_pair_id_i
     bits: "1110iii"
-    text: "FPUSHP imm3(i)"
+    text: "FPUSHP pair_id(i)"
     fields:
       i: {kind: immediate, width: 3}
-  - id: extrashort.fpopp_imm3_i
+  - id: extrashort.fpopp_pair_id_i
     bits: "1111iii"
-    text: "FPOPP imm3(i)"
+    text: "FPOPP pair_id(i)"
     fields:
       i: {kind: immediate, width: 3}

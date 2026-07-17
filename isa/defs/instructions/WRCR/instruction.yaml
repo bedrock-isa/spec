@@ -1,0 +1,25 @@
+mnemonic: WRCR
+doc:
+  title: Write Control Register
+  summary: Write a privileged control register from an Rn register.
+  description: WRCR is always a supervisor-only instruction; user-visible control state must use dedicated instructions gated by control-register policy bits.
+  instruction_family: system_registers
+  instruction_class: system
+behavior:
+  group: system_registers
+  inputs:
+  - src
+  - cr
+  output: none
+  control_register_access:
+    selector: cr
+    write: src
+attributes:
+  privilege: supervisor
+  flags: unchanged
+forms:
+  operands:
+  - name: src
+    type: Rn
+  - name: cr
+    type: imm16

@@ -1,0 +1,49 @@
+mnemonic: CMPXCHG
+doc:
+  title: Compare And Exchange
+  summary: Performs the compare and exchange operation.
+  description: Compares memory with the expected Rn register and conditionally stores the desired Rn register. After the operation, expected contains the observed old memory value. ZF=1 means the store happened; ZF=0 means memory was left unchanged.
+  instruction_family: atomics
+  instruction_class: system
+behavior:
+  group: atomics
+  inputs:
+  - desired
+  input_output:
+  - expected
+  - memory
+attributes:
+  privilege: unprivileged
+  memory_ordering:
+    operand: order
+    type: memory_order
+    encodings:
+      relaxed: 0
+      acquire: 1
+      release: 2
+      acqrel: 3
+      seqcst: 4
+    reserved_encodings:
+    - 5
+    - 6
+    - 7
+    consume: treated as acquire
+    description: The memory-order qualifier controls visibility ordering around the atomic read-modify-write. Relaxed preserves atomicity only. Acquire orders later memory operations after the atomic operation. Release orders prior memory operations before it. Acquire-release applies both directions. Sequential consistency additionally participates in the global sequentially consistent order whether the comparison succeeds or fails; a failed SEQCST operation participates as an SC load and creates no write.
+  flags:
+    Z: store succeeded
+    N: cleared
+    C: cleared
+    V: cleared
+forms:
+  memory_operand_ea_set: addressable_memory_only
+  require_memory_operand: true
+  operands:
+  - name: order
+    type: memory_order
+  - name: expected
+    type: Rn
+  - name: desired
+    type: Rn
+  - name: memory
+    type: EA
+  size: BWLQ

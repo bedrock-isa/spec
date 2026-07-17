@@ -1,0 +1,33 @@
+mnemonic: BNDSXX
+doc:
+  title: Signed Bounds Check Exclusive-Exclusive
+  summary: Checks signed value membership in the exclusive-exclusive interval (lo, hi).
+  description: BNDSXX treats both bounds as exclusive. It sets V when signed(value) is outside (signed(lo), signed(hi)); Z, N, and C are unchanged.
+  instruction_family: bounds
+  instruction_class: integer
+behavior:
+  group: bounds
+  inputs:
+  - hi
+  - lo
+  - value
+  output: none
+  interval: "(lo, hi)"
+  signedness: signed
+  bounds_mode: XX
+attributes:
+  privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: true
+    repg: true
+forms:
+  extension_family: integer_bounds_signed
+  operands:
+  - name: lo
+    type: Rn
+  - name: value
+    type: EA
+  - name: hi
+    type: Rn
+  size: BWLQ

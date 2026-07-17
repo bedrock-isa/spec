@@ -45,7 +45,7 @@ CMP, TEST & Update Z, N, C, and V from a temporary result without storing it.\\
 CMPJcc, TESTJcc & Compute branch flags temporarily and leave architectural FLAGS unchanged.\\
 INC, DEC & Leave FLAGS unchanged.\\
 INCF, DECF & Update Z, N, C, and V from the stored result.\\
-SETF, CLRF & Change selected imm4 mask bits and preserve unselected FLAGS bits.\\
+SETF, CLRF & Change selected \texttt{flags\_bitmap} bits and preserve unselected FLAGS bits.\\
 NEG, ABS & Leave FLAGS unchanged.\\
 CLR & Write zero and leave FLAGS unchanged.\\
 Bounds checks & Set V for an out-of-range value and leave Z, N, and C unchanged.\\

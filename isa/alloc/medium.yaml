@@ -68,14 +68,14 @@ entries:
   - id: medium.trace_ea
     bits: "000010011110000100"
     text: "TRACE <imm16>"
-  - id: medium.setf_imm4_m
+  - id: medium.setf_flags_bitmap_m
     bits: "00001011011000mmmm"
-    text: "SETF imm4(m)"
+    text: "SETF flags_bitmap(m)"
     fields:
       m: {kind: immediate, width: 4}
-  - id: medium.clrf_imm4_m
+  - id: medium.clrf_flags_bitmap_m
     bits: "00001001011000mmmm"
-    text: "CLRF imm4(m)"
+    text: "CLRF flags_bitmap(m)"
     fields:
       m: {kind: immediate, width: 4}
   - id: medium.inc_x_ea

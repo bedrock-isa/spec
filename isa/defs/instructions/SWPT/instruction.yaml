@@ -1,0 +1,18 @@
+mnemonic: SWPT
+doc:
+  title: Switch Page Table
+  summary: Performs the switch page table operation.
+  instruction_family: tlb_and_context
+  instruction_class: system
+  description: Replaces PTCR with the supplied page-table control value and clears ASCR as one architectural page-table switch.
+behavior:
+  group: tlb_context
+  inputs:
+  - new_ptcr
+  output: none
+attributes:
+  privilege: supervisor
+forms:
+  operands:
+  - name: new_ptcr
+    type: Rn

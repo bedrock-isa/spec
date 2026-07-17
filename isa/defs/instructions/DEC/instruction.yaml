@@ -1,0 +1,30 @@
+mnemonic: DEC
+doc:
+  title: Decrement
+  summary: Performs the decrement operation.
+  instruction_family: integer_unary
+  instruction_class: integer
+  description: Subtracts one from the selected-width destination and writes the modular result without changing FLAGS.
+behavior:
+  group: integer_unary
+  input_output: dst
+attributes:
+  privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: true
+    repg: true
+  repgf_candidate: true
+  flags: unchanged
+forms:
+  compact_forms:
+  - operands:
+    - name: dst
+      type: Rn
+    size: LQ
+  extended_forms:
+  - operands:
+    - name: dst
+      type: EA
+    size: BWLQ
+    compact: false

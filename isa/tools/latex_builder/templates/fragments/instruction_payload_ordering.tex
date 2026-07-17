@@ -33,7 +33,7 @@ sign extension performed by the consuming instruction or EA form.
 \end{manuallongtable}
 
 \manualtablecaption{Immediate Operand Interpretation}
-\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{0.38in}>{\raggedright\arraybackslash}p{0.62in}>{\raggedright\arraybackslash}p{0.62in}>{\raggedright\arraybackslash}p{0.90in}>{\raggedright\arraybackslash}p{2.00in}@{}}
+\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{0.95in}>{\raggedright\arraybackslash}p{0.38in}>{\raggedright\arraybackslash}p{0.62in}>{\raggedright\arraybackslash}p{0.62in}>{\raggedright\arraybackslash}p{0.90in}>{\raggedright\arraybackslash}p{1.70in}@{}}
 \toprule
 \rowcolor{ManualHeaderFill}
 \textbf{Operand} & \textbf{Bits} & \textbf{Value} & \textbf{Range} & \textbf{Extension} & \textbf{Applies When}\\
@@ -45,15 +45,17 @@ sign extension performed by the consuming instruction or EA form.
 \textbf{Operand} & \textbf{Bits} & \textbf{Value} & \textbf{Range} & \textbf{Extension} & \textbf{Applies When}\\
 \midrule
 \endhead
-\texttt{imm3} & @IMM3_WIDTH@ & unsigned & @IMM3_RANGE@ & zero-extend & PUSHP/POPP canonical register-pair selector\\
-\texttt{imm4} & @IMM4_WIDTH@ & unsigned & @IMM4_RANGE@ & zero-extend & SETF/CLRF integer FLAGS masks\\
+\texttt{pair\_id} & @PAIR_ID_WIDTH@ & identifier & @PAIR_ID_RANGE@ & none & PUSHP/POPP canonical register-pair selector\\
+\texttt{pt\_level} & @PT_LEVEL_WIDTH@ & enumeration & @PT_LEVEL_RANGE@ & none & PTQUERY page-table level selector\\
+\texttt{flags\_bitmap} & @FLAGS_BITMAP_WIDTH@ & bitmap & @FLAGS_BITMAP_RANGE@ & none & SETF/CLRF integer FLAGS masks\\
 \texttt{imm6} & @IMM6_WIDTH@ & unsigned & @IMM6_RANGE@ & zero-extend & integer forms with an explicit B/W/L/Q operation size\\
 \texttt{imm7} & @IMM7_WIDTH@ & unsigned & @IMM7_RANGE@ & zero-extend & EXTRACT register-pair forms\\
 \bottomrule
 \end{manuallongtable}
 
-PUSHP and POPP interpret \texttt{imm3} as a canonical register-pair index, so every encoding from 0 through 7 is valid.
-SETF and CLRF interpret \texttt{imm4} as the low FLAGS nibble: bit 3 selects Z, bit 2 selects N, bit 1 selects C,
+PUSHP and POPP interpret \texttt{pair\_id} as a canonical register-pair index, so every encoding from 0 through 7 is valid.
+PTQUERY accepts \texttt{pt\_level} values 1 through 5; encodings 0, 6, and 7 are reserved.
+SETF and CLRF interpret \texttt{flags\_bitmap} as the low FLAGS nibble: bit 3 selects Z, bit 2 selects N, bit 1 selects C,
 and bit 0 selects V.
 
 An \texttt{imm6} value is zero-extended to the selected operation size before use when that size is wider than six

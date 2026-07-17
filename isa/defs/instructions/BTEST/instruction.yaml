@@ -1,0 +1,57 @@
+mnemonic: BTEST
+doc:
+  title: Bit Test
+  summary: Performs the bit test operation.
+  instruction_family: integer_bitfield
+  instruction_class: integer
+  description: Tests the destination bit selected by the low six bits of the bit index and sets Z when that bit is clear without changing the destination.
+behavior:
+  group: bit_ops
+  inputs:
+  - bit_index
+  - dst
+  output: none
+attributes:
+  privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: true
+    repg: true
+  flags:
+    Z: old_bit == 0
+    N: unchanged
+    C: unchanged
+    V: unchanged
+forms:
+  operands:
+  - - name: bit_index
+      type: Rn
+    - name: dst
+      type: Rn
+  - - name: bit_index
+      type: imm6
+    - name: dst
+      type: Rn
+  - - name: bit_index
+      type: Rn
+    - name: dst
+      type: EA
+  - - name: bit_index
+      type: imm6
+    - name: dst
+      type: EA
+  size: BWLQ
+  compact: false
+  encoding_fields:
+  - field: o
+    kind: bit_group
+    width: 2
+    placement: high
+    values:
+    - BCHG
+    - BCLR
+    - BSET
+    - BTEST
+    derive: mnemonic
+    match:
+      profile: I6_TO_EA

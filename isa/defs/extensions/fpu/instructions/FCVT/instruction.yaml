@@ -26,20 +26,18 @@ attributes:
 forms:
   operands:
   - - name: src
-      type: FREG
+      type: Fn
     - name: dst
-      type: FREG
+      type: Fn
   - - name: src
-      type: FREG
+      type: Fn
     - name: dst
       type: Rn
   - - name: src
       type: Rn
     - name: dst
-      type: FREG
+      type: Fn
   conversions:
   - F32 <-> F64
   - signed int32/int64 <-> F32/F64
   - unsigned int32/int64 <-> F32/F64
-definition_status:
-  allocation: 'external: isa/alloc'

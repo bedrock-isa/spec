@@ -28,23 +28,21 @@ attributes:
 forms:
   operands:
   - - name: lo
-      type: FREG
+      type: Fn
     - name: value
-      type: FREG
+      type: Fn
     - name: hi
-      type: FREG
+      type: Fn
   - - name: lo
-      type: FREG
+      type: Fn
     - name: value
       type: EA
     - name: hi
-      type: FREG
+      type: Fn
   - - name: lo
       type: EA
     - name: value
-      type: FREG
+      type: Fn
     - name: hi
       type: EA
-  size: S_D
-definition_status:
-  allocation: 'external: isa/alloc'
+  size: SD

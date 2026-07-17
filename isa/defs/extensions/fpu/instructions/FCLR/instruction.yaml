@@ -18,9 +18,7 @@ attributes:
 forms:
   operands:
   - - name: dst
-      type: FREG
+      type: Fn
   - - name: dst
       type: EA
   result: "+0.0"
-definition_status:
-  allocation: 'external: isa/alloc'

@@ -22,17 +22,15 @@ attributes:
 forms:
   operands:
   - - name: src
-      type: FREG
+      type: Fn
     - name: dst
-      type: FREG
+      type: Fn
   - - name: src
       type: EA
     - name: dst
-      type: FREG
+      type: Fn
   - - name: src
-      type: FREG
+      type: Fn
     - name: dst
       type: EA
-  size: S_D
-definition_status:
-  allocation: 'external: isa/alloc'
+  size: SD

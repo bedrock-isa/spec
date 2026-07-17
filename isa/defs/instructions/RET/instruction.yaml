@@ -1,0 +1,14 @@
+mnemonic: RET
+doc:
+  title: Return
+  summary: Performs the return operation.
+  instruction_family: control_flow
+  instruction_class: control_flow
+  description: Reads one 64-bit return address from SS:SP, advances SP by eight bytes, validates the target, and transfers control to it.
+behavior:
+  group: control_flow
+  output: none
+attributes:
+  privilege: unprivileged
+forms:
+  operands: []

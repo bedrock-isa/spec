@@ -1,0 +1,32 @@
+mnemonic: MOVUC
+doc:
+  title: Move User To Current
+  summary: Copies from user-domain memory to a current-domain destination.
+  description: MOVUC is a supervisor-only checked user-access move. If the source operand is memory, that access uses the user domain. The destination is a current-domain memory operand or an Rn register. Forms without a user-domain memory source are invalid.
+  instruction_family: data_movement
+  instruction_class: system
+behavior:
+  group: data_movement
+  inputs:
+  - src
+  output: dst
+attributes:
+  privilege: supervisor
+  repeatable:
+    rep: true
+    repcc: true
+    repg: true
+  access_domain: user_to_current
+forms:
+  src_ea_set: user_memory_only
+  dst_ea_set: store_destination
+  require_memory_operand: true
+  extended_forms:
+  - operands:
+    - name: src
+      type: EA
+    - name: dst
+      type: EA
+    size: BWLQ
+    compact: false
+    constraint: src_user_memory_dst_current_memory_or_register

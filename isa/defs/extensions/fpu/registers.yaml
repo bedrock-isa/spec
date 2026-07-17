@@ -1,0 +1,19 @@
+registers:
+  floating_point:
+    entries:
+    - {name: F0, width: 64, encoding: 0}
+    - {name: F1, width: 64, encoding: 1}
+    - {name: F2, width: 64, encoding: 2}
+    - {name: F3, width: 64, encoding: 3}
+    - {name: F4, width: 64, encoding: 4}
+    - {name: F5, width: 64, encoding: 5}
+    - {name: F6, width: 64, encoding: 6}
+    - {name: F7, width: 64, encoding: 7}
+    - {name: F8, width: 64, encoding: 8}
+    - {name: F9, width: 64, encoding: 9}
+    - {name: F10, width: 64, encoding: 10}
+    - {name: F11, width: 64, encoding: 11}
+    - {name: F12, width: 64, encoding: 12}
+    - {name: F13, width: 64, encoding: 13}
+    - {name: F14, width: 64, encoding: 14}
+    - {name: F15, width: 64, encoding: 15}

@@ -1,0 +1,20 @@
+include:
+- instructions/FACOSA
+- instructions/FASINA
+- instructions/FATANA
+- instructions/FATANHA
+- instructions/FCOSA
+- instructions/FCOSHA
+- instructions/FETOXA
+- instructions/FETOXM1A
+- instructions/FLOG10A
+- instructions/FLOG2A
+- instructions/FLOGNA
+- instructions/FLOGNP1A
+- instructions/FSINA
+- instructions/FSINCOSA
+- instructions/FSINHA
+- instructions/FTANA
+- instructions/FTANHA
+- instructions/FTENTOXA
+- instructions/FTWOTOXA

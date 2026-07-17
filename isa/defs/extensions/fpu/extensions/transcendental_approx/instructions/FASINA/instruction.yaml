@@ -1,0 +1,44 @@
+mnemonic: FASINA
+doc:
+  title: Approximate Floating-Point Arc Sine
+  summary: Performs the bounded approximate floating-point arc sine operation.
+  instruction_family: fpu_transcendental_approx
+  instruction_class: fpu
+  description: Computes the asin(x) in radians reference over finite x with abs(x) <= 1 after DAZ and writes an implementation-bounded S- or D-format approximation under the selected FPTRANSA accuracy contract.
+behavior:
+  group: fpu_transcendental_approx
+  inputs:
+  - src
+  output: dst
+  approximation:
+    contract_id: '0x0011'
+    reference_function: asin(x) in radians
+    domain: finite x with abs(x) <= 1 after DAZ
+    max_ulp:
+      S: 4
+      D: 4
+    exact_anchors:
+    - asin(+0) = +0
+    - asin(-0) = -0
+    properties:
+    - odd
+    - monotonically increasing on [-1, 1]
+    - result is in [-pi/2, pi/2]
+attributes:
+  privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: false
+    repg: true
+  fp_flags:
+    update:
+    - NV
+    - UF
+forms:
+  operands:
+  - name: src
+    type: Fn
+  - name: dst
+    type: Fn
+  size: SD
+  extension_family: fpu_transcendental_approx

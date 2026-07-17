@@ -1,0 +1,28 @@
+mnemonic: CTZ
+doc:
+  title: Count Trailing Zeros
+  summary: Performs the count trailing zeros operation.
+  description: Counts the trailing zero bits within the selected operand size and writes the count to the destination register. A zero operand returns the operand width in bits.
+  instruction_family: integer_bitfield
+  instruction_class: integer
+behavior:
+  group: bit_counts
+  inputs:
+  - src
+  input_output: dst
+attributes:
+  privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: true
+    repg: true
+  repgf_candidate: true
+  flags: unchanged
+forms:
+  operands:
+  - name: src
+    type: EA
+  - name: dst
+    type: Rn
+  size: BWLQ
+  zero_input: returns operand width

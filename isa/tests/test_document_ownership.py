@@ -37,12 +37,13 @@ class DocumentOwnershipTests(unittest.TestCase):
         self.assertTrue((ROOT / "isa" / "memory_model" / "validation.yaml").exists())
 
     def test_gs_metadata_and_segment_instructions_are_abi_neutral(self) -> None:
-        segments = yaml.safe_load(
-            (ROOT / "isa" / "defs" / "segments.yaml").read_text(encoding="utf-8")
-        )["segment_registers"]
+        register_groups = yaml.safe_load(
+            (ROOT / "isa" / "defs" / "registers.yaml").read_text(encoding="utf-8")
+        )["registers"]
+        segments = register_groups["segment"]["entries"]
         gs_registers = [entry for entry in segments if entry["name"].startswith("GS")]
         self.assertEqual(
-            [entry["sreg_use"] for entry in gs_registers],
+            [entry["description"] for entry in gs_registers],
             [f"general segment register {index}" for index in range(6)],
         )
 
@@ -52,7 +53,6 @@ class DocumentOwnershipTests(unittest.TestCase):
                     ROOT
                     / "isa"
                     / "defs"
-                    / "base"
                     / "instructions"
                     / mnemonic
                     / "instruction.yaml"

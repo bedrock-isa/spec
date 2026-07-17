@@ -9,10 +9,7 @@ from pathlib import Path
 import sys
 from typing import Any
 
-try:
-    import yaml
-except ImportError as exc:  # pragma: no cover - environment error path
-    raise SystemExit("PyYAML is required to validate ISA YAML files") from exc
+from defs_loader import load_extensions, load_instruction_sets, load_yaml
 
 
 DEF_ROOT = Path("isa/defs")
@@ -20,16 +17,11 @@ ALLOC_ROOT = Path("isa/alloc")
 INSTRUCTION_FILENAME = "instruction.yaml"
 
 
-def load_yaml(path: Path) -> Any:
-    with path.open() as f:
-        return yaml.safe_load(f)
-
-
 def definition_payloads(root: Path) -> dict[str, dict[str, Any]]:
-    manifest = load_yaml(root / "manifest.yaml")
+    extensions = load_extensions(root)
     out: dict[str, dict[str, Any]] = {}
-    for spec in manifest.get("instruction_sets", []):
-        include = root / spec["include"]
+    for instruction_set in load_instruction_sets(root, extensions):
+        include = instruction_set.include
         data = load_yaml(include)
         for item in data.get("include", []):
             path = include.parent / item / INSTRUCTION_FILENAME

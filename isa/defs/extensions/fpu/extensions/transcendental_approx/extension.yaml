@@ -1,0 +1,48 @@
+name: transcendental_approx
+instructions: instructions.yaml
+cpuid:
+  feature: OPTIONAL_EXTENSION_FEATURES.FPTRANSA
+  class: 0x00000001
+  accuracy_leaf: 0x0001
+implementation: hardware implementation or internal assist
+approximation_model:
+  contract_revision: 1
+  baseline_max_ulp:
+    S: 4
+    D: 4
+  formats:
+    S:
+      ieee_754_format: binary32
+      precision_bits: 24
+      minimum_normal_exponent: -126
+      minimum_subnormal_exponent: -149
+    D:
+      ieee_754_format: binary64
+      precision_bits: 53
+      minimum_normal_exponent: -1022
+      minimum_subnormal_exponent: -1074
+  reference:
+    input: source value after FSTATUS.DAZ
+    exact_value: mathematical real result named by the instruction contract
+    measured_result: approximate result before FSTATUS.FTZ
+    ulp: 2 ** max(floor(log2(abs(exact_value))) - precision_bits + 1, minimum_normal_exponent - precision_bits + 1), or the minimum subnormal quantum when the exact value is zero
+    error: abs(approximate_result - exact_value) / ulp
+  result:
+    rounding: nearest_even independent of FSTATUS.RM
+    determinism: stable for the same implementation, input, format, and relevant FSTATUS modes
+    cross_implementation_bit_exact: false
+  exceptions:
+    updated:
+    - NV
+    - DZ
+    - OF
+    - UF
+    unchanged:
+    - NX
+    overflow: exact magnitude exceeds the maximum finite value of the selected format
+    underflow: exact nonzero magnitude is below the minimum normal value of the selected format
+  cpuid_result:
+    S_MAX_ULP_Q8_8: bits 0..15
+    D_MAX_ULP_Q8_8: bits 16..31
+    CONTRACT_REVISION: bits 32..39
+    PRESENT: bit 63

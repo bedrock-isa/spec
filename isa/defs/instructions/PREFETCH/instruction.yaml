@@ -1,0 +1,24 @@
+mnemonic: PREFETCH
+doc:
+  title: Prefetch
+  summary: Hint that EA will be read soon; no architectural fault unless policy says otherwise.
+  instruction_family: cache
+  instruction_class: system
+  description: Computes the source address without an architectural read and issues an optional temporal read-prefetch hint. An AT=1 mapping produces no slot transaction. Ignoring the hint has no architectural effect except under an explicitly configured prefetch-fault policy.
+behavior:
+  group: cache
+  inputs:
+  - src
+  output: none
+attributes:
+  privilege: user allowed
+  repeatable:
+    rep: true
+    repcc: false
+    repg: true
+forms:
+  src_ea_set: memory_only
+  require_memory_operand: true
+  operands:
+  - name: src
+    type: EA

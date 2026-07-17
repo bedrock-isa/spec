@@ -1,0 +1,26 @@
+mnemonic: CLMULH
+doc:
+  title: Carryless Multiply High
+  summary: Performs the carryless multiply high operation.
+  instruction_family: integer_mul_div
+  instruction_class: integer
+  description: Forms the carryless polynomial product of the selected-width source and destination values and writes its high half to the destination.
+behavior:
+  group: multiply_divide
+  inputs:
+  - src
+  input_output: dst
+attributes:
+  privilege: unprivileged
+  repeatable:
+    rep: true
+    repcc: true
+    repg: true
+forms:
+  operands:
+  - - name: src
+      type: EA
+    - name: dst
+      type: Rn
+  size: Q
+  result: carryless high half

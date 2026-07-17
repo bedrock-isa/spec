@@ -20,10 +20,8 @@ attributes:
 forms:
   operands:
   - name: src
-    type: FREG
+    type: Fn
   - name: dst
     type: Rn
-  size: S_D
+  size: SD
   result: classification bitmap
-definition_status:
-  allocation: 'external: isa/alloc'

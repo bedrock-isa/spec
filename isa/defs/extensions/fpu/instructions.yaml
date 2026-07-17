@@ -1,4 +1,3 @@
-common: instructions/_common.yaml
 include:
 - instructions/FABS
 - instructions/FADD

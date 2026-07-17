@@ -1,4 +1,3 @@
-version: draft
 ordinary_plt:
   entry_size: 32
   alignment: 16

@@ -1,0 +1,40 @@
+mnemonic: CALL
+doc:
+  title: Call
+  summary: Performs the call operation.
+  instruction_family: control_flow
+  instruction_class: control_flow
+  description: Pushes the next instruction address as one 64-bit stack value and transfers control to the target. The stack update and control transfer use the ordinary SS:SP and target-validation rules.
+behavior:
+  group: control_flow
+  inputs:
+  - target
+  output: none
+attributes:
+  privilege: unprivileged
+forms:
+  compact_forms:
+  - profile: IMM16
+    allocation_cluster: direct_call
+    fixed_encoding:
+      primary_payload: 3
+    operands:
+    - name: target
+      type: imm16
+  - profile: IMM32
+    allocation_cluster: direct_call
+    operands:
+    - name: target
+      type: imm32
+  - profile: IMM64
+    allocation_cluster: direct_call
+    operands:
+    - name: target
+      type: imm64
+  extended_forms:
+  - operands:
+    - name: target
+      type: EA
+    compact: false
+  size:
+    fixed: Q
