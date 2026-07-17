@@ -5,11 +5,7 @@ doc:
   description: Enter supervisor mode through the explicit SPC/SCS/SDS supervisor-call path. SYSCALL saves the user continuation in the UR control-register bank, switches to SSS:SSP, and does not create an event frame or set event-active state.
   instruction_family: core_control
   instruction_class: system
-behavior:
-  group: core_control
-  output: none
 attributes:
   privilege: any
-  serializing: true
 forms:
-  operands: []
+- operands: []

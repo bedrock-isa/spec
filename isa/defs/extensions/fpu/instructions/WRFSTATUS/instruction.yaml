@@ -5,17 +5,12 @@ doc:
   description: WRFSTATUS writes the architectural 16-bit FSTATUS register from the low 16 bits of the source Rn register. Reserved FSTATUS bits must be zero. FFLAGS is a separate accrued floating-point exception flag register and is not written by WRFSTATUS. WRFSTATUS requires the floating-point extension.
   instruction_family: system_registers
   instruction_class: system
-behavior:
-  group: system_registers
-  inputs:
-  - src
-  output: none
 attributes:
   privilege: unprivileged
-  flags: writes FSTATUS from source bits
-  cpuid_feature: OPTIONAL_EXTENSION_FEATURES.FP
 forms:
-  operands:
+- operands:
   - name: src
     type: Rn
-  size: W
+    access: read
+  sizes:
+  - W

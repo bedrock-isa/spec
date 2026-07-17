@@ -5,15 +5,12 @@ doc:
   description: RDFSTATUS reads the architectural 16-bit FSTATUS register, zero-extends it to 64 bits, and writes the result to the destination Rn register. FSTATUS contains floating-point exception trap enables, rounding mode, and non-default mode bits. Accrued floating-point exception flags are kept in the separate FFLAGS register. RDFSTATUS requires the floating-point extension.
   instruction_family: system_registers
   instruction_class: system
-behavior:
-  group: system_registers
-  output: dst
 attributes:
   privilege: unprivileged
-  flags: unchanged
-  cpuid_feature: OPTIONAL_EXTENSION_FEATURES.FP
 forms:
-  operands:
+- operands:
   - name: dst
     type: Rn
-  size: W
+    access: write
+  sizes:
+  - W

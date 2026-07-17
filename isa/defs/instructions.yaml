@@ -98,9 +98,7 @@ include:
 - instructions/PUSH
 - instructions/PUSHP
 - instructions/RDCR
-- instructions/RDFFLAGS
 - instructions/RDFLAGS
-- instructions/RDFSTATUS
 - instructions/RDPMC
 - instructions/RDSEG
 - instructions/RDSTATUS
@@ -136,9 +134,7 @@ include:
 - instructions/WFENCE
 - instructions/WRBKDCACHE
 - instructions/WRCR
-- instructions/WRFFLAGS
 - instructions/WRFLAGS
-- instructions/WRFSTATUS
 - instructions/WRSEG
 - instructions/WRSTATUS
 - instructions/XCHG

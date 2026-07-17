@@ -5,21 +5,15 @@ doc:
   description: 'SETF sets the selected architectural integer FLAGS bits. The immediate operand is a 4-bit mask: bit 3 selects Z, bit 2 selects N, bit 1 selects C, and bit 0 selects V. Selected bits are written to one; unselected FLAGS bits are unchanged. The assembler may provide symbolic mask aliases such as Z, N, C, V, and combinations using |. STC is an assembler alias for SETF C.'
   instruction_family: system_registers
   instruction_class: system
-behavior:
-  group: system_registers
-  inputs:
-  - mask
-  output: none
+flags:
+  Z: set when mask bit 3 is one; otherwise unchanged
+  N: set when mask bit 2 is one; otherwise unchanged
+  C: set when mask bit 1 is one; otherwise unchanged
+  V: set when mask bit 0 is one; otherwise unchanged
 attributes:
   privilege: unprivileged
-  flags:
-    Z: set when mask bit 3 is one; otherwise unchanged
-    N: set when mask bit 2 is one; otherwise unchanged
-    C: set when mask bit 1 is one; otherwise unchanged
-    V: set when mask bit 0 is one; otherwise unchanged
 forms:
-  operands:
+- operands:
   - name: mask
     type: flags_bitmap
-  aliases:
-  - STC = SETF C
+    access: read

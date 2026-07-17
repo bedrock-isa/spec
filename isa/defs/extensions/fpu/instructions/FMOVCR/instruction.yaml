@@ -5,145 +5,19 @@ doc:
   description: FMOVCR maps an unsigned 16-bit constant ID to a fixed IEEE-754 binary64 bit pattern and writes that pattern to the destination F register. The mapping includes common numeric, transcendental, infinity, NaN, and format-boundary constants. It is independent of FSTATUS rounding, DAZ, FTZ, and default-NaN modes. Loading a signaling NaN is a bitwise move and does not itself raise NV; a later consuming floating-point operation applies its normal NaN rules.
   instruction_family: fpu
   instruction_class: fpu
-behavior:
-  group: fpu_move_compare
-  inputs:
-  - constant_id
-  output: dst
 attributes:
   privilege: unprivileged
-  repeatable:
-    rep: true
-    repcc: false
-    repg: true
-  fp_flags: unchanged
-  flags: unchanged
+  repeat:
+  - REP
+  - REPG
 forms:
-  operands:
+- operands:
   - name: constant_id
-    type: imm16
+    type: fconst_id
+    access: read
   - name: dst
     type: Fn
-  size: SD
-  result_format: IEEE-754 binary64
-  constant_ids:
-  - id: '0x0000'
-    name: positive_zero
-    value_bits: '0x0000000000000000'
-  - id: '0x0001'
-    name: negative_zero
-    value_bits: '0x8000000000000000'
-  - id: '0x0002'
-    name: positive_one
-    value_bits: '0x3ff0000000000000'
-  - id: '0x0003'
-    name: negative_one
-    value_bits: '0xbff0000000000000'
-  - id: '0x0004'
-    name: positive_one_half
-    value_bits: '0x3fe0000000000000'
-  - id: '0x0005'
-    name: negative_one_half
-    value_bits: '0xbfe0000000000000'
-  - id: '0x0006'
-    name: positive_two
-    value_bits: '0x4000000000000000'
-  - id: '0x0007'
-    name: negative_two
-    value_bits: '0xc000000000000000'
-  - id: '0x0008'
-    name: positive_ten
-    value_bits: '0x4024000000000000'
-  - id: '0x0009'
-    name: negative_ten
-    value_bits: '0xc024000000000000'
-  - id: '0x0010'
-    name: pi
-    value_bits: '0x400921fb54442d18'
-  - id: '0x0011'
-    name: pi_over_2
-    value_bits: '0x3ff921fb54442d18'
-  - id: '0x0012'
-    name: pi_over_4
-    value_bits: '0x3fe921fb54442d18'
-  - id: '0x0013'
-    name: two_pi
-    value_bits: '0x401921fb54442d18'
-  - id: '0x0014'
-    name: reciprocal_pi
-    value_bits: '0x3fd45f306dc9c883'
-  - id: '0x0015'
-    name: two_over_pi
-    value_bits: '0x3fe45f306dc9c883'
-  - id: '0x0016'
-    name: sqrt_2
-    value_bits: '0x3ff6a09e667f3bcd'
-  - id: '0x0017'
-    name: reciprocal_sqrt_2
-    value_bits: '0x3fe6a09e667f3bcc'
-  - id: '0x0020'
-    name: e
-    value_bits: '0x4005bf0a8b145769'
-  - id: '0x0021'
-    name: log2_e
-    value_bits: '0x3ff71547652b82fe'
-  - id: '0x0022'
-    name: log10_e
-    value_bits: '0x3fdbcb7b1526e50e'
-  - id: '0x0023'
-    name: ln_2
-    value_bits: '0x3fe62e42fefa39ef'
-  - id: '0x0024'
-    name: ln_10
-    value_bits: '0x40026bb1bbb55516'
-  - id: '0x0025'
-    name: log2_10
-    value_bits: '0x400a934f0979a371'
-  - id: '0x0026'
-    name: log10_2
-    value_bits: '0x3fd34413509f79ff'
-  - id: '0x0100'
-    name: positive_infinity
-    value_bits: '0x7ff0000000000000'
-  - id: '0x0101'
-    name: negative_infinity
-    value_bits: '0xfff0000000000000'
-  - id: '0x0102'
-    name: canonical_positive_quiet_nan
-    value_bits: '0x7ff8000000000000'
-  - id: '0x0103'
-    name: canonical_negative_quiet_nan
-    value_bits: '0xfff8000000000000'
-  - id: '0x0104'
-    name: canonical_positive_signaling_nan
-    value_bits: '0x7ff0000000000001'
-  - id: '0x0105'
-    name: canonical_negative_signaling_nan
-    value_bits: '0xfff0000000000001'
-  - id: '0x0110'
-    name: maximum_positive_finite
-    value_bits: '0x7fefffffffffffff'
-  - id: '0x0111'
-    name: maximum_negative_finite
-    value_bits: '0xffefffffffffffff'
-  - id: '0x0112'
-    name: minimum_positive_normal
-    value_bits: '0x0010000000000000'
-  - id: '0x0113'
-    name: minimum_negative_normal
-    value_bits: '0x8010000000000000'
-  - id: '0x0114'
-    name: minimum_positive_subnormal
-    value_bits: '0x0000000000000001'
-  - id: '0x0115'
-    name: minimum_negative_subnormal
-    value_bits: '0x8000000000000001'
-  - id: '0x0116'
-    name: machine_epsilon
-    value_bits: '0x3cb0000000000000'
-  - id: '0x0117'
-    name: maximum_positive_subnormal
-    value_bits: '0x000fffffffffffff'
-  - id: '0x0118'
-    name: maximum_negative_subnormal
-    value_bits: '0x800fffffffffffff'
+    access: write
+  sizes:
+  - S
+  - D

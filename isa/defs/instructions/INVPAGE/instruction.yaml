@@ -5,15 +5,10 @@ doc:
   instruction_family: tlb_and_context
   instruction_class: system
   description: Computes the source linear page without reading memory and invalidates matching global or current-ASID translations and in-progress results before retirement.
-behavior:
-  group: tlb_context
-  inputs:
-  - page
-  output: none
 attributes:
   privilege: supervisor
-  serializing: true
 forms:
-  operands:
+- operands:
   - name: page
     type: EA
+    access: address

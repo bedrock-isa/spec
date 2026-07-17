@@ -5,25 +5,22 @@ doc:
   instruction_family: fpu
   instruction_class: fpu
   description: Combines the magnitude bits of the destination with the sign bit of the source and writes the selected-format result.
-behavior:
-  group: fpu_arithmetic
-  inputs:
-  - sign_src
-  - magnitude_src
-  output: dst
 attributes:
   privilege: unprivileged
-  repeatable:
-    rep: true
-    repcc: false
-    repg: true
-  fp_flags: unchanged
+  repeat:
+  - REP
+  - REPG
 forms:
-  operands:
+- operands:
   - name: sign_src
     type: Fn
+    access: read
   - name: magnitude_src
     type: Fn
+    access: read
   - name: dst
     type: Fn
-  size: SD
+    access: write
+  sizes:
+  - S
+  - D

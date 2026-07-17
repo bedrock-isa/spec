@@ -5,43 +5,46 @@ doc:
   instruction_family: control_flow
   instruction_class: control_flow
   description: Transfers execution to the target when the encoded condition is true and otherwise continues at the next instruction. Compact direct-relative forms retain the W/L displacement selector. Extended EA forms use L/Q. Jcc.L reads the low 32-bit target from its register or memory EA and zero-extends it to the 64-bit near target; Jcc.Q uses the complete 64-bit target.
-behavior:
-  group: control_flow
-  inputs:
-  - cc
-  - target
-  output: none
 attributes:
   privilege: unprivileged
 forms:
-  compact_forms:
-  - operands:
-    - name: cc
-      type: condition
-    - name: target
-      type: imm8s
-    size: WL
-  - operands:
-    - name: cc
-      type: condition
-    - name: target
-      type: imm16s
-    size: WL
-  - operands:
-    - name: cc
-      type: condition
-    - name: target
-      type: imm32s
-    size: WL
-  extended_forms:
-  - operands:
-    - name: cc
-      type: condition
-    - name: target
-      type: EA
-    size: LQ
-    compact: false
-  reads: FLAGS
-  extended_target_interpretation:
-    L: zero-extend 32-bit operand value to 64-bit near target
-    Q: use complete 64-bit operand value as near target
+- operands:
+  - name: cc
+    type: condition
+    access: read
+  - name: target
+    type: imm8s
+    access: read
+  sizes:
+  - W
+  - L
+- operands:
+  - name: cc
+    type: condition
+    access: read
+  - name: target
+    type: imm16s
+    access: read
+  sizes:
+  - W
+  - L
+- operands:
+  - name: cc
+    type: condition
+    access: read
+  - name: target
+    type: imm32s
+    access: read
+  sizes:
+  - W
+  - L
+- operands:
+  - name: cc
+    type: condition
+    access: read
+  - name: target
+    type: EA
+    access: read
+  sizes:
+  - L
+  - Q

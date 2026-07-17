@@ -5,10 +5,7 @@ doc:
   instruction_family: core_control
   instruction_class: system
   description: Notifies the implementation that the current hardware thread may be deprioritized or descheduled. It is not a memory barrier and resumes at the next instruction without architectural state changes.
-behavior:
-  group: core_control
-  output: none
 attributes:
   privilege: any
 forms:
-  operands: []
+- operands: []

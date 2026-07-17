@@ -5,22 +5,24 @@ doc:
   instruction_family: integer_unary
   instruction_class: integer
   description: Adds one to the selected-width destination, writes the modular result, and updates Z, N, C, and V.
-behavior:
-  group: integer_unary
-  input_output: dst
+flags:
+  Z: result == 0
+  N: most_significant_bit(result)
+  C: unsigned carry out
+  V: signed overflow
 attributes:
   privilege: unprivileged
-  repeatable:
-    rep: true
-    repcc: true
-    repg: true
-  flags:
-    Z: result == 0
-    N: most_significant_bit(result)
-    C: unsigned carry out
-    V: signed overflow
+  repeat:
+  - REP
+  - REPcc
+  - REPG
 forms:
-  operands:
+- operands:
   - name: dst
     type: Rn
-  size: BWLQ
+    access: read_write
+  sizes:
+  - B
+  - W
+  - L
+  - Q

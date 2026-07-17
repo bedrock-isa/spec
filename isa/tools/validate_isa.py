@@ -58,29 +58,19 @@ def allocation_mnemonics(root: Path) -> set[str]:
     return out
 
 
-def as_names(value: Any) -> set[str]:
-    if value is None or value == "none":
-        return set()
-    if isinstance(value, list):
-        return {str(item) for item in value}
-    return {str(value)}
-
-
-def contains_writable_ea(value: Any, written_names: set[str]) -> bool:
+def contains_writable_ea(value: Any) -> bool:
     if isinstance(value, dict):
-        if value.get("type") == "EA" and str(value.get("name")) in written_names:
+        if value.get("type") == "EA" and value.get("access") in {"write", "read_write"}:
             return True
-        return any(contains_writable_ea(item, written_names) for item in value.values())
+        return any(contains_writable_ea(item) for item in value.values())
     if isinstance(value, list):
-        return any(contains_writable_ea(item, written_names) for item in value)
+        return any(contains_writable_ea(item) for item in value)
     return False
 
 
 def instruction_has_writable_ea(data: dict[str, Any]) -> bool:
-    behavior = data.get("behavior") or {}
-    written_names = as_names(behavior.get("output")) | as_names(behavior.get("input_output"))
     forms = data.get("forms") or {}
-    return bool(forms.get("dst_ea_set")) or contains_writable_ea(forms, written_names)
+    return contains_writable_ea(forms)
 
 
 def allocation_form_operands(text: str) -> list[str]:

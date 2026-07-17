@@ -36,7 +36,7 @@ EXPECTED_CONTRACT_IDS = {
 
 
 class V1DecisionIntegrationTests(unittest.TestCase):
-    def test_fptransa_contract_ids_match_definitions_and_details(self) -> None:
+    def test_fptransa_contract_ids_match_tex_and_details(self) -> None:
         instruction_root = (
             ROOT
             / "isa"
@@ -47,13 +47,24 @@ class V1DecisionIntegrationTests(unittest.TestCase):
             / "transcendental_approx"
             / "instructions"
         )
-        actual: dict[str, int] = {}
-        for mnemonic, expected_id in EXPECTED_CONTRACT_IDS.items():
-            definition = yaml.safe_load(
-                (instruction_root / mnemonic / "instruction.yaml").read_text(encoding="utf-8")
+        contract_table = (
+            ROOT
+            / "isa"
+            / "tools"
+            / "latex_builder"
+            / "templates"
+            / "fragments"
+            / "fptransa_accuracy_contracts.tex"
+        ).read_text(encoding="utf-8")
+        actual = {
+            mnemonic: int(contract_id, 16)
+            for contract_id, mnemonic in re.findall(
+                r"\\texttt\{0x([0-9a-f]{4})\}\s*&\s*"
+                r"\\hyperref\[[^]]+\]\{\\texttt\{([A-Z0-9]+)\}\}",
+                contract_table,
             )
-            contract_id = int(definition["behavior"]["approximation"]["contract_id"], 0)
-            actual[mnemonic] = contract_id
+        }
+        for mnemonic, expected_id in EXPECTED_CONTRACT_IDS.items():
             details = (instruction_root / mnemonic / "details.tex").read_text(encoding="utf-8")
             self.assertIn(f"contract is \\texttt{{0x{expected_id:04x}}}", details)
 
@@ -251,8 +262,13 @@ class V1DecisionIntegrationTests(unittest.TestCase):
                 ROOT / "isa" / "defs" / "instructions" / "Jcc" / "instruction.yaml"
             ).read_text(encoding="utf-8")
         )
-        self.assertEqual(jcc_definition["forms"]["compact_forms"][0]["size"], "WL")
-        self.assertEqual(jcc_definition["forms"]["extended_forms"][0]["size"], "LQ")
+        sizes_by_types = {
+            tuple(operand["type"] for operand in form["operands"]): form.get("sizes", [])
+            for form in jcc_definition["forms"]
+        }
+        for relative_type in ("imm8s", "imm16s", "imm32s"):
+            self.assertEqual(sizes_by_types[("condition", relative_type)], ["W", "L"])
+        self.assertEqual(sizes_by_types[("condition", "EA")], ["L", "Q"])
         self.assertIn("zero-extends it to the 64-bit near target", jcc_definition["doc"]["description"])
 
         ea_model = (

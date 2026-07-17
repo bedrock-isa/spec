@@ -5,24 +5,18 @@ doc:
   instruction_family: ea_utility
   instruction_class: data_movement
   description: Computes the source effective address without reading the addressed memory and writes that address to the destination.
-behavior:
-  group: ea_utility
-  inputs:
-  - src
-  output: dst
 attributes:
   privilege: unprivileged
-  repeatable:
-    rep: true
-    repcc: true
-    repg: true
-  repgf_candidate: true
-  flags: unchanged
+  repeat:
+  - REP
+  - REPcc
+  - REPG
+  - REPGF
 forms:
-  src_ea_set: pure_address_calculation
-  operands:
+- operands:
   - name: src
     type: EA
+    access: address
   - name: dst
     type: Rn
-  no_memory_access: true
+    access: write

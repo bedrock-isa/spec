@@ -5,41 +5,23 @@ doc:
   instruction_family: fpu_transcendental_approx
   instruction_class: fpu
   description: Computes the 2 ** x reference over all finite values and signed infinity after DAZ and writes an implementation-bounded S- or D-format approximation under the selected FPTRANSA accuracy contract.
-behavior:
-  group: fpu_transcendental_approx
-  inputs:
-  - src
-  output: dst
-  approximation:
-    contract_id: '0x0033'
-    reference_function: 2 ** x
-    domain: all finite values and signed infinity after DAZ
-    max_ulp:
-      S: 4
-      D: 4
-    exact_anchors:
-    - 2 ** signed 0 = +1
-    - 2 ** +infinity = +infinity
-    - 2 ** -infinity = +0
-    properties:
-    - strictly increasing for finite inputs
-    - result is nonnegative
+may_accrue_fp_flags:
+- NV
+- OF
+- UF
 attributes:
   privilege: unprivileged
-  repeatable:
-    rep: true
-    repcc: false
-    repg: true
-  fp_flags:
-    update:
-    - NV
-    - OF
-    - UF
+  repeat:
+  - REP
+  - REPG
 forms:
-  operands:
+- operands:
   - name: src
     type: Fn
+    access: read
   - name: dst
     type: Fn
-  size: SD
-  extension_family: fpu_transcendental_approx
+    access: write
+  sizes:
+  - S
+  - D

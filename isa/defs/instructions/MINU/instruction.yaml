@@ -5,28 +5,34 @@ doc:
   instruction_family: integer_alu
   instruction_class: integer
   description: Compares the selected-width operands as unsigned integers and writes the lesser value to the destination.
-behavior:
-  group: integer_minmax
-  inputs:
-  - src
-  input_output: dst
-  signedness: unsigned
 attributes:
   privilege: unprivileged
-  repeatable:
-    rep: true
-    repcc: true
-    repg: true
+  repeat:
+  - REP
+  - REPcc
+  - REPG
 forms:
-  operands:
-  - - name: src
-      type: EA
-    - name: dst
-      type: Rn
-  - - name: src
-      type: Rn
-    - name: dst
-      type: EA
-  size: BWLQ
-  compact: false
-  result: second operand
+- operands:
+  - name: src
+    type: EA
+    access: read
+  - name: dst
+    type: Rn
+    access: read_write
+  sizes:
+  - B
+  - W
+  - L
+  - Q
+- operands:
+  - name: src
+    type: Rn
+    access: read
+  - name: dst
+    type: EA
+    access: read_write
+  sizes:
+  - B
+  - W
+  - L
+  - Q

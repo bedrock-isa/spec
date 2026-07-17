@@ -5,17 +5,10 @@ doc:
   instruction_family: cache
   instruction_class: system
   description: Resolves the addressed range without reading it, writes every dirty byte in intersecting data-cache lines to the point of coherency, retains the lines as clean, and retires after completion.
-behavior:
-  group: cache
-  inputs:
-  - target
-  output: none
 attributes:
-  privilege:
-    default: supervisor
-    policy_controlled: true
+  privilege: supervisor
 forms:
-  require_memory_operand: true
-  operands:
+- operands:
   - name: target
     type: EA
+    access: address

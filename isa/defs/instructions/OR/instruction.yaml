@@ -5,57 +5,67 @@ doc:
   instruction_family: integer_alu
   instruction_class: integer
   description: Writes the selected-width bitwise disjunction of the source and destination values to the destination.
-behavior:
-  group: integer_alu
-  inputs:
-  - src
-  input_output: dst
 attributes:
   privilege: unprivileged
-  repeatable:
-    rep: true
-    repcc: true
-    repg: true
-  repgf_candidate: true
-  streaming_candidate: true
-  flags: unchanged
+  repeat:
+  - REP
+  - REPcc
+  - REPG
+  - REPGF
 forms:
-  dst_ea_set: store_destination
-  compact_forms:
-  - operands:
-    - name: src
-      type: Rn
-    - name: dst
-      type: Rn
-    size: LQ
-  - operands:
-    - name: imm
-      type: imm
-    - name: dst
-      type: Rn
-    size: WL
-  extended_forms:
-  - operands:
-    - name: src
-      type: EA
-    - name: dst
-      type: Rn
-    size: BWLQ
-    compact: false
-  - operands:
-    - name: src
-      type: Rn
-    - name: dst
-      type: EA
-    size: BWLQ
-    compact: false
-  - operands:
-    - name: imm
-      type: imm6
-    - name: dst
-      type: EA
-    size: BWLQ
-    compact: false
-  form: destructive two-address form
-  result: second operand
-  memory_memory: disallowed
+- operands:
+  - name: src
+    type: Rn
+    access: read
+  - name: dst
+    type: Rn
+    access: read_write
+  sizes:
+  - L
+  - Q
+- operands:
+  - name: imm
+    type: imm
+    access: read
+  - name: dst
+    type: Rn
+    access: read_write
+  sizes:
+  - W
+  - L
+- operands:
+  - name: src
+    type: EA
+    access: read
+  - name: dst
+    type: Rn
+    access: read_write
+  sizes:
+  - B
+  - W
+  - L
+  - Q
+- operands:
+  - name: src
+    type: Rn
+    access: read
+  - name: dst
+    type: EA
+    access: read_write
+  sizes:
+  - B
+  - W
+  - L
+  - Q
+- operands:
+  - name: imm
+    type: imm6
+    access: read
+  - name: dst
+    type: EA
+    access: read_write
+  sizes:
+  - B
+  - W
+  - L
+  - Q

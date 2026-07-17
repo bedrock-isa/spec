@@ -5,22 +5,15 @@ doc:
   description: WRSEG validates a 64-bit segment register image from the source Rn register and writes it to an SREG-class segment register. CS is not an SREG operand and changes only through architectural control-transfer paths that update CS and PC together.
   instruction_family: system_registers
   instruction_class: system
-behavior:
-  group: system_registers
-  inputs:
-  - src
-  output: seg
 attributes:
-  privilege: policy controlled
-  flags: unchanged
+  privilege: unprivileged
 forms:
-  operands:
+- operands:
   - name: src
     type: Rn
+    access: read
   - name: seg
     type: SREG
-  size: Q
-  segment_image_validation:
-    before_commit: true
-    invalid_image_exception: INVALID_CONTROL_STATE
-    atomic_destination_update: true
+    access: write
+  sizes:
+  - Q

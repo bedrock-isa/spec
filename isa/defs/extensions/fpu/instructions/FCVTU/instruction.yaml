@@ -5,39 +5,35 @@ doc:
   instruction_family: fpu
   instruction_class: fpu
   description: Converts between supported unsigned integer and floating-point forms, or between the supported floating-point widths, according to the operand classes.
-behavior:
-  group: fpu_move_compare
-  inputs:
-  - src
-  output: dst
+may_accrue_fp_flags:
+- NV
+- OF
+- UF
+- NX
 attributes:
   privilege: unprivileged
-  repeatable:
-    rep: true
-    repcc: false
-    repg: true
-  streaming_candidate: true
-  fp_flags:
-    update_when_required:
-    - NV
-    - OF
-    - UF
-    - NX
+  repeat:
+  - REP
+  - REPG
 forms:
-  operands:
-  - - name: src
-      type: Fn
-    - name: dst
-      type: Fn
-  - - name: src
-      type: Fn
-    - name: dst
-      type: Rn
-  - - name: src
-      type: Rn
-    - name: dst
-      type: Fn
-  conversions:
-  - F32 <-> F64
-  - signed int32/int64 <-> F32/F64
-  - unsigned int32/int64 <-> F32/F64
+- operands:
+  - name: src
+    type: Fn
+    access: read
+  - name: dst
+    type: Fn
+    access: write
+- operands:
+  - name: src
+    type: Fn
+    access: read
+  - name: dst
+    type: Rn
+    access: write
+- operands:
+  - name: src
+    type: Rn
+    access: read
+  - name: dst
+    type: Fn
+    access: write

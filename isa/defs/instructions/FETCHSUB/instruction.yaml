@@ -5,36 +5,21 @@ doc:
   instruction_family: atomics
   instruction_class: system
   description: Atomically replaces the memory operand with its selected-width difference from the source and returns the previous memory value in the source register.
-behavior:
-  group: atomics
-  input_output:
-  - memory
-  - src
 attributes:
   privilege: unprivileged
-  memory_ordering:
-    operand: order
-    type: memory_order
-    encodings:
-      relaxed: 0
-      acquire: 1
-      release: 2
-      acqrel: 3
-      seqcst: 4
-    reserved_encodings:
-    - 5
-    - 6
-    - 7
-    consume: treated as acquire
-    description: The memory-order qualifier controls visibility ordering around the atomic read-modify-write. Relaxed preserves atomicity only. Acquire orders later memory operations after the atomic operation. Release orders prior memory operations before it. Acquire-release applies both directions. Sequential consistency additionally participates in the global sequentially consistent order for atomic operations.
 forms:
-  memory_operand_ea_set: addressable_memory_only
-  require_memory_operand: true
-  operands:
+- operands:
   - name: order
     type: memory_order
+    access: read
   - name: src
     type: Rn
+    access: read_write
   - name: memory
     type: EA
-  size: BWLQ
+    access: read_write
+  sizes:
+  - B
+  - W
+  - L
+  - Q

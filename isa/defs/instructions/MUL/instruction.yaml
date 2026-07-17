@@ -5,23 +5,22 @@ doc:
   description: MUL is the shared low-half integer multiply form. Signed and unsigned low-half multiplication produce the same low N result, so the scalar core uses one low-half multiply mnemonic.
   instruction_family: integer_mul_div
   instruction_class: integer
-behavior:
-  group: multiply_divide
-  inputs:
-  - src
-  input_output: dst
 attributes:
   privilege: unprivileged
-  repeatable:
-    rep: true
-    repcc: true
-    repg: true
-  flags: unchanged
+  repeat:
+  - REP
+  - REPcc
+  - REPG
 forms:
-  operands:
-  - - name: src
-      type: EA
-    - name: dst
-      type: Rn
-  size: BWLQ
-  result: low half
+- operands:
+  - name: src
+    type: EA
+    access: read
+  - name: dst
+    type: Rn
+    access: read_write
+  sizes:
+  - B
+  - W
+  - L
+  - Q

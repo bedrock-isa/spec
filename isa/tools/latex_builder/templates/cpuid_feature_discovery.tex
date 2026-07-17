@@ -17,7 +17,7 @@ rename files, reorder buffers, or other implementation-private structures.
 A query selector identifies a discovery class, leaf, and optional result index. The selector is a Q-sized value held
 in the selected Rn register.
 
-CPUID is unprivileged and non-serializing under the base compatibility rules. CPUID results are stable after reset
+CPUID is unprivileged under the base compatibility rules. CPUID results are stable after reset
 unless a future feature explicitly defines a mutable result.
 
 \manualtablecaption{CPUID Query Selector}
@@ -192,7 +192,7 @@ sampled errors. On heterogeneous or virtualized systems they are the worst bound
 vCPU-migration domain. If a contract is absent, executing its instruction raises \texttt{ILLEGAL\_INSTRUCTION}
 before operand or floating-point-state access.
 
-@FPTRANSA_CONTRACT_TABLE@
+\input{isa/tools/latex_builder/templates/fragments/fptransa_accuracy_contracts.tex}
 
 \subsection{Performance-Counter Discovery}
 Class \texttt{0x00000002}, leaf \texttt{0x0002} uses indexes 1 through 65535 as RDPMC counter IDs. Index zero is the

@@ -5,40 +5,23 @@ doc:
   instruction_family: fpu_transcendental_approx
   instruction_class: fpu
   description: Computes the ln(1 + x) without an intermediate rounded addition reference over finite x >= -1 and positive infinity after DAZ; -1 is the DZ boundary and writes an implementation-bounded S- or D-format approximation under the selected FPTRANSA accuracy contract.
-behavior:
-  group: fpu_transcendental_approx
-  inputs:
-  - src
-  output: dst
-  approximation:
-    contract_id: '0x0042'
-    reference_function: ln(1 + x) without an intermediate rounded addition
-    domain: finite x >= -1 and positive infinity after DAZ; -1 is the DZ boundary
-    max_ulp:
-      S: 4
-      D: 4
-    exact_anchors:
-    - log1p(+0) = +0
-    - log1p(-0) = -0
-    - log1p(-1) = -infinity
-    properties:
-    - strictly increasing on (-1, +infinity)
+may_accrue_fp_flags:
+- NV
+- DZ
+- UF
 attributes:
   privilege: unprivileged
-  repeatable:
-    rep: true
-    repcc: false
-    repg: true
-  fp_flags:
-    update:
-    - NV
-    - DZ
-    - UF
+  repeat:
+  - REP
+  - REPG
 forms:
-  operands:
+- operands:
   - name: src
     type: Fn
+    access: read
   - name: dst
     type: Fn
-  size: SD
-  extension_family: fpu_transcendental_approx
+    access: write
+  sizes:
+  - S
+  - D

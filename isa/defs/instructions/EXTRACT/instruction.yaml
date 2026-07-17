@@ -5,27 +5,25 @@ doc:
   description: Concatenates Rn(high) as the upper half and the original Rn(low/dest) value as the lower half, shifts the concatenated value right by an unsigned 7-bit immediate offset, and writes the low selected-size result back to Rn(low/dest). The operation is similar to ARM EXTR, but uses the Bedrock B/W/L/Q operation size and a 7-bit immediate offset.
   instruction_family: integer_bitfield
   instruction_class: integer
-behavior:
-  group: bitfield_extract
-  inputs:
-  - offset
-  - high
-  input_output: low_dst
 attributes:
   privilege: unprivileged
-  repeatable:
-    rep: true
-    repcc: true
-    repg: true
-  flags: unchanged
+  repeat:
+  - REP
+  - REPcc
+  - REPG
 forms:
-  operands:
+- operands:
   - name: offset
     type: imm7
+    access: read
   - name: high
     type: Rn
+    access: read
   - name: low_dst
     type: Rn
-  size: BWLQ
-  compact: false
-  result: low/destination register
+    access: read_write
+  sizes:
+  - B
+  - W
+  - L
+  - Q

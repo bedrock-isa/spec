@@ -5,15 +5,10 @@ doc:
   description: Queries architectural discovery information. The selected Rn register contains the CPUID query selector before execution and receives the selected 64-bit result after execution.
   instruction_family: system_registers
   instruction_class: system
-behavior:
-  group: system_registers
-  input_output: reg
 attributes:
-  privilege: user allowed
-  flags: unchanged
+  privilege: unprivileged
 forms:
-  operands:
+- operands:
   - name: reg
     type: Rn
-  input: reg contains CPUID query selector
-  output: selected CPUID result is written back to reg
+    access: read_write

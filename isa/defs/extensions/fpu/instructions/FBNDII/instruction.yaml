@@ -5,44 +5,52 @@ doc:
   description: FBNDII treats both bounds as inclusive. It sets V when value is unordered or outside [lo, hi]; Z, N, and C are unchanged.
   instruction_family: fpu
   instruction_class: fpu
-behavior:
-  group: fpu_arithmetic
-  inputs:
-  - hi
-  - lo
-  - value
-  output: none
-  repeat_flags: fpu_interval_v_flag
+flags:
+  V: set when the value is out of bounds or unordered
+may_accrue_fp_flags:
+- NV
 attributes:
   privilege: unprivileged
-  repeatable:
-    rep: true
-    repcc: false
-    repg: true
-  fp_flags:
-    update_when_required:
-    - NV
-  flags:
-    V: set when the value is out of bounds or unordered
-    ZNC: unchanged
+  repeat:
+  - REP
+  - REPG
 forms:
-  operands:
-  - - name: lo
-      type: Fn
-    - name: value
-      type: Fn
-    - name: hi
-      type: Fn
-  - - name: lo
-      type: Fn
-    - name: value
-      type: EA
-    - name: hi
-      type: Fn
-  - - name: lo
-      type: EA
-    - name: value
-      type: Fn
-    - name: hi
-      type: EA
-  size: SD
+- operands:
+  - name: lo
+    type: Fn
+    access: read
+  - name: value
+    type: Fn
+    access: read
+  - name: hi
+    type: Fn
+    access: read
+  sizes:
+  - S
+  - D
+- operands:
+  - name: lo
+    type: Fn
+    access: read
+  - name: value
+    type: EA
+    access: read
+  - name: hi
+    type: Fn
+    access: read
+  sizes:
+  - S
+  - D
+- operands:
+  - name: lo
+    type: EA
+    access: read
+  - name: value
+    type: Fn
+    access: read
+  - name: hi
+    type: EA
+    access: read
+  sizes:
+  - S
+  - D

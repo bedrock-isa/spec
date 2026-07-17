@@ -85,24 +85,14 @@ class InstructionDef:
         return value if isinstance(value, dict) else {}
 
     @property
-    def behavior(self) -> dict[str, Any]:
-        value = self.data.get("behavior")
-        return value if isinstance(value, dict) else {}
-
-    @property
-    def approximation(self) -> dict[str, Any]:
-        value = self.behavior.get("approximation")
-        return value if isinstance(value, dict) else {}
-
-    @property
     def attributes(self) -> dict[str, Any]:
         value = self.data.get("attributes")
         return value if isinstance(value, dict) else {}
 
     @property
-    def forms(self) -> dict[str, Any]:
+    def forms(self) -> list[dict[str, Any]]:
         value = self.data.get("forms")
-        return value if isinstance(value, dict) else {}
+        return [form for form in value if isinstance(form, dict)] if isinstance(value, list) else []
 
     @property
     def details_path(self) -> Path:
@@ -166,20 +156,6 @@ def display_text(value: Any) -> str:
 
 def privilege_text(value: Any, default: str = "unprivileged") -> str:
     """Render instruction privilege attributes in reader-facing form."""
-    if isinstance(value, dict):
-        base = compact_text(value.get("default", default)) or default
-        qualifiers: list[str] = []
-        if value.get("policy_controlled"):
-            qualifiers.append("policy-controlled")
-        for key, item in value.items():
-            if key in {"default", "policy_controlled"}:
-                continue
-            item_text = display_text(item)
-            if item_text:
-                qualifiers.append(f"{display_text(key)}: {item_text}")
-        if qualifiers:
-            return f"{base}, " + ", ".join(qualifiers)
-        return base
     return display_text(value) or default
 
 
@@ -342,21 +318,9 @@ def operand_list_text(value: Any) -> str:
     return compact_text(value) or "-"
 
 
-def form_attribute_text(key: str, value: Any) -> str:
-    if key == "compact":
-        return "compact form" if value else "extended form only"
-    if key == "flags":
-        return "FLAGS " + display_text(value) if not isinstance(value, dict) else flag_summary(value)
-    if key == "profile":
-        return f"profile: {display_text(value)}"
-    if key == "constraint":
-        return f"constraint: {display_text(value)}"
-    if key == "result":
-        return f"result: {display_text(value)}"
-    return f"{label_text(key)}: {display_text(value)}"
-
-
 def form_size_text(value: Any) -> str:
+    if isinstance(value, list):
+        return "/".join(str(item) for item in value) or "-"
     text = compact_text(value)
     if not text or text == "-":
         return "-"
@@ -375,20 +339,7 @@ def form_size_text(value: Any) -> str:
 
 
 def iter_instruction_forms(instruction: InstructionDef) -> list[tuple[str, dict[str, Any]]]:
-    forms = instruction.forms
-    out: list[tuple[str, dict[str, Any]]] = []
-    for key, label in (("compact_forms", "compact"), ("extended_forms", "extended")):
-        for form in forms.get(key, []) or []:
-            if isinstance(form, dict):
-                out.append((label, form))
-    operands = forms.get("operands")
-    if operands is not None:
-        if isinstance(operands, list) and operands and all(isinstance(item, list) for item in operands):
-            for item in operands:
-                out.append(("form", {"operands": item, "size": forms.get("size", "-")}))
-        else:
-            out.append(("form", {"operands": operands, "size": forms.get("size", "-")}))
-    return out
+    return [("logical", form) for form in instruction.forms]
 
 
 def instruction_form_count(instruction: InstructionDef, model: IsaModel) -> int:
@@ -500,53 +451,37 @@ def encoding_class_template_values(model: IsaModel) -> dict[str, Any]:
 
 
 def form_allows_memory_memory(value: Any) -> bool:
-    if isinstance(value, dict):
-        if value.get("memory_memory") is True or value.get("constraint"):
-            return True
-        return any(form_allows_memory_memory(child) for child in value.values())
-    if isinstance(value, list):
-        return any(form_allows_memory_memory(child) for child in value)
-    return False
+    if not isinstance(value, dict):
+        return False
+    operands = value.get("operands") or []
+    return sum(
+        isinstance(operand, dict) and operand.get("type") == "EA"
+        for operand in operands
+    ) >= 2
 
 
 def memory_memory_instruction_names(model: IsaModel) -> list[str]:
-    return [inst.mnemonic for inst in model.instructions if form_allows_memory_memory(inst.forms)]
+    return [
+        inst.mnemonic
+        for inst in model.instructions
+        if any(form_allows_memory_memory(form) for form in inst.forms)
+    ]
 
 
 def repeat_syntax_rows(model: IsaModel) -> list[list[Any]]:
-    rows: list[list[Any]] = []
-    repcc = instruction_by_mnemonic(model, "REPcc")
-    if repcc is not None:
-        syntax = compact_text(repcc.forms.get("syntax", ""))
-        rows.append(["REPcc", syntax, "-", "-"])
-        rows.append(["REP", syntax.replace("REPcc", "REP", 1), "-", "-"])
-
-    repg = instruction_by_mnemonic(model, "REPG")
-    if repg is None:
-        return rows
-    rows.append(["REPG", repg.forms.get("syntax", ""), "-", "-"])
-    aliases = repg.forms.get("assembler_checked_aliases") or {}
-    for name, data in aliases.items():
-        if not isinstance(data, dict):
-            continue
-        requirements: list[str] = []
-        body_candidate = data.get("body_candidate_required")
-        if body_candidate:
-            requirements.append(f"body_candidate={display_text(body_candidate)}")
-        body_constraints = data.get("body_constraints") or []
-        if isinstance(body_constraints, list):
-            requirements.extend(compact_text(item) for item in body_constraints)
-        elif body_constraints:
-            requirements.append(compact_text(body_constraints))
-        rows.append(
-            [
-                name,
-                compact_text(data.get("syntax", "")),
-                compact_text(data.get("emits", "")),
-                "; ".join(requirements) or "-",
-            ]
-        )
-    return rows
+    if instruction_by_mnemonic(model, "REPcc") is None or instruction_by_mnemonic(model, "REPG") is None:
+        return []
+    return [
+        ["REPcc", "REPcc Rn, (instruction)", "-", "-"],
+        ["REP", "REP Rn, (instruction)", "-", "-"],
+        ["REPG", "REPG Rn, { (instructions...) }", "-", "-"],
+        [
+            "REPGF",
+            "REPGF Rn, { (instructions...) }",
+            "REPG",
+            "body must be REPGF-eligible and must not write the selected counter register",
+        ],
+    ]
 
 
 def latex_cell(value: Any) -> str:
@@ -613,33 +548,8 @@ def latex_attributes_block(inst: InstructionDef, model: IsaModel) -> str:
     return latex_ragged_block(lines)
 
 
-def latex_approximation_field(inst: InstructionDef) -> str:
-    approximation = inst.approximation
-    if not approximation:
-        return ""
-    max_ulp = approximation.get("max_ulp") or {}
-    if not isinstance(max_ulp, dict):
-        max_ulp = {}
-    lines = [
-        f"Contract ID: {compact_text(approximation.get('contract_id'))}",
-        f"Reference: {compact_text(approximation.get('reference_function'))}",
-        f"Domain: {compact_text(approximation.get('domain'))}",
-        f"ISA maximum error: S <= {compact_text(max_ulp.get('S'))} ULP; D <= {compact_text(max_ulp.get('D'))} ULP",
-    ]
-    anchors = approximation.get("exact_anchors") or []
-    if anchors:
-        lines.append("Exact anchors: " + "; ".join(compact_text(item) for item in anchors))
-    properties = approximation.get("properties") or []
-    if properties:
-        lines.append("Properties: " + "; ".join(compact_text(item) for item in properties))
-    return latex_instruction_field(
-        "Approximation Contract",
-        latex_ragged_block([latex_escape(line) for line in lines]),
-    )
-
-
 def latex_flag_status(inst: InstructionDef) -> str:
-    flags = inst.attributes.get("flags")
+    flags = inst.data.get("flags")
     if not isinstance(flags, dict) or not flags:
         return ""
     names = [name for name in ("Z", "N", "C", "V") if name in flags]
@@ -651,24 +561,34 @@ def latex_flag_status(inst: InstructionDef) -> str:
     return rf"\begin{{manualstatusstrip}}\textbf{{Status}}\enspace {latex_escape(flag_summary(flags))}\end{{manualstatusstrip}}"
 
 
-def latex_instruction_constant_ids(inst: InstructionDef) -> str:
-    constants = inst.forms.get("constant_ids")
-    if constants is None:
+def instruction_uses_operand_type(inst: InstructionDef, operand_type: str) -> bool:
+    return any(
+        operand.get("type") == operand_type
+        for form in inst.forms
+        for operand in (form.get("operands") or [])
+        if isinstance(operand, dict)
+    )
+
+
+def latex_instruction_constant_ids(inst: InstructionDef, model: IsaModel) -> str:
+    if not instruction_uses_operand_type(inst, "fconst_id"):
         return ""
+    operand_type = (model.metadata.get("operand_types") or {}).get("fconst_id") or {}
+    constants = operand_type.get("values")
     if not isinstance(constants, list) or not constants:
-        raise ValueError(f"{inst.path}: forms.constant_ids must be a non-empty list")
+        raise ValueError("fconst_id operand type must define a non-empty values list")
 
     rows: list[list[str]] = []
     seen_ids: set[str] = set()
     for index, item in enumerate(constants):
         if not isinstance(item, dict):
-            raise ValueError(f"{inst.path}: forms.constant_ids[{index}] must be a mapping")
-        constant_id = compact_text(item.get("id"))
+            raise ValueError(f"fconst_id.values[{index}] must be a mapping")
+        constant_id = compact_text(item.get("value"))
         name = compact_text(item.get("name"))
         value_bits = compact_text(item.get("value_bits"))
         if not constant_id or not name or not value_bits:
             raise ValueError(
-                f"{inst.path}: forms.constant_ids[{index}] requires id, name, and value_bits"
+                f"fconst_id.values[{index}] requires value, name, and value_bits"
             )
         if constant_id in seen_ids:
             raise ValueError(f"{inst.path}: duplicate constant ID {constant_id}")
@@ -681,7 +601,7 @@ def latex_instruction_constant_ids(inst: InstructionDef) -> str:
             ]
         )
 
-    result_format = compact_text(inst.forms.get("result_format", ""))
+    result_format = compact_text(operand_type.get("result_bits_format", ""))
     title = f"{inst.mnemonic} Constant IDs"
     if result_format:
         title += f" ({result_format})"
@@ -694,6 +614,8 @@ def latex_instruction_constant_ids(inst: InstructionDef) -> str:
 
 
 def size_suffix(size: Any) -> str:
+    if isinstance(size, list):
+        return ".<" + "/".join(str(item) for item in size) + ">" if size else ""
     text = compact_text(size)
     if not text or text == "-":
         return ""
@@ -701,8 +623,8 @@ def size_suffix(size: Any) -> str:
 
 
 def fallback_form_syntax(inst: InstructionDef, form: dict[str, Any]) -> str:
-    operands = form.get("operands", inst.forms.get("operands", []))
-    suffix = size_suffix(form.get("size", inst.forms.get("size", "")))
+    operands = form.get("operands", [])
+    suffix = size_suffix(form.get("sizes", []))
     if operands == []:
         return inst.mnemonic
     return f"{inst.mnemonic}{suffix} {operand_list_text(operands).replace(':', ' ')}"
@@ -1155,12 +1077,12 @@ def field_constraint_values(
         if allowed <= names.keys():
             return ", ".join(names[value] for value in sorted(allowed))
 
-    memory_order = inst.attributes.get("memory_ordering") or {}
-    if symbol == "o" and isinstance(memory_order, dict):
-        encodings = memory_order.get("encodings") or {}
+    if symbol == "o" and instruction_uses_operand_type(inst, "memory_order"):
+        memory_order = (model.metadata.get("operand_types") or {}).get("memory_order") or {}
         names = {
-            int(value): display_text(name)
-            for name, value in encodings.items()
+            int(item["value"]): display_text(item["name"])
+            for item in memory_order.get("values") or []
+            if isinstance(item, dict) and "value" in item and "name" in item
         }
         if allowed <= names.keys():
             return ", ".join(names[value] for value in sorted(allowed))
@@ -1361,7 +1283,7 @@ def field_description_label(symbol: str, spec: dict[str, Any], inst: Instruction
         name = "Condition field"
     elif kind == "immediate":
         name = "Immediate field"
-    elif symbol == "o" and inst.attributes.get("memory_ordering"):
+    elif symbol == "o" and instruction_uses_operand_type(inst, "memory_order"):
         name = "Memory-order field"
     else:
         name = f"{display_text(kind).capitalize()} field"
@@ -1396,7 +1318,7 @@ def field_description_text(
         text = "Selects the condition code."
     elif kind == "immediate":
         text = "Encodes the immediate value."
-    elif symbol == "o" and inst.attributes.get("memory_ordering"):
+    elif symbol == "o" and instruction_uses_operand_type(inst, "memory_order"):
         text = "Selects the memory ordering."
     else:
         text = f"Encodes the {display_text(kind)} value."
@@ -1442,12 +1364,6 @@ def latex_allocated_instruction_form_block(
     form = allocation_form_text(entry.text)
     length = instruction_length(entry, form, model.metadata.get("ea"))
     form_privilege = inst.attributes.get("privilege", "unprivileged")
-    for form_metadata in inst.forms.values():
-        if not isinstance(form_metadata, dict):
-            continue
-        if form_metadata.get("allocation") == entry.entry_id:
-            form_privilege = form_metadata.get("privilege", form_privilege)
-            break
     rows = [
         ("Encoding class", latex_escape(entry.cls)),
         ("Required bytes", latex_escape(required_bytes_label(length))),
@@ -1482,17 +1398,11 @@ def latex_instruction_forms_block(model: IsaModel, inst: InstructionDef) -> str:
         )
     if not blocks:
         for kind, form in iter_instruction_forms(inst):
-            attrs = []
-            for key in ("profile", "constraint", "result", "flags", "compact"):
-                if key in form:
-                    attrs.append(form_attribute_text(key, form[key]))
             rows = [
-                ("Form", latex_escape(operand_list_text(form.get("operands", inst.forms.get("operands", []))))),
+                ("Form", latex_escape(operand_list_text(form.get("operands", [])))),
                 ("Kind", latex_escape(kind)),
-                ("Size", latex_escape(form_size_text(form.get("size", inst.forms.get("size", "-"))))),
+                ("Size", latex_escape(form_size_text(form.get("sizes", [])))),
             ]
-            if attrs:
-                rows.append(("Attributes", latex_escape("; ".join(attrs))))
             blocks.append(
                 latex_instruction_form_block(
                     fallback_form_syntax(inst, form),
@@ -1569,45 +1479,6 @@ def latex_code_table(
     return latex_longtable(headers, rendered_rows, widths, caption, style=style, listed=listed)
 
 
-def fptransa_contracts(model: IsaModel) -> list[tuple[int, InstructionDef, dict[str, Any]]]:
-    contracts: list[tuple[int, InstructionDef, dict[str, Any]]] = []
-    for inst in model.instructions:
-        approximation = inst.approximation
-        if not approximation:
-            continue
-        raw_id = compact_text(approximation.get("contract_id"))
-        try:
-            contract_id = int(raw_id, 0)
-        except ValueError as exc:
-            raise ValueError(f"{inst.path}: invalid approximation contract_id {raw_id!r}") from exc
-        contracts.append((contract_id, inst, approximation))
-    return sorted(contracts, key=lambda item: item[0])
-
-
-def latex_fptransa_contract_table(model: IsaModel) -> str:
-    rows: list[list[str]] = []
-    for contract_id, inst, approximation in fptransa_contracts(model):
-        max_ulp = approximation.get("max_ulp") or {}
-        if not isinstance(max_ulp, dict):
-            max_ulp = {}
-        accuracy = f"S <= {compact_text(max_ulp.get('S'))} ULP; D <= {compact_text(max_ulp.get('D'))} ULP"
-        rows.append(
-            [
-                tex_code(f"0x{contract_id:04x}"),
-                rf"\hyperref[{instruction_label(inst.mnemonic)}]{{{tex_code(inst.mnemonic)}}}",
-                latex_escape(compact_text(approximation.get("reference_function"))),
-                latex_escape(compact_text(approximation.get("domain"))),
-                latex_escape(accuracy),
-            ]
-        )
-    return latex_longtable(
-        ["Contract ID", "Mnemonic", "Reference", "Domain", "ISA maximum"],
-        rows,
-        ["0.72in", "0.78in", "1.20in", "2.05in", "0.90in"],
-        "FPTRANSA Accuracy Contracts",
-    )
-
-
 def latex_cpuid_feature_discovery_section(model: IsaModel) -> str:
     return render_latex_template(
         "cpuid_feature_discovery.tex",
@@ -1615,7 +1486,6 @@ def latex_cpuid_feature_discovery_section(model: IsaModel) -> str:
             "CPUID_INSTRUCTION_TABLE": latex_instruction_links(
                 model, ["CPUID"], "The normative instruction entry is"
             ),
-            "FPTRANSA_CONTRACT_TABLE": latex_fptransa_contract_table(model),
         },
     )
 
@@ -2129,10 +1999,7 @@ def latex_instruction_entry(model: IsaModel, inst: InstructionDef, *, first_in_g
     status = latex_flag_status(inst)
     if status:
         parts.append(status)
-    approximation = latex_approximation_field(inst)
-    if approximation:
-        parts.append(approximation)
-    constant_ids = latex_instruction_constant_ids(inst)
+    constant_ids = latex_instruction_constant_ids(inst, model)
     if constant_ids:
         parts.append(constant_ids)
     details_tex = instruction_details_tex(inst)

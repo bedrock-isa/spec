@@ -5,23 +5,19 @@ doc:
   instruction_family: control_flow
   instruction_class: control_flow
   description: Increments the index and transfers control only when the new index differs from the bound and the encoded condition is true.
-behavior:
-  group: control_flow
-  inputs:
-  - cc
-  - bound
-  - target
-  input_output: index
 attributes:
   privilege: unprivileged
 forms:
-  operands:
+- operands:
   - name: cc
     type: condition
+    access: read
   - name: index
     type: Rn
+    access: read_write
   - name: bound
     type: Rn
+    access: read
   - name: target
     type: EA
-  reads: FLAGS
+    access: read

@@ -5,28 +5,24 @@ doc:
   description: RDSEG reads the 64-bit image of an SREG-class segment register into the destination Rn register. The dedicated RDSEG CS form reads the current CS image without assigning CS an SREG selector. CS remains unavailable to WRSEG and explicit EA selection.
   instruction_family: system_registers
   instruction_class: system
-behavior:
-  group: system_registers
-  inputs:
-  - seg
-  output: dst
 attributes:
-  privilege: policy controlled
-  flags: unchanged
+  privilege: unprivileged
 forms:
-  operands:
-  - - name: seg
-      type: SREG
-    - name: dst
-      type: Rn
-  - - name: seg
-      type: CS
-    - name: dst
-      type: Rn
-  size: Q
-  cs_form:
-    allocation: long.rdseg_cs_rn_d
-    source_only: true
-    sreg_encoding: none
-    privilege: unprivileged
-  segment_image_validation: not_applicable_to_read
+- operands:
+  - name: seg
+    type: SREG
+    access: read
+  - name: dst
+    type: Rn
+    access: write
+  sizes:
+  - Q
+- operands:
+  - name: seg
+    type: CS
+    access: read
+  - name: dst
+    type: Rn
+    access: write
+  sizes:
+  - Q

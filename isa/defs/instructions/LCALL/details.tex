@@ -7,3 +7,7 @@
 \end{enumerate}
 
 \textbf{Fault atomicity.} No frame word, SP, CS, or PC update is visible when any prior step faults.
+
+The far-return frame is 16 bytes in the old SS context: the return PC occupies offset 0 and the return CS image
+occupies offset 8. An invalid new CS image raises \texttt{INVALID\_CONTROL\_STATE}; target translation or either
+frame-store translation failure raises \texttt{PAGE\_FAULT}.

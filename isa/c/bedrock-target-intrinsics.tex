@@ -61,11 +61,11 @@ facilities. Any family header may also be included directly.
 \midrule
 \endhead
 far pointer & \texttt{<bedrockfarintrin.h>} & public & \texttt{bedrock-c-far} profile\\
-core & \texttt{<bedrockcoreintrin.h>} & public & user and policy-controlled core operations\\
+core & \texttt{<bedrockcoreintrin.h>} & public & unprivileged core operations\\
 memory & \texttt{<bedrockmemoryintrin.h>} & public & user ordering and access hints\\
 integer & \texttt{<bedrockintegerintrin.h>} & public & nonportable integer operations\\
 floating point & \texttt{<bedrockfpuintrin.h>} & public & floating-point environment and classification\\
-system registers & \texttt{<bedrocksysregintrin.h>} & system & supervisor or policy-controlled register access\\
+system registers & \texttt{<bedrocksysregintrin.h>} & system & architectural system-register access\\
 cache & \texttt{<bedrockcacheintrin.h>} & system & cache management\\
 MMU & \texttt{<bedrockmmuintrin.h>} & system & supervisor translation operations\\
 processor state & \texttt{<bedrockstateintrin.h>} & system & runtime state management\\
@@ -169,11 +169,11 @@ form. An already-linear address and bounds-only image instead use
 \endhead
 \compilerbuiltin{cpuid} & \compilerctype{u64(u64 selector)} & \texttt{CPUID} & User allowed; reads discovery state and not C memory.\\
 \compilerbuiltin{read_status} & \compilerctype{uint16_t(void)} & \texttt{RDSTATUS} & Unprivileged; reads \texttt{STATUS} and not C memory.\\
-\compilerbuiltin{rdpmc} & \compilerctype{uint64_t(counter_id)} & \texttt{RDPMC} & Policy controlled; ID is a constant in 0 through 65535; zero and unavailable IDs fault with \texttt{INVALID\_SELECTOR}.\\
+\compilerbuiltin{rdpmc} & \compilerctype{uint64_t(counter_id)} & \texttt{RDPMC} & Unprivileged; ID is a constant in 0 through 65535; zero and unavailable IDs fault with \texttt{INVALID\_SELECTOR}.\\
 \compilerbuiltin{breakpoint} & \compilerctype{void(void)} & \texttt{BKPT} & Any privilege; always raises the architectural breakpoint/debug exception.\\
 \compilerbuiltin{trace} & \compilerctype{void(marker)} & \texttt{TRACE} & Unprivileged; marker is a constant in 0 through 65535; emits a marker when enabled and otherwise acts as a NOP.\\
 \compilerbuiltin{yield} & \compilerctype{void(void)} & \texttt{YIELD} & Any privilege; scheduling hint, not a compiler or memory barrier.\\
-\compilerbuiltin{wait} & \compilerctype{void(void)} & \texttt{WAIT} & Policy controlled; may suspend until an event or interrupt and is a convergent side effect.\\
+\compilerbuiltin{wait} & \compilerctype{void(void)} & \texttt{WAIT} & Unprivileged; may suspend until an event or interrupt and is a convergent side effect.\\
 \bottomrule
 \end{longtable}
 \endgroup
@@ -263,9 +263,9 @@ remain active.
 \compilerbuiltin{write_status} & \compilerctype{void(uint16_t)} & \texttt{WRSTATUS} & Supervisor; reserved and privilege-controlled bits follow the ISA; compiler-visible side effect.\\
 \compilerbuiltin{read_control_register} & \compilerctype{uint64_t(selector)} & \texttt{RDCR} & Supervisor; selector is a constant in 0 through 65535 naming a defined register.\\
 \compilerbuiltin{write_control_register} & \compilerctype{void(selector,u64)} & \texttt{WRCR} & Supervisor; defined constant selector required; writes the register and clobbers memory.\\
-\compilerbuiltin{read_segment_register} & \compilerctype{uint64_t(selector)} & \texttt{RDSEG} & Policy controlled; selector is a compile-time \texttt{\_\_bedrock\_segment\_register\_t}.\\
+\compilerbuiltin{read_segment_register} & \compilerctype{uint64_t(selector)} & \texttt{RDSEG} & Unprivileged; selector is a compile-time \texttt{\_\_bedrock\_segment\_register\_t}.\\
 \compilerbuiltin{read_code_segment} & \compilerctype{uint64_t(void)} & \texttt{RDSEG CS} & Unprivileged; reads the current CS image through the dedicated source-only form.\\
-\compilerbuiltin{write_segment_register} & \compilerctype{void(selector,image)} & \texttt{WRSEG} & Policy controlled; validates the SREG image, changes address interpretation, and fully clobbers memory.\\
+\compilerbuiltin{write_segment_register} & \compilerctype{void(selector,image)} & \texttt{WRSEG} & Unprivileged; validates the SREG image, changes address interpretation, and fully clobbers memory.\\
 \bottomrule
 \end{longtable}
 \endgroup
@@ -288,11 +288,11 @@ or range forms.
 \textbf{Name} & \textbf{C interface} & \textbf{Lowering} & \textbf{Availability and effect}\\
 \midrule
 \endhead
-\compilerbuiltin{flush_dcache} & \compilerctype{void(void *,size_t)} & \texttt{FLSHDCACHE} & Supervisor by default, policy controlled; cache side effect and full memory clobber.\\
-\compilerbuiltin{invalidate_dcache} & \compilerctype{void(void *,size_t)} & \texttt{INVDCACHE} & Supervisor by default, policy controlled; cache side effect and full memory clobber.\\
-\compilerbuiltin{invalidate_icache} & \compilerctype{void(void *,size_t)} & \texttt{INVICACHE} & Supervisor by default, policy controlled; instruction-cache side effect and instruction-stream barrier.\\
-\compilerbuiltin{writeback_dcache} & \compilerctype{void(void *,size_t)} & \texttt{WRBKDCACHE} & Supervisor by default, policy controlled; cache side effect and full memory clobber.\\
-\compilerbuiltin{sync_cache} & \compilerctype{void(void *,size_t)} & \texttt{SYNCCACHE} & Supervisor by default, policy controlled; synchronizes data/instruction visibility and the instruction stream.\\
+\compilerbuiltin{flush_dcache} & \compilerctype{void(void *,size_t)} & \texttt{FLSHDCACHE} & Supervisor; cache side effect and full memory clobber.\\
+\compilerbuiltin{invalidate_dcache} & \compilerctype{void(void *,size_t)} & \texttt{INVDCACHE} & Supervisor; cache side effect and full memory clobber.\\
+\compilerbuiltin{invalidate_icache} & \compilerctype{void(void *,size_t)} & \texttt{INVICACHE} & Supervisor; instruction-cache side effect and instruction-stream barrier.\\
+\compilerbuiltin{writeback_dcache} & \compilerctype{void(void *,size_t)} & \texttt{WRBKDCACHE} & Supervisor; cache side effect and full memory clobber.\\
+\compilerbuiltin{sync_cache} & \compilerctype{void(void *,size_t)} & \texttt{SYNCCACHE} & Supervisor; synchronizes data/instruction visibility and the instruction stream.\\
 \bottomrule
 \end{longtable}
 \endgroup
@@ -307,9 +307,9 @@ or range forms.
 \textbf{Name} & \textbf{C interface} & \textbf{Lowering} & \textbf{Constraint and effect}\\
 \midrule
 \endhead
-\compilerbuiltin{invalidate_tlb} & \compilerctype{void(void)} & \texttt{INVTLB} & Supervisor; serializing invalidation and full memory clobber.\\
-\compilerbuiltin{invalidate_page} & \compilerctype{void(const void *)} & \texttt{INVPAGE} & Supervisor; argument supplies the linear page address; serializing and fully clobbering.\\
-\compilerbuiltin{invalidate_asid} & \compilerctype{void(asid)} & \texttt{INVASID} & Supervisor; ASID is a constant in 0 through 65535; serializing and fully clobbering.\\
+\compilerbuiltin{invalidate_tlb} & \compilerctype{void(void)} & \texttt{INVTLB} & Supervisor; translation-state side effect and full memory clobber.\\
+\compilerbuiltin{invalidate_page} & \compilerctype{void(const void *)} & \texttt{INVPAGE} & Supervisor; argument supplies the linear page address and the operation fully clobbers memory.\\
+\compilerbuiltin{invalidate_asid} & \compilerctype{void(asid)} & \texttt{INVASID} & Supervisor; ASID is a constant in 0 through 65535 and the operation fully clobbers memory.\\
 \compilerbuiltin{switch_page_table} & \compilerctype{void(uint64_t ptcr)} & \texttt{SWPT} & Supervisor; valid page-table image required; changes address space and fully clobbers memory.\\
 \compilerbuiltin{switch_page_table_asid} & \compilerctype{void(uint64_t,uint16_t)} & \texttt{SWPTA} & Supervisor; valid image and low 16-bit ASID; changes address space and fully clobbers memory.\\
 \compilerbuiltin{virtual_to_physical} & \compilerctype{result(address)} & \texttt{VTOP} & Supervisor; wrapper returns value and operation-defined \texttt{FLAGS} captured atomically; page walk without access to the translated C object.\\

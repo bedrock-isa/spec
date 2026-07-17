@@ -40,3 +40,7 @@ include:
 - instructions/FTEST
 - instructions/FTRUNC
 - instructions/FXCHG
+- instructions/RDFFLAGS
+- instructions/RDFSTATUS
+- instructions/WRFFLAGS
+- instructions/WRFSTATUS

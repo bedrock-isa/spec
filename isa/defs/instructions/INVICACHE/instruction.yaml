@@ -5,17 +5,10 @@ doc:
   instruction_family: cache
   instruction_class: system
   description: Resolves the addressed range without fetching from it, invalidates intersecting instruction-cache and decoded state, discards matching prefetched bytes, and forces later execution to refetch coherent bytes.
-behavior:
-  group: cache
-  inputs:
-  - target
-  output: none
 attributes:
-  privilege:
-    default: supervisor
-    policy_controlled: true
+  privilege: supervisor
 forms:
-  require_memory_operand: true
-  operands:
+- operands:
   - name: target
     type: EA
+    access: address

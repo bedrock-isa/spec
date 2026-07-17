@@ -5,39 +5,21 @@ doc:
   instruction_family: fpu_transcendental_approx
   instruction_class: fpu
   description: Computes the cos(x) in radians reference over finite x with abs(x) <= pi / 4 after DAZ and writes an implementation-bounded S- or D-format approximation under the selected FPTRANSA accuracy contract.
-behavior:
-  group: fpu_transcendental_approx
-  inputs:
-  - src
-  output: dst
-  approximation:
-    contract_id: '0x0002'
-    reference_function: cos(x) in radians
-    domain: finite x with abs(x) <= pi / 4 after DAZ
-    max_ulp:
-      S: 4
-      D: 4
-    exact_anchors:
-    - cos(+0) = +1
-    - cos(-0) = +1
-    properties:
-    - even
-    - nondecreasing on [-pi/4, 0] and nonincreasing on [0, pi/4]
-    - result is in [sqrt(2)/2, 1]
+may_accrue_fp_flags:
+- NV
 attributes:
   privilege: unprivileged
-  repeatable:
-    rep: true
-    repcc: false
-    repg: true
-  fp_flags:
-    update:
-    - NV
+  repeat:
+  - REP
+  - REPG
 forms:
-  operands:
+- operands:
   - name: src
     type: Fn
+    access: read
   - name: dst
     type: Fn
-  size: SD
-  extension_family: fpu_transcendental_approx
+    access: write
+  sizes:
+  - S
+  - D

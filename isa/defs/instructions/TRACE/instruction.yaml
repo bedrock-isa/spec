@@ -5,15 +5,10 @@ doc:
   instruction_family: control_flow
   instruction_class: control_flow
   description: When architectural tracing is enabled, appends the low 16-bit marker and current instruction boundary to the implementation trace stream; otherwise it has no effect.
-behavior:
-  group: control_flow
-  inputs:
-  - marker
-  output: none
 attributes:
   privilege: unprivileged
 forms:
-  operands:
+- operands:
   - name: marker
     type: imm16
-  if_trace_disabled: nop
+    access: read

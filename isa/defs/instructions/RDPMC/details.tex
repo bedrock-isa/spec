@@ -22,6 +22,6 @@ leaf. Reading ID zero or any other unavailable ID raises \texttt{INVALID\_CONTRO
 unavailable-counter behavior.
 
 \begin{manualraggedblock}
-Supervisor mode may read every implemented counter. User-mode RDPMC requires PMC.USER; otherwise it raises
-\texttt{PRIVILEGE\_FAULT}. Clearing PMC.EN freezes the current counter values without clearing them.
+Every privilege level may read every implemented counter. Clearing PMC.EN freezes the current counter values
+without clearing them.
 \end{manualraggedblock}

@@ -5,31 +5,27 @@ doc:
   instruction_family: integer_unary
   instruction_class: integer
   description: Writes zero to the selected-width destination.
-behavior:
-  group: integer_unary
-  output: dst
 attributes:
   privilege: unprivileged
-  repeatable:
-    rep: true
-    repcc: true
-    repg: true
-  repgf_candidate: true
-  flags: unchanged
+  repeat:
+  - REP
+  - REPcc
+  - REPG
+  - REPGF
 forms:
-  compact_forms:
-  - operands:
-    - name: dst
-      type: Rn
-    size: L
-  - operands:
-    - name: dst
-      type: Rn
-    size: Q
-  extended_forms:
-  - operands:
-    - name: dst
-      type: EA
-    size: BWLQ
-    compact: false
-  result: dst = 0
+- operands:
+  - name: dst
+    type: Rn
+    access: write
+  sizes:
+  - L
+  - Q
+- operands:
+  - name: dst
+    type: EA
+    access: write
+  sizes:
+  - B
+  - W
+  - L
+  - Q

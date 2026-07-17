@@ -5,30 +5,31 @@ doc:
   instruction_family: fpu
   instruction_class: fpu
   description: Selects the lesser floating-point operand according to the architectural NaN and signed-zero rules and writes it to the destination.
-behavior:
-  group: fpu_arithmetic
-  inputs:
-  - src
-  input_output: dst
+may_accrue_fp_flags:
+- NV
 attributes:
   privilege: unprivileged
-  repeatable:
-    rep: true
-    repcc: false
-    repg: true
-  streaming_candidate: true
-  fp_flags:
-    update_when_required:
-    - NV
+  repeat:
+  - REP
+  - REPG
 forms:
-  operands:
-  - - name: src
-      type: Fn
-    - name: dst
-      type: Fn
-  - - name: src
-      type: EA
-    - name: dst
-      type: Fn
-  size: SD
-  nan_policy: defined by the floating-point model
+- operands:
+  - name: src
+    type: Fn
+    access: read
+  - name: dst
+    type: Fn
+    access: read_write
+  sizes:
+  - S
+  - D
+- operands:
+  - name: src
+    type: EA
+    access: read
+  - name: dst
+    type: Fn
+    access: read_write
+  sizes:
+  - S
+  - D

@@ -5,49 +5,38 @@ doc:
   description: Zero-extends the source operand from byte size to word size. The low byte of the source is copied into the destination, and the remaining high destination bits are filled with zero.
   instruction_family: integer_unary
   instruction_class: integer
-behavior:
-  group: integer_extend
-  inputs:
-  - src
-  output: dst
-  destination_size: W
-  repeat_observed_value: result_value
-  repeat_flags: flags_logic_observed_value
 attributes:
   privilege: unprivileged
-  streaming_candidate: true
-  repeatable:
-    rep: true
-    repcc: true
-    repg: true
-  repgf_candidate: true
+  repeat:
+  - REP
+  - REPcc
+  - REPG
+  - REPGF
 forms:
-  dst_ea_set: store_destination
-  extended_forms:
-  - operands:
-    - name: src
-      type: EA
-    - name: dst
-      type: Rn
-    size: B
-    compact: false
-  - operands:
-    - name: src
-      type: Rn
-    - name: dst
-      type: EA
-    size: B
-    compact: false
-  - operands:
-    - name: src
-      type: EA
-    - name: dst
-      type: EA
-    size: B
-    compact: false
-    memory_memory: true
-  source_size:
+- operands:
+  - name: src
+    type: EA
+    access: read
+  - name: dst
+    type: Rn
+    access: write
+  sizes:
   - B
-  access_width:
-    src: source_size
-    dst: destination_size
+- operands:
+  - name: src
+    type: Rn
+    access: read
+  - name: dst
+    type: EA
+    access: write
+  sizes:
+  - B
+- operands:
+  - name: src
+    type: EA
+    access: read
+  - name: dst
+    type: EA
+    access: write
+  sizes:
+  - B

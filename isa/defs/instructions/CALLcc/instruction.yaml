@@ -5,33 +5,33 @@ doc:
   instruction_family: control_flow
   instruction_class: control_flow
   description: When the encoded condition is true, pushes the next instruction address as one 64-bit stack value and transfers control to the target; otherwise execution continues without changing the stack.
-behavior:
-  group: control_flow
-  inputs:
-  - cc
-  - target
-  output: none
 attributes:
   privilege: unprivileged
 forms:
-  compact_forms:
-  - operands:
-    - name: cc
-      type: condition
-    - name: target
-      type: imm16s
-  - operands:
-    - name: cc
-      type: condition
-    - name: target
-      type: imm32s
-  extended_forms:
-  - operands:
-    - name: cc
-      type: condition
-    - name: target
-      type: EA
-    compact: false
-  size:
-    fixed: Q
-  reads: FLAGS
+- operands:
+  - name: cc
+    type: condition
+    access: read
+  - name: target
+    type: imm16s
+    access: read
+  sizes:
+  - Q
+- operands:
+  - name: cc
+    type: condition
+    access: read
+  - name: target
+    type: imm32s
+    access: read
+  sizes:
+  - Q
+- operands:
+  - name: cc
+    type: condition
+    access: read
+  - name: target
+    type: EA
+    access: read
+  sizes:
+  - Q

@@ -5,53 +5,14 @@ doc:
   description: Pushes the canonical register pair selected by the pair ID. The canonical pair sequence is pair 0 (R14, R15), pair 1 (R12, R13), pair 2 (R10, R11), pair 3 (R8, R9), pair 4 (R6, R7), pair 5 (R4, R5), pair 6 (R2, R3), and pair 7 (R0, R1). All eight pair IDs are valid and each selects one pair.
   instruction_family: data_movement
   instruction_class: data_movement
-behavior:
-  group: stack
-  inputs:
-  - pair_id
-  output: none
 attributes:
   privilege: unprivileged
-  repeatable:
-    rep: true
-    repcc: true
-    repg: true
+  repeat:
+  - REP
+  - REPcc
+  - REPG
 forms:
-  operands:
+- operands:
   - name: pair_id
     type: pair_id
-  canonical_pairs:
-  - index: 0
-    registers:
-    - R14
-    - R15
-  - index: 1
-    registers:
-    - R12
-    - R13
-  - index: 2
-    registers:
-    - R10
-    - R11
-  - index: 3
-    registers:
-    - R8
-    - R9
-  - index: 4
-    registers:
-    - R6
-    - R7
-  - index: 5
-    registers:
-    - R4
-    - R5
-  - index: 6
-    registers:
-    - R2
-    - R3
-  - index: 7
-    registers:
-    - R0
-    - R1
-  size_per_register: Q
-  compact: required
+    access: read

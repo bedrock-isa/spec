@@ -6,3 +6,7 @@
 \end{enumerate}
 
 \textbf{Fault atomicity.} SP, CS, and PC remain unchanged when a frame read or return-target validation faults.
+
+The 16-byte far-return frame is read through the old SS context: the return PC occupies offset 0 and the return CS
+image occupies offset 8. A frame translation or return-target translation failure raises \texttt{PAGE\_FAULT}; an
+invalid return CS image raises \texttt{INVALID\_CONTROL\_STATE}.

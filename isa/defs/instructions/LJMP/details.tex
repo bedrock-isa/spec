@@ -6,3 +6,6 @@
 \end{enumerate}
 
 \textbf{Fault atomicity.} CS and PC remain unchanged when operand evaluation or target validation faults.
+
+An invalid new CS image raises \texttt{INVALID\_CONTROL\_STATE}; target translation failure raises
+\texttt{PAGE\_FAULT}.

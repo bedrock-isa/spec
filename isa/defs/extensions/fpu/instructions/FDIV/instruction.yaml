@@ -5,35 +5,35 @@ doc:
   instruction_family: fpu
   instruction_class: fpu
   description: Divides the selected-format floating-point destination value by the source and writes the rounded result under the architectural floating-point environment.
-behavior:
-  group: fpu_arithmetic
-  inputs:
-  - src
-  input_output: dst
+may_accrue_fp_flags:
+- NV
+- DZ
+- OF
+- UF
+- NX
 attributes:
   privilege: unprivileged
-  repeatable:
-    rep: true
-    repcc: false
-    repg: true
-  streaming_candidate: true
-  fp_flags:
-    update:
-    - NV
-    - DZ
-    - OF
-    - UF
-    - NX
+  repeat:
+  - REP
+  - REPG
 forms:
-  operands:
-  - - name: src
-      type: Fn
-    - name: dst
-      type: Fn
-  - - name: src
-      type: EA
-    - name: dst
-      type: Fn
-  size: SD
-  result: Fdst
-  memory_destination_arithmetic: disallowed
+- operands:
+  - name: src
+    type: Fn
+    access: read
+  - name: dst
+    type: Fn
+    access: read_write
+  sizes:
+  - S
+  - D
+- operands:
+  - name: src
+    type: EA
+    access: read
+  - name: dst
+    type: Fn
+    access: read_write
+  sizes:
+  - S
+  - D

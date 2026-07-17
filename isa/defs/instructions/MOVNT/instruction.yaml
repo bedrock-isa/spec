@@ -5,24 +5,22 @@ doc:
   description: MOVNT is a store-only non-temporal move. The source is an Rn register and the destination must be a memory operand. Register destinations and immediate destinations are invalid.
   instruction_family: cache
   instruction_class: data_movement
-behavior:
-  group: cache
-  inputs:
-  - src
-  output: dst
 attributes:
   privilege: unprivileged
-  repeatable:
-    rep: true
-    repcc: true
-    repg: true
-  memory_hint: non_temporal
+  repeat:
+  - REP
+  - REPcc
+  - REPG
 forms:
-  dst_ea_set: memory_only
-  require_memory_operand: true
-  operands:
+- operands:
   - name: src
     type: Rn
+    access: read
   - name: dst
     type: EA
-  size: BWLQ
+    access: write
+  sizes:
+  - B
+  - W
+  - L
+  - Q

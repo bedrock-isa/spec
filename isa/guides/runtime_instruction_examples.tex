@@ -7,7 +7,7 @@ implementation-performance guarantees.
 
 \subsection{Repeat and Streaming Candidates}
 Regular memory traversal forms such as MOV, CMP, EXTZ, EXTS, cache maintenance, and selected atomic-free
-transforms are natural streaming candidates when combined with a defined repeat instruction or REPG. An implementation may also stream
+transforms are natural repeated-execution patterns when combined with a defined repeat instruction or REPG. An implementation may also stream
 fixed-size instruction groups when REPG describes a bounded group that has no unresolved control transfer into or
 out of the group body.
 

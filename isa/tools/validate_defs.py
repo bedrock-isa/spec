@@ -153,23 +153,6 @@ def validate_defs(root: Path = ROOT) -> tuple[dict[str, Any], list[str]]:
         errors.append(str(exc))
 
     fptransa_extension = extensions.get("fpu.transcendental_approx")
-    fptransa_model = (
-        fptransa_extension.data.get("approximation_model")
-        if fptransa_extension is not None
-        else None
-    )
-    if fptransa_extension is not None and not isinstance(fptransa_model, dict):
-        errors.append(f"{fptransa_extension.path}: missing approximation_model mapping")
-        fptransa_model = None
-    fptransa_max_ulp = (
-        fptransa_model.get("baseline_max_ulp")
-        if isinstance(fptransa_model, dict)
-        else None
-    )
-    if fptransa_extension is not None and not isinstance(fptransa_max_ulp, dict):
-        errors.append(f"{fptransa_extension.path}: missing approximation_model.baseline_max_ulp mapping")
-        fptransa_max_ulp = None
-
     try:
         declared_operand_types = load_operand_types(root, extensions)
     except (OSError, ValueError) as exc:
@@ -194,10 +177,8 @@ def validate_defs(root: Path = ROOT) -> tuple[dict[str, Any], list[str]]:
     counts = Counter()
     operand_types = Counter()
     instruction_families = Counter()
-    extension_families = Counter()
     legacy_operand_files: dict[str, set[Path]] = defaultdict(set)
     unknown_operand_files: dict[str, set[Path]] = defaultdict(set)
-    fptransa_contracts: dict[int, tuple[str, Path]] = {}
     details_count = 0
 
     for path in instruction_files:
@@ -252,67 +233,38 @@ def validate_defs(root: Path = ROOT) -> tuple[dict[str, Any], list[str]]:
             for family in scalar_list(doc.get("instruction_family")):
                 instruction_families[family] += 1
 
-        behavior = data.get("behavior", {})
-        if not isinstance(behavior, dict):
-            errors.append(f"{path}: behavior must be a mapping")
-            behavior = {}
         details_path = path.with_name(INSTRUCTION_DETAILS_FILENAME)
         if details_path.exists():
             details_count += 1
             errors.extend(validate_details_tex(details_path))
 
-        forms = data.get("forms", {})
-        if isinstance(forms, dict):
-            ext_family = forms.get("extension_family")
-            if isinstance(ext_family, str):
-                extension_families[ext_family] += 1
-                if ext_family == "fpu_transcendental_approx":
-                    if forms.get("size") != "SD":
-                        errors.append(f"{path}: FPTRANSA instructions must support S and D together")
-                    behavior = data.get("behavior") or {}
-                    approximation = behavior.get("approximation") if isinstance(behavior, dict) else None
-                    if not isinstance(approximation, dict):
-                        errors.append(f"{path}: missing behavior.approximation contract")
-                    else:
-                        raw_contract_id = approximation.get("contract_id")
-                        contract_id: int | None = None
-                        try:
-                            contract_id = int(str(raw_contract_id), 0)
-                        except (TypeError, ValueError):
-                            errors.append(f"{path}: invalid FPTRANSA contract_id {raw_contract_id!r}")
-                        else:
-                            previous_contract = fptransa_contracts.get(contract_id)
-                            if previous_contract is not None:
-                                errors.append(
-                                    f"duplicate FPTRANSA contract_id 0x{contract_id:04x}: "
-                                    f"{previous_contract[1]} and {path}"
-                                )
-                            fptransa_contracts[contract_id] = (mnemonic, path)
-                        if fptransa_max_ulp is not None and approximation.get("max_ulp") != fptransa_max_ulp:
-                            errors.append(
-                                f"{path}: FPTRANSA max_ulp must match "
-                                f"{fptransa_extension.path}: {fptransa_max_ulp}"
-                            )
-                        for key in ("reference_function", "domain", "exact_anchors", "properties"):
-                            if not approximation.get(key):
-                                errors.append(f"{path}: approximation contract is missing {key}")
-                    documentation_text = " ".join(
-                        [
-                            str(doc.get("description", "")),
-                            details_path.read_text(encoding="utf-8") if details_path.is_file() else "",
-                        ]
-                    )
-                    documentation_plain = documentation_text.replace(r"\_", "_")
-                    if "unbounded precision" in documentation_text or "using FSTATUS.RM" in documentation_text:
-                        errors.append(f"{path}: correctly-rounded language remains in FPTRANSA documentation")
-                    if contract_id is not None and f"0x{contract_id:04x}" not in documentation_text:
-                        errors.append(f"{path}: details do not identify FPTRANSA contract 0x{contract_id:04x}")
-                    if "PRESENT" not in documentation_plain or "ILLEGAL_INSTRUCTION" not in documentation_plain:
-                        errors.append(f"{path}: details do not define unavailable-contract handling")
-                    fp_flags = data.get("attributes", {}).get("fp_flags", {})
-                    updates = fp_flags.get("update", []) if isinstance(fp_flags, dict) else []
-                    if "NX" in updates:
-                        errors.append(f"{path}: FPTRANSA must leave NX unchanged")
+        forms = data.get("forms", [])
+        is_fptransa = (
+            fptransa_extension is not None
+            and path.is_relative_to(fptransa_extension.path.parent / "instructions")
+        )
+        if is_fptransa:
+            supported_sizes = {
+                str(size)
+                for form in forms if isinstance(form, dict)
+                for size in (form.get("sizes") or [])
+            } if isinstance(forms, list) else set()
+            if supported_sizes != {"S", "D"}:
+                errors.append(f"{path}: FPTRANSA instructions must support S and D together")
+            documentation_text = " ".join(
+                [
+                    str(doc.get("description", "")),
+                    details_path.read_text(encoding="utf-8") if details_path.is_file() else "",
+                ]
+            )
+            documentation_plain = documentation_text.replace(r"\_", "_")
+            if "unbounded precision" in documentation_text or "using FSTATUS.RM" in documentation_text:
+                errors.append(f"{path}: correctly-rounded language remains in FPTRANSA documentation")
+            if "PRESENT" not in documentation_plain or "ILLEGAL_INSTRUCTION" not in documentation_plain:
+                errors.append(f"{path}: details do not define unavailable-contract handling")
+            updates = data.get("may_accrue_fp_flags", [])
+            if "NX" in updates:
+                errors.append(f"{path}: FPTRANSA must leave NX unchanged")
 
         collect_operand_types(data, operand_types)
         file_operand_types = Counter()
@@ -343,7 +295,6 @@ def validate_defs(root: Path = ROOT) -> tuple[dict[str, Any], list[str]]:
         "instructions": counts["instructions"],
         "instruction_details": details_count,
         "instruction_families": dict(sorted(instruction_families.items())),
-        "extension_families": dict(sorted(extension_families.items())),
         "operand_types": dict(sorted(operand_types.items())),
         "legacy_operand_files": {key: len(value) for key, value in sorted(legacy_operand_files.items())},
         "unknown_operand_files": {key: len(value) for key, value in sorted(unknown_operand_files.items())},
@@ -367,7 +318,6 @@ def main() -> int:
         "instruction_details",
     ):
         print(f"  {key}: {summary.get(key, 0)}")
-    print("  extension families:", len(summary.get("extension_families", {})))
     print("  instruction families:", len(summary.get("instruction_families", {})))
     legacy = summary.get("legacy_operand_files", {})
     if legacy:

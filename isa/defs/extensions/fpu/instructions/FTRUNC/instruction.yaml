@@ -5,34 +5,42 @@ doc:
   instruction_family: fpu
   instruction_class: fpu
   description: Rounds the selected floating-point source toward zero to an integral value in the same floating-point format.
-behavior:
-  group: fpu_arithmetic
-  inputs:
-  - src
-  output: dst
+may_accrue_fp_flags:
+- NV
+- NX
 attributes:
   privilege: unprivileged
-  repeatable:
-    rep: true
-    repcc: false
-    repg: true
-  fp_flags:
-    update_when_required:
-    - NV
-    - NX
+  repeat:
+  - REP
+  - REPG
 forms:
-  operands:
-  - - name: src
-      type: Fn
-    - name: dst
-      type: Fn
-  - - name: src
-      type: EA
-    - name: dst
-      type: Fn
-  - - name: src
-      type: Fn
-    - name: dst
-      type: EA
-  size: SD
-  result: floating integral value
+- operands:
+  - name: src
+    type: Fn
+    access: read
+  - name: dst
+    type: Fn
+    access: write
+  sizes:
+  - S
+  - D
+- operands:
+  - name: src
+    type: EA
+    access: read
+  - name: dst
+    type: Fn
+    access: write
+  sizes:
+  - S
+  - D
+- operands:
+  - name: src
+    type: Fn
+    access: read
+  - name: dst
+    type: EA
+    access: write
+  sizes:
+  - S
+  - D

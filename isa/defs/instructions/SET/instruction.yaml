@@ -5,18 +5,16 @@ doc:
   instruction_family: control_flow
   instruction_class: control_flow
   description: Writes integer one to the selected-width destination.
-behavior:
-  group: control_flow
-  output: dst
 attributes:
   privilege: unprivileged
-  repeatable:
-    rep: true
-    repcc: true
-    repg: true
+  repeat:
+  - REP
+  - REPcc
+  - REPG
 forms:
-  operands:
+- operands:
   - name: dst
     type: Rn
-  size: Q
-  writes: 1
+    access: write
+  sizes:
+  - Q

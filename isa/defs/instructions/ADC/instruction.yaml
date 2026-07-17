@@ -5,37 +5,51 @@ doc:
   instruction_family: integer_alu
   instruction_class: integer
   description: Adds the selected-width source value and the incoming C flag to the destination, writes the truncated sum, and updates Z, N, C, and V from the complete addition.
-behavior:
-  group: integer_carry_alu
-  inputs:
-  - src
-  input_output: dst
+flags:
+  Z: result == 0
+  N: most_significant_bit(result)
+  C: unsigned carry out
+  V: signed overflow
 attributes:
   privilege: unprivileged
-  repeatable:
-    rep: true
-    repcc: true
-    repg: true
-  flags:
-    Z: result == 0
-    N: most_significant_bit(result)
-    C: unsigned carry out
-    V: signed overflow
+  repeat:
+  - REP
+  - REPcc
+  - REPG
 forms:
-  dst_ea_set: store_destination
-  operands:
-  - - name: src
-      type: EA
-    - name: dst
-      type: Rn
-  - - name: src
-      type: Rn
-    - name: dst
-      type: EA
-  - - name: imm
-      type: imm6
-    - name: dst
-      type: EA
-  size: BWLQ
-  compact: false
-  reads: C
+- operands:
+  - name: src
+    type: EA
+    access: read
+  - name: dst
+    type: Rn
+    access: read_write
+  sizes:
+  - B
+  - W
+  - L
+  - Q
+- operands:
+  - name: src
+    type: Rn
+    access: read
+  - name: dst
+    type: EA
+    access: read_write
+  sizes:
+  - B
+  - W
+  - L
+  - Q
+- operands:
+  - name: imm
+    type: imm6
+    access: read
+  - name: dst
+    type: EA
+    access: read_write
+  sizes:
+  - B
+  - W
+  - L
+  - Q

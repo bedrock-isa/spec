@@ -5,37 +5,13 @@ doc:
   description: REPG takes an Rn counter and an unsigned 16-bit body byte count. The body starts at the next instruction after REPG and extends for exactly body_bytes bytes. body_bytes is an unsigned byte count. A zero body byte count is invalid. A nonzero body byte count is valid only when the selected byte range decodes as a whole number of complete instructions and ends exactly at an instruction boundary. The grouped body is decoded when repeat state is entered and remains the repeated body until the repeat context exits.
   instruction_family: control_flow
   instruction_class: control_flow
-behavior:
-  group: control_flow
-  inputs:
-  - body_bytes
-  input_output: counter
 attributes:
   privilege: unprivileged
-  flags: grouped instruction rules apply
 forms:
-  syntax: |-
-    REPG Rn, {
-        (instructions...)
-    }
-  body: byte_counted_instruction_group
-  repeatable_required:
-    REPG: repg
-  assembler_checked_aliases:
-    REPGF:
-      emits: REPG
-      syntax: |-
-        REPGF Rn, {
-            (instructions...)
-        }
-      body_candidate_required: repgf_candidate
-      body_constraints:
-      - body must not write the selected counter register
-      architectural_effect: identical to REPG; the machine encoding and repeat-continuation state do not distinguish the alias
-  compact_forms:
-  - operands:
-    - name: counter
-      type: Rn
-    - name: body_bytes
-      type: imm16
-    compact: required
+- operands:
+  - name: counter
+    type: Rn
+    access: read_write
+  - name: body_bytes
+    type: imm16
+    access: read

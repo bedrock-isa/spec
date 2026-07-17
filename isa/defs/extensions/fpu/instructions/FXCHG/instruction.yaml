@@ -5,21 +5,16 @@ doc:
   instruction_family: fpu
   instruction_class: fpu
   description: Exchanges the two selected-format floating-point register values.
-behavior:
-  group: fpu_move_compare
-  input_output:
-  - lhs
-  - rhs
 attributes:
   privilege: unprivileged
-  repeatable:
-    rep: true
-    repcc: false
-    repg: true
-  fp_flags: unchanged
+  repeat:
+  - REP
+  - REPG
 forms:
-  operands:
+- operands:
   - name: lhs
     type: Fn
+    access: read_write
   - name: rhs
     type: Fn
+    access: read_write

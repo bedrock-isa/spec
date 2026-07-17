@@ -5,17 +5,13 @@ doc:
   description: Updates PTCR from the first Rn register, writes the low 16 bits of the second Rn register into ASCR[31:16], and sets ASCR.AE.
   instruction_family: tlb_and_context
   instruction_class: system
-behavior:
-  group: tlb_context
-  inputs:
-  - new_ptcr
-  - asid
-  output: none
 attributes:
   privilege: supervisor
 forms:
-  operands:
+- operands:
   - name: new_ptcr
     type: Rn
+    access: read
   - name: asid
     type: Rn
+    access: read

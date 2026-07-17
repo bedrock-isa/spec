@@ -5,22 +5,19 @@ doc:
   instruction_family: integer_mul_div
   instruction_class: integer
   description: Multiplies the selected-width operands as unsigned integers and writes the high half of the double-width product.
-behavior:
-  group: multiply_divide
-  inputs:
-  - src
-  input_output: dst
 attributes:
   privilege: unprivileged
-  repeatable:
-    rep: true
-    repcc: true
-    repg: true
+  repeat:
+  - REP
+  - REPcc
+  - REPG
 forms:
-  operands:
+- operands:
   - name: src
     type: Rn
+    access: read
   - name: dst
     type: Rn
-  size: Q
-  result: high half
+    access: read_write
+  sizes:
+  - Q

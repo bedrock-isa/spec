@@ -5,17 +5,12 @@ doc:
   description: WRFFLAGS writes the architectural FFLAGS register from the low source bits. Reserved FFLAGS bits must be zero. WRFFLAGS requires the floating-point extension.
   instruction_family: system_registers
   instruction_class: system
-behavior:
-  group: system_registers
-  inputs:
-  - src
-  output: none
 attributes:
   privilege: unprivileged
-  flags: writes FFLAGS from source bits
-  cpuid_feature: OPTIONAL_EXTENSION_FEATURES.FP
 forms:
-  operands:
+- operands:
   - name: src
     type: Rn
-  size: W
+    access: read
+  sizes:
+  - W

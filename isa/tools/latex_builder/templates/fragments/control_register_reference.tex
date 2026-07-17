@@ -139,8 +139,7 @@ reserved & \texttt{63..33} & must be zero\\
 
 \begin{manualformatdiagram}{PMC Format}{8}
 \manualformatrow{PMC[63:0]}{%
-\manualformatfield{reserved}{62}
-\manualformatfield{USER}{1}
+\manualformatfield{reserved}{63}
 \manualformatfield{EN}{1}
 }
 \end{manualformatdiagram}
@@ -151,8 +150,7 @@ reserved & \texttt{63..33} & must be zero\\
 \rowcolor{ManualHeaderFill}
 \textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
 \midrule
-reserved & \texttt{63..2} & must be zero\\
-\texttt{USER} & \texttt{1} & permit user-mode RDPMC when set\\
+reserved & \texttt{63..1} & must be zero\\
 \texttt{EN} & \texttt{0} & enable performance-counter increments when set\\
 \bottomrule
 \end{manualtabular}

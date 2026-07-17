@@ -5,17 +5,10 @@ doc:
   instruction_family: cache
   instruction_class: system
   description: Writes dirty data for the addressed range to the point of instruction coherency, invalidates corresponding instruction and decoded state, and retires only when later fetches observe the synchronized bytes.
-behavior:
-  group: cache
-  inputs:
-  - target
-  output: none
 attributes:
-  privilege:
-    default: supervisor
-    policy_controlled: true
+  privilege: supervisor
 forms:
-  require_memory_operand: true
-  operands:
+- operands:
   - name: target
     type: EA
+    access: address

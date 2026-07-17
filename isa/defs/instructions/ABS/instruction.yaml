@@ -5,25 +5,26 @@ doc:
   instruction_family: integer_unary
   instruction_class: integer
   description: Replaces the selected-width destination value with its two's-complement absolute value. The most-negative value wraps to itself and does not trap.
-behavior:
-  group: integer_unary
-  input_output: dst
 attributes:
   privilege: unprivileged
-  repeatable:
-    rep: true
-    repcc: true
-    repg: true
-  flags: unchanged
+  repeat:
+  - REP
+  - REPcc
+  - REPG
 forms:
-  compact_forms:
-  - operands:
-    - name: dst
-      type: Rn
-    size: LQ
-  extended_forms:
-  - operands:
-    - name: dst
-      type: EA
-    size: BWLQ
-    compact: false
+- operands:
+  - name: dst
+    type: Rn
+    access: read_write
+  sizes:
+  - L
+  - Q
+- operands:
+  - name: dst
+    type: EA
+    access: read_write
+  sizes:
+  - B
+  - W
+  - L
+  - Q

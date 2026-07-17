@@ -5,41 +5,44 @@ doc:
   instruction_family: data_movement
   instruction_class: data_movement
   description: Exchanges the two selected-width operand values as one instruction.
-behavior:
-  group: data_movement
-  input_output:
-  - lhs
-  - rhs
 attributes:
   privilege: unprivileged
-  repeatable:
-    rep: true
-    repcc: true
-    repg: true
-  memory: at_most_one_memory_operand
-  atomic: false
+  repeat:
+  - REP
+  - REPcc
+  - REPG
 forms:
-  compact_forms:
-  - operands:
-    - name: lhs
-      type: Rn
-    - name: rhs
-      type: Rn
-    size: LQ
-  extended_forms:
-  - operands:
-    - name: lhs
-      type: EA
-    - name: rhs
-      type: Rn
-    size: BWLQ
-    compact: false
-  - operands:
-    - name: lhs
-      type: Rn
-    - name: rhs
-      type: EA
-    size: BWLQ
-    compact: false
-  memory_memory:
-    allowed: false
+- operands:
+  - name: lhs
+    type: Rn
+    access: read_write
+  - name: rhs
+    type: Rn
+    access: read_write
+  sizes:
+  - L
+  - Q
+- operands:
+  - name: lhs
+    type: EA
+    access: read_write
+  - name: rhs
+    type: Rn
+    access: read_write
+  sizes:
+  - B
+  - W
+  - L
+  - Q
+- operands:
+  - name: lhs
+    type: Rn
+    access: read_write
+  - name: rhs
+    type: EA
+    access: read_write
+  sizes:
+  - B
+  - W
+  - L
+  - Q

@@ -5,16 +5,12 @@ doc:
   description: WRFLAGS writes the low 16 bits from the source Rn register into the architectural FLAGS register. Reserved FLAGS bits must be zero. FLAGS is not part of the S segment-register operand class.
   instruction_family: system_registers
   instruction_class: system
-behavior:
-  group: system_registers
-  inputs:
-  - src
-  output: none
 attributes:
   privilege: unprivileged
-  flags: writes FLAGS from source low bits
 forms:
-  operands:
+- operands:
   - name: src
     type: Rn
-  size: W
+    access: read
+  sizes:
+  - W

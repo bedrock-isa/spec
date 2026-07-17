@@ -5,62 +5,72 @@ doc:
   instruction_family: integer_alu
   instruction_class: integer
   description: Computes the selected-width bitwise conjunction only to set Z and N, clears C and V, and does not write the temporary result.
-behavior:
-  group: integer_compare
-  inputs:
-  - dst
-  - src
-  output: none
-  repeat_observed_value: lhs_bitwise_and_rhs
-  repeat_flags: flags_logic_observed_value
+flags:
+  Z: result == 0
+  N: most_significant_bit(result)
+  C: '0'
+  V: '0'
 attributes:
   privilege: unprivileged
-  streaming_candidate: true
-  repeatable:
-    rep: true
-    repcc: true
-    repg: true
-  repgf_candidate: true
-  flags:
-    Z: result == 0
-    N: most_significant_bit(result)
-    C: '0'
-    V: '0'
+  repeat:
+  - REP
+  - REPcc
+  - REPG
+  - REPGF
 forms:
-  compact_forms:
-  - operands:
-    - name: src
-      type: Rn
-    - name: dst
-      type: Rn
-    size: LQ
-  - operands:
-    - name: imm
-      type: imm
-    - name: rhs
-      type: Rn
-    size: WL
-  extended_forms:
-  - operands:
-    - name: lhs
-      type: EA
-    - name: rhs
-      type: Rn
-    size: BWLQ
-    compact: false
-  - operands:
-    - name: lhs
-      type: Rn
-    - name: rhs
-      type: EA
-    size: BWLQ
-    compact: false
-  - operands:
-    - name: imm
-      type: imm6
-    - name: rhs
-      type: EA
-    size: BWLQ
-    compact: false
-  result: none
-  memory_memory: disallowed
+- operands:
+  - name: src
+    type: Rn
+    access: read
+  - name: dst
+    type: Rn
+    access: read
+  sizes:
+  - L
+  - Q
+- operands:
+  - name: imm
+    type: imm
+    access: read
+  - name: rhs
+    type: Rn
+    access: read
+  sizes:
+  - W
+  - L
+- operands:
+  - name: lhs
+    type: EA
+    access: read
+  - name: rhs
+    type: Rn
+    access: read
+  sizes:
+  - B
+  - W
+  - L
+  - Q
+- operands:
+  - name: lhs
+    type: Rn
+    access: read
+  - name: rhs
+    type: EA
+    access: read
+  sizes:
+  - B
+  - W
+  - L
+  - Q
+- operands:
+  - name: imm
+    type: imm6
+    access: read
+  - name: rhs
+    type: EA
+    access: read
+  sizes:
+  - B
+  - W
+  - L
+  - Q

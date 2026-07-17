@@ -22,4 +22,5 @@ It ignores \texttt{FSTATUS.RM} and formats its implementation-defined approximat
 The approximation is deterministic for the same implementation, input, format, and relevant FSTATUS mode, but need
 not be bit-identical across implementations. DN and FTZ retain their ordinary meanings. FPTRANSA may accrue NV, DZ,
 OF, and UF as its instruction contract requires, but it leaves the accrued NX flag unchanged and never takes an NX
-trap.
+trap. Overflow means that the exact result magnitude exceeds the selected format's maximum finite value. Underflow
+means that the exact nonzero result magnitude is below the selected format's minimum normal value.

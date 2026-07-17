@@ -5,28 +5,24 @@ doc:
   description: MOVUU is a supervisor-only checked user-access move. Both source and destination operands must be memory operands, and both memory accesses use the user domain. Register and immediate aliases are invalid.
   instruction_family: data_movement
   instruction_class: system
-behavior:
-  group: data_movement
-  inputs:
-  - src
-  output: dst
 attributes:
   privilege: supervisor
-  repeatable:
-    rep: true
-    repcc: true
-    repg: true
-  access_domain: user_to_user
+  repeat:
+  - REP
+  - REPcc
+  - REPG
 forms:
-  src_ea_set: user_memory_only
-  dst_ea_set: user_memory_only
-  require_memory_operand: true
-  extended_forms:
-  - operands:
-    - name: src
-      type: EA
-    - name: dst
-      type: EA
-    size: BWLQ
-    compact: false
-    constraint: src_user_memory_dst_user_memory
+- operands:
+  - name: src
+    type: EA
+    access: read
+    domain: user
+  - name: dst
+    type: EA
+    access: write
+    domain: user
+  sizes:
+  - B
+  - W
+  - L
+  - Q

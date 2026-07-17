@@ -5,21 +5,13 @@ doc:
   description: WRCR is always a supervisor-only instruction; user-visible control state must use dedicated instructions gated by control-register policy bits.
   instruction_family: system_registers
   instruction_class: system
-behavior:
-  group: system_registers
-  inputs:
-  - src
-  - cr
-  output: none
-  control_register_access:
-    selector: cr
-    write: src
 attributes:
   privilege: supervisor
-  flags: unchanged
 forms:
-  operands:
+- operands:
   - name: src
     type: Rn
+    access: read
   - name: cr
     type: imm16
+    access: read

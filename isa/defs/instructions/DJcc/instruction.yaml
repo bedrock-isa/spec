@@ -5,20 +5,16 @@ doc:
   instruction_family: control_flow
   instruction_class: control_flow
   description: Decrements the selected counter and transfers control only when the new count is nonzero and the encoded condition is true.
-behavior:
-  group: control_flow
-  inputs:
-  - cc
-  - target
-  input_output: counter
 attributes:
   privilege: unprivileged
 forms:
-  operands:
+- operands:
   - name: cc
     type: condition
+    access: read
   - name: counter
     type: Rn
+    access: read_write
   - name: target
     type: EA
-  reads: FLAGS
+    access: read

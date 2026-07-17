@@ -28,9 +28,49 @@ operand_types:
     encoding_ref: ea.yaml#compact/forms
     field_width: 7
   pair_id:
-    kind: identifier
+    kind: enum
     field_width: 3
-    signed: false
+    values:
+    - value: 0
+      name: R14_R15
+      registers:
+      - R14
+      - R15
+    - value: 1
+      name: R12_R13
+      registers:
+      - R12
+      - R13
+    - value: 2
+      name: R10_R11
+      registers:
+      - R10
+      - R11
+    - value: 3
+      name: R8_R9
+      registers:
+      - R8
+      - R9
+    - value: 4
+      name: R6_R7
+      registers:
+      - R6
+      - R7
+    - value: 5
+      name: R4_R5
+      registers:
+      - R4
+      - R5
+    - value: 6
+      name: R2_R3
+      registers:
+      - R2
+      - R3
+    - value: 7
+      name: R0_R1
+      registers:
+      - R0
+      - R1
   pt_level:
     kind: enum
     field_width: 3
@@ -95,7 +135,3 @@ operand_types:
     - {value: 2, name: RELEASE}
     - {value: 3, name: ACQREL}
     - {value: 4, name: SEQCST}
-    reserved_values:
-    - {value: 5, name: RESERVED5}
-    - {value: 6, name: RESERVED6}
-    - {value: 7, name: RESERVED7}

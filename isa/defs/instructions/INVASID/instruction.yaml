@@ -5,15 +5,10 @@ doc:
   instruction_family: tlb_and_context
   instruction_class: system
   description: Invalidates every non-global cached translation for the selected 16-bit ASID on the current hardware thread, discards matching in-progress results, and prevents later use of stale entries.
-behavior:
-  group: tlb_context
-  inputs:
-  - asid
-  output: none
 attributes:
   privilege: supervisor
-  serializing: true
 forms:
-  operands:
+- operands:
   - name: asid
     type: imm16
+    access: read

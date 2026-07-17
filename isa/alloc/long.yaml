@@ -606,31 +606,43 @@ entries:
     text: "FLSHDCACHE <ea>(e)"
     fields:
       e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: reg_direct, reason: register_direct_reclaimed}
   - id: long.invdcache_ea_e
     bits: "1111101111010000100eeeeeee"
     text: "INVDCACHE <ea>(e)"
     fields:
       e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: reg_direct, reason: register_direct_reclaimed}
   - id: long.invicache_ea_e
     bits: "1111101111010000101eeeeeee"
     text: "INVICACHE <ea>(e)"
     fields:
       e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: reg_direct, reason: register_direct_reclaimed}
   - id: long.prefetch_ea_e
     bits: "1111101111010000110eeeeeee"
     text: "PREFETCH <ea>(e)"
     fields:
       e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: reg_direct, reason: register_direct_reclaimed}
   - id: long.synccache_ea_e
     bits: "1111101111010000111eeeeeee"
     text: "SYNCCACHE <ea>(e)"
     fields:
       e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: reg_direct, reason: register_direct_reclaimed}
   - id: long.wrbkdcache_ea_e
     bits: "1111101111010001000eeeeeee"
     text: "WRBKDCACHE <ea>(e)"
     fields:
       e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: reg_direct, reason: register_direct_reclaimed}
   - id: long.save_ea_e
     bits: "1111101111010001001eeeeeee"
     text: "SAVE <ea>(e)"
@@ -646,6 +658,8 @@ entries:
     text: "PREFETCHNT <ea>(e)"
     fields:
       e: {kind: ea7, width: 7}
+    constraints:
+      - {field: e, exclude: reg_direct, reason: register_direct_reclaimed}
   - id: long.rdcr_ea_rn_d
     bits: "1111101111010001110000dddd"
     text: "RDCR <imm16>, Rn(d)"

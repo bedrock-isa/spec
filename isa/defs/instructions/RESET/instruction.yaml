@@ -5,11 +5,7 @@ doc:
   description: RESET performs an architectural warm reset. It preserves the platform-supplied BOOTPC and BOOTCFG control registers, resets all other resettable architectural state, clears the standard performance counters, and resumes execution at BOOTPC. Cold reset is a platform event that initializes BOOTPC and BOOTCFG before beginning execution at BOOTPC.
   instruction_family: core_control
   instruction_class: system
-behavior:
-  group: core_control
-  output: none
 attributes:
   privilege: supervisor
-  serializing: true
 forms:
-  operands: []
+- operands: []

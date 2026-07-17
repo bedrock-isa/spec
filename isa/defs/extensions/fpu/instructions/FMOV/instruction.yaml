@@ -5,32 +5,39 @@ doc:
   instruction_family: fpu
   instruction_class: fpu
   description: Copies the selected-format floating-point source value to the destination.
-behavior:
-  group: fpu_move_compare
-  inputs:
-  - src
-  output: dst
 attributes:
   privilege: unprivileged
-  repeatable:
-    rep: true
-    repcc: false
-    repg: true
-  streaming_candidate: true
-  fp_flags: unchanged
-  flags: unchanged
+  repeat:
+  - REP
+  - REPG
 forms:
-  operands:
-  - - name: src
-      type: Fn
-    - name: dst
-      type: Fn
-  - - name: src
-      type: EA
-    - name: dst
-      type: Fn
-  - - name: src
-      type: Fn
-    - name: dst
-      type: EA
-  size: SD
+- operands:
+  - name: src
+    type: Fn
+    access: read
+  - name: dst
+    type: Fn
+    access: write
+  sizes:
+  - S
+  - D
+- operands:
+  - name: src
+    type: EA
+    access: read
+  - name: dst
+    type: Fn
+    access: write
+  sizes:
+  - S
+  - D
+- operands:
+  - name: src
+    type: Fn
+    access: read
+  - name: dst
+    type: EA
+    access: write
+  sizes:
+  - S
+  - D

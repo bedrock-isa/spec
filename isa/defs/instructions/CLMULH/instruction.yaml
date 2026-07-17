@@ -5,22 +5,19 @@ doc:
   instruction_family: integer_mul_div
   instruction_class: integer
   description: Forms the carryless polynomial product of the selected-width source and destination values and writes its high half to the destination.
-behavior:
-  group: multiply_divide
-  inputs:
-  - src
-  input_output: dst
 attributes:
   privilege: unprivileged
-  repeatable:
-    rep: true
-    repcc: true
-    repg: true
+  repeat:
+  - REP
+  - REPcc
+  - REPG
 forms:
-  operands:
-  - - name: src
-      type: EA
-    - name: dst
-      type: Rn
-  size: Q
-  result: carryless high half
+- operands:
+  - name: src
+    type: EA
+    access: read
+  - name: dst
+    type: Rn
+    access: read_write
+  sizes:
+  - Q

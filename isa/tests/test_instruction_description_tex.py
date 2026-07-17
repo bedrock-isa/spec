@@ -16,6 +16,7 @@ if str(TOOL_DIR) not in sys.path:
 
 from gen_docs import (  # noqa: E402
     InstructionDef,
+    IsaModel,
     instruction_details_tex,
     latex_instruction_constant_ids,
 )
@@ -34,25 +35,44 @@ def instruction(path: Path) -> InstructionDef:
                 "instruction_family": "test",
                 "instruction_class": "test",
             },
-            "behavior": {},
+            "flags": {"Z": "result is zero"},
             "attributes": {
                 "privilege": "unprivileged",
-                "flags": {"Z": "result is zero"},
             },
-            "forms": {"operands": []},
+            "forms": [{"operands": []}],
         },
+    )
+
+
+def model(constants: list[dict[str, str]]) -> IsaModel:
+    return IsaModel(
+        defs_root=ROOT / "isa" / "defs",
+        alloc_root=ROOT / "isa" / "alloc",
+        metadata={
+            "operand_types": {
+                "fconst_id": {
+                    "kind": "enum",
+                    "field_width": 16,
+                    "result_bits_format": "IEEE-754 binary64",
+                    "values": constants,
+                }
+            }
+        },
+        instructions=[],
+        allocation_classes=[],
+        allocated_by_mnemonic={},
     )
 
 
 class InstructionDetailsTexTests(unittest.TestCase):
     def test_renders_constant_ids_from_instruction_forms(self) -> None:
         inst = instruction(Path("isa/defs/instructions/TESTDOC/instruction.yaml"))
-        inst.data["forms"]["result_format"] = "IEEE-754 binary64"
-        inst.data["forms"]["constant_ids"] = [
-            {"id": "0x0010", "name": "pi", "value_bits": "0x400921fb54442d18"},
-            {"id": "0x0100", "name": "positive_infinity", "value_bits": "0x7ff0000000000000"},
+        inst.data["forms"] = [{"operands": [{"name": "constant_id", "type": "fconst_id"}]}]
+        constants = [
+            {"value": "0x0010", "name": "pi", "value_bits": "0x400921fb54442d18"},
+            {"value": "0x0100", "name": "positive_infinity", "value_bits": "0x7ff0000000000000"},
         ]
-        rendered = latex_instruction_constant_ids(inst)
+        rendered = latex_instruction_constant_ids(inst, model(constants))
         self.assertIn("TESTDOC Constant IDs (IEEE-754 binary64)", rendered)
         self.assertIn(r"\texttt{0x0010}", rendered)
         self.assertIn("positive infinity", rendered)
@@ -60,12 +80,13 @@ class InstructionDetailsTexTests(unittest.TestCase):
 
     def test_rejects_duplicate_constant_ids(self) -> None:
         inst = instruction(Path("isa/defs/instructions/TESTDOC/instruction.yaml"))
-        inst.data["forms"]["constant_ids"] = [
-            {"id": "0x0000", "name": "zero", "value_bits": "0x0"},
-            {"id": "0x0000", "name": "other_zero", "value_bits": "0x0"},
+        inst.data["forms"] = [{"operands": [{"name": "constant_id", "type": "fconst_id"}]}]
+        constants = [
+            {"value": "0x0000", "name": "zero", "value_bits": "0x0"},
+            {"value": "0x0000", "name": "other_zero", "value_bits": "0x0"},
         ]
         with self.assertRaisesRegex(ValueError, "duplicate constant ID"):
-            latex_instruction_constant_ids(inst)
+            latex_instruction_constant_ids(inst, model(constants))
 
     def test_instruction_without_sibling_body_has_no_details_output(self) -> None:
         inst = instruction(Path("isa/defs/instructions/TESTDOC/instruction.yaml"))

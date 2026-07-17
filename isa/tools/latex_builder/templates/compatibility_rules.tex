@@ -60,5 +60,5 @@ instruction group, optional register state, or optional state image unless the c
 reports support.
 
 Unknown selectors return zero. Reserved CPUID result bits are ignored by software unless a future architectural
-definition assigns them. CPUID is unprivileged and does not serialize execution. Its results remain stable after
+definition assigns them. CPUID is unprivileged. Its results remain stable after
 reset unless a future feature explicitly defines a mutable result.

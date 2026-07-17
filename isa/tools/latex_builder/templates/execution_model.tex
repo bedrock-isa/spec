@@ -9,7 +9,7 @@ pages.
 \subsection{Architectural Result Priority}
 When one instruction could encounter more than one exceptional condition, the architecturally reported result is
 the first applicable condition in the following order. This is a result-priority contract and does not require an
-implementation to serialize its internal pipeline in the same order.
+implementation to commit its internal pipeline effects in the same order.
 
 \begin{enumerate}
 \item Instruction fetch and fetch translation.
@@ -56,7 +56,7 @@ An instruction that faults before commit leaves destination registers, destinati
 register effects unchanged unless the instruction explicitly defines partial completion.
 
 Atomic read-modify-write forms have a single architectural commit point for the memory update and any associated
-register result. Cache, TLB, and system-state instructions describe their own serialization and visibility rules.
+register result. Cache, TLB, and system-state instructions describe their own completion and visibility rules.
 
 Ordinary integer ALU forms use the common one-memory-operand rule. Compare and test forms may read two operands and
 update FLAGS without storing their temporary result. EXTS and EXTZ additionally provide explicitly encoded

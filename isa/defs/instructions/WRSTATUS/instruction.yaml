@@ -5,16 +5,12 @@ doc:
   description: WRSTATUS writes the low 16 bits from the source Rn register into the architectural STATUS register. Reserved STATUS bits must be zero. STATUS is not part of the S segment-register operand class.
   instruction_family: system_registers
   instruction_class: system
-behavior:
-  group: system_registers
-  inputs:
-  - src
-  output: none
 attributes:
   privilege: supervisor
-  flags: unchanged
 forms:
-  operands:
+- operands:
   - name: src
     type: Rn
-  size: W
+    access: read
+  sizes:
+  - W

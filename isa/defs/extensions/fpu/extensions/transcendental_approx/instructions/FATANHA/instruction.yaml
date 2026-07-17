@@ -5,41 +5,23 @@ doc:
   instruction_family: fpu_transcendental_approx
   instruction_class: fpu
   description: Computes the atanh(x) reference over finite x with abs(x) <= 1 after DAZ and writes an implementation-bounded S- or D-format approximation under the selected FPTRANSA accuracy contract.
-behavior:
-  group: fpu_transcendental_approx
-  inputs:
-  - src
-  output: dst
-  approximation:
-    contract_id: '0x0024'
-    reference_function: atanh(x)
-    domain: finite x with abs(x) <= 1 after DAZ
-    max_ulp:
-      S: 4
-      D: 4
-    exact_anchors:
-    - atanh(+0) = +0
-    - atanh(-0) = -0
-    - atanh(signed 1) = signed infinity
-    properties:
-    - odd
-    - monotonically increasing on (-1, 1)
+may_accrue_fp_flags:
+- NV
+- DZ
+- UF
 attributes:
   privilege: unprivileged
-  repeatable:
-    rep: true
-    repcc: false
-    repg: true
-  fp_flags:
-    update:
-    - NV
-    - DZ
-    - UF
+  repeat:
+  - REP
+  - REPG
 forms:
-  operands:
+- operands:
   - name: src
     type: Fn
+    access: read
   - name: dst
     type: Fn
-  size: SD
-  extension_family: fpu_transcendental_approx
+    access: write
+  sizes:
+  - S
+  - D

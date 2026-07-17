@@ -5,20 +5,17 @@ doc:
   instruction_family: fpu
   instruction_class: fpu
   description: Writes positive floating-point zero in the selected format to the destination.
-behavior:
-  group: fpu_move_compare
-  output: dst
 attributes:
   privilege: unprivileged
-  repeatable:
-    rep: true
-    repcc: false
-    repg: true
-  fp_flags: unchanged
+  repeat:
+  - REP
+  - REPG
 forms:
-  operands:
-  - - name: dst
-      type: Fn
-  - - name: dst
-      type: EA
-  result: "+0.0"
+- operands:
+  - name: dst
+    type: Fn
+    access: write
+- operands:
+  - name: dst
+    type: EA
+    access: write

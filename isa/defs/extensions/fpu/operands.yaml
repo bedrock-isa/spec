@@ -3,3 +3,172 @@ operand_types:
     kind: register
     register_group: floating_point
     field_width: 4
+  fp_pair_id:
+    kind: enum
+    field_width: 3
+    values:
+    - value: 0
+      name: F14_F15
+      registers:
+      - F14
+      - F15
+    - value: 1
+      name: F12_F13
+      registers:
+      - F12
+      - F13
+    - value: 2
+      name: F10_F11
+      registers:
+      - F10
+      - F11
+    - value: 3
+      name: F8_F9
+      registers:
+      - F8
+      - F9
+    - value: 4
+      name: F6_F7
+      registers:
+      - F6
+      - F7
+    - value: 5
+      name: F4_F5
+      registers:
+      - F4
+      - F5
+    - value: 6
+      name: F2_F3
+      registers:
+      - F2
+      - F3
+    - value: 7
+      name: F0_F1
+      registers:
+      - F0
+      - F1
+  fconst_id:
+    kind: enum
+    field_width: 16
+    result_bits_format: IEEE-754 binary64
+    values:
+    - value: '0x0000'
+      name: positive_zero
+      value_bits: '0x0000000000000000'
+    - value: '0x0001'
+      name: negative_zero
+      value_bits: '0x8000000000000000'
+    - value: '0x0002'
+      name: positive_one
+      value_bits: '0x3ff0000000000000'
+    - value: '0x0003'
+      name: negative_one
+      value_bits: '0xbff0000000000000'
+    - value: '0x0004'
+      name: positive_one_half
+      value_bits: '0x3fe0000000000000'
+    - value: '0x0005'
+      name: negative_one_half
+      value_bits: '0xbfe0000000000000'
+    - value: '0x0006'
+      name: positive_two
+      value_bits: '0x4000000000000000'
+    - value: '0x0007'
+      name: negative_two
+      value_bits: '0xc000000000000000'
+    - value: '0x0008'
+      name: positive_ten
+      value_bits: '0x4024000000000000'
+    - value: '0x0009'
+      name: negative_ten
+      value_bits: '0xc024000000000000'
+    - value: '0x0010'
+      name: pi
+      value_bits: '0x400921fb54442d18'
+    - value: '0x0011'
+      name: pi_over_2
+      value_bits: '0x3ff921fb54442d18'
+    - value: '0x0012'
+      name: pi_over_4
+      value_bits: '0x3fe921fb54442d18'
+    - value: '0x0013'
+      name: two_pi
+      value_bits: '0x401921fb54442d18'
+    - value: '0x0014'
+      name: reciprocal_pi
+      value_bits: '0x3fd45f306dc9c883'
+    - value: '0x0015'
+      name: two_over_pi
+      value_bits: '0x3fe45f306dc9c883'
+    - value: '0x0016'
+      name: sqrt_2
+      value_bits: '0x3ff6a09e667f3bcd'
+    - value: '0x0017'
+      name: reciprocal_sqrt_2
+      value_bits: '0x3fe6a09e667f3bcc'
+    - value: '0x0020'
+      name: e
+      value_bits: '0x4005bf0a8b145769'
+    - value: '0x0021'
+      name: log2_e
+      value_bits: '0x3ff71547652b82fe'
+    - value: '0x0022'
+      name: log10_e
+      value_bits: '0x3fdbcb7b1526e50e'
+    - value: '0x0023'
+      name: ln_2
+      value_bits: '0x3fe62e42fefa39ef'
+    - value: '0x0024'
+      name: ln_10
+      value_bits: '0x40026bb1bbb55516'
+    - value: '0x0025'
+      name: log2_10
+      value_bits: '0x400a934f0979a371'
+    - value: '0x0026'
+      name: log10_2
+      value_bits: '0x3fd34413509f79ff'
+    - value: '0x0100'
+      name: positive_infinity
+      value_bits: '0x7ff0000000000000'
+    - value: '0x0101'
+      name: negative_infinity
+      value_bits: '0xfff0000000000000'
+    - value: '0x0102'
+      name: canonical_positive_quiet_nan
+      value_bits: '0x7ff8000000000000'
+    - value: '0x0103'
+      name: canonical_negative_quiet_nan
+      value_bits: '0xfff8000000000000'
+    - value: '0x0104'
+      name: canonical_positive_signaling_nan
+      value_bits: '0x7ff0000000000001'
+    - value: '0x0105'
+      name: canonical_negative_signaling_nan
+      value_bits: '0xfff0000000000001'
+    - value: '0x0110'
+      name: maximum_positive_finite
+      value_bits: '0x7fefffffffffffff'
+    - value: '0x0111'
+      name: maximum_negative_finite
+      value_bits: '0xffefffffffffffff'
+    - value: '0x0112'
+      name: minimum_positive_normal
+      value_bits: '0x0010000000000000'
+    - value: '0x0113'
+      name: minimum_negative_normal
+      value_bits: '0x8010000000000000'
+    - value: '0x0114'
+      name: minimum_positive_subnormal
+      value_bits: '0x0000000000000001'
+    - value: '0x0115'
+      name: minimum_negative_subnormal
+      value_bits: '0x8000000000000001'
+    - value: '0x0116'
+      name: machine_epsilon
+      value_bits: '0x3cb0000000000000'
+    - value: '0x0117'
+      name: maximum_positive_subnormal
+      value_bits: '0x000fffffffffffff'
+    - value: '0x0118'
+      name: maximum_negative_subnormal
+      value_bits: '0x800fffffffffffff'

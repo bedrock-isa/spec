@@ -5,40 +5,23 @@ doc:
   instruction_family: fpu_transcendental_approx
   instruction_class: fpu
   description: Computes the log10(x) reference over positive finite values and positive infinity after DAZ; signed zero is the DZ boundary and writes an implementation-bounded S- or D-format approximation under the selected FPTRANSA accuracy contract.
-behavior:
-  group: fpu_transcendental_approx
-  inputs:
-  - src
-  output: dst
-  approximation:
-    contract_id: '0x0044'
-    reference_function: log10(x)
-    domain: positive finite values and positive infinity after DAZ; signed zero is the DZ boundary
-    max_ulp:
-      S: 4
-      D: 4
-    exact_anchors:
-    - log10(+1) = +0
-    - log10(signed 0) = -infinity
-    - log10(+infinity) = +infinity
-    properties:
-    - strictly increasing on the positive domain
+may_accrue_fp_flags:
+- NV
+- DZ
+- UF
 attributes:
   privilege: unprivileged
-  repeatable:
-    rep: true
-    repcc: false
-    repg: true
-  fp_flags:
-    update:
-    - NV
-    - DZ
-    - UF
+  repeat:
+  - REP
+  - REPG
 forms:
-  operands:
+- operands:
   - name: src
     type: Fn
+    access: read
   - name: dst
     type: Fn
-  size: SD
-  extension_family: fpu_transcendental_approx
+    access: write
+  sizes:
+  - S
+  - D

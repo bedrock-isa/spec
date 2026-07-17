@@ -48,12 +48,11 @@ while a body write to that register is ignored. REPG executes counter-register r
 program order, but a write does not replace the separately captured remaining count. The checked REPGF spelling
 rejects such a write at assembly time.
 
-The repeat condition is derived from the body's repeat-observed value and repeat flag rule. Unless an instruction
-overrides that rule, the observed value is its primary committed result, or the primary source value for a store-only
-operation. An instruction that updates FLAGS uses the committed flags; otherwise logical flags are derived from the
-observed value. The first condition test occurs after the first body iteration. Body commit, condition capture,
-counter decrement, and continuation-PC selection form one precise architectural commit step. REP is the unconditional
-T-condition spelling, and F is reserved for REPcc.
+The repeat condition uses the body's committed FLAGS result when the body updates FLAGS. Otherwise, logical flags are
+derived from the body's primary committed result, or from its primary source value for a store-only operation. The
+first condition test occurs after the first body iteration. Body commit, condition capture, counter decrement, and
+continuation-PC selection form one precise architectural commit step. REP is the unconditional T-condition spelling,
+and F is reserved for REPcc.
 
 A repeat body may not contain another repeat operation, a repeat-control instruction, or a control transfer.
 Floating-point instructions may be used with REP and REPG, but not with REPcc. While repetition is active, PC names
@@ -68,8 +67,7 @@ streaming engine, or wider internal datapath. That internal width is not archite
 the ABI. This freedom does not permit reordering visible exceptions, changing the committed counter value, or
 exposing partial updates within an iteration.
 
-An implementation may also choose scalar execution for any repeated operation. A streaming candidate is a shape
-that can be recognized; it is not a throughput, latency, or vector-width guarantee.
+An implementation may also choose scalar execution for any repeated operation.
 
 \subsection{Fault and Restart Semantics}
 A fault during repeated execution preserves committed work and saves the state needed to resume or emulate the

@@ -5,14 +5,12 @@ doc:
   description: RDSTATUS reads the architectural 16-bit STATUS register, zero-extends it to 64 bits, and writes the result to the destination Rn register. Reading STATUS is unprivileged; writing STATUS remains supervisor-only. STATUS is not part of the S segment-register operand class.
   instruction_family: system_registers
   instruction_class: system
-behavior:
-  group: system_registers
-  output: dst
 attributes:
   privilege: unprivileged
-  flags: unchanged
 forms:
-  operands:
+- operands:
   - name: dst
     type: Rn
-  size: W
+    access: write
+  sizes:
+  - W
