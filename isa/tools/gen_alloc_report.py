@@ -28,21 +28,29 @@ from validate_alloc import (
 )
 
 
-CLASS_INSTRUCTION_BYTES = {
-    "extrashort": 1,
-    "short": 2,
-    "medium": 3,
-    "long": 4,
-    "extralong": 5,
-}
+def analyze_store(defs_root: Path) -> tuple[list[ClassReport], list[EntryReport]]:
+    from encoding_store import class_entries, load_encoding_store
 
-CLASS_ORDER = {
-    "extrashort": 0,
-    "short": 1,
-    "medium": 2,
-    "long": 3,
-    "extralong": 4,
-}
+    store = load_encoding_store(defs_root)
+    class_reports: list[ClassReport] = []
+    entry_reports: list[EntryReport] = []
+    for encoding_class in store.classes:
+        synthetic = {
+            "class": encoding_class.name,
+            "payload_bits": encoding_class.payload_bits,
+            "namespace": list(encoding_class.namespace),
+            "entries": class_entries(store, encoding_class.name),
+        }
+        class_report, entries = analyze_data(store.class_path, synthetic)
+        class_report = ClassReport(
+            **{
+                **class_report.__dict__,
+                "instruction_bytes": encoding_class.instruction_bytes,
+            }
+        )
+        class_reports.append(class_report)
+        entry_reports.extend(entries)
+    return class_reports, entry_reports
 
 
 @dataclass(frozen=True)
@@ -117,8 +125,7 @@ def entry_skipped_values(
     return out
 
 
-def analyze_file(path: Path) -> tuple[ClassReport, list[EntryReport]]:
-    data = load_yaml(path)
+def analyze_data(path: Path, data: dict[str, Any]) -> tuple[ClassReport, list[EntryReport]]:
     if "escapes" in data:
         raise ValueError(f"{path}: top-level escapes are no longer supported; use class namespace patterns")
     cls = str(data["class"])
@@ -174,7 +181,7 @@ def analyze_file(path: Path) -> tuple[ClassReport, list[EntryReport]]:
             cls=cls,
             path=str(path),
             payload_bits=payload_bits,
-            instruction_bytes=CLASS_INSTRUCTION_BYTES.get(cls),
+            instruction_bytes=None,
             namespace_slots=total_slots,
             allocated_slots=allocated_slots,
             claimed_slots=claimed_slots,
@@ -189,10 +196,14 @@ def analyze_file(path: Path) -> tuple[ClassReport, list[EntryReport]]:
     )
 
 
+def analyze_file(path: Path) -> tuple[ClassReport, list[EntryReport]]:
+    return analyze_data(path, load_yaml(path))
+
+
 def analyze(paths: list[Path]) -> tuple[list[ClassReport], list[EntryReport]]:
     class_reports: list[ClassReport] = []
     entry_reports: list[EntryReport] = []
-    for path in sorted(paths, key=lambda p: (CLASS_ORDER.get(p.stem, 99), str(p))):
+    for path in sorted(paths):
         class_report, entries = analyze_file(path)
         class_reports.append(class_report)
         entry_reports.extend(entries)
@@ -232,6 +243,9 @@ def markdown_table(headers: list[str], rows: list[list[str]]) -> str:
 
 
 def mnemonic_totals(entries: list[EntryReport]) -> list[dict[str, Any]]:
+    class_order = {
+        name: index for index, name in enumerate(dict.fromkeys(entry.cls for entry in entries))
+    }
     totals: dict[tuple[str, str], dict[str, Any]] = {}
     for entry in entries:
         key = (entry.cls, entry.mnemonic)
@@ -251,7 +265,7 @@ def mnemonic_totals(entries: list[EntryReport]) -> list[dict[str, Any]]:
 
     return sorted(
         totals.values(),
-        key=lambda item: (CLASS_ORDER.get(str(item["class"]), 99), -int(item["allocated_slots"]), str(item["mnemonic"])),
+        key=lambda item: (class_order[str(item["class"])], -int(item["allocated_slots"]), str(item["mnemonic"])),
     )
 
 
@@ -259,7 +273,7 @@ def render_markdown(classes: list[ClassReport], entries: list[EntryReport]) -> s
     lines = [
         "# Encoding Allocation Report",
         "",
-        "Generated from `isa/alloc/*.yaml`. Slot counts are opcode payload slots inside each allocation namespace.",
+        "Generated from per-instruction `encodings.yaml` files. Slot counts are opcode payload slots inside each allocation namespace.",
         "`reclaimed` counts are slots excluded by entry constraints before assignment. `remaining` is namespace slots minus allocated instruction slots. `clean-free` excludes both allocated and reclaimed slots.",
         "",
         "## Class Summary",
@@ -327,7 +341,7 @@ def render_markdown(classes: list[ClassReport], entries: list[EntryReport]) -> s
     )
 
     lines.extend(["", "## Form Detail", ""])
-    for cls in sorted({entry.cls for entry in entries}, key=lambda name: CLASS_ORDER.get(name, 99)):
+    for cls in dict.fromkeys(entry.cls for entry in entries):
         lines.extend(["", f"### {cls}", ""])
         cls_entries = [entry for entry in entries if entry.cls == cls]
         lines.append(
@@ -472,18 +486,15 @@ def write_outputs(
     return list(paths.values())
 
 
-def default_paths() -> list[Path]:
-    return sorted(Path("isa/alloc").glob("*.yaml"), key=lambda p: (CLASS_ORDER.get(p.stem, 99), str(p)))
-
-
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("paths", nargs="*", type=Path, default=default_paths())
+    parser.add_argument("paths", nargs="*", type=Path)
+    parser.add_argument("--defs", type=Path, default=Path("isa/defs"))
     parser.add_argument("--out-dir", type=Path, default=Path("build/reports"))
     parser.add_argument("--base-name", default="encoding_allocation_report")
     args = parser.parse_args()
 
-    classes, entries = analyze(args.paths)
+    classes, entries = analyze(args.paths) if args.paths else analyze_store(args.defs)
     written = write_outputs(args.out_dir, args.base_name, classes, entries)
 
     for item in classes:

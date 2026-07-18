@@ -1,0 +1,12 @@
+forms:
+- id: long.rdfstatus_rn_d
+  class: long
+  bits: 1111101111010001111000dddd
+  syntax: RDFSTATUS Rn(d)
+  operands:
+  - name: dst
+    type: Rn
+    access: write
+    field: d
+  sizes:
+  - W

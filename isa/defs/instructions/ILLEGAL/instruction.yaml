@@ -1,11 +1,8 @@
 mnemonic: ILLEGAL
-doc:
-  title: Illegal Instruction
-  summary: Raise illegal-instruction exception.
-  instruction_family: core_control
-  instruction_class: system
-  description: Raises ILLEGAL_INSTRUCTION with the EXPLICIT_ILLEGAL cause at the current instruction boundary without retiring or changing architectural destination state before event entry.
+title: Illegal Instruction
+summary: Raise illegal-instruction exception.
+description: Raises ILLEGAL_INSTRUCTION with the EXPLICIT_ILLEGAL cause at the current instruction boundary without retiring or changing architectural destination state before event entry.
 attributes:
+  class: system
+  family: core_control
   privilege: any
-forms:
-- operands: []

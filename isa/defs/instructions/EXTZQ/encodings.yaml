@@ -1,0 +1,212 @@
+forms:
+- id: short.extzq_l_rn_s_rn_d
+  class: short
+  bits: 101000ssssdddd
+  syntax: EXTZQ.L Rn(s), Rn(d)
+  operands:
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: Rn
+    access: write
+    field: d
+  sizes:
+  - L
+- id: medium.extzq_b_rn_s_ea_e
+  class: medium
+  bits: 1101010sssseeeeeee
+  syntax: EXTZQ.B Rn(s), <ea>(e)
+  operands:
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: EA
+    access: write
+    field: e
+  sizes:
+  - B
+  constraints:
+  - field: e
+    exclude: immediate
+    reason: invalid_destination
+- id: medium.extzq_b_ea_e_rn_d
+  class: medium
+  bits: 1101011ddddeeeeeee
+  syntax: EXTZQ.B <ea>(e), Rn(d)
+  operands:
+  - name: src
+    type: EA
+    access: read
+    field: e
+  - name: dst
+    type: Rn
+    access: write
+    field: d
+  sizes:
+  - B
+  constraints:
+  - field: e
+    allow:
+    - 0x10..0x7f
+    reason: register_direct_reclaimed
+- id: medium.extzq_w_rn_s_ea_e
+  class: medium
+  bits: 1101100sssseeeeeee
+  syntax: EXTZQ.W Rn(s), <ea>(e)
+  operands:
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: EA
+    access: write
+    field: e
+  sizes:
+  - W
+  constraints:
+  - field: e
+    exclude: immediate
+    reason: invalid_destination
+- id: medium.extzq_w_ea_e_rn_d
+  class: medium
+  bits: 1101101ddddeeeeeee
+  syntax: EXTZQ.W <ea>(e), Rn(d)
+  operands:
+  - name: src
+    type: EA
+    access: read
+    field: e
+  - name: dst
+    type: Rn
+    access: write
+    field: d
+  sizes:
+  - W
+  constraints:
+  - field: e
+    allow:
+    - 0x10..0x7f
+    reason: register_direct_reclaimed
+- id: medium.extzq_l_rn_s_ea_e
+  class: medium
+  bits: 1101110sssseeeeeee
+  syntax: EXTZQ.L Rn(s), <ea>(e)
+  operands:
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: EA
+    access: write
+    field: e
+  sizes:
+  - L
+  constraints:
+  - field: e
+    allow:
+    - 0x10..0x7f
+    reason: register_direct_reclaimed
+  - field: e
+    exclude: immediate
+    reason: invalid_destination
+- id: medium.extzq_l_ea_e_rn_d
+  class: medium
+  bits: 1101111ddddeeeeeee
+  syntax: EXTZQ.L <ea>(e), Rn(d)
+  operands:
+  - name: src
+    type: EA
+    access: read
+    field: e
+  - name: dst
+    type: Rn
+    access: write
+    field: d
+  sizes:
+  - L
+  constraints:
+  - field: e
+    allow:
+    - 0x10..0x7f
+    reason: register_direct_reclaimed
+- id: long.extzq_b_ea_s_ea_d
+  class: long
+  bits: 111110100101sssssssddddddd
+  syntax: EXTZQ.B <ea>(s), <ea>(d)
+  operands:
+  - name: src
+    type: EA
+    access: read
+    field: s
+  - name: dst
+    type: EA
+    access: write
+    field: d
+  sizes:
+  - B
+  constraints:
+  - field: s
+    exclude: reg_direct
+    reason: canonical_form_reclaim
+  - field: d
+    exclude: reg_direct
+    reason: canonical_form_reclaim
+  - field: d
+    exclude: immediate
+    reason: invalid_destination
+- id: long.extzq_w_ea_s_ea_d
+  class: long
+  bits: 111110100110sssssssddddddd
+  syntax: EXTZQ.W <ea>(s), <ea>(d)
+  operands:
+  - name: src
+    type: EA
+    access: read
+    field: s
+  - name: dst
+    type: EA
+    access: write
+    field: d
+  sizes:
+  - W
+  constraints:
+  - field: s
+    exclude: reg_direct
+    reason: canonical_form_reclaim
+  - field: d
+    exclude: reg_direct
+    reason: canonical_form_reclaim
+  - field: d
+    exclude: immediate
+    reason: invalid_destination
+- id: long.extzq_l_ea_s_ea_d
+  class: long
+  bits: 111110100111sssssssddddddd
+  syntax: EXTZQ.L <ea>(s), <ea>(d)
+  operands:
+  - name: src
+    type: EA
+    access: read
+    field: s
+  - name: dst
+    type: EA
+    access: write
+    field: d
+  sizes:
+  - L
+  constraints:
+  - field: s
+    exclude: reg_direct
+    reason: canonical_form_reclaim
+  - field: d
+    exclude: reg_direct
+    reason: canonical_form_reclaim
+  - field: d
+    exclude: immediate
+    reason: invalid_destination

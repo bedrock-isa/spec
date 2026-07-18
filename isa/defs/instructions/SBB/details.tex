@@ -1,3 +1,10 @@
+\begin{manualflageffects}{FLAGS}
+\manualflageffect{Z}{result == 0}
+\manualflageffect{N}{most\_significant\_bit(result)}
+\manualflageffect{C}{unsigned borrow}
+\manualflageffect{V}{signed overflow}
+\end{manualflageffects}
+
 Let \(n\) be the selected width, \(d\) and \(s\) the unsigned operand bit patterns, and \(b\) the incoming borrow represented by the C flag. The written result is
 \[
   r = (d - s - b) \bmod 2^n .

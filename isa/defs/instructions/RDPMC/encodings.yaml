@@ -1,0 +1,13 @@
+forms:
+- id: long.rdpmc_ea_rn_d
+  class: long
+  bits: 1111101111010001111010dddd
+  syntax: RDPMC <imm16>, Rn(d)
+  operands:
+  - name: counter_id
+    type: imm16
+    access: read
+  - name: dst
+    type: Rn
+    access: write
+    field: d

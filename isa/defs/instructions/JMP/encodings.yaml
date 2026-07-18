@@ -1,0 +1,45 @@
+forms:
+- id: short.jmp_imm8s_i
+  class: short
+  bits: 110000iiiiiiii
+  syntax: JMP imm8s(i)
+  operands:
+  - name: target
+    type: imm8s
+    access: read
+    field: i
+- id: medium.jmp_ea
+  class: medium
+  bits: '000010011000000000'
+  syntax: JMP <imm16s>
+  operands:
+  - name: target
+    type: imm16s
+    access: read
+- id: medium.jmp_ea.2
+  class: medium
+  bits: '000110011000000000'
+  syntax: JMP <imm32s>
+  operands:
+  - name: target
+    type: imm32s
+    access: read
+- id: long.jmp_x_ea_e
+  class: long
+  bits: 1111001001z00000000eeeeeee
+  syntax: JMP.X(z:L/Q) <ea>(e)
+  operands:
+  - name: target
+    type: EA
+    access: read
+    field: e
+  sizes:
+  - L
+  - Q
+  fields:
+    z:
+      type: size
+  constraints:
+  - field: e
+    exclude: immediate
+    reason: canonical_form_reclaim

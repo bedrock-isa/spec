@@ -659,6 +659,18 @@
 \newenvironment{manualsyntax}{\par\Needspace{0.60in}\textbf{Assembler Syntax}\par\begin{manualcode}}{\end{manualcode}\par}
 \newenvironment{manualstatusstrip}{\par\Needspace{0.50in}\begingroup\small\noindent}{\par\endgroup\vspace{2pt}}
 \newcommand{\manualstatusitem}[2]{\textbf{#1}\enspace#2\qquad}
+\newenvironment{manualflageffects}[1]{%
+  \par\Needspace{0.95in}\textbf{#1 Effects}\par
+  \begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.62in}>{\raggedright\arraybackslash}p{4.68in}@{}}
+  \toprule
+  \rowcolor{ManualHeaderFill}\textbf{Flag} & \textbf{Effect}\\
+  \midrule
+}{%
+  \bottomrule
+  \end{manualtabular}
+  \par
+}
+\newcommand{\manualflageffect}[2]{\texttt{#1} & #2\\}
 \newenvironment{manualeaprofile}{\par\Needspace{1.1in}\begingroup\small\raggedright}{\par\endgroup}
 \newcommand{\manualeaprofileline}[2]{\par\hangindent=1.08in\hangafter=1\textbf{#1:}\enspace#2\par}
 \newcommand{\manualeaprofilesyntax}[1]{\par\noindent\mbox{\texttt{#1}}\par}

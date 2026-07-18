@@ -102,6 +102,11 @@ operand_types:
     field_width: 7
     signed: false
     operation_size_extension: zero_extend
+  imm8:
+    kind: immediate
+    field_width: 8
+    signed: false
+    operation_size_extension: zero_extend
   imm16:
     kind: immediate
     field_width: 16

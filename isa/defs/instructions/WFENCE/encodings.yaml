@@ -1,0 +1,5 @@
+forms:
+- id: extrashort.wfence
+  class: extrashort
+  bits: '0001011'
+  syntax: WFENCE

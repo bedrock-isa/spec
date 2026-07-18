@@ -1,0 +1,13 @@
+forms:
+- id: medium.repg_rn_r_ea
+  class: medium
+  bits: 00001001101000rrrr
+  syntax: REPG Rn(r), <imm16>
+  operands:
+  - name: counter
+    type: Rn
+    access: read_write
+    field: r
+  - name: body_bytes
+    type: imm16
+    access: read

@@ -25,14 +25,15 @@ from gen_docs import (  # noqa: E402
     latex_allocated_instruction_form_block,
     load_yaml,
 )
+from encoding_store import allocation_entry_dict, load_encoding_store  # noqa: E402
 
 
 class InstructionEaFormsTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
+        cls.store = load_encoding_store(ROOT / "isa" / "defs")
         cls.model = IsaModel(
             defs_root=ROOT / "isa" / "defs",
-            alloc_root=ROOT / "isa" / "alloc",
             metadata={
                 "ea": load_yaml(ROOT / "isa" / "defs" / "ea.yaml"),
                 "conditions": load_yaml(ROOT / "isa" / "defs" / "conditions.yaml"),
@@ -47,14 +48,13 @@ class InstructionEaFormsTests(unittest.TestCase):
         return InstructionDef(path, "base", mnemonic, load_yaml(path))
 
     def allocation(self, entry_id: str) -> AllocationEntry:
-        cls = entry_id.split(".", 1)[0]
-        path = ROOT / "isa" / "alloc" / f"{cls}.yaml"
-        data = load_yaml(path)
-        raw = next(item for item in data["entries"] if item["id"] == entry_id)
+        located = next(item for item in self.store.encodings if item.form.id == entry_id)
+        encoding_class = self.store.classes_by_name[located.form.encoding_class]
+        raw = allocation_entry_dict(located)
         return AllocationEntry(
-            path=path,
-            cls=cls,
-            payload_bits=int(data["payload_bits"]),
+            path=located.path,
+            cls=encoding_class.name,
+            payload_bits=encoding_class.payload_bits,
             entry_id=entry_id,
             bits=compact_bits(str(raw["bits"])),
             text=str(raw["text"]),
@@ -62,6 +62,16 @@ class InstructionEaFormsTests(unittest.TestCase):
             skipped=0,
             fields=raw.get("fields") or {},
             constraints=raw.get("constraints") or [],
+            operands=tuple(
+                {
+                    "name": operand.name,
+                    "type": operand.type,
+                    "access": operand.access,
+                    **({"field": operand.field} if operand.field else {}),
+                }
+                for operand in located.form.operands
+            ),
+            instruction_bytes=encoding_class.instruction_bytes,
         )
 
     def render_entry(self, mnemonic: str, entry_id: str) -> str:
@@ -81,35 +91,36 @@ class InstructionEaFormsTests(unittest.TestCase):
         rows = compact_ea_display_rows(self.model.metadata["ea"])
         self.assertEqual(len(rows), 27)
         summary_count = 0
-        for path in sorted((ROOT / "isa" / "alloc").glob("*.yaml")):
-            data = load_yaml(path)
-            for raw in data.get("entries", []) or []:
-                entry = AllocationEntry(
-                    path=path,
-                    cls=str(data["class"]),
-                    payload_bits=int(data["payload_bits"]),
-                    entry_id=str(raw["id"]),
-                    bits=compact_bits(str(raw["bits"])),
-                    text=str(raw["text"]),
-                    assigned=0,
-                    skipped=0,
-                    fields=raw.get("fields") or {},
+        for located in self.store.encodings:
+            encoding_class = self.store.classes_by_name[located.form.encoding_class]
+            raw = allocation_entry_dict(located)
+            entry = AllocationEntry(
+                path=located.path,
+                cls=encoding_class.name,
+                payload_bits=encoding_class.payload_bits,
+                entry_id=str(raw["id"]),
+                bits=compact_bits(str(raw["bits"])),
+                text=str(raw["text"]),
+                assigned=0,
+                skipped=0,
+                fields=raw.get("fields") or {},
                     constraints=raw.get("constraints") or [],
+                    instruction_bytes=encoding_class.instruction_bytes,
                 )
-                for symbol, spec in entry.fields.items():
-                    if not isinstance(spec, dict) or spec.get("kind") != "ea7":
-                        continue
-                    summary_count += 1
-                    constraints = ea_constraints_for_field(entry, symbol)
-                    expected = frozenset(
-                        row.syntax
-                        for row in rows
-                        if all(ea_value_allowed(value, constraints) for value in row.values)
-                    )
-                    summary = ea_availability_summary(self.model, entry, symbol)
-                    with self.subTest(entry=entry.entry_id, field=symbol):
-                        self.assertEqual(summary.allowed_syntax, expected)
-                        self.assertEqual(summary.reconstructed_allowed_syntax(), expected)
+            for symbol, spec in entry.fields.items():
+                if not isinstance(spec, dict) or spec.get("kind") != "ea7":
+                    continue
+                summary_count += 1
+                constraints = ea_constraints_for_field(entry, symbol)
+                expected = frozenset(
+                    row.syntax
+                    for row in rows
+                    if all(ea_value_allowed(value, constraints) for value in row.values)
+                )
+                summary = ea_availability_summary(self.model, entry, symbol)
+                with self.subTest(entry=entry.entry_id, field=symbol):
+                    self.assertEqual(summary.allowed_syntax, expected)
+                    self.assertEqual(summary.reconstructed_allowed_syntax(), expected)
         self.assertEqual(summary_count, 248)
 
 if __name__ == "__main__":

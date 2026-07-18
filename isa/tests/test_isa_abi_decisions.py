@@ -96,7 +96,10 @@ class V1DecisionIntegrationTests(unittest.TestCase):
                 ).read_text(encoding="utf-8")
             )
 
-        allocation = (ROOT / "isa" / "alloc" / "long.yaml").read_text(encoding="utf-8")
+        allocation = "\n".join(
+            path.read_text(encoding="utf-8")
+            for path in (ROOT / "isa" / "defs").glob("**/instructions/*/encodings.yaml")
+        )
         extension_catalog = (ROOT / "isa" / "defs" / "extensions.yaml").read_text(
             encoding="utf-8"
         )
@@ -242,11 +245,20 @@ class V1DecisionIntegrationTests(unittest.TestCase):
             encoded = list((result & ((1 << 64) - 1)).to_bytes(8, "little"))
             self.assertEqual(encoded, vector["encoded_little_endian"])
 
-        allocation = yaml.safe_load((ROOT / "isa" / "alloc" / "long.yaml").read_text(encoding="utf-8"))
-        jmp = next(entry for entry in allocation["entries"] if entry["id"] == "long.jmp_x_ea_e")
-        jcc = next(entry for entry in allocation["entries"] if entry["id"] == "long.jcc_x_ea_e")
-        self.assertEqual(jmp["text"], "JMP.X(z:L/Q) <ea>(e)")
-        self.assertEqual(jcc["text"], "Jcc.X(z:L/Q) <ea>(e)")
+        jmp = yaml.safe_load(
+            (ROOT / "isa" / "defs" / "instructions" / "JMP" / "encodings.yaml").read_text(
+                encoding="utf-8"
+            )
+        )["forms"]
+        jcc = yaml.safe_load(
+            (ROOT / "isa" / "defs" / "instructions" / "Jcc" / "encodings.yaml").read_text(
+                encoding="utf-8"
+            )
+        )["forms"]
+        jmp_form = next(entry for entry in jmp if entry["id"] == "long.jmp_x_ea_e")
+        jcc_form = next(entry for entry in jcc if entry["id"] == "long.jcc_x_ea_e")
+        self.assertEqual(jmp_form["syntax"], "JMP.X(z:L/Q) <ea>(e)")
+        self.assertEqual(jcc_form["syntax"], "Jcc.X(z:L/Q) <ea>(e)")
 
         payload = "1111001001" + "1" + "00000000" + "1100111"
         encoded_opcode = [
@@ -259,7 +271,7 @@ class V1DecisionIntegrationTests(unittest.TestCase):
 
         jcc_definition = yaml.safe_load(
             (
-                ROOT / "isa" / "defs" / "instructions" / "Jcc" / "instruction.yaml"
+                ROOT / "isa" / "defs" / "instructions" / "Jcc" / "encodings.yaml"
             ).read_text(encoding="utf-8")
         )
         sizes_by_types = {
@@ -269,7 +281,12 @@ class V1DecisionIntegrationTests(unittest.TestCase):
         for relative_type in ("imm8s", "imm16s", "imm32s"):
             self.assertEqual(sizes_by_types[("condition", relative_type)], ["W", "L"])
         self.assertEqual(sizes_by_types[("condition", "EA")], ["L", "Q"])
-        self.assertIn("zero-extends it to the 64-bit near target", jcc_definition["doc"]["description"])
+        jcc_instruction = yaml.safe_load(
+            (ROOT / "isa" / "defs" / "instructions" / "Jcc" / "instruction.yaml").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertIn("zero-extends it to the 64-bit near target", jcc_instruction["description"])
 
         ea_model = (
             ROOT

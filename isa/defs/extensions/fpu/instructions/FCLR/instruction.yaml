@@ -1,21 +1,11 @@
 mnemonic: FCLR
-doc:
-  title: Floating-Point Clear
-  summary: Performs the floating-point clear operation.
-  instruction_family: fpu
-  instruction_class: fpu
-  description: Writes positive floating-point zero in the selected format to the destination.
+title: Floating-Point Clear
+summary: Performs the floating-point clear operation.
+description: Writes positive floating-point zero in the selected format to the destination.
 attributes:
+  class: fpu
+  family: fpu
   privilege: unprivileged
   repeat:
   - REP
   - REPG
-forms:
-- operands:
-  - name: dst
-    type: Fn
-    access: write
-- operands:
-  - name: dst
-    type: EA
-    access: write

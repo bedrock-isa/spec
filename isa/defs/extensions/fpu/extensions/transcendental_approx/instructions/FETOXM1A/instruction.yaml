@@ -1,27 +1,12 @@
 mnemonic: FETOXM1A
-doc:
-  title: Approximate Floating-Point e To x Minus One
-  summary: Performs the bounded approximate floating-point e to x minus one operation.
-  instruction_family: fpu_transcendental_approx
-  instruction_class: fpu
-  description: Computes the (e ** x) - 1 without an intermediate rounded exponential reference over all finite values and signed infinity after DAZ and writes an implementation-bounded S- or D-format approximation under the selected FPTRANSA accuracy contract.
-may_accrue_fp_flags:
-- NV
-- OF
-- UF
+title: Approximate Floating-Point e To x Minus One
+summary: Performs the bounded approximate floating-point e to x minus one operation.
+description: Computes the (e ** x) - 1 without an intermediate rounded exponential reference over all finite values and signed infinity after DAZ and writes an implementation-bounded S- or D-format approximation under the selected FPTRANSA accuracy contract.
 attributes:
+  class: fpu
+  family: fpu_transcendental_approx
   privilege: unprivileged
   repeat:
   - REP
   - REPG
-forms:
-- operands:
-  - name: src
-    type: Fn
-    access: read
-  - name: dst
-    type: Fn
-    access: write
-  sizes:
-  - S
-  - D
+additional_description: details.tex

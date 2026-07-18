@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 from collections import Counter, defaultdict
 from dataclasses import dataclass
+import difflib
 import os
 from pathlib import Path
 import re
@@ -35,8 +36,7 @@ from validate_alloc import (  # noqa: E402
 )
 
 
-CLASS_ORDER = {"extrashort": 0, "short": 1, "medium": 2, "long": 3, "extralong": 4}
-DEFAULT_ALLOC_ROOT = Path("isa/alloc")
+DEFAULT_DEFS_ROOT = Path("isa/defs")
 DEFAULT_MAX_ENUMERATE = 5_000_000
 ANSI_RESET = "\033[0m"
 ANSI_DIM = "\033[2m"
@@ -89,19 +89,7 @@ def load_yaml(path: Path) -> dict[str, Any]:
     return data
 
 
-def alloc_path(alloc_root: Path, cls: str) -> Path:
-    path = alloc_root / f"{cls}.yaml"
-    if not path.exists():
-        raise FileNotFoundError(path)
-    return path
-
-
-def class_paths(alloc_root: Path) -> list[Path]:
-    return sorted(alloc_root.glob("*.yaml"), key=lambda p: (CLASS_ORDER.get(p.stem, 99), str(p)))
-
-
-def load_space(path: Path) -> AllocationSpace:
-    data = load_yaml(path)
+def load_space_data(path: Path, data: dict[str, Any]) -> AllocationSpace:
     cls = str(data["class"])
     payload_bits = int(data["payload_bits"])
     namespaces = namespace_patterns(payload_bits, data)
@@ -153,6 +141,24 @@ def load_space(path: Path) -> AllocationSpace:
         allocated=allocated,
         claimed=claimed,
         skipped=dict(skipped),
+    )
+
+
+def load_store_space(defs_root: Path, cls: str) -> AllocationSpace:
+    from encoding_store import class_entries, load_encoding_store
+
+    store = load_encoding_store(defs_root)
+    encoding_class = store.classes_by_name.get(cls)
+    if encoding_class is None:
+        raise ValueError(f"unknown encoding class {cls!r}")
+    return load_space_data(
+        store.class_path,
+        {
+            "class": cls,
+            "payload_bits": encoding_class.payload_bits,
+            "namespace": list(encoding_class.namespace),
+            "entries": class_entries(store, cls),
+        },
     )
 
 
@@ -570,8 +576,11 @@ def format_table(headers: list[str], rows: list[list[str]]) -> str:
 
 def command_summary(args: argparse.Namespace) -> int:
     rows: list[list[str]] = []
-    for path in class_paths(args.alloc_root):
-        space = load_space(path)
+    from encoding_store import load_encoding_store
+
+    store = load_encoding_store(args.defs_root)
+    for encoding_class in store.classes:
+        space = load_store_space(args.defs_root, encoding_class.name)
         total = namespace_size(space.namespaces)
         allocated = len(space.allocated)
         skipped = sum(len(items) for items in space.skipped.values())
@@ -585,7 +594,7 @@ def command_summary(args: argparse.Namespace) -> int:
                 f"{allocated:,}",
                 f"{skipped:,}",
                 f"{total - len(unavailable):,}",
-                str(path),
+                str(store.class_path),
             ]
         )
     print(format_table(["class", "bits", "namespace", "allocated", "reclaimed", "clean-free", "path"], rows))
@@ -615,7 +624,7 @@ def command_legend(args: argparse.Namespace) -> int:
 
 
 def command_entries(args: argparse.Namespace) -> int:
-    space = load_space(alloc_path(args.alloc_root, args.cls))
+    space = load_store_space(args.defs_root, args.cls)
     leading = normalize_pattern(args.leading, space.payload_bits) if args.leading else None
     needle = args.grep.lower() if args.grep else None
     use_color = color_enabled(args)
@@ -697,7 +706,7 @@ def patterns_overlap(left: str, right: str) -> bool:
 
 
 def command_check(args: argparse.Namespace) -> int:
-    space = load_space(alloc_path(args.alloc_root, args.cls))
+    space = load_store_space(args.defs_root, args.cls)
     pattern = normalize_pattern(args.pattern, space.payload_bits)
     shown_pattern = display_pattern(args.pattern, space.payload_bits)
     shown_fields = infer_fields(shown_pattern)
@@ -766,7 +775,7 @@ def command_check(args: argparse.Namespace) -> int:
 
 
 def command_holes(args: argparse.Namespace) -> int:
-    space = load_space(alloc_path(args.alloc_root, args.cls))
+    space = load_store_space(args.defs_root, args.cls)
     all_values = namespace_values(space, args.max_enumerate)
     leading = normalize_pattern(args.leading, space.payload_bits) if args.leading else None
 
@@ -805,9 +814,233 @@ def command_holes(args: argparse.Namespace) -> int:
     return 0
 
 
+def canonical_encodings_yaml(data: dict[str, Any]) -> str:
+    return yaml.safe_dump(
+        data,
+        sort_keys=False,
+        allow_unicode=True,
+        width=1000,
+    )
+
+
+def locate_encoding_form(defs_root: Path, form_id: str) -> tuple[Path, dict[str, Any], int]:
+    matches: list[tuple[Path, dict[str, Any], int]] = []
+    for path in sorted(defs_root.glob("**/instructions/*/encodings.yaml")):
+        data = load_yaml(path)
+        for index, form in enumerate(data.get("forms") or []):
+            if isinstance(form, dict) and form.get("id") == form_id:
+                matches.append((path, data, index))
+    if not matches:
+        raise ValueError(f"encoding form {form_id!r} not found")
+    if len(matches) != 1:
+        raise ValueError(f"encoding form {form_id!r} is not globally unique")
+    return matches[0]
+
+
+def instruction_encoding_path(defs_root: Path, mnemonic: str) -> Path:
+    matches = [
+        path
+        for path in defs_root.glob("**/instructions/*/encodings.yaml")
+        if path.parent.name == mnemonic
+    ]
+    if len(matches) != 1:
+        raise ValueError(
+            f"expected one encoding document for {mnemonic!r}, found {len(matches)}"
+        )
+    return matches[0]
+
+
+def decode_form_snippet(path: Path) -> dict[str, Any]:
+    from defs_schema import decode_encodings
+    from encoding_store import encoding_form_dict
+
+    raw = load_yaml(path)
+    if "forms" in raw:
+        forms = raw["forms"]
+    else:
+        forms = [raw]
+    if not isinstance(forms, list) or len(forms) != 1:
+        raise ValueError(f"{path}: expected exactly one encoding form")
+    document = decode_encodings(path, {"forms": forms})
+    return encoding_form_dict(document.forms[0])
+
+
+def constraints_snippet(path: Path) -> list[dict[str, Any]]:
+    raw = yaml.safe_load(path.read_text(encoding="utf-8"))
+    if isinstance(raw, dict) and "constraints" in raw:
+        raw = raw["constraints"]
+    if not isinstance(raw, list):
+        raise ValueError(f"{path}: expected a constraints list")
+    if not all(isinstance(item, dict) for item in raw):
+        raise ValueError(f"{path}: every constraint must be a mapping")
+    return [dict(item) for item in raw]
+
+
+def validate_candidate_document(
+    defs_root: Path,
+    target_path: Path,
+    candidate: dict[str, Any],
+) -> None:
+    from defs_loader import load_extensions, load_operand_types, load_size_definitions
+    from defs_schema import decode_encodings, decode_instruction
+    from encoding_store import LocatedEncoding, allocation_entry_dict, load_encoding_store
+
+    candidate_doc = decode_encodings(target_path, candidate)
+    store = load_encoding_store(defs_root)
+    class_names = set(store.classes_by_name)
+    extensions = load_extensions(defs_root)
+    operand_registry = load_operand_types(defs_root, extensions)
+    operand_types = set(operand_registry)
+    size_codes = set(load_size_definitions(defs_root, extensions)["size_codes"])
+    instruction_path = target_path.with_name("instruction.yaml")
+    instruction = decode_instruction(instruction_path, load_yaml(instruction_path))
+    if instruction.mnemonic != target_path.parent.name:
+        raise ValueError(f"{instruction_path}: mnemonic does not match directory")
+    for form in candidate_doc.forms:
+        if form.encoding_class not in class_names:
+            raise ValueError(
+                f"{target_path}: form {form.id!r} references unknown class {form.encoding_class!r}"
+            )
+        syntax_mnemonic = re.split(r"[./(]", form.syntax.split()[0])[0]
+        if syntax_mnemonic != instruction.mnemonic:
+            raise ValueError(
+                f"{target_path}: form {form.id!r} syntax names {syntax_mnemonic}, "
+                f"expected {instruction.mnemonic}"
+            )
+        for operand in form.operands:
+            if operand.type not in operand_types:
+                raise ValueError(
+                    f"{target_path}: form {form.id!r} uses unknown operand type {operand.type!r}"
+                )
+            elif operand.field is not None:
+                expected_width = int(operand_registry[operand.type]["field_width"])
+                actual_width = form.bits.count(operand.field)
+                if actual_width != expected_width:
+                    raise ValueError(
+                        f"{target_path}: form {form.id!r} operand {operand.name!r} "
+                        f"has {actual_width}-bit field, expected {expected_width}"
+                    )
+        for marker, field in form.fields.items():
+            if field.type != "size" and field.type not in operand_types:
+                raise ValueError(
+                    f"{target_path}: form {form.id!r} field {marker!r} uses unknown type {field.type!r}"
+                )
+            if field.type != "size":
+                expected_width = int(operand_registry[field.type]["field_width"])
+                actual_width = form.bits.count(marker)
+                if actual_width != expected_width:
+                    raise ValueError(
+                        f"{target_path}: form {form.id!r} field {marker!r} "
+                        f"has {actual_width} bits, expected {expected_width}"
+                    )
+        for size in form.sizes:
+            if size not in size_codes:
+                raise ValueError(f"{target_path}: form {form.id!r} uses unknown size {size!r}")
+    target_resolved = target_path.resolve()
+    located = [
+        item for item in store.encodings if item.path.resolve() != target_resolved
+    ]
+    located.extend(
+        LocatedEncoding(target_path, target_path.parent.name, form)
+        for form in candidate_doc.forms
+    )
+
+    ids: set[str] = set()
+    by_class: dict[str, list[LocatedEncoding]] = defaultdict(list)
+    for item in located:
+        if item.form.id in ids:
+            raise ValueError(f"duplicate encoding id {item.form.id!r}")
+        ids.add(item.form.id)
+        by_class[item.form.encoding_class].append(item)
+
+    for encoding_class in store.classes:
+        claims_by_value: dict[int, Claim] = {}
+        for item in by_class.get(encoding_class.name, []):
+            entry = allocation_entry_dict(item)
+            claims, _skipped = entry_claims(
+                item.path,
+                encoding_class.payload_bits,
+                list(encoding_class.namespace),
+                entry,
+            )
+            for value, claim in claims:
+                previous = claims_by_value.get(value)
+                if previous is not None:
+                    raise ValueError(
+                        f"0x{value:x}: {previous.entry_id} overlaps {claim.entry_id}"
+                    )
+                claims_by_value[value] = claim
+
+
+def preview_or_apply(
+    path: Path,
+    data: dict[str, Any],
+    *,
+    apply: bool,
+) -> None:
+    before = path.read_text(encoding="utf-8")
+    after = canonical_encodings_yaml(data)
+    diff = "".join(
+        difflib.unified_diff(
+            before.splitlines(keepends=True),
+            after.splitlines(keepends=True),
+            fromfile=str(path),
+            tofile=str(path),
+        )
+    )
+    print(diff or "(no changes)", end="" if diff else "\n")
+    if not apply or before == after:
+        return
+    temporary = path.with_name(path.name + ".tmp")
+    try:
+        temporary.write_text(after, encoding="utf-8")
+        os.replace(temporary, path)
+    finally:
+        if temporary.exists():
+            temporary.unlink()
+
+
+def command_add(args: argparse.Namespace) -> int:
+    path = instruction_encoding_path(args.defs_root, args.mnemonic)
+    data = load_yaml(path)
+    form = decode_form_snippet(args.form)
+    data.setdefault("forms", []).append(form)
+    validate_candidate_document(args.defs_root, path, data)
+    preview_or_apply(path, data, apply=args.apply)
+    return 0
+
+
+def command_move(args: argparse.Namespace) -> int:
+    path, data, index = locate_encoding_form(args.defs_root, args.form_id)
+    form = data["forms"][index]
+    if args.cls is not None:
+        form["class"] = args.cls
+    if args.bits is not None:
+        form["bits"] = args.bits
+    validate_candidate_document(args.defs_root, path, data)
+    preview_or_apply(path, data, apply=args.apply)
+    return 0
+
+
+def command_edit(args: argparse.Namespace) -> int:
+    path, data, index = locate_encoding_form(args.defs_root, args.form_id)
+    form = data["forms"][index]
+    if args.bits is not None:
+        form["bits"] = args.bits
+    if args.constraints is not None:
+        constraints = constraints_snippet(args.constraints)
+        if constraints:
+            form["constraints"] = constraints
+        else:
+            form.pop("constraints", None)
+    validate_candidate_document(args.defs_root, path, data)
+    preview_or_apply(path, data, apply=args.apply)
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--alloc-root", type=Path, default=DEFAULT_ALLOC_ROOT)
+    parser.add_argument("--defs-root", type=Path, default=DEFAULT_DEFS_ROOT)
     parser.add_argument("--color", choices=["auto", "always", "never"], default="auto")
     sub = parser.add_subparsers(dest="command", required=True)
 
@@ -824,7 +1057,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     entries = sub.add_parser("entries", help="list allocation entries, optionally filtered")
     add_color_option(entries)
-    entries.add_argument("cls", choices=sorted(CLASS_ORDER, key=CLASS_ORDER.get))
+    entries.add_argument("cls")
     entries.add_argument("--leading", help="0/1/? leading-bit pattern; shorter patterns are padded with ?")
     entries.add_argument("--grep", help="case-insensitive id/text filter")
     entries.add_argument("--show-reserved", action="store_true", help="include computed reserved blocks")
@@ -834,7 +1067,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     check = sub.add_parser("check", help="check whether a candidate pattern is free")
     add_color_option(check)
-    check.add_argument("cls", choices=sorted(CLASS_ORDER, key=CLASS_ORDER.get))
+    check.add_argument("cls")
     check.add_argument("pattern", help="0/1/? pattern; shorter patterns are padded with ?")
     check.add_argument("--max-expand", type=int, default=1 << 22)
     check.add_argument("--limit", type=int, default=12)
@@ -843,7 +1076,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     holes = sub.add_parser("holes", help="list aligned clean-free blocks")
     add_color_option(holes)
-    holes.add_argument("cls", choices=sorted(CLASS_ORDER, key=CLASS_ORDER.get))
+    holes.add_argument("cls")
     holes.add_argument("--leading", help="0/1/? leading-bit pattern; shorter patterns are padded with ?")
     holes.add_argument("--include-reclaimed", action="store_true")
     holes.add_argument("--min-slots", type=int, default=1)
@@ -853,6 +1086,26 @@ def build_parser() -> argparse.ArgumentParser:
     holes.add_argument("--sort", choices=["size", "address"], default="size")
     holes.add_argument("--max-enumerate", type=int, default=DEFAULT_MAX_ENUMERATE)
     holes.set_defaults(func=command_holes)
+
+    add = sub.add_parser("add", help="validate and add one encoding form")
+    add.add_argument("mnemonic")
+    add.add_argument("form", type=Path, help="YAML file containing one form")
+    add.add_argument("--apply", action="store_true", help="atomically apply after validation")
+    add.set_defaults(func=command_add)
+
+    move = sub.add_parser("move", help="move an existing form to a class/bit pattern")
+    move.add_argument("form_id")
+    move.add_argument("--class", dest="cls")
+    move.add_argument("--bits")
+    move.add_argument("--apply", action="store_true", help="atomically apply after validation")
+    move.set_defaults(func=command_move)
+
+    edit = sub.add_parser("edit", help="edit bits and/or constraints of an existing form")
+    edit.add_argument("form_id")
+    edit.add_argument("--bits")
+    edit.add_argument("--constraints", type=Path, help="YAML constraints list")
+    edit.add_argument("--apply", action="store_true", help="atomically apply after validation")
+    edit.set_defaults(func=command_edit)
 
     return parser
 

@@ -1,0 +1,69 @@
+forms:
+- id: medium.fmov_x_fn_s_fn_d
+  class: medium
+  bits: 100100zssss110dddd
+  syntax: FMOV.X(z:S/D) Fn(s), Fn(d)
+  operands:
+  - name: src
+    type: Fn
+    access: read
+    field: s
+  - name: dst
+    type: Fn
+    access: write
+    field: d
+  sizes:
+  - S
+  - D
+  fields:
+    z:
+      type: size
+- id: long.fmov_x_ea_s_fn_d
+  class: long
+  bits: 1111010101z0000ddddeeeeeee
+  syntax: FMOV.X(z:S/D) <ea>(e), Fn(d)
+  operands:
+  - name: src
+    type: EA
+    access: read
+    field: e
+  - name: dst
+    type: Fn
+    access: write
+    field: d
+  sizes:
+  - S
+  - D
+  fields:
+    z:
+      type: size
+  constraints:
+  - field: e
+    exclude: reg_direct
+    reason: canonical_form_reclaim
+- id: long.fmov_x_fn_s_ea_d
+  class: long
+  bits: 1111011000z0000sssseeeeeee
+  syntax: FMOV.X(z:S/D) Fn(s), <ea>(e)
+  operands:
+  - name: src
+    type: Fn
+    access: read
+    field: s
+  - name: dst
+    type: EA
+    access: write
+    field: e
+  sizes:
+  - S
+  - D
+  fields:
+    z:
+      type: size
+  constraints:
+  - field: e
+    exclude: reg_direct
+    reason: canonical_form_reclaim
+  - field: e
+    exclude: immediate
+    reason: invalid_destination

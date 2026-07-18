@@ -1,0 +1,65 @@
+forms:
+- id: extrashort.clr_q_rn_r
+  class: extrashort
+  bits: 110rrrr
+  syntax: CLR.Q Rn(r)
+  operands:
+  - name: dst
+    type: Rn
+    access: write
+    field: r
+  sizes:
+  - Q
+- id: short.clr_l_rn_r
+  class: short
+  bits: 1000100011rrrr
+  syntax: CLR.L Rn(r)
+  operands:
+  - name: dst
+    type: Rn
+    access: write
+    field: r
+  sizes:
+  - L
+- id: medium.clr_x_ea
+  class: medium
+  bits: 0eee10z0110000eeee
+  syntax: CLR.X(z:B/W) <ea>
+  operands:
+  - name: dst
+    type: EA
+    access: write
+    field: e
+  sizes:
+  - B
+  - W
+  fields:
+    z:
+      type: size
+  constraints:
+  - field: e
+    exclude: immediate
+    reason: invalid_destination
+- id: medium.clr_x_ea.2
+  class: medium
+  bits: 0eee10z0111000eeee
+  syntax: CLR.X(z:L/Q) <ea>
+  operands:
+  - name: dst
+    type: EA
+    access: write
+    field: e
+  sizes:
+  - L
+  - Q
+  fields:
+    z:
+      type: size
+  constraints:
+  - field: e
+    allow:
+    - 0x10..0x7f
+    reason: register_direct_reclaimed
+  - field: e
+    exclude: immediate
+    reason: invalid_destination

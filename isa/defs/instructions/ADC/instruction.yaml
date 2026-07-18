@@ -1,55 +1,13 @@
 mnemonic: ADC
-doc:
-  title: Add With Carry
-  summary: Performs the add with carry operation.
-  instruction_family: integer_alu
-  instruction_class: integer
-  description: Adds the selected-width source value and the incoming C flag to the destination, writes the truncated sum, and updates Z, N, C, and V from the complete addition.
-flags:
-  Z: result == 0
-  N: most_significant_bit(result)
-  C: unsigned carry out
-  V: signed overflow
+title: Add With Carry
+summary: Performs the add with carry operation.
+description: Adds the selected-width source value and the incoming C flag to the destination, writes the truncated sum, and updates Z, N, C, and V from the complete addition.
 attributes:
+  class: integer
+  family: integer_alu
   privilege: unprivileged
   repeat:
   - REP
   - REPcc
   - REPG
-forms:
-- operands:
-  - name: src
-    type: EA
-    access: read
-  - name: dst
-    type: Rn
-    access: read_write
-  sizes:
-  - B
-  - W
-  - L
-  - Q
-- operands:
-  - name: src
-    type: Rn
-    access: read
-  - name: dst
-    type: EA
-    access: read_write
-  sizes:
-  - B
-  - W
-  - L
-  - Q
-- operands:
-  - name: imm
-    type: imm6
-    access: read
-  - name: dst
-    type: EA
-    access: read_write
-  sizes:
-  - B
-  - W
-  - L
-  - Q
+additional_description: details.tex

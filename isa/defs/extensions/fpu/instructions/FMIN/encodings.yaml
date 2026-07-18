@@ -1,0 +1,43 @@
+forms:
+- id: medium.fmin_x_fn_s_fn_d
+  class: medium
+  bits: 100101zssss110dddd
+  syntax: FMIN.X(z:S/D) Fn(s), Fn(d)
+  operands:
+  - name: src
+    type: Fn
+    access: read
+    field: s
+  - name: dst
+    type: Fn
+    access: read_write
+    field: d
+  sizes:
+  - S
+  - D
+  fields:
+    z:
+      type: size
+- id: long.fmin_x_ea_s_fn_d
+  class: long
+  bits: 1111010101z1001ddddeeeeeee
+  syntax: FMIN.X(z:S/D) <ea>(e), Fn(d)
+  operands:
+  - name: src
+    type: EA
+    access: read
+    field: e
+  - name: dst
+    type: Fn
+    access: read_write
+    field: d
+  sizes:
+  - S
+  - D
+  fields:
+    z:
+      type: size
+  constraints:
+  - field: e
+    exclude: reg_direct
+    reason: canonical_form_reclaim

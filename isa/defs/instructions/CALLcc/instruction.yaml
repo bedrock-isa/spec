@@ -1,37 +1,8 @@
 mnemonic: CALLcc
-doc:
-  title: Call Conditional
-  summary: Performs a call when the condition is true.
-  instruction_family: control_flow
-  instruction_class: control_flow
-  description: When the encoded condition is true, pushes the next instruction address as one 64-bit stack value and transfers control to the target; otherwise execution continues without changing the stack.
+title: Call Conditional
+summary: Performs a call when the condition is true.
+description: When the encoded condition is true, pushes the next instruction address as one 64-bit stack value and transfers control to the target; otherwise execution continues without changing the stack.
 attributes:
+  class: control_flow
+  family: control_flow
   privilege: unprivileged
-forms:
-- operands:
-  - name: cc
-    type: condition
-    access: read
-  - name: target
-    type: imm16s
-    access: read
-  sizes:
-  - Q
-- operands:
-  - name: cc
-    type: condition
-    access: read
-  - name: target
-    type: imm32s
-    access: read
-  sizes:
-  - Q
-- operands:
-  - name: cc
-    type: condition
-    access: read
-  - name: target
-    type: EA
-    access: read
-  sizes:
-  - Q

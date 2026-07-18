@@ -1,30 +1,12 @@
 mnemonic: ABS
-doc:
-  title: Absolute Value
-  summary: Performs the absolute value operation.
-  instruction_family: integer_unary
-  instruction_class: integer
-  description: Replaces the selected-width destination value with its two's-complement absolute value. The most-negative value wraps to itself and does not trap.
+title: Absolute Value
+summary: Performs the absolute value operation.
+description: Replaces the selected-width destination value with its two's-complement absolute value. The most-negative value wraps to itself and does not trap.
 attributes:
+  class: integer
+  family: integer_unary
   privilege: unprivileged
   repeat:
   - REP
   - REPcc
   - REPG
-forms:
-- operands:
-  - name: dst
-    type: Rn
-    access: read_write
-  sizes:
-  - L
-  - Q
-- operands:
-  - name: dst
-    type: EA
-    access: read_write
-  sizes:
-  - B
-  - W
-  - L
-  - Q

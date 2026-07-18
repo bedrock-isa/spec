@@ -1,52 +1,11 @@
 mnemonic: FMOVcc
-doc:
-  title: Floating-Point Conditional Move
-  summary: Performs the floating-point conditional move operation.
-  instruction_family: fpu
-  instruction_class: fpu
-  description: Copies the selected-format floating-point source value to the destination only when the encoded integer condition is true.
+title: Floating-Point Conditional Move
+summary: Performs the floating-point conditional move operation.
+description: Copies the selected-format floating-point source value to the destination only when the encoded integer condition is true.
 attributes:
+  class: fpu
+  family: fpu
   privilege: unprivileged
   repeat:
   - REP
   - REPG
-forms:
-- operands:
-  - name: cc
-    type: condition
-    access: read
-  - name: src
-    type: Fn
-    access: read
-  - name: dst
-    type: Fn
-    access: write
-  sizes:
-  - S
-  - D
-- operands:
-  - name: cc
-    type: condition
-    access: read
-  - name: src
-    type: EA
-    access: read
-  - name: dst
-    type: Fn
-    access: write
-  sizes:
-  - S
-  - D
-- operands:
-  - name: cc
-    type: condition
-    access: read
-  - name: src
-    type: Fn
-    access: read
-  - name: dst
-    type: EA
-    access: write
-  sizes:
-  - S
-  - D

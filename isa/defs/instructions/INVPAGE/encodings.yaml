@@ -1,0 +1,10 @@
+forms:
+- id: long.invpage_ea_e
+  class: long
+  bits: 1111101111010000010eeeeeee
+  syntax: INVPAGE <ea>(e)
+  operands:
+  - name: page
+    type: EA
+    access: address
+    field: e

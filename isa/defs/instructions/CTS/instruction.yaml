@@ -1,27 +1,13 @@
 mnemonic: CTS
-doc:
-  title: Count Trailing Set Bits
-  summary: Performs the count trailing set bits operation.
-  description: Counts the trailing one bits within the selected operand size and writes the count to the destination register. A zero operand returns 0; an operand whose selected bits are all one returns the operand width in bits.
-  instruction_family: integer_bitfield
-  instruction_class: integer
+title: Count Trailing Set Bits
+summary: Performs the count trailing set bits operation.
+description: Counts the trailing one bits within the selected operand size and writes the count to the destination register. A zero operand returns 0; an operand whose selected bits are all one returns the operand width in bits.
 attributes:
+  class: integer
+  family: integer_bitfield
   privilege: unprivileged
   repeat:
   - REP
   - REPcc
   - REPG
   - REPGF
-forms:
-- operands:
-  - name: src
-    type: EA
-    access: read
-  - name: dst
-    type: Rn
-    access: read_write
-  sizes:
-  - B
-  - W
-  - L
-  - Q

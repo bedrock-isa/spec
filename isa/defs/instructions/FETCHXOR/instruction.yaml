@@ -1,25 +1,8 @@
 mnemonic: FETCHXOR
-doc:
-  title: Atomic Fetch Xor
-  summary: Performs the atomic fetch xor operation.
-  instruction_family: atomics
-  instruction_class: system
-  description: Atomically replaces the memory operand with its bitwise exclusive-or with the source and returns the previous memory value in the source register.
+title: Atomic Fetch Xor
+summary: Performs the atomic fetch xor operation.
+description: Atomically replaces the memory operand with its bitwise exclusive-or with the source and returns the previous memory value in the source register.
 attributes:
+  class: system
+  family: atomics
   privilege: unprivileged
-forms:
-- operands:
-  - name: order
-    type: memory_order
-    access: read
-  - name: src
-    type: Rn
-    access: read_write
-  - name: memory
-    type: EA
-    access: read_write
-  sizes:
-  - B
-  - W
-  - L
-  - Q

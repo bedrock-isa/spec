@@ -1,38 +1,12 @@
 mnemonic: MAXU
-doc:
-  title: Unsigned Maximum
-  summary: Performs the unsigned maximum operation.
-  instruction_family: integer_alu
-  instruction_class: integer
-  description: Compares the selected-width operands as unsigned integers and writes the greater value to the destination.
+title: Unsigned Maximum
+summary: Performs the unsigned maximum operation.
+description: Compares the selected-width operands as unsigned integers and writes the greater value to the destination.
 attributes:
+  class: integer
+  family: integer_alu
   privilege: unprivileged
   repeat:
   - REP
   - REPcc
   - REPG
-forms:
-- operands:
-  - name: src
-    type: EA
-    access: read
-  - name: dst
-    type: Rn
-    access: read_write
-  sizes:
-  - B
-  - W
-  - L
-  - Q
-- operands:
-  - name: src
-    type: Rn
-    access: read
-  - name: dst
-    type: EA
-    access: read_write
-  sizes:
-  - B
-  - W
-  - L
-  - Q

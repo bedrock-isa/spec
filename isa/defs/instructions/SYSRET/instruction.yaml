@@ -1,11 +1,9 @@
 mnemonic: SYSRET
-doc:
-  title: System Return
-  summary: Return to user mode from the user-return control-register bank.
-  description: Return to user mode from the UR control-register bank. SYSRET is the matching return instruction for SYSCALL and is valid only outside architectural event processing.
-  instruction_family: core_control
-  instruction_class: system
+title: System Return
+summary: Return to user mode from the user-return control-register bank.
+description: Return to user mode from the UR control-register bank. SYSRET is the matching return instruction for SYSCALL and is valid only outside architectural event processing.
 attributes:
+  class: system
+  family: core_control
   privilege: supervisor
-forms:
-- operands: []
+additional_description: details.tex

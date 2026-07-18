@@ -1,0 +1,5 @@
+forms:
+- id: extrashort.sysret
+  class: extrashort
+  bits: '0000110'
+  syntax: SYSRET

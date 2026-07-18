@@ -1,42 +1,13 @@
 mnemonic: EXTSW
-doc:
-  title: Sign Extend To Word
-  summary: Performs the sign extend to word operation.
-  description: Sign-extends the source operand from byte size to word size. The low byte of the source is copied into the destination, and the remaining high destination bits are filled with the source sign bit.
-  instruction_family: integer_unary
-  instruction_class: integer
+title: Sign Extend To Word
+summary: Performs the sign extend to word operation.
+description: Sign-extends the source operand from byte size to word size. The low byte of the source is copied into the destination, and the remaining high destination bits are filled with the source sign bit.
 attributes:
+  class: integer
+  family: integer_unary
   privilege: unprivileged
   repeat:
   - REP
   - REPcc
   - REPG
   - REPGF
-forms:
-- operands:
-  - name: src
-    type: EA
-    access: read
-  - name: dst
-    type: Rn
-    access: write
-  sizes:
-  - B
-- operands:
-  - name: src
-    type: Rn
-    access: read
-  - name: dst
-    type: EA
-    access: write
-  sizes:
-  - B
-- operands:
-  - name: src
-    type: EA
-    access: read
-  - name: dst
-    type: EA
-    access: write
-  sizes:
-  - B

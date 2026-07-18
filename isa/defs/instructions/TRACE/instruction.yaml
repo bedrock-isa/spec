@@ -1,14 +1,8 @@
 mnemonic: TRACE
-doc:
-  title: Trace Marker
-  summary: Performs the trace marker operation.
-  instruction_family: control_flow
-  instruction_class: control_flow
-  description: When architectural tracing is enabled, appends the low 16-bit marker and current instruction boundary to the implementation trace stream; otherwise it has no effect.
+title: Trace Marker
+summary: Performs the trace marker operation.
+description: When architectural tracing is enabled, appends the low 16-bit marker and current instruction boundary to the implementation trace stream; otherwise it has no effect.
 attributes:
+  class: control_flow
+  family: control_flow
   privilege: unprivileged
-forms:
-- operands:
-  - name: marker
-    type: imm16
-    access: read

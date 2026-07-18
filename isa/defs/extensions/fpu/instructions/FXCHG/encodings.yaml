@@ -1,0 +1,14 @@
+forms:
+- id: medium.fxchg_fn_l_fn_r
+  class: medium
+  bits: 1011010llll000rrrr
+  syntax: FXCHG Fn(l), Fn(r)
+  operands:
+  - name: lhs
+    type: Fn
+    access: read_write
+    field: l
+  - name: rhs
+    type: Fn
+    access: read_write
+    field: r

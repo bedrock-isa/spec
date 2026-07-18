@@ -1,44 +1,46 @@
 # Instruction Definitions
 
-`isa/defs` contains semantic instruction definitions for the current ISA.
-Concrete opcode placement is intentionally externalized to `isa/alloc`.
+`isa/defs` is the source of truth for instruction documentation, concrete
+encodings, architectural primitives, extension wiring, and document order.
 
-The current contents are a first-pass import from `old/isa/spec`:
+The former central allocation blocks have been replaced by instruction-owned
+encoding forms. Instruction and extension families remain explicit, and base
+instruction operand types use `Rn`; removed legacy core instructions are not
+kept as inactive definitions in this tree.
 
-```text
-old allocation blocks removed
-instruction families and extension families preserved
-old operand schema migrated to extension-aware operand files
-```
-
-This import is being migrated to the new architectural model. Base instruction
-operand types use `Rn`; removed legacy core instructions are not kept as
-inactive definitions in this tree.
-
-Definition YAML is reserved for enumerated values, logical operand forms, and
-constraints owned by a concrete instruction or format. Concrete instruction
-encoding fields, compact/extended placement, profiles, and encoding constraints
-live in `isa/alloc`. Cross-cutting
+Definition YAML is reserved for stable, structured values. Cross-cutting
 explanatory prose belongs in the reference templates, not in generic
 `rule`/`meaning`, `topic`/`value`, or similar document-shaped mappings. A
 derived list must be computed from its owning definitions instead of being
-copied into a second YAML source. The `doc` block on an instruction remains the
-intentional home for that instruction's title, summary, and narrative.
+copied into a second YAML source.
 
-Each instruction's `forms` value is a list of logical signatures. Every operand
-has a `name`, an operand `type`, and one of the common `access` values `read`,
-`write`, `read_write`, or `address`. `address` computes an EA address without an
-architectural load or store. A user-domain memory operand additionally carries
-`domain: user`; the ordinary current domain is implicit. A form may list its
-supported suffixes under `sizes`. Encoding-specific alternatives are not copied
-into this list.
+The exact versioned contract is documented in `SCHEMA.md`. The frozen
+dataclass decoder and `schema.lock` reject unknown fields, wrong scalar types,
+invalid discriminated variants, and unversioned changes to the decoder itself.
 
-Instruction attributes contain the privilege enum and, where applicable, the
-accepted repeat contexts. Integer condition-code effects live in an optional
-top-level `flags` mapping. Floating-point instructions that can accrue exception
-flags list them directly under `may_accrue_fp_flags`. Implicit state reads and
-writes are described by the instruction semantics rather than duplicated in an
-unconsumed metadata block.
+Each instruction directory contains two required YAML documents:
+
+```text
+instruction.yaml  title, summary, description, attributes, and optional TeX/syntax references
+encodings.yaml    concrete forms with stable ID, class, bits, syntax, operands, sizes, fields, and constraints
+```
+
+Every encoded operand has a `name`, registered operand `type`, and one of the
+common `access` values `read`, `write`, `read_write`, or `address`. It names its
+opcode marker with `field` unless it is a fixed or payload-only operand. A
+user-domain memory operand additionally carries `domain: user`; the ordinary
+current domain is implicit. `fields` declares non-operand selectors such as a
+size field. Field widths are derived from `bits` rather than repeated.
+
+Instruction attributes contain class, family, privilege, and, where applicable,
+accepted repeat contexts. Flag semantics and other instruction-specific
+normative detail live in the explicitly referenced TeX body. Implicit state
+reads and writes are described there rather than duplicated in unconsumed YAML.
+
+The five encoding classes, their declaration order, instruction byte counts,
+payload widths, and namespaces are declared once in `encoding_classes.yaml`.
+Allocation validation, reports, documentation, and `alloc_edit.py` aggregate
+the per-instruction `encodings.yaml` files against that registry.
 
 Extension-wide machine-readable invariants live in the extension root's
 `extension.yaml`. The top-level `extensions.yaml` lists root extension names,
@@ -67,7 +69,7 @@ same arrangement.
 The transcendental-approximation extension manifest contains only extension
 wiring and its feature association. The common approximation model and
 individual instruction contracts are normative TeX: the common model lives in
-`approximate_floating_point_intro.tex`, instruction-specific semantics live in
+the extension's `introduction.tex`, instruction-specific semantics live in
 sibling `details.tex` files, and the CPUID registry lives in
 `fptransa_accuracy_contracts.tex`. This documentation is not duplicated as
 instruction or extension YAML metadata.
@@ -75,5 +77,22 @@ instruction or extension YAML metadata.
 Run the definition-layer check with:
 
 ```sh
+python3 isa/tools/validate_schema.py
 python3 isa/tools/validate_defs.py
+python3 isa/tools/validate_alloc.py
+python3 isa/tools/validate_isa.py
 ```
+
+Generate allocation reports with `python3 isa/tools/gen_alloc_report.py`.
+Inspect the global space with `alloc_edit.py summary`, `entries`, `check`, or
+`holes`. The write commands operate on stable form IDs:
+
+```sh
+python3 isa/tools/alloc_edit.py add MNEMONIC form.yaml
+python3 isa/tools/alloc_edit.py move FORM_ID --class long --bits '...'
+python3 isa/tools/alloc_edit.py edit FORM_ID --bits '...' --constraints constraints.yaml
+```
+
+Write commands print a unified diff and make no change by default. `--apply`
+strictly decodes the candidate, checks registered references and the complete
+global opcode space, then atomically replaces the one `encodings.yaml` file.

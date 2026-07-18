@@ -1,11 +1,8 @@
 mnemonic: RESET
-doc:
-  title: Reset
-  summary: Perform warm reset; preserve BOOTPC and BOOTCFG.
-  description: RESET performs an architectural warm reset. It preserves the platform-supplied BOOTPC and BOOTCFG control registers, resets all other resettable architectural state, clears the standard performance counters, and resumes execution at BOOTPC. Cold reset is a platform event that initializes BOOTPC and BOOTCFG before beginning execution at BOOTPC.
-  instruction_family: core_control
-  instruction_class: system
+title: Reset
+summary: Perform warm reset; preserve BOOTPC and BOOTCFG.
+description: RESET performs an architectural warm reset. It preserves the platform-supplied BOOTPC and BOOTCFG control registers, resets all other resettable architectural state, clears the standard performance counters, and resumes execution at BOOTPC. Cold reset is a platform event that initializes BOOTPC and BOOTCFG before beginning execution at BOOTPC.
 attributes:
+  class: system
+  family: core_control
   privilege: supervisor
-forms:
-- operands: []

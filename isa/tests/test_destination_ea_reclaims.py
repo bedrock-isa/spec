@@ -17,19 +17,21 @@ from validate_alloc import (  # noqa: E402
     compact_bits,
     entry_claims,
     field_value,
-    namespace_patterns,
 )
-from validate_isa import load_yaml  # noqa: E402
+from encoding_store import allocation_entry_dict, load_encoding_store  # noqa: E402
 
 
-MEDIUM_ALLOC = ROOT / "isa" / "alloc" / "medium.yaml"
+DEFS_ROOT = ROOT / "isa" / "defs"
 IMMEDIATE_EA_VALUES = range(0x6C, 0x70)
 
 
 def immediate_claim_count(entry_id: str) -> int:
-    path = MEDIUM_ALLOC
-    data = load_yaml(path)
-    entry = next(item for item in data["entries"] if item["id"] == entry_id)
+    store = load_encoding_store(DEFS_ROOT)
+    encoding_class = store.classes_by_name["medium"]
+    path = store.class_path
+    entry = allocation_entry_dict(
+        next(item for item in store.for_class("medium") if item.form.id == entry_id)
+    )
     pattern = compact_bits(str(entry["bits"]))
     ea_fields = [
         name
@@ -40,8 +42,8 @@ def immediate_claim_count(entry_id: str) -> int:
         raise AssertionError(f"{entry_id}: expected one EA field, got {ea_fields}")
     claims, _ = entry_claims(
         path,
-        int(data["payload_bits"]),
-        namespace_patterns(int(data["payload_bits"]), data),
+        encoding_class.payload_bits,
+        list(encoding_class.namespace),
         entry,
     )
     result = 0

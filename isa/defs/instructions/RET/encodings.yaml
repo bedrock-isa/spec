@@ -1,0 +1,5 @@
+forms:
+- id: extrashort.ret
+  class: extrashort
+  bits: '0000010'
+  syntax: RET

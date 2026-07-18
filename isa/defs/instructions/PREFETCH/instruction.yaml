@@ -1,17 +1,11 @@
 mnemonic: PREFETCH
-doc:
-  title: Prefetch
-  summary: Hint that EA will be read soon; no architectural fault unless policy says otherwise.
-  instruction_family: cache
-  instruction_class: system
-  description: Computes the source address without an architectural read and issues an optional temporal read-prefetch hint. An AT=1 mapping produces no slot transaction. Ignoring the hint has no architectural effect except under an explicitly configured prefetch-fault policy.
+title: Prefetch
+summary: Hint that EA will be read soon; no architectural fault unless policy says otherwise.
+description: Computes the source address without an architectural read and issues an optional temporal read-prefetch hint. An AT=1 mapping produces no slot transaction. Ignoring the hint has no architectural effect except under an explicitly configured prefetch-fault policy.
 attributes:
+  class: system
+  family: cache
   privilege: unprivileged
   repeat:
   - REP
   - REPG
-forms:
-- operands:
-  - name: src
-    type: EA
-    access: address

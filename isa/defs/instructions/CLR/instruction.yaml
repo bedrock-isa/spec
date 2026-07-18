@@ -1,31 +1,13 @@
 mnemonic: CLR
-doc:
-  title: Clear
-  summary: Performs the clear operation.
-  instruction_family: integer_unary
-  instruction_class: integer
-  description: Writes zero to the selected-width destination.
+title: Clear
+summary: Performs the clear operation.
+description: Writes zero to the selected-width destination.
 attributes:
+  class: integer
+  family: integer_unary
   privilege: unprivileged
   repeat:
   - REP
   - REPcc
   - REPG
   - REPGF
-forms:
-- operands:
-  - name: dst
-    type: Rn
-    access: write
-  sizes:
-  - L
-  - Q
-- operands:
-  - name: dst
-    type: EA
-    access: write
-  sizes:
-  - B
-  - W
-  - L
-  - Q

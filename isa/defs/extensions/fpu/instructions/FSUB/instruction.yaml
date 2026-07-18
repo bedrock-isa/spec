@@ -1,38 +1,12 @@
 mnemonic: FSUB
-doc:
-  title: Floating-Point Subtract
-  summary: Subtracts the source operand from the destination operand.
-  instruction_family: fpu
-  instruction_class: fpu
-  description: Subtracts the selected-format floating-point source from the destination and writes the rounded result.
-may_accrue_fp_flags:
-- NV
-- OF
-- UF
-- NX
+title: Floating-Point Subtract
+summary: Subtracts the source operand from the destination operand.
+description: Subtracts the selected-format floating-point source from the destination and writes the rounded result.
 attributes:
+  class: fpu
+  family: fpu
   privilege: unprivileged
   repeat:
   - REP
   - REPG
-forms:
-- operands:
-  - name: src
-    type: Fn
-    access: read
-  - name: dst
-    type: Fn
-    access: read_write
-  sizes:
-  - S
-  - D
-- operands:
-  - name: src
-    type: EA
-    access: read
-  - name: dst
-    type: Fn
-    access: read_write
-  sizes:
-  - S
-  - D
+additional_description: details.tex

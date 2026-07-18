@@ -1,76 +1,14 @@
 mnemonic: TEST
-doc:
-  title: Test
-  summary: Computes a comparison result and updates condition codes without storing the temporary value.
-  instruction_family: integer_alu
-  instruction_class: integer
-  description: Computes the selected-width bitwise conjunction only to set Z and N, clears C and V, and does not write the temporary result.
-flags:
-  Z: result == 0
-  N: most_significant_bit(result)
-  C: '0'
-  V: '0'
+title: Test
+summary: Computes a comparison result and updates condition codes without storing the temporary value.
+description: Computes the selected-width bitwise conjunction only to set Z and N, clears C and V, and does not write the temporary result.
 attributes:
+  class: integer
+  family: integer_alu
   privilege: unprivileged
   repeat:
   - REP
   - REPcc
   - REPG
   - REPGF
-forms:
-- operands:
-  - name: src
-    type: Rn
-    access: read
-  - name: dst
-    type: Rn
-    access: read
-  sizes:
-  - L
-  - Q
-- operands:
-  - name: imm
-    type: imm
-    access: read
-  - name: rhs
-    type: Rn
-    access: read
-  sizes:
-  - W
-  - L
-- operands:
-  - name: lhs
-    type: EA
-    access: read
-  - name: rhs
-    type: Rn
-    access: read
-  sizes:
-  - B
-  - W
-  - L
-  - Q
-- operands:
-  - name: lhs
-    type: Rn
-    access: read
-  - name: rhs
-    type: EA
-    access: read
-  sizes:
-  - B
-  - W
-  - L
-  - Q
-- operands:
-  - name: imm
-    type: imm6
-    access: read
-  - name: rhs
-    type: EA
-    access: read
-  sizes:
-  - B
-  - W
-  - L
-  - Q
+additional_description: details.tex

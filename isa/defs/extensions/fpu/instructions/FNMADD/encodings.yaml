@@ -1,0 +1,70 @@
+forms:
+- id: long.fnmadd_x_fn_l_fn_r_fn_d
+  class: long
+  bits: 1111010000zllllrrrr110dddd
+  syntax: FNMADD.X(z:S/D) Fn(l), Fn(r), Fn(d)
+  operands:
+  - name: lhs
+    type: Fn
+    access: read
+    field: l
+  - name: rhs
+    type: Fn
+    access: read
+    field: r
+  - name: dst
+    type: Fn
+    access: read_write
+    field: d
+  sizes:
+  - S
+  - D
+  fields:
+    z:
+      type: size
+- id: extralong.fnmadd_x_ea_l_fn_r_fn_d
+  class: extralong
+  bits: 1111110000001z00rrrr010ddddlllllll
+  syntax: FNMADD.X(z:S/D) <ea>(l), Fn(r), Fn(d)
+  operands:
+  - name: lhs
+    type: EA
+    access: read
+    field: l
+  - name: rhs
+    type: Fn
+    access: read
+    field: r
+  - name: dst
+    type: Fn
+    access: read_write
+    field: d
+  sizes:
+  - S
+  - D
+  fields:
+    z:
+      type: size
+- id: extralong.fnmadd_x_fn_l_ea_r_fn_d
+  class: extralong
+  bits: 1111110000001z00llll110ddddrrrrrrr
+  syntax: FNMADD.X(z:S/D) Fn(l), <ea>(r), Fn(d)
+  operands:
+  - name: lhs
+    type: Fn
+    access: read
+    field: l
+  - name: rhs
+    type: EA
+    access: read
+    field: r
+  - name: dst
+    type: Fn
+    access: read_write
+    field: d
+  sizes:
+  - S
+  - D
+  fields:
+    z:
+      type: size

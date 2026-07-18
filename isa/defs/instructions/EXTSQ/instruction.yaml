@@ -1,57 +1,13 @@
 mnemonic: EXTSQ
-doc:
-  title: Sign Extend To Quad
-  summary: Performs the sign extend to quad operation.
-  description: Sign-extends the source operand from the instruction size to quad size. The low source-size bytes of the source are copied into the destination, and the remaining high destination bits are filled with the source sign bit.
-  instruction_family: integer_unary
-  instruction_class: integer
+title: Sign Extend To Quad
+summary: Performs the sign extend to quad operation.
+description: Sign-extends the source operand from the instruction size to quad size. The low source-size bytes of the source are copied into the destination, and the remaining high destination bits are filled with the source sign bit.
 attributes:
+  class: integer
+  family: integer_unary
   privilege: unprivileged
   repeat:
   - REP
   - REPcc
   - REPG
   - REPGF
-forms:
-- operands:
-  - name: src
-    type: Rn
-    access: read
-  - name: dst
-    type: Rn
-    access: write
-  sizes:
-  - L
-- operands:
-  - name: src
-    type: EA
-    access: read
-  - name: dst
-    type: Rn
-    access: write
-  sizes:
-  - B
-  - W
-  - L
-- operands:
-  - name: src
-    type: Rn
-    access: read
-  - name: dst
-    type: EA
-    access: write
-  sizes:
-  - B
-  - W
-  - L
-- operands:
-  - name: src
-    type: EA
-    access: read
-  - name: dst
-    type: EA
-    access: write
-  sizes:
-  - B
-  - W
-  - L

@@ -1,0 +1,58 @@
+forms:
+- id: long.fcvt_x_fn_s_fn_d
+  class: long
+  bits: 1111010111z0001ssss010dddd
+  syntax: FCVT.X(z:S/D) Fn(s), Fn(d)
+  operands:
+  - name: src
+    type: Fn
+    access: read
+    field: s
+  - name: dst
+    type: Fn
+    access: write
+    field: d
+  sizes:
+  - S
+  - D
+  fields:
+    z:
+      type: size
+- id: long.fcvt_x_fn_s_rn_d
+  class: long
+  bits: 1111010111z0011ssss010dddd
+  syntax: FCVT.X(z:S/D) Fn(s), Rn(d)
+  operands:
+  - name: src
+    type: Fn
+    access: read
+    field: s
+  - name: dst
+    type: Rn
+    access: write
+    field: d
+  sizes:
+  - S
+  - D
+  fields:
+    z:
+      type: size
+- id: long.fcvt_x_rn_s_fn_d
+  class: long
+  bits: 1111010111z0101ssss010dddd
+  syntax: FCVT.X(z:S/D) Rn(s), Fn(d)
+  operands:
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: Fn
+    access: write
+    field: d
+  sizes:
+  - S
+  - D
+  fields:
+    z:
+      type: size

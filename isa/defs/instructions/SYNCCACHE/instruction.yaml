@@ -1,14 +1,8 @@
 mnemonic: SYNCCACHE
-doc:
-  title: Synchronize Caches
-  summary: Synchronize instruction/data cache visibility.
-  instruction_family: cache
-  instruction_class: system
-  description: Writes dirty data for the addressed range to the point of instruction coherency, invalidates corresponding instruction and decoded state, and retires only when later fetches observe the synchronized bytes.
+title: Synchronize Caches
+summary: Synchronize instruction/data cache visibility.
+description: Writes dirty data for the addressed range to the point of instruction coherency, invalidates corresponding instruction and decoded state, and retires only when later fetches observe the synchronized bytes.
 attributes:
+  class: system
+  family: cache
   privilege: supervisor
-forms:
-- operands:
-  - name: target
-    type: EA
-    access: address

@@ -1,67 +1,13 @@
 mnemonic: BCLR
-doc:
-  title: Bit Clear
-  summary: Performs the bit clear operation.
-  instruction_family: integer_bitfield
-  instruction_class: integer
-  description: Clears the destination bit selected by the low six bits of the bit index and sets Z when that bit was previously clear.
-flags:
-  Z: old_bit == 0
-  N: unchanged
-  C: unchanged
-  V: unchanged
+title: Bit Clear
+summary: Performs the bit clear operation.
+description: Clears the destination bit selected by the low six bits of the bit index and sets Z when that bit was previously clear.
 attributes:
+  class: integer
+  family: integer_bitfield
   privilege: unprivileged
   repeat:
   - REP
   - REPcc
   - REPG
-forms:
-- operands:
-  - name: bit_index
-    type: Rn
-    access: read
-  - name: dst
-    type: Rn
-    access: read_write
-  sizes:
-  - B
-  - W
-  - L
-  - Q
-- operands:
-  - name: bit_index
-    type: imm6
-    access: read
-  - name: dst
-    type: Rn
-    access: read_write
-  sizes:
-  - B
-  - W
-  - L
-  - Q
-- operands:
-  - name: bit_index
-    type: Rn
-    access: read
-  - name: dst
-    type: EA
-    access: read_write
-  sizes:
-  - B
-  - W
-  - L
-  - Q
-- operands:
-  - name: bit_index
-    type: imm6
-    access: read
-  - name: dst
-    type: EA
-    access: read_write
-  sizes:
-  - B
-  - W
-  - L
-  - Q
+additional_description: details.tex

@@ -1,49 +1,13 @@
 mnemonic: SHR
-doc:
-  title: Shift Right
-  summary: Performs the shift right operation.
-  description: 'The effective count is the count operand modulo the selected operand width: B uses mod 8, W uses mod 16, L uses mod 32, and Q uses mod 64. If the effective count is zero, the destination is unchanged. FLAGS are unchanged for all counts.'
-  instruction_family: integer_bitfield
-  instruction_class: integer
+title: Shift Right
+summary: Performs the shift right operation.
+description: 'The effective count is the count operand modulo the selected operand width: B uses mod 8, W uses mod 16, L uses mod 32, and Q uses mod 64. If the effective count is zero, the destination is unchanged. FLAGS are unchanged for all counts.'
 attributes:
+  class: integer
+  family: integer_bitfield
   privilege: unprivileged
   repeat:
   - REP
   - REPcc
   - REPG
   - REPGF
-forms:
-- operands:
-  - name: count
-    type: Rn
-    access: read
-  - name: dst
-    type: Rn
-    access: read_write
-  sizes:
-  - L
-  - Q
-- operands:
-  - name: count
-    type: Rn
-    access: read
-  - name: dst
-    type: EA
-    access: read_write
-  sizes:
-  - B
-  - W
-  - L
-  - Q
-- operands:
-  - name: count
-    type: imm6
-    access: read
-  - name: dst
-    type: EA
-    access: read_write
-  sizes:
-  - B
-  - W
-  - L
-  - Q

@@ -1,0 +1,9 @@
+forms:
+- id: long.invasid_ea
+  class: long
+  bits: '11111011110100011000000000'
+  syntax: INVASID <imm16>
+  operands:
+  - name: asid
+    type: imm16
+    access: read

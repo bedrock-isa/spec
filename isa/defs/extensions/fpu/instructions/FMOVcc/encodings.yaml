@@ -1,0 +1,74 @@
+forms:
+- id: long.fmovcc_fn_s_fn_d
+  class: long
+  bits: 11110110010ccccssss000dddd
+  syntax: FMOVcc Fn(s), Fn(d)
+  operands:
+  - name: cc
+    type: condition
+    access: read
+    field: c
+  - name: src
+    type: Fn
+    access: read
+    field: s
+  - name: dst
+    type: Fn
+    access: write
+    field: d
+  sizes:
+  - S
+  - D
+- id: long.fmovcc_x_ea_s_fn_d
+  class: long
+  bits: 1111011010zccccddddeeeeeee
+  syntax: FMOVcc.X(z:S/D) <ea>(e), Fn(d)
+  operands:
+  - name: cc
+    type: condition
+    access: read
+    field: c
+  - name: src
+    type: EA
+    access: read
+    field: e
+  - name: dst
+    type: Fn
+    access: write
+    field: d
+  sizes:
+  - S
+  - D
+  fields:
+    z:
+      type: size
+- id: long.fmovcc_x_fn_s_ea_d
+  class: long
+  bits: 1111011001zccccsssseeeeeee
+  syntax: FMOVcc.X(z:S/D) Fn(s), <ea>(e)
+  operands:
+  - name: cc
+    type: condition
+    access: read
+    field: c
+  - name: src
+    type: Fn
+    access: read
+    field: s
+  - name: dst
+    type: EA
+    access: write
+    field: e
+  sizes:
+  - S
+  - D
+  fields:
+    z:
+      type: size
+  constraints:
+  - field: e
+    exclude: reg_direct
+    reason: canonical_form_reclaim
+  - field: e
+    exclude: immediate
+    reason: invalid_destination

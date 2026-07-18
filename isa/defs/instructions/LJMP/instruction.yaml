@@ -1,17 +1,9 @@
 mnemonic: LJMP
-doc:
-  title: Long Jump
-  summary: Atomically transfers control to a new CS:PC pair.
-  description: Long jump is the CS-changing jump instruction. It commits the new CS and PC as a single architectural control-transfer step, so software does not need to write CS directly while execution is still using the old PC. The two-operand form takes the new CS image from Rn and the target offset/address from the target EA. A segment-immediate plus offset-immediate form is not encoded because two 64-bit immediates would exceed the instruction-length budget for this form.
-  instruction_family: control_flow
-  instruction_class: control_flow
+title: Long Jump
+summary: Atomically transfers control to a new CS:PC pair.
+description: Long jump is the CS-changing jump instruction. It commits the new CS and PC as a single architectural control-transfer step, so software does not need to write CS directly while execution is still using the old PC. The two-operand form takes the new CS image from Rn and the target offset/address from the target EA. A segment-immediate plus offset-immediate form is not encoded because two 64-bit immediates would exceed the instruction-length budget for this form.
 attributes:
+  class: control_flow
+  family: control_flow
   privilege: unprivileged
-forms:
-- operands:
-  - name: new_cs
-    type: Rn
-    access: read
-  - name: target
-    type: EA
-    access: read
+additional_description: details.tex

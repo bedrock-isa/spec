@@ -1,33 +1,9 @@
 mnemonic: CMPXCHG
-doc:
-  title: Compare And Exchange
-  summary: Performs the compare and exchange operation.
-  description: Compares memory with the expected Rn register and conditionally stores the desired Rn register. After the operation, expected contains the observed old memory value. ZF=1 means the store happened; ZF=0 means memory was left unchanged.
-  instruction_family: atomics
-  instruction_class: system
-flags:
-  Z: store succeeded
-  N: cleared
-  C: cleared
-  V: cleared
+title: Compare And Exchange
+summary: Performs the compare and exchange operation.
+description: Compares memory with the expected Rn register and conditionally stores the desired Rn register. After the operation, expected contains the observed old memory value. ZF=1 means the store happened; ZF=0 means memory was left unchanged.
 attributes:
+  class: system
+  family: atomics
   privilege: unprivileged
-forms:
-- operands:
-  - name: order
-    type: memory_order
-    access: read
-  - name: expected
-    type: Rn
-    access: read_write
-  - name: desired
-    type: Rn
-    access: read
-  - name: memory
-    type: EA
-    access: read_write
-  sizes:
-  - B
-  - W
-  - L
-  - Q
+additional_description: details.tex

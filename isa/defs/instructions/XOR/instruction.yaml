@@ -1,71 +1,13 @@
 mnemonic: XOR
-doc:
-  title: Bitwise Xor
-  summary: Computes the bitwise XOR of the source and destination operands.
-  instruction_family: integer_alu
-  instruction_class: integer
-  description: Writes the selected-width bitwise exclusive-or of the source and destination values to the destination.
+title: Bitwise Xor
+summary: Computes the bitwise XOR of the source and destination operands.
+description: Writes the selected-width bitwise exclusive-or of the source and destination values to the destination.
 attributes:
+  class: integer
+  family: integer_alu
   privilege: unprivileged
   repeat:
   - REP
   - REPcc
   - REPG
   - REPGF
-forms:
-- operands:
-  - name: src
-    type: Rn
-    access: read
-  - name: dst
-    type: Rn
-    access: read_write
-  sizes:
-  - L
-  - Q
-- operands:
-  - name: imm
-    type: imm
-    access: read
-  - name: dst
-    type: Rn
-    access: read_write
-  sizes:
-  - W
-  - L
-- operands:
-  - name: src
-    type: EA
-    access: read
-  - name: dst
-    type: Rn
-    access: read_write
-  sizes:
-  - B
-  - W
-  - L
-  - Q
-- operands:
-  - name: src
-    type: Rn
-    access: read
-  - name: dst
-    type: EA
-    access: read_write
-  sizes:
-  - B
-  - W
-  - L
-  - Q
-- operands:
-  - name: imm
-    type: imm6
-    access: read
-  - name: dst
-    type: EA
-    access: read_write
-  sizes:
-  - B
-  - W
-  - L
-  - Q

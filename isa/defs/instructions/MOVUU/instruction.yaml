@@ -1,28 +1,12 @@
 mnemonic: MOVUU
-doc:
-  title: Move User To User
-  summary: Copies from user-domain memory to user-domain memory.
-  description: MOVUU is a supervisor-only checked user-access move. Both source and destination operands must be memory operands, and both memory accesses use the user domain. Register and immediate aliases are invalid.
-  instruction_family: data_movement
-  instruction_class: system
+title: Move User To User
+summary: Copies from user-domain memory to user-domain memory.
+description: MOVUU is a supervisor-only checked user-access move. Both source and destination operands must be memory operands, and both memory accesses use the user domain. Register and immediate aliases are invalid.
 attributes:
+  class: system
+  family: data_movement
   privilege: supervisor
   repeat:
   - REP
   - REPcc
   - REPG
-forms:
-- operands:
-  - name: src
-    type: EA
-    access: read
-    domain: user
-  - name: dst
-    type: EA
-    access: write
-    domain: user
-  sizes:
-  - B
-  - W
-  - L
-  - Q

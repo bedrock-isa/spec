@@ -20,28 +20,30 @@ from validate_alloc import (  # noqa: E402
     expand_pattern,
     field_value,
     matches_pattern,
-    namespace_patterns,
 )
-from validate_isa import load_yaml  # noqa: E402
+from encoding_store import allocation_entry_dict, load_encoding_store  # noqa: E402
 
 
-LONG_ALLOC = ROOT / "isa" / "alloc" / "long.yaml"
+DEFS_ROOT = ROOT / "isa" / "defs"
 IMMEDIATE_EA_VALUES = set(range(0x6C, 0x70))
 
 
 class ControlFlowEaReclaimTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.data = load_yaml(LONG_ALLOC)
-        cls.payload_bits = int(cls.data["payload_bits"])
-        cls.namespaces = namespace_patterns(cls.payload_bits, cls.data)
+        store = load_encoding_store(DEFS_ROOT)
+        encoding_class = store.classes_by_name["long"]
+        cls.path = store.class_path
+        cls.payload_bits = encoding_class.payload_bits
+        cls.namespaces = list(encoding_class.namespace)
+        cls.entries = [allocation_entry_dict(item) for item in store.for_class("long")]
 
     def entry(self, entry_id: str) -> dict[str, Any]:
-        return next(item for item in self.data["entries"] if item["id"] == entry_id)
+        return next(item for item in self.entries if item["id"] == entry_id)
 
     def claims(self, entry_id: str) -> tuple[set[int], dict[str, int]]:
         claims, skipped = entry_claims(
-            LONG_ALLOC,
+            self.path,
             self.payload_bits,
             self.namespaces,
             self.entry(entry_id),
@@ -56,12 +58,12 @@ class ControlFlowEaReclaimTests(unittest.TestCase):
 
     def claimed_targets(self, targets: set[int]) -> set[int]:
         result: set[int] = set()
-        for entry in self.data["entries"]:
+        for entry in self.entries:
             pattern = compact_bits(str(entry["bits"]))
             if not any(matches_pattern(value, pattern) for value in targets):
                 continue
             claims, _skipped = entry_claims(
-                LONG_ALLOC,
+                self.path,
                 self.payload_bits,
                 self.namespaces,
                 entry,

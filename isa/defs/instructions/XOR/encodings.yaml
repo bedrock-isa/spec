@@ -1,0 +1,120 @@
+forms:
+- id: short.xor_x_rn_s_rn_d
+  class: short
+  bits: 00110zssssdddd
+  syntax: XOR.X(z:L/Q) Rn(s), Rn(d)
+  operands:
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: Rn
+    access: read_write
+    field: d
+  sizes:
+  - L
+  - Q
+  fields:
+    z:
+      type: size
+- id: medium.xor_x_rn_s_ea_e
+  class: medium
+  bits: 010100zsssseeeeeee
+  syntax: XOR.X(z:B/W) Rn(s), <ea>(e)
+  operands:
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: EA
+    access: read_write
+    field: e
+  sizes:
+  - B
+  - W
+  fields:
+    z:
+      type: size
+  constraints:
+  - field: e
+    exclude: immediate
+    reason: invalid_destination
+- id: medium.xor_x_rn_s_ea_e.2
+  class: medium
+  bits: 010101zsssseeeeeee
+  syntax: XOR.X(z:L/Q) Rn(s), <ea>(e)
+  operands:
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: EA
+    access: read_write
+    field: e
+  sizes:
+  - L
+  - Q
+  fields:
+    z:
+      type: size
+  constraints:
+  - field: e
+    allow:
+    - 0x10..0x67
+    - 0x69..0x7f
+    reason: register_direct_and_sp_direct_reclaimed
+  - field: e
+    exclude: immediate
+    reason: invalid_destination
+- id: medium.xor_x_ea_e_rn_d
+  class: medium
+  bits: 010110zddddeeeeeee
+  syntax: XOR.X(z:B/W) <ea>(e), Rn(d)
+  operands:
+  - name: src
+    type: EA
+    access: read
+    field: e
+  - name: dst
+    type: Rn
+    access: read_write
+    field: d
+  sizes:
+  - B
+  - W
+  fields:
+    z:
+      type: size
+  constraints:
+  - field: e
+    allow:
+    - 0x10..0x7f
+    reason: register_direct_reclaimed
+- id: medium.xor_x_ea_e_rn_d.2
+  class: medium
+  bits: 010111zddddeeeeeee
+  syntax: XOR.X(z:L/Q) <ea>(e), Rn(d)
+  operands:
+  - name: src
+    type: EA
+    access: read
+    field: e
+  - name: dst
+    type: Rn
+    access: read_write
+    field: d
+  sizes:
+  - L
+  - Q
+  fields:
+    z:
+      type: size
+  constraints:
+  - field: e
+    allow:
+    - 0x10..0x67
+    - 0x69..0x7f
+    reason: register_direct_and_sp_direct_reclaimed

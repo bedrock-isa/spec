@@ -1,0 +1,58 @@
+forms:
+- id: short.abs_x_rn_r
+  class: short
+  bits: 10001z0100rrrr
+  syntax: ABS.X(z:L/Q) Rn(r)
+  operands:
+  - name: dst
+    type: Rn
+    access: read_write
+    field: r
+  sizes:
+  - L
+  - Q
+  fields:
+    z:
+      type: size
+- id: medium.abs_x_ea
+  class: medium
+  bits: 0eee10z1000000eeee
+  syntax: ABS.X(z:B/W) <ea>
+  operands:
+  - name: dst
+    type: EA
+    access: read_write
+    field: e
+  sizes:
+  - B
+  - W
+  fields:
+    z:
+      type: size
+  constraints:
+  - field: e
+    exclude: immediate
+    reason: invalid_destination
+- id: medium.abs_x_ea.2
+  class: medium
+  bits: 0eee10z1001000eeee
+  syntax: ABS.X(z:L/Q) <ea>
+  operands:
+  - name: dst
+    type: EA
+    access: read_write
+    field: e
+  sizes:
+  - L
+  - Q
+  fields:
+    z:
+      type: size
+  constraints:
+  - field: e
+    allow:
+    - 0x10..0x7f
+    reason: register_direct_reclaimed
+  - field: e
+    exclude: immediate
+    reason: invalid_destination

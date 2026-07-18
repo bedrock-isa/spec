@@ -1,0 +1,43 @@
+forms:
+- id: long.fgetman_x_ea_s_fn_d
+  class: long
+  bits: 1111010110z0010ddddeeeeeee
+  syntax: FGETMAN.X(z:S/D) <ea>(e), Fn(d)
+  operands:
+  - name: src
+    type: EA
+    access: read
+    field: e
+  - name: dst
+    type: Fn
+    access: write
+    field: d
+  sizes:
+  - S
+  - D
+  fields:
+    z:
+      type: size
+  constraints:
+  - field: e
+    exclude: reg_direct
+    reason: canonical_form_reclaim
+- id: long.fgetman_x_fn_s_fn_d
+  class: long
+  bits: 1111010110z0010dddd000ssss
+  syntax: FGETMAN.X(z:S/D) Fn(s), Fn(d)
+  operands:
+  - name: src
+    type: Fn
+    access: read
+    field: s
+  - name: dst
+    type: Fn
+    access: write
+    field: d
+  sizes:
+  - S
+  - D
+  fields:
+    z:
+      type: size

@@ -69,7 +69,11 @@ may run on that logical processor, system software saves and restores the bank w
 Virtualization includes it in guest supervisor state. Signal delivery, system-call restart, tracing, and initial
 user-process entry may inspect or establish the bank through WRCR, subject to the same validation rules.
 
-@SUPERVISOR_CONTROL_FLOW_TABLE@
+Normative control-flow behavior is defined by
+\hyperref[instr:syscall]{\texttt{SYSCALL}},
+\hyperref[instr:sysret]{\texttt{SYSRET}},
+\hyperref[instr:lret]{\texttt{LRET}}, and
+\hyperref[instr:eret]{\texttt{ERET}}.\par
 
 \subsection{Architectural Event Boundary}
 Exceptions, maskable interrupts, and NMI use the event-entry state and an architectural event frame. Event delivery

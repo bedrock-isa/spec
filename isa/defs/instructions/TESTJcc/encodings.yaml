@@ -1,0 +1,67 @@
+forms:
+- id: long.testjcc_x_rn_s_rn_d_imm8s
+  class: long
+  bits: 111100010zzccccssss010dddd
+  syntax: TESTJcc.X(z:B/W/L/Q) Rn(s), Rn(d), <imm8s>
+  operands:
+  - name: cc
+    type: condition
+    access: read
+    field: c
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: Rn
+    access: read
+    field: d
+  - name: target
+    type: imm8s
+    access: read
+  sizes:
+  - B
+  - W
+  - L
+  - Q
+  fields:
+    z:
+      type: size
+  constraints:
+  - field: c
+    allow:
+    - 0x2..0xf
+    reason: condition_true_false_reclaimed
+- id: long.testjcc_x_rn_s_rn_d_imm16s
+  class: long
+  bits: 111100010zzccccssss011dddd
+  syntax: TESTJcc.X(z:B/W/L/Q) Rn(s), Rn(d), <imm16s>
+  operands:
+  - name: cc
+    type: condition
+    access: read
+    field: c
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: Rn
+    access: read
+    field: d
+  - name: target
+    type: imm16s
+    access: read
+  sizes:
+  - B
+  - W
+  - L
+  - Q
+  fields:
+    z:
+      type: size
+  constraints:
+  - field: c
+    allow:
+    - 0x2..0xf
+    reason: condition_true_false_reclaimed

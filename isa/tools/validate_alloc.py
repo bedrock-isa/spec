@@ -166,7 +166,7 @@ def entry_claims(
     declared_fields = entry.get("fields") or {}
     actual_fields = field_widths(pattern)
     for name, spec in declared_fields.items():
-        expected_width = int(spec["width"])
+        expected_width = int(spec.get("width", actual_fields.get(name, 0)))
         actual_width = actual_fields.get(name, 0)
         if actual_width != expected_width:
             raise ValueError(
@@ -195,6 +195,58 @@ def entry_claims(
         claims.append((value, claim))
 
     return claims, skipped
+
+
+def validate_store(defs_root: Path) -> list[tuple[str, dict[str, int], Counter[str], list[str]]]:
+    """Validate all per-instruction encodings grouped by class."""
+    from encoding_store import class_entries, load_encoding_store
+
+    store = load_encoding_store(defs_root)
+    results: list[tuple[str, dict[str, int], Counter[str], list[str]]] = []
+    for encoding_class in store.classes:
+        data = {
+            "class": encoding_class.name,
+            "payload_bits": encoding_class.payload_bits,
+            "namespace": list(encoding_class.namespace),
+            "entries": class_entries(store, encoding_class.name),
+        }
+        total = namespace_size(list(encoding_class.namespace))
+        by_value: dict[int, Claim] = {}
+        allocated_values: set[int] = set()
+        skipped: Counter[str] = Counter()
+        overlaps: list[str] = []
+        for entry in data["entries"]:
+            claims, entry_skipped = entry_claims(
+                Path(str(entry.get("source_path", store.class_path))),
+                encoding_class.payload_bits,
+                list(encoding_class.namespace),
+                entry,
+            )
+            skipped.update(entry_skipped)
+            for value, claim in claims:
+                previous = by_value.get(value)
+                if previous is not None:
+                    overlaps.append(
+                        f"0x{value:x}: {previous.entry_id} overlaps {claim.entry_id}"
+                    )
+                    continue
+                by_value[value] = claim
+                allocated_values.add(value)
+        results.append(
+            (
+                encoding_class.name,
+                {
+                    "total": total,
+                    "allocated": len(allocated_values),
+                    "reserved_total": total - len(allocated_values),
+                    "claimed": len(by_value),
+                    "constraint_skipped": sum(skipped.values()),
+                },
+                skipped,
+                overlaps,
+            )
+        )
+    return results
 
 
 def default_namespace_patterns(payload_bits: int, cls: str) -> list[str]:
@@ -294,23 +346,37 @@ def main() -> int:
         "paths",
         nargs="*",
         type=Path,
-        default=sorted(Path("isa/alloc").glob("*.yaml")),
+        default=None,
         help="allocation YAML files to validate",
     )
+    parser.add_argument("--defs", type=Path, default=Path("isa/defs"))
     args = parser.parse_args()
 
     had_error = False
-    for path in args.paths:
+    if args.paths:
+        results: list[tuple[Path | None, str, dict[str, int], Counter[str], list[str]]] = []
+        for path in args.paths:
+            try:
+                cls, summary, skipped, overlaps = validate_file(path)
+                results.append((path, cls, summary, skipped, overlaps))
+            except Exception as exc:
+                had_error = True
+                print(f"{path}: ERROR: {exc}", file=sys.stderr)
+    else:
         try:
-            cls, summary, skipped, overlaps = validate_file(path)
+            results = [
+                (None, cls, summary, skipped, overlaps)
+                for cls, summary, skipped, overlaps in validate_store(args.defs)
+            ]
         except Exception as exc:
             had_error = True
-            print(f"{path}: ERROR: {exc}", file=sys.stderr)
-            continue
+            print(f"{args.defs}: ERROR: {exc}", file=sys.stderr)
+            results = []
 
+    for path, cls, summary, skipped, overlaps in results:
         if overlaps:
             had_error = True
-        print(f"{path} [{cls}]")
+        print(f"{path or args.defs} [{cls}]")
         print(f"  allocated:          {summary['allocated']}")
         print(f"  reserved total:     {summary['reserved_total']}")
         print(f"  constraint skipped: {summary['constraint_skipped']}")

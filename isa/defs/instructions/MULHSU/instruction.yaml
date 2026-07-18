@@ -1,23 +1,12 @@
 mnemonic: MULHSU
-doc:
-  title: Signed By Unsigned Multiply High
-  summary: Performs the signed by unsigned multiply high operation.
-  instruction_family: integer_mul_div
-  instruction_class: integer
-  description: Multiplies a signed destination by an unsigned source at the selected width and writes the high half of the double-width product.
+title: Signed By Unsigned Multiply High
+summary: Performs the signed by unsigned multiply high operation.
+description: Multiplies a signed destination by an unsigned source at the selected width and writes the high half of the double-width product.
 attributes:
+  class: integer
+  family: integer_mul_div
   privilege: unprivileged
   repeat:
   - REP
   - REPcc
   - REPG
-forms:
-- operands:
-  - name: src
-    type: Rn
-    access: read
-  - name: dst
-    type: Rn
-    access: read_write
-  sizes:
-  - Q

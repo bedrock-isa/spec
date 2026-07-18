@@ -1,11 +1,8 @@
 mnemonic: YIELD
-doc:
-  title: Yield
-  summary: Hints to the scheduler or implementation that the current thread may yield.
-  instruction_family: core_control
-  instruction_class: system
-  description: Notifies the implementation that the current hardware thread may be deprioritized or descheduled. It is not a memory barrier and resumes at the next instruction without architectural state changes.
+title: Yield
+summary: Hints to the scheduler or implementation that the current thread may yield.
+description: Notifies the implementation that the current hardware thread may be deprioritized or descheduled. It is not a memory barrier and resumes at the next instruction without architectural state changes.
 attributes:
+  class: system
+  family: core_control
   privilege: any
-forms:
-- operands: []

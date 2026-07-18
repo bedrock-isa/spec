@@ -1,44 +1,12 @@
 mnemonic: MOVcc
-doc:
-  title: Move Conditional
-  summary: Performs the move conditional operation.
-  instruction_family: control_flow
-  instruction_class: control_flow
-  description: Copies the source value to the destination only when the encoded condition is true.
+title: Move Conditional
+summary: Performs the move conditional operation.
+description: Copies the source value to the destination only when the encoded condition is true.
 attributes:
+  class: control_flow
+  family: control_flow
   privilege: unprivileged
   repeat:
   - REP
   - REPcc
   - REPG
-forms:
-- operands:
-  - name: cc
-    type: condition
-    access: read
-  - name: src
-    type: Rn
-    access: read
-  - name: dst
-    type: EA
-    access: write
-  sizes:
-  - B
-  - W
-  - L
-  - Q
-- operands:
-  - name: cc
-    type: condition
-    access: read
-  - name: src
-    type: EA
-    access: read
-  - name: dst
-    type: Rn
-    access: write
-  sizes:
-  - B
-  - W
-  - L
-  - Q

@@ -1,0 +1,5 @@
+# Frozen Bedrock YAML schema contract. Bump version for intentional changes.
+version=1
+families=12
+decoder_sha256=2e8894037a38742f44eedd0f43627a502254e9c1a139c60bc91ba8438e363f77
+contract_sha256=87d55b9851ea823b4cb93d0fa58eaac4bdd086c9a4046ba5fdeca4fbde43da11

@@ -1,0 +1,5 @@
+forms:
+- id: extrashort.afence
+  class: extrashort
+  bits: '0001100'
+  syntax: AFENCE

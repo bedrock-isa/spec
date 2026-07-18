@@ -1,0 +1,5 @@
+forms:
+- id: extrashort.nop
+  class: extrashort
+  bits: '0000001'
+  syntax: NOP

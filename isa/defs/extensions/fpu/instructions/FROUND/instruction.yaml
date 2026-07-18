@@ -1,46 +1,12 @@
 mnemonic: FROUND
-doc:
-  title: Floating-Point Round
-  summary: Performs the floating-point round operation.
-  instruction_family: fpu
-  instruction_class: fpu
-  description: Rounds the selected floating-point source to the nearest integral value in the same format according to the instruction-defined rounding rule.
-may_accrue_fp_flags:
-- NV
-- NX
+title: Floating-Point Round
+summary: Performs the floating-point round operation.
+description: Rounds the selected floating-point source to the nearest integral value in the same format according to the instruction-defined rounding rule.
 attributes:
+  class: fpu
+  family: fpu
   privilege: unprivileged
   repeat:
   - REP
   - REPG
-forms:
-- operands:
-  - name: src
-    type: Fn
-    access: read
-  - name: dst
-    type: Fn
-    access: write
-  sizes:
-  - S
-  - D
-- operands:
-  - name: src
-    type: EA
-    access: read
-  - name: dst
-    type: Fn
-    access: write
-  sizes:
-  - S
-  - D
-- operands:
-  - name: src
-    type: Fn
-    access: read
-  - name: dst
-    type: EA
-    access: write
-  sizes:
-  - S
-  - D
+additional_description: details.tex

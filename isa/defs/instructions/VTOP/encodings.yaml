@@ -1,0 +1,14 @@
+forms:
+- id: long.vtop_rn_v_rn_p
+  class: long
+  bits: 111110111101001vvvv000pppp
+  syntax: VTOP Rn(v), Rn(p)
+  operands:
+  - name: virt
+    type: Rn
+    access: read
+    field: v
+  - name: phys
+    type: Rn
+    access: write
+    field: p

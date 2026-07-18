@@ -1,31 +1,13 @@
 mnemonic: REVBYTE
-doc:
-  title: Reverse Bytes
-  summary: Performs the reverse bytes operation.
-  instruction_family: integer_alu
-  instruction_class: integer
-  description: Reverses the byte order within the selected operand width and writes the result to the destination.
+title: Reverse Bytes
+summary: Performs the reverse bytes operation.
+description: Reverses the byte order within the selected operand width and writes the result to the destination.
 attributes:
+  class: integer
+  family: integer_alu
   privilege: unprivileged
   repeat:
   - REP
   - REPcc
   - REPG
   - REPGF
-forms:
-- operands:
-  - name: dst
-    type: Rn
-    access: read_write
-  sizes:
-  - W
-  - L
-  - Q
-- operands:
-  - name: dst
-    type: EA
-    access: read_write
-  sizes:
-  - W
-  - L
-  - Q

@@ -1,22 +1,13 @@
 mnemonic: LEA
-doc:
-  title: Load Effective Address
-  summary: Performs the load effective address operation.
-  instruction_family: ea_utility
-  instruction_class: data_movement
-  description: Computes the source effective address without reading the addressed memory and writes that address to the destination.
+title: Load Effective Address
+summary: Performs the load effective address operation.
+description: Computes the source effective address without reading the addressed memory and writes that address to the destination.
 attributes:
+  class: data_movement
+  family: ea_utility
   privilege: unprivileged
   repeat:
   - REP
   - REPcc
   - REPG
   - REPGF
-forms:
-- operands:
-  - name: src
-    type: EA
-    access: address
-  - name: dst
-    type: Rn
-    access: write

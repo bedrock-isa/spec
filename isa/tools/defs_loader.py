@@ -6,6 +6,16 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from defs_schema import (
+    InstructionSetIndex,
+    decode_extension_catalog,
+    decode_extension_manifest,
+    decode_instruction_index,
+    decode_operand_registry,
+    decode_register_registry,
+    decode_size_registry,
+)
+
 try:
     import yaml
 except ImportError as exc:  # pragma: no cover - environment error path
@@ -24,6 +34,8 @@ class InstructionSetDef:
     name: str
     root: Path
     include: Path
+    title: str
+    introduction: Path | None = None
 
 
 def load_yaml(path: Path) -> Any:
@@ -36,6 +48,7 @@ def load_extension_catalog(defs_root: Path) -> dict[str, Any]:
     data = load_yaml(path)
     if not isinstance(data, dict):
         raise ValueError(f"{path}: expected mapping")
+    decode_extension_catalog(path, data)
     return data
 
 
@@ -59,6 +72,7 @@ def load_extensions(
         data = load_yaml(path)
         if not isinstance(data, dict):
             raise ValueError(f"{path}: expected mapping")
+        decode_extension_manifest(path, data)
         local_name = data.get("name")
         if not isinstance(local_name, str) or not local_name:
             raise ValueError(f"{path}: extension name must be a non-empty string")
@@ -101,8 +115,18 @@ def load_instruction_sets(
     extensions: dict[str, ExtensionDef] | None = None,
 ) -> list[InstructionSetDef]:
     extensions = extensions if extensions is not None else load_extensions(defs_root)
+    base_include = defs_root / "instructions.yaml"
+    base_index = decode_instruction_index(base_include, load_yaml(base_include))
     instruction_sets = [
-        InstructionSetDef("base", defs_root, defs_root / "instructions.yaml")
+        InstructionSetDef(
+            "base",
+            defs_root,
+            base_include,
+            base_index.title,
+            base_include.parent / base_index.introduction
+            if base_index.introduction
+            else None,
+        )
     ]
     names = {"base"}
 
@@ -114,11 +138,17 @@ def load_instruction_sets(
             raise ValueError(f"{extension.path}: instructions path must be a string")
         if extension.name in names:
             raise ValueError(f"{extension.path}: duplicate instruction set {extension.name!r}")
+        include_path = extension.path.parent / include_ref
+        index = decode_instruction_index(include_path, load_yaml(include_path))
         instruction_sets.append(
             InstructionSetDef(
                 extension.name,
                 extension.path.parent,
-                extension.path.parent / include_ref,
+                include_path,
+                index.title,
+                include_path.parent / index.introduction
+                if index.introduction
+                else None,
             )
         )
         names.add(extension.name)
@@ -142,6 +172,7 @@ def load_operand_types(
     operand_types: dict[str, Any] = {}
     for path in paths:
         data = load_yaml(path)
+        decode_operand_registry(path, data)
         declared = data.get("operand_types") if isinstance(data, dict) else None
         if not isinstance(declared, dict):
             raise ValueError(f"{path}: expected operand_types mapping")
@@ -174,6 +205,7 @@ def load_size_definitions(
     }
     for path in paths:
         data = load_yaml(path)
+        decode_size_registry(path, data)
         if not isinstance(data, dict):
             raise ValueError(f"{path}: expected mapping")
         for section, definitions in merged.items():
@@ -205,6 +237,7 @@ def load_register_groups(
     groups: dict[str, Any] = {}
     for path in paths:
         data = load_yaml(path)
+        decode_register_registry(path, data)
         if not isinstance(data, dict) or not isinstance(data.get("registers"), dict):
             raise ValueError(f"{path}: expected registers mapping")
         for name, group in data["registers"].items():

@@ -20,6 +20,8 @@ CPUID \texttt{SAVE\_AREA\_LAYOUT} leaves report every extension component's offs
 starts on a 64-byte boundary; software does not infer one offset from another component's size. When floating-point
 state is enabled, its component contains F0 through F15, FFLAGS, and FSTATUS.
 
-@SAVE_RESTORE_INSTRUCTION_TABLE@
+The normative instruction entries are
+\hyperref[instr:save]{\texttt{SAVE}} and
+\hyperref[instr:restore]{\texttt{RESTORE}}.\par
 
 \input{isa/tools/latex_builder/templates/fragments/save_area_diagram.tex}

@@ -1,0 +1,24 @@
+forms:
+- id: long.djcc_rn_r_ea_e
+  class: long
+  bits: 11110000111ccccrrrreeeeeee
+  syntax: DJcc Rn(r), <ea>(e)
+  operands:
+  - name: cc
+    type: condition
+    access: read
+    field: c
+  - name: counter
+    type: Rn
+    access: read_write
+    field: r
+  - name: target
+    type: EA
+    access: read
+    field: e
+  constraints:
+  - field: c
+    allow:
+    - 0
+    - 0x2..0xf
+    reason: condition_false_reclaimed

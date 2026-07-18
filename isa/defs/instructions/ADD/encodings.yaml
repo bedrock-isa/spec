@@ -1,0 +1,173 @@
+forms:
+- id: extrashort.add_q_8_sp
+  class: extrashort
+  bits: '0001110'
+  syntax: ADD.Q 8, SP
+  operands:
+  - name: imm
+    type: imm
+    access: read
+  - name: dst
+    type: SP
+    access: read_write
+  sizes:
+  - Q
+- id: short.add_x_rn_s_rn_d
+  class: short
+  bits: 00001zssssdddd
+  syntax: ADD.X(z:L/Q) Rn(s), Rn(d)
+  operands:
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: Rn
+    access: read_write
+    field: d
+  sizes:
+  - L
+  - Q
+  fields:
+    z:
+      type: size
+- id: short.add_q_imm8_i_sp
+  class: short
+  bits: 101111iiiiiiii
+  syntax: ADD.Q imm8(i), SP
+  operands:
+  - name: imm
+    type: imm8
+    access: read
+    field: i
+  - name: dst
+    type: SP
+    access: read_write
+  sizes:
+  - Q
+- id: medium.add_q_ea_sp
+  class: medium
+  bits: '000010011110000000'
+  syntax: ADD.Q <imm16s>, SP
+  operands:
+  - name: imm
+    type: imm16s
+    access: read
+  - name: dst
+    type: SP
+    access: read_write
+  sizes:
+  - Q
+- id: medium.add_q_ea_sp.2
+  class: medium
+  bits: '000010011110000001'
+  syntax: ADD.Q <imm32s>, SP
+  operands:
+  - name: imm
+    type: imm32s
+    access: read
+  - name: dst
+    type: SP
+    access: read_write
+  sizes:
+  - Q
+- id: medium.add_x_rn_s_ea_e
+  class: medium
+  bits: 000100zsssseeeeeee
+  syntax: ADD.X(z:B/W) Rn(s), <ea>(e)
+  operands:
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: EA
+    access: read_write
+    field: e
+  sizes:
+  - B
+  - W
+  fields:
+    z:
+      type: size
+  constraints:
+  - field: e
+    exclude: immediate
+    reason: invalid_destination
+- id: medium.add_x_rn_s_ea_e.2
+  class: medium
+  bits: 000101zsssseeeeeee
+  syntax: ADD.X(z:L/Q) Rn(s), <ea>(e)
+  operands:
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: EA
+    access: read_write
+    field: e
+  sizes:
+  - L
+  - Q
+  fields:
+    z:
+      type: size
+  constraints:
+  - field: e
+    allow:
+    - 0x10..0x67
+    - 0x69..0x7f
+    reason: register_direct_and_sp_direct_reclaimed
+  - field: e
+    exclude: immediate
+    reason: invalid_destination
+- id: medium.add_x_ea_e_rn_d
+  class: medium
+  bits: 000110zddddeeeeeee
+  syntax: ADD.X(z:B/W) <ea>(e), Rn(d)
+  operands:
+  - name: src
+    type: EA
+    access: read
+    field: e
+  - name: dst
+    type: Rn
+    access: read_write
+    field: d
+  sizes:
+  - B
+  - W
+  fields:
+    z:
+      type: size
+  constraints:
+  - field: e
+    allow:
+    - 0x10..0x7f
+    reason: register_direct_reclaimed
+- id: medium.add_x_ea_e_rn_d.2
+  class: medium
+  bits: 000111zddddeeeeeee
+  syntax: ADD.X(z:L/Q) <ea>(e), Rn(d)
+  operands:
+  - name: src
+    type: EA
+    access: read
+    field: e
+  - name: dst
+    type: Rn
+    access: read_write
+    field: d
+  sizes:
+  - L
+  - Q
+  fields:
+    z:
+      type: size
+  constraints:
+  - field: e
+    allow:
+    - 0x10..0x67
+    - 0x69..0x7f
+    reason: register_direct_and_sp_direct_reclaimed

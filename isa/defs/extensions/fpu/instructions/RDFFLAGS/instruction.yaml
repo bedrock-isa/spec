@@ -1,16 +1,8 @@
 mnemonic: RDFFLAGS
-doc:
-  title: Read Floating-Point Flags
-  summary: Read the accrued floating-point exception flags into a register.
-  description: RDFFLAGS reads the architectural FFLAGS register, zero-extends it to the destination register, and does not modify FFLAGS. RDFFLAGS requires the floating-point extension.
-  instruction_family: system_registers
-  instruction_class: system
+title: Read Floating-Point Flags
+summary: Read the accrued floating-point exception flags into a register.
+description: RDFFLAGS reads the architectural FFLAGS register, zero-extends it to the destination register, and does not modify FFLAGS. RDFFLAGS requires the floating-point extension.
 attributes:
+  class: system
+  family: system_registers
   privilege: unprivileged
-forms:
-- operands:
-  - name: dst
-    type: Rn
-    access: write
-  sizes:
-  - W

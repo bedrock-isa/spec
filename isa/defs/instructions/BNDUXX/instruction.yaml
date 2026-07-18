@@ -1,29 +1,12 @@
 mnemonic: BNDUXX
-doc:
-  title: Unsigned Bounds Check Exclusive-Exclusive
-  summary: Checks unsigned value membership in the exclusive-exclusive interval (lo, hi).
-  description: BNDUXX treats both bounds as exclusive. It sets V when unsigned(value) is outside (unsigned(lo), unsigned(hi)); Z, N, and C are unchanged.
-  instruction_family: bounds
-  instruction_class: integer
+title: Unsigned Bounds Check Exclusive-Exclusive
+summary: Checks unsigned value membership in the exclusive-exclusive interval (lo, hi).
+description: BNDUXX treats both bounds as exclusive. It sets V when unsigned(value) is outside (unsigned(lo), unsigned(hi)); Z, N, and C are unchanged.
 attributes:
+  class: integer
+  family: bounds
   privilege: unprivileged
   repeat:
   - REP
   - REPcc
   - REPG
-forms:
-- operands:
-  - name: lo
-    type: Rn
-    access: read
-  - name: value
-    type: EA
-    access: read
-  - name: hi
-    type: Rn
-    access: read
-  sizes:
-  - B
-  - W
-  - L
-  - Q

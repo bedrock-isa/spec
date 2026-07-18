@@ -1,0 +1,13 @@
+forms:
+- id: medium.fclr_fn_d
+  class: medium
+  bits: 100100z0001000dddd
+  syntax: FCLR Fn(d)
+  operands:
+  - name: dst
+    type: Fn
+    access: write
+    field: d
+  fields:
+    z:
+      type: size

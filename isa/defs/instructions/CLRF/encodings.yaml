@@ -1,0 +1,10 @@
+forms:
+- id: medium.clrf_flags_bitmap_m
+  class: medium
+  bits: 00001001011000mmmm
+  syntax: CLRF flags_bitmap(m)
+  operands:
+  - name: mask
+    type: flags_bitmap
+    access: read
+    field: m

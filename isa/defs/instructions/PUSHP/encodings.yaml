@@ -1,0 +1,10 @@
+forms:
+- id: extrashort.pushp_pair_id_i
+  class: extrashort
+  bits: 0010iii
+  syntax: PUSHP pair_id(i)
+  operands:
+  - name: pair_id
+    type: pair_id
+    access: read
+    field: i

@@ -1,11 +1,8 @@
 mnemonic: NOP
-doc:
-  title: No Operation
-  summary: No architectural state change.
-  instruction_family: core_control
-  instruction_class: system
-  description: Retires normally without changing architectural state.
+title: No Operation
+summary: No architectural state change.
+description: Retires normally without changing architectural state.
 attributes:
+  class: system
+  family: core_control
   privilege: any
-forms:
-- operands: []

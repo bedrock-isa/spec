@@ -1,37 +1,12 @@
 mnemonic: FCMP
-doc:
-  title: Floating-Point Compare
-  summary: Performs the floating-point compare operation.
-  instruction_family: fpu
-  instruction_class: fpu
-  description: Compares the selected-format floating-point operands and updates the integer condition flags without writing a floating-point result.
-flags:
-  V: set when unordered
-may_accrue_fp_flags:
-- NV
+title: Floating-Point Compare
+summary: Performs the floating-point compare operation.
+description: Compares the selected-format floating-point operands and updates the integer condition flags without writing a floating-point result.
 attributes:
+  class: fpu
+  family: fpu
   privilege: unprivileged
   repeat:
   - REP
   - REPG
-forms:
-- operands:
-  - name: src
-    type: Fn
-    access: read
-  - name: dst
-    type: Fn
-    access: read
-  sizes:
-  - S
-  - D
-- operands:
-  - name: src
-    type: EA
-    access: read
-  - name: dst
-    type: Fn
-    access: read
-  sizes:
-  - S
-  - D
+additional_description: details.tex

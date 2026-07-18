@@ -1,0 +1,14 @@
+forms:
+- id: long.swpta_rn_p_rn_a
+  class: long
+  bits: 111110111101001aaaa001pppp
+  syntax: SWPTA Rn(p), Rn(a)
+  operands:
+  - name: new_ptcr
+    type: Rn
+    access: read
+    field: p
+  - name: asid
+    type: Rn
+    access: read
+    field: a

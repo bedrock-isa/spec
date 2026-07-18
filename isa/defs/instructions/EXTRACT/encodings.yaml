@@ -1,0 +1,26 @@
+forms:
+- id: long.extract_x_imm7_i_rn_h_rn_l
+  class: long
+  bits: 111100101zzhhhhlllliiiiiii
+  syntax: EXTRACT.X(z:B/W/L/Q) imm7(i), Rn(h), Rn(l)
+  operands:
+  - name: offset
+    type: imm7
+    access: read
+    field: i
+  - name: high
+    type: Rn
+    access: read
+    field: h
+  - name: low_dst
+    type: Rn
+    access: read_write
+    field: l
+  sizes:
+  - B
+  - W
+  - L
+  - Q
+  fields:
+    z:
+      type: size

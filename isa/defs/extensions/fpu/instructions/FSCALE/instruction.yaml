@@ -1,38 +1,12 @@
 mnemonic: FSCALE
-doc:
-  title: Floating-Point Scale
-  summary: Performs the floating-point scale operation.
-  instruction_family: fpu
-  instruction_class: fpu
-  description: Scales the selected floating-point destination by an integral power of two derived from the source and writes the rounded result.
-may_accrue_fp_flags:
-- NV
-- OF
-- UF
-- NX
+title: Floating-Point Scale
+summary: Performs the floating-point scale operation.
+description: Scales the selected floating-point destination by an integral power of two derived from the source and writes the rounded result.
 attributes:
+  class: fpu
+  family: fpu
   privilege: unprivileged
   repeat:
   - REP
   - REPG
-forms:
-- operands:
-  - name: src
-    type: Fn
-    access: read
-  - name: dst
-    type: Fn
-    access: read_write
-  sizes:
-  - S
-  - D
-- operands:
-  - name: src
-    type: EA
-    access: read
-  - name: dst
-    type: Fn
-    access: read_write
-  sizes:
-  - S
-  - D
+additional_description: details.tex

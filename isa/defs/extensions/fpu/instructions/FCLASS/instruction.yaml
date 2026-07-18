@@ -1,23 +1,12 @@
 mnemonic: FCLASS
-doc:
-  title: Floating-Point Classify
-  summary: Performs the floating-point classify operation.
-  instruction_family: fpu
-  instruction_class: fpu
-  description: Examines the selected floating-point encoding without raising a floating-point exception and writes a one-hot class bitmap to the integer destination.
+title: Floating-Point Classify
+summary: Performs the floating-point classify operation.
+description: Examines the selected floating-point encoding without raising a floating-point exception and writes a one-hot class bitmap to the integer destination.
 attributes:
+  class: fpu
+  family: fpu
   privilege: unprivileged
   repeat:
   - REP
   - REPG
-forms:
-- operands:
-  - name: src
-    type: Fn
-    access: read
-  - name: dst
-    type: Rn
-    access: write
-  sizes:
-  - S
-  - D
+additional_description: details.tex

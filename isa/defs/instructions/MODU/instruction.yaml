@@ -1,26 +1,13 @@
 mnemonic: MODU
-doc:
-  title: Unsigned Modulo
-  summary: Performs the unsigned modulo operation.
-  instruction_family: integer_mul_div
-  instruction_class: integer
-  description: Writes the remainder of selected-width unsigned destination-by-source division. A zero divisor raises DIVIDE_ERROR.
+title: Unsigned Modulo
+summary: Performs the unsigned modulo operation.
+description: Writes the remainder of selected-width unsigned destination-by-source division. A zero divisor raises DIVIDE_ERROR.
 attributes:
+  class: integer
+  family: integer_mul_div
   privilege: unprivileged
   repeat:
   - REP
   - REPcc
   - REPG
-forms:
-- operands:
-  - name: src
-    type: EA
-    access: read
-  - name: dst
-    type: Rn
-    access: read_write
-  sizes:
-  - B
-  - W
-  - L
-  - Q
+additional_description: details.tex

@@ -1,17 +1,9 @@
 mnemonic: RDPMC
-doc:
-  title: Read Performance Counter
-  summary: Read the 64-bit performance counter selected by a constant counter ID.
-  description: RDPMC reads a mandatory or implementation-discovered performance counter from any privilege level. Counter ID zero and every other unimplemented counter ID raise INVALID_CONTROL_STATE with the INVALID_SELECTOR cause.
-  instruction_family: system_registers
-  instruction_class: system
+title: Read Performance Counter
+summary: Read the 64-bit performance counter selected by a constant counter ID.
+description: RDPMC reads a mandatory or implementation-discovered performance counter from any privilege level. Counter ID zero and every other unimplemented counter ID raise INVALID_CONTROL_STATE with the INVALID_SELECTOR cause.
 attributes:
+  class: system
+  family: system_registers
   privilege: unprivileged
-forms:
-- operands:
-  - name: counter_id
-    type: imm16
-    access: read
-  - name: dst
-    type: Rn
-    access: write
+additional_description: details.tex

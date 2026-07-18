@@ -1,0 +1,22 @@
+forms:
+- id: medium.lea_x_ea_rn
+  class: medium
+  bits: 0eeez1zdddd000eeee
+  syntax: LEA.X(z:B/W/L/Q) <ea>, Rn
+  operands:
+  - name: src
+    type: EA
+    access: address
+    field: e
+  - name: dst
+    type: Rn
+    access: write
+    field: d
+  sizes:
+  - B
+  - W
+  - L
+  - Q
+  fields:
+    z:
+      type: size

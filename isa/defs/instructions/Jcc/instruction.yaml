@@ -1,50 +1,8 @@
 mnemonic: Jcc
-doc:
-  title: Jump Conditional
-  summary: Transfers control when the encoded condition is true.
-  instruction_family: control_flow
-  instruction_class: control_flow
-  description: Transfers execution to the target when the encoded condition is true and otherwise continues at the next instruction. Compact direct-relative forms retain the W/L displacement selector. Extended EA forms use L/Q. Jcc.L reads the low 32-bit target from its register or memory EA and zero-extends it to the 64-bit near target; Jcc.Q uses the complete 64-bit target.
+title: Jump Conditional
+summary: Transfers control when the encoded condition is true.
+description: Transfers execution to the target when the encoded condition is true and otherwise continues at the next instruction. Compact direct-relative forms retain the W/L displacement selector. Extended EA forms use L/Q. Jcc.L reads the low 32-bit target from its register or memory EA and zero-extends it to the 64-bit near target; Jcc.Q uses the complete 64-bit target.
 attributes:
+  class: control_flow
+  family: control_flow
   privilege: unprivileged
-forms:
-- operands:
-  - name: cc
-    type: condition
-    access: read
-  - name: target
-    type: imm8s
-    access: read
-  sizes:
-  - W
-  - L
-- operands:
-  - name: cc
-    type: condition
-    access: read
-  - name: target
-    type: imm16s
-    access: read
-  sizes:
-  - W
-  - L
-- operands:
-  - name: cc
-    type: condition
-    access: read
-  - name: target
-    type: imm32s
-    access: read
-  sizes:
-  - W
-  - L
-- operands:
-  - name: cc
-    type: condition
-    access: read
-  - name: target
-    type: EA
-    access: read
-  sizes:
-  - L
-  - Q

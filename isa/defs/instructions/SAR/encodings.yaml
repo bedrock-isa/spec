@@ -1,0 +1,95 @@
+forms:
+- id: short.sar_x_rn_s_rn_d
+  class: short
+  bits: 01101zssssdddd
+  syntax: SAR.X(z:L/Q) Rn(s), Rn(d)
+  operands:
+  - name: count
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: Rn
+    access: read_write
+    field: d
+  sizes:
+  - L
+  - Q
+  fields:
+    z:
+      type: size
+- id: medium.sar_x_rn_s_ea_e
+  class: medium
+  bits: 101110zsssseeeeeee
+  syntax: SAR.X(z:B/W) Rn(s), <ea>(e)
+  operands:
+  - name: count
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: EA
+    access: read_write
+    field: e
+  sizes:
+  - B
+  - W
+  fields:
+    z:
+      type: size
+  constraints:
+  - field: e
+    exclude: immediate
+    reason: invalid_destination
+- id: medium.sar_x_rn_s_ea_e.2
+  class: medium
+  bits: 101111zsssseeeeeee
+  syntax: SAR.X(z:L/Q) Rn(s), <ea>(e)
+  operands:
+  - name: count
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: EA
+    access: read_write
+    field: e
+  sizes:
+  - L
+  - Q
+  fields:
+    z:
+      type: size
+  constraints:
+  - field: e
+    allow:
+    - 0x10..0x7f
+    reason: register_direct_reclaimed
+  - field: e
+    exclude: immediate
+    reason: invalid_destination
+- id: long.sar_x_imm6_i_ea_e
+  class: long
+  bits: 1111101110zz0iiiiiieeeeeee
+  syntax: SAR.X(z:B/W/L/Q) imm6(i), <ea>(e)
+  operands:
+  - name: count
+    type: imm6
+    access: read
+    field: i
+  - name: dst
+    type: EA
+    access: read_write
+    field: e
+  sizes:
+  - B
+  - W
+  - L
+  - Q
+  fields:
+    z:
+      type: size
+  constraints:
+  - field: e
+    exclude: immediate
+    reason: invalid_destination

@@ -8,8 +8,10 @@ The active source tree is:
 
 ```text
 isa/memory_model/             draft formal-validation gate and litmus obligations
-isa/defs/**/instructions/    one directory per instruction, with instruction.yaml and optional details.tex
-isa/alloc/*.yaml             opcode allocation source of truth
+isa/defs/SCHEMA.md            frozen versioned YAML document contract
+isa/defs/schema.lock          decoder version and SHA-256 contract lock
+isa/defs/encoding_classes.yaml encoding-class framing, width, order, and namespaces
+isa/defs/**/instructions/    instruction.yaml, encodings.yaml, and optional TeX per instruction
 isa/tex/*.tex                shared reference-document components
 isa/abi/bedrock-elf-abi.tex  ELF binary-format ABI source
 isa/abi/bedrock-c-abi.tex    C ABI source, including far-pointer ABI
@@ -17,6 +19,7 @@ isa/c/*.tex                  C language-extension and compiler-API sources
 isa/c/include/*.h            target intrinsic header interfaces
 isa/guides/*.tex             non-normative programming and toolchain guides
 isa/tools/validate_defs.py   definition include/family consistency validator
+isa/tools/validate_schema.py version-lock and strict YAML decoder gate
 isa/tools/validate_alloc.py  allocation collision and cardinality validator
 isa/tools/validate_isa.py    definition/allocation join validator
 isa/tools/validate_abi_docs.py ABI document and intrinsic-header validator
@@ -29,11 +32,13 @@ Historical source snapshots and reference material are kept under `old/`.
 
 ## Instruction Documentation Sources
 
-Each instruction lives in an `instructions/<MNEMONIC>/` directory. Its
-`instruction.yaml` carries a required, non-normative `doc.summary` for summary
-tables and a required, normative one-paragraph `doc.description`. Instructions
-that need additional normative material place a body-only `details.tex` beside
-the YAML file; the generator supplies the `Detailed Semantics` heading.
+Each instruction lives in an `instructions/<MNEMONIC>/` directory.
+`instruction.yaml` carries the title, summary, one-paragraph description, and
+common attributes. `encodings.yaml` owns every concrete encoding form, including
+syntax, operands, fields, sizes, and reclaim constraints. Instructions that need
+additional normative material name a body-only TeX file with
+`additional_description`; the generator supplies the `Detailed Semantics`
+heading.
 
 Each instruction-set `instructions.yaml` explicitly lists instruction
 directories. Extension-wide architectural metadata lives in an
@@ -53,8 +58,9 @@ python3 -m pip install -r requirements.txt
 Run the definition and allocation checks with:
 
 ```sh
+python3 isa/tools/validate_schema.py
 python3 isa/tools/validate_defs.py
-python3 isa/tools/validate_alloc.py isa/alloc/*.yaml
+python3 isa/tools/validate_alloc.py
 python3 isa/tools/validate_isa.py
 python3 isa/tools/validate_abi_docs.py
 ```

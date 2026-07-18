@@ -1,0 +1,10 @@
+forms:
+- id: extrashort.fpopp_pair_id_i
+  class: extrashort
+  bits: 1111iii
+  syntax: FPOPP pair_id(i)
+  operands:
+  - name: pair_id
+    type: fp_pair_id
+    access: read
+    field: i

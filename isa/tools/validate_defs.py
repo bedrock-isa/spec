@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
-"""Validate instruction definition YAML files for the ISA rewrite."""
+"""Strictly validate the integrated ISA definition tree and its references."""
 
 from __future__ import annotations
 
 import argparse
-from collections import Counter, defaultdict
+from collections import Counter
 from pathlib import Path
 import re
-import sys
 from typing import Any
 
 from defs_loader import (
@@ -17,42 +16,22 @@ from defs_loader import (
     load_instruction_sets,
     load_operand_types,
     load_register_groups,
+    load_size_definitions,
     load_yaml,
 )
+from defs_schema import (
+    DecodeError,
+    decode_encodings,
+    decode_instruction,
+    decode_yaml,
+    verify_schema_lock,
+)
+from encoding_store import load_encoding_store
 
 
 ROOT = Path("isa/defs")
 INSTRUCTION_FILENAME = "instruction.yaml"
-INSTRUCTION_DETAILS_FILENAME = "details.tex"
-FORBIDDEN_BEHAVIOR_KEYS = {
-    "operation",
-    "operation_text",
-    "operation_by_form",
-    "fault_order",
-    "fault_atomicity",
-    "canonicalization",
-    "descriptor_payloads",
-}
-
-
-def scalar_list(value: Any) -> list[str]:
-    if value is None:
-        return []
-    if isinstance(value, list):
-        return [str(item) for item in value]
-    return [str(value)]
-
-
-def collect_operand_types(value: Any, out: Counter[str]) -> None:
-    if isinstance(value, dict):
-        typ = value.get("type")
-        if isinstance(typ, str):
-            out[typ] += 1
-        for child in value.values():
-            collect_operand_types(child, out)
-    elif isinstance(value, list):
-        for child in value:
-            collect_operand_types(child, out)
+ENCODINGS_FILENAME = "encodings.yaml"
 
 
 def iter_instruction_files(
@@ -62,14 +41,12 @@ def iter_instruction_files(
     files: list[Path] = []
     for instruction_set in instruction_sets:
         include = instruction_set.include
-        if not include.exists():
-            errors.append(f"missing include file: {include}")
-            continue
+        if instruction_set.introduction is not None and not instruction_set.introduction.is_file():
+            errors.append(
+                f"{include}: missing introduction {instruction_set.introduction.name}"
+            )
         data = load_yaml(include)
-        if not isinstance(data, dict):
-            errors.append(f"{include}: expected mapping")
-            continue
-        include_items = data.get("include")
+        include_items = data.get("include") if isinstance(data, dict) else None
         if not isinstance(include_items, list):
             errors.append(f"{include}: include must be a list of instruction directories")
             continue
@@ -77,11 +54,7 @@ def iter_instruction_files(
             if not isinstance(item, str) or not item.strip():
                 errors.append(f"{include}: instruction include entries must be non-empty strings")
                 continue
-            directory = include.parent / item
-            if not directory.is_dir():
-                errors.append(f"{include}: missing instruction directory {item}")
-                continue
-            path = directory / INSTRUCTION_FILENAME
+            path = include.parent / item / INSTRUCTION_FILENAME
             if not path.is_file():
                 errors.append(f"{include}: missing instruction definition {item}/{INSTRUCTION_FILENAME}")
                 continue
@@ -93,29 +66,13 @@ def normalized_sentence(value: str) -> str:
     return " ".join(re.sub(r"[^A-Za-z0-9]+", " ", value).lower().split())
 
 
-def forbidden_key_locations(value: Any, prefix: str = "") -> list[str]:
-    locations: list[str] = []
-    if isinstance(value, dict):
-        for key, child in value.items():
-            location = f"{prefix}.{key}" if prefix else str(key)
-            if key in FORBIDDEN_BEHAVIOR_KEYS or key == "description_tex":
-                locations.append(location)
-            locations.extend(forbidden_key_locations(child, location))
-    elif isinstance(value, list):
-        for index, child in enumerate(value):
-            locations.extend(forbidden_key_locations(child, f"{prefix}[{index}]"))
-    return locations
-
-
-def validate_details_tex(path: Path) -> list[str]:
-    if not path.exists():
-        return []
+def validate_description_tex(path: Path) -> list[str]:
     if not path.is_file():
-        return [f"{path}: expected a regular details.tex file"]
+        return [f"{path}: referenced TeX file does not exist"]
     text = path.read_text(encoding="utf-8").strip()
     errors: list[str] = []
     if not text:
-        errors.append(f"{path}: details.tex must not be empty")
+        errors.append(f"{path}: referenced TeX file must not be empty")
     forbidden = (
         re.search(r"\\(?:sub)*section\s*(?!\*)\{", text)
         or re.search(r"\\addcontentsline\s*\{toc\}", text)
@@ -125,179 +82,171 @@ def validate_details_tex(path: Path) -> list[str]:
         )
     )
     if forbidden:
-        errors.append(f"{path}: details.tex contains a forbidden document-structure command")
+        errors.append(f"{path}: additional description contains a forbidden document-structure command")
     return errors
 
 
 def validate_defs(root: Path = ROOT) -> tuple[dict[str, Any], list[str]]:
-    catalog_path = root / "extensions.yaml"
     errors: list[str] = []
-    if not catalog_path.exists():
-        return {}, [f"missing extension catalog: {catalog_path}"]
-
-    catalog = load_extension_catalog(root)
     try:
+        verify_schema_lock()
+        for path in sorted(root.rglob("*.yaml")):
+            decode_yaml(path)
+        catalog = load_extension_catalog(root)
         extensions = load_extensions(root, catalog)
-    except (OSError, ValueError) as exc:
-        extensions = {}
-        errors.append(str(exc))
-    try:
         register_groups = load_register_groups(root, extensions)
-    except (OSError, ValueError) as exc:
-        register_groups = {}
-        errors.append(str(exc))
-    try:
         instruction_sets = load_instruction_sets(root, extensions)
-    except (OSError, ValueError) as exc:
-        instruction_sets = []
-        errors.append(str(exc))
+        operand_types = load_operand_types(root, extensions)
+        sizes = load_size_definitions(root, extensions)
+    except (OSError, ValueError, DecodeError) as exc:
+        return {}, [str(exc)]
 
-    fptransa_extension = extensions.get("fpu.transcendental_approx")
-    try:
-        declared_operand_types = load_operand_types(root, extensions)
-    except (OSError, ValueError) as exc:
-        declared_operand_types = {}
-        errors.append(str(exc))
-    allowed_operand_types = set(declared_operand_types)
+    cpuid_positions: dict[tuple[int, int, int, int], str] = {}
+    cpuid_features: dict[str, str] = {}
+    for name, extension in extensions.items():
+        availability = extension.data.get("availability")
+        cpuid = availability.get("cpuid") if isinstance(availability, dict) else None
+        if not isinstance(cpuid, dict):
+            continue
+        position = (
+            int(cpuid["class"]),
+            int(cpuid["leaf"]),
+            int(cpuid["index"]),
+            int(cpuid["bit"]),
+        )
+        if any(value < 0 for value in position[:3]) or not 0 <= position[3] < 64:
+            errors.append(f"{extension.path}: invalid CPUID feature position {position}")
+        previous = cpuid_positions.get(position)
+        if previous is not None:
+            errors.append(
+                f"{extension.path}: CPUID position {position} duplicates extension {previous}"
+            )
+        cpuid_positions[position] = name
+        feature = str(cpuid["feature"])
+        previous = cpuid_features.get(feature)
+        if previous is not None:
+            errors.append(
+                f"{extension.path}: CPUID feature {feature} duplicates extension {previous}"
+            )
+        cpuid_features[feature] = name
+
     instruction_files, include_errors = iter_instruction_files(instruction_sets)
     errors.extend(include_errors)
-    discovered_instruction_files = set(root.glob("**/instructions/*/instruction.yaml"))
-    listed_instruction_files = set(instruction_files)
-    discovered_instruction_dirs = {
-        path for path in root.glob("**/instructions/*") if path.is_dir()
-    }
-    for path in sorted(discovered_instruction_files - listed_instruction_files):
+    listed = set(instruction_files)
+    discovered = set(root.glob("**/instructions/*/instruction.yaml"))
+    for path in sorted(discovered - listed):
         errors.append(f"{path}: instruction definition is not listed by an instructions.yaml index")
-    for path in sorted(listed_instruction_files - discovered_instruction_files):
+    for path in sorted(listed - discovered):
         errors.append(f"{path}: listed instruction definition is outside the directory contract")
-    if discovered_instruction_dirs != {path.parent for path in discovered_instruction_files}:
-        errors.append("instruction directories and instruction.yaml parents do not match exactly")
 
+    known_operand_types = set(operand_types)
+    known_sizes = set((sizes.get("size_codes") or {}).keys())
+    known_field_types = known_operand_types | {"size"}
     mnemonics: dict[str, Path] = {}
-    counts = Counter()
-    operand_types = Counter()
-    instruction_families = Counter()
-    legacy_operand_files: dict[str, set[Path]] = defaultdict(set)
-    unknown_operand_files: dict[str, set[Path]] = defaultdict(set)
+    instruction_families: Counter[str] = Counter()
+    used_operand_types: Counter[str] = Counter()
     details_count = 0
+    encoding_count = 0
 
     for path in instruction_files:
-        data = load_yaml(path)
-        if not isinstance(data, dict):
-            errors.append(f"{path}: expected mapping")
+        try:
+            document = decode_instruction(path, load_yaml(path))
+        except (OSError, ValueError, DecodeError) as exc:
+            errors.append(str(exc))
             continue
-
-        if "allocation" in data:
-            errors.append(f"{path}: instruction definition still contains allocation block")
-
-        mnemonic = data.get("mnemonic")
-        if mnemonic is None:
-            errors.append(f"{path}: missing mnemonic")
-            continue
-
-        mnemonic = str(mnemonic)
-        for location in forbidden_key_locations(data):
-            errors.append(f"{path}: forbidden field {location}")
-        if path.name != INSTRUCTION_FILENAME:
-            errors.append(f"{path}: instruction definition must be named {INSTRUCTION_FILENAME}")
+        mnemonic = document.mnemonic
         if path.parent.name != mnemonic:
             errors.append(f"{path}: directory name must match mnemonic {mnemonic}")
         previous = mnemonics.get(mnemonic)
         if previous is not None:
             errors.append(f"duplicate mnemonic {mnemonic}: {previous} and {path}")
         mnemonics[mnemonic] = path
-        counts["instructions"] += 1
+        instruction_families[document.attributes.family] += 1
 
-        doc = data.get("doc", {})
-        if isinstance(doc, dict):
-            summary_text = doc.get("summary")
-            if not isinstance(summary_text, str) or not summary_text.strip():
-                errors.append(f"{path}: doc.summary must be a non-empty string")
-            else:
-                summary_text = " ".join(summary_text.split())
-                if len(summary_text) > 120:
-                    errors.append(f"{path}: doc.summary exceeds 120 characters")
-                if len(re.findall(r"[.!?](?:\s|$)", summary_text)) != 1:
-                    errors.append(f"{path}: doc.summary must contain exactly one sentence")
-            description_text = doc.get("description")
-            if not isinstance(description_text, str) or not description_text.strip():
-                errors.append(f"{path}: doc.description must be a non-empty string")
-            else:
-                if "\n\n" in description_text.strip():
-                    errors.append(f"{path}: doc.description must be a single paragraph")
-                if isinstance(summary_text, str):
-                    summary_norm = normalized_sentence(summary_text)
-                    description_norm = normalized_sentence(description_text)
-                    if summary_norm and description_norm.startswith(summary_norm):
-                        errors.append(f"{path}: doc.description repeats doc.summary as its opening sentence")
-            for family in scalar_list(doc.get("instruction_family")):
-                instruction_families[family] += 1
+        summary = " ".join(document.summary.split())
+        if len(summary) > 120:
+            errors.append(f"{path}: summary exceeds 120 characters")
+        if len(re.findall(r"[.!?](?:\s|$)", summary)) != 1:
+            errors.append(f"{path}: summary must contain exactly one sentence")
+        if "\n\n" in document.description.strip():
+            errors.append(f"{path}: description must be a single paragraph")
+        if normalized_sentence(document.description).startswith(normalized_sentence(summary)):
+            errors.append(f"{path}: description repeats summary as its opening sentence")
 
-        details_path = path.with_name(INSTRUCTION_DETAILS_FILENAME)
-        if details_path.exists():
+        if document.additional_description is not None:
             details_count += 1
-            errors.extend(validate_details_tex(details_path))
+            errors.extend(validate_description_tex(path.parent / document.additional_description))
 
-        forms = data.get("forms", [])
-        is_fptransa = (
-            fptransa_extension is not None
-            and path.is_relative_to(fptransa_extension.path.parent / "instructions")
-        )
-        if is_fptransa:
-            supported_sizes = {
-                str(size)
-                for form in forms if isinstance(form, dict)
-                for size in (form.get("sizes") or [])
-            } if isinstance(forms, list) else set()
-            if supported_sizes != {"S", "D"}:
-                errors.append(f"{path}: FPTRANSA instructions must support S and D together")
-            documentation_text = " ".join(
-                [
-                    str(doc.get("description", "")),
-                    details_path.read_text(encoding="utf-8") if details_path.is_file() else "",
-                ]
-            )
-            documentation_plain = documentation_text.replace(r"\_", "_")
-            if "unbounded precision" in documentation_text or "using FSTATUS.RM" in documentation_text:
-                errors.append(f"{path}: correctly-rounded language remains in FPTRANSA documentation")
-            if "PRESENT" not in documentation_plain or "ILLEGAL_INSTRUCTION" not in documentation_plain:
-                errors.append(f"{path}: details do not define unavailable-contract handling")
-            updates = data.get("may_accrue_fp_flags", [])
-            if "NX" in updates:
-                errors.append(f"{path}: FPTRANSA must leave NX unchanged")
+        encodings_path = path.with_name(ENCODINGS_FILENAME)
+        if not encodings_path.is_file():
+            errors.append(f"{path}: missing {ENCODINGS_FILENAME}")
+            continue
+        try:
+            encodings = decode_encodings(encodings_path, load_yaml(encodings_path))
+        except (OSError, ValueError, DecodeError) as exc:
+            errors.append(str(exc))
+            continue
+        encoding_count += len(encodings.forms)
+        for form in encodings.forms:
+            head = re.split(r"[./(]", form.syntax.split()[0])[0]
+            if head != mnemonic:
+                errors.append(
+                    f"{encodings_path}: form {form.id} syntax names {head}, expected {mnemonic}"
+                )
+            for operand in form.operands:
+                used_operand_types[operand.type] += 1
+                if operand.type not in known_operand_types:
+                    errors.append(
+                        f"{encodings_path}: form {form.id} uses unknown operand type {operand.type}"
+                    )
+                elif operand.field is not None:
+                    expected_width = int(operand_types[operand.type]["field_width"])
+                    actual_width = form.bits.count(operand.field)
+                    if actual_width != expected_width:
+                        errors.append(
+                            f"{encodings_path}: form {form.id} operand {operand.name} "
+                            f"has {actual_width}-bit field, but {operand.type} requires {expected_width}"
+                        )
+            for marker, field in form.fields.items():
+                if field.type not in known_field_types:
+                    errors.append(
+                        f"{encodings_path}: form {form.id} field {marker} uses unknown type {field.type}"
+                    )
+                elif field.type != "size":
+                    expected_width = int(operand_types[field.type]["field_width"])
+                    actual_width = form.bits.count(marker)
+                    if actual_width != expected_width:
+                        errors.append(
+                            f"{encodings_path}: form {form.id} selector {marker} "
+                            f"has {actual_width} bits, but {field.type} requires {expected_width}"
+                        )
+            for size in form.sizes:
+                if size not in known_sizes:
+                    errors.append(
+                        f"{encodings_path}: form {form.id} uses unknown size {size}"
+                    )
 
-        collect_operand_types(data, operand_types)
-        file_operand_types = Counter()
-        collect_operand_types(data, file_operand_types)
-        for legacy in ("DREG", "AREG", "DBANK", "DREG_OR_AREG"):
-            if file_operand_types[legacy]:
-                legacy_operand_files[legacy].add(path)
+    discovered_encoding_files = set(root.glob("**/instructions/*/encodings.yaml"))
+    expected_encoding_files = {path.with_name(ENCODINGS_FILENAME) for path in instruction_files}
+    for path in sorted(discovered_encoding_files - expected_encoding_files):
+        errors.append(f"{path}: encodings file is outside a listed instruction directory")
 
-        if allowed_operand_types:
-            for typ in file_operand_types:
-                if typ not in allowed_operand_types:
-                    unknown_operand_files[typ].add(path)
-
-    if legacy_operand_files:
-        details = ", ".join(f"{key}={len(value)}" for key, value in sorted(legacy_operand_files.items()))
-        errors.append(f"instruction files still use legacy operand types: {details}")
-    if unknown_operand_files:
-        details = ", ".join(f"{key}={len(value)}" for key, value in sorted(unknown_operand_files.items()))
-        errors.append(f"instruction files use operand types not listed in operands.yaml: {details}")
-    discovered_details_paths = set(root.glob("**/instructions/*/details.tex"))
-    if any(path.parent not in discovered_instruction_dirs for path in discovered_details_paths):
-        errors.append("details.tex found outside a valid instruction directory")
+    try:
+        store = load_encoding_store(root)
+        if len(store.encodings) != encoding_count:
+            errors.append("global encoding store count differs from per-instruction decode count")
+    except (OSError, ValueError, DecodeError) as exc:
+        errors.append(str(exc))
 
     summary = {
         "extension_definitions": len(extensions),
         "register_groups": len(register_groups),
         "instruction_files": len(instruction_files),
-        "instructions": counts["instructions"],
+        "instructions": len(mnemonics),
         "instruction_details": details_count,
+        "encodings": encoding_count,
         "instruction_families": dict(sorted(instruction_families.items())),
-        "operand_types": dict(sorted(operand_types.items())),
-        "legacy_operand_files": {key: len(value) for key, value in sorted(legacy_operand_files.items())},
-        "unknown_operand_files": {key: len(value) for key, value in sorted(unknown_operand_files.items())},
+        "operand_types": dict(sorted(used_operand_types.items())),
     }
     return summary, errors
 
@@ -306,30 +255,23 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=ROOT)
     args = parser.parse_args()
-
     summary, errors = validate_defs(args.root)
-
-    print(f"{args.root}")
+    print(args.root)
     for key in (
         "extension_definitions",
         "register_groups",
         "instruction_files",
         "instructions",
         "instruction_details",
+        "encodings",
     ):
         print(f"  {key}: {summary.get(key, 0)}")
     print("  instruction families:", len(summary.get("instruction_families", {})))
-    legacy = summary.get("legacy_operand_files", {})
-    if legacy:
-        details = ", ".join(f"{key}={value}" for key, value in legacy.items())
-        print(f"  legacy operand files: {details}")
-
     print(f"  errors: {len(errors)}")
     for error in errors[:40]:
         print(f"    {error}")
     if len(errors) > 40:
         print(f"    ... {len(errors) - 40} more")
-
     return 1 if errors else 0
 
 

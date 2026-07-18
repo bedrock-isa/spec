@@ -1,11 +1,9 @@
 mnemonic: LRET
-doc:
-  title: Long Return
-  summary: Pops a far return frame and atomically restores CS:PC.
-  description: Long return reads the far return frame from SS:SP and commits CS and PC together. The frame contains the return PC Q value at the current SP and the return CS Q value at SP+8; after both values are fetched, SP is advanced by 16 bytes and the control state is committed.
-  instruction_family: control_flow
-  instruction_class: control_flow
+title: Long Return
+summary: Pops a far return frame and atomically restores CS:PC.
+description: Long return reads the far return frame from SS:SP and commits CS and PC together. The frame contains the return PC Q value at the current SP and the return CS Q value at SP+8; after both values are fetched, SP is advanced by 16 bytes and the control state is committed.
 attributes:
+  class: control_flow
+  family: control_flow
   privilege: unprivileged
-forms:
-- operands: []
+additional_description: details.tex

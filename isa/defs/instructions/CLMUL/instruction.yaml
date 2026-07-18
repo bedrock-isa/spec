@@ -1,26 +1,13 @@
 mnemonic: CLMUL
-doc:
-  title: Carryless Multiply
-  summary: Performs the carryless multiply operation.
-  instruction_family: integer_mul_div
-  instruction_class: integer
-  description: Forms the carryless polynomial product of the selected-width source and destination values and writes its low half to the destination.
+title: Carryless Multiply
+summary: Performs the carryless multiply operation.
+description: Forms the carryless polynomial product of the selected-width source and destination values and writes its low half to the destination.
 attributes:
+  class: integer
+  family: integer_mul_div
   privilege: unprivileged
   repeat:
   - REP
   - REPcc
   - REPG
-forms:
-- operands:
-  - name: src
-    type: EA
-    access: read
-  - name: dst
-    type: Rn
-    access: read_write
-  sizes:
-  - B
-  - W
-  - L
-  - Q
+additional_description: details.tex

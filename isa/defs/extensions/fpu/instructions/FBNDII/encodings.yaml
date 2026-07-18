@@ -1,0 +1,70 @@
+forms:
+- id: long.fbndii_x_fn_l_fn_v_fn_h
+  class: long
+  bits: 1111010000zllllhhhh000vvvv
+  syntax: FBNDII.X(z:S/D) Fn(l), Fn(v), Fn(h)
+  operands:
+  - name: lo
+    type: Fn
+    access: read
+    field: l
+  - name: value
+    type: Fn
+    access: read
+    field: v
+  - name: hi
+    type: Fn
+    access: read
+    field: h
+  sizes:
+  - S
+  - D
+  fields:
+    z:
+      type: size
+- id: long.fbndii_x_fn_l_ea_v_fn_h
+  class: long
+  bits: 1111010001zllllhhhhvvvvvvv
+  syntax: FBNDII.X(z:S/D) Fn(l), <ea>(v), Fn(h)
+  operands:
+  - name: lo
+    type: Fn
+    access: read
+    field: l
+  - name: value
+    type: EA
+    access: read
+    field: v
+  - name: hi
+    type: Fn
+    access: read
+    field: h
+  sizes:
+  - S
+  - D
+  fields:
+    z:
+      type: size
+- id: extralong.fbndii_x_ea_l_fn_v_ea_h
+  class: extralong
+  bits: 1111110000000z00vvvvlllllllhhhhhhh
+  syntax: FBNDII.X(z:S/D) <ea>(l), Fn(v), <ea>(h)
+  operands:
+  - name: lo
+    type: EA
+    access: read
+    field: l
+  - name: value
+    type: Fn
+    access: read
+    field: v
+  - name: hi
+    type: EA
+    access: read
+    field: h
+  sizes:
+  - S
+  - D
+  fields:
+    z:
+      type: size

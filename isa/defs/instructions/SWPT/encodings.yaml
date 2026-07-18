@@ -1,0 +1,10 @@
+forms:
+- id: long.swpt_rn_p
+  class: long
+  bits: 1111101111010001111011pppp
+  syntax: SWPT Rn(p)
+  operands:
+  - name: new_ptcr
+    type: Rn
+    access: read
+    field: p

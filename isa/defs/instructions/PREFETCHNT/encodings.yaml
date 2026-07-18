@@ -1,0 +1,14 @@
+forms:
+- id: long.prefetchnt_ea_e
+  class: long
+  bits: 1111101111010001011eeeeeee
+  syntax: PREFETCHNT <ea>(e)
+  operands:
+  - name: src
+    type: EA
+    access: address
+    field: e
+  constraints:
+  - field: e
+    exclude: reg_direct
+    reason: register_direct_reclaimed

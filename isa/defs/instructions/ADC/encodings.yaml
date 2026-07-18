@@ -1,0 +1,75 @@
+forms:
+- id: medium.adc_x_rn_s_rn_d
+  class: medium
+  bits: 1100zz1ssss000dddd
+  syntax: ADC.X(z:B/W/L/Q) Rn(s), Rn(d)
+  operands:
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: Rn
+    access: read_write
+    field: d
+  sizes:
+  - B
+  - W
+  - L
+  - Q
+  fields:
+    z:
+      type: size
+- id: long.adc_x_rn_s_ea_e
+  class: long
+  bits: 1111000000zz000sssseeeeeee
+  syntax: ADC.X(z:B/W/L/Q) Rn(s), <ea>(e)
+  operands:
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: EA
+    access: read_write
+    field: e
+  sizes:
+  - B
+  - W
+  - L
+  - Q
+  fields:
+    z:
+      type: size
+  constraints:
+  - field: e
+    exclude: rn_direct
+    reason: canonical_form_reclaim
+  - field: e
+    exclude: immediate
+    reason: invalid_destination
+- id: long.adc_x_ea_e_rn_s
+  class: long
+  bits: 1111000000zz001sssseeeeeee
+  syntax: ADC.X(z:B/W/L/Q) <ea>(e), Rn(s)
+  operands:
+  - name: src
+    type: EA
+    access: read
+    field: e
+  - name: dst
+    type: Rn
+    access: read_write
+    field: s
+  sizes:
+  - B
+  - W
+  - L
+  - Q
+  fields:
+    z:
+      type: size
+  constraints:
+  - field: e
+    exclude: rn_direct
+    reason: canonical_form_reclaim

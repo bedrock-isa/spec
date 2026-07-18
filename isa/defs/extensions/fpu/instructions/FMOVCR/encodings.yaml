@@ -1,0 +1,19 @@
+forms:
+- id: long.fmovcr_x_imm16_fn_d
+  class: long
+  bits: 1111010110z01100010000dddd
+  syntax: FMOVCR.X(z:S/D) <imm16>, Fn(d)
+  operands:
+  - name: constant_id
+    type: fconst_id
+    access: read
+  - name: dst
+    type: Fn
+    access: write
+    field: d
+  sizes:
+  - S
+  - D
+  fields:
+    z:
+      type: size

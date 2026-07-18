@@ -1,27 +1,13 @@
 mnemonic: CLZ
-doc:
-  title: Count Leading Zeros
-  summary: Performs the count leading zeros operation.
-  description: Counts the leading zero bits within the selected operand size and writes the count to the destination register. A zero operand returns the operand width in bits.
-  instruction_family: integer_bitfield
-  instruction_class: integer
+title: Count Leading Zeros
+summary: Performs the count leading zeros operation.
+description: Counts the leading zero bits within the selected operand size and writes the count to the destination register. A zero operand returns the operand width in bits.
 attributes:
+  class: integer
+  family: integer_bitfield
   privilege: unprivileged
   repeat:
   - REP
   - REPcc
   - REPG
   - REPGF
-forms:
-- operands:
-  - name: src
-    type: EA
-    access: read
-  - name: dst
-    type: Rn
-    access: read_write
-  sizes:
-  - B
-  - W
-  - L
-  - Q

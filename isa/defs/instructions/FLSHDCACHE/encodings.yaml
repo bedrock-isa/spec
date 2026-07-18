@@ -1,0 +1,14 @@
+forms:
+- id: long.flshdcache_ea_e
+  class: long
+  bits: 1111101111010000011eeeeeee
+  syntax: FLSHDCACHE <ea>(e)
+  operands:
+  - name: target
+    type: EA
+    access: address
+    field: e
+  constraints:
+  - field: e
+    exclude: reg_direct
+    reason: register_direct_reclaimed

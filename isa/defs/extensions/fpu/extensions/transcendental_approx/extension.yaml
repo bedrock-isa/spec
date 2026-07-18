@@ -1,4 +1,9 @@
 name: transcendental_approx
+availability:
+  cpuid:
+    feature: FPTRANSA
+    class: 0x00000001
+    leaf: 0x0000
+    index: 1
+    bit: 1
 instructions: instructions.yaml
-cpuid:
-  feature: OPTIONAL_EXTENSION_FEATURES.FPTRANSA

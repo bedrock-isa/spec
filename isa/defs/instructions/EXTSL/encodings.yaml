@@ -1,0 +1,135 @@
+forms:
+- id: short.extsl_x_rn_s_rn_d
+  class: short
+  bits: 01111zssssdddd
+  syntax: EXTSL.X(z:B/W) Rn(s), Rn(d)
+  operands:
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: Rn
+    access: write
+    field: d
+  sizes:
+  - B
+  - W
+  fields:
+    z:
+      type: size
+- id: medium.extsl_b_rn_s_ea_e
+  class: medium
+  bits: 1110000sssseeeeeee
+  syntax: EXTSL.B Rn(s), <ea>(e)
+  operands:
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: EA
+    access: write
+    field: e
+  sizes:
+  - B
+  constraints:
+  - field: e
+    allow:
+    - 0x10..0x7f
+    reason: register_direct_reclaimed
+  - field: e
+    exclude: immediate
+    reason: invalid_destination
+- id: medium.extsl_b_ea_e_rn_d
+  class: medium
+  bits: 1110001ddddeeeeeee
+  syntax: EXTSL.B <ea>(e), Rn(d)
+  operands:
+  - name: src
+    type: EA
+    access: read
+    field: e
+  - name: dst
+    type: Rn
+    access: write
+    field: d
+  sizes:
+  - B
+  constraints:
+  - field: e
+    allow:
+    - 0x10..0x7f
+    reason: register_direct_reclaimed
+- id: medium.extsl_w_rn_s_ea_e
+  class: medium
+  bits: 1110010sssseeeeeee
+  syntax: EXTSL.W Rn(s), <ea>(e)
+  operands:
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: EA
+    access: write
+    field: e
+  sizes:
+  - W
+  constraints:
+  - field: e
+    allow:
+    - 0x10..0x7f
+    reason: register_direct_reclaimed
+  - field: e
+    exclude: immediate
+    reason: invalid_destination
+- id: medium.extsl_w_ea_e_rn_d
+  class: medium
+  bits: 1110011ddddeeeeeee
+  syntax: EXTSL.W <ea>(e), Rn(d)
+  operands:
+  - name: src
+    type: EA
+    access: read
+    field: e
+  - name: dst
+    type: Rn
+    access: write
+    field: d
+  sizes:
+  - W
+  constraints:
+  - field: e
+    allow:
+    - 0x10..0x7f
+    reason: register_direct_reclaimed
+- id: long.extsl_x_ea_s_ea_d
+  class: long
+  bits: 11111010100zsssssssddddddd
+  syntax: EXTSL.X(z:B/W) <ea>(s), <ea>(d)
+  operands:
+  - name: src
+    type: EA
+    access: read
+    field: s
+  - name: dst
+    type: EA
+    access: write
+    field: d
+  sizes:
+  - B
+  - W
+  fields:
+    z:
+      type: size
+  constraints:
+  - field: s
+    exclude: reg_direct
+    reason: canonical_form_reclaim
+  - field: d
+    exclude: reg_direct
+    reason: canonical_form_reclaim
+  - field: d
+    exclude: immediate
+    reason: invalid_destination

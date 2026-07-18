@@ -1,29 +1,12 @@
 mnemonic: BNDSIX
-doc:
-  title: Signed Bounds Check Inclusive-Exclusive
-  summary: Checks signed value membership in the inclusive-exclusive interval [lo, hi).
-  description: BNDSIX treats the low bound as inclusive and the high bound as exclusive. It sets V when signed(value) is outside [signed(lo), signed(hi)); Z, N, and C are unchanged.
-  instruction_family: bounds
-  instruction_class: integer
+title: Signed Bounds Check Inclusive-Exclusive
+summary: Checks signed value membership in the inclusive-exclusive interval [lo, hi).
+description: BNDSIX treats the low bound as inclusive and the high bound as exclusive. It sets V when signed(value) is outside [signed(lo), signed(hi)); Z, N, and C are unchanged.
 attributes:
+  class: integer
+  family: bounds
   privilege: unprivileged
   repeat:
   - REP
   - REPcc
   - REPG
-forms:
-- operands:
-  - name: lo
-    type: Rn
-    access: read
-  - name: value
-    type: EA
-    access: read
-  - name: hi
-    type: Rn
-    access: read
-  sizes:
-  - B
-  - W
-  - L
-  - Q

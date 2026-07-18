@@ -1,27 +1,13 @@
 mnemonic: PARITY
-doc:
-  title: Parity Test
-  summary: Computes operand parity and writes the predicate to an Rn register.
-  description: Computes the parity of the selected operand size and writes popcount(src) & 1 to the destination register. The written value is 1 for odd parity and 0 for even parity. FLAGS are unchanged.
-  instruction_family: integer_bitfield
-  instruction_class: integer
+title: Parity Test
+summary: Computes operand parity and writes the predicate to an Rn register.
+description: Computes the parity of the selected operand size and writes popcount(src) & 1 to the destination register. The written value is 1 for odd parity and 0 for even parity. FLAGS are unchanged.
 attributes:
+  class: integer
+  family: integer_bitfield
   privilege: unprivileged
   repeat:
   - REP
   - REPcc
   - REPG
   - REPGF
-forms:
-- operands:
-  - name: src
-    type: EA
-    access: read
-  - name: dst
-    type: Rn
-    access: write
-  sizes:
-  - B
-  - W
-  - L
-  - Q

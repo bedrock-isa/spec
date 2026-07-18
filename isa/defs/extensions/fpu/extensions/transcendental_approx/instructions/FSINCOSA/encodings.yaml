@@ -1,0 +1,24 @@
+forms:
+- id: extralong.fsincosa_x_fn_s_fn_d_fn_c
+  class: extralong
+  bits: 1111110000001z01ssss000dddd000cccc
+  syntax: FSINCOSA.X(z:S/D) Fn(s), Fn(d), Fn(c)
+  operands:
+  - name: src
+    type: Fn
+    access: read
+    field: s
+  - name: sin_dst
+    type: Fn
+    access: write
+    field: d
+  - name: cos_dst
+    type: Fn
+    access: write
+    field: c
+  sizes:
+  - S
+  - D
+  fields:
+    z:
+      type: size

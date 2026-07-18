@@ -1,0 +1,43 @@
+forms:
+- id: long.frem_x_ea_s_fn_d
+  class: long
+  bits: 1111010110z0100ddddeeeeeee
+  syntax: FREM.X(z:S/D) <ea>(e), Fn(d)
+  operands:
+  - name: src
+    type: EA
+    access: read
+    field: e
+  - name: dst
+    type: Fn
+    access: read_write
+    field: d
+  sizes:
+  - S
+  - D
+  fields:
+    z:
+      type: size
+  constraints:
+  - field: e
+    exclude: reg_direct
+    reason: canonical_form_reclaim
+- id: long.frem_x_fn_s_fn_d
+  class: long
+  bits: 1111010110z0100dddd000ssss
+  syntax: FREM.X(z:S/D) Fn(s), Fn(d)
+  operands:
+  - name: src
+    type: Fn
+    access: read
+    field: s
+  - name: dst
+    type: Fn
+    access: read_write
+    field: d
+  sizes:
+  - S
+  - D
+  fields:
+    z:
+      type: size

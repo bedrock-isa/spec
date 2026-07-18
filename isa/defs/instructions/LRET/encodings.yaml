@@ -1,0 +1,5 @@
+forms:
+- id: extrashort.lret
+  class: extrashort
+  bits: '0000011'
+  syntax: LRET

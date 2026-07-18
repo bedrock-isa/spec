@@ -1,0 +1,20 @@
+forms:
+- id: long.ftwotoxa_x_fn_s_fn_d
+  class: long
+  bits: 1111011100z0010dddd010ssss
+  syntax: FTWOTOXA.X(z:S/D) Fn(s), Fn(d)
+  operands:
+  - name: src
+    type: Fn
+    access: read
+    field: s
+  - name: dst
+    type: Fn
+    access: write
+    field: d
+  sizes:
+  - S
+  - D
+  fields:
+    z:
+      type: size

@@ -1,14 +1,8 @@
 mnemonic: INVPAGE
-doc:
-  title: Invalidate TLB Page
-  summary: Invalidate TLB entry for linear page.
-  instruction_family: tlb_and_context
-  instruction_class: system
-  description: Computes the source linear page without reading memory and invalidates matching global or current-ASID translations and in-progress results before retirement.
+title: Invalidate TLB Page
+summary: Invalidate TLB entry for linear page.
+description: Computes the source linear page without reading memory and invalidates matching global or current-ASID translations and in-progress results before retirement.
 attributes:
+  class: system
+  family: tlb_and_context
   privilege: supervisor
-forms:
-- operands:
-  - name: page
-    type: EA
-    access: address

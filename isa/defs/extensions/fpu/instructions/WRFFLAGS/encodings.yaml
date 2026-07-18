@@ -1,0 +1,12 @@
+forms:
+- id: long.wrfflags_rn_s
+  class: long
+  bits: 1111101111010001110101ssss
+  syntax: WRFFLAGS Rn(s)
+  operands:
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  sizes:
+  - W

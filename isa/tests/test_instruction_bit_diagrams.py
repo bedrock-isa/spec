@@ -21,6 +21,7 @@ from gen_docs import (  # noqa: E402
     load_yaml,
     required_bytes_text,
 )
+from encoding_store import allocation_entry_dict, load_encoding_store  # noqa: E402
 
 
 def allocation(
@@ -30,6 +31,13 @@ def allocation(
     bits: str | None = None,
     fields: dict[str, object] | None = None,
 ) -> AllocationEntry:
+    instruction_bytes = {
+        "extrashort": 1,
+        "short": 2,
+        "medium": 3,
+        "long": 4,
+        "extralong": 5,
+    }[cls]
     return AllocationEntry(
         path=Path(f"isa/alloc/{cls}.yaml"),
         cls=cls,
@@ -41,6 +49,7 @@ def allocation(
         skipped=0,
         fields=fields or {},
         constraints=[],
+        instruction_bytes=instruction_bytes,
     )
 
 
@@ -77,29 +86,29 @@ class InstructionBitDiagramTests(unittest.TestCase):
 
     def test_all_allocations_have_valid_byte_and_required_length_models(self) -> None:
         ea_data = load_yaml(ROOT / "isa" / "defs" / "ea.yaml")
-        for path in sorted((ROOT / "isa" / "alloc").glob("*.yaml")):
-            data = load_yaml(path)
-            cls = str(data["class"])
-            payload_bits = int(data["payload_bits"])
-            for raw in data.get("entries", []) or []:
-                entry = AllocationEntry(
-                    path=path,
-                    cls=cls,
-                    payload_bits=payload_bits,
-                    entry_id=str(raw["id"]),
-                    bits="".join(str(raw["bits"]).split()),
-                    text=str(raw.get("text", "")),
-                    assigned=0,
-                    skipped=0,
-                    fields=raw.get("fields") or {},
-                    constraints=raw.get("constraints") or [],
-                )
-                with self.subTest(entry=entry.entry_id):
-                    byte_segments = entry_byte_segments(entry)
-                    self.assertEqual(len(byte_segments), allocation_opcode_bytes(entry))
-                    self.assertTrue(all(sum(width for _label, width in byte) == 8 for byte in byte_segments))
-                    length = instruction_length(entry, entry.text, ea_data)
-                    self.assertLessEqual(length.maximum_required_bytes, 18)
+        store = load_encoding_store(ROOT / "isa" / "defs")
+        for located in store.encodings:
+            encoding_class = store.classes_by_name[located.form.encoding_class]
+            raw = allocation_entry_dict(located)
+            entry = AllocationEntry(
+                path=located.path,
+                cls=encoding_class.name,
+                payload_bits=encoding_class.payload_bits,
+                entry_id=str(raw["id"]),
+                bits="".join(str(raw["bits"]).split()),
+                text=str(raw.get("text", "")),
+                assigned=0,
+                skipped=0,
+                fields=raw.get("fields") or {},
+                constraints=raw.get("constraints") or [],
+                instruction_bytes=encoding_class.instruction_bytes,
+            )
+            with self.subTest(entry=entry.entry_id):
+                byte_segments = entry_byte_segments(entry)
+                self.assertEqual(len(byte_segments), allocation_opcode_bytes(entry))
+                self.assertTrue(all(sum(width for _label, width in byte) == 8 for byte in byte_segments))
+                length = instruction_length(entry, entry.text, ea_data)
+                self.assertLessEqual(length.maximum_required_bytes, 18)
 
 
 if __name__ == "__main__":

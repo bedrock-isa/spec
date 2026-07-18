@@ -1,48 +1,12 @@
 mnemonic: XCHG
-doc:
-  title: Exchange
-  summary: Performs the exchange operation.
-  instruction_family: data_movement
-  instruction_class: data_movement
-  description: Exchanges the two selected-width operand values as one instruction.
+title: Exchange
+summary: Performs the exchange operation.
+description: Exchanges the two selected-width operand values as one instruction.
 attributes:
+  class: data_movement
+  family: data_movement
   privilege: unprivileged
   repeat:
   - REP
   - REPcc
   - REPG
-forms:
-- operands:
-  - name: lhs
-    type: Rn
-    access: read_write
-  - name: rhs
-    type: Rn
-    access: read_write
-  sizes:
-  - L
-  - Q
-- operands:
-  - name: lhs
-    type: EA
-    access: read_write
-  - name: rhs
-    type: Rn
-    access: read_write
-  sizes:
-  - B
-  - W
-  - L
-  - Q
-- operands:
-  - name: lhs
-    type: Rn
-    access: read_write
-  - name: rhs
-    type: EA
-    access: read_write
-  sizes:
-  - B
-  - W
-  - L
-  - Q

@@ -1,23 +1,12 @@
 mnemonic: MULHU
-doc:
-  title: Unsigned Multiply High
-  summary: Performs the unsigned multiply high operation.
-  instruction_family: integer_mul_div
-  instruction_class: integer
-  description: Multiplies the selected-width operands as unsigned integers and writes the high half of the double-width product.
+title: Unsigned Multiply High
+summary: Performs the unsigned multiply high operation.
+description: Multiplies the selected-width operands as unsigned integers and writes the high half of the double-width product.
 attributes:
+  class: integer
+  family: integer_mul_div
   privilege: unprivileged
   repeat:
   - REP
   - REPcc
   - REPG
-forms:
-- operands:
-  - name: src
-    type: Rn
-    access: read
-  - name: dst
-    type: Rn
-    access: read_write
-  sizes:
-  - Q

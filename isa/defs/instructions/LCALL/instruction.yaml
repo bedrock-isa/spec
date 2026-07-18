@@ -1,17 +1,9 @@
 mnemonic: LCALL
-doc:
-  title: Long Call
-  summary: Pushes a far return frame and atomically transfers control to a new CS:PC pair.
-  description: Long call is the CS-changing call instruction. It first constructs the far return frame on SS:SP, then commits the new CS and PC together. The two-operand form takes the new CS image from Rn and the target offset/address from the target EA. A segment-immediate plus offset-immediate form is not encoded because two 64-bit immediates would exceed the instruction-length budget for this form.
-  instruction_family: control_flow
-  instruction_class: control_flow
+title: Long Call
+summary: Pushes a far return frame and atomically transfers control to a new CS:PC pair.
+description: Long call is the CS-changing call instruction. It first constructs the far return frame on SS:SP, then commits the new CS and PC together. The two-operand form takes the new CS image from Rn and the target offset/address from the target EA. A segment-immediate plus offset-immediate form is not encoded because two 64-bit immediates would exceed the instruction-length budget for this form.
 attributes:
+  class: control_flow
+  family: control_flow
   privilege: unprivileged
-forms:
-- operands:
-  - name: new_cs
-    type: Rn
-    access: read
-  - name: target
-    type: EA
-    access: read
+additional_description: details.tex

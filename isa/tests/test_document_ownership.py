@@ -67,7 +67,7 @@ class DocumentOwnershipTests(unittest.TestCase):
                     / "instruction.yaml"
                 ).read_text(encoding="utf-8")
             )
-            description = definition["doc"]["description"].lower()
+            description = definition["description"].lower()
             self.assertNotIn("tls", description)
             self.assertNotIn("far-pointer", description)
             self.assertNotIn("profile_access", definition["attributes"])
@@ -109,9 +109,16 @@ class DocumentOwnershipTests(unittest.TestCase):
     def test_compiler_policy_stays_out_of_architecture_text(self) -> None:
         templates = ROOT / "isa" / "tools" / "latex_builder" / "templates"
         cpuid = (templates / "cpuid_feature_discovery.tex").read_text(encoding="utf-8")
-        fptransa = (templates / "approximate_floating_point_intro.tex").read_text(
-            encoding="utf-8"
-        )
+        fptransa = (
+            ROOT
+            / "isa"
+            / "defs"
+            / "extensions"
+            / "fpu"
+            / "extensions"
+            / "transcendental_approx"
+            / "introduction.tex"
+        ).read_text(encoding="utf-8")
         self.assertNotIn("compiler intrinsic", cpuid.lower())
         for term in ("compiler mode", "intrinsic", "libm"):
             self.assertNotIn(term, fptransa.lower())

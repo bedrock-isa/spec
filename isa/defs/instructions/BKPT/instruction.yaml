@@ -1,11 +1,8 @@
 mnemonic: BKPT
-doc:
-  title: Breakpoint
-  summary: Raise the breakpoint exception.
-  instruction_family: core_control
-  instruction_class: system
-  description: Raises BREAKPOINT and saves the next instruction address without executing that instruction before event entry commits. DEBUG_TRACE remains reserved for the architectural trace mechanism.
+title: Breakpoint
+summary: Raise the breakpoint exception.
+description: Raises BREAKPOINT and saves the next instruction address without executing that instruction before event entry commits. DEBUG_TRACE remains reserved for the architectural trace mechanism.
 attributes:
+  class: system
+  family: core_control
   privilege: any
-forms:
-- operands: []

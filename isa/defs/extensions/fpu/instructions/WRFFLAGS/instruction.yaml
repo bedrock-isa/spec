@@ -1,16 +1,8 @@
 mnemonic: WRFFLAGS
-doc:
-  title: Write Floating-Point Flags
-  summary: Write the accrued floating-point exception flags from a register.
-  description: WRFFLAGS writes the architectural FFLAGS register from the low source bits. Reserved FFLAGS bits must be zero. WRFFLAGS requires the floating-point extension.
-  instruction_family: system_registers
-  instruction_class: system
+title: Write Floating-Point Flags
+summary: Write the accrued floating-point exception flags from a register.
+description: WRFFLAGS writes the architectural FFLAGS register from the low source bits. Reserved FFLAGS bits must be zero. WRFFLAGS requires the floating-point extension.
 attributes:
+  class: system
+  family: system_registers
   privilege: unprivileged
-forms:
-- operands:
-  - name: src
-    type: Rn
-    access: read
-  sizes:
-  - W

@@ -1,3 +1,4 @@
+title: Floating-Point Instructions
 include:
 - instructions/FABS
 - instructions/FADD

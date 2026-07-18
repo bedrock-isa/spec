@@ -1,31 +1,13 @@
 mnemonic: INC
-doc:
-  title: Increment
-  summary: Performs the increment operation.
-  instruction_family: integer_unary
-  instruction_class: integer
-  description: Adds one to the selected-width destination and writes the modular result without changing FLAGS.
+title: Increment
+summary: Performs the increment operation.
+description: Adds one to the selected-width destination and writes the modular result without changing FLAGS.
 attributes:
+  class: integer
+  family: integer_unary
   privilege: unprivileged
   repeat:
   - REP
   - REPcc
   - REPG
   - REPGF
-forms:
-- operands:
-  - name: dst
-    type: Rn
-    access: read_write
-  sizes:
-  - L
-  - Q
-- operands:
-  - name: dst
-    type: EA
-    access: read_write
-  sizes:
-  - B
-  - W
-  - L
-  - Q

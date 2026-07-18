@@ -1,0 +1,14 @@
+forms:
+- id: long.prefetch_ea_e
+  class: long
+  bits: 1111101111010000110eeeeeee
+  syntax: PREFETCH <ea>(e)
+  operands:
+  - name: src
+    type: EA
+    access: address
+    field: e
+  constraints:
+  - field: e
+    exclude: reg_direct
+    reason: register_direct_reclaimed

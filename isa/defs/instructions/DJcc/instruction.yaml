@@ -1,20 +1,8 @@
 mnemonic: DJcc
-doc:
-  title: Decrement And Jump Conditional
-  summary: Performs the decrement and jump conditional operation.
-  instruction_family: control_flow
-  instruction_class: control_flow
-  description: Decrements the selected counter and transfers control only when the new count is nonzero and the encoded condition is true.
+title: Decrement And Jump Conditional
+summary: Performs the decrement and jump conditional operation.
+description: Decrements the selected counter and transfers control only when the new count is nonzero and the encoded condition is true.
 attributes:
+  class: control_flow
+  family: control_flow
   privilege: unprivileged
-forms:
-- operands:
-  - name: cc
-    type: condition
-    access: read
-  - name: counter
-    type: Rn
-    access: read_write
-  - name: target
-    type: EA
-    access: read

@@ -1,0 +1,14 @@
+forms:
+- id: long.ljmp_rn_r_ea_e
+  class: long
+  bits: 111100001100101rrrreeeeeee
+  syntax: LJMP Rn(r), <ea>(e)
+  operands:
+  - name: new_cs
+    type: Rn
+    access: read
+    field: r
+  - name: target
+    type: EA
+    access: read
+    field: e

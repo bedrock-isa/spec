@@ -1,0 +1,22 @@
+forms:
+- id: long.seglea_x_ea_e_rn_d
+  class: long
+  bits: 111100011zz0000ddddeeeeeee
+  syntax: SEGLEA.X(z:B/W/L/Q) <ea>(e), Rn(d)
+  operands:
+  - name: src
+    type: EA
+    access: address
+    field: e
+  - name: dst
+    type: Rn
+    access: write
+    field: d
+  sizes:
+  - B
+  - W
+  - L
+  - Q
+  fields:
+    z:
+      type: size

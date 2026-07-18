@@ -11,7 +11,7 @@ selector before execution and reads the returned 64-bit value after execution.
 CPUID exposes program-visible architectural information. It is not a dump of internal microarchitectural queues,
 rename files, reorder buffers, or other implementation-private structures.
 
-@CPUID_INSTRUCTION_TABLE@
+The normative instruction entry is \hyperref[instr:cpuid]{\texttt{CPUID}}.\par
 
 \subsection{Query Model}
 A query selector identifies a discovery class, leaf, and optional result index. The selector is a Q-sized value held
@@ -131,13 +131,13 @@ code point at the field boundary; consumers replace an invalid sequence rather t
 
 \subsection{Optional-Extension Directory}
 Class \texttt{0x00000001}, leaf \texttt{0x0000}, index one reports optional architectural groups. The index-zero
-header reports \texttt{MAX\_LEAF=1} and \texttt{MAX\_INDEX=1}. The index-one result uses
-bit 0 for \texttt{FP}, bit 1 for \texttt{FPTRANSA}, and bit 2 for \texttt{VIRTACCEL}; bits 63 through 3 are
-reserved and read as zero. \texttt{FPTRANSA} requires \texttt{FP} and is set when at least one approximate
+header reports \texttt{MAX\_LEAF=1} and \texttt{MAX\_INDEX=1}.
+
+@EXTENSION_DIRECTORY_TABLE@
+
+Unlisted bits are reserved and read as zero. \texttt{FPTRANSA} requires \texttt{FP} and is set when at least one approximate
 transcendental contract is present. It does not imply that every contract is present.
-The \texttt{VIRTACCEL} bit denotes the virtualization-acceleration architectural
-group. The current draft defines no member of that group and therefore
-requires the bit to read zero.
+The currently unassigned \texttt{VIRTACCEL} group has no manifest and therefore has no feature bit.
 
 \subsection{FPTRANSA Accuracy Discovery}
 Class \texttt{0x00000001}, leaf \texttt{0x0001} uses indexes 1 through \texttt{0x0044} as a sparse space of stable

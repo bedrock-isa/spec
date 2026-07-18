@@ -1,20 +1,12 @@
 mnemonic: SET
-doc:
-  title: Set True
-  summary: Writes integer one to the destination operand.
-  instruction_family: control_flow
-  instruction_class: control_flow
-  description: Writes integer one to the selected-width destination.
+title: Set True
+summary: Writes integer one to the destination operand.
+description: Writes integer one to the selected-width destination.
 attributes:
+  class: control_flow
+  family: control_flow
   privilege: unprivileged
   repeat:
   - REP
   - REPcc
   - REPG
-forms:
-- operands:
-  - name: dst
-    type: Rn
-    access: write
-  sizes:
-  - Q

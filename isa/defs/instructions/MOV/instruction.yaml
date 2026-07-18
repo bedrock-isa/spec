@@ -1,79 +1,13 @@
 mnemonic: MOV
-doc:
-  title: Move
-  summary: Copies the source operand to the destination operand.
-  instruction_family: data_movement
-  instruction_class: data_movement
-  description: Reads the source using its addressing mode and selected size and writes that value to the destination.
+title: Move
+summary: Copies the source operand to the destination operand.
+description: Reads the source using its addressing mode and selected size and writes that value to the destination.
 attributes:
+  class: data_movement
+  family: data_movement
   privilege: unprivileged
   repeat:
   - REP
   - REPcc
   - REPG
   - REPGF
-forms:
-- operands:
-  - name: src
-    type: Rn
-    access: read
-  - name: dst
-    type: Rn
-    access: write
-  sizes:
-  - L
-  - Q
-- operands:
-  - name: src
-    type: Rn
-    access: read
-  - name: dst
-    type: SP
-    access: write
-  sizes:
-  - Q
-- operands:
-  - name: src
-    type: SP
-    access: read
-  - name: dst
-    type: Rn
-    access: write
-  sizes:
-  - Q
-- operands:
-  - name: src
-    type: EA
-    access: read
-  - name: dst
-    type: EA
-    access: write
-  sizes:
-  - B
-  - W
-  - L
-  - Q
-- operands:
-  - name: src
-    type: EA
-    access: read
-  - name: dst
-    type: Rn
-    access: write
-  sizes:
-  - B
-  - W
-  - L
-  - Q
-- operands:
-  - name: src
-    type: Rn
-    access: read
-  - name: dst
-    type: EA
-    access: write
-  sizes:
-  - B
-  - W
-  - L
-  - Q

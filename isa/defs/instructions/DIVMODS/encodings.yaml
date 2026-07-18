@@ -1,0 +1,26 @@
+forms:
+- id: extralong.divmods_x_ea_e_rn_q_rn_r
+  class: extralong
+  bits: 111111000010zz00qqqq001rrrreeeeeee
+  syntax: DIVMODS.X(z:B/W/L/Q) <ea>(e), Rn(q), Rn(r)
+  operands:
+  - name: src
+    type: EA
+    access: read
+    field: e
+  - name: quotient
+    type: Rn
+    access: read_write
+    field: q
+  - name: remainder
+    type: Rn
+    access: write
+    field: r
+  sizes:
+  - B
+  - W
+  - L
+  - Q
+  fields:
+    z:
+      type: size

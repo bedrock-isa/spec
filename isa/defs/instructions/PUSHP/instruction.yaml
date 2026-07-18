@@ -1,18 +1,13 @@
 mnemonic: PUSHP
-doc:
-  title: Push Register Pairs
-  summary: Pushes one canonical Rn register pair selected by an inline pair index.
-  description: Pushes the canonical register pair selected by the pair ID. The canonical pair sequence is pair 0 (R14, R15), pair 1 (R12, R13), pair 2 (R10, R11), pair 3 (R8, R9), pair 4 (R6, R7), pair 5 (R4, R5), pair 6 (R2, R3), and pair 7 (R0, R1). All eight pair IDs are valid and each selects one pair.
-  instruction_family: data_movement
-  instruction_class: data_movement
+title: Push Register Pairs
+summary: Pushes one canonical Rn register pair selected by an inline pair index.
+description: Pushes the canonical register pair selected by the pair ID. The canonical pair sequence is pair 0 (R14, R15), pair 1 (R12, R13), pair 2 (R10, R11), pair 3 (R8, R9), pair 4 (R6, R7), pair 5 (R4, R5), pair 6 (R2, R3), and pair 7 (R0, R1). All eight pair IDs are valid and each selects one pair.
 attributes:
+  class: data_movement
+  family: data_movement
   privilege: unprivileged
   repeat:
   - REP
   - REPcc
   - REPG
-forms:
-- operands:
-  - name: pair_id
-    type: pair_id
-    access: read
+additional_description: details.tex

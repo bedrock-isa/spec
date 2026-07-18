@@ -1,0 +1,37 @@
+forms:
+- id: long.movuu_x_ea_s_ea_d
+  class: long
+  bits: 1111100100zzsssssssddddddd
+  syntax: MOVUU.X(z:B/W/L/Q) <ea>(s), <ea>(d)
+  operands:
+  - name: src
+    type: EA
+    access: read
+    field: s
+    domain: user
+  - name: dst
+    type: EA
+    access: write
+    field: d
+    domain: user
+  sizes:
+  - B
+  - W
+  - L
+  - Q
+  fields:
+    z:
+      type: size
+  constraints:
+  - field: s
+    exclude: reg_direct
+    reason: user_source_memory_required
+  - field: s
+    exclude: immediate
+    reason: user_source_memory_required
+  - field: d
+    exclude: reg_direct
+    reason: user_destination_memory_required
+  - field: d
+    exclude: immediate
+    reason: invalid_destination

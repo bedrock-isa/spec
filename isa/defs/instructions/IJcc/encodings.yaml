@@ -1,0 +1,28 @@
+forms:
+- id: extralong.ijcc_rn_i_rn_b_ea_e
+  class: extralong
+  bits: 111111000100cccciiii000bbbbeeeeeee
+  syntax: IJcc Rn(i), Rn(b), <ea>(e)
+  operands:
+  - name: cc
+    type: condition
+    access: read
+    field: c
+  - name: index
+    type: Rn
+    access: read_write
+    field: i
+  - name: bound
+    type: Rn
+    access: read
+    field: b
+  - name: target
+    type: EA
+    access: read
+    field: e
+  constraints:
+  - field: c
+    allow:
+    - 0
+    - 0x2..0xf
+    reason: condition_false_reclaimed

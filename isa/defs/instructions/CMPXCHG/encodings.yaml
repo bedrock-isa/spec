@@ -1,0 +1,41 @@
+forms:
+- id: extralong.cmpxchg_x_order_o_rn_x_rn_d_ea_e
+  class: extralong
+  bits: 111111000101zz01xxxxoooddddeeeeeee
+  syntax: CMPXCHG.X(z:B/W/L/Q)/order(o) Rn(x), Rn(d), <ea>(e)
+  operands:
+  - name: order
+    type: memory_order
+    access: read
+    field: o
+  - name: expected
+    type: Rn
+    access: read_write
+    field: x
+  - name: desired
+    type: Rn
+    access: read
+    field: d
+  - name: memory
+    type: EA
+    access: read_write
+    field: e
+  sizes:
+  - B
+  - W
+  - L
+  - Q
+  fields:
+    z:
+      type: size
+  constraints:
+  - field: o
+    allow:
+    - 0x0..0x4
+    reason: memory_order_reserved_reclaimed
+  - field: e
+    exclude: reg_direct
+    reason: memory_operand_required
+  - field: e
+    exclude: immediate
+    reason: memory_operand_required

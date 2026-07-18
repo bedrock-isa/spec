@@ -1,26 +1,13 @@
 mnemonic: MODS
-doc:
-  title: Signed Modulo
-  summary: Performs the signed modulo operation.
-  instruction_family: integer_mul_div
-  instruction_class: integer
-  description: Interprets both selected-width operands as signed integers and writes the remainder associated with truncation-toward-zero division. Invalid signed division cases raise DIVIDE_ERROR.
+title: Signed Modulo
+summary: Performs the signed modulo operation.
+description: Interprets both selected-width operands as signed integers and writes the remainder associated with truncation-toward-zero division. Invalid signed division cases raise DIVIDE_ERROR.
 attributes:
+  class: integer
+  family: integer_mul_div
   privilege: unprivileged
   repeat:
   - REP
   - REPcc
   - REPG
-forms:
-- operands:
-  - name: src
-    type: EA
-    access: read
-  - name: dst
-    type: Rn
-    access: read_write
-  sizes:
-  - B
-  - W
-  - L
-  - Q
+additional_description: details.tex

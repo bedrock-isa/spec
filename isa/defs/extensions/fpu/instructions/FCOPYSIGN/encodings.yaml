@@ -1,0 +1,24 @@
+forms:
+- id: long.fcopysign_x_fn_s_fn_m_fn_d
+  class: long
+  bits: 1111010111zssssmmmm011dddd
+  syntax: FCOPYSIGN.X(z:S/D) Fn(s), Fn(m), Fn(d)
+  operands:
+  - name: sign_src
+    type: Fn
+    access: read
+    field: s
+  - name: magnitude_src
+    type: Fn
+    access: read
+    field: m
+  - name: dst
+    type: Fn
+    access: write
+    field: d
+  sizes:
+  - S
+  - D
+  fields:
+    z:
+      type: size

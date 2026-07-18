@@ -1,0 +1,16 @@
+forms:
+- id: long.wrseg_rn_d_sreg_s
+  class: long
+  bits: 1111101111010000001sssdddd
+  syntax: WRSEG Rn(d), SREG(s)
+  operands:
+  - name: src
+    type: Rn
+    access: read
+    field: d
+  - name: seg
+    type: SREG
+    access: write
+    field: s
+  sizes:
+  - Q

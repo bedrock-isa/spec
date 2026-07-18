@@ -1,0 +1,22 @@
+forms:
+- id: long.mul_x_ea_e_rn_d
+  class: long
+  bits: 1111000010zz010ddddeeeeeee
+  syntax: MUL.X(z:B/W/L/Q) <ea>(e), Rn(d)
+  operands:
+  - name: src
+    type: EA
+    access: read
+    field: e
+  - name: dst
+    type: Rn
+    access: read_write
+    field: d
+  sizes:
+  - B
+  - W
+  - L
+  - Q
+  fields:
+    z:
+      type: size

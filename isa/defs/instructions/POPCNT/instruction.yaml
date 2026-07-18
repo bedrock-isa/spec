@@ -1,27 +1,13 @@
 mnemonic: POPCNT
-doc:
-  title: Population Count
-  summary: Performs the population count operation.
-  instruction_family: integer_bitfield
-  instruction_class: integer
-  description: Counts set bits within the selected B, W, L, or Q source width and writes that count to the destination.
+title: Population Count
+summary: Performs the population count operation.
+description: Counts set bits within the selected B, W, L, or Q source width and writes that count to the destination.
 attributes:
+  class: integer
+  family: integer_bitfield
   privilege: unprivileged
   repeat:
   - REP
   - REPcc
   - REPG
   - REPGF
-forms:
-- operands:
-  - name: src
-    type: EA
-    access: read
-  - name: dst
-    type: Rn
-    access: read_write
-  sizes:
-  - B
-  - W
-  - L
-  - Q

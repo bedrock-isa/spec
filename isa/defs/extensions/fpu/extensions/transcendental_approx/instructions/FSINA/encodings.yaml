@@ -1,0 +1,20 @@
+forms:
+- id: long.fsina_x_fn_s_fn_d
+  class: long
+  bits: 1111011100z0001dddd100ssss
+  syntax: FSINA.X(z:S/D) Fn(s), Fn(d)
+  operands:
+  - name: src
+    type: Fn
+    access: read
+    field: s
+  - name: dst
+    type: Fn
+    access: write
+    field: d
+  sizes:
+  - S
+  - D
+  fields:
+    z:
+      type: size

@@ -1,0 +1,185 @@
+forms:
+- id: extrashort.mov_q_rn_r_sp
+  class: extrashort
+  bits: 100rrrr
+  syntax: MOV.Q Rn(r), SP
+  operands:
+  - name: src
+    type: Rn
+    access: read
+    field: r
+  - name: dst
+    type: SP
+    access: write
+  sizes:
+  - Q
+- id: extrashort.mov_q_sp_rn_r
+  class: extrashort
+  bits: 101rrrr
+  syntax: MOV.Q SP, Rn(r)
+  operands:
+  - name: src
+    type: SP
+    access: read
+  - name: dst
+    type: Rn
+    access: write
+    field: r
+  sizes:
+  - Q
+- id: short.mov_x_rn_s_rn_d
+  class: short
+  bits: 00000zssssdddd
+  syntax: MOV.X(z:L/Q) Rn(s), Rn(d)
+  operands:
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: Rn
+    access: write
+    field: d
+  sizes:
+  - L
+  - Q
+  fields:
+    z:
+      type: size
+- id: medium.mov_x_rn_s_ea_e
+  class: medium
+  bits: 000000zsssseeeeeee
+  syntax: MOV.X(z:B/W) Rn(s), <ea>(e)
+  operands:
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: EA
+    access: write
+    field: e
+  sizes:
+  - B
+  - W
+  fields:
+    z:
+      type: size
+  constraints:
+  - field: e
+    allow:
+    - 0x00..0x67
+    - 0x69..0x7f
+    reason: sp_direct_reclaimed
+  - field: e
+    exclude: immediate
+    reason: invalid_destination
+- id: medium.mov_x_rn_s_ea_e.2
+  class: medium
+  bits: 000001zsssseeeeeee
+  syntax: MOV.X(z:L/Q) Rn(s), <ea>(e)
+  operands:
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: EA
+    access: write
+    field: e
+  sizes:
+  - L
+  - Q
+  fields:
+    z:
+      type: size
+  constraints:
+  - field: e
+    allow:
+    - 0x10..0x67
+    - 0x69..0x7f
+    reason: register_direct_and_sp_direct_reclaimed
+  - field: e
+    exclude: immediate
+    reason: invalid_destination
+- id: medium.mov_x_ea_e_rn_d
+  class: medium
+  bits: 000010zddddeeeeeee
+  syntax: MOV.X(z:B/W) <ea>(e), Rn(d)
+  operands:
+  - name: src
+    type: EA
+    access: read
+    field: e
+  - name: dst
+    type: Rn
+    access: write
+    field: d
+  sizes:
+  - B
+  - W
+  fields:
+    z:
+      type: size
+  constraints:
+  - field: e
+    allow:
+    - 0x10..0x67
+    - 0x69..0x7f
+    reason: register_direct_and_sp_direct_reclaimed
+- id: medium.mov_x_ea_e_rn_d.2
+  class: medium
+  bits: 000011zddddeeeeeee
+  syntax: MOV.X(z:L/Q) <ea>(e), Rn(d)
+  operands:
+  - name: src
+    type: EA
+    access: read
+    field: e
+  - name: dst
+    type: Rn
+    access: write
+    field: d
+  sizes:
+  - L
+  - Q
+  fields:
+    z:
+      type: size
+  constraints:
+  - field: e
+    allow:
+    - 0x10..0x67
+    - 0x69..0x7f
+    reason: register_direct_and_sp_direct_reclaimed
+- id: long.mov_x_ea_s_ea_d
+  class: long
+  bits: 1111100000zzsssssssddddddd
+  syntax: MOV.X(z:B/W/L/Q) <ea>(s), <ea>(d)
+  operands:
+  - name: src
+    type: EA
+    access: read
+    field: s
+  - name: dst
+    type: EA
+    access: write
+    field: d
+  sizes:
+  - B
+  - W
+  - L
+  - Q
+  fields:
+    z:
+      type: size
+  constraints:
+  - field: s
+    exclude: reg_direct
+    reason: canonical_form_reclaim
+  - field: d
+    exclude: reg_direct
+    reason: canonical_form_reclaim
+  - field: d
+    exclude: immediate
+    reason: invalid_destination

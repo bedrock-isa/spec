@@ -1,0 +1,16 @@
+forms:
+- id: long.clmulh_q_ea_e_rn_d
+  class: long
+  bits: 111100001100110ddddeeeeeee
+  syntax: CLMULH.Q <ea>(e), Rn(d)
+  operands:
+  - name: src
+    type: EA
+    access: read
+    field: e
+  - name: dst
+    type: Rn
+    access: read_write
+    field: d
+  sizes:
+  - Q

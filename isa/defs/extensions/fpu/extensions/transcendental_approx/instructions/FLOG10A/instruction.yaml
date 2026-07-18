@@ -1,27 +1,12 @@
 mnemonic: FLOG10A
-doc:
-  title: Approximate Floating-Point Log Base 10
-  summary: Performs the bounded approximate floating-point log base 10 operation.
-  instruction_family: fpu_transcendental_approx
-  instruction_class: fpu
-  description: Computes the log10(x) reference over positive finite values and positive infinity after DAZ; signed zero is the DZ boundary and writes an implementation-bounded S- or D-format approximation under the selected FPTRANSA accuracy contract.
-may_accrue_fp_flags:
-- NV
-- DZ
-- UF
+title: Approximate Floating-Point Log Base 10
+summary: Performs the bounded approximate floating-point log base 10 operation.
+description: Computes the log10(x) reference over positive finite values and positive infinity after DAZ; signed zero is the DZ boundary and writes an implementation-bounded S- or D-format approximation under the selected FPTRANSA accuracy contract.
 attributes:
+  class: fpu
+  family: fpu_transcendental_approx
   privilege: unprivileged
   repeat:
   - REP
   - REPG
-forms:
-- operands:
-  - name: src
-    type: Fn
-    access: read
-  - name: dst
-    type: Fn
-    access: write
-  sizes:
-  - S
-  - D
+additional_description: details.tex

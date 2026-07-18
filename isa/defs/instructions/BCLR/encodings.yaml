@@ -1,0 +1,45 @@
+forms:
+- id: long.bclr_rn_b_ea_e
+  class: long
+  bits: 111100001100010bbbbeeeeeee
+  syntax: BCLR Rn(b), <ea>(e)
+  operands:
+  - name: bit_index
+    type: Rn
+    access: read
+    field: b
+  - name: dst
+    type: EA
+    access: read_write
+    field: e
+  sizes:
+  - B
+  - W
+  - L
+  - Q
+  constraints:
+  - field: e
+    exclude: immediate
+    reason: invalid_destination
+- id: long.bclr_imm6_i_ea_e
+  class: long
+  bits: 1111101110101iiiiiieeeeeee
+  syntax: BCLR imm6(i), <ea>(e)
+  operands:
+  - name: bit_index
+    type: imm6
+    access: read
+    field: i
+  - name: dst
+    type: EA
+    access: read_write
+    field: e
+  sizes:
+  - B
+  - W
+  - L
+  - Q
+  constraints:
+  - field: e
+    exclude: immediate
+    reason: invalid_destination

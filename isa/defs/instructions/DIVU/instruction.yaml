@@ -1,26 +1,13 @@
 mnemonic: DIVU
-doc:
-  title: Unsigned Divide
-  summary: Performs the unsigned divide operation.
-  instruction_family: integer_mul_div
-  instruction_class: integer
-  description: Divides the selected-width unsigned destination value by the unsigned source value and writes the quotient. A zero divisor raises DIVIDE_ERROR.
+title: Unsigned Divide
+summary: Performs the unsigned divide operation.
+description: Divides the selected-width unsigned destination value by the unsigned source value and writes the quotient. A zero divisor raises DIVIDE_ERROR.
 attributes:
+  class: integer
+  family: integer_mul_div
   privilege: unprivileged
   repeat:
   - REP
   - REPcc
   - REPG
-forms:
-- operands:
-  - name: src
-    type: EA
-    access: read
-  - name: dst
-    type: Rn
-    access: read_write
-  sizes:
-  - B
-  - W
-  - L
-  - Q
+additional_description: details.tex

@@ -1,31 +1,13 @@
 mnemonic: NOT
-doc:
-  title: Bitwise Not
-  summary: Performs the bitwise not operation.
-  instruction_family: integer_unary
-  instruction_class: integer
-  description: Writes the selected-width bitwise complement of the destination value.
+title: Bitwise Not
+summary: Performs the bitwise not operation.
+description: Writes the selected-width bitwise complement of the destination value.
 attributes:
+  class: integer
+  family: integer_unary
   privilege: unprivileged
   repeat:
   - REP
   - REPcc
   - REPG
   - REPGF
-forms:
-- operands:
-  - name: dst
-    type: Rn
-    access: read_write
-  sizes:
-  - L
-  - Q
-- operands:
-  - name: dst
-    type: EA
-    access: read_write
-  sizes:
-  - B
-  - W
-  - L
-  - Q

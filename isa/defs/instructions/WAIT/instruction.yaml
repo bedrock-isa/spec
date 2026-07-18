@@ -1,11 +1,8 @@
 mnemonic: WAIT
-doc:
-  title: Wait
-  summary: Wait until an enabled event or interrupt becomes pending.
-  instruction_family: core_control
-  instruction_class: system
-  description: Retires with the next instruction as its continuation, stops fetching while waiting, and resumes or enters an event when an enabled wake source becomes pending.
+title: Wait
+summary: Wait until an enabled event or interrupt becomes pending.
+description: Retires with the next instruction as its continuation, stops fetching while waiting, and resumes or enters an event when an enabled wake source becomes pending.
 attributes:
+  class: system
+  family: core_control
   privilege: unprivileged
-forms:
-- operands: []

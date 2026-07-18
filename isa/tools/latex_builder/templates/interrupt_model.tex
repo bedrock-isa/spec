@@ -12,6 +12,11 @@ Hardware supplies an event code and a frame whose payload layout is fixed by the
 common entry point and dispatches by the event code. There is no architectural vector table or per-event hardware
 handler address.
 
+Related normative instruction entries are
+\hyperref[instr:bkpt]{\texttt{BKPT}},
+\hyperref[instr:eret]{\texttt{ERET}}, and
+\hyperref[instr:reset]{\texttt{RESET}}.\par
+
 \subsection{Event Code and Sources}
 Every delivered event carries a 32-bit code. The high byte is the event class and the low 24 bits are an ID in that
 class's namespace.
@@ -64,8 +69,6 @@ STATUS.EA is hardware-managed transition state. WRSTATUS must preserve its curre
 raises INVALID\_CONTROL\_STATE without modifying STATUS. ERET is legal only while EA is one; SYSRET is legal only
 while EA is zero. A mismatch raises INVALID\_CONTROL\_STATE before ERET reads an event frame or SYSRET reads the
 user-return bank.
-
-@EXCEPTION_INSTRUCTION_TABLE@
 
 \clearpage
 \subsection{Architectural Event Frame}

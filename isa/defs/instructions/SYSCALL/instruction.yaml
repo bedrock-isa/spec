@@ -1,11 +1,9 @@
 mnemonic: SYSCALL
-doc:
-  title: System Call
-  summary: Enter the supervisor-call path through SPC/SCS/SDS and the configured call stack.
-  description: Enter supervisor mode through the explicit SPC/SCS/SDS supervisor-call path. SYSCALL saves the user continuation in the UR control-register bank, switches to SSS:SSP, and does not create an event frame or set event-active state.
-  instruction_family: core_control
-  instruction_class: system
+title: System Call
+summary: Enter the supervisor-call path through SPC/SCS/SDS and the configured call stack.
+description: Enter supervisor mode through the explicit SPC/SCS/SDS supervisor-call path. SYSCALL saves the user continuation in the UR control-register bank, switches to SSS:SSP, and does not create an event frame or set event-active state.
 attributes:
+  class: system
+  family: core_control
   privilege: any
-forms:
-- operands: []
+additional_description: details.tex

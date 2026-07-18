@@ -1,43 +1,11 @@
 mnemonic: FMOV
-doc:
-  title: Floating-Point Move
-  summary: Copies the source operand to the destination operand.
-  instruction_family: fpu
-  instruction_class: fpu
-  description: Copies the selected-format floating-point source value to the destination.
+title: Floating-Point Move
+summary: Copies the source operand to the destination operand.
+description: Copies the selected-format floating-point source value to the destination.
 attributes:
+  class: fpu
+  family: fpu
   privilege: unprivileged
   repeat:
   - REP
   - REPG
-forms:
-- operands:
-  - name: src
-    type: Fn
-    access: read
-  - name: dst
-    type: Fn
-    access: write
-  sizes:
-  - S
-  - D
-- operands:
-  - name: src
-    type: EA
-    access: read
-  - name: dst
-    type: Fn
-    access: write
-  sizes:
-  - S
-  - D
-- operands:
-  - name: src
-    type: Fn
-    access: read
-  - name: dst
-    type: EA
-    access: write
-  sizes:
-  - S
-  - D

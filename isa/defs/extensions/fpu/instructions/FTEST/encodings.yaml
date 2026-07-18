@@ -1,0 +1,35 @@
+forms:
+- id: long.ftest_x_ea_s
+  class: long
+  bits: 1111010110z01100000eeeeeee
+  syntax: FTEST.X(z:S/D) <ea>(e)
+  operands:
+  - name: src
+    type: EA
+    access: read
+    field: e
+  sizes:
+  - S
+  - D
+  fields:
+    z:
+      type: size
+  constraints:
+  - field: e
+    exclude: rn_direct
+    reason: canonical_form_reclaim
+- id: long.ftest_x_fn_s
+  class: long
+  bits: 1111010110z01100000000ssss
+  syntax: FTEST.X(z:S/D) Fn(s)
+  operands:
+  - name: src
+    type: Fn
+    access: read
+    field: s
+  sizes:
+  - S
+  - D
+  fields:
+    z:
+      type: size

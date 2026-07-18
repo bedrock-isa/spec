@@ -25,9 +25,8 @@ from validate_alloc import (  # noqa: E402
     compact_bits,
     entry_claims,
     expand_pattern,
-    namespace_patterns,
+    namespace_size,
     parse_range,
-    validate_file,
 )
 from alloc_notes import allocation_form_text  # noqa: E402
 from defs_loader import (  # noqa: E402
@@ -40,6 +39,8 @@ from defs_loader import (  # noqa: E402
 )
 from latex_to_markdown import render_markdown_from_latex  # noqa: E402
 from validate_isa import allocation_mnemonic  # noqa: E402
+from encoding_store import allocation_entry_dict, load_encoding_store  # noqa: E402
+from defs_schema import decode_instruction  # noqa: E402
 from latex_builder.common import (  # noqa: E402
     LatexTopSection,
     latex_longtable,
@@ -52,24 +53,9 @@ from latex_builder.common import (  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 DEF_ROOT = ROOT / "isa" / "defs"
-ALLOC_ROOT = ROOT / "isa" / "alloc"
 DEFAULT_OUTPUT = ROOT / "build" / "isa_reference.tex"
 EA_FRAGMENT_DIR = ROOT / "isa" / "tools" / "latex_builder" / "templates" / "fragments"
-INSTRUCTION_SET_SECTION_ORDER = [
-    "base",
-    "fpu",
-    "fpu.transcendental_approx",
-]
-INSTRUCTION_SET_SECTION_TITLES = {
-    "base": "General Instructions",
-    "fpu": "Floating-Point Instructions",
-    "fpu.transcendental_approx": "Approximate Floating-Point Transcendental Instructions",
-}
-INSTRUCTION_SET_SECTION_INTRO_TEMPLATES = {
-    "fpu.transcendental_approx": "approximate_floating_point_intro.tex",
-}
 INSTRUCTION_FILENAME = "instruction.yaml"
-INSTRUCTION_DETAILS_FILENAME = "details.tex"
 
 
 @dataclass(frozen=True)
@@ -81,8 +67,14 @@ class InstructionDef:
 
     @property
     def doc(self) -> dict[str, Any]:
-        value = self.data.get("doc")
-        return value if isinstance(value, dict) else {}
+        attributes = self.attributes
+        return {
+            "title": self.data["title"],
+            "summary": self.data["summary"],
+            "description": self.data["description"],
+            "instruction_class": attributes["class"],
+            "instruction_family": attributes["family"],
+        }
 
     @property
     def attributes(self) -> dict[str, Any]:
@@ -90,13 +82,14 @@ class InstructionDef:
         return value if isinstance(value, dict) else {}
 
     @property
-    def forms(self) -> list[dict[str, Any]]:
-        value = self.data.get("forms")
-        return [form for form in value if isinstance(form, dict)] if isinstance(value, list) else []
+    def details_path(self) -> Path | None:
+        relative = self.data.get("additional_description")
+        return self.path.parent / relative if isinstance(relative, str) else None
 
     @property
-    def details_path(self) -> Path:
-        return self.path.with_name(INSTRUCTION_DETAILS_FILENAME)
+    def additional_assembler_syntax(self) -> list[str]:
+        value = self.data.get("additional_assembler_syntax", [])
+        return list(value) if isinstance(value, list) else []
 
 
 @dataclass(frozen=True)
@@ -111,6 +104,9 @@ class AllocationEntry:
     skipped: int
     fields: dict[str, Any]
     constraints: list[dict[str, Any]]
+    operands: tuple[dict[str, Any], ...] = ()
+    sizes: tuple[str, ...] = ()
+    instruction_bytes: int | None = None
 
     @property
     def mnemonic(self) -> str | None:
@@ -131,7 +127,6 @@ class AllocationClass:
 @dataclass(frozen=True)
 class IsaModel:
     defs_root: Path
-    alloc_root: Path
     metadata: dict[str, Any]
     instructions: list[InstructionDef]
     allocation_classes: list[AllocationClass]
@@ -202,60 +197,89 @@ def load_instructions(defs_root: Path) -> list[InstructionDef]:
     instructions: list[InstructionDef] = []
     for instruction_set, path in instruction_definition_paths(defs_root):
         data = load_yaml(path)
-        if not isinstance(data, dict):
-            raise ValueError(f"{path}: expected mapping")
-        mnemonic = data.get("mnemonic")
-        if not mnemonic:
-            raise ValueError(f"{path}: missing mnemonic")
+        decoded = decode_instruction(path, data)
+        mnemonic = decoded.mnemonic
         if path.parent.name != str(mnemonic):
             raise ValueError(
                 f"{path}: directory name {path.parent.name!r} does not match mnemonic {mnemonic!r}"
             )
         instructions.append(InstructionDef(path, instruction_set, str(mnemonic), data))
-    return sorted(instructions, key=lambda item: (item.mnemonic.lower(), str(item.path)))
+    return instructions
 
 
-def load_allocation_class(path: Path) -> AllocationClass:
-    data = load_yaml(path)
-    if not isinstance(data, dict):
-        raise ValueError(f"{path}: expected mapping")
-    cls, summary, skipped, overlaps = validate_file(path)
-    payload_bits = int(data["payload_bits"])
-    namespaces = namespace_patterns(payload_bits, data)
-    entries: list[AllocationEntry] = []
-    for raw in data.get("entries", []) or []:
-        if not isinstance(raw, dict):
-            continue
-        claims, entry_skipped = entry_claims(path, payload_bits, namespaces, raw)
-        entries.append(
-            AllocationEntry(
-                path=path,
-                cls=cls,
-                payload_bits=payload_bits,
-                entry_id=str(raw["id"]),
-                bits=compact_bits(str(raw["bits"])),
-                text=str(raw.get("text", "")),
-                assigned=len(claims),
-                skipped=sum(entry_skipped.values()),
-                fields=raw.get("fields") or {},
-                constraints=raw.get("constraints") or [],
+def load_allocations(defs_root: Path) -> list[AllocationClass]:
+    store = load_encoding_store(defs_root)
+    classes: list[AllocationClass] = []
+    for encoding_class in store.classes:
+        namespaces = list(encoding_class.namespace)
+        entries: list[AllocationEntry] = []
+        skipped = Counter()
+        overlaps: list[str] = []
+        by_value: dict[int, str] = {}
+        assigned_values: set[int] = set()
+        for located in store.for_class(encoding_class.name):
+            raw = allocation_entry_dict(located)
+            claims, entry_skipped = entry_claims(
+                located.path,
+                encoding_class.payload_bits,
+                namespaces,
+                raw,
+            )
+            skipped.update(entry_skipped)
+            for value, claim in claims:
+                previous = by_value.get(value)
+                if previous is not None:
+                    overlaps.append(
+                        f"0x{value:x}: {previous} overlaps {claim.entry_id}"
+                    )
+                else:
+                    by_value[value] = claim.entry_id
+                    assigned_values.add(value)
+            entries.append(
+                AllocationEntry(
+                    path=located.path,
+                    cls=encoding_class.name,
+                    payload_bits=encoding_class.payload_bits,
+                    entry_id=located.form.id,
+                    bits=compact_bits(located.form.bits),
+                    text=located.form.syntax,
+                    assigned=len(claims),
+                    skipped=sum(entry_skipped.values()),
+                    fields=raw["fields"],
+                    constraints=raw["constraints"],
+                    operands=tuple(
+                        {
+                            "name": operand.name,
+                            "type": operand.type,
+                            "access": operand.access,
+                            **({"field": operand.field} if operand.field else {}),
+                            **({"domain": operand.domain} if operand.domain else {}),
+                        }
+                        for operand in located.form.operands
+                    ),
+                    sizes=located.form.sizes,
+                    instruction_bytes=encoding_class.instruction_bytes,
+                )
+            )
+        total = namespace_size(namespaces)
+        classes.append(
+            AllocationClass(
+                path=store.class_path,
+                cls=encoding_class.name,
+                payload_bits=encoding_class.payload_bits,
+                summary={
+                    "total": total,
+                    "allocated": len(assigned_values),
+                    "reserved_total": total - len(assigned_values),
+                    "claimed": len(by_value),
+                    "constraint_skipped": sum(skipped.values()),
+                },
+                skipped_by_reason=skipped,
+                overlaps=overlaps,
+                entries=entries,
             )
         )
-    return AllocationClass(
-        path=path,
-        cls=cls,
-        payload_bits=payload_bits,
-        summary=summary,
-        skipped_by_reason=skipped,
-        overlaps=overlaps,
-        entries=entries,
-    )
-
-
-def load_allocations(alloc_root: Path) -> list[AllocationClass]:
-    order = {"extrashort": 0, "short": 1, "medium": 2, "long": 3, "extralong": 4}
-    classes = [load_allocation_class(path) for path in sorted(alloc_root.glob("*.yaml"))]
-    return sorted(classes, key=lambda item: (order.get(item.cls, 99), item.cls))
+    return classes
 
 
 def load_metadata(defs_root: Path) -> dict[str, Any]:
@@ -269,6 +293,14 @@ def load_metadata(defs_root: Path) -> dict[str, Any]:
         if path.exists():
             out[name] = load_yaml(path)
     extensions = load_extensions(defs_root)
+    out["instruction_sets"] = [
+        {
+            "name": item.name,
+            "title": item.title,
+            "introduction": item.introduction,
+        }
+        for item in load_instruction_sets(defs_root, extensions)
+    ]
     out["operand_types"] = load_operand_types(defs_root, extensions)
     out["sizes"] = load_size_definitions(defs_root, extensions)
     out["extensions"] = {
@@ -279,9 +311,9 @@ def load_metadata(defs_root: Path) -> dict[str, Any]:
     return out
 
 
-def load_model(defs_root: Path, alloc_root: Path) -> IsaModel:
+def load_model(defs_root: Path) -> IsaModel:
     instructions = load_instructions(defs_root)
-    allocation_classes = load_allocations(alloc_root)
+    allocation_classes = load_allocations(defs_root)
     allocated_by_mnemonic: dict[str, list[AllocationEntry]] = defaultdict(list)
     for cls in allocation_classes:
         for entry in cls.entries:
@@ -290,65 +322,11 @@ def load_model(defs_root: Path, alloc_root: Path) -> IsaModel:
                 allocated_by_mnemonic[mnemonic].append(entry)
     return IsaModel(
         defs_root=defs_root,
-        alloc_root=alloc_root,
         metadata=load_metadata(defs_root),
         instructions=instructions,
         allocation_classes=allocation_classes,
         allocated_by_mnemonic=dict(sorted(allocated_by_mnemonic.items())),
     )
-
-
-def operand_text(operand: Any) -> str:
-    if not isinstance(operand, dict):
-        return compact_text(operand)
-    name = operand.get("name")
-    typ = operand.get("type")
-    if name and typ:
-        return f"{name}:{typ}"
-    if typ:
-        return str(typ)
-    return compact_text(operand)
-
-
-def operand_list_text(value: Any) -> str:
-    if value == []:
-        return "-"
-    if isinstance(value, list):
-        return ", ".join(operand_text(item) for item in value) or "-"
-    return compact_text(value) or "-"
-
-
-def form_size_text(value: Any) -> str:
-    if isinstance(value, list):
-        return "/".join(str(item) for item in value) or "-"
-    text = compact_text(value)
-    if not text or text == "-":
-        return "-"
-    mapping = {
-        "BWLQ": "B/W/L/Q",
-        "BWL": "B/W/L",
-        "BW": "B/W",
-        "WLQ": "W/L/Q",
-        "WL": "W/L",
-        "LQ": "L/Q",
-        "SD": "S/D",
-        "implicit_Q": "Q",
-        "fixed: Q": "Q",
-    }
-    return mapping.get(text, text)
-
-
-def iter_instruction_forms(instruction: InstructionDef) -> list[tuple[str, dict[str, Any]]]:
-    return [("logical", form) for form in instruction.forms]
-
-
-def instruction_form_count(instruction: InstructionDef, model: IsaModel) -> int:
-    allocated_forms = {
-        allocation_form_text(entry.text)
-        for entry in model.allocated_by_mnemonic.get(instruction.mnemonic, [])
-        if allocation_form_text(entry.text)
-    }
-    return max(len(allocated_forms), len(iter_instruction_forms(instruction)))
 
 
 def instruction_family(instruction: InstructionDef) -> str:
@@ -359,50 +337,28 @@ def instruction_class(instruction: InstructionDef) -> str:
     return label_text(instruction.doc.get("instruction_class", "-")) or "-"
 
 
-def instruction_set_groups(instructions: list[InstructionDef]) -> list[tuple[str, str, list[InstructionDef]]]:
+def instruction_set_groups(
+    model: IsaModel,
+    instructions: list[InstructionDef],
+) -> list[tuple[str, str, Path | None, list[InstructionDef]]]:
     by_set: dict[str, list[InstructionDef]] = defaultdict(list)
     for inst in instructions:
         by_set[inst.instruction_set].append(inst)
 
-    ordered_sets = [name for name in INSTRUCTION_SET_SECTION_ORDER if name in by_set]
-    ordered_sets.extend(sorted(name for name in by_set if name not in set(ordered_sets)))
-    return [
-        (
-            name,
-            INSTRUCTION_SET_SECTION_TITLES.get(name, f"{name.replace('_', ' ').title()} Instructions Summary"),
-            by_set[name],
-        )
-        for name in ordered_sets
-    ]
-
-
-def instruction_by_mnemonic(model: IsaModel, mnemonic: str) -> InstructionDef | None:
-    target = mnemonic.upper()
-    for inst in model.instructions:
-        if inst.mnemonic.upper() == target:
-            return inst
-    return None
-
-
-def instruction_brief_rows(model: IsaModel, mnemonics: list[str]) -> list[list[Any]]:
-    rows: list[list[Any]] = []
-    for mnemonic in mnemonics:
-        inst = instruction_by_mnemonic(model, mnemonic)
-        if inst is None:
+    definitions = model.metadata.get("instruction_sets") or []
+    groups: list[tuple[str, str, Path | None, list[InstructionDef]]] = []
+    declared: set[str] = set()
+    for item in definitions:
+        name = str(item["name"])
+        if name not in by_set:
             continue
-        rows.append([inst.mnemonic, inst.doc.get("summary", inst.doc.get("title", inst.mnemonic))])
-    return rows
-
-
-def latex_instruction_links(model: IsaModel, mnemonics: list[str], lead: str) -> str:
-    links = []
-    for mnemonic in mnemonics:
-        inst = instruction_by_mnemonic(model, mnemonic)
-        if inst is not None:
-            links.append(rf"\hyperref[{instruction_label(inst.mnemonic)}]{{\texttt{{{latex_escape(inst.mnemonic)}}}}}")
-    if not links:
-        return ""
-    return f"{lead} " + ", ".join(links) + r".\par"
+        declared.add(name)
+        introduction = item.get("introduction")
+        groups.append((name, str(item["title"]), introduction, by_set[name]))
+    missing = set(by_set) - declared
+    if missing:
+        raise ValueError(f"instruction sets lack index metadata: {sorted(missing)}")
+    return groups
 
 
 def data_format_template_values(model: IsaModel) -> dict[str, Any]:
@@ -450,10 +406,7 @@ def encoding_class_template_values(model: IsaModel) -> dict[str, Any]:
     }
 
 
-def form_allows_memory_memory(value: Any) -> bool:
-    if not isinstance(value, dict):
-        return False
-    operands = value.get("operands") or []
+def form_allows_memory_memory(operands: Any) -> bool:
     return sum(
         isinstance(operand, dict) and operand.get("type") == "EA"
         for operand in operands
@@ -464,23 +417,10 @@ def memory_memory_instruction_names(model: IsaModel) -> list[str]:
     return [
         inst.mnemonic
         for inst in model.instructions
-        if any(form_allows_memory_memory(form) for form in inst.forms)
-    ]
-
-
-def repeat_syntax_rows(model: IsaModel) -> list[list[Any]]:
-    if instruction_by_mnemonic(model, "REPcc") is None or instruction_by_mnemonic(model, "REPG") is None:
-        return []
-    return [
-        ["REPcc", "REPcc Rn, (instruction)", "-", "-"],
-        ["REP", "REP Rn, (instruction)", "-", "-"],
-        ["REPG", "REPG Rn, { (instructions...) }", "-", "-"],
-        [
-            "REPGF",
-            "REPGF Rn, { (instructions...) }",
-            "REPG",
-            "body must be REPGF-eligible and must not write the selected counter register",
-        ],
+        if any(
+            form_allows_memory_memory(entry.operands)
+            for entry in model.allocated_by_mnemonic.get(inst.mnemonic, [])
+        )
     ]
 
 
@@ -513,12 +453,6 @@ def latex_code_line_stack(lines: list[str]) -> str:
     return "\n".join(rf"\manualcodeline{{{latex_escape(line)}}}" for line in lines)
 
 
-def flag_summary(flags: Any) -> str:
-    if isinstance(flags, dict):
-        return "; ".join(f"{key}: {compact_text(value)}" for key, value in flags.items()) or "-"
-    return compact_text(flags) or "-"
-
-
 def instruction_length_summary(inst: InstructionDef, model: IsaModel) -> str:
     lengths: set[int] = set()
     for entry in model.allocated_by_mnemonic.get(inst.mnemonic, []):
@@ -548,86 +482,78 @@ def latex_attributes_block(inst: InstructionDef, model: IsaModel) -> str:
     return latex_ragged_block(lines)
 
 
-def latex_flag_status(inst: InstructionDef) -> str:
-    flags = inst.data.get("flags")
-    if not isinstance(flags, dict) or not flags:
-        return ""
-    names = [name for name in ("Z", "N", "C", "V") if name in flags]
-    if names:
-        items = "".join(rf"\manualstatusitem{{{latex_escape(name)}}}{{*}}" for name in names)
-        return "\n".join(
-            [r"\begin{manualstatusstrip}", items, rf"\par\textcolor{{ManualMuted}}{{{latex_escape(flag_summary(flags))}}}", r"\end{manualstatusstrip}"]
-        )
-    return rf"\begin{{manualstatusstrip}}\textbf{{Status}}\enspace {latex_escape(flag_summary(flags))}\end{{manualstatusstrip}}"
-
-
-def instruction_uses_operand_type(inst: InstructionDef, operand_type: str) -> bool:
+def instruction_uses_operand_type(
+    model: IsaModel,
+    inst: InstructionDef,
+    operand_type: str,
+) -> bool:
     return any(
         operand.get("type") == operand_type
-        for form in inst.forms
-        for operand in (form.get("operands") or [])
+        for entry in model.allocated_by_mnemonic.get(inst.mnemonic, [])
+        for operand in entry.operands
         if isinstance(operand, dict)
     )
 
 
-def latex_instruction_constant_ids(inst: InstructionDef, model: IsaModel) -> str:
-    if not instruction_uses_operand_type(inst, "fconst_id"):
-        return ""
-    operand_type = (model.metadata.get("operand_types") or {}).get("fconst_id") or {}
-    constants = operand_type.get("values")
-    if not isinstance(constants, list) or not constants:
-        raise ValueError("fconst_id operand type must define a non-empty values list")
+def latex_instruction_operand_value_tables(
+    model: IsaModel,
+    inst: InstructionDef,
+) -> str:
+    """Render rich enum operands without instruction-specific generator code."""
+    operands_by_type: dict[str, str] = {}
+    for entry in model.allocated_by_mnemonic.get(inst.mnemonic, []):
+        for operand in entry.operands:
+            operand_type = str(operand.get("type", ""))
+            operand_name = str(operand.get("name", operand_type))
+            if operand_type:
+                operands_by_type.setdefault(operand_type, operand_name)
 
-    rows: list[list[str]] = []
-    seen_ids: set[str] = set()
-    for index, item in enumerate(constants):
-        if not isinstance(item, dict):
-            raise ValueError(f"fconst_id.values[{index}] must be a mapping")
-        constant_id = compact_text(item.get("value"))
-        name = compact_text(item.get("name"))
-        value_bits = compact_text(item.get("value_bits"))
-        if not constant_id or not name or not value_bits:
-            raise ValueError(
-                f"fconst_id.values[{index}] requires value, name, and value_bits"
-            )
-        if constant_id in seen_ids:
-            raise ValueError(f"{inst.path}: duplicate constant ID {constant_id}")
-        seen_ids.add(constant_id)
-        rows.append(
-            [
-                tex_code(constant_id),
-                latex_escape(display_text(name)),
-                tex_code(value_bits),
-            ]
+    tables: list[str] = []
+    registry = model.metadata.get("operand_types") or {}
+    for operand_type, operand_name in operands_by_type.items():
+        spec = registry.get(operand_type)
+        if not isinstance(spec, dict):
+            continue
+        values = spec.get("values")
+        if not isinstance(values, list) or not values:
+            continue
+        if not all(isinstance(item, dict) and "value_bits" in item for item in values):
+            continue
+
+        rows: list[list[str]] = []
+        seen_ids: set[str] = set()
+        for index, item in enumerate(values):
+            value = compact_text(item.get("value"))
+            name = compact_text(item.get("name"))
+            value_bits = compact_text(item.get("value_bits"))
+            if not value or not name or not value_bits:
+                raise ValueError(
+                    f"{operand_type}.values[{index}] requires value, name, and value_bits"
+                )
+            if value in seen_ids:
+                raise ValueError(f"{inst.path}: duplicate {operand_type} value {value}")
+            seen_ids.add(value)
+            rows.append([tex_code(value), latex_escape(display_text(name)), tex_code(value_bits)])
+
+        display_name = " ".join(
+            "ID" if part.lower() == "id" else part.capitalize()
+            for part in display_text(operand_name).split()
         )
-
-    result_format = compact_text(operand_type.get("result_bits_format", ""))
-    title = f"{inst.mnemonic} Constant IDs"
-    if result_format:
-        title += f" ({result_format})"
-    return latex_longtable(
-        ["ID", "Constant", "Result bits"],
-        rows,
-        ["0.75in", "2.35in", "2.30in"],
-        title,
-    )
-
-
-def size_suffix(size: Any) -> str:
-    if isinstance(size, list):
-        return ".<" + "/".join(str(item) for item in size) + ">" if size else ""
-    text = compact_text(size)
-    if not text or text == "-":
-        return ""
-    return ".<" + "/".join(text) + ">"
-
-
-def fallback_form_syntax(inst: InstructionDef, form: dict[str, Any]) -> str:
-    operands = form.get("operands", [])
-    suffix = size_suffix(form.get("sizes", []))
-    if operands == []:
-        return inst.mnemonic
-    return f"{inst.mnemonic}{suffix} {operand_list_text(operands).replace(':', ' ')}"
+        if not display_name.endswith("s"):
+            display_name += "s"
+        title = f"{inst.mnemonic} {display_name}"
+        result_format = compact_text(spec.get("result_bits_format", ""))
+        if result_format:
+            title += f" ({result_format})"
+        tables.append(
+            latex_longtable(
+                ["ID", "Constant", "Result bits"],
+                rows,
+                ["0.75in", "2.35in", "2.30in"],
+                title,
+            )
+        )
+    return "\n".join(tables)
 
 
 def assembler_syntax_lines(model: IsaModel, inst: InstructionDef) -> list[str]:
@@ -638,38 +564,11 @@ def assembler_syntax_lines(model: IsaModel, inst: InstructionDef) -> list[str]:
         if form and form not in seen:
             lines.append(form)
             seen.add(form)
-    if lines:
-        return lines
-    for _kind, form in iter_instruction_forms(inst):
-        syntax = fallback_form_syntax(inst, form)
+    for syntax in inst.additional_assembler_syntax:
         if syntax not in seen:
             lines.append(syntax)
             seen.add(syntax)
     return lines
-
-
-def latex_instruction_form_block(
-    title: str,
-    rows: list[tuple[str, str]],
-    *,
-    needspace: str = "1.45in",
-    include_forms_heading: bool = False,
-) -> str:
-    values = {key: value for key, value in rows if value and key != "Form"}
-    if not values:
-        return ""
-    kind = values.pop("Kind", "form")
-    size = values.pop("Size", "variable length")
-    attributes = values.pop("Attributes", "unprivileged")
-    return "\n".join(
-        [
-            rf"\begin{{manualformblock}}{{{needspace}}}",
-            *([r"\manualinstructionformsheading"] if include_forms_heading else []),
-            rf"\textbf{{{tex_code(title)}}}\par",
-            rf"\manualformmetadata{{{kind}}}{{{size}}}{{{attributes}}}",
-            r"\end{manualformblock}",
-        ]
-    )
 
 
 def instruction_form_operands(form: str) -> str:
@@ -700,19 +599,10 @@ def operand_role(index: int, operand_count: int) -> str:
     return f"operand {index + 1}"
 
 
-CLASS_OPCODE_BYTES = {
-    "extrashort": 1,
-    "short": 2,
-    "medium": 3,
-    "long": 4,
-    "extralong": 5,
-}
-
-
 def allocation_opcode_bytes(entry: AllocationEntry) -> int:
-    if entry.cls in CLASS_OPCODE_BYTES:
-        return CLASS_OPCODE_BYTES[entry.cls]
-    return 2 + (max(0, entry.payload_bits - 10) + 7) // 8
+    if entry.instruction_bytes is None:
+        raise ValueError(f"{entry.entry_id}: encoding class lacks instruction_bytes")
+    return entry.instruction_bytes
 
 
 @dataclass(frozen=True)
@@ -1077,7 +967,7 @@ def field_constraint_values(
         if allowed <= names.keys():
             return ", ".join(names[value] for value in sorted(allowed))
 
-    if symbol == "o" and instruction_uses_operand_type(inst, "memory_order"):
+    if symbol == "o" and instruction_uses_operand_type(model, inst, "memory_order"):
         memory_order = (model.metadata.get("operand_types") or {}).get("memory_order") or {}
         names = {
             int(item["value"]): display_text(item["name"])
@@ -1271,7 +1161,12 @@ def latex_ea_addressing_mode_tables(model: IsaModel, entry: AllocationEntry, sym
     return latex_ea_availability_summary(ea_availability_summary(model, entry, symbol))
 
 
-def field_description_label(symbol: str, spec: dict[str, Any], inst: InstructionDef) -> str:
+def field_description_label(
+    model: IsaModel,
+    symbol: str,
+    spec: dict[str, Any],
+    inst: InstructionDef,
+) -> str:
     kind = str(spec.get("kind", "field"))
     if kind == "size":
         name = "Size field"
@@ -1283,7 +1178,7 @@ def field_description_label(symbol: str, spec: dict[str, Any], inst: Instruction
         name = "Condition field"
     elif kind == "immediate":
         name = "Immediate field"
-    elif symbol == "o" and instruction_uses_operand_type(inst, "memory_order"):
+    elif symbol == "o" and instruction_uses_operand_type(model, inst, "memory_order"):
         name = "Memory-order field"
     else:
         name = f"{display_text(kind).capitalize()} field"
@@ -1318,7 +1213,7 @@ def field_description_text(
         text = "Selects the condition code."
     elif kind == "immediate":
         text = "Encodes the immediate value."
-    elif symbol == "o" and instruction_uses_operand_type(inst, "memory_order"):
+    elif symbol == "o" and instruction_uses_operand_type(model, inst, "memory_order"):
         text = "Selects the memory ordering."
     else:
         text = f"Encodes the {display_text(kind)} value."
@@ -1344,7 +1239,7 @@ def latex_field_explanation_block(
         if spec.get("kind") == "ea7":
             parts.append(r"\Needspace{1.15in}")
         parts.append(
-            rf"\manualinstructionfielddescription{{{field_description_label(symbol, spec, inst)}}}"
+            rf"\manualinstructionfielddescription{{{field_description_label(model, symbol, spec, inst)}}}"
             rf"{{{field_description_text(model, inst, entry, form, symbol, spec)}}}"
         )
         if spec.get("kind") == "ea7":
@@ -1397,21 +1292,6 @@ def latex_instruction_forms_block(model: IsaModel, inst: InstructionDef) -> str:
             )
         )
     if not blocks:
-        for kind, form in iter_instruction_forms(inst):
-            rows = [
-                ("Form", latex_escape(operand_list_text(form.get("operands", [])))),
-                ("Kind", latex_escape(kind)),
-                ("Size", latex_escape(form_size_text(form.get("sizes", [])))),
-            ]
-            blocks.append(
-                latex_instruction_form_block(
-                    fallback_form_syntax(inst, form),
-                    rows,
-                    needspace="1.25in",
-                    include_forms_heading=not blocks,
-                )
-            )
-    if not blocks:
         return ""
     return "\n".join([r"\begin{manualinstructionforms}", *blocks, r"\end{manualinstructionforms}"])
 
@@ -1427,15 +1307,15 @@ def render_latex(model: IsaModel, only_allocated: bool = False) -> str:
         {
             "REGISTER_SECTION": latex_register_section(model),
             "CPUID_SECTION": latex_cpuid_feature_discovery_section(model),
-            "SAVE_RESTORE_SECTION": latex_save_restore_section(model),
+            "SAVE_RESTORE_SECTION": latex_save_restore_section(),
             "DATA_FORMATS_SECTION": latex_data_formats_section(model),
             "CONDITION_CODES_SECTION": latex_condition_section(model),
             "EFFECTIVE_ADDRESS_SECTION": latex_ea_section(model),
-            "PRIVILEGED_PROGRAMMING_SECTION": latex_privileged_programming_model_section(model),
-            "EXCEPTION_PROCESSING_SECTION": latex_exception_processing_section(model),
+            "PRIVILEGED_PROGRAMMING_SECTION": latex_privileged_programming_model_section(),
+            "EXCEPTION_PROCESSING_SECTION": latex_exception_processing_section(),
             "INSTRUCTION_WORD_FORMATS_SECTION": latex_instruction_word_formats_section(model),
             "EXECUTION_MODEL_SECTION": latex_execution_model_section(model),
-            "STREAMING_EXECUTION_SECTION": latex_streaming_model_section(model),
+            "STREAMING_EXECUTION_SECTION": latex_streaming_model_section(),
             "INSTRUCTION_REFERENCE_SECTION": latex_instruction_reference_section(model, instructions),
         },
     ) + "\n"
@@ -1479,32 +1359,46 @@ def latex_code_table(
     return latex_longtable(headers, rendered_rows, widths, caption, style=style, listed=listed)
 
 
+def latex_extension_directory_table(model: IsaModel) -> str:
+    rows: list[list[Any]] = []
+    for qualified_name, extension in (model.metadata.get("extensions") or {}).items():
+        if not isinstance(extension, dict):
+            continue
+        availability = extension.get("availability")
+        cpuid = availability.get("cpuid") if isinstance(availability, dict) else None
+        if not isinstance(cpuid, dict):
+            continue
+        rows.append(
+            [
+                f"0x{int(cpuid['class']):08x}",
+                f"0x{int(cpuid['leaf']):04x}",
+                str(int(cpuid["index"])),
+                str(int(cpuid["bit"])),
+                str(cpuid["feature"]),
+                qualified_name,
+            ]
+        )
+    if not rows:
+        raise ValueError("no extension CPUID availability entries are defined")
+    rows.sort(key=lambda row: (int(row[0], 16), int(row[1], 16), int(row[2]), int(row[3])))
+    return latex_code_table(
+        ["Class", "Leaf", "Index", "Bit", "Feature", "Extension"],
+        rows,
+        ["0.75in", "0.55in", "0.45in", "0.35in", "0.80in", "2.10in"],
+        "Optional-Extension Feature Bits",
+        {0, 1, 2, 3, 4},
+    )
+
+
 def latex_cpuid_feature_discovery_section(model: IsaModel) -> str:
     return render_latex_template(
         "cpuid_feature_discovery.tex",
-        {
-            "CPUID_INSTRUCTION_TABLE": latex_instruction_links(
-                model, ["CPUID"], "The normative instruction entry is"
-            ),
-        },
+        {"EXTENSION_DIRECTORY_TABLE": latex_extension_directory_table(model)},
     )
 
 
-def latex_save_restore_section(model: IsaModel) -> str:
-    save = instruction_by_mnemonic(model, "SAVE")
-    restore = instruction_by_mnemonic(model, "RESTORE")
-    instruction_rows = []
-    for inst in (save, restore):
-        if inst is not None:
-            instruction_rows.append([inst.mnemonic, inst.doc.get("summary", inst.mnemonic)])
-    return render_latex_template(
-        "save_restore_area.tex",
-        {
-            "SAVE_RESTORE_INSTRUCTION_TABLE": latex_instruction_links(
-                model, [row[0] for row in instruction_rows], "The normative instruction entries are"
-            ),
-        },
-    )
+def latex_save_restore_section() -> str:
+    return render_latex_template("save_restore_area.tex", {})
 
 
 def latex_data_formats_section(model: IsaModel) -> str:
@@ -1899,39 +1793,16 @@ def latex_execution_model_section(model: IsaModel) -> str:
     )
 
 
-def latex_streaming_model_section(model: IsaModel) -> str:
-    repeat_syntax_table = latex_table(
-        ["Form", "Syntax", "Emits", "Requirements"],
-        repeat_syntax_rows(model),
-        ["0.65in", "1.75in", "1.20in", "1.80in"],
-        "Repeat Instruction Syntax",
-    )
-    return render_latex_template(
-        "streaming_execution_model.tex",
-        {"REPEAT_SYNTAX_TABLE": repeat_syntax_table},
-    )
+def latex_streaming_model_section() -> str:
+    return render_latex_template("streaming_execution_model.tex", {})
 
 
-def latex_privileged_programming_model_section(model: IsaModel) -> str:
-    supervisor_control_flow_table = latex_instruction_links(
-        model,
-        ["SYSCALL", "SYSRET", "LRET", "ERET"],
-        "Normative control-flow behavior is defined by",
-    )
-    return render_latex_template(
-        "privileged_programming_model.tex",
-        {"SUPERVISOR_CONTROL_FLOW_TABLE": supervisor_control_flow_table},
-    )
+def latex_privileged_programming_model_section() -> str:
+    return render_latex_template("privileged_programming_model.tex", {})
 
 
-def latex_exception_processing_section(model: IsaModel) -> str:
-    exception_instruction_table = latex_instruction_links(
-        model, ["BKPT", "ERET", "RESET"], "Related normative instruction entries are"
-    )
-    return render_latex_template(
-        "interrupt_model.tex",
-        {"EXCEPTION_INSTRUCTION_TABLE": exception_instruction_table},
-    )
+def latex_exception_processing_section() -> str:
+    return render_latex_template("interrupt_model.tex", {})
 
 
 def instruction_label(mnemonic: str) -> str:
@@ -1941,6 +1812,8 @@ def instruction_label(mnemonic: str) -> str:
 
 def instruction_details_tex(inst: InstructionDef) -> str:
     path = inst.details_path
+    if path is None:
+        return ""
     if not path.exists():
         return ""
     if not path.is_file():
@@ -1985,7 +1858,7 @@ def latex_instruction_entry(model: IsaModel, inst: InstructionDef, *, first_in_g
     )
     description = compact_text(inst.doc.get("description", ""))
     if not description:
-        raise ValueError(f"{inst.path}: doc.description must be a non-empty string")
+        raise ValueError(f"{inst.path}: description must be a non-empty string")
     parts.append(latex_instruction_field("Description", latex_escape(description)))
     syntax_lines = assembler_syntax_lines(model, inst)
     if syntax_lines:
@@ -1996,12 +1869,9 @@ def latex_instruction_entry(model: IsaModel, inst: InstructionDef, *, first_in_g
             )
         )
     parts.append(latex_instruction_field("Attributes", latex_attributes_block(inst, model)))
-    status = latex_flag_status(inst)
-    if status:
-        parts.append(status)
-    constant_ids = latex_instruction_constant_ids(inst, model)
-    if constant_ids:
-        parts.append(constant_ids)
+    operand_value_tables = latex_instruction_operand_value_tables(model, inst)
+    if operand_value_tables:
+        parts.append(operand_value_tables)
     details_tex = instruction_details_tex(inst)
     if details_tex:
         parts.append(r"\manualinstructiondescriptionheading{Detailed Semantics}")
@@ -2019,11 +1889,12 @@ def latex_reading_instruction_description_section() -> str:
 
 def latex_instruction_reference_section(model: IsaModel, instructions: list[InstructionDef]) -> str:
     parts: list[str] = [latex_reading_instruction_description_section()]
-    for set_name, title, group in instruction_set_groups(instructions):
+    for _set_name, title, introduction, group in instruction_set_groups(model, instructions):
         parts.append(str(LatexTopSection(title)))
-        intro_template = INSTRUCTION_SET_SECTION_INTRO_TEMPLATES.get(set_name)
-        if intro_template:
-            parts.append(render_latex_template(intro_template))
+        if introduction:
+            if not introduction.is_file():
+                raise FileNotFoundError(f"instruction-set introduction not found: {introduction}")
+            parts.append(introduction.read_text(encoding="utf-8").strip())
         parts.extend(
             [
                 r"\subsection{Summary}",
@@ -2046,14 +1917,13 @@ def infer_format(output: Path, explicit: str | None) -> str:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--defs", type=Path, default=DEF_ROOT)
-    parser.add_argument("--alloc", type=Path, default=ALLOC_ROOT)
     parser.add_argument("-o", "--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--format", choices=["latex", "markdown"], default=None)
     parser.add_argument("--pandoc", help="Pandoc executable for derived Markdown output")
     parser.add_argument("--only-allocated", action="store_true")
     args = parser.parse_args()
 
-    model = load_model(args.defs, args.alloc)
+    model = load_model(args.defs)
     if args.defs.resolve() == DEF_ROOT.resolve():
         write_ea_reference_fragments(model.metadata.get("ea") or {})
     latex = render_latex(model, only_allocated=args.only_allocated)
