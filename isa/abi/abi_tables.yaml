@@ -1,0 +1,101 @@
+schema_version: 0
+
+c_abi:
+  return_registers:
+    - result_class: general_scalar
+      convention:
+        kind: single_register
+        register: R0
+    - result_class: floating_point_scalar
+      convention:
+        kind: single_register
+        register: F0
+    - result_class: long_double_scalar
+      convention:
+        kind: single_register
+        register: F0
+    - result_class: complex_scalar
+      convention:
+        kind: complex_registers
+        real: F0
+        imaginary: F1
+    - result_class: int128_scalar
+      convention:
+        kind: register_pair
+        high: R1
+        low: R0
+    - result_class: far_pointer
+      convention:
+        kind: far_pointer_registers
+        address: R0
+        segment_image: GS1
+    - result_class: small_aggregate
+      convention:
+        kind: register_pair
+        high: R1
+        low: R0
+    - result_class: large_aggregate
+      convention:
+        kind: sret_pointer
+        argument: R0
+        result: R0
+
+  call_relocations:
+    - call_form: direct_c_call
+      relocation: R_BEDROCK_CALL32S
+    - call_form: external_plt_call
+      relocation: R_BEDROCK_PLT32S
+    - call_form: far_symbol_address_word
+      relocation: R_BEDROCK_FAR_ADDR64
+    - call_form: far_symbol_segment_word
+      relocation: R_BEDROCK_FAR_SEGMENT64
+    - call_form: external_far_call_slot
+      relocation: R_BEDROCK_FAR_JUMP_SLOT
+
+  ordinary_access_guarantees:
+    - access:
+        alignment: aligned
+        widths_bytes: [1, 2, 4, 8]
+        operations: [load, store]
+      guarantee: tear_free
+    - access:
+        minimum_width_bytes: 16
+      guarantee: not_atomic
+    - access:
+        alignment: unaligned
+      guarantee: no_tear_free_guarantee
+
+  native_atomic_primitives:
+    - c_operations: [load, store]
+      lowering:
+        kind: aligned_access_with_ordering
+    - c_operations: [compare_exchange]
+      lowering:
+        kind: width_matched_instruction
+        instruction: CMPXCHG
+    - c_operations: [exchange]
+      lowering:
+        kind: instruction_loop
+        instruction: CMPXCHG
+
+elf_abi:
+  bedrock_specific_sections:
+    - name: .got.far
+      attributes: [alloc, read, write]
+      contents: far_pointer_entries
+    - name: .note.bedrock
+      classification: note
+    - name: .bedrock.segdomains
+      classification: linker_metadata
+
+  tls_relocation_families:
+    - model: local_exec
+      relocations:
+        - R_BEDROCK_TLS_OFFSET32S
+        - R_BEDROCK_TLS_OFFSET64
+    - model: tlsdesc
+      relocations:
+        - R_BEDROCK_TLSDESC_GOTPCREL32S
+        - R_BEDROCK_TLSDESC_GOTPCREL64
+        - R_BEDROCK_TLSDESC_CALL
+        - R_BEDROCK_TLSDESC

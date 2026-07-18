@@ -9,4 +9,8 @@ attributes:
   repeat:
   - REP
   - REPG
-additional_description: details.tex
+flag_effects:
+  FLAGS:
+    V: "set when the value is out of bounds or unordered"
+  FFLAGS:
+    NV: "may accrue"

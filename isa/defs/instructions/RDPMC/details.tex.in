@@ -1,0 +1,17 @@
+\textbf{Performance-Counter IDs}\par
+RDPMC selects a 64-bit counter with its 16-bit immediate ID. The three standard counters are mandatory and wrap
+modulo $2^{64}$. Cold reset and warm RESET clear them to zero. PMC.EN controls whether they increment.
+
+@STANDARD_PERFORMANCE_COUNTERS_TABLE@
+
+Each successfully committed repeat-body iteration contributes one INSTRET event. A faulting instruction does not.
+PTWALK includes a walk that later reports a page fault, but excludes a segment-bound or canonical-address failure
+detected before a walk begins. ID zero is unavailable because index zero of the CPUID performance-counter leaf is its
+common discovery header. Other IDs beyond the standard set are implementation-defined and are discovered through that
+leaf. Reading ID zero or any other unavailable ID raises \texttt{INVALID\_CONTROL\_STATE} with the same
+unavailable-counter behavior.
+
+\begin{manualraggedblock}
+Every privilege level may read every implemented counter. Clearing PMC.EN freezes the current counter values
+without clearing them.
+\end{manualraggedblock}

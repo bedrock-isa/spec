@@ -13,8 +13,6 @@ while SP and PC forms omit the segment field because their segment association i
 
 \input{isa/tools/latex_builder/templates/fragments/rn_register_model_figure.tex}
 
-@GENERAL_REGISTER_TABLE@
-
 \subsection{Unified Integer Register File}
 The base architecture has no data-register bank mechanism. All integer instructions address the same architectural R0
 through R15 register file.
@@ -31,12 +29,8 @@ instruction group is implemented.
 Floating-point exception and mode state is held separately in FFLAGS and FSTATUS. Their precise bit assignments are
 defined by the floating-point instruction set and compatibility state.
 
-@FLOATING_REGISTER_TABLE@
-
 \subsection{Segment Registers}
 \input{isa/tools/latex_builder/templates/fragments/segment_register_format_diagram.tex}
-
-@SEGMENT_REGISTER_TABLE@
 
 \subsection{Segment Register Operand Class}
 Instructions that take an explicit segment-register operand use the three-bit SREG encoding below.
@@ -48,9 +42,6 @@ the source-only \texttt{RDSEG CS} and \texttt{PUSH CS} forms can copy its curren
 control-transfer paths that update CS and PC together can change it.
 
 @SREG_TABLE@
-
-\subsection{Special Registers}
-@SPECIAL_REGISTER_TABLE@
 
 \subsection{Control Registers}
 \input{isa/tools/latex_builder/templates/fragments/control_register_reference.tex}

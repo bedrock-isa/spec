@@ -10,11 +10,13 @@ The active source tree is:
 isa/memory_model/             draft formal-validation gate and litmus obligations
 isa/defs/SCHEMA.md            frozen versioned YAML document contract
 isa/defs/schema.lock          decoder version and SHA-256 contract lock
-isa/defs/encoding_classes.yaml encoding-class framing, width, order, and namespaces
 isa/defs/**/instructions/    instruction.yaml, encodings.yaml, and optional TeX per instruction
+isa/reference/architecture_tables.yaml generated ISA-reference table data
 isa/tex/*.tex                shared reference-document components
+isa/abi/abi_tables.yaml      generated ABI quick-reference table data
 isa/abi/bedrock-elf-abi.tex  ELF binary-format ABI source
 isa/abi/bedrock-c-abi.tex    C ABI source, including far-pointer ABI
+isa/c/target_intrinsics.yaml generated target-intrinsic table data
 isa/c/*.tex                  C language-extension and compiler-API sources
 isa/c/include/*.h            target intrinsic header interfaces
 isa/guides/*.tex             non-normative programming and toolchain guides
@@ -23,6 +25,7 @@ isa/tools/validate_schema.py version-lock and strict YAML decoder gate
 isa/tools/validate_alloc.py  allocation collision and cardinality validator
 isa/tools/validate_isa.py    definition/allocation join validator
 isa/tools/validate_abi_docs.py ABI document and intrinsic-header validator
+isa/tools/encoding_architecture.py fixed instruction framing and opcode-class grammar
 isa/tools/gen_docs.py        reference document generator
 isa/tools/latex_to_markdown.py derived Markdown converter for TeX documents
 isa/tools/gen_alloc_report.py allocation occupancy report generator

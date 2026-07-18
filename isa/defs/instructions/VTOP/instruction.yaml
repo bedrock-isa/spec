@@ -6,4 +6,10 @@ attributes:
   class: system
   family: tlb_and_context
   privilege: supervisor
+flag_effects:
+  FLAGS:
+    Z: "translation query succeeded"
+    N: "successful translation is user-domain accessible; cleared on failure"
+    C: "successful translation is writable; cleared on failure"
+    V: "successful translation is executable; cleared on failure"
 additional_description: details.tex

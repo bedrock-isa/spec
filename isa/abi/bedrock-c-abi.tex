@@ -552,25 +552,7 @@ pre-segment address in \texttt{R0} and validated segment image in
 \texttt{GS1}. A failed \texttt{GS1} write raises
 \texttt{INVALID\_CONTROL\_STATE} before the return transfer.
 
-\manualtablecaption{C Return Register Quick Reference}
-\begingroup\footnotesize
-\setlength{\tabcolsep}{2pt}
-\begin{longtable}{@{}p{2.15in}p{3.35in}@{}}
-\toprule
-\textbf{Result Class} & \textbf{Register Rule}\\
-\midrule
-\endhead
-General scalar & \texttt{R0}\\
-Floating-point scalar & \texttt{F0}\\
-\texttt{long double} scalar & \texttt{F0}\\
-Complex scalar & real component in \texttt{F0}, imaginary component in \texttt{F1}\\
-\texttt{\_\_int128} scalar & \texttt{R1:R0}\\
-Far data or function pointer & address in \texttt{R0}, segment image in \texttt{GS1}\\
-Small aggregate & \texttt{R1:R0}\\
-Large aggregate & sret pointer in \texttt{R0}, result pointer returned in \texttt{R0}\\
-\bottomrule
-\end{longtable}
-\endgroup
+\input{isa/abi/generated/c_return_register_quick_reference.tex}
 
 \subsection{Aggregate Passing}
 For every by-value aggregate argument, the caller allocates distinct storage,
@@ -672,19 +654,7 @@ contract.
 \subsection{Calls, Relocations, and Relaxation}
 The relocation records the linkage path selected for a C call:
 
-\manualtablecaption{C Call Relocation Quick Reference}
-\begin{manuallongtable}{@{}p{2.15in}p{3.25in}@{}}
-\toprule
-\textbf{Call form} & \textbf{Relocation}\\
-\midrule
-\endhead
-Direct C call & \texttt{R\_BEDROCK\_CALL32S}\\
-External call through the PLT & \texttt{R\_BEDROCK\_PLT32S}\\
-Far symbol address word & \texttt{R\_BEDROCK\_FAR\_ADDR64}\\
-Far symbol segment word & \texttt{R\_BEDROCK\_FAR\_SEGMENT64}\\
-External far call slot & \texttt{R\_BEDROCK\_FAR\_JUMP\_SLOT}\\
-\bottomrule
-\end{manuallongtable}
+\input{isa/abi/generated/c_call_relocation_quick_reference.tex}
 
 The assembler and linker may relax an instruction sequence, but relaxation
 must preserve the C call interface, symbol identity, and observable control
@@ -731,17 +701,7 @@ operations and ordering instructions.
 The following guarantees apply to ordinary memory accesses. They do not by
 themselves establish C inter-thread ordering:
 
-\manualtablecaption{Ordinary Memory Access Guarantees}
-\begin{manuallongtable}{@{}p{2.75in}p{2.65in}@{}}
-\toprule
-\textbf{Access} & \textbf{Guarantee}\\
-\midrule
-\endhead
-Aligned 1/2/4/8-byte load or store & tear-free\\
-Access of 16 bytes or more & not atomic\\
-Unaligned access & no tear-free guarantee\\
-\bottomrule
-\end{manuallongtable}
+\input{isa/abi/generated/ordinary_memory_access_guarantees.tex}
 
 \subsection{Atomic Object Eligibility}
 The native lock-free set consists of integer objects and ordinary 64-bit
@@ -760,17 +720,7 @@ Once the object satisfies the width and alignment requirements above, the
 compiler uses the following primitive lowering. The ordering sequences are
 defined separately below.
 
-\manualtablecaption{Native Atomic Primitive Quick Reference}
-\begin{manuallongtable}{@{}p{2.15in}p{3.25in}@{}}
-\toprule
-\textbf{C operation} & \textbf{Bedrock primitive}\\
-\midrule
-\endhead
-Atomic load or store & ordinary aligned tear-free access plus the required ordering sequence\\
-Compare-exchange & width-matched \texttt{CMPXCHG}\\
-Exchange & compare-exchange loop using \texttt{CMPXCHG}\\
-\bottomrule
-\end{manuallongtable}
+\input{isa/abi/generated/native_atomic_primitive_quick_reference.tex}
 
 \Needspace{2.6in}
 \subsection{C Atomic Memory Order Mapping}
@@ -815,17 +765,8 @@ Sequentially consistent store & \texttt{AFENCE}, store, \texttt{AFENCE}\\
 \bottomrule
 \end{manuallongtable}
 
-\manualtablecaption{C Thread Fence Lowering}
-\begin{manuallongtable}{@{}p{1.55in}p{3.95in}@{}}
-\toprule
-\textbf{C order} & \textbf{Lowering}\\
-\midrule
-\endhead
-Relaxed & no operation\\
-Consume, acquire, release, or acquire-release & \texttt{AFENCE}\\
-Sequentially consistent & \texttt{AFENCE}\\
-\bottomrule
-\end{manuallongtable}
+A relaxed C thread fence emits no instruction. Consume, acquire, release, acquire-release, and sequentially
+consistent thread fences emit \texttt{AFENCE}.
 
 \subsection{Volatile, Device, and Executable Memory}
 Volatile accesses preserve the observable access count and order but do not
@@ -1041,30 +982,6 @@ The C ABI does not define a hosted process-entry protocol or system-call ABI. Th
 \manualfield{Instruction:}{SYSCALL}
 Ordinary C code reaches SYSCALL only through OS ABI wrappers or target-specific runtime code.
 \subsection{OS ABI Segment Policy}
-\manualtablecaption{OS-Owned C Segment Policy}
-\begingroup\footnotesize
-\setlength{\tabcolsep}{2pt}
-\begin{longtable}{@{}p{1.75in}p{3.75in}@{}}
-\toprule
-\textbf{Rule} & \textbf{Value}\\
-\midrule
-\endhead
-owner & OS ABI\\
-selectable modes & disabled or bounds-only for C-visible CS, DS, and SS\\
-required invariants & pre-segment pointer identity, ordinary-pointer DS coverage, near-call CS reachability, active-stack SS coverage, and GS0 TLS semantics\\
-loader policy & the OS ABI defines initial images, executable and shared-object placement, dynamic-loading constraints, and any permitted bounds changes\\
-\bottomrule
-\end{longtable}
-\endgroup
-
-The active OS ABI reserves \texttt{GS0} for TLS, permits user reads of
-\texttt{DS} and \texttt{GS0} through \texttt{GS5}, and permits user writes of
-\texttt{GS1} through \texttt{GS5}, subject to architectural segment-image
-validation. The dedicated \texttt{RDSEG CS} form is unprivileged as specified
-by the ISA. The OS ABI saves and restores all six GS registers as
-architectural thread state across context switches and preserves interrupted
-values across signal or exception delivery. \texttt{GS1} through
-\texttt{GS5} remain volatile at C call boundaries and are not part of the
-\texttt{setjmp}/\texttt{longjmp} callee-saved environment.
+Segment initialization and process policy are defined by the active OS ABI.
 
 \end{document}

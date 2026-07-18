@@ -6,52 +6,7 @@ occupy increasing addresses in decode order.
 Signed displacement and immediate payloads use two's-complement representation at their declared width before any
 sign extension performed by the consuming instruction or EA form.
 
-\manualtablecaption{Immediate, Displacement, and Address Payload Order}
-\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{0.45in}>{\raggedright\arraybackslash}p{4.20in}@{}}
-\toprule
-\rowcolor{ManualHeaderFill}
-\textbf{Payload} & \textbf{Bytes} & \textbf{Memory Order}\\
-\midrule
-\endfirsthead
-\multicolumn{3}{l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
-\toprule
-\rowcolor{ManualHeaderFill}
-\textbf{Payload} & \textbf{Bytes} & \textbf{Memory Order}\\
-\midrule
-\endhead
-\texttt{imm8} & 1 & single byte\\
-\texttt{imm16} & 2 & bits 7..0 at the lower byte, then bits 15..8\\
-\texttt{imm32} & 4 & least significant byte first\\
-\texttt{imm64} & 8 & least significant byte first\\
-\texttt{disp8} & 1 & single signed two's-complement byte\\
-\texttt{disp16} & 2 & signed two's-complement value, little-endian\\
-\texttt{disp32} & 4 & signed value, least significant byte first\\
-\texttt{disp64} & 8 & declared-width payload, least significant byte first\\
-\texttt{abs32} & 4 & absolute-address payload, least significant byte first\\
-\texttt{abs64} & 8 & absolute-address payload, least significant byte first\\
-\bottomrule
-\end{manuallongtable}
-
-\manualtablecaption{Immediate Operand Interpretation}
-\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{0.95in}>{\raggedright\arraybackslash}p{0.38in}>{\raggedright\arraybackslash}p{0.62in}>{\raggedright\arraybackslash}p{0.62in}>{\raggedright\arraybackslash}p{0.90in}>{\raggedright\arraybackslash}p{1.70in}@{}}
-\toprule
-\rowcolor{ManualHeaderFill}
-\textbf{Operand} & \textbf{Bits} & \textbf{Value} & \textbf{Range} & \textbf{Extension} & \textbf{Applies When}\\
-\midrule
-\endfirsthead
-\multicolumn{6}{l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
-\toprule
-\rowcolor{ManualHeaderFill}
-\textbf{Operand} & \textbf{Bits} & \textbf{Value} & \textbf{Range} & \textbf{Extension} & \textbf{Applies When}\\
-\midrule
-\endhead
-\texttt{pair\_id} & @PAIR_ID_WIDTH@ & identifier & @PAIR_ID_RANGE@ & none & PUSHP/POPP canonical register-pair selector\\
-\texttt{pt\_level} & @PT_LEVEL_WIDTH@ & enumeration & @PT_LEVEL_RANGE@ & none & PTQUERY page-table level selector\\
-\texttt{flags\_bitmap} & @FLAGS_BITMAP_WIDTH@ & bitmap & @FLAGS_BITMAP_RANGE@ & none & SETF/CLRF integer FLAGS masks\\
-\texttt{imm6} & @IMM6_WIDTH@ & unsigned & @IMM6_RANGE@ & zero-extend & integer forms with an explicit B/W/L/Q operation size\\
-\texttt{imm7} & @IMM7_WIDTH@ & unsigned & @IMM7_RANGE@ & zero-extend & EXTRACT register-pair forms\\
-\bottomrule
-\end{manuallongtable}
+\input{isa/tools/latex_builder/templates/fragments/generated/immediate_operand_interpretation.tex}
 
 PUSHP and POPP interpret \texttt{pair\_id} as a canonical register-pair index, so every encoding from 0 through 7 is valid.
 PTQUERY accepts \texttt{pt\_level} values 1 through 5; encodings 0, 6, and 7 are reserved.

@@ -39,44 +39,9 @@ V & overflow & Set on signed overflow or an explicitly reported exceptional cond
 \textbf{Operation Class} & \textbf{FLAGS Result}\\
 \midrule
 \endhead
-ADD, SUB, AND, OR, XOR & Leave FLAGS unchanged.\\
-ADC, SBB & Read C as carry or borrow input and update Z, N, C, and V.\\
-CMP, TEST & Update Z, N, C, and V from a temporary result without storing it.\\
-CMPJcc, TESTJcc & Compute branch flags temporarily and leave architectural FLAGS unchanged.\\
-INC, DEC & Leave FLAGS unchanged.\\
-INCF, DECF & Update Z, N, C, and V from the stored result.\\
-SETF, CLRF & Change selected \texttt{flags\_bitmap} bits and preserve unselected FLAGS bits.\\
-NEG, ABS & Leave FLAGS unchanged.\\
-CLR & Write zero and leave FLAGS unchanged.\\
-Bounds checks & Set V for an out-of-range value and leave Z, N, and C unchanged.\\
+@COMMON_INTEGER_FLAG_ROWS@
 \bottomrule
 \end{manuallongtable}
-
-\subsection{Shift, Rotate, and Bit Operations}
-\manualtablecaption{Shift and Rotate Count Rules}
-\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{1.30in}>{\raggedright\arraybackslash}p{4.10in}@{}}
-\toprule
-\rowcolor{ManualHeaderFill}
-\textbf{Operation} & \textbf{Count Rule}\\
-\midrule
-SHL, SHR, SAR & Count is not reduced modulo width; oversized counts use defined zero- or sign-fill behavior.\\
-ROL, ROR & Count is reduced modulo width; effective count zero preserves destination and FLAGS.\\
-\bottomrule
-\end{manualtabular}
-
-\manualtablecaption{Shift and Rotate Flag Computation}
-\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{4.65in}@{}}
-\toprule
-\rowcolor{ManualHeaderFill}
-\textbf{Operation} & \textbf{FLAGS Result for Nonzero Effective Count}\\
-\midrule
-SHL & Z and N from result; C is last shifted bit; V reports signed multiplication overflow.\\
-SHR & Z and N from result; C is last shifted bit; V is clear.\\
-SAR & Z and N from result; C is last shifted bit or original sign for oversized counts; V is clear.\\
-ROL & Z and N from result; C is least significant result bit; V is clear.\\
-ROR & Z and N from result; C is most significant result bit; V is clear.\\
-\bottomrule
-\end{manualtabular}
 
 \subsection{Conditional Consumers}
 Conditional branches, calls, traps, sets, and repeat forms consume the condition-code table without recomputing

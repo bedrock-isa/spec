@@ -59,7 +59,7 @@ the payload. For extended instructions, bits 5..2 are \texttt{L}, bits 1..0 begi
 continues that stream. Thus \texttt{L} encodes the total length as $3+L$ bytes directly in
 Figure~\ref{fig:instruction-header-byte-formats}.
 
-\input{isa/tools/latex_builder/templates/fragments/instruction_encoding_diagrams.tex}
+@INSTRUCTION_ENCODING_DIAGRAMS@
 
 \manualtablecaption{Instruction Length Truth Table}
 \begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{1.25in}>{\raggedright\arraybackslash}p{1.25in}>{\raggedright\arraybackslash}p{0.55in}@{}}
@@ -74,54 +74,17 @@ Figure~\ref{fig:instruction-header-byte-formats}.
 \textbf{Byte 0 Pattern} & \textbf{Byte 1 Pattern} & \textbf{Bytes}\\
 \midrule
 \endhead
-\texttt{0xxxxxxx} & -- & 1\\
-\texttt{10xxxxxx} & \texttt{xxxxxxxx} & 2\\
-\texttt{110000oo} & \texttt{bbbbxxxx} & 3\\
-\texttt{110001oo} & \texttt{bbbbxxxx} & 4\\
-\texttt{110010oo} & \texttt{bbbbxxxx} & 5\\
-\texttt{110011oo} & \texttt{bbbbxxxx} & 6\\
-\texttt{110100oo} & \texttt{bbbbxxxx} & 7\\
-\texttt{110101oo} & \texttt{bbbbxxxx} & 8\\
-\texttt{110110oo} & \texttt{bbbbxxxx} & 9\\
-\texttt{110111oo} & \texttt{bbbbxxxx} & 10\\
-\texttt{111000oo} & \texttt{bbbbxxxx} & 11\\
-\texttt{111001oo} & \texttt{bbbbxxxx} & 12\\
-\texttt{111010oo} & \texttt{bbbbxxxx} & 13\\
-\texttt{111011oo} & \texttt{bbbbxxxx} & 14\\
-\texttt{111100oo} & \texttt{bbbbxxxx} & 15\\
-\texttt{111101oo} & \texttt{bbbbxxxx} & 16\\
-\texttt{111110oo} & \texttt{bbbbxxxx} & 17\\
-\texttt{111111oo} & \texttt{bbbbxxxx} & 18\\
+@INSTRUCTION_LENGTH_TRUTH_TABLE_ROWS@
 \bottomrule
 \end{manuallongtable}
 
-\manualtablecaption{Opcode Length Truth Table}
-\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.95in}>{\raggedright\arraybackslash}p{0.80in}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{2.90in}@{}}
-\toprule
-\rowcolor{ManualHeaderFill}
-\textbf{Opcode Selector} & \textbf{Class} & \textbf{Opcode Bytes} & \textbf{Validity}\\
-\midrule
-\texttt{0xxxxx} & \texttt{medium} & 3 & any extended instruction length\\
-\texttt{10xxxx} & \texttt{medium} & 3 & any extended instruction length\\
-\texttt{110xxx} & \texttt{medium} & 3 & any extended instruction length\\
-\texttt{1110xx} & \texttt{medium} & 3 & any extended instruction length\\
-\texttt{11110x} & \texttt{long} & 4 & instruction length at least 4 bytes\\
-\texttt{111110} & \texttt{long} & 4 & instruction length at least 4 bytes\\
-\texttt{111111} & \texttt{extralong} & 5 & instruction length at least 5 bytes\\
-\bottomrule
-\end{manualtabular}
-
 \manualtablecaption{Encoding Class Summary}
-\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.72in}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{3.20in}@{}}
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.72in}>{\raggedright\arraybackslash}p{0.55in}>{\raggedright\arraybackslash}p{2.05in}>{\raggedright\arraybackslash}p{0.62in}>{\raggedright\arraybackslash}p{1.45in}@{}}
 \toprule
 \rowcolor{ManualHeaderFill}
-\textbf{Class} & \textbf{Payload Bits} & \textbf{Selection}\\
+\textbf{Class} & \textbf{Payload Bits} & \textbf{Header or Opcode Selector} & \textbf{Opcode Bytes} & \textbf{Validity}\\
 \midrule
-extrashort & @EXTRASHORT_PAYLOAD_BITS@ & byte0[7]=0; payload is byte0[6:0]\\
-short & @SHORT_PAYLOAD_BITS@ & byte0[7:6]=10; payload is byte0[5:0] followed by byte1[7:0]\\
-medium & @MEDIUM_PAYLOAD_BITS@ & byte0[7:6]=11 and opcode selector is 0xxxxx, 10xxxx, 110xxx, or 1110xx\\
-long & @LONG_PAYLOAD_BITS@ & byte0[7:6]=11 and opcode selector is 11110x or 111110\\
-extralong & @EXTRALONG_PAYLOAD_BITS@ & byte0[7:6]=11 and opcode selector is 111111\\
+@ENCODING_CLASS_SUMMARY_ROWS@
 \bottomrule
 \end{manualtabular}
 

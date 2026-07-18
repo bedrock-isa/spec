@@ -49,34 +49,11 @@ sequence makes the modified bytes visible to instruction fetch.
 For every scalar size below, a naturally aligned normal-memory load or store is tear-free. Unaligned accesses retain
 the successful-access and synchronous-fault rules above.
 
-\Needspace{2.3in}
-\manualtablecaption{Scalar Access Sizes and Alignment}
-\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{3.95in}@{}}
-\toprule
-\rowcolor{ManualHeaderFill}
-\textbf{Suffix} & \textbf{Bytes} & \textbf{Natural Alignment}\\
-\midrule
-B & 1 & any byte address\\
-W & 2 & address divisible by 2\\
-L & 4 & address divisible by 4\\
-Q & 8 & address divisible by 8\\
-\bottomrule
-\end{manualtabular}
+Natural alignment equals the operand width in bytes: B is one byte and may use any byte address; W, L, and Q are
+two, four, and eight bytes and require addresses divisible by two, four, and eight respectively.
 
 \subsection{Atomic Memory-Order Selectors}
-\manualtablecaption{Atomic Memory-Order Selectors}
-\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.95in}>{\raggedright\arraybackslash}p{0.45in}>{\raggedright\arraybackslash}p{4.00in}@{}}
-\toprule
-\rowcolor{ManualHeaderFill}
-\textbf{Selector} & \textbf{Code} & \textbf{Architectural Ordering Effect}\\
-\midrule
-\texttt{RELAXED} & \texttt{0} & Atomicity only. No ordering is imposed on unrelated memory operations.\\
-\texttt{ACQUIRE} & \texttt{1} & Later memory operations by the same hardware thread are ordered after the atomic operation.\\
-\texttt{RELEASE} & \texttt{2} & Earlier memory operations by the same hardware thread are ordered before the atomic operation.\\
-\texttt{ACQREL} & \texttt{3} & Applies both acquire and release ordering.\\
-\texttt{SEQCST} & \texttt{4} & Applies acquire-release ordering and participates in the single global sequentially consistent order.\\
-\bottomrule
-\end{manualtabular}
+\input{isa/tools/latex_builder/templates/fragments/generated/atomic_memory_order_selectors.tex}
 
 \subsection{Fence Instructions}
 \hyperref[instr:rfence]{\texttt{RFENCE}} orders prior reads before later reads,

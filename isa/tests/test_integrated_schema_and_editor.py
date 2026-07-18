@@ -66,19 +66,6 @@ def make_minimal_defs(root: Path) -> Path:
         {"registers": {"general": {"entries": [{"name": "R0", "width": 64}]}}},
     )
     write_yaml(
-        defs / "encoding_classes.yaml",
-        {
-            "classes": [
-                {
-                    "name": "extrashort",
-                    "instruction_bytes": 1,
-                    "payload_bits": 7,
-                    "namespace": ["???????"],
-                }
-            ]
-        },
-    )
-    write_yaml(
         defs / "instructions.yaml",
         {"title": "Base", "include": ["instructions/BASE"]},
     )

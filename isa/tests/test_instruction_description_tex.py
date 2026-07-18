@@ -19,11 +19,18 @@ from gen_docs import (  # noqa: E402
     InstructionDef,
     IsaModel,
     instruction_details_tex,
+    latex_instruction_flag_effects,
     latex_instruction_operand_value_tables,
+    load_instructions,
 )
 
 
-def instruction(path: Path, *, details: bool = False) -> InstructionDef:
+def instruction(
+    path: Path,
+    *,
+    details: bool = False,
+    flag_effects: dict[str, dict[str, str]] | None = None,
+) -> InstructionDef:
     return InstructionDef(
         path=path,
         instruction_set="base",
@@ -38,6 +45,7 @@ def instruction(path: Path, *, details: bool = False) -> InstructionDef:
                 "family": "test",
                 "privilege": "unprivileged",
             },
+            **({"flag_effects": flag_effects} if flag_effects else {}),
             **({"additional_description": "details.tex"} if details else {}),
         },
     )
@@ -77,6 +85,37 @@ def model(constants: list[dict[str, str]]) -> IsaModel:
 
 
 class InstructionDetailsTexTests(unittest.TestCase):
+    def test_flag_effect_metadata_uses_table_and_inline_thresholds(self) -> None:
+        inline = instruction(
+            Path("instruction.yaml"),
+            flag_effects={"FFLAGS": {"NV": "may accrue", "NX": "may accrue"}},
+        )
+        inline_tex = latex_instruction_flag_effects(inline)
+        self.assertIn(r"\manualinstructionfield{FFLAGS}", inline_tex)
+        self.assertNotIn("manualflageffects", inline_tex)
+
+        table = instruction(
+            Path("instruction.yaml"),
+            flag_effects={
+                "FLAGS": {"Z": "result == 0", "N": "result sign", "C": "carry"}
+            },
+        )
+        table_tex = latex_instruction_flag_effects(table)
+        self.assertIn(r"\begin{manualflageffects}{FLAGS}", table_tex)
+        self.assertIn(r"\manualflageffect{Z}{result == 0}", table_tex)
+
+    def test_repository_flag_effect_split_and_ownership(self) -> None:
+        banks = [
+            effects
+            for inst in load_instructions(ROOT / "isa" / "defs")
+            for effects in inst.flag_effects.values()
+        ]
+        self.assertEqual(len(banks), 71)
+        self.assertEqual(sum(len(effects) >= 3 for effects in banks), 36)
+        self.assertEqual(sum(len(effects) <= 2 for effects in banks), 35)
+        for path in (ROOT / "isa" / "defs").glob("**/instructions/*/details.tex"):
+            self.assertNotIn("manualflageffects", path.read_text(encoding="utf-8"))
+
     def test_renders_rich_enum_values_from_encoding_operands(self) -> None:
         inst = instruction(Path("isa/defs/instructions/TESTDOC/instruction.yaml"))
         constants = [

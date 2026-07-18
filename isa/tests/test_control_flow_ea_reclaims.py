@@ -33,7 +33,6 @@ class ControlFlowEaReclaimTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         store = load_encoding_store(DEFS_ROOT)
         encoding_class = store.classes_by_name["long"]
-        cls.path = store.class_path
         cls.payload_bits = encoding_class.payload_bits
         cls.namespaces = list(encoding_class.namespace)
         cls.entries = [allocation_entry_dict(item) for item in store.for_class("long")]
@@ -42,11 +41,12 @@ class ControlFlowEaReclaimTests(unittest.TestCase):
         return next(item for item in self.entries if item["id"] == entry_id)
 
     def claims(self, entry_id: str) -> tuple[set[int], dict[str, int]]:
+        entry = self.entry(entry_id)
         claims, skipped = entry_claims(
-            self.path,
+            Path(str(entry["source_path"])),
             self.payload_bits,
             self.namespaces,
-            self.entry(entry_id),
+            entry,
         )
         return {value for value, _claim in claims}, dict(skipped)
 
@@ -63,7 +63,7 @@ class ControlFlowEaReclaimTests(unittest.TestCase):
             if not any(matches_pattern(value, pattern) for value in targets):
                 continue
             claims, _skipped = entry_claims(
-                self.path,
+                Path(str(entry["source_path"])),
                 self.payload_bits,
                 self.namespaces,
                 entry,

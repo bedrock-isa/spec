@@ -100,8 +100,6 @@ boundary, and zeros the padding. The frame-size unit remains one 8-byte slot.
 
 \input{isa/tools/latex_builder/templates/fragments/frame_type_table.tex}
 
-\input{isa/tools/latex_builder/templates/fragments/payload_slot_table.tex}
-
 The frame type is fixed by the delivered event and never changes because repeat state was interrupted. ERROR\_CODE is
 defined separately by each exception and has zero in every unassigned bit. PAGE\_FAULT extends that slot with
 effective-address and linear-address context. AUXILIARY includes all four named slots and permits EVENT\_AUX to

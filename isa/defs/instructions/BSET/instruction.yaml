@@ -10,4 +10,9 @@ attributes:
   - REP
   - REPcc
   - REPG
-additional_description: details.tex
+flag_effects:
+  FLAGS:
+    Z: "old_bit == 0"
+    N: "unchanged"
+    C: "unchanged"
+    V: "unchanged"

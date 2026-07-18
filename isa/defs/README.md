@@ -21,7 +21,7 @@ invalid discriminated variants, and unversioned changes to the decoder itself.
 Each instruction directory contains two required YAML documents:
 
 ```text
-instruction.yaml  title, summary, description, attributes, and optional TeX/syntax references
+instruction.yaml  title, summary, description, attributes, flag effects, and optional TeX/syntax references
 encodings.yaml    concrete forms with stable ID, class, bits, syntax, operands, sizes, fields, and constraints
 ```
 
@@ -34,13 +34,16 @@ size field. Field widths are derived from `bits` rather than repeated.
 
 Instruction attributes contain class, family, privilege, and, where applicable,
 accepted repeat contexts. Flag semantics and other instruction-specific
-normative detail live in the explicitly referenced TeX body. Implicit state
+normative detail live in the explicitly referenced TeX body. FLAGS and FFLAGS
+effects are structured instruction metadata so reference tables and compact
+effect lines are generated from one source. Implicit state
 reads and writes are described there rather than duplicated in unconsumed YAML.
 
-The five encoding classes, their declaration order, instruction byte counts,
-payload widths, and namespaces are declared once in `encoding_classes.yaml`.
+The five encoding classes and their order are architectural invariants in
+`isa/tools/encoding_architecture.py`. Payload widths and opcode namespaces are
+derived there from instruction framing and the extended opcode selectors.
 Allocation validation, reports, documentation, and `alloc_edit.py` aggregate
-the per-instruction `encodings.yaml` files against that registry.
+the per-instruction `encodings.yaml` files against that fixed grammar.
 
 Extension-wide machine-readable invariants live in the extension root's
 `extension.yaml`. The top-level `extensions.yaml` lists root extension names,

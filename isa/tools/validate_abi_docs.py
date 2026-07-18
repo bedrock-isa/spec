@@ -8,21 +8,15 @@ import re
 
 import abi_call_model
 from defs_loader import load_yaml
+import gen_abi_tables
+import gen_architecture_tables
+import gen_target_intrinsics
 
 
 ROOT = Path(__file__).resolve().parents[2]
 HEADER_ROOT = ROOT / "isa" / "c" / "include"
 REGISTER_DEFS = ROOT / "isa" / "defs" / "registers.yaml"
 CALL_CASES = ROOT / "isa" / "abi" / "calling_convention_cases.json"
-CONTROL_REGISTER_REFERENCE = (
-    ROOT
-    / "isa"
-    / "tools"
-    / "latex_builder"
-    / "templates"
-    / "fragments"
-    / "control_register_reference.tex"
-)
 
 
 def normalize_tex(text: str) -> str:
@@ -40,7 +34,7 @@ def require(condition: bool, message: str) -> None:
         raise ValueError(message)
 
 
-def validate_relocations() -> None:
+def validate_relocations() -> set[str]:
     path = ROOT / "isa" / "abi" / "bedrock-elf-abi.tex"
     text = normalize_tex(path.read_text(encoding="utf-8"))
     rows = re.findall(r"(?m)^(\d+)\s*&\s*\\texttt\{(R_BEDROCK_[A-Z0-9_]+)\}", text)
@@ -49,14 +43,18 @@ def validate_relocations() -> None:
     require(ids, f"{path}: no relocation entries found")
     require(ids == list(range(len(ids))), f"{path}: relocation IDs must be contiguous from zero; found {ids}")
     require(len(names) == len(set(names)), f"{path}: duplicate relocation names")
+    return set(names)
 
 
-def builtin_tokens(text: str) -> set[str]:
-    return {
-        token
-        for token in re.findall(r"__builtin_bedrock_[A-Za-z0-9_]+", normalize_tex(text))
-        if token != "__builtin_bedrock_"
-    }
+def validate_generated_abi_tables(defined_relocations: set[str]) -> None:
+    manifest = gen_abi_tables.load_manifest()
+    gen_abi_tables.validate_relocation_relationships(manifest, defined_relocations)
+    stale = gen_abi_tables.check_fragments(manifest)
+    require(
+        not stale,
+        "generated ABI table fragments are stale: "
+        + ", ".join(str(path) for path in stale),
+    )
 
 
 def segment_selectors_from_metadata() -> dict[str, int]:
@@ -71,20 +69,12 @@ def segment_selectors_from_metadata() -> dict[str, int]:
 
 
 def validate_target_intrinsics() -> None:
-    document_path = ROOT / "isa" / "c" / "bedrock-target-intrinsics.tex"
-    document = document_path.read_text(encoding="utf-8")
-    suffixes = re.findall(r"\\compilerbuiltin\{([a-z0-9_]+)\}", document)
-    require(len(suffixes) == len(set(suffixes)), f"{document_path}: duplicate target builtin entry")
-    documented = {f"__builtin_bedrock_{suffix}" for suffix in suffixes}
-
-    declared: set[str] = set()
-    for header in sorted(HEADER_ROOT.glob("*.h")):
-        declared.update(builtin_tokens(header.read_text(encoding="utf-8")))
-
-    missing = sorted(declared - documented)
-    extra = sorted(documented - declared)
-    require(not missing, f"{document_path}: missing header builtins: {', '.join(missing)}")
-    require(not extra, f"{document_path}: documents undefined builtins: {', '.join(extra)}")
+    manifest = gen_target_intrinsics.load_manifest()
+    gen_target_intrinsics.validate_manifest_against_headers(manifest, HEADER_ROOT)
+    gen_target_intrinsics.check_tables(
+        gen_target_intrinsics.render_tables(manifest),
+        gen_target_intrinsics.DEFAULT_OUTPUT_DIR,
+    )
 
     header_path = HEADER_ROOT / "bedrocksysregintrin.h"
     header = header_path.read_text(encoding="utf-8")
@@ -107,17 +97,21 @@ def validate_control_register_reference() -> None:
         for name, value in re.findall(r"__BEDROCK_CR_([A-Z0-9]+)\s*=\s*0x([0-9A-Fa-f]+)", header)
     }
 
-    reference = CONTROL_REGISTER_REFERENCE.read_text(encoding="utf-8")
+    manifest = gen_architecture_tables.load_mapping(gen_architecture_tables.SOURCE)
+    gen_architecture_tables.validate_manifest(manifest)
+    stale = gen_architecture_tables.generate(check=True)
+    require(
+        not stale,
+        "generated architecture table fragments are stale: "
+        + ", ".join(str(path) for path in stale),
+    )
     documented_selectors = {
-        name: int(value, 16)
-        for value, name in re.findall(
-            r"\\texttt\{0x([0-9A-Fa-f]+)\}\s*&\s*\\texttt\{([A-Z0-9]+)\}",
-            reference,
-        )
+        str(entry["name"]): int(entry["selector"])
+        for entry in manifest["control_registers"]
     }
     require(
         documented_selectors == header_selectors,
-        f"{CONTROL_REGISTER_REFERENCE}: selector table does not match {header_path}",
+        f"{gen_architecture_tables.SOURCE}: control-register selectors do not match {header_path}",
     )
 
 
@@ -135,7 +129,8 @@ def validate_calling_convention_model() -> None:
 
 
 def main() -> int:
-    validate_relocations()
+    defined_relocations = validate_relocations()
+    validate_generated_abi_tables(defined_relocations)
     validate_target_intrinsics()
     validate_control_register_reference()
     validate_calling_convention_model()

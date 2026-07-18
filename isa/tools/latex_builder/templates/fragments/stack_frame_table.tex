@@ -19,5 +19,9 @@
 +0x28 & SAVED\_CS & saved code-segment image\\
 +0x30 & SAVED\_DS & saved data-segment image\\
 +0x38 & SAVED\_SS & saved stack-segment image\\
++0x40 & ERROR\_CODE & exception-specific error code; unassigned bits are zero\\
++0x48 & FAULT\_EA & numeric effective address before segment pre-translation\\
++0x50 & FAULT\_LINEAR & address after segment pre-translation\\
++0x58 & EVENT\_AUX & double-fault, machine-check, or bus-error auxiliary information\\
 \bottomrule
 \end{manuallongtable}

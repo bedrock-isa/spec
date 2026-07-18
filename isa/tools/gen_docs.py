@@ -40,7 +40,16 @@ from defs_loader import (  # noqa: E402
 from latex_to_markdown import render_markdown_from_latex  # noqa: E402
 from validate_isa import allocation_mnemonic  # noqa: E402
 from encoding_store import allocation_entry_dict, load_encoding_store  # noqa: E402
-from defs_schema import decode_instruction  # noqa: E402
+from encoding_architecture import (  # noqa: E402
+    ARCHITECTURE_SOURCE_PATH,
+    ENCODING_CLASSES,
+    EXTENDED_BYTE1_PATTERN,
+    EXTRASHORT_BYTE0_PATTERN,
+    SHORT_BYTE0_PATTERN,
+    extended_instruction_lengths,
+    extended_length_byte0_pattern,
+)
+from defs_schema import FLAG_BANKS, decode_instruction  # noqa: E402
 from latex_builder.common import (  # noqa: E402
     LatexTopSection,
     latex_longtable,
@@ -90,6 +99,21 @@ class InstructionDef:
     def additional_assembler_syntax(self) -> list[str]:
         value = self.data.get("additional_assembler_syntax", [])
         return list(value) if isinstance(value, list) else []
+
+    @property
+    def flag_effects(self) -> dict[str, dict[str, str]]:
+        value = self.data.get("flag_effects")
+        if not isinstance(value, dict):
+            return {}
+        return {
+            str(bank): {
+                str(flag): str(effect)
+                for flag, effect in effects.items()
+                if isinstance(flag, str) and isinstance(effect, str)
+            }
+            for bank, effects in value.items()
+            if isinstance(bank, str) and isinstance(effects, dict)
+        }
 
 
 @dataclass(frozen=True)
@@ -264,7 +288,7 @@ def load_allocations(defs_root: Path) -> list[AllocationClass]:
         total = namespace_size(namespaces)
         classes.append(
             AllocationClass(
-                path=store.class_path,
+                path=ARCHITECTURE_SOURCE_PATH,
                 cls=encoding_class.name,
                 payload_bits=encoding_class.payload_bits,
                 summary={
@@ -399,10 +423,69 @@ def data_format_template_values(model: IsaModel) -> dict[str, Any]:
     return values
 
 
-def encoding_class_template_values(model: IsaModel) -> dict[str, Any]:
+def encoding_architecture_template_values() -> dict[str, str]:
+    length_rows = [
+        rf"\texttt{{{EXTRASHORT_BYTE0_PATTERN}}} & -- & 1\\",
+        rf"\texttt{{{SHORT_BYTE0_PATTERN}}} & \texttt{{xxxxxxxx}} & 2\\",
+    ]
+    length_rows.extend(
+        rf"\texttt{{{extended_length_byte0_pattern(instruction_bytes)}}} & "
+        rf"\texttt{{{EXTENDED_BYTE1_PATTERN}}} & {instruction_bytes}\\"
+        for instruction_bytes in extended_instruction_lengths()
+    )
+
+    class_rows = []
+    namespace_rows = []
+    for encoding_class in ENCODING_CLASSES:
+        if not encoding_class.selectors:
+            namespace_rows.append(
+                rf"\manualbitrow{{{encoding_class.name}}}{{%" "\n"
+                rf"\manualbitfieldtext{{payload[{encoding_class.payload_bits - 1}:0]}}"
+                rf"{{{encoding_class.payload_bits}}}" "\n"
+                "}"
+            )
+        if encoding_class.name == "extrashort":
+            selection = rf"\texttt{{{EXTRASHORT_BYTE0_PATTERN}}}"
+            validity = "exactly 1 byte"
+        elif encoding_class.name == "short":
+            selection = rf"\texttt{{{SHORT_BYTE0_PATTERN}}}"
+            validity = "exactly 2 bytes"
+        else:
+            selection = ", ".join(
+                rf"\texttt{{{selector}}}" for selector in encoding_class.selectors
+            )
+            validity = (
+                "any extended instruction length"
+                if encoding_class.instruction_bytes == 3
+                else f"instruction length at least {encoding_class.instruction_bytes} bytes"
+            )
+        class_rows.append(
+            rf"\texttt{{{encoding_class.name}}} & {encoding_class.payload_bits} & "
+            rf"{selection} & {encoding_class.instruction_bytes} & {validity}\\"
+        )
+
+        for selector in encoding_class.selectors:
+            group = (
+                f" group {encoding_class.selectors.index(selector)}"
+                if len(encoding_class.selectors) > 1
+                else ""
+            )
+            selector_macro = (
+                "manualbitfieldcode" if "x" in selector else "manualbitfixed"
+            )
+            suffix_bits = encoding_class.payload_bits - len(selector)
+            namespace_rows.append(
+                rf"\manualbitrow{{{encoding_class.name}{group}}}{{%" "\n"
+                rf"\{selector_macro}{{{selector}}}{{{len(selector)}}}" "\n"
+                rf"\manualbitfieldtext{{payload[{suffix_bits - 1}:0]}}"
+                rf"{{{suffix_bits}}}" "\n"
+                "}"
+            )
+
     return {
-        f"{cls.cls.upper()}_PAYLOAD_BITS": cls.payload_bits
-        for cls in model.allocation_classes
+        "INSTRUCTION_LENGTH_TRUTH_TABLE_ROWS": "\n".join(length_rows),
+        "ENCODING_CLASS_SUMMARY_ROWS": "\n".join(class_rows),
+        "OPCODE_PAYLOAD_NAMESPACE_ROWS": "\n".join(namespace_rows),
     }
 
 
@@ -1310,6 +1393,7 @@ def render_latex(model: IsaModel, only_allocated: bool = False) -> str:
             "SAVE_RESTORE_SECTION": latex_save_restore_section(),
             "DATA_FORMATS_SECTION": latex_data_formats_section(model),
             "CONDITION_CODES_SECTION": latex_condition_section(model),
+            "CONDITION_CODE_COMPUTATION_SECTION": latex_condition_code_computation_section(model),
             "EFFECTIVE_ADDRESS_SECTION": latex_ea_section(model),
             "PRIVILEGED_PROGRAMMING_SECTION": latex_privileged_programming_model_section(),
             "EXCEPTION_PROCESSING_SECTION": latex_exception_processing_section(),
@@ -1406,7 +1490,11 @@ def latex_data_formats_section(model: IsaModel) -> str:
 
 
 def latex_instruction_word_formats_section(model: IsaModel) -> str:
-    values = encoding_class_template_values(model)
+    values = encoding_architecture_template_values()
+    values["INSTRUCTION_ENCODING_DIAGRAMS"] = render_latex_template(
+        "fragments/instruction_encoding_diagrams.tex",
+        values,
+    )
     values["INSTRUCTION_PAYLOAD_ORDERING_SECTION"] = render_latex_template(
         "fragments/instruction_payload_ordering.tex",
         data_format_template_values(model),
@@ -1420,28 +1508,14 @@ def latex_instruction_word_formats_section(model: IsaModel) -> str:
 def latex_register_section(model: IsaModel) -> str:
     data = model.metadata.get("registers") or {}
     register_groups = data.get("registers") or {}
-    general_registers = (register_groups.get("general") or {}).get("entries") or []
-    special_registers = (register_groups.get("special") or {}).get("entries") or []
-    floating_registers = (register_groups.get("floating_point") or {}).get("entries") or []
     segment_registers = (register_groups.get("segment") or {}).get("entries") or []
-    reg_rows = [
-        [reg.get("name", ""), bits_text(reg.get("encoding", ""), 4), reg.get("width", "")]
-        for reg in general_registers
-    ]
-    special_rows = [
-        [reg.get("name", ""), reg.get("width", "")]
-        for reg in special_registers
-    ]
-    floating_rows = [
-        [reg.get("name", ""), bits_text(reg.get("encoding", ""), 4), reg.get("width", "")]
-        for reg in floating_registers
-    ]
-    segment_rows = [
-        [reg.get("name", ""), reg.get("role", ""), reg.get("width", "")]
-        for reg in segment_registers
-    ]
     sreg_rows = [
-        [reg.get("name", ""), bits_text(reg["encoding"], 3), reg.get("description", "")]
+        [
+            reg.get("name", ""),
+            bits_text(reg["encoding"], 3),
+            reg.get("role", ""),
+            reg.get("description", ""),
+        ]
         for reg in sorted(
             (
                 reg
@@ -1454,40 +1528,12 @@ def latex_register_section(model: IsaModel) -> str:
     return render_latex_template(
         "register_model.tex",
         {
-            "GENERAL_REGISTER_TABLE": latex_code_table(
-                ["Register", "Encoding", "Width"],
-                reg_rows,
-                ["1.15in", "1.10in", "0.75in"],
-                "General Register Encoding",
-                {0, 1},
-            ),
-            "FLOATING_REGISTER_TABLE": latex_code_table(
-                ["Register", "Encoding", "Width"],
-                floating_rows,
-                ["0.85in", "1.10in", "0.75in"],
-                "Floating-Point Registers",
-                {0, 1},
-            ),
-            "SEGMENT_REGISTER_TABLE": latex_code_table(
-                ["Segment", "Role", "Width"],
-                segment_rows,
-                ["0.85in", "1.10in", "0.75in"],
-                "Segment Registers",
-                {0},
-            ),
             "SREG_TABLE": latex_code_table(
-                ["SREG", "Bits", "Use"],
+                ["Segment", "Bits", "Role", "Use"],
                 sreg_rows,
-                ["0.60in", "0.50in", "4.30in"],
+                ["0.60in", "0.50in", "0.70in", "3.60in"],
                 "Segment Register Operand Encoding",
                 {0, 1},
-            ),
-            "SPECIAL_REGISTER_TABLE": latex_code_table(
-                ["Special", "Width"],
-                special_rows,
-                ["0.85in", "0.75in"],
-                "Special Registers",
-                {0},
             ),
         },
     )
@@ -1510,6 +1556,30 @@ def latex_condition_section(model: IsaModel) -> str:
                 {0, 1, 2},
             ),
         },
+    )
+
+
+def latex_common_integer_flag_rows(model: IsaModel) -> str:
+    rows = []
+    for inst in model.instructions:
+        effects = inst.flag_effects.get("FLAGS")
+        if not effects:
+            continue
+        effect_text = "; ".join(
+            rf"\texttt{{{flag}}}: {latex_escape(effects[flag])}"
+            for flag in FLAG_BANKS["FLAGS"]
+            if flag in effects
+        )
+        rows.append(
+            rf"\texttt{{{latex_escape(inst.mnemonic)}}} & {effect_text}.\\"
+        )
+    return "\n".join(rows)
+
+
+def latex_condition_code_computation_section(model: IsaModel) -> str:
+    return render_latex_template(
+        "condition_code_computation.tex",
+        {"COMMON_INTEGER_FLAG_ROWS": latex_common_integer_flag_rows(model)},
     )
 
 
@@ -1832,6 +1902,35 @@ def instruction_details_tex(inst: InstructionDef) -> str:
     return text
 
 
+def latex_instruction_flag_effects(inst: InstructionDef) -> str:
+    parts: list[str] = []
+    for bank, valid_flags in FLAG_BANKS.items():
+        effects = inst.flag_effects.get(bank)
+        if not effects:
+            continue
+        ordered = [(flag, effects[flag]) for flag in valid_flags if flag in effects]
+        if len(ordered) <= 2:
+            text = "; ".join(
+                rf"\texttt{{{flag}}} {latex_escape(effect)}"
+                for flag, effect in ordered
+            )
+            if text and text[-1] not in ".!?":
+                text += "."
+            parts.append(latex_instruction_field(bank, text))
+            continue
+        parts.extend(
+            [
+                rf"\begin{{manualflageffects}}{{{bank}}}",
+                *(
+                    rf"\manualflageffect{{{flag}}}{{{latex_escape(effect)}}}"
+                    for flag, effect in ordered
+                ),
+                r"\end{manualflageffects}",
+            ]
+        )
+    return "\n".join(parts)
+
+
 def latex_instruction_summary_table(title: str, instructions: list[InstructionDef]) -> str:
     rows = []
     for inst in instructions:
@@ -1872,10 +1971,14 @@ def latex_instruction_entry(model: IsaModel, inst: InstructionDef, *, first_in_g
     operand_value_tables = latex_instruction_operand_value_tables(model, inst)
     if operand_value_tables:
         parts.append(operand_value_tables)
+    flag_effects = latex_instruction_flag_effects(inst)
     details_tex = instruction_details_tex(inst)
-    if details_tex:
+    if flag_effects or details_tex:
         parts.append(r"\manualinstructiondescriptionheading{Detailed Semantics}")
-        parts.append(details_tex)
+        if flag_effects:
+            parts.append(flag_effects)
+        if details_tex:
+            parts.append(details_tex)
     forms_block = latex_instruction_forms_block(model, inst)
     if forms_block:
         parts.append(forms_block)

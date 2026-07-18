@@ -9,4 +9,6 @@ attributes:
   repeat:
   - REP
   - REPG
-additional_description: details.tex
+flag_effects:
+  FFLAGS:
+    NV: "may accrue"

@@ -26,7 +26,8 @@ from validate_alloc import (
     namespace_patterns,
     parse_range,
 )
-from defs_schema import decode_encodings, decode_encoding_classes, decode_instruction
+from defs_schema import decode_encodings, decode_instruction
+from encoding_architecture import ENCODING_CLASSES_BY_NAME
 from encoding_store import allocation_entry_dict, load_encoding_store
 
 
@@ -34,14 +35,6 @@ ROOT = Path(__file__).resolve().parents[2]
 DEFS_ROOT = ROOT / "isa" / "defs"
 ALLOC_ROOT = ROOT / "isa" / "alloc"
 LEDGER_PATH = ROOT / "build" / "migration" / "definition-migration-ledger.json"
-
-CLASS_BYTES = {
-    "extrashort": 1,
-    "short": 2,
-    "medium": 3,
-    "long": 4,
-    "extralong": 5,
-}
 
 KIND_TO_TYPE = {
     "size": "size",
@@ -135,7 +128,7 @@ def load_allocations() -> tuple[list[dict[str, Any]], list[OldAllocation]]:
     entries: list[OldAllocation] = []
     for path in sorted(
         ALLOC_ROOT.glob("*.yaml"),
-        key=lambda item: list(CLASS_BYTES).index(item.stem),
+        key=lambda item: list(ENCODING_CLASSES_BY_NAME).index(item.stem),
     ):
         data = load_yaml(path)
         if not isinstance(data, dict):
@@ -143,10 +136,16 @@ def load_allocations() -> tuple[list[dict[str, Any]], list[OldAllocation]]:
         cls = str(data["class"])
         payload_bits = int(data["payload_bits"])
         namespaces = namespace_patterns(payload_bits, data)
+        encoding_class = ENCODING_CLASSES_BY_NAME[cls]
+        if payload_bits != encoding_class.payload_bits:
+            raise ValueError(
+                f"{path}: {cls} payload width {payload_bits} does not match architecture "
+                f"width {encoding_class.payload_bits}"
+            )
         classes.append(
             {
                 "name": cls,
-                "instruction_bytes": CLASS_BYTES[cls],
+                "instruction_bytes": encoding_class.instruction_bytes,
                 "payload_bits": payload_bits,
                 "namespace": namespaces,
             }
@@ -869,7 +868,6 @@ def write_ledger(
 
 def apply_migration(
     instructions: dict[str, OldInstruction],
-    classes: list[dict[str, Any]],
     forms_by_mnemonic: dict[str, list[dict[str, Any]]],
     ledger: dict[str, Any],
 ) -> None:
@@ -878,9 +876,6 @@ def apply_migration(
         for mnemonic, instruction in instructions.items()
         if instruction.path.with_name("details.tex").is_file()
     }
-    (DEFS_ROOT / "encoding_classes.yaml").write_text(
-        dump_yaml({"classes": classes}), encoding="utf-8"
-    )
     for mnemonic, instruction in instructions.items():
         details_path = instruction.path.with_name("details.tex")
         old_details = details_path.read_text(encoding="utf-8") if details_path.exists() else ""
@@ -907,8 +902,6 @@ def verify_migration(
     ledger: dict[str, Any],
     old_tex_bodies: dict[str, str],
 ) -> None:
-    class_path = DEFS_ROOT / "encoding_classes.yaml"
-    decode_encoding_classes(class_path, load_yaml(class_path))
     form_count = 0
     for mnemonic, old in instructions.items():
         instruction = decode_instruction(old.path, load_yaml(old.path))
@@ -1045,7 +1038,7 @@ def main() -> int:
     if args.command == "apply":
         if undecided:
             raise SystemExit("refusing migration: uncovered logical forms need dispositions")
-        apply_migration(instructions, classes, forms_by_mnemonic, ledger)
+        apply_migration(instructions, forms_by_mnemonic, ledger)
     return 0
 
 

@@ -22,6 +22,7 @@ from gen_docs import (  # noqa: E402
     required_bytes_text,
 )
 from encoding_store import allocation_entry_dict, load_encoding_store  # noqa: E402
+from encoding_architecture import ENCODING_CLASSES, ENCODING_CLASSES_BY_NAME  # noqa: E402
 
 
 def allocation(
@@ -31,13 +32,7 @@ def allocation(
     bits: str | None = None,
     fields: dict[str, object] | None = None,
 ) -> AllocationEntry:
-    instruction_bytes = {
-        "extrashort": 1,
-        "short": 2,
-        "medium": 3,
-        "long": 4,
-        "extralong": 5,
-    }[cls]
+    instruction_bytes = ENCODING_CLASSES_BY_NAME[cls].instruction_bytes
     return AllocationEntry(
         path=Path(f"isa/alloc/{cls}.yaml"),
         cls=cls,
@@ -55,15 +50,11 @@ def allocation(
 
 class InstructionBitDiagramTests(unittest.TestCase):
     def test_every_rendered_byte_has_exactly_eight_bits(self) -> None:
-        for cls, payload_bits in (
-            ("extrashort", 7),
-            ("short", 14),
-            ("medium", 18),
-            ("long", 26),
-            ("extralong", 34),
-        ):
-            with self.subTest(cls=cls):
-                for byte in entry_byte_segments(allocation(cls, payload_bits)):
+        for encoding_class in ENCODING_CLASSES:
+            with self.subTest(cls=encoding_class.name):
+                for byte in entry_byte_segments(
+                    allocation(encoding_class.name, encoding_class.payload_bits)
+                ):
                     self.assertEqual(sum(width for _label, width in byte), 8)
 
     def test_required_bytes_use_ea_metadata_instead_of_global_maximum(self) -> None:

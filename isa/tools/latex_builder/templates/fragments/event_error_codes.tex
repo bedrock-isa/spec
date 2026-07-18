@@ -27,21 +27,7 @@
 \bottomrule
 \end{manuallongtable}
 
-\manualtablecaption{PAGE\_FAULT Causes}
-\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{2.20in}>{\raggedright\arraybackslash}p{2.55in}@{}}
-\toprule
-\rowcolor{ManualHeaderFill}
-\textbf{Value} & \textbf{Cause} & \textbf{Detection class}\\
-\midrule
-0 & \texttt{NOT\_PRESENT} & required PTE is not present\\
-1 & \texttt{PERMISSION} & accumulated permission excludes the access\\
-2 & \texttt{MALFORMED\_PTE} & structurally invalid PTE\\
-3 & \texttt{NONCANONICAL} & noncanonical address\\
-4 & \texttt{SEGMENT\_BOUNDS} & segment bounds failure\\
-5 & \texttt{ATOMIC\_ALIGNMENT} & misaligned byte-addressed (\texttt{AT=0}) atomic operand\\
-6 & \texttt{ADDRESS\_TYPE} & address or memory type rejects the access\\
-\bottomrule
-\end{manualtabular}
+\input{isa/tools/latex_builder/templates/fragments/generated/page_fault_causes.tex}
 
 The originating privilege is recovered from saved \texttt{STATUS.PM}; it is not duplicated in \texttt{ERROR\_CODE}.
 \texttt{USER\_DOMAIN} instead distinguishes the ordinary user permission path from the checked user-access path used
@@ -60,32 +46,9 @@ result after segment pre-translation. A value not produced is zero and has its c
 \texttt{DIVIDE\_ERROR.ERROR\_CODE[7:0]} is 0 for \texttt{ZERO\_DIVISOR} and 1 for
 \texttt{SIGNED\_OVERFLOW}; bits 63..8 are zero.
 
-\manualtablecaption{ILLEGAL\_INSTRUCTION Causes}
-\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{2.35in}>{\raggedright\arraybackslash}p{2.40in}@{}}
-\toprule
-\rowcolor{ManualHeaderFill}
-\textbf{Value} & \textbf{Cause} & \textbf{Meaning}\\
-\midrule
-0 & \texttt{INVALID\_OPCODE} & opcode is not assigned\\
-1 & \texttt{INVALID\_EA\_FORM} & effective-address form is not legal for the instruction\\
-2 & \texttt{RESERVED\_ENCODING} & assigned instruction uses a reserved field value\\
-3 & \texttt{UNAVAILABLE\_EXTENSION} & required extension is unavailable\\
-4 & \texttt{EXPLICIT\_ILLEGAL} & architected \texttt{ILLEGAL} instruction\\
-\bottomrule
-\end{manualtabular}
+\input{isa/tools/latex_builder/templates/fragments/generated/illegal_instruction_causes.tex}
 
-\manualtablecaption{INVALID\_CONTROL\_STATE Causes}
-\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{2.35in}>{\raggedright\arraybackslash}p{2.40in}@{}}
-\toprule
-\rowcolor{ManualHeaderFill}
-\textbf{Value} & \textbf{Cause} & \textbf{Meaning}\\
-\midrule
-0 & \texttt{INVALID\_SELECTOR} & selector names no available resource\\
-1 & \texttt{RESERVED\_BITS} & reserved bits are nonzero or changed illegally\\
-2 & \texttt{INVALID\_IMAGE} & supplied architectural image is invalid\\
-3 & \texttt{INVALID\_TRANSITION} & requested state transition is illegal\\
-\bottomrule
-\end{manualtabular}
+\input{isa/tools/latex_builder/templates/fragments/generated/invalid_control_state_causes.tex}
 
 An unavailable \texttt{RDPMC} ID reports \texttt{INVALID\_SELECTOR}; an illegal
 reserved-bit update reports \texttt{RESERVED\_BITS}; an invalid segment,

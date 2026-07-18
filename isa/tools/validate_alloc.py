@@ -10,6 +10,8 @@ from pathlib import Path
 import sys
 from typing import Any, Iterable
 
+from encoding_architecture import ARCHITECTURE_SOURCE_PATH, ENCODING_CLASSES_BY_NAME
+
 try:
     import yaml
 except ImportError as exc:  # pragma: no cover - environment error path
@@ -217,7 +219,7 @@ def validate_store(defs_root: Path) -> list[tuple[str, dict[str, int], Counter[s
         overlaps: list[str] = []
         for entry in data["entries"]:
             claims, entry_skipped = entry_claims(
-                Path(str(entry.get("source_path", store.class_path))),
+                Path(str(entry.get("source_path", ARCHITECTURE_SOURCE_PATH))),
                 encoding_class.payload_bits,
                 list(encoding_class.namespace),
                 entry,
@@ -250,28 +252,14 @@ def validate_store(defs_root: Path) -> list[tuple[str, dict[str, int], Counter[s
 
 
 def default_namespace_patterns(payload_bits: int, cls: str) -> list[str]:
-    if cls == "medium":
-        if payload_bits != 18:
-            raise ValueError(f"medium payload_bits must be 18, got {payload_bits}")
-        return [
-            "0?????????????????",
-            "10????????????????",
-            "110???????????????",
-            "1110??????????????",
-        ]
-    if cls == "long":
-        if payload_bits != 26:
-            raise ValueError(f"long payload_bits must be 26, got {payload_bits}")
-        return [
-            "111100????????????????????",
-            "111101????????????????????",
-            "111110????????????????????",
-        ]
-    if cls == "extralong":
-        if payload_bits != 34:
-            raise ValueError(f"extralong payload_bits must be 34, got {payload_bits}")
-        return ["111111????????????????????????????"]
-    return ["?" * payload_bits]
+    encoding_class = ENCODING_CLASSES_BY_NAME.get(cls)
+    if encoding_class is None:
+        return ["?" * payload_bits]
+    if payload_bits != encoding_class.payload_bits:
+        raise ValueError(
+            f"{cls} payload_bits must be {encoding_class.payload_bits}, got {payload_bits}"
+        )
+    return list(encoding_class.namespace)
 
 
 def namespace_patterns(payload_bits: int, data: dict[str, Any]) -> list[str]:

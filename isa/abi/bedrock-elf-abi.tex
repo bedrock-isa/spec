@@ -207,36 +207,10 @@ initial-value rule.
 
 \clearpage
 \section{Sections and Symbols}
-Bedrock uses ordinary ELF sections. The names below are the standard section conventions for conforming Bedrock ELF objects.
-\subsection{Standard Sections}
-\manualtablecaption{Standard Section Names}
-\begingroup\footnotesize
-\setlength{\tabcolsep}{2pt}
-\begin{longtable}{@{}p{1.45in}p{4.05in}@{}}
-\toprule
-\textbf{Section} & \textbf{Attributes}\\
-\midrule
-\endhead
-\texttt{.text} & alloc, execute, read\\
-\texttt{.rodata} & alloc, read\\
-\texttt{.data} & alloc, read, write\\
-\texttt{.bss} & alloc, read, write, zero fill\\
-\texttt{.init} & alloc, execute, read\\
-\texttt{.fini} & alloc, execute, read\\
-\texttt{.got} & alloc, read, write\\
-\texttt{.got.plt} & alloc, read, write\\
-\texttt{.got.far} & \begin{tabular}[t]{@{}l@{}}alloc\\read\\write\\far pointer entries\end{tabular}\\
-\texttt{.plt} & alloc, execute, read\\
-\texttt{.dynamic} & alloc, dynamic\\
-\texttt{.dynsym} & alloc, dynamic symbol table\\
-\texttt{.dynstr} & alloc, dynamic string table\\
-\texttt{.rela.dyn} & alloc, relocation\\
-\texttt{.rela.plt} & alloc, relocation\\
-\texttt{.note.bedrock} & note\\
-\texttt{.bedrock.segdomains} & linker metadata\\
-\bottomrule
-\end{longtable}
-\endgroup
+Bedrock uses ordinary ELF sections with the usual ELF meanings. Only the Bedrock-specific section conventions are
+listed below.
+\subsection{Bedrock-Specific Sections}
+\input{isa/abi/generated/bedrock_specific_section_conventions.tex}
 \subsection{Symbol Model}
 Bedrock supports the standard local, global, and weak bindings and the
 default, hidden, and protected visibility classes. The standard notype,
@@ -347,24 +321,23 @@ ET DYN rule & loader adds load bias to p vaddr, validates the resulting base and
 \item Discarded input sections discard their associated segment-domain records.
 \end{itemize}
 \subsection{Far Pointer Relocation Pair}
-An ELF far pointer object is 16-byte aligned and contains two adjacent 64-bit
-words:
+An ELF far pointer object and a \texttt{.got.far} entry are 16-byte aligned and contain two adjacent 64-bit words:
 
-\manualtablecaption{ELF Far Pointer Object Layout}
+\manualtablecaption{ELF Far Pointer Object and GOT Entry Layout}
 \begingroup\footnotesize
 \setlength{\tabcolsep}{2pt}
-\begin{longtable}{@{}p{0.75in}p{1.45in}p{0.75in}p{2.55in}@{}}
+\begin{longtable}{@{}p{0.55in}p{0.90in}p{0.45in}p{1.55in}p{2.05in}@{}}
 \toprule
-\textbf{Offset} & \textbf{Field} & \textbf{Type} & \textbf{Relocation}\\
+\textbf{Offset} & \textbf{Field} & \textbf{Type} & \textbf{Static Relocation} & \textbf{Published \texttt{.got.far} Value}\\
 \midrule
 \endhead
-0 & address & \texttt{u64} & \texttt{R\_BEDROCK\_FAR\_ADDR64}\\
-8 & segment image & \texttt{u64} & \texttt{R\_BEDROCK\_FAR\_SEGMENT64}\\
+\texttt{+0x00} & address & \texttt{u64} & \texttt{R\_BEDROCK\_FAR\_ADDR64} & canonical pre-segment data address or far-call entry address\\
+\texttt{+0x08} & segment image & \texttt{u64} & \texttt{R\_BEDROCK\_FAR\_SEGMENT64} & canonical disabled or bounds-only data image or far-call CS image\\
 \bottomrule
 \end{longtable}
 \endgroup
 
-The explicit RELA addend applies only to the address word. The segment-image
+For a static far pointer object, the explicit RELA addend applies only to the address word. The segment-image
 relocation has addend zero. Both relocations name the same symbol and together
 form one indivisible link-time contract, although the loader need not update
 the two words atomically before publication.
@@ -584,20 +557,6 @@ segment state. The loader writes each final \texttt{.got.plt} value before
 publication. Published slots are immutable and may be covered by
 \texttt{PT\_GNU\_RELRO}; no post-publication rebinding is permitted. A later
 lazy-binding facility requires a distinct ELF profile and resolver ABI.
-\subsection{Far GOT Layout}
-\manualtablecaption{Far GOT Entry}
-\begingroup\footnotesize
-\setlength{\tabcolsep}{2pt}
-\begin{longtable}{@{}p{0.75in}p{1.25in}p{0.65in}p{2.85in}@{}}
-\toprule
-\textbf{Offset} & \textbf{Field} & \textbf{Type} & \textbf{Meaning}\\
-\midrule
-\endhead
-\texttt{+0x00} & \texttt{address} & \texttt{u64} & canonical pre-segment data address or far-call entry address\\
-\texttt{+0x08} & \texttt{segment\_\allowbreak{}image} & \texttt{u64} & canonical disabled or bounds-only data image or far-call CS image\\
-\bottomrule
-\end{longtable}
-\endgroup
 \subsection{Far Binding Rules}
 \begin{itemize}
 \item The loader resolves every R BEDROCK FAR GLOB DAT, R BEDROCK FAR JUMP SLOT, and R BEDROCK FAR IRELATIVE relocation before application code can observe the entry.
@@ -619,19 +578,7 @@ link-time constant byte offset from the GS0 base; TLSDESC supplies runtime
 resolution when the reference crosses a dynamic-object boundary or remains
 interposable.
 
-\manualtablecaption{TLS Relocation Families}
-\begingroup\footnotesize
-\setlength{\tabcolsep}{2pt}
-\begin{longtable}{@{}p{1.25in}p{4.25in}@{}}
-\toprule
-\textbf{Model} & \textbf{Relocations}\\
-\midrule
-\endhead
-local-exec & \begin{tabular}[t]{@{}l@{}}\texttt{R\_BEDROCK\_TLS\_OFFSET32S}\\\texttt{R\_BEDROCK\_TLS\_OFFSET64}\end{tabular}\\
-TLSDESC & \begin{tabular}[t]{@{}l@{}}\texttt{R\_BEDROCK\_TLSDESC\_GOTPCREL32S}\\\texttt{R\_BEDROCK\_TLSDESC\_GOTPCREL64}\\\texttt{R\_BEDROCK\_TLSDESC\_CALL}\\\texttt{R\_BEDROCK\_TLSDESC}\end{tabular}\\
-\bottomrule
-\end{longtable}
-\endgroup
+\input{isa/abi/generated/tls_relocation_families.tex}
 
 Far TLS relocations and far TLS static initializers are forbidden. Taking the
 address of a TLS object linearizes its GS0-relative address at runtime and

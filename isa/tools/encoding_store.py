@@ -8,13 +8,11 @@ from typing import Iterable
 from collections import Counter
 
 from defs_schema import (
-    EncodingClass,
-    EncodingClassesDocument,
     EncodingForm,
     EncodingsDocument,
-    decode_encoding_classes,
     decode_encodings,
 )
+from encoding_architecture import ENCODING_CLASSES, EncodingClass
 
 import yaml
 
@@ -29,7 +27,6 @@ class LocatedEncoding:
 @dataclass(frozen=True)
 class EncodingStore:
     defs_root: Path
-    class_path: Path
     classes: tuple[EncodingClass, ...]
     encodings: tuple[LocatedEncoding, ...]
 
@@ -49,11 +46,7 @@ def _raw_yaml(path: Path):
 
 
 def load_encoding_store(defs_root: Path) -> EncodingStore:
-    class_path = defs_root / "encoding_classes.yaml"
-    class_doc = decode_encoding_classes(class_path, _raw_yaml(class_path))
-    if not isinstance(class_doc, EncodingClassesDocument):  # pragma: no cover
-        raise TypeError(class_doc)
-    class_names = {item.name for item in class_doc.classes}
+    class_names = {item.name for item in ENCODING_CLASSES}
     encodings: list[LocatedEncoding] = []
     ids: dict[str, Path] = {}
     for path in sorted(defs_root.glob("**/instructions/*/encodings.yaml")):
@@ -74,7 +67,7 @@ def load_encoding_store(defs_root: Path) -> EncodingStore:
                 )
             ids[form.id] = path
             encodings.append(LocatedEncoding(path, mnemonic, form))
-    return EncodingStore(defs_root, class_path, class_doc.classes, tuple(encodings))
+    return EncodingStore(defs_root, ENCODING_CLASSES, tuple(encodings))
 
 
 def encoding_form_dict(form: EncodingForm) -> dict:

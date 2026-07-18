@@ -6,4 +6,9 @@ attributes:
   class: system
   family: system_registers
   privilege: unprivileged
-additional_description: details.tex
+flag_effects:
+  FLAGS:
+    Z: "cleared when mask bit 3 is one; otherwise unchanged"
+    N: "cleared when mask bit 2 is one; otherwise unchanged"
+    C: "cleared when mask bit 1 is one; otherwise unchanged"
+    V: "cleared when mask bit 0 is one; otherwise unchanged"

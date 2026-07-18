@@ -6,4 +6,10 @@ attributes:
   class: system
   family: atomics
   privilege: unprivileged
+flag_effects:
+  FLAGS:
+    Z: "store succeeded"
+    N: "cleared"
+    C: "cleared"
+    V: "cleared"
 additional_description: details.tex

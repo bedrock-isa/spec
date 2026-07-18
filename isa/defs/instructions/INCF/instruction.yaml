@@ -10,4 +10,9 @@ attributes:
   - REP
   - REPcc
   - REPG
-additional_description: details.tex
+flag_effects:
+  FLAGS:
+    Z: "result == 0"
+    N: "most_significant_bit(result)"
+    C: "unsigned carry out"
+    V: "signed overflow"

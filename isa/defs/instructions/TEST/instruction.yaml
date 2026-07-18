@@ -11,4 +11,9 @@ attributes:
   - REPcc
   - REPG
   - REPGF
-additional_description: details.tex
+flag_effects:
+  FLAGS:
+    Z: "result == 0"
+    N: "most_significant_bit(result)"
+    C: "0"
+    V: "0"

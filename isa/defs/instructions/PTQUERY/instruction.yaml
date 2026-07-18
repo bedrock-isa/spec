@@ -6,4 +6,10 @@ attributes:
   class: system
   family: tlb_and_context
   privilege: supervisor
+flag_effects:
+  FLAGS:
+    Z: "requested PTE was read and is structurally valid for its level"
+    N: "valid queried path is user-domain accessible; cleared on failure"
+    C: "valid queried path is writable; cleared on failure"
+    V: "valid queried path is executable; cleared on failure"
 additional_description: details.tex

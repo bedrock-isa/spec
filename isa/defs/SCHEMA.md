@@ -1,12 +1,14 @@
 # YAML Schema Contract
 
-The Bedrock YAML schema is frozen at version 1. This file displays the complete
+The Bedrock YAML schema is frozen at version 0. This file displays the complete
 shape accepted by `isa/tools/defs_schema.py`, including nested records and
 discriminated variants. `schema.lock` pins the SHA-256 digests of both files.
 
 Changing an allowed field, required field, value type, enum, path rule, or
-cross-field invariant is a schema change. Increment `SCHEMA_VERSION`, update
-this contract and its tests, and regenerate `schema.lock` deliberately.
+cross-field invariant is a schema change. While the project remains unreleased,
+keep `SCHEMA_VERSION` at 0 and update this contract, its tests, and
+`schema.lock` deliberately. A version increment requires an explicit release
+or versioning decision.
 
 ## Notation and common rules
 
@@ -34,6 +36,7 @@ InstructionDocument {
   summary: string
   description: string
   attributes: InstructionAttributes
+  flag_effects?: map<enum(FLAGS, FFLAGS), map<flag-name, string>>
   additional_assembler_syntax?: list<string, unique>
   additional_description?: relative-path ending in .tex
 }
@@ -45,6 +48,10 @@ InstructionAttributes {
   repeat?: list<enum(REP, REPcc, REPG, REPGF), unique>
 }
 ```
+
+`FLAGS` accepts `Z`, `N`, `C`, and `V`; `FFLAGS` accepts `NV`, `DZ`, `OF`,
+`UF`, and `NX`. Each present bank is non-empty. Renderers use the listed
+architectural flag order rather than YAML mapping order.
 
 ## 2. `encodings.yaml`
 
@@ -91,26 +98,7 @@ Form IDs are unique within a document and begin with `class + "."`. Operand
 field markers are unique. Operand fields plus `fields` declare every symbolic
 marker in `bits` exactly once; `0`, `1`, and `?` are not declared markers.
 
-## 3. `encoding_classes.yaml`
-
-```text
-EncodingClassesDocument {
-  classes: list<EncodingClass>
-}
-
-EncodingClass {
-  name: string, unique within classes
-  instruction_bytes: int[1..]
-  payload_bits: int[1..]
-  namespace: non-empty list<BitNamespace, unique>
-}
-
-BitNamespace = string of exactly payload_bits characters from 0, 1, ?
-```
-
-Class list order is architectural encoding-class order.
-
-## 4. `instructions.yaml`
+## 3. `instructions.yaml`
 
 ```text
 InstructionSetIndex {
@@ -122,7 +110,7 @@ InstructionSetIndex {
 
 The `include` sequence is also the document order.
 
-## 5. Extension documents
+## 4. Extension documents
 
 `extensions.yaml`:
 
@@ -158,7 +146,7 @@ CpuidAvailability {
 }
 ```
 
-## 6. `operands.yaml`
+## 5. `operands.yaml`
 
 ```text
 OperandRegistry {
@@ -250,7 +238,7 @@ OperandBit {
 Enum/reserved values and names are unique within their lists and combined enum
 numeric/string values do not overlap. Bitmap bit numbers and names are unique.
 
-## 7. `sizes.yaml`
+## 6. `sizes.yaml`
 
 ```text
 SizeRegistry {
@@ -282,7 +270,7 @@ ReservedSizeValue {
 
 Values are unique within each list and cannot overlap reserved values.
 
-## 8. `registers.yaml`
+## 7. `registers.yaml`
 
 ```text
 RegisterRegistry {
@@ -304,7 +292,7 @@ RegisterEntry {
 
 Names and present encodings are unique within a register group.
 
-## 9. `conditions.yaml`
+## 8. `conditions.yaml`
 
 ```text
 ConditionRegistry {
@@ -322,7 +310,7 @@ ConditionDefinition {
 Condition values are unique. Every primary name and alias shares one global
 unique namespace.
 
-## 10. `ea.yaml`
+## 9. `ea.yaml`
 
 ```text
 EaRegistry {
@@ -387,7 +375,7 @@ Form names are unique per section. Every pattern marker has exactly one field
 declaration and vice versa. Compact `payload` values reference a declared
 `payloads` key.
 
-## 11. `isa/abi/plt_golden_vectors.yaml`
+## 10. `isa/abi/plt_golden_vectors.yaml`
 
 ```text
 AbiVectorsDocument {
@@ -452,7 +440,7 @@ AbiRelocationVector {
 }
 ```
 
-## 12. `isa/memory_model/validation.yaml`
+## 11. `isa/memory_model/validation.yaml`
 
 ```text
 MemoryValidationDocument {
@@ -489,5 +477,6 @@ then enforce the following references and global invariants:
 - operand and size names are registered, encoding marker widths equal their
   primitive widths, and EA write destinations reclaim immediate encodings;
 - CPUID feature names and `(class, leaf, index, bit)` positions are unique;
-- encoding IDs are globally stable, class/bit widths match
-  `encoding_classes.yaml`, and concrete opcode claims do not overlap.
+- encoding IDs are globally stable, class names and bit widths match the fixed
+  grammar in `isa/tools/encoding_architecture.py`, and concrete opcode claims
+  do not overlap.

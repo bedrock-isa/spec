@@ -60,46 +60,13 @@ leaf directory before consuming optional feature bits.
 The base class describes the mandatory scalar ISA and implementation identity. Optional groups are reported
 separately so that binaries can test for them without probing instruction faults.
 
-\manualtablecaption{CPUID Discovery Policy}
-\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{1.25in}>{\raggedright\arraybackslash}p{1.10in}>{\raggedright\arraybackslash}p{3.05in}@{}}
-\toprule
-\rowcolor{ManualHeaderFill}
-\textbf{Policy} & \textbf{Class} & \textbf{Meaning}\\
-\midrule
-Bedrock base ISA & 0x00000000 & base identity, instruction limits, integer registers, condition codes, and mandatory groups\\
-Optional extensions & 0x00000001 & optional floating-point, transcendental, and virtualization-acceleration groups\\
-Implementation properties & 0x00000002 & program-visible limits, topology, and SAVE/RESTORE area layout\\
-\bottomrule
-\end{manualtabular}
-
 \subsection{Leaf Directory}
 Each discovery class may expose a leaf directory. A directory leaf reports which subordinate leaves are defined and
 how indexed leaves should be enumerated.
 
 Software must treat an absent leaf as zero and must ignore reserved bits in a present leaf.
 
-\manualtablecaption{CPUID Leaf Directory}
-\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{0.82in}>{\raggedright\arraybackslash}p{0.62in}>{\raggedright\arraybackslash}p{1.35in}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{1.90in}@{}}
-\toprule
-\rowcolor{ManualHeaderFill}
-\textbf{Class} & \textbf{Leaf} & \textbf{Name} & \textbf{Indexes} & \textbf{Summary}\\
-\midrule
-\endfirsthead
-\multicolumn{5}{l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
-\toprule
-\rowcolor{ManualHeaderFill}
-\textbf{Class} & \textbf{Leaf} & \textbf{Name} & \textbf{Indexes} & \textbf{Summary}\\
-\midrule
-\endhead
-\texttt{0x00000000} & \texttt{0x0000} & \texttt{BASE\_IDENTITY} & \texttt{0..18} & common header, identity, revisions, vendor name, and processor name\\
-\texttt{0x00000001} & \texttt{0x0000} & \texttt{EXTENSION\_DIRECTORY} & \texttt{0..1} & common header and optional architectural-group bits\\
-\texttt{0x00000001} & \texttt{0x0001} & \texttt{FPTRANSA\_ACCURACY} & \texttt{0..0x0044} & common header and sparse per-function accuracy contracts\\
-\texttt{0x00000002} & \texttt{0x0000} & \texttt{EXECUTION\_PROPERTIES} & \texttt{0..1} & common header and program-visible execution properties\\
-\texttt{0x00000002} & \texttt{0x0001} & \texttt{TOPOLOGY} & \texttt{0..n} & common header and hardware-thread topology descriptors\\
-\texttt{0x00000002} & \texttt{0x0002} & \texttt{PERFORMANCE\_COUNTERS} & \texttt{0..3} & common header and standard RDPMC-counter presence\\
-\texttt{0x00000002} & \texttt{0x0004} & \texttt{SAVE\_AREA\_LAYOUT} & \texttt{0..n} & common header, SAVE/RESTORE sizes, bitmap, and component descriptors\\
-\bottomrule
-\end{manuallongtable}
+\input{isa/tools/latex_builder/templates/fragments/generated/cpuid_class_leaf_directory.tex}
 
 Class 0 has no \texttt{BASE\_LIMITS} leaf. Word size, maximum instruction length, opcode classes, and the Rn count are
 invariants of this specification and are defined by their normative architectural sections rather than by runtime

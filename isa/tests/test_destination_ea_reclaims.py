@@ -28,10 +28,8 @@ IMMEDIATE_EA_VALUES = range(0x6C, 0x70)
 def immediate_claim_count(entry_id: str) -> int:
     store = load_encoding_store(DEFS_ROOT)
     encoding_class = store.classes_by_name["medium"]
-    path = store.class_path
-    entry = allocation_entry_dict(
-        next(item for item in store.for_class("medium") if item.form.id == entry_id)
-    )
+    located = next(item for item in store.for_class("medium") if item.form.id == entry_id)
+    entry = allocation_entry_dict(located)
     pattern = compact_bits(str(entry["bits"]))
     ea_fields = [
         name
@@ -41,7 +39,7 @@ def immediate_claim_count(entry_id: str) -> int:
     if len(ea_fields) != 1:
         raise AssertionError(f"{entry_id}: expected one EA field, got {ea_fields}")
     claims, _ = entry_claims(
-        path,
+        located.path,
         encoding_class.payload_bits,
         list(encoding_class.namespace),
         entry,

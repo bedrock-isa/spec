@@ -21,18 +21,14 @@ issue or a wider internal streaming datapath.
 
 \subsection{Repeat Syntax and Body Eligibility}
 
-\manualtablecaption{Repeat Instruction Syntax}
-\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{1.75in}>{\raggedright\arraybackslash}p{1.20in}>{\raggedright\arraybackslash}p{1.80in}@{}}
-\toprule
-\rowcolor{ManualHeaderFill}
-\textbf{Form} & \textbf{Syntax} & \textbf{Emits} & \textbf{Requirements}\\
-\midrule
-\texttt{REPcc} & \texttt{REPcc Rn, (instruction)} & -- & --\\
-\texttt{REP} & \texttt{REP Rn, (instruction)} & -- & --\\
-\texttt{REPG} & \texttt{REPG Rn, \{ (instructions...) \}} & -- & --\\
-\texttt{REPGF} & \texttt{REPGF Rn, \{ (instructions...) \}} & \texttt{REPG} & body must be REPGF-eligible and must not write the selected counter register\\
-\bottomrule
-\end{manualtabular}
+The accepted spellings are:
+\begin{itemize}
+\item \texttt{REPcc Rn, (instruction)}
+\item \texttt{REP Rn, (instruction)}
+\item \texttt{REPG Rn, \{ (instructions...) \}}
+\item \texttt{REPGF Rn, \{ (instructions...) \}}, an assembler-only spelling that emits REPG after applying the
+additional eligibility checks described below
+\end{itemize}
 
 Repeatability is opt-in for each context. An instruction eligible for REP may be used as an unconditional
 single-instruction body. REPcc additionally requires conditional-repeat eligibility, whereas REPG accepts

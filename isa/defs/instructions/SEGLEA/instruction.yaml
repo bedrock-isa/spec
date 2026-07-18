@@ -11,4 +11,7 @@ attributes:
   - REPcc
   - REPG
   - REPGF
+flag_effects:
+  FLAGS:
+    V: "cleared on success; set when the segment-point bounds check fails"
 additional_description: details.tex

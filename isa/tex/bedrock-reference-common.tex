@@ -27,6 +27,9 @@
 \makeatletter
 \renewcommand{\@pnumwidth}{2.2em}
 \renewcommand{\@tocrmarg}{3.0em}
+\renewcommand*{\l@subsection}{\@dottedtocline{2}{1.5em}{3.2em}}
+\renewcommand*{\l@figure}{\@dottedtocline{1}{1.5em}{3.5em}}
+\let\l@table\l@figure
 \makeatother
 \definecolor{RuleGray}{gray}{0.18}
 \definecolor{LightRule}{gray}{0.80}

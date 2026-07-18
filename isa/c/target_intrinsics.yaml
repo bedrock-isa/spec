@@ -1,0 +1,313 @@
+version: 0
+interface_count: 50
+
+header_families:
+  - id: far
+    name: far pointer
+    header: bedrockfarintrin.h
+    umbrella: public
+    exposure: '`bedrock-c-far` profile'
+  - id: core
+    name: core
+    header: bedrockcoreintrin.h
+    umbrella: public
+    exposure: unprivileged core operations
+  - id: memory
+    name: memory
+    header: bedrockmemoryintrin.h
+    umbrella: public
+    exposure: user ordering and access hints
+  - id: integer
+    name: integer
+    header: bedrockintegerintrin.h
+    umbrella: public
+    exposure: nonportable integer operations
+  - id: floating_point
+    name: floating point
+    header: bedrockfpuintrin.h
+    umbrella: public
+    exposure: floating-point environment and classification
+  - id: system_registers
+    name: system registers
+    header: bedrocksysregintrin.h
+    umbrella: system
+    exposure: architectural system-register access
+  - id: cache
+    name: cache
+    header: bedrockcacheintrin.h
+    umbrella: system
+    exposure: cache management
+  - id: mmu
+    name: MMU
+    header: bedrockmmuintrin.h
+    umbrella: system
+    exposure: supervisor translation operations
+  - id: processor_state
+    name: processor state
+    header: bedrockstateintrin.h
+    umbrella: system
+    exposure: runtime state management
+
+builtin_families:
+  - id: far
+    caption: Far Pointer Builtins
+    effect_heading: Constraint and effect
+    builtins:
+      - name: far_ptr_init
+        c_interface: far T(type,address,image)
+        lowering: {kind: description, value: value construction}
+        effect: Far type required; constant operands preserve constant-expression status; no fault, segment write, or memory access.
+      - name: far_flat_ptr_init
+        c_interface: far T(type,address)
+        lowering: {kind: description, value: value construction}
+        effect: Far type required; attaches the canonical disabled image without faulting.
+      - name: far_null
+        c_interface: far T(type)
+        lowering: {kind: description, value: constant construction}
+        effect: Far type required; produces the canonical all-zero representation.
+      - name: far_ptr_from_segment
+        c_interface: far T(type,offset,image)
+        lowering: {kind: description, value: canonicalization}
+        effect: Far type required; invalid input produces an invalid representation without faulting.
+      - name: far_address
+        c_interface: uint64_t(pointer)
+        lowering: {kind: description, value: address extraction}
+        effect: Accepts a far data or function pointer; pure extraction without validation or bounds probing.
+      - name: far_same_encoding
+        c_interface: int(left,right)
+        lowering: {kind: description, value: two-word comparison}
+        effect: Compatible far pointer types required; pure representation comparison.
+
+  - id: core
+    caption: Core Builtins
+    effect_heading: Availability, constraint, and effect
+    builtins:
+      - name: cpuid
+        c_interface: u64(u64 selector)
+        lowering: {kind: instruction, value: CPUID}
+        effect: User allowed; reads discovery state and not C memory.
+      - name: read_status
+        c_interface: uint16_t(void)
+        lowering: {kind: instruction, value: RDSTATUS}
+        effect: Unprivileged; reads `STATUS` and not C memory.
+      - name: rdpmc
+        c_interface: uint64_t(counter_id)
+        lowering: {kind: instruction, value: RDPMC}
+        effect: Unprivileged; ID is a constant in 0 through 65535; zero and unavailable IDs fault with `INVALID_SELECTOR`.
+      - name: breakpoint
+        c_interface: void(void)
+        lowering: {kind: instruction, value: BKPT}
+        effect: Any privilege; always raises the architectural breakpoint/debug exception.
+      - name: trace
+        c_interface: void(marker)
+        lowering: {kind: instruction, value: TRACE}
+        effect: Unprivileged; marker is a constant in 0 through 65535; emits a marker when enabled and otherwise acts as a NOP.
+      - name: yield
+        c_interface: void(void)
+        lowering: {kind: instruction, value: YIELD}
+        effect: Any privilege; scheduling hint, not a compiler or memory barrier.
+      - name: wait
+        c_interface: void(void)
+        lowering: {kind: instruction, value: WAIT}
+        effect: Unprivileged; may suspend until an event or interrupt and is a convergent side effect.
+
+  - id: memory
+    caption: Memory Builtins
+    effect_heading: Constraint and effect
+    builtins:
+      - name: read_fence
+        c_interface: void(void)
+        lowering: {kind: instruction, value: RFENCE}
+        effect: Compiler and hardware read-ordering barrier.
+      - name: write_fence
+        c_interface: void(void)
+        lowering: {kind: instruction, value: WFENCE}
+        effect: Compiler and hardware write-ordering barrier.
+      - name: address_fence
+        c_interface: void(void)
+        lowering: {kind: instruction, value: AFENCE}
+        effect: Full compiler memory clobber and hardware address fence.
+      - name: nontemporal_store_u8
+        c_interface: void(u8 *,u8)
+        lowering: {kind: instruction, value: MOVNT.B}
+        effect: One writable byte; one hinted store, neither volatile nor a fence.
+      - name: nontemporal_store_u16
+        c_interface: void(u16 *,u16)
+        lowering: {kind: instruction, value: MOVNT.W}
+        effect: One writable 16-bit object; one hinted store, neither volatile nor a fence.
+      - name: nontemporal_store_u32
+        c_interface: void(u32 *,u32)
+        lowering: {kind: instruction, value: MOVNT.L}
+        effect: One writable 32-bit object; one hinted store, neither volatile nor a fence.
+      - name: nontemporal_store_u64
+        c_interface: void(u64 *,u64)
+        lowering: {kind: instruction, value: MOVNT.Q}
+        effect: One writable 64-bit object; one hinted store, neither volatile nor a fence.
+
+  - id: integer
+    caption: Integer Builtins
+    effect_heading: Result and effect
+    builtins:
+      - name: clmul_u8
+        c_interface: u8(u8,u8)
+        lowering: {kind: instruction, value: CLMUL.B}
+        effect: Pure; low 8 bits of the carryless product.
+      - name: clmul_u16
+        c_interface: u16(u16,u16)
+        lowering: {kind: instruction, value: CLMUL.W}
+        effect: Pure; low 16 bits of the carryless product.
+      - name: clmul_u32
+        c_interface: u32(u32,u32)
+        lowering: {kind: instruction, value: CLMUL.L}
+        effect: Pure; low 32 bits of the carryless product.
+      - name: clmul_u64
+        c_interface: u64(u64,u64)
+        lowering: {kind: instruction, value: CLMUL.Q}
+        effect: Pure; low 64 bits of the carryless product.
+
+  - id: floating_point
+    caption: Floating-Point Builtins
+    effect_heading: Availability, constraint, and effect
+    builtins:
+      - name: read_fstatus
+        c_interface: uint16_t(void)
+        lowering: {kind: instruction, value: RDFSTATUS}
+        effect: Unprivileged; access to the floating-point environment.
+      - name: write_fstatus
+        c_interface: void(uint16_t)
+        lowering: {kind: instruction, value: WRFSTATUS}
+        effect: Unprivileged; reserved bits follow the ISA; changes the floating-point environment.
+      - name: read_fflags
+        c_interface: uint16_t(void)
+        lowering: {kind: instruction, value: RDFFLAGS}
+        effect: Unprivileged; reads accrued floating-point exception flags.
+      - name: write_fflags
+        c_interface: void(uint16_t)
+        lowering: {kind: instruction, value: WRFFLAGS}
+        effect: Unprivileged; reserved bits follow the ISA; writes accrued flags.
+      - name: fclass_f32
+        c_interface: uint16_t(float)
+        lowering: {kind: instruction, value: FCLASS.S}
+        effect: FPU required; pure ten-class one-hot classification; does not update `FFLAGS`.
+      - name: fclass_f64
+        c_interface: uint16_t(double)
+        lowering: {kind: instruction, value: FCLASS.D}
+        effect: FPU required; pure ten-class one-hot classification; does not update `FFLAGS`.
+
+  - id: system_registers
+    caption: System-Register Builtins
+    effect_heading: Availability, constraint, and effect
+    builtins:
+      - name: write_status
+        c_interface: void(uint16_t)
+        lowering: {kind: instruction, value: WRSTATUS}
+        effect: Supervisor; reserved and privilege-controlled bits follow the ISA; compiler-visible side effect.
+      - name: read_control_register
+        c_interface: uint64_t(selector)
+        lowering: {kind: instruction, value: RDCR}
+        effect: Supervisor; selector is a constant in 0 through 65535 naming a defined register.
+      - name: write_control_register
+        c_interface: void(selector,u64)
+        lowering: {kind: instruction, value: WRCR}
+        effect: Supervisor; defined constant selector required; writes the register and clobbers memory.
+      - name: read_segment_register
+        c_interface: uint64_t(selector)
+        lowering: {kind: instruction, value: RDSEG}
+        effect: Unprivileged; selector is a compile-time `__bedrock_segment_register_t`.
+      - name: read_code_segment
+        c_interface: uint64_t(void)
+        lowering: {kind: instruction, value: RDSEG CS}
+        effect: Unprivileged; reads the current CS image through the dedicated source-only form.
+      - name: write_segment_register
+        c_interface: void(selector,image)
+        lowering: {kind: instruction, value: WRSEG}
+        effect: Unprivileged; validates the SREG image, changes address interpretation, and fully clobbers memory.
+
+  - id: cache
+    caption: Cache-Management Builtins
+    effect_heading: Availability and effect
+    builtins:
+      - name: flush_dcache
+        c_interface: void(void *,size_t)
+        lowering: {kind: instruction, value: FLSHDCACHE}
+        effect: Supervisor; cache side effect and full memory clobber.
+      - name: invalidate_dcache
+        c_interface: void(void *,size_t)
+        lowering: {kind: instruction, value: INVDCACHE}
+        effect: Supervisor; cache side effect and full memory clobber.
+      - name: invalidate_icache
+        c_interface: void(void *,size_t)
+        lowering: {kind: instruction, value: INVICACHE}
+        effect: Supervisor; instruction-cache side effect and instruction-stream barrier.
+      - name: writeback_dcache
+        c_interface: void(void *,size_t)
+        lowering: {kind: instruction, value: WRBKDCACHE}
+        effect: Supervisor; cache side effect and full memory clobber.
+      - name: sync_cache
+        c_interface: void(void *,size_t)
+        lowering: {kind: instruction, value: SYNCCACHE}
+        effect: Supervisor; synchronizes data/instruction visibility and the instruction stream.
+
+  - id: mmu
+    caption: MMU Builtins
+    effect_heading: Constraint and effect
+    builtins:
+      - name: invalidate_tlb
+        c_interface: void(void)
+        lowering: {kind: instruction, value: INVTLB}
+        effect: Supervisor; translation-state side effect and full memory clobber.
+      - name: invalidate_page
+        c_interface: void(const void *)
+        lowering: {kind: instruction, value: INVPAGE}
+        effect: Supervisor; argument supplies the linear page address and the operation fully clobbers memory.
+      - name: invalidate_asid
+        c_interface: void(asid)
+        lowering: {kind: instruction, value: INVASID}
+        effect: Supervisor; ASID is a constant in 0 through 65535 and the operation fully clobbers memory.
+      - name: switch_page_table
+        c_interface: void(uint64_t ptcr)
+        lowering: {kind: instruction, value: SWPT}
+        effect: Supervisor; valid page-table image required; changes address space and fully clobbers memory.
+      - name: switch_page_table_asid
+        c_interface: void(uint64_t,uint16_t)
+        lowering: {kind: instruction, value: SWPTA}
+        effect: Supervisor; valid image and low 16-bit ASID; changes address space and fully clobbers memory.
+      - name: virtual_to_physical
+        c_interface: result(address)
+        lowering: {kind: instruction, value: VTOP}
+        effect: Supervisor; wrapper returns value and operation-defined `FLAGS` captured atomically; page walk without access to the translated C object.
+      - name: page_table_query
+        c_interface: result(level,address)
+        lowering: {kind: instruction, value: PTQUERY}
+        effect: Supervisor; level is a constant in 0 through 7; wrapper atomically returns value and `FLAGS`; page walk without access to the queried C object.
+
+  - id: processor_state
+    caption: Processor-State Builtins
+    effect_heading: Constraint and effect
+    builtins:
+      - name: save_processor_state
+        c_interface: void(void *area)
+        lowering: {kind: instruction, value: SAVE}
+        effect: Writable, CPUID-sized, 4096-byte-aligned area; writes architectural state and fully clobbers memory.
+      - name: restore_processor_state
+        c_interface: void(const void *area)
+        lowering: {kind: description, value: backend restore}
+        effect: Readable, feature-valid, 4096-byte-aligned area; may define `R0--R15`, `FLAGS`, valid `GS` registers, and extension state.
+
+shared_types:
+  - name: __bedrock_segment_register_t
+    contract:
+      kind: text
+      value: selectors for `DS`, `SS`, and `GS0` through `GS5`; `CS` instead uses the fixed `RDSEG CS` source form
+  - name: __bedrock_control_register_t
+    contract:
+      kind: text
+      value: constants for the architectural RDCR and WRCR selector namespace
+  - name: __bedrock_query_result_t
+    contract:
+      kind: c_layout
+      value: u64 value; u16 flags; u16 reserved[3]
+  - name: __bedrock_instruction_descriptor_t
+    contract:
+      kind: c_layout
+      value: u64 control, operand1, operand2, operand3

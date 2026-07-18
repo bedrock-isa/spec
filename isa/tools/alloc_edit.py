@@ -34,6 +34,7 @@ from validate_alloc import (  # noqa: E402
     namespace_size,
     pattern_cardinality,
 )
+from encoding_architecture import ARCHITECTURE_SOURCE_PATH  # noqa: E402
 
 
 DEFAULT_DEFS_ROOT = Path("isa/defs")
@@ -103,7 +104,8 @@ def load_space_data(path: Path, data: dict[str, Any]) -> AllocationSpace:
     overlap_examples: list[str] = []
 
     for entry in entries:
-        claims, _entry_skipped = entry_claims(path, payload_bits, namespaces, entry)
+        entry_path = Path(str(entry.get("source_path", path)))
+        claims, _entry_skipped = entry_claims(entry_path, payload_bits, namespaces, entry)
         for value, claim in claims:
             previous = claimed.get(value)
             if previous is not None:
@@ -116,7 +118,7 @@ def load_space_data(path: Path, data: dict[str, Any]) -> AllocationSpace:
                 continue
             allocated[value] = claim
             claimed[value] = claim
-        for value, reason in skipped_values(path, payload_bits, namespaces, entry):
+        for value, reason in skipped_values(entry_path, payload_bits, namespaces, entry):
             skipped[value].append(
                 SkippedSlot(
                     entry_id=str(entry["id"]),
@@ -152,7 +154,7 @@ def load_store_space(defs_root: Path, cls: str) -> AllocationSpace:
     if encoding_class is None:
         raise ValueError(f"unknown encoding class {cls!r}")
     return load_space_data(
-        store.class_path,
+        ARCHITECTURE_SOURCE_PATH,
         {
             "class": cls,
             "payload_bits": encoding_class.payload_bits,
@@ -594,7 +596,7 @@ def command_summary(args: argparse.Namespace) -> int:
                 f"{allocated:,}",
                 f"{skipped:,}",
                 f"{total - len(unavailable):,}",
-                str(store.class_path),
+                str(ARCHITECTURE_SOURCE_PATH),
             ]
         )
     print(format_table(["class", "bits", "namespace", "allocated", "reclaimed", "clean-free", "path"], rows))
@@ -637,7 +639,10 @@ def command_entries(args: argparse.Namespace) -> int:
             continue
         if needle and needle not in entry_id.lower() and needle not in text.lower():
             continue
-        claims, skipped = entry_claims(space.path, space.payload_bits, space.namespaces, entry)
+        entry_path = Path(str(entry.get("source_path", space.path)))
+        claims, skipped = entry_claims(
+            entry_path, space.payload_bits, space.namespaces, entry
+        )
         rows.append(
             (
                 pattern_min_value(bits),

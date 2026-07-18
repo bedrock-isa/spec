@@ -23,7 +23,6 @@ from defs_schema import (  # noqa: E402
     decode_abi_vectors,
     decode_condition_registry,
     decode_ea_registry,
-    decode_encoding_classes,
     decode_encodings,
     decode_extension_catalog,
     decode_extension_manifest,
@@ -81,7 +80,6 @@ class FrozenSchemaTests(unittest.TestCase):
         cases = (
             (decode_instruction, defs / "instructions" / "ADD" / "instruction.yaml"),
             (decode_encodings, defs / "instructions" / "ADD" / "encodings.yaml"),
-            (decode_encoding_classes, defs / "encoding_classes.yaml"),
             (decode_instruction_index, defs / "instructions.yaml"),
             (decode_extension_catalog, defs / "extensions.yaml"),
             (decode_extension_manifest, defs / "extensions" / "fpu" / "extension.yaml"),
@@ -142,6 +140,27 @@ class FrozenSchemaTests(unittest.TestCase):
         for decoder, path, candidate, message in mutations:
             with self.subTest(path=path), self.assertRaisesRegex(DecodeError, message):
                 decoder(path, candidate)
+
+    def test_instruction_flag_effects_reject_unknown_or_empty_entries(self) -> None:
+        path = ROOT / "isa" / "defs" / "instructions" / "CMP" / "instruction.yaml"
+        base = load(path)
+        cases = []
+
+        unknown_bank = deepcopy(base)
+        unknown_bank["flag_effects"]["STATUS"] = {"Z": "set"}
+        cases.append((unknown_bank, "unknown flag banks STATUS"))
+
+        unknown_flag = deepcopy(base)
+        unknown_flag["flag_effects"]["FLAGS"]["NX"] = "set"
+        cases.append((unknown_flag, "unknown flags NX"))
+
+        empty_effect = deepcopy(base)
+        empty_effect["flag_effects"]["FLAGS"]["Z"] = ""
+        cases.append((empty_effect, "expected non-empty string"))
+
+        for candidate, message in cases:
+            with self.subTest(message=message), self.assertRaisesRegex(DecodeError, message):
+                decode_instruction(path, candidate)
 
 
 if __name__ == "__main__":

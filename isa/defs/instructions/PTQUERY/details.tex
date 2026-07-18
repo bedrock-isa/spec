@@ -1,10 +1,3 @@
-\begin{manualflageffects}{FLAGS}
-\manualflageffect{Z}{requested PTE was read and is structurally valid for its level}
-\manualflageffect{N}{valid queried path is user-domain accessible; cleared on failure}
-\manualflageffect{C}{valid queried path is writable; cleared on failure}
-\manualflageffect{V}{valid queried path is executable; cleared on failure}
-\end{manualflageffects}
-
 The requested level is the low three bits of the level operand. Values outside 1 through 5 raise \texttt{ILLEGAL\_INSTRUCTION}; level 5 is reported as an ordinary unsuccessful query in LA48 mode.
 
 \begin{enumerate}

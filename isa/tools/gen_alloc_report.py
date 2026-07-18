@@ -26,6 +26,7 @@ from validate_alloc import (
     namespace_size,
     pattern_cardinality,
 )
+from encoding_architecture import ARCHITECTURE_SOURCE_PATH
 
 
 def analyze_store(defs_root: Path) -> tuple[list[ClassReport], list[EntryReport]]:
@@ -41,7 +42,7 @@ def analyze_store(defs_root: Path) -> tuple[list[ClassReport], list[EntryReport]
             "namespace": list(encoding_class.namespace),
             "entries": class_entries(store, encoding_class.name),
         }
-        class_report, entries = analyze_data(store.class_path, synthetic)
+        class_report, entries = analyze_data(ARCHITECTURE_SOURCE_PATH, synthetic)
         class_report = ClassReport(
             **{
                 **class_report.__dict__,
@@ -141,16 +142,19 @@ def analyze_data(path: Path, data: dict[str, Any]) -> tuple[ClassReport, list[En
     entry_reports: list[EntryReport] = []
 
     for entry in data.get("entries") or []:
+        entry_path = Path(str(entry.get("source_path", path)))
         pattern = compact_bits(str(entry["bits"]))
         text = allocation_form_text(str(entry.get("text", "")))
-        claims, skipped = entry_claims(path, payload_bits, namespaces, entry)
+        claims, skipped = entry_claims(entry_path, payload_bits, namespaces, entry)
         class_skipped.update(skipped)
-        skipped_values.update(entry_skipped_values(path, payload_bits, namespaces, entry))
+        skipped_values.update(
+            entry_skipped_values(entry_path, payload_bits, namespaces, entry)
+        )
 
         entry_reports.append(
             EntryReport(
                 cls=cls,
-                path=str(path),
+                path=str(entry_path),
                 entry_id=str(entry["id"]),
                 mnemonic=mnemonic_from_text(text, str(entry["id"])),
                 bits=pattern,

@@ -144,26 +144,6 @@ the base-page field. The disabled spelling is the canonical all-zero image.
 The Bedrock Target Intrinsics document defines the complete signatures,
 field-width, alignment, and validation contract.
 
-\manualtablecaption{Far Pointer Construction Interface}
-\begingroup\footnotesize
-\setlength{\tabcolsep}{2pt}
-\begin{longtable}{@{}p{1.95in}p{2.75in}p{0.85in}@{}}
-\toprule
-\textbf{Macro} & \textbf{Builtin} & \textbf{Input}\\
-\midrule
-\endhead
-\texttt{\_\_BEDROCK\_FAR\_PTR\_INIT} &
-\texttt{\_\_builtin\_bedrock\_far\_ptr\_init} & pair\\
-\texttt{\_\_BEDROCK\_FAR\_FLAT\_PTR\_INIT} &
-\texttt{\_\_builtin\_bedrock\_far\_flat\_ptr\_init} & address\\
-\texttt{\_\_BEDROCK\_FAR\_NULL} &
-\texttt{\_\_builtin\_bedrock\_far\_null} & type\\
-\texttt{\_\_BEDROCK\_FAR\_PTR\_FROM\_SEGMENT} &
-\texttt{\_\_builtin\_bedrock\_far\_ptr\_from\_segment} & pair\\
-\bottomrule
-\end{longtable}
-\endgroup
-
 Each macro's first argument names a far-qualified object or function pointer
 type. The typed initializer accepts a pre-segment address expressed in the
 resulting bounds-only segment's coordinate space and changes a nonzero-mantissa

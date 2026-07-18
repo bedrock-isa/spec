@@ -12,11 +12,10 @@ from typing import Any, Iterable
 import yaml
 
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 0
 SCHEMA_FAMILIES = (
     "instruction",
     "encodings",
-    "encoding_classes",
     "instruction_index",
     "extension",
     "operands",
@@ -46,6 +45,10 @@ OPERAND_KINDS = frozenset(
         "relative_immediate",
     }
 )
+FLAG_BANKS = {
+    "FLAGS": ("Z", "N", "C", "V"),
+    "FFLAGS": ("NV", "DZ", "OF", "UF", "NX"),
+}
 
 
 class DecodeError(ValueError):
@@ -245,6 +248,7 @@ class InstructionDocument:
     summary: str
     description: str
     attributes: InstructionAttributes
+    flag_effects: dict[str, dict[str, str]] = field(default_factory=dict)
     additional_assembler_syntax: tuple[str, ...] = ()
     additional_description: str | None = None
 
@@ -287,19 +291,6 @@ class EncodingForm:
 @dataclass(frozen=True)
 class EncodingsDocument:
     forms: tuple[EncodingForm, ...]
-
-
-@dataclass(frozen=True)
-class EncodingClass:
-    name: str
-    instruction_bytes: int
-    payload_bits: int
-    namespace: tuple[str, ...]
-
-
-@dataclass(frozen=True)
-class EncodingClassesDocument:
-    classes: tuple[EncodingClass, ...]
 
 
 @dataclass(frozen=True)
@@ -559,7 +550,6 @@ class MemoryValidationDocument:
 DecodedDocument = (
     InstructionDocument
     | EncodingsDocument
-    | EncodingClassesDocument
     | InstructionSetIndex
     | ExtensionManifest
     | ExtensionCatalog
@@ -580,7 +570,7 @@ def decode_instruction(path: Path, raw: Any) -> InstructionDocument:
         path,
         "",
         required=("mnemonic", "title", "summary", "description", "attributes"),
-        optional=("additional_assembler_syntax", "additional_description"),
+        optional=("flag_effects", "additional_assembler_syntax", "additional_description"),
     )
     attrs = _mapping(data["attributes"], path, "attributes")
     _keys(
@@ -605,6 +595,33 @@ def decode_instruction(path: Path, raw: Any) -> InstructionDocument:
         )
     )
     _unique(extra_syntax, path, "additional_assembler_syntax")
+    raw_flag_effects = _mapping(data.get("flag_effects", {}), path, "flag_effects")
+    unknown_banks = raw_flag_effects.keys() - FLAG_BANKS.keys()
+    if unknown_banks:
+        raise DecodeError(
+            f"{_where(path, 'flag_effects')}: unknown flag banks "
+            f"{', '.join(sorted(unknown_banks))}"
+        )
+    flag_effects: dict[str, dict[str, str]] = {}
+    for bank, valid_flags in FLAG_BANKS.items():
+        if bank not in raw_flag_effects:
+            continue
+        raw_effects = _mapping(raw_flag_effects[bank], path, f"flag_effects.{bank}")
+        if not raw_effects:
+            raise DecodeError(
+                f"{_where(path, f'flag_effects.{bank}')}: expected non-empty mapping"
+            )
+        unknown_flags = raw_effects.keys() - set(valid_flags)
+        if unknown_flags:
+            raise DecodeError(
+                f"{_where(path, f'flag_effects.{bank}')}: unknown flags "
+                f"{', '.join(sorted(unknown_flags))}"
+            )
+        flag_effects[bank] = {
+            flag: _string(raw_effects[flag], path, f"flag_effects.{bank}.{flag}")
+            for flag in valid_flags
+            if flag in raw_effects
+        }
     additional_description = data.get("additional_description")
     if additional_description is not None:
         additional_description = _relative_reference(
@@ -628,6 +645,7 @@ def decode_instruction(path: Path, raw: Any) -> InstructionDocument:
             ),
             repeat=repeat,
         ),
+        flag_effects=flag_effects,
         additional_assembler_syntax=extra_syntax,
         additional_description=additional_description,
     )
@@ -785,46 +803,6 @@ def decode_encodings(path: Path, raw: Any) -> EncodingsDocument:
             )
         )
     return EncodingsDocument(tuple(forms))
-
-
-def decode_encoding_classes(path: Path, raw: Any) -> EncodingClassesDocument:
-    data = _mapping(raw, path, "")
-    _keys(data, path, "", required=("classes",))
-    classes: list[EncodingClass] = []
-    names: set[str] = set()
-    for index, raw_class in enumerate(_list(data["classes"], path, "classes")):
-        item_path = f"classes[{index}]"
-        item = _mapping(raw_class, path, item_path)
-        _keys(
-            item,
-            path,
-            item_path,
-            required=("name", "instruction_bytes", "payload_bits", "namespace"),
-        )
-        name = _string(item["name"], path, item_path + ".name")
-        if name in names:
-            raise DecodeError(f"{_where(path, item_path)}: duplicate class {name}")
-        names.add(name)
-        payload_bits = _positive_integer(item["payload_bits"], path, item_path + ".payload_bits")
-        namespace = tuple(_string_list(item["namespace"], path, item_path + ".namespace"))
-        if not namespace:
-            raise DecodeError(f"{_where(path, item_path + '.namespace')}: expected non-empty list")
-        _unique(namespace, path, item_path + ".namespace")
-        if any(len(pattern) != payload_bits for pattern in namespace):
-            raise DecodeError(f"{_where(path, item_path + '.namespace')}: width mismatch")
-        if any(set(pattern) - set("01?") for pattern in namespace):
-            raise DecodeError(f"{_where(path, item_path + '.namespace')}: invalid pattern")
-        classes.append(
-            EncodingClass(
-                name=name,
-                instruction_bytes=_positive_integer(
-                    item["instruction_bytes"], path, item_path + ".instruction_bytes"
-                ),
-                payload_bits=payload_bits,
-                namespace=namespace,
-            )
-        )
-    return EncodingClassesDocument(tuple(classes))
 
 
 def decode_instruction_index(path: Path, raw: Any) -> InstructionSetIndex:
@@ -1644,8 +1622,6 @@ def decode_yaml(path: Path) -> DecodedDocument:
         return decode_instruction(path, raw)
     if name == "encodings.yaml":
         return decode_encodings(path, raw)
-    if name == "encoding_classes.yaml":
-        return decode_encoding_classes(path, raw)
     if name == "instructions.yaml":
         return decode_instruction_index(path, raw)
     if name == "extension.yaml":

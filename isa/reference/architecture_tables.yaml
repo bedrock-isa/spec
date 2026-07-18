@@ -1,0 +1,216 @@
+schema_version: 0
+
+performance_counters:
+  - id: 1
+    name: CYCLE
+    increment_event: implementation_cycle_while_enabled
+  - id: 2
+    name: INSTRET
+    increment_event: committed_architectural_instruction
+  - id: 3
+    name: PTWALK
+    increment_event: hardware_page_walk_start_after_tlb_miss
+
+reserved_field_defaults:
+  - field_class: architected_register_reserved_bits
+    read_rule: zero
+    use_rule: must_be_zero
+  - field_class: control_register_reserved_bits
+    read_rule: zero
+    use_rule: must_be_zero
+    fault: INVALID_CONTROL_STATE
+  - field_class: reserved_selector_values
+    read_rule: unavailable
+    use_rule: invalid_selector
+    fault: INVALID_CONTROL_STATE
+  - field_class: consumed_reserved_pte_bits
+    read_rule: unavailable
+    use_rule: invalid_translation_input
+    fault: PAGE_FAULT
+  - field_class: reserved_event_code_classes_or_ids
+    read_rule: unavailable
+    use_rule: base_profile_must_not_generate
+  - field_class: reserved_architectural_event_frame_bits
+    read_rule: unavailable
+    use_rule: must_be_zero
+    fault: INVALID_CONTROL_STATE_ON_ERET
+
+cpuid:
+  classes:
+    - id: 0x00000000
+      name: Bedrock base ISA
+      summary: base identity, instruction limits, integer registers, condition codes, and mandatory groups
+      leaves:
+        - id: 0x0000
+          name: BASE_IDENTITY
+          max_index: 18
+          summary: common header, identity, revisions, vendor name, and processor name
+    - id: 0x00000001
+      name: Optional extensions
+      summary: optional floating-point, transcendental, and virtualization-acceleration groups
+      leaves:
+        - id: 0x0000
+          name: EXTENSION_DIRECTORY
+          max_index: 1
+          summary: common header and optional architectural-group bits
+        - id: 0x0001
+          name: FPTRANSA_ACCURACY
+          max_index: 0x0044
+          summary: common header and sparse per-function accuracy contracts
+    - id: 0x00000002
+      name: Implementation properties
+      summary: program-visible limits, topology, and SAVE/RESTORE area layout
+      leaves:
+        - id: 0x0000
+          name: EXECUTION_PROPERTIES
+          max_index: 1
+          summary: common header and program-visible execution properties
+        - id: 0x0001
+          name: TOPOLOGY
+          max_index: n
+          summary: common header and hardware-thread topology descriptors
+        - id: 0x0002
+          name: PERFORMANCE_COUNTERS
+          max_index: 3
+          summary: common header and standard RDPMC-counter presence
+        - id: 0x0004
+          name: SAVE_AREA_LAYOUT
+          max_index: n
+          summary: common header, SAVE/RESTORE sizes, bitmap, and component descriptors
+
+control_registers:
+  - {selector: 0x0000, name: PTCR, use: page-table root and translation control}
+  - {selector: 0x0001, name: ASCR, use: address-space identifier control}
+  - {selector: 0x0002, name: ECR, use: architectural event-delivery control}
+  - {selector: 0x0100, name: SPC, use: SYSCALL entry program counter}
+  - {selector: 0x0101, name: SCS, use: SYSCALL entry code-segment image}
+  - {selector: 0x0102, name: SDS, use: SYSCALL entry data-segment image}
+  - {selector: 0x0108, name: URPC, use: user-return program counter}
+  - {selector: 0x0109, name: URSP, use: user-return stack pointer}
+  - {selector: 0x010A, name: URCS, use: user-return code-segment image}
+  - {selector: 0x010B, name: URDS, use: user-return data-segment image}
+  - {selector: 0x010C, name: URSS, use: user-return stack-segment image}
+  - {selector: 0x010D, name: URCTL, use: user-return FLAGS, STATUS, and valid state}
+  - {selector: 0x0110, name: EPC, use: common architectural event-entry PC}
+  - {selector: 0x0111, name: ECS, use: architectural event-entry code-segment image}
+  - {selector: 0x0112, name: EDS, use: architectural event-entry data-segment image}
+  - {selector: 0x0200, name: SSS, use: supervisor-call working-stack segment image}
+  - {selector: 0x0201, name: SSP, use: supervisor-call working-stack top}
+  - {selector: 0x0210, name: ISS, use: maskable-interrupt stack-segment image}
+  - {selector: 0x0211, name: ISP, use: maskable-interrupt stack top}
+  - {selector: 0x0220, name: FSS, use: fault/exception stack-segment image}
+  - {selector: 0x0221, name: FSP, use: fault/exception stack top}
+  - {selector: 0x0230, name: DSS, use: double-fault stack-segment image}
+  - {selector: 0x0231, name: DSP, use: double-fault stack top}
+  - {selector: 0x1000, name: BOOTPC, use: warm-reset target supplied by the platform at cold reset}
+  - {selector: 0x1001, name: BOOTCFG, use: opaque platform boot configuration preserved by warm reset}
+  - {selector: 0x1100, name: PMC, use: performance-monitor enable and user-access control}
+
+exception_causes:
+  PAGE_FAULT:
+    - {value: 0, name: NOT_PRESENT, meaning: required PTE is not present}
+    - {value: 1, name: PERMISSION, meaning: accumulated permission excludes the access}
+    - {value: 2, name: MALFORMED_PTE, meaning: structurally invalid PTE}
+    - {value: 3, name: NONCANONICAL, meaning: noncanonical address}
+    - {value: 4, name: SEGMENT_BOUNDS, meaning: segment bounds failure}
+    - {value: 5, name: ATOMIC_ALIGNMENT, meaning: misaligned byte-addressed atomic operand, address_type: 0}
+    - {value: 6, name: ADDRESS_TYPE, meaning: address or memory type rejects the access}
+  ILLEGAL_INSTRUCTION:
+    - {value: 0, name: INVALID_OPCODE, meaning: opcode is not assigned}
+    - {value: 1, name: INVALID_EA_FORM, meaning: effective-address form is not legal for the instruction}
+    - {value: 2, name: RESERVED_ENCODING, meaning: assigned instruction uses a reserved field value}
+    - {value: 3, name: UNAVAILABLE_EXTENSION, meaning: required extension is unavailable}
+    - {value: 4, name: EXPLICIT_ILLEGAL, meaning: architected ILLEGAL instruction}
+  INVALID_CONTROL_STATE:
+    - {value: 0, name: INVALID_SELECTOR, meaning: selector names no available resource}
+    - {value: 1, name: RESERVED_BITS, meaning: reserved bits are nonzero or changed illegally}
+    - {value: 2, name: INVALID_IMAGE, meaning: supplied architectural image is invalid}
+    - {value: 3, name: INVALID_TRANSITION, meaning: requested state transition is illegal}
+
+fptransa_accuracy_contracts:
+  - {id: 0x0001, mnemonic: FSINA, function: sin, reference_qualifier: radians, domain: finite_abs_le_pi_over_4, max_ulp: {S: 4, D: 4}}
+  - {id: 0x0002, mnemonic: FCOSA, function: cos, reference_qualifier: radians, domain: finite_abs_le_pi_over_4, max_ulp: {S: 4, D: 4}}
+  - {id: 0x0003, mnemonic: FTANA, function: tan, reference_qualifier: radians, domain: finite_abs_le_pi_over_4, max_ulp: {S: 4, D: 4}}
+  - {id: 0x0004, mnemonic: FSINCOSA, function: sincos, reference_qualifier: radians, domain: finite_abs_le_pi_over_4, max_ulp: {S: 4, D: 4}}
+  - {id: 0x0011, mnemonic: FASINA, function: asin, reference_qualifier: radians, domain: finite_abs_le_one, max_ulp: {S: 4, D: 4}}
+  - {id: 0x0012, mnemonic: FACOSA, function: acos, reference_qualifier: radians, domain: finite_abs_le_one, max_ulp: {S: 4, D: 4}}
+  - {id: 0x0013, mnemonic: FATANA, function: atan, reference_qualifier: radians, domain: finite_or_signed_infinity, max_ulp: {S: 4, D: 4}}
+  - {id: 0x0021, mnemonic: FSINHA, function: sinh, domain: finite_or_signed_infinity, max_ulp: {S: 4, D: 4}}
+  - {id: 0x0022, mnemonic: FCOSHA, function: cosh, domain: finite_or_signed_infinity, max_ulp: {S: 4, D: 4}}
+  - {id: 0x0023, mnemonic: FTANHA, function: tanh, domain: finite_or_signed_infinity, max_ulp: {S: 4, D: 4}}
+  - {id: 0x0024, mnemonic: FATANHA, function: atanh, domain: finite_abs_le_one, max_ulp: {S: 4, D: 4}}
+  - {id: 0x0031, mnemonic: FETOXA, function: exp, domain: finite_or_signed_infinity, max_ulp: {S: 4, D: 4}}
+  - {id: 0x0032, mnemonic: FETOXM1A, function: expm1, domain: finite_or_signed_infinity, max_ulp: {S: 4, D: 4}}
+  - {id: 0x0033, mnemonic: FTWOTOXA, function: exp2, domain: finite_or_signed_infinity, max_ulp: {S: 4, D: 4}}
+  - {id: 0x0034, mnemonic: FTENTOXA, function: exp10, domain: finite_or_signed_infinity, max_ulp: {S: 4, D: 4}}
+  - {id: 0x0041, mnemonic: FLOGNA, function: ln, domain: positive_or_positive_infinity_zero_dz, max_ulp: {S: 4, D: 4}}
+  - {id: 0x0042, mnemonic: FLOGNP1A, function: log1p, domain: finite_ge_minus_one_or_positive_infinity_minus_one_dz, max_ulp: {S: 4, D: 4}}
+  - {id: 0x0043, mnemonic: FLOG2A, function: log2, domain: positive_or_positive_infinity_zero_dz, max_ulp: {S: 4, D: 4}}
+  - {id: 0x0044, mnemonic: FLOG10A, function: log10, domain: positive_or_positive_infinity_zero_dz, max_ulp: {S: 4, D: 4}}
+
+event_frames:
+  types:
+    - {code: 0x0, name: BASIC, payload_bytes: 0, allocated_payload_bytes: 0, total_bytes: 64, last_slot: none}
+    - {code: 0x1, name: ERROR, payload_bytes: 8, allocated_payload_bytes: 16, total_bytes: 80, last_slot: ERROR_CODE}
+    - {code: 0x2, name: PAGE_FAULT, payload_bytes: 24, allocated_payload_bytes: 32, total_bytes: 96, last_slot: FAULT_LINEAR}
+    - {code: 0x3, name: AUXILIARY, payload_bytes: 32, allocated_payload_bytes: 32, total_bytes: 96, last_slot: EVENT_AUX}
+  assignments:
+    - events: [DEBUG_TRACE, BREAKPOINT, PRIVILEGE_FAULT]
+      frame_type: BASIC
+    - events: [ILLEGAL_INSTRUCTION, DIVIDE_ERROR, INVALID_CONTROL_STATE, FLOATING_POINT_FAULT]
+      frame_type: ERROR
+    - events: [PAGE_FAULT]
+      frame_type: PAGE_FAULT
+    - events: [DOUBLE_FAULT, MACHINE_CHECK, BUS_ERROR]
+      frame_type: AUXILIARY
+    - event_class: interrupt_and_nmi
+      frame_type: BASIC
+
+immediate_operand_interpretation:
+  - operand_type: pair_id
+    value_kind: identifier
+    range_from: declared_values
+    extension: none
+    applies_when: PUSHP/POPP canonical register-pair selector
+  - operand_type: pt_level
+    value_kind: enumeration
+    range_from: declared_values
+    extension: none
+    applies_when: PTQUERY page-table level selector
+  - operand_type: flags_bitmap
+    value_kind: bitmap
+    range_from: field_width
+    extension: none
+    applies_when: SETF/CLRF integer FLAGS masks
+  - operand_type: imm6
+    value_kind: unsigned
+    range_from: field_width
+    extension: zero-extend
+    applies_when: integer forms with an explicit B/W/L/Q operation size
+  - operand_type: imm7
+    value_kind: unsigned
+    range_from: field_width
+    extension: zero-extend
+    applies_when: EXTRACT register-pair forms
+
+reset_state:
+  - {state: [ECR, EPC, ECS, EDS], value: zero}
+  - {state: [SPC, SCS, SDS], value: zero}
+  - {state: [URPC, URSP, URCS, URDS, URSS, URCTL], value: zero}
+  - {state_pairs: [[SSS, SSP], [ISS, ISP], [FSS, FSP], [DSS, DSP]], value: zero}
+  - {state: [PMC], value: zero}
+  - {state: [CYCLE, INSTRET, PTWALK], value: zero}
+  - {state: [STATUS.IE, STATUS.EA, STATUS.NI], value: zero}
+  - {state: [FSTATUS, FFLAGS], value: zero}
+  - {state: [hidden_current_edepth], value: zero}
+  - {state: [hidden_current_event_stack_level], value: invalid}
+  - {state: [ECR.NMI_P], value: zero}
+  - {state: [PTCR.PE, ASCR], value: zero}
+  - {state: [BOOTPC, BOOTCFG], value: platform_supplied_cold_preserved_warm}
+
+atomic_memory_orders:
+  - {selector: RELAXED, code: 0, effect: atomicity_only}
+  - {selector: ACQUIRE, code: 1, effect: acquire}
+  - {selector: RELEASE, code: 2, effect: release}
+  - {selector: ACQREL, code: 3, effect: acquire_release}
+  - {selector: SEQCST, code: 4, effect: sequentially_consistent}

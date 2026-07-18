@@ -26,25 +26,5 @@
 \end{manuallistedbitdiagram}
 
 \begin{manuallistedbitdiagram}{Opcode Payload Namespaces}
-\manualbitrow{extrashort}{%
-\manualbitfieldtext{payload[6:0]}{7}
-}
-\manualbitrow{short}{%
-\manualbitfieldtext{payload[13:0]}{14}
-}
-\manualbitrow{medium}{%
-\manualbitfieldtext{payload[17:0]}{18}
-}
-\manualbitrow{long group 0}{%
-\manualbitfieldcode{11110x}{6}
-\manualbitfieldtext{payload[19:0]}{20}
-}
-\manualbitrow{long group 1}{%
-\manualbitfixed{111110}{6}
-\manualbitfieldtext{payload[19:0]}{20}
-}
-\manualbitrow{extralong}{%
-\manualbitfixed{111111}{6}
-\manualbitfieldtext{payload[27:0]}{28}
-}
+@OPCODE_PAYLOAD_NAMESPACE_ROWS@
 \end{manuallistedbitdiagram}

@@ -52,26 +52,7 @@ system-management operation. \texttt{<bedrocksystemintrin.h>} is the system
 umbrella for register, cache, MMU, processor-state, and virtualization
 facilities. Any family header may also be included directly.
 
-\manualtablecaption{Target Intrinsic Header Families}
-\begingroup\footnotesize
-\setlength{\tabcolsep}{2pt}
-\begin{longtable}{@{}p{1.15in}p{1.65in}p{0.65in}p{2.15in}@{}}
-\toprule
-\textbf{Family} & \textbf{Header} & \textbf{Umbrella} & \textbf{Exposure}\\
-\midrule
-\endhead
-far pointer & \texttt{<bedrockfarintrin.h>} & public & \texttt{bedrock-c-far} profile\\
-core & \texttt{<bedrockcoreintrin.h>} & public & unprivileged core operations\\
-memory & \texttt{<bedrockmemoryintrin.h>} & public & user ordering and access hints\\
-integer & \texttt{<bedrockintegerintrin.h>} & public & nonportable integer operations\\
-floating point & \texttt{<bedrockfpuintrin.h>} & public & floating-point environment and classification\\
-system registers & \texttt{<bedrocksysregintrin.h>} & system & architectural system-register access\\
-cache & \texttt{<bedrockcacheintrin.h>} & system & cache management\\
-MMU & \texttt{<bedrockmmuintrin.h>} & system & supervisor translation operations\\
-processor state & \texttt{<bedrockstateintrin.h>} & system & runtime state management\\
-\bottomrule
-\end{longtable}
-\endgroup
+\input{isa/c/generated/target_intrinsics/header_families.tex}
 
 \subsection{Common Compilation Rules}
 Family wrappers are static inline functions unless an encoded immediate or
@@ -139,103 +120,23 @@ form. An already-linear address and bounds-only image instead use
 \texttt{\_\_BEDROCK\_FAR\_PTR\_INIT}; a flat address uses
 \texttt{\_\_BEDROCK\_FAR\_FLAT\_PTR\_INIT}.
 
-\manualtablecaption{Far Pointer Builtins}
-\begingroup\footnotesize
-\setlength{\tabcolsep}{2pt}
-\begin{longtable}{@{}p{1.25in}p{1.25in}p{1.05in}p{2.05in}@{}}
-\toprule
-\textbf{Name} & \textbf{C interface} & \textbf{Lowering} & \textbf{Constraint and effect}\\
-\midrule
-\endhead
-\compilerbuiltin{far_ptr_init} & \compilerctype{far T(type,address,image)} & value construction & Far type required; constant operands preserve constant-expression status; no fault, segment write, or memory access.\\
-\compilerbuiltin{far_flat_ptr_init} & \compilerctype{far T(type,address)} & value construction & Far type required; attaches the canonical disabled image without faulting.\\
-\compilerbuiltin{far_null} & \compilerctype{far T(type)} & constant construction & Far type required; produces the canonical all-zero representation.\\
-\compilerbuiltin{far_ptr_from_segment} & \compilerctype{far T(type,offset,image)} & canonicalization & Far type required; invalid input produces an invalid representation without faulting.\\
-\compilerbuiltin{far_address} & \compilerctype{uint64_t(pointer)} & address extraction & Accepts a far data or function pointer; pure extraction without validation or bounds probing.\\
-\compilerbuiltin{far_same_encoding} & \compilerctype{int(left,right)} & two-word comparison & Compatible far pointer types required; pure representation comparison.\\
-\bottomrule
-\end{longtable}
-\endgroup
+\input{isa/c/generated/target_intrinsics/far.tex}
 
 \subsection{Core Builtins}
 \manualfield{Header:}{\texttt{<bedrockcoreintrin.h>}}
-\manualtablecaption{Core Builtins}
-\begingroup\footnotesize
-\setlength{\tabcolsep}{2pt}
-\begin{longtable}{@{}p{1.25in}p{1.25in}p{0.8in}p{2.3in}@{}}
-\toprule
-\textbf{Name} & \textbf{C interface} & \textbf{Lowering} & \textbf{Availability, constraint, and effect}\\
-\midrule
-\endhead
-\compilerbuiltin{cpuid} & \compilerctype{u64(u64 selector)} & \texttt{CPUID} & User allowed; reads discovery state and not C memory.\\
-\compilerbuiltin{read_status} & \compilerctype{uint16_t(void)} & \texttt{RDSTATUS} & Unprivileged; reads \texttt{STATUS} and not C memory.\\
-\compilerbuiltin{rdpmc} & \compilerctype{uint64_t(counter_id)} & \texttt{RDPMC} & Unprivileged; ID is a constant in 0 through 65535; zero and unavailable IDs fault with \texttt{INVALID\_SELECTOR}.\\
-\compilerbuiltin{breakpoint} & \compilerctype{void(void)} & \texttt{BKPT} & Any privilege; always raises the architectural breakpoint/debug exception.\\
-\compilerbuiltin{trace} & \compilerctype{void(marker)} & \texttt{TRACE} & Unprivileged; marker is a constant in 0 through 65535; emits a marker when enabled and otherwise acts as a NOP.\\
-\compilerbuiltin{yield} & \compilerctype{void(void)} & \texttt{YIELD} & Any privilege; scheduling hint, not a compiler or memory barrier.\\
-\compilerbuiltin{wait} & \compilerctype{void(void)} & \texttt{WAIT} & Unprivileged; may suspend until an event or interrupt and is a convergent side effect.\\
-\bottomrule
-\end{longtable}
-\endgroup
+\input{isa/c/generated/target_intrinsics/core.tex}
 
 \subsection{Memory Builtins}
 \manualfield{Header:}{\texttt{<bedrockmemoryintrin.h>}}
-\manualtablecaption{Memory Builtins}
-\begingroup\footnotesize
-\setlength{\tabcolsep}{2pt}
-\begin{longtable}{@{}p{1.35in}p{1.3in}p{0.75in}p{2.2in}@{}}
-\toprule
-\textbf{Name} & \textbf{C interface} & \textbf{Lowering} & \textbf{Constraint and effect}\\
-\midrule
-\endhead
-\compilerbuiltin{read_fence} & \compilerctype{void(void)} & \texttt{RFENCE} & Compiler and hardware read-ordering barrier.\\
-\compilerbuiltin{write_fence} & \compilerctype{void(void)} & \texttt{WFENCE} & Compiler and hardware write-ordering barrier.\\
-\compilerbuiltin{address_fence} & \compilerctype{void(void)} & \texttt{AFENCE} & Full compiler memory clobber and hardware address fence.\\
-\compilerbuiltin{nontemporal_store_u8} & \compilerctype{void(u8 *,u8)} & \texttt{MOVNT.B} & One writable byte; one hinted store, neither volatile nor a fence.\\
-\compilerbuiltin{nontemporal_store_u16} & \compilerctype{void(u16 *,u16)} & \texttt{MOVNT.W} & One writable 16-bit object; one hinted store, neither volatile nor a fence.\\
-\compilerbuiltin{nontemporal_store_u32} & \compilerctype{void(u32 *,u32)} & \texttt{MOVNT.L} & One writable 32-bit object; one hinted store, neither volatile nor a fence.\\
-\compilerbuiltin{nontemporal_store_u64} & \compilerctype{void(u64 *,u64)} & \texttt{MOVNT.Q} & One writable 64-bit object; one hinted store, neither volatile nor a fence.\\
-\bottomrule
-\end{longtable}
-\endgroup
+\input{isa/c/generated/target_intrinsics/memory.tex}
 
 \subsection{Integer Builtins}
 \manualfield{Header:}{\texttt{<bedrockintegerintrin.h>}}
-\manualtablecaption{Integer Builtins}
-\begingroup\footnotesize
-\setlength{\tabcolsep}{2pt}
-\begin{longtable}{@{}p{1.3in}p{1.55in}p{0.75in}p{2.0in}@{}}
-\toprule
-\textbf{Name} & \textbf{C interface} & \textbf{Lowering} & \textbf{Result and effect}\\
-\midrule
-\endhead
-\compilerbuiltin{clmul_u8} & \compilerctype{u8(u8,u8)} & \texttt{CLMUL.B} & Pure; low 8 bits of the carryless product.\\
-\compilerbuiltin{clmul_u16} & \compilerctype{u16(u16,u16)} & \texttt{CLMUL.W} & Pure; low 16 bits of the carryless product.\\
-\compilerbuiltin{clmul_u32} & \compilerctype{u32(u32,u32)} & \texttt{CLMUL.L} & Pure; low 32 bits of the carryless product.\\
-\compilerbuiltin{clmul_u64} & \compilerctype{u64(u64,u64)} & \texttt{CLMUL.Q} & Pure; low 64 bits of the carryless product.\\
-\bottomrule
-\end{longtable}
-\endgroup
+\input{isa/c/generated/target_intrinsics/integer.tex}
 
 \subsection{Floating-Point Builtins}
 \manualfield{Header:}{\texttt{<bedrockfpuintrin.h>}}
-\manualtablecaption{Floating-Point Builtins}
-\begingroup\footnotesize
-\setlength{\tabcolsep}{2pt}
-\begin{longtable}{@{}p{1.25in}p{1.3in}p{0.85in}p{2.2in}@{}}
-\toprule
-\textbf{Name} & \textbf{C interface} & \textbf{Lowering} & \textbf{Availability, constraint, and effect}\\
-\midrule
-\endhead
-\compilerbuiltin{read_fstatus} & \compilerctype{uint16_t(void)} & \texttt{RDFSTATUS} & Unprivileged; access to the floating-point environment.\\
-\compilerbuiltin{write_fstatus} & \compilerctype{void(uint16_t)} & \texttt{WRFSTATUS} & Unprivileged; reserved bits follow the ISA; changes the floating-point environment.\\
-\compilerbuiltin{read_fflags} & \compilerctype{uint16_t(void)} & \texttt{RDFFLAGS} & Unprivileged; reads accrued floating-point exception flags.\\
-\compilerbuiltin{write_fflags} & \compilerctype{void(uint16_t)} & \texttt{WRFFLAGS} & Unprivileged; reserved bits follow the ISA; writes accrued flags.\\
-\compilerbuiltin{fclass_f32} & \compilerctype{uint16_t(float)} & \texttt{FCLASS.S} & FPU required; pure ten-class one-hot classification; does not update \texttt{FFLAGS}.\\
-\compilerbuiltin{fclass_f64} & \compilerctype{uint16_t(double)} & \texttt{FCLASS.D} & FPU required; pure ten-class one-hot classification; does not update \texttt{FFLAGS}.\\
-\bottomrule
-\end{longtable}
-\endgroup
+\input{isa/c/generated/target_intrinsics/floating_point.tex}
 
 \subsection{Approximate Transcendental Lowering Policy}
 A strict language-library operation shall not be lowered to an FPTRANSA
@@ -252,23 +153,7 @@ remain active.
 
 \subsection{System-Register Builtins}
 \manualfield{Header:}{\texttt{<bedrocksysregintrin.h>}}
-\manualtablecaption{System-Register Builtins}
-\begingroup\footnotesize
-\setlength{\tabcolsep}{2pt}
-\begin{longtable}{@{}p{1.4in}p{1.3in}p{0.7in}p{2.2in}@{}}
-\toprule
-\textbf{Name} & \textbf{C interface} & \textbf{Lowering} & \textbf{Availability, constraint, and effect}\\
-\midrule
-\endhead
-\compilerbuiltin{write_status} & \compilerctype{void(uint16_t)} & \texttt{WRSTATUS} & Supervisor; reserved and privilege-controlled bits follow the ISA; compiler-visible side effect.\\
-\compilerbuiltin{read_control_register} & \compilerctype{uint64_t(selector)} & \texttt{RDCR} & Supervisor; selector is a constant in 0 through 65535 naming a defined register.\\
-\compilerbuiltin{write_control_register} & \compilerctype{void(selector,u64)} & \texttt{WRCR} & Supervisor; defined constant selector required; writes the register and clobbers memory.\\
-\compilerbuiltin{read_segment_register} & \compilerctype{uint64_t(selector)} & \texttt{RDSEG} & Unprivileged; selector is a compile-time \texttt{\_\_bedrock\_segment\_register\_t}.\\
-\compilerbuiltin{read_code_segment} & \compilerctype{uint64_t(void)} & \texttt{RDSEG CS} & Unprivileged; reads the current CS image through the dedicated source-only form.\\
-\compilerbuiltin{write_segment_register} & \compilerctype{void(selector,image)} & \texttt{WRSEG} & Unprivileged; validates the SREG image, changes address interpretation, and fully clobbers memory.\\
-\bottomrule
-\end{longtable}
-\endgroup
+\input{isa/c/generated/target_intrinsics/system_registers.tex}
 
 The system-register header defines \texttt{\_\_bedrock\_control\_register\_t} constants for every published
 control-register selector. The constants are names for the architectural selector values; they do not weaken the
@@ -280,81 +165,23 @@ All range operations evaluate the address once. A zero length is a no-op; a
 nonzero length selects exactly that byte range and may lower to one or more EA
 or range forms.
 
-\manualtablecaption{Cache-Management Builtins}
-\begingroup\footnotesize
-\setlength{\tabcolsep}{2pt}
-\begin{longtable}{@{}p{1.45in}p{1.3in}p{0.9in}p{1.95in}@{}}
-\toprule
-\textbf{Name} & \textbf{C interface} & \textbf{Lowering} & \textbf{Availability and effect}\\
-\midrule
-\endhead
-\compilerbuiltin{flush_dcache} & \compilerctype{void(void *,size_t)} & \texttt{FLSHDCACHE} & Supervisor; cache side effect and full memory clobber.\\
-\compilerbuiltin{invalidate_dcache} & \compilerctype{void(void *,size_t)} & \texttt{INVDCACHE} & Supervisor; cache side effect and full memory clobber.\\
-\compilerbuiltin{invalidate_icache} & \compilerctype{void(void *,size_t)} & \texttt{INVICACHE} & Supervisor; instruction-cache side effect and instruction-stream barrier.\\
-\compilerbuiltin{writeback_dcache} & \compilerctype{void(void *,size_t)} & \texttt{WRBKDCACHE} & Supervisor; cache side effect and full memory clobber.\\
-\compilerbuiltin{sync_cache} & \compilerctype{void(void *,size_t)} & \texttt{SYNCCACHE} & Supervisor; synchronizes data/instruction visibility and the instruction stream.\\
-\bottomrule
-\end{longtable}
-\endgroup
+\input{isa/c/generated/target_intrinsics/cache.tex}
 
 \subsection{MMU Builtins}
 \manualfield{Header:}{\texttt{<bedrockmmuintrin.h>}}
-\manualtablecaption{MMU Builtins}
-\begingroup\footnotesize
-\setlength{\tabcolsep}{2pt}
-\begin{longtable}{@{}p{1.4in}p{1.35in}p{0.75in}p{2.1in}@{}}
-\toprule
-\textbf{Name} & \textbf{C interface} & \textbf{Lowering} & \textbf{Constraint and effect}\\
-\midrule
-\endhead
-\compilerbuiltin{invalidate_tlb} & \compilerctype{void(void)} & \texttt{INVTLB} & Supervisor; translation-state side effect and full memory clobber.\\
-\compilerbuiltin{invalidate_page} & \compilerctype{void(const void *)} & \texttt{INVPAGE} & Supervisor; argument supplies the linear page address and the operation fully clobbers memory.\\
-\compilerbuiltin{invalidate_asid} & \compilerctype{void(asid)} & \texttt{INVASID} & Supervisor; ASID is a constant in 0 through 65535 and the operation fully clobbers memory.\\
-\compilerbuiltin{switch_page_table} & \compilerctype{void(uint64_t ptcr)} & \texttt{SWPT} & Supervisor; valid page-table image required; changes address space and fully clobbers memory.\\
-\compilerbuiltin{switch_page_table_asid} & \compilerctype{void(uint64_t,uint16_t)} & \texttt{SWPTA} & Supervisor; valid image and low 16-bit ASID; changes address space and fully clobbers memory.\\
-\compilerbuiltin{virtual_to_physical} & \compilerctype{result(address)} & \texttt{VTOP} & Supervisor; wrapper returns value and operation-defined \texttt{FLAGS} captured atomically; page walk without access to the translated C object.\\
-\compilerbuiltin{page_table_query} & \compilerctype{result(level,address)} & \texttt{PTQUERY} & Supervisor; level is a constant in 0 through 7; wrapper atomically returns value and \texttt{FLAGS}; page walk without access to the queried C object.\\
-\bottomrule
-\end{longtable}
-\endgroup
+\input{isa/c/generated/target_intrinsics/mmu.tex}
 
 \Needspace{2.0in}
 \subsection{Processor-State Builtins}
 \manualfield{Header:}{\texttt{<bedrockstateintrin.h>}}
-\manualtablecaption{Processor-State Builtins}
-\begingroup\footnotesize
-\setlength{\tabcolsep}{2pt}
-\begin{longtable}{@{}p{1.55in}p{1.35in}p{0.8in}p{1.9in}@{}}
-\toprule
-\textbf{Name} & \textbf{C interface} & \textbf{Lowering} & \textbf{Constraint and effect}\\
-\midrule
-\endhead
-\compilerbuiltin{save_processor_state} & \compilerctype{void(void *area)} & \texttt{SAVE} & Writable, CPUID-sized, 4096-byte-aligned area; writes architectural state and fully clobbers memory.\\
-\compilerbuiltin{restore_processor_state} & \compilerctype{void(const void *area)} & backend restore & Readable, feature-valid, 4096-byte-aligned area; may define \texttt{R0--R15}, \texttt{FLAGS}, valid \texttt{GS} registers, and extension state.\\
-\bottomrule
-\end{longtable}
-\endgroup
+\input{isa/c/generated/target_intrinsics/processor_state.tex}
 
 Both operations are unprivileged, but restoration of \texttt{STATUS} remains
 privilege-restricted. The backend must model every restored register
 explicitly rather than treating restore as an opaque call or memory effect.
 
 \section{Shared Header Types and Exclusions}
-\manualtablecaption{Target Intrinsic Shared Types}
-\begingroup\footnotesize
-\setlength{\tabcolsep}{2pt}
-\begin{longtable}{@{}p{2.05in}p{3.45in}@{}}
-\toprule
-\textbf{Type} & \textbf{ABI contract}\\
-\midrule
-\endhead
-\texttt{\_\_bedrock\_segment\_register\_t} & selectors for \texttt{DS}, \texttt{SS}, and \texttt{GS0} through \texttt{GS5}; \texttt{CS} instead uses the fixed \texttt{RDSEG CS} source form\\
-\texttt{\_\_bedrock\_control\_register\_t} & constants for the architectural RDCR and WRCR selector namespace\\
-\texttt{\_\_bedrock\_query\_result\_t} & \compilerctype{u64 value; u16 flags; u16 reserved[3]}\\
-\texttt{\_\_bedrock\_instruction\_descriptor\_t} & \compilerctype{u64 control, operand1, operand2, operand3}\\
-\bottomrule
-\end{longtable}
-\endgroup
+\input{isa/c/generated/target_intrinsics/shared_types.tex}
 
 \smallskip
 \begingroup\small
