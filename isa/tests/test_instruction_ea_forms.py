@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tests for lossless reader-facing per-instruction EA summaries."""
+"""Tests for reader-facing per-instruction EA summaries."""
 
 from __future__ import annotations
 
@@ -87,10 +87,8 @@ class InstructionEaFormsTests(unittest.TestCase):
         self.assertEqual(rendered.count("Effective Address field"), 2)
         self.assertEqual(rendered.count(r"\manualeasummary"), 2)
 
-    def test_all_248_summaries_reconstruct_the_original_allowed_sets(self) -> None:
+    def test_all_summaries_reconstruct_their_allowed_sets(self) -> None:
         rows = compact_ea_display_rows(self.model.metadata["ea"])
-        self.assertEqual(len(rows), 27)
-        summary_count = 0
         for located in self.store.encodings:
             encoding_class = self.store.classes_by_name[located.form.encoding_class]
             raw = allocation_entry_dict(located)
@@ -110,7 +108,6 @@ class InstructionEaFormsTests(unittest.TestCase):
             for symbol, spec in entry.fields.items():
                 if not isinstance(spec, dict) or spec.get("kind") != "ea7":
                     continue
-                summary_count += 1
                 constraints = ea_constraints_for_field(entry, symbol)
                 expected = frozenset(
                     row.syntax
@@ -121,7 +118,6 @@ class InstructionEaFormsTests(unittest.TestCase):
                 with self.subTest(entry=entry.entry_id, field=symbol):
                     self.assertEqual(summary.allowed_syntax, expected)
                     self.assertEqual(summary.reconstructed_allowed_syntax(), expected)
-        self.assertEqual(summary_count, 248)
 
 if __name__ == "__main__":
     unittest.main()

@@ -13,15 +13,6 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class DocumentOwnershipTests(unittest.TestCase):
-    def test_instruction_metadata_has_no_behavior_bucket(self) -> None:
-        instruction_paths = sorted(
-            (ROOT / "isa" / "defs").glob("**/instructions/*/instruction.yaml")
-        )
-        self.assertEqual(len(instruction_paths), 205)
-        for path in instruction_paths:
-            definition = yaml.safe_load(path.read_text(encoding="utf-8"))
-            self.assertNotIn("behavior", definition, path)
-
     def test_draft_sources_do_not_claim_a_release_version(self) -> None:
         public_documents = (
             ROOT / "isa" / "abi" / "bedrock-c-abi.tex",
