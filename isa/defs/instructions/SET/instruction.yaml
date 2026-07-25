@@ -6,7 +6,11 @@ attributes:
   class: control_flow
   family: control_flow
   privilege: unprivileged
-  repeat:
+repeat:
+  contexts:
   - REP
   - REPcc
   - REPG
+  observed:
+    kind: result
+    operand: dst

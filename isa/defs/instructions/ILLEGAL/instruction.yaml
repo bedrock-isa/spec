@@ -6,3 +6,6 @@ attributes:
   class: system
   family: core_control
   privilege: any
+exceptions:
+- event: ILLEGAL_INSTRUCTION
+  when: the instruction executes; cause is EXPLICIT_ILLEGAL

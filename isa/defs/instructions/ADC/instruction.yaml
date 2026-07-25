@@ -6,10 +6,13 @@ attributes:
   class: integer
   family: integer_alu
   privilege: unprivileged
-  repeat:
+repeat:
+  contexts:
   - REP
   - REPcc
   - REPG
+  observed:
+    kind: flags
 flag_effects:
   FLAGS:
     Z: "result == 0"

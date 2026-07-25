@@ -6,8 +6,11 @@ attributes:
   class: data_movement
   family: data_movement
   privilege: unprivileged
-  repeat:
+repeat:
+  contexts:
   - REP
   - REPcc
   - REPG
-  - REPGF
+  observed:
+    kind: result
+    operand: dst

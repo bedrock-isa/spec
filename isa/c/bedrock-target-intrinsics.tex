@@ -161,9 +161,11 @@ privilege, reserved-bit, or per-register validation performed by RDCR and WRCR.
 
 \subsection{Cache-Management Builtins}
 \manualfield{Header:}{\texttt{<bedrockcacheintrin.h>}}
-All range operations evaluate the address once. A zero length is a no-op; a
-nonzero length selects exactly that byte range and may lower to one or more EA
-or range forms.
+All cache range operations evaluate the address once and obtain the maintenance granule from CPUID
+\texttt{CACHE\_TOPOLOGY}. A zero length emits no cache-maintenance instruction. A nonzero, nonwrapping byte range
+selects every maintenance block that intersects the range and lowers to one block instruction per selected block.
+Each instruction translates its own block address. If a later instruction faults, blocks completed by earlier
+instructions remain completed.
 
 \input{isa/c/generated/target_intrinsics/cache.tex}
 
@@ -189,8 +191,7 @@ explicitly rather than treating restore as an opaque call or memory effect.
 No target builtin is defined for near/far conversion or far-address
 truncation; \texttt{EXTRACT}, \texttt{CLMULH}, \texttt{MULHS},
 \texttt{MULHSU}, or \texttt{MULHU}; raw integer \texttt{FLAGS} manipulation;
-call, return, stack, and repeat-control instructions; or the current draft
-virtualization-acceleration group.
+or call, return, stack, and repeat-control instructions.
 \endgroup
 
 \end{document}

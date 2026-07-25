@@ -5,6 +5,6 @@
 \item Read the complete selected frame and validate FLAGS, STATUS, CS, DS, SS, SP, and an executable canonical PC without changing architectural state.
 \item When repeat state is saved, validate the repeat context in the always-present FRAME\_EXT1 slot; otherwise
 require FRAME\_EXT1 to be zero and prepare cleared repeat state. Frame type remains determined only by the event.
-\item Atomically restore the validated state, event-depth state, and repeat state. The SYSCALL return bank is unchanged and no interrupt-controller acknowledgement is implied.
+\item Atomically restore the validated state, event-depth state, and repeat state.
 \item After restoration, admit a pending NMI before the next instruction boundary when STATUS.NI is clear and ECR.NMI\_P is set.
 \end{enumerate}

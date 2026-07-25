@@ -34,8 +34,8 @@ rule. Such instruction-specific rules override the default subfield write rule.
 
 \subsection{Little-Endian Memory Organization}
 Integer data, immediates, displacements, and absolute address payloads are little-endian. Multi-byte numeric
-payloads are stored least significant byte first. The instruction header is byte-coded in instruction-stream
-order rather than interpreted as a little-endian integer.
+payloads are stored least significant byte first. The decoder consumes instruction-header fields byte by byte in
+instruction-stream order.
 
 For an N-byte integer value stored at byte address A, byte A contains bits 7..0, byte A+1 contains bits 15..8, and
 so on.
@@ -47,6 +47,8 @@ Floating-point scalar formats are little-endian in memory as well. S is IEEE-754
 significand precision, minimum normal exponent $-126$, and minimum subnormal quantum $2^{-149}$. D is IEEE-754
 binary64 with 53 bits of significand precision, minimum normal exponent $-1022$, and minimum subnormal quantum
 $2^{-1074}$.
+
+\input{isa/tools/latex_builder/templates/fragments/floating_point_format_diagram.tex}
 
 The bit-level floating-point encoding, NaN policy, exception flags, and rounding behavior are defined by the
 floating-point instruction and state descriptions; their memory byte order follows the same

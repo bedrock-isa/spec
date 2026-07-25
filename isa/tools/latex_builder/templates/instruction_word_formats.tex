@@ -1,5 +1,5 @@
 \clearpage
-\section{Instruction Encoding}
+\section{Instruction Encoding}\label{section:instruction-header-formats}
 
 \subsection{Instruction Stream and Record Boundary}
 The byte addressed by PC is byte 0 of the current instruction. Instruction decoding determines the complete
@@ -10,16 +10,16 @@ displacements, or instruction-specific payloads. The detailed length and opcode-
 chapter.
 
 The instruction boundary is fixed by byte 0 for extrashort and short forms, and by the first two bytes for
-extended forms, before operand evaluation begins. An implementation may reject an instruction before any
-architectural state is changed if the encoded length cannot contain the selected form.
+extended forms, before operand evaluation begins. An encoded length that cannot contain the selected form raises
+\texttt{ILLEGAL\_INSTRUCTION} before any architectural state is changed.
 
 The encoded length must contain every required opcode byte, descriptor, immediate, displacement, bitmap, and
-instruction-specific payload. Extra payload bytes are part of the instruction record but have no implicit extension
-meaning unless the selected instruction form consumes them.
+instruction-specific payload. For an extended instruction, every trailing byte after the selected concrete form is
+uninterpreted padding; every byte value is valid. Padding never extends an operand, descriptor, or opcode.
 
-An overlong record is valid only when the selected form explicitly treats the extra trailing bytes as padding. An
-undersized record faults during length and decode validation, before any architectural state changes. Later payload
-bytes never extend an instruction implicitly.
+Before decode validation or operand evaluation, instruction fetch and permission checks cover the complete encoded
+record, including padding. An inaccessible padding byte therefore reports the applicable instruction-fetch fault.
+An undersized record raises \texttt{ILLEGAL\_INSTRUCTION.INSUFFICIENT\_LENGTH} before architectural state changes.
 
 \subsection{Instruction Header Formats}
 
@@ -31,6 +31,12 @@ byte0[1:0], continues through byte1, and then consumes later bytes as required b
 
 An extended instruction is invalid if its encoded total length is shorter than the opcode class minimum: 3 bytes
 for medium, 4 bytes for long, and 5 bytes for extralong.
+
+\texttt{LEN n, <instruction>} requests an extended record whose total size is \texttt{n} bytes, where
+\texttt{3 <= n <= 18}. The requested size must cover the concrete form. Without \texttt{LEN}, the assembler emits
+the shortest valid record. It fills requested trailing padding with zero. A disassembler emits \texttt{LEN n,} for
+an overlong record so reassembly preserves the length; padding byte values are not preserved. Extrashort and short
+forms retain their fixed record lengths.
 
 \begin{manuallistedbitdiagram}{Instruction Header Byte Formats}
 \manualbitrow{extrashort byte}{%
@@ -88,6 +94,13 @@ Figure~\ref{fig:instruction-header-byte-formats}.
 \bottomrule
 \end{manualtabular}
 
+\subsection{Opcode Allocation Map}
+Each assigned form appears once below. Unassigned patterns in the class summary are reserved. For a concrete
+extended form requiring \texttt{k} bytes, every total length from \texttt{k} through 18 is valid.
+
+@OPCODE_ALLOCATION_MAP@
+
 @INSTRUCTION_PAYLOAD_ORDERING_SECTION@
 
 \input{isa/tools/latex_builder/templates/fragments/representative_instruction_encodings.tex}
+@ASSEMBLER_LANGUAGE_SECTION@

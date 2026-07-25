@@ -7,6 +7,8 @@ forms:
   - name: src
     type: EA
     access: read
+    ea_role: value
+    ea_width: operation_size
     field: e
   - name: quotient
     type: Rn
@@ -24,3 +26,6 @@ forms:
   fields:
     z:
       type: size
+  destination_overlap:
+  - operands: [quotient, remainder]
+    rule: illegal_instruction

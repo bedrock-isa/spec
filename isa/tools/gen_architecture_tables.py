@@ -73,10 +73,15 @@ def validate_manifest(data: dict[str, Any]) -> None:
         "reserved_field_defaults",
         "cpuid",
         "control_registers",
+        "cache_policies",
+        "translation_cache",
+        "control_write_rules",
         "exception_causes",
         "fptransa_accuracy_contracts",
         "event_frames",
+        "architectural_events",
         "immediate_operand_interpretation",
+        "reset_contract",
         "reset_state",
         "atomic_memory_orders",
     }
@@ -96,8 +101,61 @@ def validate_manifest(data: dict[str, Any]) -> None:
     controls = require_list(data["control_registers"], "control_registers")
     unique_values(controls, "selector", "control_registers")
     unique_values(controls, "name", "control_registers")
+    for index, control in enumerate(controls):
+        if set(control) != {"selector", "name", "use"}:
+            raise ValueError(
+                f"control_registers[{index}]: expected selector, name, and use only"
+            )
+        if not isinstance(control["use"], str) or not control["use"].strip():
+            raise ValueError(f"control_registers[{index}].use: expected non-empty string")
     if [int(item["selector"]) for item in controls] != sorted(int(item["selector"]) for item in controls):
         raise ValueError("control_registers: selectors must be in ascending order")
+
+    policies = require_list(data["cache_policies"], "cache_policies")
+    unique_values(policies, "cp", "cache_policies")
+    unique_values(policies, "name", "cache_policies")
+    if [int(item["cp"]) for item in policies] != [0, 1, 2, 3]:
+        raise ValueError("cache_policies: CP values must be exactly 0 through 3")
+    for item in policies:
+        if set(item) != {
+            "cp",
+            "name",
+            "reads_fetches",
+            "stores",
+            "retained_state",
+        }:
+            raise ValueError(f"cache_policies.{item.get('cp')}: invalid fields")
+
+    translation = data["translation_cache"]
+    if not isinstance(translation, dict) or set(translation) != {
+        "identity",
+        "transitions",
+        "shootdown",
+    }:
+        raise ValueError("translation_cache: invalid fields")
+    identity = require_list(translation["identity"], "translation_cache.identity")
+    transitions = require_list(
+        translation["transitions"], "translation_cache.transitions"
+    )
+    unique_values(identity, "component", "translation_cache.identity")
+    unique_values(transitions, "operation", "translation_cache.transitions")
+    if not isinstance(translation["shootdown"], list) or len(translation["shootdown"]) != 9:
+        raise ValueError("translation_cache.shootdown: expected the nine-step protocol")
+
+    control_rules = require_list(data["control_write_rules"], "control_write_rules")
+    controlled_names: list[str] = []
+    for index, rule in enumerate(control_rules):
+        if set(rule) != {"registers", "writable", "validation", "commit"}:
+            raise ValueError(f"control_write_rules[{index}]: invalid fields")
+        registers = rule["registers"]
+        if not isinstance(registers, list) or not registers:
+            raise ValueError(f"control_write_rules[{index}].registers: expected a non-empty list")
+        controlled_names.extend(str(name) for name in registers)
+    if len(controlled_names) != len(set(controlled_names)):
+        raise ValueError("control_write_rules: each register must appear exactly once")
+    manifest_control_names = [str(item["name"]) for item in controls]
+    if set(controlled_names) != set(manifest_control_names):
+        raise ValueError("control_write_rules: register coverage differs from control_registers")
 
     causes = data["exception_causes"]
     if not isinstance(causes, dict) or set(causes) != {
@@ -113,6 +171,107 @@ def validate_manifest(data: dict[str, Any]) -> None:
         values = [int(item["value"]) for item in entries]
         if values != list(range(len(values))):
             raise ValueError(f"exception_causes.{exception}: values must be contiguous from zero")
+
+    events = require_list(data["architectural_events"], "architectural_events")
+    unique_values(events, "name", "architectural_events")
+    exception_ids: set[int] = set()
+    frame_names = {
+        str(frame["name"])
+        for frame in require_list(data["event_frames"]["types"], "event_frames.types")
+    }
+    for index, event in enumerate(events):
+        required_event_fields = {
+            "event_class",
+            "id",
+            "name",
+            "producer",
+            "kind",
+            "saved_pc",
+            "committed_state",
+            "frame",
+            "payload",
+            "priority",
+        }
+        if set(event) != required_event_fields:
+            raise ValueError(f"architectural_events[{index}]: invalid fields")
+        if event["event_class"] == "EXCEPTION":
+            event_id = int(event["id"])
+            if event_id in exception_ids:
+                raise ValueError(f"architectural_events: duplicate exception ID {event_id}")
+            exception_ids.add(event_id)
+        elif event["event_class"] not in {"NMI", "INTERRUPT"}:
+            raise ValueError(f"architectural_events[{index}]: invalid event class")
+        if str(event["frame"]) not in frame_names:
+            raise ValueError(f"architectural_events[{index}]: unknown frame")
+        if int(event["priority"]) not in range(1, 8):
+            raise ValueError(f"architectural_events[{index}]: priority must be 1..7")
+
+    reset_contract = data["reset_contract"]
+    if not isinstance(reset_contract, dict) or set(reset_contract) != {
+        "scope",
+        "privilege",
+        "serialization",
+        "restart",
+        "other_logical_processors",
+    }:
+        raise ValueError("reset_contract: invalid fields")
+    reset_rows = require_list(data["reset_state"], "reset_state")
+    reset_names: list[str] = []
+    allowed_reset_values = {
+        "zero",
+        "invalid",
+        "supervisor_only",
+        "bootpc",
+        "retained_coherent",
+        "running_at_bootpc",
+        "platform_supplied_cold_preserved_warm",
+    }
+    for index, row in enumerate(reset_rows):
+        if set(row) != {"state", "value"}:
+            raise ValueError(f"reset_state[{index}]: invalid fields")
+        states = row["state"]
+        if not isinstance(states, list) or not states:
+            raise ValueError(f"reset_state[{index}].state: expected a non-empty list")
+        reset_names.extend(str(name) for name in states)
+        if row["value"] not in allowed_reset_values:
+            raise ValueError(f"reset_state[{index}]: invalid reset value")
+    if len(reset_names) != len(set(reset_names)):
+        raise ValueError("reset_state: each state must appear exactly once")
+    required_reset_names = {
+        *(f"R{index}" for index in range(16)),
+        "SP",
+        "PC",
+        "FLAGS",
+        "STATUS",
+        "CS",
+        "DS",
+        "SS",
+        *(f"GS{index}" for index in range(6)),
+        *manifest_control_names,
+        "F0_F15",
+        "FSTATUS",
+        "FFLAGS",
+        "extension_state",
+        "CYCLE",
+        "INSTRET",
+        "PTWALK",
+        "ECR.NMI_P",
+        "hidden_repeat_state",
+        "hidden_load_reservation",
+        "hidden_current_edepth",
+        "hidden_current_event_stack_level",
+        "local_translation_cache",
+        "local_page_walk_cache",
+        "local_prefetch_state",
+        "coherent_data_and_instruction_cache_contents",
+        "execution_state",
+    }
+    if set(reset_names) != required_reset_names:
+        missing_reset = sorted(required_reset_names - set(reset_names))
+        extra_reset = sorted(set(reset_names) - required_reset_names)
+        raise ValueError(
+            f"reset_state: coverage differs: missing={missing_reset}, extra={extra_reset}"
+        )
 
     cpuid = data["cpuid"]
     if not isinstance(cpuid, dict):
@@ -138,6 +297,112 @@ def validate_manifest(data: dict[str, Any]) -> None:
     counter_leaf = leaf_by_selector.get((2, 2))
     if counter_leaf is None or int(counter_leaf["max_index"]) != max(int(item["id"]) for item in counters):
         raise ValueError("cpuid: PERFORMANCE_COUNTERS MAX_INDEX must equal the greatest standard counter ID")
+
+    cache = cpuid.get("cache_topology")
+    if not isinstance(cache, dict):
+        raise ValueError("cpuid.cache_topology: expected a mapping")
+    if (int(cache.get("class", -1)), int(cache.get("leaf", -1))) != (2, 1):
+        raise ValueError("cpuid.cache_topology: selector must be class 2 leaf 1")
+    cache_leaf = leaf_by_selector.get((2, 1))
+    if cache_leaf is None or cache_leaf.get("name") != "CACHE_TOPOLOGY":
+        raise ValueError("cpuid.cache_topology: directory entry must be CACHE_TOPOLOGY")
+    granule = cache.get("granule")
+    if not isinstance(granule, dict):
+        raise ValueError("cpuid.cache_topology.granule: expected a mapping")
+    if (
+        int(granule.get("index", -1)) != 1
+        or int(granule.get("min_bytes", -1)) != 1
+        or int(granule.get("max_bytes", -1)) != 4096
+        or granule.get("power_of_two") is not True
+    ):
+        raise ValueError("cpuid.cache_topology.granule: invalid maintenance-granule contract")
+    if int(cache.get("descriptor_first_index", -1)) != 2:
+        raise ValueError("cpuid.cache_topology: descriptor_first_index must be 2")
+    if cache.get("descriptor_order") != [
+        "cache_level",
+        "cache_type",
+        "sharing_level",
+        "sharing_id",
+    ]:
+        raise ValueError("cpuid.cache_topology: invalid descriptor order")
+    cache_types = require_list(cache.get("cache_types"), "cpuid.cache_topology.cache_types")
+    if [(int(item["value"]), item["name"]) for item in cache_types] != [
+        (1, "DATA"),
+        (2, "INSTRUCTION"),
+        (3, "UNIFIED"),
+    ]:
+        raise ValueError("cpuid.cache_topology: invalid cache type assignments")
+    cache_fields = require_list(cache.get("fields"), "cpuid.cache_topology.fields")
+    if [(item.get("name"), item.get("bits")) for item in cache_fields] != [
+        ("TYPE", "1..0"),
+        ("LEVEL", "5..2"),
+        ("LINE_LOG2", "11..6"),
+        ("SHARING_LEVEL", "15..12"),
+        ("SHARING_LP_COUNT_MINUS1", "31..16"),
+        ("SHARING_ID", "63..32"),
+    ]:
+        raise ValueError("cpuid.cache_topology: invalid descriptor fields")
+
+    save = cpuid.get("save_area_layout")
+    if not isinstance(save, dict):
+        raise ValueError("cpuid.save_area_layout: expected a mapping")
+    if (int(save.get("class", -1)), int(save.get("leaf", -1))) != (2, 4):
+        raise ValueError("cpuid.save_area_layout: selector must be class 2 leaf 4")
+    if int(save.get("format", -1)) != 0:
+        raise ValueError("cpuid.save_area_layout: current FMT must be zero")
+    fixed_size = int(save.get("fixed_size_bytes", -1))
+    bitmap_words = int(save.get("bitmap_words", -1))
+    if fixed_size != 0xC0 or bitmap_words != 1:
+        raise ValueError("cpuid.save_area_layout: invalid fixed layout")
+    if (
+        int(save.get("descriptor_first_index", -1)) != 3
+        or int(save.get("descriptor_stride", -1)) != 2
+    ):
+        raise ValueError("cpuid.save_area_layout: invalid descriptor indexing")
+    components = require_list(save.get("components"), "cpuid.save_area_layout.components")
+    unique_values(components, "id", "cpuid.save_area_layout.components")
+    unique_values(components, "bitmap_bit", "cpuid.save_area_layout.components")
+    if [int(item["id"]) for item in components] != sorted(int(item["id"]) for item in components):
+        raise ValueError("cpuid.save_area_layout: components must be ordered by ID")
+    occupied: list[tuple[int, int, int]] = []
+    for component in components:
+        component_id = int(component["id"])
+        bit = int(component["bitmap_bit"])
+        offset = int(component["offset_bytes"])
+        size = int(component["max_size_bytes"])
+        alignment = int(component["alignment_bytes"])
+        if component_id < 0 or component_id > 0xFFFF or bit < 0 or bit >= 64 * bitmap_words:
+            raise ValueError("cpuid.save_area_layout: component ID or bitmap bit out of range")
+        if alignment != 64 or offset < fixed_size or offset % alignment or size <= 0 or size % alignment:
+            raise ValueError("cpuid.save_area_layout: invalid component offset, size, or alignment")
+        occupied.append((offset, offset + size, component_id))
+    for previous, current in zip(sorted(occupied), sorted(occupied)[1:]):
+        if previous[1] > current[0]:
+            raise ValueError(
+                f"cpuid.save_area_layout: components {previous[2]} and {current[2]} overlap"
+            )
+    fp_components = [item for item in components if item.get("name") == "FP"]
+    if len(fp_components) != 1:
+        raise ValueError("cpuid.save_area_layout: expected one FP component")
+    fp = fp_components[0]
+    if (
+        int(fp["id"]) != 1
+        or int(fp["bitmap_bit"]) != 0
+        or int(fp["offset_bytes"]) != 0xC0
+        or int(fp["max_size_bytes"]) != 0xC0
+        or int(fp["alignment_bytes"]) != 64
+        or int(fp["init_policy"]) != 1
+    ):
+        raise ValueError("cpuid.save_area_layout: invalid FP component descriptor")
+    if [
+        (item.get("name"), int(item.get("offset", -1)), int(item.get("size", -1)))
+        for item in require_list(fp.get("layout"), "cpuid.save_area_layout.components.FP.layout")
+    ] != [
+        ("F0_F15", 0x000, 0x080),
+        ("FFLAGS", 0x080, 0x008),
+        ("FSTATUS", 0x088, 0x008),
+    ]:
+        raise ValueError("cpuid.save_area_layout: invalid FP component layout")
 
     for contract in contracts:
         mnemonic = str(contract["mnemonic"])
@@ -192,8 +457,53 @@ def code_list(values: Iterable[Any]) -> str:
     return ", ".join(tex_code(value) for value in values)
 
 
+def breakable_code(value: Any) -> str:
+    escaped = tex_escape(value).replace("--", r"{-}{-}")
+    for separator in (r"\_", ":", "."):
+        escaped = escaped.replace(separator, separator + r"\allowbreak{}")
+    return r"\texttt{" + escaped + "}"
+
+
+def breakable_text(value: Any) -> str:
+    escaped = tex_escape(value)
+    for separator in (r"\_", ":", ".", ","):
+        escaped = escaped.replace(separator, separator + r"\allowbreak{}")
+    return escaped
+
+
 def generated(content: str) -> str:
     return GENERATED_HEADER + content.rstrip() + "\n"
+
+
+def format_diagram(
+    caption: str,
+    rows: list[tuple[str, int, int, list[tuple[str, int]]]],
+    *,
+    min_units: int = 6,
+) -> str:
+    lines = [
+        rf"\begin{{manuallistedformatdiagram}}{{{tex_escape(caption)}}}{{{min_units}}}"
+    ]
+    for label, high, low, fields in rows:
+        if sum(width for _name, width in fields) != high - low + 1:
+            raise ValueError(f"{caption}: {label} fields do not cover bits {high}..{low}")
+        lines.append(
+            rf"\manualformatrowrange{{{tex_escape(label)}}}{{{high}}}{{{low}}}{{%"
+        )
+        lines.extend(
+            rf"\manualformatfield{{{tex_escape(name)}}}{{{width}}}"
+            for name, width in fields
+        )
+        lines.append("}")
+    lines.append(r"\end{manuallistedformatdiagram}")
+    return "\n".join(lines)
+
+
+def bit_range_width(bits: str) -> int:
+    high_text, separator, low_text = str(bits).partition("..")
+    high = int(high_text)
+    low = int(low_text) if separator else high
+    return abs(high - low) + 1
 
 
 def render_performance_counters(data: dict[str, Any]) -> str:
@@ -286,8 +596,230 @@ def render_cpuid_directory(data: dict[str, Any]) -> str:
     return latex_longtable(
         ["Class", "Leaf", "Name", "Indexes", "Summary"],
         rows,
-        ["0.82in", "0.62in", "1.35in", "0.70in", "1.90in"],
+        ["0.82in", "0.62in", "1.45in", "0.70in", "1.80in"],
         "CPUID Class and Leaf Directory",
+    )
+
+
+def render_cache_topology(data: dict[str, Any]) -> str:
+    cache = data["cpuid"]["cache_topology"]
+    property_diagram = format_diagram(
+        "Cache-Maintenance Properties Result",
+        [
+            (
+                "index 1 result[63:0]",
+                63,
+                0,
+                [
+                    ("reserved", 48),
+                    ("GRANULE", 16),
+                ],
+            )
+        ],
+    )
+    property_diagram += (
+        "\n"
+        + r"{\small\texttt{GRANULE} is \texttt{MAINTENANCE\_GRANULE\_BYTES}.\par}"
+    )
+    property_table = latex_tabular(
+        ["Index", "Bits", "Field", "Meaning"],
+        [
+            [
+                "1",
+                tex_code("15..0"),
+                tex_code("MAINTENANCE_GRANULE_BYTES"),
+                "one-block cache-maintenance granule in bytes",
+            ],
+            ["1", tex_code("63..16"), "reserved", "zero"],
+        ],
+        ["0.45in", "0.65in", "2.20in", "2.15in"],
+        "Cache-Maintenance Properties",
+    )
+    field_meanings = {
+        "TYPE": "1 data; 2 instruction; 3 unified",
+        "LEVEL": "cache level, in the range 1 through 15",
+        "LINE_LOG2": "cache-line bytes are 1 shifted left by this value",
+        "SHARING_LEVEL": "nested cache-sharing scope; zero is one logical processor",
+        "SHARING_LP_COUNT_MINUS1": "logical-processor count in the sharing scope, minus one",
+        "SHARING_ID": "identifier of the processor set at the reported sharing level",
+    }
+    descriptor_table = latex_tabular(
+        ["Bits", "Field", "Meaning"],
+        [
+            [
+                tex_code(item["bits"]),
+                tex_code(item["name"]),
+                field_meanings[item["name"]],
+            ]
+            for item in cache["fields"]
+        ],
+        ["0.65in", "2.10in", "2.65in"],
+        "Cache-Topology Descriptor",
+    )
+    descriptor_diagram = format_diagram(
+        "Cache-Topology Descriptor Format",
+        [
+            (
+                "descriptor[63:0]",
+                63,
+                0,
+                [
+                    (
+                        {
+                            "TYPE": "T",
+                            "LEVEL": "LV",
+                            "LINE_LOG2": "LL2",
+                            "SHARING_LEVEL": "SL",
+                            "SHARING_LP_COUNT_MINUS1": "LP-1",
+                            "SHARING_ID": "SID",
+                        }[str(item["name"])],
+                        bit_range_width(str(item["bits"])),
+                    )
+                    for item in reversed(cache["fields"])
+                ],
+            )
+        ],
+    )
+    descriptor_diagram += "\n" + (
+        r"{\small\texttt{SID}, \texttt{LP-1}, \texttt{SL}, \texttt{LL2}, "
+        r"\texttt{LV}, and \texttt{T} denote \texttt{SHARING\_ID}, "
+        r"\texttt{SHARING\_LP\_COUNT\_MINUS1}, \texttt{SHARING\_LEVEL}, "
+        r"\texttt{LINE\_LOG2}, \texttt{LEVEL}, and \texttt{TYPE}.\par}"
+    )
+    return "\n\n".join(
+        (property_diagram, property_table, descriptor_diagram, descriptor_table)
+    )
+
+
+def render_save_area_layout(data: dict[str, Any]) -> str:
+    save = data["cpuid"]["save_area_layout"]
+    index_table = latex_tabular(
+        ["Index", "Contents"],
+        [
+            ["0", "common CPUID leaf header"],
+            ["1", tex_code("SAVE_AREA_SIZE_BYTES") + " in bits 63..0"],
+            [
+                "2",
+                tex_code("FIXED_SIZE_BYTES[15:0]")
+                + ", "
+                + tex_code("COMPONENT_COUNT[31:16]")
+                + ", "
+                + tex_code("BITMAP_WORDS[47:32]")
+                + ", "
+                + tex_code("FMT[51:48]")
+                + "; bits 63..52 are zero",
+            ],
+            [
+                tex_code("3+2i"),
+                "component descriptor A for zero-based component ordinal "
+                + tex_code("i"),
+            ],
+            [
+                tex_code("4+2i"),
+                "component descriptor B for zero-based component ordinal "
+                + tex_code("i"),
+            ],
+        ],
+        ["0.80in", "4.60in"],
+        "SAVE-AREA-LAYOUT Indexes",
+    )
+    result_diagram = format_diagram(
+        "SAVE-Area Layout CPUID Result Formats",
+        [
+            (
+                "index 2",
+                63,
+                0,
+                [
+                    ("reserved", 12),
+                    ("FMT", 4),
+                    ("BITMAP", 16),
+                    ("COUNT", 16),
+                    ("FIXED_SIZE", 16),
+                ],
+            ),
+            (
+                "descriptor A",
+                63,
+                0,
+                [
+                    ("OFFSET", 32),
+                    ("reserved", 10),
+                    ("BIT", 6),
+                    ("ID", 16),
+                ],
+            ),
+            (
+                "descriptor B",
+                63,
+                0,
+                [
+                    ("RSV", 8),
+                    ("INIT", 8),
+                    ("ALIGN", 16),
+                    ("MAX_SIZE", 32),
+                ],
+            ),
+        ],
+        min_units=8,
+    )
+    result_diagram += "\n" + (
+        r"{\small Diagram labels abbreviate the field names in the descriptor tables below; "
+        r"\texttt{BITMAP}, \texttt{COUNT}, and \texttt{FIXED\_SIZE} are "
+        r"\texttt{BITMAP\_WORDS}, \texttt{COMPONENT\_COUNT}, and "
+        r"\texttt{FIXED\_SIZE\_BYTES}.\par}"
+    )
+    descriptor_a = r"\Needspace{2.5in}" + "\n" + latex_tabular(
+        ["Bits", "Field", "Meaning"],
+        [
+            [tex_code("15..0"), tex_code("COMPONENT_ID"), "stable component identifier"],
+            [tex_code("21..16"), tex_code("BITMAP_BIT"), "bit selecting this component"],
+            [tex_code("31..22"), "reserved", "zero"],
+            [tex_code("63..32"), tex_code("OFFSET_BYTES"), "offset from the save-area base"],
+        ],
+        ["0.65in", "1.70in", "3.05in"],
+        "SAVE Component Descriptor A",
+    )
+    descriptor_b = latex_tabular(
+        ["Bits", "Field", "Meaning"],
+        [
+            [tex_code("31..0"), tex_code("MAX_SIZE_BYTES"), "allocated component size"],
+            [tex_code("47..32"), tex_code("ALIGNMENT_BYTES"), "required component alignment"],
+            [
+                tex_code("55..48"),
+                tex_code("INIT_POLICY"),
+                "1 restores the component-defined initial state when its bitmap bit is clear",
+            ],
+            [tex_code("63..56"), "reserved", "zero"],
+        ],
+        ["0.65in", "1.70in", "3.05in"],
+        "SAVE Component Descriptor B",
+    )
+    fp = next(item for item in save["components"] if item["name"] == "FP")
+    fp_rows = []
+    for item in fp["layout"]:
+        start = int(item["offset"])
+        end = start + int(item["size"]) - 1
+        meaning = {
+            "F0_F15": "F0 through F15 in ascending register order",
+            "FFLAGS": "FFLAGS in bits 15..0; remaining bits zero",
+            "FSTATUS": "FSTATUS in bits 15..0; remaining bits zero",
+        }[item["name"]]
+        fp_rows.append(
+            [
+                tex_code(f"0x{start:03x}..0x{end:03x}"),
+                tex_code(item["name"]),
+                meaning,
+            ]
+        )
+    fp_table = latex_tabular(
+        ["Component Offset", "State", "Contents"],
+        fp_rows,
+        ["1.25in", "1.20in", "2.95in"],
+        "Floating-Point SAVE Component",
+    )
+    return "\n\n".join(
+        (index_table, result_diagram, descriptor_a, descriptor_b, fp_table)
     )
 
 
@@ -301,6 +833,80 @@ def render_control_registers(data: dict[str, Any]) -> str:
         rows,
         ["0.75in", "1.05in", "3.55in"],
         "Control-Register Selectors",
+    )
+
+
+def render_cache_policies(data: dict[str, Any]) -> str:
+    rows = [
+        [
+            tex_code(item["cp"]),
+            breakable_code(item["name"]),
+            tex_escape(item["reads_fetches"]),
+            tex_escape(item["stores"]),
+            tex_escape(item["retained_state"]),
+        ]
+        for item in data["cache_policies"]
+    ]
+    return latex_longtable(
+        ["CP", "Policy", "Reads and Fetches", "Stores", "Retained State"],
+        rows,
+        ["0.35in", "1.15in", "1.30in", "1.45in", "1.15in"],
+        "Normal-Memory Cache Policies",
+    )
+
+
+def render_translation_cache(data: dict[str, Any]) -> str:
+    translation = data["translation_cache"]
+    identity_table = latex_tabular(
+        ["Identity Component", "Applies To"],
+        [
+            [breakable_code(item["component"]), tex_escape(item["applies"])]
+            for item in translation["identity"]
+        ],
+        ["2.00in", "3.40in"],
+        "Translation-Cache Entry Identity",
+    )
+    transition_table = latex_longtable(
+        ["Operation", "Non-Global Entries", "Global Entries"],
+        [
+            [
+                breakable_code(item["operation"]),
+                tex_escape(item["non_global"]),
+                tex_escape(item["global"]),
+            ]
+            for item in translation["transitions"]
+        ],
+        ["1.30in", "2.25in", "1.85in"],
+        "Local Translation-Cache Transitions",
+    )
+    shootdown_rows = [
+        [str(index), tex_escape(step)]
+        for index, step in enumerate(translation["shootdown"], start=1)
+    ]
+    shootdown_table = latex_tabular(
+        ["Step", "Required Action"],
+        shootdown_rows,
+        ["0.45in", "4.95in"],
+        "Remote Translation Shootdown Protocol",
+    )
+    return "\n\n".join((identity_table, transition_table, shootdown_table))
+
+
+def render_control_write_rules(data: dict[str, Any]) -> str:
+    rows = [
+        [
+            code_list(rule["registers"]),
+            tex_escape(rule["writable"]),
+            tex_escape(rule["validation"]),
+            tex_escape(rule["commit"]),
+        ]
+        for rule in data["control_write_rules"]
+    ]
+    return latex_longtable(
+        ["Register", "Writable Image", "Validation", "Commit and Side Effect"],
+        rows,
+        ["1.05in", "1.45in", "1.55in", "1.35in"],
+        "WRCR Selector Rules",
     )
 
 
@@ -418,6 +1024,48 @@ def render_event_frames(data: dict[str, Any]) -> str:
     return frame_table + "\n" + assignment_table
 
 
+def event_code(event: dict[str, Any]) -> str:
+    if event["event_class"] == "EXCEPTION":
+        return f"EXC:{int(event['id']):02x}"
+    return f"{event['event_class']}:{event['id']}"
+
+
+def render_architectural_events(data: dict[str, Any]) -> str:
+    boundary_rows = [
+        [
+            breakable_code(event_code(event)),
+            breakable_code(event["name"]),
+            tex_escape(event["kind"]),
+            tex_escape(event["saved_pc"]),
+            str(int(event["priority"])),
+        ]
+        for event in data["architectural_events"]
+    ]
+    boundary_table = latex_longtable(
+        ["Code", "Event", "Kind", "Saved PC", "Priority"],
+        boundary_rows,
+        ["0.75in", "1.15in", "0.85in", "2.15in", "0.50in"],
+        "Architectural Event Boundaries and Priority",
+    )
+    delivery_rows = [
+        [
+            breakable_code(event["name"]),
+            tex_escape(event["producer"]),
+            tex_escape(event["committed_state"]),
+            breakable_code(event["frame"]),
+            tex_escape(event["payload"]),
+        ]
+        for event in data["architectural_events"]
+    ]
+    delivery_table = latex_longtable(
+        ["Event", "Producer", "Committed State", "Frame", "Payload"],
+        delivery_rows,
+        ["1.05in", "1.25in", "1.50in", "0.70in", "1.00in"],
+        "Architectural Event Producers and Delivery State",
+    )
+    return boundary_table + "\n\n" + delivery_table
+
+
 def operand_range(spec: dict[str, Any], range_from: str) -> str:
     width = int(spec["field_width"])
     if range_from == "declared_values":
@@ -458,23 +1106,39 @@ def render_reset_state(data: dict[str, Any]) -> str:
     reset_values = {
         "zero": "0",
         "invalid": "invalid",
+        "supervisor_only": "PM=1; all other STATUS bits 0",
+        "bootpc": "BOOTPC",
+        "retained_coherent": "retained as coherent contents",
+        "running_at_bootpc": "running at BOOTPC",
         "platform_supplied_cold_preserved_warm": "platform supplied on cold reset; preserved by warm RESET",
     }
     rows = []
     for item in data["reset_state"]:
-        if "state_pairs" in item:
-            state = ", ".join(f"{left}:{right}" for left, right in item["state_pairs"])
-        else:
-            names = [str(value) for value in item["state"]]
-            state = ", ".join(names).replace("hidden_current_edepth", "hidden_current_edepth")
-            state = state.replace("hidden_current_event_stack_level", "hidden current event stack level")
-        rows.append([tex_escape(state), tex_escape(reset_values[item["value"]])])
-    return latex_longtable(
+        names = [str(value) for value in item["state"]]
+        state = ", ".join(names).replace("hidden_current_edepth", "hidden_current_edepth")
+        state = state.replace("hidden_current_event_stack_level", "hidden current event stack level")
+        state = state.replace("F0_F15", "F0--F15")
+        rows.append([breakable_text(state), tex_escape(reset_values[item["value"]])])
+    contract = data["reset_contract"]
+    contract_table = latex_tabular(
+        ["Property", "Architectural Rule"],
+        [
+            ["Scope", tex_escape(contract["scope"])],
+            ["Required privilege", tex_escape(contract["privilege"])],
+            ["Serialization", tex_escape(contract["serialization"])],
+            ["Restart", tex_escape(contract["restart"])],
+            ["Other logical processors", tex_escape(contract["other_logical_processors"])],
+        ],
+        ["1.35in", "4.05in"],
+        "Warm RESET Contract",
+    )
+    state_table = latex_longtable(
         ["State", "Reset Value"],
         rows,
         ["2.00in", "2.40in"],
         "Architectural Reset State",
     )
+    return contract_table + "\n\n" + state_table
 
 
 def render_atomic_orders(data: dict[str, Any]) -> str:
@@ -512,7 +1176,16 @@ def output_files(data: dict[str, Any]) -> dict[Path, str]:
     return {
         GENERATED_DIR / "reserved_field_defaults.tex": generated(render_reserved_defaults(data)),
         GENERATED_DIR / "cpuid_class_leaf_directory.tex": generated(render_cpuid_directory(data)),
+        GENERATED_DIR / "cpuid_cache_topology.tex": generated(render_cache_topology(data)),
+        GENERATED_DIR / "cpuid_save_area_layout.tex": generated(render_save_area_layout(data)),
         GENERATED_DIR / "control_register_selectors.tex": generated(render_control_registers(data)),
+        GENERATED_DIR / "cache_policies.tex": generated(render_cache_policies(data)),
+        GENERATED_DIR / "translation_cache_contract.tex": generated(
+            render_translation_cache(data)
+        ),
+        GENERATED_DIR / "control_write_rules.tex": generated(
+            render_control_write_rules(data)
+        ),
         GENERATED_DIR / "page_fault_causes.tex": generated(render_exception_causes(data, "PAGE_FAULT")),
         GENERATED_DIR / "illegal_instruction_causes.tex": generated(
             render_exception_causes(data, "ILLEGAL_INSTRUCTION")
@@ -526,6 +1199,9 @@ def output_files(data: dict[str, Any]) -> dict[Path, str]:
         GENERATED_DIR / "atomic_memory_order_selectors.tex": generated(render_atomic_orders(data)),
         FRAGMENT_DIR / "fptransa_accuracy_contracts.tex": generated(render_fptransa_contracts(data)),
         FRAGMENT_DIR / "frame_type_table.tex": generated(render_event_frames(data)),
+        FRAGMENT_DIR / "architectural_events.tex": generated(
+            render_architectural_events(data)
+        ),
         FRAGMENT_DIR / "reset_state_table.tex": generated(render_reset_state(data)),
         RDPMC_OUTPUT: generated(rdpmc_details),
     }

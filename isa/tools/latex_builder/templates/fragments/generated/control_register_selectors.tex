@@ -24,7 +24,7 @@
 \texttt{0x010a} & \texttt{URCS} & user-return code-segment image\\
 \texttt{0x010b} & \texttt{URDS} & user-return data-segment image\\
 \texttt{0x010c} & \texttt{URSS} & user-return stack-segment image\\
-\texttt{0x010d} & \texttt{URCTL} & user-return FLAGS\\
+\texttt{0x010d} & \texttt{URCTL} & user-return FLAGS, STATUS, and valid state\\
 \texttt{0x0110} & \texttt{EPC} & common architectural event-entry PC\\
 \texttt{0x0111} & \texttt{ECS} & architectural event-entry code-segment image\\
 \texttt{0x0112} & \texttt{EDS} & architectural event-entry data-segment image\\
@@ -38,6 +38,6 @@
 \texttt{0x0231} & \texttt{DSP} & double-fault stack top\\
 \texttt{0x1000} & \texttt{BOOTPC} & warm-reset target supplied by the platform at cold reset\\
 \texttt{0x1001} & \texttt{BOOTCFG} & opaque platform boot configuration preserved by warm reset\\
-\texttt{0x1100} & \texttt{PMC} & performance-monitor enable and user-access control\\
+\texttt{0x1100} & \texttt{PMC} & performance-monitor enable\\
 \bottomrule
 \end{manuallongtable}

@@ -1,15 +1,18 @@
 mnemonic: BCLR
 title: Bit Clear
 summary: Performs the bit clear operation.
-description: Clears the destination bit selected by the low six bits of the bit index and sets Z when that bit was previously clear.
+description: Clears the destination bit selected by the low six bits of the bit index and sets Z when that bit was previously clear. A memory destination is read by an ordinary selected-width load and updated by an ordinary selected-width store.
 attributes:
   class: integer
   family: integer_bitfield
   privilege: unprivileged
-  repeat:
+repeat:
+  contexts:
   - REP
   - REPcc
   - REPG
+  observed:
+    kind: flags
 flag_effects:
   FLAGS:
     Z: "old_bit == 0"

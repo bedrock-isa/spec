@@ -1,0 +1,48 @@
+schema_version: 0
+
+block_selection:
+  granule_bytes: 64
+  cases:
+    - {id: last_byte, virtual_address: 0x103f, physical_address: 0x103f, selected_base: 0x1000, selected_limit: 0x1040}
+    - {id: next_block, virtual_address: 0x1040, physical_address: 0x1040, selected_base: 0x1040, selected_limit: 0x1080}
+
+c_ranges:
+  - id: zero_length
+    address: 0x103f
+    length: 0
+    selected_blocks: []
+  - id: two_blocks
+    address: 0x103f
+    length: 2
+    selected_blocks: [0x1000, 0x1040]
+    retired_before_fault: preserved
+
+page_boundary:
+  page_bytes: 4096
+  granule_bytes: 64
+  address: 0x0fff
+  length: 2
+  selected_blocks: [0x0fc0, 0x1000]
+  translated_pages: [0x0000, 0x1000]
+  second_page_fault:
+    first_block_effect: preserved
+    second_block_effect: none
+
+data_domain_broadcast:
+  coherence_domain: [lp0, lp1, lp2, lp3]
+  resident_copies: [lp0.D, lp1.D, lp2.U, lp3.I]
+  required_targets: [lp0.D, lp1.D, lp2.U]
+  excluded_targets: [lp3.I]
+  retirement: after_all_required_targets_complete
+
+remote_instruction_fetch:
+  initial_code_bytes: old
+  publisher:
+    - store_new_code_bytes
+    - SYNCCACHE_each_intersecting_block
+    - release_rendezvous
+  receivers:
+    lp1: [acquire_rendezvous, INVICACHE_each_intersecting_block, branch_to_code]
+    lp2: [acquire_rendezvous, INVICACHE_each_intersecting_block, branch_to_code]
+  allowed_fetch: new
+  forbidden_fetch: old

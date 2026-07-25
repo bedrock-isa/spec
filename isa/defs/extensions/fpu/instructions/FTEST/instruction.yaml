@@ -1,16 +1,20 @@
 mnemonic: FTEST
 title: Floating-Point Test
 summary: Performs the floating-point test operation.
-description: Classifies the selected floating-point value for comparison with zero and updates the integer condition flags without writing a result.
+description: Compares the selected-format operand with positive zero and writes Z,N,C,V as greater=0000, equal=1000, less=0110, or unordered=0001. A quiet NaN is unordered; a signaling NaN is unordered and generates NV.
 attributes:
   class: fpu
   family: fpu
   privilege: unprivileged
-  repeat:
+repeat:
+  contexts:
   - REP
   - REPG
 flag_effects:
   FLAGS:
+    Z: "set only when equal"
+    N: "set only when less"
+    C: "set only when less"
     V: "set when unordered"
   FFLAGS:
     NV: "may accrue"

@@ -6,8 +6,11 @@ attributes:
   class: integer
   family: integer_unary
   privilege: unprivileged
-  repeat:
+repeat:
+  contexts:
   - REP
   - REPcc
   - REPG
-  - REPGF
+  observed:
+    kind: result
+    operand: dst

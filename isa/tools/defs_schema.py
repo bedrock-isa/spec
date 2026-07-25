@@ -30,9 +30,13 @@ SCHEMA_LOCK_PATH = Path(__file__).resolve().parents[1] / "defs" / "schema.lock"
 SCHEMA_DOCUMENT_PATH = Path(__file__).resolve().parents[1] / "defs" / "SCHEMA.md"
 
 PRIVILEGES = frozenset({"unprivileged", "supervisor", "any"})
-REPEAT_CONTEXTS = frozenset({"REP", "REPcc", "REPG", "REPGF"})
+REPEAT_CONTEXTS = frozenset({"REP", "REPcc", "REPG"})
+REPEAT_OBSERVED_KINDS = frozenset({"flags", "result", "source"})
+DESTINATION_OVERLAP_RULES = frozenset({"same_value", "illegal_instruction"})
 OPERAND_ACCESS = frozenset({"read", "write", "read_write", "address"})
 OPERAND_DOMAINS = frozenset({"user"})
+EA_ROLES = frozenset({"value", "address", "control_target"})
+EA_WIDTHS = frozenset({"operation_size", "B", "W", "L", "Q"})
 OPERAND_KINDS = frozenset(
     {
         "register",
@@ -238,7 +242,25 @@ class InstructionAttributes:
     instruction_class: str
     family: str
     privilege: str
-    repeat: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class RepeatObserved:
+    kind: str
+    operand: str | None = None
+
+
+@dataclass(frozen=True)
+class RepeatContract:
+    contexts: tuple[str, ...]
+    observed: RepeatObserved | None = None
+
+
+@dataclass(frozen=True)
+class InstructionException:
+    event: str
+    when: str
+    forms: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -248,6 +270,8 @@ class InstructionDocument:
     summary: str
     description: str
     attributes: InstructionAttributes
+    repeat: RepeatContract | None = None
+    exceptions: tuple[InstructionException, ...] = ()
     flag_effects: dict[str, dict[str, str]] = field(default_factory=dict)
     additional_assembler_syntax: tuple[str, ...] = ()
     additional_description: str | None = None
@@ -260,6 +284,8 @@ class EncodingOperand:
     access: str
     field: str | None = None
     domain: str | None = None
+    ea_role: str | None = None
+    ea_width: str | None = None
 
 
 @dataclass(frozen=True)
@@ -276,6 +302,12 @@ class EncodingConstraint:
 
 
 @dataclass(frozen=True)
+class DestinationOverlap:
+    operands: tuple[str, str]
+    rule: str
+
+
+@dataclass(frozen=True)
 class EncodingForm:
     id: str
     encoding_class: str
@@ -285,6 +317,7 @@ class EncodingForm:
     sizes: tuple[str, ...] = ()
     fields: dict[str, EncodingField] = field(default_factory=dict)
     constraints: tuple[EncodingConstraint, ...] = ()
+    destination_overlap: tuple[DestinationOverlap, ...] = ()
     notes: tuple[str, ...] = ()
 
 
@@ -570,7 +603,13 @@ def decode_instruction(path: Path, raw: Any) -> InstructionDocument:
         path,
         "",
         required=("mnemonic", "title", "summary", "description", "attributes"),
-        optional=("flag_effects", "additional_assembler_syntax", "additional_description"),
+        optional=(
+            "repeat",
+            "exceptions",
+            "flag_effects",
+            "additional_assembler_syntax",
+            "additional_description",
+        ),
     )
     attrs = _mapping(data["attributes"], path, "attributes")
     _keys(
@@ -578,15 +617,87 @@ def decode_instruction(path: Path, raw: Any) -> InstructionDocument:
         path,
         "attributes",
         required=("class", "family", "privilege"),
-        optional=("repeat",),
     )
-    repeat = tuple(
-        _enum_string(value, path, f"attributes.repeat[{index}]", REPEAT_CONTEXTS)
-        for index, value in enumerate(
-            _list(attrs.get("repeat", []), path, "attributes.repeat")
+    repeat: RepeatContract | None = None
+    if "repeat" in data:
+        raw_repeat = _mapping(data["repeat"], path, "repeat")
+        _keys(
+            raw_repeat,
+            path,
+            "repeat",
+            required=("contexts",),
+            optional=("observed",),
         )
-    )
-    _unique(repeat, path, "attributes.repeat")
+        contexts = tuple(
+            _enum_string(value, path, f"repeat.contexts[{index}]", REPEAT_CONTEXTS)
+            for index, value in enumerate(
+                _list(raw_repeat["contexts"], path, "repeat.contexts")
+            )
+        )
+        if not contexts:
+            raise DecodeError(f"{_where(path, 'repeat.contexts')}: expected non-empty list")
+        _unique(contexts, path, "repeat.contexts")
+        observed: RepeatObserved | None = None
+        if "observed" in raw_repeat:
+            raw_observed = _mapping(raw_repeat["observed"], path, "repeat.observed")
+            _keys(
+                raw_observed,
+                path,
+                "repeat.observed",
+                required=("kind",),
+                optional=("operand",),
+            )
+            kind = _enum_string(
+                raw_observed["kind"],
+                path,
+                "repeat.observed.kind",
+                REPEAT_OBSERVED_KINDS,
+            )
+            operand = raw_observed.get("operand")
+            if operand is not None:
+                operand = _string(operand, path, "repeat.observed.operand")
+            if kind == "flags" and operand is not None:
+                raise DecodeError(
+                    f"{_where(path, 'repeat.observed.operand')}: flags observation has no operand"
+                )
+            if kind in {"result", "source"} and operand is None:
+                raise DecodeError(
+                    f"{_where(path, 'repeat.observed')}: {kind} observation requires operand"
+                )
+            observed = RepeatObserved(kind, operand)
+        if ("REPcc" in contexts) != (observed is not None):
+            raise DecodeError(
+                f"{_where(path, 'repeat')}: observed is required exactly when REPcc is present"
+            )
+        repeat = RepeatContract(contexts, observed)
+
+    exceptions: list[InstructionException] = []
+    for index, raw_exception in enumerate(
+        _list(data.get("exceptions", []), path, "exceptions")
+    ):
+        item_path = f"exceptions[{index}]"
+        item = _mapping(raw_exception, path, item_path)
+        _keys(
+            item,
+            path,
+            item_path,
+            required=("event", "when"),
+            optional=("forms",),
+        )
+        event = _string(item["event"], path, item_path + ".event")
+        if not re.fullmatch(r"[A-Z][A-Z0-9_]*", event):
+            raise DecodeError(f"{_where(path, item_path + '.event')}: invalid event name")
+        forms = tuple(
+            _string_list(item.get("forms", []), path, item_path + ".forms")
+        )
+        _unique(forms, path, item_path + ".forms")
+        exceptions.append(
+            InstructionException(
+                event=event,
+                when=_string(item["when"], path, item_path + ".when"),
+                forms=forms,
+            )
+        )
     extra_syntax = tuple(
         _string_list(
             data.get("additional_assembler_syntax", []),
@@ -643,8 +754,9 @@ def decode_instruction(path: Path, raw: Any) -> InstructionDocument:
             privilege=_enum_string(
                 attrs["privilege"], path, "attributes.privilege", PRIVILEGES
             ),
-            repeat=repeat,
         ),
+        repeat=repeat,
+        exceptions=tuple(exceptions),
         flag_effects=flag_effects,
         additional_assembler_syntax=extra_syntax,
         additional_description=additional_description,
@@ -664,7 +776,14 @@ def decode_encodings(path: Path, raw: Any) -> EncodingsDocument:
             path,
             field_path,
             required=("id", "class", "bits", "syntax"),
-            optional=("operands", "sizes", "fields", "constraints", "notes"),
+            optional=(
+                "operands",
+                "sizes",
+                "fields",
+                "constraints",
+                "destination_overlap",
+                "notes",
+            ),
         )
         form_id = _string(form["id"], path, f"{field_path}.id")
         if form_id in ids:
@@ -693,7 +812,7 @@ def decode_encodings(path: Path, raw: Any) -> EncodingsDocument:
                 path,
                 operand_path,
                 required=("name", "type", "access"),
-                optional=("field", "domain"),
+                optional=("field", "domain", "ea_role", "ea_width"),
             )
             marker = operand.get("field")
             if marker is not None:
@@ -710,19 +829,52 @@ def decode_encodings(path: Path, raw: Any) -> EncodingsDocument:
             domain = operand.get("domain")
             if domain is not None:
                 domain = _string(domain, path, operand_path + ".domain")
+            operand_type = _string(operand["type"], path, operand_path + ".type")
+            access = _enum_string(
+                operand["access"], path, operand_path + ".access", OPERAND_ACCESS
+            )
+            ea_role = operand.get("ea_role")
+            ea_width = operand.get("ea_width")
+            if operand_type == "EA":
+                if ea_role is None or ea_width is None:
+                    raise DecodeError(
+                        f"{_where(path, operand_path)}: EA operands require ea_role and ea_width"
+                    )
+                ea_role = _enum_string(
+                    ea_role, path, operand_path + ".ea_role", EA_ROLES
+                )
+                ea_width = _enum_string(
+                    ea_width, path, operand_path + ".ea_width", EA_WIDTHS
+                )
+                if ea_role == "address" and access != "address":
+                    raise DecodeError(
+                        f"{_where(path, operand_path)}: address role requires address access"
+                    )
+                if ea_role == "control_target" and access != "read":
+                    raise DecodeError(
+                        f"{_where(path, operand_path)}: control_target role requires read access"
+                    )
+                if ea_role == "value" and access == "address":
+                    raise DecodeError(
+                        f"{_where(path, operand_path)}: value role cannot use address access"
+                    )
+            elif ea_role is not None or ea_width is not None:
+                raise DecodeError(
+                    f"{_where(path, operand_path)}: ea_role and ea_width apply only to EA operands"
+                )
             operands.append(
                 EncodingOperand(
                     name=_string(operand["name"], path, operand_path + ".name"),
-                    type=_string(operand["type"], path, operand_path + ".type"),
-                    access=_enum_string(
-                        operand["access"], path, operand_path + ".access", OPERAND_ACCESS
-                    ),
+                    type=operand_type,
+                    access=access,
                     field=marker,
                     domain=(
                         _enum_string(domain, path, operand_path + ".domain", OPERAND_DOMAINS)
                         if domain is not None
                         else None
                     ),
+                    ea_role=ea_role,
+                    ea_width=ea_width,
                 )
             )
 
@@ -789,6 +941,98 @@ def decode_encodings(path: Path, raw: Any) -> EncodingsDocument:
 
         sizes = tuple(_string_list(form.get("sizes", []), path, field_path + ".sizes"))
         _unique(sizes, path, field_path + ".sizes")
+        for operand_index, operand in enumerate(operands):
+            if (
+                operand.type == "EA"
+                and operand.ea_width == "operation_size"
+                and not sizes
+            ):
+                raise DecodeError(
+                    f"{_where(path, f'{field_path}.operands[{operand_index}].ea_width')}: "
+                    "operation_size requires at least one form size"
+                )
+
+        writable_names = {
+            operand.name
+            for operand in operands
+            if operand.field is not None and operand.access in {"write", "read_write"}
+        }
+        excluded_register_direct_fields = {
+            constraint.field
+            for constraint in constraints
+            if constraint.exclude == "reg_direct"
+        }
+
+        def operands_can_overlap(
+            left: EncodingOperand,
+            right: EncodingOperand,
+        ) -> bool:
+            if left.type == right.type:
+                return True
+            for ea_operand, register_operand in ((left, right), (right, left)):
+                if (
+                    ea_operand.type == "EA"
+                    and register_operand.type in {"Rn", "Fn"}
+                    and ea_operand.field not in excluded_register_direct_fields
+                ):
+                    return True
+            return False
+
+        expected_overlap_pairs = {
+            tuple(sorted((left.name, right.name)))
+            for left_index, left in enumerate(operands)
+            for right in operands[left_index + 1 :]
+            if left.field is not None
+            and right.field is not None
+            and left.access in {"write", "read_write"}
+            and right.access in {"write", "read_write"}
+            and operands_can_overlap(left, right)
+        }
+        destination_overlap: list[DestinationOverlap] = []
+        declared_overlap_pairs: set[tuple[str, str]] = set()
+        for relation_index, raw_relation in enumerate(
+            _list(
+                form.get("destination_overlap", []),
+                path,
+                field_path + ".destination_overlap",
+            )
+        ):
+            item_path = f"{field_path}.destination_overlap[{relation_index}]"
+            item = _mapping(raw_relation, path, item_path)
+            _keys(item, path, item_path, required=("operands", "rule"))
+            names = tuple(
+                _string_list(item["operands"], path, item_path + ".operands")
+            )
+            if len(names) != 2 or names[0] == names[1]:
+                raise DecodeError(
+                    f"{_where(path, item_path + '.operands')}: expected two distinct operands"
+                )
+            if any(name not in writable_names for name in names):
+                raise DecodeError(
+                    f"{_where(path, item_path + '.operands')}: relation requires writable field operands"
+                )
+            pair = tuple(sorted(names))
+            if pair in declared_overlap_pairs:
+                raise DecodeError(
+                    f"{_where(path, item_path + '.operands')}: duplicate overlap pair"
+                )
+            declared_overlap_pairs.add(pair)
+            destination_overlap.append(
+                DestinationOverlap(
+                    operands=(names[0], names[1]),
+                    rule=_enum_string(
+                        item["rule"],
+                        path,
+                        item_path + ".rule",
+                        DESTINATION_OVERLAP_RULES,
+                    ),
+                )
+            )
+        if declared_overlap_pairs != expected_overlap_pairs:
+            raise DecodeError(
+                f"{_where(path, field_path + '.destination_overlap')}: "
+                "must define every writable field-operand pair"
+            )
         forms.append(
             EncodingForm(
                 id=form_id,
@@ -799,6 +1043,7 @@ def decode_encodings(path: Path, raw: Any) -> EncodingsDocument:
                 sizes=sizes,
                 fields=fields,
                 constraints=tuple(constraints),
+                destination_overlap=tuple(destination_overlap),
                 notes=tuple(_string_list(form.get("notes", []), path, field_path + ".notes")),
             )
         )

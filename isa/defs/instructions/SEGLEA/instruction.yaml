@@ -1,16 +1,18 @@
 mnemonic: SEGLEA
 title: Segment Load Effective Address
 summary: Performs the segment load effective address operation.
-description: SEGLEA computes the source effective address and applies only the selected segment's pre-translation. The size suffix selects the index scale used during effective-address calculation; it does not widen the segment check to an access-sized byte range. The check tests only the computed effective-address point. On success, SEGLEA writes the segment result to the destination and clears V. On a failed segment-bound check, it sets V, suppresses the destination-operand write, and does not raise PAGE_FAULT. Because bounds failure is a completed non-faulting operation, effective-address auto-update effects commit normally.
+description: SEGLEA computes the source effective-address point and applies the selected segment's pre-translation to that point. The size suffix selects the index scale used during effective-address calculation. On success, SEGLEA writes the segment result to the destination and clears V. A failed segment-bound check sets V, suppresses the destination write, commits effective-address auto-update effects, and completes without an exception.
 attributes:
   class: data_movement
   family: ea_utility
   privilege: unprivileged
-  repeat:
+repeat:
+  contexts:
   - REP
   - REPcc
   - REPG
-  - REPGF
+  observed:
+    kind: flags
 flag_effects:
   FLAGS:
     V: "cleared on success; set when the segment-point bounds check fails"

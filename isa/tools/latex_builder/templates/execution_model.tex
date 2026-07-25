@@ -2,14 +2,11 @@
 \section{Instruction Execution Model}
 
 This section defines the common execution contract used by the instruction descriptions. An individual
-instruction may add stricter rules, but it does not silently replace the rules below. The purpose of this section
-is to make operand evaluation, side effects, repetition, and status updates readable before the per-instruction
-pages.
+instruction may add stricter rules, but it does not silently replace the rules below.
 
 \subsection{Architectural Result Priority}
 When one instruction could encounter more than one exceptional condition, the architecturally reported result is
-the first applicable condition in the following order. This is a result-priority contract and does not require an
-implementation to commit its internal pipeline effects in the same order.
+the first applicable condition in the following order. This order defines the architecturally reported result.
 
 \begin{enumerate}
 \item Instruction fetch and fetch translation.
@@ -35,6 +32,54 @@ the destination stack slot; POP reads the stack slot before validating or writin
 register order and POPP uses reverse listed order; CALL validates its target before accessing the return stack; RET
 reads the return stack before validating its target; and the far call, far return, event return, and supervisor-entry
 instructions use the step order in their instruction descriptions.
+
+\subsection{Implicit Stack Operations}
+Ordinary implicit stack operations capture the current SS and SP before their first stack access. Every stack slot is
+64 bits and is addressed through the captured SS. The ranges below are expressed in terms of the captured
+\texttt{old\_sp}; the applicable segment, translation, and complete-range checks finish before the operation commits.
+
+\Needspace{3.4in}
+\manualtablecaption{Ordinary Implicit Stack Operations}
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.92in}>{\raggedright\arraybackslash}p{1.18in}>{\raggedright\arraybackslash}p{0.78in}>{\raggedright\arraybackslash}p{2.72in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Operation} & \textbf{Stack range} & \textbf{Committed SP} & \textbf{Slot layout or value order}\\
+\midrule
+\texttt{PUSH}, \texttt{CALL} &
+$[\texttt{old\_sp}-8,\texttt{old\_sp})$ &
+\texttt{old\_sp}-8 &
+one source value or the following-instruction return PC at \texttt{old\_sp}-8\\
+\texttt{POP}, \texttt{RET} &
+$[\texttt{old\_sp},\texttt{old\_sp}+8)$ &
+\texttt{old\_sp}+8 &
+one destination value or return PC read at \texttt{old\_sp}\\
+\texttt{PUSHP}, \texttt{FPUSHP} &
+$[\texttt{old\_sp}-16,\texttt{old\_sp})$ &
+\texttt{old\_sp}-16 &
+listed pair's second register at \texttt{old\_sp}-16 and first register at \texttt{old\_sp}-8\\
+\texttt{POPP}, \texttt{FPOPP} &
+$[\texttt{old\_sp},\texttt{old\_sp}+16)$ &
+\texttt{old\_sp}+16 &
+listed pair's second register from \texttt{old\_sp}, then first register from \texttt{old\_sp}+8\\
+\texttt{LCALL} &
+$[\texttt{old\_sp}-16,\texttt{old\_sp})$ &
+\texttt{old\_sp}-16 &
+return PC at \texttt{old\_sp}-16 and return CS image at \texttt{old\_sp}-8\\
+\texttt{LRET} &
+$[\texttt{old\_sp},\texttt{old\_sp}+16)$ &
+\texttt{old\_sp}+16 &
+return PC at \texttt{old\_sp} and return CS image at \texttt{old\_sp}+8\\
+\bottomrule
+\end{manualtabular}
+
+The complete range and all source values are established before a push operation changes memory or SP. A pop
+operation reads its complete range and completes any applicable destination validation before changing a destination
+or SP. A successful operation commits all listed stack and register effects together; a preceding fault exposes none
+of them.
+
+Architectural event entry and ERET use the event-frame layout in the Architectural Event Processing Model.
+SYSCALL and SYSRET keep their continuation in the user-return control-register bank described by the Privileged
+Programming Model.
 
 \subsection{Operand Evaluation and EA Defaults}
 Operands are decoded in instruction order. Source reads complete before the final destination write unless an

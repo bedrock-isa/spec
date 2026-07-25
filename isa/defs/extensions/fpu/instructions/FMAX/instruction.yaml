@@ -1,12 +1,13 @@
 mnemonic: FMAX
 title: Floating-Point Maximum
 summary: Performs the floating-point maximum operation.
-description: Selects the greater floating-point operand according to the architectural NaN and signed-zero rules and writes it to the destination.
+description: Selects the greater numeric operand; one NaN selects the numeric operand, two NaNs use the common NaN-selection rule, and a positive-zero/negative-zero pair selects positive zero. A signaling NaN generates NV.
 attributes:
   class: fpu
   family: fpu
   privilege: unprivileged
-  repeat:
+repeat:
+  contexts:
   - REP
   - REPG
 flag_effects:

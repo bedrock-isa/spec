@@ -6,8 +6,15 @@ attributes:
   class: integer
   family: integer_mul_div
   privilege: unprivileged
-  repeat:
+repeat:
+  contexts:
   - REP
   - REPcc
   - REPG
+  observed:
+    kind: result
+    operand: dst
+exceptions:
+- event: DIVIDE_ERROR
+  when: the divisor is zero
 additional_description: details.tex

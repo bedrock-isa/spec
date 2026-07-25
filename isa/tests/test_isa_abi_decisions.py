@@ -108,7 +108,7 @@ class V1DecisionIntegrationTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
         self.assertNotIn("ENCINST", allocation)
         self.assertNotIn("virtualization_acceleration", extension_catalog)
-        self.assertIn("VIRTACCEL", cpuid)
+        self.assertNotIn("VIRTACCEL", cpuid)
 
         repg_details = (
             ROOT / "isa" / "defs" / "instructions" / "REPG" / "details.tex"
@@ -225,7 +225,10 @@ class V1DecisionIntegrationTests(unittest.TestCase):
         self.assertIn(r"\texttt{BUS\_ERROR} is a synchronous precise fault", interrupt_model)
         self.assertIn("corrected", interrupt_model)
         self.assertIn(r"\texttt{PRECISE} and \texttt{RETRY\_SAFE} clear", interrupt_model)
-        self.assertIn("ERET restores any structurally valid frame mechanically", interrupt_model)
+        self.assertIn(
+            "Software interprets the machine-check continuation fields",
+            interrupt_model,
+        )
 
     def test_exact_eager_plt_encoding_and_relocations(self) -> None:
         vectors = yaml.safe_load(
@@ -297,7 +300,10 @@ class V1DecisionIntegrationTests(unittest.TestCase):
             / "effective_address_modes.tex"
         ).read_text(encoding="utf-8")
         self.assertIn("PC naming byte 0 of the current instruction", ea_model)
-        self.assertIn("not the address of the following instruction", ea_model)
+        self.assertIn(
+            "instruction-start value throughout operand evaluation",
+            ea_model,
+        )
 
     def test_atomic_alignment_applies_only_to_byte_addressed_leaves(self) -> None:
         translation = (

@@ -3,7 +3,7 @@ LATEXMK ?= latexmk
 PANDOC ?= pandoc
 LATEX_FLAGS = -pdf -interaction=nonstopmode -halt-on-error
 
-.PHONY: docs docs-markdown abi-markdown abi-tables check-abi-tables target-intrinsics-tables check-target-intrinsics-tables architecture-tables check-architecture-tables isa-reference isa-reference-markdown elf-abi elf-abi-markdown c-abi c-abi-markdown c-far-extensions c-far-extensions-markdown target-intrinsics target-intrinsics-markdown programming-guide programming-guide-markdown c-extensions compiler-abi intrinsics validate-docs validate-abi-model
+.PHONY: docs docs-markdown abi-markdown abi-tables check-abi-tables target-intrinsics-tables check-target-intrinsics-tables architecture-tables check-architecture-tables validate-conformance validate-reference-navigation isa-reference isa-reference-markdown elf-abi elf-abi-markdown c-abi c-abi-markdown c-far-extensions c-far-extensions-markdown target-intrinsics target-intrinsics-markdown programming-guide programming-guide-markdown c-extensions compiler-abi intrinsics validate-docs validate-abi-model
 
 docs: isa-reference elf-abi c-abi c-far-extensions target-intrinsics programming-guide
 
@@ -29,11 +29,17 @@ architecture-tables:
 check-architecture-tables:
 	$(PYTHON) isa/tools/gen_architecture_tables.py --check
 
-isa-reference: architecture-tables
+validate-conformance:
+	$(PYTHON) isa/tools/validate_conformance.py
+
+validate-reference-navigation:
+	$(PYTHON) isa/tools/validate_reference_navigation.py
+
+isa-reference: architecture-tables validate-conformance validate-reference-navigation
 	$(PYTHON) isa/tools/gen_docs.py -o build/isa_reference.tex
 	$(LATEXMK) $(LATEX_FLAGS) -outdir=build build/isa_reference.tex
 
-isa-reference-markdown: architecture-tables
+isa-reference-markdown: architecture-tables validate-conformance validate-reference-navigation
 	$(PYTHON) isa/tools/gen_docs.py --format markdown --pandoc "$(PANDOC)" -o build/isa_reference.md
 
 elf-abi: abi-tables
@@ -72,7 +78,7 @@ compiler-abi: target-intrinsics
 
 intrinsics: target-intrinsics
 
-validate-docs: check-architecture-tables
+validate-docs: check-architecture-tables validate-conformance validate-reference-navigation
 	$(PYTHON) isa/tools/validate_abi_docs.py
 
 validate-abi-model:

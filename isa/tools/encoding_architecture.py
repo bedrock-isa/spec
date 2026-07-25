@@ -77,6 +77,15 @@ def extended_length_byte0_pattern(instruction_bytes: int) -> str:
     return f"11{length_code:04b}oo"
 
 
+def extended_record_is_sufficient(required_bytes: int, record: bytes) -> bool:
+    """Return the architectural length result; trailing byte values are ignored."""
+    if required_bytes not in extended_instruction_lengths():
+        raise ValueError(f"required extended bytes must be 3..18, got {required_bytes}")
+    if len(record) not in extended_instruction_lengths():
+        raise ValueError(f"encoded extended bytes must be 3..18, got {len(record)}")
+    return len(record) >= required_bytes
+
+
 def _selector_values(pattern: str) -> set[int]:
     values = {0}
     for char in pattern:

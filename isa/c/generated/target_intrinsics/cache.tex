@@ -8,11 +8,11 @@
 \textbf{Name} & \textbf{C interface} & \textbf{Lowering} & \textbf{Availability and effect}\\
 \midrule
 \endhead
-\compilerbuiltin{flush_dcache} & \compilerctype{void(void *,size_t)} & \texttt{FLSHDCACHE} & Supervisor; cache side effect and full memory clobber.\\
-\compilerbuiltin{invalidate_dcache} & \compilerctype{void(void *,size_t)} & \texttt{INVDCACHE} & Supervisor; cache side effect and full memory clobber.\\
-\compilerbuiltin{invalidate_icache} & \compilerctype{void(void *,size_t)} & \texttt{INVICACHE} & Supervisor; instruction-cache side effect and instruction-stream barrier.\\
-\compilerbuiltin{writeback_dcache} & \compilerctype{void(void *,size_t)} & \texttt{WRBKDCACHE} & Supervisor; cache side effect and full memory clobber.\\
-\compilerbuiltin{sync_cache} & \compilerctype{void(void *,size_t)} & \texttt{SYNCCACHE} & Supervisor; synchronizes data/instruction visibility and the instruction stream.\\
+\compilerbuiltin{flush_dcache} & \compilerctype{void(void *,size_t)} & \texttt{FLSHDCACHE} & Supervisor; applies FLSHDCACHE to every CPUID maintenance block intersecting the range and fully clobbers memory.\\
+\compilerbuiltin{invalidate_dcache} & \compilerctype{void(void *,size_t)} & \texttt{INVDCACHE} & Supervisor; applies INVDCACHE to every CPUID maintenance block intersecting the range and fully clobbers memory.\\
+\compilerbuiltin{invalidate_icache} & \compilerctype{void(void *,size_t)} & \texttt{INVICACHE} & Supervisor; applies local INVICACHE to every CPUID maintenance block intersecting the range and serializes instruction fetch.\\
+\compilerbuiltin{writeback_dcache} & \compilerctype{void(void *,size_t)} & \texttt{WRBKDCACHE} & Supervisor; applies WRBKDCACHE to every CPUID maintenance block intersecting the range and fully clobbers memory.\\
+\compilerbuiltin{sync_cache} & \compilerctype{void(void *,size_t)} & \texttt{SYNCCACHE} & Supervisor; applies SYNCCACHE to every CPUID maintenance block intersecting the range and serializes instruction fetch.\\
 \bottomrule
 \end{longtable}
 \endgroup

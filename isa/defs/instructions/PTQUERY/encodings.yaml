@@ -11,6 +11,8 @@ forms:
   - name: src
     type: EA
     access: address
+    ea_role: address
+    ea_width: Q
     field: e
   - name: dst
     type: Rn

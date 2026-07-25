@@ -5,6 +5,28 @@ unassigned bit is zero, and an auxiliary or address value not produced is zero w
 
 For \texttt{DOUBLE\_FAULT}, \texttt{ERROR\_CODE[7:0]} identifies the delivery stage:
 
+\begin{manuallistedformatdiagram}{DOUBLE\_FAULT Auxiliary Formats}{4}
+\manualformatrowrange{ERROR\_CODE[63:0]}{63}{0}{%
+\manualformatfield{reserved}{37}
+\manualformatfield{detail}{27}
+}
+\manualformatrowrange{detail[26:0]}{26}{0}{%
+\manualformatfield{E}{1}
+\manualformatfield{L}{1}
+\manualformatfield{F}{1}
+\manualformatfield{reserved}{16}
+\manualformatfield{STAGE}{8}
+}
+\manualformatrowrange{EVENT\_AUX[63:0]}{63}{0}{%
+\manualformatfield{zero}{32}
+\manualformatfield{failed event code}{32}
+}
+\end{manuallistedformatdiagram}
+{\small
+\texttt{E}, \texttt{L}, and \texttt{F} are \texttt{EVENT\_AUX\_VALID},
+\texttt{FAULT\_LINEAR\_VALID}, and \texttt{FAULT\_EA\_VALID}.
+\par}
+
 \manualtablecaption{DOUBLE\_FAULT Delivery Stages}
 \begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{2.15in}>{\raggedright\arraybackslash}p{2.60in}@{}}
 \toprule
@@ -23,6 +45,29 @@ When valid, \texttt{EVENT\_AUX[31:0]} contains the event code whose delivery fai
 when those values were produced.
 
 For \texttt{MACHINE\_CHECK}, the error code has this layout:
+
+\begin{manuallistedformatdiagram}{MACHINE\_CHECK ERROR\_CODE Format}{4}
+\manualformatrowrange{ERROR\_CODE[63:0]}{63}{0}{%
+\manualformatfield{reserved}{37}
+\manualformatfield{detail}{27}
+}
+\manualformatrowrange{detail[26:0]}{26}{0}{%
+\manualformatfield{E}{1}
+\manualformatfield{L}{1}
+\manualformatfield{F}{1}
+\manualformatfield{reserved}{12}
+\manualformatfield{R}{1}
+\manualformatfield{P}{1}
+\manualformatfield{SV}{2}
+\manualformatfield{SRC}{8}
+}
+\end{manuallistedformatdiagram}
+{\small
+\texttt{E}, \texttt{L}, and \texttt{F} are \texttt{EVENT\_AUX\_VALID},
+\texttt{FAULT\_LINEAR\_VALID}, and \texttt{FAULT\_EA\_VALID};
+\texttt{P}, \texttt{R}, \texttt{SV}, and \texttt{SRC} denote \texttt{PRECISE},
+\texttt{RETRY\_SAFE}, \texttt{SEVERITY}, and \texttt{SOURCE}.
+\par}
 
 \manualtablecaption{MACHINE\_CHECK ERROR\_CODE Fields}
 \begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{1.35in}>{\raggedright\arraybackslash}p{3.45in}@{}}
@@ -75,6 +120,34 @@ bit, \texttt{PRECISE=0, RETRY\_SAFE=1} is invalid for every severity, fatal mach
 diagnostic state is precise.
 
 For \texttt{BUS\_ERROR}, the error code has this layout:
+
+\begin{manuallistedformatdiagram}{BUS\_ERROR ERROR\_CODE Format}{4}
+\manualformatrowrange{ERROR\_CODE[63:0]}{63}{0}{%
+\manualformatfield{reserved}{33}
+\manualformatfield{detail}{31}
+}
+\manualformatrowrange{detail[30:0]}{30}{0}{%
+\manualformatfield{R}{1}
+\manualformatfield{SZ}{3}
+\manualformatfield{E}{1}
+\manualformatfield{L}{1}
+\manualformatfield{F}{1}
+\manualformatfield{OP}{8}
+\manualformatfield{0}{1}
+\manualformatfield{LVL}{3}
+\manualformatfield{A}{1}
+\manualformatfield{U}{1}
+\manualformatfield{AC}{2}
+\manualformatfield{CAUSE}{8}
+}
+\end{manuallistedformatdiagram}
+{\small
+\texttt{E}, \texttt{L}, and \texttt{F} are \texttt{EVENT\_AUX\_VALID},
+\texttt{FAULT\_LINEAR\_VALID}, and \texttt{FAULT\_EA\_VALID};
+\texttt{SZ}, \texttt{OP}, \texttt{LVL}, and \texttt{AC} denote \texttt{ACCESS\_SIZE},
+\texttt{OPERAND}, \texttt{WALK\_LEVEL}, and \texttt{ACCESS}; \texttt{A}, \texttt{U}, and
+\texttt{R} denote \texttt{ATOMIC}, \texttt{USER\_DOMAIN}, and \texttt{RETRY\_SAFE}.
+\par}
 
 \manualtablecaption{BUS\_ERROR ERROR\_CODE Fields}
 \begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{1.35in}>{\raggedright\arraybackslash}p{3.45in}@{}}

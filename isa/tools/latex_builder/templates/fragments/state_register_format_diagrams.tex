@@ -1,4 +1,4 @@
-\subsection{FLAGS and STATUS Registers}
+\subsection{FLAGS and STATUS Registers}\label{section:state-register-formats}
 FLAGS and STATUS are accessed through dedicated read/write instructions. Reserved bits read as zero and must remain zero.
 
 \begin{manuallistedformatdiagram}{FLAGS Register Format}{3}
@@ -14,14 +14,18 @@ FLAGS and STATUS are accessed through dedicated read/write instructions. Reserve
 \begin{manuallistedformatdiagram}{STATUS Register Format}{3}
 \manualformatrow{STATUS[15:0]}{%
 \manualformatfield{0}{10}
-\manualformatfield{IE}{1}
-\manualformatfield{PM}{1}
-\manualformatfield{RF}{1}
-\manualformatfield{TF}{1}
-\manualformatfield{NI}{1}
-\manualformatfield{EA}{1}
+\manualformatfield{I}{1}
+\manualformatfield{P}{1}
+\manualformatfield{R}{1}
+\manualformatfield{T}{1}
+\manualformatfield{N}{1}
+\manualformatfield{E}{1}
 }
 \end{manuallistedformatdiagram}
+{\small
+In the diagram, \texttt{I}, \texttt{P}, \texttt{R}, \texttt{T}, \texttt{N}, and \texttt{E}
+abbreviate \texttt{IE}, \texttt{PM}, \texttt{RF}, \texttt{TF}, \texttt{NI}, and \texttt{EA}.
+\par}
 
 STATUS.EA is hardware-managed architectural event-active state. WRSTATUS must preserve its current value; only event
 entry and ERET change it. The remaining writable STATUS fields retain their instruction-defined validation rules.
@@ -33,28 +37,34 @@ non-default floating-point modes. Both registers are present only with the float
 \begin{manuallistedformatdiagram}{FFLAGS Register Format}{3}
 \manualformatrow{FFLAGS[15:0]}{%
 \manualformatfield{0}{11}
-\manualformatfield{NV}{1}
-\manualformatfield{DZ}{1}
-\manualformatfield{OF}{1}
-\manualformatfield{UF}{1}
-\manualformatfield{NX}{1}
+\manualformatfield{I}{1}
+\manualformatfield{Z}{1}
+\manualformatfield{O}{1}
+\manualformatfield{U}{1}
+\manualformatfield{X}{1}
 }
 \end{manuallistedformatdiagram}
 
 \begin{manuallistedformatdiagram}{FSTATUS Register Format}{4}
 \manualformatrow{FSTATUS[15:0]}{%
 \manualformatfield{0}{6}
-\manualformatfield{DN}{1}
-\manualformatfield{DAZ}{1}
-\manualformatfield{FTZ}{1}
-\manualformatfield{RM}{2}
-\manualformatfield{NV\_EN}{1}
-\manualformatfield{DZ\_EN}{1}
-\manualformatfield{OF\_EN}{1}
-\manualformatfield{UF\_EN}{1}
-\manualformatfield{NX\_EN}{1}
+\manualformatfield{D}{1}
+\manualformatfield{A}{1}
+\manualformatfield{F}{1}
+\manualformatfield{R}{2}
+\manualformatfield{I}{1}
+\manualformatfield{Z}{1}
+\manualformatfield{O}{1}
+\manualformatfield{U}{1}
+\manualformatfield{X}{1}
 }
 \end{manuallistedformatdiagram}
+{\small
+In the diagrams, \texttt{I}, \texttt{Z}, \texttt{O}, \texttt{U}, and \texttt{X} denote the
+\texttt{NV}, \texttt{DZ}, \texttt{OF}, \texttt{UF}, and \texttt{NX} flag or enable bits.
+In FSTATUS, \texttt{D}, \texttt{A}, \texttt{F}, and \texttt{R} denote
+\texttt{DN}, \texttt{DAZ}, \texttt{FTZ}, and \texttt{RM}.
+\par}
 
 \manualtablecaption{Floating-Point State Fields}
 \begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{3.95in}@{}}

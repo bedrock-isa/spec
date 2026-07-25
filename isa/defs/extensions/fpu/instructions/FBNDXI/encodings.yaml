@@ -34,6 +34,8 @@ forms:
   - name: value
     type: EA
     access: read
+    ea_role: value
+    ea_width: operation_size
     field: v
   - name: hi
     type: Fn
@@ -53,6 +55,8 @@ forms:
   - name: lo
     type: EA
     access: read
+    ea_role: value
+    ea_width: operation_size
     field: l
   - name: value
     type: Fn
@@ -61,6 +65,8 @@ forms:
   - name: hi
     type: EA
     access: read
+    ea_role: value
+    ea_width: operation_size
     field: h
   sizes:
   - S

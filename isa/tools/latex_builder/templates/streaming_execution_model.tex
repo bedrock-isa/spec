@@ -2,9 +2,7 @@
 \section{Streaming Execution Model}
 
 This section defines the architectural role of repeated scalar execution in Bedrock. The architecture exposes
-scalar register state and bounded repeated instruction forms. A high-performance implementation may recognize
-regular repeated operations and execute them with wider internal datapaths, but that internal width is not
-architectural state.
+scalar register state and bounded repeated instruction forms.
 
 \subsection{Architectural Scalar Semantics}
 REP, REPcc, REPG, and any explicitly defined repeat instruction are architecturally scalar. Their visible behavior is
@@ -16,8 +14,7 @@ committed iteration completed before the next one began.
 The body is decoded when repeat state is entered and remains fixed for that repeat context. Each iteration evaluates
 register and memory operands by the body's ordinary rules, including the normal scalar effects of auto-update
 effective addresses. FLAGS and FFLAGS follow the body's instruction semantics and any repeat-specific accumulation
-rule. Faults remain precise at the repeated-operation boundary, regardless of whether an implementation uses scalar
-issue or a wider internal streaming datapath.
+rule. Faults remain precise at the repeated-operation boundary.
 
 \subsection{Repeat Syntax and Body Eligibility}
 
@@ -35,13 +32,17 @@ single-instruction body. REPcc additionally requires conditional-repeat eligibil
 instructions eligible for grouped repetition. An instruction without the relevant eligibility is not repeatable in
 that context.
 
+\input{isa/tools/latex_builder/templates/fragments/repeat_contract_prelude.tex}
+
+@REPEAT_CONTRACT_TABLE@
+
 The processor decodes the body and checks its repeat eligibility before applying the zero-count rule. A malformed or
 unavailable body therefore faults even when the captured count is zero. Once a valid body has passed those checks, a
 zero count annuls it without architectural side effects.
 
-REPGF is an assembler-checked spelling of REPG rather than a distinct architectural operation. The assembler accepts
-only candidate bodies that do not write the selected counter register. The emitted encoding, decoded operation, and
-repeat-continuation state are otherwise identical to REPG.
+REPGF is an assembler-checked spelling that emits REPG after applying the additional body-eligibility checks. The
+assembler accepts only candidate bodies that do not write the selected counter register. The emitted encoding,
+decoded operation, and repeat-continuation state are identical to REPG.
 
 \subsection{Counter, Condition, and Control Rules}
 
@@ -55,26 +56,20 @@ while a body write to that register is ignored. REPG executes counter-register r
 program order, but a write does not replace the separately captured remaining count. The checked REPGF spelling
 rejects such a write at assembly time.
 
-The repeat condition uses the body's committed FLAGS result when the body updates FLAGS. Otherwise, logical flags are
-derived from the body's primary committed result, or from its primary source value for a store-only operation. The
-first condition test occurs after the first body iteration. Body commit, condition capture, counter decrement, and
-continuation-PC selection form one precise architectural commit step. REP is the unconditional T-condition spelling,
-and F is reserved for REPcc.
+The repeat-contract table selects one observation for every REPcc-capable body. A \texttt{flags} observation uses the
+complete post-body FLAGS image. A \texttt{result:operand} or \texttt{source:operand} observation derives logical Z
+from whether the selected-width value is zero, N from its most significant bit, and C and V as zero. These logical
+flags do not change architectural FLAGS. The observed value is captured before repeat counter-destination
+suppression. The first condition test occurs after the first body iteration. Body commit, condition capture, counter
+decrement, and continuation-PC selection form one precise architectural commit step. REP is the unconditional
+T-condition spelling, and F is reserved for REPcc.
 
 A repeat body may not contain another repeat operation, a repeat-control instruction, or a control transfer.
-Floating-point instructions may be used with REP and REPG, but not with REPcc. While repetition is active, PC names
+Floating-point instructions use the REP and REPG contracts in the generated table. While repetition is active, PC names
 the current body instruction, and the initially decoded instruction or group remains fixed. Handler entry saves
 repeat state in FRAME\_EXT1 and clears the active architectural repeat state; ERET restores that state atomically with
-the saved PC and status state. Single-step debugging stops after each architecturally executed iteration, whereas a
-next-instruction operation runs the complete repeat and stops after repeat state clears.
-
-\subsection{Implementation Freedom}
-An implementation may recognize regular repeated operations and execute them with a micro-loop, loop buffer,
-streaming engine, or wider internal datapath. That internal width is not architectural state and is not part of
-the ABI. This freedom does not permit reordering visible exceptions, changing the committed counter value, or
-exposing partial updates within an iteration.
-
-An implementation may also choose scalar execution for any repeated operation.
+the saved PC and status state. TF and RF apply to the trace units defined by the Event Priority and Debug Trace
+subsection.
 
 \subsection{Fault and Restart Semantics}
 A fault during repeated execution preserves committed work and saves the state needed to resume or emulate the

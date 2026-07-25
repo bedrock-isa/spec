@@ -83,12 +83,15 @@ class DocumentOwnershipTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
         for phrase in (
             "C-language",
-            "release sequence",
             "compiler mappings",
             "architecture freeze",
             "Memory-Model Validation Gate",
         ):
             self.assertNotIn(phrase, memory_model)
+        self.assertIn(
+            "contributes no write and therefore creates no release sequence",
+            memory_model,
+        )
 
         c_abi = (ROOT / "isa" / "abi" / "bedrock-c-abi.tex").read_text(encoding="utf-8")
         closure = (ROOT / "isa" / "memory_model" / "validation.yaml").read_text(

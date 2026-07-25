@@ -1,5 +1,5 @@
-The four supervisor stack pairs have fixed roles. They are not selected by an event table, and the supervisor-call
-pair is not an event stack level.
+The four supervisor stack pairs have fixed roles. SSS:SSP is the SYSCALL working stack. ISS:ISP, FSS:FSP, and
+DSS:DSP are event stack levels 1, 2, and 3.
 
 \manualtablecaption{Supervisor Stack Roles}
 \begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.55in}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{1.55in}>{\raggedright\arraybackslash}p{2.25in}@{}}

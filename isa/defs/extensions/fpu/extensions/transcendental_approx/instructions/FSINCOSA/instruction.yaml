@@ -6,11 +6,17 @@ attributes:
   class: fpu
   family: fpu_transcendental_approx
   privilege: unprivileged
-  repeat:
+repeat:
+  contexts:
   - REP
   - REPG
 flag_effects:
   FFLAGS:
     NV: "may accrue"
     UF: "may accrue"
+exceptions:
+- event: ILLEGAL_INSTRUCTION
+  when: sin_dst and cos_dst designate the same register; cause is INVALID_OPERAND_RELATION
+- event: FLOATING_POINT_FAULT
+  when: an enabled floating-point exception is raised
 additional_description: details.tex

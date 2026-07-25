@@ -1,0 +1,72 @@
+schema_version: 0
+
+nan_and_zero:
+  - {id: s_snan, format: S, operation: FADD, inputs: [0x7f800001, 0x3f800000], result: 0x7fc00001, flags: [NV]}
+  - {id: d_snan, format: D, operation: FADD, inputs: [0x7ff0000000000001, 0x3ff0000000000000], result: 0x7ff8000000000001, flags: [NV]}
+  - {id: s_qnan_order, format: S, operation: FADD, inputs: [0x7fc00123, 0x7fc00456], result: 0x7fc00123, flags: []}
+  - {id: d_qnan_order, format: D, operation: FADD, inputs: [0x7ff8000000001234, 0x7ff8000000005678], result: 0x7ff8000000001234, flags: []}
+  - {id: s_default_nan, format: S, operation: FADD, modes: [DN], inputs: [0x7f800001, 0x3f800000], result: 0x7fc00000, flags: [NV]}
+  - {id: d_default_nan, format: D, operation: FADD, modes: [DN], inputs: [0x7ff0000000000001, 0x3ff0000000000000], result: 0x7ff8000000000000, flags: [NV]}
+  - {id: s_min_signed_zero, format: S, operation: FMIN, inputs: [0x00000000, 0x80000000], result: 0x80000000, flags: []}
+  - {id: d_min_signed_zero, format: D, operation: FMIN, inputs: [0x0000000000000000, 0x8000000000000000], result: 0x8000000000000000, flags: []}
+  - {id: s_max_signed_zero, format: S, operation: FMAX, inputs: [0x00000000, 0x80000000], result: 0x00000000, flags: []}
+  - {id: d_max_signed_zero, format: D, operation: FMAX, inputs: [0x0000000000000000, 0x8000000000000000], result: 0x0000000000000000, flags: []}
+
+subnormal:
+  - {id: s_daz, format: S, operation: FTEST, modes: [DAZ], inputs: [0x00000001], zncv: 0b1000, flags: []}
+  - {id: d_daz, format: D, operation: FTEST, modes: [DAZ], inputs: [0x0000000000000001], zncv: 0b1000, flags: []}
+  - {id: s_exact, format: S, operation: FMUL, inputs: [0x00800000, 0x3f000000], result: 0x00400000, flags: []}
+  - {id: d_exact, format: D, operation: FMUL, inputs: [0x0010000000000000, 0x3fe0000000000000], result: 0x0008000000000000, flags: []}
+  - {id: s_ftz, format: S, operation: FMUL, modes: [FTZ], inputs: [0x00800000, 0x3f000000], result: 0x00000000, flags: [UF, NX]}
+  - {id: d_ftz, format: D, operation: FMUL, modes: [FTZ], inputs: [0x0010000000000000, 0x3fe0000000000000], result: 0x0000000000000000, flags: [UF, NX]}
+
+rounding_mode:
+  - {id: s_rn, format: S, operation: FCVT, direction: Rn_to_Fn, mode: nearest_even, input: 16777217, result: 0x4b800000, flags: [NX]}
+  - {id: s_rz, format: S, operation: FCVT, direction: Rn_to_Fn, mode: toward_zero, input: 16777217, result: 0x4b800000, flags: [NX]}
+  - {id: s_rp, format: S, operation: FCVT, direction: Rn_to_Fn, mode: toward_positive, input: 16777217, result: 0x4b800001, flags: [NX]}
+  - {id: s_rm, format: S, operation: FCVT, direction: Rn_to_Fn, mode: toward_negative, input: 16777217, result: 0x4b800000, flags: [NX]}
+  - {id: d_rn, format: D, operation: FCVT, direction: Rn_to_Fn, mode: nearest_even, input: 9007199254740993, result: 0x4340000000000000, flags: [NX]}
+  - {id: d_rz, format: D, operation: FCVT, direction: Rn_to_Fn, mode: toward_zero, input: 9007199254740993, result: 0x4340000000000000, flags: [NX]}
+  - {id: d_rp, format: D, operation: FCVT, direction: Rn_to_Fn, mode: toward_positive, input: 9007199254740993, result: 0x4340000000000001, flags: [NX]}
+  - {id: d_rm, format: D, operation: FCVT, direction: Rn_to_Fn, mode: toward_negative, input: 9007199254740993, result: 0x4340000000000000, flags: [NX]}
+
+comparison:
+  - {id: greater, relation: greater, zncv: 0b0000, flags: []}
+  - {id: equal, relation: equal, zncv: 0b1000, flags: []}
+  - {id: less, relation: less, zncv: 0b0110, flags: []}
+  - {id: unordered_qnan, relation: unordered, zncv: 0b0001, flags: []}
+  - {id: unordered_snan, relation: unordered, zncv: 0b0001, flags: [NV]}
+
+signed_integer_conversion:
+  - {id: s_negative_overflow, format: S, input_bits: 0xdf800000, result: 0x8000000000000000, flags: [NV]}
+  - {id: d_negative_overflow, format: D, input_bits: 0xc3f0000000000000, result: 0x8000000000000000, flags: [NV]}
+  - {id: s_negative_infinity, format: S, input_bits: 0xff800000, result: 0x8000000000000000, flags: [NV]}
+  - {id: d_negative_infinity, format: D, input_bits: 0xfff0000000000000, result: 0x8000000000000000, flags: [NV]}
+  - {id: s_positive_overflow, format: S, input_bits: 0x5f000000, result: 0x7fffffffffffffff, flags: [NV]}
+  - {id: d_positive_overflow, format: D, input_bits: 0x43e0000000000000, result: 0x7fffffffffffffff, flags: [NV]}
+  - {id: s_positive_infinity, format: S, input_bits: 0x7f800000, result: 0x7fffffffffffffff, flags: [NV]}
+  - {id: d_positive_infinity, format: D, input_bits: 0x7ff0000000000000, result: 0x7fffffffffffffff, flags: [NV]}
+  - {id: s_nan, format: S, input_bits: 0x7fc00000, result: 0x0000000000000000, flags: [NV]}
+  - {id: d_nan, format: D, input_bits: 0x7ff8000000000000, result: 0x0000000000000000, flags: [NV]}
+  - {id: s_valid_inexact, format: S, input_bits: 0x3fc00000, result: 0x0000000000000001, flags: [NX]}
+  - {id: d_valid_inexact, format: D, input_bits: 0x3ff8000000000000, result: 0x0000000000000001, flags: [NX]}
+
+unsigned_integer_conversion:
+  - {id: s_negative, format: S, input_bits: 0xbf800000, result: 0x0000000000000000, flags: [NV]}
+  - {id: d_negative, format: D, input_bits: 0xbff0000000000000, result: 0x0000000000000000, flags: [NV]}
+  - {id: s_negative_infinity, format: S, input_bits: 0xff800000, result: 0x0000000000000000, flags: [NV]}
+  - {id: d_negative_infinity, format: D, input_bits: 0xfff0000000000000, result: 0x0000000000000000, flags: [NV]}
+  - {id: s_positive_overflow, format: S, input_bits: 0x5f800000, result: 0xffffffffffffffff, flags: [NV]}
+  - {id: d_positive_overflow, format: D, input_bits: 0x43f0000000000000, result: 0xffffffffffffffff, flags: [NV]}
+  - {id: s_positive_infinity, format: S, input_bits: 0x7f800000, result: 0xffffffffffffffff, flags: [NV]}
+  - {id: d_positive_infinity, format: D, input_bits: 0x7ff0000000000000, result: 0xffffffffffffffff, flags: [NV]}
+  - {id: s_nan, format: S, input_bits: 0x7fc00000, result: 0x0000000000000000, flags: [NV]}
+  - {id: d_nan, format: D, input_bits: 0x7ff8000000000000, result: 0x0000000000000000, flags: [NV]}
+  - {id: s_valid_inexact, format: S, input_bits: 0x3fc00000, result: 0x0000000000000001, flags: [NX]}
+  - {id: d_valid_inexact, format: D, input_bits: 0x3ff8000000000000, result: 0x0000000000000001, flags: [NX]}
+
+trap_commit:
+  - {id: s_nv_enabled, format: S, operation: FADD, generated: [NV], enabled: [NV], fault: FLOATING_POINT_FAULT, destination: unchanged, integer_flags: unchanged, fflags: unchanged}
+  - {id: d_dz_enabled, format: D, operation: FDIV, generated: [DZ], enabled: [DZ], fault: FLOATING_POINT_FAULT, destination: unchanged, integer_flags: unchanged, fflags: unchanged}
+  - {id: s_nx_disabled, format: S, operation: FCVT, generated: [NX], enabled: [], fault: none, destination: result, integer_flags: instruction_result, fflags: or_generated}
+  - {id: d_nx_disabled, format: D, operation: FCVT, generated: [NX], enabled: [], fault: none, destination: result, integer_flags: instruction_result, fflags: or_generated}

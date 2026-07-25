@@ -1,16 +1,26 @@
 \clearpage
-\subsection{Page-Table Entry Format}
+\subsection{Page-Table Entry Format}\label{section:page-table-entry-format}
 
 Every page-table entry is 64 bits. The low twelve bits contain hardware-defined traversal, permission, and memory
 attributes. The physical frame number occupies bits \texttt{PABITS-1..12}; bits above the selected physical-address
 width are available to software and ignored by the page-table walker.
 
-\begin{manualformatdiagram}{Page-Table Entry Low Attributes}{4}
+\begin{manuallistedformatdiagram}{Page-Table Entry Formats}{4}
+\manualformatrowrange{PABITS=48}{63}{0}{%
+\manualformatfield{software}{16}
+\manualformatfield{PFN}{36}
+\manualformatfield{attributes}{12}
+}
+\manualformatrowrange{PABITS=56}{63}{0}{%
+\manualformatfield{software}{8}
+\manualformatfield{PFN}{44}
+\manualformatfield{attributes}{12}
+}
 \manualformatrowrange{PTE[11:0]}{11}{0}{%
 \manualformatfield{T}{1}
-\manualformatfield{SW0}{1}
-\manualformatfield{CP}{2}
-\manualformatfield{AT}{1}
+\manualformatfield{S}{1}
+\manualformatfield{C}{2}
+\manualformatfield{M}{1}
 \manualformatfield{D}{1}
 \manualformatfield{A}{1}
 \manualformatfield{G}{1}
@@ -19,7 +29,11 @@ width are available to software and ignored by the page-table walker.
 \manualformatfield{W}{1}
 \manualformatfield{P}{1}
 }
-\end{manualformatdiagram}
+\end{manuallistedformatdiagram}
+{\small
+In the low-bit row, \texttt{S}, \texttt{C}, and \texttt{M} abbreviate
+\texttt{SW0}, \texttt{CP}, and \texttt{AT}; the other labels match the field table.
+\par}
 
 \manualtablecaption{Page-Table Entry Fields}
 \begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{0.85in}>{\raggedright\arraybackslash}p{3.85in}@{}}

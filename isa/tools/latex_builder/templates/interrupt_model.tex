@@ -9,30 +9,50 @@ model.
 
 Every exception, maskable interrupt, and NMI transfers to the exact program counter in EPC after loading ECS and EDS.
 Hardware supplies an event code and a frame whose payload layout is fixed by the event source. Software begins at one
-common entry point and dispatches by the event code. There is no architectural vector table or per-event hardware
-handler address.
+common entry point and dispatches by the event code.
 
 Related normative instruction entries are
 \hyperref[instr:bkpt]{\texttt{BKPT}},
 \hyperref[instr:eret]{\texttt{ERET}}, and
 \hyperref[instr:reset]{\texttt{RESET}}.\par
 
-\subsection{Event Code and Sources}
+\subsection{Event Code and Sources}\label{section:event-code-and-sources}
 Every delivered event carries a 32-bit code. The high byte is the event class and the low 24 bits are an ID in that
 class's namespace.
 
 \input{isa/tools/latex_builder/templates/fragments/event_code_reference.tex}
 
-Exception ID 0x01, which was formerly used for NMI, is reserved. Other unassigned base-profile exception IDs are
-also reserved. External interrupt IDs do not share a namespace with exception IDs. Interrupt-controller routing,
+\input{isa/tools/latex_builder/templates/fragments/architectural_events.tex}
+
+Unassigned base-profile exception IDs are reserved. External interrupt IDs do not share a namespace with exception
+IDs. Interrupt-controller routing,
 native-ID mapping, ownership, acknowledgement, trigger mode, masking, and end-of-interrupt signaling belong to the
-platform ABI. ERET never performs an implicit EOI. An interrupt ID unknown to software still reaches the common entry;
+platform ABI. An interrupt ID unknown to software still reaches the common entry;
 the platform dispatcher applies its unhandled or spurious-interrupt policy.
 
 A restartable fault saves the faulting instruction or its architecturally defined restart point. A trap saves the
 following instruction. An interrupt or NMI saves the next instruction that would otherwise execute. An event taken
 during repeat execution saves the active repeat continuation PC and records the remaining repeat state in the
 always-present \texttt{FRAME\_EXT1} slot.
+
+\subsection{Event Priority and Debug Trace}\label{section:event-priority-and-debug-trace}
+When events compete at one architectural boundary, the lower priority number in the event table wins. This orders
+delivery failure before machine check, current synchronous faults, explicit traps, DEBUG\_TRACE, NMI, and maskable
+interrupt. A lower-priority asynchronous event remains pending after a higher-priority event is selected.
+
+A trace unit is one ordinary committed instruction, one committed REP or REPcc body iteration, or one completed
+REPG group iteration. Completion of a zero-count REP, REPcc, or REPG is also one trace unit. TF is sampled at the
+start of the unit. If sampled TF is one and sampled RF is zero, successful completion commits the unit and then
+delivers DEBUG\_TRACE with the following trace-unit boundary as its saved PC.
+
+The \hyperref[instr:trace]{\texttt{TRACE}} marker instruction is an ordinary instruction for this trace-unit rule
+and separately records the marker described by its instruction entry. The
+\hyperref[section:tracing-terminology]{tracing terminology} distinguishes the instruction, trace unit, and event.
+
+RF is a one-shot DEBUG\_TRACE suppressor. If sampled RF is one, successful trace-unit completion clears RF and does
+not produce DEBUG\_TRACE. A synchronous fault or asynchronous event before that completion preserves RF. WRSTATUS,
+ERET, and SYSRET changes to TF or RF apply to the next trace unit. Event entry saves the old STATUS image and then
+clears live TF and RF. RF does not suppress an explicit trap such as BKPT.
 
 \subsection{Entry Admission and Event Depth}
 The event-entry state is usable only while ECR.V is set. A maskable interrupt is admitted only when ECR.V,
@@ -49,10 +69,8 @@ DOUBLE\_FAULT frame; at depth 15 there is no representable child frame.
 \subsection{Supervisor Event Stacks and Nesting}
 \input{isa/tools/latex_builder/templates/fragments/supervisor_stack_sets.tex}
 
-The double-fault pair remains exclusive to DOUBLE\_FAULT and event-delivery failure. An ordinary exception, NMI, or
-machine check therefore cannot consume the final recovery stack. Current event stack level is meaningful only while
-STATUS.EA is set. ERET validates and restores both saved depth and saved stack level; software cannot use an edited
-frame to manufacture an impossible nesting transition.
+DOUBLE\_FAULT and event-delivery failure use DSS:DSP. Current event stack level is meaningful only while STATUS.EA
+is set. ERET validates and restores both saved depth and saved stack level.
 
 \subsection{Event Entry State}
 Before making an event visible, hardware validates EPC, ECS, EDS, the selected stack state, and the complete frame
@@ -61,14 +79,14 @@ STATUS.IE, STATUS.TF, and STATUS.RF as one architectural commit. R0 through R15 
 the common entry code preserves whatever its software ABI requires.
 
 NMI entry additionally sets STATUS.NI. Other event classes preserve NI. A further NMI observed while NI is set is
-coalesced into ECR.NMI\_P rather than recursively delivered. ECR.NMI\_P is hardware managed, so WRCR ignores the
-supplied value for that bit. When ERET successfully restores NI to zero, a pending NMI is delivered before the next
-instruction boundary.
+recorded by setting ECR.NMI\_P. ECR.NMI\_P is hardware managed, so WRCR ignores the supplied value for that bit.
+When ERET successfully restores NI to zero, a pending NMI is delivered before the next instruction boundary.
 
 STATUS.EA is hardware-managed transition state. WRSTATUS must preserve its current value. An attempt to change EA
-raises INVALID\_CONTROL\_STATE without modifying STATUS. ERET is legal only while EA is one; SYSRET is legal only
-while EA is zero. A mismatch raises INVALID\_CONTROL\_STATE before ERET reads an event frame or SYSRET reads the
-user-return bank.
+raises INVALID\_CONTROL\_STATE without modifying STATUS. WRSTATUS may change IE, NI, TF, and RF; its PM and EA
+values must equal the current values. Clearing NI while ECR.NMI\_P is one admits the pending NMI at the next
+instruction boundary. ERET is legal only while EA is one; SYSRET is legal only while EA is zero. A mismatch raises
+INVALID\_CONTROL\_STATE before ERET reads an event frame or SYSRET reads the user-return bank.
 
 \clearpage
 \subsection{Architectural Event Frame}
@@ -87,12 +105,11 @@ Event classification is carried exclusively by EVENT\_INFO.
 ERET first validates the frame shape and nesting metadata. BASIC requires frame\_size 8, ERROR requires 10, and
 PAGE\_FAULT and AUXILIARY require 12. It also requires saved\_edepth plus one to equal the current depth and requires
 saved\_esl not to exceed the current stack level. If the saved STATUS image has EA clear, both saved values must be
-zero. Saved STATUS.PM determines whether the interrupted context was user or supervisor mode; the frame contains no
-duplicate from-user flag.
+zero. Saved STATUS.PM identifies the interrupted privilege mode.
 
 Only after those checks does ERET validate the saved control state, segment images, PC, SP, depth, and stack level.
-On success it restores FLAGS, STATUS, CS, DS, SS, SP, PC, event depth, and stack level as one commit. ERET does not
-interpret EVENT\_INFO or the event-specific payload, and it does not modify the SYSCALL user-return bank.
+On success it restores FLAGS, STATUS, CS, DS, SS, SP, PC, event depth, stack level, and any saved repeat continuation
+as one commit. EVENT\_INFO and the event-specific payload remain available to software.
 
 \subsection{Event Payloads}
 Payload starts at offset +0x40. Hardware allocates only the defined payload prefix, rounds it up to a 16-byte
@@ -100,8 +117,8 @@ boundary, and zeros the padding. The frame-size unit remains one 8-byte slot.
 
 \input{isa/tools/latex_builder/templates/fragments/frame_type_table.tex}
 
-The frame type is fixed by the delivered event and never changes because repeat state was interrupted. ERROR\_CODE is
-defined separately by each exception and has zero in every unassigned bit. PAGE\_FAULT extends that slot with
+The delivered event determines the frame type, and FRAME\_EXT1 records repeat continuation. ERROR\_CODE is defined
+separately by each exception and has zero in every unassigned bit. PAGE\_FAULT extends that slot with
 effective-address and linear-address context. AUXILIARY includes all four named slots and permits EVENT\_AUX to
 describe double-fault, machine-check, or bus-error state.
 
@@ -130,8 +147,7 @@ identifies the responsible instruction boundary. Its separate \texttt{RETRY\_SAF
 effect might already have occurred. Page-walk bus errors and ordinary byte-addressed-memory bus errors are retry-safe.
 A slot transaction reports the value determined by its acknowledgement result.
 
-ERET restores any structurally valid frame mechanically and does not interpret these policy bits. Software decides
-whether retry or continuation is permitted from the event payload.
+Software interprets the machine-check continuation fields before choosing a return or recovery action.
 
 \Needspace{6.4in}
 \subsection{Repeat Continuation}
@@ -151,7 +167,7 @@ the frame before return.
 \subsection{Delivery Failure and Shutdown}
 Failure to validate the common entry context, establish the selected stack, or store a complete event frame is
 delivered as DOUBLE\_FAULT on DSS:DSP. Failure while DOUBLE\_FAULT is already being delivered enters SHUTDOWN.
-SHUTDOWN retires no further instructions and can be exited only by a platform reset; unlike HALT it is not resumable.
+SHUTDOWN retires no further instructions and can be exited only by a platform reset.
 The frame save and all architectural entry state remain atomic, so a failed attempt never exposes a partially stored
 frame or partially changed execution context.
 
@@ -159,11 +175,11 @@ frame or partially changed execution context.
 \subsection{Event Reset and Context State}
 \input{isa/tools/latex_builder/templates/fragments/reset_state_table.tex}
 
-Cold and warm architectural reset clear event entry, supervisor entry, all four stack pairs, the complete user-return
-bank, event depth and stack-level state, and pending NMI state. BOOTPC and BOOTCFG retain their separately defined
-cold- and warm-reset behavior. Software initializes entry segments, exact entry PCs, and configured stack tops before
-setting ECR.V or entering user mode.
+Warm RESET applies the complete generated state table to the executing logical processor only. Cold reset initializes
+BOOTPC and BOOTCFG before applying the same processor-state image to each logical processor selected by the platform
+reset event. Software initializes entry segments, exact entry PCs, and configured stack tops before setting ECR.V
+or entering user mode.
 
 ECR, entry and stack registers, hidden event depth and stack level, and the user-return bank are per-logical-processor
-state. System software and a hypervisor include the applicable state when switching supervisor contexts or virtual
-processors. Event frames are ordinary memory owned by the interrupted supervisor context.
+state. System software includes the applicable state when switching supervisor contexts. Event frames are ordinary
+memory owned by the interrupted supervisor context.

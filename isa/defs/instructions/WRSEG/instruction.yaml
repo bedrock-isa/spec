@@ -1,7 +1,7 @@
 mnemonic: WRSEG
 title: Write Segment Register
 summary: Write an SREG segment image from an Rn register.
-description: WRSEG validates a 64-bit segment register image from the source Rn register and writes it to an SREG-class segment register. CS is not an SREG operand and changes only through architectural control-transfer paths that update CS and PC together.
+description: WRSEG validates a 64-bit segment register image from the source Rn register and writes it to the selected SREG.
 attributes:
   class: system
   family: system_registers

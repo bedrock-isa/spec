@@ -15,6 +15,7 @@ if str(TOOL_DIR) not in sys.path:
 
 from encoding_architecture import (  # noqa: E402
     ENCODING_CLASSES,
+    extended_record_is_sufficient,
     extended_instruction_lengths,
     extended_length_byte0_pattern,
 )
@@ -65,6 +66,20 @@ class EncodingArchitectureTests(unittest.TestCase):
             len(values["OPCODE_PAYLOAD_NAMESPACE_ROWS"].split(r"\manualbitrow")) - 1,
             9,
         )
+
+    def test_extended_padding_values_do_not_change_length_validity(self) -> None:
+        for required in extended_instruction_lengths():
+            for encoded in extended_instruction_lengths():
+                payloads = (
+                    bytes(encoded),
+                    bytes([0xFF]) * encoded,
+                    bytes(0x00 if index % 2 == 0 else 0xA5 for index in range(encoded)),
+                )
+                for record in payloads:
+                    self.assertEqual(
+                        extended_record_is_sufficient(required, record),
+                        encoded >= required,
+                    )
 
 
 if __name__ == "__main__":

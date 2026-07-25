@@ -39,7 +39,7 @@ cpuid:
   classes:
     - id: 0x00000000
       name: Bedrock base ISA
-      summary: base identity, instruction limits, integer registers, condition codes, and mandatory groups
+      summary: base identity, architecture and implementation revisions, vendor name, and processor name
       leaves:
         - id: 0x0000
           name: BASE_IDENTITY
@@ -47,7 +47,7 @@ cpuid:
           summary: common header, identity, revisions, vendor name, and processor name
     - id: 0x00000001
       name: Optional extensions
-      summary: optional floating-point, transcendental, and virtualization-acceleration groups
+      summary: optional floating-point and transcendental groups
       leaves:
         - id: 0x0000
           name: EXTENSION_DIRECTORY
@@ -59,16 +59,16 @@ cpuid:
           summary: common header and sparse per-function accuracy contracts
     - id: 0x00000002
       name: Implementation properties
-      summary: program-visible limits, topology, and SAVE/RESTORE area layout
+      summary: cache topology, performance counters, and SAVE/RESTORE area layout
       leaves:
         - id: 0x0000
-          name: EXECUTION_PROPERTIES
-          max_index: 1
-          summary: common header and program-visible execution properties
+          name: IMPLEMENTATION_DIRECTORY
+          max_index: 0
+          summary: common implementation-class header
         - id: 0x0001
-          name: TOPOLOGY
+          name: CACHE_TOPOLOGY
           max_index: n
-          summary: common header and hardware-thread topology descriptors
+          summary: common header, maintenance granule, and cache-sharing descriptors
         - id: 0x0002
           name: PERFORMANCE_COUNTERS
           max_index: 3
@@ -77,6 +77,47 @@ cpuid:
           name: SAVE_AREA_LAYOUT
           max_index: n
           summary: common header, SAVE/RESTORE sizes, bitmap, and component descriptors
+  cache_topology:
+    class: 0x00000002
+    leaf: 0x0001
+    granule:
+      index: 1
+      min_bytes: 1
+      max_bytes: 4096
+      power_of_two: true
+    descriptor_first_index: 2
+    descriptor_order: [cache_level, cache_type, sharing_level, sharing_id]
+    cache_types:
+      - {value: 1, name: DATA}
+      - {value: 2, name: INSTRUCTION}
+      - {value: 3, name: UNIFIED}
+    fields:
+      - {name: TYPE, bits: 1..0}
+      - {name: LEVEL, bits: 5..2}
+      - {name: LINE_LOG2, bits: 11..6}
+      - {name: SHARING_LEVEL, bits: 15..12}
+      - {name: SHARING_LP_COUNT_MINUS1, bits: 31..16}
+      - {name: SHARING_ID, bits: 63..32}
+  save_area_layout:
+    class: 0x00000002
+    leaf: 0x0004
+    format: 0
+    fixed_size_bytes: 0x00c0
+    bitmap_words: 1
+    descriptor_first_index: 3
+    descriptor_stride: 2
+    components:
+      - id: 1
+        name: FP
+        bitmap_bit: 0
+        offset_bytes: 0x00c0
+        max_size_bytes: 0x00c0
+        alignment_bytes: 64
+        init_policy: 1
+        layout:
+          - {name: F0_F15, offset: 0x000, size: 0x080}
+          - {name: FFLAGS, offset: 0x080, size: 0x008}
+          - {name: FSTATUS, offset: 0x088, size: 0x008}
 
 control_registers:
   - {selector: 0x0000, name: PTCR, use: page-table root and translation control}
@@ -90,7 +131,7 @@ control_registers:
   - {selector: 0x010A, name: URCS, use: user-return code-segment image}
   - {selector: 0x010B, name: URDS, use: user-return data-segment image}
   - {selector: 0x010C, name: URSS, use: user-return stack-segment image}
-  - {selector: 0x010D, name: URCTL, use: user-return FLAGS, STATUS, and valid state}
+  - {selector: 0x010D, name: URCTL, use: "user-return FLAGS, STATUS, and valid state"}
   - {selector: 0x0110, name: EPC, use: common architectural event-entry PC}
   - {selector: 0x0111, name: ECS, use: architectural event-entry code-segment image}
   - {selector: 0x0112, name: EDS, use: architectural event-entry data-segment image}
@@ -104,7 +145,119 @@ control_registers:
   - {selector: 0x0231, name: DSP, use: double-fault stack top}
   - {selector: 0x1000, name: BOOTPC, use: warm-reset target supplied by the platform at cold reset}
   - {selector: 0x1001, name: BOOTCFG, use: opaque platform boot configuration preserved by warm reset}
-  - {selector: 0x1100, name: PMC, use: performance-monitor enable and user-access control}
+  - {selector: 0x1100, name: PMC, use: performance-monitor enable}
+
+cache_policies:
+  - cp: 0
+    name: CACHEABLE_WRITE_BACK
+    reads_fetches: may allocate a coherent cache copy
+    stores: may retire into a coherent dirty cache copy
+    retained_state: clean or dirty coherent cache copies
+  - cp: 1
+    name: COHERENT_UNCACHEABLE
+    reads_fetches: enter coherence without retaining a cache copy
+    stores: enter coherence before retirement without retaining a dirty copy
+    retained_state: no retained cache copy
+  - cp: 2
+    name: COHERENT_WRITE_THROUGH
+    reads_fetches: may allocate a coherent clean cache copy
+    stores: enter coherence before retirement without retaining a dirty copy
+    retained_state: clean coherent cache copies only
+  - cp: 3
+    name: COHERENT_WRITE_COMBINING
+    reads_fetches: enter coherence without retaining a cache copy
+    stores: may combine adjacent byte writes before entering coherence
+    retained_state: pending combined stores, but no retained cache copy
+
+translation_cache:
+  identity:
+    - {component: linear page, applies: every entry}
+    - {component: LA57 and PABITS_SEL, applies: every entry}
+    - {component: ASID, applies: non-global entry while ASCR.AE is one}
+  transitions:
+    - operation: WRCR PTCR with changed root_page
+      non_global: invalidate all current untagged entries when AE is zero; when AE is one software must invalidate the ASID before rebinding it
+      global: preserve only mappings whose complete leaf attributes are identical in every context
+    - operation: WRCR PTCR with changed LA57 or PABITS_SEL
+      non_global: invalidate entries using the old translation geometry
+      global: invalidate entries using the old translation geometry
+    - operation: WRCR ASCR changing ASID while AE remains one
+      non_global: select the new ASID-tagged entries
+      global: preserve
+    - operation: WRCR ASCR changing AE
+      non_global: invalidate the old untagged context or select the new tagged context as applicable
+      global: preserve
+    - operation: SWPT
+      non_global: install PTCR and invalidate the current untagged context
+      global: preserve only identical global mappings
+    - operation: SWPTA
+      non_global: install PTCR and ASCR and select the new ASID-tagged context
+      global: preserve only identical global mappings
+    - operation: INVPAGE
+      non_global: invalidate the addressed page for the current ASID, or the current untagged context when AE is zero
+      global: invalidate the addressed global page
+    - operation: INVASID
+      non_global: invalidate every entry tagged with the selected ASID
+      global: preserve
+    - operation: INVTLB
+      non_global: invalidate every local entry
+      global: invalidate every local entry
+  shootdown:
+    - PTE store
+    - AFENCE
+    - local invalidate
+    - release shootdown request
+    - target acquire and local invalidate
+    - target release acknowledgement
+    - updater acquire of every acknowledgement
+    - AFENCE
+    - reclaim or reuse
+
+control_write_rules:
+  - registers: [PTCR]
+    writable: root_page, PABITS_SEL, LA57, and PE; reserved bits must be zero
+    validation: PABITS_SEL is 0 or 1 and the selected root frame fits the selected physical-address width
+    commit: apply the translation-cache transition selected by the changed fields
+  - registers: [ASCR]
+    writable: ASID and AE; reserved bits must be zero
+    validation: the complete ASCR image is validated before commit
+    commit: apply the translation-cache transition selected by the changed fields
+  - registers: [ECR]
+    writable: MAX_EDEPTH and V; NMI_P is hardware managed and the supplied value is ignored
+    validation: setting V validates EPC, ECS, EDS, and all configured event stack pairs
+    commit: replace the complete writable image atomically
+  - registers: [SPC, EPC]
+    writable: complete 64-bit entry address
+    validation: 16-byte aligned, canonical, and executable under the matching code-segment image
+    commit: replace the selected register atomically
+  - registers: [SCS, SDS, ECS, EDS, SSS, ISS, FSS, DSS]
+    writable: complete 64-bit segment image
+    validation: apply the architectural segment-image validity rule
+    commit: replace the selected register atomically
+  - registers: [SSP, ISP, FSP, DSP]
+    writable: complete 64-bit configured stack top
+    validation: 64-byte aligned
+    commit: replace the selected register atomically
+  - registers: [URPC, URSP, URCS, URDS, URSS]
+    writable: complete 64-bit saved user-return value
+    validation: defer complete-bank validation until URCTL.V is set or SYSRET executes
+    commit: replace the selected register atomically
+  - registers: [URCTL]
+    writable: V, STATUS, and FLAGS; reserved bits must be zero
+    validation: setting V validates the complete user-return bank and requires saved PM and EA to be zero
+    commit: replace URCTL atomically after complete-bank validation
+  - registers: [BOOTPC]
+    writable: complete 64-bit warm-reset target
+    validation: the value is used as the exact PC after warm RESET
+    commit: replace BOOTPC atomically
+  - registers: [BOOTCFG]
+    writable: complete opaque 64-bit platform boot configuration
+    validation: no image transformation
+    commit: replace BOOTCFG atomically
+  - registers: [PMC]
+    writable: EN; reserved bits must be zero
+    validation: EN is Boolean
+    commit: replace PMC atomically
 
 exception_causes:
   PAGE_FAULT:
@@ -121,6 +274,8 @@ exception_causes:
     - {value: 2, name: RESERVED_ENCODING, meaning: assigned instruction uses a reserved field value}
     - {value: 3, name: UNAVAILABLE_EXTENSION, meaning: required extension is unavailable}
     - {value: 4, name: EXPLICIT_ILLEGAL, meaning: architected ILLEGAL instruction}
+    - {value: 5, name: INSUFFICIENT_LENGTH, meaning: encoded record is shorter than the selected concrete form requires}
+    - {value: 6, name: INVALID_OPERAND_RELATION, meaning: writable operands use a prohibited overlap relation}
   INVALID_CONTROL_STATE:
     - {value: 0, name: INVALID_SELECTOR, meaning: selector names no available resource}
     - {value: 1, name: RESERVED_BITS, meaning: reserved bits are nonzero or changed illegally}
@@ -166,6 +321,21 @@ event_frames:
     - event_class: interrupt_and_nmi
       frame_type: BASIC
 
+architectural_events:
+  - {event_class: EXCEPTION, id: 0x00, name: DEBUG_TRACE, producer: completion of a TF-selected trace unit, kind: trap, saved_pc: next trace unit, committed_state: completed trace unit, frame: BASIC, payload: none, priority: 5}
+  - {event_class: EXCEPTION, id: 0x02, name: BREAKPOINT, producer: BKPT, kind: explicit trap, saved_pc: following instruction, committed_state: BKPT completed, frame: BASIC, payload: none, priority: 4}
+  - {event_class: EXCEPTION, id: 0x03, name: ILLEGAL_INSTRUCTION, producer: decode or instruction-validity check, kind: fault, saved_pc: faulting instruction, committed_state: no effects of the faulting instruction, frame: ERROR, payload: error code, priority: 3}
+  - {event_class: EXCEPTION, id: 0x08, name: PRIVILEGE_FAULT, producer: privilege check, kind: fault, saved_pc: faulting instruction, committed_state: no effects of the faulting instruction, frame: BASIC, payload: none, priority: 3}
+  - {event_class: EXCEPTION, id: 0x09, name: PAGE_FAULT, producer: "segment, translation, access, or atomic-alignment check", kind: fault, saved_pc: faulting instruction, committed_state: no effects of the faulting instruction, frame: PAGE_FAULT, payload: "error code, fault EA, and linear address", priority: 3}
+  - {event_class: EXCEPTION, id: 0x0A, name: DIVIDE_ERROR, producer: integer divide operation, kind: fault, saved_pc: faulting instruction, committed_state: no effects of the faulting instruction, frame: ERROR, payload: error code, priority: 3}
+  - {event_class: EXCEPTION, id: 0x0D, name: INVALID_CONTROL_STATE, producer: control-state validation, kind: fault, saved_pc: faulting instruction, committed_state: no effects of the faulting instruction, frame: ERROR, payload: error code, priority: 3}
+  - {event_class: EXCEPTION, id: 0x0E, name: FLOATING_POINT_FAULT, producer: enabled floating-point exception, kind: fault, saved_pc: faulting instruction, committed_state: no destination or accrued-flag effects of the faulting instruction, frame: ERROR, payload: error code, priority: 3}
+  - {event_class: EXCEPTION, id: 0x18, name: DOUBLE_FAULT, producer: architectural event-delivery failure, kind: delivery failure, saved_pc: interrupted event boundary, committed_state: no partial first delivery state, frame: AUXILIARY, payload: delivery-failure auxiliary state, priority: 1}
+  - {event_class: EXCEPTION, id: 0x19, name: MACHINE_CHECK, producer: processor or memory-system machine-check source, kind: machine check, saved_pc: selected by PRECISE and corrected status, committed_state: selected by PRECISE and RETRY_SAFE, frame: AUXILIARY, payload: machine-check auxiliary state, priority: 2}
+  - {event_class: EXCEPTION, id: 0x1A, name: BUS_ERROR, producer: synchronous acknowledged bus failure, kind: fault, saved_pc: faulting instruction, committed_state: no CPU state effects of the faulting instruction, frame: AUXILIARY, payload: bus-error auxiliary state, priority: 3}
+  - {event_class: NMI, id: source, name: NMI, producer: admitted non-maskable interrupt source, kind: asynchronous, saved_pc: next instruction or repeat continuation, committed_state: all earlier committed state, frame: BASIC, payload: none, priority: 6}
+  - {event_class: INTERRUPT, id: platform, name: INTERRUPT, producer: admitted maskable interrupt source, kind: asynchronous, saved_pc: next instruction or repeat continuation, committed_state: all earlier committed state, frame: BASIC, payload: none, priority: 7}
+
 immediate_operand_interpretation:
   - operand_type: pair_id
     value_kind: identifier
@@ -193,19 +363,32 @@ immediate_operand_interpretation:
     extension: zero-extend
     applies_when: EXTRACT register-pair forms
 
+reset_contract:
+  scope: executing logical processor
+  privilege: supervisor
+  serialization: complete prior memory effects and pending write-combining stores before reset state commits
+  restart: running at BOOTPC after instruction-fetch synchronization
+  other_logical_processors: unchanged
+
 reset_state:
-  - {state: [ECR, EPC, ECS, EDS], value: zero}
-  - {state: [SPC, SCS, SDS], value: zero}
+  - {state: [R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, R13, R14, R15, SP], value: zero}
+  - {state: [FLAGS], value: zero}
+  - {state: [STATUS], value: supervisor_only}
+  - {state: [CS, DS, SS, GS0, GS1, GS2, GS3, GS4, GS5], value: zero}
+  - {state: [PC], value: bootpc}
+  - {state: [PTCR, ASCR, ECR], value: zero}
+  - {state: [EPC, ECS, EDS, SPC, SCS, SDS], value: zero}
   - {state: [URPC, URSP, URCS, URDS, URSS, URCTL], value: zero}
-  - {state_pairs: [[SSS, SSP], [ISS, ISP], [FSS, FSP], [DSS, DSP]], value: zero}
-  - {state: [PMC], value: zero}
-  - {state: [CYCLE, INSTRET, PTWALK], value: zero}
-  - {state: [STATUS.IE, STATUS.EA, STATUS.NI], value: zero}
-  - {state: [FSTATUS, FFLAGS], value: zero}
+  - {state: [SSS, SSP, ISS, ISP, FSS, FSP, DSS, DSP], value: zero}
+  - {state: [PMC, CYCLE, INSTRET, PTWALK], value: zero}
+  - {state: [F0_F15, FSTATUS, FFLAGS, extension_state], value: zero}
+  - {state: [hidden_repeat_state, hidden_load_reservation], value: invalid}
   - {state: [hidden_current_edepth], value: zero}
   - {state: [hidden_current_event_stack_level], value: invalid}
   - {state: [ECR.NMI_P], value: zero}
-  - {state: [PTCR.PE, ASCR], value: zero}
+  - {state: [local_translation_cache, local_page_walk_cache, local_prefetch_state], value: invalid}
+  - {state: [coherent_data_and_instruction_cache_contents], value: retained_coherent}
+  - {state: [execution_state], value: running_at_bootpc}
   - {state: [BOOTPC, BOOTCFG], value: platform_supplied_cold_preserved_warm}
 
 atomic_memory_orders:

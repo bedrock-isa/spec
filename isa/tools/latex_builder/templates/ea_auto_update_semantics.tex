@@ -1,7 +1,7 @@
-Auto-update forms are part of EA evaluation, not separate instruction modifiers. They update a temporary operand-evaluation
-image and become architecturally visible only if the instruction commits.
+EA evaluation applies auto-update to a temporary operand-evaluation image. The update becomes architecturally
+visible only if the instruction commits.
 
-Base auto-update changes by the memory access size in bytes. Index auto-update changes by one element before
+Base auto-update changes by the EA interpretation width in bytes. Index auto-update changes by one element before
 scaling, so the scale affects address generation but not the architectural index increment amount.
 
 EA evaluation begins by copying the architectural registers into a temporary operand-evaluation image. Operands are
@@ -12,8 +12,14 @@ architecturally visible until the instruction commits. A fault before commit the
 memory state unchanged apart from the exception-entry transition.
 
 Postincrement forms use the current temporary value and update it afterward. Predecrement forms update the temporary
-value first and then use the result. A base register changes by the memory access size in bytes; an index register
-changes by one element before scaling. Each REP iteration applies and commits these rules independently.
+value first and then use the result. A base register changes by the EA interpretation width in bytes; an index
+register changes by one element before scaling. Each REP iteration applies and commits these rules independently.
+
+Size-less address-role forms INVPAGE, FLSHDCACHE, INVDCACHE, INVICACHE, WRBKDCACHE, SYNCCACHE, PREFETCH,
+PREFETCHNT, PTQUERY, SAVE, and RESTORE have Q interpretation width. Size-less control-target forms DJcc, IJcc,
+LCALL, and LJMP also have Q interpretation width. Their EXT0 index scale is eight and their base predecrement or
+postincrement amount is eight. Cache range loops advance their explicit address by the CPUID maintenance granule,
+independently of this per-EA update amount.
 
 When one register supplies both terms in \texttt{[R1 + R1++ * scale]}, the base and index terms use the same
 current temporary R1 before the index update. In \texttt{[R1 + {-}{-}R1 * scale]}, the base uses the current value;

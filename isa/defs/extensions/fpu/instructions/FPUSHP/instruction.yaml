@@ -6,8 +6,8 @@ attributes:
   class: fpu
   family: fpu
   privilege: unprivileged
-  repeat:
+repeat:
+  contexts:
   - REP
-  - REPcc
   - REPG
 additional_description: details.tex

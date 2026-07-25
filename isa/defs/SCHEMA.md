@@ -36,6 +36,8 @@ InstructionDocument {
   summary: string
   description: string
   attributes: InstructionAttributes
+  repeat?: RepeatContract
+  exceptions?: list<InstructionException>
   flag_effects?: map<enum(FLAGS, FFLAGS), map<flag-name, string>>
   additional_assembler_syntax?: list<string, unique>
   additional_description?: relative-path ending in .tex
@@ -45,9 +47,29 @@ InstructionAttributes {
   class: string
   family: string
   privilege: enum(unprivileged, supervisor, any)
-  repeat?: list<enum(REP, REPcc, REPG, REPGF), unique>
+}
+
+RepeatContract {
+  contexts: non-empty list<enum(REP, REPcc, REPG), unique>
+  observed?: RepeatObserved
+}
+
+RepeatObserved {
+  kind: enum(flags, result, source)
+  operand?: string
+}
+
+InstructionException {
+  event: string matching [A-Z][A-Z0-9_]*
+  when: string
+  forms?: list<form-id, unique>
 }
 ```
+
+`observed` is present exactly when `REPcc` is in `contexts`. `flags` has no
+operand; `result` and `source` require an operand name used by the instruction.
+Exception event and form references are checked against the architectural event
+manifest and the instruction's encoding forms.
 
 `FLAGS` accepts `Z`, `N`, `C`, and `V`; `FFLAGS` accepts `NV`, `DZ`, `OF`,
 `UF`, and `NX`. Each present bank is non-empty. Renderers use the listed
@@ -69,6 +91,7 @@ EncodingForm {
   sizes?: list<string, unique>
   fields?: map<one-character marker, EncodingField>
   constraints?: list<EncodingConstraint>
+  destination_overlap?: list<DestinationOverlap>
   notes?: list<string>
 }
 
@@ -78,6 +101,8 @@ EncodingOperand {
   access: enum(read, write, read_write, address)
   field?: one-character marker occurring in EncodingForm.bits
   domain?: enum(user)
+  ea_role: enum(value, address, control_target) when type = EA
+  ea_width: enum(operation_size, B, W, L, Q) when type = EA
 }
 
 EncodingField {
@@ -92,11 +117,23 @@ EncodingConstraint {
     exclude: string
   )
 }
+
+DestinationOverlap {
+  operands: list<string>[exactly 2 distinct writable field operands]
+  rule: enum(same_value, illegal_instruction)
+}
 ```
 
 Form IDs are unique within a document and begin with `class + "."`. Operand
 field markers are unique. Operand fields plus `fields` declare every symbolic
 marker in `bits` exactly once; `0`, `1`, and `?` are not declared markers.
+Every EA operand declares both `ea_role` and `ea_width`. `address` role uses
+`address` access, `control_target` role uses `read` access, and `value` role
+uses `read`, `write`, or `read_write` access. `operation_size` requires at
+least one form size; fixed widths define EXT0 index scale and pre/post-update
+amount directly.
+Every pair of writable field operands that can designate the same architectural
+register has exactly one `destination_overlap` entry.
 
 ## 3. `instructions.yaml`
 

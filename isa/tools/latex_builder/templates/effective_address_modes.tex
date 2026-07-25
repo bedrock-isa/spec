@@ -1,8 +1,11 @@
 \clearpage
 \section{Effective Addressing Modes}
 
-An effective-address field is an operand descriptor. It may select a register value, an immediate value, or a memory
-operand pointer. Only memory forms continue into segment pre-translation and paging.
+An effective-address field is an operand descriptor with an instruction-defined role and interpretation width. A
+value role reads or writes the selected register, immediate, or memory value. An address role uses a register or
+immediate as an address value and uses a memory-form EA as the calculated address without an initial data read. A
+control-target role uses a register or immediate value directly and reads an interpretation-width target from a
+memory form. Memory forms continue into segment pre-translation and paging.
 
 The seven-bit compact EA field is embedded in the opcode payload. Any displacement, absolute address, immediate, or
 EXT0 descriptor bytes are appended as EA payload bytes. When an instruction contains multiple payload-bearing
@@ -10,19 +13,19 @@ operands, payloads are consumed in instruction operand order.
 
 Multi-byte scalar EA payloads, such as displacements, absolute addresses, and immediates, are little-endian. Payload
 names ending in s are signed and are sign-extended before use; payload names without s are unsigned unless the
-consuming instruction explicitly says otherwise. An EXT0 descriptor is not a multi-byte scalar: its descriptor bytes
-are consumed in the displayed stream order, byte 0 followed by byte 1, and bit numbering restarts at 7 for each byte.
+consuming instruction explicitly says otherwise. The decoder consumes EXT0 descriptor bytes in the displayed stream
+order, byte 0 followed by byte 1, and bit numbering restarts at 7 for each byte.
 
-Indexed scale is implicit in the consuming instruction. For ordinary B/W/L/Q memory operations, the scale is 1, 2,
-4, or 8. LEA uses its suffix to select the scale.
+Indexed scale is the EA interpretation width declared by the consuming form. B, W, L, and Q widths select scales 1,
+2, 4, and 8. A form whose width is \texttt{operation\_size} uses its selected instruction size. LEA and SEGLEA use
+their suffix; size-less address and control-target forms use Q.
 
 For every compact or EXT0 PC-based EA, the PC term is the architectural PC naming byte 0 of the current instruction.
-It is not the address of the following instruction and not the address of a displacement or relocation field. The PC
-term remains that instruction-start value throughout operand evaluation.
+The PC term remains that instruction-start value throughout operand evaluation.
 
 \clearpage
 \subsection{Compact EA Addressing Modes}
-Compact EA forms are the fast-path operand encodings. They cover direct Rn and SP operands, common Rn/SP/PC memory
+Compact EA forms encode direct Rn and SP operands, common Rn/SP/PC memory
 operands, absolute memory operands, immediate operands, and the EXT0 escape.
 
 Compact memory forms that do not name SP or PC use the operation default data segment. SP memory forms are fixed to
@@ -38,8 +41,7 @@ SS, and PC memory forms are fixed to CS.
 A compact EXT0 EA value selects an extended descriptor and the displacement width. The descriptor bytes then select
 segment, base, index, zero-base, SP/PC indexed, and auto-update behavior.
 
-EXT0 has no default segment as a descriptor class. A concrete descriptor either encodes an SREG SEG(s), selects
-fixed SS/CS through SP or PC, or explicitly uses the operation default data segment.
+Each EXT0 descriptor selects an SREG SEG(s), fixed SS or CS through SP or PC, or the operation default data segment.
 
 \input{isa/tools/latex_builder/templates/fragments/ea_field_diagrams.tex}
 

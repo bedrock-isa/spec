@@ -19,6 +19,8 @@ forms:
   - name: target
     type: EA
     access: read
+    ea_role: control_target
+    ea_width: Q
     field: e
   constraints:
   - field: c

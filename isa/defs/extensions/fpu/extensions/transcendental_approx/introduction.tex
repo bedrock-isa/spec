@@ -15,7 +15,6 @@ The measured error is $|a-y|/\operatorname{ulp}_F(y)$. The bound applies only to
 the selected format's finite range; NaN, infinity, and overflow follow the instruction's special-value rules.
 Every present contract guarantees at most 4 ULP for both S and D, corresponding to at least 21 and 50 worst-case
 relative precision bits respectively for nonzero normal results. CPUID may advertise a smaller certified bound.
-The instruction does not compute or return its actual error.
 
 FPTRANSA applies DAZ before forming the exact reference input and measures its advertised ULP error before FTZ.
 It ignores \texttt{FSTATUS.RM} and formats its implementation-defined approximation with nearest-even rounding.

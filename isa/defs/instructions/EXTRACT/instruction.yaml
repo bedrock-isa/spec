@@ -1,13 +1,17 @@
 mnemonic: EXTRACT
 title: Extract From Register Pair
 summary: Extracts a selected-width value from a concatenated pair of Rn registers.
-description: Concatenates Rn(high) as the upper half and the original Rn(low/dest) value as the lower half, shifts the concatenated value right by an unsigned 7-bit immediate offset, and writes the low selected-size result back to Rn(low/dest). The operation is similar to ARM EXTR, but uses the Bedrock B/W/L/Q operation size and a 7-bit immediate offset.
+description: Concatenates Rn(high) as the upper half and the original Rn(low/dest) value as the lower half, shifts the concatenated value right by an unsigned 7-bit immediate offset, and writes the low selected-size result back to Rn(low/dest).
 attributes:
   class: integer
   family: integer_bitfield
   privilege: unprivileged
-  repeat:
+repeat:
+  contexts:
   - REP
   - REPcc
   - REPG
+  observed:
+    kind: result
+    operand: low_dst
 additional_description: details.tex

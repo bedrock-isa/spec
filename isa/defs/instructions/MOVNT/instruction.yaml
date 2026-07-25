@@ -6,7 +6,11 @@ attributes:
   class: data_movement
   family: cache
   privilege: unprivileged
-  repeat:
+repeat:
+  contexts:
   - REP
   - REPcc
   - REPG
+  observed:
+    kind: source
+    operand: src

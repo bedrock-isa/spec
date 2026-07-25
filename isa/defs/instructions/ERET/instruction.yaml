@@ -6,4 +6,7 @@ attributes:
   class: system
   family: core_control
   privilege: supervisor
+exceptions:
+- event: INVALID_CONTROL_STATE
+  when: event-active state is clear or the event frame or return image fails validation
 additional_description: details.tex

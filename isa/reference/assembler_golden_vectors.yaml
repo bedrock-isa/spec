@@ -1,0 +1,106 @@
+schema_version: 0
+cases:
+- id: extrashort_add_sp
+  assembly: ADD.Q 8, SP
+  form_id: extrashort.add_q_8_sp
+  field_values: {}
+  payload_bytes: []
+  encoded_bytes: [0x0e]
+  canonical_disassembly: ADD.Q 8, SP
+  covers: [extrashort, SP, immediate]
+- id: short_mov_register
+  assembly: MOV.L R1, R2
+  form_id: short.mov_x_rn_s_rn_d
+  field_values: {z: 0, s: 1, d: 2}
+  payload_bytes: []
+  encoded_bytes: [0x80, 0x12]
+  canonical_disassembly: MOV.L R1, R2
+  covers: [short, register]
+- id: medium_mov_indirect
+  assembly: MOV.B R2, [R3]
+  form_id: medium.mov_x_rn_s_ea_e
+  field_values: {z: 0, s: 2, e: 0x13}
+  payload_bytes: []
+  encoded_bytes: [0xc0, 0x01, 0x13]
+  canonical_disassembly: MOV.B R2, [R3]
+  covers: [medium, indirect]
+- id: medium_mov_register_displacement
+  assembly: MOV.W R2, [R3 + 127]
+  form_id: medium.mov_x_rn_s_ea_e
+  field_values: {z: 1, s: 2, e: 0x23}
+  payload_bytes: [0x7f]
+  encoded_bytes: [0xc4, 0x09, 0x23, 0x7f]
+  canonical_disassembly: MOV.W R2, [R3 + 127]
+  covers: [medium, displacement]
+- id: medium_mov_pc_displacement
+  assembly: MOV.B [PC - 4], R1
+  form_id: medium.mov_x_ea_e_rn_d
+  field_values: {z: 0, d: 1, e: 0x64}
+  payload_bytes: [0xfc]
+  encoded_bytes: [0xc4, 0x20, 0xe4, 0xfc]
+  canonical_disassembly: MOV.B [PC - 4], R1
+  covers: [medium, PC, displacement]
+- id: medium_mov_absolute
+  assembly: MOV.B [0x1234], R1
+  form_id: medium.mov_x_ea_e_rn_d
+  field_values: {z: 0, d: 1, e: 0x6a}
+  payload_bytes: [0x34, 0x12, 0x00, 0x00]
+  encoded_bytes: [0xd0, 0x20, 0xea, 0x34, 0x12, 0x00, 0x00]
+  canonical_disassembly: MOV.B [0x1234], R1
+  covers: [medium, absolute]
+- id: medium_mov_immediate
+  assembly: MOV.B -2, R1
+  form_id: medium.mov_x_ea_e_rn_d
+  field_values: {z: 0, d: 1, e: 0x6c}
+  payload_bytes: [0xfe]
+  encoded_bytes: [0xc4, 0x20, 0xec, 0xfe]
+  canonical_disassembly: MOV.B -2, R1
+  covers: [medium, immediate]
+- id: medium_mov_ext0
+  assembly: MOV.B R1, [GS0:R2 + 4]
+  form_id: medium.mov_x_rn_s_ea_e
+  field_values: {z: 0, s: 1, e: 0x70}
+  payload_bytes: [0x22, 0x04]
+  encoded_bytes: [0xc8, 0x00, 0xf0, 0x22, 0x04]
+  canonical_disassembly: MOV.B R1, [GS0:R2 + 4]
+  covers: [medium, EXT0, displacement]
+- id: long_mov_memory_memory
+  assembly: MOV.B [R1], [R2]
+  form_id: long.mov_x_ea_s_ea_d
+  field_values: {z: 0, s: 0x11, d: 0x12}
+  payload_bytes: []
+  encoded_bytes: [0xc7, 0xe0, 0x08, 0x92]
+  canonical_disassembly: MOV.B [R1], [R2]
+  covers: [long, indirect]
+- id: extralong_fsincosa
+  assembly: FSINCOSA.S F1, F2, F3
+  form_id: extralong.fsincosa_x_fn_s_fn_d_fn_c
+  field_values: {z: 0, s: 1, d: 2, c: 3}
+  payload_bytes: []
+  encoded_bytes: [0xcb, 0xf0, 0x24, 0x41, 0x03]
+  canonical_disassembly: FSINCOSA.S F1, F2, F3
+  covers: [extralong, register]
+- id: long_jne_condition_size
+  assembly: JNE.L [R4]
+  form_id: long.jcc_x_ea_e
+  field_values: {z: 0, c: 3, e: 0x14}
+  payload_bytes: []
+  encoded_bytes: [0xc7, 0xc9, 0x01, 0x94]
+  canonical_disassembly: JNE.L [R4]
+  covers: [long, condition_size, indirect]
+- id: alias_clc
+  assembly: CLC
+  form_id: medium.clrf_flags_bitmap_m
+  field_values: {m: 2}
+  payload_bytes: []
+  encoded_bytes: [0xc0, 0x25, 0x82]
+  canonical_disassembly: CLRF C
+  covers: [medium, alias]
+- id: len_padding
+  assembly: LEN 6, MOV.B R2, [R3]
+  form_id: medium.mov_x_rn_s_ea_e
+  field_values: {z: 0, s: 2, e: 0x13}
+  payload_bytes: [0x00, 0x00, 0x00]
+  encoded_bytes: [0xcc, 0x01, 0x13, 0x00, 0x00, 0x00]
+  canonical_disassembly: LEN 6, MOV.B R2, [R3]
+  covers: [medium, LEN_padding, indirect]

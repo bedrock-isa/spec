@@ -30,6 +30,8 @@ forms:
   - name: rhs
     type: EA
     access: read
+    ea_role: value
+    ea_width: operation_size
     field: e
   sizes:
   - B
@@ -49,6 +51,8 @@ forms:
   - name: rhs
     type: EA
     access: read
+    ea_role: value
+    ea_width: operation_size
     field: e
   sizes:
   - L
@@ -70,6 +74,8 @@ forms:
   - name: lhs
     type: EA
     access: read
+    ea_role: value
+    ea_width: operation_size
     field: e
   - name: rhs
     type: Rn
@@ -94,6 +100,8 @@ forms:
   - name: lhs
     type: EA
     access: read
+    ea_role: value
+    ea_width: operation_size
     field: e
   - name: rhs
     type: Rn
@@ -119,10 +127,14 @@ forms:
   - name: lhs
     type: EA
     access: read
+    ea_role: value
+    ea_width: operation_size
     field: s
   - name: rhs
     type: EA
     access: read
+    ea_role: value
+    ea_width: operation_size
     field: d
   sizes:
   - B

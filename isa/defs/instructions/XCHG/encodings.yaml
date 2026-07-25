@@ -18,6 +18,9 @@ forms:
   fields:
     z:
       type: size
+  destination_overlap:
+  - operands: [lhs, rhs]
+    rule: same_value
 - id: medium.xchg_x_rn_s_ea_e
   class: medium
   bits: 100000zsssseeeeeee
@@ -30,6 +33,8 @@ forms:
   - name: rhs
     type: EA
     access: read_write
+    ea_role: value
+    ea_width: operation_size
     field: e
   sizes:
   - B
@@ -41,6 +46,9 @@ forms:
   - field: e
     exclude: immediate
     reason: invalid_destination
+  destination_overlap:
+  - operands: [lhs, rhs]
+    rule: same_value
 - id: medium.xchg_x_rn_s_ea_e.2
   class: medium
   bits: 100001zsssseeeeeee
@@ -53,6 +61,8 @@ forms:
   - name: rhs
     type: EA
     access: read_write
+    ea_role: value
+    ea_width: operation_size
     field: e
   sizes:
   - L
@@ -69,6 +79,9 @@ forms:
   - field: e
     exclude: immediate
     reason: invalid_destination
+  destination_overlap:
+  - operands: [lhs, rhs]
+    rule: same_value
 - id: medium.xchg_x_ea_e_rn_d
   class: medium
   bits: 100010zddddeeeeeee
@@ -77,6 +90,8 @@ forms:
   - name: lhs
     type: EA
     access: read_write
+    ea_role: value
+    ea_width: operation_size
     field: e
   - name: rhs
     type: Rn
@@ -96,6 +111,9 @@ forms:
   - field: e
     exclude: immediate
     reason: invalid_destination
+  destination_overlap:
+  - operands: [lhs, rhs]
+    rule: same_value
 - id: medium.xchg_x_ea_e_rn_d.2
   class: medium
   bits: 100011zddddeeeeeee
@@ -104,6 +122,8 @@ forms:
   - name: lhs
     type: EA
     access: read_write
+    ea_role: value
+    ea_width: operation_size
     field: e
   - name: rhs
     type: Rn
@@ -124,3 +144,6 @@ forms:
   - field: e
     exclude: immediate
     reason: invalid_destination
+  destination_overlap:
+  - operands: [lhs, rhs]
+    rule: same_value

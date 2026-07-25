@@ -16,7 +16,24 @@ forward a hardware thread's own pending store to its later loads before that sto
 The baseline ordering is weak. Except for same-byte coherence or ordering imposed by an atomic memory-order selector
 or fence, loads and stores to different locations may be issued, completed, and observed in an order different from
 program order. Coherence and multi-copy atomicity do not by themselves order accesses to different locations.
-Platform-defined device memory may impose additional rules outside this normal-memory model.
+
+\subsection{PTE Cache Policies}
+The two-bit PTE \texttt{CP} field selects a cache policy for byte-addressed normal memory. Every policy uses the
+same coherence order, multi-copy atomicity, tearing rules, atomic operations, and fence semantics defined in this
+chapter. The policy changes allocation, retained cache state, and store combination; it does not create a separate
+value or ordering domain.
+
+\input{isa/tools/latex_builder/templates/fragments/generated/cache_policies.tex}
+
+Aliases of one physical byte with different \texttt{CP} values participate in the same coherence order. A load,
+instruction fetch, or atomic operation through any alias observes the same physical value subject to ordinary
+ordering, and atomic operations serialize at the physical location. CP2 stores enter coherence before retirement
+and leave no dirty cache copy. CP3 combined stores preserve the byte writes and their per-location program order.
+
+\texttt{WFENCE} and \texttt{AFENCE} complete earlier pending CP3 stores. WRBKDCACHE, FLSHDCACHE, and SYNCCACHE
+complete pending CP3 stores for their selected block before performing their named cache action. The
+data-write, cache-maintenance, rendezvous, and local instruction-cache sequence below applies without regard to the
+\texttt{CP} value used by the modified code mapping.
 
 \subsection{Slot-Addressed Transactions}
 An \texttt{AT=1} load or store is an acknowledged slot transaction rather than a normal-memory byte access. Multiple
@@ -28,14 +45,12 @@ transactions with byte-addressed memory operations according to its full cumulat
 effects of different widths at the same slot remain part of the platform or device contract.
 
 \subsection{Access Atomicity and Alignment}
-Unaligned ordinary memory accesses are architecturally permitted and may be implemented as multiple aligned memory
-beats. A successfully completed unaligned access has no tear-free guarantee; each visible store beat is separately
-coherent and multi-copy atomic.
+Unaligned ordinary memory accesses are architecturally permitted. A completed unaligned load may observe bytes from
+multiple coherence events, and a completed unaligned store may enter coherence as separately visible portions. Each
+visible store portion is coherent and multi-copy atomic.
 
 An unaligned store is nevertheless fault-atomic for synchronous faults. If any byte of the complete store range
-would raise a synchronous fault, no byte of the store becomes architecturally visible. An implementation that uses
-multiple beats must validate, buffer, or roll back those beats to preserve this rule. This fault atomicity does not
-make a successfully completed unaligned store tear-free.
+would raise a synchronous fault, no byte of the store becomes architecturally visible.
 
 Atomic read-modify-write instructions require natural alignment only for an \texttt{AT=0} byte-addressed operand.
 A misaligned \texttt{AT=0} atomic operand raises \texttt{PAGE\_FAULT} with the \texttt{ATOMIC\_ALIGNMENT} cause
@@ -46,6 +61,29 @@ before any memory update or architectural result commits; it must not complete a
 Stores to memory that is later executed as instructions are ordinary data stores until an explicit synchronization
 sequence makes the modified bytes visible to instruction fetch.
 
+\subsection{Cache-Maintenance Blocks}
+CPUID \texttt{CACHE\_TOPOLOGY} reports a cache-maintenance granule $G$. A cache-maintenance instruction computes and
+translates its address-role EA without reading an operand value, then selects the physical byte interval
+$[\lfloor A/G\rfloor G,\lfloor A/G\rfloor G+G)$ containing the translated physical address $A$. One instruction
+operates on exactly that block. Because $G$ is at most 4096 bytes, the selected physical block does not cross a
+4 KiB page boundary.
+
+FLSHDCACHE, INVDCACHE, and WRBKDCACHE apply to every data or unified cache copy of the selected block in its
+normal-memory coherence domain. FLSHDCACHE writes dirty bytes into normal-memory coherence and invalidates the
+copies. INVDCACHE discards the copies without writeback. WRBKDCACHE writes dirty bytes into normal-memory coherence
+and retains clean copies. Each operation completes the selected block before retirement.
+
+INVICACHE invalidates the selected block in the executing logical processor's instruction cache, decoded
+instruction state, and instruction-prefetch state. SYNCCACHE first completes the data writeback for the block
+throughout the coherence domain, then performs the same local instruction-side invalidation, and finally serializes
+later instruction fetch so that it observes the synchronized bytes. To publish modified code to another logical
+processor, software completes SYNCCACHE on the publisher, performs a release/acquire rendezvous, and executes
+INVICACHE for the block on every receiving logical processor before branching to the modified bytes.
+
+Address translation, permission, and address-type checks precede a block's cache effects. A fault leaves that
+instruction's selected block unchanged. An \texttt{AT=1} mapping retains the slot-addressed rule: cache maintenance
+issues no slot transaction and has no cache effect.
+
 For every scalar size below, a naturally aligned normal-memory load or store is tear-free. Unaligned accesses retain
 the successful-access and synchronous-fault rules above.
 
@@ -55,13 +93,38 @@ two, four, and eight bytes and require addresses divisible by two, four, and eig
 \subsection{Atomic Memory-Order Selectors}
 \input{isa/tools/latex_builder/templates/fragments/generated/atomic_memory_order_selectors.tex}
 
+\texttt{CMPXCHG}, \texttt{FETCHADD}, \texttt{FETCHSUB}, \texttt{FETCHAND}, \texttt{FETCHOR}, and
+\texttt{FETCHXOR} are the atomic read-modify-write instructions. Each performs its memory read, successful memory
+write, and architectural register result as one indivisible operation in the coherence order of the addressed
+physical location.
+
+One encoded selector governs the complete \texttt{CMPXCHG} operation on both success and failure. A failed
+\texttt{CMPXCHG} contributes a read event. Its acquire component orders later memory operations after that read, and
+its release component orders earlier memory operations before that read. On success, the write event carries the
+selected release effect to observers of that write; on failure, the read is the operation's memory event. A failed
+\texttt{CMPXCHG} contributes no write and therefore creates no release sequence. A failed
+\texttt{CMPXCHG.SEQCST} additionally participates in the global sequentially consistent order as an SC load.
+
 \subsection{Fence Instructions}
-\hyperref[instr:rfence]{\texttt{RFENCE}} orders prior reads before later reads,
-\hyperref[instr:wfence]{\texttt{WFENCE}} orders prior writes before later writes, and
-\hyperref[instr:afence]{\texttt{AFENCE}} orders prior memory operations before later memory operations issued by
-the same hardware thread. \texttt{AFENCE} is cumulative: memory effects observed before the fence are propagated
-before effects ordered after it, including through another hardware thread. The linked instruction entries define the
-normative ordering behavior.
+The table gives every ordered-before pair imposed by a fence on memory operations issued by the same hardware
+thread. An entry marked ordered places every earlier operation of the row kind before every later operation of the
+column kind.
+
+\manualtablecaption{Fence Ordered-Before Pairs}
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.85in}>{\raggedright\arraybackslash}p{1.10in}>{\raggedright\arraybackslash}p{1.10in}>{\raggedright\arraybackslash}p{1.10in}>{\raggedright\arraybackslash}p{1.10in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Fence} & \textbf{read to read} & \textbf{read to write} & \textbf{write to read} & \textbf{write to write}\\
+\midrule
+\texttt{RFENCE} & ordered & baseline & baseline & baseline\\
+\texttt{WFENCE} & baseline & baseline & baseline & ordered\\
+\texttt{AFENCE} & ordered & ordered & ordered & ordered\\
+\bottomrule
+\end{manualtabular}
+
+A baseline entry retains the weak-ordering rules of this chapter. \texttt{AFENCE} is cumulative: memory effects
+observed before the fence are propagated before effects ordered after it, including through another hardware thread.
+The linked instruction entries define the matching completion behavior.
 
 \subsection{Global Sequentially Consistent Order}
 All \texttt{AFENCE} operations and all \texttt{SEQCST} atomic operations participate in one global total order that is
@@ -71,8 +134,7 @@ consistent with each hardware thread's ordered-before relation and with per-loca
 A naturally aligned tear-free scalar load or store also participates as an SC operation when it is the only memory
 access between its immediately surrounding \texttt{AFENCE} operations in memory-event order. Thus
 \texttt{AFENCE; access; AFENCE} is the architectural sequence for an SC scalar load or store. The access and both
-fences occupy their required positions in the same global order; the sequence cannot be satisfied by two unrelated
-per-thread barriers.
+fences occupy their required positions in the same global order.
 
 Acquire and release operations may be strengthened with \texttt{AFENCE}; the resulting instruction sequence has the
 union of the ordering constraints imposed by its operations.

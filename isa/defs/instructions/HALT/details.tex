@@ -1,0 +1,8 @@
+HALT retires with the following instruction as its continuation, then applies the Architectural Event Processing
+Model's event priority and admission rules at that instruction boundary. If the model selects an event at that
+boundary, it is delivered with the continuation as its saved PC before the logical processor enters the halted state.
+
+Otherwise, the executing logical processor stops instruction fetch. When an asynchronous architectural event later
+becomes admissible, the logical processor leaves the halted state by delivering that event with the continuation as
+its saved PC. Event delivery precedes execution of the continuation. Only the executing logical processor enters
+the halted state.

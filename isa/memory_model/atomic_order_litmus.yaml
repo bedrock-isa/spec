@@ -1,0 +1,130 @@
+schema_version: 0
+
+ordered_before_pairs:
+  RFENCE: [read_to_read]
+  WFENCE: [write_to_write]
+  AFENCE: [read_to_read, read_to_write, write_to_read, write_to_write]
+
+cases:
+  - id: failed_cmpxchg_acquire
+    model_family: MP
+    initial:
+      data: 0
+      flag: 0
+    threads:
+      - id: publisher
+        operations:
+          - ordinary_store: {location: data, value: 1}
+          - FETCHADD.RELEASE: {location: flag, source: 1}
+      - id: observer
+        registers: {expected: 0, desired: 2}
+        operations:
+          - CMPXCHG.ACQUIRE: {location: flag, expected: expected, desired: desired}
+          - ordinary_load: {location: data, result: observed_data}
+    condition: expected == 1
+    forbidden_outcomes:
+      - observed_data == 0
+    purpose: The failed comparison reads the release-written flag and its acquire component orders the later data load.
+
+  - id: failed_cmpxchg_release_event
+    initial:
+      data: 0
+      flag: 1
+    threads:
+      - id: actor
+        registers: {expected: 0, desired: 2}
+        operations:
+          - ordinary_store: {location: data, value: 1}
+          - CMPXCHG.RELEASE: {location: flag, expected: expected, desired: desired}
+    required_relations:
+      - ordinary_store(data) ordered_before failed_read(flag)
+    final:
+      flag: 1
+      expected: 1
+    purpose: The release component orders the earlier store before the failed read event while the observed flag value remains unchanged.
+
+  - id: afence_store_buffering
+    model_family: SB
+    initial:
+      x: 0
+      y: 0
+    threads:
+      - id: left
+        operations:
+          - ordinary_store: {location: x, value: 1}
+          - AFENCE
+          - ordinary_load: {location: y, result: left_y}
+      - id: right
+        operations:
+          - ordinary_store: {location: y, value: 1}
+          - AFENCE
+          - ordinary_load: {location: x, result: right_x}
+    forbidden_outcomes:
+      - left_y == 0 and right_x == 0
+    purpose: Each AFENCE supplies its write-to-read edge and both fences participate in the global SC order.
+
+  - id: transitive_release_acquire
+    model_family: RWC
+    initial:
+      x: 0
+      y: 0
+    threads:
+      - id: first
+        operations:
+          - FETCHADD.RELEASE: {location: x, source: 1}
+      - id: relay
+        registers: {expected_x: 0, desired_x: 2}
+        operations:
+          - CMPXCHG.ACQUIRE: {location: x, expected: expected_x, desired: desired_x}
+          - FETCHADD.RELEASE: {location: y, source: 1}
+      - id: last
+        registers: {expected_y: 0, desired_y: 2}
+        operations:
+          - CMPXCHG.ACQUIRE: {location: y, expected: expected_y, desired: desired_y}
+          - ordinary_load: {location: x, result: observed_x}
+    condition: expected_x == 1 and expected_y == 1
+    forbidden_outcomes:
+      - observed_x == 0
+    purpose: Ordered-before propagates through the relay's acquire and release operations.
+
+  - id: seqcst_iriw
+    model_family: IRIW
+    initial:
+      x: 0
+      y: 0
+    threads:
+      - id: x_writer
+        operations:
+          - FETCHADD.SEQCST: {location: x, source: 1}
+      - id: y_writer
+        operations:
+          - FETCHADD.SEQCST: {location: y, source: 1}
+      - id: x_then_y
+        registers: {expected_x0: 2, desired_x0: 3, expected_y0: 2, desired_y0: 3}
+        operations:
+          - CMPXCHG.SEQCST: {location: x, expected: expected_x0, desired: desired_x0}
+          - CMPXCHG.SEQCST: {location: y, expected: expected_y0, desired: desired_y0}
+      - id: y_then_x
+        registers: {expected_y1: 2, desired_y1: 3, expected_x1: 2, desired_x1: 3}
+        operations:
+          - CMPXCHG.SEQCST: {location: y, expected: expected_y1, desired: desired_y1}
+          - CMPXCHG.SEQCST: {location: x, expected: expected_x1, desired: desired_x1}
+    condition: expected_x0 == 1 and expected_y1 == 1
+    forbidden_outcomes:
+      - expected_y0 == 0 and expected_x1 == 0
+    purpose: The one global SC order forbids the readers from observing the independent writes in opposite orders.
+
+  - id: failed_cmpxchg_seqcst_classification
+    initial:
+      value: 1
+    threads:
+      - id: observer
+        registers: {expected: 0, desired: 2}
+        operations:
+          - CMPXCHG.SEQCST: {location: value, expected: expected, desired: desired}
+    required_events:
+      - {kind: sc_load, location: value, value: 1}
+    final:
+      value: 1
+      expected: 1
+    purpose: A failed sequentially consistent comparison contributes an SC load event.

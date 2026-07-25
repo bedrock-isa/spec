@@ -1,8 +1,8 @@
 \clearpage
 \subsection{Flag Meanings}
 Integer condition codes are held in FLAGS. Integer instructions leave FLAGS unchanged unless their instruction
-description explicitly defines a FLAGS write. This keeps ordinary arithmetic and data movement independent from
-condition-code state. Unmentioned FLAGS bits are preserved unless the instruction says otherwise.
+description explicitly defines a FLAGS write. Unmentioned FLAGS bits are preserved unless the instruction says
+otherwise.
 
 For an operand width of n bits, ordinary integer ALU results are evaluated modulo 2\textasciicircum{}n unless the
 instruction explicitly defines a wider intermediate.
@@ -24,24 +24,6 @@ C & carry/borrow & Set on unsigned carry out for addition or unsigned borrow for
 V & overflow & Set on signed overflow or an explicitly reported exceptional condition.\\
 \bottomrule
 \end{manualtabular}
-
-\subsection{Common Integer Rules}
-\manualtablecaption{Common Integer Flag Computation}
-\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{1.30in}>{\raggedright\arraybackslash}p{4.10in}@{}}
-\toprule
-\rowcolor{ManualHeaderFill}
-\textbf{Operation Class} & \textbf{FLAGS Result}\\
-\midrule
-\endfirsthead
-\multicolumn{2}{l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
-\toprule
-\rowcolor{ManualHeaderFill}
-\textbf{Operation Class} & \textbf{FLAGS Result}\\
-\midrule
-\endhead
-@COMMON_INTEGER_FLAG_ROWS@
-\bottomrule
-\end{manuallongtable}
 
 \subsection{Conditional Consumers}
 Conditional branches, calls, traps, sets, and repeat forms consume the condition-code table without recomputing

@@ -1,8 +1,11 @@
 mnemonic: WRCR
 title: Write Control Register
 summary: Write a privileged control register from an Rn register.
-description: WRCR is always a supervisor-only instruction; user-visible control state must use dedicated instructions gated by control-register policy bits.
+description: WRCR validates and atomically writes the selected control register in supervisor mode. The WRCR Selector Rules table defines each writable image, validation condition, and translation or event-state side effect.
 attributes:
   class: system
   family: system_registers
   privilege: supervisor
+exceptions:
+- event: INVALID_CONTROL_STATE
+  when: the selector, reserved bits, image, or requested transition fails the WRCR selector rule

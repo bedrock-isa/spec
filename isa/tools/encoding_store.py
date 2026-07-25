@@ -90,6 +90,10 @@ def encoding_form_dict(form: EncodingForm) -> dict:
                 item["field"] = operand.field
             if operand.domain is not None:
                 item["domain"] = operand.domain
+            if operand.ea_role is not None:
+                item["ea_role"] = operand.ea_role
+            if operand.ea_width is not None:
+                item["ea_width"] = operand.ea_width
             operands.append(item)
         out["operands"] = operands
     if form.sizes:
@@ -110,6 +114,14 @@ def encoding_form_dict(form: EncodingForm) -> dict:
                 item["reason"] = constraint.reason
             constraints.append(item)
         out["constraints"] = constraints
+    if form.destination_overlap:
+        out["destination_overlap"] = [
+            {
+                "operands": list(relation.operands),
+                "rule": relation.rule,
+            }
+            for relation in form.destination_overlap
+        ]
     if form.notes:
         out["notes"] = list(form.notes)
     return out
@@ -168,6 +180,14 @@ def allocation_entry_dict(located: LocatedEncoding) -> dict:
     }
     if form.notes:
         out["notes"] = list(form.notes)
+    if form.destination_overlap:
+        out["destination_overlap"] = [
+            {
+                "operands": list(relation.operands),
+                "rule": relation.rule,
+            }
+            for relation in form.destination_overlap
+        ]
     return out
 
 

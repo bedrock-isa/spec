@@ -1,7 +1,7 @@
 mnemonic: RDCR
 title: Read Control Register
 summary: Read a privileged control register.
-description: RDCR is always a supervisor-only instruction; user-visible control state must use dedicated instructions gated by control-register policy bits.
+description: RDCR reads a selected control register in supervisor mode.
 attributes:
   class: system
   family: system_registers

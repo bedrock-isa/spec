@@ -1,13 +1,17 @@
 mnemonic: POP
 title: Pop
 summary: Pops one 64-bit stack value into an Rn or SREG destination.
-description: POP loads one 64-bit stack value into a general register or SREG destination. The SREG form accepts DS, SS, and GS0-GS5, is unprivileged, and does not accept CS. A candidate segment image is validated before either the destination SREG or SP is changed. POP SS reads through the old SS and makes the new SS visible only when the destination and updated SP commit together.
+description: POP loads one 64-bit stack value into a general register or SREG destination. The SREG form accepts DS, SS, and GS0-GS5 and is unprivileged. A candidate segment image is validated before either the destination SREG or SP is changed. POP SS reads through the old SS and makes the new SS visible only when the destination and updated SP commit together.
 attributes:
   class: data_movement
   family: data_movement
   privilege: unprivileged
-  repeat:
+repeat:
+  contexts:
   - REP
   - REPcc
   - REPG
+  observed:
+    kind: result
+    operand: reg
 additional_description: details.tex

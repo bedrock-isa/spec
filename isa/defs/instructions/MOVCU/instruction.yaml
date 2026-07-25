@@ -6,7 +6,11 @@ attributes:
   class: system
   family: data_movement
   privilege: supervisor
-  repeat:
+repeat:
+  contexts:
   - REP
   - REPcc
   - REPG
+  observed:
+    kind: result
+    operand: dst

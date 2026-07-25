@@ -59,7 +59,7 @@
 \manualeaprofilesyntax{[PC + disp64]}
 \manualeaprofileline{EA encoding}{1100100, 1100101, 1100110, and 1100111 select disp8s, disp16s, disp32s, and disp64.}
 \manualeaprofileline{EA type}{memory operand.}
-\manualeaprofileline{Generation}{offset = instruction-start PC + displacement. PC names byte 0 of the current instruction, not the following instruction or displacement field.}
+\manualeaprofileline{Generation}{offset = instruction-start PC + displacement. PC names byte 0 of the current instruction.}
 \manualeaprofileline{Segment}{Fixed to CS; no segment field is encoded.}
 \manualeaprofileline{Payload}{A displacement payload is always present. Payload is little-endian and has the size named by the EA form.}
 \manualeaprofileline{Update}{No auto-update for PC forms.}
@@ -110,7 +110,7 @@
 \manualeaprofileline{EA encoding}{1110100 selects no displacement; 1110000, 1110001, 1110010, and 1110011 select disp8s, disp16s, disp32s, and disp64.}
 \manualeaprofileline{EA type}{memory operand described by the appended EXT0 descriptor.}
 \manualeaprofileline{Generation}{The EXT0 descriptor selects segment, base, index, and auto-update behavior. The compact EA escape selects only the displacement size.}
-\manualeaprofileline{Segment}{EXT0 has no implicit segment. Segment-qualified forms encode SREG SEG(s); SP and PC indexed forms use SS and CS; default base-update forms use the operation default data segment.}
+\manualeaprofileline{Segment}{Segment-qualified forms encode SREG SEG(s); SP and PC indexed forms use SS and CS; default base-update forms use the operation default data segment.}
 \manualeaprofileline{Payload}{Payload order is EXT0 descriptor byte or bytes first, then the optional displacement payload selected by the compact EA escape.}
 \manualeaprofileline{Update}{Only EXT0 forms with ++ or {-}{-} update the temporary operand-evaluation image.}
 \end{manualeaprofile}

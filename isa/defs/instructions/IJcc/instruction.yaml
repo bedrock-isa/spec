@@ -1,7 +1,7 @@
 mnemonic: IJcc
 title: Increment And Jump Conditional
 summary: Performs the increment and jump conditional operation.
-description: Increments the index and transfers control only when the new index differs from the bound and the encoded condition is true.
+description: 'Increments the index and transfers control only when the new index differs from the bound and the encoded condition is true. The target EA has Q interpretation width: a memory form reads a 64-bit target and a register or immediate form supplies its value directly.'
 attributes:
   class: control_flow
   family: control_flow

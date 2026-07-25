@@ -29,6 +29,8 @@ forms:
   - name: dst
     type: EA
     access: write
+    ea_role: value
+    ea_width: operation_size
     field: e
   sizes:
   - B
@@ -48,6 +50,8 @@ forms:
   - name: dst
     type: EA
     access: write
+    ea_role: value
+    ea_width: operation_size
     field: e
   sizes:
   - L

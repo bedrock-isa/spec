@@ -26,6 +26,8 @@ forms:
   - name: src
     type: EA
     access: read
+    ea_role: value
+    ea_width: operation_size
     field: e
   - name: dst
     type: Fn

@@ -13,5 +13,14 @@ PTQUERY accepts \texttt{pt\_level} values 1 through 5; encodings 0, 6, and 7 are
 SETF and CLRF interpret \texttt{flags\_bitmap} as the low FLAGS nibble: bit 3 selects Z, bit 2 selects N, bit 1 selects C,
 and bit 0 selects V.
 
+\begin{manuallistedformatdiagram}{SETF and CLRF Flag Bitmap}{3}
+\manualformatrowrange{flags\_bitmap[3:0]}{3}{0}{%
+\manualformatfield{Z}{1}
+\manualformatfield{N}{1}
+\manualformatfield{C}{1}
+\manualformatfield{V}{1}
+}
+\end{manuallistedformatdiagram}
+
 An \texttt{imm6} value is zero-extended to the selected operation size before use when that size is wider than six
 bits. EXTRACT uses \texttt{imm7} as the offset into its concatenated register pair.

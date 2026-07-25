@@ -19,6 +19,8 @@ forms:
   - name: memory
     type: EA
     access: read_write
+    ea_role: value
+    ea_width: operation_size
     field: e
   sizes:
   - B

@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter, defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 import re
 import sys
@@ -50,6 +50,7 @@ from encoding_architecture import (  # noqa: E402
     extended_length_byte0_pattern,
 )
 from defs_schema import FLAG_BANKS, decode_instruction  # noqa: E402
+from validate_reference_navigation import validate_path as load_reference_navigation  # noqa: E402
 from latex_builder.common import (  # noqa: E402
     LatexTopSection,
     latex_longtable,
@@ -65,6 +66,10 @@ DEF_ROOT = ROOT / "isa" / "defs"
 DEFAULT_OUTPUT = ROOT / "build" / "isa_reference.tex"
 EA_FRAGMENT_DIR = ROOT / "isa" / "tools" / "latex_builder" / "templates" / "fragments"
 INSTRUCTION_FILENAME = "instruction.yaml"
+ASSEMBLER_GOLDEN_PATH = ROOT / "isa" / "reference" / "assembler_golden_vectors.yaml"
+CONFORMANCE_MANIFEST_PATH = ROOT / "isa" / "reference" / "conformance_manifest.yaml"
+ARCHITECTURE_TABLES_PATH = ROOT / "isa" / "reference" / "architecture_tables.yaml"
+REFERENCE_NAVIGATION_PATH = ROOT / "isa" / "reference" / "reference_navigation.yaml"
 
 
 @dataclass(frozen=True)
@@ -128,6 +133,7 @@ class AllocationEntry:
     skipped: int
     fields: dict[str, Any]
     constraints: list[dict[str, Any]]
+    destination_overlap: list[dict[str, Any]] = field(default_factory=list)
     operands: tuple[dict[str, Any], ...] = ()
     sizes: tuple[str, ...] = ()
     instruction_bytes: int | None = None
@@ -271,6 +277,7 @@ def load_allocations(defs_root: Path) -> list[AllocationClass]:
                     skipped=sum(entry_skipped.values()),
                     fields=raw["fields"],
                     constraints=raw["constraints"],
+                    destination_overlap=raw.get("destination_overlap", []),
                     operands=tuple(
                         {
                             "name": operand.name,
@@ -278,6 +285,8 @@ def load_allocations(defs_root: Path) -> list[AllocationClass]:
                             "access": operand.access,
                             **({"field": operand.field} if operand.field else {}),
                             **({"domain": operand.domain} if operand.domain else {}),
+                            **({"ea_role": operand.ea_role} if operand.ea_role else {}),
+                            **({"ea_width": operand.ea_width} if operand.ea_width else {}),
                         }
                         for operand in located.form.operands
                     ),
@@ -359,6 +368,20 @@ def instruction_family(instruction: InstructionDef) -> str:
 
 def instruction_class(instruction: InstructionDef) -> str:
     return label_text(instruction.doc.get("instruction_class", "-")) or "-"
+
+
+def instruction_feature(model: IsaModel, inst: InstructionDef) -> str:
+    extension = (model.metadata.get("extensions") or {}).get(inst.instruction_set)
+    if not isinstance(extension, dict):
+        return ""
+    availability = extension.get("availability")
+    cpuid = availability.get("cpuid") if isinstance(availability, dict) else None
+    return compact_text(cpuid.get("feature")) if isinstance(cpuid, dict) else ""
+
+
+def instruction_repeat_contract(inst: InstructionDef) -> dict[str, Any] | None:
+    repeat = inst.data.get("repeat")
+    return repeat if isinstance(repeat, dict) else None
 
 
 def instruction_set_groups(
@@ -562,6 +585,24 @@ def latex_attributes_block(inst: InstructionDef, model: IsaModel) -> str:
         rf"{latex_escape(privilege_text(inst.attributes.get('privilege', '-'), '-'))}",
         rf"{latex_escape('Length')} = {latex_escape(instruction_length_summary(inst, model))}",
     ]
+    feature = instruction_feature(model, inst)
+    if feature:
+        lines.append(rf"{latex_escape('Feature')} = {tex_code(feature)}")
+    repeat = instruction_repeat_contract(inst)
+    if repeat:
+        contexts = repeat.get("contexts") or []
+        lines.append(
+            rf"{latex_escape('Repeat')} = "
+            + ", ".join(tex_code(str(context)) for context in contexts)
+        )
+        observed = repeat.get("observed")
+        if isinstance(observed, dict):
+            kind = str(observed.get("kind"))
+            operand = observed.get("operand")
+            value = tex_code(kind)
+            if operand:
+                value += " " + tex_code(str(operand))
+            lines.append(rf"{latex_escape('REPcc observation')} = {value}")
     return latex_ragged_block(lines)
 
 
@@ -680,6 +721,25 @@ def operand_role(index: int, operand_count: int) -> str:
     if operand_count == 2:
         return "source operand" if index == 0 else "destination operand"
     return f"operand {index + 1}"
+
+
+def ea_operand_role(entry: AllocationEntry, symbol: str, fallback: str) -> str:
+    for operand in entry.operands:
+        if operand.get("field") != symbol or operand.get("type") != "EA":
+            continue
+        role = operand.get("ea_role")
+        if role == "address":
+            return "address operand"
+        if role == "control_target":
+            return "control target"
+        access = operand.get("access")
+        if access == "read":
+            return "source operand"
+        if access == "write":
+            return "destination operand"
+        if access == "read_write":
+            return "read/write operand"
+    return fallback
 
 
 def allocation_opcode_bytes(entry: AllocationEntry) -> int:
@@ -1235,7 +1295,8 @@ def entry_ea_fields(entry: AllocationEntry, form: str) -> list[tuple[str, str]]:
         if spec.get("kind") != "ea7":
             continue
         operand = field_operand(form, symbol)
-        role = operand_role(operand[0], operand_count) if operand else "operand"
+        fallback = operand_role(operand[0], operand_count) if operand else "operand"
+        role = ea_operand_role(entry, symbol, fallback)
         fields.append((symbol, role))
     return fields
 
@@ -1277,7 +1338,8 @@ def field_description_text(
     spec: dict[str, Any],
 ) -> str:
     operand = field_operand(form, symbol)
-    role = operand_role(operand[0], len(split_form_operands(form))) if operand else ""
+    fallback = operand_role(operand[0], len(split_form_operands(form))) if operand else ""
+    role = ea_operand_role(entry, symbol, fallback)
     kind = spec.get("kind")
     values = field_constraint_values(model, inst, entry, symbol, spec)
     if kind == "size":
@@ -1316,7 +1378,7 @@ def latex_field_explanation_block(
         parts.append(
             r"\manualinstructionfielddescription{Length field \texttt{L}}"
             r"{Encodes the total instruction length as $3+L$ bytes. "
-            r"The selected length must cover all required bytes.}"
+            r"The selected length must cover all required bytes; trailing bytes are uninterpreted padding.}"
         )
     for symbol, spec in ordered_entry_fields(entry):
         if spec.get("kind") == "ea7":
@@ -1327,6 +1389,26 @@ def latex_field_explanation_block(
         )
         if spec.get("kind") == "ea7":
             parts.append(latex_ea_addressing_mode_tables(model, entry, symbol))
+    for relation in entry.destination_overlap:
+        operands = relation.get("operands") or []
+        if len(operands) != 2:
+            continue
+        pair = f"{operands[0]} = {operands[1]}"
+        if relation.get("rule") == "same_value":
+            meaning = (
+                f"When {pair} designate the same architectural register, "
+                "the final value equals that register's initial value."
+            )
+        else:
+            meaning = (
+                f"When {pair} designate the same architectural register, "
+                "the instruction raises ILLEGAL_INSTRUCTION.INVALID_OPERAND_RELATION "
+                "before architectural effects."
+            )
+        parts.append(
+            rf"\manualinstructionfielddescription{{Destination overlap}}"
+            rf"{{{latex_escape(meaning)}}}"
+        )
     if not parts:
         return ""
     return "\n".join([r"\manualinstructionfieldsheading", *parts])
@@ -1389,18 +1471,22 @@ def render_latex(model: IsaModel, only_allocated: bool = False) -> str:
         "document.tex",
         {
             "REGISTER_SECTION": latex_register_section(model),
+            "CONFORMANCE_SECTION": latex_conformance_section(),
             "CPUID_SECTION": latex_cpuid_feature_discovery_section(model),
             "SAVE_RESTORE_SECTION": latex_save_restore_section(),
             "DATA_FORMATS_SECTION": latex_data_formats_section(model),
             "CONDITION_CODES_SECTION": latex_condition_section(model),
-            "CONDITION_CODE_COMPUTATION_SECTION": latex_condition_code_computation_section(model),
+            "CONDITION_CODE_COMPUTATION_SECTION": latex_condition_code_computation_section(),
             "EFFECTIVE_ADDRESS_SECTION": latex_ea_section(model),
             "PRIVILEGED_PROGRAMMING_SECTION": latex_privileged_programming_model_section(),
             "EXCEPTION_PROCESSING_SECTION": latex_exception_processing_section(),
             "INSTRUCTION_WORD_FORMATS_SECTION": latex_instruction_word_formats_section(model),
             "EXECUTION_MODEL_SECTION": latex_execution_model_section(model),
-            "STREAMING_EXECUTION_SECTION": latex_streaming_model_section(),
+            "STREAMING_EXECUTION_SECTION": latex_streaming_model_section(model),
             "INSTRUCTION_REFERENCE_SECTION": latex_instruction_reference_section(model, instructions),
+            "REFERENCE_NAVIGATION_SECTION": latex_reference_navigation_section(
+                model, instructions
+            ),
         },
     ) + "\n"
 
@@ -1443,8 +1529,8 @@ def latex_code_table(
     return latex_longtable(headers, rendered_rows, widths, caption, style=style, listed=listed)
 
 
-def latex_extension_directory_table(model: IsaModel) -> str:
-    rows: list[list[Any]] = []
+def extension_directory_entries(model: IsaModel) -> list[tuple[int, int, int, int, str, str]]:
+    entries: list[tuple[int, int, int, int, str, str]] = []
     for qualified_name, extension in (model.metadata.get("extensions") or {}).items():
         if not isinstance(extension, dict):
             continue
@@ -1452,19 +1538,62 @@ def latex_extension_directory_table(model: IsaModel) -> str:
         cpuid = availability.get("cpuid") if isinstance(availability, dict) else None
         if not isinstance(cpuid, dict):
             continue
-        rows.append(
-            [
-                f"0x{int(cpuid['class']):08x}",
-                f"0x{int(cpuid['leaf']):04x}",
-                str(int(cpuid["index"])),
-                str(int(cpuid["bit"])),
+        entries.append(
+            (
+                int(cpuid["class"]),
+                int(cpuid["leaf"]),
+                int(cpuid["index"]),
+                int(cpuid["bit"]),
                 str(cpuid["feature"]),
                 qualified_name,
-            ]
+            )
         )
-    if not rows:
+    if not entries:
         raise ValueError("no extension CPUID availability entries are defined")
-    rows.sort(key=lambda row: (int(row[0], 16), int(row[1], 16), int(row[2]), int(row[3])))
+    entries.sort(key=lambda entry: entry[:4])
+    return entries
+
+
+def latex_extension_directory_diagram(model: IsaModel) -> str:
+    grouped: dict[tuple[int, int, int], list[tuple[int, str]]] = {}
+    for class_id, leaf_id, index, bit, feature, _qualified_name in extension_directory_entries(model):
+        grouped.setdefault((class_id, leaf_id, index), []).append((bit, feature))
+
+    lines = [
+        r"\begin{manuallistedformatdiagram}{Optional-Extension Directory Result}{10}"
+    ]
+    for (_class_id, _leaf_id, index), fields in sorted(grouped.items()):
+        cursor = 63
+        lines.append(rf"\manualformatrowrange{{index {index}}}{{63}}{{0}}{{%")
+        for bit, feature in sorted(fields, reverse=True):
+            if bit > cursor or bit < 0:
+                raise ValueError(f"invalid extension CPUID feature bit {bit}")
+            if cursor > bit:
+                lines.append(rf"\manualformatfield{{reserved}}{{{cursor - bit}}}")
+            # Feature names live in the table immediately below the diagram.
+            # One-bit cells stay unlabeled so every diagram can use the same
+            # fixed physical width per bit without text overlapping neighbors.
+            lines.append(r"\manualformatfield{}{1}")
+            cursor = bit - 1
+        if cursor >= 0:
+            lines.append(rf"\manualformatfield{{reserved}}{{{cursor + 1}}}")
+        lines.append("}")
+    lines.append(r"\end{manuallistedformatdiagram}")
+    return "\n".join(lines)
+
+
+def latex_extension_directory_table(model: IsaModel) -> str:
+    rows = [
+        [
+            f"0x{class_id:08x}",
+            f"0x{leaf_id:04x}",
+            str(index),
+            str(bit),
+            feature,
+            qualified_name,
+        ]
+        for class_id, leaf_id, index, bit, feature, qualified_name in extension_directory_entries(model)
+    ]
     return latex_code_table(
         ["Class", "Leaf", "Index", "Bit", "Feature", "Extension"],
         rows,
@@ -1477,12 +1606,587 @@ def latex_extension_directory_table(model: IsaModel) -> str:
 def latex_cpuid_feature_discovery_section(model: IsaModel) -> str:
     return render_latex_template(
         "cpuid_feature_discovery.tex",
-        {"EXTENSION_DIRECTORY_TABLE": latex_extension_directory_table(model)},
+        {
+            "EXTENSION_DIRECTORY_DIAGRAM": latex_extension_directory_diagram(model),
+            "EXTENSION_DIRECTORY_TABLE": latex_extension_directory_table(model),
+        },
     )
 
 
 def latex_save_restore_section() -> str:
     return render_latex_template("save_restore_area.tex", {})
+
+
+def latex_assembler_golden_rows() -> str:
+    document = load_yaml(ASSEMBLER_GOLDEN_PATH)
+    cases = document.get("cases") if isinstance(document, dict) else None
+    if not isinstance(cases, list) or not cases:
+        raise ValueError(f"{ASSEMBLER_GOLDEN_PATH}: expected non-empty cases list")
+    rows: list[str] = []
+    for index, case in enumerate(cases):
+        if not isinstance(case, dict):
+            raise ValueError(f"{ASSEMBLER_GOLDEN_PATH}: cases[{index}] must be a mapping")
+        fields = case.get("field_values")
+        encoded = case.get("encoded_bytes")
+        if not isinstance(fields, dict) or not isinstance(encoded, list):
+            raise ValueError(
+                f"{ASSEMBLER_GOLDEN_PATH}: cases[{index}] requires field_values and encoded_bytes"
+            )
+        field_text = ",".join(f"{name}={value:#x}" for name, value in fields.items())
+        form_text = tex_breakable_code(case.get("form_id", ""))
+        if field_text:
+            form_text += r"; " + tex_code(field_text)
+        byte_text = " ".join(f"{int(value):02x}" for value in encoded)
+        rows.append(
+            " & ".join(
+                [
+                    tex_code(case.get("assembly", "")),
+                    form_text,
+                    tex_code(byte_text),
+                    tex_code(case.get("canonical_disassembly", "")),
+                ]
+            )
+            + r"\\"
+        )
+    return "\n".join(rows)
+
+
+def latex_conformance_section() -> str:
+    document = load_yaml(CONFORMANCE_MANIFEST_PATH)
+    items = document.get("implementation_defined") if isinstance(document, dict) else None
+    if not isinstance(items, list):
+        raise ValueError(
+            f"{CONFORMANCE_MANIFEST_PATH}: expected implementation_defined list"
+        )
+    rows: list[str] = []
+    for index, item in enumerate(items):
+        if not isinstance(item, dict):
+            raise ValueError(
+                f"{CONFORMANCE_MANIFEST_PATH}: implementation_defined[{index}] "
+                "must be a mapping"
+            )
+        rows.append(
+            " & ".join(
+                [
+                    tex_code(item.get("id", "")),
+                    latex_escape(item.get("definition", "")),
+                    latex_escape(item.get("publication", "")),
+                ]
+            )
+            + r"\\"
+        )
+    return render_latex_template(
+        "conformance.tex",
+        {"IMPLEMENTATION_DEFINED_ROWS": "\n".join(rows)},
+    )
+
+
+def navigation_link(anchor: str, text: str = "definition") -> str:
+    return (
+        rf"\hyperref[{anchor}]{{{latex_escape(text)}}} "
+        rf"(p.~\pageref{{{anchor}}})"
+    )
+
+
+def navigation_code_link(anchor: str, text: str) -> str:
+    code = ", ".join(
+        tex_breakable_code(part) for part in text.split(", ")
+    )
+    return (
+        rf"\hyperref[{anchor}]{{{code}}} "
+        rf"(p.~\pageref{{{anchor}}})"
+    )
+
+
+def architecture_table_data() -> dict[str, Any]:
+    data = load_yaml(ARCHITECTURE_TABLES_PATH)
+    if not isinstance(data, dict):
+        raise ValueError(f"{ARCHITECTURE_TABLES_PATH}: expected mapping")
+    return data
+
+
+def canonical_field_index(navigation: dict[str, Any]) -> str:
+    rows = [
+        [
+            tex_code(group["owner"]),
+            ", ".join(tex_code(field) for field in group["fields"]),
+            navigation_link(group["definition"]),
+        ]
+        for group in navigation["canonical_field_groups"]
+    ]
+    return latex_longtable(
+        ["Owner", "Canonical fields", "Normative definition"],
+        rows,
+        ["1.15in", "2.90in", "1.30in"],
+        "Canonical Field Names",
+        style="dense",
+    )
+
+
+def mnemonic_index_rows(
+    model: IsaModel,
+    instructions: list[InstructionDef],
+) -> list[list[str]]:
+    rows: list[list[str]] = []
+    for instruction in sorted(instructions, key=lambda item: item.mnemonic):
+        entries = model.allocated_by_mnemonic.get(instruction.mnemonic, [])
+        if not entries:
+            rows.append(
+                [
+                    rf"\hyperref[{instruction_label(instruction.mnemonic)}]"
+                    rf"{{{tex_code(instruction.mnemonic)}}}",
+                    rf"\pageref{{{instruction_label(instruction.mnemonic)}}}",
+                    "--",
+                    "--",
+                ]
+            )
+            continue
+        for entry in entries:
+            rows.append(
+                [
+                    rf"\hyperref[{instruction_label(instruction.mnemonic)}]"
+                    rf"{{{tex_code(instruction.mnemonic)}}}",
+                    rf"\pageref{{{instruction_label(instruction.mnemonic)}}}",
+                    tex_breakable_code(entry.entry_id),
+                    tex_breakable_code(f"{entry.cls}:")
+                    + tex_breakable_pattern(entry.bits),
+                ]
+            )
+    return rows
+
+
+def mnemonic_index(
+    model: IsaModel,
+    instructions: list[InstructionDef],
+) -> str:
+    return latex_longtable(
+        ["Mnemonic", "Page", "Form ID", "Class and opcode pattern"],
+        mnemonic_index_rows(model, instructions),
+        ["0.80in", "0.35in", "2.35in", "1.85in"],
+        "Mnemonic, Form, and Opcode Index",
+        style="dense",
+    )
+
+
+def reset_value_map(architecture: dict[str, Any]) -> dict[str, str]:
+    values: dict[str, str] = {}
+    for row in architecture["reset_state"]:
+        for state in row["state"]:
+            name = str(state)
+            if name == "F0_F15":
+                for index in range(16):
+                    values[f"F{index}"] = str(row["value"])
+            else:
+                values[name] = str(row["value"])
+    return values
+
+
+def grouped_reset_text(members: list[str], reset_values: dict[str, str]) -> str:
+    grouped: dict[str, list[str]] = defaultdict(list)
+    for member in members:
+        grouped[reset_values.get(member, "not listed")].append(member)
+    if len(grouped) == 1:
+        return tex_breakable_code(next(iter(grouped)))
+    return "; ".join(
+        tex_breakable_code(f"{', '.join(names)}={value}")
+        for value, names in grouped.items()
+    )
+
+
+def state_member_text(members: list[str]) -> str:
+    for prefix in ("R", "F"):
+        expected = [f"{prefix}{index}" for index in range(16)]
+        if members == expected:
+            return f"{prefix}0--{prefix}15"
+    return ", ".join(members)
+
+
+def state_index_rows(
+    navigation: dict[str, Any],
+    architecture: dict[str, Any],
+) -> list[list[str]]:
+    reset_values = reset_value_map(architecture)
+    rows: list[list[str]] = []
+    for group in navigation["state_groups"]:
+        members = list(group["members"])
+        fields = list(group["fields"])
+        state_text = state_member_text(members)
+        rows.append(
+            [
+                navigation_code_link(group["definition"], state_text),
+                ", ".join(tex_code(field) for field in fields) or "--",
+                latex_escape(group["readers"]),
+                latex_escape(group["writers"]),
+                grouped_reset_text(members, reset_values),
+            ]
+        )
+
+    field_groups = {
+        item["owner"]: item["fields"]
+        for item in navigation["canonical_field_groups"]
+    }
+    for control in architecture["control_registers"]:
+        name = str(control["name"])
+        rows.append(
+            [
+                navigation_code_link("section:control-registers", name),
+                ", ".join(tex_code(field) for field in field_groups.get(name, []))
+                or "--",
+                tex_code("RDCR"),
+                tex_code("WRCR") + " and named architectural transitions",
+                tex_breakable_code(reset_values.get(name, "not listed")),
+            ]
+        )
+    return rows
+
+
+def state_index(
+    navigation: dict[str, Any],
+    architecture: dict[str, Any],
+) -> str:
+    return latex_longtable(
+        ["State", "Fields", "Readers", "Writers", "Reset"],
+        state_index_rows(navigation, architecture),
+        ["0.90in", "1.05in", "1.35in", "1.45in", "0.65in"],
+        "Architectural State Index",
+        style="dense",
+    )
+
+
+def event_instruction_producers(
+    instructions: list[InstructionDef],
+) -> dict[str, list[str]]:
+    producers: dict[str, list[str]] = defaultdict(list)
+    for instruction in instructions:
+        exceptions = instruction.data.get("exceptions")
+        if not isinstance(exceptions, list):
+            continue
+        for exception in exceptions:
+            if not isinstance(exception, dict):
+                continue
+            event = exception.get("event")
+            if isinstance(event, str) and instruction.mnemonic not in producers[event]:
+                producers[event].append(instruction.mnemonic)
+    return producers
+
+
+def event_index_rows(
+    architecture: dict[str, Any],
+    instructions: list[InstructionDef],
+) -> list[list[str]]:
+    instruction_producers = event_instruction_producers(instructions)
+    rows: list[list[str]] = []
+    for event in architecture["architectural_events"]:
+        event_class = str(event["event_class"])
+        event_id = event["id"]
+        code = (
+            f"EXC:{int(event_id):02x}"
+            if event_class == "EXCEPTION"
+            else f"{event_class}:{event_id}"
+        )
+        producer_links = [
+            rf"\hyperref[{instruction_label(mnemonic)}]{{{tex_code(mnemonic)}}}"
+            for mnemonic in sorted(instruction_producers.get(str(event["name"]), []))
+        ]
+        producer = latex_escape(event["producer"])
+        if producer_links:
+            producer += "; " + ", ".join(producer_links)
+        rows.append(
+            [
+                tex_breakable_code(code),
+                tex_breakable_code(str(event["name"])),
+                producer,
+                tex_code(event["priority"]),
+                tex_code(event["frame"]),
+                navigation_link("section:event-code-and-sources"),
+            ]
+        )
+    return rows
+
+
+def event_index(
+    architecture: dict[str, Any],
+    instructions: list[InstructionDef],
+) -> str:
+    return latex_longtable(
+        ["Code", "Event", "Producer", "Priority", "Frame", "Definition"],
+        event_index_rows(architecture, instructions),
+        ["0.70in", "0.85in", "1.75in", "0.45in", "0.70in", "0.85in"],
+        "Architectural Event Index",
+        style="dense",
+    )
+
+
+def extension_register_state(
+    model: IsaModel,
+    qualified_name: str,
+    architecture: dict[str, Any],
+) -> str:
+    extensions = load_extensions(model.defs_root)
+    candidates = [
+        name
+        for name in extensions
+        if qualified_name == name or qualified_name.startswith(name + ".")
+    ]
+    candidates.sort(key=len, reverse=True)
+    registers: list[str] = []
+    owner_feature = ""
+    for name in candidates:
+        extension = extensions[name]
+        availability = extension.data.get("availability")
+        cpuid = availability.get("cpuid") if isinstance(availability, dict) else None
+        if isinstance(cpuid, dict) and not owner_feature:
+            owner_feature = str(cpuid.get("feature", ""))
+        register_ref = extension.data.get("registers")
+        if not isinstance(register_ref, str):
+            continue
+        register_doc = load_yaml(extension.path.parent / register_ref)
+        groups = register_doc.get("registers") if isinstance(register_doc, dict) else None
+        if isinstance(groups, dict):
+            for group in groups.values():
+                entries = group.get("entries") if isinstance(group, dict) else None
+                if isinstance(entries, list):
+                    registers.extend(
+                        str(entry["name"])
+                        for entry in entries
+                        if isinstance(entry, dict) and "name" in entry
+                    )
+        break
+    if registers and registers == [f"F{index}" for index in range(16)]:
+        state = "F0--F15, FFLAGS, FSTATUS"
+    else:
+        state = ", ".join(registers) or owner_feature or qualified_name
+    components = architecture["cpuid"]["save_area_layout"]["components"]
+    component_names = {
+        str(item["name"]) for item in components if isinstance(item, dict)
+    }
+    matching_feature = ""
+    for name in reversed(candidates):
+        availability = extensions[name].data.get("availability")
+        cpuid = availability.get("cpuid") if isinstance(availability, dict) else None
+        if isinstance(cpuid, dict) and str(cpuid.get("feature", "")) in component_names:
+            matching_feature = str(cpuid["feature"])
+            break
+    if matching_feature:
+        state += f", SAVE component {matching_feature}"
+    return state
+
+
+def feature_index_rows(
+    model: IsaModel,
+    instructions: list[InstructionDef],
+    architecture: dict[str, Any],
+) -> list[list[str]]:
+    rows: list[list[str]] = []
+    for qualified_name, extension in sorted(
+        model.metadata["extensions"].items(),
+        key=lambda item: (
+            int(item[1]["availability"]["cpuid"]["class"]),
+            int(item[1]["availability"]["cpuid"]["leaf"]),
+            int(item[1]["availability"]["cpuid"]["index"]),
+            int(item[1]["availability"]["cpuid"]["bit"]),
+        ),
+    ):
+        cpuid = extension["availability"]["cpuid"]
+        selector = (
+            f"{int(cpuid['class']):08x}:"
+            f"{int(cpuid['leaf']):04x}:"
+            f"{int(cpuid['index'])}/bit{int(cpuid['bit'])}"
+        )
+        gated = sorted(
+            (
+                instruction
+                for instruction in instructions
+                if instruction.instruction_set == qualified_name
+            ),
+            key=lambda item: item.mnemonic,
+        )
+        related_state = extension_register_state(
+            model, qualified_name, architecture
+        )
+        for instruction in gated:
+            rows.append(
+                [
+                    navigation_code_link(
+                        "section:cpuid-extension-directory",
+                        str(cpuid["feature"]),
+                    ),
+                    tex_breakable_code(selector),
+                    rf"\hyperref[{instruction_label(instruction.mnemonic)}]"
+                    rf"{{{tex_code(instruction.mnemonic)}}}",
+                    latex_escape(related_state),
+                ]
+            )
+    return rows
+
+
+def feature_index(
+    model: IsaModel,
+    instructions: list[InstructionDef],
+    architecture: dict[str, Any],
+) -> str:
+    return latex_longtable(
+        ["Predicate", "Class:leaf:index/bit", "Gated instruction", "Related state or component"],
+        feature_index_rows(model, instructions, architecture),
+        ["0.80in", "1.35in", "1.15in", "2.05in"],
+        "CPUID Feature Index",
+        style="dense",
+    )
+
+
+def allocation_index_rows(
+    model: IsaModel,
+    architecture: dict[str, Any],
+) -> list[list[str]]:
+    rows: list[list[str]] = []
+    for allocation_class in model.allocation_classes:
+        summary = allocation_class.summary
+        rows.append(
+            [
+                tex_breakable_code(f"opcode/{allocation_class.cls}"),
+                latex_escape(
+                    f"{summary['allocated']} of {summary['total']} payload values assigned"
+                ),
+                latex_escape(f"{summary['reserved_total']} payload values unassigned"),
+                navigation_link("section:instruction-header-formats"),
+            ]
+        )
+
+    ea = model.metadata["ea"]
+    compact_values: set[int] = set()
+    for form in ea["compact"]["forms"]:
+        compact_values.update(expand_pattern(str(form["pattern"])))
+    rows.extend(
+        [
+            [
+                tex_breakable_code("effective_address/compact"),
+                latex_escape(f"{len(compact_values)} of 128 descriptors assigned"),
+                latex_escape(f"{128 - len(compact_values)} descriptors unassigned"),
+                navigation_link("table:compact-ea-encoding"),
+            ],
+            [
+                tex_breakable_code("effective_address/EXT0"),
+                latex_escape(f"{len(ea['ext0']['forms'])} descriptor profiles assigned"),
+                "all unmatched descriptor patterns are unassigned",
+                navigation_link("section:extended-ea-addressing"),
+            ],
+        ]
+    )
+
+    for name, operand in sorted(model.metadata["operand_types"].items()):
+        reserved = operand.get("reserved_values") if isinstance(operand, dict) else None
+        if not isinstance(reserved, list) or not reserved:
+            continue
+        assigned = operand.get("values", [])
+        rows.append(
+            [
+                tex_breakable_code(f"operand_selector/{name}"),
+                ", ".join(tex_code(item["name"]) for item in assigned),
+                ", ".join(tex_code(item["name"]) for item in reserved),
+                navigation_link("section:instruction-header-formats"),
+            ]
+        )
+
+    controls = architecture["control_registers"]
+    rows.append(
+        [
+            tex_breakable_code("control_register_selector"),
+            latex_escape(f"{len(controls)} selectors assigned"),
+            tex_breakable_code("INVALID_CONTROL_STATE.INVALID_SELECTOR"),
+            navigation_link("section:control-registers"),
+        ]
+    )
+    exceptions = [
+        event
+        for event in architecture["architectural_events"]
+        if event["event_class"] == "EXCEPTION"
+    ]
+    rows.append(
+        [
+            tex_breakable_code("base_exception_id"),
+            latex_escape(f"{len(exceptions)} IDs assigned"),
+            "unassigned IDs are reserved",
+            navigation_link("section:event-code-and-sources"),
+        ]
+    )
+    cpuid_leaves = sum(
+        len(cpuid_class["leaves"])
+        for cpuid_class in architecture["cpuid"]["classes"]
+    )
+    rows.append(
+        [
+            tex_breakable_code("CPUID_class_leaf_index"),
+            latex_escape(
+                f"{len(architecture['cpuid']['classes'])} classes and "
+                f"{cpuid_leaves} leaves assigned"
+            ),
+            "an unknown class, leaf, or index returns zero",
+            navigation_link("section:cpuid-extension-directory"),
+        ]
+    )
+    return rows
+
+
+def allocation_index(
+    model: IsaModel,
+    architecture: dict[str, Any],
+) -> str:
+    return latex_longtable(
+        ["Namespace", "Assigned", "Unassigned or reserved", "Definition"],
+        allocation_index_rows(model, architecture),
+        ["1.45in", "1.55in", "1.55in", "0.85in"],
+        "Allocation and Reserved-Space Index",
+        style="dense",
+    )
+
+
+def revision_history_table(navigation: dict[str, Any]) -> str:
+    history = navigation["revision_history"]
+    unreleased = history["unreleased"]
+    rows = [
+        [
+            latex_escape(unreleased["status"]),
+            "--",
+            latex_escape("; ".join(unreleased["changes"])),
+        ]
+    ]
+    for release in history["released"]:
+        rows.append(
+            [
+                latex_escape(release["title"]),
+                tex_code(release["architecture_revision"]),
+                latex_escape(
+                    f"{release['compatibility']}: "
+                    + "; ".join(release["changes"])
+                ),
+            ]
+        )
+    return latex_longtable(
+        ["Status", "Architecture revision", "Changes"],
+        rows,
+        ["0.85in", "0.90in", "3.65in"],
+        "Architecture Revision History",
+    )
+
+
+def latex_reference_navigation_section(
+    model: IsaModel,
+    instructions: list[InstructionDef],
+) -> str:
+    navigation = load_reference_navigation(REFERENCE_NAVIGATION_PATH)
+    architecture = architecture_table_data()
+    return render_latex_template(
+        "reference_navigation.tex",
+        {
+            "CANONICAL_FIELD_INDEX": canonical_field_index(navigation),
+            "MNEMONIC_INDEX": mnemonic_index(model, instructions),
+            "STATE_INDEX": state_index(navigation, architecture),
+            "EVENT_INDEX": event_index(architecture, instructions),
+            "FEATURE_INDEX": feature_index(model, instructions, architecture),
+            "ALLOCATION_INDEX": allocation_index(model, architecture),
+            "REVISION_HISTORY": revision_history_table(navigation),
+        },
+    )
 
 
 def latex_data_formats_section(model: IsaModel) -> str:
@@ -1499,10 +2203,103 @@ def latex_instruction_word_formats_section(model: IsaModel) -> str:
         "fragments/instruction_payload_ordering.tex",
         data_format_template_values(model),
     )
+    values["OPCODE_ALLOCATION_MAP"] = latex_opcode_allocation_map(model)
+    values["ASSEMBLER_LANGUAGE_SECTION"] = render_latex_template(
+        "assembler_language.tex",
+        {"ASSEMBLER_GOLDEN_ROWS": latex_assembler_golden_rows()},
+    )
     return render_latex_template(
         "instruction_word_formats.tex",
         values,
     )
+
+
+def opcode_rule_text(entry: AllocationEntry) -> str:
+    rules: list[str] = []
+    for constraint in entry.constraints:
+        field = str(constraint.get("field", ""))
+        if constraint.get("allow"):
+            values = ", ".join(str(value) for value in constraint["allow"])
+            rules.append(f"{field} in {values}")
+        elif constraint.get("exclude"):
+            rules.append(f"{field} excludes {constraint['exclude']}")
+    for relation in entry.destination_overlap:
+        operands = relation.get("operands") or []
+        if len(operands) == 2:
+            rules.append(
+                f"{operands[0]}={operands[1]}:{relation.get('rule')}"
+            )
+    return "; ".join(rules) or "--"
+
+
+def tex_breakable_code(value: str) -> str:
+    escaped = latex_escape(value).replace("--", r"{-}{-}")
+    escaped = escaped.replace(r"\_", r"\_\allowbreak{}")
+    escaped = escaped.replace(".", r".\allowbreak{}")
+    escaped = escaped.replace("/", r"/\allowbreak{}")
+    escaped = escaped.replace(":", r":\allowbreak{}")
+    escaped = escaped.replace("=", r"=\allowbreak{}")
+    return r"\texttt{" + escaped + "}"
+
+
+def tex_breakable_pattern(value: str) -> str:
+    chunks = [latex_escape(value[index : index + 8]) for index in range(0, len(value), 8)]
+    return r"\texttt{" + r"\allowbreak{}".join(chunks) + "}"
+
+
+def latex_breakable_text(value: str) -> str:
+    escaped = latex_escape(value)
+    for separator in (r"\_", ".", "/", ":", "=", ","):
+        escaped = escaped.replace(separator, separator + r"\allowbreak{}")
+    return escaped
+
+
+def latex_opcode_allocation_map(model: IsaModel) -> str:
+    instruction_by_mnemonic = {
+        instruction.mnemonic: instruction for instruction in model.instructions
+    }
+    tables: list[str] = []
+    for allocation_class in model.allocation_classes:
+        rows: list[list[str]] = []
+        for entry in sorted(
+            allocation_class.entries,
+            key=lambda item: (item.bits, item.entry_id),
+        ):
+            mnemonic = entry.mnemonic
+            inst = instruction_by_mnemonic.get(mnemonic or "")
+            owner = instruction_feature(model, inst) if inst is not None else ""
+            owner = owner or "BASE"
+            length = instruction_length(
+                entry,
+                allocation_form_text(entry.text),
+                model.metadata.get("ea"),
+            )
+            if entry.cls in {"extrashort", "short"}:
+                length_text = f"fixed {required_bytes_text(length)}"
+            else:
+                length_text = (
+                    f"required {required_bytes_text(length)}; "
+                    "each concrete required..18"
+                )
+            rows.append(
+                [
+                    tex_breakable_pattern(entry.bits),
+                    tex_breakable_code(entry.entry_id),
+                    latex_breakable_text(allocation_form_text(entry.text)),
+                    latex_breakable_text(opcode_rule_text(entry)),
+                    tex_code(owner),
+                    latex_escape(length_text),
+                ]
+            )
+        tables.append(
+            latex_longtable(
+                ["Pattern", "Form ID", "Syntax", "Constraints / Relations", "Owner", "Length"],
+                rows,
+                ["0.55in", "0.85in", "1.00in", "0.80in", "0.50in", "0.60in"],
+                f"{allocation_class.cls.capitalize()} Opcode Allocation",
+            )
+        )
+    return "\n\n".join(tables)
 
 
 def latex_register_section(model: IsaModel) -> str:
@@ -1559,28 +2356,8 @@ def latex_condition_section(model: IsaModel) -> str:
     )
 
 
-def latex_common_integer_flag_rows(model: IsaModel) -> str:
-    rows = []
-    for inst in model.instructions:
-        effects = inst.flag_effects.get("FLAGS")
-        if not effects:
-            continue
-        effect_text = "; ".join(
-            rf"\texttt{{{flag}}}: {latex_escape(effects[flag])}"
-            for flag in FLAG_BANKS["FLAGS"]
-            if flag in effects
-        )
-        rows.append(
-            rf"\texttt{{{latex_escape(inst.mnemonic)}}} & {effect_text}.\\"
-        )
-    return "\n".join(rows)
-
-
-def latex_condition_code_computation_section(model: IsaModel) -> str:
-    return render_latex_template(
-        "condition_code_computation.tex",
-        {"COMMON_INTEGER_FLAG_ROWS": latex_common_integer_flag_rows(model)},
-    )
+def latex_condition_code_computation_section() -> str:
+    return render_latex_template("condition_code_computation.tex")
 
 
 def latex_ea_payload_rows(data: dict[str, Any]) -> str:
@@ -1863,8 +2640,40 @@ def latex_execution_model_section(model: IsaModel) -> str:
     )
 
 
-def latex_streaming_model_section() -> str:
-    return render_latex_template("streaming_execution_model.tex", {})
+def latex_repeat_contract_table(model: IsaModel) -> str:
+    rows: list[list[str]] = []
+    for inst in model.instructions:
+        repeat = instruction_repeat_contract(inst)
+        if not repeat:
+            continue
+        contexts = ", ".join(str(value) for value in repeat.get("contexts") or [])
+        observed = repeat.get("observed")
+        if isinstance(observed, dict):
+            observation = str(observed.get("kind", ""))
+            if observed.get("operand"):
+                observation += f":{observed['operand']}"
+        else:
+            observation = "--"
+        rows.append(
+            [
+                rf"\hyperref[{instruction_label(inst.mnemonic)}]{{{tex_code(inst.mnemonic)}}}",
+                tex_code(contexts),
+                tex_code(observation),
+            ]
+        )
+    return latex_longtable(
+        ["Instruction", "Eligible Contexts", "REPcc Observation"],
+        rows,
+        ["1.05in", "2.20in", "2.15in"],
+        "Instruction Repeat Contracts",
+    )
+
+
+def latex_streaming_model_section(model: IsaModel) -> str:
+    return render_latex_template(
+        "streaming_execution_model.tex",
+        {"REPEAT_CONTRACT_TABLE": latex_repeat_contract_table(model)},
+    )
 
 
 def latex_privileged_programming_model_section() -> str:
@@ -1908,16 +2717,10 @@ def latex_instruction_flag_effects(inst: InstructionDef) -> str:
         effects = inst.flag_effects.get(bank)
         if not effects:
             continue
-        ordered = [(flag, effects[flag]) for flag in valid_flags if flag in effects]
-        if len(ordered) <= 2:
-            text = "; ".join(
-                rf"\texttt{{{flag}}} {latex_escape(effect)}"
-                for flag, effect in ordered
-            )
-            if text and text[-1] not in ".!?":
-                text += "."
-            parts.append(latex_instruction_field(bank, text))
-            continue
+        ordered = [
+            (flag, effects.get(flag, "preserved"))
+            for flag in valid_flags
+        ]
         parts.extend(
             [
                 rf"\begin{{manualflageffects}}{{{bank}}}",
@@ -1929,6 +2732,24 @@ def latex_instruction_flag_effects(inst: InstructionDef) -> str:
             ]
         )
     return "\n".join(parts)
+
+
+def latex_instruction_exceptions(inst: InstructionDef) -> str:
+    raw_exceptions = inst.data.get("exceptions")
+    if not isinstance(raw_exceptions, list) or not raw_exceptions:
+        return ""
+    lines: list[str] = []
+    for item in raw_exceptions:
+        if not isinstance(item, dict):
+            continue
+        event = tex_code(str(item.get("event", "")))
+        condition = latex_escape(str(item.get("when", "")))
+        forms = item.get("forms")
+        if isinstance(forms, list) and forms:
+            form_text = ", ".join(tex_code(str(form)) for form in forms)
+            condition += rf" ({latex_escape('forms')}: {form_text})"
+        lines.append(event + ": " + condition)
+    return latex_ragged_block(lines)
 
 
 def latex_instruction_summary_table(title: str, instructions: list[InstructionDef]) -> str:
@@ -1958,7 +2779,7 @@ def latex_instruction_entry(model: IsaModel, inst: InstructionDef, *, first_in_g
     description = compact_text(inst.doc.get("description", ""))
     if not description:
         raise ValueError(f"{inst.path}: description must be a non-empty string")
-    parts.append(latex_instruction_field("Description", latex_escape(description)))
+    parts.append(latex_instruction_field("Operation", latex_escape(description)))
     syntax_lines = assembler_syntax_lines(model, inst)
     if syntax_lines:
         parts.append(
@@ -1968,6 +2789,9 @@ def latex_instruction_entry(model: IsaModel, inst: InstructionDef, *, first_in_g
             )
         )
     parts.append(latex_instruction_field("Attributes", latex_attributes_block(inst, model)))
+    exceptions = latex_instruction_exceptions(inst)
+    if exceptions:
+        parts.append(latex_instruction_field("Exceptions", exceptions))
     operand_value_tables = latex_instruction_operand_value_tables(model, inst)
     if operand_value_tables:
         parts.append(operand_value_tables)

@@ -1,0 +1,121 @@
+\clearpage
+\section{Assembly Language and Canonical Text}
+
+This section defines the canonical textual mapping for one decoded instruction record. The syntax lines in the
+instruction entries are form patterns: field markers in parentheses identify encoded fields, \texttt{X(z:...)}
+lists the size suffixes selected by field \texttt{z}, and angle-bracketed names identify appended payloads. Those
+markers explain the encoding and are replaced by concrete operands in assembly source.
+
+\subsection{Canonical Statement Grammar}
+
+The grammar consumes one instruction statement after symbol and relocation expressions have been resolved to the
+integer value presented to instruction-form selection.
+
+\begin{manualcode}
+\manualcodeline{statement := [ LEN integer , ] instruction}
+\manualcodeline{instruction := instruction-head [ operand-list ]}
+\manualcodeline{instruction-head := base-mnemonic [ condition-name ] [ size-suffix ] [ / memory-order ]}
+\manualcodeline{operand-list := operand \{ , operand \}}
+\manualcodeline{operand := register | immediate | effective-address | flag-mask | instruction-body}
+\manualcodeline{register := R0 ... R15 | SP | PC | F0 ... F15 | architectural named register}
+\manualcodeline{integer := [ + | - ] ( decimal | 0x hexadecimal | 0b binary )}
+\end{manualcode}
+
+Canonical mnemonics, register names, segment-register names, condition names, size suffixes, memory-order names,
+and flag names use uppercase spelling. Decimal digits have no prefix. Hexadecimal and binary literals use the
+lowercase prefixes \texttt{0x} and \texttt{0b}; canonical hexadecimal digits are lowercase. Canonical signed
+immediates and displacements use decimal notation, while absolute addresses use hexadecimal notation.
+
+For a conditional mnemonic, the primary condition name from the Condition Encoding table immediately follows the
+base mnemonic. A size suffix follows the condition. Thus a conditional long form is written
+\texttt{JNE.L}, not with the \texttt{cc}, \texttt{X}, \texttt{z}, or field-marker notation used by an encoding
+pattern. An atomic memory-order selector follows the size suffix, as in
+\texttt{CMPXCHG.Q/ACQUIRE}.
+
+Operands appear in the order printed by the selected instruction form. A two-operand data form prints source,
+comma, destination. A three-operand form retains the names and order stated by its instruction entry. Canonical
+output places one space after a mnemonic head and after each comma, and one space on each side of an address
+\texttt{+} or \texttt{-} operator.
+
+\subsection{Effective-Address Text}
+
+The canonical effective-address productions are:
+
+\begin{manualcode}
+\manualcodeline{effective-address := register | immediate | memory-address}
+\manualcodeline{memory-address := [ address-expression ]}
+\manualcodeline{address-expression := base | base + displacement | base - displacement}
+\manualcodeline{address-expression := segment : base [ + index * scale ] [ + displacement | - displacement ]}
+\manualcodeline{address-expression := base + index * scale [ + displacement | - displacement ]}
+\manualcodeline{base := R0 ... R15 | SP | PC | 0 | R0++ ... R15++ | {-}{-}R0 ... {-}{-}R15}
+\manualcodeline{index := R0 ... R15 | R0++ ... R15++ | {-}{-}R0 ... {-}{-}R15}
+\manualcodeline{segment := DS | SS | GS0 ... GS5}
+\manualcodeline{scale := 1 | 2 | 4 | 8}
+\end{manualcode}
+
+The selected compact or EXT0 profile determines which production members are valid for that instruction field.
+The register, descriptor, displacement, and scale values in the text map directly to the fields and payload order
+specified in the Effective Addressing chapters. A canonical disassembler chooses the primary condition name and
+the concrete register and segment names from their encoding tables.
+
+\subsection{Aliases and Canonical Disassembly}
+
+\manualtablecaption{Assembler Aliases and Canonical Text}
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{1.35in}>{\raggedright\arraybackslash}p{1.55in}>{\raggedright\arraybackslash}p{2.55in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Source spelling} & \textbf{Canonical text} & \textbf{Mapping}\\
+\midrule
+\texttt{CLC} & \texttt{CLRF C} & Encodes the C-bit flag mask.\\
+\texttt{STC} & \texttt{SETF C} & Encodes the C-bit flag mask.\\
+\texttt{REP Rn, (instruction)} & \texttt{REP Rn, (instruction)} & Encodes condition T in the REPcc form.\\
+\texttt{REPGF Rn, \{ body \}} & \texttt{REPG Rn, body\_bytes} & Applies the REPGF assembly-time body check, then emits REPG.\\
+condition alias & primary condition name & Uses the primary name in the Condition Encoding table.\\
+\bottomrule
+\end{manualtabular}
+
+\texttt{LEN n, instruction} selects an extended record of exactly \texttt{n} bytes. Form selection first chooses
+the shortest concrete form whose fields, operand classes, ranges, and EA constraints match the statement. The
+explicit length then supplies zero padding through byte \texttt{n-1}. Without \texttt{LEN}, the selected concrete
+form uses its shortest valid record. Canonical disassembly emits \texttt{LEN n,} exactly when an extended record is
+longer than its concrete form, as defined in Instruction Header Formats.
+
+\subsection{Form Selection and Diagnostics}
+
+Form matching evaluates the complete operand list, explicit suffixes and qualifiers, field ranges, EA profile
+constraints, destination-overlap rules, and the requested record length. The assembler reports the stage that
+prevented a unique encoding:
+
+\begin{itemize}
+\item \textbf{lexical}: a token does not match the statement grammar;
+\item \textbf{expression}: an operand expression has no resolved integer or relocation value;
+\item \textbf{form}: no instruction form has the supplied mnemonic head and operand classes;
+\item \textbf{range}: a resolved value does not fit the selected field or payload width;
+\item \textbf{constraint}: an EA profile, selector value, or operand relation fails the selected form's rule;
+\item \textbf{length}: a \texttt{LEN} value lies outside 3 through 18 or cannot contain the concrete form; and
+\item \textbf{ambiguity}: more than one shortest concrete form remains after all preceding checks.
+\end{itemize}
+
+\subsection{Golden Encodings}
+
+The complete source cases are recorded in
+\texttt{isa/reference/assembler\_golden\_vectors.yaml}. The following cases show the byte order used by that
+source. Fields are listed after decoding the header and opcode payload; appended descriptor, immediate,
+displacement, and padding bytes follow in instruction-stream order.
+
+\manualtablecaption{Canonical Assembly Golden Encodings}
+\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{1.35in}>{\raggedright\arraybackslash}p{1.65in}>{\raggedright\arraybackslash}p{1.10in}>{\raggedright\arraybackslash}p{1.45in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Assembly} & \textbf{Form and fields} & \textbf{Bytes} & \textbf{Canonical disassembly}\\
+\midrule
+\endfirsthead
+\multicolumn{4}{l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Assembly} & \textbf{Form and fields} & \textbf{Bytes} & \textbf{Canonical disassembly}\\
+\midrule
+\endhead
+@ASSEMBLER_GOLDEN_ROWS@
+\bottomrule
+\end{manuallongtable}

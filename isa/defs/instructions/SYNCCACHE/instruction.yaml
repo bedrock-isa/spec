@@ -1,7 +1,7 @@
 mnemonic: SYNCCACHE
 title: Synchronize Caches
-summary: Synchronize instruction/data cache visibility.
-description: Writes dirty data for the addressed range to the point of instruction coherency, invalidates corresponding instruction and decoded state, and retires only when later fetches observe the synchronized bytes.
+summary: Synchronize one cache-maintenance block for local instruction fetch.
+description: Computes and translates the address-role EA, writes dirty data for its CPUID-sized maintenance block into normal-memory coherence throughout the coherence domain, invalidates the executing logical processor's matching instruction, decoded, and prefetch state, and serializes later instruction fetch.
 attributes:
   class: system
   family: cache

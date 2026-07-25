@@ -109,7 +109,7 @@ builtin_families:
       - name: wait
         c_interface: void(void)
         lowering: {kind: instruction, value: WAIT}
-        effect: Unprivileged; may suspend until an event or interrupt and is a convergent side effect.
+        effect: Unprivileged PAUSE-like convergent hint; retires normally and permits a finite implementation-selected delay, including zero, before subsequent execution.
 
   - id: memory
     caption: Memory Builtins
@@ -230,23 +230,23 @@ builtin_families:
       - name: flush_dcache
         c_interface: void(void *,size_t)
         lowering: {kind: instruction, value: FLSHDCACHE}
-        effect: Supervisor; cache side effect and full memory clobber.
+        effect: Supervisor; applies FLSHDCACHE to every CPUID maintenance block intersecting the range and fully clobbers memory.
       - name: invalidate_dcache
         c_interface: void(void *,size_t)
         lowering: {kind: instruction, value: INVDCACHE}
-        effect: Supervisor; cache side effect and full memory clobber.
+        effect: Supervisor; applies INVDCACHE to every CPUID maintenance block intersecting the range and fully clobbers memory.
       - name: invalidate_icache
         c_interface: void(void *,size_t)
         lowering: {kind: instruction, value: INVICACHE}
-        effect: Supervisor; instruction-cache side effect and instruction-stream barrier.
+        effect: Supervisor; applies local INVICACHE to every CPUID maintenance block intersecting the range and serializes instruction fetch.
       - name: writeback_dcache
         c_interface: void(void *,size_t)
         lowering: {kind: instruction, value: WRBKDCACHE}
-        effect: Supervisor; cache side effect and full memory clobber.
+        effect: Supervisor; applies WRBKDCACHE to every CPUID maintenance block intersecting the range and fully clobbers memory.
       - name: sync_cache
         c_interface: void(void *,size_t)
         lowering: {kind: instruction, value: SYNCCACHE}
-        effect: Supervisor; synchronizes data/instruction visibility and the instruction stream.
+        effect: Supervisor; applies SYNCCACHE to every CPUID maintenance block intersecting the range and serializes instruction fetch.
 
   - id: mmu
     caption: MMU Builtins

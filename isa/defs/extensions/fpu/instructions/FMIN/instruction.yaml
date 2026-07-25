@@ -1,12 +1,13 @@
 mnemonic: FMIN
 title: Floating-Point Minimum
 summary: Performs the floating-point minimum operation.
-description: Selects the lesser floating-point operand according to the architectural NaN and signed-zero rules and writes it to the destination.
+description: Selects the lesser numeric operand; one NaN selects the numeric operand, two NaNs use the common NaN-selection rule, and a positive-zero/negative-zero pair selects negative zero. A signaling NaN generates NV.
 attributes:
   class: fpu
   family: fpu
   privilege: unprivileged
-  repeat:
+repeat:
+  contexts:
   - REP
   - REPG
 flag_effects:

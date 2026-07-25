@@ -44,23 +44,28 @@ and \texttt{SAVE \textless{}ea\textgreater{}} instructions.
 
 struct br_save_area_info {
     uint64_t size;
-    uint16_t header_size;
+    uint16_t fixed_size;
     uint16_t component_count;
     uint16_t bitmap_words;
+    uint8_t format;
 };
 
 struct br_save_component {
     uint16_t id;
-    uint16_t flags;
+    uint8_t bitmap_bit;
     uint32_t offset;
+    uint32_t max_size;
+    uint16_t alignment;
+    uint8_t init_policy;
 };
 
 struct br_program_context {
     void *save_area;
     uint64_t save_area_size;
-    uint16_t header_size;
+    uint16_t fixed_size;
     uint16_t component_count;
     uint16_t bitmap_words;
+    uint8_t format;
 };
 
 uint64_t bedrock_cpuid(uint64_t selector);
@@ -86,9 +91,10 @@ static struct br_save_area_info br_query_save_area(void)
     struct br_save_area_info info;
 
     info.size = r0;
-    info.header_size = (uint16_t)(r1 & 0xffffu);
+    info.fixed_size = (uint16_t)(r1 & 0xffffu);
     info.component_count = (uint16_t)((r1 >> 16) & 0xffffu);
     info.bitmap_words = (uint16_t)((r1 >> 32) & 0xffffu);
+    info.format = (uint8_t)((r1 >> 48) & 0x0fu);
     return info;
 }
 
@@ -96,13 +102,22 @@ static void br_query_save_components(struct br_save_component *out,
                                      uint16_t count)
 {
     for (uint16_t i = 0; i != count; ++i) {
-        uint64_t r = bedrock_cpuid(
+        uint16_t descriptor_a = (uint16_t)(3u + 2u * i);
+        uint16_t descriptor_b = (uint16_t)(descriptor_a + 1u);
+        uint64_t a = bedrock_cpuid(
             br_cpuid_selector(BR_CPUID_CLASS_IMPL,
                               BR_CPUID_SAVE_AREA_LAYOUT,
-                              (uint16_t)(3u + i)));
-        out[i].id = (uint16_t)(r & 0xffffu);
-        out[i].flags = (uint16_t)((r >> 16) & 0xffffu);
-        out[i].offset = (uint32_t)(r >> 32);
+                              descriptor_a));
+        uint64_t b = bedrock_cpuid(
+            br_cpuid_selector(BR_CPUID_CLASS_IMPL,
+                              BR_CPUID_SAVE_AREA_LAYOUT,
+                              descriptor_b));
+        out[i].id = (uint16_t)(a & 0xffffu);
+        out[i].bitmap_bit = (uint8_t)((a >> 16) & 0x3fu);
+        out[i].offset = (uint32_t)(a >> 32);
+        out[i].max_size = (uint32_t)b;
+        out[i].alignment = (uint16_t)((b >> 32) & 0xffffu);
+        out[i].init_policy = (uint8_t)((b >> 48) & 0xffu);
     }
 }
 
@@ -133,9 +148,10 @@ int br_save_program_context(struct br_program_context *ctx,
 
     ctx->save_area = (void *)base;
     ctx->save_area_size = info.size;
-    ctx->header_size = info.header_size;
+    ctx->fixed_size = info.fixed_size;
     ctx->component_count = info.component_count;
     ctx->bitmap_words = info.bitmap_words;
+    ctx->format = info.format;
 
     bedrock_save(ctx->save_area);
     return 0;

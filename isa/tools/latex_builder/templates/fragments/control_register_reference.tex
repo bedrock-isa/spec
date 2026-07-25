@@ -5,15 +5,21 @@ stack, and user-return registers are per-logical-processor architectural state.
 
 \input{isa/tools/latex_builder/templates/fragments/generated/control_register_selectors.tex}
 
+\input{isa/tools/latex_builder/templates/fragments/generated/control_write_rules.tex}
+
 \begin{manualformatdiagram}{PTCR Format}{8}
 \manualformatrow{PTCR[63:0]}{%
 \manualformatfield{root\_page}{52}
-\manualformatfield{PSEL}{4}
+\manualformatfield{PS}{4}
 \manualformatfield{L}{1}
 \manualformatfield{reserved}{6}
-\manualformatfield{PE}{1}
+\manualformatfield{P}{1}
 }
 \end{manualformatdiagram}
+{\small
+In the diagram, \texttt{PS}, \texttt{L}, and \texttt{P} abbreviate
+\texttt{PABITS\_SEL}, \texttt{LA57}, and \texttt{PE}.
+\par}
 
 \manualtablecaption{PTCR Fields}
 \begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{3.65in}@{}}
@@ -34,9 +40,10 @@ reserved & \texttt{6..1} & must be zero\\
 \manualformatfield{reserved}{32}
 \manualformatfield{ASID}{16}
 \manualformatfield{reserved}{15}
-\manualformatfield{AE}{1}
+\manualformatfield{A}{1}
 }
 \end{manualformatdiagram}
+{\small\texttt{A} abbreviates \texttt{AE} in the diagram.\par}
 
 \manualtablecaption{ASCR Fields}
 \begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{3.65in}@{}}
@@ -100,9 +107,10 @@ reserved & \texttt{63..33} & must be zero\\
 \begin{manualformatdiagram}{PMC Format}{8}
 \manualformatrow{PMC[63:0]}{%
 \manualformatfield{reserved}{63}
-\manualformatfield{EN}{1}
+\manualformatfield{E}{1}
 }
 \end{manualformatdiagram}
+{\small\texttt{E} abbreviates \texttt{EN} in the diagram.\par}
 
 \manualtablecaption{PMC Fields}
 \begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{3.65in}@{}}

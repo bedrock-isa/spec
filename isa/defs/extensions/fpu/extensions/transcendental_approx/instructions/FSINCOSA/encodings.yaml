@@ -22,3 +22,6 @@ forms:
   fields:
     z:
       type: size
+  destination_overlap:
+  - operands: [sin_dst, cos_dst]
+    rule: illegal_instruction

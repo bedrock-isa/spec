@@ -1,7 +1,7 @@
 \clearpage
-\section{Terminology and Compatibility}
+\section{Terminology and Compatibility}\label{section:terminology}
 
-\subsection{Address Values}
+\subsection{Address Values}\label{section:address-terminology}
 
 An \emph{effective address (EA)} is the address value or operand designator produced by an addressing mode before
 segment pre-translation. A memory EA produces an address, while register and immediate EAs name non-memory operands.
@@ -18,6 +18,15 @@ With paging disabled, the linear address is used directly instead.
 A \emph{memory-system address} is the value presented to the memory subsystem after every active architectural
 translation stage. Depending on the final access attributes, the subsystem may interpret it as an ordinary byte
 address or an externally acknowledged slot address.
+
+\emph{Byte-addressed normal memory} is the coherent memory-location model selected by a final translation with
+\texttt{AT=0}. The PTE \texttt{CP} field selects one of its four normal-memory cache policies. \emph{Cacheable}
+names only policy \texttt{CP=0}; the other three \texttt{CP} values remain byte-addressed normal memory with the
+allocation and propagation behavior defined by the Memory Model.
+
+A \emph{slot-addressed transaction} is the externally acknowledged access selected by a final translation with
+\texttt{AT=1}. Its memory-system address is a slot address rather than a normal-memory byte address. The
+Memory Address Translation and Memory Model sections define its transfer, completion, and ordering rules.
 
 \emph{Address generation} is the instruction-local calculation that combines registers, displacement, index,
 scale, and immediate fields into an effective address. It does not by itself read memory.
@@ -46,7 +55,7 @@ address to a physical frame and applies PTE permissions, cache policy, and addre
 A \emph{PFN} is a physical frame number. A leaf PTE combines its PFN with linear-address bits 11..0 to form a byte
 address when \texttt{AT=0} or a slot address when \texttt{AT=1}.
 
-\subsection{Control Flow}
+\subsection{Control Flow}\label{section:control-flow-terminology}
 
 A \emph{near control transfer} is a CALL, RET, JMP, or conditional branch that changes only PC within the current
 code-segment context.
@@ -54,10 +63,18 @@ code-segment context.
 A \emph{segment-changing control transfer} updates CS and PC in one architectural commit. Long jumps, long calls,
 and long returns belong to this category.
 
-\subsection{Architectural State}
+\subsection{Tracing Terms}\label{section:tracing-terminology}
+
+The \emph{\texttt{TRACE} instruction} records its immediate marker and current instruction boundary in the
+implementation trace stream when that stream is enabled. A \emph{trace unit} is the execution-completion unit
+sampled by \texttt{STATUS.TF}. \emph{\texttt{DEBUG\_TRACE}} is the architectural event delivered after successful
+completion of a TF-selected trace unit. These names identify the marker instruction, execution boundary, and event,
+respectively.
+
+\subsection{Architectural State}\label{section:architectural-state-terminology}
 
 A \emph{general-purpose register} is one of the sixteen 64-bit Rn integer registers, R0 through R15. Ordinary
-integer register fields name this unified class.
+integer register fields use four bits to select R0 through R15.
 
 An \emph{Rn register} is a general-purpose integer register selected by a four-bit Rn field. It may hold integers,
 addresses, counters, selectors, or temporary data according to the instruction form.
@@ -65,25 +82,24 @@ addresses, counters, selectors, or temporary data according to the instruction f
 The \emph{stack pointer register} is SP. It lies outside the four-bit Rn namespace and uses SS as the fixed segment
 for SP-relative addressing.
 
-A \emph{segment register operand} is a 64-bit segment register exposed through the S operand class. That class names
-DS, SS, and GS0 through GS5 from the SREG selector table, not CS, FLAGS, STATUS, PC, or SP.
-CS may appear as the fixed source operand of \texttt{RDSEG CS} and \texttt{PUSH CS}; those forms do not add CS to
-the SREG selector namespace and provide no corresponding write or pop form.
+A \emph{segment register operand} is a 64-bit segment register exposed through the S operand class. The SREG selector
+table maps its eight encodings to DS, SS, and GS0 through GS5. \texttt{RDSEG CS} and \texttt{PUSH CS} read the
+current CS image through their fixed CS forms.
 
-A \emph{state register} is named architectural state such as FLAGS or STATUS. Dedicated read and write instructions
-access these registers instead of the S operand class.
+A \emph{state register} is named architectural state such as FLAGS or STATUS. \texttt{RDFLAGS}, \texttt{WRFLAGS},
+\texttt{RDSTATUS}, and \texttt{WRSTATUS} access these registers.
 
 A \emph{control register} is a privileged register exposed through the CR operand class, such as PTCR, ASCR, ECR,
 SPC, SCS, and SDS.
 
-\subsection{Compatibility}
+\subsection{Compatibility}\label{section:compatibility-terminology}
 
-\emph{Reserved} means held for a future architectural definition, so software does not depend on the current value
-or behavior. \emph{Must be zero} requires software to write zero, and \emph{read-as-zero} means reads return zero
-while the field remains reserved. \emph{Ignored} means hardware accepts the field without using it for the current
-operation. \emph{Preserved} requires software to retain the previous value when rewriting the containing object.
+\emph{Reserved} means that software must not depend on the field's value or behavior. \emph{Must be zero} requires
+software to write zero, and \emph{read-as-zero} means reads return zero while the field remains reserved.
+\emph{Ignored} means hardware accepts the field without using it for the current operation. \emph{Preserved}
+requires software to retain the previous value when rewriting the containing object.
 
-\emph{Software-defined} state is explicitly reserved for software use and is not consumed by a future extension
-without redefining the containing structure. \emph{Implementation-defined} behavior is selected by the
+\emph{Software-defined} state is reserved for software use; hardware interpretation is limited to behavior
+explicitly defined by the containing structure. \emph{Implementation-defined} behavior is selected by the
 implementation and published through CPUID, platform documentation, or firmware. \emph{Illegal} use of an opcode,
 effective-address form, selector, or operation raises the exception named by the defining rule.

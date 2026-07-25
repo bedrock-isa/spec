@@ -1,12 +1,12 @@
 mnemonic: XCHG
 title: Exchange
 summary: Performs the exchange operation.
-description: Exchanges the two selected-width operand values as one instruction.
+description: Exchanges the two selected-width operand values as one instruction. A memory form performs an ordinary selected-width load followed by an ordinary selected-width store, with both architectural destinations committed by the instruction.
 attributes:
   class: data_movement
   family: data_movement
   privilege: unprivileged
-  repeat:
+repeat:
+  contexts:
   - REP
-  - REPcc
   - REPG

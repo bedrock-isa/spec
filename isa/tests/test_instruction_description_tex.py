@@ -85,14 +85,15 @@ def model(constants: list[dict[str, str]]) -> IsaModel:
 
 
 class InstructionDetailsTexTests(unittest.TestCase):
-    def test_flag_effect_metadata_uses_table_and_inline_thresholds(self) -> None:
+    def test_flag_effect_metadata_renders_complete_banks(self) -> None:
         inline = instruction(
             Path("instruction.yaml"),
             flag_effects={"FFLAGS": {"NV": "may accrue", "NX": "may accrue"}},
         )
         inline_tex = latex_instruction_flag_effects(inline)
-        self.assertIn(r"\manualinstructionfield{FFLAGS}", inline_tex)
-        self.assertNotIn("manualflageffects", inline_tex)
+        self.assertIn(r"\begin{manualflageffects}{FFLAGS}", inline_tex)
+        self.assertIn(r"\manualflageffect{NV}{may accrue}", inline_tex)
+        self.assertIn(r"\manualflageffect{DZ}{preserved}", inline_tex)
 
         table = instruction(
             Path("instruction.yaml"),
@@ -110,9 +111,9 @@ class InstructionDetailsTexTests(unittest.TestCase):
             for inst in load_instructions(ROOT / "isa" / "defs")
             for effects in inst.flag_effects.values()
         ]
-        self.assertEqual(len(banks), 71)
-        self.assertEqual(sum(len(effects) >= 3 for effects in banks), 36)
-        self.assertEqual(sum(len(effects) <= 2 for effects in banks), 35)
+        self.assertEqual(len(banks), 79)
+        self.assertEqual(sum(len(effects) >= 3 for effects in banks), 38)
+        self.assertEqual(sum(len(effects) <= 2 for effects in banks), 41)
         for path in (ROOT / "isa" / "defs").glob("**/instructions/*/details.tex"):
             self.assertNotIn("manualflageffects", path.read_text(encoding="utf-8"))
 

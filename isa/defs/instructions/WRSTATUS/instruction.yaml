@@ -1,8 +1,11 @@
 mnemonic: WRSTATUS
 title: Write Status
 summary: Write the processor STATUS register from an Rn register.
-description: WRSTATUS writes the low 16 bits from the source Rn register into the architectural STATUS register. Reserved STATUS bits must be zero. STATUS is not part of the S segment-register operand class.
+description: WRSTATUS validates the low 16 bits from the source Rn register and atomically updates IE, NI, TF, and RF. Reserved bits must be zero, and the supplied PM and EA values must equal the current values. Clearing NI with a pending NMI admits that NMI at the next instruction boundary.
 attributes:
   class: system
   family: system_registers
   privilege: supervisor
+exceptions:
+- event: INVALID_CONTROL_STATE
+  when: reserved bits are nonzero or the supplied PM or EA value differs from the current value

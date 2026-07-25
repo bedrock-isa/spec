@@ -278,7 +278,6 @@
 \newif\ifmanualformatdiagrammeasuring
 \newif\ifmanualformatrowmeasuring
 \newcount\manualformatdiagramrows
-\newcount\manualformatdiagrammaxunits
 \newcount\manualformatrowbits
 \newcount\manualformatrowunits
 \newcount\manualformatrowindex
@@ -287,23 +286,50 @@
 \newcount\manualformatfieldx
 \newcount\manualformatfieldhigh
 \newcount\manualformatrowlow
-\newcount\manualformatfieldminunits
+\newcount\manualformatlastfieldbits
+\newcount\manualformatbitlabelvalue
+\newcount\manualformatbitlabeltens
+\newcount\manualformatbitlabelones
+\newcount\manualformatbitlabelbase
+\newcommand{\manualformatbitpositionlabel}[3]{%
+  \manualformatbitlabelvalue=#1\relax
+  \manualformatbitlabeltens=\manualformatbitlabelvalue
+  \divide\manualformatbitlabeltens by 10
+  \manualformatbitlabelones=\manualformatbitlabelvalue
+  \manualformatbitlabelbase=\manualformatbitlabeltens
+  \multiply\manualformatbitlabelbase by 10
+  \advance\manualformatbitlabelones by -\manualformatbitlabelbase
+  \ifnum\manualformatbitlabelvalue>9
+    \node[anchor=south,align=center,font=\scriptsize,inner sep=0pt] at ({#2},{#3})
+      {\the\manualformatbitlabeltens\\[-1pt]\the\manualformatbitlabelones};
+  \else
+    \node[anchor=south,align=center,font=\scriptsize,inner sep=0pt] at ({#2},{#3})
+      {\phantom{0}\\[-1pt]\the\manualformatbitlabelones};
+  \fi}
 \newcommand{\manualformatfield}[2]{%
   \manualformatfieldbits=#2\relax
   \manualformatfieldunits=\manualformatfieldbits
-  \ifnum\manualformatfieldunits<\manualformatfieldminunits
-    \manualformatfieldunits=\manualformatfieldminunits
-  \fi
   \ifmanualformatrowmeasuring
     \advance\manualformatrowbits by \manualformatfieldbits
     \advance\manualformatrowunits by \manualformatfieldunits
   \else
-    \ifnum\manualformatfieldhigh>\manualformatrowlow
-      \node[anchor=south] at ({\the\manualformatfieldx},{\manualformatrowy + 1.18}) {\the\manualformatfieldhigh};
+    \ifnum\manualformatfieldbits=1
+      \manualformatbitpositionlabel{\the\manualformatfieldhigh}
+        {\the\manualformatfieldx + 0.5}{\manualformatrowy + 1.18}
+    \else
+      \ifnum\manualformatfieldhigh>\manualformatrowlow
+        \manualformatbitpositionlabel{\the\manualformatfieldhigh}
+          {\the\manualformatfieldx + 0.5}{\manualformatrowy + 1.18}
+      \fi
     \fi
     \draw ({\the\manualformatfieldx},{\manualformatrowy}) rectangle
       ({\the\numexpr\manualformatfieldx+\manualformatfieldunits\relax},{\manualformatrowy + 1});
-    \node at ({\the\manualformatfieldx + \the\manualformatfieldunits/2},{\manualformatrowy + 0.5}) {#1};
+    \ifnum\manualformatfieldbits<3
+      \node[font=\tiny] at ({\the\manualformatfieldx + \the\manualformatfieldunits/2},{\manualformatrowy + 0.5}) {#1};
+    \else
+      \node at ({\the\manualformatfieldx + \the\manualformatfieldunits/2},{\manualformatrowy + 0.5}) {#1};
+    \fi
+    \manualformatlastfieldbits=\manualformatfieldbits
     \advance\manualformatfieldx by \manualformatfieldunits
     \advance\manualformatfieldhigh by -\manualformatfieldbits
   \fi}
@@ -314,17 +340,18 @@
   \manualformatrowmeasuringtrue#4\manualformatrowmeasuringfalse
   \ifmanualformatdiagrammeasuring
     \advance\manualformatdiagramrows by 1
-    \ifnum\manualformatrowunits>\manualformatdiagrammaxunits
-      \manualformatdiagrammaxunits=\manualformatrowunits
-    \fi
   \else
-    \pgfmathsetmacro{\manualformatrowy}{-2.08*\the\manualformatrowindex}
+    \pgfmathsetmacro{\manualformatrowy}{-2.55*\the\manualformatrowindex}
     \node[anchor=east] at (-0.35,{\manualformatrowy + 0.5}) {#1};
     \manualformatfieldx=0
     \manualformatrowlow=#3\relax
     \manualformatfieldhigh=#2\relax
+    \manualformatlastfieldbits=0
     #4
-    \node[anchor=south east] at ({\the\manualformatfieldx},{\manualformatrowy + 1.18}) {#3};
+    \ifnum\manualformatlastfieldbits=1\else
+      \manualformatbitpositionlabel{#3}
+        {\the\manualformatfieldx - 0.5}{\manualformatrowy + 1.18}
+    \fi
     \advance\manualformatrowindex by 1
   \fi}
 \newcommand{\manualformatrow}[2]{%
@@ -334,12 +361,12 @@
   \manualformatrowrange{#1}{\number\numexpr\manualformatrowbits-1\relax}{0}{#2}}
 \newcommand{\manualrenderformatdiagram}[4]{%
   \begingroup
-  \manualformatfieldminunits=#2\relax
   \manualformatdiagramrows=0
-  \manualformatdiagrammaxunits=0
   \manualformatdiagrammeasuringtrue#3\manualformatdiagrammeasuringfalse
-  \pgfmathsetmacro{\manualformatdiagramneedspace}{0.80 + 0.45*\the\manualformatdiagramrows}
-  \pgfmathsetmacro{\manualformatdiagramxscale}{min(0.30, 4.58/\the\manualformatdiagrammaxunits)}
+  \pgfmathsetmacro{\manualformatdiagramneedspace}{0.80 + 0.52*\the\manualformatdiagramrows}
+  % One bit always occupies the same physical width. The second environment
+  % argument is retained for source compatibility but no longer affects geometry.
+  \pgfmathsetmacro{\manualformatdiagramxscale}{4.58/64}
   \Needspace{\manualformatdiagramneedspace in}%
   \begin{center}\vspace{3pt}%
   \begin{tikzpicture}[x=\manualformatdiagramxscale in,y=0.22in,every node/.style={font=\scriptsize}]%

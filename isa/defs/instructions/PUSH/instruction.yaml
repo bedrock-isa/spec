@@ -1,13 +1,17 @@
 mnemonic: PUSH
 title: Push
 summary: Pushes one Rn value, SREG image, or the current CS image onto the stack.
-description: PUSH stores one 64-bit general-register value or SREG segment image on the stack. The SREG form accepts DS, SS, and GS0-GS5 and does not assign CS an SREG selector. A separate source-only PUSH CS form stores the current CS image. PUSH SS captures the old SS image and uses that same old SS as the stack context for the store.
+description: PUSH stores one 64-bit general-register value, selected SREG image, or current CS image on the stack. The SREG form accepts DS, SS, and GS0-GS5. PUSH SS captures the old SS image and uses that same old SS as the stack context for the store.
 attributes:
   class: data_movement
   family: data_movement
   privilege: unprivileged
-  repeat:
+repeat:
+  contexts:
   - REP
   - REPcc
   - REPG
+  observed:
+    kind: source
+    operand: reg
 additional_description: details.tex

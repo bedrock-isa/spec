@@ -6,8 +6,17 @@ attributes:
   class: integer
   family: integer_mul_div
   privilege: unprivileged
-  repeat:
+repeat:
+  contexts:
   - REP
   - REPcc
   - REPG
+  observed:
+    kind: result
+    operand: quotient
+exceptions:
+- event: DIVIDE_ERROR
+  when: the divisor is zero
+- event: ILLEGAL_INSTRUCTION
+  when: quotient and remainder designate the same register; cause is INVALID_OPERAND_RELATION
 additional_description: details.tex

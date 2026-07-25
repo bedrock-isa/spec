@@ -5,14 +5,14 @@
 \BedrockContractDiagram{foundation}
 
 \subsection{Design Goals}
-Bedrock is a bounded, byte-addressed CISC ISA with explicit instruction lengths, compact hot-path register forms,
+Bedrock is a bounded, byte-addressed CISC ISA with explicit instruction lengths, compact register forms,
 and selected register-memory and memory-memory forms.
 
 The manual presents programmer-visible behavior first: architectural state, operand encoding, execution semantics,
 and instruction descriptions. Encoding details appear where they are needed to decode or use an instruction form.
 
 \subsection{Architectural Profile}
-Bedrock uses a unified 16-entry Rn integer register file. SP and PC are special architectural registers outside the
+Bedrock defines sixteen 64-bit integer registers, R0 through R15. SP and PC are special architectural registers outside the
 Rn namespace, with SP-relative addressing tied to SS and PC-relative addressing tied to CS.
 
 The reference is organized around programmer-visible state, operand formation, execution semantics, and instruction
@@ -25,5 +25,4 @@ behavior. Byte-level instruction framing is specified separately in the Instruct
 \item The effective-address model covers register, memory, immediate, absolute, segment-qualified, indexed, and auto-update operands.
 \item Segment pre-translation precedes optional page-table translation.
 \item User and supervisor modes share the instruction set, with privileged instructions and checked user-access moves defining supervisor-only behavior.
-\item REP, REPcc, and REPG expose scalar repeated execution while leaving internal streaming width implementation-defined.
 \end{itemize}

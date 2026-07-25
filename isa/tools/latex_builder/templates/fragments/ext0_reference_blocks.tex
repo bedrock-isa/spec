@@ -5,7 +5,7 @@
 \manualeaprofilesyntax{[SEG(s):Rn(b) + displacement]}
 \manualeaprofileline{Descriptor}{0sssbbbb, one byte.}
 \manualeaprofileline{Generation}{offset = temporary Rn(b) + displacement.}
-\manualeaprofileline{Segment}{SEG(s) selects DS, SS, or GS0..GS5; CS is not an explicit selector.}
+\manualeaprofileline{Segment}{SEG(s) selects DS, SS, or GS0..GS5.}
 \manualeaprofileline{Payload}{One descriptor byte plus the optional displacement selected by the compact EXT0 escape.}
 \manualeaprofileline{Update}{No auto-update.}
 \end{manualeaprofile}
@@ -20,7 +20,7 @@
 \manualeaprofilesyntax{[SEG(s):Rn(b) + {-}{-}Rn(i) * scale + displacement]}
 \manualeaprofileline{Descriptor}{Byte 0 is \texttt{1sss0010}, \texttt{1sss0000}, or \texttt{1sss0001} for no update, postincrement, or predecrement. Byte 1 is \texttt{bbbbiiii}.}
 \manualeaprofileline{Generation}{offset = temporary Rn(b) + index\_term * scale + displacement.}
-\manualeaprofileline{Segment}{SEG(s) selects DS, SS, or GS0..GS5; CS is not an explicit selector.}
+\manualeaprofileline{Segment}{SEG(s) selects DS, SS, or GS0..GS5.}
 \manualeaprofileline{Scale}{Scale is implicit in the consuming instruction. B/W/L/Q normally imply 1/2/4/8.}
 \manualeaprofileline{Payload}{Two descriptor bytes plus the optional displacement selected by the compact EXT0 escape.}
 \manualeaprofileline{Update}{Index postincrement uses the current temporary Rn(i), then increments it by one element. Index predecrement decrements temporary Rn(i) by one element before use.}
@@ -34,7 +34,7 @@
 \manualeaprofilesyntax{[SEG(s):0 + displacement]}
 \manualeaprofileline{Descriptor}{1sss0011, one byte.}
 \manualeaprofileline{Generation}{offset = displacement. Without a displacement payload, offset is 0.}
-\manualeaprofileline{Segment}{SEG(s) selects DS, SS, or GS0..GS5; CS is not an explicit selector.}
+\manualeaprofileline{Segment}{SEG(s) selects DS, SS, or GS0..GS5.}
 \manualeaprofileline{Payload}{One descriptor byte plus the optional displacement selected by the compact EXT0 escape.}
 \manualeaprofileline{Update}{No auto-update.}
 \end{manualeaprofile}
@@ -48,7 +48,7 @@
 \manualeaprofilesyntax{[SEG(s):{-}{-}Rn(b) + displacement]}
 \manualeaprofileline{Descriptor}{Byte 0 is \texttt{1sss1000}. Byte 1 is \texttt{bbbb0000} for base postincrement or \texttt{bbbb0001} for base predecrement.}
 \manualeaprofileline{Generation}{offset = base\_term + displacement.}
-\manualeaprofileline{Segment}{SEG(s) selects DS, SS, or GS0..GS5; CS is not an explicit selector.}
+\manualeaprofileline{Segment}{SEG(s) selects DS, SS, or GS0..GS5.}
 \manualeaprofileline{Payload}{Two descriptor bytes plus the optional displacement selected by the compact EXT0 escape.}
 \manualeaprofileline{Update}{Base postincrement uses the current temporary Rn(b), then increments it by the memory access size. Base predecrement decrements temporary Rn(b) by the memory access size before use.}
 \end{manualeaprofile}
@@ -63,7 +63,7 @@
 \manualeaprofilesyntax{[SEG(s):0 + {-}{-}Rn(i) * scale + displacement]}
 \manualeaprofileline{Descriptor}{Byte 0 is \texttt{1sss1001}. Byte 1 is \texttt{0010iiii}, \texttt{0000iiii}, or \texttt{0001iiii} for no update, postincrement, or predecrement.}
 \manualeaprofileline{Generation}{offset = index\_term * scale + displacement.}
-\manualeaprofileline{Segment}{SEG(s) selects DS, SS, or GS0..GS5; CS is not an explicit selector.}
+\manualeaprofileline{Segment}{SEG(s) selects DS, SS, or GS0..GS5.}
 \manualeaprofileline{Payload}{Two descriptor bytes plus the optional displacement selected by the compact EXT0 escape.}
 \manualeaprofileline{Update}{Index update follows the same one-element temporary-image rule as other indexed update forms.}
 \end{manualeaprofile}
@@ -83,7 +83,7 @@
 \manualeaprofileline{Generation}{offset = temporary SP or instruction-start PC + index\_term * scale + displacement. A PC term names byte 0 of the current instruction.}
 \manualeaprofileline{Segment}{SP forms are fixed to SS. PC forms are fixed to CS.}
 \manualeaprofileline{Payload}{Two descriptor bytes plus the optional displacement selected by the compact EXT0 escape.}
-\manualeaprofileline{Update}{Only the Rn(i) index register may auto-update; SP and PC are not auto-updated by these forms.}
+\manualeaprofileline{Update}{Auto-update applies to the Rn(i) index register.}
 \end{manualeaprofile}
 \manualeaindexedmemoryflow{EXT0 SP/PC indexed}{SP OR PC}{SP or PC term}{optional displacement}{Rn(i)}{EFFECTIVE ADDRESS}
 \end{manualformblock}

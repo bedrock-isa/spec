@@ -6,4 +6,7 @@ attributes:
   class: system
   family: core_control
   privilege: any
+exceptions:
+- event: INVALID_CONTROL_STATE
+  when: the user-return bank is already valid or the configured entry context fails validation
 additional_description: details.tex

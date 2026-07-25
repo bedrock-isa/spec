@@ -8,8 +8,7 @@ implementation properties, and feature-specific parameters.
 The CPUID instruction uses a selected Rn register as both query selector and result register. Software writes the
 selector before execution and reads the returned 64-bit value after execution.
 
-CPUID exposes program-visible architectural information. It is not a dump of internal microarchitectural queues,
-rename files, reorder buffers, or other implementation-private structures.
+CPUID exposes program-visible architectural information.
 
 The normative instruction entry is \hyperref[instr:cpuid]{\texttt{CPUID}}.\par
 
@@ -17,8 +16,18 @@ The normative instruction entry is \hyperref[instr:cpuid]{\texttt{CPUID}}.\par
 A query selector identifies a discovery class, leaf, and optional result index. The selector is a Q-sized value held
 in the selected Rn register.
 
-CPUID is unprivileged under the base compatibility rules. CPUID results are stable after reset
-unless a future feature explicitly defines a mutable result.
+CPUID is unprivileged under the base compatibility rules. For a logical processor, CPUID results remain stable until
+that logical processor is reset. A discovery result applies to execution on the logical processor that returned it.
+Software associates cached discovery state with that logical processor and uses results obtained on each logical
+processor before selecting its optional architectural behavior.
+
+\begin{manuallistedformatdiagram}{CPUID Query Selector Format}{6}
+\manualformatrowrange{selector[63:0]}{63}{0}{%
+\manualformatfield{class}{32}
+\manualformatfield{leaf}{16}
+\manualformatfield{index}{16}
+}
+\end{manuallistedformatdiagram}
 
 \manualtablecaption{CPUID Query Selector}
 \begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{0.85in}>{\raggedright\arraybackslash}p{3.90in}@{}}
@@ -34,6 +43,23 @@ unless a future feature explicitly defines a mutable result.
 
 Index zero of every defined leaf is a common discovery header. Leaf-specific payload begins at index one. An unknown
 class, leaf, or index returns zero; consequently, index zero of an absent leaf also returns zero.
+
+\begin{manuallistedformatdiagram}{CPUID Common Leaf Header Formats}{6}
+\manualformatrowrange{class 0, leaf 0}{63}{0}{%
+\manualformatfield{MAX\_CLASS}{32}
+\manualformatfield{MAX\_LEAF}{16}
+\manualformatfield{MAX\_INDEX}{16}
+}
+\manualformatrowrange{other class, leaf 0}{63}{0}{%
+\manualformatfield{reserved}{32}
+\manualformatfield{MAX\_LEAF}{16}
+\manualformatfield{MAX\_INDEX}{16}
+}
+\manualformatrowrange{leaf 1 or greater}{63}{0}{%
+\manualformatfield{reserved}{48}
+\manualformatfield{MAX\_INDEX}{16}
+}
+\end{manuallistedformatdiagram}
 
 \manualtablecaption{CPUID Common Leaf Header}
 \begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{1.85in}>{\raggedright\arraybackslash}p{1.15in}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{1.05in}@{}}
@@ -58,7 +84,7 @@ Discovery classes partition architectural information by compatibility purpose. 
 leaf directory before consuming optional feature bits.
 
 The base class describes the mandatory scalar ISA and implementation identity. Optional groups are reported
-separately so that binaries can test for them without probing instruction faults.
+in the optional-extension directory.
 
 \subsection{Leaf Directory}
 Each discovery class may expose a leaf directory. A directory leaf reports which subordinate leaves are defined and
@@ -68,15 +94,24 @@ Software must treat an absent leaf as zero and must ignore reserved bits in a pr
 
 \input{isa/tools/latex_builder/templates/fragments/generated/cpuid_class_leaf_directory.tex}
 
-Class 0 has no \texttt{BASE\_LIMITS} leaf. Word size, maximum instruction length, opcode classes, and the Rn count are
-invariants of this specification and are defined by their normative architectural sections rather than by runtime
-discovery. Therefore class 0 \texttt{MAX\_LEAF} is zero in the current draft.
-
 \subsection{Base Identity}
 Class \texttt{0x00000000}, leaf \texttt{0x0000} reports \texttt{MAX\_LEAF=0} and \texttt{MAX\_INDEX=18} in its
 index-zero header. An implementation recognizing only the classes defined by this specification reports
 \texttt{MAX\_CLASS=2}; an implementation that recognizes a higher implementation-defined class reports that greater
 selector. The base-identity payload is:
+
+\begin{manuallistedformatdiagram}{CPUID Base Identity Result Formats}{6}
+\manualformatrowrange{index 1}{63}{0}{%
+\manualformatfield{VENDOR\_ID}{16}
+\manualformatfield{ARCHITECTURE\_ID}{16}
+\manualformatfield{IMPLEMENTATION\_ID}{32}
+}
+\manualformatrowrange{index 2}{63}{0}{%
+\manualformatfield{zero}{32}
+\manualformatfield{IMPL\_REV}{16}
+\manualformatfield{ARCH\_REV}{16}
+}
+\end{manuallistedformatdiagram}
 
 \manualtablecaption{Base Identity Indexes}
 \begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{4.95in}@{}}
@@ -91,20 +126,33 @@ selector. The base-identity payload is:
 \bottomrule
 \end{manualtabular}
 
+\texttt{VENDOR\_ID} selects the vendor namespace in which \texttt{IMPLEMENTATION\_ID} is interpreted.
+\texttt{IMPLEMENTATION\_ID} is assigned within that \texttt{VENDOR\_ID} namespace.
+\texttt{ARCHITECTURE\_ID} selects the base architectural contract, so the
+\texttt{(VENDOR\_ID, IMPLEMENTATION\_ID)} pair identifies an implementation and
+\texttt{ARCHITECTURE\_ID} identifies the ISA contract it implements.
+
+\texttt{ARCHITECTURE\_REVISION} is an unsigned 16-bit, monotonically increasing compatibility level within one
+\texttt{ARCHITECTURE\_ID}. A processor reporting revision \(N\) implements the base architectural behavior of every
+defined revision less than or equal to \(N\). Optional instruction groups, state, and parameterized contracts are
+selected from their CPUID leaves and feature bits. \texttt{IMPLEMENTATION\_REVISION} is an unsigned revision assigned
+by the vendor and is compared only when both \texttt{VENDOR\_ID} and \texttt{IMPLEMENTATION\_ID} match.
+
 The name fields are UTF-8 byte strings in increasing index order. Within each 64-bit result, the first byte occupies
 bits 7..0 and subsequent bytes occupy successively higher bits. A name shorter than 64 bytes is terminated by a zero
 byte and all remaining bytes are zero. A 64-byte name has no terminator. Producers must not split a multi-byte UTF-8
 code point at the field boundary; consumers replace an invalid sequence rather than reading beyond the field.
 
-\subsection{Optional-Extension Directory}
+\subsection{Optional-Extension Directory}\label{section:cpuid-extension-directory}
 Class \texttt{0x00000001}, leaf \texttt{0x0000}, index one reports optional architectural groups. The index-zero
 header reports \texttt{MAX\_LEAF=1} and \texttt{MAX\_INDEX=1}.
+
+@EXTENSION_DIRECTORY_DIAGRAM@
 
 @EXTENSION_DIRECTORY_TABLE@
 
 Unlisted bits are reserved and read as zero. \texttt{FPTRANSA} requires \texttt{FP} and is set when at least one approximate
 transcendental contract is present. It does not imply that every contract is present.
-The currently unassigned \texttt{VIRTACCEL} group has no manifest and therefore has no feature bit.
 
 \subsection{FPTRANSA Accuracy Discovery}
 Class \texttt{0x00000001}, leaf \texttt{0x0001} uses indexes 1 through \texttt{0x0044} as a sparse space of stable
@@ -121,6 +169,20 @@ The sparse ID space reserves \texttt{0x0001..0x000F} for reduced-domain circular
 hyperbolic functions, \texttt{0x0030..0x003F} for exponential functions, and
 \texttt{0x0040..0x004F} for logarithmic functions. The low-nibble-zero selector of each family is unassigned, and
 actual contracts in each family begin at low nibble one. Unassigned values at or below \texttt{0x0044} return zero.
+
+\begin{manuallistedformatdiagram}{FPTRANSA Accuracy Result Format}{6}
+\manualformatrowrange{result[63:0]}{63}{0}{%
+\manualformatfield{P}{1}
+\manualformatfield{reserved}{23}
+\manualformatfield{REV}{8}
+\manualformatfield{D ULP}{16}
+\manualformatfield{S ULP}{16}
+}
+\end{manuallistedformatdiagram}
+{\small
+\texttt{P} is \texttt{PRESENT}; \texttt{REV} is \texttt{CONTRACT\_REVISION}; the D and S ULP
+fields use unsigned Q8.8.
+\par}
 
 \manualtablecaption{FPTRANSA Accuracy Result}
 \begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.78in}>{\raggedright\arraybackslash}p{1.20in}>{\raggedright\arraybackslash}p{3.55in}@{}}
@@ -153,21 +215,74 @@ The selector is $(\texttt{0x00000001} \ll 32) \mathbin{|} (\texttt{0x0001} \ll 1
 \texttt{FLOG2A} uses \texttt{0x0000000100010043}. An implementation that certifies \texttt{FSINA} at 1.5 ULP for
 S and 2 ULP for D returns \texttt{0x8000000102000180}.
 
-\texttt{PRESENT} is an architectural usability guarantee, not a statement that a dedicated hardware unit exists;
-an internal assist is permitted. The returned bounds cover every input in the contract domain and are not average or
-sampled errors. On heterogeneous or virtualized systems they are the worst bounds over the current scheduling or
-vCPU-migration domain. If a contract is absent, executing its instruction raises \texttt{ILLEGAL\_INSTRUCTION}
-before operand or floating-point-state access.
+\texttt{PRESENT=1} guarantees that the instruction and both S and D forms are architecturally usable under the
+returned contract. The S and D bounds are worst-case bounds over every input in the contract domain and apply to
+every execution on the logical processor that returned the CPUID result until reset. Executing the instruction with
+\texttt{PRESENT=0} raises \texttt{ILLEGAL\_INSTRUCTION} before operand or floating-point-state access.
 
 \input{isa/tools/latex_builder/templates/fragments/fptransa_accuracy_contracts.tex}
 
-\subsection{Performance-Counter Discovery}
+\subsection{Implementation-Class Directory}
+Class \texttt{0x00000002}, leaf \texttt{0x0000} consists of the common header. It reports
+\texttt{MAX\_LEAF=4} and \texttt{MAX\_INDEX=0}.
+
+\subsection{Cache-Topology Discovery}
+Class \texttt{0x00000002}, leaf \texttt{0x0001} reports the cache-maintenance granule and the cache instances visible
+to the current logical processor. Index zero is the common header. Index one is the maintenance-properties result,
+and indexes 2 through \texttt{MAX\_INDEX} are a dense array of cache descriptors. With $N$ descriptors,
+\texttt{MAX\_INDEX=1+N}.
+
+\input{isa/tools/latex_builder/templates/fragments/generated/cpuid_cache_topology.tex}
+
+\texttt{MAINTENANCE\_GRANULE\_BYTES} is a nonzero power of two no greater than 4096 and has the same value on every
+logical processor in one normal-memory coherence domain. Every reported cache-line size divides the maintenance
+granule. A descriptor has \texttt{TYPE} 1, 2, or 3 and a nonzero \texttt{LEVEL}. Descriptors are
+ordered by increasing cache level, cache type, sharing level, and sharing ID.
+
+\texttt{SHARING\_LEVEL} values describe strictly nested processor sets. The pair
+\texttt{(SHARING\_LEVEL, SHARING\_ID)} is equal exactly when two descriptors name the same logical-processor set.
+At sharing level zero, \texttt{SHARING\_LP\_COUNT\_MINUS1} is zero. At a greater sharing level, the count field
+equals the number of logical processors in that set minus one. The tuple of cache type, cache level, sharing level,
+and sharing ID is unique within the leaf.
+
+\subsection{Performance-Counter Discovery}\label{section:performance-counter-discovery}
 Class \texttt{0x00000002}, leaf \texttt{0x0002} uses indexes 1 through 65535 as RDPMC counter IDs. Index zero is the
 common header. Result bit 0 is \texttt{PRESENT}; bits 63..1 are reserved and read as zero. CYCLE, INSTRET, and PTWALK
 IDs 1, 2, and 3 are mandatory and therefore always report present; the index-zero header reports
 \texttt{MAX\_INDEX=3} when no implementation-defined counter has a greater ID. An implementation-defined ID may be
 used only when its query reports present.
+
+\begin{manuallistedformatdiagram}{Performance-Counter Presence Result}{6}
+\manualformatrowrange{result[63:0]}{63}{0}{%
+\manualformatfield{reserved}{63}
+\manualformatfield{P}{1}
+}
+\end{manuallistedformatdiagram}
+{\small\texttt{P} is \texttt{PRESENT}.\par}
+
 The RDPMC instruction description defines counter behavior and unavailable-ID fault handling.
+
+\subsection{SAVE-Area Layout Discovery}
+Class \texttt{0x00000002}, leaf \texttt{0x0004} describes the memory image used by SAVE and RESTORE. Index zero is
+the common header. Indexes one and two describe the complete image and its fixed block. Each available extension
+component contributes descriptor A followed by descriptor B, so for $N$ components
+\texttt{MAX\_INDEX=2+2N}. Component descriptors are ordered by increasing \texttt{COMPONENT\_ID}.
+
+\input{isa/tools/latex_builder/templates/fragments/generated/cpuid_save_area_layout.tex}
+
+\texttt{SAVE\_AREA\_SIZE\_BYTES} is the complete byte range validated and accessed by SAVE or RESTORE. It is at
+least \texttt{FIXED\_SIZE\_BYTES}, covers the end of every component, and is a multiple of 64 bytes.
+\texttt{FIXED\_SIZE\_BYTES} is \texttt{0x00c0}, \texttt{BITMAP\_WORDS} is 1, and \texttt{FMT} is zero for the
+save-image format defined by this specification.
+
+Each descriptor names one available extension component. Component IDs and bitmap bits are unique. Component
+regions begin at or after the fixed block, meet their reported alignment, and do not overlap. A set state-block
+bitmap bit selects the descriptor carrying the same \texttt{BITMAP\_BIT}. \texttt{INIT\_POLICY=1} means that
+RESTORE reconstructs the component-defined initial state when that component's bitmap bit is clear.
+
+When the FP extension is present, component ID 1 uses bitmap bit 0, offset \texttt{0x00c0}, size
+\texttt{0x00c0}, and alignment 64. Its initial state is F0 through F15 equal to positive zero, FFLAGS equal to zero,
+and FSTATUS equal to zero.
 
 \subsection{Bit Fields}
 CPUID bit fields are feature predicates unless the leaf description says they encode a numeric value. Reserved
@@ -176,7 +291,6 @@ result bits are ignored by software.
 A set feature bit only permits software to use the corresponding architectural behavior; the instruction's normal
 privilege, operand, and compatibility checks still apply.
 
-The FP, FPTRANSA, and VIRTACCEL predicates report the base floating-point, approximate transcendental
-floating-point, and virtualization-acceleration groups. Numeric fields use names that describe their unit:
-SAVE\_AREA\_SIZE reports the maximum save-area size in bytes, and COMPONENT\_OFFSET gives the 64-byte-aligned
-offset of an extension-state component.
+The FP and FPTRANSA predicates report the base floating-point and approximate transcendental floating-point groups.
+Numeric fields use names that describe their unit. \texttt{SAVE\_AREA\_SIZE\_BYTES},
+\texttt{OFFSET\_BYTES}, \texttt{MAX\_SIZE\_BYTES}, and \texttt{ALIGNMENT\_BYTES} are byte counts.

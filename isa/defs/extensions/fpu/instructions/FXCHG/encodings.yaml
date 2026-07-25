@@ -12,3 +12,6 @@ forms:
     type: Fn
     access: read_write
     field: r
+  destination_overlap:
+  - operands: [lhs, rhs]
+    rule: same_value

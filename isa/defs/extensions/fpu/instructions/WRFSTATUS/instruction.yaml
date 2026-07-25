@@ -1,7 +1,7 @@
 mnemonic: WRFSTATUS
 title: Write Floating-Point Status
 summary: Write the FPU status/control register from an Rn register.
-description: WRFSTATUS writes the architectural 16-bit FSTATUS register from the low 16 bits of the source Rn register. Reserved FSTATUS bits must be zero. FFLAGS is a separate accrued floating-point exception flag register and is not written by WRFSTATUS. WRFSTATUS requires the floating-point extension.
+description: WRFSTATUS writes only the architectural 16-bit FSTATUS register from the low 16 bits of the source Rn register. Reserved FSTATUS bits must be zero. WRFSTATUS requires the floating-point extension.
 attributes:
   class: system
   family: system_registers

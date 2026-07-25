@@ -6,5 +6,7 @@ forms:
   operands:
   - name: memory
     type: EA
-    access: read
+    access: address
+    ea_role: address
+    ea_width: Q
     field: e

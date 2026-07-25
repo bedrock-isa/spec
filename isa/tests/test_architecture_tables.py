@@ -28,6 +28,12 @@ EXPECTED_CAPTIONS = {
     "Standard Performance Counters",
     "Reserved Field Defaults",
     "CPUID Class and Leaf Directory",
+    "Cache-Maintenance Properties",
+    "Cache-Topology Descriptor",
+    "SAVE-AREA-LAYOUT Indexes",
+    "SAVE Component Descriptor A",
+    "SAVE Component Descriptor B",
+    "Floating-Point SAVE Component",
     "Control-Register Selectors",
     r"PAGE\_FAULT Causes",
     r"ILLEGAL\_INSTRUCTION Causes",
@@ -38,6 +44,14 @@ EXPECTED_CAPTIONS = {
     "Immediate Operand Interpretation",
     "Architectural Reset State",
     "Atomic Memory-Order Selectors",
+    "Warm RESET Contract",
+    "Normal-Memory Cache Policies",
+    "Translation-Cache Entry Identity",
+    "Local Translation-Cache Transitions",
+    "Remote Translation Shootdown Protocol",
+    "WRCR Selector Rules",
+    "Architectural Event Producers and Delivery State",
+    "Architectural Event Boundaries and Priority",
 }
 
 

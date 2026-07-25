@@ -14,7 +14,7 @@
 \compilerbuiltin{breakpoint} & \compilerctype{void(void)} & \texttt{BKPT} & Any privilege; always raises the architectural breakpoint/debug exception.\\
 \compilerbuiltin{trace} & \compilerctype{void(marker)} & \texttt{TRACE} & Unprivileged; marker is a constant in 0 through 65535; emits a marker when enabled and otherwise acts as a NOP.\\
 \compilerbuiltin{yield} & \compilerctype{void(void)} & \texttt{YIELD} & Any privilege; scheduling hint, not a compiler or memory barrier.\\
-\compilerbuiltin{wait} & \compilerctype{void(void)} & \texttt{WAIT} & Unprivileged; may suspend until an event or interrupt and is a convergent side effect.\\
+\compilerbuiltin{wait} & \compilerctype{void(void)} & \texttt{WAIT} & Unprivileged PAUSE-like convergent hint; retires normally and permits a finite implementation-selected delay, including zero, before subsequent execution.\\
 \bottomrule
 \end{longtable}
 \endgroup

@@ -1,12 +1,13 @@
 mnemonic: FROUND
 title: Floating-Point Round
 summary: Performs the floating-point round operation.
-description: Rounds the selected floating-point source to the nearest integral value in the same format according to the instruction-defined rounding rule.
+description: Rounds the selected floating-point source to the nearest integral value in the same format using nearest-even, independently of FSTATUS.RM.
 attributes:
   class: fpu
   family: fpu
   privilege: unprivileged
-  repeat:
+repeat:
+  contexts:
   - REP
   - REPG
 flag_effects:

@@ -1,9 +1,8 @@
 \clearpage
 \subsection{Compatibility Contract}
 
-This section defines the default compatibility contract for reserved fields, optional features, and future
-architectural growth. A later section may narrow one of these defaults for a specific structure, but it must say so
-explicitly.
+This section defines the default compatibility contract for reserved fields and optional features. A later section
+may narrow one of these defaults for a specific structure, but it must say so explicitly.
 
 This manual treats reserved and unallocated encodings as one architectural category: software must not depend on their
 value, decode result, or behavior.
@@ -18,12 +17,8 @@ where the containing structure explicitly says otherwise.
 \input{isa/tools/latex_builder/templates/fragments/generated/reserved_field_defaults.tex}
 
 \subsection{Reserved Encodings}
-Reserved instruction opcodes, reserved extension opcodes, reserved effective-address forms, and unsupported optional
-instruction-group encodings are not executable instruction forms.
-
-There is no separate extension-unavailable exception in this model; unsupported optional instruction-group encodings
-use the same illegal-instruction path as other reserved instruction encodings.
-Attempting to execute any of these encodings raises \texttt{ILLEGAL\_INSTRUCTION}.
+Reserved instruction opcodes, reserved extension opcodes, reserved effective-address forms, and optional
+instruction-group encodings whose CPUID feature bit is clear raise \texttt{ILLEGAL\_INSTRUCTION} during decode.
 
 Noncanonical encodings are invalid unless an instruction description explicitly defines an alias or priority rule.
 Assemblers emit canonical encodings by default; disassemblers prefer canonical spellings.
@@ -34,6 +29,5 @@ CPUID is the compatibility boundary for optional architectural behavior. Softwar
 instruction group, optional register state, or optional state image unless the corresponding CPUID bit or leaf
 reports support.
 
-Unknown selectors return zero. Reserved CPUID result bits are ignored by software unless a future architectural
-definition assigns them. CPUID is unprivileged. Its results remain stable after
-reset unless a future feature explicitly defines a mutable result.
+Unknown selectors return zero. Software ignores reserved CPUID result bits. CPUID is unprivileged. For a logical
+processor, CPUID results remain stable until that logical processor is reset.

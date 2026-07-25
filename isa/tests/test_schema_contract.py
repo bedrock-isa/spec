@@ -162,6 +162,52 @@ class FrozenSchemaTests(unittest.TestCase):
             with self.subTest(message=message), self.assertRaisesRegex(DecodeError, message):
                 decode_instruction(path, candidate)
 
+    def test_ea_operands_require_consistent_role_and_width(self) -> None:
+        path = ROOT / "isa" / "defs" / "instructions" / "ADD" / "encodings.yaml"
+        base = load(path)
+        ea_form = next(
+            form
+            for form in base["forms"]
+            if any(operand.get("type") == "EA" for operand in form.get("operands", []))
+        )
+        ea_index = next(
+            index
+            for index, operand in enumerate(ea_form["operands"])
+            if operand.get("type") == "EA"
+        )
+
+        missing = deepcopy(base)
+        candidate = next(
+            form for form in missing["forms"] if form["id"] == ea_form["id"]
+        )
+        candidate["operands"][ea_index].pop("ea_width")
+        with self.assertRaisesRegex(DecodeError, "require ea_role and ea_width"):
+            decode_encodings(path, missing)
+
+        wrong_role = deepcopy(base)
+        candidate = next(
+            form for form in wrong_role["forms"] if form["id"] == ea_form["id"]
+        )
+        candidate["operands"][ea_index]["ea_role"] = "address"
+        with self.assertRaisesRegex(DecodeError, "address role requires address access"):
+            decode_encodings(path, wrong_role)
+
+        wrong_control_target = deepcopy(base)
+        candidate = next(
+            form for form in wrong_control_target["forms"] if form["id"] == ea_form["id"]
+        )
+        candidate["operands"][ea_index]["ea_role"] = "control_target"
+        with self.assertRaisesRegex(DecodeError, "control_target role requires read access"):
+            decode_encodings(path, wrong_control_target)
+
+        nonsized = deepcopy(base)
+        candidate = next(
+            form for form in nonsized["forms"] if form["id"] == ea_form["id"]
+        )
+        candidate["sizes"] = []
+        with self.assertRaisesRegex(DecodeError, "operation_size requires"):
+            decode_encodings(path, nonsized)
+
 
 if __name__ == "__main__":
     unittest.main()

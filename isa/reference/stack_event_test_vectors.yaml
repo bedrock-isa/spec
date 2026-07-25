@@ -1,0 +1,72 @@
+schema_version: 0
+
+ordinary_stack:
+  old_sp: 0x1000
+  cases:
+    - id: push_or_call
+      range_half_open: [0x0ff8, 0x1000]
+      committed_sp: 0x0ff8
+      slots:
+        - {address: 0x0ff8, value: source_or_following_pc}
+      commit: all_or_none
+    - id: pop_or_ret
+      range_half_open: [0x1000, 0x1008]
+      committed_sp: 0x1008
+      slots:
+        - {address: 0x1000, value: destination_or_return_pc}
+      commit: all_or_none
+    - id: pair_push
+      pair: [first, second]
+      range_half_open: [0x0ff0, 0x1000]
+      committed_sp: 0x0ff0
+      slots:
+        - {address: 0x0ff0, value: second}
+        - {address: 0x0ff8, value: first}
+      commit: all_or_none
+    - id: pair_pop
+      pair: [first, second]
+      range_half_open: [0x1000, 0x1010]
+      committed_sp: 0x1010
+      slots:
+        - {address: 0x1000, destination: second}
+        - {address: 0x1008, destination: first}
+      commit: all_or_none
+    - id: far_call
+      range_half_open: [0x0ff0, 0x1000]
+      committed_sp: 0x0ff0
+      slots:
+        - {address: 0x0ff0, value: return_pc}
+        - {address: 0x0ff8, value: return_cs}
+      commit: all_or_none
+    - id: far_return
+      range_half_open: [0x1000, 0x1010]
+      committed_sp: 0x1010
+      slots:
+        - {address: 0x1000, destination: return_pc}
+        - {address: 0x1008, destination: return_cs}
+      commit: all_or_none
+  fault_before_commit:
+    memory: unchanged
+    sp: unchanged
+    destinations: unchanged
+
+wait:
+  cases:
+    - {id: zero_delay, selected_delay: zero, retired_pc: following_instruction, architectural_effect: normal_retirement}
+    - {id: finite_delay, selected_delay: finite_nonzero, retired_pc: following_instruction, architectural_effect: normal_retirement}
+
+halt:
+  cases:
+    - id: pending_admissible_event
+      event_state: admissible_at_retirement_boundary
+      enters_halted_state: false
+      saved_pc: following_instruction
+      next_action: event_delivery
+    - id: later_admissible_event
+      event_state: becomes_admissible_after_halt
+      fetch_while_halted: stopped
+      saved_pc: following_instruction
+      next_action: event_delivery
+    - id: logical_processor_scope
+      halted: executing_logical_processor
+      other_logical_processors: continue_independent_execution

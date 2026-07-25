@@ -88,6 +88,17 @@ def validate_description_tex(path: Path) -> list[str]:
 
 def validate_defs(root: Path = ROOT) -> tuple[dict[str, Any], list[str]]:
     errors: list[str] = []
+    architecture_path = root.parent / "reference" / "architecture_tables.yaml"
+    try:
+        architecture = load_yaml(architecture_path) if architecture_path.is_file() else {}
+        event_names = {
+            str(item["name"])
+            for item in architecture.get("architectural_events", [])
+            if isinstance(item, dict) and "name" in item
+        }
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        event_names = set()
+        errors.append(f"{architecture_path}: cannot load architectural event names: {exc}")
     try:
         verify_schema_lock()
         for path in sorted(root.rglob("*.yaml")):
@@ -187,6 +198,31 @@ def validate_defs(root: Path = ROOT) -> tuple[dict[str, Any], list[str]]:
             errors.append(str(exc))
             continue
         encoding_count += len(encodings.forms)
+        form_ids = {form.id for form in encodings.forms}
+        if document.repeat is not None and document.repeat.observed is not None:
+            observed_operand = document.repeat.observed.operand
+            if observed_operand is not None:
+                missing_forms = [
+                    form.id
+                    for form in encodings.forms
+                    if observed_operand not in {operand.name for operand in form.operands}
+                ]
+                if missing_forms:
+                    errors.append(
+                        f"{path}: repeat observed operand {observed_operand} is absent from "
+                        f"forms {', '.join(missing_forms)}"
+                    )
+        for exception in document.exceptions:
+            if exception.event not in event_names:
+                errors.append(
+                    f"{path}: exception references unknown event {exception.event}"
+                )
+            unknown_forms = set(exception.forms) - form_ids
+            if unknown_forms:
+                errors.append(
+                    f"{path}: exception {exception.event} references unknown forms "
+                    f"{', '.join(sorted(unknown_forms))}"
+                )
         for form in encodings.forms:
             head = re.split(r"[./(]", form.syntax.split()[0])[0]
             if head != mnemonic:

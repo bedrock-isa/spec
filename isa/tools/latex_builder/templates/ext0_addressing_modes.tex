@@ -3,8 +3,7 @@
 EXT0 is used when compact EA cannot express the operand: explicit segment selection, indexed addressing, zero-base
 addressing, SP/PC indexed addressing, or auto-update addressing.
 
-EXT0 has no default segment as an encoding class. Each concrete form either encodes an SREG SEG(s), uses a fixed
-SP/PC segment, or explicitly states that it uses the operation default data segment. Explicit SEG(s) never selects
-CS.
+Each EXT0 form selects an encoded SREG SEG(s), fixed SS or CS through SP or PC, or the operation default data
+segment.
 
 \input{isa/tools/latex_builder/templates/fragments/ext0_reference_blocks.tex}

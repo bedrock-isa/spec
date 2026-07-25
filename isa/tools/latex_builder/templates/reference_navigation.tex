@@ -1,0 +1,47 @@
+\clearpage
+\appendix
+\section{Reference Indexes and Revision History}\label{section:reference-indexes}
+
+These indexes are generated from the instruction definitions, encoding store, register and extension manifests,
+architectural tables, and the navigation YAML source. Page references point to the normative definition or
+instruction entry.
+
+\subsection{Canonical Field Names}
+
+The following spellings are canonical within the named owner. A one-letter field is interpreted in its owner or
+instruction-form context.
+
+@CANONICAL_FIELD_INDEX@
+
+\subsection{Mnemonic, Form, and Opcode Index}
+
+@MNEMONIC_INDEX@
+
+\subsection{Architectural State Index}
+
+Reader and writer columns identify the architectural interfaces or execution classes that access each state group.
+Reset values are taken from the generated architectural reset-state source.
+
+@STATE_INDEX@
+
+\subsection{Architectural Event Index}
+
+@EVENT_INDEX@
+
+\subsection{CPUID Feature Index}
+
+@FEATURE_INDEX@
+
+\subsection{Allocation and Reserved-Space Index}
+
+This index points to the complete allocation maps and records the existing unassigned-selector behavior for each
+namespace. It does not allocate a value.
+
+@ALLOCATION_INDEX@
+
+\subsection{Architecture Revision History}
+
+The current working specification remains in the Unreleased row until a release assigns an
+\texttt{ARCHITECTURE\_REVISION}. Released rows use the revision value returned by CPUID.
+
+@REVISION_HISTORY@

@@ -6,7 +6,13 @@ attributes:
   class: integer
   family: bounds
   privilege: unprivileged
-  repeat:
+repeat:
+  contexts:
   - REP
   - REPcc
   - REPG
+  observed:
+    kind: flags
+flag_effects:
+  FLAGS:
+    V: "signed(value) is outside the selected interval"

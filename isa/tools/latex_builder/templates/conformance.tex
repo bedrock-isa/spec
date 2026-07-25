@@ -1,0 +1,70 @@
+\clearpage
+\section{Conformance}
+
+\subsection{Conformance Claim}
+
+A Bedrock implementation conformance claim identifies the architecture revision reported by CPUID and the CPUID
+feature set for the logical processor to which the claim applies. For that revision and discovered feature set,
+the implementation accepts and executes every architecturally valid instruction record according to its encoding,
+state, event, memory, and instruction-specific rules. The same claim covers the architected discovery results,
+save images, event frames, and reset state defined for that processor.
+
+Canonical assembly text and golden encodings are a source-to-byte and byte-to-text contract for architecture tools.
+They do not change the architectural result of an instruction record.
+
+\subsection{Normative Material and Specificity}
+
+Architecture prose, ordered steps, generated architecture tables, instruction encoding diagrams, and the Operation
+and Detailed Semantics fields of instruction entries are normative unless a section explicitly identifies material
+as a summary, example, guide, or validation status.
+
+The following domain rules resolve different levels of specificity:
+
+\begin{enumerate}
+\item Instruction bytes, field values, lengths, and decoding validity follow the concrete instruction form, its
+field constraints, and the Instruction Encoding and Effective Addressing chapters.
+\item Execution of a decoded instruction follows its Operation and Detailed Semantics. An instruction-specific rule
+narrows the common execution, operand, flag, memory, or event rule that it names.
+\item Common architectural behavior follows the chapter that defines that behavior. A structure-specific rule
+narrows the defaults in Terminology and Compatibility.
+\item Summary tables, programming guides, and validation-status files provide navigation or verification context
+and do not replace a normative rule.
+\end{enumerate}
+
+Two normative statements at the same specificity are required to agree. A discrepancy at that level is a
+specification defect and is resolved by correcting the normative sources and their derived tables together.
+
+\subsection{Implementation-Defined Disclosures}
+
+An implementation-defined selection is stable for the implementation revision named by CPUID and is published
+through the channel named by its defining rule. The publication identifies the selected value or behavior and the
+processor revisions to which it applies.
+
+\manualtablecaption{Implementation-Defined Disclosure Register}
+\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{1.35in}>{\raggedright\arraybackslash}p{2.20in}>{\raggedright\arraybackslash}p{2.10in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Item} & \textbf{Defining rule} & \textbf{Publication}\\
+\midrule
+\endfirsthead
+\multicolumn{3}{l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Item} & \textbf{Defining rule} & \textbf{Publication}\\
+\midrule
+\endhead
+@IMPLEMENTATION_DEFINED_ROWS@
+\bottomrule
+\end{manuallongtable}
+
+\subsection{Conformance Vectors}
+
+\texttt{isa/reference/conformance\_manifest.yaml} names each required vector family, its source, and the cases that
+must remain represented. The manifest covers assembler encodings, atomic ordering, paging and cross-page accesses,
+stack and event boundaries, memory-order obligations, cache synchronization, and floating-point special values.
+Every required case is the ID of a concrete case in the named YAML source.
+
+For an input named by a vector, the expected bytes, state transition, architectural event, or allowed and forbidden
+outcome is normative for that case. General behavior continues to follow the defining architecture rule. Schema
+decoders, vector evaluators, formal models, and repository tests are validation tools; their implementation does
+not add an architectural result.

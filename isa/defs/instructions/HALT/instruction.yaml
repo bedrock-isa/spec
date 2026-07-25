@@ -1,8 +1,9 @@
 mnemonic: HALT
 title: Halt
-summary: Enter halted supervisor state until an enabled event resumes execution.
-description: Retires with the next instruction as its continuation, enters the halted state, and fetches no further instructions until an enabled architectural event resumes execution.
+summary: Halt the executing logical processor until an asynchronous architectural event is admitted.
+description: Retires with the next instruction as its continuation and stops instruction fetch on the executing logical processor until an asynchronous architectural event is admitted and delivered.
 attributes:
   class: system
   family: core_control
   privilege: supervisor
+additional_description: details.tex

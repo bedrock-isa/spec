@@ -1,7 +1,7 @@
 mnemonic: TRACE
-title: Trace Marker
-summary: Performs the trace marker operation.
-description: When architectural tracing is enabled, appends the low 16-bit marker and current instruction boundary to the implementation trace stream; otherwise it has no effect.
+title: Trace Stream Marker
+summary: Records a marker and instruction boundary in the implementation trace stream.
+description: When the implementation trace stream is enabled, appends the low 16-bit marker and current instruction boundary to that stream; otherwise it completes without changing architectural state. The tracing terminology distinguishes this marker instruction from a TF-selected trace unit and the DEBUG_TRACE architectural event.
 attributes:
   class: control_flow
   family: control_flow

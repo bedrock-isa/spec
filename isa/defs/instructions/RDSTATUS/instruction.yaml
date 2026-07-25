@@ -1,7 +1,7 @@
 mnemonic: RDSTATUS
 title: Read Status
 summary: Read the processor STATUS register into an Rn register.
-description: RDSTATUS reads the architectural 16-bit STATUS register, zero-extends it to 64 bits, and writes the result to the destination Rn register. Reading STATUS is unprivileged; writing STATUS remains supervisor-only. STATUS is not part of the S segment-register operand class.
+description: RDSTATUS reads the architectural 16-bit STATUS register, zero-extends it to 64 bits, and writes the result to the destination Rn register. Reading STATUS is unprivileged; writing STATUS remains supervisor-only.
 attributes:
   class: system
   family: system_registers

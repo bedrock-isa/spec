@@ -32,6 +32,8 @@ forms:
   - name: target
     type: EA
     access: read
+    ea_role: control_target
+    ea_width: operation_size
     field: e
   sizes:
   - L

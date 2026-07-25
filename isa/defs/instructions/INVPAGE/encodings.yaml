@@ -7,4 +7,6 @@ forms:
   - name: page
     type: EA
     access: address
+    ea_role: address
+    ea_width: Q
     field: e

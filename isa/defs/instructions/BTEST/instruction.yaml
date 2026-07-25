@@ -6,10 +6,13 @@ attributes:
   class: integer
   family: integer_bitfield
   privilege: unprivileged
-  repeat:
+repeat:
+  contexts:
   - REP
   - REPcc
   - REPG
+  observed:
+    kind: flags
 flag_effects:
   FLAGS:
     Z: "old_bit == 0"

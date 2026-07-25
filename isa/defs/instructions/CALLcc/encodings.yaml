@@ -49,6 +49,8 @@ forms:
   - name: target
     type: EA
     access: read
+    ea_role: value
+    ea_width: operation_size
     field: e
   sizes:
   - Q

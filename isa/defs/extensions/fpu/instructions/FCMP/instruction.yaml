@@ -1,16 +1,20 @@
 mnemonic: FCMP
 title: Floating-Point Compare
 summary: Performs the floating-point compare operation.
-description: Compares the selected-format floating-point operands and updates the integer condition flags without writing a floating-point result.
+description: Compares the selected-format operands and writes Z,N,C,V as greater=0000, equal=1000, less=0110, or unordered=0001. A quiet NaN is unordered; a signaling NaN is unordered and generates NV.
 attributes:
   class: fpu
   family: fpu
   privilege: unprivileged
-  repeat:
+repeat:
+  contexts:
   - REP
   - REPG
 flag_effects:
   FLAGS:
+    Z: "set only when equal"
+    N: "set only when less"
+    C: "set only when less"
     V: "set when unordered"
   FFLAGS:
     NV: "may accrue"

@@ -40,6 +40,8 @@ forms:
   - name: dst
     type: EA
     access: read_write
+    ea_role: value
+    ea_width: operation_size
     field: e
   sizes:
   - W
@@ -59,6 +61,8 @@ forms:
   - name: dst
     type: EA
     access: read_write
+    ea_role: value
+    ea_width: operation_size
     field: e
   sizes:
   - L
@@ -78,6 +82,8 @@ forms:
   - name: dst
     type: EA
     access: read_write
+    ea_role: value
+    ea_width: operation_size
     field: e
   sizes:
   - Q

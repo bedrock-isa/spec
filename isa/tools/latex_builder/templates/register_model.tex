@@ -1,35 +1,28 @@
 \clearpage
 \section{Programming Model}
 
-\subsection{Register Model}
-The integer programming model exposes sixteen 64-bit Rn registers, R0 through R15. Bedrock uses one
-general-purpose register class for integer values, address values, counters, selectors, and temporary data.
+\subsection{Register Model}\label{section:register-model}
+The integer programming model exposes sixteen 64-bit Rn registers, R0 through R15. Instruction forms use these
+registers for integer values, addresses, counters, selectors, and temporary data.
 
 SP and PC are special architectural registers outside the four-bit Rn namespace. SP-relative memory forms use SS by
 default; PC-relative memory forms use CS by default.
 
-Segment registers are separate 64-bit architectural registers. Segment-qualified EA forms select them explicitly,
-while SP and PC forms omit the segment field because their segment association is fixed.
+CS, DS, SS, and GS0 through GS5 are 64-bit architectural segment registers. Segment-qualified EA forms select them
+explicitly, while SP and PC forms omit the segment field because their segment association is fixed.
 
 \input{isa/tools/latex_builder/templates/fragments/rn_register_model_figure.tex}
 
-\subsection{Unified Integer Register File}
-The base architecture has no data-register bank mechanism. All integer instructions address the same architectural R0
-through R15 register file.
-
-Bank-select instructions and banked integer-register control state are outside this ISA definition and are not
-accepted as instruction or control-state features.
-
 \input{isa/tools/latex_builder/templates/fragments/state_register_format_diagrams.tex}
 
-\subsection{Floating-Point Register Model}
-The floating-point extension exposes F0 through F15 as independent 64-bit registers when the floating-point
+\subsection{Floating-Point Register Model}\label{section:floating-point-register-model}
+The floating-point extension exposes F0 through F15 as 64-bit registers when the floating-point
 instruction group is implemented.
 
-Floating-point exception and mode state is held separately in FFLAGS and FSTATUS. Their precise bit assignments are
-defined by the floating-point instruction set and compatibility state.
+FFLAGS holds accrued floating-point exceptions. FSTATUS holds floating-point trap enables, rounding mode, and mode
+controls. Their precise bit assignments are defined by the floating-point instruction set and compatibility state.
 
-\subsection{Segment Registers}
+\subsection{Segment Registers}\label{section:segment-registers}
 \input{isa/tools/latex_builder/templates/fragments/segment_register_format_diagram.tex}
 
 \subsection{Segment Register Operand Class}
@@ -37,11 +30,11 @@ Instructions that take an explicit segment-register operand use the three-bit SR
 
 SP-relative EA forms do not carry this field and use SS. PC-relative EA forms do not carry this field and use CS.
 
-CS is not an SREG operand. Instruction fetch and fixed PC-relative addressing select it implicitly;
-the source-only \texttt{RDSEG CS} and \texttt{PUSH CS} forms can copy its current image. Only architectural
-control-transfer paths that update CS and PC together can change it.
+SREG selects DS, SS, and GS0 through GS5. Instruction fetch and fixed PC-relative addressing select CS implicitly.
+\texttt{RDSEG CS} and \texttt{PUSH CS} read the current CS image. Segment-changing control transfers update CS and
+PC together.
 
 @SREG_TABLE@
 
-\subsection{Control Registers}
+\subsection{Control Registers}\label{section:control-registers}
 \input{isa/tools/latex_builder/templates/fragments/control_register_reference.tex}

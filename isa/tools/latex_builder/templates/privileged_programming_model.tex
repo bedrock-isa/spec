@@ -24,8 +24,8 @@ otherwise.
 
 \subsection{Supervisor Call Entry}
 SYSCALL is valid only in user mode. It first requires URCTL.V to be clear and validates SPC, SCS, SDS, SSS, and SSP.
-SPC is an exact 16-byte-aligned entry address rather than an address that hardware rounds. SSP is a
-64-byte-aligned configured working-stack top.
+SPC must be 16-byte aligned, and SYSCALL uses its exact value. SSP is a 64-byte-aligned configured working-stack
+top.
 
 After validation, SYSCALL writes the address following the instruction to URPC, saves the user SP and CS/DS/SS
 images, and writes FLAGS and STATUS to URCTL with V set. It then loads CS=SCS, DS=SDS, SS=SSS, SP=SSP, and PC=SPC
@@ -35,8 +35,7 @@ and execution-context transition are one commit.
 SYSCALL performs no memory access and creates no stack frame. SSP is not modified by entry or return. Kernel code may
 move SP freely and may execute SYSRET from any supervisor stack position because the return context resides entirely
 in the UR control-register bank. An invalid entry configuration, including an already valid bank, raises
-INVALID\_CONTROL\_STATE at the SYSCALL instruction boundary. Because entry writes no frame memory, it cannot raise a
-stack-storage PAGE\_FAULT.
+INVALID\_CONTROL\_STATE at the SYSCALL instruction boundary.
 
 \subsection{User Return and Context Ownership}
 SYSRET is the only matching return instruction. It is legal only while STATUS.EA is clear and requires URCTL.V to be
@@ -47,12 +46,11 @@ INVALID\_CONTROL\_STATE through the event path without modifying the bank or par
 
 An event taken during a system call switches to ISS:ISP, FSS:FSP, or DSS:DSP according to its event kind. ERET
 returns to the interrupted syscall context and leaves the UR bank unchanged; SYSRET can then return to user mode.
-Supervisor software uses CALL for internal calls and does not recursively execute SYSCALL.
 
 The UR bank is per-logical-processor architectural state. If a system call blocks or is preempted and another thread
 may run on that logical processor, system software saves and restores the bank with the thread's supervisor context.
-Virtualization includes it in guest supervisor state. Signal delivery, system-call restart, tracing, and initial
-user-process entry may inspect or establish the bank through WRCR, subject to the same validation rules.
+Signal delivery, system-call restart, tracing, and initial user-process entry may inspect or establish the bank
+through WRCR, subject to the same validation rules.
 
 Normative control-flow behavior is defined by
 \hyperref[instr:syscall]{\texttt{SYSCALL}},
