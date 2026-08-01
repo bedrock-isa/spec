@@ -1,7 +1,7 @@
 \subsection{FLAGS and STATUS Registers}\label{section:state-register-formats}
 FLAGS and STATUS are accessed through dedicated read/write instructions. Reserved bits read as zero and must remain zero.
 
-\begin{manuallistedformatdiagram}{FLAGS Register Format}{3}
+\begin{manuallistedformatdiagram}{FLAGS Register Format}
 \manualformatrow{FLAGS[15:0]}{%
 \manualformatfield{0}{12}
 \manualformatfield{Z}{1}
@@ -11,7 +11,7 @@ FLAGS and STATUS are accessed through dedicated read/write instructions. Reserve
 }
 \end{manuallistedformatdiagram}
 
-\begin{manuallistedformatdiagram}{STATUS Register Format}{3}
+\begin{manuallistedformatdiagram}{STATUS Register Format}
 \manualformatrow{STATUS[15:0]}{%
 \manualformatfield{0}{10}
 \manualformatfield{I}{1}
@@ -34,7 +34,7 @@ entry and ERET change it. The remaining writable STATUS fields retain their inst
 FFLAGS holds accrued IEEE-754 exception flags. FSTATUS holds the matching trap enables, rounding mode, and optional
 non-default floating-point modes. Both registers are present only with the floating-point extension and reset to zero.
 
-\begin{manuallistedformatdiagram}{FFLAGS Register Format}{3}
+\begin{manuallistedformatdiagram}{FFLAGS Register Format}
 \manualformatrow{FFLAGS[15:0]}{%
 \manualformatfield{0}{11}
 \manualformatfield{I}{1}
@@ -45,7 +45,7 @@ non-default floating-point modes. Both registers are present only with the float
 }
 \end{manuallistedformatdiagram}
 
-\begin{manuallistedformatdiagram}{FSTATUS Register Format}{4}
+\begin{manuallistedformatdiagram}{FSTATUS Register Format}
 \manualformatrow{FSTATUS[15:0]}{%
 \manualformatfield{0}{6}
 \manualformatfield{D}{1}

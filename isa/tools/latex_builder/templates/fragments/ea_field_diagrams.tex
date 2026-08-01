@@ -1,56 +1,47 @@
-\begin{manuallistedbitdiagram}{Compact Effective-Address Field}
-\manualbitfieldrow{EA[6:0]}{%
-\manualbitlabel{6}
-\manualbitlabel{4}
-\manualbitlabel{3}
-\manualbitlabel{0}
-}{%
-\manualbitfieldtext{mode}{3}
-\manualbitfieldtext{register/form}{4}
+\begin{manuallistedformatdiagram}{Compact Effective-Address Field}
+\manualformatrowrange{EA[6:0]}{6}{0}{%
+\manualformatfield{M}{3}
+\manualformatfield{r/f}{4}
 }
-\end{manuallistedbitdiagram}
+\end{manuallistedformatdiagram}
+{\small\texttt{M} abbreviates mode, and \texttt{r/f} abbreviates register/form.\par}
 
-\begin{manuallistedbitdiagram}{EXT0 One-Byte Descriptor Forms}
-\manualbitrow{SEG + base}{%
-\manualbitfixed{0}{1}
-\manualbitfieldcode{s}{3}
-\manualbitfieldcode{b}{4}
+\begin{manuallistedformatdiagram}{EXT0 One-Byte Descriptor Forms}
+\manualformatrow{SEG + base}{%
+\manualformatfixed{0}{1}
+\manualformatfieldcode{s}{3}
+\manualformatfieldcode{b}{4}
 }
-\manualbitrow{SEG + zero}{%
-\manualbitfixed{1}{1}
-\manualbitfieldcode{s}{3}
-\manualbitfixed{0011}{4}
+\manualformatrow{SEG + zero}{%
+\manualformatfixed{1}{1}
+\manualformatfieldcode{s}{3}
+\manualformatfixed{0011}{4}
 }
-\manualbitrow{default base++}{%
-\manualbitfixed{1}{1}
-\manualbitfieldcode{b}{4}
-\manualbitfixed{100}{3}
+\manualformatrow{default base++}{%
+\manualformatfixed{1}{1}
+\manualformatfieldcode{b}{4}
+\manualformatfixed{100}{3}
 }
-\manualbitrow{default {-}{-}base}{%
-\manualbitfixed{1}{1}
-\manualbitfieldcode{b}{4}
-\manualbitfixed{101}{3}
+\manualformatrow{default {-}{-}base}{%
+\manualformatfixed{1}{1}
+\manualformatfieldcode{b}{4}
+\manualformatfixed{101}{3}
 }
-\end{manuallistedbitdiagram}
+\end{manuallistedformatdiagram}
 
-\begin{manuallistedbitdiagram}{EXT0 Two-Byte Indexed Descriptor Byte Layouts}
-\manualbitfieldrow{SEG + base + index}{%
-\manualbytepairlabels
-}{%
-\manualbitfixed{1}{1}
-\manualbitfieldcode{s}{3}
-\manualbitfieldcode{mode}{4}
-\manualbitgap{1}
-\manualbitfieldcode{b}{4}
-\manualbitfieldcode{i}{4}
+\begin{manuallistedformatdiagram}{EXT0 Two-Byte Indexed Descriptor Byte Layouts}
+\manualformatrow{SEG + base + index}{%
+\manualformatfixed{1}{1}
+\manualformatfieldcode{s}{3}
+\manualformatfieldcode{M}{4}
+\manualformatfieldcode{b}{4}
+\manualformatfieldcode{i}{4}
 }
-\manualbitfieldrow{SP/PC + index}{%
-\manualbytepairlabels
-}{%
-\manualbitfixed{1000101}{7}
-\manualbitfieldcode{x}{1}
-\manualbitgap{1}
-\manualbitfieldcode{mode}{4}
-\manualbitfieldcode{i}{4}
+\manualformatrow{SP/PC + index}{%
+\manualformatfixed{1000101}{7}
+\manualformatfieldcode{x}{1}
+\manualformatfieldcode{M}{4}
+\manualformatfieldcode{i}{4}
 }
-\end{manuallistedbitdiagram}
+\end{manuallistedformatdiagram}
+{\small\texttt{M} abbreviates mode.\par}

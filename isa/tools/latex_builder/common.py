@@ -11,9 +11,63 @@ import re
 import yaml
 
 CAPTION_LABEL_RE = re.compile(r"^(?:Table|Figure)\s+\d+(?:-\d+)?\.\s*")
+PLACEHOLDER_RE = re.compile(r"@[A-Z0-9_]+@")
+TABLE_WIDTH_RE = re.compile(r"^(?:\d+(?:\.\d+)?(?:pt|in|cm|mm|em|ex)|X)$")
 TEMPLATE_DIR = Path(__file__).with_name("templates")
 TABLE_INLINE_LIST_MAX_CHARS = 32
 TABLE_INLINE_ITEM_MAX_CHARS = 20
+
+
+@dataclass(frozen=True)
+class TextTex:
+    """Untrusted ordinary text that must be escaped before entering TeX."""
+
+    value: Any
+
+    def render(self) -> str:
+        text = str(self.value)
+        replacements = {
+            "\\": r"\textbackslash{}",
+            "&": r"\&",
+            "%": r"\%",
+            "$": r"\$",
+            "#": r"\#",
+            "_": r"\_",
+            "{": r"\{",
+            "}": r"\}",
+            "~": r"\textasciitilde{}",
+            "^": r"\textasciicircum{}",
+            "|": r"\textbar{}",
+            "<": r"\textless{}",
+            ">": r"\textgreater{}",
+        }
+        out = "".join(replacements.get(ch, ch) for ch in text)
+        return (
+            out.replace("->", r"\ensuremath{\rightarrow{}}")
+            .replace("<-", r"\ensuremath{\leftarrow{}}")
+            .replace("=>", r"\ensuremath{\Rightarrow{}}")
+        )
+
+
+@dataclass(frozen=True)
+class CodeTex:
+    """Untrusted code text rendered in a TeX code span."""
+
+    value: Any
+
+    def render(self) -> str:
+        escaped = TextTex(self.value).render().replace("--", r"{-}{-}")
+        return r"\texttt{" + escaped + "}"
+
+
+@dataclass(frozen=True)
+class TrustedRawTex:
+    """Generator-owned TeX assembled only from literals and escaped values."""
+
+    value: str
+
+    def render(self) -> str:
+        return self.value
 
 
 def load_allocation(path: Path) -> dict[str, Any]:
@@ -26,33 +80,11 @@ def latex_template(name: str) -> str:
 
 
 def tex_escape(value: Any) -> str:
-    text = str(value)
-    replacements = {
-        "\\": r"\textbackslash{}",
-        "&": r"\&",
-        "%": r"\%",
-        "$": r"\$",
-        "#": r"\#",
-        "_": r"\_",
-        "{": r"\{",
-        "}": r"\}",
-        "~": r"\textasciitilde{}",
-        "^": r"\textasciicircum{}",
-        "|": r"\textbar{}",
-        "<": r"\textless{}",
-        ">": r"\textgreater{}",
-    }
-    out = "".join(replacements.get(ch, ch) for ch in text)
-    return (
-        out.replace("->", r"\ensuremath{\rightarrow{}}")
-        .replace("<-", r"\ensuremath{\leftarrow{}}")
-        .replace("=>", r"\ensuremath{\Rightarrow{}}")
-    )
+    return TextTex(value).render()
 
 
 def tex_code(value: Any) -> str:
-    escaped = tex_escape(value).replace("--", r"{-}{-}")
-    return r"\texttt{" + escaped + "}"
+    return CodeTex(value).render()
 
 
 def tex_multiline(lines: list[str]) -> str:
@@ -172,7 +204,7 @@ class LatexComponent:
 
 
 def render_component(value: Any) -> str:
-    if isinstance(value, LatexComponent):
+    if isinstance(value, (LatexComponent, TextTex, CodeTex, TrustedRawTex)):
         return value.render()
     return str(value)
 
@@ -184,12 +216,64 @@ class LatexTemplate(LatexComponent):
 
     def render(self) -> str:
         text = latex_template(self.name)
+        occurrences = PLACEHOLDER_RE.findall(text)
+        duplicates = sorted(
+            placeholder
+            for placeholder in set(occurrences)
+            if occurrences.count(placeholder) != 1
+        )
+        if duplicates:
+            raise ValueError(
+                f"duplicate LaTeX template placeholders in {self.name}: "
+                + ", ".join(duplicates)
+            )
+        expected = {placeholder[1:-1] for placeholder in occurrences}
+        provided = set(self.values or {})
+        missing = sorted(expected - provided)
+        unused = sorted(provided - expected)
+        if missing or unused:
+            raise ValueError(
+                f"LaTeX template value mismatch in {self.name}: "
+                f"missing [{', '.join(missing) or '-'}], "
+                f"unused [{', '.join(unused) or '-'}]"
+            )
         for key, value in (self.values or {}).items():
-            text = text.replace(f"@{key}@", render_component(value))
-        unresolved = sorted(set(re.findall(r"@[A-Z0-9_]+@", text)))
-        if unresolved:
-            raise ValueError(f"unresolved LaTeX template placeholders in {self.name}: {', '.join(unresolved)}")
+            if not isinstance(
+                value,
+                (LatexComponent, TextTex, CodeTex, TrustedRawTex),
+            ):
+                raise TypeError(
+                    f"LaTeX template value {key} in {self.name} must have an "
+                    "explicit TeX rendering type"
+                )
+            text = text.replace(f"@{key}@", value.render())
         return text
+
+
+def _validate_table_shape(
+    headers: list[str],
+    rows: list[list[str]],
+    widths: list[str] | None,
+    where: str,
+) -> None:
+    if not headers:
+        raise ValueError(f"{where}: table must have at least one column")
+    column_count = len(headers)
+    for row_index, row in enumerate(rows):
+        if len(row) != column_count:
+            raise ValueError(
+                f"{where}: row {row_index} has {len(row)} cells; "
+                f"expected {column_count}"
+            )
+    if widths is None:
+        return
+    if len(widths) != column_count:
+        raise ValueError(
+            f"{where}: {len(widths)} widths for {column_count} columns"
+        )
+    for index, width in enumerate(widths):
+        if not TABLE_WIDTH_RE.fullmatch(width):
+            raise ValueError(f"{where}: invalid width for column {index}: {width!r}")
 
 
 @dataclass(frozen=True)
@@ -238,9 +322,12 @@ class LatexLongTable(LatexComponent):
     listed: bool = True
 
     def render(self) -> str:
+        _validate_table_shape(self.headers, self.rows, self.widths, "LatexLongTable")
         if not self.rows:
             return "No entries.\\par\n"
         if self.widths:
+            if "X" in self.widths:
+                raise ValueError("LatexLongTable: flexible X columns are unsupported")
             spec = "@{}" + "".join(rf">{{\raggedright\arraybackslash}}p{{{width}}}" for width in self.widths) + "@{}"
         else:
             spec = "@{}" + " ".join("l" for _ in self.headers) + "@{}"
@@ -291,30 +378,60 @@ class LatexTabular(LatexComponent):
     listed: bool = True
 
     def render(self) -> str:
+        _validate_table_shape(self.headers, self.rows, self.widths, "LatexTabular")
         if not self.rows:
             return "No entries.\\par\n"
         if self.widths:
-            spec = "@{}" + "".join(rf">{{\raggedright\arraybackslash}}p{{{width}}}" for width in self.widths) + "@{}"
+            spec = "@{}" + "".join(
+                r">{\raggedright\arraybackslash}X"
+                if width == "X"
+                else rf">{{\raggedright\arraybackslash}}p{{{width}}}"
+                for width in self.widths
+            ) + "@{}"
         else:
-            spec = "@{}" + " ".join("l" for _ in self.headers) + "@{}"
+            spec = (
+                "@{}"
+                + " ".join("l" for _ in self.headers[:-1])
+                + (r" >{\raggedright\arraybackslash}X" if self.headers else "")
+                + "@{}"
+            )
+        flexible = not self.widths or "X" in self.widths
         out = []
         if self.caption:
             out.append(rf"\manualtablecaption{{{tex_escape(caption_title(self.caption))}}}")
-        out.extend([
-            rf"\begin{{manualtabular}}{{{spec}}}",
-            r"\toprule",
-            r"\rowcolor{ManualHeaderFill}",
-            " & ".join(r"\textbf{" + tex_escape(header) + "}" for header in self.headers) + r"\\",
-            r"\midrule",
-        ])
-        for row in self.rows:
-            out.append(" & ".join(row) + r"\\")
+        if flexible:
+            out.extend(
+                [
+                    r"\Needspace{1.25in}",
+                    r"\begingroup\footnotesize",
+                    r"\setlength{\aboverulesep}{0pt}",
+                    r"\setlength{\belowrulesep}{0pt}",
+                    r"\setlength{\extrarowheight}{1.2pt}",
+                    r"\begin{center}",
+                    rf"\begin{{tabularx}}{{\linewidth}}{{{spec}}}",
+                ]
+            )
+        else:
+            out.append(rf"\begin{{manualtabular}}{{{spec}}}")
         out.extend(
             [
-                r"\bottomrule",
-                r"\end{manualtabular}",
+                r"\toprule",
+                r"\rowcolor{ManualHeaderFill}",
+                " & ".join(
+                    r"\textbf{" + tex_escape(header) + "}"
+                    for header in self.headers
+                )
+                + r"\\",
+                r"\midrule",
             ]
         )
+        for row in self.rows:
+            out.append(" & ".join(row) + r"\\")
+        out.append(r"\bottomrule")
+        if flexible:
+            out.extend([r"\end{tabularx}", r"\end{center}", r"\endgroup"])
+        else:
+            out.append(r"\end{manualtabular}")
         return "\n".join(out) + "\n"
 
 

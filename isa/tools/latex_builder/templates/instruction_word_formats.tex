@@ -41,20 +41,20 @@ forms retain their fixed record lengths.
 \begin{manuallistedbitdiagram}{Instruction Header Byte Formats}
 \manualbitrow{extrashort byte}{%
 \manualbitfixed{0}{1}
-\manualbitfieldtext{payload[6:0]}{7}
+\manualbitfieldtext{payload}{7}
 }
-\manualbitfieldrow{short bytes}{\manualbytepairlabels}{%
+\manualbitfieldrow{short bytes}{\manualbyterowlabels{0}{2}}{%
 \manualbitfixed{10}{2}
-\manualbitfieldtext{payload[13:8]}{6}
+\manualbitfieldtext{PAY-HI}{6}
 \manualbitgap{1}
-\manualbitfieldtext{payload[7:0]}{8}
+\manualbitfieldtext{PAY-LO}{8}
 }
-\manualbitfieldrow{extended start bytes}{\manualbytepairlabels}{%
+\manualbitfieldrow{extended start bytes}{\manualbyterowlabels{0}{2}}{%
 \manualbitfixed{11}{2}
 \manualbitfieldtext{L}{4}
-\manualbitfieldtext{opcode high}{2}
+\manualbitfieldtext{OP}{2}
 \manualbitgap{1}
-\manualbitfieldtext{opcode next}{8}
+\manualbitfieldtext{NEXT}{8}
 }
 \end{manuallistedbitdiagram}
 \label{fig:instruction-header-byte-formats}

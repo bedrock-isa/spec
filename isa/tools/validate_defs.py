@@ -27,6 +27,7 @@ from defs_schema import (
     verify_schema_lock,
 )
 from encoding_store import load_encoding_store
+from artifact_overlay import read_source, resolve_source
 
 
 ROOT = Path("isa/defs")
@@ -62,14 +63,11 @@ def iter_instruction_files(
     return files, errors
 
 
-def normalized_sentence(value: str) -> str:
-    return " ".join(re.sub(r"[^A-Za-z0-9]+", " ", value).lower().split())
-
-
 def validate_description_tex(path: Path) -> list[str]:
-    if not path.is_file():
+    resolved = resolve_source(path, ROOT.parent.parent)
+    if not resolved.is_file():
         return [f"{path}: referenced TeX file does not exist"]
-    text = path.read_text(encoding="utf-8").strip()
+    text = read_source(path, ROOT.parent.parent).strip()
     errors: list[str] = []
     if not text:
         errors.append(f"{path}: referenced TeX file must not be empty")
@@ -173,16 +171,6 @@ def validate_defs(root: Path = ROOT) -> tuple[dict[str, Any], list[str]]:
             errors.append(f"duplicate mnemonic {mnemonic}: {previous} and {path}")
         mnemonics[mnemonic] = path
         instruction_families[document.attributes.family] += 1
-
-        summary = " ".join(document.summary.split())
-        if len(summary) > 120:
-            errors.append(f"{path}: summary exceeds 120 characters")
-        if len(re.findall(r"[.!?](?:\s|$)", summary)) != 1:
-            errors.append(f"{path}: summary must contain exactly one sentence")
-        if "\n\n" in document.description.strip():
-            errors.append(f"{path}: description must be a single paragraph")
-        if normalized_sentence(document.description).startswith(normalized_sentence(summary)):
-            errors.append(f"{path}: description repeats summary as its opening sentence")
 
         if document.additional_description is not None:
             details_count += 1

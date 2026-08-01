@@ -3,10 +3,11 @@
 
 from __future__ import annotations
 
-import argparse
 from pathlib import Path
 import re
 from typing import Any
+
+from latex_builder.common import tex_code, tex_escape
 
 try:
     import yaml
@@ -30,6 +31,7 @@ BUILTIN_LAYOUTS = {
     "mmu": ("1.4in", "1.35in", "0.75in", "2.1in"),
     "processor_state": ("1.55in", "1.35in", "0.8in", "1.9in"),
 }
+TABLE_WIDTH_RE = re.compile(r"^\d+(?:\.\d+)?(?:pt|in|cm|mm|em|ex)$")
 
 
 def require(condition: bool, message: str) -> None:
@@ -191,18 +193,8 @@ def validate_manifest_against_headers(
         )
 
 
-def tex_code(value: str) -> str:
-    escaped = value.replace("\\", r"\textbackslash{}")
-    for source, replacement in (("_", r"\_"), ("%", r"\%"), ("&", r"\&"), ("#", r"\#")):
-        escaped = escaped.replace(source, replacement)
-    return rf"\texttt{{{escaped}}}"
-
-
 def tex_plain(value: str) -> str:
-    escaped = value.replace("\\", r"\textbackslash{}")
-    for source, replacement in (("&", r"\&"), ("%", r"\%"), ("#", r"\#"), ("_", r"\_")):
-        escaped = escaped.replace(source, replacement)
-    return escaped
+    return tex_escape(value)
 
 
 def tex_inline(value: str) -> str:
@@ -222,40 +214,69 @@ def generated_preamble(manifest_path: Path) -> list[str]:
     ]
 
 
-def render_header_families(manifest: dict[str, Any], manifest_path: Path) -> str:
-    lines = generated_preamble(manifest_path) + [
-        r"\manualtablecaption{Target Intrinsic Header Families}",
-        r"\begingroup\footnotesize",
-        r"\setlength{\tabcolsep}{2pt}",
-        r"\begin{longtable}{@{}p{1.15in}p{1.65in}p{0.65in}p{2.15in}@{}}",
-        r"\toprule",
-        r"\textbf{Family} & \textbf{Header} & \textbf{Umbrella} & \textbf{Exposure}\\",
-        r"\midrule",
-        r"\endhead",
-    ]
-    for family in manifest["header_families"]:
-        header = tex_code(f"<{family['header']}>")
-        lines.append(
-            f"{tex_plain(family['name'])} & {header} & "
-            f"{tex_plain(family['umbrella'])} & {tex_inline(family['exposure'])}\\\\"
+def render_fixed_longtable(
+    manifest_path: Path,
+    *,
+    caption: str,
+    headers: tuple[str, ...],
+    widths: tuple[str, ...],
+    rows: list[tuple[str, ...]],
+) -> str:
+    require(
+        len(widths) == len(headers),
+        f"{caption}: {len(widths)} widths for {len(headers)} columns",
+    )
+    for index, width in enumerate(widths):
+        require(
+            TABLE_WIDTH_RE.fullmatch(width) is not None,
+            f"{caption}: invalid width for column {index}: {width!r}",
         )
-    lines.extend([r"\bottomrule", r"\end{longtable}", r"\endgroup", ""])
-    return "\n".join(lines)
-
-
-def render_builtin_family(family: dict[str, Any], manifest_path: Path) -> str:
-    widths = BUILTIN_LAYOUTS[family["id"]]
+    for index, row in enumerate(rows):
+        require(
+            len(row) == len(headers),
+            f"{caption}: row {index} has {len(row)} cells; "
+            f"expected {len(headers)}",
+        )
     column_spec = "".join(f"p{{{width}}}" for width in widths)
     lines = generated_preamble(manifest_path) + [
-        rf"\manualtablecaption{{{tex_plain(family['caption'])}}}",
+        rf"\manualtablecaption{{{caption}}}",
         r"\begingroup\footnotesize",
         r"\setlength{\tabcolsep}{2pt}",
         rf"\begin{{longtable}}{{@{{}}{column_spec}@{{}}}}",
         r"\toprule",
-        rf"\textbf{{Name}} & \textbf{{C interface}} & \textbf{{Lowering}} & \textbf{{{tex_plain(family['effect_heading'])}}}\\",
+        " & ".join(rf"\textbf{{{header}}}" for header in headers) + r"\\",
         r"\midrule",
         r"\endhead",
     ]
+    lines.extend(" & ".join(row) + r"\\" for row in rows)
+    lines.extend([r"\bottomrule", r"\end{longtable}", r"\endgroup", ""])
+    return "\n".join(lines)
+
+
+def render_header_families(manifest: dict[str, Any], manifest_path: Path) -> str:
+    rows: list[tuple[str, ...]] = []
+    for family in manifest["header_families"]:
+        header = tex_code(f"<{family['header']}>")
+        rows.append(
+            (
+                tex_plain(family["name"]),
+                header,
+                tex_plain(family["umbrella"]),
+                tex_inline(family["exposure"]),
+            )
+        )
+    return render_fixed_longtable(
+        manifest_path,
+        caption="Target Intrinsic Header Families",
+        headers=("Family", "Header", "Umbrella", "Exposure"),
+        widths=("1.15in", "1.65in", "0.65in", "2.15in"),
+        rows=rows,
+    )
+
+
+def render_builtin_family(family: dict[str, Any], manifest_path: Path) -> str:
+    widths = BUILTIN_LAYOUTS[family["id"]]
+    rows: list[tuple[str, ...]] = []
     for builtin in family["builtins"]:
         lowering = builtin["lowering"]
         lowering_tex = (
@@ -263,36 +284,45 @@ def render_builtin_family(family: dict[str, Any], manifest_path: Path) -> str:
             if lowering["kind"] == "instruction"
             else tex_plain(lowering["value"])
         )
-        lines.append(
-            rf"\compilerbuiltin{{{builtin['name']}}} & "
-            rf"\compilerctype{{{builtin['c_interface']}}} & "
-            f"{lowering_tex} & {tex_inline(builtin['effect'])}\\\\"
+        rows.append(
+            (
+                tex_code(builtin["name"]),
+                tex_code(builtin["c_interface"]),
+                lowering_tex,
+                tex_inline(builtin["effect"]),
+            )
         )
-    lines.extend([r"\bottomrule", r"\end{longtable}", r"\endgroup", ""])
-    return "\n".join(lines)
+    return render_fixed_longtable(
+        manifest_path,
+        caption=tex_plain(family["caption"]),
+        headers=(
+            "Name",
+            "C interface",
+            "Lowering",
+            tex_plain(family["effect_heading"]),
+        ),
+        widths=widths,
+        rows=rows,
+    )
 
 
 def render_shared_types(manifest: dict[str, Any], manifest_path: Path) -> str:
-    lines = generated_preamble(manifest_path) + [
-        r"\manualtablecaption{Target Intrinsic Shared Types}",
-        r"\begingroup\footnotesize",
-        r"\setlength{\tabcolsep}{2pt}",
-        r"\begin{longtable}{@{}p{2.05in}p{3.45in}@{}}",
-        r"\toprule",
-        r"\textbf{Type} & \textbf{ABI contract}\\",
-        r"\midrule",
-        r"\endhead",
-    ]
+    rows: list[tuple[str, ...]] = []
     for shared_type in manifest["shared_types"]:
         contract = shared_type["contract"]
         contract_tex = (
-            rf"\compilerctype{{{contract['value']}}}"
+            tex_code(contract["value"])
             if contract["kind"] == "c_layout"
             else tex_inline(contract["value"])
         )
-        lines.append(f"{tex_code(shared_type['name'])} & {contract_tex}\\\\")
-    lines.extend([r"\bottomrule", r"\end{longtable}", r"\endgroup", ""])
-    return "\n".join(lines)
+        rows.append((tex_code(shared_type["name"]), contract_tex))
+    return render_fixed_longtable(
+        manifest_path,
+        caption="Target Intrinsic Shared Types",
+        headers=("Type", "ABI contract"),
+        widths=("2.05in", "3.45in"),
+        rows=rows,
+    )
 
 
 def render_tables(manifest: dict[str, Any], manifest_path: Path = DEFAULT_MANIFEST) -> dict[str, str]:
@@ -307,40 +337,10 @@ def render_tables(manifest: dict[str, Any], manifest_path: Path = DEFAULT_MANIFE
     return rendered
 
 
-def write_tables(rendered: dict[str, str], output_dir: Path) -> None:
-    output_dir.mkdir(parents=True, exist_ok=True)
-    for name, content in rendered.items():
-        (output_dir / name).write_text(content, encoding="utf-8")
-
-
-def check_tables(rendered: dict[str, str], output_dir: Path) -> None:
-    mismatches = []
-    for name, expected in rendered.items():
-        path = output_dir / name
-        if not path.is_file() or path.read_text(encoding="utf-8") != expected:
-            mismatches.append(str(path))
-    require(not mismatches, "generated target-intrinsic tables are stale: " + ", ".join(mismatches))
-
-
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
-    parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
-    parser.add_argument("--check", action="store_true", help="fail if generated tables are stale")
-    return parser.parse_args()
-
-
-def main() -> int:
-    args = parse_args()
-    manifest = load_manifest(args.manifest)
+def render_artifacts() -> dict[Path, str]:
+    manifest = load_manifest(DEFAULT_MANIFEST)
     validate_manifest_against_headers(manifest)
-    rendered = render_tables(manifest, args.manifest)
-    if args.check:
-        check_tables(rendered, args.output_dir)
-    else:
-        write_tables(rendered, args.output_dir)
-    return 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
+    return {
+        DEFAULT_OUTPUT_DIR / name: content
+        for name, content in render_tables(manifest, DEFAULT_MANIFEST).items()
+    }

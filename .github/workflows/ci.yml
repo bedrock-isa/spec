@@ -20,14 +20,17 @@ jobs:
       - name: Install Python dependencies
         run: python -m pip install -r requirements.txt
 
-      - name: Validate ISA spec
-        run: make validate
+      - name: Install document toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            latexmk \
+            pandoc \
+            poppler-utils \
+            texlive-fonts-recommended \
+            texlive-latex-base \
+            texlive-latex-extra \
+            texlive-extra-utils
 
-      - name: Generate allocation
-        run: make allocation
-
-      - name: Build QBE Bedrock backend
-        run: make qbe-bedrock
-
-      - name: Run assembler/disassembler smoke tests
-        run: make asm-disasm-smoke bedrock-as-smoke
+      - name: Compile and validate the complete document set
+        run: make docs

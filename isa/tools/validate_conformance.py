@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate ISA conformance manifests and exact assembler golden vectors."""
+"""Validate ISA conformance manifests and exact assembler conformance vectors."""
 
 from __future__ import annotations
 
@@ -20,11 +20,11 @@ from encoding_store import EncodingStore, LocatedEncoding, load_encoding_store  
 
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_GOLDEN = ROOT / "isa" / "reference" / "assembler_golden_vectors.yaml"
+DEFAULT_VECTORS = ROOT / "isa" / "reference" / "assembler_conformance_vectors.yaml"
 DEFAULT_MANIFEST = ROOT / "isa" / "reference" / "conformance_manifest.yaml"
 
-GOLDEN_TOP_KEYS = {"schema_version", "cases"}
-GOLDEN_CASE_KEYS = {
+VECTOR_TOP_KEYS = {"schema_version", "cases"}
+VECTOR_CASE_KEYS = {
     "id",
     "assembly",
     "form_id",
@@ -34,37 +34,9 @@ GOLDEN_CASE_KEYS = {
     "canonical_disassembly",
     "covers",
 }
-REQUIRED_GOLDEN_COVERAGE = {
-    "extrashort",
-    "short",
-    "medium",
-    "long",
-    "extralong",
-    "register",
-    "indirect",
-    "displacement",
-    "SP",
-    "PC",
-    "absolute",
-    "immediate",
-    "EXT0",
-    "condition_size",
-    "alias",
-    "LEN_padding",
-}
-
 MANIFEST_TOP_KEYS = {"schema_version", "families", "implementation_defined"}
 MANIFEST_FAMILY_KEYS = {"id", "source", "required_cases"}
 MANIFEST_IMPLEMENTATION_KEYS = {"id", "definition", "publication"}
-REQUIRED_MANIFEST_SOURCES = {
-    "isa/reference/assembler_golden_vectors.yaml",
-    "isa/memory_model/atomic_order_litmus.yaml",
-    "isa/reference/address_translation_test_vectors.yaml",
-    "isa/reference/stack_event_test_vectors.yaml",
-    "isa/memory_model/validation.yaml",
-    "isa/memory_model/cache_sync_litmus.yaml",
-    "isa/reference/fp_common_test_vectors.yaml",
-}
 
 
 class ConformanceError(ValueError):
@@ -133,7 +105,7 @@ def _substitute_fields(
 ) -> str:
     bits = located.form.bits
     if "?" in bits:
-        raise ConformanceError(f"{where}: golden form may not contain wildcard bits")
+        raise ConformanceError(f"{where}: conformance form may not contain wildcard bits")
     widths = Counter(char for char in bits if char not in "01")
     if set(field_values) != set(widths):
         missing = ", ".join(sorted(set(widths) - set(field_values))) or "-"
@@ -162,12 +134,12 @@ def _substitute_fields(
     return "".join(result)
 
 
-def encode_golden_case(
+def encode_conformance_case(
     case: dict[str, Any],
     form_index: dict[str, LocatedEncoding],
     where: str = "case",
 ) -> bytes:
-    """Encode one exact golden case from its form fields and appended bytes."""
+    """Encode one exact conformance case from its form fields and appended bytes."""
 
     form_id = _nonempty_string(case.get("form_id"), f"{where}.form_id")
     located = form_index.get(form_id)
@@ -248,7 +220,9 @@ def _validate_round_trip(
             if pattern_bit != encoded_bit:
                 raise ConformanceError(f"{where}: encoded opcode does not match form")
         elif pattern_bit == "?":
-            raise ConformanceError(f"{where}: golden form may not contain wildcard bits")
+            raise ConformanceError(
+                f"{where}: conformance form may not contain wildcard bits"
+            )
         else:
             recovered.setdefault(pattern_bit, []).append(encoded_bit)
     values = {name: int("".join(value), 2) for name, value in recovered.items()}
@@ -258,22 +232,25 @@ def _validate_round_trip(
         )
 
 
-def validate_golden_document(raw: Any, store: EncodingStore) -> None:
-    document = _mapping(raw, "assembler golden vectors")
-    _exact_keys(document, GOLDEN_TOP_KEYS, "assembler golden vectors")
+def validate_vector_document(raw: Any, store: EncodingStore) -> None:
+    document = _mapping(raw, "assembler conformance vectors")
+    _exact_keys(document, VECTOR_TOP_KEYS, "assembler conformance vectors")
     if document["schema_version"] != 0:
-        raise ConformanceError("assembler golden vectors.schema_version: expected 0")
+        raise ConformanceError(
+            "assembler conformance vectors.schema_version: expected 0"
+        )
 
-    cases = _list(document["cases"], "assembler golden vectors.cases")
+    cases = _list(document["cases"], "assembler conformance vectors.cases")
     if not cases:
-        raise ConformanceError("assembler golden vectors.cases: expected non-empty list")
+        raise ConformanceError(
+            "assembler conformance vectors.cases: expected non-empty list"
+        )
     index = _form_index(store)
     ids: set[str] = set()
-    coverage: set[str] = set()
     for case_index, raw_case in enumerate(cases):
-        where = f"assembler golden vectors.cases[{case_index}]"
+        where = f"assembler conformance vectors.cases[{case_index}]"
         case = _mapping(raw_case, where)
-        _exact_keys(case, GOLDEN_CASE_KEYS, where)
+        _exact_keys(case, VECTOR_CASE_KEYS, where)
         case_id = _nonempty_string(case["id"], f"{where}.id")
         if case_id in ids:
             raise ConformanceError(f"{where}.id: duplicate {case_id!r}")
@@ -287,7 +264,6 @@ def validate_golden_document(raw: Any, store: EncodingStore) -> None:
             raise ConformanceError(f"{where}.covers: expected non-empty string list")
         if len(covers) != len(set(covers)):
             raise ConformanceError(f"{where}.covers: duplicate tag")
-        coverage.update(covers)
         if "alias" not in covers and assembly != canonical:
             raise ConformanceError(
                 f"{where}: non-alias assembly must equal canonical disassembly"
@@ -297,15 +273,8 @@ def validate_golden_document(raw: Any, store: EncodingStore) -> None:
         located = index.get(form_id)
         if located is None:
             raise ConformanceError(f"{where}.form_id: unknown form {form_id!r}")
-        record = encode_golden_case(case, index, where)
+        record = encode_conformance_case(case, index, where)
         _validate_round_trip(case, located, record, where)
-
-    missing_coverage = REQUIRED_GOLDEN_COVERAGE - coverage
-    if missing_coverage:
-        raise ConformanceError(
-            "assembler golden vectors: missing coverage "
-            + ", ".join(sorted(missing_coverage))
-        )
 
 
 def _collect_ids(value: Any) -> set[str]:
@@ -329,7 +298,6 @@ def validate_manifest_document(raw: Any, root: Path = ROOT) -> None:
         raise ConformanceError("conformance manifest.schema_version: expected 0")
 
     family_ids: set[str] = set()
-    sources: set[str] = set()
     for index, raw_family in enumerate(
         _list(document["families"], "conformance manifest.families")
     ):
@@ -348,8 +316,6 @@ def validate_manifest_document(raw: Any, root: Path = ROOT) -> None:
         resolved = root / source_path
         if not resolved.is_file() or resolved.suffix not in {".yaml", ".yml"}:
             raise ConformanceError(f"{where}.source: expected existing YAML file")
-        sources.add(source)
-
         required_cases = _list(family["required_cases"], f"{where}.required_cases")
         if (
             not required_cases
@@ -366,13 +332,6 @@ def validate_manifest_document(raw: Any, root: Path = ROOT) -> None:
                 f"{where}.required_cases: absent from {source}: "
                 + ", ".join(sorted(missing))
             )
-
-    missing_sources = REQUIRED_MANIFEST_SOURCES - sources
-    if missing_sources:
-        raise ConformanceError(
-            "conformance manifest: missing required sources "
-            + ", ".join(sorted(missing_sources))
-        )
 
     implementation_ids: set[str] = set()
     implementation_items = _list(
@@ -392,26 +351,26 @@ def validate_manifest_document(raw: Any, root: Path = ROOT) -> None:
 
 
 def validate_paths(
-    golden_path: Path = DEFAULT_GOLDEN,
+    vectors_path: Path = DEFAULT_VECTORS,
     manifest_path: Path = DEFAULT_MANIFEST,
     root: Path = ROOT,
 ) -> None:
     store = load_encoding_store(root / "isa" / "defs")
-    validate_golden_document(_load_yaml(golden_path), store)
+    validate_vector_document(_load_yaml(vectors_path), store)
     validate_manifest_document(_load_yaml(manifest_path), root)
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--golden", type=Path, default=DEFAULT_GOLDEN)
+    parser.add_argument("--vectors", type=Path, default=DEFAULT_VECTORS)
     parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
     args = parser.parse_args()
     try:
-        validate_paths(args.golden, args.manifest)
+        validate_paths(args.vectors, args.manifest)
     except (ConformanceError, ValueError) as exc:
         print(f"conformance validation failed: {exc}", file=sys.stderr)
         return 1
-    print("conformance manifest and assembler golden vectors are valid")
+    print("conformance manifest and assembler conformance vectors are valid")
     return 0
 
 

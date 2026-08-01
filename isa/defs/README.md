@@ -77,13 +77,11 @@ sibling `details.tex` files, and the CPUID registry lives in
 `fptransa_accuracy_contracts.tex`. This documentation is not duplicated as
 instruction or extension YAML metadata.
 
-Run the definition-layer check with:
+The document compiler owns the definition-layer checks and the full document
+gate:
 
 ```sh
-python3 isa/tools/validate_schema.py
-python3 isa/tools/validate_defs.py
-python3 isa/tools/validate_alloc.py
-python3 isa/tools/validate_isa.py
+make docs
 ```
 
 Generate allocation reports with `python3 isa/tools/gen_alloc_report.py`.

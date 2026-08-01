@@ -412,7 +412,7 @@ Form names are unique per section. Every pattern marker has exactly one field
 declaration and vice versa. Compact `payload` values reference a declared
 `payloads` key.
 
-## 10. `isa/abi/plt_golden_vectors.yaml`
+## 10. `isa/abi/plt_conformance_vectors.yaml`
 
 ```text
 AbiVectorsDocument {

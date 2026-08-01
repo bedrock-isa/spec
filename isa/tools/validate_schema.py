@@ -16,7 +16,7 @@ def document_paths(root: Path) -> list[Path]:
     paths = sorted((root / "isa" / "defs").rglob("*.yaml"))
     paths.extend(
         (
-            root / "isa" / "abi" / "plt_golden_vectors.yaml",
+            root / "isa" / "abi" / "plt_conformance_vectors.yaml",
             root / "isa" / "memory_model" / "validation.yaml",
         )
     )

@@ -1,5 +1,5 @@
 # Frozen pre-release Bedrock YAML schema contract. Keep version 0 until an explicit release decision.
 version=0
 families=11
-decoder_sha256=4fd89ada1ae928c72f39497531cadbfd73643fcee5ef9b0224e5ef7579c2c51a
-contract_sha256=1153fcdf7c708c07eebcb4a94f0a136d30e381fc8239e7d3a9be9da1274b8bf8
+decoder_sha256=480469f6ebe3bb4b3ad857091476312bd2c3ea06aa56414ae85568a6deda5fe1
+contract_sha256=818f9868459e228a45b37b53276f49bda532278c90f4a0bf6ba8bf6a0c480af1

@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import argparse
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -37,7 +36,7 @@ from defs_loader import (  # noqa: E402
     load_size_definitions,
     load_yaml,
 )
-from latex_to_markdown import render_markdown_from_latex  # noqa: E402
+from artifact_overlay import read_source, resolve_source  # noqa: E402
 from validate_isa import allocation_mnemonic  # noqa: E402
 from encoding_store import allocation_entry_dict, load_encoding_store  # noqa: E402
 from encoding_architecture import (  # noqa: E402
@@ -53,9 +52,11 @@ from defs_schema import FLAG_BANKS, decode_instruction  # noqa: E402
 from validate_reference_navigation import validate_path as load_reference_navigation  # noqa: E402
 from latex_builder.common import (  # noqa: E402
     LatexTopSection,
+    TextTex,
+    TrustedRawTex,
     latex_longtable,
     latex_tabular,
-    render_latex_template,
+    render_latex_template as render_typed_latex_template,
     tex_code,
     tex_escape as latex_escape,
 )
@@ -63,13 +64,32 @@ from latex_builder.common import (  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 DEF_ROOT = ROOT / "isa" / "defs"
-DEFAULT_OUTPUT = ROOT / "build" / "isa_reference.tex"
 EA_FRAGMENT_DIR = ROOT / "isa" / "tools" / "latex_builder" / "templates" / "fragments"
 INSTRUCTION_FILENAME = "instruction.yaml"
-ASSEMBLER_GOLDEN_PATH = ROOT / "isa" / "reference" / "assembler_golden_vectors.yaml"
+ASSEMBLER_CONFORMANCE_PATH = (
+    ROOT / "isa" / "reference" / "assembler_conformance_vectors.yaml"
+)
 CONFORMANCE_MANIFEST_PATH = ROOT / "isa" / "reference" / "conformance_manifest.yaml"
 ARCHITECTURE_TABLES_PATH = ROOT / "isa" / "reference" / "architecture_tables.yaml"
 REFERENCE_NAVIGATION_PATH = ROOT / "isa" / "reference" / "reference_navigation.yaml"
+
+
+def render_latex_template(
+    name: str,
+    values: dict[str, Any] | None = None,
+) -> str:
+    """Render generator-owned TeX fragments through the explicit trusted boundary."""
+    typed_values: dict[str, TextTex | TrustedRawTex] = {}
+    for key, value in (values or {}).items():
+        if isinstance(value, str):
+            typed_values[key] = TrustedRawTex(value)
+        elif isinstance(value, (int, float)) and not isinstance(value, bool):
+            typed_values[key] = TextTex(value)
+        else:
+            raise TypeError(
+                f"{name}: template value {key} must be rendered TeX or a text scalar"
+            )
+    return render_typed_latex_template(name, typed_values)
 
 
 @dataclass(frozen=True)
@@ -428,6 +448,8 @@ def data_format_template_values(model: IsaModel) -> dict[str, Any]:
         key = str(name).upper()
         field_width = int(spec.get("field_width", 0) or 0)
         values[f"{key}_WIDTH"] = field_width
+        if name == "imm6":
+            values["IMM6_EXTENSION_THRESHOLD"] = field_width
         enum_values = [
             item.get("value")
             for item in (spec.get("values") or [])
@@ -462,8 +484,8 @@ def encoding_architecture_template_values() -> dict[str, str]:
     for encoding_class in ENCODING_CLASSES:
         if not encoding_class.selectors:
             namespace_rows.append(
-                rf"\manualbitrow{{{encoding_class.name}}}{{%" "\n"
-                rf"\manualbitfieldtext{{payload[{encoding_class.payload_bits - 1}:0]}}"
+                rf"\manualformatrow{{{encoding_class.name}}}{{%" "\n"
+                rf"\manualformatfield{{payload}}"
                 rf"{{{encoding_class.payload_bits}}}" "\n"
                 "}"
             )
@@ -494,13 +516,13 @@ def encoding_architecture_template_values() -> dict[str, str]:
                 else ""
             )
             selector_macro = (
-                "manualbitfieldcode" if "x" in selector else "manualbitfixed"
+                "manualformatfieldcode" if "x" in selector else "manualformatfixed"
             )
             suffix_bits = encoding_class.payload_bits - len(selector)
             namespace_rows.append(
-                rf"\manualbitrow{{{encoding_class.name}{group}}}{{%" "\n"
+                rf"\manualformatrow{{{encoding_class.name}{group}}}{{%" "\n"
                 rf"\{selector_macro}{{{selector}}}{{{len(selector)}}}" "\n"
-                rf"\manualbitfieldtext{{payload[{suffix_bits - 1}:0]}}"
+                rf"\manualformatfield{{payload}}"
                 rf"{{{suffix_bits}}}" "\n"
                 "}"
             )
@@ -877,47 +899,28 @@ def bit_segments(bits: str) -> list[tuple[str, int]]:
         cls = segment_class(ch)
         if cls != current:
             chunk = bits[start:index]
-            out.extend(split_bit_chunk(chunk))
+            out.append((bit_label(chunk), len(chunk)))
             start = index
             current = cls
     chunk = bits[start:]
-    out.extend(split_bit_chunk(chunk))
+    out.append((bit_label(chunk), len(chunk)))
     return out
 
 
-def split_bit_chunk(chunk: str) -> list[tuple[str, int]]:
-    if set(chunk) <= {"0", "1", "?"} and len(chunk) > 4:
-        return [(bit_label(chunk[index : index + 4]), len(chunk[index : index + 4])) for index in range(0, len(chunk), 4)]
-    return [(bit_label(chunk), len(chunk))]
-
-
-def normalize_byte_segments(segments: list[tuple[str, int]]) -> list[tuple[str, int]]:
-    """Keep contiguous fixed bits aligned to four-bit groups within a byte."""
-    normalized: list[tuple[str, int]] = []
-    fixed_bits = ""
-
-    def flush_fixed_bits() -> None:
-        nonlocal fixed_bits
-        for index in range(0, len(fixed_bits), 4):
-            chunk = fixed_bits[index : index + 4]
-            normalized.append((chunk, len(chunk)))
-        fixed_bits = ""
-
-    for label, width in segments:
-        if len(label) == width and set(label) <= {"0", "1", "-"}:
-            fixed_bits += label
-            continue
-        flush_fixed_bits()
-        normalized.append((label, width))
-    flush_fixed_bits()
-    return normalized
+# Eight encoded bytes plus seven one-bit gutters fit the fixed-width manual body.
+MAX_INSTRUCTION_BYTES_PER_DIAGRAM_ROW = 8
 
 
 def instruction_byte_row_segments(
     byte_index: int,
-    left_segments: list[tuple[str, int]],
-    right_segments: list[tuple[str, int]] | None = None,
+    byte_segments: list[list[tuple[str, int]]],
 ) -> str:
+    if not 1 <= len(byte_segments) <= MAX_INSTRUCTION_BYTES_PER_DIAGRAM_ROW:
+        raise ValueError(
+            f"instruction diagram row at byte {byte_index} contains {len(byte_segments)} bytes; "
+            f"expected 1-{MAX_INSTRUCTION_BYTES_PER_DIAGRAM_ROW}"
+        )
+
     def field(text: str, width: int) -> str:
         if set(text) <= {"0", "1"}:
             macro = "manualbitfixed"
@@ -927,22 +930,12 @@ def instruction_byte_row_segments(
             macro = "manualbitvariable"
         return rf"\{macro}{{{latex_escape(text)}}}{{{width}}}"
 
-    fields = [
-        field(text, width)
-        for text, width in left_segments
-        if width > 0
-    ]
-    if right_segments is None:
-        labels = rf"\manualsinglebytelabels{{{byte_index}}}"
-        fields.append(r"\manualbitgap{9}")
-    else:
-        labels = rf"\manualbytepairlabelsfor{{{byte_index}}}{{{byte_index + 1}}}"
-        fields.append(r"\manualbitgap{1}")
-        fields.extend(
-            field(text, width)
-            for text, width in right_segments
-            if width > 0
-        )
+    fields: list[str] = []
+    for row_byte_index, segments in enumerate(byte_segments):
+        if row_byte_index:
+            fields.append(r"\manualbitgap{1}")
+        fields.extend(field(text, width) for text, width in segments if width > 0)
+    labels = rf"\manualbyterowlabels{{{byte_index}}}{{{len(byte_segments)}}}"
     return "\n".join(
         [
             r"\manualbitfieldrow{}{%",
@@ -1000,7 +993,6 @@ def entry_byte_segments(entry: AllocationEntry) -> list[list[tuple[str, int]]]:
             chunk = remaining[:8]
             remaining = remaining[8:]
             byte_segments.append(bit_segments(chunk))
-    byte_segments = [normalize_byte_segments(segments) for segments in byte_segments]
     for byte_index, segments in enumerate(byte_segments):
         width = sum(segment_width for _label, segment_width in segments)
         if width != 8:
@@ -1013,10 +1005,9 @@ def latex_entry_bit_diagram(entry: AllocationEntry, form: str) -> str:
     rows = [
         instruction_byte_row_segments(
             index,
-            byte_segments[index],
-            byte_segments[index + 1] if index + 1 < len(byte_segments) else None,
+            byte_segments[index : index + MAX_INSTRUCTION_BYTES_PER_DIAGRAM_ROW],
         )
-        for index in range(0, len(byte_segments), 2)
+        for index in range(0, len(byte_segments), MAX_INSTRUCTION_BYTES_PER_DIAGRAM_ROW)
     ]
     return "\n".join(
         [
@@ -1559,9 +1550,7 @@ def latex_extension_directory_diagram(model: IsaModel) -> str:
     for class_id, leaf_id, index, bit, feature, _qualified_name in extension_directory_entries(model):
         grouped.setdefault((class_id, leaf_id, index), []).append((bit, feature))
 
-    lines = [
-        r"\begin{manuallistedformatdiagram}{Optional-Extension Directory Result}{10}"
-    ]
+    lines = [r"\begin{manuallistedformatdiagram}{Optional-Extension Directory Result}"]
     for (_class_id, _leaf_id, index), fields in sorted(grouped.items()):
         cursor = 63
         lines.append(rf"\manualformatrowrange{{index {index}}}{{63}}{{0}}{{%")
@@ -1617,20 +1606,25 @@ def latex_save_restore_section() -> str:
     return render_latex_template("save_restore_area.tex", {})
 
 
-def latex_assembler_golden_rows() -> str:
-    document = load_yaml(ASSEMBLER_GOLDEN_PATH)
+def latex_assembler_conformance_rows() -> str:
+    document = load_yaml(ASSEMBLER_CONFORMANCE_PATH)
     cases = document.get("cases") if isinstance(document, dict) else None
     if not isinstance(cases, list) or not cases:
-        raise ValueError(f"{ASSEMBLER_GOLDEN_PATH}: expected non-empty cases list")
+        raise ValueError(
+            f"{ASSEMBLER_CONFORMANCE_PATH}: expected non-empty cases list"
+        )
     rows: list[str] = []
     for index, case in enumerate(cases):
         if not isinstance(case, dict):
-            raise ValueError(f"{ASSEMBLER_GOLDEN_PATH}: cases[{index}] must be a mapping")
+            raise ValueError(
+                f"{ASSEMBLER_CONFORMANCE_PATH}: cases[{index}] must be a mapping"
+            )
         fields = case.get("field_values")
         encoded = case.get("encoded_bytes")
         if not isinstance(fields, dict) or not isinstance(encoded, list):
             raise ValueError(
-                f"{ASSEMBLER_GOLDEN_PATH}: cases[{index}] requires field_values and encoded_bytes"
+                f"{ASSEMBLER_CONFORMANCE_PATH}: cases[{index}] requires "
+                "field_values and encoded_bytes"
             )
         field_text = ",".join(f"{name}={value:#x}" for name, value in fields.items())
         form_text = tex_breakable_code(case.get("form_id", ""))
@@ -2190,27 +2184,53 @@ def latex_reference_navigation_section(
 
 
 def latex_data_formats_section(model: IsaModel) -> str:
-    return render_latex_template("data_formats.tex", data_format_template_values(model))
+    all_values = data_format_template_values(model)
+    scalar_values = {
+        key: value
+        for key, value in all_values.items()
+        if key.startswith(("B_", "W_", "L_", "Q_", "S_", "D_"))
+    }
+    return render_latex_template("data_formats.tex", scalar_values)
 
 
 def latex_instruction_word_formats_section(model: IsaModel) -> str:
-    values = encoding_architecture_template_values()
-    values["INSTRUCTION_ENCODING_DIAGRAMS"] = render_latex_template(
+    architecture_values = encoding_architecture_template_values()
+    instruction_encoding_diagrams = render_latex_template(
         "fragments/instruction_encoding_diagrams.tex",
-        values,
+        {
+            "OPCODE_PAYLOAD_NAMESPACE_ROWS": architecture_values[
+                "OPCODE_PAYLOAD_NAMESPACE_ROWS"
+            ]
+        },
     )
-    values["INSTRUCTION_PAYLOAD_ORDERING_SECTION"] = render_latex_template(
+    data_values = data_format_template_values(model)
+    operand_values = {
+        key: value
+        for key, value in data_values.items()
+        if not key.startswith(("B_", "W_", "L_", "Q_", "S_", "D_"))
+    }
+    instruction_payload_ordering = render_latex_template(
         "fragments/instruction_payload_ordering.tex",
-        data_format_template_values(model),
+        operand_values,
     )
-    values["OPCODE_ALLOCATION_MAP"] = latex_opcode_allocation_map(model)
-    values["ASSEMBLER_LANGUAGE_SECTION"] = render_latex_template(
+    assembler_language = render_latex_template(
         "assembler_language.tex",
-        {"ASSEMBLER_GOLDEN_ROWS": latex_assembler_golden_rows()},
+        {"ASSEMBLER_CONFORMANCE_ROWS": latex_assembler_conformance_rows()},
     )
     return render_latex_template(
         "instruction_word_formats.tex",
-        values,
+        {
+            "INSTRUCTION_LENGTH_TRUTH_TABLE_ROWS": architecture_values[
+                "INSTRUCTION_LENGTH_TRUTH_TABLE_ROWS"
+            ],
+            "ENCODING_CLASS_SUMMARY_ROWS": architecture_values[
+                "ENCODING_CLASS_SUMMARY_ROWS"
+            ],
+            "INSTRUCTION_ENCODING_DIAGRAMS": instruction_encoding_diagrams,
+            "INSTRUCTION_PAYLOAD_ORDERING_SECTION": instruction_payload_ordering,
+            "OPCODE_ALLOCATION_MAP": latex_opcode_allocation_map(model),
+            "ASSEMBLER_LANGUAGE_SECTION": assembler_language,
+        },
     )
 
 
@@ -2585,7 +2605,7 @@ def ext0_fragment_values(data: dict[str, Any]) -> dict[str, str]:
     }
 
 
-def write_ea_reference_fragments(data: dict[str, Any]) -> None:
+def render_ea_reference_fragments(data: dict[str, Any]) -> dict[Path, str]:
     outputs = {
         "compact_ea_reference_blocks.tex": render_latex_template(
             "fragments/compact_ea_reference_blocks.tex.in",
@@ -2596,10 +2616,7 @@ def write_ea_reference_fragments(data: dict[str, Any]) -> None:
             ext0_fragment_values(data),
         ),
     }
-    for name, text in outputs.items():
-        path = EA_FRAGMENT_DIR / name
-        if not path.exists() or path.read_text(encoding="utf-8") != text:
-            path.write_text(text, encoding="utf-8")
+    return {EA_FRAGMENT_DIR / name: text for name, text in outputs.items()}
 
 
 def latex_ea_section(model: IsaModel) -> str:
@@ -2693,11 +2710,12 @@ def instruction_details_tex(inst: InstructionDef) -> str:
     path = inst.details_path
     if path is None:
         return ""
-    if not path.exists():
+    resolved = resolve_source(path, ROOT)
+    if not resolved.exists():
         return ""
-    if not path.is_file():
+    if not resolved.is_file():
         raise ValueError(f"{path}: expected a regular details.tex file")
-    text = path.read_text(encoding="utf-8").strip()
+    text = read_source(path, ROOT).strip()
     if not text:
         raise ValueError(f"{path}: details.tex must not be empty")
     numbered_heading = re.search(r"\\(?:sub)*section\s*(?!\*)\{", text)
@@ -2833,35 +2851,3 @@ def latex_instruction_reference_section(model: IsaModel, instructions: list[Inst
             for index, inst in enumerate(group)
         )
     return "\n".join(parts)
-
-
-def infer_format(output: Path, explicit: str | None) -> str:
-    if explicit:
-        return explicit
-    return "markdown" if output.suffix.lower() in {".md", ".markdown"} else "latex"
-
-
-def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--defs", type=Path, default=DEF_ROOT)
-    parser.add_argument("-o", "--output", type=Path, default=DEFAULT_OUTPUT)
-    parser.add_argument("--format", choices=["latex", "markdown"], default=None)
-    parser.add_argument("--pandoc", help="Pandoc executable for derived Markdown output")
-    parser.add_argument("--only-allocated", action="store_true")
-    args = parser.parse_args()
-
-    model = load_model(args.defs)
-    if args.defs.resolve() == DEF_ROOT.resolve():
-        write_ea_reference_fragments(model.metadata.get("ea") or {})
-    latex = render_latex(model, only_allocated=args.only_allocated)
-    fmt = infer_format(args.output, args.format)
-    text = render_markdown_from_latex(latex, args.pandoc) if fmt == "markdown" else latex
-
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(text, encoding="utf-8")
-    print(f"wrote {args.output}")
-    return 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())

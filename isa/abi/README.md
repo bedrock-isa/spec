@@ -26,18 +26,15 @@ The ABI TeX documents are the normative prose sources. The retained ABI
 quick-reference tables are generated from `abi_tables.yaml`, whose semantic
 fields record return locations, call-relocation relationships, ordinary and
 atomic access rules, Bedrock-specific sections, and TLS relocation families.
-Run `make abi-tables` after changing that manifest. In addition,
-`calling_convention_cases.json` contains compiler-facing call-layout fixtures,
+The document compiler renders those tables in its build overlay. In addition,
+`calling_convention_cases.json` contains compiler-facing call-layout cases,
 and `../tools/abi_call_model.py` is the executable reference procedure that
-checks them. The same case identifiers appear in the worked examples in the C
-ABI, so documented coverage and conformance fixtures cannot silently diverge.
+checks them. Worked examples reference those cases through a TeX macro that
+rejects unknown or missing documented IDs during compilation.
 
 Generated assembly included in the C ABI is non-normative. Compiler output for
 an unimplemented or nonconforming path is kept out of the reference document.
 
-Run `make validate-docs` to check layer assignments, relocation tables,
-generated ABI tables, document boundaries, call-layout fixtures, and
-intrinsic/header agreement.
-Run `make validate-abi-model` to check only the executable calling-convention
-model. Run `make docs` to build the complete six-document reference and guide
-set.
+Run `make docs` to check the semantic sources and build the complete
+six-document PDF and Markdown set. No partial validation target is a quality
+gate.

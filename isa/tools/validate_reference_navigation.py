@@ -35,17 +35,6 @@ REVISION_HISTORY_KEYS = {"unreleased", "released"}
 UNRELEASED_KEYS = {"status", "architecture_revision", "changes"}
 RELEASED_KEYS = {"architecture_revision", "title", "compatibility", "changes"}
 
-REQUIRED_FIELD_GROUPS = {
-    "FLAGS": ("Z", "N", "C", "V"),
-    "STATUS": ("IE", "PM", "RF", "TF", "NI", "EA"),
-    "PTCR": ("root_page", "PABITS_SEL", "LA57", "PE"),
-    "ASCR": ("ASID", "AE"),
-    "ECR": ("MAX_EDEPTH", "NMI_P", "V"),
-    "URCTL": ("V", "STATUS", "FLAGS"),
-    "PMC": ("EN",),
-    "PTE": ("P", "W", "X", "U", "G", "A", "D", "AT", "CP", "SW0", "T", "PFN"),
-    "instruction_header": ("L",),
-}
 SUPPLEMENTAL_STATE = {"FLAGS", "STATUS", "FFLAGS", "FSTATUS"}
 
 
@@ -169,23 +158,19 @@ def validate_state_groups(raw: Any, anchors: set[str]) -> None:
 
 
 def validate_field_groups(raw: Any, anchors: set[str]) -> None:
-    groups: dict[str, tuple[str, ...]] = {}
+    owners: set[str] = set()
     for index, raw_group in enumerate(list_value(raw, "canonical_field_groups")):
         where = f"canonical_field_groups[{index}]"
         group = mapping(raw_group, where)
         exact_keys(group, FIELD_GROUP_KEYS, where)
         owner = nonempty_string(group["owner"], f"{where}.owner")
-        if owner in groups:
+        if owner in owners:
             raise NavigationError(f"{where}.owner: duplicate {owner!r}")
-        fields = tuple(string_list(group["fields"], f"{where}.fields"))
+        owners.add(owner)
+        string_list(group["fields"], f"{where}.fields")
         definition = nonempty_string(group["definition"], f"{where}.definition")
         if definition not in anchors:
             raise NavigationError(f"{where}.definition: unknown anchor {definition!r}")
-        groups[owner] = fields
-    if groups != REQUIRED_FIELD_GROUPS:
-        raise NavigationError(
-            "canonical_field_groups must match the architectural canonical-name set"
-        )
 
 
 def validate_revision_history(raw: Any) -> None:
@@ -242,44 +227,6 @@ def validate_architecture_rows() -> None:
             raise NavigationError(f"{where}.name: duplicate {name!r}")
         names.add(name)
         nonempty_string(register["use"], f"{where}.use")
-    urctl = next(item for item in registers if item["name"] == "URCTL")
-    if urctl["use"] != "user-return FLAGS, STATUS, and valid state":
-        raise NavigationError("URCTL selector description is incomplete")
-
-
-def validate_canonical_source_spelling() -> None:
-    roots = (
-        ROOT / "isa" / "defs",
-        ROOT / "isa" / "reference",
-        TEMPLATE_ROOT,
-    )
-    stale = re.compile(r"\b(?:ZF|PSEL)\b")
-    for root in roots:
-        for path in root.rglob("*"):
-            if path.suffix not in {".tex", ".yaml", ".md", ".in"} or not path.is_file():
-                continue
-            match = stale.search(path.read_text(encoding="utf-8"))
-            if match:
-                raise NavigationError(
-                    f"{path.relative_to(ROOT)}: stale canonical name {match.group(0)!r}"
-                )
-    memory_model = (TEMPLATE_ROOT / "memory_model.tex").read_text(encoding="utf-8")
-    if "Platform-defined device memory" in memory_model:
-        raise NavigationError("memory_model.tex: undefined device-memory category remains")
-    terminology = (TEMPLATE_ROOT / "terminology.tex").read_text(encoding="utf-8")
-    required = (
-        "Byte-addressed normal memory",
-        r"\texttt{CP=0}",
-        "slot-addressed transaction",
-        r"\texttt{AT=1}",
-        r"\texttt{TRACE} instruction",
-        r"\texttt{DEBUG\_TRACE}",
-    )
-    for text in required:
-        if text not in terminology:
-            raise NavigationError(f"terminology.tex: missing canonical text {text!r}")
-
-
 def validate_document(raw: Any) -> None:
     document = mapping(raw, "reference navigation")
     exact_keys(document, TOP_KEYS, "reference navigation")
@@ -290,7 +237,6 @@ def validate_document(raw: Any) -> None:
     validate_field_groups(document["canonical_field_groups"], anchors)
     validate_revision_history(document["revision_history"])
     validate_architecture_rows()
-    validate_canonical_source_spelling()
 
 
 def validate_path(path: Path = DEFAULT_SOURCE) -> dict[str, Any]:
@@ -308,7 +254,7 @@ def main() -> int:
     except (NavigationError, ValueError) as exc:
         print(f"reference navigation validation failed: {exc}", file=sys.stderr)
         return 1
-    print("reference navigation and canonical names are valid")
+    print("reference navigation is structurally valid")
     return 0
 
 

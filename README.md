@@ -26,7 +26,7 @@ isa/tools/validate_alloc.py  allocation collision and cardinality validator
 isa/tools/validate_isa.py    definition/allocation join validator
 isa/tools/validate_abi_docs.py ABI document and intrinsic-header validator
 isa/tools/encoding_architecture.py fixed instruction framing and opcode-class grammar
-isa/tools/gen_docs.py        reference document generator
+isa/tools/gen_docs.py        pure reference-document rendering library used by the compiler
 isa/tools/latex_to_markdown.py derived Markdown converter for TeX documents
 isa/tools/gen_alloc_report.py allocation occupancy report generator
 ```
@@ -58,67 +58,28 @@ Install the Python tooling dependency once with:
 python3 -m pip install -r requirements.txt
 ```
 
-Run the definition and allocation checks with:
-
-```sh
-python3 isa/tools/validate_schema.py
-python3 isa/tools/validate_defs.py
-python3 isa/tools/validate_alloc.py
-python3 isa/tools/validate_isa.py
-python3 isa/tools/validate_abi_docs.py
-```
-
-## Reference Documents
-
-Generate the ISA reference TeX source:
-
-```sh
-python3 isa/tools/gen_docs.py -o build/isa_reference.tex
-```
-
-Generate derived GitHub-Flavored Markdown with Pandoc:
-
-```sh
-python3 isa/tools/gen_docs.py --format markdown -o build/isa_reference.md
-```
-
-The Markdown file is generated from the fully rendered LaTeX document. It is a
-publication artifact, not a second documentation source. No Markdown templates
-are maintained in the repository. Install Pandoc first, or set the `PANDOC`
-environment variable to its executable path.
-
-The directly maintained ABI and compiler-interface TeX documents use the same
-converter. For example:
-
-```sh
-python3 isa/tools/latex_to_markdown.py \
-  isa/abi/bedrock-elf-abi.tex \
-  build/markdown/bedrock-elf-abi.md
-python3 isa/tools/latex_to_markdown.py \
-  isa/abi/bedrock-c-abi.tex \
-  build/markdown/bedrock-c-abi.md
-```
-
-Build the PDF from the generated TeX:
-
-```sh
-latexmk -pdf -interaction=nonstopmode -halt-on-error -outdir=build build/isa_reference.tex
-cp build/isa_reference.pdf isa_reference.pdf
-```
-
-Build all six reference documents and guides:
+The document compiler runs the definition, allocation, ABI, and cross-source
+checks as mandatory stages. Build and validate all six reference documents and
+their Markdown derivatives with:
 
 ```sh
 make docs
 ```
 
-The five directly maintained TeX documents can be built independently with
-`make elf-abi`, `make c-abi`, `make c-far-extensions`, and
-`make target-intrinsics`, or `make programming-guide`.
+## Reference Documents
 
-Use `make isa-reference-markdown` for the ISA reference, `make abi-markdown`
-for both ABI documents, or `make docs-markdown` for all six derived Markdown
-artifacts.
+`isa/tools/compile_documents.py` is the only document compilation entry point.
+It generates all derived TeX in a temporary build overlay, compiles PDF and
+Markdown from that same overlay, validates the results, and publishes them only
+after the complete run succeeds. Generated TeX is not tracked in the source
+tree.
+
+```sh
+make docs
+```
+
+`make docs-pdf` and `make docs-markdown` are partial development builds. They
+do not replace the complete `make docs` quality gate.
 
 ## Allocation Reports
 

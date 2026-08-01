@@ -3,10 +3,8 @@
 
 from __future__ import annotations
 
-import argparse
 from pathlib import Path
 import re
-import sys
 from typing import Any, Iterable
 
 try:
@@ -478,12 +476,8 @@ def generated(content: str) -> str:
 def format_diagram(
     caption: str,
     rows: list[tuple[str, int, int, list[tuple[str, int]]]],
-    *,
-    min_units: int = 6,
 ) -> str:
-    lines = [
-        rf"\begin{{manuallistedformatdiagram}}{{{tex_escape(caption)}}}{{{min_units}}}"
-    ]
+    lines = [rf"\begin{{manuallistedformatdiagram}}{{{tex_escape(caption)}}}"]
     for label, high, low, fields in rows:
         if sum(width for _name, width in fields) != high - low + 1:
             raise ValueError(f"{caption}: {label} fields do not cover bits {high}..{low}")
@@ -519,7 +513,7 @@ def render_performance_counters(data: dict[str, Any]) -> str:
     return latex_tabular(
         ["ID", "Name", "Increment event"],
         rows,
-        ["0.55in", "1.05in", "3.80in"],
+        ["0.55in", "1.05in", "X"],
         "Standard Performance Counters",
     )
 
@@ -558,7 +552,7 @@ def render_reserved_defaults(data: dict[str, Any]) -> str:
     return latex_tabular(
         ["Field Class", "Read Rule", "Write or Use Rule", "Fault"],
         rows,
-        ["1.65in", "0.75in", "1.35in", "1.65in"],
+        ["1.65in", "0.75in", "1.35in", "X"],
         "Reserved Field Defaults",
     )
 
@@ -632,7 +626,7 @@ def render_cache_topology(data: dict[str, Any]) -> str:
             ],
             ["1", tex_code("63..16"), "reserved", "zero"],
         ],
-        ["0.45in", "0.65in", "2.20in", "2.15in"],
+        ["0.45in", "0.65in", "2.20in", "X"],
         "Cache-Maintenance Properties",
     )
     field_meanings = {
@@ -653,7 +647,7 @@ def render_cache_topology(data: dict[str, Any]) -> str:
             ]
             for item in cache["fields"]
         ],
-        ["0.65in", "2.10in", "2.65in"],
+        ["0.65in", "2.10in", "X"],
         "Cache-Topology Descriptor",
     )
     descriptor_diagram = format_diagram(
@@ -720,7 +714,7 @@ def render_save_area_layout(data: dict[str, Any]) -> str:
                 + tex_code("i"),
             ],
         ],
-        ["0.80in", "4.60in"],
+        ["0.80in", "X"],
         "SAVE-AREA-LAYOUT Indexes",
     )
     result_diagram = format_diagram(
@@ -761,7 +755,6 @@ def render_save_area_layout(data: dict[str, Any]) -> str:
                 ],
             ),
         ],
-        min_units=8,
     )
     result_diagram += "\n" + (
         r"{\small Diagram labels abbreviate the field names in the descriptor tables below; "
@@ -777,7 +770,7 @@ def render_save_area_layout(data: dict[str, Any]) -> str:
             [tex_code("31..22"), "reserved", "zero"],
             [tex_code("63..32"), tex_code("OFFSET_BYTES"), "offset from the save-area base"],
         ],
-        ["0.65in", "1.70in", "3.05in"],
+        ["0.65in", "1.70in", "X"],
         "SAVE Component Descriptor A",
     )
     descriptor_b = latex_tabular(
@@ -792,7 +785,7 @@ def render_save_area_layout(data: dict[str, Any]) -> str:
             ],
             [tex_code("63..56"), "reserved", "zero"],
         ],
-        ["0.65in", "1.70in", "3.05in"],
+        ["0.65in", "1.70in", "X"],
         "SAVE Component Descriptor B",
     )
     fp = next(item for item in save["components"] if item["name"] == "FP")
@@ -815,7 +808,7 @@ def render_save_area_layout(data: dict[str, Any]) -> str:
     fp_table = latex_tabular(
         ["Component Offset", "State", "Contents"],
         fp_rows,
-        ["1.25in", "1.20in", "2.95in"],
+        ["1.25in", "1.20in", "X"],
         "Floating-Point SAVE Component",
     )
     return "\n\n".join(
@@ -863,7 +856,7 @@ def render_translation_cache(data: dict[str, Any]) -> str:
             [breakable_code(item["component"]), tex_escape(item["applies"])]
             for item in translation["identity"]
         ],
-        ["2.00in", "3.40in"],
+        ["2.00in", "X"],
         "Translation-Cache Entry Identity",
     )
     transition_table = latex_longtable(
@@ -886,7 +879,7 @@ def render_translation_cache(data: dict[str, Any]) -> str:
     shootdown_table = latex_tabular(
         ["Step", "Required Action"],
         shootdown_rows,
-        ["0.45in", "4.95in"],
+        ["0.45in", "X"],
         "Remote Translation Shootdown Protocol",
     )
     return "\n\n".join((identity_table, transition_table, shootdown_table))
@@ -919,10 +912,10 @@ def render_exception_causes(data: dict[str, Any], exception: str) -> str:
         rows.append([tex_escape(item["value"]), tex_code(item["name"]), meaning])
     if exception == "PAGE_FAULT":
         headers = ["Value", "Cause", "Detection class"]
-        widths = ["0.65in", "2.20in", "2.55in"]
+        widths = ["0.65in", "2.20in", "X"]
     else:
         headers = ["Value", "Cause", "Meaning"]
-        widths = ["0.65in", "2.35in", "2.40in"]
+        widths = ["0.65in", "2.35in", "X"]
     return latex_tabular(headers, rows, widths, f"{exception} Causes")
 
 
@@ -1129,7 +1122,7 @@ def render_reset_state(data: dict[str, Any]) -> str:
             ["Restart", tex_escape(contract["restart"])],
             ["Other logical processors", tex_escape(contract["other_logical_processors"])],
         ],
-        ["1.35in", "4.05in"],
+        ["1.35in", "X"],
         "Warm RESET Contract",
     )
     state_table = latex_longtable(
@@ -1158,7 +1151,7 @@ def render_atomic_orders(data: dict[str, Any]) -> str:
     return latex_tabular(
         ["Selector", "Code", "Architectural Ordering Effect"],
         rows,
-        ["0.95in", "0.45in", "4.00in"],
+        ["0.95in", "0.45in", "X"],
         "Atomic Memory-Order Selectors",
     )
 
@@ -1207,36 +1200,7 @@ def output_files(data: dict[str, Any]) -> dict[Path, str]:
     }
 
 
-def generate(*, check: bool = False) -> list[Path]:
+def render_artifacts() -> dict[Path, str]:
     data = load_mapping(SOURCE)
     validate_manifest(data)
-    outputs = output_files(data)
-    stale: list[Path] = []
-    for path, content in outputs.items():
-        if check:
-            if not path.is_file() or path.read_text(encoding="utf-8") != content:
-                stale.append(path)
-            continue
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(content, encoding="utf-8")
-    return stale
-
-
-def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--check",
-        action="store_true",
-        help="validate the manifest and fail if generated files are stale",
-    )
-    args = parser.parse_args()
-    stale = generate(check=args.check)
-    if stale:
-        for path in stale:
-            print(f"stale generated architecture table: {path.relative_to(ROOT)}", file=sys.stderr)
-        return 1
-    return 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
+    return output_files(data)

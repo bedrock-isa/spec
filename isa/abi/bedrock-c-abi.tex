@@ -149,16 +149,12 @@ that defines their object representation and argument classification.
 Far data and function pointers are 16-byte, 16-byte-aligned, little-endian
 two-word scalars with the common object representation shown below.
 
-\begin{manuallistedbitdiagram}{Far Pointer Object Representation}
-\manualbitfieldrow{}{%
-  \node[anchor=south] at (0.5,{\manualbitrowy + 1.18}) {127};%
-  \node[anchor=south] at (127.5,{\manualbitrowy + 1.18}) {0};%
-  \node[anchor=north] at (32,{\manualbitrowy - 0.16}) {offset 8};%
-  \node[anchor=north] at (96,{\manualbitrowy - 0.16}) {offset 0};%
-}{%
-  \manualbitfieldtext{segment image [127:64]}{64}%
-  \manualbitfieldtext{pre-segment address [63:0]}{64}}
-\end{manuallistedbitdiagram}
+\begin{manuallistedformatdiagram}{Far Pointer Object Representation}
+\manualformatrowrange{offset 8}{127}{64}{%
+  \manualformatfield{segment image}{64}}
+\manualformatrowrange{offset 0}{63}{0}{%
+  \manualformatfield{pre-segment address}{64}}
+\end{manuallistedformatdiagram}
 
 Far data pointers interpret the two words as a canonical virtual byte address
 and data-segment image; far function pointers interpret them as a canonical
@@ -801,7 +797,7 @@ illustrate the assignment procedure. The final two examples are generated output
 from the Bedrock LLVM backend. Examples do not introduce exceptions to the
 normative rules above.
 
-% ABI-CALL-CASE: mixed-register-classes
+\manualabicase{mixed-register-classes}
 \subsection{Independent Register Classes and Pair Alignment}
 \begingroup\small\ttfamily
 \begin{tabularx}{\linewidth}{@{}X@{}}
@@ -817,7 +813,7 @@ so \texttt{wide} uses \texttt{R3:R2} and \texttt{R1} remains unused. The
 address of the caller-owned \texttt{pair} copy uses \texttt{R4}, and
 \texttt{bias} uses \texttt{F1}. No stack argument area is required.
 
-% ABI-CALL-CASE: sret-reserves-r0
+\manualabicase{sret-reserves-r0}
 \subsection{sret Changes Ordinary Argument Assignment}
 \begingroup\small\ttfamily
 \begin{tabularx}{\linewidth}{@{}X@{}}
@@ -832,7 +828,7 @@ the general cursor begins at 1. Thus \texttt{tag} uses \texttt{R1},
 The callee stores the result through the entry value of \texttt{R0} and returns
 the same address in \texttt{R0}.
 
-% ABI-CALL-CASE: pair-exhausts-general-class
+\manualabicase{pair-exhausts-general-class}
 \subsection{A Pair That Does Not Fit Exhausts Its Class}
 \begingroup\small\ttfamily
 \begin{tabularx}{\linewidth}{@{}X@{}}
@@ -847,7 +843,7 @@ Arguments \texttt{a0} through \texttt{a6} use \texttt{R0} through
 becomes exhausted. \texttt{tail} therefore uses \texttt{[SP+32]}; it does not
 backfill \texttt{R7}.
 
-% ABI-CALL-CASE: far-pointer-register-channels
+\manualabicase{far-pointer-register-channels}
 \subsection{Far Pointer Address and Segment Channels}
 \begingroup\small\ttfamily
 \begin{tabularx}{\linewidth}{@{}X@{}}
@@ -861,7 +857,7 @@ far\_data\_pointer bind(uint64\_t tag, far\_data\_pointer data,\tabularnewline
 GPR alignment is applied. The returned far pointer uses address register
 \texttt{R0} and segment register \texttt{GS1}.
 
-% ABI-CALL-CASE: variadic-default-promotions
+\manualabicase{variadic-default-promotions}
 \subsection{Variadic Promotions and Slot Traversal}
 \begingroup\small\ttfamily
 \begin{tabularx}{\linewidth}{@{}X@{}}

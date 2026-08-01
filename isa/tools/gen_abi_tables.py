@@ -3,17 +3,21 @@
 
 from __future__ import annotations
 
-import argparse
 from collections.abc import Iterable, Mapping
+import json
 from pathlib import Path
-import sys
+import re
 from typing import Any
 
 import yaml
 
+import abi_call_model
+from latex_builder.common import tex_code, tex_escape
+
 
 ROOT = Path(__file__).resolve().parents[2]
 MANIFEST_PATH = ROOT / "isa" / "abi" / "abi_tables.yaml"
+CALL_CASES_PATH = ROOT / "isa" / "abi" / "calling_convention_cases.json"
 FRAGMENT_DIR = ROOT / "isa" / "abi" / "generated"
 
 FRAGMENT_NAMES = (
@@ -43,6 +47,7 @@ CALL_FORM_LABELS = {
     "far_symbol_segment_word": "Far symbol segment word",
     "external_far_call_slot": "External far call slot",
 }
+TABLE_WIDTH_RE = re.compile(r"^\d+(?:\.\d+)?(?:pt|in|cm|mm|em|ex)$")
 
 
 class ManifestError(ValueError):
@@ -92,8 +97,7 @@ def _unique(values: Iterable[str], where: str) -> None:
 
 
 def _tt(value: str) -> str:
-    escaped = value.replace("_", r"\_")
-    return rf"\texttt{{{escaped}}}"
+    return tex_code(value)
 
 
 def load_manifest(path: Path = MANIFEST_PATH) -> Mapping[str, Any]:
@@ -213,7 +217,7 @@ def validate_manifest(manifest: Mapping[str, Any]) -> None:
     elf_abi = _mapping(manifest["elf_abi"], "manifest.elf_abi")
     _keys(
         elf_abi,
-        {"bedrock_specific_sections", "tls_relocation_families"},
+        {"bedrock_specific_sections", "relocations", "tls_relocation_families"},
         set(),
         "manifest.elf_abi",
     )
@@ -232,6 +236,29 @@ def validate_manifest(manifest: Mapping[str, Any]) -> None:
             _identifiers(row["attributes"], f"{where}.attributes")
             _identifier(row["contents"], f"{where}.contents")
     _unique(section_names, "manifest.elf_abi.bedrock_specific_sections.name")
+
+    relocations = _list(elf_abi["relocations"], "manifest.elf_abi.relocations")
+    relocation_ids: list[int] = []
+    relocation_names: list[str] = []
+    for index, raw_row in enumerate(relocations):
+        where = f"manifest.elf_abi.relocations[{index}]"
+        row = _mapping(raw_row, where)
+        _keys(row, {"id", "name", "size", "calculation"}, set(), where)
+        relocation_id = row["id"]
+        if not isinstance(relocation_id, int) or isinstance(relocation_id, bool):
+            raise ManifestError(f"{where}.id: expected an integer")
+        relocation_ids.append(relocation_id)
+        name = _identifier(row["name"], f"{where}.name")
+        if not name.startswith("R_BEDROCK_"):
+            raise ManifestError(f"{where}.name: expected an R_BEDROCK_ name")
+        relocation_names.append(name)
+        _identifier(row["size"], f"{where}.size")
+        _identifier(row["calculation"], f"{where}.calculation")
+    if relocation_ids != list(range(len(relocation_ids))):
+        raise ManifestError(
+            "manifest.elf_abi.relocations.id: expected contiguous IDs from zero"
+        )
+    _unique(relocation_names, "manifest.elf_abi.relocations.name")
 
     families = _list(elf_abi["tls_relocation_families"], "manifest.elf_abi.tls_relocation_families")
     models: list[str] = []
@@ -255,10 +282,8 @@ def referenced_relocations(manifest: Mapping[str, Any]) -> set[str]:
     return names
 
 
-def validate_relocation_relationships(
-    manifest: Mapping[str, Any], defined_relocations: Iterable[str]
-) -> None:
-    defined = set(defined_relocations)
+def validate_relocation_relationships(manifest: Mapping[str, Any]) -> None:
+    defined = {row["name"] for row in manifest["elf_abi"]["relocations"]}
     missing = sorted(referenced_relocations(manifest) - defined)
     if missing:
         raise ManifestError(
@@ -281,22 +306,24 @@ def _return_rule(convention: Mapping[str, Any]) -> str:
     raise AssertionError(kind)
 
 
-def _render_returns(rows: list[Mapping[str, Any]]) -> str:
-    return "".join(
-        f"{RETURN_CLASS_LABELS[row['result_class']]} & {_return_rule(row['convention'])}\\\\\n"
+def _render_returns(rows: list[Mapping[str, Any]]) -> list[tuple[str, str]]:
+    return [
+        (RETURN_CLASS_LABELS[row["result_class"]], _return_rule(row["convention"]))
         for row in rows
-    )
+    ]
 
 
-def _render_calls(rows: list[Mapping[str, Any]]) -> str:
-    return "".join(
-        f"{CALL_FORM_LABELS[row['call_form']]} & {_tt(row['relocation'])}\\\\\n"
+def _render_calls(rows: list[Mapping[str, Any]]) -> list[tuple[str, str]]:
+    return [
+        (CALL_FORM_LABELS[row["call_form"]], _tt(row["relocation"]))
         for row in rows
-    )
+    ]
 
 
-def _render_access_guarantees(rows: list[Mapping[str, Any]]) -> str:
-    rendered: list[str] = []
+def _render_access_guarantees(
+    rows: list[Mapping[str, Any]],
+) -> list[tuple[str, str]]:
+    rendered: list[tuple[str, str]] = []
     for row in rows:
         guarantee = row["guarantee"]
         if guarantee == "tear_free":
@@ -308,17 +335,19 @@ def _render_access_guarantees(rows: list[Mapping[str, Any]]) -> str:
         else:
             access = "Unaligned access"
             result = "no tear-free guarantee"
-        rendered.append(f"{access} & {result}\\\\\n")
-    return "".join(rendered)
+        rendered.append((access, result))
+    return rendered
 
 
-def _render_atomic_primitives(rows: list[Mapping[str, Any]]) -> str:
+def _render_atomic_primitives(
+    rows: list[Mapping[str, Any]],
+) -> list[tuple[str, str]]:
     operation_labels = {
         ("load", "store"): "Atomic load or store",
         ("compare_exchange",): "Compare-exchange",
         ("exchange",): "Exchange",
     }
-    rendered: list[str] = []
+    rendered: list[tuple[str, str]] = []
     for row in rows:
         operations = tuple(row["c_operations"])
         lowering = row["lowering"]
@@ -328,48 +357,126 @@ def _render_atomic_primitives(rows: list[Mapping[str, Any]]) -> str:
             primitive = f"width-matched {_tt(lowering['instruction'])}"
         else:
             primitive = f"compare-exchange loop using {_tt(lowering['instruction'])}"
-        rendered.append(f"{operation_labels[operations]} & {primitive}\\\\\n")
-    return "".join(rendered)
+        rendered.append((operation_labels[operations], primitive))
+    return rendered
 
 
-def _render_sections(rows: list[Mapping[str, Any]]) -> str:
+def _render_sections(rows: list[Mapping[str, Any]]) -> list[tuple[str, str]]:
     classifications = {"note": "note", "linker_metadata": "linker metadata"}
     contents = {"far_pointer_entries": "far pointer entries"}
-    rendered: list[str] = []
+    rendered: list[tuple[str, str]] = []
     for row in rows:
         if "classification" in row:
             detail = classifications[row["classification"]]
         else:
-            values = [*row["attributes"], contents[row["contents"]]]
+            values = [
+                *(tex_escape(value) for value in row["attributes"]),
+                tex_escape(contents[row["contents"]]),
+            ]
             detail = r"\begin{tabular}[t]{@{}l@{}}" + r"\\".join(values) + r"\end{tabular}"
-        rendered.append(f"{_tt(row['name'])} & {detail}\\\\\n")
-    return "".join(rendered)
+        rendered.append((_tt(row["name"]), detail))
+    return rendered
 
 
-def _render_tls(rows: list[Mapping[str, Any]]) -> str:
+def _render_relocations(rows: list[Mapping[str, Any]]) -> str:
+    rendered: list[tuple[str, str, str, str]] = []
+    for row in rows:
+        name = _tt(row["name"]).replace(r"\_", r"\_\allowbreak{}")
+        rendered.append(
+            (
+                str(row["id"]),
+                name,
+                tex_code(row["size"]),
+                tex_code(row["calculation"]),
+            )
+        )
+    return _serialize_rows(rendered, 4, "ELF relocation rows")
+
+
+def _render_call_case_registry(case_ids: Iterable[str]) -> str:
+    identifiers = sorted(case_ids)
+    definitions = [
+        rf"\expandafter\def\csname bedrockabicase@known@{identifier}\endcsname{{}}"
+        for identifier in identifiers
+    ]
+    completeness_checks = [
+        (
+            rf"\ifcsname bedrockabicase@seen@{identifier}\endcsname\else"
+            rf"\PackageError{{bedrock-reference}}"
+            rf"{{Missing ABI calling-convention case `{identifier}'}}"
+            r"{Reference every documented calling-convention case with "
+            r"\string\manualabicase.}\fi"
+        )
+        for identifier in identifiers
+    ]
+    return "\n".join(
+        [
+            *definitions,
+            r"\newcommand{\manualabicase}[1]{%",
+            r"  \ifcsname bedrockabicase@known@#1\endcsname",
+            r"    \expandafter\gdef\csname bedrockabicase@seen@#1\endcsname{}%",
+            r"  \else",
+            r"    \PackageError{bedrock-reference}{Unknown ABI calling-convention case `#1'}%",
+            r"      {Use an ID declared in isa/abi/calling_convention_cases.json.}%",
+            r"  \fi}",
+            r"\AtEndDocument{%",
+            *completeness_checks,
+            r"}",
+            "",
+        ]
+    )
+
+
+def _render_tls(rows: list[Mapping[str, Any]]) -> list[tuple[str, str]]:
     model_labels = {"local_exec": "local-exec", "tlsdesc": "TLSDESC"}
-    rendered: list[str] = []
+    rendered: list[tuple[str, str]] = []
     for row in rows:
         relocations = r"\\".join(_tt(name) for name in row["relocations"])
         rendered.append(
-            f"{model_labels[row['model']]} & "
-            + r"\begin{tabular}[t]{@{}l@{}}"
-            + relocations
-            + r"\end{tabular}"
-            + "\\\\\n"
+            (
+                model_labels[row["model"]],
+                r"\begin{tabular}[t]{@{}l@{}}"
+                + relocations
+                + r"\end{tabular}",
+            )
         )
+    return rendered
+
+
+def _serialize_rows(
+    rows: Iterable[tuple[str, ...]],
+    column_count: int,
+    context: str,
+) -> str:
+    rendered: list[str] = []
+    for index, row in enumerate(rows):
+        if len(row) != column_count:
+            raise ManifestError(
+                f"{context}: row {index} has {len(row)} cells; "
+                f"expected {column_count}"
+            )
+        rendered.append(" & ".join(row) + "\\\\\n")
     return "".join(rendered)
 
 
 def _table_fragment(
     *,
     caption: str,
-    columns: str,
+    widths: tuple[str, ...],
     headers: tuple[str, ...],
-    rows: str,
+    rows: list[tuple[str, ...]],
     environment: str = "longtable",
     compact: bool = False,
 ) -> str:
+    if len(widths) != len(headers):
+        raise ManifestError(
+            f"{caption}: {len(widths)} widths for {len(headers)} columns"
+        )
+    for index, width in enumerate(widths):
+        if TABLE_WIDTH_RE.fullmatch(width) is None:
+            raise ManifestError(f"{caption}: invalid width for column {index}: {width!r}")
+    columns = "@{}" + "".join(f"p{{{width}}}" for width in widths) + "@{}"
+    rendered_rows = _serialize_rows(rows, len(headers), caption)
     prefix = f"\\manualtablecaption{{{caption}}}\n"
     suffix = ""
     if compact:
@@ -382,7 +489,7 @@ def _table_fragment(
         + "\n\\toprule\n"
         + header_row
         + "\\\\\n\\midrule\n\\endhead\n"
-        + rows
+        + rendered_rows
         + "\\bottomrule\n"
         + rf"\end{{{environment}}}"
         + "\n"
@@ -390,8 +497,11 @@ def _table_fragment(
     )
 
 
-def render_fragments(manifest: Mapping[str, Any]) -> dict[str, str]:
+def render_fragments(
+    manifest: Mapping[str, Any], documented_call_cases: Iterable[str]
+) -> dict[str, str]:
     validate_manifest(manifest)
+    validate_relocation_relationships(manifest)
     c_abi = manifest["c_abi"]
     elf_abi = manifest["elf_abi"]
     generated_header = (
@@ -399,44 +509,52 @@ def render_fragments(manifest: Mapping[str, Any]) -> dict[str, str]:
         "% Source: isa/abi/abi_tables.yaml\n"
     )
     bodies = {
-        "c_return_register_quick_reference.tex": _table_fragment(
-            caption="C Return Register Quick Reference",
-            columns="@{}p{2.15in}p{3.35in}@{}",
-            headers=("Result Class", "Register Rule"),
-            rows=_render_returns(c_abi["return_registers"]),
-            compact=True,
+        "c_return_register_quick_reference.tex": (
+            _render_call_case_registry(documented_call_cases)
+            + _table_fragment(
+                caption="C Return Register Quick Reference",
+                widths=("2.15in", "3.35in"),
+                headers=("Result Class", "Register Rule"),
+                rows=_render_returns(c_abi["return_registers"]),
+                compact=True,
+            )
         ),
         "c_call_relocation_quick_reference.tex": _table_fragment(
             caption="C Call Relocation Quick Reference",
-            columns="@{}p{2.15in}p{3.25in}@{}",
+            widths=("2.15in", "3.25in"),
             headers=("Call form", "Relocation"),
             rows=_render_calls(c_abi["call_relocations"]),
             environment="manuallongtable",
         ),
         "ordinary_memory_access_guarantees.tex": _table_fragment(
             caption="Ordinary Memory Access Guarantees",
-            columns="@{}p{2.75in}p{2.65in}@{}",
+            widths=("2.75in", "2.65in"),
             headers=("Access", "Guarantee"),
             rows=_render_access_guarantees(c_abi["ordinary_access_guarantees"]),
             environment="manuallongtable",
         ),
         "native_atomic_primitive_quick_reference.tex": _table_fragment(
             caption="Native Atomic Primitive Quick Reference",
-            columns="@{}p{2.15in}p{3.25in}@{}",
+            widths=("2.15in", "3.25in"),
             headers=("C operation", "Bedrock primitive"),
             rows=_render_atomic_primitives(c_abi["native_atomic_primitives"]),
             environment="manuallongtable",
         ),
-        "bedrock_specific_section_conventions.tex": _table_fragment(
-            caption="Bedrock-Specific Section Conventions",
-            columns="@{}p{1.45in}p{4.05in}@{}",
-            headers=("Section", "Attributes"),
-            rows=_render_sections(elf_abi["bedrock_specific_sections"]),
-            compact=True,
+        "bedrock_specific_section_conventions.tex": (
+            "\\newcommand{\\bedrockelfrelocationrows}{%\n"
+            + _render_relocations(elf_abi["relocations"])
+            + "}\n"
+            + _table_fragment(
+                caption="Bedrock-Specific Section Conventions",
+                widths=("1.45in", "4.05in"),
+                headers=("Section", "Attributes"),
+                rows=_render_sections(elf_abi["bedrock_specific_sections"]),
+                compact=True,
+            )
         ),
         "tls_relocation_families.tex": _table_fragment(
             caption="TLS Relocation Families",
-            columns="@{}p{1.25in}p{4.25in}@{}",
+            widths=("1.25in", "4.25in"),
             headers=("Model", "Relocations"),
             rows=_render_tls(elf_abi["tls_relocation_families"]),
             compact=True,
@@ -445,49 +563,12 @@ def render_fragments(manifest: Mapping[str, Any]) -> dict[str, str]:
     return {name: generated_header + bodies[name] for name in FRAGMENT_NAMES}
 
 
-def check_fragments(
-    manifest: Mapping[str, Any], output_dir: Path = FRAGMENT_DIR
-) -> list[Path]:
-    stale: list[Path] = []
-    for name, expected in render_fragments(manifest).items():
-        path = output_dir / name
-        if not path.is_file() or path.read_text(encoding="utf-8") != expected:
-            stale.append(path)
-    return stale
-
-
-def write_fragments(manifest: Mapping[str, Any], output_dir: Path = FRAGMENT_DIR) -> None:
-    output_dir.mkdir(parents=True, exist_ok=True)
-    for name, content in render_fragments(manifest).items():
-        path = output_dir / name
-        if path.is_file() and path.read_text(encoding="utf-8") == content:
-            continue
-        path.write_text(content, encoding="utf-8")
-
-
-def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--manifest", type=Path, default=MANIFEST_PATH)
-    parser.add_argument("--output-dir", type=Path, default=FRAGMENT_DIR)
-    parser.add_argument("--check", action="store_true", help="fail if generated fragments are stale")
-    args = parser.parse_args()
-
-    try:
-        manifest = load_manifest(args.manifest)
-        if args.check:
-            stale = check_fragments(manifest, args.output_dir)
-            if stale:
-                print("stale generated ABI table fragments:", file=sys.stderr)
-                for path in stale:
-                    print(f"  {path}", file=sys.stderr)
-                return 1
-        else:
-            write_fragments(manifest, args.output_dir)
-    except (OSError, yaml.YAMLError, ManifestError) as exc:
-        print(exc, file=sys.stderr)
-        return 1
-    return 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
+def render_artifacts() -> dict[Path, str]:
+    manifest = load_manifest()
+    documented_call_cases = abi_call_model.validate_cases(CALL_CASES_PATH)
+    return {
+        FRAGMENT_DIR / name: content
+        for name, content in render_fragments(
+            manifest, documented_call_cases
+        ).items()
+    }

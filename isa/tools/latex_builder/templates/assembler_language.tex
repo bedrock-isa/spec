@@ -96,14 +96,15 @@ prevented a unique encoding:
 \item \textbf{ambiguity}: more than one shortest concrete form remains after all preceding checks.
 \end{itemize}
 
-\subsection{Golden Encodings}
+\subsection{Conformance Encodings}
 
 The complete source cases are recorded in
-\texttt{isa/reference/assembler\_golden\_vectors.yaml}. The following cases show the byte order used by that
+\texttt{isa/\allowbreak{}reference/\allowbreak{}assembler\_\allowbreak{}conformance\_\allowbreak{}vectors.yaml}.
+The following cases show the byte order used by that
 source. Fields are listed after decoding the header and opcode payload; appended descriptor, immediate,
 displacement, and padding bytes follow in instruction-stream order.
 
-\manualtablecaption{Canonical Assembly Golden Encodings}
+\manualtablecaption{Canonical Assembly Conformance Encodings}
 \begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{1.35in}>{\raggedright\arraybackslash}p{1.65in}>{\raggedright\arraybackslash}p{1.10in}>{\raggedright\arraybackslash}p{1.45in}@{}}
 \toprule
 \rowcolor{ManualHeaderFill}
@@ -116,6 +117,6 @@ displacement, and padding bytes follow in instruction-stream order.
 \textbf{Assembly} & \textbf{Form and fields} & \textbf{Bytes} & \textbf{Canonical disassembly}\\
 \midrule
 \endhead
-@ASSEMBLER_GOLDEN_ROWS@
+@ASSEMBLER_CONFORMANCE_ROWS@
 \bottomrule
 \end{manuallongtable}

@@ -5,7 +5,7 @@ Every page-table entry is 64 bits. The low twelve bits contain hardware-defined 
 attributes. The physical frame number occupies bits \texttt{PABITS-1..12}; bits above the selected physical-address
 width are available to software and ignored by the page-table walker.
 
-\begin{manuallistedformatdiagram}{Page-Table Entry Formats}{4}
+\begin{manuallistedformatdiagram}{Page-Table Entry Formats}
 \manualformatrowrange{PABITS=48}{63}{0}{%
 \manualformatfield{software}{16}
 \manualformatfield{PFN}{36}

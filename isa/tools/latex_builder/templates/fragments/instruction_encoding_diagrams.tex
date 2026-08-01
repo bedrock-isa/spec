@@ -1,30 +1,26 @@
 \begin{manuallistedbitdiagram}{Instruction Record Components}
 \manualbitrow{extrashort byte}{%
 \manualbitfixed{0}{1}
-\manualbitfieldtext{payload[6:0]}{7}
+\manualbitfieldtext{payload}{7}
 }
-\manualbitfieldrow{short header}{%
-\manualbytepairlabels
-}{%
+\manualbitfieldrow{short header}{\manualbyterowlabels{0}{2}}{%
 \manualbitfixed{10}{2}
-\manualbitfieldtext{payload[13:8]}{6}
+\manualbitfieldtext{PAY-HI}{6}
 \manualbitgap{1}
-\manualbitfieldtext{payload[7:0]}{8}
+\manualbitfieldtext{PAY-LO}{8}
 }
-\manualbitfieldrow{extended header}{%
-\manualbytepairbitlabels
-}{%
+\manualbitfieldrow{extended header}{\manualbytepairbitlabels}{%
 \manualbitfixed{11}{2}
 \manualbitfieldtext{L}{4}
-\manualbitfieldtext{opcode high}{2}
+\manualbitfieldtext{OP}{2}
 \manualbitgap{1}
-\manualbitfieldtext{opcode next}{8}
+\manualbitfieldtext{NEXT}{8}
 }
 \manualbitrow{extended continuation}{%
-\manualbitfieldtext{remaining opcode bytes, EA descriptors, immediates, and displacements}{16}
+\manualbitfieldtext{continuation}{16}
 }
 \end{manuallistedbitdiagram}
 
-\begin{manuallistedbitdiagram}{Opcode Payload Namespaces}
+\begin{manuallistedformatdiagram}{Opcode Payload Namespaces}
 @OPCODE_PAYLOAD_NAMESPACE_ROWS@
-\end{manuallistedbitdiagram}
+\end{manuallistedformatdiagram}

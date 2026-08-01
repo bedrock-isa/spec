@@ -1883,7 +1883,7 @@ def decode_yaml(path: Path) -> DecodedDocument:
         return decode_condition_registry(path, raw)
     if name == "ea.yaml":
         return decode_ea_registry(path, raw)
-    if path.match("*/abi/plt_golden_vectors.yaml"):
+    if path.match("*/abi/plt_conformance_vectors.yaml"):
         return decode_abi_vectors(path, raw)
     if path.match("*/memory_model/validation.yaml"):
         return decode_memory_validation(path, raw)

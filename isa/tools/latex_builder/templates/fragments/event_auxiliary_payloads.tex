@@ -5,7 +5,7 @@ unassigned bit is zero, and an auxiliary or address value not produced is zero w
 
 For \texttt{DOUBLE\_FAULT}, \texttt{ERROR\_CODE[7:0]} identifies the delivery stage:
 
-\begin{manuallistedformatdiagram}{DOUBLE\_FAULT Auxiliary Formats}{4}
+\begin{manuallistedformatdiagram}{DOUBLE\_FAULT Auxiliary Formats}
 \manualformatrowrange{ERROR\_CODE[63:0]}{63}{0}{%
 \manualformatfield{reserved}{37}
 \manualformatfield{detail}{27}
@@ -46,7 +46,7 @@ when those values were produced.
 
 For \texttt{MACHINE\_CHECK}, the error code has this layout:
 
-\begin{manuallistedformatdiagram}{MACHINE\_CHECK ERROR\_CODE Format}{4}
+\begin{manuallistedformatdiagram}{MACHINE\_CHECK ERROR\_CODE Format}
 \manualformatrowrange{ERROR\_CODE[63:0]}{63}{0}{%
 \manualformatfield{reserved}{37}
 \manualformatfield{detail}{27}
@@ -121,7 +121,7 @@ diagnostic state is precise.
 
 For \texttt{BUS\_ERROR}, the error code has this layout:
 
-\begin{manuallistedformatdiagram}{BUS\_ERROR ERROR\_CODE Format}{4}
+\begin{manuallistedformatdiagram}{BUS\_ERROR ERROR\_CODE Format}
 \manualformatrowrange{ERROR\_CODE[63:0]}{63}{0}{%
 \manualformatfield{reserved}{33}
 \manualformatfield{detail}{31}

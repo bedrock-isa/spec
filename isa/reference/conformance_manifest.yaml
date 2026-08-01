@@ -1,7 +1,7 @@
 schema_version: 0
 families:
 - id: assembler
-  source: isa/reference/assembler_golden_vectors.yaml
+  source: isa/reference/assembler_conformance_vectors.yaml
   required_cases:
   - extrashort_add_sp
   - short_mov_register
@@ -26,7 +26,7 @@ families:
   - seqcst_iriw
   - failed_cmpxchg_seqcst_classification
 - id: paging
-  source: isa/reference/address_translation_test_vectors.yaml
+  source: isa/reference/address_translation_conformance_vectors.yaml
   required_cases:
   - paging_disabled_full_width
   - cross_page_qword_second_not_present
@@ -36,7 +36,7 @@ families:
   - cross_page_second_bus_error
   - cross_page_instruction_fetch_permission
 - id: stack_event
-  source: isa/reference/stack_event_test_vectors.yaml
+  source: isa/reference/stack_event_conformance_vectors.yaml
   required_cases:
   - push_or_call
   - pop_or_ret
@@ -68,7 +68,7 @@ families:
   - zero_length
   - two_blocks
 - id: fp
-  source: isa/reference/fp_common_test_vectors.yaml
+  source: isa/reference/fp_common_conformance_vectors.yaml
   required_cases:
   - s_snan
   - d_snan

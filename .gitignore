@@ -51,3 +51,6 @@ __pycache__/
 
 # old files
 /old/
+
+# Agents
+AGENTS.md
