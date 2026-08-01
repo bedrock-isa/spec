@@ -15,8 +15,6 @@ Source-language and compiler-facing contracts are kept outside the ABI stack:
 - `../c/bedrock-target-intrinsics.tex` specifies compiler builtins and target
   header interfaces.
 - `../c/include/` contains the corresponding compiler-facing target headers.
-- `../guides/bedrock-programming-toolchain-guide.tex` contains non-normative
-  C-library, compiler, and runtime examples.
 
 All reference documents use `../tex/bedrock-reference-common.tex`. The ISA
 reference remains generated from the architectural definition and allocation
@@ -36,5 +34,5 @@ Generated assembly included in the C ABI is non-normative. Compiler output for
 an unimplemented or nonconforming path is kept out of the reference document.
 
 Run `make docs` to check the semantic sources and build the complete
-six-document PDF and Markdown set. No partial validation target is a quality
+five-document PDF and Markdown set. No partial validation target is a quality
 gate.

@@ -89,13 +89,6 @@ DOCUMENTS = (
         Path("latex/bedrock-target-intrinsics/bedrock-target-intrinsics.pdf"),
         Path("markdown/bedrock-target-intrinsics.md"),
     ),
-    Document(
-        "bedrock-programming-toolchain-guide",
-        ROOT / "isa" / "guides" / "bedrock-programming-toolchain-guide.tex",
-        "bedrock-programming-toolchain-guide.pdf",
-        Path("latex/bedrock-programming-toolchain-guide/bedrock-programming-toolchain-guide.pdf"),
-        Path("markdown/bedrock-programming-toolchain-guide.md"),
-    ),
 )
 
 
@@ -328,6 +321,35 @@ def publish_file(source: Path, destination: Path) -> None:
     os.replace(temporary, destination)
 
 
+def remove_generated_path(path: Path) -> None:
+    if path.is_symlink() or path.is_file():
+        path.unlink()
+    elif path.is_dir():
+        shutil.rmtree(path)
+
+
+def prune_retired_document_outputs(output_root: Path, output_format: str) -> None:
+    if output_format in {"all", "pdf"}:
+        expected_pdf_directories = {
+            document.pdf_output.parent
+            for document in DOCUMENTS
+            if document.pdf_output.parent != Path(".")
+        }
+        pdf_root = output_root / "latex"
+        if pdf_root.is_dir():
+            for path in pdf_root.iterdir():
+                if path.relative_to(output_root) not in expected_pdf_directories:
+                    remove_generated_path(path)
+
+    if output_format in {"all", "markdown"}:
+        expected_markdown_outputs = {document.markdown_output for document in DOCUMENTS}
+        markdown_root = output_root / "markdown"
+        if markdown_root.is_dir():
+            for path in markdown_root.iterdir():
+                if path.relative_to(output_root) not in expected_markdown_outputs:
+                    remove_generated_path(path)
+
+
 def compile_documents(args: argparse.Namespace) -> int:
     output_root = args.output_root.resolve()
     if output_root in {Path("/").resolve(), Path.home().resolve(), ROOT.resolve()}:
@@ -400,6 +422,7 @@ def compile_documents(args: argparse.Namespace) -> int:
         changed = sorted(key for key in set(before) | set(after) if before.get(key) != after.get(key))
         raise CompileError("document compilation modified tracked sources: " + ", ".join(changed))
 
+    prune_retired_document_outputs(output_root, args.format)
     for document in DOCUMENTS:
         if document.key in produced_pdfs:
             pdf, log = produced_pdfs[document.key]
