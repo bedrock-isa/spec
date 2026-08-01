@@ -42,7 +42,6 @@ These terms are specific to the C binding. ELF and address-space terms keep the 
 \section{Data Model}
 \manualfield{Model:}{LP64}
 \manualfield{Byte Order:}{little endian}
-\manualfield{Instruction Header:}{16 bits}
 \manualfield{Internal SP:}{8-byte aligned}
 \manualfield{Function Entry:}{16-byte aligned}
 \manualfield{Before CALL:}{SP mod 16 = 8}
@@ -104,7 +103,9 @@ every other bit clear.
 An ordinary object or function pointer is a 64-bit, 8-byte-aligned canonical
 pre-segment virtual address. Object and function pointers remain distinct C
 type categories even though their baseline representations have the same size
-and alignment.
+and alignment. The null pointer has numeric address zero and an all-zero
+64-bit object representation. Every ordinary-pointer result with numeric
+address zero is the null pointer.
 
 \paragraph{128-bit integers.}
 The types \texttt{\_\_int128} and \texttt{unsigned \_\_int128} are 16-byte,
@@ -161,13 +162,18 @@ and data-segment image; far function pointers interpret them as a canonical
 far-call entry address and \texttt{CS} image.
 
 For either pointer kind, an enabled image must be validated and bounds-only,
-and a disabled image must be canonical. The null representation is the
-all-zero pair; an address-zero result canonicalizes the high word to zero.
+and a disabled image must be canonical. A far pointer is null exactly when its
+address word is zero. Its image word remains part of the representation and
+must still satisfy the ordinary image-validity rule. The all-zero pair is the
+canonical encoding produced by explicit null construction, but a zero-address
+far value with another valid image is the same null pointer value with a
+different raw encoding.
 Translated-window images are not ABI-valid stored, passed, returned, relocated,
 or GOT-resolved far pointers. For an explicitly translated source, the segment
-base is applied to obtain a linear address and the image is converted to
-bounds-only mode. That same numeric address is then the pre-segment address word
-of the resulting C far pointer.
+base is added to the EA modulo $2^{64}$ and the image is converted to
+bounds-only mode. The converted image is retained for every sum, including a
+zero sum produced by wraparound. A zero sum denotes null without changing that
+image word.
 
 The unsigned raw carriers
 \texttt{\_\_bedrock\_far\_uintptr\_t} and
@@ -175,14 +181,16 @@ The unsigned raw carriers
 metadata is forgeable address metadata, not an unforgeable capability. Both
 carrier names are aliases of \texttt{unsigned \_\_int128}; the separate names
 document data-pointer and function-pointer use but do not create distinct C
-types.
+types. Conversion through a matching carrier preserves a zero-address value's
+image word; it does not replace that representation with the all-zero pair.
 
 \subsection{Aggregate Layout}
 Scalar and pointer object representations are defined in Sections~3.1 through
 3.3. Aggregate layout applies those component sizes and alignments as follows:
 \begin{itemize}
 \item Struct fields are laid out in declaration order with natural alignment up to the aggregate maximum.
-\item Unions have the size and alignment of their most strictly aligned member, rounded up to that alignment.
+\item A union's alignment is the greatest alignment required by any member. Its size is the greatest ABI size of any
+member, rounded up to a multiple of the union alignment.
 \item Arrays store elements contiguously with each element using the ABI size of its type.
 \item Aggregate object size is rounded up to the aggregate object's alignment.
 \end{itemize}
@@ -195,6 +203,13 @@ base types are identical after typedef expansion may share a unit. A base-type
 change or a field that does not fit closes the current unit and begins a new
 naturally aligned unit. A field width may not exceed the representation width
 of its base type.
+
+An externally visible bit-field base type shall be \texttt{\_Bool},
+\texttt{signed int}, \texttt{unsigned int}, or a typedef of one of those types.
+A plain \texttt{int} bit-field has the value range and representation of
+\texttt{signed int}. Other base types are target extensions and may not cross
+an external ABI boundary without a separately documented compatible extension
+ABI.
 
 An unnamed nonzero-width field consumes space normally. A zero-width field
 closes the current unit and advances layout to the next boundary for its base
@@ -306,7 +321,9 @@ and TLS addresses.
 \item \texttt{CS} permits near-call reachability for every ordinary function
 entry in the active linkage domain, and \texttt{SS} covers the active stack.
 \item Pre-segment virtual address zero is not assigned to a C object or
-function entry.
+function entry. Every C object and its one-past address must be representable
+as nonzero 64-bit addresses; no object may have mathematical one-past address
+$2^{64}$.
 \end{itemize}
 
 The active OS ABI selects the initial disabled or bounds-only images and owns
@@ -318,9 +335,13 @@ changes those images.
 \texttt{STATUS} is not part of the C abstract machine; ordinary C code accesses
 it only through target-specific intrinsics or runtime code. Low-level access to
 \texttt{FSTATUS} and \texttt{FFLAGS} uses
-\texttt{<bedrockfpuintrin.h>}. Their baseline call-preservation semantics are
-not defined here: a compiler intrinsic, floating-point environment runtime, or
-OS interface that exposes either register shall define the relevant effect.
+\texttt{<bedrockfpuintrin.h>}. \texttt{FSTATUS} is callee-saved: a function
+returns with the incoming rounding mode, trap enables, and other control fields
+unless its documented interface changes the floating-point environment.
+\texttt{FFLAGS} is cumulative floating-point status and is caller-clobbered;
+floating-point operations in a callee may set accrued exception flags. An
+interface that requires a saved environment uses its floating-point environment
+runtime contract explicitly.
 
 \section{Calling Convention}
 This section is normative. A caller and callee conform when they independently
@@ -349,7 +370,7 @@ The first stack argument begins at \texttt{[SP+16]} at callee entry. The eight
 bytes at \texttt{[SP+8]} are alignment padding and carry no argument value.
 Each subsequent stack argument occupies the next 16-byte slot.
 
-\begin{manuallistedstackframediagram}{Far-call stack frame at callee entry}
+\begin{manuallistedstackframediagram}{Near-call stack frame at callee entry}
 \manualstackframespslot{+0}{saved return \texttt{PC}}
 \manualstackframeslot{+8}{8-byte alignment padding}
 \manualstackframepayload{+16}{first stack argument, if present}
@@ -519,13 +540,20 @@ does not consume a location from the other resource. A stack-assigned or
 unnamed variadic far pointer occupies one 16-byte, 16-byte-aligned slot and is
 never split.
 
-Only canonical, validated far pointers cross an ABI call boundary. Loading a
-register-assigned image with \texttt{WRSEG} performs this validation. Before a
-stack-assigned, variadic, or unprototyped far pointer is published, the caller
-validates its image through scratch \texttt{GS1}. Any failed validation raises
-\texttt{INVALID\_CONTROL\_STATE} before the control transfer. Invalid far
-values may still be copied and compared within one function where the language
-extension permits it; they cannot be passed or returned.
+Only scalar far pointers assigned through the FAR class cross an ABI call
+boundary in canonical, validated form. Loading a register-assigned image with
+\texttt{WRSEG} performs this validation. Before a stack-assigned, variadic, or
+unprototyped scalar far pointer is published, the caller validates its image
+through scratch \texttt{GS1}. Any failed validation raises
+\texttt{INVALID\_CONTROL\_STATE} before the control transfer.
+
+An aggregate is transferred as its object representation and is not
+recursively inspected for far-pointer encodings. A contained far-pointer
+representation may therefore cross a call boundary inside an aggregate. It is
+validated when extracted for scalar return, dereference, call, or another
+operation that requires a valid far pointer. Invalid far values may be copied
+and compared wherever the language extension permits representation-preserving
+operations.
 
 \subsection{C Return Values}
 Scalar results use their natural register class. A \texttt{\_\_int128} result
@@ -599,38 +627,91 @@ object loading, and relocation belong to the Bedrock ELF ABI. Hosted library
 behavior is outside the freestanding C ABI.
 
 \subsection{Compiler Runtime Helpers}
-The compiler may inline addition, subtraction, negation, bitwise operations,
-shifts, comparisons, truncation, and extension of 128-bit integers. It may call
-a helper for multiplication, division, remainder, or integer/floating
-conversion; this ABI does not guarantee that any such operation is inline.
-Floating-point helpers are also permitted when the selected target lacks the
-required operation.
+The compiler lowers addition, subtraction, negation, bitwise operations,
+comparisons, truncation, and extension of 128-bit integers without an implicit
+runtime call. It may call one of the helpers below for 128-bit multiplication,
+division, remainder, and shifts; conversion between a 128-bit integer and a
+supported floating-point type; or complex multiplication and division.
 
 Every compiler-runtime helper is an ordinary \texttt{bedrock-c} function. Its
 arguments and results therefore follow Section~5, including the
-\texttt{R1:R0} return convention for \texttt{\_\_int128}. The standard helper
-symbols use compiler-rt/libgcc-compatible spellings:
+\texttt{R1:R0} return convention for \texttt{\_\_int128}.
+
+The tables below are the complete baseline helper set. A conforming compiler shall not make an
+implicit reference to another compiler-rt or libgcc helper unless a separate
+target extension defines that symbol and its ABI. A runtime may export
+additional symbols, but their presence does not enlarge the baseline contract.
+
+In the signature column, \texttt{i128} means \texttt{\_\_int128},
+\texttt{u128} means \texttt{unsigned \_\_int128}, \texttt{c32} means
+\texttt{float \_Complex}, and \texttt{c64} means
+\texttt{double \_Complex}. The signatures use ordinary C parameter and result
+classification; a shift count has type \texttt{int}.
 
 \Needspace{2.7in}
-\manualtablecaption{\texttt{\_\_int128} Runtime Helper Names}
+\manualtablecaption{\texttt{\_\_int128} Arithmetic and Shift Helpers}
 \begingroup\footnotesize
 \setlength{\tabcolsep}{2pt}
-\begin{longtable}{@{}p{2.25in}p{3.25in}@{}}
+\begin{longtable}{@{}p{1.55in}p{1.55in}p{2.45in}@{}}
 \toprule
-\textbf{Operation} & \textbf{Helper}\\
+\textbf{Operation} & \textbf{Helper} & \textbf{Signature}\\
 \midrule
 \endhead
-Multiply & \texttt{\_\allowbreak{}\_\allowbreak{}multi3}\\
-Signed divide & \texttt{\_\allowbreak{}\_\allowbreak{}divti3}\\
-Unsigned divide & \texttt{\_\allowbreak{}\_\allowbreak{}udivti3}\\
-Signed remainder & \texttt{\_\allowbreak{}\_\allowbreak{}modti3}\\
-Unsigned remainder & \texttt{\_\allowbreak{}\_\allowbreak{}umodti3}\\
-Shift left & \texttt{\_\allowbreak{}\_\allowbreak{}ashlti3}\\
-Arithmetic shift right & \texttt{\_\allowbreak{}\_\allowbreak{}ashrti3}\\
-Logical shift right & \texttt{\_\allowbreak{}\_\allowbreak{}lshrti3}\\
+Multiply & \texttt{\_\allowbreak{}\_\allowbreak{}multi3} & \texttt{i128(i128, i128)}\\
+Signed divide & \texttt{\_\allowbreak{}\_\allowbreak{}divti3} & \texttt{i128(i128, i128)}\\
+Unsigned divide & \texttt{\_\allowbreak{}\_\allowbreak{}udivti3} & \texttt{u128(u128, u128)}\\
+Signed remainder & \texttt{\_\allowbreak{}\_\allowbreak{}modti3} & \texttt{i128(i128, i128)}\\
+Unsigned remainder & \texttt{\_\allowbreak{}\_\allowbreak{}umodti3} & \texttt{u128(u128, u128)}\\
+Shift left & \texttt{\_\allowbreak{}\_\allowbreak{}ashlti3} & \texttt{i128(i128, int)}\\
+Arithmetic shift right & \texttt{\_\allowbreak{}\_\allowbreak{}ashrti3} & \texttt{i128(i128, int)}\\
+Logical shift right & \texttt{\_\allowbreak{}\_\allowbreak{}lshrti3} & \texttt{u128(u128, int)}\\
 \bottomrule
 \end{longtable}
 \endgroup
+
+\manualtablecaption{\texttt{\_\_int128} and Floating-Point Conversion Helpers}
+\begingroup\footnotesize
+\setlength{\tabcolsep}{2pt}
+\begin{longtable}{@{}p{1.55in}p{1.55in}p{2.45in}@{}}
+\toprule
+\textbf{Conversion} & \textbf{Helper} & \textbf{Signature}\\
+\midrule
+\endhead
+Signed to binary32 & \texttt{\_\allowbreak{}\_\allowbreak{}floattisf} & \texttt{float(i128)}\\
+Signed to binary64 & \texttt{\_\allowbreak{}\_\allowbreak{}floattidf} & \texttt{double(i128)}\\
+Unsigned to binary32 & \texttt{\_\allowbreak{}\_\allowbreak{}floatuntisf} & \texttt{float(u128)}\\
+Unsigned to binary64 & \texttt{\_\allowbreak{}\_\allowbreak{}floatuntidf} & \texttt{double(u128)}\\
+Binary32 to signed & \texttt{\_\allowbreak{}\_\allowbreak{}fixsfti} & \texttt{i128(float)}\\
+Binary64 to signed & \texttt{\_\allowbreak{}\_\allowbreak{}fixdfti} & \texttt{i128(double)}\\
+Binary32 to unsigned & \texttt{\_\allowbreak{}\_\allowbreak{}fixunssfti} & \texttt{u128(float)}\\
+Binary64 to unsigned & \texttt{\_\allowbreak{}\_\allowbreak{}fixunsdfti} & \texttt{u128(double)}\\
+\bottomrule
+\end{longtable}
+\endgroup
+
+\manualtablecaption{Complex Arithmetic Helpers}
+\begingroup\footnotesize
+\setlength{\tabcolsep}{2pt}
+\begin{longtable}{@{}p{1.55in}p{1.55in}p{2.45in}@{}}
+\toprule
+\textbf{Operation} & \textbf{Helper} & \textbf{Signature}\\
+\midrule
+\endhead
+Binary32 multiply & \texttt{\_\allowbreak{}\_\allowbreak{}mulsc3} & \texttt{c32(float, float, float, float)}\\
+Binary32 divide & \texttt{\_\allowbreak{}\_\allowbreak{}divsc3} & \texttt{c32(float, float, float, float)}\\
+Binary64 multiply & \texttt{\_\allowbreak{}\_\allowbreak{}muldc3} & \texttt{c64(double, double, double, double)}\\
+Binary64 divide & \texttt{\_\allowbreak{}\_\allowbreak{}divdc3} & \texttt{c64(double, double, double, double)}\\
+\bottomrule
+\end{longtable}
+\endgroup
+
+The four scalar arguments to a complex helper are the real and imaginary parts
+of its two operands, in operand order. Bedrock \texttt{long double} has the
+binary64 representation and call classification, so conversions involving
+\texttt{long double} use the corresponding \texttt{df} helper and
+\texttt{long double \_Complex} multiplication or division uses the
+corresponding \texttt{dc3} helper. The baseline defines no \texttt{xf} or
+\texttt{tf} helper symbols.
 
 \subsection{Pointers and External Objects}
 A C function pointer is a 64-bit pre-segment near-call address. Code and data
@@ -706,10 +787,11 @@ the natural alignment for that size. An unaligned atomic object is not
 lock-free. Accordingly, \texttt{\_\_atomic\_always\_lock\_free} returns true
 only for those naturally aligned sizes.
 
-A 128-bit integer atomic, and any atomic object wider than 8 bytes, is outside
-the baseline target contract. Such a declaration is a target constraint
-violation; this ABI defines neither a native operation nor a compiler-runtime
-helper ABI for it.
+The baseline accepts an atomic object only when it belongs to that native
+lock-free set. Any other atomic object---including a floating-point, aggregate,
+far-pointer, 128-bit integer, unsupported-width, or insufficiently aligned
+object---is a target constraint violation. This ABI defines neither a native
+operation nor a compiler-runtime helper ABI for such an object.
 
 \subsection{Native Atomic Primitives}
 Once the object satisfies the width and alignment requirements above, the

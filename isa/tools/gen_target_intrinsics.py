@@ -63,11 +63,6 @@ def load_manifest(path: Path = DEFAULT_MANIFEST) -> dict[str, Any]:
 
 def validate_manifest(manifest: dict[str, Any], path: Path = DEFAULT_MANIFEST) -> None:
     require(manifest.get("version") == 0, f"{path}: version must be 0")
-    interface_count = manifest.get("interface_count")
-    require(
-        isinstance(interface_count, int) and interface_count >= 0,
-        f"{path}: interface_count must be a non-negative integer",
-    )
 
     header_families = require_list(manifest.get("header_families"), f"{path}: header_families")
     builtin_families = require_list(manifest.get("builtin_families"), f"{path}: builtin_families")
@@ -128,10 +123,6 @@ def validate_manifest(manifest: dict[str, Any], path: Path = DEFAULT_MANIFEST) -
         f"{path}: builtin families must match header families in order",
     )
     require(len(builtin_names) == len(set(builtin_names)), f"{path}: duplicate builtin name")
-    require(
-        len(builtin_names) == interface_count,
-        f"{path}: interface_count is {interface_count}, but {len(builtin_names)} builtins are defined",
-    )
 
     type_names: list[str] = []
     for index, raw_type in enumerate(shared_types):

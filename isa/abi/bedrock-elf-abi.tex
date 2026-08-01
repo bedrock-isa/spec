@@ -165,9 +165,19 @@ The loader may execute \texttt{ET\_EXEC} and executable \texttt{ET\_DYN}
 images. It honors \texttt{PT\_INTERP}, maps each loadable segment at its
 declared page alignment, and rejects an alignment below 4096 bytes. For a
 segment whose \texttt{p\_memsz} exceeds \texttt{p\_filesz}, the loader fills
-the complete gap with zero bytes. The zero-filled region has at least 8-byte
-alignment; a stronger object or section alignment remains binding.
+every byte in the half-open range
+$[\texttt{p\_vaddr}+\texttt{p\_filesz},
+\texttt{p\_vaddr}+\texttt{p\_memsz})$ with zero. Object and section alignment
+requirements remain binding, but the start of this gap has no additional
+alignment guarantee.
 \subsection{Page Permissions}
+Every \texttt{PT\_LOAD} shall set \texttt{PF\_R}. A loader rejects a
+\texttt{PT\_LOAD} whose flags are zero or contain \texttt{PF\_W} or
+\texttt{PF\_X} without \texttt{PF\_R}. For an accepted segment,
+\texttt{PF\_W} and \texttt{PF\_X} map independently to PTE W and X as shown
+below. This restriction is required because a present Bedrock page is readable
+and cannot implement a write-only or execute-only ELF segment.
+
 \manualtablecaption{ELF Segment Permission Mapping}
 \begingroup\footnotesize
 \setlength{\tabcolsep}{2pt}
@@ -214,14 +224,16 @@ listed below.
 \subsection{Symbol Model}
 Bedrock supports the standard local, global, and weak bindings and the
 default, hidden, and protected visibility classes. The standard notype,
-object, function, ifunc, section, and file symbol types retain their ELF
+object, function, TLS, ifunc, section, and file symbol types retain their ELF
 meanings. Two processor-specific far-function types extend that set and are
 listed below.
 
 \begin{itemize}
 \item Function symbols name the first instruction of the callable entry point.
 \item Object symbols name the first byte of the object storage.
-\item ELF st value stores a byte offset relative to the symbol's defining section.
+\item In \texttt{ET\_REL}, ELF \texttt{st\_value} stores a byte offset relative to the symbol's defining section. In
+\texttt{ET\_EXEC} and \texttt{ET\_DYN} after final link, it stores the symbol's pre-segment virtual byte address as
+defined in Section~2.4.
 \item STT BEDROCK FAR FUNC has processor-specific type value 13 and names a canonical LCALL/LRET far-call entry.
 \item A near STT FUNC entry and far STT BEDROCK FAR FUNC entry for one source-level function are distinct symbols with distinct addresses.
 \end{itemize}
@@ -341,6 +353,9 @@ For a static far pointer object, the explicit RELA addend applies only to the ad
 relocation has addend zero. Both relocations name the same symbol and together
 form one indivisible link-time contract, although the loader need not update
 the two words atomically before publication.
+An address word of zero denotes a C null pointer, but neither the linker nor
+the loader clears the paired image word for that reason. The image relocation,
+canonical-image requirement, and complete-pair publication rules still apply.
 \subsection{Static Link Rules}
 \begin{itemize}
 \item R BEDROCK FAR ADDR64 and R BEDROCK FAR SEGMENT64 must occur as a pair against the same symbol at adjacent eight-byte fields of one aligned 16-byte object.
@@ -382,6 +397,18 @@ relocation type defines them. PC-relative address materialization subtracts
 subtract \texttt{N}, the address of the instruction following the patched
 instruction. A result that does not fit the signedness and width stated in the
 relocation table is a link error; the linker must not truncate it.
+
+For a PC-relative address-materialization relocation, let \texttt{I} be the
+address of byte zero of the containing instruction and let
+$\delta=\texttt{P}-\texttt{I}$ be the relocation field's byte offset. Let
+$A_{\mathrm{src}}$ be the addend in the source expression before field-offset
+bias. The encoded value shall equal the target plus $A_{\mathrm{src}}$ minus
+\texttt{I}. Because the relocation-table expressions subtract \texttt{P}, the
+assembler records the ELF addend as $\texttt{A}=A_{\mathrm{src}}+\delta$ for
+\texttt{PCREL}, \texttt{GOTPCREL}, \texttt{GOT\_BASE\_PCREL}, and
+\texttt{TLSDESC\_GOTPCREL} relocations. The linker does not infer instruction
+boundaries. The PLT addend described in Section~8.3 is one instance of this
+general rule.
 \subsection{Expression Terms}
 \manualtablecaption{Relocation Expression Terms}
 \begingroup\footnotesize
@@ -440,12 +467,9 @@ payloads. Relocations 13--23 write PC-relative, next-instruction-relative, or
 section-relative results. Relocations 24--33 address GOT slots, the GOT base,
 symbols relative to that base, and PLT entries. Relocations 34--38 are ordinary
 dynamic-loader operations. Relocations 39--44 implement GS0 local-exec and
-TLSDESC TLS. Relocations 45--50 construct or resolve canonical far pairs.
-
-The relocation table is the normative source for each numeric type, field
-width, signedness, and calculation. Sections~6, 8, and 9 add the pairing,
-publication, symbol-binding, and relaxation constraints that cannot be
-expressed by the calculation alone.
+TLSDESC TLS. Relocations 45--50 construct or resolve canonical far pairs. The
+table defines widths and calculations; Sections~6, 8, and 9 supply additional
+rules.
 
 \clearpage
 \section{Dynamic Linking}
@@ -542,6 +566,7 @@ or the defining shared object is unloaded.
 \item A TLS symbol defined in the same program image may use local-exec addressing when its byte offset from GS0 is link-time constant.
 \item A TLS reference from a shared object or to an interposable TLS symbol uses TLSDESC.
 \item The linker may relax a TLSDESC sequence to local-exec when symbol binding and final placement make the GS0-relative offset constant.
+\item A source expression \texttt{S+k} uses the descriptor for \texttt{S}; after resolution, the caller adds \texttt{k} to the returned offset. The descriptor relocations never encode the subobject addend \texttt{k}.
 \end{itemize}
 \Needspace{1.8in}
 \subsection{TLSDESC Entry}
@@ -553,23 +578,110 @@ or the defining shared object is unloaded.
 \textbf{Offset} & \textbf{Field} & \textbf{Type} & \textbf{Meaning}\\
 \midrule
 \endhead
-\texttt{+0x00} & \texttt{resolver or fast function} & \texttt{u64} & function that resolves the descriptor or a relaxed fast-path implementation\\
-\texttt{+0x08} & \texttt{argument} & \texttt{u64} & resolver argument or relaxed fast-path payload\\
+\texttt{+0x00} & \texttt{function} & \texttt{u64} & near-call address of the resolver or fast function\\
+\texttt{+0x08} & \texttt{argument} & \texttt{u64} & signed direct GS0-relative offset or resolver-specific opaque token\\
 \bottomrule
 \end{longtable}
 \endgroup
+
+Each entry occupies 16 bytes in \texttt{.got} and has 16-byte alignment. The
+loader resolves the symbol binding, writes both words, and completes any memory
+ordering required to publish the pair before application code can observe it.
+Both words are immutable after publication and may subsequently be protected by
+\texttt{PT\_GNU\_RELRO}. The ABI requires no public name for either the
+resolver or fast function; their near-call addresses may be loader-private.
+
+The argument word belongs to the implementation of the selected function. A
+fast function may load \texttt{[R0+8]} and return it directly. An opaque token
+is not application data and remains valid only while the object that defines
+the TLS symbol is loaded. A resolver may perform dynamic per-thread lookup or
+allocation, but
+neither it nor the fast function may rewrite or self-patch the published
+descriptor. This per-thread work is not lazy symbol binding: the loader has
+already resolved the TLS symbol and published the final immutable pair.
 \subsection{TLSDESC Call ABI}
-The caller places the address of the TLSDESC entry in \texttt{R0}. The
-resolver returns the signed byte offset from the GS0 TLS base in \texttt{R0}
-and may clobber only caller-saved registers. This is a specialized resolver
-interface; the descriptor call relocation identifies the call site for the
-linker.
-\subsection{TLSDESC Relocation and Relaxation}
-\begin{itemize}
-\item TLSDESC GOTPCREL relocations materialize the address of the descriptor entry.
-\item The TLSDESC call relocation marks the descriptor call instruction so the linker may replace the call sequence when relaxation is legal.
-\item The TLSDESC descriptor relocation initializes the two-word descriptor entry used by the dynamic loader.
+The canonical sequence is exactly:
+\begin{verbatim}
+LEA.Q [PC + descriptor@TLSDESC_GOTPCREL], R0
+CALL  [R0]
+\end{verbatim}
+The \texttt{LEA.Q} places the descriptor address in \texttt{R0}.
+\texttt{CALL [R0]} reads the 64-bit near-call target from descriptor offset
+zero and does not replace \texttt{R0}, so the called function receives the
+descriptor address in \texttt{R0}. No intervening move is part of the
+canonical sequence.
+
+The function returns a valid signed byte offset from the GS0 TLS base in
+\texttt{R0}. It preserves GS0 and every register and state item that the normal
+C ABI designates callee-saved, and it may clobber normal caller-saved state.
+There is no recoverable failure return or reserved offset: zero is a valid TLS
+offset. A resolver that cannot produce an offset follows a platform-defined
+fatal path and does not return.
+
+\subsection{TLSDESC Relocations}
+\paragraph{Descriptor address.}
+\texttt{R\_BEDROCK\_TLSDESC\_GOTPCREL32S} and
+\texttt{R\_BEDROCK\_TLSDESC\_GOTPCREL64} apply to the PC-relative displacement
+field of the canonical \texttt{LEA.Q} and compute the address of the descriptor
+for \texttt{STT\_TLS} symbol \texttt{S}. The source expression has semantic
+TLS addend zero. Under the PC-relative field-bias rule in Section~7.1, the RELA
+addend is exactly $A=\delta$; it contains the instruction-field offset and no
+TLS subobject addend.
+
+\Needspace{1.0in}
+\paragraph{Call marker.}
+\texttt{R\_BEDROCK\_TLSDESC\_CALL} has size zero, changes no byte, and names the
+same TLS symbol as the paired TLSDESC GOTPCREL relocation on the immediately
+preceding \texttt{LEA.Q}. Its addend is zero and its place is byte zero of the
+exact immediately following \texttt{CALL [R0]}. It is a static-link relaxation
+marker, is consumed by the static linker, and is never emitted as a dynamic
+relocation. A producer shall not place a label or control-flow target between
+the two instructions or at a nonzero byte of either instruction when emitting
+a relaxable sequence.
+
+\paragraph{Descriptor initialization.}
+\texttt{R\_BEDROCK\_TLSDESC} applies only to \texttt{STT\_TLS} symbols, has
+addend zero, and is placed at offset zero of an aligned descriptor. It directs
+the loader to initialize two adjacent 64-bit words with the selected
+\texttt{\{function, argument\}} pair for \texttt{S}. It is not an integer
+calculation. The link or load that would leave a weak TLS symbol unresolved
+shall reject the object: GS0-relative offset zero is valid and cannot also
+encode absent weak binding. A weak symbol that resolves to a definition is
+handled normally.
+
+The linker may merge descriptors only when they name the same resolved binding
+\texttt{S} and have the required zero semantic addend. If any unrelaxed use
+remains, a final dynamic link emits one aligned pair in \texttt{.got} and the
+corresponding dynamic \texttt{R\_BEDROCK\_TLSDESC}. The loader initializes the
+pair eagerly before publication. A final executable with no runtime loader
+shall relax every TLSDESC use; otherwise the static link fails. If all uses are
+relaxed, the final link discards the descriptor and its initialization
+relocation.
+
+\subsection{TLSDESC Local-Exec Relaxation}
+Relaxation is permitted only after final binding proves that \texttt{S} is
+non-preemptible and \texttt{TLS(S)} is a link-time constant. It replaces the
+entire canonical pair without changing the section size or the address of any
+following instruction:
+\begin{itemize}\raggedright
+\item With \texttt{R\_BEDROCK\_TLSDESC\_GOTPCREL32S}, the original
+      7-byte \texttt{LEA.Q} and 4-byte \texttt{CALL [R0]} occupy 11 bytes. If
+      \texttt{TLS(S)} fits signed 32 bits, the linker emits
+      \texttt{LEN 11, MOV.Q TLS(S), R0}, applies
+      \texttt{R\_BEDROCK\_TLS\_OFFSET32S} with addend zero to its 32-bit
+      immediate payload, and writes four zero padding bytes after the natural
+      7-byte form.
+\item With \texttt{R\_BEDROCK\_TLSDESC\_GOTPCREL64}, the original
+      11-byte \texttt{LEA.Q} and 4-byte \texttt{CALL [R0]} occupy 15 bytes. The
+      linker emits \texttt{LEN 15, MOV.Q TLS(S), R0}, applies
+      \texttt{R\_BEDROCK\_TLS\_OFFSET64} with addend zero to its 64-bit
+      immediate payload, and writes four zero padding bytes after the natural
+      11-byte form.
 \end{itemize}
+The linker consumes both code relocations. The removed call may eliminate
+normal caller-saved clobbers and unobservable resolver stack activity; code may
+not depend on either. If no unrelaxed reference remains, no descriptor is
+allocated.
 
 \clearpage
 \section{Code Models}

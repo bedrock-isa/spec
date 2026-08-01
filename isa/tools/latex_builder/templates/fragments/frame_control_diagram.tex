@@ -1,10 +1,8 @@
 \begin{manuallistedformatdiagram}{FRAME\_CONTROL Format}
-\manualformatrowrange{FRAME\_CONTROL[63:32]}{63}{32}{%
+\manualformatrowrange{FRAME\_CONTROL[63:0]}{63}{0}{%
 \manualformatfield{STATUS}{16}
 \manualformatfield{FLAGS}{16}
-}
-\manualformatrowrange{FRAME\_CONTROL[31:0]}{31}{0}{%
-\manualformatfield{reserved}{13}
+\manualformatreserved{reserved}{13}
 \manualformatfield{R}{1}
 \manualformatfield{L}{2}
 \manualformatfield{D}{4}

@@ -51,12 +51,12 @@ class, leaf, or index returns zero; consequently, index zero of an absent leaf a
 \manualformatfield{MAX\_INDEX}{16}
 }
 \manualformatrowrange{other class, leaf 0}{63}{0}{%
-\manualformatfield{reserved}{32}
+\manualformatreserved{reserved}{32}
 \manualformatfield{MAX\_LEAF}{16}
 \manualformatfield{MAX\_INDEX}{16}
 }
 \manualformatrowrange{leaf 1 or greater}{63}{0}{%
-\manualformatfield{reserved}{48}
+\manualformatreserved{reserved}{48}
 \manualformatfield{MAX\_INDEX}{16}
 }
 \end{manuallistedformatdiagram}
@@ -173,7 +173,7 @@ actual contracts in each family begin at low nibble one. Unassigned values at or
 \begin{manuallistedformatdiagram}{FPTRANSA Accuracy Result Format}
 \manualformatrowrange{result[63:0]}{63}{0}{%
 \manualformatfield{P}{1}
-\manualformatfield{reserved}{23}
+\manualformatreserved{reserved}{23}
 \manualformatfield{REV}{8}
 \manualformatfield{D ULP}{16}
 \manualformatfield{S ULP}{16}
@@ -254,7 +254,7 @@ used only when its query reports present.
 
 \begin{manuallistedformatdiagram}{Performance-Counter Presence Result}
 \manualformatrowrange{result[63:0]}{63}{0}{%
-\manualformatfield{reserved}{63}
+\manualformatreserved{reserved}{63}
 \manualformatfield{P}{1}
 }
 \end{manuallistedformatdiagram}

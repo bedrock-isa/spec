@@ -12,7 +12,7 @@ stack, and user-return registers are per-logical-processor architectural state.
 \manualformatfield{root\_page}{52}
 \manualformatfield{PS}{4}
 \manualformatfield{L}{1}
-\manualformatreserved{RSV}{6}
+\manualformatreserved{reserved}{6}
 \manualformatfield{P}{1}
 }
 \end{manualformatdiagram}
@@ -37,9 +37,9 @@ reserved & \texttt{6..1} & must be zero\\
 
 \begin{manualformatdiagram}{ASCR Format}
 \manualformatrow{ASCR[63:0]}{%
-\manualformatfield{reserved}{32}
+\manualformatreserved{reserved}{32}
 \manualformatfield{ASID}{16}
-\manualformatfield{reserved}{15}
+\manualformatreserved{reserved}{15}
 \manualformatfield{A}{1}
 }
 \end{manualformatdiagram}
@@ -60,10 +60,10 @@ reserved & \texttt{15..1} & must be zero\\
 
 \begin{manualformatdiagram}{ECR Format}
 \manualformatrow{ECR[63:0]}{%
-\manualformatfield{reserved}{52}
+\manualformatreserved{reserved}{52}
 \manualformatfield{MAX}{4}
 \manualformatfield{P}{1}
-\manualformatreserved{RSV}{6}
+\manualformatreserved{reserved}{6}
 \manualformatfield{V}{1}
 }
 \end{manualformatdiagram}
@@ -76,7 +76,7 @@ reserved & \texttt{15..1} & must be zero\\
 \midrule
 reserved & \texttt{63..12} & must be zero\\
 \texttt{MAX\_EDEPTH} & \texttt{11..8} & maximum depth at which a maskable interrupt may be admitted\\
-\texttt{NMI\_P} & \texttt{7} & hardware-managed coalesced pending-NMI state; WRCR ignores the supplied bit\\
+\texttt{NMI\_P} & \texttt{7} & hardware-managed coalesced pending-NMI state while entry is invalid or NI is set; WRCR ignores the supplied bit\\
 reserved & \texttt{6..1} & must be zero\\
 \texttt{V} & \texttt{0} & architectural event-entry state is valid\\
 \bottomrule
@@ -84,7 +84,7 @@ reserved & \texttt{6..1} & must be zero\\
 
 \begin{manualformatdiagram}{URCTL Format}
 \manualformatrow{URCTL[63:0]}{%
-\manualformatfield{reserved}{31}
+\manualformatreserved{reserved}{31}
 \manualformatfield{V}{1}
 \manualformatfield{STATUS}{16}
 \manualformatfield{FLAGS}{16}
@@ -106,7 +106,7 @@ reserved & \texttt{63..33} & must be zero\\
 
 \begin{manualformatdiagram}{PMC Format}
 \manualformatrow{PMC[63:0]}{%
-\manualformatfield{reserved}{63}
+\manualformatreserved{reserved}{63}
 \manualformatfield{E}{1}
 }
 \end{manualformatdiagram}

@@ -1,16 +1,13 @@
 \subsubsection{Page-Fault Error Code}
 \begin{manuallistedformatdiagram}{PAGE\_FAULT ERROR\_CODE Format}
 \manualformatrowrange{ERROR\_CODE[63:0]}{63}{0}{%
-\manualformatfield{reserved}{34}
-\manualformatfield{detail}{30}
-}
-\manualformatrowrange{detail[29:0]}{29}{0}{%
+\manualformatreserved{reserved}{34}
 \manualformatfield{SZ}{3}
-\manualformatfield{0}{1}
+\manualformatreserved{0}{1}
 \manualformatfield{L}{1}
 \manualformatfield{E}{1}
 \manualformatfield{OP}{8}
-\manualformatfield{0}{1}
+\manualformatreserved{0}{1}
 \manualformatfield{LVL}{3}
 \manualformatfield{A}{1}
 \manualformatfield{U}{1}
@@ -88,10 +85,11 @@ bits 63..5 are zero.
 
 \begin{manuallistedformatdiagram}{Simple Exception ERROR\_CODE Formats}
 \manualformatrowrange{cause code}{63}{0}{%
-\manualformatfield{reserved}{56}
+\manualformatreserved{reserved}{56}
 \manualformatfield{CAUSE}{8}
 }
-\manualformatrowrange{floating-point fault[4:0]}{4}{0}{%
+\manualformatrowrange{floating-point fault[63:0]}{63}{0}{%
+\manualformatreserved{reserved}{59}
 \manualformatfield{I}{1}
 \manualformatfield{Z}{1}
 \manualformatfield{O}{1}

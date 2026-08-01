@@ -1,25 +1,23 @@
 \begin{manuallistedformatdiagram}{SAVE/RESTORE Base Header}
 \manualformatrowrange{header[63:0]}{63}{0}{%
-\manualformatfield{reserved}{12}
+\manualformatreserved{reserved}{12}
 \manualformatfield{STATUS}{16}
 \manualformatfield{FLAGS}{16}
-\manualformatfield{reserved}{10}
-\manualformatfield{GSV}{6}
-\manualformatfield{FMT}{4}
-}
-\manualformatrowrange{bitmap[63:0]}{63}{0}{%
-\manualformatfield{state block bitmap}{64}
-}
-\manualformatrowrange{GS\_VALID[5:0]}{5}{0}{%
+\manualformatreserved{reserved}{10}
 \manualformatfield{5}{1}
 \manualformatfield{4}{1}
 \manualformatfield{3}{1}
 \manualformatfield{2}{1}
 \manualformatfield{1}{1}
 \manualformatfield{0}{1}
+\manualformatfield{FMT}{4}
+}
+\manualformatrowrange{bitmap[63:0]}{63}{0}{%
+\manualformatfield{state block bitmap}{64}
 }
 \end{manuallistedformatdiagram}
-{\small\texttt{GSV} is the six-bit \texttt{GS\_VALID} bitmap. SAVE writes \texttt{GSV=0x3f} and \texttt{FMT=0}.\par}
+{\small The labels \texttt{5} through \texttt{0} are the six \texttt{GS\_VALID} bits. SAVE writes
+\texttt{GS\_VALID=0x3f} and \texttt{FMT=0}.\par}
 \begin{manuallistedstructlayout}
   {SAVE/RESTORE Fixed Base Block}
   {8}

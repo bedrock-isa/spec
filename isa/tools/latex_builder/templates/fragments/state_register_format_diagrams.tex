@@ -3,7 +3,7 @@ FLAGS and STATUS are accessed through dedicated read/write instructions. Reserve
 
 \begin{manuallistedformatdiagram}{FLAGS Register Format}
 \manualformatrow{FLAGS[15:0]}{%
-\manualformatfield{0}{12}
+\manualformatreserved{reserved}{12}
 \manualformatfield{Z}{1}
 \manualformatfield{N}{1}
 \manualformatfield{C}{1}
@@ -13,7 +13,7 @@ FLAGS and STATUS are accessed through dedicated read/write instructions. Reserve
 
 \begin{manuallistedformatdiagram}{STATUS Register Format}
 \manualformatrow{STATUS[15:0]}{%
-\manualformatfield{0}{10}
+\manualformatreserved{reserved}{10}
 \manualformatfield{I}{1}
 \manualformatfield{P}{1}
 \manualformatfield{R}{1}
@@ -36,7 +36,7 @@ non-default floating-point modes. Both registers are present only with the float
 
 \begin{manuallistedformatdiagram}{FFLAGS Register Format}
 \manualformatrow{FFLAGS[15:0]}{%
-\manualformatfield{0}{11}
+\manualformatreserved{reserved}{11}
 \manualformatfield{I}{1}
 \manualformatfield{Z}{1}
 \manualformatfield{O}{1}
@@ -47,7 +47,7 @@ non-default floating-point modes. Both registers are present only with the float
 
 \begin{manuallistedformatdiagram}{FSTATUS Register Format}
 \manualformatrow{FSTATUS[15:0]}{%
-\manualformatfield{0}{6}
+\manualformatreserved{reserved}{6}
 \manualformatfield{D}{1}
 \manualformatfield{A}{1}
 \manualformatfield{F}{1}

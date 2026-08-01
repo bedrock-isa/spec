@@ -5,18 +5,7 @@ Every page-table entry is 64 bits. The low twelve bits contain hardware-defined 
 attributes. The physical frame number occupies bits \texttt{PABITS-1..12}; bits above the selected physical-address
 width are available to software and ignored by the page-table walker.
 
-\begin{manuallistedformatdiagram}{Page-Table Entry Formats}
-\manualformatrowrange{PABITS=48}{63}{0}{%
-\manualformatfield{software}{16}
-\manualformatfield{PFN}{36}
-\manualformatfield{attributes}{12}
-}
-\manualformatrowrange{PABITS=56}{63}{0}{%
-\manualformatfield{software}{8}
-\manualformatfield{PFN}{44}
-\manualformatfield{attributes}{12}
-}
-\manualformatrowrange{PTE[11:0]}{11}{0}{%
+\newcommand{\manualpteattributefields}{%
 \manualformatfield{T}{1}
 \manualformatfield{S}{1}
 \manualformatfield{C}{2}
@@ -29,9 +18,21 @@ width are available to software and ignored by the page-table walker.
 \manualformatfield{W}{1}
 \manualformatfield{P}{1}
 }
+
+\begin{manuallistedformatdiagram}{Page-Table Entry Formats}
+\manualformatrowrange{PABITS=48}{63}{0}{%
+\manualformatfield{software}{16}
+\manualformatfield{PFN}{36}
+\manualpteattributefields
+}
+\manualformatrowrange{PABITS=56}{63}{0}{%
+\manualformatfield{software}{8}
+\manualformatfield{PFN}{44}
+\manualpteattributefields
+}
 \end{manuallistedformatdiagram}
 {\small
-In the low-bit row, \texttt{S}, \texttt{C}, and \texttt{M} abbreviate
+In both rows, \texttt{S}, \texttt{C}, and \texttt{M} abbreviate
 \texttt{SW0}, \texttt{CP}, and \texttt{AT}; the other labels match the field table.
 \par}
 

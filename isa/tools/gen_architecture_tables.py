@@ -484,10 +484,11 @@ def format_diagram(
         lines.append(
             rf"\manualformatrowrange{{{tex_escape(label)}}}{{{high}}}{{{low}}}{{%"
         )
-        lines.extend(
-            rf"\manualformatfield{{{tex_escape(name)}}}{{{width}}}"
-            for name, width in fields
-        )
+        for name, width in fields:
+            if name.lower() in {"reserved", "rsv"}:
+                lines.append(rf"\manualformatreserved{{reserved}}{{{width}}}")
+            else:
+                lines.append(rf"\manualformatfield{{{tex_escape(name)}}}{{{width}}}")
         lines.append("}")
     lines.append(r"\end{manuallistedformatdiagram}")
     return "\n".join(lines)

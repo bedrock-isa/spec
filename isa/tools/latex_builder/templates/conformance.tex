@@ -9,9 +9,6 @@ the implementation accepts and executes every architecturally valid instruction 
 state, event, memory, and instruction-specific rules. The same claim covers the architected discovery results,
 save images, event frames, and reset state defined for that processor.
 
-Canonical assembly text and exact conformance encodings are a source-to-byte and byte-to-text contract for architecture tools.
-They do not change the architectural result of an instruction record.
-
 \subsection{Normative Material and Specificity}
 
 Architecture prose, ordered steps, generated architecture tables, instruction encoding diagrams, and the Operation
@@ -56,15 +53,3 @@ processor revisions to which it applies.
 @IMPLEMENTATION_DEFINED_ROWS@
 \bottomrule
 \end{manuallongtable}
-
-\subsection{Conformance Vectors}
-
-\texttt{isa/reference/conformance\_manifest.yaml} names each required vector family, its source, and the cases that
-must remain represented. The manifest covers assembler encodings, atomic ordering, paging and cross-page accesses,
-stack and event boundaries, memory-order obligations, cache synchronization, and floating-point special values.
-Every required case is the ID of a concrete case in the named YAML source.
-
-For an input named by a vector, the expected bytes, state transition, architectural event, or allowed and forbidden
-outcome is normative for that case. General behavior continues to follow the defining architecture rule. Schema
-decoders, vector evaluators, formal models, and repository tests are validation tools; their implementation does
-not add an architectural result.

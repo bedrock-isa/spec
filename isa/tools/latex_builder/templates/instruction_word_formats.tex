@@ -38,7 +38,7 @@ the shortest valid record. It fills requested trailing padding with zero. A disa
 an overlong record so reassembly preserves the length; padding byte values are not preserved. Extrashort and short
 forms retain their fixed record lengths.
 
-\begin{manuallistedbitdiagram}{Instruction Header Byte Formats}
+\begin{manuallistedbitdiagram}{Instruction Header Byte Formats}[fig:instruction-header-byte-formats]
 \manualbitrow{extrashort byte}{%
 \manualbitfixed{0}{1}
 \manualbitfieldtext{payload}{7}
@@ -57,7 +57,6 @@ forms retain their fixed record lengths.
 \manualbitfieldtext{NEXT}{8}
 }
 \end{manuallistedbitdiagram}
-\label{fig:instruction-header-byte-formats}
 
 Figure~\ref{fig:instruction-header-byte-formats} annotations are read from high to low bit. In byte 0, bit 7 distinguishes extrashort framing; bits 7..6
 select short (\texttt{10}) or extended (\texttt{11}) framing. For short instructions, bits 5..2 and 1..0 continue
@@ -94,13 +93,6 @@ Figure~\ref{fig:instruction-header-byte-formats}.
 \bottomrule
 \end{manualtabular}
 
-\subsection{Opcode Allocation Map}
-Each assigned form appears once below. Unassigned patterns in the class summary are reserved. For a concrete
-extended form requiring \texttt{k} bytes, every total length from \texttt{k} through 18 is valid.
-
-@OPCODE_ALLOCATION_MAP@
-
 @INSTRUCTION_PAYLOAD_ORDERING_SECTION@
 
 \input{isa/tools/latex_builder/templates/fragments/representative_instruction_encodings.tex}
-@ASSEMBLER_LANGUAGE_SECTION@

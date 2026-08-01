@@ -1,4 +1,4 @@
-\begin{manuallistedformatdiagram}{Floating-Point Register Encodings}
+\begin{manuallistedformatdiagram}{Floating-Point Register Encodings}[fig:floating-point-register-encodings]
 \manualformatrowrange{D / Fn[63:0]}{63}{0}{%
 \manualformatfield{s}{1}
 \manualformatfield{exponent}{11}
@@ -11,7 +11,6 @@
 \manualformatfield{fraction}{23}
 }
 \end{manuallistedformatdiagram}
-\label{fig:floating-point-register-encodings}
 {\small
 For a NaN, the most significant fraction bit is the quiet bit: bit 22 for S and bit 51 for D.
 \texttt{s} denotes the sign bit. An S result occupies Fn bits 31..0 and writes zero to Fn bits 63..32.

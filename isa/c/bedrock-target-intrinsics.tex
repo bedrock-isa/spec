@@ -27,7 +27,6 @@ not duplicate their architectural or language semantics.
 
 \manualfield{Interface name:}{\texttt{bedrock-target-intrinsics}}
 \manualfield{Source language:}{ISO C with implementation-reserved target interfaces}
-\manualfield{Interface count:}{50 compiler builtins in 10 header families}
 
 \section{Compiler Interface Model}
 
@@ -49,8 +48,8 @@ ABI-visible meaning.
 \texttt{<bedrockintrin.h>} is the public umbrella. It includes the far, core,
 memory, integer, and floating-point families and deliberately exposes no
 system-management operation. \texttt{<bedrocksystemintrin.h>} is the system
-umbrella for register, cache, MMU, processor-state, and virtualization
-facilities. Any family header may also be included directly.
+umbrella for system-register, cache, MMU, and processor-state facilities. Any
+family header may also be included directly.
 
 \input{isa/c/generated/target_intrinsics/header_families.tex}
 
@@ -96,10 +95,12 @@ exponent from 0 through 31 and a mantissa from 1 through 63. The macro only
 packs fields; it does not validate the resulting base, span, limit, or address
 canonicality.
 
-\texttt{\_\_BEDROCK\_SEGMENT\_IMAGE\_FOR\_BASE(base,...)} accepts a virtual
-byte address and converts it to the base-page field. The base must be aligned
-to 4096 bytes; the macro discards the low 12 bits and does not adjust a later
-offset to compensate for a misaligned base.
+\texttt{\_\_BEDROCK\_SEGMENT\_IMAGE\_FOR\_BASE(base,...)} encodes
+$\lfloor\texttt{(uint64\_t)base}/4096\rfloor$ in the base-page field. It
+discards the low 12 bits, so a misaligned operand names the containing page and
+does not preserve the original byte address. The macro imposes no alignment
+precondition and does not adjust a later offset to compensate for the discarded
+bits.
 \texttt{\_\_BEDROCK\_SEGMENT\_DISABLED} is the canonical all-zero disabled
 image. ABI-visible disabled images use that constant rather than constructing
 an image with a zero mantissa and nonzero remaining fields.
@@ -114,9 +115,12 @@ The four construction operations use the macro spellings
 handled by the compiler and is not a runtime C value.
 
 \texttt{\_\_BEDROCK\_FAR\_PTR\_FROM\_SEGMENT} accepts an enabled translated
-source image with nonzero mantissa and bounds-only mode clear. It adds the
-encoded base to the supplied offset and converts the image to bounds-only
-form. An already-linear address and bounds-only image instead use
+source image with nonzero mantissa and bounds-only mode clear.
+\Needspace{5\baselineskip}
+It adds the encoded base to the supplied offset modulo $2^{64}$. A zero sum
+denotes null, but the converted bounds-only image is retained for zero and
+nonzero sums alike. It performs no overflow test. An already-linear address and
+bounds-only image instead use
 \texttt{\_\_BEDROCK\_FAR\_PTR\_INIT}; a flat address uses
 \texttt{\_\_BEDROCK\_FAR\_FLAT\_PTR\_INIT}.
 
@@ -167,6 +171,13 @@ selects every maintenance block that intersects the range and lowers to one bloc
 Each instruction translates its own block address. If a later instruction faults, blocks completed by earlier
 instructions remain completed.
 
+For a nonzero length, the mathematical half-open range
+$[\mathrm{address},\mathrm{address}+\mathrm{length})$ shall lie within the
+64-bit address space. Otherwise the behavior of the call is undefined and no
+architectural cache-maintenance sequence is required. An implementation may
+diagnose a provably wrapping constant range. A valid range end is calculated
+mathematically, not modulo $2^{64}$.
+
 \input{isa/c/generated/target_intrinsics/cache.tex}
 
 \subsection{MMU Builtins}
@@ -179,8 +190,9 @@ instructions remain completed.
 \input{isa/c/generated/target_intrinsics/processor_state.tex}
 
 Both operations are unprivileged, but restoration of \texttt{STATUS} remains
-privilege-restricted. The backend must model every restored register
-explicitly rather than treating restore as an opaque call or memory effect.
+privilege-restricted. The backend must model every restored register and the
+full memory and addressing-context clobber explicitly. It must not treat
+restore as an opaque call or as only a memory effect.
 
 \section{Shared Header Types and Exclusions}
 \input{isa/c/generated/target_intrinsics/shared_types.tex}

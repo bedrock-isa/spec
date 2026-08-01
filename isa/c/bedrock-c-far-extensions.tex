@@ -103,25 +103,29 @@ the typed veneer ABI defined by the C ABI.
 Pointer arithmetic changes the canonical address while preserving the
 associated bounds context. Pointer difference and relational comparison are
 defined only for pointers into the same C array object and use canonical
-addresses. Equality and hashing likewise use canonical address identity after
-null canonicalization; differing bounds contexts do not make otherwise equal
-pointers unequal.
+addresses. Equality and hashing use canonical address identity: every
+zero-address value is null, and differing image words do not make null values or
+otherwise equal addresses unequal.
 
 The builtin
 \texttt{\_\_builtin\_bedrock\_far\_same\_encoding(left,right)} compares the
 complete ABI representation when raw encoding identity is required.
-A non-null value with invalid or noncanonical metadata may be copied, compared,
-or converted to its matching raw carrier without faulting, but dereference or
-call is invalid. Such a value cannot cross a C ABI argument or return boundary,
-which validates far-pointer images before control transfer. The C ABI defines
-the null and raw-carrier representations.
+A zero-address null value may therefore have distinct raw encodings when its
+image words differ. A value with invalid or noncanonical metadata may be copied,
+compared, or converted to its matching raw carrier without faulting, but
+dereference or call is invalid. The C ABI validates a scalar far-pointer
+argument or result, including a null value's retained image, before control
+transfer. An aggregate crosses the boundary as an uninspected object
+representation, so a contained far-pointer encoding is instead validated when
+an operation extracts and uses it as a scalar far pointer. The C ABI defines
+the null identity and raw-carrier representations.
 
 \subsection{Pointer and Integer Conversion}
 Ordinary \texttt{uintptr\_t} and \texttt{intptr\_t} remain near-pointer
 carriers. Explicit conversion to the matching far raw carrier preserves the
-complete representation; conversion back restores the value and canonicalizes
-a zero canonical address to null. A matching-carrier round trip compares equal
-and retains its bounds context.
+complete representation; conversion back restores both words. A zero address
+denotes null without clearing its restored image word. A matching-carrier round
+trip compares equal and retains its bounds context and raw encoding.
 
 The builtin \texttt{\_\_builtin\_bedrock\_far\_address(pointer)} returns the
 canonical 64-bit pre-segment address without validation or faulting.
@@ -139,8 +143,10 @@ The included \texttt{<bedrockfarintrin.h>} also exposes
 \texttt{\_\_BEDROCK\_SEGMENT\_DISABLED}. These are pure 64-bit value
 expressions, not architectural segment-register operations. The first form
 packs the segment fields and normalizes the bounds-only operand to zero or one.
-The second accepts a 4096-byte-aligned virtual byte address and converts it to
-the base-page field. The disabled spelling is the canonical all-zero image.
+The second accepts a virtual byte address, discards its low 12 bits, and encodes
+the containing 4096-byte page in the base-page field. It imposes no alignment
+precondition and does not preserve a misaligned operand's original byte
+address. The disabled spelling is the canonical all-zero image.
 The Bedrock Target Intrinsics document defines the complete signatures,
 field-width, alignment, and validation contract.
 
@@ -148,24 +154,31 @@ Each macro's first argument names a far-qualified object or function pointer
 type. The typed initializer accepts a pre-segment address expressed in the
 resulting bounds-only segment's coordinate space and changes a nonzero-mantissa
 image to bounds-only without adding its base. The flat form attaches the
-disabled image. The translated-source form adds base and offset, uses the sum
-as the constructed pointer's pre-segment address, sets bounds-only mode, and
-preserves validated bounds. The null form produces the ABI null value.
+disabled image. The translated-source form adds base and offset, uses the low
+64 bits of the sum as the constructed pointer's pre-segment address, sets
+bounds-only mode, and preserves the image's bounds. The null form produces the
+ABI all-zero null value.
 The translated-source form requires an enabled image with nonzero mantissa and
 bounds-only mode clear. An already-linear address paired with a bounds-only
 image uses the typed initializer instead.
 
 Construction writes no segment register, probes no bounds, walks no page
-table, and performs no memory access. Address zero canonicalizes to null. An
-invalid image or base-plus-offset overflow produces an invalid far value
-without raising an exception. A one-past address may therefore be constructed
-without access. Validation occurs when a value crosses a C ABI argument or
-return boundary and before dereference or call; bounds checking occurs at the
+table, and performs no memory access. It neither detects nor reports
+base-plus-offset overflow. The converted bounds-only image is retained whether
+the low 64-bit modular sum is zero or nonzero. A zero sum denotes null without
+changing that image. For a valid source image, an in-range offset cannot
+overflow; a nonzero result from an out-of-range or wrapping offset lies outside
+the retained bounds and fails at the dependent access or control transfer. A
+one-past address may therefore be constructed without access.
+Image validation occurs when a scalar value crosses a C ABI argument or return
+boundary and before dereference or call; bounds checking occurs at the
 dependent access or control transfer.
 
 When every value operand is an integer constant expression and the pointer
-type is complete enough for its cast, the macro is an integer
-constant-expression initializer.
+type is complete enough for its cast, the macro result is accepted as a
+constant initializer for an object of the resulting far-pointer type. This
+target extension does not classify the pointer-valued result itself as an
+integer constant expression.
 
 \section{Access and Cross-Segment Aliasing}
 

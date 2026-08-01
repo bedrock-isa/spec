@@ -124,7 +124,7 @@ elf_abi:
     - {id: 41, name: R_BEDROCK_TLSDESC_GOTPCREL32S, size: 32-bit signed, calculation: TLSDESC(S) + A - P}
     - {id: 42, name: R_BEDROCK_TLSDESC_GOTPCREL64, size: 64-bit signed, calculation: TLSDESC(S) + A - P}
     - {id: 43, name: R_BEDROCK_TLSDESC_CALL, size: "0", calculation: none}
-    - {id: 44, name: R_BEDROCK_TLSDESC, size: 128-bit unsigned, calculation: tlsdesc_init}
+    - {id: 44, name: R_BEDROCK_TLSDESC, size: "2 x u64", calculation: "write {function, argument} for S"}
     - {id: 45, name: R_BEDROCK_FAR_ADDR64, size: 64-bit unsigned, calculation: FARADDR(S) + A}
     - {id: 46, name: R_BEDROCK_FAR_SEGMENT64, size: 64-bit unsigned, calculation: SEG(S)}
     - {id: 47, name: R_BEDROCK_FAR_DOMAIN64, size: 64-bit unsigned, calculation: SEGDOM(A)}

@@ -12,13 +12,13 @@ state_groups:
     fields: []
     definition: section:register-model
     readers: stack operations and SP-relative effective addresses
-    writers: stack operations, writable SP destinations, and RESTORE
+    writers: stack operations and writable SP destinations
   - id: program_counter
     members: [PC]
     fields: []
     definition: section:register-model
     readers: instruction fetch and PC-relative effective addresses
-    writers: control transfers, event return, RESET, and RESTORE
+    writers: control transfers, event return, and RESET
   - id: segment_registers
     members: [CS, DS, SS, GS0, GS1, GS2, GS3, GS4, GS5]
     fields: [base, e, m, B]
@@ -86,6 +86,6 @@ revision_history:
     changes:
       - Closed the CPUID, SAVE/RESTORE, floating-point, cache-maintenance, and effective-address contracts.
       - Defined reset, memory policy, translation, event, repeat, and instruction-encoding boundaries.
-      - Defined atomic ordering, paging boundaries, compatibility identity, stack, WAIT/HALT, assembly, and conformance contracts.
+      - Defined atomic ordering, paging boundaries, compatibility identity, stack, WAIT/HALT, and conformance contracts.
       - Unified terminology, canonical field names, reference indexes, and revision-history navigation.
   released: []

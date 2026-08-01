@@ -1,5 +1,4 @@
 version: 0
-interface_count: 50
 
 header_families:
   - id: far
@@ -68,7 +67,7 @@ builtin_families:
       - name: far_ptr_from_segment
         c_interface: far T(type,offset,image)
         lowering: {kind: description, value: canonicalization}
-        effect: Far type required; invalid input produces an invalid representation without faulting.
+        effect: Far type required; returns the low 64 bits of encoded base plus offset with the converted bounds-only image, including when the zero address denotes null; no overflow test or fault.
       - name: far_address
         c_interface: uint64_t(pointer)
         lowering: {kind: description, value: address extraction}
@@ -238,7 +237,7 @@ builtin_families:
       - name: invalidate_icache
         c_interface: void(void *,size_t)
         lowering: {kind: instruction, value: INVICACHE}
-        effect: Supervisor; applies local INVICACHE to every CPUID maintenance block intersecting the range and serializes instruction fetch.
+        effect: Supervisor; applies local INVICACHE to every CPUID maintenance block intersecting the range, serializes instruction fetch, and fully clobbers memory.
       - name: writeback_dcache
         c_interface: void(void *,size_t)
         lowering: {kind: instruction, value: WRBKDCACHE}
@@ -246,7 +245,7 @@ builtin_families:
       - name: sync_cache
         c_interface: void(void *,size_t)
         lowering: {kind: instruction, value: SYNCCACHE}
-        effect: Supervisor; applies SYNCCACHE to every CPUID maintenance block intersecting the range and serializes instruction fetch.
+        effect: Supervisor; applies SYNCCACHE to every CPUID maintenance block intersecting the range, serializes instruction fetch, and fully clobbers memory.
 
   - id: mmu
     caption: MMU Builtins
@@ -279,7 +278,7 @@ builtin_families:
       - name: page_table_query
         c_interface: result(level,address)
         lowering: {kind: instruction, value: PTQUERY}
-        effect: Supervisor; level is a constant in 0 through 7; wrapper atomically returns value and `FLAGS`; page walk without access to the queried C object.
+        effect: Supervisor; level is an integer constant expression in 1 through 5; wrapper atomically returns value and `FLAGS`; page walk without access to the queried C object.
 
   - id: processor_state
     caption: Processor-State Builtins
@@ -291,8 +290,8 @@ builtin_families:
         effect: Writable, CPUID-sized, 4096-byte-aligned area; writes architectural state and fully clobbers memory.
       - name: restore_processor_state
         c_interface: void(const void *area)
-        lowering: {kind: description, value: backend restore}
-        effect: Readable, feature-valid, 4096-byte-aligned area; may define `R0--R15`, `FLAGS`, valid `GS` registers, and extension state.
+        lowering: {kind: instruction, value: RESTORE}
+        effect: Readable, feature-valid, 4096-byte-aligned area; reads the complete selected state image; may define `R0--R15`, `FLAGS`, valid `GS` registers, and extension state; fully clobbers memory and prevents TLS or segmented memory accesses from moving across a restored `GS` addressing context.
 
 shared_types:
   - name: __bedrock_segment_register_t
@@ -307,7 +306,3 @@ shared_types:
     contract:
       kind: c_layout
       value: u64 value; u16 flags; u16 reserved[3]
-  - name: __bedrock_instruction_descriptor_t
-    contract:
-      kind: c_layout
-      value: u64 control, operand1, operand2, operand3

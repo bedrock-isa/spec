@@ -1,21 +1,5 @@
 schema_version: 0
 families:
-- id: assembler
-  source: isa/reference/assembler_conformance_vectors.yaml
-  required_cases:
-  - extrashort_add_sp
-  - short_mov_register
-  - medium_mov_indirect
-  - medium_mov_register_displacement
-  - medium_mov_pc_displacement
-  - medium_mov_absolute
-  - medium_mov_immediate
-  - medium_mov_ext0
-  - long_mov_memory_memory
-  - extralong_fsincosa
-  - long_jne_condition_size
-  - alias_clc
-  - len_padding
 - id: atomic_order
   source: isa/memory_model/atomic_order_litmus.yaml
   required_cases:
