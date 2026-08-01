@@ -30,13 +30,17 @@ the compiler that turns those sources into a consistent document set.
 
 `make docs` compiles and validates five coordinated documents:
 
-| Document | Scope | Generated outputs |
+| Document | Scope | PDF output |
 | --- | --- | --- |
-| Programmer's Reference Manual | Architectural state, encoding, execution, memory, events, conformance, and instruction definitions | `build/isa_reference.pdf`, `build/isa_reference.md` |
-| [Bedrock ELF ABI](isa/abi/bedrock-elf-abi.tex) | ELF objects, linking, relocation, loading, dynamic linking, TLS metadata, and code models | `build/latex/bedrock-elf-abi/bedrock-elf-abi.pdf`, `build/markdown/bedrock-elf-abi.md` |
-| [Bedrock C ABI](isa/abi/bedrock-c-abi.tex) | C data model, register convention, calling convention, stack, unwind, and memory-model mapping | `build/latex/bedrock-c-abi/bedrock-c-abi.pdf`, `build/markdown/bedrock-c-abi.md` |
-| [C far-pointer extensions](isa/c/bedrock-c-far-extensions.tex) | Bedrock-specific C types and source-language semantics for far pointers | `build/latex/bedrock-c-far-extensions/bedrock-c-far-extensions.pdf`, `build/markdown/bedrock-c-far-extensions.md` |
-| [Target intrinsics](isa/c/bedrock-target-intrinsics.tex) | Compiler builtins, intrinsic headers, signatures, and effects | `build/latex/bedrock-target-intrinsics/bedrock-target-intrinsics.pdf`, `build/markdown/bedrock-target-intrinsics.md` |
+| Programmer's Reference Manual | Architectural state, encoding, execution, memory, events, conformance, and instruction definitions | `build/isa_reference.pdf` |
+| [Bedrock ELF ABI](isa/abi/bedrock-elf-abi.tex) | ELF objects, linking, relocation, loading, dynamic linking, TLS metadata, and code models | `build/latex/bedrock-elf-abi/bedrock-elf-abi.pdf` |
+| [Bedrock C ABI](isa/abi/bedrock-c-abi.tex) | C data model, register convention, calling convention, stack, unwind, and memory-model mapping | `build/latex/bedrock-c-abi/bedrock-c-abi.pdf` |
+| [C far-pointer extensions](isa/c/bedrock-c-far-extensions.tex) | Bedrock-specific C types and source-language semantics for far pointers | `build/latex/bedrock-c-far-extensions/bedrock-c-far-extensions.pdf` |
+| [Target intrinsics](isa/c/bedrock-target-intrinsics.tex) | Compiler builtins, intrinsic headers, signatures, and effects | `build/latex/bedrock-target-intrinsics/bedrock-target-intrinsics.pdf` |
+
+The complete local build also writes Markdown counterparts to
+`build/isa_reference.md` and `build/markdown/`. These Markdown files are not
+published as CI artifacts.
 
 The Programmer's Reference Manual is assembled from the definitions under
 [`isa/defs`](isa/defs), the architecture data under
