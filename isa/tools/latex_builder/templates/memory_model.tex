@@ -17,6 +17,25 @@ The baseline ordering is weak. Except for same-byte coherence or ordering impose
 or fence, loads and stores to different locations may be issued, completed, and observed in an order different from
 program order. Coherence and multi-copy atomicity do not by themselves order accesses to different locations.
 
+\subsection{Ordinary Load Values and Preserved Order}
+Each byte returned by a load comes from the initial value of that physical byte or from an actual store or successful
+atomic read-modify-write to that byte. A load does not obtain a value solely from a cyclic chain in which the load
+value is needed to produce the write that would supply it.
+
+Among writes already globally observable when a load takes its value, the load observes the latest write in the
+byte's coherence order. A load may instead forward a byte from an earlier store by the same hardware thread before
+that store is globally observable. A store later than the load in program order cannot supply the load.
+
+Program order is preserved from an earlier read or write to a later write when their byte ranges overlap. Two loads
+of the same byte, with no intervening same-thread write to that byte, do not observe the byte's coherence order moving
+backward. These rules apply independently to every byte of an access, including each visible portion of an unaligned
+access.
+
+A load is ordered before a later memory access whose effective address depends on the loaded value. A load is also
+ordered before a later store when the stored value depends on the load or when execution of that store is
+control-dependent on the load. Control dependence alone does not order a later load; software uses an appropriate
+fence when that ordering is required.
+
 \subsection{PTE Cache Policies}
 The two-bit PTE \texttt{CP} field selects a cache policy for byte-addressed normal memory. Every policy uses the
 same coherence order, multi-copy atomicity, tearing rules, atomic operations, and fence semantics defined in this
@@ -97,6 +116,11 @@ two, four, and eight bytes and require addresses divisible by two, four, and eig
 \texttt{FETCHXOR} are the atomic read-modify-write instructions. Each performs its memory read, successful memory
 write, and architectural register result as one indivisible operation in the coherence order of the addressed
 physical location.
+
+A successful release or stronger atomic write heads a release sequence. The sequence continues through immediately
+following successful atomic read-modify-write operations to the same location in coherence order and ends before any
+other write. An acquire or stronger atomic operation that takes its value from any member of the sequence observes
+the effects ordered before its head before effects ordered after the acquiring operation.
 
 One encoded selector governs the complete \texttt{CMPXCHG} operation on both success and failure. A failed
 \texttt{CMPXCHG} contributes a read event. Its acquire component orders later memory operations after that read, and
