@@ -17,7 +17,7 @@ from site_latex import parse_latex_structure
 from site_markdown import (
     read_pandoc_ast,
     render_page_ast,
-    select_pandoc_gfm_writer,
+    require_supported_pandoc,
     split_document_ast,
 )
 from site_model import (
@@ -467,7 +467,7 @@ def render_site_output(
     """Render Markdown sources, validate them, and build the static HTML site."""
     ordered = tuple(documents)
     environment = dict(os.environ if environment is None else environment)
-    pandoc_writer = select_pandoc_gfm_writer(
+    require_supported_pandoc(
         pandoc=pandoc,
         environment=environment,
     )
@@ -572,7 +572,6 @@ def render_site_output(
                 registry=site.registry,
                 visual_titles=visual_titles[document.id],
                 api_version=ast.api_version,
-                pandoc_writer=pandoc_writer,
                 pandoc=pandoc,
                 environment=environment,
             )

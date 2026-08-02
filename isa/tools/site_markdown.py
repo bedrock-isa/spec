@@ -18,6 +18,9 @@ from site_model import scoped_target, section_page_key
 
 
 MARKER_PREFIXES = ("part:", "page:", "instr:")
+PANDOC_MINIMUM_VERSION = (3, 8)
+PANDOC_GFM_WRITER = "gfm+tex_math_dollars-tex_math_gfm"
+PANDOC_VERSION_RE = re.compile(r"^pandoc (?P<version>[0-9]+(?:\.[0-9]+)*)$")
 ALLOWED_ANCHOR_RE = re.compile(
     r'<a href="#(?P<anchor>[a-z0-9][a-z0-9-]*)" id="(?P=anchor)"></a>'
 )
@@ -35,11 +38,25 @@ INSTRUCTION_BEGIN_RE = re.compile(r"\\begin\{manualinstruction\}\s*\{")
 LONGTABLE_CONTINUATION_RE = re.compile(
     r"\\endfirsthead.*?\\endhead", flags=re.DOTALL
 )
+SUPPORTED_TABLE_ENVIRONMENTS = (
+    "manualdenselongtable",
+    "manualflageffects",
+    "manuallongtable",
+    "manualtabular",
+    "longtable",
+    "tabularx",
+    "tabular",
+)
 TABLE_ENVIRONMENT_RE = re.compile(
-    r"\\begin\{(?P<environment>manuallongtable|manualtabular|longtable|tabularx|tabular)\}"
+    r"\\begin\{(?P<environment>"
+    + "|".join(
+        re.escape(environment) for environment in SUPPORTED_TABLE_ENVIRONMENTS
+    )
+    + r")\}"
     r".*?\\end\{(?P=environment)\}",
     flags=re.DOTALL,
 )
+TABLE_COMMAND_RE = re.compile(r"\\manualfield\s*\{")
 LEADING_TABLE_NUMBER_RE = re.compile(
     r"(?P<prefix>(?:^|&|\\\\)\s*)"
     r"(?P<number>[0-9]+(?:\.\.[0-9]+|--[0-9]+)?)"
@@ -299,6 +316,60 @@ def normalize_latex_for_site(text: str) -> str:
     return "".join(output)
 
 
+def require_supported_pandoc(
+    *,
+    pandoc: str = "pandoc",
+    environment: dict[str, str] | None = None,
+) -> tuple[int, ...]:
+    """Require the Pandoc reader/writer contract used by the site backend."""
+    environment = dict(os.environ if environment is None else environment)
+    result = subprocess.run(
+        [pandoc, "--version"],
+        text=True,
+        capture_output=True,
+        cwd=Path(__file__).resolve().parents[2],
+        env=environment,
+        check=False,
+    )
+    first_line = result.stdout.splitlines()[0].strip() if result.stdout else ""
+    match = PANDOC_VERSION_RE.fullmatch(first_line)
+    if result.returncode != 0 or match is None:
+        detail = (
+            result.stderr.strip() or first_line or f"exit status {result.returncode}"
+        )
+        raise SiteMarkdownError(f"could not determine Pandoc version: {detail}")
+    version = tuple(int(component) for component in match.group("version").split("."))
+    if version < PANDOC_MINIMUM_VERSION:
+        required = ".".join(str(component) for component in PANDOC_MINIMUM_VERSION)
+        actual = ".".join(str(component) for component in version)
+        raise SiteMarkdownError(
+            f"Pandoc {required} or newer is required for site table conversion; "
+            f"found {actual}"
+        )
+    return version
+
+
+def _supported_table_count(text: str, where: Path) -> int:
+    begin = r"\begin{document}"
+    end = r"\end{document}"
+    start = text.find(begin)
+    finish = text.rfind(end)
+    if start < 0 or finish < start:
+        raise SiteMarkdownError(f"{where}: expanded LaTeX document body is missing")
+    body = text[start + len(begin) : finish]
+    environment_count = 0
+    for name in SUPPORTED_TABLE_ENVIRONMENTS:
+        begins = body.count(rf"\begin{{{name}}}")
+        ends = body.count(rf"\end{{{name}}}")
+        if begins != ends:
+            raise SiteMarkdownError(
+                f"{where}: unbalanced {name} table environment; "
+                f"{begins} begin markers and {ends} end markers"
+            )
+        environment_count += begins
+    return environment_count + len(TABLE_COMMAND_RE.findall(body))
+
+
 def _unsupported_html_tags(markdown: str) -> list[str]:
     tags: set[str] = set()
     fence_character: str | None = None
@@ -330,11 +401,13 @@ def read_pandoc_ast(
 ) -> PandocAst:
     """Read one expanded LaTeX document as Pandoc's semantic JSON AST."""
     environment = dict(os.environ if environment is None else environment)
+    normalized = normalize_latex_for_site(
+        expanded_source.read_text(encoding="utf-8")
+    )
+    expected_tables = _supported_table_count(normalized, expanded_source)
     result = subprocess.run(
         [pandoc, "--from=latex", "--to=json"],
-        input=normalize_latex_for_site(
-            expanded_source.read_text(encoding="utf-8")
-        ),
+        input=normalized,
         text=True,
         capture_output=True,
         cwd=Path(__file__).resolve().parents[2],
@@ -346,11 +419,15 @@ def read_pandoc_ast(
         raise SiteMarkdownError(f"Pandoc failed to read {expanded_source}: {detail}")
     parsed = json.loads(result.stdout)
     raw_nodes: list[str] = []
+    table_nodes = 0
 
     def inspect(value: Any) -> None:
+        nonlocal table_nodes
         if isinstance(value, dict):
             if value.get("t") in {"RawBlock", "RawInline"}:
                 raw_nodes.append(repr(value.get("c")))
+            if value.get("t") == "Table":
+                table_nodes += 1
             for child in value.values():
                 inspect(child)
         elif isinstance(value, list):
@@ -363,44 +440,17 @@ def read_pandoc_ast(
         raise SiteMarkdownError(
             f"{expanded_source}: Pandoc produced {len(raw_nodes)} unresolved raw nodes: {sample}"
         )
+    if table_nodes != expected_tables:
+        raise SiteMarkdownError(
+            f"{expanded_source}: Pandoc table structure mismatch; "
+            f"{expected_tables} supported LaTeX table producers emitted "
+            f"{table_nodes} Table nodes"
+        )
     return PandocAst(
         tuple(parsed["pandoc-api-version"]),
         dict(parsed.get("meta", {})),
         tuple(parsed.get("blocks", [])),
     )
-
-
-def select_pandoc_gfm_writer(
-    *,
-    pandoc: str = "pandoc",
-    environment: dict[str, str] | None = None,
-) -> str:
-    """Select dollar-delimited GFM math without naming unsupported extensions."""
-    environment = dict(os.environ if environment is None else environment)
-    result = subprocess.run(
-        [pandoc, "--list-extensions=gfm"],
-        text=True,
-        capture_output=True,
-        cwd=Path(__file__).resolve().parents[2],
-        env=environment,
-        check=False,
-    )
-    if result.returncode != 0 or result.stderr.strip():
-        detail = result.stderr.strip() or f"exit status {result.returncode}"
-        raise SiteMarkdownError(f"Pandoc failed to list GFM extensions: {detail}")
-    extensions = {
-        line[1:]
-        for line in result.stdout.splitlines()
-        if len(line) > 1 and line[0] in {"+", "-"}
-    }
-    if "tex_math_dollars" not in extensions:
-        raise SiteMarkdownError(
-            "Pandoc GFM writer does not support dollar-delimited TeX math"
-        )
-    writer = "gfm+tex_math_dollars"
-    if "tex_math_gfm" in extensions:
-        writer += "-tex_math_gfm"
-    return writer
 
 
 def _attribute(node: dict[str, Any]) -> list[Any] | None:
@@ -774,7 +824,6 @@ def render_page_ast(
     registry: PageRegistry,
     visual_titles: dict[str, str],
     api_version: Iterable[int],
-    pandoc_writer: str,
     pandoc: str = "pandoc",
     environment: dict[str, str] | None = None,
 ) -> RenderedPage:
@@ -795,7 +844,7 @@ def render_page_ast(
         [
             pandoc,
             "--from=json",
-            f"--to={pandoc_writer}",
+            f"--to={PANDOC_GFM_WRITER}",
             "--wrap=none",
             "--markdown-headings=atx",
         ],
