@@ -146,7 +146,7 @@ def _add_instruction_pages(
     registry: PageRegistry,
     model: gen_docs.IsaModel,
     document: DocumentSiteSpec,
-    landing: str,
+    part_page: str,
     sections: dict[str, SectionSpec],
 ) -> set[str]:
     consumed: set[str] = set()
@@ -157,7 +157,7 @@ def _add_instruction_pages(
             title="Instructions",
             output=PurePosixPath(document.id) / "instructions" / "index.md",
             group=document.id,
-            parent=landing,
+            parent=part_page,
             source=document.id,
         ),
         targets=(scoped_target(document.id, "page:instructions"),),
@@ -216,7 +216,12 @@ def _add_instruction_pages(
             PageSpec(
                 key=group_page,
                 title=title,
-                output=PurePosixPath(document.id) / "instructions" / f"{group_id}.md",
+                output=(
+                    PurePosixPath(document.id)
+                    / "instructions"
+                    / group_id
+                    / "index.md"
+                ),
                 group=document.id,
                 parent=instruction_root,
                 source=document.id,
@@ -240,7 +245,7 @@ def _add_instruction_pages(
                     title=instruction.mnemonic,
                     output=PurePosixPath(document.id) / "instructions" / f"{slug}.md",
                     group=document.id,
-                    parent=instruction_root,
+                    parent=group_page,
                     source=str(instruction.path),
                 )
             )
@@ -278,11 +283,12 @@ def _add_isa_pages(
     instruction_sections: set[str] = set()
 
     for part in document.structure.parts:
+        part_page = part_page_key(document.id, part.key)
         registry.add_page(
             PageSpec(
-                key=part_page_key(document.id, part.key),
+                key=part_page,
                 title=part.title,
-                output=PurePosixPath(document.id) / f"{part.key}.md",
+                output=PurePosixPath(document.id) / part.key / "index.md",
                 group=document.id,
                 parent=landing,
                 source=document.id,
@@ -299,7 +305,7 @@ def _add_isa_pages(
                         f"{INSTRUCTION_PART_ID!r} part"
                     )
                 instruction_sections = _add_instruction_pages(
-                    registry, model, document, landing, sections
+                    registry, model, document, part_page, sections
                 )
                 consumed.update(instruction_sections)
                 continue
@@ -312,7 +318,7 @@ def _add_isa_pages(
                     title=section.title,
                     output=PurePosixPath(document.id) / f"{section.key}.md",
                     group=document.id,
-                    parent=landing,
+                    parent=part_page,
                     source=document.id,
                 )
             )

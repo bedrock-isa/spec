@@ -218,6 +218,16 @@ class PageRegistry:
                     f"page {page.key}: parent {parent.key} belongs to a different group"
                 )
 
+        parent_keys = {
+            page.parent for page in self.pages if page.parent is not None
+        }
+        for parent_key in parent_keys:
+            parent = self.page(parent_key)
+            if parent.output.name.casefold() != "index.md":
+                raise SiteError(
+                    f"navigation parent {parent.key}: output must be an index.md page"
+                )
+
         for page in self.pages:
             seen = {page.key}
             parent_key = page.parent
