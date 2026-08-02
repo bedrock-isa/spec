@@ -370,6 +370,39 @@ def read_pandoc_ast(
     )
 
 
+def select_pandoc_gfm_writer(
+    *,
+    pandoc: str = "pandoc",
+    environment: dict[str, str] | None = None,
+) -> str:
+    """Select dollar-delimited GFM math without naming unsupported extensions."""
+    environment = dict(os.environ if environment is None else environment)
+    result = subprocess.run(
+        [pandoc, "--list-extensions=gfm"],
+        text=True,
+        capture_output=True,
+        cwd=Path(__file__).resolve().parents[2],
+        env=environment,
+        check=False,
+    )
+    if result.returncode != 0 or result.stderr.strip():
+        detail = result.stderr.strip() or f"exit status {result.returncode}"
+        raise SiteMarkdownError(f"Pandoc failed to list GFM extensions: {detail}")
+    extensions = {
+        line[1:]
+        for line in result.stdout.splitlines()
+        if len(line) > 1 and line[0] in {"+", "-"}
+    }
+    if "tex_math_dollars" not in extensions:
+        raise SiteMarkdownError(
+            "Pandoc GFM writer does not support dollar-delimited TeX math"
+        )
+    writer = "gfm+tex_math_dollars"
+    if "tex_math_gfm" in extensions:
+        writer += "-tex_math_gfm"
+    return writer
+
+
 def _attribute(node: dict[str, Any]) -> list[Any] | None:
     tag = node.get("t")
     content = node.get("c")
@@ -741,6 +774,7 @@ def render_page_ast(
     registry: PageRegistry,
     visual_titles: dict[str, str],
     api_version: Iterable[int],
+    pandoc_writer: str,
     pandoc: str = "pandoc",
     environment: dict[str, str] | None = None,
 ) -> RenderedPage:
@@ -761,7 +795,7 @@ def render_page_ast(
         [
             pandoc,
             "--from=json",
-            "--to=gfm+tex_math_dollars-tex_math_gfm",
+            f"--to={pandoc_writer}",
             "--wrap=none",
             "--markdown-headings=atx",
         ],
