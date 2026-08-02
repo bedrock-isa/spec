@@ -9,7 +9,7 @@
 \BedrockFrontMatter
 
 \clearpage
-\section{Scope and Status}
+\section{Scope and Status}\label{page:scope-and-status}
 This document defines the Bedrock-specific C source-language extensions for far
 data pointers, far function pointers, and cross-segment aliasing. It specifies
 declarator syntax, type compatibility, conversions, pointer operations,
@@ -25,7 +25,7 @@ Intrinsics document.
 \manualfield{Language scope:}{ISO C with Bedrock target extensions}
 \manualfield{Not specified:}{C++ type system, name mangling, or C++ exceptions}
 
-\section{Terminology}
+\section{Terminology}\label{page:terminology}
 \begin{description}[style=nextline,leftmargin=1.75in,labelwidth=1.65in,itemsep=3pt,topsep=3pt]
 \item[far data pointer] A C pointer kind carrying a pre-segment virtual address
 and the segment metadata whose ABI representation is defined by the Bedrock C
@@ -38,7 +38,7 @@ pointer identity independently of bounds metadata.
 ordinary near and segmented alias domains. It is not a hardware fence.
 \end{description}
 
-\section{Far Pointer Type System}
+\section{Far Pointer Type System}\label{page:far-pointer-type-system}
 
 \subsection{Declarator Binding}
 The implementation provides the pointer-kind qualifier \texttt{\_\_far},
@@ -132,7 +132,7 @@ canonical 64-bit pre-segment address without validation or faulting.
 Conversion through an ordinary 64-bit carrier is rejected unless an explicitly
 implementation-defined truncation operation is requested.
 
-\section{Far Pointer Construction}
+\section{Far Pointer Construction}\label{page:far-pointer-construction}
 The compiler-owned header \texttt{<bedrockintrin.h>} exposes typed macros over
 the matching target builtins. These operations construct values; they do not
 expose a C structure representation.
@@ -180,7 +180,7 @@ constant initializer for an object of the resulting far-pointer type. This
 target extension does not classify the pointer-valued result itself as an
 integer constant expression.
 
-\section{Access and Cross-Segment Aliasing}
+\section{Access and Cross-Segment Aliasing}\label{page:access-and-cross-segment-aliasing}
 
 \subsection{Access Semantics}
 Dereference uses the address and segment metadata carried by the far pointer.
@@ -259,7 +259,7 @@ compiler emits one dependent load through that segment register. The exact
 instruction sequence is an implementation choice as long as those observable
 rules hold.
 
-\section{Far Function Language Semantics}
+\section{Far Function Language Semantics}\label{page:far-function-language-semantics}
 A far function pointer declaration such as
 \texttt{int (* \_\_far handler)(int)} selects the far function-pointer type.
 Calling through it uses the far-call convention defined by the C ABI. The

@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 import argparse
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 import hashlib
 import json
 import os
@@ -26,7 +26,7 @@ import gen_abi_tables  # noqa: E402
 import gen_architecture_tables  # noqa: E402
 import gen_docs  # noqa: E402
 import gen_target_intrinsics  # noqa: E402
-from latex_to_markdown import render_markdown_file  # noqa: E402
+from site_output import SiteDocument, render_site_output  # noqa: E402
 
 
 GENERATED_INCLUDE_RE = re.compile(r"\\(?:input|include)\{([^{}]+)\}")
@@ -50,7 +50,8 @@ class Document:
     source: Path | None
     pdf_name: str
     pdf_output: Path
-    markdown_output: Path
+    site_id: str
+    navigation_title: str
 
 
 DOCUMENTS = (
@@ -59,35 +60,40 @@ DOCUMENTS = (
         None,
         "isa_reference.pdf",
         Path("isa_reference.pdf"),
-        Path("isa_reference.md"),
+        "isa",
+        "Programmer's Reference Manual",
     ),
     Document(
         "bedrock-elf-abi",
         ROOT / "isa" / "abi" / "bedrock-elf-abi.tex",
         "bedrock-elf-abi.pdf",
         Path("latex/bedrock-elf-abi/bedrock-elf-abi.pdf"),
-        Path("markdown/bedrock-elf-abi.md"),
+        "elf-abi",
+        "ELF ABI",
     ),
     Document(
         "bedrock-c-abi",
         ROOT / "isa" / "abi" / "bedrock-c-abi.tex",
         "bedrock-c-abi.pdf",
         Path("latex/bedrock-c-abi/bedrock-c-abi.pdf"),
-        Path("markdown/bedrock-c-abi.md"),
+        "c-abi",
+        "C ABI",
     ),
     Document(
         "bedrock-c-far-extensions",
         ROOT / "isa" / "c" / "bedrock-c-far-extensions.tex",
         "bedrock-c-far-extensions.pdf",
         Path("latex/bedrock-c-far-extensions/bedrock-c-far-extensions.pdf"),
-        Path("markdown/bedrock-c-far-extensions.md"),
+        "c-far-extensions",
+        "C Far-Pointer Extensions",
     ),
     Document(
         "bedrock-target-intrinsics",
         ROOT / "isa" / "c" / "bedrock-target-intrinsics.tex",
         "bedrock-target-intrinsics.pdf",
         Path("latex/bedrock-target-intrinsics/bedrock-target-intrinsics.pdf"),
-        Path("markdown/bedrock-target-intrinsics.md"),
+        "target-intrinsics",
+        "Target Intrinsics",
     ),
 )
 
@@ -321,6 +327,14 @@ def publish_file(source: Path, destination: Path) -> None:
     os.replace(temporary, destination)
 
 
+def publish_tree(source: Path, destination: Path) -> None:
+    temporary = destination.with_name(destination.name + ".tmp")
+    remove_generated_path(temporary)
+    shutil.copytree(source, temporary)
+    remove_generated_path(destination)
+    os.replace(temporary, destination)
+
+
 def remove_generated_path(path: Path) -> None:
     if path.is_symlink() or path.is_file():
         path.unlink()
@@ -329,7 +343,7 @@ def remove_generated_path(path: Path) -> None:
 
 
 def prune_retired_document_outputs(output_root: Path, output_format: str) -> None:
-    if output_format in {"all", "pdf"}:
+    if output_format in {"all", "pdf", "site"}:
         expected_pdf_directories = {
             document.pdf_output.parent
             for document in DOCUMENTS
@@ -341,13 +355,27 @@ def prune_retired_document_outputs(output_root: Path, output_format: str) -> Non
                 if path.relative_to(output_root) not in expected_pdf_directories:
                     remove_generated_path(path)
 
-    if output_format in {"all", "markdown"}:
-        expected_markdown_outputs = {document.markdown_output for document in DOCUMENTS}
-        markdown_root = output_root / "markdown"
-        if markdown_root.is_dir():
-            for path in markdown_root.iterdir():
-                if path.relative_to(output_root) not in expected_markdown_outputs:
-                    remove_generated_path(path)
+    if output_format in {"all", "site"}:
+        remove_generated_path(output_root / "markdown")
+        remove_generated_path(output_root / "isa_reference.md")
+        remove_generated_path(output_root / "gitbook")
+
+
+def source_revision(env: dict[str, str]) -> str:
+    revision = run(
+        ["git", "rev-parse", "HEAD"],
+        env=env,
+        description="source revision discovery",
+    ).stdout.strip()
+    dirty = subprocess.run(
+        ["git", "status", "--porcelain", "--untracked-files=normal"],
+        cwd=ROOT,
+        env=env,
+        text=True,
+        capture_output=True,
+        check=True,
+    ).stdout
+    return revision + ("-dirty" if dirty else "")
 
 
 def compile_documents(args: argparse.Namespace) -> int:
@@ -393,9 +421,10 @@ def compile_documents(args: argparse.Namespace) -> int:
     }
     metrics: dict[str, dict[str, object]] = {}
     produced_pdfs: dict[str, tuple[Path, Path]] = {}
-    produced_markdown: dict[str, Path] = {}
+    produced_site: Path | None = None
+    site_metrics: dict[str, int] | None = None
 
-    if args.format in {"all", "pdf"}:
+    if args.format in {"all", "pdf", "site"}:
         for document in DOCUMENTS:
             pdf, log, document_metrics = compile_pdf(
                 document, sources[document.key], stage, env, args.latexmk
@@ -403,18 +432,30 @@ def compile_documents(args: argparse.Namespace) -> int:
             produced_pdfs[document.key] = (pdf, log)
             metrics[document.key] = document_metrics
 
-    if args.format in {"all", "markdown"}:
-        for document in DOCUMENTS:
-            markdown = stage / "markdown" / document.markdown_output.name
-            markdown.parent.mkdir(parents=True, exist_ok=True)
-            render_markdown_file(
-                sources[document.key],
-                markdown,
-                pandoc=args.pandoc,
-                latexpand=args.latexpand,
-                environment=env,
-            )
-            produced_markdown[document.key] = markdown
+    if args.format in {"all", "site"}:
+        produced_site = stage / "site"
+        site = render_site_output(
+            (
+                SiteDocument(
+                    document.key,
+                    document.site_id,
+                    document.navigation_title,
+                    sources[document.key],
+                    produced_pdfs[document.key][0],
+                    document.pdf_name,
+                )
+                for document in DOCUMENTS
+            ),
+            model,
+            produced_site,
+            source_revision=source_revision(env),
+            pandoc=args.pandoc,
+            latexpand=args.latexpand,
+            mkdocs=args.mkdocs,
+            latexmk=args.latexmk,
+            environment=env,
+        )
+        site_metrics = asdict(site)
 
     after = source_snapshot(output_root)
     store.require_absent_from_source_tree()
@@ -428,9 +469,9 @@ def compile_documents(args: argparse.Namespace) -> int:
             pdf, log = produced_pdfs[document.key]
             publish_file(pdf, output_root / document.pdf_output)
             publish_file(log, (output_root / document.pdf_output).with_suffix(".log"))
-        if document.key in produced_markdown:
-            publish_file(produced_markdown[document.key], output_root / document.markdown_output)
-    if args.format in {"all", "pdf"}:
+    if produced_site is not None:
+        publish_tree(produced_site, output_root / "site")
+    if args.format in {"all", "pdf", "site"}:
         publish_file(isa_source, output_root / "isa_reference.tex")
 
     generated_destination = output_root / "generated"
@@ -442,6 +483,7 @@ def compile_documents(args: argparse.Namespace) -> int:
         "format": args.format,
         "generated_artifacts": store.count,
         "documents": metrics,
+        "site": site_metrics,
     }
     report_path = stage / "document-compile.json"
     report_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -456,11 +498,12 @@ def compile_documents(args: argparse.Namespace) -> int:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--format", choices=("all", "pdf", "markdown"), default="all")
+    parser.add_argument("--format", choices=("all", "pdf", "site"), default="all")
     parser.add_argument("--output-root", type=Path, default=ROOT / "build")
     parser.add_argument("--latexmk", default=os.environ.get("LATEXMK", "latexmk"))
     parser.add_argument("--pandoc", default=os.environ.get("PANDOC", "pandoc"))
     parser.add_argument("--latexpand", default=os.environ.get("LATEXPAND", "latexpand"))
+    parser.add_argument("--mkdocs", default=os.environ.get("MKDOCS", "mkdocs"))
     return parser.parse_args()
 
 

@@ -2,14 +2,15 @@ PYTHON ?= python3
 LATEXMK ?= latexmk
 PANDOC ?= pandoc
 LATEXPAND ?= latexpand
+MKDOCS ?= mkdocs
 
-.PHONY: docs docs-pdf docs-markdown
+.PHONY: docs docs-pdf docs-site
 
 docs:
-	$(PYTHON) isa/tools/compile_documents.py --format all --latexmk "$(LATEXMK)" --pandoc "$(PANDOC)" --latexpand "$(LATEXPAND)"
+	$(PYTHON) isa/tools/compile_documents.py --format all --latexmk "$(LATEXMK)" --pandoc "$(PANDOC)" --latexpand "$(LATEXPAND)" --mkdocs "$(MKDOCS)"
 
 docs-pdf:
 	$(PYTHON) isa/tools/compile_documents.py --format pdf --latexmk "$(LATEXMK)"
 
-docs-markdown:
-	$(PYTHON) isa/tools/compile_documents.py --format markdown --pandoc "$(PANDOC)" --latexpand "$(LATEXPAND)"
+docs-site:
+	$(PYTHON) isa/tools/compile_documents.py --format site --latexmk "$(LATEXMK)" --pandoc "$(PANDOC)" --latexpand "$(LATEXPAND)" --mkdocs "$(MKDOCS)"

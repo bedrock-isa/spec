@@ -3,17 +3,26 @@ name: CI
 on:
   push:
   pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  validate:
+  build:
+    name: Build and validate reference documents
     runs-on: ubuntu-latest
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 
@@ -69,3 +78,113 @@ jobs:
           path: build/latex/bedrock-target-intrinsics/bedrock-target-intrinsics.pdf
           archive: false
           if-no-files-found: error
+
+      - name: Upload reference site
+        uses: actions/upload-artifact@v7
+        with:
+          name: reference-site
+          path: build/site
+          if-no-files-found: error
+          include-hidden-files: true
+
+  publish:
+    name: Update gh-pages publication branch
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out repository history
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Download validated reference site
+        uses: actions/download-artifact@v8
+        with:
+          name: reference-site
+          path: build/site
+
+      - name: Publish to gh-pages
+        env:
+          PUBLISH_BRANCH: gh-pages
+        run: |
+          set -euo pipefail
+
+          test -f build/site/index.html
+          test -f build/site/.nojekyll
+          test -f build/site/source-revision.txt
+          test "$(cat build/site/source-revision.txt)" = "${GITHUB_SHA}"
+
+          test -n "${RUNNER_TEMP:-}"
+          publish_dir="$(mktemp -d "${RUNNER_TEMP}/bedrock-pages.XXXXXX")"
+          case "${publish_dir}" in
+            "${RUNNER_TEMP}"/bedrock-pages.*) ;;
+            *) echo "Unsafe publication worktree: ${publish_dir}" >&2; exit 1 ;;
+          esac
+
+          cleanup() {
+            git worktree remove --force "${publish_dir}" >/dev/null 2>&1 || true
+            rmdir "${publish_dir}" >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+
+          if git ls-remote --exit-code --heads origin \
+            "refs/heads/${PUBLISH_BRANCH}" >/dev/null 2>&1; then
+            git fetch --quiet --no-tags origin \
+              "refs/heads/${PUBLISH_BRANCH}:refs/remotes/origin/${PUBLISH_BRANCH}"
+            git worktree add --quiet -B "${PUBLISH_BRANCH}" "${publish_dir}" \
+              "origin/${PUBLISH_BRANCH}"
+          else
+            git worktree add --quiet --detach "${publish_dir}" HEAD
+            git -C "${publish_dir}" switch --quiet --orphan "${PUBLISH_BRANCH}"
+            git -C "${publish_dir}" rm -rf --ignore-unmatch .
+          fi
+
+          rsync -a --delete --exclude=.git build/site/ "${publish_dir}/"
+          git -C "${publish_dir}" config user.name "github-actions[bot]"
+          git -C "${publish_dir}" config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+          git -C "${publish_dir}" add --all
+
+          if git -C "${publish_dir}" diff --cached --quiet; then
+            echo "gh-pages already matches ${GITHUB_SHA}"
+            exit 0
+          fi
+
+          git -C "${publish_dir}" commit --quiet -m "docs: publish ${GITHUB_SHA}"
+          git -C "${publish_dir}" push --quiet origin "${PUBLISH_BRANCH}"
+
+  deploy:
+    name: Deploy reference site to GitHub Pages
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Download validated reference site
+        uses: actions/download-artifact@v8
+        with:
+          name: reference-site
+          path: build/site
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v6
+
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: build/site
+          include-hidden-files: true
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

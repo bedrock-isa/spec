@@ -2427,6 +2427,13 @@ def instruction_label(mnemonic: str) -> str:
     return f"instr:{slug or 'unknown'}"
 
 
+def instruction_set_page_label(name: str) -> str:
+    slug = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
+    if not slug:
+        raise ValueError("instruction set name has no stable page identifier")
+    return f"page:instruction-group-{slug}"
+
+
 def instruction_details_tex(inst: InstructionDef) -> str:
     path = inst.details_path
     if path is None:
@@ -2555,8 +2562,13 @@ def latex_reading_instruction_description_section() -> str:
 
 def latex_instruction_reference_section(model: IsaModel, instructions: list[InstructionDef]) -> str:
     parts: list[str] = [latex_reading_instruction_description_section()]
-    for _set_name, title, introduction, group in instruction_set_groups(model, instructions):
-        parts.append(str(LatexTopSection(title)))
+    for set_name, title, introduction, group in instruction_set_groups(model, instructions):
+        parts.extend(
+            [
+                str(LatexTopSection(title)),
+                rf"\label{{{instruction_set_page_label(set_name)}}}",
+            ]
+        )
         if introduction:
             if not introduction.is_file():
                 raise FileNotFoundError(f"instruction-set introduction not found: {introduction}")

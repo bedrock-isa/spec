@@ -11,7 +11,7 @@
 \BedrockFrontMatter
 
 \clearpage
-\section{Scope and Status}
+\section{Scope and Status}\label{page:scope-and-status}
 This document defines the compiler-owned Bedrock C target interface: builtin
 names, implementation-reserved header wrappers, source signatures, lowering
 requirements, availability and privilege constraints, and compiler-visible
@@ -28,7 +28,7 @@ not duplicate their architectural or language semantics.
 \manualfield{Interface name:}{\texttt{bedrock-target-intrinsics}}
 \manualfield{Source language:}{ISO C with implementation-reserved target interfaces}
 
-\section{Compiler Interface Model}
+\section{Compiler Interface Model}\label{page:compiler-interface-model}
 
 \subsection{Names and Ownership}
 The compiler builtin namespace begins with
@@ -75,7 +75,7 @@ denotes \texttt{\_\_bedrock\_query\_result\_t}. A clobber means a compiler
 memory clobber, while a named fence also has the hardware behavior defined by
 the ISA.
 
-\section{Public Target Interface}
+\section{Public Target Interface}\label{page:public-target-interface}
 
 \subsection{Segment-Image Value Macros}
 \manualfield{Header:}{\texttt{<bedrockfarintrin.h>}}
@@ -149,7 +149,7 @@ separately defined approximate interface or an active compiler mode permits
 approximate mathematics. The selected instruction remains subject to its ISA
 accuracy, special-value, and floating-point exception contract.
 
-\section{System Target Interface}
+\section{System Target Interface}\label{page:system-target-interface}
 The system umbrella is separate so ordinary source inclusion does not
 accidentally make privileged facilities appear available. The compiler emits
 the requested architectural operation; runtime privilege and policy checks
@@ -194,7 +194,7 @@ privilege-restricted. The backend must model every restored register and the
 full memory and addressing-context clobber explicitly. It must not treat
 restore as an opaque call or as only a memory effect.
 
-\section{Shared Header Types and Exclusions}
+\section{Shared Header Types and Exclusions}\label{page:shared-header-types-and-exclusions}
 \input{isa/c/generated/target_intrinsics/shared_types.tex}
 
 \smallskip

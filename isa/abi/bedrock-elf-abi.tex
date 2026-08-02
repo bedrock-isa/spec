@@ -9,7 +9,7 @@
 \BedrockFrontMatter
 
 \clearpage
-\section{Scope and Conformance}
+\section{Scope and Conformance}\label{page:scope-and-conformance}
 This document defines the Bedrock binary-format contract for ELF objects, linking, relocation, loading, dynamic linking, TLS metadata, and code models. It depends on the Bedrock ISA Specification and the active platform/runtime environment ABI. It does not define a language calling convention or an application interface.
 
 \subsection{Contract Position}
@@ -21,7 +21,7 @@ This document defines the Bedrock binary-format contract for ELF objects, linkin
 \manualfield{Optional profile:}{\texttt{bedrock-elf-far}}
 
 \clearpage
-\section{Terminology}
+\section{Terminology}\label{page:terminology}
 These terms are used by the Bedrock ELF ABI. ISA-level address, register, and effective-address terms keep the meanings defined by the architecture manual.
 \begin{description}[style=nextline,leftmargin=1.45in,labelwidth=1.35in,itemsep=3pt,topsep=3pt]
 \item[ELF ABI] The ELF, relocation, dynamic-linking, TLS, and code-model contract that is shared by language bindings and operating-system profiles.
@@ -37,7 +37,7 @@ These terms are used by the Bedrock ELF ABI. ISA-level address, register, and ef
 \end{description}
 
 \clearpage
-\section{ELF Object Format}
+\section{ELF Object Format}\label{page:elf-object-format}
 Bedrock objects use the 64-bit little-endian ELF format and machine identifier
 \texttt{EM\_\allowbreak{}BEDROCK} (\texttt{0xffb0}). A conforming producer may
 emit relocatable objects, executable images, or shared/position-independent
@@ -158,7 +158,7 @@ An input object may contain at most one Bedrock ABI attribute note. A linker
 merges compatible input values and emits exactly one note in the output.
 
 \clearpage
-\section{Program Loading}
+\section{Program Loading}\label{page:program-loading}
 Bedrock ELF program loading follows the ordinary ELF segment model. The ELF ABI defines executable mapping, loader-visible object rules, and the minimum execution environment needed to begin running the image; language runtimes and OS ABIs define their own entry argument protocol above this layer.
 \subsection{Loading Rules}
 The loader may execute \texttt{ET\_EXEC} and executable \texttt{ET\_DYN}
@@ -216,7 +216,7 @@ is governed by the execution-environment rules above rather than by this
 initial-value rule.
 
 \clearpage
-\section{Sections and Symbols}
+\section{Sections and Symbols}\label{page:sections-and-symbols}
 Bedrock uses ordinary ELF sections with the usual ELF meanings. Only the Bedrock-specific section conventions are
 listed below.
 \subsection{Bedrock-Specific Sections}
@@ -253,7 +253,7 @@ defined in Section~2.4.
 \endgroup
 
 \clearpage
-\section{Far Segment Domains and Linking}
+\section{Far Segment Domains and Linking}\label{page:far-segment-domains-and-linking}
 \manualfield{Profile:}{bedrock-elf-far}
 \subsection{Profile Scope}
 The far profile may appear in \texttt{ET\_REL} inputs and in
@@ -382,7 +382,7 @@ must be a non-TLS data symbol or an \texttt{STT\_BEDROCK\_FAR\_FUNC} symbol
 assigned to exactly one segment domain.
 
 \clearpage
-\section{Relocation Set}
+\section{Relocation Set}\label{page:relocation-set}
 Bedrock ELF objects use RELA relocation entries with explicit addends. The Bedrock ABI defines how each relocation type patches instruction or data fields.
 \subsection{Expression Model}
 Every static relocation starts with the canonical expression \texttt{S+A},
@@ -472,7 +472,7 @@ table defines widths and calculations; Sections~6, 8, and 9 supply additional
 rules.
 
 \clearpage
-\section{Dynamic Linking}
+\section{Dynamic Linking}\label{page:dynamic-linking}
 Dynamic objects use a fixed eager-binding Bedrock GOT and PLT contract. Lazy binding and a runtime PLT resolver protocol are not part of the current draft ELF ABI.
 \subsection{Dynamic Linking Rules}
 Ordinary dynamic linking supports standard and indirect functions, copy
@@ -543,7 +543,7 @@ lazy-binding facility requires a distinct ELF profile and resolver ABI.
 \end{itemize}
 
 \clearpage
-\section{Thread-Local Storage}
+\section{Thread-Local Storage}\label{page:thread-local-storage}
 Thread-local storage is addressed through the GS0 segment register. TLS references that remain inside the program and have a link-time constant offset use the local-exec model. TLS references that cross dynamic object boundaries, may be interposed, or otherwise require runtime resolution use the TLSDESC model.
 \subsection{TLS Base Model}
 GS0 is the TLS base register. A TLS offset is translated by GS0 segment
@@ -684,7 +684,7 @@ not depend on either. If no unrelaxed reference remains, no descriptor is
 allocated.
 
 \clearpage
-\section{Code Models}
+\section{Code Models}\label{page:code-models}
 Code models define placement and locality assumptions that assemblers, linkers, and compilers may use when selecting address materialization, displacement, GOT, PLT, and relocation forms. Bedrock 32-bit displacement and direct control-transfer forms are signed, so direct 32-bit relative references cover a -2 GiB to +2 GiB - 1 window.
 \manualtablecaption{Bedrock Code Models}
 \begingroup\footnotesize
@@ -763,7 +763,7 @@ Its default relocations are \texttt{R\_BEDROCK\_ABS64},
 relaxing any full-width form to a shorter encoding.
 
 \clearpage
-\section{Assembler Contract}
+\section{Assembler Contract}\label{page:assembler-contract}
 \manualfield{Default ABI:}{bedrock-elf}
 \subsection{Strict Mode}
 \begin{itemize}

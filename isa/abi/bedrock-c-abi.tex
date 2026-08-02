@@ -9,7 +9,7 @@
 \BedrockFrontMatter
 
 \clearpage
-\section{Scope and Conformance}
+\section{Scope and Conformance}\label{page:scope-and-conformance}
 This document defines the Bedrock C data model, register convention, calling
 convention, far-pointer representation and calls, aggregate and variadic rules,
 compiler-runtime helper ABI, and C memory-model lowering. It depends on the
@@ -24,7 +24,7 @@ and semantics for target-specific C extensions are defined separately.
 \manualfield{Defined extended type family:}{\texttt{bedrock-c-far}}
 
 \clearpage
-\section{Terminology}
+\section{Terminology}\label{page:terminology}
 These terms are specific to the C binding. ELF and address-space terms keep the meanings defined by the Bedrock ELF ABI and the architecture manual.
 \begin{description}[style=nextline,leftmargin=1.45in,labelwidth=1.35in,itemsep=3pt,topsep=3pt]
 \item[object pointer] A 64-bit pre-segment virtual address that designates an object or one-past an object according to the C abstract machine.
@@ -39,7 +39,7 @@ These terms are specific to the C binding. ELF and address-space terms keep the 
 \end{description}
 
 \clearpage
-\section{Data Model}
+\section{Data Model}\label{page:data-model}
 \manualfield{Model:}{LP64}
 \manualfield{Byte Order:}{little endian}
 \manualfield{Internal SP:}{8-byte aligned}
@@ -227,7 +227,7 @@ an external ABI boundary without a separately documented compatible extension
 ABI. Empty structures and zero-length arrays are likewise excluded from the
 baseline profile.
 
-\section{Register Convention}
+\section{Register Convention}\label{page:register-convention}
 This section defines which architectural state survives an ordinary C call.
 Argument and result locations are defined by the assignment procedure in
 Section~5; they are intentionally not duplicated here.
@@ -343,7 +343,7 @@ floating-point operations in a callee may set accrued exception flags. An
 interface that requires a saved environment uses its floating-point environment
 runtime contract explicitly.
 
-\section{Calling Convention}
+\section{Calling Convention}\label{page:calling-convention}
 This section is normative. A caller and callee conform when they independently
 apply the classification and assignment procedure below and therefore agree on
 every argument location, return location, and stack boundary. Register lists
@@ -616,7 +616,7 @@ An unprototyped call applies the same promotions and places every argument on
 the stack. As required by C, the callee type must be compatible with the
 promoted types.
 
-\section{Freestanding C Binding}
+\section{Freestanding C Binding}\label{page:freestanding-c-binding}
 This section defines the compiler-runtime and ELF linkage obligations of the
 freestanding C profile. It does not define process startup or hosted-library
 behavior.
@@ -770,7 +770,7 @@ repositioned because the return-frame sizes differ.
 \subsection{TLS and OS ABI Boundary}
 TLS and OS boundary rules are supplied by the ABI specification.
 
-\section{C Memory Model}
+\section{C Memory Model}\label{page:c-memory-model}
 This section defines how the baseline C memory model maps to Bedrock memory
 operations and ordering instructions.
 
@@ -873,7 +873,7 @@ before transferring control to them.
 \endgroup
 
 \clearpage
-\section{Calling Convention Examples}
+\section{Calling Convention Examples}\label{page:calling-convention-examples}
 The first four cases are inputs to the executable reference model and
 illustrate the assignment procedure. The final two examples are generated output
 from the Bedrock LLVM backend. Examples do not introduce exceptions to the
@@ -1054,7 +1054,7 @@ restored, the outgoing arguments have the ordinary ABI layout, and the target's
 \texttt{R0} result is also the result required by \texttt{mf\_pipeline}.
 
 \clearpage
-\section{System Interface Boundary}
+\section{System Interface Boundary}\label{page:system-interface-boundary}
 The C ABI does not define a hosted process-entry protocol or system-call ABI. Those contracts belong to the active OS ABI.
 \subsection{SYSCALL Boundary}
 \manualfield{Instruction:}{SYSCALL}
