@@ -9055,39 +9055,180 @@
 <p><strong>Payload:</strong>Payload order is EXT0 descriptor byte or bytes first, then the optional displacement payload selected by the compact EA escape.</p>
 <p><strong>Update:</strong>Only EXT0 forms with ++ or -- update the temporary operand-evaluation image.</p>
 <p><strong>Compact EA Encoding</strong></p>
-<p>@&gt;</p>
-<p>p1.10in&gt;</p>
-<p>p2.30in&gt;</p>
-<p>p1.0in&gt;</p>
-<p>p0.6in@</p>
-<p><strong>Bits</strong> &amp; <strong>Syntax</strong> &amp; <strong>Class</strong> &amp; <strong>Memory</strong>  </p>
-<p><code>000rrrr</code> &amp; <code>Rn(r)</code> &amp; register &amp; no<br />
-<code>001rrrr</code> &amp; <code>[Rn(r)]</code> &amp; memory &amp; yes<br />
-<code>010rrrr</code> &amp; <code>[Rn(r) + disp8s]</code> &amp; memory &amp; yes<br />
-<code>011rrrr</code> &amp; <code>[Rn(r) + disp16s]</code> &amp; memory &amp; yes<br />
-<code>100rrrr</code> &amp; <code>[Rn(r) + disp32s]</code> &amp; memory &amp; yes<br />
-<code>101rrrr</code> &amp; <code>[Rn(r) + disp64]</code> &amp; memory &amp; yes<br />
-<code>1100000</code> &amp; <code>[SP + disp8s]</code> &amp; memory &amp; yes<br />
-<code>1100001</code> &amp; <code>[SP + disp16s]</code> &amp; memory &amp; yes<br />
-<code>1100010</code> &amp; <code>[SP + disp32s]</code> &amp; memory &amp; yes<br />
-<code>1100011</code> &amp; <code>[SP + disp64]</code> &amp; memory &amp; yes<br />
-<code>1100100</code> &amp; <code>[PC + disp8s]</code> &amp; memory &amp; yes<br />
-<code>1100101</code> &amp; <code>[PC + disp16s]</code> &amp; memory &amp; yes<br />
-<code>1100110</code> &amp; <code>[PC + disp32s]</code> &amp; memory &amp; yes<br />
-<code>1100111</code> &amp; <code>[PC + disp64]</code> &amp; memory &amp; yes<br />
-<code>1101000</code> &amp; <code>SP</code> &amp; register &amp; no<br />
-<code>1101001</code> &amp; <code>[SP]</code> &amp; memory &amp; yes<br />
-<code>1101010</code> &amp; <code>[abs32s]</code> &amp; memory &amp; yes<br />
-<code>1101011</code> &amp; <code>[abs64]</code> &amp; memory &amp; yes<br />
-<code>1101100</code> &amp; <code>imm8s</code> &amp; immediate &amp; no<br />
-<code>1101101</code> &amp; <code>imm16s</code> &amp; immediate &amp; no<br />
-<code>1101110</code> &amp; <code>imm32s</code> &amp; immediate &amp; no<br />
-<code>1101111</code> &amp; <code>imm64</code> &amp; immediate &amp; no<br />
-<code>1110000</code> &amp; <code>EXT0/disp8s</code> &amp; ext0_escape &amp; -<br />
-<code>1110001</code> &amp; <code>EXT0/disp16s</code> &amp; ext0_escape &amp; -<br />
-<code>1110010</code> &amp; <code>EXT0/disp32s</code> &amp; ext0_escape &amp; -<br />
-<code>1110011</code> &amp; <code>EXT0/disp64</code> &amp; ext0_escape &amp; -<br />
-<code>1110100</code> &amp; <code>EXT0</code> &amp; ext0_escape &amp; -  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Bits</strong></th>
+<th style="text-align: left;"><strong>Syntax</strong></th>
+<th style="text-align: left;"><strong>Class</strong></th>
+<th style="text-align: left;"><strong>Memory</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>000rrrr</code></td>
+<td style="text-align: left;"><code>Rn(r)</code></td>
+<td style="text-align: left;">register</td>
+<td style="text-align: left;">no</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>001rrrr</code></td>
+<td style="text-align: left;"><code>[Rn(r)]</code></td>
+<td style="text-align: left;">memory</td>
+<td style="text-align: left;">yes</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>010rrrr</code></td>
+<td style="text-align: left;"><code>[Rn(r) + disp8s]</code></td>
+<td style="text-align: left;">memory</td>
+<td style="text-align: left;">yes</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>011rrrr</code></td>
+<td style="text-align: left;"><code>[Rn(r) + disp16s]</code></td>
+<td style="text-align: left;">memory</td>
+<td style="text-align: left;">yes</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>100rrrr</code></td>
+<td style="text-align: left;"><code>[Rn(r) + disp32s]</code></td>
+<td style="text-align: left;">memory</td>
+<td style="text-align: left;">yes</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>101rrrr</code></td>
+<td style="text-align: left;"><code>[Rn(r) + disp64]</code></td>
+<td style="text-align: left;">memory</td>
+<td style="text-align: left;">yes</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>1100000</code></td>
+<td style="text-align: left;"><code>[SP + disp8s]</code></td>
+<td style="text-align: left;">memory</td>
+<td style="text-align: left;">yes</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>1100001</code></td>
+<td style="text-align: left;"><code>[SP + disp16s]</code></td>
+<td style="text-align: left;">memory</td>
+<td style="text-align: left;">yes</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>1100010</code></td>
+<td style="text-align: left;"><code>[SP + disp32s]</code></td>
+<td style="text-align: left;">memory</td>
+<td style="text-align: left;">yes</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>1100011</code></td>
+<td style="text-align: left;"><code>[SP + disp64]</code></td>
+<td style="text-align: left;">memory</td>
+<td style="text-align: left;">yes</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>1100100</code></td>
+<td style="text-align: left;"><code>[PC + disp8s]</code></td>
+<td style="text-align: left;">memory</td>
+<td style="text-align: left;">yes</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>1100101</code></td>
+<td style="text-align: left;"><code>[PC + disp16s]</code></td>
+<td style="text-align: left;">memory</td>
+<td style="text-align: left;">yes</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>1100110</code></td>
+<td style="text-align: left;"><code>[PC + disp32s]</code></td>
+<td style="text-align: left;">memory</td>
+<td style="text-align: left;">yes</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>1100111</code></td>
+<td style="text-align: left;"><code>[PC + disp64]</code></td>
+<td style="text-align: left;">memory</td>
+<td style="text-align: left;">yes</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>1101000</code></td>
+<td style="text-align: left;"><code>SP</code></td>
+<td style="text-align: left;">register</td>
+<td style="text-align: left;">no</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>1101001</code></td>
+<td style="text-align: left;"><code>[SP]</code></td>
+<td style="text-align: left;">memory</td>
+<td style="text-align: left;">yes</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>1101010</code></td>
+<td style="text-align: left;"><code>[abs32s]</code></td>
+<td style="text-align: left;">memory</td>
+<td style="text-align: left;">yes</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>1101011</code></td>
+<td style="text-align: left;"><code>[abs64]</code></td>
+<td style="text-align: left;">memory</td>
+<td style="text-align: left;">yes</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>1101100</code></td>
+<td style="text-align: left;"><code>imm8s</code></td>
+<td style="text-align: left;">immediate</td>
+<td style="text-align: left;">no</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>1101101</code></td>
+<td style="text-align: left;"><code>imm16s</code></td>
+<td style="text-align: left;">immediate</td>
+<td style="text-align: left;">no</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>1101110</code></td>
+<td style="text-align: left;"><code>imm32s</code></td>
+<td style="text-align: left;">immediate</td>
+<td style="text-align: left;">no</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>1101111</code></td>
+<td style="text-align: left;"><code>imm64</code></td>
+<td style="text-align: left;">immediate</td>
+<td style="text-align: left;">no</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>1110000</code></td>
+<td style="text-align: left;"><code>EXT0/disp8s</code></td>
+<td style="text-align: left;">ext0_escape</td>
+<td style="text-align: left;">-</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>1110001</code></td>
+<td style="text-align: left;"><code>EXT0/disp16s</code></td>
+<td style="text-align: left;">ext0_escape</td>
+<td style="text-align: left;">-</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>1110010</code></td>
+<td style="text-align: left;"><code>EXT0/disp32s</code></td>
+<td style="text-align: left;">ext0_escape</td>
+<td style="text-align: left;">-</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>1110011</code></td>
+<td style="text-align: left;"><code>EXT0/disp64</code></td>
+<td style="text-align: left;">ext0_escape</td>
+<td style="text-align: left;">-</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>1110100</code></td>
+<td style="text-align: left;"><code>EXT0</code></td>
+<td style="text-align: left;">ext0_escape</td>
+<td style="text-align: left;">-</td>
+</tr>
+</tbody>
+</table>
 <p><a href="#table-compact-ea-encoding" id="table-compact-ea-encoding"></a></p>
 <h2 id="extended-ea-descriptor">Extended EA Descriptor</h2>
 <p>A compact EXT0 EA value selects an extended descriptor and the displacement width. The descriptor bytes then select segment, base, index, zero-base, SP/PC indexed, and auto-update behavior.</p>
@@ -9101,23 +9242,84 @@
 <p><strong>EXT0 Two-Byte Indexed Descriptor Byte Layouts</strong></p>
 <p><code>M</code> abbreviates mode.</p>
 <p><strong>EA Payload Names</strong></p>
-<p>@&gt;</p>
-<p>p0.95in&gt;</p>
-<p>p0.45in&gt;</p>
-<p>p0.70in&gt;</p>
-<p>p3.30in@</p>
-<p><strong>Payload</strong> &amp; <strong>Bytes</strong> &amp; <strong>Value</strong> &amp; <strong>Use</strong>  </p>
-<p>disp8s &amp; 1 &amp; signed &amp; displacement added to base/index expression<br />
-disp16s &amp; 2 &amp; signed &amp; displacement added to base/index expression<br />
-disp32s &amp; 4 &amp; signed &amp; displacement added to base/index expression<br />
-disp64 &amp; 8 &amp; unsigned &amp; displacement added to base/index expression<br />
-abs32s &amp; 4 &amp; signed &amp; absolute address, sign-extended before use<br />
-abs64 &amp; 8 &amp; unsigned &amp; absolute address payload<br />
-imm8s &amp; 1 &amp; signed &amp; immediate operand payload<br />
-imm16s &amp; 2 &amp; signed &amp; immediate operand payload<br />
-imm32s &amp; 4 &amp; signed &amp; immediate operand payload<br />
-imm64 &amp; 8 &amp; unsigned &amp; immediate operand payload<br />
-EXT0 descriptor &amp; 1 or 2 &amp; encoded &amp; extended EA descriptor; present only for EXT0 escapes  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Payload</strong></th>
+<th style="text-align: left;"><strong>Bytes</strong></th>
+<th style="text-align: left;"><strong>Value</strong></th>
+<th style="text-align: left;"><strong>Use</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">disp8s</td>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">signed</td>
+<td style="text-align: left;">displacement added to base/index expression</td>
+</tr>
+<tr>
+<td style="text-align: left;">disp16s</td>
+<td style="text-align: left;">2</td>
+<td style="text-align: left;">signed</td>
+<td style="text-align: left;">displacement added to base/index expression</td>
+</tr>
+<tr>
+<td style="text-align: left;">disp32s</td>
+<td style="text-align: left;">4</td>
+<td style="text-align: left;">signed</td>
+<td style="text-align: left;">displacement added to base/index expression</td>
+</tr>
+<tr>
+<td style="text-align: left;">disp64</td>
+<td style="text-align: left;">8</td>
+<td style="text-align: left;">unsigned</td>
+<td style="text-align: left;">displacement added to base/index expression</td>
+</tr>
+<tr>
+<td style="text-align: left;">abs32s</td>
+<td style="text-align: left;">4</td>
+<td style="text-align: left;">signed</td>
+<td style="text-align: left;">absolute address, sign-extended before use</td>
+</tr>
+<tr>
+<td style="text-align: left;">abs64</td>
+<td style="text-align: left;">8</td>
+<td style="text-align: left;">unsigned</td>
+<td style="text-align: left;">absolute address payload</td>
+</tr>
+<tr>
+<td style="text-align: left;">imm8s</td>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">signed</td>
+<td style="text-align: left;">immediate operand payload</td>
+</tr>
+<tr>
+<td style="text-align: left;">imm16s</td>
+<td style="text-align: left;">2</td>
+<td style="text-align: left;">signed</td>
+<td style="text-align: left;">immediate operand payload</td>
+</tr>
+<tr>
+<td style="text-align: left;">imm32s</td>
+<td style="text-align: left;">4</td>
+<td style="text-align: left;">signed</td>
+<td style="text-align: left;">immediate operand payload</td>
+</tr>
+<tr>
+<td style="text-align: left;">imm64</td>
+<td style="text-align: left;">8</td>
+<td style="text-align: left;">unsigned</td>
+<td style="text-align: left;">immediate operand payload</td>
+</tr>
+<tr>
+<td style="text-align: left;">EXT0 descriptor</td>
+<td style="text-align: left;">1 or 2</td>
+<td style="text-align: left;">encoded</td>
+<td style="text-align: left;">extended EA descriptor; present only for EXT0 escapes</td>
+</tr>
+</tbody>
+</table>
 <p>For a compact displacement, absolute address, or immediate, the selected payload follows the EA field at that operand’s payload position. EXT0 begins with the compact escape value and one or two descriptor bytes; a displaced EXT0 form places its selected displacement after those descriptor bytes. When an instruction has more than one payload-bearing EA operand, the decoder consumes each complete EA payload sequence in instruction operand order.</p>
 <h2 id="extended-ea-addressing-modes">Extended EA Addressing Modes <a href="#section-extended-ea-addressing" id="section-extended-ea-addressing"></a></h2>
 <p>EXT0 is used when compact EA cannot express the operand: explicit segment selection, indexed addressing, zero-base addressing, SP/PC indexed addressing, or auto-update addressing.</p>

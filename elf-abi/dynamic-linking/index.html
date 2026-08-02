@@ -8986,16 +8986,60 @@
 <p>There is no <code>PLT0</code>. Every ordinary PLT entry occupies 32 bytes and has 16-byte alignment. Far binding uses the same eager publication rule: every <code>.got.far</code> entry is a 16-byte aligned 16-byte pair, is bound eagerly, and is immutable after publication. There is no far PLT. An external far call loads the final pair from <code>.got.far</code> and transfers with <code>LCALL</code>.</p>
 <h2 id="got-reserved-entries">GOT Reserved Entries</h2>
 <p><strong>Global Offset Table Reserved Entries</strong></p>
-<p>@p0.55inp1.55inp3.4in@ <strong>Index</strong> &amp; <strong>Name</strong> &amp; <strong>Meaning</strong><br />
-0 &amp; <code>_DYNAMIC</code> &amp; dynamic section address<br />
-1 &amp; reserved &amp; zero; no loader-handle meaning<br />
-2 &amp; reserved &amp; zero; no lazy-resolver meaning  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Index</strong></th>
+<th style="text-align: left;"><strong>Name</strong></th>
+<th style="text-align: left;"><strong>Meaning</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;"><code>_DYNAMIC</code></td>
+<td style="text-align: left;">dynamic section address</td>
+</tr>
+<tr>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">reserved</td>
+<td style="text-align: left;">zero; no loader-handle meaning</td>
+</tr>
+<tr>
+<td style="text-align: left;">2</td>
+<td style="text-align: left;">reserved</td>
+<td style="text-align: left;">zero; no lazy-resolver meaning</td>
+</tr>
+</tbody>
+</table>
 <h2 id="plt-layout">PLT Layout</h2>
 <p><strong>Procedure Linkage Table Layout</strong></p>
-<p>@p0.75inp1.55inp3.20in@ <strong>Offset</strong> &amp; <strong>Bytes or field</strong> &amp; <strong>Effect</strong><br />
-<code>+0x00</code> &amp; <code>e7 c9 80 67</code> &amp; <code>JMP.Q [PC + disp64]</code><br />
-<code>+0x04</code> &amp; <code>disp64</code> &amp; little-endian <code>R_BEDROCK_GOTPCREL64</code> relocation field<br />
-<code>+0x0c</code> &amp; twenty <code>01</code> bytes &amp; canonical <code>NOP</code> padding through offset <code>+0x1f</code>  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Offset</strong></th>
+<th style="text-align: left;"><strong>Bytes or field</strong></th>
+<th style="text-align: left;"><strong>Effect</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>+0x00</code></td>
+<td style="text-align: left;"><code>e7 c9 80 67</code></td>
+<td style="text-align: left;"><code>JMP.Q [PC + disp64]</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>+0x04</code></td>
+<td style="text-align: left;"><code>disp64</code></td>
+<td style="text-align: left;">little-endian <code>R_BEDROCK_GOTPCREL64</code> relocation field</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>+0x0c</code></td>
+<td style="text-align: left;">twenty <code>01</code> bytes</td>
+<td style="text-align: left;">canonical <code>NOP</code> padding through offset <code>+0x1f</code></td>
+</tr>
+</tbody>
+</table>
 <p>A PLT relocation uses explicit addend <code>+4</code>. Architectural PC names byte zero of the current instruction, whereas relocation place <code>P</code> is the field at entry offset four; therefore <code>GOT(S)+A-P</code> evaluates to <code>GOT(S)-PLTentry</code>, the displacement consumed by the PC-relative EA. The referenced <code>.got.plt</code> slot is 8-byte aligned and contains the eagerly resolved 64-bit near target. Both the PLT entry and its slot must be reachable under the active CS bounds used by that PC-relative EA.</p>
 <p>A PLT transfer preserves <code>R0</code> through <code>R7</code>, <code>F0</code> through <code>F7</code>, <code>GS1</code> through <code>GS5</code>, <code>FLAGS</code>, and all segment state. The loader writes each final <code>.got.plt</code> value before publication. Published slots are immutable and may be covered by <code>PT_GNU_RELRO</code>; no post-publication rebinding is permitted. A later lazy-binding facility requires a distinct ELF profile and resolver ABI.</p>
 <h2 id="far-binding-rules">Far Binding Rules</h2>

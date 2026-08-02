@@ -8918,151 +8918,580 @@
 <h1 id="general-instructions">General Instructions</h1>
 <h2 id="summary">Summary</h2>
 <p><strong>General Instructions Summary</strong></p>
-<p>@&gt;</p>
-<p>p1.05in&gt;</p>
-<p>p4.35in@</p>
-<p><strong>Mnemonic</strong> &amp; <strong>Brief description</strong>  </p>
-<p><a href="../abs/"><code>ABS</code></a> &amp; Performs the absolute value operation.<br />
-<a href="../adc/"><code>ADC</code></a> &amp; Performs the add with carry operation.<br />
-<a href="../add/"><code>ADD</code></a> &amp; Adds the source operand to the destination operand.<br />
-<a href="../afence/"><code>AFENCE</code></a> &amp; Order prior memory operations before later memory operations.<br />
-<a href="../and/"><code>AND</code></a> &amp; Computes the bitwise AND of the source and destination operands.<br />
-<a href="../bchg/"><code>BCHG</code></a> &amp; Performs the bit change operation.<br />
-<a href="../bclr/"><code>BCLR</code></a> &amp; Performs the bit clear operation.<br />
-<a href="../bkpt/"><code>BKPT</code></a> &amp; Raise the breakpoint exception.<br />
-<a href="../bndsii/"><code>BNDSII</code></a> &amp; Checks signed value membership in the inclusive-inclusive interval [lo, hi].<br />
-<a href="../bndsix/"><code>BNDSIX</code></a> &amp; Checks signed value membership in the inclusive-exclusive interval [lo, hi).<br />
-<a href="../bndsxi/"><code>BNDSXI</code></a> &amp; Checks signed value membership in the exclusive-inclusive interval (lo, hi].<br />
-<a href="../bndsxx/"><code>BNDSXX</code></a> &amp; Checks signed value membership in the exclusive-exclusive interval (lo, hi).<br />
-<a href="../bnduii/"><code>BNDUII</code></a> &amp; Checks unsigned value membership in the inclusive-inclusive interval [lo, hi].<br />
-<a href="../bnduix/"><code>BNDUIX</code></a> &amp; Checks unsigned value membership in the inclusive-exclusive interval [lo, hi).<br />
-<a href="../bnduxi/"><code>BNDUXI</code></a> &amp; Checks unsigned value membership in the exclusive-inclusive interval (lo, hi].<br />
-<a href="../bnduxx/"><code>BNDUXX</code></a> &amp; Checks unsigned value membership in the exclusive-exclusive interval (lo, hi).<br />
-<a href="../bset/"><code>BSET</code></a> &amp; Performs the bit set operation.<br />
-<a href="../btest/"><code>BTEST</code></a> &amp; Performs the bit test operation.<br />
-<a href="../call/"><code>CALL</code></a> &amp; Performs the call operation.<br />
-<a href="../callcc/"><code>CALLcc</code></a> &amp; Performs a call when the condition is true.<br />
-<a href="../clmul/"><code>CLMUL</code></a> &amp; Performs the carryless multiply operation.<br />
-<a href="../clmulh/"><code>CLMULH</code></a> &amp; Performs the carryless multiply high operation.<br />
-<a href="../clr/"><code>CLR</code></a> &amp; Performs the clear operation.<br />
-<a href="../clrf/"><code>CLRF</code></a> &amp; Clears selected integer FLAGS bits.<br />
-<a href="../cls/"><code>CLS</code></a> &amp; Performs the count leading set bits operation.<br />
-<a href="../clz/"><code>CLZ</code></a> &amp; Performs the count leading zeros operation.<br />
-<a href="../cmp/"><code>CMP</code></a> &amp; Computes a comparison result and updates condition codes without storing the temporary value.<br />
-<a href="../cmpjcc/"><code>CMPJcc</code></a> &amp; Compares two Rn registers and branches on the selected condition without writing FLAGS.<br />
-<a href="../cmpxchg/"><code>CMPXCHG</code></a> &amp; Performs the compare and exchange operation.<br />
-<a href="../cpuid/"><code>CPUID</code></a> &amp; Queries architectural discovery information through a selected Rn register.<br />
-<a href="../cts/"><code>CTS</code></a> &amp; Performs the count trailing set bits operation.<br />
-<a href="../ctz/"><code>CTZ</code></a> &amp; Performs the count trailing zeros operation.<br />
-<a href="../dec/"><code>DEC</code></a> &amp; Performs the decrement operation.<br />
-<a href="../decf/"><code>DECF</code></a> &amp; Decrements the destination operand and updates integer FLAGS.<br />
-<a href="../divmods/"><code>DIVMODS</code></a> &amp; Performs the signed divide with remainder operation.<br />
-<a href="../divmodu/"><code>DIVMODU</code></a> &amp; Performs the unsigned divide with remainder operation.<br />
-<a href="../divs/"><code>DIVS</code></a> &amp; Performs the signed divide operation.<br />
-<a href="../divu/"><code>DIVU</code></a> &amp; Performs the unsigned divide operation.<br />
-<a href="../djcc/"><code>DJcc</code></a> &amp; Performs the decrement and jump conditional operation.<br />
-<a href="../ijcc/"><code>IJcc</code></a> &amp; Performs the increment and jump conditional operation.<br />
-<a href="../extract/"><code>EXTRACT</code></a> &amp; Extracts a selected-width value from a concatenated pair of Rn registers.<br />
-<a href="../extsl/"><code>EXTSL</code></a> &amp; Performs the sign extend to long operation.<br />
-<a href="../extsq/"><code>EXTSQ</code></a> &amp; Performs the sign extend to quad operation.<br />
-<a href="../extsw/"><code>EXTSW</code></a> &amp; Performs the sign extend to word operation.<br />
-<a href="../extzl/"><code>EXTZL</code></a> &amp; Performs the zero extend to long operation.<br />
-<a href="../extzq/"><code>EXTZQ</code></a> &amp; Performs the zero extend to quad operation.<br />
-<a href="../extzw/"><code>EXTZW</code></a> &amp; Performs the zero extend to word operation.<br />
-<a href="../fetchadd/"><code>FETCHADD</code></a> &amp; Performs the atomic fetch add operation.<br />
-<a href="../fetchand/"><code>FETCHAND</code></a> &amp; Performs the atomic fetch and operation.<br />
-<a href="../fetchor/"><code>FETCHOR</code></a> &amp; Performs the atomic fetch or operation.<br />
-<a href="../fetchsub/"><code>FETCHSUB</code></a> &amp; Performs the atomic fetch subtract operation.<br />
-<a href="../fetchxor/"><code>FETCHXOR</code></a> &amp; Performs the atomic fetch xor operation.<br />
-<a href="../flshdcache/"><code>FLSHDCACHE</code></a> &amp; Write back and invalidate one cache-maintenance block.<br />
-<a href="../halt/"><code>HALT</code></a> &amp; Halt the executing logical processor until an asynchronous architectural event is admitted.<br />
-<a href="../illegal/"><code>ILLEGAL</code></a> &amp; Raise illegal-instruction exception.<br />
-<a href="../inc/"><code>INC</code></a> &amp; Performs the increment operation.<br />
-<a href="../incf/"><code>INCF</code></a> &amp; Increments the destination operand and updates integer FLAGS.<br />
-<a href="../invasid/"><code>INVASID</code></a> &amp; Invalidate TLB entries for ASID.<br />
-<a href="../invdcache/"><code>INVDCACHE</code></a> &amp; Invalidate one data-cache maintenance block.<br />
-<a href="../invicache/"><code>INVICACHE</code></a> &amp; Invalidate one local instruction-cache maintenance block.<br />
-<a href="../invpage/"><code>INVPAGE</code></a> &amp; Invalidate TLB entry for linear page.<br />
-<a href="../invtlb/"><code>INVTLB</code></a> &amp; Invalidate all TLB entries.<br />
-<a href="../eret/"><code>ERET</code></a> &amp; Return from an architectural event frame.<br />
-<a href="../jmp/"><code>JMP</code></a> &amp; Transfers control to the target address.<br />
-<a href="../jcc/"><code>Jcc</code></a> &amp; Transfers control when the encoded condition is true.<br />
-<a href="../lcall/"><code>LCALL</code></a> &amp; Pushes a far return frame and atomically transfers control to a new CS:PC pair.<br />
-<a href="../lea/"><code>LEA</code></a> &amp; Performs the load effective address operation.<br />
-<a href="../ljmp/"><code>LJMP</code></a> &amp; Atomically transfers control to a new CS:PC pair.<br />
-<a href="../lret/"><code>LRET</code></a> &amp; Pops a far return frame and atomically restores CS:PC.<br />
-<a href="../maxs/"><code>MAXS</code></a> &amp; Performs the signed maximum operation.<br />
-<a href="../maxu/"><code>MAXU</code></a> &amp; Performs the unsigned maximum operation.<br />
-<a href="../mins/"><code>MINS</code></a> &amp; Performs the signed minimum operation.<br />
-<a href="../minu/"><code>MINU</code></a> &amp; Performs the unsigned minimum operation.<br />
-<a href="../mods/"><code>MODS</code></a> &amp; Performs the signed modulo operation.<br />
-<a href="../modu/"><code>MODU</code></a> &amp; Performs the unsigned modulo operation.<br />
-<a href="../mov/"><code>MOV</code></a> &amp; Copies the source operand to the destination operand.<br />
-<a href="../movcc/"><code>MOVcc</code></a> &amp; Performs the move conditional operation.<br />
-<a href="../movcu/"><code>MOVCU</code></a> &amp; Copies from a current-domain source to user-domain memory.<br />
-<a href="../movnt/"><code>MOVNT</code></a> &amp; Stores an Rn value to memory with a non-temporal access hint.<br />
-<a href="../movuc/"><code>MOVUC</code></a> &amp; Copies from user-domain memory to a current-domain destination.<br />
-<a href="../movuu/"><code>MOVUU</code></a> &amp; Copies from user-domain memory to user-domain memory.<br />
-<a href="../mul/"><code>MUL</code></a> &amp; Multiplies the destination by the source and keeps the low half.<br />
-<a href="../mulhs/"><code>MULHS</code></a> &amp; Performs the signed multiply high operation.<br />
-<a href="../mulhsu/"><code>MULHSU</code></a> &amp; Performs the signed by unsigned multiply high operation.<br />
-<a href="../mulhu/"><code>MULHU</code></a> &amp; Performs the unsigned multiply high operation.<br />
-<a href="../neg/"><code>NEG</code></a> &amp; Performs the negate operation.<br />
-<a href="../nop/"><code>NOP</code></a> &amp; No architectural state change.<br />
-<a href="../not/"><code>NOT</code></a> &amp; Performs the bitwise not operation.<br />
-<a href="../or/"><code>OR</code></a> &amp; Computes the bitwise OR of the source and destination operands.<br />
-<a href="../parity/"><code>PARITY</code></a> &amp; Computes operand parity and writes the predicate to an Rn register.<br />
-<a href="../pop/"><code>POP</code></a> &amp; Pops one 64-bit stack value into an Rn or SREG destination.<br />
-<a href="../popcnt/"><code>POPCNT</code></a> &amp; Performs the population count operation.<br />
-<a href="../popp/"><code>POPP</code></a> &amp; Pops one canonical Rn register pair selected by an inline pair index.<br />
-<a href="../prefetch/"><code>PREFETCH</code></a> &amp; Hint that EA will be read soon; no architectural fault unless policy says otherwise.<br />
-<a href="../prefetchnt/"><code>PREFETCHNT</code></a> &amp; Hint that EA will be read with non-temporal locality.<br />
-<a href="../ptquery/"><code>PTQUERY</code></a> &amp; Non-destructively reads the raw PTE selected at one page-table level.<br />
-<a href="../push/"><code>PUSH</code></a> &amp; Pushes one Rn value, SREG image, or the current CS image onto the stack.<br />
-<a href="../pushp/"><code>PUSHP</code></a> &amp; Pushes one canonical Rn register pair selected by an inline pair index.<br />
-<a href="../rdcr/"><code>RDCR</code></a> &amp; Read a privileged control register.<br />
-<a href="../rdflags/"><code>RDFLAGS</code></a> &amp; Read the integer condition-code flags into an Rn register.<br />
-<a href="../rdpmc/"><code>RDPMC</code></a> &amp; Read the 64-bit performance counter selected by a constant counter ID.<br />
-<a href="../rdseg/"><code>RDSEG</code></a> &amp; Read an SREG or the current CS image into an Rn register.<br />
-<a href="../rdstatus/"><code>RDSTATUS</code></a> &amp; Read the processor STATUS register into an Rn register.<br />
-<a href="../repg/"><code>REPG</code></a> &amp; Repeats the following straight-line instruction body using an Rn counter.<br />
-<a href="../repcc/"><code>REPcc</code></a> &amp; Repeats the next instruction while the counter and condition remain active.<br />
-<a href="../reset/"><code>RESET</code></a> &amp; Perform warm reset; preserve BOOTPC and BOOTCFG.<br />
-<a href="../restore/"><code>RESTORE</code></a> &amp; Restore processor state from a CPUID-defined save area.<br />
-<a href="../ret/"><code>RET</code></a> &amp; Performs the return operation.<br />
-<a href="../revbyte/"><code>REVBYTE</code></a> &amp; Performs the reverse bytes operation.<br />
-<a href="../rfence/"><code>RFENCE</code></a> &amp; Order prior reads before later reads.<br />
-<a href="../rol/"><code>ROL</code></a> &amp; Performs the rotate left operation.<br />
-<a href="../ror/"><code>ROR</code></a> &amp; Performs the rotate right operation.<br />
-<a href="../sar/"><code>SAR</code></a> &amp; Performs the shift arithmetic right operation.<br />
-<a href="../save/"><code>SAVE</code></a> &amp; Save modified processor state to a CPUID-defined save area.<br />
-<a href="../sbb/"><code>SBB</code></a> &amp; Performs the subtract with borrow operation.<br />
-<a href="../seglea/"><code>SEGLEA</code></a> &amp; Performs the segment load effective address operation.<br />
-<a href="../set/"><code>SET</code></a> &amp; Writes integer one to the destination operand.<br />
-<a href="../setcc/"><code>SETcc</code></a> &amp; Performs the set conditional operation.<br />
-<a href="../setf/"><code>SETF</code></a> &amp; Sets selected integer FLAGS bits.<br />
-<a href="../shl/"><code>SHL</code></a> &amp; Performs the shift left operation.<br />
-<a href="../shr/"><code>SHR</code></a> &amp; Performs the shift right operation.<br />
-<a href="../sub/"><code>SUB</code></a> &amp; Subtracts the source operand from the destination operand.<br />
-<a href="../swpt/"><code>SWPT</code></a> &amp; Performs the switch page table operation.<br />
-<a href="../swpta/"><code>SWPTA</code></a> &amp; Switches the page table and enables address-space context matching.<br />
-<a href="../synccache/"><code>SYNCCACHE</code></a> &amp; Synchronize one cache-maintenance block for local instruction fetch.<br />
-<a href="../syscall/"><code>SYSCALL</code></a> &amp; Enter the supervisor-call path through SPC/SCS/SDS and the configured call stack.<br />
-<a href="../sysret/"><code>SYSRET</code></a> &amp; Return to user mode from the user-return control-register bank.<br />
-<a href="../test/"><code>TEST</code></a> &amp; Computes a comparison result and updates condition codes without storing the temporary value.<br />
-<a href="../testjcc/"><code>TESTJcc</code></a> &amp; Tests two Rn registers and branches on the selected condition without writing FLAGS.<br />
-<a href="../trace/"><code>TRACE</code></a> &amp; Records a marker and instruction boundary in the implementation trace stream.<br />
-<a href="../vtop/"><code>VTOP</code></a> &amp; Non-destructively queries the current translation of a linear address.<br />
-<a href="../wait/"><code>WAIT</code></a> &amp; Pause execution for a finite implementation-selected interval.<br />
-<a href="../wfence/"><code>WFENCE</code></a> &amp; Order prior writes before later writes.<br />
-<a href="../wrbkdcache/"><code>WRBKDCACHE</code></a> &amp; Write back one data-cache maintenance block.<br />
-<a href="../wrcr/"><code>WRCR</code></a> &amp; Write a privileged control register from an Rn register.<br />
-<a href="../wrflags/"><code>WRFLAGS</code></a> &amp; Write the integer condition-code flags from an Rn register.<br />
-<a href="../wrseg/"><code>WRSEG</code></a> &amp; Write an SREG segment image from an Rn register.<br />
-<a href="../wrstatus/"><code>WRSTATUS</code></a> &amp; Write the processor STATUS register from an Rn register.<br />
-<a href="../xchg/"><code>XCHG</code></a> &amp; Performs the exchange operation.<br />
-<a href="../xor/"><code>XOR</code></a> &amp; Computes the bitwise XOR of the source and destination operands.<br />
-<a href="../yield/"><code>YIELD</code></a> &amp; Hints to the scheduler or implementation that the current thread may yield.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Mnemonic</strong></th>
+<th style="text-align: left;"><strong>Brief description</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><a href="../abs/"><code>ABS</code></a></td>
+<td style="text-align: left;">Performs the absolute value operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../adc/"><code>ADC</code></a></td>
+<td style="text-align: left;">Performs the add with carry operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../add/"><code>ADD</code></a></td>
+<td style="text-align: left;">Adds the source operand to the destination operand.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../afence/"><code>AFENCE</code></a></td>
+<td style="text-align: left;">Order prior memory operations before later memory operations.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../and/"><code>AND</code></a></td>
+<td style="text-align: left;">Computes the bitwise AND of the source and destination operands.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../bchg/"><code>BCHG</code></a></td>
+<td style="text-align: left;">Performs the bit change operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../bclr/"><code>BCLR</code></a></td>
+<td style="text-align: left;">Performs the bit clear operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../bkpt/"><code>BKPT</code></a></td>
+<td style="text-align: left;">Raise the breakpoint exception.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../bndsii/"><code>BNDSII</code></a></td>
+<td style="text-align: left;">Checks signed value membership in the inclusive-inclusive interval [lo, hi].</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../bndsix/"><code>BNDSIX</code></a></td>
+<td style="text-align: left;">Checks signed value membership in the inclusive-exclusive interval [lo, hi).</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../bndsxi/"><code>BNDSXI</code></a></td>
+<td style="text-align: left;">Checks signed value membership in the exclusive-inclusive interval (lo, hi].</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../bndsxx/"><code>BNDSXX</code></a></td>
+<td style="text-align: left;">Checks signed value membership in the exclusive-exclusive interval (lo, hi).</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../bnduii/"><code>BNDUII</code></a></td>
+<td style="text-align: left;">Checks unsigned value membership in the inclusive-inclusive interval [lo, hi].</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../bnduix/"><code>BNDUIX</code></a></td>
+<td style="text-align: left;">Checks unsigned value membership in the inclusive-exclusive interval [lo, hi).</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../bnduxi/"><code>BNDUXI</code></a></td>
+<td style="text-align: left;">Checks unsigned value membership in the exclusive-inclusive interval (lo, hi].</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../bnduxx/"><code>BNDUXX</code></a></td>
+<td style="text-align: left;">Checks unsigned value membership in the exclusive-exclusive interval (lo, hi).</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../bset/"><code>BSET</code></a></td>
+<td style="text-align: left;">Performs the bit set operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../btest/"><code>BTEST</code></a></td>
+<td style="text-align: left;">Performs the bit test operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../call/"><code>CALL</code></a></td>
+<td style="text-align: left;">Performs the call operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../callcc/"><code>CALLcc</code></a></td>
+<td style="text-align: left;">Performs a call when the condition is true.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../clmul/"><code>CLMUL</code></a></td>
+<td style="text-align: left;">Performs the carryless multiply operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../clmulh/"><code>CLMULH</code></a></td>
+<td style="text-align: left;">Performs the carryless multiply high operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../clr/"><code>CLR</code></a></td>
+<td style="text-align: left;">Performs the clear operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../clrf/"><code>CLRF</code></a></td>
+<td style="text-align: left;">Clears selected integer FLAGS bits.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cls/"><code>CLS</code></a></td>
+<td style="text-align: left;">Performs the count leading set bits operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../clz/"><code>CLZ</code></a></td>
+<td style="text-align: left;">Performs the count leading zeros operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cmp/"><code>CMP</code></a></td>
+<td style="text-align: left;">Computes a comparison result and updates condition codes without storing the temporary value.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cmpjcc/"><code>CMPJcc</code></a></td>
+<td style="text-align: left;">Compares two Rn registers and branches on the selected condition without writing FLAGS.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cmpxchg/"><code>CMPXCHG</code></a></td>
+<td style="text-align: left;">Performs the compare and exchange operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid/"><code>CPUID</code></a></td>
+<td style="text-align: left;">Queries architectural discovery information through a selected Rn register.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cts/"><code>CTS</code></a></td>
+<td style="text-align: left;">Performs the count trailing set bits operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../ctz/"><code>CTZ</code></a></td>
+<td style="text-align: left;">Performs the count trailing zeros operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../dec/"><code>DEC</code></a></td>
+<td style="text-align: left;">Performs the decrement operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../decf/"><code>DECF</code></a></td>
+<td style="text-align: left;">Decrements the destination operand and updates integer FLAGS.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../divmods/"><code>DIVMODS</code></a></td>
+<td style="text-align: left;">Performs the signed divide with remainder operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../divmodu/"><code>DIVMODU</code></a></td>
+<td style="text-align: left;">Performs the unsigned divide with remainder operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../divs/"><code>DIVS</code></a></td>
+<td style="text-align: left;">Performs the signed divide operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../divu/"><code>DIVU</code></a></td>
+<td style="text-align: left;">Performs the unsigned divide operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../djcc/"><code>DJcc</code></a></td>
+<td style="text-align: left;">Performs the decrement and jump conditional operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../ijcc/"><code>IJcc</code></a></td>
+<td style="text-align: left;">Performs the increment and jump conditional operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../extract/"><code>EXTRACT</code></a></td>
+<td style="text-align: left;">Extracts a selected-width value from a concatenated pair of Rn registers.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../extsl/"><code>EXTSL</code></a></td>
+<td style="text-align: left;">Performs the sign extend to long operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../extsq/"><code>EXTSQ</code></a></td>
+<td style="text-align: left;">Performs the sign extend to quad operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../extsw/"><code>EXTSW</code></a></td>
+<td style="text-align: left;">Performs the sign extend to word operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../extzl/"><code>EXTZL</code></a></td>
+<td style="text-align: left;">Performs the zero extend to long operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../extzq/"><code>EXTZQ</code></a></td>
+<td style="text-align: left;">Performs the zero extend to quad operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../extzw/"><code>EXTZW</code></a></td>
+<td style="text-align: left;">Performs the zero extend to word operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../fetchadd/"><code>FETCHADD</code></a></td>
+<td style="text-align: left;">Performs the atomic fetch add operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../fetchand/"><code>FETCHAND</code></a></td>
+<td style="text-align: left;">Performs the atomic fetch and operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../fetchor/"><code>FETCHOR</code></a></td>
+<td style="text-align: left;">Performs the atomic fetch or operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../fetchsub/"><code>FETCHSUB</code></a></td>
+<td style="text-align: left;">Performs the atomic fetch subtract operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../fetchxor/"><code>FETCHXOR</code></a></td>
+<td style="text-align: left;">Performs the atomic fetch xor operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../flshdcache/"><code>FLSHDCACHE</code></a></td>
+<td style="text-align: left;">Write back and invalidate one cache-maintenance block.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../halt/"><code>HALT</code></a></td>
+<td style="text-align: left;">Halt the executing logical processor until an asynchronous architectural event is admitted.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../illegal/"><code>ILLEGAL</code></a></td>
+<td style="text-align: left;">Raise illegal-instruction exception.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../inc/"><code>INC</code></a></td>
+<td style="text-align: left;">Performs the increment operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../incf/"><code>INCF</code></a></td>
+<td style="text-align: left;">Increments the destination operand and updates integer FLAGS.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../invasid/"><code>INVASID</code></a></td>
+<td style="text-align: left;">Invalidate TLB entries for ASID.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../invdcache/"><code>INVDCACHE</code></a></td>
+<td style="text-align: left;">Invalidate one data-cache maintenance block.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../invicache/"><code>INVICACHE</code></a></td>
+<td style="text-align: left;">Invalidate one local instruction-cache maintenance block.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../invpage/"><code>INVPAGE</code></a></td>
+<td style="text-align: left;">Invalidate TLB entry for linear page.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../invtlb/"><code>INVTLB</code></a></td>
+<td style="text-align: left;">Invalidate all TLB entries.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../eret/"><code>ERET</code></a></td>
+<td style="text-align: left;">Return from an architectural event frame.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../jmp/"><code>JMP</code></a></td>
+<td style="text-align: left;">Transfers control to the target address.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../jcc/"><code>Jcc</code></a></td>
+<td style="text-align: left;">Transfers control when the encoded condition is true.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../lcall/"><code>LCALL</code></a></td>
+<td style="text-align: left;">Pushes a far return frame and atomically transfers control to a new CS:PC pair.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../lea/"><code>LEA</code></a></td>
+<td style="text-align: left;">Performs the load effective address operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../ljmp/"><code>LJMP</code></a></td>
+<td style="text-align: left;">Atomically transfers control to a new CS:PC pair.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../lret/"><code>LRET</code></a></td>
+<td style="text-align: left;">Pops a far return frame and atomically restores CS:PC.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../maxs/"><code>MAXS</code></a></td>
+<td style="text-align: left;">Performs the signed maximum operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../maxu/"><code>MAXU</code></a></td>
+<td style="text-align: left;">Performs the unsigned maximum operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../mins/"><code>MINS</code></a></td>
+<td style="text-align: left;">Performs the signed minimum operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../minu/"><code>MINU</code></a></td>
+<td style="text-align: left;">Performs the unsigned minimum operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../mods/"><code>MODS</code></a></td>
+<td style="text-align: left;">Performs the signed modulo operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../modu/"><code>MODU</code></a></td>
+<td style="text-align: left;">Performs the unsigned modulo operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../mov/"><code>MOV</code></a></td>
+<td style="text-align: left;">Copies the source operand to the destination operand.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../movcc/"><code>MOVcc</code></a></td>
+<td style="text-align: left;">Performs the move conditional operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../movcu/"><code>MOVCU</code></a></td>
+<td style="text-align: left;">Copies from a current-domain source to user-domain memory.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../movnt/"><code>MOVNT</code></a></td>
+<td style="text-align: left;">Stores an Rn value to memory with a non-temporal access hint.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../movuc/"><code>MOVUC</code></a></td>
+<td style="text-align: left;">Copies from user-domain memory to a current-domain destination.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../movuu/"><code>MOVUU</code></a></td>
+<td style="text-align: left;">Copies from user-domain memory to user-domain memory.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../mul/"><code>MUL</code></a></td>
+<td style="text-align: left;">Multiplies the destination by the source and keeps the low half.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../mulhs/"><code>MULHS</code></a></td>
+<td style="text-align: left;">Performs the signed multiply high operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../mulhsu/"><code>MULHSU</code></a></td>
+<td style="text-align: left;">Performs the signed by unsigned multiply high operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../mulhu/"><code>MULHU</code></a></td>
+<td style="text-align: left;">Performs the unsigned multiply high operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../neg/"><code>NEG</code></a></td>
+<td style="text-align: left;">Performs the negate operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../nop/"><code>NOP</code></a></td>
+<td style="text-align: left;">No architectural state change.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../not/"><code>NOT</code></a></td>
+<td style="text-align: left;">Performs the bitwise not operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../or/"><code>OR</code></a></td>
+<td style="text-align: left;">Computes the bitwise OR of the source and destination operands.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../parity/"><code>PARITY</code></a></td>
+<td style="text-align: left;">Computes operand parity and writes the predicate to an Rn register.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../pop/"><code>POP</code></a></td>
+<td style="text-align: left;">Pops one 64-bit stack value into an Rn or SREG destination.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../popcnt/"><code>POPCNT</code></a></td>
+<td style="text-align: left;">Performs the population count operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../popp/"><code>POPP</code></a></td>
+<td style="text-align: left;">Pops one canonical Rn register pair selected by an inline pair index.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../prefetch/"><code>PREFETCH</code></a></td>
+<td style="text-align: left;">Hint that EA will be read soon; no architectural fault unless policy says otherwise.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../prefetchnt/"><code>PREFETCHNT</code></a></td>
+<td style="text-align: left;">Hint that EA will be read with non-temporal locality.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../ptquery/"><code>PTQUERY</code></a></td>
+<td style="text-align: left;">Non-destructively reads the raw PTE selected at one page-table level.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../push/"><code>PUSH</code></a></td>
+<td style="text-align: left;">Pushes one Rn value, SREG image, or the current CS image onto the stack.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../pushp/"><code>PUSHP</code></a></td>
+<td style="text-align: left;">Pushes one canonical Rn register pair selected by an inline pair index.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../rdcr/"><code>RDCR</code></a></td>
+<td style="text-align: left;">Read a privileged control register.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../rdflags/"><code>RDFLAGS</code></a></td>
+<td style="text-align: left;">Read the integer condition-code flags into an Rn register.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../rdpmc/"><code>RDPMC</code></a></td>
+<td style="text-align: left;">Read the 64-bit performance counter selected by a constant counter ID.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../rdseg/"><code>RDSEG</code></a></td>
+<td style="text-align: left;">Read an SREG or the current CS image into an Rn register.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../rdstatus/"><code>RDSTATUS</code></a></td>
+<td style="text-align: left;">Read the processor STATUS register into an Rn register.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../repg/"><code>REPG</code></a></td>
+<td style="text-align: left;">Repeats the following straight-line instruction body using an Rn counter.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../repcc/"><code>REPcc</code></a></td>
+<td style="text-align: left;">Repeats the next instruction while the counter and condition remain active.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../reset/"><code>RESET</code></a></td>
+<td style="text-align: left;">Perform warm reset; preserve BOOTPC and BOOTCFG.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../restore/"><code>RESTORE</code></a></td>
+<td style="text-align: left;">Restore processor state from a CPUID-defined save area.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../ret/"><code>RET</code></a></td>
+<td style="text-align: left;">Performs the return operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../revbyte/"><code>REVBYTE</code></a></td>
+<td style="text-align: left;">Performs the reverse bytes operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../rfence/"><code>RFENCE</code></a></td>
+<td style="text-align: left;">Order prior reads before later reads.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../rol/"><code>ROL</code></a></td>
+<td style="text-align: left;">Performs the rotate left operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../ror/"><code>ROR</code></a></td>
+<td style="text-align: left;">Performs the rotate right operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../sar/"><code>SAR</code></a></td>
+<td style="text-align: left;">Performs the shift arithmetic right operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../save/"><code>SAVE</code></a></td>
+<td style="text-align: left;">Save modified processor state to a CPUID-defined save area.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../sbb/"><code>SBB</code></a></td>
+<td style="text-align: left;">Performs the subtract with borrow operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../seglea/"><code>SEGLEA</code></a></td>
+<td style="text-align: left;">Performs the segment load effective address operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../set/"><code>SET</code></a></td>
+<td style="text-align: left;">Writes integer one to the destination operand.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../setcc/"><code>SETcc</code></a></td>
+<td style="text-align: left;">Performs the set conditional operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../setf/"><code>SETF</code></a></td>
+<td style="text-align: left;">Sets selected integer FLAGS bits.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../shl/"><code>SHL</code></a></td>
+<td style="text-align: left;">Performs the shift left operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../shr/"><code>SHR</code></a></td>
+<td style="text-align: left;">Performs the shift right operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../sub/"><code>SUB</code></a></td>
+<td style="text-align: left;">Subtracts the source operand from the destination operand.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../swpt/"><code>SWPT</code></a></td>
+<td style="text-align: left;">Performs the switch page table operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../swpta/"><code>SWPTA</code></a></td>
+<td style="text-align: left;">Switches the page table and enables address-space context matching.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../synccache/"><code>SYNCCACHE</code></a></td>
+<td style="text-align: left;">Synchronize one cache-maintenance block for local instruction fetch.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../syscall/"><code>SYSCALL</code></a></td>
+<td style="text-align: left;">Enter the supervisor-call path through SPC/SCS/SDS and the configured call stack.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../sysret/"><code>SYSRET</code></a></td>
+<td style="text-align: left;">Return to user mode from the user-return control-register bank.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../test/"><code>TEST</code></a></td>
+<td style="text-align: left;">Computes a comparison result and updates condition codes without storing the temporary value.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../testjcc/"><code>TESTJcc</code></a></td>
+<td style="text-align: left;">Tests two Rn registers and branches on the selected condition without writing FLAGS.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../trace/"><code>TRACE</code></a></td>
+<td style="text-align: left;">Records a marker and instruction boundary in the implementation trace stream.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../vtop/"><code>VTOP</code></a></td>
+<td style="text-align: left;">Non-destructively queries the current translation of a linear address.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../wait/"><code>WAIT</code></a></td>
+<td style="text-align: left;">Pause execution for a finite implementation-selected interval.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../wfence/"><code>WFENCE</code></a></td>
+<td style="text-align: left;">Order prior writes before later writes.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../wrbkdcache/"><code>WRBKDCACHE</code></a></td>
+<td style="text-align: left;">Write back one data-cache maintenance block.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../wrcr/"><code>WRCR</code></a></td>
+<td style="text-align: left;">Write a privileged control register from an Rn register.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../wrflags/"><code>WRFLAGS</code></a></td>
+<td style="text-align: left;">Write the integer condition-code flags from an Rn register.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../wrseg/"><code>WRSEG</code></a></td>
+<td style="text-align: left;">Write an SREG segment image from an Rn register.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../wrstatus/"><code>WRSTATUS</code></a></td>
+<td style="text-align: left;">Write the processor STATUS register from an Rn register.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../xchg/"><code>XCHG</code></a></td>
+<td style="text-align: left;">Performs the exchange operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../xor/"><code>XOR</code></a></td>
+<td style="text-align: left;">Computes the bitwise XOR of the source and destination operands.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../yield/"><code>YIELD</code></a></td>
+<td style="text-align: left;">Hints to the scheduler or implementation that the current thread may yield.</td>
+</tr>
+</tbody>
+</table>
 
 
 

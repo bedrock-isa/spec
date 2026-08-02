@@ -9028,51 +9028,159 @@
 <h2 id="ordinary-access-atomicity">Ordinary Access Atomicity</h2>
 <p>The following guarantees apply to ordinary memory accesses. They do not by themselves establish C inter-thread ordering:</p>
 <p><strong>Ordinary Memory Access Guarantees</strong></p>
-<p>@p2.75inp2.65in@</p>
-<p><strong>Access</strong> &amp; <strong>Guarantee</strong><br />
-Aligned 1/2/4/8-byte load or store &amp; tear-free<br />
-Access of 16 bytes or more &amp; not atomic<br />
-Unaligned access &amp; no tear-free guarantee  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Access</strong></th>
+<th style="text-align: left;"><strong>Guarantee</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">Aligned 1/2/4/8-byte load or store</td>
+<td style="text-align: left;">tear-free</td>
+</tr>
+<tr>
+<td style="text-align: left;">Access of 16 bytes or more</td>
+<td style="text-align: left;">not atomic</td>
+</tr>
+<tr>
+<td style="text-align: left;">Unaligned access</td>
+<td style="text-align: left;">no tear-free guarantee</td>
+</tr>
+</tbody>
+</table>
 <h2 id="atomic-object-eligibility">Atomic Object Eligibility</h2>
 <p>The native lock-free set consists of integer objects and ordinary 64-bit pointer objects whose size is 1, 2, 4, or 8 bytes and whose address satisfies the natural alignment for that size. An unaligned atomic object is not lock-free. Accordingly, <code>__atomic_always_lock_free</code> returns true only for those naturally aligned sizes.</p>
 <p>The baseline accepts an atomic object only when it belongs to that native lock-free set. Any other atomic object—including a floating-point, aggregate, far-pointer, 128-bit integer, unsupported-width, or insufficiently aligned object—is a target constraint violation. This ABI defines neither a native operation nor a compiler-runtime helper ABI for such an object.</p>
 <h2 id="native-atomic-primitives">Native Atomic Primitives</h2>
 <p>Once the object satisfies the width and alignment requirements above, the compiler uses the following primitive lowering. The ordering sequences are defined separately below.</p>
 <p><strong>Native Atomic Primitive Quick Reference</strong></p>
-<p>@p2.15inp3.25in@</p>
-<p><strong>C operation</strong> &amp; <strong>Bedrock primitive</strong><br />
-Atomic load or store &amp; ordinary aligned tear-free access plus the required ordering sequence<br />
-Compare-exchange &amp; width-matched <code>CMPXCHG</code><br />
-Exchange &amp; compare-exchange loop using <code>CMPXCHG</code>  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>C operation</strong></th>
+<th style="text-align: left;"><strong>Bedrock primitive</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">Atomic load or store</td>
+<td style="text-align: left;">ordinary aligned tear-free access plus the required ordering sequence</td>
+</tr>
+<tr>
+<td style="text-align: left;">Compare-exchange</td>
+<td style="text-align: left;">width-matched <code>CMPXCHG</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Exchange</td>
+<td style="text-align: left;">compare-exchange loop using <code>CMPXCHG</code></td>
+</tr>
+</tbody>
+</table>
 <h2 id="c-atomic-memory-order-mapping">C Atomic Memory Order Mapping</h2>
 <p><strong>C Atomic Memory Order Mapping</strong></p>
-<p>@p1.55inp3.95in@ <strong>C order</strong> &amp; <strong>Bedrock order or sequence</strong><br />
-relaxed &amp; <code>relaxed</code><br />
-consume &amp; <code>acquire</code><br />
-acquire &amp; <code>acquire</code><br />
-release &amp; <code>release</code><br />
-acq_rel &amp; <code>acqrel</code><br />
-seq_cst &amp; <code>seqcst</code>  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>C order</strong></th>
+<th style="text-align: left;"><strong>Bedrock order or sequence</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">relaxed</td>
+<td style="text-align: left;"><code>relaxed</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">consume</td>
+<td style="text-align: left;"><code>acquire</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">acquire</td>
+<td style="text-align: left;"><code>acquire</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">release</td>
+<td style="text-align: left;"><code>release</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">acq_rel</td>
+<td style="text-align: left;"><code>acqrel</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">seq_cst</td>
+<td style="text-align: left;"><code>seqcst</code></td>
+</tr>
+</tbody>
+</table>
 <p>For C compare-exchange, the compiler selects the join of the success and failure orders; it does not compare their numeric encodings. Consume is treated as acquire, acquire joined with release is acquire-release, and sequential consistency dominates every other order. A failure performs no write. Any release component introduced by the joined instruction therefore creates neither a write nor a release sequence on failure, while a failed <code>CMPXCHG.SEQCST</code> still participates in the global SC order as an SC load.</p>
 <p><strong>Atomic Load and Store Ordering</strong></p>
-<p>@p1.55inp3.95in@</p>
-<p><strong>Operation</strong> &amp; <strong>Lowering</strong><br />
-Relaxed load/store &amp; no fence<br />
-Consume or acquire load &amp; load, then <code>AFENCE</code><br />
-Release store &amp; <code>AFENCE</code>, then store<br />
-Sequentially consistent load &amp; <code>AFENCE</code>, load, <code>AFENCE</code><br />
-Sequentially consistent store &amp; <code>AFENCE</code>, store, <code>AFENCE</code>  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Operation</strong></th>
+<th style="text-align: left;"><strong>Lowering</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">Relaxed load/store</td>
+<td style="text-align: left;">no fence</td>
+</tr>
+<tr>
+<td style="text-align: left;">Consume or acquire load</td>
+<td style="text-align: left;">load, then <code>AFENCE</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Release store</td>
+<td style="text-align: left;"><code>AFENCE</code>, then store</td>
+</tr>
+<tr>
+<td style="text-align: left;">Sequentially consistent load</td>
+<td style="text-align: left;"><code>AFENCE</code>, load, <code>AFENCE</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Sequentially consistent store</td>
+<td style="text-align: left;"><code>AFENCE</code>, store, <code>AFENCE</code></td>
+</tr>
+</tbody>
+</table>
 <p>A relaxed C thread fence emits no instruction. Consume, acquire, release, acquire-release, and sequentially consistent thread fences emit <code>AFENCE</code>.</p>
 <h2 id="volatile-device-and-executable-memory">Volatile, Device, and Executable Memory</h2>
 <p>Volatile accesses preserve the observable access count and order but do not themselves provide inter-thread or device ordering. MMIO ordering belongs to platform/runtime mapping attributes. Dynamic code patching requires <code>__bedrock_sync_cache</code> or a platform interface with equivalent cache synchronization; a relocation agent must synchronize patched instructions before transferring control to them.</p>
 <h2 id="c-fetch-rmw-lowering">C Fetch RMW Lowering</h2>
 <p><strong>C Fetch RMW Lowering</strong></p>
-<p>@p2.15inp3.35in@ <strong>C operation</strong> &amp; <strong>Lowering</strong><br />
-<code>atomic_fetch_add</code> &amp; <code>FETCHADD</code><br />
-<code>atomic_fetch_sub</code> &amp; <code>FETCHSUB</code><br />
-<code>atomic_fetch_and</code> &amp; <code>FETCHAND</code><br />
-<code>atomic_fetch_or</code> &amp; <code>FETCHOR</code><br />
-<code>atomic_fetch_xor</code> &amp; <code>FETCHXOR</code></p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>C operation</strong></th>
+<th style="text-align: left;"><strong>Lowering</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>atomic_fetch_add</code></td>
+<td style="text-align: left;"><code>FETCHADD</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>atomic_fetch_sub</code></td>
+<td style="text-align: left;"><code>FETCHSUB</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>atomic_fetch_and</code></td>
+<td style="text-align: left;"><code>FETCHAND</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>atomic_fetch_or</code></td>
+<td style="text-align: left;"><code>FETCHOR</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>atomic_fetch_xor</code></td>
+<td style="text-align: left;"><code>FETCHXOR</code></td>
+</tr>
+</tbody>
+</table>
 
 
 

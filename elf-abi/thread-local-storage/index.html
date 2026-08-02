@@ -9106,42 +9106,21 @@
 <h2 id="tls-base-model">TLS Base Model</h2>
 <p>GS0 is the TLS base register. A TLS offset is translated by GS0 segment pre-translation before page-table translation. The local-exec model encodes a link-time constant byte offset from the GS0 base; TLSDESC supplies runtime resolution when the reference crosses a dynamic-object boundary or remains interposable.</p>
 <p><strong>TLS Relocation Families</strong></p>
-<p>@p1.25inp4.25in@ <strong>Model</strong> &amp; <strong>Relocations</strong><br />
-local-exec &amp;</p>
 <table>
 <thead>
 <tr>
-<th style="text-align: left;"></th>
+<th style="text-align: left;"><strong>Model</strong></th>
+<th style="text-align: left;"><strong>Relocations</strong></th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><code>R_BEDROCK_TLS_OFFSET32S</code></td>
+<td style="text-align: left;">local-exec</td>
+<td style="text-align: left;"><code>R_BEDROCK_TLS_OFFSET32S</code>; <code>R_BEDROCK_TLS_OFFSET64</code></td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>R_BEDROCK_TLS_OFFSET64</code></td>
-</tr>
-</tbody>
-</table>
-<p>TLSDESC &amp;</p>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;"></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;"><code>R_BEDROCK_TLSDESC_GOTPCREL32S</code></td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>R_BEDROCK_TLSDESC_GOTPCREL64</code></td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>R_BEDROCK_TLSDESC_CALL</code></td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>R_BEDROCK_TLSDESC</code></td>
+<td style="text-align: left;">TLSDESC</td>
+<td style="text-align: left;"><code>R_BEDROCK_TLSDESC_GOTPCREL32S</code>; <code>R_BEDROCK_TLSDESC_GOTPCREL64</code>; <code>R_BEDROCK_TLSDESC_CALL</code>; <code>R_BEDROCK_TLSDESC</code></td>
 </tr>
 </tbody>
 </table>
@@ -9163,9 +9142,30 @@ local-exec &amp;</p>
 </ul>
 <h2 id="tlsdesc-entry">TLSDESC Entry</h2>
 <p><strong>TLSDESC Entry Layout</strong></p>
-<p>@p0.8inp1.7inp0.65inp2.35in@ <strong>Offset</strong> &amp; <strong>Field</strong> &amp; <strong>Type</strong> &amp; <strong>Meaning</strong><br />
-<code>+0x00</code> &amp; <code>function</code> &amp; <code>u64</code> &amp; near-call address of the resolver or fast function<br />
-<code>+0x08</code> &amp; <code>argument</code> &amp; <code>u64</code> &amp; signed direct GS0-relative offset or resolver-specific opaque token  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Offset</strong></th>
+<th style="text-align: left;"><strong>Field</strong></th>
+<th style="text-align: left;"><strong>Type</strong></th>
+<th style="text-align: left;"><strong>Meaning</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>+0x00</code></td>
+<td style="text-align: left;"><code>function</code></td>
+<td style="text-align: left;"><code>u64</code></td>
+<td style="text-align: left;">near-call address of the resolver or fast function</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>+0x08</code></td>
+<td style="text-align: left;"><code>argument</code></td>
+<td style="text-align: left;"><code>u64</code></td>
+<td style="text-align: left;">signed direct GS0-relative offset or resolver-specific opaque token</td>
+</tr>
+</tbody>
+</table>
 <p>Each entry occupies 16 bytes in <code>.got</code> and has 16-byte alignment. The loader resolves the symbol binding, writes both words, and completes any memory ordering required to publish the pair before application code can observe it. Both words are immutable after publication and may subsequently be protected by <code>PT_GNU_RELRO</code>. The ABI requires no public name for either the resolver or fast function; their near-call addresses may be loader-private.</p>
 <p>The argument word belongs to the implementation of the selected function. A fast function may load <code>[R0+8]</code> and return it directly. An opaque token is not application data and remains valid only while the object that defines the TLS symbol is loaded. A resolver may perform dynamic per-thread lookup or allocation, but neither it nor the fast function may rewrite or self-patch the published descriptor. This per-thread work is not lazy symbol binding: the loader has already resolved the TLS symbol and published the final immutable pair.</p>
 <h2 id="tlsdesc-call-abi">TLSDESC Call ABI</h2>

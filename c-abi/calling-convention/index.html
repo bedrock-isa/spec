@@ -9110,25 +9110,87 @@
 <p>Frame pointers are omitted by default. When a function elects to keep a frame pointer, it uses <code>R15</code>. R15 is callee-saved and is used as the frame pointer when a function elects to maintain one.</p>
 <h2 id="dwarf-register-numbering-and-unwind">DWARF Register Numbering and Unwind</h2>
 <p><strong>Bedrock DWARF Register Numbers</strong></p>
-<p>@&gt;</p>
-<p>p1.10in&gt;</p>
-<p>p1.75in&gt;</p>
-<p>p2.55in@</p>
-<p><strong>Numbers</strong> &amp; <strong>Registers</strong> &amp; <strong>Status</strong>  </p>
-<p>0..15 &amp; <code>R0</code>..<code>R15</code> &amp; assigned<br />
-16 &amp; <code>SP</code> &amp; assigned<br />
-17 &amp; <code>PC</code> &amp; assigned; CIE return-address register<br />
-18 &amp; <code>FLAGS</code> &amp; assigned<br />
-19 &amp; <code>STATUS</code> &amp; assigned<br />
-20..31 &amp; — &amp; reserved<br />
-32..47 &amp; <code>F0</code>..<code>F15</code> &amp; assigned<br />
-48 &amp; <code>CS</code> &amp; assigned<br />
-49 &amp; <code>DS</code> &amp; assigned<br />
-50 &amp; <code>SS</code> &amp; assigned<br />
-51..56 &amp; <code>GS0</code>..<code>GS5</code> &amp; assigned<br />
-57 &amp; <code>FFLAGS</code> &amp; assigned<br />
-58 &amp; <code>FSTATUS</code> &amp; assigned<br />
-59 and greater &amp; — &amp; reserved  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Numbers</strong></th>
+<th style="text-align: left;"><strong>Registers</strong></th>
+<th style="text-align: left;"><strong>Status</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">0..15</td>
+<td style="text-align: left;"><code>R0</code>..<code>R15</code></td>
+<td style="text-align: left;">assigned</td>
+</tr>
+<tr>
+<td style="text-align: left;">16</td>
+<td style="text-align: left;"><code>SP</code></td>
+<td style="text-align: left;">assigned</td>
+</tr>
+<tr>
+<td style="text-align: left;">17</td>
+<td style="text-align: left;"><code>PC</code></td>
+<td style="text-align: left;">assigned; CIE return-address register</td>
+</tr>
+<tr>
+<td style="text-align: left;">18</td>
+<td style="text-align: left;"><code>FLAGS</code></td>
+<td style="text-align: left;">assigned</td>
+</tr>
+<tr>
+<td style="text-align: left;">19</td>
+<td style="text-align: left;"><code>STATUS</code></td>
+<td style="text-align: left;">assigned</td>
+</tr>
+<tr>
+<td style="text-align: left;">20..31</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">reserved</td>
+</tr>
+<tr>
+<td style="text-align: left;">32..47</td>
+<td style="text-align: left;"><code>F0</code>..<code>F15</code></td>
+<td style="text-align: left;">assigned</td>
+</tr>
+<tr>
+<td style="text-align: left;">48</td>
+<td style="text-align: left;"><code>CS</code></td>
+<td style="text-align: left;">assigned</td>
+</tr>
+<tr>
+<td style="text-align: left;">49</td>
+<td style="text-align: left;"><code>DS</code></td>
+<td style="text-align: left;">assigned</td>
+</tr>
+<tr>
+<td style="text-align: left;">50</td>
+<td style="text-align: left;"><code>SS</code></td>
+<td style="text-align: left;">assigned</td>
+</tr>
+<tr>
+<td style="text-align: left;">51..56</td>
+<td style="text-align: left;"><code>GS0</code>..<code>GS5</code></td>
+<td style="text-align: left;">assigned</td>
+</tr>
+<tr>
+<td style="text-align: left;">57</td>
+<td style="text-align: left;"><code>FFLAGS</code></td>
+<td style="text-align: left;">assigned</td>
+</tr>
+<tr>
+<td style="text-align: left;">58</td>
+<td style="text-align: left;"><code>FSTATUS</code></td>
+<td style="text-align: left;">assigned</td>
+</tr>
+<tr>
+<td style="text-align: left;">59 and greater</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">reserved</td>
+</tr>
+</tbody>
+</table>
 <p>At near-call entry, the canonical frame address is entry <code>SP+8</code>; saved <code>PC</code> is at CFA minus 8 and <code>CS</code> has a same-value rule. At far-call entry, the CFA is entry <code>SP+16</code>; saved <code>PC</code> is at CFA minus 16 and saved <code>CS</code> is at CFA minus 8. Standard DWARF CFI rules recover both registers; Bedrock defines no target-specific CFI opcode. Signal and architectural event-frame unwind conventions belong to the active OS ABI.</p>
 <h2 id="argument-classification">Argument Classification</h2>
 <p>Classification occurs after the C language has determined the effective type of the argument. A named argument to a prototyped function is placed in one of six ABI classes:</p>
@@ -9182,15 +9244,48 @@
 <p>For a larger aggregate, the caller allocates a 16-byte-aligned result buffer and passes its address in <code>R0</code> before ordinary argument assignment. The callee stores the result in that buffer and returns the same address in <code>R0</code>.</p>
 <p>A far data or function pointer result uses <code>GS1:R0</code>, with its pre-segment address in <code>R0</code> and validated segment image in <code>GS1</code>. A failed <code>GS1</code> write raises <code>INVALID_CONTROL_STATE</code> before the return transfer.</p>
 <p><strong>C Return Register Quick Reference</strong></p>
-<p>@p2.15inp3.35in@ <strong>Result Class</strong> &amp; <strong>Register Rule</strong><br />
-General scalar &amp; <code>R0</code><br />
-Floating-point scalar &amp; <code>F0</code><br />
-<code>long double</code> scalar &amp; <code>F0</code><br />
-Complex scalar &amp; real component in <code>F0</code>, imaginary component in <code>F1</code><br />
-<code>__int128</code> scalar &amp; <code>R1:R0</code><br />
-Far data or function pointer &amp; address in <code>R0</code>, segment image in <code>GS1</code><br />
-Small aggregate &amp; <code>R1:R0</code><br />
-Large aggregate &amp; sret pointer in <code>R0</code>, result pointer returned in <code>R0</code>  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Result Class</strong></th>
+<th style="text-align: left;"><strong>Register Rule</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">General scalar</td>
+<td style="text-align: left;"><code>R0</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Floating-point scalar</td>
+<td style="text-align: left;"><code>F0</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>long double</code> scalar</td>
+<td style="text-align: left;"><code>F0</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Complex scalar</td>
+<td style="text-align: left;">real component in <code>F0</code>, imaginary component in <code>F1</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>__int128</code> scalar</td>
+<td style="text-align: left;"><code>R1:R0</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Far data or function pointer</td>
+<td style="text-align: left;">address in <code>R0</code>, segment image in <code>GS1</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Small aggregate</td>
+<td style="text-align: left;"><code>R1:R0</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Large aggregate</td>
+<td style="text-align: left;">sret pointer in <code>R0</code>, result pointer returned in <code>R0</code></td>
+</tr>
+</tbody>
+</table>
 <h2 id="aggregate-passing">Aggregate Passing</h2>
 <p>For every by-value aggregate argument, the caller allocates distinct storage, aligns its start to 16 bytes, initializes it with the argument value, and keeps it alive until the call returns. The address, rather than the aggregate bytes, is assigned by the GENERAL procedure. If GENERAL registers are exhausted, the stack argument slot contains that address; it does not contain the aggregate itself.</p>
 <p>The copy gives the callee an addressable object with the declared aggregate type. A callee may modify its private copy without modifying the caller’s source object. Baseline aggregates containing bit-fields and mixed integer/floating aggregates use the same INDIRECT rule; their member composition never changes argument registers. An extension aggregate with packed or unaligned members cannot cross this external ABI boundary unless a separate extension ABI permits it.</p>

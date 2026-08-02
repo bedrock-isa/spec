@@ -8949,29 +8949,92 @@
 <p>FPTRANSA applies DAZ before forming the exact reference input and measures its advertised ULP error before FTZ. It ignores <code>FSTATUS.RM</code> and formats its implementation-defined approximation with nearest-even rounding. The approximation is deterministic for the same implementation, input, format, and relevant FSTATUS mode, but need not be bit-identical across implementations. DN and FTZ retain their ordinary meanings. FPTRANSA may accrue NV, DZ, OF, and UF as its instruction contract requires, but it leaves the accrued NX flag unchanged and never takes an NX trap. Overflow means that the exact result magnitude exceeds the selected format’s maximum finite value. Underflow means that the exact nonzero result magnitude is below the selected format’s minimum normal value.</p>
 <h2 id="summary">Summary</h2>
 <p><strong>Approximate Floating-Point Transcendental Instructions Summary</strong></p>
-<p>@&gt;</p>
-<p>p1.05in&gt;</p>
-<p>p4.35in@</p>
-<p><strong>Mnemonic</strong> &amp; <strong>Brief description</strong>  </p>
-<p><a href="../facosa/"><code>FACOSA</code></a> &amp; Performs the bounded approximate floating-point arc cosine operation.<br />
-<a href="../fasina/"><code>FASINA</code></a> &amp; Performs the bounded approximate floating-point arc sine operation.<br />
-<a href="../fatana/"><code>FATANA</code></a> &amp; Performs the bounded approximate floating-point arc tangent operation.<br />
-<a href="../fatanha/"><code>FATANHA</code></a> &amp; Performs the bounded approximate floating-point hyperbolic arc tangent operation.<br />
-<a href="../fcosa/"><code>FCOSA</code></a> &amp; Performs the bounded approximate floating-point cosine operation.<br />
-<a href="../fcosha/"><code>FCOSHA</code></a> &amp; Performs the bounded approximate floating-point hyperbolic cosine operation.<br />
-<a href="../fetoxa/"><code>FETOXA</code></a> &amp; Performs the bounded approximate floating-point e to x operation.<br />
-<a href="../fetoxm1a/"><code>FETOXM1A</code></a> &amp; Performs the bounded approximate floating-point e to x minus one operation.<br />
-<a href="../flog10a/"><code>FLOG10A</code></a> &amp; Performs the bounded approximate floating-point log base 10 operation.<br />
-<a href="../flog2a/"><code>FLOG2A</code></a> &amp; Performs the bounded approximate floating-point log base 2 operation.<br />
-<a href="../flogna/"><code>FLOGNA</code></a> &amp; Performs the bounded approximate floating-point natural log operation.<br />
-<a href="../flognp1a/"><code>FLOGNP1A</code></a> &amp; Performs the bounded approximate floating-point natural log plus one operation.<br />
-<a href="../fsina/"><code>FSINA</code></a> &amp; Performs the bounded approximate floating-point sine operation.<br />
-<a href="../fsincosa/"><code>FSINCOSA</code></a> &amp; Performs the bounded approximate floating-point sine and cosine operation.<br />
-<a href="../fsinha/"><code>FSINHA</code></a> &amp; Performs the bounded approximate floating-point hyperbolic sine operation.<br />
-<a href="../ftana/"><code>FTANA</code></a> &amp; Performs the bounded approximate floating-point tangent operation.<br />
-<a href="../ftanha/"><code>FTANHA</code></a> &amp; Performs the bounded approximate floating-point hyperbolic tangent operation.<br />
-<a href="../ftentoxa/"><code>FTENTOXA</code></a> &amp; Performs the bounded approximate floating-point 10 to x operation.<br />
-<a href="../ftwotoxa/"><code>FTWOTOXA</code></a> &amp; Performs the bounded approximate floating-point 2 to x operation.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Mnemonic</strong></th>
+<th style="text-align: left;"><strong>Brief description</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><a href="../facosa/"><code>FACOSA</code></a></td>
+<td style="text-align: left;">Performs the bounded approximate floating-point arc cosine operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../fasina/"><code>FASINA</code></a></td>
+<td style="text-align: left;">Performs the bounded approximate floating-point arc sine operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../fatana/"><code>FATANA</code></a></td>
+<td style="text-align: left;">Performs the bounded approximate floating-point arc tangent operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../fatanha/"><code>FATANHA</code></a></td>
+<td style="text-align: left;">Performs the bounded approximate floating-point hyperbolic arc tangent operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../fcosa/"><code>FCOSA</code></a></td>
+<td style="text-align: left;">Performs the bounded approximate floating-point cosine operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../fcosha/"><code>FCOSHA</code></a></td>
+<td style="text-align: left;">Performs the bounded approximate floating-point hyperbolic cosine operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../fetoxa/"><code>FETOXA</code></a></td>
+<td style="text-align: left;">Performs the bounded approximate floating-point e to x operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../fetoxm1a/"><code>FETOXM1A</code></a></td>
+<td style="text-align: left;">Performs the bounded approximate floating-point e to x minus one operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../flog10a/"><code>FLOG10A</code></a></td>
+<td style="text-align: left;">Performs the bounded approximate floating-point log base 10 operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../flog2a/"><code>FLOG2A</code></a></td>
+<td style="text-align: left;">Performs the bounded approximate floating-point log base 2 operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../flogna/"><code>FLOGNA</code></a></td>
+<td style="text-align: left;">Performs the bounded approximate floating-point natural log operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../flognp1a/"><code>FLOGNP1A</code></a></td>
+<td style="text-align: left;">Performs the bounded approximate floating-point natural log plus one operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../fsina/"><code>FSINA</code></a></td>
+<td style="text-align: left;">Performs the bounded approximate floating-point sine operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../fsincosa/"><code>FSINCOSA</code></a></td>
+<td style="text-align: left;">Performs the bounded approximate floating-point sine and cosine operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../fsinha/"><code>FSINHA</code></a></td>
+<td style="text-align: left;">Performs the bounded approximate floating-point hyperbolic sine operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../ftana/"><code>FTANA</code></a></td>
+<td style="text-align: left;">Performs the bounded approximate floating-point tangent operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../ftanha/"><code>FTANHA</code></a></td>
+<td style="text-align: left;">Performs the bounded approximate floating-point hyperbolic tangent operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../ftentoxa/"><code>FTENTOXA</code></a></td>
+<td style="text-align: left;">Performs the bounded approximate floating-point 10 to x operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../ftwotoxa/"><code>FTWOTOXA</code></a></td>
+<td style="text-align: left;">Performs the bounded approximate floating-point 2 to x operation.</td>
+</tr>
+</tbody>
+</table>
 
 
 

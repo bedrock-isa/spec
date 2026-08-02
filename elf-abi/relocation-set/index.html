@@ -9009,81 +9009,407 @@
 <p>For a PC-relative address-materialization relocation, let <code>I</code> be the address of byte zero of the containing instruction and let <span class="arithmatex">\(\delta=\texttt{P}-\texttt{I}\)</span> be the relocation field’s byte offset. Let <span class="arithmatex">\(A_{\mathrm{src}}\)</span> be the addend in the source expression before field-offset bias. The encoded value shall equal the target plus <span class="arithmatex">\(A_{\mathrm{src}}\)</span> minus <code>I</code>. Because the relocation-table expressions subtract <code>P</code>, the assembler records the ELF addend as <span class="arithmatex">\(\texttt{A}=A_{\mathrm{src}}+\delta\)</span> for <code>PCREL</code>, <code>GOTPCREL</code>, <code>GOT_BASE_PCREL</code>, and <code>TLSDESC_GOTPCREL</code> relocations. The linker does not infer instruction boundaries. The PLT addend described in Section 8.3 is one instance of this general rule.</p>
 <h2 id="expression-terms">Expression Terms</h2>
 <p><strong>Relocation Expression Terms</strong></p>
-<p>@p1.0inp4.5in@ <strong>Term</strong> &amp; <strong>Meaning</strong><br />
-<code>S</code> &amp; Runtime byte address of the symbol named by the relocation after symbol resolution.<br />
-<code>A</code> &amp; Explicit addend stored in the ELF64 Rela entry.<br />
-<code>P</code> &amp; Runtime byte address of the relocation field being patched.<br />
-<code>N</code> &amp; Runtime byte address of the next instruction after the instruction being patched.<br />
-<code>SB</code> &amp; Runtime byte address of the beginning of the symbol’s defining section.<br />
-<code>B</code> &amp; Runtime load base address of the loaded object that owns the relocation.<br />
-<code>GB</code> &amp; Runtime byte address of the global offset table base for the loaded object.<br />
-<code>GOT(S)</code> &amp; Runtime byte address of the GOT slot allocated for symbol S.<br />
-<code>PLT(S)</code> &amp; Runtime byte address of the PLT entry allocated for symbol S.<br />
-<code>TLS(S)</code> &amp; Byte offset of TLS symbol S from the ABI TLS base in GS0.<br />
-<code>TLSDESC(S)</code> &amp; Runtime byte address of the TLSDESC entry allocated for TLS symbol S.<br />
-<code>SEG(S)</code> &amp; Final validated bounds-only segment register image of the segment domain containing non-TLS data or far function symbol S.<br />
-<code>FARADDR(S)</code> &amp; Canonical pre-segment virtual address S of a non-TLS data symbol or far-call entry in its bounds-only domain.<br />
-<code>SEGDOM(D)</code> &amp; Final validated bounds-only segment register image of image-local segment-domain identifier D.<br />
-<code>FAR(S)</code> &amp; The ordered 128-bit pair whose low word is FARADDR(S) and whose high word is the canonical bounds-only SEG(S).<br />
-<code>FarResolver(X)</code> &amp; The 128-bit far function pair returned in GS1:R0 by calling the resolver at near-call address X.<br />
-<code>Resolver(X)</code> &amp; Runtime byte address returned by calling the resolver function at address X.  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Term</strong></th>
+<th style="text-align: left;"><strong>Meaning</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>S</code></td>
+<td style="text-align: left;">Runtime byte address of the symbol named by the relocation after symbol resolution.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>A</code></td>
+<td style="text-align: left;">Explicit addend stored in the ELF64 Rela entry.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>P</code></td>
+<td style="text-align: left;">Runtime byte address of the relocation field being patched.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>N</code></td>
+<td style="text-align: left;">Runtime byte address of the next instruction after the instruction being patched.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>SB</code></td>
+<td style="text-align: left;">Runtime byte address of the beginning of the symbol’s defining section.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>B</code></td>
+<td style="text-align: left;">Runtime load base address of the loaded object that owns the relocation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>GB</code></td>
+<td style="text-align: left;">Runtime byte address of the global offset table base for the loaded object.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>GOT(S)</code></td>
+<td style="text-align: left;">Runtime byte address of the GOT slot allocated for symbol S.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>PLT(S)</code></td>
+<td style="text-align: left;">Runtime byte address of the PLT entry allocated for symbol S.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>TLS(S)</code></td>
+<td style="text-align: left;">Byte offset of TLS symbol S from the ABI TLS base in GS0.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>TLSDESC(S)</code></td>
+<td style="text-align: left;">Runtime byte address of the TLSDESC entry allocated for TLS symbol S.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>SEG(S)</code></td>
+<td style="text-align: left;">Final validated bounds-only segment register image of the segment domain containing non-TLS data or far function symbol S.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>FARADDR(S)</code></td>
+<td style="text-align: left;">Canonical pre-segment virtual address S of a non-TLS data symbol or far-call entry in its bounds-only domain.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>SEGDOM(D)</code></td>
+<td style="text-align: left;">Final validated bounds-only segment register image of image-local segment-domain identifier D.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>FAR(S)</code></td>
+<td style="text-align: left;">The ordered 128-bit pair whose low word is FARADDR(S) and whose high word is the canonical bounds-only SEG(S).</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>FarResolver(X)</code></td>
+<td style="text-align: left;">The 128-bit far function pair returned in GS1:R0 by calling the resolver at near-call address X.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Resolver(X)</code></td>
+<td style="text-align: left;">Runtime byte address returned by calling the resolver function at address X.</td>
+</tr>
+</tbody>
+</table>
 <h2 id="got-and-plt-model">GOT and PLT Model</h2>
 <p>The ordinary GOT stores 64-bit addresses for position-independent code and dynamic binding. A GOT relocation allocates or references the symbol’s slot in the loaded object. The PLT contains executable near-call entries; a PLT relocation names that entry rather than the final function address. Every ordinary PLT slot is resolved before application entry or constructors execute.</p>
 <p>GOT and PLT function addresses stay inside the ABI-visible near-call linkage domain. The far GOT is a separate table of aligned 16-byte address/image pairs, is completely resolved before publication, and has no corresponding far PLT.</p>
 <h2 id="relocations">Relocations</h2>
 <p><strong>Bedrock ELF Relocation Types</strong></p>
-<p>@p0.45inp2.15inp0.85inp2.05in@ <strong>Type</strong> &amp; <strong>Name</strong> &amp; <strong>Size</strong> &amp; <strong>Calculation</strong><br />
-0 &amp; <code>R_BEDROCK_NONE</code> &amp; <code>0</code> &amp; <code>none</code><br />
-1 &amp; <code>R_BEDROCK_ABS8</code> &amp; <code>8-bit unsigned</code> &amp; <code>S + A</code><br />
-2 &amp; <code>R_BEDROCK_ABS16</code> &amp; <code>16-bit unsigned</code> &amp; <code>S + A</code><br />
-3 &amp; <code>R_BEDROCK_ABS32S</code> &amp; <code>32-bit signed</code> &amp; <code>S + A</code><br />
-4 &amp; <code>R_BEDROCK_ABS64</code> &amp; <code>64-bit unsigned</code> &amp; <code>S + A</code><br />
-5 &amp; <code>R_BEDROCK_IMM8S</code> &amp; <code>8-bit signed</code> &amp; <code>S + A</code><br />
-6 &amp; <code>R_BEDROCK_IMM16S</code> &amp; <code>16-bit signed</code> &amp; <code>S + A</code><br />
-7 &amp; <code>R_BEDROCK_IMM32S</code> &amp; <code>32-bit signed</code> &amp; <code>S + A</code><br />
-8 &amp; <code>R_BEDROCK_IMM64</code> &amp; <code>64-bit unsigned</code> &amp; <code>S + A</code><br />
-9 &amp; <code>R_BEDROCK_DISP8S</code> &amp; <code>8-bit signed</code> &amp; <code>S + A</code><br />
-10 &amp; <code>R_BEDROCK_DISP16S</code> &amp; <code>16-bit signed</code> &amp; <code>S + A</code><br />
-11 &amp; <code>R_BEDROCK_DISP32S</code> &amp; <code>32-bit signed</code> &amp; <code>S + A</code><br />
-12 &amp; <code>R_BEDROCK_DISP64</code> &amp; <code>64-bit unsigned</code> &amp; <code>S + A</code><br />
-13 &amp; <code>R_BEDROCK_PCREL8S</code> &amp; <code>8-bit signed</code> &amp; <code>S + A - P</code><br />
-14 &amp; <code>R_BEDROCK_PCREL16S</code> &amp; <code>16-bit signed</code> &amp; <code>S + A - P</code><br />
-15 &amp; <code>R_BEDROCK_PCREL32S</code> &amp; <code>32-bit signed</code> &amp; <code>S + A - P</code><br />
-16 &amp; <code>R_BEDROCK_PCREL64</code> &amp; <code>64-bit signed</code> &amp; <code>S + A - P</code><br />
-17 &amp; <code>R_BEDROCK_BRDISP8S</code> &amp; <code>8-bit signed</code> &amp; <code>S + A - N</code><br />
-18 &amp; <code>R_BEDROCK_BRDISP16S</code> &amp; <code>16-bit signed</code> &amp; <code>S + A - N</code><br />
-19 &amp; <code>R_BEDROCK_BRDISP32S</code> &amp; <code>32-bit signed</code> &amp; <code>S + A - N</code><br />
-20 &amp; <code>R_BEDROCK_CALL16S</code> &amp; <code>16-bit signed</code> &amp; <code>S + A - N</code><br />
-21 &amp; <code>R_BEDROCK_CALL32S</code> &amp; <code>32-bit signed</code> &amp; <code>S + A - N</code><br />
-22 &amp; <code>R_BEDROCK_SECTION_REL32</code> &amp; <code>32-bit unsigned</code> &amp; <code>S + A - SB</code><br />
-23 &amp; <code>R_BEDROCK_SECTION_REL64</code> &amp; <code>64-bit unsigned</code> &amp; <code>S + A - SB</code><br />
-24 &amp; <code>R_BEDROCK_GOT64</code> &amp; <code>64-bit unsigned</code> &amp; <code>GOT(S) + A</code><br />
-25 &amp; <code>R_BEDROCK_GOTPCREL32S</code> &amp; <code>32-bit signed</code> &amp; <code>GOT(S) + A - P</code><br />
-26 &amp; <code>R_BEDROCK_GOTPCREL64</code> &amp; <code>64-bit signed</code> &amp; <code>GOT(S) + A - P</code><br />
-27 &amp; <code>R_BEDROCK_GOTOFF32S</code> &amp; <code>32-bit signed</code> &amp; <code>S + A - GB</code><br />
-28 &amp; <code>R_BEDROCK_GOTOFF64</code> &amp; <code>64-bit signed</code> &amp; <code>S + A - GB</code><br />
-29 &amp; <code>R_BEDROCK_GOT_BASE_PCREL32S</code> &amp; <code>32-bit signed</code> &amp; <code>GB + A - P</code><br />
-30 &amp; <code>R_BEDROCK_GOT_BASE_PCREL64</code> &amp; <code>64-bit signed</code> &amp; <code>GB + A - P</code><br />
-31 &amp; <code>R_BEDROCK_PLT16S</code> &amp; <code>16-bit signed</code> &amp; <code>PLT(S) + A - N</code><br />
-32 &amp; <code>R_BEDROCK_PLT32S</code> &amp; <code>32-bit signed</code> &amp; <code>PLT(S) + A - N</code><br />
-33 &amp; <code>R_BEDROCK_PLT64</code> &amp; <code>64-bit unsigned</code> &amp; <code>PLT(S) + A</code><br />
-34 &amp; <code>R_BEDROCK_RELATIVE</code> &amp; <code>64-bit unsigned</code> &amp; <code>B + A</code><br />
-35 &amp; <code>R_BEDROCK_GLOB_DAT</code> &amp; <code>64-bit unsigned</code> &amp; <code>S + A</code><br />
-36 &amp; <code>R_BEDROCK_JUMP_SLOT</code> &amp; <code>64-bit unsigned</code> &amp; <code>S + A</code><br />
-37 &amp; <code>R_BEDROCK_COPY</code> &amp; <code>variable-size</code> &amp; <code>copy symbol size bytes</code><br />
-38 &amp; <code>R_BEDROCK_IRELATIVE</code> &amp; <code>64-bit unsigned</code> &amp; <code>Resolver(B + A)</code><br />
-39 &amp; <code>R_BEDROCK_TLS_OFFSET32S</code> &amp; <code>32-bit signed</code> &amp; <code>TLS(S) + A</code><br />
-40 &amp; <code>R_BEDROCK_TLS_OFFSET64</code> &amp; <code>64-bit signed</code> &amp; <code>TLS(S) + A</code><br />
-41 &amp; <code>R_BEDROCK_TLSDESC_GOTPCREL32S</code> &amp; <code>32-bit signed</code> &amp; <code>TLSDESC(S) + A - P</code><br />
-42 &amp; <code>R_BEDROCK_TLSDESC_GOTPCREL64</code> &amp; <code>64-bit signed</code> &amp; <code>TLSDESC(S) + A - P</code><br />
-43 &amp; <code>R_BEDROCK_TLSDESC_CALL</code> &amp; <code>0</code> &amp; <code>none</code><br />
-44 &amp; <code>R_BEDROCK_TLSDESC</code> &amp; <code>2 x u64</code> &amp; <code>write {function, argument} for S</code><br />
-45 &amp; <code>R_BEDROCK_FAR_ADDR64</code> &amp; <code>64-bit unsigned</code> &amp; <code>FARADDR(S) + A</code><br />
-46 &amp; <code>R_BEDROCK_FAR_SEGMENT64</code> &amp; <code>64-bit unsigned</code> &amp; <code>SEG(S)</code><br />
-47 &amp; <code>R_BEDROCK_FAR_DOMAIN64</code> &amp; <code>64-bit unsigned</code> &amp; <code>SEGDOM(A)</code><br />
-48 &amp; <code>R_BEDROCK_FAR_GLOB_DAT</code> &amp; <code>128-bit unsigned</code> &amp; <code>{FARADDR(S) + A, SEG(S)}</code><br />
-49 &amp; <code>R_BEDROCK_FAR_JUMP_SLOT</code> &amp; <code>128-bit unsigned</code> &amp; <code>FAR(S)</code><br />
-50 &amp; <code>R_BEDROCK_FAR_IRELATIVE</code> &amp; <code>128-bit unsigned</code> &amp; <code>FarResolver(B + A)</code>  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Type</strong></th>
+<th style="text-align: left;"><strong>Name</strong></th>
+<th style="text-align: left;"><strong>Size</strong></th>
+<th style="text-align: left;"><strong>Calculation</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;"><code>R_BEDROCK_NONE</code></td>
+<td style="text-align: left;"><code>0</code></td>
+<td style="text-align: left;"><code>none</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;"><code>R_BEDROCK_ABS8</code></td>
+<td style="text-align: left;"><code>8-bit unsigned</code></td>
+<td style="text-align: left;"><code>S + A</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">2</td>
+<td style="text-align: left;"><code>R_BEDROCK_ABS16</code></td>
+<td style="text-align: left;"><code>16-bit unsigned</code></td>
+<td style="text-align: left;"><code>S + A</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">3</td>
+<td style="text-align: left;"><code>R_BEDROCK_ABS32S</code></td>
+<td style="text-align: left;"><code>32-bit signed</code></td>
+<td style="text-align: left;"><code>S + A</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">4</td>
+<td style="text-align: left;"><code>R_BEDROCK_ABS64</code></td>
+<td style="text-align: left;"><code>64-bit unsigned</code></td>
+<td style="text-align: left;"><code>S + A</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">5</td>
+<td style="text-align: left;"><code>R_BEDROCK_IMM8S</code></td>
+<td style="text-align: left;"><code>8-bit signed</code></td>
+<td style="text-align: left;"><code>S + A</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">6</td>
+<td style="text-align: left;"><code>R_BEDROCK_IMM16S</code></td>
+<td style="text-align: left;"><code>16-bit signed</code></td>
+<td style="text-align: left;"><code>S + A</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">7</td>
+<td style="text-align: left;"><code>R_BEDROCK_IMM32S</code></td>
+<td style="text-align: left;"><code>32-bit signed</code></td>
+<td style="text-align: left;"><code>S + A</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">8</td>
+<td style="text-align: left;"><code>R_BEDROCK_IMM64</code></td>
+<td style="text-align: left;"><code>64-bit unsigned</code></td>
+<td style="text-align: left;"><code>S + A</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">9</td>
+<td style="text-align: left;"><code>R_BEDROCK_DISP8S</code></td>
+<td style="text-align: left;"><code>8-bit signed</code></td>
+<td style="text-align: left;"><code>S + A</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">10</td>
+<td style="text-align: left;"><code>R_BEDROCK_DISP16S</code></td>
+<td style="text-align: left;"><code>16-bit signed</code></td>
+<td style="text-align: left;"><code>S + A</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">11</td>
+<td style="text-align: left;"><code>R_BEDROCK_DISP32S</code></td>
+<td style="text-align: left;"><code>32-bit signed</code></td>
+<td style="text-align: left;"><code>S + A</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">12</td>
+<td style="text-align: left;"><code>R_BEDROCK_DISP64</code></td>
+<td style="text-align: left;"><code>64-bit unsigned</code></td>
+<td style="text-align: left;"><code>S + A</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">13</td>
+<td style="text-align: left;"><code>R_BEDROCK_PCREL8S</code></td>
+<td style="text-align: left;"><code>8-bit signed</code></td>
+<td style="text-align: left;"><code>S + A - P</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">14</td>
+<td style="text-align: left;"><code>R_BEDROCK_PCREL16S</code></td>
+<td style="text-align: left;"><code>16-bit signed</code></td>
+<td style="text-align: left;"><code>S + A - P</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">15</td>
+<td style="text-align: left;"><code>R_BEDROCK_PCREL32S</code></td>
+<td style="text-align: left;"><code>32-bit signed</code></td>
+<td style="text-align: left;"><code>S + A - P</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">16</td>
+<td style="text-align: left;"><code>R_BEDROCK_PCREL64</code></td>
+<td style="text-align: left;"><code>64-bit signed</code></td>
+<td style="text-align: left;"><code>S + A - P</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">17</td>
+<td style="text-align: left;"><code>R_BEDROCK_BRDISP8S</code></td>
+<td style="text-align: left;"><code>8-bit signed</code></td>
+<td style="text-align: left;"><code>S + A - N</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">18</td>
+<td style="text-align: left;"><code>R_BEDROCK_BRDISP16S</code></td>
+<td style="text-align: left;"><code>16-bit signed</code></td>
+<td style="text-align: left;"><code>S + A - N</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">19</td>
+<td style="text-align: left;"><code>R_BEDROCK_BRDISP32S</code></td>
+<td style="text-align: left;"><code>32-bit signed</code></td>
+<td style="text-align: left;"><code>S + A - N</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">20</td>
+<td style="text-align: left;"><code>R_BEDROCK_CALL16S</code></td>
+<td style="text-align: left;"><code>16-bit signed</code></td>
+<td style="text-align: left;"><code>S + A - N</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">21</td>
+<td style="text-align: left;"><code>R_BEDROCK_CALL32S</code></td>
+<td style="text-align: left;"><code>32-bit signed</code></td>
+<td style="text-align: left;"><code>S + A - N</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">22</td>
+<td style="text-align: left;"><code>R_BEDROCK_SECTION_REL32</code></td>
+<td style="text-align: left;"><code>32-bit unsigned</code></td>
+<td style="text-align: left;"><code>S + A - SB</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">23</td>
+<td style="text-align: left;"><code>R_BEDROCK_SECTION_REL64</code></td>
+<td style="text-align: left;"><code>64-bit unsigned</code></td>
+<td style="text-align: left;"><code>S + A - SB</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">24</td>
+<td style="text-align: left;"><code>R_BEDROCK_GOT64</code></td>
+<td style="text-align: left;"><code>64-bit unsigned</code></td>
+<td style="text-align: left;"><code>GOT(S) + A</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">25</td>
+<td style="text-align: left;"><code>R_BEDROCK_GOTPCREL32S</code></td>
+<td style="text-align: left;"><code>32-bit signed</code></td>
+<td style="text-align: left;"><code>GOT(S) + A - P</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">26</td>
+<td style="text-align: left;"><code>R_BEDROCK_GOTPCREL64</code></td>
+<td style="text-align: left;"><code>64-bit signed</code></td>
+<td style="text-align: left;"><code>GOT(S) + A - P</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">27</td>
+<td style="text-align: left;"><code>R_BEDROCK_GOTOFF32S</code></td>
+<td style="text-align: left;"><code>32-bit signed</code></td>
+<td style="text-align: left;"><code>S + A - GB</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">28</td>
+<td style="text-align: left;"><code>R_BEDROCK_GOTOFF64</code></td>
+<td style="text-align: left;"><code>64-bit signed</code></td>
+<td style="text-align: left;"><code>S + A - GB</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">29</td>
+<td style="text-align: left;"><code>R_BEDROCK_GOT_BASE_PCREL32S</code></td>
+<td style="text-align: left;"><code>32-bit signed</code></td>
+<td style="text-align: left;"><code>GB + A - P</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">30</td>
+<td style="text-align: left;"><code>R_BEDROCK_GOT_BASE_PCREL64</code></td>
+<td style="text-align: left;"><code>64-bit signed</code></td>
+<td style="text-align: left;"><code>GB + A - P</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">31</td>
+<td style="text-align: left;"><code>R_BEDROCK_PLT16S</code></td>
+<td style="text-align: left;"><code>16-bit signed</code></td>
+<td style="text-align: left;"><code>PLT(S) + A - N</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">32</td>
+<td style="text-align: left;"><code>R_BEDROCK_PLT32S</code></td>
+<td style="text-align: left;"><code>32-bit signed</code></td>
+<td style="text-align: left;"><code>PLT(S) + A - N</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">33</td>
+<td style="text-align: left;"><code>R_BEDROCK_PLT64</code></td>
+<td style="text-align: left;"><code>64-bit unsigned</code></td>
+<td style="text-align: left;"><code>PLT(S) + A</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">34</td>
+<td style="text-align: left;"><code>R_BEDROCK_RELATIVE</code></td>
+<td style="text-align: left;"><code>64-bit unsigned</code></td>
+<td style="text-align: left;"><code>B + A</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">35</td>
+<td style="text-align: left;"><code>R_BEDROCK_GLOB_DAT</code></td>
+<td style="text-align: left;"><code>64-bit unsigned</code></td>
+<td style="text-align: left;"><code>S + A</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">36</td>
+<td style="text-align: left;"><code>R_BEDROCK_JUMP_SLOT</code></td>
+<td style="text-align: left;"><code>64-bit unsigned</code></td>
+<td style="text-align: left;"><code>S + A</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">37</td>
+<td style="text-align: left;"><code>R_BEDROCK_COPY</code></td>
+<td style="text-align: left;"><code>variable-size</code></td>
+<td style="text-align: left;"><code>copy symbol size bytes</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">38</td>
+<td style="text-align: left;"><code>R_BEDROCK_IRELATIVE</code></td>
+<td style="text-align: left;"><code>64-bit unsigned</code></td>
+<td style="text-align: left;"><code>Resolver(B + A)</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">39</td>
+<td style="text-align: left;"><code>R_BEDROCK_TLS_OFFSET32S</code></td>
+<td style="text-align: left;"><code>32-bit signed</code></td>
+<td style="text-align: left;"><code>TLS(S) + A</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">40</td>
+<td style="text-align: left;"><code>R_BEDROCK_TLS_OFFSET64</code></td>
+<td style="text-align: left;"><code>64-bit signed</code></td>
+<td style="text-align: left;"><code>TLS(S) + A</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">41</td>
+<td style="text-align: left;"><code>R_BEDROCK_TLSDESC_GOTPCREL32S</code></td>
+<td style="text-align: left;"><code>32-bit signed</code></td>
+<td style="text-align: left;"><code>TLSDESC(S) + A - P</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">42</td>
+<td style="text-align: left;"><code>R_BEDROCK_TLSDESC_GOTPCREL64</code></td>
+<td style="text-align: left;"><code>64-bit signed</code></td>
+<td style="text-align: left;"><code>TLSDESC(S) + A - P</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">43</td>
+<td style="text-align: left;"><code>R_BEDROCK_TLSDESC_CALL</code></td>
+<td style="text-align: left;"><code>0</code></td>
+<td style="text-align: left;"><code>none</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">44</td>
+<td style="text-align: left;"><code>R_BEDROCK_TLSDESC</code></td>
+<td style="text-align: left;"><code>2 x u64</code></td>
+<td style="text-align: left;"><code>write {function, argument} for S</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">45</td>
+<td style="text-align: left;"><code>R_BEDROCK_FAR_ADDR64</code></td>
+<td style="text-align: left;"><code>64-bit unsigned</code></td>
+<td style="text-align: left;"><code>FARADDR(S) + A</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">46</td>
+<td style="text-align: left;"><code>R_BEDROCK_FAR_SEGMENT64</code></td>
+<td style="text-align: left;"><code>64-bit unsigned</code></td>
+<td style="text-align: left;"><code>SEG(S)</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">47</td>
+<td style="text-align: left;"><code>R_BEDROCK_FAR_DOMAIN64</code></td>
+<td style="text-align: left;"><code>64-bit unsigned</code></td>
+<td style="text-align: left;"><code>SEGDOM(A)</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">48</td>
+<td style="text-align: left;"><code>R_BEDROCK_FAR_GLOB_DAT</code></td>
+<td style="text-align: left;"><code>128-bit unsigned</code></td>
+<td style="text-align: left;"><code>{FARADDR(S) + A, SEG(S)}</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">49</td>
+<td style="text-align: left;"><code>R_BEDROCK_FAR_JUMP_SLOT</code></td>
+<td style="text-align: left;"><code>128-bit unsigned</code></td>
+<td style="text-align: left;"><code>FAR(S)</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">50</td>
+<td style="text-align: left;"><code>R_BEDROCK_FAR_IRELATIVE</code></td>
+<td style="text-align: left;"><code>128-bit unsigned</code></td>
+<td style="text-align: left;"><code>FarResolver(B + A)</code></td>
+</tr>
+</tbody>
+</table>
 <h2 id="relocation-families-and-additional-constraints">Relocation Families and Additional Constraints</h2>
 <p>Relocations 1–12 write absolute data, immediate, or effective-address payloads. Relocations 13–23 write PC-relative, next-instruction-relative, or section-relative results. Relocations 24–33 address GOT slots, the GOT base, symbols relative to that base, and PLT entries. Relocations 34–38 are ordinary dynamic-loader operations. Relocations 39–44 implement GS0 local-exec and TLSDESC TLS. Relocations 45–50 construct or resolve canonical far pairs. The table defines widths and calculations; Sections 6, 8, and 9 supply additional rules.</p>
 

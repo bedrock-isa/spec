@@ -8964,16 +8964,72 @@
 <h2 id="header-topology-and-exposure">Header Topology and Exposure</h2>
 <p><code>&lt;bedrockintrin.h&gt;</code> is the public umbrella. It includes the far, core, memory, integer, and floating-point families and deliberately exposes no system-management operation. <code>&lt;bedrocksystemintrin.h&gt;</code> is the system umbrella for system-register, cache, MMU, and processor-state facilities. Any family header may also be included directly.</p>
 <p><strong>Target Intrinsic Header Families</strong></p>
-<p>@p1.15inp1.65inp0.65inp2.15in@ <strong>Family</strong> &amp; <strong>Header</strong> &amp; <strong>Umbrella</strong> &amp; <strong>Exposure</strong><br />
-far pointer &amp; <code>&lt;bedrockfarintrin.h&gt;</code> &amp; public &amp; <code>bedrock-c-far</code> profile<br />
-core &amp; <code>&lt;bedrockcoreintrin.h&gt;</code> &amp; public &amp; unprivileged core operations<br />
-memory &amp; <code>&lt;bedrockmemoryintrin.h&gt;</code> &amp; public &amp; user ordering and access hints<br />
-integer &amp; <code>&lt;bedrockintegerintrin.h&gt;</code> &amp; public &amp; nonportable integer operations<br />
-floating point &amp; <code>&lt;bedrockfpuintrin.h&gt;</code> &amp; public &amp; floating-point environment and classification<br />
-system registers &amp; <code>&lt;bedrocksysregintrin.h&gt;</code> &amp; system &amp; architectural system-register access<br />
-cache &amp; <code>&lt;bedrockcacheintrin.h&gt;</code> &amp; system &amp; cache management<br />
-MMU &amp; <code>&lt;bedrockmmuintrin.h&gt;</code> &amp; system &amp; supervisor translation operations<br />
-processor state &amp; <code>&lt;bedrockstateintrin.h&gt;</code> &amp; system &amp; runtime state management  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Family</strong></th>
+<th style="text-align: left;"><strong>Header</strong></th>
+<th style="text-align: left;"><strong>Umbrella</strong></th>
+<th style="text-align: left;"><strong>Exposure</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">far pointer</td>
+<td style="text-align: left;"><code>&lt;bedrockfarintrin.h&gt;</code></td>
+<td style="text-align: left;">public</td>
+<td style="text-align: left;"><code>bedrock-c-far</code> profile</td>
+</tr>
+<tr>
+<td style="text-align: left;">core</td>
+<td style="text-align: left;"><code>&lt;bedrockcoreintrin.h&gt;</code></td>
+<td style="text-align: left;">public</td>
+<td style="text-align: left;">unprivileged core operations</td>
+</tr>
+<tr>
+<td style="text-align: left;">memory</td>
+<td style="text-align: left;"><code>&lt;bedrockmemoryintrin.h&gt;</code></td>
+<td style="text-align: left;">public</td>
+<td style="text-align: left;">user ordering and access hints</td>
+</tr>
+<tr>
+<td style="text-align: left;">integer</td>
+<td style="text-align: left;"><code>&lt;bedrockintegerintrin.h&gt;</code></td>
+<td style="text-align: left;">public</td>
+<td style="text-align: left;">nonportable integer operations</td>
+</tr>
+<tr>
+<td style="text-align: left;">floating point</td>
+<td style="text-align: left;"><code>&lt;bedrockfpuintrin.h&gt;</code></td>
+<td style="text-align: left;">public</td>
+<td style="text-align: left;">floating-point environment and classification</td>
+</tr>
+<tr>
+<td style="text-align: left;">system registers</td>
+<td style="text-align: left;"><code>&lt;bedrocksysregintrin.h&gt;</code></td>
+<td style="text-align: left;">system</td>
+<td style="text-align: left;">architectural system-register access</td>
+</tr>
+<tr>
+<td style="text-align: left;">cache</td>
+<td style="text-align: left;"><code>&lt;bedrockcacheintrin.h&gt;</code></td>
+<td style="text-align: left;">system</td>
+<td style="text-align: left;">cache management</td>
+</tr>
+<tr>
+<td style="text-align: left;">MMU</td>
+<td style="text-align: left;"><code>&lt;bedrockmmuintrin.h&gt;</code></td>
+<td style="text-align: left;">system</td>
+<td style="text-align: left;">supervisor translation operations</td>
+</tr>
+<tr>
+<td style="text-align: left;">processor state</td>
+<td style="text-align: left;"><code>&lt;bedrockstateintrin.h&gt;</code></td>
+<td style="text-align: left;">system</td>
+<td style="text-align: left;">runtime state management</td>
+</tr>
+</tbody>
+</table>
 <h2 id="common-compilation-rules">Common Compilation Rules</h2>
 <p>Family wrappers are static inline functions unless an encoded immediate or type operand requires a macro. Every builtin listed by an enabled profile must be recognized by the compiler. If a required optional feature is disabled and no fallback is specified here, compilation fails rather than emitting an unresolved call.</p>
 <p>An encoded immediate must be an integer constant expression in the stated range. Header inclusion neither suppresses nor emulates architectural privilege checks. An operation is volatile only when its entry states an externally observable architectural effect. Compiler memory effects and hardware ordering are exactly those stated by the entry; one does not imply the other.</p>

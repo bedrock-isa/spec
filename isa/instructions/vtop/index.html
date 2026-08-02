@@ -9015,14 +9015,32 @@
 <p>Length = 4 bytes</p>
 <h2 id="detailed-semantics">Detailed Semantics</h2>
 <p><strong>FLAGS Effects</strong></p>
-<p>@&gt;</p>
-<p>p0.62in&gt;</p>
-<p>p4.68in@</p>
-<p><strong>Flag</strong> &amp; <strong>Effect</strong>  </p>
-<p><code>Z</code> &amp; translation query succeeded<br />
-<code>N</code> &amp; successful translation is user-domain accessible; cleared on failure<br />
-<code>C</code> &amp; successful translation is writable; cleared on failure<br />
-<code>V</code> &amp; successful translation is executable; cleared on failure  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Flag</strong></th>
+<th style="text-align: left;"><strong>Effect</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>Z</code></td>
+<td style="text-align: left;">translation query succeeded</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>N</code></td>
+<td style="text-align: left;">successful translation is user-domain accessible; cleared on failure</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>C</code></td>
+<td style="text-align: left;">successful translation is writable; cleared on failure</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>V</code></td>
+<td style="text-align: left;">successful translation is executable; cleared on failure</td>
+</tr>
+</tbody>
+</table>
 <p>The source address is checked for canonicality before the page-table walk. The walk begins at the PTCR root and follows the active LA48 or LA57 hierarchy using the virtual page number.</p>
 <p>Every nonleaf entry must be a valid table pointer. U, W, and X are accumulated across the walk. A valid L1 leaf supplies the physical frame number, which is combined with the original 12-bit page offset. Success sets Z and reports effective U, W, and X in N, C, and V. Any canonicality or walk failure returns zero and clears all four flags without raising <code>PAGE_FAULT</code>, setting PTE A or D, or modifying the TLB.</p>
 <h2 id="instruction-forms">Instruction Forms</h2>

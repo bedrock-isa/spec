@@ -8987,11 +8987,37 @@
 <h2 id="page-permissions">Page Permissions</h2>
 <p>Every <code>PT_LOAD</code> shall set <code>PF_R</code>. A loader rejects a <code>PT_LOAD</code> whose flags are zero or contain <code>PF_W</code> or <code>PF_X</code> without <code>PF_R</code>. For an accepted segment, <code>PF_W</code> and <code>PF_X</code> map independently to PTE W and X as shown below. This restriction is required because a present Bedrock page is readable and cannot implement a write-only or execute-only ELF segment.</p>
 <p><strong>ELF Segment Permission Mapping</strong></p>
-<p>@p1.2inp1.45inp2.85in@ <strong>ELF Flags</strong> &amp; <strong>PTE Flags</strong> &amp; <strong>Meaning</strong><br />
-<code>PF_R</code> &amp; P, U &amp; readable user page<br />
-<code>PF_RPF_W</code> &amp; P, U, W &amp; readable writable user page<br />
-<code>PF_RPF_X</code> &amp; P, U, X &amp; readable executable user page<br />
-<code>PF_RPF_WPF_X</code> &amp; P, U, W, X &amp; readable writable executable user page  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>ELF Flags</strong></th>
+<th style="text-align: left;"><strong>PTE Flags</strong></th>
+<th style="text-align: left;"><strong>Meaning</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>PF_R</code></td>
+<td style="text-align: left;">P, U</td>
+<td style="text-align: left;">readable user page</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>PF_RPF_W</code></td>
+<td style="text-align: left;">P, U, W</td>
+<td style="text-align: left;">readable writable user page</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>PF_RPF_X</code></td>
+<td style="text-align: left;">P, U, X</td>
+<td style="text-align: left;">readable executable user page</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>PF_RPF_WPF_X</code></td>
+<td style="text-align: left;">P, U, W, X</td>
+<td style="text-align: left;">readable writable executable user page</td>
+</tr>
+</tbody>
+</table>
 <h2 id="execution-environment">Execution Environment</h2>
 <p>At transfer to <code>e_entry</code>, the active code context must permit fetch from the entry address, the data context must cover the mapped ordinary data regions, and the stack context must permit reads and writes to the stack provided by the platform/runtime environment ABI. This document does not fix the numeric values or descriptor images of CS, DS, or SS.</p>
 <p>Executable images and ordinary shared objects form one ABI-visible near-call linkage domain. Their function symbols are pre-segment code addresses, not CS:PC pairs. A segment-changing call is therefore outside the ordinary dynamic linking contract; a runtime or OS ABI may expose a near-call veneer for such a transfer.</p>

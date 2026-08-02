@@ -9220,74 +9220,314 @@
 <p><img alt="Architectural Event Code" src="../../assets/visuals/isa/architectural-event-processing-model-01.svg" /></p>
 <p><strong>Architectural Event Code</strong></p>
 <p><strong>Architectural Event Classes</strong></p>
-<p>@&gt;</p>
-<p>p0.65in&gt;</p>
-<p>p1.15in&gt;</p>
-<p>p3.65in@</p>
-<p><strong>Value</strong> &amp; <strong>Class</strong> &amp; <strong>ID interpretation</strong><br />
-<code>0x00</code> &amp; EXCEPTION &amp; architecture-defined exception ID<br />
-<code>0x01</code> &amp; INTERRUPT &amp; opaque platform-assigned global interrupt ID<br />
-<code>0x02</code> &amp; NMI &amp; zero or an architecturally/platform-defined NMI source ID<br />
-<code>0x03..0xFF</code> &amp; reserved &amp; –  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Value</strong></th>
+<th style="text-align: left;"><strong>Class</strong></th>
+<th style="text-align: left;"><strong>ID interpretation</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>0x00</code></td>
+<td style="text-align: left;">EXCEPTION</td>
+<td style="text-align: left;">architecture-defined exception ID</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x01</code></td>
+<td style="text-align: left;">INTERRUPT</td>
+<td style="text-align: left;">opaque platform-assigned global interrupt ID</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x02</code></td>
+<td style="text-align: left;">NMI</td>
+<td style="text-align: left;">zero or an architecturally/platform-defined NMI source ID</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x03..0xFF</code></td>
+<td style="text-align: left;">reserved</td>
+<td style="text-align: left;">–</td>
+</tr>
+</tbody>
+</table>
 <p><strong>Assigned Base Exception IDs</strong></p>
-<p>@&gt;</p>
-<p>p0.55in&gt;</p>
-<p>p2.05in&gt;</p>
-<p>p2.85in@</p>
-<p><strong>ID</strong> &amp; <strong>Name</strong> &amp; <strong>Subtype or source</strong>  </p>
-<p><code>0x00</code> &amp; DEBUG_TRACE &amp; debug trace trap<br />
-<code>0x02</code> &amp; BREAKPOINT &amp; breakpoint trap<br />
-<code>0x03</code> &amp; ILLEGAL_INSTRUCTION &amp; illegal-instruction fault<br />
-<code>0x08</code> &amp; PRIVILEGE_FAULT &amp; privilege fault<br />
-<code>0x09</code> &amp; PAGE_FAULT &amp; address-translation, access, or atomic-alignment fault<br />
-<code>0x0A</code> &amp; DIVIDE_ERROR &amp; integer divide fault<br />
-<code>0x0D</code> &amp; INVALID_CONTROL_STATE &amp; invalid control-state fault<br />
-<code>0x0E</code> &amp; FLOATING_POINT_FAULT &amp; floating-point fault or trap<br />
-<code>0x18</code> &amp; DOUBLE_FAULT &amp; event-delivery failure<br />
-<code>0x19</code> &amp; MACHINE_CHECK &amp; corrected trap or recoverable/fatal machine-check exception<br />
-<code>0x1A</code> &amp; BUS_ERROR &amp; synchronous precise bus-error fault  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>ID</strong></th>
+<th style="text-align: left;"><strong>Name</strong></th>
+<th style="text-align: left;"><strong>Subtype or source</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>0x00</code></td>
+<td style="text-align: left;">DEBUG_TRACE</td>
+<td style="text-align: left;">debug trace trap</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x02</code></td>
+<td style="text-align: left;">BREAKPOINT</td>
+<td style="text-align: left;">breakpoint trap</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x03</code></td>
+<td style="text-align: left;">ILLEGAL_INSTRUCTION</td>
+<td style="text-align: left;">illegal-instruction fault</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x08</code></td>
+<td style="text-align: left;">PRIVILEGE_FAULT</td>
+<td style="text-align: left;">privilege fault</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x09</code></td>
+<td style="text-align: left;">PAGE_FAULT</td>
+<td style="text-align: left;">address-translation, access, or atomic-alignment fault</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0A</code></td>
+<td style="text-align: left;">DIVIDE_ERROR</td>
+<td style="text-align: left;">integer divide fault</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0D</code></td>
+<td style="text-align: left;">INVALID_CONTROL_STATE</td>
+<td style="text-align: left;">invalid control-state fault</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0E</code></td>
+<td style="text-align: left;">FLOATING_POINT_FAULT</td>
+<td style="text-align: left;">floating-point fault or trap</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x18</code></td>
+<td style="text-align: left;">DOUBLE_FAULT</td>
+<td style="text-align: left;">event-delivery failure</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x19</code></td>
+<td style="text-align: left;">MACHINE_CHECK</td>
+<td style="text-align: left;">corrected trap or recoverable/fatal machine-check exception</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x1A</code></td>
+<td style="text-align: left;">BUS_ERROR</td>
+<td style="text-align: left;">synchronous precise bus-error fault</td>
+</tr>
+</tbody>
+</table>
 <p><strong>Architectural Event Boundaries and Priority</strong></p>
-<p>@&gt;</p>
-<p>p0.75in&gt;</p>
-<p>p1.15in&gt;</p>
-<p>p0.85in&gt;</p>
-<p>p2.15in&gt;</p>
-<p>p0.50in@</p>
-<p><strong>Code</strong> &amp; <strong>Event</strong> &amp; <strong>Kind</strong> &amp; <strong>Saved PC</strong> &amp; <strong>Priority</strong>  </p>
-<p><code>EXC:00</code> &amp; <code>DEBUG_TRACE</code> &amp; trap &amp; next trace unit &amp; 5<br />
-<code>EXC:02</code> &amp; <code>BREAKPOINT</code> &amp; explicit trap &amp; following instruction &amp; 4<br />
-<code>EXC:03</code> &amp; <code>ILLEGAL_INSTRUCTION</code> &amp; fault &amp; faulting instruction &amp; 3<br />
-<code>EXC:08</code> &amp; <code>PRIVILEGE_FAULT</code> &amp; fault &amp; faulting instruction &amp; 3<br />
-<code>EXC:09</code> &amp; <code>PAGE_FAULT</code> &amp; fault &amp; faulting instruction &amp; 3<br />
-<code>EXC:0a</code> &amp; <code>DIVIDE_ERROR</code> &amp; fault &amp; faulting instruction &amp; 3<br />
-<code>EXC:0d</code> &amp; <code>INVALID_CONTROL_STATE</code> &amp; fault &amp; faulting instruction &amp; 3<br />
-<code>EXC:0e</code> &amp; <code>FLOATING_POINT_FAULT</code> &amp; fault &amp; faulting instruction &amp; 3<br />
-<code>EXC:18</code> &amp; <code>DOUBLE_FAULT</code> &amp; delivery failure &amp; interrupted event boundary &amp; 1<br />
-<code>EXC:19</code> &amp; <code>MACHINE_CHECK</code> &amp; machine check &amp; selected by PRECISE and corrected status &amp; 2<br />
-<code>EXC:1a</code> &amp; <code>BUS_ERROR</code> &amp; fault &amp; faulting instruction &amp; 3<br />
-<code>NMI:source</code> &amp; <code>NMI</code> &amp; asynchronous &amp; next instruction or repeat continuation &amp; 6<br />
-<code>INTERRUPT:platform</code> &amp; <code>INTERRUPT</code> &amp; asynchronous &amp; next instruction or repeat continuation &amp; 7  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Code</strong></th>
+<th style="text-align: left;"><strong>Event</strong></th>
+<th style="text-align: left;"><strong>Kind</strong></th>
+<th style="text-align: left;"><strong>Saved PC</strong></th>
+<th style="text-align: left;"><strong>Priority</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>EXC:00</code></td>
+<td style="text-align: left;"><code>DEBUG_TRACE</code></td>
+<td style="text-align: left;">trap</td>
+<td style="text-align: left;">next trace unit</td>
+<td style="text-align: left;">5</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>EXC:02</code></td>
+<td style="text-align: left;"><code>BREAKPOINT</code></td>
+<td style="text-align: left;">explicit trap</td>
+<td style="text-align: left;">following instruction</td>
+<td style="text-align: left;">4</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>EXC:03</code></td>
+<td style="text-align: left;"><code>ILLEGAL_INSTRUCTION</code></td>
+<td style="text-align: left;">fault</td>
+<td style="text-align: left;">faulting instruction</td>
+<td style="text-align: left;">3</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>EXC:08</code></td>
+<td style="text-align: left;"><code>PRIVILEGE_FAULT</code></td>
+<td style="text-align: left;">fault</td>
+<td style="text-align: left;">faulting instruction</td>
+<td style="text-align: left;">3</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>EXC:09</code></td>
+<td style="text-align: left;"><code>PAGE_FAULT</code></td>
+<td style="text-align: left;">fault</td>
+<td style="text-align: left;">faulting instruction</td>
+<td style="text-align: left;">3</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>EXC:0a</code></td>
+<td style="text-align: left;"><code>DIVIDE_ERROR</code></td>
+<td style="text-align: left;">fault</td>
+<td style="text-align: left;">faulting instruction</td>
+<td style="text-align: left;">3</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>EXC:0d</code></td>
+<td style="text-align: left;"><code>INVALID_CONTROL_STATE</code></td>
+<td style="text-align: left;">fault</td>
+<td style="text-align: left;">faulting instruction</td>
+<td style="text-align: left;">3</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>EXC:0e</code></td>
+<td style="text-align: left;"><code>FLOATING_POINT_FAULT</code></td>
+<td style="text-align: left;">fault</td>
+<td style="text-align: left;">faulting instruction</td>
+<td style="text-align: left;">3</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>EXC:18</code></td>
+<td style="text-align: left;"><code>DOUBLE_FAULT</code></td>
+<td style="text-align: left;">delivery failure</td>
+<td style="text-align: left;">interrupted event boundary</td>
+<td style="text-align: left;">1</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>EXC:19</code></td>
+<td style="text-align: left;"><code>MACHINE_CHECK</code></td>
+<td style="text-align: left;">machine check</td>
+<td style="text-align: left;">selected by PRECISE and corrected status</td>
+<td style="text-align: left;">2</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>EXC:1a</code></td>
+<td style="text-align: left;"><code>BUS_ERROR</code></td>
+<td style="text-align: left;">fault</td>
+<td style="text-align: left;">faulting instruction</td>
+<td style="text-align: left;">3</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NMI:source</code></td>
+<td style="text-align: left;"><code>NMI</code></td>
+<td style="text-align: left;">asynchronous</td>
+<td style="text-align: left;">next instruction or repeat continuation</td>
+<td style="text-align: left;">6</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>INTERRUPT:platform</code></td>
+<td style="text-align: left;"><code>INTERRUPT</code></td>
+<td style="text-align: left;">asynchronous</td>
+<td style="text-align: left;">next instruction or repeat continuation</td>
+<td style="text-align: left;">7</td>
+</tr>
+</tbody>
+</table>
 <p><strong>Architectural Event Producers and Delivery State</strong></p>
-<p>@&gt;</p>
-<p>p1.05in&gt;</p>
-<p>p1.25in&gt;</p>
-<p>p1.50in&gt;</p>
-<p>p0.70in&gt;</p>
-<p>p1.00in@</p>
-<p><strong>Event</strong> &amp; <strong>Producer</strong> &amp; <strong>Committed State</strong> &amp; <strong>Frame</strong> &amp; <strong>Payload</strong>  </p>
-<p><code>DEBUG_TRACE</code> &amp; completion of a TF-selected trace unit &amp; completed trace unit &amp; <code>BASIC</code> &amp; none<br />
-<code>BREAKPOINT</code> &amp; BKPT &amp; BKPT completed &amp; <code>BASIC</code> &amp; none<br />
-<code>ILLEGAL_INSTRUCTION</code> &amp; decode or instruction-validity check &amp; no effects of the faulting instruction &amp; <code>ERROR</code> &amp; error code<br />
-<code>PRIVILEGE_FAULT</code> &amp; privilege check &amp; no effects of the faulting instruction &amp; <code>BASIC</code> &amp; none<br />
-<code>PAGE_FAULT</code> &amp; segment, translation, access, or atomic-alignment check &amp; no effects of the faulting instruction &amp; <code>PAGE_FAULT</code> &amp; error code, fault EA, and linear address<br />
-<code>DIVIDE_ERROR</code> &amp; integer divide operation &amp; no effects of the faulting instruction &amp; <code>ERROR</code> &amp; error code<br />
-<code>INVALID_CONTROL_STATE</code> &amp; control-state validation &amp; no effects of the faulting instruction &amp; <code>ERROR</code> &amp; error code<br />
-<code>FLOATING_POINT_FAULT</code> &amp; enabled floating-point exception &amp; no destination or accrued-flag effects of the faulting instruction &amp; <code>ERROR</code> &amp; error code<br />
-<code>DOUBLE_FAULT</code> &amp; architectural event-delivery failure &amp; no partial first delivery state &amp; <code>AUXILIARY</code> &amp; delivery-failure auxiliary state<br />
-<code>MACHINE_CHECK</code> &amp; processor or memory-system machine-check source &amp; selected by PRECISE and RETRY_SAFE &amp; <code>AUXILIARY</code> &amp; machine-check auxiliary state<br />
-<code>BUS_ERROR</code> &amp; synchronous acknowledged bus failure &amp; no CPU state effects of the faulting instruction &amp; <code>AUXILIARY</code> &amp; bus-error auxiliary state<br />
-<code>NMI</code> &amp; admitted non-maskable interrupt source &amp; all earlier committed state &amp; <code>BASIC</code> &amp; none<br />
-<code>INTERRUPT</code> &amp; admitted maskable interrupt source &amp; all earlier committed state &amp; <code>BASIC</code> &amp; none  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Event</strong></th>
+<th style="text-align: left;"><strong>Producer</strong></th>
+<th style="text-align: left;"><strong>Committed State</strong></th>
+<th style="text-align: left;"><strong>Frame</strong></th>
+<th style="text-align: left;"><strong>Payload</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>DEBUG_TRACE</code></td>
+<td style="text-align: left;">completion of a TF-selected trace unit</td>
+<td style="text-align: left;">completed trace unit</td>
+<td style="text-align: left;"><code>BASIC</code></td>
+<td style="text-align: left;">none</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>BREAKPOINT</code></td>
+<td style="text-align: left;">BKPT</td>
+<td style="text-align: left;">BKPT completed</td>
+<td style="text-align: left;"><code>BASIC</code></td>
+<td style="text-align: left;">none</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>ILLEGAL_INSTRUCTION</code></td>
+<td style="text-align: left;">decode or instruction-validity check</td>
+<td style="text-align: left;">no effects of the faulting instruction</td>
+<td style="text-align: left;"><code>ERROR</code></td>
+<td style="text-align: left;">error code</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>PRIVILEGE_FAULT</code></td>
+<td style="text-align: left;">privilege check</td>
+<td style="text-align: left;">no effects of the faulting instruction</td>
+<td style="text-align: left;"><code>BASIC</code></td>
+<td style="text-align: left;">none</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>PAGE_FAULT</code></td>
+<td style="text-align: left;">segment, translation, access, or atomic-alignment check</td>
+<td style="text-align: left;">no effects of the faulting instruction</td>
+<td style="text-align: left;"><code>PAGE_FAULT</code></td>
+<td style="text-align: left;">error code, fault EA, and linear address</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>DIVIDE_ERROR</code></td>
+<td style="text-align: left;">integer divide operation</td>
+<td style="text-align: left;">no effects of the faulting instruction</td>
+<td style="text-align: left;"><code>ERROR</code></td>
+<td style="text-align: left;">error code</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>INVALID_CONTROL_STATE</code></td>
+<td style="text-align: left;">control-state validation</td>
+<td style="text-align: left;">no effects of the faulting instruction</td>
+<td style="text-align: left;"><code>ERROR</code></td>
+<td style="text-align: left;">error code</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>FLOATING_POINT_FAULT</code></td>
+<td style="text-align: left;">enabled floating-point exception</td>
+<td style="text-align: left;">no destination or accrued-flag effects of the faulting instruction</td>
+<td style="text-align: left;"><code>ERROR</code></td>
+<td style="text-align: left;">error code</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>DOUBLE_FAULT</code></td>
+<td style="text-align: left;">architectural event-delivery failure</td>
+<td style="text-align: left;">no partial first delivery state</td>
+<td style="text-align: left;"><code>AUXILIARY</code></td>
+<td style="text-align: left;">delivery-failure auxiliary state</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>MACHINE_CHECK</code></td>
+<td style="text-align: left;">processor or memory-system machine-check source</td>
+<td style="text-align: left;">selected by PRECISE and RETRY_SAFE</td>
+<td style="text-align: left;"><code>AUXILIARY</code></td>
+<td style="text-align: left;">machine-check auxiliary state</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>BUS_ERROR</code></td>
+<td style="text-align: left;">synchronous acknowledged bus failure</td>
+<td style="text-align: left;">no CPU state effects of the faulting instruction</td>
+<td style="text-align: left;"><code>AUXILIARY</code></td>
+<td style="text-align: left;">bus-error auxiliary state</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NMI</code></td>
+<td style="text-align: left;">admitted non-maskable interrupt source</td>
+<td style="text-align: left;">all earlier committed state</td>
+<td style="text-align: left;"><code>BASIC</code></td>
+<td style="text-align: left;">none</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>INTERRUPT</code></td>
+<td style="text-align: left;">admitted maskable interrupt source</td>
+<td style="text-align: left;">all earlier committed state</td>
+<td style="text-align: left;"><code>BASIC</code></td>
+<td style="text-align: left;">none</td>
+</tr>
+</tbody>
+</table>
 <p>Unassigned base-profile exception IDs are reserved. External interrupt IDs do not share a namespace with exception IDs. Interrupt-controller routing, native-ID mapping, ownership, acknowledgement, trigger mode, masking, and end-of-interrupt signaling belong to the platform ABI. An interrupt ID unknown to software still reaches the common entry; the platform dispatcher applies its unhandled or spurious-interrupt policy.</p>
 <p>A restartable fault saves the faulting instruction or its architecturally defined restart point. A trap saves the following instruction. An interrupt or NMI saves the next instruction that would otherwise execute. An event taken during repeat execution saves the active repeat continuation PC and records the remaining repeat state in the always-present <code>FRAME_EXT1</code> slot.</p>
 <h2 id="event-priority-and-debug-trace">Event Priority and Debug Trace <a href="#section-event-priority-and-debug-trace" id="section-event-priority-and-debug-trace"></a></h2>
@@ -9301,16 +9541,42 @@
 <h2 id="supervisor-event-stacks-and-nesting">Supervisor Event Stacks and Nesting</h2>
 <p>The four supervisor stack pairs have fixed roles. SSS:SSP is the SYSCALL working stack. ISS:ISP, FSS:FSP, and DSS:DSP are event stack levels 1, 2, and 3.</p>
 <p><strong>Supervisor Stack Roles</strong></p>
-<p>@&gt;</p>
-<p>p0.55in&gt;</p>
-<p>p1.05in&gt;</p>
-<p>p1.55in&gt;</p>
-<p>p2.25in@</p>
-<p><strong>Level</strong> &amp; <strong>Pair</strong> &amp; <strong>Role</strong> &amp; <strong>Use</strong><br />
-call &amp; <code>SSS:SSP</code> &amp; supervisor call &amp; SYSCALL working stack<br />
-1 &amp; <code>ISS:ISP</code> &amp; maskable interrupt &amp; external interrupts and IPIs<br />
-2 &amp; <code>FSS:FSP</code> &amp; fault/exception &amp; faults, traps, NMI, and machine check<br />
-3 &amp; <code>DSS:DSP</code> &amp; double fault &amp; DOUBLE_FAULT and event-delivery failure only  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Level</strong></th>
+<th style="text-align: left;"><strong>Pair</strong></th>
+<th style="text-align: left;"><strong>Role</strong></th>
+<th style="text-align: left;"><strong>Use</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">call</td>
+<td style="text-align: left;"><code>SSS:SSP</code></td>
+<td style="text-align: left;">supervisor call</td>
+<td style="text-align: left;">SYSCALL working stack</td>
+</tr>
+<tr>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;"><code>ISS:ISP</code></td>
+<td style="text-align: left;">maskable interrupt</td>
+<td style="text-align: left;">external interrupts and IPIs</td>
+</tr>
+<tr>
+<td style="text-align: left;">2</td>
+<td style="text-align: left;"><code>FSS:FSP</code></td>
+<td style="text-align: left;">fault/exception</td>
+<td style="text-align: left;">faults, traps, NMI, and machine check</td>
+</tr>
+<tr>
+<td style="text-align: left;">3</td>
+<td style="text-align: left;"><code>DSS:DSP</code></td>
+<td style="text-align: left;">double fault</td>
+<td style="text-align: left;">DOUBLE_FAULT and event-delivery failure only</td>
+</tr>
+</tbody>
+</table>
 <p>The processor tracks a hidden two-bit current event stack level while STATUS.EA is set. A maskable interrupt requests level 1, an exception other than DOUBLE_FAULT or an NMI requests level 2, and DOUBLE_FAULT requests level 3. If entry is from a context with EA clear, hardware loads the pair assigned to the requested level. If entry is already event-active and the request is for a higher level, hardware moves to the higher pair. A same- or lower-level nested event retains the current SS:SP and appends its frame instead of reloading a configured top and overwriting an older frame. An interrupt-handler fault therefore moves from level 1 to level 2, while an interrupt admitted during an exception remains on level 2. ERET restores the saved event-active and stack-level state.</p>
 <pre><code>if STATUS.EA == 0:
     selected_esl = requested_esl
@@ -9333,68 +9599,219 @@ else:
 <p><img alt="Architectural Event Frame" src="../../assets/visuals/isa/architectural-event-processing-model-02.svg" /></p>
 <p><strong>Architectural Event Frame</strong></p>
 <p><strong>Architectural Event Frame Fields</strong></p>
-<p>@&gt;</p>
-<p>p0.70in&gt;</p>
-<p>p1.20in&gt;</p>
-<p>p3.60in@</p>
-<p><strong>Offset</strong> &amp; <strong>Slot</strong> &amp; <strong>Meaning</strong>  </p>
-<p>+0x00 &amp; FRAME_CONTROL &amp; frame shape, nesting metadata, saved FLAGS, and saved STATUS<br />
-+0x08 &amp; EVENT_INFO &amp; event code in bits 31..0; bits 63..32 are zero<br />
-+0x10 &amp; FRAME_EXT1 &amp; repeat continuation when <code>repeat_saved</code> is one; otherwise zero<br />
-+0x18 &amp; SAVED_PC &amp; saved program counter<br />
-+0x20 &amp; SAVED_SP &amp; saved stack pointer<br />
-+0x28 &amp; SAVED_CS &amp; saved code-segment image<br />
-+0x30 &amp; SAVED_DS &amp; saved data-segment image<br />
-+0x38 &amp; SAVED_SS &amp; saved stack-segment image<br />
-+0x40 &amp; ERROR_CODE &amp; exception-specific error code; unassigned bits are zero<br />
-+0x48 &amp; FAULT_EA &amp; numeric effective address before segment pre-translation<br />
-+0x50 &amp; FAULT_LINEAR &amp; address after segment pre-translation<br />
-+0x58 &amp; EVENT_AUX &amp; double-fault, machine-check, or bus-error auxiliary information  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Offset</strong></th>
+<th style="text-align: left;"><strong>Slot</strong></th>
+<th style="text-align: left;"><strong>Meaning</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">+0x00</td>
+<td style="text-align: left;">FRAME_CONTROL</td>
+<td style="text-align: left;">frame shape, nesting metadata, saved FLAGS, and saved STATUS</td>
+</tr>
+<tr>
+<td style="text-align: left;">+0x08</td>
+<td style="text-align: left;">EVENT_INFO</td>
+<td style="text-align: left;">event code in bits 31..0; bits 63..32 are zero</td>
+</tr>
+<tr>
+<td style="text-align: left;">+0x10</td>
+<td style="text-align: left;">FRAME_EXT1</td>
+<td style="text-align: left;">repeat continuation when <code>repeat_saved</code> is one; otherwise zero</td>
+</tr>
+<tr>
+<td style="text-align: left;">+0x18</td>
+<td style="text-align: left;">SAVED_PC</td>
+<td style="text-align: left;">saved program counter</td>
+</tr>
+<tr>
+<td style="text-align: left;">+0x20</td>
+<td style="text-align: left;">SAVED_SP</td>
+<td style="text-align: left;">saved stack pointer</td>
+</tr>
+<tr>
+<td style="text-align: left;">+0x28</td>
+<td style="text-align: left;">SAVED_CS</td>
+<td style="text-align: left;">saved code-segment image</td>
+</tr>
+<tr>
+<td style="text-align: left;">+0x30</td>
+<td style="text-align: left;">SAVED_DS</td>
+<td style="text-align: left;">saved data-segment image</td>
+</tr>
+<tr>
+<td style="text-align: left;">+0x38</td>
+<td style="text-align: left;">SAVED_SS</td>
+<td style="text-align: left;">saved stack-segment image</td>
+</tr>
+<tr>
+<td style="text-align: left;">+0x40</td>
+<td style="text-align: left;">ERROR_CODE</td>
+<td style="text-align: left;">exception-specific error code; unassigned bits are zero</td>
+</tr>
+<tr>
+<td style="text-align: left;">+0x48</td>
+<td style="text-align: left;">FAULT_EA</td>
+<td style="text-align: left;">numeric effective address before segment pre-translation</td>
+</tr>
+<tr>
+<td style="text-align: left;">+0x50</td>
+<td style="text-align: left;">FAULT_LINEAR</td>
+<td style="text-align: left;">address after segment pre-translation</td>
+</tr>
+<tr>
+<td style="text-align: left;">+0x58</td>
+<td style="text-align: left;">EVENT_AUX</td>
+<td style="text-align: left;">double-fault, machine-check, or bus-error auxiliary information</td>
+</tr>
+</tbody>
+</table>
 <p><img alt="FRAME_CONTROL Format" src="../../assets/visuals/isa/architectural-event-processing-model-03.svg" /></p>
 <p><strong>FRAME_CONTROL Format</strong></p>
 <p><code>D</code> and <code>T</code> abbreviate <code>depth</code> and <code>type</code>.</p>
 <p><strong>FRAME_CONTROL Fields</strong></p>
-<p>@&gt;</p>
-<p>p1.10in&gt;</p>
-<p>p0.65in&gt;</p>
-<p>p3.65in@</p>
-<p><strong>Field</strong> &amp; <strong>Bits</strong> &amp; <strong>Meaning</strong>  </p>
-<p>frame_size &amp; 0..7 &amp; total allocated frame size in 8-byte units<br />
-frame_type &amp; 8..11 &amp; optional payload layout code; it does not classify the event<br />
-saved_edepth &amp; 12..15 &amp; event depth before this entry<br />
-saved_esl &amp; 16..17 &amp; event stack level before this entry<br />
-repeat_saved &amp; 18 &amp; repeat continuation state is present in FRAME_EXT1<br />
-entry_flags &amp; 19..31 &amp; reserved entry flags; must be zero unless assigned by a later profile<br />
-flags &amp; 32..47 &amp; saved FLAGS image<br />
-status &amp; 48..63 &amp; saved STATUS image  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Field</strong></th>
+<th style="text-align: left;"><strong>Bits</strong></th>
+<th style="text-align: left;"><strong>Meaning</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">frame_size</td>
+<td style="text-align: left;">0..7</td>
+<td style="text-align: left;">total allocated frame size in 8-byte units</td>
+</tr>
+<tr>
+<td style="text-align: left;">frame_type</td>
+<td style="text-align: left;">8..11</td>
+<td style="text-align: left;">optional payload layout code; it does not classify the event</td>
+</tr>
+<tr>
+<td style="text-align: left;">saved_edepth</td>
+<td style="text-align: left;">12..15</td>
+<td style="text-align: left;">event depth before this entry</td>
+</tr>
+<tr>
+<td style="text-align: left;">saved_esl</td>
+<td style="text-align: left;">16..17</td>
+<td style="text-align: left;">event stack level before this entry</td>
+</tr>
+<tr>
+<td style="text-align: left;">repeat_saved</td>
+<td style="text-align: left;">18</td>
+<td style="text-align: left;">repeat continuation state is present in FRAME_EXT1</td>
+</tr>
+<tr>
+<td style="text-align: left;">entry_flags</td>
+<td style="text-align: left;">19..31</td>
+<td style="text-align: left;">reserved entry flags; must be zero unless assigned by a later profile</td>
+</tr>
+<tr>
+<td style="text-align: left;">flags</td>
+<td style="text-align: left;">32..47</td>
+<td style="text-align: left;">saved FLAGS image</td>
+</tr>
+<tr>
+<td style="text-align: left;">status</td>
+<td style="text-align: left;">48..63</td>
+<td style="text-align: left;">saved STATUS image</td>
+</tr>
+</tbody>
+</table>
 <p>ERET first validates the frame shape and nesting metadata. BASIC requires frame_size 8, ERROR requires 10, and PAGE_FAULT and AUXILIARY require 12. It also requires saved_edepth plus one to equal the current depth and requires saved_esl not to exceed the current stack level. If the saved STATUS image has EA clear, both saved values must be zero. Saved STATUS.PM identifies the interrupted privilege mode.</p>
 <p>Only after those checks does ERET validate the saved control state, segment images, PC, SP, depth, and stack level. On success it restores FLAGS, STATUS, CS, DS, SS, SP, PC, event depth, stack level, and any saved repeat continuation as one commit. EVENT_INFO and the event-specific payload remain available to software.</p>
 <h2 id="event-payloads">Event Payloads</h2>
 <p>Payload starts at offset +0x40. Hardware allocates only the defined payload prefix, rounds it up to a 16-byte boundary, and zeros the padding. The frame-size unit remains one 8-byte slot.</p>
 <p><strong>Architectural Event Frame Types and Sizes</strong></p>
-<p>@&gt;</p>
-<p>p0.42in&gt;</p>
-<p>p0.82in&gt;</p>
-<p>p0.68in&gt;</p>
-<p>p0.78in&gt;</p>
-<p>p0.88in&gt;</p>
-<p>p0.62in&gt;</p>
-<p>p1.00in@</p>
-<p><strong>Code</strong> &amp; <strong>Type</strong> &amp; <strong>Payload</strong> &amp; <strong>Allocated</strong> &amp; <strong>Total</strong> &amp; <strong>Size</strong> &amp; <strong>Last slot</strong>  </p>
-<p>0x0 &amp; BASIC &amp; 0 &amp; 0 &amp; 64 &amp; 8 &amp; none<br />
-0x1 &amp; ERROR &amp; 8 &amp; 16 &amp; 80 &amp; 10 &amp; ERROR_CODE<br />
-0x2 &amp; PAGE_FAULT &amp; 24 &amp; 32 &amp; 96 &amp; 12 &amp; FAULT_LINEAR<br />
-0x3 &amp; AUXILIARY &amp; 32 &amp; 32 &amp; 96 &amp; 12 &amp; EVENT_AUX  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Code</strong></th>
+<th style="text-align: left;"><strong>Type</strong></th>
+<th style="text-align: left;"><strong>Payload</strong></th>
+<th style="text-align: left;"><strong>Allocated</strong></th>
+<th style="text-align: left;"><strong>Total</strong></th>
+<th style="text-align: left;"><strong>Size</strong></th>
+<th style="text-align: left;"><strong>Last slot</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">0x0</td>
+<td style="text-align: left;">BASIC</td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">64</td>
+<td style="text-align: left;">8</td>
+<td style="text-align: left;">none</td>
+</tr>
+<tr>
+<td style="text-align: left;">0x1</td>
+<td style="text-align: left;">ERROR</td>
+<td style="text-align: left;">8</td>
+<td style="text-align: left;">16</td>
+<td style="text-align: left;">80</td>
+<td style="text-align: left;">10</td>
+<td style="text-align: left;">ERROR_CODE</td>
+</tr>
+<tr>
+<td style="text-align: left;">0x2</td>
+<td style="text-align: left;">PAGE_FAULT</td>
+<td style="text-align: left;">24</td>
+<td style="text-align: left;">32</td>
+<td style="text-align: left;">96</td>
+<td style="text-align: left;">12</td>
+<td style="text-align: left;">FAULT_LINEAR</td>
+</tr>
+<tr>
+<td style="text-align: left;">0x3</td>
+<td style="text-align: left;">AUXILIARY</td>
+<td style="text-align: left;">32</td>
+<td style="text-align: left;">32</td>
+<td style="text-align: left;">96</td>
+<td style="text-align: left;">12</td>
+<td style="text-align: left;">EVENT_AUX</td>
+</tr>
+</tbody>
+</table>
 <p><strong>Event-to-Frame-Type Assignment</strong></p>
-<p>@&gt;</p>
-<p>p3.75in&gt;</p>
-<p>p1.45in@</p>
-<p><strong>Delivered event</strong> &amp; <strong>Frame type</strong>  </p>
-<p><code>DEBUG_TRACE</code>, <code>BREAKPOINT</code>, <code>PRIVILEGE_FAULT</code> &amp; BASIC<br />
-<code>ILLEGAL_INSTRUCTION</code>, <code>DIVIDE_ERROR</code>, <code>INVALID_CONTROL_STATE</code>, <code>FLOATING_POINT_FAULT</code> &amp; ERROR<br />
-<code>PAGE_FAULT</code> &amp; PAGE_FAULT<br />
-<code>DOUBLE_FAULT</code>, <code>MACHINE_CHECK</code>, <code>BUS_ERROR</code> &amp; AUXILIARY<br />
-interrupt and NMI &amp; BASIC  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Delivered event</strong></th>
+<th style="text-align: left;"><strong>Frame type</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>DEBUG_TRACE</code>, <code>BREAKPOINT</code>, <code>PRIVILEGE_FAULT</code></td>
+<td style="text-align: left;">BASIC</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>ILLEGAL_INSTRUCTION</code>, <code>DIVIDE_ERROR</code>, <code>INVALID_CONTROL_STATE</code>, <code>FLOATING_POINT_FAULT</code></td>
+<td style="text-align: left;">ERROR</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>PAGE_FAULT</code></td>
+<td style="text-align: left;">PAGE_FAULT</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>DOUBLE_FAULT</code>, <code>MACHINE_CHECK</code>, <code>BUS_ERROR</code></td>
+<td style="text-align: left;">AUXILIARY</td>
+</tr>
+<tr>
+<td style="text-align: left;">interrupt and NMI</td>
+<td style="text-align: left;">BASIC</td>
+</tr>
+</tbody>
+</table>
 <p>The delivered event determines the frame type, and FRAME_EXT1 records repeat continuation. ERROR_CODE is defined separately by each exception and has zero in every unassigned bit. PAGE_FAULT extends that slot with effective-address and linear-address context. AUXILIARY includes all four named slots and permits EVENT_AUX to describe double-fault, machine-check, or bus-error state.</p>
 <p>A misaligned <code>AT=0</code> atomic memory operand uses the PAGE_FAULT frame with ERROR_CODE subtype <code>ATOMIC_ALIGNMENT</code>. FAULT_EA identifies the misaligned effective-address operand and FAULT_LINEAR contains its segment-pretranslated starting address. The fault is reported before the atomic instruction performs a memory read, memory write, or architectural result update.</p>
 <h3 id="page-fault-error-code">Page-Fault Error Code</h3>
@@ -9402,64 +9819,208 @@ interrupt and NMI &amp; BASIC  </p>
 <p><strong>PAGE_FAULT ERROR_CODE Format</strong></p>
 <p><code>SZ</code>, <code>L</code>, <code>E</code>, <code>OP</code>, <code>LVL</code>, and <code>AC</code> denote <code>ACCESS_SIZE</code>, <code>FAULT_LINEAR_VALID</code>, <code>FAULT_EA_VALID</code>, <code>OPERAND</code>, <code>WALK_LEVEL</code>, and <code>ACCESS</code>; <code>A</code> and <code>U</code> denote <code>ATOMIC</code> and <code>USER_DOMAIN</code>.</p>
 <p><strong>PAGE_FAULT ERROR_CODE Fields</strong></p>
-<p>@&gt;</p>
-<p>p0.70in&gt;</p>
-<p>p1.45in&gt;</p>
-<p>p3.35in@</p>
-<p><strong>Bits</strong> &amp; <strong>Field</strong> &amp; <strong>Meaning</strong>  </p>
-<p>7..0 &amp; <code>CAUSE</code> &amp; page-fault cause listed below<br />
-9..8 &amp; <code>ACCESS</code> &amp; 0 none, 1 read, 2 write, 3 execute<br />
-10 &amp; <code>USER_DOMAIN</code> &amp; access selected the user-domain permission path<br />
-11 &amp; <code>ATOMIC</code> &amp; access was an atomic read-modify-write<br />
-14..12 &amp; <code>WALK_LEVEL</code> &amp; 0 before or without a walk; 1 through 5 identify the PTE level<br />
-15 &amp; reserved &amp; zero<br />
-23..16 &amp; <code>OPERAND</code> &amp; zero-based explicit operand ordinal; <code>0xff</code> for implicit fetch or stack access<br />
-24 &amp; <code>FAULT_EA_VALID</code> &amp; <code>FAULT_EA</code> was produced<br />
-25 &amp; <code>FAULT_LINEAR_VALID</code> &amp; <code>FAULT_LINEAR</code> was produced<br />
-26 &amp; reserved &amp; zero<br />
-29..27 &amp; <code>ACCESS_SIZE</code> &amp; 0 unavailable or inapplicable; 1 B; 2 W; 3 L; 4 Q<br />
-63..30 &amp; reserved &amp; zero  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Bits</strong></th>
+<th style="text-align: left;"><strong>Field</strong></th>
+<th style="text-align: left;"><strong>Meaning</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">7..0</td>
+<td style="text-align: left;"><code>CAUSE</code></td>
+<td style="text-align: left;">page-fault cause listed below</td>
+</tr>
+<tr>
+<td style="text-align: left;">9..8</td>
+<td style="text-align: left;"><code>ACCESS</code></td>
+<td style="text-align: left;">0 none, 1 read, 2 write, 3 execute</td>
+</tr>
+<tr>
+<td style="text-align: left;">10</td>
+<td style="text-align: left;"><code>USER_DOMAIN</code></td>
+<td style="text-align: left;">access selected the user-domain permission path</td>
+</tr>
+<tr>
+<td style="text-align: left;">11</td>
+<td style="text-align: left;"><code>ATOMIC</code></td>
+<td style="text-align: left;">access was an atomic read-modify-write</td>
+</tr>
+<tr>
+<td style="text-align: left;">14..12</td>
+<td style="text-align: left;"><code>WALK_LEVEL</code></td>
+<td style="text-align: left;">0 before or without a walk; 1 through 5 identify the PTE level</td>
+</tr>
+<tr>
+<td style="text-align: left;">15</td>
+<td style="text-align: left;">reserved</td>
+<td style="text-align: left;">zero</td>
+</tr>
+<tr>
+<td style="text-align: left;">23..16</td>
+<td style="text-align: left;"><code>OPERAND</code></td>
+<td style="text-align: left;">zero-based explicit operand ordinal; <code>0xff</code> for implicit fetch or stack access</td>
+</tr>
+<tr>
+<td style="text-align: left;">24</td>
+<td style="text-align: left;"><code>FAULT_EA_VALID</code></td>
+<td style="text-align: left;"><code>FAULT_EA</code> was produced</td>
+</tr>
+<tr>
+<td style="text-align: left;">25</td>
+<td style="text-align: left;"><code>FAULT_LINEAR_VALID</code></td>
+<td style="text-align: left;"><code>FAULT_LINEAR</code> was produced</td>
+</tr>
+<tr>
+<td style="text-align: left;">26</td>
+<td style="text-align: left;">reserved</td>
+<td style="text-align: left;">zero</td>
+</tr>
+<tr>
+<td style="text-align: left;">29..27</td>
+<td style="text-align: left;"><code>ACCESS_SIZE</code></td>
+<td style="text-align: left;">0 unavailable or inapplicable; 1 B; 2 W; 3 L; 4 Q</td>
+</tr>
+<tr>
+<td style="text-align: left;">63..30</td>
+<td style="text-align: left;">reserved</td>
+<td style="text-align: left;">zero</td>
+</tr>
+</tbody>
+</table>
 <p><strong>PAGE_FAULT Causes</strong></p>
-<p>@&gt;</p>
-<p>p0.65in&gt;</p>
-<p>p2.20in&gt;</p>
-<p>X@</p>
-<p><strong>Value</strong> &amp; <strong>Cause</strong> &amp; <strong>Detection class</strong><br />
-0 &amp; <code>NOT_PRESENT</code> &amp; required PTE is not present<br />
-1 &amp; <code>PERMISSION</code> &amp; accumulated permission excludes the access<br />
-2 &amp; <code>MALFORMED_PTE</code> &amp; structurally invalid PTE<br />
-3 &amp; <code>NONCANONICAL</code> &amp; noncanonical address<br />
-4 &amp; <code>SEGMENT_BOUNDS</code> &amp; segment bounds failure<br />
-5 &amp; <code>ATOMIC_ALIGNMENT</code> &amp; misaligned byte-addressed (<code>AT=0</code>) atomic operand<br />
-6 &amp; <code>ADDRESS_TYPE</code> &amp; address or memory type rejects the access  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Value</strong></th>
+<th style="text-align: left;"><strong>Cause</strong></th>
+<th style="text-align: left;"><strong>Detection class</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;"><code>NOT_PRESENT</code></td>
+<td style="text-align: left;">required PTE is not present</td>
+</tr>
+<tr>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;"><code>PERMISSION</code></td>
+<td style="text-align: left;">accumulated permission excludes the access</td>
+</tr>
+<tr>
+<td style="text-align: left;">2</td>
+<td style="text-align: left;"><code>MALFORMED_PTE</code></td>
+<td style="text-align: left;">structurally invalid PTE</td>
+</tr>
+<tr>
+<td style="text-align: left;">3</td>
+<td style="text-align: left;"><code>NONCANONICAL</code></td>
+<td style="text-align: left;">noncanonical address</td>
+</tr>
+<tr>
+<td style="text-align: left;">4</td>
+<td style="text-align: left;"><code>SEGMENT_BOUNDS</code></td>
+<td style="text-align: left;">segment bounds failure</td>
+</tr>
+<tr>
+<td style="text-align: left;">5</td>
+<td style="text-align: left;"><code>ATOMIC_ALIGNMENT</code></td>
+<td style="text-align: left;">misaligned byte-addressed (<code>AT=0</code>) atomic operand</td>
+</tr>
+<tr>
+<td style="text-align: left;">6</td>
+<td style="text-align: left;"><code>ADDRESS_TYPE</code></td>
+<td style="text-align: left;">address or memory type rejects the access</td>
+</tr>
+</tbody>
+</table>
 <p>Saved <code>STATUS.PM</code> records the originating privilege. <code>USER_DOMAIN</code> distinguishes the ordinary user permission path from the checked user-access path used by supervisor instructions such as <code>MOVUC</code>, <code>MOVCU</code>, and <code>MOVUU</code>. An atomic read-modify-write reports <code>ACCESS=write</code>. <code>NOT_PRESENT</code> and <code>MALFORMED_PTE</code> identify the actual PTE level. <code>PERMISSION</code> identifies the first level, in root-to-leaf walk order, whose accumulated permissions exclude the requested access. A cause detected before a walk reports level zero.</p>
 <p><code>ACCESS_SIZE</code> records the architectural transfer width when one of the B, W, L, or Q widths applies. It is zero when no such width is available or applicable.</p>
 <p><code>FAULT_EA</code> is the numeric effective address before segment pre-translation. <code>FAULT_LINEAR</code> is the result after segment pre-translation. A value not produced is zero and has its corresponding validity bit clear.</p>
 <h3 id="other-exception-error-codes">Other Exception Error Codes</h3>
 <p><code>DIVIDE_ERROR.ERROR_CODE[7:0]</code> is 0 for <code>ZERO_DIVISOR</code> and 1 for <code>SIGNED_OVERFLOW</code>; bits 63..8 are zero.</p>
 <p><strong>ILLEGAL_INSTRUCTION Causes</strong></p>
-<p>@&gt;</p>
-<p>p0.65in&gt;</p>
-<p>p2.35in&gt;</p>
-<p>X@</p>
-<p><strong>Value</strong> &amp; <strong>Cause</strong> &amp; <strong>Meaning</strong><br />
-0 &amp; <code>INVALID_OPCODE</code> &amp; opcode is not assigned<br />
-1 &amp; <code>INVALID_EA_FORM</code> &amp; effective-address form is not legal for the instruction<br />
-2 &amp; <code>RESERVED_ENCODING</code> &amp; assigned instruction uses a reserved field value<br />
-3 &amp; <code>UNAVAILABLE_EXTENSION</code> &amp; required extension is unavailable<br />
-4 &amp; <code>EXPLICIT_ILLEGAL</code> &amp; architected ILLEGAL instruction<br />
-5 &amp; <code>INSUFFICIENT_LENGTH</code> &amp; encoded record is shorter than the selected concrete form requires<br />
-6 &amp; <code>INVALID_OPERAND_RELATION</code> &amp; writable operands use a prohibited overlap relation  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Value</strong></th>
+<th style="text-align: left;"><strong>Cause</strong></th>
+<th style="text-align: left;"><strong>Meaning</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;"><code>INVALID_OPCODE</code></td>
+<td style="text-align: left;">opcode is not assigned</td>
+</tr>
+<tr>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;"><code>INVALID_EA_FORM</code></td>
+<td style="text-align: left;">effective-address form is not legal for the instruction</td>
+</tr>
+<tr>
+<td style="text-align: left;">2</td>
+<td style="text-align: left;"><code>RESERVED_ENCODING</code></td>
+<td style="text-align: left;">assigned instruction uses a reserved field value</td>
+</tr>
+<tr>
+<td style="text-align: left;">3</td>
+<td style="text-align: left;"><code>UNAVAILABLE_EXTENSION</code></td>
+<td style="text-align: left;">required extension is unavailable</td>
+</tr>
+<tr>
+<td style="text-align: left;">4</td>
+<td style="text-align: left;"><code>EXPLICIT_ILLEGAL</code></td>
+<td style="text-align: left;">architected ILLEGAL instruction</td>
+</tr>
+<tr>
+<td style="text-align: left;">5</td>
+<td style="text-align: left;"><code>INSUFFICIENT_LENGTH</code></td>
+<td style="text-align: left;">encoded record is shorter than the selected concrete form requires</td>
+</tr>
+<tr>
+<td style="text-align: left;">6</td>
+<td style="text-align: left;"><code>INVALID_OPERAND_RELATION</code></td>
+<td style="text-align: left;">writable operands use a prohibited overlap relation</td>
+</tr>
+</tbody>
+</table>
 <p><strong>INVALID_CONTROL_STATE Causes</strong></p>
-<p>@&gt;</p>
-<p>p0.65in&gt;</p>
-<p>p2.35in&gt;</p>
-<p>X@</p>
-<p><strong>Value</strong> &amp; <strong>Cause</strong> &amp; <strong>Meaning</strong><br />
-0 &amp; <code>INVALID_SELECTOR</code> &amp; selector names no available resource<br />
-1 &amp; <code>RESERVED_BITS</code> &amp; reserved bits are nonzero or changed illegally<br />
-2 &amp; <code>INVALID_IMAGE</code> &amp; supplied architectural image is invalid<br />
-3 &amp; <code>INVALID_TRANSITION</code> &amp; requested state transition is illegal  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Value</strong></th>
+<th style="text-align: left;"><strong>Cause</strong></th>
+<th style="text-align: left;"><strong>Meaning</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;"><code>INVALID_SELECTOR</code></td>
+<td style="text-align: left;">selector names no available resource</td>
+</tr>
+<tr>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;"><code>RESERVED_BITS</code></td>
+<td style="text-align: left;">reserved bits are nonzero or changed illegally</td>
+</tr>
+<tr>
+<td style="text-align: left;">2</td>
+<td style="text-align: left;"><code>INVALID_IMAGE</code></td>
+<td style="text-align: left;">supplied architectural image is invalid</td>
+</tr>
+<tr>
+<td style="text-align: left;">3</td>
+<td style="text-align: left;"><code>INVALID_TRANSITION</code></td>
+<td style="text-align: left;">requested state transition is illegal</td>
+</tr>
+</tbody>
+</table>
 <p>An unavailable <code>RDPMC</code> ID reports <code>INVALID_SELECTOR</code>; an illegal reserved-bit update reports <code>RESERVED_BITS</code>; an invalid segment, control-register, or SAVE/RESTORE image reports <code>INVALID_IMAGE</code>; and an illegal <code>ERET</code>, <code>SYSRET</code>, or privilege-state transition reports <code>INVALID_TRANSITION</code>.</p>
 <p><code>FLOATING_POINT_FAULT.ERROR_CODE[4:0]</code> is a cause bitmap: bits 4 through 0 are <code>NV</code>, <code>DZ</code>, <code>OF</code>, <code>UF</code>, and <code>NX</code>. All causes generated by the operation are reported together; bits 63..5 are zero.</p>
 <p><img alt="Simple Exception ERROR_CODE Formats" src="../../assets/visuals/isa/architectural-event-processing-model-05.svg" /></p>
@@ -9473,74 +10034,232 @@ interrupt and NMI &amp; BASIC  </p>
 <p><strong>DOUBLE_FAULT Auxiliary Formats</strong></p>
 <p><code>E</code>, <code>L</code>, and <code>F</code> are <code>EVENT_AUX_VALID</code>, <code>FAULT_LINEAR_VALID</code>, and <code>FAULT_EA_VALID</code>.</p>
 <p><strong>DOUBLE_FAULT Delivery Stages</strong></p>
-<p>@&gt;</p>
-<p>p0.65in&gt;</p>
-<p>p2.15in&gt;</p>
-<p>p2.60in@</p>
-<p><strong>Value</strong> &amp; <strong>Stage</strong> &amp; <strong>Failure</strong><br />
-0 &amp; <code>ENTRY_STATE</code> &amp; entry code or segment state validation<br />
-1 &amp; <code>STACK_STATE</code> &amp; selected event-stack state<br />
-2 &amp; <code>FRAME_ADDRESS</code> &amp; complete frame-address formation or translation<br />
-3 &amp; <code>FRAME_STORE</code> &amp; complete frame storage  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Value</strong></th>
+<th style="text-align: left;"><strong>Stage</strong></th>
+<th style="text-align: left;"><strong>Failure</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;"><code>ENTRY_STATE</code></td>
+<td style="text-align: left;">entry code or segment state validation</td>
+</tr>
+<tr>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;"><code>STACK_STATE</code></td>
+<td style="text-align: left;">selected event-stack state</td>
+</tr>
+<tr>
+<td style="text-align: left;">2</td>
+<td style="text-align: left;"><code>FRAME_ADDRESS</code></td>
+<td style="text-align: left;">complete frame-address formation or translation</td>
+</tr>
+<tr>
+<td style="text-align: left;">3</td>
+<td style="text-align: left;"><code>FRAME_STORE</code></td>
+<td style="text-align: left;">complete frame storage</td>
+</tr>
+</tbody>
+</table>
 <p>When valid, <code>EVENT_AUX[31:0]</code> contains the event code whose delivery failed and bits 63..32 are zero. A <code>FRAME_ADDRESS</code> or <code>FRAME_STORE</code> failure supplies <code>FAULT_EA</code> and <code>FAULT_LINEAR</code> when those values were produced.</p>
 <p>For <code>MACHINE_CHECK</code>, the error code has this layout:</p>
 <p><img alt="MACHINE_CHECK ERROR_CODE Format" src="../../assets/visuals/isa/architectural-event-processing-model-07.svg" /></p>
 <p><strong>MACHINE_CHECK ERROR_CODE Format</strong></p>
 <p><code>E</code>, <code>L</code>, and <code>F</code> are <code>EVENT_AUX_VALID</code>, <code>FAULT_LINEAR_VALID</code>, and <code>FAULT_EA_VALID</code>; <code>P</code>, <code>R</code>, <code>SV</code>, and <code>SRC</code> denote <code>PRECISE</code>, <code>RETRY_SAFE</code>, <code>SEVERITY</code>, and <code>SOURCE</code>.</p>
 <p><strong>MACHINE_CHECK ERROR_CODE Fields</strong></p>
-<p>@&gt;</p>
-<p>p0.70in&gt;</p>
-<p>p1.35in&gt;</p>
-<p>p3.45in@</p>
-<p><strong>Bits</strong> &amp; <strong>Field</strong> &amp; <strong>Meaning</strong><br />
-7..0 &amp; <code>SOURCE</code> &amp; 0 unknown; 1 core; 2 cache; 3 translation; 4 memory; 5 interconnect<br />
-9..8 &amp; <code>SEVERITY</code> &amp; 0 corrected; 1 recoverable; 2 fatal; 3 reserved<br />
-10 &amp; <code>PRECISE</code> &amp; saved PC identifies the responsible instruction and saved CPU state precedes it<br />
-11 &amp; <code>RETRY_SAFE</code> &amp; retry at that precise boundary cannot duplicate an external effect<br />
-23..12 &amp; reserved &amp; zero<br />
-24 &amp; <code>FAULT_EA_VALID</code> &amp; <code>FAULT_EA</code> was produced<br />
-25 &amp; <code>FAULT_LINEAR_VALID</code> &amp; <code>FAULT_LINEAR</code> was produced<br />
-26 &amp; <code>EVENT_AUX_VALID</code> &amp; <code>EVENT_AUX</code> was produced<br />
-63..27 &amp; reserved &amp; zero  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Bits</strong></th>
+<th style="text-align: left;"><strong>Field</strong></th>
+<th style="text-align: left;"><strong>Meaning</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">7..0</td>
+<td style="text-align: left;"><code>SOURCE</code></td>
+<td style="text-align: left;">0 unknown; 1 core; 2 cache; 3 translation; 4 memory; 5 interconnect</td>
+</tr>
+<tr>
+<td style="text-align: left;">9..8</td>
+<td style="text-align: left;"><code>SEVERITY</code></td>
+<td style="text-align: left;">0 corrected; 1 recoverable; 2 fatal; 3 reserved</td>
+</tr>
+<tr>
+<td style="text-align: left;">10</td>
+<td style="text-align: left;"><code>PRECISE</code></td>
+<td style="text-align: left;">saved PC identifies the responsible instruction and saved CPU state precedes it</td>
+</tr>
+<tr>
+<td style="text-align: left;">11</td>
+<td style="text-align: left;"><code>RETRY_SAFE</code></td>
+<td style="text-align: left;">retry at that precise boundary cannot duplicate an external effect</td>
+</tr>
+<tr>
+<td style="text-align: left;">23..12</td>
+<td style="text-align: left;">reserved</td>
+<td style="text-align: left;">zero</td>
+</tr>
+<tr>
+<td style="text-align: left;">24</td>
+<td style="text-align: left;"><code>FAULT_EA_VALID</code></td>
+<td style="text-align: left;"><code>FAULT_EA</code> was produced</td>
+</tr>
+<tr>
+<td style="text-align: left;">25</td>
+<td style="text-align: left;"><code>FAULT_LINEAR_VALID</code></td>
+<td style="text-align: left;"><code>FAULT_LINEAR</code> was produced</td>
+</tr>
+<tr>
+<td style="text-align: left;">26</td>
+<td style="text-align: left;"><code>EVENT_AUX_VALID</code></td>
+<td style="text-align: left;"><code>EVENT_AUX</code> was produced</td>
+</tr>
+<tr>
+<td style="text-align: left;">63..27</td>
+<td style="text-align: left;">reserved</td>
+<td style="text-align: left;">zero</td>
+</tr>
+</tbody>
+</table>
 <p>When valid, <code>EVENT_AUX</code> contains an implementation-defined syndrome. Associated effective and linear addresses are supplied when available.</p>
 <p><code>RETRY_SAFE=1</code> requires <code>PRECISE=1</code>. The valid severity and continuation combinations are:</p>
 <p><strong>MACHINE_CHECK Valid Continuation Combinations</strong></p>
-<p>@&gt;</p>
-<p>p0.95in&gt;</p>
-<p>p0.55in&gt;</p>
-<p>p0.75in&gt;</p>
-<p>p3.25in@</p>
-<p><strong>Severity</strong> &amp; <strong>PRECISE</strong> &amp; <strong>RETRY_SAFE</strong> &amp; <strong>Saved PC and continuation meaning</strong>  </p>
-<p>corrected &amp; 0 &amp; 0 &amp; Trap; saved PC is the instruction following the corrected operation.<br />
-recoverable &amp; 0 &amp; 0 &amp; Saved PC is the next instruction that would execute at the delivery boundary; saved CPU state is the state at that boundary. It does not identify the responsible operation.<br />
-recoverable &amp; 1 &amp; 0 &amp; Saved PC identifies the responsible instruction and CPU state precedes it; retry may duplicate an external effect.<br />
-recoverable &amp; 1 &amp; 1 &amp; Saved PC identifies the responsible instruction and CPU state precedes it; retry cannot duplicate an external effect.<br />
-fatal &amp; 0 &amp; 0 &amp; Saved PC is the next instruction at the delivery boundary and is diagnostic only.<br />
-fatal &amp; 1 &amp; 0 &amp; Saved PC identifies the responsible instruction and pre-instruction CPU state for diagnosis only.  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Severity</strong></th>
+<th style="text-align: left;"><strong>PRECISE</strong></th>
+<th style="text-align: left;"><strong>RETRY_SAFE</strong></th>
+<th style="text-align: left;"><strong>Saved PC and continuation meaning</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">corrected</td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">Trap; saved PC is the instruction following the corrected operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;">recoverable</td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">Saved PC is the next instruction that would execute at the delivery boundary; saved CPU state is the state at that boundary. It does not identify the responsible operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;">recoverable</td>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">Saved PC identifies the responsible instruction and CPU state precedes it; retry may duplicate an external effect.</td>
+</tr>
+<tr>
+<td style="text-align: left;">recoverable</td>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">Saved PC identifies the responsible instruction and CPU state precedes it; retry cannot duplicate an external effect.</td>
+</tr>
+<tr>
+<td style="text-align: left;">fatal</td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">Saved PC is the next instruction at the delivery boundary and is diagnostic only.</td>
+</tr>
+<tr>
+<td style="text-align: left;">fatal</td>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">Saved PC identifies the responsible instruction and pre-instruction CPU state for diagnosis only.</td>
+</tr>
+</tbody>
+</table>
 <p>All other combinations are invalid and are not generated. In particular, corrected machine checks never set either bit, <code>PRECISE=0, RETRY_SAFE=1</code> is invalid for every severity, fatal machine checks never set <code>RETRY_SAFE</code>, and severity 3 is reserved. A fatal event provides no reliable continuation even when its diagnostic state is precise.</p>
 <p>For <code>BUS_ERROR</code>, the error code has this layout:</p>
 <p><img alt="BUS_ERROR ERROR_CODE Format" src="../../assets/visuals/isa/architectural-event-processing-model-08.svg" /></p>
 <p><strong>BUS_ERROR ERROR_CODE Format</strong></p>
 <p><code>E</code>, <code>L</code>, and <code>F</code> are <code>EVENT_AUX_VALID</code>, <code>FAULT_LINEAR_VALID</code>, and <code>FAULT_EA_VALID</code>; <code>SZ</code>, <code>OP</code>, <code>LVL</code>, and <code>AC</code> denote <code>ACCESS_SIZE</code>, <code>OPERAND</code>, <code>WALK_LEVEL</code>, and <code>ACCESS</code>; <code>A</code>, <code>U</code>, and <code>R</code> denote <code>ATOMIC</code>, <code>USER_DOMAIN</code>, and <code>RETRY_SAFE</code>.</p>
 <p><strong>BUS_ERROR ERROR_CODE Fields</strong></p>
-<p>@&gt;</p>
-<p>p0.70in&gt;</p>
-<p>p1.35in&gt;</p>
-<p>p3.45in@</p>
-<p><strong>Bits</strong> &amp; <strong>Field</strong> &amp; <strong>Meaning</strong>  </p>
-<p>7..0 &amp; <code>CAUSE</code> &amp; 0 no responder; 1 access denied; 2 timeout; 3 data error; 4 other<br />
-9..8 &amp; <code>ACCESS</code> &amp; 0 none, 1 read, 2 write, 3 execute<br />
-10 &amp; <code>USER_DOMAIN</code> &amp; access selected the user-domain permission path<br />
-11 &amp; <code>ATOMIC</code> &amp; access was an atomic read-modify-write<br />
-14..12 &amp; <code>WALK_LEVEL</code> &amp; 0 outside a walk; 1 through 5 identify the PTE level<br />
-15 &amp; reserved &amp; zero<br />
-23..16 &amp; <code>OPERAND</code> &amp; zero-based explicit operand ordinal; <code>0xff</code> for implicit fetch or stack access<br />
-24 &amp; <code>FAULT_EA_VALID</code> &amp; <code>FAULT_EA</code> was produced<br />
-25 &amp; <code>FAULT_LINEAR_VALID</code> &amp; <code>FAULT_LINEAR</code> was produced<br />
-26 &amp; <code>EVENT_AUX_VALID</code> &amp; <code>EVENT_AUX</code> was produced<br />
-29..27 &amp; <code>ACCESS_SIZE</code> &amp; 0 unavailable or inapplicable; 1 B; 2 W; 3 L; 4 Q<br />
-30 &amp; <code>RETRY_SAFE</code> &amp; retry cannot duplicate an external effect<br />
-63..31 &amp; reserved &amp; zero  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Bits</strong></th>
+<th style="text-align: left;"><strong>Field</strong></th>
+<th style="text-align: left;"><strong>Meaning</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">7..0</td>
+<td style="text-align: left;"><code>CAUSE</code></td>
+<td style="text-align: left;">0 no responder; 1 access denied; 2 timeout; 3 data error; 4 other</td>
+</tr>
+<tr>
+<td style="text-align: left;">9..8</td>
+<td style="text-align: left;"><code>ACCESS</code></td>
+<td style="text-align: left;">0 none, 1 read, 2 write, 3 execute</td>
+</tr>
+<tr>
+<td style="text-align: left;">10</td>
+<td style="text-align: left;"><code>USER_DOMAIN</code></td>
+<td style="text-align: left;">access selected the user-domain permission path</td>
+</tr>
+<tr>
+<td style="text-align: left;">11</td>
+<td style="text-align: left;"><code>ATOMIC</code></td>
+<td style="text-align: left;">access was an atomic read-modify-write</td>
+</tr>
+<tr>
+<td style="text-align: left;">14..12</td>
+<td style="text-align: left;"><code>WALK_LEVEL</code></td>
+<td style="text-align: left;">0 outside a walk; 1 through 5 identify the PTE level</td>
+</tr>
+<tr>
+<td style="text-align: left;">15</td>
+<td style="text-align: left;">reserved</td>
+<td style="text-align: left;">zero</td>
+</tr>
+<tr>
+<td style="text-align: left;">23..16</td>
+<td style="text-align: left;"><code>OPERAND</code></td>
+<td style="text-align: left;">zero-based explicit operand ordinal; <code>0xff</code> for implicit fetch or stack access</td>
+</tr>
+<tr>
+<td style="text-align: left;">24</td>
+<td style="text-align: left;"><code>FAULT_EA_VALID</code></td>
+<td style="text-align: left;"><code>FAULT_EA</code> was produced</td>
+</tr>
+<tr>
+<td style="text-align: left;">25</td>
+<td style="text-align: left;"><code>FAULT_LINEAR_VALID</code></td>
+<td style="text-align: left;"><code>FAULT_LINEAR</code> was produced</td>
+</tr>
+<tr>
+<td style="text-align: left;">26</td>
+<td style="text-align: left;"><code>EVENT_AUX_VALID</code></td>
+<td style="text-align: left;"><code>EVENT_AUX</code> was produced</td>
+</tr>
+<tr>
+<td style="text-align: left;">29..27</td>
+<td style="text-align: left;"><code>ACCESS_SIZE</code></td>
+<td style="text-align: left;">0 unavailable or inapplicable; 1 B; 2 W; 3 L; 4 Q</td>
+</tr>
+<tr>
+<td style="text-align: left;">30</td>
+<td style="text-align: left;"><code>RETRY_SAFE</code></td>
+<td style="text-align: left;">retry cannot duplicate an external effect</td>
+</tr>
+<tr>
+<td style="text-align: left;">63..31</td>
+<td style="text-align: left;">reserved</td>
+<td style="text-align: left;">zero</td>
+</tr>
+</tbody>
+</table>
 <p>A bus error during a page walk reports the level whose PTE transaction failed. When valid, <code>EVENT_AUX</code> contains the final memory-system address available for the failed transaction. For a slot-addressed access, this is the slot address and not a byte address.</p>
 <h2 id="machine-check-and-bus-error-continuation">Machine-Check and Bus-Error Continuation</h2>
 <p>A corrected <code>MACHINE_CHECK</code> is a trap, has both <code>PRECISE</code> and <code>RETRY_SAFE</code> clear, and saves the following instruction. A recoverable machine check uses the valid combinations in the auxiliary-payload table. When <code>PRECISE</code> is one, the saved PC identifies the responsible instruction boundary and CPU architectural state is the state from before that instruction. When it is zero, the saved PC is the next instruction that would execute at the delivery boundary and CPU state corresponds to that boundary; neither identifies the responsible operation. <code>RETRY_SAFE</code> may be one only with <code>PRECISE=1</code> and additionally guarantees that returning to the responsible boundary cannot duplicate an external effect. A fatal machine check always clears <code>RETRY_SAFE</code>; <code>PRECISE</code> then describes diagnostic location quality and never guarantees reliable continuation.</p>
@@ -9552,55 +10271,173 @@ fatal &amp; 1 &amp; 0 &amp; Saved PC identifies the responsible instruction and 
 <p><strong>FRAME_EXT1 Repeat Continuation Format</strong></p>
 <p><code>K</code> abbreviates <code>kind</code>.</p>
 <p><strong>FRAME_EXT1 Repeat-Continuation Fields</strong></p>
-<p>@&gt;</p>
-<p>p1.55in&gt;</p>
-<p>p0.60in&gt;</p>
-<p>p3.35in@</p>
-<p><strong>Field</strong> &amp; <strong>Bits</strong> &amp; <strong>Meaning</strong><br />
-rep_reg &amp; 0..3 &amp; general-purpose counter register R0..R15<br />
-rep_cc &amp; 4..7 &amp; condition code for REPcc; T for unconditional REP/REPG<br />
-repeat_kind &amp; 8..9 &amp; 0: REP/REPcc, 1: REPG, 2..3: reserved<br />
-reserved &amp; 10..15 &amp; reserved, must be zero<br />
-group_start_delta &amp; 16..31 &amp; unsigned byte distance from saved PC to the first grouped instruction; zero for REP/REPcc<br />
-body_bytes &amp; 32..47 &amp; grouped-repeat body length in bytes; zero for REP/REPcc<br />
-reserved &amp; 48..63 &amp; reserved, must be zero  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Field</strong></th>
+<th style="text-align: left;"><strong>Bits</strong></th>
+<th style="text-align: left;"><strong>Meaning</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">rep_reg</td>
+<td style="text-align: left;">0..3</td>
+<td style="text-align: left;">general-purpose counter register R0..R15</td>
+</tr>
+<tr>
+<td style="text-align: left;">rep_cc</td>
+<td style="text-align: left;">4..7</td>
+<td style="text-align: left;">condition code for REPcc; T for unconditional REP/REPG</td>
+</tr>
+<tr>
+<td style="text-align: left;">repeat_kind</td>
+<td style="text-align: left;">8..9</td>
+<td style="text-align: left;">: REP/REPcc, 1: REPG, 2..3: reserved</td>
+</tr>
+<tr>
+<td style="text-align: left;">reserved</td>
+<td style="text-align: left;">10..15</td>
+<td style="text-align: left;">reserved, must be zero</td>
+</tr>
+<tr>
+<td style="text-align: left;">group_start_delta</td>
+<td style="text-align: left;">16..31</td>
+<td style="text-align: left;">unsigned byte distance from saved PC to the first grouped instruction; zero for REP/REPcc</td>
+</tr>
+<tr>
+<td style="text-align: left;">body_bytes</td>
+<td style="text-align: left;">32..47</td>
+<td style="text-align: left;">grouped-repeat body length in bytes; zero for REP/REPcc</td>
+</tr>
+<tr>
+<td style="text-align: left;">reserved</td>
+<td style="text-align: left;">48..63</td>
+<td style="text-align: left;">reserved, must be zero</td>
+</tr>
+</tbody>
+</table>
 <h2 id="delivery-failure-and-shutdown">Delivery Failure and Shutdown</h2>
 <p>Failure to validate the common entry context, establish the selected stack, or store a complete event frame is delivered as DOUBLE_FAULT on DSS:DSP. Failure while DOUBLE_FAULT is already being delivered enters SHUTDOWN. SHUTDOWN retires no further instructions and can be exited only by a platform reset. The frame save and all architectural entry state remain atomic, so a failed attempt never exposes a partially stored frame or partially changed execution context.</p>
 <h2 id="event-reset-and-context-state">Event Reset and Context State</h2>
 <p><strong>Warm RESET Contract</strong></p>
-<p>@&gt;</p>
-<p>p1.35in&gt;</p>
-<p>X@</p>
-<p><strong>Property</strong> &amp; <strong>Architectural Rule</strong><br />
-Scope &amp; executing logical processor<br />
-Required privilege &amp; supervisor<br />
-Serialization &amp; complete prior memory effects and pending write-combining stores before reset state commits<br />
-Restart &amp; running at BOOTPC after instruction-fetch synchronization<br />
-Other logical processors &amp; unchanged  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Property</strong></th>
+<th style="text-align: left;"><strong>Architectural Rule</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">Scope</td>
+<td style="text-align: left;">executing logical processor</td>
+</tr>
+<tr>
+<td style="text-align: left;">Required privilege</td>
+<td style="text-align: left;">supervisor</td>
+</tr>
+<tr>
+<td style="text-align: left;">Serialization</td>
+<td style="text-align: left;">complete prior memory effects and pending write-combining stores before reset state commits</td>
+</tr>
+<tr>
+<td style="text-align: left;">Restart</td>
+<td style="text-align: left;">running at BOOTPC after instruction-fetch synchronization</td>
+</tr>
+<tr>
+<td style="text-align: left;">Other logical processors</td>
+<td style="text-align: left;">unchanged</td>
+</tr>
+</tbody>
+</table>
 <p><strong>Architectural Reset State</strong></p>
-<p>@&gt;</p>
-<p>p2.00in&gt;</p>
-<p>p2.40in@</p>
-<p><strong>State</strong> &amp; <strong>Reset Value</strong>  </p>
-<p>R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, R13, R14, R15, SP &amp; 0<br />
-FLAGS &amp; 0<br />
-STATUS &amp; PM=1; all other STATUS bits 0<br />
-CS, DS, SS, GS0, GS1, GS2, GS3, GS4, GS5 &amp; 0<br />
-PC &amp; BOOTPC<br />
-PTCR, ASCR, ECR &amp; 0<br />
-EPC, ECS, EDS, SPC, SCS, SDS &amp; 0<br />
-URPC, URSP, URCS, URDS, URSS, URCTL &amp; 0<br />
-SSS, SSP, ISS, ISP, FSS, FSP, DSS, DSP &amp; 0<br />
-PMC, CYCLE, INSTRET, PTWALK &amp; 0<br />
-F0–F15, FSTATUS, FFLAGS, extension_state &amp; 0<br />
-hidden_repeat_state, hidden_load_reservation &amp; invalid<br />
-hidden_current_edepth &amp; 0<br />
-hidden current event stack level &amp; invalid<br />
-ECR.NMI_P &amp; 0<br />
-local_translation_cache, local_page_walk_cache, local_prefetch_state &amp; invalid<br />
-coherent_data_and_instruction_cache_contents &amp; retained as coherent contents<br />
-execution_state &amp; running at BOOTPC<br />
-BOOTPC, BOOTCFG &amp; platform supplied on cold reset; preserved by warm RESET  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>State</strong></th>
+<th style="text-align: left;"><strong>Reset Value</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, R13, R14, R15, SP</td>
+<td style="text-align: left;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;">FLAGS</td>
+<td style="text-align: left;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;">STATUS</td>
+<td style="text-align: left;">PM=1; all other STATUS bits 0</td>
+</tr>
+<tr>
+<td style="text-align: left;">CS, DS, SS, GS0, GS1, GS2, GS3, GS4, GS5</td>
+<td style="text-align: left;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;">PC</td>
+<td style="text-align: left;">BOOTPC</td>
+</tr>
+<tr>
+<td style="text-align: left;">PTCR, ASCR, ECR</td>
+<td style="text-align: left;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;">EPC, ECS, EDS, SPC, SCS, SDS</td>
+<td style="text-align: left;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;">URPC, URSP, URCS, URDS, URSS, URCTL</td>
+<td style="text-align: left;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;">SSS, SSP, ISS, ISP, FSS, FSP, DSS, DSP</td>
+<td style="text-align: left;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;">PMC, CYCLE, INSTRET, PTWALK</td>
+<td style="text-align: left;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;">F0–F15, FSTATUS, FFLAGS, extension_state</td>
+<td style="text-align: left;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;">hidden_repeat_state, hidden_load_reservation</td>
+<td style="text-align: left;">invalid</td>
+</tr>
+<tr>
+<td style="text-align: left;">hidden_current_edepth</td>
+<td style="text-align: left;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;">hidden current event stack level</td>
+<td style="text-align: left;">invalid</td>
+</tr>
+<tr>
+<td style="text-align: left;">ECR.NMI_P</td>
+<td style="text-align: left;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;">local_translation_cache, local_page_walk_cache, local_prefetch_state</td>
+<td style="text-align: left;">invalid</td>
+</tr>
+<tr>
+<td style="text-align: left;">coherent_data_and_instruction_cache_contents</td>
+<td style="text-align: left;">retained as coherent contents</td>
+</tr>
+<tr>
+<td style="text-align: left;">execution_state</td>
+<td style="text-align: left;">running at BOOTPC</td>
+</tr>
+<tr>
+<td style="text-align: left;">BOOTPC, BOOTCFG</td>
+<td style="text-align: left;">platform supplied on cold reset; preserved by warm RESET</td>
+</tr>
+</tbody>
+</table>
 <p>Warm RESET applies the complete generated state table to the executing logical processor only. Cold reset initializes BOOTPC and BOOTCFG before applying the same processor-state image to each logical processor selected by the platform reset event. Software initializes entry segments, exact entry PCs, and configured stack tops before setting ECR.V or entering user mode.</p>
 <p>ECR, entry and stack registers, hidden event depth and stack level, and the user-return bank are per-logical-processor state. System software includes the applicable state when switching supervisor contexts. Event frames are ordinary memory owned by the interrupted supervisor context.</p>
 

@@ -9000,59 +9000,214 @@
 <p><img alt="Opcode Payload Namespaces" src="../../assets/visuals/isa/instruction-encoding-03.svg" /></p>
 <p><strong>Opcode Payload Namespaces</strong></p>
 <p><strong>Instruction Length Truth Table</strong></p>
-<p>@&gt;</p>
-<p>p1.25in&gt;</p>
-<p>p1.25in&gt;</p>
-<p>p0.55in@</p>
-<p><strong>Byte 0 Pattern</strong> &amp; <strong>Byte 1 Pattern</strong> &amp; <strong>Bytes</strong>  </p>
-<p><code>0xxxxxxx</code> &amp; – &amp; 1<br />
-<code>10xxxxxx</code> &amp; <code>xxxxxxxx</code> &amp; 2<br />
-<code>110000oo</code> &amp; <code>bbbbxxxx</code> &amp; 3<br />
-<code>110001oo</code> &amp; <code>bbbbxxxx</code> &amp; 4<br />
-<code>110010oo</code> &amp; <code>bbbbxxxx</code> &amp; 5<br />
-<code>110011oo</code> &amp; <code>bbbbxxxx</code> &amp; 6<br />
-<code>110100oo</code> &amp; <code>bbbbxxxx</code> &amp; 7<br />
-<code>110101oo</code> &amp; <code>bbbbxxxx</code> &amp; 8<br />
-<code>110110oo</code> &amp; <code>bbbbxxxx</code> &amp; 9<br />
-<code>110111oo</code> &amp; <code>bbbbxxxx</code> &amp; 10<br />
-<code>111000oo</code> &amp; <code>bbbbxxxx</code> &amp; 11<br />
-<code>111001oo</code> &amp; <code>bbbbxxxx</code> &amp; 12<br />
-<code>111010oo</code> &amp; <code>bbbbxxxx</code> &amp; 13<br />
-<code>111011oo</code> &amp; <code>bbbbxxxx</code> &amp; 14<br />
-<code>111100oo</code> &amp; <code>bbbbxxxx</code> &amp; 15<br />
-<code>111101oo</code> &amp; <code>bbbbxxxx</code> &amp; 16<br />
-<code>111110oo</code> &amp; <code>bbbbxxxx</code> &amp; 17<br />
-<code>111111oo</code> &amp; <code>bbbbxxxx</code> &amp; 18  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Byte 0 Pattern</strong></th>
+<th style="text-align: left;"><strong>Byte 1 Pattern</strong></th>
+<th style="text-align: left;"><strong>Bytes</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>0xxxxxxx</code></td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;">1</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>10xxxxxx</code></td>
+<td style="text-align: left;"><code>xxxxxxxx</code></td>
+<td style="text-align: left;">2</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>110000oo</code></td>
+<td style="text-align: left;"><code>bbbbxxxx</code></td>
+<td style="text-align: left;">3</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>110001oo</code></td>
+<td style="text-align: left;"><code>bbbbxxxx</code></td>
+<td style="text-align: left;">4</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>110010oo</code></td>
+<td style="text-align: left;"><code>bbbbxxxx</code></td>
+<td style="text-align: left;">5</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>110011oo</code></td>
+<td style="text-align: left;"><code>bbbbxxxx</code></td>
+<td style="text-align: left;">6</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>110100oo</code></td>
+<td style="text-align: left;"><code>bbbbxxxx</code></td>
+<td style="text-align: left;">7</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>110101oo</code></td>
+<td style="text-align: left;"><code>bbbbxxxx</code></td>
+<td style="text-align: left;">8</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>110110oo</code></td>
+<td style="text-align: left;"><code>bbbbxxxx</code></td>
+<td style="text-align: left;">9</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>110111oo</code></td>
+<td style="text-align: left;"><code>bbbbxxxx</code></td>
+<td style="text-align: left;">10</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>111000oo</code></td>
+<td style="text-align: left;"><code>bbbbxxxx</code></td>
+<td style="text-align: left;">11</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>111001oo</code></td>
+<td style="text-align: left;"><code>bbbbxxxx</code></td>
+<td style="text-align: left;">12</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>111010oo</code></td>
+<td style="text-align: left;"><code>bbbbxxxx</code></td>
+<td style="text-align: left;">13</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>111011oo</code></td>
+<td style="text-align: left;"><code>bbbbxxxx</code></td>
+<td style="text-align: left;">14</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>111100oo</code></td>
+<td style="text-align: left;"><code>bbbbxxxx</code></td>
+<td style="text-align: left;">15</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>111101oo</code></td>
+<td style="text-align: left;"><code>bbbbxxxx</code></td>
+<td style="text-align: left;">16</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>111110oo</code></td>
+<td style="text-align: left;"><code>bbbbxxxx</code></td>
+<td style="text-align: left;">17</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>111111oo</code></td>
+<td style="text-align: left;"><code>bbbbxxxx</code></td>
+<td style="text-align: left;">18</td>
+</tr>
+</tbody>
+</table>
 <p><strong>Encoding Class Summary</strong></p>
-<p>@&gt;</p>
-<p>p0.72in&gt;</p>
-<p>p0.55in&gt;</p>
-<p>p2.05in&gt;</p>
-<p>p0.62in&gt;</p>
-<p>p1.45in@</p>
-<p><strong>Class</strong> &amp; <strong>Payload Bits</strong> &amp; <strong>Header or Opcode Selector</strong> &amp; <strong>Opcode Bytes</strong> &amp; <strong>Validity</strong><br />
-<code>extrashort</code> &amp; 7 &amp; <code>0xxxxxxx</code> &amp; 1 &amp; exactly 1 byte<br />
-<code>short</code> &amp; 14 &amp; <code>10xxxxxx</code> &amp; 2 &amp; exactly 2 bytes<br />
-<code>medium</code> &amp; 18 &amp; <code>0xxxxx</code>, <code>10xxxx</code>, <code>110xxx</code>, <code>1110xx</code> &amp; 3 &amp; any extended instruction length<br />
-<code>long</code> &amp; 26 &amp; <code>11110x</code>, <code>111110</code> &amp; 4 &amp; instruction length at least 4 bytes<br />
-<code>extralong</code> &amp; 34 &amp; <code>111111</code> &amp; 5 &amp; instruction length at least 5 bytes  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Class</strong></th>
+<th style="text-align: left;"><strong>Payload Bits</strong></th>
+<th style="text-align: left;"><strong>Header or Opcode Selector</strong></th>
+<th style="text-align: left;"><strong>Opcode Bytes</strong></th>
+<th style="text-align: left;"><strong>Validity</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>extrashort</code></td>
+<td style="text-align: left;">7</td>
+<td style="text-align: left;"><code>0xxxxxxx</code></td>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">exactly 1 byte</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>short</code></td>
+<td style="text-align: left;">14</td>
+<td style="text-align: left;"><code>10xxxxxx</code></td>
+<td style="text-align: left;">2</td>
+<td style="text-align: left;">exactly 2 bytes</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>medium</code></td>
+<td style="text-align: left;">18</td>
+<td style="text-align: left;"><code>0xxxxx</code>, <code>10xxxx</code>, <code>110xxx</code>, <code>1110xx</code></td>
+<td style="text-align: left;">3</td>
+<td style="text-align: left;">any extended instruction length</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>long</code></td>
+<td style="text-align: left;">26</td>
+<td style="text-align: left;"><code>11110x</code>, <code>111110</code></td>
+<td style="text-align: left;">4</td>
+<td style="text-align: left;">instruction length at least 4 bytes</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>extralong</code></td>
+<td style="text-align: left;">34</td>
+<td style="text-align: left;"><code>111111</code></td>
+<td style="text-align: left;">5</td>
+<td style="text-align: left;">instruction length at least 5 bytes</td>
+</tr>
+</tbody>
+</table>
 <h2 id="instruction-payload-ordering">Instruction Payload Ordering</h2>
 <p>The instruction header occupies one byte for extrashort forms, two bytes for short forms, and at least two start bytes for extended forms. If a descriptor, immediate, displacement, or bitmap follows, those payload bytes occupy increasing addresses in decode order.</p>
 <p>Signed displacement and immediate payloads use two’s-complement representation at their declared width before any sign extension performed by the consuming instruction or EA form.</p>
 <p><strong>Immediate Operand Interpretation</strong></p>
-<p>@&gt;</p>
-<p>p0.95in&gt;</p>
-<p>p0.38in&gt;</p>
-<p>p0.62in&gt;</p>
-<p>p0.62in&gt;</p>
-<p>p0.90in&gt;</p>
-<p>p1.70in@</p>
-<p><strong>Operand</strong> &amp; <strong>Bits</strong> &amp; <strong>Value</strong> &amp; <strong>Range</strong> &amp; <strong>Extension</strong> &amp; <strong>Applies When</strong>  </p>
-<p><code>pair_id</code> &amp; 3 &amp; identifier &amp; 0..7 &amp; none &amp; PUSHP/POPP canonical register-pair selector<br />
-<code>pt_level</code> &amp; 3 &amp; enumeration &amp; 1..5 &amp; none &amp; PTQUERY page-table level selector<br />
-<code>flags_bitmap</code> &amp; 4 &amp; bitmap &amp; 0..15 &amp; none &amp; SETF/CLRF integer FLAGS masks<br />
-<code>imm6</code> &amp; 6 &amp; unsigned &amp; 0..63 &amp; zero-extend &amp; integer forms with an explicit B/W/L/Q operation size<br />
-<code>imm7</code> &amp; 7 &amp; unsigned &amp; 0..127 &amp; zero-extend &amp; EXTRACT register-pair forms  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Operand</strong></th>
+<th style="text-align: left;"><strong>Bits</strong></th>
+<th style="text-align: left;"><strong>Value</strong></th>
+<th style="text-align: left;"><strong>Range</strong></th>
+<th style="text-align: left;"><strong>Extension</strong></th>
+<th style="text-align: left;"><strong>Applies When</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>pair_id</code></td>
+<td style="text-align: left;">3</td>
+<td style="text-align: left;">identifier</td>
+<td style="text-align: left;">0..7</td>
+<td style="text-align: left;">none</td>
+<td style="text-align: left;">PUSHP/POPP canonical register-pair selector</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>pt_level</code></td>
+<td style="text-align: left;">3</td>
+<td style="text-align: left;">enumeration</td>
+<td style="text-align: left;">1..5</td>
+<td style="text-align: left;">none</td>
+<td style="text-align: left;">PTQUERY page-table level selector</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>flags_bitmap</code></td>
+<td style="text-align: left;">4</td>
+<td style="text-align: left;">bitmap</td>
+<td style="text-align: left;">0..15</td>
+<td style="text-align: left;">none</td>
+<td style="text-align: left;">SETF/CLRF integer FLAGS masks</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>imm6</code></td>
+<td style="text-align: left;">6</td>
+<td style="text-align: left;">unsigned</td>
+<td style="text-align: left;">0..63</td>
+<td style="text-align: left;">zero-extend</td>
+<td style="text-align: left;">integer forms with an explicit B/W/L/Q operation size</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>imm7</code></td>
+<td style="text-align: left;">7</td>
+<td style="text-align: left;">unsigned</td>
+<td style="text-align: left;">0..127</td>
+<td style="text-align: left;">zero-extend</td>
+<td style="text-align: left;">EXTRACT register-pair forms</td>
+</tr>
+</tbody>
+</table>
 <p>PUSHP and POPP interpret the 3-bit <code>pair_id</code> as a canonical register-pair index, so every encoding from 0..7 is valid. PTQUERY uses a 3-bit <code>pt_level</code>; assigned levels are 1..5, while encodings 0, 6, and 7 are reserved. SETF and CLRF interpret the 4-bit <code>flags_bitmap</code> range 0..15 as the low FLAGS nibble: bit 3 selects Z, bit 2 selects N, bit 1 selects C, and bit 0 selects V.</p>
 <p><img alt="SETF and CLRF Flag Bitmap" src="../../assets/visuals/isa/instruction-encoding-04.svg" /></p>
 <p><strong>SETF and CLRF Flag Bitmap</strong></p>

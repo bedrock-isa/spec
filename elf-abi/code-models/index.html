@@ -9004,12 +9004,42 @@
 <h1 id="code-models">Code Models</h1>
 <p>Code models define placement and locality assumptions that assemblers, linkers, and compilers may use when selecting address materialization, displacement, GOT, PLT, and relocation forms. Bedrock 32-bit displacement and direct control-transfer forms are signed, so direct 32-bit relative references cover a -2 GiB to +2 GiB - 1 window.</p>
 <p><strong>Bedrock Code Models</strong></p>
-<p>@p0.65inp2.25inp2.60in@ <strong>Model</strong> &amp; <strong>Placement contract</strong> &amp; <strong>Default access strategy</strong><br />
-<code>low</code> &amp; static addresses in <code>0x00000000..0x7fffffff</code> &amp; signed 32-bit absolute data and direct transfers<br />
-<code>small</code> &amp; referenced code, data, GOT, and PLT fit one signed 32-bit relative window &amp; PC-relative access; GOT/PLT for interposable symbols<br />
-<code>medium</code> &amp; code, GOT, and PLT fit one signed 32-bit window; data placement is unrestricted &amp; direct code; GOT-resolved 64-bit data addresses<br />
-<code>high</code> &amp; static high image with internal references in a signed 32-bit displacement window &amp; image-base or PC-relative access with full-width fallback<br />
-<code>large</code> &amp; unrestricted 64-bit address space &amp; full-width materialization and indirect transfer  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Model</strong></th>
+<th style="text-align: left;"><strong>Placement contract</strong></th>
+<th style="text-align: left;"><strong>Default access strategy</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>low</code></td>
+<td style="text-align: left;">static addresses in <code>0x00000000..0x7fffffff</code></td>
+<td style="text-align: left;">signed 32-bit absolute data and direct transfers</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>small</code></td>
+<td style="text-align: left;">referenced code, data, GOT, and PLT fit one signed 32-bit relative window</td>
+<td style="text-align: left;">PC-relative access; GOT/PLT for interposable symbols</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>medium</code></td>
+<td style="text-align: left;">code, GOT, and PLT fit one signed 32-bit window; data placement is unrestricted</td>
+<td style="text-align: left;">direct code; GOT-resolved 64-bit data addresses</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>high</code></td>
+<td style="text-align: left;">static high image with internal references in a signed 32-bit displacement window</td>
+<td style="text-align: left;">image-base or PC-relative access with full-width fallback</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>large</code></td>
+<td style="text-align: left;">unrestricted 64-bit address space</td>
+<td style="text-align: left;">full-width materialization and indirect transfer</td>
+</tr>
+</tbody>
+</table>
 <h2 id="low-model-details">low Model Details</h2>
 <p>The <code>low</code> model is a static image model whose named code and data lie between <code>0x00000000</code> and <code>0x7fffffff</code>. Code uses direct signed 32-bit branch or call payloads; data uses absolute or base-relative signed 32-bit payloads. A GOT or PLT is not required by the model.</p>
 <p>Its default relocation set is <code>R_BEDROCK_ABS32S</code>, <code>R_BEDROCK_IMM32S</code>, <code>R_BEDROCK_DISP32S</code>, <code>R_BEDROCK_BRDISP32S</code>, and <code>R_BEDROCK_CALL32S</code>. The linker may shrink a direct transfer or address materialization after final placement proves that the result fits a shorter encoding.</p>

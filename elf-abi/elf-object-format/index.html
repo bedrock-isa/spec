@@ -9050,26 +9050,92 @@
 <p>All relocation sections use <code>Elf64_Rela</code> entries with explicit addends and the <code>.rela</code> section-name stem. Ordinary symbol and string tables use <code>.symtab</code> and <code>.strtab</code>. Architecture attributes use <code>.note.bedrock</code>. The baseline value of <code>e_flags</code> is zero; a consumer must reject an unknown nonzero value rather than silently treating it as the baseline profile.</p>
 <h2 id="elf-identification-bytes">ELF Identification Bytes</h2>
 <p><strong>ELF e_ident Values</strong></p>
-<p>@p1.55inp3.95in@ <strong>e_ident Field</strong> &amp; <strong>Value</strong><br />
-<code>EI_MAG</code> &amp; <code>0x7f ’E’ ’L’ ’F’</code><br />
-<code>EI_CLASS</code> &amp; <code>ELFCLASS64</code><br />
-<code>EI_DATA</code> &amp; <code>ELFDATA2LSB</code><br />
-<code>EI_VERSION</code> &amp; <code>EV_CURRENT</code><br />
-<code>EI_OSABI</code> &amp; <code>ELFOSABI_NONE</code><br />
-<code>EI_ABIVERSION</code> &amp; <code>0</code>  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>e_ident Field</strong></th>
+<th style="text-align: left;"><strong>Value</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>EI_MAG</code></td>
+<td style="text-align: left;"><code>0x7f ’E’ ’L’ ’F’</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>EI_CLASS</code></td>
+<td style="text-align: left;"><code>ELFCLASS64</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>EI_DATA</code></td>
+<td style="text-align: left;"><code>ELFDATA2LSB</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>EI_VERSION</code></td>
+<td style="text-align: left;"><code>EV_CURRENT</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>EI_OSABI</code></td>
+<td style="text-align: left;"><code>ELFOSABI_NONE</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>EI_ABIVERSION</code></td>
+<td style="text-align: left;"><code>0</code></td>
+</tr>
+</tbody>
+</table>
 <h2 id="elf-header-sizes">ELF Header Sizes</h2>
 <p><strong>ELF Header Size Values</strong></p>
-<p>@p1.55inp3.95in@ <strong>Header Field</strong> &amp; <strong>Bytes</strong><br />
-<code>e_ehsize</code> &amp; 64<br />
-<code>e_phentsize</code> &amp; 56<br />
-<code>e_shentsize</code> &amp; 64  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Header Field</strong></th>
+<th style="text-align: left;"><strong>Bytes</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>e_ehsize</code></td>
+<td style="text-align: left;">64</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>e_phentsize</code></td>
+<td style="text-align: left;">56</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>e_shentsize</code></td>
+<td style="text-align: left;">64</td>
+</tr>
+</tbody>
+</table>
 <h2 id="entry-point-semantics">Entry Point Semantics</h2>
 <p><strong>ELF Entry Point Rules</strong></p>
-<p>@p1.75inp3.75in@ <strong>File Type</strong> &amp; <strong>e_entry Meaning</strong><br />
-<code>ET_REL</code> &amp; 0<br />
-<code>ET_EXEC</code> &amp; absolute pre-segment virtual byte address<br />
-<code>ET_DYN (executable)</code> &amp; load-bias-relative pre-segment virtual byte address; runtime entry is load base + e entry<br />
-<code>ET_DYN (shared object without entry)</code> &amp; 0  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>File Type</strong></th>
+<th style="text-align: left;"><strong>e_entry Meaning</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>ET_REL</code></td>
+<td style="text-align: left;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>ET_EXEC</code></td>
+<td style="text-align: left;">absolute pre-segment virtual byte address</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>ET_DYN (executable)</code></td>
+<td style="text-align: left;">load-bias-relative pre-segment virtual byte address; runtime entry is load base + e entry</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>ET_DYN (shared object without entry)</code></td>
+<td style="text-align: left;">0</td>
+</tr>
+</tbody>
+</table>
 <h2 id="program-header-policy">Program Header Policy</h2>
 <p>The standard <code>PT_LOAD</code>, <code>PT_DYNAMIC</code>, <code>PT_INTERP</code>, <code>PT_NOTE</code>, and <code>PT_TLS</code> program headers retain their ordinary ELF meanings. The far profile additionally defines <code>PT_BEDROCK_SEGDOM</code>; Section 6 gives its complete contract.</p>
 <p>Program permission bits use the standard values <code>PF_X=1</code>, <code>PF_W=2</code>, and <code>PF_R=4</code>. The processor-specific <code>PF_BEDROCK_BOUNDS_ONLY</code> bit is <code>0x10000000</code> and is valid only as specified for segment-domain headers. Every <code>PT_LOAD</code> has <code>p_align</code> equal to the selected page size or a larger power-of-two alignment; the minimum supported page alignment is 4096 bytes.</p>
@@ -9080,16 +9146,52 @@
 <p><code>Tag_Bedrock_Far_Model</code> is a 32-bit architecture attribute. An absent attribute has value zero and declares no far-address contract. Value one selects the canonical far representation: a pre-segment address paired with a disabled or bounds-only segment image. Section 6 defines compatibility and rejection rules for this value.</p>
 <h2 id="abi-attribute-note-encoding">ABI Attribute Note Encoding</h2>
 <p><strong>Bedrock ABI Attribute Note</strong></p>
-<p>@p1.75inp3.75in@ <strong>Field</strong> &amp; <strong>Value</strong><br />
-section &amp; <code>.note.bedrock</code><br />
-owner name &amp; <code>BEDROCK</code><br />
-owner namesz &amp; 8 including the terminating null byte<br />
-note type &amp; <code>NT_BEDROCK_ABI_ATTRIBUTES</code><br />
-note type value &amp; 1<br />
-descriptor size bytes &amp; 8<br />
-descriptor word 0 tag &amp; <code>Tag_Bedrock_Far_Model</code><br />
-descriptor word 0 type &amp; <code>u32</code><br />
-descriptor word 1 &amp; reserved u32; must be zero  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Field</strong></th>
+<th style="text-align: left;"><strong>Value</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">section</td>
+<td style="text-align: left;"><code>.note.bedrock</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">owner name</td>
+<td style="text-align: left;"><code>BEDROCK</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">owner namesz</td>
+<td style="text-align: left;">8 including the terminating null byte</td>
+</tr>
+<tr>
+<td style="text-align: left;">note type</td>
+<td style="text-align: left;"><code>NT_BEDROCK_ABI_ATTRIBUTES</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">note type value</td>
+<td style="text-align: left;">1</td>
+</tr>
+<tr>
+<td style="text-align: left;">descriptor size bytes</td>
+<td style="text-align: left;">8</td>
+</tr>
+<tr>
+<td style="text-align: left;">descriptor word 0 tag</td>
+<td style="text-align: left;"><code>Tag_Bedrock_Far_Model</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">descriptor word 0 type</td>
+<td style="text-align: left;"><code>u32</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">descriptor word 1</td>
+<td style="text-align: left;">reserved u32; must be zero</td>
+</tr>
+</tbody>
+</table>
 <p>An input object may contain at most one Bedrock ABI attribute note. A linker merges compatible input values and emits exactly one note in the output.</p>
 
 

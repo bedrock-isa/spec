@@ -8994,51 +8994,217 @@
 <p>Feature = <code>FP</code></p>
 <p>Repeat = <code>REP</code>, <code>REPG</code></p>
 <p><strong>FMOVCR Constant IDs (IEEE-754 binary64)</strong></p>
-<p>@&gt;</p>
-<p>p0.75in&gt;</p>
-<p>p2.35in&gt;</p>
-<p>p2.30in@</p>
-<p><strong>ID</strong> &amp; <strong>Constant</strong> &amp; <strong>Result bits</strong>  </p>
-<p><code>0x0000</code> &amp; positive zero &amp; <code>0x0000000000000000</code><br />
-<code>0x0001</code> &amp; negative zero &amp; <code>0x8000000000000000</code><br />
-<code>0x0002</code> &amp; positive one &amp; <code>0x3ff0000000000000</code><br />
-<code>0x0003</code> &amp; negative one &amp; <code>0xbff0000000000000</code><br />
-<code>0x0004</code> &amp; positive one half &amp; <code>0x3fe0000000000000</code><br />
-<code>0x0005</code> &amp; negative one half &amp; <code>0xbfe0000000000000</code><br />
-<code>0x0006</code> &amp; positive two &amp; <code>0x4000000000000000</code><br />
-<code>0x0007</code> &amp; negative two &amp; <code>0xc000000000000000</code><br />
-<code>0x0008</code> &amp; positive ten &amp; <code>0x4024000000000000</code><br />
-<code>0x0009</code> &amp; negative ten &amp; <code>0xc024000000000000</code><br />
-<code>0x0010</code> &amp; pi &amp; <code>0x400921fb54442d18</code><br />
-<code>0x0011</code> &amp; pi over 2 &amp; <code>0x3ff921fb54442d18</code><br />
-<code>0x0012</code> &amp; pi over 4 &amp; <code>0x3fe921fb54442d18</code><br />
-<code>0x0013</code> &amp; two pi &amp; <code>0x401921fb54442d18</code><br />
-<code>0x0014</code> &amp; reciprocal pi &amp; <code>0x3fd45f306dc9c883</code><br />
-<code>0x0015</code> &amp; two over pi &amp; <code>0x3fe45f306dc9c883</code><br />
-<code>0x0016</code> &amp; sqrt 2 &amp; <code>0x3ff6a09e667f3bcd</code><br />
-<code>0x0017</code> &amp; reciprocal sqrt 2 &amp; <code>0x3fe6a09e667f3bcc</code><br />
-<code>0x0020</code> &amp; e &amp; <code>0x4005bf0a8b145769</code><br />
-<code>0x0021</code> &amp; log2 e &amp; <code>0x3ff71547652b82fe</code><br />
-<code>0x0022</code> &amp; log10 e &amp; <code>0x3fdbcb7b1526e50e</code><br />
-<code>0x0023</code> &amp; ln 2 &amp; <code>0x3fe62e42fefa39ef</code><br />
-<code>0x0024</code> &amp; ln 10 &amp; <code>0x40026bb1bbb55516</code><br />
-<code>0x0025</code> &amp; log2 10 &amp; <code>0x400a934f0979a371</code><br />
-<code>0x0026</code> &amp; log10 2 &amp; <code>0x3fd34413509f79ff</code><br />
-<code>0x0100</code> &amp; positive infinity &amp; <code>0x7ff0000000000000</code><br />
-<code>0x0101</code> &amp; negative infinity &amp; <code>0xfff0000000000000</code><br />
-<code>0x0102</code> &amp; canonical positive quiet nan &amp; <code>0x7ff8000000000000</code><br />
-<code>0x0103</code> &amp; canonical negative quiet nan &amp; <code>0xfff8000000000000</code><br />
-<code>0x0104</code> &amp; canonical positive signaling nan &amp; <code>0x7ff0000000000001</code><br />
-<code>0x0105</code> &amp; canonical negative signaling nan &amp; <code>0xfff0000000000001</code><br />
-<code>0x0110</code> &amp; maximum positive finite &amp; <code>0x7fefffffffffffff</code><br />
-<code>0x0111</code> &amp; maximum negative finite &amp; <code>0xffefffffffffffff</code><br />
-<code>0x0112</code> &amp; minimum positive normal &amp; <code>0x0010000000000000</code><br />
-<code>0x0113</code> &amp; minimum negative normal &amp; <code>0x8010000000000000</code><br />
-<code>0x0114</code> &amp; minimum positive subnormal &amp; <code>0x0000000000000001</code><br />
-<code>0x0115</code> &amp; minimum negative subnormal &amp; <code>0x8000000000000001</code><br />
-<code>0x0116</code> &amp; machine epsilon &amp; <code>0x3cb0000000000000</code><br />
-<code>0x0117</code> &amp; maximum positive subnormal &amp; <code>0x000fffffffffffff</code><br />
-<code>0x0118</code> &amp; maximum negative subnormal &amp; <code>0x800fffffffffffff</code>  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>ID</strong></th>
+<th style="text-align: left;"><strong>Constant</strong></th>
+<th style="text-align: left;"><strong>Result bits</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>0x0000</code></td>
+<td style="text-align: left;">positive zero</td>
+<td style="text-align: left;"><code>0x0000000000000000</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0001</code></td>
+<td style="text-align: left;">negative zero</td>
+<td style="text-align: left;"><code>0x8000000000000000</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0002</code></td>
+<td style="text-align: left;">positive one</td>
+<td style="text-align: left;"><code>0x3ff0000000000000</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0003</code></td>
+<td style="text-align: left;">negative one</td>
+<td style="text-align: left;"><code>0xbff0000000000000</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0004</code></td>
+<td style="text-align: left;">positive one half</td>
+<td style="text-align: left;"><code>0x3fe0000000000000</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0005</code></td>
+<td style="text-align: left;">negative one half</td>
+<td style="text-align: left;"><code>0xbfe0000000000000</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0006</code></td>
+<td style="text-align: left;">positive two</td>
+<td style="text-align: left;"><code>0x4000000000000000</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0007</code></td>
+<td style="text-align: left;">negative two</td>
+<td style="text-align: left;"><code>0xc000000000000000</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0008</code></td>
+<td style="text-align: left;">positive ten</td>
+<td style="text-align: left;"><code>0x4024000000000000</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0009</code></td>
+<td style="text-align: left;">negative ten</td>
+<td style="text-align: left;"><code>0xc024000000000000</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0010</code></td>
+<td style="text-align: left;">pi</td>
+<td style="text-align: left;"><code>0x400921fb54442d18</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0011</code></td>
+<td style="text-align: left;">pi over 2</td>
+<td style="text-align: left;"><code>0x3ff921fb54442d18</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0012</code></td>
+<td style="text-align: left;">pi over 4</td>
+<td style="text-align: left;"><code>0x3fe921fb54442d18</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0013</code></td>
+<td style="text-align: left;">two pi</td>
+<td style="text-align: left;"><code>0x401921fb54442d18</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0014</code></td>
+<td style="text-align: left;">reciprocal pi</td>
+<td style="text-align: left;"><code>0x3fd45f306dc9c883</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0015</code></td>
+<td style="text-align: left;">two over pi</td>
+<td style="text-align: left;"><code>0x3fe45f306dc9c883</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0016</code></td>
+<td style="text-align: left;">sqrt 2</td>
+<td style="text-align: left;"><code>0x3ff6a09e667f3bcd</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0017</code></td>
+<td style="text-align: left;">reciprocal sqrt 2</td>
+<td style="text-align: left;"><code>0x3fe6a09e667f3bcc</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0020</code></td>
+<td style="text-align: left;">e</td>
+<td style="text-align: left;"><code>0x4005bf0a8b145769</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0021</code></td>
+<td style="text-align: left;">log2 e</td>
+<td style="text-align: left;"><code>0x3ff71547652b82fe</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0022</code></td>
+<td style="text-align: left;">log10 e</td>
+<td style="text-align: left;"><code>0x3fdbcb7b1526e50e</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0023</code></td>
+<td style="text-align: left;">ln 2</td>
+<td style="text-align: left;"><code>0x3fe62e42fefa39ef</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0024</code></td>
+<td style="text-align: left;">ln 10</td>
+<td style="text-align: left;"><code>0x40026bb1bbb55516</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0025</code></td>
+<td style="text-align: left;">log2 10</td>
+<td style="text-align: left;"><code>0x400a934f0979a371</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0026</code></td>
+<td style="text-align: left;">log10 2</td>
+<td style="text-align: left;"><code>0x3fd34413509f79ff</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0100</code></td>
+<td style="text-align: left;">positive infinity</td>
+<td style="text-align: left;"><code>0x7ff0000000000000</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0101</code></td>
+<td style="text-align: left;">negative infinity</td>
+<td style="text-align: left;"><code>0xfff0000000000000</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0102</code></td>
+<td style="text-align: left;">canonical positive quiet nan</td>
+<td style="text-align: left;"><code>0x7ff8000000000000</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0103</code></td>
+<td style="text-align: left;">canonical negative quiet nan</td>
+<td style="text-align: left;"><code>0xfff8000000000000</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0104</code></td>
+<td style="text-align: left;">canonical positive signaling nan</td>
+<td style="text-align: left;"><code>0x7ff0000000000001</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0105</code></td>
+<td style="text-align: left;">canonical negative signaling nan</td>
+<td style="text-align: left;"><code>0xfff0000000000001</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0110</code></td>
+<td style="text-align: left;">maximum positive finite</td>
+<td style="text-align: left;"><code>0x7fefffffffffffff</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0111</code></td>
+<td style="text-align: left;">maximum negative finite</td>
+<td style="text-align: left;"><code>0xffefffffffffffff</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0112</code></td>
+<td style="text-align: left;">minimum positive normal</td>
+<td style="text-align: left;"><code>0x0010000000000000</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0113</code></td>
+<td style="text-align: left;">minimum negative normal</td>
+<td style="text-align: left;"><code>0x8010000000000000</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0114</code></td>
+<td style="text-align: left;">minimum positive subnormal</td>
+<td style="text-align: left;"><code>0x0000000000000001</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0115</code></td>
+<td style="text-align: left;">minimum negative subnormal</td>
+<td style="text-align: left;"><code>0x8000000000000001</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0116</code></td>
+<td style="text-align: left;">machine epsilon</td>
+<td style="text-align: left;"><code>0x3cb0000000000000</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0117</code></td>
+<td style="text-align: left;">maximum positive subnormal</td>
+<td style="text-align: left;"><code>0x000fffffffffffff</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0118</code></td>
+<td style="text-align: left;">maximum negative subnormal</td>
+<td style="text-align: left;"><code>0x800fffffffffffff</code></td>
+</tr>
+</tbody>
+</table>
 <h2 id="instruction-forms">Instruction Forms</h2>
 <p><strong><code>FMOVCR.X(z:S/D) &lt;imm16&gt;, Fn(d)</code></strong></p>
 <p><em>Encoding class: long; required bytes: 6 bytes; privilege: unprivileged</em></p>

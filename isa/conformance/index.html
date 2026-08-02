@@ -8981,15 +8981,37 @@
 <h2 id="implementation-defined-disclosures">Implementation-Defined Disclosures</h2>
 <p>An implementation-defined selection is stable for the implementation revision named by CPUID and is published through the channel named by its defining rule. The publication identifies the selected value or behavior and the processor revisions to which it applies.</p>
 <p><strong>Implementation-Defined Disclosure Register</strong></p>
-<p>@&gt;</p>
-<p>p1.35in&gt;</p>
-<p>p2.20in&gt;</p>
-<p>p2.10in@</p>
-<p><strong>Item</strong> &amp; <strong>Defining rule</strong> &amp; <strong>Publication</strong>  </p>
-<p><code>cpuid_higher_classes</code> &amp; CPUID Feature Discovery, Base Identity and Leaf Directory &amp; CPUID class and leaf directories plus implementation documentation for the class payload<br />
-<code>performance_counter_ids</code> &amp; CPUID Performance-Counter Discovery and RDPMC &amp; CPUID PERFORMANCE_COUNTERS presence results plus implementation documentation naming each counter event<br />
-<code>event_aux_syndrome</code> &amp; Machine-check EVENT_AUX payload &amp; platform documentation or firmware interface documentation for the event source<br />
-<code>fptransa_approximation</code> &amp; FPTRANSA ULP Error Model and CPUID accuracy contracts &amp; CPUID accuracy-contract discovery plus implementation documentation for the deterministic approximation</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Item</strong></th>
+<th style="text-align: left;"><strong>Defining rule</strong></th>
+<th style="text-align: left;"><strong>Publication</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>cpuid_higher_classes</code></td>
+<td style="text-align: left;">CPUID Feature Discovery, Base Identity and Leaf Directory</td>
+<td style="text-align: left;">CPUID class and leaf directories plus implementation documentation for the class payload</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>performance_counter_ids</code></td>
+<td style="text-align: left;">CPUID Performance-Counter Discovery and RDPMC</td>
+<td style="text-align: left;">CPUID PERFORMANCE_COUNTERS presence results plus implementation documentation naming each counter event</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>event_aux_syndrome</code></td>
+<td style="text-align: left;">Machine-check EVENT_AUX payload</td>
+<td style="text-align: left;">platform documentation or firmware interface documentation for the event source</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>fptransa_approximation</code></td>
+<td style="text-align: left;">FPTRANSA ULP Error Model and CPUID accuracy contracts</td>
+<td style="text-align: left;">CPUID accuracy-contract discovery plus implementation documentation for the deterministic approximation</td>
+</tr>
+</tbody>
+</table>
 
 
 

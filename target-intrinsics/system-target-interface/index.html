@@ -8982,44 +8982,200 @@
 <h1 id="system-target-interface">System Target Interface</h1>
 <p>The system umbrella is separate so ordinary source inclusion does not accidentally make privileged facilities appear available. The compiler emits the requested architectural operation; runtime privilege and policy checks remain active.</p>
 <h2 id="system-register-builtins">System-Register Builtins</h2>
-<p>@&gt;</p>
-<p>p1.46inX@</p>
-<p><strong>Header:</strong> &amp; <code>&lt;bedrocksysregintrin.h&gt;</code></p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"></th>
+<th style="text-align: left;"></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Header:</strong></td>
+<td style="text-align: left;"><code>&lt;bedrocksysregintrin.h&gt;</code></td>
+</tr>
+</tbody>
+</table>
 <p><strong>System-Register Builtins</strong></p>
-<p>@p1.4inp1.3inp0.7inp2.2in@ <strong>Name</strong> &amp; <strong>C interface</strong> &amp; <strong>Lowering</strong> &amp; <strong>Availability, constraint, and effect</strong><br />
-<code>write_status</code> &amp; <code>void(uint16_t)</code> &amp; <code>WRSTATUS</code> &amp; Supervisor; reserved and privilege-controlled bits follow the ISA; compiler-visible side effect.<br />
-<code>read_control_register</code> &amp; <code>uint64_t(selector)</code> &amp; <code>RDCR</code> &amp; Supervisor; selector is a constant in 0 through 65535 naming a defined register.<br />
-<code>write_control_register</code> &amp; <code>void(selector,u64)</code> &amp; <code>WRCR</code> &amp; Supervisor; defined constant selector required; writes the register and clobbers memory.<br />
-<code>read_segment_register</code> &amp; <code>uint64_t(selector)</code> &amp; <code>RDSEG</code> &amp; Unprivileged; selector is a compile-time <code>__bedrock_segment_register_t</code>.<br />
-<code>read_code_segment</code> &amp; <code>uint64_t(void)</code> &amp; <code>RDSEG CS</code> &amp; Unprivileged; reads the current CS image through the dedicated source-only form.<br />
-<code>write_segment_register</code> &amp; <code>void(selector,image)</code> &amp; <code>WRSEG</code> &amp; Unprivileged; validates the SREG image, changes address interpretation, and fully clobbers memory.  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Name</strong></th>
+<th style="text-align: left;"><strong>C interface</strong></th>
+<th style="text-align: left;"><strong>Lowering</strong></th>
+<th style="text-align: left;"><strong>Availability, constraint, and effect</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>write_status</code></td>
+<td style="text-align: left;"><code>void(uint16_t)</code></td>
+<td style="text-align: left;"><code>WRSTATUS</code></td>
+<td style="text-align: left;">Supervisor; reserved and privilege-controlled bits follow the ISA; compiler-visible side effect.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>read_control_register</code></td>
+<td style="text-align: left;"><code>uint64_t(selector)</code></td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;">Supervisor; selector is a constant in 0 through 65535 naming a defined register.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>write_control_register</code></td>
+<td style="text-align: left;"><code>void(selector,u64)</code></td>
+<td style="text-align: left;"><code>WRCR</code></td>
+<td style="text-align: left;">Supervisor; defined constant selector required; writes the register and clobbers memory.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>read_segment_register</code></td>
+<td style="text-align: left;"><code>uint64_t(selector)</code></td>
+<td style="text-align: left;"><code>RDSEG</code></td>
+<td style="text-align: left;">Unprivileged; selector is a compile-time <code>__bedrock_segment_register_t</code>.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>read_code_segment</code></td>
+<td style="text-align: left;"><code>uint64_t(void)</code></td>
+<td style="text-align: left;"><code>RDSEG CS</code></td>
+<td style="text-align: left;">Unprivileged; reads the current CS image through the dedicated source-only form.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>write_segment_register</code></td>
+<td style="text-align: left;"><code>void(selector,image)</code></td>
+<td style="text-align: left;"><code>WRSEG</code></td>
+<td style="text-align: left;">Unprivileged; validates the SREG image, changes address interpretation, and fully clobbers memory.</td>
+</tr>
+</tbody>
+</table>
 <p>The system-register header defines <code>__bedrock_control_register_t</code> constants for every published control-register selector. The constants are names for the architectural selector values; they do not weaken the privilege, reserved-bit, or per-register validation performed by RDCR and WRCR.</p>
 <h2 id="cache-management-builtins">Cache-Management Builtins</h2>
-<p>@&gt;</p>
-<p>p1.46inX@</p>
-<p><strong>Header:</strong> &amp; <code>&lt;bedrockcacheintrin.h&gt;</code></p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"></th>
+<th style="text-align: left;"></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Header:</strong></td>
+<td style="text-align: left;"><code>&lt;bedrockcacheintrin.h&gt;</code></td>
+</tr>
+</tbody>
+</table>
 <p>All cache range operations evaluate the address once and obtain the maintenance granule from CPUID <code>CACHE_TOPOLOGY</code>. A zero length emits no cache-maintenance instruction. A nonzero, nonwrapping byte range selects every maintenance block that intersects the range and lowers to one block instruction per selected block. Each instruction translates its own block address. If a later instruction faults, blocks completed by earlier instructions remain completed.</p>
 <p>For a nonzero length, the mathematical half-open range <span class="arithmatex">\([\mathrm{address},\mathrm{address}+\mathrm{length})\)</span> shall lie within the 64-bit address space. Otherwise the behavior of the call is undefined and no architectural cache-maintenance sequence is required. An implementation may diagnose a provably wrapping constant range. A valid range end is calculated mathematically, not modulo <span class="arithmatex">\(2^{64}\)</span>.</p>
 <p><strong>Cache-Management Builtins</strong></p>
-<p>@p1.45inp1.3inp0.9inp1.95in@ <strong>Name</strong> &amp; <strong>C interface</strong> &amp; <strong>Lowering</strong> &amp; <strong>Availability and effect</strong><br />
-<code>flush_dcache</code> &amp; <code>void(void *,size_t)</code> &amp; <code>FLSHDCACHE</code> &amp; Supervisor; applies FLSHDCACHE to every CPUID maintenance block intersecting the range and fully clobbers memory.<br />
-<code>invalidate_dcache</code> &amp; <code>void(void *,size_t)</code> &amp; <code>INVDCACHE</code> &amp; Supervisor; applies INVDCACHE to every CPUID maintenance block intersecting the range and fully clobbers memory.<br />
-<code>invalidate_icache</code> &amp; <code>void(void *,size_t)</code> &amp; <code>INVICACHE</code> &amp; Supervisor; applies local INVICACHE to every CPUID maintenance block intersecting the range, serializes instruction fetch, and fully clobbers memory.<br />
-<code>writeback_dcache</code> &amp; <code>void(void *,size_t)</code> &amp; <code>WRBKDCACHE</code> &amp; Supervisor; applies WRBKDCACHE to every CPUID maintenance block intersecting the range and fully clobbers memory.<br />
-<code>sync_cache</code> &amp; <code>void(void *,size_t)</code> &amp; <code>SYNCCACHE</code> &amp; Supervisor; applies SYNCCACHE to every CPUID maintenance block intersecting the range, serializes instruction fetch, and fully clobbers memory.  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Name</strong></th>
+<th style="text-align: left;"><strong>C interface</strong></th>
+<th style="text-align: left;"><strong>Lowering</strong></th>
+<th style="text-align: left;"><strong>Availability and effect</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>flush_dcache</code></td>
+<td style="text-align: left;"><code>void(void *,size_t)</code></td>
+<td style="text-align: left;"><code>FLSHDCACHE</code></td>
+<td style="text-align: left;">Supervisor; applies FLSHDCACHE to every CPUID maintenance block intersecting the range and fully clobbers memory.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>invalidate_dcache</code></td>
+<td style="text-align: left;"><code>void(void *,size_t)</code></td>
+<td style="text-align: left;"><code>INVDCACHE</code></td>
+<td style="text-align: left;">Supervisor; applies INVDCACHE to every CPUID maintenance block intersecting the range and fully clobbers memory.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>invalidate_icache</code></td>
+<td style="text-align: left;"><code>void(void *,size_t)</code></td>
+<td style="text-align: left;"><code>INVICACHE</code></td>
+<td style="text-align: left;">Supervisor; applies local INVICACHE to every CPUID maintenance block intersecting the range, serializes instruction fetch, and fully clobbers memory.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>writeback_dcache</code></td>
+<td style="text-align: left;"><code>void(void *,size_t)</code></td>
+<td style="text-align: left;"><code>WRBKDCACHE</code></td>
+<td style="text-align: left;">Supervisor; applies WRBKDCACHE to every CPUID maintenance block intersecting the range and fully clobbers memory.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>sync_cache</code></td>
+<td style="text-align: left;"><code>void(void *,size_t)</code></td>
+<td style="text-align: left;"><code>SYNCCACHE</code></td>
+<td style="text-align: left;">Supervisor; applies SYNCCACHE to every CPUID maintenance block intersecting the range, serializes instruction fetch, and fully clobbers memory.</td>
+</tr>
+</tbody>
+</table>
 <h2 id="mmu-builtins">MMU Builtins</h2>
-<p>@&gt;</p>
-<p>p1.46inX@</p>
-<p><strong>Header:</strong> &amp; <code>&lt;bedrockmmuintrin.h&gt;</code></p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"></th>
+<th style="text-align: left;"></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Header:</strong></td>
+<td style="text-align: left;"><code>&lt;bedrockmmuintrin.h&gt;</code></td>
+</tr>
+</tbody>
+</table>
 <p><strong>MMU Builtins</strong></p>
-<p>@p1.4inp1.35inp0.75inp2.1in@ <strong>Name</strong> &amp; <strong>C interface</strong> &amp; <strong>Lowering</strong> &amp; <strong>Constraint and effect</strong><br />
-<code>invalidate_tlb</code> &amp; <code>void(void)</code> &amp; <code>INVTLB</code> &amp; Supervisor; translation-state side effect and full memory clobber.<br />
-<code>invalidate_page</code> &amp; <code>void(const void *)</code> &amp; <code>INVPAGE</code> &amp; Supervisor; argument supplies the linear page address and the operation fully clobbers memory.<br />
-<code>invalidate_asid</code> &amp; <code>void(asid)</code> &amp; <code>INVASID</code> &amp; Supervisor; ASID is a constant in 0 through 65535 and the operation fully clobbers memory.<br />
-<code>switch_page_table</code> &amp; <code>void(uint64_t ptcr)</code> &amp; <code>SWPT</code> &amp; Supervisor; valid page-table image required; changes address space and fully clobbers memory.<br />
-<code>switch_page_table_asid</code> &amp; <code>void(uint64_t,uint16_t)</code> &amp; <code>SWPTA</code> &amp; Supervisor; valid image and low 16-bit ASID; changes address space and fully clobbers memory.<br />
-<code>virtual_to_physical</code> &amp; <code>result(address)</code> &amp; <code>VTOP</code> &amp; Supervisor; wrapper returns value and operation-defined <code>FLAGS</code> captured atomically; page walk without access to the translated C object.<br />
-<code>page_table_query</code> &amp; <code>result(level,address)</code> &amp; <code>PTQUERY</code> &amp; Supervisor; level is an integer constant expression in 1 through 5; wrapper atomically returns value and <code>FLAGS</code>; page walk without access to the queried C object.  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Name</strong></th>
+<th style="text-align: left;"><strong>C interface</strong></th>
+<th style="text-align: left;"><strong>Lowering</strong></th>
+<th style="text-align: left;"><strong>Constraint and effect</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>invalidate_tlb</code></td>
+<td style="text-align: left;"><code>void(void)</code></td>
+<td style="text-align: left;"><code>INVTLB</code></td>
+<td style="text-align: left;">Supervisor; translation-state side effect and full memory clobber.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>invalidate_page</code></td>
+<td style="text-align: left;"><code>void(const void *)</code></td>
+<td style="text-align: left;"><code>INVPAGE</code></td>
+<td style="text-align: left;">Supervisor; argument supplies the linear page address and the operation fully clobbers memory.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>invalidate_asid</code></td>
+<td style="text-align: left;"><code>void(asid)</code></td>
+<td style="text-align: left;"><code>INVASID</code></td>
+<td style="text-align: left;">Supervisor; ASID is a constant in 0 through 65535 and the operation fully clobbers memory.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>switch_page_table</code></td>
+<td style="text-align: left;"><code>void(uint64_t ptcr)</code></td>
+<td style="text-align: left;"><code>SWPT</code></td>
+<td style="text-align: left;">Supervisor; valid page-table image required; changes address space and fully clobbers memory.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>switch_page_table_asid</code></td>
+<td style="text-align: left;"><code>void(uint64_t,uint16_t)</code></td>
+<td style="text-align: left;"><code>SWPTA</code></td>
+<td style="text-align: left;">Supervisor; valid image and low 16-bit ASID; changes address space and fully clobbers memory.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>virtual_to_physical</code></td>
+<td style="text-align: left;"><code>result(address)</code></td>
+<td style="text-align: left;"><code>VTOP</code></td>
+<td style="text-align: left;">Supervisor; wrapper returns value and operation-defined <code>FLAGS</code> captured atomically; page walk without access to the translated C object.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>page_table_query</code></td>
+<td style="text-align: left;"><code>result(level,address)</code></td>
+<td style="text-align: left;"><code>PTQUERY</code></td>
+<td style="text-align: left;">Supervisor; level is an integer constant expression in 1 through 5; wrapper atomically returns value and <code>FLAGS</code>; page walk without access to the queried C object.</td>
+</tr>
+</tbody>
+</table>
 <h2 id="processor-state-builtins">Processor-State Builtins</h2>
 <table>
 <thead>

@@ -8964,19 +8964,61 @@
 <p>An Rn destination write smaller than Q replaces only the selected low-order subfield; bits above the operation size are preserved. Q-sized Rn writes replace all 64 bits. Memory destination writes transfer only the selected number of bytes.</p>
 <p>An instruction may explicitly define a full-register write, zero-extension, sign-extension, or another upper-bit rule. Such instruction-specific rules override the default subfield write rule.</p>
 <p><strong>Scalar Data Sizes</strong></p>
-<p>@&gt;</p>
-<p>p0.45in&gt;</p>
-<p>p0.55in&gt;</p>
-<p>p0.45in&gt;</p>
-<p>p0.50in&gt;</p>
-<p>p1.55in@</p>
-<p><strong>Code</strong> &amp; <strong>Suffix</strong> &amp; <strong>Bits</strong> &amp; <strong>Bytes</strong> &amp; <strong>Name</strong><br />
-<code>B</code> &amp; <code>.B</code> &amp; 8 &amp; 1 &amp; Byte<br />
-<code>W</code> &amp; <code>.W</code> &amp; 16 &amp; 2 &amp; Word<br />
-<code>L</code> &amp; <code>.L</code> &amp; 32 &amp; 4 &amp; Long<br />
-<code>Q</code> &amp; <code>.Q</code> &amp; 64 &amp; 8 &amp; Quad<br />
-<code>S</code> &amp; <code>.S</code> &amp; 32 &amp; 4 &amp; Single<br />
-<code>D</code> &amp; <code>.D</code> &amp; 64 &amp; 8 &amp; Double  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Code</strong></th>
+<th style="text-align: left;"><strong>Suffix</strong></th>
+<th style="text-align: left;"><strong>Bits</strong></th>
+<th style="text-align: left;"><strong>Bytes</strong></th>
+<th style="text-align: left;"><strong>Name</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>B</code></td>
+<td style="text-align: left;"><code>.B</code></td>
+<td style="text-align: left;">8</td>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">Byte</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>W</code></td>
+<td style="text-align: left;"><code>.W</code></td>
+<td style="text-align: left;">16</td>
+<td style="text-align: left;">2</td>
+<td style="text-align: left;">Word</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>L</code></td>
+<td style="text-align: left;"><code>.L</code></td>
+<td style="text-align: left;">32</td>
+<td style="text-align: left;">4</td>
+<td style="text-align: left;">Long</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Q</code></td>
+<td style="text-align: left;"><code>.Q</code></td>
+<td style="text-align: left;">64</td>
+<td style="text-align: left;">8</td>
+<td style="text-align: left;">Quad</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>S</code></td>
+<td style="text-align: left;"><code>.S</code></td>
+<td style="text-align: left;">32</td>
+<td style="text-align: left;">4</td>
+<td style="text-align: left;">Single</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>D</code></td>
+<td style="text-align: left;"><code>.D</code></td>
+<td style="text-align: left;">64</td>
+<td style="text-align: left;">8</td>
+<td style="text-align: left;">Double</td>
+</tr>
+</tbody>
+</table>
 <p><img alt="Integer Register Operand Subfields" src="../../assets/visuals/isa/data-formats-01.svg" /></p>
 <p><strong>Integer Register Operand Subfields</strong></p>
 <h2 id="little-endian-memory-organization">Little-Endian Memory Organization</h2>

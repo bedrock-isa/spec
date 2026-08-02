@@ -9018,15 +9018,36 @@
 <p>Repeat = <code>REP</code>, <code>REPG</code></p>
 <h2 id="detailed-semantics">Detailed Semantics</h2>
 <p><strong>FFLAGS Effects</strong></p>
-<p>@&gt;</p>
-<p>p0.62in&gt;</p>
-<p>p4.68in@</p>
-<p><strong>Flag</strong> &amp; <strong>Effect</strong>  </p>
-<p><code>NV</code> &amp; may accrue<br />
-<code>DZ</code> &amp; preserved<br />
-<code>OF</code> &amp; preserved<br />
-<code>UF</code> &amp; preserved<br />
-<code>NX</code> &amp; preserved  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Flag</strong></th>
+<th style="text-align: left;"><strong>Effect</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>NV</code></td>
+<td style="text-align: left;">may accrue</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>DZ</code></td>
+<td style="text-align: left;">preserved</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>OF</code></td>
+<td style="text-align: left;">preserved</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>UF</code></td>
+<td style="text-align: left;">preserved</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NX</code></td>
+<td style="text-align: left;">preserved</td>
+</tr>
+</tbody>
+</table>
 <p>For S format, exponent field zero is treated as biased exponent one and the bias 127 is subtracted. For D format, exponent field zero is likewise treated as one and bias 1023 is subtracted. The resulting signed integer exponent is converted to the selected floating-point destination format. This rule gives zero and subnormal inputs the minimum normal exponent and leaves infinity and NaN encodings at the exponent produced by their all-ones field.</p>
 <h2 id="instruction-forms">Instruction Forms</h2>
 <p><strong><code>FGETEXP.X(z:S/D) &lt;ea&gt;(e), Fn(d)</code></strong></p>

@@ -9018,15 +9018,36 @@
 <p>Repeat = <code>REP</code>, <code>REPG</code></p>
 <h2 id="detailed-semantics">Detailed Semantics</h2>
 <p><strong>FFLAGS Effects</strong></p>
-<p>@&gt;</p>
-<p>p0.62in&gt;</p>
-<p>p4.68in@</p>
-<p><strong>Flag</strong> &amp; <strong>Effect</strong>  </p>
-<p><code>NV</code> &amp; may accrue<br />
-<code>DZ</code> &amp; preserved<br />
-<code>OF</code> &amp; preserved<br />
-<code>UF</code> &amp; preserved<br />
-<code>NX</code> &amp; preserved  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Flag</strong></th>
+<th style="text-align: left;"><strong>Effect</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>NV</code></td>
+<td style="text-align: left;">may accrue</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>DZ</code></td>
+<td style="text-align: left;">preserved</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>OF</code></td>
+<td style="text-align: left;">preserved</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>UF</code></td>
+<td style="text-align: left;">preserved</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NX</code></td>
+<td style="text-align: left;">preserved</td>
+</tr>
+</tbody>
+</table>
 <p>After DAZ processing, let <span class="arithmatex">\(x\)</span> be the original destination and <span class="arithmatex">\(y\)</span> the source. For finite valid operands, choose <span class="arithmatex">\(q\)</span> as <span class="arithmatex">\(x/y\)</span> rounded to the nearest integer with ties to even and compute $<span class="arithmatex">\(r = x - qy\)</span>$ with exact intermediate arithmetic. A zero result has the sign of <span class="arithmatex">\(x\)</span>.</p>
 <p>A signaling NaN accrues NV; a NaN input produces the selected quiet NaN. Infinite <span class="arithmatex">\(x\)</span> or zero <span class="arithmatex">\(y\)</span> accrues NV and produces the architectural default quiet NaN. Infinite <span class="arithmatex">\(y\)</span> with finite <span class="arithmatex">\(x\)</span> returns <span class="arithmatex">\(x\)</span>. Enabled traps raise <code>FLOATING_POINT_FAULT</code> before the destination write.</p>
 <h2 id="instruction-forms">Instruction Forms</h2>

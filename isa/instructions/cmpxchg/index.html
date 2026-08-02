@@ -9015,14 +9015,32 @@
 <p>Length = 5-15 bytes</p>
 <h2 id="detailed-semantics">Detailed Semantics</h2>
 <p><strong>FLAGS Effects</strong></p>
-<p>@&gt;</p>
-<p>p0.62in&gt;</p>
-<p>p4.68in@</p>
-<p><strong>Flag</strong> &amp; <strong>Effect</strong>  </p>
-<p><code>Z</code> &amp; store succeeded<br />
-<code>N</code> &amp; cleared<br />
-<code>C</code> &amp; cleared<br />
-<code>V</code> &amp; cleared  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Flag</strong></th>
+<th style="text-align: left;"><strong>Effect</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>Z</code></td>
+<td style="text-align: left;">store succeeded</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>N</code></td>
+<td style="text-align: left;">cleared</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>C</code></td>
+<td style="text-align: left;">cleared</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>V</code></td>
+<td style="text-align: left;">cleared</td>
+</tr>
+</tbody>
+</table>
 <p>The memory read, optional memory write, expected-register update, and flag update form one atomic read-modify-write operation. The encoded memory-order selector governs the complete operation on both comparison outcomes. On failure, the operation contributes the observed memory read as its ordering event: acquire orders later memory operations after that read, release orders earlier memory operations before that read, and sequential consistency places that read in the global SC order. On success, the memory write carries the same selected order to observers of that write. A failed comparison contributes no memory write and creates no release sequence.</p>
 <ul>
 <li>

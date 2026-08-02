@@ -8961,31 +8961,28 @@
 <p>Bedrock uses ordinary ELF sections with the usual ELF meanings. Only the Bedrock-specific section conventions are listed below.</p>
 <h2 id="bedrock-specific-sections">Bedrock-Specific Sections</h2>
 <p><strong>Bedrock-Specific Section Conventions</strong></p>
-<p>@p1.45inp4.05in@ <strong>Section</strong> &amp; <strong>Attributes</strong><br />
-<code>.got.far</code> &amp;</p>
 <table>
 <thead>
 <tr>
-<th style="text-align: left;"></th>
+<th style="text-align: left;"><strong>Section</strong></th>
+<th style="text-align: left;"><strong>Attributes</strong></th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;">alloc</td>
+<td style="text-align: left;"><code>.got.far</code></td>
+<td style="text-align: left;">alloc; read; write; far pointer entries</td>
 </tr>
 <tr>
-<td style="text-align: left;">read</td>
+<td style="text-align: left;"><code>.note.bedrock</code></td>
+<td style="text-align: left;">note</td>
 </tr>
 <tr>
-<td style="text-align: left;">write</td>
-</tr>
-<tr>
-<td style="text-align: left;">far pointer entries</td>
+<td style="text-align: left;"><code>.bedrock.segdomains</code></td>
+<td style="text-align: left;">linker metadata</td>
 </tr>
 </tbody>
 </table>
-<p><code>.note.bedrock</code> &amp; note<br />
-<code>.bedrock.segdomains</code> &amp; linker metadata  </p>
 <h2 id="symbol-model">Symbol Model</h2>
 <p>Bedrock supports the standard local, global, and weak bindings and the default, hidden, and protected visibility classes. The standard notype, object, function, TLS, ifunc, section, and file symbol types retain their ELF meanings. Two processor-specific far-function types extend that set and are listed below.</p>
 <ul>
@@ -9007,9 +9004,27 @@
 </ul>
 <h2 id="processor-specific-symbol-types">Processor-Specific Symbol Types</h2>
 <p><strong>Bedrock ELF Symbol Types</strong></p>
-<p>@p2.1inp0.6inp2.8in@ <strong>Name</strong> &amp; <strong>Value</strong> &amp; <strong>Meaning</strong><br />
-<code>STT_BEDROCK_FAR_FUNC</code> &amp; 13 &amp; canonical LCALL/LRET far-call entry<br />
-<code>STT_BEDROCK_FAR_IFUNC</code> &amp; 14 &amp; near-call resolver returning a canonical far function pair in GS1:R0</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Name</strong></th>
+<th style="text-align: left;"><strong>Value</strong></th>
+<th style="text-align: left;"><strong>Meaning</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>STT_BEDROCK_FAR_FUNC</code></td>
+<td style="text-align: left;">13</td>
+<td style="text-align: left;">canonical LCALL/LRET far-call entry</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>STT_BEDROCK_FAR_IFUNC</code></td>
+<td style="text-align: left;">14</td>
+<td style="text-align: left;">near-call resolver returning a canonical far function pair in GS1:R0</td>
+</tr>
+</tbody>
+</table>
 
 
 

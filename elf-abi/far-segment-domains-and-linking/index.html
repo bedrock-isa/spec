@@ -9090,9 +9090,20 @@
 
 
 <h1 id="far-segment-domains-and-linking">Far Segment Domains and Linking</h1>
-<p>@&gt;</p>
-<p>p1.46inX@</p>
-<p><strong>Profile:</strong> &amp; bedrock-elf-far</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"></th>
+<th style="text-align: left;"></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Profile:</strong></td>
+<td style="text-align: left;">bedrock-elf-far</td>
+</tr>
+</tbody>
+</table>
 <h2 id="profile-scope">Profile Scope</h2>
 <p>The far profile may appear in <code>ET_REL</code> inputs and in <code>ET_EXEC</code> or <code>ET_DYN</code> output images. It applies to non-TLS data symbols and to functions explicitly typed <code>STT_BEDROCK_FAR_FUNC</code>. TLS is not assigned to a far segment domain; Section 9 defines the only TLS addressing models.</p>
 <h2 id="object-compatibility">Object Compatibility</h2>
@@ -9101,22 +9112,81 @@
 <h2 id="segment-domain-metadata">Segment-Domain Metadata</h2>
 <p>The <code>.bedrock.segdomains</code> section is a little-endian, non-allocatable <code>SHT_PROGBITS</code> metadata section with no section flags. Its <code>sh_entsize</code> is 16 bytes, and every record has the following layout:</p>
 <p><strong>Segment-Domain Record Layout</strong></p>
-<p>@p0.7inp1.25inp0.65inp2.9in@ <strong>Offset</strong> &amp; <strong>Field</strong> &amp; <strong>Type</strong> &amp; <strong>Meaning</strong><br />
-0 &amp; <code>section_index</code> &amp; <code>u32</code> &amp; section header index of an allocatable non-TLS data or code section<br />
-4 &amp; <code>domain_id</code> &amp; <code>u32</code> &amp; nonzero object-local segment-domain identifier<br />
-8 &amp; <code>segment_image</code> &amp; <code>u64</code> &amp; zero in ET REL unless fixed by the producer; final validated image in ET EXEC or link-time image template in ET DYN  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Offset</strong></th>
+<th style="text-align: left;"><strong>Field</strong></th>
+<th style="text-align: left;"><strong>Type</strong></th>
+<th style="text-align: left;"><strong>Meaning</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;"><code>section_index</code></td>
+<td style="text-align: left;"><code>u32</code></td>
+<td style="text-align: left;">section header index of an allocatable non-TLS data or code section</td>
+</tr>
+<tr>
+<td style="text-align: left;">4</td>
+<td style="text-align: left;"><code>domain_id</code></td>
+<td style="text-align: left;"><code>u32</code></td>
+<td style="text-align: left;">nonzero object-local segment-domain identifier</td>
+</tr>
+<tr>
+<td style="text-align: left;">8</td>
+<td style="text-align: left;"><code>segment_image</code></td>
+<td style="text-align: left;"><code>u64</code></td>
+<td style="text-align: left;">zero in ET REL unless fixed by the producer; final validated image in ET EXEC or link-time image template in ET DYN</td>
+</tr>
+</tbody>
+</table>
 <h2 id="final-program-header">Final Program Header</h2>
 <p>Each output domain has exactly one <code>PT_BEDROCK_SEGDOM</code> program header. The processor-specific <code>p_type</code> value is <code>0x70000000</code>. <code>PT_LOAD</code> headers continue to describe file mapping; the domain header describes the validated segment image:</p>
 <p><strong>PT_BEDROCK_SEGDOM Field Interpretation</strong></p>
-<p>@p1.65inp3.85in@ <strong>Field</strong> &amp; <strong>Interpretation</strong><br />
-p paddr &amp; nonzero image-local domain identifier<br />
-p vaddr &amp; domain linear base before ET DYN load bias<br />
-p memsz &amp; domain byte span; linker pads the domain to an exactly representable architectural segment span<br />
-p flags &amp; PF R, PF W, and PF X describe access; PF BEDROCK BOUNDS ONLY is mandatory<br />
-segment mode &amp; enabled domains are bounds-only with b equal to one; translated-window domains are rejected<br />
-p align &amp; 4096 or greater<br />
-p offset and p filesz &amp; zero; PT LOAD headers continue to describe file mapping<br />
-ET DYN rule &amp; loader adds load bias to p vaddr, validates the resulting base and span, and constructs a bounds-only SEG(D)  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Field</strong></th>
+<th style="text-align: left;"><strong>Interpretation</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">p paddr</td>
+<td style="text-align: left;">nonzero image-local domain identifier</td>
+</tr>
+<tr>
+<td style="text-align: left;">p vaddr</td>
+<td style="text-align: left;">domain linear base before ET DYN load bias</td>
+</tr>
+<tr>
+<td style="text-align: left;">p memsz</td>
+<td style="text-align: left;">domain byte span; linker pads the domain to an exactly representable architectural segment span</td>
+</tr>
+<tr>
+<td style="text-align: left;">p flags</td>
+<td style="text-align: left;">PF R, PF W, and PF X describe access; PF BEDROCK BOUNDS ONLY is mandatory</td>
+</tr>
+<tr>
+<td style="text-align: left;">segment mode</td>
+<td style="text-align: left;">enabled domains are bounds-only with b equal to one; translated-window domains are rejected</td>
+</tr>
+<tr>
+<td style="text-align: left;">p align</td>
+<td style="text-align: left;">4096 or greater</td>
+</tr>
+<tr>
+<td style="text-align: left;">p offset and p filesz</td>
+<td style="text-align: left;">zero; PT LOAD headers continue to describe file mapping</td>
+</tr>
+<tr>
+<td style="text-align: left;">ET DYN rule</td>
+<td style="text-align: left;">loader adds load bias to p vaddr, validates the resulting base and span, and constructs a bounds-only SEG(D)</td>
+</tr>
+</tbody>
+</table>
 <h2 id="domain-rules">Domain Rules</h2>
 <ul>
 <li>
@@ -9150,9 +9220,33 @@ ET DYN rule &amp; loader adds load bias to p vaddr, validates the resulting base
 <h2 id="far-pointer-relocation-pair">Far Pointer Relocation Pair</h2>
 <p>An ELF far pointer object and a <code>.got.far</code> entry are 16-byte aligned and contain two adjacent 64-bit words:</p>
 <p><strong>ELF Far Pointer Object and GOT Entry Layout</strong></p>
-<p>@p0.55inp0.90inp0.45inp1.55inp2.05in@ <strong>Offset</strong> &amp; <strong>Field</strong> &amp; <strong>Type</strong> &amp; <strong>Static Relocation</strong> &amp; <strong>Published <code>.got.far</code> Value</strong><br />
-<code>+0x00</code> &amp; address &amp; <code>u64</code> &amp; <code>R_BEDROCK_FAR_ADDR64</code> &amp; canonical pre-segment data address or far-call entry address<br />
-<code>+0x08</code> &amp; segment image &amp; <code>u64</code> &amp; <code>R_BEDROCK_FAR_SEGMENT64</code> &amp; canonical disabled or bounds-only data image or far-call CS image  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Offset</strong></th>
+<th style="text-align: left;"><strong>Field</strong></th>
+<th style="text-align: left;"><strong>Type</strong></th>
+<th style="text-align: left;"><strong>Static Relocation</strong></th>
+<th style="text-align: left;"><strong>Published <code>.got.far</code> Value</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>+0x00</code></td>
+<td style="text-align: left;">address</td>
+<td style="text-align: left;"><code>u64</code></td>
+<td style="text-align: left;"><code>R_BEDROCK_FAR_ADDR64</code></td>
+<td style="text-align: left;">canonical pre-segment data address or far-call entry address</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>+0x08</code></td>
+<td style="text-align: left;">segment image</td>
+<td style="text-align: left;"><code>u64</code></td>
+<td style="text-align: left;"><code>R_BEDROCK_FAR_SEGMENT64</code></td>
+<td style="text-align: left;">canonical disabled or bounds-only data image or far-call CS image</td>
+</tr>
+</tbody>
+</table>
 <p>For a static far pointer object, the explicit RELA addend applies only to the address word. The segment-image relocation has addend zero. Both relocations name the same symbol and together form one indivisible link-time contract, although the loader need not update the two words atomically before publication. An address word of zero denotes a C null pointer, but neither the linker nor the loader clears the paired image word for that reason. The image relocation, canonical-image requirement, and complete-pair publication rules still apply.</p>
 <h2 id="static-link-rules">Static Link Rules</h2>
 <ul>

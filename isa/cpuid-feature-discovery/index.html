@@ -9167,27 +9167,66 @@
 <p><img alt="CPUID Query Selector Format" src="../../assets/visuals/isa/cpuid-feature-discovery-01.svg" /></p>
 <p><strong>CPUID Query Selector Format</strong></p>
 <p><strong>CPUID Query Selector</strong></p>
-<p>@&gt;</p>
-<p>p0.65in&gt;</p>
-<p>p0.85in&gt;</p>
-<p>p3.90in@</p>
-<p><strong>Bits</strong> &amp; <strong>Field</strong> &amp; <strong>Meaning</strong><br />
-<code>0..15</code> &amp; <code>index</code> &amp; result index within the selected leaf<br />
-<code>16..31</code> &amp; <code>leaf</code> &amp; information leaf within the selected class<br />
-<code>32..63</code> &amp; <code>class</code> &amp; CPUID information class  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Bits</strong></th>
+<th style="text-align: left;"><strong>Field</strong></th>
+<th style="text-align: left;"><strong>Meaning</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>0..15</code></td>
+<td style="text-align: left;"><code>index</code></td>
+<td style="text-align: left;">result index within the selected leaf</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>16..31</code></td>
+<td style="text-align: left;"><code>leaf</code></td>
+<td style="text-align: left;">information leaf within the selected class</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>32..63</code></td>
+<td style="text-align: left;"><code>class</code></td>
+<td style="text-align: left;">CPUID information class</td>
+</tr>
+</tbody>
+</table>
 <p>Index zero of every defined leaf is a common discovery header. Leaf-specific payload begins at index one. An unknown class, leaf, or index returns zero; consequently, index zero of an absent leaf also returns zero.</p>
 <p><img alt="CPUID Common Leaf Header Formats" src="../../assets/visuals/isa/cpuid-feature-discovery-02.svg" /></p>
 <p><strong>CPUID Common Leaf Header Formats</strong></p>
 <p><strong>CPUID Common Leaf Header</strong></p>
-<p>@&gt;</p>
-<p>p1.85in&gt;</p>
-<p>p1.15in&gt;</p>
-<p>p1.05in&gt;</p>
-<p>p1.05in@</p>
-<p><strong>Query</strong> &amp; <strong>Bits 63..32</strong> &amp; <strong>Bits 31..16</strong> &amp; <strong>Bits 15..0</strong><br />
-class 0, leaf 0, index 0 &amp; <code>MAX_CLASS</code> &amp; <code>MAX_LEAF</code> &amp; <code>MAX_INDEX</code><br />
-other class, leaf 0, index 0 &amp; reserved, zero &amp; <code>MAX_LEAF</code> &amp; <code>MAX_INDEX</code><br />
-any class, leaf 1 or greater, index 0 &amp; reserved, zero &amp; reserved, zero &amp; <code>MAX_INDEX</code>  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Query</strong></th>
+<th style="text-align: left;"><strong>Bits 63..32</strong></th>
+<th style="text-align: left;"><strong>Bits 31..16</strong></th>
+<th style="text-align: left;"><strong>Bits 15..0</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">class 0, leaf 0, index 0</td>
+<td style="text-align: left;"><code>MAX_CLASS</code></td>
+<td style="text-align: left;"><code>MAX_LEAF</code></td>
+<td style="text-align: left;"><code>MAX_INDEX</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">other class, leaf 0, index 0</td>
+<td style="text-align: left;">reserved, zero</td>
+<td style="text-align: left;"><code>MAX_LEAF</code></td>
+<td style="text-align: left;"><code>MAX_INDEX</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">any class, leaf 1 or greater, index 0</td>
+<td style="text-align: left;">reserved, zero</td>
+<td style="text-align: left;">reserved, zero</td>
+<td style="text-align: left;"><code>MAX_INDEX</code></td>
+</tr>
+</tbody>
+</table>
 <p><code>MAX_CLASS</code> is the greatest class recognized by the implementation, <code>MAX_LEAF</code> is the greatest leaf recognized within the selected class, and <code>MAX_INDEX</code> is the greatest index recognized within the selected leaf. Each field is a maximum selector value, not a count. A leaf may be sparse below <code>MAX_INDEX</code>; software must still treat an unassigned selector as absent. Software ignores reserved bits in every returned value, so a later revision can assign them without invalidating existing discovery code.</p>
 <h2 id="discovery-classes">Discovery Classes</h2>
 <p>Discovery classes partition architectural information by compatibility purpose. Software first checks the class and leaf directory before consuming optional feature bits.</p>
@@ -9196,36 +9235,120 @@ any class, leaf 1 or greater, index 0 &amp; reserved, zero &amp; reserved, zero 
 <p>Each discovery class may expose a leaf directory. A directory leaf reports which subordinate leaves are defined and how indexed leaves should be enumerated.</p>
 <p>Software must treat an absent leaf as zero and must ignore reserved bits in a present leaf.</p>
 <p><strong>CPUID Class and Leaf Directory</strong></p>
-<p>@&gt;</p>
-<p>p0.82in&gt;</p>
-<p>p0.62in&gt;</p>
-<p>p1.45in&gt;</p>
-<p>p0.70in&gt;</p>
-<p>p1.80in@</p>
-<p><strong>Class</strong> &amp; <strong>Leaf</strong> &amp; <strong>Name</strong> &amp; <strong>Indexes</strong> &amp; <strong>Summary</strong>  </p>
-<p><code>0x00000000</code> &amp; – &amp; <em>Bedrock base ISA</em> &amp; – &amp; base identity, architecture and implementation revisions, vendor name, and processor name<br />
-<code>0x00000000</code> &amp; <code>0x0000</code> &amp; <code>BASE_IDENTITY</code> &amp; <code>0..18</code> &amp; common header, identity, revisions, vendor name, and processor name<br />
-<code>0x00000001</code> &amp; – &amp; <em>Optional extensions</em> &amp; – &amp; optional floating-point and transcendental groups<br />
-<code>0x00000001</code> &amp; <code>0x0000</code> &amp; <code>EXTENSION_DIRECTORY</code> &amp; <code>0..1</code> &amp; common header and optional architectural-group bits<br />
-<code>0x00000001</code> &amp; <code>0x0001</code> &amp; <code>FPTRANSA_ACCURACY</code> &amp; <code>0..0x0044</code> &amp; common header and sparse per-function accuracy contracts<br />
-<code>0x00000002</code> &amp; – &amp; <em>Implementation properties</em> &amp; – &amp; cache topology, performance counters, and SAVE/RESTORE area layout<br />
-<code>0x00000002</code> &amp; <code>0x0000</code> &amp; <code>IMPLEMENTATION_DIRECTORY</code> &amp; <code>0..0</code> &amp; common implementation-class header<br />
-<code>0x00000002</code> &amp; <code>0x0001</code> &amp; <code>CACHE_TOPOLOGY</code> &amp; <code>0..n</code> &amp; common header, maintenance granule, and cache-sharing descriptors<br />
-<code>0x00000002</code> &amp; <code>0x0002</code> &amp; <code>PERFORMANCE_COUNTERS</code> &amp; <code>0..3</code> &amp; common header and standard RDPMC-counter presence<br />
-<code>0x00000002</code> &amp; <code>0x0004</code> &amp; <code>SAVE_AREA_LAYOUT</code> &amp; <code>0..n</code> &amp; common header, SAVE/RESTORE sizes, bitmap, and component descriptors  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Class</strong></th>
+<th style="text-align: left;"><strong>Leaf</strong></th>
+<th style="text-align: left;"><strong>Name</strong></th>
+<th style="text-align: left;"><strong>Indexes</strong></th>
+<th style="text-align: left;"><strong>Summary</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>0x00000000</code></td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;"><em>Bedrock base ISA</em></td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;">base identity, architecture and implementation revisions, vendor name, and processor name</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x00000000</code></td>
+<td style="text-align: left;"><code>0x0000</code></td>
+<td style="text-align: left;"><code>BASE_IDENTITY</code></td>
+<td style="text-align: left;"><code>0..18</code></td>
+<td style="text-align: left;">common header, identity, revisions, vendor name, and processor name</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x00000001</code></td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;"><em>Optional extensions</em></td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;">optional floating-point and transcendental groups</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x00000001</code></td>
+<td style="text-align: left;"><code>0x0000</code></td>
+<td style="text-align: left;"><code>EXTENSION_DIRECTORY</code></td>
+<td style="text-align: left;"><code>0..1</code></td>
+<td style="text-align: left;">common header and optional architectural-group bits</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x00000001</code></td>
+<td style="text-align: left;"><code>0x0001</code></td>
+<td style="text-align: left;"><code>FPTRANSA_ACCURACY</code></td>
+<td style="text-align: left;"><code>0..0x0044</code></td>
+<td style="text-align: left;">common header and sparse per-function accuracy contracts</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x00000002</code></td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;"><em>Implementation properties</em></td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;">cache topology, performance counters, and SAVE/RESTORE area layout</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x00000002</code></td>
+<td style="text-align: left;"><code>0x0000</code></td>
+<td style="text-align: left;"><code>IMPLEMENTATION_DIRECTORY</code></td>
+<td style="text-align: left;"><code>0..0</code></td>
+<td style="text-align: left;">common implementation-class header</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x00000002</code></td>
+<td style="text-align: left;"><code>0x0001</code></td>
+<td style="text-align: left;"><code>CACHE_TOPOLOGY</code></td>
+<td style="text-align: left;"><code>0..n</code></td>
+<td style="text-align: left;">common header, maintenance granule, and cache-sharing descriptors</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x00000002</code></td>
+<td style="text-align: left;"><code>0x0002</code></td>
+<td style="text-align: left;"><code>PERFORMANCE_COUNTERS</code></td>
+<td style="text-align: left;"><code>0..3</code></td>
+<td style="text-align: left;">common header and standard RDPMC-counter presence</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x00000002</code></td>
+<td style="text-align: left;"><code>0x0004</code></td>
+<td style="text-align: left;"><code>SAVE_AREA_LAYOUT</code></td>
+<td style="text-align: left;"><code>0..n</code></td>
+<td style="text-align: left;">common header, SAVE/RESTORE sizes, bitmap, and component descriptors</td>
+</tr>
+</tbody>
+</table>
 <h2 id="base-identity">Base Identity</h2>
 <p>Class <code>0x00000000</code>, leaf <code>0x0000</code> reports <code>MAX_LEAF=0</code> and <code>MAX_INDEX=18</code> in its index-zero header. An implementation recognizing only the classes defined by this specification reports <code>MAX_CLASS=2</code>; an implementation that recognizes a higher implementation-defined class reports that greater selector. The base-identity payload is:</p>
 <p><img alt="CPUID Base Identity Result Formats" src="../../assets/visuals/isa/cpuid-feature-discovery-03.svg" /></p>
 <p><strong>CPUID Base Identity Result Formats</strong></p>
 <p><strong>Base Identity Indexes</strong></p>
-<p>@&gt;</p>
-<p>p0.65in&gt;</p>
-<p>p4.95in@</p>
-<p><strong>Index</strong> &amp; <strong>Contents</strong><br />
-1 &amp; bits 31..0 <code>IMPLEMENTATION_ID</code>; bits 47..32 <code>ARCHITECTURE_ID</code>; bits 63..48 <code>VENDOR_ID</code><br />
-2 &amp; bits 15..0 <code>ARCHITECTURE_REVISION</code>; bits 31..16 <code>IMPLEMENTATION_REVISION</code>; bits 63..32 zero<br />
-3–10 &amp; 64-byte vendor name<br />
-11–18 &amp; 64-byte processor name  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Index</strong></th>
+<th style="text-align: left;"><strong>Contents</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">bits 31..0 <code>IMPLEMENTATION_ID</code>; bits 47..32 <code>ARCHITECTURE_ID</code>; bits 63..48 <code>VENDOR_ID</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">2</td>
+<td style="text-align: left;">bits 15..0 <code>ARCHITECTURE_REVISION</code>; bits 31..16 <code>IMPLEMENTATION_REVISION</code>; bits 63..32 zero</td>
+</tr>
+<tr>
+<td style="text-align: left;">3–10</td>
+<td style="text-align: left;">64-byte vendor name</td>
+</tr>
+<tr>
+<td style="text-align: left;">11–18</td>
+<td style="text-align: left;">64-byte processor name</td>
+</tr>
+</tbody>
+</table>
 <p><code>VENDOR_ID</code> selects the vendor namespace in which <code>IMPLEMENTATION_ID</code> is interpreted. <code>IMPLEMENTATION_ID</code> is assigned within that <code>VENDOR_ID</code> namespace. <code>ARCHITECTURE_ID</code> selects the base architectural contract, so the <code>(VENDOR_ID, IMPLEMENTATION_ID)</code> pair identifies an implementation and <code>ARCHITECTURE_ID</code> identifies the ISA contract it implements.</p>
 <p><code>ARCHITECTURE_REVISION</code> is an unsigned 16-bit, monotonically increasing compatibility level within one <code>ARCHITECTURE_ID</code>. A processor reporting revision <span class="arithmatex">\(N\)</span> implements the base architectural behavior of every defined revision less than or equal to <span class="arithmatex">\(N\)</span>. Optional instruction groups, state, and parameterized contracts are selected from their CPUID leaves and feature bits. <code>IMPLEMENTATION_REVISION</code> is an unsigned revision assigned by the vendor and is compared only when both <code>VENDOR_ID</code> and <code>IMPLEMENTATION_ID</code> match.</p>
 <p>The name fields are UTF-8 byte strings in increasing index order. Within each 64-bit result, the first byte occupies bits 7..0 and subsequent bytes occupy successively higher bits. A name shorter than 64 bytes is terminated by a zero byte and all remaining bytes are zero. A 64-byte name has no terminator. Producers must not split a multi-byte UTF-8 code point at the field boundary; consumers replace an invalid sequence rather than reading beyond the field.</p>
@@ -9234,16 +9357,36 @@ any class, leaf 1 or greater, index 0 &amp; reserved, zero &amp; reserved, zero 
 <p><img alt="Optional-Extension Directory Result" src="../../assets/visuals/isa/cpuid-feature-discovery-04.svg" /></p>
 <p><strong>Optional-Extension Directory Result</strong></p>
 <p><strong>Optional-Extension Feature Bits</strong></p>
-<p>@&gt;</p>
-<p>p0.75in&gt;</p>
-<p>p0.55in&gt;</p>
-<p>p0.45in&gt;</p>
-<p>p0.35in&gt;</p>
-<p>p0.80in&gt;</p>
-<p>p2.10in@</p>
-<p><strong>Class</strong> &amp; <strong>Leaf</strong> &amp; <strong>Index</strong> &amp; <strong>Bit</strong> &amp; <strong>Feature</strong> &amp; <strong>Extension</strong>  </p>
-<p><code>0x00000001</code> &amp; <code>0x0000</code> &amp; <code>1</code> &amp; <code>0</code> &amp; <code>FP</code> &amp; fpu<br />
-<code>0x00000001</code> &amp; <code>0x0000</code> &amp; <code>1</code> &amp; <code>1</code> &amp; <code>FPTRANSA</code> &amp; fpu.transcendental_approx  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Class</strong></th>
+<th style="text-align: left;"><strong>Leaf</strong></th>
+<th style="text-align: left;"><strong>Index</strong></th>
+<th style="text-align: left;"><strong>Bit</strong></th>
+<th style="text-align: left;"><strong>Feature</strong></th>
+<th style="text-align: left;"><strong>Extension</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>0x00000001</code></td>
+<td style="text-align: left;"><code>0x0000</code></td>
+<td style="text-align: left;"><code>1</code></td>
+<td style="text-align: left;"><code>0</code></td>
+<td style="text-align: left;"><code>FP</code></td>
+<td style="text-align: left;">fpu</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x00000001</code></td>
+<td style="text-align: left;"><code>0x0000</code></td>
+<td style="text-align: left;"><code>1</code></td>
+<td style="text-align: left;"><code>1</code></td>
+<td style="text-align: left;"><code>FPTRANSA</code></td>
+<td style="text-align: left;">fpu.transcendental_approx</td>
+</tr>
+</tbody>
+</table>
 <p>Unlisted bits are reserved and read as zero. <code>FPTRANSA</code> requires <code>FP</code> and is set when at least one approximate transcendental contract is present. It does not imply that every contract is present.</p>
 <h2 id="fptransa-accuracy-discovery">FPTRANSA Accuracy Discovery</h2>
 <p>Class <code>0x00000001</code>, leaf <code>0x0001</code> uses indexes 1 through <code>0x0044</code> as a sparse space of stable 16-bit accuracy-contract IDs. Index zero is the common header and reports <code>MAX_INDEX=0x0044</code>. A contract ID identifies the reference function, input domain, special-value behavior, error metric, exact anchors, and mathematical properties; it is independent of instruction encoding placement. An incompatible change receives a new ID, and a retired ID is not reused. The contracts defined here use <code>CONTRACT_REVISION=1</code>. Weakening a guarantee, changing the domain, or changing the error metric requires a new ID rather than a revision increment. An implementation that advertises a smaller certified ULP bound strengthens the existing contract and retains the same ID and revision.</p>
@@ -9252,48 +9395,194 @@ any class, leaf 1 or greater, index 0 &amp; reserved, zero &amp; reserved, zero 
 <p><strong>FPTRANSA Accuracy Result Format</strong></p>
 <p><code>P</code> is <code>PRESENT</code>; <code>REV</code> is <code>CONTRACT_REVISION</code>; the D and S ULP fields use unsigned Q8.8.</p>
 <p><strong>FPTRANSA Accuracy Result</strong></p>
-<p>@&gt;</p>
-<p>p0.78in&gt;</p>
-<p>p1.20in&gt;</p>
-<p>p3.55in@</p>
-<p><strong>Bits</strong> &amp; <strong>Field</strong> &amp; <strong>Meaning</strong><br />
-<code>0..15</code> &amp; <code>S_MAX_ULP_Q8_8</code> &amp; certified worst-case S-format ULP bound, rounded upward to unsigned Q8.8<br />
-<code>16..31</code> &amp; <code>D_MAX_ULP_Q8_8</code> &amp; certified worst-case D-format ULP bound, rounded upward to unsigned Q8.8<br />
-<code>32..39</code> &amp; <code>CONTRACT_REVISION</code> &amp; value 1 for the contracts defined here<br />
-<code>40..62</code> &amp; reserved &amp; zero<br />
-<code>63</code> &amp; <code>PRESENT</code> &amp; the instruction and both S and D forms are available  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Bits</strong></th>
+<th style="text-align: left;"><strong>Field</strong></th>
+<th style="text-align: left;"><strong>Meaning</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>0..15</code></td>
+<td style="text-align: left;"><code>S_MAX_ULP_Q8_8</code></td>
+<td style="text-align: left;">certified worst-case S-format ULP bound, rounded upward to unsigned Q8.8</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>16..31</code></td>
+<td style="text-align: left;"><code>D_MAX_ULP_Q8_8</code></td>
+<td style="text-align: left;">certified worst-case D-format ULP bound, rounded upward to unsigned Q8.8</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>32..39</code></td>
+<td style="text-align: left;"><code>CONTRACT_REVISION</code></td>
+<td style="text-align: left;">value 1 for the contracts defined here</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>40..62</code></td>
+<td style="text-align: left;">reserved</td>
+<td style="text-align: left;">zero</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>63</code></td>
+<td style="text-align: left;"><code>PRESENT</code></td>
+<td style="text-align: left;">the instruction and both S and D forms are available</td>
+</tr>
+</tbody>
+</table>
 <p>For a certified bound <span class="arithmatex">\(K\)</span>, the field value is <span class="arithmatex">\(\lceil 256K\rceil\)</span> and the advertised bound is the field divided by 256. Thus 0.5, 1, 1.5, 2, and 4 ULP encode as <code>0x0080</code>, <code>0x0100</code>, <code>0x0180</code>, <code>0x0200</code>, and <code>0x0400</code>. A present contract has both fields in <code>0x0001..0x0400</code>; an absent or unknown contract returns zero. Software that does not recognize the returned revision uses its fallback path.</p>
 <p>Software first checks <code>FP</code> and <code>FPTRANSA</code> in <code>EXTENSION_DIRECTORY</code>, then queries the intended contract ID in <code>FPTRANSA_ACCURACY</code>. It uses the instruction only when <code>PRESENT</code> is set, the returned <code>CONTRACT_REVISION</code> is 1, and the S or D bound required by the call site is no larger than its quality threshold; otherwise it uses a software fallback. For example, a D-format <code>FLOG2A</code> path requiring at most 2 ULP accepts selector <code>0x0000000100010043</code> only when the returned D field is at most <code>0x0200</code>.</p>
 <p>The selector is <span class="arithmatex">\((\texttt{0x00000001} \ll 32) \mathbin{|} (\texttt{0x0001} \ll 16) \mathbin{|}
 \textit{contract-id}\)</span>. For example, <code>FSINA</code> uses selector <code>0x0000000100010001</code>, and <code>FLOG2A</code> uses <code>0x0000000100010043</code>. An implementation that certifies <code>FSINA</code> at 1.5 ULP for S and 2 ULP for D returns <code>0x8000000102000180</code>.</p>
 <p><code>PRESENT=1</code> guarantees that the instruction and both S and D forms are architecturally usable under the returned contract. The S and D bounds are worst-case bounds over every input in the contract domain and apply to every execution on the logical processor that returned the CPUID result until reset. Executing the instruction with <code>PRESENT=0</code> raises <code>ILLEGAL_INSTRUCTION</code> before operand or floating-point-state access.</p>
 <p><strong>FPTRANSA Accuracy Contracts</strong></p>
-<p>@&gt;</p>
-<p>p0.72in&gt;</p>
-<p>p0.78in&gt;</p>
-<p>p1.20in&gt;</p>
-<p>p2.05in&gt;</p>
-<p>p0.90in@</p>
-<p><strong>Contract ID</strong> &amp; <strong>Mnemonic</strong> &amp; <strong>Reference</strong> &amp; <strong>Domain</strong> &amp; <strong>ISA maximum</strong>  </p>
-<p><code>0x0001</code> &amp; <a href="../instructions/fsina/"><code>FSINA</code></a> &amp; sin(x) in radians &amp; finite x with abs(x) <span class="arithmatex">\(\leq\)</span> pi / 4 after DAZ &amp; S <span class="arithmatex">\(\leq\)</span> 4 ULP; D <span class="arithmatex">\(\leq\)</span> 4 ULP<br />
-<code>0x0002</code> &amp; <a href="../instructions/fcosa/"><code>FCOSA</code></a> &amp; cos(x) in radians &amp; finite x with abs(x) <span class="arithmatex">\(\leq\)</span> pi / 4 after DAZ &amp; S <span class="arithmatex">\(\leq\)</span> 4 ULP; D <span class="arithmatex">\(\leq\)</span> 4 ULP<br />
-<code>0x0003</code> &amp; <a href="../instructions/ftana/"><code>FTANA</code></a> &amp; tan(x) in radians &amp; finite x with abs(x) <span class="arithmatex">\(\leq\)</span> pi / 4 after DAZ &amp; S <span class="arithmatex">\(\leq\)</span> 4 ULP; D <span class="arithmatex">\(\leq\)</span> 4 ULP<br />
-<code>0x0004</code> &amp; <a href="../instructions/fsincosa/"><code>FSINCOSA</code></a> &amp; paired sin(x) and cos(x) in radians &amp; finite x with abs(x) <span class="arithmatex">\(\leq\)</span> pi / 4 after DAZ &amp; S <span class="arithmatex">\(\leq\)</span> 4 ULP; D <span class="arithmatex">\(\leq\)</span> 4 ULP<br />
-<code>0x0011</code> &amp; <a href="../instructions/fasina/"><code>FASINA</code></a> &amp; asin(x) in radians &amp; finite x with abs(x) <span class="arithmatex">\(\leq\)</span> 1 after DAZ &amp; S <span class="arithmatex">\(\leq\)</span> 4 ULP; D <span class="arithmatex">\(\leq\)</span> 4 ULP<br />
-<code>0x0012</code> &amp; <a href="../instructions/facosa/"><code>FACOSA</code></a> &amp; acos(x) in radians &amp; finite x with abs(x) <span class="arithmatex">\(\leq\)</span> 1 after DAZ &amp; S <span class="arithmatex">\(\leq\)</span> 4 ULP; D <span class="arithmatex">\(\leq\)</span> 4 ULP<br />
-<code>0x0013</code> &amp; <a href="../instructions/fatana/"><code>FATANA</code></a> &amp; atan(x) in radians &amp; all finite values and signed infinity after DAZ &amp; S <span class="arithmatex">\(\leq\)</span> 4 ULP; D <span class="arithmatex">\(\leq\)</span> 4 ULP<br />
-<code>0x0021</code> &amp; <a href="../instructions/fsinha/"><code>FSINHA</code></a> &amp; sinh(x) &amp; all finite values and signed infinity after DAZ &amp; S <span class="arithmatex">\(\leq\)</span> 4 ULP; D <span class="arithmatex">\(\leq\)</span> 4 ULP<br />
-<code>0x0022</code> &amp; <a href="../instructions/fcosha/"><code>FCOSHA</code></a> &amp; cosh(x) &amp; all finite values and signed infinity after DAZ &amp; S <span class="arithmatex">\(\leq\)</span> 4 ULP; D <span class="arithmatex">\(\leq\)</span> 4 ULP<br />
-<code>0x0023</code> &amp; <a href="../instructions/ftanha/"><code>FTANHA</code></a> &amp; tanh(x) &amp; all finite values and signed infinity after DAZ &amp; S <span class="arithmatex">\(\leq\)</span> 4 ULP; D <span class="arithmatex">\(\leq\)</span> 4 ULP<br />
-<code>0x0024</code> &amp; <a href="../instructions/fatanha/"><code>FATANHA</code></a> &amp; atanh(x) &amp; finite x with abs(x) <span class="arithmatex">\(\leq\)</span> 1 after DAZ &amp; S <span class="arithmatex">\(\leq\)</span> 4 ULP; D <span class="arithmatex">\(\leq\)</span> 4 ULP<br />
-<code>0x0031</code> &amp; <a href="../instructions/fetoxa/"><code>FETOXA</code></a> &amp; <span class="arithmatex">\(e^x\)</span> &amp; all finite values and signed infinity after DAZ &amp; S <span class="arithmatex">\(\leq\)</span> 4 ULP; D <span class="arithmatex">\(\leq\)</span> 4 ULP<br />
-<code>0x0032</code> &amp; <a href="../instructions/fetoxm1a/"><code>FETOXM1A</code></a> &amp; <span class="arithmatex">\(e^x-1\)</span> without an intermediate rounded exponential &amp; all finite values and signed infinity after DAZ &amp; S <span class="arithmatex">\(\leq\)</span> 4 ULP; D <span class="arithmatex">\(\leq\)</span> 4 ULP<br />
-<code>0x0033</code> &amp; <a href="../instructions/ftwotoxa/"><code>FTWOTOXA</code></a> &amp; <span class="arithmatex">\(2^x\)</span> &amp; all finite values and signed infinity after DAZ &amp; S <span class="arithmatex">\(\leq\)</span> 4 ULP; D <span class="arithmatex">\(\leq\)</span> 4 ULP<br />
-<code>0x0034</code> &amp; <a href="../instructions/ftentoxa/"><code>FTENTOXA</code></a> &amp; <span class="arithmatex">\(10^x\)</span> &amp; all finite values and signed infinity after DAZ &amp; S <span class="arithmatex">\(\leq\)</span> 4 ULP; D <span class="arithmatex">\(\leq\)</span> 4 ULP<br />
-<code>0x0041</code> &amp; <a href="../instructions/flogna/"><code>FLOGNA</code></a> &amp; ln(x) &amp; positive finite values and positive infinity after DAZ; signed zero is the DZ boundary &amp; S <span class="arithmatex">\(\leq\)</span> 4 ULP; D <span class="arithmatex">\(\leq\)</span> 4 ULP<br />
-<code>0x0042</code> &amp; <a href="../instructions/flognp1a/"><code>FLOGNP1A</code></a> &amp; ln(1 + x) without an intermediate rounded addition &amp; finite x <span class="arithmatex">\(\geq -1\)</span> and positive infinity after DAZ; <span class="arithmatex">\(-1\)</span> is the DZ boundary &amp; S <span class="arithmatex">\(\leq\)</span> 4 ULP; D <span class="arithmatex">\(\leq\)</span> 4 ULP<br />
-<code>0x0043</code> &amp; <a href="../instructions/flog2a/"><code>FLOG2A</code></a> &amp; log2(x) &amp; positive finite values and positive infinity after DAZ; signed zero is the DZ boundary &amp; S <span class="arithmatex">\(\leq\)</span> 4 ULP; D <span class="arithmatex">\(\leq\)</span> 4 ULP<br />
-<code>0x0044</code> &amp; <a href="../instructions/flog10a/"><code>FLOG10A</code></a> &amp; log10(x) &amp; positive finite values and positive infinity after DAZ; signed zero is the DZ boundary &amp; S <span class="arithmatex">\(\leq\)</span> 4 ULP; D <span class="arithmatex">\(\leq\)</span> 4 ULP  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Contract ID</strong></th>
+<th style="text-align: left;"><strong>Mnemonic</strong></th>
+<th style="text-align: left;"><strong>Reference</strong></th>
+<th style="text-align: left;"><strong>Domain</strong></th>
+<th style="text-align: left;"><strong>ISA maximum</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>0x0001</code></td>
+<td style="text-align: left;"><a href="../instructions/fsina/"><code>FSINA</code></a></td>
+<td style="text-align: left;">sin(x) in radians</td>
+<td style="text-align: left;">finite x with abs(x) <span class="arithmatex">\(\leq\)</span> pi / 4 after DAZ</td>
+<td style="text-align: left;">S <span class="arithmatex">\(\leq\)</span> 4 ULP; D <span class="arithmatex">\(\leq\)</span> 4 ULP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0002</code></td>
+<td style="text-align: left;"><a href="../instructions/fcosa/"><code>FCOSA</code></a></td>
+<td style="text-align: left;">cos(x) in radians</td>
+<td style="text-align: left;">finite x with abs(x) <span class="arithmatex">\(\leq\)</span> pi / 4 after DAZ</td>
+<td style="text-align: left;">S <span class="arithmatex">\(\leq\)</span> 4 ULP; D <span class="arithmatex">\(\leq\)</span> 4 ULP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0003</code></td>
+<td style="text-align: left;"><a href="../instructions/ftana/"><code>FTANA</code></a></td>
+<td style="text-align: left;">tan(x) in radians</td>
+<td style="text-align: left;">finite x with abs(x) <span class="arithmatex">\(\leq\)</span> pi / 4 after DAZ</td>
+<td style="text-align: left;">S <span class="arithmatex">\(\leq\)</span> 4 ULP; D <span class="arithmatex">\(\leq\)</span> 4 ULP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0004</code></td>
+<td style="text-align: left;"><a href="../instructions/fsincosa/"><code>FSINCOSA</code></a></td>
+<td style="text-align: left;">paired sin(x) and cos(x) in radians</td>
+<td style="text-align: left;">finite x with abs(x) <span class="arithmatex">\(\leq\)</span> pi / 4 after DAZ</td>
+<td style="text-align: left;">S <span class="arithmatex">\(\leq\)</span> 4 ULP; D <span class="arithmatex">\(\leq\)</span> 4 ULP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0011</code></td>
+<td style="text-align: left;"><a href="../instructions/fasina/"><code>FASINA</code></a></td>
+<td style="text-align: left;">asin(x) in radians</td>
+<td style="text-align: left;">finite x with abs(x) <span class="arithmatex">\(\leq\)</span> 1 after DAZ</td>
+<td style="text-align: left;">S <span class="arithmatex">\(\leq\)</span> 4 ULP; D <span class="arithmatex">\(\leq\)</span> 4 ULP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0012</code></td>
+<td style="text-align: left;"><a href="../instructions/facosa/"><code>FACOSA</code></a></td>
+<td style="text-align: left;">acos(x) in radians</td>
+<td style="text-align: left;">finite x with abs(x) <span class="arithmatex">\(\leq\)</span> 1 after DAZ</td>
+<td style="text-align: left;">S <span class="arithmatex">\(\leq\)</span> 4 ULP; D <span class="arithmatex">\(\leq\)</span> 4 ULP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0013</code></td>
+<td style="text-align: left;"><a href="../instructions/fatana/"><code>FATANA</code></a></td>
+<td style="text-align: left;">atan(x) in radians</td>
+<td style="text-align: left;">all finite values and signed infinity after DAZ</td>
+<td style="text-align: left;">S <span class="arithmatex">\(\leq\)</span> 4 ULP; D <span class="arithmatex">\(\leq\)</span> 4 ULP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0021</code></td>
+<td style="text-align: left;"><a href="../instructions/fsinha/"><code>FSINHA</code></a></td>
+<td style="text-align: left;">sinh(x)</td>
+<td style="text-align: left;">all finite values and signed infinity after DAZ</td>
+<td style="text-align: left;">S <span class="arithmatex">\(\leq\)</span> 4 ULP; D <span class="arithmatex">\(\leq\)</span> 4 ULP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0022</code></td>
+<td style="text-align: left;"><a href="../instructions/fcosha/"><code>FCOSHA</code></a></td>
+<td style="text-align: left;">cosh(x)</td>
+<td style="text-align: left;">all finite values and signed infinity after DAZ</td>
+<td style="text-align: left;">S <span class="arithmatex">\(\leq\)</span> 4 ULP; D <span class="arithmatex">\(\leq\)</span> 4 ULP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0023</code></td>
+<td style="text-align: left;"><a href="../instructions/ftanha/"><code>FTANHA</code></a></td>
+<td style="text-align: left;">tanh(x)</td>
+<td style="text-align: left;">all finite values and signed infinity after DAZ</td>
+<td style="text-align: left;">S <span class="arithmatex">\(\leq\)</span> 4 ULP; D <span class="arithmatex">\(\leq\)</span> 4 ULP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0024</code></td>
+<td style="text-align: left;"><a href="../instructions/fatanha/"><code>FATANHA</code></a></td>
+<td style="text-align: left;">atanh(x)</td>
+<td style="text-align: left;">finite x with abs(x) <span class="arithmatex">\(\leq\)</span> 1 after DAZ</td>
+<td style="text-align: left;">S <span class="arithmatex">\(\leq\)</span> 4 ULP; D <span class="arithmatex">\(\leq\)</span> 4 ULP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0031</code></td>
+<td style="text-align: left;"><a href="../instructions/fetoxa/"><code>FETOXA</code></a></td>
+<td style="text-align: left;"><span class="arithmatex">\(e^x\)</span></td>
+<td style="text-align: left;">all finite values and signed infinity after DAZ</td>
+<td style="text-align: left;">S <span class="arithmatex">\(\leq\)</span> 4 ULP; D <span class="arithmatex">\(\leq\)</span> 4 ULP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0032</code></td>
+<td style="text-align: left;"><a href="../instructions/fetoxm1a/"><code>FETOXM1A</code></a></td>
+<td style="text-align: left;"><span class="arithmatex">\(e^x-1\)</span> without an intermediate rounded exponential</td>
+<td style="text-align: left;">all finite values and signed infinity after DAZ</td>
+<td style="text-align: left;">S <span class="arithmatex">\(\leq\)</span> 4 ULP; D <span class="arithmatex">\(\leq\)</span> 4 ULP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0033</code></td>
+<td style="text-align: left;"><a href="../instructions/ftwotoxa/"><code>FTWOTOXA</code></a></td>
+<td style="text-align: left;"><span class="arithmatex">\(2^x\)</span></td>
+<td style="text-align: left;">all finite values and signed infinity after DAZ</td>
+<td style="text-align: left;">S <span class="arithmatex">\(\leq\)</span> 4 ULP; D <span class="arithmatex">\(\leq\)</span> 4 ULP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0034</code></td>
+<td style="text-align: left;"><a href="../instructions/ftentoxa/"><code>FTENTOXA</code></a></td>
+<td style="text-align: left;"><span class="arithmatex">\(10^x\)</span></td>
+<td style="text-align: left;">all finite values and signed infinity after DAZ</td>
+<td style="text-align: left;">S <span class="arithmatex">\(\leq\)</span> 4 ULP; D <span class="arithmatex">\(\leq\)</span> 4 ULP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0041</code></td>
+<td style="text-align: left;"><a href="../instructions/flogna/"><code>FLOGNA</code></a></td>
+<td style="text-align: left;">ln(x)</td>
+<td style="text-align: left;">positive finite values and positive infinity after DAZ; signed zero is the DZ boundary</td>
+<td style="text-align: left;">S <span class="arithmatex">\(\leq\)</span> 4 ULP; D <span class="arithmatex">\(\leq\)</span> 4 ULP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0042</code></td>
+<td style="text-align: left;"><a href="../instructions/flognp1a/"><code>FLOGNP1A</code></a></td>
+<td style="text-align: left;">ln(1 + x) without an intermediate rounded addition</td>
+<td style="text-align: left;">finite x <span class="arithmatex">\(\geq -1\)</span> and positive infinity after DAZ; <span class="arithmatex">\(-1\)</span> is the DZ boundary</td>
+<td style="text-align: left;">S <span class="arithmatex">\(\leq\)</span> 4 ULP; D <span class="arithmatex">\(\leq\)</span> 4 ULP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0043</code></td>
+<td style="text-align: left;"><a href="../instructions/flog2a/"><code>FLOG2A</code></a></td>
+<td style="text-align: left;">log2(x)</td>
+<td style="text-align: left;">positive finite values and positive infinity after DAZ; signed zero is the DZ boundary</td>
+<td style="text-align: left;">S <span class="arithmatex">\(\leq\)</span> 4 ULP; D <span class="arithmatex">\(\leq\)</span> 4 ULP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x0044</code></td>
+<td style="text-align: left;"><a href="../instructions/flog10a/"><code>FLOG10A</code></a></td>
+<td style="text-align: left;">log10(x)</td>
+<td style="text-align: left;">positive finite values and positive infinity after DAZ; signed zero is the DZ boundary</td>
+<td style="text-align: left;">S <span class="arithmatex">\(\leq\)</span> 4 ULP; D <span class="arithmatex">\(\leq\)</span> 4 ULP</td>
+</tr>
+</tbody>
+</table>
 <h2 id="implementation-class-directory">Implementation-Class Directory</h2>
 <p>Class <code>0x00000002</code>, leaf <code>0x0000</code> consists of the common header. It reports <code>MAX_LEAF=4</code> and <code>MAX_INDEX=0</code>.</p>
 <h2 id="cache-topology-discovery">Cache-Topology Discovery</h2>
@@ -9302,29 +9591,75 @@ any class, leaf 1 or greater, index 0 &amp; reserved, zero &amp; reserved, zero 
 <p><strong>Cache-Maintenance Properties Result</strong></p>
 <p><code>GRANULE</code> is <code>MAINTENANCE_GRANULE_BYTES</code>.</p>
 <p><strong>Cache-Maintenance Properties</strong></p>
-<p>@&gt;</p>
-<p>p0.45in&gt;</p>
-<p>p0.65in&gt;</p>
-<p>p2.20in&gt;</p>
-<p>X@</p>
-<p><strong>Index</strong> &amp; <strong>Bits</strong> &amp; <strong>Field</strong> &amp; <strong>Meaning</strong><br />
-1 &amp; <code>15..0</code> &amp; <code>MAINTENANCE_GRANULE_BYTES</code> &amp; one-block cache-maintenance granule in bytes<br />
-1 &amp; <code>63..16</code> &amp; reserved &amp; zero  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Index</strong></th>
+<th style="text-align: left;"><strong>Bits</strong></th>
+<th style="text-align: left;"><strong>Field</strong></th>
+<th style="text-align: left;"><strong>Meaning</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;"><code>15..0</code></td>
+<td style="text-align: left;"><code>MAINTENANCE_GRANULE_BYTES</code></td>
+<td style="text-align: left;">one-block cache-maintenance granule in bytes</td>
+</tr>
+<tr>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;"><code>63..16</code></td>
+<td style="text-align: left;">reserved</td>
+<td style="text-align: left;">zero</td>
+</tr>
+</tbody>
+</table>
 <p><img alt="Cache-Topology Descriptor Format" src="../../assets/visuals/isa/cpuid-feature-discovery-07.svg" /></p>
 <p><strong>Cache-Topology Descriptor Format</strong></p>
 <p><code>SID</code>, <code>LP-1</code>, <code>SL</code>, <code>LL2</code>, <code>LV</code>, and <code>T</code> denote <code>SHARING_ID</code>, <code>SHARING_LP_COUNT_MINUS1</code>, <code>SHARING_LEVEL</code>, <code>LINE_LOG2</code>, <code>LEVEL</code>, and <code>TYPE</code>.</p>
 <p><strong>Cache-Topology Descriptor</strong></p>
-<p>@&gt;</p>
-<p>p0.65in&gt;</p>
-<p>p2.10in&gt;</p>
-<p>X@</p>
-<p><strong>Bits</strong> &amp; <strong>Field</strong> &amp; <strong>Meaning</strong><br />
-<code>1..0</code> &amp; <code>TYPE</code> &amp; 1 data; 2 instruction; 3 unified<br />
-<code>5..2</code> &amp; <code>LEVEL</code> &amp; cache level, in the range 1 through 15<br />
-<code>11..6</code> &amp; <code>LINE_LOG2</code> &amp; cache-line bytes are 1 shifted left by this value<br />
-<code>15..12</code> &amp; <code>SHARING_LEVEL</code> &amp; nested cache-sharing scope; zero is one logical processor<br />
-<code>31..16</code> &amp; <code>SHARING_LP_COUNT_MINUS1</code> &amp; logical-processor count in the sharing scope, minus one<br />
-<code>63..32</code> &amp; <code>SHARING_ID</code> &amp; identifier of the processor set at the reported sharing level  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Bits</strong></th>
+<th style="text-align: left;"><strong>Field</strong></th>
+<th style="text-align: left;"><strong>Meaning</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>1..0</code></td>
+<td style="text-align: left;"><code>TYPE</code></td>
+<td style="text-align: left;">1 data; 2 instruction; 3 unified</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>5..2</code></td>
+<td style="text-align: left;"><code>LEVEL</code></td>
+<td style="text-align: left;">cache level, in the range 1 through 15</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>11..6</code></td>
+<td style="text-align: left;"><code>LINE_LOG2</code></td>
+<td style="text-align: left;">cache-line bytes are 1 shifted left by this value</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>15..12</code></td>
+<td style="text-align: left;"><code>SHARING_LEVEL</code></td>
+<td style="text-align: left;">nested cache-sharing scope; zero is one logical processor</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>31..16</code></td>
+<td style="text-align: left;"><code>SHARING_LP_COUNT_MINUS1</code></td>
+<td style="text-align: left;">logical-processor count in the sharing scope, minus one</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>63..32</code></td>
+<td style="text-align: left;"><code>SHARING_ID</code></td>
+<td style="text-align: left;">identifier of the processor set at the reported sharing level</td>
+</tr>
+</tbody>
+</table>
 <p><code>MAINTENANCE_GRANULE_BYTES</code> is a nonzero power of two no greater than 4096 and has the same value on every logical processor in one normal-memory coherence domain. Every reported cache-line size divides the maintenance granule. A descriptor has <code>TYPE</code> 1, 2, or 3 and a nonzero <code>LEVEL</code>. Descriptors are ordered by increasing cache level, cache type, sharing level, and sharing ID.</p>
 <p><code>SHARING_LEVEL</code> values describe strictly nested processor sets. The pair <code>(SHARING_LEVEL, SHARING_ID)</code> is equal exactly when two descriptors name the same logical-processor set. At sharing level zero, <code>SHARING_LP_COUNT_MINUS1</code> is zero. At a greater sharing level, the count field equals the number of logical processors in that set minus one. The tuple of cache type, cache level, sharing level, and sharing ID is unique within the leaf.</p>
 <h2 id="performance-counter-discovery">Performance-Counter Discovery <a href="#section-performance-counter-discovery" id="section-performance-counter-discovery"></a></h2>
@@ -9336,47 +9671,130 @@ any class, leaf 1 or greater, index 0 &amp; reserved, zero &amp; reserved, zero 
 <h2 id="save-area-layout-discovery">SAVE-Area Layout Discovery</h2>
 <p>Class <code>0x00000002</code>, leaf <code>0x0004</code> describes the memory image used by SAVE and RESTORE. Index zero is the common header. Indexes one and two describe the complete image and its fixed block. Each available extension component contributes descriptor A followed by descriptor B, so for <span class="arithmatex">\(N\)</span> components <code>MAX_INDEX=2+2N</code>. Component descriptors are ordered by increasing <code>COMPONENT_ID</code>.</p>
 <p><strong>SAVE-AREA-LAYOUT Indexes</strong></p>
-<p>@&gt;</p>
-<p>p0.80in&gt;</p>
-<p>X@</p>
-<p><strong>Index</strong> &amp; <strong>Contents</strong><br />
-0 &amp; common CPUID leaf header<br />
-1 &amp; <code>SAVE_AREA_SIZE_BYTES</code> in bits 63..0<br />
-2 &amp; <code>FIXED_SIZE_BYTES[15:0]</code>, <code>COMPONENT_COUNT[31:16]</code>, <code>BITMAP_WORDS[47:32]</code>, <code>FMT[51:48]</code>; bits 63..52 are zero<br />
-<code>3+2i</code> &amp; component descriptor A for zero-based component ordinal <code>i</code><br />
-<code>4+2i</code> &amp; component descriptor B for zero-based component ordinal <code>i</code>  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Index</strong></th>
+<th style="text-align: left;"><strong>Contents</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">common CPUID leaf header</td>
+</tr>
+<tr>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;"><code>SAVE_AREA_SIZE_BYTES</code> in bits 63..0</td>
+</tr>
+<tr>
+<td style="text-align: left;">2</td>
+<td style="text-align: left;"><code>FIXED_SIZE_BYTES[15:0]</code>, <code>COMPONENT_COUNT[31:16]</code>, <code>BITMAP_WORDS[47:32]</code>, <code>FMT[51:48]</code>; bits 63..52 are zero</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>3+2i</code></td>
+<td style="text-align: left;">component descriptor A for zero-based component ordinal <code>i</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>4+2i</code></td>
+<td style="text-align: left;">component descriptor B for zero-based component ordinal <code>i</code></td>
+</tr>
+</tbody>
+</table>
 <p><img alt="SAVE-Area Layout CPUID Result Formats" src="../../assets/visuals/isa/cpuid-feature-discovery-09.svg" /></p>
 <p><strong>SAVE-Area Layout CPUID Result Formats</strong></p>
 <p>Diagram labels abbreviate the field names in the descriptor tables below; <code>BITMAP</code>, <code>COUNT</code>, and <code>FIXED_SIZE</code> are <code>BITMAP_WORDS</code>, <code>COMPONENT_COUNT</code>, and <code>FIXED_SIZE_BYTES</code>.</p>
 <p><strong>SAVE Component Descriptor A</strong></p>
-<p>@&gt;</p>
-<p>p0.65in&gt;</p>
-<p>p1.70in&gt;</p>
-<p>X@</p>
-<p><strong>Bits</strong> &amp; <strong>Field</strong> &amp; <strong>Meaning</strong><br />
-<code>15..0</code> &amp; <code>COMPONENT_ID</code> &amp; stable component identifier<br />
-<code>21..16</code> &amp; <code>BITMAP_BIT</code> &amp; bit selecting this component<br />
-<code>31..22</code> &amp; reserved &amp; zero<br />
-<code>63..32</code> &amp; <code>OFFSET_BYTES</code> &amp; offset from the save-area base  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Bits</strong></th>
+<th style="text-align: left;"><strong>Field</strong></th>
+<th style="text-align: left;"><strong>Meaning</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>15..0</code></td>
+<td style="text-align: left;"><code>COMPONENT_ID</code></td>
+<td style="text-align: left;">stable component identifier</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>21..16</code></td>
+<td style="text-align: left;"><code>BITMAP_BIT</code></td>
+<td style="text-align: left;">bit selecting this component</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>31..22</code></td>
+<td style="text-align: left;">reserved</td>
+<td style="text-align: left;">zero</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>63..32</code></td>
+<td style="text-align: left;"><code>OFFSET_BYTES</code></td>
+<td style="text-align: left;">offset from the save-area base</td>
+</tr>
+</tbody>
+</table>
 <p><strong>SAVE Component Descriptor B</strong></p>
-<p>@&gt;</p>
-<p>p0.65in&gt;</p>
-<p>p1.70in&gt;</p>
-<p>X@</p>
-<p><strong>Bits</strong> &amp; <strong>Field</strong> &amp; <strong>Meaning</strong><br />
-<code>31..0</code> &amp; <code>MAX_SIZE_BYTES</code> &amp; allocated component size<br />
-<code>47..32</code> &amp; <code>ALIGNMENT_BYTES</code> &amp; required component alignment<br />
-<code>55..48</code> &amp; <code>INIT_POLICY</code> &amp; 1 restores the component-defined initial state when its bitmap bit is clear<br />
-<code>63..56</code> &amp; reserved &amp; zero  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Bits</strong></th>
+<th style="text-align: left;"><strong>Field</strong></th>
+<th style="text-align: left;"><strong>Meaning</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>31..0</code></td>
+<td style="text-align: left;"><code>MAX_SIZE_BYTES</code></td>
+<td style="text-align: left;">allocated component size</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>47..32</code></td>
+<td style="text-align: left;"><code>ALIGNMENT_BYTES</code></td>
+<td style="text-align: left;">required component alignment</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>55..48</code></td>
+<td style="text-align: left;"><code>INIT_POLICY</code></td>
+<td style="text-align: left;">1 restores the component-defined initial state when its bitmap bit is clear</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>63..56</code></td>
+<td style="text-align: left;">reserved</td>
+<td style="text-align: left;">zero</td>
+</tr>
+</tbody>
+</table>
 <p><strong>Floating-Point SAVE Component</strong></p>
-<p>@&gt;</p>
-<p>p1.25in&gt;</p>
-<p>p1.20in&gt;</p>
-<p>X@</p>
-<p><strong>Component Offset</strong> &amp; <strong>State</strong> &amp; <strong>Contents</strong><br />
-<code>0x000..0x07f</code> &amp; <code>F0_F15</code> &amp; F0 through F15 in ascending register order<br />
-<code>0x080..0x087</code> &amp; <code>FFLAGS</code> &amp; FFLAGS in bits 15..0; remaining bits zero<br />
-<code>0x088..0x08f</code> &amp; <code>FSTATUS</code> &amp; FSTATUS in bits 15..0; remaining bits zero  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Component Offset</strong></th>
+<th style="text-align: left;"><strong>State</strong></th>
+<th style="text-align: left;"><strong>Contents</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>0x000..0x07f</code></td>
+<td style="text-align: left;"><code>F0_F15</code></td>
+<td style="text-align: left;">F0 through F15 in ascending register order</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x080..0x087</code></td>
+<td style="text-align: left;"><code>FFLAGS</code></td>
+<td style="text-align: left;">FFLAGS in bits 15..0; remaining bits zero</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>0x088..0x08f</code></td>
+<td style="text-align: left;"><code>FSTATUS</code></td>
+<td style="text-align: left;">FSTATUS in bits 15..0; remaining bits zero</td>
+</tr>
+</tbody>
+</table>
 <p><code>SAVE_AREA_SIZE_BYTES</code> is the complete byte range validated and accessed by SAVE or RESTORE. It is at least <code>FIXED_SIZE_BYTES</code>, covers the end of every component, and is a multiple of 64 bytes. <code>FIXED_SIZE_BYTES</code> is <code>0x00c0</code>, <code>BITMAP_WORDS</code> is 1, and <code>FMT</code> is zero for the save-image format defined by this specification.</p>
 <p>Each descriptor names one available extension component. Component IDs and bitmap bits are unique. Component regions begin at or after the fixed block, meet their reported alignment, and do not overlap. A set state-block bitmap bit selects the descriptor carrying the same <code>BITMAP_BIT</code>. <code>INIT_POLICY=1</code> means that RESTORE reconstructs the component-defined initial state when that component’s bitmap bit is clear.</p>
 <p>When the FP extension is present, component ID 1 uses bitmap bit 0, offset <code>0x00c0</code>, size <code>0x00c0</code>, and alignment 64. Its initial state is F0 through F15 equal to positive zero, FFLAGS equal to zero, and FSTATUS equal to zero.</p>

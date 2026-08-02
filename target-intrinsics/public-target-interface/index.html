@@ -9047,74 +9047,345 @@
 
 <h1 id="public-target-interface">Public Target Interface</h1>
 <h2 id="segment-image-value-macros">Segment-Image Value Macros</h2>
-<p>@&gt;</p>
-<p>p1.46inX@</p>
-<p><strong>Header:</strong> &amp; <code>&lt;bedrockfarintrin.h&gt;</code></p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"></th>
+<th style="text-align: left;"></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Header:</strong></td>
+<td style="text-align: left;"><code>&lt;bedrockfarintrin.h&gt;</code></td>
+</tr>
+</tbody>
+</table>
 <p>The public far-pointer header defines the pure value macros <code>__BEDROCK_SEGMENT_IMAGE</code>, <code>__BEDROCK_SEGMENT_IMAGE_FOR_BASE</code>, and <code>__BEDROCK_SEGMENT_DISABLED</code>. They construct 64-bit segment images without reading or writing architectural state and are available through <code>&lt;bedrockintrin.h&gt;</code> without exposing the system-register interface.</p>
 <p><code>__BEDROCK_SEGMENT_IMAGE(base_page,exponent,mantissa, bounds_only)</code> places the low 52, 5, and 6 bits of the first three operands in their architectural fields and normalizes <code>bounds_only</code> to zero or one. Each operand is evaluated once. An ABI-valid enabled image uses an exponent from 0 through 31 and a mantissa from 1 through 63. The macro only packs fields; it does not validate the resulting base, span, limit, or address canonicality.</p>
 <p><code>__BEDROCK_SEGMENT_IMAGE_FOR_BASE(base,...)</code> encodes <span class="arithmatex">\(\lfloor\texttt{(uint64\_t)base}/4096\rfloor\)</span> in the base-page field. It discards the low 12 bits, so a misaligned operand names the containing page and does not preserve the original byte address. The macro imposes no alignment precondition and does not adjust a later offset to compensate for the discarded bits. <code>__BEDROCK_SEGMENT_DISABLED</code> is the canonical all-zero disabled image. ABI-visible disabled images use that constant rather than constructing an image with a zero mantissa and nonzero remaining fields.</p>
 <h2 id="far-pointer-builtins">Far Pointer Builtins</h2>
-<p>@&gt;</p>
-<p>p1.46inX@</p>
-<p><strong>Header:</strong> &amp; <code>&lt;bedrockfarintrin.h&gt;</code></p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"></th>
+<th style="text-align: left;"></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Header:</strong></td>
+<td style="text-align: left;"><code>&lt;bedrockfarintrin.h&gt;</code></td>
+</tr>
+</tbody>
+</table>
 <p>The four construction operations use the macro spellings <code>__BEDROCK_FAR_PTR_INIT</code>, <code>__BEDROCK_FAR_FLAT_PTR_INIT</code>, <code>__BEDROCK_FAR_NULL</code>, and <code>__BEDROCK_FAR_PTR_FROM_SEGMENT</code>. Their pointer-type operand is handled by the compiler and is not a runtime C value.</p>
 <p><code>__BEDROCK_FAR_PTR_FROM_SEGMENT</code> accepts an enabled translated source image with nonzero mantissa and bounds-only mode clear. It adds the encoded base to the supplied offset modulo <span class="arithmatex">\(2^{64}\)</span>. A zero sum denotes null, but the converted bounds-only image is retained for zero and nonzero sums alike. It performs no overflow test. An already-linear address and bounds-only image instead use <code>__BEDROCK_FAR_PTR_INIT</code>; a flat address uses <code>__BEDROCK_FAR_FLAT_PTR_INIT</code>.</p>
 <p><strong>Far Pointer Builtins</strong></p>
-<p>@p1.25inp1.25inp1.05inp2.05in@ <strong>Name</strong> &amp; <strong>C interface</strong> &amp; <strong>Lowering</strong> &amp; <strong>Constraint and effect</strong><br />
-<code>far_ptr_init</code> &amp; <code>far T(type,address,image)</code> &amp; value construction &amp; Far type required; constant operands preserve constant-expression status; no fault, segment write, or memory access.<br />
-<code>far_flat_ptr_init</code> &amp; <code>far T(type,address)</code> &amp; value construction &amp; Far type required; attaches the canonical disabled image without faulting.<br />
-<code>far_null</code> &amp; <code>far T(type)</code> &amp; constant construction &amp; Far type required; produces the canonical all-zero representation.<br />
-<code>far_ptr_from_segment</code> &amp; <code>far T(type,offset,image)</code> &amp; canonicalization &amp; Far type required; returns the low 64 bits of encoded base plus offset with the converted bounds-only image, including when the zero address denotes null; no overflow test or fault.<br />
-<code>far_address</code> &amp; <code>uint64_t(pointer)</code> &amp; address extraction &amp; Accepts a far data or function pointer; pure extraction without validation or bounds probing.<br />
-<code>far_same_encoding</code> &amp; <code>int(left,right)</code> &amp; two-word comparison &amp; Compatible far pointer types required; pure representation comparison.  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Name</strong></th>
+<th style="text-align: left;"><strong>C interface</strong></th>
+<th style="text-align: left;"><strong>Lowering</strong></th>
+<th style="text-align: left;"><strong>Constraint and effect</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>far_ptr_init</code></td>
+<td style="text-align: left;"><code>far T(type,address,image)</code></td>
+<td style="text-align: left;">value construction</td>
+<td style="text-align: left;">Far type required; constant operands preserve constant-expression status; no fault, segment write, or memory access.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>far_flat_ptr_init</code></td>
+<td style="text-align: left;"><code>far T(type,address)</code></td>
+<td style="text-align: left;">value construction</td>
+<td style="text-align: left;">Far type required; attaches the canonical disabled image without faulting.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>far_null</code></td>
+<td style="text-align: left;"><code>far T(type)</code></td>
+<td style="text-align: left;">constant construction</td>
+<td style="text-align: left;">Far type required; produces the canonical all-zero representation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>far_ptr_from_segment</code></td>
+<td style="text-align: left;"><code>far T(type,offset,image)</code></td>
+<td style="text-align: left;">canonicalization</td>
+<td style="text-align: left;">Far type required; returns the low 64 bits of encoded base plus offset with the converted bounds-only image, including when the zero address denotes null; no overflow test or fault.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>far_address</code></td>
+<td style="text-align: left;"><code>uint64_t(pointer)</code></td>
+<td style="text-align: left;">address extraction</td>
+<td style="text-align: left;">Accepts a far data or function pointer; pure extraction without validation or bounds probing.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>far_same_encoding</code></td>
+<td style="text-align: left;"><code>int(left,right)</code></td>
+<td style="text-align: left;">two-word comparison</td>
+<td style="text-align: left;">Compatible far pointer types required; pure representation comparison.</td>
+</tr>
+</tbody>
+</table>
 <h2 id="core-builtins">Core Builtins</h2>
-<p>@&gt;</p>
-<p>p1.46inX@</p>
-<p><strong>Header:</strong> &amp; <code>&lt;bedrockcoreintrin.h&gt;</code></p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"></th>
+<th style="text-align: left;"></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Header:</strong></td>
+<td style="text-align: left;"><code>&lt;bedrockcoreintrin.h&gt;</code></td>
+</tr>
+</tbody>
+</table>
 <p><strong>Core Builtins</strong></p>
-<p>@p1.25inp1.25inp0.8inp2.3in@ <strong>Name</strong> &amp; <strong>C interface</strong> &amp; <strong>Lowering</strong> &amp; <strong>Availability, constraint, and effect</strong><br />
-<code>cpuid</code> &amp; <code>u64(u64 selector)</code> &amp; <code>CPUID</code> &amp; User allowed; reads discovery state and not C memory.<br />
-<code>read_status</code> &amp; <code>uint16_t(void)</code> &amp; <code>RDSTATUS</code> &amp; Unprivileged; reads <code>STATUS</code> and not C memory.<br />
-<code>rdpmc</code> &amp; <code>uint64_t(counter_id)</code> &amp; <code>RDPMC</code> &amp; Unprivileged; ID is a constant in 0 through 65535; zero and unavailable IDs fault with <code>INVALID_SELECTOR</code>.<br />
-<code>breakpoint</code> &amp; <code>void(void)</code> &amp; <code>BKPT</code> &amp; Any privilege; always raises the architectural breakpoint/debug exception.<br />
-<code>trace</code> &amp; <code>void(marker)</code> &amp; <code>TRACE</code> &amp; Unprivileged; marker is a constant in 0 through 65535; emits a marker when enabled and otherwise acts as a NOP.<br />
-<code>yield</code> &amp; <code>void(void)</code> &amp; <code>YIELD</code> &amp; Any privilege; scheduling hint, not a compiler or memory barrier.<br />
-<code>wait</code> &amp; <code>void(void)</code> &amp; <code>WAIT</code> &amp; Unprivileged PAUSE-like convergent hint; retires normally and permits a finite implementation-selected delay, including zero, before subsequent execution.  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Name</strong></th>
+<th style="text-align: left;"><strong>C interface</strong></th>
+<th style="text-align: left;"><strong>Lowering</strong></th>
+<th style="text-align: left;"><strong>Availability, constraint, and effect</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>cpuid</code></td>
+<td style="text-align: left;"><code>u64(u64 selector)</code></td>
+<td style="text-align: left;"><code>CPUID</code></td>
+<td style="text-align: left;">User allowed; reads discovery state and not C memory.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>read_status</code></td>
+<td style="text-align: left;"><code>uint16_t(void)</code></td>
+<td style="text-align: left;"><code>RDSTATUS</code></td>
+<td style="text-align: left;">Unprivileged; reads <code>STATUS</code> and not C memory.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>rdpmc</code></td>
+<td style="text-align: left;"><code>uint64_t(counter_id)</code></td>
+<td style="text-align: left;"><code>RDPMC</code></td>
+<td style="text-align: left;">Unprivileged; ID is a constant in 0 through 65535; zero and unavailable IDs fault with <code>INVALID_SELECTOR</code>.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>breakpoint</code></td>
+<td style="text-align: left;"><code>void(void)</code></td>
+<td style="text-align: left;"><code>BKPT</code></td>
+<td style="text-align: left;">Any privilege; always raises the architectural breakpoint/debug exception.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>trace</code></td>
+<td style="text-align: left;"><code>void(marker)</code></td>
+<td style="text-align: left;"><code>TRACE</code></td>
+<td style="text-align: left;">Unprivileged; marker is a constant in 0 through 65535; emits a marker when enabled and otherwise acts as a NOP.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>yield</code></td>
+<td style="text-align: left;"><code>void(void)</code></td>
+<td style="text-align: left;"><code>YIELD</code></td>
+<td style="text-align: left;">Any privilege; scheduling hint, not a compiler or memory barrier.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>wait</code></td>
+<td style="text-align: left;"><code>void(void)</code></td>
+<td style="text-align: left;"><code>WAIT</code></td>
+<td style="text-align: left;">Unprivileged PAUSE-like convergent hint; retires normally and permits a finite implementation-selected delay, including zero, before subsequent execution.</td>
+</tr>
+</tbody>
+</table>
 <h2 id="memory-builtins">Memory Builtins</h2>
-<p>@&gt;</p>
-<p>p1.46inX@</p>
-<p><strong>Header:</strong> &amp; <code>&lt;bedrockmemoryintrin.h&gt;</code></p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"></th>
+<th style="text-align: left;"></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Header:</strong></td>
+<td style="text-align: left;"><code>&lt;bedrockmemoryintrin.h&gt;</code></td>
+</tr>
+</tbody>
+</table>
 <p><strong>Memory Builtins</strong></p>
-<p>@p1.35inp1.3inp0.75inp2.2in@ <strong>Name</strong> &amp; <strong>C interface</strong> &amp; <strong>Lowering</strong> &amp; <strong>Constraint and effect</strong><br />
-<code>read_fence</code> &amp; <code>void(void)</code> &amp; <code>RFENCE</code> &amp; Compiler and hardware read-ordering barrier.<br />
-<code>write_fence</code> &amp; <code>void(void)</code> &amp; <code>WFENCE</code> &amp; Compiler and hardware write-ordering barrier.<br />
-<code>address_fence</code> &amp; <code>void(void)</code> &amp; <code>AFENCE</code> &amp; Full compiler memory clobber and hardware address fence.<br />
-<code>nontemporal_store_u8</code> &amp; <code>void(u8 *,u8)</code> &amp; <code>MOVNT.B</code> &amp; One writable byte; one hinted store, neither volatile nor a fence.<br />
-<code>nontemporal_store_u16</code> &amp; <code>void(u16 *,u16)</code> &amp; <code>MOVNT.W</code> &amp; One writable 16-bit object; one hinted store, neither volatile nor a fence.<br />
-<code>nontemporal_store_u32</code> &amp; <code>void(u32 *,u32)</code> &amp; <code>MOVNT.L</code> &amp; One writable 32-bit object; one hinted store, neither volatile nor a fence.<br />
-<code>nontemporal_store_u64</code> &amp; <code>void(u64 *,u64)</code> &amp; <code>MOVNT.Q</code> &amp; One writable 64-bit object; one hinted store, neither volatile nor a fence.  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Name</strong></th>
+<th style="text-align: left;"><strong>C interface</strong></th>
+<th style="text-align: left;"><strong>Lowering</strong></th>
+<th style="text-align: left;"><strong>Constraint and effect</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>read_fence</code></td>
+<td style="text-align: left;"><code>void(void)</code></td>
+<td style="text-align: left;"><code>RFENCE</code></td>
+<td style="text-align: left;">Compiler and hardware read-ordering barrier.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>write_fence</code></td>
+<td style="text-align: left;"><code>void(void)</code></td>
+<td style="text-align: left;"><code>WFENCE</code></td>
+<td style="text-align: left;">Compiler and hardware write-ordering barrier.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>address_fence</code></td>
+<td style="text-align: left;"><code>void(void)</code></td>
+<td style="text-align: left;"><code>AFENCE</code></td>
+<td style="text-align: left;">Full compiler memory clobber and hardware address fence.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>nontemporal_store_u8</code></td>
+<td style="text-align: left;"><code>void(u8 *,u8)</code></td>
+<td style="text-align: left;"><code>MOVNT.B</code></td>
+<td style="text-align: left;">One writable byte; one hinted store, neither volatile nor a fence.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>nontemporal_store_u16</code></td>
+<td style="text-align: left;"><code>void(u16 *,u16)</code></td>
+<td style="text-align: left;"><code>MOVNT.W</code></td>
+<td style="text-align: left;">One writable 16-bit object; one hinted store, neither volatile nor a fence.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>nontemporal_store_u32</code></td>
+<td style="text-align: left;"><code>void(u32 *,u32)</code></td>
+<td style="text-align: left;"><code>MOVNT.L</code></td>
+<td style="text-align: left;">One writable 32-bit object; one hinted store, neither volatile nor a fence.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>nontemporal_store_u64</code></td>
+<td style="text-align: left;"><code>void(u64 *,u64)</code></td>
+<td style="text-align: left;"><code>MOVNT.Q</code></td>
+<td style="text-align: left;">One writable 64-bit object; one hinted store, neither volatile nor a fence.</td>
+</tr>
+</tbody>
+</table>
 <h2 id="integer-builtins">Integer Builtins</h2>
-<p>@&gt;</p>
-<p>p1.46inX@</p>
-<p><strong>Header:</strong> &amp; <code>&lt;bedrockintegerintrin.h&gt;</code></p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"></th>
+<th style="text-align: left;"></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Header:</strong></td>
+<td style="text-align: left;"><code>&lt;bedrockintegerintrin.h&gt;</code></td>
+</tr>
+</tbody>
+</table>
 <p><strong>Integer Builtins</strong></p>
-<p>@p1.3inp1.55inp0.75inp2.0in@ <strong>Name</strong> &amp; <strong>C interface</strong> &amp; <strong>Lowering</strong> &amp; <strong>Result and effect</strong><br />
-<code>clmul_u8</code> &amp; <code>u8(u8,u8)</code> &amp; <code>CLMUL.B</code> &amp; Pure; low 8 bits of the carryless product.<br />
-<code>clmul_u16</code> &amp; <code>u16(u16,u16)</code> &amp; <code>CLMUL.W</code> &amp; Pure; low 16 bits of the carryless product.<br />
-<code>clmul_u32</code> &amp; <code>u32(u32,u32)</code> &amp; <code>CLMUL.L</code> &amp; Pure; low 32 bits of the carryless product.<br />
-<code>clmul_u64</code> &amp; <code>u64(u64,u64)</code> &amp; <code>CLMUL.Q</code> &amp; Pure; low 64 bits of the carryless product.  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Name</strong></th>
+<th style="text-align: left;"><strong>C interface</strong></th>
+<th style="text-align: left;"><strong>Lowering</strong></th>
+<th style="text-align: left;"><strong>Result and effect</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>clmul_u8</code></td>
+<td style="text-align: left;"><code>u8(u8,u8)</code></td>
+<td style="text-align: left;"><code>CLMUL.B</code></td>
+<td style="text-align: left;">Pure; low 8 bits of the carryless product.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>clmul_u16</code></td>
+<td style="text-align: left;"><code>u16(u16,u16)</code></td>
+<td style="text-align: left;"><code>CLMUL.W</code></td>
+<td style="text-align: left;">Pure; low 16 bits of the carryless product.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>clmul_u32</code></td>
+<td style="text-align: left;"><code>u32(u32,u32)</code></td>
+<td style="text-align: left;"><code>CLMUL.L</code></td>
+<td style="text-align: left;">Pure; low 32 bits of the carryless product.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>clmul_u64</code></td>
+<td style="text-align: left;"><code>u64(u64,u64)</code></td>
+<td style="text-align: left;"><code>CLMUL.Q</code></td>
+<td style="text-align: left;">Pure; low 64 bits of the carryless product.</td>
+</tr>
+</tbody>
+</table>
 <h2 id="floating-point-builtins">Floating-Point Builtins</h2>
-<p>@&gt;</p>
-<p>p1.46inX@</p>
-<p><strong>Header:</strong> &amp; <code>&lt;bedrockfpuintrin.h&gt;</code></p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"></th>
+<th style="text-align: left;"></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Header:</strong></td>
+<td style="text-align: left;"><code>&lt;bedrockfpuintrin.h&gt;</code></td>
+</tr>
+</tbody>
+</table>
 <p><strong>Floating-Point Builtins</strong></p>
-<p>@p1.25inp1.3inp0.85inp2.2in@ <strong>Name</strong> &amp; <strong>C interface</strong> &amp; <strong>Lowering</strong> &amp; <strong>Availability, constraint, and effect</strong><br />
-<code>read_fstatus</code> &amp; <code>uint16_t(void)</code> &amp; <code>RDFSTATUS</code> &amp; Unprivileged; access to the floating-point environment.<br />
-<code>write_fstatus</code> &amp; <code>void(uint16_t)</code> &amp; <code>WRFSTATUS</code> &amp; Unprivileged; reserved bits follow the ISA; changes the floating-point environment.<br />
-<code>read_fflags</code> &amp; <code>uint16_t(void)</code> &amp; <code>RDFFLAGS</code> &amp; Unprivileged; reads accrued floating-point exception flags.<br />
-<code>write_fflags</code> &amp; <code>void(uint16_t)</code> &amp; <code>WRFFLAGS</code> &amp; Unprivileged; reserved bits follow the ISA; writes accrued flags.<br />
-<code>fclass_f32</code> &amp; <code>uint16_t(float)</code> &amp; <code>FCLASS.S</code> &amp; FPU required; pure ten-class one-hot classification; does not update <code>FFLAGS</code>.<br />
-<code>fclass_f64</code> &amp; <code>uint16_t(double)</code> &amp; <code>FCLASS.D</code> &amp; FPU required; pure ten-class one-hot classification; does not update <code>FFLAGS</code>.  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Name</strong></th>
+<th style="text-align: left;"><strong>C interface</strong></th>
+<th style="text-align: left;"><strong>Lowering</strong></th>
+<th style="text-align: left;"><strong>Availability, constraint, and effect</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>read_fstatus</code></td>
+<td style="text-align: left;"><code>uint16_t(void)</code></td>
+<td style="text-align: left;"><code>RDFSTATUS</code></td>
+<td style="text-align: left;">Unprivileged; access to the floating-point environment.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>write_fstatus</code></td>
+<td style="text-align: left;"><code>void(uint16_t)</code></td>
+<td style="text-align: left;"><code>WRFSTATUS</code></td>
+<td style="text-align: left;">Unprivileged; reserved bits follow the ISA; changes the floating-point environment.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>read_fflags</code></td>
+<td style="text-align: left;"><code>uint16_t(void)</code></td>
+<td style="text-align: left;"><code>RDFFLAGS</code></td>
+<td style="text-align: left;">Unprivileged; reads accrued floating-point exception flags.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>write_fflags</code></td>
+<td style="text-align: left;"><code>void(uint16_t)</code></td>
+<td style="text-align: left;"><code>WRFFLAGS</code></td>
+<td style="text-align: left;">Unprivileged; reserved bits follow the ISA; writes accrued flags.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>fclass_f32</code></td>
+<td style="text-align: left;"><code>uint16_t(float)</code></td>
+<td style="text-align: left;"><code>FCLASS.S</code></td>
+<td style="text-align: left;">FPU required; pure ten-class one-hot classification; does not update <code>FFLAGS</code>.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>fclass_f64</code></td>
+<td style="text-align: left;"><code>uint16_t(double)</code></td>
+<td style="text-align: left;"><code>FCLASS.D</code></td>
+<td style="text-align: left;">FPU required; pure ten-class one-hot classification; does not update <code>FFLAGS</code>.</td>
+</tr>
+</tbody>
+</table>
 <h2 id="approximate-transcendental-lowering-policy">Approximate Transcendental Lowering Policy</h2>
 <p>A strict language-library operation shall not be lowered to an FPTRANSA instruction. A compiler may select FPTRANSA only when the source uses a separately defined approximate interface or an active compiler mode permits approximate mathematics. The selected instruction remains subject to its ISA accuracy, special-value, and floating-point exception contract.</p>
 

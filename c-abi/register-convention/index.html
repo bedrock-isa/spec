@@ -9028,12 +9028,37 @@
 <h2 id="register-preservation">Register Preservation</h2>
 <p>The caller shall preserve any live value held in a volatile register before a call. A callee that modifies a nonvolatile register shall restore its exact incoming value before returning. Registers not listed as nonvolatile carry no value across the call unless another rule in this ABI explicitly assigns the call result to them.</p>
 <p><strong>C Call Preservation Sets</strong></p>
-<p>@p1.35inp2.0inp2.05in@</p>
-<p><strong>State</strong> &amp; <strong>Volatile across a call</strong> &amp; <strong>Preserved by the callee</strong><br />
-General registers &amp; <code>R0</code>–<code>R7</code> &amp; <code>R8</code>–<code>R15</code><br />
-Floating-point registers &amp; <code>F0</code>–<code>F7</code> &amp; <code>F8</code>–<code>F15</code><br />
-Condition state &amp; <code>FLAGS</code> &amp; none<br />
-Segment state &amp; <code>GS1</code>–<code>GS5</code> &amp; <code>CS</code>, <code>DS</code>, <code>SS</code>, <code>GS0</code>  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>State</strong></th>
+<th style="text-align: left;"><strong>Volatile across a call</strong></th>
+<th style="text-align: left;"><strong>Preserved by the callee</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">General registers</td>
+<td style="text-align: left;"><code>R0</code>–<code>R7</code></td>
+<td style="text-align: left;"><code>R8</code>–<code>R15</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Floating-point registers</td>
+<td style="text-align: left;"><code>F0</code>–<code>F7</code></td>
+<td style="text-align: left;"><code>F8</code>–<code>F15</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Condition state</td>
+<td style="text-align: left;"><code>FLAGS</code></td>
+<td style="text-align: left;">none</td>
+</tr>
+<tr>
+<td style="text-align: left;">Segment state</td>
+<td style="text-align: left;"><code>GS1</code>–<code>GS5</code></td>
+<td style="text-align: left;"><code>CS</code>, <code>DS</code>, <code>SS</code>, <code>GS0</code></td>
+</tr>
+</tbody>
+</table>
 <p>A callee may preserve floating-point registers with <code>FPUSHP</code> and <code>FPOPP</code> or with any sequence having the same observable effect. Each instruction operates on one canonical pair. The nonvolatile pairs are index 0 for <code>F14:F15</code>, index 1 for <code>F12:F13</code>, index 2 for <code>F10:F11</code>, and index 3 for <code>F8:F9</code>. When several pairs are saved, a normal prologue pushes them in increasing pair-index order and the matching epilogue pops them in decreasing pair-index order. A callee need only save the pair containing each nonvolatile register it modifies. <code>R15</code> is an ordinary nonvolatile register unless the function elects to use it as a frame pointer.</p>
 <h2 id="stack-and-control-state">Stack and Control State</h2>
 <p><code>SP</code> is the architectural stack pointer, not a general C temporary. A callee may move it while executing but shall restore the entry value before returning; Section 5 defines the additional alignment and frame rules. <code>PC</code> is the architectural instruction pointer and is visible to C code only as a control-flow target. The call and return instructions, rather than a preservation class, define its transition across a call. Condition codes in <code>FLAGS</code> are volatile and may be clobbered by every callee.</p>

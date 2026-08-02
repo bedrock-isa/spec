@@ -9015,14 +9015,32 @@
 <p>Length = 4-14 bytes</p>
 <h2 id="detailed-semantics">Detailed Semantics</h2>
 <p><strong>FLAGS Effects</strong></p>
-<p>@&gt;</p>
-<p>p0.62in&gt;</p>
-<p>p4.68in@</p>
-<p><strong>Flag</strong> &amp; <strong>Effect</strong>  </p>
-<p><code>Z</code> &amp; requested PTE was read and is structurally valid for its level<br />
-<code>N</code> &amp; valid queried path is user-domain accessible; cleared on failure<br />
-<code>C</code> &amp; valid queried path is writable; cleared on failure<br />
-<code>V</code> &amp; valid queried path is executable; cleared on failure  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Flag</strong></th>
+<th style="text-align: left;"><strong>Effect</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>Z</code></td>
+<td style="text-align: left;">requested PTE was read and is structurally valid for its level</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>N</code></td>
+<td style="text-align: left;">valid queried path is user-domain accessible; cleared on failure</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>C</code></td>
+<td style="text-align: left;">valid queried path is writable; cleared on failure</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>V</code></td>
+<td style="text-align: left;">valid queried path is executable; cleared on failure</td>
+</tr>
+</tbody>
+</table>
 <p>The requested level is the low three bits of the level operand. Values outside 1 through 5 raise <code>ILLEGAL_INSTRUCTION</code>; level 5 is reported as an ordinary unsuccessful query in LA48 mode.</p>
 <ol>
 <li>

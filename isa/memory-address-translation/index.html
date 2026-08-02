@@ -9061,15 +9061,36 @@
 <p>Every covered page of a store is validated before any byte of the store becomes visible. A later-page translation, permission, address-type, or synchronous data-access fault leaves every destination byte and every leaf D bit unchanged. A updates completed while consuming an earlier valid entry retain the speculative-A rule and may remain set when a later page faults.</p>
 <p>Instruction-record fetch uses the same increasing-address rule for all bytes required by the encoded record. A fault on a later page completes as an instruction-fetch fault before decode or operand evaluation, while earlier instruction-cache and PTE A effects retain their ordinary rules.</p>
 <p><strong>Segment Pre-Translation Modes</strong></p>
-<p>@&gt;</p>
-<p>p0.90in&gt;</p>
-<p>p1.05in&gt;</p>
-<p>p1.95in&gt;</p>
-<p>p1.50in@</p>
-<p><strong>Mode</strong> &amp; <strong>Segment State</strong> &amp; <strong>Check</strong> &amp; <strong>Linear Address</strong><br />
-disabled &amp; m = 0 &amp; no segment-window check &amp; linear = EA<br />
-translated window &amp; m != 0, b = 0 &amp; starting point <span class="arithmatex">\(0 \le \mathrm{EA}&lt;\mathrm{span}\)</span>; complete range selected by leaf <code>AT</code> &amp; linear = base + EA<br />
-bounds-only window &amp; m != 0, b = 1 &amp; starting point <span class="arithmatex">\(\mathrm{base}\le\mathrm{EA}&lt;\mathrm{limit}\)</span>; complete range selected by leaf <code>AT</code> &amp; linear = EA  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Mode</strong></th>
+<th style="text-align: left;"><strong>Segment State</strong></th>
+<th style="text-align: left;"><strong>Check</strong></th>
+<th style="text-align: left;"><strong>Linear Address</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">disabled</td>
+<td style="text-align: left;">m = 0</td>
+<td style="text-align: left;">no segment-window check</td>
+<td style="text-align: left;">linear = EA</td>
+</tr>
+<tr>
+<td style="text-align: left;">translated window</td>
+<td style="text-align: left;">m != 0, b = 0</td>
+<td style="text-align: left;">starting point <span class="arithmatex">\(0 \le \mathrm{EA}&lt;\mathrm{span}\)</span>; complete range selected by leaf <code>AT</code></td>
+<td style="text-align: left;">linear = base + EA</td>
+</tr>
+<tr>
+<td style="text-align: left;">bounds-only window</td>
+<td style="text-align: left;">m != 0, b = 1</td>
+<td style="text-align: left;">starting point <span class="arithmatex">\(\mathrm{base}\le\mathrm{EA}&lt;\mathrm{limit}\)</span>; complete range selected by leaf <code>AT</code></td>
+<td style="text-align: left;">linear = EA</td>
+</tr>
+</tbody>
+</table>
 <h2 id="paging-stage">Paging Stage</h2>
 <p>Paging is enabled by <code>PTCR.PE</code> and translates the linear address produced by segment pre-translation. Before the walk can produce a translation, the linear address must be canonical for the mode selected by <code>PTCR.LA57</code>. A noncanonical address raises <code>PAGE_FAULT</code>. With paging disabled, the memory system uses the linear address directly.</p>
 <p>Each page-table level uses a nine-bit address field to select one of 512 64-bit entries in a 4-KiB table page. For a table-page base address (B) and index (i), the selected entry is at (B + 8i). The walker starts at the physical table page named by <code>PTCR.root_page</code>. Every selected entry above L1 points to the next table page, and the selected L1 entry is the leaf PTE. Its physical frame number is combined with linear-address bits <code>11..0</code> to form the memory-system address. The leaf <code>AT</code> bit determines whether that value is a byte address or a slot address:</p>
@@ -9091,24 +9112,82 @@ bounds-only window &amp; m != 0, b = 1 &amp; starting point <span class="arithma
 <p><strong>Page-Table Entry Formats</strong></p>
 <p>In both rows, <code>S</code>, <code>C</code>, and <code>M</code> abbreviate <code>SW0</code>, <code>CP</code>, and <code>AT</code>; the other labels match the field table.</p>
 <p><strong>Page-Table Entry Fields</strong></p>
-<p>@&gt;</p>
-<p>p0.65in&gt;</p>
-<p>p0.85in&gt;</p>
-<p>p3.85in@</p>
-<p><strong>Field</strong> &amp; <strong>Bits</strong> &amp; <strong>Meaning</strong><br />
-<code>P</code> &amp; <code>0</code> &amp; present<br />
-<code>W</code> &amp; <code>1</code> &amp; writable<br />
-<code>X</code> &amp; <code>2</code> &amp; executable<br />
-<code>U</code> &amp; <code>3</code> &amp; user-domain mapping<br />
-<code>G</code> &amp; <code>4</code> &amp; global translation<br />
-<code>A</code> &amp; <code>5</code> &amp; accessed; may be set on a consumed byte-addressed entry, including a speculative traversal; required one for a slot leaf<br />
-<code>D</code> &amp; <code>6</code> &amp; byte-addressed leaf dirty bit, set exactly when a store or atomic update commits; required one for a slot leaf<br />
-<code>AT</code> &amp; <code>7</code> &amp; 0 byte-addressed leaf; 1 externally acknowledged slot-addressed leaf<br />
-<code>CP</code> &amp; <code>9..8</code> &amp; 0 cacheable; 1 uncacheable; 2 write-through; 3 write-combining<br />
-<code>SW0</code> &amp; <code>10</code> &amp; software-defined and ignored by hardware<br />
-<code>T</code> &amp; <code>11</code> &amp; one for a non-leaf table pointer; zero for an L1 leaf<br />
-<code>PFN</code> &amp; <code>PABITS-1..12</code> &amp; next-table or mapped-page physical frame number<br />
-software &amp; <code>63..PABITS</code> &amp; software-defined and ignored by hardware  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Field</strong></th>
+<th style="text-align: left;"><strong>Bits</strong></th>
+<th style="text-align: left;"><strong>Meaning</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>P</code></td>
+<td style="text-align: left;"><code>0</code></td>
+<td style="text-align: left;">present</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>W</code></td>
+<td style="text-align: left;"><code>1</code></td>
+<td style="text-align: left;">writable</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>X</code></td>
+<td style="text-align: left;"><code>2</code></td>
+<td style="text-align: left;">executable</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>U</code></td>
+<td style="text-align: left;"><code>3</code></td>
+<td style="text-align: left;">user-domain mapping</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>G</code></td>
+<td style="text-align: left;"><code>4</code></td>
+<td style="text-align: left;">global translation</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>A</code></td>
+<td style="text-align: left;"><code>5</code></td>
+<td style="text-align: left;">accessed; may be set on a consumed byte-addressed entry, including a speculative traversal; required one for a slot leaf</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>D</code></td>
+<td style="text-align: left;"><code>6</code></td>
+<td style="text-align: left;">byte-addressed leaf dirty bit, set exactly when a store or atomic update commits; required one for a slot leaf</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>AT</code></td>
+<td style="text-align: left;"><code>7</code></td>
+<td style="text-align: left;">0 byte-addressed leaf; 1 externally acknowledged slot-addressed leaf</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>CP</code></td>
+<td style="text-align: left;"><code>9..8</code></td>
+<td style="text-align: left;">0 cacheable; 1 uncacheable; 2 write-through; 3 write-combining</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>SW0</code></td>
+<td style="text-align: left;"><code>10</code></td>
+<td style="text-align: left;">software-defined and ignored by hardware</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>T</code></td>
+<td style="text-align: left;"><code>11</code></td>
+<td style="text-align: left;">one for a non-leaf table pointer; zero for an L1 leaf</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>PFN</code></td>
+<td style="text-align: left;"><code>PABITS-1..12</code></td>
+<td style="text-align: left;">next-table or mapped-page physical frame number</td>
+</tr>
+<tr>
+<td style="text-align: left;">software</td>
+<td style="text-align: left;"><code>63..PABITS</code></td>
+<td style="text-align: left;">software-defined and ignored by hardware</td>
+</tr>
+</tbody>
+</table>
 <p>At every level above L1, P and T must both be one; D, G, and AT must be zero. At L1, P must be one and T must be zero. W, X, and U permissions are accumulated across the walk. A reserved or malformed consumed entry raises <code>PAGE_FAULT</code>. Supervisor current-domain access to a user mapping faults; the checked user-domain operations select the user-domain permission path explicitly.</p>
 <p>An <code>AT=1</code> leaf must have <code>CP=1</code> (uncacheable), <code>X=0</code>, <code>A=1</code>, and <code>D=1</code>. Any <code>AT=1</code> leaf with inconsistent attributes is a malformed PTE. Because A and D are required to be set in a valid slot leaf, an access never performs a speculative A update or a commit-time D update to that leaf.</p>
 <p>When hardware changes A or D from zero to one, it performs a conditional 64-bit atomic read-modify-write of the complete PTE. The update sets only the required A or D bits and preserves every other bit from the current 64-bit value. It succeeds only if the translation-relevant PTE value still matches the value that was validated. If a concurrent write changes that value first, the walker must re-read and revalidate the entry; it must not write back stale PTE fields.</p>
@@ -9116,42 +9195,132 @@ software &amp; <code>63..PABITS</code> &amp; software-defined and ignored by har
 <h2 id="translation-cache-identity-and-invalidation">Translation-Cache Identity and Invalidation</h2>
 <p>A translation-cache entry is identified by the components below. PTCR <code>root_page</code> is not a hardware tag. While ASCR.AE is one, system software binds one ASID to one PTCR root and translation geometry; it completes the required shootdown before reusing that ASID for a different PTCR image. While AE is zero, the current untagged context is invalidated when PTCR changes.</p>
 <p><strong>Translation-Cache Entry Identity</strong></p>
-<p>@&gt;</p>
-<p>p2.00in&gt;</p>
-<p>X@</p>
-<p><strong>Identity Component</strong> &amp; <strong>Applies To</strong><br />
-<code>linear page</code> &amp; every entry<br />
-<code>LA57 and PABITS_SEL</code> &amp; every entry<br />
-<code>ASID</code> &amp; non-global entry while ASCR.AE is one  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Identity Component</strong></th>
+<th style="text-align: left;"><strong>Applies To</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>linear page</code></td>
+<td style="text-align: left;">every entry</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>LA57 and PABITS_SEL</code></td>
+<td style="text-align: left;">every entry</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>ASID</code></td>
+<td style="text-align: left;">non-global entry while ASCR.AE is one</td>
+</tr>
+</tbody>
+</table>
 <p><strong>Local Translation-Cache Transitions</strong></p>
-<p>@&gt;</p>
-<p>p1.30in&gt;</p>
-<p>p2.25in&gt;</p>
-<p>p1.85in@</p>
-<p><strong>Operation</strong> &amp; <strong>Non-Global Entries</strong> &amp; <strong>Global Entries</strong>  </p>
-<p><code>WRCR PTCR with changed root_page</code> &amp; invalidate all current untagged entries when AE is zero; when AE is one software must invalidate the ASID before rebinding it &amp; preserve only mappings whose complete leaf attributes are identical in every context<br />
-<code>WRCR PTCR with changed LA57 or PABITS_SEL</code> &amp; invalidate entries using the old translation geometry &amp; invalidate entries using the old translation geometry<br />
-<code>WRCR ASCR changing ASID while AE remains one</code> &amp; select the new ASID-tagged entries &amp; preserve<br />
-<code>WRCR ASCR changing AE</code> &amp; invalidate the old untagged context or select the new tagged context as applicable &amp; preserve<br />
-<code>SWPT</code> &amp; install PTCR and invalidate the current untagged context &amp; preserve only identical global mappings<br />
-<code>SWPTA</code> &amp; install PTCR and ASCR and select the new ASID-tagged context &amp; preserve only identical global mappings<br />
-<code>INVPAGE</code> &amp; invalidate the addressed page for the current ASID, or the current untagged context when AE is zero &amp; invalidate the addressed global page<br />
-<code>INVASID</code> &amp; invalidate every entry tagged with the selected ASID &amp; preserve<br />
-<code>INVTLB</code> &amp; invalidate every local entry &amp; invalidate every local entry  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Operation</strong></th>
+<th style="text-align: left;"><strong>Non-Global Entries</strong></th>
+<th style="text-align: left;"><strong>Global Entries</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>WRCR PTCR with changed root_page</code></td>
+<td style="text-align: left;">invalidate all current untagged entries when AE is zero; when AE is one software must invalidate the ASID before rebinding it</td>
+<td style="text-align: left;">preserve only mappings whose complete leaf attributes are identical in every context</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>WRCR PTCR with changed LA57 or PABITS_SEL</code></td>
+<td style="text-align: left;">invalidate entries using the old translation geometry</td>
+<td style="text-align: left;">invalidate entries using the old translation geometry</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>WRCR ASCR changing ASID while AE remains one</code></td>
+<td style="text-align: left;">select the new ASID-tagged entries</td>
+<td style="text-align: left;">preserve</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>WRCR ASCR changing AE</code></td>
+<td style="text-align: left;">invalidate the old untagged context or select the new tagged context as applicable</td>
+<td style="text-align: left;">preserve</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>SWPT</code></td>
+<td style="text-align: left;">install PTCR and invalidate the current untagged context</td>
+<td style="text-align: left;">preserve only identical global mappings</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>SWPTA</code></td>
+<td style="text-align: left;">install PTCR and ASCR and select the new ASID-tagged context</td>
+<td style="text-align: left;">preserve only identical global mappings</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>INVPAGE</code></td>
+<td style="text-align: left;">invalidate the addressed page for the current ASID, or the current untagged context when AE is zero</td>
+<td style="text-align: left;">invalidate the addressed global page</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>INVASID</code></td>
+<td style="text-align: left;">invalidate every entry tagged with the selected ASID</td>
+<td style="text-align: left;">preserve</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>INVTLB</code></td>
+<td style="text-align: left;">invalidate every local entry</td>
+<td style="text-align: left;">invalidate every local entry</td>
+</tr>
+</tbody>
+</table>
 <p><strong>Remote Translation Shootdown Protocol</strong></p>
-<p>@&gt;</p>
-<p>p0.45in&gt;</p>
-<p>X@</p>
-<p><strong>Step</strong> &amp; <strong>Required Action</strong><br />
-1 &amp; PTE store<br />
-2 &amp; AFENCE<br />
-3 &amp; local invalidate<br />
-4 &amp; release shootdown request<br />
-5 &amp; target acquire and local invalidate<br />
-6 &amp; target release acknowledgement<br />
-7 &amp; updater acquire of every acknowledgement<br />
-8 &amp; AFENCE<br />
-9 &amp; reclaim or reuse  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Step</strong></th>
+<th style="text-align: left;"><strong>Required Action</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">PTE store</td>
+</tr>
+<tr>
+<td style="text-align: left;">2</td>
+<td style="text-align: left;">AFENCE</td>
+</tr>
+<tr>
+<td style="text-align: left;">3</td>
+<td style="text-align: left;">local invalidate</td>
+</tr>
+<tr>
+<td style="text-align: left;">4</td>
+<td style="text-align: left;">release shootdown request</td>
+</tr>
+<tr>
+<td style="text-align: left;">5</td>
+<td style="text-align: left;">target acquire and local invalidate</td>
+</tr>
+<tr>
+<td style="text-align: left;">6</td>
+<td style="text-align: left;">target release acknowledgement</td>
+</tr>
+<tr>
+<td style="text-align: left;">7</td>
+<td style="text-align: left;">updater acquire of every acknowledgement</td>
+</tr>
+<tr>
+<td style="text-align: left;">8</td>
+<td style="text-align: left;">AFENCE</td>
+</tr>
+<tr>
+<td style="text-align: left;">9</td>
+<td style="text-align: left;">reclaim or reuse</td>
+</tr>
+</tbody>
+</table>
 <p>A global leaf ignores ASID matching. Its PFN, accumulated permissions, <code>CP</code>, and <code>AT</code> attributes must be identical in every context in which that global entry can be used. Changing any of those attributes requires invalidating the global entry on every target logical processor.</p>
 <p>The page-table walker reads page tables as CP0 coherent normal memory. Each 64-bit PTE read observes one coherence version; it does not combine fields from different writes. An in-progress walk may complete with the old or new coherence version, so the updater does not reclaim the old mapping until the complete shootdown protocol finishes. The local invalidation instructions affect only the executing logical processor; the request and acknowledgement steps are ordinary shared-memory communication ordered by the stated release, acquire, and AFENCE operations.</p>
 <h2 id="leaf-address-types-and-access-ranges">Leaf Address Types and Access Ranges</h2>

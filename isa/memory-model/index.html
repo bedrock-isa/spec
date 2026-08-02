@@ -9076,17 +9076,47 @@
 <h2 id="pte-cache-policies">PTE Cache Policies</h2>
 <p>The two-bit PTE <code>CP</code> field selects a cache policy for byte-addressed normal memory. Every policy uses the same coherence order, multi-copy atomicity, tearing rules, atomic operations, and fence semantics defined in this chapter. The policy changes allocation, retained cache state, and store combination; it does not create a separate value or ordering domain.</p>
 <p><strong>Normal-Memory Cache Policies</strong></p>
-<p>@&gt;</p>
-<p>p0.35in&gt;</p>
-<p>p1.15in&gt;</p>
-<p>p1.30in&gt;</p>
-<p>p1.45in&gt;</p>
-<p>p1.15in@</p>
-<p><strong>CP</strong> &amp; <strong>Policy</strong> &amp; <strong>Reads and Fetches</strong> &amp; <strong>Stores</strong> &amp; <strong>Retained State</strong>  </p>
-<p><code>0</code> &amp; <code>CACHEABLE_WRITE_BACK</code> &amp; may allocate a coherent cache copy &amp; may retire into a coherent dirty cache copy &amp; clean or dirty coherent cache copies<br />
-<code>1</code> &amp; <code>COHERENT_UNCACHEABLE</code> &amp; enter coherence without retaining a cache copy &amp; enter coherence before retirement without retaining a dirty copy &amp; no retained cache copy<br />
-<code>2</code> &amp; <code>COHERENT_WRITE_THROUGH</code> &amp; may allocate a coherent clean cache copy &amp; enter coherence before retirement without retaining a dirty copy &amp; clean coherent cache copies only<br />
-<code>3</code> &amp; <code>COHERENT_WRITE_COMBINING</code> &amp; enter coherence without retaining a cache copy &amp; may combine adjacent byte writes before entering coherence &amp; pending combined stores, but no retained cache copy  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>CP</strong></th>
+<th style="text-align: left;"><strong>Policy</strong></th>
+<th style="text-align: left;"><strong>Reads and Fetches</strong></th>
+<th style="text-align: left;"><strong>Stores</strong></th>
+<th style="text-align: left;"><strong>Retained State</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>0</code></td>
+<td style="text-align: left;"><code>CACHEABLE_WRITE_BACK</code></td>
+<td style="text-align: left;">may allocate a coherent cache copy</td>
+<td style="text-align: left;">may retire into a coherent dirty cache copy</td>
+<td style="text-align: left;">clean or dirty coherent cache copies</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>1</code></td>
+<td style="text-align: left;"><code>COHERENT_UNCACHEABLE</code></td>
+<td style="text-align: left;">enter coherence without retaining a cache copy</td>
+<td style="text-align: left;">enter coherence before retirement without retaining a dirty copy</td>
+<td style="text-align: left;">no retained cache copy</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>2</code></td>
+<td style="text-align: left;"><code>COHERENT_WRITE_THROUGH</code></td>
+<td style="text-align: left;">may allocate a coherent clean cache copy</td>
+<td style="text-align: left;">enter coherence before retirement without retaining a dirty copy</td>
+<td style="text-align: left;">clean coherent cache copies only</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>3</code></td>
+<td style="text-align: left;"><code>COHERENT_WRITE_COMBINING</code></td>
+<td style="text-align: left;">enter coherence without retaining a cache copy</td>
+<td style="text-align: left;">may combine adjacent byte writes before entering coherence</td>
+<td style="text-align: left;">pending combined stores, but no retained cache copy</td>
+</tr>
+</tbody>
+</table>
 <p>Aliases of one physical byte with different <code>CP</code> values participate in the same coherence order. A load, instruction fetch, or atomic operation through any alias observes the same physical value subject to ordinary ordering, and atomic operations serialize at the physical location. CP2 stores enter coherence before retirement and leave no dirty cache copy. CP3 combined stores preserve the byte writes and their per-location program order.</p>
 <p><code>WFENCE</code> and <code>AFENCE</code> complete earlier pending CP3 stores. WRBKDCACHE, FLSHDCACHE, and SYNCCACHE complete pending CP3 stores for their selected block before performing their named cache action. The data-write, cache-maintenance, rendezvous, and local instruction-cache sequence below applies without regard to the <code>CP</code> value used by the modified code mapping.</p>
 <h2 id="slot-addressed-transactions">Slot-Addressed Transactions</h2>
@@ -9106,31 +9136,81 @@
 <p>Natural alignment equals the operand width in bytes: B is one byte and may use any byte address; W, L, and Q are two, four, and eight bytes and require addresses divisible by two, four, and eight respectively.</p>
 <h2 id="atomic-memory-order-selectors">Atomic Memory-Order Selectors</h2>
 <p><strong>Atomic Memory-Order Selectors</strong></p>
-<p>@&gt;</p>
-<p>p0.95in&gt;</p>
-<p>p0.45in&gt;</p>
-<p>X@</p>
-<p><strong>Selector</strong> &amp; <strong>Code</strong> &amp; <strong>Architectural Ordering Effect</strong><br />
-<code>RELAXED</code> &amp; <code>0</code> &amp; Atomicity only. No ordering is imposed on unrelated memory operations.<br />
-<code>ACQUIRE</code> &amp; <code>1</code> &amp; Later memory operations by the same hardware thread are ordered after the atomic operation.<br />
-<code>RELEASE</code> &amp; <code>2</code> &amp; Earlier memory operations by the same hardware thread are ordered before the atomic operation.<br />
-<code>ACQREL</code> &amp; <code>3</code> &amp; Applies both acquire and release ordering.<br />
-<code>SEQCST</code> &amp; <code>4</code> &amp; Applies acquire-release ordering and participates in the single global sequentially consistent order.  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Selector</strong></th>
+<th style="text-align: left;"><strong>Code</strong></th>
+<th style="text-align: left;"><strong>Architectural Ordering Effect</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>RELAXED</code></td>
+<td style="text-align: left;"><code>0</code></td>
+<td style="text-align: left;">Atomicity only. No ordering is imposed on unrelated memory operations.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>ACQUIRE</code></td>
+<td style="text-align: left;"><code>1</code></td>
+<td style="text-align: left;">Later memory operations by the same hardware thread are ordered after the atomic operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>RELEASE</code></td>
+<td style="text-align: left;"><code>2</code></td>
+<td style="text-align: left;">Earlier memory operations by the same hardware thread are ordered before the atomic operation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>ACQREL</code></td>
+<td style="text-align: left;"><code>3</code></td>
+<td style="text-align: left;">Applies both acquire and release ordering.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>SEQCST</code></td>
+<td style="text-align: left;"><code>4</code></td>
+<td style="text-align: left;">Applies acquire-release ordering and participates in the single global sequentially consistent order.</td>
+</tr>
+</tbody>
+</table>
 <p><code>CMPXCHG</code>, <code>FETCHADD</code>, <code>FETCHSUB</code>, <code>FETCHAND</code>, <code>FETCHOR</code>, and <code>FETCHXOR</code> are the atomic read-modify-write instructions. Each performs its memory read, successful memory write, and architectural register result as one indivisible operation in the coherence order of the addressed physical location.</p>
 <p>One encoded selector governs the complete <code>CMPXCHG</code> operation on both success and failure. A failed <code>CMPXCHG</code> contributes a read event. Its acquire component orders later memory operations after that read, and its release component orders earlier memory operations before that read. On success, the write event carries the selected release effect to observers of that write; on failure, the read is the operation’s memory event. A failed <code>CMPXCHG</code> contributes no write and therefore creates no release sequence. A failed <code>CMPXCHG.SEQCST</code> additionally participates in the global sequentially consistent order as an SC load.</p>
 <h2 id="fence-instructions">Fence Instructions</h2>
 <p>The table gives every ordered-before pair imposed by a fence on memory operations issued by the same hardware thread. An entry marked ordered places every earlier operation of the row kind before every later operation of the column kind.</p>
 <p><strong>Fence Ordered-Before Pairs</strong></p>
-<p>@&gt;</p>
-<p>p0.85in&gt;</p>
-<p>p1.10in&gt;</p>
-<p>p1.10in&gt;</p>
-<p>p1.10in&gt;</p>
-<p>p1.10in@</p>
-<p><strong>Fence</strong> &amp; <strong>read to read</strong> &amp; <strong>read to write</strong> &amp; <strong>write to read</strong> &amp; <strong>write to write</strong><br />
-<code>RFENCE</code> &amp; ordered &amp; baseline &amp; baseline &amp; baseline<br />
-<code>WFENCE</code> &amp; baseline &amp; baseline &amp; baseline &amp; ordered<br />
-<code>AFENCE</code> &amp; ordered &amp; ordered &amp; ordered &amp; ordered  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Fence</strong></th>
+<th style="text-align: left;"><strong>read to read</strong></th>
+<th style="text-align: left;"><strong>read to write</strong></th>
+<th style="text-align: left;"><strong>write to read</strong></th>
+<th style="text-align: left;"><strong>write to write</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>RFENCE</code></td>
+<td style="text-align: left;">ordered</td>
+<td style="text-align: left;">baseline</td>
+<td style="text-align: left;">baseline</td>
+<td style="text-align: left;">baseline</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>WFENCE</code></td>
+<td style="text-align: left;">baseline</td>
+<td style="text-align: left;">baseline</td>
+<td style="text-align: left;">baseline</td>
+<td style="text-align: left;">ordered</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>AFENCE</code></td>
+<td style="text-align: left;">ordered</td>
+<td style="text-align: left;">ordered</td>
+<td style="text-align: left;">ordered</td>
+<td style="text-align: left;">ordered</td>
+</tr>
+</tbody>
+</table>
 <p>A baseline entry retains the weak-ordering rules of this chapter. <code>AFENCE</code> is cumulative: memory effects observed before the fence are propagated before effects ordered after it, including through another hardware thread. The linked instruction entries define the matching completion behavior.</p>
 <h2 id="global-sequentially-consistent-order">Global Sequentially Consistent Order</h2>
 <p>All <code>AFENCE</code> operations and all <code>SEQCST</code> atomic operations participate in one global total order that is consistent with each hardware thread’s ordered-before relation and with per-location coherence. A failed <code>CMPXCHG.SEQCST</code> participates in that order as an SC load even though it performs no write.</p>

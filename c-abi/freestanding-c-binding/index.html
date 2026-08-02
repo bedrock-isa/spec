@@ -9033,31 +9033,141 @@
 <p>The tables below are the complete baseline helper set. A conforming compiler shall not make an implicit reference to another compiler-rt or libgcc helper unless a separate target extension defines that symbol and its ABI. A runtime may export additional symbols, but their presence does not enlarge the baseline contract.</p>
 <p>In the signature column, <code>i128</code> means <code>__int128</code>, <code>u128</code> means <code>unsigned __int128</code>, <code>c32</code> means <code>float _Complex</code>, and <code>c64</code> means <code>double _Complex</code>. The signatures use ordinary C parameter and result classification; a shift count has type <code>int</code>.</p>
 <p><strong><code>__int128</code> Arithmetic and Shift Helpers</strong></p>
-<p>@p1.55inp1.55inp2.45in@ <strong>Operation</strong> &amp; <strong>Helper</strong> &amp; <strong>Signature</strong><br />
-Multiply &amp; <code>__multi3</code> &amp; <code>i128(i128, i128)</code><br />
-Signed divide &amp; <code>__divti3</code> &amp; <code>i128(i128, i128)</code><br />
-Unsigned divide &amp; <code>__udivti3</code> &amp; <code>u128(u128, u128)</code><br />
-Signed remainder &amp; <code>__modti3</code> &amp; <code>i128(i128, i128)</code><br />
-Unsigned remainder &amp; <code>__umodti3</code> &amp; <code>u128(u128, u128)</code><br />
-Shift left &amp; <code>__ashlti3</code> &amp; <code>i128(i128, int)</code><br />
-Arithmetic shift right &amp; <code>__ashrti3</code> &amp; <code>i128(i128, int)</code><br />
-Logical shift right &amp; <code>__lshrti3</code> &amp; <code>u128(u128, int)</code>  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Operation</strong></th>
+<th style="text-align: left;"><strong>Helper</strong></th>
+<th style="text-align: left;"><strong>Signature</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">Multiply</td>
+<td style="text-align: left;"><code>__multi3</code></td>
+<td style="text-align: left;"><code>i128(i128, i128)</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Signed divide</td>
+<td style="text-align: left;"><code>__divti3</code></td>
+<td style="text-align: left;"><code>i128(i128, i128)</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Unsigned divide</td>
+<td style="text-align: left;"><code>__udivti3</code></td>
+<td style="text-align: left;"><code>u128(u128, u128)</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Signed remainder</td>
+<td style="text-align: left;"><code>__modti3</code></td>
+<td style="text-align: left;"><code>i128(i128, i128)</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Unsigned remainder</td>
+<td style="text-align: left;"><code>__umodti3</code></td>
+<td style="text-align: left;"><code>u128(u128, u128)</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Shift left</td>
+<td style="text-align: left;"><code>__ashlti3</code></td>
+<td style="text-align: left;"><code>i128(i128, int)</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Arithmetic shift right</td>
+<td style="text-align: left;"><code>__ashrti3</code></td>
+<td style="text-align: left;"><code>i128(i128, int)</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Logical shift right</td>
+<td style="text-align: left;"><code>__lshrti3</code></td>
+<td style="text-align: left;"><code>u128(u128, int)</code></td>
+</tr>
+</tbody>
+</table>
 <p><strong><code>__int128</code> and Floating-Point Conversion Helpers</strong></p>
-<p>@p1.55inp1.55inp2.45in@ <strong>Conversion</strong> &amp; <strong>Helper</strong> &amp; <strong>Signature</strong><br />
-Signed to binary32 &amp; <code>__floattisf</code> &amp; <code>float(i128)</code><br />
-Signed to binary64 &amp; <code>__floattidf</code> &amp; <code>double(i128)</code><br />
-Unsigned to binary32 &amp; <code>__floatuntisf</code> &amp; <code>float(u128)</code><br />
-Unsigned to binary64 &amp; <code>__floatuntidf</code> &amp; <code>double(u128)</code><br />
-Binary32 to signed &amp; <code>__fixsfti</code> &amp; <code>i128(float)</code><br />
-Binary64 to signed &amp; <code>__fixdfti</code> &amp; <code>i128(double)</code><br />
-Binary32 to unsigned &amp; <code>__fixunssfti</code> &amp; <code>u128(float)</code><br />
-Binary64 to unsigned &amp; <code>__fixunsdfti</code> &amp; <code>u128(double)</code>  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Conversion</strong></th>
+<th style="text-align: left;"><strong>Helper</strong></th>
+<th style="text-align: left;"><strong>Signature</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">Signed to binary32</td>
+<td style="text-align: left;"><code>__floattisf</code></td>
+<td style="text-align: left;"><code>float(i128)</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Signed to binary64</td>
+<td style="text-align: left;"><code>__floattidf</code></td>
+<td style="text-align: left;"><code>double(i128)</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Unsigned to binary32</td>
+<td style="text-align: left;"><code>__floatuntisf</code></td>
+<td style="text-align: left;"><code>float(u128)</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Unsigned to binary64</td>
+<td style="text-align: left;"><code>__floatuntidf</code></td>
+<td style="text-align: left;"><code>double(u128)</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Binary32 to signed</td>
+<td style="text-align: left;"><code>__fixsfti</code></td>
+<td style="text-align: left;"><code>i128(float)</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Binary64 to signed</td>
+<td style="text-align: left;"><code>__fixdfti</code></td>
+<td style="text-align: left;"><code>i128(double)</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Binary32 to unsigned</td>
+<td style="text-align: left;"><code>__fixunssfti</code></td>
+<td style="text-align: left;"><code>u128(float)</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Binary64 to unsigned</td>
+<td style="text-align: left;"><code>__fixunsdfti</code></td>
+<td style="text-align: left;"><code>u128(double)</code></td>
+</tr>
+</tbody>
+</table>
 <p><strong>Complex Arithmetic Helpers</strong></p>
-<p>@p1.55inp1.55inp2.45in@ <strong>Operation</strong> &amp; <strong>Helper</strong> &amp; <strong>Signature</strong><br />
-Binary32 multiply &amp; <code>__mulsc3</code> &amp; <code>c32(float, float, float, float)</code><br />
-Binary32 divide &amp; <code>__divsc3</code> &amp; <code>c32(float, float, float, float)</code><br />
-Binary64 multiply &amp; <code>__muldc3</code> &amp; <code>c64(double, double, double, double)</code><br />
-Binary64 divide &amp; <code>__divdc3</code> &amp; <code>c64(double, double, double, double)</code>  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Operation</strong></th>
+<th style="text-align: left;"><strong>Helper</strong></th>
+<th style="text-align: left;"><strong>Signature</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">Binary32 multiply</td>
+<td style="text-align: left;"><code>__mulsc3</code></td>
+<td style="text-align: left;"><code>c32(float, float, float, float)</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Binary32 divide</td>
+<td style="text-align: left;"><code>__divsc3</code></td>
+<td style="text-align: left;"><code>c32(float, float, float, float)</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Binary64 multiply</td>
+<td style="text-align: left;"><code>__muldc3</code></td>
+<td style="text-align: left;"><code>c64(double, double, double, double)</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Binary64 divide</td>
+<td style="text-align: left;"><code>__divdc3</code></td>
+<td style="text-align: left;"><code>c64(double, double, double, double)</code></td>
+</tr>
+</tbody>
+</table>
 <p>The four scalar arguments to a complex helper are the real and imaginary parts of its two operands, in operand order. Bedrock <code>long double</code> has the binary64 representation and call classification, so conversions involving <code>long double</code> use the corresponding <code>df</code> helper and <code>long double _Complex</code> multiplication or division uses the corresponding <code>dc3</code> helper. The baseline defines no <code>xf</code> or <code>tf</code> helper symbols.</p>
 <h2 id="pointers-and-external-objects">Pointers and External Objects</h2>
 <p>A C function pointer is a 64-bit pre-segment near-call address. Code and data pointers have the same size and alignment, but remain distinct C type categories; neither representation creates an interchangeable code/data address space.</p>
@@ -9066,13 +9176,36 @@ Binary64 divide &amp; <code>__divdc3</code> &amp; <code>c64(double, double, doub
 <h2 id="calls-relocations-and-relaxation">Calls, Relocations, and Relaxation</h2>
 <p>The relocation records the linkage path selected for a C call:</p>
 <p><strong>C Call Relocation Quick Reference</strong></p>
-<p>@p2.15inp3.25in@</p>
-<p><strong>Call form</strong> &amp; <strong>Relocation</strong><br />
-Direct C call &amp; <code>R_BEDROCK_CALL32S</code><br />
-External call through the PLT &amp; <code>R_BEDROCK_PLT32S</code><br />
-Far symbol address word &amp; <code>R_BEDROCK_FAR_ADDR64</code><br />
-Far symbol segment word &amp; <code>R_BEDROCK_FAR_SEGMENT64</code><br />
-External far call slot &amp; <code>R_BEDROCK_FAR_JUMP_SLOT</code>  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Call form</strong></th>
+<th style="text-align: left;"><strong>Relocation</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">Direct C call</td>
+<td style="text-align: left;"><code>R_BEDROCK_CALL32S</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">External call through the PLT</td>
+<td style="text-align: left;"><code>R_BEDROCK_PLT32S</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Far symbol address word</td>
+<td style="text-align: left;"><code>R_BEDROCK_FAR_ADDR64</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Far symbol segment word</td>
+<td style="text-align: left;"><code>R_BEDROCK_FAR_SEGMENT64</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">External far call slot</td>
+<td style="text-align: left;"><code>R_BEDROCK_FAR_JUMP_SLOT</code></td>
+</tr>
+</tbody>
+</table>
 <p>The assembler and linker may relax an instruction sequence, but relaxation must preserve the C call interface, symbol identity, and observable control transfer defined by the original relocation. Relaxation is not a distinct C calling convention.</p>
 <p>For a direct far call, the caller materializes <code>SEG(S)</code> and <code>FARADDR(S)</code> and transfers with <code>LCALL</code>. An indirect call loads both words from the function pointer; a segment image already held in a GS register is copied to the Rn operand required by <code>LCALL</code>. An external dynamic call loads the eagerly resolved, immutable 16-byte entry from <code>.got.far</code>; the far model has no PLT.</p>
 <h2 id="nearfar-abi-veneers">Near/Far ABI Veneers</h2>

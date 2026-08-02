@@ -9020,18 +9020,54 @@
 <h2 id="implicit-stack-operations">Implicit Stack Operations</h2>
 <p>Ordinary implicit stack operations capture the current SS and SP before their first stack access. Every stack slot is 64 bits and is addressed through the captured SS. The ranges below are expressed in terms of the captured <code>old_sp</code>; the applicable segment, translation, and complete-range checks finish before the operation commits.</p>
 <p><strong>Ordinary Implicit Stack Operations</strong></p>
-<p>@&gt;</p>
-<p>p0.92in&gt;</p>
-<p>p1.18in&gt;</p>
-<p>p0.78in&gt;</p>
-<p>p2.72in@</p>
-<p><strong>Operation</strong> &amp; <strong>Stack range</strong> &amp; <strong>Committed SP</strong> &amp; <strong>Slot layout or value order</strong><br />
-<code>PUSH</code>, <code>CALL</code> &amp; <span class="arithmatex">\([\texttt{old\_sp}-8,\texttt{old\_sp})\)</span> &amp; <code>old_sp</code>-8 &amp; one source value or the following-instruction return PC at <code>old_sp</code>-8<br />
-<code>POP</code>, <code>RET</code> &amp; <span class="arithmatex">\([\texttt{old\_sp},\texttt{old\_sp}+8)\)</span> &amp; <code>old_sp</code>+8 &amp; one destination value or return PC read at <code>old_sp</code><br />
-<code>PUSHP</code>, <code>FPUSHP</code> &amp; <span class="arithmatex">\([\texttt{old\_sp}-16,\texttt{old\_sp})\)</span> &amp; <code>old_sp</code>-16 &amp; listed pair’s second register at <code>old_sp</code>-16 and first register at <code>old_sp</code>-8<br />
-<code>POPP</code>, <code>FPOPP</code> &amp; <span class="arithmatex">\([\texttt{old\_sp},\texttt{old\_sp}+16)\)</span> &amp; <code>old_sp</code>+16 &amp; listed pair’s second register from <code>old_sp</code>, then first register from <code>old_sp</code>+8<br />
-<code>LCALL</code> &amp; <span class="arithmatex">\([\texttt{old\_sp}-16,\texttt{old\_sp})\)</span> &amp; <code>old_sp</code>-16 &amp; return PC at <code>old_sp</code>-16 and return CS image at <code>old_sp</code>-8<br />
-<code>LRET</code> &amp; <span class="arithmatex">\([\texttt{old\_sp},\texttt{old\_sp}+16)\)</span> &amp; <code>old_sp</code>+16 &amp; return PC at <code>old_sp</code> and return CS image at <code>old_sp</code>+8  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Operation</strong></th>
+<th style="text-align: left;"><strong>Stack range</strong></th>
+<th style="text-align: left;"><strong>Committed SP</strong></th>
+<th style="text-align: left;"><strong>Slot layout or value order</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>PUSH</code>, <code>CALL</code></td>
+<td style="text-align: left;"><span class="arithmatex">\([\texttt{old\_sp}-8,\texttt{old\_sp})\)</span></td>
+<td style="text-align: left;"><code>old_sp</code>-8</td>
+<td style="text-align: left;">one source value or the following-instruction return PC at <code>old_sp</code>-8</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>POP</code>, <code>RET</code></td>
+<td style="text-align: left;"><span class="arithmatex">\([\texttt{old\_sp},\texttt{old\_sp}+8)\)</span></td>
+<td style="text-align: left;"><code>old_sp</code>+8</td>
+<td style="text-align: left;">one destination value or return PC read at <code>old_sp</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>PUSHP</code>, <code>FPUSHP</code></td>
+<td style="text-align: left;"><span class="arithmatex">\([\texttt{old\_sp}-16,\texttt{old\_sp})\)</span></td>
+<td style="text-align: left;"><code>old_sp</code>-16</td>
+<td style="text-align: left;">listed pair’s second register at <code>old_sp</code>-16 and first register at <code>old_sp</code>-8</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>POPP</code>, <code>FPOPP</code></td>
+<td style="text-align: left;"><span class="arithmatex">\([\texttt{old\_sp},\texttt{old\_sp}+16)\)</span></td>
+<td style="text-align: left;"><code>old_sp</code>+16</td>
+<td style="text-align: left;">listed pair’s second register from <code>old_sp</code>, then first register from <code>old_sp</code>+8</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>LCALL</code></td>
+<td style="text-align: left;"><span class="arithmatex">\([\texttt{old\_sp}-16,\texttt{old\_sp})\)</span></td>
+<td style="text-align: left;"><code>old_sp</code>-16</td>
+<td style="text-align: left;">return PC at <code>old_sp</code>-16 and return CS image at <code>old_sp</code>-8</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>LRET</code></td>
+<td style="text-align: left;"><span class="arithmatex">\([\texttt{old\_sp},\texttt{old\_sp}+16)\)</span></td>
+<td style="text-align: left;"><code>old_sp</code>+16</td>
+<td style="text-align: left;">return PC at <code>old_sp</code> and return CS image at <code>old_sp</code>+8</td>
+</tr>
+</tbody>
+</table>
 <p>The complete range and all source values are established before a push operation changes memory or SP. A pop operation reads its complete range and completes any applicable destination validation before changing a destination or SP. A successful operation commits all listed stack and register effects together; a preceding fault exposes none of them.</p>
 <p>Architectural event entry and ERET use the event-frame layout in the Architectural Event Processing Model. SYSCALL and SYSRET keep their continuation in the user-return control-register bank described by the Privileged Programming Model.</p>
 <h2 id="operand-evaluation-and-ea-defaults">Operand Evaluation and EA Defaults</h2>

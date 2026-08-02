@@ -8985,13 +8985,40 @@
 <h2 id="alias-identity">Alias Identity</h2>
 <p>Compiler regions with no cross-segment operation may partition near and segmented memory into distinct alias domains. A cross-segment operation reconciles the affected domains with a cross-segment alias barrier. Two accesses alias when their canonical pre-segment byte ranges overlap and ordinary C effective-type rules permit aliasing. Segment metadata may be unknown at compile time, and visible far operations require no source annotation.</p>
 <p><strong>Cross-Segment Alias-Barrier Triggers</strong></p>
-<p>@p1.55inp4.0in@ <strong>Trigger</strong> &amp; <strong>Compiler memory effect</strong><br />
-far data load &amp; reconcile potentially aliased state before the read<br />
-far data store &amp; reconcile before the write and invalidate affected cached values afterward<br />
-far data RMW &amp; apply both the read and write effects<br />
-direct far call &amp; materialize dirty escaped state before the call and invalidate cached escaped state afterward<br />
-indirect far call &amp; same escaped-memory effect as a direct far call<br />
-hidden access &amp; inline assembly, intrinsic, or external code declared with <code>cross_segment_access</code>  </p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Trigger</strong></th>
+<th style="text-align: left;"><strong>Compiler memory effect</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">far data load</td>
+<td style="text-align: left;">reconcile potentially aliased state before the read</td>
+</tr>
+<tr>
+<td style="text-align: left;">far data store</td>
+<td style="text-align: left;">reconcile before the write and invalidate affected cached values afterward</td>
+</tr>
+<tr>
+<td style="text-align: left;">far data RMW</td>
+<td style="text-align: left;">apply both the read and write effects</td>
+</tr>
+<tr>
+<td style="text-align: left;">direct far call</td>
+<td style="text-align: left;">materialize dirty escaped state before the call and invalidate cached escaped state afterward</td>
+</tr>
+<tr>
+<td style="text-align: left;">indirect far call</td>
+<td style="text-align: left;">same escaped-memory effect as a direct far call</td>
+</tr>
+<tr>
+<td style="text-align: left;">hidden access</td>
+<td style="text-align: left;">inline assembly, intrinsic, or external code declared with <code>cross_segment_access</code></td>
+</tr>
+</tbody>
+</table>
 <p>Pointer construction, copying, arithmetic, conversion, and comparison are not triggers. Before a triggering access, dirty potentially aliased escaped state must be materialized. After a write, RMW, or far call, potentially aliased cached values must be invalidated; lazy reload is permitted. Objects proven not to overlap need no spill or invalidation. Adjacent barriers may be coalesced only when observable C behavior is unchanged.</p>
 <p>A function containing a trigger acquires the inferred <code>__attribute__((cross_segment_access))</code> property. Explicit use declares a hidden effect. The property is not part of the function type and does not change calling convention or symbol identity. Its memory summary survives inlining and LTO. Contradictory <code>readnone</code>, <code>const</code>, <code>pure</code>, or equivalent annotations are rejected.</p>
 <p>Strict aliasing, <code>restrict</code>, volatile, atomic-object identity, and data races are evaluated using canonical address ranges. Different bounds contexts may designate the same atomic object. The alias barrier is not a hardware memory fence.</p>
