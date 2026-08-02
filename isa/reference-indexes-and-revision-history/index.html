@@ -1,0 +1,9923 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Generated reference documentation for the Bedrock architecture and its ABI and C interfaces.">
+      
+      
+      
+      
+        <link rel="prev" href="../instructions/ftwotoxa/">
+      
+      
+        <link rel="next" href="../../elf-abi/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Reference Indexes and Revision History - Bedrock Architecture</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#reference-indexes-and-revision-history" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Bedrock Architecture" class="md-header__button md-logo" aria-label="Bedrock Architecture" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Bedrock Architecture
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Reference Indexes and Revision History
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Bedrock Architecture" class="md-nav__button md-logo" aria-label="Bedrock Architecture" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Bedrock Architecture
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bedrock Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Programmer's Reference Manual
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Programmer's Reference Manual
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_1" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Programmer's Reference Manual
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2_1" id="__nav_2_1_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_1_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Programmer's Reference Manual
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architectural-foundations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architectural Foundations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../terminology-and-compatibility/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Terminology and Compatibility
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../conformance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Conformance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../programming-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Programming Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../data-formats/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Formats
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../encoding-addressing-and-execution/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Encoding, Addressing, and Execution
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instruction-encoding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Instruction Encoding
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../effective-addressing-modes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Effective Addressing Modes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../memory-address-translation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Memory Address Translation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instruction-execution-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Instruction Execution Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../flags-and-condition-codes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Flags and Condition Codes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../memory-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Memory Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../streaming-execution-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Streaming Execution Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../system-programming/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    System Programming
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../privileged-execution-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Privileged Execution Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architectural-event-processing-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architectural Event Processing Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cpuid-feature-discovery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CPUID Feature Discovery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../processor-state-save-and-restore/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Processor-State Save and Restore
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instruction-set-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Instruction Set Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_1_22" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../instructions/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Instructions
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2_1_22" id="__nav_2_1_22_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_1_22_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_1_22">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Instructions
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/reading-an-instruction-description/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reading an Instruction Description
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/base/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    General Instructions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/abs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ABS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/adc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/add/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/afence/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AFENCE
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/and/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AND
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/bchg/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BCHG
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/bclr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BCLR
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/bkpt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BKPT
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/bndsii/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BNDSII
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/bndsix/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BNDSIX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/bndsxi/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BNDSXI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/bndsxx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BNDSXX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/bnduii/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BNDUII
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/bnduix/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BNDUIX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/bnduxi/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BNDUXI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/bnduxx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BNDUXX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/bset/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BSET
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/btest/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BTEST
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/call/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CALL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/callcc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CALLcc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/clmul/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLMUL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/clmulh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLMULH
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/clr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLR
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/clrf/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLRF
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/cls/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/clz/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLZ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/cmp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CMP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/cmpjcc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CMPJcc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/cmpxchg/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CMPXCHG
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/cpuid/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CPUID
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/cts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CTS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/ctz/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CTZ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/dec/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DEC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/decf/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DECF
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/divmods/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIVMODS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/divmodu/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIVMODU
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/divs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIVS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/divu/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIVU
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/djcc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DJcc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/ijcc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IJcc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/extract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    EXTRACT
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/extsl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    EXTSL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/extsq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    EXTSQ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/extsw/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    EXTSW
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/extzl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    EXTZL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/extzq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    EXTZQ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/extzw/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    EXTZW
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fetchadd/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FETCHADD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fetchand/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FETCHAND
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fetchor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FETCHOR
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fetchsub/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FETCHSUB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fetchxor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FETCHXOR
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/flshdcache/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FLSHDCACHE
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/halt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HALT
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/illegal/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ILLEGAL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/inc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    INC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/incf/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    INCF
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/invasid/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    INVASID
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/invdcache/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    INVDCACHE
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/invicache/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    INVICACHE
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/invpage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    INVPAGE
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/invtlb/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    INVTLB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/eret/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ERET
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/jmp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JMP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/jcc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Jcc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/lcall/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    LCALL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/lea/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    LEA
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/ljmp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    LJMP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/lret/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    LRET
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/maxs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MAXS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/maxu/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MAXU
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/mins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MINS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/minu/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MINU
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/mods/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MODS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/modu/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MODU
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/mov/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MOV
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/movcc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MOVcc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/movcu/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MOVCU
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/movnt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MOVNT
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/movuc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MOVUC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/movuu/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MOVUU
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/mul/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MUL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/mulhs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MULHS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/mulhsu/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MULHSU
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/mulhu/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MULHU
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/neg/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NEG
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/nop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NOP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/not/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NOT
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/or/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    OR
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/parity/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PARITY
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/pop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    POP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/popcnt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    POPCNT
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/popp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    POPP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/prefetch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PREFETCH
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/prefetchnt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PREFETCHNT
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/ptquery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PTQUERY
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/push/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PUSH
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/pushp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PUSHP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/rdcr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RDCR
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/rdflags/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RDFLAGS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/rdpmc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RDPMC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/rdseg/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RDSEG
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/rdstatus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RDSTATUS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/repg/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    REPG
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/repcc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    REPcc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/reset/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RESET
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/restore/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RESTORE
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/ret/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RET
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/revbyte/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    REVBYTE
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/rfence/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RFENCE
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/rol/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ROL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/ror/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ROR
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/sar/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SAR
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/save/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SAVE
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/sbb/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SBB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/seglea/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SEGLEA
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/set/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SET
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/setcc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SETcc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/setf/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SETF
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/shl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SHL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/shr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SHR
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/sub/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SUB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/swpt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SWPT
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/swpta/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SWPTA
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/synccache/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SYNCCACHE
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/syscall/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SYSCALL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/sysret/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SYSRET
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/test/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TEST
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/testjcc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TESTJcc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/trace/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TRACE
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/vtop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VTOP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/wait/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WAIT
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/wfence/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WFENCE
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/wrbkdcache/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WRBKDCACHE
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/wrcr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WRCR
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/wrflags/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WRFLAGS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/wrseg/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WRSEG
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/wrstatus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WRSTATUS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/xchg/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    XCHG
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/xor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    XOR
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/yield/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    YIELD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fpu/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Floating-Point Instructions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fabs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FABS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fadd/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FADD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fbndii/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FBNDII
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fbndix/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FBNDIX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fbndxi/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FBNDXI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fbndxx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FBNDXX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fceil/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FCEIL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fclass/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FCLASS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fclr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FCLR
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fcmp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FCMP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fcopysign/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FCOPYSIGN
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fcvt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FCVT
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fcvtu/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FCVTU
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fdiv/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FDIV
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/ffloor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FFLOOR
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fgetexp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FGETEXP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fgetman/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FGETMAN
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fint/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FINT
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fintrz/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FINTRZ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fmadd/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FMADD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fmax/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FMAX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fmin/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FMIN
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fmod/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FMOD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fmov/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FMOV
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fmovcr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FMOVCR
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fmovcc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FMOVcc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fpopp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FPOPP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fpushp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FPUSHP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fmsub/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FMSUB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fmul/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FMUL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fneg/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FNEG
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fnmadd/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FNMADD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fnmsub/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FNMSUB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/frem/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FREM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fround/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FROUND
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fscale/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FSCALE
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fsqrt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FSQRT
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fsub/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FSUB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/ftest/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FTEST
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/ftrunc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FTRUNC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fxchg/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FXCHG
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/rdfflags/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RDFFLAGS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/rdfstatus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RDFSTATUS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/wrfflags/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WRFFLAGS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/wrfstatus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WRFSTATUS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fpu-transcendental-approx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Approximate Floating-Point Transcendental Instructions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/facosa/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FACOSA
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fasina/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FASINA
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fatana/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FATANA
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fatanha/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FATANHA
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fcosa/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FCOSA
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fcosha/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FCOSHA
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fetoxa/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FETOXA
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fetoxm1a/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FETOXM1A
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/flog10a/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FLOG10A
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/flog2a/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FLOG2A
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/flogna/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FLOGNA
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/flognp1a/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FLOGNP1A
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fsina/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FSINA
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fsincosa/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FSINCOSA
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fsinha/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FSINHA
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/ftana/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FTANA
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/ftanha/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FTANHA
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/ftentoxa/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FTENTOXA
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/ftwotoxa/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FTWOTOXA
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference Indexes and Revision History
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference Indexes and Revision History
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#canonical-field-names" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Canonical Field Names
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#architectural-state-index" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architectural State Index
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#architectural-event-index" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architectural Event Index
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cpuid-feature-index" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CPUID Feature Index
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#architecture-revision-history" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architecture Revision History
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ELF ABI
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    ELF ABI
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_1" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../elf-abi/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bedrock ELF ABI
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3_1" id="__nav_3_1_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Bedrock ELF ABI
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elf-abi/scope-and-conformance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scope and Conformance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elf-abi/terminology/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Terminology
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elf-abi/elf-object-format/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ELF Object Format
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elf-abi/program-loading/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Program Loading
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elf-abi/sections-and-symbols/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sections and Symbols
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elf-abi/far-segment-domains-and-linking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Far Segment Domains and Linking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elf-abi/relocation-set/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Relocation Set
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elf-abi/dynamic-linking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dynamic Linking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elf-abi/thread-local-storage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Thread-Local Storage
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elf-abi/code-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Code Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elf-abi/assembler-contract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Assembler Contract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C ABI
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    C ABI
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_1" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../c-abi/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bedrock C ABI
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4_1" id="__nav_4_1_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Bedrock C ABI
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../c-abi/scope-and-conformance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scope and Conformance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../c-abi/terminology/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Terminology
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../c-abi/data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../c-abi/register-convention/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Register Convention
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../c-abi/calling-convention/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Calling Convention
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../c-abi/freestanding-c-binding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Freestanding C Binding
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../c-abi/c-memory-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C Memory Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../c-abi/calling-convention-examples/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Calling Convention Examples
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../c-abi/system-interface-boundary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    System Interface Boundary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C Far-Pointer Extensions
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    C Far-Pointer Extensions
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_1" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../c-far-extensions/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bedrock C Far-Pointer Extensions
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5_1" id="__nav_5_1_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Bedrock C Far-Pointer Extensions
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../c-far-extensions/scope-and-status/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scope and Status
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../c-far-extensions/terminology/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Terminology
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../c-far-extensions/far-pointer-type-system/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Far Pointer Type System
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../c-far-extensions/far-pointer-construction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Far Pointer Construction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../c-far-extensions/access-and-cross-segment-aliasing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Access and Cross-Segment Aliasing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../c-far-extensions/far-function-language-semantics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Far Function Language Semantics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Target Intrinsics
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Target Intrinsics
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_1" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../target-intrinsics/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bedrock Target Intrinsics
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6_1" id="__nav_6_1_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Bedrock Target Intrinsics
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../target-intrinsics/scope-and-status/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scope and Status
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../target-intrinsics/compiler-interface-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compiler Interface Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../target-intrinsics/public-target-interface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Public Target Interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../target-intrinsics/system-target-interface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    System Target Interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../target-intrinsics/shared-header-types-and-exclusions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Shared Header Types and Exclusions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#canonical-field-names" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Canonical Field Names
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#architectural-state-index" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architectural State Index
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#architectural-event-index" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architectural Event Index
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cpuid-feature-index" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CPUID Feature Index
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#architecture-revision-history" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architecture Revision History
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="reference-indexes-and-revision-history">Reference Indexes and Revision History</h1>
+<p><a href="#section-reference-indexes" id="section-reference-indexes"></a></p>
+<p>These indexes are generated from the instruction definitions, encoding store, register and extension manifests, architectural tables, and navigation metadata. Page references point to the normative definition or instruction entry.</p>
+<h2 id="canonical-field-names">Canonical Field Names</h2>
+<p>The following spellings are canonical within the named owner. A one-letter field is interpreted in its owner or instruction-form context.</p>
+<p><strong>Canonical Field Names</strong></p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Owner</strong></th>
+<th style="text-align: left;"><strong>Canonical fields</strong></th>
+<th style="text-align: left;"><strong>Normative definition</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>FLAGS</code></td>
+<td style="text-align: left;"><code>Z</code>, <code>N</code>, <code>C</code>, <code>V</code></td>
+<td style="text-align: left;"><a href="../programming-model/#section-state-register-formats">definition</a> (p. )</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>STATUS</code></td>
+<td style="text-align: left;"><code>IE</code>, <code>PM</code>, <code>RF</code>, <code>TF</code>, <code>NI</code>, <code>EA</code></td>
+<td style="text-align: left;"><a href="../programming-model/#section-state-register-formats">definition</a> (p. )</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>PTCR</code></td>
+<td style="text-align: left;"><code>root_page</code>, <code>PABITS_SEL</code>, <code>LA57</code>, <code>PE</code></td>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers">definition</a> (p. )</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>ASCR</code></td>
+<td style="text-align: left;"><code>ASID</code>, <code>AE</code></td>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers">definition</a> (p. )</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>ECR</code></td>
+<td style="text-align: left;"><code>MAX_EDEPTH</code>, <code>NMI_P</code>, <code>V</code></td>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers">definition</a> (p. )</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>URCTL</code></td>
+<td style="text-align: left;"><code>V</code>, <code>STATUS</code>, <code>FLAGS</code></td>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers">definition</a> (p. )</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>PMC</code></td>
+<td style="text-align: left;"><code>EN</code></td>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers">definition</a> (p. )</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>PTE</code></td>
+<td style="text-align: left;"><code>P</code>, <code>W</code>, <code>X</code>, <code>U</code>, <code>G</code>, <code>A</code>, <code>D</code>, <code>AT</code>, <code>CP</code>, <code>SW0</code>, <code>T</code>, <code>PFN</code></td>
+<td style="text-align: left;"><a href="../memory-address-translation/#section-page-table-entry-format">definition</a> (p. )</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>instruction_header</code></td>
+<td style="text-align: left;"><code>L</code></td>
+<td style="text-align: left;"><a href="../instruction-encoding/#section-instruction-header-formats">definition</a> (p. )</td>
+</tr>
+</tbody>
+</table>
+<h2 id="architectural-state-index">Architectural State Index</h2>
+<p>Reader and writer columns identify the architectural interfaces or execution classes that access each state group. Reset values are taken from the generated architectural reset-state source.</p>
+<p><strong>Architectural State Index</strong></p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>State</strong></th>
+<th style="text-align: left;"><strong>Fields</strong></th>
+<th style="text-align: left;"><strong>Readers</strong></th>
+<th style="text-align: left;"><strong>Writers</strong></th>
+<th style="text-align: left;"><strong>Reset</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-register-model"><code>R0``-``-``R15</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;">Rn source operands and effective-address base or index terms</td>
+<td style="text-align: left;">writable Rn destinations and effective-address auto-update</td>
+<td style="text-align: left;"><code>zero</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-register-model"><code>SP</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;">stack operations and SP-relative effective addresses</td>
+<td style="text-align: left;">stack operations and writable SP destinations</td>
+<td style="text-align: left;"><code>zero</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-register-model"><code>PC</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;">instruction fetch and PC-relative effective addresses</td>
+<td style="text-align: left;">control transfers, event return, and RESET</td>
+<td style="text-align: left;"><code>bootpc</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-segment-registers"><code>CS</code>, <code>DS</code>, <code>SS</code>, <code>GS0</code>, <code>GS1</code>, <code>GS2</code>, <code>GS3</code>, <code>GS4</code>, <code>GS5</code></a> (p. )</td>
+<td style="text-align: left;"><code>base</code>, <code>e</code>, <code>m</code>, <code>B</code></td>
+<td style="text-align: left;">segment pre-translation, RDSEG, fixed CS reads, and SAVE</td>
+<td style="text-align: left;">WRSEG, segment-changing control transfers, event return, and RESTORE</td>
+<td style="text-align: left;"><code>zero</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-state-register-formats"><code>FLAGS</code>, <code>STATUS</code></a> (p. )</td>
+<td style="text-align: left;"><code>Z</code>, <code>N</code>, <code>C</code>, <code>V</code>, <code>IE</code>, <code>PM</code>, <code>RF</code>, <code>TF</code>, <code>NI</code>, <code>EA</code></td>
+<td style="text-align: left;">condition evaluation, RDFLAGS, RDSTATUS, event entry, and SAVE</td>
+<td style="text-align: left;">instruction flag results, WRFLAGS, WRSTATUS, event transitions, and RESTORE</td>
+<td style="text-align: left;"><code>FLAGS=zero</code>; <code>STATUS=supervisor_only</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-floating-point-register-model"><code>F0``-``-``F15</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;">floating-point source operands and SAVE</td>
+<td style="text-align: left;">floating-point destinations and RESTORE</td>
+<td style="text-align: left;"><code>zero</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-state-register-formats"><code>FFLAGS</code>, <code>FSTATUS</code></a> (p. )</td>
+<td style="text-align: left;"><code>NV</code>, <code>DZ</code>, <code>OF</code>, <code>UF</code>, <code>NX</code>, <code>NV_EN</code>, <code>DZ_EN</code>, <code>OF_EN</code>, <code>UF_EN</code>, <code>NX_EN</code>, <code>RM</code>, <code>FTZ</code>, <code>DAZ</code>, <code>DN</code></td>
+<td style="text-align: left;">floating-point execution, dedicated reads, and SAVE</td>
+<td style="text-align: left;">floating-point results, dedicated writes, RESET, and RESTORE</td>
+<td style="text-align: left;"><code>zero</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-performance-counter-discovery"><code>CYCLE</code>, <code>INSTRET</code>, <code>PTWALK</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;">RDPMC</td>
+<td style="text-align: left;">architecturally defined counter increment events and RESET</td>
+<td style="text-align: left;"><code>zero</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>PTCR</code></a> (p. )</td>
+<td style="text-align: left;"><code>root_page</code>, <code>PABITS_SEL</code>, <code>LA57</code>, <code>PE</code></td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;"><code>zero</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>ASCR</code></a> (p. )</td>
+<td style="text-align: left;"><code>ASID</code>, <code>AE</code></td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;"><code>zero</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>ECR</code></a> (p. )</td>
+<td style="text-align: left;"><code>MAX_EDEPTH</code>, <code>NMI_P</code>, <code>V</code></td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;"><code>zero</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>SPC</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;"><code>zero</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>SCS</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;"><code>zero</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>SDS</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;"><code>zero</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>URPC</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;"><code>zero</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>URSP</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;"><code>zero</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>URCS</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;"><code>zero</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>URDS</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;"><code>zero</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>URSS</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;"><code>zero</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>URCTL</code></a> (p. )</td>
+<td style="text-align: left;"><code>V</code>, <code>STATUS</code>, <code>FLAGS</code></td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;"><code>zero</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>EPC</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;"><code>zero</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>ECS</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;"><code>zero</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>EDS</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;"><code>zero</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>SSS</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;"><code>zero</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>SSP</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;"><code>zero</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>ISS</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;"><code>zero</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>ISP</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;"><code>zero</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>FSS</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;"><code>zero</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>FSP</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;"><code>zero</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>DSS</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;"><code>zero</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>DSP</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;"><code>zero</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>BOOTPC</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;"><code>platform_supplied_cold_preserved_warm</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>BOOTCFG</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;"><code>platform_supplied_cold_preserved_warm</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>PMC</code></a> (p. )</td>
+<td style="text-align: left;"><code>EN</code></td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;"><code>zero</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="architectural-event-index">Architectural Event Index</h2>
+<p><strong>Architectural Event Index</strong></p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Code</strong></th>
+<th style="text-align: left;"><strong>Event</strong></th>
+<th style="text-align: left;"><strong>Producer</strong></th>
+<th style="text-align: left;"><strong>Priority</strong></th>
+<th style="text-align: left;"><strong>Frame</strong></th>
+<th style="text-align: left;"><strong>Definition</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>EXC:00</code></td>
+<td style="text-align: left;"><code>DEBUG_TRACE</code></td>
+<td style="text-align: left;">completion of a TF-selected trace unit</td>
+<td style="text-align: left;"><code>5</code></td>
+<td style="text-align: left;"><code>BASIC</code></td>
+<td style="text-align: left;"><a href="../architectural-event-processing-model/#section-event-code-and-sources">definition</a> (p. )</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>EXC:02</code></td>
+<td style="text-align: left;"><code>BREAKPOINT</code></td>
+<td style="text-align: left;">BKPT; <a href="../instructions/bkpt/"><code>BKPT</code></a></td>
+<td style="text-align: left;"><code>4</code></td>
+<td style="text-align: left;"><code>BASIC</code></td>
+<td style="text-align: left;"><a href="../architectural-event-processing-model/#section-event-code-and-sources">definition</a> (p. )</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>EXC:03</code></td>
+<td style="text-align: left;"><code>ILLEGAL_INSTRUCTION</code></td>
+<td style="text-align: left;">decode or instruction-validity check; <a href="../instructions/divmods/"><code>DIVMODS</code></a>, <a href="../instructions/divmodu/"><code>DIVMODU</code></a>, <a href="../instructions/fsincosa/"><code>FSINCOSA</code></a>, <a href="../instructions/illegal/"><code>ILLEGAL</code></a></td>
+<td style="text-align: left;"><code>3</code></td>
+<td style="text-align: left;"><code>ERROR</code></td>
+<td style="text-align: left;"><a href="../architectural-event-processing-model/#section-event-code-and-sources">definition</a> (p. )</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>EXC:08</code></td>
+<td style="text-align: left;"><code>PRIVILEGE_FAULT</code></td>
+<td style="text-align: left;">privilege check</td>
+<td style="text-align: left;"><code>3</code></td>
+<td style="text-align: left;"><code>BASIC</code></td>
+<td style="text-align: left;"><a href="../architectural-event-processing-model/#section-event-code-and-sources">definition</a> (p. )</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>EXC:09</code></td>
+<td style="text-align: left;"><code>PAGE_FAULT</code></td>
+<td style="text-align: left;">segment, translation, access, or atomic-alignment check</td>
+<td style="text-align: left;"><code>3</code></td>
+<td style="text-align: left;"><code>PAGE_FAULT</code></td>
+<td style="text-align: left;"><a href="../architectural-event-processing-model/#section-event-code-and-sources">definition</a> (p. )</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>EXC:0a</code></td>
+<td style="text-align: left;"><code>DIVIDE_ERROR</code></td>
+<td style="text-align: left;">integer divide operation; <a href="../instructions/divmods/"><code>DIVMODS</code></a>, <a href="../instructions/divmodu/"><code>DIVMODU</code></a>, <a href="../instructions/divs/"><code>DIVS</code></a>, <a href="../instructions/divu/"><code>DIVU</code></a>, <a href="../instructions/mods/"><code>MODS</code></a>, <a href="../instructions/modu/"><code>MODU</code></a></td>
+<td style="text-align: left;"><code>3</code></td>
+<td style="text-align: left;"><code>ERROR</code></td>
+<td style="text-align: left;"><a href="../architectural-event-processing-model/#section-event-code-and-sources">definition</a> (p. )</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>EXC:0d</code></td>
+<td style="text-align: left;"><code>INVALID_CONTROL_STATE</code></td>
+<td style="text-align: left;">control-state validation; <a href="../instructions/eret/"><code>ERET</code></a>, <a href="../instructions/syscall/"><code>SYSCALL</code></a>, <a href="../instructions/sysret/"><code>SYSRET</code></a>, <a href="../instructions/wrcr/"><code>WRCR</code></a>, <a href="../instructions/wrstatus/"><code>WRSTATUS</code></a></td>
+<td style="text-align: left;"><code>3</code></td>
+<td style="text-align: left;"><code>ERROR</code></td>
+<td style="text-align: left;"><a href="../architectural-event-processing-model/#section-event-code-and-sources">definition</a> (p. )</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>EXC:0e</code></td>
+<td style="text-align: left;"><code>FLOATING_POINT_FAULT</code></td>
+<td style="text-align: left;">enabled floating-point exception; <a href="../instructions/fsincosa/"><code>FSINCOSA</code></a></td>
+<td style="text-align: left;"><code>3</code></td>
+<td style="text-align: left;"><code>ERROR</code></td>
+<td style="text-align: left;"><a href="../architectural-event-processing-model/#section-event-code-and-sources">definition</a> (p. )</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>EXC:18</code></td>
+<td style="text-align: left;"><code>DOUBLE_FAULT</code></td>
+<td style="text-align: left;">architectural event-delivery failure</td>
+<td style="text-align: left;"><code>1</code></td>
+<td style="text-align: left;"><code>AUXILIARY</code></td>
+<td style="text-align: left;"><a href="../architectural-event-processing-model/#section-event-code-and-sources">definition</a> (p. )</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>EXC:19</code></td>
+<td style="text-align: left;"><code>MACHINE_CHECK</code></td>
+<td style="text-align: left;">processor or memory-system machine-check source</td>
+<td style="text-align: left;"><code>2</code></td>
+<td style="text-align: left;"><code>AUXILIARY</code></td>
+<td style="text-align: left;"><a href="../architectural-event-processing-model/#section-event-code-and-sources">definition</a> (p. )</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>EXC:1a</code></td>
+<td style="text-align: left;"><code>BUS_ERROR</code></td>
+<td style="text-align: left;">synchronous acknowledged bus failure</td>
+<td style="text-align: left;"><code>3</code></td>
+<td style="text-align: left;"><code>AUXILIARY</code></td>
+<td style="text-align: left;"><a href="../architectural-event-processing-model/#section-event-code-and-sources">definition</a> (p. )</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NMI:source</code></td>
+<td style="text-align: left;"><code>NMI</code></td>
+<td style="text-align: left;">admitted non-maskable interrupt source</td>
+<td style="text-align: left;"><code>6</code></td>
+<td style="text-align: left;"><code>BASIC</code></td>
+<td style="text-align: left;"><a href="../architectural-event-processing-model/#section-event-code-and-sources">definition</a> (p. )</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>INTERRUPT:platform</code></td>
+<td style="text-align: left;"><code>INTERRUPT</code></td>
+<td style="text-align: left;">admitted maskable interrupt source</td>
+<td style="text-align: left;"><code>7</code></td>
+<td style="text-align: left;"><code>BASIC</code></td>
+<td style="text-align: left;"><a href="../architectural-event-processing-model/#section-event-code-and-sources">definition</a> (p. )</td>
+</tr>
+</tbody>
+</table>
+<h2 id="cpuid-feature-index">CPUID Feature Index</h2>
+<p><strong>CPUID Feature Index</strong></p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Predicate</strong></th>
+<th style="text-align: left;"><strong>Class:leaf:index/bit</strong></th>
+<th style="text-align: left;"><strong>Gated instruction</strong></th>
+<th style="text-align: left;"><strong>Related state or component</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fabs/"><code>FABS</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fadd/"><code>FADD</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fbndii/"><code>FBNDII</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fbndix/"><code>FBNDIX</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fbndxi/"><code>FBNDXI</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fbndxx/"><code>FBNDXX</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fceil/"><code>FCEIL</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fclass/"><code>FCLASS</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fclr/"><code>FCLR</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fcmp/"><code>FCMP</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fcopysign/"><code>FCOPYSIGN</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fcvt/"><code>FCVT</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fcvtu/"><code>FCVTU</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fdiv/"><code>FDIV</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/ffloor/"><code>FFLOOR</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fgetexp/"><code>FGETEXP</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fgetman/"><code>FGETMAN</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fint/"><code>FINT</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fintrz/"><code>FINTRZ</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fmadd/"><code>FMADD</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fmax/"><code>FMAX</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fmin/"><code>FMIN</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fmod/"><code>FMOD</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fmov/"><code>FMOV</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fmovcr/"><code>FMOVCR</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fmovcc/"><code>FMOVcc</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fmsub/"><code>FMSUB</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fmul/"><code>FMUL</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fneg/"><code>FNEG</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fnmadd/"><code>FNMADD</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fnmsub/"><code>FNMSUB</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fpopp/"><code>FPOPP</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fpushp/"><code>FPUSHP</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/frem/"><code>FREM</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fround/"><code>FROUND</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fscale/"><code>FSCALE</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fsqrt/"><code>FSQRT</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fsub/"><code>FSUB</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/ftest/"><code>FTEST</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/ftrunc/"><code>FTRUNC</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fxchg/"><code>FXCHG</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/rdfflags/"><code>RDFFLAGS</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/rdfstatus/"><code>RDFSTATUS</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/wrfflags/"><code>WRFFLAGS</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/wrfstatus/"><code>WRFSTATUS</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FPTRANSA</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit1</code></td>
+<td style="text-align: left;"><a href="../instructions/facosa/"><code>FACOSA</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FPTRANSA</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit1</code></td>
+<td style="text-align: left;"><a href="../instructions/fasina/"><code>FASINA</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FPTRANSA</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit1</code></td>
+<td style="text-align: left;"><a href="../instructions/fatana/"><code>FATANA</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FPTRANSA</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit1</code></td>
+<td style="text-align: left;"><a href="../instructions/fatanha/"><code>FATANHA</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FPTRANSA</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit1</code></td>
+<td style="text-align: left;"><a href="../instructions/fcosa/"><code>FCOSA</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FPTRANSA</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit1</code></td>
+<td style="text-align: left;"><a href="../instructions/fcosha/"><code>FCOSHA</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FPTRANSA</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit1</code></td>
+<td style="text-align: left;"><a href="../instructions/fetoxa/"><code>FETOXA</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FPTRANSA</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit1</code></td>
+<td style="text-align: left;"><a href="../instructions/fetoxm1a/"><code>FETOXM1A</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FPTRANSA</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit1</code></td>
+<td style="text-align: left;"><a href="../instructions/flog10a/"><code>FLOG10A</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FPTRANSA</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit1</code></td>
+<td style="text-align: left;"><a href="../instructions/flog2a/"><code>FLOG2A</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FPTRANSA</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit1</code></td>
+<td style="text-align: left;"><a href="../instructions/flogna/"><code>FLOGNA</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FPTRANSA</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit1</code></td>
+<td style="text-align: left;"><a href="../instructions/flognp1a/"><code>FLOGNP1A</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FPTRANSA</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit1</code></td>
+<td style="text-align: left;"><a href="../instructions/fsina/"><code>FSINA</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FPTRANSA</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit1</code></td>
+<td style="text-align: left;"><a href="../instructions/fsincosa/"><code>FSINCOSA</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FPTRANSA</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit1</code></td>
+<td style="text-align: left;"><a href="../instructions/fsinha/"><code>FSINHA</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FPTRANSA</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit1</code></td>
+<td style="text-align: left;"><a href="../instructions/ftana/"><code>FTANA</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FPTRANSA</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit1</code></td>
+<td style="text-align: left;"><a href="../instructions/ftanha/"><code>FTANHA</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FPTRANSA</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit1</code></td>
+<td style="text-align: left;"><a href="../instructions/ftentoxa/"><code>FTENTOXA</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FPTRANSA</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit1</code></td>
+<td style="text-align: left;"><a href="../instructions/ftwotoxa/"><code>FTWOTOXA</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+</tbody>
+</table>
+<h2 id="architecture-revision-history">Architecture Revision History</h2>
+<p>The current working specification remains in the Unreleased row until a release assigns an <code>ARCHITECTURE_REVISION</code>. Released rows use the revision value returned by CPUID.</p>
+<p><strong>Architecture Revision History</strong></p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Status</strong></th>
+<th style="text-align: left;"><strong>Architecture revision</strong></th>
+<th style="text-align: left;"><strong>Changes</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">Unreleased</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;">Closed the CPUID, SAVE/RESTORE, floating-point, cache-maintenance, and effective-address contracts.; Defined reset, memory policy, translation, event, repeat, and instruction-encoding boundaries.; Defined atomic ordering, paging boundaries, compatibility identity, stack, WAIT/HALT, and conformance contracts.; Unified terminology, canonical field names, reference indexes, and revision-history navigation.</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.indexes", "navigation.sections", "navigation.top", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../../javascripts/mathjax.js"></script>
+      
+        <script src="https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>
