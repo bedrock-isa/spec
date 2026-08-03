@@ -9273,7 +9273,7 @@
 <p>Byte, word, and long operations use the low-order subfield of the selected register. Q-sized operations use the full 64-bit register.</p>
 <p>An Rn destination write smaller than Q replaces only the selected low-order subfield; bits above the operation size are preserved. Q-sized Rn writes replace all 64 bits. Memory destination writes transfer only the selected number of bytes.</p>
 <p>An instruction may explicitly define a full-register write, zero-extension, sign-extension, or another upper-bit rule. Such instruction-specific rules override the default subfield write rule.</p>
-<p><strong>Scalar Data Sizes</strong></p>
+<p><strong>Integer Data Sizes</strong></p>
 <table>
 <thead>
 <tr>
@@ -9313,6 +9313,30 @@
 <td style="text-align: left;">8</td>
 <td style="text-align: left;">Quad</td>
 </tr>
+</tbody>
+</table>
+<p><img alt="Integer Register Operand Subfields" src="../../assets/visuals/isa/data-formats-01.svg" /></p>
+<p><strong>Integer Register Operand Subfields</strong></p>
+<h2 id="little-endian-memory-organization">Little-Endian Memory Organization</h2>
+<p>Integer data, immediates, displacements, and absolute address payloads are little-endian. Multi-byte numeric payloads are stored least significant byte first. The decoder consumes instruction-header fields byte by byte in instruction-stream order.</p>
+<p>For an N-byte integer value stored at byte address A, byte A contains bits 7..0, byte A+1 contains bits 15..8, and so on.</p>
+<p><img alt="Little-Endian Byte Order for a 64-Bit Value" src="../../assets/visuals/isa/data-formats-02.svg" /></p>
+<p><strong>Little-Endian Byte Order for a 64-Bit Value</strong></p>
+<p><img alt="Instruction Start Bytes" src="../../assets/visuals/isa/data-formats-03.svg" /></p>
+<p><strong>Instruction Start Bytes</strong></p>
+<h2 id="floating-point-data-formats">Floating-Point Data Formats</h2>
+<p><strong>Floating-Point Scalar Sizes</strong></p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Code</strong></th>
+<th style="text-align: left;"><strong>Suffix</strong></th>
+<th style="text-align: left;"><strong>Bits</strong></th>
+<th style="text-align: left;"><strong>Bytes</strong></th>
+<th style="text-align: left;"><strong>Name</strong></th>
+</tr>
+</thead>
+<tbody>
 <tr>
 <td style="text-align: left;"><code>S</code></td>
 <td style="text-align: left;"><code>.S</code></td>
@@ -9329,16 +9353,6 @@
 </tr>
 </tbody>
 </table>
-<p><img alt="Integer Register Operand Subfields" src="../../assets/visuals/isa/data-formats-01.svg" /></p>
-<p><strong>Integer Register Operand Subfields</strong></p>
-<h2 id="little-endian-memory-organization">Little-Endian Memory Organization</h2>
-<p>Integer data, immediates, displacements, and absolute address payloads are little-endian. Multi-byte numeric payloads are stored least significant byte first. The decoder consumes instruction-header fields byte by byte in instruction-stream order.</p>
-<p>For an N-byte integer value stored at byte address A, byte A contains bits 7..0, byte A+1 contains bits 15..8, and so on.</p>
-<p><img alt="Little-Endian Byte Order for a 64-Bit Value" src="../../assets/visuals/isa/data-formats-02.svg" /></p>
-<p><strong>Little-Endian Byte Order for a 64-Bit Value</strong></p>
-<p><img alt="Instruction Start Bytes" src="../../assets/visuals/isa/data-formats-03.svg" /></p>
-<p><strong>Instruction Start Bytes</strong></p>
-<h2 id="floating-point-data-formats">Floating-Point Data Formats</h2>
 <p>Floating-point scalar formats are little-endian in memory as well. S is IEEE-754 binary32 with 24 bits of significand precision, minimum normal exponent <span class="arithmatex">\(-126\)</span>, and minimum subnormal quantum <span class="arithmatex">\(2^{-149}\)</span>. D is IEEE-754 binary64 with 53 bits of significand precision, minimum normal exponent <span class="arithmatex">\(-1022\)</span>, and minimum subnormal quantum <span class="arithmatex">\(2^{-1074}\)</span>.</p>
 <p><img alt="Floating-Point Register Encodings" src="../../assets/visuals/isa/data-formats-04.svg" /></p>
 <p><strong>Floating-Point Register Encodings</strong></p>
