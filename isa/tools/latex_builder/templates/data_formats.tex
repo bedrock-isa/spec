@@ -15,7 +15,7 @@ bytes.
 An instruction may explicitly define a full-register write, zero-extension, sign-extension, or another upper-bit
 rule. Such instruction-specific rules override the default subfield write rule.
 
-\manualtablecaption{Scalar Data Sizes}
+\manualtablecaption{Integer Data Sizes}
 \begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.45in}>{\raggedright\arraybackslash}p{0.55in}>{\raggedright\arraybackslash}p{0.45in}>{\raggedright\arraybackslash}p{0.50in}>{\raggedright\arraybackslash}p{1.55in}@{}}
 \toprule
 \rowcolor{ManualHeaderFill}
@@ -25,8 +25,6 @@ rule. Such instruction-specific rules override the default subfield write rule.
 \texttt{W} & \texttt{@W_SUFFIX@} & @W_BITS@ & @W_BYTES@ & Word\\
 \texttt{L} & \texttt{@L_SUFFIX@} & @L_BITS@ & @L_BYTES@ & Long\\
 \texttt{Q} & \texttt{@Q_SUFFIX@} & @Q_BITS@ & @Q_BYTES@ & Quad\\
-\texttt{S} & \texttt{@S_SUFFIX@} & @S_BITS@ & @S_BYTES@ & Single\\
-\texttt{D} & \texttt{@D_SUFFIX@} & @D_BITS@ & @D_BYTES@ & Double\\
 \bottomrule
 \end{manualtabular}
 
@@ -43,6 +41,17 @@ so on.
 \input{isa/tools/latex_builder/templates/fragments/data_byte_order_diagrams.tex}
 
 \subsection{Floating-Point Data Formats}
+\manualtablecaption{Floating-Point Scalar Sizes}
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.45in}>{\raggedright\arraybackslash}p{0.55in}>{\raggedright\arraybackslash}p{0.45in}>{\raggedright\arraybackslash}p{0.50in}>{\raggedright\arraybackslash}p{1.55in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Code} & \textbf{Suffix} & \textbf{Bits} & \textbf{Bytes} & \textbf{Name}\\
+\midrule
+\texttt{S} & \texttt{@S_SUFFIX@} & @S_BITS@ & @S_BYTES@ & Single\\
+\texttt{D} & \texttt{@D_SUFFIX@} & @D_BITS@ & @D_BYTES@ & Double\\
+\bottomrule
+\end{manualtabular}
+
 Floating-point scalar formats are little-endian in memory as well. S is IEEE-754 binary32 with 24 bits of
 significand precision, minimum normal exponent $-126$, and minimum subnormal quantum $2^{-149}$. D is IEEE-754
 binary64 with 53 bits of significand precision, minimum normal exponent $-1022$, and minimum subnormal quantum
