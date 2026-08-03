@@ -9171,7 +9171,7 @@
   <span class="md-ellipsis">
     
   
-    Shared Header Types and Exclusions
+    Shared Header Types
   
 
     
@@ -9288,10 +9288,10 @@
 
 
 <h1 id="dynamic-linking">Dynamic Linking</h1>
-<p>Dynamic objects use a fixed eager-binding Bedrock GOT and PLT contract. Lazy binding and a runtime PLT resolver protocol are not part of the current draft ELF ABI.</p>
+<p>Dynamic objects use a fixed eager-binding Bedrock GOT and PLT contract.</p>
 <h2 id="dynamic-linking-rules">Dynamic Linking Rules</h2>
 <p>Ordinary dynamic linking supports standard and indirect functions, copy relocations, and <code>R_BEDROCK_IRELATIVE</code>. The loader resolves every ordinary <code>R_BEDROCK_JUMP_SLOT</code> and <code>R_BEDROCK_IRELATIVE</code> relocation before transferring control to the program entry point or any constructor. Shared-object calls use near <code>CALL</code>/<code>RET</code> within the ABI-visible linkage domain. The GOT base symbol is <code>_GLOBAL_OFFSET_TABLE_</code>.</p>
-<p>There is no <code>PLT0</code>. Every ordinary PLT entry occupies 32 bytes and has 16-byte alignment. Far binding uses the same eager publication rule: every <code>.got.far</code> entry is a 16-byte aligned 16-byte pair, is bound eagerly, and is immutable after publication. There is no far PLT. An external far call loads the final pair from <code>.got.far</code> and transfers with <code>LCALL</code>.</p>
+<p>Every ordinary PLT entry occupies 32 bytes and has 16-byte alignment. Far binding uses the same eager publication rule: every <code>.got.far</code> entry is a 16-byte aligned 16-byte pair, is bound eagerly, and is immutable after publication. An external far call loads the final pair from <code>.got.far</code> and transfers with <code>LCALL</code>.</p>
 <h2 id="got-reserved-entries">GOT Reserved Entries</h2>
 <p><strong>Global Offset Table Reserved Entries</strong></p>
 <table>
@@ -9311,12 +9311,12 @@
 <tr>
 <td style="text-align: left;">1</td>
 <td style="text-align: left;">reserved</td>
-<td style="text-align: left;">zero; no loader-handle meaning</td>
+<td style="text-align: left;">zero</td>
 </tr>
 <tr>
 <td style="text-align: left;">2</td>
 <td style="text-align: left;">reserved</td>
-<td style="text-align: left;">zero; no lazy-resolver meaning</td>
+<td style="text-align: left;">zero</td>
 </tr>
 </tbody>
 </table>
@@ -9349,7 +9349,7 @@
 </tbody>
 </table>
 <p>A PLT relocation uses explicit addend <code>+4</code>. Architectural PC names byte zero of the current instruction, whereas relocation place <code>P</code> is the field at entry offset four; therefore <code>GOT(S)+A-P</code> evaluates to <code>GOT(S)-PLTentry</code>, the displacement consumed by the PC-relative EA. The referenced <code>.got.plt</code> slot is 8-byte aligned and contains the eagerly resolved 64-bit near target. Both the PLT entry and its slot must be reachable under the active CS bounds used by that PC-relative EA.</p>
-<p>A PLT transfer preserves <code>R0</code> through <code>R7</code>, <code>F0</code> through <code>F7</code>, <code>GS1</code> through <code>GS5</code>, <code>FLAGS</code>, and all segment state. The loader writes each final <code>.got.plt</code> value before publication. Published slots are immutable and may be covered by <code>PT_GNU_RELRO</code>; no post-publication rebinding is permitted. A later lazy-binding facility requires a distinct ELF profile and resolver ABI.</p>
+<p>A PLT transfer preserves <code>R0</code> through <code>R7</code>, <code>F0</code> through <code>F7</code>, <code>GS1</code> through <code>GS5</code>, <code>FLAGS</code>, and all segment state. The loader writes each final <code>.got.plt</code> value before publication. Published slots are immutable and may be covered by <code>PT_GNU_RELRO</code>.</p>
 <h2 id="far-binding-rules">Far Binding Rules</h2>
 <ul>
 <li>
@@ -9359,10 +9359,7 @@
 <p>A far function GOT entry contains the canonical STT BEDROCK FAR FUNC address and is called with LCALL.</p>
 </li>
 <li>
-<p>No lazy far PLT state exists; a far-call resolver never consumes or overwrites C argument registers at the call site.</p>
-</li>
-<li>
-<p>Interposition resolves and writes the complete 16-byte pair before loader publication; the ABI requires no 16-byte atomic store.</p>
+<p>Interposition resolves and writes the complete 16-byte pair before loader publication.</p>
 </li>
 <li>
 <p>STT BEDROCK FAR IFUNC resolvers are called with the normal near C ABI and return a pre-segment code address in R0 and a canonical disabled or bounds-only CS image in GS1.</p>

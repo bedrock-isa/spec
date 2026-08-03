@@ -9177,7 +9177,7 @@
   <span class="md-ellipsis">
     
   
-    Shared Header Types and Exclusions
+    Shared Header Types
   
 
     
@@ -9303,6 +9303,7 @@
 <p>Family = atomics</p>
 <p>Privilege = unprivileged</p>
 <p>Length = 5-15 bytes</p>
+<p>Repeat = <code>none</code></p>
 <h2 id="instruction-forms">Instruction Forms</h2>
 <p><strong><code>FETCHXOR.X(z:B/W/L/Q)/order(o) Rn(s), &lt;ea&gt;(e)</code></strong></p>
 <p><em>Encoding class: extralong; required bytes: 5-15 bytes; privilege: unprivileged</em></p>
@@ -9314,7 +9315,7 @@
 <p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
 <p><strong>Memory-order field <code>o</code></strong> — Selects the memory ordering. Allowed values: RELAXED, ACQUIRE, RELEASE, ACQREL, SEQCST.</p>
 <p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
-<p><strong>Effective Address field <code>e</code></strong> — Specifies the read/write operand. Availability is summarized by category; compact mode bits are defined by Compact EA Encoding, and extended descriptors are defined by the Extended EA profiles.</p>
+<p><strong>Effective Address field <code>e</code></strong> — Specifies the read/write operand.</p>
 <p><strong>EA availability</strong></p>
 <p><strong>Allowed:</strong> Memory; EXT0</p>
 <p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>

@@ -9261,7 +9261,7 @@
   <span class="md-ellipsis">
     
   
-    Shared Header Types and Exclusions
+    Shared Header Types
   
 
     
@@ -9503,7 +9503,7 @@
 </tr>
 </tbody>
 </table>
-<p>Index zero of every defined leaf is a common discovery header. Leaf-specific payload begins at index one. An unknown class, leaf, or index returns zero; consequently, index zero of an absent leaf also returns zero.</p>
+<p>Index zero of every defined leaf is a common discovery header. Leaf-specific payload begins at index one. An unknown class, leaf, or index returns zero.</p>
 <p><img alt="CPUID Common Leaf Header Formats" src="../../assets/visuals/isa/cpuid-feature-discovery-02.svg" /></p>
 <p><strong>CPUID Common Leaf Header Formats</strong></p>
 <p><strong>CPUID Common Leaf Header</strong></p>
@@ -9537,13 +9537,12 @@
 </tr>
 </tbody>
 </table>
-<p><code>MAX_CLASS</code> is the greatest class recognized by the implementation, <code>MAX_LEAF</code> is the greatest leaf recognized within the selected class, and <code>MAX_INDEX</code> is the greatest index recognized within the selected leaf. Each field is a maximum selector value, not a count. A leaf may be sparse below <code>MAX_INDEX</code>; software must still treat an unassigned selector as absent. Software ignores reserved bits in every returned value, so a later revision can assign them without invalidating existing discovery code.</p>
+<p><code>MAX_CLASS</code> is the greatest class recognized by the implementation, <code>MAX_LEAF</code> is the greatest leaf recognized within the selected class, and <code>MAX_INDEX</code> is the greatest index recognized within the selected leaf. Each field is a maximum selector value, not a count. A leaf may be sparse below <code>MAX_INDEX</code>. Software ignores reserved bits in every returned value, so a later revision can assign them without invalidating existing discovery code.</p>
 <h2 id="discovery-classes">Discovery Classes</h2>
 <p>Discovery classes partition architectural information by compatibility purpose. Software first checks the class and leaf directory before consuming optional feature bits.</p>
 <p>The base class describes the mandatory scalar ISA and implementation identity. Optional groups are reported in the optional-extension directory.</p>
 <h2 id="leaf-directory">Leaf Directory</h2>
 <p>Each discovery class may expose a leaf directory. A directory leaf reports which subordinate leaves are defined and how indexed leaves should be enumerated.</p>
-<p>Software must treat an absent leaf as zero and must ignore reserved bits in a present leaf.</p>
 <p><strong>CPUID Class and Leaf Directory</strong></p>
 <table>
 <thead>
@@ -9697,10 +9696,10 @@
 </tr>
 </tbody>
 </table>
-<p>Unlisted bits are reserved and read as zero. <code>FPTRANSA</code> requires <code>FP</code> and is set when at least one approximate transcendental contract is present. It does not imply that every contract is present.</p>
+<p>Unlisted bits are reserved and read as zero. <code>FPTRANSA</code> requires <code>FP</code> and is set when at least one approximate transcendental contract is present.</p>
 <h2 id="fptransa-accuracy-discovery">FPTRANSA Accuracy Discovery</h2>
 <p>Class <code>0x00000001</code>, leaf <code>0x0001</code> uses indexes 1 through <code>0x0044</code> as a sparse space of stable 16-bit accuracy-contract IDs. Index zero is the common header and reports <code>MAX_INDEX=0x0044</code>. A contract ID identifies the reference function, input domain, special-value behavior, error metric, exact anchors, and mathematical properties; it is independent of instruction encoding placement. An incompatible change receives a new ID, and a retired ID is not reused. The contracts defined here use <code>CONTRACT_REVISION=1</code>. Weakening a guarantee, changing the domain, or changing the error metric requires a new ID rather than a revision increment. An implementation that advertises a smaller certified ULP bound strengthens the existing contract and retains the same ID and revision.</p>
-<p>The sparse ID space reserves <code>0x0001..0x000F</code> for reduced-domain circular trigonometric functions, <code>0x0010..0x001F</code> for inverse trigonometric functions, <code>0x0020..0x002F</code> for hyperbolic and inverse hyperbolic functions, <code>0x0030..0x003F</code> for exponential functions, and <code>0x0040..0x004F</code> for logarithmic functions. The low-nibble-zero selector of each family is unassigned, and actual contracts in each family begin at low nibble one. Unassigned values at or below <code>0x0044</code> return zero.</p>
+<p>The sparse ID space reserves <code>0x0001..0x000F</code> for reduced-domain circular trigonometric functions, <code>0x0010..0x001F</code> for inverse trigonometric functions, <code>0x0020..0x002F</code> for hyperbolic and inverse hyperbolic functions, <code>0x0030..0x003F</code> for exponential functions, and <code>0x0040..0x004F</code> for logarithmic functions. The low-nibble-zero selector of each family is unassigned, and actual contracts in each family begin at low nibble one.</p>
 <p><img alt="FPTRANSA Accuracy Result Format" src="../../assets/visuals/isa/cpuid-feature-discovery-05.svg" /></p>
 <p><strong>FPTRANSA Accuracy Result Format</strong></p>
 <p><code>P</code> is <code>PRESENT</code>; <code>REV</code> is <code>CONTRACT_REVISION</code>; the D and S ULP fields use unsigned Q8.8.</p>
@@ -9741,7 +9740,7 @@
 </tr>
 </tbody>
 </table>
-<p>For a certified bound <span class="arithmatex">\(K\)</span>, the field value is <span class="arithmatex">\(\lceil 256K\rceil\)</span> and the advertised bound is the field divided by 256. Thus 0.5, 1, 1.5, 2, and 4 ULP encode as <code>0x0080</code>, <code>0x0100</code>, <code>0x0180</code>, <code>0x0200</code>, and <code>0x0400</code>. A present contract has both fields in <code>0x0001..0x0400</code>; an absent or unknown contract returns zero. Software that does not recognize the returned revision uses its fallback path.</p>
+<p>For a certified bound <span class="arithmatex">\(K\)</span>, the field value is <span class="arithmatex">\(\lceil 256K\rceil\)</span> and the advertised bound is the field divided by 256. Thus 0.5, 1, 1.5, 2, and 4 ULP encode as <code>0x0080</code>, <code>0x0100</code>, <code>0x0180</code>, <code>0x0200</code>, and <code>0x0400</code>. A present contract has both fields in <code>0x0001..0x0400</code>. Software that does not recognize the returned revision uses its fallback path.</p>
 <p>Software first checks <code>FP</code> and <code>FPTRANSA</code> in <code>EXTENSION_DIRECTORY</code>, then queries the intended contract ID in <code>FPTRANSA_ACCURACY</code>. It uses the instruction only when <code>PRESENT</code> is set, the returned <code>CONTRACT_REVISION</code> is 1, and the S or D bound required by the call site is no larger than its quality threshold; otherwise it uses a software fallback. For example, a D-format <code>FLOG2A</code> path requiring at most 2 ULP accepts selector <code>0x0000000100010043</code> only when the returned D field is at most <code>0x0200</code>.</p>
 <p>The selector is <span class="arithmatex">\((\texttt{0x00000001} \ll 32) \mathbin{|} (\texttt{0x0001} \ll 16) \mathbin{|}
 \textit{contract-id}\)</span>. For example, <code>FSINA</code> uses selector <code>0x0000000100010001</code>, and <code>FLOG2A</code> uses <code>0x0000000100010043</code>. An implementation that certifies <code>FSINA</code> at 1.5 ULP for S and 2 ULP for D returns <code>0x8000000102000180</code>.</p>
@@ -9977,7 +9976,6 @@
 <p><img alt="Performance-Counter Presence Result" src="../../assets/visuals/isa/cpuid-feature-discovery-08.svg" /></p>
 <p><strong>Performance-Counter Presence Result</strong></p>
 <p><code>P</code> is <code>PRESENT</code>.</p>
-<p>The RDPMC instruction description defines counter behavior and unavailable-ID fault handling.</p>
 <h2 id="save-area-layout-discovery">SAVE-Area Layout Discovery</h2>
 <p>Class <code>0x00000002</code>, leaf <code>0x0004</code> describes the memory image used by SAVE and RESTORE. Index zero is the common header. Indexes one and two describe the complete image and its fixed block. Each available extension component contributes descriptor A followed by descriptor B, so for <span class="arithmatex">\(N\)</span> components <code>MAX_INDEX=2+2N</code>. Component descriptors are ordered by increasing <code>COMPONENT_ID</code>.</p>
 <p><strong>SAVE-AREA-LAYOUT Indexes</strong></p>

@@ -9160,7 +9160,7 @@
   <span class="md-ellipsis">
     
   
-    Shared Header Types and Exclusions
+    Shared Header Types
   
 
     
@@ -9270,7 +9270,7 @@
 <p>The compiler builtin namespace begins with <code>__builtin_bedrock_</code>. Each <strong>Name</strong> entry in this document denotes that prefix followed by the displayed name. For example, <code>cpuid</code> denotes <code>__builtin_bedrock_cpuid</code>. The ordinary header wrapper uses the <code>__bedrock_</code> prefix with the same name unless its entry or the far-pointer construction interface specifies a macro spelling.</p>
 <p>All of these identifiers are implementation-reserved. A builtin is a compiler primitive, not an external function symbol. The target headers own wrapper declarations and umbrella include topology; this document owns their ABI-visible meaning.</p>
 <h2 id="header-topology-and-exposure">Header Topology and Exposure</h2>
-<p><code>&lt;bedrockintrin.h&gt;</code> is the public umbrella. It includes the far, core, memory, integer, and floating-point families and deliberately exposes no system-management operation. <code>&lt;bedrocksystemintrin.h&gt;</code> is the system umbrella for system-register, cache, MMU, and processor-state facilities. Any family header may also be included directly.</p>
+<p><code>&lt;bedrockintrin.h&gt;</code> is the public umbrella. It includes the far, core, memory, integer, and floating-point families. <code>&lt;bedrocksystemintrin.h&gt;</code> is the system umbrella for system-register, cache, MMU, and processor-state facilities. Any family header may also be included directly.</p>
 <p><strong>Target Intrinsic Header Families</strong></p>
 <table>
 <thead>

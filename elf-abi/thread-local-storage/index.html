@@ -9232,7 +9232,7 @@
   <span class="md-ellipsis">
     
   
-    Shared Header Types and Exclusions
+    Shared Header Types
   
 
     
@@ -9475,7 +9475,7 @@
 </tbody>
 </table>
 <p>Each entry occupies 16 bytes in <code>.got</code> and has 16-byte alignment. The loader resolves the symbol binding, writes both words, and completes any memory ordering required to publish the pair before application code can observe it. Both words are immutable after publication and may subsequently be protected by <code>PT_GNU_RELRO</code>. The ABI requires no public name for either the resolver or fast function; their near-call addresses may be loader-private.</p>
-<p>The argument word belongs to the implementation of the selected function. A fast function may load <code>[R0+8]</code> and return it directly. An opaque token is not application data and remains valid only while the object that defines the TLS symbol is loaded. A resolver may perform dynamic per-thread lookup or allocation, but neither it nor the fast function may rewrite or self-patch the published descriptor. This per-thread work is not lazy symbol binding: the loader has already resolved the TLS symbol and published the final immutable pair.</p>
+<p>The argument word belongs to the implementation of the selected function. A fast function may load <code>[R0+8]</code> and return it directly. An opaque token is not application data and remains valid only while the object that defines the TLS symbol is loaded. A resolver may perform dynamic per-thread lookup or allocation, but neither it nor the fast function may rewrite or self-patch the published descriptor.</p>
 <h2 id="tlsdesc-call-abi">TLSDESC Call ABI</h2>
 <p>The canonical sequence is exactly:</p>
 <pre><code>LEA.Q [PC + descriptor@TLSDESC_GOTPCREL], R0

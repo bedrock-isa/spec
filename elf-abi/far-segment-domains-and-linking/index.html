@@ -9226,7 +9226,7 @@
   <span class="md-ellipsis">
     
   
-    Shared Header Types and Exclusions
+    Shared Header Types
   
 
     
@@ -9595,7 +9595,7 @@
 <p>The loader validates that every published far pair has a canonical disabled or bounds-only image; enabled addresses lie within bounds except for a relocation explicitly recognized as exactly one-past a complete object.</p>
 </li>
 <li>
-<p>Far GOT and relocation results are fully initialized before application threads can observe them and are immutable afterward; no 16-byte atomic update ABI exists.</p>
+<p>Far GOT and relocation results are fully initialized before application threads can observe them and are immutable afterward.</p>
 </li>
 <li>
 <p>Unloading a shared object ends the lifetime of its data, TLS instances, near entries, far-call entries, segment images, and every pointer that designates them.</p>

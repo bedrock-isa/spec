@@ -9204,7 +9204,7 @@
   <span class="md-ellipsis">
     
   
-    Shared Header Types and Exclusions
+    Shared Header Types
   
 
     
@@ -9369,7 +9369,7 @@
 </tr>
 </tbody>
 </table>
-<p>The public far-pointer header defines the pure value macros <code>__BEDROCK_SEGMENT_IMAGE</code>, <code>__BEDROCK_SEGMENT_IMAGE_FOR_BASE</code>, and <code>__BEDROCK_SEGMENT_DISABLED</code>. They construct 64-bit segment images without reading or writing architectural state and are available through <code>&lt;bedrockintrin.h&gt;</code> without exposing the system-register interface.</p>
+<p>The public far-pointer header defines the pure value macros <code>__BEDROCK_SEGMENT_IMAGE</code>, <code>__BEDROCK_SEGMENT_IMAGE_FOR_BASE</code>, and <code>__BEDROCK_SEGMENT_DISABLED</code>. They construct 64-bit segment images without reading or writing architectural state and are available through <code>&lt;bedrockintrin.h&gt;</code>.</p>
 <p><code>__BEDROCK_SEGMENT_IMAGE(base_page,exponent,mantissa, bounds_only)</code> places the low 52, 5, and 6 bits of the first three operands in their architectural fields and normalizes <code>bounds_only</code> to zero or one. Each operand is evaluated once. An ABI-valid enabled image uses an exponent from 0 through 31 and a mantissa from 1 through 63. The macro only packs fields; it does not validate the resulting base, span, limit, or address canonicality.</p>
 <p><code>__BEDROCK_SEGMENT_IMAGE_FOR_BASE(base,...)</code> encodes <span class="arithmatex">\(\lfloor\texttt{(uint64\_t)base}/4096\rfloor\)</span> in the base-page field. It discards the low 12 bits, so a misaligned operand names the containing page and does not preserve the original byte address. The macro imposes no alignment precondition and does not adjust a later offset to compensate for the discarded bits. <code>__BEDROCK_SEGMENT_DISABLED</code> is the canonical all-zero disabled image. ABI-visible disabled images use that constant rather than constructing an image with a zero mantissa and nonzero remaining fields.</p>
 <h2 id="far-pointer-builtins">Far Pointer Builtins</h2>

@@ -9188,7 +9188,7 @@
   <span class="md-ellipsis">
     
   
-    Shared Header Types and Exclusions
+    Shared Header Types
   
 
     
@@ -9325,6 +9325,7 @@
 <p>Family = core control</p>
 <p>Privilege = supervisor</p>
 <p>Length = 2 bytes</p>
+<p>Repeat = <code>none</code></p>
 <h2 id="detailed-semantics">Detailed Semantics</h2>
 <p>RESET is supervisor-only and affects only the executing logical processor. Before the reset-state transition commits, all earlier memory effects and pending write-combining stores from that logical processor complete. No younger instruction effect becomes visible.</p>
 <p>The instruction installs the complete Architectural Reset State table. R0 through R15 and SP become zero, PC becomes BOOTPC, STATUS contains only PM set, and BOOTPC and BOOTCFG retain their values. Architectural repeat state, the load reservation, translation and page-walk caches, decoded instruction state, and prefetch state are invalidated. Coherent data- and instruction-cache contents remain coherent. Instruction-fetch synchronization completes before the first instruction at BOOTPC is fetched.</p>

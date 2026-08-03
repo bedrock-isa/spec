@@ -9188,7 +9188,7 @@
   <span class="md-ellipsis">
     
   
-    Shared Header Types and Exclusions
+    Shared Header Types
   
 
     
@@ -9325,6 +9325,7 @@
 <p>Family = control flow</p>
 <p>Privilege = unprivileged</p>
 <p>Length = 4-14 bytes</p>
+<p>Repeat = <code>none</code></p>
 <h2 id="detailed-semantics">Detailed Semantics</h2>
 <ol>
 <li>
@@ -9351,7 +9352,7 @@
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
 <p><strong>Register field <code>r</code></strong> — Selects the source operand.</p>
-<p><strong>Effective Address field <code>e</code></strong> — Specifies the control target. Availability is summarized by category; compact mode bits are defined by Compact EA Encoding, and extended descriptors are defined by the Extended EA profiles.</p>
+<p><strong>Effective Address field <code>e</code></strong> — Specifies the control target.</p>
 <p><strong>EA availability</strong></p>
 <p><strong>Allowed:</strong> Register; Memory; Immediate; EXT0</p>
 <p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>

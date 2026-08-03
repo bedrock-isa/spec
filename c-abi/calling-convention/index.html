@@ -9226,7 +9226,7 @@
   <span class="md-ellipsis">
     
   
-    Shared Header Types and Exclusions
+    Shared Header Types
   
 
     
@@ -9499,7 +9499,7 @@
 </tr>
 </tbody>
 </table>
-<p>At near-call entry, the canonical frame address is entry <code>SP+8</code>; saved <code>PC</code> is at CFA minus 8 and <code>CS</code> has a same-value rule. At far-call entry, the CFA is entry <code>SP+16</code>; saved <code>PC</code> is at CFA minus 16 and saved <code>CS</code> is at CFA minus 8. Standard DWARF CFI rules recover both registers; Bedrock defines no target-specific CFI opcode. Signal and architectural event-frame unwind conventions belong to the active OS ABI.</p>
+<p>At near-call entry, the canonical frame address is entry <code>SP+8</code>; saved <code>PC</code> is at CFA minus 8 and <code>CS</code> has a same-value rule. At far-call entry, the CFA is entry <code>SP+16</code>; saved <code>PC</code> is at CFA minus 16 and saved <code>CS</code> is at CFA minus 8. Standard DWARF CFI rules recover both registers. Signal and architectural event-frame unwind conventions belong to the active OS ABI.</p>
 <h2 id="argument-classification">Argument Classification</h2>
 <p>Classification occurs after the C language has determined the effective type of the argument. A named argument to a prototyped function is placed in one of six ABI classes:</p>
 <p><strong>GENERAL</strong></p>
@@ -9599,7 +9599,7 @@
 <p>The copy gives the callee an addressable object with the declared aggregate type. A callee may modify its private copy without modifying the caller’s source object. Baseline aggregates containing bit-fields and mixed integer/floating aggregates use the same INDIRECT rule; their member composition never changes argument registers. An extension aggregate with packed or unaligned members cannot cross this external ABI boundary unless a separate extension ABI permits it.</p>
 <h2 id="variadic-calls">Variadic Calls</h2>
 <p>Fixed named arguments use the ordinary assignment procedure. Every unnamed argument is first subject to the C default argument promotions and is then placed in a 16-byte stack slot. In particular, <code>float</code> becomes <code>double</code>, and <code>_Bool</code>, <code>char</code>, <code>short</code>, and their signed or unsigned variants promote to <code>int</code> when <code>int</code> can represent all values of the source type. <code>long double</code> remains the Bedrock binary64 <code>long double</code> type. An aggregate slot contains the address of the caller-owned by-value copy described above.</p>
-<p>The baseline <code>va_list</code> representation is one 64-bit pointer to the next unnamed argument slot. <code>va_start</code> initializes it to the first unnamed slot after any stack-assigned named arguments. <code>va_arg</code> reads the promoted representation from the low bytes of the current slot, or follows the copy address for an aggregate, and then advances the pointer by 16 bytes. <code>va_copy</code> copies the pointer value and <code>va_end</code> has no machine effect. There is no register save area.</p>
+<p>The baseline <code>va_list</code> representation is one 64-bit pointer to the next unnamed argument slot. <code>va_start</code> initializes it to the first unnamed slot after any stack-assigned named arguments. <code>va_arg</code> reads the promoted representation from the low bytes of the current slot, or follows the copy address for an aggregate, and then advances the pointer by 16 bytes. <code>va_copy</code> copies the pointer value and <code>va_end</code> has no machine effect.</p>
 <p>An unprototyped call applies the same promotions and places every argument on the stack. As required by C, the callee type must be compatible with the promoted types.</p>
 
 

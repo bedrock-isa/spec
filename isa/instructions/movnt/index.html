@@ -9177,7 +9177,7 @@
   <span class="md-ellipsis">
     
   
-    Shared Header Types and Exclusions
+    Shared Header Types
   
 
     
@@ -9295,7 +9295,7 @@
 
 <h1 id="movnt">MOVNT</h1>
 <h2 id="operation">Operation</h2>
-<p>MOVNT is a store-only non-temporal move. The source is an Rn register and the destination must be a memory operand. Register destinations and immediate destinations are invalid.</p>
+<p>MOVNT is a store-only non-temporal move. The source is an Rn register and the destination must be a memory operand.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
 <p><code>MOVNT.X(z:B/W/L/Q) Rn(s), &lt;ea&gt;(e)</code></p>
 <h2 id="attributes">Attributes</h2>
@@ -9315,7 +9315,7 @@
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
 <p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
-<p><strong>Effective Address field <code>e</code></strong> — Specifies the destination operand. Availability is summarized by category; compact mode bits are defined by Compact EA Encoding, and extended descriptors are defined by the Extended EA profiles.</p>
+<p><strong>Effective Address field <code>e</code></strong> — Specifies the destination operand.</p>
 <p><strong>EA availability</strong></p>
 <p><strong>Allowed:</strong> Memory; EXT0</p>
 <p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>

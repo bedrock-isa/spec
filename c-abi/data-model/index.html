@@ -8453,17 +8453,6 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#types-outside-the-baseline" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Types outside the baseline.
-      
-    </span>
-  </a>
-  
-</li>
-        
       </ul>
     </nav>
   
@@ -9282,7 +9271,7 @@
   <span class="md-ellipsis">
     
   
-    Shared Header Types and Exclusions
+    Shared Header Types
   
 
     
@@ -9420,17 +9409,6 @@
     <span class="md-ellipsis">
       
         Complex types.
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#types-outside-the-baseline" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Types outside the baseline.
       
     </span>
   </a>
@@ -9736,15 +9714,13 @@
 <p>An ordinary object or function pointer is a 64-bit, 8-byte-aligned canonical pre-segment virtual address. Object and function pointers remain distinct C type categories even though their baseline representations have the same size and alignment. The null pointer has numeric address zero and an all-zero 64-bit object representation. Every ordinary-pointer result with numeric address zero is the null pointer.</p>
 <h4 id="128-bit-integers">128-bit integers.</h4>
 <p>The types <code>__int128</code> and <code>unsigned __int128</code> are 16-byte, 16-byte-aligned integers. Their little-endian object representation places the low 64-bit word at the lower address. When the calling convention assigns one to a GENERAL-PAIR, the low word occupies the lower-numbered even register and the high word occupies the following odd register. A returned 128-bit integer therefore uses <code>R0</code> for the low word and <code>R1</code> for the high word. Its stack slot is 16-byte aligned.</p>
-<p>An ordinary 128-bit load or store need not be atomic and may use two 64-bit memory operations. The 128-bit integer types are not supported as C atomic objects in the baseline profile; this ABI defines neither a native 16-byte atomic operation nor a compiler-runtime helper contract for them.</p>
+<p>An ordinary 128-bit load or store need not be atomic and may use two 64-bit memory operations. The 128-bit integer types are not supported as C atomic objects in the baseline profile.</p>
 <h4 id="floating-point-profile">Floating-point profile.</h4>
-<p>The <code>bedrock-c</code> profile requires the base floating-point extension and defines no soft-float calling convention. Floating-point helpers may replace unavailable operations only when the <code>F0</code>–<code>F15</code> register calling convention remains available.</p>
+<p>The <code>bedrock-c</code> profile requires the base floating-point extension. Floating-point helpers may replace unavailable operations only when the <code>F0</code>–<code>F15</code> register calling convention remains available.</p>
 <h4 id="long-double">Long double.</h4>
 <p><code>long double</code> is a distinct C type with the IEEE-754 binary64 object representation, 8-byte size, and 8-byte alignment. It uses the floating-point argument class and returns in <code>F0</code>, making its call representation ABI-compatible with <code>double</code>. In a variadic call it occupies one 16-byte slot containing an 8-byte binary64 value without widening.</p>
 <h4 id="complex-types">Complex types.</h4>
 <p>A complex object contains its real component first and its imaginary component second, each using the corresponding real type’s representation. Therefore <code>float _Complex</code> has size 8 and alignment 4, while <code>double _Complex</code> and <code>long double _Complex</code> have size 16 and alignment 8.</p>
-<h4 id="types-outside-the-baseline">Types outside the baseline.</h4>
-<p><code>_Float16</code> and <code>__bf16</code> are not members of the <code>bedrock-c</code> profile. Vector types require a separate target extension that defines their object representation and argument classification.</p>
 <h2 id="far-pointer-representations">Far Pointer Representations</h2>
 <p>Far data and function pointers are 16-byte, 16-byte-aligned, little-endian two-word scalars with the common object representation shown below.</p>
 <p><img alt="Far Pointer Object Representation" src="../../assets/visuals/c-abi/data-model-01.svg" /></p>

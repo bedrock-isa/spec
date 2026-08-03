@@ -9188,7 +9188,7 @@
   <span class="md-ellipsis">
     
   
-    Shared Header Types and Exclusions
+    Shared Header Types
   
 
     
@@ -9326,6 +9326,7 @@
 <p>Family = control flow</p>
 <p>Privilege = unprivileged</p>
 <p>Length = 3 bytes</p>
+<p>Repeat = <code>none</code></p>
 <h2 id="detailed-semantics">Detailed Semantics</h2>
 <p>The body instruction is fetched, decoded, and checked for repeatability before the zero-count rule is applied. If the counter is zero, the decoded body is annulled and has no architectural side effects. If the counter is nonzero, the first body iteration executes before any condition check. The repeat condition is the body instruction’s repeat-observed value, observed during body execution rather than sampled by REP outside the body. Body commit, condition observation, counter decrement, and continuation PC selection are one precise architectural commit step. Every completed body iteration decrements the counter by one, including the terminating condition-false iteration. Writes by the body to the selected counter register have no architectural effect while repeat state is active.</p>
 <h2 id="instruction-forms">Instruction Forms</h2>

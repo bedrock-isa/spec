@@ -9193,7 +9193,7 @@
   <span class="md-ellipsis">
     
   
-    Shared Header Types and Exclusions
+    Shared Header Types
   
 
     
@@ -9476,7 +9476,7 @@
 </tr>
 </tbody>
 </table>
-<p>The four scalar arguments to a complex helper are the real and imaginary parts of its two operands, in operand order. Bedrock <code>long double</code> has the binary64 representation and call classification, so conversions involving <code>long double</code> use the corresponding <code>df</code> helper and <code>long double _Complex</code> multiplication or division uses the corresponding <code>dc3</code> helper. The baseline defines no <code>xf</code> or <code>tf</code> helper symbols.</p>
+<p>The four scalar arguments to a complex helper are the real and imaginary parts of its two operands, in operand order. Bedrock <code>long double</code> has the binary64 representation and call classification, so conversions involving <code>long double</code> use the corresponding <code>df</code> helper and <code>long double _Complex</code> multiplication or division uses the corresponding <code>dc3</code> helper.</p>
 <h2 id="pointers-and-external-objects">Pointers and External Objects</h2>
 <p>A C function pointer is a 64-bit pre-segment near-call address. Code and data pointers have the same size and alignment, but remain distinct C type categories; neither representation creates an interchangeable code/data address space.</p>
 <p>Far data and function pointers use their distinct 16-byte representations. Externally visible far functions have one canonical far-call entry address. Near and far entries use distinct symbols and addresses.</p>
@@ -9515,7 +9515,7 @@
 </tbody>
 </table>
 <p>The assembler and linker may relax an instruction sequence, but relaxation must preserve the C call interface, symbol identity, and observable control transfer defined by the original relocation. Relaxation is not a distinct C calling convention.</p>
-<p>For a direct far call, the caller materializes <code>SEG(S)</code> and <code>FARADDR(S)</code> and transfers with <code>LCALL</code>. An indirect call loads both words from the function pointer; a segment image already held in a GS register is copied to the Rn operand required by <code>LCALL</code>. An external dynamic call loads the eagerly resolved, immutable 16-byte entry from <code>.got.far</code>; the far model has no PLT.</p>
+<p>For a direct far call, the caller materializes <code>SEG(S)</code> and <code>FARADDR(S)</code> and transfers with <code>LCALL</code>. An indirect call loads both words from the function pointer; a segment image already held in a GS register is copied to the Rn operand required by <code>LCALL</code>. An external dynamic call loads the eagerly resolved, immutable 16-byte entry from <code>.got.far</code>.</p>
 <h2 id="nearfar-abi-veneers">Near/Far ABI Veneers</h2>
 <p>The current draft source profile diagnoses an ordinary/far function-pointer cast and does not require automatic veneer synthesis. A cast is not an implicit request for a veneer. This subsection instead defines the ABI of a veneer supplied through a separately named implementation extension or by runtime code.</p>
 <p>Only a compiler with complete, prototyped function type information may synthesize a cross-convention veneer. The linker may redirect or deduplicate an already typed veneer but may not infer one.</p>

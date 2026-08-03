@@ -9193,7 +9193,7 @@
   <span class="md-ellipsis">
     
   
-    Shared Header Types and Exclusions
+    Shared Header Types
   
 
     
@@ -9360,7 +9360,7 @@
 </table>
 <h2 id="atomic-object-eligibility">Atomic Object Eligibility</h2>
 <p>The native lock-free set consists of integer objects and ordinary 64-bit pointer objects whose size is 1, 2, 4, or 8 bytes and whose address satisfies the natural alignment for that size. An unaligned atomic object is not lock-free. Accordingly, <code>__atomic_always_lock_free</code> returns true only for those naturally aligned sizes.</p>
-<p>The baseline accepts an atomic object only when it belongs to that native lock-free set. Any other atomic object—including a floating-point, aggregate, far-pointer, 128-bit integer, unsupported-width, or insufficiently aligned object—is a target constraint violation. This ABI defines neither a native operation nor a compiler-runtime helper ABI for such an object.</p>
+<p>The baseline accepts an atomic object only when it belongs to that native lock-free set. Any other atomic object—including a floating-point, aggregate, far-pointer, 128-bit integer, unsupported-width, or insufficiently aligned object—is a target constraint violation.</p>
 <h2 id="native-atomic-primitives">Native Atomic Primitives</h2>
 <p>Once the object satisfies the width and alignment requirements above, the compiler uses the following primitive lowering. The ordering sequences are defined separately below.</p>
 <p><strong>Native Atomic Primitive Quick Reference</strong></p>

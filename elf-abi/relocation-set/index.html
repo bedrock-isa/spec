@@ -9182,7 +9182,7 @@
   <span class="md-ellipsis">
     
   
-    Shared Header Types and Exclusions
+    Shared Header Types
   
 
     
@@ -9397,7 +9397,7 @@
 </table>
 <h2 id="got-and-plt-model">GOT and PLT Model</h2>
 <p>The ordinary GOT stores 64-bit addresses for position-independent code and dynamic binding. A GOT relocation allocates or references the symbol’s slot in the loaded object. The PLT contains executable near-call entries; a PLT relocation names that entry rather than the final function address. Every ordinary PLT slot is resolved before application entry or constructors execute.</p>
-<p>GOT and PLT function addresses stay inside the ABI-visible near-call linkage domain. The far GOT is a separate table of aligned 16-byte address/image pairs, is completely resolved before publication, and has no corresponding far PLT.</p>
+<p>GOT and PLT function addresses stay inside the ABI-visible near-call linkage domain. The far GOT is a separate table of aligned 16-byte address/image pairs, and is completely resolved before publication.</p>
 <h2 id="relocations">Relocations</h2>
 <p><strong>Bedrock ELF Relocation Types</strong></p>
 <table>
