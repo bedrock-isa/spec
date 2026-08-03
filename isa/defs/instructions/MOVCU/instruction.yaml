@@ -1,7 +1,7 @@
 mnemonic: MOVCU
 title: Move Current To User
 summary: Copies from a current-domain source to user-domain memory.
-description: MOVCU is a supervisor-only checked user-access move. The source is a current-domain memory operand, register, or immediate. If the destination operand is memory, that access uses the user domain. Forms without a user-domain memory destination are invalid.
+description: MOVCU is a supervisor-only checked user-access move. The source is a current-domain memory operand, register, or immediate. If the destination operand is memory, that access uses the user domain.
 attributes:
   class: system
   family: data_movement

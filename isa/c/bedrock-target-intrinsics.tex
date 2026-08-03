@@ -46,8 +46,7 @@ ABI-visible meaning.
 
 \subsection{Header Topology and Exposure}
 \texttt{<bedrockintrin.h>} is the public umbrella. It includes the far, core,
-memory, integer, and floating-point families and deliberately exposes no
-system-management operation. \texttt{<bedrocksystemintrin.h>} is the system
+memory, integer, and floating-point families. \texttt{<bedrocksystemintrin.h>} is the system
 umbrella for system-register, cache, MMU, and processor-state facilities. Any
 family header may also be included directly.
 
@@ -84,8 +83,7 @@ The public far-pointer header defines the pure value macros
 \texttt{\_\_BEDROCK\_SEGMENT\_IMAGE\_FOR\_BASE}, and
 \texttt{\_\_BEDROCK\_SEGMENT\_DISABLED}. They construct 64-bit segment
 images without reading or writing architectural state and are available
-through \texttt{<bedrockintrin.h>} without exposing the system-register
-interface.
+through \texttt{<bedrockintrin.h>}.
 
 \texttt{\_\_BEDROCK\_SEGMENT\_IMAGE(base\_page,exponent,mantissa,
 bounds\_only)} places the low 52, 5, and 6 bits of the first three operands in
@@ -150,9 +148,7 @@ approximate mathematics. The selected instruction remains subject to its ISA
 accuracy, special-value, and floating-point exception contract.
 
 \section{System Target Interface}\label{page:system-target-interface}
-The system umbrella is separate so ordinary source inclusion does not
-accidentally make privileged facilities appear available. The compiler emits
-the requested architectural operation; runtime privilege and policy checks
+The compiler emits the requested architectural operation; runtime privilege and policy checks
 remain active.
 
 \subsection{System-Register Builtins}
@@ -194,16 +190,7 @@ privilege-restricted. The backend must model every restored register and the
 full memory and addressing-context clobber explicitly. It must not treat
 restore as an opaque call or as only a memory effect.
 
-\section{Shared Header Types and Exclusions}\label{page:shared-header-types-and-exclusions}
+\section{Shared Header Types}\label{page:shared-header-types-and-exclusions}
 \input{isa/c/generated/target_intrinsics/shared_types.tex}
-
-\smallskip
-\begingroup\small
-\noindent\textbf{Deliberate exclusions.}
-No target builtin is defined for near/far conversion or far-address
-truncation; \texttt{EXTRACT}, \texttt{CLMULH}, \texttt{MULHS},
-\texttt{MULHSU}, or \texttt{MULHU}; raw integer \texttt{FLAGS} manipulation;
-or call, return, stack, and repeat-control instructions.
-\endgroup
 
 \end{document}

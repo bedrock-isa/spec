@@ -622,6 +622,8 @@ def latex_attributes_block(inst: InstructionDef, model: IsaModel) -> str:
             if operand:
                 value += " " + tex_code(str(operand))
             lines.append(rf"{latex_escape('REPcc observation')} = {value}")
+    else:
+        lines.append(rf"{latex_escape('Repeat')} = {tex_code('none')}")
     return latex_ragged_block(lines)
 
 
@@ -1229,7 +1231,6 @@ def latex_ea_syntax_list(items: tuple[str, ...]) -> str:
 
 def latex_ea_availability_summary(summary: EAAvailabilitySummary) -> str:
     allowed_terms: list[str] = []
-    unavailable: list[str] = []
     for category in summary.categories:
         if category.mode == "all":
             allowed_terms.append(category.name)
@@ -1237,9 +1238,7 @@ def latex_ea_availability_summary(summary: EAAvailabilitySummary) -> str:
             allowed_terms.append(f"{category.name} except {latex_ea_syntax_list(category.exceptions)}")
         elif category.mode == "only":
             allowed_terms.append(f"{category.name} only {latex_ea_syntax_list(category.exceptions)}")
-        else:
-            unavailable.append(category.name)
-    return rf"\manualeasummary{{{'; '.join(allowed_terms) or 'none'}}}{{{', '.join(unavailable)}}}"
+    return rf"\manualeasummary{{{'; '.join(allowed_terms) or 'none'}}}"
 
 
 def destination_ea_field(entry: AllocationEntry) -> str | None:
@@ -1335,10 +1334,7 @@ def field_description_text(
         return latex_escape(f"Selects {choices}." if choices else "Selects the operand size.")
     if kind == "ea7":
         target = f"the {role}" if role else "the operand"
-        return latex_escape(
-            f"Specifies {target}. Availability is summarized by category; compact mode bits are defined by "
-            "Compact EA Encoding, and extended descriptors are defined by the Extended EA profiles."
-        )
+        return latex_escape(f"Specifies {target}.")
     if kind in {"rn", "freg", "vreg", "creg", "sreg"}:
         target = f"the {role}" if role else "a register operand"
         return latex_escape(f"Selects {target}.")
@@ -1470,7 +1466,7 @@ def render_latex(model: IsaModel, only_allocated: bool = False) -> str:
             "EXCEPTION_PROCESSING_SECTION": latex_exception_processing_section(),
             "INSTRUCTION_WORD_FORMATS_SECTION": latex_instruction_word_formats_section(model),
             "EXECUTION_MODEL_SECTION": latex_execution_model_section(model),
-            "STREAMING_EXECUTION_SECTION": latex_streaming_model_section(model),
+            "STREAMING_EXECUTION_SECTION": latex_streaming_model_section(),
             "INSTRUCTION_REFERENCE_SECTION": latex_instruction_reference_section(model, instructions),
             "REFERENCE_NAVIGATION_SECTION": latex_reference_navigation_section(
                 model, instructions
@@ -2378,40 +2374,8 @@ def latex_execution_model_section(model: IsaModel) -> str:
     )
 
 
-def latex_repeat_contract_table(model: IsaModel) -> str:
-    rows: list[list[str]] = []
-    for inst in model.instructions:
-        repeat = instruction_repeat_contract(inst)
-        if not repeat:
-            continue
-        contexts = ", ".join(str(value) for value in repeat.get("contexts") or [])
-        observed = repeat.get("observed")
-        if isinstance(observed, dict):
-            observation = str(observed.get("kind", ""))
-            if observed.get("operand"):
-                observation += f":{observed['operand']}"
-        else:
-            observation = "--"
-        rows.append(
-            [
-                rf"\hyperref[{instruction_label(inst.mnemonic)}]{{{tex_code(inst.mnemonic)}}}",
-                tex_code(contexts),
-                tex_code(observation),
-            ]
-        )
-    return latex_longtable(
-        ["Instruction", "Eligible Contexts", "REPcc Observation"],
-        rows,
-        ["1.05in", "2.20in", "2.15in"],
-        "Instruction Repeat Contracts",
-    )
-
-
-def latex_streaming_model_section(model: IsaModel) -> str:
-    return render_latex_template(
-        "streaming_execution_model.tex",
-        {"REPEAT_CONTRACT_TABLE": latex_repeat_contract_table(model)},
-    )
+def latex_streaming_model_section() -> str:
+    return render_latex_template("streaming_execution_model.tex")
 
 
 def latex_privileged_programming_model_section() -> str:

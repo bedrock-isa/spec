@@ -42,7 +42,7 @@ processor before selecting its optional architectural behavior.
 \end{manualtabular}
 
 Index zero of every defined leaf is a common discovery header. Leaf-specific payload begins at index one. An unknown
-class, leaf, or index returns zero; consequently, index zero of an absent leaf also returns zero.
+class, leaf, or index returns zero.
 
 \begin{manuallistedformatdiagram}{CPUID Common Leaf Header Formats}
 \manualformatrowrange{class 0, leaf 0}{63}{0}{%
@@ -75,8 +75,8 @@ any class, leaf 1 or greater, index 0 & reserved, zero & reserved, zero & \textt
 
 \texttt{MAX\_CLASS} is the greatest class recognized by the implementation, \texttt{MAX\_LEAF} is the greatest leaf
 recognized within the selected class, and \texttt{MAX\_INDEX} is the greatest index recognized within the selected
-leaf. Each field is a maximum selector value, not a count. A leaf may be sparse below \texttt{MAX\_INDEX}; software
-must still treat an unassigned selector as absent. Software ignores reserved bits in every returned value, so a later
+leaf. Each field is a maximum selector value, not a count. A leaf may be sparse below \texttt{MAX\_INDEX}. Software
+ignores reserved bits in every returned value, so a later
 revision can assign them without invalidating existing discovery code.
 
 \subsection{Discovery Classes}
@@ -89,8 +89,6 @@ in the optional-extension directory.
 \subsection{Leaf Directory}
 Each discovery class may expose a leaf directory. A directory leaf reports which subordinate leaves are defined and
 how indexed leaves should be enumerated.
-
-Software must treat an absent leaf as zero and must ignore reserved bits in a present leaf.
 
 \input{isa/tools/latex_builder/templates/fragments/generated/cpuid_class_leaf_directory.tex}
 
@@ -152,7 +150,7 @@ header reports \texttt{MAX\_LEAF=1} and \texttt{MAX\_INDEX=1}.
 @EXTENSION_DIRECTORY_TABLE@
 
 Unlisted bits are reserved and read as zero. \texttt{FPTRANSA} requires \texttt{FP} and is set when at least one approximate
-transcendental contract is present. It does not imply that every contract is present.
+transcendental contract is present.
 
 \subsection{FPTRANSA Accuracy Discovery}
 Class \texttt{0x00000001}, leaf \texttt{0x0001} uses indexes 1 through \texttt{0x0044} as a sparse space of stable
@@ -168,7 +166,7 @@ The sparse ID space reserves \texttt{0x0001..0x000F} for reduced-domain circular
 \texttt{0x0010..0x001F} for inverse trigonometric functions, \texttt{0x0020..0x002F} for hyperbolic and inverse
 hyperbolic functions, \texttt{0x0030..0x003F} for exponential functions, and
 \texttt{0x0040..0x004F} for logarithmic functions. The low-nibble-zero selector of each family is unassigned, and
-actual contracts in each family begin at low nibble one. Unassigned values at or below \texttt{0x0044} return zero.
+actual contracts in each family begin at low nibble one.
 
 \begin{manuallistedformatdiagram}{FPTRANSA Accuracy Result Format}
 \manualformatrowrange{result[63:0]}{63}{0}{%
@@ -200,8 +198,8 @@ fields use unsigned Q8.8.
 
 For a certified bound $K$, the field value is $\lceil 256K\rceil$ and the advertised bound is the field divided by
 256. Thus 0.5, 1, 1.5, 2, and 4 ULP encode as \texttt{0x0080}, \texttt{0x0100}, \texttt{0x0180},
-\texttt{0x0200}, and \texttt{0x0400}. A present contract has both fields in \texttt{0x0001..0x0400}; an absent or
-unknown contract returns zero. Software that does not recognize the returned revision uses its fallback path.
+\texttt{0x0200}, and \texttt{0x0400}. A present contract has both fields in \texttt{0x0001..0x0400}.
+Software that does not recognize the returned revision uses its fallback path.
 
 Software first checks \texttt{FP} and \texttt{FPTRANSA} in \texttt{EXTENSION\_DIRECTORY}, then queries the intended
 contract ID in \texttt{FPTRANSA\_ACCURACY}. It uses the instruction only when \texttt{PRESENT} is set, the returned
@@ -259,8 +257,6 @@ used only when its query reports present.
 }
 \end{manuallistedformatdiagram}
 {\small\texttt{P} is \texttt{PRESENT}.\par}
-
-The RDPMC instruction description defines counter behavior and unavailable-ID fault handling.
 
 \subsection{SAVE-Area Layout Discovery}
 Class \texttt{0x00000002}, leaf \texttt{0x0004} describes the memory image used by SAVE and RESTORE. Index zero is

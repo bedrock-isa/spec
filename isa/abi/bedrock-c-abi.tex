@@ -118,12 +118,11 @@ Its stack slot is 16-byte aligned.
 
 An ordinary 128-bit load or store need not be atomic and may use two 64-bit
 memory operations. The 128-bit integer types are not supported as C atomic
-objects in the baseline profile; this ABI defines neither a native 16-byte
-atomic operation nor a compiler-runtime helper contract for them.
+objects in the baseline profile.
 
 \paragraph{Floating-point profile.}
-The \texttt{bedrock-c} profile requires the base floating-point extension and
-defines no soft-float calling convention. Floating-point helpers may replace
+The \texttt{bedrock-c} profile requires the base floating-point extension.
+Floating-point helpers may replace
 unavailable operations only when the \texttt{F0}--\texttt{F15} register calling
 convention remains available.
 
@@ -140,11 +139,6 @@ second, each using the corresponding real type's representation. Therefore
 \texttt{float \_Complex} has size 8 and alignment 4, while
 \texttt{double \_Complex} and \texttt{long double \_Complex} have size 16 and
 alignment 8.
-
-\paragraph{Types outside the baseline.}
-\texttt{\_Float16} and \texttt{\_\_bf16} are not members of the
-\texttt{bedrock-c} profile. Vector types require a separate target extension
-that defines their object representation and argument classification.
 
 \subsection{Far Pointer Representations}
 Far data and function pointers are 16-byte, 16-byte-aligned, little-endian
@@ -458,8 +452,8 @@ At near-call entry, the canonical frame address is entry \texttt{SP+8}; saved
 \texttt{PC} is at CFA minus 8 and \texttt{CS} has a same-value rule. At
 far-call entry, the CFA is entry \texttt{SP+16}; saved \texttt{PC} is at CFA
 minus 16 and saved \texttt{CS} is at CFA minus 8. Standard DWARF CFI rules
-recover both registers; Bedrock defines no target-specific CFI opcode. Signal
-and architectural event-frame unwind conventions belong to the active OS ABI.
+recover both registers. Signal and architectural event-frame unwind
+conventions belong to the active OS ABI.
 
 \Needspace{2.4in}
 \subsection{Argument Classification}
@@ -610,7 +604,7 @@ slot after any stack-assigned named arguments. \texttt{va\_arg} reads the
 promoted representation from the low bytes of the current slot, or follows the
 copy address for an aggregate, and then advances the pointer by 16 bytes.
 \texttt{va\_copy} copies the pointer value and \texttt{va\_end} has no machine
-effect. There is no register save area.
+effect.
 
 An unprototyped call applies the same promotions and places every argument on
 the stack. As required by C, the callee type must be compatible with the
@@ -710,8 +704,7 @@ of its two operands, in operand order. Bedrock \texttt{long double} has the
 binary64 representation and call classification, so conversions involving
 \texttt{long double} use the corresponding \texttt{df} helper and
 \texttt{long double \_Complex} multiplication or division uses the
-corresponding \texttt{dc3} helper. The baseline defines no \texttt{xf} or
-\texttt{tf} helper symbols.
+corresponding \texttt{dc3} helper.
 
 \subsection{Pointers and External Objects}
 A C function pointer is a 64-bit pre-segment near-call address. Code and data
@@ -743,7 +736,7 @@ For a direct far call, the caller materializes \texttt{SEG(S)} and
 both words from the function pointer; a segment image already held in a GS
 register is copied to the Rn operand required by \texttt{LCALL}. An external
 dynamic call loads the eagerly resolved, immutable 16-byte entry from
-\texttt{.got.far}; the far model has no PLT.
+\texttt{.got.far}.
 
 \subsection{Near/Far ABI Veneers}
 The current draft source profile diagnoses an ordinary/far function-pointer cast
@@ -790,8 +783,7 @@ only for those naturally aligned sizes.
 The baseline accepts an atomic object only when it belongs to that native
 lock-free set. Any other atomic object---including a floating-point, aggregate,
 far-pointer, 128-bit integer, unsupported-width, or insufficiently aligned
-object---is a target constraint violation. This ABI defines neither a native
-operation nor a compiler-runtime helper ABI for such an object.
+object---is a target constraint violation.
 
 \subsection{Native Atomic Primitives}
 Once the object satisfies the width and alignment requirements above, the

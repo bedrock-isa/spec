@@ -1,7 +1,7 @@
 mnemonic: MOVNT
 title: Move Non-Temporal
 summary: Stores an Rn value to memory with a non-temporal access hint.
-description: MOVNT is a store-only non-temporal move. The source is an Rn register and the destination must be a memory operand. Register destinations and immediate destinations are invalid.
+description: MOVNT is a store-only non-temporal move. The source is an Rn register and the destination must be a memory operand.
 attributes:
   class: data_movement
   family: cache

@@ -858,11 +858,11 @@
 \newenvironment{manualeaprofile}{\par\Needspace{1.1in}\begingroup\small\raggedright}{\par\endgroup}
 \newcommand{\manualeaprofileline}[2]{\par\hangindent=1.08in\hangafter=1\textbf{#1:}\enspace#2\par}
 \newcommand{\manualeaprofilesyntax}[1]{\par\noindent\mbox{\texttt{#1}}\par}
-\newcommand{\manualeasummary}[2]{%
+\newcommand{\manualeasummary}[1]{%
   \par\begingroup\small\leftskip=0.24in\textbf{EA availability}\par
   \textbf{Allowed:} #1\par
   \textbf{Encoding:} See \hyperref[table:compact-ea-encoding]{Compact EA Encoding} and the
-  \hyperref[section:extended-ea-addressing]{Extended EA Descriptor profiles}.\manualifempty{#2}{}{\par\textbf{Unavailable:} #2}\par\endgroup}
+  \hyperref[section:extended-ea-addressing]{Extended EA Descriptor profiles}.\par\endgroup}
 \newcommand{\manualsummarymnemonic}[2]{\hyperref[#1]{\texttt{#2}}}
 \newenvironment{manualinstructionformat}{%
   \par\Needspace{1.55in}%

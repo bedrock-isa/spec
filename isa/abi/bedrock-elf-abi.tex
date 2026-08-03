@@ -372,7 +372,7 @@ canonical-image requirement, and complete-pair publication rules still apply.
 \item Interposable far data symbols use R BEDROCK FAR GLOB DAT; interposable far function symbols use R BEDROCK FAR JUMP SLOT.
 \item The loader constructs every domain image after load bias is known, applies complete far relocations, then publishes .got.far to application threads.
 \item The loader validates that every published far pair has a canonical disabled or bounds-only image; enabled addresses lie within bounds except for a relocation explicitly recognized as exactly one-past a complete object.
-\item Far GOT and relocation results are fully initialized before application threads can observe them and are immutable afterward; no 16-byte atomic update ABI exists.
+\item Far GOT and relocation results are fully initialized before application threads can observe them and are immutable afterward.
 \item Unloading a shared object ends the lifetime of its data, TLS instances, near entries, far-call entries, segment images, and every pointer that designates them.
 \end{itemize}
 \subsection{Assembler Directive}
@@ -447,7 +447,7 @@ ordinary PLT slot is resolved before application entry or constructors execute.
 
 GOT and PLT function addresses stay inside the ABI-visible near-call linkage
 domain. The far GOT is a separate table of aligned 16-byte address/image pairs,
-is completely resolved before publication, and has no corresponding far PLT.
+and is completely resolved before publication.
 \subsection{Relocations}
 \manualtablecaption{Bedrock ELF Relocation Types}
 \begingroup\footnotesize
@@ -473,7 +473,7 @@ rules.
 
 \clearpage
 \section{Dynamic Linking}\label{page:dynamic-linking}
-Dynamic objects use a fixed eager-binding Bedrock GOT and PLT contract. Lazy binding and a runtime PLT resolver protocol are not part of the current draft ELF ABI.
+Dynamic objects use a fixed eager-binding Bedrock GOT and PLT contract.
 \subsection{Dynamic Linking Rules}
 Ordinary dynamic linking supports standard and indirect functions, copy
 relocations, and \texttt{R\_BEDROCK\_IRELATIVE}. The loader resolves every
@@ -483,10 +483,10 @@ constructor. Shared-object calls use near \texttt{CALL}/\texttt{RET} within
 the ABI-visible linkage domain. The GOT base symbol is
 \texttt{\_GLOBAL\_OFFSET\_TABLE\_}.
 
-There is no \texttt{PLT0}. Every ordinary PLT entry occupies 32 bytes and has
+Every ordinary PLT entry occupies 32 bytes and has
 16-byte alignment. Far binding uses the same eager publication rule: every
 \texttt{.got.far} entry is a 16-byte aligned 16-byte pair, is bound eagerly,
-and is immutable after publication. There is no far PLT. An external far call
+and is immutable after publication. An external far call
 loads the final pair from \texttt{.got.far} and transfers with \texttt{LCALL}.
 \subsection{GOT Reserved Entries}
 \manualtablecaption{Global Offset Table Reserved Entries}
@@ -498,8 +498,8 @@ loads the final pair from \texttt{.got.far} and transfers with \texttt{LCALL}.
 \midrule
 \endhead
 0 & \texttt{\_\allowbreak{}DYNAMIC} & dynamic section address\\
-1 & reserved & zero; no loader-handle meaning\\
-2 & reserved & zero; no lazy-resolver meaning\\
+1 & reserved & zero\\
+2 & reserved & zero\\
 \bottomrule
 \end{longtable}
 \endgroup
@@ -529,14 +529,12 @@ A PLT transfer preserves \texttt{R0} through \texttt{R7}, \texttt{F0} through
 \texttt{F7}, \texttt{GS1} through \texttt{GS5}, \texttt{FLAGS}, and all
 segment state. The loader writes each final \texttt{.got.plt} value before
 publication. Published slots are immutable and may be covered by
-\texttt{PT\_GNU\_RELRO}; no post-publication rebinding is permitted. A later
-lazy-binding facility requires a distinct ELF profile and resolver ABI.
+\texttt{PT\_GNU\_RELRO}.
 \subsection{Far Binding Rules}
 \begin{itemize}
 \item The loader resolves every R BEDROCK FAR GLOB DAT, R BEDROCK FAR JUMP SLOT, and R BEDROCK FAR IRELATIVE relocation before application code can observe the entry.
 \item A far function GOT entry contains the canonical STT BEDROCK FAR FUNC address and is called with LCALL.
-\item No lazy far PLT state exists; a far-call resolver never consumes or overwrites C argument registers at the call site.
-\item Interposition resolves and writes the complete 16-byte pair before loader publication; the ABI requires no 16-byte atomic store.
+\item Interposition resolves and writes the complete 16-byte pair before loader publication.
 \item STT BEDROCK FAR IFUNC resolvers are called with the normal near C ABI and return a pre-segment code address in R0 and a canonical disabled or bounds-only CS image in GS1.
 \item The loader rejects a far resolver result whose image is noncanonical or whose non-null function address lies outside an enabled image's bounds.
 \item Published .got.far entries are immutable; post-publication rebinding or mutation is forbidden.
@@ -597,8 +595,7 @@ is not application data and remains valid only while the object that defines
 the TLS symbol is loaded. A resolver may perform dynamic per-thread lookup or
 allocation, but
 neither it nor the fast function may rewrite or self-patch the published
-descriptor. This per-thread work is not lazy symbol binding: the loader has
-already resolved the TLS symbol and published the final immutable pair.
+descriptor.
 \subsection{TLSDESC Call ABI}
 The canonical sequence is exactly:
 \begin{verbatim}
