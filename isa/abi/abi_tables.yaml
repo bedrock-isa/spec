@@ -24,11 +24,6 @@ c_abi:
         kind: register_pair
         high: R1
         low: R0
-    - result_class: far_pointer
-      convention:
-        kind: far_pointer_registers
-        address: R0
-        segment_image: GS1
     - result_class: small_aggregate
       convention:
         kind: register_pair
@@ -45,12 +40,6 @@ c_abi:
       relocation: R_BEDROCK_CALL32S
     - call_form: external_plt_call
       relocation: R_BEDROCK_PLT32S
-    - call_form: far_symbol_address_word
-      relocation: R_BEDROCK_FAR_ADDR64
-    - call_form: far_symbol_segment_word
-      relocation: R_BEDROCK_FAR_SEGMENT64
-    - call_form: external_far_call_slot
-      relocation: R_BEDROCK_FAR_JUMP_SLOT
 
   ordinary_access_guarantees:
     - access:
@@ -125,22 +114,6 @@ elf_abi:
     - {id: 42, name: R_BEDROCK_TLSDESC_GOTPCREL64, size: 64-bit signed, calculation: TLSDESC(S) + A - P}
     - {id: 43, name: R_BEDROCK_TLSDESC_CALL, size: "0", calculation: none}
     - {id: 44, name: R_BEDROCK_TLSDESC, size: "2 x u64", calculation: "write {function, argument} for S"}
-    - {id: 45, name: R_BEDROCK_FAR_ADDR64, size: 64-bit unsigned, calculation: FARADDR(S) + A}
-    - {id: 46, name: R_BEDROCK_FAR_SEGMENT64, size: 64-bit unsigned, calculation: SEG(S)}
-    - {id: 47, name: R_BEDROCK_FAR_DOMAIN64, size: 64-bit unsigned, calculation: SEGDOM(A)}
-    - {id: 48, name: R_BEDROCK_FAR_GLOB_DAT, size: 128-bit unsigned, calculation: "{FARADDR(S) + A, SEG(S)}"}
-    - {id: 49, name: R_BEDROCK_FAR_JUMP_SLOT, size: 128-bit unsigned, calculation: FAR(S)}
-    - {id: 50, name: R_BEDROCK_FAR_IRELATIVE, size: 128-bit unsigned, calculation: FarResolver(B + A)}
-
-  bedrock_specific_sections:
-    - name: .got.far
-      attributes: [alloc, read, write]
-      contents: far_pointer_entries
-    - name: .note.bedrock
-      classification: note
-    - name: .bedrock.segdomains
-      classification: linker_metadata
-
   tls_relocation_families:
     - model: local_exec
       relocations:

@@ -1,11 +1,6 @@
 version: 0
 
 header_families:
-  - id: far
-    name: far pointer
-    header: bedrockfarintrin.h
-    umbrella: public
-    exposure: '`bedrock-c-far` profile'
   - id: core
     name: core
     header: bedrockcoreintrin.h
@@ -48,35 +43,6 @@ header_families:
     exposure: runtime state management
 
 builtin_families:
-  - id: far
-    caption: Far Pointer Builtins
-    effect_heading: Constraint and effect
-    builtins:
-      - name: far_ptr_init
-        c_interface: far T(type,address,image)
-        lowering: {kind: description, value: value construction}
-        effect: Far type required; constant operands preserve constant-expression status; no fault, segment write, or memory access.
-      - name: far_flat_ptr_init
-        c_interface: far T(type,address)
-        lowering: {kind: description, value: value construction}
-        effect: Far type required; attaches the canonical disabled image without faulting.
-      - name: far_null
-        c_interface: far T(type)
-        lowering: {kind: description, value: constant construction}
-        effect: Far type required; produces the canonical all-zero representation.
-      - name: far_ptr_from_segment
-        c_interface: far T(type,offset,image)
-        lowering: {kind: description, value: canonicalization}
-        effect: Far type required; returns the low 64 bits of encoded base plus offset with the converted bounds-only image, including when the zero address denotes null; no overflow test or fault.
-      - name: far_address
-        c_interface: uint64_t(pointer)
-        lowering: {kind: description, value: address extraction}
-        effect: Accepts a far data or function pointer; pure extraction without validation or bounds probing.
-      - name: far_same_encoding
-        c_interface: int(left,right)
-        lowering: {kind: description, value: two-word comparison}
-        effect: Compatible far pointer types required; pure representation comparison.
-
   - id: core
     caption: Core Builtins
     effect_heading: Availability, constraint, and effect

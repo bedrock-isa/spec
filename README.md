@@ -36,7 +36,7 @@ This small example captures several Bedrock ideas at once: segment-qualified ind
 
 - **Streaming without hidden vector state.** `REP`, conditional `REPcc`, and grouped `REPG` repeat scalar work in program order. Events preserve the remaining repeat context, so execution stays debuggable and restartable.
 
-- **A complete systems boundary.** Segment pre-translation, optional paging, coherent weakly ordered memory, atomics, fences, privilege transitions, event delivery, ELF, the LP64 C ABI, and far pointers are designed as related layers.
+- **A complete systems boundary.** Segment pre-translation, optional paging, coherent weakly ordered memory, atomics, fences, privilege transitions, event delivery, ELF, and the LP64 C ABI are designed as related layers.
 
 - **Explicit evolution.** Optional facilities are discovered through `CPUID`; reserved encodings stay reserved; incompatible behavior receives a new architectural identity or contract instead of silently changing meaning.
 

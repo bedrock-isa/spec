@@ -54,6 +54,5 @@ __pycache__/
 
 # Agents
 AGENTS.md
-CURRENT_TASK.md
 /.agent
 /.codex

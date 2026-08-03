@@ -21,7 +21,6 @@ DEFAULT_OUTPUT_DIR = ROOT / "isa" / "c" / "generated" / "target_intrinsics"
 HEADER_ROOT = ROOT / "isa" / "c" / "include"
 
 BUILTIN_LAYOUTS = {
-    "far": ("1.25in", "1.25in", "1.05in", "2.05in"),
     "core": ("1.25in", "1.25in", "0.8in", "2.3in"),
     "memory": ("1.35in", "1.3in", "0.75in", "2.2in"),
     "integer": ("1.3in", "1.55in", "0.75in", "2.0in"),

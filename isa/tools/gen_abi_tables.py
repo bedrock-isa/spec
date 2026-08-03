@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
-import json
 from pathlib import Path
 import re
 from typing import Any
@@ -12,7 +11,7 @@ from typing import Any
 import yaml
 
 import abi_call_model
-from latex_builder.common import tex_code, tex_escape
+from latex_builder.common import tex_code
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -25,7 +24,7 @@ FRAGMENT_NAMES = (
     "c_call_relocation_quick_reference.tex",
     "ordinary_memory_access_guarantees.tex",
     "native_atomic_primitive_quick_reference.tex",
-    "bedrock_specific_section_conventions.tex",
+    "elf_relocation_rows.tex",
     "tls_relocation_families.tex",
 )
 
@@ -35,7 +34,6 @@ RETURN_CLASS_LABELS = {
     "long_double_scalar": r"\texttt{long double} scalar",
     "complex_scalar": "Complex scalar",
     "int128_scalar": r"\texttt{\_\_int128} scalar",
-    "far_pointer": "Far data or function pointer",
     "small_aggregate": "Small aggregate",
     "large_aggregate": "Large aggregate",
 }
@@ -43,9 +41,6 @@ RETURN_CLASS_LABELS = {
 CALL_FORM_LABELS = {
     "direct_c_call": "Direct C call",
     "external_plt_call": "External call through the PLT",
-    "far_symbol_address_word": "Far symbol address word",
-    "far_symbol_segment_word": "Far symbol segment word",
-    "external_far_call_slot": "External far call slot",
 }
 TABLE_WIDTH_RE = re.compile(r"^\d+(?:\.\d+)?(?:pt|in|cm|mm|em|ex)$")
 
@@ -140,7 +135,6 @@ def validate_manifest(manifest: Mapping[str, Any]) -> None:
             "single_register": {"kind", "register"},
             "complex_registers": {"kind", "real", "imaginary"},
             "register_pair": {"kind", "high", "low"},
-            "far_pointer_registers": {"kind", "address", "segment_image"},
             "sret_pointer": {"kind", "argument", "result"},
         }
         if kind not in required_by_kind:
@@ -217,26 +211,10 @@ def validate_manifest(manifest: Mapping[str, Any]) -> None:
     elf_abi = _mapping(manifest["elf_abi"], "manifest.elf_abi")
     _keys(
         elf_abi,
-        {"bedrock_specific_sections", "relocations", "tls_relocation_families"},
+        {"relocations", "tls_relocation_families"},
         set(),
         "manifest.elf_abi",
     )
-    sections = _list(elf_abi["bedrock_specific_sections"], "manifest.elf_abi.bedrock_specific_sections")
-    section_names: list[str] = []
-    for index, raw_row in enumerate(sections):
-        where = f"manifest.elf_abi.bedrock_specific_sections[{index}]"
-        row = _mapping(raw_row, where)
-        _keys(row, {"name"}, {"attributes", "contents", "classification"}, where)
-        section_names.append(_identifier(row["name"], f"{where}.name"))
-        if "classification" in row:
-            _keys(row, {"name", "classification"}, set(), where)
-            _identifier(row["classification"], f"{where}.classification")
-        else:
-            _keys(row, {"name", "attributes", "contents"}, set(), where)
-            _identifiers(row["attributes"], f"{where}.attributes")
-            _identifier(row["contents"], f"{where}.contents")
-    _unique(section_names, "manifest.elf_abi.bedrock_specific_sections.name")
-
     relocations = _list(elf_abi["relocations"], "manifest.elf_abi.relocations")
     relocation_ids: list[int] = []
     relocation_names: list[str] = []
@@ -299,8 +277,6 @@ def _return_rule(convention: Mapping[str, Any]) -> str:
         return f"real component in {_tt(convention['real'])}, imaginary component in {_tt(convention['imaginary'])}"
     if kind == "register_pair":
         return _tt(f"{convention['high']}:{convention['low']}")
-    if kind == "far_pointer_registers":
-        return f"address in {_tt(convention['address'])}, segment image in {_tt(convention['segment_image'])}"
     if kind == "sret_pointer":
         return f"sret pointer in {_tt(convention['argument'])}, result pointer returned in {_tt(convention['result'])}"
     raise AssertionError(kind)
@@ -358,23 +334,6 @@ def _render_atomic_primitives(
         else:
             primitive = f"compare-exchange loop using {_tt(lowering['instruction'])}"
         rendered.append((operation_labels[operations], primitive))
-    return rendered
-
-
-def _render_sections(rows: list[Mapping[str, Any]]) -> list[tuple[str, str]]:
-    classifications = {"note": "note", "linker_metadata": "linker metadata"}
-    contents = {"far_pointer_entries": "far pointer entries"}
-    rendered: list[tuple[str, str]] = []
-    for row in rows:
-        if "classification" in row:
-            detail = classifications[row["classification"]]
-        else:
-            values = [
-                *(tex_escape(value) for value in row["attributes"]),
-                tex_escape(contents[row["contents"]]),
-            ]
-            detail = r"\begin{tabular}[t]{@{}l@{}}" + r"\\".join(values) + r"\end{tabular}"
-        rendered.append((_tt(row["name"]), detail))
     return rendered
 
 
@@ -540,17 +499,10 @@ def render_fragments(
             rows=_render_atomic_primitives(c_abi["native_atomic_primitives"]),
             environment="manuallongtable",
         ),
-        "bedrock_specific_section_conventions.tex": (
+        "elf_relocation_rows.tex": (
             "\\newcommand{\\bedrockelfrelocationrows}{%\n"
             + _render_relocations(elf_abi["relocations"])
             + "}\n"
-            + _table_fragment(
-                caption="Bedrock-Specific Section Conventions",
-                widths=("1.45in", "4.05in"),
-                headers=("Section", "Attributes"),
-                rows=_render_sections(elf_abi["bedrock_specific_sections"]),
-                compact=True,
-            )
         ),
         "tls_relocation_families.tex": _table_fragment(
             caption="TLS Relocation Families",

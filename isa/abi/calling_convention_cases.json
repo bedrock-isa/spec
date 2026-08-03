@@ -199,128 +199,21 @@
       }
     },
     {
-      "id": "far-pointer-register-channels",
-      "documented": true,
-      "call": {
-        "return": {"kind": "far_data_pointer"},
-        "arguments": [
-          {"name": "tag", "kind": "u64"},
-          {"name": "data", "kind": "far_data_pointer"},
-          {"name": "function", "kind": "far_function_pointer"}
-        ]
-      },
-      "expect": {
-        "sret": null,
-        "return_location": "GS1:R0",
-        "arguments": [
-          {"name": "tag", "source_kind": "u64", "effective_kind": "u64", "mode": "value", "location": "R0"},
-          {"name": "data", "source_kind": "far_data_pointer", "effective_kind": "far_data_pointer", "mode": "value", "location": "GS2:R1"},
-          {"name": "function", "source_kind": "far_function_pointer", "effective_kind": "far_function_pointer", "mode": "value", "location": "GS3:R2"}
-        ],
-        "stack_size": 0
-      }
-    },
-    {
-      "id": "far-segment-exhaustion-preserves-general",
-      "documented": false,
-      "call": {
-        "return": {"kind": "void"},
-        "arguments": [
-          {"name": "p0", "kind": "far_data_pointer"},
-          {"name": "p1", "kind": "far_data_pointer"},
-          {"name": "p2", "kind": "far_data_pointer"},
-          {"name": "p3", "kind": "far_data_pointer"},
-          {"name": "p4", "kind": "far_data_pointer"},
-          {"name": "tail", "kind": "u64"}
-        ]
-      },
-      "expect": {
-        "sret": null,
-        "return_location": null,
-        "arguments": [
-          {"name": "p0", "source_kind": "far_data_pointer", "effective_kind": "far_data_pointer", "mode": "value", "location": "GS2:R0"},
-          {"name": "p1", "source_kind": "far_data_pointer", "effective_kind": "far_data_pointer", "mode": "value", "location": "GS3:R1"},
-          {"name": "p2", "source_kind": "far_data_pointer", "effective_kind": "far_data_pointer", "mode": "value", "location": "GS4:R2"},
-          {"name": "p3", "source_kind": "far_data_pointer", "effective_kind": "far_data_pointer", "mode": "value", "location": "GS5:R3"},
-          {"name": "p4", "source_kind": "far_data_pointer", "effective_kind": "far_data_pointer", "mode": "value", "location": "[SP+16]"},
-          {"name": "tail", "source_kind": "u64", "effective_kind": "u64", "mode": "value", "location": "R4"}
-        ],
-        "stack_size": 16
-      }
-    },
-    {
       "id": "sret-shifts-only-general-cursor",
       "documented": false,
       "call": {
         "return": {"kind": "aggregate", "size": 24},
         "arguments": [
-          {"name": "data", "kind": "far_data_pointer"}
+          {"name": "factor", "kind": "f64"}
         ]
       },
       "expect": {
         "sret": "R0",
         "return_location": "R0",
         "arguments": [
-          {"name": "data", "source_kind": "far_data_pointer", "effective_kind": "far_data_pointer", "mode": "value", "location": "GS2:R1"}
+          {"name": "factor", "source_kind": "f64", "effective_kind": "f64", "mode": "value", "location": "F0"}
         ],
         "stack_size": 0
-      }
-    },
-    {
-      "id": "general-exhaustion-spills-far-pointer",
-      "documented": false,
-      "call": {
-        "return": {"kind": "void"},
-        "arguments": [
-          {"name": "a0", "kind": "u64"},
-          {"name": "a1", "kind": "u64"},
-          {"name": "a2", "kind": "u64"},
-          {"name": "a3", "kind": "u64"},
-          {"name": "a4", "kind": "u64"},
-          {"name": "a5", "kind": "u64"},
-          {"name": "a6", "kind": "u64"},
-          {"name": "a7", "kind": "u64"},
-          {"name": "p0", "kind": "far_data_pointer"},
-          {"name": "p1", "kind": "far_function_pointer"}
-        ]
-      },
-      "expect": {
-        "sret": null,
-        "return_location": null,
-        "arguments": [
-          {"name": "a0", "source_kind": "u64", "effective_kind": "u64", "mode": "value", "location": "R0"},
-          {"name": "a1", "source_kind": "u64", "effective_kind": "u64", "mode": "value", "location": "R1"},
-          {"name": "a2", "source_kind": "u64", "effective_kind": "u64", "mode": "value", "location": "R2"},
-          {"name": "a3", "source_kind": "u64", "effective_kind": "u64", "mode": "value", "location": "R3"},
-          {"name": "a4", "source_kind": "u64", "effective_kind": "u64", "mode": "value", "location": "R4"},
-          {"name": "a5", "source_kind": "u64", "effective_kind": "u64", "mode": "value", "location": "R5"},
-          {"name": "a6", "source_kind": "u64", "effective_kind": "u64", "mode": "value", "location": "R6"},
-          {"name": "a7", "source_kind": "u64", "effective_kind": "u64", "mode": "value", "location": "R7"},
-          {"name": "p0", "source_kind": "far_data_pointer", "effective_kind": "far_data_pointer", "mode": "value", "location": "[SP+16]"},
-          {"name": "p1", "source_kind": "far_function_pointer", "effective_kind": "far_function_pointer", "mode": "value", "location": "[SP+32]"}
-        ],
-        "stack_size": 32
-      }
-    },
-    {
-      "id": "variadic-far-pointer-stack-slot",
-      "documented": false,
-      "call": {
-        "return": {"kind": "void"},
-        "variadic": true,
-        "arguments": [
-          {"name": "format", "kind": "pointer"},
-          {"name": "data", "kind": "far_data_pointer", "named": false}
-        ]
-      },
-      "expect": {
-        "sret": null,
-        "return_location": null,
-        "arguments": [
-          {"name": "format", "source_kind": "pointer", "effective_kind": "pointer", "mode": "value", "location": "R0"},
-          {"name": "data", "source_kind": "far_data_pointer", "effective_kind": "far_data_pointer", "mode": "value", "location": "[SP+16]"}
-        ],
-        "stack_size": 16
       }
     },
     {

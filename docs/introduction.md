@@ -24,7 +24,7 @@ These forms share one operand model instead of being redefined instruction by in
 
 Bedrock separates effective-address calculation, segment pre-translation, optional page-table translation, and the final memory-system access. `CS`, `DS`, and `SS` provide fixed code, data, and stack contexts, while `GS0` through `GS5` provide additional explicitly selectable domains. Segment state may be disabled, translated, or used as a bounds-only window.
 
-Paging adds permissions, page geometry, and an address-type distinction. Ordinary byte-addressed memory participates in the coherent memory system; slot-addressed mappings represent acknowledged transactions for device-style access. Keeping these stages separate makes protection domains, far addressing, ordinary virtual memory, and memory-mapped interaction parts of one composable model.
+Paging adds permissions, page geometry, and an address-type distinction. Ordinary byte-addressed memory participates in the coherent memory system; slot-addressed mappings represent acknowledged transactions for device-style access. Keeping these stages separate makes protection domains, segment-qualified addressing, ordinary virtual memory, and memory-mapped interaction parts of one composable model.
 
 ### Precise execution and restartable failure
 
@@ -48,7 +48,7 @@ Each iteration retains ordinary operand and fault rules. When an event interrupt
 
 Bedrock has distinct user and supervisor modes. Explicit system calls use a validated supervisor-call state and return bank, while exceptions, interrupts, and NMIs use a separate common architectural-event path. Entry and return transitions validate their complete context and commit atomically, avoiding half-entered privilege states.
 
-The ISA is the foundation of a broader software contract. Bedrock defines a 64-bit ELF environment, an LP64 C ABI, near and far call models, far pointers that pair an address with a segment image, and compiler-facing target operations. These layers are kept separate in meaning, but they are designed together so that an architectural feature has a coherent path into real programs.
+The ISA is the foundation of a broader software contract. Bedrock defines a 64-bit ELF environment, an LP64 C ABI, and compiler-facing target operations. These layers are kept separate in meaning, but they are designed together so that an architectural feature has a coherent path into real programs.
 
 ### Optional features are discoverable contracts
 
@@ -70,7 +70,7 @@ Software can therefore choose an optional facility based on an explicit semantic
 
 **One meaning should serve every layer.** The project uses structured architectural definitions and machine-checkable invariants so that instruction semantics, reference material, ABI rules, and conformance evidence do not drift into parallel versions of the architecture.
 
-**Boundary cases deserve first-class treatment.** Cross-page accesses, failed atomics, nested events, partial repeat progress, cache synchronization, and far-pointer transitions are specification subjects in their own right. The design is judged by how well these cases compose, not only by how elegant the happy path looks.
+**Boundary cases deserve first-class treatment.** Cross-page accesses, failed atomics, nested events, partial repeat progress, and cache synchronization are specification subjects in their own right. The design is judged by how well these cases compose, not only by how elegant the happy path looks.
 
 ## Direction
 

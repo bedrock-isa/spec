@@ -349,7 +349,6 @@ def build_site(
         "isa",
         "elf-abi",
         "c-abi",
-        "c-far-extensions",
         "target-intrinsics",
     ]
     if ids != expected:

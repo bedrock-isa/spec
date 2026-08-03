@@ -69,13 +69,6 @@ jobs:
           archive: false
           if-no-files-found: error
 
-      - name: Upload C far-pointer extensions
-        uses: actions/upload-artifact@v7
-        with:
-          path: build/latex/bedrock-c-far-extensions/bedrock-c-far-extensions.pdf
-          archive: false
-          if-no-files-found: error
-
       - name: Upload target intrinsics
         uses: actions/upload-artifact@v7
         with:

@@ -80,14 +80,6 @@ DOCUMENTS = (
         "C ABI",
     ),
     Document(
-        "bedrock-c-far-extensions",
-        ROOT / "isa" / "c" / "bedrock-c-far-extensions.tex",
-        "bedrock-c-far-extensions.pdf",
-        Path("latex/bedrock-c-far-extensions/bedrock-c-far-extensions.pdf"),
-        "c-far-extensions",
-        "C Far-Pointer Extensions",
-    ),
-    Document(
         "bedrock-target-intrinsics",
         ROOT / "isa" / "c" / "bedrock-target-intrinsics.tex",
         "bedrock-target-intrinsics.pdf",

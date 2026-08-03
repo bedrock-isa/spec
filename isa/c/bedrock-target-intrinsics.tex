@@ -21,10 +21,8 @@ backend, and the target headers.
 
 Architectural instruction behavior remains defined by the Bedrock ISA
 Specification. The baseline calling convention is defined by the Bedrock C
-ABI. Far-pointer source types are defined by the Bedrock C Far-Pointer
-Extensions, while their representation and calls are defined by the C ABI.
-This document specifies how source programs reach those facilities; it does
-not duplicate their architectural or language semantics.
+ABI. This document specifies how source programs reach target facilities; it
+does not duplicate their architectural or language semantics.
 
 \manualfield{Interface name:}{\texttt{bedrock-target-intrinsics}}
 \manualfield{Source language:}{ISO C with implementation-reserved target interfaces}
@@ -37,8 +35,8 @@ The compiler builtin namespace begins with
 denotes that prefix followed by the displayed name. For example,
 \texttt{cpuid} denotes
 \texttt{\_\_builtin\_bedrock\_cpuid}. The ordinary header wrapper uses the
-\texttt{\_\_bedrock\_} prefix with the same name unless its entry or the
-far-pointer construction interface specifies a macro spelling.
+\texttt{\_\_bedrock\_} prefix with the same name unless its entry specifies a
+macro spelling.
 
 All of these identifiers are implementation-reserved. A builtin is a compiler
 primitive, not an external function symbol. The target headers own wrapper
@@ -46,8 +44,8 @@ declarations and umbrella include topology; this document owns their
 ABI-visible meaning.
 
 \subsection{Header Topology and Exposure}
-\texttt{<bedrockintrin.h>} is the public umbrella. It includes the far, core,
-memory, integer, and floating-point families. \texttt{<bedrocksystemintrin.h>} is the system
+\texttt{<bedrockintrin.h>} is the public umbrella. It includes the core, memory,
+integer, and floating-point families. \texttt{<bedrocksystemintrin.h>} is the system
 umbrella for system-register, cache, MMU, and processor-state facilities. Any
 family header may also be included directly.
 
@@ -76,54 +74,6 @@ memory clobber, while a named fence also has the hardware behavior defined by
 the ISA.
 
 \section{Public Target Interface}\label{page:public-target-interface}
-
-\subsection{Segment-Image Value Macros}
-\manualfield{Header:}{\texttt{<bedrockfarintrin.h>}}
-The public far-pointer header defines the pure value macros
-\texttt{\_\_BEDROCK\_SEGMENT\_IMAGE},
-\texttt{\_\_BEDROCK\_SEGMENT\_IMAGE\_FOR\_BASE}, and
-\texttt{\_\_BEDROCK\_SEGMENT\_DISABLED}. They construct 64-bit segment
-images without reading or writing architectural state and are available
-through \texttt{<bedrockintrin.h>}.
-
-\texttt{\_\_BEDROCK\_SEGMENT\_IMAGE(base\_page,exponent,mantissa,
-bounds\_only)} places the low 52, 5, and 6 bits of the first three operands in
-their architectural fields and normalizes \texttt{bounds\_only} to zero or
-one. Each operand is evaluated once. An ABI-valid enabled image uses an
-exponent from 0 through 31 and a mantissa from 1 through 63. The macro only
-packs fields; it does not validate the resulting base, span, limit, or address
-canonicality.
-
-\texttt{\_\_BEDROCK\_SEGMENT\_IMAGE\_FOR\_BASE(base,...)} encodes
-$\lfloor\texttt{(uint64\_t)base}/4096\rfloor$ in the base-page field. It
-discards the low 12 bits, so a misaligned operand names the containing page and
-does not preserve the original byte address. The macro imposes no alignment
-precondition and does not adjust a later offset to compensate for the discarded
-bits.
-\texttt{\_\_BEDROCK\_SEGMENT\_DISABLED} is the canonical all-zero disabled
-image. ABI-visible disabled images use that constant rather than constructing
-an image with a zero mantissa and nonzero remaining fields.
-
-\subsection{Far Pointer Builtins}
-\manualfield{Header:}{\texttt{<bedrockfarintrin.h>}}
-The four construction operations use the macro spellings
-\texttt{\_\_BEDROCK\_FAR\_PTR\_INIT},
-\texttt{\_\_BEDROCK\_FAR\_FLAT\_PTR\_INIT},
-\texttt{\_\_BEDROCK\_FAR\_NULL}, and
-\texttt{\_\_BEDROCK\_FAR\_PTR\_FROM\_SEGMENT}. Their pointer-type operand is
-handled by the compiler and is not a runtime C value.
-
-\texttt{\_\_BEDROCK\_FAR\_PTR\_FROM\_SEGMENT} accepts an enabled translated
-source image with nonzero mantissa and bounds-only mode clear.
-\Needspace{5\baselineskip}
-It adds the encoded base to the supplied offset modulo $2^{64}$. A zero sum
-denotes null, but the converted bounds-only image is retained for zero and
-nonzero sums alike. It performs no overflow test. An already-linear address and
-bounds-only image instead use
-\texttt{\_\_BEDROCK\_FAR\_PTR\_INIT}; a flat address uses
-\texttt{\_\_BEDROCK\_FAR\_FLAT\_PTR\_INIT}.
-
-\input{isa/c/generated/target_intrinsics/far.tex}
 
 \subsection{Core Builtins}
 \manualfield{Header:}{\texttt{<bedrockcoreintrin.h>}}
@@ -159,6 +109,28 @@ remain active.
 The system-register header defines \texttt{\_\_bedrock\_control\_register\_t} constants for every published
 control-register selector. The constants are names for the architectural selector values; they do not weaken the
 privilege, reserved-bit, or per-register validation performed by RDCR and WRCR.
+
+It also defines the pure value macros
+\texttt{\_\allowbreak{}\_\allowbreak{}BEDROCK\_\allowbreak{}SEGMENT\_\allowbreak{}IMAGE},
+\texttt{\_\allowbreak{}\_\allowbreak{}BEDROCK\_\allowbreak{}SEGMENT\_\allowbreak{}IMAGE\_\allowbreak{}FOR\_\allowbreak{}BASE}, and
+\texttt{\_\allowbreak{}\_\allowbreak{}BEDROCK\_\allowbreak{}SEGMENT\_\allowbreak{}DISABLED}. They construct 64-bit segment
+images without reading or writing architectural state.
+
+\texttt{\_\_BEDROCK\_SEGMENT\_IMAGE(base\_page,exponent,mantissa,
+bounds\_only)} places the low 52, 5, and 6 bits of the first three operands in
+their architectural fields and normalizes \texttt{bounds\_only} to zero or
+one. Each operand is evaluated once. A valid enabled image uses an exponent
+from 0 through 31 and a mantissa from 1 through 63. The macro only packs
+fields; it does not validate the resulting base, span, limit, or address
+canonicality.
+
+\texttt{\_\_BEDROCK\_SEGMENT\_IMAGE\_FOR\_BASE(base,...)} encodes
+$\lfloor\texttt{(uint64\_t)base}/4096\rfloor$ in the base-page field. It
+discards the low 12 bits, so a misaligned operand names the containing page and
+does not preserve the original byte address. The macro imposes no alignment
+precondition and does not adjust a later offset to compensate for the discarded
+bits. \texttt{\_\_BEDROCK\_SEGMENT\_DISABLED} is the canonical all-zero
+disabled image.
 
 \subsection{Cache-Management Builtins}
 \manualfield{Header:}{\texttt{<bedrockcacheintrin.h>}}
