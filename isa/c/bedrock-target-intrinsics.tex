@@ -8,6 +8,7 @@
 \input{isa/tex/bedrock-reference-common.tex}
 \begin{document}
 \BedrockMakeTitlePage{Bedrock Target Intrinsics}{C Compiler Builtins and Header Interfaces}{Draft}
+\BedrockDocumentHasFiguresfalse
 \BedrockFrontMatter
 
 \clearpage
@@ -190,7 +191,7 @@ privilege-restricted. The backend must model every restored register and the
 full memory and addressing-context clobber explicitly. It must not treat
 restore as an opaque call or as only a memory effect.
 
-\section{Shared Header Types}\label{page:shared-header-types-and-exclusions}
+\section{Shared Header Types}\label{page:shared-header-types}
 \input{isa/c/generated/target_intrinsics/shared_types.tex}
 
 \end{document}

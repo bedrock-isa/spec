@@ -3,10 +3,8 @@
 `isa/defs` is the source of truth for instruction documentation, concrete
 encodings, architectural primitives, extension wiring, and document order.
 
-The former central allocation blocks have been replaced by instruction-owned
-encoding forms. Instruction and extension families remain explicit, and base
-instruction operand types use `Rn`; removed legacy core instructions are not
-kept as inactive definitions in this tree.
+Encoding forms are instruction-owned. Instruction and extension families are
+explicit, and base instruction operand types use `Rn`.
 
 Definition YAML is reserved for stable, structured values. Cross-cutting
 explanatory prose belongs in the reference templates, not in generic

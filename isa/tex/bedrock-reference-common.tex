@@ -909,13 +909,17 @@
   \vfill
   \end{titlepage}}
 
+\newif\ifBedrockDocumentHasFigures
+\BedrockDocumentHasFigurestrue
 \newcommand{\BedrockFrontMatter}{%
   \tableofcontents
   \clearpage
   \listoftables
   \clearpage
-  \listoffigures
-  \clearpage
+  \ifBedrockDocumentHasFigures
+    \listoffigures
+    \clearpage
+  \fi
   \pagenumbering{arabic}}
 
 \newcommand{\BedrockContractNode}[5]{%

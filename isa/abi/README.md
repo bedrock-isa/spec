@@ -20,8 +20,8 @@ All reference documents use `../tex/bedrock-reference-common.tex`. The ISA
 reference remains generated from the architectural definition and allocation
 sources, but its generated TeX inputs the same common component.
 
-The ABI TeX documents are the normative prose sources. The retained ABI
-quick-reference tables are generated from `abi_tables.yaml`, whose semantic
+The ABI TeX documents are the normative prose sources. The ABI quick-reference
+tables are generated from `abi_tables.yaml`, whose semantic
 fields record return locations, call-relocation relationships, ordinary and
 atomic access rules, Bedrock-specific sections, and TLS relocation families.
 The document compiler renders those tables in its build overlay. In addition,

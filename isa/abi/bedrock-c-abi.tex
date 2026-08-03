@@ -846,6 +846,7 @@ platform/runtime mapping attributes. Dynamic code patching requires
 synchronization; a relocation agent must synchronize patched instructions
 before transferring control to them.
 
+\Needspace{2.0in}
 \subsection{C Fetch RMW Lowering}
 \manualtablecaption{C Fetch RMW Lowering}
 \begingroup\footnotesize
@@ -949,7 +950,7 @@ that order by adding 16 after each access.
 \Needspace{1.8in}
 \subsection{Generated Assembly Conventions}
 The assembly examples are non-normative. They were emitted with \texttt{-Oz}
-by Bedrock LLVM 22.1.8 in round \texttt{187-extrashort-sp-adjust} and then
+by Bedrock LLVM 22.1.8 and then
 checked against the call-assignment model, register-preservation contract, and
 the architectural semantics of \texttt{CALL}, \texttt{RET}, \texttt{PUSHP},
 and \texttt{POPP}. File directives, LLVM basic-block comments, and local labels
