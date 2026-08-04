@@ -57,3 +57,7 @@ forms:
   fields:
     z:
       type: size
+  constraints:
+  - field: e
+    exclude: rn_direct
+    reason: canonical_form_reclaim

@@ -120,9 +120,8 @@ forms:
   constraints:
   - field: e
     allow:
-    - 0x10..0x67
-    - 0x69..0x7f
-    reason: register_direct_and_sp_direct_reclaimed
+    - 0x10..0x7f
+    reason: register_direct_reclaimed
   - field: e
     exclude: immediate
     reason: invalid_destination
@@ -179,3 +178,114 @@ forms:
     - 0x10..0x67
     - 0x69..0x7f
     reason: register_direct_and_sp_direct_reclaimed
+- id: long.add_x_imm8s_ea_e
+  class: long
+  bits: 1111000110zz0010000eeeeeee
+  syntax: ADD.X(z:B/W/L/Q) <imm8s>, <ea>(e)
+  operands:
+  - name: src
+    type: imm8s
+    access: read
+  - name: dst
+    type: EA
+    access: read_write
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  sizes:
+  - B
+  - W
+  - L
+  - Q
+  fields:
+    z:
+      type: size
+  constraints:
+  - field: e
+    exclude: reg_direct
+    reason: memory_destination_required
+  - field: e
+    exclude: immediate
+    reason: invalid_destination
+- id: long.add_x_imm16s_ea_e
+  class: long
+  bits: 1111000110zz0010001eeeeeee
+  syntax: ADD.X(z:W/L/Q) <imm16s>, <ea>(e)
+  operands:
+  - name: src
+    type: imm16s
+    access: read
+  - name: dst
+    type: EA
+    access: read_write
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  sizes:
+  - W
+  - L
+  - Q
+  fields:
+    z:
+      type: size
+  constraints:
+  - field: z
+    allow:
+    - 0x1..0x3
+    reason: immediate_wider_than_operation_size
+  - field: e
+    exclude: reg_direct
+    reason: memory_destination_required
+  - field: e
+    exclude: immediate
+    reason: invalid_destination
+- id: long.add_x_imm32s_ea_e
+  class: long
+  bits: 11110001101z0010010eeeeeee
+  syntax: ADD.X(z:L/Q) <imm32s>, <ea>(e)
+  operands:
+  - name: src
+    type: imm32s
+    access: read
+  - name: dst
+    type: EA
+    access: read_write
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  sizes:
+  - L
+  - Q
+  fields:
+    z:
+      type: size
+  constraints:
+  - field: e
+    exclude: reg_direct
+    reason: memory_destination_required
+  - field: e
+    exclude: immediate
+    reason: invalid_destination
+- id: long.add_q_imm64_ea_e
+  class: long
+  bits: 1111000110110010011eeeeeee
+  syntax: ADD.Q <imm64>, <ea>(e)
+  operands:
+  - name: src
+    type: imm64
+    access: read
+  - name: dst
+    type: EA
+    access: read_write
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  sizes:
+  - Q
+  constraints:
+  - field: e
+    exclude: reg_direct
+    reason: memory_destination_required
+  - field: e
+    exclude: immediate
+    reason: invalid_destination

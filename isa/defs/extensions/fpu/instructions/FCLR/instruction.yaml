@@ -1,7 +1,7 @@
 mnemonic: FCLR
 title: Floating-Point Clear
 summary: Performs the floating-point clear operation.
-description: Writes positive floating-point zero in the selected format to the destination.
+description: Writes all zero bits to the complete 64-bit Fn destination, representing positive zero in both S and D interpretations.
 attributes:
   class: fpu
   family: fpu

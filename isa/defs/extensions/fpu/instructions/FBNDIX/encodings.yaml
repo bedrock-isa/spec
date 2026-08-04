@@ -47,6 +47,10 @@ forms:
   fields:
     z:
       type: size
+  constraints:
+  - field: v
+    exclude: reg_direct
+    reason: canonical_form_reclaim
 - id: extralong.fbndix_x_ea_l_fn_v_ea_h
   class: extralong
   bits: 1111110000000z01vvvvlllllllhhhhhhh
@@ -74,3 +78,10 @@ forms:
   fields:
     z:
       type: size
+  constraints:
+  - field: l
+    exclude: reg_direct
+    reason: canonical_form_reclaim
+  - field: h
+    exclude: reg_direct
+    reason: canonical_form_reclaim
