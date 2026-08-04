@@ -8957,11 +8957,15 @@
 <p><code>AND.X(z:L/Q) Rn(s), &lt;ea&gt;(e)</code></p>
 <p><code>AND.X(z:B/W) &lt;ea&gt;(e), Rn(d)</code></p>
 <p><code>AND.X(z:L/Q) &lt;ea&gt;(e), Rn(d)</code></p>
+<p><code>AND.X(z:B/W/L/Q) &lt;imm8s&gt;, &lt;ea&gt;(e)</code></p>
+<p><code>AND.X(z:W/L/Q) &lt;imm16s&gt;, &lt;ea&gt;(e)</code></p>
+<p><code>AND.X(z:L/Q) &lt;imm32s&gt;, &lt;ea&gt;(e)</code></p>
+<p><code>AND.Q &lt;imm64&gt;, &lt;ea&gt;(e)</code></p>
 <h2 id="attributes">Attributes</h2>
 <p>Class = integer</p>
 <p>Family = integer alu</p>
 <p>Privilege = unprivileged</p>
-<p>Length = 2-13 bytes</p>
+<p>Length = 2-18 bytes</p>
 <p>Repeat = <code>REP</code>, <code>REPcc</code>, <code>REPG</code></p>
 <p>REPcc observation = <code>result</code> <code>dst</code></p>
 <h2 id="instruction-forms">Instruction Forms</h2>
@@ -9025,6 +9029,53 @@
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the source operand.</p>
 <p><strong>EA availability</strong></p>
 <p><strong>Allowed:</strong> Memory; Immediate; EXT0</p>
+<p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>
+<p><strong><code>AND.X(z:B/W/L/Q) &lt;imm8s&gt;, &lt;ea&gt;(e)</code></strong></p>
+<p><em>Encoding class: long; required bytes: 5-15 bytes; privilege: unprivileged</em></p>
+<p><strong>Instruction Format:</strong></p>
+<p><img alt="Format — Instruction format for AND.X(z:B/W/L/Q) \&lt;imm8s&gt;, \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/and-06.svg" /></p>
+<p><strong>Format Instruction format for AND.X(z:B/W/L/Q) \&lt;imm8s&gt;, \&lt;ea&gt;(e)</strong></p>
+<p><strong>Instruction Fields:</strong></p>
+<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
+<p><strong>Effective Address field <code>e</code></strong> — Specifies the read/write operand.</p>
+<p><strong>EA availability</strong></p>
+<p><strong>Allowed:</strong> Memory; EXT0</p>
+<p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>
+<p><strong><code>AND.X(z:W/L/Q) &lt;imm16s&gt;, &lt;ea&gt;(e)</code></strong></p>
+<p><em>Encoding class: long; required bytes: 6-16 bytes; privilege: unprivileged</em></p>
+<p><strong>Instruction Format:</strong></p>
+<p><img alt="Format — Instruction format for AND.X(z:W/L/Q) \&lt;imm16s&gt;, \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/and-07.svg" /></p>
+<p><strong>Format Instruction format for AND.X(z:W/L/Q) \&lt;imm16s&gt;, \&lt;ea&gt;(e)</strong></p>
+<p><strong>Instruction Fields:</strong></p>
+<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Size field <code>z</code></strong> — Selects W/L/Q.</p>
+<p><strong>Effective Address field <code>e</code></strong> — Specifies the read/write operand.</p>
+<p><strong>EA availability</strong></p>
+<p><strong>Allowed:</strong> Memory; EXT0</p>
+<p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>
+<p><strong><code>AND.X(z:L/Q) &lt;imm32s&gt;, &lt;ea&gt;(e)</code></strong></p>
+<p><em>Encoding class: long; required bytes: 8-18 bytes; privilege: unprivileged</em></p>
+<p><strong>Instruction Format:</strong></p>
+<p><img alt="Format — Instruction format for AND.X(z:L/Q) \&lt;imm32s&gt;, \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/and-08.svg" /></p>
+<p><strong>Format Instruction format for AND.X(z:L/Q) \&lt;imm32s&gt;, \&lt;ea&gt;(e)</strong></p>
+<p><strong>Instruction Fields:</strong></p>
+<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Size field <code>z</code></strong> — Selects L/Q.</p>
+<p><strong>Effective Address field <code>e</code></strong> — Specifies the read/write operand.</p>
+<p><strong>EA availability</strong></p>
+<p><strong>Allowed:</strong> Memory; EXT0</p>
+<p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>
+<p><strong><code>AND.Q &lt;imm64&gt;, &lt;ea&gt;(e)</code></strong></p>
+<p><em>Encoding class: long; required bytes: 12-18 bytes; privilege: unprivileged</em></p>
+<p><strong>Instruction Format:</strong></p>
+<p><img alt="Format — Instruction format for AND.Q \&lt;imm64&gt;, \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/and-09.svg" /></p>
+<p><strong>Format Instruction format for AND.Q \&lt;imm64&gt;, \&lt;ea&gt;(e)</strong></p>
+<p><strong>Instruction Fields:</strong></p>
+<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Effective Address field <code>e</code></strong> — Specifies the read/write operand.</p>
+<p><strong>EA availability</strong></p>
+<p><strong>Allowed:</strong> Memory; EXT0</p>
 <p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>
 
 

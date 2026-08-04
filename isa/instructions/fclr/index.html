@@ -8950,7 +8950,7 @@
 
 <h1 id="fclr">FCLR</h1>
 <h2 id="operation">Operation</h2>
-<p>Writes positive floating-point zero in the selected format to the destination.</p>
+<p>Writes all zero bits to the complete 64-bit Fn destination, representing positive zero in both S and D interpretations.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
 <p><code>FCLR Fn(d)</code></p>
 <h2 id="attributes">Attributes</h2>
@@ -8968,7 +8968,6 @@
 <p><strong>Format Instruction format for FCLR Fn(d)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>z</code></strong> — Selects the operand size.</p>
 <p><strong>Register field <code>d</code></strong> — Selects the operand.</p>
 
 
