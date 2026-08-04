@@ -17,14 +17,9 @@ forms:
     ea_width: operation_size
     field: d
     domain: user
-  sizes:
-  - B
-  - W
-  - L
-  - Q
   fields:
     z:
-      type: size
+      type: size.BWLQ
   constraints:
   - field: d
     exclude: reg_direct

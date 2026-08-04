@@ -16,12 +16,9 @@ forms:
     type: Fn
     access: write
     field: c
-  sizes:
-  - S
-  - D
   fields:
     z:
-      type: size
+      type: size.SD
   destination_overlap:
   - operands: [sin_dst, cos_dst]
     rule: illegal_instruction

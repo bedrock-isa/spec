@@ -15,6 +15,7 @@ from defs_schema import (
     decode_register_registry,
     decode_size_registry,
 )
+from encoding_fields import FieldTypeRegistry, build_field_type_registry
 
 try:
     import yaml
@@ -218,6 +219,17 @@ def load_size_definitions(
                 raise ValueError(f"{path}: duplicate {section} entry {duplicate!r}")
             definitions.update(additions)
     return merged
+
+
+def load_field_types(
+    defs_root: Path,
+    extensions: dict[str, ExtensionDef] | None = None,
+) -> FieldTypeRegistry:
+    extensions = extensions if extensions is not None else load_extensions(defs_root)
+    return build_field_type_registry(
+        load_operand_types(defs_root, extensions),
+        load_size_definitions(defs_root, extensions),
+    )
 
 
 def load_register_groups(

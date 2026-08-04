@@ -14,12 +14,9 @@ forms:
     type: Fn
     access: write
     field: d
-  sizes:
-  - S
-  - D
   fields:
     z:
-      type: size
+      type: size.SD
   constraints:
   - field: e
     exclude: reg_direct
@@ -37,12 +34,9 @@ forms:
     type: Fn
     access: write
     field: d
-  sizes:
-  - S
-  - D
   fields:
     z:
-      type: size
+      type: size.SD
 - id: long.fint_x_fn_s_ea_d
   class: long
   bits: 1111011000z1000sssseeeeeee
@@ -58,12 +52,9 @@ forms:
     ea_role: value
     ea_width: operation_size
     field: e
-  sizes:
-  - S
-  - D
   fields:
     z:
-      type: size
+      type: size.SD
   constraints:
   - field: e
     exclude: reg_direct

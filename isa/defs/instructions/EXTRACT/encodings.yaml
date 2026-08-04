@@ -16,11 +16,6 @@ forms:
     type: Rn
     access: read_write
     field: l
-  sizes:
-  - B
-  - W
-  - L
-  - Q
   fields:
     z:
-      type: size
+      type: size.BWLQ

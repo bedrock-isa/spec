@@ -22,14 +22,9 @@ forms:
     ea_role: value
     ea_width: operation_size
     field: e
-  sizes:
-  - B
-  - W
-  - L
-  - Q
   fields:
     z:
-      type: size
+      type: size.BWLQ
   constraints:
   - field: o
     allow:

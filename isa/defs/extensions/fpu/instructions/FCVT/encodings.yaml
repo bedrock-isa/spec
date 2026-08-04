@@ -12,12 +12,9 @@ forms:
     type: Fn
     access: write
     field: d
-  sizes:
-  - S
-  - D
   fields:
     z:
-      type: size
+      type: size.SD
 - id: long.fcvt_x_fn_s_rn_d
   class: long
   bits: 1111010111z0011ssss010dddd
@@ -31,12 +28,9 @@ forms:
     type: Rn
     access: write
     field: d
-  sizes:
-  - S
-  - D
   fields:
     z:
-      type: size
+      type: size.SD
 - id: long.fcvt_x_rn_s_fn_d
   class: long
   bits: 1111010111z0101ssss010dddd
@@ -50,9 +44,6 @@ forms:
     type: Fn
     access: write
     field: d
-  sizes:
-  - S
-  - D
   fields:
     z:
-      type: size
+      type: size.SD

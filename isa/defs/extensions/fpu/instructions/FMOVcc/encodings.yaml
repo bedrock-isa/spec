@@ -38,12 +38,9 @@ forms:
     type: Fn
     access: write
     field: d
-  sizes:
-  - S
-  - D
   fields:
     z:
-      type: size
+      type: size.SD
   constraints:
   - field: e
     exclude: reg_direct
@@ -67,12 +64,9 @@ forms:
     ea_role: value
     ea_width: operation_size
     field: e
-  sizes:
-  - S
-  - D
   fields:
     z:
-      type: size
+      type: size.SD
   constraints:
   - field: e
     exclude: reg_direct

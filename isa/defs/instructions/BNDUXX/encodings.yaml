@@ -18,11 +18,6 @@ forms:
     type: Rn
     access: read
     field: h
-  sizes:
-  - B
-  - W
-  - L
-  - Q
   fields:
     z:
-      type: size
+      type: size.BWLQ

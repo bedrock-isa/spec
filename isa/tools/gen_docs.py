@@ -265,7 +265,7 @@ def load_allocations(defs_root: Path) -> list[AllocationClass]:
         by_value: dict[int, str] = {}
         assigned_values: set[int] = set()
         for located in store.for_class(encoding_class.name):
-            raw = allocation_entry_dict(located)
+            raw = allocation_entry_dict(located, store.field_types)
             claims, entry_skipped = entry_claims(
                 located.path,
                 encoding_class.payload_bits,
@@ -1026,13 +1026,6 @@ def field_bit_range(entry: AllocationEntry, symbol: str) -> str:
     return str(high) if high == low else f"{high}:{low}"
 
 
-def field_size_choices(form: str, symbol: str) -> str:
-    match = re.search(rf"{re.escape(symbol)}:([A-Za-z0-9_/]+)", form)
-    if not match:
-        return ""
-    return match.group(1)
-
-
 def ordered_entry_fields(entry: AllocationEntry) -> list[tuple[str, dict[str, Any]]]:
     seen: set[str] = set()
     out: list[tuple[str, dict[str, Any]]] = []
@@ -1330,7 +1323,7 @@ def field_description_text(
     kind = spec.get("kind")
     values = field_constraint_values(model, inst, entry, symbol, spec)
     if kind == "size":
-        choices = field_size_choices(form, symbol)
+        choices = "/".join(str(item) for item in spec.get("size_choices", []))
         return latex_escape(f"Selects {choices}." if choices else "Selects the operand size.")
     if kind == "ea7":
         target = f"the {role}" if role else "the operand"

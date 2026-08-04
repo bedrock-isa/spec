@@ -12,12 +12,9 @@ forms:
     type: Fn
     access: read_write
     field: d
-  sizes:
-  - S
-  - D
   fields:
     z:
-      type: size
+      type: size.SD
 - id: long.fmax_x_ea_s_fn_d
   class: long
   bits: 1111010101z1010ddddeeeeeee
@@ -33,12 +30,9 @@ forms:
     type: Fn
     access: read_write
     field: d
-  sizes:
-  - S
-  - D
   fields:
     z:
-      type: size
+      type: size.SD
   constraints:
   - field: e
     exclude: reg_direct

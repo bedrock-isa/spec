@@ -886,22 +886,22 @@ def validate_candidate_document(
     target_path: Path,
     candidate: dict[str, Any],
 ) -> None:
-    from defs_loader import load_extensions, load_operand_types, load_size_definitions
+    from encoding_fields import resolve_encoding_form
     from defs_schema import decode_encodings, decode_instruction
     from encoding_store import LocatedEncoding, allocation_entry_dict, load_encoding_store
 
     candidate_doc = decode_encodings(target_path, candidate)
     store = load_encoding_store(defs_root)
     class_names = set(store.classes_by_name)
-    extensions = load_extensions(defs_root)
-    operand_registry = load_operand_types(defs_root, extensions)
-    operand_types = set(operand_registry)
-    size_codes = set(load_size_definitions(defs_root, extensions)["size_codes"])
     instruction_path = target_path.with_name("instruction.yaml")
     instruction = decode_instruction(instruction_path, load_yaml(instruction_path))
     if instruction.mnemonic != target_path.parent.name:
         raise ValueError(f"{instruction_path}: mnemonic does not match directory")
-    for form in candidate_doc.forms:
+    candidate_forms = [
+        resolve_encoding_form(form, store.field_types, target_path)
+        for form in candidate_doc.forms
+    ]
+    for form in candidate_forms:
         if form.encoding_class not in class_names:
             raise ValueError(
                 f"{target_path}: form {form.id!r} references unknown class {form.encoding_class!r}"
@@ -912,42 +912,13 @@ def validate_candidate_document(
                 f"{target_path}: form {form.id!r} syntax names {syntax_mnemonic}, "
                 f"expected {instruction.mnemonic}"
             )
-        for operand in form.operands:
-            if operand.type not in operand_types:
-                raise ValueError(
-                    f"{target_path}: form {form.id!r} uses unknown operand type {operand.type!r}"
-                )
-            elif operand.field is not None:
-                expected_width = int(operand_registry[operand.type]["field_width"])
-                actual_width = form.bits.count(operand.field)
-                if actual_width != expected_width:
-                    raise ValueError(
-                        f"{target_path}: form {form.id!r} operand {operand.name!r} "
-                        f"has {actual_width}-bit field, expected {expected_width}"
-                    )
-        for marker, field in form.fields.items():
-            if field.type != "size" and field.type not in operand_types:
-                raise ValueError(
-                    f"{target_path}: form {form.id!r} field {marker!r} uses unknown type {field.type!r}"
-                )
-            if field.type != "size":
-                expected_width = int(operand_registry[field.type]["field_width"])
-                actual_width = form.bits.count(marker)
-                if actual_width != expected_width:
-                    raise ValueError(
-                        f"{target_path}: form {form.id!r} field {marker!r} "
-                        f"has {actual_width} bits, expected {expected_width}"
-                    )
-        for size in form.sizes:
-            if size not in size_codes:
-                raise ValueError(f"{target_path}: form {form.id!r} uses unknown size {size!r}")
     target_resolved = target_path.resolve()
     located = [
         item for item in store.encodings if item.path.resolve() != target_resolved
     ]
     located.extend(
         LocatedEncoding(target_path, target_path.parent.name, form)
-        for form in candidate_doc.forms
+        for form in candidate_forms
     )
 
     ids: set[str] = set()
@@ -961,7 +932,7 @@ def validate_candidate_document(
     for encoding_class in store.classes:
         claims_by_value: dict[int, Claim] = {}
         for item in by_class.get(encoding_class.name, []):
-            entry = allocation_entry_dict(item)
+            entry = allocation_entry_dict(item, store.field_types)
             claims, _skipped = entry_claims(
                 item.path,
                 encoding_class.payload_bits,

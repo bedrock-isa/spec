@@ -16,12 +16,9 @@ forms:
     type: Fn
     access: read
     field: h
-  sizes:
-  - S
-  - D
   fields:
     z:
-      type: size
+      type: size.SD
 - id: long.fbndxi_x_fn_l_ea_v_fn_h
   class: long
   bits: 1111010011zllllhhhhvvvvvvv
@@ -41,12 +38,9 @@ forms:
     type: Fn
     access: read
     field: h
-  sizes:
-  - S
-  - D
   fields:
     z:
-      type: size
+      type: size.SD
   constraints:
   - field: v
     exclude: reg_direct
@@ -72,12 +66,9 @@ forms:
     ea_role: value
     ea_width: operation_size
     field: h
-  sizes:
-  - S
-  - D
   fields:
     z:
-      type: size
+      type: size.SD
   constraints:
   - field: l
     exclude: reg_direct

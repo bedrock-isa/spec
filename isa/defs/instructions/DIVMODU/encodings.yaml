@@ -18,14 +18,9 @@ forms:
     type: Rn
     access: write
     field: r
-  sizes:
-  - B
-  - W
-  - L
-  - Q
   fields:
     z:
-      type: size
+      type: size.BWLQ
   destination_overlap:
   - operands: [quotient, remainder]
     rule: illegal_instruction

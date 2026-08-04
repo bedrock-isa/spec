@@ -35,12 +35,9 @@ forms:
     ea_role: control_target
     ea_width: operation_size
     field: e
-  sizes:
-  - L
-  - Q
   fields:
     z:
-      type: size
+      type: size.LQ
   constraints:
   - field: e
     exclude: immediate

@@ -408,7 +408,6 @@ class SizeKindValue:
 
 @dataclass(frozen=True)
 class SizeKind:
-    field: str
     values: tuple[SizeKindValue, ...]
     reserved_values: tuple[SizeKindValue, ...] = ()
 
@@ -941,17 +940,6 @@ def decode_encodings(path: Path, raw: Any) -> EncodingsDocument:
 
         sizes = tuple(_string_list(form.get("sizes", []), path, field_path + ".sizes"))
         _unique(sizes, path, field_path + ".sizes")
-        for operand_index, operand in enumerate(operands):
-            if (
-                operand.type == "EA"
-                and operand.ea_width == "operation_size"
-                and not sizes
-            ):
-                raise DecodeError(
-                    f"{_where(path, f'{field_path}.operands[{operand_index}].ea_width')}: "
-                    "operation_size requires at least one form size"
-                )
-
         writable_names = {
             operand.name
             for operand in operands
@@ -1367,12 +1355,9 @@ def decode_size_registry(path: Path, raw: Any) -> SizeRegistry:
             path,
             item_path,
             value,
-            required=("field", "values"),
+            required=("values",),
             optional=("reserved_values",),
         )
-        marker = _string(item["field"], path, item_path + ".field")
-        if not re.fullmatch(r"[a-z]", marker):
-            raise DecodeError(f"{_where(path, item_path + '.field')}: invalid marker")
         values = _decode_size_values(
             item["values"], path, item_path + ".values", reserved=False
         )
@@ -1389,7 +1374,7 @@ def decode_size_registry(path: Path, raw: Any) -> SizeRegistry:
             path,
             item_path + ".values",
         )
-        size_kinds[name] = SizeKind(marker, values, reserved_values)
+        size_kinds[name] = SizeKind(values, reserved_values)
     return SizeRegistry(size_codes, size_kinds)
 
 

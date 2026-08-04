@@ -8,7 +8,6 @@ size_codes:
 
 size_kinds:
   SD:
-    field: z
     values:
     - {value: 0, code: S}
     - {value: 1, code: D}

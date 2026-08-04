@@ -16,9 +16,6 @@ forms:
     type: Fn
     access: write
     field: d
-  sizes:
-  - S
-  - D
   fields:
     z:
-      type: size
+      type: size.SD

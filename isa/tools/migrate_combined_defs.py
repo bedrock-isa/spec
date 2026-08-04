@@ -27,6 +27,8 @@ from validate_alloc import (
     parse_range,
 )
 from defs_schema import decode_encodings, decode_instruction
+from defs_loader import load_field_types
+from encoding_fields import FieldTypeRegistry, size_type_for_codes
 from encoding_architecture import ENCODING_CLASSES_BY_NAME
 from encoding_store import allocation_entry_dict, load_encoding_store
 
@@ -37,7 +39,6 @@ ALLOC_ROOT = ROOT / "isa" / "alloc"
 LEDGER_PATH = ROOT / "build" / "migration" / "definition-migration-ledger.json"
 
 KIND_TO_TYPE = {
-    "size": "size",
     "rn": "Rn",
     "freg": "Fn",
     "ea7": "EA",
@@ -345,6 +346,7 @@ def migrated_constraints(entry: dict[str, Any]) -> list[dict[str, Any]]:
 def migrate_entry(
     allocation: OldAllocation,
     instruction: OldInstruction,
+    field_types: FieldTypeRegistry,
 ) -> tuple[dict[str, Any], int]:
     entry = allocation.entry
     syntax = str(entry.get("text", ""))
@@ -358,6 +360,7 @@ def migrate_entry(
         parsed_sizes,
     )
     logical = instruction.forms[logical_index]
+    sizes = tuple(parsed_sizes or [str(item) for item in logical.get("sizes") or []])
     logical_operands = list(logical.get("operands") or [])
     if len(logical_operands) != len(parsed_operands):
         raise ValueError(f"{entry['id']}: operand count changed during mapping")
@@ -393,22 +396,23 @@ def migrate_entry(
         if name in used_fields:
             continue
         kind = str(spec["kind"])
-        typ = KIND_TO_TYPE.get(kind)
+        typ = (
+            size_type_for_codes(field_types, sizes)
+            if kind == "size"
+            else KIND_TO_TYPE.get(kind)
+        )
         if typ is None:
             raise ValueError(f"{entry['id']}: unowned field {name} kind={kind}")
         remaining_fields[name] = {"type": typ}
     undeclared_markers = set(actual_widths) - used_fields - set(remaining_fields)
-    # One legacy FCLR entry used the conventional ``z`` size selector without
-    # repeating its declaration in the allocation field map. Make that latent
-    # selector explicit; any other undeclared marker remains a hard failure.
-    if undeclared_markers == {"z"}:
-        remaining_fields["z"] = {"type": "size"}
-    elif undeclared_markers:
+    if undeclared_markers:
         raise ValueError(
             f"{entry['id']}: undeclared bit markers {sorted(undeclared_markers)}"
         )
 
-    sizes = parsed_sizes or [str(item) for item in logical.get("sizes") or []]
+    has_size_selector = any(
+        spec["type"].startswith("size.") for spec in remaining_fields.values()
+    )
     result: dict[str, Any] = {
         "id": str(entry["id"]),
         "class": allocation.cls,
@@ -417,8 +421,8 @@ def migrate_entry(
     }
     if operands:
         result["operands"] = operands
-    if sizes:
-        result["sizes"] = sizes
+    if sizes and not has_size_selector:
+        result["sizes"] = list(sizes)
     if remaining_fields:
         result["fields"] = remaining_fields
     constraints = migrated_constraints(entry)
@@ -614,6 +618,7 @@ def build_migration() -> tuple[
 ]:
     instructions = load_instructions()
     classes, allocations = load_allocations()
+    field_types = load_field_types(DEFS_ROOT)
     forms_by_mnemonic: dict[str, list[dict[str, Any]]] = defaultdict(list)
     covered: dict[str, set[int]] = defaultdict(set)
     mapped_ids: dict[tuple[str, int], list[str]] = defaultdict(list)
@@ -622,7 +627,7 @@ def build_migration() -> tuple[
         instruction = instructions.get(mnemonic)
         if instruction is None:
             raise ValueError(f"{allocation.entry['id']}: no instruction {mnemonic}")
-        migrated, logical_index = migrate_entry(allocation, instruction)
+        migrated, logical_index = migrate_entry(allocation, instruction, field_types)
         forms_by_mnemonic[mnemonic].append(migrated)
         covered[mnemonic].add(logical_index)
         mapped_ids[(mnemonic, logical_index)].append(str(migrated["id"]))
@@ -935,7 +940,7 @@ def verify_migration(
     classes_by_name = store.classes_by_name
     for located in store.encodings:
         encoding_class = classes_by_name[located.form.encoding_class]
-        raw = allocation_entry_dict(located)
+        raw = allocation_entry_dict(located, store.field_types)
         new_fingerprints[located.form.id] = {
             "class": encoding_class.name,
             **claim_fingerprint(

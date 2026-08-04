@@ -10,12 +10,9 @@ forms:
     ea_role: value
     ea_width: operation_size
     field: e
-  sizes:
-  - S
-  - D
   fields:
     z:
-      type: size
+      type: size.SD
   constraints:
   - field: e
     exclude: rn_direct
@@ -29,9 +26,6 @@ forms:
     type: Fn
     access: read
     field: s
-  sizes:
-  - S
-  - D
   fields:
     z:
-      type: size
+      type: size.SD

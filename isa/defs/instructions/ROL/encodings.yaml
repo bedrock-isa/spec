@@ -12,12 +12,9 @@ forms:
     type: Rn
     access: read_write
     field: d
-  sizes:
-  - L
-  - Q
   fields:
     z:
-      type: size
+      type: size.LQ
 - id: medium.rol_x_rn_s_ea_e
   class: medium
   bits: 100110zsssseeeeeee
@@ -33,12 +30,9 @@ forms:
     ea_role: value
     ea_width: operation_size
     field: e
-  sizes:
-  - B
-  - W
   fields:
     z:
-      type: size
+      type: size.BW
   constraints:
   - field: e
     exclude: immediate
@@ -58,12 +52,9 @@ forms:
     ea_role: value
     ea_width: operation_size
     field: e
-  sizes:
-  - L
-  - Q
   fields:
     z:
-      type: size
+      type: size.LQ
   constraints:
   - field: e
     allow:
@@ -87,14 +78,9 @@ forms:
     ea_role: value
     ea_width: operation_size
     field: e
-  sizes:
-  - B
-  - W
-  - L
-  - Q
   fields:
     z:
-      type: size
+      type: size.BWLQ
   constraints:
   - field: e
     exclude: immediate

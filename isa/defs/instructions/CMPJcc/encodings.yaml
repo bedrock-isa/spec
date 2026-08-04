@@ -19,14 +19,9 @@ forms:
   - name: target
     type: imm8s
     access: read
-  sizes:
-  - B
-  - W
-  - L
-  - Q
   fields:
     z:
-      type: size
+      type: size.BWLQ
   constraints:
   - field: c
     allow:
@@ -52,14 +47,9 @@ forms:
   - name: target
     type: imm16s
     access: read
-  sizes:
-  - B
-  - W
-  - L
-  - Q
   fields:
     z:
-      type: size
+      type: size.BWLQ
   constraints:
   - field: c
     allow:

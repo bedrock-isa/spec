@@ -8,12 +8,9 @@ forms:
     type: Rn
     access: read_write
     field: r
-  sizes:
-  - L
-  - Q
   fields:
     z:
-      type: size
+      type: size.LQ
 - id: medium.dec_x_ea
   class: medium
   bits: 0eee10z0010000eeee
@@ -25,12 +22,9 @@ forms:
     ea_role: value
     ea_width: operation_size
     field: e
-  sizes:
-  - B
-  - W
   fields:
     z:
-      type: size
+      type: size.BW
   constraints:
   - field: e
     exclude: immediate
@@ -46,12 +40,9 @@ forms:
     ea_role: value
     ea_width: operation_size
     field: e
-  sizes:
-  - L
-  - Q
   fields:
     z:
-      type: size
+      type: size.LQ
   constraints:
   - field: e
     allow:

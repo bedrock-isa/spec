@@ -16,12 +16,9 @@ forms:
     type: Fn
     access: read_write
     field: d
-  sizes:
-  - S
-  - D
   fields:
     z:
-      type: size
+      type: size.SD
 - id: extralong.fmsub_x_ea_l_fn_r_fn_d
   class: extralong
   bits: 1111110000001z00rrrr001ddddlllllll
@@ -41,12 +38,9 @@ forms:
     type: Fn
     access: read_write
     field: d
-  sizes:
-  - S
-  - D
   fields:
     z:
-      type: size
+      type: size.SD
   constraints:
   - field: l
     exclude: reg_direct
@@ -70,12 +64,9 @@ forms:
     type: Fn
     access: read_write
     field: d
-  sizes:
-  - S
-  - D
   fields:
     z:
-      type: size
+      type: size.SD
   constraints:
   - field: r
     exclude: reg_direct

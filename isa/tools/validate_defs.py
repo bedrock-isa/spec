@@ -13,10 +13,9 @@ from defs_loader import (
     InstructionSetDef,
     load_extension_catalog,
     load_extensions,
+    load_field_types,
     load_instruction_sets,
-    load_operand_types,
     load_register_groups,
-    load_size_definitions,
     load_yaml,
 )
 from defs_schema import (
@@ -27,6 +26,7 @@ from defs_schema import (
     verify_schema_lock,
 )
 from encoding_store import load_encoding_store
+from encoding_fields import resolve_encoding_form
 from artifact_overlay import read_source, resolve_source
 
 
@@ -105,8 +105,7 @@ def validate_defs(root: Path = ROOT) -> tuple[dict[str, Any], list[str]]:
         extensions = load_extensions(root, catalog)
         register_groups = load_register_groups(root, extensions)
         instruction_sets = load_instruction_sets(root, extensions)
-        operand_types = load_operand_types(root, extensions)
-        sizes = load_size_definitions(root, extensions)
+        field_types = load_field_types(root, extensions)
     except (OSError, ValueError, DecodeError) as exc:
         return {}, [str(exc)]
 
@@ -148,9 +147,6 @@ def validate_defs(root: Path = ROOT) -> tuple[dict[str, Any], list[str]]:
     for path in sorted(listed - discovered):
         errors.append(f"{path}: listed instruction definition is outside the directory contract")
 
-    known_operand_types = set(operand_types)
-    known_sizes = set((sizes.get("size_codes") or {}).keys())
-    known_field_types = known_operand_types | {"size"}
     mnemonics: dict[str, Path] = {}
     instruction_families: Counter[str] = Counter()
     used_operand_types: Counter[str] = Counter()
@@ -211,7 +207,12 @@ def validate_defs(root: Path = ROOT) -> tuple[dict[str, Any], list[str]]:
                     f"{path}: exception {exception.event} references unknown forms "
                     f"{', '.join(sorted(unknown_forms))}"
                 )
-        for form in encodings.forms:
+        for decoded_form in encodings.forms:
+            try:
+                form = resolve_encoding_form(decoded_form, field_types, encodings_path)
+            except ValueError as exc:
+                errors.append(str(exc))
+                continue
             head = re.split(r"[./(]", form.syntax.split()[0])[0]
             if head != mnemonic:
                 errors.append(
@@ -219,36 +220,6 @@ def validate_defs(root: Path = ROOT) -> tuple[dict[str, Any], list[str]]:
                 )
             for operand in form.operands:
                 used_operand_types[operand.type] += 1
-                if operand.type not in known_operand_types:
-                    errors.append(
-                        f"{encodings_path}: form {form.id} uses unknown operand type {operand.type}"
-                    )
-                elif operand.field is not None:
-                    expected_width = int(operand_types[operand.type]["field_width"])
-                    actual_width = form.bits.count(operand.field)
-                    if actual_width != expected_width:
-                        errors.append(
-                            f"{encodings_path}: form {form.id} operand {operand.name} "
-                            f"has {actual_width}-bit field, but {operand.type} requires {expected_width}"
-                        )
-            for marker, field in form.fields.items():
-                if field.type not in known_field_types:
-                    errors.append(
-                        f"{encodings_path}: form {form.id} field {marker} uses unknown type {field.type}"
-                    )
-                elif field.type != "size":
-                    expected_width = int(operand_types[field.type]["field_width"])
-                    actual_width = form.bits.count(marker)
-                    if actual_width != expected_width:
-                        errors.append(
-                            f"{encodings_path}: form {form.id} selector {marker} "
-                            f"has {actual_width} bits, but {field.type} requires {expected_width}"
-                        )
-            for size in form.sizes:
-                if size not in known_sizes:
-                    errors.append(
-                        f"{encodings_path}: form {form.id} uses unknown size {size}"
-                    )
 
     discovered_encoding_files = set(root.glob("**/instructions/*/encodings.yaml"))
     expected_encoding_files = {path.with_name(ENCODINGS_FILENAME) for path in instruction_files}

@@ -5,8 +5,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
-from collections import Counter
 
+from defs_loader import load_extensions, load_field_types
+from encoding_fields import FieldTypeRegistry, resolve_encoding_form
 from defs_schema import (
     EncodingForm,
     EncodingsDocument,
@@ -29,6 +30,7 @@ class EncodingStore:
     defs_root: Path
     classes: tuple[EncodingClass, ...]
     encodings: tuple[LocatedEncoding, ...]
+    field_types: FieldTypeRegistry
 
     @property
     def classes_by_name(self) -> dict[str, EncodingClass]:
@@ -47,6 +49,8 @@ def _raw_yaml(path: Path):
 
 def load_encoding_store(defs_root: Path) -> EncodingStore:
     class_names = {item.name for item in ENCODING_CLASSES}
+    extensions = load_extensions(defs_root)
+    field_types = load_field_types(defs_root, extensions)
     encodings: list[LocatedEncoding] = []
     ids: dict[str, Path] = {}
     for path in sorted(defs_root.glob("**/instructions/*/encodings.yaml")):
@@ -54,7 +58,8 @@ def load_encoding_store(defs_root: Path) -> EncodingStore:
         if not isinstance(document, EncodingsDocument):  # pragma: no cover
             raise TypeError(document)
         mnemonic = path.parent.name
-        for form in document.forms:
+        for decoded_form in document.forms:
+            form = resolve_encoding_form(decoded_form, field_types, path)
             if form.encoding_class not in class_names:
                 raise ValueError(
                     f"{path}: form {form.id!r} references unknown class "
@@ -67,7 +72,7 @@ def load_encoding_store(defs_root: Path) -> EncodingStore:
                 )
             ids[form.id] = path
             encodings.append(LocatedEncoding(path, mnemonic, form))
-    return EncodingStore(defs_root, ENCODING_CLASSES, tuple(encodings))
+    return EncodingStore(defs_root, ENCODING_CLASSES, tuple(encodings), field_types)
 
 
 def encoding_form_dict(form: EncodingForm) -> dict:
@@ -96,7 +101,10 @@ def encoding_form_dict(form: EncodingForm) -> dict:
                 item["ea_width"] = operand.ea_width
             operands.append(item)
         out["operands"] = operands
-    if form.sizes:
+    has_size_selector = any(
+        value.type.startswith("size.") for value in form.fields.values()
+    )
+    if form.sizes and not has_size_selector:
         out["sizes"] = list(form.sizes)
     if form.fields:
         out["fields"] = {
@@ -127,44 +135,30 @@ def encoding_form_dict(form: EncodingForm) -> dict:
     return out
 
 
-def allocation_entry_dict(located: LocatedEncoding) -> dict:
+def allocation_entry_dict(
+    located: LocatedEncoding,
+    field_types: FieldTypeRegistry,
+) -> dict:
     """Adapt a new encoding form to the claim/report algorithms."""
     form = located.form
-    widths = Counter(char for char in form.bits if char not in "01?")
-    kind_by_type = {
-        "size": "size",
-        "Rn": "rn",
-        "Fn": "freg",
-        "EA": "ea7",
-        "condition": "condition",
-    }
-    immediate_types = {
-        "flags_bitmap",
-        "pair_id",
-        "fp_pair_id",
-        "pt_level",
-        "fconst_id",
-    }
-
-    def field_kind(field_type: str) -> str:
-        if field_type.startswith("imm") or field_type in immediate_types:
-            return "immediate"
-        return kind_by_type.get(field_type, "bits")
-
     fields: dict[str, dict[str, object]] = {}
+
+    def field_dict(type_name: str) -> dict[str, object]:
+        spec = field_types.types[type_name]
+        result: dict[str, object] = {
+            "type": type_name,
+            "kind": spec.allocation_kind,
+            "width": spec.width,
+        }
+        if spec.size_codes:
+            result["size_choices"] = list(spec.size_codes)
+        return result
+
     for operand in form.operands:
         if operand.field is not None:
-            fields[operand.field] = {
-                "type": operand.type,
-                "kind": field_kind(operand.type),
-                "width": widths[operand.field],
-            }
+            fields[operand.field] = field_dict(operand.type)
     for name, value in form.fields.items():
-        fields[name] = {
-            "type": value.type,
-            "kind": field_kind(value.type),
-            "width": widths[name],
-        }
+        fields[name] = field_dict(value.type)
     out = {
         "id": form.id,
         "bits": form.bits,
@@ -192,10 +186,17 @@ def allocation_entry_dict(located: LocatedEncoding) -> dict:
 
 
 def class_entries(store: EncodingStore, name: str) -> list[dict]:
-    return [allocation_entry_dict(item) for item in store.for_class(name)]
+    return [
+        allocation_entry_dict(item, store.field_types)
+        for item in store.for_class(name)
+    ]
 
 
 def iter_entries(store: EncodingStore) -> Iterable[tuple[EncodingClass, LocatedEncoding, dict]]:
     classes = store.classes_by_name
     for located in store.encodings:
-        yield classes[located.form.encoding_class], located, allocation_entry_dict(located)
+        yield (
+            classes[located.form.encoding_class],
+            located,
+            allocation_entry_dict(located, store.field_types),
+        )

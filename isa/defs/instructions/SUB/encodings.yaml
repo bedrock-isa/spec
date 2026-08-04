@@ -25,12 +25,9 @@ forms:
     type: Rn
     access: read_write
     field: d
-  sizes:
-  - L
-  - Q
   fields:
     z:
-      type: size
+      type: size.LQ
 - id: short.sub_q_imm8_i_sp
   class: short
   bits: 110001iiiiiiii
@@ -91,12 +88,9 @@ forms:
     ea_role: value
     ea_width: operation_size
     field: e
-  sizes:
-  - B
-  - W
   fields:
     z:
-      type: size
+      type: size.BW
   constraints:
   - field: e
     exclude: immediate
@@ -116,12 +110,9 @@ forms:
     ea_role: value
     ea_width: operation_size
     field: e
-  sizes:
-  - L
-  - Q
   fields:
     z:
-      type: size
+      type: size.LQ
   constraints:
   - field: e
     allow:
@@ -145,12 +136,9 @@ forms:
     type: Rn
     access: read_write
     field: d
-  sizes:
-  - B
-  - W
   fields:
     z:
-      type: size
+      type: size.BW
   constraints:
   - field: e
     allow:
@@ -171,12 +159,9 @@ forms:
     type: Rn
     access: read_write
     field: d
-  sizes:
-  - L
-  - Q
   fields:
     z:
-      type: size
+      type: size.LQ
   constraints:
   - field: e
     allow:
@@ -197,14 +182,9 @@ forms:
     ea_role: value
     ea_width: operation_size
     field: e
-  sizes:
-  - B
-  - W
-  - L
-  - Q
   fields:
     z:
-      type: size
+      type: size.BWLQ
   constraints:
   - field: e
     exclude: reg_direct
@@ -226,13 +206,9 @@ forms:
     ea_role: value
     ea_width: operation_size
     field: e
-  sizes:
-  - W
-  - L
-  - Q
   fields:
     z:
-      type: size
+      type: size.WLQ
   constraints:
   - field: z
     allow:
@@ -258,12 +234,9 @@ forms:
     ea_role: value
     ea_width: operation_size
     field: e
-  sizes:
-  - L
-  - Q
   fields:
     z:
-      type: size
+      type: size.LQ
   constraints:
   - field: e
     exclude: reg_direct

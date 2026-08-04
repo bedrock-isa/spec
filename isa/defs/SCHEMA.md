@@ -129,9 +129,15 @@ field markers are unique. Operand fields plus `fields` declare every symbolic
 marker in `bits` exactly once; `0`, `1`, and `?` are not declared markers.
 Every EA operand declares both `ea_role` and `ea_width`. `address` role uses
 `address` access, `control_target` role uses `read` access, and `value` role
-uses `read`, `write`, or `read_write` access. `operation_size` requires at
-least one form size; fixed widths define EXT0 index scale and pre/post-update
-amount directly.
+uses `read`, `write`, or `read_write` access. Each operand or field type names
+one entry in the merged operand/size field-type registry, and its marker count
+in `bits` equals that type's encoded width. An encoded size selector uses an
+explicit `size.<SizeKind>` type; its size choices are derived from that kind,
+so the form does not also declare `sizes`. Selector-less and fixed-size forms
+continue to declare `sizes` directly. `operation_size` requires a resulting
+size domain; fixed widths define EXT0 index scale and pre/post-update amount
+directly. Reserved size-kind values must be excluded by an `allow` constraint
+on the selector field. Field-marker bits need not be contiguous.
 Every pair of writable field operands that can designate the same architectural
 register has exactly one `destination_overlap` entry.
 
@@ -289,7 +295,6 @@ SizeCode {
 }
 
 SizeKind {
-  field: one lowercase character
   values: non-empty list<SizeValue>
   reserved_values?: list<ReservedSizeValue>
 }
@@ -305,7 +310,10 @@ ReservedSizeValue {
 }
 ```
 
-Values are unique within each list and cannot overlap reserved values.
+Values are unique within each list and cannot overlap reserved values. Valid
+and reserved values together cover the complete encoded domain; that domain
+determines the width of `size.<SizeKind>`. Size-field markers belong to each
+encoding form rather than to the reusable size kind.
 
 ## 7. `registers.yaml`
 

@@ -12,12 +12,9 @@ forms:
     type: Rn
     access: write
     field: d
-  sizes:
-  - B
-  - W
   fields:
     z:
-      type: size
+      type: size.BW
 - id: medium.extsl_b_rn_s_ea_e
   class: medium
   bits: 1110000sssseeeeeee
@@ -129,12 +126,9 @@ forms:
     ea_role: value
     ea_width: operation_size
     field: d
-  sizes:
-  - B
-  - W
   fields:
     z:
-      type: size
+      type: size.BW
   constraints:
   - field: s
     exclude: reg_direct

@@ -8,11 +8,6 @@ forms:
     type: Rn
     access: read_write
     field: r
-  sizes:
-  - B
-  - W
-  - L
-  - Q
   fields:
     z:
-      type: size
+      type: size.BWLQ

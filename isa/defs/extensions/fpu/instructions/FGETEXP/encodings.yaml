@@ -14,12 +14,9 @@ forms:
     type: Fn
     access: write
     field: d
-  sizes:
-  - S
-  - D
   fields:
     z:
-      type: size
+      type: size.SD
   constraints:
   - field: e
     exclude: reg_direct
@@ -37,9 +34,6 @@ forms:
     type: Fn
     access: write
     field: d
-  sizes:
-  - S
-  - D
   fields:
     z:
-      type: size
+      type: size.SD

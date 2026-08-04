@@ -12,14 +12,9 @@ forms:
     type: Rn
     access: read_write
     field: d
-  sizes:
-  - B
-  - W
-  - L
-  - Q
   fields:
     z:
-      type: size
+      type: size.BWLQ
 - id: long.sbb_x_rn_s_ea_e
   class: long
   bits: 1111000000zz010sssseeeeeee
@@ -35,14 +30,9 @@ forms:
     ea_role: value
     ea_width: operation_size
     field: e
-  sizes:
-  - B
-  - W
-  - L
-  - Q
   fields:
     z:
-      type: size
+      type: size.BWLQ
   constraints:
   - field: e
     exclude: rn_direct
@@ -65,14 +55,9 @@ forms:
     type: Rn
     access: read_write
     field: s
-  sizes:
-  - B
-  - W
-  - L
-  - Q
   fields:
     z:
-      type: size
+      type: size.BWLQ
   constraints:
   - field: e
     exclude: rn_direct
