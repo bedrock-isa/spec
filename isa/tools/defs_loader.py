@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import Any
 
 from defs_schema import (
-    InstructionSetIndex,
     decode_extension_catalog,
     decode_extension_manifest,
     decode_instruction_index,

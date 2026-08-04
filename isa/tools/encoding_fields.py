@@ -99,17 +99,6 @@ def build_field_type_registry(
     return FieldTypeRegistry(types=types, size_codes=size_codes)
 
 
-def size_type_for_codes(registry: FieldTypeRegistry, codes: tuple[str, ...]) -> str:
-    matches = [
-        spec.name
-        for spec in registry.types.values()
-        if spec.size_codes == codes
-    ]
-    if len(matches) != 1:
-        raise ValueError(f"cannot resolve a unique size field type for {list(codes)!r}")
-    return matches[0]
-
-
 def _constraint_allows(constraint: EncodingConstraint, value: int) -> bool:
     for item in constraint.allow:
         if isinstance(item, int):

@@ -92,7 +92,6 @@ EncodingForm {
   fields?: map<one-character marker, EncodingField>
   constraints?: list<EncodingConstraint>
   destination_overlap?: list<DestinationOverlap>
-  notes?: list<string>
 }
 
 EncodingOperand {

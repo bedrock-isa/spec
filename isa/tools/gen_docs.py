@@ -27,7 +27,6 @@ from validate_alloc import (  # noqa: E402
     namespace_size,
     parse_range,
 )
-from alloc_notes import allocation_form_text  # noqa: E402
 from defs_loader import (  # noqa: E402
     load_extensions,
     load_instruction_sets,
@@ -55,7 +54,6 @@ from latex_builder.common import (  # noqa: E402
     TextTex,
     TrustedRawTex,
     latex_longtable,
-    latex_tabular,
     render_latex_template as render_typed_latex_template,
     tex_code,
     tex_escape as latex_escape,
@@ -157,7 +155,7 @@ class AllocationEntry:
 
     @property
     def mnemonic(self) -> str | None:
-        return allocation_mnemonic(allocation_form_text(self.text))
+        return allocation_mnemonic(self.text.strip())
 
 
 @dataclass(frozen=True)
@@ -566,34 +564,15 @@ def latex_instruction_field(label: str, value_latex: str) -> str:
     return rf"\manualinstructionfield{{{latex_escape(label)}}}{{{value_latex}}}"
 
 
-def latex_instruction_status(label: str, value_latex: str) -> str:
-    if not value_latex:
-        return ""
-    return rf"\manualinstructionstatus{{{latex_escape(label)}}}{{{value_latex}}}"
-
-
-def latex_code_line_stack(lines: list[str]) -> str:
-    if not lines:
-        return tex_code("-")
-    return "\n".join(rf"\manualcodeline{{{latex_escape(line)}}}" for line in lines)
-
-
 def instruction_length_summary(inst: InstructionDef, model: IsaModel) -> str:
     lengths: set[int] = set()
     for entry in model.allocated_by_mnemonic.get(inst.mnemonic, []):
-        form = allocation_form_text(entry.text)
+        form = entry.text.strip()
         lengths.update(instruction_length(entry, form, model.metadata.get("ea")).required_bytes)
     if not lengths:
         return "variable length"
     low, high = min(lengths), max(lengths)
     return f"{low} byte" if low == high == 1 else (f"{low} bytes" if low == high else f"{low}-{high} bytes")
-
-
-def latex_instruction_metadata(inst: InstructionDef, model: IsaModel) -> str:
-    return rf"\manualinstructionmetadata{{{latex_escape(instruction_class(inst))}}}" \
-        rf"{{{latex_escape(instruction_family(inst))}}}" \
-        rf"{{{latex_escape(privilege_text(inst.attributes.get('privilege', '-'), '-'))}}}" \
-        rf"{{{latex_escape(instruction_length_summary(inst, model))}}}"
 
 
 def latex_attributes_block(inst: InstructionDef, model: IsaModel) -> str:
@@ -705,7 +684,7 @@ def assembler_syntax_lines(model: IsaModel, inst: InstructionDef) -> list[str]:
     lines: list[str] = []
     seen: set[str] = set()
     for entry in model.allocated_by_mnemonic.get(inst.mnemonic, []):
-        form = allocation_form_text(entry.text)
+        form = entry.text.strip()
         if form and form not in seen:
             lines.append(form)
             seen.add(form)
@@ -1017,15 +996,6 @@ def latex_entry_bit_diagram(entry: AllocationEntry, form: str) -> str:
     )
 
 
-def field_bit_range(entry: AllocationEntry, symbol: str) -> str:
-    positions = [entry.payload_bits - 1 - index for index, char in enumerate(entry.bits) if char == symbol]
-    if not positions:
-        return "-"
-    high = max(positions)
-    low = min(positions)
-    return str(high) if high == low else f"{high}:{low}"
-
-
 def ordered_entry_fields(entry: AllocationEntry) -> list[tuple[str, dict[str, Any]]]:
     seen: set[str] = set()
     out: list[tuple[str, dict[str, Any]]] = []
@@ -1234,21 +1204,11 @@ def latex_ea_availability_summary(summary: EAAvailabilitySummary) -> str:
     return rf"\manualeasummary{{{'; '.join(allowed_terms) or 'none'}}}"
 
 
-def destination_ea_field(entry: AllocationEntry) -> str | None:
-    for symbol in ("d", "e"):
-        spec = entry.fields.get(symbol)
-        if isinstance(spec, dict) and spec.get("kind") == "ea7":
-            return symbol
-    return None
-
-
 def ea_constraints_for_field(entry: AllocationEntry, symbol: str) -> list[dict[str, Any]]:
-    destination = destination_ea_field(entry)
     return [
         constraint
         for constraint in entry.constraints
         if constraint.get("field") == symbol
-        or (constraint.get("destination") and symbol == destination)
     ]
 
 
@@ -1398,7 +1358,7 @@ def latex_allocated_instruction_form_block(
     *,
     include_forms_heading: bool = False,
 ) -> str:
-    form = allocation_form_text(entry.text)
+    form = entry.text.strip()
     length = instruction_length(entry, form, model.metadata.get("ea"))
     form_privilege = inst.attributes.get("privilege", "unprivileged")
     rows = [
@@ -1466,25 +1426,6 @@ def render_latex(model: IsaModel, only_allocated: bool = False) -> str:
             ),
         },
     ) + "\n"
-
-
-def latex_table(
-    headers: list[str],
-    rows: list[list[Any]],
-    widths: list[str],
-    caption: str,
-    *,
-    style: str = "default",
-    listed: bool = True,
-) -> str:
-    return latex_longtable(
-        headers,
-        [[latex_cell(value) for value in row] for row in rows],
-        widths,
-        caption,
-        style=style,
-        listed=listed,
-    )
 
 
 def latex_code_table(

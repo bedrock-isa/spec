@@ -10,12 +10,7 @@ from pathlib import Path
 import sys
 from typing import Any, Iterable
 
-from encoding_architecture import ARCHITECTURE_SOURCE_PATH, ENCODING_CLASSES_BY_NAME
-
-try:
-    import yaml
-except ImportError as exc:  # pragma: no cover - environment error path
-    raise SystemExit("PyYAML is required to validate allocation YAML files") from exc
+from encoding_architecture import ARCHITECTURE_SOURCE_PATH
 
 
 @dataclass(frozen=True)
@@ -114,7 +109,6 @@ def is_immediate(value: int) -> bool:
 
 PREDICATES = {
     "rn_direct": is_rn_direct,
-    "sp_direct": is_sp_direct,
     "reg_direct": is_reg_direct,
     "immediate": is_immediate,
 }
@@ -135,13 +129,6 @@ def excluded_by(value: int, pattern: str, constraint: dict[str, Any]) -> bool:
         raise ValueError(f"unknown exclude predicate {pred_name!r}")
     predicate = PREDICATES[pred_name]
 
-    if constraint.get("destination"):
-        for field in ("d", "e"):
-            field_bits, width = field_value(value, pattern, field)
-            if width == 7:
-                return predicate(field_bits)
-        raise ValueError("destination constraint needs a 7-bit d or e EA field")
-
     field = constraint["field"]
     field_bits, width = field_value(value, pattern, field)
     if width == 0:
@@ -160,8 +147,6 @@ def entry_claims(
     pattern = compact_bits(str(entry["bits"]))
     constraints = entry.get("constraints") or []
 
-    if ";" in text:
-        raise ValueError(f"{entry_id}: text must not contain semicolon notes; use constraints or notes")
     if len(pattern) != payload_bits:
         raise ValueError(f"{entry_id}: pattern has {len(pattern)} bits, expected {payload_bits}")
 
@@ -251,21 +236,10 @@ def validate_store(defs_root: Path) -> list[tuple[str, dict[str, int], Counter[s
     return results
 
 
-def default_namespace_patterns(payload_bits: int, cls: str) -> list[str]:
-    encoding_class = ENCODING_CLASSES_BY_NAME.get(cls)
-    if encoding_class is None:
-        return ["?" * payload_bits]
-    if payload_bits != encoding_class.payload_bits:
-        raise ValueError(
-            f"{cls} payload_bits must be {encoding_class.payload_bits}, got {payload_bits}"
-        )
-    return list(encoding_class.namespace)
-
-
 def namespace_patterns(payload_bits: int, data: dict[str, Any]) -> list[str]:
     raw = data.get("namespace")
     if raw is None:
-        return default_namespace_patterns(payload_bits, str(data.get("class", "")))
+        raise ValueError("namespace is required")
     patterns = [compact_bits(str(item)) for item in raw]
     for pattern in patterns:
         if len(pattern) != payload_bits:
@@ -289,77 +263,21 @@ def namespace_size(patterns: list[str]) -> int:
     return total
 
 
-def validate_file(path: Path) -> tuple[str, dict[str, int], Counter[str], list[str]]:
-    data = yaml.safe_load(path.read_text())
-    if not isinstance(data, dict):
-        raise ValueError(f"{path}: expected a mapping")
-    if "escapes" in data:
-        raise ValueError(f"{path}: top-level escapes are no longer supported; use class namespace patterns")
-
-    cls = str(data["class"])
-    payload_bits = int(data["payload_bits"])
-    namespaces = namespace_patterns(payload_bits, data)
-    total = namespace_size(namespaces)
-
-    by_value: dict[int, Claim] = {}
-    allocated_values: set[int] = set()
-    skipped: Counter[str] = Counter()
-    overlaps: list[str] = []
-    for entry in data.get("entries") or []:
-        claims, entry_skipped = entry_claims(path, payload_bits, namespaces, entry)
-        skipped.update(entry_skipped)
-        for value, claim in claims:
-            previous = by_value.get(value)
-            if previous is not None:
-                overlaps.append(f"0x{value:x}: {previous.entry_id} overlaps {claim.entry_id}")
-                continue
-            by_value[value] = claim
-            allocated_values.add(value)
-
-    assigned = len(allocated_values)
-    reserved_total = total - assigned
-    summary = {
-        "total": total,
-        "allocated": assigned,
-        "reserved_total": reserved_total,
-        "claimed": len(by_value),
-        "constraint_skipped": sum(skipped.values()),
-    }
-    return cls, summary, skipped, overlaps
-
-
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "paths",
-        nargs="*",
-        type=Path,
-        default=None,
-        help="allocation YAML files to validate",
-    )
     parser.add_argument("--defs", type=Path, default=Path("isa/defs"))
     args = parser.parse_args()
 
     had_error = False
-    if args.paths:
-        results: list[tuple[Path | None, str, dict[str, int], Counter[str], list[str]]] = []
-        for path in args.paths:
-            try:
-                cls, summary, skipped, overlaps = validate_file(path)
-                results.append((path, cls, summary, skipped, overlaps))
-            except Exception as exc:
-                had_error = True
-                print(f"{path}: ERROR: {exc}", file=sys.stderr)
-    else:
-        try:
-            results = [
-                (None, cls, summary, skipped, overlaps)
-                for cls, summary, skipped, overlaps in validate_store(args.defs)
-            ]
-        except Exception as exc:
-            had_error = True
-            print(f"{args.defs}: ERROR: {exc}", file=sys.stderr)
-            results = []
+    try:
+        results = [
+            (None, cls, summary, skipped, overlaps)
+            for cls, summary, skipped, overlaps in validate_store(args.defs)
+        ]
+    except Exception as exc:
+        had_error = True
+        print(f"{args.defs}: ERROR: {exc}", file=sys.stderr)
+        results = []
 
     for path, cls, summary, skipped, overlaps in results:
         if overlaps:

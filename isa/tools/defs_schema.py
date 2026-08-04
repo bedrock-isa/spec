@@ -318,7 +318,6 @@ class EncodingForm:
     fields: dict[str, EncodingField] = field(default_factory=dict)
     constraints: tuple[EncodingConstraint, ...] = ()
     destination_overlap: tuple[DestinationOverlap, ...] = ()
-    notes: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -781,7 +780,6 @@ def decode_encodings(path: Path, raw: Any) -> EncodingsDocument:
                 "fields",
                 "constraints",
                 "destination_overlap",
-                "notes",
             ),
         )
         form_id = _string(form["id"], path, f"{field_path}.id")
@@ -1032,7 +1030,6 @@ def decode_encodings(path: Path, raw: Any) -> EncodingsDocument:
                 fields=fields,
                 constraints=tuple(constraints),
                 destination_overlap=tuple(destination_overlap),
-                notes=tuple(_string_list(form.get("notes", []), path, field_path + ".notes")),
             )
         )
     return EncodingsDocument(tuple(forms))

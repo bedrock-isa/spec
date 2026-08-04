@@ -6,14 +6,12 @@ from __future__ import annotations
 import argparse
 import csv
 import json
-from collections import Counter, defaultdict
+from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-import yaml
-
-from alloc_notes import allocation_form_text, allocation_note_text
+from alloc_notes import allocation_note_text
 from validate_alloc import (
     Claim,
     compact_bits,
@@ -86,16 +84,9 @@ class ClassReport:
     overlaps: list[str]
 
 
-def load_yaml(path: Path) -> dict[str, Any]:
-    data = yaml.safe_load(path.read_text(encoding="utf-8"))
-    if not isinstance(data, dict):
-        raise ValueError(f"{path}: expected a mapping")
-    return data
-
-
 def mnemonic_from_text(text: str, entry_id: str) -> str:
-    form = allocation_form_text(text)
-    first = form.strip().split(maxsplit=1)[0] if form.strip() else entry_id.rsplit(".", 1)[-1]
+    text = text.strip()
+    first = text.split(maxsplit=1)[0] if text else entry_id.rsplit(".", 1)[-1]
     return first
 
 
@@ -127,8 +118,6 @@ def entry_skipped_values(
 
 
 def analyze_data(path: Path, data: dict[str, Any]) -> tuple[ClassReport, list[EntryReport]]:
-    if "escapes" in data:
-        raise ValueError(f"{path}: top-level escapes are no longer supported; use class namespace patterns")
     cls = str(data["class"])
     payload_bits = int(data["payload_bits"])
     namespaces = namespace_patterns(payload_bits, data)
@@ -144,7 +133,7 @@ def analyze_data(path: Path, data: dict[str, Any]) -> tuple[ClassReport, list[En
     for entry in data.get("entries") or []:
         entry_path = Path(str(entry.get("source_path", path)))
         pattern = compact_bits(str(entry["bits"]))
-        text = allocation_form_text(str(entry.get("text", "")))
+        text = str(entry["syntax"]).strip()
         claims, skipped = entry_claims(entry_path, payload_bits, namespaces, entry)
         class_skipped.update(skipped)
         skipped_values.update(
@@ -198,20 +187,6 @@ def analyze_data(path: Path, data: dict[str, Any]) -> tuple[ClassReport, list[En
         ),
         entry_reports,
     )
-
-
-def analyze_file(path: Path) -> tuple[ClassReport, list[EntryReport]]:
-    return analyze_data(path, load_yaml(path))
-
-
-def analyze(paths: list[Path]) -> tuple[list[ClassReport], list[EntryReport]]:
-    class_reports: list[ClassReport] = []
-    entry_reports: list[EntryReport] = []
-    for path in sorted(paths):
-        class_report, entries = analyze_file(path)
-        class_reports.append(class_report)
-        entry_reports.extend(entries)
-    return class_reports, entry_reports
 
 
 def int_text(value: int) -> str:
@@ -492,13 +467,12 @@ def write_outputs(
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("paths", nargs="*", type=Path)
     parser.add_argument("--defs", type=Path, default=Path("isa/defs"))
     parser.add_argument("--out-dir", type=Path, default=Path("build/reports"))
     parser.add_argument("--base-name", default="encoding_allocation_report")
     args = parser.parse_args()
 
-    classes, entries = analyze(args.paths) if args.paths else analyze_store(args.defs)
+    classes, entries = analyze_store(args.defs)
     written = write_outputs(args.out_dir, args.base_name, classes, entries)
 
     for item in classes:

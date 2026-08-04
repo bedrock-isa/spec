@@ -8,11 +8,6 @@ from typing import Any
 from validate_alloc import parse_range
 
 
-def allocation_form_text(text: str) -> str:
-    """Return only the instruction form, without legacy semicolon notes."""
-    return str(text).split(";", 1)[0].strip()
-
-
 def allocation_note_text(entry: Any) -> str:
     notes = allocation_notes(entry)
     return "; ".join(notes) if notes else "-"
@@ -21,12 +16,8 @@ def allocation_note_text(entry: Any) -> str:
 def allocation_notes(entry: Any) -> list[str]:
     fields = _entry_get(entry, "fields", {}) or {}
     constraints = _entry_get(entry, "constraints", []) or []
-    raw_notes = _entry_get(entry, "notes", []) or []
 
     out: list[str] = []
-    for note in _as_note_list(raw_notes):
-        _append_unique(out, note)
-
     for constraint in constraints:
         if not isinstance(constraint, dict):
             continue
@@ -41,8 +32,6 @@ def constraint_note(constraint: dict[str, Any], fields: dict[str, Any]) -> str:
     parts: list[str] = []
     if field:
         parts.append(f"field={field}")
-    if constraint.get("destination"):
-        parts.append("destination=true")
     if "allow" in constraint:
         width = _field_width(fields, field)
         parts.append(f"allow={_range_list_text(constraint.get('allow') or [], width)}")
@@ -58,13 +47,6 @@ def _entry_get(entry: Any, key: str, default: Any) -> Any:
     if isinstance(entry, dict):
         return entry.get(key, default)
     return getattr(entry, key, default)
-
-
-def _as_note_list(value: Any) -> list[str]:
-    if isinstance(value, list):
-        return [str(item).strip() for item in value if str(item).strip()]
-    text = str(value).strip()
-    return [text] if text else []
 
 
 def _append_unique(out: list[str], value: str) -> None:

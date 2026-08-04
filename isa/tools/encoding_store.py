@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable
 
 from defs_loader import load_extensions, load_field_types
 from encoding_fields import FieldTypeRegistry, resolve_encoding_form
@@ -130,8 +129,6 @@ def encoding_form_dict(form: EncodingForm) -> dict:
             }
             for relation in form.destination_overlap
         ]
-    if form.notes:
-        out["notes"] = list(form.notes)
     return out
 
 
@@ -172,8 +169,6 @@ def allocation_entry_dict(
         "source_path": str(located.path),
         "mnemonic": located.mnemonic,
     }
-    if form.notes:
-        out["notes"] = list(form.notes)
     if form.destination_overlap:
         out["destination_overlap"] = [
             {
@@ -190,13 +185,3 @@ def class_entries(store: EncodingStore, name: str) -> list[dict]:
         allocation_entry_dict(item, store.field_types)
         for item in store.for_class(name)
     ]
-
-
-def iter_entries(store: EncodingStore) -> Iterable[tuple[EncodingClass, LocatedEncoding, dict]]:
-    classes = store.classes_by_name
-    for located in store.encodings:
-        yield (
-            classes[located.form.encoding_class],
-            located,
-            allocation_entry_dict(located, store.field_types),
-        )

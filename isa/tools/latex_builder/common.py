@@ -5,7 +5,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-import json
 import re
 
 import yaml
@@ -70,11 +69,6 @@ class TrustedRawTex:
         return self.value
 
 
-def load_allocation(path: Path) -> dict[str, Any]:
-    with path.open("r", encoding="utf-8") as fp:
-        return json.load(fp)
-
-
 def latex_template(name: str) -> str:
     return (TEMPLATE_DIR / name).read_text(encoding="utf-8")
 
@@ -106,59 +100,8 @@ def table_list_should_stack(items: list[Any], text_fn: Any = str) -> bool:
     )
 
 
-def tex_table_value(value: Any) -> str:
-    if isinstance(value, list):
-        if not value:
-            return tex_escape("-")
-        if table_list_should_stack(value, readable_text):
-            return tex_multiline([readable_text(item) for item in value])
-        return tex_escape(", ".join(readable_text(item) for item in value))
-    if isinstance(value, set):
-        if not value:
-            return tex_escape("-")
-        items = sorted(value)
-        if table_list_should_stack(items, readable_text):
-            return tex_multiline([readable_text(item) for item in items])
-        return tex_escape(", ".join(readable_text(item) for item in items))
-    return tex_escape(readable_text(value))
-
-
-def tex_table_code_value(value: Any) -> str:
-    if isinstance(value, list):
-        if not value:
-            return tex_escape("-")
-        if table_list_should_stack(value):
-            return tex_multiline_latex([tex_code(item) for item in value])
-        return ", ".join(tex_code(item) for item in value)
-    if isinstance(value, set):
-        if not value:
-            return tex_escape("-")
-        items = sorted(value)
-        if table_list_should_stack(items):
-            return tex_multiline_latex([tex_code(item) for item in items])
-        return ", ".join(tex_code(item) for item in items)
-    return tex_code(value)
-
-
 def caption_title(value: Any) -> str:
     return CAPTION_LABEL_RE.sub("", str(value)).strip()
-
-
-def listed_figure_caption(caption: str) -> str:
-    return rf"\manualfigurecaption{{{tex_escape(caption_title(caption))}}}"
-
-
-def tex_yaml(value: Any) -> str:
-    dumped = yaml.safe_dump(value, sort_keys=False, allow_unicode=False).strip()
-    return tex_escape(dumped)
-
-
-def mdash_join(items: list[str]) -> str:
-    return ", ".join(item for item in items if item) or "-"
-
-
-def pretty_key(key: str) -> str:
-    return key.replace("_", " ").replace(".", " ").title()
 
 
 def normalize_text(value: Any) -> str:
@@ -176,21 +119,6 @@ def compact_text(value: Any) -> str:
 
 def readable_text(value: Any) -> str:
     return compact_text(value).replace("_", " ")
-
-
-def memory_rule_text(value: Any) -> str:
-    return readable_text(value)
-
-
-def latex_paragraph(value: Any) -> str:
-    return tex_escape(compact_text(value))
-
-
-def instruction_docs(spec: dict[str, Any]) -> dict[str, dict[str, Any]]:
-    docs = (spec.get("instructions") or {}).get("instruction_docs") or {}
-    if not isinstance(docs, dict):
-        return {}
-    return {str(key): value for key, value in docs.items() if isinstance(value, dict)}
 
 
 class LatexComponent:
@@ -274,15 +202,6 @@ def _validate_table_shape(
     for index, width in enumerate(widths):
         if not TABLE_WIDTH_RE.fullmatch(width):
             raise ValueError(f"{where}: invalid width for column {index}: {width!r}")
-
-
-@dataclass(frozen=True)
-class LatexSequence(LatexComponent):
-    parts: list[Any]
-    separator: str = "\n"
-
-    def render(self) -> str:
-        return self.separator.join(render_component(part) for part in self.parts if part is not None)
 
 
 @dataclass(frozen=True)
@@ -437,14 +356,6 @@ class LatexTabular(LatexComponent):
 
 def render_latex_template(name: str, values: dict[str, Any] | None = None) -> str:
     return LatexTemplate(name, values).render()
-
-
-def top_section(title: str) -> str:
-    return LatexTopSection(title).render()
-
-
-def hidden_top_section(title: str) -> str:
-    return LatexHiddenTopSection(title).render()
 
 
 def latex_longtable(

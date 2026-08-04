@@ -23,21 +23,10 @@ size_kinds:
     values:
     - {value: 0, code: L}
     - {value: 1, code: Q}
-  WL:
-    values:
-    - {value: 0, code: W}
-    - {value: 1, code: L}
   BW:
     values:
     - {value: 0, code: B}
     - {value: 1, code: W}
-  BWL:
-    values:
-    - {value: 0, code: B}
-    - {value: 1, code: W}
-    - {value: 2, code: L}
-    reserved_values:
-    - {value: 3, name: invalid}
   WLQ:
     values:
     - {value: 1, code: W}

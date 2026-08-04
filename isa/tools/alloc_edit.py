@@ -94,8 +94,6 @@ def load_space_data(path: Path, data: dict[str, Any]) -> AllocationSpace:
     cls = str(data["class"])
     payload_bits = int(data["payload_bits"])
     namespaces = namespace_patterns(payload_bits, data)
-    if "escapes" in data:
-        raise ValueError(f"{path}: top-level escapes are no longer supported; use class namespace patterns")
     entries = [entry for entry in data.get("entries") or [] if isinstance(entry, dict)]
     allocated: dict[int, Claim] = {}
     claimed: dict[int, Claim] = {}
@@ -404,13 +402,6 @@ def minimized_cubes_from_values(values: Iterable[int], width: int) -> list[Cube]
     return cubes
 
 
-def covered_values(cubes: Iterable[Cube]) -> set[int]:
-    out: set[int] = set()
-    for cube in cubes:
-        out.update(expand_pattern(cube_pattern(cube)))
-    return out
-
-
 def exact_disjoint_cubes(cubes: Iterable[Cube], expected: set[int], width: int) -> list[Cube]:
     remaining = set(expected)
     out: list[Cube] = []
@@ -440,13 +431,6 @@ def validate_exact_cover(cubes: Iterable[Cube], expected: set[int]) -> None:
         if missing:
             raise RuntimeError(f"minimized cover missed 0x{min(missing):x}")
         raise RuntimeError(f"minimized cover includes off-set value 0x{min(extra):x}")
-
-
-def value_range_text(base: int, size: int, width: int) -> str:
-    if size == 1:
-        return f"0x{base:0{(width + 3) // 4}x}"
-    end = base + size - 1
-    return f"0x{base:0{(width + 3) // 4}x}..0x{end:0{(width + 3) // 4}x}"
 
 
 def cube_span_text(cube: Cube) -> str:

@@ -33,7 +33,3 @@ def resolve_source(path: Path, repository_root: Path) -> Path:
 
 def read_source(path: Path, repository_root: Path) -> str:
     return resolve_source(path, repository_root).read_text(encoding="utf-8")
-
-
-def source_is_file(path: Path, repository_root: Path) -> bool:
-    return resolve_source(path, repository_root).is_file()
