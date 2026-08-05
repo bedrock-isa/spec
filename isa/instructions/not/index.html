@@ -8952,9 +8952,9 @@
 <h2 id="operation">Operation</h2>
 <p>Writes the selected-width bitwise complement of the destination value.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
-<p><code>NOT.X(z:L/Q) Rn(r)</code></p>
-<p><code>NOT.X(z:B/W) &lt;ea&gt;</code></p>
-<p><code>NOT.X(z:L/Q) &lt;ea&gt;</code></p>
+<p><code>NOT.LQ(z) Rn(r)</code></p>
+<p><code>NOT.BW(z) &lt;ea&gt;(e)</code></p>
+<p><code>NOT.LQ(z) &lt;ea&gt;(e)</code></p>
 <h2 id="attributes">Attributes</h2>
 <p>Class = integer</p>
 <p>Family = integer unary</p>
@@ -8963,19 +8963,19 @@
 <p>Repeat = <code>REP</code>, <code>REPcc</code>, <code>REPG</code></p>
 <p>REPcc observation = <code>result</code> <code>dst</code></p>
 <h2 id="instruction-forms">Instruction Forms</h2>
-<p><strong><code>NOT.X(z:L/Q) Rn(r)</code></strong></p>
+<p><strong><code>NOT.LQ(z) Rn(r)</code></strong></p>
 <p><em>Encoding class: short; required bytes: 2 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for NOT.X(z:L/Q) Rn(r)" src="../../../assets/visuals/isa/not-01.svg" /></p>
-<p><strong>Format Instruction format for NOT.X(z:L/Q) Rn(r)</strong></p>
+<p><img alt="Format — Instruction format for NOT.LQ(z) Rn(r)" src="../../../assets/visuals/isa/not-01.svg" /></p>
+<p><strong>Format Instruction format for NOT.LQ(z) Rn(r)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Size field <code>z</code></strong> — Selects L/Q.</p>
 <p><strong>Register field <code>r</code></strong> — Selects the operand.</p>
-<p><strong><code>NOT.X(z:B/W) &lt;ea&gt;</code></strong></p>
+<p><strong><code>NOT.BW(z) &lt;ea&gt;(e)</code></strong></p>
 <p><em>Encoding class: medium; required bytes: 3-13 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for NOT.X(z:B/W) \&lt;ea&gt;" src="../../../assets/visuals/isa/not-02.svg" /></p>
-<p><strong>Format Instruction format for NOT.X(z:B/W) \&lt;ea&gt;</strong></p>
+<p><img alt="Format — Instruction format for NOT.BW(z) \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/not-02.svg" /></p>
+<p><strong>Format Instruction format for NOT.BW(z) \&lt;ea&gt;(e)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the read/write operand.</p>
@@ -8983,11 +8983,11 @@
 <p><strong>Allowed:</strong> Register; Memory; EXT0</p>
 <p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>
 <p><strong>Size field <code>z</code></strong> — Selects B/W.</p>
-<p><strong><code>NOT.X(z:L/Q) &lt;ea&gt;</code></strong></p>
+<p><strong><code>NOT.LQ(z) &lt;ea&gt;(e)</code></strong></p>
 <p><em>Encoding class: medium; required bytes: 3-13 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for NOT.X(z:L/Q) \&lt;ea&gt;" src="../../../assets/visuals/isa/not-03.svg" /></p>
-<p><strong>Format Instruction format for NOT.X(z:L/Q) \&lt;ea&gt;</strong></p>
+<p><img alt="Format — Instruction format for NOT.LQ(z) \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/not-03.svg" /></p>
+<p><strong>Format Instruction format for NOT.LQ(z) \&lt;ea&gt;(e)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the read/write operand.</p>

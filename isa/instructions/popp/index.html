@@ -8974,7 +8974,7 @@
 <h2 id="operation">Operation</h2>
 <p>Pops the canonical register pair selected by the pair ID. The canonical pair sequence is pair 0 (R14, R15), pair 1 (R12, R13), pair 2 (R10, R11), pair 3 (R8, R9), pair 4 (R6, R7), pair 5 (R4, R5), pair 6 (R2, R3), and pair 7 (R0, R1). All eight pair IDs are valid and each selects one pair.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
-<p><code>POPP pair_id(i)</code></p>
+<p><code>POPP PAIRn(i)</code></p>
 <h2 id="attributes">Attributes</h2>
 <p>Class = data movement</p>
 <p>Family = data movement</p>
@@ -8985,11 +8985,11 @@
 <p>POPP selects one canonical pair using the unsigned 3-bit pair index and reads the complete two-slot stack range through the old SS:SP context before either destination register or SP is changed. For a listed pair (<em>first</em>, <em>second</em>), the second register is read from old SP and the first register is read from old SP plus 8. Both destination registers and the SP update to old SP plus 16 commit together. A preceding fault changes neither destination register nor SP.</p>
 <p>Multiple POPP instructions can be used in reverse canonical epilogue order to restore multiple pairs.</p>
 <h2 id="instruction-forms">Instruction Forms</h2>
-<p><strong><code>POPP pair_id(i)</code></strong></p>
+<p><strong><code>POPP PAIRn(i)</code></strong></p>
 <p><em>Encoding class: extrashort; required bytes: 1 byte; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for POPP pair_id(i)" src="../../../assets/visuals/isa/popp-01.svg" /></p>
-<p><strong>Format Instruction format for POPP pair_id(i)</strong></p>
+<p><img alt="Format — Instruction format for POPP PAIRn(i)" src="../../../assets/visuals/isa/popp-01.svg" /></p>
+<p><strong>Format Instruction format for POPP PAIRn(i)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Immediate field <code>i</code></strong> — Encodes the immediate value.</p>
 

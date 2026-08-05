@@ -8974,8 +8974,8 @@
 <h2 id="operation">Operation</h2>
 <p>Scales the selected floating-point destination by an integral power of two derived from the source and writes the rounded result.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
-<p><code>FSCALE.X(z:S/D) &lt;ea&gt;(e), Fn(d)</code></p>
-<p><code>FSCALE.X(z:S/D) Fn(s), Fn(d)</code></p>
+<p><code>FSCALE.SD(z) &lt;ea&gt;(e), Fn(d)</code></p>
+<p><code>FSCALE.SD(z) Fn(s), Fn(d)</code></p>
 <h2 id="attributes">Attributes</h2>
 <p>Class = fpu</p>
 <p>Family = fpu</p>
@@ -9017,11 +9017,11 @@
 </table>
 <p>Let <span class="arithmatex">\(x\)</span> be the first source after DAZ processing and let <span class="arithmatex">\(k\)</span> be the second source rounded to an integer using the current rounding mode. The mathematical result before format rounding is $<span class="arithmatex">\(x \times 2^k .\)</span>$ A NaN operand is propagated according to the common floating-point rules. Multiplying zero or infinity by the power of two preserves that value and its sign. Conversion of the scale operand to <span class="arithmatex">\(k\)</span> can accrue NX; final rounding can accrue OF, UF, or NX. Enabled exceptions trap before the destination is written.</p>
 <h2 id="instruction-forms">Instruction Forms</h2>
-<p><strong><code>FSCALE.X(z:S/D) &lt;ea&gt;(e), Fn(d)</code></strong></p>
+<p><strong><code>FSCALE.SD(z) &lt;ea&gt;(e), Fn(d)</code></strong></p>
 <p><em>Encoding class: long; required bytes: 4-14 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for FSCALE.X(z:S/D) \&lt;ea&gt;(e), Fn(d)" src="../../../assets/visuals/isa/fscale-01.svg" /></p>
-<p><strong>Format Instruction format for FSCALE.X(z:S/D) \&lt;ea&gt;(e), Fn(d)</strong></p>
+<p><img alt="Format — Instruction format for FSCALE.SD(z) \&lt;ea&gt;(e), Fn(d)" src="../../../assets/visuals/isa/fscale-01.svg" /></p>
+<p><strong>Format Instruction format for FSCALE.SD(z) \&lt;ea&gt;(e), Fn(d)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects S/D.</p>
@@ -9030,11 +9030,11 @@
 <p><strong>EA availability</strong></p>
 <p><strong>Allowed:</strong> Memory; Immediate; EXT0</p>
 <p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>
-<p><strong><code>FSCALE.X(z:S/D) Fn(s), Fn(d)</code></strong></p>
+<p><strong><code>FSCALE.SD(z) Fn(s), Fn(d)</code></strong></p>
 <p><em>Encoding class: long; required bytes: 4 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for FSCALE.X(z:S/D) Fn(s), Fn(d)" src="../../../assets/visuals/isa/fscale-02.svg" /></p>
-<p><strong>Format Instruction format for FSCALE.X(z:S/D) Fn(s), Fn(d)</strong></p>
+<p><img alt="Format — Instruction format for FSCALE.SD(z) Fn(s), Fn(d)" src="../../../assets/visuals/isa/fscale-02.svg" /></p>
+<p><strong>Format Instruction format for FSCALE.SD(z) Fn(s), Fn(d)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects S/D.</p>

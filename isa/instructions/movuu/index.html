@@ -8952,7 +8952,7 @@
 <h2 id="operation">Operation</h2>
 <p>MOVUU is a supervisor-only checked user-access move. Both source and destination operands must be memory operands, and both memory accesses use the user domain.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
-<p><code>MOVUU.X(z:B/W/L/Q) &lt;ea&gt;(s), &lt;ea&gt;(d)</code></p>
+<p><code>MOVUU.BWLQ(z) &lt;ea&gt;(s), &lt;ea&gt;(d)</code></p>
 <h2 id="attributes">Attributes</h2>
 <p>Class = system</p>
 <p>Family = data movement</p>
@@ -8961,11 +8961,11 @@
 <p>Repeat = <code>REP</code>, <code>REPcc</code>, <code>REPG</code></p>
 <p>REPcc observation = <code>result</code> <code>dst</code></p>
 <h2 id="instruction-forms">Instruction Forms</h2>
-<p><strong><code>MOVUU.X(z:B/W/L/Q) &lt;ea&gt;(s), &lt;ea&gt;(d)</code></strong></p>
+<p><strong><code>MOVUU.BWLQ(z) &lt;ea&gt;(s), &lt;ea&gt;(d)</code></strong></p>
 <p><em>Encoding class: long; required bytes: 4-18 bytes; privilege: supervisor</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for MOVUU.X(z:B/W/L/Q) \&lt;ea&gt;(s), \&lt;ea&gt;(d)" src="../../../assets/visuals/isa/movuu-01.svg" /></p>
-<p><strong>Format Instruction format for MOVUU.X(z:B/W/L/Q) \&lt;ea&gt;(s), \&lt;ea&gt;(d)</strong></p>
+<p><img alt="Format — Instruction format for MOVUU.BWLQ(z) \&lt;ea&gt;(s), \&lt;ea&gt;(d)" src="../../../assets/visuals/isa/movuu-01.svg" /></p>
+<p><strong>Format Instruction format for MOVUU.BWLQ(z) \&lt;ea&gt;(s), \&lt;ea&gt;(d)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>

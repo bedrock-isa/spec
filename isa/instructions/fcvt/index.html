@@ -8974,9 +8974,9 @@
 <h2 id="operation">Operation</h2>
 <p>Converts between supported signed integer and floating-point forms, or between the supported floating-point widths, according to the operand classes.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
-<p><code>FCVT.X(z:S/D) Fn(s), Fn(d)</code></p>
-<p><code>FCVT.X(z:S/D) Fn(s), Rn(d)</code></p>
-<p><code>FCVT.X(z:S/D) Rn(s), Fn(d)</code></p>
+<p><code>FCVT.SD(z) Fn(s), Fn(d)</code></p>
+<p><code>FCVT.SD(z) Fn(s), Rn(d)</code></p>
+<p><code>FCVT.SD(z) Rn(s), Fn(d)</code></p>
 <h2 id="attributes">Attributes</h2>
 <p>Class = fpu</p>
 <p>Family = fpu</p>
@@ -9030,31 +9030,31 @@
 </ul>
 <p>An invalid Fn-to-Rn conversion generates NV without OF or NX. A valid conversion that discards a fractional part generates NX. Fn-to-Fn and Rn-to-Fn conversion use the common floating-point rounding, exception, and commit rules.</p>
 <h2 id="instruction-forms">Instruction Forms</h2>
-<p><strong><code>FCVT.X(z:S/D) Fn(s), Fn(d)</code></strong></p>
+<p><strong><code>FCVT.SD(z) Fn(s), Fn(d)</code></strong></p>
 <p><em>Encoding class: long; required bytes: 4 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for FCVT.X(z:S/D) Fn(s), Fn(d)" src="../../../assets/visuals/isa/fcvt-01.svg" /></p>
-<p><strong>Format Instruction format for FCVT.X(z:S/D) Fn(s), Fn(d)</strong></p>
+<p><img alt="Format — Instruction format for FCVT.SD(z) Fn(s), Fn(d)" src="../../../assets/visuals/isa/fcvt-01.svg" /></p>
+<p><strong>Format Instruction format for FCVT.SD(z) Fn(s), Fn(d)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects S/D.</p>
 <p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
 <p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
-<p><strong><code>FCVT.X(z:S/D) Fn(s), Rn(d)</code></strong></p>
+<p><strong><code>FCVT.SD(z) Fn(s), Rn(d)</code></strong></p>
 <p><em>Encoding class: long; required bytes: 4 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for FCVT.X(z:S/D) Fn(s), Rn(d)" src="../../../assets/visuals/isa/fcvt-02.svg" /></p>
-<p><strong>Format Instruction format for FCVT.X(z:S/D) Fn(s), Rn(d)</strong></p>
+<p><img alt="Format — Instruction format for FCVT.SD(z) Fn(s), Rn(d)" src="../../../assets/visuals/isa/fcvt-02.svg" /></p>
+<p><strong>Format Instruction format for FCVT.SD(z) Fn(s), Rn(d)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects S/D.</p>
 <p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
 <p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
-<p><strong><code>FCVT.X(z:S/D) Rn(s), Fn(d)</code></strong></p>
+<p><strong><code>FCVT.SD(z) Rn(s), Fn(d)</code></strong></p>
 <p><em>Encoding class: long; required bytes: 4 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for FCVT.X(z:S/D) Rn(s), Fn(d)" src="../../../assets/visuals/isa/fcvt-03.svg" /></p>
-<p><strong>Format Instruction format for FCVT.X(z:S/D) Rn(s), Fn(d)</strong></p>
+<p><img alt="Format — Instruction format for FCVT.SD(z) Rn(s), Fn(d)" src="../../../assets/visuals/isa/fcvt-03.svg" /></p>
+<p><strong>Format Instruction format for FCVT.SD(z) Rn(s), Fn(d)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects S/D.</p>

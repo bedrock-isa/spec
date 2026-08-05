@@ -8974,7 +8974,7 @@
 <h2 id="operation">Operation</h2>
 <p>BNDUXX treats both bounds as exclusive. It sets V when unsigned(value) is outside (unsigned(lo), unsigned(hi)); Z, N, and C are unchanged.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
-<p><code>BNDUXX.X(z:B/W/L/Q) Rn(l), &lt;ea&gt;(e), Rn(h)</code></p>
+<p><code>BNDUXX.BWLQ(z) Rn(l), &lt;ea&gt;(e), Rn(h)</code></p>
 <h2 id="attributes">Attributes</h2>
 <p>Class = integer</p>
 <p>Family = bounds</p>
@@ -9011,11 +9011,11 @@
 </tbody>
 </table>
 <h2 id="instruction-forms">Instruction Forms</h2>
-<p><strong><code>BNDUXX.X(z:B/W/L/Q) Rn(l), &lt;ea&gt;(e), Rn(h)</code></strong></p>
+<p><strong><code>BNDUXX.BWLQ(z) Rn(l), &lt;ea&gt;(e), Rn(h)</code></strong></p>
 <p><em>Encoding class: extralong; required bytes: 5-15 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for BNDUXX.X(z:B/W/L/Q) Rn(l), \&lt;ea&gt;(e), Rn(h)" src="../../../assets/visuals/isa/bnduxx-01.svg" /></p>
-<p><strong>Format Instruction format for BNDUXX.X(z:B/W/L/Q) Rn(l), \&lt;ea&gt;(e), Rn(h)</strong></p>
+<p><img alt="Format — Instruction format for BNDUXX.BWLQ(z) Rn(l), \&lt;ea&gt;(e), Rn(h)" src="../../../assets/visuals/isa/bnduxx-01.svg" /></p>
+<p><strong>Format Instruction format for BNDUXX.BWLQ(z) Rn(l), \&lt;ea&gt;(e), Rn(h)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>

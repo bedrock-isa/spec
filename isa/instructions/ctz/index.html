@@ -8952,7 +8952,7 @@
 <h2 id="operation">Operation</h2>
 <p>Counts the trailing zero bits within the selected operand size and writes the count to the destination register. A zero operand returns the operand width in bits.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
-<p><code>CTZ.X(z:B/W/L/Q) &lt;ea&gt;(e), Rn(d)</code></p>
+<p><code>CTZ.BWLQ(z) &lt;ea&gt;(e), Rn(d)</code></p>
 <h2 id="attributes">Attributes</h2>
 <p>Class = integer</p>
 <p>Family = integer bitfield</p>
@@ -8961,11 +8961,11 @@
 <p>Repeat = <code>REP</code>, <code>REPcc</code>, <code>REPG</code></p>
 <p>REPcc observation = <code>result</code> <code>dst</code></p>
 <h2 id="instruction-forms">Instruction Forms</h2>
-<p><strong><code>CTZ.X(z:B/W/L/Q) &lt;ea&gt;(e), Rn(d)</code></strong></p>
+<p><strong><code>CTZ.BWLQ(z) &lt;ea&gt;(e), Rn(d)</code></strong></p>
 <p><em>Encoding class: long; required bytes: 4-14 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for CTZ.X(z:B/W/L/Q) \&lt;ea&gt;(e), Rn(d)" src="../../../assets/visuals/isa/ctz-01.svg" /></p>
-<p><strong>Format Instruction format for CTZ.X(z:B/W/L/Q) \&lt;ea&gt;(e), Rn(d)</strong></p>
+<p><img alt="Format — Instruction format for CTZ.BWLQ(z) \&lt;ea&gt;(e), Rn(d)" src="../../../assets/visuals/isa/ctz-01.svg" /></p>
+<p><strong>Format Instruction format for CTZ.BWLQ(z) \&lt;ea&gt;(e), Rn(d)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>

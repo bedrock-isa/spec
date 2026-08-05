@@ -8974,8 +8974,8 @@
 <h2 id="operation">Operation</h2>
 <p>REPcc installs repeat state for the following single instruction. The selected counter register is interpreted as an unsigned remaining count. The body instruction is decoded before zero-count annulment, and body repeatability is checked before annulment. REP is the unconditional spelling and uses condition T. Condition F is reserved and is not a valid encoding. While repeat state is active, architectural PC points at the body instruction boundary. Exceptions and architectural events save repeat state in FRAME_EXT1 and clear architectural repeat state before entering the handler; ERET restores the saved repeat state with the saved PC and status state.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
-<p><code>REPcc Rn(r), (instruction)</code></p>
-<p><code>REP Rn(r), (instruction)</code></p>
+<p><code>REPcc Rn(r), (&lt;instruction&gt;)</code></p>
+<p><code>REP Rn(r), (&lt;instruction&gt;)</code></p>
 <h2 id="attributes">Attributes</h2>
 <p>Class = control flow</p>
 <p>Family = control flow</p>
@@ -8985,11 +8985,11 @@
 <h2 id="detailed-semantics">Detailed Semantics</h2>
 <p>The body instruction is fetched, decoded, and checked for repeatability before the zero-count rule is applied. If the counter is zero, the decoded body is annulled and has no architectural side effects. If the counter is nonzero, the first body iteration executes before any condition check. The repeat condition is the body instruction’s repeat-observed value, observed during body execution rather than sampled by REP outside the body. Body commit, condition observation, counter decrement, and continuation PC selection are one precise architectural commit step. Every completed body iteration decrements the counter by one, including the terminating condition-false iteration. Writes by the body to the selected counter register have no architectural effect while repeat state is active.</p>
 <h2 id="instruction-forms">Instruction Forms</h2>
-<p><strong><code>REPcc Rn(r), (instruction)</code></strong></p>
+<p><strong><code>REPcc Rn(r), (&lt;instruction&gt;)</code></strong></p>
 <p><em>Encoding class: medium; required bytes: 3 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for REPcc Rn(r), (instruction)" src="../../../assets/visuals/isa/repcc-01.svg" /></p>
-<p><strong>Format Instruction format for REPcc Rn(r), (instruction)</strong></p>
+<p><img alt="Format — Instruction format for REPcc Rn(r), (\&lt;instruction&gt;)" src="../../../assets/visuals/isa/repcc-01.svg" /></p>
+<p><strong>Format Instruction format for REPcc Rn(r), (\&lt;instruction&gt;)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
 <p><strong>Condition field <code>c</code></strong> — Selects the condition code. Allowed values: T, EQ, NE, ULT, UGE, MI, PL, VS, VC, ULE, UGT, LT, GE, LE, GT.</p>

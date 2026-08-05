@@ -8974,7 +8974,7 @@
 <h2 id="operation">Operation</h2>
 <p>Adds one to the selected-width destination, writes the modular result, and updates Z, N, C, and V.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
-<p><code>INCF.X(z:B/W/L/Q) Rn(r)</code></p>
+<p><code>INCF.BWLQ(z) Rn(r)</code></p>
 <h2 id="attributes">Attributes</h2>
 <p>Class = integer</p>
 <p>Family = integer unary</p>
@@ -9011,11 +9011,11 @@
 </tbody>
 </table>
 <h2 id="instruction-forms">Instruction Forms</h2>
-<p><strong><code>INCF.X(z:B/W/L/Q) Rn(r)</code></strong></p>
+<p><strong><code>INCF.BWLQ(z) Rn(r)</code></strong></p>
 <p><em>Encoding class: medium; required bytes: 3 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for INCF.X(z:B/W/L/Q) Rn(r)" src="../../../assets/visuals/isa/incf-01.svg" /></p>
-<p><strong>Format Instruction format for INCF.X(z:B/W/L/Q) Rn(r)</strong></p>
+<p><img alt="Format — Instruction format for INCF.BWLQ(z) Rn(r)" src="../../../assets/visuals/isa/incf-01.svg" /></p>
+<p><strong>Format Instruction format for INCF.BWLQ(z) Rn(r)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>

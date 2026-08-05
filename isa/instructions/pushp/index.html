@@ -8974,7 +8974,7 @@
 <h2 id="operation">Operation</h2>
 <p>Pushes the canonical register pair selected by the pair ID. The canonical pair sequence is pair 0 (R14, R15), pair 1 (R12, R13), pair 2 (R10, R11), pair 3 (R8, R9), pair 4 (R6, R7), pair 5 (R4, R5), pair 6 (R2, R3), and pair 7 (R0, R1). All eight pair IDs are valid and each selects one pair.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
-<p><code>PUSHP pair_id(i)</code></p>
+<p><code>PUSHP PAIRn(i)</code></p>
 <h2 id="attributes">Attributes</h2>
 <p>Class = data movement</p>
 <p>Family = data movement</p>
@@ -8985,11 +8985,11 @@
 <p>PUSHP selects one canonical pair using the unsigned 3-bit pair index and captures both register values and the old SS:SP context. It validates the complete two-slot stack range before either slot or SP is changed. For a listed pair (<em>first</em>, <em>second</em>), the second register is stored at old SP minus 16 and the first register is stored at old SP minus 8. Both stores and the SP update to old SP minus 16 commit together. A preceding fault changes neither slot nor SP.</p>
 <p>Multiple PUSHP instructions can be used in canonical prologue order to save multiple pairs.</p>
 <h2 id="instruction-forms">Instruction Forms</h2>
-<p><strong><code>PUSHP pair_id(i)</code></strong></p>
+<p><strong><code>PUSHP PAIRn(i)</code></strong></p>
 <p><em>Encoding class: extrashort; required bytes: 1 byte; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for PUSHP pair_id(i)" src="../../../assets/visuals/isa/pushp-01.svg" /></p>
-<p><strong>Format Instruction format for PUSHP pair_id(i)</strong></p>
+<p><img alt="Format — Instruction format for PUSHP PAIRn(i)" src="../../../assets/visuals/isa/pushp-01.svg" /></p>
+<p><strong>Format Instruction format for PUSHP PAIRn(i)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Immediate field <code>i</code></strong> — Encodes the immediate value.</p>
 

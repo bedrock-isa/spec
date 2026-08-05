@@ -8952,10 +8952,10 @@
 <h2 id="operation">Operation</h2>
 <p>The effective count is the count operand modulo the selected operand width: B uses mod 8, W uses mod 16, L uses mod 32, and Q uses mod 64. If the effective count is zero, the destination is unchanged. FLAGS are unchanged for all counts.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
-<p><code>ROL.X(z:L/Q) Rn(s), Rn(d)</code></p>
-<p><code>ROL.X(z:B/W) Rn(s), &lt;ea&gt;(e)</code></p>
-<p><code>ROL.X(z:L/Q) Rn(s), &lt;ea&gt;(e)</code></p>
-<p><code>ROL.X(z:B/W/L/Q) imm6(i), &lt;ea&gt;(e)</code></p>
+<p><code>ROL.LQ(z) Rn(s), Rn(d)</code></p>
+<p><code>ROL.BW(z) Rn(s), &lt;ea&gt;(e)</code></p>
+<p><code>ROL.LQ(z) Rn(s), &lt;ea&gt;(e)</code></p>
+<p><code>ROL.BWLQ(z) imm6(i), &lt;ea&gt;(e)</code></p>
 <h2 id="attributes">Attributes</h2>
 <p>Class = integer</p>
 <p>Family = integer bitfield</p>
@@ -8964,20 +8964,20 @@
 <p>Repeat = <code>REP</code>, <code>REPcc</code>, <code>REPG</code></p>
 <p>REPcc observation = <code>result</code> <code>dst</code></p>
 <h2 id="instruction-forms">Instruction Forms</h2>
-<p><strong><code>ROL.X(z:L/Q) Rn(s), Rn(d)</code></strong></p>
+<p><strong><code>ROL.LQ(z) Rn(s), Rn(d)</code></strong></p>
 <p><em>Encoding class: short; required bytes: 2 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for ROL.X(z:L/Q) Rn(s), Rn(d)" src="../../../assets/visuals/isa/rol-01.svg" /></p>
-<p><strong>Format Instruction format for ROL.X(z:L/Q) Rn(s), Rn(d)</strong></p>
+<p><img alt="Format — Instruction format for ROL.LQ(z) Rn(s), Rn(d)" src="../../../assets/visuals/isa/rol-01.svg" /></p>
+<p><strong>Format Instruction format for ROL.LQ(z) Rn(s), Rn(d)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Size field <code>z</code></strong> — Selects L/Q.</p>
 <p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
 <p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
-<p><strong><code>ROL.X(z:B/W) Rn(s), &lt;ea&gt;(e)</code></strong></p>
+<p><strong><code>ROL.BW(z) Rn(s), &lt;ea&gt;(e)</code></strong></p>
 <p><em>Encoding class: medium; required bytes: 3-13 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for ROL.X(z:B/W) Rn(s), \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/rol-02.svg" /></p>
-<p><strong>Format Instruction format for ROL.X(z:B/W) Rn(s), \&lt;ea&gt;(e)</strong></p>
+<p><img alt="Format — Instruction format for ROL.BW(z) Rn(s), \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/rol-02.svg" /></p>
+<p><strong>Format Instruction format for ROL.BW(z) Rn(s), \&lt;ea&gt;(e)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects B/W.</p>
@@ -8986,11 +8986,11 @@
 <p><strong>EA availability</strong></p>
 <p><strong>Allowed:</strong> Register; Memory; EXT0</p>
 <p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>
-<p><strong><code>ROL.X(z:L/Q) Rn(s), &lt;ea&gt;(e)</code></strong></p>
+<p><strong><code>ROL.LQ(z) Rn(s), &lt;ea&gt;(e)</code></strong></p>
 <p><em>Encoding class: medium; required bytes: 3-13 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for ROL.X(z:L/Q) Rn(s), \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/rol-03.svg" /></p>
-<p><strong>Format Instruction format for ROL.X(z:L/Q) Rn(s), \&lt;ea&gt;(e)</strong></p>
+<p><img alt="Format — Instruction format for ROL.LQ(z) Rn(s), \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/rol-03.svg" /></p>
+<p><strong>Format Instruction format for ROL.LQ(z) Rn(s), \&lt;ea&gt;(e)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects L/Q.</p>
@@ -8999,11 +8999,11 @@
 <p><strong>EA availability</strong></p>
 <p><strong>Allowed:</strong> Register except <code>Rn(r)</code>; Memory; EXT0</p>
 <p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>
-<p><strong><code>ROL.X(z:B/W/L/Q) imm6(i), &lt;ea&gt;(e)</code></strong></p>
+<p><strong><code>ROL.BWLQ(z) imm6(i), &lt;ea&gt;(e)</code></strong></p>
 <p><em>Encoding class: long; required bytes: 4-14 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for ROL.X(z:B/W/L/Q) imm6(i), \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/rol-04.svg" /></p>
-<p><strong>Format Instruction format for ROL.X(z:B/W/L/Q) imm6(i), \&lt;ea&gt;(e)</strong></p>
+<p><img alt="Format — Instruction format for ROL.BWLQ(z) imm6(i), \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/rol-04.svg" /></p>
+<p><strong>Format Instruction format for ROL.BWLQ(z) imm6(i), \&lt;ea&gt;(e)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>

@@ -8974,9 +8974,9 @@
 <h2 id="operation">Operation</h2>
 <p>FBNDXX treats both bounds as exclusive. It sets V when value is unordered or outside (lo, hi); Z, N, and C are unchanged.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
-<p><code>FBNDXX.X(z:S/D) Fn(l), Fn(v), Fn(h)</code></p>
-<p><code>FBNDXX.X(z:S/D) Fn(l), &lt;ea&gt;(v), Fn(h)</code></p>
-<p><code>FBNDXX.X(z:S/D) &lt;ea&gt;(l), Fn(v), &lt;ea&gt;(h)</code></p>
+<p><code>FBNDXX.SD(z) Fn(l), Fn(v), Fn(h)</code></p>
+<p><code>FBNDXX.SD(z) Fn(l), &lt;ea&gt;(v), Fn(h)</code></p>
+<p><code>FBNDXX.SD(z) &lt;ea&gt;(l), Fn(v), &lt;ea&gt;(h)</code></p>
 <h2 id="attributes">Attributes</h2>
 <p>Class = fpu</p>
 <p>Family = fpu</p>
@@ -9044,22 +9044,22 @@
 </tbody>
 </table>
 <h2 id="instruction-forms">Instruction Forms</h2>
-<p><strong><code>FBNDXX.X(z:S/D) Fn(l), Fn(v), Fn(h)</code></strong></p>
+<p><strong><code>FBNDXX.SD(z) Fn(l), Fn(v), Fn(h)</code></strong></p>
 <p><em>Encoding class: long; required bytes: 4 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for FBNDXX.X(z:S/D) Fn(l), Fn(v), Fn(h)" src="../../../assets/visuals/isa/fbndxx-01.svg" /></p>
-<p><strong>Format Instruction format for FBNDXX.X(z:S/D) Fn(l), Fn(v), Fn(h)</strong></p>
+<p><img alt="Format — Instruction format for FBNDXX.SD(z) Fn(l), Fn(v), Fn(h)" src="../../../assets/visuals/isa/fbndxx-01.svg" /></p>
+<p><strong>Format Instruction format for FBNDXX.SD(z) Fn(l), Fn(v), Fn(h)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects S/D.</p>
 <p><strong>Register field <code>l</code></strong> — Selects the operand 1.</p>
 <p><strong>Register field <code>h</code></strong> — Selects the operand 3.</p>
 <p><strong>Register field <code>v</code></strong> — Selects the operand 2.</p>
-<p><strong><code>FBNDXX.X(z:S/D) Fn(l), &lt;ea&gt;(v), Fn(h)</code></strong></p>
+<p><strong><code>FBNDXX.SD(z) Fn(l), &lt;ea&gt;(v), Fn(h)</code></strong></p>
 <p><em>Encoding class: long; required bytes: 4-14 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for FBNDXX.X(z:S/D) Fn(l), \&lt;ea&gt;(v), Fn(h)" src="../../../assets/visuals/isa/fbndxx-02.svg" /></p>
-<p><strong>Format Instruction format for FBNDXX.X(z:S/D) Fn(l), \&lt;ea&gt;(v), Fn(h)</strong></p>
+<p><img alt="Format — Instruction format for FBNDXX.SD(z) Fn(l), \&lt;ea&gt;(v), Fn(h)" src="../../../assets/visuals/isa/fbndxx-02.svg" /></p>
+<p><strong>Format Instruction format for FBNDXX.SD(z) Fn(l), \&lt;ea&gt;(v), Fn(h)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects S/D.</p>
@@ -9069,11 +9069,11 @@
 <p><strong>EA availability</strong></p>
 <p><strong>Allowed:</strong> Memory; Immediate; EXT0</p>
 <p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>
-<p><strong><code>FBNDXX.X(z:S/D) &lt;ea&gt;(l), Fn(v), &lt;ea&gt;(h)</code></strong></p>
+<p><strong><code>FBNDXX.SD(z) &lt;ea&gt;(l), Fn(v), &lt;ea&gt;(h)</code></strong></p>
 <p><em>Encoding class: extralong; required bytes: 5-18 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for FBNDXX.X(z:S/D) \&lt;ea&gt;(l), Fn(v), \&lt;ea&gt;(h)" src="../../../assets/visuals/isa/fbndxx-03.svg" /></p>
-<p><strong>Format Instruction format for FBNDXX.X(z:S/D) \&lt;ea&gt;(l), Fn(v), \&lt;ea&gt;(h)</strong></p>
+<p><img alt="Format — Instruction format for FBNDXX.SD(z) \&lt;ea&gt;(l), Fn(v), \&lt;ea&gt;(h)" src="../../../assets/visuals/isa/fbndxx-03.svg" /></p>
+<p><strong>Format Instruction format for FBNDXX.SD(z) \&lt;ea&gt;(l), Fn(v), \&lt;ea&gt;(h)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects S/D.</p>

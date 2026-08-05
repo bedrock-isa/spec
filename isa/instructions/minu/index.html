@@ -8952,8 +8952,8 @@
 <h2 id="operation">Operation</h2>
 <p>Compares the selected-width operands as unsigned integers and writes the lesser value to the destination.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
-<p><code>MINU.X(z:B/W/L/Q) &lt;ea&gt;(e), Rn(d)</code></p>
-<p><code>MINU.X(z:B/W/L/Q) Rn(s), &lt;ea&gt;(e)</code></p>
+<p><code>MINU.BWLQ(z) &lt;ea&gt;(e), Rn(d)</code></p>
+<p><code>MINU.BWLQ(z) Rn(s), &lt;ea&gt;(e)</code></p>
 <h2 id="attributes">Attributes</h2>
 <p>Class = integer</p>
 <p>Family = integer alu</p>
@@ -8962,11 +8962,11 @@
 <p>Repeat = <code>REP</code>, <code>REPcc</code>, <code>REPG</code></p>
 <p>REPcc observation = <code>result</code> <code>dst</code></p>
 <h2 id="instruction-forms">Instruction Forms</h2>
-<p><strong><code>MINU.X(z:B/W/L/Q) &lt;ea&gt;(e), Rn(d)</code></strong></p>
+<p><strong><code>MINU.BWLQ(z) &lt;ea&gt;(e), Rn(d)</code></strong></p>
 <p><em>Encoding class: long; required bytes: 4-14 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for MINU.X(z:B/W/L/Q) \&lt;ea&gt;(e), Rn(d)" src="../../../assets/visuals/isa/minu-01.svg" /></p>
-<p><strong>Format Instruction format for MINU.X(z:B/W/L/Q) \&lt;ea&gt;(e), Rn(d)</strong></p>
+<p><img alt="Format — Instruction format for MINU.BWLQ(z) \&lt;ea&gt;(e), Rn(d)" src="../../../assets/visuals/isa/minu-01.svg" /></p>
+<p><strong>Format Instruction format for MINU.BWLQ(z) \&lt;ea&gt;(e), Rn(d)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
@@ -8975,11 +8975,11 @@
 <p><strong>EA availability</strong></p>
 <p><strong>Allowed:</strong> Register; Memory; Immediate; EXT0</p>
 <p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>
-<p><strong><code>MINU.X(z:B/W/L/Q) Rn(s), &lt;ea&gt;(e)</code></strong></p>
+<p><strong><code>MINU.BWLQ(z) Rn(s), &lt;ea&gt;(e)</code></strong></p>
 <p><em>Encoding class: long; required bytes: 4-14 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for MINU.X(z:B/W/L/Q) Rn(s), \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/minu-02.svg" /></p>
-<p><strong>Format Instruction format for MINU.X(z:B/W/L/Q) Rn(s), \&lt;ea&gt;(e)</strong></p>
+<p><img alt="Format — Instruction format for MINU.BWLQ(z) Rn(s), \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/minu-02.svg" /></p>
+<p><strong>Format Instruction format for MINU.BWLQ(z) Rn(s), \&lt;ea&gt;(e)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>

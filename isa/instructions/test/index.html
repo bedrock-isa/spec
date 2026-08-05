@@ -8974,11 +8974,11 @@
 <h2 id="operation">Operation</h2>
 <p>Computes the selected-width bitwise conjunction only to set Z and N, clears C and V, and does not write the temporary result.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
-<p><code>TEST.X(z:L/Q) Rn(s), Rn(d)</code></p>
-<p><code>TEST.X(z:B/W) Rn(s), &lt;ea&gt;(e)</code></p>
-<p><code>TEST.X(z:L/Q) Rn(s), &lt;ea&gt;(e)</code></p>
-<p><code>TEST.X(z:B/W) &lt;ea&gt;(e), Rn(d)</code></p>
-<p><code>TEST.X(z:L/Q) &lt;ea&gt;(e), Rn(d)</code></p>
+<p><code>TEST.LQ(z) Rn(s), Rn(d)</code></p>
+<p><code>TEST.BW(z) Rn(s), &lt;ea&gt;(e)</code></p>
+<p><code>TEST.LQ(z) Rn(s), &lt;ea&gt;(e)</code></p>
+<p><code>TEST.BW(z) &lt;ea&gt;(e), Rn(d)</code></p>
+<p><code>TEST.LQ(z) &lt;ea&gt;(e), Rn(d)</code></p>
 <h2 id="attributes">Attributes</h2>
 <p>Class = integer</p>
 <p>Family = integer alu</p>
@@ -9015,20 +9015,20 @@
 </tbody>
 </table>
 <h2 id="instruction-forms">Instruction Forms</h2>
-<p><strong><code>TEST.X(z:L/Q) Rn(s), Rn(d)</code></strong></p>
+<p><strong><code>TEST.LQ(z) Rn(s), Rn(d)</code></strong></p>
 <p><em>Encoding class: short; required bytes: 2 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for TEST.X(z:L/Q) Rn(s), Rn(d)" src="../../../assets/visuals/isa/test-01.svg" /></p>
-<p><strong>Format Instruction format for TEST.X(z:L/Q) Rn(s), Rn(d)</strong></p>
+<p><img alt="Format — Instruction format for TEST.LQ(z) Rn(s), Rn(d)" src="../../../assets/visuals/isa/test-01.svg" /></p>
+<p><strong>Format Instruction format for TEST.LQ(z) Rn(s), Rn(d)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Size field <code>z</code></strong> — Selects L/Q.</p>
 <p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
 <p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
-<p><strong><code>TEST.X(z:B/W) Rn(s), &lt;ea&gt;(e)</code></strong></p>
+<p><strong><code>TEST.BW(z) Rn(s), &lt;ea&gt;(e)</code></strong></p>
 <p><em>Encoding class: medium; required bytes: 3-13 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for TEST.X(z:B/W) Rn(s), \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/test-02.svg" /></p>
-<p><strong>Format Instruction format for TEST.X(z:B/W) Rn(s), \&lt;ea&gt;(e)</strong></p>
+<p><img alt="Format — Instruction format for TEST.BW(z) Rn(s), \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/test-02.svg" /></p>
+<p><strong>Format Instruction format for TEST.BW(z) Rn(s), \&lt;ea&gt;(e)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects B/W.</p>
@@ -9037,11 +9037,11 @@
 <p><strong>EA availability</strong></p>
 <p><strong>Allowed:</strong> Register; Memory; Immediate; EXT0</p>
 <p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>
-<p><strong><code>TEST.X(z:L/Q) Rn(s), &lt;ea&gt;(e)</code></strong></p>
+<p><strong><code>TEST.LQ(z) Rn(s), &lt;ea&gt;(e)</code></strong></p>
 <p><em>Encoding class: medium; required bytes: 3-13 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for TEST.X(z:L/Q) Rn(s), \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/test-03.svg" /></p>
-<p><strong>Format Instruction format for TEST.X(z:L/Q) Rn(s), \&lt;ea&gt;(e)</strong></p>
+<p><img alt="Format — Instruction format for TEST.LQ(z) Rn(s), \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/test-03.svg" /></p>
+<p><strong>Format Instruction format for TEST.LQ(z) Rn(s), \&lt;ea&gt;(e)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects L/Q.</p>
@@ -9050,11 +9050,11 @@
 <p><strong>EA availability</strong></p>
 <p><strong>Allowed:</strong> Memory; Immediate; EXT0</p>
 <p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>
-<p><strong><code>TEST.X(z:B/W) &lt;ea&gt;(e), Rn(d)</code></strong></p>
+<p><strong><code>TEST.BW(z) &lt;ea&gt;(e), Rn(d)</code></strong></p>
 <p><em>Encoding class: medium; required bytes: 3-13 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for TEST.X(z:B/W) \&lt;ea&gt;(e), Rn(d)" src="../../../assets/visuals/isa/test-04.svg" /></p>
-<p><strong>Format Instruction format for TEST.X(z:B/W) \&lt;ea&gt;(e), Rn(d)</strong></p>
+<p><img alt="Format — Instruction format for TEST.BW(z) \&lt;ea&gt;(e), Rn(d)" src="../../../assets/visuals/isa/test-04.svg" /></p>
+<p><strong>Format Instruction format for TEST.BW(z) \&lt;ea&gt;(e), Rn(d)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects B/W.</p>
@@ -9063,11 +9063,11 @@
 <p><strong>EA availability</strong></p>
 <p><strong>Allowed:</strong> Register except <code>Rn(r)</code>; Memory; Immediate; EXT0</p>
 <p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>
-<p><strong><code>TEST.X(z:L/Q) &lt;ea&gt;(e), Rn(d)</code></strong></p>
+<p><strong><code>TEST.LQ(z) &lt;ea&gt;(e), Rn(d)</code></strong></p>
 <p><em>Encoding class: medium; required bytes: 3-13 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for TEST.X(z:L/Q) \&lt;ea&gt;(e), Rn(d)" src="../../../assets/visuals/isa/test-05.svg" /></p>
-<p><strong>Format Instruction format for TEST.X(z:L/Q) \&lt;ea&gt;(e), Rn(d)</strong></p>
+<p><img alt="Format — Instruction format for TEST.LQ(z) \&lt;ea&gt;(e), Rn(d)" src="../../../assets/visuals/isa/test-05.svg" /></p>
+<p><strong>Format Instruction format for TEST.LQ(z) \&lt;ea&gt;(e), Rn(d)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects L/Q.</p>

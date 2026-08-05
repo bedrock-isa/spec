@@ -8953,16 +8953,16 @@
 <p>The accepted spellings are:</p>
 <ul>
 <li>
-<p><code>REPcc Rn, (instruction)</code></p>
+<p><code>REPcc Rn, (&lt;instruction&gt;)</code></p>
 </li>
 <li>
-<p><code>REP Rn, (instruction)</code></p>
+<p><code>REP Rn, (&lt;instruction&gt;)</code></p>
 </li>
 <li>
-<p><code>REPG Rn, { (instructions...) }</code></p>
+<p><code>REPG Rn, { &lt;instruction&gt;... }</code></p>
 </li>
 <li>
-<p><code>REPGF Rn, { (instructions...) }</code>, an assembler-only spelling that emits REPG after applying the additional eligibility checks described below</p>
+<p><code>REPGF Rn, { &lt;instruction&gt;... }</code>, an assembler-only spelling that emits REPG after applying the additional eligibility checks described below</p>
 </li>
 </ul>
 <p>The processor decodes the body and checks its repeat eligibility before applying the zero-count rule. A malformed or unavailable body therefore faults even when the captured count is zero. Once a valid body has passed those checks, a zero count annuls it without architectural side effects.</p>

@@ -8974,7 +8974,7 @@
 <h2 id="operation">Operation</h2>
 <p>Computes the log10(x) reference over positive finite values and positive infinity after DAZ; signed zero is the DZ boundary and writes an implementation-bounded S- or D-format approximation under the selected FPTRANSA accuracy contract.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
-<p><code>FLOG10A.X(z:S/D) Fn(s), Fn(d)</code></p>
+<p><code>FLOG10A.SD(z) Fn(s), Fn(d)</code></p>
 <h2 id="attributes">Attributes</h2>
 <p>Class = fpu</p>
 <p>Family = fpu transcendental approx</p>
@@ -9050,11 +9050,11 @@
 <p>A signaling NaN accrues NV. NaN results are quieted and then processed by FSTATUS.DN. FSTATUS.FTZ replaces a subnormal result with the required signed zero and accrues UF. OF and UF are accrued as specified by the common FPTRANSA model, while NX is unchanged.</p>
 <p>If any accrued exception is enabled as a trap, the instruction raises <code>FLOATING_POINT_FAULT</code> before writing a destination; otherwise it commits the result and accrued flags together.</p>
 <h2 id="instruction-forms">Instruction Forms</h2>
-<p><strong><code>FLOG10A.X(z:S/D) Fn(s), Fn(d)</code></strong></p>
+<p><strong><code>FLOG10A.SD(z) Fn(s), Fn(d)</code></strong></p>
 <p><em>Encoding class: long; required bytes: 4 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for FLOG10A.X(z:S/D) Fn(s), Fn(d)" src="../../../assets/visuals/isa/flog10a-01.svg" /></p>
-<p><strong>Format Instruction format for FLOG10A.X(z:S/D) Fn(s), Fn(d)</strong></p>
+<p><img alt="Format — Instruction format for FLOG10A.SD(z) Fn(s), Fn(d)" src="../../../assets/visuals/isa/flog10a-01.svg" /></p>
+<p><strong>Format Instruction format for FLOG10A.SD(z) Fn(s), Fn(d)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects S/D.</p>

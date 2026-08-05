@@ -8955,7 +8955,7 @@
 <p><code>JMP imm8s(i)</code></p>
 <p><code>JMP &lt;imm16s&gt;</code></p>
 <p><code>JMP &lt;imm32s&gt;</code></p>
-<p><code>JMP.X(z:L/Q) &lt;ea&gt;(e)</code></p>
+<p><code>JMP.LQ(z) &lt;ea&gt;(e)</code></p>
 <h2 id="attributes">Attributes</h2>
 <p>Class = control flow</p>
 <p>Family = control flow</p>
@@ -8984,11 +8984,11 @@
 <p><strong>Format Instruction format for JMP \&lt;imm32s&gt;</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
-<p><strong><code>JMP.X(z:L/Q) &lt;ea&gt;(e)</code></strong></p>
+<p><strong><code>JMP.LQ(z) &lt;ea&gt;(e)</code></strong></p>
 <p><em>Encoding class: long; required bytes: 4-14 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for JMP.X(z:L/Q) \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/jmp-04.svg" /></p>
-<p><strong>Format Instruction format for JMP.X(z:L/Q) \&lt;ea&gt;(e)</strong></p>
+<p><img alt="Format — Instruction format for JMP.LQ(z) \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/jmp-04.svg" /></p>
+<p><strong>Format Instruction format for JMP.LQ(z) \&lt;ea&gt;(e)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects L/Q.</p>

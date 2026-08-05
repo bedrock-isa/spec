@@ -8974,7 +8974,7 @@
 <h2 id="operation">Operation</h2>
 <p>SEGLEA computes the source effective-address point and applies the selected segment’s pre-translation to that point. The size suffix selects the index scale used during effective-address calculation. On success, SEGLEA writes the segment result to the destination and clears V. A failed segment-bound check sets V, suppresses the destination write, commits effective-address auto-update effects, and completes without an exception.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
-<p><code>SEGLEA.X(z:B/W/L/Q) &lt;ea&gt;(e), Rn(d)</code></p>
+<p><code>SEGLEA.BWLQ(z) &lt;ea&gt;(e), Rn(d)</code></p>
 <h2 id="attributes">Attributes</h2>
 <p>Class = data movement</p>
 <p>Family = ea utility</p>
@@ -9013,11 +9013,11 @@
 <p>Let <span class="arithmatex">\(a\)</span> be the source effective address before a memory read. From the selected segment image, define $<span class="arithmatex">\(b = \mathrm{segment}[63:12] \ll 12,
   \qquad s = (\mathrm{mantissa} \ll \mathrm{exponent}) \ll 12 .\)</span>$ A zero mantissa disables bounds and returns <span class="arithmatex">\(a\)</span>. In translated mode, <span class="arithmatex">\(a\)</span> must satisfy <span class="arithmatex">\(0 \le a &lt; s\)</span> and the result is <span class="arithmatex">\(b+a\)</span>. In bounds-only mode, <span class="arithmatex">\(a\)</span> must satisfy <span class="arithmatex">\(b \le a &lt; b+s\)</span> and the result remains <span class="arithmatex">\(a\)</span>. V is set for an out-of-bounds address, in which case the destination is not written.</p>
 <h2 id="instruction-forms">Instruction Forms</h2>
-<p><strong><code>SEGLEA.X(z:B/W/L/Q) &lt;ea&gt;(e), Rn(d)</code></strong></p>
+<p><strong><code>SEGLEA.BWLQ(z) &lt;ea&gt;(e), Rn(d)</code></strong></p>
 <p><em>Encoding class: long; required bytes: 4-14 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for SEGLEA.X(z:B/W/L/Q) \&lt;ea&gt;(e), Rn(d)" src="../../../assets/visuals/isa/seglea-01.svg" /></p>
-<p><strong>Format Instruction format for SEGLEA.X(z:B/W/L/Q) \&lt;ea&gt;(e), Rn(d)</strong></p>
+<p><img alt="Format — Instruction format for SEGLEA.BWLQ(z) \&lt;ea&gt;(e), Rn(d)" src="../../../assets/visuals/isa/seglea-01.svg" /></p>
+<p><strong>Format Instruction format for SEGLEA.BWLQ(z) \&lt;ea&gt;(e), Rn(d)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>

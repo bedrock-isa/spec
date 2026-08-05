@@ -8974,8 +8974,8 @@
 <h2 id="operation">Operation</h2>
 <p>Computes the IEEE-style floating-point modulus defined by a quotient rounded toward zero and writes the selected-format remainder.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
-<p><code>FMOD.X(z:S/D) &lt;ea&gt;(e), Fn(d)</code></p>
-<p><code>FMOD.X(z:S/D) Fn(s), Fn(d)</code></p>
+<p><code>FMOD.SD(z) &lt;ea&gt;(e), Fn(d)</code></p>
+<p><code>FMOD.SD(z) Fn(s), Fn(d)</code></p>
 <h2 id="attributes">Attributes</h2>
 <p>Class = fpu</p>
 <p>Family = fpu</p>
@@ -9018,11 +9018,11 @@
 <p>After DAZ processing, let <span class="arithmatex">\(x\)</span> be the original destination and <span class="arithmatex">\(y\)</span> the source. For finite valid operands, choose <span class="arithmatex">\(q\)</span> as <span class="arithmatex">\(x/y\)</span> truncated toward zero and compute $<span class="arithmatex">\(r = x - qy\)</span>$ with exact intermediate arithmetic. A zero result has the sign of <span class="arithmatex">\(x\)</span>.</p>
 <p>A signaling NaN accrues NV; a NaN input produces the selected quiet NaN. Infinite <span class="arithmatex">\(x\)</span> or zero <span class="arithmatex">\(y\)</span> accrues NV and produces the architectural default quiet NaN. Infinite <span class="arithmatex">\(y\)</span> with finite <span class="arithmatex">\(x\)</span> returns <span class="arithmatex">\(x\)</span>. Enabled traps raise <code>FLOATING_POINT_FAULT</code> before the destination write.</p>
 <h2 id="instruction-forms">Instruction Forms</h2>
-<p><strong><code>FMOD.X(z:S/D) &lt;ea&gt;(e), Fn(d)</code></strong></p>
+<p><strong><code>FMOD.SD(z) &lt;ea&gt;(e), Fn(d)</code></strong></p>
 <p><em>Encoding class: long; required bytes: 4-14 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for FMOD.X(z:S/D) \&lt;ea&gt;(e), Fn(d)" src="../../../assets/visuals/isa/fmod-01.svg" /></p>
-<p><strong>Format Instruction format for FMOD.X(z:S/D) \&lt;ea&gt;(e), Fn(d)</strong></p>
+<p><img alt="Format — Instruction format for FMOD.SD(z) \&lt;ea&gt;(e), Fn(d)" src="../../../assets/visuals/isa/fmod-01.svg" /></p>
+<p><strong>Format Instruction format for FMOD.SD(z) \&lt;ea&gt;(e), Fn(d)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects S/D.</p>
@@ -9031,11 +9031,11 @@
 <p><strong>EA availability</strong></p>
 <p><strong>Allowed:</strong> Memory; Immediate; EXT0</p>
 <p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>
-<p><strong><code>FMOD.X(z:S/D) Fn(s), Fn(d)</code></strong></p>
+<p><strong><code>FMOD.SD(z) Fn(s), Fn(d)</code></strong></p>
 <p><em>Encoding class: long; required bytes: 4 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for FMOD.X(z:S/D) Fn(s), Fn(d)" src="../../../assets/visuals/isa/fmod-02.svg" /></p>
-<p><strong>Format Instruction format for FMOD.X(z:S/D) Fn(s), Fn(d)</strong></p>
+<p><img alt="Format — Instruction format for FMOD.SD(z) Fn(s), Fn(d)" src="../../../assets/visuals/isa/fmod-02.svg" /></p>
+<p><strong>Format Instruction format for FMOD.SD(z) Fn(s), Fn(d)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects S/D.</p>

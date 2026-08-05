@@ -8974,7 +8974,7 @@
 <h2 id="operation">Operation</h2>
 <p>Compares memory with the expected Rn register and conditionally stores the desired Rn register. After the operation, expected contains the observed old memory value. Z=1 means the store happened; Z=0 means memory was left unchanged.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
-<p><code>CMPXCHG.X(z:B/W/L/Q)/order(o) Rn(x), Rn(d), &lt;ea&gt;(e)</code></p>
+<p><code>CMPXCHG.BWLQ(z)/order(o) Rn(x), Rn(d), &lt;ea&gt;(e)</code></p>
 <h2 id="attributes">Attributes</h2>
 <p>Class = system</p>
 <p>Family = atomics</p>
@@ -9023,11 +9023,11 @@
 </ul>
 <p>A memory-access fault exposes none of these updates.</p>
 <h2 id="instruction-forms">Instruction Forms</h2>
-<p><strong><code>CMPXCHG.X(z:B/W/L/Q)/order(o) Rn(x), Rn(d), &lt;ea&gt;(e)</code></strong></p>
+<p><strong><code>CMPXCHG.BWLQ(z)/order(o) Rn(x), Rn(d), &lt;ea&gt;(e)</code></strong></p>
 <p><em>Encoding class: extralong; required bytes: 5-15 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for CMPXCHG.X(z:B/W/L/Q)/order(o) Rn(x), Rn(d), \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/cmpxchg-01.svg" /></p>
-<p><strong>Format Instruction format for CMPXCHG.X(z:B/W/L/Q)/order(o) Rn(x), Rn(d), \&lt;ea&gt;(e)</strong></p>
+<p><img alt="Format — Instruction format for CMPXCHG.BWLQ(z)/order(o) Rn(x), Rn(d), \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/cmpxchg-01.svg" /></p>
+<p><strong>Format Instruction format for CMPXCHG.BWLQ(z)/order(o) Rn(x), Rn(d), \&lt;ea&gt;(e)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>

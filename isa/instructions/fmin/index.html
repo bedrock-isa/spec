@@ -8974,8 +8974,8 @@
 <h2 id="operation">Operation</h2>
 <p>Selects the lesser numeric operand; one NaN selects the numeric operand, two NaNs use the common NaN-selection rule, and a positive-zero/negative-zero pair selects negative zero. A signaling NaN generates NV.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
-<p><code>FMIN.X(z:S/D) Fn(s), Fn(d)</code></p>
-<p><code>FMIN.X(z:S/D) &lt;ea&gt;(e), Fn(d)</code></p>
+<p><code>FMIN.SD(z) Fn(s), Fn(d)</code></p>
+<p><code>FMIN.SD(z) &lt;ea&gt;(e), Fn(d)</code></p>
 <h2 id="attributes">Attributes</h2>
 <p>Class = fpu</p>
 <p>Family = fpu</p>
@@ -9016,21 +9016,21 @@
 </tbody>
 </table>
 <h2 id="instruction-forms">Instruction Forms</h2>
-<p><strong><code>FMIN.X(z:S/D) Fn(s), Fn(d)</code></strong></p>
+<p><strong><code>FMIN.SD(z) Fn(s), Fn(d)</code></strong></p>
 <p><em>Encoding class: medium; required bytes: 3 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for FMIN.X(z:S/D) Fn(s), Fn(d)" src="../../../assets/visuals/isa/fmin-01.svg" /></p>
-<p><strong>Format Instruction format for FMIN.X(z:S/D) Fn(s), Fn(d)</strong></p>
+<p><img alt="Format — Instruction format for FMIN.SD(z) Fn(s), Fn(d)" src="../../../assets/visuals/isa/fmin-01.svg" /></p>
+<p><strong>Format Instruction format for FMIN.SD(z) Fn(s), Fn(d)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects S/D.</p>
 <p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
 <p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
-<p><strong><code>FMIN.X(z:S/D) &lt;ea&gt;(e), Fn(d)</code></strong></p>
+<p><strong><code>FMIN.SD(z) &lt;ea&gt;(e), Fn(d)</code></strong></p>
 <p><em>Encoding class: long; required bytes: 4-14 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for FMIN.X(z:S/D) \&lt;ea&gt;(e), Fn(d)" src="../../../assets/visuals/isa/fmin-02.svg" /></p>
-<p><strong>Format Instruction format for FMIN.X(z:S/D) \&lt;ea&gt;(e), Fn(d)</strong></p>
+<p><img alt="Format — Instruction format for FMIN.SD(z) \&lt;ea&gt;(e), Fn(d)" src="../../../assets/visuals/isa/fmin-02.svg" /></p>
+<p><strong>Format Instruction format for FMIN.SD(z) \&lt;ea&gt;(e), Fn(d)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects S/D.</p>

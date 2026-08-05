@@ -8952,7 +8952,7 @@
 <h2 id="operation">Operation</h2>
 <p>MOVNT is a store-only non-temporal move. The source is an Rn register and the destination must be a memory operand.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
-<p><code>MOVNT.X(z:B/W/L/Q) Rn(s), &lt;ea&gt;(e)</code></p>
+<p><code>MOVNT.BWLQ(z) Rn(s), &lt;ea&gt;(e)</code></p>
 <h2 id="attributes">Attributes</h2>
 <p>Class = data movement</p>
 <p>Family = cache</p>
@@ -8961,11 +8961,11 @@
 <p>Repeat = <code>REP</code>, <code>REPcc</code>, <code>REPG</code></p>
 <p>REPcc observation = <code>source</code> <code>src</code></p>
 <h2 id="instruction-forms">Instruction Forms</h2>
-<p><strong><code>MOVNT.X(z:B/W/L/Q) Rn(s), &lt;ea&gt;(e)</code></strong></p>
+<p><strong><code>MOVNT.BWLQ(z) Rn(s), &lt;ea&gt;(e)</code></strong></p>
 <p><em>Encoding class: long; required bytes: 4-14 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for MOVNT.X(z:B/W/L/Q) Rn(s), \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/movnt-01.svg" /></p>
-<p><strong>Format Instruction format for MOVNT.X(z:B/W/L/Q) Rn(s), \&lt;ea&gt;(e)</strong></p>
+<p><img alt="Format — Instruction format for MOVNT.BWLQ(z) Rn(s), \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/movnt-01.svg" /></p>
+<p><strong>Format Instruction format for MOVNT.BWLQ(z) Rn(s), \&lt;ea&gt;(e)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>

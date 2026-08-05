@@ -8954,8 +8954,8 @@
 <h2 id="assembler-syntax">Assembler Syntax</h2>
 <p><code>CLR.Q Rn(r)</code></p>
 <p><code>CLR.L Rn(r)</code></p>
-<p><code>CLR.X(z:B/W) &lt;ea&gt;</code></p>
-<p><code>CLR.X(z:L/Q) &lt;ea&gt;</code></p>
+<p><code>CLR.BW(z) &lt;ea&gt;(e)</code></p>
+<p><code>CLR.LQ(z) &lt;ea&gt;(e)</code></p>
 <h2 id="attributes">Attributes</h2>
 <p>Class = integer</p>
 <p>Family = integer unary</p>
@@ -8978,11 +8978,11 @@
 <p><strong>Format Instruction format for CLR.L Rn(r)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Register field <code>r</code></strong> — Selects the operand.</p>
-<p><strong><code>CLR.X(z:B/W) &lt;ea&gt;</code></strong></p>
+<p><strong><code>CLR.BW(z) &lt;ea&gt;(e)</code></strong></p>
 <p><em>Encoding class: medium; required bytes: 3-13 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for CLR.X(z:B/W) \&lt;ea&gt;" src="../../../assets/visuals/isa/clr-03.svg" /></p>
-<p><strong>Format Instruction format for CLR.X(z:B/W) \&lt;ea&gt;</strong></p>
+<p><img alt="Format — Instruction format for CLR.BW(z) \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/clr-03.svg" /></p>
+<p><strong>Format Instruction format for CLR.BW(z) \&lt;ea&gt;(e)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the destination operand.</p>
@@ -8990,11 +8990,11 @@
 <p><strong>Allowed:</strong> Register; Memory; EXT0</p>
 <p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>
 <p><strong>Size field <code>z</code></strong> — Selects B/W.</p>
-<p><strong><code>CLR.X(z:L/Q) &lt;ea&gt;</code></strong></p>
+<p><strong><code>CLR.LQ(z) &lt;ea&gt;(e)</code></strong></p>
 <p><em>Encoding class: medium; required bytes: 3-13 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for CLR.X(z:L/Q) \&lt;ea&gt;" src="../../../assets/visuals/isa/clr-04.svg" /></p>
-<p><strong>Format Instruction format for CLR.X(z:L/Q) \&lt;ea&gt;</strong></p>
+<p><img alt="Format — Instruction format for CLR.LQ(z) \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/clr-04.svg" /></p>
+<p><strong>Format Instruction format for CLR.LQ(z) \&lt;ea&gt;(e)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the destination operand.</p>
