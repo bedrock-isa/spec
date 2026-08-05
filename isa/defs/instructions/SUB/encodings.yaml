@@ -15,7 +15,7 @@ forms:
 - id: short.sub_x_rn_s_rn_d
   class: short
   bits: 00010zssssdddd
-  syntax: SUB.X(z:L/Q) Rn(s), Rn(d)
+  syntax: SUB.LQ(z) Rn(s), Rn(d)
   operands:
   - name: src
     type: Rn
@@ -76,7 +76,7 @@ forms:
 - id: medium.sub_x_rn_s_ea_e
   class: medium
   bits: 001000zsssseeeeeee
-  syntax: SUB.X(z:B/W) Rn(s), <ea>(e)
+  syntax: SUB.BW(z) Rn(s), <ea>(e)
   operands:
   - name: src
     type: Rn
@@ -98,7 +98,7 @@ forms:
 - id: medium.sub_x_rn_s_ea_e.2
   class: medium
   bits: 001001zsssseeeeeee
-  syntax: SUB.X(z:L/Q) Rn(s), <ea>(e)
+  syntax: SUB.LQ(z) Rn(s), <ea>(e)
   operands:
   - name: src
     type: Rn
@@ -124,7 +124,7 @@ forms:
 - id: medium.sub_x_ea_e_rn_d
   class: medium
   bits: 001010zddddeeeeeee
-  syntax: SUB.X(z:B/W) <ea>(e), Rn(d)
+  syntax: SUB.BW(z) <ea>(e), Rn(d)
   operands:
   - name: src
     type: EA
@@ -147,7 +147,7 @@ forms:
 - id: medium.sub_x_ea_e_rn_d.2
   class: medium
   bits: 001011zddddeeeeeee
-  syntax: SUB.X(z:L/Q) <ea>(e), Rn(d)
+  syntax: SUB.LQ(z) <ea>(e), Rn(d)
   operands:
   - name: src
     type: EA
@@ -171,7 +171,7 @@ forms:
 - id: long.sub_x_imm8s_ea_e
   class: long
   bits: 1111000110zz0010100eeeeeee
-  syntax: SUB.X(z:B/W/L/Q) <imm8s>, <ea>(e)
+  syntax: SUB.BWLQ(z) <imm8s>, <ea>(e)
   operands:
   - name: src
     type: imm8s
@@ -195,7 +195,7 @@ forms:
 - id: long.sub_x_imm16s_ea_e
   class: long
   bits: 1111000110zz0010101eeeeeee
-  syntax: SUB.X(z:W/L/Q) <imm16s>, <ea>(e)
+  syntax: SUB.WLQ(z) <imm16s>, <ea>(e)
   operands:
   - name: src
     type: imm16s
@@ -223,7 +223,7 @@ forms:
 - id: long.sub_x_imm32s_ea_e
   class: long
   bits: 11110001101z0010110eeeeeee
-  syntax: SUB.X(z:L/Q) <imm32s>, <ea>(e)
+  syntax: SUB.LQ(z) <imm32s>, <ea>(e)
   operands:
   - name: src
     type: imm32s

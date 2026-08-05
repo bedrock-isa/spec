@@ -3,7 +3,7 @@ operand_types:
     kind: register
     register_group: floating_point
     field_width: 4
-  fp_pair_id:
+  FPAIRn:
     kind: enum
     field_width: 3
     values:

@@ -24,7 +24,7 @@ forms:
 - id: medium.clr_x_ea
   class: medium
   bits: 0eee10z0110000eeee
-  syntax: CLR.X(z:B/W) <ea>
+  syntax: CLR.BW(z) <ea>(e)
   operands:
   - name: dst
     type: EA
@@ -42,7 +42,7 @@ forms:
 - id: medium.clr_x_ea.2
   class: medium
   bits: 0eee10z0111000eeee
-  syntax: CLR.X(z:L/Q) <ea>
+  syntax: CLR.LQ(z) <ea>(e)
   operands:
   - name: dst
     type: EA

@@ -870,7 +870,7 @@ def validate_candidate_document(
     target_path: Path,
     candidate: dict[str, Any],
 ) -> None:
-    from encoding_fields import resolve_encoding_form
+    from encoding_fields import resolve_encoding_form, validate_encoding_template
     from defs_schema import decode_encodings, decode_instruction
     from encoding_store import LocatedEncoding, allocation_entry_dict, load_encoding_store
 
@@ -881,20 +881,19 @@ def validate_candidate_document(
     instruction = decode_instruction(instruction_path, load_yaml(instruction_path))
     if instruction.mnemonic != target_path.parent.name:
         raise ValueError(f"{instruction_path}: mnemonic does not match directory")
-    candidate_forms = [
-        resolve_encoding_form(form, store.field_types, target_path)
-        for form in candidate_doc.forms
-    ]
+    candidate_forms = []
+    for form in candidate_doc.forms:
+        validate_encoding_template(
+            form,
+            instruction.mnemonic,
+            store.field_types,
+            target_path,
+        )
+        candidate_forms.append(resolve_encoding_form(form, store.field_types, target_path))
     for form in candidate_forms:
         if form.encoding_class not in class_names:
             raise ValueError(
                 f"{target_path}: form {form.id!r} references unknown class {form.encoding_class!r}"
-            )
-        syntax_mnemonic = re.split(r"[./(]", form.syntax.split()[0])[0]
-        if syntax_mnemonic != instruction.mnemonic:
-            raise ValueError(
-                f"{target_path}: form {form.id!r} syntax names {syntax_mnemonic}, "
-                f"expected {instruction.mnemonic}"
             )
     target_resolved = target_path.resolve()
     located = [

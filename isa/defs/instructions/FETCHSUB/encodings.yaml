@@ -2,7 +2,7 @@ forms:
 - id: extralong.fetchsub_x_order_o_rn_s_ea_e
   class: extralong
   bits: 111111000101zz000011ooosssseeeeeee
-  syntax: FETCHSUB.X(z:B/W/L/Q)/order(o) Rn(s), <ea>(e)
+  syntax: FETCHSUB.BWLQ(z)/order(o) Rn(s), <ea>(e)
   operands:
   - name: order
     type: memory_order

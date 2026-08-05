@@ -2,7 +2,7 @@ forms:
 - id: long.divu_x_ea_e_rn_d
   class: long
   bits: 1111000010zz100ddddeeeeeee
-  syntax: DIVU.X(z:B/W/L/Q) <ea>(e), Rn(d)
+  syntax: DIVU.BWLQ(z) <ea>(e), Rn(d)
   operands:
   - name: src
     type: EA

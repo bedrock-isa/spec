@@ -7,5 +7,5 @@ attributes:
   family: control_flow
   privilege: unprivileged
 additional_assembler_syntax:
-- REPGF Rn(r), { (instructions...) }
+- REPGF Rn(r), { <instruction>... }
 additional_description: details.tex

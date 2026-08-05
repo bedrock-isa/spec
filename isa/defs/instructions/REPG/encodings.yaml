@@ -2,7 +2,7 @@ forms:
 - id: medium.repg_rn_r_ea
   class: medium
   bits: 00001001101000rrrr
-  syntax: REPG Rn(r), { (instructions...) }
+  syntax: REPG Rn(r), { <instruction>... }
   operands:
   - name: counter
     type: Rn

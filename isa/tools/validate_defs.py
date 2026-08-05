@@ -27,6 +27,7 @@ from defs_schema import (
 )
 from encoding_store import load_encoding_store
 from encoding_fields import resolve_encoding_form
+from encoding_fields import validate_encoding_template
 from artifact_overlay import read_source, resolve_source
 
 
@@ -207,19 +208,42 @@ def validate_defs(root: Path = ROOT) -> tuple[dict[str, Any], list[str]]:
                     f"{path}: exception {exception.event} references unknown forms "
                     f"{', '.join(sorted(unknown_forms))}"
                 )
+        valid_forms = []
         for decoded_form in encodings.forms:
             try:
+                validate_encoding_template(
+                    decoded_form,
+                    mnemonic,
+                    field_types,
+                    encodings_path,
+                )
                 form = resolve_encoding_form(decoded_form, field_types, encodings_path)
             except ValueError as exc:
                 errors.append(str(exc))
                 continue
-            head = re.split(r"[./(]", form.syntax.split()[0])[0]
-            if head != mnemonic:
-                errors.append(
-                    f"{encodings_path}: form {form.id} syntax names {head}, expected {mnemonic}"
-                )
+            valid_forms.append(decoded_form)
             for operand in form.operands:
                 used_operand_types[operand.type] += 1
+        for alias in document.additional_assembler_syntax:
+            alias_errors: list[str] = []
+            for form in valid_forms:
+                try:
+                    validate_encoding_template(
+                        form,
+                        mnemonic,
+                        field_types,
+                        path,
+                        syntax=alias,
+                        alias=True,
+                    )
+                    break
+                except ValueError as exc:
+                    alias_errors.append(str(exc))
+            else:
+                errors.append(
+                    f"{path}: additional assembler syntax {alias!r} does not "
+                    "correspond to any encoding form"
+                )
 
     discovered_encoding_files = set(root.glob("**/instructions/*/encodings.yaml"))
     expected_encoding_files = {path.with_name(ENCODINGS_FILENAME) for path in instruction_files}

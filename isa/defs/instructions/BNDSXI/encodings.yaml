@@ -2,7 +2,7 @@ forms:
 - id: extralong.bndsxi_x_rn_l_ea_e_rn_h
   class: extralong
   bits: 111111000001zz00llll010hhhheeeeeee
-  syntax: BNDSXI.X(z:B/W/L/Q) Rn(l), <ea>(e), Rn(h)
+  syntax: BNDSXI.BWLQ(z) Rn(l), <ea>(e), Rn(h)
   operands:
   - name: lo
     type: Rn

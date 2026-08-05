@@ -2,7 +2,7 @@ forms:
 - id: long.movcu_x_ea_s_ea_d
   class: long
   bits: 1111100011zzsssssssddddddd
-  syntax: MOVCU.X(z:B/W/L/Q) <ea>(s), <ea>(d)
+  syntax: MOVCU.BWLQ(z) <ea>(s), <ea>(d)
   operands:
   - name: src
     type: EA

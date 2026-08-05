@@ -2,7 +2,7 @@ forms:
 - id: short.not_x_rn_r
   class: short
   bits: 10001z0101rrrr
-  syntax: NOT.X(z:L/Q) Rn(r)
+  syntax: NOT.LQ(z) Rn(r)
   operands:
   - name: dst
     type: Rn
@@ -14,7 +14,7 @@ forms:
 - id: medium.not_x_ea
   class: medium
   bits: 0eee10z1010000eeee
-  syntax: NOT.X(z:B/W) <ea>
+  syntax: NOT.BW(z) <ea>(e)
   operands:
   - name: dst
     type: EA
@@ -32,7 +32,7 @@ forms:
 - id: medium.not_x_ea.2
   class: medium
   bits: 0eee10z1011000eeee
-  syntax: NOT.X(z:L/Q) <ea>
+  syntax: NOT.LQ(z) <ea>(e)
   operands:
   - name: dst
     type: EA

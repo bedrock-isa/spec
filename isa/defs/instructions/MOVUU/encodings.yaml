@@ -2,7 +2,7 @@ forms:
 - id: long.movuu_x_ea_s_ea_d
   class: long
   bits: 1111100100zzsssssssddddddd
-  syntax: MOVUU.X(z:B/W/L/Q) <ea>(s), <ea>(d)
+  syntax: MOVUU.BWLQ(z) <ea>(s), <ea>(d)
   operands:
   - name: src
     type: EA

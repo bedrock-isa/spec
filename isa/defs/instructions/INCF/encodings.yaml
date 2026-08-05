@@ -2,7 +2,7 @@ forms:
 - id: medium.incf_x_rn_r
   class: medium
   bits: 000010z0z01000rrrr
-  syntax: INCF.X(z:B/W/L/Q) Rn(r)
+  syntax: INCF.BWLQ(z) Rn(r)
   operands:
   - name: dst
     type: Rn

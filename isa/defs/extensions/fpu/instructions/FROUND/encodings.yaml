@@ -2,7 +2,7 @@ forms:
 - id: medium.fround_x_fn_s_fn_d
   class: medium
   bits: 100001zdddd000ssss
-  syntax: FROUND.X(z:S/D) Fn(s), Fn(d)
+  syntax: FROUND.SD(z) Fn(s), Fn(d)
   operands:
   - name: src
     type: Fn
@@ -18,7 +18,7 @@ forms:
 - id: long.fround_x_ea_s_fn_d
   class: long
   bits: 1111010101z1011ddddeeeeeee
-  syntax: FROUND.X(z:S/D) <ea>(e), Fn(d)
+  syntax: FROUND.SD(z) <ea>(e), Fn(d)
   operands:
   - name: src
     type: EA
@@ -40,7 +40,7 @@ forms:
 - id: long.fround_x_fn_s_ea_d
   class: long
   bits: 1111011000z0100sssseeeeeee
-  syntax: FROUND.X(z:S/D) Fn(s), <ea>(e)
+  syntax: FROUND.SD(z) Fn(s), <ea>(e)
   operands:
   - name: src
     type: Fn

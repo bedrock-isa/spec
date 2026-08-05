@@ -140,6 +140,119 @@ on the selector field. Field-marker bits need not be contiguous.
 Every pair of writable field operands that can designate the same architectural
 register has exactly one `destination_overlap` entry.
 
+### Assembly-template language
+
+The following BNF and correspondence rules define canonical template values
+for `EncodingForm.syntax` and each element of
+`InstructionDocument.additional_assembler_syntax`. In the BNF, quoted strings
+are literal text, angle-bracketed names are nonterminals, `|` separates
+alternatives, and all repetition is expressed by recursion.
+
+```text
+<encoding-form-syntax> ::= <instruction-template>
+<additional-assembler-syntax> ::= <instruction-template>
+
+<instruction-template> ::= <instruction-head>
+                         | <instruction-head> " " <operand-list>
+
+<instruction-head> ::= <mnemonic-name>
+                     | <mnemonic-name> <fixed-size-suffix>
+                     | <mnemonic-name> <selected-size-suffix>
+                     | <mnemonic-name> <selected-size-suffix> <order-selector>
+
+<selected-size-suffix> ::= "." <size-kind-name> <field-expression>
+
+<order-selector> ::= "/order" <field-expression>
+
+<operand-list> ::= <operand>
+                 | <operand> ", " <operand-list>
+
+<operand> ::= <operand-reference>
+            | <operand-reference> <field-expression>
+            | <decimal-literal>
+            | <operand-group>
+
+<operand-reference> ::= <operand-name>
+                      | "<" <operand-name> ">"
+
+<field-expression> ::= "(" <field-marker> ")"
+
+<operand-group> ::= "(" <operand-reference> ")"
+                  | "{" " " <operand-reference> "..." " " "}"
+
+<decimal-literal> ::= <decimal-digit>
+                    | <decimal-digit> <decimal-literal>
+<decimal-digit> ::= "0" | "1" | "2" | "3" | "4"
+                  | "5" | "6" | "7" | "8" | "9"
+```
+
+The grammar uses lexical classes owned by the existing definitions:
+
+- `<mnemonic-name>` has the lexical form of `InstructionDocument.mnemonic`.
+  Its owning mnemonic or explicitly recorded alias status is determined by the
+  correspondence rules below.
+- `<fixed-size-suffix>` is a `SizeCode.suffix`. `<size-kind-name>` is a key in
+  the merged size-kind registry. Their spelling and meaning remain owned by
+  `sizes.yaml`.
+- `<operand-name>` is a case-sensitive identifier beginning with an ASCII
+  letter and continuing with ASCII letters, digits, or underscores. Concrete
+  operand references are interpreted from the corresponding
+  `EncodingOperand.type` and the owning operand and EA registries.
+- `<field-marker>` is one lowercase symbolic marker local to the encoding form.
+  Its declaration and encoded occurrences remain owned by that form's `bits`,
+  `operands`, and `fields`. A field expression binds only that marker.
+- Condition names and aliases substituted for `cc` come from
+  `conditions.yaml`. The angle-bracket operand reference `<ea>` expands to a
+  concrete effective-address spelling owned by `ea.yaml`.
+
+All terminals are case-sensitive. Canonical templates use one explicit space
+terminal between a head and its first operand, and comma plus one space between
+operands.
+
+The following correspondence rules restrict the BNF to well-formed canonical
+templates:
+
+- The base `<mnemonic-name>` of an `EncodingForm.syntax` is exactly the owning
+  instruction's registered `mnemonic`. An
+  `additional_assembler_syntax` element may instead use the alias spelling
+  explicitly recorded by that element for the same instruction.
+- A fixed size suffix names exactly the form's one fixed registered size code,
+  and the form declares that code in `sizes`. A selector-less form obtains its
+  size domain from `sizes`. A selected suffix names one registered
+  `<size-kind-name>` and uses a field expression whose marker names exactly one
+  `fields` entry with type
+  `size.<size-kind-name>`. The form does not declare `sizes`. Instantiation
+  selects among the codes and their registered suffixes owned by that size
+  kind, in registry order.
+- An owning registered mnemonic ending in the literal `cc` has exactly one
+  encoded operand named `cc`, of type `condition`, whose `field` is declared in
+  `bits`. That terminal `cc` is the condition-selector placeholder:
+  instantiation replaces it with a primary condition name or alias whose value
+  is admitted by the form's field constraints.
+- `/order` followed by a field expression names exactly one encoded operand
+  named `order`, of type `memory_order`, with that field marker. Its
+  concrete selector is the enum name admitted for the encoded value and by the
+  form's constraints. The `/order` selector follows a selected size suffix.
+- Condition and order operands are represented by the instruction head.
+  Operand-group nodes are excluded from `EncodingOperand` correspondence. Each
+  remaining displayed non-group `<operand>` corresponds one-for-one, in YAML
+  order, with one `EncodingOperand`. A field-bearing operand uses an `<operand-reference>`
+  followed by a field expression with that exact marker. A fieldless operand
+  uses its corresponding presentation from the next rule. Every displayed
+  field-bearing encoded operand carries its field binding, and the displayed
+  order is the declared operand order. A fieldless `EncodingOperand` may be
+  undisplayed only when that form contains an operand-group node.
+- A field-bearing non-EA operand uses a bare reference naming its registered
+  operand type. A field-bearing operand of type `EA` uses the angle-bracket
+  reference `<ea>`, whose concrete spelling is selected from `ea.yaml`. A
+  fieldless payload supplied after the primary encoding uses an angle-bracket
+  reference naming its registered operand type. A fieldless `fixed_register`
+  operand uses a bare reference with the architectural register spelling from
+  its registry entry. A decimal literal is the fixed nonnegative value of its
+  corresponding fieldless operand for that form. These correspondence rules
+  determine operand presentation. Encoded field binding is expressed by
+  `<field-expression>`.
+
 ## 3. `instructions.yaml`
 
 ```text

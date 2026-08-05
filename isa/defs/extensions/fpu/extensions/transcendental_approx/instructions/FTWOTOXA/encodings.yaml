@@ -2,7 +2,7 @@ forms:
 - id: long.ftwotoxa_x_fn_s_fn_d
   class: long
   bits: 1111011100z0010dddd010ssss
-  syntax: FTWOTOXA.X(z:S/D) Fn(s), Fn(d)
+  syntax: FTWOTOXA.SD(z) Fn(s), Fn(d)
   operands:
   - name: src
     type: Fn

@@ -47,7 +47,7 @@ from encoding_architecture import (  # noqa: E402
     extended_instruction_lengths,
     extended_length_byte0_pattern,
 )
-from defs_schema import FLAG_BANKS, decode_instruction  # noqa: E402
+from defs_schema import FLAG_BANKS, decode_instruction, parse_assembly_template  # noqa: E402
 from validate_reference_navigation import validate_path as load_reference_navigation  # noqa: E402
 from latex_builder.common import (  # noqa: E402
     LatexTopSection,
@@ -436,11 +436,11 @@ def data_format_template_values(model: IsaModel) -> dict[str, Any]:
         values[f"{code}_BITS"] = byte_count * 8
         values[f"{code}_BYTES"] = byte_count
     operand_types = model.metadata.get("operand_types") or {}
-    for name in ("pair_id", "pt_level", "flags_bitmap", "imm6", "imm7"):
+    for name in ("PAIRn", "pt_level", "flags_bitmap", "imm6", "imm7"):
         spec = operand_types.get(name)
         if not isinstance(spec, dict):
             continue
-        key = str(name).upper()
+        key = "PAIR_ID" if name == "PAIRn" else str(name).upper()
         field_width = int(spec.get("field_width", 0) or 0)
         values[f"{key}_WIDTH"] = field_width
         if name == "imm6":
@@ -568,7 +568,14 @@ def instruction_length_summary(inst: InstructionDef, model: IsaModel) -> str:
     lengths: set[int] = set()
     for entry in model.allocated_by_mnemonic.get(inst.mnemonic, []):
         form = entry.text.strip()
-        lengths.update(instruction_length(entry, form, model.metadata.get("ea")).required_bytes)
+        lengths.update(
+            instruction_length(
+                entry,
+                form,
+                model.metadata.get("ea"),
+                model.metadata.get("operand_types"),
+            ).required_bytes
+        )
     if not lengths:
         return "variable length"
     low, high = min(lengths), max(lengths)
@@ -811,18 +818,32 @@ def ea_payload_byte_lengths(ea_data: Any) -> tuple[int, ...]:
     return tuple(sorted(lengths))
 
 
-def fixed_form_payload_bytes(form: str) -> int:
+def fixed_form_payload_bytes(form: str, operand_types: Any) -> int:
+    payload_sizes = {
+        str(name): int(spec["field_width"]) // 8
+        for name, spec in (operand_types or {}).items()
+        if isinstance(spec, dict)
+        and isinstance(spec.get("field_width"), int)
+        and int(spec["field_width"]) > 0
+        and int(spec["field_width"]) % 8 == 0
+    }
     total = 0
-    for marker in re.findall(r"<([^>]+)>", form):
-        if marker == "ea":
+    template = parse_assembly_template(form)
+    for operand in template.operands:
+        if operand.kind != "reference" or not operand.angled or operand.name == "ea":
             continue
-        total += named_payload_bytes(marker, {})
+        total += named_payload_bytes(operand.name, payload_sizes)
     return total
 
 
-def instruction_length(entry: AllocationEntry, form: str, ea_data: Any) -> InstructionLength:
+def instruction_length(
+    entry: AllocationEntry,
+    form: str,
+    ea_data: Any,
+    operand_types: Any,
+) -> InstructionLength:
     opcode_bytes = allocation_opcode_bytes(entry)
-    required = {opcode_bytes + fixed_form_payload_bytes(form)}
+    required = {opcode_bytes + fixed_form_payload_bytes(form, operand_types)}
     ea_count = sum(
         1
         for field in entry.fields.values()
@@ -1359,7 +1380,12 @@ def latex_allocated_instruction_form_block(
     include_forms_heading: bool = False,
 ) -> str:
     form = entry.text.strip()
-    length = instruction_length(entry, form, model.metadata.get("ea"))
+    length = instruction_length(
+        entry,
+        form,
+        model.metadata.get("ea"),
+        model.metadata.get("operand_types"),
+    )
     form_privilege = inst.attributes.get("privilege", "unprivileged")
     rows = [
         ("Encoding class", latex_escape(entry.cls)),

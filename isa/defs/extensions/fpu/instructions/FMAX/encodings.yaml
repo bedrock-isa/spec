@@ -2,7 +2,7 @@ forms:
 - id: medium.fmax_x_fn_s_fn_d
   class: medium
   bits: 100101zssss111dddd
-  syntax: FMAX.X(z:S/D) Fn(s), Fn(d)
+  syntax: FMAX.SD(z) Fn(s), Fn(d)
   operands:
   - name: src
     type: Fn
@@ -18,7 +18,7 @@ forms:
 - id: long.fmax_x_ea_s_fn_d
   class: long
   bits: 1111010101z1010ddddeeeeeee
-  syntax: FMAX.X(z:S/D) <ea>(e), Fn(d)
+  syntax: FMAX.SD(z) <ea>(e), Fn(d)
   operands:
   - name: src
     type: EA

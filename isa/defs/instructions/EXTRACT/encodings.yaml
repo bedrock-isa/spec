@@ -2,7 +2,7 @@ forms:
 - id: long.extract_x_imm7_i_rn_h_rn_l
   class: long
   bits: 111100101zzhhhhlllliiiiiii
-  syntax: EXTRACT.X(z:B/W/L/Q) imm7(i), Rn(h), Rn(l)
+  syntax: EXTRACT.BWLQ(z) imm7(i), Rn(h), Rn(l)
   operands:
   - name: offset
     type: imm7

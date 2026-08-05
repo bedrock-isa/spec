@@ -2,7 +2,7 @@ forms:
 - id: extralong.fsincosa_x_fn_s_fn_d_fn_c
   class: extralong
   bits: 1111110000001z01ssss000dddd000cccc
-  syntax: FSINCOSA.X(z:S/D) Fn(s), Fn(d), Fn(c)
+  syntax: FSINCOSA.SD(z) Fn(s), Fn(d), Fn(c)
   operands:
   - name: src
     type: Fn

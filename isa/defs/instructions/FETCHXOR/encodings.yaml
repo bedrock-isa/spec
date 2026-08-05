@@ -2,7 +2,7 @@ forms:
 - id: extralong.fetchxor_x_order_o_rn_s_ea_e
   class: extralong
   bits: 111111000101zz000100ooosssseeeeeee
-  syntax: FETCHXOR.X(z:B/W/L/Q)/order(o) Rn(s), <ea>(e)
+  syntax: FETCHXOR.BWLQ(z)/order(o) Rn(s), <ea>(e)
   operands:
   - name: order
     type: memory_order

@@ -2,7 +2,7 @@ forms:
 - id: medium.fdiv_x_fn_s_fn_d
   class: medium
   bits: 100101zssss010dddd
-  syntax: FDIV.X(z:S/D) Fn(s), Fn(d)
+  syntax: FDIV.SD(z) Fn(s), Fn(d)
   operands:
   - name: src
     type: Fn
@@ -18,7 +18,7 @@ forms:
 - id: long.fdiv_x_ea_s_fn_d
   class: long
   bits: 1111010101z0100ddddeeeeeee
-  syntax: FDIV.X(z:S/D) <ea>(e), Fn(d)
+  syntax: FDIV.SD(z) <ea>(e), Fn(d)
   operands:
   - name: src
     type: EA

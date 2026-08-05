@@ -27,7 +27,7 @@ operand_types:
     kind: ea_immediate
     encoding_ref: ea.yaml#compact/forms
     field_width: 7
-  pair_id:
+  PAIRn:
     kind: enum
     field_width: 3
     values:

@@ -27,7 +27,7 @@ forms:
 - id: long.jmp_x_ea_e
   class: long
   bits: 1111001001z00000000eeeeeee
-  syntax: JMP.X(z:L/Q) <ea>(e)
+  syntax: JMP.LQ(z) <ea>(e)
   operands:
   - name: target
     type: EA

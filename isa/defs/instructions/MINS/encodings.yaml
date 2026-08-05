@@ -2,7 +2,7 @@ forms:
 - id: long.mins_x_ea_e_rn_d
   class: long
   bits: 1111000001zz010ddddeeeeeee
-  syntax: MINS.X(z:B/W/L/Q) <ea>(e), Rn(d)
+  syntax: MINS.BWLQ(z) <ea>(e), Rn(d)
   operands:
   - name: src
     type: EA
@@ -20,7 +20,7 @@ forms:
 - id: long.mins_x_rn_s_ea_e
   class: long
   bits: 1111000001zz011sssseeeeeee
-  syntax: MINS.X(z:B/W/L/Q) Rn(s), <ea>(e)
+  syntax: MINS.BWLQ(z) Rn(s), <ea>(e)
   operands:
   - name: src
     type: Rn

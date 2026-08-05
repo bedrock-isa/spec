@@ -2,7 +2,7 @@ forms:
 - id: long.fbndxi_x_fn_l_fn_v_fn_h
   class: long
   bits: 1111010000zllllhhhh010vvvv
-  syntax: FBNDXI.X(z:S/D) Fn(l), Fn(v), Fn(h)
+  syntax: FBNDXI.SD(z) Fn(l), Fn(v), Fn(h)
   operands:
   - name: lo
     type: Fn
@@ -22,7 +22,7 @@ forms:
 - id: long.fbndxi_x_fn_l_ea_v_fn_h
   class: long
   bits: 1111010011zllllhhhhvvvvvvv
-  syntax: FBNDXI.X(z:S/D) Fn(l), <ea>(v), Fn(h)
+  syntax: FBNDXI.SD(z) Fn(l), <ea>(v), Fn(h)
   operands:
   - name: lo
     type: Fn
@@ -48,7 +48,7 @@ forms:
 - id: extralong.fbndxi_x_ea_l_fn_v_ea_h
   class: extralong
   bits: 1111110000000z10vvvvlllllllhhhhhhh
-  syntax: FBNDXI.X(z:S/D) <ea>(l), Fn(v), <ea>(h)
+  syntax: FBNDXI.SD(z) <ea>(l), Fn(v), <ea>(h)
   operands:
   - name: lo
     type: EA

@@ -2,7 +2,7 @@ forms:
 - id: long.fgetexp_x_ea_s_fn_d
   class: long
   bits: 1111010110z0001ddddeeeeeee
-  syntax: FGETEXP.X(z:S/D) <ea>(e), Fn(d)
+  syntax: FGETEXP.SD(z) <ea>(e), Fn(d)
   operands:
   - name: src
     type: EA
@@ -24,7 +24,7 @@ forms:
 - id: long.fgetexp_x_fn_s_fn_d
   class: long
   bits: 1111010110z0001dddd000ssss
-  syntax: FGETEXP.X(z:S/D) Fn(s), Fn(d)
+  syntax: FGETEXP.SD(z) Fn(s), Fn(d)
   operands:
   - name: src
     type: Fn

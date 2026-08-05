@@ -2,7 +2,7 @@ forms:
 - id: medium.fsqrt_x_fn_s_fn_d
   class: medium
   bits: 100101zssss101dddd
-  syntax: FSQRT.X(z:S/D) Fn(s), Fn(d)
+  syntax: FSQRT.SD(z) Fn(s), Fn(d)
   operands:
   - name: src
     type: Fn
@@ -18,7 +18,7 @@ forms:
 - id: long.fsqrt_x_ea_s_fn_d
   class: long
   bits: 1111010101z1000ddddeeeeeee
-  syntax: FSQRT.X(z:S/D) <ea>(e), Fn(d)
+  syntax: FSQRT.SD(z) <ea>(e), Fn(d)
   operands:
   - name: src
     type: EA
@@ -40,7 +40,7 @@ forms:
 - id: long.fsqrt_x_fn_s_ea_d
   class: long
   bits: 1111011000z0011sssseeeeeee
-  syntax: FSQRT.X(z:S/D) Fn(s), <ea>(e)
+  syntax: FSQRT.SD(z) Fn(s), <ea>(e)
   operands:
   - name: src
     type: Fn

@@ -2,7 +2,7 @@ forms:
 - id: long.maxu_x_ea_e_rn_d
   class: long
   bits: 1111000001zz100ddddeeeeeee
-  syntax: MAXU.X(z:B/W/L/Q) <ea>(e), Rn(d)
+  syntax: MAXU.BWLQ(z) <ea>(e), Rn(d)
   operands:
   - name: src
     type: EA
@@ -20,7 +20,7 @@ forms:
 - id: long.maxu_x_rn_s_ea_e
   class: long
   bits: 1111000001zz101sssseeeeeee
-  syntax: MAXU.X(z:B/W/L/Q) Rn(s), <ea>(e)
+  syntax: MAXU.BWLQ(z) Rn(s), <ea>(e)
   operands:
   - name: src
     type: Rn

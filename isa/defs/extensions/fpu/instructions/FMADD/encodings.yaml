@@ -2,7 +2,7 @@ forms:
 - id: long.fmadd_x_fn_l_fn_r_fn_d
   class: long
   bits: 1111010000zllllrrrr100dddd
-  syntax: FMADD.X(z:S/D) Fn(l), Fn(r), Fn(d)
+  syntax: FMADD.SD(z) Fn(l), Fn(r), Fn(d)
   operands:
   - name: lhs
     type: Fn
@@ -22,7 +22,7 @@ forms:
 - id: extralong.fmadd_x_ea_l_fn_r_fn_d
   class: extralong
   bits: 1111110000001z00rrrr000ddddlllllll
-  syntax: FMADD.X(z:S/D) <ea>(l), Fn(r), Fn(d)
+  syntax: FMADD.SD(z) <ea>(l), Fn(r), Fn(d)
   operands:
   - name: lhs
     type: EA
@@ -48,7 +48,7 @@ forms:
 - id: extralong.fmadd_x_fn_l_ea_r_fn_d
   class: extralong
   bits: 1111110000001z00llll100ddddrrrrrrr
-  syntax: FMADD.X(z:S/D) Fn(l), <ea>(r), Fn(d)
+  syntax: FMADD.SD(z) Fn(l), <ea>(r), Fn(d)
   operands:
   - name: lhs
     type: Fn

@@ -2,7 +2,7 @@ forms:
 - id: short.and_x_rn_s_rn_d
   class: short
   bits: 00100zssssdddd
-  syntax: AND.X(z:L/Q) Rn(s), Rn(d)
+  syntax: AND.LQ(z) Rn(s), Rn(d)
   operands:
   - name: src
     type: Rn
@@ -18,7 +18,7 @@ forms:
 - id: medium.and_x_rn_s_ea_e
   class: medium
   bits: 001100zsssseeeeeee
-  syntax: AND.X(z:B/W) Rn(s), <ea>(e)
+  syntax: AND.BW(z) Rn(s), <ea>(e)
   operands:
   - name: src
     type: Rn
@@ -40,7 +40,7 @@ forms:
 - id: medium.and_x_rn_s_ea_e.2
   class: medium
   bits: 001101zsssseeeeeee
-  syntax: AND.X(z:L/Q) Rn(s), <ea>(e)
+  syntax: AND.LQ(z) Rn(s), <ea>(e)
   operands:
   - name: src
     type: Rn
@@ -67,7 +67,7 @@ forms:
 - id: medium.and_x_ea_e_rn_d
   class: medium
   bits: 001110zddddeeeeeee
-  syntax: AND.X(z:B/W) <ea>(e), Rn(d)
+  syntax: AND.BW(z) <ea>(e), Rn(d)
   operands:
   - name: src
     type: EA
@@ -90,7 +90,7 @@ forms:
 - id: medium.and_x_ea_e_rn_d.2
   class: medium
   bits: 001111zddddeeeeeee
-  syntax: AND.X(z:L/Q) <ea>(e), Rn(d)
+  syntax: AND.LQ(z) <ea>(e), Rn(d)
   operands:
   - name: src
     type: EA
@@ -114,7 +114,7 @@ forms:
 - id: long.and_x_imm8s_ea_e
   class: long
   bits: 1111000110zz0011000eeeeeee
-  syntax: AND.X(z:B/W/L/Q) <imm8s>, <ea>(e)
+  syntax: AND.BWLQ(z) <imm8s>, <ea>(e)
   operands:
   - name: src
     type: imm8s
@@ -138,7 +138,7 @@ forms:
 - id: long.and_x_imm16s_ea_e
   class: long
   bits: 1111000110zz0011001eeeeeee
-  syntax: AND.X(z:W/L/Q) <imm16s>, <ea>(e)
+  syntax: AND.WLQ(z) <imm16s>, <ea>(e)
   operands:
   - name: src
     type: imm16s
@@ -166,7 +166,7 @@ forms:
 - id: long.and_x_imm32s_ea_e
   class: long
   bits: 11110001101z0011010eeeeeee
-  syntax: AND.X(z:L/Q) <imm32s>, <ea>(e)
+  syntax: AND.LQ(z) <imm32s>, <ea>(e)
   operands:
   - name: src
     type: imm32s

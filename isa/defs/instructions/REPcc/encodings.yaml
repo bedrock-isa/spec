@@ -2,7 +2,7 @@ forms:
 - id: medium.repcc_rn_r
   class: medium
   bits: 100100cccc0000rrrr
-  syntax: REPcc Rn(r), (instruction)
+  syntax: REPcc Rn(r), (<instruction>)
   operands:
   - name: cc
     type: condition

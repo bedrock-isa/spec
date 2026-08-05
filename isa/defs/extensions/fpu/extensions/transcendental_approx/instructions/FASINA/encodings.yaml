@@ -2,7 +2,7 @@ forms:
 - id: long.fasina_x_fn_s_fn_d
   class: long
   bits: 1111011100z0000dddd001ssss
-  syntax: FASINA.X(z:S/D) Fn(s), Fn(d)
+  syntax: FASINA.SD(z) Fn(s), Fn(d)
   operands:
   - name: src
     type: Fn

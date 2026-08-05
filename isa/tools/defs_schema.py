@@ -59,6 +59,141 @@ class DecodeError(ValueError):
     """A YAML document does not satisfy its declared shape."""
 
 
+@dataclass(frozen=True)
+class AssemblyTemplateOperand:
+    """One parsed operand or operand-group node in an assembly template."""
+
+    kind: str
+    name: str | None = None
+    angled: bool = False
+    field: str | None = None
+    literal: int | None = None
+    group_style: str | None = None
+
+
+@dataclass(frozen=True)
+class AssemblyTemplate:
+    """Parsed canonical assembly-template structure."""
+
+    mnemonic: str
+    fixed_size_suffix: str | None = None
+    selected_size_kind: str | None = None
+    size_field: str | None = None
+    order_field: str | None = None
+    operands: tuple[AssemblyTemplateOperand, ...] = ()
+
+
+class _AssemblyTemplateParser:
+    def __init__(self, value: str, source: str) -> None:
+        self.value = value
+        self.source = source
+        self.index = 0
+
+    def fail(self, message: str) -> None:
+        raise DecodeError(f"{self.source}: {message} at character {self.index + 1}")
+
+    def take(self, literal: str) -> bool:
+        if self.value.startswith(literal, self.index):
+            self.index += len(literal)
+            return True
+        return False
+
+    def require(self, literal: str) -> None:
+        if not self.take(literal):
+            self.fail(f"expected {literal!r}")
+
+    def identifier(self, label: str, *, mnemonic: bool = False) -> str:
+        pattern = r"[A-Za-z][A-Za-z0-9]*" if mnemonic else r"[A-Za-z][A-Za-z0-9_]*"
+        match = re.match(pattern, self.value[self.index :])
+        if match is None:
+            self.fail(f"expected {label}")
+        result = match.group(0)
+        self.index += len(result)
+        return result
+
+    def field_expression(self) -> str:
+        self.require("(")
+        if self.index >= len(self.value) or self.value[self.index] not in "abcdefghijklmnopqrstuvwxyz":
+            self.fail("expected lowercase field marker")
+        marker = self.value[self.index]
+        self.index += 1
+        self.require(")")
+        return marker
+
+    def operand_reference(self) -> tuple[str, bool]:
+        angled = self.take("<")
+        name = self.identifier("operand name")
+        if angled:
+            self.require(">")
+        return name, angled
+
+    def operand(self) -> AssemblyTemplateOperand:
+        if self.take("{ "):
+            name, angled = self.operand_reference()
+            self.require("... }")
+            return AssemblyTemplateOperand(
+                kind="group", name=name, angled=angled, group_style="braced"
+            )
+        if self.take("("):
+            name, angled = self.operand_reference()
+            self.require(")")
+            return AssemblyTemplateOperand(
+                kind="group", name=name, angled=angled, group_style="parenthesized"
+            )
+        decimal = re.match(r"[0-9]+", self.value[self.index :])
+        if decimal is not None:
+            spelling = decimal.group(0)
+            self.index += len(spelling)
+            return AssemblyTemplateOperand(kind="decimal", literal=int(spelling, 10))
+        name, angled = self.operand_reference()
+        marker = self.field_expression() if self.index < len(self.value) and self.value[self.index] == "(" else None
+        return AssemblyTemplateOperand(
+            kind="reference", name=name, angled=angled, field=marker
+        )
+
+    def parse(self) -> AssemblyTemplate:
+        mnemonic = self.identifier("mnemonic name", mnemonic=True)
+        fixed_size_suffix: str | None = None
+        selected_size_kind: str | None = None
+        size_field: str | None = None
+        order_field: str | None = None
+        if self.take("."):
+            suffix_or_kind = self.identifier("size suffix or size-kind name")
+            if self.index < len(self.value) and self.value[self.index] == "(":
+                selected_size_kind = suffix_or_kind
+                size_field = self.field_expression()
+                if self.take("/order"):
+                    order_field = self.field_expression()
+            else:
+                fixed_size_suffix = "." + suffix_or_kind
+
+        operands: list[AssemblyTemplateOperand] = []
+        if self.index < len(self.value):
+            self.require(" ")
+            operands.append(self.operand())
+            while self.index < len(self.value):
+                self.require(", ")
+                operands.append(self.operand())
+        if self.index != len(self.value):
+            self.fail("unexpected text")
+        return AssemblyTemplate(
+            mnemonic=mnemonic,
+            fixed_size_suffix=fixed_size_suffix,
+            selected_size_kind=selected_size_kind,
+            size_field=size_field,
+            order_field=order_field,
+            operands=tuple(operands),
+        )
+
+
+def parse_assembly_template(value: str, source: str = "assembly template") -> AssemblyTemplate:
+    """Parse one value using the canonical assembly-template grammar."""
+
+    if not isinstance(value, str) or not value:
+        raise DecodeError(f"{source}: expected non-empty string")
+    return _AssemblyTemplateParser(value, source).parse()
+
+
 def verify_schema_lock(lock_path: Path = SCHEMA_LOCK_PATH) -> None:
     """Reject an unversioned edit to the frozen decoder contract."""
     try:
@@ -704,6 +839,11 @@ def decode_instruction(path: Path, raw: Any) -> InstructionDocument:
         )
     )
     _unique(extra_syntax, path, "additional_assembler_syntax")
+    for index, syntax in enumerate(extra_syntax):
+        parse_assembly_template(
+            syntax,
+            _where(path, f"additional_assembler_syntax[{index}]"),
+        )
     raw_flag_effects = _mapping(data.get("flag_effects", {}), path, "flag_effects")
     unknown_banks = raw_flag_effects.keys() - FLAG_BANKS.keys()
     if unknown_banks:
@@ -1019,12 +1159,14 @@ def decode_encodings(path: Path, raw: Any) -> EncodingsDocument:
                 f"{_where(path, field_path + '.destination_overlap')}: "
                 "must define every writable field-operand pair"
             )
+        syntax = _string(form["syntax"], path, field_path + ".syntax")
+        parse_assembly_template(syntax, _where(path, field_path + ".syntax"))
         forms.append(
             EncodingForm(
                 id=form_id,
                 encoding_class=encoding_class,
                 bits=bits,
-                syntax=_string(form["syntax"], path, field_path + ".syntax"),
+                syntax=syntax,
                 operands=tuple(operands),
                 sizes=sizes,
                 fields=fields,

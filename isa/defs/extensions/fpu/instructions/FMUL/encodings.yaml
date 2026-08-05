@@ -2,7 +2,7 @@ forms:
 - id: medium.fmul_x_fn_s_fn_d
   class: medium
   bits: 100101zssss001dddd
-  syntax: FMUL.X(z:S/D) Fn(s), Fn(d)
+  syntax: FMUL.SD(z) Fn(s), Fn(d)
   operands:
   - name: src
     type: Fn
@@ -18,7 +18,7 @@ forms:
 - id: long.fmul_x_ea_s_fn_d
   class: long
   bits: 1111010101z0011ddddeeeeeee
-  syntax: FMUL.X(z:S/D) <ea>(e), Fn(d)
+  syntax: FMUL.SD(z) <ea>(e), Fn(d)
   operands:
   - name: src
     type: EA

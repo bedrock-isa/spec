@@ -2,7 +2,7 @@ forms:
 - id: long.fcosa_x_fn_s_fn_d
   class: long
   bits: 1111011100z0000dddd100ssss
-  syntax: FCOSA.X(z:S/D) Fn(s), Fn(d)
+  syntax: FCOSA.SD(z) Fn(s), Fn(d)
   operands:
   - name: src
     type: Fn

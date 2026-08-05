@@ -2,7 +2,7 @@ forms:
 - id: medium.lea_x_ea_rn
   class: medium
   bits: 0eeez1zdddd000eeee
-  syntax: LEA.X(z:B/W/L/Q) <ea>, Rn
+  syntax: LEA.BWLQ(z) <ea>(e), Rn(d)
   operands:
   - name: src
     type: EA

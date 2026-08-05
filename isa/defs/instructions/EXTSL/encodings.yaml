@@ -2,7 +2,7 @@ forms:
 - id: short.extsl_x_rn_s_rn_d
   class: short
   bits: 01111zssssdddd
-  syntax: EXTSL.X(z:B/W) Rn(s), Rn(d)
+  syntax: EXTSL.BW(z) Rn(s), Rn(d)
   operands:
   - name: src
     type: Rn
@@ -112,7 +112,7 @@ forms:
 - id: long.extsl_x_ea_s_ea_d
   class: long
   bits: 11111010100zsssssssddddddd
-  syntax: EXTSL.X(z:B/W) <ea>(s), <ea>(d)
+  syntax: EXTSL.BW(z) <ea>(s), <ea>(d)
   operands:
   - name: src
     type: EA

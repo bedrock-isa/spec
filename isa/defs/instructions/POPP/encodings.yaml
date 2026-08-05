@@ -2,9 +2,9 @@ forms:
 - id: extrashort.popp_pair_id_i
   class: extrashort
   bits: 0011iii
-  syntax: POPP pair_id(i)
+  syntax: POPP PAIRn(i)
   operands:
   - name: pair_id
-    type: pair_id
+    type: PAIRn
     access: read
     field: i

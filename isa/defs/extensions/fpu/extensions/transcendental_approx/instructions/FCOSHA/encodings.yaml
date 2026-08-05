@@ -2,7 +2,7 @@ forms:
 - id: long.fcosha_x_fn_s_fn_d
   class: long
   bits: 1111011100z0000dddd101ssss
-  syntax: FCOSHA.X(z:S/D) Fn(s), Fn(d)
+  syntax: FCOSHA.SD(z) Fn(s), Fn(d)
   operands:
   - name: src
     type: Fn

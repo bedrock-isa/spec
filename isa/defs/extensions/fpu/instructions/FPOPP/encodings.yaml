@@ -2,9 +2,9 @@ forms:
 - id: extrashort.fpopp_pair_id_i
   class: extrashort
   bits: 1111iii
-  syntax: FPOPP pair_id(i)
+  syntax: FPOPP FPAIRn(i)
   operands:
   - name: pair_id
-    type: fp_pair_id
+    type: FPAIRn
     access: read
     field: i

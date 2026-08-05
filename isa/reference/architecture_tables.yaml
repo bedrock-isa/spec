@@ -337,7 +337,7 @@ architectural_events:
   - {event_class: INTERRUPT, id: platform, name: INTERRUPT, producer: admitted maskable interrupt source, kind: asynchronous, saved_pc: next instruction or repeat continuation, committed_state: all earlier committed state, frame: BASIC, payload: none, priority: 7}
 
 immediate_operand_interpretation:
-  - operand_type: pair_id
+  - operand_type: PAIRn
     value_kind: identifier
     range_from: declared_values
     extension: none

@@ -2,7 +2,7 @@ forms:
 - id: long.clz_x_ea_e_rn_d
   class: long
   bits: 1111000000zz100ddddeeeeeee
-  syntax: CLZ.X(z:B/W/L/Q) <ea>(e), Rn(d)
+  syntax: CLZ.BWLQ(z) <ea>(e), Rn(d)
   operands:
   - name: src
     type: EA

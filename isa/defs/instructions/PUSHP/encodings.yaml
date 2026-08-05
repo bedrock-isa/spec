@@ -2,9 +2,9 @@ forms:
 - id: extrashort.pushp_pair_id_i
   class: extrashort
   bits: 0010iii
-  syntax: PUSHP pair_id(i)
+  syntax: PUSHP PAIRn(i)
   operands:
   - name: pair_id
-    type: pair_id
+    type: PAIRn
     access: read
     field: i

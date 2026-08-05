@@ -2,7 +2,7 @@ forms:
 - id: long.fgetman_x_ea_s_fn_d
   class: long
   bits: 1111010110z0010ddddeeeeeee
-  syntax: FGETMAN.X(z:S/D) <ea>(e), Fn(d)
+  syntax: FGETMAN.SD(z) <ea>(e), Fn(d)
   operands:
   - name: src
     type: EA
@@ -24,7 +24,7 @@ forms:
 - id: long.fgetman_x_fn_s_fn_d
   class: long
   bits: 1111010110z0010dddd000ssss
-  syntax: FGETMAN.X(z:S/D) Fn(s), Fn(d)
+  syntax: FGETMAN.SD(z) Fn(s), Fn(d)
   operands:
   - name: src
     type: Fn

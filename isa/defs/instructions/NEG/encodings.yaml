@@ -2,7 +2,7 @@ forms:
 - id: short.neg_x_rn_r
   class: short
   bits: 10001z0010rrrr
-  syntax: NEG.X(z:L/Q) Rn(r)
+  syntax: NEG.LQ(z) Rn(r)
   operands:
   - name: dst
     type: Rn
@@ -14,7 +14,7 @@ forms:
 - id: medium.neg_x_ea
   class: medium
   bits: 0eee10z0100000eeee
-  syntax: NEG.X(z:B/W) <ea>
+  syntax: NEG.BW(z) <ea>(e)
   operands:
   - name: dst
     type: EA
@@ -32,7 +32,7 @@ forms:
 - id: medium.neg_x_ea.2
   class: medium
   bits: 0eee10z0101000eeee
-  syntax: NEG.X(z:L/Q) <ea>
+  syntax: NEG.LQ(z) <ea>(e)
   operands:
   - name: dst
     type: EA

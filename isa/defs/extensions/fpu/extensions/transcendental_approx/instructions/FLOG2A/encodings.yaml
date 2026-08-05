@@ -2,7 +2,7 @@ forms:
 - id: long.flog2a_x_fn_s_fn_d
   class: long
   bits: 1111011100z0001dddd001ssss
-  syntax: FLOG2A.X(z:S/D) Fn(s), Fn(d)
+  syntax: FLOG2A.SD(z) Fn(s), Fn(d)
   operands:
   - name: src
     type: Fn
