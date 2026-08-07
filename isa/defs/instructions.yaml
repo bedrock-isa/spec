@@ -39,7 +39,7 @@ include:
 - instructions/DIVS
 - instructions/DIVU
 - instructions/DJcc
-- instructions/IJcc
+- instructions/ERET
 - instructions/EXTRACT
 - instructions/EXTSL
 - instructions/EXTSQ
@@ -54,6 +54,7 @@ include:
 - instructions/FETCHXOR
 - instructions/FLSHDCACHE
 - instructions/HALT
+- instructions/IJcc
 - instructions/ILLEGAL
 - instructions/INC
 - instructions/INCF
@@ -62,9 +63,8 @@ include:
 - instructions/INVICACHE
 - instructions/INVPAGE
 - instructions/INVTLB
-- instructions/ERET
-- instructions/JMP
 - instructions/Jcc
+- instructions/JMP
 - instructions/LCALL
 - instructions/LEA
 - instructions/LJMP
@@ -103,8 +103,8 @@ include:
 - instructions/RDPMC
 - instructions/RDSEG
 - instructions/RDSTATUS
-- instructions/REPG
 - instructions/REPcc
+- instructions/REPG
 - instructions/RESET
 - instructions/RESTORE
 - instructions/RET

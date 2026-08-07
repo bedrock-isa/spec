@@ -1,7 +1,7 @@
 mnemonic: MULHS
 title: Signed Multiply High
 summary: Performs the signed multiply high operation.
-description: Multiplies the selected-width operands as signed integers and writes the high half of the double-width product.
+description: Multiplies the 64-bit operands as signed integers and writes the high 64 bits of the 128-bit product.
 attributes:
   class: integer
   family: integer_mul_div

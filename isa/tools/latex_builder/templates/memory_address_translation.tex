@@ -14,12 +14,26 @@ suppression, and auto-update commit behavior. SEGLEA applies segment pre-transla
 
 \input{isa/tools/latex_builder/templates/fragments/address_translation_pipeline_figure.tex}
 
-Segment pre-translation interprets the selected 64-bit segment image before paging. Its base is
-\texttt{base\_page} multiplied by 4096, and its span is \texttt{(m << e)} multiplied by 4096. The limit is the
-mathematical sum of base and span and is checked before 64-bit truncation. A segment image with \texttt{m=0} is a
-valid disabled image and passes the effective address through. An image with \texttt{m!=0} is valid only when its
-mathematical base-plus-span is at most $2^{64}$. An enabled segment either checks the effective address as an offset
-and adds the base, or checks an already-linear address in bounds-only mode.
+\subsection{Segment Pre-Translation}\label{section:segment-pre-translation}
+
+Segment pre-translation interprets the selected 64-bit segment image before paging. The segment fields, derived
+quantities, and image-validity condition are defined in
+\hyperref[section:segment-registers]{Segment Registers}. A disabled segment passes the effective address through.
+An enabled segment either checks the effective address as an offset and adds the base, or checks an already-linear
+address in bounds-only mode.
+
+\Needspace{2.3in}
+\manualtablecaption{Segment Pre-Translation Modes}
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.90in}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{1.95in}>{\raggedright\arraybackslash}p{1.50in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Mode} & \textbf{Segment State} & \textbf{Check} & \textbf{Linear Address}\\
+\midrule
+disabled & m = 0 & no segment-window check & linear = EA\\
+translated window & m != 0, b = 0 & starting point $0 \le \mathrm{EA}<\mathrm{span}$; complete range selected by leaf \texttt{AT} & linear = base + EA\\
+bounds-only window & m != 0, b = 1 & starting point $\mathrm{base}\le\mathrm{EA}<\mathrm{limit}$; complete range selected by leaf \texttt{AT} & linear = EA\\
+\bottomrule
+\end{manualtabular}
 
 Address validation begins by forming the starting EA and its segment-pretranslated linear value. The starting point
 must be within the selected segment. With paging enabled, the starting linear value must then be canonical and the
@@ -35,34 +49,6 @@ the selected PTE frame and attributes. With paging disabled, the memory system r
 address directly as a byte address. \texttt{PABITS\_SEL} applies to page-table geometry, while the direct address
 retains all 64 bits. An invalid segment image raises INVALID\_CONTROL\_STATE when written; a failed segment bound or
 canonical-address check raises PAGE\_FAULT during access.
-
-\subsection{Multi-Page Accesses}
-For an \texttt{AT=0} byte range that intersects more than one 4-KiB linear page, translation, accumulated permission,
-and leaf address-type checks are resolved in increasing linear-page order. Each page's walk reaches its existing
-not-present, structural-validity, and permission result before the next page is consumed. The first page in that order
-that fails supplies the architectural fault and walk level.
-
-Every covered page of a store is validated before any byte of the store becomes visible. A later-page translation,
-permission, address-type, or synchronous data-access fault leaves every destination byte and every leaf D bit
-unchanged. A updates completed while consuming an earlier valid entry retain the speculative-A rule and may remain
-set when a later page faults.
-
-Instruction-record fetch uses the same increasing-address rule for all bytes required by the encoded record. A fault
-on a later page completes as an instruction-fetch fault before decode or operand evaluation, while earlier
-instruction-cache and PTE A effects retain their ordinary rules.
-
-\Needspace{2.3in}
-\manualtablecaption{Segment Pre-Translation Modes}
-\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.90in}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{1.95in}>{\raggedright\arraybackslash}p{1.50in}@{}}
-\toprule
-\rowcolor{ManualHeaderFill}
-\textbf{Mode} & \textbf{Segment State} & \textbf{Check} & \textbf{Linear Address}\\
-\midrule
-disabled & m = 0 & no segment-window check & linear = EA\\
-translated window & m != 0, b = 0 & starting point $0 \le \mathrm{EA}<\mathrm{span}$; complete range selected by leaf \texttt{AT} & linear = base + EA\\
-bounds-only window & m != 0, b = 1 & starting point $\mathrm{base}\le\mathrm{EA}<\mathrm{limit}$; complete range selected by leaf \texttt{AT} & linear = EA\\
-\bottomrule
-\end{manualtabular}
 
 \input{isa/tools/latex_builder/templates/fragments/page_walk_reference.tex}
 
@@ -121,3 +107,18 @@ under byte-addressed rules. \texttt{ATOMIC\_ALIGNMENT} applies only after an \te
 
 A slot store retires only after the transaction is acknowledged. The ordering and completion rules for slot
 transactions, including AFENCE, are defined by the Memory Model.
+
+\subsection{Multi-Page Accesses}
+For an \texttt{AT=0} byte range that intersects more than one 4-KiB linear page, translation, accumulated permission,
+and leaf address-type checks are resolved in increasing linear-page order. Each page's walk reaches its existing
+not-present, structural-validity, and permission result before the next page is consumed. The first page in that order
+that fails supplies the architectural fault and walk level.
+
+Every covered page of a store is validated before any byte of the store becomes visible. A later-page translation,
+permission, address-type, or synchronous data-access fault leaves every destination byte and every leaf D bit
+unchanged. A updates completed while consuming an earlier valid entry retain the speculative-A rule and may remain
+set when a later page faults.
+
+Instruction-record fetch uses the same increasing-address rule for all bytes required by the encoded record. A fault
+on a later page completes as an instruction-fetch fault before decode or operand evaluation, while earlier
+instruction-cache and PTE A effects retain their ordinary rules.

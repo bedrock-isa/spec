@@ -1,7 +1,7 @@
 mnemonic: FLOGNA
 title: Approximate Floating-Point Natural Log
 summary: Performs the bounded approximate floating-point natural log operation.
-description: Computes the ln(x) reference over positive finite values and positive infinity after DAZ; signed zero is the DZ boundary and writes an implementation-bounded S- or D-format approximation under the selected FPTRANSA accuracy contract.
+description: After DAZ, computes an implementation-bounded S- or D-format approximation of the ln(x) reference under the selected FPTRANSA accuracy contract. The reference domain includes positive finite values and positive infinity; signed zero is the DZ boundary.
 attributes:
   class: fpu
   family: fpu_transcendental_approx

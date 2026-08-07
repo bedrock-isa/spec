@@ -40,10 +40,10 @@ forms:
   - field: e
     exclude: immediate
     reason: invalid_destination
-- id: long.sbb_x_ea_e_rn_s
+- id: long.sbb_x_ea_e_rn_d
   class: long
-  bits: 1111000000zz011sssseeeeeee
-  syntax: SBB.BWLQ(z) <ea>(e), Rn(s)
+  bits: 1111000000zz011ddddeeeeeee
+  syntax: SBB.BWLQ(z) <ea>(e), Rn(d)
   operands:
   - name: src
     type: EA
@@ -54,7 +54,7 @@ forms:
   - name: dst
     type: Rn
     access: read_write
-    field: s
+    field: d
   fields:
     z:
       type: size.BWLQ

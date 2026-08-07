@@ -6,3 +6,29 @@
 \manualformatfield{b}{1}
 }
 \end{manuallistedformatdiagram}
+
+\Needspace{2.3in}
+\manualtablecaption{Segment Register Fields}
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.90in}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{4.05in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
+\midrule
+\texttt{base\_page} & \texttt{63..12} & unsigned 4-KiB page number from which \(\mathit{base}\) is derived\\
+\texttt{e} & \texttt{11..7} & unsigned exponent used to derive \(\mathit{span}\)\\
+\texttt{m} & \texttt{6..1} & unsigned mantissa used to derive \(\mathit{span}\); zero selects the disabled image\\
+\texttt{b} & \texttt{0} & for an enabled image, zero selects translated-window mode and one selects bounds-only mode\\
+\bottomrule
+\end{manualtabular}
+
+The following quantities are evaluated mathematically without 64-bit truncation:
+\[
+\begin{aligned}
+\mathit{base}  &= \mathit{base\_page}\times4096,\\
+\mathit{span}  &= \mathit{m}\times 2^{\mathit{e}}\times4096,\\
+\mathit{limit} &= \mathit{base}+\mathit{span}.
+\end{aligned}
+\]
+A segment image with \texttt{m=0} is a valid disabled image. An enabled image is valid only when
+\(\mathit{limit}\leq 2^{64}\). The disabled, translated-window, and bounds-only address checks and their fault
+rules are defined in \hyperref[section:segment-pre-translation]{Segment Pre-Translation}.

@@ -1,7 +1,7 @@
 mnemonic: FETCHSUB
 title: Atomic Fetch Subtract
 summary: Performs the atomic fetch subtract operation.
-description: Atomically replaces the memory operand with its selected-width difference from the source and returns the previous memory value in the source register.
+description: Atomically replaces the memory operand with the selected-width result of old memory minus the source, and returns the old memory value in the source register.
 attributes:
   class: system
   family: atomics

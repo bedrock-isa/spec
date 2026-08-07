@@ -77,6 +77,12 @@ before any memory update or architectural result commits; it must not complete a
 \texttt{AT=1} operand has no byte-alignment property and every atomic operation through it instead raises
 \texttt{ADDRESS\_TYPE}, regardless of the numeric slot address.
 
+For every scalar size, a naturally aligned normal-memory load or store is tear-free. Unaligned accesses retain the
+successful-access and synchronous-fault rules above.
+
+Natural alignment equals the operand width in bytes: B is one byte and may use any byte address; W, L, and Q are
+two, four, and eight bytes and require addresses divisible by two, four, and eight respectively.
+
 Stores to memory that is later executed as instructions are ordinary data stores until an explicit synchronization
 sequence makes the modified bytes visible to instruction fetch.
 
@@ -102,12 +108,6 @@ INVICACHE for the block on every receiving logical processor before branching to
 Address translation, permission, and address-type checks precede a block's cache effects. A fault leaves that
 instruction's selected block unchanged. An \texttt{AT=1} mapping retains the slot-addressed rule: cache maintenance
 issues no slot transaction and has no cache effect.
-
-For every scalar size below, a naturally aligned normal-memory load or store is tear-free. Unaligned accesses retain
-the successful-access and synchronous-fault rules above.
-
-Natural alignment equals the operand width in bytes: B is one byte and may use any byte address; W, L, and Q are
-two, four, and eight bytes and require addresses divisible by two, four, and eight respectively.
 
 \subsection{Atomic Memory-Order Selectors}
 \input{isa/tools/latex_builder/templates/fragments/generated/atomic_memory_order_selectors.tex}

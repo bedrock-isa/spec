@@ -1,10 +1,12 @@
+{\raggedright
 \begin{enumerate}
 \item Require supervisor mode and active architectural event state; otherwise raise \texttt{INVALID\_CONTROL\_STATE}.
 \item Read and decode FRAME\_CONTROL at SS:SP without changing SP. Accept only the defined BASIC, ERROR, PAGE\_FAULT, and AUXILIARY sizes, with all reserved bits zero.
 \item Validate the saved event depth and stack level. A saved state with EA clear must carry zero saved event depth and stack level.
 \item Read the complete selected frame and validate FLAGS, STATUS, CS, DS, SS, SP, and an executable canonical PC without changing architectural state.
-\item When repeat state is saved, validate the repeat context in the always-present FRAME\_EXT1 slot; otherwise
+\item When repeat state is saved, validate the repeat context in the always-present FRAME\_EXT1 slot. Otherwise,
 require FRAME\_EXT1 to be zero and prepare cleared repeat state. Frame type remains determined only by the event.
 \item Atomically restore the validated state, event-depth state, and repeat state.
 \item After restoration, admit a pending NMI before the next instruction boundary when STATUS.NI is clear and ECR.NMI\_P is set.
 \end{enumerate}
+\par}

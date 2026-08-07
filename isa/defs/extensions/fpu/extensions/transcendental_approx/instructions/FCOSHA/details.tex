@@ -1,4 +1,4 @@
-The required FPTRANSA\_ACCURACY contract is \texttt{0x0022}. If PRESENT is clear, the instruction raises \texttt{ILLEGAL\_INSTRUCTION} before reading operands or floating-point state.
+The required FPTRANSA\_ACCURACY contract is \texttt{0x0022}. If that accuracy contract's \texttt{PRESENT} field is clear, the instruction raises \texttt{ILLEGAL\_INSTRUCTION} before reading operands or floating-point state.
 
 After FSTATUS.DAZ processing, the reference function is cosh(x) on all finite values and signed infinity after DAZ. The result error is at most 4 ULP for S and 4 ULP for D.
 

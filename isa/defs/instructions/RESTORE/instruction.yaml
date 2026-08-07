@@ -1,7 +1,7 @@
 mnemonic: RESTORE
 title: Restore Processor State
 summary: Restore processor state from a CPUID-defined save area.
-description: The save area uses a fixed architectural layout discovered through CPUID. The save-area base must be 4 KiB aligned. RESTORE is the matching restore operation for SAVE and may restore base architectural state as well as enabled extension state from the same save image. An unrecognized format or any set bitmap bit that lacks a CPUID component descriptor raises INVALID_CONTROL_STATE before architectural state changes. User-mode RESTORE ignores the saved STATUS image; supervisor RESTORE applies the normal STATUS write rules.
+description: RESTORE reconstructs base architectural state and enabled extension state from a 4-KiB-aligned, CPUID-defined save area.
 attributes:
   class: system
   family: tlb_and_context

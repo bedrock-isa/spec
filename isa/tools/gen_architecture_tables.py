@@ -37,6 +37,16 @@ GENERATED_HEADER = (
     "% Source: isa/reference/architecture_tables.yaml\n"
 )
 
+RESET_VALUE_TEXT = {
+    "zero": "0",
+    "invalid": "invalid",
+    "supervisor_only": "PM=1; all other STATUS bits 0",
+    "bootpc": "BOOTPC",
+    "retained_coherent": "retained as coherent contents",
+    "running_at_bootpc": "running at BOOTPC",
+    "platform_supplied_cold_preserved_warm": "platform supplied on cold reset; preserved by warm RESET",
+}
+
 
 def load_mapping(path: Path) -> dict[str, Any]:
     with path.open(encoding="utf-8") as stream:
@@ -1096,22 +1106,13 @@ def render_immediate_operands(data: dict[str, Any]) -> str:
 
 
 def render_reset_state(data: dict[str, Any]) -> str:
-    reset_values = {
-        "zero": "0",
-        "invalid": "invalid",
-        "supervisor_only": "PM=1; all other STATUS bits 0",
-        "bootpc": "BOOTPC",
-        "retained_coherent": "retained as coherent contents",
-        "running_at_bootpc": "running at BOOTPC",
-        "platform_supplied_cold_preserved_warm": "platform supplied on cold reset; preserved by warm RESET",
-    }
     rows = []
     for item in data["reset_state"]:
         names = [str(value) for value in item["state"]]
         state = ", ".join(names).replace("hidden_current_edepth", "hidden_current_edepth")
         state = state.replace("hidden_current_event_stack_level", "hidden current event stack level")
         state = state.replace("F0_F15", "F0--F15")
-        rows.append([breakable_text(state), tex_escape(reset_values[item["value"]])])
+        rows.append([breakable_text(state), tex_escape(RESET_VALUE_TEXT[item["value"]])])
     contract = data["reset_contract"]
     contract_table = latex_tabular(
         ["Property", "Architectural Rule"],

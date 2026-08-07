@@ -15,11 +15,11 @@
 \coordinate (modebranch) at (2.75,0);
 \draw (sel.east) -- (modebranch);
 \draw[->] (modebranch) -- (check.west);
-\draw[->] (modebranch) |- node[lab,pos=0.20,right] {$m=0$} (disabled.west);
+\draw[->] (modebranch) |- node[lab,pos=0.82,above] {$m=0$: disabled} (disabled.west);
 \coordinate (segbranch) at (4.55,0);
 \draw[->] (check.east) -- (segbranch) |- (add.west);
 \draw[->] (check.east) -- (keep.west);
-\draw[->] (check.south) -- ++(0,-0.58) node[lab,below] {window fail: PAGE\_FAULT};
+\draw[->] (check.south) -- ++(0,-0.72) node[lab,below,align=center] {enabled-window failure:\\PAGE\_FAULT};
 \coordinate (linmerge) at (7.45,0);
 \draw (add.east) -- ++(0.34,0) |- (linmerge);
 \draw (keep.east) -- (linmerge);

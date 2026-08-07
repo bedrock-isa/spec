@@ -1,7 +1,7 @@
 mnemonic: MULHSU
 title: Signed By Unsigned Multiply High
 summary: Performs the signed by unsigned multiply high operation.
-description: Multiplies a signed destination by an unsigned source at the selected width and writes the high half of the double-width product.
+description: Multiplies the signed 64-bit destination by the unsigned 64-bit source and writes the high 64 bits of the 128-bit product.
 attributes:
   class: integer
   family: integer_mul_div

@@ -21,7 +21,7 @@ state_groups:
     writers: control transfers, event return, and RESET
   - id: segment_registers
     members: [CS, DS, SS, GS0, GS1, GS2, GS3, GS4, GS5]
-    fields: [base, e, m, B]
+    fields: [base_page, e, m, b]
     definition: section:segment-registers
     readers: segment pre-translation, RDSEG, fixed CS reads, and SAVE
     writers: WRSEG, segment-changing control transfers, event return, and RESTORE

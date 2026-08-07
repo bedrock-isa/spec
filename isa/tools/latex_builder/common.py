@@ -259,7 +259,12 @@ class LatexLongTable(LatexComponent):
         environment = environments[self.style]
         out = []
         if self.caption:
-            out.append(rf"\manualtablecaption{{{tex_escape(caption_title(self.caption))}}}")
+            out.extend(
+                [
+                    r"\Needspace{1.25in}",
+                    rf"\manualtablecaption{{{tex_escape(caption_title(self.caption))}}}",
+                ]
+            )
         out.extend(
             [
                 rf"\begin{{{environment}}}{{{spec}}}",
@@ -317,11 +322,15 @@ class LatexTabular(LatexComponent):
         flexible = not self.widths or "X" in self.widths
         out = []
         if self.caption:
-            out.append(rf"\manualtablecaption{{{tex_escape(caption_title(self.caption))}}}")
-        if flexible:
             out.extend(
                 [
                     r"\Needspace{1.25in}",
+                    rf"\manualtablecaption{{{tex_escape(caption_title(self.caption))}}}",
+                ]
+            )
+        if flexible:
+            out.extend(
+                [
                     r"\begingroup\footnotesize",
                     r"\setlength{\aboverulesep}{0pt}",
                     r"\setlength{\belowrulesep}{0pt}",

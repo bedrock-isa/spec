@@ -1,7 +1,7 @@
 mnemonic: SETF
 title: Set Flags
 summary: Sets selected integer FLAGS bits.
-description: 'SETF sets the selected architectural integer FLAGS bits. The immediate operand is a 4-bit mask: bit 3 selects Z, bit 2 selects N, bit 1 selects C, and bit 0 selects V. Selected bits are written to one; unselected FLAGS bits are unchanged. The assembler may provide symbolic mask aliases such as Z, N, C, V, and combinations using |. STC is an assembler alias for SETF C.'
+description: 'SETF writes the FLAGS bits selected by flags_bitmap to one and leaves unselected FLAGS bits unchanged. The assembler may provide symbolic mask aliases such as Z, N, C, V, and combinations using |. STC is an assembler alias for SETF C.'
 attributes:
   class: system
   family: system_registers

@@ -6,7 +6,7 @@ instruction may add stricter rules, but it does not silently replace the rules b
 
 \subsection{Architectural Result Priority}
 When one instruction could encounter more than one exceptional condition, the architecturally reported result is
-the first applicable condition in the following order. This order defines the architecturally reported result.
+the first applicable condition in the following order.
 
 \begin{enumerate}
 \item Instruction fetch and fetch translation.
@@ -79,7 +79,7 @@ of them.
 
 Architectural event entry and ERET use the event-frame layout in the Architectural Event Processing Model.
 SYSCALL and SYSRET keep their continuation in the user-return control-register bank described by the Privileged
-Programming Model.
+Execution Model.
 
 \subsection{Operand Evaluation and EA Defaults}
 Operands are decoded in instruction order. Source reads complete before the final destination write unless an

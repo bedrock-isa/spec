@@ -49,6 +49,7 @@ from encoding_architecture import (  # noqa: E402
 )
 from defs_schema import FLAG_BANKS, decode_instruction, parse_assembly_template  # noqa: E402
 from validate_reference_navigation import validate_path as load_reference_navigation  # noqa: E402
+from gen_architecture_tables import RESET_VALUE_TEXT  # noqa: E402
 from latex_builder.common import (  # noqa: E402
     LatexTopSection,
     TextTex,
@@ -1268,16 +1269,25 @@ def latex_ea_addressing_mode_tables(model: IsaModel, entry: AllocationEntry, sym
 
 def field_description_label(
     model: IsaModel,
+    entry: AllocationEntry,
     symbol: str,
     spec: dict[str, Any],
     inst: InstructionDef,
 ) -> str:
     kind = str(spec.get("kind", "field"))
+    declared_operand_type = next(
+        (
+            str(operand.get("type"))
+            for operand in entry.operands
+            if operand.get("field") == symbol
+        ),
+        "",
+    )
     if kind == "size":
         name = "Size field"
     elif kind == "ea7":
         name = "Effective Address field"
-    elif kind in {"rn", "freg", "vreg", "creg", "sreg"}:
+    elif kind in {"rn", "freg", "vreg", "creg", "sreg"} or declared_operand_type == "SREG":
         name = "Register field"
     elif kind == "condition":
         name = "Condition field"
@@ -1302,6 +1312,14 @@ def field_description_text(
     fallback = operand_role(operand[0], len(split_form_operands(form))) if operand else ""
     role = ea_operand_role(entry, symbol, fallback)
     kind = spec.get("kind")
+    declared_operand_type = next(
+        (
+            str(item.get("type"))
+            for item in entry.operands
+            if item.get("field") == symbol
+        ),
+        "",
+    )
     values = field_constraint_values(model, inst, entry, symbol, spec)
     if kind == "size":
         choices = "/".join(str(item) for item in spec.get("size_choices", []))
@@ -1309,11 +1327,17 @@ def field_description_text(
     if kind == "ea7":
         target = f"the {role}" if role else "the operand"
         return latex_escape(f"Specifies {target}.")
-    if kind in {"rn", "freg", "vreg", "creg", "sreg"}:
+    if kind == "sreg" or declared_operand_type == "SREG":
+        target = f"the {role}" if role else "a segment-register operand"
+        return (
+            latex_escape(f"Selects {target} using the ")
+            + r"\hyperref[table:sreg-encoding]{SREG encoding}."
+        )
+    if kind in {"rn", "freg", "vreg", "creg"}:
         target = f"the {role}" if role else "a register operand"
         return latex_escape(f"Selects {target}.")
     if kind == "condition":
-        text = "Selects the condition code."
+        text = r"Selects the \hyperref[table:condition-code-encoding]{condition code}."
     elif kind == "immediate":
         text = "Encodes the immediate value."
     elif symbol == "o" and instruction_uses_operand_type(model, inst, "memory_order"):
@@ -1322,7 +1346,7 @@ def field_description_text(
         text = f"Encodes the {display_text(kind)} value."
     if values:
         text += f" Allowed values: {values}."
-    return latex_escape(text)
+    return text if kind == "condition" else latex_escape(text)
 
 
 def latex_field_explanation_block(
@@ -1342,7 +1366,7 @@ def latex_field_explanation_block(
         if spec.get("kind") == "ea7":
             parts.append(r"\Needspace{1.15in}")
         parts.append(
-            rf"\manualinstructionfielddescription{{{field_description_label(model, symbol, spec, inst)}}}"
+            rf"\manualinstructionfielddescription{{{field_description_label(model, entry, symbol, spec, inst)}}}"
             rf"{{{field_description_text(model, inst, entry, form, symbol, spec)}}}"
         )
         if spec.get("kind") == "ea7":
@@ -1638,9 +1662,9 @@ def reset_value_map(architecture: dict[str, Any]) -> dict[str, str]:
             name = str(state)
             if name == "F0_F15":
                 for index in range(16):
-                    values[f"F{index}"] = str(row["value"])
+                    values[f"F{index}"] = RESET_VALUE_TEXT[str(row["value"])]
             else:
-                values[name] = str(row["value"])
+                values[name] = RESET_VALUE_TEXT[str(row["value"])]
     return values
 
 
@@ -1649,9 +1673,9 @@ def grouped_reset_text(members: list[str], reset_values: dict[str, str]) -> str:
     for member in members:
         grouped[reset_values.get(member, "not listed")].append(member)
     if len(grouped) == 1:
-        return tex_breakable_code(next(iter(grouped)))
+        return latex_escape(next(iter(grouped)))
     return "; ".join(
-        tex_breakable_code(f"{', '.join(names)}={value}")
+        ", ".join(tex_code(name) for name in names) + ": " + latex_escape(value)
         for value, names in grouped.items()
     )
 
@@ -1697,7 +1721,7 @@ def state_index_rows(
                 or "--",
                 tex_code("RDCR"),
                 tex_code("WRCR") + " and named architectural transitions",
-                tex_breakable_code(reset_values.get(name, "not listed")),
+                latex_escape(reset_values.get(name, "not listed")),
             ]
         )
     return rows
@@ -1710,7 +1734,7 @@ def state_index(
     return latex_longtable(
         ["State", "Fields", "Readers", "Writers", "Reset"],
         state_index_rows(navigation, architecture),
-        ["0.90in", "1.05in", "1.35in", "1.45in", "0.65in"],
+        ["0.75in", "0.85in", "1.20in", "1.30in", "1.30in"],
         "Architectural State Index",
         style="dense",
     )
@@ -1747,11 +1771,22 @@ def event_index_rows(
             if event_class == "EXCEPTION"
             else f"{event_class}:{event_id}"
         )
+        producer_mnemonics = sorted(
+            instruction_producers.get(str(event["name"]), [])
+        )
+        architectural_producer = str(event["producer"])
+        if architectural_producer in producer_mnemonics:
+            producer = (
+                rf"\hyperref[{instruction_label(architectural_producer)}]"
+                rf"{{{tex_code(architectural_producer)}}}"
+            )
+            producer_mnemonics.remove(architectural_producer)
+        else:
+            producer = latex_escape(architectural_producer)
         producer_links = [
             rf"\hyperref[{instruction_label(mnemonic)}]{{{tex_code(mnemonic)}}}"
-            for mnemonic in sorted(instruction_producers.get(str(event["name"]), []))
+            for mnemonic in producer_mnemonics
         ]
-        producer = latex_escape(event["producer"])
         if producer_links:
             producer += "; " + ", ".join(producer_links)
         rows.append(
@@ -1891,7 +1926,7 @@ def feature_index(
     return latex_longtable(
         ["Predicate", "Class:leaf:index/bit", "Gated instruction", "Related state or component"],
         feature_index_rows(model, instructions, architecture),
-        ["0.80in", "1.35in", "1.15in", "2.05in"],
+        ["1.00in", "1.45in", "1.15in", "1.75in"],
         "CPUID Feature Index",
         style="dense",
     )
@@ -1904,7 +1939,10 @@ def revision_history_table(navigation: dict[str, Any]) -> str:
         [
             latex_escape(unreleased["status"]),
             "--",
-            latex_escape("; ".join(unreleased["changes"])),
+            latex_escape(
+                "; ".join(change.rstrip(".") for change in unreleased["changes"])
+                + "."
+            ),
         ]
     ]
     for release in history["released"]:
@@ -1914,7 +1952,8 @@ def revision_history_table(navigation: dict[str, Any]) -> str:
                 tex_code(release["architecture_revision"]),
                 latex_escape(
                     f"{release['compatibility']}: "
-                    + "; ".join(release["changes"])
+                    + "; ".join(change.rstrip(".") for change in release["changes"])
+                    + "."
                 ),
             ]
         )
@@ -2440,8 +2479,8 @@ def latex_instruction_summary_table(title: str, instructions: list[InstructionDe
     )
 
 
-def latex_instruction_entry(model: IsaModel, inst: InstructionDef, *, first_in_group: bool = False) -> str:
-    parts: list[str] = [r"\Needspace{5.5in}" if first_in_group else r"\clearpage"]
+def latex_instruction_entry(model: IsaModel, inst: InstructionDef) -> str:
+    parts: list[str] = [r"\clearpage"]
     title = compact_text(inst.doc.get("title", inst.mnemonic)) or inst.mnemonic
     parts.append(
         rf"\begin{{manualinstruction}}{{{latex_escape(inst.mnemonic)}}}{{{latex_escape(title)}}}{{{instruction_label(inst.mnemonic)}}}"
@@ -2503,8 +2542,5 @@ def latex_instruction_reference_section(model: IsaModel, instructions: list[Inst
                 latex_instruction_summary_table(f"{title} Summary", group),
             ]
         )
-        parts.extend(
-            latex_instruction_entry(model, inst, first_in_group=index == 0)
-            for index, inst in enumerate(group)
-        )
+        parts.extend(latex_instruction_entry(model, inst) for inst in group)
     return "\n".join(parts)

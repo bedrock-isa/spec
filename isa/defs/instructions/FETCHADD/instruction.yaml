@@ -1,7 +1,7 @@
 mnemonic: FETCHADD
 title: Atomic Fetch Add
 summary: Performs the atomic fetch add operation.
-description: Atomically replaces the memory operand with its selected-width sum with the source and returns the previous memory value in the source register.
+description: Atomically replaces the memory operand with the selected-width sum of the old memory value and the source, and returns the old memory value in the source register.
 attributes:
   class: system
   family: atomics

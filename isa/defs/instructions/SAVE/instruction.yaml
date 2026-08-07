@@ -1,7 +1,7 @@
 mnemonic: SAVE
 title: Save Processor State
 summary: Save modified processor state to a CPUID-defined save area.
-description: 'SAVE writes modified enabled extension components to their CPUID-defined 64-byte-aligned offsets and may clear bitmap bits for architecturally clean components. The fixed base block records R0-R15, GS0-GS5, FLAGS, and STATUS with FMT=0 and GS_VALID=0x3f. Software allocates CPUID SAVE_AREA_SIZE_BYTES bytes and locates each component using its reported offset and size. The save-area base must be 4 KiB aligned.'
+description: SAVE writes base architectural state and modified enabled extension state to a 4-KiB-aligned, CPUID-defined save area.
 attributes:
   class: system
   family: tlb_and_context
