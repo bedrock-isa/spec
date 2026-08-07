@@ -2665,14 +2665,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../ijcc/" class="md-nav__link">
+      <a href="../eret/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    IJcc
+    ERET
   
 
     
@@ -3085,6 +3085,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../ijcc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IJcc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../illegal/" class="md-nav__link">
         
   
@@ -3309,14 +3337,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../eret/" class="md-nav__link">
+      <a href="../jcc/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    ERET
+    Jcc
   
 
     
@@ -3345,34 +3373,6 @@
     
   
     JMP
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../jcc/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Jcc
   
 
     
@@ -4559,14 +4559,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../repg/" class="md-nav__link">
+      <a href="../repcc/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    REPG
+    REPcc
   
 
     
@@ -4587,14 +4587,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../repcc/" class="md-nav__link">
+      <a href="../repg/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    REPcc
+    REPG
   
 
     
@@ -6457,34 +6457,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../fmovcr/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    FMOVCR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../fmovcc/" class="md-nav__link">
         
   
@@ -6513,42 +6485,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../fpopp/" class="md-nav__link">
+      <a href="../fmovcr/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    FPOPP
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../fpushp/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    FPUSHP
+    FMOVCR
   
 
     
@@ -6689,6 +6633,62 @@
     
   
     FNMSUB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fpopp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FPOPP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fpushp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FPUSHP
   
 
     
@@ -8972,7 +8972,7 @@
 
 <h1 id="pop">POP</h1>
 <h2 id="operation">Operation</h2>
-<p>POP loads one 64-bit stack value into a general register or SREG destination. The SREG form accepts DS, SS, and GS0-GS5 and is unprivileged. A candidate segment image is validated before either the destination SREG or SP is changed. POP SS reads through the old SS and makes the new SS visible only when the destination and updated SP commit together.</p>
+<p>POP loads one 64-bit stack value into an Rn or SREG destination and advances SP. The destination and updated SP commit together.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
 <p><code>POP Rn(r)</code></p>
 <p><code>POP SREG(s)</code></p>
@@ -8984,7 +8984,8 @@
 <p>Repeat = <code>REP</code>, <code>REPcc</code>, <code>REPG</code></p>
 <p>REPcc observation = <code>result</code> <code>reg</code></p>
 <h2 id="detailed-semantics">Detailed Semantics</h2>
-<p>POP reads and validates the stack value without changing architectural state. For an SREG destination, segment-image validation completes before commit. It then updates the destination and SP together; any preceding access or validation fault leaves both unchanged. POP SS performs the read using the old SS and exposes the new SS only at the final commit.</p>
+<p>POP reads and validates the stack value without changing architectural state. For an SREG destination, segment-image validation completes before commit. It then updates the destination and SP together; any preceding access or validation fault leaves both unchanged.</p>
+<p>POP SS performs the read using the old SS and exposes the new SS only at the final commit.</p>
 <h2 id="instruction-forms">Instruction Forms</h2>
 <p><strong><code>POP Rn(r)</code></strong></p>
 <p><em>Encoding class: extrashort; required bytes: 1 byte; privilege: unprivileged</em></p>
@@ -8999,7 +9000,7 @@
 <p><img alt="Format — Instruction format for POP SREG(s)" src="../../../assets/visuals/isa/pop-02.svg" /></p>
 <p><strong>Format Instruction format for POP SREG(s)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Bits field <code>s</code></strong> — Encodes the bits value.</p>
+<p><strong>Register field <code>s</code></strong> — Selects the operand using the <a href="../../programming-model/#table-sreg-encoding">SREG encoding</a>.</p>
 
 
 

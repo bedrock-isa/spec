@@ -2752,14 +2752,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/ijcc/" class="md-nav__link">
+      <a href="../instructions/eret/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    IJcc
+    ERET
   
 
     
@@ -3172,6 +3172,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../instructions/ijcc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IJcc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../instructions/illegal/" class="md-nav__link">
         
   
@@ -3396,14 +3424,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/eret/" class="md-nav__link">
+      <a href="../instructions/jcc/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    ERET
+    Jcc
   
 
     
@@ -3432,34 +3460,6 @@
     
   
     JMP
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/jcc/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Jcc
   
 
     
@@ -4544,14 +4544,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/repg/" class="md-nav__link">
+      <a href="../instructions/repcc/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    REPG
+    REPcc
   
 
     
@@ -4572,14 +4572,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/repcc/" class="md-nav__link">
+      <a href="../instructions/repg/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    REPcc
+    REPG
   
 
     
@@ -6442,34 +6442,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fmovcr/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    FMOVCR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../instructions/fmovcc/" class="md-nav__link">
         
   
@@ -6498,42 +6470,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fpopp/" class="md-nav__link">
+      <a href="../instructions/fmovcr/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    FPOPP
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/fpushp/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    FPUSHP
+    FMOVCR
   
 
     
@@ -6674,6 +6618,62 @@
     
   
     FNMSUB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fpopp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FPOPP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fpushp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FPUSHP
   
 
     
@@ -8947,7 +8947,7 @@
 <h1 id="instruction-execution-model">Instruction Execution Model</h1>
 <p>This section defines the common execution contract used by the instruction descriptions. An individual instruction may add stricter rules, but it does not silently replace the rules below.</p>
 <h2 id="architectural-result-priority">Architectural Result Priority</h2>
-<p>When one instruction could encounter more than one exceptional condition, the architecturally reported result is the first applicable condition in the following order. This order defines the architecturally reported result.</p>
+<p>When one instruction could encounter more than one exceptional condition, the architecturally reported result is the first applicable condition in the following order.</p>
 <ol>
 <li>
 <p>Instruction fetch and fetch translation.</p>
@@ -9034,7 +9034,7 @@
 </tbody>
 </table>
 <p>The complete range and all source values are established before a push operation changes memory or SP. A pop operation reads its complete range and completes any applicable destination validation before changing a destination or SP. A successful operation commits all listed stack and register effects together; a preceding fault exposes none of them.</p>
-<p>Architectural event entry and ERET use the event-frame layout in the Architectural Event Processing Model. SYSCALL and SYSRET keep their continuation in the user-return control-register bank described by the Privileged Programming Model.</p>
+<p>Architectural event entry and ERET use the event-frame layout in the Architectural Event Processing Model. SYSCALL and SYSRET keep their continuation in the user-return control-register bank described by the Privileged Execution Model.</p>
 <h2 id="operand-evaluation-and-ea-defaults">Operand Evaluation and EA Defaults</h2>
 <p>Operands are decoded in instruction order. Source reads complete before the final destination write unless an atomic form says otherwise. Effective-address calculation may produce an address without reading memory.</p>
 <p>Auto-update EA forms update a temporary operand-evaluation image. The architectural register update becomes visible only when the instruction commits.</p>

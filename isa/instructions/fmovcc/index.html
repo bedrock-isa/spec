@@ -11,10 +11,10 @@
       
       
       
-        <link rel="prev" href="../fmovcr/">
+        <link rel="prev" href="../fmov/">
       
       
-        <link rel="next" href="../fpopp/">
+        <link rel="next" href="../fmovcr/">
       
       
         
@@ -2663,14 +2663,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../ijcc/" class="md-nav__link">
+      <a href="../eret/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    IJcc
+    ERET
   
 
     
@@ -3083,6 +3083,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../ijcc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IJcc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../illegal/" class="md-nav__link">
         
   
@@ -3307,14 +3335,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../eret/" class="md-nav__link">
+      <a href="../jcc/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    ERET
+    Jcc
   
 
     
@@ -3343,34 +3371,6 @@
     
   
     JMP
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../jcc/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Jcc
   
 
     
@@ -4455,14 +4455,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../repg/" class="md-nav__link">
+      <a href="../repcc/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    REPG
+    REPcc
   
 
     
@@ -4483,14 +4483,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../repcc/" class="md-nav__link">
+      <a href="../repg/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    REPcc
+    REPG
   
 
     
@@ -6352,34 +6352,6 @@
                 
   
   
-  
-  
-    <li class="md-nav__item">
-      <a href="../fmovcr/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    FMOVCR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
     
   
   
@@ -6502,42 +6474,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../fpopp/" class="md-nav__link">
+      <a href="../fmovcr/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    FPOPP
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../fpushp/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    FPUSHP
+    FMOVCR
   
 
     
@@ -6678,6 +6622,62 @@
     
   
     FNMSUB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fpopp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FPOPP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fpushp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FPUSHP
   
 
     
@@ -8970,7 +8970,7 @@
 <p><strong>Format Instruction format for FMOVcc Fn(s), Fn(d)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
-<p><strong>Condition field <code>c</code></strong> — Selects the condition code.</p>
+<p><strong>Condition field <code>c</code></strong> — Selects the <a href="../../flags-and-condition-codes/#table-condition-code-encoding">condition code</a>.</p>
 <p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
 <p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
 <p><strong><code>FMOVcc.SD(z) &lt;ea&gt;(e), Fn(d)</code></strong></p>
@@ -8981,7 +8981,7 @@
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects S/D.</p>
-<p><strong>Condition field <code>c</code></strong> — Selects the condition code.</p>
+<p><strong>Condition field <code>c</code></strong> — Selects the <a href="../../flags-and-condition-codes/#table-condition-code-encoding">condition code</a>.</p>
 <p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the source operand.</p>
 <p><strong>EA availability</strong></p>
@@ -8995,7 +8995,7 @@
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects S/D.</p>
-<p><strong>Condition field <code>c</code></strong> — Selects the condition code.</p>
+<p><strong>Condition field <code>c</code></strong> — Selects the <a href="../../flags-and-condition-codes/#table-condition-code-encoding">condition code</a>.</p>
 <p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the destination operand.</p>
 <p><strong>EA availability</strong></p>

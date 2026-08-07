@@ -2665,14 +2665,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../ijcc/" class="md-nav__link">
+      <a href="../eret/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    IJcc
+    ERET
   
 
     
@@ -3085,6 +3085,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../ijcc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IJcc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../illegal/" class="md-nav__link">
         
   
@@ -3309,14 +3337,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../eret/" class="md-nav__link">
+      <a href="../jcc/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    ERET
+    Jcc
   
 
     
@@ -3345,34 +3373,6 @@
     
   
     JMP
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../jcc/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Jcc
   
 
     
@@ -4457,14 +4457,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../repg/" class="md-nav__link">
+      <a href="../repcc/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    REPG
+    REPcc
   
 
     
@@ -4485,14 +4485,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../repcc/" class="md-nav__link">
+      <a href="../repg/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    REPcc
+    REPG
   
 
     
@@ -6457,34 +6457,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../fmovcr/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    FMOVCR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../fmovcc/" class="md-nav__link">
         
   
@@ -6513,42 +6485,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../fpopp/" class="md-nav__link">
+      <a href="../fmovcr/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    FPOPP
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../fpushp/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    FPUSHP
+    FMOVCR
   
 
     
@@ -6689,6 +6633,62 @@
     
   
     FNMSUB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fpopp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FPOPP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fpushp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FPUSHP
   
 
     
@@ -9010,8 +9010,7 @@
 </tr>
 </tbody>
 </table>
-<p>Let <span class="arithmatex">\(a\)</span> be the source effective address before a memory read. From the selected segment image, define $<span class="arithmatex">\(b = \mathrm{segment}[63:12] \ll 12,
-  \qquad s = (\mathrm{mantissa} \ll \mathrm{exponent}) \ll 12 .\)</span>$ A zero mantissa disables bounds and returns <span class="arithmatex">\(a\)</span>. In translated mode, <span class="arithmatex">\(a\)</span> must satisfy <span class="arithmatex">\(0 \le a &lt; s\)</span> and the result is <span class="arithmatex">\(b+a\)</span>. In bounds-only mode, <span class="arithmatex">\(a\)</span> must satisfy <span class="arithmatex">\(b \le a &lt; b+s\)</span> and the result remains <span class="arithmatex">\(a\)</span>. V is set for an out-of-bounds address, in which case the destination is not written.</p>
+<p>Let <span class="arithmatex">\(a\)</span> be the source effective address before a memory read. The <a href="../../effective-addressing-modes/">effective-address form</a> selects the segment image, which supplies the <span class="arithmatex">\(\mathit{base}\)</span>, <span class="arithmatex">\(\mathit{span}\)</span>, and <span class="arithmatex">\(\mathit{limit}\)</span> quantities defined in <a href="../../programming-model/#section-segment-registers">Segment Registers</a>. A zero mantissa disables bounds and returns <span class="arithmatex">\(a\)</span>. In translated mode, <span class="arithmatex">\(a\)</span> must satisfy <span class="arithmatex">\(0 \le a &lt; \mathit{span}\)</span> and the result is <span class="arithmatex">\(\mathit{base}+a\)</span>. In bounds-only mode, <span class="arithmatex">\(a\)</span> must satisfy <span class="arithmatex">\(\mathit{base} \le a &lt; \mathit{limit}\)</span> and the result remains <span class="arithmatex">\(a\)</span>. V is set for an out-of-bounds address, in which case the destination is not written.</p>
 <h2 id="instruction-forms">Instruction Forms</h2>
 <p><strong><code>SEGLEA.BWLQ(z) &lt;ea&gt;(e), Rn(d)</code></strong></p>
 <p><em>Encoding class: long; required bytes: 4-14 bytes; privilege: unprivileged</em></p>

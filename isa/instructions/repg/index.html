@@ -11,10 +11,10 @@
       
       
       
-        <link rel="prev" href="../rdstatus/">
+        <link rel="prev" href="../repcc/">
       
       
-        <link rel="next" href="../repcc/">
+        <link rel="next" href="../reset/">
       
       
         
@@ -2665,14 +2665,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../ijcc/" class="md-nav__link">
+      <a href="../eret/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    IJcc
+    ERET
   
 
     
@@ -3085,6 +3085,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../ijcc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IJcc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../illegal/" class="md-nav__link">
         
   
@@ -3309,14 +3337,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../eret/" class="md-nav__link">
+      <a href="../jcc/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    ERET
+    Jcc
   
 
     
@@ -3345,34 +3373,6 @@
     
   
     JMP
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../jcc/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Jcc
   
 
     
@@ -4454,6 +4454,34 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../repcc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    REPcc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -4575,34 +4603,6 @@
   
 </nav>
       
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../repcc/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    REPcc
-  
-
-    
-  </span>
-  
-  
-
-      </a>
     </li>
   
 
@@ -6457,34 +6457,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../fmovcr/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    FMOVCR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../fmovcc/" class="md-nav__link">
         
   
@@ -6513,42 +6485,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../fpopp/" class="md-nav__link">
+      <a href="../fmovcr/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    FPOPP
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../fpushp/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    FPUSHP
+    FMOVCR
   
 
     
@@ -6689,6 +6633,62 @@
     
   
     FNMSUB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fpopp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FPOPP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fpushp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FPUSHP
   
 
     
@@ -8972,7 +8972,7 @@
 
 <h1 id="repg">REPG</h1>
 <h2 id="operation">Operation</h2>
-<p>REPG takes an Rn counter and an unsigned 16-bit body byte count. The body starts at the next instruction after REPG and extends for exactly body_bytes bytes. body_bytes is an unsigned byte count. A zero body byte count is invalid. A nonzero body byte count is valid only when the selected byte range decodes as a whole number of complete instructions and ends exactly at an instruction boundary. The grouped body is decoded when repeat state is entered and remains the repeated body until the repeat context exits.</p>
+<p>REPG takes an Rn counter and an unsigned 16-bit body byte count. The body starts at the next instruction after REPG and extends for exactly body_bytes bytes. A zero body byte count is invalid. A nonzero body byte count is valid only when the selected byte range decodes as a whole number of complete instructions and ends exactly at an instruction boundary. The grouped body is decoded when repeat state is entered and remains the repeated body until the repeat context exits.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
 <p><code>REPG Rn(r), { &lt;instruction&gt;... }</code></p>
 <p><code>REPGF Rn(r), { &lt;instruction&gt;... }</code></p>
@@ -8983,7 +8983,9 @@
 <p>Length = 3 bytes</p>
 <p>Repeat = <code>none</code></p>
 <h2 id="detailed-semantics">Detailed Semantics</h2>
-<p>The grouped body is decoded and each body instruction is checked for REPG repeatability before the zero-count rule is applied. If the counter is zero, the decoded group is annulled and has no architectural side effects. If the counter is nonzero, one successful whole-group iteration decrements it by one. The update occurs only after the whole grouped body iteration succeeds. A normal REPG body may write the selected counter register; such writes are ordinary architectural writes in the grouped instruction stream and do not modify the captured repeat remaining-count value. At a successful group-iteration boundary, the repeat counter update has final priority for the selected counter register. The REPGF assembler-checked alias rejects bodies that write the selected counter register. Completed prior body instructions in a faulting iteration remain committed, later body instructions do not execute, and the saved repeat continuation records the selected counter, condition T, repeat kind, group_start_delta, and body_bytes in FRAME_EXT1. FLAGS and FFLAGS follow the rules of the last completed grouped instruction; FFLAGS from completed floating-point operations are accumulated by bitwise inclusive-or.</p>
+<p>The grouped body is decoded and each body instruction is checked for REPG repeatability before the zero-count rule is applied. If the counter is zero, the decoded group is annulled and has no architectural side effects.</p>
+<p>If the counter is nonzero, one successful whole-group iteration decrements it by one. The update occurs only after the whole grouped body iteration succeeds. A normal REPG body may write the selected counter register; such writes are ordinary architectural writes in the grouped instruction stream and do not modify the captured repeat remaining-count value. At a successful group-iteration boundary, the repeat counter update has final priority for the selected counter register. The REPGF assembler-checked alias rejects bodies that write the selected counter register.</p>
+<p>Completed prior body instructions in a faulting iteration remain committed, and later body instructions do not execute. The saved repeat continuation records the selected counter, condition T, repeat kind, group_start_delta, and body_bytes in FRAME_EXT1. FLAGS and FFLAGS follow the rules of the last completed grouped instruction; FFLAGS from completed floating-point operations are accumulated by bitwise inclusive-or.</p>
 <h2 id="instruction-forms">Instruction Forms</h2>
 <p><strong><code>REPG Rn(r), { &lt;instruction&gt;... }</code></strong></p>
 <p><em>Encoding class: medium; required bytes: 3 bytes; privilege: unprivileged</em></p>

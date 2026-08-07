@@ -2752,14 +2752,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/ijcc/" class="md-nav__link">
+      <a href="../instructions/eret/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    IJcc
+    ERET
   
 
     
@@ -3172,6 +3172,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../instructions/ijcc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IJcc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../instructions/illegal/" class="md-nav__link">
         
   
@@ -3396,14 +3424,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/eret/" class="md-nav__link">
+      <a href="../instructions/jcc/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    ERET
+    Jcc
   
 
     
@@ -3432,34 +3460,6 @@
     
   
     JMP
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/jcc/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Jcc
   
 
     
@@ -4544,14 +4544,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/repg/" class="md-nav__link">
+      <a href="../instructions/repcc/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    REPG
+    REPcc
   
 
     
@@ -4572,14 +4572,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/repcc/" class="md-nav__link">
+      <a href="../instructions/repg/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    REPcc
+    REPG
   
 
     
@@ -6442,34 +6442,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fmovcr/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    FMOVCR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../instructions/fmovcc/" class="md-nav__link">
         
   
@@ -6498,42 +6470,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fpopp/" class="md-nav__link">
+      <a href="../instructions/fmovcr/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    FPOPP
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/fpushp/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    FPUSHP
+    FMOVCR
   
 
     
@@ -6674,6 +6618,62 @@
     
   
     FNMSUB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fpopp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FPOPP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fpushp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FPUSHP
   
 
     
@@ -8960,9 +8960,7 @@
 <p><img alt="Instruction Header Byte Formats" src="../../assets/visuals/isa/instruction-encoding-01.svg" /></p>
 <p><strong>Instruction Header Byte Formats</strong></p>
 <p>Figure <a href="#fig:instruction-header-byte-formats">[fig:instruction-header-byte-formats]</a> annotations are read from high to low bit. In byte 0, bit 7 distinguishes extrashort framing; bits 7..6 select short (<code>10</code>) or extended (<code>11</code>) framing. For short instructions, bits 5..2 and 1..0 continue the payload. For extended instructions, bits 5..2 are <code>L</code>, bits 1..0 begin the opcode stream, and byte 1 continues that stream. Thus <code>L</code> encodes the total length as <span class="arithmatex">\(3+L\)</span> bytes directly in Figure <a href="#fig:instruction-header-byte-formats">[fig:instruction-header-byte-formats]</a>.</p>
-<p><img alt="Instruction Record Components" src="../../assets/visuals/isa/instruction-encoding-02.svg" /></p>
-<p><strong>Instruction Record Components</strong></p>
-<p><img alt="Opcode Payload Namespaces" src="../../assets/visuals/isa/instruction-encoding-03.svg" /></p>
+<p><img alt="Opcode Payload Namespaces" src="../../assets/visuals/isa/instruction-encoding-02.svg" /></p>
 <p><strong>Opcode Payload Namespaces</strong></p>
 <p><strong>Instruction Length Truth Table</strong></p>
 <table>
@@ -9174,15 +9172,15 @@
 </tbody>
 </table>
 <p>PUSHP and POPP interpret the 3-bit <code>pair_id</code> as a canonical register-pair index, so every encoding from 0..7 is valid. PTQUERY uses a 3-bit <code>pt_level</code>; assigned levels are 1..5, while encodings 0, 6, and 7 are reserved. SETF and CLRF interpret the 4-bit <code>flags_bitmap</code> range 0..15 as the low FLAGS nibble: bit 3 selects Z, bit 2 selects N, bit 1 selects C, and bit 0 selects V.</p>
-<p><img alt="SETF and CLRF Flag Bitmap" src="../../assets/visuals/isa/instruction-encoding-04.svg" /></p>
+<p><img alt="SETF and CLRF Flag Bitmap" src="../../assets/visuals/isa/instruction-encoding-03.svg" /></p>
 <p><strong>SETF and CLRF Flag Bitmap</strong></p>
-<p>An 6-bit <code>imm6</code> value in 0..63 is zero-extended to the selected operation size before use when that size is wider than 6 bits. EXTRACT uses the 7-bit <code>imm7</code> range 0..127 as the offset into its concatenated register pair.</p>
+<p>A 6-bit <code>imm6</code> value in 0..63 is zero-extended to the selected operation size before use when that size is wider than 6 bits. EXTRACT uses the 7-bit <code>imm7</code> range 0..127 as the offset into its concatenated register pair.</p>
 <h2 id="representative-encodings">Representative Encodings</h2>
-<p><img alt="Short Encoding Layout for MOV.X(z:L/Q) Rn(s), Rn(d)" src="../../assets/visuals/isa/instruction-encoding-05.svg" /></p>
+<p><img alt="Short Encoding Layout for MOV.X(z:L/Q) Rn(s), Rn(d)" src="../../assets/visuals/isa/instruction-encoding-04.svg" /></p>
 <p><strong>Short Encoding Layout for MOV.X(z:L/Q) Rn(s), Rn(d)</strong></p>
-<p><img alt="Medium Encoding Layout for MOV.X(z:B/W) Rn(s), \&lt;ea&gt;(e)" src="../../assets/visuals/isa/instruction-encoding-06.svg" /></p>
+<p><img alt="Medium Encoding Layout for MOV.X(z:B/W) Rn(s), \&lt;ea&gt;(e)" src="../../assets/visuals/isa/instruction-encoding-05.svg" /></p>
 <p><strong>Medium Encoding Layout for MOV.X(z:B/W) Rn(s), \&lt;ea&gt;(e)</strong></p>
-<p><img alt="Long Encoding Layout for ADC.X(z:B/W/L/Q) Rn(s), \&lt;ea&gt;(e)" src="../../assets/visuals/isa/instruction-encoding-07.svg" /></p>
+<p><img alt="Long Encoding Layout for ADC.X(z:B/W/L/Q) Rn(s), \&lt;ea&gt;(e)" src="../../assets/visuals/isa/instruction-encoding-06.svg" /></p>
 <p><strong>Long Encoding Layout for ADC.X(z:B/W/L/Q) Rn(s), \&lt;ea&gt;(e)</strong></p>
 
 

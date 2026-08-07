@@ -2665,14 +2665,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../ijcc/" class="md-nav__link">
+      <a href="../eret/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    IJcc
+    ERET
   
 
     
@@ -3085,6 +3085,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../ijcc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IJcc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../illegal/" class="md-nav__link">
         
   
@@ -3309,14 +3337,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../eret/" class="md-nav__link">
+      <a href="../jcc/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    ERET
+    Jcc
   
 
     
@@ -3345,34 +3373,6 @@
     
   
     JMP
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../jcc/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Jcc
   
 
     
@@ -4457,14 +4457,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../repg/" class="md-nav__link">
+      <a href="../repcc/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    REPG
+    REPcc
   
 
     
@@ -4485,14 +4485,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../repcc/" class="md-nav__link">
+      <a href="../repg/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    REPcc
+    REPG
   
 
     
@@ -6457,34 +6457,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../fmovcr/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    FMOVCR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../fmovcc/" class="md-nav__link">
         
   
@@ -6513,42 +6485,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../fpopp/" class="md-nav__link">
+      <a href="../fmovcr/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    FPOPP
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../fpushp/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    FPUSHP
+    FMOVCR
   
 
     
@@ -6689,6 +6633,62 @@
     
   
     FNMSUB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fpopp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FPOPP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fpushp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FPUSHP
   
 
     
@@ -8972,7 +8972,7 @@
 
 <h1 id="vtop">VTOP</h1>
 <h2 id="operation">Operation</h2>
-<p>VTOP translates the supplied linear address with the current PTCR configuration without performing an architectural memory access. With paging disabled, the address is returned unchanged. With paging enabled, the instruction performs the configured LA48 or LA57 walk. Translation failures are reported through the integer flags instead of raising PAGE_FAULT. A successful query returns the byte address for an AT=0 leaf or the slot address for an AT=1 leaf and reports the accumulated U, W, and X permissions. The query issues no slot transaction and never sets PTE A or D, fills or modifies a TLB entry, or otherwise changes translation state.</p>
+<p>With paging disabled, VTOP returns the supplied linear address unchanged. With paging enabled, it returns the current byte or slot translation and reports query success and accumulated U, W, and X permissions in FLAGS without performing a memory transaction.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
 <p><code>VTOP Rn(v), Rn(p)</code></p>
 <h2 id="attributes">Attributes</h2>

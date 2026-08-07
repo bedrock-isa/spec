@@ -2665,14 +2665,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../ijcc/" class="md-nav__link">
+      <a href="../eret/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    IJcc
+    ERET
   
 
     
@@ -3085,6 +3085,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../ijcc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IJcc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../illegal/" class="md-nav__link">
         
   
@@ -3309,14 +3337,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../eret/" class="md-nav__link">
+      <a href="../jcc/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    ERET
+    Jcc
   
 
     
@@ -3345,34 +3373,6 @@
     
   
     JMP
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../jcc/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Jcc
   
 
     
@@ -4457,14 +4457,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../repg/" class="md-nav__link">
+      <a href="../repcc/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    REPG
+    REPcc
   
 
     
@@ -4485,14 +4485,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../repcc/" class="md-nav__link">
+      <a href="../repg/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    REPcc
+    REPG
   
 
     
@@ -6457,34 +6457,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../fmovcr/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    FMOVCR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../fmovcc/" class="md-nav__link">
         
   
@@ -6513,42 +6485,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../fpopp/" class="md-nav__link">
+      <a href="../fmovcr/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    FPOPP
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../fpushp/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    FPUSHP
+    FMOVCR
   
 
     
@@ -6689,6 +6633,62 @@
     
   
     FNMSUB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fpopp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FPOPP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fpushp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FPUSHP
   
 
     
@@ -8976,7 +8976,7 @@
 <h2 id="assembler-syntax">Assembler Syntax</h2>
 <p><code>SBB.BWLQ(z) Rn(s), Rn(d)</code></p>
 <p><code>SBB.BWLQ(z) Rn(s), &lt;ea&gt;(e)</code></p>
-<p><code>SBB.BWLQ(z) &lt;ea&gt;(e), Rn(s)</code></p>
+<p><code>SBB.BWLQ(z) &lt;ea&gt;(e), Rn(d)</code></p>
 <h2 id="attributes">Attributes</h2>
 <p>Class = integer</p>
 <p>Family = integer alu</p>
@@ -9037,15 +9037,15 @@
 <p><strong>EA availability</strong></p>
 <p><strong>Allowed:</strong> Register except <code>Rn(r)</code>; Memory; EXT0</p>
 <p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>
-<p><strong><code>SBB.BWLQ(z) &lt;ea&gt;(e), Rn(s)</code></strong></p>
+<p><strong><code>SBB.BWLQ(z) &lt;ea&gt;(e), Rn(d)</code></strong></p>
 <p><em>Encoding class: long; required bytes: 4-14 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for SBB.BWLQ(z) \&lt;ea&gt;(e), Rn(s)" src="../../../assets/visuals/isa/sbb-03.svg" /></p>
-<p><strong>Format Instruction format for SBB.BWLQ(z) \&lt;ea&gt;(e), Rn(s)</strong></p>
+<p><img alt="Format — Instruction format for SBB.BWLQ(z) \&lt;ea&gt;(e), Rn(d)" src="../../../assets/visuals/isa/sbb-03.svg" /></p>
+<p><strong>Format Instruction format for SBB.BWLQ(z) \&lt;ea&gt;(e), Rn(d)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
-<p><strong>Register field <code>s</code></strong> — Selects the destination operand.</p>
+<p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the source operand.</p>
 <p><strong>EA availability</strong></p>
 <p><strong>Allowed:</strong> Register except <code>Rn(r)</code>; Memory; Immediate; EXT0</p>

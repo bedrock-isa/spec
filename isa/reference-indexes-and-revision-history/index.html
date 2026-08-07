@@ -2661,14 +2661,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/ijcc/" class="md-nav__link">
+      <a href="../instructions/eret/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    IJcc
+    ERET
   
 
     
@@ -3081,6 +3081,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../instructions/ijcc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IJcc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../instructions/illegal/" class="md-nav__link">
         
   
@@ -3305,14 +3333,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/eret/" class="md-nav__link">
+      <a href="../instructions/jcc/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    ERET
+    Jcc
   
 
     
@@ -3341,34 +3369,6 @@
     
   
     JMP
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/jcc/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Jcc
   
 
     
@@ -4453,14 +4453,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/repg/" class="md-nav__link">
+      <a href="../instructions/repcc/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    REPG
+    REPcc
   
 
     
@@ -4481,14 +4481,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/repcc/" class="md-nav__link">
+      <a href="../instructions/repg/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    REPcc
+    REPG
   
 
     
@@ -6351,34 +6351,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fmovcr/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    FMOVCR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../instructions/fmovcc/" class="md-nav__link">
         
   
@@ -6407,42 +6379,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fpopp/" class="md-nav__link">
+      <a href="../instructions/fmovcr/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    FPOPP
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/fpushp/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    FPUSHP
+    FMOVCR
   
 
     
@@ -6583,6 +6527,62 @@
     
   
     FNMSUB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fpopp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FPOPP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fpushp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FPUSHP
   
 
     
@@ -9047,238 +9047,238 @@
 <td style="text-align: left;">–</td>
 <td style="text-align: left;">Rn source operands and effective-address base or index terms</td>
 <td style="text-align: left;">writable Rn destinations and effective-address auto-update</td>
-<td style="text-align: left;"><code>zero</code></td>
+<td style="text-align: left;">0</td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../programming-model/#section-register-model"><code>SP</code></a> (p. )</td>
 <td style="text-align: left;">–</td>
 <td style="text-align: left;">stack operations and SP-relative effective addresses</td>
 <td style="text-align: left;">stack operations and writable SP destinations</td>
-<td style="text-align: left;"><code>zero</code></td>
+<td style="text-align: left;">0</td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../programming-model/#section-register-model"><code>PC</code></a> (p. )</td>
 <td style="text-align: left;">–</td>
 <td style="text-align: left;">instruction fetch and PC-relative effective addresses</td>
 <td style="text-align: left;">control transfers, event return, and RESET</td>
-<td style="text-align: left;"><code>bootpc</code></td>
+<td style="text-align: left;">BOOTPC</td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../programming-model/#section-segment-registers"><code>CS</code>, <code>DS</code>, <code>SS</code>, <code>GS0</code>, <code>GS1</code>, <code>GS2</code>, <code>GS3</code>, <code>GS4</code>, <code>GS5</code></a> (p. )</td>
-<td style="text-align: left;"><code>base</code>, <code>e</code>, <code>m</code>, <code>B</code></td>
+<td style="text-align: left;"><code>base_page</code>, <code>e</code>, <code>m</code>, <code>b</code></td>
 <td style="text-align: left;">segment pre-translation, RDSEG, fixed CS reads, and SAVE</td>
 <td style="text-align: left;">WRSEG, segment-changing control transfers, event return, and RESTORE</td>
-<td style="text-align: left;"><code>zero</code></td>
+<td style="text-align: left;">0</td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../programming-model/#section-state-register-formats"><code>FLAGS</code>, <code>STATUS</code></a> (p. )</td>
 <td style="text-align: left;"><code>Z</code>, <code>N</code>, <code>C</code>, <code>V</code>, <code>IE</code>, <code>PM</code>, <code>RF</code>, <code>TF</code>, <code>NI</code>, <code>EA</code></td>
 <td style="text-align: left;">condition evaluation, RDFLAGS, RDSTATUS, event entry, and SAVE</td>
 <td style="text-align: left;">instruction flag results, WRFLAGS, WRSTATUS, event transitions, and RESTORE</td>
-<td style="text-align: left;"><code>FLAGS=zero</code>; <code>STATUS=supervisor_only</code></td>
+<td style="text-align: left;"><code>FLAGS</code>: 0; <code>STATUS</code>: PM=1; all other STATUS bits 0</td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../programming-model/#section-floating-point-register-model"><code>F0``-``-``F15</code></a> (p. )</td>
 <td style="text-align: left;">–</td>
 <td style="text-align: left;">floating-point source operands and SAVE</td>
 <td style="text-align: left;">floating-point destinations and RESTORE</td>
-<td style="text-align: left;"><code>zero</code></td>
+<td style="text-align: left;">0</td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../programming-model/#section-state-register-formats"><code>FFLAGS</code>, <code>FSTATUS</code></a> (p. )</td>
 <td style="text-align: left;"><code>NV</code>, <code>DZ</code>, <code>OF</code>, <code>UF</code>, <code>NX</code>, <code>NV_EN</code>, <code>DZ_EN</code>, <code>OF_EN</code>, <code>UF_EN</code>, <code>NX_EN</code>, <code>RM</code>, <code>FTZ</code>, <code>DAZ</code>, <code>DN</code></td>
 <td style="text-align: left;">floating-point execution, dedicated reads, and SAVE</td>
 <td style="text-align: left;">floating-point results, dedicated writes, RESET, and RESTORE</td>
-<td style="text-align: left;"><code>zero</code></td>
+<td style="text-align: left;">0</td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-performance-counter-discovery"><code>CYCLE</code>, <code>INSTRET</code>, <code>PTWALK</code></a> (p. )</td>
 <td style="text-align: left;">–</td>
 <td style="text-align: left;">RDPMC</td>
 <td style="text-align: left;">architecturally defined counter increment events and RESET</td>
-<td style="text-align: left;"><code>zero</code></td>
+<td style="text-align: left;">0</td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>PTCR</code></a> (p. )</td>
 <td style="text-align: left;"><code>root_page</code>, <code>PABITS_SEL</code>, <code>LA57</code>, <code>PE</code></td>
 <td style="text-align: left;"><code>RDCR</code></td>
 <td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
-<td style="text-align: left;"><code>zero</code></td>
+<td style="text-align: left;">0</td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>ASCR</code></a> (p. )</td>
 <td style="text-align: left;"><code>ASID</code>, <code>AE</code></td>
 <td style="text-align: left;"><code>RDCR</code></td>
 <td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
-<td style="text-align: left;"><code>zero</code></td>
+<td style="text-align: left;">0</td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>ECR</code></a> (p. )</td>
 <td style="text-align: left;"><code>MAX_EDEPTH</code>, <code>NMI_P</code>, <code>V</code></td>
 <td style="text-align: left;"><code>RDCR</code></td>
 <td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
-<td style="text-align: left;"><code>zero</code></td>
+<td style="text-align: left;">0</td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>SPC</code></a> (p. )</td>
 <td style="text-align: left;">–</td>
 <td style="text-align: left;"><code>RDCR</code></td>
 <td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
-<td style="text-align: left;"><code>zero</code></td>
+<td style="text-align: left;">0</td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>SCS</code></a> (p. )</td>
 <td style="text-align: left;">–</td>
 <td style="text-align: left;"><code>RDCR</code></td>
 <td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
-<td style="text-align: left;"><code>zero</code></td>
+<td style="text-align: left;">0</td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>SDS</code></a> (p. )</td>
 <td style="text-align: left;">–</td>
 <td style="text-align: left;"><code>RDCR</code></td>
 <td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
-<td style="text-align: left;"><code>zero</code></td>
+<td style="text-align: left;">0</td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>URPC</code></a> (p. )</td>
 <td style="text-align: left;">–</td>
 <td style="text-align: left;"><code>RDCR</code></td>
 <td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
-<td style="text-align: left;"><code>zero</code></td>
+<td style="text-align: left;">0</td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>URSP</code></a> (p. )</td>
 <td style="text-align: left;">–</td>
 <td style="text-align: left;"><code>RDCR</code></td>
 <td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
-<td style="text-align: left;"><code>zero</code></td>
+<td style="text-align: left;">0</td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>URCS</code></a> (p. )</td>
 <td style="text-align: left;">–</td>
 <td style="text-align: left;"><code>RDCR</code></td>
 <td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
-<td style="text-align: left;"><code>zero</code></td>
+<td style="text-align: left;">0</td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>URDS</code></a> (p. )</td>
 <td style="text-align: left;">–</td>
 <td style="text-align: left;"><code>RDCR</code></td>
 <td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
-<td style="text-align: left;"><code>zero</code></td>
+<td style="text-align: left;">0</td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>URSS</code></a> (p. )</td>
 <td style="text-align: left;">–</td>
 <td style="text-align: left;"><code>RDCR</code></td>
 <td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
-<td style="text-align: left;"><code>zero</code></td>
+<td style="text-align: left;">0</td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>URCTL</code></a> (p. )</td>
 <td style="text-align: left;"><code>V</code>, <code>STATUS</code>, <code>FLAGS</code></td>
 <td style="text-align: left;"><code>RDCR</code></td>
 <td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
-<td style="text-align: left;"><code>zero</code></td>
+<td style="text-align: left;">0</td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>EPC</code></a> (p. )</td>
 <td style="text-align: left;">–</td>
 <td style="text-align: left;"><code>RDCR</code></td>
 <td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
-<td style="text-align: left;"><code>zero</code></td>
+<td style="text-align: left;">0</td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>ECS</code></a> (p. )</td>
 <td style="text-align: left;">–</td>
 <td style="text-align: left;"><code>RDCR</code></td>
 <td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
-<td style="text-align: left;"><code>zero</code></td>
+<td style="text-align: left;">0</td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>EDS</code></a> (p. )</td>
 <td style="text-align: left;">–</td>
 <td style="text-align: left;"><code>RDCR</code></td>
 <td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
-<td style="text-align: left;"><code>zero</code></td>
+<td style="text-align: left;">0</td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>SSS</code></a> (p. )</td>
 <td style="text-align: left;">–</td>
 <td style="text-align: left;"><code>RDCR</code></td>
 <td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
-<td style="text-align: left;"><code>zero</code></td>
+<td style="text-align: left;">0</td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>SSP</code></a> (p. )</td>
 <td style="text-align: left;">–</td>
 <td style="text-align: left;"><code>RDCR</code></td>
 <td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
-<td style="text-align: left;"><code>zero</code></td>
+<td style="text-align: left;">0</td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>ISS</code></a> (p. )</td>
 <td style="text-align: left;">–</td>
 <td style="text-align: left;"><code>RDCR</code></td>
 <td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
-<td style="text-align: left;"><code>zero</code></td>
+<td style="text-align: left;">0</td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>ISP</code></a> (p. )</td>
 <td style="text-align: left;">–</td>
 <td style="text-align: left;"><code>RDCR</code></td>
 <td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
-<td style="text-align: left;"><code>zero</code></td>
+<td style="text-align: left;">0</td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>FSS</code></a> (p. )</td>
 <td style="text-align: left;">–</td>
 <td style="text-align: left;"><code>RDCR</code></td>
 <td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
-<td style="text-align: left;"><code>zero</code></td>
+<td style="text-align: left;">0</td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>FSP</code></a> (p. )</td>
 <td style="text-align: left;">–</td>
 <td style="text-align: left;"><code>RDCR</code></td>
 <td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
-<td style="text-align: left;"><code>zero</code></td>
+<td style="text-align: left;">0</td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>DSS</code></a> (p. )</td>
 <td style="text-align: left;">–</td>
 <td style="text-align: left;"><code>RDCR</code></td>
 <td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
-<td style="text-align: left;"><code>zero</code></td>
+<td style="text-align: left;">0</td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>DSP</code></a> (p. )</td>
 <td style="text-align: left;">–</td>
 <td style="text-align: left;"><code>RDCR</code></td>
 <td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
-<td style="text-align: left;"><code>zero</code></td>
+<td style="text-align: left;">0</td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>BOOTPC</code></a> (p. )</td>
 <td style="text-align: left;">–</td>
 <td style="text-align: left;"><code>RDCR</code></td>
 <td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
-<td style="text-align: left;"><code>platform_supplied_cold_preserved_warm</code></td>
+<td style="text-align: left;">platform supplied on cold reset; preserved by warm RESET</td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>BOOTCFG</code></a> (p. )</td>
 <td style="text-align: left;">–</td>
 <td style="text-align: left;"><code>RDCR</code></td>
 <td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
-<td style="text-align: left;"><code>platform_supplied_cold_preserved_warm</code></td>
+<td style="text-align: left;">platform supplied on cold reset; preserved by warm RESET</td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>PMC</code></a> (p. )</td>
 <td style="text-align: left;"><code>EN</code></td>
 <td style="text-align: left;"><code>RDCR</code></td>
 <td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
-<td style="text-align: left;"><code>zero</code></td>
+<td style="text-align: left;">0</td>
 </tr>
 </tbody>
 </table>
@@ -9307,7 +9307,7 @@
 <tr>
 <td style="text-align: left;"><code>EXC:02</code></td>
 <td style="text-align: left;"><code>BREAKPOINT</code></td>
-<td style="text-align: left;">BKPT; <a href="../instructions/bkpt/"><code>BKPT</code></a></td>
+<td style="text-align: left;"><a href="../instructions/bkpt/"><code>BKPT</code></a></td>
 <td style="text-align: left;"><code>4</code></td>
 <td style="text-align: left;"><code>BASIC</code></td>
 <td style="text-align: left;"><a href="../architectural-event-processing-model/#section-event-code-and-sources">definition</a> (p. )</td>
@@ -9815,7 +9815,7 @@
 <tr>
 <td style="text-align: left;">Unreleased</td>
 <td style="text-align: left;">–</td>
-<td style="text-align: left;">Closed the CPUID, SAVE/RESTORE, floating-point, cache-maintenance, and effective-address contracts.; Defined reset, memory policy, translation, event, repeat, and instruction-encoding boundaries.; Defined atomic ordering, paging boundaries, compatibility identity, stack, WAIT/HALT, and conformance contracts.; Unified terminology, canonical field names, reference indexes, and revision-history navigation.</td>
+<td style="text-align: left;">Closed the CPUID, SAVE/RESTORE, floating-point, cache-maintenance, and effective-address contracts; Defined reset, memory policy, translation, event, repeat, and instruction-encoding boundaries; Defined atomic ordering, paging boundaries, compatibility identity, stack, WAIT/HALT, and conformance contracts; Unified terminology, canonical field names, reference indexes, and revision-history navigation.</td>
 </tr>
 </tbody>
 </table>

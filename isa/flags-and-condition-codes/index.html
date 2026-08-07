@@ -2752,14 +2752,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/ijcc/" class="md-nav__link">
+      <a href="../instructions/eret/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    IJcc
+    ERET
   
 
     
@@ -3172,6 +3172,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../instructions/ijcc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IJcc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../instructions/illegal/" class="md-nav__link">
         
   
@@ -3396,14 +3424,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/eret/" class="md-nav__link">
+      <a href="../instructions/jcc/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    ERET
+    Jcc
   
 
     
@@ -3432,34 +3460,6 @@
     
   
     JMP
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/jcc/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Jcc
   
 
     
@@ -4544,14 +4544,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/repg/" class="md-nav__link">
+      <a href="../instructions/repcc/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    REPG
+    REPcc
   
 
     
@@ -4572,14 +4572,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/repcc/" class="md-nav__link">
+      <a href="../instructions/repg/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    REPcc
+    REPG
   
 
     
@@ -6442,34 +6442,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fmovcr/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    FMOVCR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../instructions/fmovcc/" class="md-nav__link">
         
   
@@ -6498,42 +6470,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/fpopp/" class="md-nav__link">
+      <a href="../instructions/fmovcr/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    FPOPP
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/fpushp/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    FPUSHP
+    FMOVCR
   
 
     
@@ -6674,6 +6618,62 @@
     
   
     FNMSUB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fpopp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FPOPP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../instructions/fpushp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FPUSHP
   
 
     
@@ -9057,6 +9057,7 @@
 </tr>
 </tbody>
 </table>
+<p><a href="#table-condition-code-encoding" id="table-condition-code-encoding"></a></p>
 <h2 id="flag-meanings">Flag Meanings</h2>
 <p>Integer condition codes are held in FLAGS. Integer instructions leave FLAGS unchanged unless their instruction description explicitly defines a FLAGS write. Unmentioned FLAGS bits are preserved unless the instruction says otherwise.</p>
 <p>For an operand width of n bits, ordinary integer ALU results are evaluated modulo 2^n unless the instruction explicitly defines a wider intermediate.</p>

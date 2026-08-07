@@ -11,10 +11,10 @@
       
       
       
-        <link rel="prev" href="../jmp/">
+        <link rel="prev" href="../invtlb/">
       
       
-        <link rel="next" href="../lcall/">
+        <link rel="next" href="../jmp/">
       
       
         
@@ -2665,14 +2665,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../ijcc/" class="md-nav__link">
+      <a href="../eret/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    IJcc
+    ERET
   
 
     
@@ -3085,6 +3085,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../ijcc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IJcc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../illegal/" class="md-nav__link">
         
   
@@ -3306,62 +3334,6 @@
                 
   
   
-  
-  
-    <li class="md-nav__item">
-      <a href="../eret/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    ERET
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../jmp/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    JMP
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
     
   
   
@@ -3472,6 +3444,34 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../jmp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JMP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -4548,14 +4548,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../repg/" class="md-nav__link">
+      <a href="../repcc/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    REPG
+    REPcc
   
 
     
@@ -4576,14 +4576,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../repcc/" class="md-nav__link">
+      <a href="../repg/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    REPcc
+    REPG
   
 
     
@@ -6446,34 +6446,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../fmovcr/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    FMOVCR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../fmovcc/" class="md-nav__link">
         
   
@@ -6502,42 +6474,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../fpopp/" class="md-nav__link">
+      <a href="../fmovcr/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    FPOPP
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../fpushp/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    FPUSHP
+    FMOVCR
   
 
     
@@ -6678,6 +6622,62 @@
     
   
     FNMSUB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fpopp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FPOPP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fpushp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FPUSHP
   
 
     
@@ -8969,7 +8969,7 @@
 <p><img alt="Format — Instruction format for Jcc imm8s(i)" src="../../../assets/visuals/isa/jcc-01.svg" /></p>
 <p><strong>Format Instruction format for Jcc imm8s(i)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Condition field <code>c</code></strong> — Selects the condition code. Allowed values: EQ, NE, ULT, UGE, MI, PL, VS, VC, ULE, UGT, LT, GE, LE, GT.</p>
+<p><strong>Condition field <code>c</code></strong> — Selects the <a href="../../flags-and-condition-codes/#table-condition-code-encoding">condition code</a>. Allowed values: EQ, NE, ULT, UGE, MI, PL, VS, VC, ULE, UGT, LT, GE, LE, GT.</p>
 <p><strong>Immediate field <code>i</code></strong> — Encodes the immediate value.</p>
 <p><strong><code>Jcc &lt;imm16s&gt;</code></strong></p>
 <p><em>Encoding class: medium; required bytes: 5 bytes; privilege: unprivileged</em></p>
@@ -8978,7 +8978,7 @@
 <p><strong>Format Instruction format for Jcc \&lt;imm16s&gt;</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
-<p><strong>Condition field <code>c</code></strong> — Selects the condition code. Allowed values: EQ, NE, ULT, UGE, MI, PL, VS, VC, ULE, UGT, LT, GE, LE, GT.</p>
+<p><strong>Condition field <code>c</code></strong> — Selects the <a href="../../flags-and-condition-codes/#table-condition-code-encoding">condition code</a>. Allowed values: EQ, NE, ULT, UGE, MI, PL, VS, VC, ULE, UGT, LT, GE, LE, GT.</p>
 <p><strong><code>Jcc &lt;imm32s&gt;</code></strong></p>
 <p><em>Encoding class: medium; required bytes: 7 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
@@ -8986,7 +8986,7 @@
 <p><strong>Format Instruction format for Jcc \&lt;imm32s&gt;</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
-<p><strong>Condition field <code>c</code></strong> — Selects the condition code. Allowed values: EQ, NE, ULT, UGE, MI, PL, VS, VC, ULE, UGT, LT, GE, LE, GT.</p>
+<p><strong>Condition field <code>c</code></strong> — Selects the <a href="../../flags-and-condition-codes/#table-condition-code-encoding">condition code</a>. Allowed values: EQ, NE, ULT, UGE, MI, PL, VS, VC, ULE, UGT, LT, GE, LE, GT.</p>
 <p><strong><code>Jcc.LQ(z) &lt;ea&gt;(e)</code></strong></p>
 <p><em>Encoding class: long; required bytes: 4-14 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
@@ -8995,7 +8995,7 @@
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects L/Q.</p>
-<p><strong>Condition field <code>c</code></strong> — Selects the condition code. Allowed values: EQ, NE, ULT, UGE, MI, PL, VS, VC, ULE, UGT, LT, GE, LE, GT.</p>
+<p><strong>Condition field <code>c</code></strong> — Selects the <a href="../../flags-and-condition-codes/#table-condition-code-encoding">condition code</a>. Allowed values: EQ, NE, ULT, UGE, MI, PL, VS, VC, ULE, UGT, LT, GE, LE, GT.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the control target.</p>
 <p><strong>EA availability</strong></p>
 <p><strong>Allowed:</strong> Register; Memory; EXT0</p>
