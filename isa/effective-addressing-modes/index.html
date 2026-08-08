@@ -8924,8 +8924,8 @@
 
 <h1 id="effective-addressing-modes">Effective Addressing Modes</h1>
 <p>An effective-address field is an operand descriptor with an instruction-defined role and interpretation width. A value role reads or writes the selected register, immediate, or memory value. An address role uses a register or immediate as an address value and uses a memory-form EA as the calculated address without an initial data read. A control-target role uses a register or immediate value directly and reads an interpretation-width target from a memory form. Memory forms continue into segment pre-translation and paging.</p>
-<p>The seven-bit compact EA field is embedded in the opcode payload. Any displacement, absolute address, immediate, or EXT0 descriptor bytes are appended as EA payload bytes. When an instruction contains multiple payload-bearing operands, payloads are consumed in instruction operand order.</p>
-<p>Multi-byte scalar EA payloads, such as displacements, absolute addresses, and immediates, are little-endian. Payload names ending in s are signed and are sign-extended before use; payload names without s are unsigned unless the consuming instruction explicitly says otherwise. The decoder consumes EXT0 descriptor bytes in the displayed stream order, byte 0 followed by byte 1, and bit numbering restarts at 7 for each byte.</p>
+<p>Each seven-bit compact EA field is embedded in the concrete opcode form, and all compact EA fields precede any appended EA payload bytes. Any displacement, absolute address, immediate, or EXT0 descriptor bytes are appended as EA payload bytes. Appended EA payload sequences appear in declared instruction operand order. For two payload-bearing EA operands, the opcode stream is: concrete opcode form containing EA0 and EA1 <span class="arithmatex">\(\rightarrow\)</span> complete EA0 payload sequence <span class="arithmatex">\(\rightarrow\)</span> complete EA1 payload sequence <span class="arithmatex">\(\rightarrow\)</span> any trailing padding.</p>
+<p>Multi-byte scalar EA payloads, such as displacements, absolute addresses, and immediates, are little-endian. Payload names ending in s are signed and are sign-extended before use; payload names without s are unsigned unless the consuming instruction explicitly says otherwise. EXT0 descriptor bytes appear in stream order, byte 0 first. Each descriptor byte is independently numbered from bit 7 through bit 0.</p>
 <p>Indexed scale is the EA interpretation width declared by the consuming form. B, W, L, and Q widths select scales 1, 2, 4, and 8. A form whose width is <code>operation_size</code> uses its selected instruction size. LEA and SEGLEA use their suffix; size-less address and control-target forms use Q.</p>
 <p>For every compact or EXT0 PC-based EA, the PC term is the architectural PC naming byte 0 of the current instruction. The PC term remains that instruction-start value throughout operand evaluation.</p>
 <h2 id="compact-ea-addressing-modes">Compact EA Addressing Modes</h2>
@@ -9017,7 +9017,7 @@
 <p><strong>EA type:</strong>memory operand described by the appended EXT0 descriptor.</p>
 <p><strong>Generation:</strong>The EXT0 descriptor selects segment, base, index, and auto-update behavior. The compact EA escape selects only the displacement size.</p>
 <p><strong>Segment:</strong>Segment-qualified forms encode SREG SEG(s); SP and PC indexed forms use SS and CS; default base-update forms use the operation default data segment.</p>
-<p><strong>Payload:</strong>Payload order is EXT0 descriptor byte or bytes first, then the optional displacement payload selected by the compact EA escape.</p>
+<p><strong>Payload:</strong>The EXT0 descriptor byte or bytes come first, followed by the optional displacement payload selected by the compact EA escape.</p>
 <p><strong>Update:</strong>Only EXT0 forms with ++ or -- update the temporary operand-evaluation image.</p>
 <p><strong>Compact EA Encoding</strong></p>
 <table>
@@ -9197,7 +9197,7 @@
 <p><a href="#table-compact-ea-encoding" id="table-compact-ea-encoding"></a></p>
 <h2 id="extended-ea-descriptor">Extended EA Descriptor</h2>
 <p>A compact EXT0 EA value selects an extended descriptor and the displacement width. The descriptor bytes then select segment, base, index, zero-base, SP/PC indexed, and auto-update behavior.</p>
-<p>Each EXT0 descriptor selects an SREG SEG(s), fixed SS or CS through SP or PC, or the operation default data segment.</p>
+<p>Each EXT0 descriptor selects its segment from the encoded SREG field SEG(s), the fixed SS segment for SP, the fixed CS segment for PC, or the operation’s default data segment.</p>
 <p><img alt="Compact Effective-Address Field" src="../../assets/visuals/isa/effective-addressing-modes-07.svg" /></p>
 <p><strong>Compact Effective-Address Field</strong></p>
 <p><code>M</code> abbreviates mode, and <code>r/f</code> abbreviates register/form.</p>
@@ -9285,10 +9285,10 @@
 </tr>
 </tbody>
 </table>
-<p>For a compact displacement, absolute address, or immediate, the selected payload follows the EA field at that operand’s payload position. EXT0 begins with the compact escape value and one or two descriptor bytes; a displaced EXT0 form places its selected displacement after those descriptor bytes. When an instruction has more than one payload-bearing EA operand, the decoder consumes each complete EA payload sequence in instruction operand order.</p>
+<p>For a compact displacement, absolute address, or immediate, the selected payload follows the EA field at that operand’s payload position. EXT0 construction begins with the compact escape value in the concrete opcode form and one or two appended descriptor bytes; a displaced EXT0 form places its selected displacement after those descriptor bytes. When an instruction has more than one payload-bearing EA operand, the decoder consumes each complete appended EA payload sequence in declared instruction operand order. Each complete sequence, including any EXT0 descriptor bytes and selected displacement, ends before the next payload-bearing EA operand’s sequence begins.</p>
 <h2 id="extended-ea-addressing-modes">Extended EA Addressing Modes <a href="#section-extended-ea-addressing" id="section-extended-ea-addressing"></a></h2>
 <p>EXT0 is used when compact EA cannot express the operand: explicit segment selection, indexed addressing, zero-base addressing, SP/PC indexed addressing, or auto-update addressing.</p>
-<p>Each EXT0 form selects an encoded SREG SEG(s), fixed SS or CS through SP or PC, or the operation default data segment.</p>
+<p>Each EXT0 form selects its segment from the encoded SREG field SEG(s), the fixed SS segment for SP, the fixed CS segment for PC, or the operation’s default data segment.</p>
 <p><strong><code>EXT0 Explicit Segment Base</code></strong></p>
 <p><code>[SEG(s):Rn(b) + displacement]</code></p>
 <p><strong>Descriptor:</strong>0sssbbbb, one byte.</p>

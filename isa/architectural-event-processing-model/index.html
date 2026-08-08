@@ -10403,7 +10403,7 @@ else:
 </tr>
 </tbody>
 </table>
-<p>Warm RESET applies the complete generated state table to the executing logical processor only. Cold reset initializes BOOTPC and BOOTCFG before applying the same processor-state image to each logical processor selected by the platform reset event. Software initializes entry segments, exact entry PCs, and configured stack tops before setting ECR.V or entering user mode.</p>
+<p>Warm RESET applies the processor-state image shown in the preceding table to the executing logical processor only. Cold reset initializes BOOTPC and BOOTCFG before applying the same processor-state image to each logical processor selected by the platform reset event. Software initializes entry segments, exact entry PCs, and configured stack tops before setting ECR.V or entering user mode.</p>
 <p>ECR, entry and stack registers, hidden event depth and stack level, and the user-return bank are per-logical-processor state. System software includes the applicable state when switching supervisor contexts. Event frames are ordinary memory owned by the interrupted supervisor context.</p>
 
 

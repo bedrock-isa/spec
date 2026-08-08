@@ -8972,7 +8972,7 @@
 
 <h1 id="cmpxchg">CMPXCHG</h1>
 <h2 id="operation">Operation</h2>
-<p>Compares memory with the expected Rn register and conditionally stores the desired Rn register. After the operation, expected contains the observed old memory value. Z=1 means the store happened; Z=0 means memory was left unchanged.</p>
+<p>Compares memory with the expected Rn register and conditionally stores the desired Rn register. After the operation, the expected register contains the observed old memory value. Z=1 means the store happened; Z=0 means memory was left unchanged.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
 <p><code>CMPXCHG.BWLQ(z)/order(o) Rn(x), Rn(d), &lt;ea&gt;(e)</code></p>
 <h2 id="attributes">Attributes</h2>
@@ -9031,9 +9031,9 @@
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
-<p><strong>Register field <code>x</code></strong> — Selects the operand 1.</p>
+<p><strong>Register field <code>x</code></strong> — Selects operand 1.</p>
 <p><strong>Memory-order field <code>o</code></strong> — Selects the memory ordering. Allowed values: RELAXED, ACQUIRE, RELEASE, ACQREL, SEQCST.</p>
-<p><strong>Register field <code>d</code></strong> — Selects the operand 2.</p>
+<p><strong>Register field <code>d</code></strong> — Selects operand 2.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the read/write operand.</p>
 <p><strong>EA availability</strong></p>
 <p><strong>Allowed:</strong> Memory; EXT0</p>

@@ -8972,7 +8972,7 @@
 
 <h1 id="fcosa">FCOSA</h1>
 <h2 id="operation">Operation</h2>
-<p>Computes the cos(x) in radians reference over finite x with abs(x) \&lt;= pi / 4 after DAZ and writes an implementation-bounded S- or D-format approximation under the selected FPTRANSA accuracy contract.</p>
+<p>Computes the cos(x) reference in radians over finite x with abs(x) \&lt;= pi / 4 after DAZ and writes an implementation-bounded S- or D-format approximation under the selected FPTRANSA accuracy contract.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
 <p><code>FCOSA.SD(z) Fn(s), Fn(d)</code></p>
 <h2 id="attributes">Attributes</h2>
@@ -9015,7 +9015,7 @@
 </tbody>
 </table>
 <p>The required FPTRANSA_ACCURACY contract is <code>0x0002</code>. If that accuracy contract’s <code>PRESENT</code> field is clear, the instruction raises <code>ILLEGAL_INSTRUCTION</code> before reading operands or floating-point state.</p>
-<p>After FSTATUS.DAZ processing, the reference function is cos(x) in radians on finite x with abs(x) \&lt;= pi / 4 after DAZ. The result error is at most 4 ULP for S and 4 ULP for D.</p>
+<p>After FSTATUS.DAZ processing, the reference function is cos(x) in radians on finite x with abs(x) \&lt;= pi / 4. The result error is at most 4 ULP for S and 4 ULP for D.</p>
 <p><strong>Special values</strong></p>
 <ul>
 <li>

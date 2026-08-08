@@ -9015,7 +9015,7 @@
 </tbody>
 </table>
 <p>The required FPTRANSA_ACCURACY contract is <code>0x0044</code>. If that accuracy contract’s <code>PRESENT</code> field is clear, the instruction raises <code>ILLEGAL_INSTRUCTION</code> before reading operands or floating-point state.</p>
-<p>After FSTATUS.DAZ processing, the reference function is log10(x) on positive finite values and positive infinity after DAZ; signed zero is the DZ boundary. The result error is at most 4 ULP for S and 4 ULP for D.</p>
+<p>After FSTATUS.DAZ processing, the reference function is log10(x) on positive finite values and positive infinity; signed zero is the DZ boundary. The result error is at most 4 ULP for S and 4 ULP for D.</p>
 <p><strong>Special values</strong></p>
 <ul>
 <li>
