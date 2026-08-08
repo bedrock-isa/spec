@@ -1,7 +1,7 @@
 mnemonic: FATANA
 title: Approximate Floating-Point Arc Tangent
 summary: Performs the bounded approximate floating-point arc tangent operation.
-description: Computes the atan(x) in radians reference over all finite values and signed infinity after DAZ and writes an implementation-bounded S- or D-format approximation under the selected FPTRANSA accuracy contract.
+description: Computes the atan(x) reference in radians over all finite values and signed infinity after DAZ and writes an implementation-bounded S- or D-format approximation under the selected FPTRANSA accuracy contract.
 attributes:
   class: fpu
   family: fpu_transcendental_approx

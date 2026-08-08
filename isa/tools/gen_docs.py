@@ -1321,20 +1321,21 @@ def field_description_text(
         "",
     )
     values = field_constraint_values(model, inst, entry, symbol, spec)
+    numbered_operand_role = role.startswith("operand ") and role[len("operand ") :].isdigit()
     if kind == "size":
         choices = "/".join(str(item) for item in spec.get("size_choices", []))
         return latex_escape(f"Selects {choices}." if choices else "Selects the operand size.")
     if kind == "ea7":
-        target = f"the {role}" if role else "the operand"
+        target = role if numbered_operand_role else f"the {role}" if role else "the operand"
         return latex_escape(f"Specifies {target}.")
     if kind == "sreg" or declared_operand_type == "SREG":
-        target = f"the {role}" if role else "a segment-register operand"
+        target = role if numbered_operand_role else f"the {role}" if role else "a segment-register operand"
         return (
             latex_escape(f"Selects {target} using the ")
             + r"\hyperref[table:sreg-encoding]{SREG encoding}."
         )
     if kind in {"rn", "freg", "vreg", "creg"}:
-        target = f"the {role}" if role else "a register operand"
+        target = role if numbered_operand_role else f"the {role}" if role else "a register operand"
         return latex_escape(f"Selects {target}.")
     if kind == "condition":
         text = r"Selects the \hyperref[table:condition-code-encoding]{condition code}."
@@ -1375,15 +1376,15 @@ def latex_field_explanation_block(
         operands = relation.get("operands") or []
         if len(operands) != 2:
             continue
-        pair = f"{operands[0]} = {operands[1]}"
+        subjects = f"the {operands[0]} and {operands[1]} operands"
         if relation.get("rule") == "same_value":
             meaning = (
-                f"When {pair} designate the same architectural register, "
+                f"When {subjects} designate the same architectural register, "
                 "the final value equals that register's initial value."
             )
         else:
             meaning = (
-                f"When {pair} designate the same architectural register, "
+                f"When {subjects} designate the same architectural register, "
                 "the instruction raises ILLEGAL_INSTRUCTION.INVALID_OPERAND_RELATION "
                 "before architectural effects."
             )

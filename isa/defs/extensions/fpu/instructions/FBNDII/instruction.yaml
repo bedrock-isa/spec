@@ -1,7 +1,7 @@
 mnemonic: FBNDII
 title: Floating-Point Bounds Check Inclusive-Inclusive
 summary: Checks floating-point value membership in the inclusive-inclusive interval [lo, hi].
-description: FBNDII treats both bounds as inclusive. It sets V when value is unordered or outside [lo, hi]; Z, N, and C are unchanged.
+description: FBNDII treats both bounds as inclusive. It sets V when the value is unordered or outside [lo, hi]; Z, N, and C are unchanged.
 attributes:
   class: fpu
   family: fpu

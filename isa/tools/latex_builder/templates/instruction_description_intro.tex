@@ -37,7 +37,7 @@ the accrued floating-point exception and status bits.
 In an encoding diagram, fixed 0 and 1 fields identify opcode bits, and the notes below decode lettered fields. An
 <ea> field is the compact effective-address field and may append EA payload bytes in operand order.
 
-For an extended encoding, the four-bit L field selects a 3+L-byte instruction record. Required bytes is the space
-consumed by the opcode and selected operand payloads. Every larger encoded length through 18 bytes is valid and the
-trailing bytes are uninterpreted padding. The \texttt{LEN n,} spelling records an explicit total length.
+For an extended encoding, the four-bit L field selects a 3+L-byte instruction record. The required-byte count is the
+space consumed by the opcode and selected operand payloads. Every larger encoded length through 18 bytes is
+valid and the trailing bytes are uninterpreted padding. The \texttt{LEN n,} spelling records an explicit total length.
 \clearpage

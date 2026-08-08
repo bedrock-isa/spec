@@ -47,8 +47,8 @@ while a body write to that register is ignored. REPG executes counter-register r
 program order, but a write does not replace the separately captured remaining count. The checked REPGF spelling
 rejects such a write at assembly time.
 
-The \texttt{REPcc observation} attribute in every REPcc-capable instruction description selects one observation. A
-\texttt{flags} observation uses the complete post-body FLAGS image. A \texttt{result:operand} or
+The \texttt{REPcc observation} attribute in every REPcc-capable instruction description specifies the input used for
+the condition test. A \texttt{flags} observation uses the complete post-body FLAGS image. A \texttt{result:operand} or
 \texttt{source:operand} observation derives logical Z from whether the selected-width value is zero, N from its most
 significant bit, and C and V as zero. These logical flags do not change architectural FLAGS. The observed value is
 captured before repeat counter-destination suppression. The first condition test occurs after the first body
@@ -58,7 +58,7 @@ architectural commit step. REP is the unconditional T-condition spelling, and F 
 A repeat body may not contain another repeat operation, a repeat-control instruction, or a control transfer.
 While repetition is active, PC names the current body instruction, and the initially decoded instruction or group
 remains fixed. Handler entry saves repeat state in FRAME\_EXT1 and clears the active architectural repeat state; ERET
-restores that state atomically with the saved PC and status state. TF and RF apply to the trace units defined by the
+restores that state atomically with the saved PC and control state. TF and RF apply to the trace units defined by the
 Event Priority and Debug Trace subsection.
 
 \subsection{Fault and Restart Semantics}

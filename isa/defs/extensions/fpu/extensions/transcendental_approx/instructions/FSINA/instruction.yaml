@@ -1,7 +1,7 @@
 mnemonic: FSINA
 title: Approximate Floating-Point Sine
 summary: Performs the bounded approximate floating-point sine operation.
-description: Computes the sin(x) in radians reference over finite x with abs(x) <= pi / 4 after DAZ and writes an implementation-bounded S- or D-format approximation under the selected FPTRANSA accuracy contract.
+description: Computes the sin(x) reference in radians over finite x with abs(x) <= pi / 4 after DAZ and writes an implementation-bounded S- or D-format approximation under the selected FPTRANSA accuracy contract.
 attributes:
   class: fpu
   family: fpu_transcendental_approx

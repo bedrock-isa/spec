@@ -182,9 +182,9 @@ frame or partially changed execution context.
 \input{isa/tools/latex_builder/templates/fragments/reset_state_table.tex}
 
 \Needspace{1.8in}
-Warm RESET applies the complete generated state table to the executing logical processor only. Cold reset initializes
-BOOTPC and BOOTCFG before applying the same processor-state image to each logical processor selected by the platform
-reset event. Software initializes entry segments, exact entry PCs, and configured stack tops before setting ECR.V
+Warm RESET applies the processor-state image shown in the preceding table to the executing logical processor only. Cold
+reset initializes BOOTPC and BOOTCFG before applying the same processor-state image to each logical processor selected
+by the platform reset event. Software initializes entry segments, exact entry PCs, and configured stack tops before setting ECR.V
 or entering user mode.
 
 ECR, entry and stack registers, hidden event depth and stack level, and the user-return bank are per-logical-processor

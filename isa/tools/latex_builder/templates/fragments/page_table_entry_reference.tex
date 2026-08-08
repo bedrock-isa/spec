@@ -47,8 +47,8 @@ In both rows, \texttt{S}, \texttt{C}, and \texttt{M} abbreviate
 \texttt{X} & \texttt{2} & executable\\
 \texttt{U} & \texttt{3} & user-domain mapping\\
 \texttt{G} & \texttt{4} & global translation\\
-\texttt{A} & \texttt{5} & accessed; may be set on a consumed byte-addressed entry, including a speculative traversal; required one for a slot leaf\\
-\texttt{D} & \texttt{6} & byte-addressed leaf dirty bit, set exactly when a store or atomic update commits; required one for a slot leaf\\
+\texttt{A} & \texttt{5} & accessed; may be set on a consumed byte-addressed entry, including a speculative traversal; must be one for a slot leaf\\
+\texttt{D} & \texttt{6} & byte-addressed leaf dirty bit, set exactly when a store or atomic update commits; must be one for a slot leaf\\
 \texttt{AT} & \texttt{7} & 0 byte-addressed leaf; 1 externally acknowledged slot-addressed leaf\\
 \texttt{CP} & \texttt{9..8} & 0 cacheable; 1 uncacheable; 2 write-through; 3 write-combining\\
 \texttt{SW0} & \texttt{10} & software-defined and ignored by hardware\\

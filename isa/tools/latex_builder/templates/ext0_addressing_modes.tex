@@ -3,7 +3,7 @@
 EXT0 is used when compact EA cannot express the operand: explicit segment selection, indexed addressing, zero-base
 addressing, SP/PC indexed addressing, or auto-update addressing.
 
-Each EXT0 form selects an encoded SREG SEG(s), fixed SS or CS through SP or PC, or the operation default data
-segment.
+Each EXT0 form selects its segment from the encoded SREG field SEG(s), the fixed SS segment for SP, the fixed CS
+segment for PC, or the operation's default data segment.
 
 \input{isa/tools/latex_builder/templates/fragments/ext0_reference_blocks.tex}

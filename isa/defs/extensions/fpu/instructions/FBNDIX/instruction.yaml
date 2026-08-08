@@ -1,7 +1,7 @@
 mnemonic: FBNDIX
 title: Floating-Point Bounds Check Inclusive-Exclusive
 summary: Checks floating-point value membership in the inclusive-exclusive interval [lo, hi).
-description: FBNDIX treats the low bound as inclusive and the high bound as exclusive. It sets V when value is unordered or outside [lo, hi); Z, N, and C are unchanged.
+description: FBNDIX treats the low bound as inclusive and the high bound as exclusive. It sets V when the value is unordered or outside [lo, hi); Z, N, and C are unchanged.
 attributes:
   class: fpu
   family: fpu

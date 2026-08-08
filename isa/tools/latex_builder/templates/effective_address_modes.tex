@@ -7,14 +7,16 @@ immediate as an address value and uses a memory-form EA as the calculated addres
 control-target role uses a register or immediate value directly and reads an interpretation-width target from a
 memory form. Memory forms continue into segment pre-translation and paging.
 
-The seven-bit compact EA field is embedded in the opcode payload. Any displacement, absolute address, immediate, or
-EXT0 descriptor bytes are appended as EA payload bytes. When an instruction contains multiple payload-bearing
-operands, payloads are consumed in instruction operand order.
+Each seven-bit compact EA field is embedded in the concrete opcode form, and all compact EA fields precede any
+appended EA payload bytes. Any displacement, absolute address, immediate, or EXT0 descriptor bytes are appended as EA
+payload bytes. Appended EA payload sequences appear in declared instruction operand order. For two payload-bearing EA
+operands, the opcode stream is: concrete opcode form containing EA0 and EA1 $\rightarrow$ complete EA0 payload
+sequence $\rightarrow$ complete EA1 payload sequence $\rightarrow$ any trailing padding.
 
 Multi-byte scalar EA payloads, such as displacements, absolute addresses, and immediates, are little-endian. Payload
 names ending in s are signed and are sign-extended before use; payload names without s are unsigned unless the
-consuming instruction explicitly says otherwise. The decoder consumes EXT0 descriptor bytes in the displayed stream
-order, byte 0 followed by byte 1, and bit numbering restarts at 7 for each byte.
+consuming instruction explicitly says otherwise. EXT0 descriptor bytes appear in stream order, byte 0 first. Each
+descriptor byte is independently numbered from bit 7 through bit 0.
 
 Indexed scale is the EA interpretation width declared by the consuming form. B, W, L, and Q widths select scales 1,
 2, 4, and 8. A form whose width is \texttt{operation\_size} uses its selected instruction size. LEA and SEGLEA use
@@ -41,7 +43,8 @@ SS, and PC memory forms are fixed to CS.
 A compact EXT0 EA value selects an extended descriptor and the displacement width. The descriptor bytes then select
 segment, base, index, zero-base, SP/PC indexed, and auto-update behavior.
 
-Each EXT0 descriptor selects an SREG SEG(s), fixed SS or CS through SP or PC, or the operation default data segment.
+Each EXT0 descriptor selects its segment from the encoded SREG field SEG(s), the fixed SS segment for SP, the fixed CS
+segment for PC, or the operation's default data segment.
 
 \input{isa/tools/latex_builder/templates/fragments/ea_field_diagrams.tex}
 
@@ -63,9 +66,11 @@ Each EXT0 descriptor selects an SREG SEG(s), fixed SS or CS through SP or PC, or
 \end{manuallongtable}
 
 For a compact displacement, absolute address, or immediate, the selected payload follows the EA field at that
-operand's payload position. EXT0 begins with the compact escape value and one or two descriptor bytes; a displaced
-EXT0 form places its selected displacement after those descriptor bytes. When an instruction has more than one
-payload-bearing EA operand, the decoder consumes each complete EA payload sequence in instruction operand order.
+operand's payload position. EXT0 construction begins with the compact escape value in the concrete opcode form and one
+or two appended descriptor bytes; a displaced EXT0 form places its selected displacement after those descriptor bytes.
+When an instruction has more than one payload-bearing EA operand, the decoder consumes each complete appended EA
+payload sequence in declared instruction operand order. Each complete sequence, including any EXT0 descriptor bytes
+and selected displacement, ends before the next payload-bearing EA operand's sequence begins.
 
 @EXT0_SECTION@
 

@@ -95,8 +95,8 @@ how indexed leaves should be enumerated.
 \subsection{Base Identity}
 Class \texttt{0x00000000}, leaf \texttt{0x0000} reports \texttt{MAX\_LEAF=0} and \texttt{MAX\_INDEX=18} in its
 index-zero header. An implementation recognizing only the classes defined by this specification reports
-\texttt{MAX\_CLASS=2}; an implementation that recognizes a higher implementation-defined class reports that greater
-selector. The base-identity payload is:
+\texttt{MAX\_CLASS=2}; an implementation that recognizes a higher implementation-defined class reports the highest
+such selector. The base-identity payload is:
 
 \begin{manuallistedformatdiagram}{CPUID Base Identity Result Formats}
 \manualformatrowrange{index 1}{63}{0}{%
@@ -130,7 +130,7 @@ selector. The base-identity payload is:
 \texttt{(VENDOR\_ID, IMPLEMENTATION\_ID)} pair identifies an implementation and
 \texttt{ARCHITECTURE\_ID} identifies the ISA contract it implements.
 
-\texttt{ARCHITECTURE\_REVISION} is an unsigned 16-bit, monotonically increasing compatibility level within one
+\texttt{ARCHITECTURE\_REVISION} is a monotonically increasing unsigned 16-bit compatibility level within one
 \texttt{ARCHITECTURE\_ID}. A processor reporting revision \(N\) implements the base architectural behavior of every
 defined revision less than or equal to \(N\). Optional instruction groups, state, and parameterized contracts are
 selected from their CPUID leaves and feature bits. \texttt{IMPLEMENTATION\_REVISION} is an unsigned revision assigned

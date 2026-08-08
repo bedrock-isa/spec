@@ -20,8 +20,8 @@ translation stage. Depending on the final access attributes, the subsystem may i
 address or an externally acknowledged slot address.
 
 \emph{Byte-addressed normal memory} is the coherent memory-location model selected by a final translation with
-\texttt{AT=0}. The PTE \texttt{CP} field selects one of its four normal-memory cache policies. \emph{Cacheable}
-names only policy \texttt{CP=0}; the other three \texttt{CP} values remain byte-addressed normal memory with the
+\texttt{AT=0}. The PTE \texttt{CP} field selects one of its four normal-memory cache policies. Only policy
+\texttt{CP=0} is \emph{cacheable}; the other three \texttt{CP} values remain byte-addressed normal memory with the
 allocation and propagation behavior defined by the Memory Model.
 
 A \emph{slot-addressed transaction} is the externally acknowledged access selected by a final translation with

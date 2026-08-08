@@ -1,6 +1,6 @@
 The required FPTRANSA\_ACCURACY contract is \texttt{0x0011}. If that accuracy contract's \texttt{PRESENT} field is clear, the instruction raises \texttt{ILLEGAL\_INSTRUCTION} before reading operands or floating-point state.
 
-After FSTATUS.DAZ processing, the reference function is asin(x) in radians on finite x with abs(x) \textless{}= 1 after DAZ. The result error is at most 4 ULP for S and 4 ULP for D.
+After FSTATUS.DAZ processing, the reference function is asin(x) in radians on finite x with abs(x) \textless{}= 1. The result error is at most 4 ULP for S and 4 ULP for D.
 
 \textbf{Special values}\par
 \begin{itemize}

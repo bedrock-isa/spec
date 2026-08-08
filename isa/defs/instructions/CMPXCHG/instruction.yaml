@@ -1,7 +1,7 @@
 mnemonic: CMPXCHG
 title: Compare And Exchange
 summary: Performs the compare and exchange operation.
-description: Compares memory with the expected Rn register and conditionally stores the desired Rn register. After the operation, expected contains the observed old memory value. Z=1 means the store happened; Z=0 means memory was left unchanged.
+description: Compares memory with the expected Rn register and conditionally stores the desired Rn register. After the operation, the expected register contains the observed old memory value. Z=1 means the store happened; Z=0 means memory was left unchanged.
 attributes:
   class: system
   family: atomics
