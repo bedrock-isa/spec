@@ -1,0 +1,14 @@
+[package]
+name = "bedrock-debug-remote"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+bedrock-bus.workspace = true
+bedrock-core.workspace = true
+bedrock-debug.workspace = true
+bedrock-machine.workspace = true
+bedrock-toolchain.workspace = true
+thiserror.workspace = true
+tracing.workspace = true

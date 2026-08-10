@@ -9,6 +9,7 @@ import json
 import os
 from pathlib import Path
 import sys
+import tempfile
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -64,6 +65,40 @@ ACCESS_CONSTRUCTORS = {
     "read_write": "AccessReadWrite",
     "address": "AccessAddress",
 }
+
+
+def _is_within(path: Path, root: Path) -> bool:
+    try:
+        path.relative_to(root)
+        return True
+    except ValueError:
+        return False
+
+
+def validate_build_dir(raw_build_dir: Path) -> Path:
+    """Resolve and validate a dedicated repository-build or external-temp path."""
+    build_dir = raw_build_dir.expanduser().resolve()
+    repository_build = (ROOT / "build").resolve()
+    if _is_within(build_dir, repository_build):
+        return build_dir
+
+    temp_roots = {
+        Path(tempfile.gettempdir()).resolve(),
+        Path("/private/tmp").resolve(),
+        Path("/tmp").resolve(),
+        Path("/var/tmp").resolve(),
+    }
+    external_temp = not _is_within(build_dir, ROOT) and any(
+        build_dir != temp_root and _is_within(build_dir, temp_root)
+        for temp_root in temp_roots
+    )
+    if external_temp:
+        return build_dir
+
+    raise ValueError(
+        f"refusing generated-catalog build directory outside {repository_build} "
+        f"or an external temporary directory: {build_dir}"
+    )
 PRIVILEGE_CONSTRUCTORS = {
     "unprivileged": "UserPrivilege",
     "supervisor": "SupervisorPrivilege",
@@ -488,18 +523,29 @@ def check_outputs(build_dir: Path) -> bool:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--build-dir", required=True, type=Path,
-        help="explicit directory for generated Sail build artifacts",
+        "build_dir",
+        metavar="BUILD_DIR",
+        type=Path,
+        help="dedicated directory beneath repository build/ or an external temporary directory",
     )
     parser.add_argument("--check", action="store_true", help="fail if build output is stale")
     args = parser.parse_args()
-    outputs = render_outputs(args.build_dir)
+    try:
+        build_dir = validate_build_dir(args.build_dir)
+    except ValueError as error:
+        print(f"catalog generation failed: {error}", file=sys.stderr)
+        return 1
+    outputs = render_outputs(build_dir)
     if args.check:
-        stale = [path for path, expected in outputs.items() if not path.exists() or path.read_text(encoding="utf-8") != expected]
+        stale = [
+            path
+            for path, expected in outputs.items()
+            if not path.exists() or path.read_text(encoding="utf-8") != expected
+        ]
         for path in stale:
             print(f"stale generated output: {path}", file=sys.stderr)
         return int(bool(stale))
-    write_outputs(args.build_dir)
+    write_outputs(build_dir)
     return 0
 
 

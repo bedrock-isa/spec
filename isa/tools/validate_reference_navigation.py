@@ -247,7 +247,12 @@ def validate_path(path: Path = DEFAULT_SOURCE) -> dict[str, Any]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--source", type=Path, default=DEFAULT_SOURCE)
+    parser.add_argument(
+        "--source",
+        type=Path,
+        default=DEFAULT_SOURCE,
+        help="reference-navigation YAML path (default: repository source)",
+    )
     args = parser.parse_args()
     try:
         validate_path(args.source)

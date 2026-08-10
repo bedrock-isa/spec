@@ -27,6 +27,15 @@ from validate_alloc import (
 from encoding_architecture import ARCHITECTURE_SOURCE_PATH
 
 
+REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
+
+
+def report_basename(value: str) -> str:
+    if not value or value in {".", ".."} or "\0" in value or Path(value).name != value:
+        raise argparse.ArgumentTypeError("must be a nonempty local basename")
+    return value
+
+
 def analyze_store(defs_root: Path) -> tuple[list[ClassReport], list[EntryReport]]:
     from encoding_store import class_entries, load_encoding_store
 
@@ -467,9 +476,24 @@ def write_outputs(
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--defs", type=Path, default=Path("isa/defs"))
-    parser.add_argument("--out-dir", type=Path, default=Path("build/reports"))
-    parser.add_argument("--base-name", default="encoding_allocation_report")
+    parser.add_argument(
+        "--defs",
+        type=Path,
+        default=REPOSITORY_ROOT / "isa" / "defs",
+        help="ISA definition root (default: repository isa/defs)",
+    )
+    parser.add_argument(
+        "--out-dir",
+        type=Path,
+        default=REPOSITORY_ROOT / "build" / "reports",
+        help="report output directory (default: repository build/reports)",
+    )
+    parser.add_argument(
+        "--base-name",
+        type=report_basename,
+        default="encoding_allocation_report",
+        help="basename shared by generated report files",
+    )
     args = parser.parse_args()
 
     classes, entries = analyze_store(args.defs)

@@ -1,0 +1,20 @@
+[package]
+name = "bedrock-gui"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+bedrock-core.workspace = true
+bedrock-debug.workspace = true
+bedrock-debug-remote.workspace = true
+bedrock-devices.workspace = true
+bedrock-lldb.workspace = true
+bedrock-machine.workspace = true
+bedrock-toolchain.workspace = true
+eframe.workspace = true
+egui.workspace = true
+tracing.workspace = true
+
+[build-dependencies]
+bedrock-toolchain.workspace = true

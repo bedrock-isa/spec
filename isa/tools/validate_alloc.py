@@ -13,6 +13,10 @@ from typing import Any, Iterable
 from encoding_architecture import ARCHITECTURE_SOURCE_PATH
 
 
+REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
+DEFAULT_DEFS_ROOT = REPOSITORY_ROOT / "isa" / "defs"
+
+
 @dataclass(frozen=True)
 class Claim:
     path: Path
@@ -265,7 +269,12 @@ def namespace_size(patterns: list[str]) -> int:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--defs", type=Path, default=Path("isa/defs"))
+    parser.add_argument(
+        "--defs",
+        type=Path,
+        default=DEFAULT_DEFS_ROOT,
+        help="ISA definition root (default: repository isa/defs)",
+    )
     args = parser.parse_args()
 
     had_error = False

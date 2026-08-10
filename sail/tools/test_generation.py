@@ -154,12 +154,12 @@ class DocumentationBuildTests(unittest.TestCase):
 
     def test_build_directory_safety(self) -> None:
         self.assertEqual(
-            build_docs.validate_build_dir(build_docs.ROOT / "build" / "sail-doc"),
+            generate_catalog.validate_build_dir(build_docs.ROOT / "build" / "sail-doc"),
             (build_docs.ROOT / "build" / "sail-doc").resolve(),
         )
         with tempfile.TemporaryDirectory(prefix="bedrock-sail-doc-safe-") as temporary:
             external = Path(temporary) / "artifact"
-            self.assertEqual(build_docs.validate_build_dir(external), external.resolve())
+            self.assertEqual(generate_catalog.validate_build_dir(external), external.resolve())
         for source_root in (
             build_docs.ROOT,
             build_docs.ROOT / "sail",
@@ -168,7 +168,7 @@ class DocumentationBuildTests(unittest.TestCase):
         ):
             with self.subTest(source_root=source_root):
                 with self.assertRaises(ValueError):
-                    build_docs.validate_build_dir(source_root)
+                    generate_catalog.validate_build_dir(source_root)
 
     def test_semantic_index_counts_routes_and_stability(self) -> None:
         first = build_docs.render_semantic_index(self.doc_bundle)

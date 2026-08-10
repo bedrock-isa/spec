@@ -66,9 +66,9 @@ From the repository root:
 ```sh
 isa_sail_build=$(mktemp -d /private/tmp/isa-sail.XXXXXX)
 PYTHONDONTWRITEBYTECODE=1 python3 sail/tools/generate_catalog.py \
-  --build-dir "$isa_sail_build"
+  "$isa_sail_build"
 PYTHONDONTWRITEBYTECODE=1 python3 sail/tools/generate_catalog.py \
-  --build-dir "$isa_sail_build" --check
+  "$isa_sail_build" --check
 PYTHONDONTWRITEBYTECODE=1 python3 sail/tools/test_generation.py
 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=isa/tools python3 isa/tools/validate_isa.py
 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=isa/tools python3 isa/tools/validate_alloc.py
@@ -82,7 +82,7 @@ Generate and run C only in a temporary directory:
 ```sh
 isa_sail_build=$(mktemp -d /private/tmp/isa-sail.XXXXXX)
 PYTHONDONTWRITEBYTECODE=1 python3 sail/tools/generate_catalog.py \
-  --build-dir "$isa_sail_build"
+  "$isa_sail_build"
 gmp_prefix=$(brew --prefix gmp)
 (cd sail/model && C_INCLUDE_PATH="$gmp_prefix/include" LIBRARY_PATH="$gmp_prefix/lib" \
   opam exec -- sail --require-version 0.20.2 --no-memo-z3 --all-modules \

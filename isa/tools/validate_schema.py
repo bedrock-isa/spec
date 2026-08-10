@@ -45,7 +45,12 @@ def validate_schema(root: Path = ROOT) -> tuple[int, list[str]]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--root", type=Path, default=ROOT)
+    parser.add_argument(
+        "--root",
+        type=Path,
+        default=ROOT,
+        help="repository root containing versioned schema documents",
+    )
     args = parser.parse_args()
     count, errors = validate_schema(args.root.resolve())
     print(f"schema version: {SCHEMA_VERSION}")

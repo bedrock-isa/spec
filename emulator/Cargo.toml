@@ -1,0 +1,39 @@
+[workspace]
+members = [
+    "crates/bedrock-isa",
+    "crates/bedrock-bus",
+    "crates/bedrock-core",
+    "crates/bedrock-devices",
+    "crates/bedrock-machine",
+    "crates/bedrock-debug",
+    "crates/bedrock-debug-remote",
+    "crates/bedrock-lldb",
+    "crates/bedrock-toolchain",
+    "crates/bedrock-cli",
+    "crates/bedrock-gui",
+]
+resolver = "3"
+
+[workspace.package]
+edition = "2024"
+license = "MIT OR Apache-2.0"
+
+[workspace.dependencies]
+bedrock-isa = { path = "crates/bedrock-isa" }
+bedrock-bus = { path = "crates/bedrock-bus" }
+bedrock-core = { path = "crates/bedrock-core" }
+bedrock-devices = { path = "crates/bedrock-devices" }
+bedrock-machine = { path = "crates/bedrock-machine" }
+bedrock-debug = { path = "crates/bedrock-debug" }
+bedrock-debug-remote = { path = "crates/bedrock-debug-remote" }
+bedrock-lldb = { path = "crates/bedrock-lldb" }
+bedrock-toolchain = { path = "crates/bedrock-toolchain" }
+
+bitflags = "2"
+clap = { version = "4", features = ["derive"] }
+eframe = "0.29"
+egui = "0.29"
+fpmath = { version = "=0.1.1", features = ["soft-float"] }
+rustc_apfloat = "0.2.3"
+thiserror = "2"
+tracing = "0.1"

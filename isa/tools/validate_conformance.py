@@ -137,7 +137,12 @@ def validate_paths(
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
+    parser.add_argument(
+        "--manifest",
+        type=Path,
+        default=DEFAULT_MANIFEST,
+        help="conformance manifest path (default: repository manifest)",
+    )
     args = parser.parse_args()
     try:
         validate_paths(args.manifest)

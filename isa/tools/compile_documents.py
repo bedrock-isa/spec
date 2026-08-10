@@ -490,12 +490,34 @@ def compile_documents(args: argparse.Namespace) -> int:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--format", choices=("all", "pdf", "site"), default="all")
-    parser.add_argument("--output-root", type=Path, default=ROOT / "build")
-    parser.add_argument("--latexmk", default=os.environ.get("LATEXMK", "latexmk"))
-    parser.add_argument("--pandoc", default=os.environ.get("PANDOC", "pandoc"))
-    parser.add_argument("--latexpand", default=os.environ.get("LATEXPAND", "latexpand"))
-    parser.add_argument("--mkdocs", default=os.environ.get("MKDOCS", "mkdocs"))
+    parser.add_argument(
+        "--format",
+        choices=("all", "pdf", "site"),
+        default="all",
+        help="output format to compile (default: all)",
+    )
+    parser.add_argument(
+        "--output-root",
+        type=Path,
+        default=ROOT / "build",
+        help="published artifact directory (default: repository build/)",
+    )
+    parser.add_argument(
+        "--latexmk",
+        default=os.environ.get("LATEXMK", "latexmk"),
+        help="latexmk executable",
+    )
+    parser.add_argument(
+        "--pandoc", default=os.environ.get("PANDOC", "pandoc"), help="pandoc executable"
+    )
+    parser.add_argument(
+        "--latexpand",
+        default=os.environ.get("LATEXPAND", "latexpand"),
+        help="latexpand executable",
+    )
+    parser.add_argument(
+        "--mkdocs", default=os.environ.get("MKDOCS", "mkdocs"), help="mkdocs executable"
+    )
     return parser.parse_args()
 
 

@@ -9,7 +9,6 @@ from pathlib import Path
 import re
 import subprocess
 import sys
-import tempfile
 
 
 sys.dont_write_bytecode = True
@@ -24,40 +23,6 @@ OWNER_MODULES = frozenset({"core", "fp", "postlude"})
 sys.path.insert(0, str(TOOLS_ROOT))
 
 import generate_catalog
-
-
-def _is_within(path: Path, root: Path) -> bool:
-    try:
-        path.relative_to(root)
-        return True
-    except ValueError:
-        return False
-
-
-def validate_build_dir(raw_build_dir: Path) -> Path:
-    """Resolve and validate a dedicated repository-build or external-temp path."""
-    build_dir = raw_build_dir.expanduser().resolve()
-    repository_build = (ROOT / "build").resolve()
-    if _is_within(build_dir, repository_build):
-        return build_dir
-
-    temp_roots = {
-        Path(tempfile.gettempdir()).resolve(),
-        Path("/private/tmp").resolve(),
-        Path("/tmp").resolve(),
-        Path("/var/tmp").resolve(),
-    }
-    external_temp = not _is_within(build_dir, ROOT) and any(
-        build_dir != temp_root and _is_within(build_dir, temp_root)
-        for temp_root in temp_roots
-    )
-    if external_temp:
-        return build_dir
-
-    raise ValueError(
-        f"refusing documentation build directory outside {repository_build} "
-        f"or an external temporary directory: {build_dir}"
-    )
 
 
 def _function_record(entry: object) -> tuple[list[str], str] | None:
@@ -397,7 +362,7 @@ def render_semantic_index(doc_bundle: dict[str, object]) -> str:
 
 
 def build_docs(raw_build_dir: Path) -> tuple[Path, Path]:
-    build_dir = validate_build_dir(raw_build_dir)
+    build_dir = generate_catalog.validate_build_dir(raw_build_dir)
     build_dir.mkdir(parents=True, exist_ok=True)
     generate_catalog.write_outputs(build_dir)
 
@@ -438,8 +403,8 @@ def build_docs(raw_build_dir: Path) -> tuple[Path, Path]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--build-dir",
-        required=True,
+        "build_dir",
+        metavar="BUILD_DIR",
         type=Path,
         help="dedicated directory beneath repository build/ or an external temporary directory",
     )

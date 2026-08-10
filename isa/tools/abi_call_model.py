@@ -10,6 +10,7 @@ turning the whole ABI document into structured data.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import argparse
 import json
 from pathlib import Path
 from typing import Any
@@ -264,6 +265,8 @@ def validate_cases(path: Path) -> set[str]:
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.parse_args()
     root = Path(__file__).resolve().parents[2]
     path = root / "isa" / "abi" / "calling_convention_cases.json"
     documented = validate_cases(path)

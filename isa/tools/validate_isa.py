@@ -12,7 +12,8 @@ from defs_schema import decode_instruction
 from encoding_store import EncodingStore, LocatedEncoding, load_encoding_store
 
 
-DEF_ROOT = Path("isa/defs")
+REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
+DEF_ROOT = REPOSITORY_ROOT / "isa" / "defs"
 
 
 def definition_payloads(root: Path) -> dict[str, dict]:
@@ -68,7 +69,12 @@ def writable_ea_reclaim_status(store: EncodingStore) -> tuple[int, list[str]]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--defs", type=Path, default=DEF_ROOT)
+    parser.add_argument(
+        "--defs",
+        type=Path,
+        default=DEF_ROOT,
+        help="ISA definition root (default: repository isa/defs)",
+    )
     args = parser.parse_args()
 
     definitions = definition_mnemonics(args.defs)

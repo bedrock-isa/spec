@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import argparse
 from pathlib import Path
 import re
 
@@ -82,6 +83,8 @@ def validate_calling_convention_model() -> None:
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.parse_args()
     validate_abi_manifest()
     validate_target_intrinsics()
     validate_control_register_reference()

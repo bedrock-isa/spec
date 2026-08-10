@@ -35,10 +35,13 @@ from validate_alloc import (  # noqa: E402
     pattern_cardinality,
 )
 from encoding_architecture import ARCHITECTURE_SOURCE_PATH  # noqa: E402
+from encoding_architecture import ENCODING_CLASSES  # noqa: E402
 
 
-DEFAULT_DEFS_ROOT = Path("isa/defs")
+REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
+DEFAULT_DEFS_ROOT = REPOSITORY_ROOT / "isa" / "defs"
 DEFAULT_MAX_ENUMERATE = 5_000_000
+ENCODING_CLASS_NAMES = tuple(item.name for item in ENCODING_CLASSES)
 ANSI_RESET = "\033[0m"
 ANSI_DIM = "\033[2m"
 ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
@@ -51,6 +54,20 @@ FIELD_COLORS = {
     "immediate": "\033[94m",
     "bits": "\033[90m",
 }
+
+
+def nonnegative_int(value: str) -> int:
+    parsed = int(value)
+    if parsed < 0:
+        raise argparse.ArgumentTypeError("must be nonnegative")
+    return parsed
+
+
+def positive_int(value: str) -> int:
+    parsed = int(value)
+    if parsed <= 0:
+        raise argparse.ArgumentTypeError("must be positive")
+    return parsed
 
 
 @dataclass(frozen=True)
@@ -999,12 +1016,27 @@ def command_edit(args: argparse.Namespace) -> int:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--defs-root", type=Path, default=DEFAULT_DEFS_ROOT)
-    parser.add_argument("--color", choices=["auto", "always", "never"], default="auto")
+    parser.add_argument(
+        "--defs-root",
+        type=Path,
+        default=DEFAULT_DEFS_ROOT,
+        help="ISA definition root (default: repository isa/defs)",
+    )
+    parser.add_argument(
+        "--color",
+        choices=["auto", "always", "never"],
+        default="auto",
+        help="colorize bit fields (default: auto)",
+    )
     sub = parser.add_subparsers(dest="command", required=True)
 
     def add_color_option(target: argparse.ArgumentParser) -> None:
-        target.add_argument("--color", choices=["auto", "always", "never"], default=argparse.SUPPRESS)
+        target.add_argument(
+            "--color",
+            choices=["auto", "always", "never"],
+            default=argparse.SUPPRESS,
+            help="override colorization for this command",
+        )
 
     summary = sub.add_parser("summary", help="show class occupancy using claimed and reclaimed slots")
     add_color_option(summary)
@@ -1016,52 +1048,105 @@ def build_parser() -> argparse.ArgumentParser:
 
     entries = sub.add_parser("entries", help="list allocation entries, optionally filtered")
     add_color_option(entries)
-    entries.add_argument("cls")
+    entries.add_argument("cls", choices=ENCODING_CLASS_NAMES, help="encoding class to inspect")
     entries.add_argument("--leading", help="0/1/? leading-bit pattern; shorter patterns are padded with ?")
     entries.add_argument("--grep", help="case-insensitive id/text filter")
     entries.add_argument("--show-reserved", action="store_true", help="include computed reserved blocks")
-    entries.add_argument("--reserved-limit", type=int, default=0, help="max reserved rows; 0 means no limit")
-    entries.add_argument("--max-enumerate", type=int, default=DEFAULT_MAX_ENUMERATE)
+    entries.add_argument(
+        "--reserved-limit",
+        type=nonnegative_int,
+        default=0,
+        help="max reserved rows; 0 means no limit",
+    )
+    entries.add_argument(
+        "--max-enumerate",
+        type=positive_int,
+        default=DEFAULT_MAX_ENUMERATE,
+        help="maximum namespace slots to enumerate",
+    )
     entries.set_defaults(func=command_entries)
 
     check = sub.add_parser("check", help="check whether a candidate pattern is free")
     add_color_option(check)
-    check.add_argument("cls")
+    check.add_argument("cls", choices=ENCODING_CLASS_NAMES, help="encoding class to check")
     check.add_argument("pattern", help="0/1/? pattern; shorter patterns are padded with ?")
-    check.add_argument("--max-expand", type=int, default=1 << 22)
-    check.add_argument("--limit", type=int, default=12)
+    check.add_argument(
+        "--max-expand",
+        type=positive_int,
+        default=1 << 22,
+        help="maximum candidate slots to expand",
+    )
+    check.add_argument(
+        "--limit",
+        type=nonnegative_int,
+        default=12,
+        help="maximum overlap rows per category",
+    )
     check.add_argument("--ignore-entry", action="append", help="ignore an existing entry id while checking")
     check.set_defaults(func=command_check)
 
     holes = sub.add_parser("holes", help="list aligned clean-free blocks")
     add_color_option(holes)
-    holes.add_argument("cls")
+    holes.add_argument("cls", choices=ENCODING_CLASS_NAMES, help="encoding class to inspect")
     holes.add_argument("--leading", help="0/1/? leading-bit pattern; shorter patterns are padded with ?")
-    holes.add_argument("--include-reclaimed", action="store_true")
-    holes.add_argument("--min-slots", type=int, default=1)
-    holes.add_argument("--max-slots", type=int)
-    holes.add_argument("--min-wildcards", type=int, default=0)
-    holes.add_argument("--limit", type=int, default=32)
-    holes.add_argument("--sort", choices=["size", "address"], default="size")
-    holes.add_argument("--max-enumerate", type=int, default=DEFAULT_MAX_ENUMERATE)
+    holes.add_argument(
+        "--include-reclaimed",
+        action="store_true",
+        help="treat reclaimed slots as available",
+    )
+    holes.add_argument(
+        "--min-slots", type=positive_int, default=1, help="minimum slots per block"
+    )
+    holes.add_argument(
+        "--max-slots", type=positive_int, help="maximum slots per block"
+    )
+    holes.add_argument(
+        "--min-wildcards",
+        type=nonnegative_int,
+        default=0,
+        help="minimum wildcard bits per block",
+    )
+    holes.add_argument(
+        "--limit",
+        type=nonnegative_int,
+        default=32,
+        help="maximum blocks to display",
+    )
+    holes.add_argument(
+        "--sort",
+        choices=["size", "address"],
+        default="size",
+        help="block ordering (default: size)",
+    )
+    holes.add_argument(
+        "--max-enumerate",
+        type=positive_int,
+        default=DEFAULT_MAX_ENUMERATE,
+        help="maximum namespace slots to enumerate",
+    )
     holes.set_defaults(func=command_holes)
 
     add = sub.add_parser("add", help="validate and add one encoding form")
-    add.add_argument("mnemonic")
+    add.add_argument("mnemonic", help="instruction mnemonic receiving the form")
     add.add_argument("form", type=Path, help="YAML file containing one form")
     add.add_argument("--apply", action="store_true", help="atomically apply after validation")
     add.set_defaults(func=command_add)
 
     move = sub.add_parser("move", help="move an existing form to a class/bit pattern")
-    move.add_argument("form_id")
-    move.add_argument("--class", dest="cls")
-    move.add_argument("--bits")
+    move.add_argument("form_id", help="existing encoding form identifier")
+    move.add_argument(
+        "--class",
+        dest="cls",
+        choices=ENCODING_CLASS_NAMES,
+        help="replacement encoding class",
+    )
+    move.add_argument("--bits", help="replacement encoding bit pattern")
     move.add_argument("--apply", action="store_true", help="atomically apply after validation")
     move.set_defaults(func=command_move)
 
     edit = sub.add_parser("edit", help="edit bits and/or constraints of an existing form")
-    edit.add_argument("form_id")
-    edit.add_argument("--bits")
+    edit.add_argument("form_id", help="existing encoding form identifier")
+    edit.add_argument("--bits", help="replacement encoding bit pattern")
     edit.add_argument("--constraints", type=Path, help="YAML constraints list")
     edit.add_argument("--apply", action="store_true", help="atomically apply after validation")
     edit.set_defaults(func=command_edit)
@@ -1072,6 +1157,16 @@ def build_parser() -> argparse.ArgumentParser:
 def main() -> int:
     parser = build_parser()
     args = parser.parse_args()
+    if args.command == "move" and args.cls is None and args.bits is None:
+        parser.error("move requires --class and/or --bits")
+    if args.command == "edit" and args.bits is None and args.constraints is None:
+        parser.error("edit requires --bits and/or --constraints")
+    if (
+        args.command == "holes"
+        and args.max_slots is not None
+        and args.max_slots < args.min_slots
+    ):
+        parser.error("--max-slots must be greater than or equal to --min-slots")
     try:
         return int(args.func(args))
     except BrokenPipeError:

@@ -31,7 +31,7 @@ from encoding_fields import validate_encoding_template
 from artifact_overlay import read_source, resolve_source
 
 
-ROOT = Path("isa/defs")
+ROOT = Path(__file__).resolve().parents[2] / "isa" / "defs"
 INSTRUCTION_FILENAME = "instruction.yaml"
 ENCODINGS_FILENAME = "encodings.yaml"
 
@@ -272,7 +272,12 @@ def validate_defs(root: Path = ROOT) -> tuple[dict[str, Any], list[str]]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--root", type=Path, default=ROOT)
+    parser.add_argument(
+        "--root",
+        type=Path,
+        default=ROOT,
+        help="ISA definition root (default: repository isa/defs)",
+    )
     args = parser.parse_args()
     summary, errors = validate_defs(args.root)
     print(args.root)
