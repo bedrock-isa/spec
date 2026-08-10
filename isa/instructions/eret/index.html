@@ -9020,7 +9020,7 @@
 <p>Read the complete selected frame and validate FLAGS, STATUS, CS, DS, SS, SP, and an executable canonical PC without changing architectural state.</p>
 </li>
 <li>
-<p>When repeat state is saved, validate the repeat context in the always-present FRAME_EXT1 slot. Otherwise, require FRAME_EXT1 to be zero and prepare cleared repeat state. Frame type remains determined only by the event.</p>
+<p>When repeat state is saved, validate the repeat context in the always-present FRAME_EXT1 slot. Otherwise, require FRAME_EXT1 to be zero and prepare cleared repeat state. Frame type remains determined only by the event. For a saved REPG context, zero in the selected live loop-control register is valid: execution resumes at the saved group instruction and applies the normal REPG guarded-decrement/result rule only after the remaining group instructions complete.</p>
 </li>
 <li>
 <p>Atomically restore the validated state, event-depth state, and repeat state.</p>

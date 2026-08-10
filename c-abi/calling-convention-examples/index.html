@@ -9088,7 +9088,7 @@
 </table>
 <p>The named <code>format</code> argument uses <code>R0</code>. The signed character is promoted to <code>int</code> and stored at <code>[SP+16]</code>; the <code>float</code> is promoted to <code>double</code> and stored at <code>[SP+32]</code>. The caller creates the aggregate copy and stores its address at <code>[SP+48]</code>. A <code>va_list</code> initialized by <code>va_start</code> visits those three slots in that order by adding 16 after each access.</p>
 <h2 id="generated-assembly-conventions">Generated Assembly Conventions</h2>
-<p>The assembly examples are non-normative. They were emitted with <code>-Oz</code> by Bedrock LLVM 22.1.8 and then checked against the call-assignment model, register-preservation contract, and the architectural semantics of <code>CALL</code>, <code>RET</code>, <code>PUSHP</code>, and <code>POPP</code>. File directives, LLVM basic-block comments, and local labels that do not affect the shown control flow are omitted. The scalar leaf example also replaces a one-instruction <code>REPG</code> body with the architecturally equivalent single-instruction <code>REP</code> spelling; otherwise instruction order and operands are unchanged. If an implementation sequence conflicts with a normative rule, the rule controls.</p>
+<p>The assembly examples are non-normative. They were emitted with <code>-Oz</code> by Bedrock LLVM 22.1.8 and then checked against the call-assignment model, register-preservation contract, and the architectural semantics of <code>CALL</code>, <code>RET</code>, <code>PUSHP</code>, and <code>POPP</code>. File directives, LLVM basic-block comments, and local labels that do not affect the shown control flow are omitted. The scalar leaf example presents its one-instruction counted loop with <code>REP</code>. For a grouped body that does not write the selected loop-control register, REPG’s post-body rule requires an equivalent form to bypass an initial zero but permits it to supply N directly for a positive N; the displayed <code>REP</code> also takes N directly and annuls zero. Apart from that zero-case normalization, instruction order and operands are unchanged. If an implementation sequence conflicts with a normative rule, the rule controls.</p>
 <p>The benchmark sources use GNU C89 implicit return types. The declarations below show their equivalent explicit C types so that the ABI interface is unambiguous.</p>
 <h2 id="scalar-leaf-function">Scalar Leaf Function</h2>
 <table>
@@ -9160,10 +9160,10 @@
 <td style="text-align: left;">mf_pipeline:</td>
 </tr>
 <tr>
-<td style="text-align: left;">pushp3</td>
+<td style="text-align: left;">pushp4</td>
 </tr>
 <tr>
-<td style="text-align: left;">pushp2</td>
+<td style="text-align: left;">pushp5</td>
 </tr>
 <tr>
 <td style="text-align: left;">sub.q8, sp</td>
@@ -9226,10 +9226,10 @@
 <td style="text-align: left;">add.q8, sp</td>
 </tr>
 <tr>
-<td style="text-align: left;">popp2</td>
+<td style="text-align: left;">popp5</td>
 </tr>
 <tr>
-<td style="text-align: left;">popp3</td>
+<td style="text-align: left;">popp4</td>
 </tr>
 <tr>
 <td style="text-align: left;">jmpmf_bias_sum</td>
