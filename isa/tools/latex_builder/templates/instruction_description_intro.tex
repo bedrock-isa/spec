@@ -1,4 +1,8 @@
 \clearpage
+\begingroup
+\setlength{\parskip}{1pt}
+\titlespacing*{\section}{0pt}{0.8em}{0.45em}
+\titlespacing*{\subsection}{0pt}{0.45em}{0.25em}
 \section*{Reading an Instruction Description}\label{page:reading-an-instruction-description}
 \phantomsection
 \addcontentsline{toc}{section}{Reading an Instruction Description}
@@ -7,6 +11,10 @@ Each instruction entry presents its normative Operation, then Assembler Syntax, 
 metadata. Detailed Semantics follows when more space is needed, before the concrete encoding forms. Brief,
 non-normative summaries appear only in the instruction-set summary tables. Each mnemonic begins on a new page so its
 form diagrams, field explanations, and side-effect text stay together as one reference unit.
+
+Operation and Detailed Semantics are handwritten projections of the executable behavior owned by the handwritten
+Sail model. They must be traceable to that model and cannot independently introduce an observable state transition,
+fault, commit, repeat, event, or memory action.
 
 \subsection*{Mnemonics and Suffixes}
 The B, W, L, and Q suffixes select 8-, 16-, 32-, and 64-bit integer sizes; S and D select 32- and 64-bit
@@ -37,7 +45,11 @@ the accrued floating-point exception and status bits.
 In an encoding diagram, fixed 0 and 1 fields identify opcode bits, and the notes below decode lettered fields. An
 <ea> field is the compact effective-address field and may append EA payload bytes in operand order.
 
+Concrete forms, operand and effective-address grammar, stable form identities, and size selectors are owned by the
+instruction-definition layer. Explanatory encoding text does not define another encoding.
+
 For an extended encoding, the four-bit L field selects a 3+L-byte instruction record. The required-byte count is the
 space consumed by the opcode and selected operand payloads. Every larger encoded length through 18 bytes is
 valid and the trailing bytes are uninterpreted padding. The \texttt{LEN n,} spelling records an explicit total length.
+\endgroup
 \clearpage

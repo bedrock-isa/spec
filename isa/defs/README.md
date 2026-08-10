@@ -1,7 +1,13 @@
 # Instruction Definitions
 
-`isa/defs` is the source of truth for instruction documentation, concrete
-encodings, architectural primitives, extension wiring, and document order.
+`isa/defs` is the source of truth for concrete instruction encodings, operand
+and effective-address grammar, stable form identities, extension wiring,
+structured static facts, and document order. Handwritten Sail owns executable
+instruction behavior, architectural state transitions, fault and commit
+ordering, repeat and event behavior, and single-hart memory-action sequencing.
+The formal memory model owns its concurrency domain. ABI sources own ELF, C
+ABI, and calling-convention contracts, while compiler-interface sources
+separately own source-language and compiler-facing target-interface contracts.
 
 Encoding forms are instruction-owned. Instruction and extension families are
 explicit, and base instruction operand types use `Rn`.
@@ -31,11 +37,13 @@ current domain is implicit. `fields` declares non-operand selectors such as a
 size field. Field widths are derived from `bits` rather than repeated.
 
 Instruction attributes contain class, family, privilege, and, where applicable,
-accepted repeat contexts. Flag semantics and other instruction-specific
-normative detail live in the explicitly referenced TeX body. FLAGS and FFLAGS
-effects are structured instruction metadata so reference tables and compact
-effect lines are generated from one source. Implicit state
-reads and writes are described there rather than duplicated in unconsumed YAML.
+accepted repeat contexts. FLAGS and FFLAGS effects are structured instruction
+metadata so reference tables and compact effect lines are generated from one
+source. Handwritten explanatory text remains authored prose, but descriptions
+of executable behavior must be traceable to the applicable handwritten Sail
+functions and cannot independently introduce an observable state transition,
+fault, commit, repeat, event, or memory action. Encoding prose remains
+downstream of these definitions.
 
 The five encoding classes and their order are architectural invariants in
 `isa/tools/encoding_architecture.py`. Payload widths and opcode namespaces are
@@ -68,12 +76,12 @@ encodings are kept separately in `sizes.yaml`; extension-owned sizes use the
 same arrangement.
 
 The transcendental-approximation extension manifest contains only extension
-wiring and its feature association. The common approximation model and
-individual instruction contracts are normative TeX: the common model lives in
-the extension's `introduction.tex`, instruction-specific semantics live in
-sibling `details.tex` files, and the CPUID registry lives in
-`fptransa_accuracy_contracts.tex`. This documentation is not duplicated as
-instruction or extension YAML metadata.
+wiring and its feature association. The external numerical provider owns
+reference values and ULP certificates; handwritten Sail owns validation and
+architectural trap or commit behavior. The authored presentation remains in
+the extension's `introduction.tex`, sibling `details.tex` files, and
+`fptransa_accuracy_contracts.tex`, downstream of those owners and without
+duplication as instruction or extension YAML metadata.
 
 The document compiler owns the definition-layer checks and the full document
 gate:

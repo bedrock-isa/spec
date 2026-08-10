@@ -15,6 +15,30 @@ Architecture prose, ordered steps, generated architecture tables, instruction en
 and Detailed Semantics fields of instruction entries are normative unless a section explicitly identifies material
 as a summary, example, or validation status.
 
+\noindent
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{1.55in}X@{}}
+\toprule
+\textbf{Domain owner} & \textbf{Owned material}\\
+\midrule
+The instruction-definition layer & Concrete instruction encodings, operand and effective-address grammar, stable form
+identities, extension wiring, and document ordering.\\
+Handwritten Sail & Executable instruction behavior, architectural state transitions, fault and commit ordering,
+repeat and event behavior, and single-logical-processor memory-action sequencing.\\
+The formal memory model & Permitted cross-processor ordering and visibility.\\
+ABI sources & ELF, C ABI, and calling-convention contracts.\\
+Compiler-interface sources & Source-language and compiler-facing target-interface contracts.\\
+External numerical floating-point providers & Numerical results and certificates only; handwritten Sail validates
+their inputs and owns the resulting architectural trap or commit behavior.\\
+\bottomrule
+\end{tabularx}
+
+Generated presentations and authored explanatory prose remain normative where declared but are semantically downstream
+of the applicable owner. Behavioral prose is traceable to handwritten Sail and cannot independently introduce
+observable behavior.
+
+Domain ownership selects the controlling semantic source; the specificity rules below govern narrowing without
+transferring ownership.
+
 The following domain rules resolve different levels of specificity:
 
 \begin{enumerate}
@@ -30,6 +54,8 @@ and do not replace a normative rule.
 
 Two normative statements at the same specificity are required to agree. A discrepancy at that level is a
 specification defect and is resolved by correcting the normative sources and their derived tables together.
+
+Corrections to an owning source propagate to its downstream prose and generated presentations.
 
 \subsection{Implementation-Defined Disclosures}
 
