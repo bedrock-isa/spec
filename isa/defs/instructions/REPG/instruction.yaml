@@ -1,7 +1,7 @@
 mnemonic: REPG
 title: Grouped Repeat
-summary: Repeats the following straight-line instruction body using an Rn counter.
-description: REPG takes an Rn counter and an unsigned 16-bit body byte count. The body starts at the next instruction after REPG and extends for exactly body_bytes bytes. A zero body byte count is invalid. A nonzero body byte count is valid only when the selected byte range decodes as a whole number of complete instructions and ends exactly at an instruction boundary. The grouped body is decoded when repeat state is entered and remains the repeated body until the repeat context exits.
+summary: Repeats the following straight-line instruction body using a live Rn loop-control register.
+description: REPG takes an Rn loop-control register and an unsigned 16-bit body byte count. The body starts at the next instruction after REPG and extends for exactly body_bytes bytes. A zero body byte count is invalid. A nonzero body byte count is valid only when the selected byte range decodes as a whole number of complete instructions and ends exactly at an instruction boundary. The grouped body is decoded when repeat state is entered and remains the repeated body until the repeat context exits.
 attributes:
   class: control_flow
   family: control_flow

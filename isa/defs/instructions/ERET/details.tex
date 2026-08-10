@@ -6,6 +6,9 @@
 \item Read the complete selected frame and validate FLAGS, STATUS, CS, DS, SS, SP, and an executable canonical PC without changing architectural state.
 \item When repeat state is saved, validate the repeat context in the always-present FRAME\_EXT1 slot. Otherwise,
 require FRAME\_EXT1 to be zero and prepare cleared repeat state. Frame type remains determined only by the event.
+For a saved REPG context, zero in the selected live loop-control register is valid: execution resumes at the saved
+group instruction and applies the normal REPG guarded-decrement/result rule only after the remaining
+group instructions complete.
 \item Atomically restore the validated state, event-depth state, and repeat state.
 \item After restoration, admit a pending NMI before the next instruction boundary when STATUS.NI is clear and ECR.NMI\_P is set.
 \end{enumerate}

@@ -205,9 +205,9 @@ Segment state & \texttt{GS1}--\texttt{GS5} & \texttt{CS}, \texttt{DS}, \texttt{S
 
 A callee may preserve floating-point registers with \texttt{FPUSHP} and
 \texttt{FPOPP} or with any sequence having the same observable effect. Each
-instruction operates on one canonical pair. The nonvolatile pairs are index 0
-for \texttt{F14:F15}, index 1 for \texttt{F12:F13}, index 2 for
-\texttt{F10:F11}, and index 3 for \texttt{F8:F9}. When several pairs are
+instruction operates on one canonical pair. The nonvolatile pairs are index 4
+for \texttt{F8:F9}, index 5 for \texttt{F10:F11}, index 6 for
+\texttt{F12:F13}, and index 7 for \texttt{F14:F15}. When several pairs are
 saved, a normal prologue pushes them in increasing pair-index order and the
 matching epilogue pops them in decreasing pair-index order. A callee need only
 save the pair containing each nonvolatile register it modifies. \texttt{R15}
@@ -769,10 +769,13 @@ checked against the call-assignment model, register-preservation contract, and
 the architectural semantics of \texttt{CALL}, \texttt{RET}, \texttt{PUSHP},
 and \texttt{POPP}. File directives, LLVM basic-block comments, and local labels
 that do not affect the shown control flow are omitted. The scalar leaf example
-also replaces a one-instruction \texttt{REPG} body with the architecturally
-equivalent single-instruction \texttt{REP} spelling; otherwise instruction
-order and operands are unchanged. If an implementation sequence conflicts
-with a normative rule, the rule controls.
+presents its one-instruction counted loop with \texttt{REP}. For a grouped body
+that does not write the selected loop-control register, REPG's post-body rule
+requires an equivalent form to bypass an initial zero but permits it to supply
+N directly for a positive N; the displayed \texttt{REP} also takes N directly
+and annuls zero. Apart from that zero-case normalization, instruction order and
+operands are unchanged. If an implementation sequence conflicts with a
+normative rule, the rule controls.
 
 The benchmark sources use GNU C89 implicit return types. The declarations below
 show their equivalent explicit C types so that the ABI interface is unambiguous.
@@ -822,8 +825,8 @@ first intermediate result live in nonvolatile \texttt{R8} through
 \begingroup\scriptsize\ttfamily
 \begin{tabularx}{\linewidth}{@{}X@{}}
 mf\_pipeline:\tabularnewline
-\hspace{1.2em}pushp\hspace{0.9em}3\tabularnewline
-\hspace{1.2em}pushp\hspace{0.9em}2\tabularnewline
+\hspace{1.2em}pushp\hspace{0.9em}4\tabularnewline
+\hspace{1.2em}pushp\hspace{0.9em}5\tabularnewline
 \hspace{1.2em}sub.q\hspace{0.9em}8, sp\tabularnewline
 \hspace{1.2em}mov.q\hspace{0.9em}r3, r8\tabularnewline
 \hspace{1.2em}mov.q\hspace{0.9em}r1, r9\tabularnewline
@@ -844,8 +847,8 @@ mf\_pipeline:\tabularnewline
 \hspace{1.2em}mov.q\hspace{0.9em}r9, r0\tabularnewline
 \hspace{1.2em}mov.q\hspace{0.9em}r8, r1\tabularnewline
 \hspace{1.2em}add.q\hspace{0.9em}8, sp\tabularnewline
-\hspace{1.2em}popp\hspace{1.0em}2\tabularnewline
-\hspace{1.2em}popp\hspace{1.0em}3\tabularnewline
+\hspace{1.2em}popp\hspace{1.0em}5\tabularnewline
+\hspace{1.2em}popp\hspace{1.0em}4\tabularnewline
 \hspace{1.2em}jmp\hspace{1.15em}mf\_bias\_sum\tabularnewline
 \end{tabularx}
 \endgroup

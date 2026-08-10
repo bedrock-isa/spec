@@ -32,45 +32,45 @@ operand_types:
     field_width: 3
     values:
     - value: 0
-      name: R14_R15
-      registers:
-      - R14
-      - R15
-    - value: 1
-      name: R12_R13
-      registers:
-      - R12
-      - R13
-    - value: 2
-      name: R10_R11
-      registers:
-      - R10
-      - R11
-    - value: 3
-      name: R8_R9
-      registers:
-      - R8
-      - R9
-    - value: 4
-      name: R6_R7
-      registers:
-      - R6
-      - R7
-    - value: 5
-      name: R4_R5
-      registers:
-      - R4
-      - R5
-    - value: 6
-      name: R2_R3
-      registers:
-      - R2
-      - R3
-    - value: 7
       name: R0_R1
       registers:
       - R0
       - R1
+    - value: 1
+      name: R2_R3
+      registers:
+      - R2
+      - R3
+    - value: 2
+      name: R4_R5
+      registers:
+      - R4
+      - R5
+    - value: 3
+      name: R6_R7
+      registers:
+      - R6
+      - R7
+    - value: 4
+      name: R8_R9
+      registers:
+      - R8
+      - R9
+    - value: 5
+      name: R10_R11
+      registers:
+      - R10
+      - R11
+    - value: 6
+      name: R12_R13
+      registers:
+      - R12
+      - R13
+    - value: 7
+      name: R14_R15
+      registers:
+      - R14
+      - R15
   pt_level:
     kind: enum
     field_width: 3

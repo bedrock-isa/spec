@@ -8,45 +8,45 @@ operand_types:
     field_width: 3
     values:
     - value: 0
-      name: F14_F15
-      registers:
-      - F14
-      - F15
-    - value: 1
-      name: F12_F13
-      registers:
-      - F12
-      - F13
-    - value: 2
-      name: F10_F11
-      registers:
-      - F10
-      - F11
-    - value: 3
-      name: F8_F9
-      registers:
-      - F8
-      - F9
-    - value: 4
-      name: F6_F7
-      registers:
-      - F6
-      - F7
-    - value: 5
-      name: F4_F5
-      registers:
-      - F4
-      - F5
-    - value: 6
-      name: F2_F3
-      registers:
-      - F2
-      - F3
-    - value: 7
       name: F0_F1
       registers:
       - F0
       - F1
+    - value: 1
+      name: F2_F3
+      registers:
+      - F2
+      - F3
+    - value: 2
+      name: F4_F5
+      registers:
+      - F4
+      - F5
+    - value: 3
+      name: F6_F7
+      registers:
+      - F6
+      - F7
+    - value: 4
+      name: F8_F9
+      registers:
+      - F8
+      - F9
+    - value: 5
+      name: F10_F11
+      registers:
+      - F10
+      - F11
+    - value: 6
+      name: F12_F13
+      registers:
+      - F12
+      - F13
+    - value: 7
+      name: F14_F15
+      registers:
+      - F14
+      - F15
   fconst_id:
     kind: enum
     field_width: 16

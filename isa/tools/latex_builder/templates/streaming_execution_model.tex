@@ -27,25 +27,32 @@ The accepted spellings are:
 additional eligibility checks described below
 \end{itemize}
 
-The processor decodes the body and checks its repeat eligibility before applying the zero-count rule. A malformed or
-unavailable body therefore faults even when the captured count is zero. Once a valid body has passed those checks, a
-zero count annuls it without architectural side effects.
+The processor decodes the body and checks its repeat eligibility before applying any zero-based termination rule. A
+malformed or unavailable body therefore faults even when the selected register is zero. Once a valid body has
+passed those checks, a zero captured count annuls REP or REPcc without architectural side effects. REPG has no entry
+zero-count annul; it begins the group and applies its live loop-control rule only at a successful group boundary.
 
 REPGF is an assembler-checked spelling that emits REPG after applying the additional body-eligibility checks. The
-assembler accepts only candidate bodies that do not write the selected counter register. The emitted encoding,
+assembler accepts only candidate bodies that do not write the selected loop-control register. The emitted encoding,
 decoded operation, and repeat-continuation state are identical to REPG.
 
 \subsection{Counter, Condition, and Control Rules}
 
-Entering repeat state captures the selected Rn value as an unsigned remaining count. Each successfully committed
-iteration decrements that captured count. A condition-false REPcc iteration still commits its body and performs the
-decrement before repeat state is cleared. A valid zero count performs no body side effects after decoding and
-eligibility checks complete.
+Entering REP or REPcc state captures the selected Rn value as an unsigned remaining count. Each successfully
+committed iteration decrements that captured count. A condition-false REPcc iteration still commits its body and
+performs the decrement before repeat state is cleared. A valid zero count performs no body side effects after
+decoding and eligibility checks complete.
 
 During REP and REPcc, a body read of the selected counter register observes the iteration-start architectural value,
-while a body write to that register is ignored. REPG executes counter-register reads and writes in normal in-group
-program order, but a write does not replace the separately captured remaining count. The checked REPGF spelling
-rejects such a write at assembly time.
+while a body write to that register is ignored. REPG instead uses the selected architectural Rn as its live unsigned
+loop-control value and captures no separate remaining count. REPG executes reads and writes of that register in
+normal in-group program order. At each successful whole-group boundary, it examines the current value after all body
+writes. If the value is zero, REPG leaves it unchanged and exits. Otherwise, REPG first decrements it by one and then
+uses the resulting value to select the next action: zero exits, while nonzero continues at the group start. This
+guarded decrement and resulting-value decision form the group-boundary state transition. When the body does not
+write the register, an initial zero executes one iteration and an initial positive value N executes exactly N
+iterations; both cases leave zero. Any body write controls the boundary reached by that iteration, so writing either
+zero or one terminates at that boundary. The checked REPGF spelling rejects such a write at assembly time.
 
 The \texttt{REPcc observation} attribute in every REPcc-capable instruction description specifies the input used for
 the condition test. A \texttt{flags} observation uses the complete post-body FLAGS image. A \texttt{result:operand} or
@@ -73,7 +80,7 @@ REPcc; earlier iterations remain committed.
 
 For REPG, the unsigned body byte count must describe a group that ends on an instruction boundary. Instructions in
 the group commit in program order. If an instruction faults, earlier completed instructions in the current group
-iteration remain committed and later instructions do not execute. The fault is reported at the faulting instruction,
-and the repeat counter is not decremented for the incomplete group iteration; it is decremented only after the whole
-group iteration succeeds. The saved PC and repeat continuation retain the information required to reconstruct the
-group and continue the remaining work.
+iteration remain committed and later instructions do not execute. The fault is reported at the faulting instruction;
+the live loop-control register retains every committed body effect, but the group-boundary state transition does not
+occur for the incomplete group iteration. The saved PC and repeat continuation retain the information required to
+reconstruct the group and continue the remaining work.

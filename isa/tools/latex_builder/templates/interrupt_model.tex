@@ -32,8 +32,9 @@ the platform dispatcher applies its unhandled or spurious-interrupt policy.
 
 A restartable fault saves the faulting instruction or its architecturally defined restart point. A trap saves the
 following instruction. An interrupt or NMI saves the next instruction that would otherwise execute. An event taken
-during repeat execution saves the active repeat continuation PC and records the remaining repeat state in the
-always-present \texttt{FRAME\_EXT1} slot.
+during repeat execution saves the active repeat continuation PC and records the repeat selector and position state
+in the always-present \texttt{FRAME\_EXT1} slot. For REPG, the live loop-control value remains in the selected Rn and
+is not copied into \texttt{FRAME\_EXT1}.
 
 \subsection{Event Priority and Debug Trace}\label{section:event-priority-and-debug-trace}
 When events compete at one architectural boundary, the lower priority number in the event table wins. This orders
@@ -41,8 +42,8 @@ delivery failure before machine check, current synchronous faults, explicit trap
 interrupt. A lower-priority asynchronous event remains pending after a higher-priority event is selected.
 
 A trace unit is one ordinary committed instruction, one committed REP or REPcc body iteration, or one completed
-REPG group iteration. Completion of a zero-count REP, REPcc, or REPG is also one trace unit. TF is sampled at the
-start of the unit. If sampled TF is one and sampled RF is zero, successful completion commits the unit and then
+REPG group iteration. Completion of a zero-count REP or REPcc is also one trace unit. TF is sampled at the start of
+the unit. If sampled TF is one and sampled RF is zero, successful completion commits the unit and then
 delivers DEBUG\_TRACE with the following trace-unit boundary as its saved PC.
 
 The \hyperref[instr:trace]{\texttt{TRACE}} marker instruction is an ordinary instruction for this trace-unit rule
@@ -162,8 +163,10 @@ When FRAME\_CONTROL.repeat\_saved is set, FRAME\_EXT1 records the active repeat 
 FRAME\_EXT1 is zero. Event entry clears active
 architectural repeat state, and ERET restores it atomically with the saved PC and control state. During
 single-instruction repeat, SAVED\_PC is the repeated body boundary. For REPG, software reconstructs the group start
-from SAVED\_PC and the encoded byte-distance delta. ERET preserves the continuation unless supervisor software edits
-the frame before return.
+from SAVED\_PC and the encoded byte-distance delta; the selected architectural Rn supplies the live loop-control
+value after return. Zero is valid for an active REPG continuation: ERET resumes the saved group instruction, and
+REPG applies its normal guarded-decrement/result rule only after the remaining instructions in that group
+iteration complete. ERET preserves the continuation unless supervisor software edits the frame before return.
 
 \input{isa/tools/latex_builder/templates/fragments/repeat_event_aux_diagram.tex}
 

@@ -4,7 +4,7 @@
 \rowcolor{ManualHeaderFill}
 \textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
 \midrule
-rep\_reg & 0..3 & general-purpose counter register R0..R15\\
+rep\_reg & 0..3 & counter register for REP/REPcc or live loop-control register for REPG; R0..R15\\
 rep\_cc & 4..7 & condition code for REPcc; T for unconditional REP/REPG\\
 repeat\_kind & 8..9 & 0: REP/REPcc, 1: REPG, 2..3: reserved\\
 reserved & 10..15 & reserved, must be zero\\
