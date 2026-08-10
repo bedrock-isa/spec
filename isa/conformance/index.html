@@ -8927,6 +8927,42 @@
 <p>A Bedrock implementation conformance claim identifies the architecture revision reported by CPUID and the CPUID feature set for the logical processor to which the claim applies. For that revision and discovered feature set, the implementation accepts and executes every architecturally valid instruction record according to its encoding, state, event, memory, and instruction-specific rules. The same claim covers the architected discovery results, save images, event frames, and reset state defined for that processor.</p>
 <h2 id="normative-material-and-specificity">Normative Material and Specificity</h2>
 <p>Architecture prose, ordered steps, generated architecture tables, instruction encoding diagrams, and the Operation and Detailed Semantics fields of instruction entries are normative unless a section explicitly identifies material as a summary, example, or validation status.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Domain owner</strong></th>
+<th style="text-align: left;"><strong>Owned material</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">The instruction-definition layer</td>
+<td style="text-align: left;">Concrete instruction encodings, operand and effective-address grammar, stable form identities, extension wiring, and document ordering.</td>
+</tr>
+<tr>
+<td style="text-align: left;">Handwritten Sail</td>
+<td style="text-align: left;">Executable instruction behavior, architectural state transitions, fault and commit ordering, repeat and event behavior, and single-logical-processor memory-action sequencing.</td>
+</tr>
+<tr>
+<td style="text-align: left;">The formal memory model</td>
+<td style="text-align: left;">Permitted cross-processor ordering and visibility.</td>
+</tr>
+<tr>
+<td style="text-align: left;">ABI sources</td>
+<td style="text-align: left;">ELF, C ABI, and calling-convention contracts.</td>
+</tr>
+<tr>
+<td style="text-align: left;">Compiler-interface sources</td>
+<td style="text-align: left;">Source-language and compiler-facing target-interface contracts.</td>
+</tr>
+<tr>
+<td style="text-align: left;">External numerical floating-point providers</td>
+<td style="text-align: left;">Numerical results and certificates only; handwritten Sail validates their inputs and owns the resulting architectural trap or commit behavior.</td>
+</tr>
+</tbody>
+</table>
+<p>Generated presentations and authored explanatory prose remain normative where declared but are semantically downstream of the applicable owner. Behavioral prose is traceable to handwritten Sail and cannot independently introduce observable behavior.</p>
+<p>Domain ownership selects the controlling semantic source; the specificity rules below govern narrowing without transferring ownership.</p>
 <p>The following domain rules resolve different levels of specificity:</p>
 <ol>
 <li>
@@ -8943,6 +8979,7 @@
 </li>
 </ol>
 <p>Two normative statements at the same specificity are required to agree. A discrepancy at that level is a specification defect and is resolved by correcting the normative sources and their derived tables together.</p>
+<p>Corrections to an owning source propagate to its downstream prose and generated presentations.</p>
 <h2 id="implementation-defined-disclosures">Implementation-Defined Disclosures</h2>
 <p>An implementation-defined selection is stable for the implementation revision named by CPUID and is published through the channel named by its defining rule. The publication identifies the selected value or behavior and the processor revisions to which it applies.</p>
 <p><strong>Implementation-Defined Disclosure Register</strong></p>
