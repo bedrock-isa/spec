@@ -210,9 +210,7 @@ for \texttt{F8:F9}, index 5 for \texttt{F10:F11}, index 6 for
 \texttt{F12:F13}, and index 7 for \texttt{F14:F15}. When several pairs are
 saved, a normal prologue pushes them in increasing pair-index order and the
 matching epilogue pops them in decreasing pair-index order. A callee need only
-save the pair containing each nonvolatile register it modifies. \texttt{R15}
-is an ordinary nonvolatile register unless the function elects to use it as a
-frame pointer.
+save the pair containing each nonvolatile register it modifies.
 
 \subsection{Stack and Control State}
 \texttt{SP} is the architectural stack pointer, not a general C temporary. A
@@ -313,8 +311,8 @@ Each subsequent stack argument occupies the next 16-byte slot.
 \end{manuallistedstackframediagram}
 
 \subsection{Frame Pointer}
-Frame pointers are omitted by default.  When a function elects to keep a
-frame pointer, it uses \texttt{R15}.  R15 is callee-saved and is used as the frame pointer when a function elects to maintain one.
+A function that maintains a frame pointer uses callee-saved \texttt{R15}.
+Frame pointers are otherwise omitted.
 
 \subsection{DWARF Register Numbering and Unwind}
 \manualtablecaption{Bedrock DWARF Register Numbers}
@@ -589,7 +587,9 @@ transfer defined by the original relocation. Relaxation is not a distinct C
 calling convention.
 
 \subsection{TLS and OS ABI Boundary}
-TLS and OS boundary rules are supplied by the ABI specification.
+The Bedrock ELF ABI defines TLS models, symbols, and relocations. The active
+platform/runtime environment ABI defines thread setup, the initial \texttt{GS0}
+image, loader handoff, and OS-facing TLS transitions.
 
 \section{C Memory Model}\label{page:c-memory-model}
 This section defines how the baseline C memory model maps to Bedrock memory
@@ -695,10 +695,8 @@ before transferring control to them.
 
 \clearpage
 \section{Calling Convention Examples}\label{page:calling-convention-examples}
-The first four cases are inputs to the executable reference model and
-illustrate the assignment procedure. The final two examples are generated output
-from the Bedrock LLVM backend. Examples do not introduce exceptions to the
-normative rules above.
+The examples illustrate the assignment procedure and do not introduce
+exceptions to the normative rules above.
 
 \manualabicase{mixed-register-classes}
 \subsection{Independent Register Classes and Pair Alignment}
@@ -762,13 +760,10 @@ the aggregate copy and stores its address at \texttt{[SP+48]}. A
 that order by adding 16 after each access.
 
 \Needspace{1.8in}
-\subsection{Generated Assembly Conventions}
-The assembly examples are non-normative. They were emitted with \texttt{-Oz}
-by Bedrock LLVM 22.1.8 and then
-checked against the call-assignment model, register-preservation contract, and
-the architectural semantics of \texttt{CALL}, \texttt{RET}, \texttt{PUSHP},
-and \texttt{POPP}. File directives, LLVM basic-block comments, and local labels
-that do not affect the shown control flow are omitted. The scalar leaf example
+\subsection{Assembly Conventions}
+The assembly examples are non-normative. File directives, basic-block
+comments, and local labels that do not affect the shown control flow are
+omitted. The scalar leaf example
 presents its one-instruction counted loop with \texttt{REP}. For a grouped body
 that does not write the selected loop-control register, REPG's post-body rule
 requires an equivalent form to bypass an initial zero but permits it to supply
@@ -777,8 +772,7 @@ and annuls zero. Apart from that zero-case normalization, instruction order and
 operands are unchanged. If an implementation sequence conflicts with a
 normative rule, the rule controls.
 
-The benchmark sources use GNU C89 implicit return types. The declarations below
-show their equivalent explicit C types so that the ABI interface is unambiguous.
+The declarations below state the ABI interfaces used by the examples.
 
 % ABI-ASM-EXAMPLE: scalar-leaf
 \subsection{Scalar Leaf Function}
@@ -789,7 +783,7 @@ int sum(int *p, int n);\tabularnewline
 \endgroup
 
 On entry, \texttt{p} is in \texttt{R0} and the sign-extended value of
-\texttt{n} is in \texttt{R1}. The generated function uses only volatile
+\texttt{n} is in \texttt{R1}. The function uses only volatile
 registers, does not change \texttt{SP}, and returns the integer sum in
 \texttt{R0}.
 
@@ -804,7 +798,7 @@ sum:\tabularnewline
 \hspace{1.2em}ret\tabularnewline
 \end{tabularx}
 \endgroup
-\manualfigurecaption{Generated scalar leaf function}
+\manualfigurecaption{Scalar leaf function}
 \end{manualformblock}
 
 % ABI-ASM-EXAMPLE: nonleaf-preservation
@@ -817,7 +811,7 @@ int mf\_pipeline(int *tmp, int *dst, int *src, int n,\tabularnewline
 \endgroup
 
 The seven arguments occupy \texttt{R0} through \texttt{R6} in source order.
-The generated function keeps \texttt{n}, \texttt{dst}, \texttt{tmp}, and the
+The function keeps \texttt{n}, \texttt{dst}, \texttt{tmp}, and the
 first intermediate result live in nonvolatile \texttt{R8} through
 \texttt{R11}. It therefore saves and restores both canonical register pairs.
 
@@ -852,7 +846,7 @@ mf\_pipeline:\tabularnewline
 \hspace{1.2em}jmp\hspace{1.15em}mf\_bias\_sum\tabularnewline
 \end{tabularx}
 \endgroup
-\manualfigurecaption{Generated non-leaf function with a tail transfer}
+\manualfigurecaption{Non-leaf function with a tail transfer}
 
 Each \texttt{PUSHP} saves 16 bytes, so the pair saves leave the entry alignment
 unchanged. The additional 8-byte subtraction establishes \texttt{SP mod 16 =

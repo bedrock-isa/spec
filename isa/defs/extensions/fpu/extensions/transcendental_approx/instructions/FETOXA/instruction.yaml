@@ -1,6 +1,6 @@
 mnemonic: FETOXA
 title: Approximate Floating-Point e To x
-summary: Performs the bounded approximate floating-point e to x operation.
+summary: Performs the approximate floating-point e to x operation.
 description: Computes the e ** x reference over all finite values and signed infinity after DAZ and writes an implementation-bounded S- or D-format approximation under the selected FPTRANSA accuracy contract.
 attributes:
   class: fpu

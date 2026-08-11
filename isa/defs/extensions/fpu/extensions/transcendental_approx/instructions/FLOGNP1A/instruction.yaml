@@ -1,6 +1,6 @@
 mnemonic: FLOGNP1A
 title: Approximate Floating-Point Natural Log Plus One
-summary: Performs the bounded approximate floating-point natural log plus one operation.
+summary: Performs the approximate floating-point natural log plus one operation.
 description: After DAZ, computes an implementation-bounded S- or D-format approximation of the ln(1 + x) reference without an intermediate rounded addition under the selected FPTRANSA accuracy contract. The reference domain includes finite x >= -1 and positive infinity; -1 is the DZ boundary.
 attributes:
   class: fpu

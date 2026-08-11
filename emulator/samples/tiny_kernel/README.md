@@ -44,7 +44,8 @@ ISA repository.
 - `user.c` is intentionally empty; user applications live outside the kernel
   image source and are embedded as ELF bytes.
 - `../userland/apps` builds the `MATH`, `SORT`, `MEM`, `FAR`, `DEMO`, `FAULT`,
-  and `HALT` user ELFs. `../userland/basic` builds the BASIC user ELF. The kernel
+  `PFAULT`, `SFAULT`, and `HALT` user ELFs. `../userland/basic` builds the BASIC
+  user ELF. The kernel
   embeds each image as data, loads its PT_LOAD segments on demand, gives it
   separate code/data and stack bounds, runs it in user mode, and returns to the
   shell through `SYSCALL_EXIT` when the app exits normally.
@@ -64,11 +65,10 @@ display and type one of these commands followed by Enter:
 - `FAR`: installs a translated window in `GS1`, fills and transforms a
   page-aligned memory bank through explicitly segment-qualified accesses, then
   prints the input edges, output edges, checksum, and PASS/FAIL.
-- `PFAULT`: reads a supervisor-only kernel page through a disabled segment
-  image; the kernel records a paging permission fault, terminates the app, and
-  returns to the shell.
-- `SFAULT`: reads outside the app's DS window; the kernel records a segment
-  bounds fault, terminates the app, and returns to the shell.
+- `PFAULT`: probes a read through a disabled segment image. When the resulting
+  process fault is recoverable, the kernel returns to the shell.
+- `SFAULT`: probes a read outside the app's DS bounds. When the resulting
+  process fault is recoverable, the kernel returns to the shell.
 - `DEMO`: sends the payload stream through `SYSCALL`, periodically yields
   through the syscall table, and prints the resulting checksum/yield summary.
 - `BASIC`: executes the embedded separate ELF user application and enters a

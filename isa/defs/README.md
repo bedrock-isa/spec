@@ -18,8 +18,8 @@ explanatory prose belongs in the reference templates, not in generic
 derived list must be computed from its owning definitions instead of being
 copied into a second YAML source.
 
-The exact versioned contract is documented in `SCHEMA.md`. The frozen
-dataclass decoder and `schema.lock` reject unknown fields, wrong scalar types,
+The exact versioned contract is documented in `SCHEMA.md`. The dataclass
+decoder and `schema.lock` reject unknown fields, wrong scalar types,
 invalid discriminated variants, and unversioned changes to the decoder itself.
 
 Each instruction directory contains two required YAML documents:
@@ -36,8 +36,8 @@ user-domain memory operand additionally carries `domain: user`; the ordinary
 current domain is implicit. `fields` declares non-operand selectors such as a
 size field. Field widths are derived from `bits` rather than repeated.
 
-Instruction attributes contain class, family, privilege, and, where applicable,
-accepted repeat contexts. FLAGS and FFLAGS effects are structured instruction
+Instruction attributes contain class, family, and privilege. Where applicable,
+the sibling `repeat` record contains accepted repeat contexts. FLAGS and FFLAGS effects are structured instruction
 metadata so reference tables and compact effect lines are generated from one
 source. Handwritten explanatory text remains authored prose, but descriptions
 of executable behavior must be traceable to the applicable handwritten Sail

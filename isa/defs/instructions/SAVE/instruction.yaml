@@ -1,6 +1,6 @@
 mnemonic: SAVE
 title: Save Processor State
-summary: Save modified processor state to a CPUID-defined save area.
+summary: Saves processor state to a CPUID-defined save area.
 description: SAVE writes base architectural state and modified enabled extension state to a 4-KiB-aligned, CPUID-defined save area.
 attributes:
   class: system

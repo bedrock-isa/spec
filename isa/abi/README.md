@@ -1,13 +1,11 @@
 # Bedrock ABI documents
 
-The ABI document set is maintained directly in TeX. It follows a four-layer
-core stack. The Platform / OS ABI spans and constrains the stack, while the ISA
-specification is its non-ABI architectural foundation.
+The two ABI documents are maintained directly in TeX:
 
-- `bedrock-elf-abi.tex` specifies the layer-1 binary-format ABI.
-- `bedrock-c-abi.tex` specifies the layer-2 C language ABI.
+- `bedrock-elf-abi.tex` specifies the ELF object, linking, and loading ABI.
+- `bedrock-c-abi.tex` specifies the C language binding and calling convention.
 
-Source-language and compiler-facing contracts are kept outside the ABI stack:
+Source-language and compiler-facing contracts are kept separately:
 
 - `../c/bedrock-target-intrinsics.tex` specifies compiler builtins and target
   header interfaces.

@@ -1,6 +1,6 @@
 mnemonic: TEST
 title: Test
-summary: Computes a comparison result and updates condition codes without storing the temporary value.
+summary: Computes a bitwise conjunction and updates condition codes without storing the temporary value.
 description: Computes the selected-width bitwise conjunction only to set Z and N, clears C and V, and does not write the temporary result.
 attributes:
   class: integer

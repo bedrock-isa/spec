@@ -1,9 +1,3 @@
-EA evaluation applies auto-update to a temporary operand-evaluation image. The update becomes architecturally
-visible only if the instruction commits.
-
-Base auto-update changes by the EA interpretation width in bytes. Index auto-update changes by one element before
-scaling, so the scale affects address generation but not the architectural index increment amount.
-
 EA evaluation begins by copying the architectural registers into a temporary operand-evaluation image. Operands are
 then processed in instruction order. Within one EA, the base term is evaluated before the index term and then the
 displacement. Auto-update changes only the temporary image while operands are being evaluated. Memory reads and

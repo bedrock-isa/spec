@@ -112,5 +112,5 @@ implementation_defined:
   definition: Machine-check EVENT_AUX payload
   publication: platform documentation or firmware interface documentation for the event source
 - id: fptransa_approximation
-  definition: FPTRANSA ULP Error Model and CPUID accuracy contracts
+  definition: FPTRANSA Common Model and CPUID accuracy contracts
   publication: CPUID accuracy-contract discovery plus implementation documentation for the deterministic approximation

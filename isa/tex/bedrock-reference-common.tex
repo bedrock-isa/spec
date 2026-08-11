@@ -901,8 +901,9 @@
   {\Large \MakeUppercase{\BedrockArchitectureName} ARCHITECTURE\par}
   \vspace{0.25in}
   {\Huge\bfseries #1\par}
-  \vspace{0.35in}
-  {\large #2\par}
+  \if\relax\detokenize{#2}\relax\else
+    \vspace{0.35in}{\large #2\par}
+  \fi
   \if\relax\detokenize{#3}\relax\else
     \vspace{0.20in}{\large #3\par}
   \fi

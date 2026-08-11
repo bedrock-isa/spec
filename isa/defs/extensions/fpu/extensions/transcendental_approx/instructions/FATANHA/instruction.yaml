@@ -1,6 +1,6 @@
 mnemonic: FATANHA
 title: Approximate Floating-Point Hyperbolic Arc Tangent
-summary: Performs the bounded approximate floating-point hyperbolic arc tangent operation.
+summary: Performs the approximate floating-point hyperbolic arc tangent operation.
 description: Computes the atanh(x) reference over finite x with abs(x) <= 1 after DAZ and writes an implementation-bounded S- or D-format approximation under the selected FPTRANSA accuracy contract.
 attributes:
   class: fpu

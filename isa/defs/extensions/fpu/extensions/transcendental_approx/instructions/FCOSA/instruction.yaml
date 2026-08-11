@@ -1,6 +1,6 @@
 mnemonic: FCOSA
 title: Approximate Floating-Point Cosine
-summary: Performs the bounded approximate floating-point cosine operation.
+summary: Performs the approximate floating-point cosine operation.
 description: Computes the cos(x) reference in radians over finite x with abs(x) <= pi / 4 after DAZ and writes an implementation-bounded S- or D-format approximation under the selected FPTRANSA accuracy contract.
 attributes:
   class: fpu

@@ -1,6 +1,6 @@
 mnemonic: FASINA
 title: Approximate Floating-Point Arc Sine
-summary: Performs the bounded approximate floating-point arc sine operation.
+summary: Performs the approximate floating-point arc sine operation.
 description: Computes the asin(x) reference in radians over finite x with abs(x) <= 1 after DAZ and writes an implementation-bounded S- or D-format approximation under the selected FPTRANSA accuracy contract.
 attributes:
   class: fpu

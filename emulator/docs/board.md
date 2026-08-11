@@ -15,9 +15,9 @@ addresses to RAM or MMIO devices.
 
 ## Display
 
-The initial display device uses a fixed `320x200` framebuffer with one byte per
+The display device uses a fixed `320x200` framebuffer with one byte per
 pixel in RGB332 format. The visible VRAM payload is 64,000 bytes. The rest of
-the 64 KiB VRAM window is currently unmapped padding.
+the 64 KiB VRAM window is unmapped padding.
 
 Display registers are byte-addressed:
 
@@ -25,20 +25,24 @@ Display registers are byte-addressed:
 | --- | --- | --- |
 | `0x00..0x03` | read-only | width as little-endian `u32` |
 | `0x04..0x07` | read-only | height as little-endian `u32` |
-| `0x08..0x0B` | read-only | pixel format id as little-endian `u32` |
+| `0x08..0x0B` | read-only | pixel format ID as little-endian `u32`: `1` (RGB332) |
 | `0x0C..0x0F` | read/write | control as little-endian `u32`, bit 0 enables output |
 | `0x10..0x17` | read-only | dirty sequence as little-endian `u64` |
 
 ## Keyboard
 
-The initial keyboard device exposes a small event FIFO. Key events are `u32`
+The keyboard device exposes a small event FIFO. Key events are `u32`
 values:
 
 | Bits | Meaning |
 | --- | --- |
-| `0..15` | key code |
+| `0..15` | key code: printable ASCII `0x0020..0x007e`; Backspace `0x0008`, Tab `0x0009`, Enter `0x000d`, Escape `0x001b`, Delete `0x007f`; arrows `0x0101..0x0104`; Insert/Home/End/Page Up/Page Down `0x0110..0x0114`; Copy/Cut/Paste `0x0120..0x0122`; F1..F35 `0x0201..0x0223` |
 | `16` | pressed when set, released when clear |
-| `17..31` | modifier bits |
+| `17` | Shift modifier |
+| `18` | Control modifier |
+| `19` | Alt modifier |
+| `20` | Command modifier |
+| `21..31` | unused |
 
 Keyboard registers are byte-addressed:
 
@@ -50,7 +54,7 @@ Keyboard registers are byte-addressed:
 
 ## ELF Loading
 
-The loader follows `abi_reference.pdf` for the language-neutral Bedrock ELF ABI:
+The loader follows `bedrock-elf-abi.pdf` for the language-neutral Bedrock ELF ABI:
 
 - ELF64, little-endian, `EM_BEDROCK = 0xffb0`.
 - `ET_EXEC` and executable `ET_DYN` are accepted.

@@ -1,6 +1,6 @@
 mnemonic: FTANHA
 title: Approximate Floating-Point Hyperbolic Tangent
-summary: Performs the bounded approximate floating-point hyperbolic tangent operation.
+summary: Performs the approximate floating-point hyperbolic tangent operation.
 description: Computes the tanh(x) reference over all finite values and signed infinity after DAZ and writes an implementation-bounded S- or D-format approximation under the selected FPTRANSA accuracy contract.
 attributes:
   class: fpu

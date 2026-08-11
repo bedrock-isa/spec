@@ -1,6 +1,6 @@
 mnemonic: FSINHA
 title: Approximate Floating-Point Hyperbolic Sine
-summary: Performs the bounded approximate floating-point hyperbolic sine operation.
+summary: Performs the approximate floating-point hyperbolic sine operation.
 description: Computes the sinh(x) reference over all finite values and signed infinity after DAZ and writes an implementation-bounded S- or D-format approximation under the selected FPTRANSA accuracy contract.
 attributes:
   class: fpu

@@ -137,23 +137,21 @@ def _write_page(
 def _root_landing(
     site: SiteModel,
     documents: tuple[DocumentSiteSpec, ...],
-    source_revision: str,
 ) -> str:
     lines = [
         "# Bedrock Architecture",
         "",
-        "Generated reference documentation for the Bedrock architecture and its ABI and C interfaces.",
-        "",
-        "## Publication status",
-        "",
-        "This site is a generated development snapshot. Normative content is owned by the validated repository sources.",
-        "",
-        f"Source revision: `{source_revision}`",
+        "Reference documents for the Bedrock architecture, ELF ABI, C ABI, and compiler interface.",
         "",
         "## Reference documents",
         "",
     ]
     for document in documents:
+        subtitle_suffix = (
+            f" — {document.structure.title.subtitle}"
+            if document.structure.title.subtitle is not None
+            else ""
+        )
         lines.append(
             "- "
             + _link(
@@ -162,7 +160,7 @@ def _root_landing(
                 document_page_key(document.id),
                 document.structure.title.title,
             )
-            + f" — {document.structure.title.subtitle}"
+            + subtitle_suffix
             + " ("
             + _asset_link(
                 site.registry,
@@ -183,13 +181,17 @@ def _document_landing(
     lines = [
         f"# {document.structure.title.title}",
         "",
-        document.structure.title.subtitle,
-        "",
-        _asset_link(site.registry, page_key, document.download, "Download PDF"),
-        "",
-        "## Contents",
-        "",
     ]
+    if document.structure.title.subtitle is not None:
+        lines.extend([document.structure.title.subtitle, ""])
+    lines.extend(
+        [
+            _asset_link(site.registry, page_key, document.download, "Download PDF"),
+            "",
+            "## Contents",
+            "",
+        ]
+    )
     if document.structure.parts:
         for part in document.structure.parts:
             lines.append(
@@ -336,8 +338,8 @@ def _write_mkdocs_configuration(
     configuration = {
         "site_name": "Bedrock Architecture",
         "site_description": (
-            "Generated reference documentation for the Bedrock architecture "
-            "and its ABI and C interfaces."
+            "Reference documents for the Bedrock architecture and its ABI "
+            "and C interfaces."
         ),
         "docs_dir": str(source_root),
         "site_dir": str(output_root),
@@ -530,7 +532,7 @@ def render_site_output(
         source_root,
         site.registry,
         ROOT_PAGE_KEY,
-        _root_landing(site, document_specs, source_revision),
+        _root_landing(site, document_specs),
         written,
     )
     for document in document_specs:
@@ -617,7 +619,7 @@ def render_site_output(
         environment=environment,
     )
     _require_rendered_pages(output_root, site)
-    (output_root / "source-revision.txt").write_text(
+    (source_root / "source-revision.txt").write_text(
         source_revision + "\n",
         encoding="utf-8",
     )

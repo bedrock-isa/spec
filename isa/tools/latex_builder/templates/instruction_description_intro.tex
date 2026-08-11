@@ -12,9 +12,11 @@ metadata. Detailed Semantics follows when more space is needed, before the concr
 non-normative summaries appear only in the instruction-set summary tables. Each mnemonic begins on a new page so its
 form diagrams, field explanations, and side-effect text stay together as one reference unit.
 
-Operation and Detailed Semantics are handwritten projections of the executable behavior owned by the handwritten
-Sail model. They must be traceable to that model and cannot independently introduce an observable state transition,
-fault, commit, repeat, event, or memory action.
+An entry's Operation and Detailed Semantics are normative and may refine only
+named common rules. Determine every observable state transition or action---trap/fault,
+commit, repeat, event, flag effect, or memory action---from those fields together
+with named common rules, including the
+\hyperref[page:instruction-execution-model]{Instruction Execution Model}.
 
 \subsection*{Mnemonics and Suffixes}
 The B, W, L, and Q suffixes select 8-, 16-, 32-, and 64-bit integer sizes; S and D select 32- and 64-bit
@@ -45,8 +47,8 @@ the accrued floating-point exception and status bits.
 In an encoding diagram, fixed 0 and 1 fields identify opcode bits, and the notes below decode lettered fields. An
 <ea> field is the compact effective-address field and may append EA payload bytes in operand order.
 
-Concrete forms, operand and effective-address grammar, stable form identities, and size selectors are owned by the
-instruction-definition layer. Explanatory encoding text does not define another encoding.
+In each instruction entry, Encoding Forms presents the concrete forms, operand and
+effective-address grammar, stable form identities, and size selectors.
 
 For an extended encoding, the four-bit L field selects a 3+L-byte instruction record. The required-byte count is the
 space consumed by the opcode and selected operand payloads. Every larger encoded length through 18 bytes is

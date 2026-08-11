@@ -1,7 +1,7 @@
 mnemonic: FSINCOSA
 title: Approximate Floating-Point Sine And Cosine
-summary: Performs the bounded approximate floating-point sine and cosine operation.
-description: Computes the paired sin(x) and cos(x) reference in radians over finite x with abs(x) <= pi / 4 after DAZ and writes an implementation-bounded S- or D-format approximation under the selected FPTRANSA accuracy contract.
+summary: Performs the approximate floating-point sine and cosine operations.
+description: Computes the paired sin(x) and cos(x) references in radians over finite x with abs(x) <= pi / 4 after DAZ and writes implementation-bounded S- or D-format approximations under the selected FPTRANSA accuracy contract.
 attributes:
   class: fpu
   family: fpu_transcendental_approx

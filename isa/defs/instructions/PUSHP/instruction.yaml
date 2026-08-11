@@ -1,5 +1,5 @@
 mnemonic: PUSHP
-title: Push Register Pairs
+title: Push Register Pair
 summary: Pushes one canonical Rn register pair selected by an inline pair index.
 description: Pushes the canonical register pair selected by the pair ID. The canonical pair sequence is pair 0 (R0, R1), pair 1 (R2, R3), pair 2 (R4, R5), pair 3 (R6, R7), pair 4 (R8, R9), pair 5 (R10, R11), pair 6 (R12, R13), and pair 7 (R14, R15). All eight pair IDs are valid and each selects one pair.
 attributes:

@@ -18,7 +18,7 @@ INSTRUCTION_RE = re.compile(r"\\begin\{manualinstruction\}\s*\{")
 @dataclass(frozen=True)
 class DocumentTitle:
     title: str
-    subtitle: str
+    subtitle: str | None
 
 
 @dataclass(frozen=True)
@@ -172,7 +172,11 @@ def _title_page(original: str, masked: str, body_start: int, body_end: int) -> D
     subtitle_raw, _ = _braced_value(original, cursor, "document subtitle")
     return DocumentTitle(
         _plain_title(title_raw, "document title"),
-        _plain_title(subtitle_raw, "document subtitle"),
+        (
+            _plain_title(subtitle_raw, "document subtitle")
+            if subtitle_raw.split()
+            else None
+        ),
     )
 
 

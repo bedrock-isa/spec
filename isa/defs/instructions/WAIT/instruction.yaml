@@ -1,6 +1,6 @@
 mnemonic: WAIT
 title: Wait
-summary: Pause execution for a finite implementation-selected interval.
+summary: Permits a finite implementation-selected delay, including zero.
 description: Retires normally with the next instruction as its continuation and permits a finite implementation-selected delay, including zero, before subsequent execution.
 attributes:
   class: system

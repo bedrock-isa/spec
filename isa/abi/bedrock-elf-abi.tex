@@ -106,7 +106,7 @@ Program permission bits use the standard values \texttt{PF\_X=1},
 \texttt{p\_align} equal to the selected page size or a larger power-of-two
 alignment; the minimum supported page alignment is 4096 bytes.
 
-\subsection{Section and Symbol Policy}
+\subsection{Section and Symbol Policy}\label{section:section-and-symbol-policy}
 Standard ELF section types and the \texttt{SHF\_WRITE},
 \texttt{SHF\_ALLOC}, \texttt{SHF\_EXECINSTR}, and \texttt{SHF\_TLS} flags
 retain their generic meanings. Symbol binding and type occupy
@@ -197,9 +197,8 @@ meanings.
 \begin{itemize}
 \item Function symbols name the first instruction of the callable entry point.
 \item Object symbols name the first byte of the object storage.
-\item In \texttt{ET\_REL}, ELF \texttt{st\_value} stores a byte offset relative to the symbol's defining section. In
-\texttt{ET\_EXEC} and \texttt{ET\_DYN} after final link, it stores the symbol's pre-segment virtual byte address as
-defined in Section~2.4.
+\item Symbol values follow the Section and Symbol Policy in
+Section~\ref{section:section-and-symbol-policy}.
 \end{itemize}
 \clearpage
 \section{Relocation Set}\label{page:relocation-set}

@@ -1,7 +1,7 @@
 # Bedrock Emulator
 
-This directory contains an early Rust workspace for a Bedrock CPU emulator.
-It now includes the CPU core, ISA decoder, memory bus, memory-mapped
+This directory contains a Rust workspace for a Bedrock CPU emulator. It
+includes the CPU core, ISA decoder, memory bus, memory-mapped
 framebuffer/keyboard devices, concrete machine wiring, debugger support, CLI,
 GUI, LLVM toolchain integration, and executable samples.
 
@@ -17,7 +17,7 @@ into a crate `src` directory.
 - `bedrock-isa`: instruction word, prefix, operand, and decode skeletons.
 - `bedrock-bus`: byte-addressed bus, RAM, devices, and address-map helpers.
 - `bedrock-core`: CPU state, memory translation, exception delivery, integer
-  execution, and the initial executable FPU subset used by the samples.
+  execution, and the executable FPU subset used by the samples.
 - `bedrock-devices`: framebuffer and keyboard MMIO devices.
 - `bedrock-machine`: concrete MVP board wiring.
 - `bedrock-debug`: breakpoint, watchpoint, trace, and snapshot types.

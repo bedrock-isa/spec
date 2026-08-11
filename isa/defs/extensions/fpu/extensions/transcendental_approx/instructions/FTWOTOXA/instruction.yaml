@@ -1,6 +1,6 @@
 mnemonic: FTWOTOXA
 title: Approximate Floating-Point 2 To x
-summary: Performs the bounded approximate floating-point 2 to x operation.
+summary: Performs the approximate floating-point 2 to x operation.
 description: Computes the 2 ** x reference over all finite values and signed infinity after DAZ and writes an implementation-bounded S- or D-format approximation under the selected FPTRANSA accuracy contract.
 attributes:
   class: fpu

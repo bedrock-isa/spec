@@ -1933,39 +1933,6 @@ def feature_index(
     )
 
 
-def revision_history_table(navigation: dict[str, Any]) -> str:
-    history = navigation["revision_history"]
-    unreleased = history["unreleased"]
-    rows = [
-        [
-            latex_escape(unreleased["status"]),
-            "--",
-            latex_escape(
-                "; ".join(change.rstrip(".") for change in unreleased["changes"])
-                + "."
-            ),
-        ]
-    ]
-    for release in history["released"]:
-        rows.append(
-            [
-                latex_escape(release["title"]),
-                tex_code(release["architecture_revision"]),
-                latex_escape(
-                    f"{release['compatibility']}: "
-                    + "; ".join(change.rstrip(".") for change in release["changes"])
-                    + "."
-                ),
-            ]
-        )
-    return latex_longtable(
-        ["Status", "Architecture revision", "Changes"],
-        rows,
-        ["0.85in", "0.90in", "3.65in"],
-        "Architecture Revision History",
-    )
-
-
 def latex_reference_navigation_section(
     model: IsaModel,
     instructions: list[InstructionDef],
@@ -1979,7 +1946,6 @@ def latex_reference_navigation_section(
             "STATE_INDEX": state_index(navigation, architecture),
             "EVENT_INDEX": event_index(architecture, instructions),
             "FEATURE_INDEX": feature_index(model, instructions, architecture),
-            "REVISION_HISTORY": revision_history_table(navigation),
         },
     )
 

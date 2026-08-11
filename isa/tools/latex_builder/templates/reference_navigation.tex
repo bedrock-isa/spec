@@ -1,10 +1,9 @@
 \clearpage
 \appendix
-\section{Reference Indexes and Revision History}\label{page:reference-indexes-and-revision-history}\label{section:reference-indexes}
+\section{Reference Indexes}\label{page:reference-indexes}\label{section:reference-indexes}
 
-These indexes are generated from the instruction definitions, encoding store, register and extension manifests,
-architectural tables, and navigation metadata. Page references point to the normative definition or
-instruction entry.
+These indexes provide page references to architectural definitions and
+instruction entries.
 
 \subsection{Canonical Field Names}
 
@@ -16,7 +15,7 @@ instruction-form context.
 \subsection{Architectural State Index}
 
 Reader and writer columns identify the architectural interfaces or execution classes that access each state group.
-Reset values are taken from the generated architectural reset-state source.
+Reset values are the architectural reset values for each state group.
 
 @STATE_INDEX@
 
@@ -28,10 +27,3 @@ Reset values are taken from the generated architectural reset-state source.
 \subsection{CPUID Feature Index}
 
 @FEATURE_INDEX@
-
-\subsection{Architecture Revision History}
-
-The current working specification remains in the Unreleased row until a release assigns an
-\texttt{ARCHITECTURE\_REVISION}. Released rows use the revision value returned by CPUID.
-
-@REVISION_HISTORY@

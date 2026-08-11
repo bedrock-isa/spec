@@ -1,6 +1,6 @@
 mnemonic: FCOSHA
 title: Approximate Floating-Point Hyperbolic Cosine
-summary: Performs the bounded approximate floating-point hyperbolic cosine operation.
+summary: Performs the approximate floating-point hyperbolic cosine operation.
 description: Computes the cosh(x) reference over all finite values and signed infinity after DAZ and writes an implementation-bounded S- or D-format approximation under the selected FPTRANSA accuracy contract.
 attributes:
   class: fpu

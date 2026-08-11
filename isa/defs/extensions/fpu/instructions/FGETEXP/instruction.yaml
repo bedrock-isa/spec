@@ -1,7 +1,7 @@
 mnemonic: FGETEXP
 title: Floating-Point Get Exponent
 summary: Performs the floating-point get exponent operation.
-description: Extracts the unbiased exponent classification of the selected floating-point source and writes the specified floating-point result for finite and special values.
+description: Derives a signed exponent from the selected source's exponent field and converts that integer to the selected floating-point destination format.
 attributes:
   class: fpu
   family: fpu

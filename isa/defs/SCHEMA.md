@@ -1,14 +1,14 @@
 # YAML Schema Contract
 
-The Bedrock YAML schema is frozen at version 0. This file displays the complete
-shape accepted by `isa/tools/defs_schema.py`, including nested records and
-discriminated variants. `schema.lock` pins the SHA-256 digests of both files.
+This file displays the complete Bedrock YAML schema accepted by
+`isa/tools/defs_schema.py`, including nested records and discriminated
+variants. The displayed contract is synchronized with the decoder at version
+0, and `schema.lock` pins the SHA-256 digests of both files.
 
 Changing an allowed field, required field, value type, enum, path rule, or
-cross-field invariant is a schema change. While the project remains unreleased,
-keep `SCHEMA_VERSION` at 0 and update this contract, its tests, and
-`schema.lock` deliberately. A version increment requires an explicit release
-or versioning decision.
+cross-field invariant is a schema change. Keep `SCHEMA_VERSION` at 0 until an
+explicit release or versioning decision, and synchronize this contract, its
+tests, and `schema.lock` with each deliberate schema change.
 
 ## Notation and common rules
 

@@ -1,4 +1,4 @@
-\subsection{FPTRANSA ULP Error Model}
+\subsection{FPTRANSA Common Model}\label{section:fptransa-common-model}
 For an approximate transcendental instruction, $x'$ is the source after \texttt{FSTATUS.DAZ}, $y=f(x')$ is the
 exact real reference value named by its accuracy contract, and $a$ is the approximate result before
 \texttt{FSTATUS.FTZ}. For a format with precision $p$ and minimum normal exponent $e_{\min}$, define
@@ -19,9 +19,15 @@ relative precision bits respectively for nonzero normal results. CPUID may adver
 FPTRANSA applies DAZ before forming the exact reference input and measures its advertised ULP error before FTZ.
 It ignores \texttt{FSTATUS.RM} and formats its implementation-defined approximation with nearest-even rounding.
 The approximation is deterministic for the same implementation, input, format, and relevant FSTATUS mode, but need
-not be bit-identical across implementations. DN and FTZ retain their ordinary meanings. FPTRANSA may accrue NV, DZ,
-OF, and UF as its instruction contract requires, but it leaves the accrued NX flag unchanged and never takes an NX
-trap. Overflow means that the exact result magnitude exceeds the selected format's maximum finite value. Underflow
-means that the exact nonzero result magnitude is below the selected format's minimum normal value.
+not be bit-identical across implementations.
+
+A signaling NaN accrues NV. NaN results are quieted and then processed by \texttt{FSTATUS.DN}.
+\texttt{FSTATUS.FTZ} replaces a subnormal result with the required signed zero and accrues UF. Each instruction
+accrues NV and DZ according to its special-value rules, and accrues OF and UF when required by its exact result;
+NX remains unchanged and cannot cause a trap. Overflow means that the exact result magnitude exceeds the selected
+format's maximum finite value. Underflow means that the exact nonzero result magnitude is below the selected format's
+minimum normal value. If any accrued exception is enabled as a trap, the instruction raises
+\texttt{FLOATING\_POINT\_FAULT} before writing any destination; otherwise it commits its result or results and
+accrued flags together.
 
 \clearpage

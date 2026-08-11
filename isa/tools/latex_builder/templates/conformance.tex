@@ -11,35 +11,36 @@ save images, event frames, and reset state defined for that processor.
 
 \subsection{Normative Material and Specificity}
 
-Architecture prose, ordered steps, generated architecture tables, instruction encoding diagrams, and the Operation
+Architecture prose, ordered steps, architecture tables, instruction encoding diagrams, and the Operation
 and Detailed Semantics fields of instruction entries are normative unless a section explicitly identifies material
 as a summary, example, or validation status.
 
 \noindent
 \begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{1.55in}X@{}}
 \toprule
-\textbf{Domain owner} & \textbf{Owned material}\\
+\textbf{Rule set or provider} & \textbf{Covered material}\\
 \midrule
-The instruction-definition layer & Concrete instruction encodings, operand and effective-address grammar, stable form
+Instruction definitions & Concrete instruction encodings, operand and effective-address grammar, stable form
 identities, extension wiring, and document ordering.\\
-Handwritten Sail & Executable instruction behavior, architectural state transitions, fault and commit ordering,
+\hyperref[page:instruction-execution-model]{Instruction Execution Model} common rules and instruction-entry Operation
+and Detailed Semantics & Executable instruction behavior, architectural state transitions, fault and commit ordering,
 repeat and event behavior, and single-logical-processor memory-action sequencing.\\
-The formal memory model & Permitted cross-processor ordering and visibility.\\
-ABI sources & ELF, C ABI, and calling-convention contracts.\\
-Compiler-interface sources & Source-language and compiler-facing target-interface contracts.\\
-External numerical floating-point providers & Numerical results and certificates only; handwritten Sail validates
-their inputs and owns the resulting architectural trap or commit behavior.\\
+Formal memory model & Permitted cross-processor ordering and visibility.\\
+ABI specifications & ELF, C ABI, and calling-convention contracts.\\
+Compiler-interface specifications & Source-language and compiler-facing target-interface contracts.\\
+External numerical floating-point providers & Numerical results and certificates only; input validation and the resulting
+architectural trap or commit behavior follow the applicable
+\hyperref[page:instruction-execution-model]{Instruction Execution Model} common rules and instruction entry's Operation
+and Detailed Semantics.\\
 \bottomrule
 \end{tabularx}
 
-Generated presentations and authored explanatory prose remain normative where declared but are semantically downstream
-of the applicable owner. Behavioral prose is traceable to handwritten Sail and cannot independently introduce
-observable behavior.
-
-Domain ownership selects the controlling semantic source; the specificity rules below govern narrowing without
-transferring ownership.
-
-The following domain rules resolve different levels of specificity:
+Presented material remains normative where declared and follows the applicable
+rule set. For executable behavior, readers apply the
+\hyperref[page:instruction-execution-model]{Instruction Execution Model} common
+rules together with the applicable instruction entry's Operation and Detailed
+Semantics. The following specificity rules govern narrowing among applicable
+rules:
 
 \begin{enumerate}
 \item Instruction bytes, field values, lengths, and decoding validity follow the concrete instruction form, its
@@ -48,14 +49,12 @@ field constraints, and the Instruction Encoding and Effective Addressing chapter
 narrows the common execution, operand, flag, memory, or event rule that it names.
 \item Common architectural behavior follows the chapter that defines that behavior. A structure-specific rule
 narrows the defaults in Terminology and Compatibility.
-\item Summary tables, examples, and validation-status files provide navigation or verification context
+\item Summary tables and examples provide navigation or explanatory context
 and do not replace a normative rule.
 \end{enumerate}
 
 Two normative statements at the same specificity are required to agree. A discrepancy at that level is a
 specification defect and is resolved by correcting the normative sources and their derived tables together.
-
-Corrections to an owning source propagate to its downstream prose and generated presentations.
 
 \subsection{Implementation-Defined Disclosures}
 

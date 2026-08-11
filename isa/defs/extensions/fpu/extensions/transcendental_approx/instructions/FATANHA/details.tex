@@ -20,6 +20,4 @@ After FSTATUS.DAZ processing, the reference function is atanh(x) on finite x wit
 \item monotonically increasing on (-1, 1)
 \end{itemize}
 
-A signaling NaN accrues NV. NaN results are quieted and then processed by FSTATUS.DN. FSTATUS.FTZ replaces a subnormal result with the required signed zero and accrues UF. OF and UF are accrued as specified by the common FPTRANSA model, while NX is unchanged.
-
-If any accrued exception is enabled as a trap, the instruction raises \texttt{FLOATING\_POINT\_FAULT} before writing a destination; otherwise it commits the result and accrued flags together.
+NaN, exception, trap, and commit handling follows the common FPTRANSA model in Section~\ref{section:fptransa-common-model}.
