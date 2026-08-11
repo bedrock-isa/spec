@@ -8,8 +8,9 @@ GUI, LLVM toolchain integration, and executable samples.
 The emulator is a non-owning executable consumer of the surrounding ISA
 repository. Static encodings and operand/EA grammar come from `../isa/defs`;
 handwritten Sail under `../sail` owns executable architectural behavior. The
-checked-in Rust decode table is generated from the definitions and does not
-independently define the ISA.
+Rust decode table is generated into Cargo's build output from the definitions
+and does not independently define the ISA. No generated Rust source is checked
+into a crate `src` directory.
 
 ## Workspace Layout
 
@@ -34,14 +35,10 @@ make emulator-isa-check
 make emulator-validate
 ```
 
-The generator derives its input and output locations from its own installed
-path, so this freshness check also works from any current directory:
-
-```sh
-python3 /path/to/isa-design/emulator/tools/gen_isa.py --check
-```
-
-From this directory, the equivalent Rust-only checks are:
+Generation requires Python 3 and PyYAML. Cargo invokes the generator
+automatically for direct builds, checks, and tests; set `PYTHON` to override
+the default `python3` executable. From this directory, the equivalent direct
+Cargo checks are:
 
 ```sh
 cargo check --workspace

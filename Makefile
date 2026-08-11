@@ -40,11 +40,10 @@ sail-docs:
 	$(PYTHON) sail/tools/build_docs.py "$(SAIL_BUILD_DIR)"
 
 emulator-isa-generate:
-	$(PYTHON) emulator/tools/gen_isa.py
+	PYTHON="$(PYTHON)" $(CARGO) check --manifest-path "$(EMULATOR_MANIFEST)" -p bedrock-isa --target-dir "$(EMULATOR_TARGET_DIR)"
 
-emulator-isa-check:
+emulator-isa-check: emulator-isa-generate
 	cd emulator && $(PYTHON) -m unittest tools/test_gen_isa.py
-	$(PYTHON) emulator/tools/gen_isa.py --check
 
 emulator-format:
 	$(CARGO) fmt --manifest-path "$(EMULATOR_MANIFEST)" --all -- --check

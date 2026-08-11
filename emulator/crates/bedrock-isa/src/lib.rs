@@ -1,6 +1,8 @@
 pub mod decode;
 pub mod ea;
-pub mod generated;
+pub mod generated {
+    include!(concat!(env!("OUT_DIR"), "/generated.rs"));
+}
 pub mod header;
 pub mod instruction;
 pub mod operand;

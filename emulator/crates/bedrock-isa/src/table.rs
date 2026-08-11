@@ -148,6 +148,7 @@ pub struct GeneratedForm {
     pub text: &'static str,
     pub class: EncodingClass,
     pub payload_bits: u8,
+    pub fixed_operand_bytes: u8,
     pub pattern: &'static str,
     pub mask: u64,
     pub value: u64,

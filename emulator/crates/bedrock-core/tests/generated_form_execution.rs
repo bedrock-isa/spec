@@ -161,6 +161,7 @@ fn appended_operand_bytes(form: &GeneratedForm, payload: u64) -> Vec<u8> {
         }
     }
 
+    let fixed_start = appended.len();
     for (needle, width, value) in [
         ("<imm8s>", 1, 1_u64),
         ("<imm16s>", 2, 1_u64),
@@ -177,6 +178,12 @@ fn appended_operand_bytes(form: &GeneratedForm, payload: u64) -> Vec<u8> {
     if form.opcode == Opcode::Repg {
         appended.extend_from_slice(&REPG_BODY_BYTES.to_le_bytes());
     }
+    assert_eq!(
+        usize::from(form.fixed_operand_bytes),
+        appended.len() - fixed_start,
+        "{} has incorrect fixed operand payload metadata",
+        form.id
+    );
     appended
 }
 
@@ -308,6 +315,11 @@ fn every_generated_form_decodes_and_reaches_a_non_illegal_execution_path() {
             form.id
         );
         assert_eq!(decoded.form, form.form, "{}", form.id);
+        assert!(
+            std::ptr::eq(decoded.generated_form, form),
+            "{} retained a different generated form",
+            form.id
+        );
         assert_eq!(decoded.allocation_id, form.id, "{}", form.id);
         assert_eq!(decoded.opcode, form.opcode, "{}", form.id);
         if let Some(offender) = execute_one(form, &bytes) {

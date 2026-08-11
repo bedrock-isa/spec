@@ -30,6 +30,33 @@ PREDICATE_VALUES = {
     "immediate": set(range(0x6C, 0x70)),
 }
 
+FIELDLESS_OPERAND_WIDTHS = {
+    "CS": 0,
+    "SP": 0,
+    "imm": 0,
+    "imm8s": 1,
+    "imm16s": 2,
+    "imm16": 2,
+    "imm32s": 4,
+    "imm64": 8,
+    "fconst_id": 2,
+}
+
+
+def validated_output_path(output: Path) -> Path:
+    """Resolve output and reject generated Rust beneath repository src trees."""
+
+    resolved = output.resolve()
+    try:
+        relative = resolved.relative_to(REPOSITORY_ROOT.resolve())
+    except ValueError:
+        return resolved
+    if "src" in relative.parts[:-1]:
+        raise ValueError(
+            f"generated Rust output must not be under a repository src directory: {resolved}"
+        )
+    return resolved
+
 
 def rust_string(value: str) -> str:
     return '"' + value.replace("\\", "\\\\").replace('"', '\\"') + '"'
@@ -340,6 +367,24 @@ def mnemonic(text: str) -> str:
     if not re.fullmatch(r"[A-Za-z][A-Za-z0-9]*", head):
         raise ValueError(f"cannot derive mnemonic from {text!r}")
     return head.upper()
+
+
+def fixed_operand_bytes(entry_id: str, operands: list[dict[str, Any]]) -> int:
+    total = 0
+    for operand in operands:
+        if operand.get("field") is not None:
+            continue
+        operand_type = str(operand.get("type"))
+        try:
+            total += FIELDLESS_OPERAND_WIDTHS[operand_type]
+        except KeyError as error:
+            raise ValueError(
+                f"{entry_id}: fieldless operand {operand.get('name')!r} "
+                f"has unknown payload width for type {operand_type!r}"
+            ) from error
+    if total > 0xFF:
+        raise ValueError(f"{entry_id}: fixed operand payload exceeds u8")
+    return total
 
 
 def rust_variant(value: str) -> str:
@@ -696,6 +741,7 @@ def render(isa_design: Path) -> str:
                 raise ValueError(f"{entry_id}: missing definition for {mnemonic_name}")
             pattern = compact_bits(str(entry["bits"]))
             mask, value = pattern_mask_value(pattern)
+            fixed_bytes = fixed_operand_bytes(entry_id, operands_by_form[entry_id])
             variant = rust_variant(entry_id)
             if variant in seen_form_names:
                 raise ValueError(f"duplicate generated FormId variant {variant} from {entry_id}")
@@ -748,7 +794,8 @@ def render(isa_design: Path) -> str:
                 f"form: FormId::{variant}, id: {rust_string(entry_id)}, "
                 f"opcode: Opcode::{opcode_variants[mnemonic_name]}, text: {rust_string(text)}, "
                 f"class: EncodingClass::{class_name.title().replace('short', 'Short').replace('long', 'Long')}, "
-                f"payload_bits: {payload_bits}, pattern: {rust_string(pattern)}, "
+                f"payload_bits: {payload_bits}, fixed_operand_bytes: {fixed_bytes}, "
+                f"pattern: {rust_string(pattern)}, "
                 f"mask: 0x{mask:x}, value: 0x{value:x}, fields: {fields}, ea_fields: {ea_fields}, "
                 f"constraints: {constraints}, "
                 f"destination_overlap: {destination_overlap}, "
@@ -851,8 +898,8 @@ def main() -> int:
     parser.add_argument(
         "--output",
         type=Path,
-        default=EMULATOR_ROOT / "crates/bedrock-isa/src/generated.rs",
-        help="generated Rust table path (default: emulator bedrock-isa crate)",
+        required=True,
+        help="generated Rust table path outside repository src directories",
     )
     parser.add_argument(
         "--check",
@@ -861,16 +908,21 @@ def main() -> int:
     )
     args = parser.parse_args()
 
+    try:
+        output = validated_output_path(args.output)
+    except ValueError as error:
+        parser.error(str(error))
+
     rendered = render(args.isa_design.resolve())
     if args.check:
-        if not args.output.exists() or args.output.read_text(encoding="utf-8") != rendered:
-            print(f"generated ISA table is stale: {args.output}", file=sys.stderr)
+        if not output.exists() or output.read_text(encoding="utf-8") != rendered:
+            print(f"generated ISA table is stale: {output}", file=sys.stderr)
             return 1
         return 0
 
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(rendered, encoding="utf-8")
-    print(f"generated {args.output}")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(rendered, encoding="utf-8")
+    print(f"generated {output}")
     return 0
 
 

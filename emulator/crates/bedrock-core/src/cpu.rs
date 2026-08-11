@@ -12,7 +12,6 @@ use bedrock_isa::{
     AutoUpdate, CompactEa, DecodedInstruction, DestinationOverlapRule, DisplacementWidth,
     Ext0Descriptor, FieldKind, FormId, InstructionSet, MAX_INSTRUCTION_BYTES, Opcode,
     RepeatObservation, RepeatObservedOperand, RepeatOperandLocation, Size, decode, decode_header,
-    generated::GENERATED_FORMS,
 };
 use std::cell::Cell;
 
@@ -591,11 +590,7 @@ impl Cpu {
         pc: u64,
         instruction: &DecodedInstruction,
     ) -> Result<(), Trap> {
-        let form = GENERATED_FORMS
-            .iter()
-            .find(|form| form.form == instruction.form)
-            .expect("decoded form must have generated metadata");
-        for relation in form.destination_overlap {
+        for relation in instruction.generated_form.destination_overlap {
             if relation.rule != DestinationOverlapRule::IllegalInstruction {
                 continue;
             }
@@ -6219,10 +6214,11 @@ fn page_fault_metadata(mut trap: Trap, size: Size, operand: Option<u8>, atomic: 
 }
 
 fn ea_field_ordinal(instruction: &DecodedInstruction, symbol: char) -> u8 {
-    GENERATED_FORMS
+    instruction
+        .generated_form
+        .ea_fields
         .iter()
-        .find(|form| form.form == instruction.form)
-        .and_then(|form| form.ea_fields.iter().find(|field| field.symbol == symbol))
+        .find(|field| field.symbol == symbol)
         .map(|field| field.syntax_operand_ordinal)
         .unwrap_or(0)
 }

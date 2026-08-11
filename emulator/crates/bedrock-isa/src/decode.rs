@@ -1,6 +1,6 @@
 use crate::generated::{FormId, decode_form};
 use crate::header::{HeaderError, InstructionHeader, decode_header, opcode_payload};
-use crate::table::{FieldKind, extract_pattern_field};
+use crate::table::{FieldKind, GeneratedForm, extract_pattern_field};
 use crate::{CompactEa, DecodedOperand, Ext0Descriptor, InstructionAttributes, Opcode};
 use thiserror::Error;
 
@@ -16,6 +16,7 @@ pub struct DecodedInstruction {
     pub header: InstructionHeader,
     pub length_bytes: u8,
     pub form: FormId,
+    pub generated_form: &'static GeneratedForm,
     pub allocation_id: &'static str,
     pub form_text: &'static str,
     pub opcode: Opcode,
@@ -69,7 +70,7 @@ pub fn decode(bytes: &[u8]) -> Result<DecodedInstruction, DecodeError> {
         .iter()
         .map(lower_field)
         .collect::<Result<Vec<_>, _>>()?;
-    validate_operand_payload(form.opcode, form.text, form.fields, &fields, header, record)?;
+    validate_operand_payload(form, &fields, header, record)?;
     let attributes = InstructionAttributes {
         instruction_set: form.attributes.instruction_set,
         privileged: form.attributes.privileged,
@@ -84,6 +85,7 @@ pub fn decode(bytes: &[u8]) -> Result<DecodedInstruction, DecodeError> {
         header,
         length_bytes: header.length_bytes,
         form: form.form,
+        generated_form: form,
         allocation_id: form.id,
         form_text: form.text,
         opcode: form.opcode,
@@ -95,15 +97,14 @@ pub fn decode(bytes: &[u8]) -> Result<DecodedInstruction, DecodeError> {
 }
 
 fn validate_operand_payload(
-    opcode: Opcode,
-    text: &str,
-    generated_fields: &[crate::table::GeneratedField],
+    form: &GeneratedForm,
     fields: &[DecodedField],
     header: InstructionHeader,
     record: &[u8],
 ) -> Result<(), DecodeError> {
     let mut cursor = usize::from(header.opcode_bytes);
-    for generated in generated_fields
+    for generated in form
+        .fields
         .iter()
         .filter(|field| field.kind == FieldKind::Ea7)
     {
@@ -127,16 +128,7 @@ fn validate_operand_payload(
             ea => cursor += ea.appended_bytes(),
         }
     }
-    cursor += occurrences(text, "<imm8s>");
-    cursor += occurrences(text, "<imm16s>") * 2;
-    cursor += occurrences(text, "<imm16>") * 2;
-    cursor += occurrences(text, "<imm16/bitmap>") * 2;
-    cursor += occurrences(text, "<imm32s>") * 4;
-    cursor += occurrences(text, "<imm64>") * 8;
-    cursor += occurrences(text, "<fconst_id>") * 2;
-    if opcode == Opcode::Repg {
-        cursor += 2;
-    }
+    cursor += usize::from(form.fixed_operand_bytes);
     if cursor > record.len() {
         return Err(DecodeError::OperandPayload {
             needed: cursor,
@@ -144,10 +136,6 @@ fn validate_operand_payload(
         });
     }
     Ok(())
-}
-
-fn occurrences(text: &str, needle: &str) -> usize {
-    text.match_indices(needle).count()
 }
 
 fn lower_field(field: &DecodedField) -> Result<DecodedOperand, DecodeError> {
