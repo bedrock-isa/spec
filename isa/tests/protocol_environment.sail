@@ -81,6 +81,15 @@ function test_protocol_environment_group() -> unit = {
       let done = resume_transaction(l1, pte_response(0x00000000ABCDE00F));
       assert(done.state.registers[0] == 0x00000000ABCDEABC);
       assert(done.state.flags == 0b1111);
+      let large_l3 = resume_transaction(l3, pte_response(0x000000004000000F));
+      assert(large_l3.state.registers[0] == 0x0000000056789ABC);
+      assert(large_l3.state.flags == 0b1111);
+      let misaligned_l3 = resume_transaction(l3, pte_response(0x000000004000100F));
+      assert(misaligned_l3.state.registers[0] == 0x0000000000000000);
+      assert(misaligned_l3.state.flags == 0b0000);
+      let upper_slot = resume_transaction(l3, pte_response(0x00000000400001EB));
+      assert(upper_slot.state.registers[0] == 0x0000000000000000);
+      assert(upper_slot.state.flags == 0b0000);
       let malformed_l3 = resume_transaction(l3, pte_response(0x000000000000384F));
       assert(malformed_l3.state.registers[0] == 0x0000000000000000);
       assert(malformed_l3.state.flags == 0b0000);
@@ -102,6 +111,9 @@ function test_protocol_environment_group() -> unit = {
       let raw = resume_transaction(l3, pte_response(0x000000000000384F));
       assert(raw.state.registers[0] == 0x000000000000384F);
       assert(raw.state.flags == 0b0000);
+      let large_leaf = resume_transaction(l3, pte_response(0x000000004000000F));
+      assert(large_leaf.state.registers[0] == 0x000000004000000F);
+      assert(large_leaf.state.flags == 0b1111);
       let unreadable = resume_transaction(l4, failing_response(ResponsePteRead));
       assert(unreadable.fault != None());
       assert(unreadable.state == state);
@@ -112,6 +124,22 @@ function test_protocol_environment_group() -> unit = {
       assert(not_bool(rejected_bounds.awaiting_environment));
       assert(rejected_bounds.fault != None());
       assert(rejected_bounds.state == outside)
+    },
+    None() => assert(false),
+  };
+
+  match decode_full_record([|0xC7, 0xEF, 0x10, 0x00|]) {
+    Some(instruction) => {
+      var state = initial_cpu();
+      state.supervisor = true; state.status = 0x0000000000000010;
+      state.controls[0] = 0x0000000000001001;
+      state.registers[0] = 0x0000123456789ABC;
+      let l4 = execute_full(instruction, state);
+      let l3 = resume_transaction(l4, pte_response(0x000000000000280F));
+      let blocked = resume_transaction(l3, pte_response(0x000000004000000F));
+      assert(not_bool(blocked.awaiting_environment));
+      assert(blocked.state.registers[0] == 0x0000000000000000);
+      assert(blocked.state.flags == 0b0000)
     },
     None() => assert(false),
   };

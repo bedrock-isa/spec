@@ -197,6 +197,7 @@ pub enum TranslatedTarget {
 pub struct PageWalkResult {
     pub target: TranslatedTarget,
     pub leaf_entry: u64,
+    pub leaf_level: u8,
     pub entries: [u64; 5],
     pub levels: u8,
     pub user: bool,
@@ -351,6 +352,7 @@ impl MemoryTranslation {
             return Ok(PageWalkResult {
                 target: TranslatedTarget::Byte(linear),
                 leaf_entry: 0,
+                leaf_level: 0,
                 entries: [0; 5],
                 levels: 0,
                 user: true,
@@ -381,6 +383,7 @@ impl MemoryTranslation {
         let mut effective_u = true;
         let mut traversed = Vec::with_capacity(shifts.len());
         let mut entries = [0u64; 5];
+        let mut leaf_level = 0;
 
         for (index, shift) in shifts.iter().copied().enumerate() {
             let architectural_level = (shifts.len() - index) as u8;
@@ -398,11 +401,11 @@ impl MemoryTranslation {
                 return Err(page_fault(linear, PageFaultReason::NotPresent).into());
             }
 
-            let leaf = index + 1 == shifts.len();
+            let leaf = entry & PTE_TABLE == 0;
             let structurally_valid = if leaf {
-                valid_leaf_entry(entry)
+                valid_leaf_entry(entry, architectural_level)
             } else {
-                valid_table_entry(entry)
+                architectural_level > 1 && valid_table_entry(entry)
             };
             if !structurally_valid {
                 return Err(page_fault(linear, PageFaultReason::InvalidEntry).into());
@@ -435,14 +438,18 @@ impl MemoryTranslation {
                 }
             }
 
-            if !leaf {
-                table = entry & pfn_mask;
+            if leaf {
+                leaf_level = architectural_level;
+                break;
             }
+            table = entry & pfn_mask;
         }
 
         let leaf_entry = traversed.last().expect("page walk has a leaf").1;
         let target = if leaf_entry & PTE_ADDRESSING_TYPE == 0 {
-            TranslatedTarget::Byte((leaf_entry & pfn_mask) | (linear & 0xfff))
+            TranslatedTarget::Byte(
+                (leaf_entry & pfn_mask) | (linear & leaf_offset_mask(leaf_level)),
+            )
         } else {
             TranslatedTarget::Slot((leaf_entry & pfn_mask) | (linear & 0xfff))
         };
@@ -465,6 +472,7 @@ impl MemoryTranslation {
         Ok(PageWalkResult {
             target,
             leaf_entry,
+            leaf_level,
             entries,
             levels: shifts.len() as u8,
             user: effective_u,
@@ -574,10 +582,10 @@ impl MemoryTranslation {
             effective_x &= entry & PTE_EXECUTABLE != 0;
             effective_u &= entry & PTE_USER != 0;
             if level == requested_level {
-                let valid = if level == 1 {
-                    valid_leaf_entry(entry)
+                let valid = if entry & PTE_TABLE == 0 {
+                    valid_leaf_entry(entry, level)
                 } else {
-                    valid_table_entry(entry)
+                    level > 1 && valid_table_entry(entry)
                 };
                 return Ok(if valid {
                     PageQueryResult::success(entry, effective_u, effective_w, effective_x)
@@ -585,7 +593,7 @@ impl MemoryTranslation {
                     PageQueryResult::failure_with_value(entry)
                 });
             }
-            if !valid_table_entry(entry) {
+            if entry & PTE_TABLE == 0 || !valid_table_entry(entry) {
                 return Ok(PageQueryResult::failure());
             }
             table = entry & pfn_mask;
@@ -611,14 +619,19 @@ const fn valid_table_entry(entry: u64) -> bool {
         && entry & (PTE_DIRTY | PTE_GLOBAL | PTE_ADDRESSING_TYPE) == 0
 }
 
-const fn valid_leaf_entry(entry: u64) -> bool {
+const fn leaf_offset_mask(level: u8) -> u64 {
+    (1u64 << (12 + 9 * (level - 1))) - 1
+}
+
+const fn valid_leaf_entry(entry: u64, level: u8) -> bool {
     if entry & PTE_PRESENT == 0 || entry & PTE_TABLE != 0 {
         return false;
     }
     if entry & PTE_ADDRESSING_TYPE == 0 {
-        return true;
+        return entry & (leaf_offset_mask(level) & !0xfff) == 0;
     }
-    entry & PTE_CP_MASK == PTE_CP_SLOT
+    level == 1
+        && entry & PTE_CP_MASK == PTE_CP_SLOT
         && entry & PTE_EXECUTABLE == 0
         && entry & (PTE_ACCESSED | PTE_DIRTY) == (PTE_ACCESSED | PTE_DIRTY)
 }
@@ -852,6 +865,109 @@ mod tests {
                 PageFaultReason::Execute,
             );
         }
+    }
+
+    #[test]
+    fn aligned_byte_leaves_terminate_at_every_level_and_use_the_level_offset() {
+        let bases = [
+            0x0000_0000_0000_8000,
+            0x0000_0000_0020_0000,
+            0x0000_0000_4000_0000,
+            0x0000_0080_0000_0000,
+            0x0000_0000_0000_0000,
+        ];
+        for level in 1..=5 {
+            let base = bases[usize::from(level - 1)];
+            let offset = leaf_offset_mask(level);
+            let (translation, mut bus) =
+                tracked_five_level_mapping(level, |_| base | TABLE_PERMISSIONS, true);
+
+            let walk = translation
+                .page_address(
+                    &mut bus,
+                    offset,
+                    AccessDomain::User,
+                    AccessKind::Write,
+                    true,
+                    true,
+                )
+                .unwrap();
+            assert_eq!(walk.target, TranslatedTarget::Byte(base | offset));
+            assert_eq!(walk.leaf_level, level);
+            assert_eq!(walk.entry_at_level(level).unwrap() & PTE_TABLE, 0);
+            let consumed = usize::from(6 - level);
+            assert_eq!(bus.pte_reads, FIVE_LEVEL_ENTRY_ADDRESSES[..consumed]);
+            for address in FIVE_LEVEL_ENTRY_ADDRESSES[..consumed].iter().copied() {
+                assert_ne!(bus.ram.read_u64(address).unwrap() & PTE_ACCESSED, 0);
+            }
+            assert_ne!(
+                bus.ram
+                    .read_u64(FIVE_LEVEL_ENTRY_ADDRESSES[consumed - 1])
+                    .unwrap()
+                    & PTE_DIRTY,
+                0
+            );
+        }
+    }
+
+    #[test]
+    fn upper_byte_leaves_require_natural_alignment() {
+        for level in 2..=5 {
+            assert_level_fault(
+                level,
+                |_| 0x1000 | TABLE_PERMISSIONS,
+                true,
+                AccessDomain::User,
+                AccessKind::Read,
+                true,
+                PageFaultReason::InvalidEntry,
+            );
+        }
+    }
+
+    #[test]
+    fn slot_leaves_are_rejected_above_level_one() {
+        let slot_leaf = PTE_PRESENT
+            | PTE_WRITABLE
+            | PTE_USER
+            | PTE_ADDRESSING_TYPE
+            | PTE_CP_SLOT
+            | PTE_ACCESSED
+            | PTE_DIRTY;
+        for level in 2..=5 {
+            assert_level_fault(
+                level,
+                |_| slot_leaf,
+                true,
+                AccessDomain::User,
+                AccessKind::Read,
+                true,
+                PageFaultReason::InvalidEntry,
+            );
+        }
+    }
+
+    #[test]
+    fn translation_and_page_queries_stop_at_an_upper_leaf() {
+        let leaf = 0x4000_0000 | TABLE_PERMISSIONS;
+        let (translation, mut bus) = tracked_five_level_mapping(3, |_| leaf, true);
+        let translated = translation.query_translation(&mut bus, 0x123).unwrap();
+        assert_eq!(translated.value, 0x4000_0123);
+        assert!(
+            translated.valid && translated.user && translated.writable && translated.executable
+        );
+
+        let (translation, mut bus) = tracked_five_level_mapping(3, |_| leaf, true);
+        let queried = translation.query_page_entry(&mut bus, 0x123, 3).unwrap();
+        assert_eq!(queried.value, leaf);
+        assert!(queried.valid && queried.user && queried.writable && queried.executable);
+
+        let (translation, mut bus) = tracked_five_level_mapping(3, |_| leaf, true);
+        assert_eq!(
+            translation.query_page_entry(&mut bus, 0x123, 2).unwrap(),
+            PageQueryResult::failure()
+        );
+        assert_eq!(bus.pte_reads, FIVE_LEVEL_ENTRY_ADDRESSES[..3]);
     }
 
     #[test]

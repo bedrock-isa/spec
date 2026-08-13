@@ -55,7 +55,8 @@ canonical-address check raises PAGE\_FAULT during access.
 \input{isa/memory/architecture/page_table_entry_reference.tex}
 
 \subsection{Translation-Cache Identity and Invalidation}
-A translation-cache entry is identified by the components below. PTCR \texttt{root\_page} is not a hardware tag.
+A translation-cache entry is identified by the components below, including the leaf-aligned linear range that it
+maps. PTCR \texttt{root\_page} is not a hardware tag.
 While ASCR.AE is one, system software binds one ASID to one PTCR root and translation geometry; it completes the
 required shootdown before reusing that ASID for a different PTCR image. While AE is zero, the current untagged
 context is invalidated when PTCR changes.
@@ -73,16 +74,17 @@ The local invalidation instructions affect only the executing logical processor;
 steps are ordinary shared-memory communication ordered by the stated release, acquire, and AFENCE operations.
 
 \subsection{Leaf Address Types and Access Ranges}
-The leaf \texttt{AT} bit selects the meaning of the low twelve linear-address bits and the memory-system address:
+The leaf \texttt{AT} bit selects the memory-system address. For an \texttt{AT=0} leaf at level $L$, let
+$o=12+9(L-1)$; for the L1-only \texttt{AT=1} form, $o=12$:
 
 \[
 \begin{aligned}
-\texttt{AT=0:}\quad \mathit{byte\_address} &= (\mathit{PFN}\ll12)\mathbin{|}\mathit{linear}[11:0],\\
+\texttt{AT=0:}\quad \mathit{byte\_address} &= (\mathit{PFN}\ll12)\mathbin{|}\mathit{linear}[o-1:0],\\
 \texttt{AT=1:}\quad \mathit{slot\_address} &= (\mathit{PFN}\ll12)\mathbin{|}\mathit{linear}[11:0].
 \end{aligned}
 \]
 
-For \texttt{AT=0}, the low bits are a byte offset and a width-$n$ access covers the half-open interval
+For \texttt{AT=0}, the selected low bits are a byte offset and a width-$n$ access covers the half-open interval
 $[a,a+n)$. For \texttt{AT=1}, the low bits are a slot index and every B, W, L, or Q access covers exactly one
 addressable unit, $[a,a+1)$. Here $a$ is the value at the applicable stage: EA for segment bounds, linear address
 for paging coverage, and byte or slot address after translation. All leaves consumed by an \texttt{AT=0} byte range
@@ -109,16 +111,16 @@ A slot store retires only after the transaction is acknowledged. The ordering an
 transactions, including AFENCE, are defined by the Memory Model.
 
 \subsection{Multi-Page Accesses}
-For an \texttt{AT=0} byte range that intersects more than one 4-KiB linear page, translation, accumulated permission,
-and leaf address-type checks are resolved in increasing linear-page order. Each page's walk reaches its existing
-not-present, structural-validity, and permission result before the next page is consumed. The first page in that order
-that fails supplies the architectural fault and walk level.
+For an \texttt{AT=0} byte range that intersects more than one distinct leaf mapping, translation, accumulated
+permission, and leaf address-type checks are resolved once per mapping in increasing linear-address order. Each
+mapping's walk reaches its existing not-present, structural-validity, and permission result before the next mapping
+is consumed. The first mapping in that order that fails supplies the architectural fault and walk level.
 
-Every covered page of a store is validated before any byte of the store becomes visible. A later-page translation,
+Every covered leaf mapping of a store is validated before any byte of the store becomes visible. A later-mapping translation,
 permission, address-type, or synchronous data-access fault leaves every destination byte and every leaf D bit
 unchanged. A updates completed while consuming an earlier valid entry retain the speculative-A rule and may remain
-set when a later page faults.
+set when a later mapping faults.
 
 Instruction-record fetch uses the same increasing-address rule for all bytes required by the encoded record. A fault
-on a later page completes as an instruction-fetch fault before decode or operand evaluation, while earlier
+in a later mapping completes as an instruction-fetch fault before decode or operand evaluation, while earlier
 instruction-cache and PTE A effects retain their ordinary rules.

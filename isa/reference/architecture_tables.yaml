@@ -171,7 +171,7 @@ cache_policies:
 
 translation_cache:
   identity:
-    - {component: linear page, applies: every entry}
+    - {component: leaf-aligned linear mapping range, applies: every entry}
     - {component: LA57 and PABITS_SEL, applies: every entry}
     - {component: ASID, applies: non-global entry while ASCR.AE is one}
   transitions:
@@ -194,8 +194,8 @@ translation_cache:
       non_global: install PTCR and ASCR and select the new ASID-tagged context
       global: preserve only identical global mappings
     - operation: INVPAGE
-      non_global: invalidate the addressed page for the current ASID, or the current untagged context when AE is zero
-      global: invalidate the addressed global page
+      non_global: invalidate every mapping containing the addressed linear value for the current ASID, or the current untagged context when AE is zero
+      global: invalidate every addressed global mapping containing that linear value
     - operation: INVASID
       non_global: invalidate every entry tagged with the selected ASID
       global: preserve

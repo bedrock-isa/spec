@@ -2,8 +2,8 @@ The requested level is the low three bits of the level operand. Values outside 1
 
 \begin{enumerate}
 \item Compute the linear address without reading the source memory and reject a noncanonical address as an unsuccessful query.
-\item Starting at the PTCR root, read one 64-bit PTE per level. Every preceding entry must be a valid table pointer with P, T, D, G, and AT in their required states.
-\item Accumulate U, W, and X permissions along the traversed path. Stop after reading the requested level, even when that requested entry is structurally malformed.
-\item Return the raw requested PTE and set Z only when it is structurally valid. N, C, and V report the accumulated U, W, and X permissions only while Z is set.
+\item Starting at the PTCR root, read one 64-bit PTE per level. Every preceding entry must be a valid table pointer; a valid earlier leaf prevents traversal to a lower requested level.
+\item Accumulate U, W, and X permissions along the traversed path. Stop after reading the requested level, even when that requested entry is structurally malformed or is a valid leaf rather than a table pointer.
+\item Return the raw requested PTE and set Z only when it is structurally valid as either a table pointer or a leaf at that level. N, C, and V report the accumulated U, W, and X permissions only while Z is set.
 \end{enumerate}
 Failure before the requested entry is read returns zero and clears all four flags. The walk ignores PTCR.PE, does not set PTE A or D, does not modify a TLB, and does not raise \texttt{PAGE\_FAULT} for walk failure.

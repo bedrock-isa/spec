@@ -3,8 +3,10 @@
 
 from __future__ import annotations
 
+from collections import Counter
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import sys
@@ -33,6 +35,49 @@ def _set_gather(payload: int, positions: tuple[int, ...], value: int) -> int:
         else:
             payload &= ~(1 << position)
     return payload
+
+
+def _struct_body(package: str, type_name: str) -> str:
+    end = package.index(f"  }} {type_name};")
+    start = package.rindex("  typedef struct packed {", 0, end)
+    return package[start:end]
+
+
+def _gather_value(raw: int, positions: tuple[int, ...]) -> int:
+    value = 0
+    for position in positions:
+        value = (value << 1) | ((raw >> position) & 1)
+    return value
+
+
+def _canonical_ea(form: decode_ir.EaFormIR, raw: int) -> dict[str, object]:
+    result: dict[str, object] = {
+        "kind": form.kind,
+        "segment": form.segment,
+        "base": form.base,
+        "register_name": form.register_name,
+        "update_target": form.update_target,
+        "update_mode": form.update_mode,
+        "direct_register_valid": False,
+        "direct_register": 0,
+        "base_register_valid": False,
+        "base_register": 0,
+        "index_register_valid": False,
+        "index_register": 0,
+        "segment_register_valid": False,
+        "segment_register": 0,
+    }
+    member_by_role = {
+        "value": "direct_register",
+        "base": "base_register",
+        "index": "index_register",
+        "segment": "segment_register",
+    }
+    for field in form.fields:
+        member = member_by_role[field.role]
+        result[f"{member}_valid"] = True
+        result[member] = _gather_value(raw, field.positions)
+    return result
 
 
 def _generation_temporary_directory() -> tempfile.TemporaryDirectory[str]:
@@ -69,7 +114,22 @@ class SystemVerilogGenerationTests(unittest.TestCase):
             end = d1.index(f"{self.names.form[next_form.key]}: begin", start)
         return d1[start:end]
 
+    def d0_form_case_text(self, form: decode_ir.FormIR) -> str:
+        d0 = self.outputs[self.build_dir / "bedrock_decode_d0.sv"]
+        start = d0.index(f"// form {form.index}: {form.key}")
+        end = d0.find("\n        // form ", start + 1)
+        return d0[start:] if end < 0 else d0[start:end]
+
     def compact_case_text(self, raw: int) -> str:
+        ea = self.outputs[self.build_dir / "bedrock_decode_ea.sv"]
+        start = ea.index(f"7'h{raw:02x}: begin")
+        if raw == 0x7F:
+            end = ea.index("        default: begin end", start)
+        else:
+            end = ea.index(f"7'h{raw + 1:02x}: begin", start)
+        return ea[start:end]
+
+    def span_case_text(self, raw: int) -> str:
         d1 = self.outputs[self.build_dir / "bedrock_decode_d1.sv"]
         start = d1.index(f"7'h{raw:02x}: begin")
         if raw == 0x7F:
@@ -77,6 +137,15 @@ class SystemVerilogGenerationTests(unittest.TestCase):
         else:
             end = d1.index(f"7'h{raw + 1:02x}: begin", start)
         return d1[start:end]
+
+    def d0_span_case_text(self, raw: int) -> str:
+        d0 = self.outputs[self.build_dir / "bedrock_decode_d0.sv"]
+        start = d0.index(f"7'h{raw:02x}: begin")
+        if raw == 0x7F:
+            end = d0.index("        default: begin end", start)
+        else:
+            end = d0.index(f"7'h{raw + 1:02x}: begin", start)
+        return d0[start:end]
 
     def test_deterministic_round_trip_check_and_stale_output(self) -> None:
         first = generate_decoder.render_outputs(self.build_dir)
@@ -129,6 +198,7 @@ class SystemVerilogGenerationTests(unittest.TestCase):
         package = self.outputs[self.build_dir / "bedrock_decode_pkg.sv"]
         d0 = self.outputs[self.build_dir / "bedrock_decode_d0.sv"]
         d1 = self.outputs[self.build_dir / "bedrock_decode_d1.sv"]
+        ea_decoder = self.outputs[self.build_dir / "bedrock_decode_ea.sv"]
         self.assertEqual(
             (
                 self.ir.limits.form_count,
@@ -142,20 +212,149 @@ class SystemVerilogGenerationTests(unittest.TestCase):
             ),
             (422, 205, 34, 4, 2, 5, 2, 18),
         )
-        for text in (package, d0, d1):
+        for text in (package, d0, d1, ea_decoder):
             self.assertNotIn(" string ", text)
             self.assertNotIn("input wire", text)
         self.assertNotIn("localparam int", package)
         self.assertIn("input  logic valid_i", d0)
         self.assertIn("input  logic [BEDROCK_OPCODE_BITS-1:0] opcode_i", d0)
+        self.assertIn("output d0_ea_result_t ea_result_o", d0)
         self.assertIn("input  logic [BEDROCK_RECORD_BYTES*8-1:0] record_i", d1)
         self.assertIn("input  logic [4:0] byte_count_i", d1)
-        self.assertIn("logic statically_legal", package)
+        self.assertIn("input  logic [BEDROCK_RECORD_BYTES*8-1:0] record_i", ea_decoder)
+        self.assertIn("input  logic [4:0] byte_count_i", ea_decoder)
+        d0_result = _struct_body(package, "d0_result_t")
+        d0_ea_result = _struct_body(package, "d0_ea_result_t")
+        operand = _struct_body(package, "decoded_operand_t")
+        ea = _struct_body(package, "decoded_ea_t")
+        d1_result = _struct_body(package, "d1_opcode_result_t")
+        ea_result = _struct_body(package, "ea_decode_result_t")
+        parse_result = _struct_body(package, "ea_parse_result_t")
+        self.assertIn("ea_layout_e ea_layout;", d0_result)
+        self.assertIn(
+            "operand_ea_width_e [BEDROCK_EA_SLOTS-1:0] ea_widths;",
+            d0_result,
+        )
+        for field in (
+            "d0_status_e status;",
+            "ea_layout_e ea_layout;",
+            "operand_ea_width_e [BEDROCK_EA_SLOTS-1:0] ea_widths;",
+            "logic [6:0] low_raw;",
+            "logic [6:0] alt_raw;",
+            "logic [3:0] base_cursor;",
+            "logic [3:0] post_alt_cursor;",
+        ):
+            self.assertIn(field, d0_ea_result)
+        for opcode_field in (
+            "opcode_class_e opcode_class;",
+            "form_id_e form;",
+            "logic [BEDROCK_OPCODE_BITS-1:0] opcode;",
+        ):
+            self.assertNotIn(opcode_field, d0_ea_result)
+        self.assertIn("BEDROCK_EA_LOW_SLOT = 1'd0", package)
+        self.assertIn("BEDROCK_EA_ALT_SLOT = 1'd1", package)
+        for former in (
+            "operand_name_e name;",
+            "operand_domain_e domain;",
+            "operand_ea_role_e ea_role;",
+            "operand_source_e source;",
+            "fixed_identity_e fixed_identity;",
+            "logic [6:0] width;",
+            "logic statically_legal;",
+        ):
+            self.assertNotIn(former, operand)
+        for former in (
+            "compact_form",
+            "descriptor_form",
+            "descriptor_family",
+            "payload_name",
+            "payload_kind",
+            "logic [6:0] raw;",
+            "descriptor_bytes",
+            "logic [15:0] descriptor;",
+            "field_count",
+            "decoded_ea_field_t",
+            "consumed_bytes",
+        ):
+            self.assertNotIn(former, ea)
+        for former in (
+            "d0_status_e d0_status;",
+            "opcode_class_e opcode_class;",
+            "logic [BEDROCK_OPCODE_BITS-1:0] opcode;",
+            "field_count",
+            "decoded_field_t",
+        ):
+            self.assertNotIn(former, d1_result)
+        self.assertIn("decoded_ea_t ea;", parse_result)
+        self.assertNotIn("decoded_field_t", package)
+        self.assertNotIn("decoded_ea_field_t", package)
+        self.assertNotIn("result_o.fields", d1)
+        self.assertNotIn("result_o.d0_status", d1)
+        self.assertNotIn("result_o.opcode_class", d1)
+        self.assertNotIn("result_o.opcode =", d1)
+        self.assertNotIn("parse_one_ea", d1)
+        self.assertNotIn("result_o.eas", d1)
+        self.assertNotIn("result_o.ea_count", d1)
         self.assertNotIn("legal_values", package)
-        self.assertIn("decoded_ea_t [BEDROCK_EA_SLOTS-1:0] eas", package)
-        self.assertNotIn("input logic clk", d0 + d1)
-        self.assertNotIn("input logic reset", d0 + d1)
-        self.assertNotIn("always_ff", d0 + d1)
+        self.assertNotIn("decoded_ea_t", d1_result)
+        self.assertNotIn("ea_count", d1_result)
+        self.assertIn("decoded_ea_t [BEDROCK_EA_SLOTS-1:0] eas", ea_result)
+        self.assertIn("output d1_opcode_result_t result_o", d1)
+        self.assertIn("output ea_decode_result_t result_o", ea_decoder)
+        self.assertIn("input  d0_ea_result_t d0_i", ea_decoder)
+        self.assertNotIn("d1_opcode_result_t", ea_decoder)
+        self.assertNotIn("ea_decode_result_t", d1)
+        self.assertNotIn("d1_result_t", package)
+        self.assertNotIn("d0_i.form", ea_decoder)
+        self.assertNotIn("FORM_", ea_decoder)
+        self.assertEqual(ea_decoder.count(" = parse_one_ea("), 2)
+        self.assertEqual(
+            d0.count("function automatic ea_span_result_t encoded_ea_span("),
+            1,
+        )
+        self.assertEqual(
+            d1.count("function automatic ea_span_result_t encoded_ea_span("),
+            1,
+        )
+        self.assertNotIn("function automatic ea_span_result_t encoded_ea_span(", ea_decoder)
+        self.assertIn("ea_result_o.low_raw = opcode_i[6:0];", d0)
+        self.assertIn(
+            "ea_result_o.alt_raw = {opcode_i[16:14], opcode_i[3:0]};",
+            d0,
+        )
+        self.assertIn("ea_result_o.alt_raw = opcode_i[13:7];", d0)
+        self.assertIn(
+            "alt_span = encoded_ea_span(ea_result_o.alt_raw);", d0
+        )
+        self.assertIn(
+            "if (alt_span.valid)\n"
+            "      ea_result_o.post_alt_cursor =\n"
+            "        ea_result_o.base_cursor + {2'b0, alt_span.encoded_bytes};",
+            d0,
+        )
+        self.assertIn("low_cursor = d0_i.base_cursor;", ea_decoder)
+        self.assertIn(
+            "if (d0_i.ea_layout == EA_LAYOUT_ALT_THEN_LOW)\n"
+            "      low_cursor = d0_i.post_alt_cursor;",
+            ea_decoder,
+        )
+        self.assertNotIn("d0_i.opcode", ea_decoder)
+        self.assertNotIn("d0_i.opcode_class", ea_decoder)
+        self.assertNotIn("opcode_class_bytes", ea_decoder)
+        self.assertNotIn("alt_span", ea_decoder)
+        self.assertNotIn("low_cursor = alt_parse.next_cursor;", ea_decoder)
+        self.assertIn(
+            "if (low_parse.ok &&\n"
+            "            (d0_i.ea_layout != EA_LAYOUT_ALT_THEN_LOW || alt_parse.ok))",
+            ea_decoder,
+        )
+        self.assertNotIn("input logic clk", d0 + d1 + ea_decoder)
+        self.assertNotIn("input logic reset", d0 + d1 + ea_decoder)
+        self.assertNotIn("always_ff", d0 + d1 + ea_decoder)
+        for form in self.ir.forms:
+            marker = f"{self.names.form[form.key]}: begin // {form.index}: {form.key}"
+            self.assertIn(marker, d1)
+            self.assertNotIn(marker, ea_decoder)
 
     def test_generated_outputs_use_bounded_readable_lines(self) -> None:
         for path, generated in self.outputs.items():
@@ -168,6 +367,8 @@ class SystemVerilogGenerationTests(unittest.TestCase):
 
         d0 = self.outputs[self.build_dir / "bedrock_decode_d0.sv"]
         self.assertNotIn("if (!selected && (", d0)
+        self.assertNotIn("logic selected;", d0)
+        self.assertNotIn("selected =", d0)
         for form in self.ir.forms:
             for constraint_index, constraint in enumerate(form.constraints):
                 signal = f"form_{form.index:03d}_constraint_{constraint_index}_value"
@@ -205,7 +406,112 @@ class SystemVerilogGenerationTests(unittest.TestCase):
                         case,
                     )
 
-    def test_public_mask_orders_and_ea_field_bound_are_live_derived(self) -> None:
+    def test_two_class_position_candidates_cover_every_form(self) -> None:
+        d0 = self.outputs[self.build_dir / "bedrock_decode_d0.sv"]
+        layouts: Counter[str] = Counter()
+        for form in self.ir.forms:
+            layout = generate_decoder._ea_layout(form)
+            layouts[layout] += 1
+            low_width, alt_width = generate_decoder._ea_candidate_widths(
+                form, self.names
+            )
+            selection = f"form_{form.index:03d}_selection"
+            self.assertIn(f"assign {selection}.ea_layout = {layout};", d0)
+            self.assertIn(
+                f"assign {selection}.ea_widths[BEDROCK_EA_LOW_SLOT] = "
+                f"{low_width};",
+                d0,
+            )
+            self.assertIn(
+                f"assign {selection}.ea_widths[BEDROCK_EA_ALT_SLOT] = "
+                f"{alt_width};",
+                d0,
+            )
+            d1_case = self.form_case_text(form)
+            for slot, operand in enumerate(form.operands):
+                if isinstance(
+                    operand.source, decode_ir.EffectiveAddressSourceIR
+                ):
+                    candidate = generate_decoder._ea_candidate_slot(form, operand)
+                    self.assertIn(
+                        f"result_o.operands[{slot}].ea_slot = 1'd{candidate};",
+                        d1_case,
+                    )
+        self.assertEqual(
+            layouts,
+            Counter(
+                {
+                    generate_decoder.EA_LAYOUT_NONE: 173,
+                    generate_decoder.EA_LAYOUT_LOW: 214,
+                    generate_decoder.EA_LAYOUT_ALT: 16,
+                    generate_decoder.EA_LAYOUT_ALT_THEN_LOW: 19,
+                }
+            ),
+        )
+
+    def test_d0_uses_complete_balanced_priority_trees(self) -> None:
+        d0 = self.outputs[self.build_dir / "bedrock_decode_d0.sv"]
+        selection_nodes = {
+            match.group(1): (match.group(2), match.group(3))
+            for match in re.finditer(
+                r"  assign (\w+_selection_node_\d+) = "
+                r"(\w+)\.valid \? \2 : (\w+);",
+                d0,
+            )
+        }
+        raw_nodes = {
+            match.group(1): (match.group(2), match.group(3))
+            for match in re.finditer(
+                r"  assign (\w+_raw_node_\d+) = \((\w+) \| (\w+)\);",
+                d0,
+            )
+        }
+
+        def tree(root: str, nodes: dict[str, tuple[str, str]]) -> tuple[list[str], int]:
+            if root not in nodes:
+                return [root], 0
+            left, right = nodes[root]
+            left_leaves, left_depth = tree(left, nodes)
+            right_leaves, right_depth = tree(right, nodes)
+            return left_leaves + right_leaves, max(left_depth, right_depth) + 1
+
+        by_class: dict[str, list[decode_ir.FormIR]] = {}
+        for form in self.ir.forms:
+            by_class.setdefault(form.opcode_class, []).append(form)
+        for opcode_class in sorted(by_class):
+            forms = by_class[opcode_class]
+            case = re.search(
+                rf"{self.names.opcode_class[opcode_class]}: begin\n"
+                rf"        class_raw_match = (\w+);\n"
+                rf"        class_selection = (\w+);",
+                d0,
+            )
+            self.assertIsNotNone(case, opcode_class)
+            assert case is not None
+            raw_leaves, raw_depth = tree(case.group(1), raw_nodes)
+            selection_leaves, selection_depth = tree(
+                case.group(2), selection_nodes
+            )
+            expected_raw = [f"form_{form.index:03d}_raw_match" for form in forms]
+            expected_selection = [
+                f"form_{form.index:03d}_selection" for form in forms
+            ]
+            expected_depth = (len(forms) - 1).bit_length()
+            self.assertEqual(raw_leaves, expected_raw)
+            self.assertEqual(selection_leaves, expected_selection)
+            self.assertEqual(raw_depth, expected_depth)
+            self.assertEqual(selection_depth, expected_depth)
+            self.assertIn(
+                f"// {opcode_class}: {len(forms)} parallel form leaves, "
+                f"{expected_depth} balanced priority levels",
+                d0,
+            )
+        self.assertEqual(len(raw_nodes), len(self.ir.forms) - len(by_class))
+        self.assertEqual(
+            len(selection_nodes), len(self.ir.forms) - len(by_class)
+        )
+
+    def test_public_mask_orders_are_live_derived(self) -> None:
         package = self.outputs[self.build_dir / "bedrock_decode_pkg.sv"]
         layout = generate_decoder.derive_public_layout(self.ir)
         expected_orders = {
@@ -292,26 +598,6 @@ class SystemVerilogGenerationTests(unittest.TestCase):
                     )
                 self.assertIn(assignment, case)
 
-        families = {
-            family.name: family
-            for family in self.ir.effective_addresses.descriptor_families
-        }
-        combined_counts = []
-        for compact in self.ir.effective_addresses.compact_forms:
-            if compact.referenced_descriptor_family:
-                combined_counts.extend(
-                    len(compact.fields) + len(descriptor.fields)
-                    for descriptor in families[compact.referenced_descriptor_family].forms
-                )
-            else:
-                combined_counts.append(len(compact.fields))
-        expected_ea_slots = max(combined_counts, default=0)
-        self.assertEqual(layout.ea_field_slots, expected_ea_slots)
-        self.assertIn(
-            f"localparam logic [9:0] BEDROCK_EA_FIELD_SLOTS = 10'd{expected_ea_slots};",
-            package,
-        )
-
     def test_appended_payload_signedness_is_public_and_complete(self) -> None:
         package = self.outputs[self.build_dir / "bedrock_decode_pkg.sv"]
         self.assertIn("logic payload_signed;", package)
@@ -329,6 +615,130 @@ class SystemVerilogGenerationTests(unittest.TestCase):
                     appended_signedness.append(source.signed)
         self.assertIn(True, appended_signedness)
         self.assertIn(False, appended_signedness)
+
+    def test_operands_gather_directly_and_keep_fixed_payload_values(self) -> None:
+        for form in self.ir.forms:
+            case = self.form_case_text(form)
+            for slot, operand in enumerate(form.operands):
+                source = operand.source
+                if isinstance(
+                    source,
+                    (decode_ir.EncodedFieldSourceIR, decode_ir.EffectiveAddressSourceIR),
+                ):
+                    self.assertIn(
+                        f"result_o.operands[{slot}].value = "
+                        f"64'({generate_decoder._gather('d0_i.opcode', source.positions)});",
+                        case,
+                    )
+                elif isinstance(source, decode_ir.FixedSourceIR):
+                    self.assertIn(
+                        f"result_o.operands[{slot}].value = "
+                        f"64'h{(source.value or 0):016x};",
+                        case,
+                    )
+
+    def test_payload_width_codes_and_canonical_ea_assignments_are_complete(self) -> None:
+        package = self.outputs[self.build_dir / "bedrock_decode_pkg.sv"]
+        widths = tuple(
+            sorted(
+                {
+                    compact.payload_width
+                    for compact in self.ir.effective_addresses.compact_forms
+                }
+            )
+        )
+        self.assertEqual(widths, (0, 8, 16, 32, 64))
+        for code, width in enumerate(widths, 1):
+            name = self.names.ea_payload_width[str(width)]
+            self.assertIn(f"{name} = 3'd{code}", package)
+
+        def assert_assignments(
+            text: str,
+            form: decode_ir.EaFormIR,
+            raw_signal: str,
+        ) -> None:
+            static = (
+                ("kind", self.names.ea_kind[form.kind]),
+                ("segment", self.names.ea_segment[form.segment]),
+                ("base", self.names.ea_base[form.base]),
+                ("register_name", self.names.ea_register[form.register_name]),
+                ("update_target", self.names.update_target[form.update_target]),
+                ("update_mode", self.names.update_mode[form.update_mode]),
+            )
+            for member, value in static:
+                self.assertIn(f"parse_one_ea.ea.{member} = {value};", text)
+            role_members = {
+                "value": "direct_register",
+                "base": "base_register",
+                "index": "index_register",
+                "segment": "segment_register",
+            }
+            for field in form.fields:
+                member = role_members[field.role]
+                gathered = generate_decoder._gather(raw_signal, field.positions)
+                self.assertIn(
+                    f"parse_one_ea.ea.{member}_valid = 1'b1;", text
+                )
+                self.assertIn(
+                    f"parse_one_ea.ea.{member} = 4'({gathered});", text
+                )
+
+        compact_by_name = {
+            compact.name: compact
+            for compact in self.ir.effective_addresses.compact_forms
+        }
+        for entry in self.ir.effective_addresses.compact_entries:
+            case = self.compact_case_text(entry.raw)
+            if not entry.valid:
+                self.assertNotIn("parse_one_ea.ea.payload_width =", case)
+                continue
+            compact = compact_by_name[entry.form_name]
+            self.assertIn(
+                "parse_one_ea.ea.payload_width = "
+                f"{self.names.ea_payload_width[str(compact.payload_width)]};",
+                case,
+            )
+            self.assertIn(
+                f"parse_one_ea.ea.payload_signed = 1'b{int(compact.payload_signed)};",
+                case,
+            )
+            assert_assignments(case, compact, "compact_raw")
+
+        for family in self.ir.effective_addresses.descriptor_families:
+            compact = next(
+                item
+                for item in self.ir.effective_addresses.compact_forms
+                if item.referenced_descriptor_family == family.name
+            )
+            case = self.compact_case_text(compact.value)
+            for descriptor in family.forms:
+                assert_assignments(case, descriptor, "descriptor")
+
+    def test_direct_register_and_fixed_sp_remain_distinct(self) -> None:
+        compact_by_name = {
+            compact.name: compact
+            for compact in self.ir.effective_addresses.compact_forms
+        }
+        direct = compact_by_name["register"]
+        stack_pointer = compact_by_name["stack_pointer"]
+        for compact in (direct, stack_pointer):
+            stage, decoded, _ = generate_decoder.reference_ea(
+                self.ir,
+                compact.value,
+                [0] * self.ir.limits.max_record_bytes,
+                self.ir.limits.max_record_bytes,
+                0,
+            )
+            self.assertEqual(stage, "success")
+            self.assertIsNotNone(decoded)
+            if compact is direct:
+                self.assertEqual(decoded["register_name"], "")
+                self.assertTrue(decoded["direct_register_valid"])
+                self.assertEqual(decoded["direct_register"], direct.value & 0xF)
+            else:
+                self.assertEqual(decoded["register_name"], "SP")
+                self.assertFalse(decoded["direct_register_valid"])
+                self.assertEqual(decoded["direct_register"], 0)
 
     def test_every_live_form_has_exact_d0_reference_recognition(self) -> None:
         for form in self.ir.forms:
@@ -403,20 +813,58 @@ class SystemVerilogGenerationTests(unittest.TestCase):
             [item.raw for item in entries if not item.valid], list(range(0x7A, 0x80))
         )
         d1 = self.outputs[self.build_dir / "bedrock_decode_d1.sv"]
+        d0 = self.outputs[self.build_dir / "bedrock_decode_d0.sv"]
+        ea_decoder = self.outputs[self.build_dir / "bedrock_decode_ea.sv"]
         for entry in entries:
             self.assertIn(f"7'h{entry.raw:02x}: begin", d1)
+            self.assertIn(f"7'h{entry.raw:02x}: begin", d0)
+            self.assertIn(f"7'h{entry.raw:02x}: begin", ea_decoder)
+            span_case = self.span_case_text(entry.raw)
+            self.assertEqual(self.d0_span_case_text(entry.raw), span_case)
+            if entry.valid:
+                compact = next(
+                    item
+                    for item in self.ir.effective_addresses.compact_forms
+                    if item.name == entry.form_name
+                )
+                expected_span = compact.descriptor_bytes + compact.payload_width // 8
+                self.assertIn("encoded_ea_span.valid = 1'b1;", span_case)
+                self.assertIn(
+                    f"encoded_ea_span.encoded_bytes = 4'd{expected_span};",
+                    span_case,
+                )
+            else:
+                self.assertNotIn("encoded_ea_span.valid = 1'b1;", span_case)
         for family in self.ir.effective_addresses.descriptor_families:
-            self.assertIn(f"cursor + {family.descriptor_bytes}", d1)
+            self.assertIn(f"cursor + {family.descriptor_bytes}", ea_decoder)
+            selector = (
+                f"unique casez (descriptor[{family.descriptor_bytes * 8 - 1}:0])"
+            )
+            expected_selectors = sum(
+                entry.descriptor_family == family.name for entry in entries
+            )
+            self.assertEqual(ea_decoder.count(selector), expected_selectors)
+            for index, first in enumerate(family.forms):
+                self.assertIn(
+                    f"{generate_decoder._casez(family.descriptor_bytes * 8, first.value, first.mask)}: begin // {first.name}",
+                    ea_decoder,
+                )
+                for second in family.forms[index + 1 :]:
+                    self.assertNotEqual(
+                        (first.value ^ second.value) & first.mask & second.mask,
+                        0,
+                        (family.name, first.name, second.name),
+                    )
             for form in family.forms:
-                self.assertIn(f"// {form.name}", d1)
-                self.assertIn(self.names.ea_form[form.name], d1)
+                self.assertIn(f"// {form.name}", ea_decoder)
+        self.assertNotIn("if (!descriptor_match &&", ea_decoder)
         self.assertIn(
             "descriptor = {record[(cursor * 8) +: 8], record[((cursor + 1) * 8) +: 8]};",
-            d1,
+            ea_decoder,
         )
         self.assertIn(
             "payload[0 +: 8] = record[((cursor + 0) * 8) +: 8]",
-            d1,
+            ea_decoder,
         )
         families = {
             family.name: family
@@ -437,6 +885,28 @@ class SystemVerilogGenerationTests(unittest.TestCase):
             with self.subTest(compact=entry.raw):
                 self.assertEqual(stage, "success" if entry.valid else "ea_descriptor")
                 self.assertEqual(decoded is not None, entry.valid)
+                if decoded is not None:
+                    compact = next(
+                        form
+                        for form in self.ir.effective_addresses.compact_forms
+                        if form.name == entry.form_name
+                    )
+                    expected_form = (
+                        families[entry.descriptor_family].forms[0]
+                        if entry.descriptor_family
+                        else compact
+                    )
+                    expected_raw = (
+                        families[entry.descriptor_family].forms[0].value
+                        if entry.descriptor_family
+                        else entry.raw
+                    )
+                    for member, expected in _canonical_ea(
+                        expected_form, expected_raw
+                    ).items():
+                        self.assertEqual(decoded[member], expected, member)
+                    self.assertEqual(decoded["payload_width"], compact.payload_width)
+                    self.assertEqual(decoded["payload_signed"], compact.payload_signed)
         for family in families.values():
             compact = next(
                 form
@@ -454,20 +924,44 @@ class SystemVerilogGenerationTests(unittest.TestCase):
                 )
                 with self.subTest(family=family.name, descriptor=descriptor_form.name):
                     self.assertEqual(stage, "success")
-                    self.assertEqual(decoded["descriptor_form"], descriptor_form.name)
+                    for member, expected in _canonical_ea(
+                        descriptor_form, descriptor_form.value
+                    ).items():
+                        self.assertEqual(decoded[member], expected, member)
                     self.assertEqual(next_cursor, cursor + family.descriptor_bytes)
-        payload_compact = next(
-            form
-            for form in self.ir.effective_addresses.compact_forms
-            if form.payload_width == 64 and not form.referenced_descriptor_family
+        observed_signedness = set()
+        for payload_width in (0, 8, 16, 32, 64):
+            payload_compact = next(
+                form
+                for form in self.ir.effective_addresses.compact_forms
+                if form.payload_width == payload_width
+                and not form.referenced_descriptor_family
+            )
+            payload_bytes = payload_width // 8
+            record = [0] * 18
+            record[cursor : cursor + payload_bytes] = range(1, payload_bytes + 1)
+            stage, decoded, _ = generate_decoder.reference_ea(
+                self.ir, payload_compact.value, record, 18, cursor
+            )
+            with self.subTest(payload_width=payload_width):
+                self.assertEqual(stage, "success")
+                self.assertEqual(
+                    decoded["payload"],
+                    sum(
+                        byte << (offset * 8)
+                        for offset, byte in enumerate(range(1, payload_bytes + 1))
+                    ),
+                )
+                self.assertEqual(decoded["payload_width"], payload_width)
+                self.assertEqual(
+                    decoded["payload_signed"], payload_compact.payload_signed
+                )
+            observed_signedness.add(payload_compact.payload_signed)
+        observed_signedness.update(
+            compact.payload_signed
+            for compact in self.ir.effective_addresses.compact_forms
         )
-        record = [0] * 18
-        record[cursor : cursor + 8] = range(1, 9)
-        stage, decoded, _ = generate_decoder.reference_ea(
-            self.ir, payload_compact.value, record, 18, cursor
-        )
-        self.assertEqual(stage, "success")
-        self.assertEqual(decoded["payload"], 0x0807060504030201)
+        self.assertEqual(observed_signedness, {False, True})
         ext2 = next(
             form
             for form in self.ir.effective_addresses.compact_forms
@@ -489,6 +983,7 @@ class SystemVerilogGenerationTests(unittest.TestCase):
         self.assertEqual(tuple(entry.raw for entry in invalid_entries), tuple(range(0x7A, 0x80)))
 
         d1 = self.outputs[self.build_dir / "bedrock_decode_d1.sv"]
+        ea_decoder = self.outputs[self.build_dir / "bedrock_decode_ea.sv"]
         initialization = "\n".join(
             [
                 "      parse_one_ea = '0;",
@@ -496,8 +991,11 @@ class SystemVerilogGenerationTests(unittest.TestCase):
                 "      parse_one_ea.next_cursor = cursor_in;",
             ]
         )
-        self.assertEqual(d1.count(initialization), 1)
-        self.assertLess(d1.index(initialization), d1.index("      unique case (compact_raw)"))
+        self.assertEqual(ea_decoder.count(initialization), 1)
+        self.assertLess(
+            ea_decoder.index(initialization),
+            ea_decoder.index("      unique case (compact_raw)"),
+        )
 
         ea_form = self.forms["medium.abs_x_ea"]
         ea_operand = next(
@@ -505,13 +1003,15 @@ class SystemVerilogGenerationTests(unittest.TestCase):
             for operand in ea_form.operands
             if isinstance(operand.source, decode_ir.EffectiveAddressSourceIR)
         )
+        self.assertEqual(generate_decoder._ea_candidate_slot(ea_form, ea_operand), 1)
         form_cursor = ea_form.opcode_bytes
-        form_case = self.form_case_text(ea_form)
         self.assertIn(
-            ");\n          cursor = ea_parse.next_cursor;\n          if (!ea_parse.ok) begin",
-            form_case,
+            "result_o.required_bytes = alt_parse.next_cursor;", ea_decoder
         )
-        self.assertIn("        result_o.required_bytes = cursor;", form_case)
+        self.assertIn("result_o.stage = alt_parse.stage;", ea_decoder)
+        opcode_case = self.form_case_text(ea_form)
+        self.assertIn("ea_span = encoded_ea_span", opcode_case)
+        self.assertIn("result_o.stage = D1_STAGE_EA_DESCRIPTOR;", opcode_case)
 
         for entry in invalid_entries:
             opcode = _set_gather(
@@ -566,7 +1066,11 @@ class SystemVerilogGenerationTests(unittest.TestCase):
         next_form = self.ir.forms[mixed.index + 1]
         mixed_end = d1.index(f"{self.names.form[next_form.key]}: begin", mixed_start)
         mixed_case = d1[mixed_start:mixed_end]
-        self.assertLess(mixed_case.index("parse_one_ea"), mixed_case.index("D1_STAGE_STANDALONE_PAYLOAD"))
+        self.assertLess(
+            mixed_case.index("encoded_ea_span"),
+            mixed_case.index("D1_STAGE_STANDALONE_PAYLOAD"),
+        )
+        self.assertNotIn("parse_one_ea", mixed_case)
         self.assertIn("result_o = '0;", d1)
         self.assertIn("result_o.stage = D1_STAGE_D0_REJECTED;", d1)
         self.assertIn("if (byte_count_i > BEDROCK_RECORD_BYTES)", d1)
@@ -764,20 +1268,32 @@ class SystemVerilogGenerationTests(unittest.TestCase):
             payload_case,
         )
 
-        two_ea = self.forms["long.cmp_x_ea_s_ea_d"]
-        parse_count = sum(
-            isinstance(layout, decode_ir.ParseEaIR) for layout in two_ea.layout
+        ea_decoder = self.outputs[self.build_dir / "bedrock_decode_ea.sv"]
+        d0 = self.outputs[self.build_dir / "bedrock_decode_d0.sv"]
+        self.assertEqual(ea_decoder.count(" = parse_one_ea("), 2)
+        self.assertIn(
+            "alt_span = encoded_ea_span(ea_result_o.alt_raw);\n"
+            "    if (alt_span.valid)\n"
+            "      ea_result_o.post_alt_cursor =\n"
+            "        ea_result_o.base_cursor + {2'b0, alt_span.encoded_bytes};",
+            d0,
         )
-        two_ea_case = self.form_case_text(two_ea)
-        self.assertEqual(
-            two_ea_case.count("          cursor = ea_parse.next_cursor;"),
-            parse_count,
+        self.assertIn(
+            "low_cursor = d0_i.base_cursor;\n"
+            "    if (d0_i.ea_layout == EA_LAYOUT_ALT_THEN_LOW)\n"
+            "      low_cursor = d0_i.post_alt_cursor;",
+            ea_decoder,
         )
-        self.assertEqual(
-            two_ea_case.count(
-                ");\n          cursor = ea_parse.next_cursor;\n          if (!ea_parse.ok) begin"
-            ),
-            parse_count,
+        self.assertNotIn("low_cursor = alt_parse.next_cursor;", ea_decoder)
+        dual_start = ea_decoder.index("EA_LAYOUT_ALT_THEN_LOW: begin")
+        dual_end = ea_decoder.index("        endcase", dual_start)
+        dual_case = ea_decoder[dual_start:dual_end]
+        self.assertLess(dual_case.index("if (!alt_parse.ok)"), dual_case.index("if (!low_parse.ok)"))
+        self.assertIn(
+            "result_o.required_bytes = alt_parse.next_cursor;", dual_case
+        )
+        self.assertIn(
+            "result_o.required_bytes = low_parse.next_cursor;", dual_case
         )
 
     def _testbench(self) -> str:
@@ -786,13 +1302,20 @@ class SystemVerilogGenerationTests(unittest.TestCase):
             "`timescale 1ns/1ps",
             "module tb;",
             "  import bedrock_decode_pkg::*;",
-            "  logic valid_i; opcode_class_e opcode_class_i; logic [33:0] opcode_i; d0_result_t d0;",
-            "  d0_result_t d0_direct; logic [143:0] record_i; logic [4:0] byte_count_i; d1_result_t d1;",
-            "  bedrock_decode_d0 u_d0(.valid_i, .opcode_class_i, .opcode_i, .result_o(d0));",
+            "  logic valid_i; opcode_class_e opcode_class_i; logic [33:0] opcode_i;",
+            "  d0_result_t d0; d0_ea_result_t d0_ea;",
+            "  logic direct_valid_i; opcode_class_e direct_opcode_class_i; logic [33:0] direct_opcode_i;",
+            "  d0_result_t d0_direct; d0_ea_result_t d0_ea_direct;",
+            "  logic [143:0] record_i; logic [4:0] byte_count_i;",
+            "  d1_opcode_result_t d1; ea_decode_result_t ea;",
+            "  bedrock_decode_d0 u_d0(.valid_i, .opcode_class_i, .opcode_i, .result_o(d0), .ea_result_o(d0_ea));",
+            "  bedrock_decode_d0 u_d0_direct(.valid_i(direct_valid_i), .opcode_class_i(direct_opcode_class_i), .opcode_i(direct_opcode_i), .result_o(d0_direct), .ea_result_o(d0_ea_direct));",
             "  bedrock_decode_d1 u_d1(.d0_i(d0_direct), .record_i, .byte_count_i, .result_o(d1));",
+            "  bedrock_decode_ea u_ea(.d0_i(d0_ea_direct), .record_i, .byte_count_i, .result_o(ea));",
             "  initial begin",
             "    valid_i = 1'b0; opcode_class_i = OPCODE_CLASS_INVALID; opcode_i = '0;",
-            "    d0_direct = '0; record_i = '0; byte_count_i = '0; #1;",
+            "    direct_valid_i = 1'b0; direct_opcode_class_i = OPCODE_CLASS_INVALID; direct_opcode_i = '0;",
+            "    record_i = '0; byte_count_i = '0; #1;",
             "    if (d0.status != D0_INVALID_INPUT) $fatal(1, \"D0 invalid-input state\");",
         ]
         for form in self.ir.forms:
@@ -804,19 +1327,19 @@ class SystemVerilogGenerationTests(unittest.TestCase):
                 ]
             )
 
-        ea_form = self.forms["medium.abs_x_ea"]
+        ea_form = self.forms["medium.lea_x_ea_rn"]
         ea_operand = next(
             operand
             for operand in ea_form.operands
             if isinstance(operand.source, decode_ir.EffectiveAddressSourceIR)
         )
+        ea_candidate = generate_decoder._ea_candidate_slot(ea_form, ea_operand)
         base_opcode = generate_decoder.representative_opcode(ea_form)
         lines.extend(
             [
                 "    valid_i = 1'b0;",
-                "    d0_direct = '0; d0_direct.status = D0_SUCCESS;",
-                f"    d0_direct.opcode_class = {names.opcode_class[ea_form.opcode_class]};",
-                f"    d0_direct.form = {names.form[ea_form.key]};",
+                "    direct_valid_i = 1'b1;",
+                f"    direct_opcode_class_i = {names.opcode_class[ea_form.opcode_class]};",
                 "    record_i = '0; byte_count_i = 5'd18;",
             ]
         )
@@ -834,11 +1357,11 @@ class SystemVerilogGenerationTests(unittest.TestCase):
                     shift = (family.descriptor_bytes - byte - 1) * 8
                     record[ea_form.opcode_bytes + byte] = (descriptor >> shift) & 0xFF
             lines.append(
-                f"    d0_direct.opcode = 34'h{opcode:09x}; record_i = 144'h{_record_value(record):036x}; #1;"
+                f"    direct_opcode_i = 34'h{opcode:09x}; record_i = 144'h{_record_value(record):036x}; #1;"
             )
             expected_valid = 1 if entry.valid else 0
             lines.append(
-                f"    if (d1.valid != 1'b{expected_valid}) $fatal(1, \"compact EA {entry.raw:02x}\");"
+                f"    if (d1.valid != 1'b{expected_valid} || ea.valid != 1'b{expected_valid}) $fatal(1, \"compact EA {entry.raw:02x}\");"
             )
 
         family_compact = {
@@ -859,16 +1382,41 @@ class SystemVerilogGenerationTests(unittest.TestCase):
                 for byte in range(family.descriptor_bytes):
                     shift = (family.descriptor_bytes - byte - 1) * 8
                     record[cursor + byte] = (descriptor.value >> shift) & 0xFF
+                expected = _canonical_ea(descriptor, descriptor.value)
+                checks = [
+                    f"ea.eas[{ea_candidate}].kind != {names.ea_kind[descriptor.kind]}",
+                    f"ea.eas[{ea_candidate}].segment != {names.ea_segment[descriptor.segment]}",
+                    f"ea.eas[{ea_candidate}].base != {names.ea_base[descriptor.base]}",
+                    f"ea.eas[{ea_candidate}].register_name != {names.ea_register[descriptor.register_name]}",
+                    f"ea.eas[{ea_candidate}].update_target != {names.update_target[descriptor.update_target]}",
+                    f"ea.eas[{ea_candidate}].update_mode != {names.update_mode[descriptor.update_mode]}",
+                ]
+                for member in (
+                    "direct_register",
+                    "base_register",
+                    "index_register",
+                    "segment_register",
+                ):
+                    valid = int(bool(expected[f"{member}_valid"]))
+                    value = int(expected[member])
+                    checks.extend(
+                        [
+                            f"ea.eas[{ea_candidate}].{member}_valid != 1'b{valid}",
+                            f"ea.eas[{ea_candidate}].{member} != 4'd{value}",
+                        ]
+                    )
                 lines.extend(
                     [
-                        f"    d0_direct.opcode = 34'h{opcode:09x}; record_i = 144'h{_record_value(record):036x}; byte_count_i = 5'd18; #1;",
-                        f"    if (!d1.valid || d1.eas[0].descriptor_form != {names.ea_form[descriptor.name]}) $fatal(1, \"descriptor {family.name}/{descriptor.name}\");",
+                        f"    direct_opcode_i = 34'h{opcode:09x}; record_i = 144'h{_record_value(record):036x}; byte_count_i = 5'd18; #1;",
+                        "    if (!ea.valid || "
+                        + " || ".join(checks)
+                        + f") $fatal(1, \"descriptor {family.name}/{descriptor.name}\");",
                     ]
                 )
 
         payload_form = self.forms["long.fmovcr_x_imm16_fn_d"]
         payload_record = list(payload_form.representative_record or ())
-        payload_record[payload_form.opcode_bytes : payload_form.opcode_bytes + 2] = [0x34, 0x12]
+        payload_record[payload_form.opcode_bytes : payload_form.opcode_bytes + 2] = [0x10, 0x00]
         payload_operand = next(
             index
             for index, operand in enumerate(payload_form.operands)
@@ -876,11 +1424,10 @@ class SystemVerilogGenerationTests(unittest.TestCase):
         )
         lines.extend(
             [
-                "    d0_direct = '0; d0_direct.status = D0_SUCCESS;",
-                f"    d0_direct.opcode_class = {names.opcode_class[payload_form.opcode_class]}; d0_direct.form = {names.form[payload_form.key]};",
-                f"    d0_direct.opcode = 34'h{generate_decoder.representative_opcode(payload_form):09x};",
+                f"    direct_opcode_class_i = {names.opcode_class[payload_form.opcode_class]};",
+                f"    direct_opcode_i = 34'h{generate_decoder.representative_opcode(payload_form):09x};",
                 f"    record_i = 144'h{_record_value(payload_record):036x}; byte_count_i = 5'd{len(payload_record)}; #1;",
-                f"    if (!d1.valid || d1.operands[{payload_operand}].value != 64'h0000000000001234) $fatal(1, \"standalone LE payload\");",
+                f"    if (!d1.valid || d1.operands[{payload_operand}].value != 64'h0000000000000010) $fatal(1, \"standalone LE payload\");",
                 f"    byte_count_i = 5'd{payload_form.opcode_bytes + 1}; #1;",
                 "    if (d1.valid || d1.stage != D1_STAGE_STANDALONE_PAYLOAD) $fatal(1, \"standalone bounds\");",
             ]
@@ -888,12 +1435,57 @@ class SystemVerilogGenerationTests(unittest.TestCase):
 
         ext2 = family_compact["ext2"]
         ext2_opcode = _set_gather(base_opcode, ea_operand.source.positions, ext2.value)
+        dual_form = self.forms["long.movuc_x_ea_s_ea_d"]
+        dual_alt_operand = next(
+            operand
+            for operand in dual_form.operands
+            if generate_decoder._ea_candidate_slot(dual_form, operand) == 1
+        )
+        dual_low_operand = next(
+            operand
+            for operand in dual_form.operands
+            if generate_decoder._ea_candidate_slot(dual_form, operand) == 0
+        )
+        ext2_payload = next(
+            compact
+            for compact in self.ir.effective_addresses.compact_forms
+            if compact.referenced_descriptor_family == "ext2"
+            and compact.payload_width == 8
+        )
+        dual_opcode = generate_decoder.representative_opcode(dual_form)
+        dual_opcode = _set_gather(
+            dual_opcode, dual_alt_operand.source.positions, ext2_payload.value
+        )
+        dual_opcode = _set_gather(dual_opcode, dual_low_operand.source.positions, 1)
+        dual_record = [0] * self.ir.limits.max_record_bytes
+        dual_descriptor = family_by_name["ext2"].forms[0].value
+        for byte in range(family_by_name["ext2"].descriptor_bytes):
+            shift = (family_by_name["ext2"].descriptor_bytes - byte - 1) * 8
+            dual_record[dual_form.opcode_bytes + byte] = (
+                dual_descriptor >> shift
+            ) & 0xFF
+        dual_record[
+            dual_form.opcode_bytes + family_by_name["ext2"].descriptor_bytes
+        ] = 0x5A
+        malformed_dual_opcode = generate_decoder.representative_opcode(dual_form)
+        malformed_dual_opcode = _set_gather(
+            malformed_dual_opcode, dual_alt_operand.source.positions, ext2.value
+        )
+        malformed_dual_opcode = _set_gather(
+            malformed_dual_opcode, dual_low_operand.source.positions, 1
+        )
         lines.extend(
             [
-                f"    d0_direct.form = {names.form[ea_form.key]}; d0_direct.opcode = 34'h{ext2_opcode:09x}; record_i = '0; byte_count_i = 5'd{cursor + 1}; #1;",
-                "    if (d1.valid || d1.stage != D1_STAGE_EA_DESCRIPTOR) $fatal(1, \"descriptor bounds\");",
-                "    d0_direct = '0; #1;",
-                "    if (d1.valid || d1.operation != OP_INVALID || d1.operands != '0) $fatal(1, \"stale output\");",
+                f"    direct_opcode_class_i = {names.opcode_class[ea_form.opcode_class]};",
+                f"    direct_opcode_i = 34'h{ext2_opcode:09x}; record_i = '0; byte_count_i = 5'd{cursor + 1}; #1;",
+                "    if (ea.valid || ea.stage != D1_STAGE_EA_DESCRIPTOR) $fatal(1, \"descriptor bounds\");",
+                f"    direct_opcode_class_i = {names.opcode_class[dual_form.opcode_class]};",
+                f"    direct_opcode_i = 34'h{dual_opcode:09x}; record_i = 144'h{_record_value(dual_record):036x}; byte_count_i = 5'd7; #1;",
+                "    if (!ea.valid || ea.ea_count != 2'd2 || ea.required_bytes != 6'd7 || !ea.eas[BEDROCK_EA_LOW_SLOT].valid || !ea.eas[BEDROCK_EA_ALT_SLOT].valid || ea.eas[BEDROCK_EA_ALT_SLOT].payload[7:0] != 8'h5a) $fatal(1, \"parallel dual EA\");",
+                f"    direct_opcode_i = 34'h{malformed_dual_opcode:09x}; record_i = '0; byte_count_i = 5'd18; #1;",
+                f"    if (ea.valid || ea.stage != D1_STAGE_EA_DESCRIPTOR || ea.ea_count != 2'd2 || ea.required_bytes != 6'd{dual_form.opcode_bytes} || ea.eas[BEDROCK_EA_LOW_SLOT] != '0) $fatal(1, \"failed ALT normalizes LOW\");",
+                "    direct_valid_i = 1'b0; direct_opcode_class_i = OPCODE_CLASS_INVALID; direct_opcode_i = '0; #1;",
+                "    if (d1.valid || d1.operation != OP_INVALID || d1.operands != '0 || ea.valid || ea.eas != '0) $fatal(1, \"stale output\");",
                 "    $finish;",
                 "  end",
                 "endmodule",
@@ -907,24 +1499,90 @@ class SystemVerilogGenerationTests(unittest.TestCase):
             "`timescale 1ns/1ps",
             "module tb;",
             "  import bedrock_decode_pkg::*;",
-            "  logic valid_i; opcode_class_e opcode_class_i; logic [33:0] opcode_i; d0_result_t d0;",
-            "  bedrock_decode_d0 dut(.valid_i, .opcode_class_i, .opcode_i, .result_o(d0));",
+            "  logic valid_i; opcode_class_e opcode_class_i; logic [33:0] opcode_i;",
+            "  d0_result_t d0; d0_ea_result_t d0_ea;",
+            "  bedrock_decode_d0 dut(.valid_i, .opcode_class_i, .opcode_i, .result_o(d0), .ea_result_o(d0_ea));",
             "  initial begin",
+            "    if ($bits(d0_result_t) != 54) $fatal(1, \"d0_result_t width\");",
+            "    if ($bits(d0_ea_result_t) != 30) $fatal(1, \"d0_ea_result_t width\");",
+            "    if ($bits(control_metadata_t) != 23) $fatal(1, \"control_metadata_t width\");",
+            "    if ($bits(decoded_operand_t) != 78) $fatal(1, \"decoded_operand_t width\");",
+            "    if ($bits(decoded_ea_t) != 106) $fatal(1, \"decoded_ea_t width\");",
+            "    if ($bits(ea_span_result_t) != 5) $fatal(1, \"ea_span_result_t width\");",
+            "    if ($bits(ea_parse_result_t) != 117) $fatal(1, \"ea_parse_result_t width\");",
+            "    if ($bits(d1_opcode_result_t) != 398) $fatal(1, \"d1_opcode_result_t width\");",
+            "    if ($bits(ea_decode_result_t) != 225) $fatal(1, \"ea_decode_result_t width\");",
             "    valid_i = 1'b0; opcode_class_i = OPCODE_CLASS_INVALID; opcode_i = '0; #1;",
             "    if (d0.status != D0_INVALID_INPUT) $fatal(1, \"invalid input\");",
+            "    if (d0_ea.status != D0_INVALID_INPUT) $fatal(1, \"EA invalid input\");",
         ]
+        compact_by_name = {
+            compact.name: compact
+            for compact in self.ir.effective_addresses.compact_forms
+        }
         for form in self.ir.forms:
             opcode = generate_decoder.representative_opcode(form)
+            low_width, alt_width = generate_decoder._ea_candidate_widths(
+                form, self.names
+            )
+            low_raw = opcode & 0x7F
+            alt_raw = 0
+            if form.opcode_class == "medium":
+                alt_raw = (((opcode >> 14) & 0x7) << 4) | (opcode & 0xF)
+            elif form.opcode_class in ("long", "extralong"):
+                alt_raw = (opcode >> 7) & 0x7F
+            post_alt_cursor = form.opcode_bytes
+            entry = self.ir.effective_addresses.compact_entries[alt_raw]
+            if entry.valid:
+                compact = compact_by_name[entry.form_name]
+                post_alt_cursor += (
+                    compact.descriptor_bytes + compact.payload_width // 8
+                )
             lines.extend(
                 [
                     f"    valid_i = 1'b1; opcode_class_i = {self.names.opcode_class[form.opcode_class]}; opcode_i = 34'h{opcode:09x}; #1;",
                     f"    if (d0.status != D0_SUCCESS || d0.form != {self.names.form[form.key]}) $fatal(1, \"{form.key}\");",
+                    f"    if (d0.ea_layout != {generate_decoder._ea_layout(form)}) $fatal(1, \"EA layout {form.key}\");",
+                    f"    if (d0.ea_widths[BEDROCK_EA_LOW_SLOT] != {low_width}) $fatal(1, \"EA low width {form.key}\");",
+                    f"    if (d0.ea_widths[BEDROCK_EA_ALT_SLOT] != {alt_width}) $fatal(1, \"EA alt width {form.key}\");",
+                    f"    if (d0_ea.status != d0.status || d0_ea.ea_layout != d0.ea_layout || d0_ea.ea_widths != d0.ea_widths) $fatal(1, \"EA metadata {form.key}\");",
+                    f"    if (d0_ea.low_raw != 7'h{low_raw:02x} || d0_ea.alt_raw != 7'h{alt_raw:02x}) $fatal(1, \"EA raw {form.key}\");",
+                    f"    if (d0_ea.base_cursor != 6'd{form.opcode_bytes} || d0_ea.post_alt_cursor != 6'd{post_alt_cursor}) $fatal(1, \"EA cursor {form.key}\");",
                 ]
             )
         lines.extend(["    $finish;", "  end", "endmodule", ""])
         return "\n".join(lines)
 
-    def test_verilator_lint_and_d0_simulation_when_available(self) -> None:
+    def test_verilator_split_d1_lint_when_explicitly_enabled(self) -> None:
+        if os.environ.get("SV_RUN_LARGE_LINT") != "1":
+            self.skipTest("large split-D1 lint requires SV_RUN_LARGE_LINT=1")
+        verilator = shutil.which("verilator")
+        if verilator is None:
+            self.skipTest("Verilator is not available")
+        package = str(self.build_dir / generate_decoder.OUTPUT_NAMES[0])
+        for module, output_index in (
+            ("bedrock_decode_d1", 2),
+            ("bedrock_decode_ea", 3),
+        ):
+            subprocess.run(
+                [
+                    verilator,
+                    "--Wno-fatal",
+                    "--Wno-WIDTH",
+                    "--Wno-UNSIGNED",
+                    "--Wno-CMPCONST",
+                    "--Wno-CASEOVERLAP",
+                    "--lint-only",
+                    "--top-module",
+                    module,
+                    package,
+                    str(self.build_dir / generate_decoder.OUTPUT_NAMES[output_index]),
+                ],
+                check=True,
+                cwd=generate_decoder.ROOT,
+            )
+
+    def test_verilator_package_widths_and_d0_simulation_when_available(self) -> None:
         verilator = shutil.which("verilator")
         if verilator is None:
             self.skipTest("Verilator is not available")
@@ -936,14 +1594,12 @@ class SystemVerilogGenerationTests(unittest.TestCase):
             "--Wno-CMPCONST",
             "--Wno-CASEOVERLAP",
         ]
-        package, d0, d1 = (str(self.build_dir / name) for name in generate_decoder.OUTPUT_NAMES)
-        subprocess.run(
-            common + ["--lint-only", "--top-module", "bedrock_decode_d0", package, d0],
-            check=True,
-            cwd=generate_decoder.ROOT,
+        package, d0 = (
+            str(self.build_dir / name)
+            for name in generate_decoder.OUTPUT_NAMES[:2]
         )
         subprocess.run(
-            common + ["--lint-only", "--top-module", "bedrock_decode_d1", package, d1],
+            common + ["--lint-only", "--top-module", "bedrock_decode_d0", package, d0],
             check=True,
             cwd=generate_decoder.ROOT,
         )

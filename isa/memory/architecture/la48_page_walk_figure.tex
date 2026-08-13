@@ -28,18 +28,18 @@
 \node[draw,align=center,minimum width=0.78in,minimum height=0.30in] (canon) at (0.95,5.42) {canonical\\check};
 \draw[->,black,densely dashed,line width=0.35pt] (1.19,6.02) -- (1.19,5.62) -- (canon.north);
 \node[draw,align=center,minimum width=0.82in,minimum height=0.34in,inner sep=1.5pt] (tbl0) at (1.75,4.78) {L4\\table page};
-\node[draw,align=center,minimum width=1.12in,minimum height=0.42in,inner sep=1.5pt] (ent0) at (3.25,4.78) {selected\\L4 entry\\next table};
+\node[draw,align=center,minimum width=1.12in,minimum height=0.42in,inner sep=1.5pt] (ent0) at (3.25,4.78) {selected L4 PTE\\leaf or table};
 \node[draw,align=center,minimum width=0.72in,minimum height=0.34in,inner sep=1.5pt] (root) at (0.70,4.78) {PTCR\\root\_page};
 \draw[->] (root.east) -- (tbl0.west);
 \draw[->] (tbl0.east) -- node[above,align=center,font=\scriptsize] {L4 idx\\bits 47..39} (ent0.west);
 \draw[->,black,densely dashed,line width=0.35pt] (2.20,6.02) -- (2.20,5.86) -- (3.93,5.86) -- (3.93,4.78) -- (ent0.east);
 \node[draw,align=center,minimum width=0.82in,minimum height=0.34in,inner sep=1.5pt] (tbl1) at (1.75,4.11) {L3\\table page};
-\node[draw,align=center,minimum width=1.12in,minimum height=0.42in,inner sep=1.5pt] (ent1) at (3.25,4.11) {selected\\L3 entry\\next table};
+\node[draw,align=center,minimum width=1.12in,minimum height=0.42in,inner sep=1.5pt] (ent1) at (3.25,4.11) {selected L3 PTE\\leaf or table};
 \draw[->] (ent0.south) -- (3.25,4.42) -- (1.75,4.42) -- (tbl1.north);
 \draw[->] (tbl1.east) -- node[above,align=center,font=\scriptsize] {L3 idx\\bits 38..30} (ent1.west);
 \draw[->,black,densely dashed,line width=0.35pt] (2.92,6.02) -- (2.92,5.82) -- (4.03,5.82) -- (4.03,4.11) -- (ent1.east);
 \node[draw,align=center,minimum width=0.82in,minimum height=0.34in,inner sep=1.5pt] (tbl2) at (1.75,3.44) {L2\\table page};
-\node[draw,align=center,minimum width=1.12in,minimum height=0.42in,inner sep=1.5pt] (ent2) at (3.25,3.44) {selected\\L2 entry\\next table};
+\node[draw,align=center,minimum width=1.12in,minimum height=0.42in,inner sep=1.5pt] (ent2) at (3.25,3.44) {selected L2 PTE\\leaf or table};
 \draw[->] (ent1.south) -- (3.25,3.76) -- (1.75,3.76) -- (tbl2.north);
 \draw[->] (tbl2.east) -- node[above,align=center,font=\scriptsize] {L2 idx\\bits 29..21} (ent2.west);
 \draw[->,black,densely dashed,line width=0.35pt] (3.65,6.02) -- (3.65,5.78) -- (4.13,5.78) -- (4.13,3.44) -- (ent2.east);
@@ -55,7 +55,7 @@
 \draw[->] (frame.east) -- node[above] {PFN} (plus.west);
 \draw[->] (plus.east) -- (phys.west);
 \draw[->,black,densely dashed,line width=0.35pt] (5.22,6.02) -- (5.22,5.70) -- (4.33,5.70) -- (4.33,2.23) -- (3.12,2.23) -- (plus.north);
-\node[draw,align=left,minimum width=4.55in,inner sep=2.5pt] at (3.02,1.45) {Each index selects one entry in its table. Non-leaf entries point to the next table;\\the leaf PTE supplies the physical frame number and access attributes.};
+\node[draw,align=left,minimum width=4.55in,inner sep=2.5pt] at (3.02,1.45) {Maximum-depth walk shown. At L4--L2, T=1 continues and T=0 terminates at an aligned byte leaf;\\the terminating level selects the offset width. L1 terminates as a byte or slot leaf.};
 \end{tikzpicture}
 \manualfigurecaption{LA48 Four-Level Page Walk}
 \end{center}

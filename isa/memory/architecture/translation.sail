@@ -19,17 +19,27 @@ function pte_permission_bits(pte : bits(64)) -> bits(64) =
   | (if pte[1] == bitone then 0x0000000000000002 else 0x0000000000000000)
   | (if pte[2] == bitone then 0x0000000000000004 else 0x0000000000000000)
 
+function paging_leaf_offset_mask(level : int) -> bits(64) = match level {
+  5 => 0x0000FFFFFFFFFFFF,
+  4 => 0x0000007FFFFFFFFF,
+  3 => 0x000000003FFFFFFF,
+  2 => 0x00000000001FFFFF,
+  _ => 0x0000000000000FFF,
+}
+
+function paging_leaf_alignment_mask(level : int) -> bits(64) =
+  paging_leaf_offset_mask(level) & 0xFFFFFFFFFFFFF000
+
 function pte_structurally_valid(pte : bits(64), level : int) -> bool =
   if pte[0] == bitzero then false
-  else if level > 1 then
-    pte[11] == bitone & pte[6] == bitzero & pte[4] == bitzero & pte[7] == bitzero
-  else {
+  else if pte[11] == bitone then
+    level > 1 & pte[6] == bitzero & pte[4] == bitzero & pte[7] == bitzero
+  else if pte[7] == bitone then {
     let slot = pte[7] == bitone;
-    pte[11] == bitzero
-    & (if slot then pte[9 .. 8] == 0b01 & pte[2] == bitzero
-                    & pte[5] == bitone & pte[6] == bitone
-       else true)
+    level == 1 & slot & pte[9 .. 8] == 0b01 & pte[2] == bitzero
+               & pte[5] == bitone & pte[6] == bitone
   }
+  else (pte & paging_leaf_alignment_mask(level)) == 0x0000000000000000
 
 function pte_read_request(state : Cpu_state, instruction : Decoded_instruction,
                           linear : bits(64), table_base : bits(64), level : int,

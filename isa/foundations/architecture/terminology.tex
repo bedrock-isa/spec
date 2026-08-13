@@ -52,8 +52,8 @@ and checks only that it lies inside the segment window.
 \emph{Page-table translation} is the optional \texttt{PTCR.PE}-controlled stage that maps a canonical linear
 address to a physical frame and applies PTE permissions, cache policy, and addressing type.
 
-A \emph{PFN} is a physical frame number. A leaf PTE combines its PFN with linear-address bits 11..0 to form a byte
-address when \texttt{AT=0} or a slot address when \texttt{AT=1}.
+A \emph{PFN} is a physical frame number. A byte-addressed leaf PTE at level $L$ combines its naturally aligned PFN
+base with the low $12+9(L-1)$ linear-address bits. An L1 slot leaf combines its PFN with linear-address bits 11..0.
 
 \subsection{Control Flow}\label{section:control-flow-terminology}
 

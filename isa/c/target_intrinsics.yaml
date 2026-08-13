@@ -224,7 +224,7 @@ builtin_families:
       - name: invalidate_page
         c_interface: void(const void *)
         lowering: {kind: instruction, value: INVPAGE}
-        effect: Supervisor; argument supplies the linear page address and the operation fully clobbers memory.
+        effect: Supervisor; argument supplies a linear address and invalidates any matching cached leaf mapping containing it; the operation fully clobbers memory.
       - name: invalidate_asid
         c_interface: void(asid)
         lowering: {kind: instruction, value: INVASID}

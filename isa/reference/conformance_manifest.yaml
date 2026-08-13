@@ -13,6 +13,10 @@ families:
   source: isa/reference/address_translation_conformance_vectors.yaml
   required_cases:
   - paging_disabled_full_width
+  - aligned_upper_byte_leaf
+  - misaligned_upper_byte_leaf
+  - upper_slot_leaf_invalid
+  - query_stops_at_upper_leaf
   - cross_page_qword_second_not_present
   - cross_page_first_fault_has_priority
   - cross_page_qword_second_permission

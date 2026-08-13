@@ -63,17 +63,33 @@ project. Generated Sail is a build artifact and is never an authority owner.
 Only `foundations/architecture/prelude.sail` uses Sail library `$include`
 directives.
 
-The canonical Decode IR also generates three disposable combinational
-SystemVerilog artifacts: `bedrock_decode_pkg.sv`, `bedrock_decode_d0.sv`, and
-`bedrock_decode_d1.sv`. D0 accepts a valid bit, generated opcode-class enum,
-and right-aligned 34-bit opcode, and returns a recognition result in one of
-four states: invalid input, unallocated opcode, constraint-rejected, or
-success. D1 accepts that D0 result, an 18-byte record with byte 0 in bits
-`[7:0]`, and a byte count. Its output carries operation and control metadata,
-decoded fields and operands, effective addresses, static legality, required
-length, and decode stage; this result is the U0 handoff boundary. The interface
-uses `logic` enums and packed structures and has no clock, reset, register, or
-transport protocol.
+The canonical Decode IR also generates four disposable combinational
+SystemVerilog artifacts: `bedrock_decode_pkg.sv`, `bedrock_decode_d0.sv`,
+`bedrock_decode_d1.sv`, and `bedrock_decode_ea.sv`. D0 accepts a valid bit,
+generated opcode-class enum, and right-aligned 34-bit opcode, and returns a
+recognition result in one of four states: invalid input, unallocated opcode,
+constraint-rejected, or success. A successful result also carries the selected
+form's two-bit EA layout and the operand width for each of two fixed EA
+candidates. In parallel, D0 emits a separate 30-bit EA-front-end result carrying
+the same status/layout/widths plus the low/alternate compact fields and the
+base/post-alternate record cursors. The opcode D1 consumes the recognition
+result, while the EA D1 consumes the EA-front-end result; each also accepts an
+18-byte record with byte 0 in bits `[7:0]` and a byte count.
+`bedrock_decode_d1` emits the exact 398-bit opcode/form result: valid/stage,
+form and operation, 23-bit control metadata, size/flag/event masks, four compact
+operands with fixed low/alternate EA-candidate references, overlap, and
+required/encoded byte counts. `bedrock_decode_ea` speculatively decodes exactly
+two class-position candidates: medium low plus medium-alt, or long/extralong
+low plus high. Unreferenced candidates are ignored; D0 precomputes both record
+cursors, and only a high-then-low layout selects the post-alternate cursor for
+the low candidate. It emits the independent 225-bit EA result containing its
+own valid/stage, the two fixed canonical candidates, and required-byte evidence.
+Neither module consumes the other's result and no aggregate packet or join
+module is generated;
+downstream control combines only their success/kill conditions for referenced
+EA candidates. Richer Decode IR metadata remains outside both buses. The
+interfaces use `logic` enums and packed structures and have no clock, reset,
+register, or transport protocol.
 
 For source-only reading, begin with `isa/bedrock.sail_project`, which is the
 ordered module graph. `foundations/architecture/` defines shared semantic types;
@@ -154,11 +170,13 @@ PYTHONDONTWRITEBYTECODE=1 python3 isa/tools/systemverilog/generate_decoder.py \
   "$sv_build" --check
 PYTHONDONTWRITEBYTECODE=1 SV_TEST_ROOT="$sv_build/tests" \
   python3 isa/tools/systemverilog/test_generation.py
-verilator --lint-only --Wno-fatal --Wno-WIDTH --Wno-UNSIGNED --Wno-CMPCONST \
-  --top-module bedrock_decode_d1 "$sv_build/bedrock_decode_pkg.sv" \
-  "$sv_build/bedrock_decode_d1.sv"
 make sv-decoder SV_BUILD_DIR="$sv_build/make"
 ```
+
+The owner suite performs bounded package/D0 Verilator checks when Verilator is
+available. Full lint of both large split-D1 modules is intentionally opt-in via
+`SV_RUN_LARGE_LINT=1` because elaboration can require several gigabytes of
+memory.
 
 Generate and run C only in a temporary directory:
 

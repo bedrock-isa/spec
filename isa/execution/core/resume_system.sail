@@ -58,10 +58,14 @@ function resume_system_phase(previous : Execution_result, response : Transaction
         else if not_bool(valid) then query_result(
           previous, 0x0000000000000000, false, 0x0000000000000000
         )
-        else if level == 1 then {
+        else if raw[11] == bitzero then {
+          if instruction.form.operation == Op_PTQUERY then
+            query_result(previous, 0x0000000000000000, false, 0x0000000000000000)
+          else {
           let physical = (raw & paging_pfn_mask(previous.pending.before.controls[0]))
-                       | (previous.request.value & 0x0000000000000FFF);
+                       | (previous.request.value & paging_leaf_offset_mask(level));
           query_result(previous, physical, true, permissions)
+          }
         }
         else {
           let next_level = level - 1;
