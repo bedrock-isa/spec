@@ -1,0 +1,64 @@
+function response_matches_phase(phase : Continuation_phase, request : Primitive_request,
+                                kind : Transaction_response_kind) -> bool = match phase {
+  PhaseSourceRead => kind == ResponseRead,
+  PhaseDestinationProbe =>
+    if request.kind == MemoryRead then kind == ResponseRead
+    else if request.kind == MemoryProbe then kind == ResponseProbe
+    else false,
+  PhaseDestinationWrite => kind == ResponseStoreAck,
+  PhaseMemoryWriteFirst => kind == ResponseStoreAck,
+  PhaseMemoryWriteSecond => kind == ResponseStoreAck,
+  PhaseTargetRead => kind == ResponseRead,
+  PhaseTargetExecuteProbe => kind == ResponseTranslation,
+  PhaseStackRange => kind == ResponseStackRange,
+  PhaseStackReadFirst => kind == ResponseRead,
+  PhaseStackReadSecond => kind == ResponseRead,
+  PhaseStackWriteFirst => kind == ResponseStoreAck,
+  PhaseIntegerExternal => kind == ResponseIntegerExternal,
+  PhaseAtomicRmw => kind == ResponseAtomic,
+  PhaseCacheTranslate => kind == ResponseAddressTranslation,
+  PhaseCacheMaintenance => kind == ResponseCacheMaintenance,
+  PhaseFenceCompletion => kind == ResponseFenceCompletion,
+  PhaseTlbOperation => kind == ResponseTlbOperation,
+  PhaseTranslationQuery => kind == ResponseTranslationQuery,
+  PhasePteRead => kind == ResponsePteRead,
+  PhaseContextSwitch => kind == ResponseContextSwitch,
+  PhaseStateSave => kind == ResponseStateSave,
+  PhaseStateRestoreHeader => kind == ResponseStateRestore,
+  PhaseStateRestoreRange => kind == ResponseStateRestore,
+  PhaseStateRestore => kind == ResponseStateRestore,
+  PhaseRepeatFetch => kind == ResponseRepeatFetch,
+  PhaseEventFrameHeader => kind == ResponseEventFrame,
+  PhaseEventFrame => kind == ResponseEventFrame,
+  PhaseEventTargetProbe => kind == ResponseTranslation,
+  PhaseEventStackProbe => kind == ResponseStackRange,
+  PhaseEventFrameStore => kind == ResponseEventFrame,
+  PhaseEventReturnBody => kind == ResponseRepeatFetch,
+  PhaseEventReturnExecute => kind == ResponseTranslation,
+  PhaseFpContractQuery => kind == ResponseCpuidQuery,
+  PhaseFpSourceRead => kind == ResponseRead,
+  PhaseFpDestinationProbe => kind == ResponseProbe,
+  PhaseFpCompute => kind == ResponseFloatingPoint,
+  PhaseFpDestinationWrite => kind == ResponseStoreAck,
+  PhaseCpuidQuery => kind == ResponseCpuidQuery,
+  PhasePerformanceCounter => kind == ResponsePerformanceCounter,
+  PhaseControlTransition => kind == ResponseControlTransition,
+  PhaseResetSerialize => kind == ResponseResetSerialize,
+  ContinuationNone => false,
+  _ => false,
+}
+
+function transaction_faulted(previous : Execution_result, kind : Fault_kind,
+                             detail : string) -> Execution_result = struct {
+  state = previous.pending.before,
+  pending = previous.pending,
+  request = previous.request,
+  effects = [||],
+  fault = Some(struct {
+    kind = kind, operation = previous.pending.operation, detail = detail,
+    error_code = if kind == AccessFault then 0x0000000047000000 else 0x0000000000000000,
+    bus_error = kind == AccessFault
+  }),
+  awaiting_environment = false
+}
+

@@ -16,8 +16,7 @@ from latex_builder.common import latex_longtable, latex_tabular, tex_code, tex_e
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "isa" / "reference" / "architecture_tables.yaml"
-FRAGMENT_DIR = ROOT / "isa" / "tools" / "latex_builder" / "templates" / "fragments"
-GENERATED_DIR = FRAGMENT_DIR / "generated"
+ISA_ROOT = ROOT / "isa"
 OPERANDS_SOURCE = ROOT / "isa" / "defs" / "operands.yaml"
 RDPMC_TEMPLATE = ROOT / "isa" / "defs" / "instructions" / "RDPMC" / "details.tex.in"
 RDPMC_OUTPUT = ROOT / "isa" / "defs" / "instructions" / "RDPMC" / "details.tex"
@@ -1168,35 +1167,57 @@ def output_files(data: dict[str, Any]) -> dict[Path, str]:
     rdpmc_details = rdpmc_details.replace(marker, performance_table.rstrip())
 
     return {
-        GENERATED_DIR / "reserved_field_defaults.tex": generated(render_reserved_defaults(data)),
-        GENERATED_DIR / "cpuid_class_leaf_directory.tex": generated(render_cpuid_directory(data)),
-        GENERATED_DIR / "cpuid_cache_topology.tex": generated(render_cache_topology(data)),
-        GENERATED_DIR / "cpuid_save_area_layout.tex": generated(render_save_area_layout(data)),
-        GENERATED_DIR / "control_register_selectors.tex": generated(render_control_registers(data)),
-        GENERATED_DIR / "cache_policies.tex": generated(render_cache_policies(data)),
-        GENERATED_DIR / "translation_cache_contract.tex": generated(
+        ISA_ROOT / "foundations" / "architecture" / "reserved_field_defaults.tex": generated(
+            render_reserved_defaults(data)
+        ),
+        ISA_ROOT / "system" / "state" / "cpuid_class_leaf_directory.tex": generated(
+            render_cpuid_directory(data)
+        ),
+        ISA_ROOT / "system" / "state" / "cpuid_cache_topology.tex": generated(
+            render_cache_topology(data)
+        ),
+        ISA_ROOT / "system" / "state" / "cpuid_save_area_layout.tex": generated(
+            render_save_area_layout(data)
+        ),
+        ISA_ROOT / "system" / "state" / "control_register_selectors.tex": generated(
+            render_control_registers(data)
+        ),
+        ISA_ROOT / "memory" / "architecture" / "cache_policies.tex": generated(
+            render_cache_policies(data)
+        ),
+        ISA_ROOT / "memory" / "architecture" / "translation_cache_contract.tex": generated(
             render_translation_cache(data)
         ),
-        GENERATED_DIR / "control_write_rules.tex": generated(
+        ISA_ROOT / "system" / "state" / "control_write_rules.tex": generated(
             render_control_write_rules(data)
         ),
-        GENERATED_DIR / "page_fault_causes.tex": generated(render_exception_causes(data, "PAGE_FAULT")),
-        GENERATED_DIR / "illegal_instruction_causes.tex": generated(
+        ISA_ROOT / "system" / "events" / "page_fault_causes.tex": generated(
+            render_exception_causes(data, "PAGE_FAULT")
+        ),
+        ISA_ROOT / "system" / "events" / "illegal_instruction_causes.tex": generated(
             render_exception_causes(data, "ILLEGAL_INSTRUCTION")
         ),
-        GENERATED_DIR / "invalid_control_state_causes.tex": generated(
+        ISA_ROOT / "system" / "events" / "invalid_control_state_causes.tex": generated(
             render_exception_causes(data, "INVALID_CONTROL_STATE")
         ),
-        GENERATED_DIR / "immediate_operand_interpretation.tex": generated(
+        ISA_ROOT / "encoding" / "instruction" / "immediate_operand_interpretation.tex": generated(
             render_immediate_operands(data)
         ),
-        GENERATED_DIR / "atomic_memory_order_selectors.tex": generated(render_atomic_orders(data)),
-        FRAGMENT_DIR / "fptransa_accuracy_contracts.tex": generated(render_fptransa_contracts(data)),
-        FRAGMENT_DIR / "frame_type_table.tex": generated(render_event_frames(data)),
-        FRAGMENT_DIR / "architectural_events.tex": generated(
+        ISA_ROOT / "memory" / "architecture" / "atomic_memory_order_selectors.tex": generated(
+            render_atomic_orders(data)
+        ),
+        ISA_ROOT / "system" / "state" / "fptransa_accuracy_contracts.tex": generated(
+            render_fptransa_contracts(data)
+        ),
+        ISA_ROOT / "system" / "events" / "frame_type_table.tex": generated(
+            render_event_frames(data)
+        ),
+        ISA_ROOT / "system" / "events" / "architectural_events.tex": generated(
             render_architectural_events(data)
         ),
-        FRAGMENT_DIR / "reset_state_table.tex": generated(render_reset_state(data)),
+        ISA_ROOT / "system" / "state" / "reset_state_table.tex": generated(
+            render_reset_state(data)
+        ),
         RDPMC_OUTPUT: generated(rdpmc_details),
     }
 

@@ -1,0 +1,34 @@
+\clearpage
+\section{Programming Model}\label{page:programming-model}
+
+\subsection{Register Model}\label{section:register-model}
+The integer programming model exposes sixteen 64-bit Rn registers, R0 through R15. Instruction forms use these
+registers for integer values, addresses, counters, selectors, and temporary data.
+
+SP and PC are special architectural registers outside the four-bit Rn namespace. SP-relative memory forms use SS by
+default; PC-relative memory forms use CS by default.
+
+CS, DS, SS, and GS0 through GS5 are 64-bit architectural segment registers. Segment-qualified EA forms select them
+explicitly, while SP and PC forms omit the segment field because their segment association is fixed.
+
+\input{isa/system/state/rn_register_model_figure.tex}
+
+\input{isa/system/state/state_register_format_diagrams.tex}
+
+\subsection{Segment Registers}\label{section:segment-registers}
+\input{isa/system/state/segment_register_format_diagram.tex}
+
+\subsection{Segment Register Operand Class}
+Instructions that take an explicit segment-register operand use the three-bit SREG encoding below.
+
+SP-relative EA forms do not carry this field and use SS. PC-relative EA forms do not carry this field and use CS.
+
+SREG selects DS, SS, and GS0 through GS5. Instruction fetch and fixed PC-relative addressing select CS implicitly.
+\texttt{RDSEG CS} and \texttt{PUSH CS} read the current CS image. Segment-changing control transfers update CS and
+PC together.
+
+@SREG_TABLE@
+\label{table:sreg-encoding}
+
+\subsection{Control Registers}\label{section:control-registers}
+\input{isa/system/state/control_register_reference.tex}

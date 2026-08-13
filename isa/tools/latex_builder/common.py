@@ -12,7 +12,7 @@ import yaml
 CAPTION_LABEL_RE = re.compile(r"^(?:Table|Figure)\s+\d+(?:-\d+)?\.\s*")
 PLACEHOLDER_RE = re.compile(r"@[A-Z0-9_]+@")
 TABLE_WIDTH_RE = re.compile(r"^(?:\d+(?:\.\d+)?(?:pt|in|cm|mm|em|ex)|X)$")
-TEMPLATE_DIR = Path(__file__).with_name("templates")
+REFERENCE_SOURCE_ROOT = Path(__file__).resolve().parents[2]
 TABLE_INLINE_LIST_MAX_CHARS = 32
 TABLE_INLINE_ITEM_MAX_CHARS = 20
 
@@ -70,7 +70,7 @@ class TrustedRawTex:
 
 
 def latex_template(name: str) -> str:
-    return (TEMPLATE_DIR / name).read_text(encoding="utf-8")
+    return (REFERENCE_SOURCE_ROOT / name).read_text(encoding="utf-8")
 
 
 def tex_escape(value: Any) -> str:

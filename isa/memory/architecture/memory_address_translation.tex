@@ -1,0 +1,124 @@
+\clearpage
+\section{Memory Address Translation}\label{page:memory-address-translation}\label{section:memory-address-translation}
+
+Memory address translation is a separate pipeline after effective-address calculation. Effective-address evaluation
+produces an address value or operand designator; segmentation optionally turns that value into a linear address, and
+paging optionally turns the linear address into a memory-system address.
+
+Instruction fetches use CS, stack accesses use SS, and ordinary data accesses use the operation default data segment
+unless an effective-address form explicitly selects another segment. SP and PC forms use their fixed segments.
+
+\hyperref[instr:seglea]{\texttt{SEGLEA}} exposes the linear address produced by segment pre-translation when
+software explicitly needs it. Its instruction description defines the point check, FLAGS result, destination
+suppression, and auto-update commit behavior. SEGLEA applies segment pre-translation to the computed starting point.
+
+\input{isa/memory/architecture/address_translation_pipeline_figure.tex}
+
+\subsection{Segment Pre-Translation}\label{section:segment-pre-translation}
+
+Segment pre-translation interprets the selected 64-bit segment image before paging. The segment fields, derived
+quantities, and image-validity condition are defined in
+\hyperref[section:segment-registers]{Segment Registers}. A disabled segment passes the effective address through.
+An enabled segment either checks the effective address as an offset and adds the base, or checks an already-linear
+address in bounds-only mode.
+
+\Needspace{2.3in}
+\manualtablecaption{Segment Pre-Translation Modes}
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.90in}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{1.95in}>{\raggedright\arraybackslash}p{1.50in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Mode} & \textbf{Segment State} & \textbf{Check} & \textbf{Linear Address}\\
+\midrule
+disabled & m = 0 & no segment-window check & linear = EA\\
+translated window & m != 0, b = 0 & starting point $0 \le \mathrm{EA}<\mathrm{span}$; complete range selected by leaf \texttt{AT} & linear = base + EA\\
+bounds-only window & m != 0, b = 1 & starting point $\mathrm{base}\le\mathrm{EA}<\mathrm{limit}$; complete range selected by leaf \texttt{AT} & linear = EA\\
+\bottomrule
+\end{manualtabular}
+
+Address validation begins by forming the starting EA and its segment-pretranslated linear value. The starting point
+must be within the selected segment. With paging enabled, the starting linear value must then be canonical and the
+starting leaf translation is resolved far enough to determine its \texttt{AT} value. That value selects the complete
+bounds, alignment, translation, and address-type checks described under Leaf Address Types. This ordering defines
+the reported result. With paging disabled, the ordinary byte-addressed range rules apply.
+
+Complete range additions are mathematical: 64-bit wraparound never makes an out-of-range access valid. A range
+failure raises \texttt{PAGE\_FAULT} before an architectural memory transaction begins.
+
+The segment result is the linear address. With PTCR.PE set, the page-table walker consumes that address and applies
+the selected PTE frame and attributes. With paging disabled, the memory system receives the complete 64-bit linear
+address directly as a byte address. \texttt{PABITS\_SEL} applies to page-table geometry, while the direct address
+retains all 64 bits. An invalid segment image raises INVALID\_CONTROL\_STATE when written; a failed segment bound or
+canonical-address check raises PAGE\_FAULT during access.
+
+\input{isa/memory/architecture/page_walk_reference.tex}
+
+\input{isa/memory/architecture/page_table_entry_reference.tex}
+
+\subsection{Translation-Cache Identity and Invalidation}
+A translation-cache entry is identified by the components below. PTCR \texttt{root\_page} is not a hardware tag.
+While ASCR.AE is one, system software binds one ASID to one PTCR root and translation geometry; it completes the
+required shootdown before reusing that ASID for a different PTCR image. While AE is zero, the current untagged
+context is invalidated when PTCR changes.
+
+\input{isa/memory/architecture/translation_cache_contract.tex}
+
+A global leaf ignores ASID matching. Its PFN, accumulated permissions, \texttt{CP}, and \texttt{AT} attributes must
+be identical in every context in which that global entry can be used. Changing any of those attributes requires
+invalidating the global entry on every target logical processor.
+
+The page-table walker reads page tables as CP0 coherent normal memory. Each 64-bit PTE read observes one coherence
+version; it does not combine fields from different writes. An in-progress walk may complete with the old or new
+coherence version, so the updater does not reclaim the old mapping until the complete shootdown protocol finishes.
+The local invalidation instructions affect only the executing logical processor; the request and acknowledgement
+steps are ordinary shared-memory communication ordered by the stated release, acquire, and AFENCE operations.
+
+\subsection{Leaf Address Types and Access Ranges}
+The leaf \texttt{AT} bit selects the meaning of the low twelve linear-address bits and the memory-system address:
+
+\[
+\begin{aligned}
+\texttt{AT=0:}\quad \mathit{byte\_address} &= (\mathit{PFN}\ll12)\mathbin{|}\mathit{linear}[11:0],\\
+\texttt{AT=1:}\quad \mathit{slot\_address} &= (\mathit{PFN}\ll12)\mathbin{|}\mathit{linear}[11:0].
+\end{aligned}
+\]
+
+For \texttt{AT=0}, the low bits are a byte offset and a width-$n$ access covers the half-open interval
+$[a,a+n)$. For \texttt{AT=1}, the low bits are a slot index and every B, W, L, or Q access covers exactly one
+addressable unit, $[a,a+1)$. Here $a$ is the value at the applicable stage: EA for segment bounds, linear address
+for paging coverage, and byte or slot address after translation. All leaves consumed by an \texttt{AT=0} byte range
+must also be byte-addressed; an address-type mismatch raises \texttt{PAGE\_FAULT} with cause
+\texttt{ADDRESS\_TYPE}.
+
+An \texttt{AT=1} transaction carries the slot address, transfer width, read/write direction, and write data. Width
+does not scale the slot address: for example, \texttt{Q [0]} and \texttt{Q [1]} select distinct slots, and
+\texttt{Q [4095]} remains one access to the last slot of the leaf. Slot accesses have no byte-alignment rule and no
+width-induced cross-page condition. Different widths at one slot remain transactions to that same slot; their
+device-visible relationship is defined by the applicable platform or device contract, not by normal-memory byte
+aliasing.
+
+Ordinary B, W, L, and Q loads and stores are valid through an \texttt{AT=1} leaf. Instruction fetch and every atomic
+read-modify-write through such a leaf raise \texttt{ADDRESS\_TYPE}. A prefetch produces no slot transaction. A cache
+maintenance operation has no slot-side effect. PTQUERY and VTOP report the translation without issuing a slot
+transaction; VTOP returns the slot address for an \texttt{AT=1} leaf.
+
+Address type is selected before applying the alignment rule appropriate to that type. Consequently, an atomic whose
+starting leaf has \texttt{AT=1} raises \texttt{ADDRESS\_TYPE} even when the numeric slot address would be misaligned
+under byte-addressed rules. \texttt{ATOMIC\_ALIGNMENT} applies only after an \texttt{AT=0} leaf has been selected.
+
+A slot store retires only after the transaction is acknowledged. The ordering and completion rules for slot
+transactions, including AFENCE, are defined by the Memory Model.
+
+\subsection{Multi-Page Accesses}
+For an \texttt{AT=0} byte range that intersects more than one 4-KiB linear page, translation, accumulated permission,
+and leaf address-type checks are resolved in increasing linear-page order. Each page's walk reaches its existing
+not-present, structural-validity, and permission result before the next page is consumed. The first page in that order
+that fails supplies the architectural fault and walk level.
+
+Every covered page of a store is validated before any byte of the store becomes visible. A later-page translation,
+permission, address-type, or synchronous data-access fault leaves every destination byte and every leaf D bit
+unchanged. A updates completed while consuming an earlier valid entry retain the speculative-A rule and may remain
+set when a later page faults.
+
+Instruction-record fetch uses the same increasing-address rule for all bytes required by the encoded record. A fault
+on a later page completes as an instruction-fetch fault before decode or operand evaluation, while earlier
+instruction-cache and PTE A effects retain their ordinary rules.

@@ -37,7 +37,7 @@ docs-site:
 	$(PYTHON) isa/tools/compile_documents.py --format site --output-root "$(BUILD_DIR)" --latexmk "$(LATEXMK)" --pandoc "$(PANDOC)" --latexpand "$(LATEXPAND)" --mkdocs "$(MKDOCS)"
 
 sail-docs:
-	$(PYTHON) sail/tools/build_docs.py "$(SAIL_BUILD_DIR)"
+	$(PYTHON) isa/tools/sail/build_docs.py "$(SAIL_BUILD_DIR)"
 
 emulator-isa-generate:
 	PYTHON="$(PYTHON)" $(CARGO) check --manifest-path "$(EMULATOR_MANIFEST)" -p bedrock-isa --target-dir "$(EMULATOR_TARGET_DIR)"

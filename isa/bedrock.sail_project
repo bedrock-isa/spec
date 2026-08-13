@@ -1,0 +1,109 @@
+prelude {
+  files
+    foundations/architecture/prelude.sail,
+    foundations/architecture/semantic_types.sail
+}
+
+catalog_types {
+  requires prelude, operations
+  files encoding/instruction/catalog_types.sail
+}
+
+decode {
+  requires prelude, operations, catalog_types, catalog
+  files
+    encoding/instruction/framing.sail,
+    encoding/instruction/selected.sail,
+    encoding/instruction/types.sail,
+    encoding/instruction/bytes.sail,
+    encoding/instruction/effective_address.sail,
+    encoding/instruction/decode.sail
+}
+
+fp {
+  requires prelude, operations, catalog_types, catalog
+  files
+    instructions/floating_point/operation_catalog.sail,
+    instructions/floating_point/transcendental_contract.sail,
+    instructions/floating_point/register_pairs.sail,
+    instructions/floating_point/types.sail,
+    instructions/floating_point/environment.sail,
+    instructions/floating_point/local_operations.sail,
+    instructions/floating_point/request_contract.sail,
+    instructions/floating_point/response_contract.sail,
+    instructions/floating_point/finalize.sail
+}
+
+core {
+  requires prelude, operations, catalog_types, catalog, decode, fp
+  files
+    execution/core/types.sail,
+    execution/core/state.sail,
+    execution/core/predicates.sail,
+    execution/core/effective_address.sail,
+    execution/core/integer_bits.sail,
+    instructions/integer/operands.sail,
+    instructions/integer/arithmetic.sail,
+    instructions/integer/data_control.sail,
+    instructions/integer/routing.sail,
+    system/state/system.sail,
+    memory/architecture/common.sail,
+    memory/architecture/save_cache.sail,
+    memory/architecture/translation.sail,
+    memory/architecture/system_requests.sail,
+    memory/architecture/stack_control.sail,
+    system/events/events.sail,
+    execution/repeat/repeat.sail,
+    instructions/control/control.sail,
+    instructions/floating_point/local_execution.sail,
+    instructions/floating_point/transaction_inputs.sail,
+    instructions/floating_point/transaction_compute.sail,
+    instructions/floating_point/transaction_flow.sail,
+    execution/core/dispatch.sail,
+    execution/core/resume_values.sail,
+    execution/core/resume_restore.sail,
+    execution/core/resume_common.sail,
+    execution/core/resume_memory.sail,
+    execution/core/resume_control.sail,
+    execution/core/resume_system.sail,
+    execution/core/resume_repeat.sail,
+    execution/core/resume_events.sail,
+    execution/core/resume_fp.sail,
+    execution/core/resume.sail
+}
+
+postlude {
+  requires prelude, operations, catalog_types, catalog, decode, fp, core
+  files execution/core/boundary.sail
+}
+
+unit_tests {
+  requires prelude, operations, catalog_types, catalog, decode, fp, core, postlude
+  files
+    tests/support.sail,
+    tests/coverage.sail,
+    tests/pairs.sail,
+    tests/transactions.sail,
+    tests/integer.sail,
+    tests/state.sail,
+    tests/protocol_environment.sail,
+    tests/protocol_state.sail,
+    tests/protocol_stack.sail,
+    tests/protocol_events.sail,
+    tests/protocol.sail,
+    tests/event_support.sail,
+    tests/event.sail,
+    tests/floating_point_support.sail,
+    tests/floating_point_metadata.sail,
+    tests/floating_point_values.sail,
+    tests/floating_point_protocol.sail,
+    tests/floating_point_conversion.sail,
+    tests/floating_point.sail,
+    tests/full.sail,
+    tests/smoke.sail
+}
+
+main {
+  requires prelude, operations, catalog_types, catalog, decode, fp, core, postlude, unit_tests
+  files tests/main.sail
+}

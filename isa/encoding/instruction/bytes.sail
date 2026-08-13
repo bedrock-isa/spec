@@ -1,0 +1,97 @@
+function byte_at(bytes : list(bits(8)), index : int) -> option(bits(8)) = match bytes {
+  [||] => None(),
+  byte :: tail => if index == 0 then Some(byte) else if index > 0 then byte_at(tail, index - 1) else None(),
+}
+
+function read_le_int(bytes : list(bits(8)), cursor : int, remaining : int,
+                     factor : int, accumulated : int) -> option(int) =
+  if remaining == 0 then Some(accumulated)
+  else match byte_at(bytes, cursor) {
+    Some(byte) => read_le_int(bytes, cursor + 1, remaining - 1,
+                             factor * 256, accumulated + unsigned(byte) * factor),
+    None() => None(),
+  }
+
+function read_le_bits(bytes : list(bits(8)), cursor : int, width : int) -> option(bits(64)) =
+  if (width == 0) | (width == 8) | (width == 16) | (width == 24)
+     | (width == 32) | (width == 40) | (width == 48) | (width == 56) | (width == 64) then
+    match read_le_int(bytes, cursor, tdiv_int(width, 8), 1, 0) {
+      Some(value) => Some(get_slice_int(64, value, 0)),
+      None() => None(),
+    }
+  else None()
+
+function read_be_int(bytes : list(bits(8)), cursor : int, remaining : int,
+                     accumulated : int) -> option(int) =
+  if remaining == 0 then Some(accumulated)
+  else match byte_at(bytes, cursor) {
+    Some(byte) => read_be_int(bytes, cursor + 1, remaining - 1,
+                             accumulated * 256 + unsigned(byte)),
+    None() => None(),
+  }
+
+function read_be_bits(bytes : list(bits(8)), cursor : int, width : int) -> option(bits(64)) =
+  match read_be_int(bytes, cursor, tdiv_int(width, 8), 0) {
+    Some(value) => Some(get_slice_int(64, value, 0)),
+    None() => None(),
+  }
+
+function opcode_payload(bytes : list(bits(8)), encoding_class : Encoding_class) -> option(bits(64)) =
+  match (encoding_class, bytes) {
+    (ExtraShort, byte0 :: _) => Some(sail_zero_extend(byte0[6 .. 0], 64)),
+    (Short, byte0 :: byte1 :: _) => Some(sail_zero_extend(byte0[5 .. 0] @ byte1, 64)),
+    (Medium, byte0 :: byte1 :: byte2 :: _) =>
+      Some(sail_zero_extend(byte0[1 .. 0] @ byte1 @ byte2, 64)),
+    (Long, byte0 :: byte1 :: byte2 :: byte3 :: _) =>
+      Some(sail_zero_extend(byte0[1 .. 0] @ byte1 @ byte2 @ byte3, 64)),
+    (ExtraLong, byte0 :: byte1 :: byte2 :: byte3 :: byte4 :: _) =>
+      Some(sail_zero_extend(byte0[1 .. 0] @ byte1 @ byte2 @ byte3 @ byte4, 64)),
+    _ => None(),
+  }
+
+function encoding_class_of_record(record_class : Record_class) -> Encoding_class = match record_class {
+  FixedExtraShort => ExtraShort,
+  FixedShort => Short,
+  ExtendedMedium => Medium,
+  ExtendedLong => Long,
+  ExtendedExtraLong => ExtraLong,
+}
+
+function find_catalog_entry(payload : bits(64), encoding_class : Encoding_class,
+                            entries : list(Catalog_entry)) -> option(Catalog_entry) =
+  match entries {
+    [||] => None(),
+    entry :: tail =>
+      if entry.encoding_class == encoding_class & catalog_entry_matches(payload, entry)
+      then Some(entry)
+      else find_catalog_entry(payload, encoding_class, tail),
+  }
+
+function find_opcode_entry(payload : bits(64), encoding_class : Encoding_class,
+                           entries : list(Catalog_entry)) -> option(Catalog_entry) =
+  match entries {
+    [||] => None(),
+    entry :: tail =>
+      if entry.encoding_class == encoding_class & ((payload & entry.mask) == entry.value)
+      then Some(entry)
+      else find_opcode_entry(payload, encoding_class, tail),
+  }
+
+function decode_fields(payload : bits(64), fields : list(Catalog_field)) -> list(Decoded_field) =
+  match fields {
+    [||] => [||],
+    field :: tail => struct {
+      symbol = field.symbol,
+      type_name = field.type_name,
+      kind = field.kind,
+      role = "",
+      value = extracted_field(payload, field.positions, 0)
+    } :: decode_fields(payload, tail),
+  }
+
+function find_decoded_field(symbol : string, fields : list(Decoded_field)) -> option(Decoded_field) =
+  match fields {
+    [||] => None(),
+    field :: tail => if field.symbol == symbol then Some(field) else find_decoded_field(symbol, tail),
+  }
+

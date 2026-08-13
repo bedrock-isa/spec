@@ -21,7 +21,19 @@ from defs_loader import load_extensions, load_register_groups  # noqa: E402
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_SOURCE = ROOT / "isa" / "reference" / "reference_navigation.yaml"
 ARCHITECTURE_SOURCE = ROOT / "isa" / "reference" / "architecture_tables.yaml"
-TEMPLATE_ROOT = ROOT / "isa" / "tools" / "latex_builder" / "templates"
+EXPLANATORY_SOURCE_ROOTS = tuple(
+    ROOT / "isa" / topic
+    for topic in (
+        "document",
+        "foundations",
+        "encoding",
+        "addressing",
+        "execution",
+        "memory",
+        "system",
+        "instructions",
+    )
+)
 
 TOP_KEYS = {
     "schema_version",
@@ -87,8 +99,11 @@ def string_list(value: Any, where: str, *, allow_empty: bool = False) -> list[st
 
 def template_anchors() -> set[str]:
     anchors: set[str] = set()
-    for path in TEMPLATE_ROOT.rglob("*.tex"):
-        anchors.update(re.findall(r"\\label\{([^}]+)\}", path.read_text(encoding="utf-8")))
+    for source_root in EXPLANATORY_SOURCE_ROOTS:
+        for path in source_root.rglob("*.tex"):
+            anchors.update(
+                re.findall(r"\\label\{([^}]+)\}", path.read_text(encoding="utf-8"))
+            )
     return anchors
 
 

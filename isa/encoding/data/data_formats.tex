@@ -1,0 +1,64 @@
+\clearpage
+\section{Data Formats}\label{page:data-formats}
+
+\subsection{Integer Data Sizes}
+Integer operands use size suffixes to select the low-order subfield of an Rn register and the number of bytes
+transferred by memory operands.
+
+Byte, word, and long operations use the low-order subfield of the selected register. Q-sized operations use the full
+64-bit register.
+
+An Rn destination write smaller than Q replaces only the selected low-order subfield; bits above the operation size
+are preserved. Q-sized Rn writes replace all 64 bits. Memory destination writes transfer only the selected number of
+bytes.
+
+An instruction may explicitly define a full-register write, zero-extension, sign-extension, or another upper-bit
+rule. Such instruction-specific rules override the default subfield write rule.
+
+\manualtablecaption{Integer Data Sizes}
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.45in}>{\raggedright\arraybackslash}p{0.55in}>{\raggedright\arraybackslash}p{0.45in}>{\raggedright\arraybackslash}p{0.50in}>{\raggedright\arraybackslash}p{1.55in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Code} & \textbf{Suffix} & \textbf{Bits} & \textbf{Bytes} & \textbf{Name}\\
+\midrule
+\texttt{B} & \texttt{@B_SUFFIX@} & @B_BITS@ & @B_BYTES@ & Byte\\
+\texttt{W} & \texttt{@W_SUFFIX@} & @W_BITS@ & @W_BYTES@ & Word\\
+\texttt{L} & \texttt{@L_SUFFIX@} & @L_BITS@ & @L_BYTES@ & Long\\
+\texttt{Q} & \texttt{@Q_SUFFIX@} & @Q_BITS@ & @Q_BYTES@ & Quad\\
+\bottomrule
+\end{manualtabular}
+
+\input{isa/encoding/data/integer_register_subfield_diagram.tex}
+
+\subsection{Little-Endian Memory Organization}
+Integer data, immediates, displacements, and absolute address payloads are little-endian. Multi-byte numeric
+payloads are stored least significant byte first. The decoder consumes instruction-header fields byte by byte in
+instruction-stream order.
+
+For an N-byte integer value stored at byte address A, byte A contains bits 7..0, byte A+1 contains bits 15..8, and
+so on.
+
+\input{isa/encoding/data/data_byte_order_diagrams.tex}
+
+\subsection{Floating-Point Data Formats}
+\manualtablecaption{Floating-Point Scalar Sizes}
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.45in}>{\raggedright\arraybackslash}p{0.55in}>{\raggedright\arraybackslash}p{0.45in}>{\raggedright\arraybackslash}p{0.50in}>{\raggedright\arraybackslash}p{1.55in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Code} & \textbf{Suffix} & \textbf{Bits} & \textbf{Bytes} & \textbf{Name}\\
+\midrule
+\texttt{S} & \texttt{@S_SUFFIX@} & @S_BITS@ & @S_BYTES@ & Single\\
+\texttt{D} & \texttt{@D_SUFFIX@} & @D_BITS@ & @D_BYTES@ & Double\\
+\bottomrule
+\end{manualtabular}
+
+Floating-point scalar formats are little-endian in memory as well. S is IEEE-754 binary32 with 24 bits of
+significand precision, minimum normal exponent $-126$, and minimum subnormal quantum $2^{-149}$. D is IEEE-754
+binary64 with 53 bits of significand precision, minimum normal exponent $-1022$, and minimum subnormal quantum
+$2^{-1074}$.
+
+\input{isa/encoding/data/floating_point_format_diagram.tex}
+
+The bit-level floating-point encoding, NaN policy, exception flags, and rounding behavior are defined by the
+floating-point instruction and state descriptions; their memory byte order follows the same
+least-significant-byte-first rule as integer data.

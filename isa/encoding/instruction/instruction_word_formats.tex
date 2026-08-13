@@ -1,0 +1,98 @@
+\clearpage
+\section{Instruction Encoding}\label{page:instruction-encoding}\label{section:instruction-header-formats}
+
+\subsection{Instruction Stream and Record Boundary}
+The byte addressed by PC is byte 0 of the current instruction. Instruction decoding determines the complete
+instruction length before operand evaluation begins.
+
+Any remaining bytes selected by the instruction length belong to the opcode payload, EA descriptors, immediates,
+displacements, or instruction-specific payloads. The detailed length and opcode-class truth tables are in this
+chapter.
+
+The instruction boundary is fixed by byte 0 for extrashort and short forms, and by the first two bytes for
+extended forms, before operand evaluation begins. An encoded length that cannot contain the selected form raises
+\texttt{ILLEGAL\_INSTRUCTION} before any architectural state is changed.
+
+The encoded length must contain every required opcode byte, descriptor, immediate, displacement, bitmap, and
+instruction-specific payload. For an extended instruction, every trailing byte after the selected concrete form is
+uninterpreted padding; every byte value is valid. Padding never extends an operand, descriptor, or opcode.
+
+Before decode validation or operand evaluation, instruction fetch and permission checks cover the complete encoded
+record, including padding. An inaccessible padding byte therefore reports the applicable instruction-fetch fault.
+An undersized record raises \texttt{ILLEGAL\_INSTRUCTION.INSUFFICIENT\_LENGTH} before architectural state changes.
+
+\subsection{Instruction Header Formats}
+
+Instruction framing is byte-oriented. Byte 0 alone identifies extrashort and short instructions; extended
+instructions use byte 0 and byte 1 to determine both total instruction length and opcode class.
+
+Extended byte0[5:2] is L, and the total instruction length is 3+L bytes. The opcode stream begins at
+byte0[1:0], continues through byte1, and then consumes later bytes as required by the opcode class.
+
+An extended instruction is invalid if its encoded total length is shorter than the opcode class minimum: 3 bytes
+for medium, 4 bytes for long, and 5 bytes for extralong.
+
+\texttt{LEN n, <instruction>} requests an extended record whose total size is \texttt{n} bytes, where
+\texttt{3 <= n <= 18}. The requested size must cover the concrete form. Without \texttt{LEN}, the assembler emits
+the shortest valid record. It fills requested trailing padding with zero. A disassembler emits \texttt{LEN n,} for
+an overlong record so reassembly preserves the length; padding byte values are not preserved. Extrashort and short
+forms retain their fixed record lengths.
+
+\begin{manuallistedbitdiagram}{Instruction Header Byte Formats}[fig:instruction-header-byte-formats]
+\manualbitrow{extrashort byte}{%
+\manualbitfixed{0}{1}
+\manualbitfieldtext{payload}{7}
+}
+\manualbitfieldrow{short bytes}{\manualbyterowlabels{0}{2}}{%
+\manualbitfixed{10}{2}
+\manualbitfieldtext{PAY-HI}{6}
+\manualbitgap{1}
+\manualbitfieldtext{PAY-LO}{8}
+}
+\manualbitfieldrow{extended start bytes}{\manualbyterowlabels{0}{2}}{%
+\manualbitfixed{11}{2}
+\manualbitfieldtext{L}{4}
+\manualbitfieldtext{OP}{2}
+\manualbitgap{1}
+\manualbitfieldtext{NEXT}{8}
+}
+\end{manuallistedbitdiagram}
+
+Figure~\ref{fig:instruction-header-byte-formats} annotations are read from high to low bit. In byte 0, bit 7 distinguishes extrashort framing; bits 7..6
+select short (\texttt{10}) or extended (\texttt{11}) framing. For short instructions, bits 5..2 and 1..0 continue
+the payload. For extended instructions, bits 5..2 are \texttt{L}, bits 1..0 begin the opcode stream, and byte 1
+continues that stream. Thus \texttt{L} encodes the total length as $3+L$ bytes directly in
+Figure~\ref{fig:instruction-header-byte-formats}.
+
+@INSTRUCTION_ENCODING_DIAGRAMS@
+
+\manualtablecaption{Instruction Length Truth Table}
+\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{1.25in}>{\raggedright\arraybackslash}p{1.25in}>{\raggedright\arraybackslash}p{0.55in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Byte 0 Pattern} & \textbf{Byte 1 Pattern} & \textbf{Bytes}\\
+\midrule
+\endfirsthead
+\multicolumn{3}{l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Byte 0 Pattern} & \textbf{Byte 1 Pattern} & \textbf{Bytes}\\
+\midrule
+\endhead
+@INSTRUCTION_LENGTH_TRUTH_TABLE_ROWS@
+\bottomrule
+\end{manuallongtable}
+
+\manualtablecaption{Encoding Class Summary}
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.72in}>{\raggedright\arraybackslash}p{0.55in}>{\raggedright\arraybackslash}p{2.05in}>{\raggedright\arraybackslash}p{0.62in}>{\raggedright\arraybackslash}p{1.45in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Class} & \textbf{Payload Bits} & \textbf{Header or Opcode Selector} & \textbf{Opcode Bytes} & \textbf{Validity}\\
+\midrule
+@ENCODING_CLASS_SUMMARY_ROWS@
+\bottomrule
+\end{manualtabular}
+
+@INSTRUCTION_PAYLOAD_ORDERING_SECTION@
+
+\input{isa/encoding/instruction/representative_instruction_encodings.tex}

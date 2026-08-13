@@ -63,7 +63,7 @@ from latex_builder.common import (  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 DEF_ROOT = ROOT / "isa" / "defs"
-EA_FRAGMENT_DIR = ROOT / "isa" / "tools" / "latex_builder" / "templates" / "fragments"
+EA_FRAGMENT_DIR = ROOT / "isa" / "addressing" / "effective_address"
 INSTRUCTION_FILENAME = "instruction.yaml"
 CONFORMANCE_MANIFEST_PATH = ROOT / "isa" / "reference" / "conformance_manifest.yaml"
 ARCHITECTURE_TABLES_PATH = ROOT / "isa" / "reference" / "architecture_tables.yaml"
@@ -1456,7 +1456,7 @@ def render_latex(model: IsaModel, only_allocated: bool = False) -> str:
         if not only_allocated or item.mnemonic in model.allocated_by_mnemonic
     ]
     return render_latex_template(
-        "document.tex",
+        "document/document.tex",
         {
             "REGISTER_SECTION": latex_register_section(model),
             "CONFORMANCE_SECTION": latex_conformance_section(),
@@ -1572,7 +1572,7 @@ def latex_extension_directory_table(model: IsaModel) -> str:
 
 def latex_cpuid_feature_discovery_section(model: IsaModel) -> str:
     return render_latex_template(
-        "cpuid_feature_discovery.tex",
+        "system/state/cpuid_feature_discovery.tex",
         {
             "EXTENSION_DIRECTORY_DIAGRAM": latex_extension_directory_diagram(model),
             "EXTENSION_DIRECTORY_TABLE": latex_extension_directory_table(model),
@@ -1581,7 +1581,7 @@ def latex_cpuid_feature_discovery_section(model: IsaModel) -> str:
 
 
 def latex_save_restore_section() -> str:
-    return render_latex_template("save_restore_area.tex", {})
+    return render_latex_template("system/state/save_restore_area.tex", {})
 
 
 def latex_conformance_section() -> str:
@@ -1609,7 +1609,7 @@ def latex_conformance_section() -> str:
             + r"\\"
         )
     return render_latex_template(
-        "conformance.tex",
+        "foundations/architecture/conformance.tex",
         {"IMPLEMENTATION_DEFINED_ROWS": "\n".join(rows)},
     )
 
@@ -1940,7 +1940,7 @@ def latex_reference_navigation_section(
     navigation = load_reference_navigation(REFERENCE_NAVIGATION_PATH)
     architecture = architecture_table_data()
     return render_latex_template(
-        "reference_navigation.tex",
+        "system/indexes/reference_navigation.tex",
         {
             "CANONICAL_FIELD_INDEX": canonical_field_index(navigation),
             "STATE_INDEX": state_index(navigation, architecture),
@@ -1957,13 +1957,13 @@ def latex_data_formats_section(model: IsaModel) -> str:
         for key, value in all_values.items()
         if key.startswith(("B_", "W_", "L_", "Q_", "S_", "D_"))
     }
-    return render_latex_template("data_formats.tex", scalar_values)
+    return render_latex_template("encoding/data/data_formats.tex", scalar_values)
 
 
 def latex_instruction_word_formats_section(model: IsaModel) -> str:
     architecture_values = encoding_architecture_template_values()
     instruction_encoding_diagrams = render_latex_template(
-        "fragments/instruction_encoding_diagrams.tex",
+        "encoding/instruction/instruction_encoding_diagrams.tex",
         {
             "OPCODE_PAYLOAD_NAMESPACE_ROWS": architecture_values[
                 "OPCODE_PAYLOAD_NAMESPACE_ROWS"
@@ -1977,11 +1977,11 @@ def latex_instruction_word_formats_section(model: IsaModel) -> str:
         if not key.startswith(("B_", "W_", "L_", "Q_", "S_", "D_"))
     }
     instruction_payload_ordering = render_latex_template(
-        "fragments/instruction_payload_ordering.tex",
+        "encoding/instruction/instruction_payload_ordering.tex",
         operand_values,
     )
     return render_latex_template(
-        "instruction_word_formats.tex",
+        "encoding/instruction/instruction_word_formats.tex",
         {
             "INSTRUCTION_LENGTH_TRUTH_TABLE_ROWS": architecture_values[
                 "INSTRUCTION_LENGTH_TRUTH_TABLE_ROWS"
@@ -2026,7 +2026,7 @@ def latex_register_section(model: IsaModel) -> str:
         )
     ]
     return render_latex_template(
-        "register_model.tex",
+        "system/state/register_model.tex",
         {
             "SREG_TABLE": latex_code_table(
                 ["Segment", "Bits", "Role", "Use"],
@@ -2046,7 +2046,7 @@ def latex_condition_section(model: IsaModel) -> str:
         aliases = ", ".join(str(item) for item in cond.get("aliases", []) or [])
         rows.append([bits_text(cond.get("value", ""), 4), cond.get("name", ""), aliases or "-", cond.get("expression", "")])
     return render_latex_template(
-        "condition_codes.tex",
+        "execution/core/condition_codes.tex",
         {
             "CONDITION_TABLE": latex_code_table(
                 ["Bits", "Name", "Aliases", "Expression"],
@@ -2060,7 +2060,7 @@ def latex_condition_section(model: IsaModel) -> str:
 
 
 def latex_condition_code_computation_section() -> str:
-    return render_latex_template("condition_code_computation.tex")
+    return render_latex_template("execution/core/condition_code_computation.tex")
 
 
 def latex_ea_payload_rows(data: dict[str, Any]) -> str:
@@ -2291,11 +2291,11 @@ def ext0_fragment_values(data: dict[str, Any]) -> dict[str, str]:
 def render_ea_reference_fragments(data: dict[str, Any]) -> dict[Path, str]:
     outputs = {
         "compact_ea_reference_blocks.tex": render_latex_template(
-            "fragments/compact_ea_reference_blocks.tex.in",
+            "addressing/effective_address/compact_ea_reference_blocks.tex.in",
             compact_ea_fragment_values(data),
         ),
         "ext0_reference_blocks.tex": render_latex_template(
-            "fragments/ext0_reference_blocks.tex.in",
+            "addressing/effective_address/ext0_reference_blocks.tex.in",
             ext0_fragment_values(data),
         ),
     }
@@ -2313,10 +2313,14 @@ def latex_ea_section(model: IsaModel) -> str:
         compact_rows.append(
             [form.get("pattern", ""), form.get("syntax", table_class), table_class, display_text(memory)]
         )
-    ext0_section = render_latex_template("ext0_addressing_modes.tex", {})
-    auto_update_section = render_latex_template("ea_auto_update_semantics.tex", {})
+    ext0_section = render_latex_template(
+        "addressing/effective_address/ext0_addressing_modes.tex", {}
+    )
+    auto_update_section = render_latex_template(
+        "addressing/effective_address/ea_auto_update_semantics.tex", {}
+    )
     return render_latex_template(
-        "effective_address_modes.tex",
+        "addressing/effective_address/effective_address_modes.tex",
         {
             "COMPACT_EA_TABLE": latex_code_table(
                 ["Bits", "Syntax", "Class", "Memory"],
@@ -2335,21 +2339,21 @@ def latex_ea_section(model: IsaModel) -> str:
 def latex_execution_model_section(model: IsaModel) -> str:
     memory_exceptions = compact_text(memory_memory_instruction_names(model))
     return render_latex_template(
-        "execution_model.tex",
+        "execution/core/execution_model.tex",
         {"MEMORY_MEMORY_EXCEPTIONS": latex_escape(memory_exceptions)},
     )
 
 
 def latex_streaming_model_section() -> str:
-    return render_latex_template("streaming_execution_model.tex")
+    return render_latex_template("execution/repeat/streaming_execution_model.tex")
 
 
 def latex_privileged_programming_model_section() -> str:
-    return render_latex_template("privileged_programming_model.tex", {})
+    return render_latex_template("system/state/privileged_programming_model.tex", {})
 
 
 def latex_exception_processing_section() -> str:
-    return render_latex_template("interrupt_model.tex", {})
+    return render_latex_template("system/events/interrupt_model.tex", {})
 
 
 def instruction_label(mnemonic: str) -> str:
@@ -2487,7 +2491,7 @@ def latex_instruction_entry(model: IsaModel, inst: InstructionDef) -> str:
 
 
 def latex_reading_instruction_description_section() -> str:
-    return render_latex_template("instruction_description_intro.tex")
+    return render_latex_template("instructions/reference/instruction_description_intro.tex")
 
 
 def latex_instruction_reference_section(model: IsaModel, instructions: list[InstructionDef]) -> str:
