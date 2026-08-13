@@ -187,37 +187,66 @@ compact:
     syntax: imm64
     kind: immediate
     payload: imm64
-  - name: ext0_disp8s
+  - name: ext1_disp8s
     pattern: "1110000"
-    syntax: EXT0/disp8s
+    syntax: EXT1/disp8s
     kind: escape
-    descriptor: ext0
+    descriptor: ext1
     payload: disp8s
-  - name: ext0_disp16s
+  - name: ext1_disp16s
     pattern: "1110001"
-    syntax: EXT0/disp16s
+    syntax: EXT1/disp16s
     kind: escape
-    descriptor: ext0
+    descriptor: ext1
     payload: disp16s
-  - name: ext0_disp32s
+  - name: ext1_disp32s
     pattern: "1110010"
-    syntax: EXT0/disp32s
+    syntax: EXT1/disp32s
     kind: escape
-    descriptor: ext0
+    descriptor: ext1
     payload: disp32s
-  - name: ext0_disp64
+  - name: ext1_disp64
     pattern: "1110011"
-    syntax: EXT0/disp64
+    syntax: EXT1/disp64
     kind: escape
-    descriptor: ext0
+    descriptor: ext1
     payload: disp64
-  - name: ext0
+  - name: ext1
     pattern: "1110100"
-    syntax: EXT0
+    syntax: EXT1
     kind: escape
-    descriptor: ext0
+    descriptor: ext1
+  - name: ext2_disp8s
+    pattern: "1110101"
+    syntax: EXT2/disp8s
+    kind: escape
+    descriptor: ext2
+    payload: disp8s
+  - name: ext2_disp16s
+    pattern: "1110110"
+    syntax: EXT2/disp16s
+    kind: escape
+    descriptor: ext2
+    payload: disp16s
+  - name: ext2_disp32s
+    pattern: "1110111"
+    syntax: EXT2/disp32s
+    kind: escape
+    descriptor: ext2
+    payload: disp32s
+  - name: ext2_disp64
+    pattern: "1111000"
+    syntax: EXT2/disp64
+    kind: escape
+    descriptor: ext2
+    payload: disp64
+  - name: ext2
+    pattern: "1111001"
+    syntax: EXT2
+    kind: escape
+    descriptor: ext2
 
-ext0:
+ext1:
   kind: memory
   forms:
   - name: explicit_segment_base
@@ -228,6 +257,34 @@ ext0:
       s: {type: SREG, role: segment}
       b: {type: Rn, role: base}
     segment: explicit
+  - name: explicit_segment_zero_base
+    pattern:
+    - "1sss0011"
+    syntax: "[SEG(s):0 + displacement]"
+    fields:
+      s: {type: SREG, role: segment}
+    base: zero
+    segment: explicit
+  - name: default_segment_base_postincrement
+    pattern:
+    - "1bbbb100"
+    syntax: "[Rn(b)++ + displacement]"
+    fields:
+      b: {type: Rn, role: base}
+    segment: default
+    update: {target: b, mode: postincrement}
+  - name: default_segment_base_predecrement
+    pattern:
+    - "1bbbb101"
+    syntax: "[--Rn(b) + displacement]"
+    fields:
+      b: {type: Rn, role: base}
+    segment: default
+    update: {target: b, mode: predecrement}
+
+ext2:
+  kind: memory
+  forms:
   - name: explicit_segment_index_postincrement
     pattern:
     - "1sss0000"
@@ -259,14 +316,6 @@ ext0:
       s: {type: SREG, role: segment}
       b: {type: Rn, role: base}
       i: {type: Rn, role: index}
-    segment: explicit
-  - name: explicit_segment_zero_base
-    pattern:
-    - "1sss0011"
-    syntax: "[SEG(s):0 + displacement]"
-    fields:
-      s: {type: SREG, role: segment}
-    base: zero
     segment: explicit
   - name: explicit_segment_base_postincrement
     pattern:
@@ -378,19 +427,3 @@ ext0:
       i: {type: Rn, role: index}
     base: PC
     segment: CS
-  - name: default_segment_base_postincrement
-    pattern:
-    - "1bbbb100"
-    syntax: "[Rn(b)++ + displacement]"
-    fields:
-      b: {type: Rn, role: base}
-    segment: default
-    update: {target: b, mode: postincrement}
-  - name: default_segment_base_predecrement
-    pattern:
-    - "1bbbb101"
-    syntax: "[--Rn(b) + displacement]"
-    fields:
-      b: {type: Rn, role: base}
-    segment: default
-    update: {target: b, mode: predecrement}

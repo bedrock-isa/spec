@@ -64,8 +64,9 @@ shape. Base groups live in the top-level `registers.yaml`; extension-owned
 groups live in that extension's `registers.yaml` and are referenced by its
 `extension.yaml`. Addressing-mode encodings and fixed segment selection remain
 owned by `ea.yaml`, not by register declarations. EA payload widths, compact
-forms, and EXT0 descriptor forms are declared there once; the corresponding
-LaTeX encoding and syntax lists are generated from those declarations.
+forms, and exact-length EXT1 and EXT2 descriptor forms are declared there
+once; the corresponding LaTeX encoding and syntax lists are generated from
+those declarations.
 
 Base instructions and their index live directly under `isa/defs`. Base operand
 types live in the top-level `operands.yaml`; extension-owned operand types live

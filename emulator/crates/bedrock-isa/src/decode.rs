@@ -1,7 +1,7 @@
 use crate::generated::{FormId, decode_form};
 use crate::header::{HeaderError, InstructionHeader, decode_header, opcode_payload};
 use crate::table::{FieldKind, GeneratedForm, extract_pattern_field};
-use crate::{CompactEa, DecodedOperand, Ext0Descriptor, InstructionAttributes, Opcode};
+use crate::{CompactEa, DecodedOperand, ExtendedDescriptor, InstructionAttributes, Opcode};
 use thiserror::Error;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -115,15 +115,30 @@ fn validate_operand_payload(
             .value as u8;
         match CompactEa::decode(value) {
             CompactEa::Reserved(value) => return Err(DecodeError::ReservedEffectiveAddress(value)),
-            CompactEa::Ext0 { displacement } => {
-                let (_, descriptor_bytes) = Ext0Descriptor::decode(
-                    record.get(cursor..).unwrap_or_default(),
-                )
-                .ok_or(DecodeError::OperandPayload {
-                    needed: cursor + 1,
-                    available: record.len(),
-                })?;
-                cursor += descriptor_bytes + displacement.map_or(0, |width| width.bytes());
+            ea @ (CompactEa::Ext1 { .. } | CompactEa::Ext2 { .. }) => {
+                let descriptor_bytes = ea.descriptor_bytes();
+                let descriptor_payload = record.get(cursor..cursor + descriptor_bytes).ok_or(
+                    DecodeError::OperandPayload {
+                        needed: cursor + descriptor_bytes,
+                        available: record.len(),
+                    },
+                )?;
+                let valid = match ea {
+                    CompactEa::Ext1 { .. } => {
+                        ExtendedDescriptor::decode_ext1(descriptor_payload).is_some()
+                    }
+                    CompactEa::Ext2 { .. } => {
+                        ExtendedDescriptor::decode_ext2(descriptor_payload).is_some()
+                    }
+                    _ => false,
+                };
+                if !valid {
+                    return Err(DecodeError::OperandPayload {
+                        needed: cursor + descriptor_bytes,
+                        available: record.len(),
+                    });
+                }
+                cursor += ea.appended_bytes();
             }
             ea => cursor += ea.appended_bytes(),
         }
@@ -289,6 +304,43 @@ mod tests {
                 .allocation_id,
             form.id
         );
+    }
+
+    #[test]
+    fn extended_ea_family_fixes_descriptor_and_required_record_lengths() {
+        let form = generated_form("medium.inc_x_ea.2");
+        let opcode_bytes = form.class.opcode_bytes();
+
+        let ext1_payload = set_field(form.pattern, 'e', form.value, 0x74);
+        assert_eq!(
+            decode(&extended_record(form, ext1_payload, opcode_bytes)),
+            Err(DecodeError::OperandPayload {
+                needed: opcode_bytes + 1,
+                available: opcode_bytes,
+            })
+        );
+        assert!(decode(&extended_record(form, ext1_payload, opcode_bytes + 1)).is_ok());
+
+        let ext2_payload = set_field(form.pattern, 'e', form.value, 0x79);
+        let mut truncated_ext2 = extended_record(form, ext2_payload, opcode_bytes + 1);
+        truncated_ext2[opcode_bytes] = 0x80;
+        assert_eq!(
+            decode(&truncated_ext2),
+            Err(DecodeError::OperandPayload {
+                needed: opcode_bytes + 2,
+                available: opcode_bytes + 1,
+            })
+        );
+        let mut complete_ext2 = extended_record(form, ext2_payload, opcode_bytes + 2);
+        complete_ext2[opcode_bytes..].copy_from_slice(&[0x80, 0x00]);
+        assert!(decode(&complete_ext2).is_ok());
+
+        let mut old_ambiguous_encoding = extended_record(form, ext1_payload, opcode_bytes + 2);
+        old_ambiguous_encoding[opcode_bytes..].copy_from_slice(&[0x92, 0x02]);
+        assert!(matches!(
+            decode(&old_ambiguous_encoding),
+            Err(DecodeError::OperandPayload { .. })
+        ));
     }
 
     fn generated_form(id: &str) -> &'static GeneratedForm {

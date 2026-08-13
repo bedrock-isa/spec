@@ -151,8 +151,14 @@ fn appended_operand_bytes(form: &GeneratedForm, payload: u64) -> Vec<u8> {
             }
             CompactEa::Absolute64 => appended.extend_from_slice(&DATA_ADDRESS.to_le_bytes()),
             CompactEa::Immediate(width) => append_width(&mut appended, width, 1),
-            CompactEa::Ext0 { displacement } => {
+            CompactEa::Ext1 { displacement } => {
                 appended.push(0x00);
+                if let Some(width) = displacement {
+                    append_width(&mut appended, width, 0);
+                }
+            }
+            CompactEa::Ext2 { displacement } => {
+                appended.extend_from_slice(&[0x80, 0x00]);
                 if let Some(width) = displacement {
                     append_width(&mut appended, width, 0);
                 }

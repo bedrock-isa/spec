@@ -623,8 +623,10 @@ class EaRegistry:
     payloads: dict[str, EaPayload]
     compact_field_width: int
     compact_forms: tuple[EaForm, ...]
-    ext0_kind: str
-    ext0_forms: tuple[EaForm, ...]
+    ext1_kind: str
+    ext1_forms: tuple[EaForm, ...]
+    ext2_kind: str
+    ext2_forms: tuple[EaForm, ...]
 
 
 @dataclass(frozen=True)
@@ -1614,6 +1616,7 @@ def _decode_ea_forms(
     *,
     compact: bool,
     compact_width: int | None = None,
+    descriptor_bytes: int | None = None,
 ) -> tuple[EaForm, ...]:
     forms: list[EaForm] = []
     for index, raw_item in enumerate(_list(value, path, field_path)):
@@ -1645,7 +1648,12 @@ def _decode_ea_forms(
             raise DecodeError(f"{_where(path, item_path + '.pattern')}: width mismatch")
         if not compact and any(len(pattern) != 8 for pattern in patterns):
             raise DecodeError(
-                f"{_where(path, item_path + '.pattern')}: EXT0 bytes must be 8 bits"
+                f"{_where(path, item_path + '.pattern')}: descriptor bytes must be 8 bits"
+            )
+        if descriptor_bytes is not None and len(patterns) != descriptor_bytes:
+            raise DecodeError(
+                f"{_where(path, item_path + '.pattern')}: expected exactly "
+                f"{descriptor_bytes} descriptor byte pattern(s)"
             )
         if any(
             set(pattern) - set("01abcdefghijklmnopqrstuvwxyz") for pattern in patterns
@@ -1721,7 +1729,7 @@ def _decode_ea_forms(
 
 def decode_ea_registry(path: Path, raw: Any) -> EaRegistry:
     data = _mapping(raw, path, "")
-    _keys(data, path, "", required=("payloads", "compact", "ext0"))
+    _keys(data, path, "", required=("payloads", "compact", "ext1", "ext2"))
     payloads: dict[str, EaPayload] = {}
     for name, value in _mapping(data["payloads"], path, "payloads").items():
         item_path = f"payloads.{name}"
@@ -1747,22 +1755,40 @@ def decode_ea_registry(path: Path, raw: Any) -> EaRegistry:
         compact=True,
         compact_width=compact_width,
     )
-    ext0_data = _mapping(data["ext0"], path, "ext0")
-    _keys(ext0_data, path, "ext0", required=("kind", "forms"))
-    ext0_forms = _decode_ea_forms(
-        ext0_data["forms"], path, "ext0.forms", compact=False
+    ext1_data = _mapping(data["ext1"], path, "ext1")
+    _keys(ext1_data, path, "ext1", required=("kind", "forms"))
+    ext1_forms = _decode_ea_forms(
+        ext1_data["forms"], path, "ext1.forms", compact=False, descriptor_bytes=1
     )
+    ext2_data = _mapping(data["ext2"], path, "ext2")
+    _keys(ext2_data, path, "ext2", required=("kind", "forms"))
+    ext2_forms = _decode_ea_forms(
+        ext2_data["forms"], path, "ext2.forms", compact=False, descriptor_bytes=2
+    )
+    descriptor_families = {"ext1", "ext2"}
     for form in compact_forms:
         if form.payload is not None and form.payload not in payloads:
             raise DecodeError(
                 f"{_where(path, 'compact.forms')}: unknown payload {form.payload}"
             )
+        if form.descriptor is not None and form.descriptor not in descriptor_families:
+            raise DecodeError(
+                f"{_where(path, 'compact.forms')}: unknown descriptor family "
+                f"{form.descriptor}"
+            )
+        if (form.kind == "escape") != (form.descriptor is not None):
+            raise DecodeError(
+                f"{_where(path, 'compact.forms')}: escape forms must reference exactly "
+                "one declared descriptor family"
+            )
     return EaRegistry(
         payloads=payloads,
         compact_field_width=compact_width,
         compact_forms=compact_forms,
-        ext0_kind=_string(ext0_data["kind"], path, "ext0.kind"),
-        ext0_forms=ext0_forms,
+        ext1_kind=_string(ext1_data["kind"], path, "ext1.kind"),
+        ext1_forms=ext1_forms,
+        ext2_kind=_string(ext2_data["kind"], path, "ext2.kind"),
+        ext2_forms=ext2_forms,
     )
 
 

@@ -347,7 +347,7 @@ def _overlaps(form) -> list[str]:
     ]
 
 
-def _ea_form(form, ext0: bool, payloads) -> str:
+def _ea_form(form, descriptor_family: str, descriptor_bytes: int, payloads) -> str:
     joined = "".join(form.pattern)
     patterns = []
     offset = len(joined)
@@ -371,14 +371,16 @@ def _ea_form(form, ext0: bool, payloads) -> str:
         )
     payload = payloads.get(form.payload) if form.payload else None
     return (
-        "  struct { name = %s, ext0 = %s, patterns = %s, kind = %s, fields = %s, "
+        "  struct { name = %s, descriptor_family = %s, descriptor_bytes = %d, "
+        "patterns = %s, kind = %s, fields = %s, "
         "segment = %s, payload = %s, payload_width = %d, payload_signed = %s, base = %s, "
         "register_name = %s, descriptor = %s, update_target = %s, update_mode = %s }"
         % (
             json.dumps(form.name),
-            str(ext0).lower(),
+            json.dumps(descriptor_family),
+            descriptor_bytes,
             _list(patterns),
-            json.dumps(form.kind or "memory" if ext0 else form.kind or ""),
+            json.dumps(form.kind or "memory" if descriptor_family else form.kind or ""),
             _list(fields),
             json.dumps(form.segment or ""),
             json.dumps(form.payload or ""),
@@ -458,8 +460,27 @@ def render_catalog(store, operand_types, ea_registry, documents) -> str:
         )
     lines.append(",\n".join(entries))
     lines.extend(["|]", "", "function effective_address_catalog() -> list(Ea_form) = [|"])
-    ea_forms = [_ea_form(form, False, ea_registry.payloads) for form in ea_registry.compact_forms]
-    ea_forms.extend(_ea_form(form, True, ea_registry.payloads) for form in ea_registry.ext0_forms)
+    descriptor_bytes = {
+        "ext1": len(ea_registry.ext1_forms[0].pattern),
+        "ext2": len(ea_registry.ext2_forms[0].pattern),
+    }
+    ea_forms = [
+        _ea_form(
+            form,
+            "",
+            descriptor_bytes.get(form.descriptor or "", 0),
+            ea_registry.payloads,
+        )
+        for form in ea_registry.compact_forms
+    ]
+    ea_forms.extend(
+        _ea_form(form, "ext1", descriptor_bytes["ext1"], ea_registry.payloads)
+        for form in ea_registry.ext1_forms
+    )
+    ea_forms.extend(
+        _ea_form(form, "ext2", descriptor_bytes["ext2"], ea_registry.payloads)
+        for form in ea_registry.ext2_forms
+    )
     lines.append(",\n".join(ea_forms))
     lines.extend(["|]", "", "function representative_form_records() -> list(Representative_record) = [|"])
     records = []

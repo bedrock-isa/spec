@@ -134,7 +134,7 @@ in `bits` equals that type's encoded width. An encoded size selector uses an
 explicit `size.<SizeKind>` type; its size choices are derived from that kind,
 so the form does not also declare `sizes`. Selector-less and fixed-size forms
 continue to declare `sizes` directly. `operation_size` requires a resulting
-size domain; fixed widths define EXT0 index scale and pre/post-update amount
+size domain; fixed widths define extended-descriptor index scale and pre/post-update amount
 directly. Reserved size-kind values must be excluded by an `allow` constraint
 on the selector field. Field-marker bits need not be contiguous.
 Every pair of writable field operands that can designate the same architectural
@@ -473,7 +473,8 @@ unique namespace.
 EaRegistry {
   payloads: map<string, EaPayload>
   compact: CompactEaSection
-  ext0: Ext0EaSection
+  ext1: Ext1EaSection
+  ext2: Ext2EaSection
 }
 
 EaPayload {
@@ -500,14 +501,29 @@ CompactEaForm {
   descriptor?: string
 }
 
-Ext0EaSection {
+Ext1EaSection {
   kind: string
-  forms: list<Ext0EaForm>
+  forms: list<Ext1EaForm>
 }
 
-Ext0EaForm {
+Ext1EaForm {
   name: string
-  pattern: non-empty list<BitPattern of exactly 8 bits>
+  pattern: list containing exactly one BitPattern of exactly 8 bits
+  syntax: string
+  fields?: map<one lowercase marker, EaField>
+  segment?: string
+  base?: string
+  update?: EaUpdate
+}
+
+Ext2EaSection {
+  kind: string
+  forms: list<Ext2EaForm>
+}
+
+Ext2EaForm {
+  name: string
+  pattern: list containing exactly two BitPatterns of exactly 8 bits
   syntax: string
   fields?: map<one lowercase marker, EaField>
   segment?: string
@@ -527,6 +543,11 @@ EaUpdate {
 
 BitPattern = string containing only 0, 1, and lowercase markers
 ```
+
+Every compact form with `kind: escape` names exactly one declared descriptor
+family in `descriptor`; non-escape compact forms do not name a descriptor
+family. The compact form therefore fixes the descriptor length before its
+descriptor bytes are parsed.
 
 Form names are unique per section. Every pattern marker has exactly one field
 declaration and vice versa. Compact `payload` values reference a declared

@@ -1,0 +1,10 @@
+\clearpage
+\subsection{Extended EA Addressing Modes}\label{section:extended-ea-addressing}
+EXT1 and EXT2 are used when compact EA cannot express the operand: explicit segment selection, indexed addressing,
+zero-base addressing, SP/PC indexed addressing, or auto-update addressing. EXT1 selects exactly one descriptor byte;
+EXT2 selects exactly two descriptor bytes.
+
+Each extended-descriptor form selects its segment from the encoded SREG field SEG(s), the fixed SS segment for SP, the fixed CS
+segment for PC, or the operation's default data segment.
+
+\input{isa/addressing/effective_address/extended_descriptor_reference_blocks.tex}

@@ -38,11 +38,11 @@ function test_full_decode() -> unit = {
     None() => assert(false),
   };
 
-  match decode_full_record([|0xCD, 0xEC, 0x00, 0x92, 0x02, 0x7F|]) {
+  match decode_full_record([|0xCD, 0xEC, 0x05, 0x92, 0x02, 0x7F|]) {
     Some(instruction) => match first_ea_operand(instruction.operands) {
       Some(operand) => match operand.ea {
         Some(ea) => {
-          assert(ea.ext0_name == "explicit_segment_index");
+          assert(ea.descriptor_name == "explicit_segment_index");
           expect_ea_field(ea.fields, "s", 1);
           expect_ea_field(ea.fields, "b", 0);
           expect_ea_field(ea.fields, "i", 2);

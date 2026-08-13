@@ -13,7 +13,7 @@ struct Decoded_ea = {
   base : string,
   register_name : string,
   operand_width : string,
-  ext0_name : string,
+  descriptor_name : string,
   raw : int,
   descriptor_bytes : int,
   fields : list(Decoded_field),

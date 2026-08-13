@@ -86,7 +86,8 @@ class CatalogGenerationTests(unittest.TestCase):
         self.assertEqual(sum(len(item.form.constraints) for item in self.store.encodings), 342)
         self.assertTrue(all(item.form.id.startswith(item.form.encoding_class + ".") for item in self.store.encodings))
         self.assertGreater(len(self.ea_registry.compact_forms), 0)
-        self.assertGreater(len(self.ea_registry.ext0_forms), 0)
+        self.assertGreater(len(self.ea_registry.ext1_forms), 0)
+        self.assertGreater(len(self.ea_registry.ext2_forms), 0)
         self.assertEqual(self.ea_registry.compact_field_width, 7)
 
     def test_selected_primary_bytes_and_endpoints(self) -> None:

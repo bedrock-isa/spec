@@ -10,7 +10,7 @@ use bedrock_bus::{
 };
 use bedrock_isa::{
     AutoUpdate, CompactEa, DecodedInstruction, DestinationOverlapRule, DisplacementWidth,
-    Ext0Descriptor, FieldKind, FormId, InstructionSet, MAX_INSTRUCTION_BYTES, Opcode,
+    ExtendedDescriptor, FieldKind, FormId, InstructionSet, MAX_INSTRUCTION_BYTES, Opcode,
     RepeatObservation, RepeatObservedOperand, RepeatOperandLocation, Size, decode, decode_header,
 };
 use std::cell::Cell;
@@ -4970,9 +4970,14 @@ impl Cpu {
                 (read_unsigned(payload, 4) as u32 as i32 as i64) as u64,
             ),
             CompactEa::Absolute64 => (SegmentSelector::Ds, read_unsigned(payload, 8)),
-            CompactEa::Ext0 { displacement } => {
-                let (descriptor, descriptor_bytes) =
-                    Ext0Descriptor::decode(payload).ok_or(illegal_instruction(pc))?;
+            extended @ (CompactEa::Ext1 { displacement } | CompactEa::Ext2 { displacement }) => {
+                let descriptor_bytes = extended.descriptor_bytes();
+                let descriptor = match extended {
+                    CompactEa::Ext1 { .. } => ExtendedDescriptor::decode_ext1(payload),
+                    CompactEa::Ext2 { .. } => ExtendedDescriptor::decode_ext2(payload),
+                    _ => None,
+                }
+                .ok_or(illegal_instruction(pc))?;
                 let first = if descriptor_bytes == 1 {
                     descriptor.raw as u8
                 } else {
@@ -6545,7 +6550,7 @@ fn ea_payload(instruction: &DecodedInstruction, target: CompactEa) -> &[u8] {
         if ea == target {
             return payload.get(cursor..).unwrap_or_default();
         }
-        cursor += ea_payload_len(ea, payload.get(cursor..).unwrap_or_default());
+        cursor += ea_payload_len(ea);
     }
     payload
 }
@@ -6561,19 +6566,12 @@ fn ea_payload_for_symbol(instruction: &DecodedInstruction, target: char) -> &[u8
             return payload.get(cursor..).unwrap_or_default();
         }
         let ea = CompactEa::decode(field.value as u8);
-        cursor += ea_payload_len(ea, payload.get(cursor..).unwrap_or_default());
+        cursor += ea_payload_len(ea);
     }
     payload
 }
-fn ea_payload_len(ea: CompactEa, payload: &[u8]) -> usize {
-    match ea {
-        CompactEa::Ext0 { displacement } => Ext0Descriptor::decode(payload)
-            .map(|(_, descriptor_bytes)| {
-                descriptor_bytes + displacement.map_or(0, DisplacementWidth::bytes)
-            })
-            .unwrap_or(0),
-        _ => ea.appended_bytes(),
-    }
+fn ea_payload_len(ea: CompactEa) -> usize {
+    ea.appended_bytes()
 }
 fn payload_after_eas(instruction: &DecodedInstruction) -> &[u8] {
     let payload = trailing_bytes(instruction);
@@ -6584,7 +6582,7 @@ fn payload_after_eas(instruction: &DecodedInstruction) -> &[u8] {
         .filter(|field| field.kind == FieldKind::Ea7)
     {
         let ea = CompactEa::decode(field.value as u8);
-        cursor += ea_payload_len(ea, payload.get(cursor..).unwrap_or_default());
+        cursor += ea_payload_len(ea);
     }
     payload.get(cursor..).unwrap_or_default()
 }
@@ -7752,8 +7750,9 @@ mod tests {
     }
 
     #[test]
-    fn fetch_operand_is_captured_before_overlapping_ext0_base_or_index_update() {
+    fn fetch_operand_is_captured_before_overlapping_extended_descriptor_update() {
         struct Case {
+            compact_ea: u64,
             descriptor: &'static [u8],
             address: u64,
             source_value: u64,
@@ -7761,12 +7760,14 @@ mod tests {
         }
         let cases = [
             Case {
+                compact_ea: 0x74,
                 descriptor: &[0x94],
                 address: 0x40,
                 source_value: 0x40,
                 extra_register: None,
             },
             Case {
+                compact_ea: 0x79,
                 descriptor: &[0x90, 0x12],
                 address: 0x50,
                 source_value: 2,
@@ -7776,7 +7777,7 @@ mod tests {
         for case in cases {
             let instruction = encoded_form(
                 "extralong.fetchadd_x_order_o_rn_s_ea_e",
-                &[('z', 3), ('o', 0), ('s', 2), ('e', 0x74)],
+                &[('z', 3), ('o', 0), ('s', 2), ('e', case.compact_ea)],
                 case.descriptor,
             );
             let mut ram = Ram::new(0x100);
@@ -7796,8 +7797,9 @@ mod tests {
     }
 
     #[test]
-    fn cmpxchg_operands_are_captured_before_overlapping_ext0_updates() {
+    fn cmpxchg_operands_are_captured_before_overlapping_extended_descriptor_updates() {
         struct Case {
+            compact_ea: u64,
             descriptor: &'static [u8],
             address: u64,
             operand_value: u64,
@@ -7806,6 +7808,7 @@ mod tests {
         }
         let expected_cases = [
             Case {
+                compact_ea: 0x74,
                 descriptor: &[0x94],
                 address: 0x40,
                 operand_value: 0x40,
@@ -7813,6 +7816,7 @@ mod tests {
                 final_operand: 0x40,
             },
             Case {
+                compact_ea: 0x79,
                 descriptor: &[0x90, 0x12],
                 address: 0x50,
                 operand_value: 2,
@@ -7823,7 +7827,13 @@ mod tests {
         for case in expected_cases {
             let instruction = encoded_form(
                 "extralong.cmpxchg_x_order_o_rn_x_rn_d_ea_e",
-                &[('z', 3), ('o', 0), ('x', 2), ('d', 3), ('e', 0x74)],
+                &[
+                    ('z', 3),
+                    ('o', 0),
+                    ('x', 2),
+                    ('d', 3),
+                    ('e', case.compact_ea),
+                ],
                 case.descriptor,
             );
             let mut ram = Ram::new(0x100);
@@ -7845,6 +7855,7 @@ mod tests {
 
         let desired_cases = [
             Case {
+                compact_ea: 0x74,
                 descriptor: &[0x9c],
                 address: 0x40,
                 operand_value: 0x40,
@@ -7852,6 +7863,7 @@ mod tests {
                 final_operand: 0x48,
             },
             Case {
+                compact_ea: 0x79,
                 descriptor: &[0x90, 0x13],
                 address: 0x50,
                 operand_value: 2,
@@ -7862,7 +7874,13 @@ mod tests {
         for case in desired_cases {
             let instruction = encoded_form(
                 "extralong.cmpxchg_x_order_o_rn_x_rn_d_ea_e",
-                &[('z', 3), ('o', 0), ('x', 2), ('d', 3), ('e', 0x74)],
+                &[
+                    ('z', 3),
+                    ('o', 0),
+                    ('x', 2),
+                    ('d', 3),
+                    ('e', case.compact_ea),
+                ],
                 case.descriptor,
             );
             let mut ram = Ram::new(0x100);
@@ -7885,8 +7903,9 @@ mod tests {
     }
 
     #[test]
-    fn bounds_operands_follow_low_value_high_order_with_overlapping_ext0_updates() {
+    fn bounds_operands_follow_low_value_high_order_with_overlapping_extended_descriptor_updates() {
         struct Case {
+            compact_ea: u64,
             descriptor: &'static [u8],
             address: u64,
             low: usize,
@@ -7899,6 +7918,7 @@ mod tests {
         }
         let cases = [
             Case {
+                compact_ea: 0x74,
                 descriptor: &[0x94],
                 address: 0x40,
                 low: 2,
@@ -7910,6 +7930,7 @@ mod tests {
                 final_r2: 0x48,
             },
             Case {
+                compact_ea: 0x79,
                 descriptor: &[0x90, 0x12],
                 address: 0x50,
                 low: 2,
@@ -7921,6 +7942,7 @@ mod tests {
                 final_r2: 3,
             },
             Case {
+                compact_ea: 0x74,
                 descriptor: &[0x94],
                 address: 0x40,
                 low: 3,
@@ -7932,6 +7954,7 @@ mod tests {
                 final_r2: 0x48,
             },
             Case {
+                compact_ea: 0x79,
                 descriptor: &[0x90, 0x12],
                 address: 0x50,
                 low: 3,
@@ -7949,7 +7972,7 @@ mod tests {
                 &[
                     ('z', 3),
                     ('l', case.low as u64),
-                    ('e', 0x74),
+                    ('e', case.compact_ea),
                     ('h', case.high as u64),
                 ],
                 case.descriptor,
@@ -7971,7 +7994,7 @@ mod tests {
     }
 
     #[test]
-    fn atomic_and_bounds_faults_rollback_overlapping_ext0_updates() {
+    fn atomic_and_bounds_faults_rollback_overlapping_extended_descriptor_updates() {
         let instructions = [
             encoded_form(
                 "extralong.fetchadd_x_order_o_rn_s_ea_e",
@@ -8357,8 +8380,8 @@ mod tests {
     }
 
     #[test]
-    fn ext0_explicit_segment_indexed_store_uses_base_and_index() {
-        let bytes = [0xc8, 0x02, 0xf4, 0x92, 0x02]; // MOV.B R5, [DS:R0 + R2]
+    fn ext2_explicit_segment_indexed_store_uses_base_and_index() {
+        let bytes = [0xc8, 0x02, 0xf9, 0x92, 0x02]; // MOV.B R5, [DS:R0 + R2]
         let mut ram = Ram::new(64);
         for (index, byte) in bytes.into_iter().enumerate() {
             ram.write_u8(index as u64, byte).unwrap();
@@ -8375,8 +8398,8 @@ mod tests {
     }
 
     #[test]
-    fn ext0_index_is_scaled_by_the_ea_interpretation_width() {
-        let bytes = [0xc8, 0x19, 0x74, 0x92, 0x13]; // MOV.Q R2, [DS:R1 + R3]
+    fn ext2_index_is_scaled_by_the_ea_interpretation_width() {
+        let bytes = [0xc8, 0x19, 0x79, 0x92, 0x13]; // MOV.Q R2, [DS:R1 + R3]
         let mut ram = Ram::new(128);
         for (index, byte) in bytes.into_iter().enumerate() {
             ram.write_u8(index as u64, byte).unwrap();
@@ -8393,7 +8416,7 @@ mod tests {
     }
 
     #[test]
-    fn ext0_index_scaling_covers_all_integer_ea_widths() {
+    fn ext2_index_scaling_covers_all_integer_ea_widths() {
         let cases = [
             ("medium.mov_x_rn_s_ea_e", 0, Size::Byte),
             ("medium.mov_x_rn_s_ea_e", 1, Size::Word),
@@ -8401,7 +8424,7 @@ mod tests {
             ("medium.mov_x_rn_s_ea_e.2", 1, Size::Quad),
         ];
         for (id, selector, size) in cases {
-            let bytes = encoded_form(id, &[('z', selector), ('s', 2), ('e', 0x74)], &[0x92, 0x13]);
+            let bytes = encoded_form(id, &[('z', selector), ('s', 2), ('e', 0x79)], &[0x92, 0x13]);
             let mut ram = Ram::new(0x100);
             ram.load(0, &bytes).unwrap();
             let mut cpu = Cpu::new();
@@ -8421,12 +8444,12 @@ mod tests {
     }
 
     #[test]
-    fn ext0_index_auto_update_changes_one_element_before_scaling() {
+    fn ext2_index_auto_update_changes_one_element_before_scaling() {
         for (descriptor, address, final_index) in [([0x90, 0x13], 0x50, 3), ([0x91, 0x13], 0x48, 1)]
         {
             let bytes = encoded_form(
                 "medium.mov_x_rn_s_ea_e.2",
-                &[('z', 1), ('s', 2), ('e', 0x74)],
+                &[('z', 1), ('s', 2), ('e', 0x79)],
                 &descriptor,
             );
             let mut ram = Ram::new(0x100);
@@ -8444,7 +8467,7 @@ mod tests {
     }
 
     #[test]
-    fn read_modify_write_executors_resolve_ext0_base_once() {
+    fn read_modify_write_executors_resolve_ext1_base_once() {
         let cases = [
             (
                 encoded_form(
@@ -8514,9 +8537,9 @@ mod tests {
     }
 
     #[test]
-    fn read_modify_write_resolves_ext0_index_once() {
+    fn read_modify_write_resolves_ext2_index_once() {
         let instruction =
-            encoded_form("medium.inc_x_ea.2", &[('z', 1), ('e', 0x74)], &[0x90, 0x13]);
+            encoded_form("medium.inc_x_ea.2", &[('z', 1), ('e', 0x79)], &[0x90, 0x13]);
         let mut ram = Ram::new(0x200);
         ram.load(0, &instruction).unwrap();
         ram.write_u64(0x90, 5).unwrap();
@@ -8558,7 +8581,7 @@ mod tests {
         ] {
             let instruction = encoded_form(
                 id,
-                &[('z', 1), (register_field, 2), ('e', 0x74)],
+                &[('z', 1), (register_field, 2), ('e', 0x79)],
                 &[0x90, 0x12],
             );
             let mut ram = Ram::new(0x200);
@@ -8642,12 +8665,12 @@ mod tests {
     }
 
     #[test]
-    fn ext0_same_register_base_and_index_follow_term_order() {
+    fn ext2_same_register_base_and_index_follow_term_order() {
         for (descriptor, address, final_register) in [([0x90, 0x11], 36, 5), ([0x91, 0x11], 28, 3)]
         {
             let bytes = encoded_form(
                 "medium.mov_x_rn_s_ea_e.2",
-                &[('z', 1), ('s', 2), ('e', 0x74)],
+                &[('z', 1), ('s', 2), ('e', 0x79)],
                 &descriptor,
             );
             let mut ram = Ram::new(0x80);
@@ -8664,15 +8687,15 @@ mod tests {
     }
 
     #[test]
-    fn ext0_uses_fpu_and_extension_destination_widths() {
+    fn ext2_uses_fpu_and_extension_destination_widths() {
         let fmov = encoded_form(
             "long.fmov_x_fn_s_ea_d",
-            &[('z', 0), ('s', 0), ('e', 0x74)],
+            &[('z', 0), ('s', 0), ('e', 0x79)],
             &[0x92, 0x13],
         );
         let extend = encoded_form(
             "medium.extzq_b_rn_s_ea_e",
-            &[('s', 2), ('e', 0x74)],
+            &[('s', 2), ('e', 0x79)],
             &[0x92, 0x13],
         );
         let mut ram = Ram::new(0x100);

@@ -795,14 +795,10 @@ def ea_payload_byte_lengths(ea_data: Any) -> tuple[int, ...]:
             raise ValueError(f"EA payload {name!r} must have a positive byte-aligned field width")
         sizes[str(name)] = field_width // 8
 
-    ext0 = ea_data.get("ext0") or {}
     descriptor_sizes = {
-        len(form.get("pattern") or [])
-        for form in (ext0.get("forms") or [])
-        if isinstance(form, dict) and isinstance(form.get("pattern"), list) and form.get("pattern")
+        family: len((ea_data.get(family) or {}).get("forms", [])[0].get("pattern") or [])
+        for family in ("ext1", "ext2")
     }
-    if not descriptor_sizes:
-        descriptor_sizes = {1}
 
     compact = ea_data.get("compact") or {}
     lengths: set[int] = set()
@@ -811,7 +807,10 @@ def ea_payload_byte_lengths(ea_data: Any) -> tuple[int, ...]:
             continue
         payload_bytes = named_payload_bytes(form.get("payload"), sizes)
         if form.get("kind") == "escape":
-            lengths.update(size + payload_bytes for size in descriptor_sizes)
+            family = compact_text(form.get("descriptor"))
+            if family not in descriptor_sizes:
+                raise ValueError(f"unknown compact EA descriptor family: {family!r}")
+            lengths.add(descriptor_sizes[family] + payload_bytes)
             continue
         lengths.add(payload_bytes)
     if not lengths:
@@ -1170,7 +1169,7 @@ def compact_ea_category(kind: str) -> str:
         "register": "Register",
         "memory": "Memory",
         "immediate": "Immediate",
-        "escape": "EXT0",
+        "escape": "Extended Descriptor",
     }
     try:
         return categories[kind]
@@ -1191,7 +1190,7 @@ def ea_availability_summary(model: IsaModel, entry: AllocationEntry, symbol: str
         if allowed_values:
             allowed.add(row.syntax)
     categories: list[EAAvailabilityCategory] = []
-    for name in ("Register", "Memory", "Immediate", "EXT0"):
+    for name in ("Register", "Memory", "Immediate", "Extended Descriptor"):
         members = tuple(row.syntax for row in rows if compact_ea_category(row.kind) == name)
         category_allowed = tuple(item for item in members if item in allowed)
         excluded = tuple(item for item in members if item not in allowed)
@@ -2084,8 +2083,11 @@ def latex_ea_payload_rows(data: dict[str, Any]) -> str:
         else:
             raise ValueError(f"unknown EA payload kind: {kind!r}")
         rows.append(f"{name} & {byte_width} & {value} & {use}\\\\")
-    rows.append(
-        "EXT0 descriptor & 1 or 2 & encoded & extended EA descriptor; present only for EXT0 escapes\\\\"
+    rows.extend(
+        [
+            "EXT1 descriptor & 1 & encoded & one-byte extended EA descriptor; present only for EXT1 escapes\\\\",
+            "EXT2 descriptor & 2 & encoded & two-byte extended EA descriptor; present only for EXT2 escapes\\\\",
+        ]
     )
     return "\n".join(rows)
 
@@ -2147,7 +2149,8 @@ def compact_ea_fragment_values(data: dict[str, Any]) -> dict[str, str]:
     )
     absolute = selected("absolute_32s", "absolute_64")
     immediate = selected("immediate_8s", "immediate_16s", "immediate_32s", "immediate_64")
-    ext0 = selected("ext0", "ext0_disp8s", "ext0_disp16s", "ext0_disp32s", "ext0_disp64")
+    ext1 = selected("ext1", "ext1_disp8s", "ext1_disp16s", "ext1_disp32s", "ext1_disp64")
+    ext2 = selected("ext2", "ext2_disp8s", "ext2_disp16s", "ext2_disp32s", "ext2_disp64")
 
     def patterns(items: list[dict[str, Any]]) -> list[str]:
         return [compact_text(item.get("pattern")) for item in items]
@@ -2184,16 +2187,21 @@ def compact_ea_fragment_values(data: dict[str, Any]) -> dict[str, str]:
         "IMMEDIATE_ENCODING": latex_ea_encoding(
             f"{joined_words(patterns(immediate))} select {joined_words(payloads(immediate))}."
         ),
-        "EXT0_ESCAPE_SYNTAX": latex_ea_syntax(ext0),
-        "EXT0_ESCAPE_ENCODING": latex_ea_encoding(
-            f"{patterns(ext0)[0]} selects no displacement; "
-            f"{joined_words(patterns(ext0[1:]))} select {joined_words(payloads(ext0[1:]))}."
+        "EXT1_ESCAPE_SYNTAX": latex_ea_syntax(ext1),
+        "EXT1_ESCAPE_ENCODING": latex_ea_encoding(
+            f"{patterns(ext1)[0]} selects no displacement; "
+            f"{joined_words(patterns(ext1[1:]))} select {joined_words(payloads(ext1[1:]))}."
+        ),
+        "EXT2_ESCAPE_SYNTAX": latex_ea_syntax(ext2),
+        "EXT2_ESCAPE_ENCODING": latex_ea_encoding(
+            f"{patterns(ext2)[0]} selects no displacement; "
+            f"{joined_words(patterns(ext2[1:]))} select {joined_words(payloads(ext2[1:]))}."
         ),
     }
 
 
-def ext0_fragment_values(data: dict[str, Any]) -> dict[str, str]:
-    forms = ea_form_index(data, "ext0")
+def extended_descriptor_fragment_values(data: dict[str, Any]) -> dict[str, str]:
+    forms = {**ea_form_index(data, "ext1"), **ea_form_index(data, "ext2")}
 
     def selected(*names: str) -> list[dict[str, Any]]:
         return [forms[name] for name in names]
@@ -2294,9 +2302,9 @@ def render_ea_reference_fragments(data: dict[str, Any]) -> dict[Path, str]:
             "addressing/effective_address/compact_ea_reference_blocks.tex.in",
             compact_ea_fragment_values(data),
         ),
-        "ext0_reference_blocks.tex": render_latex_template(
-            "addressing/effective_address/ext0_reference_blocks.tex.in",
-            ext0_fragment_values(data),
+        "extended_descriptor_reference_blocks.tex": render_latex_template(
+            "addressing/effective_address/extended_descriptor_reference_blocks.tex.in",
+            extended_descriptor_fragment_values(data),
         ),
     }
     return {EA_FRAGMENT_DIR / name: text for name, text in outputs.items()}
@@ -2308,13 +2316,13 @@ def latex_ea_section(model: IsaModel) -> str:
     compact_rows = []
     for form in compact.get("forms", []) or []:
         kind = compact_text(form.get("kind"))
-        table_class = "ext0_escape" if kind == "escape" else kind
+        table_class = "extended_escape" if kind == "escape" else kind
         memory = kind == "memory" if kind in {"register", "memory", "immediate"} else ""
         compact_rows.append(
             [form.get("pattern", ""), form.get("syntax", table_class), table_class, display_text(memory)]
         )
-    ext0_section = render_latex_template(
-        "addressing/effective_address/ext0_addressing_modes.tex", {}
+    extended_descriptor_section = render_latex_template(
+        "addressing/effective_address/extended_descriptor_addressing_modes.tex", {}
     )
     auto_update_section = render_latex_template(
         "addressing/effective_address/ea_auto_update_semantics.tex", {}
@@ -2330,7 +2338,7 @@ def latex_ea_section(model: IsaModel) -> str:
                 {0, 1},
             ),
             "EA_PAYLOAD_ROWS": latex_ea_payload_rows(data),
-            "EXT0_SECTION": ext0_section,
+            "EXTENDED_DESCRIPTOR_SECTION": extended_descriptor_section,
             "AUTO_UPDATE_SECTION": auto_update_section,
         },
     )

@@ -281,8 +281,8 @@ function test_typed_decode_and_transactions() -> unit = {
     },
     None() => assert(false),
   };
-  match (decode_full_record([|0xCD, 0xE4, 0x00, 0x90, 0x22, 0x7F|]),
-         decode_full_record([|0xCD, 0xE4, 0x00, 0x91, 0x22, 0x7F|])) {
+  match (decode_full_record([|0xCD, 0xE4, 0x05, 0x90, 0x22, 0x7F|]),
+         decode_full_record([|0xCD, 0xE4, 0x05, 0x91, 0x22, 0x7F|])) {
     (Some(post_instruction), Some(pre_instruction)) => {
       var state = initial_cpu(); state.registers[2] = 0x000000000000000A;
       let post = evaluate_ea_operands_in_order(

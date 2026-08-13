@@ -73,7 +73,8 @@ struct Ea_field = {
 
 struct Ea_form = {
   name : string,
-  ext0 : bool,
+  descriptor_family : string,
+  descriptor_bytes : int,
   patterns : list(Ea_pattern),
   kind : string,
   fields : list(Ea_field),
