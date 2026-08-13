@@ -63,6 +63,18 @@ project. Generated Sail is a build artifact and is never an authority owner.
 Only `foundations/architecture/prelude.sail` uses Sail library `$include`
 directives.
 
+The canonical Decode IR also generates three disposable combinational
+SystemVerilog artifacts: `bedrock_decode_pkg.sv`, `bedrock_decode_d0.sv`, and
+`bedrock_decode_d1.sv`. D0 accepts a valid bit, generated opcode-class enum,
+and right-aligned 34-bit opcode, and returns a recognition result in one of
+four states: invalid input, unallocated opcode, constraint-rejected, or
+success. D1 accepts that D0 result, an 18-byte record with byte 0 in bits
+`[7:0]`, and a byte count. Its output carries operation and control metadata,
+decoded fields and operands, effective addresses, static legality, required
+length, and decode stage; this result is the U0 handoff boundary. The interface
+uses `logic` enums and packed structures and has no clock, reset, register, or
+transport protocol.
+
 For source-only reading, begin with `isa/bedrock.sail_project`, which is the
 ordered module graph. `foundations/architecture/` defines shared semantic types;
 the generated overlay supplies operation and encoding metadata from `isa/defs`;
@@ -129,6 +141,23 @@ PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=isa/tools python3 isa/tools/validate_alloc.
 (cd isa && opam exec -- sail --require-version 0.20.2 --no-memo-z3 \
   --all-modules --just-check bedrock.sail_project \
   "$isa_sail_build/bedrock-generated.sail_project")
+```
+
+Generate, check, test, and validate the SystemVerilog decoder from the
+repository root:
+
+```sh
+sv_build=$(mktemp -d /private/tmp/isa-sv-decoder.XXXXXX)
+PYTHONDONTWRITEBYTECODE=1 python3 isa/tools/systemverilog/generate_decoder.py \
+  "$sv_build"
+PYTHONDONTWRITEBYTECODE=1 python3 isa/tools/systemverilog/generate_decoder.py \
+  "$sv_build" --check
+PYTHONDONTWRITEBYTECODE=1 SV_TEST_ROOT="$sv_build/tests" \
+  python3 isa/tools/systemverilog/test_generation.py
+verilator --lint-only --Wno-fatal --Wno-WIDTH --Wno-UNSIGNED --Wno-CMPCONST \
+  --top-module bedrock_decode_d1 "$sv_build/bedrock_decode_pkg.sv" \
+  "$sv_build/bedrock_decode_d1.sv"
+make sv-decoder SV_BUILD_DIR="$sv_build/make"
 ```
 
 Generate and run C only in a temporary directory:

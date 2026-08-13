@@ -11,10 +11,11 @@ MKDOCS ?= mkdocs
 
 BUILD_DIR ?= build
 SAIL_BUILD_DIR ?= $(BUILD_DIR)/sail-doc
+SV_BUILD_DIR ?= $(BUILD_DIR)/systemverilog-decoder
 EMULATOR_MANIFEST := emulator/Cargo.toml
 EMULATOR_TARGET_DIR ?= $(abspath $(BUILD_DIR)/emulator-target)
 
-.PHONY: all isa sail emulator
+.PHONY: all isa sail emulator sv-decoder
 .PHONY: docs docs-pdf docs-site sail-docs
 .PHONY: emulator-isa-generate emulator-isa-check emulator-format emulator-test emulator-validate
 
@@ -23,6 +24,9 @@ all: isa sail emulator
 isa: docs
 
 sail: sail-docs
+
+sv-decoder:
+	$(PYTHON) isa/tools/systemverilog/generate_decoder.py "$(SV_BUILD_DIR)"
 
 emulator: emulator-isa-check
 	$(CARGO) build --manifest-path "$(EMULATOR_MANIFEST)" --workspace --target-dir "$(EMULATOR_TARGET_DIR)"

@@ -6,13 +6,19 @@ from __future__ import annotations
 import argparse
 from collections import Counter
 import json
-import os
 from pathlib import Path
 import sys
 import tempfile
 
 
 ROOT = Path(__file__).resolve().parents[3]
+ISA_TOOLS = ROOT / "isa" / "tools"
+sys.path.insert(0, str(ISA_TOOLS))
+
+import decode_ir
+from encoding_architecture import ENCODING_CLASSES_BY_NAME
+
+
 EXPECTED_DISTRIBUTION = {
     "extrashort": 25,
     "short": 37,
@@ -104,96 +110,35 @@ PRIVILEGE_CONSTRUCTORS = {
     "supervisor": "SupervisorPrivilege",
     "any": "AnyPrivilege",
 }
+INSTRUCTION_SET_CONSTRUCTORS = {
+    "base": "BaseSet",
+    "fpu": "FpuSet",
+    "fpu.transcendental_approx": "FpuTranscendentalSet",
+}
+PREDICATE_CONSTRUCTORS = {
+    "none": "PredicateNone",
+    "write_boolean": "WriteBoolean",
+    "temporary": "Temporary",
+    "counter_and_condition": "CounterAndCondition",
+    "annul_on_false": "AnnulOnFalse",
+}
 
 
 def _load_inputs():
-    sys.path.insert(0, str(ROOT / "isa" / "tools"))
-    from defs_loader import load_operand_types, load_yaml
-    from defs_schema import decode_ea_registry, decode_instruction
-    from encoding_store import load_encoding_store
-
-    previous = Path.cwd()
-    try:
-        os.chdir(ROOT)
-        store = load_encoding_store(Path("isa/defs"))
-        operand_types = load_operand_types(Path("isa/defs"))
-        ea_path = Path("isa/defs/ea.yaml")
-        ea_registry = decode_ea_registry(ea_path, load_yaml(ea_path))
-        documents = {}
-        for located in store.encodings:
-            path = located.path.with_name("instruction.yaml")
-            documents[located.mnemonic] = decode_instruction(path, load_yaml(path))
-        return store, operand_types, ea_registry, documents
-    finally:
-        os.chdir(previous)
-
-
-def _range(value: int | str) -> tuple[int, int]:
-    if isinstance(value, int):
-        return value, value
-    text = value.replace("_", "")
-    if ".." in text:
-        lower, upper = text.split("..", 1)
-        return int(lower, 0), int(upper, 0)
-    parsed = int(text, 0)
-    return parsed, parsed
-
-
-def _bits(pattern: str) -> tuple[int, int]:
-    value = 0
-    mask = 0
-    for char in pattern:
-        value <<= 1
-        mask <<= 1
-        if char in "01":
-            mask |= 1
-            value |= int(char)
-    return value, mask
-
-
-def _set_field(pattern: str, payload: int, symbol: str, field_value: int) -> int:
-    positions = _positions(pattern, symbol)
-    for bit_index, position in enumerate(reversed(positions)):
-        bit = (field_value >> bit_index) & 1
-        payload = (payload | (1 << position)) if bit else (payload & ~(1 << position))
-    return payload
-
-
-def _representative_payload(form) -> int:
-    value, _ = _bits(form.bits)
-    for constraint in form.constraints:
-        selected = _range(constraint.allow[0])[0] if constraint.allow else 0x10
-        value = _set_field(form.bits, value, constraint.field, selected)
-    return value
+    inputs = decode_ir.load_decode_inputs(ROOT / "isa" / "defs")
+    return inputs.store, inputs.operand_types, inputs.ea_registry, inputs.documents
 
 
 def _representative_record(located, operand_types) -> list[int]:
     form = located.form
-    payload = _representative_payload(form)
-    opcode_bytes = {"extrashort": 1, "short": 2, "medium": 3, "long": 4, "extralong": 5}[form.encoding_class]
-    appended = sum(item["field_width"] for item in (
-        operand_types[operand.type]
-        for operand in form.operands
-        if operand.field is None and not (operand.type == "imm" and "<" not in form.syntax)
-    )) // 8
-    total = opcode_bytes + appended
-    if form.encoding_class == "extrashort":
-        record = [payload]
-    elif form.encoding_class == "short":
-        full = (0b10 << 14) | payload
-        record = [(full >> 8) & 0xFF, full & 0xFF]
-    else:
-        if total > 18:
-            raise ValueError(f"{form.id}: representative requires {total} bytes")
-        header = 0b11000000 | ((total - 3) << 2) | ((payload >> ((opcode_bytes - 1) * 8)) & 0x3)
-        record = [header]
-        record.extend((payload >> shift) & 0xFF for shift in range((opcode_bytes - 2) * 8, -1, -8))
-    record.extend([0] * appended)
-    return record
-
-
-def _positions(pattern: str, symbol: str) -> list[int]:
-    return [len(pattern) - index - 1 for index, char in enumerate(pattern) if char == symbol]
+    record = decode_ir.build_representative_record(
+        form,
+        operand_types,
+        ENCODING_CLASSES_BY_NAME[form.encoding_class].instruction_bytes,
+    )
+    if record is None:
+        raise ValueError(f"{form.id}: representative exceeds the encodable record length")
+    return list(record)
 
 
 def _list(items: list[str]) -> str:
@@ -209,167 +154,136 @@ def _operation(mnemonic: str) -> str:
 
 
 def _instruction_set(path: Path) -> tuple[str, str]:
-    text = path.as_posix()
-    if "/extensions/fpu/extensions/transcendental_approx/" in text:
-        return "fpu.transcendental_approx", "FpuTranscendentalSet"
-    if "/extensions/fpu/" in text:
-        return "fpu", "FpuSet"
-    return "base", "BaseSet"
+    name = decode_ir.instruction_set_name(ROOT / "isa" / "defs", path)
+    return name, INSTRUCTION_SET_CONSTRUCTORS[name]
 
 
-def _constraint(pattern: str, constraint) -> str:
-    positions = _positions(pattern, constraint.field)
-    if constraint.allow:
-        kind = "AllowRanges"
-        ranges = [
-            "struct { lower = %d, upper = %d }" % _range(item)
-            for item in constraint.allow
-        ]
-    else:
-        kind = EXCLUDE_CONSTRUCTORS[constraint.exclude]
-        ranges = []
+def _constraint(constraint: decode_ir.ConstraintIR) -> str:
+    kind = (
+        "AllowRanges"
+        if constraint.kind == "allow_ranges"
+        else EXCLUDE_CONSTRUCTORS[constraint.kind.removeprefix("exclude_")]
+    )
+    ranges = [
+        "struct { lower = %d, upper = %d }" % (item.lower, item.upper)
+        for item in constraint.ranges
+    ]
     return (
         "struct { field_positions = %s, kind = %s, ranges = %s, reason = %s }"
-        % (_list(list(map(str, positions))), kind, _list(ranges), json.dumps(constraint.reason or ""))
+        % (
+            _list(list(map(str, constraint.positions))),
+            kind,
+            _list(ranges),
+            json.dumps(constraint.reason),
+        )
     )
 
 
-def _fields(form, registry) -> list[str]:
-    declarations = {}
-    for operand in form.operands:
-        if operand.field is not None:
-            declarations[operand.field] = operand.type
-    for symbol, field in form.fields.items():
-        declarations[symbol] = field.type
-    out = []
-    for symbol in sorted(declarations):
-        type_name = declarations[symbol]
-        spec = registry.types[type_name]
-        out.append(
-            "struct { symbol = %s, type_name = %s, kind = %s, positions = %s }"
-            % (
-                json.dumps(symbol),
-                json.dumps(type_name),
-                FIELD_KIND_CONSTRUCTORS[spec.allocation_kind],
-                _list(list(map(str, _positions(form.bits, symbol)))),
-            )
+def _fields(items: tuple[decode_ir.FieldIR, ...]) -> list[str]:
+    return [
+        "struct { symbol = %s, type_name = %s, kind = %s, positions = %s }"
+        % (
+            json.dumps(item.symbol),
+            json.dumps(item.type_name),
+            FIELD_KIND_CONSTRUCTORS[item.kind],
+            _list(list(map(str, item.positions))),
         )
-    return out
+        for item in items
+    ]
 
 
-def _operand_legal_values(raw) -> list[int]:
-    return [int(item["value"], 0) if isinstance(item["value"], str) else int(item["value"])
-            for item in raw.get("values", [])]
-
-
-def _predicate_mode(mnemonic: str, form) -> str:
-    if mnemonic == "SETcc":
-        return "WriteBoolean"
-    if mnemonic in {"CMPJcc", "TESTJcc"}:
-        return "Temporary"
-    if mnemonic in {"DJcc", "IJcc", "REPcc"}:
-        return "CounterAndCondition"
-    if any(operand.type == "condition" for operand in form.operands):
-        return "AnnulOnFalse"
-    return "PredicateNone"
-
-
-def _operands(form, operand_types) -> list[str]:
-    from defs_schema import parse_assembly_template
-
-    template = parse_assembly_template(form.syntax, form.id)
-    decimal_literals = [item.literal for item in template.operands if item.kind == "decimal"]
+def _operands(items: tuple[decode_ir.OperandIR, ...]) -> list[str]:
     out = []
-    for operand in form.operands:
-        raw = operand_types[operand.type]
-        fixed_value = 0
+    for item in items:
+        source = item.source
+        field_symbol = ""
+        positions: tuple[int, ...] = ()
         has_fixed_value = False
-        if operand.field is None and operand.type == "imm" and decimal_literals:
-            fixed_value = int(decimal_literals.pop(0))
-            has_fixed_value = True
-        positions = _positions(form.bits, operand.field) if operand.field else []
+        fixed_value = 0
+        fixed_identity = ""
+        if isinstance(
+            source,
+            (decode_ir.EncodedFieldSourceIR, decode_ir.EffectiveAddressSourceIR),
+        ):
+            field_symbol = source.field_symbol
+            positions = source.positions
+        elif isinstance(source, decode_ir.FixedSourceIR):
+            has_fixed_value = source.value is not None
+            fixed_value = source.value or 0
+            fixed_identity = source.identity
         out.append(
             "struct { name = %s, type_name = %s, access = %s, field_symbol = %s, "
             "field_positions = %s, domain = %s, ea_role = %s, ea_width = %s, "
             "has_fixed_value = %s, fixed_value = %d, fixed_identity = %s, legal_values = %s }"
             % (
-                json.dumps(operand.name),
-                json.dumps(operand.type),
-                ACCESS_CONSTRUCTORS[operand.access],
-                json.dumps(operand.field or ""),
+                json.dumps(item.name),
+                json.dumps(item.type_name),
+                ACCESS_CONSTRUCTORS[item.access],
+                json.dumps(field_symbol),
                 _list(list(map(str, positions))),
-                json.dumps(operand.domain or ""),
-                json.dumps(operand.ea_role or ""),
-                json.dumps(operand.ea_width or ""),
+                json.dumps(item.domain),
+                json.dumps(item.ea_role),
+                json.dumps(item.ea_width),
                 str(has_fixed_value).lower(),
                 fixed_value,
-                json.dumps(raw.get("register", "")),
-                _list([str(value) for value in _operand_legal_values(raw)]),
+                json.dumps(fixed_identity),
+                _list([str(value) for value in item.legal_values]),
             )
         )
     return out
 
 
-def _payloads(form, operand_types) -> list[str]:
-    out = []
-    for operand in form.operands:
-        if operand.field is not None:
-            continue
-        raw = operand_types[operand.type]
-        width = int(raw["field_width"])
-        if width == 0 or (operand.type == "imm" and "<" not in form.syntax):
-            continue
-        out.append(
-            "struct { operand_name = %s, type_name = %s, width = %d, signed = %s }"
-            % (
-                json.dumps(operand.name),
-                json.dumps(operand.type),
-                width,
-                str(bool(raw.get("signed", False))).lower(),
-            )
+def _payloads(form: decode_ir.FormIR) -> list[str]:
+    operand_types = {operand.name: operand.type_name for operand in form.operands}
+    return [
+        "struct { operand_name = %s, type_name = %s, width = %d, signed = %s }"
+        % (
+            json.dumps(item.operand_name),
+            json.dumps(operand_types[item.operand_name]),
+            item.width,
+            str(item.signed).lower(),
         )
-    return out
+        for item in form.layout
+        if isinstance(item, decode_ir.ReadPayloadIR)
+    ]
 
 
-def _exceptions(document) -> list[str]:
+def _exceptions(annotations: decode_ir.AnnotationsIR) -> list[str]:
     return [
         "struct { event = %s, when_text = %s, forms = %s }"
-        % (json.dumps(item.event), json.dumps(item.when), _strings(item.forms))
-        for item in document.exceptions
+        % (
+            json.dumps(item.event),
+            json.dumps(item.condition_text),
+            _strings(item.forms),
+        )
+        for item in annotations.exception_conditions
     ]
 
 
-def _overlaps(form) -> list[str]:
+def _overlaps(items: tuple[decode_ir.DestinationOverlapIR, ...]) -> list[str]:
     return [
         "struct { left = %s, right = %s, rule = %s }"
-        % (json.dumps(item.operands[0]), json.dumps(item.operands[1]), json.dumps(item.rule))
-        for item in form.destination_overlap
+        % (json.dumps(item.left), json.dumps(item.right), json.dumps(item.rule))
+        for item in items
     ]
 
 
-def _ea_form(form, descriptor_family: str, descriptor_bytes: int, payloads) -> str:
-    joined = "".join(form.pattern)
-    patterns = []
-    offset = len(joined)
-    for pattern in form.pattern:
-        offset -= len(pattern)
-        value, mask = _bits(pattern)
-        patterns.append(
-            "struct { width = %d, value = 0x%04X, mask = 0x%04X }"
-            % (len(pattern), value, mask)
+def _ea_form(form: decode_ir.EaFormIR) -> str:
+    patterns = [
+        "struct { width = %d, value = 0x%04X, mask = 0x%04X }"
+        % (item.width, item.value, item.mask)
+        for item in form.patterns
+    ]
+    rendered_fields = [
+        "struct { symbol = %s, type_name = %s, role = %s, positions = %s }"
+        % (
+            json.dumps(item.symbol),
+            json.dumps(item.type_name),
+            json.dumps(item.role),
+            _list(list(map(str, item.positions))),
         )
-    fields = []
-    for symbol, field in sorted(form.fields.items()):
-        fields.append(
-            "struct { symbol = %s, type_name = %s, role = %s, positions = %s }"
-            % (
-                json.dumps(symbol),
-                json.dumps(field.type),
-                json.dumps(field.role),
-                _list(list(map(str, _positions(joined, symbol)))),
-            )
-        )
-    payload = payloads.get(form.payload) if form.payload else None
+        for item in form.fields
+    ]
     return (
         "  struct { name = %s, descriptor_family = %s, descriptor_bytes = %d, "
         "patterns = %s, kind = %s, fields = %s, "
@@ -377,20 +291,20 @@ def _ea_form(form, descriptor_family: str, descriptor_bytes: int, payloads) -> s
         "register_name = %s, descriptor = %s, update_target = %s, update_mode = %s }"
         % (
             json.dumps(form.name),
-            json.dumps(descriptor_family),
-            descriptor_bytes,
+            json.dumps(form.member_of_descriptor_family),
+            form.descriptor_bytes,
             _list(patterns),
-            json.dumps(form.kind or "memory" if descriptor_family else form.kind or ""),
-            _list(fields),
-            json.dumps(form.segment or ""),
-            json.dumps(form.payload or ""),
-            payload.field_width if payload else 0,
-            str(payload.signed if payload else False).lower(),
-            json.dumps(form.base or ""),
-            json.dumps(form.register or ""),
-            json.dumps(form.descriptor or ""),
-            json.dumps(form.update.target if form.update else ""),
-            json.dumps(form.update.mode if form.update else ""),
+            json.dumps(form.kind),
+            _list(rendered_fields),
+            json.dumps(form.segment),
+            json.dumps(form.payload_name),
+            form.payload_width,
+            str(form.payload_signed).lower(),
+            json.dumps(form.base),
+            json.dumps(form.register_name),
+            json.dumps(form.referenced_descriptor_family),
+            json.dumps(form.update_target),
+            json.dumps(form.update_mode),
         )
     )
 
@@ -412,7 +326,7 @@ def render_operations(documents) -> str:
     return "\n".join(lines)
 
 
-def render_catalog(store, operand_types, ea_registry, documents) -> str:
+def _render_catalog_ir(ir: decode_ir.DecodeIR) -> str:
     lines = [
         "// Generated by generate_catalog.py from schema-decoded isa/defs owners.",
         "// Do not edit.",
@@ -420,18 +334,12 @@ def render_catalog(store, operand_types, ea_registry, documents) -> str:
         "function primary_form_catalog() -> list(Catalog_entry) = [|",
     ]
     entries = []
-    for located in sorted(store.encodings, key=lambda item: item.form.id):
-        form = located.form
-        document = documents[located.mnemonic]
-        set_name, set_constructor = _instruction_set(located.path)
-        value, mask = _bits(form.bits)
-        contexts = set(document.repeat.contexts if document.repeat else ())
-        observed_kind = document.repeat.observed.kind if document.repeat and document.repeat.observed else ""
-        observed_operand = document.repeat.observed.operand or "" if document.repeat and document.repeat.observed else ""
+    for form in ir.forms:
+        control = form.control
+        repeat = control.repeat
         flag_effects = [
-            f"{bank}.{flag}={effect}"
-            for bank, effects in document.flag_effects.items()
-            for flag, effect in effects.items()
+            f"{item.bank}.{item.flag}={item.effect_text}"
+            for item in form.annotations.flag_effects
         ]
         entries.append(
             "  struct { form_id = %s, mnemonic = %s, operation = %s, route = %s, "
@@ -444,55 +352,53 @@ def render_catalog(store, operand_types, ea_registry, documents) -> str:
             "mask = 0x%016X, constraints = %s, fields = %s, operands = %s, sizes = %s, "
             "appended_payloads = %s, overlaps = %s }"
             % (
-                json.dumps(form.id), json.dumps(located.mnemonic), _operation(located.mnemonic),
-                ROUTE_CONSTRUCTORS[document.attributes.family], set_constructor,
-                json.dumps(document.attributes.instruction_class), json.dumps(document.attributes.family),
-                PRIVILEGE_CONSTRUCTORS[document.attributes.privilege],
-                _predicate_mode(located.mnemonic, form),
-                str(any(operand.type == "EA" for operand in form.operands)).lower(),
-                str("REP" in contexts).lower(), str("REPcc" in contexts).lower(), str("REPG" in contexts).lower(),
-                json.dumps(observed_kind), json.dumps(observed_operand),
-                _strings(flag_effects), _list(_exceptions(document)), CLASS_CONSTRUCTORS[form.encoding_class],
-                len(form.bits), value, mask, _list([_constraint(form.bits, item) for item in form.constraints]),
-                _list(_fields(form, store.field_types)), _list(_operands(form, operand_types)), _strings(form.sizes),
-                _list(_payloads(form, operand_types)), _list(_overlaps(form)),
+                json.dumps(form.key), json.dumps(form.mnemonic), _operation(form.mnemonic),
+                ROUTE_CONSTRUCTORS[control.route],
+                INSTRUCTION_SET_CONSTRUCTORS[control.instruction_set],
+                json.dumps(control.instruction_class), json.dumps(control.family),
+                PRIVILEGE_CONSTRUCTORS[control.privilege],
+                PREDICATE_CONSTRUCTORS[control.predicate_mode],
+                str(control.has_ea_operand).lower(),
+                str(repeat.rep).lower(), str(repeat.repcc).lower(), str(repeat.repg).lower(),
+                json.dumps(repeat.observed_kind), json.dumps(repeat.observed_operand),
+                _strings(flag_effects), _list(_exceptions(form.annotations)),
+                CLASS_CONSTRUCTORS[form.opcode_class],
+                form.opcode_width, form.opcode_value, form.opcode_mask,
+                _list([_constraint(item) for item in form.constraints]),
+                _list(_fields(form.fields)), _list(_operands(form.operands)), _strings(form.sizes),
+                _list(_payloads(form)), _list(_overlaps(form.overlaps)),
             )
         )
     lines.append(",\n".join(entries))
     lines.extend(["|]", "", "function effective_address_catalog() -> list(Ea_form) = [|"])
-    descriptor_bytes = {
-        "ext1": len(ea_registry.ext1_forms[0].pattern),
-        "ext2": len(ea_registry.ext2_forms[0].pattern),
-    }
-    ea_forms = [
-        _ea_form(
-            form,
-            "",
-            descriptor_bytes.get(form.descriptor or "", 0),
-            ea_registry.payloads,
-        )
-        for form in ea_registry.compact_forms
-    ]
+    ea = ir.effective_addresses
+    ea_forms = [_ea_form(form) for form in ea.compact_forms]
     ea_forms.extend(
-        _ea_form(form, "ext1", descriptor_bytes["ext1"], ea_registry.payloads)
-        for form in ea_registry.ext1_forms
-    )
-    ea_forms.extend(
-        _ea_form(form, "ext2", descriptor_bytes["ext2"], ea_registry.payloads)
-        for form in ea_registry.ext2_forms
+        _ea_form(form)
+        for family in ea.descriptor_families
+        for form in family.forms
     )
     lines.append(",\n".join(ea_forms))
     lines.extend(["|]", "", "function representative_form_records() -> list(Representative_record) = [|"])
     records = []
-    for located in sorted(store.encodings, key=lambda item: item.form.id):
-        bytes_text = ", ".join(f"0x{byte:02X}" for byte in _representative_record(located, operand_types))
+    for form in ir.forms:
+        if form.representative_record is None:
+            raise ValueError(f"{form.key}: representative exceeds the encodable record length")
+        bytes_text = ", ".join(f"0x{byte:02X}" for byte in form.representative_record)
         records.append(
             "  struct { form_id = %s, mnemonic = %s, bytes = [|%s|] }"
-            % (json.dumps(located.form.id), json.dumps(located.mnemonic), bytes_text)
+            % (json.dumps(form.key), json.dumps(form.mnemonic), bytes_text)
         )
     lines.append(",\n".join(records))
     lines.extend(["|]", ""])
     return "\n".join(lines)
+
+
+def render_catalog(store, operand_types, ea_registry, documents) -> str:
+    """Compatibility adapter that renders only from the canonical Decode IR."""
+    return _render_catalog_ir(
+        decode_ir.build_decode_ir(store, operand_types, ea_registry, documents)
+    )
 
 
 def render_overlay_project() -> str:
@@ -510,20 +416,22 @@ catalog {
 
 def render_outputs(build_dir: Path) -> dict[Path, str]:
     store, operand_types, ea_registry, documents = _load_inputs()
-    distribution = Counter(item.form.encoding_class for item in store.encodings)
-    set_distribution = Counter(_instruction_set(item.path)[0] for item in {x.mnemonic: x for x in store.encodings}.values())
-    if len(store.encodings) != 422 or dict(distribution) != EXPECTED_DISTRIBUTION:
-        raise ValueError(f"unexpected form inventory: {len(store.encodings)} {dict(distribution)}")
-    if len(documents) != 205 or dict(set_distribution) != EXPECTED_SET_DISTRIBUTION:
-        raise ValueError(f"unexpected mnemonic inventory: {len(documents)} {dict(set_distribution)}")
-    unknown_routes = {doc.attributes.family for doc in documents.values()} - ROUTE_CONSTRUCTORS.keys()
+    ir = decode_ir.build_decode_ir(store, operand_types, ea_registry, documents)
+    distribution = Counter(form.opcode_class for form in ir.forms)
+    one_form_per_mnemonic = {form.mnemonic: form for form in ir.forms}
+    set_distribution = Counter(
+        form.control.instruction_set for form in one_form_per_mnemonic.values()
+    )
+    if ir.limits.form_count != 422 or dict(distribution) != EXPECTED_DISTRIBUTION:
+        raise ValueError(f"unexpected form inventory: {ir.limits.form_count} {dict(distribution)}")
+    if ir.limits.mnemonic_count != 205 or dict(set_distribution) != EXPECTED_SET_DISTRIBUTION:
+        raise ValueError(f"unexpected mnemonic inventory: {ir.limits.mnemonic_count} {dict(set_distribution)}")
+    unknown_routes = {form.control.route for form in ir.forms} - ROUTE_CONSTRUCTORS.keys()
     if unknown_routes:
         raise ValueError(f"unrouted instruction families: {sorted(unknown_routes)}")
     return {
         build_dir / "generated" / "operations.sail": render_operations(documents),
-        build_dir / "generated" / "catalog.sail": render_catalog(
-            store, operand_types, ea_registry, documents
-        ),
+        build_dir / "generated" / "catalog.sail": _render_catalog_ir(ir),
         build_dir / "bedrock-generated.sail_project": render_overlay_project(),
     }
 
