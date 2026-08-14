@@ -2518,7 +2518,7 @@ def latex_instruction_reference_section(model: IsaModel, instructions: list[Inst
         parts.extend(
             [
                 r"\subsection{Summary}",
-                latex_instruction_summary_table(f"{title} Summary", group),
+                latex_instruction_summary_table(f"{title} Summary (Informative)", group),
             ]
         )
         parts.extend(latex_instruction_entry(model, inst) for inst in group)

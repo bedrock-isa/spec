@@ -7,16 +7,10 @@
 \phantomsection
 \addcontentsline{toc}{section}{Reading an Instruction Description}
 \subsection*{Entry Organization}
-Each instruction entry presents its normative Operation, then Assembler Syntax, Attributes, and structured status
-metadata. Detailed Semantics follows when more space is needed, before the concrete encoding forms. Brief,
-non-normative summaries appear only in the instruction-set summary tables. Each mnemonic begins on a new page so its
+Each instruction entry presents its Operation, then Assembler Syntax, Attributes, and structured status
+metadata. Detailed Semantics follows when more space is needed, before the concrete encoding forms. Brief
+summaries appear only in the instruction-set summary tables. Each mnemonic begins on a new page so its
 form diagrams, field explanations, and side-effect text stay together as one reference unit.
-
-An entry's Operation and Detailed Semantics are normative and may refine only
-named common rules. Determine every observable state transition or action---trap/fault,
-commit, repeat, event, flag effect, or memory action---from those fields together
-with named common rules, including the
-\hyperref[page:instruction-execution-model]{Instruction Execution Model}.
 
 \subsection*{Mnemonics and Suffixes}
 The B, W, L, and Q suffixes select 8-, 16-, 32-, and 64-bit integer sizes; S and D select 32- and 64-bit
