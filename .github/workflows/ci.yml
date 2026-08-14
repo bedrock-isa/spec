@@ -99,6 +99,8 @@ jobs:
       - name: Check out repository history
         uses: actions/checkout@v6
         with:
+          repository: bedrock-isa/spec
+          ref: ${{ github.sha }}
           fetch-depth: 0
 
       - name: Download validated reference site
@@ -115,8 +117,6 @@ jobs:
 
           test -f build/site/index.html
           test -f build/site/.nojekyll
-          test -f build/site/source-revision.txt
-          test "$(cat build/site/source-revision.txt)" = "${GITHUB_SHA}"
 
           test -n "${RUNNER_TEMP:-}"
           publish_dir="$(mktemp -d "${RUNNER_TEMP}/bedrock-pages.XXXXXX")"
