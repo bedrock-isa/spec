@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Generated reference documentation for the Bedrock architecture and its ABI and C interfaces.">
+        <meta name="description" content="Reference documents for the Bedrock architecture and its ABI and C interfaces.">
       
       
       
@@ -821,14 +821,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../isa/streaming-execution-model/" class="md-nav__link">
+      <a href="../../isa/repeated-scalar-execution/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Streaming Execution Model
+    Repeated Scalar Execution
   
 
     
@@ -7591,14 +7591,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../isa/reference-indexes-and-revision-history/" class="md-nav__link">
+      <a href="../../isa/reference-indexes/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Reference Indexes and Revision History
+    Reference Indexes
   
 
     
@@ -8519,10 +8519,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#generated-assembly-conventions" class="md-nav__link">
+  <a href="#assembly-conventions" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Generated Assembly Conventions
+        Assembly Conventions
       
     </span>
   </a>
@@ -8959,10 +8959,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#generated-assembly-conventions" class="md-nav__link">
+  <a href="#assembly-conventions" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Generated Assembly Conventions
+        Assembly Conventions
       
     </span>
   </a>
@@ -9009,7 +9009,7 @@
 
 
 <h1 id="calling-convention-examples">Calling Convention Examples</h1>
-<p>The first four cases are inputs to the executable reference model and illustrate the assignment procedure. The final two examples are generated output from the Bedrock LLVM backend. Examples do not introduce exceptions to the normative rules above.</p>
+<p>The examples illustrate the assignment procedure and do not introduce exceptions to the normative rules above.</p>
 <h2 id="independent-register-classes-and-pair-alignment">Independent Register Classes and Pair Alignment</h2>
 <table>
 <thead>
@@ -9087,9 +9087,9 @@
 </tbody>
 </table>
 <p>The named <code>format</code> argument uses <code>R0</code>. The signed character is promoted to <code>int</code> and stored at <code>[SP+16]</code>; the <code>float</code> is promoted to <code>double</code> and stored at <code>[SP+32]</code>. The caller creates the aggregate copy and stores its address at <code>[SP+48]</code>. A <code>va_list</code> initialized by <code>va_start</code> visits those three slots in that order by adding 16 after each access.</p>
-<h2 id="generated-assembly-conventions">Generated Assembly Conventions</h2>
-<p>The assembly examples are non-normative. They were emitted with <code>-Oz</code> by Bedrock LLVM 22.1.8 and then checked against the call-assignment model, register-preservation contract, and the architectural semantics of <code>CALL</code>, <code>RET</code>, <code>PUSHP</code>, and <code>POPP</code>. File directives, LLVM basic-block comments, and local labels that do not affect the shown control flow are omitted. The scalar leaf example presents its one-instruction counted loop with <code>REP</code>. For a grouped body that does not write the selected loop-control register, REPG’s post-body rule requires an equivalent form to bypass an initial zero but permits it to supply N directly for a positive N; the displayed <code>REP</code> also takes N directly and annuls zero. Apart from that zero-case normalization, instruction order and operands are unchanged. If an implementation sequence conflicts with a normative rule, the rule controls.</p>
-<p>The benchmark sources use GNU C89 implicit return types. The declarations below show their equivalent explicit C types so that the ABI interface is unambiguous.</p>
+<h2 id="assembly-conventions">Assembly Conventions</h2>
+<p>The assembly examples are non-normative. File directives, basic-block comments, and local labels that do not affect the shown control flow are omitted. The scalar leaf example presents its one-instruction counted loop with <code>REP</code>. For a grouped body that does not write the selected loop-control register, REPG’s post-body rule requires an equivalent form to bypass an initial zero but permits it to supply N directly for a positive N; the displayed <code>REP</code> also takes N directly and annuls zero. Apart from that zero-case normalization, instruction order and operands are unchanged. If an implementation sequence conflicts with a normative rule, the rule controls.</p>
+<p>The declarations below state the ABI interfaces used by the examples.</p>
 <h2 id="scalar-leaf-function">Scalar Leaf Function</h2>
 <table>
 <thead>
@@ -9103,7 +9103,7 @@
 </tr>
 </tbody>
 </table>
-<p>On entry, <code>p</code> is in <code>R0</code> and the sign-extended value of <code>n</code> is in <code>R1</code>. The generated function uses only volatile registers, does not change <code>SP</code>, and returns the integer sum in <code>R0</code>.</p>
+<p>On entry, <code>p</code> is in <code>R0</code> and the sign-extended value of <code>n</code> is in <code>R1</code>. The function uses only volatile registers, does not change <code>SP</code>, and returns the integer sum in <code>R0</code>.</p>
 <table>
 <thead>
 <tr>
@@ -9131,7 +9131,7 @@
 </tr>
 </tbody>
 </table>
-<p><strong>Generated scalar leaf function</strong></p>
+<p><strong>Scalar leaf function</strong></p>
 <h2 id="non-leaf-preservation-and-call-alignment">Non-Leaf Preservation and Call Alignment</h2>
 <table>
 <thead>
@@ -9148,7 +9148,7 @@
 </tr>
 </tbody>
 </table>
-<p>The seven arguments occupy <code>R0</code> through <code>R6</code> in source order. The generated function keeps <code>n</code>, <code>dst</code>, <code>tmp</code>, and the first intermediate result live in nonvolatile <code>R8</code> through <code>R11</code>. It therefore saves and restores both canonical register pairs.</p>
+<p>The seven arguments occupy <code>R0</code> through <code>R6</code> in source order. The function keeps <code>n</code>, <code>dst</code>, <code>tmp</code>, and the first intermediate result live in nonvolatile <code>R8</code> through <code>R11</code>. It therefore saves and restores both canonical register pairs.</p>
 <table>
 <thead>
 <tr>
@@ -9236,7 +9236,7 @@
 </tr>
 </tbody>
 </table>
-<p><strong>Generated non-leaf function with a tail transfer</strong></p>
+<p><strong>Non-leaf function with a tail transfer</strong></p>
 <p>Each <code>PUSHP</code> saves 16 bytes, so the pair saves leave the entry alignment unchanged. The additional 8-byte subtraction establishes <code>SP mod 16 = 8</code> before each <code>CALL</code>; the pushed return address therefore gives the callee a 16-byte-aligned entry stack. The epilogue removes the padding and restores <code>R10:R11</code> before <code>R8:R9</code>. The final <code>JMP</code> is a legal tail transfer because the frame and nonvolatile state have already been restored, the outgoing arguments have the ordinary ABI layout, and the target’s <code>R0</code> result is also the result required by <code>mf_pipeline</code>.</p>
 
 

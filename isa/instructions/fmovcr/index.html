@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Generated reference documentation for the Bedrock architecture and its ABI and C interfaces.">
+        <meta name="description" content="Reference documents for the Bedrock architecture and its ABI and C interfaces.">
       
       
       
@@ -825,14 +825,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../streaming-execution-model/" class="md-nav__link">
+      <a href="../../repeated-scalar-execution/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Streaming Execution Model
+    Repeated Scalar Execution
   
 
     
@@ -7692,14 +7692,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference-indexes-and-revision-history/" class="md-nav__link">
+      <a href="../../reference-indexes/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Reference Indexes and Revision History
+    Reference Indexes
   
 
     
@@ -8950,7 +8950,7 @@
 
 <h1 id="fmovcr">FMOVCR</h1>
 <h2 id="operation">Operation</h2>
-<p>FMOVCR maps an unsigned 16-bit constant ID to a fixed IEEE-754 binary64 bit pattern and writes that pattern to the destination F register. The mapping includes common numeric, transcendental, infinity, NaN, and format-boundary constants. It is independent of FSTATUS rounding, DAZ, FTZ, and default-NaN modes. Loading a signaling NaN is a bitwise move and does not itself raise NV; a later consuming floating-point operation applies its normal NaN rules.</p>
+<p>FMOVCR maps an unsigned 16-bit constant ID to a fixed IEEE-754 binary64 bit pattern and writes that pattern to the destination F register. It is independent of FSTATUS rounding, DAZ, FTZ, and default-NaN modes. Loading a signaling NaN is a bitwise move and does not itself raise NV; a later consuming floating-point operation applies its normal NaN rules.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
 <p><code>FMOVCR.SD(z) &lt;fconst_id&gt;, Fn(d)</code></p>
 <h2 id="attributes">Attributes</h2>

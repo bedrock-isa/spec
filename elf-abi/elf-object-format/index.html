@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Generated reference documentation for the Bedrock architecture and its ABI and C interfaces.">
+        <meta name="description" content="Reference documents for the Bedrock architecture and its ABI and C interfaces.">
       
       
       
@@ -821,14 +821,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../isa/streaming-execution-model/" class="md-nav__link">
+      <a href="../../isa/repeated-scalar-execution/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Streaming Execution Model
+    Repeated Scalar Execution
   
 
     
@@ -7591,14 +7591,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../isa/reference-indexes-and-revision-history/" class="md-nav__link">
+      <a href="../../isa/reference-indexes/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Reference Indexes and Revision History
+    Reference Indexes
   
 
     
@@ -9058,7 +9058,7 @@
 <h2 id="program-header-policy">Program Header Policy</h2>
 <p>The standard <code>PT_LOAD</code>, <code>PT_DYNAMIC</code>, <code>PT_INTERP</code>, <code>PT_NOTE</code>, and <code>PT_TLS</code> program headers retain their ordinary ELF meanings.</p>
 <p>Program permission bits use the standard values <code>PF_X=1</code>, <code>PF_W=2</code>, and <code>PF_R=4</code>. Every <code>PT_LOAD</code> has <code>p_align</code> equal to the selected page size or a larger power-of-two alignment; the minimum supported page alignment is 4096 bytes.</p>
-<h2 id="section-and-symbol-policy">Section and Symbol Policy</h2>
+<h2 id="section-and-symbol-policy">Section and Symbol Policy <a href="#section-section-and-symbol-policy" id="section-section-and-symbol-policy"></a></h2>
 <p>Standard ELF section types and the <code>SHF_WRITE</code>, <code>SHF_ALLOC</code>, <code>SHF_EXECINSTR</code>, and <code>SHF_TLS</code> flags retain their generic meanings. Symbol binding and type occupy <code>st_info</code> in the ordinary ELF encoding. Architecture-specific <code>st_other</code> bits are reserved and must be zero.</p>
 <p>In an <code>ET_REL</code> object, <code>st_value</code> is a byte offset from the start of the defining section. After final link, it is the symbol’s pre-segment virtual byte address. This transition does not convert ordinary function symbols into CS:PC pairs or ordinary object symbols into segmented descriptors.</p>
 

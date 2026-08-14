@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Generated reference documentation for the Bedrock architecture and its ABI and C interfaces.">
+        <meta name="description" content="Reference documents for the Bedrock architecture and its ABI and C interfaces.">
       
       
       
@@ -918,14 +918,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../streaming-execution-model/" class="md-nav__link">
+      <a href="../repeated-scalar-execution/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Streaming Execution Model
+    Repeated Scalar Execution
   
 
     
@@ -7688,14 +7688,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference-indexes-and-revision-history/" class="md-nav__link">
+      <a href="../reference-indexes/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Reference Indexes and Revision History
+    Reference Indexes
   
 
     
@@ -9038,7 +9038,7 @@
 <h2 id="operand-evaluation-and-ea-defaults">Operand Evaluation and EA Defaults</h2>
 <p>Operands are decoded in instruction order. Source reads complete before the final destination write unless an atomic form says otherwise. Effective-address calculation may produce an address without reading memory.</p>
 <p>Auto-update EA forms update a temporary operand-evaluation image. The architectural register update becomes visible only when the instruction commits.</p>
-<p>Ordinary forms accept at most one memory operand. The explicitly encoded memory-memory exceptions are CMP, EXTSL, EXTSQ, EXTSW, EXTZL, EXTZQ, EXTZW, MOV, MOVCU, MOVUC, MOVUU, FBNDII, FBNDIX, FBNDXI, FBNDXX. Repeat behavior is available only through the repeat instructions and body-eligibility rules defined in the Streaming Execution Model.</p>
+<p>Ordinary forms accept at most one memory operand. The explicitly encoded memory-memory exceptions are CMP, EXTSL, EXTSQ, EXTSW, EXTZL, EXTZQ, EXTZW, MOV, MOVCU, MOVUC, MOVUU, FBNDII, FBNDIX, FBNDXI, FBNDXX. Repeat behavior is available only through the repeat instructions and body-eligibility rules defined in Repeated Scalar Execution.</p>
 <p>FLAGS and FFLAGS fields that an instruction does not mention remain unchanged. Operand evaluation follows instruction operand order, and an instruction has one architectural commit point unless its description explicitly defines partial completion.</p>
 <h2 id="shared-side-effect-rules">Shared Side-Effect Rules</h2>
 <p>An instruction that faults before commit leaves destination registers, destination memory, and auto-update register effects unchanged unless the instruction explicitly defines partial completion.</p>

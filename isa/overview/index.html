@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Generated reference documentation for the Bedrock architecture and its ABI and C interfaces.">
+        <meta name="description" content="Reference documents for the Bedrock architecture and its ABI and C interfaces.">
       
       
       
@@ -504,10 +504,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#design-goals" class="md-nav__link">
+  <a href="#manual-scope" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Design Goals
+        Manual Scope
       
     </span>
   </a>
@@ -907,14 +907,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../streaming-execution-model/" class="md-nav__link">
+      <a href="../repeated-scalar-execution/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Streaming Execution Model
+    Repeated Scalar Execution
   
 
     
@@ -7677,14 +7677,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference-indexes-and-revision-history/" class="md-nav__link">
+      <a href="../reference-indexes/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Reference Indexes and Revision History
+    Reference Indexes
   
 
     
@@ -8884,10 +8884,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#design-goals" class="md-nav__link">
+  <a href="#manual-scope" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Design Goals
+        Manual Scope
       
     </span>
   </a>
@@ -8925,12 +8925,10 @@
 <h1 id="overview">Overview</h1>
 <h2 id="contract-position">Contract Position</h2>
 <p><strong>Current document:</strong> Bedrock Programmer’s Reference Manual. The shaded block identifies its primary contract position. The Platform / OS ABI spans and constrains the four core ABI layers; the ISA specification is their non-ABI architectural foundation.</p>
-<h2 id="design-goals">Design Goals</h2>
-<p>Bedrock is a bounded, byte-addressed CISC ISA with explicit instruction lengths, compact register forms, and selected register-memory and memory-memory forms.</p>
-<p>The manual presents programmer-visible behavior first: architectural state, operand encoding, execution semantics, and instruction descriptions. Encoding details appear where they are needed to decode or use an instruction form.</p>
+<h2 id="manual-scope">Manual Scope</h2>
+<p>This manual defines programmer-visible architectural state, operand encoding, execution semantics, and instruction behavior for the Bedrock instruction set architecture.</p>
 <h2 id="architectural-profile">Architectural Profile</h2>
 <p>Bedrock defines sixteen 64-bit integer registers, R0 through R15. SP and PC are special architectural registers outside the Rn namespace, with SP-relative addressing tied to SS and PC-relative addressing tied to CS.</p>
-<p>The reference is organized around programmer-visible state, operand formation, execution semantics, and instruction behavior. Byte-level instruction framing is specified separately in the Instruction Encoding chapter.</p>
 <ul>
 <li>
 <p>The PC names a byte in the instruction stream; sequential execution advances it by the decoded instruction length.</p>

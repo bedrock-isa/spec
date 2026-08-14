@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Generated reference documentation for the Bedrock architecture and its ABI and C interfaces.">
+        <meta name="description" content="Reference documents for the Bedrock architecture and its ABI and C interfaces.">
       
       
       
@@ -825,14 +825,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../streaming-execution-model/" class="md-nav__link">
+      <a href="../../repeated-scalar-execution/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Streaming Execution Model
+    Repeated Scalar Execution
   
 
     
@@ -7692,14 +7692,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference-indexes-and-revision-history/" class="md-nav__link">
+      <a href="../../reference-indexes/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Reference Indexes and Revision History
+    Reference Indexes
   
 
     
@@ -8980,7 +8980,7 @@
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the read/write operand.</p>
 <p><strong>EA availability</strong></p>
-<p><strong>Allowed:</strong> Register; Memory; EXT0</p>
+<p><strong>Allowed:</strong> Register; Memory; Extended Descriptor</p>
 <p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>
 <p><strong>Size field <code>z</code></strong> — Selects B/W.</p>
 <p><strong><code>INC.LQ(z) &lt;ea&gt;(e)</code></strong></p>
@@ -8992,7 +8992,7 @@
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the read/write operand.</p>
 <p><strong>EA availability</strong></p>
-<p><strong>Allowed:</strong> Register except <code>Rn(r)</code>; Memory; EXT0</p>
+<p><strong>Allowed:</strong> Register except <code>Rn(r)</code>; Memory; Extended Descriptor</p>
 <p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>
 <p><strong>Size field <code>z</code></strong> — Selects L/Q.</p>
 

@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Generated reference documentation for the Bedrock architecture and its ABI and C interfaces.">
+        <meta name="description" content="Reference documents for the Bedrock architecture and its ABI and C interfaces.">
       
       
       
@@ -825,14 +825,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../streaming-execution-model/" class="md-nav__link">
+      <a href="../../repeated-scalar-execution/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Streaming Execution Model
+    Repeated Scalar Execution
   
 
     
@@ -7703,14 +7703,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference-indexes-and-revision-history/" class="md-nav__link">
+      <a href="../../reference-indexes/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Reference Indexes and Revision History
+    Reference Indexes
   
 
     
@@ -9047,8 +9047,7 @@
 <ul>
 <li>strictly increasing on the positive domain</li>
 </ul>
-<p>A signaling NaN accrues NV. NaN results are quieted and then processed by FSTATUS.DN. FSTATUS.FTZ replaces a subnormal result with the required signed zero and accrues UF. OF and UF are accrued as specified by the common FPTRANSA model, while NX is unchanged.</p>
-<p>If any accrued exception is enabled as a trap, the instruction raises <code>FLOATING_POINT_FAULT</code> before writing a destination; otherwise it commits the result and accrued flags together.</p>
+<p>NaN, exception, trap, and commit handling follows the common FPTRANSA model in Section <a href="../fpu-transcendental-approx/#section-fptransa-common-model">3.1</a>.</p>
 <h2 id="instruction-forms">Instruction Forms</h2>
 <p><strong><code>FLOGNA.SD(z) Fn(s), Fn(d)</code></strong></p>
 <p><em>Encoding class: long; required bytes: 4 bytes; privilege: unprivileged</em></p>

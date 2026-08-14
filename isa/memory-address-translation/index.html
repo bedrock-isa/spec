@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Generated reference documentation for the Bedrock architecture and its ABI and C interfaces.">
+        <meta name="description" content="Reference documents for the Bedrock architecture and its ABI and C interfaces.">
       
       
       
@@ -962,14 +962,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../streaming-execution-model/" class="md-nav__link">
+      <a href="../repeated-scalar-execution/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Streaming Execution Model
+    Repeated Scalar Execution
   
 
     
@@ -7732,14 +7732,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference-indexes-and-revision-history/" class="md-nav__link">
+      <a href="../reference-indexes/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Reference Indexes and Revision History
+    Reference Indexes
   
 
     
@@ -9077,17 +9077,19 @@
 <p>The segment result is the linear address. With PTCR.PE set, the page-table walker consumes that address and applies the selected PTE frame and attributes. With paging disabled, the memory system receives the complete 64-bit linear address directly as a byte address. <code>PABITS_SEL</code> applies to page-table geometry, while the direct address retains all 64 bits. An invalid segment image raises INVALID_CONTROL_STATE when written; a failed segment bound or canonical-address check raises PAGE_FAULT during access.</p>
 <h2 id="paging-stage">Paging Stage</h2>
 <p>Paging is enabled by <code>PTCR.PE</code> and translates the linear address produced by segment pre-translation. Before the walk can produce a translation, the linear address must be canonical for the mode selected by <code>PTCR.LA57</code>. A noncanonical address raises <code>PAGE_FAULT</code>. With paging disabled, the memory system uses the linear address directly.</p>
-<p>Each page-table level uses a nine-bit address field to select one of 512 64-bit entries in a 4-KiB table page. For a table-page base address (B) and index (i), the selected entry is at (B + 8i). The walker starts at the physical table page named by <code>PTCR.root_page</code>. Every selected entry above L1 points to the next table page, and the selected L1 entry is the leaf PTE. Its physical frame number is combined with linear-address bits <code>11..0</code> to form the memory-system address. The leaf <code>AT</code> bit determines whether that value is a byte address or a slot address:</p>
-<div class="arithmatex">\[\mathit{memory\_system\_address} = (\mathit{leaf\_PFN} \ll 12) + \mathit{linear}[11:0].\]</div>
-<p>The walker validates every consumed entry and accumulates its permissions while descending toward L1. The leaf PTE supplies the final frame number and memory attributes. The detailed entry-validity, permission, accessed, and dirty rules are specified under Page-Table Entry Format. At each consumed level, result priority is not-present first, structural validity second, and accumulated permission third; the walker resolves those results before consuming a lower level.</p>
+<p>Each page-table level uses a nine-bit address field to select one of 512 64-bit entries in a 4-KiB table page. For a table-page base address (B) and index (i), the selected entry is at (B + 8i). The walker starts at the physical table page named by <code>PTCR.root_page</code>. At each active level, a selected entry with <code>T=1</code> points to the next table page; this form is valid only above L1. A selected entry with <code>T=0</code> terminates the walk. An <code>AT=0</code> terminating entry is a byte-addressed leaf at any active level. If its level is <span class="arithmatex">\(L\)</span>, its naturally aligned physical base is combined with the low <span class="arithmatex">\(12+9(L-1)\)</span> linear-address bits:</p>
+<div class="arithmatex">\[\mathit{byte\_address} = (\mathit{leaf\_PFN} \ll 12) +
+  \mathit{linear}[12+9(L-1)-1:0].\]</div>
+<p>The resulting L1 through L5 leaf sizes are 4 KiB, 2 MiB, 1 GiB, 512 GiB, and 256 TiB. An <code>AT=1</code> terminating entry remains valid only at L1 and retains its 4096-slot address formation from bits <code>11..0</code>.</p>
+<p>The walker validates every consumed entry and accumulates its permissions while descending through selected levels. The terminating leaf PTE supplies the final frame number and memory attributes. The detailed entry-validity, permission, accessed, and dirty rules are specified under Page-Table Entry Format. At each consumed level, result priority is not-present first, structural validity second, and accumulated permission third; the walker resolves those results before consuming a lower level.</p>
 <p><img alt="Linear-Address Paging Fields" src="../../assets/visuals/isa/memory-address-translation-02.svg" /></p>
 <p><strong>Linear-Address Paging Fields</strong></p>
 <h2 id="la48-four-level-paging">LA48 Four-Level Paging</h2>
-<p>When <code>PTCR.LA57</code> is zero, bits <code>63..48</code> of the linear address must equal the sign extension of bit <code>47</code>. Bits <code>47..39</code>, <code>38..30</code>, <code>29..21</code>, and <code>20..12</code> select the L4, L3, L2, and L1 entries respectively. The twelve low bits are carried unchanged as the offset within the translated 4-KiB page. The L4 table is the root table named by <code>PTCR.root_page</code>.</p>
+<p>When <code>PTCR.LA57</code> is zero, bits <code>63..48</code> of the linear address must equal the sign extension of bit <code>47</code>. Bits <code>47..39</code>, <code>38..30</code>, <code>29..21</code>, and <code>20..12</code> select the L4, L3, L2, and L1 entries respectively. A byte-addressed leaf may terminate the walk at any of those levels; all bits below the terminating level’s index form its offset. The L4 table is the root table named by <code>PTCR.root_page</code>.</p>
 <p><img alt="LA48 Four-Level Page Walk" src="../../assets/visuals/isa/memory-address-translation-03.svg" /></p>
 <p><strong>LA48 Four-Level Page Walk</strong></p>
 <h2 id="la57-five-level-paging">LA57 Five-Level Paging</h2>
-<p>When <code>PTCR.LA57</code> is one, bits <code>63..57</code> of the linear address must equal the sign extension of bit <code>56</code>. Bits <code>56..48</code> select an additional L5 entry, whose PFN identifies the L4 table. Bits <code>47..12</code> then drive the same L4-through-L1 walk used by LA48, and bits <code>11..0</code> remain the page offset. The L5 table is the root table named by <code>PTCR.root_page</code>.</p>
+<p>When <code>PTCR.LA57</code> is one, bits <code>63..57</code> of the linear address must equal the sign extension of bit <code>56</code>. Bits <code>56..48</code> select an additional L5 entry. A table pointer continues into the same L4-through-L1 hierarchy used by LA48, while a byte-addressed leaf at any selected level terminates the walk and uses all lower linear-address bits as its offset. The L5 table is the root table named by <code>PTCR.root_page</code>.</p>
 <p><img alt="LA57 Five-Level Page Walk" src="../../assets/visuals/isa/memory-address-translation-04.svg" /></p>
 <p><strong>LA57 Five-Level Page Walk</strong></p>
 <h2 id="page-table-entry-format">Page-Table Entry Format <a href="#section-page-table-entry-format" id="section-page-table-entry-format"></a></h2>
@@ -9158,12 +9160,12 @@
 <tr>
 <td style="text-align: left;"><code>T</code></td>
 <td style="text-align: left;"><code>11</code></td>
-<td style="text-align: left;">one for a non-leaf table pointer; zero for an L1 leaf</td>
+<td style="text-align: left;">one for a non-leaf table pointer; zero for a terminating leaf</td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>PFN</code></td>
 <td style="text-align: left;"><code>PABITS-1..12</code></td>
-<td style="text-align: left;">next-table or mapped-page physical frame number</td>
+<td style="text-align: left;">next-table or mapped-leaf physical frame number</td>
 </tr>
 <tr>
 <td style="text-align: left;">software</td>
@@ -9172,12 +9174,12 @@
 </tr>
 </tbody>
 </table>
-<p>At every level above L1, P and T must both be one; D, G, and AT must be zero. At L1, P must be one and T must be zero. W, X, and U permissions are accumulated across the walk. A reserved or malformed consumed entry raises <code>PAGE_FAULT</code>. Supervisor current-domain access to a user mapping faults; the checked user-domain operations select the user-domain permission path explicitly.</p>
-<p>An <code>AT=1</code> leaf must have <code>CP=1</code> (uncacheable), <code>X=0</code>, <code>A=1</code>, and <code>D=1</code>. Any <code>AT=1</code> leaf with inconsistent attributes is a malformed PTE. Because A and D are required to be set in a valid slot leaf, an access never performs a speculative A update or a commit-time D update to that leaf.</p>
+<p>At every level above L1, a present entry may be either a <code>T=1</code> table pointer or a <code>T=0,AT=0</code> byte-addressed leaf. A table pointer must have D, G, and AT clear. At L1, a present entry must have T clear. An <code>AT=0</code> leaf at level <span class="arithmatex">\(L\)</span> must have a physical base naturally aligned to <span class="arithmatex">\(2^{12+9(L-1)}\)</span> bytes; nonzero PFN bits within that alignment make the consumed entry malformed. W, X, and U permissions are accumulated across the walk. A reserved or malformed consumed entry raises <code>PAGE_FAULT</code>. Supervisor current-domain access to a user mapping faults; the checked user-domain operations select the user-domain permission path explicitly.</p>
+<p>An <code>AT=1</code> leaf is valid only at L1 and must have <code>CP=1</code> (uncacheable), <code>X=0</code>, <code>A=1</code>, and <code>D=1</code>. Any <code>AT=1</code> leaf with inconsistent attributes is a malformed PTE. Because A and D are required to be set in a valid slot leaf, an access never performs a speculative A update or a commit-time D update to that leaf.</p>
 <p>When hardware changes A or D from zero to one, it performs a conditional 64-bit atomic read-modify-write of the complete PTE. The update sets only the required A or D bits and preserves every other bit from the current 64-bit value. It succeeds only if the translation-relevant PTE value still matches the value that was validated. If a concurrent write changes that value first, the walker must re-read and revalidate the entry; it must not write back stale PTE fields.</p>
 <p>A may be set after a structurally valid entry is consumed by a speculative walk even when the initiating instruction is later squashed or faults after that traversal. D is exact rather than speculative: a failed, squashed, permission-denied, or non-storing operation must not change D. A store or successful atomic memory update may become architecturally visible only if any required D update also succeeds. PTQUERY and VTOP retain their instruction-specific rule that they never modify A or D.</p>
 <h2 id="translation-cache-identity-and-invalidation">Translation-Cache Identity and Invalidation</h2>
-<p>A translation-cache entry is identified by the components below. PTCR <code>root_page</code> is not a hardware tag. While ASCR.AE is one, system software binds one ASID to one PTCR root and translation geometry; it completes the required shootdown before reusing that ASID for a different PTCR image. While AE is zero, the current untagged context is invalidated when PTCR changes.</p>
+<p>A translation-cache entry is identified by the components below, including the leaf-aligned linear range that it maps. PTCR <code>root_page</code> is not a hardware tag. While ASCR.AE is one, system software binds one ASID to one PTCR root and translation geometry; it completes the required shootdown before reusing that ASID for a different PTCR image. While AE is zero, the current untagged context is invalidated when PTCR changes.</p>
 <p><strong>Translation-Cache Entry Identity</strong></p>
 <table>
 <thead>
@@ -9188,7 +9190,7 @@
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><code>linear page</code></td>
+<td style="text-align: left;"><code>leaf-aligned linear mapping range</code></td>
 <td style="text-align: left;">every entry</td>
 </tr>
 <tr>
@@ -9243,8 +9245,8 @@
 </tr>
 <tr>
 <td style="text-align: left;"><code>INVPAGE</code></td>
-<td style="text-align: left;">invalidate the addressed page for the current ASID, or the current untagged context when AE is zero</td>
-<td style="text-align: left;">invalidate the addressed global page</td>
+<td style="text-align: left;">invalidate every mapping containing the addressed linear value for the current ASID, or the current untagged context when AE is zero</td>
+<td style="text-align: left;">invalidate every addressed global mapping containing that linear value</td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>INVASID</code></td>
@@ -9308,20 +9310,20 @@
 <p>A global leaf ignores ASID matching. Its PFN, accumulated permissions, <code>CP</code>, and <code>AT</code> attributes must be identical in every context in which that global entry can be used. Changing any of those attributes requires invalidating the global entry on every target logical processor.</p>
 <p>The page-table walker reads page tables as CP0 coherent normal memory. Each 64-bit PTE read observes one coherence version; it does not combine fields from different writes. An in-progress walk may complete with the old or new coherence version, so the updater does not reclaim the old mapping until the complete shootdown protocol finishes. The local invalidation instructions affect only the executing logical processor; the request and acknowledgement steps are ordinary shared-memory communication ordered by the stated release, acquire, and AFENCE operations.</p>
 <h2 id="leaf-address-types-and-access-ranges">Leaf Address Types and Access Ranges</h2>
-<p>The leaf <code>AT</code> bit selects the meaning of the low twelve linear-address bits and the memory-system address:</p>
+<p>The leaf <code>AT</code> bit selects the memory-system address. For an <code>AT=0</code> leaf at level <span class="arithmatex">\(L\)</span>, let <span class="arithmatex">\(o=12+9(L-1)\)</span>; for the L1-only <code>AT=1</code> form, <span class="arithmatex">\(o=12\)</span>:</p>
 <div class="arithmatex">\[\begin{aligned}
-\texttt{AT=0:}\quad \mathit{byte\_address} &amp;= (\mathit{PFN}\ll12)\mathbin{|}\mathit{linear}[11:0],\\
+\texttt{AT=0:}\quad \mathit{byte\_address} &amp;= (\mathit{PFN}\ll12)\mathbin{|}\mathit{linear}[o-1:0],\\
 \texttt{AT=1:}\quad \mathit{slot\_address} &amp;= (\mathit{PFN}\ll12)\mathbin{|}\mathit{linear}[11:0].
 \end{aligned}\]</div>
-<p>For <code>AT=0</code>, the low bits are a byte offset and a width-<span class="arithmatex">\(n\)</span> access covers the half-open interval <span class="arithmatex">\([a,a+n)\)</span>. For <code>AT=1</code>, the low bits are a slot index and every B, W, L, or Q access covers exactly one addressable unit, <span class="arithmatex">\([a,a+1)\)</span>. Here <span class="arithmatex">\(a\)</span> is the value at the applicable stage: EA for segment bounds, linear address for paging coverage, and byte or slot address after translation. All leaves consumed by an <code>AT=0</code> byte range must also be byte-addressed; an address-type mismatch raises <code>PAGE_FAULT</code> with cause <code>ADDRESS_TYPE</code>.</p>
+<p>For <code>AT=0</code>, the selected low bits are a byte offset and a width-<span class="arithmatex">\(n\)</span> access covers the half-open interval <span class="arithmatex">\([a,a+n)\)</span>. For <code>AT=1</code>, the low bits are a slot index and every B, W, L, or Q access covers exactly one addressable unit, <span class="arithmatex">\([a,a+1)\)</span>. Here <span class="arithmatex">\(a\)</span> is the value at the applicable stage: EA for segment bounds, linear address for paging coverage, and byte or slot address after translation. All leaves consumed by an <code>AT=0</code> byte range must also be byte-addressed; an address-type mismatch raises <code>PAGE_FAULT</code> with cause <code>ADDRESS_TYPE</code>.</p>
 <p>An <code>AT=1</code> transaction carries the slot address, transfer width, read/write direction, and write data. Width does not scale the slot address: for example, <code>Q [0]</code> and <code>Q [1]</code> select distinct slots, and <code>Q [4095]</code> remains one access to the last slot of the leaf. Slot accesses have no byte-alignment rule and no width-induced cross-page condition. Different widths at one slot remain transactions to that same slot; their device-visible relationship is defined by the applicable platform or device contract, not by normal-memory byte aliasing.</p>
 <p>Ordinary B, W, L, and Q loads and stores are valid through an <code>AT=1</code> leaf. Instruction fetch and every atomic read-modify-write through such a leaf raise <code>ADDRESS_TYPE</code>. A prefetch produces no slot transaction. A cache maintenance operation has no slot-side effect. PTQUERY and VTOP report the translation without issuing a slot transaction; VTOP returns the slot address for an <code>AT=1</code> leaf.</p>
 <p>Address type is selected before applying the alignment rule appropriate to that type. Consequently, an atomic whose starting leaf has <code>AT=1</code> raises <code>ADDRESS_TYPE</code> even when the numeric slot address would be misaligned under byte-addressed rules. <code>ATOMIC_ALIGNMENT</code> applies only after an <code>AT=0</code> leaf has been selected.</p>
 <p>A slot store retires only after the transaction is acknowledged. The ordering and completion rules for slot transactions, including AFENCE, are defined by the Memory Model.</p>
 <h2 id="multi-page-accesses">Multi-Page Accesses</h2>
-<p>For an <code>AT=0</code> byte range that intersects more than one 4-KiB linear page, translation, accumulated permission, and leaf address-type checks are resolved in increasing linear-page order. Each page’s walk reaches its existing not-present, structural-validity, and permission result before the next page is consumed. The first page in that order that fails supplies the architectural fault and walk level.</p>
-<p>Every covered page of a store is validated before any byte of the store becomes visible. A later-page translation, permission, address-type, or synchronous data-access fault leaves every destination byte and every leaf D bit unchanged. A updates completed while consuming an earlier valid entry retain the speculative-A rule and may remain set when a later page faults.</p>
-<p>Instruction-record fetch uses the same increasing-address rule for all bytes required by the encoded record. A fault on a later page completes as an instruction-fetch fault before decode or operand evaluation, while earlier instruction-cache and PTE A effects retain their ordinary rules.</p>
+<p>For an <code>AT=0</code> byte range that intersects more than one distinct leaf mapping, translation, accumulated permission, and leaf address-type checks are resolved once per mapping in increasing linear-address order. Each mapping’s walk reaches its existing not-present, structural-validity, and permission result before the next mapping is consumed. The first mapping in that order that fails supplies the architectural fault and walk level.</p>
+<p>Every covered leaf mapping of a store is validated before any byte of the store becomes visible. A later-mapping translation, permission, address-type, or synchronous data-access fault leaves every destination byte and every leaf D bit unchanged. A updates completed while consuming an earlier valid entry retain the speculative-A rule and may remain set when a later mapping faults.</p>
+<p>Instruction-record fetch uses the same increasing-address rule for all bytes required by the encoded record. A fault in a later mapping completes as an instruction-fetch fault before decode or operand evaluation, while earlier instruction-cache and PTE A effects retain their ordinary rules.</p>
 
 
 

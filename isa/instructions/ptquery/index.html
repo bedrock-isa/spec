@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Generated reference documentation for the Bedrock architecture and its ABI and C interfaces.">
+        <meta name="description" content="Reference documents for the Bedrock architecture and its ABI and C interfaces.">
       
       
       
@@ -825,14 +825,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../streaming-execution-model/" class="md-nav__link">
+      <a href="../../repeated-scalar-execution/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Streaming Execution Model
+    Repeated Scalar Execution
   
 
     
@@ -7703,14 +7703,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference-indexes-and-revision-history/" class="md-nav__link">
+      <a href="../../reference-indexes/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Reference Indexes and Revision History
+    Reference Indexes
   
 
     
@@ -9015,13 +9015,13 @@
 <p>Compute the linear address without reading the source memory and reject a noncanonical address as an unsuccessful query.</p>
 </li>
 <li>
-<p>Starting at the PTCR root, read one 64-bit PTE per level. Every preceding entry must be a valid table pointer with P, T, D, G, and AT in their required states.</p>
+<p>Starting at the PTCR root, read one 64-bit PTE per level. Every preceding entry must be a valid table pointer; a valid earlier leaf prevents traversal to a lower requested level.</p>
 </li>
 <li>
-<p>Accumulate U, W, and X permissions along the traversed path. Stop after reading the requested level, even when that requested entry is structurally malformed.</p>
+<p>Accumulate U, W, and X permissions along the traversed path. Stop after reading the requested level, even when that requested entry is structurally malformed or is a valid leaf rather than a table pointer.</p>
 </li>
 <li>
-<p>Return the raw requested PTE and set Z only when it is structurally valid. N, C, and V report the accumulated U, W, and X permissions only while Z is set.</p>
+<p>Return the raw requested PTE and set Z only when it is structurally valid as either a table pointer or a leaf at that level. N, C, and V report the accumulated U, W, and X permissions only while Z is set.</p>
 </li>
 </ol>
 <p>Failure before the requested entry is read returns zero and clears all four flags. The walk ignores PTCR.PE, does not set PTE A or D, does not modify a TLB, and does not raise <code>PAGE_FAULT</code> for walk failure.</p>
@@ -9037,7 +9037,7 @@
 <p><strong>Register field <code>d</code></strong> — Selects operand 3.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the address operand.</p>
 <p><strong>EA availability</strong></p>
-<p><strong>Allowed:</strong> Register; Memory; Immediate; EXT0</p>
+<p><strong>Allowed:</strong> Register; Memory; Immediate; Extended Descriptor</p>
 <p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>
 
 

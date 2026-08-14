@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Generated reference documentation for the Bedrock architecture and its ABI and C interfaces.">
+        <meta name="description" content="Reference documents for the Bedrock architecture and its ABI and C interfaces.">
       
       
       
@@ -907,14 +907,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../streaming-execution-model/" class="md-nav__link">
+      <a href="../repeated-scalar-execution/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Streaming Execution Model
+    Repeated Scalar Execution
   
 
     
@@ -7677,14 +7677,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference-indexes-and-revision-history/" class="md-nav__link">
+      <a href="../reference-indexes/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Reference Indexes and Revision History
+    Reference Indexes
   
 
     
@@ -8926,44 +8926,42 @@
 <h2 id="conformance-claim">Conformance Claim</h2>
 <p>A Bedrock implementation conformance claim identifies the architecture revision reported by CPUID and the CPUID feature set for the logical processor to which the claim applies. For that revision and discovered feature set, the implementation accepts and executes every architecturally valid instruction record according to its encoding, state, event, memory, and instruction-specific rules. The same claim covers the architected discovery results, save images, event frames, and reset state defined for that processor.</p>
 <h2 id="normative-material-and-specificity">Normative Material and Specificity</h2>
-<p>Architecture prose, ordered steps, generated architecture tables, instruction encoding diagrams, and the Operation and Detailed Semantics fields of instruction entries are normative unless a section explicitly identifies material as a summary, example, or validation status.</p>
+<p>Architecture prose, ordered steps, architecture tables, instruction encoding diagrams, and the Operation and Detailed Semantics fields of instruction entries are normative unless a section explicitly identifies material as a summary, example, or validation status.</p>
 <table>
 <thead>
 <tr>
-<th style="text-align: left;"><strong>Domain owner</strong></th>
-<th style="text-align: left;"><strong>Owned material</strong></th>
+<th style="text-align: left;"><strong>Rule set or provider</strong></th>
+<th style="text-align: left;"><strong>Covered material</strong></th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;">The instruction-definition layer</td>
+<td style="text-align: left;">Instruction definitions</td>
 <td style="text-align: left;">Concrete instruction encodings, operand and effective-address grammar, stable form identities, extension wiring, and document ordering.</td>
 </tr>
 <tr>
-<td style="text-align: left;">Handwritten Sail</td>
+<td style="text-align: left;"><a href="../instruction-execution-model/">Instruction Execution Model</a> common rules and instruction-entry Operation and Detailed Semantics</td>
 <td style="text-align: left;">Executable instruction behavior, architectural state transitions, fault and commit ordering, repeat and event behavior, and single-logical-processor memory-action sequencing.</td>
 </tr>
 <tr>
-<td style="text-align: left;">The formal memory model</td>
+<td style="text-align: left;">Formal memory model</td>
 <td style="text-align: left;">Permitted cross-processor ordering and visibility.</td>
 </tr>
 <tr>
-<td style="text-align: left;">ABI sources</td>
+<td style="text-align: left;">ABI specifications</td>
 <td style="text-align: left;">ELF, C ABI, and calling-convention contracts.</td>
 </tr>
 <tr>
-<td style="text-align: left;">Compiler-interface sources</td>
+<td style="text-align: left;">Compiler-interface specifications</td>
 <td style="text-align: left;">Source-language and compiler-facing target-interface contracts.</td>
 </tr>
 <tr>
 <td style="text-align: left;">External numerical floating-point providers</td>
-<td style="text-align: left;">Numerical results and certificates only; handwritten Sail validates their inputs and owns the resulting architectural trap or commit behavior.</td>
+<td style="text-align: left;">Numerical results and certificates only; input validation and the resulting architectural trap or commit behavior follow the applicable <a href="../instruction-execution-model/">Instruction Execution Model</a> common rules and instruction entry’s Operation and Detailed Semantics.</td>
 </tr>
 </tbody>
 </table>
-<p>Generated presentations and authored explanatory prose remain normative where declared but are semantically downstream of the applicable owner. Behavioral prose is traceable to handwritten Sail and cannot independently introduce observable behavior.</p>
-<p>Domain ownership selects the controlling semantic source; the specificity rules below govern narrowing without transferring ownership.</p>
-<p>The following domain rules resolve different levels of specificity:</p>
+<p>Presented material remains normative where declared and follows the applicable rule set. For executable behavior, readers apply the <a href="../instruction-execution-model/">Instruction Execution Model</a> common rules together with the applicable instruction entry’s Operation and Detailed Semantics. The following specificity rules govern narrowing among applicable rules:</p>
 <ol>
 <li>
 <p>Instruction bytes, field values, lengths, and decoding validity follow the concrete instruction form, its field constraints, and the Instruction Encoding and Effective Addressing chapters.</p>
@@ -8975,11 +8973,10 @@
 <p>Common architectural behavior follows the chapter that defines that behavior. A structure-specific rule narrows the defaults in Terminology and Compatibility.</p>
 </li>
 <li>
-<p>Summary tables, examples, and validation-status files provide navigation or verification context and do not replace a normative rule.</p>
+<p>Summary tables and examples provide navigation or explanatory context and do not replace a normative rule.</p>
 </li>
 </ol>
 <p>Two normative statements at the same specificity are required to agree. A discrepancy at that level is a specification defect and is resolved by correcting the normative sources and their derived tables together.</p>
-<p>Corrections to an owning source propagate to its downstream prose and generated presentations.</p>
 <h2 id="implementation-defined-disclosures">Implementation-Defined Disclosures</h2>
 <p>An implementation-defined selection is stable for the implementation revision named by CPUID and is published through the channel named by its defining rule. The publication identifies the selected value or behavior and the processor revisions to which it applies.</p>
 <p><strong>Implementation-Defined Disclosure Register</strong></p>
@@ -9009,7 +9006,7 @@
 </tr>
 <tr>
 <td style="text-align: left;"><code>fptransa_approximation</code></td>
-<td style="text-align: left;">FPTRANSA ULP Error Model and CPUID accuracy contracts</td>
+<td style="text-align: left;">FPTRANSA Common Model and CPUID accuracy contracts</td>
 <td style="text-align: left;">CPUID accuracy-contract discovery plus implementation documentation for the deterministic approximation</td>
 </tr>
 </tbody>

@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Generated reference documentation for the Bedrock architecture and its ABI and C interfaces.">
+        <meta name="description" content="Reference documents for the Bedrock architecture and its ABI and C interfaces.">
       
       
       
@@ -984,14 +984,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../streaming-execution-model/" class="md-nav__link">
+      <a href="../repeated-scalar-execution/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Streaming Execution Model
+    Repeated Scalar Execution
   
 
     
@@ -7754,14 +7754,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference-indexes-and-revision-history/" class="md-nav__link">
+      <a href="../reference-indexes/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Reference Indexes and Revision History
+    Reference Indexes
   
 
     
@@ -9094,7 +9094,7 @@
 <p>A <em>translated segment</em> is enabled with bounds-only mode clear. It checks the effective address as an offset within the segment span and then adds the segment base.</p>
 <p>A <em>bounds-only segment</em> is enabled with bounds-only mode set. It treats the effective address as already linear and checks only that it lies inside the segment window.</p>
 <p><em>Page-table translation</em> is the optional <code>PTCR.PE</code>-controlled stage that maps a canonical linear address to a physical frame and applies PTE permissions, cache policy, and addressing type.</p>
-<p>A <em>PFN</em> is a physical frame number. A leaf PTE combines its PFN with linear-address bits 11..0 to form a byte address when <code>AT=0</code> or a slot address when <code>AT=1</code>.</p>
+<p>A <em>PFN</em> is a physical frame number. A byte-addressed leaf PTE at level <span class="arithmatex">\(L\)</span> combines its naturally aligned PFN base with the low <span class="arithmatex">\(12+9(L-1)\)</span> linear-address bits. An L1 slot leaf combines its PFN with linear-address bits 11..0.</p>
 <h2 id="control-flow">Control Flow <a href="#section-control-flow-terminology" id="section-control-flow-terminology"></a></h2>
 <p>A <em>near control transfer</em> is a CALL, RET, JMP, or conditional branch that changes only PC within the current code-segment context.</p>
 <p>A <em>segment-changing control transfer</em> updates CS and PC in one architectural commit. Long jumps, long calls, and long returns belong to this category.</p>

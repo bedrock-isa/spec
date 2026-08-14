@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Generated reference documentation for the Bedrock architecture and its ABI and C interfaces.">
+        <meta name="description" content="Reference documents for the Bedrock architecture and its ABI and C interfaces.">
       
       
       
@@ -907,14 +907,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../streaming-execution-model/" class="md-nav__link">
+      <a href="../repeated-scalar-execution/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Streaming Execution Model
+    Repeated Scalar Execution
   
 
     
@@ -7677,14 +7677,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference-indexes-and-revision-history/" class="md-nav__link">
+      <a href="../reference-indexes/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Reference Indexes and Revision History
+    Reference Indexes
   
 
     
@@ -8924,12 +8924,12 @@
 
 <h1 id="effective-addressing-modes">Effective Addressing Modes</h1>
 <p>An effective-address field is an operand descriptor with an instruction-defined role and interpretation width. A value role reads or writes the selected register, immediate, or memory value. An address role uses a register or immediate as an address value and uses a memory-form EA as the calculated address without an initial data read. A control-target role uses a register or immediate value directly and reads an interpretation-width target from a memory form. Memory forms continue into segment pre-translation and paging.</p>
-<p>Each seven-bit compact EA field is embedded in the concrete opcode form, and all compact EA fields precede any appended EA payload bytes. Any displacement, absolute address, immediate, or EXT0 descriptor bytes are appended as EA payload bytes. Appended EA payload sequences appear in declared instruction operand order. For two payload-bearing EA operands, the opcode stream is: concrete opcode form containing EA0 and EA1 <span class="arithmatex">\(\rightarrow\)</span> complete EA0 payload sequence <span class="arithmatex">\(\rightarrow\)</span> complete EA1 payload sequence <span class="arithmatex">\(\rightarrow\)</span> any trailing padding.</p>
-<p>Multi-byte scalar EA payloads, such as displacements, absolute addresses, and immediates, are little-endian. Payload names ending in s are signed and are sign-extended before use; payload names without s are unsigned unless the consuming instruction explicitly says otherwise. EXT0 descriptor bytes appear in stream order, byte 0 first. Each descriptor byte is independently numbered from bit 7 through bit 0.</p>
+<p>Each seven-bit compact EA field is embedded in the concrete opcode form, and all compact EA fields precede any appended EA payload bytes. Any displacement, absolute address, immediate, or extended descriptor bytes are appended as EA payload bytes. Appended EA payload sequences appear in declared instruction operand order. For two payload-bearing EA operands, the opcode stream is: concrete opcode form containing EA0 and EA1 <span class="arithmatex">\(\rightarrow\)</span> complete EA0 payload sequence <span class="arithmatex">\(\rightarrow\)</span> complete EA1 payload sequence <span class="arithmatex">\(\rightarrow\)</span> any trailing padding.</p>
+<p>Multi-byte scalar EA payloads, such as displacements, absolute addresses, and immediates, are little-endian. Payload names ending in s are signed and are sign-extended before use; payload names without s are unsigned unless the consuming instruction explicitly says otherwise. Extended descriptor bytes appear in stream order, byte 0 first. Each descriptor byte is independently numbered from bit 7 through bit 0.</p>
 <p>Indexed scale is the EA interpretation width declared by the consuming form. B, W, L, and Q widths select scales 1, 2, 4, and 8. A form whose width is <code>operation_size</code> uses its selected instruction size. LEA and SEGLEA use their suffix; size-less address and control-target forms use Q.</p>
-<p>For every compact or EXT0 PC-based EA, the PC term is the architectural PC naming byte 0 of the current instruction. The PC term remains that instruction-start value throughout operand evaluation.</p>
+<p>For every compact or extended-descriptor PC-based EA, the PC term is the architectural PC naming byte 0 of the current instruction. The PC term remains that instruction-start value throughout operand evaluation.</p>
 <h2 id="compact-ea-addressing-modes">Compact EA Addressing Modes</h2>
-<p>Compact EA forms encode direct Rn and SP operands, common Rn/SP/PC memory operands, absolute memory operands, immediate operands, and the EXT0 escape.</p>
+<p>Compact EA forms encode direct Rn and SP operands, common Rn/SP/PC memory operands, absolute memory operands, immediate operands, and the EXT1 and EXT2 escapes.</p>
 <p>Compact memory forms that do not name SP or PC use the operation default data segment. SP memory forms are fixed to SS, and PC memory forms are fixed to CS.</p>
 <p><strong><code>Register Direct</code></strong></p>
 <p><code>Rn(r)</code></p>
@@ -9007,18 +9007,30 @@
 <p><strong>Update:</strong>No auto-update. Immediate forms are not valid destinations unless an instruction explicitly defines such a form.</p>
 <p><img alt="Immediate operand generation" src="../../assets/visuals/isa/effective-addressing-modes-06.svg" /></p>
 <p><strong>Immediate operand generation</strong></p>
-<p><strong><code>EXT0 Escape</code></strong></p>
-<p><code>EXT0</code></p>
-<p><code>EXT0/disp8s</code></p>
-<p><code>EXT0/disp16s</code></p>
-<p><code>EXT0/disp32s</code></p>
-<p><code>EXT0/disp64</code></p>
+<p><strong><code>EXT1 Escape</code></strong></p>
+<p><code>EXT1</code></p>
+<p><code>EXT1/disp8s</code></p>
+<p><code>EXT1/disp16s</code></p>
+<p><code>EXT1/disp32s</code></p>
+<p><code>EXT1/disp64</code></p>
 <p><strong>EA encoding:</strong> selects no displacement; 1110000, 1110001, 1110010, and 1110011 select disp8s, disp16s, disp32s, and disp64.</p>
-<p><strong>EA type:</strong>memory operand described by the appended EXT0 descriptor.</p>
-<p><strong>Generation:</strong>The EXT0 descriptor selects segment, base, index, and auto-update behavior. The compact EA escape selects only the displacement size.</p>
-<p><strong>Segment:</strong>Segment-qualified forms encode SREG SEG(s); SP and PC indexed forms use SS and CS; default base-update forms use the operation default data segment.</p>
-<p><strong>Payload:</strong>The EXT0 descriptor byte or bytes come first, followed by the optional displacement payload selected by the compact EA escape.</p>
-<p><strong>Update:</strong>Only EXT0 forms with ++ or -- update the temporary operand-evaluation image.</p>
+<p><strong>EA type:</strong>memory operand described by the appended EXT1 descriptor.</p>
+<p><strong>Generation:</strong>The one-byte EXT1 descriptor selects segment, base, and auto-update behavior. The compact EA escape selects the descriptor family and displacement size.</p>
+<p><strong>Segment:</strong>Segment-qualified forms encode SREG SEG(s); default base-update forms use the operation default data segment.</p>
+<p><strong>Payload:</strong>The one descriptor byte comes first, followed by the optional displacement payload selected by the compact EA escape.</p>
+<p><strong>Update:</strong>Only forms with ++ or -- update the temporary operand-evaluation image.</p>
+<p><strong><code>EXT2 Escape</code></strong></p>
+<p><code>EXT2</code></p>
+<p><code>EXT2/disp8s</code></p>
+<p><code>EXT2/disp16s</code></p>
+<p><code>EXT2/disp32s</code></p>
+<p><code>EXT2/disp64</code></p>
+<p><strong>EA encoding:</strong> selects no displacement; 1110101, 1110110, 1110111, and 1111000 select disp8s, disp16s, disp32s, and disp64.</p>
+<p><strong>EA type:</strong>memory operand described by the appended EXT2 descriptor.</p>
+<p><strong>Generation:</strong>The two-byte EXT2 descriptor selects segment, base, index, and auto-update behavior. The compact EA escape selects the descriptor family and displacement size.</p>
+<p><strong>Segment:</strong>Segment-qualified forms encode SREG SEG(s); SP and PC indexed forms use SS and CS.</p>
+<p><strong>Payload:</strong>The two descriptor bytes come first, followed by the optional displacement payload selected by the compact EA escape.</p>
+<p><strong>Update:</strong>Only forms with ++ or -- update the temporary operand-evaluation image.</p>
 <p><strong>Compact EA Encoding</strong></p>
 <table>
 <thead>
@@ -9164,47 +9176,77 @@
 </tr>
 <tr>
 <td style="text-align: left;"><code>1110000</code></td>
-<td style="text-align: left;"><code>EXT0/disp8s</code></td>
-<td style="text-align: left;">ext0_escape</td>
+<td style="text-align: left;"><code>EXT1/disp8s</code></td>
+<td style="text-align: left;">extended_escape</td>
 <td style="text-align: left;">-</td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>1110001</code></td>
-<td style="text-align: left;"><code>EXT0/disp16s</code></td>
-<td style="text-align: left;">ext0_escape</td>
+<td style="text-align: left;"><code>EXT1/disp16s</code></td>
+<td style="text-align: left;">extended_escape</td>
 <td style="text-align: left;">-</td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>1110010</code></td>
-<td style="text-align: left;"><code>EXT0/disp32s</code></td>
-<td style="text-align: left;">ext0_escape</td>
+<td style="text-align: left;"><code>EXT1/disp32s</code></td>
+<td style="text-align: left;">extended_escape</td>
 <td style="text-align: left;">-</td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>1110011</code></td>
-<td style="text-align: left;"><code>EXT0/disp64</code></td>
-<td style="text-align: left;">ext0_escape</td>
+<td style="text-align: left;"><code>EXT1/disp64</code></td>
+<td style="text-align: left;">extended_escape</td>
 <td style="text-align: left;">-</td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>1110100</code></td>
-<td style="text-align: left;"><code>EXT0</code></td>
-<td style="text-align: left;">ext0_escape</td>
+<td style="text-align: left;"><code>EXT1</code></td>
+<td style="text-align: left;">extended_escape</td>
+<td style="text-align: left;">-</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>1110101</code></td>
+<td style="text-align: left;"><code>EXT2/disp8s</code></td>
+<td style="text-align: left;">extended_escape</td>
+<td style="text-align: left;">-</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>1110110</code></td>
+<td style="text-align: left;"><code>EXT2/disp16s</code></td>
+<td style="text-align: left;">extended_escape</td>
+<td style="text-align: left;">-</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>1110111</code></td>
+<td style="text-align: left;"><code>EXT2/disp32s</code></td>
+<td style="text-align: left;">extended_escape</td>
+<td style="text-align: left;">-</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>1111000</code></td>
+<td style="text-align: left;"><code>EXT2/disp64</code></td>
+<td style="text-align: left;">extended_escape</td>
+<td style="text-align: left;">-</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>1111001</code></td>
+<td style="text-align: left;"><code>EXT2</code></td>
+<td style="text-align: left;">extended_escape</td>
 <td style="text-align: left;">-</td>
 </tr>
 </tbody>
 </table>
 <p><a href="#table-compact-ea-encoding" id="table-compact-ea-encoding"></a></p>
 <h2 id="extended-ea-descriptor">Extended EA Descriptor</h2>
-<p>A compact EXT0 EA value selects an extended descriptor and the displacement width. The descriptor bytes then select segment, base, index, zero-base, SP/PC indexed, and auto-update behavior.</p>
-<p>Each EXT0 descriptor selects its segment from the encoded SREG field SEG(s), the fixed SS segment for SP, the fixed CS segment for PC, or the operation’s default data segment.</p>
+<p>A compact EXT1 or EXT2 EA value selects both an exact descriptor length and the displacement width. The descriptor bytes then select segment, base, index, zero-base, SP/PC indexed, and auto-update behavior within that family.</p>
+<p>Each extended descriptor selects its segment from the encoded SREG field SEG(s), the fixed SS segment for SP, the fixed CS segment for PC, or the operation’s default data segment.</p>
 <p><img alt="Compact Effective-Address Field" src="../../assets/visuals/isa/effective-addressing-modes-07.svg" /></p>
 <p><strong>Compact Effective-Address Field</strong></p>
 <p><code>M</code> abbreviates mode, and <code>r/f</code> abbreviates register/form.</p>
-<p><img alt="EXT0 One-Byte Descriptor Forms" src="../../assets/visuals/isa/effective-addressing-modes-08.svg" /></p>
-<p><strong>EXT0 One-Byte Descriptor Forms</strong></p>
-<p><img alt="EXT0 Two-Byte Indexed Descriptor Byte Layouts" src="../../assets/visuals/isa/effective-addressing-modes-09.svg" /></p>
-<p><strong>EXT0 Two-Byte Indexed Descriptor Byte Layouts</strong></p>
+<p><img alt="EXT1 Descriptor Forms" src="../../assets/visuals/isa/effective-addressing-modes-08.svg" /></p>
+<p><strong>EXT1 Descriptor Forms</strong></p>
+<p><img alt="EXT2 Descriptor Byte Layouts" src="../../assets/visuals/isa/effective-addressing-modes-09.svg" /></p>
+<p><strong>EXT2 Descriptor Byte Layouts</strong></p>
 <p><code>M</code> abbreviates mode.</p>
 <p><strong>EA Payload Names</strong></p>
 <table>
@@ -9278,27 +9320,33 @@
 <td style="text-align: left;">immediate operand payload</td>
 </tr>
 <tr>
-<td style="text-align: left;">EXT0 descriptor</td>
-<td style="text-align: left;">1 or 2</td>
+<td style="text-align: left;">EXT1 descriptor</td>
+<td style="text-align: left;">1</td>
 <td style="text-align: left;">encoded</td>
-<td style="text-align: left;">extended EA descriptor; present only for EXT0 escapes</td>
+<td style="text-align: left;">one-byte extended EA descriptor; present only for EXT1 escapes</td>
+</tr>
+<tr>
+<td style="text-align: left;">EXT2 descriptor</td>
+<td style="text-align: left;">2</td>
+<td style="text-align: left;">encoded</td>
+<td style="text-align: left;">two-byte extended EA descriptor; present only for EXT2 escapes</td>
 </tr>
 </tbody>
 </table>
-<p>For a compact displacement, absolute address, or immediate, the selected payload follows the EA field at that operand’s payload position. EXT0 construction begins with the compact escape value in the concrete opcode form and one or two appended descriptor bytes; a displaced EXT0 form places its selected displacement after those descriptor bytes. When an instruction has more than one payload-bearing EA operand, the decoder consumes each complete appended EA payload sequence in declared instruction operand order. Each complete sequence, including any EXT0 descriptor bytes and selected displacement, ends before the next payload-bearing EA operand’s sequence begins.</p>
+<p>For a compact displacement, absolute address, or immediate, the selected payload follows the EA field at that operand’s payload position. Extended-descriptor construction begins with the compact escape value in the concrete opcode form and exactly one EXT1 or two EXT2 descriptor bytes; a displaced form places its selected displacement after those descriptor bytes. When an instruction has more than one payload-bearing EA operand, the decoder consumes each complete appended EA payload sequence in declared instruction operand order. Each complete sequence, including any extended descriptor bytes and selected displacement, ends before the next payload-bearing EA operand’s sequence begins.</p>
 <h2 id="extended-ea-addressing-modes">Extended EA Addressing Modes <a href="#section-extended-ea-addressing" id="section-extended-ea-addressing"></a></h2>
-<p>EXT0 is used when compact EA cannot express the operand: explicit segment selection, indexed addressing, zero-base addressing, SP/PC indexed addressing, or auto-update addressing.</p>
-<p>Each EXT0 form selects its segment from the encoded SREG field SEG(s), the fixed SS segment for SP, the fixed CS segment for PC, or the operation’s default data segment.</p>
-<p><strong><code>EXT0 Explicit Segment Base</code></strong></p>
+<p>EXT1 and EXT2 are used when compact EA cannot express the operand: explicit segment selection, indexed addressing, zero-base addressing, SP/PC indexed addressing, or auto-update addressing. EXT1 selects exactly one descriptor byte; EXT2 selects exactly two descriptor bytes.</p>
+<p>Each extended-descriptor form selects its segment from the encoded SREG field SEG(s), the fixed SS segment for SP, the fixed CS segment for PC, or the operation’s default data segment.</p>
+<p><strong><code>EXT1 Explicit Segment Base</code></strong></p>
 <p><code>[SEG(s):Rn(b) + displacement]</code></p>
 <p><strong>Descriptor:</strong>0sssbbbb, one byte.</p>
 <p><strong>Generation:</strong>offset = temporary Rn(b) + displacement.</p>
 <p><strong>Segment:</strong>SEG(s) selects DS, SS, or GS0..GS5.</p>
-<p><strong>Payload:</strong>One descriptor byte plus the optional displacement selected by the compact EXT0 escape.</p>
+<p><strong>Payload:</strong>One descriptor byte plus the optional displacement selected by the compact EXT1 escape.</p>
 <p><strong>Update:</strong>No auto-update.</p>
-<p><img alt="EXT0 explicit segment base" src="../../assets/visuals/isa/effective-addressing-modes-10.svg" /></p>
-<p><strong>EXT0 explicit segment base</strong></p>
-<p><strong><code>EXT0 Explicit Segment Indexed</code></strong></p>
+<p><img alt="EXT1 explicit segment base" src="../../assets/visuals/isa/effective-addressing-modes-10.svg" /></p>
+<p><strong>EXT1 explicit segment base</strong></p>
+<p><strong><code>EXT2 Explicit Segment Indexed</code></strong></p>
 <p><code>[SEG(s):Rn(b) + Rn(i) * scale + displacement]</code></p>
 <p><code>[SEG(s):Rn(b) + Rn(i)++ * scale + displacement]</code></p>
 <p><code>[SEG(s):Rn(b) + ``-``-``Rn(i) * scale + displacement]</code></p>
@@ -9306,41 +9354,41 @@
 <p><strong>Generation:</strong>offset = temporary Rn(b) + index_term * scale + displacement.</p>
 <p><strong>Segment:</strong>SEG(s) selects DS, SS, or GS0..GS5.</p>
 <p><strong>Scale:</strong>Scale is implicit in the consuming instruction. B/W/L/Q normally imply 1/2/4/8.</p>
-<p><strong>Payload:</strong>Two descriptor bytes plus the optional displacement selected by the compact EXT0 escape.</p>
+<p><strong>Payload:</strong>Two descriptor bytes plus the optional displacement selected by the compact EXT2 escape.</p>
 <p><strong>Update:</strong>Index postincrement uses the current temporary Rn(i), then increments it by one element. Index predecrement decrements temporary Rn(i) by one element before use.</p>
-<p><img alt="EXT0 explicit segment indexed" src="../../assets/visuals/isa/effective-addressing-modes-11.svg" /></p>
-<p><strong>EXT0 explicit segment indexed</strong></p>
-<p><strong><code>EXT0 Explicit Segment Zero Base</code></strong></p>
+<p><img alt="EXT2 explicit segment indexed" src="../../assets/visuals/isa/effective-addressing-modes-11.svg" /></p>
+<p><strong>EXT2 explicit segment indexed</strong></p>
+<p><strong><code>EXT1 Explicit Segment Zero Base</code></strong></p>
 <p><code>[SEG(s):0 + displacement]</code></p>
 <p><strong>Descriptor:</strong>1sss0011, one byte.</p>
 <p><strong>Generation:</strong>offset = displacement. Without a displacement payload, offset is 0.</p>
 <p><strong>Segment:</strong>SEG(s) selects DS, SS, or GS0..GS5.</p>
-<p><strong>Payload:</strong>One descriptor byte plus the optional displacement selected by the compact EXT0 escape.</p>
+<p><strong>Payload:</strong>One descriptor byte plus the optional displacement selected by the compact EXT1 escape.</p>
 <p><strong>Update:</strong>No auto-update.</p>
-<p><img alt="EXT0 zero-base address generation" src="../../assets/visuals/isa/effective-addressing-modes-12.svg" /></p>
-<p><strong>EXT0 zero-base address generation</strong></p>
-<p><strong><code>EXT0 Explicit Segment Base Auto-Update</code></strong></p>
+<p><img alt="EXT1 zero-base address generation" src="../../assets/visuals/isa/effective-addressing-modes-12.svg" /></p>
+<p><strong>EXT1 zero-base address generation</strong></p>
+<p><strong><code>EXT2 Explicit Segment Base Auto-Update</code></strong></p>
 <p><code>[SEG(s):Rn(b)++ + displacement]</code></p>
 <p><code>[SEG(s):``-``-``Rn(b) + displacement]</code></p>
 <p><strong>Descriptor:</strong>Byte 0 is <code>1sss1000</code>. Byte 1 is <code>bbbb0000</code> for base postincrement or <code>bbbb0001</code> for base predecrement.</p>
 <p><strong>Generation:</strong>offset = base_term + displacement.</p>
 <p><strong>Segment:</strong>SEG(s) selects DS, SS, or GS0..GS5.</p>
-<p><strong>Payload:</strong>Two descriptor bytes plus the optional displacement selected by the compact EXT0 escape.</p>
+<p><strong>Payload:</strong>Two descriptor bytes plus the optional displacement selected by the compact EXT2 escape.</p>
 <p><strong>Update:</strong>Base postincrement uses the current temporary Rn(b), then increments it by the memory access size. Base predecrement decrements temporary Rn(b) by the memory access size before use.</p>
-<p><img alt="EXT0 base auto-update" src="../../assets/visuals/isa/effective-addressing-modes-13.svg" /></p>
-<p><strong>EXT0 base auto-update</strong></p>
-<p><strong><code>EXT0 Explicit Segment Zero-Base Indexed</code></strong></p>
+<p><img alt="EXT2 base auto-update" src="../../assets/visuals/isa/effective-addressing-modes-13.svg" /></p>
+<p><strong>EXT2 base auto-update</strong></p>
+<p><strong><code>EXT2 Explicit Segment Zero-Base Indexed</code></strong></p>
 <p><code>[SEG(s):0 + Rn(i) * scale + displacement]</code></p>
 <p><code>[SEG(s):0 + Rn(i)++ * scale + displacement]</code></p>
 <p><code>[SEG(s):0 + ``-``-``Rn(i) * scale + displacement]</code></p>
 <p><strong>Descriptor:</strong>Byte 0 is <code>1sss1001</code>. Byte 1 is <code>0010iiii</code>, <code>0000iiii</code>, or <code>0001iiii</code> for no update, postincrement, or predecrement.</p>
 <p><strong>Generation:</strong>offset = index_term * scale + displacement.</p>
 <p><strong>Segment:</strong>SEG(s) selects DS, SS, or GS0..GS5.</p>
-<p><strong>Payload:</strong>Two descriptor bytes plus the optional displacement selected by the compact EXT0 escape.</p>
+<p><strong>Payload:</strong>Two descriptor bytes plus the optional displacement selected by the compact EXT2 escape.</p>
 <p><strong>Update:</strong>Index update follows the same one-element temporary-image rule as other indexed update forms.</p>
-<p><img alt="EXT0 zero-base indexed" src="../../assets/visuals/isa/effective-addressing-modes-14.svg" /></p>
-<p><strong>EXT0 zero-base indexed</strong></p>
-<p><strong><code>EXT0 SP/PC Indexed</code></strong></p>
+<p><img alt="EXT2 zero-base indexed" src="../../assets/visuals/isa/effective-addressing-modes-14.svg" /></p>
+<p><strong>EXT2 zero-base indexed</strong></p>
+<p><strong><code>EXT2 SP/PC Indexed</code></strong></p>
 <p><code>[SP + Rn(i) * scale + displacement]</code></p>
 <p><code>[SP + Rn(i)++ * scale + displacement]</code></p>
 <p><code>[SP + ``-``-``Rn(i) * scale + displacement]</code></p>
@@ -9350,25 +9398,23 @@
 <p><strong>Descriptor:</strong>Byte 0 is <code>10001010</code> for SP or <code>10001011</code> for PC. Byte 1 is <code>0010iiii</code>, <code>0000iiii</code>, or <code>0001iiii</code> for no update, postincrement, or predecrement.</p>
 <p><strong>Generation:</strong>offset = temporary SP or instruction-start PC + index_term * scale + displacement. A PC term names byte 0 of the current instruction.</p>
 <p><strong>Segment:</strong>SP forms are fixed to SS. PC forms are fixed to CS.</p>
-<p><strong>Payload:</strong>Two descriptor bytes plus the optional displacement selected by the compact EXT0 escape.</p>
+<p><strong>Payload:</strong>Two descriptor bytes plus the optional displacement selected by the compact EXT2 escape.</p>
 <p><strong>Update:</strong>Auto-update applies to the Rn(i) index register.</p>
-<p><img alt="EXT0 SP/PC indexed" src="../../assets/visuals/isa/effective-addressing-modes-15.svg" /></p>
-<p><strong>EXT0 SP/PC indexed</strong></p>
-<p><strong><code>EXT0 Default-Segment Base Auto-Update</code></strong></p>
+<p><img alt="EXT2 SP/PC indexed" src="../../assets/visuals/isa/effective-addressing-modes-15.svg" /></p>
+<p><strong>EXT2 SP/PC indexed</strong></p>
+<p><strong><code>EXT1 Default-Segment Base Auto-Update</code></strong></p>
 <p><code>[Rn(b)++ + displacement]</code></p>
 <p><code>[``-``-``Rn(b) + displacement]</code></p>
 <p><strong>Descriptor:</strong>1bbbb100 for base postincrement; 1bbbb101 for base predecrement. One byte.</p>
 <p><strong>Generation:</strong>offset = base_term + displacement.</p>
 <p><strong>Segment:</strong>Uses the operation default data segment.</p>
-<p><strong>Payload:</strong>One descriptor byte plus the optional displacement selected by the compact EXT0 escape.</p>
+<p><strong>Payload:</strong>One descriptor byte plus the optional displacement selected by the compact EXT1 escape.</p>
 <p><strong>Update:</strong>Postincrement uses the current temporary Rn(b), then increments it by the memory access size. Predecrement decrements temporary Rn(b) by the memory access size before use.</p>
-<p><img alt="EXT0 default-segment base auto-update" src="../../assets/visuals/isa/effective-addressing-modes-16.svg" /></p>
-<p><strong>EXT0 default-segment base auto-update</strong></p>
-<p>EA evaluation applies auto-update to a temporary operand-evaluation image. The update becomes architecturally visible only if the instruction commits.</p>
-<p>Base auto-update changes by the EA interpretation width in bytes. Index auto-update changes by one element before scaling, so the scale affects address generation but not the architectural index increment amount.</p>
+<p><img alt="EXT1 default-segment base auto-update" src="../../assets/visuals/isa/effective-addressing-modes-16.svg" /></p>
+<p><strong>EXT1 default-segment base auto-update</strong></p>
 <p>EA evaluation begins by copying the architectural registers into a temporary operand-evaluation image. Operands are then processed in instruction order. Within one EA, the base term is evaluated before the index term and then the displacement. Auto-update changes only the temporary image while operands are being evaluated. Memory reads and writes are collected as instruction side effects, and neither those effects nor the register updates become architecturally visible until the instruction commits. A fault before commit therefore leaves both register and memory state unchanged apart from the exception-entry transition.</p>
 <p>Postincrement forms use the current temporary value and update it afterward. Predecrement forms update the temporary value first and then use the result. A base register changes by the EA interpretation width in bytes; an index register changes by one element before scaling. Each REP iteration applies and commits these rules independently.</p>
-<p>Size-less address-role forms INVPAGE, FLSHDCACHE, INVDCACHE, INVICACHE, WRBKDCACHE, SYNCCACHE, PREFETCH, PREFETCHNT, PTQUERY, SAVE, and RESTORE have Q interpretation width. Size-less control-target forms DJcc, IJcc, LCALL, and LJMP also have Q interpretation width. Their EXT0 index scale is eight and their base predecrement or postincrement amount is eight. Cache range loops advance their explicit address by the CPUID maintenance granule, independently of this per-EA update amount.</p>
+<p>Size-less address-role forms INVPAGE, FLSHDCACHE, INVDCACHE, INVICACHE, WRBKDCACHE, SYNCCACHE, PREFETCH, PREFETCHNT, PTQUERY, SAVE, and RESTORE have Q interpretation width. Size-less control-target forms DJcc, IJcc, LCALL, and LJMP also have Q interpretation width. Their extended-descriptor index scale is eight and their base predecrement or postincrement amount is eight. Cache range loops advance their explicit address by the CPUID maintenance granule, independently of this per-EA update amount.</p>
 <p>When one register supplies both terms in <code>[R1 + R1++ * scale]</code>, the base and index terms use the same current temporary R1 before the index update. In <code>[R1 + ``-``-``R1 * scale]</code>, the base uses the current value; the index term then decrements temporary R1 and uses the updated value.</p>
 
 

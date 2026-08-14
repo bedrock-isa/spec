@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Generated reference documentation for the Bedrock architecture and its ABI and C interfaces.">
+        <meta name="description" content="Reference documents for the Bedrock architecture and its ABI and C interfaces.">
       
       
       
@@ -825,14 +825,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../streaming-execution-model/" class="md-nav__link">
+      <a href="../../repeated-scalar-execution/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Streaming Execution Model
+    Repeated Scalar Execution
   
 
     
@@ -7703,14 +7703,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference-indexes-and-revision-history/" class="md-nav__link">
+      <a href="../../reference-indexes/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Reference Indexes and Revision History
+    Reference Indexes
   
 
     
@@ -9010,7 +9010,7 @@
 </tbody>
 </table>
 <p>The source address is checked for canonicality before the page-table walk. The walk begins at the PTCR root and follows the active LA48 or LA57 hierarchy using the virtual page number.</p>
-<p>Every nonleaf entry must be a valid table pointer. U, W, and X are accumulated across the walk. A valid L1 leaf supplies the physical frame number, which is combined with the original 12-bit page offset. Success sets Z and reports effective U, W, and X in N, C, and V. Any canonicality or walk failure returns zero and clears all four flags without raising <code>PAGE_FAULT</code>, setting PTE A or D, or modifying the TLB.</p>
+<p>Every continuing entry must be a valid table pointer. U, W, and X are accumulated across the walk. A valid byte-addressed leaf at level <span class="arithmatex">\(L\)</span> terminates the walk and combines its naturally aligned physical base with the original low <span class="arithmatex">\(12+9(L-1)\)</span> address bits; an L1 slot leaf retains its 12-bit slot index. Success sets Z and reports effective U, W, and X in N, C, and V. Any canonicality or walk failure returns zero and clears all four flags without raising <code>PAGE_FAULT</code>, setting PTE A or D, or modifying the TLB.</p>
 <h2 id="instruction-forms">Instruction Forms</h2>
 <p><strong><code>VTOP Rn(v), Rn(p)</code></strong></p>
 <p><em>Encoding class: long; required bytes: 4 bytes; privilege: supervisor</em></p>

@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Generated reference documentation for the Bedrock architecture and its ABI and C interfaces.">
+        <meta name="description" content="Reference documents for the Bedrock architecture and its ABI and C interfaces.">
       
       
       
@@ -951,14 +951,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../streaming-execution-model/" class="md-nav__link">
+      <a href="../repeated-scalar-execution/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Streaming Execution Model
+    Repeated Scalar Execution
   
 
     
@@ -7721,14 +7721,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference-indexes-and-revision-history/" class="md-nav__link">
+      <a href="../reference-indexes/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Reference Indexes and Revision History
+    Reference Indexes
   
 
     
@@ -9015,8 +9015,8 @@
 <p>The integer programming model exposes sixteen 64-bit Rn registers, R0 through R15. Instruction forms use these registers for integer values, addresses, counters, selectors, and temporary data.</p>
 <p>SP and PC are special architectural registers outside the four-bit Rn namespace. SP-relative memory forms use SS by default; PC-relative memory forms use CS by default.</p>
 <p>CS, DS, SS, and GS0 through GS5 are 64-bit architectural segment registers. Segment-qualified EA forms select them explicitly, while SP and PC forms omit the segment field because their segment association is fixed.</p>
-<p><img alt="User Programming Model" src="../../assets/visuals/isa/programming-model-01.svg" /></p>
-<p><strong>User Programming Model</strong></p>
+<p><img alt="Architectural Register Model" src="../../assets/visuals/isa/programming-model-01.svg" /></p>
+<p><strong>Architectural Register Model</strong></p>
 <h2 id="flags-and-status-registers">FLAGS and STATUS Registers <a href="#section-state-register-formats" id="section-state-register-formats"></a></h2>
 <p>FLAGS and STATUS are accessed through dedicated read/write instructions.</p>
 <p><img alt="FLAGS Register Format" src="../../assets/visuals/isa/programming-model-02.svg" /></p>

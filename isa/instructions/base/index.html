@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Generated reference documentation for the Bedrock architecture and its ABI and C interfaces.">
+        <meta name="description" content="Reference documents for the Bedrock architecture and its ABI and C interfaces.">
       
       
       
@@ -825,14 +825,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../streaming-execution-model/" class="md-nav__link">
+      <a href="../../repeated-scalar-execution/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Streaming Execution Model
+    Repeated Scalar Execution
   
 
     
@@ -7601,14 +7601,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference-indexes-and-revision-history/" class="md-nav__link">
+      <a href="../../reference-indexes/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Reference Indexes and Revision History
+    Reference Indexes
   
 
     
@@ -8826,7 +8826,7 @@
 
 <h1 id="general-instructions">General Instructions</h1>
 <h2 id="summary">Summary</h2>
-<p><strong>General Instructions Summary</strong></p>
+<p><strong>General Instructions Summary (Informative)</strong></p>
 <table>
 <thead>
 <tr>
@@ -9081,7 +9081,7 @@
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../invpage/"><code>INVPAGE</code></a></td>
-<td style="text-align: left;">Invalidate TLB entry for linear page.</td>
+<td style="text-align: left;">Invalidate TLB mapping containing a linear address.</td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../invtlb/"><code>INVTLB</code></a></td>
@@ -9209,7 +9209,7 @@
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../prefetch/"><code>PREFETCH</code></a></td>
-<td style="text-align: left;">Hint that EA will be read soon; no architectural fault unless policy says otherwise.</td>
+<td style="text-align: left;">Hints that EA will be read soon; faults only under the configured prefetch-fault policy.</td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../prefetchnt/"><code>PREFETCHNT</code></a></td>
@@ -9289,7 +9289,7 @@
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../save/"><code>SAVE</code></a></td>
-<td style="text-align: left;">Save modified processor state to a CPUID-defined save area.</td>
+<td style="text-align: left;">Saves processor state to a CPUID-defined save area.</td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../sbb/"><code>SBB</code></a></td>
@@ -9345,7 +9345,7 @@
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../test/"><code>TEST</code></a></td>
-<td style="text-align: left;">Computes a comparison result and updates condition codes without storing the temporary value.</td>
+<td style="text-align: left;">Computes a bitwise conjunction and updates condition codes without storing the temporary value.</td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../testjcc/"><code>TESTJcc</code></a></td>
@@ -9361,7 +9361,7 @@
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../wait/"><code>WAIT</code></a></td>
-<td style="text-align: left;">Pause execution for a finite implementation-selected interval.</td>
+<td style="text-align: left;">Permits a finite implementation-selected delay, including zero.</td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../wfence/"><code>WFENCE</code></a></td>

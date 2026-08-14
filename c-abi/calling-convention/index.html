@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Generated reference documentation for the Bedrock architecture and its ABI and C interfaces.">
+        <meta name="description" content="Reference documents for the Bedrock architecture and its ABI and C interfaces.">
       
       
       
@@ -821,14 +821,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../isa/streaming-execution-model/" class="md-nav__link">
+      <a href="../../isa/repeated-scalar-execution/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Streaming Execution Model
+    Repeated Scalar Execution
   
 
     
@@ -7591,14 +7591,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../isa/reference-indexes-and-revision-history/" class="md-nav__link">
+      <a href="../../isa/reference-indexes/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Reference Indexes and Revision History
+    Reference Indexes
   
 
     
@@ -9039,7 +9039,7 @@
 <p><img alt="Near-call stack frame at callee entry" src="../../assets/visuals/c-abi/calling-convention-01.svg" /></p>
 <p><strong>Near-call stack frame at callee entry</strong></p>
 <h2 id="frame-pointer">Frame Pointer</h2>
-<p>Frame pointers are omitted by default. When a function elects to keep a frame pointer, it uses <code>R15</code>. R15 is callee-saved and is used as the frame pointer when a function elects to maintain one.</p>
+<p>A function that maintains a frame pointer uses callee-saved <code>R15</code>. Frame pointers are otherwise omitted.</p>
 <h2 id="dwarf-register-numbering-and-unwind">DWARF Register Numbering and Unwind</h2>
 <p><strong>Bedrock DWARF Register Numbers</strong></p>
 <table>

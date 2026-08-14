@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Generated reference documentation for the Bedrock architecture and its ABI and C interfaces.">
+        <meta name="description" content="Reference documents for the Bedrock architecture and its ABI and C interfaces.">
       
       
       
@@ -825,14 +825,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../streaming-execution-model/" class="md-nav__link">
+      <a href="../../repeated-scalar-execution/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Streaming Execution Model
+    Repeated Scalar Execution
   
 
     
@@ -7690,14 +7690,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference-indexes-and-revision-history/" class="md-nav__link">
+      <a href="../../reference-indexes/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Reference Indexes and Revision History
+    Reference Indexes
   
 
     
@@ -8948,8 +8948,7 @@
 
 <h1 id="reading-an-instruction-description">Reading an Instruction Description</h1>
 <h2 id="entry-organization">Entry Organization</h2>
-<p>Each instruction entry presents its normative Operation, then Assembler Syntax, Attributes, and structured status metadata. Detailed Semantics follows when more space is needed, before the concrete encoding forms. Brief, non-normative summaries appear only in the instruction-set summary tables. Each mnemonic begins on a new page so its form diagrams, field explanations, and side-effect text stay together as one reference unit.</p>
-<p>Operation and Detailed Semantics are handwritten projections of the executable behavior owned by the handwritten Sail model. They must be traceable to that model and cannot independently introduce an observable state transition, fault, commit, repeat, event, or memory action.</p>
+<p>Each instruction entry presents its Operation, then Assembler Syntax, Attributes, and structured status metadata. Detailed Semantics follows when more space is needed, before the concrete encoding forms. Brief summaries appear only in the instruction-set summary tables. Each mnemonic begins on a new page so its form diagrams, field explanations, and side-effect text stay together as one reference unit.</p>
 <h2 id="mnemonics-and-suffixes">Mnemonics and Suffixes</h2>
 <p>The B, W, L, and Q suffixes select 8-, 16-, 32-, and 64-bit integer sizes; S and D select 32- and 64-bit floating-point scalar sizes where defined.</p>
 <p>When an instruction form encodes a size selector z, its definition maps z to the suffix set shown for that form. A mnemonic without a size suffix has a single architecturally defined size or no data-size operand. Conditional mnemonic forms use the condition names listed in the Flags and Condition Codes chapter.</p>
@@ -8960,7 +8959,7 @@
 <p>In instruction pseudocode, Operand Read applies the addressing mode and operation size. Operand Write stores the selected-size result; a sub-Q Rn write preserves upper bits unless the instruction defines another rule. EA Address computes an address without reading memory. A control-target memory form reads its declared-width target, while a control-target register or immediate form supplies the target value directly. A selector may name an Rn register, a segment register, or an encoded immediate. FLAGS ZNCV refers to the integer Z, N, C, and V bits, while FFLAGS names the accrued floating-point exception and status bits.</p>
 <h2 id="encoding-forms">Encoding Forms</h2>
 <p>In an encoding diagram, fixed 0 and 1 fields identify opcode bits, and the notes below decode lettered fields. An \&lt;ea&gt; field is the compact effective-address field and may append EA payload bytes in operand order.</p>
-<p>Concrete forms, operand and effective-address grammar, stable form identities, and size selectors are owned by the instruction-definition layer. Explanatory encoding text does not define another encoding.</p>
+<p>In each instruction entry, Encoding Forms presents the concrete forms, operand and effective-address grammar, stable form identities, and size selectors.</p>
 <p>For an extended encoding, the four-bit L field selects a 3+L-byte instruction record. The required-byte count is the space consumed by the opcode and selected operand payloads. Every larger encoded length through 18 bytes is valid and the trailing bytes are uninterpreted padding. The <code>LEN n,</code> spelling records an explicit total length.</p>
 
 

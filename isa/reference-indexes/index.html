@@ -6,15 +6,15 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Generated reference documentation for the Bedrock architecture and its ABI and C interfaces.">
+        <meta name="description" content="Reference documents for the Bedrock architecture and its ABI and C interfaces.">
       
       
       
       
-        <link rel="prev" href="../memory-model/">
+        <link rel="prev" href="../instructions/ftwotoxa/">
       
       
-        <link rel="next" href="../system-programming/">
+        <link rel="next" href="../../elf-abi/">
       
       
         
@@ -25,7 +25,7 @@
     
     
       
-        <title>Streaming Execution Model - Bedrock Architecture</title>
+        <title>Reference Indexes - Bedrock Architecture</title>
       
     
     
@@ -66,7 +66,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#streaming-execution-model" class="md-skip">
+        <a href="#reference-indexes" class="md-skip">
           Skip to content
         </a>
       
@@ -102,7 +102,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Streaming Execution Model
+              Reference Indexes
             
           </span>
         </div>
@@ -576,8 +576,6 @@
                 
   
   
-    
-  
   
   
     
@@ -607,11 +605,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_1_3" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_1_3" >
         
           
           <div class="md-nav__link md-nav__container">
@@ -639,7 +637,7 @@
             
           </div>
         
-        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_1_3_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_1_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_2_1_3">
             <span class="md-nav__icon md-icon"></span>
             
@@ -824,44 +822,17 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Streaming Execution Model
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../repeated-scalar-execution/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Streaming Execution Model
+    Repeated Scalar Execution
   
 
     
@@ -870,70 +841,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#architectural-scalar-semantics" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Architectural Scalar Semantics
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#repeat-syntax-and-body-eligibility" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Repeat Syntax and Body Eligibility
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#counter-condition-and-control-rules" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Counter, Condition, and Control Rules
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#fault-and-restart-semantics" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Fault and Restart Semantics
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1143,6 +1050,8 @@
                 
   
   
+    
+  
   
   
     
@@ -1162,11 +1071,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_1_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_1_5" checked>
         
           
           <div class="md-nav__link md-nav__container">
@@ -1194,7 +1103,7 @@
             
           </div>
         
-        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_1_5_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_1_5_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_2_1_5">
             <span class="md-nav__icon md-icon"></span>
             
@@ -7685,17 +7594,44 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../reference-indexes-and-revision-history/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference Indexes
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
   <span class="md-ellipsis">
     
   
-    Reference Indexes and Revision History
+    Reference Indexes
   
 
     
@@ -7704,6 +7640,70 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#canonical-field-names" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Canonical Field Names
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#architectural-state-index" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architectural State Index
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#architectural-event-index" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architectural Event Index
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cpuid-feature-index" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CPUID Feature Index
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -8884,10 +8884,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#architectural-scalar-semantics" class="md-nav__link">
+  <a href="#canonical-field-names" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Architectural Scalar Semantics
+        Canonical Field Names
       
     </span>
   </a>
@@ -8895,10 +8895,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#repeat-syntax-and-body-eligibility" class="md-nav__link">
+  <a href="#architectural-state-index" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Repeat Syntax and Body Eligibility
+        Architectural State Index
       
     </span>
   </a>
@@ -8906,10 +8906,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#counter-condition-and-control-rules" class="md-nav__link">
+  <a href="#architectural-event-index" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Counter, Condition, and Control Rules
+        Architectural Event Index
       
     </span>
   </a>
@@ -8917,10 +8917,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#fault-and-restart-semantics" class="md-nav__link">
+  <a href="#cpuid-feature-index" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Fault and Restart Semantics
+        CPUID Feature Index
       
     </span>
   </a>
@@ -8944,38 +8944,840 @@
 
 
 
-<h1 id="streaming-execution-model">Streaming Execution Model</h1>
-<p>This section defines the architectural role of repeated scalar execution in Bedrock. The architecture exposes scalar register state and bounded repeated instruction forms.</p>
-<h2 id="architectural-scalar-semantics">Architectural Scalar Semantics</h2>
-<p>REP, REPcc, REPG, and any explicitly defined repeat instruction are architecturally scalar. Their visible behavior is the same as executing the repeated instruction or byte-counted instruction group in program order under the selected counter and termination rules. The architectural counter, FLAGS image, memory effects, and auto-update register effects are observed as if each committed iteration completed before the next one began.</p>
-<p>The body is decoded when repeat state is entered and remains fixed for that repeat context. Each iteration evaluates register and memory operands by the body’s ordinary rules, including the normal scalar effects of auto-update effective addresses. FLAGS and FFLAGS follow the body’s instruction semantics and any repeat-specific accumulation rule. Faults remain precise at the repeated-operation boundary.</p>
-<h2 id="repeat-syntax-and-body-eligibility">Repeat Syntax and Body Eligibility</h2>
-<p>The accepted spellings are:</p>
-<ul>
-<li>
-<p><code>REPcc Rn, (&lt;instruction&gt;)</code></p>
-</li>
-<li>
-<p><code>REP Rn, (&lt;instruction&gt;)</code></p>
-</li>
-<li>
-<p><code>REPG Rn, { &lt;instruction&gt;... }</code></p>
-</li>
-<li>
-<p><code>REPGF Rn, { &lt;instruction&gt;... }</code>, an assembler-only spelling that emits REPG after applying the additional eligibility checks described below</p>
-</li>
-</ul>
-<p>The processor decodes the body and checks its repeat eligibility before applying any zero-based termination rule. A malformed or unavailable body therefore faults even when the selected register is zero. Once a valid body has passed those checks, a zero captured count annuls REP or REPcc without architectural side effects. REPG has no entry zero-count annul; it begins the group and applies its live loop-control rule only at a successful group boundary.</p>
-<p>REPGF is an assembler-checked spelling that emits REPG after applying the additional body-eligibility checks. The assembler accepts only candidate bodies that do not write the selected loop-control register. The emitted encoding, decoded operation, and repeat-continuation state are identical to REPG.</p>
-<h2 id="counter-condition-and-control-rules">Counter, Condition, and Control Rules</h2>
-<p>Entering REP or REPcc state captures the selected Rn value as an unsigned remaining count. Each successfully committed iteration decrements that captured count. A condition-false REPcc iteration still commits its body and performs the decrement before repeat state is cleared. A valid zero count performs no body side effects after decoding and eligibility checks complete.</p>
-<p>During REP and REPcc, a body read of the selected counter register observes the iteration-start architectural value, while a body write to that register is ignored. REPG instead uses the selected architectural Rn as its live unsigned loop-control value and captures no separate remaining count. REPG executes reads and writes of that register in normal in-group program order. At each successful whole-group boundary, it examines the current value after all body writes. If the value is zero, REPG leaves it unchanged and exits. Otherwise, REPG first decrements it by one and then uses the resulting value to select the next action: zero exits, while nonzero continues at the group start. This guarded decrement and resulting-value decision form the group-boundary state transition. When the body does not write the register, an initial zero executes one iteration and an initial positive value N executes exactly N iterations; both cases leave zero. Any body write controls the boundary reached by that iteration, so writing either zero or one terminates at that boundary. The checked REPGF spelling rejects such a write at assembly time.</p>
-<p>The <code>REPcc observation</code> attribute in every REPcc-capable instruction description specifies the input used for the condition test. A <code>flags</code> observation uses the complete post-body FLAGS image. A <code>result:operand</code> or <code>source:operand</code> observation derives logical Z from whether the selected-width value is zero, N from its most significant bit, and C and V as zero. These logical flags do not change architectural FLAGS. The observed value is captured before repeat counter-destination suppression. The first condition test occurs after the first body iteration. Body commit, condition capture, counter decrement, and continuation-PC selection form one precise architectural commit step. REP is the unconditional T-condition spelling, and F is reserved for REPcc.</p>
-<p>A repeat body may not contain another repeat operation, a repeat-control instruction, or a control transfer. While repetition is active, PC names the current body instruction, and the initially decoded instruction or group remains fixed. Handler entry saves repeat state in FRAME_EXT1 and clears the active architectural repeat state; ERET restores that state atomically with the saved PC and control state. TF and RF apply to the trace units defined by the Event Priority and Debug Trace subsection.</p>
-<h2 id="fault-and-restart-semantics">Fault and Restart Semantics</h2>
-<p>A fault during repeated execution preserves committed work and saves the state needed to resume or emulate the remainder. Event entry records the active repeat context in FRAME_EXT1 and clears active repeat state. The Repeat Continuation subsection of the Architectural Event Processing Model defines the saved format and ERET restoration.</p>
-<p>REP and REPcc atomically commit the one-instruction body, repeat-observed condition, counter decrement, and continuation-PC selection. If the body faults, that iteration does not commit and the fault is reported at the body instruction. Every committed iteration decrements the counter, including a condition-false iteration that terminates REPcc; earlier iterations remain committed.</p>
-<p>For REPG, the unsigned body byte count must describe a group that ends on an instruction boundary. Instructions in the group commit in program order. If an instruction faults, earlier completed instructions in the current group iteration remain committed and later instructions do not execute. The fault is reported at the faulting instruction; the live loop-control register retains every committed body effect, but the group-boundary state transition does not occur for the incomplete group iteration. The saved PC and repeat continuation retain the information required to reconstruct the group and continue the remaining work.</p>
+<h1 id="reference-indexes">Reference Indexes</h1>
+<p><a href="#section-reference-indexes" id="section-reference-indexes"></a></p>
+<p>These indexes provide page references to architectural definitions and instruction entries.</p>
+<h2 id="canonical-field-names">Canonical Field Names</h2>
+<p>The following spellings are canonical within the named owner. A one-letter field is interpreted in its owner or instruction-form context.</p>
+<p><strong>Canonical Field Names</strong></p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Owner</strong></th>
+<th style="text-align: left;"><strong>Canonical fields</strong></th>
+<th style="text-align: left;"><strong>Normative definition</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>FLAGS</code></td>
+<td style="text-align: left;"><code>Z</code>, <code>N</code>, <code>C</code>, <code>V</code></td>
+<td style="text-align: left;"><a href="../programming-model/#section-state-register-formats">definition</a> (p. )</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>STATUS</code></td>
+<td style="text-align: left;"><code>IE</code>, <code>PM</code>, <code>RF</code>, <code>TF</code>, <code>NI</code>, <code>EA</code></td>
+<td style="text-align: left;"><a href="../programming-model/#section-state-register-formats">definition</a> (p. )</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>PTCR</code></td>
+<td style="text-align: left;"><code>root_page</code>, <code>PABITS_SEL</code>, <code>LA57</code>, <code>PE</code></td>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers">definition</a> (p. )</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>ASCR</code></td>
+<td style="text-align: left;"><code>ASID</code>, <code>AE</code></td>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers">definition</a> (p. )</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>ECR</code></td>
+<td style="text-align: left;"><code>MAX_EDEPTH</code>, <code>NMI_P</code>, <code>V</code></td>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers">definition</a> (p. )</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>URCTL</code></td>
+<td style="text-align: left;"><code>V</code>, <code>STATUS</code>, <code>FLAGS</code></td>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers">definition</a> (p. )</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>PMC</code></td>
+<td style="text-align: left;"><code>EN</code></td>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers">definition</a> (p. )</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>PTE</code></td>
+<td style="text-align: left;"><code>P</code>, <code>W</code>, <code>X</code>, <code>U</code>, <code>G</code>, <code>A</code>, <code>D</code>, <code>AT</code>, <code>CP</code>, <code>SW0</code>, <code>T</code>, <code>PFN</code></td>
+<td style="text-align: left;"><a href="../memory-address-translation/#section-page-table-entry-format">definition</a> (p. )</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>instruction_header</code></td>
+<td style="text-align: left;"><code>L</code></td>
+<td style="text-align: left;"><a href="../instruction-encoding/#section-instruction-header-formats">definition</a> (p. )</td>
+</tr>
+</tbody>
+</table>
+<h2 id="architectural-state-index">Architectural State Index</h2>
+<p>Reader and writer columns identify the architectural interfaces or execution classes that access each state group. Reset values are the architectural reset values for each state group.</p>
+<p><strong>Architectural State Index</strong></p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>State</strong></th>
+<th style="text-align: left;"><strong>Fields</strong></th>
+<th style="text-align: left;"><strong>Readers</strong></th>
+<th style="text-align: left;"><strong>Writers</strong></th>
+<th style="text-align: left;"><strong>Reset</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-register-model"><code>R0``-``-``R15</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;">Rn source operands and effective-address base or index terms</td>
+<td style="text-align: left;">writable Rn destinations and effective-address auto-update</td>
+<td style="text-align: left;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-register-model"><code>SP</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;">stack operations and SP-relative effective addresses</td>
+<td style="text-align: left;">stack operations and writable SP destinations</td>
+<td style="text-align: left;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-register-model"><code>PC</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;">instruction fetch and PC-relative effective addresses</td>
+<td style="text-align: left;">control transfers, event return, and RESET</td>
+<td style="text-align: left;">BOOTPC</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-segment-registers"><code>CS</code>, <code>DS</code>, <code>SS</code>, <code>GS0</code>, <code>GS1</code>, <code>GS2</code>, <code>GS3</code>, <code>GS4</code>, <code>GS5</code></a> (p. )</td>
+<td style="text-align: left;"><code>base_page</code>, <code>e</code>, <code>m</code>, <code>b</code></td>
+<td style="text-align: left;">segment pre-translation, RDSEG, fixed CS reads, and SAVE</td>
+<td style="text-align: left;">WRSEG, segment-changing control transfers, event return, and RESTORE</td>
+<td style="text-align: left;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-state-register-formats"><code>FLAGS</code>, <code>STATUS</code></a> (p. )</td>
+<td style="text-align: left;"><code>Z</code>, <code>N</code>, <code>C</code>, <code>V</code>, <code>IE</code>, <code>PM</code>, <code>RF</code>, <code>TF</code>, <code>NI</code>, <code>EA</code></td>
+<td style="text-align: left;">condition evaluation, RDFLAGS, RDSTATUS, event entry, and SAVE</td>
+<td style="text-align: left;">instruction flag results, WRFLAGS, WRSTATUS, event transitions, and RESTORE</td>
+<td style="text-align: left;"><code>FLAGS</code>: 0; <code>STATUS</code>: PM=1; all other STATUS bits 0</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-floating-point-register-model"><code>F0``-``-``F15</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;">floating-point source operands and SAVE</td>
+<td style="text-align: left;">floating-point destinations and RESTORE</td>
+<td style="text-align: left;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-state-register-formats"><code>FFLAGS</code>, <code>FSTATUS</code></a> (p. )</td>
+<td style="text-align: left;"><code>NV</code>, <code>DZ</code>, <code>OF</code>, <code>UF</code>, <code>NX</code>, <code>NV_EN</code>, <code>DZ_EN</code>, <code>OF_EN</code>, <code>UF_EN</code>, <code>NX_EN</code>, <code>RM</code>, <code>FTZ</code>, <code>DAZ</code>, <code>DN</code></td>
+<td style="text-align: left;">floating-point execution, dedicated reads, and SAVE</td>
+<td style="text-align: left;">floating-point results, dedicated writes, RESET, and RESTORE</td>
+<td style="text-align: left;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-performance-counter-discovery"><code>CYCLE</code>, <code>INSTRET</code>, <code>PTWALK</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;">RDPMC</td>
+<td style="text-align: left;">architecturally defined counter increment events and RESET</td>
+<td style="text-align: left;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>PTCR</code></a> (p. )</td>
+<td style="text-align: left;"><code>root_page</code>, <code>PABITS_SEL</code>, <code>LA57</code>, <code>PE</code></td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>ASCR</code></a> (p. )</td>
+<td style="text-align: left;"><code>ASID</code>, <code>AE</code></td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>ECR</code></a> (p. )</td>
+<td style="text-align: left;"><code>MAX_EDEPTH</code>, <code>NMI_P</code>, <code>V</code></td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>SPC</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>SCS</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>SDS</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>URPC</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>URSP</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>URCS</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>URDS</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>URSS</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>URCTL</code></a> (p. )</td>
+<td style="text-align: left;"><code>V</code>, <code>STATUS</code>, <code>FLAGS</code></td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>EPC</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>ECS</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>EDS</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>SSS</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>SSP</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>ISS</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>ISP</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>FSS</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>FSP</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>DSS</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>DSP</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>BOOTPC</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;">platform supplied on cold reset; preserved by warm RESET</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>BOOTCFG</code></a> (p. )</td>
+<td style="text-align: left;">–</td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;">platform supplied on cold reset; preserved by warm RESET</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../programming-model/#section-control-registers"><code>PMC</code></a> (p. )</td>
+<td style="text-align: left;"><code>EN</code></td>
+<td style="text-align: left;"><code>RDCR</code></td>
+<td style="text-align: left;"><code>WRCR</code> and named architectural transitions</td>
+<td style="text-align: left;">0</td>
+</tr>
+</tbody>
+</table>
+<h2 id="architectural-event-index">Architectural Event Index</h2>
+<p><strong>Architectural Event Index</strong></p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Code</strong></th>
+<th style="text-align: left;"><strong>Event</strong></th>
+<th style="text-align: left;"><strong>Producer</strong></th>
+<th style="text-align: left;"><strong>Priority</strong></th>
+<th style="text-align: left;"><strong>Frame</strong></th>
+<th style="text-align: left;"><strong>Definition</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>EXC:00</code></td>
+<td style="text-align: left;"><code>DEBUG_TRACE</code></td>
+<td style="text-align: left;">completion of a TF-selected trace unit</td>
+<td style="text-align: left;"><code>5</code></td>
+<td style="text-align: left;"><code>BASIC</code></td>
+<td style="text-align: left;"><a href="../architectural-event-processing-model/#section-event-code-and-sources">definition</a> (p. )</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>EXC:02</code></td>
+<td style="text-align: left;"><code>BREAKPOINT</code></td>
+<td style="text-align: left;"><a href="../instructions/bkpt/"><code>BKPT</code></a></td>
+<td style="text-align: left;"><code>4</code></td>
+<td style="text-align: left;"><code>BASIC</code></td>
+<td style="text-align: left;"><a href="../architectural-event-processing-model/#section-event-code-and-sources">definition</a> (p. )</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>EXC:03</code></td>
+<td style="text-align: left;"><code>ILLEGAL_INSTRUCTION</code></td>
+<td style="text-align: left;">decode or instruction-validity check; <a href="../instructions/divmods/"><code>DIVMODS</code></a>, <a href="../instructions/divmodu/"><code>DIVMODU</code></a>, <a href="../instructions/fsincosa/"><code>FSINCOSA</code></a>, <a href="../instructions/illegal/"><code>ILLEGAL</code></a></td>
+<td style="text-align: left;"><code>3</code></td>
+<td style="text-align: left;"><code>ERROR</code></td>
+<td style="text-align: left;"><a href="../architectural-event-processing-model/#section-event-code-and-sources">definition</a> (p. )</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>EXC:08</code></td>
+<td style="text-align: left;"><code>PRIVILEGE_FAULT</code></td>
+<td style="text-align: left;">privilege check</td>
+<td style="text-align: left;"><code>3</code></td>
+<td style="text-align: left;"><code>BASIC</code></td>
+<td style="text-align: left;"><a href="../architectural-event-processing-model/#section-event-code-and-sources">definition</a> (p. )</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>EXC:09</code></td>
+<td style="text-align: left;"><code>PAGE_FAULT</code></td>
+<td style="text-align: left;">segment, translation, access, or atomic-alignment check</td>
+<td style="text-align: left;"><code>3</code></td>
+<td style="text-align: left;"><code>PAGE_FAULT</code></td>
+<td style="text-align: left;"><a href="../architectural-event-processing-model/#section-event-code-and-sources">definition</a> (p. )</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>EXC:0a</code></td>
+<td style="text-align: left;"><code>DIVIDE_ERROR</code></td>
+<td style="text-align: left;">integer divide operation; <a href="../instructions/divmods/"><code>DIVMODS</code></a>, <a href="../instructions/divmodu/"><code>DIVMODU</code></a>, <a href="../instructions/divs/"><code>DIVS</code></a>, <a href="../instructions/divu/"><code>DIVU</code></a>, <a href="../instructions/mods/"><code>MODS</code></a>, <a href="../instructions/modu/"><code>MODU</code></a></td>
+<td style="text-align: left;"><code>3</code></td>
+<td style="text-align: left;"><code>ERROR</code></td>
+<td style="text-align: left;"><a href="../architectural-event-processing-model/#section-event-code-and-sources">definition</a> (p. )</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>EXC:0d</code></td>
+<td style="text-align: left;"><code>INVALID_CONTROL_STATE</code></td>
+<td style="text-align: left;">control-state validation; <a href="../instructions/eret/"><code>ERET</code></a>, <a href="../instructions/syscall/"><code>SYSCALL</code></a>, <a href="../instructions/sysret/"><code>SYSRET</code></a>, <a href="../instructions/wrcr/"><code>WRCR</code></a>, <a href="../instructions/wrstatus/"><code>WRSTATUS</code></a></td>
+<td style="text-align: left;"><code>3</code></td>
+<td style="text-align: left;"><code>ERROR</code></td>
+<td style="text-align: left;"><a href="../architectural-event-processing-model/#section-event-code-and-sources">definition</a> (p. )</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>EXC:0e</code></td>
+<td style="text-align: left;"><code>FLOATING_POINT_FAULT</code></td>
+<td style="text-align: left;">enabled floating-point exception; <a href="../instructions/fsincosa/"><code>FSINCOSA</code></a></td>
+<td style="text-align: left;"><code>3</code></td>
+<td style="text-align: left;"><code>ERROR</code></td>
+<td style="text-align: left;"><a href="../architectural-event-processing-model/#section-event-code-and-sources">definition</a> (p. )</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>EXC:18</code></td>
+<td style="text-align: left;"><code>DOUBLE_FAULT</code></td>
+<td style="text-align: left;">architectural event-delivery failure</td>
+<td style="text-align: left;"><code>1</code></td>
+<td style="text-align: left;"><code>AUXILIARY</code></td>
+<td style="text-align: left;"><a href="../architectural-event-processing-model/#section-event-code-and-sources">definition</a> (p. )</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>EXC:19</code></td>
+<td style="text-align: left;"><code>MACHINE_CHECK</code></td>
+<td style="text-align: left;">processor or memory-system machine-check source</td>
+<td style="text-align: left;"><code>2</code></td>
+<td style="text-align: left;"><code>AUXILIARY</code></td>
+<td style="text-align: left;"><a href="../architectural-event-processing-model/#section-event-code-and-sources">definition</a> (p. )</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>EXC:1a</code></td>
+<td style="text-align: left;"><code>BUS_ERROR</code></td>
+<td style="text-align: left;">synchronous acknowledged bus failure</td>
+<td style="text-align: left;"><code>3</code></td>
+<td style="text-align: left;"><code>AUXILIARY</code></td>
+<td style="text-align: left;"><a href="../architectural-event-processing-model/#section-event-code-and-sources">definition</a> (p. )</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NMI:source</code></td>
+<td style="text-align: left;"><code>NMI</code></td>
+<td style="text-align: left;">admitted non-maskable interrupt source</td>
+<td style="text-align: left;"><code>6</code></td>
+<td style="text-align: left;"><code>BASIC</code></td>
+<td style="text-align: left;"><a href="../architectural-event-processing-model/#section-event-code-and-sources">definition</a> (p. )</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>INTERRUPT:platform</code></td>
+<td style="text-align: left;"><code>INTERRUPT</code></td>
+<td style="text-align: left;">admitted maskable interrupt source</td>
+<td style="text-align: left;"><code>7</code></td>
+<td style="text-align: left;"><code>BASIC</code></td>
+<td style="text-align: left;"><a href="../architectural-event-processing-model/#section-event-code-and-sources">definition</a> (p. )</td>
+</tr>
+</tbody>
+</table>
+<h2 id="cpuid-feature-index">CPUID Feature Index</h2>
+<p><strong>CPUID Feature Index</strong></p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Predicate</strong></th>
+<th style="text-align: left;"><strong>Class:leaf:index/bit</strong></th>
+<th style="text-align: left;"><strong>Gated instruction</strong></th>
+<th style="text-align: left;"><strong>Related state or component</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fabs/"><code>FABS</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fadd/"><code>FADD</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fbndii/"><code>FBNDII</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fbndix/"><code>FBNDIX</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fbndxi/"><code>FBNDXI</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fbndxx/"><code>FBNDXX</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fceil/"><code>FCEIL</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fclass/"><code>FCLASS</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fclr/"><code>FCLR</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fcmp/"><code>FCMP</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fcopysign/"><code>FCOPYSIGN</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fcvt/"><code>FCVT</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fcvtu/"><code>FCVTU</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fdiv/"><code>FDIV</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/ffloor/"><code>FFLOOR</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fgetexp/"><code>FGETEXP</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fgetman/"><code>FGETMAN</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fint/"><code>FINT</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fintrz/"><code>FINTRZ</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fmadd/"><code>FMADD</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fmax/"><code>FMAX</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fmin/"><code>FMIN</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fmod/"><code>FMOD</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fmov/"><code>FMOV</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fmovcr/"><code>FMOVCR</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fmovcc/"><code>FMOVcc</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fmsub/"><code>FMSUB</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fmul/"><code>FMUL</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fneg/"><code>FNEG</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fnmadd/"><code>FNMADD</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fnmsub/"><code>FNMSUB</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fpopp/"><code>FPOPP</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fpushp/"><code>FPUSHP</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/frem/"><code>FREM</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fround/"><code>FROUND</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fscale/"><code>FSCALE</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fsqrt/"><code>FSQRT</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fsub/"><code>FSUB</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/ftest/"><code>FTEST</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/ftrunc/"><code>FTRUNC</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/fxchg/"><code>FXCHG</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/rdfflags/"><code>RDFFLAGS</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/rdfstatus/"><code>RDFSTATUS</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/wrfflags/"><code>WRFFLAGS</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FP</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit0</code></td>
+<td style="text-align: left;"><a href="../instructions/wrfstatus/"><code>WRFSTATUS</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FPTRANSA</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit1</code></td>
+<td style="text-align: left;"><a href="../instructions/facosa/"><code>FACOSA</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FPTRANSA</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit1</code></td>
+<td style="text-align: left;"><a href="../instructions/fasina/"><code>FASINA</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FPTRANSA</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit1</code></td>
+<td style="text-align: left;"><a href="../instructions/fatana/"><code>FATANA</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FPTRANSA</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit1</code></td>
+<td style="text-align: left;"><a href="../instructions/fatanha/"><code>FATANHA</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FPTRANSA</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit1</code></td>
+<td style="text-align: left;"><a href="../instructions/fcosa/"><code>FCOSA</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FPTRANSA</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit1</code></td>
+<td style="text-align: left;"><a href="../instructions/fcosha/"><code>FCOSHA</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FPTRANSA</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit1</code></td>
+<td style="text-align: left;"><a href="../instructions/fetoxa/"><code>FETOXA</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FPTRANSA</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit1</code></td>
+<td style="text-align: left;"><a href="../instructions/fetoxm1a/"><code>FETOXM1A</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FPTRANSA</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit1</code></td>
+<td style="text-align: left;"><a href="../instructions/flog10a/"><code>FLOG10A</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FPTRANSA</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit1</code></td>
+<td style="text-align: left;"><a href="../instructions/flog2a/"><code>FLOG2A</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FPTRANSA</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit1</code></td>
+<td style="text-align: left;"><a href="../instructions/flogna/"><code>FLOGNA</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FPTRANSA</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit1</code></td>
+<td style="text-align: left;"><a href="../instructions/flognp1a/"><code>FLOGNP1A</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FPTRANSA</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit1</code></td>
+<td style="text-align: left;"><a href="../instructions/fsina/"><code>FSINA</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FPTRANSA</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit1</code></td>
+<td style="text-align: left;"><a href="../instructions/fsincosa/"><code>FSINCOSA</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FPTRANSA</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit1</code></td>
+<td style="text-align: left;"><a href="../instructions/fsinha/"><code>FSINHA</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FPTRANSA</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit1</code></td>
+<td style="text-align: left;"><a href="../instructions/ftana/"><code>FTANA</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FPTRANSA</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit1</code></td>
+<td style="text-align: left;"><a href="../instructions/ftanha/"><code>FTANHA</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FPTRANSA</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit1</code></td>
+<td style="text-align: left;"><a href="../instructions/ftentoxa/"><code>FTENTOXA</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>FPTRANSA</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit1</code></td>
+<td style="text-align: left;"><a href="../instructions/ftwotoxa/"><code>FTWOTOXA</code></a></td>
+<td style="text-align: left;">F0–F15, FFLAGS, FSTATUS, SAVE component FP</td>
+</tr>
+</tbody>
+</table>
 
 
 

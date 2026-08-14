@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Generated reference documentation for the Bedrock architecture and its ABI and C interfaces.">
+        <meta name="description" content="Reference documents for the Bedrock architecture and its ABI and C interfaces.">
       
       
       
@@ -825,14 +825,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../streaming-execution-model/" class="md-nav__link">
+      <a href="../../repeated-scalar-execution/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Streaming Execution Model
+    Repeated Scalar Execution
   
 
     
@@ -7692,14 +7692,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference-indexes-and-revision-history/" class="md-nav__link">
+      <a href="../../reference-indexes/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Reference Indexes and Revision History
+    Reference Indexes
   
 
     
@@ -8950,7 +8950,7 @@
 
 <h1 id="shr">SHR</h1>
 <h2 id="operation">Operation</h2>
-<p>The effective count is the count operand modulo the selected operand width: B uses mod 8, W uses mod 16, L uses mod 32, and Q uses mod 64. If the effective count is zero, the destination is unchanged. FLAGS are unchanged for all counts.</p>
+<p>Shifts the selected-width destination value right by the effective count, zero-fills the vacated high bits, and writes the result to the destination. The effective count is the count operand modulo the selected operand width: B uses mod 8, W uses mod 16, L uses mod 32, and Q uses mod 64. If the effective count is zero, the destination is unchanged. FLAGS are unchanged for all counts.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
 <p><code>SHR.LQ(z) Rn(s), Rn(d)</code></p>
 <p><code>SHR.BW(z) Rn(s), &lt;ea&gt;(e)</code></p>
@@ -8984,7 +8984,7 @@
 <p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the read/write operand.</p>
 <p><strong>EA availability</strong></p>
-<p><strong>Allowed:</strong> Register; Memory; EXT0</p>
+<p><strong>Allowed:</strong> Register; Memory; Extended Descriptor</p>
 <p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>
 <p><strong><code>SHR.LQ(z) Rn(s), &lt;ea&gt;(e)</code></strong></p>
 <p><em>Encoding class: medium; required bytes: 3-13 bytes; privilege: unprivileged</em></p>
@@ -8997,7 +8997,7 @@
 <p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the read/write operand.</p>
 <p><strong>EA availability</strong></p>
-<p><strong>Allowed:</strong> Register except <code>Rn(r)</code>; Memory; EXT0</p>
+<p><strong>Allowed:</strong> Register except <code>Rn(r)</code>; Memory; Extended Descriptor</p>
 <p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>
 <p><strong><code>SHR.BWLQ(z) imm6(i), &lt;ea&gt;(e)</code></strong></p>
 <p><em>Encoding class: long; required bytes: 4-14 bytes; privilege: unprivileged</em></p>
@@ -9010,7 +9010,7 @@
 <p><strong>Immediate field <code>i</code></strong> — Encodes the immediate value.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the read/write operand.</p>
 <p><strong>EA availability</strong></p>
-<p><strong>Allowed:</strong> Register; Memory; EXT0</p>
+<p><strong>Allowed:</strong> Register; Memory; Extended Descriptor</p>
 <p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>
 
 
