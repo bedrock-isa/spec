@@ -5,7 +5,7 @@ After FSTATUS.DAZ processing, the reference function is paired sin(x) and cos(x)
 \textbf{Special values}\par
 \begin{itemize}
 \item When the two destinations name the same F register, \texttt{ILLEGAL\_INSTRUCTION} is raised before operands or floating-point state are read.
-\item When the source is infinite or its magnitude exceeds pi / 4, NV is accrued and both results are the architectural default quiet NaN.
+\item When the source is infinite or its magnitude exceeds pi / 4, NV is generated and both results are the architectural default quiet NaN.
 \item When the source is zero, the sine result preserves the source zero and the cosine result is positive one.
 \end{itemize}
 
@@ -23,4 +23,4 @@ After FSTATUS.DAZ processing, the reference function is paired sin(x) and cos(x)
 
 For nontrapping execution, the sine and cosine destinations are written atomically.
 
-NaN, exception, trap, and commit handling follows the common FPTRANSA model in Section~\ref{section:fptransa-common-model}.
+NaN handling, floating-point exception-cause generation, matching condition-enable testing, \texttt{FLOATING\_POINT\_FAULT} architectural-event delivery, and commit behavior follow the common FPTRANSA model in Section~\ref{section:fptransa-common-model}.

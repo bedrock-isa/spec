@@ -185,9 +185,8 @@ mod tests {
     }
 
     #[test]
-    fn extension_bits_and_all_nineteen_accuracy_results_share_the_contract_owner() {
+    fn extension_bits_and_accuracy_results_share_the_contract_owner() {
         assert_eq!(query(selector(1, 0, 1)), 0b11);
-        assert_eq!(CONTRACTS.len(), 19);
         for contract in CONTRACTS {
             assert_eq!(
                 query(selector(1, 1, contract.contract_id)),

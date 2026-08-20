@@ -415,7 +415,7 @@ def reference_d1(
             values[operand.name] = source.value or 0
         else:
             values[operand.name] = 0
-    cursor = form.opcode_bytes
+    cursor = form.opcode_space_bytes
     for layout in form.layout:
         operand = next(item for item in form.operands if item.name == layout.operand_name)
         if isinstance(layout, decode_ir.ParseEaIR):
@@ -837,8 +837,8 @@ def _balanced_tree(
 def _render_opcode_class_bytes_function(ir: decode_ir.DecodeIR) -> str:
     class_bytes: dict[str, int] = {}
     for form in ir.forms:
-        previous = class_bytes.setdefault(form.opcode_class, form.opcode_bytes)
-        if previous != form.opcode_bytes:
+        previous = class_bytes.setdefault(form.opcode_class, form.opcode_space_bytes)
+        if previous != form.opcode_space_bytes:
             raise ValueError(f"opcode class {form.opcode_class} has mixed widths")
     byte_cases = "\n".join(
         f"        OPCODE_CLASS_{_identifier(opcode_class)}: "
@@ -1357,7 +1357,7 @@ def _render_form_case(
     lines.extend(
         [
             f"        result_o.operand_count = 3'd{len(form.operands)};",
-            f"        cursor = 6'd{form.opcode_bytes};",
+            f"        cursor = 6'd{form.opcode_space_bytes};",
         ]
     )
     observed_slot = next((i for i, x in enumerate(form.operands) if x.name == form.control.repeat.observed_operand), 0)

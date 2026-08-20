@@ -18,5 +18,5 @@ exceptions:
 - event: ILLEGAL_INSTRUCTION
   when: sin_dst and cos_dst designate the same register; cause is INVALID_OPERAND_RELATION
 - event: FLOATING_POINT_FAULT
-  when: an enabled floating-point exception is raised
+  when: a generated floating-point exception condition is enabled
 additional_description: details.tex

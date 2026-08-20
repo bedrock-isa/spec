@@ -4,7 +4,7 @@ ordinary_plt:
   instruction:
     assembly: JMP.Q [PC + disp64]
     offset: 0
-    opcode_bytes: [0xe7, 0xc9, 0x80, 0x67]
+    opcode_space_bytes: [0xe7, 0xc9, 0x80, 0x67]
     total_bytes: 12
     displacement:
       offset: 4

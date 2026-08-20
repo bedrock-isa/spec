@@ -12,6 +12,10 @@ calling-convention contracts;
 compiler-interface sources separately own source-language and compiler-facing
 target-interface contracts.
 
+In the handwritten Sail and formal-model internals, one hart corresponds to one architectural logical processor.
+Public ISA prose uses *logical processor*; the internal hart and memory-action terms do not define additional
+architectural subjects or public memory-event categories.
+
 Numerical floating-point primitives, including FPTRANSA reference values and
 ULP certificates, are trusted external inputs. The Sail model owns validation
 of their contract identity and shape, reported error bound, NX exclusion, and
@@ -50,14 +54,14 @@ isa/
 │   ├── common/               shared TeX definitions
 │   └── document/             manual assembly and front matter
 ├── memory/
-│   ├── access/               memory transactions and continuation
-│   ├── cache/                cache transaction model
+│   ├── access/               memory accesses and continuation
+│   ├── cache/                cache-operation model
 │   ├── ordering/             manual and formal ordering model
 │   └── translation/          model, manual, and conformance roles
 ├── system/
 │   ├── events/               explanatory TeX + Sail event behavior
-│   ├── requests/             system-request transactions
-│   ├── stack/                stack transactions
+│   ├── requests/             system-request processing
+│   ├── stack/                stack-memory operations
 │   ├── state/                explanatory TeX + Sail system state
 │   └── indexes/              explanatory TeX navigation
 ├── tests/                    semantic-family tests and executable entrypoint
@@ -81,19 +85,19 @@ generated opcode-class enum, and right-aligned 34-bit opcode, and returns a
 recognition result in one of four states: invalid input, unallocated opcode,
 constraint-rejected, or success. A successful result also carries the selected
 form's two-bit EA layout and the operand width for each of two fixed EA
-candidates. In parallel, D0 emits a separate 30-bit EA-front-end result carrying
+candidates. In parallel, D0 emits a separate packed EA-front-end result carrying
 the same status/layout/widths plus the low/alternate compact fields and the
 base/post-alternate record cursors. The opcode D1 consumes the recognition
 result, while the EA D1 consumes the EA-front-end result; each also accepts an
 18-byte record with byte 0 in bits `[7:0]` and a byte count.
-`bedrock_decode_d1` emits the exact 398-bit opcode/form result: valid/stage,
-form and operation, 23-bit control metadata, size/flag/event masks, four compact
+`bedrock_decode_d1` emits the packed opcode/form result: valid/stage,
+form and operation, control metadata, size/flag/event masks, four compact
 operands with fixed low/alternate EA-candidate references, overlap, and
 required/encoded byte counts. `bedrock_decode_ea` speculatively decodes exactly
 two class-position candidates: medium low plus medium-alt, or long/extralong
 low plus high. Unreferenced candidates are ignored; D0 precomputes both record
 cursors, and only a high-then-low layout selects the post-alternate cursor for
-the low candidate. It emits the independent 225-bit EA result containing its
+the low candidate. It emits an independent packed EA result containing its
 own valid/stage, the two fixed canonical candidates, and required-byte evidence.
 Neither module consumes the other's result and no aggregate packet or join
 module is generated;
@@ -136,7 +140,7 @@ semantic leaves. In project order:
 - `instructions/semantics/integer/` contains `operands.sail`, `arithmetic.sail`,
   `data_control.sail`, and `routing.sail`. Memory access, cache, translation,
   and ordering sources use the corresponding role directories under `memory/`;
-  system reset, save/restore, requests, and stack transactions are under
+  system reset, save/restore, requests, and stack operations are under
   `system/`.
 - `tests/` keeps aggregate test entrypoints in `protocol.sail`, `event.sail`, and
   `floating_point.sail`; their responsibility-group helpers use the matching
@@ -153,8 +157,8 @@ make sail-docs
 
 This writes only beneath the ignored `build/sail-doc/` directory. Its primary
 outputs are Sail's embedded documentation bundle, `bedrock-sail.json`, and the
-deterministic `semantic-index.json`. The index maps all 205 operations to their
-routes, all 480 stable form IDs to their operations, and module-qualified actual
+deterministic `semantic-index.json`. The index maps each generated operation to
+its route, each stable form ID to its operation, and module-qualified actual
 owner paths derived from the `core`, `fp`, and `postlude` functions and their
 dispatch. Operations without an operation-specific owner are accepted only
 when their route has an explicit owner.

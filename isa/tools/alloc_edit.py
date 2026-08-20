@@ -92,7 +92,7 @@ class Cube:
 class AllocationSpace:
     path: Path
     cls: str
-    payload_bits: int
+    allocation_bits: int
     namespaces: list[str]
     entries: list[dict[str, Any]]
     allocated: dict[int, Claim]
@@ -109,8 +109,8 @@ def load_yaml(path: Path) -> dict[str, Any]:
 
 def load_space_data(path: Path, data: dict[str, Any]) -> AllocationSpace:
     cls = str(data["class"])
-    payload_bits = int(data["payload_bits"])
-    namespaces = namespace_patterns(payload_bits, data)
+    allocation_bits = int(data["allocation_bits"])
+    namespaces = namespace_patterns(allocation_bits, data)
     entries = [entry for entry in data.get("entries") or [] if isinstance(entry, dict)]
     allocated: dict[int, Claim] = {}
     claimed: dict[int, Claim] = {}
@@ -120,20 +120,20 @@ def load_space_data(path: Path, data: dict[str, Any]) -> AllocationSpace:
 
     for entry in entries:
         entry_path = Path(str(entry.get("source_path", path)))
-        claims, _entry_skipped = entry_claims(entry_path, payload_bits, namespaces, entry)
+        claims, _entry_skipped = entry_claims(entry_path, allocation_bits, namespaces, entry)
         for value, claim in claims:
             previous = claimed.get(value)
             if previous is not None:
                 overlap_count += 1
                 if len(overlap_examples) < 20:
-                    digits = (payload_bits + 3) // 4
+                    digits = (allocation_bits + 3) // 4
                     overlap_examples.append(
                         f"0x{value:0{digits}x}: {previous.entry_id} overlaps {claim.entry_id}"
                     )
                 continue
             allocated[value] = claim
             claimed[value] = claim
-        for value, reason in skipped_values(entry_path, payload_bits, namespaces, entry):
+        for value, reason in skipped_values(entry_path, allocation_bits, namespaces, entry):
             skipped[value].append(
                 SkippedSlot(
                     entry_id=str(entry["id"]),
@@ -152,7 +152,7 @@ def load_space_data(path: Path, data: dict[str, Any]) -> AllocationSpace:
     return AllocationSpace(
         path=path,
         cls=cls,
-        payload_bits=payload_bits,
+        allocation_bits=allocation_bits,
         namespaces=namespaces,
         entries=entries,
         allocated=allocated,
@@ -172,7 +172,7 @@ def load_store_space(defs_root: Path, cls: str) -> AllocationSpace:
         ARCHITECTURE_SOURCE_PATH,
         {
             "class": cls,
-            "payload_bits": encoding_class.payload_bits,
+            "allocation_bits": encoding_class.allocation_bits,
             "namespace": list(encoding_class.namespace),
             "entries": class_entries(store, cls),
         },
@@ -181,15 +181,15 @@ def load_store_space(defs_root: Path, cls: str) -> AllocationSpace:
 
 def skipped_values(
     path: Path,
-    payload_bits: int,
+    allocation_bits: int,
     namespaces: list[str],
     entry: dict[str, Any],
 ) -> Iterable[tuple[int, str]]:
     entry_id = str(entry["id"])
     pattern = compact_bits(str(entry["bits"]))
     constraints = entry.get("constraints") or []
-    if len(pattern) != payload_bits:
-        raise ValueError(f"{entry_id}: pattern has {len(pattern)} bits, expected {payload_bits}")
+    if len(pattern) != allocation_bits:
+        raise ValueError(f"{entry_id}: pattern has {len(pattern)} bits, expected {allocation_bits}")
 
     for value in expand_pattern(pattern):
         if not any(matches_pattern(value, namespace) for namespace in namespaces):
@@ -472,14 +472,14 @@ def render_synthetic_cubes(
     kind: str,
     order: int,
     values: set[int],
-    payload_bits: int,
+    allocation_bits: int,
     use_color: bool,
     limit: int,
     hidden_counts: Counter[str],
 ) -> None:
     if not values:
         return
-    blocks = minimized_cubes_from_values(values, payload_bits)
+    blocks = minimized_cubes_from_values(values, allocation_bits)
     if limit and len(blocks) > limit:
         hidden_counts[kind] += len(blocks) - limit
         blocks = blocks[:limit]
@@ -593,7 +593,7 @@ def command_summary(args: argparse.Namespace) -> int:
         rows.append(
             [
                 space.cls,
-                str(space.payload_bits),
+                str(space.allocation_bits),
                 f"{total:,}",
                 f"{allocated:,}",
                 f"{skipped:,}",
@@ -629,7 +629,7 @@ def command_legend(args: argparse.Namespace) -> int:
 
 def command_entries(args: argparse.Namespace) -> int:
     space = load_store_space(args.defs_root, args.cls)
-    leading = normalize_pattern(args.leading, space.payload_bits) if args.leading else None
+    leading = normalize_pattern(args.leading, space.allocation_bits) if args.leading else None
     needle = args.grep.lower() if args.grep else None
     use_color = color_enabled(args)
     rows: list[tuple[int, int, int, list[str]]] = []
@@ -644,7 +644,7 @@ def command_entries(args: argparse.Namespace) -> int:
             continue
         entry_path = Path(str(entry.get("source_path", space.path)))
         claims, skipped = entry_claims(
-            entry_path, space.payload_bits, space.namespaces, entry
+            entry_path, space.allocation_bits, space.namespaces, entry
         )
         rows.append(
             (
@@ -678,7 +678,7 @@ def command_entries(args: argparse.Namespace) -> int:
                 kind="reclaimed",
                 order=1,
                 values=reclaimed_values,
-                payload_bits=space.payload_bits,
+                allocation_bits=space.allocation_bits,
                 use_color=use_color,
                 limit=args.reserved_limit,
                 hidden_counts=hidden_counts,
@@ -689,7 +689,7 @@ def command_entries(args: argparse.Namespace) -> int:
                 kind="reserved",
                 order=2,
                 values=reserved_values,
-                payload_bits=space.payload_bits,
+                allocation_bits=space.allocation_bits,
                 use_color=use_color,
                 limit=args.reserved_limit,
                 hidden_counts=hidden_counts,
@@ -720,8 +720,8 @@ def patterns_overlap(left: str, right: str) -> bool:
 
 def command_check(args: argparse.Namespace) -> int:
     space = load_store_space(args.defs_root, args.cls)
-    pattern = normalize_pattern(args.pattern, space.payload_bits)
-    shown_pattern = display_pattern(args.pattern, space.payload_bits)
+    pattern = normalize_pattern(args.pattern, space.allocation_bits)
+    shown_pattern = display_pattern(args.pattern, space.allocation_bits)
     shown_fields = infer_fields(shown_pattern)
     use_color = color_enabled(args)
     slots = pattern_cardinality(pattern)
@@ -790,7 +790,7 @@ def command_check(args: argparse.Namespace) -> int:
 def command_holes(args: argparse.Namespace) -> int:
     space = load_store_space(args.defs_root, args.cls)
     all_values = namespace_values(space, args.max_enumerate)
-    leading = normalize_pattern(args.leading, space.payload_bits) if args.leading else None
+    leading = normalize_pattern(args.leading, space.allocation_bits) if args.leading else None
 
     unavailable = set(space.claimed)
     if not args.include_reclaimed:
@@ -801,7 +801,7 @@ def command_holes(args: argparse.Namespace) -> int:
 
     blocks = [
         cube
-        for cube in minimized_cubes_from_values(available, space.payload_bits)
+        for cube in minimized_cubes_from_values(available, space.allocation_bits)
         if cube.slots >= args.min_slots
         and (args.max_slots is None or cube.slots <= args.max_slots)
         and cube_pattern(cube).count("?") >= args.min_wildcards
@@ -942,7 +942,7 @@ def validate_candidate_document(
             entry = allocation_entry_dict(item, store.field_types)
             claims, _skipped = entry_claims(
                 item.path,
-                encoding_class.payload_bits,
+                encoding_class.allocation_bits,
                 list(encoding_class.namespace),
                 entry,
             )

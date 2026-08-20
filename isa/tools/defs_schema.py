@@ -513,7 +513,7 @@ class OperandBit:
 @dataclass(frozen=True)
 class OperandType:
     kind: str
-    field_width: int
+    bit_width: int
     register_group: str | None = None
     register: str | None = None
     encoding_ref: str | None = None
@@ -591,7 +591,7 @@ class ConditionRegistry:
 @dataclass(frozen=True)
 class EaPayload:
     kind: str
-    field_width: int
+    bit_width: int
     signed: bool
 
 
@@ -644,7 +644,7 @@ class AbiDisplacement:
 class AbiInstruction:
     assembly: str
     offset: int
-    opcode_bytes: tuple[int, ...]
+    opcode_space_bytes: tuple[int, ...]
     total_bytes: int
     displacement: AbiDisplacement
 
@@ -1357,11 +1357,11 @@ def decode_operand_registry(path: Path, raw: Any) -> OperandRegistry:
             item,
             path,
             item_path,
-            required=("kind", "field_width"),
+            required=("kind", "bit_width"),
             optional=common_optional,
         )
         kind = _enum_string(item["kind"], path, item_path + ".kind", OPERAND_KINDS)
-        irrelevant = (set(item) - {"kind", "field_width"}) - allowed_by_kind[kind]
+        irrelevant = (set(item) - {"kind", "bit_width"}) - allowed_by_kind[kind]
         if irrelevant:
             raise DecodeError(
                 f"{_where(path, item_path)}: fields not valid for {kind}: "
@@ -1400,11 +1400,11 @@ def decode_operand_registry(path: Path, raw: Any) -> OperandRegistry:
             )
         _unique((bit.bit for bit in bits), path, item_path + ".bits.bit")
         _unique((bit.name for bit in bits), path, item_path + ".bits.name")
-        field_width = _nonnegative_integer(
-            item["field_width"], path, item_path + ".field_width"
+        bit_width = _nonnegative_integer(
+            item["bit_width"], path, item_path + ".bit_width"
         )
-        if any(bit.bit >= field_width for bit in bits):
-            raise DecodeError(f"{_where(path, item_path + '.bits')}: bit exceeds field width")
+        if any(bit.bit >= bit_width for bit in bits):
+            raise DecodeError(f"{_where(path, item_path + '.bits')}: bit exceeds bit width")
 
         def optional_string(key: str) -> str | None:
             child = item.get(key)
@@ -1417,7 +1417,7 @@ def decode_operand_registry(path: Path, raw: Any) -> OperandRegistry:
         signed = item.get("signed")
         operand_types[name] = OperandType(
             kind=kind,
-            field_width=field_width,
+            bit_width=bit_width,
             register_group=optional_string("register_group"),
             register=optional_string("register"),
             encoding_ref=optional_string("encoding_ref"),
@@ -1723,12 +1723,12 @@ def decode_ea_registry(path: Path, raw: Any) -> EaRegistry:
     for name, value in _mapping(data["payloads"], path, "payloads").items():
         item_path = f"payloads.{name}"
         item = _validate_item_keys(
-            path, item_path, value, required=("kind", "field_width", "signed")
+            path, item_path, value, required=("kind", "bit_width", "signed")
         )
         payloads[name] = EaPayload(
             kind=_string(item["kind"], path, item_path + ".kind"),
-            field_width=_positive_integer(
-                item["field_width"], path, item_path + ".field_width"
+            bit_width=_positive_integer(
+                item["bit_width"], path, item_path + ".bit_width"
             ),
             signed=_boolean(item["signed"], path, item_path + ".signed"),
         )
@@ -1798,7 +1798,7 @@ def decode_abi_vectors(path: Path, raw: Any) -> AbiVectorsDocument:
         path,
         "ordinary_plt.instruction",
         plt["instruction"],
-        required=("assembly", "offset", "opcode_bytes", "total_bytes", "displacement"),
+        required=("assembly", "offset", "opcode_space_bytes", "total_bytes", "displacement"),
     )
     raw_displacement = _validate_item_keys(
         path,
@@ -1830,10 +1830,10 @@ def decode_abi_vectors(path: Path, raw: Any) -> AbiVectorsDocument:
         offset=_nonnegative_integer(
             raw_instruction["offset"], path, "ordinary_plt.instruction.offset"
         ),
-        opcode_bytes=_byte_list(
-            raw_instruction["opcode_bytes"],
+        opcode_space_bytes=_byte_list(
+            raw_instruction["opcode_space_bytes"],
             path,
-            "ordinary_plt.instruction.opcode_bytes",
+            "ordinary_plt.instruction.opcode_space_bytes",
         ),
         total_bytes=_positive_integer(
             raw_instruction["total_bytes"],

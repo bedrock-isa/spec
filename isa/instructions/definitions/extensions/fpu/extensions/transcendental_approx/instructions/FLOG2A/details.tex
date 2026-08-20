@@ -4,8 +4,8 @@ After FSTATUS.DAZ processing, the reference function is log2(x) on positive fini
 
 \textbf{Special values}\par
 \begin{itemize}
-\item When the source is zero, DZ is accrued and the result is -infinity.
-\item When the source \textless{} 0, NV is accrued and the result is the architectural default quiet NaN.
+\item When the source is zero, DZ is generated and the result is -infinity.
+\item When the source \textless{} 0, NV is generated and the result is the architectural default quiet NaN.
 \item When the source is +infinity, the result is +infinity.
 \item When the source equals 1, the result is positive zero.
 \end{itemize}
@@ -22,4 +22,4 @@ After FSTATUS.DAZ processing, the reference function is log2(x) on positive fini
 \item strictly increasing on the positive domain
 \end{itemize}
 
-NaN, exception, trap, and commit handling follows the common FPTRANSA model in Section~\ref{section:fptransa-common-model}.
+NaN handling, floating-point exception-cause generation, matching condition-enable testing, \texttt{FLOATING\_POINT\_FAULT} architectural-event delivery, and commit behavior follow the common FPTRANSA model in Section~\ref{section:fptransa-common-model}.

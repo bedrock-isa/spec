@@ -8,4 +8,5 @@ produces zero; positive overflow or positive infinity produces \texttt{0xfffffff
 \texttt{FSTATUS.RM}.
 \end{itemize}
 An invalid Fn-to-Rn conversion generates NV without OF or NX. A valid conversion that discards a fractional part
-generates NX. Fn-to-Fn and Rn-to-Fn conversion use the common floating-point rounding, exception, and commit rules.
+generates NX. Fn-to-Fn and Rn-to-Fn conversion use the common floating-point rounding, floating-point
+exception-cause generation, condition-enable testing, and commit rules.

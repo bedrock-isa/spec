@@ -128,7 +128,7 @@ def excluded_by(value: int, pattern: str, constraint: dict[str, Any]) -> bool:
 
 def entry_claims(
     path: Path,
-    payload_bits: int,
+    allocation_bits: int,
     namespaces: list[str],
     entry: dict[str, Any],
 ) -> tuple[list[tuple[int, Claim]], Counter[str]]:
@@ -137,8 +137,8 @@ def entry_claims(
     pattern = compact_bits(str(entry["bits"]))
     constraints = entry.get("constraints") or []
 
-    if len(pattern) != payload_bits:
-        raise ValueError(f"{entry_id}: pattern has {len(pattern)} bits, expected {payload_bits}")
+    if len(pattern) != allocation_bits:
+        raise ValueError(f"{entry_id}: pattern has {len(pattern)} bits, expected {allocation_bits}")
 
     declared_fields = entry.get("fields") or {}
     actual_fields = field_widths(pattern)
@@ -183,7 +183,7 @@ def validate_store(defs_root: Path) -> list[tuple[str, dict[str, int], Counter[s
     for encoding_class in store.classes:
         data = {
             "class": encoding_class.name,
-            "payload_bits": encoding_class.payload_bits,
+            "allocation_bits": encoding_class.allocation_bits,
             "namespace": list(encoding_class.namespace),
             "entries": class_entries(store, encoding_class.name),
         }
@@ -195,7 +195,7 @@ def validate_store(defs_root: Path) -> list[tuple[str, dict[str, int], Counter[s
         for entry in data["entries"]:
             claims, entry_skipped = entry_claims(
                 Path(str(entry.get("source_path", ARCHITECTURE_SOURCE_PATH))),
-                encoding_class.payload_bits,
+                encoding_class.allocation_bits,
                 list(encoding_class.namespace),
                 entry,
             )
@@ -226,15 +226,15 @@ def validate_store(defs_root: Path) -> list[tuple[str, dict[str, int], Counter[s
     return results
 
 
-def namespace_patterns(payload_bits: int, data: dict[str, Any]) -> list[str]:
+def namespace_patterns(allocation_bits: int, data: dict[str, Any]) -> list[str]:
     raw = data.get("namespace")
     if raw is None:
         raise ValueError("namespace is required")
     patterns = [compact_bits(str(item)) for item in raw]
     for pattern in patterns:
-        if len(pattern) != payload_bits:
+        if len(pattern) != allocation_bits:
             raise ValueError(
-                f"namespace pattern {pattern!r} has {len(pattern)} bits, expected {payload_bits}"
+                f"namespace pattern {pattern!r} has {len(pattern)} bits, expected {allocation_bits}"
             )
     return patterns
 

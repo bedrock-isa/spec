@@ -2,10 +2,10 @@ operand_types:
   Fn:
     kind: register
     register_group: floating_point
-    field_width: 4
+    bit_width: 4
   FPAIRn:
     kind: enum
-    field_width: 3
+    bit_width: 3
     values:
     - value: 0
       name: F0_F1
@@ -49,7 +49,7 @@ operand_types:
       - F15
   fconst_id:
     kind: enum
-    field_width: 16
+    bit_width: 16
     result_bits_format: IEEE-754 binary64
     values:
     - value: '0x0000'

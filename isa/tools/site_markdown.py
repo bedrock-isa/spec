@@ -250,7 +250,7 @@ def _normalize_reader_macros(text: str) -> str:
     )
     text = re.sub(
         r"(?<!\\newcommand\{)\\manualinstructionformsheading\b",
-        r"\\subsection*{Instruction Forms}",
+        r"\\subsection*{Encodings}",
         text,
     )
     text = LONGTABLE_CONTINUATION_RE.sub("", text)

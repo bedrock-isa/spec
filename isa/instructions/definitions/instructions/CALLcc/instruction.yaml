@@ -1,7 +1,7 @@
 mnemonic: CALLcc
 title: Call Conditional
 summary: Performs a call when the condition is true.
-description: When the encoded condition is true, pushes the next instruction address as one 64-bit stack value and transfers control to the target; otherwise execution continues without changing the stack.
+description: When the encoded condition is true, pushes the following instruction's continuation PC as one 64-bit stack value and transfers control to the target; otherwise execution continues without changing the stack.
 attributes:
   class: control_flow
   family: control_flow

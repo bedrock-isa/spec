@@ -1,7 +1,7 @@
 mnemonic: YIELD
 title: Yield
-summary: Hints to the scheduler or implementation that the current thread may yield.
-description: Notifies the implementation that the current hardware thread may be deprioritized or descheduled. YIELD affects scheduling only; memory accesses retain the ordinary instruction-ordering rules, and execution resumes at the next instruction.
+summary: Hints that the current logical processor may be deprioritized.
+description: Notifies the implementation that the current logical processor may be deprioritized or descheduled. YIELD affects scheduling only; memory accesses retain the ordinary instruction-ordering rules, and execution resumes at the next instruction.
 attributes:
   class: system
   family: core_control

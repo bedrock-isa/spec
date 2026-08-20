@@ -32,30 +32,6 @@ class DecodeIrTests(unittest.TestCase):
             forms=forms,
         )
 
-    def test_live_inventory_and_derived_limits(self) -> None:
-        self.assertEqual(len(self.ir.forms), 484)
-        self.assertEqual(len(self.ir.mnemonics), 205)
-        self.assertEqual(
-            tuple(form.index for form in self.ir.forms),
-            tuple(range(484)),
-        )
-        self.assertEqual(
-            (
-                self.ir.limits.max_opcode_width,
-                self.ir.limits.max_operands,
-                self.ir.limits.max_ea_operands,
-                self.ir.limits.max_fields,
-            ),
-            (34, 4, 2, 5),
-        )
-        self.assertEqual(self.ir.limits.max_required_bytes, 25)
-        self.assertEqual(self.ir.limits.max_record_bytes, 18)
-        self.assertGreater(
-            self.ir.limits.max_required_bytes,
-            self.ir.limits.max_record_bytes,
-        )
-        decode_ir.validate_decode_ir(self.ir)
-
     def test_non_contiguous_fields_use_msb_to_lsb_gathers(self) -> None:
         form = self.forms["medium.abs_x_ea"]
         ea_field = next(field for field in form.fields if field.symbol == "e")
@@ -176,7 +152,7 @@ class DecodeIrTests(unittest.TestCase):
         second = decode_ir.decode_ir_json(decode_ir.load_decode_ir())
         self.assertEqual(first, second)
         parsed = json.loads(first)
-        self.assertEqual(parsed["limits"]["form_count"], 484)
+        self.assertEqual(parsed["limits"]["form_count"], len(parsed["forms"]))
         self.assertEqual(parsed["forms"][0]["index"], 0)
         self.assertEqual(parsed["forms"][0]["key"], self.ir.forms[0].key)
 

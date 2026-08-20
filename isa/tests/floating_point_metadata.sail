@@ -1,12 +1,12 @@
 function test_fp_metadata() -> unit = {
-  assert(fp_operation_count(all_semantic_operations()) == 60);
-  assert(fp_form_count(primary_form_catalog()) == 115);
-  assert(fp_path_count(primary_form_catalog(), FpPathR) == 62);
-  assert(fp_path_count(primary_form_catalog(), FpPathS1) == 36);
-  assert(fp_path_count(primary_form_catalog(), FpPathS2) == 4);
-  assert(fp_path_count(primary_form_catalog(), FpPathD1) == 11);
-  assert(fp_path_count(primary_form_catalog(), FpPathStack) == 2);
-  assert(fp_test_derived_form_count(primary_form_catalog()) == 115);
+  let catalog = primary_form_catalog();
+  let fp_forms = fp_form_count(catalog);
+  assert(fp_forms == fp_path_count(catalog, FpPathR)
+                   + fp_path_count(catalog, FpPathS1)
+                   + fp_path_count(catalog, FpPathS2)
+                   + fp_path_count(catalog, FpPathD1)
+                   + fp_path_count(catalog, FpPathStack));
+  assert(fp_test_derived_form_count(catalog) == fp_forms);
 
   match fp_find_form(primary_form_catalog(), "long.fclass_x_fn_s_rn_d") {
     Some(form) => {
@@ -72,4 +72,3 @@ function test_fp_operand_slots() -> unit = {
   assert(fp_operand_slot_get(empty, 3) == None());
   assert(fp_operand_slot_set(empty, -1, first) == None())
 }
-

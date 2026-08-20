@@ -1,6 +1,6 @@
 \subsection{Representative Encodings}
 \begin{manuallistedformatdiagram}{Short Encoding Layout for MOV.X(z:L/Q) Rn(s), Rn(d)}
-\manualformatrow{payload[13:0]}{%
+\manualformatrow{allocation[13:0]}{%
 \manualformatfixed{00}{2}
 \manualformatfixed{000}{3}
 \manualformatfieldcode{z}{1}
@@ -10,7 +10,7 @@
 \end{manuallistedformatdiagram}
 
 \begin{manuallistedformatdiagram}{Medium Encoding Layout for MOV.X(z:B/W) Rn(s), \textless{}ea\textgreater{}(e)}
-\manualformatrow{payload[17:0]}{%
+\manualformatrow{allocation[17:0]}{%
 \manualformatfixed{00}{2}
 \manualformatfixed{0000}{4}
 \manualformatfieldcode{z}{1}
@@ -20,7 +20,7 @@
 \end{manuallistedformatdiagram}
 
 \begin{manuallistedformatdiagram}{Long Encoding Layout for ADC.X(z:B/W/L/Q) Rn(s), \textless{}ea\textgreater{}(e)}
-\manualformatrow{payload[25:0]}{%
+\manualformatrow{allocation[25:0]}{%
 \manualformatfixed{1111000000}{10}
 \manualformatfieldcode{z}{2}
 \manualformatfixed{000}{3}

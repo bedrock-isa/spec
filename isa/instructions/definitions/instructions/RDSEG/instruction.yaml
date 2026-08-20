@@ -1,7 +1,7 @@
 mnemonic: RDSEG
 title: Read Segment Register
 summary: Read an SREG or the current CS image into an Rn register.
-description: RDSEG reads the 64-bit image of an SREG-class segment register into the destination Rn register. The RDSEG CS form reads the current CS image.
+description: RDSEG reads the 64-bit image of an SREG-class segment register into the destination Rn register. The RDSEG CS encoding reads the current CS image.
 attributes:
   class: system
   family: system_registers

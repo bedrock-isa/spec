@@ -1,6 +1,6 @@
-EA evaluation begins by copying the architectural registers into a temporary operand-evaluation image. Operands are
+EA evaluation begins by copying the architectural registers into temporary operand-evaluation state. Operands are
 then processed in instruction order. Within one EA, the base term is evaluated before the index term and then the
-displacement. Auto-update changes only the temporary image while operands are being evaluated. Memory reads and
+displacement. Auto-update changes only the temporary operand-evaluation state while operands are being evaluated. Memory reads and
 writes are collected as instruction side effects, and neither those effects nor the register updates become
 architecturally visible until the instruction commits. A fault before commit therefore leaves both register and
 memory state unchanged apart from the exception-entry transition.
@@ -9,8 +9,8 @@ Postincrement forms use the current temporary value and update it afterward. Pre
 value first and then use the result. A base register changes by the EA interpretation width in bytes; an index
 register changes by one element before scaling. Each REP iteration applies and commits these rules independently.
 
-Size-less address-role forms INVPAGE, FLSHDCACHE, INVDCACHE, INVICACHE, WRBKDCACHE, SYNCCACHE, PREFETCH,
-PREFETCHNT, PTQUERY, SAVE, and RESTORE have Q interpretation width. Size-less control-target forms DJcc, IJcc,
+Size-less address-role instructions INVPAGE, FLSHDCACHE, INVDCACHE, INVICACHE, WRBKDCACHE, SYNCCACHE, PREFETCH,
+PREFETCHNT, PTQUERY, SAVE, and RESTORE have Q interpretation width. Size-less control-target instructions DJcc, IJcc,
 LCALL, and LJMP also have Q interpretation width. Their extended-descriptor index scale is eight and their base predecrement or
 postincrement amount is eight. Cache range loops advance their explicit address by the CPUID maintenance granule,
 independently of this per-EA update amount.

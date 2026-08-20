@@ -45,7 +45,7 @@ def analyze_store(defs_root: Path) -> tuple[list[ClassReport], list[EntryReport]
     for encoding_class in store.classes:
         synthetic = {
             "class": encoding_class.name,
-            "payload_bits": encoding_class.payload_bits,
+            "allocation_bits": encoding_class.allocation_bits,
             "namespace": list(encoding_class.namespace),
             "entries": class_entries(store, encoding_class.name),
         }
@@ -53,7 +53,7 @@ def analyze_store(defs_root: Path) -> tuple[list[ClassReport], list[EntryReport]
         class_report = ClassReport(
             **{
                 **class_report.__dict__,
-                "instruction_bytes": encoding_class.instruction_bytes,
+                "opcode_space_bytes": encoding_class.opcode_space_bytes,
             }
         )
         class_reports.append(class_report)
@@ -80,8 +80,8 @@ class EntryReport:
 class ClassReport:
     cls: str
     path: str
-    payload_bits: int
-    instruction_bytes: int | None
+    allocation_bits: int
+    opcode_space_bytes: int | None
     namespace_slots: int
     allocated_slots: int
     claimed_slots: int
@@ -101,15 +101,15 @@ def mnemonic_from_text(text: str, entry_id: str) -> str:
 
 def entry_skipped_values(
     path: Path,
-    payload_bits: int,
+    allocation_bits: int,
     namespaces: list[str],
     entry: dict[str, Any],
 ) -> set[int]:
     entry_id = str(entry["id"])
     pattern = compact_bits(str(entry["bits"]))
     constraints = entry.get("constraints") or []
-    if len(pattern) != payload_bits:
-        raise ValueError(f"{entry_id}: pattern has {len(pattern)} bits, expected {payload_bits}")
+    if len(pattern) != allocation_bits:
+        raise ValueError(f"{entry_id}: pattern has {len(pattern)} bits, expected {allocation_bits}")
 
     out: set[int] = set()
     for value in expand_pattern(pattern):
@@ -128,8 +128,8 @@ def entry_skipped_values(
 
 def analyze_data(path: Path, data: dict[str, Any]) -> tuple[ClassReport, list[EntryReport]]:
     cls = str(data["class"])
-    payload_bits = int(data["payload_bits"])
-    namespaces = namespace_patterns(payload_bits, data)
+    allocation_bits = int(data["allocation_bits"])
+    namespaces = namespace_patterns(allocation_bits, data)
     total_slots = namespace_size(namespaces)
 
     by_value: dict[int, Claim] = {}
@@ -143,10 +143,10 @@ def analyze_data(path: Path, data: dict[str, Any]) -> tuple[ClassReport, list[En
         entry_path = Path(str(entry.get("source_path", path)))
         pattern = compact_bits(str(entry["bits"]))
         text = str(entry["syntax"]).strip()
-        claims, skipped = entry_claims(entry_path, payload_bits, namespaces, entry)
+        claims, skipped = entry_claims(entry_path, allocation_bits, namespaces, entry)
         class_skipped.update(skipped)
         skipped_values.update(
-            entry_skipped_values(entry_path, payload_bits, namespaces, entry)
+            entry_skipped_values(entry_path, allocation_bits, namespaces, entry)
         )
 
         entry_reports.append(
@@ -182,8 +182,8 @@ def analyze_data(path: Path, data: dict[str, Any]) -> tuple[ClassReport, list[En
         ClassReport(
             cls=cls,
             path=str(path),
-            payload_bits=payload_bits,
-            instruction_bytes=None,
+            allocation_bits=allocation_bits,
+            opcode_space_bytes=None,
             namespace_slots=total_slots,
             allocated_slots=allocated_slots,
             claimed_slots=claimed_slots,
@@ -261,7 +261,7 @@ def render_markdown(classes: list[ClassReport], entries: list[EntryReport]) -> s
     lines = [
         "# Encoding Allocation Report",
         "",
-        "Generated from per-instruction `encodings.yaml` files. Slot counts are opcode payload slots inside each allocation namespace.",
+        "Generated from per-instruction `encodings.yaml` files. Slot counts are opcode-space allocation slots inside each allocation namespace.",
         "`reclaimed` counts are slots excluded by entry constraints before assignment. `remaining` is namespace slots minus allocated instruction slots. `clean-free` excludes both allocated and reclaimed slots.",
         "",
         "## Class Summary",
@@ -271,8 +271,8 @@ def render_markdown(classes: list[ClassReport], entries: list[EntryReport]) -> s
         markdown_table(
             [
                 "Class",
-                "Bytes",
-                "Payload bits",
+                "Opcode-space bytes",
+                "Allocation bits",
                 "Namespace",
                 "Allocated",
                 "Allocated %",
@@ -285,8 +285,8 @@ def render_markdown(classes: list[ClassReport], entries: list[EntryReport]) -> s
             [
                 [
                     item.cls,
-                    str(item.instruction_bytes or "-"),
-                    str(item.payload_bits),
+                    str(item.opcode_space_bytes or "-"),
+                    str(item.allocation_bits),
                     int_text(item.namespace_slots),
                     int_text(item.allocated_slots),
                     percent(item.allocated_slots, item.namespace_slots),
@@ -395,8 +395,8 @@ def write_outputs(
         [
             "class",
             "path",
-            "payload_bits",
-            "instruction_bytes",
+            "allocation_bits",
+            "opcode_space_bytes",
             "namespace_slots",
             "allocated_slots",
             "claimed_slots",
@@ -411,8 +411,8 @@ def write_outputs(
             [
                 item.cls,
                 item.path,
-                item.payload_bits,
-                item.instruction_bytes or "",
+                item.allocation_bits,
+                item.opcode_space_bytes or "",
                 item.namespace_slots,
                 item.allocated_slots,
                 item.claimed_slots,

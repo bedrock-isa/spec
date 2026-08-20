@@ -8,44 +8,47 @@
 \addcontentsline{toc}{section}{Reading an Instruction Description}
 \subsection*{Entry Organization}
 Each instruction entry presents its Operation, then Assembler Syntax, Attributes, and structured status
-metadata. Detailed Semantics follows when more space is needed, before the concrete encoding forms. Brief
+metadata. Detailed Semantics follows when more space is needed, before the concrete encodings. Brief
 summaries appear only in the instruction-set summary tables. Each mnemonic begins on a new page so its
-form diagrams, field explanations, and side-effect text stay together as one reference unit.
+encoding diagrams, field explanations, and side-effect text stay together as one reference unit.
 
 \subsection*{Mnemonics and Suffixes}
 The B, W, L, and Q suffixes select 8-, 16-, 32-, and 64-bit integer sizes; S and D select 32- and 64-bit
 floating-point scalar sizes where defined.
 
-When an instruction form encodes a size selector z, its definition maps z to the suffix set shown for that form. A
+When an instruction encoding includes a size selector z, its definition maps z to the suffix set shown for that encoding. A
 mnemonic without a size suffix has a single architecturally defined size or no data-size operand.
-Conditional mnemonic forms use the condition names listed in the Flags and Condition Codes chapter.
+Conditional mnemonic variants use the condition names listed in the Flags and Condition Codes chapter.
 
-CMPJcc, DJcc, IJcc, Jcc, MOVcc, SETcc, TESTJcc, and FMOVcc place the condition suffix in the mnemonic. A form with
+CMPJcc, DJcc, IJcc, Jcc, MOVcc, SETcc, TESTJcc, and FMOVcc place the condition suffix in the mnemonic. An encoding with
 only one architectural size omits the size suffix.
 
 \subsection*{Operand and Status Notation}
-Rn names a general-purpose register; SP and PC are special registers outside that encoding namespace. An
+Rn names an Rn register selected from the general-purpose registers R0 through R15; SP and PC are special registers
+outside that encoding namespace. An
 \texttt{<ea>} operand names a compact effective-address field and any appended EA payload.
 
-FLAGS, STATUS, FFLAGS, and FSTATUS are architectural state registers. Instruction descriptions state whether a
-form updates, preserves, reads, or ignores each status field.
+FLAGS, STATUS, FFLAGS, and FSTATUS are architectural state registers. Instruction descriptions state whether an
+encoding updates, preserves, reads, or ignores each status field.
 
 In instruction pseudocode, Operand Read applies the addressing mode and operation size. Operand Write stores the
 selected-size result; a sub-Q Rn write preserves upper bits unless the instruction defines another rule. EA Address
-computes an address without reading memory. A control-target memory form reads its declared-width target, while a
-control-target register or immediate form supplies the target value directly. A selector may name an Rn register, a
+computes an address without reading memory. A control-target memory operand reads its declared-width target, while a
+control-target register or immediate operand supplies the target value directly. A selector may name an Rn register, a
 segment register, or an encoded immediate. FLAGS ZNCV refers to the integer Z, N, C, and V bits, while FFLAGS names
-the accrued floating-point exception and status bits.
+the accrued floating-point exception flags.
 
-\subsection*{Encoding Forms}
-In an encoding diagram, fixed 0 and 1 fields identify opcode bits, and the notes below decode lettered fields. An
-<ea> field is the compact effective-address field and may append EA payload bytes in operand order.
+\subsection*{Encodings}
+In an encoding diagram, fixed 0 and 1 fields identify framing, opcode-selection, or reserved values, and the notes
+below decode lettered fields. An <ea> field is the compact effective-address field and may select one or more
+independently determined EA payloads in operand order.
 
-In each instruction entry, Encoding Forms presents the concrete forms, operand and
-effective-address grammar, stable form identities, and size selectors.
+In each instruction entry, Encodings presents the encoding variants, operand and
+effective-address grammar, and size selectors.
 
-For an extended encoding, the four-bit L field selects a 3+L-byte instruction record. The required-byte count is the
-space consumed by the opcode and selected operand payloads. Every larger encoded length through 18 bytes is
-valid and the trailing bytes are uninterpreted padding. The \texttt{LEN n,} spelling records an explicit total length.
+For an extended encoding, the four-bit L field selects a 3+L-byte encoded instruction length. The required
+instruction length is the opcode-space length plus the selected operand payload lengths. Every larger encoded
+instruction length through 18 bytes is valid, and the trailing bytes are uninterpreted padding. The
+\texttt{LEN n,} spelling records an explicit encoded instruction length.
 \endgroup
 \clearpage

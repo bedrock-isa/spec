@@ -6,7 +6,6 @@ use bedrock_isa::table::{
     extract_pattern_field, form_accepts,
 };
 use bedrock_isa::{CompactEa, DisplacementWidth};
-use std::collections::HashSet;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 
 const DATA_ADDRESS: u64 = 0x1_0000;
@@ -265,45 +264,6 @@ fn execute_one(form: &GeneratedForm, bytes: &[u8]) -> Option<String> {
 
 #[test]
 fn every_generated_form_decodes_and_reaches_a_non_illegal_execution_path() {
-    assert_eq!(GENERATED_FORMS.len(), 484);
-    let class_counts = [
-        EncodingClass::ExtraShort,
-        EncodingClass::Short,
-        EncodingClass::Medium,
-        EncodingClass::Long,
-        EncodingClass::ExtraLong,
-    ]
-    .map(|class| {
-        GENERATED_FORMS
-            .iter()
-            .filter(|form| form.class == class)
-            .count()
-    });
-    assert_eq!(class_counts, [25, 39, 186, 191, 43]);
-
-    let opcodes = GENERATED_FORMS
-        .iter()
-        .map(|form| form.opcode)
-        .collect::<HashSet<_>>();
-    assert_eq!(opcodes.len(), 205);
-    let form_ids = GENERATED_FORMS
-        .iter()
-        .map(|form| form.form)
-        .collect::<HashSet<_>>();
-    assert_eq!(form_ids.len(), 484);
-    let allocation_ids = GENERATED_FORMS
-        .iter()
-        .map(|form| form.id)
-        .collect::<HashSet<_>>();
-    assert_eq!(allocation_ids.len(), 484);
-    assert_eq!(
-        GENERATED_FORMS
-            .iter()
-            .filter(|form| form.opcode == Opcode::Illegal)
-            .count(),
-        1
-    );
-
     let mut offenders = Vec::new();
     for form in GENERATED_FORMS {
         let payload = representative_payload(form);

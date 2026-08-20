@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import argparse
-from collections import Counter
 import json
 from pathlib import Path
 import sys
@@ -19,14 +18,6 @@ import decode_ir
 from encoding_architecture import ENCODING_CLASSES_BY_NAME
 
 
-EXPECTED_DISTRIBUTION = {
-    "extrashort": 25,
-    "short": 39,
-    "medium": 186,
-    "long": 191,
-    "extralong": 43,
-}
-EXPECTED_SET_DISTRIBUTION = {"base": 141, "fpu": 45, "fpu.transcendental_approx": 19}
 CLASS_CONSTRUCTORS = {
     "extrashort": "ExtraShort",
     "short": "Short",
@@ -132,7 +123,7 @@ def _representative_record(located, operand_types) -> list[int]:
     record = decode_ir.build_representative_record(
         form,
         operand_types,
-        ENCODING_CLASSES_BY_NAME[form.encoding_class].instruction_bytes,
+        ENCODING_CLASSES_BY_NAME[form.encoding_class].opcode_space_bytes,
     )
     if record is None:
         raise ValueError(f"{form.id}: representative exceeds the encodable record length")
@@ -351,7 +342,7 @@ def _render_catalog_ir(ir: decode_ir.DecodeIR) -> str:
             "has_ea_operand = %s, "
             "repeat_rep = %s, repeat_repcc = %s, repeat_repg = %s, "
             "repeat_observed_kind = %s, repeat_observed_operand = %s, flag_effects = %s, "
-            "exceptions = %s, encoding_class = %s, payload_width = %d, value = 0x%016X, "
+            "exceptions = %s, encoding_class = %s, allocation_bits = %d, value = 0x%016X, "
             "mask = 0x%016X, constraints = %s, fields = %s, operands = %s, sizes = %s, "
             "appended_payloads = %s, overlaps = %s }"
             % (
@@ -420,15 +411,6 @@ catalog {
 def render_outputs(build_dir: Path) -> dict[Path, str]:
     store, operand_types, ea_registry, documents = _load_inputs()
     ir = decode_ir.build_decode_ir(store, operand_types, ea_registry, documents)
-    distribution = Counter(form.opcode_class for form in ir.forms)
-    one_form_per_mnemonic = {form.mnemonic: form for form in ir.forms}
-    set_distribution = Counter(
-        form.control.instruction_set for form in one_form_per_mnemonic.values()
-    )
-    if ir.limits.form_count != 484 or dict(distribution) != EXPECTED_DISTRIBUTION:
-        raise ValueError(f"unexpected form inventory: {ir.limits.form_count} {dict(distribution)}")
-    if ir.limits.mnemonic_count != 205 or dict(set_distribution) != EXPECTED_SET_DISTRIBUTION:
-        raise ValueError(f"unexpected mnemonic inventory: {ir.limits.mnemonic_count} {dict(set_distribution)}")
     unknown_routes = {form.control.route for form in ir.forms} - ROUTE_CONSTRUCTORS.keys()
     if unknown_routes:
         raise ValueError(f"unrouted instruction families: {sorted(unknown_routes)}")

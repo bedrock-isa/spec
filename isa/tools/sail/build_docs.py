@@ -17,8 +17,6 @@ TOOLS_ROOT = Path(__file__).resolve().parent
 ROOT = TOOLS_ROOT.parents[2]
 SAIL_SOURCE_ROOT = ROOT / "isa"
 SAIL_PROJECT = SAIL_SOURCE_ROOT / "bedrock.sail_project"
-EXPECTED_OPERATION_COUNT = 205
-EXPECTED_FORM_COUNT = 484
 OWNER_SOURCE_PATHS = {
     "core": (
         SAIL_SOURCE_ROOT / "execution" / "core" / "types.sail",
@@ -318,12 +316,15 @@ def build_semantic_index(doc_bundle: dict[str, object]) -> dict[str, object]:
     if not isinstance(types, dict) or not isinstance(functions, dict):
         raise ValueError("Sail documentation bundle lacks types or functions")
 
+    store, _, _, documents = generate_catalog._load_inputs()
+    expected_mnemonics = set(documents)
+
     operation_type = types.get("Semantic_operation")
     if not isinstance(operation_type, dict) or not isinstance(operation_type.get("type"), str):
         raise ValueError("Sail documentation bundle lacks Semantic_operation")
     mnemonics = sorted(set(re.findall(r"\bOp_([A-Za-z0-9_]+)\b", operation_type["type"])))
-    if len(mnemonics) != EXPECTED_OPERATION_COUNT:
-        raise ValueError(f"unexpected Sail operation inventory: {len(mnemonics)}")
+    if set(mnemonics) != expected_mnemonics:
+        raise ValueError("Sail operation inventory differs from instruction definitions")
 
     semantic_route = functions.get("semantic_route")
     route_record = _function_record(semantic_route)
@@ -339,15 +340,19 @@ def build_semantic_index(doc_bundle: dict[str, object]) -> dict[str, object]:
         previous = routes.setdefault(mnemonic, route)
         if previous != route:
             raise ValueError(f"conflicting routes for {mnemonic}: {previous}, {route}")
-    if len(routes) != EXPECTED_OPERATION_COUNT or set(routes) != set(mnemonics):
+    if set(routes) != set(mnemonics):
         raise ValueError(f"unexpected Sail route inventory: {len(routes)}")
 
     owner_sources, qualified_by_name = _owner_function_graph(functions)
     operations_by_route: dict[str, set[str]] = {}
     for mnemonic, route in routes.items():
         operations_by_route.setdefault(route, set()).add(f"Op_{mnemonic}")
-    if len(operations_by_route) != 15:
-        raise ValueError(f"unexpected Sail route class inventory: {len(operations_by_route)}")
+    expected_routes = {
+        generate_catalog.ROUTE_CONSTRUCTORS[document.attributes.family]
+        for document in documents.values()
+    }
+    if set(operations_by_route) != expected_routes:
+        raise ValueError("Sail route classes differ from instruction definitions")
     route_owners = _derive_route_owners(
         set(operations_by_route), operations_by_route, owner_sources, qualified_by_name
     )
@@ -358,7 +363,6 @@ def build_semantic_index(doc_bundle: dict[str, object]) -> dict[str, object]:
         owner_sources, qualified_by_name
     )
 
-    store, _, _, _ = generate_catalog._load_inputs()
     forms_by_mnemonic: dict[str, list[str]] = {mnemonic: [] for mnemonic in mnemonics}
     forms: list[dict[str, str]] = []
     for located in sorted(store.encodings, key=lambda item: item.form.id):
@@ -373,8 +377,8 @@ def build_semantic_index(doc_bundle: dict[str, object]) -> dict[str, object]:
             "operation": f"Op_{mnemonic}",
             "route": routes[mnemonic],
         })
-    if len(forms) != EXPECTED_FORM_COUNT or len({form["form_id"] for form in forms}) != EXPECTED_FORM_COUNT:
-        raise ValueError(f"unexpected encoding form inventory: {len(forms)}")
+    if len({form["form_id"] for form in forms}) != len(forms):
+        raise ValueError("duplicate encoding form IDs in semantic index")
 
     operations = []
     for mnemonic in mnemonics:

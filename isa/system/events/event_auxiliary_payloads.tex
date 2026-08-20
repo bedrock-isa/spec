@@ -71,7 +71,7 @@ For \texttt{MACHINE\_CHECK}, the error code has this layout:
 \midrule
 7..0 & \texttt{SOURCE} & 0 unknown; 1 core; 2 cache; 3 translation; 4 memory; 5 interconnect\\
 9..8 & \texttt{SEVERITY} & 0 corrected; 1 recoverable; 2 fatal; 3 reserved\\
-10 & \texttt{PRECISE} & saved PC identifies the responsible instruction and saved CPU state precedes it\\
+10 & \texttt{PRECISE} & saved PC identifies the responsible instruction and saved architectural state precedes it\\
 11 & \texttt{RETRY\_SAFE} & retry at that precise boundary cannot duplicate an external effect\\
 23..12 & reserved & zero\\
 24 & \texttt{FAULT\_EA\_VALID} & \texttt{FAULT\_EA} was produced\\
@@ -100,11 +100,11 @@ addresses are supplied when available.
 \midrule
 \endhead
 corrected & 0 & 0 & Trap; saved PC is the instruction following the corrected operation.\\
-recoverable & 0 & 0 & Saved PC is the next instruction that would execute at the delivery boundary; saved CPU state is the state at that boundary. It does not identify the responsible operation.\\
-recoverable & 1 & 0 & Saved PC identifies the responsible instruction and CPU state precedes it; retry may duplicate an external effect.\\
-recoverable & 1 & 1 & Saved PC identifies the responsible instruction and CPU state precedes it; retry cannot duplicate an external effect.\\
+recoverable & 0 & 0 & Saved PC is the next instruction that would execute at the delivery boundary; saved architectural state is the state at that boundary. It does not identify the responsible operation.\\
+recoverable & 1 & 0 & Saved PC identifies the responsible instruction and architectural state precedes it; retry may duplicate an external effect.\\
+recoverable & 1 & 1 & Saved PC identifies the responsible instruction and architectural state precedes it; retry cannot duplicate an external effect.\\
 fatal & 0 & 0 & Saved PC is the next instruction at the delivery boundary and is diagnostic only.\\
-fatal & 1 & 0 & Saved PC identifies the responsible instruction and pre-instruction CPU state for diagnosis only.\\
+fatal & 1 & 0 & Saved PC identifies the responsible instruction and pre-instruction architectural state for diagnosis only.\\
 \bottomrule
 \end{manuallongtable}
 
@@ -169,6 +169,6 @@ For \texttt{BUS\_ERROR}, the error code has this layout:
 \bottomrule
 \end{manuallongtable}
 
-A bus error during a page walk reports the level whose PTE transaction failed. When valid, \texttt{EVENT\_AUX}
-contains the final memory-system address available for the failed transaction. For a slot-addressed access, this is
+A bus error during a page walk reports the level whose PTE access failed. When valid, \texttt{EVENT\_AUX}
+contains the final memory-system address available for the failed access. For a slot-addressed access, this is
 the slot address and not a byte address.

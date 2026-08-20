@@ -71,7 +71,7 @@ def build_field_type_registry(
         definition = dict(raw_definition)
         types[name] = FieldTypeSpec(
             name=name,
-            width=int(definition["field_width"]),
+            width=int(definition["bit_width"]),
             allocation_kind=_allocation_kind(name, definition),
             operand_kind=str(definition["kind"]),
             fixed_register=(

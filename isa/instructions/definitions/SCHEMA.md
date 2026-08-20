@@ -314,7 +314,7 @@ OperandRegistry {
 
 OperandTypeCommon {
   kind: OperandKind
-  field_width: int[0..]
+  bit_width: int[0..]
 }
 
 OperandKind = enum(
@@ -335,25 +335,25 @@ another variant are rejected.
 ```text
 kind: register {
   kind: register
-  field_width: int[0..]
+  bit_width: int[0..]
   register_group: string
 }
 
 kind: fixed_register {
   kind: fixed_register
-  field_width: int[0..]
+  bit_width: int[0..]
   register: string
 }
 
 kind: effective_address {
   kind: effective_address
-  field_width: int[0..]
+  bit_width: int[0..]
   encoding_ref: string
 }
 
 kind: enum {
   kind: enum
-  field_width: int[0..]
+  bit_width: int[0..]
   exactly-one(
     values: list<OperandEnumValue>,
     values_ref: string
@@ -364,19 +364,19 @@ kind: enum {
 
 kind: ea_immediate {
   kind: ea_immediate
-  field_width: int[0..]
+  bit_width: int[0..]
   encoding_ref: string
 }
 
 kind: bitmap {
   kind: bitmap
-  field_width: int[0..]
+  bit_width: int[0..]
   bits: list<OperandBit>
 }
 
 kind: immediate | relative_immediate {
   kind: enum(immediate, relative_immediate)
-  field_width: int[0..]
+  bit_width: int[0..]
   signed: bool
   operation_size_extension?: string
 }
@@ -389,7 +389,7 @@ OperandEnumValue {
 }
 
 OperandBit {
-  bit: int[0..field_width-1]
+  bit: int[0..bit_width-1]
   name: string
 }
 ```
@@ -483,7 +483,7 @@ EaRegistry {
 
 EaPayload {
   kind: string
-  field_width: int[1..]
+  bit_width: int[1..]
   signed: bool
 }
 
@@ -577,7 +577,7 @@ OrdinaryPlt {
 AbiInstruction {
   assembly: string
   offset: int[0..]
-  opcode_bytes: list<int[0..255]>
+  opcode_space_bytes: list<int[0..255]>
   total_bytes: int[1..]
   displacement: AbiDisplacement
 }

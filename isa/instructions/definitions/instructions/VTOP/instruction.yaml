@@ -1,7 +1,7 @@
 mnemonic: VTOP
 title: Virtual To Physical Query
 summary: Non-destructively queries the current translation of a linear address.
-description: With paging disabled, VTOP returns the supplied linear address unchanged. With paging enabled, it returns the current byte or slot translation and reports query success and accumulated U, W, and X permissions in FLAGS without performing a memory transaction.
+description: With paging disabled, VTOP returns the supplied linear address unchanged. With paging enabled, it returns the current byte or slot translation and reports query success and accumulated U, W, and X permissions in FLAGS without accessing the translated target or issuing a slot transaction.
 attributes:
   class: system
   family: tlb_and_context

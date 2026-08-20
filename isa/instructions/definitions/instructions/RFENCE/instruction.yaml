@@ -1,7 +1,7 @@
 mnemonic: RFENCE
 title: Read Fence
 summary: Order prior reads before later reads.
-description: Prevents retirement until every earlier memory read is ordered before every later memory read on the same hardware thread. It performs no memory access and changes no register or flag.
+description: Prevents retirement until every earlier memory read is ordered before every later memory read on the same logical processor. It performs no memory access and changes no register or flag.
 attributes:
   class: system
   family: core_control

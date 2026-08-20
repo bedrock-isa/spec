@@ -274,12 +274,12 @@ exception_causes:
     - {value: 2, name: RESERVED_ENCODING, meaning: assigned instruction uses a reserved field value}
     - {value: 3, name: UNAVAILABLE_EXTENSION, meaning: required extension is unavailable}
     - {value: 4, name: EXPLICIT_ILLEGAL, meaning: architected ILLEGAL instruction}
-    - {value: 5, name: INSUFFICIENT_LENGTH, meaning: encoded record is shorter than the selected concrete form requires}
+    - {value: 5, name: INSUFFICIENT_LENGTH, meaning: encoded instruction length is shorter than the selected encoding requires}
     - {value: 6, name: INVALID_OPERAND_RELATION, meaning: writable operands use a prohibited overlap relation}
   INVALID_CONTROL_STATE:
     - {value: 0, name: INVALID_SELECTOR, meaning: selector names no available resource}
     - {value: 1, name: RESERVED_BITS, meaning: reserved bits are nonzero or changed illegally}
-    - {value: 2, name: INVALID_IMAGE, meaning: supplied architectural image is invalid}
+    - {value: 2, name: INVALID_IMAGE, meaning: supplied register or processor-state image is invalid}
     - {value: 3, name: INVALID_TRANSITION, meaning: requested state transition is illegal}
 
 fptransa_accuracy_contracts:
@@ -329,10 +329,10 @@ architectural_events:
   - {event_class: EXCEPTION, id: 0x09, name: PAGE_FAULT, producer: "segment, translation, access, or atomic-alignment check", kind: fault, saved_pc: faulting instruction, committed_state: no effects of the faulting instruction, frame: PAGE_FAULT, payload: "error code, fault EA, and linear address", priority: 3}
   - {event_class: EXCEPTION, id: 0x0A, name: DIVIDE_ERROR, producer: integer divide operation, kind: fault, saved_pc: faulting instruction, committed_state: no effects of the faulting instruction, frame: ERROR, payload: error code, priority: 3}
   - {event_class: EXCEPTION, id: 0x0D, name: INVALID_CONTROL_STATE, producer: control-state validation, kind: fault, saved_pc: faulting instruction, committed_state: no effects of the faulting instruction, frame: ERROR, payload: error code, priority: 3}
-  - {event_class: EXCEPTION, id: 0x0E, name: FLOATING_POINT_FAULT, producer: enabled floating-point exception, kind: fault, saved_pc: faulting instruction, committed_state: no destination or accrued-flag effects of the faulting instruction, frame: ERROR, payload: error code, priority: 3}
+  - {event_class: EXCEPTION, id: 0x0E, name: FLOATING_POINT_FAULT, producer: enabled floating-point exception condition, kind: fault, saved_pc: faulting instruction, committed_state: no destination or accrued-flag effects of the faulting instruction, frame: ERROR, payload: error code, priority: 3}
   - {event_class: EXCEPTION, id: 0x18, name: DOUBLE_FAULT, producer: architectural event-delivery failure, kind: delivery failure, saved_pc: interrupted event boundary, committed_state: no partial first delivery state, frame: AUXILIARY, payload: delivery-failure auxiliary state, priority: 1}
   - {event_class: EXCEPTION, id: 0x19, name: MACHINE_CHECK, producer: processor or memory-system machine-check source, kind: machine check, saved_pc: selected by PRECISE and corrected status, committed_state: selected by PRECISE and RETRY_SAFE, frame: AUXILIARY, payload: machine-check auxiliary state, priority: 2}
-  - {event_class: EXCEPTION, id: 0x1A, name: BUS_ERROR, producer: synchronous acknowledged bus failure, kind: fault, saved_pc: faulting instruction, committed_state: no CPU state effects of the faulting instruction, frame: AUXILIARY, payload: bus-error auxiliary state, priority: 3}
+  - {event_class: EXCEPTION, id: 0x1A, name: BUS_ERROR, producer: synchronous acknowledged bus failure, kind: fault, saved_pc: faulting instruction, committed_state: no architectural-state effects of the faulting instruction, frame: AUXILIARY, payload: bus-error auxiliary state, priority: 3}
   - {event_class: NMI, id: source, name: NMI, producer: admitted non-maskable interrupt source, kind: asynchronous, saved_pc: next instruction or repeat continuation, committed_state: all earlier committed state, frame: BASIC, payload: none, priority: 6}
   - {event_class: INTERRUPT, id: platform, name: INTERRUPT, producer: admitted maskable interrupt source, kind: asynchronous, saved_pc: next instruction or repeat continuation, committed_state: all earlier committed state, frame: BASIC, payload: none, priority: 7}
 
@@ -349,19 +349,19 @@ immediate_operand_interpretation:
     applies_when: PTQUERY page-table level selector
   - operand_type: flags_bitmap
     value_kind: bitmap
-    range_from: field_width
+    range_from: bit_width
     extension: none
     applies_when: SETF/CLRF integer FLAGS masks
   - operand_type: imm6
     value_kind: unsigned
-    range_from: field_width
+    range_from: bit_width
     extension: zero-extend
-    applies_when: integer forms with an explicit B/W/L/Q operation size
+    applies_when: integer encodings with an explicit B/W/L/Q operation size
   - operand_type: imm7
     value_kind: unsigned
-    range_from: field_width
+    range_from: bit_width
     extension: zero-extend
-    applies_when: EXTRACT register-pair forms
+    applies_when: EXTRACT register-pair encodings
 
 reset_contract:
   scope: executing logical processor

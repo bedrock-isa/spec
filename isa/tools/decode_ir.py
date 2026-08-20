@@ -179,7 +179,7 @@ class FormIR:
     mnemonic: str
     syntax: str
     opcode_class: str
-    opcode_bytes: int
+    opcode_space_bytes: int
     opcode_width: int
     opcode_value: int
     opcode_mask: int
@@ -477,14 +477,14 @@ def _normalized_operands(
             source = FixedSourceIR(int(decimal_literals.pop(0)), "")
         else:
             source = AppendedPayloadSourceIR(
-                width=int(raw["field_width"]),
+                width=int(raw["bit_width"]),
                 signed=bool(raw.get("signed", False)),
             )
         result.append(
             OperandIR(
                 name=operand.name,
                 type_name=operand.type,
-                type_width=int(raw["field_width"]),
+                type_width=int(raw["bit_width"]),
                 access=operand.access,
                 domain=operand.domain or "",
                 ea_role=operand.ea_role or "",
@@ -534,7 +534,7 @@ def _ea_form_ir(
         ),
         segment=form.segment or "",
         payload_name=form.payload or "",
-        payload_width=payload.field_width if payload else 0,
+        payload_width=payload.bit_width if payload else 0,
         payload_signed=payload.signed if payload else False,
         base=form.base or "",
         register_name=form.register or "",
@@ -628,7 +628,7 @@ def _build_effective_addresses(ea_registry: Any, field_types: Any) -> EffectiveA
     return EffectiveAddressIR(
         compact_width=ea_registry.compact_field_width,
         payloads=tuple(
-            EaPayloadIR(name, payload.kind, payload.field_width, payload.signed)
+            EaPayloadIR(name, payload.kind, payload.bit_width, payload.signed)
             for name, payload in sorted(ea_registry.payloads.items())
         ),
         compact_forms=compact_forms,
@@ -640,7 +640,7 @@ def _build_effective_addresses(ea_registry: Any, field_types: Any) -> EffectiveA
 def build_representative_record(
     form: Any,
     operand_types: dict[str, Any],
-    opcode_bytes: int,
+    opcode_space_bytes: int,
 ) -> tuple[int, ...] | None:
     """Build the canonical representative record for one resolved schema form."""
     value, _ = pattern_value_mask(form.bits)
@@ -657,10 +657,10 @@ def build_representative_record(
         for operand in operands
         if isinstance(operand.source, AppendedPayloadSourceIR)
     )
-    total = opcode_bytes + appended_bytes
-    if opcode_bytes == 1:
+    total = opcode_space_bytes + appended_bytes
+    if opcode_space_bytes == 1:
         record = [value]
-    elif opcode_bytes == 2:
+    elif opcode_space_bytes == 2:
         full = (0b10 << 14) | value
         record = [(full >> 8) & 0xFF, full & 0xFF]
     else:
@@ -669,11 +669,11 @@ def build_representative_record(
         record = [
             0b11000000
             | ((total - 3) << 2)
-            | ((value >> ((opcode_bytes - 1) * 8)) & 0x3)
+            | ((value >> ((opcode_space_bytes - 1) * 8)) & 0x3)
         ]
         record.extend(
             (value >> shift) & 0xFF
-            for shift in range((opcode_bytes - 2) * 8, -1, -8)
+            for shift in range((opcode_space_bytes - 2) * 8, -1, -8)
         )
     record.extend([0] * appended_bytes)
     return tuple(record)
@@ -734,7 +734,7 @@ def _build_form(
         for operand in operands
         if isinstance(operand.source, AppendedPayloadSourceIR)
     )
-    fixed_required_bytes = encoding_class.instruction_bytes + sum(
+    fixed_required_bytes = encoding_class.opcode_space_bytes + sum(
         op.width // 8 for op in layout if isinstance(op, ReadPayloadIR)
     )
     repeat = document.repeat
@@ -746,7 +746,7 @@ def _build_form(
         mnemonic=located.mnemonic,
         syntax=form.syntax,
         opcode_class=form.encoding_class,
-        opcode_bytes=encoding_class.instruction_bytes,
+        opcode_space_bytes=encoding_class.opcode_space_bytes,
         opcode_width=len(form.bits),
         opcode_value=value,
         opcode_mask=mask,
@@ -785,7 +785,7 @@ def _build_form(
         maximum_required_bytes=fixed_required_bytes
         + sum(op.maximum_bytes for op in layout if isinstance(op, ParseEaIR)),
         representative_record=build_representative_record(
-            form, operand_types, encoding_class.instruction_bytes
+            form, operand_types, encoding_class.opcode_space_bytes
         ),
     )
 
@@ -1056,8 +1056,8 @@ def validate_decode_ir(ir: DecodeIR) -> None:
         if form.opcode_mask >= 1 << form.opcode_width:
             raise ValueError(f"{form.key}: opcode mask exceeds width")
         if (
-            form.opcode_bytes != encoding_class.instruction_bytes
-            or form.opcode_width != encoding_class.payload_bits
+            form.opcode_space_bytes != encoding_class.opcode_space_bytes
+            or form.opcode_width != encoding_class.allocation_bits
         ):
             raise ValueError(f"{form.key}: opcode byte/width mismatch")
         fields_by_symbol = {field.symbol: field for field in form.fields}
@@ -1190,7 +1190,7 @@ def validate_decode_ir(ir: DecodeIR) -> None:
             raise ValueError(f"{form.key}: layout must order ParseEa before ReadPayload")
         if any(op.operand_name not in operands_by_name for op in form.layout):
             raise ValueError(f"{form.key}: layout references an unknown operand")
-        fixed_required = form.opcode_bytes + sum(
+        fixed_required = form.opcode_space_bytes + sum(
             op.width // 8 for op in form.layout if isinstance(op, ReadPayloadIR)
         )
         minimum_required = fixed_required + sum(

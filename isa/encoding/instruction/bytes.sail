@@ -36,7 +36,7 @@ function read_be_bits(bytes : list(bits(8)), cursor : int, width : int) -> optio
     None() => None(),
   }
 
-function opcode_payload(bytes : list(bits(8)), encoding_class : Encoding_class) -> option(bits(64)) =
+function opcode_allocation(bytes : list(bits(8)), encoding_class : Encoding_class) -> option(bits(64)) =
   match (encoding_class, bytes) {
     (ExtraShort, byte0 :: _) => Some(sail_zero_extend(byte0[6 .. 0], 64)),
     (Short, byte0 :: byte1 :: _) => Some(sail_zero_extend(byte0[5 .. 0] @ byte1, 64)),
@@ -57,27 +57,27 @@ function encoding_class_of_record(record_class : Record_class) -> Encoding_class
   ExtendedExtraLong => ExtraLong,
 }
 
-function find_catalog_entry(payload : bits(64), encoding_class : Encoding_class,
+function find_catalog_entry(allocation : bits(64), encoding_class : Encoding_class,
                             entries : list(Catalog_entry)) -> option(Catalog_entry) =
   match entries {
     [||] => None(),
     entry :: tail =>
-      if entry.encoding_class == encoding_class & catalog_entry_matches(payload, entry)
+      if entry.encoding_class == encoding_class & catalog_entry_matches(allocation, entry)
       then Some(entry)
-      else find_catalog_entry(payload, encoding_class, tail),
+      else find_catalog_entry(allocation, encoding_class, tail),
   }
 
-function find_opcode_entry(payload : bits(64), encoding_class : Encoding_class,
+function find_opcode_entry(allocation : bits(64), encoding_class : Encoding_class,
                            entries : list(Catalog_entry)) -> option(Catalog_entry) =
   match entries {
     [||] => None(),
     entry :: tail =>
-      if entry.encoding_class == encoding_class & ((payload & entry.mask) == entry.value)
+      if entry.encoding_class == encoding_class & ((allocation & entry.mask) == entry.value)
       then Some(entry)
-      else find_opcode_entry(payload, encoding_class, tail),
+      else find_opcode_entry(allocation, encoding_class, tail),
   }
 
-function decode_fields(payload : bits(64), fields : list(Catalog_field)) -> list(Decoded_field) =
+function decode_fields(allocation : bits(64), fields : list(Catalog_field)) -> list(Decoded_field) =
   match fields {
     [||] => [||],
     field :: tail => struct {
@@ -85,8 +85,8 @@ function decode_fields(payload : bits(64), fields : list(Catalog_field)) -> list
       type_name = field.type_name,
       kind = field.kind,
       role = "",
-      value = extracted_field(payload, field.positions, 0)
-    } :: decode_fields(payload, tail),
+      value = extracted_field(allocation, field.positions, 0)
+    } :: decode_fields(allocation, tail),
   }
 
 function find_decoded_field(symbol : string, fields : list(Decoded_field)) -> option(Decoded_field) =
@@ -94,4 +94,3 @@ function find_decoded_field(symbol : string, fields : list(Decoded_field)) -> op
     [||] => None(),
     field :: tail => if field.symbol == symbol then Some(field) else find_decoded_field(symbol, tail),
   }
-

@@ -7,6 +7,9 @@ orders or observations this model permits. The machine-readable
 `validation.yaml` file records the minimum proof obligations adopted for the
 current draft.
 
+Within this formal domain, one hart corresponds to one architectural logical processor, and a memory action is the
+model-internal representation of an architectural memory event or access.
+
 The gate is deliberately marked `pending_formal_proof`. Structural repository
 tests verify that none of the required litmus families or semantic obligations
 are dropped, but those tests are not a substitute for an axiomatic or

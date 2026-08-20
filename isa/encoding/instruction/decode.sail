@@ -65,11 +65,11 @@ function operands_statically_legal(catalog : list(Catalog_operand),
     _ => false,
   }
 
-function decode_success(form : Catalog_entry, payload : bits(64), fields : list(Decoded_field),
+function decode_success(form : Catalog_entry, allocation : bits(64), fields : list(Decoded_field),
                         operands : Operand_parse, frame : Framed_record,
                         bytes : list(bits(8))) -> Decode_outcome = {
   let instruction : Decoded_instruction = struct {
-    form = form, payload = payload, fields = fields, operands = operands.operands,
+    form = form, opcode_allocation = allocation, fields = fields, operands = operands.operands,
     encoded_length = frame.encoded_length, required_length = operands.cursor, bytes = bytes
   };
   if not_bool(operands_statically_legal(form.operands, operands.operands)) then
@@ -86,19 +86,19 @@ function decode_full_record_outcome(bytes : list(bits(8))) -> Decode_outcome =
     None() => struct { stage = DecodeFraming, candidate_form = None(), instruction = None(), detail = "record framing" },
     Some(frame) => {
       let encoding_class = encoding_class_of_record(frame.record_class);
-      match opcode_payload(bytes, encoding_class) {
-        None() => struct { stage = DecodeFetch, candidate_form = None(), instruction = None(), detail = "opcode bytes unavailable" },
-        Some(payload) => match find_opcode_entry(payload, encoding_class, primary_form_catalog()) {
+      match opcode_allocation(bytes, encoding_class) {
+        None() => struct { stage = DecodeFetch, candidate_form = None(), instruction = None(), detail = "opcode-space bytes unavailable" },
+        Some(allocation) => match find_opcode_entry(allocation, encoding_class, primary_form_catalog()) {
           None() => struct { stage = DecodeOpcode, candidate_form = None(), instruction = None(), detail = "unallocated opcode" },
-          Some(opcode_form) => match find_catalog_entry(payload, encoding_class, primary_form_catalog()) {
+          Some(opcode_form) => match find_catalog_entry(allocation, encoding_class, primary_form_catalog()) {
               None() => struct { stage = DecodeConstraint, candidate_form = Some(opcode_form), instruction = None(), detail = "catalog constraint" },
               Some(form) => {
-                let fields = decode_fields(payload, form.fields);
-                let opcode_bytes = class_minimum(frame.record_class);
-                match parse_ea_operands(form.operands, fields, bytes, opcode_bytes) {
+                let fields = decode_fields(allocation, form.fields);
+                let opcode_space_bytes = class_minimum(frame.record_class);
+                match parse_ea_operands(form.operands, fields, bytes, opcode_space_bytes) {
                   None() => {
                     struct {
-                      stage = ea_failure_stage(form.operands, fields, bytes, opcode_bytes),
+                      stage = ea_failure_stage(form.operands, fields, bytes, opcode_space_bytes),
                       candidate_form = Some(form), instruction = None(), detail = "effective-address encoding"
                     }
                   },
@@ -110,7 +110,7 @@ function decode_full_record_outcome(bytes : list(bits(8))) -> Decode_outcome =
                       candidate_form = Some(form),
                       detail = "standalone operand payload"
                     },
-                    Some(operands) => decode_success(form, payload, fields, operands, frame, bytes),
+                    Some(operands) => decode_success(form, allocation, fields, operands, frame, bytes),
                   },
                 }
               },

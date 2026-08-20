@@ -10,12 +10,12 @@ and instruction behavior for the Bedrock instruction set architecture.
 
 \Needspace{3.5in}
 \subsection{Architectural Profile}
-Bedrock defines sixteen 64-bit integer registers, R0 through R15. SP and PC are special architectural registers outside the
+Bedrock defines sixteen 64-bit general-purpose registers, R0 through R15. SP and PC are special architectural registers outside the
 Rn namespace, with SP-relative addressing tied to SS and PC-relative addressing tied to CS.
 
 \begin{itemize}
-\item The PC names a byte in the instruction stream; sequential execution advances it by the decoded instruction length.
-\item Instruction length is explicit and bounded; the base profile defines lengths from 1 to 18 bytes.
+\item The PC names a byte in the instruction stream; sequential execution advances it by the encoded instruction length determined during decoding.
+\item Encoded instruction length is explicit and bounded; the base profile defines encoded instruction lengths from 1 to 18 bytes.
 \item Four integer operation sizes: B, W, L, and Q.
 \item The effective-address model covers register, memory, immediate, absolute, segment-qualified, indexed, and auto-update operands.
 \item Segment pre-translation precedes optional page-table translation.

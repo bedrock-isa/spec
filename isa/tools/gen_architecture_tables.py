@@ -1074,13 +1074,13 @@ def render_architectural_events(data: dict[str, Any]) -> str:
 
 
 def operand_range(spec: dict[str, Any], range_from: str) -> str:
-    width = int(spec["field_width"])
+    width = int(spec["bit_width"])
     if range_from == "declared_values":
         values = [int(item["value"]) for item in spec.get("values", [])]
         if not values:
             raise ValueError("declared_values range requires enum values")
         return f"{min(values)}..{max(values)}"
-    if range_from != "field_width":
+    if range_from != "bit_width":
         raise ValueError(f"unknown operand range source: {range_from}")
     return f"0..{(1 << width) - 1}"
 
@@ -1094,7 +1094,7 @@ def render_immediate_operands(data: dict[str, Any]) -> str:
         rows.append(
             [
                 tex_code(operand_type),
-                str(int(spec["field_width"])),
+                str(int(spec["bit_width"])),
                 tex_escape(item["value_kind"]),
                 tex_escape(operand_range(spec, item["range_from"])),
                 tex_escape(item["extension"]),
@@ -1142,8 +1142,8 @@ def render_reset_state(data: dict[str, Any]) -> str:
 def render_atomic_orders(data: dict[str, Any]) -> str:
     effects = {
         "atomicity_only": "Atomicity only. No ordering is imposed on unrelated memory operations.",
-        "acquire": "Later memory operations by the same hardware thread are ordered after the atomic operation.",
-        "release": "Earlier memory operations by the same hardware thread are ordered before the atomic operation.",
+        "acquire": "Later memory operations by the same logical processor are ordered after the atomic operation.",
+        "release": "Earlier memory operations by the same logical processor are ordered before the atomic operation.",
         "acquire_release": "Applies both acquire and release ordering.",
         "sequentially_consistent": (
             "Applies acquire-release ordering and participates in the single global sequentially consistent order."

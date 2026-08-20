@@ -78,7 +78,7 @@
 \manualeaprofileline{Generation}{The one-byte EXT1 descriptor selects segment, base, and auto-update behavior. The compact EA escape selects the descriptor family and displacement size.}
 \manualeaprofileline{Segment}{Segment-qualified forms encode SREG SEG(s); default base-update forms use the operation default data segment.}
 \manualeaprofileline{Payload}{The one descriptor byte comes first, followed by the optional displacement payload selected by the compact EA escape.}
-\manualeaprofileline{Update}{Only forms with ++ or {-}{-} update the temporary operand-evaluation image.}
+\manualeaprofileline{Update}{Only forms with ++ or {-}{-} update the temporary operand-evaluation state.}
 \end{manualeaprofile}
 \end{manualformblock}
 \begin{manualformblock}{2.35in}
@@ -91,6 +91,6 @@
 \manualeaprofileline{Generation}{The two-byte EXT2 descriptor selects segment, base, index, and auto-update behavior. The compact EA escape selects the descriptor family and displacement size.}
 \manualeaprofileline{Segment}{Segment-qualified forms encode SREG SEG(s); SP and PC indexed forms use SS and CS.}
 \manualeaprofileline{Payload}{The two descriptor bytes come first, followed by the optional displacement payload selected by the compact EA escape.}
-\manualeaprofileline{Update}{Only forms with ++ or {-}{-} update the temporary operand-evaluation image.}
+\manualeaprofileline{Update}{Only forms with ++ or {-}{-} update the temporary operand-evaluation state.}
 \end{manualeaprofile}
 \end{manualformblock}

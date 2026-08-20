@@ -60,7 +60,7 @@
 \manualeaprofileline{Generation}{offset = index\_term * scale + displacement.}
 \manualeaprofileline{Segment}{SEG(s) selects DS, SS, or GS0..GS5.}
 \manualeaprofileline{Payload}{Two descriptor bytes plus the optional displacement selected by the compact EXT2 escape.}
-\manualeaprofileline{Update}{Index update follows the same one-element temporary-image rule as other indexed update forms.}
+\manualeaprofileline{Update}{Index update follows the same one-element temporary-state rule as other indexed update forms.}
 \end{manualeaprofile}
 \manualeaindexedmemoryflow{EXT2 zero-base indexed}{ZERO BASE}{0}{optional displacement}{Rn(i)}{EFFECTIVE ADDRESS}
 \end{manualformblock}

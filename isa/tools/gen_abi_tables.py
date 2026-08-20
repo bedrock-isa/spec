@@ -486,7 +486,7 @@ def render_fragments(
             environment="manuallongtable",
         ),
         "ordinary_memory_access_guarantees.tex": _table_fragment(
-            caption="Ordinary Memory Access Guarantees",
+            caption="Ordinary Normal-Memory Access Guarantees",
             widths=("2.75in", "2.65in"),
             headers=("Access", "Guarantee"),
             rows=_render_access_guarantees(c_abi["ordinary_access_guarantees"]),

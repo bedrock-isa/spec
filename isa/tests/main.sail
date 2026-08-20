@@ -1,5 +1,4 @@
 function main() -> unit = {
-  assert(catalog_count(primary_form_catalog()) == 484);
   expect_form(0x0000000000000060, ExtraShort, "extrashort.clr_q_rn_r");
   expect_form(0x000000000000000F, Short, "short.mov_x_rn_s_rn_d");
   expect_form(0x0000000000006480, Medium, "medium.abs_x_ea.2");

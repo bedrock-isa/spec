@@ -1,6 +1,6 @@
 mnemonic: WRFFLAGS
 title: Write Floating-Point Flags
-summary: Write the accrued floating-point exception flags from a register.
+summary: Write the accrued floating-point exception flags from an Rn register.
 description: WRFFLAGS writes the architectural FFLAGS register from the low source bits. Reserved FFLAGS bits must be zero. WRFFLAGS requires the floating-point extension.
 attributes:
   class: system

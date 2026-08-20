@@ -1,10 +1,12 @@
 \subsection{Instruction Payload Ordering}
-The instruction header occupies one byte for extrashort forms, two bytes for short forms, and at least two start
-bytes for extended forms. If a descriptor, immediate, displacement, or bitmap follows, those payload bytes
-occupy increasing addresses in decode order.
+The instruction header is byte 0 for extrashort and short instructions and the first two bytes for medium and
+longer instructions. The opcode space may continue after the header. If a descriptor, immediate, displacement, or
+bitmap follows the opcode space, each independently determined unit is a separate payload, and the payloads occupy
+increasing addresses in decode order. An extended EA descriptor and a following displacement are therefore separate
+payloads.
 
 Signed displacement and immediate payloads use two's-complement representation at their declared width before any
-sign extension performed by the consuming instruction or EA form.
+sign extension performed by the consuming instruction or effective-address encoding.
 
 \input{isa/encoding/instruction/immediate_operand_interpretation.tex}
 

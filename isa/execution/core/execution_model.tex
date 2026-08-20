@@ -18,7 +18,8 @@ the first applicable condition in the following order.
 \item Selector, control-image, and other architectural-state validation.
 \item Predicate evaluation for a conditional operation.
 \item Every non-suppressed operand access in architectural access order.
-\item Execution-stage integer and floating-point exceptions.
+\item Execution-stage integer faults and enabled floating-point exception conditions that raise
+\texttt{FLOATING\_POINT\_FAULT}.
 \end{enumerate}
 
 A false predicate suppresses the conditional operation's target-memory and implicit stack accesses. It does not
@@ -30,7 +31,7 @@ failure has priority over a destination-access failure.
 Implicit accesses use the order stated by the instruction. In particular, PUSH captures its source before accessing
 the destination stack slot; POP reads the stack slot before validating or writing its destination; PUSHP uses listed
 register order and POPP uses reverse listed order; CALL validates its target before accessing the return stack; RET
-reads the return stack before validating its target; and the far call, far return, event return, and supervisor-entry
+reads the return stack before validating its target; and Long Call, Long Return, Event Return, and supervisor-entry
 instructions use the step order in their instruction descriptions.
 
 \subsection{Implicit Stack Operations}
@@ -48,11 +49,11 @@ Ordinary implicit stack operations capture the current SS and SP before their fi
 \texttt{PUSH}, \texttt{CALL} &
 $[\texttt{old\_sp}-8,\texttt{old\_sp})$ &
 \texttt{old\_sp}-8 &
-one source value or the following-instruction return PC at \texttt{old\_sp}-8\\
+one source value or the following instruction's continuation PC at \texttt{old\_sp}-8\\
 \texttt{POP}, \texttt{RET} &
 $[\texttt{old\_sp},\texttt{old\_sp}+8)$ &
 \texttt{old\_sp}+8 &
-one destination value or return PC read at \texttt{old\_sp}\\
+one destination value or continuation PC read at \texttt{old\_sp}\\
 \texttt{PUSHP}, \texttt{FPUSHP} &
 $[\texttt{old\_sp}-16,\texttt{old\_sp})$ &
 \texttt{old\_sp}-16 &
@@ -64,11 +65,11 @@ listed pair's second register from \texttt{old\_sp}, then first register from \t
 \texttt{LCALL} &
 $[\texttt{old\_sp}-16,\texttt{old\_sp})$ &
 \texttt{old\_sp}-16 &
-return PC at \texttt{old\_sp}-16 and return CS image at \texttt{old\_sp}-8\\
+continuation PC at \texttt{old\_sp}-16 and return CS image at \texttt{old\_sp}-8\\
 \texttt{LRET} &
 $[\texttt{old\_sp},\texttt{old\_sp}+16)$ &
 \texttt{old\_sp}+16 &
-return PC at \texttt{old\_sp} and return CS image at \texttt{old\_sp}+8\\
+continuation PC at \texttt{old\_sp} and return CS image at \texttt{old\_sp}+8\\
 \bottomrule
 \end{manualtabular}
 
@@ -83,12 +84,12 @@ Execution Model.
 
 \subsection{Operand Evaluation and EA Defaults}
 Operands are decoded in instruction order. Source reads complete before the final destination write unless an
-atomic form says otherwise. Effective-address calculation may produce an address without reading memory.
+atomic instruction says otherwise. Effective-address calculation may produce an address without reading memory.
 
-Auto-update EA forms update a temporary operand-evaluation image. The architectural register update becomes
+Auto-update EA forms update temporary operand-evaluation state. The architectural register update becomes
 visible only when the instruction commits.
 
-Ordinary forms accept at most one memory operand. The explicitly encoded memory-memory exceptions are
+Ordinary instructions accept at most one memory operand. The explicitly encoded memory-memory exceptions are
 @MEMORY_MEMORY_EXCEPTIONS@. Repeat behavior is available only through the repeat instructions and body-eligibility
 rules defined in Repeated Scalar Execution.
 
@@ -100,10 +101,10 @@ defines partial completion.
 An instruction that faults before commit leaves destination registers, destination memory, and auto-update
 register effects unchanged unless the instruction explicitly defines partial completion.
 
-Atomic read-modify-write forms have a single architectural commit point for the memory update and any associated
+Atomic read-modify-write instructions have a single architectural commit point for the memory update and any associated
 register result. Cache, TLB, and system-state instructions describe their own completion and visibility rules.
 
-Ordinary integer ALU forms use the common one-memory-operand rule. Compare and test forms may read two operands and
+Ordinary integer ALU instructions use the common one-memory-operand rule. Compare and test instructions may read two operands and
 update FLAGS without storing their temporary result. EXTS and EXTZ additionally provide explicitly encoded
 register-memory, memory-register, and memory-memory conversions; they preserve FLAGS unless a repeat rule observes a
 derived value. Data movement, LEA, and segment-address operations also preserve FLAGS unless their descriptions say

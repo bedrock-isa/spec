@@ -114,7 +114,7 @@ struct Catalog_entry = {
   flag_effects : list(string),
   exceptions : list(Catalog_exception),
   encoding_class : Encoding_class,
-  payload_width : int,
+  allocation_bits : int,
   value : bits(64),
   mask : bits(64),
   constraints : list(Catalog_constraint),

@@ -1,9 +1,4 @@
 
-function catalog_count(entries : list(Catalog_entry)) -> int = match entries {
-  [||] => 0,
-  _ :: tail => 1 + catalog_count(tail),
-}
-
 function expect_frame(bytes : list(bits(8)), expected_class : Record_class, expected_length : int) -> unit =
   match frame_record(bytes) {
     Some(frame) => {
@@ -35,8 +30,8 @@ function expect_not_decoded(bytes : list(bits(8))) -> unit = match decode_select
   None() => (),
 }
 
-function expect_form(payload : bits(64), encoding_class : Encoding_class, form_id : string) -> unit =
-  match recognize_primary_form(payload, encoding_class) {
+function expect_form(allocation : bits(64), encoding_class : Encoding_class, form_id : string) -> unit =
+  match recognize_primary_form(allocation, encoding_class) {
     Some(actual) => assert(actual == form_id),
     None() => assert(false),
   }
@@ -111,4 +106,3 @@ function expect_execution() -> unit = {
     None() => assert(false),
   }
 }
-

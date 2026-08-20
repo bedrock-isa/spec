@@ -1,12 +1,12 @@
 enum Record_class = FixedExtraShort | FixedShort | ExtendedMedium | ExtendedLong | ExtendedExtraLong
 
-function extracted_field(payload : bits(64), positions : list(range(0, 63)), accumulated : int) -> int =
+function extracted_field(allocation : bits(64), positions : list(range(0, 63)), accumulated : int) -> int =
   match positions {
     [||] => accumulated,
     position :: tail => extracted_field(
-      payload,
+      allocation,
       tail,
-      accumulated * 2 + (if payload[position] == bitone then 1 else 0)
+      accumulated * 2 + (if allocation[position] == bitone then 1 else 0)
     ),
   }
 
@@ -16,35 +16,35 @@ function value_in_ranges(value : int, ranges : list(Catalog_range)) -> bool = ma
     (allowed.lower <= value & value <= allowed.upper) | value_in_ranges(value, tail),
 }
 
-function constraint_matches(payload : bits(64), item : Catalog_constraint) -> bool = {
-  let value = extracted_field(payload, item.field_positions, 0);
+function constraint_matches(allocation : bits(64), item : Catalog_constraint) -> bool = {
+  let value = extracted_field(allocation, item.field_positions, 0);
   match item.kind {
     AllowRanges => value_in_ranges(value, item.ranges),
     ExcludeImmediate => not_bool(91 <= value & value <= 94),
   }
 }
 
-function constraints_match(payload : bits(64), constraints : list(Catalog_constraint)) -> bool =
+function constraints_match(allocation : bits(64), constraints : list(Catalog_constraint)) -> bool =
   match constraints {
     [||] => true,
-    item :: tail => constraint_matches(payload, item) & constraints_match(payload, tail),
+    item :: tail => constraint_matches(allocation, item) & constraints_match(allocation, tail),
   }
 
-function catalog_entry_matches(payload : bits(64), entry : Catalog_entry) -> bool =
-  (payload & entry.mask) == entry.value & constraints_match(payload, entry.constraints)
+function catalog_entry_matches(allocation : bits(64), entry : Catalog_entry) -> bool =
+  (allocation & entry.mask) == entry.value & constraints_match(allocation, entry.constraints)
 
-function recognize_in_catalog(payload : bits(64), encoding_class : Encoding_class,
+function recognize_in_catalog(allocation : bits(64), encoding_class : Encoding_class,
                               entries : list(Catalog_entry)) -> option(string) =
   match entries {
     [||] => None(),
     entry :: tail =>
-      if entry.encoding_class == encoding_class & catalog_entry_matches(payload, entry)
+      if entry.encoding_class == encoding_class & catalog_entry_matches(allocation, entry)
       then Some(entry.form_id)
-      else recognize_in_catalog(payload, encoding_class, tail),
+      else recognize_in_catalog(allocation, encoding_class, tail),
   }
 
-function recognize_primary_form(payload : bits(64), encoding_class : Encoding_class) -> option(string) =
-  recognize_in_catalog(payload, encoding_class, primary_form_catalog())
+function recognize_primary_form(allocation : bits(64), encoding_class : Encoding_class) -> option(string) =
+  recognize_in_catalog(allocation, encoding_class, primary_form_catalog())
 
 struct Framed_record = {
   record_class : Record_class,

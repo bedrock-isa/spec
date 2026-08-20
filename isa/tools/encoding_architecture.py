@@ -9,9 +9,9 @@ from types import MappingProxyType
 
 ARCHITECTURE_SOURCE_PATH = Path(__file__).resolve()
 
-EXTRASHORT_HEADER_BITS = 1
-SHORT_HEADER_BITS = 2
-EXTENDED_HEADER_BITS = 6
+EXTRASHORT_FRAMING_BITS = 1
+SHORT_FRAMING_BITS = 2
+EXTENDED_FRAMING_BITS = 6
 EXTENDED_SELECTOR_BITS = 6
 EXTENDED_LENGTH_BASE_BYTES = 3
 EXTENDED_LENGTH_FIELD_BITS = 4
@@ -25,19 +25,19 @@ class EncodingClass:
     """One class in the fixed architectural opcode grammar."""
 
     name: str
-    instruction_bytes: int
-    header_bits: int
+    opcode_space_bytes: int
+    framing_bits: int
     selectors: tuple[str, ...] = ()
 
     @property
-    def payload_bits(self) -> int:
-        return self.instruction_bytes * 8 - self.header_bits
+    def allocation_bits(self) -> int:
+        return self.opcode_space_bytes * 8 - self.framing_bits
 
     @property
     def namespace(self) -> tuple[str, ...]:
         if not self.selectors:
-            return ("?" * self.payload_bits,)
-        suffix_bits = self.payload_bits - EXTENDED_SELECTOR_BITS
+            return ("?" * self.allocation_bits,)
+        suffix_bits = self.allocation_bits - EXTENDED_SELECTOR_BITS
         return tuple(
             selector.replace("x", "?") + "?" * suffix_bits
             for selector in self.selectors
@@ -45,16 +45,16 @@ class EncodingClass:
 
 
 ENCODING_CLASSES = (
-    EncodingClass("extrashort", 1, EXTRASHORT_HEADER_BITS),
-    EncodingClass("short", 2, SHORT_HEADER_BITS),
+    EncodingClass("extrashort", 1, EXTRASHORT_FRAMING_BITS),
+    EncodingClass("short", 2, SHORT_FRAMING_BITS),
     EncodingClass(
         "medium",
         3,
-        EXTENDED_HEADER_BITS,
+        EXTENDED_FRAMING_BITS,
         ("0xxxxx", "10xxxx", "110xxx", "1110xx"),
     ),
-    EncodingClass("long", 4, EXTENDED_HEADER_BITS, ("11110x", "111110")),
-    EncodingClass("extralong", 5, EXTENDED_HEADER_BITS, ("111111",)),
+    EncodingClass("long", 4, EXTENDED_FRAMING_BITS, ("11110x", "111110")),
+    EncodingClass("extralong", 5, EXTENDED_FRAMING_BITS, ("111111",)),
 )
 ENCODING_CLASSES_BY_NAME = MappingProxyType(
     {encoding_class.name: encoding_class for encoding_class in ENCODING_CLASSES}
@@ -103,10 +103,10 @@ def _validate_architecture() -> None:
         raise ValueError("duplicate encoding class name")
     claimed_selectors: set[int] = set()
     for encoding_class in ENCODING_CLASSES:
-        if encoding_class.payload_bits <= 0:
-            raise ValueError(f"{encoding_class.name}: payload width must be positive")
+        if encoding_class.allocation_bits <= 0:
+            raise ValueError(f"{encoding_class.name}: allocation width must be positive")
         for namespace in encoding_class.namespace:
-            if len(namespace) != encoding_class.payload_bits:
+            if len(namespace) != encoding_class.allocation_bits:
                 raise ValueError(f"{encoding_class.name}: namespace width mismatch")
         for selector in encoding_class.selectors:
             if (

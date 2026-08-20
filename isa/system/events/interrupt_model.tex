@@ -141,17 +141,17 @@ read, memory write, or architectural result update.
 \subsection{Machine-Check and Bus-Error Continuation}
 A corrected \texttt{MACHINE\_CHECK} is a trap, has both \texttt{PRECISE} and \texttt{RETRY\_SAFE} clear, and saves
 the following instruction. A recoverable machine check uses the valid combinations in the auxiliary-payload table.
-When \texttt{PRECISE} is one, the saved PC identifies the responsible instruction boundary and CPU architectural
-state is the state from before that instruction. When it is zero, the saved PC is the next instruction that would
-execute at the delivery boundary and CPU state corresponds to that boundary; neither identifies the responsible
+When \texttt{PRECISE} is one, the saved PC identifies the responsible instruction boundary and logical-processor
+architectural state is the state from before that instruction. When it is zero, the saved PC is the next instruction that would
+execute at the delivery boundary and architectural state corresponds to that boundary; neither identifies the responsible
 operation. \texttt{RETRY\_SAFE} may be one only with \texttt{PRECISE=1} and additionally guarantees that returning
 to the responsible boundary cannot duplicate an external effect. A fatal machine check always clears
 \texttt{RETRY\_SAFE}; \texttt{PRECISE} then describes diagnostic location quality and never guarantees reliable
 continuation.
 
-\texttt{BUS\_ERROR} is a synchronous precise fault. CPU architectural state remains uncommitted and the saved PC
+\texttt{BUS\_ERROR} is a synchronous precise fault. Logical-processor architectural state remains uncommitted and the saved PC
 identifies the responsible instruction boundary. Its separate \texttt{RETRY\_SAFE} bit states whether an external
-effect might already have occurred. Page-walk bus errors and ordinary byte-addressed-memory bus errors are retry-safe.
+effect might already have occurred. Page-walk bus errors and normal-memory bus errors are retry-safe.
 A slot transaction reports the value determined by its acknowledgement result.
 
 Software interprets the machine-check continuation fields before choosing a return or recovery action.
@@ -191,5 +191,5 @@ by the platform reset event. Software initializes entry segments, exact entry PC
 or entering user mode.
 
 ECR, entry and stack registers, hidden event depth and stack level, and the user-return bank are per-logical-processor
-state. System software includes the applicable state when switching supervisor contexts. Event frames are ordinary
-memory owned by the interrupted supervisor context.
+state. System software includes the applicable state when switching supervisor contexts. Event frames reside in
+byte-addressed normal memory owned by the interrupted supervisor context.

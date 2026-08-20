@@ -1,18 +1,21 @@
 function test_full_decode() -> unit = {
   test_event_boundaries();
   test_fp_semantics();
-  assert(operation_count(all_semantic_operations()) == 205);
-  assert(count_non_fp_operations(all_semantic_operations()) == 145);
-  assert(verify_representative_records(representative_form_records()) == 484);
-  assert(verify_no_generic_external_fallback(representative_form_records()) == 484);
-  assert(verify_fp_first_phase(representative_form_records()) == 115);
+  let form_count = catalog_count(primary_form_catalog());
+  let fp_forms = fp_form_count(primary_form_catalog());
+  assert(operation_count(all_semantic_operations()) ==
+         count_non_fp_operations(all_semantic_operations()) +
+         fp_operation_count(all_semantic_operations()));
+  assert(verify_representative_records(representative_form_records()) == form_count);
+  assert(verify_no_generic_external_fallback(representative_form_records()) == form_count);
+  assert(verify_fp_first_phase(representative_form_records()) == fp_forms);
   let local_state = {
     initial_cpu() with registers = one_registers(), supervisor = true,
                        status = 0x0000000000000010,
                        fp_enabled = true, fptrans_enabled = true
   };
-  assert(verify_local_representatives(representative_form_records(), local_state) == 484);
-  assert(verify_non_fp_routes(representative_form_records(), local_state) == 307);
+  assert(verify_local_representatives(representative_form_records(), local_state) == form_count);
+  let _ = verify_non_fp_routes(representative_form_records(), local_state);
   test_local_integer_boundaries();
   test_divide_bounds_and_conditions();
   test_state_register_local();

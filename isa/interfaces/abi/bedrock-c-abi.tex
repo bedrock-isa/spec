@@ -216,7 +216,7 @@ save the pair containing each nonvolatile register it modifies.
 \texttt{SP} is the architectural stack pointer, not a general C temporary. A
 callee may move it while executing but shall restore the entry value before
 returning; Section~5 defines the additional alignment and frame rules.
-\texttt{PC} is the architectural instruction pointer and is visible to C code
+\texttt{PC} is the architectural program counter and is visible to C code
 only as a control-flow target. The call and return instructions, rather than a
 preservation class, define its transition across a call. Condition codes in
 \texttt{FLAGS} are volatile and may be clobbered by every callee.
@@ -270,10 +270,10 @@ the active platform rather than a property of the representation.
 it only through target-specific intrinsics or runtime code. Low-level access to
 \texttt{FSTATUS} and \texttt{FFLAGS} uses
 \texttt{<bedrockfpuintrin.h>}. \texttt{FSTATUS} is callee-saved: a function
-returns with the incoming rounding mode, trap enables, and other control fields
+returns with the incoming rounding mode, floating-point exception-condition enables, and other control fields
 unless its documented interface changes the floating-point environment.
 \texttt{FFLAGS} is cumulative floating-point status and is caller-clobbered;
-floating-point operations in a callee may set accrued exception flags. An
+floating-point operations in a callee may set accrued floating-point exception flags. An
 interface that requires a saved environment uses its floating-point environment
 runtime contract explicitly.
 
@@ -596,7 +596,7 @@ This section defines how the baseline C memory model maps to Bedrock memory
 operations and ordering instructions.
 
 \subsection{Ordinary Access Atomicity}
-The following guarantees apply to ordinary memory accesses. They do not by
+The following guarantees apply to ordinary normal-memory accesses. They do not by
 themselves establish C inter-thread ordering:
 
 \input{isa/interfaces/abi/generated/ordinary_memory_access_guarantees.tex}

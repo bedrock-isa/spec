@@ -465,13 +465,13 @@ following instruction:
       \texttt{LEN 11, MOV.Q TLS(S), R0}, applies
       \texttt{R\_BEDROCK\_TLS\_OFFSET32S} with addend zero to its 32-bit
       immediate payload, and writes four zero padding bytes after the natural
-      7-byte form.
+      7-byte encoding.
 \item With \texttt{R\_BEDROCK\_TLSDESC\_GOTPCREL64}, the original
       11-byte \texttt{LEA.Q} and 4-byte \texttt{CALL [R0]} occupy 15 bytes. The
       linker emits \texttt{LEN 15, MOV.Q TLS(S), R0}, applies
       \texttt{R\_BEDROCK\_TLS\_OFFSET64} with addend zero to its 64-bit
       immediate payload, and writes four zero padding bytes after the natural
-      11-byte form.
+      11-byte encoding.
 \end{itemize}
 The linker consumes both code relocations. The removed call may eliminate
 normal caller-saved clobbers and unobservable resolver stack activity; code may

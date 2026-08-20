@@ -4,8 +4,8 @@ After FSTATUS.DAZ processing, the reference function is ln(1 + x) without an int
 
 \textbf{Special values}\par
 \begin{itemize}
-\item When the source equals -1, DZ is accrued and the result is -infinity.
-\item When the source \textless{} -1, NV is accrued and the result is the architectural default quiet NaN.
+\item When the source equals -1, DZ is generated and the result is -infinity.
+\item When the source \textless{} -1, NV is generated and the result is the architectural default quiet NaN.
 \item When the source is +infinity, the result is +infinity.
 \item When the source is zero, the result is the source.
 \end{itemize}
@@ -22,4 +22,4 @@ After FSTATUS.DAZ processing, the reference function is ln(1 + x) without an int
 \item strictly increasing on (-1, +infinity)
 \end{itemize}
 
-NaN, exception, trap, and commit handling follows the common FPTRANSA model in Section~\ref{section:fptransa-common-model}.
+NaN handling, floating-point exception-cause generation, matching condition-enable testing, \texttt{FLOATING\_POINT\_FAULT} architectural-event delivery, and commit behavior follow the common FPTRANSA model in Section~\ref{section:fptransa-common-model}.

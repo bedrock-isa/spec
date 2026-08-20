@@ -5,9 +5,9 @@
 
 A Bedrock implementation conformance claim identifies the architecture revision reported by CPUID and the CPUID
 feature set for the logical processor to which the claim applies. For that revision and discovered feature set,
-the implementation accepts and executes every architecturally valid instruction record according to its encoding,
-state, event, memory, and instruction-specific rules. The same claim covers the architected discovery results,
-save images, event frames, and reset state defined for that processor.
+the implementation accepts and executes every architecturally valid encoded instruction according to its encoding,
+state, architectural-event, memory, and instruction-specific rules. The same claim covers the architected discovery results,
+processor-state images, event frames, and reset state defined for that logical processor.
 
 \subsection{Normative Material and Specificity}
 
@@ -20,12 +20,12 @@ as a summary, example, or validation status.
 \toprule
 \textbf{Rule set or provider} & \textbf{Covered material}\\
 \midrule
-Instruction definitions & Concrete instruction encodings, operand and effective-address grammar, stable form
-identities, extension wiring, and document ordering.\\
+Instruction definitions & Concrete instruction encodings, operand and effective-address grammar, extension wiring,
+and document ordering.\\
 \hyperref[page:instruction-execution-model]{Instruction Execution Model} common rules and instruction-entry Operation
 and Detailed Semantics & Executable instruction behavior, architectural state transitions, fault and commit ordering,
-repeat and event behavior, and single-logical-processor memory-action sequencing.\\
-Formal memory model & Permitted cross-processor ordering and visibility.\\
+repeat and architectural-event behavior, and single-logical-processor memory-access sequencing.\\
+Formal memory model & Permitted cross-logical-processor ordering and visibility.\\
 ABI specifications & ELF, C ABI, and calling-convention contracts.\\
 Compiler-interface specifications & Source-language and compiler-facing target-interface contracts.\\
 External numerical floating-point providers & Numerical results and certificates only; input validation and the resulting
@@ -43,7 +43,7 @@ Semantics. The following specificity rules govern narrowing among applicable
 rules:
 
 \begin{enumerate}
-\item Instruction bytes, field values, lengths, and decoding validity follow the concrete instruction form, its
+\item Opcode-space length, required instruction length, encoded instruction length, field values, and decoding validity follow the selected instruction encoding, its
 field constraints, and the Instruction Encoding and Effective Addressing chapters.
 \item Execution of a decoded instruction follows its Operation and Detailed Semantics. An instruction-specific rule
 narrows the common execution, operand, flag, memory, or event rule that it names.

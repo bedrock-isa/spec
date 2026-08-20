@@ -21,13 +21,14 @@ It ignores \texttt{FSTATUS.RM} and formats its implementation-defined approximat
 The approximation is deterministic for the same implementation, input, format, and relevant FSTATUS mode, but need
 not be bit-identical across implementations.
 
-A signaling NaN accrues NV. NaN results are quieted and then processed by \texttt{FSTATUS.DN}.
-\texttt{FSTATUS.FTZ} replaces a subnormal result with the required signed zero and accrues UF. Each instruction
-accrues NV and DZ according to its special-value rules, and accrues OF and UF when required by its exact result;
-NX remains unchanged and cannot cause a trap. Overflow means that the exact result magnitude exceeds the selected
+A signaling NaN generates NV. NaN results are quieted and then processed by \texttt{FSTATUS.DN}.
+\texttt{FSTATUS.FTZ} replaces a subnormal result with the required signed zero and generates UF. Each instruction
+generates NV and DZ according to its special-value rules, and generates OF and UF when required by its exact result;
+NX is never generated, remains unchanged in FFLAGS, and cannot cause the \texttt{FLOATING\_POINT\_FAULT}
+architectural event. Overflow means that the exact result magnitude exceeds the selected
 format's maximum finite value. Underflow means that the exact nonzero result magnitude is below the selected format's
-minimum normal value. If any accrued exception is enabled as a trap, the instruction raises
-\texttt{FLOATING\_POINT\_FAULT} before writing any destination; otherwise it commits its result or results and
-accrued flags together.
+minimum normal value. If any generated floating-point exception cause has its matching FSTATUS enable bit set, the
+instruction raises the \texttt{FLOATING\_POINT\_FAULT} architectural event before writing any destination. Otherwise
+it commits its result or results and accrues the generated causes in FFLAGS as one architectural commit.
 
 \clearpage

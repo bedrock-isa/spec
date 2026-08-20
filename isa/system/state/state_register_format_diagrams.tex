@@ -74,7 +74,7 @@ The floating-point extension exposes F0 through F15 as 64-bit registers when the
 instruction group is implemented.
 
 \subsection{FFLAGS and FSTATUS Registers}
-FFLAGS holds accrued IEEE-754 exception flags. FSTATUS holds the matching trap enables, rounding mode, and optional
+FFLAGS holds accrued IEEE-754 floating-point exception flags. FSTATUS holds the matching exception-condition enables, rounding mode, and optional
 non-default floating-point modes. Both registers are present only with the floating-point extension and reset to zero.
 
 \begin{manuallistedformatdiagram}{FFLAGS Register Format}
@@ -116,7 +116,7 @@ In FSTATUS, \texttt{D}, \texttt{A}, \texttt{F}, and \texttt{R} denote
 \textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
 \midrule
 \texttt{NV..NX} & \texttt{4..0} & accrued invalid, divide-by-zero, overflow, underflow, and inexact flags\\
-\texttt{NV\_EN..NX\_EN} & \texttt{4..0} & trap enables corresponding to FFLAGS.NV through FFLAGS.NX\\
+\texttt{NV\_EN..NX\_EN} & \texttt{4..0} & floating-point exception-condition enables corresponding to FFLAGS.NV through FFLAGS.NX\\
 \texttt{RM} & \texttt{6..5} & 0 nearest-even; 1 toward zero; 2 toward negative; 3 toward positive\\
 \texttt{FTZ} & \texttt{7} & flush tiny results to signed zero\\
 \texttt{DAZ} & \texttt{8} & treat subnormal inputs as signed zero\\

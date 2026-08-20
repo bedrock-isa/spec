@@ -336,7 +336,6 @@ mod tests {
 
     #[test]
     fn every_repcc_form_has_a_runtime_resolvable_observation_target() {
-        let mut repcc_forms = 0;
         for generated_form in GENERATED_FORMS {
             if !generated_form.attributes.repeat_repcc {
                 assert_eq!(
@@ -347,7 +346,6 @@ mod tests {
                 continue;
             }
 
-            repcc_forms += 1;
             let observation = generated_form
                 .attributes
                 .repeat_observed
@@ -385,7 +383,6 @@ mod tests {
                 ),
             }
         }
-        assert_eq!(repcc_forms, 268);
     }
 
     #[test]

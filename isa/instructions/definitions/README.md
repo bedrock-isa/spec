@@ -10,6 +10,9 @@ The formal memory model owns its concurrency domain. ABI sources own ELF, C
 ABI, and calling-convention contracts, while compiler-interface sources
 separately own source-language and compiler-facing target-interface contracts.
 
+Here, the internal Sail hart corresponds one-to-one with an architectural logical processor, and a memory action is
+the formal representation of an architectural memory event or access rather than public ISA terminology.
+
 Encoding forms are instruction-owned. Instruction and extension families are
 explicit, and base instruction operand types use `Rn`.
 
@@ -47,7 +50,7 @@ fault, commit, repeat, event, or memory action. Encoding prose remains
 downstream of these definitions.
 
 The five encoding classes and their order are architectural invariants in
-`isa/tools/encoding_architecture.py`. Payload widths and opcode namespaces are
+`isa/tools/encoding_architecture.py`. Allocation widths and opcode-space namespaces are
 derived there from instruction framing and the extended opcode selectors.
 Allocation validation, reports, documentation, and `alloc_edit.py` aggregate
 the per-instruction `encodings.yaml` files against that fixed grammar.
@@ -74,7 +77,7 @@ Base instructions and their index live directly under
 `isa/instructions/definitions`. Base operand types live in the top-level
 `operands.yaml`; extension-owned operand types live
 in that extension's `operands.yaml` and are referenced by its `extension.yaml`.
-Each operand type owns its encoding kind, field width, and any
+Each operand type owns its encoding kind, bit width, and any
 type-specific values or immediate rules. Instruction-size codes and field
 encodings are kept separately in `sizes.yaml`; extension-owned sizes use the
 same arrangement.

@@ -7,10 +7,10 @@ immediate as an address value and uses a memory-form EA as the calculated addres
 control-target role uses a register or immediate value directly and reads an interpretation-width target from a
 memory form. Memory forms continue into segment pre-translation and paging.
 
-Each seven-bit compact EA field is embedded in the concrete opcode form, and all compact EA fields precede any
+Each seven-bit compact EA field is embedded in the instruction's opcode space, and all compact EA fields precede any
 appended EA payload bytes. Any displacement, absolute address, immediate, or extended descriptor bytes are appended as EA
 payload bytes. Appended EA payload sequences appear in declared instruction operand order. For two payload-bearing EA
-operands, the opcode stream is: concrete opcode form containing EA0 and EA1 $\rightarrow$ complete EA0 payload
+operands, the encoded stream is: opcode space containing EA0 and EA1 $\rightarrow$ complete EA0 payload
 sequence $\rightarrow$ complete EA1 payload sequence $\rightarrow$ any trailing padding.
 
 Multi-byte scalar EA payloads, such as displacements, absolute addresses, and immediates, are little-endian. Payload
@@ -18,9 +18,9 @@ names ending in s are signed and are sign-extended before use; payload names wit
 consuming instruction explicitly says otherwise. Extended descriptor bytes appear in stream order, byte 0 first. Each
 descriptor byte is independently numbered from bit 7 through bit 0.
 
-Indexed scale is the EA interpretation width declared by the consuming form. B, W, L, and Q widths select scales 1,
-2, 4, and 8. A form whose width is \texttt{operation\_size} uses its selected instruction size. LEA and SEGLEA use
-their suffix; size-less address and control-target forms use Q.
+Indexed scale is the EA interpretation width declared by the consuming instruction encoding. B, W, L, and Q widths select scales 1,
+2, 4, and 8. An encoding whose width is \texttt{operation\_size} uses its selected instruction size. LEA and SEGLEA use
+their suffix; size-less instructions with address or control-target roles use Q.
 
 For every compact or extended-descriptor PC-based EA, the PC term is the architectural PC naming byte 0 of the current instruction.
 The PC term remains that instruction-start value throughout operand evaluation.
@@ -66,8 +66,8 @@ segment for PC, or the operation's default data segment.
 \end{manuallongtable}
 
 For a compact displacement, absolute address, or immediate, the selected payload follows the EA field at that
-operand's payload position. Extended-descriptor construction begins with the compact escape value in the concrete
-opcode form and exactly one EXT1 or two EXT2 descriptor bytes; a displaced form places its selected displacement after
+operand's payload position. Extended-descriptor construction begins with the compact escape value in the opcode
+space and exactly one EXT1 or two EXT2 descriptor bytes; a displaced form places its selected displacement after
 those descriptor bytes.
 When an instruction has more than one payload-bearing EA operand, the decoder consumes each complete appended EA
 payload sequence in declared instruction operand order. Each complete sequence, including any extended descriptor bytes

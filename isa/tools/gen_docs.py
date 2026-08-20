@@ -142,7 +142,7 @@ class InstructionDef:
 class AllocationEntry:
     path: Path
     cls: str
-    payload_bits: int
+    allocation_bits: int
     entry_id: str
     bits: str
     text: str
@@ -153,7 +153,7 @@ class AllocationEntry:
     destination_overlap: list[dict[str, Any]] = field(default_factory=list)
     operands: tuple[dict[str, Any], ...] = ()
     sizes: tuple[str, ...] = ()
-    instruction_bytes: int | None = None
+    opcode_space_bytes: int | None = None
 
     @property
     def mnemonic(self) -> str | None:
@@ -164,7 +164,7 @@ class AllocationEntry:
 class AllocationClass:
     path: Path
     cls: str
-    payload_bits: int
+    allocation_bits: int
     summary: dict[str, int]
     skipped_by_reason: Counter[str]
     overlaps: list[str]
@@ -268,7 +268,7 @@ def load_allocations(defs_root: Path) -> list[AllocationClass]:
             raw = allocation_entry_dict(located, store.field_types)
             claims, entry_skipped = entry_claims(
                 located.path,
-                encoding_class.payload_bits,
+                encoding_class.allocation_bits,
                 namespaces,
                 raw,
             )
@@ -286,7 +286,7 @@ def load_allocations(defs_root: Path) -> list[AllocationClass]:
                 AllocationEntry(
                     path=located.path,
                     cls=encoding_class.name,
-                    payload_bits=encoding_class.payload_bits,
+                    allocation_bits=encoding_class.allocation_bits,
                     entry_id=located.form.id,
                     bits=compact_bits(located.form.bits),
                     text=located.form.syntax,
@@ -308,7 +308,7 @@ def load_allocations(defs_root: Path) -> list[AllocationClass]:
                         for operand in located.form.operands
                     ),
                     sizes=located.form.sizes,
-                    instruction_bytes=encoding_class.instruction_bytes,
+                    opcode_space_bytes=encoding_class.opcode_space_bytes,
                 )
             )
         total = namespace_size(namespaces)
@@ -316,7 +316,7 @@ def load_allocations(defs_root: Path) -> list[AllocationClass]:
             AllocationClass(
                 path=ARCHITECTURE_SOURCE_PATH,
                 cls=encoding_class.name,
-                payload_bits=encoding_class.payload_bits,
+                allocation_bits=encoding_class.allocation_bits,
                 summary={
                     "total": total,
                     "allocated": len(assigned_values),
@@ -441,10 +441,10 @@ def data_format_template_values(model: IsaModel) -> dict[str, Any]:
         if not isinstance(spec, dict):
             continue
         key = "PAIR_ID" if name == "PAIRn" else str(name).upper()
-        field_width = int(spec.get("field_width", 0) or 0)
-        values[f"{key}_WIDTH"] = field_width
+        bit_width = int(spec.get("bit_width", 0) or 0)
+        values[f"{key}_WIDTH"] = bit_width
         if name == "imm6":
-            values["IMM6_EXTENSION_THRESHOLD"] = field_width
+            values["IMM6_EXTENSION_THRESHOLD"] = bit_width
         enum_values = [
             item.get("value")
             for item in (spec.get("values") or [])
@@ -452,14 +452,14 @@ def data_format_template_values(model: IsaModel) -> dict[str, Any]:
         ]
         if enum_values:
             values[f"{key}_RANGE"] = f"{min(enum_values)}..{max(enum_values)}"
-        elif field_width <= 0:
+        elif bit_width <= 0:
             values[f"{key}_RANGE"] = "-"
         elif spec.get("signed"):
             values[f"{key}_RANGE"] = (
-                f"{-1 << (field_width - 1)}..{(1 << (field_width - 1)) - 1}"
+                f"{-1 << (bit_width - 1)}..{(1 << (bit_width - 1)) - 1}"
             )
         else:
-            values[f"{key}_RANGE"] = f"0..{(1 << field_width) - 1}"
+            values[f"{key}_RANGE"] = f"0..{(1 << bit_width) - 1}"
     return values
 
 
@@ -480,8 +480,8 @@ def encoding_architecture_template_values() -> dict[str, str]:
         if not encoding_class.selectors:
             namespace_rows.append(
                 rf"\manualformatrow{{{encoding_class.name}}}{{%" "\n"
-                rf"\manualformatfield{{payload}}"
-                rf"{{{encoding_class.payload_bits}}}" "\n"
+                rf"\manualformatfield{{allocation}}"
+                rf"{{{encoding_class.allocation_bits}}}" "\n"
                 "}"
             )
         if encoding_class.name == "extrashort":
@@ -495,13 +495,13 @@ def encoding_architecture_template_values() -> dict[str, str]:
                 rf"\texttt{{{selector}}}" for selector in encoding_class.selectors
             )
             validity = (
-                "any extended instruction length"
-                if encoding_class.instruction_bytes == 3
-                else f"instruction length at least {encoding_class.instruction_bytes} bytes"
+                "any extended encoded instruction length"
+                if encoding_class.opcode_space_bytes == 3
+                else f"encoded instruction length at least {encoding_class.opcode_space_bytes} bytes"
             )
         class_rows.append(
-            rf"\texttt{{{encoding_class.name}}} & {encoding_class.payload_bits} & "
-            rf"{selection} & {encoding_class.instruction_bytes} & {validity}\\"
+            rf"\texttt{{{encoding_class.name}}} & {encoding_class.allocation_bits} & "
+            rf"{selection} & {encoding_class.opcode_space_bytes} & {validity}\\"
         )
 
         for selector in encoding_class.selectors:
@@ -513,11 +513,11 @@ def encoding_architecture_template_values() -> dict[str, str]:
             selector_macro = (
                 "manualformatfieldcode" if "x" in selector else "manualformatfixed"
             )
-            suffix_bits = encoding_class.payload_bits - len(selector)
+            suffix_bits = encoding_class.allocation_bits - len(selector)
             namespace_rows.append(
                 rf"\manualformatrow{{{encoding_class.name}{group}}}{{%" "\n"
                 rf"\{selector_macro}{{{selector}}}{{{len(selector)}}}" "\n"
-                rf"\manualformatfield{{payload}}"
+                rf"\manualformatfield{{allocation}}"
                 rf"{{{suffix_bits}}}" "\n"
                 "}"
             )
@@ -525,7 +525,7 @@ def encoding_architecture_template_values() -> dict[str, str]:
     return {
         "INSTRUCTION_LENGTH_TRUTH_TABLE_ROWS": "\n".join(length_rows),
         "ENCODING_CLASS_SUMMARY_ROWS": "\n".join(class_rows),
-        "OPCODE_PAYLOAD_NAMESPACE_ROWS": "\n".join(namespace_rows),
+        "OPCODE_SPACE_ALLOCATION_NAMESPACE_ROWS": "\n".join(namespace_rows),
     }
 
 
@@ -749,15 +749,15 @@ def ea_operand_role(entry: AllocationEntry, symbol: str, fallback: str) -> str:
     return fallback
 
 
-def allocation_opcode_bytes(entry: AllocationEntry) -> int:
-    if entry.instruction_bytes is None:
-        raise ValueError(f"{entry.entry_id}: encoding class lacks instruction_bytes")
-    return entry.instruction_bytes
+def allocation_opcode_space_bytes(entry: AllocationEntry) -> int:
+    if entry.opcode_space_bytes is None:
+        raise ValueError(f"{entry.entry_id}: encoding class lacks opcode_space_bytes")
+    return entry.opcode_space_bytes
 
 
 @dataclass(frozen=True)
 class InstructionLength:
-    opcode_bytes: int
+    opcode_space_bytes: int
     required_bytes: tuple[int, ...]
 
     @property
@@ -787,12 +787,12 @@ def ea_payload_byte_lengths(ea_data: Any) -> tuple[int, ...]:
     payloads = ea_data.get("payloads") or {}
     sizes: dict[str, int] = {}
     for name, spec in payloads.items():
-        if not isinstance(spec, dict) or "field_width" not in spec:
+        if not isinstance(spec, dict) or "bit_width" not in spec:
             raise ValueError(f"invalid EA payload definition: {name!r}")
-        field_width = int(spec["field_width"])
-        if field_width <= 0 or field_width % 8:
-            raise ValueError(f"EA payload {name!r} must have a positive byte-aligned field width")
-        sizes[str(name)] = field_width // 8
+        bit_width = int(spec["bit_width"])
+        if bit_width <= 0 or bit_width % 8:
+            raise ValueError(f"EA payload {name!r} must have a positive byte-aligned bit width")
+        sizes[str(name)] = bit_width // 8
 
     descriptor_sizes = {
         family: len((ea_data.get(family) or {}).get("forms", [])[0].get("pattern") or [])
@@ -819,12 +819,12 @@ def ea_payload_byte_lengths(ea_data: Any) -> tuple[int, ...]:
 
 def fixed_form_payload_bytes(form: str, operand_types: Any) -> int:
     payload_sizes = {
-        str(name): int(spec["field_width"]) // 8
+        str(name): int(spec["bit_width"]) // 8
         for name, spec in (operand_types or {}).items()
         if isinstance(spec, dict)
-        and isinstance(spec.get("field_width"), int)
-        and int(spec["field_width"]) > 0
-        and int(spec["field_width"]) % 8 == 0
+        and isinstance(spec.get("bit_width"), int)
+        and int(spec["bit_width"]) > 0
+        and int(spec["bit_width"]) % 8 == 0
     }
     total = 0
     template = parse_assembly_template(form)
@@ -841,8 +841,8 @@ def instruction_length(
     ea_data: Any,
     operand_types: Any,
 ) -> InstructionLength:
-    opcode_bytes = allocation_opcode_bytes(entry)
-    required = {opcode_bytes + fixed_form_payload_bytes(form, operand_types)}
+    opcode_space_bytes = allocation_opcode_space_bytes(entry)
+    required = {opcode_space_bytes + fixed_form_payload_bytes(form, operand_types)}
     ea_count = sum(
         1
         for field in entry.fields.values()
@@ -859,9 +859,9 @@ def instruction_length(
             }
     if not required:
         raise ValueError(f"{entry.path}: {form} has no encoding that fits the 18-byte instruction limit")
-    if entry.cls in {"extrashort", "short"} and required != {opcode_bytes}:
+    if entry.cls in {"extrashort", "short"} and required != {opcode_space_bytes}:
         raise ValueError(f"{entry.path}: {form} appends payload to a fixed-length {entry.cls} encoding")
-    return InstructionLength(opcode_bytes, tuple(sorted(required)))
+    return InstructionLength(opcode_space_bytes, tuple(sorted(required)))
 
 
 def required_bytes_text(length: InstructionLength) -> str:
@@ -1357,8 +1357,8 @@ def latex_field_explanation_block(
     if entry.cls not in {"extrashort", "short"}:
         parts.append(
             r"\manualinstructionfielddescription{Length field \texttt{L}}"
-            r"{Encodes the total instruction length as $3+L$ bytes. "
-            r"The selected length must cover all required bytes; trailing bytes are uninterpreted padding.}"
+            r"{Encodes the encoded instruction length as $3+L$ bytes. "
+            r"The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.}"
         )
     for symbol, spec in ordered_entry_fields(entry):
         if spec.get("kind") == "ea7":
@@ -1962,8 +1962,8 @@ def latex_instruction_word_formats_section(model: IsaModel) -> str:
     instruction_encoding_diagrams = render_latex_template(
         "encoding/instruction/instruction_encoding_diagrams.tex",
         {
-            "OPCODE_PAYLOAD_NAMESPACE_ROWS": architecture_values[
-                "OPCODE_PAYLOAD_NAMESPACE_ROWS"
+            "OPCODE_SPACE_ALLOCATION_NAMESPACE_ROWS": architecture_values[
+                "OPCODE_SPACE_ALLOCATION_NAMESPACE_ROWS"
             ]
         },
     )
@@ -2066,8 +2066,8 @@ def latex_ea_payload_rows(data: dict[str, Any]) -> str:
         if not isinstance(spec, dict):
             continue
         kind = compact_text(spec.get("kind"))
-        field_width = int(spec.get("field_width", 0))
-        byte_width = field_width // 8
+        bit_width = int(spec.get("bit_width", 0))
+        byte_width = bit_width // 8
         signed = bool(spec.get("signed"))
         value = "signed" if signed else "unsigned"
         if kind == "displacement":

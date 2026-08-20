@@ -12,7 +12,7 @@ supervisor call does not set it. STATUS.EA is hardware managed, and WRSTATUS mus
 attempted change raises \texttt{INVALID\_CONTROL\_STATE} without changing STATUS.
 
 The other STATUS control bits are Boolean: IE enables maskable interrupts, TF controls single-step tracing, RF marks
-exception restart, and NI inhibits nested NMI delivery. In supervisor mode, ordinary memory operands use
+exception restart, and NI inhibits nested NMI delivery. In supervisor mode, ordinary instruction memory operands use
 current-domain access. Checked user-domain access is expressed only by the supervisor-only MOVUC, MOVCU, and MOVUU
 instructions. RDCR, WRCR, translation-state changes, event-control changes, and page-table context switches require
 supervisor privilege unless an instruction explicitly says otherwise.
@@ -67,8 +67,8 @@ by ERET to the supervisor-call context, and finally user return to user executio
 
 \subsection{User-Return Context Ownership}
 The user-return bank is per-logical-processor architectural state. When a supervisor call blocks or is preempted and
-another thread may run on the same logical processor, system software saves and restores the bank as part of the
-thread's supervisor context. The bank therefore travels with the thread whose user continuation it holds rather than
+another software thread may run on the same logical processor, system software saves and restores the bank as part of the
+software thread's supervisor context. The bank therefore travels with the software thread whose user continuation it holds rather than
 with an event frame or the currently selected supervisor stack.
 
 Signal delivery, supervisor-call restart, tracing, and initial user-process entry may inspect or establish the bank

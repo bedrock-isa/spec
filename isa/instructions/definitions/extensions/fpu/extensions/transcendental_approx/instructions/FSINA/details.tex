@@ -4,7 +4,7 @@ After FSTATUS.DAZ processing, the reference function is sin(x) in radians on fin
 
 \textbf{Special values}\par
 \begin{itemize}
-\item When the source is infinite or abs(the source) \textgreater{} pi / 4, NV is accrued and the result is the architectural default quiet NaN.
+\item When the source is infinite or abs(the source) \textgreater{} pi / 4, NV is generated and the result is the architectural default quiet NaN.
 \item When the source is zero, the result is the source.
 \end{itemize}
 
@@ -21,4 +21,4 @@ After FSTATUS.DAZ processing, the reference function is sin(x) in radians on fin
 \item result is in [-sqrt(2)/2, sqrt(2)/2]
 \end{itemize}
 
-NaN, exception, trap, and commit handling follows the common FPTRANSA model in Section~\ref{section:fptransa-common-model}.
+NaN handling, floating-point exception-cause generation, matching condition-enable testing, \texttt{FLOATING\_POINT\_FAULT} architectural-event delivery, and commit behavior follow the common FPTRANSA model in Section~\ref{section:fptransa-common-model}.

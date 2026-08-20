@@ -1,7 +1,7 @@
 mnemonic: CALL
 title: Call
 summary: Performs the call operation.
-description: Pushes the next instruction address as one 64-bit stack value and transfers control to the target. An EA memory form reads a 64-bit target; an EA register form supplies its 64-bit value directly. The stack update and control transfer use the ordinary SS:SP and target-validation rules.
+description: Pushes the following instruction's continuation PC as one 64-bit stack value and transfers control to the target. An EA memory operand reads a 64-bit target; an EA register operand supplies its 64-bit value directly. The stack update and control transfer use the ordinary SS:SP and target-validation rules.
 attributes:
   class: control_flow
   family: control_flow

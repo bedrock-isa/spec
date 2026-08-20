@@ -9,7 +9,9 @@
 \manualbytecell{$V[63..56]$}{A+7}
 \end{manuallistedbyteorderdiagram}
 
-\begin{manuallistedbyteorderdiagram}{Instruction Start Bytes}{header byte}{}{instruction stream byte order}{}{}
-\manualbytecell{\shortstack{class/length\\opcode high}}{PC+0}
-\manualbytecell{\shortstack{opcode bits\\if present}}{PC+1}
+\begin{manuallistedbyteorderdiagram}{Instruction Start Bytes}{instruction byte}{}{instruction stream byte order}{}{}
+\manualbytecell{\shortstack{\scriptsize H0: frame/L\\\scriptsize allocation}}{PC+0}
+\manualbytecell{\shortstack{\scriptsize H1 (med+)\\\scriptsize allocation}}{PC+1}
 \end{manuallistedbyteorderdiagram}
+
+H0 and H1 denote header bytes 0 and 1; H1 belongs to the header only for medium and longer instructions.

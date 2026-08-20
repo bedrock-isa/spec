@@ -6,6 +6,11 @@ function operation_count(operations : list(Semantic_operation)) -> int = match o
   },
 }
 
+function catalog_count(entries : list(Catalog_entry)) -> int = match entries {
+  [||] => 0,
+  _ :: tail => 1 + catalog_count(tail),
+}
+
 function no_async_ingress() -> Async_ingress = struct {
   machine_check_pending = false, machine_check_code = 0x00000000,
   machine_check_error_code = 0x0000000000000000,
@@ -96,4 +101,3 @@ function expect_ea_field(fields : list(Decoded_field), symbol : string, expected
     Some(field) => assert(field.value == expected),
     None() => assert(false),
   }
-
