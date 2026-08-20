@@ -8953,15 +8953,13 @@
 <p>Exchanges the two selected-width operand values as one instruction. A memory form performs an ordinary selected-width load followed by an ordinary selected-width store, with both architectural destinations committed by the instruction.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
 <p><code>XCHG.LQ(z) Rn(s), Rn(d)</code></p>
-<p><code>XCHG.BW(z) Rn(s), &lt;ea&gt;(e)</code></p>
-<p><code>XCHG.LQ(z) Rn(s), &lt;ea&gt;(e)</code></p>
-<p><code>XCHG.BW(z) &lt;ea&gt;(e), Rn(d)</code></p>
-<p><code>XCHG.LQ(z) &lt;ea&gt;(e), Rn(d)</code></p>
+<p><code>XCHG.BWLQ(z) Rn(s), &lt;ea&gt;(e)</code></p>
+<p><code>XCHG.BWLQ(z) &lt;ea&gt;(e), Rn(d)</code></p>
 <h2 id="attributes">Attributes</h2>
 <p>Class = data movement</p>
 <p>Family = data movement</p>
 <p>Privilege = unprivileged</p>
-<p>Length = 2-13 bytes</p>
+<p>Length = 2-14 bytes</p>
 <p>Repeat = <code>REP</code>, <code>REPG</code></p>
 <h2 id="instruction-forms">Instruction Forms</h2>
 <p><strong><code>XCHG.LQ(z) Rn(s), Rn(d)</code></strong></p>
@@ -8974,62 +8972,32 @@
 <p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
 <p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
 <p><strong>Destination overlap</strong> — When the lhs and rhs operands designate the same architectural register, the final value equals that register’s initial value.</p>
-<p><strong><code>XCHG.BW(z) Rn(s), &lt;ea&gt;(e)</code></strong></p>
-<p><em>Encoding class: medium; required bytes: 3-13 bytes; privilege: unprivileged</em></p>
+<p><strong><code>XCHG.BWLQ(z) Rn(s), &lt;ea&gt;(e)</code></strong></p>
+<p><em>Encoding class: long; required bytes: 4-14 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for XCHG.BW(z) Rn(s), \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/xchg-02.svg" /></p>
-<p><strong>Format Instruction format for XCHG.BW(z) Rn(s), \&lt;ea&gt;(e)</strong></p>
+<p><img alt="Format — Instruction format for XCHG.BWLQ(z) Rn(s), \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/xchg-02.svg" /></p>
+<p><strong>Format Instruction format for XCHG.BWLQ(z) Rn(s), \&lt;ea&gt;(e)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>z</code></strong> — Selects B/W.</p>
-<p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
-<p><strong>Effective Address field <code>e</code></strong> — Specifies the read/write operand.</p>
-<p><strong>EA availability</strong></p>
-<p><strong>Allowed:</strong> Register; Memory; Extended Descriptor</p>
-<p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>
-<p><strong>Destination overlap</strong> — When the lhs and rhs operands designate the same architectural register, the final value equals that register’s initial value.</p>
-<p><strong><code>XCHG.LQ(z) Rn(s), &lt;ea&gt;(e)</code></strong></p>
-<p><em>Encoding class: medium; required bytes: 3-13 bytes; privilege: unprivileged</em></p>
-<p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for XCHG.LQ(z) Rn(s), \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/xchg-03.svg" /></p>
-<p><strong>Format Instruction format for XCHG.LQ(z) Rn(s), \&lt;ea&gt;(e)</strong></p>
-<p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>z</code></strong> — Selects L/Q.</p>
+<p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
 <p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the read/write operand.</p>
 <p><strong>EA availability</strong></p>
 <p><strong>Allowed:</strong> Memory; Extended Descriptor</p>
 <p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>
-<p><strong>Destination overlap</strong> — When the lhs and rhs operands designate the same architectural register, the final value equals that register’s initial value.</p>
-<p><strong><code>XCHG.BW(z) &lt;ea&gt;(e), Rn(d)</code></strong></p>
-<p><em>Encoding class: medium; required bytes: 3-13 bytes; privilege: unprivileged</em></p>
+<p><strong><code>XCHG.BWLQ(z) &lt;ea&gt;(e), Rn(d)</code></strong></p>
+<p><em>Encoding class: long; required bytes: 4-14 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for XCHG.BW(z) \&lt;ea&gt;(e), Rn(d)" src="../../../assets/visuals/isa/xchg-04.svg" /></p>
-<p><strong>Format Instruction format for XCHG.BW(z) \&lt;ea&gt;(e), Rn(d)</strong></p>
+<p><img alt="Format — Instruction format for XCHG.BWLQ(z) \&lt;ea&gt;(e), Rn(d)" src="../../../assets/visuals/isa/xchg-03.svg" /></p>
+<p><strong>Format Instruction format for XCHG.BWLQ(z) \&lt;ea&gt;(e), Rn(d)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>z</code></strong> — Selects B/W.</p>
-<p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
-<p><strong>Effective Address field <code>e</code></strong> — Specifies the read/write operand.</p>
-<p><strong>EA availability</strong></p>
-<p><strong>Allowed:</strong> Register except <code>Rn(r)</code>; Memory; Extended Descriptor</p>
-<p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>
-<p><strong>Destination overlap</strong> — When the lhs and rhs operands designate the same architectural register, the final value equals that register’s initial value.</p>
-<p><strong><code>XCHG.LQ(z) &lt;ea&gt;(e), Rn(d)</code></strong></p>
-<p><em>Encoding class: medium; required bytes: 3-13 bytes; privilege: unprivileged</em></p>
-<p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for XCHG.LQ(z) \&lt;ea&gt;(e), Rn(d)" src="../../../assets/visuals/isa/xchg-05.svg" /></p>
-<p><strong>Format Instruction format for XCHG.LQ(z) \&lt;ea&gt;(e), Rn(d)</strong></p>
-<p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>z</code></strong> — Selects L/Q.</p>
+<p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
 <p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the read/write operand.</p>
 <p><strong>EA availability</strong></p>
 <p><strong>Allowed:</strong> Memory; Extended Descriptor</p>
 <p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>
-<p><strong>Destination overlap</strong> — When the lhs and rhs operands designate the same architectural register, the final value equals that register’s initial value.</p>
 
 
 

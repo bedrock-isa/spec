@@ -8996,12 +8996,13 @@
 <h2 id="operation">Operation</h2>
 <p>Writes the remainder of selected-width unsigned destination-by-source division. A zero divisor raises DIVIDE_ERROR.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
+<p><code>MODU.BWLQ(z) Rn(s), Rn(d)</code></p>
 <p><code>MODU.BWLQ(z) &lt;ea&gt;(e), Rn(d)</code></p>
 <h2 id="attributes">Attributes</h2>
 <p>Class = integer</p>
 <p>Family = integer mul div</p>
 <p>Privilege = unprivileged</p>
-<p>Length = 4-14 bytes</p>
+<p>Length = 3-14 bytes</p>
 <p>Repeat = <code>REP</code>, <code>REPcc</code>, <code>REPG</code></p>
 <p>REPcc observation = <code>result</code> <code>dst</code></p>
 <h2 id="exceptions">Exceptions</h2>
@@ -9011,10 +9012,20 @@
   \qquad r = d - qs .\)</span>$ For a nonzero divisor, the remainder satisfies <span class="arithmatex">\(0 \le r &lt; s\)</span>. The destination supplies the dividend and receives <span class="arithmatex">\(r\)</span>.</p>
 <p>A zero divisor raises <code>DIVIDE_ERROR</code>; no destination is changed.</p>
 <h2 id="instruction-forms">Instruction Forms</h2>
+<p><strong><code>MODU.BWLQ(z) Rn(s), Rn(d)</code></strong></p>
+<p><em>Encoding class: medium; required bytes: 3 bytes; privilege: unprivileged</em></p>
+<p><strong>Instruction Format:</strong></p>
+<p><img alt="Format — Instruction format for MODU.BWLQ(z) Rn(s), Rn(d)" src="../../../assets/visuals/isa/modu-01.svg" /></p>
+<p><strong>Format Instruction format for MODU.BWLQ(z) Rn(s), Rn(d)</strong></p>
+<p><strong>Instruction Fields:</strong></p>
+<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
+<p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
+<p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
 <p><strong><code>MODU.BWLQ(z) &lt;ea&gt;(e), Rn(d)</code></strong></p>
 <p><em>Encoding class: long; required bytes: 4-14 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for MODU.BWLQ(z) \&lt;ea&gt;(e), Rn(d)" src="../../../assets/visuals/isa/modu-01.svg" /></p>
+<p><img alt="Format — Instruction format for MODU.BWLQ(z) \&lt;ea&gt;(e), Rn(d)" src="../../../assets/visuals/isa/modu-02.svg" /></p>
 <p><strong>Format Instruction format for MODU.BWLQ(z) \&lt;ea&gt;(e), Rn(d)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
@@ -9022,7 +9033,7 @@
 <p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the source operand.</p>
 <p><strong>EA availability</strong></p>
-<p><strong>Allowed:</strong> Register; Memory; Immediate; Extended Descriptor</p>
+<p><strong>Allowed:</strong> Memory; Immediate; Extended Descriptor</p>
 <p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>
 
 

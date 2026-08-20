@@ -8956,11 +8956,12 @@
 <p><code>JMP &lt;imm16s&gt;</code></p>
 <p><code>JMP &lt;imm32s&gt;</code></p>
 <p><code>JMP.LQ(z) &lt;ea&gt;(e)</code></p>
+<p><code>JMP.LQ(z) Rn(r)</code></p>
 <h2 id="attributes">Attributes</h2>
 <p>Class = control flow</p>
 <p>Family = control flow</p>
 <p>Privilege = unprivileged</p>
-<p>Length = 2-14 bytes</p>
+<p>Length = 2-13 bytes</p>
 <p>Repeat = <code>none</code></p>
 <h2 id="instruction-forms">Instruction Forms</h2>
 <p><strong><code>JMP imm8s(i)</code></strong></p>
@@ -8985,7 +8986,7 @@
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
 <p><strong><code>JMP.LQ(z) &lt;ea&gt;(e)</code></strong></p>
-<p><em>Encoding class: long; required bytes: 4-14 bytes; privilege: unprivileged</em></p>
+<p><em>Encoding class: medium; required bytes: 3-13 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
 <p><img alt="Format — Instruction format for JMP.LQ(z) \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/jmp-04.svg" /></p>
 <p><strong>Format Instruction format for JMP.LQ(z) \&lt;ea&gt;(e)</strong></p>
@@ -8994,8 +8995,17 @@
 <p><strong>Size field <code>z</code></strong> — Selects L/Q.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the control target.</p>
 <p><strong>EA availability</strong></p>
-<p><strong>Allowed:</strong> Register; Memory; Extended Descriptor</p>
+<p><strong>Allowed:</strong> Memory; Extended Descriptor</p>
 <p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>
+<p><strong><code>JMP.LQ(z) Rn(r)</code></strong></p>
+<p><em>Encoding class: medium; required bytes: 3 bytes; privilege: unprivileged</em></p>
+<p><strong>Instruction Format:</strong></p>
+<p><img alt="Format — Instruction format for JMP.LQ(z) Rn(r)" src="../../../assets/visuals/isa/jmp-05.svg" /></p>
+<p><strong>Format Instruction format for JMP.LQ(z) Rn(r)</strong></p>
+<p><strong>Instruction Fields:</strong></p>
+<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Size field <code>z</code></strong> — Selects L/Q.</p>
+<p><strong>Register field <code>r</code></strong> — Selects the operand.</p>
 
 
 

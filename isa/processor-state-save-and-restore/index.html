@@ -1028,6 +1028,24 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Processor-State Save and Restore
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -1044,6 +1062,80 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#save-area-layout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Save-Area Layout
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fixed-architectural-state" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed Architectural State
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#extension-components-and-clean-state" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Extension Components and Clean State
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#save-responsibilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SAVE Responsibilities
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#restore-responsibilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RESTORE Responsibilities
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -8796,6 +8888,69 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#save-area-layout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Save-Area Layout
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fixed-architectural-state" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed Architectural State
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#extension-components-and-clean-state" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Extension Components and Clean State
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#save-responsibilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SAVE Responsibilities
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#restore-responsibilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RESTORE Responsibilities
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -8812,19 +8967,28 @@
 
 
 <h1 id="processor-state-save-and-restore">Processor-State Save and Restore</h1>
-<p>SAVE and RESTORE use a CPUID-defined memory image whose base is 4 KiB aligned. The fixed block contains the base header, state-block bitmap, R0 through R15, and GS0 through GS5 images.</p>
-<p>The header carries FLAGS, STATUS, format, and GS-validity state. <code>GS_VALID</code> selects which GS images are meaningful. SAVE may omit an architecturally clean extension component by clearing its bitmap bit, and RESTORE uses that bitmap as authoritative when reconstructing extension state.</p>
-<p>SAVE writes <code>FMT=0</code>, sets <code>GS_VALID=0x3f</code>, and records GS0 through GS5. RESTORE replaces each GSn whose corresponding <code>GS_VALID</code> bit is set and preserves each GSn whose bit is clear. It validates every selected segment image before changing architectural state.</p>
-<p>SAVE sets bitmap bits only for components described by its CPUID <code>SAVE_AREA_LAYOUT</code> leaf. RESTORE accepts only the defined format and only bitmap bits that name CPUID-described components for that format. RESTORE raises <code>INVALID_CONTROL_STATE</code> before changing architectural state when the format is unrecognized or a set bitmap bit does not name a CPUID-described component for that format.</p>
-<p>An extension component is architecturally clean when its state is known to equal its component-defined initial state. Reset and RESTORE of a clear component bit make that component clean. A committed write that can make a component differ from its initial state makes it modified; RESTORE of a non-initial component image also makes it modified. An implementation may mark a component clean whenever it establishes that the complete component again equals its initial state. SAVE does not change clean or modified state. SAVE may clear a bitmap bit only for a clean component. RESTORE of a clear, described component bit installs that component’s initial state.</p>
-<p>User-mode RESTORE ignores saved supervisor-only STATUS state. Supervisor RESTORE validates the saved STATUS image by the ordinary privileged write rules before making it visible.</p>
-<p>Software obtains every extension component’s offset and maximum size from CPUID <code>SAVE_AREA_LAYOUT</code>. Each component starts on a 64-byte boundary. When floating-point state is enabled, its component contains F0 through F15, FFLAGS, and FSTATUS in the layout reported in the CPUID chapter. The floating-point component’s initial state is positive zero in F0 through F15 and zero in FFLAGS and FSTATUS.</p>
-<p>The normative instruction entries are <a href="../instructions/save/"><code>SAVE</code></a> and <a href="../instructions/restore/"><code>RESTORE</code></a>.</p>
+<p>SAVE and RESTORE use a CPUID-defined memory image whose base is 4 KiB aligned.</p>
+<h2 id="save-area-layout">Save-Area Layout</h2>
+<p>Software obtains every extension component’s offset and maximum size from CPUID <code>SAVE_AREA_LAYOUT</code>. Each component starts on a 64-byte boundary.</p>
 <p><img alt="SAVE/RESTORE Base Header" src="../../assets/visuals/isa/processor-state-save-and-restore-01.svg" /></p>
 <p><strong>SAVE/RESTORE Base Header</strong></p>
 <p>The labels <code>5</code> through <code>0</code> are the six <code>GS_VALID</code> bits. SAVE writes <code>GS_VALID=0x3f</code> and <code>FMT=0</code>.</p>
 <p><img alt="SAVE/RESTORE Fixed Base Block" src="../../assets/visuals/isa/processor-state-save-and-restore-02.svg" /></p>
 <p><strong>SAVE/RESTORE Fixed Base Block</strong></p>
+<h2 id="fixed-architectural-state">Fixed Architectural State</h2>
+<p>The fixed block contains the base header, state-block bitmap, R0 through R15, and GS0 through GS5 images.</p>
+<p>The header carries FLAGS, STATUS, format, and GS-validity state. <code>GS_VALID</code> selects which GS images are meaningful.</p>
+<h2 id="extension-components-and-clean-state">Extension Components and Clean State</h2>
+<p>An extension component is architecturally clean when its state is known to equal its component-defined initial state. Reset and RESTORE of a clear component bit make that component clean. A committed write that can make a component differ from its initial state makes it modified; RESTORE of a non-initial component image also makes it modified. An implementation may mark a component clean whenever it establishes that the complete component again equals its initial state.</p>
+<p>When floating-point state is enabled, its component contains F0 through F15, FFLAGS, and FSTATUS in the layout reported in the CPUID chapter. The floating-point component’s initial state is positive zero in F0 through F15 and zero in FFLAGS and FSTATUS.</p>
+<h2 id="save-responsibilities">SAVE Responsibilities</h2>
+<p>SAVE writes <code>FMT=0</code>, sets <code>GS_VALID=0x3f</code>, and records GS0 through GS5. SAVE sets bitmap bits only for components described by its CPUID <code>SAVE_AREA_LAYOUT</code> leaf.</p>
+<p>SAVE may omit an architecturally clean extension component by clearing its bitmap bit. SAVE may clear a bitmap bit only for a clean component. SAVE does not change clean or modified state.</p>
+<h2 id="restore-responsibilities">RESTORE Responsibilities</h2>
+<p>RESTORE replaces each GSn whose corresponding <code>GS_VALID</code> bit is set and preserves each GSn whose bit is clear. It validates every selected segment image before changing architectural state.</p>
+<p>RESTORE uses the state-block bitmap as authoritative when reconstructing extension state. It accepts only the defined format and only bitmap bits that name CPUID-described components for that format. RESTORE raises <code>INVALID_CONTROL_STATE</code> before changing architectural state when the format is unrecognized or a set bitmap bit does not name a CPUID-described component for that format. RESTORE of a clear, described component bit installs that component’s initial state.</p>
+<p>User-mode RESTORE ignores saved supervisor-only STATUS state. Supervisor RESTORE validates the saved STATUS image by the ordinary privileged write rules before making it visible.</p>
+<p>The normative instruction entries are <a href="../instructions/save/"><code>SAVE</code></a> and <a href="../instructions/restore/"><code>RESTORE</code></a>.</p>
 
 
 

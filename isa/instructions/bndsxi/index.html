@@ -8975,6 +8975,7 @@
 <p>BNDSXI treats the low bound as exclusive and the high bound as inclusive. It sets V when signed(value) is outside (signed(lo), signed(hi)]; Z, N, and C are unchanged.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
 <p><code>BNDSXI.BWLQ(z) Rn(l), &lt;ea&gt;(e), Rn(h)</code></p>
+<p><code>BNDSXI.BWLQ(z) Rn(l), Rn(v), Rn(h)</code></p>
 <h2 id="attributes">Attributes</h2>
 <p>Class = integer</p>
 <p>Family = bounds</p>
@@ -9023,8 +9024,19 @@
 <p><strong>Register field <code>h</code></strong> — Selects operand 3.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the source operand.</p>
 <p><strong>EA availability</strong></p>
-<p><strong>Allowed:</strong> Register; Memory; Immediate; Extended Descriptor</p>
+<p><strong>Allowed:</strong> Memory; Immediate; Extended Descriptor</p>
 <p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>
+<p><strong><code>BNDSXI.BWLQ(z) Rn(l), Rn(v), Rn(h)</code></strong></p>
+<p><em>Encoding class: extralong; required bytes: 5 bytes; privilege: unprivileged</em></p>
+<p><strong>Instruction Format:</strong></p>
+<p><img alt="Format — Instruction format for BNDSXI.BWLQ(z) Rn(l), Rn(v), Rn(h)" src="../../../assets/visuals/isa/bndsxi-02.svg" /></p>
+<p><strong>Format Instruction format for BNDSXI.BWLQ(z) Rn(l), Rn(v), Rn(h)</strong></p>
+<p><strong>Instruction Fields:</strong></p>
+<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
+<p><strong>Register field <code>l</code></strong> — Selects operand 1.</p>
+<p><strong>Register field <code>v</code></strong> — Selects operand 2.</p>
+<p><strong>Register field <code>h</code></strong> — Selects operand 3.</p>
 
 
 

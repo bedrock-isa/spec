@@ -8974,12 +8974,13 @@
 <h2 id="operation">Operation</h2>
 <p>SEGLEA computes the source effective-address point and applies the selected segment’s pre-translation to that point. The size suffix selects the index scale used during effective-address calculation. On success, SEGLEA writes the segment result to the destination and clears V. A failed segment-bound check sets V, suppresses the destination write, commits effective-address auto-update effects, and completes without an exception.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
+<p><code>SEGLEA.BWLQ(z) Rn(s), Rn(d)</code></p>
 <p><code>SEGLEA.BWLQ(z) &lt;ea&gt;(e), Rn(d)</code></p>
 <h2 id="attributes">Attributes</h2>
 <p>Class = data movement</p>
 <p>Family = ea utility</p>
 <p>Privilege = unprivileged</p>
-<p>Length = 4-14 bytes</p>
+<p>Length = 3-14 bytes</p>
 <p>Repeat = <code>REP</code>, <code>REPcc</code>, <code>REPG</code></p>
 <p>REPcc observation = <code>flags</code></p>
 <h2 id="detailed-semantics">Detailed Semantics</h2>
@@ -9012,10 +9013,20 @@
 </table>
 <p>Let <span class="arithmatex">\(a\)</span> be the source effective address before a memory read. The <a href="../../effective-addressing-modes/">effective-address form</a> selects the segment image, which supplies the <span class="arithmatex">\(\mathit{base}\)</span>, <span class="arithmatex">\(\mathit{span}\)</span>, and <span class="arithmatex">\(\mathit{limit}\)</span> quantities defined in <a href="../../programming-model/#section-segment-registers">Segment Registers</a>. A zero mantissa disables bounds and returns <span class="arithmatex">\(a\)</span>. In translated mode, <span class="arithmatex">\(a\)</span> must satisfy <span class="arithmatex">\(0 \le a &lt; \mathit{span}\)</span> and the result is <span class="arithmatex">\(\mathit{base}+a\)</span>. In bounds-only mode, <span class="arithmatex">\(a\)</span> must satisfy <span class="arithmatex">\(\mathit{base} \le a &lt; \mathit{limit}\)</span> and the result remains <span class="arithmatex">\(a\)</span>. V is set for an out-of-bounds address, in which case the destination is not written.</p>
 <h2 id="instruction-forms">Instruction Forms</h2>
+<p><strong><code>SEGLEA.BWLQ(z) Rn(s), Rn(d)</code></strong></p>
+<p><em>Encoding class: medium; required bytes: 3 bytes; privilege: unprivileged</em></p>
+<p><strong>Instruction Format:</strong></p>
+<p><img alt="Format — Instruction format for SEGLEA.BWLQ(z) Rn(s), Rn(d)" src="../../../assets/visuals/isa/seglea-01.svg" /></p>
+<p><strong>Format Instruction format for SEGLEA.BWLQ(z) Rn(s), Rn(d)</strong></p>
+<p><strong>Instruction Fields:</strong></p>
+<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
+<p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
+<p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
 <p><strong><code>SEGLEA.BWLQ(z) &lt;ea&gt;(e), Rn(d)</code></strong></p>
 <p><em>Encoding class: long; required bytes: 4-14 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for SEGLEA.BWLQ(z) \&lt;ea&gt;(e), Rn(d)" src="../../../assets/visuals/isa/seglea-01.svg" /></p>
+<p><img alt="Format — Instruction format for SEGLEA.BWLQ(z) \&lt;ea&gt;(e), Rn(d)" src="../../../assets/visuals/isa/seglea-02.svg" /></p>
 <p><strong>Format Instruction format for SEGLEA.BWLQ(z) \&lt;ea&gt;(e), Rn(d)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
@@ -9023,7 +9034,7 @@
 <p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the address operand.</p>
 <p><strong>EA availability</strong></p>
-<p><strong>Allowed:</strong> Register; Memory; Immediate; Extended Descriptor</p>
+<p><strong>Allowed:</strong> Memory; Immediate; Extended Descriptor</p>
 <p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>
 
 

@@ -8952,13 +8952,15 @@
 <h2 id="operation">Operation</h2>
 <p>Zero-extends the source operand from the instruction size to quad size. The low source-size bytes of the source are copied into the destination, and the remaining high destination bits are filled with zero.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
+<p><code>EXTZQ.B Rn(s), Rn(d)</code></p>
+<p><code>EXTZQ.W Rn(s), Rn(d)</code></p>
 <p><code>EXTZQ.L Rn(s), Rn(d)</code></p>
-<p><code>EXTZQ.B Rn(s), &lt;ea&gt;(e)</code></p>
 <p><code>EXTZQ.B &lt;ea&gt;(e), Rn(d)</code></p>
-<p><code>EXTZQ.W Rn(s), &lt;ea&gt;(e)</code></p>
 <p><code>EXTZQ.W &lt;ea&gt;(e), Rn(d)</code></p>
-<p><code>EXTZQ.L Rn(s), &lt;ea&gt;(e)</code></p>
 <p><code>EXTZQ.L &lt;ea&gt;(e), Rn(d)</code></p>
+<p><code>EXTZQ.B Rn(s), &lt;ea&gt;(e)</code></p>
+<p><code>EXTZQ.W Rn(s), &lt;ea&gt;(e)</code></p>
+<p><code>EXTZQ.L Rn(s), &lt;ea&gt;(e)</code></p>
 <p><code>EXTZQ.B &lt;ea&gt;(s), &lt;ea&gt;(d)</code></p>
 <p><code>EXTZQ.W &lt;ea&gt;(s), &lt;ea&gt;(d)</code></p>
 <p><code>EXTZQ.L &lt;ea&gt;(s), &lt;ea&gt;(d)</code></p>
@@ -8970,49 +8972,41 @@
 <p>Repeat = <code>REP</code>, <code>REPcc</code>, <code>REPG</code></p>
 <p>REPcc observation = <code>result</code> <code>dst</code></p>
 <h2 id="instruction-forms">Instruction Forms</h2>
+<p><strong><code>EXTZQ.B Rn(s), Rn(d)</code></strong></p>
+<p><em>Encoding class: short; required bytes: 2 bytes; privilege: unprivileged</em></p>
+<p><strong>Instruction Format:</strong></p>
+<p><img alt="Format — Instruction format for EXTZQ.B Rn(s), Rn(d)" src="../../../assets/visuals/isa/extzq-01.svg" /></p>
+<p><strong>Format Instruction format for EXTZQ.B Rn(s), Rn(d)</strong></p>
+<p><strong>Instruction Fields:</strong></p>
+<p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
+<p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
+<p><strong><code>EXTZQ.W Rn(s), Rn(d)</code></strong></p>
+<p><em>Encoding class: short; required bytes: 2 bytes; privilege: unprivileged</em></p>
+<p><strong>Instruction Format:</strong></p>
+<p><img alt="Format — Instruction format for EXTZQ.W Rn(s), Rn(d)" src="../../../assets/visuals/isa/extzq-02.svg" /></p>
+<p><strong>Format Instruction format for EXTZQ.W Rn(s), Rn(d)</strong></p>
+<p><strong>Instruction Fields:</strong></p>
+<p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
+<p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
 <p><strong><code>EXTZQ.L Rn(s), Rn(d)</code></strong></p>
 <p><em>Encoding class: short; required bytes: 2 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for EXTZQ.L Rn(s), Rn(d)" src="../../../assets/visuals/isa/extzq-01.svg" /></p>
+<p><img alt="Format — Instruction format for EXTZQ.L Rn(s), Rn(d)" src="../../../assets/visuals/isa/extzq-03.svg" /></p>
 <p><strong>Format Instruction format for EXTZQ.L Rn(s), Rn(d)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
 <p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
-<p><strong><code>EXTZQ.B Rn(s), &lt;ea&gt;(e)</code></strong></p>
-<p><em>Encoding class: medium; required bytes: 3-13 bytes; privilege: unprivileged</em></p>
-<p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for EXTZQ.B Rn(s), \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/extzq-02.svg" /></p>
-<p><strong>Format Instruction format for EXTZQ.B Rn(s), \&lt;ea&gt;(e)</strong></p>
-<p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
-<p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
-<p><strong>Effective Address field <code>e</code></strong> — Specifies the destination operand.</p>
-<p><strong>EA availability</strong></p>
-<p><strong>Allowed:</strong> Register; Memory; Extended Descriptor</p>
-<p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>
 <p><strong><code>EXTZQ.B &lt;ea&gt;(e), Rn(d)</code></strong></p>
 <p><em>Encoding class: medium; required bytes: 3-13 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for EXTZQ.B \&lt;ea&gt;(e), Rn(d)" src="../../../assets/visuals/isa/extzq-03.svg" /></p>
+<p><img alt="Format — Instruction format for EXTZQ.B \&lt;ea&gt;(e), Rn(d)" src="../../../assets/visuals/isa/extzq-04.svg" /></p>
 <p><strong>Format Instruction format for EXTZQ.B \&lt;ea&gt;(e), Rn(d)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
 <p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the source operand.</p>
 <p><strong>EA availability</strong></p>
-<p><strong>Allowed:</strong> Register except <code>Rn(r)</code>; Memory; Immediate; Extended Descriptor</p>
-<p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>
-<p><strong><code>EXTZQ.W Rn(s), &lt;ea&gt;(e)</code></strong></p>
-<p><em>Encoding class: medium; required bytes: 3-13 bytes; privilege: unprivileged</em></p>
-<p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for EXTZQ.W Rn(s), \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/extzq-04.svg" /></p>
-<p><strong>Format Instruction format for EXTZQ.W Rn(s), \&lt;ea&gt;(e)</strong></p>
-<p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
-<p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
-<p><strong>Effective Address field <code>e</code></strong> — Specifies the destination operand.</p>
-<p><strong>EA availability</strong></p>
-<p><strong>Allowed:</strong> Register; Memory; Extended Descriptor</p>
+<p><strong>Allowed:</strong> Memory; Immediate; Extended Descriptor</p>
 <p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>
 <p><strong><code>EXTZQ.W &lt;ea&gt;(e), Rn(d)</code></strong></p>
 <p><em>Encoding class: medium; required bytes: 3-13 bytes; privilege: unprivileged</em></p>
@@ -9024,36 +9018,60 @@
 <p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the source operand.</p>
 <p><strong>EA availability</strong></p>
-<p><strong>Allowed:</strong> Register except <code>Rn(r)</code>; Memory; Immediate; Extended Descriptor</p>
-<p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>
-<p><strong><code>EXTZQ.L Rn(s), &lt;ea&gt;(e)</code></strong></p>
-<p><em>Encoding class: medium; required bytes: 3-13 bytes; privilege: unprivileged</em></p>
-<p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for EXTZQ.L Rn(s), \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/extzq-06.svg" /></p>
-<p><strong>Format Instruction format for EXTZQ.L Rn(s), \&lt;ea&gt;(e)</strong></p>
-<p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
-<p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
-<p><strong>Effective Address field <code>e</code></strong> — Specifies the destination operand.</p>
-<p><strong>EA availability</strong></p>
-<p><strong>Allowed:</strong> Register except <code>Rn(r)</code>; Memory; Extended Descriptor</p>
+<p><strong>Allowed:</strong> Memory; Immediate; Extended Descriptor</p>
 <p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>
 <p><strong><code>EXTZQ.L &lt;ea&gt;(e), Rn(d)</code></strong></p>
 <p><em>Encoding class: medium; required bytes: 3-13 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for EXTZQ.L \&lt;ea&gt;(e), Rn(d)" src="../../../assets/visuals/isa/extzq-07.svg" /></p>
+<p><img alt="Format — Instruction format for EXTZQ.L \&lt;ea&gt;(e), Rn(d)" src="../../../assets/visuals/isa/extzq-06.svg" /></p>
 <p><strong>Format Instruction format for EXTZQ.L \&lt;ea&gt;(e), Rn(d)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
 <p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the source operand.</p>
 <p><strong>EA availability</strong></p>
-<p><strong>Allowed:</strong> Register except <code>Rn(r)</code>; Memory; Immediate; Extended Descriptor</p>
+<p><strong>Allowed:</strong> Memory; Immediate; Extended Descriptor</p>
+<p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>
+<p><strong><code>EXTZQ.B Rn(s), &lt;ea&gt;(e)</code></strong></p>
+<p><em>Encoding class: long; required bytes: 4-14 bytes; privilege: unprivileged</em></p>
+<p><strong>Instruction Format:</strong></p>
+<p><img alt="Format — Instruction format for EXTZQ.B Rn(s), \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/extzq-07.svg" /></p>
+<p><strong>Format Instruction format for EXTZQ.B Rn(s), \&lt;ea&gt;(e)</strong></p>
+<p><strong>Instruction Fields:</strong></p>
+<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
+<p><strong>Effective Address field <code>e</code></strong> — Specifies the destination operand.</p>
+<p><strong>EA availability</strong></p>
+<p><strong>Allowed:</strong> Memory; Extended Descriptor</p>
+<p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>
+<p><strong><code>EXTZQ.W Rn(s), &lt;ea&gt;(e)</code></strong></p>
+<p><em>Encoding class: long; required bytes: 4-14 bytes; privilege: unprivileged</em></p>
+<p><strong>Instruction Format:</strong></p>
+<p><img alt="Format — Instruction format for EXTZQ.W Rn(s), \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/extzq-08.svg" /></p>
+<p><strong>Format Instruction format for EXTZQ.W Rn(s), \&lt;ea&gt;(e)</strong></p>
+<p><strong>Instruction Fields:</strong></p>
+<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
+<p><strong>Effective Address field <code>e</code></strong> — Specifies the destination operand.</p>
+<p><strong>EA availability</strong></p>
+<p><strong>Allowed:</strong> Memory; Extended Descriptor</p>
+<p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>
+<p><strong><code>EXTZQ.L Rn(s), &lt;ea&gt;(e)</code></strong></p>
+<p><em>Encoding class: long; required bytes: 4-14 bytes; privilege: unprivileged</em></p>
+<p><strong>Instruction Format:</strong></p>
+<p><img alt="Format — Instruction format for EXTZQ.L Rn(s), \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/extzq-09.svg" /></p>
+<p><strong>Format Instruction format for EXTZQ.L Rn(s), \&lt;ea&gt;(e)</strong></p>
+<p><strong>Instruction Fields:</strong></p>
+<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
+<p><strong>Effective Address field <code>e</code></strong> — Specifies the destination operand.</p>
+<p><strong>EA availability</strong></p>
+<p><strong>Allowed:</strong> Memory; Extended Descriptor</p>
 <p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>
 <p><strong><code>EXTZQ.B &lt;ea&gt;(s), &lt;ea&gt;(d)</code></strong></p>
 <p><em>Encoding class: long; required bytes: 4-18 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for EXTZQ.B \&lt;ea&gt;(s), \&lt;ea&gt;(d)" src="../../../assets/visuals/isa/extzq-08.svg" /></p>
+<p><img alt="Format — Instruction format for EXTZQ.B \&lt;ea&gt;(s), \&lt;ea&gt;(d)" src="../../../assets/visuals/isa/extzq-10.svg" /></p>
 <p><strong>Format Instruction format for EXTZQ.B \&lt;ea&gt;(s), \&lt;ea&gt;(d)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
@@ -9068,7 +9086,7 @@
 <p><strong><code>EXTZQ.W &lt;ea&gt;(s), &lt;ea&gt;(d)</code></strong></p>
 <p><em>Encoding class: long; required bytes: 4-18 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for EXTZQ.W \&lt;ea&gt;(s), \&lt;ea&gt;(d)" src="../../../assets/visuals/isa/extzq-09.svg" /></p>
+<p><img alt="Format — Instruction format for EXTZQ.W \&lt;ea&gt;(s), \&lt;ea&gt;(d)" src="../../../assets/visuals/isa/extzq-11.svg" /></p>
 <p><strong>Format Instruction format for EXTZQ.W \&lt;ea&gt;(s), \&lt;ea&gt;(d)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
@@ -9083,7 +9101,7 @@
 <p><strong><code>EXTZQ.L &lt;ea&gt;(s), &lt;ea&gt;(d)</code></strong></p>
 <p><em>Encoding class: long; required bytes: 4-18 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for EXTZQ.L \&lt;ea&gt;(s), \&lt;ea&gt;(d)" src="../../../assets/visuals/isa/extzq-10.svg" /></p>
+<p><img alt="Format — Instruction format for EXTZQ.L \&lt;ea&gt;(s), \&lt;ea&gt;(d)" src="../../../assets/visuals/isa/extzq-12.svg" /></p>
 <p><strong>Format Instruction format for EXTZQ.L \&lt;ea&gt;(s), \&lt;ea&gt;(d)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>

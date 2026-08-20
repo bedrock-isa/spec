@@ -8979,7 +8979,7 @@
 <p>Class = system</p>
 <p>Family = tlb and context</p>
 <p>Privilege = supervisor</p>
-<p>Length = 4 bytes</p>
+<p>Length = 3 bytes</p>
 <p>Repeat = <code>none</code></p>
 <h2 id="detailed-semantics">Detailed Semantics</h2>
 <p><strong>FLAGS Effects</strong></p>
@@ -9013,7 +9013,7 @@
 <p>Every continuing entry must be a valid table pointer. U, W, and X are accumulated across the walk. A valid byte-addressed leaf at level <span class="arithmatex">\(L\)</span> terminates the walk and combines its naturally aligned physical base with the original low <span class="arithmatex">\(12+9(L-1)\)</span> address bits; an L1 slot leaf retains its 12-bit slot index. Success sets Z and reports effective U, W, and X in N, C, and V. Any canonicality or walk failure returns zero and clears all four flags without raising <code>PAGE_FAULT</code>, setting PTE A or D, or modifying the TLB.</p>
 <h2 id="instruction-forms">Instruction Forms</h2>
 <p><strong><code>VTOP Rn(v), Rn(p)</code></strong></p>
-<p><em>Encoding class: long; required bytes: 4 bytes; privilege: supervisor</em></p>
+<p><em>Encoding class: medium; required bytes: 3 bytes; privilege: supervisor</em></p>
 <p><strong>Instruction Format:</strong></p>
 <p><img alt="Format — Instruction format for VTOP Rn(v), Rn(p)" src="../../../assets/visuals/isa/vtop-01.svg" /></p>
 <p><strong>Format Instruction format for VTOP Rn(v), Rn(p)</strong></p>

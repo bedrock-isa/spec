@@ -8931,30 +8931,19 @@
 <h2 id="compact-ea-addressing-modes">Compact EA Addressing Modes</h2>
 <p>Compact EA forms encode direct Rn and SP operands, common Rn/SP/PC memory operands, absolute memory operands, immediate operands, and the EXT1 and EXT2 escapes.</p>
 <p>Compact memory forms that do not name SP or PC use the operation default data segment. SP memory forms are fixed to SS, and PC memory forms are fixed to CS.</p>
-<p><strong><code>Register Direct</code></strong></p>
-<p><code>Rn(r)</code></p>
-<p><code>SP</code></p>
-<p><strong>EA encoding:</strong>000rrrr selects Rn(r); 1101000 selects SP.</p>
-<p><strong>EA type:</strong>register operand, not a memory reference.</p>
-<p><strong>Generation:</strong>The operand value is the selected register value. No effective memory address is generated.</p>
-<p><strong>Segment:</strong>No segment is selected.</p>
-<p><strong>Payload:</strong>No appended EA payload bytes.</p>
-<p><strong>Update:</strong>No auto-update.</p>
-<p><img alt="Direct register operand" src="../../assets/visuals/isa/effective-addressing-modes-01.svg" /></p>
-<p><strong>Direct register operand</strong></p>
 <p><strong><code>Rn Memory</code></strong></p>
 <p><code>[Rn(r)]</code></p>
 <p><code>[Rn(r) + disp8s]</code></p>
 <p><code>[Rn(r) + disp16s]</code></p>
 <p><code>[Rn(r) + disp32s]</code></p>
 <p><code>[Rn(r) + disp64]</code></p>
-<p><strong>EA encoding:</strong>001rrrr has no displacement; 010rrrr, 011rrrr, 100rrrr, and 101rrrr select disp8s, disp16s, disp32s, and disp64.</p>
+<p><strong>EA encoding:</strong>000rrrr has no displacement; 001rrrr, 010rrrr, 011rrrr, and 100rrrr select disp8s, disp16s, disp32s, and disp64.</p>
 <p><strong>EA type:</strong>memory operand.</p>
 <p><strong>Generation:</strong>offset = temporary Rn(r) + displacement. The no-displacement form uses displacement 0.</p>
 <p><strong>Segment:</strong>Uses the operation default data segment unless the instruction defines a different default.</p>
 <p><strong>Payload:</strong>Only displacement forms append payload bytes. Displacement payload is little-endian and has the size named by the EA form.</p>
 <p><strong>Update:</strong>No auto-update in compact Rn memory forms.</p>
-<p><img alt="Rn memory address generation" src="../../assets/visuals/isa/effective-addressing-modes-02.svg" /></p>
+<p><img alt="Rn memory address generation" src="../../assets/visuals/isa/effective-addressing-modes-01.svg" /></p>
 <p><strong>Rn memory address generation</strong></p>
 <p><strong><code>SP Memory</code></strong></p>
 <p><code>[SP]</code></p>
@@ -8962,50 +8951,50 @@
 <p><code>[SP + disp16s]</code></p>
 <p><code>[SP + disp32s]</code></p>
 <p><code>[SP + disp64]</code></p>
-<p><strong>EA encoding:</strong> has no displacement; 1100000, 1100001, 1100010, and 1100011 select disp8s, disp16s, disp32s, and disp64.</p>
+<p><strong>EA encoding:</strong> has no displacement; 1010000, 1010001, 1010010, and 1010011 select disp8s, disp16s, disp32s, and disp64.</p>
 <p><strong>EA type:</strong>memory operand.</p>
 <p><strong>Generation:</strong>offset = temporary SP + displacement. The no-displacement form uses displacement 0.</p>
 <p><strong>Segment:</strong>Fixed to SS; no segment field is encoded.</p>
 <p><strong>Payload:</strong>Only displacement forms append payload bytes. Displacement payload is little-endian and has the size named by the EA form.</p>
 <p><strong>Update:</strong>No auto-update in compact SP memory forms.</p>
-<p><img alt="SP memory address generation" src="../../assets/visuals/isa/effective-addressing-modes-03.svg" /></p>
+<p><img alt="SP memory address generation" src="../../assets/visuals/isa/effective-addressing-modes-02.svg" /></p>
 <p><strong>SP memory address generation</strong></p>
 <p><strong><code>PC Memory</code></strong></p>
 <p><code>[PC + disp8s]</code></p>
 <p><code>[PC + disp16s]</code></p>
 <p><code>[PC + disp32s]</code></p>
 <p><code>[PC + disp64]</code></p>
-<p><strong>EA encoding:</strong>, 1100101, 1100110, and 1100111 select disp8s, disp16s, disp32s, and disp64.</p>
+<p><strong>EA encoding:</strong>, 1010101, 1010110, and 1010111 select disp8s, disp16s, disp32s, and disp64.</p>
 <p><strong>EA type:</strong>memory operand.</p>
 <p><strong>Generation:</strong>offset = instruction-start PC + displacement. PC names byte 0 of the current instruction.</p>
 <p><strong>Segment:</strong>Fixed to CS; no segment field is encoded.</p>
 <p><strong>Payload:</strong>A displacement payload is always present. Payload is little-endian and has the size named by the EA form.</p>
 <p><strong>Update:</strong>No auto-update for PC forms.</p>
-<p><img alt="PC-relative address generation" src="../../assets/visuals/isa/effective-addressing-modes-04.svg" /></p>
+<p><img alt="PC-relative address generation" src="../../assets/visuals/isa/effective-addressing-modes-03.svg" /></p>
 <p><strong>PC-relative address generation</strong></p>
 <p><strong><code>Absolute Memory</code></strong></p>
 <p><code>[abs32s]</code></p>
 <p><code>[abs64]</code></p>
-<p><strong>EA encoding:</strong> selects abs32s; 1101011 selects abs64.</p>
+<p><strong>EA encoding:</strong> selects abs32s; 1011010 selects abs64.</p>
 <p><strong>EA type:</strong>memory operand.</p>
 <p><strong>Generation:</strong>offset = sign-extended abs32s or unsigned abs64.</p>
 <p><strong>Segment:</strong>Uses the operation default data segment unless the instruction defines a different default.</p>
 <p><strong>Payload:</strong>The absolute address payload is little-endian and has the size named by the EA form.</p>
 <p><strong>Update:</strong>No auto-update.</p>
-<p><img alt="Absolute memory address generation" src="../../assets/visuals/isa/effective-addressing-modes-05.svg" /></p>
+<p><img alt="Absolute memory address generation" src="../../assets/visuals/isa/effective-addressing-modes-04.svg" /></p>
 <p><strong>Absolute memory address generation</strong></p>
 <p><strong><code>Immediate</code></strong></p>
 <p><code>imm8s</code></p>
 <p><code>imm16s</code></p>
 <p><code>imm32s</code></p>
 <p><code>imm64</code></p>
-<p><strong>EA encoding:</strong>, 1101101, 1101110, and 1101111 select imm8s, imm16s, imm32s, and imm64.</p>
+<p><strong>EA encoding:</strong>, 1011100, 1011101, and 1011110 select imm8s, imm16s, imm32s, and imm64.</p>
 <p><strong>EA type:</strong>immediate operand, not a memory reference.</p>
 <p><strong>Generation:</strong>The operand value is decoded from the immediate payload. Signed payloads are sign-extended according to the consuming instruction’s operand rule.</p>
 <p><strong>Segment:</strong>No segment is selected.</p>
 <p><strong>Payload:</strong>The immediate payload is little-endian and has the size named by the EA form.</p>
 <p><strong>Update:</strong>No auto-update. Immediate forms are not valid destinations unless an instruction explicitly defines such a form.</p>
-<p><img alt="Immediate operand generation" src="../../assets/visuals/isa/effective-addressing-modes-06.svg" /></p>
+<p><img alt="Immediate operand generation" src="../../assets/visuals/isa/effective-addressing-modes-05.svg" /></p>
 <p><strong>Immediate operand generation</strong></p>
 <p><strong><code>EXT1 Escape</code></strong></p>
 <p><code>EXT1</code></p>
@@ -9013,7 +9002,7 @@
 <p><code>EXT1/disp16s</code></p>
 <p><code>EXT1/disp32s</code></p>
 <p><code>EXT1/disp64</code></p>
-<p><strong>EA encoding:</strong> selects no displacement; 1110000, 1110001, 1110010, and 1110011 select disp8s, disp16s, disp32s, and disp64.</p>
+<p><strong>EA encoding:</strong> selects no displacement; 1011111, 1100000, 1100001, and 1100010 select disp8s, disp16s, disp32s, and disp64.</p>
 <p><strong>EA type:</strong>memory operand described by the appended EXT1 descriptor.</p>
 <p><strong>Generation:</strong>The one-byte EXT1 descriptor selects segment, base, and auto-update behavior. The compact EA escape selects the descriptor family and displacement size.</p>
 <p><strong>Segment:</strong>Segment-qualified forms encode SREG SEG(s); default base-update forms use the operation default data segment.</p>
@@ -9025,7 +9014,7 @@
 <p><code>EXT2/disp16s</code></p>
 <p><code>EXT2/disp32s</code></p>
 <p><code>EXT2/disp64</code></p>
-<p><strong>EA encoding:</strong> selects no displacement; 1110101, 1110110, 1110111, and 1111000 select disp8s, disp16s, disp32s, and disp64.</p>
+<p><strong>EA encoding:</strong> selects no displacement; 1100100, 1100101, 1100110, and 1100111 select disp8s, disp16s, disp32s, and disp64.</p>
 <p><strong>EA type:</strong>memory operand described by the appended EXT2 descriptor.</p>
 <p><strong>Generation:</strong>The two-byte EXT2 descriptor selects segment, base, index, and auto-update behavior. The compact EA escape selects the descriptor family and displacement size.</p>
 <p><strong>Segment:</strong>Segment-qualified forms encode SREG SEG(s); SP and PC indexed forms use SS and CS.</p>
@@ -9044,192 +9033,180 @@
 <tbody>
 <tr>
 <td style="text-align: left;"><code>000rrrr</code></td>
-<td style="text-align: left;"><code>Rn(r)</code></td>
-<td style="text-align: left;">register</td>
-<td style="text-align: left;">no</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>001rrrr</code></td>
 <td style="text-align: left;"><code>[Rn(r)]</code></td>
 <td style="text-align: left;">memory</td>
 <td style="text-align: left;">yes</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>010rrrr</code></td>
+<td style="text-align: left;"><code>001rrrr</code></td>
 <td style="text-align: left;"><code>[Rn(r) + disp8s]</code></td>
 <td style="text-align: left;">memory</td>
 <td style="text-align: left;">yes</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>011rrrr</code></td>
+<td style="text-align: left;"><code>010rrrr</code></td>
 <td style="text-align: left;"><code>[Rn(r) + disp16s]</code></td>
 <td style="text-align: left;">memory</td>
 <td style="text-align: left;">yes</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>100rrrr</code></td>
+<td style="text-align: left;"><code>011rrrr</code></td>
 <td style="text-align: left;"><code>[Rn(r) + disp32s]</code></td>
 <td style="text-align: left;">memory</td>
 <td style="text-align: left;">yes</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>101rrrr</code></td>
+<td style="text-align: left;"><code>100rrrr</code></td>
 <td style="text-align: left;"><code>[Rn(r) + disp64]</code></td>
 <td style="text-align: left;">memory</td>
 <td style="text-align: left;">yes</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>1100000</code></td>
+<td style="text-align: left;"><code>1010000</code></td>
 <td style="text-align: left;"><code>[SP + disp8s]</code></td>
 <td style="text-align: left;">memory</td>
 <td style="text-align: left;">yes</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>1100001</code></td>
+<td style="text-align: left;"><code>1010001</code></td>
 <td style="text-align: left;"><code>[SP + disp16s]</code></td>
 <td style="text-align: left;">memory</td>
 <td style="text-align: left;">yes</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>1100010</code></td>
+<td style="text-align: left;"><code>1010010</code></td>
 <td style="text-align: left;"><code>[SP + disp32s]</code></td>
 <td style="text-align: left;">memory</td>
 <td style="text-align: left;">yes</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>1100011</code></td>
+<td style="text-align: left;"><code>1010011</code></td>
 <td style="text-align: left;"><code>[SP + disp64]</code></td>
 <td style="text-align: left;">memory</td>
 <td style="text-align: left;">yes</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>1100100</code></td>
+<td style="text-align: left;"><code>1010100</code></td>
 <td style="text-align: left;"><code>[PC + disp8s]</code></td>
 <td style="text-align: left;">memory</td>
 <td style="text-align: left;">yes</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>1100101</code></td>
+<td style="text-align: left;"><code>1010101</code></td>
 <td style="text-align: left;"><code>[PC + disp16s]</code></td>
 <td style="text-align: left;">memory</td>
 <td style="text-align: left;">yes</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>1100110</code></td>
+<td style="text-align: left;"><code>1010110</code></td>
 <td style="text-align: left;"><code>[PC + disp32s]</code></td>
 <td style="text-align: left;">memory</td>
 <td style="text-align: left;">yes</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>1100111</code></td>
+<td style="text-align: left;"><code>1010111</code></td>
 <td style="text-align: left;"><code>[PC + disp64]</code></td>
 <td style="text-align: left;">memory</td>
 <td style="text-align: left;">yes</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>1101000</code></td>
-<td style="text-align: left;"><code>SP</code></td>
-<td style="text-align: left;">register</td>
-<td style="text-align: left;">no</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>1101001</code></td>
+<td style="text-align: left;"><code>1011000</code></td>
 <td style="text-align: left;"><code>[SP]</code></td>
 <td style="text-align: left;">memory</td>
 <td style="text-align: left;">yes</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>1101010</code></td>
+<td style="text-align: left;"><code>1011001</code></td>
 <td style="text-align: left;"><code>[abs32s]</code></td>
 <td style="text-align: left;">memory</td>
 <td style="text-align: left;">yes</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>1101011</code></td>
+<td style="text-align: left;"><code>1011010</code></td>
 <td style="text-align: left;"><code>[abs64]</code></td>
 <td style="text-align: left;">memory</td>
 <td style="text-align: left;">yes</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>1101100</code></td>
+<td style="text-align: left;"><code>1011011</code></td>
 <td style="text-align: left;"><code>imm8s</code></td>
 <td style="text-align: left;">immediate</td>
 <td style="text-align: left;">no</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>1101101</code></td>
+<td style="text-align: left;"><code>1011100</code></td>
 <td style="text-align: left;"><code>imm16s</code></td>
 <td style="text-align: left;">immediate</td>
 <td style="text-align: left;">no</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>1101110</code></td>
+<td style="text-align: left;"><code>1011101</code></td>
 <td style="text-align: left;"><code>imm32s</code></td>
 <td style="text-align: left;">immediate</td>
 <td style="text-align: left;">no</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>1101111</code></td>
+<td style="text-align: left;"><code>1011110</code></td>
 <td style="text-align: left;"><code>imm64</code></td>
 <td style="text-align: left;">immediate</td>
 <td style="text-align: left;">no</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>1110000</code></td>
+<td style="text-align: left;"><code>1011111</code></td>
 <td style="text-align: left;"><code>EXT1/disp8s</code></td>
 <td style="text-align: left;">extended_escape</td>
 <td style="text-align: left;">-</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>1110001</code></td>
+<td style="text-align: left;"><code>1100000</code></td>
 <td style="text-align: left;"><code>EXT1/disp16s</code></td>
 <td style="text-align: left;">extended_escape</td>
 <td style="text-align: left;">-</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>1110010</code></td>
+<td style="text-align: left;"><code>1100001</code></td>
 <td style="text-align: left;"><code>EXT1/disp32s</code></td>
 <td style="text-align: left;">extended_escape</td>
 <td style="text-align: left;">-</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>1110011</code></td>
+<td style="text-align: left;"><code>1100010</code></td>
 <td style="text-align: left;"><code>EXT1/disp64</code></td>
 <td style="text-align: left;">extended_escape</td>
 <td style="text-align: left;">-</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>1110100</code></td>
+<td style="text-align: left;"><code>1100011</code></td>
 <td style="text-align: left;"><code>EXT1</code></td>
 <td style="text-align: left;">extended_escape</td>
 <td style="text-align: left;">-</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>1110101</code></td>
+<td style="text-align: left;"><code>1100100</code></td>
 <td style="text-align: left;"><code>EXT2/disp8s</code></td>
 <td style="text-align: left;">extended_escape</td>
 <td style="text-align: left;">-</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>1110110</code></td>
+<td style="text-align: left;"><code>1100101</code></td>
 <td style="text-align: left;"><code>EXT2/disp16s</code></td>
 <td style="text-align: left;">extended_escape</td>
 <td style="text-align: left;">-</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>1110111</code></td>
+<td style="text-align: left;"><code>1100110</code></td>
 <td style="text-align: left;"><code>EXT2/disp32s</code></td>
 <td style="text-align: left;">extended_escape</td>
 <td style="text-align: left;">-</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>1111000</code></td>
+<td style="text-align: left;"><code>1100111</code></td>
 <td style="text-align: left;"><code>EXT2/disp64</code></td>
 <td style="text-align: left;">extended_escape</td>
 <td style="text-align: left;">-</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>1111001</code></td>
+<td style="text-align: left;"><code>1101000</code></td>
 <td style="text-align: left;"><code>EXT2</code></td>
 <td style="text-align: left;">extended_escape</td>
 <td style="text-align: left;">-</td>
@@ -9240,12 +9217,12 @@
 <h2 id="extended-ea-descriptor">Extended EA Descriptor</h2>
 <p>A compact EXT1 or EXT2 EA value selects both an exact descriptor length and the displacement width. The descriptor bytes then select segment, base, index, zero-base, SP/PC indexed, and auto-update behavior within that family.</p>
 <p>Each extended descriptor selects its segment from the encoded SREG field SEG(s), the fixed SS segment for SP, the fixed CS segment for PC, or the operation’s default data segment.</p>
-<p><img alt="Compact Effective-Address Field" src="../../assets/visuals/isa/effective-addressing-modes-07.svg" /></p>
+<p><img alt="Compact Effective-Address Field" src="../../assets/visuals/isa/effective-addressing-modes-06.svg" /></p>
 <p><strong>Compact Effective-Address Field</strong></p>
 <p><code>M</code> abbreviates mode, and <code>r/f</code> abbreviates register/form.</p>
-<p><img alt="EXT1 Descriptor Forms" src="../../assets/visuals/isa/effective-addressing-modes-08.svg" /></p>
+<p><img alt="EXT1 Descriptor Forms" src="../../assets/visuals/isa/effective-addressing-modes-07.svg" /></p>
 <p><strong>EXT1 Descriptor Forms</strong></p>
-<p><img alt="EXT2 Descriptor Byte Layouts" src="../../assets/visuals/isa/effective-addressing-modes-09.svg" /></p>
+<p><img alt="EXT2 Descriptor Byte Layouts" src="../../assets/visuals/isa/effective-addressing-modes-08.svg" /></p>
 <p><strong>EXT2 Descriptor Byte Layouts</strong></p>
 <p><code>M</code> abbreviates mode.</p>
 <p><strong>EA Payload Names</strong></p>
@@ -9344,7 +9321,7 @@
 <p><strong>Segment:</strong>SEG(s) selects DS, SS, or GS0..GS5.</p>
 <p><strong>Payload:</strong>One descriptor byte plus the optional displacement selected by the compact EXT1 escape.</p>
 <p><strong>Update:</strong>No auto-update.</p>
-<p><img alt="EXT1 explicit segment base" src="../../assets/visuals/isa/effective-addressing-modes-10.svg" /></p>
+<p><img alt="EXT1 explicit segment base" src="../../assets/visuals/isa/effective-addressing-modes-09.svg" /></p>
 <p><strong>EXT1 explicit segment base</strong></p>
 <p><strong><code>EXT2 Explicit Segment Indexed</code></strong></p>
 <p><code>[SEG(s):Rn(b) + Rn(i) * scale + displacement]</code></p>
@@ -9356,7 +9333,7 @@
 <p><strong>Scale:</strong>Scale is implicit in the consuming instruction. B/W/L/Q normally imply 1/2/4/8.</p>
 <p><strong>Payload:</strong>Two descriptor bytes plus the optional displacement selected by the compact EXT2 escape.</p>
 <p><strong>Update:</strong>Index postincrement uses the current temporary Rn(i), then increments it by one element. Index predecrement decrements temporary Rn(i) by one element before use.</p>
-<p><img alt="EXT2 explicit segment indexed" src="../../assets/visuals/isa/effective-addressing-modes-11.svg" /></p>
+<p><img alt="EXT2 explicit segment indexed" src="../../assets/visuals/isa/effective-addressing-modes-10.svg" /></p>
 <p><strong>EXT2 explicit segment indexed</strong></p>
 <p><strong><code>EXT1 Explicit Segment Zero Base</code></strong></p>
 <p><code>[SEG(s):0 + displacement]</code></p>
@@ -9365,7 +9342,7 @@
 <p><strong>Segment:</strong>SEG(s) selects DS, SS, or GS0..GS5.</p>
 <p><strong>Payload:</strong>One descriptor byte plus the optional displacement selected by the compact EXT1 escape.</p>
 <p><strong>Update:</strong>No auto-update.</p>
-<p><img alt="EXT1 zero-base address generation" src="../../assets/visuals/isa/effective-addressing-modes-12.svg" /></p>
+<p><img alt="EXT1 zero-base address generation" src="../../assets/visuals/isa/effective-addressing-modes-11.svg" /></p>
 <p><strong>EXT1 zero-base address generation</strong></p>
 <p><strong><code>EXT2 Explicit Segment Base Auto-Update</code></strong></p>
 <p><code>[SEG(s):Rn(b)++ + displacement]</code></p>
@@ -9375,7 +9352,7 @@
 <p><strong>Segment:</strong>SEG(s) selects DS, SS, or GS0..GS5.</p>
 <p><strong>Payload:</strong>Two descriptor bytes plus the optional displacement selected by the compact EXT2 escape.</p>
 <p><strong>Update:</strong>Base postincrement uses the current temporary Rn(b), then increments it by the memory access size. Base predecrement decrements temporary Rn(b) by the memory access size before use.</p>
-<p><img alt="EXT2 base auto-update" src="../../assets/visuals/isa/effective-addressing-modes-13.svg" /></p>
+<p><img alt="EXT2 base auto-update" src="../../assets/visuals/isa/effective-addressing-modes-12.svg" /></p>
 <p><strong>EXT2 base auto-update</strong></p>
 <p><strong><code>EXT2 Explicit Segment Zero-Base Indexed</code></strong></p>
 <p><code>[SEG(s):0 + Rn(i) * scale + displacement]</code></p>
@@ -9386,7 +9363,7 @@
 <p><strong>Segment:</strong>SEG(s) selects DS, SS, or GS0..GS5.</p>
 <p><strong>Payload:</strong>Two descriptor bytes plus the optional displacement selected by the compact EXT2 escape.</p>
 <p><strong>Update:</strong>Index update follows the same one-element temporary-image rule as other indexed update forms.</p>
-<p><img alt="EXT2 zero-base indexed" src="../../assets/visuals/isa/effective-addressing-modes-14.svg" /></p>
+<p><img alt="EXT2 zero-base indexed" src="../../assets/visuals/isa/effective-addressing-modes-13.svg" /></p>
 <p><strong>EXT2 zero-base indexed</strong></p>
 <p><strong><code>EXT2 SP/PC Indexed</code></strong></p>
 <p><code>[SP + Rn(i) * scale + displacement]</code></p>
@@ -9400,7 +9377,7 @@
 <p><strong>Segment:</strong>SP forms are fixed to SS. PC forms are fixed to CS.</p>
 <p><strong>Payload:</strong>Two descriptor bytes plus the optional displacement selected by the compact EXT2 escape.</p>
 <p><strong>Update:</strong>Auto-update applies to the Rn(i) index register.</p>
-<p><img alt="EXT2 SP/PC indexed" src="../../assets/visuals/isa/effective-addressing-modes-15.svg" /></p>
+<p><img alt="EXT2 SP/PC indexed" src="../../assets/visuals/isa/effective-addressing-modes-14.svg" /></p>
 <p><strong>EXT2 SP/PC indexed</strong></p>
 <p><strong><code>EXT1 Default-Segment Base Auto-Update</code></strong></p>
 <p><code>[Rn(b)++ + displacement]</code></p>
@@ -9410,7 +9387,7 @@
 <p><strong>Segment:</strong>Uses the operation default data segment.</p>
 <p><strong>Payload:</strong>One descriptor byte plus the optional displacement selected by the compact EXT1 escape.</p>
 <p><strong>Update:</strong>Postincrement uses the current temporary Rn(b), then increments it by the memory access size. Predecrement decrements temporary Rn(b) by the memory access size before use.</p>
-<p><img alt="EXT1 default-segment base auto-update" src="../../assets/visuals/isa/effective-addressing-modes-16.svg" /></p>
+<p><img alt="EXT1 default-segment base auto-update" src="../../assets/visuals/isa/effective-addressing-modes-15.svg" /></p>
 <p><strong>EXT1 default-segment base auto-update</strong></p>
 <p>EA evaluation begins by copying the architectural registers into a temporary operand-evaluation image. Operands are then processed in instruction order. Within one EA, the base term is evaluated before the index term and then the displacement. Auto-update changes only the temporary image while operands are being evaluated. Memory reads and writes are collected as instruction side effects, and neither those effects nor the register updates become architecturally visible until the instruction commits. A fault before commit therefore leaves both register and memory state unchanged apart from the exception-entry transition.</p>
 <p>Postincrement forms use the current temporary value and update it afterward. Predecrement forms update the temporary value first and then use the result. A base register changes by the EA interpretation width in bytes; an index register changes by one element before scaling. Each REP iteration applies and commits these rules independently.</p>

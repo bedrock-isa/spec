@@ -8953,8 +8953,7 @@
 <p>Shifts the selected-width destination value right by the effective count, sign-extends the vacated high bits, and writes the result to the destination. The effective count is the count operand modulo the selected operand width: B uses mod 8, W uses mod 16, L uses mod 32, and Q uses mod 64. If the effective count is zero, the destination is unchanged. FLAGS are unchanged for all counts.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
 <p><code>SAR.LQ(z) Rn(s), Rn(d)</code></p>
-<p><code>SAR.BW(z) Rn(s), &lt;ea&gt;(e)</code></p>
-<p><code>SAR.LQ(z) Rn(s), &lt;ea&gt;(e)</code></p>
+<p><code>SAR.BWLQ(z) Rn(s), &lt;ea&gt;(e)</code></p>
 <p><code>SAR.BWLQ(z) imm6(i), &lt;ea&gt;(e)</code></p>
 <h2 id="attributes">Attributes</h2>
 <p>Class = integer</p>
@@ -8973,36 +8972,23 @@
 <p><strong>Size field <code>z</code></strong> — Selects L/Q.</p>
 <p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
 <p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
-<p><strong><code>SAR.BW(z) Rn(s), &lt;ea&gt;(e)</code></strong></p>
-<p><em>Encoding class: medium; required bytes: 3-13 bytes; privilege: unprivileged</em></p>
+<p><strong><code>SAR.BWLQ(z) Rn(s), &lt;ea&gt;(e)</code></strong></p>
+<p><em>Encoding class: long; required bytes: 4-14 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for SAR.BW(z) Rn(s), \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/sar-02.svg" /></p>
-<p><strong>Format Instruction format for SAR.BW(z) Rn(s), \&lt;ea&gt;(e)</strong></p>
+<p><img alt="Format — Instruction format for SAR.BWLQ(z) Rn(s), \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/sar-02.svg" /></p>
+<p><strong>Format Instruction format for SAR.BWLQ(z) Rn(s), \&lt;ea&gt;(e)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>z</code></strong> — Selects B/W.</p>
+<p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
 <p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the read/write operand.</p>
 <p><strong>EA availability</strong></p>
-<p><strong>Allowed:</strong> Register; Memory; Extended Descriptor</p>
-<p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>
-<p><strong><code>SAR.LQ(z) Rn(s), &lt;ea&gt;(e)</code></strong></p>
-<p><em>Encoding class: medium; required bytes: 3-13 bytes; privilege: unprivileged</em></p>
-<p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for SAR.LQ(z) Rn(s), \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/sar-03.svg" /></p>
-<p><strong>Format Instruction format for SAR.LQ(z) Rn(s), \&lt;ea&gt;(e)</strong></p>
-<p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
-<p><strong>Size field <code>z</code></strong> — Selects L/Q.</p>
-<p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
-<p><strong>Effective Address field <code>e</code></strong> — Specifies the read/write operand.</p>
-<p><strong>EA availability</strong></p>
-<p><strong>Allowed:</strong> Register except <code>Rn(r)</code>; Memory; Extended Descriptor</p>
+<p><strong>Allowed:</strong> Memory; Extended Descriptor</p>
 <p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>
 <p><strong><code>SAR.BWLQ(z) imm6(i), &lt;ea&gt;(e)</code></strong></p>
 <p><em>Encoding class: long; required bytes: 4-14 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for SAR.BWLQ(z) imm6(i), \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/sar-04.svg" /></p>
+<p><img alt="Format — Instruction format for SAR.BWLQ(z) imm6(i), \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/sar-03.svg" /></p>
 <p><strong>Format Instruction format for SAR.BWLQ(z) imm6(i), \&lt;ea&gt;(e)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
@@ -9010,7 +8996,7 @@
 <p><strong>Immediate field <code>i</code></strong> — Encodes the immediate value.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the read/write operand.</p>
 <p><strong>EA availability</strong></p>
-<p><strong>Allowed:</strong> Register; Memory; Extended Descriptor</p>
+<p><strong>Allowed:</strong> Memory; Extended Descriptor</p>
 <p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>
 
 

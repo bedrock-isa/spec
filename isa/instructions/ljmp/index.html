@@ -8974,12 +8974,13 @@
 <h2 id="operation">Operation</h2>
 <p>Long jump is the CS-changing jump instruction. It commits the new CS and PC as a single architectural control-transfer step. The two-operand form takes the new CS image from Rn. Its target EA has Q interpretation width: a memory form reads a 64-bit offset and a register or immediate form supplies its value directly.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
+<p><code>LJMP Rn(s), Rn(d)</code></p>
 <p><code>LJMP Rn(r), &lt;ea&gt;(e)</code></p>
 <h2 id="attributes">Attributes</h2>
 <p>Class = control flow</p>
 <p>Family = control flow</p>
 <p>Privilege = unprivileged</p>
-<p>Length = 4-14 bytes</p>
+<p>Length = 3-14 bytes</p>
 <p>Repeat = <code>none</code></p>
 <h2 id="detailed-semantics">Detailed Semantics</h2>
 <ol>
@@ -8999,17 +9000,26 @@
 <p><strong>Fault atomicity.</strong> CS and PC remain unchanged when operand evaluation or target validation faults.</p>
 <p>An invalid new CS image raises <code>INVALID_CONTROL_STATE</code>; target translation failure raises <code>PAGE_FAULT</code>.</p>
 <h2 id="instruction-forms">Instruction Forms</h2>
+<p><strong><code>LJMP Rn(s), Rn(d)</code></strong></p>
+<p><em>Encoding class: medium; required bytes: 3 bytes; privilege: unprivileged</em></p>
+<p><strong>Instruction Format:</strong></p>
+<p><img alt="Format — Instruction format for LJMP Rn(s), Rn(d)" src="../../../assets/visuals/isa/ljmp-01.svg" /></p>
+<p><strong>Format Instruction format for LJMP Rn(s), Rn(d)</strong></p>
+<p><strong>Instruction Fields:</strong></p>
+<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
+<p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
 <p><strong><code>LJMP Rn(r), &lt;ea&gt;(e)</code></strong></p>
 <p><em>Encoding class: long; required bytes: 4-14 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for LJMP Rn(r), \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/ljmp-01.svg" /></p>
+<p><img alt="Format — Instruction format for LJMP Rn(r), \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/ljmp-02.svg" /></p>
 <p><strong>Format Instruction format for LJMP Rn(r), \&lt;ea&gt;(e)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
 <p><strong>Register field <code>r</code></strong> — Selects the source operand.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the control target.</p>
 <p><strong>EA availability</strong></p>
-<p><strong>Allowed:</strong> Register; Memory; Immediate; Extended Descriptor</p>
+<p><strong>Allowed:</strong> Memory; Immediate; Extended Descriptor</p>
 <p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>
 
 

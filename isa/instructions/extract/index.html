@@ -8979,7 +8979,7 @@
 <p>Class = integer</p>
 <p>Family = integer bitfield</p>
 <p>Privilege = unprivileged</p>
-<p>Length = 4 bytes</p>
+<p>Length = 5 bytes</p>
 <p>Repeat = <code>REP</code>, <code>REPcc</code>, <code>REPG</code></p>
 <p>REPcc observation = <code>result</code> <code>low_dst</code></p>
 <h2 id="detailed-semantics">Detailed Semantics</h2>
@@ -8987,7 +8987,7 @@
                                 Rn(\mathrm{low})[n-1:0]\bigr).\)</span>$ The immediate is an unsigned seven-bit shift count. The destination receives the low <span class="arithmatex">\(n\)</span> bits of <span class="arithmatex">\(T\)</span> after a logical right shift by that count. A count greater than or equal to <span class="arithmatex">\(2n\)</span> produces zero. The high register is not changed.</p>
 <h2 id="instruction-forms">Instruction Forms</h2>
 <p><strong><code>EXTRACT.BWLQ(z) imm7(i), Rn(h), Rn(l)</code></strong></p>
-<p><em>Encoding class: long; required bytes: 4 bytes; privilege: unprivileged</em></p>
+<p><em>Encoding class: extralong; required bytes: 5 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
 <p><img alt="Format — Instruction format for EXTRACT.BWLQ(z) imm7(i), Rn(h), Rn(l)" src="../../../assets/visuals/isa/extract-01.svg" /></p>
 <p><strong>Format Instruction format for EXTRACT.BWLQ(z) imm7(i), Rn(h), Rn(l)</strong></p>

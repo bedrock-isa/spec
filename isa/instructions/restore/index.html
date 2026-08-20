@@ -8975,11 +8975,12 @@
 <p>RESTORE reconstructs base architectural state and enabled extension state from a 4-KiB-aligned, CPUID-defined save area.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
 <p><code>RESTORE &lt;ea&gt;(e)</code></p>
+<p><code>RESTORE Rn(r)</code></p>
 <h2 id="attributes">Attributes</h2>
 <p>Class = system</p>
 <p>Family = tlb and context</p>
 <p>Privilege = unprivileged</p>
-<p>Length = 4-14 bytes</p>
+<p>Length = 3-13 bytes</p>
 <p>Repeat = <code>none</code></p>
 <h2 id="detailed-semantics">Detailed Semantics</h2>
 <p>RESTORE treats its address-role EA as the base of the save area without first reading an EA-sized operand. It restores R0–R15 and FLAGS from the fixed base block. A set <code>GS_VALID</code> bit selects the corresponding GS image for validation and restoration; a clear bit preserves the current GSn. User-mode RESTORE ignores the saved STATUS image, while supervisor RESTORE applies the normal STATUS write rules. A set state-block bitmap bit restores its CPUID-described extension component. A clear bit for a described component installs that component’s initial state and makes the component clean; a restored non-initial image makes the component modified.</p>
@@ -8987,7 +8988,7 @@
 <p>The complete <code>SAVE_AREA_SIZE_BYTES</code> range reported by CPUID, every selected GS image, and every selected extension component are validated before architectural state is committed. Any address, access, or validation fault leaves the architectural register state and save area unchanged.</p>
 <h2 id="instruction-forms">Instruction Forms</h2>
 <p><strong><code>RESTORE &lt;ea&gt;(e)</code></strong></p>
-<p><em>Encoding class: long; required bytes: 4-14 bytes; privilege: unprivileged</em></p>
+<p><em>Encoding class: medium; required bytes: 3-13 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
 <p><img alt="Format — Instruction format for RESTORE \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/restore-01.svg" /></p>
 <p><strong>Format Instruction format for RESTORE \&lt;ea&gt;(e)</strong></p>
@@ -8995,8 +8996,16 @@
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the address operand.</p>
 <p><strong>EA availability</strong></p>
-<p><strong>Allowed:</strong> Register; Memory; Immediate; Extended Descriptor</p>
+<p><strong>Allowed:</strong> Memory; Immediate; Extended Descriptor</p>
 <p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>
+<p><strong><code>RESTORE Rn(r)</code></strong></p>
+<p><em>Encoding class: medium; required bytes: 3 bytes; privilege: unprivileged</em></p>
+<p><strong>Instruction Format:</strong></p>
+<p><img alt="Format — Instruction format for RESTORE Rn(r)" src="../../../assets/visuals/isa/restore-02.svg" /></p>
+<p><strong>Format Instruction format for RESTORE Rn(r)</strong></p>
+<p><strong>Instruction Fields:</strong></p>
+<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Register field <code>r</code></strong> — Selects the operand.</p>
 
 
 

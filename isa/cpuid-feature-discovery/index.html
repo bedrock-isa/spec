@@ -1171,17 +1171,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#bit-fields" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Bit Fields
-      
-    </span>
-  </a>
-  
-</li>
-      
     </ul>
   
 </nav>
@@ -9092,17 +9081,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#bit-fields" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Bit Fields
-      
-    </span>
-  </a>
-  
-</li>
-      
     </ul>
   
 </nav>
@@ -9193,6 +9171,9 @@
 </tbody>
 </table>
 <p><code>MAX_CLASS</code> is the greatest class recognized by the implementation, <code>MAX_LEAF</code> is the greatest leaf recognized within the selected class, and <code>MAX_INDEX</code> is the greatest index recognized within the selected leaf. Each field is a maximum selector value, not a count. A leaf may be sparse below <code>MAX_INDEX</code>. Software ignores reserved bits in every returned value, so a later revision can assign them without invalidating existing discovery code.</p>
+<p>CPUID bit fields are feature predicates unless the leaf description says they encode a numeric value. Reserved result bits are ignored by software.</p>
+<p>A set feature bit only permits software to use the corresponding architectural behavior; the instruction’s normal privilege, operand, and compatibility checks still apply.</p>
+<p>The FP and FPTRANSA predicates report the base floating-point and approximate transcendental floating-point groups. Numeric fields use names that describe their unit. <code>SAVE_AREA_SIZE_BYTES</code>, <code>OFFSET_BYTES</code>, <code>MAX_SIZE_BYTES</code>, and <code>ALIGNMENT_BYTES</code> are byte counts.</p>
 <h2 id="discovery-classes">Discovery Classes</h2>
 <p>Discovery classes partition architectural information by compatibility purpose. Software first checks the class and leaf directory before consuming optional feature bits.</p>
 <p>The base class describes the mandatory scalar ISA and implementation identity. Optional groups are reported in the optional-extension directory.</p>
@@ -9761,10 +9742,6 @@
 <p><code>SAVE_AREA_SIZE_BYTES</code> is the complete byte range validated and accessed by SAVE or RESTORE. It is at least <code>FIXED_SIZE_BYTES</code>, covers the end of every component, and is a multiple of 64 bytes. <code>FIXED_SIZE_BYTES</code> is <code>0x00c0</code>, <code>BITMAP_WORDS</code> is 1, and <code>FMT</code> is zero for the save-image format defined by this specification.</p>
 <p>Each descriptor names one available extension component. Component IDs and bitmap bits are unique. Component regions begin at or after the fixed block, meet their reported alignment, and do not overlap. A set state-block bitmap bit selects the descriptor carrying the same <code>BITMAP_BIT</code>. <code>INIT_POLICY=1</code> means that RESTORE reconstructs the component-defined initial state when that component’s bitmap bit is clear.</p>
 <p>When the FP extension is present, component ID 1 uses bitmap bit 0, offset <code>0x00c0</code>, size <code>0x00c0</code>, and alignment 64. Its initial state is F0 through F15 equal to positive zero, FFLAGS equal to zero, and FSTATUS equal to zero.</p>
-<h2 id="bit-fields">Bit Fields</h2>
-<p>CPUID bit fields are feature predicates unless the leaf description says they encode a numeric value. Reserved result bits are ignored by software.</p>
-<p>A set feature bit only permits software to use the corresponding architectural behavior; the instruction’s normal privilege, operand, and compatibility checks still apply.</p>
-<p>The FP and FPTRANSA predicates report the base floating-point and approximate transcendental floating-point groups. Numeric fields use names that describe their unit. <code>SAVE_AREA_SIZE_BYTES</code>, <code>OFFSET_BYTES</code>, <code>MAX_SIZE_BYTES</code>, and <code>ALIGNMENT_BYTES</code> are byte counts.</p>
 
 
 

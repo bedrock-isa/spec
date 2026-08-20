@@ -8953,6 +8953,7 @@
 <p>Decrements the selected counter and transfers control only when the new count is nonzero and the encoded condition is true. The target EA has Q interpretation width: a memory form reads a 64-bit target and a register or immediate form supplies its value directly.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
 <p><code>DJcc Rn(r), &lt;ea&gt;(e)</code></p>
+<p><code>DJcc Rn(r), Rn(e)</code></p>
 <h2 id="attributes">Attributes</h2>
 <p>Class = control flow</p>
 <p>Family = control flow</p>
@@ -8971,8 +8972,18 @@
 <p><strong>Register field <code>r</code></strong> — Selects the source operand.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the control target.</p>
 <p><strong>EA availability</strong></p>
-<p><strong>Allowed:</strong> Register; Memory; Immediate; Extended Descriptor</p>
+<p><strong>Allowed:</strong> Memory; Immediate; Extended Descriptor</p>
 <p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>
+<p><strong><code>DJcc Rn(r), Rn(e)</code></strong></p>
+<p><em>Encoding class: long; required bytes: 4 bytes; privilege: unprivileged</em></p>
+<p><strong>Instruction Format:</strong></p>
+<p><img alt="Format — Instruction format for DJcc Rn(r), Rn(e)" src="../../../assets/visuals/isa/djcc-02.svg" /></p>
+<p><strong>Format Instruction format for DJcc Rn(r), Rn(e)</strong></p>
+<p><strong>Instruction Fields:</strong></p>
+<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Condition field <code>c</code></strong> — Selects the <a href="../../flags-and-condition-codes/#table-condition-code-encoding">condition code</a>. Allowed values: T, EQ, NE, ULT, UGE, MI, PL, VS, VC, ULE, UGT, LT, GE, LE, GT.</p>
+<p><strong>Register field <code>r</code></strong> — Selects the source operand.</p>
+<p><strong>Register field <code>e</code></strong> — Selects the destination operand.</p>
 
 
 

@@ -8953,15 +8953,16 @@
 <p>Computes the source linear address without reading memory and invalidates every matching global or current-ASID cached leaf-aligned mapping range that contains it, plus matching in-progress results, before retirement.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
 <p><code>INVPAGE &lt;ea&gt;(e)</code></p>
+<p><code>INVPAGE Rn(r)</code></p>
 <h2 id="attributes">Attributes</h2>
 <p>Class = system</p>
 <p>Family = tlb and context</p>
 <p>Privilege = supervisor</p>
-<p>Length = 4-14 bytes</p>
+<p>Length = 3-13 bytes</p>
 <p>Repeat = <code>none</code></p>
 <h2 id="instruction-forms">Instruction Forms</h2>
 <p><strong><code>INVPAGE &lt;ea&gt;(e)</code></strong></p>
-<p><em>Encoding class: long; required bytes: 4-14 bytes; privilege: supervisor</em></p>
+<p><em>Encoding class: medium; required bytes: 3-13 bytes; privilege: supervisor</em></p>
 <p><strong>Instruction Format:</strong></p>
 <p><img alt="Format — Instruction format for INVPAGE \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/invpage-01.svg" /></p>
 <p><strong>Format Instruction format for INVPAGE \&lt;ea&gt;(e)</strong></p>
@@ -8969,8 +8970,16 @@
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the address operand.</p>
 <p><strong>EA availability</strong></p>
-<p><strong>Allowed:</strong> Register; Memory; Immediate; Extended Descriptor</p>
+<p><strong>Allowed:</strong> Memory; Immediate; Extended Descriptor</p>
 <p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>
+<p><strong><code>INVPAGE Rn(r)</code></strong></p>
+<p><em>Encoding class: medium; required bytes: 3 bytes; privilege: supervisor</em></p>
+<p><strong>Instruction Format:</strong></p>
+<p><img alt="Format — Instruction format for INVPAGE Rn(r)" src="../../../assets/visuals/isa/invpage-02.svg" /></p>
+<p><strong>Format Instruction format for INVPAGE Rn(r)</strong></p>
+<p><strong>Instruction Fields:</strong></p>
+<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Register field <code>r</code></strong> — Selects the operand.</p>
 
 
 

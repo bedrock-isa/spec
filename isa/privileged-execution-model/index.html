@@ -1006,6 +1006,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#supervisor-call-state-and-preconditions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Supervisor-Call State and Preconditions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#supervisor-call-entry" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1017,10 +1028,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#user-return-and-context-ownership" class="md-nav__link">
+  <a href="#supervisor-execution-and-event-interaction" class="md-nav__link">
     <span class="md-ellipsis">
       
-        User Return and Context Ownership
+        Supervisor Execution and Event Interaction
       
     </span>
   </a>
@@ -1028,10 +1039,32 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#architectural-event-boundary" class="md-nav__link">
+  <a href="#user-return-context-ownership" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Architectural Event Boundary
+        User-Return Context Ownership
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#user-return-validation-and-commit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        User Return Validation and Commit
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#transition-failure-and-atomicity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Transition Failure and Atomicity
       
     </span>
   </a>
@@ -8895,6 +8928,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#supervisor-call-state-and-preconditions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Supervisor-Call State and Preconditions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#supervisor-call-entry" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -8906,10 +8950,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#user-return-and-context-ownership" class="md-nav__link">
+  <a href="#supervisor-execution-and-event-interaction" class="md-nav__link">
     <span class="md-ellipsis">
       
-        User Return and Context Ownership
+        Supervisor Execution and Event Interaction
       
     </span>
   </a>
@@ -8917,10 +8961,32 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#architectural-event-boundary" class="md-nav__link">
+  <a href="#user-return-context-ownership" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Architectural Event Boundary
+        User-Return Context Ownership
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#user-return-validation-and-commit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        User Return Validation and Commit
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#transition-failure-and-atomicity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Transition Failure and Atomicity
       
     </span>
   </a>
@@ -8945,23 +9011,69 @@
 
 
 <h1 id="privileged-execution-model">Privileged Execution Model</h1>
-<p>The privileged programming model has two independent transitions into supervisor execution. SYSCALL is an explicit supervisor call with its own entry state, working stack, and user-return bank. Architectural event delivery handles exceptions, maskable interrupts, and NMI through the common EPC/ECS/EDS entry. These paths do not share a return instruction or a memory-resident frame.</p>
-<p>Supervisor entry changes execution context at a single architectural commit point. Invalid entry targets, segment images, saved state, or control-state writes raise the defined exception without exposing a partial transition.</p>
+<p>The privileged programming model has two independent transition paths into supervisor execution. A supervisor call uses dedicated entry state, a working stack, and a user-return bank. Architectural event delivery handles exceptions, maskable interrupts, and NMI through the common EPC/ECS/EDS entry. The paths may nest, but they retain distinct entry state, return state, and return instructions.</p>
 <h2 id="privilege-and-transition-state">Privilege and Transition State</h2>
-<p>STATUS.PM is zero in user mode and one in supervisor mode. STATUS.EA records only architectural event processing; SYSCALL does not set it. STATUS.EA is hardware managed, and WRSTATUS must preserve the current EA value. An attempted change raises INVALID_CONTROL_STATE without changing STATUS.</p>
-<p>The other STATUS control bits are Boolean: IE enables maskable interrupts, TF controls single-step tracing, RF marks exception restart, and NI inhibits nested NMI delivery.</p>
-<p>In supervisor mode, ordinary memory operands use current-domain access. Checked user-domain access is expressed only by the supervisor-only MOVUC, MOVCU, and MOVUU instructions. RDCR, WRCR, translation-state changes, event-control changes, and page-table context switches require supervisor privilege unless an instruction explicitly says otherwise.</p>
+<p>STATUS.PM is zero in user mode and one in supervisor mode. STATUS.EA records only architectural event processing; a supervisor call does not set it. STATUS.EA is hardware managed, and WRSTATUS must preserve the current EA value. An attempted change raises <code>INVALID_CONTROL_STATE</code> without changing STATUS.</p>
+<p>The other STATUS control bits are Boolean: IE enables maskable interrupts, TF controls single-step tracing, RF marks exception restart, and NI inhibits nested NMI delivery. In supervisor mode, ordinary memory operands use current-domain access. Checked user-domain access is expressed only by the supervisor-only MOVUC, MOVCU, and MOVUU instructions. RDCR, WRCR, translation-state changes, event-control changes, and page-table context switches require supervisor privilege unless an instruction explicitly says otherwise.</p>
+<p>The following table summarizes the control state that distinguishes the direct supervisor-call path from an event nested within it.</p>
+<p><strong>Supervisor-Call Transition State</strong></p>
+<p><a href="#table-supervisor-call-transition-state" id="table-supervisor-call-transition-state"></a></p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Context</strong></th>
+<th style="text-align: left;"><strong>PM</strong></th>
+<th style="text-align: left;"><strong>EA</strong></th>
+<th style="text-align: left;"><strong>URCTL.V</strong></th>
+<th style="text-align: left;"><strong>Matching transition</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">user execution</td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">supervisor call enters the configured supervisor context</td>
+</tr>
+<tr>
+<td style="text-align: left;">supervisor-call context</td>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">user return restores the banked user context</td>
+</tr>
+<tr>
+<td style="text-align: left;">event during a supervisor call</td>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">event return restores the interrupted supervisor-call context</td>
+</tr>
+</tbody>
+</table>
+<h2 id="supervisor-call-state-and-preconditions">Supervisor-Call State and Preconditions</h2>
+<p>The supervisor-call entry bank consists of SCS, SDS, SSS, SPC, and SSP. The user-return bank consists of URPC, URSP, URCS, URDS, URSS, and URCTL. The control-register formats and the rules for establishing these banks through WRCR are defined in the <a href="../programming-model/#section-control-registers">Control Registers</a> section.</p>
+<p>A supervisor call requires user mode, STATUS.EA clear, and URCTL.V clear. SCS, SDS, and SSS must be valid supervisor segment images. SPC must be an exact, executable, 16-byte-aligned address under SCS. SSP must be an exact, in-bounds, 64-byte-aligned stack pointer under SSS. These conditions are validated before the transition changes architectural state.</p>
 <h2 id="supervisor-call-entry">Supervisor Call Entry</h2>
-<p>SYSCALL is valid only in user mode. It first requires URCTL.V to be clear and validates SPC, SCS, SDS, SSS, and SSP. SPC must be 16-byte aligned, and SYSCALL uses its exact value. SSP is a 64-byte-aligned configured working-stack top.</p>
-<p>After validation, SYSCALL writes the address following the instruction to URPC, saves the user SP and CS/DS/SS images, and writes FLAGS and STATUS to URCTL with V set. It then loads CS=SCS, DS=SDS, SS=SSS, SP=SSP, and PC=SPC and sets STATUS.PM. The entry does not set STATUS.EA and does not change IE, TF, RF, or NI. The complete bank update and execution-context transition are one commit.</p>
-<p>SYSCALL performs no memory access and creates no stack frame. SSP is not modified by entry or return. Kernel code may move SP freely and may execute SYSRET from any supervisor stack position because the return context resides entirely in the UR control-register bank. An invalid entry configuration, including an already valid bank, raises INVALID_CONTROL_STATE at the SYSCALL instruction boundary.</p>
-<h2 id="user-return-and-context-ownership">User Return and Context Ownership</h2>
-<p>SYSRET is the only matching return instruction. It is legal only while STATUS.EA is clear and requires URCTL.V to be set. It validates the saved user STATUS, all three segment images, PC, and SP before changing architectural state. The saved user STATUS must have PM and EA clear and valid reserved bits. A successful return restores FLAGS, STATUS, CS, DS, SS, SP, and PC and clears URCTL.V as one commit. A validation failure raises INVALID_CONTROL_STATE through the event path without modifying the bank or partially returning.</p>
-<p>An event taken during a system call switches to ISS:ISP, FSS:FSP, or DSS:DSP according to its event kind. ERET returns to the interrupted syscall context and leaves the UR bank unchanged; SYSRET can then return to user mode.</p>
-<p>The UR bank is per-logical-processor architectural state. If a system call blocks or is preempted and another thread may run on that logical processor, system software saves and restores the bank with the thread’s supervisor context. Signal delivery, system-call restart, tracing, and initial user-process entry may inspect or establish the bank through WRCR, subject to the same validation rules.</p>
-<p>Normative control-flow behavior is defined by <a href="../instructions/syscall/"><code>SYSCALL</code></a>, <a href="../instructions/sysret/"><code>SYSRET</code></a>, <a href="../instructions/lret/"><code>LRET</code></a>, and <a href="../instructions/eret/"><code>ERET</code></a>.</p>
-<h2 id="architectural-event-boundary">Architectural Event Boundary</h2>
-<p>Exceptions, maskable interrupts, and NMI use the event-entry state and an architectural event frame. Event delivery sets STATUS.EA; ERET is its only matching return. ERET is illegal with EA clear, and SYSRET is illegal with EA set. This check occurs before either instruction reads its return state. The full delivery, nesting, frame, and return rules are specified in the Architectural Event Processing Model section.</p>
+<p>After validation and the executable-target probe succeed, the supervisor call saves the address following the instruction in URPC, the user SP in URSP, the user CS, DS, and SS images in URCS, URDS, and URSS, and the user FLAGS and STATUS images in URCTL. The saved bank is marked valid by setting URCTL.V.</p>
+<p>The same architectural commit loads CS=SCS, DS=SDS, SS=SSS, SP=SSP, and PC=SPC and sets STATUS.PM. Entry preserves STATUS.EA, IE, TF, RF, and NI. It performs no memory access, creates no stack frame, and does not modify SSP.</p>
+<h2 id="supervisor-execution-and-event-interaction">Supervisor Execution and Event Interaction</h2>
+<p>The active supervisor may move SP freely and may return from any supervisor stack position because the user context resides in the user-return bank rather than on the supervisor stack. The direct path executes user return with STATUS.PM=1, STATUS.EA=0, and URCTL.V=1.</p>
+<p>An event taken before user return uses the event stack and memory-resident frame selected by the <a href="../architectural-event-processing-model/">Architectural Event Processing Model</a>. Event entry sets STATUS.EA but leaves the user-return bank intact. ERET restores the interrupted supervisor-call context, including STATUS.EA=0; user return may then restore user execution. The following figure shows both the direct return and the optional event round trip. Its textual state sequence is user execution (PM=0, EA=0, V=0), supervisor-call context (PM=1, EA=0, V=1), optionally event context (PM=1, EA=1, V=1) followed by ERET to the supervisor-call context, and finally user return to user execution.</p>
+<p><a href="#figure-supervisor-call-transitions" id="figure-supervisor-call-transitions"></a></p>
+<p><img alt="Supervisor Call, Optional Event, and User Return" src="../../assets/visuals/isa/privileged-execution-model-01.svg" /></p>
+<p><strong>Supervisor Call, Optional Event, and User Return</strong></p>
+<h2 id="user-return-context-ownership">User-Return Context Ownership</h2>
+<p>The user-return bank is per-logical-processor architectural state. When a supervisor call blocks or is preempted and another thread may run on the same logical processor, system software saves and restores the bank as part of the thread’s supervisor context. The bank therefore travels with the thread whose user continuation it holds rather than with an event frame or the currently selected supervisor stack.</p>
+<p>Signal delivery, supervisor-call restart, tracing, and initial user-process entry may inspect or establish the bank through WRCR, subject to the control-register validation rules. Events do not consume, replace, or return through the bank.</p>
+<h2 id="user-return-validation-and-commit">User Return Validation and Commit</h2>
+<p>User return requires supervisor mode, STATUS.EA clear, and URCTL.V set. Before changing architectural state, it validates the saved FLAGS and STATUS fields, including their reserved fields; requires the saved STATUS image to have PM and EA clear; validates URCS, URDS, and URSS as user segment images; requires URSP to be in bounds under URSS; and probes URPC as an executable address under URCS.</p>
+<p>After all validation and target probing succeed, user return restores FLAGS, STATUS, CS, DS, SS, SP, and PC from the user-return bank and clears URCTL.V as one architectural commit.</p>
+<h2 id="transition-failure-and-atomicity">Transition Failure and Atomicity</h2>
+<p>A supervisor-call precondition, configuration, or validation failure raises <code>INVALID_CONTROL_STATE</code> at the supervisor-call instruction boundary. A user-return precondition or saved-state validation failure raises the same exception through the architectural event path. A target-probe failure for either transition propagates the probe’s defined exception through the architectural event path. Every such failure leaves the current execution state and the complete user-return bank unchanged; no partial transition is visible.</p>
+<p>ERET is illegal while STATUS.EA is clear, and user return is illegal while STATUS.EA is set. The event-active check occurs before either instruction reads its return state. Event-delivery failure and event-frame atomicity remain defined by the <a href="../architectural-event-processing-model/">Architectural Event Processing Model</a>.</p>
+<p>Normative instruction-local behavior is defined by <a href="../instructions/syscall/"><code>SYSCALL</code></a>, <a href="../instructions/sysret/"><code>SYSRET</code></a>, <a href="../instructions/lret/"><code>LRET</code></a>, and <a href="../instructions/eret/"><code>ERET</code></a>.</p>
 
 
 

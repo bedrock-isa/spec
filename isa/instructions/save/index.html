@@ -8975,18 +8975,19 @@
 <p>SAVE writes base architectural state and modified enabled extension state to a 4-KiB-aligned, CPUID-defined save area.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
 <p><code>SAVE &lt;ea&gt;(e)</code></p>
+<p><code>SAVE Rn(r)</code></p>
 <h2 id="attributes">Attributes</h2>
 <p>Class = system</p>
 <p>Family = tlb and context</p>
 <p>Privilege = unprivileged</p>
-<p>Length = 4-14 bytes</p>
+<p>Length = 3-13 bytes</p>
 <p>Repeat = <code>none</code></p>
 <h2 id="detailed-semantics">Detailed Semantics</h2>
 <p>SAVE treats its address-role EA as the base of the save area without first reading an EA-sized operand. It writes the fixed base block, <code>FMT=0</code>, <code>GS_VALID=0x3f</code>, the state-block bitmap, R0–R15, GS0–GS5, FLAGS, and STATUS according to the Processor-State Save and Restore layout. Enabled modified extension components are written to their CPUID-defined offsets; a component known to equal its initial state may be omitted and reported clear in the bitmap. SAVE does not change a component’s clean or modified state.</p>
 <p>The complete <code>SAVE_AREA_SIZE_BYTES</code> range reported by CPUID is validated before any byte is written. Any address or access fault leaves the architectural register state and save area unchanged.</p>
 <h2 id="instruction-forms">Instruction Forms</h2>
 <p><strong><code>SAVE &lt;ea&gt;(e)</code></strong></p>
-<p><em>Encoding class: long; required bytes: 4-14 bytes; privilege: unprivileged</em></p>
+<p><em>Encoding class: medium; required bytes: 3-13 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
 <p><img alt="Format — Instruction format for SAVE \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/save-01.svg" /></p>
 <p><strong>Format Instruction format for SAVE \&lt;ea&gt;(e)</strong></p>
@@ -8994,8 +8995,16 @@
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the address operand.</p>
 <p><strong>EA availability</strong></p>
-<p><strong>Allowed:</strong> Register; Memory; Immediate; Extended Descriptor</p>
+<p><strong>Allowed:</strong> Memory; Immediate; Extended Descriptor</p>
 <p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>
+<p><strong><code>SAVE Rn(r)</code></strong></p>
+<p><em>Encoding class: medium; required bytes: 3 bytes; privilege: unprivileged</em></p>
+<p><strong>Instruction Format:</strong></p>
+<p><img alt="Format — Instruction format for SAVE Rn(r)" src="../../../assets/visuals/isa/save-02.svg" /></p>
+<p><strong>Format Instruction format for SAVE Rn(r)</strong></p>
+<p><strong>Instruction Fields:</strong></p>
+<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Register field <code>r</code></strong> — Selects the operand.</p>
 
 
 

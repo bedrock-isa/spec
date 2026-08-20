@@ -8974,21 +8974,32 @@
 <h2 id="operation">Operation</h2>
 <p>Forms the carryless polynomial product of the selected-width source and destination values and writes its low half to the destination.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
+<p><code>CLMUL.BWLQ(z) Rn(s), Rn(d)</code></p>
 <p><code>CLMUL.BWLQ(z) &lt;ea&gt;(e), Rn(d)</code></p>
 <h2 id="attributes">Attributes</h2>
 <p>Class = integer</p>
 <p>Family = integer mul div</p>
 <p>Privilege = unprivileged</p>
-<p>Length = 4-14 bytes</p>
+<p>Length = 3-14 bytes</p>
 <p>Repeat = <code>REP</code>, <code>REPcc</code>, <code>REPG</code></p>
 <p>REPcc observation = <code>result</code> <code>dst</code></p>
 <h2 id="detailed-semantics">Detailed Semantics</h2>
 <p>Treat each selected-width operand as a polynomial over <span class="arithmatex">\(\operatorname{GF}(2)\)</span>, with operand bit <span class="arithmatex">\(i\)</span> as the coefficient of <span class="arithmatex">\(x^i\)</span>. Their double-width product is $<span class="arithmatex">\(P = \bigoplus_{i=0}^{n-1} s_i (d \ll i) .\)</span>$ Addition in this expression is exclusive-or, so no carry propagates between bit positions. CLMUL writes the low <span class="arithmatex">\(n\)</span> bits of <span class="arithmatex">\(P\)</span> to the destination.</p>
 <h2 id="instruction-forms">Instruction Forms</h2>
+<p><strong><code>CLMUL.BWLQ(z) Rn(s), Rn(d)</code></strong></p>
+<p><em>Encoding class: medium; required bytes: 3 bytes; privilege: unprivileged</em></p>
+<p><strong>Instruction Format:</strong></p>
+<p><img alt="Format — Instruction format for CLMUL.BWLQ(z) Rn(s), Rn(d)" src="../../../assets/visuals/isa/clmul-01.svg" /></p>
+<p><strong>Format Instruction format for CLMUL.BWLQ(z) Rn(s), Rn(d)</strong></p>
+<p><strong>Instruction Fields:</strong></p>
+<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
+<p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
+<p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
 <p><strong><code>CLMUL.BWLQ(z) &lt;ea&gt;(e), Rn(d)</code></strong></p>
 <p><em>Encoding class: long; required bytes: 4-14 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for CLMUL.BWLQ(z) \&lt;ea&gt;(e), Rn(d)" src="../../../assets/visuals/isa/clmul-01.svg" /></p>
+<p><img alt="Format — Instruction format for CLMUL.BWLQ(z) \&lt;ea&gt;(e), Rn(d)" src="../../../assets/visuals/isa/clmul-02.svg" /></p>
 <p><strong>Format Instruction format for CLMUL.BWLQ(z) \&lt;ea&gt;(e), Rn(d)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
@@ -8996,7 +9007,7 @@
 <p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the source operand.</p>
 <p><strong>EA availability</strong></p>
-<p><strong>Allowed:</strong> Register; Memory; Immediate; Extended Descriptor</p>
+<p><strong>Allowed:</strong> Memory; Immediate; Extended Descriptor</p>
 <p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>
 
 
