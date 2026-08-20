@@ -1,0 +1,144 @@
+forms:
+- id: short.xor_x_rn_s_rn_d
+  class: short
+  bits: 00110zssssdddd
+  syntax: XOR.LQ(z) Rn(s), Rn(d)
+  operands:
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: Rn
+    access: read_write
+    field: d
+  fields:
+    z:
+      type: size.LQ
+- id: medium.xor_x_rn_s_ea_e
+  class: medium
+  bits: 00110zzsssseeeeeee
+  syntax: XOR.BWLQ(z) Rn(s), <ea>(e)
+  operands:
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: EA
+    access: read_write
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  fields:
+    z:
+      type: size.BWLQ
+  constraints:
+  - field: e
+    exclude: immediate
+    reason: invalid_destination
+- id: medium.xor_x_ea_e_rn_d
+  class: medium
+  bits: 01110zzddddeeeeeee
+  syntax: XOR.BWLQ(z) <ea>(e), Rn(d)
+  operands:
+  - name: src
+    type: EA
+    access: read
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  - name: dst
+    type: Rn
+    access: read_write
+    field: d
+  fields:
+    z:
+      type: size.BWLQ
+- id: long.xor_x_imm8s_ea_e
+  class: long
+  bits: 11110110000000100zzeeeeeee
+  syntax: XOR.BWLQ(z) <imm8s>, <ea>(e)
+  operands:
+  - name: src
+    type: imm8s
+    access: read
+  - name: dst
+    type: EA
+    access: read_write
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  fields:
+    z:
+      type: size.BWLQ
+  constraints:
+  - field: e
+    exclude: immediate
+    reason: invalid_destination
+- id: long.xor_x_imm16s_ea_e
+  class: long
+  bits: 11110110000000101zzeeeeeee
+  syntax: XOR.WLQ(z) <imm16s>, <ea>(e)
+  operands:
+  - name: src
+    type: imm16s
+    access: read
+  - name: dst
+    type: EA
+    access: read_write
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  fields:
+    z:
+      type: size.WLQ
+  constraints:
+  - field: z
+    allow:
+    - 0x1..0x3
+    reason: immediate_wider_than_operation_size
+  - field: e
+    exclude: immediate
+    reason: invalid_destination
+- id: long.xor_x_imm32s_ea_e
+  class: long
+  bits: 111101100000001100zeeeeeee
+  syntax: XOR.LQ(z) <imm32s>, <ea>(e)
+  operands:
+  - name: src
+    type: imm32s
+    access: read
+  - name: dst
+    type: EA
+    access: read_write
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  fields:
+    z:
+      type: size.LQ
+  constraints:
+  - field: e
+    exclude: immediate
+    reason: invalid_destination
+- id: medium.xor_q_imm64_ea_e
+  class: medium
+  bits: 11101010010eeeeeee
+  syntax: XOR.Q <imm64>, <ea>(e)
+  operands:
+  - name: src
+    type: imm64
+    access: read
+  - name: dst
+    type: EA
+    access: read_write
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  sizes:
+  - Q
+  constraints:
+  - field: e
+    exclude: immediate
+    reason: invalid_destination

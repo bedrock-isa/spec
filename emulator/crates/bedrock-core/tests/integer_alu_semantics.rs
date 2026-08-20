@@ -129,19 +129,19 @@ fn paged_fault_fixture(bytes: &[u8], map_data_read_only: bool) -> (Cpu, Ram) {
 }
 
 #[test]
-fn parity_writes_odd_even_selected_width_results_and_preserves_flags() {
+fn parity_immediates_write_odd_even_selected_width_results_and_preserve_flags() {
     let initial_flags = Flags::V | Flags::C | Flags::N | Flags::Z;
     for (selector, bits, mask) in WIDTHS {
         for (selected_source, expected) in [(1, 1), (3, 0)] {
+            let source = register_value(0xf0e1_d2c3_b4a5_9687, mask, selected_source);
+            let source_bytes = source.to_le_bytes();
             let bytes = encoded_form(
                 "long.parity_x_ea_e_rn_d",
-                &[('z', selector), ('e', 1), ('d', 2)],
-                &[],
+                &[('z', selector), ('e', 0x5b + selector), ('d', 2)],
+                &source_bytes[..(bits / 8) as usize],
             );
-            let source = register_value(0xf0e1_d2c3_b4a5_9687, mask, selected_source);
             let destination = 0xa1b2_c3d4_e5f6_7788;
-            let cpu =
-                run_register_instruction(&bytes, &[(1, source), (2, destination)], initial_flags);
+            let cpu = run_register_instruction(&bytes, &[(2, destination)], initial_flags);
             assert_eq!(
                 cpu.state().r[2],
                 register_value(destination, mask, expected),
@@ -156,7 +156,7 @@ fn parity_writes_odd_even_selected_width_results_and_preserves_flags() {
 fn parity_at0_source_fault_rolls_back_destination_flags_and_pc_effects() {
     let bytes = encoded_form(
         "long.parity_x_ea_e_rn_d",
-        &[('z', 3), ('e', 0x10), ('d', 2)],
+        &[('z', 3), ('e', 0x00), ('d', 2)],
         &[],
     );
     let (mut cpu, mut ram) = paged_fault_fixture(&bytes, false);
@@ -189,7 +189,7 @@ fn extract_uses_the_full_concatenation_and_unsigned_imm7_range() {
 
         for offset in offsets {
             let bytes = encoded_form(
-                "long.extract_x_imm7_i_rn_h_rn_l",
+                "extralong.extract_x_imm7_i_rn_h_rn_l",
                 &[
                     ('z', selector),
                     ('i', u64::from(offset)),
@@ -218,7 +218,7 @@ fn extract_aliases_high_and_low_from_the_prewrite_value() {
         let value = register_value(0xd1e2_f304_1526_3748, mask, 0x81c3_5aa5_81c3_5aa5);
         let offset = bits - 1;
         let bytes = encoded_form(
-            "long.extract_x_imm7_i_rn_h_rn_l",
+            "extralong.extract_x_imm7_i_rn_h_rn_l",
             &[
                 ('z', selector),
                 ('i', u64::from(offset)),
@@ -336,7 +336,7 @@ fn adc_and_sbb_detect_signed_overflow_from_the_complete_operation() {
 #[test]
 fn adc_and_sbb_at0_destination_faults_roll_back_data_flags_and_pc_effects() {
     for id in ["long.adc_x_rn_s_ea_e", "long.sbb_x_rn_s_ea_e"] {
-        let bytes = encoded_form(id, &[('z', 3), ('s', 1), ('e', 0x10)], &[]);
+        let bytes = encoded_form(id, &[('z', 3), ('s', 1), ('e', 0x00)], &[]);
         let (mut cpu, mut ram) = paged_fault_fixture(&bytes, true);
         let destination = 0x7fff_ffff_ffff_ffff;
         let flags = Flags::C | Flags::N;

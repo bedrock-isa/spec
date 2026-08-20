@@ -1,0 +1,57 @@
+forms:
+- id: long.maxu_x_ea_e_rn_d
+  class: long
+  bits: 1111001001zz011ddddeeeeeee
+  syntax: MAXU.BWLQ(z) <ea>(e), Rn(d)
+  operands:
+  - name: src
+    type: EA
+    access: read
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  - name: dst
+    type: Rn
+    access: read_write
+    field: d
+  fields:
+    z:
+      type: size.BWLQ
+- id: long.maxu_x_rn_s_ea_e
+  class: long
+  bits: 1111001101zz011sssseeeeeee
+  syntax: MAXU.BWLQ(z) Rn(s), <ea>(e)
+  operands:
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: EA
+    access: read_write
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  fields:
+    z:
+      type: size.BWLQ
+  constraints:
+  - field: e
+    exclude: immediate
+    reason: invalid_destination
+- id: medium.maxu_x_rn_s_rn_d
+  class: medium
+  bits: 10001zz011ssssdddd
+  syntax: MAXU.BWLQ(z) Rn(s), Rn(d)
+  operands:
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: Rn
+    access: read_write
+    field: d
+  fields:
+    z:
+      type: size.BWLQ

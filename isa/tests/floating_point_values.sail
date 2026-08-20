@@ -128,7 +128,7 @@ function test_fp_local_response() -> unit = {
     },
     None() => assert(false),
   };
-  match fp_test_build_request("long.fmovcr_x_imm16_fn_d", 8,
+  match fp_test_build_request("medium.fmovcr_x_imm16_fn_d", 8,
                               empty_fp_operand_slots(), ordinary,
                               0x0000000000000000) {
     Some(request) => match fp_local_response(request, 0x0000000000000010) {

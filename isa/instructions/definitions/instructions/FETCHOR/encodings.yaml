@@ -1,0 +1,31 @@
+forms:
+- id: extralong.fetchor_x_order_o_rn_s_ea_e
+  class: extralong
+  bits: 1111110101zz00000010ooosssseeeeeee
+  syntax: FETCHOR.BWLQ(z)/order(o) Rn(s), <ea>(e)
+  operands:
+  - name: order
+    type: memory_order
+    access: read
+    field: o
+  - name: src
+    type: Rn
+    access: read_write
+    field: s
+  - name: memory
+    type: EA
+    access: read_write
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  fields:
+    z:
+      type: size.BWLQ
+  constraints:
+  - field: o
+    allow:
+    - 0x0..0x4
+    reason: memory_order_reserved_reclaimed
+  - field: e
+    exclude: immediate
+    reason: memory_operand_required

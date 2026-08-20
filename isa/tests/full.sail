@@ -3,15 +3,15 @@ function test_full_decode() -> unit = {
   test_fp_semantics();
   assert(operation_count(all_semantic_operations()) == 205);
   assert(count_non_fp_operations(all_semantic_operations()) == 145);
-  assert(verify_representative_records(representative_form_records()) == 422);
-  assert(verify_no_generic_external_fallback(representative_form_records()) == 422);
+  assert(verify_representative_records(representative_form_records()) == 484);
+  assert(verify_no_generic_external_fallback(representative_form_records()) == 484);
   assert(verify_fp_first_phase(representative_form_records()) == 115);
   let local_state = {
     initial_cpu() with registers = one_registers(), supervisor = true,
                        status = 0x0000000000000010,
                        fp_enabled = true, fptrans_enabled = true
   };
-  assert(verify_local_representatives(representative_form_records(), local_state) == 422);
+  assert(verify_local_representatives(representative_form_records(), local_state) == 484);
   assert(verify_non_fp_routes(representative_form_records(), local_state) == 307);
   test_local_integer_boundaries();
   test_divide_bounds_and_conditions();
@@ -22,7 +22,7 @@ function test_full_decode() -> unit = {
 
   match decode_full_record([|0xCF, 0xC6, 0x08, 0x20, 0x7F, 0xFE|]) {
     Some(instruction) => {
-      assert(instruction.form.form_id == "long.add_x_imm8s_ea_e");
+      assert(instruction.form.form_id == "medium.add_x_imm8s_ea_e");
       expect_operand_value(instruction, "src", 0x00000000000000FE);
       expect_ea_payload(instruction, "dst", 0x000000000000007F, 8)
     },

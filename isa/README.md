@@ -1,9 +1,10 @@
 # Sail executable architecture model
 
-Authority is divided by domain. `isa/defs` owns instruction encodings, operand
-and effective-address grammar, stable form identities, extension wiring, and
-document order. The handwritten Sail files colocated under the semantic topic
-directories in `isa` own executable instruction behavior, architectural state
+Authority is divided by domain. `isa/instructions/definitions` owns instruction
+encodings, operand grammar, stable form identities, extension wiring, and
+document order; `isa/addressing/effective_address/definition.yaml` owns the
+effective-address grammar. The handwritten Sail files colocated under the
+semantic topic directories in `isa` own executable instruction behavior, architectural state
 transitions, fault and commit ordering, repeat and event behavior, and the
 sequence of memory actions issued by one hart. The formal memory model owns
 permitted cross-hart ordering and visibility. ABI sources own ELF, C ABI, and
@@ -27,34 +28,44 @@ The layout follows semantic ISA topics rather than source representation:
 ```text
 isa/
 ├── bedrock.sail_project      handwritten module graph
-├── document/                 manual assembly and front matter
-├── foundations/
-│   └── architecture/         explanatory TeX + Sail foundations
+├── addressing/
+│   └── effective_address/    definition, decode, evaluation, and manual roles
+├── conformance/              shared conformance manifest and data
 ├── encoding/
 │   ├── data/                 explanatory TeX
 │   └── instruction/          explanatory TeX + Sail decode/catalog types
-├── addressing/
-│   └── effective_address/    explanatory TeX
 ├── execution/
 │   ├── core/                 explanatory TeX + Sail execution boundary
 │   └── repeat/               explanatory TeX + Sail repeat behavior
+├── foundations/
+│   └── architecture/         explanatory TeX + Sail foundations
+├── instructions/
+│   ├── definitions/          instruction YAML, schema, and extension wiring
+│   ├── manual/               shared instruction-reference TeX
+│   └── semantics/            integer, control, and floating-point Sail
+├── interfaces/
+│   ├── abi/                  ELF/C ABI sources and conformance inputs
+│   └── c/                    compiler-facing intrinsics and headers
+├── manual/
+│   ├── common/               shared TeX definitions
+│   └── document/             manual assembly and front matter
 ├── memory/
-│   └── architecture/         explanatory TeX + Sail memory behavior
+│   ├── access/               memory transactions and continuation
+│   ├── cache/                cache transaction model
+│   ├── ordering/             manual and formal ordering model
+│   └── translation/          model, manual, and conformance roles
 ├── system/
 │   ├── events/               explanatory TeX + Sail event behavior
+│   ├── requests/             system-request transactions
+│   ├── stack/                stack transactions
 │   ├── state/                explanatory TeX + Sail system state
 │   └── indexes/              explanatory TeX navigation
-├── instructions/
-│   ├── integer/              Sail execution semantics
-│   ├── control/              Sail execution semantics
-│   ├── floating_point/       Sail execution and provider semantics
-│   └── reference/            shared explanatory TeX
 ├── tests/                    semantic-family tests and executable entrypoint
-└── tools/sail/               deterministic catalog generator and freshness tests
+└── tools/                    generators, validators, and Sail tooling
 ```
 
-Per-instruction prose is generated from `isa/defs`; the `integer/`, `control/`,
-and `floating_point/` leaves therefore do not contain authored TeX counterparts.
+Per-instruction prose is generated from `isa/instructions/definitions`; the
+semantic leaves therefore do not contain authored TeX counterparts.
 
 The source project contains handwritten Sail only. The generator writes the
 operations, catalog, and `bedrock-generated.sail_project` overlay into an
@@ -93,9 +104,10 @@ register, or transport protocol.
 
 For source-only reading, begin with `isa/bedrock.sail_project`, which is the
 ordered module graph. `foundations/architecture/` defines shared semantic types;
-the generated overlay supplies operation and encoding metadata from `isa/defs`;
-`encoding/instruction/` turns records into decoded instructions; the execution,
-memory, system, and instruction leaves contain their applicable state, behavior,
+the generated overlay supplies operation and encoding metadata from
+`isa/instructions/definitions`; `encoding/instruction/` and
+`addressing/effective_address/decode/` turn records into decoded instructions;
+the execution, memory, system, and instruction leaves contain their applicable state, behavior,
 and numerical-provider sources; and `execution/core/boundary.sail` defines
 architectural execution boundaries.
 
@@ -103,25 +115,29 @@ The larger handwritten sources are divided by responsibility within those same
 semantic leaves. In project order:
 
 - `encoding/instruction/` contains `selected.sail`, `types.sail`, `bytes.sail`,
-  `effective_address.sail`, and `decode.sail` for the selected subset, decoded
-  types, byte extraction, effective-address parsing, and full-record decode.
-- `instructions/floating_point/` contains `operation_catalog.sail`,
+  and `decode.sail` for the selected subset, decoded types, byte extraction,
+  and full-record decode. Effective-address parsing is in
+  `addressing/effective_address/decode/effective_address.sail`.
+- `instructions/semantics/floating_point/` contains `operation_catalog.sail`,
   `transcendental_contract.sail`, and `register_pairs.sail` for catalog metadata;
   `environment.sail`, `local_operations.sail`, `request_contract.sail`,
   `response_contract.sail`, and `finalize.sail` for provider semantics; and
   `local_execution.sail`, `transaction_inputs.sail`,
   `transaction_compute.sail`, and `transaction_flow.sail` for execution.
-- `execution/core/` contains `state.sail`, `predicates.sail`,
-  `effective_address.sail`, and `integer_bits.sail` for shared execution support.
+- `execution/core/` contains `state.sail`, `predicates.sail`, and
+  `integer_bits.sail` for shared execution support. Effective-address evaluation
+  is in `addressing/effective_address/evaluation/`.
   Resume support is in `resume_values.sail`, `resume_restore.sail`, and
-  `resume_common.sail`; phase implementations are in `resume_memory.sail`,
-  `resume_control.sail`, `resume_system.sail`, `resume_repeat.sail`,
+  `resume_common.sail`; the memory phase is in `memory/access/continuation.sail`,
+  while the other phase implementations are in `resume_control.sail`,
+  `resume_system.sail`, `resume_repeat.sail`,
   `resume_events.sail`, and `resume_fp.sail`; `resume.sail` owns response
   validation and phase dispatch.
-- `instructions/integer/` contains `operands.sail`, `arithmetic.sail`,
-  `data_control.sail`, and `routing.sail`. `memory/architecture/` contains
-  `common.sail`, `save_cache.sail`, `translation.sail`,
-  `system_requests.sail`, and `stack_control.sail`.
+- `instructions/semantics/integer/` contains `operands.sail`, `arithmetic.sail`,
+  `data_control.sail`, and `routing.sail`. Memory access, cache, translation,
+  and ordering sources use the corresponding role directories under `memory/`;
+  system reset, save/restore, requests, and stack transactions are under
+  `system/`.
 - `tests/` keeps aggregate test entrypoints in `protocol.sail`, `event.sail`, and
   `floating_point.sail`; their responsibility-group helpers use the matching
   `protocol_*`, `event_support.sail`, and `floating_point_*` filenames.
@@ -138,7 +154,7 @@ make sail-docs
 This writes only beneath the ignored `build/sail-doc/` directory. Its primary
 outputs are Sail's embedded documentation bundle, `bedrock-sail.json`, and the
 deterministic `semantic-index.json`. The index maps all 205 operations to their
-routes, all 422 stable form IDs to their operations, and module-qualified actual
+routes, all 480 stable form IDs to their operations, and module-qualified actual
 owner paths derived from the `core`, `fp`, and `postlude` functions and their
 dispatch. Operations without an operation-specific owner are accepted only
 when their route has an explicit owner.

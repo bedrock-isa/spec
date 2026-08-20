@@ -19,12 +19,12 @@ from defs_loader import load_extensions, load_register_groups  # noqa: E402
 
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_SOURCE = ROOT / "isa" / "reference" / "reference_navigation.yaml"
-ARCHITECTURE_SOURCE = ROOT / "isa" / "reference" / "architecture_tables.yaml"
+DEFAULT_SOURCE = ROOT / "isa" / "system" / "indexes" / "manual" / "navigation.yaml"
+ARCHITECTURE_SOURCE = ROOT / "isa" / "conformance" / "architecture_tables.yaml"
 EXPLANATORY_SOURCE_ROOTS = tuple(
     ROOT / "isa" / topic
     for topic in (
-        "document",
+        "manual",
         "foundations",
         "encoding",
         "addressing",
@@ -108,8 +108,9 @@ def template_anchors() -> set[str]:
 
 
 def known_registers() -> set[str]:
-    extensions = load_extensions(ROOT / "isa" / "defs")
-    groups = load_register_groups(ROOT / "isa" / "defs", extensions)
+    definitions = ROOT / "isa" / "instructions" / "definitions"
+    extensions = load_extensions(definitions)
+    groups = load_register_groups(definitions, extensions)
     result: set[str] = set()
     for group in groups.values():
         entries = group.get("entries") if isinstance(group, dict) else None

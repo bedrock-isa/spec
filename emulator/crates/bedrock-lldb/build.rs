@@ -9,9 +9,12 @@ fn main() {
     println!("cargo:rerun-if-env-changed=AR");
     println!("cargo:rerun-if-changed=src/shim.cpp");
 
-    let source_include = bedrock_toolchain::default_lldb_source_include_dir();
-    let build_include = bedrock_toolchain::default_lldb_build_include_dir();
-    let lib_dir = bedrock_toolchain::default_lib_dir();
+    let source_include = bedrock_toolchain::default_lldb_source_include_dir()
+        .unwrap_or_else(|error| panic!("failed to resolve LLDB source include directory: {error}"));
+    let build_include = bedrock_toolchain::default_lldb_build_include_dir()
+        .unwrap_or_else(|error| panic!("failed to resolve LLDB build include directory: {error}"));
+    let lib_dir = bedrock_toolchain::default_lib_dir()
+        .unwrap_or_else(|error| panic!("failed to resolve LLVM library directory: {error}"));
 
     if !source_include
         .join("lldb")

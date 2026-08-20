@@ -1,0 +1,37 @@
+forms:
+- id: long.ptquery_pt_level_i_ea_e_rn_d
+  class: long
+  bits: 111101101100iiiddddeeeeeee
+  syntax: PTQUERY pt_level(i), <ea>(e), Rn(d)
+  operands:
+  - name: level
+    type: pt_level
+    access: read
+    field: i
+  - name: src
+    type: EA
+    access: address
+    ea_role: address
+    ea_width: Q
+    field: e
+  - name: dst
+    type: Rn
+    access: write
+    field: d
+- id: long.ptquery_pt_level_i_rn_s_rn_d
+  class: long
+  bits: 111101100111000iiissssdddd
+  syntax: PTQUERY pt_level(i), Rn(s), Rn(d)
+  operands:
+  - name: level
+    type: pt_level
+    access: read
+    field: i
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: Rn
+    access: write
+    field: d

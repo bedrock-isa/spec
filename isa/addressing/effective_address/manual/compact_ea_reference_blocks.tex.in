@@ -1,0 +1,96 @@
+\begin{manualformblock}{5.07in}
+\textbf{\texttt{Rn Memory}}\par
+\vspace{2pt}
+\begin{manualeaprofile}
+@RN_MEMORY_SYNTAX@
+@RN_MEMORY_ENCODING@
+\manualeaprofileline{EA type}{memory operand.}
+\manualeaprofileline{Generation}{offset = temporary Rn(r) + displacement. The no-displacement form uses displacement 0.}
+\manualeaprofileline{Segment}{Uses the operation default data segment unless the instruction defines a different default.}
+\manualeaprofileline{Payload}{Only displacement forms append payload bytes. Displacement payload is little-endian and has the size named by the EA form.}
+\manualeaprofileline{Update}{No auto-update in compact Rn memory forms.}
+\end{manualeaprofile}
+\manualeaadditivememoryflow{Rn memory address generation}{BASE REGISTER}{Rn(r)}{optional displacement}{EFFECTIVE ADDRESS}
+\end{manualformblock}
+\begin{manualformblock}{5.07in}
+\textbf{\texttt{SP Memory}}\par
+\vspace{2pt}
+\begin{manualeaprofile}
+@SP_MEMORY_SYNTAX@
+@SP_MEMORY_ENCODING@
+\manualeaprofileline{EA type}{memory operand.}
+\manualeaprofileline{Generation}{offset = temporary SP + displacement. The no-displacement form uses displacement 0.}
+\manualeaprofileline{Segment}{Fixed to SS; no segment field is encoded.}
+\manualeaprofileline{Payload}{Only displacement forms append payload bytes. Displacement payload is little-endian and has the size named by the EA form.}
+\manualeaprofileline{Update}{No auto-update in compact SP memory forms.}
+\end{manualeaprofile}
+\manualeaadditivememoryflow{SP memory address generation}{STACK POINTER}{SP}{optional displacement}{EFFECTIVE ADDRESS}
+\end{manualformblock}
+\begin{manualformblock}{5.07in}
+\textbf{\texttt{PC Memory}}\par
+\vspace{2pt}
+\begin{manualeaprofile}
+@PC_MEMORY_SYNTAX@
+@PC_MEMORY_ENCODING@
+\manualeaprofileline{EA type}{memory operand.}
+\manualeaprofileline{Generation}{offset = instruction-start PC + displacement. PC names byte 0 of the current instruction.}
+\manualeaprofileline{Segment}{Fixed to CS; no segment field is encoded.}
+\manualeaprofileline{Payload}{A displacement payload is always present. Payload is little-endian and has the size named by the EA form.}
+\manualeaprofileline{Update}{No auto-update for PC forms.}
+\end{manualeaprofile}
+\manualeaadditivememoryflow{PC-relative address generation}{PROGRAM COUNTER}{PC term}{displacement}{EFFECTIVE ADDRESS}
+\end{manualformblock}
+\begin{manualformblock}{4.25in}
+\textbf{\texttt{Absolute Memory}}\par
+\vspace{2pt}
+\begin{manualeaprofile}
+@ABSOLUTE_MEMORY_SYNTAX@
+@ABSOLUTE_MEMORY_ENCODING@
+\manualeaprofileline{EA type}{memory operand.}
+\manualeaprofileline{Generation}{offset = sign-extended abs32s or unsigned abs64.}
+\manualeaprofileline{Segment}{Uses the operation default data segment unless the instruction defines a different default.}
+\manualeaprofileline{Payload}{The absolute address payload is little-endian and has the size named by the EA form.}
+\manualeaprofileline{Update}{No auto-update.}
+\end{manualeaprofile}
+\manualeasimplememoryflow{Absolute memory address generation}{ABSOLUTE ADDRESS}{address payload}{EFFECTIVE ADDRESS}
+\end{manualformblock}
+\begin{manualformblock}{3.97in}
+\textbf{\texttt{Immediate}}\par
+\vspace{2pt}
+\begin{manualeaprofile}
+@IMMEDIATE_SYNTAX@
+@IMMEDIATE_ENCODING@
+\manualeaprofileline{EA type}{immediate operand, not a memory reference.}
+\manualeaprofileline{Generation}{The operand value is decoded from the immediate payload. Signed payloads are sign-extended according to the consuming instruction's operand rule.}
+\manualeaprofileline{Segment}{No segment is selected.}
+\manualeaprofileline{Payload}{The immediate payload is little-endian and has the size named by the EA form.}
+\manualeaprofileline{Update}{No auto-update. Immediate forms are not valid destinations unless an instruction explicitly defines such a form.}
+\end{manualeaprofile}
+\manualeaimmediateflow{Immediate operand generation}{payload value}{IMMEDIATE VALUE}
+\end{manualformblock}
+\begin{manualformblock}{2.35in}
+\textbf{\texttt{EXT1 Escape}}\par
+\vspace{2pt}
+\begin{manualeaprofile}
+@EXT1_ESCAPE_SYNTAX@
+@EXT1_ESCAPE_ENCODING@
+\manualeaprofileline{EA type}{memory operand described by the appended EXT1 descriptor.}
+\manualeaprofileline{Generation}{The one-byte EXT1 descriptor selects segment, base, and auto-update behavior. The compact EA escape selects the descriptor family and displacement size.}
+\manualeaprofileline{Segment}{Segment-qualified forms encode SREG SEG(s); default base-update forms use the operation default data segment.}
+\manualeaprofileline{Payload}{The one descriptor byte comes first, followed by the optional displacement payload selected by the compact EA escape.}
+\manualeaprofileline{Update}{Only forms with ++ or {-}{-} update the temporary operand-evaluation image.}
+\end{manualeaprofile}
+\end{manualformblock}
+\begin{manualformblock}{2.35in}
+\textbf{\texttt{EXT2 Escape}}\par
+\vspace{2pt}
+\begin{manualeaprofile}
+@EXT2_ESCAPE_SYNTAX@
+@EXT2_ESCAPE_ENCODING@
+\manualeaprofileline{EA type}{memory operand described by the appended EXT2 descriptor.}
+\manualeaprofileline{Generation}{The two-byte EXT2 descriptor selects segment, base, index, and auto-update behavior. The compact EA escape selects the descriptor family and displacement size.}
+\manualeaprofileline{Segment}{Segment-qualified forms encode SREG SEG(s); SP and PC indexed forms use SS and CS.}
+\manualeaprofileline{Payload}{The two descriptor bytes come first, followed by the optional displacement payload selected by the compact EA escape.}
+\manualeaprofileline{Update}{Only forms with ++ or {-}{-} update the temporary operand-evaluation image.}
+\end{manualeaprofile}
+\end{manualformblock}

@@ -1,0 +1,14 @@
+forms:
+- id: medium.vtop_rn_v_rn_p
+  class: medium
+  bits: 1100000111vvvvpppp
+  syntax: VTOP Rn(v), Rn(p)
+  operands:
+  - name: virt
+    type: Rn
+    access: read
+    field: v
+  - name: phys
+    type: Rn
+    access: write
+    field: p

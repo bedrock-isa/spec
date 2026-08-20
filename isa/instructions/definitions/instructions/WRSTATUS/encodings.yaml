@@ -1,0 +1,12 @@
+forms:
+- id: medium.wrstatus_rn_s
+  class: medium
+  bits: 11101101010010ssss
+  syntax: WRSTATUS Rn(s)
+  operands:
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  sizes:
+  - W

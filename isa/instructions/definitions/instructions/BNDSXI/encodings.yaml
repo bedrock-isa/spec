@@ -1,0 +1,43 @@
+forms:
+- id: extralong.bndsxi_x_rn_l_ea_e_rn_h
+  class: extralong
+  bits: 1111110000zz0000010llllhhhheeeeeee
+  syntax: BNDSXI.BWLQ(z) Rn(l), <ea>(e), Rn(h)
+  operands:
+  - name: lo
+    type: Rn
+    access: read
+    field: l
+  - name: value
+    type: EA
+    access: read
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  - name: hi
+    type: Rn
+    access: read
+    field: h
+  fields:
+    z:
+      type: size.BWLQ
+- id: extralong.bndsxi_x_rn_l_rn_v_rn_h
+  class: extralong
+  bits: 1111111110zz0000000010llllvvvvhhhh
+  syntax: BNDSXI.BWLQ(z) Rn(l), Rn(v), Rn(h)
+  operands:
+  - name: lo
+    type: Rn
+    access: read
+    field: l
+  - name: value
+    type: Rn
+    access: read
+    field: v
+  - name: hi
+    type: Rn
+    access: read
+    field: h
+  fields:
+    z:
+      type: size.BWLQ

@@ -15,9 +15,9 @@ import gen_target_intrinsics
 
 
 ROOT = Path(__file__).resolve().parents[2]
-HEADER_ROOT = ROOT / "isa" / "c" / "include"
-REGISTER_DEFS = ROOT / "isa" / "defs" / "registers.yaml"
-CALL_CASES = ROOT / "isa" / "abi" / "calling_convention_cases.json"
+HEADER_ROOT = ROOT / "isa" / "interfaces" / "c" / "include"
+REGISTER_DEFS = ROOT / "isa" / "instructions" / "definitions" / "registers.yaml"
+CALL_CASES = ROOT / "isa" / "interfaces" / "abi" / "calling_convention_cases.json"
 
 
 def require(condition: bool, message: str) -> None:

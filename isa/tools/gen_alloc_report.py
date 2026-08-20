@@ -479,8 +479,11 @@ def main() -> int:
     parser.add_argument(
         "--defs",
         type=Path,
-        default=REPOSITORY_ROOT / "isa" / "defs",
-        help="ISA definition root (default: repository isa/defs)",
+        default=REPOSITORY_ROOT / "isa" / "instructions" / "definitions",
+        help=(
+            "ISA definition root "
+            "(default: repository isa/instructions/definitions)"
+        ),
     )
     parser.add_argument(
         "--out-dir",

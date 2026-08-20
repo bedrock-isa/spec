@@ -14,7 +14,7 @@ from encoding_architecture import ARCHITECTURE_SOURCE_PATH
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_DEFS_ROOT = REPOSITORY_ROOT / "isa" / "defs"
+DEFAULT_DEFS_ROOT = REPOSITORY_ROOT / "isa" / "instructions" / "definitions"
 
 
 @dataclass(frozen=True)
@@ -95,25 +95,11 @@ def field_value(value: int, pattern: str, field: str) -> tuple[int, int]:
     return out, count
 
 
-def is_rn_direct(value: int) -> bool:
-    return 0x00 <= value <= 0x0F
-
-
-def is_sp_direct(value: int) -> bool:
-    return value == 0x68
-
-
-def is_reg_direct(value: int) -> bool:
-    return is_rn_direct(value) or is_sp_direct(value)
-
-
 def is_immediate(value: int) -> bool:
-    return 0x6C <= value <= 0x6F
+    return 0x5B <= value <= 0x5E
 
 
 PREDICATES = {
-    "rn_direct": is_rn_direct,
-    "reg_direct": is_reg_direct,
     "immediate": is_immediate,
 }
 
@@ -273,7 +259,10 @@ def main() -> int:
         "--defs",
         type=Path,
         default=DEFAULT_DEFS_ROOT,
-        help="ISA definition root (default: repository isa/defs)",
+        help=(
+            "ISA definition root "
+            "(default: repository isa/instructions/definitions)"
+        ),
     )
     args = parser.parse_args()
 

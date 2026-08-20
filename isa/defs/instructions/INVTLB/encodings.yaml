@@ -1,5 +1,0 @@
-forms:
-- id: long.invtlb
-  class: long
-  bits: '11111011110100011000000001'
-  syntax: INVTLB

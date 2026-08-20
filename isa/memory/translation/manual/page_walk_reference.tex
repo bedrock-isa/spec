@@ -1,0 +1,67 @@
+\subsection{Paging Stage}
+
+Paging is enabled by \texttt{PTCR.PE} and translates the linear address produced by segment pre-translation. Before
+the walk can produce a translation, the linear address must be canonical for the mode selected by
+\texttt{PTCR.LA57}. A noncanonical address raises \texttt{PAGE\_FAULT}. With paging disabled, the memory system uses
+the linear address directly.
+
+Each page-table level uses a nine-bit address field to select one of 512 64-bit entries in a 4-KiB table page. For a
+table-page base address (B) and index (i), the selected entry is at (B + 8i). The walker starts at the physical
+table page named by \texttt{PTCR.root\_page}. At each active level, a selected entry with \texttt{T=1} points to the
+next table page; this form is valid only above L1. A selected entry with \texttt{T=0} terminates the walk. An
+\texttt{AT=0} terminating entry is a byte-addressed leaf at any active level. If its level is $L$, its naturally
+aligned physical base is combined with the low $12+9(L-1)$ linear-address bits:
+
+\[
+  \mathit{byte\_address} = (\mathit{leaf\_PFN} \ll 12) +
+  \mathit{linear}[12+9(L-1)-1:0].
+\]
+
+The resulting L1 through L5 leaf sizes are 4 KiB, 2 MiB, 1 GiB, 512 GiB, and 256 TiB. An \texttt{AT=1}
+terminating entry remains valid only at L1 and retains its 4096-slot address formation from bits \texttt{11..0}.
+
+The walker validates every consumed entry and accumulates its permissions while descending through selected levels.
+The terminating leaf PTE supplies the final frame number and memory attributes. The detailed entry-validity,
+permission, accessed, and dirty rules are specified under Page-Table Entry Format. At each consumed level, result
+priority is not-present first, structural validity second, and accumulated permission third; the walker resolves
+those results before consuming a lower level.
+
+\begin{manuallistedformatdiagram}{Linear-Address Paging Fields}
+\manualformatrowrange{LA48 linear[63:0]}{63}{0}{%
+\manualformatfield{sign extension}{16}
+\manualformatfield{L4}{9}
+\manualformatfield{L3}{9}
+\manualformatfield{L2}{9}
+\manualformatfield{L1}{9}
+\manualformatfield{offset}{12}
+}
+\manualformatrowrange{LA57 linear[63:0]}{63}{0}{%
+\manualformatfield{SEXT}{7}
+\manualformatfield{L5}{9}
+\manualformatfield{L4}{9}
+\manualformatfield{L3}{9}
+\manualformatfield{L2}{9}
+\manualformatfield{L1}{9}
+\manualformatfield{offset}{12}
+}
+\end{manuallistedformatdiagram}
+
+\clearpage
+\subsection{LA48 Four-Level Paging}
+
+When \texttt{PTCR.LA57} is zero, bits \texttt{63..48} of the linear address must equal the sign extension of bit
+\texttt{47}. Bits \texttt{47..39}, \texttt{38..30}, \texttt{29..21}, and \texttt{20..12} select the L4, L3, L2,
+and L1 entries respectively. A byte-addressed leaf may terminate the walk at any of those levels; all bits below
+the terminating level's index form its offset. The L4 table is the root table named by \texttt{PTCR.root\_page}.
+
+\input{isa/memory/translation/manual/la48_page_walk_figure.tex}
+
+\clearpage
+\subsection{LA57 Five-Level Paging}
+
+When \texttt{PTCR.LA57} is one, bits \texttt{63..57} of the linear address must equal the sign extension of bit
+\texttt{56}. Bits \texttt{56..48} select an additional L5 entry. A table pointer continues into the same
+L4-through-L1 hierarchy used by LA48, while a byte-addressed leaf at any selected level terminates the walk and uses
+all lower linear-address bits as its offset. The L5 table is the root table named by \texttt{PTCR.root\_page}.
+
+\input{isa/memory/translation/manual/la57_page_walk_figure.tex}

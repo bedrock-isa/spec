@@ -1,0 +1,84 @@
+forms:
+- id: medium.callcc_ea
+  class: medium
+  bits: 11101110000000cccc
+  syntax: CALLcc <imm16s>
+  operands:
+  - name: cc
+    type: condition
+    access: read
+    field: c
+  - name: target
+    type: imm16s
+    access: read
+  sizes:
+  - Q
+  constraints:
+  - field: c
+    allow:
+    - 0x2..0xf
+    reason: condition_true_false_reclaimed
+- id: medium.callcc_ea.2
+  class: medium
+  bits: 11101110000001cccc
+  syntax: CALLcc <imm32s>
+  operands:
+  - name: cc
+    type: condition
+    access: read
+    field: c
+  - name: target
+    type: imm32s
+    access: read
+  sizes:
+  - Q
+  constraints:
+  - field: c
+    allow:
+    - 0x2..0xf
+    reason: condition_true_false_reclaimed
+- id: long.callcc_ea_e
+  class: long
+  bits: 111101100010000cccceeeeeee
+  syntax: CALLcc <ea>(e)
+  operands:
+  - name: cc
+    type: condition
+    access: read
+    field: c
+  - name: target
+    type: EA
+    access: read
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  sizes:
+  - Q
+  constraints:
+  - field: c
+    allow:
+    - 0x2..0xf
+    reason: condition_true_false_reclaimed
+  - field: e
+    exclude: immediate
+    reason: canonical_form_reclaim
+- id: long.callcc_rn
+  class: long
+  bits: 111101100110000000ccccrrrr
+  syntax: CALLcc Rn(r)
+  operands:
+  - name: cc
+    type: condition
+    access: read
+    field: c
+  - name: target
+    type: Rn
+    access: read
+    field: r
+  sizes:
+  - Q
+  constraints:
+  - field: c
+    allow:
+    - 0x2..0xf
+    reason: condition_true_false_reclaimed

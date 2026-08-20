@@ -62,12 +62,13 @@ from latex_builder.common import (  # noqa: E402
 
 
 ROOT = Path(__file__).resolve().parents[2]
-DEF_ROOT = ROOT / "isa" / "defs"
-EA_FRAGMENT_DIR = ROOT / "isa" / "addressing" / "effective_address"
+DEF_ROOT = ROOT / "isa" / "instructions" / "definitions"
+EA_DEFINITION_PATH = ROOT / "isa" / "addressing" / "effective_address" / "definition.yaml"
+EA_FRAGMENT_DIR = ROOT / "isa" / "addressing" / "effective_address" / "manual"
 INSTRUCTION_FILENAME = "instruction.yaml"
-CONFORMANCE_MANIFEST_PATH = ROOT / "isa" / "reference" / "conformance_manifest.yaml"
-ARCHITECTURE_TABLES_PATH = ROOT / "isa" / "reference" / "architecture_tables.yaml"
-REFERENCE_NAVIGATION_PATH = ROOT / "isa" / "reference" / "reference_navigation.yaml"
+CONFORMANCE_MANIFEST_PATH = ROOT / "isa" / "conformance" / "manifest.yaml"
+ARCHITECTURE_TABLES_PATH = ROOT / "isa" / "conformance" / "architecture_tables.yaml"
+REFERENCE_NAVIGATION_PATH = ROOT / "isa" / "system" / "indexes" / "manual" / "navigation.yaml"
 
 
 def render_latex_template(
@@ -332,15 +333,13 @@ def load_allocations(defs_root: Path) -> list[AllocationClass]:
 
 
 def load_metadata(defs_root: Path) -> dict[str, Any]:
-    names = [
-        "conditions",
-        "ea",
-    ]
+    names = ["conditions"]
     out: dict[str, Any] = {}
     for name in names:
         path = defs_root / f"{name}.yaml"
         if path.exists():
             out[name] = load_yaml(path)
+    out["ea"] = load_yaml(EA_DEFINITION_PATH)
     extensions = load_extensions(defs_root)
     out["instruction_sets"] = [
         {
@@ -1166,7 +1165,6 @@ def compact_ea_display_rows(ea_data: Any) -> list[CompactEaDisplayRow]:
 
 def compact_ea_category(kind: str) -> str:
     categories = {
-        "register": "Register",
         "memory": "Memory",
         "immediate": "Immediate",
         "escape": "Extended Descriptor",
@@ -1190,7 +1188,7 @@ def ea_availability_summary(model: IsaModel, entry: AllocationEntry, symbol: str
         if allowed_values:
             allowed.add(row.syntax)
     categories: list[EAAvailabilityCategory] = []
-    for name in ("Register", "Memory", "Immediate", "Extended Descriptor"):
+    for name in ("Memory", "Immediate", "Extended Descriptor"):
         members = tuple(row.syntax for row in rows if compact_ea_category(row.kind) == name)
         category_allowed = tuple(item for item in members if item in allowed)
         excluded = tuple(item for item in members if item not in allowed)
@@ -1455,7 +1453,7 @@ def render_latex(model: IsaModel, only_allocated: bool = False) -> str:
         if not only_allocated or item.mnemonic in model.allocated_by_mnemonic
     ]
     return render_latex_template(
-        "document/document.tex",
+        "manual/document/document.tex",
         {
             "REGISTER_SECTION": latex_register_section(model),
             "CONFORMANCE_SECTION": latex_conformance_section(),
@@ -2126,7 +2124,6 @@ def compact_ea_fragment_values(data: dict[str, Any]) -> dict[str, str]:
     def selected(*names: str) -> list[dict[str, Any]]:
         return [forms[name] for name in names]
 
-    register = selected("register", "stack_pointer")
     rn_memory = selected(
         "register_indirect",
         "register_disp8s",
@@ -2159,11 +2156,6 @@ def compact_ea_fragment_values(data: dict[str, Any]) -> dict[str, str]:
         return [compact_text(item.get("payload")) for item in items]
 
     return {
-        "REGISTER_DIRECT_SYNTAX": latex_ea_syntax(register),
-        "REGISTER_DIRECT_ENCODING": latex_ea_encoding(
-            f"{patterns(register)[0]} selects {compact_text(register[0].get('syntax'))}; "
-            f"{patterns(register)[1]} selects {compact_text(register[1].get('syntax'))}."
-        ),
         "RN_MEMORY_SYNTAX": latex_ea_syntax(rn_memory),
         "RN_MEMORY_ENCODING": latex_ea_encoding(
             f"{patterns(rn_memory)[0]} has no displacement; "
@@ -2299,11 +2291,11 @@ def extended_descriptor_fragment_values(data: dict[str, Any]) -> dict[str, str]:
 def render_ea_reference_fragments(data: dict[str, Any]) -> dict[Path, str]:
     outputs = {
         "compact_ea_reference_blocks.tex": render_latex_template(
-            "addressing/effective_address/compact_ea_reference_blocks.tex.in",
+            "addressing/effective_address/manual/compact_ea_reference_blocks.tex.in",
             compact_ea_fragment_values(data),
         ),
         "extended_descriptor_reference_blocks.tex": render_latex_template(
-            "addressing/effective_address/extended_descriptor_reference_blocks.tex.in",
+            "addressing/effective_address/manual/extended_descriptor_reference_blocks.tex.in",
             extended_descriptor_fragment_values(data),
         ),
     }
@@ -2322,13 +2314,13 @@ def latex_ea_section(model: IsaModel) -> str:
             [form.get("pattern", ""), form.get("syntax", table_class), table_class, display_text(memory)]
         )
     extended_descriptor_section = render_latex_template(
-        "addressing/effective_address/extended_descriptor_addressing_modes.tex", {}
+        "addressing/effective_address/manual/extended_descriptor_addressing_modes.tex", {}
     )
     auto_update_section = render_latex_template(
-        "addressing/effective_address/ea_auto_update_semantics.tex", {}
+        "addressing/effective_address/manual/ea_auto_update_semantics.tex", {}
     )
     return render_latex_template(
-        "addressing/effective_address/effective_address_modes.tex",
+        "addressing/effective_address/manual/effective_address_modes.tex",
         {
             "COMPACT_EA_TABLE": latex_code_table(
                 ["Bits", "Syntax", "Class", "Memory"],
@@ -2499,7 +2491,7 @@ def latex_instruction_entry(model: IsaModel, inst: InstructionDef) -> str:
 
 
 def latex_reading_instruction_description_section() -> str:
-    return render_latex_template("instructions/reference/instruction_description_intro.tex")
+    return render_latex_template("instructions/manual/instruction_description_intro.tex")
 
 
 def latex_instruction_reference_section(model: IsaModel, instructions: list[InstructionDef]) -> str:

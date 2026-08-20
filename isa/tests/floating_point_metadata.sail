@@ -16,7 +16,7 @@ function test_fp_metadata() -> unit = {
     None() => assert(false),
   };
   match fp_find_form(primary_form_catalog(),
-                     "extralong.fsincosa_x_fn_s_fn_d_fn_c") {
+                     "long.fsincosa_x_fn_s_fn_d_fn_c") {
     Some(form) => {
       assert(fp_derive_result_kind(form, 4) == Some(FpResultPair32));
       assert(fp_derive_result_kind(form, 8) == Some(FpResultPair64));

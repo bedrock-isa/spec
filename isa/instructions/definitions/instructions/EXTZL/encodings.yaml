@@ -1,0 +1,117 @@
+forms:
+- id: short.extzl_x_rn_s_rn_d
+  class: short
+  bits: 01110zssssdddd
+  syntax: EXTZL.BW(z) Rn(s), Rn(d)
+  operands:
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: Rn
+    access: write
+    field: d
+  fields:
+    z:
+      type: size.BW
+- id: long.extzl_b_rn_s_ea_e
+  class: long
+  bits: 111100110100110sssseeeeeee
+  syntax: EXTZL.B Rn(s), <ea>(e)
+  operands:
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: EA
+    access: write
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  sizes:
+  - B
+  constraints:
+  - field: e
+    exclude: immediate
+    reason: invalid_destination
+- id: long.extzl_b_ea_e_rn_d
+  class: long
+  bits: 111100100100110ddddeeeeeee
+  syntax: EXTZL.B <ea>(e), Rn(d)
+  operands:
+  - name: src
+    type: EA
+    access: read
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  - name: dst
+    type: Rn
+    access: write
+    field: d
+  sizes:
+  - B
+- id: long.extzl_w_rn_s_ea_e
+  class: long
+  bits: 111100110101110sssseeeeeee
+  syntax: EXTZL.W Rn(s), <ea>(e)
+  operands:
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: EA
+    access: write
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  sizes:
+  - W
+  constraints:
+  - field: e
+    exclude: immediate
+    reason: invalid_destination
+- id: long.extzl_w_ea_e_rn_d
+  class: long
+  bits: 111100100101110ddddeeeeeee
+  syntax: EXTZL.W <ea>(e), Rn(d)
+  operands:
+  - name: src
+    type: EA
+    access: read
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  - name: dst
+    type: Rn
+    access: write
+    field: d
+  sizes:
+  - W
+- id: long.extzl_x_ea_s_ea_d
+  class: long
+  bits: 11110000101zsssssssddddddd
+  syntax: EXTZL.BW(z) <ea>(s), <ea>(d)
+  operands:
+  - name: src
+    type: EA
+    access: read
+    ea_role: value
+    ea_width: operation_size
+    field: s
+  - name: dst
+    type: EA
+    access: write
+    ea_role: value
+    ea_width: operation_size
+    field: d
+  fields:
+    z:
+      type: size.BW
+  constraints:
+  - field: d
+    exclude: immediate
+    reason: invalid_destination

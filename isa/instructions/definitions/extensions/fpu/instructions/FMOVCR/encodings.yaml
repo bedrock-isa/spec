@@ -1,0 +1,16 @@
+forms:
+- id: medium.fmovcr_x_imm16_fn_d
+  class: medium
+  bits: 11101100100z00dddd
+  syntax: FMOVCR.SD(z) <fconst_id>, Fn(d)
+  operands:
+  - name: constant_id
+    type: fconst_id
+    access: read
+  - name: dst
+    type: Fn
+    access: write
+    field: d
+  fields:
+    z:
+      type: size.SD

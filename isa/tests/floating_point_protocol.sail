@@ -2,7 +2,7 @@ function test_fptrans_contract() -> unit = {
   let contract_word : bits(64) = 0x8000000101000100;
   let fstatus = fp_make_fstatus(0b11, false, false, false, fflags_all);
   let slots = fp_test_slots1(fp_test_operand32(0x000000003F800000));
-  match fp_test_build_request("extralong.fsincosa_x_fn_s_fn_d_fn_c", 4,
+  match fp_test_build_request("long.fsincosa_x_fn_s_fn_d_fn_c", 4,
                               slots, fstatus, contract_word) {
     None() => assert(false),
     Some(request) => {
@@ -27,7 +27,7 @@ function test_fptrans_contract() -> unit = {
       )))
     },
   };
-  assert(fp_test_build_request("extralong.fsincosa_x_fn_s_fn_d_fn_c", 4,
+  assert(fp_test_build_request("long.fsincosa_x_fn_s_fn_d_fn_c", 4,
                                slots, fstatus, 0x0000000000000000) == None())
 }
 

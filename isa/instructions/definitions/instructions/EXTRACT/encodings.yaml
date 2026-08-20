@@ -1,0 +1,21 @@
+forms:
+- id: extralong.extract_x_imm7_i_rn_h_rn_l
+  class: extralong
+  bits: 1111111100zz0000000hhhhlllliiiiiii
+  syntax: EXTRACT.BWLQ(z) imm7(i), Rn(h), Rn(l)
+  operands:
+  - name: offset
+    type: imm7
+    access: read
+    field: i
+  - name: high
+    type: Rn
+    access: read
+    field: h
+  - name: low_dst
+    type: Rn
+    access: read_write
+    field: l
+  fields:
+    z:
+      type: size.BWLQ

@@ -33,11 +33,11 @@ class DecodeIrTests(unittest.TestCase):
         )
 
     def test_live_inventory_and_derived_limits(self) -> None:
-        self.assertEqual(len(self.ir.forms), 422)
+        self.assertEqual(len(self.ir.forms), 484)
         self.assertEqual(len(self.ir.mnemonics), 205)
         self.assertEqual(
             tuple(form.index for form in self.ir.forms),
-            tuple(range(422)),
+            tuple(range(484)),
         )
         self.assertEqual(
             (
@@ -59,7 +59,7 @@ class DecodeIrTests(unittest.TestCase):
     def test_non_contiguous_fields_use_msb_to_lsb_gathers(self) -> None:
         form = self.forms["medium.abs_x_ea"]
         ea_field = next(field for field in form.fields if field.symbol == "e")
-        self.assertEqual(ea_field.positions, (16, 15, 14, 3, 2, 1, 0))
+        self.assertEqual(ea_field.positions, (6, 5, 4, 3, 2, 1, 0))
         self.assertTrue(all(
             left > right for left, right in zip(ea_field.positions, ea_field.positions[1:])
         ))
@@ -77,7 +77,7 @@ class DecodeIrTests(unittest.TestCase):
         fixed = self.forms["extrashort.add_q_8_sp"].operands
         self.assertEqual(fixed[0].source, decode_ir.FixedSourceIR(8, ""))
         self.assertEqual(fixed[1].source, decode_ir.FixedSourceIR(None, "SP"))
-        appended = self.forms["long.fmovcr_x_imm16_fn_d"].operands[0].source
+        appended = self.forms["medium.fmovcr_x_imm16_fn_d"].operands[0].source
         self.assertEqual(appended, decode_ir.AppendedPayloadSourceIR(16, False))
         ea = self.forms["medium.abs_x_ea"].operands[0].source
         self.assertIsInstance(ea, decode_ir.EffectiveAddressSourceIR)
@@ -88,19 +88,19 @@ class DecodeIrTests(unittest.TestCase):
             [(item.tag, item.operand_name) for item in two_ea.layout],
             [("ParseEa", "lhs"), ("ParseEa", "rhs")],
         )
-        ea_and_payload = self.forms["long.add_q_imm64_ea_e"]
+        ea_and_payload = self.forms["medium.add_q_imm64_ea_e"]
         self.assertEqual(
             [(item.tag, item.operand_name) for item in ea_and_payload.layout],
             [("ParseEa", "dst"), ("ReadPayload", "src")],
         )
-        self.assertEqual(ea_and_payload.fixed_required_bytes, 12)
-        self.assertEqual(ea_and_payload.maximum_required_bytes, 22)
+        self.assertEqual(ea_and_payload.fixed_required_bytes, 11)
+        self.assertEqual(ea_and_payload.maximum_required_bytes, 21)
 
     def test_compact_table_is_complete_and_reserved_values_are_explicit(self) -> None:
         entries = self.ir.effective_addresses.compact_entries
         self.assertEqual(tuple(entry.raw for entry in entries), tuple(range(128)))
         invalid = [entry for entry in entries if not entry.valid]
-        self.assertEqual([entry.raw for entry in invalid], list(range(0x7A, 0x80)))
+        self.assertEqual([entry.raw for entry in invalid], list(range(0x69, 0x80)))
         self.assertTrue(all(entry.reserved and entry.invalid_reason for entry in invalid))
         self.assertTrue(all(
             entry.descriptor_bytes in {0, 1, 2}
@@ -176,7 +176,7 @@ class DecodeIrTests(unittest.TestCase):
         second = decode_ir.decode_ir_json(decode_ir.load_decode_ir())
         self.assertEqual(first, second)
         parsed = json.loads(first)
-        self.assertEqual(parsed["limits"]["form_count"], 422)
+        self.assertEqual(parsed["limits"]["form_count"], 484)
         self.assertEqual(parsed["forms"][0]["index"], 0)
         self.assertEqual(parsed["forms"][0]["key"], self.ir.forms[0].key)
 
@@ -216,7 +216,7 @@ class DecodeIrTests(unittest.TestCase):
         )
         missing_field = self.replace_form(replace(encoded_form, operands=broken_operands))
 
-        layout_form = self.forms["long.add_q_imm64_ea_e"]
+        layout_form = self.forms["medium.add_q_imm64_ea_e"]
         bad_layout = self.replace_form(
             replace(layout_form, layout=tuple(reversed(layout_form.layout)))
         )

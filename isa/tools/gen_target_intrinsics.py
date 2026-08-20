@@ -16,9 +16,9 @@ except ImportError as exc:  # pragma: no cover - environment error path
 
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_MANIFEST = ROOT / "isa" / "c" / "target_intrinsics.yaml"
-DEFAULT_OUTPUT_DIR = ROOT / "isa" / "c" / "generated" / "target_intrinsics"
-HEADER_ROOT = ROOT / "isa" / "c" / "include"
+DEFAULT_MANIFEST = ROOT / "isa" / "interfaces" / "c" / "target_intrinsics.yaml"
+DEFAULT_OUTPUT_DIR = ROOT / "isa" / "interfaces" / "c" / "generated" / "target_intrinsics"
+HEADER_ROOT = ROOT / "isa" / "interfaces" / "c" / "include"
 
 BUILTIN_LAYOUTS = {
     "core": ("1.25in", "1.25in", "0.8in", "2.3in"),

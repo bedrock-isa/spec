@@ -1,0 +1,12 @@
+forms:
+- id: medium.rdfstatus_rn_d
+  class: medium
+  bits: 11101101000100dddd
+  syntax: RDFSTATUS Rn(d)
+  operands:
+  - name: dst
+    type: Rn
+    access: write
+    field: d
+  sizes:
+  - W

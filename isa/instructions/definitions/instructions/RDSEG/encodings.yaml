@@ -1,0 +1,30 @@
+forms:
+- id: medium.rdseg_sreg_s_rn_d
+  class: medium
+  bits: 11101111111sssdddd
+  syntax: RDSEG SREG(s), Rn(d)
+  operands:
+  - name: seg
+    type: SREG
+    access: read
+    field: s
+  - name: dst
+    type: Rn
+    access: write
+    field: d
+  sizes:
+  - Q
+- id: medium.rdseg_cs_rn_d
+  class: medium
+  bits: 11101101010000dddd
+  syntax: RDSEG CS, Rn(d)
+  operands:
+  - name: seg
+    type: CS
+    access: read
+  - name: dst
+    type: Rn
+    access: write
+    field: d
+  sizes:
+  - Q

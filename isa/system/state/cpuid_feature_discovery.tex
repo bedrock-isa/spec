@@ -79,6 +79,16 @@ leaf. Each field is a maximum selector value, not a count. A leaf may be sparse 
 ignores reserved bits in every returned value, so a later
 revision can assign them without invalidating existing discovery code.
 
+CPUID bit fields are feature predicates unless the leaf description says they encode a numeric value. Reserved
+result bits are ignored by software.
+
+A set feature bit only permits software to use the corresponding architectural behavior; the instruction's normal
+privilege, operand, and compatibility checks still apply.
+
+The FP and FPTRANSA predicates report the base floating-point and approximate transcendental floating-point groups.
+Numeric fields use names that describe their unit. \texttt{SAVE\_AREA\_SIZE\_BYTES},
+\texttt{OFFSET\_BYTES}, \texttt{MAX\_SIZE\_BYTES}, and \texttt{ALIGNMENT\_BYTES} are byte counts.
+
 \subsection{Discovery Classes}
 Discovery classes partition architectural information by compatibility purpose. Software first checks the class and
 leaf directory before consuming optional feature bits.
@@ -279,14 +289,3 @@ RESTORE reconstructs the component-defined initial state when that component's b
 When the FP extension is present, component ID 1 uses bitmap bit 0, offset \texttt{0x00c0}, size
 \texttt{0x00c0}, and alignment 64. Its initial state is F0 through F15 equal to positive zero, FFLAGS equal to zero,
 and FSTATUS equal to zero.
-
-\subsection{Bit Fields}
-CPUID bit fields are feature predicates unless the leaf description says they encode a numeric value. Reserved
-result bits are ignored by software.
-
-A set feature bit only permits software to use the corresponding architectural behavior; the instruction's normal
-privilege, operand, and compatibility checks still apply.
-
-The FP and FPTRANSA predicates report the base floating-point and approximate transcendental floating-point groups.
-Numeric fields use names that describe their unit. \texttt{SAVE\_AREA\_SIZE\_BYTES},
-\texttt{OFFSET\_BYTES}, \texttt{MAX\_SIZE\_BYTES}, and \texttt{ALIGNMENT\_BYTES} are byte counts.

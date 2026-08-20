@@ -13,7 +13,7 @@ const PTE_USER: u64 = 1 << 3;
 
 fn tiny_kernel_elf() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../samples/tiny_kernel/build/tiny_kernel.elf")
+        .join("../../../samples/tiny_kernel/build/tiny_kernel.elf")
 }
 
 fn marker(machine: &Machine, offset: usize) -> u8 {
@@ -176,10 +176,11 @@ fn machine_executes_tiny_kernel_sample_with_syscall_and_event_return() {
         basic_text & (PTE_WRITE | PTE_EXEC | PTE_USER),
         PTE_EXEC | PTE_USER
     );
+    let prior_exit_marker = marker(&machine, 0x78);
     type_command(&mut machine, "RUN");
     type_command(&mut machine, "EXIT");
     run_until(&mut machine, 16_000_000, |machine| {
-        marker(machine, 0x78) != 0
+        machine.state().ascr.asid() == 1 && marker(machine, 0x78) != prior_exit_marker
     });
     assert_eq!(machine.state().ascr.asid(), 1);
     assert_eq!(machine.state().ptcr.root_table_addr(), shell_root);

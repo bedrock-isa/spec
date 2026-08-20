@@ -30,7 +30,7 @@ class CatalogGenerationTests(unittest.TestCase):
         cls.store, cls.operand_types, cls.ea_registry, cls.documents = generate_catalog._load_inputs()
 
     def test_form_mnemonic_and_extension_distribution(self) -> None:
-        self.assertEqual(len(self.store.encodings), 422)
+        self.assertEqual(len(self.store.encodings), 484)
         self.assertEqual(
             Counter(item.form.encoding_class for item in self.store.encodings),
             Counter(generate_catalog.EXPECTED_DISTRIBUTION),
@@ -75,7 +75,7 @@ class CatalogGenerationTests(unittest.TestCase):
             item.form.id: generate_catalog._representative_record(item, self.operand_types)
             for item in self.store.encodings
         }
-        self.assertEqual(len(records), 422)
+        self.assertEqual(len(records), 484)
         for form_id, record in records.items():
             self.assertGreaterEqual(len(record), 1, form_id)
             self.assertLessEqual(len(record), 18, form_id)
@@ -83,7 +83,7 @@ class CatalogGenerationTests(unittest.TestCase):
                 self.assertEqual(3 + ((record[0] >> 2) & 0xF), len(record), form_id)
 
     def test_full_metadata_inputs_are_schema_decoded(self) -> None:
-        self.assertEqual(sum(len(item.form.constraints) for item in self.store.encodings), 342)
+        self.assertEqual(sum(len(item.form.constraints) for item in self.store.encodings), 163)
         self.assertTrue(all(item.form.id.startswith(item.form.encoding_class + ".") for item in self.store.encodings))
         self.assertGreater(len(self.ea_registry.compact_forms), 0)
         self.assertGreater(len(self.ea_registry.ext1_forms), 0)
@@ -92,7 +92,7 @@ class CatalogGenerationTests(unittest.TestCase):
 
     def test_selected_primary_bytes_and_endpoints(self) -> None:
         forms = {item.form.id: item.form.bits for item in self.store.encodings}
-        self.assertEqual(forms["extrashort.clr_q_rn_r"], "110rrrr")
+        self.assertEqual(forms["extrashort.clr_q_rn_r"], "111rrrr")
         self.assertEqual(forms["short.mov_x_rn_s_rn_d"], "00000zssssdddd")
         self.assertEqual(forms["short.and_x_rn_s_rn_d"], "00100zssssdddd")
         self.assertEqual(forms["short.or_x_rn_s_rn_d"], "00101zssssdddd")
@@ -178,8 +178,8 @@ class DocumentationBuildTests(unittest.TestCase):
         self.assertEqual(first, second)
         index = json.loads(first)
         self.assertEqual(len(index["operations"]), 205)
-        self.assertEqual(len(index["forms"]), 422)
-        self.assertEqual(len({item["form_id"] for item in index["forms"]}), 422)
+        self.assertEqual(len(index["forms"]), 484)
+        self.assertEqual(len({item["form_id"] for item in index["forms"]}), 484)
         self.assertTrue(all(item["route"] for item in index["operations"]))
         operations = {item["mnemonic"]: item for item in index["operations"]}
         route_only = {

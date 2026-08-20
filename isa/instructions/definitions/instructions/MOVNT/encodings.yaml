@@ -1,0 +1,23 @@
+forms:
+- id: long.movnt_x_rn_s_ea_e
+  class: long
+  bits: 1111001110zz100sssseeeeeee
+  syntax: MOVNT.BWLQ(z) Rn(s), <ea>(e)
+  operands:
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: EA
+    access: write
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  fields:
+    z:
+      type: size.BWLQ
+  constraints:
+  - field: e
+    exclude: immediate
+    reason: invalid_destination

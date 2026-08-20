@@ -20,9 +20,7 @@ function constraint_matches(payload : bits(64), item : Catalog_constraint) -> bo
   let value = extracted_field(payload, item.field_positions, 0);
   match item.kind {
     AllowRanges => value_in_ranges(value, item.ranges),
-    ExcludeRnDirect => not_bool(0 <= value & value <= 15),
-    ExcludeRegDirect => not_bool((0 <= value & value <= 15) | (value == 104)),
-    ExcludeImmediate => not_bool(108 <= value & value <= 111),
+    ExcludeImmediate => not_bool(91 <= value & value <= 94),
   }
 }
 
@@ -119,4 +117,3 @@ function canonical_zero_padding(bytes : list(bits(8)), required_bytes : int) -> 
       else None(),
     None() => None(),
   }
-

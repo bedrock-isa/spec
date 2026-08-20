@@ -1,0 +1,49 @@
+forms:
+- id: medium.fcvt_x_fn_s_fn_d
+  class: medium
+  bits: 101010z010ssssdddd
+  syntax: FCVT.SD(z) Fn(s), Fn(d)
+  operands:
+  - name: src
+    type: Fn
+    access: read
+    field: s
+  - name: dst
+    type: Fn
+    access: write
+    field: d
+  fields:
+    z:
+      type: size.SD
+- id: long.fcvt_x_fn_s_rn_d
+  class: long
+  bits: 11111010111z001010ssssdddd
+  syntax: FCVT.SD(z) Fn(s), Rn(d)
+  operands:
+  - name: src
+    type: Fn
+    access: read
+    field: s
+  - name: dst
+    type: Rn
+    access: write
+    field: d
+  fields:
+    z:
+      type: size.SD
+- id: long.fcvt_x_rn_s_fn_d
+  class: long
+  bits: 11111010100z001010ssssdddd
+  syntax: FCVT.SD(z) Rn(s), Fn(d)
+  operands:
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: Fn
+    access: write
+    field: d
+  fields:
+    z:
+      type: size.SD

@@ -1,0 +1,35 @@
+forms:
+- id: long.mul_x_ea_e_rn_d
+  class: long
+  bits: 1111001011zz101ddddeeeeeee
+  syntax: MUL.BWLQ(z) <ea>(e), Rn(d)
+  operands:
+  - name: src
+    type: EA
+    access: read
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  - name: dst
+    type: Rn
+    access: read_write
+    field: d
+  fields:
+    z:
+      type: size.BWLQ
+- id: medium.mul_x_rn_s_rn_d
+  class: medium
+  bits: 10011zz101ssssdddd
+  syntax: MUL.BWLQ(z) Rn(s), Rn(d)
+  operands:
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: Rn
+    access: read_write
+    field: d
+  fields:
+    z:
+      type: size.BWLQ

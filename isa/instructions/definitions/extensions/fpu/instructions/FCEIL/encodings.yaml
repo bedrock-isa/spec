@@ -1,0 +1,57 @@
+forms:
+- id: medium.fceil_x_fn_s_fn_d
+  class: medium
+  bits: 101000z110ssssdddd
+  syntax: FCEIL.SD(z) Fn(s), Fn(d)
+  operands:
+  - name: src
+    type: Fn
+    access: read
+    field: s
+  - name: dst
+    type: Fn
+    access: write
+    field: d
+  fields:
+    z:
+      type: size.SD
+- id: long.fceil_x_ea_s_fn_d
+  class: long
+  bits: 1111100100z0110ddddeeeeeee
+  syntax: FCEIL.SD(z) <ea>(e), Fn(d)
+  operands:
+  - name: src
+    type: EA
+    access: read
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  - name: dst
+    type: Fn
+    access: write
+    field: d
+  fields:
+    z:
+      type: size.SD
+- id: long.fceil_x_fn_s_ea_d
+  class: long
+  bits: 1111100100z1001sssseeeeeee
+  syntax: FCEIL.SD(z) Fn(s), <ea>(e)
+  operands:
+  - name: src
+    type: Fn
+    access: read
+    field: s
+  - name: dst
+    type: EA
+    access: write
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  fields:
+    z:
+      type: size.SD
+  constraints:
+  - field: e
+    exclude: immediate
+    reason: invalid_destination

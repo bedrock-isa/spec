@@ -474,7 +474,9 @@ mod tests {
     use super::{LldbConfig, LldbEvent, LldbSession, ProcessState, expand_command};
     use bedrock_debug::Debugger;
     use bedrock_machine::{ElfLoadOptions, Machine};
-    use bedrock_toolchain::{BEDROCK_LLVM_BIN_ENV, LinkOptions, LlvmToolchain};
+    use bedrock_toolchain::{
+        BEDROCK_LLVM_BIN_ENV, BEDROCK_LLVM_ROOT_ENV, LinkOptions, LlvmToolchain,
+    };
     use std::env;
     use std::fs;
     use std::net::TcpListener;
@@ -621,9 +623,12 @@ _start:
     fn discover_toolchain() -> Option<LlvmToolchain> {
         match LlvmToolchain::discover() {
             Ok(toolchain) => Some(toolchain),
-            Err(err) if env::var_os(BEDROCK_LLVM_BIN_ENV).is_none() => {
+            Err(err)
+                if env::var_os(BEDROCK_LLVM_BIN_ENV).is_none()
+                    && env::var_os(BEDROCK_LLVM_ROOT_ENV).is_none() =>
+            {
                 eprintln!(
-                    "skipping LLDB integration test: set {BEDROCK_LLVM_BIN_ENV} or provide llvm-bedrock/build/bin: {err}"
+                    "skipping LLDB integration test: set {BEDROCK_LLVM_ROOT_ENV} to the LLVM source root; it is required for LLDB headers and libraries. {BEDROCK_LLVM_BIN_ENV} may override executable lookup only: {err}"
                 );
                 None
             }

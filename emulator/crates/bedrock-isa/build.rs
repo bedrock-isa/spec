@@ -5,7 +5,8 @@ use std::process::Command;
 
 const GENERATOR_INPUTS: &[&str] = &[
     "emulator/tools/gen_isa.py",
-    "isa/defs",
+    "isa/instructions/definitions",
+    "isa/addressing/effective_address/definition.yaml",
     "isa/tools/encoding_store.py",
     "isa/tools/validate_alloc.py",
     "isa/tools/defs_loader.py",

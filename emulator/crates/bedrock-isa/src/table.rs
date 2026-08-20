@@ -214,7 +214,7 @@ fn matches_predicate(predicate: ConstraintPredicate, value: u64) -> bool {
         ConstraintPredicate::RnDirect => value <= 0x0f,
         ConstraintPredicate::SpDirect => value == 0x68,
         ConstraintPredicate::RegDirect => value <= 0x0f || value == 0x68,
-        ConstraintPredicate::Immediate => (0x6c..=0x6f).contains(&value),
+        ConstraintPredicate::Immediate => (0x5b..=0x5e).contains(&value),
     }
 }
 
@@ -385,7 +385,7 @@ mod tests {
                 ),
             }
         }
-        assert_eq!(repcc_forms, 219);
+        assert_eq!(repcc_forms, 268);
     }
 
     #[test]
@@ -521,7 +521,7 @@ mod tests {
         assert_eq!(ea_source.ea_fields[0].symbol, 'e');
         assert_eq!(ea_source.ea_fields[0].syntax_operand_ordinal, 0);
 
-        let after_fieldless_operand = form("long.add_q_imm64_ea_e");
+        let after_fieldless_operand = form("medium.add_q_imm64_ea_e");
         assert_eq!(after_fieldless_operand.ea_fields.len(), 1);
         assert_eq!(after_fieldless_operand.ea_fields[0].symbol, 'e');
         assert_eq!(

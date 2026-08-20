@@ -1,0 +1,10 @@
+forms:
+- id: medium.swpt_rn_p
+  class: medium
+  bits: 11101101001001pppp
+  syntax: SWPT Rn(p)
+  operands:
+  - name: new_ptcr
+    type: Rn
+    access: read
+    field: p

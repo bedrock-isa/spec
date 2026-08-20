@@ -1,0 +1,12 @@
+forms:
+- id: medium.prefetchnt_ea_e
+  class: medium
+  bits: 11101001001eeeeeee
+  syntax: PREFETCHNT <ea>(e)
+  operands:
+  - name: src
+    type: EA
+    access: address
+    ea_role: address
+    ea_width: Q
+    field: e

@@ -1,6 +1,6 @@
 enum Encoding_class = ExtraShort | Short | Medium | Long | ExtraLong
 
-enum Constraint_kind = AllowRanges | ExcludeRnDirect | ExcludeRegDirect | ExcludeImmediate
+enum Constraint_kind = AllowRanges | ExcludeImmediate
 
 enum Metadata_field_kind = FieldRn | FieldFreg | FieldEa | FieldCondition | FieldSize | FieldImmediate | FieldBits
 enum Metadata_access = AccessRead | AccessWrite | AccessReadWrite | AccessAddress

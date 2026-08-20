@@ -1,0 +1,576 @@
+\documentclass[10pt,twoside]{article}
+\newcommand{\BedrockArchitectureName}{Bedrock}
+\newcommand{\BedrockDocumentTitle}{Bedrock ELF ABI}
+\newcommand{\BedrockRunningTitle}{ELF ABI}
+\newcommand{\BedrockFooterTitle}{BEDROCK ARCHITECTURE}
+\input{isa/manual/common/bedrock-reference-common.tex}
+\begin{document}
+\BedrockMakeTitlePage{Bedrock ELF ABI}{ELF Object, Linking, and Loading ABI}{Draft}
+\BedrockDocumentHasFiguresfalse
+\BedrockFrontMatter
+
+\clearpage
+\section{Scope and Conformance}\label{page:scope-and-conformance}
+This document defines the Bedrock binary-format contract for ELF objects, linking, relocation, loading, dynamic linking, TLS metadata, and code models. It depends on the Bedrock ISA Specification and the active platform/runtime environment ABI. It does not define a language calling convention or an application interface.
+
+\subsection{Contract Position}
+\BedrockContractDiagram{binary}
+
+\subsection{Profile}
+\manualfield{Profile:}{\texttt{bedrock-elf}}
+
+\clearpage
+\section{Terminology}\label{page:terminology}
+These terms are used by the Bedrock ELF ABI. ISA-level address, register, and effective-address terms keep the meanings defined by the architecture manual.
+\begin{description}[style=nextline,leftmargin=1.45in,labelwidth=1.35in,itemsep=3pt,topsep=3pt]
+\item[ELF ABI] The ELF, relocation, dynamic-linking, TLS, and code-model contract that is shared by language bindings and operating-system profiles.
+\item[platform/runtime environment ABI] The lower-layer execution-environment contract that defines process entry, system-call transitions, thread and TLS setup, loader handoff, signal or exception delivery, and platform segment policy.
+\item[pre-segment virtual address] The address value used by ELF symbols, relocations, ordinary function addresses, and ordinary data pointers before segment pre-translation. It is numerically identical to the resulting linear address in the disabled and bounds-only contexts that form the canonical interoperable Bedrock C context.
+\item[load base] The runtime address bias applied to a loaded ET\_DYN object before its symbol values and relative relocations are interpreted.
+\item[ABI-visible linkage domain] The region in which ordinary ELF code addresses are near-call entry points and do not carry an explicit CS value.
+\item[near-call entry address] A pre-segment code address that can be reached with ordinary CALL and returned from with ordinary RET inside the current linkage domain.
+\item[veneer] A near-call entry point supplied by a linker, loader, runtime, or OS ABI to hide a more complex transfer sequence from ordinary ABI callers.
+\item[code model] A set of placement and relocation assumptions used by code generation to choose direct displacement forms, GOT/PLT forms, or full-width address materialization.
+\end{description}
+
+\clearpage
+\section{ELF Object Format}\label{page:elf-object-format}
+Bedrock objects use the 64-bit little-endian ELF format and machine identifier
+\texttt{EM\_\allowbreak{}BEDROCK} (\texttt{0xffb0}). A conforming producer may
+emit relocatable objects, executable images, or shared/position-independent
+images using \texttt{ET\_REL}, \texttt{ET\_EXEC}, or \texttt{ET\_DYN}.
+
+All relocation sections use \texttt{Elf64\_Rela} entries with explicit
+addends and the \texttt{.rela} section-name stem. Ordinary symbol and string
+tables use \texttt{.symtab} and \texttt{.strtab}. The baseline value of
+\texttt{e\_flags} is zero; a
+consumer must reject an unknown nonzero value rather than silently treating it
+as the baseline profile.
+
+\subsection{ELF Identification Bytes}
+\manualtablecaption{ELF e\_ident Values}
+\begingroup\footnotesize
+\setlength{\tabcolsep}{2pt}
+\begin{longtable}{@{}p{1.55in}p{3.95in}@{}}
+\toprule
+\textbf{e\_ident Field} & \textbf{Value}\\
+\midrule
+\endhead
+\texttt{EI\_\allowbreak{}MAG} & \texttt{0x7f 'E' 'L' 'F'}\\
+\texttt{EI\_\allowbreak{}CLASS} & \texttt{ELFCLASS64}\\
+\texttt{EI\_\allowbreak{}DATA} & \texttt{ELFDATA2LSB}\\
+\texttt{EI\_\allowbreak{}VERSION} & \texttt{EV\_\allowbreak{}CURRENT}\\
+\texttt{EI\_\allowbreak{}OSABI} & \texttt{ELFOSABI\_\allowbreak{}NONE}\\
+\texttt{EI\_\allowbreak{}ABIVERSION} & \texttt{0}\\
+\bottomrule
+\end{longtable}
+\endgroup
+\subsection{ELF Header Sizes}
+\manualtablecaption{ELF Header Size Values}
+\begingroup\footnotesize
+\setlength{\tabcolsep}{2pt}
+\begin{longtable}{@{}p{1.55in}p{3.95in}@{}}
+\toprule
+\textbf{Header Field} & \textbf{Bytes}\\
+\midrule
+\endhead
+\texttt{e\_\allowbreak{}ehsize} & 64\\
+\texttt{e\_\allowbreak{}phentsize} & 56\\
+\texttt{e\_\allowbreak{}shentsize} & 64\\
+\bottomrule
+\end{longtable}
+\endgroup
+\subsection{Entry Point Semantics}
+\manualtablecaption{ELF Entry Point Rules}
+\begingroup\footnotesize
+\setlength{\tabcolsep}{2pt}
+\begin{longtable}{@{}p{1.75in}p{3.75in}@{}}
+\toprule
+\textbf{File Type} & \textbf{e\_entry Meaning}\\
+\midrule
+\endhead
+\texttt{ET\_\allowbreak{}REL} & 0\\
+\texttt{ET\_\allowbreak{}EXEC} & absolute pre-segment virtual byte address\\
+\texttt{ET\_\allowbreak{}DYN (executable)} & load-bias-relative pre-segment virtual byte address; runtime entry is load base + e entry\\
+\texttt{ET\_\allowbreak{}DYN (shared object without entry)} & 0\\
+\bottomrule
+\end{longtable}
+\endgroup
+\subsection{Program Header Policy}
+The standard \texttt{PT\_LOAD}, \texttt{PT\_DYNAMIC},
+\texttt{PT\_INTERP}, \texttt{PT\_NOTE}, and \texttt{PT\_TLS} program
+headers retain their ordinary ELF meanings.
+
+Program permission bits use the standard values \texttt{PF\_X=1},
+\texttt{PF\_W=2}, and \texttt{PF\_R=4}. Every \texttt{PT\_LOAD} has
+\texttt{p\_align} equal to the selected page size or a larger power-of-two
+alignment; the minimum supported page alignment is 4096 bytes.
+
+\subsection{Section and Symbol Policy}\label{section:section-and-symbol-policy}
+Standard ELF section types and the \texttt{SHF\_WRITE},
+\texttt{SHF\_ALLOC}, \texttt{SHF\_EXECINSTR}, and \texttt{SHF\_TLS} flags
+retain their generic meanings. Symbol binding and type occupy
+\texttt{st\_info} in the ordinary ELF encoding. Architecture-specific
+\texttt{st\_other} bits are reserved and must be zero.
+
+In an \texttt{ET\_REL} object, \texttt{st\_value} is a byte offset from the
+start of the defining section. After final link, it is the symbol's
+pre-segment virtual byte address. This transition does not convert ordinary
+function symbols into CS:PC pairs or ordinary object symbols into segmented
+descriptors.
+
+\clearpage
+\section{Program Loading}\label{page:program-loading}
+Bedrock ELF program loading follows the ordinary ELF segment model. The ELF ABI defines executable mapping, loader-visible object rules, and the minimum execution environment needed to begin running the image; language runtimes and OS ABIs define their own entry argument protocol above this layer.
+\subsection{Loading Rules}
+The loader may execute \texttt{ET\_EXEC} and executable \texttt{ET\_DYN}
+images. It honors \texttt{PT\_INTERP}, maps each loadable segment at its
+declared page alignment, and rejects an alignment below 4096 bytes. For a
+segment whose \texttt{p\_memsz} exceeds \texttt{p\_filesz}, the loader fills
+every byte in the half-open range
+$[\texttt{p\_vaddr}+\texttt{p\_filesz},
+\texttt{p\_vaddr}+\texttt{p\_memsz})$ with zero. Object and section alignment
+requirements remain binding, but the start of this gap has no additional
+alignment guarantee.
+\subsection{Page Permissions}
+Every \texttt{PT\_LOAD} shall set \texttt{PF\_R}. A loader rejects a
+\texttt{PT\_LOAD} whose flags are zero or contain \texttt{PF\_W} or
+\texttt{PF\_X} without \texttt{PF\_R}. For an accepted segment,
+\texttt{PF\_W} and \texttt{PF\_X} map independently to PTE W and X as shown
+below. This restriction is required because a present Bedrock page is readable
+and cannot implement a write-only or execute-only ELF segment.
+
+\manualtablecaption{ELF Segment Permission Mapping}
+\begingroup\footnotesize
+\setlength{\tabcolsep}{2pt}
+\begin{longtable}{@{}p{1.2in}p{1.45in}p{2.85in}@{}}
+\toprule
+\textbf{ELF Flags} & \textbf{PTE Flags} & \textbf{Meaning}\\
+\midrule
+\endhead
+\texttt{PF\_\allowbreak{}R} & P, U & readable user page\\
+\texttt{PF\_\allowbreak{}R\textbar{}PF\_\allowbreak{}W} & P, U, W & readable writable user page\\
+\texttt{PF\_\allowbreak{}R\textbar{}PF\_\allowbreak{}X} & P, U, X & readable executable user page\\
+\texttt{PF\_\allowbreak{}R\textbar{}PF\_\allowbreak{}W\textbar{}PF\_\allowbreak{}X} & P, U, W, X & readable writable executable user page\\
+\bottomrule
+\end{longtable}
+\endgroup
+\subsection{Execution Environment}
+The base ELF contract interprets \texttt{e\_entry}, \texttt{p\_vaddr}, symbol
+values, relocation places, and linked code and data addresses in its canonical
+pre-segment virtual-address coordinate. It is interoperable with execution
+contexts whose disabled or bounds-only \texttt{CS}, \texttt{DS}, and
+\texttt{SS} preserve those numeric values. At transfer to \texttt{e\_entry},
+the code context must permit fetch from the entry address, the data context
+must cover the mapped ordinary data regions, and the stack context must permit
+reads and writes to the stack provided by the platform/runtime environment
+ABI.
+
+A platform that loads or executes an object under translated segment images
+owns the symbol and pointer coordinates, loader mappings, relocation
+interpretation, module entry and exit transitions, and adaptation to this
+canonical contract. Such an object or execution context is not compatible with
+the base ELF linkage contract unless that platform ABI defines the required
+mapping and transitions.
+
+Executable images and ordinary shared objects form one ABI-visible near-call
+linkage domain. Their function symbols are pre-segment code addresses, not
+CS:PC pairs. A segment-changing call is therefore outside the ordinary dynamic
+linking contract; a runtime or OS ABI may expose a near-call veneer for such a
+transfer.
+
+\subsection{Initial Non-Segment State}
+Immediately before transfer to the entry point, the loader clears
+\texttt{FLAGS}, \texttt{FSTATUS}, and \texttt{FFLAGS}. Segment-register state
+is governed by the execution-environment rules above rather than by this
+initial-value rule.
+
+\clearpage
+\section{Sections and Symbols}\label{page:sections-and-symbols}
+Bedrock uses ordinary ELF sections with the usual ELF meanings.
+\subsection{Symbol Model}
+Bedrock supports the standard local, global, and weak bindings and the
+default, hidden, and protected visibility classes. The standard notype,
+object, function, TLS, ifunc, section, and file symbol types retain their ELF
+meanings.
+
+\begin{itemize}
+\item Function symbols name the first instruction of the callable entry point.
+\item Object symbols name the first byte of the object storage.
+\item Symbol values follow the Section and Symbol Policy in
+Section~\ref{section:section-and-symbol-policy}.
+\end{itemize}
+\clearpage
+\section{Relocation Set}\label{page:relocation-set}
+Bedrock ELF objects use RELA relocation entries with explicit addends. The Bedrock ABI defines how each relocation type patches instruction or data fields.
+\subsection{Expression Model}
+Every static relocation starts with the canonical expression \texttt{S+A},
+where the symbol and explicit RELA addend are interpreted in the address space
+of the relocation family. Ordinary relocations use ABI symbol addresses, and
+TLS relocations use GS0-relative offsets.
+
+Absolute and section-relative results are permitted when the selected
+relocation type defines them. PC-relative address materialization subtracts
+\texttt{P}, the address of the patched field. Direct branch and call payloads
+subtract \texttt{N}, the address of the instruction following the patched
+instruction. A result that does not fit the signedness and width stated in the
+relocation table is a link error; the linker must not truncate it.
+
+For a PC-relative address-materialization relocation, let \texttt{I} be the
+address of byte zero of the containing instruction and let
+$\delta=\texttt{P}-\texttt{I}$ be the relocation field's byte offset. Let
+$A_{\mathrm{src}}$ be the addend in the source expression before field-offset
+bias. The encoded value shall equal the target plus $A_{\mathrm{src}}$ minus
+\texttt{I}. Because the relocation-table expressions subtract \texttt{P}, the
+assembler records the ELF addend as $\texttt{A}=A_{\mathrm{src}}+\delta$ for
+\texttt{PCREL}, \texttt{GOTPCREL}, \texttt{GOT\_BASE\_PCREL}, and
+\texttt{TLSDESC\_GOTPCREL} relocations. The linker does not infer instruction
+boundaries. The PLT addend described in Section~7.3 is one instance of this
+general rule.
+\subsection{Expression Terms}
+\manualtablecaption{Relocation Expression Terms}
+\begingroup\footnotesize
+\setlength{\tabcolsep}{2pt}
+\begin{longtable}{@{}p{1.0in}p{4.5in}@{}}
+\toprule
+\textbf{Term} & \textbf{Meaning}\\
+\midrule
+\endhead
+\texttt{S} & Runtime byte address of the symbol named by the relocation after symbol resolution.\\
+\texttt{A} & Explicit addend stored in the ELF64 Rela entry.\\
+\texttt{P} & Runtime byte address of the relocation field being patched.\\
+\texttt{N} & Runtime byte address of the next instruction after the instruction being patched.\\
+\texttt{SB} & Runtime byte address of the beginning of the symbol's defining section.\\
+\texttt{B} & Runtime load base address of the loaded object that owns the relocation.\\
+\texttt{GB} & Runtime byte address of the global offset table base for the loaded object.\\
+\texttt{GOT(S)} & Runtime byte address of the GOT slot allocated for symbol S.\\
+\texttt{PLT(S)} & Runtime byte address of the PLT entry allocated for symbol S.\\
+\texttt{TLS(S)} & Byte offset of TLS symbol S from the ABI TLS base in GS0.\\
+\texttt{TLSDESC(S)} & Runtime byte address of the TLSDESC entry allocated for TLS symbol S.\\
+\texttt{Resolver(X)} & Runtime byte address returned by calling the resolver function at address X.\\
+\bottomrule
+\end{longtable}
+\endgroup
+\subsection{GOT and PLT Model}
+The ordinary GOT stores 64-bit addresses for position-independent code and
+dynamic binding. A GOT relocation allocates or references the symbol's slot in
+the loaded object. The PLT contains executable near-call entries; a PLT
+relocation names that entry rather than the final function address. Every
+ordinary PLT slot is resolved before application entry or constructors execute.
+
+GOT and PLT function addresses stay inside the ABI-visible near-call linkage
+domain.
+\subsection{Relocations}
+\input{isa/interfaces/abi/generated/elf_relocation_rows.tex}
+\manualtablecaption{Bedrock ELF Relocation Types}
+\begingroup\footnotesize
+\setlength{\tabcolsep}{2pt}
+\begin{longtable}{@{}p{0.45in}p{2.15in}p{0.85in}p{2.05in}@{}}
+\toprule
+\textbf{Type} & \textbf{Name} & \textbf{Size} & \textbf{Calculation}\\
+\midrule
+\endhead
+\bedrockelfrelocationrows
+\bottomrule
+\end{longtable}
+\endgroup
+\subsection{Relocation Families and Additional Constraints}
+Relocations 1--12 write absolute data, immediate, or effective-address
+payloads. Relocations 13--23 write PC-relative, next-instruction-relative, or
+section-relative results. Relocations 24--33 address GOT slots, the GOT base,
+symbols relative to that base, and PLT entries. Relocations 34--38 are ordinary
+dynamic-loader operations. Relocations 39--44 implement GS0 local-exec and
+TLSDESC TLS. The table defines widths and calculations; the dynamic-linking and
+TLS sections supply additional rules.
+
+\clearpage
+\section{Dynamic Linking}\label{page:dynamic-linking}
+Dynamic objects use a fixed eager-binding Bedrock GOT and PLT contract.
+\subsection{Dynamic Linking Rules}
+Ordinary dynamic linking supports standard and indirect functions, copy
+relocations, and \texttt{R\_BEDROCK\_IRELATIVE}. The loader resolves every
+ordinary \texttt{R\_BEDROCK\_JUMP\_SLOT} and \texttt{R\_BEDROCK\_IRELATIVE}
+relocation before transferring control to the program entry point or any
+constructor. Shared-object calls use near \texttt{CALL}/\texttt{RET} within
+the ABI-visible linkage domain. The GOT base symbol is
+\texttt{\_GLOBAL\_OFFSET\_TABLE\_}.
+
+Every ordinary PLT entry occupies 32 bytes and has 16-byte alignment.
+\subsection{GOT Reserved Entries}
+\manualtablecaption{Global Offset Table Reserved Entries}
+\begingroup\footnotesize
+\setlength{\tabcolsep}{2pt}
+\begin{longtable}{@{}p{0.55in}p{1.55in}p{3.4in}@{}}
+\toprule
+\textbf{Index} & \textbf{Name} & \textbf{Meaning}\\
+\midrule
+\endhead
+0 & \texttt{\_\allowbreak{}DYNAMIC} & dynamic section address\\
+1 & reserved & zero\\
+2 & reserved & zero\\
+\bottomrule
+\end{longtable}
+\endgroup
+\subsection{PLT Layout}
+\manualtablecaption{Procedure Linkage Table Layout}
+\begingroup\footnotesize
+\setlength{\tabcolsep}{2pt}
+\begin{longtable}{@{}p{0.75in}p{1.55in}p{3.20in}@{}}
+\toprule
+\textbf{Offset} & \textbf{Bytes or field} & \textbf{Effect}\\
+\midrule
+\endhead
+\texttt{+0x00} & \texttt{e7 c9 80 67} & \texttt{JMP.Q [PC + disp64]}\\
+\texttt{+0x04} & \texttt{disp64} & little-endian \texttt{R\_BEDROCK\_GOTPCREL64} relocation field\\
+\texttt{+0x0c} & twenty \texttt{01} bytes & canonical \texttt{NOP} padding through offset \texttt{+0x1f}\\
+\bottomrule
+\end{longtable}
+\endgroup
+
+A PLT relocation uses explicit addend \texttt{+4}. Architectural PC names byte zero of the current instruction,
+whereas relocation place \texttt{P} is the field at entry offset four; therefore
+\texttt{GOT(S)+A-P} evaluates to \texttt{GOT(S)-PLTentry}, the displacement consumed by the PC-relative EA. The
+referenced \texttt{.got.plt} slot is 8-byte aligned and contains the eagerly resolved 64-bit near target. Both the
+PLT entry and its slot must be reachable under the active CS bounds used by that PC-relative EA.
+
+A PLT transfer preserves \texttt{R0} through \texttt{R7}, \texttt{F0} through
+\texttt{F7}, \texttt{GS1} through \texttt{GS5}, \texttt{FLAGS}, and all
+segment state. The loader writes each final \texttt{.got.plt} value before
+publication. Published slots are immutable and may be covered by
+\texttt{PT\_GNU\_RELRO}.
+\clearpage
+\section{Thread-Local Storage}\label{page:thread-local-storage}
+Thread-local storage is addressed through the GS0 segment register. TLS references that remain inside the program and have a link-time constant offset use the local-exec model. TLS references that cross dynamic object boundaries, may be interposed, or otherwise require runtime resolution use the TLSDESC model.
+\subsection{TLS Base Model}
+GS0 is the TLS base register. A TLS offset is translated by GS0 segment
+pre-translation before page-table translation. The local-exec model encodes a
+link-time constant byte offset from the GS0 base; TLSDESC supplies runtime
+resolution when the reference crosses a dynamic-object boundary or remains
+interposable.
+
+\input{isa/interfaces/abi/generated/tls_relocation_families.tex}
+
+In the canonical interoperable context, taking the address of a TLS object
+linearizes its GS0-relative address at runtime and returns an ordinary
+pre-segment pointer to that thread instance. If C code executes in a translated
+context, the active platform ABI defines how that materialized address is
+converted into its ordinary-pointer coordinate. Copying a TLS pointer to
+another thread does not retarget it; the pointer becomes invalid when its
+originating thread terminates or the defining shared object is unloaded.
+\subsection{Model Selection}
+\begin{itemize}
+\item A TLS symbol defined in the same program image may use local-exec addressing when its byte offset from GS0 is link-time constant.
+\item A TLS reference from a shared object or to an interposable TLS symbol uses TLSDESC.
+\item The linker may relax a TLSDESC sequence to local-exec when symbol binding and final placement make the GS0-relative offset constant.
+\item A source expression \texttt{S+k} uses the descriptor for \texttt{S}; after resolution, the caller adds \texttt{k} to the returned offset. The descriptor relocations never encode the subobject addend \texttt{k}.
+\end{itemize}
+\Needspace{1.8in}
+\subsection{TLSDESC Entry}
+\manualtablecaption{TLSDESC Entry Layout}
+\begingroup\footnotesize
+\setlength{\tabcolsep}{2pt}
+\begin{longtable}{@{}p{0.8in}p{1.7in}p{0.65in}p{2.35in}@{}}
+\toprule
+\textbf{Offset} & \textbf{Field} & \textbf{Type} & \textbf{Meaning}\\
+\midrule
+\endhead
+\texttt{+0x00} & \texttt{function} & \texttt{u64} & near-call address of the resolver or fast function\\
+\texttt{+0x08} & \texttt{argument} & \texttt{u64} & signed direct GS0-relative offset or resolver-specific opaque token\\
+\bottomrule
+\end{longtable}
+\endgroup
+
+Each entry occupies 16 bytes in \texttt{.got} and has 16-byte alignment. The
+loader resolves the symbol binding, writes both words, and completes any memory
+ordering required to publish the pair before application code can observe it.
+Both words are immutable after publication and may subsequently be protected by
+\texttt{PT\_GNU\_RELRO}. The ABI requires no public name for either the
+resolver or fast function; their near-call addresses may be loader-private.
+
+The argument word belongs to the implementation of the selected function. A
+fast function may load \texttt{[R0+8]} and return it directly. An opaque token
+is not application data and remains valid only while the object that defines
+the TLS symbol is loaded. A resolver may perform dynamic per-thread lookup or
+allocation, but
+neither it nor the fast function may rewrite or self-patch the published
+descriptor.
+\subsection{TLSDESC Call ABI}
+The canonical sequence is exactly:
+\begin{verbatim}
+LEA.Q [PC + descriptor@TLSDESC_GOTPCREL], R0
+CALL  [R0]
+\end{verbatim}
+The \texttt{LEA.Q} places the descriptor address in \texttt{R0}.
+\texttt{CALL [R0]} reads the 64-bit near-call target from descriptor offset
+zero and does not replace \texttt{R0}, so the called function receives the
+descriptor address in \texttt{R0}. No intervening move is part of the
+canonical sequence.
+
+The function returns a valid signed byte offset from the GS0 TLS base in
+\texttt{R0}. It preserves GS0 and every register and state item that the normal
+C ABI designates callee-saved, and it may clobber normal caller-saved state.
+There is no recoverable failure return or reserved offset: zero is a valid TLS
+offset. A resolver that cannot produce an offset follows a platform-defined
+fatal path and does not return.
+
+\subsection{TLSDESC Relocations}
+\paragraph{Descriptor address.}
+\texttt{R\_BEDROCK\_TLSDESC\_GOTPCREL32S} and
+\texttt{R\_BEDROCK\_TLSDESC\_GOTPCREL64} apply to the PC-relative displacement
+field of the canonical \texttt{LEA.Q} and compute the address of the descriptor
+for \texttt{STT\_TLS} symbol \texttt{S}. The source expression has semantic
+TLS addend zero. Under the PC-relative field-bias rule in Section~6.1, the RELA
+addend is exactly $A=\delta$; it contains the instruction-field offset and no
+TLS subobject addend.
+
+\Needspace{1.0in}
+\paragraph{Call marker.}
+\texttt{R\_BEDROCK\_TLSDESC\_CALL} has size zero, changes no byte, and names the
+same TLS symbol as the paired TLSDESC GOTPCREL relocation on the immediately
+preceding \texttt{LEA.Q}. Its addend is zero and its place is byte zero of the
+exact immediately following \texttt{CALL [R0]}. It is a static-link relaxation
+marker, is consumed by the static linker, and is never emitted as a dynamic
+relocation. A producer shall not place a label or control-flow target between
+the two instructions or at a nonzero byte of either instruction when emitting
+a relaxable sequence.
+
+\paragraph{Descriptor initialization.}
+\texttt{R\_BEDROCK\_TLSDESC} applies only to \texttt{STT\_TLS} symbols, has
+addend zero, and is placed at offset zero of an aligned descriptor. It directs
+the loader to initialize two adjacent 64-bit words with the selected
+\texttt{\{function, argument\}} pair for \texttt{S}. It is not an integer
+calculation. The link or load that would leave a weak TLS symbol unresolved
+shall reject the object: GS0-relative offset zero is valid and cannot also
+encode absent weak binding. A weak symbol that resolves to a definition is
+handled normally.
+
+The linker may merge descriptors only when they name the same resolved binding
+\texttt{S} and have the required zero semantic addend. If any unrelaxed use
+remains, a final dynamic link emits one aligned pair in \texttt{.got} and the
+corresponding dynamic \texttt{R\_BEDROCK\_TLSDESC}. The loader initializes the
+pair eagerly before publication. A final executable with no runtime loader
+shall relax every TLSDESC use; otherwise the static link fails. If all uses are
+relaxed, the final link discards the descriptor and its initialization
+relocation.
+
+\subsection{TLSDESC Local-Exec Relaxation}
+Relaxation is permitted only after final binding proves that \texttt{S} is
+non-preemptible and \texttt{TLS(S)} is a link-time constant. It replaces the
+entire canonical pair without changing the section size or the address of any
+following instruction:
+\begin{itemize}\raggedright
+\item With \texttt{R\_BEDROCK\_TLSDESC\_GOTPCREL32S}, the original
+      7-byte \texttt{LEA.Q} and 4-byte \texttt{CALL [R0]} occupy 11 bytes. If
+      \texttt{TLS(S)} fits signed 32 bits, the linker emits
+      \texttt{LEN 11, MOV.Q TLS(S), R0}, applies
+      \texttt{R\_BEDROCK\_TLS\_OFFSET32S} with addend zero to its 32-bit
+      immediate payload, and writes four zero padding bytes after the natural
+      7-byte form.
+\item With \texttt{R\_BEDROCK\_TLSDESC\_GOTPCREL64}, the original
+      11-byte \texttt{LEA.Q} and 4-byte \texttt{CALL [R0]} occupy 15 bytes. The
+      linker emits \texttt{LEN 15, MOV.Q TLS(S), R0}, applies
+      \texttt{R\_BEDROCK\_TLS\_OFFSET64} with addend zero to its 64-bit
+      immediate payload, and writes four zero padding bytes after the natural
+      11-byte form.
+\end{itemize}
+The linker consumes both code relocations. The removed call may eliminate
+normal caller-saved clobbers and unobservable resolver stack activity; code may
+not depend on either. If no unrelaxed reference remains, no descriptor is
+allocated.
+
+\clearpage
+\section{Code Models}\label{page:code-models}
+Code models define placement and locality assumptions that assemblers, linkers, and compilers may use when selecting address materialization, displacement, GOT, PLT, and relocation forms. Bedrock 32-bit displacement and direct control-transfer forms are signed, so direct 32-bit relative references cover a -2 GiB to +2 GiB - 1 window.
+\manualtablecaption{Bedrock Code Models}
+\begingroup\footnotesize
+\setlength{\tabcolsep}{2pt}
+\begin{longtable}{@{}p{0.65in}p{2.25in}p{2.60in}@{}}
+\toprule
+\textbf{Model} & \textbf{Placement contract} & \textbf{Default access strategy}\\
+\midrule
+\endhead
+\texttt{low} & static addresses in \texttt{0x00000000..0x7fffffff} & signed 32-bit absolute data and direct transfers\\
+\texttt{small} & referenced code, data, GOT, and PLT fit one signed 32-bit relative window & PC-relative access; GOT/PLT for interposable symbols\\
+\texttt{medium} & code, GOT, and PLT fit one signed 32-bit window; data placement is unrestricted & direct code; GOT-resolved 64-bit data addresses\\
+\texttt{high} & static high image with internal references in a signed 32-bit displacement window & image-base or PC-relative access with full-width fallback\\
+\texttt{large} & unrestricted 64-bit address space & full-width materialization and indirect transfer\\
+\bottomrule
+\end{longtable}
+\endgroup
+\subsection{low Model Details}
+The \texttt{low} model is a static image model whose named code and data lie
+between \texttt{0x00000000} and \texttt{0x7fffffff}. Code uses direct signed
+32-bit branch or call payloads; data uses absolute or base-relative signed
+32-bit payloads. A GOT or PLT is not required by the model.
+
+Its default relocation set is \texttt{R\_BEDROCK\_ABS32S},
+\texttt{R\_BEDROCK\_IMM32S}, \texttt{R\_BEDROCK\_DISP32S},
+\texttt{R\_BEDROCK\_BRDISP32S}, and \texttt{R\_BEDROCK\_CALL32S}. The linker
+may shrink a direct transfer or address materialization after final placement
+proves that the result fits a shorter encoding.
+
+\subsection{small Model Details}
+The \texttt{small} model is position-independent and assumes that local code,
+nearby data, the GOT, and the PLT fit the signed 32-bit relative window of the
+use site or selected base. Code uses direct signed 32-bit transfers; data uses
+PC-relative or GOTPCREL signed 32-bit materialization.
+
+Its default relocations are \texttt{R\_BEDROCK\_BRDISP32S},
+\texttt{R\_BEDROCK\_CALL32S}, \texttt{R\_BEDROCK\_GOTPCREL32S},
+\texttt{R\_BEDROCK\_PLT32S}, and
+\texttt{R\_BEDROCK\_TLSDESC\_GOTPCREL32S}. The linker may shrink a relative
+form or replace GOT/TLSDESC access with a direct form when the resolved symbol
+is local and in range.
+\subsection{medium Model Details}
+The \texttt{medium} model keeps code, GOT, and PLT within a signed 32-bit
+relative window but permits data objects anywhere in the 64-bit address space.
+Code uses direct signed 32-bit transfers. Data normally uses a GOT-resolved
+64-bit address reached through a signed 32-bit GOT reference.
+
+Its default relocations are \texttt{R\_BEDROCK\_BRDISP32S},
+\texttt{R\_BEDROCK\_CALL32S}, \texttt{R\_BEDROCK\_GOTPCREL32S},
+\texttt{R\_BEDROCK\_GOT64}, \texttt{R\_BEDROCK\_PLT32S}, and
+\texttt{R\_BEDROCK\_TLSDESC\_GOTPCREL32S}. A linker may replace a GOT data
+reference with a direct relative reference when final placement puts the
+object in range.
+
+\subsection{high Model Details}
+The \texttt{high} model is a static high-address image. Internal code may use
+direct signed 32-bit transfers or image-base-relative addressing. Data uses a
+PC-relative GOT or an image-base-relative form when in range; the GOT and PLT
+are image-local or base-relative.
+
+Its default relocations are \texttt{R\_BEDROCK\_BRDISP32S},
+\texttt{R\_BEDROCK\_CALL32S}, \texttt{R\_BEDROCK\_GOTPCREL32S},
+\texttt{R\_BEDROCK\_ABS64}, and \texttt{R\_BEDROCK\_DISP64}. Compact internal
+references are permitted when final placement proves the signed 32-bit range;
+full-width and base-relative sequences remain conforming.
+
+\subsection{large Model Details}
+The \texttt{large} model makes no placement assumption. Code uses full-width
+address materialization followed by an indirect transfer when necessary; data,
+GOT, and PLT addresses are full width.
+
+Its default relocations are \texttt{R\_BEDROCK\_ABS64},
+\texttt{R\_BEDROCK\_PCREL64}, \texttt{R\_BEDROCK\_GOTPCREL64},
+\texttt{R\_BEDROCK\_PLT64}, and
+\texttt{R\_BEDROCK\_TLSDESC\_GOTPCREL64}. Final placement may justify
+relaxing any full-width form to a shorter encoding.
+
+\clearpage
+\section{Assembler Contract}\label{page:assembler-contract}
+\manualfield{Default ABI:}{bedrock-elf}
+\subsection{Strict Mode}
+\begin{itemize}
+\item Pure ISA syntax is accepted.
+\item Ambiguous symbolic operands require an explicit relocation annotation.
+\item Noncanonical encodings are rejected.
+\end{itemize}
+\subsection{Relaxation}
+\begin{itemize}
+\item Branch and call payload widths may be selected automatically when the target is known.
+\item Address materialization may shrink from 64-bit to 32-bit, 16-bit, or 8-bit payloads when the relocation result fits.
+\item Overlong encodings are emitted only when explicitly requested.
+\end{itemize}
+
+\end{document}

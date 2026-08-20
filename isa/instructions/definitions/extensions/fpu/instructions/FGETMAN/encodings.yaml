@@ -1,0 +1,35 @@
+forms:
+- id: long.fgetman_x_ea_s_fn_d
+  class: long
+  bits: 1111100101z0001ddddeeeeeee
+  syntax: FGETMAN.SD(z) <ea>(e), Fn(d)
+  operands:
+  - name: src
+    type: EA
+    access: read
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  - name: dst
+    type: Fn
+    access: write
+    field: d
+  fields:
+    z:
+      type: size.SD
+- id: medium.fgetman_x_fn_s_fn_d
+  class: medium
+  bits: 101100z001ssssdddd
+  syntax: FGETMAN.SD(z) Fn(s), Fn(d)
+  operands:
+  - name: src
+    type: Fn
+    access: read
+    field: s
+  - name: dst
+    type: Fn
+    access: write
+    field: d
+  fields:
+    z:
+      type: size.SD

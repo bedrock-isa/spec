@@ -1,0 +1,67 @@
+forms:
+- id: long.fbndix_x_fn_l_fn_v_fn_h
+  class: long
+  bits: 1111100110z001llllvvvvhhhh
+  syntax: FBNDIX.SD(z) Fn(l), Fn(v), Fn(h)
+  operands:
+  - name: lo
+    type: Fn
+    access: read
+    field: l
+  - name: value
+    type: Fn
+    access: read
+    field: v
+  - name: hi
+    type: Fn
+    access: read
+    field: h
+  fields:
+    z:
+      type: size.SD
+- id: long.fbndix_x_fn_l_ea_v_fn_h
+  class: long
+  bits: 1111100001zllllhhhhvvvvvvv
+  syntax: FBNDIX.SD(z) Fn(l), <ea>(v), Fn(h)
+  operands:
+  - name: lo
+    type: Fn
+    access: read
+    field: l
+  - name: value
+    type: EA
+    access: read
+    ea_role: value
+    ea_width: operation_size
+    field: v
+  - name: hi
+    type: Fn
+    access: read
+    field: h
+  fields:
+    z:
+      type: size.SD
+- id: extralong.fbndix_x_ea_l_fn_v_ea_h
+  class: extralong
+  bits: 11111110000z0001vvvvlllllllhhhhhhh
+  syntax: FBNDIX.SD(z) <ea>(l), Fn(v), <ea>(h)
+  operands:
+  - name: lo
+    type: EA
+    access: read
+    ea_role: value
+    ea_width: operation_size
+    field: l
+  - name: value
+    type: Fn
+    access: read
+    field: v
+  - name: hi
+    type: EA
+    access: read
+    ea_role: value
+    ea_width: operation_size
+    field: h
+  fields:
+    z:
+      type: size.SD

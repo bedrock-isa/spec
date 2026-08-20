@@ -461,7 +461,7 @@ mod tests {
     #[test]
     fn worker_runs_machine_off_thread_and_reports_stop_result() {
         let mut machine = Machine::new();
-        machine.load_program(0, &[0xa0, 0x49]).unwrap();
+        machine.load_program(0, &[0xae, 0x00]).unwrap();
         machine.processor_reset(0);
 
         let worker =
@@ -485,7 +485,7 @@ mod tests {
     #[test]
     fn unlimited_budget_has_no_finite_step_cap() {
         let mut machine = Machine::new();
-        machine.load_program(0, &[0xa0, 0x49]).unwrap();
+        machine.load_program(0, &[0xae, 0x00]).unwrap();
         machine.processor_reset(0);
 
         let worker =

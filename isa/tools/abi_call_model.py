@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Executable reference model for the Bedrock C call ABI.
 
-The normative contract lives in ``isa/abi/bedrock-c-abi.tex``.  This module
+The normative contract lives in ``isa/interfaces/abi/bedrock-c-abi.tex``.  This module
 models only the deterministic argument-location procedure so that compiler,
 runtime, and conformance-test work can share executable examples without
 turning the whole ABI document into structured data.

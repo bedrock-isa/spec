@@ -473,6 +473,8 @@ impl Cpu {
                 if let Some(ea) = first_ea(instruction) {
                     let (segment, offset) = self.address_operand_location(pc, instruction, ea)?;
                     self.effective_linear_address(segment, offset, pc)?;
+                } else if let Some(register) = general_field(instruction, 'r') {
+                    self.effective_linear_address(SegmentSelector::Ds, self.state.r[register], pc)?;
                 }
                 self.state.pc = next_pc;
                 Ok(StepResult::Running)
@@ -915,7 +917,9 @@ impl Cpu {
         } else {
             optional_field(instruction, 'i').unwrap_or(0)
         } % (size.bytes() * 8) as u64;
-        let destination = if instruction.allocation_id.contains("rn_d") {
+        let destination = if let Some(register) = general_field(instruction, 'e') {
+            Destination::Register(register as u8)
+        } else if instruction.allocation_id.contains("rn_d") {
             Destination::Register(field(instruction, 'd') as u8)
         } else {
             let ea = first_ea(instruction).ok_or(illegal_instruction(pc))?;
@@ -1131,15 +1135,19 @@ impl Cpu {
         instruction: &DecodedInstruction,
     ) -> Result<StepResult, Trap> {
         let size = instruction_size(instruction);
-        let ea = first_ea(instruction).ok_or(illegal_instruction(pc))?;
-        let (segment, address) = match ea {
-            CompactEa::Register(r) => (SegmentSelector::Ds, self.state.r[r as usize]),
-            CompactEa::StackPointer => (SegmentSelector::Ss, self.state.sp),
-            CompactEa::Immediate(width) => (
-                SegmentSelector::Ds,
-                read_signed(ea_payload(instruction, ea), width) as u64,
-            ),
-            _ => self.effective_location_with_payload(pc, ea, ea_payload(instruction, ea), size)?,
+        let (segment, address) = if let Some(register) = general_field(instruction, 's') {
+            (SegmentSelector::Ds, self.read_r(register, size))
+        } else {
+            let ea = first_ea(instruction).ok_or(illegal_instruction(pc))?;
+            match ea {
+                CompactEa::Immediate(width) => (
+                    SegmentSelector::Ds,
+                    read_signed(ea_payload(instruction, ea), width) as u64,
+                ),
+                _ => {
+                    self.effective_location_with_payload(pc, ea, ea_payload(instruction, ea), size)?
+                }
+            }
         };
         let dst = field(instruction, 'd') as usize;
         if instruction.opcode == Opcode::Seglea {
@@ -1689,13 +1697,17 @@ impl Cpu {
     ) -> Result<StepResult, Trap> {
         let size = instruction_size(instruction);
         let low = self.read_r(field(instruction, 'l') as usize, size);
-        let value = self.read_ea(
-            bus,
-            pc,
-            instruction,
-            first_ea(instruction).ok_or(illegal_instruction(pc))?,
-            size,
-        )?;
+        let value = if let Some(register) = general_field(instruction, 'v') {
+            self.read_r(register, size)
+        } else {
+            self.read_ea(
+                bus,
+                pc,
+                instruction,
+                first_ea(instruction).ok_or(illegal_instruction(pc))?,
+                size,
+            )?
+        };
         let high = self.read_r(field(instruction, 'h') as usize, size);
         let inclusive_low = matches!(
             instruction.opcode,
@@ -1741,13 +1753,17 @@ impl Cpu {
         instruction: &DecodedInstruction,
     ) -> Result<StepResult, Trap> {
         let size = instruction_size(instruction);
-        let divisor = self.read_ea(
-            bus,
-            pc,
-            instruction,
-            first_ea(instruction).ok_or(illegal_instruction(pc))?,
-            size,
-        )?;
+        let divisor = if let Some(register) = general_field(instruction, 'e') {
+            self.read_r(register, size)
+        } else {
+            self.read_ea(
+                bus,
+                pc,
+                instruction,
+                first_ea(instruction).ok_or(illegal_instruction(pc))?,
+                size,
+            )?
+        };
         if divisor == 0 {
             return Err(Trap::DivideError {
                 pc,
@@ -1840,30 +1856,36 @@ impl Cpu {
                 self.write_page_query_result(field(instruction, 'p') as usize, result);
             }
             Opcode::Ptquery => {
-                let ea = first_ea(instruction).ok_or(illegal_instruction(pc))?;
                 let translation = crate::MemoryTranslation {
                     segments: self.state.segments,
                     ptcr: self.state.ptcr,
                     ascr: self.state.ascr,
                 };
-                let (query_ea, query_segment, linear) = match ea {
-                    CompactEa::Register(register) => {
-                        let address = self.state.r[register as usize];
-                        (address, None, address)
-                    }
-                    CompactEa::StackPointer => (self.state.sp, None, self.state.sp),
-                    CompactEa::Immediate(width) => {
-                        let address = read_signed(ea_payload(instruction, ea), width) as u64;
-                        (address, None, address)
-                    }
-                    _ => {
-                        let payload = ea_payload(instruction, ea);
-                        let (segment, offset) =
-                            self.effective_location_with_payload(pc, ea, payload, Size::Quad)?;
-                        let linear = translation
-                            .segment_linear_address(segment, offset)
-                            .map_err(|fault| translation_trap(pc, fault))?;
-                        (offset, Some(segment), linear)
+                let (query_ea, query_segment, linear) = if let Some(register) =
+                    general_field(instruction, 's')
+                {
+                    let offset = self.state.r[register];
+                    let segment = SegmentSelector::Ds;
+                    let linear = translation
+                        .segment_linear_address(segment, offset)
+                        .map_err(|fault| translation_trap(pc, fault))?;
+                    (offset, Some(segment), linear)
+                } else {
+                    let ea = first_ea(instruction).ok_or(illegal_instruction(pc))?;
+                    match ea {
+                        CompactEa::Immediate(width) => {
+                            let address = read_signed(ea_payload(instruction, ea), width) as u64;
+                            (address, None, address)
+                        }
+                        _ => {
+                            let payload = ea_payload(instruction, ea);
+                            let (segment, offset) =
+                                self.effective_location_with_payload(pc, ea, payload, Size::Quad)?;
+                            let linear = translation
+                                .segment_linear_address(segment, offset)
+                                .map_err(|fault| translation_trap(pc, fault))?;
+                            (offset, Some(segment), linear)
+                        }
                     }
                 };
                 let level = field(instruction, 'i') as u8;
@@ -2733,10 +2755,7 @@ impl Cpu {
         size: Size,
     ) -> Result<ResolvedMemoryDestination, Trap> {
         let ea = ea_field(instruction, symbol).ok_or(illegal_instruction(pc))?;
-        if matches!(
-            ea,
-            CompactEa::Register(_) | CompactEa::StackPointer | CompactEa::Immediate(_)
-        ) {
+        if matches!(ea, CompactEa::Immediate(_)) {
             return Err(illegal_instruction(pc));
         }
         let (segment, offset) = self.effective_location_with_payload(
@@ -3304,9 +3323,16 @@ impl Cpu {
             self.state.pc = target;
             return Ok(StepResult::Running);
         }
-        let segment = self.state.r[field(instruction, 'r') as usize];
-        let ea = first_ea(instruction).ok_or(illegal_instruction(pc))?;
-        let target = self.read_ea(bus, pc, instruction, ea, Size::Quad)?;
+        let (segment, target) = if let (Some(segment), Some(target)) = (
+            general_field(instruction, 's'),
+            general_field(instruction, 'd'),
+        ) {
+            (self.state.r[segment], self.state.r[target])
+        } else {
+            let segment = self.state.r[field(instruction, 'r') as usize];
+            let ea = first_ea(instruction).ok_or(illegal_instruction(pc))?;
+            (segment, self.read_ea(bus, pc, instruction, ea, Size::Quad)?)
+        };
         let segment = crate::SegmentRegister::from_raw(segment);
         if !segment.valid() {
             return Err(Trap::InvalidControlState {
@@ -3376,8 +3402,12 @@ impl Cpu {
         next_pc: u64,
         instruction: &DecodedInstruction,
     ) -> Result<StepResult, Trap> {
-        let ea = first_ea(instruction).ok_or(illegal_instruction(pc))?;
-        let (segment, base) = self.address_operand_location(pc, instruction, ea)?;
+        let (segment, base) = if let Some(register) = general_field(instruction, 'r') {
+            (SegmentSelector::Ds, self.state.r[register])
+        } else {
+            let ea = first_ea(instruction).ok_or(illegal_instruction(pc))?;
+            self.address_operand_location(pc, instruction, ea)?
+        };
         if base & 0xfff != 0 {
             return Err(Trap::InvalidControlState {
                 pc,
@@ -3620,18 +3650,18 @@ impl Cpu {
     ) -> Result<StepResult, Trap> {
         let size = instruction_size(instruction);
         let id = instruction.allocation_id;
+        let (source_domain, destination_domain) = match instruction.opcode {
+            Opcode::Movuc => (AccessDomain::User, AccessDomain::Current),
+            Opcode::Movcu => (AccessDomain::Current, AccessDomain::User),
+            Opcode::Movuu => (AccessDomain::User, AccessDomain::User),
+            _ => (AccessDomain::Current, AccessDomain::Current),
+        };
         if id.contains("rn_r_sp") {
             self.state.sp = self.state.r[field(instruction, 'r') as usize];
         } else if id.contains("sp_rn_r") {
             let register = field(instruction, 'r') as usize;
             self.write_r(register, size, self.state.sp);
         } else if instruction.allocation_id.contains("ea_s_ea_d") {
-            let (source_domain, destination_domain) = match instruction.opcode {
-                Opcode::Movuc => (AccessDomain::User, AccessDomain::Current),
-                Opcode::Movcu => (AccessDomain::Current, AccessDomain::User),
-                Opcode::Movuu => (AccessDomain::User, AccessDomain::User),
-                _ => (AccessDomain::Current, AccessDomain::Current),
-            };
             let value =
                 self.read_ea_field_in_domain(bus, pc, instruction, 's', size, source_domain)?;
             self.write_ea_field_in_domain(
@@ -3645,15 +3675,38 @@ impl Cpu {
             )?;
         } else if instruction.allocation_id.contains("rn_s_ea") {
             let src = field(instruction, 's') as usize;
-            let dst = first_ea(instruction).ok_or(illegal_instruction(pc))?;
+            let dst_symbol = if ea_field(instruction, 'e').is_some() {
+                'e'
+            } else {
+                'd'
+            };
             let value = self.read_r(src, size);
-            self.write_ea(bus, pc, instruction, dst, size, value)?;
+            self.write_ea_field_in_domain(
+                bus,
+                pc,
+                instruction,
+                dst_symbol,
+                size,
+                value,
+                destination_domain,
+            )?;
         } else if instruction.allocation_id.contains("ea")
             && instruction.allocation_id.contains("rn_d")
         {
             let dst = field(instruction, 'd') as usize;
-            let src = first_ea(instruction).ok_or(illegal_instruction(pc))?;
-            let value = self.read_ea(bus, pc, instruction, src, size)?;
+            let src_symbol = if ea_field(instruction, 'e').is_some() {
+                'e'
+            } else {
+                's'
+            };
+            let value = self.read_ea_field_in_domain(
+                bus,
+                pc,
+                instruction,
+                src_symbol,
+                size,
+                source_domain,
+            )?;
             self.write_r(dst, size, value);
         } else if let (Some(src), Some(dst)) = (
             optional_field(instruction, 's'),
@@ -3664,15 +3717,34 @@ impl Cpu {
                 self.write_r(dst as usize, size, value);
             } else if id.contains("rn_s_ea") {
                 let value = self.read_r(src as usize, size);
-                let ea = ea_field(instruction, 'e')
-                    .or_else(|| ea_field(instruction, 'd'))
-                    .ok_or(illegal_instruction(pc))?;
-                self.write_ea(bus, pc, instruction, ea, size, value)?;
+                let symbol = if ea_field(instruction, 'e').is_some() {
+                    'e'
+                } else {
+                    'd'
+                };
+                self.write_ea_field_in_domain(
+                    bus,
+                    pc,
+                    instruction,
+                    symbol,
+                    size,
+                    value,
+                    destination_domain,
+                )?;
             } else if id.contains("ea") && id.contains("rn_d") {
-                let ea = ea_field(instruction, 'e')
-                    .or_else(|| ea_field(instruction, 's'))
-                    .ok_or(illegal_instruction(pc))?;
-                let value = self.read_ea(bus, pc, instruction, ea, size)?;
+                let symbol = if ea_field(instruction, 'e').is_some() {
+                    'e'
+                } else {
+                    's'
+                };
+                let value = self.read_ea_field_in_domain(
+                    bus,
+                    pc,
+                    instruction,
+                    symbol,
+                    size,
+                    source_domain,
+                )?;
                 self.write_r(dst as usize, size, value);
             } else {
                 return Err(illegal_instruction(pc));
@@ -4451,8 +4523,6 @@ impl Cpu {
         ea: CompactEa,
     ) -> Result<(), Trap> {
         let (segment, offset) = match ea {
-            CompactEa::Register(register) => (SegmentSelector::Ds, self.state.r[register as usize]),
-            CompactEa::StackPointer => (SegmentSelector::Ss, self.state.sp),
             CompactEa::Immediate(width) => (
                 SegmentSelector::Ds,
                 read_signed(ea_payload(instruction, ea), width) as u64,
@@ -4505,10 +4575,6 @@ impl Cpu {
         ea: CompactEa,
     ) -> Result<(SegmentSelector, u64), Trap> {
         match ea {
-            CompactEa::Register(register) => {
-                Ok((SegmentSelector::Ds, self.state.r[register as usize]))
-            }
-            CompactEa::StackPointer => Ok((SegmentSelector::Ss, self.state.sp)),
             CompactEa::Immediate(width) => Ok((
                 SegmentSelector::Ds,
                 read_signed(ea_payload(instruction, ea), width) as u64,
@@ -4671,8 +4737,6 @@ impl Cpu {
         size: Size,
     ) -> Result<ResolvedEa, Trap> {
         let target = match ea {
-            CompactEa::Register(register) => ResolvedEaTarget::Register(register),
-            CompactEa::StackPointer => ResolvedEaTarget::StackPointer,
             CompactEa::Immediate(width) => {
                 ResolvedEaTarget::Immediate((read_signed(payload, width) as u64) & size_mask(size))
             }
@@ -4699,8 +4763,6 @@ impl Cpu {
         size: Size,
     ) -> Result<u64, Trap> {
         match resolved.target {
-            ResolvedEaTarget::Register(register) => Ok(self.read_r(register as usize, size)),
-            ResolvedEaTarget::StackPointer => Ok(self.state.sp & size_mask(size)),
             ResolvedEaTarget::Immediate(value) => Ok(value),
             ResolvedEaTarget::Memory { segment, offset } => self
                 .read_virtual(bus, pc, segment, offset, AccessDomain::Current, size)
@@ -4718,10 +4780,6 @@ impl Cpu {
         value: u64,
     ) -> Result<(), Trap> {
         match resolved.target {
-            ResolvedEaTarget::Register(register) => {
-                self.write_r(register as usize, size, value);
-            }
-            ResolvedEaTarget::StackPointer => write_subfield(&mut self.state.sp, size, value),
             ResolvedEaTarget::Immediate(_) => return Err(illegal_instruction(pc)),
             ResolvedEaTarget::Memory { segment, offset } => self
                 .write_virtual(bus, pc, segment, offset, AccessDomain::Current, size, value)
@@ -4858,8 +4916,6 @@ impl Cpu {
         domain: AccessDomain,
     ) -> Result<u64, Trap> {
         match ea {
-            CompactEa::Register(register) => Ok(self.read_r(register as usize, size)),
-            CompactEa::StackPointer => Ok(self.state.sp & size_mask(size)),
             CompactEa::Immediate(width) => {
                 Ok((read_signed(payload, width) as u64) & size_mask(size))
             }
@@ -4908,14 +4964,6 @@ impl Cpu {
         domain: AccessDomain,
     ) -> Result<(), Trap> {
         match ea {
-            CompactEa::Register(register) => {
-                self.write_r(register as usize, size, value);
-                Ok(())
-            }
-            CompactEa::StackPointer => {
-                write_subfield(&mut self.state.sp, size, value);
-                Ok(())
-            }
             CompactEa::Immediate(_) => Err(illegal_instruction(pc)),
             _ => {
                 let (segment, offset) =
@@ -5886,8 +5934,6 @@ struct ResolvedEa {
 
 #[derive(Debug, Clone, Copy)]
 enum ResolvedEaTarget {
-    Register(u8),
-    StackPointer,
     Immediate(u64),
     Memory {
         segment: SegmentSelector,
@@ -6981,28 +7027,29 @@ mod tests {
 
     #[test]
     fn floating_clear_zeros_the_complete_register() {
-        let mut ram = Ram::new(3);
-        ram.load(0, &[0xc2, 0x40, 0x80]).unwrap(); // FCLR F0
+        let instruction = encoded_form("medium.fclr_fn_d", &[('d', 0)], &[]);
+        let mut ram = Ram::new(instruction.len());
+        ram.load(0, &instruction).unwrap();
         let mut cpu = Cpu::new();
         cpu.reset(0);
         cpu.state_mut().f[0] = u64::MAX;
 
         assert_eq!(cpu.step(&mut ram), StepResult::Running);
         assert_eq!(cpu.state().f[0], 0);
-        assert_eq!(cpu.state().pc, 3);
+        assert_eq!(cpu.state().pc, instruction.len() as u64);
     }
 
     #[test]
     fn floating_constant_and_fused_multiply_add_follow_the_fpu_encoding() {
-        let mut ram = Ram::new(10);
-        ram.load(
-            0,
-            &[
-                0xcf, 0xd6, 0xb1, 0x02, 0x08, 0x00, // FMOVCR.D 8, F2
-                0xc7, 0xd0, 0x89, 0x40, // FMADD.D F1, F2, F0
-            ],
-        )
-        .unwrap();
+        let fmovcr = encoded_form("medium.fmovcr_x_imm16_fn_d", &[('z', 1), ('d', 2)], &[8, 0]);
+        let fmadd = encoded_form(
+            "long.fmadd_x_fn_l_fn_r_fn_d",
+            &[('z', 1), ('l', 1), ('r', 2), ('d', 0)],
+            &[],
+        );
+        let program = [fmovcr, fmadd].concat();
+        let mut ram = Ram::new(program.len());
+        ram.load(0, &program).unwrap();
         let mut cpu = Cpu::new();
         cpu.reset(0);
         cpu.state_mut().f[0] = 2.0f64.to_bits();
@@ -7012,7 +7059,7 @@ mod tests {
         assert_eq!(cpu.state().f[2], 10.0f64.to_bits());
         assert_eq!(cpu.step(&mut ram), StepResult::Running);
         assert_eq!(cpu.state().f[0], 32.0f64.to_bits());
-        assert_eq!(cpu.state().pc, 10);
+        assert_eq!(cpu.state().pc, program.len() as u64);
     }
 
     #[test]
@@ -7028,19 +7075,64 @@ mod tests {
 
     #[test]
     fn movuc_reads_through_the_user_domain() {
+        let instruction = encoded_form(
+            "long.movuc_x_ea_s_ea_d",
+            &[('z', 3), ('s', 0x00), ('d', 0x01)],
+            &[],
+        );
         let mut ram = Ram::new(0x10_000);
         install_four_level_root(&mut ram);
         map_low_page(&mut ram, 0, 0x8000, PTE_W | PTE_X);
         map_low_page(&mut ram, 1, 0x9000, PTE_W | PTE_U);
-        ram.load(0x8000, &[0xc7, 0xe2, 0xc8, 0x01]).unwrap(); // MOVUC.Q [R0], R1
+        map_low_page(&mut ram, 2, 0xa000, PTE_W);
+        ram.load(0x8000, &instruction).unwrap();
         ram.write_u64(0x9000, 0x1122_3344_5566_7788).unwrap();
 
         let mut cpu = Cpu::new();
         cpu.reset(0);
         cpu.state_mut().ptcr = PageTableControl::from_raw(0x1001);
         cpu.state_mut().r[0] = 0x1000;
+        cpu.state_mut().r[1] = 0x2000;
         assert_eq!(cpu.step(&mut ram), StepResult::Running);
-        assert_eq!(cpu.state().r[1], 0x1122_3344_5566_7788);
+        assert_eq!(ram.read_u64(0xa000).unwrap(), 0x1122_3344_5566_7788);
+
+        map_low_page(&mut ram, 1, 0x9000, PTE_W);
+        cpu.reset(0);
+        cpu.state_mut().ptcr = PageTableControl::from_raw(0x1001);
+        cpu.state_mut().r[0] = 0x1000;
+        cpu.state_mut().r[1] = 0x2000;
+        assert_eq!(cpu.step(&mut ram), StepResult::Halted);
+    }
+
+    #[test]
+    fn direct_move_forms_preserve_user_domain_accesses() {
+        let movuc = encoded_form(
+            "long.movuc_x_ea_s_rn_d",
+            &[('z', 3), ('s', 0x00), ('d', 2)],
+            &[],
+        );
+        let movcu = encoded_form(
+            "long.movcu_x_rn_s_ea_d",
+            &[('z', 3), ('s', 2), ('d', 0x01)],
+            &[],
+        );
+        let program = [movuc, movcu].concat();
+        let mut ram = Ram::new(0x10_000);
+        install_four_level_root(&mut ram);
+        map_low_page(&mut ram, 0, 0x8000, PTE_W | PTE_X);
+        map_low_page(&mut ram, 1, 0x9000, PTE_W | PTE_U);
+        ram.load(0x8000, &program).unwrap();
+        ram.write_u64(0x9000, 0x1122_3344_5566_7788).unwrap();
+
+        let mut cpu = Cpu::new();
+        cpu.reset(0);
+        cpu.state_mut().ptcr = PageTableControl::from_raw(0x1001);
+        cpu.state_mut().r[0] = 0x1000;
+        cpu.state_mut().r[1] = 0x1008;
+        assert_eq!(cpu.step(&mut ram), StepResult::Running);
+        assert_eq!(cpu.state().r[2], 0x1122_3344_5566_7788);
+        assert_eq!(cpu.step(&mut ram), StepResult::Running);
+        assert_eq!(ram.read_u64(0x9008).unwrap(), 0x1122_3344_5566_7788);
 
         map_low_page(&mut ram, 1, 0x9000, PTE_W);
         cpu.reset(0);
@@ -7051,12 +7143,17 @@ mod tests {
 
     #[test]
     fn page_fault_enters_common_event_handler_and_populates_fault_frame() {
+        let instruction = encoded_form(
+            "medium.mov_x_ea_e_rn_d.2",
+            &[('z', 1), ('e', 0x00), ('d', 1)],
+            &[],
+        );
         let mut ram = Ram::new(0x20_000);
         install_four_level_root(&mut ram);
         map_low_page(&mut ram, 0, 0x8000, PTE_X | PTE_U);
         map_low_page(&mut ram, 5, 0xd000, PTE_X);
         map_low_page(&mut ram, 6, 0xe000, PTE_W);
-        ram.load(0x8000, &[0xc0, 0x38, 0x90]).unwrap(); // MOV.Q [R0], R1
+        ram.load(0x8000, &instruction).unwrap();
         ram.write_u8(0xd000, 0x04).unwrap(); // ERET
 
         let mut cpu = Cpu::new();
@@ -7102,7 +7199,7 @@ mod tests {
         let mut ram = Ram::new(0x20_000);
         install_four_level_root(&mut ram);
         map_low_page(&mut ram, 0, 0x8000, PTE_X | PTE_U);
-        ram.load(0x8000, &[0xc0, 0x38, 0x90]).unwrap(); // MOV.Q [R0], R1
+        ram.load(0x8000, &[0xc1, 0x18, 0x80]).unwrap(); // MOV.Q [R0], R1
 
         let mut cpu = Cpu::new();
         cpu.reset(0);
@@ -7121,25 +7218,31 @@ mod tests {
 
     #[test]
     fn movcu_and_movuu_use_the_user_domain_for_their_memory_sides() {
+        let movcu = encoded_form(
+            "long.movcu_x_ea_s_ea_d",
+            &[('z', 3), ('s', 0x02), ('d', 0x01)],
+            &[],
+        );
+        let movuu = encoded_form(
+            "long.movuu_x_ea_s_ea_d",
+            &[('z', 3), ('s', 0x00), ('d', 0x01)],
+            &[],
+        );
+        let program = [movcu, movuu].concat();
         let mut ram = Ram::new(0x10_000);
         install_four_level_root(&mut ram);
         map_low_page(&mut ram, 0, 0x8000, PTE_W | PTE_X);
         map_low_page(&mut ram, 1, 0x9000, PTE_W | PTE_U);
         map_low_page(&mut ram, 2, 0xa000, PTE_W | PTE_U);
-        ram.load(
-            0x8000,
-            &[
-                0xc7, 0xe3, 0xc1, 0x11, // MOVCU.Q R2, [R1]
-                0xc7, 0xe4, 0xc8, 0x11, // MOVUU.Q [R0], [R1]
-            ],
-        )
-        .unwrap();
+        map_low_page(&mut ram, 3, 0xb000, PTE_W);
+        ram.load(0x8000, &program).unwrap();
+        ram.write_u64(0xb000, 0xaabb_ccdd_eeff_0011).unwrap();
 
         let mut cpu = Cpu::new();
         cpu.reset(0);
         cpu.state_mut().ptcr = PageTableControl::from_raw(0x1001);
         cpu.state_mut().r[1] = 0x1000;
-        cpu.state_mut().r[2] = 0xaabb_ccdd_eeff_0011;
+        cpu.state_mut().r[2] = 0x3000;
         assert_eq!(cpu.step(&mut ram), StepResult::Running);
         assert_eq!(ram.read_u64(0x9000).unwrap(), 0xaabb_ccdd_eeff_0011);
 
@@ -7152,8 +7255,9 @@ mod tests {
 
     #[test]
     fn swpta_encodes_the_asid_and_vtop_walks_the_active_page_table() {
-        let mut control_ram = Ram::new(8);
-        control_ram.load(0, &[0xc7, 0xef, 0x48, 0x90]).unwrap(); // SWPTA R0, R1
+        let swpta = encoded_form("medium.swpta_rn_p_rn_a", &[('p', 0), ('a', 1)], &[]);
+        let mut control_ram = Ram::new(swpta.len());
+        control_ram.load(0, &swpta).unwrap();
         let mut cpu = Cpu::new();
         cpu.reset(0);
         cpu.state_mut().r[0] = 0;
@@ -7165,7 +7269,8 @@ mod tests {
         install_four_level_root(&mut ram);
         map_low_page(&mut ram, 0, 0x8000, PTE_W | PTE_X);
         map_low_page(&mut ram, 1, 0x9000, PTE_W | PTE_U);
-        ram.load(0x8000, &[0xc7, 0xef, 0x48, 0x82]).unwrap(); // VTOP R1, R2
+        let vtop = encoded_form("medium.vtop_rn_v_rn_p", &[('v', 1), ('p', 2)], &[]);
+        ram.load(0x8000, &vtop).unwrap();
         cpu.reset(0);
         cpu.state_mut().ptcr = PageTableControl::from_raw(0x1001);
         cpu.state_mut().r[1] = 0x1234;
@@ -7177,7 +7282,7 @@ mod tests {
 
     #[test]
     fn vtop_with_paging_disabled_is_identity_and_sets_all_query_flags() {
-        let instruction = encoded_form("long.vtop_rn_v_rn_p", &[('v', 1), ('p', 2)], &[]);
+        let instruction = encoded_form("medium.vtop_rn_v_rn_p", &[('v', 1), ('p', 2)], &[]);
         let mut ram = Ram::new(instruction.len());
         ram.load(0, &instruction).unwrap();
         let mut cpu = Cpu::new();
@@ -7196,7 +7301,7 @@ mod tests {
         map_low_page(&mut ram, 0, 0x8000, PTE_W | PTE_X);
         ram.load(
             0x8000,
-            &encoded_form("long.vtop_rn_v_rn_p", &[('v', 1), ('p', 2)], &[]),
+            &encoded_form("medium.vtop_rn_v_rn_p", &[('v', 1), ('p', 2)], &[]),
         )
         .unwrap();
         let mut cpu = Cpu::new();
@@ -7716,7 +7821,7 @@ mod tests {
     fn cmpxchg_sets_dirty_only_when_the_store_commits_and_writes_exact_flags() {
         let instruction = encoded_form(
             "extralong.cmpxchg_x_order_o_rn_x_rn_d_ea_e",
-            &[('z', 3), ('o', 0), ('x', 2), ('d', 3), ('e', 0x11)],
+            &[('z', 3), ('o', 0), ('x', 2), ('d', 3), ('e', 0x01)],
             &[],
         );
         let mut ram = Ram::new(0x10_000);
@@ -7760,14 +7865,14 @@ mod tests {
         }
         let cases = [
             Case {
-                compact_ea: 0x74,
+                compact_ea: 0x63,
                 descriptor: &[0x94],
                 address: 0x40,
                 source_value: 0x40,
                 extra_register: None,
             },
             Case {
-                compact_ea: 0x79,
+                compact_ea: 0x68,
                 descriptor: &[0x90, 0x12],
                 address: 0x50,
                 source_value: 2,
@@ -7808,7 +7913,7 @@ mod tests {
         }
         let expected_cases = [
             Case {
-                compact_ea: 0x74,
+                compact_ea: 0x63,
                 descriptor: &[0x94],
                 address: 0x40,
                 operand_value: 0x40,
@@ -7816,7 +7921,7 @@ mod tests {
                 final_operand: 0x40,
             },
             Case {
-                compact_ea: 0x79,
+                compact_ea: 0x68,
                 descriptor: &[0x90, 0x12],
                 address: 0x50,
                 operand_value: 2,
@@ -7855,7 +7960,7 @@ mod tests {
 
         let desired_cases = [
             Case {
-                compact_ea: 0x74,
+                compact_ea: 0x63,
                 descriptor: &[0x9c],
                 address: 0x40,
                 operand_value: 0x40,
@@ -7863,7 +7968,7 @@ mod tests {
                 final_operand: 0x48,
             },
             Case {
-                compact_ea: 0x79,
+                compact_ea: 0x68,
                 descriptor: &[0x90, 0x13],
                 address: 0x50,
                 operand_value: 2,
@@ -7918,7 +8023,7 @@ mod tests {
         }
         let cases = [
             Case {
-                compact_ea: 0x74,
+                compact_ea: 0x63,
                 descriptor: &[0x94],
                 address: 0x40,
                 low: 2,
@@ -7930,7 +8035,7 @@ mod tests {
                 final_r2: 0x48,
             },
             Case {
-                compact_ea: 0x79,
+                compact_ea: 0x68,
                 descriptor: &[0x90, 0x12],
                 address: 0x50,
                 low: 2,
@@ -7942,7 +8047,7 @@ mod tests {
                 final_r2: 3,
             },
             Case {
-                compact_ea: 0x74,
+                compact_ea: 0x63,
                 descriptor: &[0x94],
                 address: 0x40,
                 low: 3,
@@ -7954,7 +8059,7 @@ mod tests {
                 final_r2: 0x48,
             },
             Case {
-                compact_ea: 0x79,
+                compact_ea: 0x68,
                 descriptor: &[0x90, 0x12],
                 address: 0x50,
                 low: 3,
@@ -7998,12 +8103,12 @@ mod tests {
         let instructions = [
             encoded_form(
                 "extralong.fetchadd_x_order_o_rn_s_ea_e",
-                &[('z', 3), ('o', 0), ('s', 2), ('e', 0x74)],
+                &[('z', 3), ('o', 0), ('s', 2), ('e', 0x63)],
                 &[0x94],
             ),
             encoded_form(
                 "extralong.bnduii_x_rn_l_ea_e_rn_h",
-                &[('z', 3), ('l', 1), ('e', 0x74), ('h', 3)],
+                &[('z', 3), ('l', 1), ('e', 0x63), ('h', 3)],
                 &[0x94],
             ),
         ];
@@ -8028,7 +8133,7 @@ mod tests {
     fn slot_atomic_reports_address_type_before_alignment_without_slot_access() {
         let instruction = encoded_form(
             "extralong.fetchadd_x_order_o_rn_s_ea_e",
-            &[('z', 3), ('o', 0), ('s', 2), ('e', 0x11)],
+            &[('z', 3), ('o', 0), ('s', 2), ('e', 0x01)],
             &[],
         );
         let mut bus = SlotProbeBus::new(0x9000);
@@ -8080,8 +8185,8 @@ mod tests {
         ));
         assert!(fetch_bus.slot_requests.is_empty());
 
-        for form in ["long.prefetch_ea_e", "long.invdcache_ea_e"] {
-            let instruction = encoded_form(form, &[('e', 0x11)], &[]);
+        for form in ["medium.prefetch_ea_e", "medium.invdcache_ea_e"] {
+            let instruction = encoded_form(form, &[('e', 0x01)], &[]);
             let mut bus = SlotProbeBus::new(0x9000);
             install_four_level_root(&mut bus.ram);
             map_low_page(&mut bus.ram, 0, 0x8000, PTE_W | PTE_X);
@@ -8104,7 +8209,7 @@ mod tests {
 
     #[test]
     fn invpage_validates_only_the_linear_address_without_walking_the_target_page() {
-        let instruction = encoded_form("long.invpage_ea_e", &[('e', 0x11)], &[]);
+        let instruction = encoded_form("medium.invpage_ea_e", &[('e', 0x01)], &[]);
         let mut ram = Ram::new(0x10_000);
         install_four_level_root(&mut ram);
         map_low_page(&mut ram, 0, 0x8000, PTE_W | PTE_X);
@@ -8121,11 +8226,16 @@ mod tests {
 
     #[test]
     fn ptquery_returns_the_requested_walk_level_entry() {
+        let instruction = encoded_form(
+            "long.ptquery_pt_level_i_ea_e_rn_d",
+            &[('i', 1), ('e', 0), ('d', 2)],
+            &[],
+        );
         let mut ram = Ram::new(0x10_000);
         install_four_level_root(&mut ram);
         map_low_page(&mut ram, 0, 0x8000, PTE_W | PTE_X);
         map_low_page(&mut ram, 1, 0x9000, PTE_W | PTE_U);
-        ram.load(0, &[0xc7, 0xef, 0x09, 0x00]).unwrap(); // PTQUERY 1, R0, R2
+        ram.load(0, &instruction).unwrap();
 
         let mut cpu = Cpu::new();
         cpu.reset(0);
@@ -8202,22 +8312,28 @@ mod tests {
 
     #[test]
     fn lea_accepts_a_signed_immediate_effective_address() {
-        let bytes = [0xd1, 0xbb, 0x0e, 0x60, 0x90, 0x01, 0x00];
+        let bytes = encoded_form(
+            "medium.lea_x_ea_rn",
+            &[('z', 3), ('e', 0x5d), ('d', 6)],
+            &102_496_i32.to_le_bytes(),
+        );
         let mut ram = Ram::new(bytes.len());
-        for (index, byte) in bytes.into_iter().enumerate() {
-            ram.write_u8(index as u64, byte).unwrap();
-        }
+        ram.load(0, &bytes).unwrap();
         let mut cpu = Cpu::new();
         cpu.reset(0);
 
         assert_eq!(cpu.step(&mut ram), StepResult::Running);
         assert_eq!(cpu.state().r[6], 102_496);
-        assert_eq!(cpu.state().pc, 7);
+        assert_eq!(cpu.state().pc, bytes.len() as u64);
     }
 
     #[test]
     fn lea_returns_the_untranslated_explicit_segment_offset() {
-        let bytes = [0xd5, 0xfd, 0x02, 0xa3, 0x00, 0x00, 0x00, 0x00];
+        let bytes = encoded_form(
+            "medium.lea_x_ea_rn",
+            &[('z', 3), ('e', 0x63), ('d', 10)],
+            &[0xa3, 0, 0, 0, 0],
+        );
         let mut ram = Ram::new(bytes.len());
         ram.load(0, &bytes).unwrap();
         let mut cpu = Cpu::new();
@@ -8234,7 +8350,11 @@ mod tests {
 
     #[test]
     fn seglea_reports_bounds_with_v_instead_of_trapping() {
-        let bytes = [0xcf, 0xc7, 0x85, 0x70, 0xa3, 0x00];
+        let bytes = encoded_form(
+            "long.seglea_x_ea_e_rn_d",
+            &[('z', 3), ('e', 0x5f), ('d', 10)],
+            &[0xa3, 0],
+        );
         let mut ram = Ram::new(bytes.len());
         ram.load(0, &bytes).unwrap();
         let mut cpu = Cpu::new();
@@ -8361,7 +8481,8 @@ mod tests {
             0x9000,
             PTE_W | PTE_CP | PTE_A | PTE_D | PTE_AT,
         );
-        bus.ram.write_u8(0x8000, 0x74).unwrap(); // FPUSHP FPAIR4
+        let instruction = encoded_form("extrashort.fpushp_pair_id_i", &[('i', 4)], &[]);
+        bus.ram.load(0x8000, &instruction).unwrap();
         let mut cpu = Cpu::new();
         cpu.reset(0);
         cpu.state_mut().ptcr = PageTableControl::from_raw(0x1001);
@@ -8381,9 +8502,13 @@ mod tests {
 
     #[test]
     fn ext2_explicit_segment_indexed_store_uses_base_and_index() {
-        let bytes = [0xc8, 0x02, 0xf9, 0x92, 0x02]; // MOV.B R5, [DS:R0 + R2]
+        let bytes = encoded_form(
+            "medium.mov_x_rn_s_ea_e",
+            &[('z', 0), ('s', 5), ('e', 0x68)],
+            &[0x92, 0x02],
+        ); // MOV.B R5, [DS:R0 + R2]
         let mut ram = Ram::new(64);
-        for (index, byte) in bytes.into_iter().enumerate() {
+        for (index, byte) in bytes.iter().copied().enumerate() {
             ram.write_u8(index as u64, byte).unwrap();
         }
         let mut cpu = Cpu::new();
@@ -8399,9 +8524,13 @@ mod tests {
 
     #[test]
     fn ext2_index_is_scaled_by_the_ea_interpretation_width() {
-        let bytes = [0xc8, 0x19, 0x79, 0x92, 0x13]; // MOV.Q R2, [DS:R1 + R3]
+        let bytes = encoded_form(
+            "medium.mov_x_rn_s_ea_e.2",
+            &[('z', 1), ('s', 2), ('e', 0x68)],
+            &[0x92, 0x13],
+        ); // MOV.Q R2, [DS:R1 + R3]
         let mut ram = Ram::new(128);
-        for (index, byte) in bytes.into_iter().enumerate() {
+        for (index, byte) in bytes.iter().copied().enumerate() {
             ram.write_u8(index as u64, byte).unwrap();
         }
         let mut cpu = Cpu::new();
@@ -8424,7 +8553,7 @@ mod tests {
             ("medium.mov_x_rn_s_ea_e.2", 1, Size::Quad),
         ];
         for (id, selector, size) in cases {
-            let bytes = encoded_form(id, &[('z', selector), ('s', 2), ('e', 0x79)], &[0x92, 0x13]);
+            let bytes = encoded_form(id, &[('z', selector), ('s', 2), ('e', 0x68)], &[0x92, 0x13]);
             let mut ram = Ram::new(0x100);
             ram.load(0, &bytes).unwrap();
             let mut cpu = Cpu::new();
@@ -8449,7 +8578,7 @@ mod tests {
         {
             let bytes = encoded_form(
                 "medium.mov_x_rn_s_ea_e.2",
-                &[('z', 1), ('s', 2), ('e', 0x79)],
+                &[('z', 1), ('s', 2), ('e', 0x68)],
                 &descriptor,
             );
             let mut ram = Ram::new(0x100);
@@ -8472,7 +8601,7 @@ mod tests {
             (
                 encoded_form(
                     "medium.add_x_rn_s_ea_e.2",
-                    &[('z', 1), ('s', 2), ('e', 0x74)],
+                    &[('z', 1), ('s', 2), ('e', 0x63)],
                     &[0x8c],
                 ),
                 3,
@@ -8480,7 +8609,7 @@ mod tests {
                 8,
             ),
             (
-                encoded_form("medium.inc_x_ea.2", &[('z', 1), ('e', 0x74)], &[0x8c]),
+                encoded_form("medium.inc_x_ea.2", &[('z', 1), ('e', 0x63)], &[0x8c]),
                 0,
                 5,
                 6,
@@ -8488,7 +8617,7 @@ mod tests {
             (
                 encoded_form(
                     "long.shl_x_imm6_i_ea_e",
-                    &[('z', 3), ('i', 1), ('e', 0x74)],
+                    &[('z', 3), ('i', 1), ('e', 0x63)],
                     &[0x8c],
                 ),
                 0,
@@ -8496,7 +8625,7 @@ mod tests {
                 10,
             ),
             (
-                encoded_form("long.bset_imm6_i_ea_e", &[('i', 1), ('e', 0x74)], &[0x8c]),
+                encoded_form("long.bset_imm6_i_ea_e", &[('i', 1), ('e', 0x63)], &[0x8c]),
                 0,
                 4,
                 6,
@@ -8504,7 +8633,7 @@ mod tests {
             (
                 encoded_form(
                     "long.maxu_x_rn_s_ea_e",
-                    &[('z', 3), ('s', 2), ('e', 0x74)],
+                    &[('z', 3), ('s', 2), ('e', 0x63)],
                     &[0x8c],
                 ),
                 7,
@@ -8512,7 +8641,7 @@ mod tests {
                 7,
             ),
             (
-                encoded_form("medium.revbyte_q_ea", &[('e', 0x74)], &[0x8c]),
+                encoded_form("medium.revbyte_q_ea", &[('e', 0x63)], &[0x8c]),
                 0,
                 0x0102_0304_0506_0708,
                 0x0807_0605_0403_0201,
@@ -8539,7 +8668,7 @@ mod tests {
     #[test]
     fn read_modify_write_resolves_ext2_index_once() {
         let instruction =
-            encoded_form("medium.inc_x_ea.2", &[('z', 1), ('e', 0x79)], &[0x90, 0x13]);
+            encoded_form("medium.inc_x_ea.2", &[('z', 1), ('e', 0x68)], &[0x90, 0x13]);
         let mut ram = Ram::new(0x200);
         ram.load(0, &instruction).unwrap();
         ram.write_u64(0x90, 5).unwrap();
@@ -8558,11 +8687,11 @@ mod tests {
     #[test]
     fn exchange_reuses_resolved_ea_and_final_register_write_wins_over_auto_update() {
         for (id, register_field, expected_memory) in [
-            ("medium.xchg_x_rn_s_ea_e.2", 's', 0x80),
-            ("medium.xchg_x_ea_e_rn_d.2", 'd', 0x88),
+            ("long.xchg_x_rn_s_ea_e.2", 's', 0x80),
+            ("long.xchg_x_ea_e_rn_d.2", 'd', 0x88),
         ] {
             let instruction =
-                encoded_form(id, &[('z', 1), (register_field, 2), ('e', 0x74)], &[0x94]);
+                encoded_form(id, &[('z', 1), (register_field, 2), ('e', 0x63)], &[0x94]);
             let mut ram = Ram::new(0x200);
             ram.load(0, &instruction).unwrap();
             ram.write_u64(0x80, 0x1111).unwrap();
@@ -8576,12 +8705,12 @@ mod tests {
         }
 
         for (id, register_field, expected_memory) in [
-            ("medium.xchg_x_rn_s_ea_e.2", 's', 2),
-            ("medium.xchg_x_ea_e_rn_d.2", 'd', 3),
+            ("long.xchg_x_rn_s_ea_e.2", 's', 2),
+            ("long.xchg_x_ea_e_rn_d.2", 'd', 3),
         ] {
             let instruction = encoded_form(
                 id,
-                &[('z', 1), (register_field, 2), ('e', 0x79)],
+                &[('z', 1), (register_field, 2), ('e', 0x68)],
                 &[0x90, 0x12],
             );
             let mut ram = Ram::new(0x200);
@@ -8602,7 +8731,7 @@ mod tests {
     fn zero_count_shift_still_reads_writes_faults_and_updates_once() {
         let instruction = encoded_form(
             "long.shl_x_imm6_i_ea_e",
-            &[('z', 3), ('i', 0), ('e', 0x74)],
+            &[('z', 3), ('i', 0), ('e', 0x63)],
             &[0x8c],
         );
         let mut bus = SlotProbeBus::new(0x200);
@@ -8670,7 +8799,7 @@ mod tests {
         {
             let bytes = encoded_form(
                 "medium.mov_x_rn_s_ea_e.2",
-                &[('z', 1), ('s', 2), ('e', 0x79)],
+                &[('z', 1), ('s', 2), ('e', 0x68)],
                 &descriptor,
             );
             let mut ram = Ram::new(0x80);
@@ -8690,12 +8819,12 @@ mod tests {
     fn ext2_uses_fpu_and_extension_destination_widths() {
         let fmov = encoded_form(
             "long.fmov_x_fn_s_ea_d",
-            &[('z', 0), ('s', 0), ('e', 0x79)],
+            &[('z', 0), ('s', 0), ('e', 0x68)],
             &[0x92, 0x13],
         );
         let extend = encoded_form(
-            "medium.extzq_b_rn_s_ea_e",
-            &[('s', 2), ('e', 0x79)],
+            "long.extzq_b_rn_s_ea_e",
+            &[('s', 2), ('e', 0x68)],
             &[0x92, 0x13],
         );
         let mut ram = Ram::new(0x100);
@@ -8717,11 +8846,13 @@ mod tests {
 
     #[test]
     fn memory_destination_uses_its_own_payload_after_an_immediate_source() {
-        let bytes = [0xcf, 0xe0, 0xb6, 0x26, 0x18, 0x91]; // MOV.L 24, [R6 - 111]
+        let bytes = encoded_form(
+            "long.mov_x_ea_s_ea_d",
+            &[('z', 2), ('s', 0x5b), ('d', 0x16)],
+            &[0x18, 0x91],
+        );
         let mut ram = Ram::new(300);
-        for (index, byte) in bytes.into_iter().enumerate() {
-            ram.write_u8(index as u64, byte).unwrap();
-        }
+        ram.load(0, &bytes).unwrap();
         let mut cpu = Cpu::new();
         cpu.reset(0);
         cpu.state_mut().r[6] = 200;
@@ -8734,8 +8865,8 @@ mod tests {
     #[test]
     fn memory_alu_immediate_starts_after_the_ea_payload() {
         let bytes = encoded_form(
-            "long.add_x_imm16s_ea_e",
-            &[('z', 3), ('e', 0x20)],
+            "medium.add_x_imm16s_ea_e",
+            &[('z', 3), ('e', 0x10)],
             &[0x10, 0xfe, 0xff],
         );
         let mut ram = Ram::new(0x100);
@@ -8771,11 +8902,13 @@ mod tests {
 
     #[test]
     fn fused_test_jump_sign_extends_its_actual_displacement_width() {
-        let bytes = [0xcb, 0xc5, 0x16, 0x2c, 0xee]; // TESTJEQ.L R12, R12, -18
+        let bytes = encoded_form(
+            "long.testjcc_x_rn_s_rn_d_imm8s",
+            &[('z', 2), ('c', 2), ('s', 12), ('d', 12)],
+            &[0xee],
+        );
         let mut ram = Ram::new(32);
-        for (index, byte) in bytes.into_iter().enumerate() {
-            ram.write_u8(20 + index as u64, byte).unwrap();
-        }
+        ram.load(20, &bytes).unwrap();
         let mut cpu = Cpu::new();
         cpu.reset(20);
         cpu.state_mut().r[12] = 0;
@@ -8791,7 +8924,11 @@ mod tests {
         cpu.reset(0x20);
         cpu.state_mut().r[4] = 0xfeed_face_cafe_beef;
 
-        let rdcr = decoded_form("long.rdcr_ea_rn_d", &[('d', 4)], &0xffff_u16.to_le_bytes());
+        let rdcr = decoded_form(
+            "medium.rdcr_ea_rn_d",
+            &[('d', 4)],
+            &0xffff_u16.to_le_bytes(),
+        );
         let before = cpu.state().clone();
         assert_eq!(
             cpu.execute(&mut ram, 0x20, &rdcr),
@@ -8802,7 +8939,11 @@ mod tests {
         );
         assert_eq!(cpu.state(), &before);
 
-        let wrcr = decoded_form("long.wrcr_rn_s_ea", &[('s', 4)], &0xffff_u16.to_le_bytes());
+        let wrcr = decoded_form(
+            "medium.wrcr_rn_s_ea",
+            &[('s', 4)],
+            &0xffff_u16.to_le_bytes(),
+        );
         assert_eq!(
             cpu.execute(&mut ram, 0x20, &wrcr),
             Err(Trap::InvalidControlState {
@@ -8821,7 +8962,7 @@ mod tests {
         cpu.state_mut().ptcr = PageTableControl::from_raw(0x1001);
         cpu.state_mut().ascr = AddressSpaceControl::from_raw((7 << 16) | 1);
 
-        let wrcr_ptcr = decoded_form("long.wrcr_rn_s_ea", &[('s', 1)], &0_u16.to_le_bytes());
+        let wrcr_ptcr = decoded_form("medium.wrcr_rn_s_ea", &[('s', 1)], &0_u16.to_le_bytes());
         for (image, cause) in [
             (1 << 1, InvalidControlCause::ReservedBits),
             (2 << 8, InvalidControlCause::InvalidImage),
@@ -8844,7 +8985,7 @@ mod tests {
         );
         assert_eq!(cpu.state().ptcr.raw(), valid_wide_ptcr);
 
-        let wrcr_ascr = decoded_form("long.wrcr_rn_s_ea", &[('s', 1)], &1_u16.to_le_bytes());
+        let wrcr_ascr = decoded_form("medium.wrcr_rn_s_ea", &[('s', 1)], &1_u16.to_le_bytes());
         cpu.state_mut().r[1] = 1 << 1;
         let before = cpu.state().clone();
         assert_eq!(
@@ -8856,7 +8997,11 @@ mod tests {
         );
         assert_eq!(cpu.state(), &before);
 
-        let wrcr_spc = decoded_form("long.wrcr_rn_s_ea", &[('s', 1)], &0x0100_u16.to_le_bytes());
+        let wrcr_spc = decoded_form(
+            "medium.wrcr_rn_s_ea",
+            &[('s', 1)],
+            &0x0100_u16.to_le_bytes(),
+        );
         cpu.state_mut().r[1] = 0x123;
         let before = cpu.state().clone();
         assert_eq!(
@@ -8870,7 +9015,11 @@ mod tests {
 
         let invalid_segment = 0xffff_ffff_ffff_f000 | (0x1f << 7) | (0x3f << 1);
         assert!(!SegmentRegister::from_raw(invalid_segment).valid());
-        let wrcr_scs = decoded_form("long.wrcr_rn_s_ea", &[('s', 1)], &0x0101_u16.to_le_bytes());
+        let wrcr_scs = decoded_form(
+            "medium.wrcr_rn_s_ea",
+            &[('s', 1)],
+            &0x0101_u16.to_le_bytes(),
+        );
         cpu.state_mut().r[1] = invalid_segment;
         let before = cpu.state().clone();
         assert_eq!(
@@ -8882,7 +9031,11 @@ mod tests {
         );
         assert_eq!(cpu.state(), &before);
 
-        let wrcr_ssp = decoded_form("long.wrcr_rn_s_ea", &[('s', 1)], &0x0201_u16.to_le_bytes());
+        let wrcr_ssp = decoded_form(
+            "medium.wrcr_rn_s_ea",
+            &[('s', 1)],
+            &0x0201_u16.to_le_bytes(),
+        );
         cpu.state_mut().r[1] = 0x41;
         let before = cpu.state().clone();
         assert_eq!(
@@ -8906,8 +9059,8 @@ mod tests {
         cpu.state_mut().r[2] = 9;
 
         for instruction in [
-            decoded_form("long.swpt_rn_p", &[('p', 1)], &[]),
-            decoded_form("long.swpta_rn_p_rn_a", &[('p', 1), ('a', 2)], &[]),
+            decoded_form("medium.swpt_rn_p", &[('p', 1)], &[]),
+            decoded_form("medium.swpta_rn_p_rn_a", &[('p', 1), ('a', 2)], &[]),
         ] {
             let before = cpu.state().clone();
             assert_eq!(
@@ -8926,7 +9079,11 @@ mod tests {
         let mut ram = Ram::new(64);
         let mut cpu = Cpu::new();
         cpu.reset(0x20);
-        let wrcr_urctl = decoded_form("long.wrcr_rn_s_ea", &[('s', 1)], &0x010d_u16.to_le_bytes());
+        let wrcr_urctl = decoded_form(
+            "medium.wrcr_rn_s_ea",
+            &[('s', 1)],
+            &0x010d_u16.to_le_bytes(),
+        );
 
         cpu.state_mut().r[1] = 1 << 4;
         let before = cpu.state().clone();
@@ -9012,11 +9169,9 @@ mod tests {
 
     #[test]
     fn control_register_selector_writes_supervisor_entry_pc() {
-        let bytes = [0xcf, 0xef, 0x47, 0x10, 0x00, 0x01]; // WRCR R0, SPC
+        let bytes = encoded_form("medium.wrcr_rn_s_ea", &[('s', 0)], &[0x00, 0x01]);
         let mut ram = Ram::new(bytes.len());
-        for (index, byte) in bytes.into_iter().enumerate() {
-            ram.write_u8(index as u64, byte).unwrap();
-        }
+        ram.load(0, &bytes).unwrap();
         let mut cpu = Cpu::new();
         cpu.reset(0);
         cpu.state_mut().r[0] = 0x1230;
@@ -9027,10 +9182,13 @@ mod tests {
 
     #[test]
     fn decrement_jump_reads_a_quad_target_through_its_pc_relative_ea() {
+        let bytes = encoded_form(
+            "long.djcc_rn_r_ea_e",
+            &[('c', 0), ('r', 3), ('e', 0x54)],
+            &[0xf4],
+        );
         let mut ram = Ram::new(32);
-        for (index, byte) in [0xcb, 0xc3, 0x81, 0xe4, 0xf4].into_iter().enumerate() {
-            ram.write_u8(16 + index as u64, byte).unwrap();
-        }
+        ram.load(16, &bytes).unwrap();
         ram.write_u64(4, 4).unwrap();
         let mut cpu = Cpu::new();
         cpu.reset(16);
@@ -9043,11 +9201,13 @@ mod tests {
 
     #[test]
     fn increment_jump_ne_compares_the_incremented_index_with_the_bound() {
-        let bytes = [0xcf, 0xf1, 0x0c, 0x04, 0xe4, 0x11];
+        let bytes = encoded_form(
+            "extralong.ijcc_rn_i_rn_b_ea_e",
+            &[('c', 3), ('i', 0), ('b', 9), ('e', 0x54)],
+            &[0x11],
+        );
         let mut ram = Ram::new(32);
-        for (index, byte) in bytes.into_iter().enumerate() {
-            ram.write_u8(index as u64, byte).unwrap();
-        }
+        ram.load(0, &bytes).unwrap();
         ram.write_u64(17, 17).unwrap();
         let mut cpu = Cpu::new();
         cpu.reset(0);
@@ -9063,11 +9223,13 @@ mod tests {
 
     #[test]
     fn increment_jump_stops_at_the_bound_before_accessing_its_target() {
-        let bytes = [0xcf, 0xf1, 0x08, 0x04, 0xe4, 0x11];
+        let bytes = encoded_form(
+            "extralong.ijcc_rn_i_rn_b_ea_e",
+            &[('c', 2), ('i', 0), ('b', 9), ('e', 0x54)],
+            &[0x11],
+        );
         let mut ram = Ram::new(17);
-        for (index, byte) in bytes.into_iter().enumerate() {
-            ram.write_u8(index as u64, byte).unwrap();
-        }
+        ram.load(0, &bytes).unwrap();
         let mut cpu = Cpu::new();
         cpu.reset(0);
         cpu.state_mut().r[0] = 1;
@@ -9082,7 +9244,11 @@ mod tests {
 
     #[test]
     fn long_call_and_return_round_trip_the_atomic_far_frame_layout() {
-        let lcall = decoded_form("long.lcall_rn_r_ea_e", &[('r', 1), ('e', 0)], &[]);
+        let lcall = decoded_form(
+            "long.lcall_rn_r_ea_e",
+            &[('r', 1), ('e', 0x5e)],
+            &0x40_u64.to_le_bytes(),
+        );
         let lret = decoded_form("extrashort.lret", &[], &[]);
         let mut ram = Ram::new(0x400);
         let mut cpu = Cpu::new();
@@ -9098,18 +9264,25 @@ mod tests {
         assert_eq!(cpu.state().sp, 0x170);
         assert_eq!(cpu.state().segments.cs(), new_cs);
         assert_eq!(cpu.state().pc, 0x40);
-        assert_eq!(ram.read_u64(0x170).unwrap(), 0x24);
+        assert_eq!(
+            ram.read_u64(0x170).unwrap(),
+            0x20 + lcall.length_bytes as u64
+        );
         assert_eq!(ram.read_u64(0x178).unwrap(), old_cs.raw());
 
         assert_eq!(cpu.execute(&mut ram, 0x40, &lret), Ok(StepResult::Running));
         assert_eq!(cpu.state().sp, 0x180);
         assert_eq!(cpu.state().segments.cs(), old_cs);
-        assert_eq!(cpu.state().pc, 0x24);
+        assert_eq!(cpu.state().pc, 0x20 + lcall.length_bytes as u64);
     }
 
     #[test]
     fn long_call_probes_both_old_stack_stores_before_memory_or_state_commit() {
-        let lcall = decoded_form("long.lcall_rn_r_ea_e", &[('r', 1), ('e', 0)], &[]);
+        let lcall = decoded_form(
+            "long.lcall_rn_r_ea_e",
+            &[('r', 1), ('e', 0x5e)],
+            &0x2000_u64.to_le_bytes(),
+        );
         let mut ram = Ram::new(0x9000);
         install_four_level_root(&mut ram);
         map_low_page(&mut ram, 1, 0x5000, PTE_W);
@@ -9176,9 +9349,13 @@ mod tests {
 
     #[test]
     fn memory_to_memory_compare_uses_each_ea_payload() {
-        let bytes = [0xcf, 0xe1, 0xf0, 0x60, 0x40, 0x28];
+        let bytes = encoded_form(
+            "long.cmp_x_ea_s_ea_d",
+            &[('z', 3), ('s', 0x50), ('d', 0x50)],
+            &[0x40, 0x28],
+        );
         let mut ram = Ram::new(256);
-        for (index, byte) in bytes.into_iter().enumerate() {
+        for (index, byte) in bytes.iter().copied().enumerate() {
             ram.write_u8(index as u64, byte).unwrap();
         }
         ram.write_u64(192, 7).unwrap();
@@ -9193,40 +9370,41 @@ mod tests {
     }
 
     #[test]
-    fn register_to_ea_extend_reads_the_source_register() {
-        let bytes = [0xc3, 0x56, 0x01]; // EXTZQ.B R12, R1
-        let mut ram = Ram::new(bytes.len());
-        for (index, byte) in bytes.into_iter().enumerate() {
-            ram.write_u8(index as u64, byte).unwrap();
-        }
+    fn register_to_ea_extend_writes_the_addressed_memory() {
+        let bytes = encoded_form("long.extzq_b_rn_s_ea_e", &[('s', 12), ('e', 0x01)], &[]);
+        let mut ram = Ram::new(128);
+        ram.load(0, &bytes).unwrap();
         let mut cpu = Cpu::new();
         cpu.reset(0);
         cpu.state_mut().r[12] = 1;
         cpu.state_mut().r[1] = 81;
 
         assert_eq!(cpu.step(&mut ram), StepResult::Running);
-        assert_eq!(cpu.state().r[1], 1);
+        assert_eq!(ram.read_u8(81).unwrap(), 1);
     }
 
     #[test]
     fn current_size_selector_executes_quad_shift_width() {
-        let bytes = [0xc7, 0xed, 0xc6, 0x01]; // SHL.Q 12, R1
-        let mut ram = Ram::new(bytes.len());
-        for (index, byte) in bytes.into_iter().enumerate() {
-            ram.write_u8(index as u64, byte).unwrap();
-        }
+        let bytes = encoded_form(
+            "long.shl_x_imm6_i_ea_e",
+            &[('z', 3), ('i', 12), ('e', 0x01)],
+            &[],
+        );
+        let mut ram = Ram::new(32);
+        ram.load(0, &bytes).unwrap();
+        ram.write_u64(16, 16).unwrap();
         let mut cpu = Cpu::new();
         cpu.reset(0);
         cpu.state_mut().r[1] = 16;
 
         assert_eq!(cpu.step(&mut ram), StepResult::Running);
-        assert_eq!(cpu.state().r[1], 0x1_0000);
+        assert_eq!(ram.read_u64(16).unwrap(), 0x1_0000);
     }
 
     #[test]
     fn canonical_popp_pair_seven_is_not_reinterpreted_by_following_opcode() {
         let mut ram = Ram::new(32);
-        ram.load(0, &[0x1f, 0x65]).unwrap(); // POPP PAIR7; CLR.Q R5
+        ram.load(0, &[0x1f, 0x75]).unwrap(); // POPP PAIR7; CLR.Q R5
         ram.write_u64(16, 0x1111).unwrap();
         ram.write_u64(24, 0x2222).unwrap();
         let mut cpu = Cpu::new();
@@ -9309,7 +9487,7 @@ mod tests {
     fn fpu_unary_memory_destination_fault_precedes_enabled_fp_fault() {
         let bytes = encoded_form(
             "long.fsqrt_x_fn_s_ea_d",
-            &[('z', 1), ('s', 0), ('e', 0x11)],
+            &[('z', 1), ('s', 0), ('e', 0x01)],
             &[],
         );
         let instruction = bedrock_isa::decode(&bytes).unwrap();
@@ -9343,7 +9521,7 @@ mod tests {
     fn fpu_fault_after_at1_destination_preflight_issues_no_slot_transaction() {
         let bytes = encoded_form(
             "long.fsqrt_x_fn_s_ea_d",
-            &[('z', 1), ('s', 0), ('e', 0x11)],
+            &[('z', 1), ('s', 0), ('e', 0x01)],
             &[],
         );
         let instruction = bedrock_isa::decode(&bytes).unwrap();
@@ -9374,11 +9552,11 @@ mod tests {
     fn illegal_destination_overlap_precedes_operand_and_fpu_state_access() {
         let divmod = encoded_form(
             "extralong.divmodu_x_ea_e_rn_q_rn_r",
-            &[('z', 3), ('e', 0x10), ('q', 1), ('r', 1)],
+            &[('z', 3), ('e', 0x00), ('q', 1), ('r', 1)],
             &[],
         );
         let fsincosa = encoded_form(
-            "extralong.fsincosa_x_fn_s_fn_d_fn_c",
+            "long.fsincosa_x_fn_s_fn_d_fn_c",
             &[('z', 1), ('s', 0), ('d', 2), ('c', 2)],
             &[],
         );
@@ -9426,7 +9604,7 @@ mod tests {
     fn base_other_families_cover_memory_result_conversion_compare_and_bounds_masks() {
         let abs = encoded_form(
             "long.fabs_x_fn_s_ea_d",
-            &[('z', 0), ('s', 1), ('e', 0x6a)],
+            &[('z', 0), ('s', 1), ('e', 0x59)],
             &0x100_u32.to_le_bytes(),
         );
         let class = encoded_form(
@@ -9479,16 +9657,19 @@ mod tests {
             ("long.fsina_x_fn_s_fn_d", TransOperation::Sine),
             ("long.fcosa_x_fn_s_fn_d", TransOperation::Cosine),
             ("long.ftana_x_fn_s_fn_d", TransOperation::Tangent),
-            (
-                "extralong.fsincosa_x_fn_s_fn_d_fn_c",
-                TransOperation::SineCosine,
-            ),
+            ("long.fsincosa_x_fn_s_fn_d_fn_c", TransOperation::SineCosine),
             ("long.fasina_x_fn_s_fn_d", TransOperation::ArcSine),
             ("long.facosa_x_fn_s_fn_d", TransOperation::ArcCosine),
             ("long.fatana_x_fn_s_fn_d", TransOperation::ArcTangent),
             ("long.fsinha_x_fn_s_fn_d", TransOperation::HyperbolicSine),
-            ("long.fcosha_x_fn_s_fn_d", TransOperation::HyperbolicCosine),
-            ("long.ftanha_x_fn_s_fn_d", TransOperation::HyperbolicTangent),
+            (
+                "long.fcosha_x_fn_s_fn_d",
+                TransOperation::HyperbolicCosine,
+            ),
+            (
+                "long.ftanha_x_fn_s_fn_d",
+                TransOperation::HyperbolicTangent,
+            ),
             (
                 "long.fatanha_x_fn_s_fn_d",
                 TransOperation::HyperbolicArcTangent,
@@ -9506,13 +9687,22 @@ mod tests {
                 "long.ftentoxa_x_fn_s_fn_d",
                 TransOperation::ExponentialBaseTen,
             ),
-            ("long.flogna_x_fn_s_fn_d", TransOperation::NaturalLogarithm),
+            (
+                "long.flogna_x_fn_s_fn_d",
+                TransOperation::NaturalLogarithm,
+            ),
             (
                 "long.flognp1a_x_fn_s_fn_d",
                 TransOperation::NaturalLogarithmPlusOne,
             ),
-            ("long.flog2a_x_fn_s_fn_d", TransOperation::LogarithmBaseTwo),
-            ("long.flog10a_x_fn_s_fn_d", TransOperation::LogarithmBaseTen),
+            (
+                "long.flog2a_x_fn_s_fn_d",
+                TransOperation::LogarithmBaseTwo,
+            ),
+            (
+                "long.flog10a_x_fn_s_fn_d",
+                TransOperation::LogarithmBaseTen,
+            ),
         ];
         for (id, operation) in cases {
             let fields = if operation == TransOperation::SineCosine {
@@ -9575,7 +9765,7 @@ mod tests {
             &[],
         );
         let double_to_single = encoded_form(
-            "long.fcvt_x_fn_s_fn_d",
+            "medium.fcvt_x_fn_s_fn_d",
             &[('z', 0), ('s', 5), ('d', 6)],
             &[],
         );
@@ -9644,8 +9834,8 @@ mod tests {
 
     #[test]
     fn save_restore_round_trips_the_fixed_image_and_honors_clear_fp_components() {
-        let save = encoded_form("long.save_ea_e", &[('e', 15)], &[]);
-        let restore = encoded_form("long.restore_ea_e", &[('e', 15)], &[]);
+        let save = encoded_form("medium.save_ea_e", &[('e', 15)], &[]);
+        let restore = encoded_form("medium.restore_ea_e", &[('e', 15)], &[]);
         let restore_pc = save.len() as u64;
         let mut ram = Ram::new(0x2000);
         ram.load(0, &save).unwrap();
@@ -9705,7 +9895,7 @@ mod tests {
 
     #[test]
     fn save_omits_clean_fp_component_without_touching_its_image() {
-        let save = encoded_form("long.save_ea_e", &[('e', 15)], &[]);
+        let save = encoded_form("medium.save_ea_e", &[('e', 15)], &[]);
         let mut bus = SlotProbeBus::new(0x2000);
         bus.ram.load(0, &save).unwrap();
         for address in 0x10c0..0x1180 {
@@ -9725,7 +9915,7 @@ mod tests {
 
     #[test]
     fn restore_validates_header_and_bitmap_before_reading_state_images() {
-        let bytes = encoded_form("long.restore_ea_e", &[('e', 15)], &[]);
+        let bytes = encoded_form("medium.restore_ea_e", &[('e', 15)], &[]);
         let instruction = bedrock_isa::decode(&bytes).unwrap();
         let mut bus = SlotProbeBus::new(0x2000);
         bus.ram.write_u64(0x1000, 1 << 63).unwrap();
@@ -9749,7 +9939,7 @@ mod tests {
 
     #[test]
     fn restore_clear_fp_bitmap_installs_initial_state_without_reading_extension() {
-        let bytes = encoded_form("long.restore_ea_e", &[('e', 15)], &[]);
+        let bytes = encoded_form("medium.restore_ea_e", &[('e', 15)], &[]);
         let instruction = bedrock_isa::decode(&bytes).unwrap();
         let mut bus = SlotProbeBus::new(0x2000);
         bus.ram.write_u64(0x1000, 0).unwrap();
@@ -9787,7 +9977,7 @@ mod tests {
 
     #[test]
     fn restore_rejects_reserved_fp_image_bits_before_any_state_commit() {
-        let bytes = encoded_form("long.restore_ea_e", &[('e', 15)], &[]);
+        let bytes = encoded_form("medium.restore_ea_e", &[('e', 15)], &[]);
         let instruction = bedrock_isa::decode(&bytes).unwrap();
         let mut ram = Ram::new(0x2000);
         ram.write_u64(0x1008, 1).unwrap();
@@ -9811,8 +10001,8 @@ mod tests {
     #[test]
     fn fpu_state_writes_reject_reserved_bits_without_commit() {
         let cases = [
-            ("long.wrfflags_rn_s", 1_u64 << 5),
-            ("long.wrfstatus_rn_s", 1_u64 << 10),
+            ("medium.wrfflags_rn_s", 1_u64 << 5),
+            ("medium.wrfstatus_rn_s", 1_u64 << 10),
         ];
         for (id, value) in cases {
             let bytes = encoded_form(id, &[('s', 1)], &[]);
@@ -9835,8 +10025,11 @@ mod tests {
 
     #[test]
     fn mandatory_performance_counters_count_cycles_retirements_and_page_walks() {
-        let mut ram = Ram::new(8);
-        ram.load(0, &[0xc2, 0x40, 0x00, 0x0e]).unwrap();
+        let repeat = encoded_form("medium.repcc_rn_r", &[('c', 0), ('r', 0)], &[]);
+        let body = encoded_form("extrashort.add_q_8_sp", &[], &[]);
+        let program = [repeat, body].concat();
+        let mut ram = Ram::new(program.len() + 1);
+        ram.load(0, &program).unwrap();
         let mut cpu = Cpu::new();
         cpu.reset(0);
         cpu.state_mut().pmc = 1;
@@ -9857,13 +10050,13 @@ mod tests {
         cpu.instret_counter.set(12);
         cpu.ptwalk_counter.set(13);
         for (counter, expected) in [(1_u16, 11), (2, 12), (3, 13)] {
-            let bytes = encoded_form("long.rdpmc_ea_rn_d", &[('d', 4)], &counter.to_le_bytes());
+            let bytes = encoded_form("medium.rdpmc_ea_rn_d", &[('d', 4)], &counter.to_le_bytes());
             let instruction = bedrock_isa::decode(&bytes).unwrap();
             cpu.execute(&mut ram, 0, &instruction).unwrap();
             assert_eq!(cpu.state().r[4], expected);
         }
 
-        let invalid = encoded_form("long.rdpmc_ea_rn_d", &[('d', 4)], &[0, 0]);
+        let invalid = encoded_form("medium.rdpmc_ea_rn_d", &[('d', 4)], &[0, 0]);
         assert!(matches!(
             cpu.execute(&mut ram, 0, &bedrock_isa::decode(&invalid).unwrap()),
             Err(crate::Trap::InvalidControlState {
@@ -9872,8 +10065,11 @@ mod tests {
             })
         ));
 
-        let reserved_pmc =
-            encoded_form("long.wrcr_rn_s_ea", &[('s', 1)], &0x1100_u16.to_le_bytes());
+        let reserved_pmc = encoded_form(
+            "medium.wrcr_rn_s_ea",
+            &[('s', 1)],
+            &0x1100_u16.to_le_bytes(),
+        );
         cpu.state_mut().r[1] = 2;
         assert!(matches!(
             cpu.execute(&mut ram, 0, &bedrock_isa::decode(&reserved_pmc).unwrap()),
@@ -10043,41 +10239,46 @@ mod tests {
 
     #[test]
     fn scalar_repeat_uses_frozen_body_and_unsigned_counter() {
+        let repeat = encoded_form("medium.repcc_rn_r", &[('c', 0), ('r', 0)], &[]);
+        let body = encoded_form("extrashort.add_q_8_sp", &[], &[]);
+        let body_pc = repeat.len() as u64;
+        let after_pc = body_pc + body.len() as u64;
         let mut ram = Ram::new(8);
-        for (index, byte) in [0xc2, 0x40, 0x00, 0x0e].into_iter().enumerate() {
-            ram.write_u8(index as u64, byte).unwrap();
-        }
+        ram.load(0, &[repeat, body].concat()).unwrap();
         let mut cpu = Cpu::new();
         cpu.reset(0);
         cpu.state_mut().r[0] = 2;
         assert_eq!(cpu.step(&mut ram), StepResult::Running);
-        assert_eq!(cpu.state().pc, 3);
-        ram.write_u8(3, 0x00).unwrap();
+        assert_eq!(cpu.state().pc, body_pc);
+        ram.write_u8(body_pc, 0x00).unwrap();
         assert_eq!(cpu.step(&mut ram), StepResult::Running);
         assert_eq!(cpu.state().r[0], 1);
-        assert_eq!(cpu.state().pc, 3);
+        assert_eq!(cpu.state().pc, body_pc);
         assert_eq!(cpu.step(&mut ram), StepResult::Running);
         assert_eq!(cpu.state().r[0], 0);
-        assert_eq!(cpu.state().pc, 4);
+        assert_eq!(cpu.state().pc, after_pc);
     }
 
     #[test]
     fn repeat_group_validates_and_repeats_byte_counted_body() {
+        let body = encoded_form("extrashort.add_q_8_sp", &[], &[]);
+        let body_bytes = u16::try_from(body.len()).unwrap().to_le_bytes();
+        let repeat = encoded_form("medium.repg_rn_r_ea", &[('r', 0)], &body_bytes);
+        let body_pc = repeat.len() as u64;
+        let after_pc = body_pc + body.len() as u64;
         let mut ram = Ram::new(12);
-        for (index, byte) in [0xc8, 0x26, 0x80, 0x01, 0x00, 0x0e].into_iter().enumerate() {
-            ram.write_u8(index as u64, byte).unwrap();
-        }
+        ram.load(0, &[repeat, body].concat()).unwrap();
         let mut cpu = Cpu::new();
         cpu.reset(0);
         cpu.state_mut().r[0] = 2;
         assert_eq!(cpu.step(&mut ram), StepResult::Running);
-        assert_eq!(cpu.state().pc, 5);
+        assert_eq!(cpu.state().pc, body_pc);
         assert_eq!(cpu.step(&mut ram), StepResult::Running);
         assert_eq!(cpu.state().r[0], 1);
-        assert_eq!(cpu.state().pc, 5);
+        assert_eq!(cpu.state().pc, body_pc);
         assert_eq!(cpu.step(&mut ram), StepResult::Running);
         assert_eq!(cpu.state().r[0], 0);
-        assert_eq!(cpu.state().pc, 6);
+        assert_eq!(cpu.state().pc, after_pc);
         assert!(cpu.repeat.is_none());
     }
 
@@ -10198,7 +10399,7 @@ mod tests {
         let clear_control = encoded_form("extrashort.clr_q_rn_r", &[('r', 0)], &[]);
         let divide = encoded_form(
             "long.divu_x_ea_e_rn_d",
-            &[('z', 3), ('e', 2), ('d', 3)],
+            &[('z', 3), ('e', 0x02), ('d', 3)],
             &[],
         );
         let mut body = clear_control.clone();
@@ -10214,8 +10415,8 @@ mod tests {
         let after_pc = body_pc + body.len() as u64;
 
         let fix_divisor = encoded_form(
-            "short.mov_x_rn_s_rn_d",
-            &[('z', 1), ('s', 4), ('d', 2)],
+            "medium.mov_x_rn_s_ea_e.2",
+            &[('z', 1), ('s', 4), ('e', 0x02)],
             &[],
         );
         let handler_pc = 0x100;
@@ -10231,7 +10432,7 @@ mod tests {
         cpu.state_mut().epc = handler_pc;
         cpu.state_mut().fsp = 0x1000;
         cpu.state_mut().r[0] = u64::MAX;
-        cpu.state_mut().r[2] = 0;
+        cpu.state_mut().r[2] = 0x180;
         cpu.state_mut().r[3] = 8;
         cpu.state_mut().r[4] = 2;
 
@@ -10259,14 +10460,14 @@ mod tests {
             continuation.encode()
         );
 
-        assert_eq!(cpu.step(&mut ram), StepResult::Running); // MOV.Q R4, R2
-        assert_eq!(cpu.state().r[2], 2);
+        assert_eq!(cpu.step(&mut ram), StepResult::Running); // MOV.Q R4, [R2]
+        assert_eq!(ram.read_u64(0x180).unwrap(), 2);
         assert_eq!(cpu.step(&mut ram), StepResult::Running); // ERET
         assert_eq!(cpu.state().pc, divide_pc);
         assert_eq!(cpu.state().r[0], 0);
         assert!(cpu.repeat.is_some());
 
-        assert_eq!(cpu.step(&mut ram), StepResult::Running); // DIVU.Q R2, R3
+        assert_eq!(cpu.step(&mut ram), StepResult::Running); // DIVU.Q [R2], R3
         assert_eq!(cpu.state().r[3], 4);
         assert_eq!(cpu.state().r[0], 0);
         assert_eq!(cpu.state().pc, after_pc);
@@ -10324,7 +10525,7 @@ mod tests {
         let repeat = encoded_form("medium.repcc_rn_r", &[('c', 2), ('r', 0)], &[]);
         let body = encoded_form(
             "long.movnt_x_rn_s_ea_e",
-            &[('z', 0), ('s', 1), ('e', 0x74)],
+            &[('z', 0), ('s', 1), ('e', 0x63)],
             &[0x8c],
         );
         let body_pc = repeat.len() as u64;
@@ -10350,7 +10551,7 @@ mod tests {
         let repeat = encoded_form("medium.repcc_rn_r", &[('c', 3), ('r', 0)], &[]);
         let body = encoded_form(
             "medium.clr_x_ea",
-            &[('z', 0), ('e', 0x6a)],
+            &[('z', 0), ('e', 0x59)],
             &0x100_u32.to_le_bytes(),
         );
         let after_pc = (repeat.len() + body.len()) as u64;

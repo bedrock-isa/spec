@@ -1,0 +1,17 @@
+forms:
+- id: long.fclass_x_fn_s_rn_d
+  class: long
+  bits: 11111010111z000000ssssdddd
+  syntax: FCLASS.SD(z) Fn(s), Rn(d)
+  operands:
+  - name: src
+    type: Fn
+    access: read
+    field: s
+  - name: dst
+    type: Rn
+    access: write
+    field: d
+  fields:
+    z:
+      type: size.SD

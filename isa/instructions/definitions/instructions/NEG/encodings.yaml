@@ -1,0 +1,31 @@
+forms:
+- id: short.neg_x_rn_r
+  class: short
+  bits: 10100z0010rrrr
+  syntax: NEG.LQ(z) Rn(r)
+  operands:
+  - name: dst
+    type: Rn
+    access: read_write
+    field: r
+  fields:
+    z:
+      type: size.LQ
+- id: medium.neg_x_ea
+  class: medium
+  bits: 11100zz1011eeeeeee
+  syntax: NEG.BWLQ(z) <ea>(e)
+  operands:
+  - name: dst
+    type: EA
+    access: read_write
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  fields:
+    z:
+      type: size.BWLQ
+  constraints:
+  - field: e
+    exclude: immediate
+    reason: invalid_destination

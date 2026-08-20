@@ -22,11 +22,7 @@ pub struct LlvmToolchain {
 
 impl LlvmToolchain {
     pub fn discover() -> Result<Self, ToolchainError> {
-        if let Some(bin_dir) = env::var_os(BEDROCK_LLVM_BIN_ENV) {
-            return Self::from_bin_dir(bin_dir);
-        }
-
-        Self::from_bin_dir(default_bin_dir())
+        Self::from_bin_dir(default_bin_dir()?)
     }
 
     pub fn from_bin_dir(bin_dir: impl Into<PathBuf>) -> Result<Self, ToolchainError> {
@@ -216,6 +212,14 @@ impl Default for LinkOptions {
 
 #[derive(Debug, Error)]
 pub enum ToolchainError {
+    #[error(
+        "neither BEDROCK_LLVM_BIN nor BEDROCK_LLVM_ROOT is set; set BEDROCK_LLVM_BIN to the LLVM tool binary directory or BEDROCK_LLVM_ROOT to the LLVM source root"
+    )]
+    MissingLlvmConfiguration,
+    #[error(
+        "BEDROCK_LLVM_ROOT is not set; set it to the LLVM source root for LLVM headers and libraries"
+    )]
+    MissingLlvmRoot,
     #[error("missing LLVM Bedrock tool `{tool}` in {bin_dir:?}")]
     MissingTool {
         tool: &'static str,
@@ -242,41 +246,48 @@ pub enum ToolchainError {
     },
 }
 
-pub fn default_bin_dir() -> PathBuf {
-    default_build_dir().join("bin")
+pub fn default_bin_dir() -> Result<PathBuf, ToolchainError> {
+    llvm_bin_dir_from_config(
+        env::var_os(BEDROCK_LLVM_BIN_ENV),
+        env::var_os(BEDROCK_LLVM_ROOT_ENV),
+    )
 }
 
-pub fn default_build_dir() -> PathBuf {
-    default_llvm_root().join("build")
-}
-
-pub fn default_lib_dir() -> PathBuf {
-    default_build_dir().join("lib")
-}
-
-pub fn default_lldb_source_include_dir() -> PathBuf {
-    default_llvm_root().join("lldb").join("include")
-}
-
-pub fn default_lldb_build_include_dir() -> PathBuf {
-    default_build_dir().join("include")
-}
-
-pub fn default_llvm_root() -> PathBuf {
-    if let Some(root) = env::var_os(BEDROCK_LLVM_ROOT_ENV) {
-        return PathBuf::from(root);
+fn llvm_bin_dir_from_config(
+    bin_dir: Option<OsString>,
+    llvm_root: Option<OsString>,
+) -> Result<PathBuf, ToolchainError> {
+    if let Some(bin_dir) = bin_dir {
+        return Ok(PathBuf::from(bin_dir));
     }
 
-    let workspace_root = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .and_then(Path::parent)
-        .expect("bedrock-toolchain crate lives under workspace/crates");
+    if let Some(llvm_root) = llvm_root {
+        return Ok(PathBuf::from(llvm_root).join("build").join("bin"));
+    }
 
-    workspace_root
-        .parent()
-        .and_then(Path::parent)
-        .expect("emulator workspace lives under the ISA repository")
-        .join("llvm-bedrock")
+    Err(ToolchainError::MissingLlvmConfiguration)
+}
+
+pub fn default_llvm_root() -> Result<PathBuf, ToolchainError> {
+    env::var_os(BEDROCK_LLVM_ROOT_ENV)
+        .map(PathBuf::from)
+        .ok_or(ToolchainError::MissingLlvmRoot)
+}
+
+pub fn default_build_dir() -> Result<PathBuf, ToolchainError> {
+    Ok(default_llvm_root()?.join("build"))
+}
+
+pub fn default_lib_dir() -> Result<PathBuf, ToolchainError> {
+    Ok(default_build_dir()?.join("lib"))
+}
+
+pub fn default_lldb_source_include_dir() -> Result<PathBuf, ToolchainError> {
+    Ok(default_llvm_root()?.join("lldb").join("include"))
+}
+
+pub fn default_lldb_build_include_dir() -> Result<PathBuf, ToolchainError> {
+    Ok(default_build_dir()?.join("include"))
 }
 
 fn tool_name(name: &str) -> String {
@@ -288,5 +299,37 @@ fn tool_name(name: &str) -> String {
     #[cfg(not(windows))]
     {
         name.to_owned()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn bin_configuration_takes_precedence_over_root() {
+        let selected = llvm_bin_dir_from_config(
+            Some(OsString::from("/configured/bin")),
+            Some(OsString::from("/configured/root")),
+        )
+        .expect("explicit bin configuration should resolve");
+
+        assert_eq!(selected, PathBuf::from("/configured/bin"));
+    }
+
+    #[test]
+    fn root_configuration_derives_build_bin() {
+        let selected = llvm_bin_dir_from_config(None, Some(OsString::from("/configured/root")))
+            .expect("root configuration should resolve");
+
+        assert_eq!(selected, PathBuf::from("/configured/root/build/bin"));
+    }
+
+    #[test]
+    fn missing_configuration_is_an_error() {
+        assert!(matches!(
+            llvm_bin_dir_from_config(None, None),
+            Err(ToolchainError::MissingLlvmConfiguration)
+        ));
     }
 }

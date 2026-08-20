@@ -65,7 +65,7 @@ DOCUMENTS = (
     ),
     Document(
         "bedrock-elf-abi",
-        ROOT / "isa" / "abi" / "bedrock-elf-abi.tex",
+        ROOT / "isa" / "interfaces" / "abi" / "bedrock-elf-abi.tex",
         "bedrock-elf-abi.pdf",
         Path("latex/bedrock-elf-abi/bedrock-elf-abi.pdf"),
         "elf-abi",
@@ -73,7 +73,7 @@ DOCUMENTS = (
     ),
     Document(
         "bedrock-c-abi",
-        ROOT / "isa" / "abi" / "bedrock-c-abi.tex",
+        ROOT / "isa" / "interfaces" / "abi" / "bedrock-c-abi.tex",
         "bedrock-c-abi.pdf",
         Path("latex/bedrock-c-abi/bedrock-c-abi.pdf"),
         "c-abi",
@@ -81,7 +81,7 @@ DOCUMENTS = (
     ),
     Document(
         "bedrock-target-intrinsics",
-        ROOT / "isa" / "c" / "bedrock-target-intrinsics.tex",
+        ROOT / "isa" / "interfaces" / "c" / "bedrock-target-intrinsics.tex",
         "bedrock-target-intrinsics.pdf",
         Path("latex/bedrock-target-intrinsics/bedrock-target-intrinsics.pdf"),
         "target-intrinsics",
@@ -404,7 +404,9 @@ def compile_documents(args: argparse.Namespace) -> int:
     isa_source.write_text(isa_latex, encoding="utf-8")
 
     store.discover_consumers(source_texts(isa_latex))
-    store.mark_consumed(Path("isa/defs/instructions/RDPMC/details.tex"))
+    store.mark_consumed(
+        Path("isa/instructions/definitions/instructions/RDPMC/details.tex")
+    )
     store.require_all_consumed()
 
     sources = {

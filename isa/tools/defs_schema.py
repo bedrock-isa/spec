@@ -26,8 +26,12 @@ SCHEMA_FAMILIES = (
     "abi_vectors",
     "memory_validation",
 )
-SCHEMA_LOCK_PATH = Path(__file__).resolve().parents[1] / "defs" / "schema.lock"
-SCHEMA_DOCUMENT_PATH = Path(__file__).resolve().parents[1] / "defs" / "SCHEMA.md"
+SCHEMA_LOCK_PATH = (
+    Path(__file__).resolve().parents[1] / "instructions" / "definitions" / "schema.lock"
+)
+SCHEMA_DOCUMENT_PATH = (
+    Path(__file__).resolve().parents[1] / "instructions" / "definitions" / "SCHEMA.md"
+)
 
 PRIVILEGES = frozenset({"unprivileged", "supervisor", "any"})
 REPEAT_CONTEXTS = frozenset({"REP", "REPcc", "REPG"})
@@ -1085,26 +1089,11 @@ def decode_encodings(path: Path, raw: Any) -> EncodingsDocument:
             for operand in operands
             if operand.field is not None and operand.access in {"write", "read_write"}
         }
-        excluded_register_direct_fields = {
-            constraint.field
-            for constraint in constraints
-            if constraint.exclude == "reg_direct"
-        }
-
         def operands_can_overlap(
             left: EncodingOperand,
             right: EncodingOperand,
         ) -> bool:
-            if left.type == right.type:
-                return True
-            for ea_operand, register_operand in ((left, right), (right, left)):
-                if (
-                    ea_operand.type == "EA"
-                    and register_operand.type in {"Rn", "Fn"}
-                    and ea_operand.field not in excluded_register_direct_fields
-                ):
-                    return True
-            return False
+            return left.type == right.type
 
         expected_overlap_pairs = {
             tuple(sorted((left.name, right.name)))
@@ -2031,10 +2020,10 @@ def decode_yaml(path: Path) -> DecodedDocument:
         return decode_register_registry(path, raw)
     if name == "conditions.yaml":
         return decode_condition_registry(path, raw)
-    if name == "ea.yaml":
+    if name == "definition.yaml" and path.parent.name == "effective_address":
         return decode_ea_registry(path, raw)
-    if path.match("*/abi/plt_conformance_vectors.yaml"):
+    if path.match("*/interfaces/abi/plt_conformance_vectors.yaml"):
         return decode_abi_vectors(path, raw)
-    if path.match("*/memory_model/validation.yaml"):
+    if path.match("*/memory/ordering/formal/validation.yaml"):
         return decode_memory_validation(path, raw)
     raise DecodeError(f"{path}: unknown YAML document kind")

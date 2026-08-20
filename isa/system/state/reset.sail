@@ -1,0 +1,26 @@
+function warm_reset_state(state : Cpu_state) -> Cpu_state = {
+  var reset = initial_cpu();
+  reset.fp_enabled = state.fp_enabled;
+  reset.fptrans_enabled = state.fptrans_enabled;
+  reset.cache_maintenance_granule = state.cache_maintenance_granule;
+  reset.save_area_size = state.save_area_size;
+  reset.save_fixed_size = state.save_fixed_size;
+  reset.save_format = state.save_format;
+  reset.save_bitmap_words = state.save_bitmap_words;
+  reset.fp_component_present = state.fp_component_present;
+  reset.fp_component_id = state.fp_component_id;
+  reset.fp_component_bitmap_bit = state.fp_component_bitmap_bit;
+  reset.fp_component_offset = state.fp_component_offset;
+  reset.fp_component_size = state.fp_component_size;
+  reset.fp_component_alignment = state.fp_component_alignment;
+  reset.fp_component_init_policy = state.fp_component_init_policy;
+  reset.controls[23] = state.controls[23];
+  reset.controls[24] = state.controls[24];
+  reset.pc = state.controls[23];
+  reset.status = 0x0000000000000010;
+  reset.supervisor = true;
+  reset.halted = false;
+  reset.run_state = Running;
+  reset
+}
+

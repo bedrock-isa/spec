@@ -39,7 +39,7 @@ from encoding_architecture import ENCODING_CLASSES  # noqa: E402
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_DEFS_ROOT = REPOSITORY_ROOT / "isa" / "defs"
+DEFAULT_DEFS_ROOT = REPOSITORY_ROOT / "isa" / "instructions" / "definitions"
 DEFAULT_MAX_ENUMERATE = 5_000_000
 ENCODING_CLASS_NAMES = tuple(item.name for item in ENCODING_CLASSES)
 ANSI_RESET = "\033[0m"
@@ -467,7 +467,7 @@ def pattern_min_value(pattern: str) -> int:
 
 
 def render_synthetic_cubes(
-    rows: list[tuple[int, int, list[str]]],
+    rows: list[tuple[int, int, int, list[str]]],
     *,
     kind: str,
     order: int,
@@ -489,6 +489,7 @@ def render_synthetic_cubes(
             (
                 cube_min_value(cube),
                 order,
+                cube.slots,
                 [
                     f"{kind}.{index}",
                     colorize_bits(pattern, {}, use_color),
@@ -631,9 +632,10 @@ def command_entries(args: argparse.Namespace) -> int:
     leading = normalize_pattern(args.leading, space.payload_bits) if args.leading else None
     needle = args.grep.lower() if args.grep else None
     use_color = color_enabled(args)
-    rows: list[tuple[int, int, list[str]]] = []
+    rows: list[tuple[int, int, int, list[str]]] = []
     for entry in space.entries:
         bits = compact_bits(str(entry["bits"]))
+        pattern_slots = pattern_cardinality(bits)
         text = str(entry.get("text", ""))
         entry_id = str(entry["id"])
         if leading and not patterns_overlap(bits, leading):
@@ -648,13 +650,14 @@ def command_entries(args: argparse.Namespace) -> int:
             (
                 pattern_min_value(bits),
                 0,
+                pattern_slots,
                 [
-                entry_id,
-                colorize_bits(bits, entry.get("fields") or {}, use_color),
-                f"{pattern_cardinality(bits):,}",
-                f"{len(claims):,}",
-                f"{sum(skipped.values()):,}",
-                text,
+                    entry_id,
+                    colorize_bits(bits, entry.get("fields") or {}, use_color),
+                    f"{pattern_slots:,}",
+                    f"{len(claims):,}",
+                    f"{sum(skipped.values()):,}",
+                    text,
                 ],
             )
         )
@@ -692,9 +695,13 @@ def command_entries(args: argparse.Namespace) -> int:
                 hidden_counts=hidden_counts,
             )
 
-    if args.show_reserved:
-        rows.sort(key=lambda item: (item[0], item[1], item[2][0]))
-    table_rows = [row for _base, _kind, row in rows]
+    if args.sort == "address":
+        rows.sort(key=lambda item: (item[0], item[1], -item[2], item[3][0]))
+    elif args.sort == "size":
+        rows.sort(key=lambda item: (-item[2], item[0], item[1], item[3][0]))
+    else:
+        rows.sort(key=lambda item: (item[3][0], item[0], item[1], -item[2]))
+    table_rows = [row for _base, _kind, _slots, row in rows]
     headers = ["id", "bits", "pattern", "slots" if args.show_reserved else "assigned", "reclaimed", "text"]
     print(format_table(headers, table_rows))
     for kind, count in sorted(hidden_counts.items()):
@@ -1020,7 +1027,10 @@ def build_parser() -> argparse.ArgumentParser:
         "--defs-root",
         type=Path,
         default=DEFAULT_DEFS_ROOT,
-        help="ISA definition root (default: repository isa/defs)",
+        help=(
+            "ISA definition root "
+            "(default: repository isa/instructions/definitions)"
+        ),
     )
     parser.add_argument(
         "--color",
@@ -1052,6 +1062,12 @@ def build_parser() -> argparse.ArgumentParser:
     entries.add_argument("--leading", help="0/1/? leading-bit pattern; shorter patterns are padded with ?")
     entries.add_argument("--grep", help="case-insensitive id/text filter")
     entries.add_argument("--show-reserved", action="store_true", help="include computed reserved blocks")
+    entries.add_argument(
+        "--sort",
+        choices=["address", "id", "size"],
+        default="address",
+        help="entry ordering (default: address)",
+    )
     entries.add_argument(
         "--reserved-limit",
         type=nonnegative_int,

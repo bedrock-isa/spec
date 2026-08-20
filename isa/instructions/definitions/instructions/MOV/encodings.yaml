@@ -1,0 +1,109 @@
+forms:
+- id: extrashort.mov_q_rn_r_sp
+  class: extrashort
+  bits: 101rrrr
+  syntax: MOV.Q Rn(r), SP
+  operands:
+  - name: src
+    type: Rn
+    access: read
+    field: r
+  - name: dst
+    type: SP
+    access: write
+  sizes:
+  - Q
+- id: extrashort.mov_q_sp_rn_r
+  class: extrashort
+  bits: 110rrrr
+  syntax: MOV.Q SP, Rn(r)
+  operands:
+  - name: src
+    type: SP
+    access: read
+  - name: dst
+    type: Rn
+    access: write
+    field: r
+  sizes:
+  - Q
+- id: short.mov_x_rn_s_rn_d
+  class: short
+  bits: 00000zssssdddd
+  syntax: MOV.LQ(z) Rn(s), Rn(d)
+  operands:
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: Rn
+    access: write
+    field: d
+  fields:
+    z:
+      type: size.LQ
+- id: medium.mov_x_rn_s_ea_e
+  class: medium
+  bits: 00000zzsssseeeeeee
+  syntax: MOV.BWLQ(z) Rn(s), <ea>(e)
+  operands:
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: EA
+    access: write
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  fields:
+    z:
+      type: size.BWLQ
+  constraints:
+  - field: e
+    exclude: immediate
+    reason: invalid_destination
+- id: medium.mov_x_ea_e_rn_d
+  class: medium
+  bits: 01000zzddddeeeeeee
+  syntax: MOV.BWLQ(z) <ea>(e), Rn(d)
+  operands:
+  - name: src
+    type: EA
+    access: read
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  - name: dst
+    type: Rn
+    access: write
+    field: d
+  fields:
+    z:
+      type: size.BWLQ
+- id: long.mov_x_ea_s_ea_d
+  class: long
+  bits: 1111000100zzsssssssddddddd
+  syntax: MOV.BWLQ(z) <ea>(s), <ea>(d)
+  operands:
+  - name: src
+    type: EA
+    access: read
+    ea_role: value
+    ea_width: operation_size
+    field: s
+  - name: dst
+    type: EA
+    access: write
+    ea_role: value
+    ea_width: operation_size
+    field: d
+  fields:
+    z:
+      type: size.BWLQ
+  constraints:
+  - field: d
+    exclude: immediate
+    reason: invalid_destination

@@ -1,0 +1,229 @@
+forms:
+- id: short.extzq_b_rn_s_rn_d
+  class: short
+  bits: 100110ssssdddd
+  syntax: EXTZQ.B Rn(s), Rn(d)
+  operands:
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: Rn
+    access: write
+    field: d
+  sizes:
+  - B
+- id: short.extzq_w_rn_s_rn_d
+  class: short
+  bits: 100111ssssdddd
+  syntax: EXTZQ.W Rn(s), Rn(d)
+  operands:
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: Rn
+    access: write
+    field: d
+  sizes:
+  - W
+- id: short.extzq_l_rn_s_rn_d
+  class: short
+  bits: 100001ssssdddd
+  syntax: EXTZQ.L Rn(s), Rn(d)
+  operands:
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: Rn
+    access: write
+    field: d
+  sizes:
+  - L
+- id: long.extzq_b_rn_s_ea_e
+  class: long
+  bits: 111100110100000sssseeeeeee
+  syntax: EXTZQ.B Rn(s), <ea>(e)
+  operands:
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: EA
+    access: write
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  sizes:
+  - B
+  constraints:
+  - field: e
+    exclude: immediate
+    reason: invalid_destination
+- id: medium.extzq_b_ea_e_rn_d
+  class: medium
+  bits: 1101000ddddeeeeeee
+  syntax: EXTZQ.B <ea>(e), Rn(d)
+  operands:
+  - name: src
+    type: EA
+    access: read
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  - name: dst
+    type: Rn
+    access: write
+    field: d
+  sizes:
+  - B
+- id: long.extzq_w_rn_s_ea_e
+  class: long
+  bits: 111100110101000sssseeeeeee
+  syntax: EXTZQ.W Rn(s), <ea>(e)
+  operands:
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: EA
+    access: write
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  sizes:
+  - W
+  constraints:
+  - field: e
+    exclude: immediate
+    reason: invalid_destination
+- id: medium.extzq_w_ea_e_rn_d
+  class: medium
+  bits: 1101001ddddeeeeeee
+  syntax: EXTZQ.W <ea>(e), Rn(d)
+  operands:
+  - name: src
+    type: EA
+    access: read
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  - name: dst
+    type: Rn
+    access: write
+    field: d
+  sizes:
+  - W
+- id: long.extzq_l_rn_s_ea_e
+  class: long
+  bits: 111100110110000sssseeeeeee
+  syntax: EXTZQ.L Rn(s), <ea>(e)
+  operands:
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: EA
+    access: write
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  sizes:
+  - L
+  constraints:
+  - field: e
+    exclude: immediate
+    reason: invalid_destination
+- id: medium.extzq_l_ea_e_rn_d
+  class: medium
+  bits: 1101010ddddeeeeeee
+  syntax: EXTZQ.L <ea>(e), Rn(d)
+  operands:
+  - name: src
+    type: EA
+    access: read
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  - name: dst
+    type: Rn
+    access: write
+    field: d
+  sizes:
+  - L
+- id: long.extzq_b_ea_s_ea_d
+  class: long
+  bits: 111100001100sssssssddddddd
+  syntax: EXTZQ.B <ea>(s), <ea>(d)
+  operands:
+  - name: src
+    type: EA
+    access: read
+    ea_role: value
+    ea_width: operation_size
+    field: s
+  - name: dst
+    type: EA
+    access: write
+    ea_role: value
+    ea_width: operation_size
+    field: d
+  sizes:
+  - B
+  constraints:
+  - field: d
+    exclude: immediate
+    reason: invalid_destination
+- id: long.extzq_w_ea_s_ea_d
+  class: long
+  bits: 111100001101sssssssddddddd
+  syntax: EXTZQ.W <ea>(s), <ea>(d)
+  operands:
+  - name: src
+    type: EA
+    access: read
+    ea_role: value
+    ea_width: operation_size
+    field: s
+  - name: dst
+    type: EA
+    access: write
+    ea_role: value
+    ea_width: operation_size
+    field: d
+  sizes:
+  - W
+  constraints:
+  - field: d
+    exclude: immediate
+    reason: invalid_destination
+- id: long.extzq_l_ea_s_ea_d
+  class: long
+  bits: 111100001110sssssssddddddd
+  syntax: EXTZQ.L <ea>(s), <ea>(d)
+  operands:
+  - name: src
+    type: EA
+    access: read
+    ea_role: value
+    ea_width: operation_size
+    field: s
+  - name: dst
+    type: EA
+    access: write
+    ea_role: value
+    ea_width: operation_size
+    field: d
+  sizes:
+  - L
+  constraints:
+  - field: d
+    exclude: immediate
+    reason: invalid_destination

@@ -25,7 +25,7 @@ function legal_representative_bytes(record : Representative_record) -> list(bits
   then [|0xCB, 0xF0, 0x80, 0x00, 0x80|]
   else if record.form_id == "medium.repg_rn_r_ea"
   then [|0xC8, 0x26, 0x80, 0x01, 0x00|]
-  else if record.form_id == "extralong.fsincosa_x_fn_s_fn_d_fn_c"
+  else if record.form_id == "long.fsincosa_x_fn_s_fn_d_fn_c"
   then [|0xCB, 0xF0, 0x24, 0x00, 0x01|]
   else record.bytes
 

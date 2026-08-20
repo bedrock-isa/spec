@@ -1,0 +1,21 @@
+forms:
+- id: medium.invpage_ea_e
+  class: medium
+  bits: 11101000110eeeeeee
+  syntax: INVPAGE <ea>(e)
+  operands:
+  - name: page
+    type: EA
+    access: address
+    ea_role: address
+    ea_width: Q
+    field: e
+- id: medium.invpage_rn
+  class: medium
+  bits: 11101101000110rrrr
+  syntax: INVPAGE Rn(r)
+  operands:
+  - name: page
+    type: Rn
+    access: read
+    field: r

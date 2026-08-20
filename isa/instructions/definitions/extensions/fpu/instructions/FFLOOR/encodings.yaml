@@ -1,0 +1,57 @@
+forms:
+- id: medium.ffloor_x_fn_s_fn_d
+  class: medium
+  bits: 101010z111ssssdddd
+  syntax: FFLOOR.SD(z) Fn(s), Fn(d)
+  operands:
+  - name: src
+    type: Fn
+    access: read
+    field: s
+  - name: dst
+    type: Fn
+    access: write
+    field: d
+  fields:
+    z:
+      type: size.SD
+- id: long.ffloor_x_ea_s_fn_d
+  class: long
+  bits: 1111100100z1111ddddeeeeeee
+  syntax: FFLOOR.SD(z) <ea>(e), Fn(d)
+  operands:
+  - name: src
+    type: EA
+    access: read
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  - name: dst
+    type: Fn
+    access: write
+    field: d
+  fields:
+    z:
+      type: size.SD
+- id: long.ffloor_x_fn_s_ea_d
+  class: long
+  bits: 1111100100z1010sssseeeeeee
+  syntax: FFLOOR.SD(z) Fn(s), <ea>(e)
+  operands:
+  - name: src
+    type: Fn
+    access: read
+    field: s
+  - name: dst
+    type: EA
+    access: write
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  fields:
+    z:
+      type: size.SD
+  constraints:
+  - field: e
+    exclude: immediate
+    reason: invalid_destination

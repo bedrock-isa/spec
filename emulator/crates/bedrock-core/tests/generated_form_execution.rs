@@ -51,7 +51,7 @@ fn representative_payload(form: &GeneratedForm) -> u64 {
                 } else {
                     field.expect("generated non-destination constraint must name a field")
                 };
-                payload = set_field(form.pattern, symbol, payload, 0x10);
+                payload = set_field(form.pattern, symbol, payload, 0x00);
             }
         }
     }
@@ -68,7 +68,7 @@ fn representative_payload(form: &GeneratedForm) -> u64 {
                 'd' | 'r' => &[2, 1, 0, 3],
                 _ => &[1, 2, 0, 3],
             },
-            FieldKind::Ea7 => &[0x10, 0x11, 0x6a, 0x6b, 0x6c, 0x68, 0],
+            FieldKind::Ea7 => &[0x00, 0x01, 0x59, 0x5a, 0x5b, 0x58],
             FieldKind::Condition => &[2, 1, 3, 0],
             FieldKind::Size | FieldKind::Bits => &[0, 1, 2, 3, 4],
             FieldKind::Immediate => &[1, 0, 2, 3],
@@ -137,10 +137,7 @@ fn appended_operand_bytes(form: &GeneratedForm, payload: u64) -> Vec<u8> {
         let value = extract_pattern_field(form.pattern, field.symbol, payload)
             .expect("generated EA field") as u8;
         match CompactEa::decode(value) {
-            CompactEa::Register(_)
-            | CompactEa::RegisterIndirect(_)
-            | CompactEa::StackPointer
-            | CompactEa::StackIndirect => {}
+            CompactEa::RegisterIndirect(_) | CompactEa::StackIndirect => {}
             CompactEa::RegisterDisplacement { width, .. }
             | CompactEa::StackDisplacement(width)
             | CompactEa::ProgramCounterDisplacement(width) => {
@@ -268,7 +265,7 @@ fn execute_one(form: &GeneratedForm, bytes: &[u8]) -> Option<String> {
 
 #[test]
 fn every_generated_form_decodes_and_reaches_a_non_illegal_execution_path() {
-    assert_eq!(GENERATED_FORMS.len(), 422);
+    assert_eq!(GENERATED_FORMS.len(), 484);
     let class_counts = [
         EncodingClass::ExtraShort,
         EncodingClass::Short,
@@ -282,7 +279,7 @@ fn every_generated_form_decodes_and_reaches_a_non_illegal_execution_path() {
             .filter(|form| form.class == class)
             .count()
     });
-    assert_eq!(class_counts, [25, 37, 125, 203, 32]);
+    assert_eq!(class_counts, [25, 39, 186, 191, 43]);
 
     let opcodes = GENERATED_FORMS
         .iter()
@@ -293,12 +290,12 @@ fn every_generated_form_decodes_and_reaches_a_non_illegal_execution_path() {
         .iter()
         .map(|form| form.form)
         .collect::<HashSet<_>>();
-    assert_eq!(form_ids.len(), 422);
+    assert_eq!(form_ids.len(), 484);
     let allocation_ids = GENERATED_FORMS
         .iter()
         .map(|form| form.id)
         .collect::<HashSet<_>>();
-    assert_eq!(allocation_ids.len(), 422);
+    assert_eq!(allocation_ids.len(), 484);
     assert_eq!(
         GENERATED_FORMS
             .iter()

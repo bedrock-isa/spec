@@ -1,0 +1,61 @@
+forms:
+- id: short.sar_x_rn_s_rn_d
+  class: short
+  bits: 01101zssssdddd
+  syntax: SAR.LQ(z) Rn(s), Rn(d)
+  operands:
+  - name: count
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: Rn
+    access: read_write
+    field: d
+  fields:
+    z:
+      type: size.LQ
+- id: long.sar_x_rn_s_ea_e
+  class: long
+  bits: 1111001110zz111sssseeeeeee
+  syntax: SAR.BWLQ(z) Rn(s), <ea>(e)
+  operands:
+  - name: count
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: EA
+    access: read_write
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  fields:
+    z:
+      type: size.BWLQ
+  constraints:
+  - field: e
+    exclude: immediate
+    reason: invalid_destination
+- id: long.sar_x_imm6_i_ea_e
+  class: long
+  bits: 1111010101zz0iiiiiieeeeeee
+  syntax: SAR.BWLQ(z) imm6(i), <ea>(e)
+  operands:
+  - name: count
+    type: imm6
+    access: read
+    field: i
+  - name: dst
+    type: EA
+    access: read_write
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  fields:
+    z:
+      type: size.BWLQ
+  constraints:
+  - field: e
+    exclude: immediate
+    reason: invalid_destination

@@ -183,8 +183,8 @@ fn fptransa_executes_and_cpuid_advertises_extension_and_accuracy_contract() {
 
 #[test]
 fn save_restore_round_trips_the_complete_0x180_image_including_fp_state() {
-    let save = encoded_form("long.save_ea_e", &[('e', 15)], &[]);
-    let restore = encoded_form("long.restore_ea_e", &[('e', 15)], &[]);
+    let save = encoded_form("medium.save_ea_e", &[('e', 15)], &[]);
+    let restore = encoded_form("medium.restore_ea_e", &[('e', 15)], &[]);
     let restore_pc = save.len() as u64;
     let mut ram = Ram::new(0x2000);
     ram.load(0, &save).unwrap();

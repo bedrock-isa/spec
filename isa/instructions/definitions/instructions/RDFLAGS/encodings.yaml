@@ -1,0 +1,12 @@
+forms:
+- id: medium.rdflags_rn_d
+  class: medium
+  bits: 11101101000011dddd
+  syntax: RDFLAGS Rn(d)
+  operands:
+  - name: dst
+    type: Rn
+    access: write
+    field: d
+  sizes:
+  - W

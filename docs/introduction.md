@@ -2,6 +2,22 @@
 
 Bedrock is a 64-bit instruction set architecture for general-purpose systems software. Its specification covers programmer-visible state and instruction execution, address translation, memory ordering, privilege, event delivery, binary formats, and the C language interface.
 
+## Philosophy and goals
+
+Bedrock is an open 64-bit systems ISA designed for independent implementation and suitable for direct native implementation. The current repository is licensed under Apache-2.0. An open-source reference microarchitecture is being developed as one practical realization and shared engineering baseline. Across that reference and other implementations, architectural conformance derives from the shared programmer-visible specification.
+
+Bedrock treats architectural economy as bounded expressiveness and semantic density rather than as a minimal instruction count. Rich operands and effects are useful only when they compose precisely, so their evaluation, fault ordering, interrupt interaction, commit boundaries, and restart behavior form one explicit architectural account.
+
+The architecture seeks semantic closure for software-visible consequences across the ISA, memory, privilege, events, saved context, toolchain contracts, and ABI. The scope of that closure is the programmer-visible architecture and its software contracts. This supports durable independent agreement: implementations can converge on the same observable behavior, and revisions can preserve clear architectural meaning as the draft evolves.
+
+### Non-goals
+
+Bedrock does not optimize for or promise the following outcomes:
+
+- A minimal instruction set or decoder.
+- Binary compatibility with an existing ISA.
+- Universal coverage of address widths and market domains.
+
 ## Architecture overview
 
 ### Programming model and instructions

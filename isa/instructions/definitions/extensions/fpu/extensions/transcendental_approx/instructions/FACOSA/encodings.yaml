@@ -1,0 +1,17 @@
+forms:
+- id: long.facosa_x_fn_s_fn_d
+  class: long
+  bits: 1111100111z0101000ssssdddd
+  syntax: FACOSA.SD(z) Fn(s), Fn(d)
+  operands:
+  - name: src
+    type: Fn
+    access: read
+    field: s
+  - name: dst
+    type: Fn
+    access: write
+    field: d
+  fields:
+    z:
+      type: size.SD

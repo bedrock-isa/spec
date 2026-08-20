@@ -1,0 +1,77 @@
+forms:
+- id: long.extzw_b_rn_s_ea_e
+  class: long
+  bits: 111100110100001sssseeeeeee
+  syntax: EXTZW.B Rn(s), <ea>(e)
+  operands:
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: EA
+    access: write
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  sizes:
+  - B
+  constraints:
+  - field: e
+    exclude: immediate
+    reason: invalid_destination
+- id: long.extzw_b_ea_e_rn_d
+  class: long
+  bits: 111100100100001ddddeeeeeee
+  syntax: EXTZW.B <ea>(e), Rn(d)
+  operands:
+  - name: src
+    type: EA
+    access: read
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  - name: dst
+    type: Rn
+    access: write
+    field: d
+  sizes:
+  - B
+- id: long.extzw_b_ea_s_ea_d
+  class: long
+  bits: 111100001111sssssssddddddd
+  syntax: EXTZW.B <ea>(s), <ea>(d)
+  operands:
+  - name: src
+    type: EA
+    access: read
+    ea_role: value
+    ea_width: operation_size
+    field: s
+  - name: dst
+    type: EA
+    access: write
+    ea_role: value
+    ea_width: operation_size
+    field: d
+  sizes:
+  - B
+  constraints:
+  - field: d
+    exclude: immediate
+    reason: invalid_destination
+- id: medium.extzw_b_rn_s_rn_d
+  class: medium
+  bits: 1000100001ssssdddd
+  syntax: EXTZW.B Rn(s), Rn(d)
+  operands:
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: Rn
+    access: write
+    field: d
+  sizes:
+  - B

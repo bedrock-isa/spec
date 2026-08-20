@@ -1,0 +1,418 @@
+payloads:
+  disp8s:
+    kind: displacement
+    field_width: 8
+    signed: true
+  disp16s:
+    kind: displacement
+    field_width: 16
+    signed: true
+  disp32s:
+    kind: displacement
+    field_width: 32
+    signed: true
+  disp64:
+    kind: displacement
+    field_width: 64
+    signed: false
+  abs32s:
+    kind: absolute
+    field_width: 32
+    signed: true
+  abs64:
+    kind: absolute
+    field_width: 64
+    signed: false
+  imm8s:
+    kind: immediate
+    field_width: 8
+    signed: true
+  imm16s:
+    kind: immediate
+    field_width: 16
+    signed: true
+  imm32s:
+    kind: immediate
+    field_width: 32
+    signed: true
+  imm64:
+    kind: immediate
+    field_width: 64
+    signed: false
+
+compact:
+  field_width: 7
+  forms:
+  - name: register_indirect
+    pattern: "000rrrr"
+    syntax: "[Rn(r)]"
+    kind: memory
+    fields:
+      r: {type: Rn, role: base}
+    segment: default
+  - name: register_disp8s
+    pattern: "001rrrr"
+    syntax: "[Rn(r) + disp8s]"
+    kind: memory
+    fields:
+      r: {type: Rn, role: base}
+    segment: default
+    payload: disp8s
+  - name: register_disp16s
+    pattern: "010rrrr"
+    syntax: "[Rn(r) + disp16s]"
+    kind: memory
+    fields:
+      r: {type: Rn, role: base}
+    segment: default
+    payload: disp16s
+  - name: register_disp32s
+    pattern: "011rrrr"
+    syntax: "[Rn(r) + disp32s]"
+    kind: memory
+    fields:
+      r: {type: Rn, role: base}
+    segment: default
+    payload: disp32s
+  - name: register_disp64
+    pattern: "100rrrr"
+    syntax: "[Rn(r) + disp64]"
+    kind: memory
+    fields:
+      r: {type: Rn, role: base}
+    segment: default
+    payload: disp64
+  - name: stack_pointer_disp8s
+    pattern: "1010000"
+    syntax: "[SP + disp8s]"
+    kind: memory
+    base: SP
+    segment: SS
+    payload: disp8s
+  - name: stack_pointer_disp16s
+    pattern: "1010001"
+    syntax: "[SP + disp16s]"
+    kind: memory
+    base: SP
+    segment: SS
+    payload: disp16s
+  - name: stack_pointer_disp32s
+    pattern: "1010010"
+    syntax: "[SP + disp32s]"
+    kind: memory
+    base: SP
+    segment: SS
+    payload: disp32s
+  - name: stack_pointer_disp64
+    pattern: "1010011"
+    syntax: "[SP + disp64]"
+    kind: memory
+    base: SP
+    segment: SS
+    payload: disp64
+  - name: program_counter_disp8s
+    pattern: "1010100"
+    syntax: "[PC + disp8s]"
+    kind: memory
+    base: PC
+    segment: CS
+    payload: disp8s
+  - name: program_counter_disp16s
+    pattern: "1010101"
+    syntax: "[PC + disp16s]"
+    kind: memory
+    base: PC
+    segment: CS
+    payload: disp16s
+  - name: program_counter_disp32s
+    pattern: "1010110"
+    syntax: "[PC + disp32s]"
+    kind: memory
+    base: PC
+    segment: CS
+    payload: disp32s
+  - name: program_counter_disp64
+    pattern: "1010111"
+    syntax: "[PC + disp64]"
+    kind: memory
+    base: PC
+    segment: CS
+    payload: disp64
+  - name: stack_pointer_indirect
+    pattern: "1011000"
+    syntax: "[SP]"
+    kind: memory
+    base: SP
+    segment: SS
+  - name: absolute_32s
+    pattern: "1011001"
+    syntax: "[abs32s]"
+    kind: memory
+    segment: default
+    payload: abs32s
+  - name: absolute_64
+    pattern: "1011010"
+    syntax: "[abs64]"
+    kind: memory
+    segment: default
+    payload: abs64
+  - name: immediate_8s
+    pattern: "1011011"
+    syntax: imm8s
+    kind: immediate
+    payload: imm8s
+  - name: immediate_16s
+    pattern: "1011100"
+    syntax: imm16s
+    kind: immediate
+    payload: imm16s
+  - name: immediate_32s
+    pattern: "1011101"
+    syntax: imm32s
+    kind: immediate
+    payload: imm32s
+  - name: immediate_64
+    pattern: "1011110"
+    syntax: imm64
+    kind: immediate
+    payload: imm64
+  - name: ext1_disp8s
+    pattern: "1011111"
+    syntax: EXT1/disp8s
+    kind: escape
+    descriptor: ext1
+    payload: disp8s
+  - name: ext1_disp16s
+    pattern: "1100000"
+    syntax: EXT1/disp16s
+    kind: escape
+    descriptor: ext1
+    payload: disp16s
+  - name: ext1_disp32s
+    pattern: "1100001"
+    syntax: EXT1/disp32s
+    kind: escape
+    descriptor: ext1
+    payload: disp32s
+  - name: ext1_disp64
+    pattern: "1100010"
+    syntax: EXT1/disp64
+    kind: escape
+    descriptor: ext1
+    payload: disp64
+  - name: ext1
+    pattern: "1100011"
+    syntax: EXT1
+    kind: escape
+    descriptor: ext1
+  - name: ext2_disp8s
+    pattern: "1100100"
+    syntax: EXT2/disp8s
+    kind: escape
+    descriptor: ext2
+    payload: disp8s
+  - name: ext2_disp16s
+    pattern: "1100101"
+    syntax: EXT2/disp16s
+    kind: escape
+    descriptor: ext2
+    payload: disp16s
+  - name: ext2_disp32s
+    pattern: "1100110"
+    syntax: EXT2/disp32s
+    kind: escape
+    descriptor: ext2
+    payload: disp32s
+  - name: ext2_disp64
+    pattern: "1100111"
+    syntax: EXT2/disp64
+    kind: escape
+    descriptor: ext2
+    payload: disp64
+  - name: ext2
+    pattern: "1101000"
+    syntax: EXT2
+    kind: escape
+    descriptor: ext2
+
+ext1:
+  kind: memory
+  forms:
+  - name: explicit_segment_base
+    pattern:
+    - "0sssbbbb"
+    syntax: "[SEG(s):Rn(b) + displacement]"
+    fields:
+      s: {type: SREG, role: segment}
+      b: {type: Rn, role: base}
+    segment: explicit
+  - name: explicit_segment_zero_base
+    pattern:
+    - "1sss0011"
+    syntax: "[SEG(s):0 + displacement]"
+    fields:
+      s: {type: SREG, role: segment}
+    base: zero
+    segment: explicit
+  - name: default_segment_base_postincrement
+    pattern:
+    - "1bbbb100"
+    syntax: "[Rn(b)++ + displacement]"
+    fields:
+      b: {type: Rn, role: base}
+    segment: default
+    update: {target: b, mode: postincrement}
+  - name: default_segment_base_predecrement
+    pattern:
+    - "1bbbb101"
+    syntax: "[--Rn(b) + displacement]"
+    fields:
+      b: {type: Rn, role: base}
+    segment: default
+    update: {target: b, mode: predecrement}
+
+ext2:
+  kind: memory
+  forms:
+  - name: explicit_segment_index_postincrement
+    pattern:
+    - "1sss0000"
+    - "bbbbiiii"
+    syntax: "[SEG(s):Rn(b) + Rn(i)++ * scale + displacement]"
+    fields:
+      s: {type: SREG, role: segment}
+      b: {type: Rn, role: base}
+      i: {type: Rn, role: index}
+    segment: explicit
+    update: {target: i, mode: postincrement}
+  - name: explicit_segment_index_predecrement
+    pattern:
+    - "1sss0001"
+    - "bbbbiiii"
+    syntax: "[SEG(s):Rn(b) + --Rn(i) * scale + displacement]"
+    fields:
+      s: {type: SREG, role: segment}
+      b: {type: Rn, role: base}
+      i: {type: Rn, role: index}
+    segment: explicit
+    update: {target: i, mode: predecrement}
+  - name: explicit_segment_index
+    pattern:
+    - "1sss0010"
+    - "bbbbiiii"
+    syntax: "[SEG(s):Rn(b) + Rn(i) * scale + displacement]"
+    fields:
+      s: {type: SREG, role: segment}
+      b: {type: Rn, role: base}
+      i: {type: Rn, role: index}
+    segment: explicit
+  - name: explicit_segment_base_postincrement
+    pattern:
+    - "1sss1000"
+    - "bbbb0000"
+    syntax: "[SEG(s):Rn(b)++ + displacement]"
+    fields:
+      s: {type: SREG, role: segment}
+      b: {type: Rn, role: base}
+    segment: explicit
+    update: {target: b, mode: postincrement}
+  - name: explicit_segment_base_predecrement
+    pattern:
+    - "1sss1000"
+    - "bbbb0001"
+    syntax: "[SEG(s):--Rn(b) + displacement]"
+    fields:
+      s: {type: SREG, role: segment}
+      b: {type: Rn, role: base}
+    segment: explicit
+    update: {target: b, mode: predecrement}
+  - name: explicit_segment_zero_base_index_postincrement
+    pattern:
+    - "1sss1001"
+    - "0000iiii"
+    syntax: "[SEG(s):0 + Rn(i)++ * scale + displacement]"
+    fields:
+      s: {type: SREG, role: segment}
+      i: {type: Rn, role: index}
+    base: zero
+    segment: explicit
+    update: {target: i, mode: postincrement}
+  - name: explicit_segment_zero_base_index_predecrement
+    pattern:
+    - "1sss1001"
+    - "0001iiii"
+    syntax: "[SEG(s):0 + --Rn(i) * scale + displacement]"
+    fields:
+      s: {type: SREG, role: segment}
+      i: {type: Rn, role: index}
+    base: zero
+    segment: explicit
+    update: {target: i, mode: predecrement}
+  - name: explicit_segment_zero_base_index
+    pattern:
+    - "1sss1001"
+    - "0010iiii"
+    syntax: "[SEG(s):0 + Rn(i) * scale + displacement]"
+    fields:
+      s: {type: SREG, role: segment}
+      i: {type: Rn, role: index}
+    base: zero
+    segment: explicit
+  - name: stack_pointer_index_postincrement
+    pattern:
+    - "10001010"
+    - "0000iiii"
+    syntax: "[SP + Rn(i)++ * scale + displacement]"
+    fields:
+      i: {type: Rn, role: index}
+    base: SP
+    segment: SS
+    update: {target: i, mode: postincrement}
+  - name: stack_pointer_index_predecrement
+    pattern:
+    - "10001010"
+    - "0001iiii"
+    syntax: "[SP + --Rn(i) * scale + displacement]"
+    fields:
+      i: {type: Rn, role: index}
+    base: SP
+    segment: SS
+    update: {target: i, mode: predecrement}
+  - name: stack_pointer_index
+    pattern:
+    - "10001010"
+    - "0010iiii"
+    syntax: "[SP + Rn(i) * scale + displacement]"
+    fields:
+      i: {type: Rn, role: index}
+    base: SP
+    segment: SS
+  - name: program_counter_index_postincrement
+    pattern:
+    - "10001011"
+    - "0000iiii"
+    syntax: "[PC + Rn(i)++ * scale + displacement]"
+    fields:
+      i: {type: Rn, role: index}
+    base: PC
+    segment: CS
+    update: {target: i, mode: postincrement}
+  - name: program_counter_index_predecrement
+    pattern:
+    - "10001011"
+    - "0001iiii"
+    syntax: "[PC + --Rn(i) * scale + displacement]"
+    fields:
+      i: {type: Rn, role: index}
+    base: PC
+    segment: CS
+    update: {target: i, mode: predecrement}
+  - name: program_counter_index
+    pattern:
+    - "10001011"
+    - "0010iiii"
+    syntax: "[PC + Rn(i) * scale + displacement]"
+    fields:
+      i: {type: Rn, role: index}
+    base: PC
+    segment: CS

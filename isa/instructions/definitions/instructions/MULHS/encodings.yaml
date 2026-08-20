@@ -1,0 +1,16 @@
+forms:
+- id: medium.mulhs_q_rn_s_rn_d
+  class: medium
+  bits: 1100011011ssssdddd
+  syntax: MULHS.Q Rn(s), Rn(d)
+  operands:
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: Rn
+    access: read_write
+    field: d
+  sizes:
+  - Q

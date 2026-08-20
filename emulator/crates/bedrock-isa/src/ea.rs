@@ -19,7 +19,6 @@ impl DisplacementWidth {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CompactEa {
-    Register(u8),
     RegisterIndirect(u8),
     RegisterDisplacement {
         register: u8,
@@ -27,7 +26,6 @@ pub enum CompactEa {
     },
     StackDisplacement(DisplacementWidth),
     ProgramCounterDisplacement(DisplacementWidth),
-    StackPointer,
     StackIndirect,
     Absolute32,
     Absolute64,
@@ -45,67 +43,65 @@ impl CompactEa {
     pub const fn decode(value: u8) -> Self {
         let value = value & 0x7f;
         match value >> 4 {
-            0b000 => Self::Register(value & 0x0f),
-            0b001 => Self::RegisterIndirect(value & 0x0f),
-            0b010 => Self::RegisterDisplacement {
+            0b000 => Self::RegisterIndirect(value & 0x0f),
+            0b001 => Self::RegisterDisplacement {
                 register: value & 0x0f,
                 width: DisplacementWidth::Bits8,
             },
-            0b011 => Self::RegisterDisplacement {
+            0b010 => Self::RegisterDisplacement {
                 register: value & 0x0f,
                 width: DisplacementWidth::Bits16,
             },
-            0b100 => Self::RegisterDisplacement {
+            0b011 => Self::RegisterDisplacement {
                 register: value & 0x0f,
                 width: DisplacementWidth::Bits32,
             },
-            0b101 => Self::RegisterDisplacement {
+            0b100 => Self::RegisterDisplacement {
                 register: value & 0x0f,
                 width: DisplacementWidth::Bits64,
             },
             _ => match value {
-                0x60 => Self::StackDisplacement(DisplacementWidth::Bits8),
-                0x61 => Self::StackDisplacement(DisplacementWidth::Bits16),
-                0x62 => Self::StackDisplacement(DisplacementWidth::Bits32),
-                0x63 => Self::StackDisplacement(DisplacementWidth::Bits64),
-                0x64 => Self::ProgramCounterDisplacement(DisplacementWidth::Bits8),
-                0x65 => Self::ProgramCounterDisplacement(DisplacementWidth::Bits16),
-                0x66 => Self::ProgramCounterDisplacement(DisplacementWidth::Bits32),
-                0x67 => Self::ProgramCounterDisplacement(DisplacementWidth::Bits64),
-                0x68 => Self::StackPointer,
-                0x69 => Self::StackIndirect,
-                0x6a => Self::Absolute32,
-                0x6b => Self::Absolute64,
-                0x6c => Self::Immediate(DisplacementWidth::Bits8),
-                0x6d => Self::Immediate(DisplacementWidth::Bits16),
-                0x6e => Self::Immediate(DisplacementWidth::Bits32),
-                0x6f => Self::Immediate(DisplacementWidth::Bits64),
-                0x70 => Self::Ext1 {
+                0x50 => Self::StackDisplacement(DisplacementWidth::Bits8),
+                0x51 => Self::StackDisplacement(DisplacementWidth::Bits16),
+                0x52 => Self::StackDisplacement(DisplacementWidth::Bits32),
+                0x53 => Self::StackDisplacement(DisplacementWidth::Bits64),
+                0x54 => Self::ProgramCounterDisplacement(DisplacementWidth::Bits8),
+                0x55 => Self::ProgramCounterDisplacement(DisplacementWidth::Bits16),
+                0x56 => Self::ProgramCounterDisplacement(DisplacementWidth::Bits32),
+                0x57 => Self::ProgramCounterDisplacement(DisplacementWidth::Bits64),
+                0x58 => Self::StackIndirect,
+                0x59 => Self::Absolute32,
+                0x5a => Self::Absolute64,
+                0x5b => Self::Immediate(DisplacementWidth::Bits8),
+                0x5c => Self::Immediate(DisplacementWidth::Bits16),
+                0x5d => Self::Immediate(DisplacementWidth::Bits32),
+                0x5e => Self::Immediate(DisplacementWidth::Bits64),
+                0x5f => Self::Ext1 {
                     displacement: Some(DisplacementWidth::Bits8),
                 },
-                0x71 => Self::Ext1 {
+                0x60 => Self::Ext1 {
                     displacement: Some(DisplacementWidth::Bits16),
                 },
-                0x72 => Self::Ext1 {
+                0x61 => Self::Ext1 {
                     displacement: Some(DisplacementWidth::Bits32),
                 },
-                0x73 => Self::Ext1 {
+                0x62 => Self::Ext1 {
                     displacement: Some(DisplacementWidth::Bits64),
                 },
-                0x74 => Self::Ext1 { displacement: None },
-                0x75 => Self::Ext2 {
+                0x63 => Self::Ext1 { displacement: None },
+                0x64 => Self::Ext2 {
                     displacement: Some(DisplacementWidth::Bits8),
                 },
-                0x76 => Self::Ext2 {
+                0x65 => Self::Ext2 {
                     displacement: Some(DisplacementWidth::Bits16),
                 },
-                0x77 => Self::Ext2 {
+                0x66 => Self::Ext2 {
                     displacement: Some(DisplacementWidth::Bits32),
                 },
-                0x78 => Self::Ext2 {
+                0x67 => Self::Ext2 {
                     displacement: Some(DisplacementWidth::Bits64),
                 },
-                0x79 => Self::Ext2 { displacement: None },
+                0x68 => Self::Ext2 { displacement: None },
                 other => Self::Reserved(other),
             },
         }
@@ -297,11 +293,11 @@ mod tests {
 
     #[test]
     fn compact_extended_families_own_their_appended_lengths() {
-        assert_eq!(CompactEa::decode(0x70).appended_bytes(), 2);
-        assert_eq!(CompactEa::decode(0x74).appended_bytes(), 1);
-        assert_eq!(CompactEa::decode(0x75).appended_bytes(), 3);
-        assert_eq!(CompactEa::decode(0x79).appended_bytes(), 2);
-        assert!(matches!(CompactEa::decode(0x7a), CompactEa::Reserved(0x7a)));
+        assert_eq!(CompactEa::decode(0x5f).appended_bytes(), 2);
+        assert_eq!(CompactEa::decode(0x63).appended_bytes(), 1);
+        assert_eq!(CompactEa::decode(0x64).appended_bytes(), 3);
+        assert_eq!(CompactEa::decode(0x68).appended_bytes(), 2);
+        assert!(matches!(CompactEa::decode(0x69), CompactEa::Reserved(0x69)));
         assert!(matches!(CompactEa::decode(0x7f), CompactEa::Reserved(0x7f)));
     }
 }

@@ -1,0 +1,35 @@
+forms:
+- id: medium.lea_x_ea_rn
+  class: medium
+  bits: 00111zzddddeeeeeee
+  syntax: LEA.BWLQ(z) <ea>(e), Rn(d)
+  operands:
+  - name: src
+    type: EA
+    access: address
+    ea_role: address
+    ea_width: operation_size
+    field: e
+  - name: dst
+    type: Rn
+    access: write
+    field: d
+  fields:
+    z:
+      type: size.BWLQ
+- id: medium.lea_x_rn_s_rn_d
+  class: medium
+  bits: 10011zz010ssssdddd
+  syntax: LEA.BWLQ(z) Rn(s), Rn(d)
+  operands:
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: Rn
+    access: write
+    field: d
+  fields:
+    z:
+      type: size.BWLQ

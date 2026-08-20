@@ -15,7 +15,8 @@ from encoding_architecture import ENCODING_CLASSES_BY_NAME, extended_instruction
 
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_DEFS_ROOT = ROOT / "isa" / "defs"
+DEFAULT_DEFS_ROOT = ROOT / "isa" / "instructions" / "definitions"
+DEFAULT_EA_DEFINITION = ROOT / "isa" / "addressing" / "effective_address" / "definition.yaml"
 IR_SCHEMA_VERSION = 1
 MAX_VALUE_WIDTH = 64
 MAX_RECORD_BYTES = max(extended_instruction_lengths())
@@ -383,7 +384,11 @@ def load_decode_inputs(defs_root: Path = DEFAULT_DEFS_ROOT) -> DecodeInputs:
     resolved = defs_root.resolve()
     store = load_encoding_store(resolved)
     operand_types = load_operand_types(resolved)
-    ea_path = resolved / "ea.yaml"
+    ea_path = (
+        DEFAULT_EA_DEFINITION
+        if resolved == DEFAULT_DEFS_ROOT.resolve()
+        else resolved / "ea.yaml"
+    )
     ea_registry = decode_ea_registry(ea_path, load_yaml(ea_path))
     documents: dict[str, Any] = {}
     for located in store.encodings:
@@ -1077,11 +1082,7 @@ def validate_decode_ir(ir: DecodeIR) -> None:
                     for item in constraint.ranges
                 ):
                     raise ValueError(f"{form.key}: invalid allowed constraint range")
-            elif constraint.kind not in {
-                "exclude_rn_direct",
-                "exclude_reg_direct",
-                "exclude_immediate",
-            } or constraint.ranges:
+            elif constraint.kind != "exclude_immediate" or constraint.ranges:
                 raise ValueError(f"{form.key}: invalid normalized constraint")
 
         operands_by_name = {operand.name: operand for operand in form.operands}
@@ -1263,7 +1264,10 @@ def main(argv: list[str] | None = None) -> int:
         "--defs-root",
         type=Path,
         default=DEFAULT_DEFS_ROOT,
-        help="authoritative isa/defs root (default: repository isa/defs)",
+        help=(
+            "authoritative isa/instructions/definitions root "
+            "(default: repository isa/instructions/definitions)"
+        ),
     )
     parser.add_argument(
         "--compact",

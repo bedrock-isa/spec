@@ -1,0 +1,57 @@
+forms:
+- id: long.cmpjcc_x_rn_s_rn_d_imm8s
+  class: long
+  bits: 111101000000zzccccssssdddd
+  syntax: CMPJcc.BWLQ(z) Rn(s), Rn(d), <imm8s>
+  operands:
+  - name: cc
+    type: condition
+    access: read
+    field: c
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: Rn
+    access: read
+    field: d
+  - name: target
+    type: imm8s
+    access: read
+  fields:
+    z:
+      type: size.BWLQ
+  constraints:
+  - field: c
+    allow:
+    - 0x2..0xf
+    reason: condition_true_false_reclaimed
+- id: long.cmpjcc_x_rn_s_rn_d_imm16s
+  class: long
+  bits: 111101000001zzccccssssdddd
+  syntax: CMPJcc.BWLQ(z) Rn(s), Rn(d), <imm16s>
+  operands:
+  - name: cc
+    type: condition
+    access: read
+    field: c
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: Rn
+    access: read
+    field: d
+  - name: target
+    type: imm16s
+    access: read
+  fields:
+    z:
+      type: size.BWLQ
+  constraints:
+  - field: c
+    allow:
+    - 0x2..0xf
+    reason: condition_true_false_reclaimed

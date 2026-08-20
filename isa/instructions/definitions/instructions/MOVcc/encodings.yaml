@@ -1,0 +1,69 @@
+forms:
+- id: extralong.movcc_x_rn_s_ea_e
+  class: extralong
+  bits: 1111110011zz0000001ccccsssseeeeeee
+  syntax: MOVcc.BWLQ(z) Rn(s), <ea>(e)
+  operands:
+  - name: cc
+    type: condition
+    access: read
+    field: c
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: EA
+    access: write
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  fields:
+    z:
+      type: size.BWLQ
+  constraints:
+  - field: e
+    exclude: immediate
+    reason: invalid_destination
+- id: extralong.movcc_x_ea_e_rn_d
+  class: extralong
+  bits: 1111110011zz0000000ccccddddeeeeeee
+  syntax: MOVcc.BWLQ(z) <ea>(e), Rn(d)
+  operands:
+  - name: cc
+    type: condition
+    access: read
+    field: c
+  - name: src
+    type: EA
+    access: read
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  - name: dst
+    type: Rn
+    access: write
+    field: d
+  fields:
+    z:
+      type: size.BWLQ
+- id: long.movcc_x_rn_s_rn_d
+  class: long
+  bits: 111101000101zzccccssssdddd
+  syntax: MOVcc.BWLQ(z) Rn(s), Rn(d)
+  operands:
+  - name: cc
+    type: condition
+    access: read
+    field: c
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: Rn
+    access: write
+    field: d
+  fields:
+    z:
+      type: size.BWLQ

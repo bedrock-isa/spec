@@ -186,7 +186,7 @@ mod tests {
     #[test]
     fn decodes_every_extrashort_fixed_and_register_form() {
         assert_eq!(decode(&[0x01]).unwrap().opcode, Opcode::Nop);
-        assert_eq!(decode(&[0x22]).unwrap().opcode, Opcode::Push);
+        assert_eq!(decode(&[0x32]).unwrap().opcode, Opcode::Push);
     }
 
     #[test]
@@ -237,7 +237,7 @@ mod tests {
             0
         );
 
-        let inc = decode(&[0xa3, 0x0b]).unwrap();
+        let inc = decode(&[0xa8, 0x0b]).unwrap();
         assert_eq!(
             inc.fields
                 .iter()
@@ -250,18 +250,18 @@ mod tests {
 
     #[test]
     fn imm64_requires_all_eight_trailing_bytes() {
-        let form = generated_form("long.add_q_imm64_ea_e");
-        let payload = set_field(form.pattern, 'e', form.value, 0x10);
+        let form = generated_form("medium.add_q_imm64_ea_e");
+        let payload = set_field(form.pattern, 'e', form.value, 0x00);
 
         assert_eq!(
-            decode(&extended_record(form, payload, 11)),
+            decode(&extended_record(form, payload, 10)),
             Err(DecodeError::OperandPayload {
-                needed: 12,
-                available: 11,
+                needed: 11,
+                available: 10,
             })
         );
         assert_eq!(
-            decode(&extended_record(form, payload, 12))
+            decode(&extended_record(form, payload, 11))
                 .unwrap()
                 .allocation_id,
             form.id
@@ -270,17 +270,17 @@ mod tests {
 
     #[test]
     fn fconst_id_requires_both_trailing_bytes() {
-        let form = generated_form("long.fmovcr_x_imm16_fn_d");
+        let form = generated_form("medium.fmovcr_x_imm16_fn_d");
 
         assert_eq!(
-            decode(&extended_record(form, form.value, 5)),
+            decode(&extended_record(form, form.value, 4)),
             Err(DecodeError::OperandPayload {
-                needed: 6,
-                available: 5,
+                needed: 5,
+                available: 4,
             })
         );
         assert_eq!(
-            decode(&extended_record(form, form.value, 6))
+            decode(&extended_record(form, form.value, 5))
                 .unwrap()
                 .allocation_id,
             form.id
@@ -311,7 +311,7 @@ mod tests {
         let form = generated_form("medium.inc_x_ea.2");
         let opcode_bytes = form.class.opcode_bytes();
 
-        let ext1_payload = set_field(form.pattern, 'e', form.value, 0x74);
+        let ext1_payload = set_field(form.pattern, 'e', form.value, 0x63);
         assert_eq!(
             decode(&extended_record(form, ext1_payload, opcode_bytes)),
             Err(DecodeError::OperandPayload {
@@ -321,7 +321,7 @@ mod tests {
         );
         assert!(decode(&extended_record(form, ext1_payload, opcode_bytes + 1)).is_ok());
 
-        let ext2_payload = set_field(form.pattern, 'e', form.value, 0x79);
+        let ext2_payload = set_field(form.pattern, 'e', form.value, 0x68);
         let mut truncated_ext2 = extended_record(form, ext2_payload, opcode_bytes + 1);
         truncated_ext2[opcode_bytes] = 0x80;
         assert_eq!(

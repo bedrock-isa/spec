@@ -6,7 +6,9 @@ framebuffer/keyboard devices, concrete machine wiring, debugger support, CLI,
 GUI, LLVM toolchain integration, and executable samples.
 
 The emulator is a non-owning executable consumer of the surrounding ISA
-repository. Static encodings and operand/EA grammar come from `../isa/defs`;
+repository. Static instruction definitions come from
+`../isa/instructions/definitions`, and EA grammar comes from
+`../isa/addressing/effective_address/definition.yaml`;
 handwritten Sail under `../sail` owns executable architectural behavior. The
 Rust decode table is generated into Cargo's build output from the definitions
 and does not independently define the ISA. No generated Rust source is checked
@@ -77,7 +79,7 @@ events, and show LLVM `objdump` output for the loaded ELF.
 
 ## Samples
 
-`samples/tiny_kernel` builds a small kernel with a TTY shell. Shell commands
+`../samples/tiny_kernel` builds a small kernel with a TTY shell. Shell commands
 such as `MATH`, `SORT`, `MEM`, `DEMO`, `FAULT`, `HALT`, and `BASIC` load
 separate embedded ELF user applications into their own code/data and stack
 address ranges, switch to user mode, and then return to the shell through
@@ -92,19 +94,29 @@ Assembler and disassembler work must go through the external Bedrock LLVM
 toolchain via `bedrock-toolchain`; the emulator should not duplicate assembly
 syntax or disassembly formatting in Rust. Full `cargo test --workspace` and
 `make emulator-validate` runs include the LLDB crate, so they require a
-complete LLVM checkout and build, including its headers and libraries. Select
-that checkout with `BEDROCK_LLVM_ROOT`:
+complete LLVM checkout and build, including its headers and libraries.
+
+The LLVM toolchain discovery uses the following order:
+1. `BEDROCK_LLVM_BIN`, when set, names the LLVM tool binary directory.
+2. Otherwise, `BEDROCK_LLVM_ROOT/build/bin` is used.
+
+Set the LLVM source root for full-workspace builds, which need its headers and
+libraries as well as its tools:
 
 ```sh
-export BEDROCK_LLVM_ROOT=/path/to/llvm-bedrock
-# Optional executable-directory override for tool calls and sample builds:
-export BEDROCK_LLVM_BIN="$BEDROCK_LLVM_ROOT/build/bin"
+export BEDROCK_LLVM_ROOT=/absolute/path/to/llvm
 ```
 
-When `BEDROCK_LLVM_ROOT` is unset, full-workspace builds look for an external
-`../llvm-bedrock` checkout beside the ISA repository. `BEDROCK_LLVM_BIN` alone
-only overrides executable tool lookup; it does not supply the LLVM headers and
-libraries required for full-workspace validation. The toolchain wrapper runs:
+To override only executable lookup, set the binary directory explicitly:
+
+```sh
+export BEDROCK_LLVM_BIN=/absolute/path/to/llvm/build/bin
+```
+
+If neither variable is set, toolchain discovery returns a missing-configuration
+error. `BEDROCK_LLVM_BIN` does not provide the source root needed for LLDB
+headers and LLVM libraries; those paths always derive from
+`BEDROCK_LLVM_ROOT`. The toolchain wrapper runs:
 
 ```sh
 llvm-mc -triple=bedrock-unknown-unknown -filetype=obj program.s -o program.o

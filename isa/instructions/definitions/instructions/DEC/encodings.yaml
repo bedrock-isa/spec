@@ -1,0 +1,31 @@
+forms:
+- id: short.dec_x_rn_r
+  class: short
+  bits: 10100z0001rrrr
+  syntax: DEC.LQ(z) Rn(r)
+  operands:
+  - name: dst
+    type: Rn
+    access: read_write
+    field: r
+  fields:
+    z:
+      type: size.LQ
+- id: medium.dec_x_ea
+  class: medium
+  bits: 11100zz1000eeeeeee
+  syntax: DEC.BWLQ(z) <ea>(e)
+  operands:
+  - name: dst
+    type: EA
+    access: read_write
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  fields:
+    z:
+      type: size.BWLQ
+  constraints:
+  - field: e
+    exclude: immediate
+    reason: invalid_destination

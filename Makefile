@@ -8,6 +8,7 @@ LATEXMK ?= latexmk
 PANDOC ?= pandoc
 LATEXPAND ?= latexpand
 MKDOCS ?= mkdocs
+export LATEXMK PANDOC LATEXPAND MKDOCS
 
 BUILD_DIR ?= build
 SAIL_BUILD_DIR ?= $(BUILD_DIR)/sail-doc
@@ -32,13 +33,13 @@ emulator: emulator-isa-check
 	$(CARGO) build --manifest-path "$(EMULATOR_MANIFEST)" --workspace --target-dir "$(EMULATOR_TARGET_DIR)"
 
 docs:
-	$(PYTHON) isa/tools/compile_documents.py --format all --output-root "$(BUILD_DIR)" --latexmk "$(LATEXMK)" --pandoc "$(PANDOC)" --latexpand "$(LATEXPAND)" --mkdocs "$(MKDOCS)"
+	$(PYTHON) isa/tools/compile_documents.py --format all --output-root "$(BUILD_DIR)"
 
 docs-pdf:
-	$(PYTHON) isa/tools/compile_documents.py --format pdf --output-root "$(BUILD_DIR)" --latexmk "$(LATEXMK)"
+	$(PYTHON) isa/tools/compile_documents.py --format pdf --output-root "$(BUILD_DIR)"
 
 docs-site:
-	$(PYTHON) isa/tools/compile_documents.py --format site --output-root "$(BUILD_DIR)" --latexmk "$(LATEXMK)" --pandoc "$(PANDOC)" --latexpand "$(LATEXPAND)" --mkdocs "$(MKDOCS)"
+	$(PYTHON) isa/tools/compile_documents.py --format site --output-root "$(BUILD_DIR)"
 
 sail-docs:
 	$(PYTHON) isa/tools/sail/build_docs.py "$(SAIL_BUILD_DIR)"
@@ -55,5 +56,5 @@ emulator-format:
 emulator-test:
 	$(CARGO) test --manifest-path "$(EMULATOR_MANIFEST)" --workspace --target-dir "$(EMULATOR_TARGET_DIR)"
 
-.NOTPARALLEL: emulator-validate
-emulator-validate: emulator-isa-check emulator-format emulator-test
+emulator-validate:
+	+$(MAKE) -j1 emulator-isa-check emulator-format emulator-test

@@ -31,7 +31,7 @@ from encoding_fields import validate_encoding_template
 from artifact_overlay import read_source, resolve_source
 
 
-ROOT = Path(__file__).resolve().parents[2] / "isa" / "defs"
+ROOT = Path(__file__).resolve().parents[2] / "isa" / "instructions" / "definitions"
 INSTRUCTION_FILENAME = "instruction.yaml"
 ENCODINGS_FILENAME = "encodings.yaml"
 
@@ -65,10 +65,10 @@ def iter_instruction_files(
 
 
 def validate_description_tex(path: Path) -> list[str]:
-    resolved = resolve_source(path, ROOT.parent.parent)
+    resolved = resolve_source(path, ROOT.parents[2])
     if not resolved.is_file():
         return [f"{path}: referenced TeX file does not exist"]
-    text = read_source(path, ROOT.parent.parent).strip()
+    text = read_source(path, ROOT.parents[2]).strip()
     errors: list[str] = []
     if not text:
         errors.append(f"{path}: referenced TeX file must not be empty")
@@ -87,7 +87,7 @@ def validate_description_tex(path: Path) -> list[str]:
 
 def validate_defs(root: Path = ROOT) -> tuple[dict[str, Any], list[str]]:
     errors: list[str] = []
-    architecture_path = root.parent / "reference" / "architecture_tables.yaml"
+    architecture_path = root.parent.parent / "conformance" / "architecture_tables.yaml"
     try:
         architecture = load_yaml(architecture_path) if architecture_path.is_file() else {}
         event_names = {
@@ -276,7 +276,10 @@ def main() -> int:
         "--root",
         type=Path,
         default=ROOT,
-        help="ISA definition root (default: repository isa/defs)",
+        help=(
+            "ISA definition root "
+            "(default: repository isa/instructions/definitions)"
+        ),
     )
     args = parser.parse_args()
     summary, errors = validate_defs(args.root)

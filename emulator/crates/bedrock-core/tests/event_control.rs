@@ -98,7 +98,7 @@ fn page_fault_populates_its_frame_and_eret_restores_the_saved_state() {
     map_low_page(&mut ram, 0, 0x8000, PTE_X | PTE_U);
     map_low_page(&mut ram, 5, 0xd000, PTE_X);
     map_low_page(&mut ram, 6, 0xe000, PTE_W);
-    ram.load(0x8000, &[0xc0, 0x38, 0x90]).unwrap();
+    ram.load(0x8000, &[0xc1, 0x18, 0x80]).unwrap();
     ram.write_u8(0xd000, 0x04).unwrap();
 
     let mut cpu = Cpu::new();
@@ -144,7 +144,7 @@ fn page_fault_and_double_fault_delivery_failure_enters_shutdown() {
     let mut ram = Ram::new(0x20_000);
     install_four_level_root(&mut ram);
     map_low_page(&mut ram, 0, 0x8000, PTE_X | PTE_U);
-    ram.load(0x8000, &[0xc0, 0x38, 0x90]).unwrap();
+    ram.load(0x8000, &[0xc1, 0x18, 0x80]).unwrap();
 
     let mut cpu = Cpu::new();
     cpu.reset(0);

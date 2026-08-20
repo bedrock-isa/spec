@@ -13,11 +13,12 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 def document_paths(root: Path) -> list[Path]:
-    paths = sorted((root / "isa" / "defs").rglob("*.yaml"))
+    paths = sorted((root / "isa" / "instructions" / "definitions").rglob("*.yaml"))
     paths.extend(
         (
-            root / "isa" / "abi" / "plt_conformance_vectors.yaml",
-            root / "isa" / "memory_model" / "validation.yaml",
+            root / "isa" / "addressing" / "effective_address" / "definition.yaml",
+            root / "isa" / "interfaces" / "abi" / "plt_conformance_vectors.yaml",
+            root / "isa" / "memory" / "ordering" / "formal" / "validation.yaml",
         )
     )
     return paths
@@ -26,7 +27,9 @@ def document_paths(root: Path) -> list[Path]:
 def validate_schema(root: Path = ROOT) -> tuple[int, list[str]]:
     errors: list[str] = []
     try:
-        verify_schema_lock(root / "isa" / "defs" / "schema.lock")
+        verify_schema_lock(
+            root / "isa" / "instructions" / "definitions" / "schema.lock"
+        )
     except DecodeError as exc:
         errors.append(str(exc))
         return 0, errors

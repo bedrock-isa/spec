@@ -11,7 +11,7 @@ from typing import Any
 import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_MANIFEST = ROOT / "isa" / "reference" / "conformance_manifest.yaml"
+DEFAULT_MANIFEST = ROOT / "isa" / "conformance" / "manifest.yaml"
 
 MANIFEST_TOP_KEYS = {"schema_version", "families", "implementation_defined"}
 MANIFEST_FAMILY_KEYS = {"id", "source", "required_cases"}

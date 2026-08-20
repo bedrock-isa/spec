@@ -1,0 +1,202 @@
+forms:
+- id: extrashort.sub_q_8_sp
+  class: extrashort
+  bits: '0001111'
+  syntax: SUB.Q 8, SP
+  operands:
+  - name: imm
+    type: imm
+    access: read
+  - name: dst
+    type: SP
+    access: read_write
+  sizes:
+  - Q
+- id: short.sub_x_rn_s_rn_d
+  class: short
+  bits: 00010zssssdddd
+  syntax: SUB.LQ(z) Rn(s), Rn(d)
+  operands:
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: Rn
+    access: read_write
+    field: d
+  fields:
+    z:
+      type: size.LQ
+- id: short.sub_q_imm8_i_sp
+  class: short
+  bits: 100101iiiiiiii
+  syntax: SUB.Q imm8(i), SP
+  operands:
+  - name: imm
+    type: imm8
+    access: read
+    field: i
+  - name: dst
+    type: SP
+    access: read_write
+  sizes:
+  - Q
+  constraints:
+  - field: i
+    allow:
+    - 0x1..0xff
+    reason: zero_immediate_reclaimed
+- id: medium.sub_q_ea_sp
+  class: medium
+  bits: '111011110000001000'
+  syntax: SUB.Q <imm16s>, SP
+  operands:
+  - name: imm
+    type: imm16s
+    access: read
+  - name: dst
+    type: SP
+    access: read_write
+  sizes:
+  - Q
+- id: medium.sub_q_ea_sp.2
+  class: medium
+  bits: '111011110000001001'
+  syntax: SUB.Q <imm32s>, SP
+  operands:
+  - name: imm
+    type: imm32s
+    access: read
+  - name: dst
+    type: SP
+    access: read_write
+  sizes:
+  - Q
+- id: medium.sub_x_rn_s_ea_e
+  class: medium
+  bits: 00010zzsssseeeeeee
+  syntax: SUB.BWLQ(z) Rn(s), <ea>(e)
+  operands:
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: EA
+    access: read_write
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  fields:
+    z:
+      type: size.BWLQ
+  constraints:
+  - field: e
+    exclude: immediate
+    reason: invalid_destination
+- id: medium.sub_x_ea_e_rn_d
+  class: medium
+  bits: 01010zzddddeeeeeee
+  syntax: SUB.BWLQ(z) <ea>(e), Rn(d)
+  operands:
+  - name: src
+    type: EA
+    access: read
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  - name: dst
+    type: Rn
+    access: read_write
+    field: d
+  fields:
+    z:
+      type: size.BWLQ
+- id: long.sub_x_imm8s_ea_e
+  class: long
+  bits: 11110110000000001zzeeeeeee
+  syntax: SUB.BWLQ(z) <imm8s>, <ea>(e)
+  operands:
+  - name: src
+    type: imm8s
+    access: read
+  - name: dst
+    type: EA
+    access: read_write
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  fields:
+    z:
+      type: size.BWLQ
+  constraints:
+  - field: e
+    exclude: immediate
+    reason: invalid_destination
+- id: long.sub_x_imm16s_ea_e
+  class: long
+  bits: 11110110000000010zzeeeeeee
+  syntax: SUB.WLQ(z) <imm16s>, <ea>(e)
+  operands:
+  - name: src
+    type: imm16s
+    access: read
+  - name: dst
+    type: EA
+    access: read_write
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  fields:
+    z:
+      type: size.WLQ
+  constraints:
+  - field: z
+    allow:
+    - 0x1..0x3
+    reason: immediate_wider_than_operation_size
+  - field: e
+    exclude: immediate
+    reason: invalid_destination
+- id: long.sub_x_imm32s_ea_e
+  class: long
+  bits: 111101100000000110zeeeeeee
+  syntax: SUB.LQ(z) <imm32s>, <ea>(e)
+  operands:
+  - name: src
+    type: imm32s
+    access: read
+  - name: dst
+    type: EA
+    access: read_write
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  fields:
+    z:
+      type: size.LQ
+  constraints:
+  - field: e
+    exclude: immediate
+    reason: invalid_destination
+- id: medium.sub_q_imm64_ea_e
+  class: medium
+  bits: 11101001111eeeeeee
+  syntax: SUB.Q <imm64>, <ea>(e)
+  operands:
+  - name: src
+    type: imm64
+    access: read
+  - name: dst
+    type: EA
+    access: read_write
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  sizes:
+  - Q
+  constraints:
+  - field: e
+    exclude: immediate
+    reason: invalid_destination

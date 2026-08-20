@@ -215,13 +215,65 @@ def _constraint_matches(constraint: decode_ir.ConstraintIR, opcode: int) -> bool
         value = (value << 1) | ((opcode >> position) & 1)
     if constraint.kind == "allow_ranges":
         return any(item.lower <= value <= item.upper for item in constraint.ranges)
-    if constraint.kind == "exclude_rn_direct":
-        return not 0 <= value <= 0x0F
-    if constraint.kind == "exclude_reg_direct":
-        return not (0 <= value <= 0x0F or value == 0x68)
     if constraint.kind == "exclude_immediate":
-        return not 0x6C <= value <= 0x6F
+        return not 0x5B <= value <= 0x5E
     raise ValueError(f"unknown constraint kind {constraint.kind}")
+
+
+def _accepted_forms_overlap(
+    left: decode_ir.FormIR, right: decode_ir.FormIR
+) -> bool:
+    """Return whether two same-class forms accept at least one common opcode."""
+    if left.opcode_class != right.opcode_class:
+        return False
+    common_mask = left.opcode_mask & right.opcode_mask
+    if (left.opcode_value ^ right.opcode_value) & common_mask:
+        return False
+
+    fixed_mask = left.opcode_mask | right.opcode_mask
+    opcode = left.opcode_value | right.opcode_value
+    variable_positions = sorted(
+        {
+            position
+            for form in (left, right)
+            for constraint in form.constraints
+            for position in constraint.positions
+            if not fixed_mask & (1 << position)
+        }
+    )
+    if len(variable_positions) > 20:
+        raise ValueError(
+            "cannot prove D0 accepted-form exclusivity for "
+            f"{left.key} and {right.key}: "
+            f"{len(variable_positions)} variable constraint bits"
+        )
+    for assignment in range(1 << len(variable_positions)):
+        candidate = opcode
+        for index, position in enumerate(variable_positions):
+            if assignment & (1 << index):
+                candidate |= 1 << position
+        if all(
+            _constraint_matches(constraint, candidate)
+            for form in (left, right)
+            for constraint in form.constraints
+        ):
+            return True
+    return False
+
+
+def _validate_d0_accepted_exclusivity(ir: decode_ir.DecodeIR) -> None:
+    """Fail closed unless every opcode class has at most one accepted form."""
+    by_class: dict[str, list[decode_ir.FormIR]] = {}
+    for form in ir.forms:
+        by_class.setdefault(form.opcode_class, []).append(form)
+    for opcode_class, forms in sorted(by_class.items()):
+        for left_index, left in enumerate(forms):
+            for right in forms[left_index + 1 :]:
+                if _accepted_forms_overlap(left, right):
+                    raise ValueError(
+                        "D0 accepted forms overlap in opcode class "
+                        f"{opcode_class}: {left.key} and {right.key}"
+                    )
 
 
 def reference_d0(
@@ -738,12 +790,8 @@ def _constraint_sv(constraint: decode_ir.ConstraintIR, gathered: str) -> str:
                     f"({gathered} <= {_hex(width, item.upper)}))"
                 )
         return "(" + " || ".join(parts) + ")"
-    if constraint.kind == "exclude_rn_direct":
-        return f"!({gathered} <= {_hex(width, 0x0F)})"
-    if constraint.kind == "exclude_reg_direct":
-        return f"!(({gathered} <= {_hex(width, 0x0F)}) || ({gathered} == {_hex(width, 0x68)}))"
     if constraint.kind == "exclude_immediate":
-        return f"!(({gathered} >= {_hex(width, 0x6C)}) && ({gathered} <= {_hex(width, 0x6F)}))"
+        return f"!(({gathered} >= {_hex(width, 0x5B)}) && ({gathered} <= {_hex(width, 0x5E)}))"
     raise ValueError(f"unknown constraint kind {constraint.kind}")
 
 
@@ -811,6 +859,8 @@ def _render_opcode_class_bytes_function(ir: decode_ir.DecodeIR) -> str:
 
 
 def _render_d0(ir: decode_ir.DecodeIR, names: Names) -> str:
+    _validate_d0_accepted_exclusivity(ir)
+    form_bits_type = f"logic [{_width(len(ir.forms) + 1) - 1}:0]"
     by_class: dict[str, list[decode_ir.FormIR]] = {}
     for form in ir.forms:
         by_class.setdefault(form.opcode_class, []).append(form)
@@ -839,12 +889,15 @@ def _render_d0(ir: decode_ir.DecodeIR, names: Names) -> str:
         class_forms = by_class[opcode_class]
         class_name = _identifier(opcode_class).lower()
         raw_leaves: list[str] = []
+        form_leaves: list[str] = []
         selection_leaves: list[str] = []
         for form in class_forms:
             raw_signal = f"form_{form.index:03d}_raw_match"
             accepted_signal = f"form_{form.index:03d}_accepted_match"
+            form_signal = f"form_{form.index:03d}_onehot_form"
             selection_signal = f"form_{form.index:03d}_selection"
             raw_leaves.append(raw_signal)
+            form_leaves.append(form_signal)
             selection_leaves.append(selection_signal)
             raw = f"((opcode_i & {_hex(34, form.opcode_mask)}) == {_hex(34, form.opcode_value)})"
             low_width, alt_width = _ea_candidate_widths(form, names)
@@ -861,6 +914,7 @@ def _render_d0(ir: decode_ir.DecodeIR, names: Names) -> str:
                     f"  logic {raw_signal};",
                     f"  logic {accepted_signal};",
                     f"  d0_selection_t {selection_signal};",
+                    f"  {form_bits_type} {form_signal};",
                 ]
             )
             form_assignments.append(f"  assign {raw_signal} = {raw};")
@@ -879,7 +933,9 @@ def _render_d0(ir: decode_ir.DecodeIR, names: Names) -> str:
             form_assignments.extend(
                 [
                     f"  assign {selection_signal}.valid = {accepted_signal};",
-                    f"  assign {selection_signal}.form = {names.form[form.key]};",
+                    f"  assign {selection_signal}.form = FORM_INVALID;",
+                    f"  assign {form_signal} = {accepted_signal} ? "
+                    f"{names.form[form.key]} : FORM_INVALID;",
                     f"  assign {selection_signal}.ea_layout = {_ea_layout(form)};",
                     f"  assign {selection_signal}.ea_widths[BEDROCK_EA_LOW_SLOT] = {low_width};",
                     f"  assign {selection_signal}.ea_widths[BEDROCK_EA_ALT_SLOT] = {alt_width};",
@@ -890,6 +946,14 @@ def _render_d0(ir: decode_ir.DecodeIR, names: Names) -> str:
             prefix=f"{class_name}_raw",
             type_name="logic",
             expression="({left} | {right})",
+        )
+        form_tree_declarations, form_tree_assignments, form_root, form_depth = (
+            _balanced_tree(
+                form_leaves,
+                prefix=f"{class_name}_form",
+                type_name=form_bits_type,
+                expression="({left} | {right})",
+            )
         )
         (
             selection_declarations,
@@ -902,16 +966,30 @@ def _render_d0(ir: decode_ir.DecodeIR, names: Names) -> str:
             type_name="d0_selection_t",
             expression="{left}.valid ? {left} : {right}",
         )
+        if len(selection_declarations) != len(form_tree_declarations):
+            raise ValueError(f"mismatched D0 tree nodes for {opcode_class}")
+        # Keep corresponding tree lanes adjacent through elaboration. The
+        # target Yosys/ABC flow maps this ordering materially better.
+        selection_form_declarations = [
+            declaration
+            for pair in zip(selection_declarations, form_tree_declarations)
+            for declaration in pair
+        ]
+        selection_form_assignments = [
+            assignment
+            for pair in zip(selection_assignments, form_tree_assignments)
+            for assignment in pair
+        ]
         tree_declarations.extend(
             [
                 f"  // {opcode_class}: {len(class_forms)} parallel form leaves, "
-                f"{selection_depth} balanced priority levels",
+                f"{selection_depth} balanced form-OR/EA-priority levels",
                 *raw_declarations,
-                *selection_declarations,
+                *selection_form_declarations,
             ]
         )
-        tree_assignments.extend([*raw_assignments, *selection_assignments])
-        if raw_depth != selection_depth:
+        tree_assignments.extend([*raw_assignments, *selection_form_assignments])
+        if raw_depth != form_depth or form_depth != selection_depth:
             raise ValueError(f"mismatched D0 tree depths for {opcode_class}")
         class_cases.append(
             "\n".join(
@@ -919,6 +997,7 @@ def _render_d0(ir: decode_ir.DecodeIR, names: Names) -> str:
                     f"      {names.opcode_class[opcode_class]}: begin",
                     f"        class_raw_match = {raw_root};",
                     f"        class_selection = {selection_root};",
+                    f"        class_form = {form_root};",
                     "      end",
                 ]
             )
@@ -942,6 +1021,7 @@ module bedrock_decode_d0
 
   logic class_raw_match;
   d0_selection_t class_selection;
+  {form_bits_type} class_form;
   ea_span_result_t alt_span;
 {chr(10).join(constraint_declarations)}
 {chr(10).join(form_declarations)}
@@ -979,6 +1059,7 @@ module bedrock_decode_d0
         ea_result_o.base_cursor + {{2'b0, alt_span.encoded_bytes}};
     class_raw_match = 1'b0;
     class_selection = '0;
+    class_form = '0;
     unique case (opcode_class_i)
 {chr(10).join(class_cases)}
       default: begin end
@@ -987,7 +1068,7 @@ module bedrock_decode_d0
       result_o.status = D0_UNALLOCATED_OPCODE;
       if (class_selection.valid) begin
         result_o.status = D0_SUCCESS;
-        result_o.form = class_selection.form;
+        result_o.form = form_id_e'(class_form);
         result_o.ea_layout = class_selection.ea_layout;
         result_o.ea_widths = class_selection.ea_widths;
       end else if (class_raw_match) begin
@@ -1529,7 +1610,7 @@ endmodule
 
 
 def render_outputs(build_dir: Path) -> dict[Path, str]:
-    ir = decode_ir.load_decode_ir(ROOT / "isa" / "defs")
+    ir = decode_ir.load_decode_ir(ROOT / "isa" / "instructions" / "definitions")
     package, names = _render_package(ir)
     return {
         build_dir / OUTPUT_NAMES[0]: package,
