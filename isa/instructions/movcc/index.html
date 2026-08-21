@@ -8920,7 +8920,7 @@
 
 <h1 id="movcc">MOVcc</h1>
 <h2 id="operation">Operation</h2>
-<p>Copies the source value to the destination only when the encoded condition is true.</p>
+<p>Copies the source value to the destination only when the encoded condition is true. When the condition is true, a sub-Q Rn destination receives the selected source bits zero-extended to 64 bits.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
 <p><code>MOVcc.BWLQ(z) Rn(s), Rn(d)</code></p>
 <p><code>MOVcc.BWLQ(z) Rn(s), &lt;ea&gt;(e)</code></p>

@@ -8964,7 +8964,7 @@
 
 <h1 id="divs">DIVS</h1>
 <h2 id="operation">Operation</h2>
-<p>Interprets both selected-width operands as signed integers, divides the destination by the source with truncation toward zero, and writes the quotient. Division by zero and the most-negative value divided by minus one raise DIVIDE_ERROR.</p>
+<p>Interprets both selected-width operands as signed integers, divides the destination by the source with truncation toward zero, and writes the quotient. A sub-Q quotient is sign-extended to 64 bits. Division by zero and the most-negative value divided by minus one raise DIVIDE_ERROR.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
 <p><code>DIVS.BWLQ(z) Rn(s), Rn(d)</code></p>
 <p><code>DIVS.BWLQ(z) &lt;ea&gt;(e), Rn(d)</code></p>

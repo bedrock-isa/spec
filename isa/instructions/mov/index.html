@@ -8920,11 +8920,13 @@
 
 <h1 id="mov">MOV</h1>
 <h2 id="operation">Operation</h2>
-<p>Reads the source using its addressing mode and selected size and writes that value to the destination.</p>
+<p>Reads the source using its addressing mode and selected size and writes that value to the destination. A sub-Q Rn destination receives the selected source bits zero-extended to 64 bits.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
 <p><code>MOV.Q Rn(r), SP</code></p>
 <p><code>MOV.Q SP, Rn(r)</code></p>
 <p><code>MOV.LQ(z) Rn(s), Rn(d)</code></p>
+<p><code>MOV.B Rn(s), Rn(d)</code></p>
+<p><code>MOV.W Rn(s), Rn(d)</code></p>
 <p><code>MOV.BWLQ(z) Rn(s), &lt;ea&gt;(e)</code></p>
 <p><code>MOV.BWLQ(z) &lt;ea&gt;(e), Rn(d)</code></p>
 <p><code>MOV.BWLQ(z) &lt;ea&gt;(s), &lt;ea&gt;(d)</code></p>
@@ -8959,10 +8961,26 @@
 <p><strong>Size field <code>z</code></strong> — Selects L/Q.</p>
 <p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
 <p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
+<p><strong><code>MOV.B Rn(s), Rn(d)</code></strong></p>
+<p><em>Encoding class: short; required bytes: 2 bytes; privilege: unprivileged</em></p>
+<p><strong>Instruction Format:</strong></p>
+<p><img alt="Format — Instruction format for MOV.B Rn(s), Rn(d)" src="../../../assets/visuals/isa/mov-04.svg" /></p>
+<p><strong>Format Instruction format for MOV.B Rn(s), Rn(d)</strong></p>
+<p><strong>Instruction Fields:</strong></p>
+<p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
+<p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
+<p><strong><code>MOV.W Rn(s), Rn(d)</code></strong></p>
+<p><em>Encoding class: short; required bytes: 2 bytes; privilege: unprivileged</em></p>
+<p><strong>Instruction Format:</strong></p>
+<p><img alt="Format — Instruction format for MOV.W Rn(s), Rn(d)" src="../../../assets/visuals/isa/mov-05.svg" /></p>
+<p><strong>Format Instruction format for MOV.W Rn(s), Rn(d)</strong></p>
+<p><strong>Instruction Fields:</strong></p>
+<p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
+<p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
 <p><strong><code>MOV.BWLQ(z) Rn(s), &lt;ea&gt;(e)</code></strong></p>
 <p><em>Encoding class: medium; required bytes: 3-13 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for MOV.BWLQ(z) Rn(s), \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/mov-04.svg" /></p>
+<p><img alt="Format — Instruction format for MOV.BWLQ(z) Rn(s), \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/mov-06.svg" /></p>
 <p><strong>Format Instruction format for MOV.BWLQ(z) Rn(s), \&lt;ea&gt;(e)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
@@ -8975,7 +8993,7 @@
 <p><strong><code>MOV.BWLQ(z) &lt;ea&gt;(e), Rn(d)</code></strong></p>
 <p><em>Encoding class: medium; required bytes: 3-13 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for MOV.BWLQ(z) \&lt;ea&gt;(e), Rn(d)" src="../../../assets/visuals/isa/mov-05.svg" /></p>
+<p><img alt="Format — Instruction format for MOV.BWLQ(z) \&lt;ea&gt;(e), Rn(d)" src="../../../assets/visuals/isa/mov-07.svg" /></p>
 <p><strong>Format Instruction format for MOV.BWLQ(z) \&lt;ea&gt;(e), Rn(d)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
@@ -8988,7 +9006,7 @@
 <p><strong><code>MOV.BWLQ(z) &lt;ea&gt;(s), &lt;ea&gt;(d)</code></strong></p>
 <p><em>Encoding class: long; required bytes: 4-18 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for MOV.BWLQ(z) \&lt;ea&gt;(s), \&lt;ea&gt;(d)" src="../../../assets/visuals/isa/mov-06.svg" /></p>
+<p><img alt="Format — Instruction format for MOV.BWLQ(z) \&lt;ea&gt;(s), \&lt;ea&gt;(d)" src="../../../assets/visuals/isa/mov-08.svg" /></p>
 <p><strong>Format Instruction format for MOV.BWLQ(z) \&lt;ea&gt;(s), \&lt;ea&gt;(d)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>

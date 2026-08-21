@@ -8920,7 +8920,7 @@
 
 <h1 id="shr">SHR</h1>
 <h2 id="operation">Operation</h2>
-<p>Shifts the selected-width destination value right by the effective count, zero-fills the vacated high bits, and writes the result to the destination. The effective count is the count operand modulo the selected operand width: B uses mod 8, W uses mod 16, L uses mod 32, and Q uses mod 64. If the effective count is zero, the destination is unchanged. FLAGS are unchanged for all counts.</p>
+<p>Shifts the selected-width destination value right by the effective count, zero-fills the vacated high bits, and writes the result to the destination. The effective count is the count operand modulo the selected operand width: B uses mod 8, W uses mod 16, L uses mod 32, and Q uses mod 64. If the effective count is zero, the selected-width result equals the original selected-width value; an Rn destination is still written and a sub-Q result is zero-extended to 64 bits, while a memory destination rewrites the same selected bytes. FLAGS are unchanged for all counts.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
 <p><code>SHR.LQ(z) Rn(s), Rn(d)</code></p>
 <p><code>SHR.BWLQ(z) Rn(s), &lt;ea&gt;(e)</code></p>

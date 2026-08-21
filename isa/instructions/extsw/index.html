@@ -8920,33 +8920,22 @@
 
 <h1 id="extsw">EXTSW</h1>
 <h2 id="operation">Operation</h2>
-<p>Sign-extends the source operand from byte size to word size. The low byte of the source is copied into the destination, and the remaining high destination bits are filled with the source sign bit.</p>
+<p>Sign-extends the source operand from byte size to word size and stores the two-byte result to an EA destination. The low byte of the source is copied into the result, and the remaining high result bits are filled with the source sign bit. EXTSW has no Rn destination form; use EXTSQ.B for a sign-extended Rn result.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
-<p><code>EXTSW.B Rn(s), Rn(d)</code></p>
 <p><code>EXTSW.B Rn(s), &lt;ea&gt;(e)</code></p>
-<p><code>EXTSW.B &lt;ea&gt;(e), Rn(d)</code></p>
 <p><code>EXTSW.B &lt;ea&gt;(s), &lt;ea&gt;(d)</code></p>
 <h2 id="attributes">Attributes</h2>
 <p>Class = integer</p>
 <p>Family = integer unary</p>
 <p>Privilege = unprivileged</p>
-<p>Length = 3-18 bytes</p>
+<p>Length = 4-18 bytes</p>
 <p>Repeat = <code>REP</code>, <code>REPcc</code>, <code>REPG</code></p>
 <p>REPcc observation = <code>result</code> <code>dst</code></p>
 <h2 id="encodings">Encodings</h2>
-<p><strong><code>EXTSW.B Rn(s), Rn(d)</code></strong></p>
-<p><em>Encoding class: medium; required bytes: 3 bytes; privilege: unprivileged</em></p>
-<p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for EXTSW.B Rn(s), Rn(d)" src="../../../assets/visuals/isa/extsw-01.svg" /></p>
-<p><strong>Format Instruction format for EXTSW.B Rn(s), Rn(d)</strong></p>
-<p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
-<p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
 <p><strong><code>EXTSW.B Rn(s), &lt;ea&gt;(e)</code></strong></p>
 <p><em>Encoding class: long; required bytes: 4-14 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for EXTSW.B Rn(s), \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/extsw-02.svg" /></p>
+<p><img alt="Format — Instruction format for EXTSW.B Rn(s), \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/extsw-01.svg" /></p>
 <p><strong>Format Instruction format for EXTSW.B Rn(s), \&lt;ea&gt;(e)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
@@ -8955,22 +8944,10 @@
 <p><strong>EA availability</strong></p>
 <p><strong>Allowed:</strong> Memory; Extended Descriptor</p>
 <p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>
-<p><strong><code>EXTSW.B &lt;ea&gt;(e), Rn(d)</code></strong></p>
-<p><em>Encoding class: long; required bytes: 4-14 bytes; privilege: unprivileged</em></p>
-<p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for EXTSW.B \&lt;ea&gt;(e), Rn(d)" src="../../../assets/visuals/isa/extsw-03.svg" /></p>
-<p><strong>Format Instruction format for EXTSW.B \&lt;ea&gt;(e), Rn(d)</strong></p>
-<p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
-<p><strong>Effective Address field <code>e</code></strong> — Specifies the source operand.</p>
-<p><strong>EA availability</strong></p>
-<p><strong>Allowed:</strong> Memory; Immediate; Extended Descriptor</p>
-<p><strong>Encoding:</strong> See <a href="../../effective-addressing-modes/#table-compact-ea-encoding">Compact EA Encoding</a> and the <a href="../../effective-addressing-modes/#section-extended-ea-addressing">Extended EA Descriptor profiles</a>.</p>
 <p><strong><code>EXTSW.B &lt;ea&gt;(s), &lt;ea&gt;(d)</code></strong></p>
 <p><em>Encoding class: long; required bytes: 4-18 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for EXTSW.B \&lt;ea&gt;(s), \&lt;ea&gt;(d)" src="../../../assets/visuals/isa/extsw-04.svg" /></p>
+<p><img alt="Format — Instruction format for EXTSW.B \&lt;ea&gt;(s), \&lt;ea&gt;(d)" src="../../../assets/visuals/isa/extsw-02.svg" /></p>
 <p><strong>Format Instruction format for EXTSW.B \&lt;ea&gt;(s), \&lt;ea&gt;(d)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>

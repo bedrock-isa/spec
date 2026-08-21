@@ -8896,8 +8896,8 @@
 <h2 id="integer-data-sizes">Integer Data Sizes</h2>
 <p>Integer operands use size suffixes to select the low-order subfield of an Rn register and the number of bytes transferred by memory operands.</p>
 <p>Byte, word, and long operations use the low-order subfield of the selected register. Q-sized operations use the full 64-bit register.</p>
-<p>An Rn destination write smaller than Q replaces only the selected low-order subfield; bits above the operation size are preserved. Q-sized Rn writes replace all 64 bits. Memory destination writes transfer only the selected number of bytes.</p>
-<p>An instruction may explicitly define a full-register write, zero-extension, sign-extension, or another upper-bit rule. Such instruction-specific rules override the default subfield write rule.</p>
+<p>Every Rn destination write defines all 64 bits. A Q-sized write uses the complete result. For a B-, W-, or L-sized write, <code>ABS</code>, <code>DIVS</code>, <code>MODS</code>, <code>DIVMODS</code>, <code>MINS</code>, <code>MAXS</code>, <code>SAR</code>, and the explicit <code>EXTS</code> operations sign-extend the selected-width result to 64 bits. Every other integer operation, including <code>MOV</code>, neutral modular arithmetic, logical and bit operations, count and Boolean results, address results, atomic return values, and state-register reads, zero-extends the selected-width result to 64 bits. This result extension does not change FLAGS calculation, which continues to use the selected operation size.</p>
+<p>Memory destination writes transfer only the selected number of bytes. Extension-store instructions instead write the explicitly named W, L, or Q destination width. SP has only Q-sized writable forms and is not subject to the Rn result-extension rule.</p>
 <p><strong>Integer Data Sizes</strong></p>
 <table>
 <thead>
