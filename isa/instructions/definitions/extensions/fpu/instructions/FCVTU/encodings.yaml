@@ -17,7 +17,7 @@ forms:
       type: size.SD
 - id: long.fcvtu_x_fn_s_rn_d
   class: long
-  bits: 11111010111z001011ssssdddd
+  bits: 11111000111z001011ssssdddd
   syntax: FCVTU.SD(z) Fn(s), Rn(d)
   operands:
   - name: src
@@ -33,7 +33,7 @@ forms:
       type: size.SD
 - id: long.fcvtu_x_rn_s_fn_d
   class: long
-  bits: 11111010100z001011ssssdddd
+  bits: 11111000100z001011ssssdddd
   syntax: FCVTU.SD(z) Rn(s), Fn(d)
   operands:
   - name: src

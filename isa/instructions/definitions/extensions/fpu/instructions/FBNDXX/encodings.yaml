@@ -1,7 +1,7 @@
 forms:
-- id: long.fbndxx_x_fn_l_fn_v_fn_h
-  class: long
-  bits: 1111100110z011llllvvvvhhhh
+- id: extralong.fbndxx_x_fn_l_fn_v_fn_h
+  class: extralong
+  bits: 111111001100101000011zllllvvvvhhhh
   syntax: FBNDXX.SD(z) Fn(l), Fn(v), Fn(h)
   operands:
   - name: lo
@@ -19,9 +19,9 @@ forms:
   fields:
     z:
       type: size.SD
-- id: long.fbndxx_x_fn_l_ea_v_fn_h
-  class: long
-  bits: 1111100011zllllhhhhvvvvvvv
+- id: extralong.fbndxx_x_fn_l_ea_v_fn_h
+  class: extralong
+  bits: 111111001100100011zllllhhhhvvvvvvv
   syntax: FBNDXX.SD(z) Fn(l), <ea>(v), Fn(h)
   operands:
   - name: lo

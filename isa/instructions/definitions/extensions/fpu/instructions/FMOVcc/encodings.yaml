@@ -1,7 +1,7 @@
 forms:
 - id: long.fmovcc_fn_s_fn_d
   class: long
-  bits: 11111010101000ccccssssdddd
+  bits: 11111000101000ccccssssdddd
   syntax: FMOVcc Fn(s), Fn(d)
   operands:
   - name: cc
@@ -21,7 +21,7 @@ forms:
   - D
 - id: long.fmovcc_x_ea_s_fn_d
   class: long
-  bits: 1111101000zccccddddeeeeeee
+  bits: 1111100000zccccddddeeeeeee
   syntax: FMOVcc.SD(z) <ea>(e), Fn(d)
   operands:
   - name: cc
@@ -43,7 +43,7 @@ forms:
       type: size.SD
 - id: long.fmovcc_x_fn_s_ea_d
   class: long
-  bits: 1111101001zccccsssseeeeeee
+  bits: 1111100001zccccsssseeeeeee
   syntax: FMOVcc.SD(z) Fn(s), <ea>(e)
   operands:
   - name: cc
