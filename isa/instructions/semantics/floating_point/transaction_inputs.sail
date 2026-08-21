@@ -123,13 +123,9 @@ function fp_waiting(before : Cpu_state, after : Cpu_state,
 function fp_preserve_repeat_parent(previous : Execution_result,
                                    next : Execution_result) -> Execution_result =
   { next with pending = { next.pending with
-      repeat_prefix = previous.pending.repeat_prefix,
       repeat_body = previous.pending.repeat_body,
       repeat_bytes = previous.pending.repeat_bytes,
-      repeat_tail = previous.pending.repeat_tail,
-      repeat_tail_length = previous.pending.repeat_tail_length,
       repeat_parent_active = previous.pending.repeat_parent_active,
-      repeat_parent_grouped = previous.pending.repeat_parent_grouped,
       boundary_class = previous.pending.boundary_class } }
 
 function fp_fault_with_causes(state : Cpu_state, operation : Semantic_operation,

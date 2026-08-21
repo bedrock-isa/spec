@@ -83,12 +83,12 @@ typedef unsigned char u8;
 struct ExceptionFrame {
   u64 frame_control;
   u64 event_info;
-  u64 frame_ext1;
   u64 saved_pc;
   u64 saved_sp;
   u64 saved_cs;
   u64 saved_ds;
   u64 saved_ss;
+  u64 padding;
   u64 error_code;
   u64 fault_ea;
   u64 fault_linear;
@@ -96,7 +96,7 @@ struct ExceptionFrame {
 };
 
 struct UserReturnContext {
-  u64 urctl;
+  u64 uctl;
   u64 pc;
   u64 sp;
   u64 cs;
@@ -148,7 +148,7 @@ struct Process {
 };
 
 struct UserContext {
-  u64 urctl;
+  u64 uctl;
   u64 pc;
   u64 sp;
   u64 cs;
@@ -244,9 +244,6 @@ void syscall_user_sum(u64 value);
 u32 syscall_user_result(u64 slot, u64 value);
 u8 hex_digit(u64 value);
 void trigger_privileged_read(void);
-void write_spc(u64 value);
-void write_scs(u64 value);
-void write_sds(u64 value);
 void write_sss(u64 value);
 void write_ssp(u64 value);
 void write_epc(u64 value);

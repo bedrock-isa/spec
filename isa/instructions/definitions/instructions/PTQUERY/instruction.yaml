@@ -1,7 +1,7 @@
 mnemonic: PTQUERY
 title: Page Table Query
-summary: Non-destructively reads the raw PTE selected at one page-table level.
-description: PTQUERY reads the raw PTE selected by a linear address and requested page-table level, or returns zero when the requested entry cannot be read. Z reports structural validity; N, C, and V report the accumulated U, W, and X permissions when Z is set.
+summary: Non-destructively reads the selected PTE with ignored bit 7 cleared.
+description: PTQUERY reads the PTE selected by a linear address and requested page-table level with ignored bit 7 cleared, or returns zero when the requested entry cannot be read. Z reports structural validity; N, C, and V report the accumulated U, W, and X permissions when Z is set.
 attributes:
   class: system
   family: tlb_and_context

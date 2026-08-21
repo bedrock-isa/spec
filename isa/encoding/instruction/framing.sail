@@ -1,4 +1,4 @@
-enum Record_class = FixedExtraShort | FixedShort | ExtendedMedium | ExtendedLong | ExtendedExtraLong
+enum Record_class = FixedExtraShort | FixedShort | ExtendedMedium | ExtendedLong | ExtendedExtraLong | ExtendedXxlong
 
 function extracted_field(allocation : bits(64), positions : list(range(0, 63)), accumulated : int) -> int =
   match positions {
@@ -62,11 +62,13 @@ function class_minimum(record_class : Record_class) -> int = match record_class 
   ExtendedMedium => 3,
   ExtendedLong => 4,
   ExtendedExtraLong => 5,
+  ExtendedXxlong => 6,
 }
 
-function extended_class(selector : int) -> Record_class =
+function extended_class(selector : int, allocation_prefix : int) -> Record_class =
   if selector <= 59 then ExtendedMedium
   else if selector <= 62 then ExtendedLong
+  else if allocation_prefix == 255 then ExtendedXxlong
   else ExtendedExtraLong
 
 function frame_record(bytes : list(bits(8))) -> option(Framed_record) = match bytes {
@@ -82,7 +84,8 @@ function frame_record(bytes : list(bits(8))) -> option(Framed_record) = match by
     let actual = byte_count(bytes);
     let encoded = 3 + unsigned(byte0[5 .. 2]);
     let selector = unsigned(byte0[1 .. 0] @ byte1[7 .. 4]);
-    let record_class = extended_class(selector);
+    let allocation_prefix = unsigned(byte0[1 .. 0] @ byte1[7 .. 2]);
+    let record_class = extended_class(selector, allocation_prefix);
     if byte0[7 .. 6] == 0b11
        & actual == encoded
        & actual >= class_minimum(record_class)

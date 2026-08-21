@@ -1,0 +1,158 @@
+\label{section:vector-register-model}
+The scalable-vector extension provides 32 vector registers, \texttt{V0}
+through \texttt{V31}, and 16 predicate registers, \texttt{P0} through
+\texttt{P15}.  A vector register contains VLEN bits.  VLEN is an
+implementation-selected power of two from 128 through 2048 bits and remains
+stable until reset.  A predicate register contains one bit for each byte of a
+vector register; its packed image therefore occupies VLEN/64 bytes.  Reset
+clears every vector and predicate bit.
+
+The \texttt{VECTOR} discovery predicate and the \texttt{VECTOR\_PARAMETERS}
+CPUID leaf report the extension and VLEN.  Integer and raw-bit vector forms
+require \texttt{VECTOR}.  A form whose selected element type is \texttt{H},
+\texttt{S}, or \texttt{D} additionally requires the base floating-point
+extension.  The requirement follows the decoded element type, including a
+shared integer/floating-point opcode; disabling FP does not disable the
+integer forms of that opcode.  Vector floating-point operations use the
+ordinary \texttt{FSTATUS} environment and accrue active-lane causes into
+\texttt{FFLAGS}.
+
+\subsection{Element Types and Assembly Spelling}
+
+A size-bearing vector instruction has one suffix.  The integer element
+suffixes \texttt{B}, \texttt{W}, \texttt{L}, and \texttt{Q} select 1-, 2-,
+4-, and 8-byte elements.  The floating-point suffixes \texttt{H}, \texttt{S},
+and \texttt{D} select IEEE 754 binary16, binary32, and binary64 elements.
+Binary16 is part of the vector FP facility; its default quiet NaN is
+\texttt{0x7e00}.
+
+An opcode family that supports both integer and floating-point arithmetic
+uses the three-bit \texttt{tzz} selector.  Values zero through three select
+\texttt{B/W/L/Q}, value four is invalid, and values five through seven select
+\texttt{H/S/D}.  A family whose numeric domain is fixed by its opcode uses a
+two-bit \texttt{zz} selector: integer families assign all four values to
+\texttt{B/W/L/Q}, while FP families reserve zero and assign one through three
+to \texttt{H/S/D}.  A reserved selector does not name another data format.
+
+The suffix is the source width for a width-changing instruction; the
+destination width and signedness are part of the mnemonic.  For example,
+\texttt{VEXTZQ.B} zero-extends a byte into a quadword.  An instruction whose
+suffix controls only lane width accepts \texttt{H/S/D} as assembly aliases for
+\texttt{W/L/Q}; canonical disassembly uses \texttt{B/W/L/Q}.  Predicate
+operations, \texttt{RDCNT}, \texttt{PLOOP}, \texttt{VMOV}, \texttt{VMOVZ},
+and the permute, slide, slice, and zip families use this width-only rule.
+
+\subsection{Predicates and Destination Images}
+
+For an element size of $E$ bytes, logical lane $i$ is governed by predicate
+bit $iE$.  All other predicate bits are nonsignificant for that operation.
+Unless an instruction explicitly produces a complete predicate image or uses
+zeroing movement, a false governing bit annuls that lane: it performs no
+memory access, produces no exception, and preserves the old destination lane.
+
+An instruction that writes a predicate result writes a complete packed
+predicate image.  It sets or clears each significant result bit and clears
+all nonsignificant bits.  Integer comparisons support \texttt{EQ},
+\texttt{NE}, \texttt{ULT}, \texttt{UGE}, \texttt{ULE}, \texttt{UGT},
+\texttt{LT}, \texttt{GE}, \texttt{LE}, and \texttt{GT}.  FP comparisons
+support \texttt{EQ}, \texttt{NE}, \texttt{LT}, \texttt{LE}, \texttt{GE},
+\texttt{GT}, \texttt{VS} for unordered, and \texttt{VC} for ordered.
+\texttt{VTESTZ} and \texttt{VTESTNZ} are distinct integer test operations.
+Vector integer operations do not update scalar \texttt{FLAGS}.
+
+\texttt{PLOOP} consumes a remaining-count register and an offset register.  If
+the remaining count is zero, it takes its encoded branch target and does not
+change the predicate or either register.  Otherwise, an offset greater than
+or equal to the selected lane count raises \texttt{VECTOR\_RANGE\_ERROR} with
+error code zero and leaves the instruction uncommitted.  A valid nonzero
+iteration activates the next
+$\min(remaining, lane\_count-offset)$ lanes, subtracts that number from the
+remaining count, clears the offset register, and falls through.  Software
+advances the offset between chunks when it needs a nonzero subsequent chunk
+origin.
+
+\subsection{Lane Mapping and Scalar Bridges}
+
+Vector bytes use increasing-address little-endian order.  A same-width
+operation treats a vector as VLEN divided by the selected element width lanes.
+For widening, narrowing, FP format conversion, and integer/FP conversion, the
+operation container is the larger of the source and destination widths.  Each
+active container reads the source value from its low source-width part and
+writes the result into its low destination-width part.  Other bits of an
+active destination container and every inactive container remain unchanged.
+
+\texttt{VDUP} broadcasts a scalar register, FP register, or immediate into
+every lane.  \texttt{VEXTRACT} and \texttt{VINSERT} use a scalar lane index.  An
+index at or above the lane count raises \texttt{VECTOR\_RANGE\_ERROR} with
+error code one and commits no state.  \texttt{RDVL} returns VLEN in bytes;
+\texttt{RDCNT} returns the selected lane count.  \texttt{ADDVL} and
+\texttt{ADDPL} scale their signed immediate by VLEN bytes and packed predicate
+bytes, respectively.
+
+\subsection{Vector Memory Operations}
+
+A vector memory operand uses the ordinary compact, \texttt{EXT1}, and
+\texttt{EXT2} descriptor formats in vector context.  The descriptor computes
+one scalar anchor address.  The vector-context compact table supplies
+\texttt{VSTRIDE} selectors where the scalar table has stack-relative and
+immediate forms.  A contiguous access uses
+
+\[
+  address[i] = anchor + iE,
+\]
+
+and \texttt{VSTRIDE} uses
+
+\[
+  address[i] = base + i\,signed64(stride) + displacement.
+\]
+
+All arithmetic is modulo $2^{64}$.  Existing effective-address auto-update is
+applied once to the scalar anchor in the ordinary architectural order; it is
+not repeated per lane.
+
+Inactive lanes issue no memory transaction.  \texttt{VMOV} merges a memory
+source into its destination, while \texttt{VMOVZ} writes zero to inactive
+destination lanes.  A memory-destination arithmetic form is a lane-wise
+read-modify-write, not an atomic operation.  A vector instruction nevertheless
+has one architectural commit point: address evaluation, all active reads,
+computation, and all active writes must succeed before any register,
+predicate, memory, auto-update, \texttt{FFLAGS}, or PC effect becomes visible.
+If more than one active lane faults, the implementation may select any one of
+those faults, but the reported fault address must identify the selected lane.
+
+\subsection{Floating-Point Exceptions, Conversions, and Reductions}
+
+Each active FP lane applies the corresponding scalar rounding, NaN,
+signed-zero, default-NaN, denormal, and exception rules.  Inactive lanes
+generate no cause.  The instruction unions all active-lane causes before
+testing the enables in the original \texttt{FSTATUS}.  If any generated cause
+is enabled, one \texttt{FLOATING\_POINT\_FAULT} occurs and neither a destination
+effect nor newly accrued \texttt{FFLAGS} becomes visible.  Otherwise the union
+is accrued once and all destination effects commit together.  FP-to-integer
+conversion rounds toward zero and follows the scalar saturation and invalid
+result rules.
+
+Integer reductions return a zero-extended result in an \texttt{Rn}.  For an
+empty predicate, ADD, OR, and XOR return zero; AND and unsigned MIN return the
+all-ones value of the selected width; signed MIN returns the signed maximum;
+signed MAX returns the signed minimum; and unsigned MAX returns zero.  FP
+reductions return an \texttt{Fn}.  Empty FP ADD returns positive zero, empty FP
+MIN returns positive infinity, and empty FP MAX returns negative infinity.
+FP ADD visits active lanes in increasing logical-lane order and may not be
+reassociated.
+
+\subsection{Execution and Saved State}
+
+The vector SAVE/RESTORE component contains the complete scalable vector and
+packed predicate images.  A committed \texttt{Vn} or \texttt{Pn} write marks
+that component modified.  Architectural event entry does not otherwise change
+vector state.
+
+An implementation may internally coalesce eligible scalar \texttt{REP} or
+\texttt{REPcc} iterations into vector-sized work.  This permission creates no
+vector instruction, predicate, or additional repeat state.  The observable
+counter, condition, \texttt{FLAGS}, memory, auto-update, fault, event, and
+restart behavior must equal the scalar iteration sequence, and only the
+scalar prefix preceding the first fault or terminating \texttt{REPcc}
+observation may commit.

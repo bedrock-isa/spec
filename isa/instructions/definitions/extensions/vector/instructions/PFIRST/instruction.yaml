@@ -1,0 +1,8 @@
+mnemonic: PFIRST
+title: PFIRST (Vector)
+summary: Return the first selected element index at a significant position.
+description: Return the first selected element index at a significant position.
+attributes:
+  class: vector
+  family: vector
+  privilege: unprivileged

@@ -1,0 +1,21 @@
+forms:
+- id: extralong.vtrnhi.v98
+  class: extralong
+  bits: 11111101111011001zz1ppppvvvvvwwwww
+  syntax: VTRNHI.BWLQ(z) Pn(p), Vn(v), Vn(w)
+  operands:
+  - name: govern
+    type: Pn
+    access: read
+    field: p
+  - name: src
+    type: Vn
+    access: read
+    field: v
+  - name: dst
+    type: Vn
+    access: read_write
+    field: w
+  fields:
+    z:
+      type: size.BWLQ

@@ -1,0 +1,13 @@
+forms:
+- id: long.addpl.v22
+  class: long
+  bits: 1111101001100000000011rrrr
+  syntax: ADDPL <imm8s>, Rn(r)
+  operands:
+  - name: offset
+    type: imm8s
+    access: read
+  - name: dst
+    type: Rn
+    access: read_write
+    field: r

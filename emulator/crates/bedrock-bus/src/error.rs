@@ -1,7 +1,6 @@
 use thiserror::Error;
 
 pub type BusResult<T> = Result<T, BusError>;
-pub type SlotResult<T> = Result<T, SlotTransactionError>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
@@ -38,24 +37,6 @@ impl AcknowledgedBusFailure {
             retry_safety,
         }
     }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Error)]
-pub enum SlotProtocolError {
-    #[error("acknowledgement direction does not match the request")]
-    DirectionMismatch,
-    #[error("acknowledgement width does not match the request")]
-    WidthMismatch,
-    #[error("mapped acknowledgement address overflows the bus address space")]
-    AddressOverflow,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Error)]
-pub enum SlotTransactionError {
-    #[error(transparent)]
-    Bus(#[from] BusError),
-    #[error("slot protocol error at 0x{addr:016x}: {error}")]
-    Protocol { addr: u64, error: SlotProtocolError },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Error)]

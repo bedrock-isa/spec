@@ -1,0 +1,22 @@
+forms:
+- id: long.ppackhi.v15
+  class: long
+  bits: 11111010010111zz10ppppqqqq
+  syntax: PPACKHI.WLQ(z) Pn(p), Pn(q)
+  operands:
+  - name: src
+    type: Pn
+    access: read
+    field: p
+  - name: dst
+    type: Pn
+    access: read_write
+    field: q
+  fields:
+    z:
+      type: size.WLQ
+  constraints:
+  - field: z
+    allow:
+    - 0x1..0x3
+    reason: reserved_vector_element_type

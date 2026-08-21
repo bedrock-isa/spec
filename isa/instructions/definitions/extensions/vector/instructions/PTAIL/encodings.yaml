@@ -1,0 +1,17 @@
+forms:
+- id: long.ptail.v5
+  class: long
+  bits: 11111010010100zz01rrrrpppp
+  syntax: PTAIL.BWLQ(z) Rn(r), Pn(p)
+  operands:
+  - name: count
+    type: Rn
+    access: read
+    field: r
+  - name: dst
+    type: Pn
+    access: write
+    field: p
+  fields:
+    z:
+      type: size.BWLQ

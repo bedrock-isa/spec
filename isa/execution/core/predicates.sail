@@ -84,9 +84,16 @@ val condition_size_field : list(Decoded_field) -> option(int)
 function operation_width(instruction : Decoded_instruction) -> int =
   match condition_size_field(instruction.fields) {
     Some(selector) => {
+      if instruction.form.instruction_set == VectorSet then
+        if selector == 0 then 1
+        else if selector == 1 | selector == 5 then 2
+        else if selector == 2 | selector == 6 then 4
+        else 8
+      else {
       let count = string_list_count(instruction.form.sizes);
       let index = if count == 3 then selector - 1 else selector;
       size_code_bytes(string_at(instruction.form.sizes, index))
+      }
     },
     None() => match instruction.form.sizes {
       code :: _ => size_code_bytes(code),
@@ -99,3 +106,37 @@ function condition_size_field(fields : list(Decoded_field)) -> option(int) = mat
   field :: tail => if field.kind == FieldSize then Some(field.value) else condition_size_field(tail),
 }
 
+function vector_operand_type_present(operands : list(Decoded_operand), type_name : string) -> bool =
+  match operands {
+    [||] => false,
+    operand :: tail => operand.type_name == type_name
+                       | vector_operand_type_present(tail, type_name),
+  }
+
+function vector_fp_arithmetic_operation(operation : Semantic_operation) -> bool =
+  operation == Op_VMIN | operation == Op_VMAX | operation == Op_VDIV
+  | operation == Op_VMADD | operation == Op_VMSUB | operation == Op_VNMADD
+  | operation == Op_VNMSUB | operation == Op_VSQRT | operation == Op_VCOPYSIGN
+
+function vector_fp_unary_operation(operation : Semantic_operation) -> bool =
+  operation == Op_VROUND | operation == Op_VTRUNC | operation == Op_VFLOOR
+  | operation == Op_VCEIL | operation == Op_VCLASS
+
+function vector_fp_conversion_operation(operation : Semantic_operation) -> bool =
+  operation == Op_VCVTH | operation == Op_VCVTUH | operation == Op_VCVTS
+  | operation == Op_VCVTUS | operation == Op_VCVTD | operation == Op_VCVTUD
+  | operation == Op_VCVTL | operation == Op_VCVTUL | operation == Op_VCVTQ
+  | operation == Op_VCVTUQ
+
+function vector_instruction_requires_fp(instruction : Decoded_instruction) -> bool = {
+  let operation = instruction.form.operation;
+  let typed_fp : bool = match condition_size_field(instruction.fields) {
+    Some(selector) => selector >= 5,
+    None() => false,
+  };
+  typed_fp | vector_operand_type_present(instruction.operands, "Fn")
+  | vector_fp_arithmetic_operation(operation)
+  | vector_fp_unary_operation(operation)
+  | vector_fp_conversion_operation(operation)
+  | operation == Op_VREDMIN | operation == Op_VREDMAX
+}

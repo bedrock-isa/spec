@@ -12,7 +12,7 @@ ARCHITECTURE_SOURCE_PATH = Path(__file__).resolve()
 EXTRASHORT_FRAMING_BITS = 1
 SHORT_FRAMING_BITS = 2
 EXTENDED_FRAMING_BITS = 6
-EXTENDED_SELECTOR_BITS = 6
+EXTENDED_SELECTOR_BITS = 8
 EXTENDED_LENGTH_BASE_BYTES = 3
 EXTENDED_LENGTH_FIELD_BITS = 4
 EXTRASHORT_BYTE0_PATTERN = "0xxxxxxx"
@@ -37,9 +37,9 @@ class EncodingClass:
     def namespace(self) -> tuple[str, ...]:
         if not self.selectors:
             return ("?" * self.allocation_bits,)
-        suffix_bits = self.allocation_bits - EXTENDED_SELECTOR_BITS
         return tuple(
-            selector.replace("x", "?") + "?" * suffix_bits
+            selector.replace("x", "?")
+            + "?" * (self.allocation_bits - len(selector))
             for selector in self.selectors
         )
 
@@ -51,10 +51,11 @@ ENCODING_CLASSES = (
         "medium",
         3,
         EXTENDED_FRAMING_BITS,
-        ("0xxxxx", "10xxxx", "110xxx", "1110xx"),
+        ("0xxxxxxx", "10xxxxxx", "110xxxxx", "1110xxxx"),
     ),
-    EncodingClass("long", 4, EXTENDED_FRAMING_BITS, ("11110x", "111110")),
-    EncodingClass("extralong", 5, EXTENDED_FRAMING_BITS, ("111111",)),
+    EncodingClass("long", 4, EXTENDED_FRAMING_BITS, ("11110xxx", "111110xx")),
+    EncodingClass("extralong", 5, EXTENDED_FRAMING_BITS, ("1111110x", "11111110")),
+    EncodingClass("xxlong", 6, EXTENDED_FRAMING_BITS, ("11111111",)),
 )
 ENCODING_CLASSES_BY_NAME = MappingProxyType(
     {encoding_class.name: encoding_class for encoding_class in ENCODING_CLASSES}
@@ -118,12 +119,12 @@ def _validate_architecture() -> None:
             overlap = claimed_selectors & values
             if overlap:
                 raise ValueError(
-                    f"{encoding_class.name}: selector overlap at 0b{min(overlap):06b}"
+                    f"{encoding_class.name}: selector overlap at 0b{min(overlap):08b}"
                 )
             claimed_selectors.update(values)
     if claimed_selectors != set(range(1 << EXTENDED_SELECTOR_BITS)):
         raise ValueError(
-            "extended opcode selectors do not cover the six-bit selector space"
+            "extended opcode selectors do not cover the eight-bit selector space"
         )
 
 

@@ -1,0 +1,8 @@
+mnemonic: VMOVZ
+title: VMOVZ (Vector)
+summary: Move active memory elements into `Vd`; inactive lanes become zero.
+description: Move active memory elements into `Vd`; inactive lanes become zero.
+attributes:
+  class: vector
+  family: vector
+  privilege: unprivileged

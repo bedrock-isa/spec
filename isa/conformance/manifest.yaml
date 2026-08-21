@@ -15,12 +15,11 @@ families:
   - paging_disabled_full_width
   - aligned_upper_byte_leaf
   - misaligned_upper_byte_leaf
-  - upper_slot_leaf_invalid
+  - upper_leaf_bit7_equivalent
   - query_stops_at_upper_leaf
   - cross_page_qword_second_not_present
   - cross_page_first_fault_has_priority
   - cross_page_qword_second_permission
-  - cross_page_second_address_type
   - cross_page_second_bus_error
   - cross_page_instruction_fetch_permission
 - id: stack_event
@@ -105,6 +104,28 @@ families:
   - d_dz_enabled
   - s_nx_disabled
   - d_nx_disabled
+- id: vector
+  source: isa/instructions/semantics/vector/conformance/vectors.yaml
+  required_cases:
+  - vlen_minimum
+  - vlen_maximum
+  - vector_fp_dynamic_gate
+  - predicate_element_positions
+  - ploop_zero_branches
+  - ploop_chunk
+  - ploop_range_fault
+  - inactive_lane_merge
+  - lower_part_width_change
+  - extract_range_fault
+  - contiguous_active_addresses
+  - signed_stride_addresses
+  - later_lane_fault_rolls_back
+  - inactive_snan_suppressed
+  - enabled_fp_cause_rolls_back
+  - lower_part_fp_conversion
+  - integer_empty_identities
+  - fp_empty_identities
+  - fp_add_lane_order
 implementation_defined:
 - id: cpuid_higher_classes
   definition: CPUID Feature Discovery, Base Identity and Leaf Directory

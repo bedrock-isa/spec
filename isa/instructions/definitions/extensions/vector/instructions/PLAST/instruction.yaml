@@ -1,0 +1,8 @@
+mnemonic: PLAST
+title: PLAST (Vector)
+summary: Return the last selected element index at a significant position.
+description: Return the last selected element index at a significant position.
+attributes:
+  class: vector
+  family: vector
+  privilege: unprivileged

@@ -17,6 +17,7 @@ ISA_TOOLS = ROOT / "isa" / "tools"
 sys.path.insert(0, str(ISA_TOOLS))
 
 import decode_ir
+from encoding_architecture import ENCODING_CLASSES
 
 
 OUTPUT_NAMES = (
@@ -159,7 +160,7 @@ def _ea_candidate_slot(form: decode_ir.FormIR, operand: decode_ir.OperandIR) -> 
         return 0
     if form.opcode_class == "medium" and source.positions == EA_MEDIUM_ALT_POSITIONS:
         return 1
-    if form.opcode_class in ("long", "extralong") and source.positions == EA_HIGH_POSITIONS:
+    if form.opcode_class in ("long", "extralong", "xxlong") and source.positions == EA_HIGH_POSITIONS:
         return 1
     raise ValueError(
         f"unsupported EA candidate position in {form.key}/{operand.name}: "
@@ -176,7 +177,7 @@ def _ea_layout(form: decode_ir.FormIR) -> str:
         return EA_LAYOUT_LOW
     if slots == (1,):
         return EA_LAYOUT_ALT
-    if slots == (1, 0) and form.opcode_class in ("long", "extralong"):
+    if slots == (1, 0) and form.opcode_class in ("long", "extralong", "xxlong"):
         return EA_LAYOUT_ALT_THEN_LOW
     raise ValueError(f"unsupported EA candidate sequence in {form.key}: {slots}")
 
@@ -587,9 +588,7 @@ def _render_package(ir: decode_ir.DecodeIR) -> tuple[str, Names]:
         enums.append(text)
         return mapping
 
-    opcode_classes = _ordered(
-        (form.opcode_class for form in forms), empty_first=False
-    )
+    opcode_classes = tuple(item.name for item in ENCODING_CLASSES)
     opcode_class = add("opcode_class_e", "OPCODE_CLASS", opcode_classes)
     form = add("form_id_e", "FORM", (item.key for item in forms))
     operation = add("operation_e", "OP", ir.mnemonics)
@@ -775,7 +774,6 @@ package bedrock_decode_pkg;
     repeat_observed_e repeat_observed;
     logic repeat_rep;
     logic repeat_repcc;
-    logic repeat_repg;
     logic [1:0] repeat_observed_operand;
     logic has_ea_operand;
   }} control_metadata_t;
@@ -832,7 +830,9 @@ def _constraint_sv(constraint: decode_ir.ConstraintIR, gathered: str) -> str:
                     f"(({gathered} >= {_hex(width, item.lower)}) && "
                     f"({gathered} <= {_hex(width, item.upper)}))"
                 )
-        return "(" + " || ".join(parts) + ")"
+        if len(parts) == 1:
+            return "(" + parts[0] + ")"
+        return "(\n      " + " ||\n      ".join(parts) + "\n    )"
     if constraint.kind == "exclude_immediate":
         return f"!(({gathered} >= {_hex(width, 0x5B)}) && ({gathered} <= {_hex(width, 0x5E)}))"
     raise ValueError(f"unknown constraint kind {constraint.kind}")
@@ -878,11 +878,7 @@ def _balanced_tree(
 
 
 def _render_opcode_class_bytes_function(ir: decode_ir.DecodeIR) -> str:
-    class_bytes: dict[str, int] = {}
-    for form in ir.forms:
-        previous = class_bytes.setdefault(form.opcode_class, form.opcode_space_bytes)
-        if previous != form.opcode_space_bytes:
-            raise ValueError(f"opcode class {form.opcode_class} has mixed widths")
+    class_bytes = {item.name: item.opcode_space_bytes for item in ENCODING_CLASSES}
     byte_cases = "\n".join(
         f"        OPCODE_CLASS_{_identifier(opcode_class)}: "
         f"opcode_class_bytes = 6'd{class_bytes[opcode_class]};"
@@ -942,7 +938,10 @@ def _render_d0(ir: decode_ir.DecodeIR, names: Names) -> str:
             raw_leaves.append(raw_signal)
             form_leaves.append(form_signal)
             selection_leaves.append(selection_signal)
-            raw = f"((opcode_i & {_hex(34, form.opcode_mask)}) == {_hex(34, form.opcode_value)})"
+            raw = (
+                f"((opcode_i & {_hex(ir.limits.max_opcode_width, form.opcode_mask)}) == "
+                f"{_hex(ir.limits.max_opcode_width, form.opcode_value)})"
+            )
             low_width, alt_width = _ea_candidate_widths(form, names)
             low_profile, alt_profile = _ea_candidate_profiles(form, names)
             predicates = [
@@ -1093,7 +1092,7 @@ module bedrock_decode_d0
       OPCODE_CLASS_MEDIUM: begin
         ea_result_o.alt_raw = {{opcode_i[16:14], opcode_i[3:0]}};
       end
-      OPCODE_CLASS_LONG, OPCODE_CLASS_EXTRALONG: begin
+      OPCODE_CLASS_LONG, OPCODE_CLASS_EXTRALONG, OPCODE_CLASS_XXLONG: begin
         ea_result_o.alt_raw = opcode_i[13:7];
       end
       default: begin end
@@ -1411,7 +1410,6 @@ def _render_form_case(
         f"        result_o.control.repeat_observed = {names.observed_kind[form.control.repeat.observed_kind]};",
         f"        result_o.control.repeat_rep = 1'b{int(form.control.repeat.rep)};",
         f"        result_o.control.repeat_repcc = 1'b{int(form.control.repeat.repcc)};",
-        f"        result_o.control.repeat_repg = 1'b{int(form.control.repeat.repg)};",
         f"        result_o.control.has_ea_operand = 1'b{int(form.control.has_ea_operand)};",
     ]
     lines.extend(_render_mask_assignment("result_o.size_mask", form.sizes, size_names))

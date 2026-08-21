@@ -1,25 +1,10 @@
 function event_frame_control(state : Cpu_state, frame_slots : int,
-                             frame_type : int, saved_level : int) -> bits(64) =
+                             frame_type : int) -> bits(64) =
   get_slice_int(64, frame_slots, 0)
   | sail_shiftleft(get_slice_int(64, frame_type, 0), 8)
-  | sail_shiftleft(get_slice_int(64, state.event_depth, 0), 12)
-  | sail_shiftleft(get_slice_int(64, saved_level, 0), 16)
-  | (if state.repeat_state.active then 0x0000000000040000 else 0x0000000000000000)
+  | (if state.current_dfa then 0x0000000000001000 else 0x0000000000000000)
   | sail_shiftleft(sail_zero_extend(state.flags, 64), 32)
-  | sail_shiftleft(state.status & 0x000000000000FFFF, 48)
-
-function repeat_frame_ext1(state : Cpu_state, saved_pc : bits(64)) -> bits(64) =
-  if not_bool(state.repeat_state.active) then 0x0000000000000000
-  else {
-    let grouped = state.repeat_state.grouped;
-    let delta = if grouped then sub_bits(saved_pc, state.repeat_state.body_start)
-                else 0x0000000000000000;
-    sail_zero_extend(state.repeat_state.counter, 64)
-    | sail_shiftleft(sail_zero_extend(state.repeat_state.condition, 64), 4)
-    | (if grouped then 0x0000000000000100 else 0x0000000000000000)
-    | sail_shiftleft(delta & 0x000000000000FFFF, 16)
-    | sail_shiftleft(sail_zero_extend(state.repeat_state.body_bytes, 64), 32)
-  }
+  | sail_shiftleft(state.status & 0x000000000000FFFF, 36)
 
 function event_frame_type_code(frame_type : Event_frame_type) -> int = match frame_type {
   EventFrameBasic => 0, EventFrameError => 1,
@@ -41,12 +26,12 @@ function make_event(kind : Event_kind, frame_type : Event_frame_type, code : bit
 
 function encode_event_frame(state : Cpu_state, event : Event_record,
                             control : bits(64)) -> list(bits(8)) = {
-  let slot7 = le64_bytes(state.segments[2]);
-  let slot6 = append_bytes(le64_bytes(state.segments[1]), slot7);
-  let slot5 = append_bytes(le64_bytes(state.segments[0]), slot6);
-  let slot4 = append_bytes(le64_bytes(state.sp), slot5);
-  let slot3 = append_bytes(le64_bytes(event.saved_pc), slot4);
-  let slot2 = append_bytes(le64_bytes(repeat_frame_ext1(state, event.saved_pc)), slot3);
+  let slot7 = le64_bytes(0x0000000000000000);
+  let slot6 = append_bytes(le64_bytes(state.segments[2]), slot7);
+  let slot5 = append_bytes(le64_bytes(state.segments[1]), slot6);
+  let slot4 = append_bytes(le64_bytes(state.segments[0]), slot5);
+  let slot3 = append_bytes(le64_bytes(state.sp), slot4);
+  let slot2 = append_bytes(le64_bytes(event.saved_pc), slot3);
   let slot1 = append_bytes(le64_bytes(sail_zero_extend(event.code, 64)), slot2);
   let basic = append_bytes(le64_bytes(control), slot1);
   if event.frame_type == EventFrameBasic then basic
@@ -60,25 +45,31 @@ function encode_event_frame(state : Cpu_state, event : Event_record,
   )
 }
 
-function event_requested_level(event : Event_record) -> int =
-  if event.code == 0x00000018 then 3
-  else if event.kind == EventInterrupt then 1
-  else 2
+function event_uses_user_bank(state : Cpu_state) -> bool =
+  not_bool(state.supervisor) & status_event_depth(state.status) == 0
 
-function event_retain_stack(event : Event_record, state : Cpu_state) -> bool =
-  state.status[0] == bitone & state.event_stack_level >= event_requested_level(event)
+function event_payload_slots(frame_type : Event_frame_type) -> int = match frame_type {
+  EventFrameBasic => 0, EventFrameError => 2,
+  EventFramePage => 4, EventFrameAuxiliary => 4,
+}
+
+function event_storage_slots(event : Event_record, state : Cpu_state) -> int =
+  if event_uses_user_bank(state) then event_payload_slots(event.frame_type)
+  else event_frame_slots(event.frame_type)
 
 function event_stack_segment(event : Event_record, state : Cpu_state) -> bits(64) =
-  if event_retain_stack(event, state) then state.segments[2]
-  else if event_requested_level(event) == 1 then state.controls[17]
-  else if event_requested_level(event) == 2 then state.controls[19]
-  else state.controls[21]
+  if event.code == 0x00000018 then state.controls[21]
+  else if not_bool(event_uses_user_bank(state)) then state.segments[2]
+  else if event.code == 0x00000020 then state.controls[15]
+  else if event.kind == EventInterrupt then state.controls[17]
+  else state.controls[19]
 
 function event_stack_top(event : Event_record, state : Cpu_state) -> bits(64) =
-  if event_retain_stack(event, state) then state.sp
-  else if event_requested_level(event) == 1 then state.controls[18]
-  else if event_requested_level(event) == 2 then state.controls[20]
-  else state.controls[22]
+  if event.code == 0x00000018 then state.controls[22]
+  else if not_bool(event_uses_user_bank(state)) then state.sp
+  else if event.code == 0x00000020 then state.controls[16]
+  else if event.kind == EventInterrupt then state.controls[18]
+  else state.controls[20]
 
 function event_entry_state_valid(state : Cpu_state) -> bool =
   segment_image_valid(state.controls[13])
@@ -91,13 +82,15 @@ function event_stack_state_valid(event : Event_record, state : Cpu_state) -> boo
   let segment_image = event_stack_segment(event, state);
   let top = event_stack_top(event, state);
   segment_image_valid(segment_image)
-  & (top & 0x000000000000003F) == 0x0000000000000000
+  & (top & (if event_uses_user_bank(state) | event.code == 0x00000018
+            then 0x000000000000003F
+            else 0x000000000000000F)) == 0x0000000000000000
 }
 
 function event_frame_address_valid(event : Event_record, state : Cpu_state) -> bool = {
   let segment_image = event_stack_segment(event, state);
   let top = event_stack_top(event, state);
-  let frame_bytes = event_frame_slots(event.frame_type) * 8;
+  let frame_bytes = event_storage_slots(event, state) * 8;
   segment_point(segment_image, sub_bits(top, bits_from_int(frame_bytes))).in_bounds
 }
 
@@ -109,7 +102,7 @@ function event_stack_range_request(event : Event_record, state : Cpu_state,
                                    ordinal : int) -> Primitive_request = {
   let segment_image = event_stack_segment(event, state);
   let top = event_stack_top(event, state);
-  let frame_bytes = event_frame_slots(event.frame_type) * 8;
+  let frame_bytes = event_storage_slots(event, state) * 8;
   let frame_start = sub_bits(top, bits_from_int(frame_bytes));
   let point = segment_point(segment_image, frame_start);
   { stack_request(StackRange, ordinal, state, frame_start, top, AccessStackWrite,
@@ -123,14 +116,57 @@ function event_frame_store_request(event : Event_record, state : Cpu_state,
                                    ordinal : int) -> Primitive_request = {
   let range = event_stack_range_request(event, state, ordinal);
   let control = event_frame_control(
-    state, event_frame_slots(event.frame_type), event_frame_type_code(event.frame_type),
-    state.event_stack_level
+    state, event_frame_slots(event.frame_type), event_frame_type_code(event.frame_type)
   );
+  let payload = if event.frame_type == EventFrameError then
+    append_bytes(le64_bytes(event.error_code), le64_bytes(0x0000000000000000))
+  else if event.frame_type == EventFramePage | event.frame_type == EventFrameAuxiliary then
+    append_bytes(le64_bytes(event.error_code), append_bytes(
+      le64_bytes(event.fault_ea), append_bytes(
+        le64_bytes(event.fault_linear), le64_bytes(event.event_aux))))
+  else [||];
   { range with kind = EventFrameAccess, role = "event_frame_store",
     access = AccessStackWrite, commit_point = true,
     selector = sail_zero_extend(event.code, 64), value = control,
-    expected = event.saved_pc, auxiliary = bits_from_int(event_requested_level(event)),
-    payload_bytes = encode_event_frame(state, event, control) }
+    expected = event.saved_pc,
+    payload_bytes = if event_uses_user_bank(state) then payload
+                    else encode_event_frame(state, event, control) }
+}
+
+function committed_event_entry(before : Cpu_state, event : Event_record,
+                               new_sp : bits(64), stack_segment : bits(64)) -> Cpu_state = {
+  var updated = before;
+  let user_origin = event_uses_user_bank(before);
+  if user_origin then {
+    updated.controls[6] = event.saved_pc;
+    updated.controls[7] = before.sp;
+    updated.controls[8] = before.segments[0];
+    updated.controls[9] = before.segments[1];
+    updated.controls[10] = before.segments[2];
+    updated.controls[11] = 0x0000000100000000
+      | sail_shiftleft(before.status & 0x000000000000FFFF, 16)
+      | sail_zero_extend(before.flags, 64);
+    updated.controls[26] = sail_zero_extend(event.code, 64)
+  } else ();
+  updated.sp = new_sp;
+  updated.pc = before.controls[12];
+  updated.segments[0] = before.controls[13];
+  updated.segments[1] = before.controls[14];
+  updated.segments[2] = stack_segment;
+  updated.status = status_with_event_state(
+    (before.status & 0x0000000000000002) | 0x0000000000000011,
+    status_event_depth(before.status) + 1,
+    status_user_origin(before.status) | user_origin
+  );
+  if event.kind == EventNmi then
+    updated.status = updated.status | 0x0000000000000002
+  else ();
+  if event.code == 0x00000018 then updated.current_dfa = true else ();
+  updated.supervisor = true;
+  updated.repeat_state = { updated.repeat_state with active = false };
+  updated.run_state = Running;
+  updated.halted = false;
+  updated
 }
 
 function waiting_event_transaction(state : Cpu_state, event : Event_record, attempt : int,
@@ -162,7 +198,7 @@ function event_shutdown(state : Cpu_state) -> Execution_result = completed(
 
 function start_event_attempt(event : Event_record, state : Cpu_state,
                              attempt : int) -> Execution_result =
-  if state.controls[2][0] == bitzero | state.event_depth >= 15 then event_shutdown(state)
+  if state.controls[2][0] == bitzero | status_event_depth(state.status) >= 15 then event_shutdown(state)
   else if not_bool(event_entry_state_valid(state)) then
     if attempt >= 1 then event_shutdown(state)
     else start_event_attempt(double_fault_event(event, 0), state, 1)
@@ -182,11 +218,14 @@ function event_delivery_failed(previous : Execution_result, stage : int) -> Exec
         failed.fault_ea = previous.request.effective_address;
         failed.fault_linear = previous.request.linear_address
       } else ();
-      if previous.pending.event_attempt >= 1 | previous.pending.before.event_depth >= 15 then
+      if previous.pending.event_attempt >= 1 | previous.pending.before.current_dfa
+         | status_event_depth(previous.pending.before.status) >= 15 then
         event_shutdown(previous.pending.before)
       else start_event_attempt(double_fault_event(failed, stage), previous.pending.before, 1)
     },
   }
+
+val start_user_return : (Decoded_instruction, Cpu_state) -> Execution_result
 
 function start_event_control(instruction : Decoded_instruction, state : Cpu_state)
   -> Execution_result = {
@@ -195,11 +234,27 @@ function start_event_control(instruction : Decoded_instruction, state : Cpu_stat
       make_event(EventSynchronous, EventFrameBasic, 0x00000002, 4,
                  next_pc(state, instruction)), state
     )
-  else if instruction.form.operation == Op_ERET then
-    if state.status[0] == bitzero then faulted(
-      state, Op_ERET, InvalidControlState, "ERET outside event-active state"
+  else if instruction.form.operation == Op_SYSCALL then
+    if state.supervisor | state.status[0] == bitone
+       | status_event_depth(state.status) != 0
+       | state.controls[11][32] == bitone then
+      faulted(state, Op_SYSCALL, InvalidControlState, "invalid SYSCALL source state")
+    else start_admitted_event(
+      make_event(EventSynchronous, EventFrameBasic, 0x00000020, 4,
+                 next_pc(state, instruction)), state
     )
-    else {
+  else if instruction.form.operation == Op_ERET then {
+    let direct = state.supervisor & state.status[0] == bitzero
+      & status_event_depth(state.status) == 0
+      & not_bool(status_user_origin(state.status)) & state.controls[11][32] == bitone;
+    let outer = state.supervisor & state.status[0] == bitone
+      & status_event_depth(state.status) == 1
+      & status_user_origin(state.status) & state.controls[11][32] == bitone;
+    if status_user_origin(state.status) & state.controls[11][32] == bitzero then
+      faulted(state, Op_ERET, InvalidControlState, "invalid live user-origin chain")
+    else if direct | outer then start_user_return(instruction, state)
+    else if state.supervisor & state.status[0] == bitone
+            & status_event_depth(state.status) > 0 then {
       let request = { stack_request(
         EventFrameAccess, 0, state, state.sp, add_bits(state.sp, 0x0000000000000008),
         AccessStackRead, 0x0000000000000000, false
@@ -208,7 +263,8 @@ function start_event_control(instruction : Decoded_instruction, state : Cpu_stat
         state, state, instruction, CommitEvent, empty_destination(), PhaseEventFrameHeader,
         0, 0x0000000000000000, 0x0000000000000000, request
       )
-    }
+    } else faulted(state, Op_ERET, InvalidControlState, "invalid ERET source state")
+  }
   else faulted(state, instruction.form.operation, IllegalInstruction,
                "unsupported event-control operation")
 }
@@ -216,68 +272,26 @@ function start_event_control(instruction : Decoded_instruction, state : Cpu_stat
 function valid_frame_control(control : bits(64), state : Cpu_state) -> bool = {
   let slots = unsigned(control[7 .. 0]);
   let frame_type = unsigned(control[11 .. 8]);
-  let saved_depth = unsigned(control[15 .. 12]);
-  let saved_level = unsigned(control[17 .. 16]);
+  let saved_status = sail_shiftright(control, 36) & 0x000000000000FFFF;
   let shape = (frame_type == 0 & slots == 8) | (frame_type == 1 & slots == 10)
             | ((frame_type == 2 | frame_type == 3) & slots == 12);
-  shape & control[31 .. 19] == 0b0000000000000 & saved_depth + 1 == state.event_depth
-  & saved_level <= state.event_stack_level
-  & (if control[48] == bitzero then saved_depth == 0 & saved_level == 0
-     else saved_depth >= 1 & saved_level >= 1)
+  shape & control[31 .. 13] == 0b0000000000000000000
+  & control[63 .. 52] == 0x000
+  & saved_status[4] == bitone
+  & ((saved_status[0] == bitone & status_event_depth(saved_status) > 0)
+     | (saved_status[0] == bitzero & status_event_depth(saved_status) == 0))
+  & (control[12] == bitzero | saved_status[0] == bitone)
+  & status_event_depth(saved_status) + 1 == status_event_depth(state.status)
+  & status_user_origin(saved_status) == status_user_origin(state.status)
 }
 
-function start_syscall_transition(instruction : Decoded_instruction, state : Cpu_state)
+function start_user_return(instruction : Decoded_instruction, state : Cpu_state)
   -> Execution_result = {
-  let operation = instruction.form.operation;
-  if operation == Op_SYSCALL then
-    if state.supervisor | state.status[0] == bitone
-       | state.controls[11][32] == bitone
-       | not_bool(segment_image_valid(state.controls[4]))
-       | not_bool(segment_image_valid(state.controls[5]))
-       | not_bool(segment_image_valid(state.controls[15]))
-       | not_bool(segment_point(state.controls[15], state.controls[16]).in_bounds)
-       | (state.controls[3] & 0x000000000000000F) != 0x0000000000000000
-       | (state.controls[16] & 0x000000000000003F) != 0x0000000000000000
-    then faulted(state, operation, InvalidControlState, "invalid SYSCALL entry bank")
-    else {
-      var after = state;
-      after.controls[6] = next_pc(state, instruction);
-      after.controls[7] = state.sp;
-      after.controls[8] = state.segments[0];
-      after.controls[9] = state.segments[1];
-      after.controls[10] = state.segments[2];
-      after.controls[11] = 0x0000000100000000
-                         | sail_shiftleft(state.status & 0x000000000000FFFF, 16)
-                         | sail_zero_extend(state.flags, 64);
-      after.pc = state.controls[3];
-      after.sp = state.controls[16];
-      after.segments[0] = state.controls[4];
-      after.segments[1] = state.controls[5];
-      after.segments[2] = state.controls[15];
-      after.status = state.status | 0x0000000000000010;
-      after.supervisor = true;
-      let request = { target_probe_request(0, state.controls[4], state.controls[3]) with
-        kind = ControlTransitionRequest, role = "syscall_entry", commit_point = true,
-        state_image = state };
-      waiting_transaction(
-        state, after, instruction, CommitControl, empty_destination(), PhaseControlTransition,
-        0, state.controls[3], 0x0000000000000000, request
-      )
-    }
-  else {
-    let urctl = state.controls[11];
-    let saved_status = sail_shiftright(urctl, 16) & 0x000000000000FFFF;
-    let saved_flags = urctl & 0x000000000000FFFF;
-    if not_bool(state.supervisor) | state.status[0] == bitone | urctl[32] == bitzero
-       | (urctl & 0xFFFFFFFE00000000) != 0x0000000000000000
-       | (saved_status & 0xFFFFFFFFFFFFFFC0) != 0x0000000000000000
-       | (saved_status & 0x0000000000000011) != 0x0000000000000000
-       | (saved_flags & 0xFFFFFFFFFFFFFFF0) != 0x0000000000000000
-       | not_bool(segment_image_valid(state.controls[8]))
-       | not_bool(segment_image_valid(state.controls[9]))
-       | not_bool(segment_image_valid(state.controls[10]))
-       | not_bool(segment_point(state.controls[10], state.controls[7]).in_bounds)
-    then faulted(state, operation, InvalidControlState, "invalid SYSRET return bank")
+    let uctl = state.controls[11];
+    let saved_status = sail_shiftright(uctl, 16) & 0x000000000000FFFF;
+    let saved_flags = uctl & 0x000000000000FFFF;
+    if not_bool(state.supervisor) | not_bool(user_return_bank_image_valid(state))
+    then faulted(state, Op_ERET, InvalidControlState, "invalid user-return bank")
     else {
       var after = state;
       after.pc = state.controls[6];
@@ -288,15 +302,14 @@ function start_syscall_transition(instruction : Decoded_instruction, state : Cpu
       after.flags = saved_flags[3 .. 0];
       after.status = saved_status;
       after.supervisor = false;
-      after.controls[11] = urctl & 0xFFFFFFFEFFFFFFFF;
+      after.current_dfa = false;
+      after.controls[11] = uctl & 0xFFFFFFFEFFFFFFFF;
       let request = { target_probe_request(0, state.controls[8], state.controls[6]) with
-        kind = ControlTransitionRequest, role = "sysret_target", commit_point = true,
+        kind = ControlTransitionRequest, role = "user_return_target", commit_point = true,
         state_image = state };
       waiting_transaction(
         state, after, instruction, CommitControl, empty_destination(), PhaseControlTransition,
         0, state.controls[6], 0x0000000000000000, request
       )
     }
-  }
 }
-

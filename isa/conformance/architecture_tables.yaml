@@ -47,7 +47,7 @@ cpuid:
           summary: common header, identity, revisions, vendor name, and processor name
     - id: 0x00000001
       name: Optional extensions
-      summary: optional floating-point and transcendental groups
+      summary: optional floating-point, transcendental, and scalable-vector groups
       leaves:
         - id: 0x0000
           name: EXTENSION_DIRECTORY
@@ -57,6 +57,10 @@ cpuid:
           name: FPTRANSA_ACCURACY
           max_index: 0x0044
           summary: common header and sparse per-function accuracy contracts
+        - id: 0x0002
+          name: VECTOR_PARAMETERS
+          max_index: 1
+          summary: common header and the implementation-selected VLEN logarithm
     - id: 0x00000002
       name: Implementation properties
       summary: cache topology, performance counters, and SAVE/RESTORE area layout
@@ -118,25 +122,33 @@ cpuid:
           - {name: F0_F15, offset: 0x000, size: 0x080}
           - {name: FFLAGS, offset: 0x080, size: 0x008}
           - {name: FSTATUS, offset: 0x088, size: 0x008}
+      - id: 2
+        name: VECTOR
+        bitmap_bit: 1
+        offset_bytes: implementation_defined_64_byte_aligned
+        max_size_bytes: align_up_34_times_vlen_bytes_to_64
+        alignment_bytes: 64
+        init_policy: 1
+        layout:
+          - {name: V0_V31, offset: n_times_vlen_bytes, size: 32_times_vlen_bytes}
+          - {name: P0_P15, offset: 32_times_vlen_bytes_plus_n_times_vlen_bytes_div_8, size: 2_times_vlen_bytes}
 
 control_registers:
   - {selector: 0x0000, name: PTCR, use: page-table root and translation control}
   - {selector: 0x0001, name: ASCR, use: address-space identifier control}
   - {selector: 0x0002, name: ECR, use: architectural event-delivery control}
-  - {selector: 0x0100, name: SPC, use: SYSCALL entry program counter}
-  - {selector: 0x0101, name: SCS, use: SYSCALL entry code-segment image}
-  - {selector: 0x0102, name: SDS, use: SYSCALL entry data-segment image}
-  - {selector: 0x0108, name: URPC, use: user-return program counter}
-  - {selector: 0x0109, name: URSP, use: user-return stack pointer}
-  - {selector: 0x010A, name: URCS, use: user-return code-segment image}
-  - {selector: 0x010B, name: URDS, use: user-return data-segment image}
-  - {selector: 0x010C, name: URSS, use: user-return stack-segment image}
-  - {selector: 0x010D, name: URCTL, use: "user-return FLAGS, STATUS, and valid state"}
+  - {selector: 0x0108, name: UPC, use: user-return program counter}
+  - {selector: 0x0109, name: USP, use: user-return stack pointer}
+  - {selector: 0x010A, name: UCS, use: user-return code-segment image}
+  - {selector: 0x010B, name: UDS, use: user-return data-segment image}
+  - {selector: 0x010C, name: USS, use: user-return stack-segment image}
+  - {selector: 0x010D, name: UCTL, use: "user-return FLAGS, STATUS, and valid state"}
+  - {selector: 0x010E, name: UINFO, use: user-origin outer-event code}
   - {selector: 0x0110, name: EPC, use: common architectural event-entry PC}
   - {selector: 0x0111, name: ECS, use: architectural event-entry code-segment image}
   - {selector: 0x0112, name: EDS, use: architectural event-entry data-segment image}
-  - {selector: 0x0200, name: SSS, use: supervisor-call working-stack segment image}
-  - {selector: 0x0201, name: SSP, use: supervisor-call working-stack top}
+  - {selector: 0x0200, name: SSS, use: user-origin SYSTEM_CALL initial stack-segment image}
+  - {selector: 0x0201, name: SSP, use: user-origin SYSTEM_CALL initial stack top}
   - {selector: 0x0210, name: ISS, use: maskable-interrupt stack-segment image}
   - {selector: 0x0211, name: ISP, use: maskable-interrupt stack top}
   - {selector: 0x0220, name: FSS, use: fault/exception stack-segment image}
@@ -226,11 +238,11 @@ control_write_rules:
     writable: MAX_EDEPTH and V; NMI_P is hardware managed and the supplied value is ignored
     validation: setting V validates EPC, ECS, EDS, and all configured event stack pairs
     commit: replace the complete writable image atomically
-  - registers: [SPC, EPC]
+  - registers: [EPC]
     writable: complete 64-bit entry address
     validation: 16-byte aligned, canonical, and executable under the matching code-segment image
     commit: replace the selected register atomically
-  - registers: [SCS, SDS, ECS, EDS, SSS, ISS, FSS, DSS]
+  - registers: [ECS, EDS, SSS, ISS, FSS, DSS]
     writable: complete 64-bit segment image
     validation: apply the architectural segment-image validity rule
     commit: replace the selected register atomically
@@ -238,14 +250,18 @@ control_write_rules:
     writable: complete 64-bit configured stack top
     validation: 64-byte aligned
     commit: replace the selected register atomically
-  - registers: [URPC, URSP, URCS, URDS, URSS]
+  - registers: [UPC, USP, UCS, UDS, USS]
     writable: complete 64-bit saved user-return value
-    validation: defer complete-bank validation until URCTL.V is set or SYSRET executes
+    validation: defer complete-bank validation until UCTL.V is set
     commit: replace the selected register atomically
-  - registers: [URCTL]
+  - registers: [UINFO]
+    writable: EVENT_CODE in bits 31 through 0; bits 63 through 32 must be zero
+    validation: reject a nonzero reserved bit; validate the event-code-dependent bank when UCTL.V is set
+    commit: replace UINFO atomically
+  - registers: [UCTL]
     writable: V, STATUS, and FLAGS; reserved bits must be zero
-    validation: setting V validates the complete user-return bank and requires saved PM and EA to be zero
-    commit: replace URCTL atomically after complete-bank validation
+    validation: setting V validates the complete user-return bank and requires saved PM, EA, EDEPTH, and UO to be zero
+    commit: replace UCTL atomically after complete-bank validation
   - registers: [BOOTPC]
     writable: complete 64-bit warm-reset target
     validation: the value is used as the exact PC after warm RESET
@@ -266,8 +282,8 @@ exception_causes:
     - {value: 2, name: MALFORMED_PTE, meaning: structurally invalid PTE}
     - {value: 3, name: NONCANONICAL, meaning: noncanonical address}
     - {value: 4, name: SEGMENT_BOUNDS, meaning: segment bounds failure}
-    - {value: 5, name: ATOMIC_ALIGNMENT, meaning: misaligned byte-addressed atomic operand, address_type: 0}
-    - {value: 6, name: ADDRESS_TYPE, meaning: address or memory type rejects the access}
+    - {value: 5, name: ATOMIC_ALIGNMENT, meaning: misaligned atomic operand}
+    - {value: 6, name: RESERVED, meaning: reserved and never generated}
   ILLEGAL_INSTRUCTION:
     - {value: 0, name: INVALID_OPCODE, meaning: opcode is not assigned}
     - {value: 1, name: INVALID_EA_FORM, meaning: effective-address form is not legal for the instruction}
@@ -281,6 +297,9 @@ exception_causes:
     - {value: 1, name: RESERVED_BITS, meaning: reserved bits are nonzero or changed illegally}
     - {value: 2, name: INVALID_IMAGE, meaning: supplied register or processor-state image is invalid}
     - {value: 3, name: INVALID_TRANSITION, meaning: requested state transition is illegal}
+  VECTOR_RANGE_ERROR:
+    - {value: 0, name: LOOP_OFFSET, meaning: PLOOP receives an invalid unsigned logical-lane Roffset/index}
+    - {value: 1, name: LANE_INDEX, meaning: a scalar lane index is outside the selected vector element count}
 
 fptransa_accuracy_contracts:
   - {id: 0x0001, mnemonic: FSINA, function: sin, reference_qualifier: radians, domain: finite_abs_le_pi_over_4, max_ulp: {S: 4, D: 4}}
@@ -310,9 +329,9 @@ event_frames:
     - {code: 0x2, name: PAGE_FAULT, payload_bytes: 24, allocated_payload_bytes: 32, total_bytes: 96, last_slot: FAULT_LINEAR}
     - {code: 0x3, name: AUXILIARY, payload_bytes: 32, allocated_payload_bytes: 32, total_bytes: 96, last_slot: EVENT_AUX}
   assignments:
-    - events: [DEBUG_TRACE, BREAKPOINT, PRIVILEGE_FAULT]
+    - events: [DEBUG_TRACE, BREAKPOINT, PRIVILEGE_FAULT, SYSTEM_CALL]
       frame_type: BASIC
-    - events: [ILLEGAL_INSTRUCTION, DIVIDE_ERROR, INVALID_CONTROL_STATE, FLOATING_POINT_FAULT]
+    - events: [ILLEGAL_INSTRUCTION, DIVIDE_ERROR, VECTOR_RANGE_ERROR, INVALID_CONTROL_STATE, FLOATING_POINT_FAULT]
       frame_type: ERROR
     - events: [PAGE_FAULT]
       frame_type: PAGE_FAULT
@@ -328,13 +347,15 @@ architectural_events:
   - {event_class: EXCEPTION, id: 0x08, name: PRIVILEGE_FAULT, producer: privilege check, kind: fault, saved_pc: faulting instruction, committed_state: no effects of the faulting instruction, frame: BASIC, payload: none, priority: 3}
   - {event_class: EXCEPTION, id: 0x09, name: PAGE_FAULT, producer: "segment, translation, access, or atomic-alignment check", kind: fault, saved_pc: faulting instruction, committed_state: no effects of the faulting instruction, frame: PAGE_FAULT, payload: "error code, fault EA, and linear address", priority: 3}
   - {event_class: EXCEPTION, id: 0x0A, name: DIVIDE_ERROR, producer: integer divide operation, kind: fault, saved_pc: faulting instruction, committed_state: no effects of the faulting instruction, frame: ERROR, payload: error code, priority: 3}
+  - {event_class: EXCEPTION, id: 0x0B, name: VECTOR_RANGE_ERROR, producer: PLOOP offset or vector lane-index validation, kind: fault, saved_pc: faulting instruction, committed_state: no effects of the faulting instruction, frame: ERROR, payload: error code, priority: 3}
   - {event_class: EXCEPTION, id: 0x0D, name: INVALID_CONTROL_STATE, producer: control-state validation, kind: fault, saved_pc: faulting instruction, committed_state: no effects of the faulting instruction, frame: ERROR, payload: error code, priority: 3}
   - {event_class: EXCEPTION, id: 0x0E, name: FLOATING_POINT_FAULT, producer: enabled floating-point exception condition, kind: fault, saved_pc: faulting instruction, committed_state: no destination or accrued-flag effects of the faulting instruction, frame: ERROR, payload: error code, priority: 3}
   - {event_class: EXCEPTION, id: 0x18, name: DOUBLE_FAULT, producer: architectural event-delivery failure, kind: delivery failure, saved_pc: interrupted event boundary, committed_state: no partial first delivery state, frame: AUXILIARY, payload: delivery-failure auxiliary state, priority: 1}
   - {event_class: EXCEPTION, id: 0x19, name: MACHINE_CHECK, producer: processor or memory-system machine-check source, kind: machine check, saved_pc: selected by PRECISE and corrected status, committed_state: selected by PRECISE and RETRY_SAFE, frame: AUXILIARY, payload: machine-check auxiliary state, priority: 2}
   - {event_class: EXCEPTION, id: 0x1A, name: BUS_ERROR, producer: synchronous acknowledged bus failure, kind: fault, saved_pc: faulting instruction, committed_state: no architectural-state effects of the faulting instruction, frame: AUXILIARY, payload: bus-error auxiliary state, priority: 3}
-  - {event_class: NMI, id: source, name: NMI, producer: admitted non-maskable interrupt source, kind: asynchronous, saved_pc: next instruction or repeat continuation, committed_state: all earlier committed state, frame: BASIC, payload: none, priority: 6}
-  - {event_class: INTERRUPT, id: platform, name: INTERRUPT, producer: admitted maskable interrupt source, kind: asynchronous, saved_pc: next instruction or repeat continuation, committed_state: all earlier committed state, frame: BASIC, payload: none, priority: 7}
+  - {event_class: EXCEPTION, id: 0x20, name: SYSTEM_CALL, producer: SYSCALL, kind: explicit trap, saved_pc: following instruction, committed_state: SYSCALL completed, frame: BASIC, payload: none, priority: 4}
+  - {event_class: NMI, id: source, name: NMI, producer: admitted non-maskable interrupt source, kind: asynchronous, saved_pc: next instruction or repeat-prefix address, committed_state: all earlier committed state, frame: BASIC, payload: none, priority: 6}
+  - {event_class: INTERRUPT, id: platform, name: INTERRUPT, producer: admitted maskable interrupt source, kind: asynchronous, saved_pc: next instruction or repeat-prefix address, committed_state: all earlier committed state, frame: BASIC, payload: none, priority: 7}
 
 immediate_operand_interpretation:
   - operand_type: PAIRn
@@ -377,14 +398,14 @@ reset_state:
   - {state: [CS, DS, SS, GS0, GS1, GS2, GS3, GS4, GS5], value: zero}
   - {state: [PC], value: bootpc}
   - {state: [PTCR, ASCR, ECR], value: zero}
-  - {state: [EPC, ECS, EDS, SPC, SCS, SDS], value: zero}
-  - {state: [URPC, URSP, URCS, URDS, URSS, URCTL], value: zero}
+  - {state: [EPC, ECS, EDS], value: zero}
+  - {state: [UPC, USP, UCS, UDS, USS, UCTL, UINFO], value: zero}
   - {state: [SSS, SSP, ISS, ISP, FSS, FSP, DSS, DSP], value: zero}
   - {state: [PMC, CYCLE, INSTRET, PTWALK], value: zero}
   - {state: [F0_F15, FSTATUS, FFLAGS, extension_state], value: zero}
+  - {state: [V0_V31, P0_P15], value: zero}
   - {state: [hidden_repeat_state, hidden_load_reservation], value: invalid}
-  - {state: [hidden_current_edepth], value: zero}
-  - {state: [hidden_current_event_stack_level], value: invalid}
+  - {state: [hidden_current_dfa], value: zero}
   - {state: [ECR.NMI_P], value: zero}
   - {state: [local_translation_cache, local_page_walk_cache, local_prefetch_state], value: invalid}
   - {state: [coherent_data_and_instruction_cache_contents], value: retained_coherent}

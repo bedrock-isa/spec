@@ -1,4 +1,6 @@
 type Floating_registers = vector(16, inc, bits(64))
+type Vector_registers = vector(32, inc, list(bits(8)))
+type Predicate_registers = vector(16, inc, list(bits(8)))
 type Segment_registers = vector(9, inc, bits(64))
 type Control_registers = vector(32, inc, bits(64))
 
@@ -8,8 +10,7 @@ enum Event_kind = EventNone | EventSynchronous | EventDebugTrace | EventNmi | Ev
 
 enum Event_frame_type = EventFrameBasic | EventFrameError | EventFramePage | EventFrameAuxiliary
 
-enum Boundary_class = BoundaryOrdinary | BoundaryRepeatIteration | BoundaryRepeatGroup
-                    | BoundaryRepeatInterior | BoundaryEventEntry
+enum Boundary_class = BoundaryOrdinary | BoundaryRepeatIteration | BoundaryEventEntry
 
 struct Event_record = {
   kind : Event_kind,
@@ -38,19 +39,19 @@ struct Async_ingress = {
 
 struct Repeat_state = {
   active : bool,
-  grouped : bool,
   counter : bits(4),
   remaining : bits(64),
   condition : bits(4),
-  body_bytes : bits(16),
+  prefix_start : bits(64),
   body_start : bits(64),
   fixed_body : list(bits(8)),
-  group_progress : int,
 }
 
 struct Cpu_state = {
   registers : Registers,
   floating_registers : Floating_registers,
+  vector_registers : Vector_registers,
+  predicate_registers : Predicate_registers,
   segments : Segment_registers,
   controls : Control_registers,
   sp : bits(64),
@@ -62,10 +63,11 @@ struct Cpu_state = {
   supervisor : bool,
   fp_enabled : bool,
   fptrans_enabled : bool,
+  vector_enabled : bool,
+  vector_length_bytes : int,
   halted : bool,
   run_state : Run_state,
-  event_depth : int,
-  event_stack_level : int,
+  current_dfa : bool,
   cache_maintenance_granule : int,
   save_area_size : int,
   save_fixed_size : int,
@@ -79,6 +81,14 @@ struct Cpu_state = {
   fp_component_alignment : int,
   fp_component_init_policy : int,
   fp_component_modified : bool,
+  vector_component_present : bool,
+  vector_component_id : int,
+  vector_component_bitmap_bit : int,
+  vector_component_offset : int,
+  vector_component_size : int,
+  vector_component_alignment : int,
+  vector_component_init_policy : int,
+  vector_component_modified : bool,
   repeat_state : Repeat_state,
   nmi_latched_source : bits(24),
   nmi_relatched : bool,
@@ -136,6 +146,9 @@ enum Primitive_request_kind =
 | ControlTransitionRequest
 | ResetSerializeRequest
 | FloatingPointRequest
+| VectorMemoryRead
+| VectorMemoryWrite
+| VectorFloatingPointRequest
 | ExternalIntegerRequest
 
 enum Transaction_access =
@@ -182,13 +195,17 @@ enum Continuation_phase =
 | PhaseEventTargetProbe
 | PhaseEventStackProbe
 | PhaseEventFrameStore
-| PhaseEventReturnBody
 | PhaseEventReturnExecute
 | PhaseFpContractQuery
 | PhaseFpSourceRead
 | PhaseFpDestinationProbe
 | PhaseFpCompute
 | PhaseFpDestinationWrite
+| PhaseVectorMemoryRead
+| PhaseVectorMemoryWrite
+| PhaseVectorFpMemoryRead
+| PhaseVectorFpCompute
+| PhaseVectorFpMemoryWrite
 | PhaseCpuidQuery
 | PhasePerformanceCounter
 | PhaseControlTransition
@@ -215,6 +232,8 @@ enum Transaction_response_kind =
 | ResponseRepeatFetch
 | ResponseEventFrame
 | ResponseFloatingPoint
+| ResponseVectorMemory
+| ResponseVectorFloatingPoint
 | ResponseCpuidQuery
 | ResponsePerformanceCounter
 | ResponseControlTransition
@@ -273,7 +292,6 @@ struct Primitive_request = {
   address_translation : bool,
   commit_point : bool,
   memory_order : int,
-  address_type : int,
   cache_policy : int,
   suppress_fault : bool,
   staged_updates : list(Staged_register_update),
@@ -314,17 +332,15 @@ struct Pending_commit = {
   captured_second : bits(64),
   memory_writes : list(Memory_write),
   atomic : bool,
-  repeat_prefix : option(Decoded_instruction),
   repeat_body : option(Decoded_instruction),
   repeat_bytes : list(bits(8)),
-  repeat_tail : list(bits(8)),
-  repeat_tail_length : int,
   repeat_parent_active : bool,
-  repeat_parent_grouped : bool,
   event : option(Event_record),
   event_attempt : int,
   boundary_class : Boundary_class,
   fp_pending : Fp_pending_image,
+  vector_payload0 : list(bits(8)),
+  vector_payload1 : list(bits(8)),
 }
 
 struct Transaction_response = {
@@ -338,7 +354,6 @@ struct Transaction_response = {
   write_flags : bool,
   generated_fflags : bits(5),
   bounds_passed : bool,
-  address_type : int,
   cache_policy : int,
   atomic_store_happened : bool,
   body_bytes : list(bits(8)),
@@ -367,4 +382,3 @@ struct Decode_execute_outcome = {
   decode : Decode_outcome,
   execution : option(Execution_result),
 }
-

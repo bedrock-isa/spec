@@ -1,0 +1,8 @@
+mnemonic: VSLICE
+title: VSLICE (Vector)
+summary: Extract a consecutive window from two concatenated vectors.
+description: Extract a consecutive window from two concatenated vectors.
+attributes:
+  class: vector
+  family: vector
+  privilege: unprivileged

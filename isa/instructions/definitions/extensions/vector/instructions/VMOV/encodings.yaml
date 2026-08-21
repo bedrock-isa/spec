@@ -1,0 +1,82 @@
+forms:
+- id: long.vmov.v3
+  class: long
+  bits: 1111101001000000vvvvvwwwww
+  syntax: VMOV Vn(v), Vn(w)
+  operands:
+  - name: src
+    type: Vn
+    access: read
+    field: v
+  - name: dst
+    type: Vn
+    access: read_write
+    field: w
+- id: extralong.vmov.v91
+  class: extralong
+  bits: 11111101111010110zz0ppppvvvvvwwwww
+  syntax: VMOV.BWLQ(z) Pn(p), Vn(v), Vn(w)
+  operands:
+  - name: govern
+    type: Pn
+    access: read
+    field: p
+  - name: src
+    type: Vn
+    access: read
+    field: v
+  - name: dst
+    type: Vn
+    access: read_write
+    field: w
+  fields:
+    z:
+      type: size.BWLQ
+- id: xxlong.vmov.v137
+  class: xxlong
+  bits: 11111111000000100000zz0000ppppvvvvveeeeeee
+  syntax: VMOV.BWLQ(z) Pn(p), <ea>(e), Vn(v)
+  operands:
+  - name: govern
+    type: Pn
+    access: read
+    field: p
+  - name: src
+    type: VEA
+    access: read
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  - name: dst
+    type: Vn
+    access: read_write
+    field: v
+  fields:
+    z:
+      type: size.BWLQ
+- id: xxlong.vmov.v138
+  class: xxlong
+  bits: 11111111000000100000zz0001ppppvvvvveeeeeee
+  syntax: VMOV.BWLQ(z) Pn(p), Vn(v), <ea>(e)
+  operands:
+  - name: govern
+    type: Pn
+    access: read
+    field: p
+  - name: src
+    type: Vn
+    access: read
+    field: v
+  - name: dst
+    type: VEA
+    access: write
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  fields:
+    z:
+      type: size.BWLQ
+  constraints:
+  - field: e
+    exclude: immediate
+    reason: invalid_destination

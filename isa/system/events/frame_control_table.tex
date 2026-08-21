@@ -13,11 +13,10 @@
 \endhead
 frame\_size & 0..7 & total allocated frame size in 8-byte units\\
 frame\_type & 8..11 & optional payload layout code; it does not classify the event\\
-saved\_edepth & 12..15 & event depth before this entry\\
-saved\_esl & 16..17 & event stack level before this entry\\
-repeat\_saved & 18 & repeat continuation state is present in FRAME\_EXT1\\
-entry\_flags & 19..31 & reserved entry flags; must be zero unless assigned by a later profile\\
-flags & 32..47 & saved FLAGS image\\
-status & 48..63 & saved STATUS image\\
+saved\_dfa & 12 & prior hidden double-fault-active state\\
+reserved & 13..31 & reserved; must be zero\\
+flags & 32..35 & saved FLAGS image\\
+status & 36..51 & saved STATUS image, including EDEPTH and UO\\
+reserved & 52..63 & reserved; must be zero\\
 \bottomrule
 \end{manuallongtable}

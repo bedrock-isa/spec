@@ -30,16 +30,14 @@ address in bounds-only mode.
 \textbf{Mode} & \textbf{Segment State} & \textbf{Check} & \textbf{Linear Address}\\
 \midrule
 disabled & m = 0 & no segment-window check & linear = EA\\
-translated window & m != 0, b = 0 & starting point $0 \le \mathrm{EA}<\mathrm{span}$; complete range selected by leaf \texttt{AT} & linear = base + EA\\
-bounds-only window & m != 0, b = 1 & starting point $\mathrm{base}\le\mathrm{EA}<\mathrm{limit}$; complete range selected by leaf \texttt{AT} & linear = EA\\
+translated window & m != 0, b = 0 & complete byte range lies within $0 \le \mathrm{EA}<\mathrm{span}$ & linear = base + EA\\
+bounds-only window & m != 0, b = 1 & complete byte range lies within $\mathrm{base}\le\mathrm{EA}<\mathrm{limit}$ & linear = EA\\
 \bottomrule
 \end{manualtabular}
 
 Address validation begins by forming the starting EA and its segment-pretranslated linear value. The starting point
-must be within the selected segment. With paging enabled, the starting linear value must then be canonical and the
-starting leaf translation is resolved far enough to determine its \texttt{AT} value. That value selects the complete
-bounds, alignment, translation, and address-type checks described under Leaf Address Types. This ordering defines
-the reported result. With paging disabled, the normal-memory byte-range rules apply.
+must be within the selected segment. With paging enabled, the complete byte range is translated in increasing
+linear-address order after canonicality checks. With paging disabled, the same byte-range rules apply directly.
 
 Complete range additions are mathematical: 64-bit wraparound never makes an out-of-range access valid. A range
 failure raises \texttt{PAGE\_FAULT} before the instruction's target memory access begins.
@@ -63,7 +61,7 @@ context is invalidated when PTCR changes.
 
 \input{isa/memory/translation/manual/translation_cache_contract.tex}
 
-A global leaf ignores ASID matching. Its PFN, accumulated permissions, \texttt{CP}, and \texttt{AT} attributes must
+A global leaf ignores ASID matching. Its PFN, accumulated permissions, and \texttt{CP} attributes must
 be identical in every context in which that global entry can be used. Changing any of those attributes requires
 invalidating the global entry on every target logical processor.
 
@@ -73,51 +71,25 @@ coherence version, so the updater does not reclaim the old mapping until the com
 The local invalidation instructions affect only the executing logical processor; the request and acknowledgement
 steps are ordinary shared-memory communication ordered by the stated release, acquire, and AFENCE operations.
 
-\subsection{Leaf Address Types and Access Ranges}
-The leaf \texttt{AT} bit selects the memory-system address. For an \texttt{AT=0} leaf at level $L$, let
-$o=12+9(L-1)$; for the L1-only \texttt{AT=1} form, $o=12$:
-
+\subsection{Leaf Byte Addresses and Access Ranges}
+Every leaf at level $L$ forms a byte address with $o=12+9(L-1)$:
 \[
-\begin{aligned}
-\texttt{AT=0:}\quad \mathit{byte\_address} &= (\mathit{PFN}\ll12)\mathbin{|}\mathit{linear}[o-1:0],\\
-\texttt{AT=1:}\quad \mathit{slot\_address} &= (\mathit{PFN}\ll12)\mathbin{|}\mathit{linear}[11:0].
-\end{aligned}
+  \mathit{byte\_address} = (\mathit{PFN}\ll12)\mathbin{|}\mathit{linear}[o-1:0].
 \]
-
-For \texttt{AT=0}, the selected low bits are a byte offset and a width-$n$ access covers the half-open interval
-$[a,a+n)$. For \texttt{AT=1}, the low bits are a slot index and every B, W, L, or Q access covers exactly one
-addressable unit, $[a,a+1)$. Here $a$ is the value at the applicable stage: EA for segment bounds, linear address
-for paging coverage, and byte or slot address after translation. All leaves consumed by an \texttt{AT=0} byte range
-must also be byte-addressed; an address-type mismatch raises \texttt{PAGE\_FAULT} with cause
-\texttt{ADDRESS\_TYPE}.
-
-An \texttt{AT=1} transaction carries the slot address, transfer width, read/write direction, and write data. Width
-does not scale the slot address: for example, \texttt{Q [0]} and \texttt{Q [1]} select distinct slots, and
-\texttt{Q [4095]} remains one access to the last slot of the leaf. Slot accesses have no byte-alignment rule and no
-width-induced cross-page condition. Different widths at one slot remain transactions to that same slot; their
-device-visible relationship is defined by the applicable platform or device contract, not by normal-memory byte
-aliasing.
-
-Ordinary B, W, L, and Q loads and stores are valid through an \texttt{AT=1} leaf. Instruction fetch and every atomic
-read-modify-write through such a leaf raise \texttt{ADDRESS\_TYPE}. A prefetch produces no slot transaction. A cache
-maintenance operation has no slot-side effect. PTQUERY and VTOP report the translation without issuing a slot
-transaction; VTOP returns the slot address for an \texttt{AT=1} leaf.
-
-Address type is selected before applying the alignment rule appropriate to that type. Consequently, an atomic whose
-starting leaf has \texttt{AT=1} raises \texttt{ADDRESS\_TYPE} even when the numeric slot address would be misaligned
-under byte-addressed rules. \texttt{ATOMIC\_ALIGNMENT} applies only after an \texttt{AT=0} leaf has been selected.
-
-A slot store retires only after the transaction is acknowledged. The ordering and completion rules for slot
-transactions, including AFENCE, are defined by the Memory Model.
+A width-$n$ access covers the half-open byte interval $[a,a+n)$. PTE bit 7 is ignored and cannot change translation,
+permissions, cache policy, A/D behavior, queries, TLB identity, prefetch, cache maintenance, or access semantics.
+Atomics require natural byte alignment; a misaligned operand raises \texttt{ATOMIC\_ALIGNMENT} before the memory
+read or write. PTQUERY returns the selected PTE image with ignored bit 7 cleared, while VTOP reports the ordinary
+byte address.
 
 \subsection{Multi-Page Accesses}
-For an \texttt{AT=0} byte range that intersects more than one distinct leaf mapping, translation, accumulated
-permission, and leaf address-type checks are resolved once per mapping in increasing linear-address order. Each
+For a byte range that intersects more than one distinct leaf mapping, translation and accumulated permission checks
+are resolved once per mapping in increasing linear-address order. Each
 mapping's walk reaches its existing not-present, structural-validity, and permission result before the next mapping
 is consumed. The first mapping in that order that fails supplies the architectural fault and walk level.
 
 Every covered leaf mapping of a store is validated before any byte of the store becomes visible. A later-mapping translation,
-permission, address-type, or synchronous data-access fault leaves every destination byte and every leaf D bit
+permission or synchronous data-access fault leaves every destination byte and every leaf D bit
 unchanged. A updates completed while consuming an earlier valid entry retain the speculative-A rule and may remain
 set when a later mapping faults.
 

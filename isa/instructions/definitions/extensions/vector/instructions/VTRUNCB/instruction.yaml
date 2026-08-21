@@ -1,0 +1,8 @@
+mnemonic: VTRUNCB
+title: VTRUNCB (Vector)
+summary: Keep the low B result from W, L, or Q.
+description: Keep the low B result from W, L, or Q.
+attributes:
+  class: vector
+  family: vector
+  privilege: unprivileged

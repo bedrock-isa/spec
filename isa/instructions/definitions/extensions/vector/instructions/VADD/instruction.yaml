@@ -1,0 +1,8 @@
+mnemonic: VADD
+title: VADD (Vector)
+summary: Modular integer or IEEE floating-point addition.
+description: Modular integer or IEEE floating-point addition.
+attributes:
+  class: vector
+  family: vector
+  privilege: unprivileged

@@ -1,0 +1,8 @@
+mnemonic: PCOUNT
+title: PCOUNT (Vector)
+summary: Count set significant positions for the selected element size.
+description: Count set significant positions for the selected element size.
+attributes:
+  class: vector
+  family: vector
+  privilege: unprivileged

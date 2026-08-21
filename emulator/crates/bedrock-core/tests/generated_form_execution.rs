@@ -13,7 +13,6 @@ const STACK_ADDRESS: u64 = 0x1_4000;
 const EVENT_PC: u64 = 0x1_8000;
 const EVENT_STACK: u64 = 0x1_e000;
 const RAM_SIZE: usize = 0x2_0000;
-const REPG_BODY_BYTES: u16 = 1;
 
 fn set_field(pattern: &str, symbol: char, mut payload: u64, value: u64) -> u64 {
     let positions = pattern
@@ -168,10 +167,12 @@ fn appended_operand_bytes(form: &GeneratedForm, payload: u64) -> Vec<u8> {
 
     let fixed_start = appended.len();
     for (needle, width, value) in [
+        ("<imm8>", 1, 1_u64),
         ("<imm8s>", 1, 1_u64),
         ("<imm16s>", 2, 1_u64),
         ("<imm16>", 2, 1_u64),
         ("<imm16/bitmap>", 2, 1_u64),
+        ("<imm32>", 4, 1_u64),
         ("<imm32s>", 4, 1_u64),
         ("<imm64>", 8, 1_u64),
         ("<fconst_id>", 2, 1_u64),
@@ -179,9 +180,6 @@ fn appended_operand_bytes(form: &GeneratedForm, payload: u64) -> Vec<u8> {
         for _ in 0..form.text.match_indices(needle).count() {
             appended.extend_from_slice(&value.to_le_bytes()[..width]);
         }
-    }
-    if form.opcode == Opcode::Repg {
-        appended.extend_from_slice(&REPG_BODY_BYTES.to_le_bytes());
     }
     assert_eq!(
         usize::from(form.fixed_operand_bytes),
@@ -202,7 +200,10 @@ fn encode(form: &GeneratedForm, payload: u64, appended: &[u8]) -> Vec<u8> {
             bytes.push(0x80 | ((payload >> 8) as u8 & 0x3f));
             bytes.push(payload as u8);
         }
-        EncodingClass::Medium | EncodingClass::Long | EncodingClass::ExtraLong => {
+        EncodingClass::Medium
+        | EncodingClass::Long
+        | EncodingClass::ExtraLong
+        | EncodingClass::Xxlong => {
             assert!((opcode_bytes..=18).contains(&length), "{} length", form.id);
             bytes.push(
                 0xc0 | (((length - 3) as u8) << 2)

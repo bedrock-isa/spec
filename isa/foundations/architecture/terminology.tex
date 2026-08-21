@@ -15,18 +15,13 @@ enabled; otherwise the memory system uses it directly.
 A \emph{physical address} is the byte address produced by page-table translation for byte-addressed normal memory.
 With paging disabled, the linear address is used directly instead.
 
-A \emph{memory-system address} is the value presented to the memory subsystem after every active architectural
-translation stage. Depending on the final access attributes, the subsystem may interpret it as a normal-memory byte
-address or an externally acknowledged slot address.
+A \emph{memory-system address} is the byte address presented to the memory subsystem after every active architectural
+translation stage.
 
-\emph{Byte-addressed normal memory} is the coherent memory-location model selected by a final translation with
-\texttt{AT=0}. The PTE \texttt{CP} field selects one of its four normal-memory cache policies. Only policy
+\emph{Byte-addressed normal memory} is the coherent memory-location model used by every final translation. The PTE
+\texttt{CP} field selects one of its four cache policies. Only policy
 \texttt{CP=0} is \emph{cacheable}; the other three \texttt{CP} values remain byte-addressed normal memory with the
 allocation and propagation behavior defined by the Memory Model.
-
-A \emph{slot-addressed transaction} is the externally acknowledged access selected by a final translation with
-\texttt{AT=1}. Its memory-system address is a slot address rather than a normal-memory byte address. The
-Memory Address Translation and Memory Model sections define its transfer, completion, and ordering rules.
 
 \emph{Address generation} is the instruction-local calculation that combines registers, displacement, index,
 scale, and immediate fields into an effective address. It does not by itself read memory.
@@ -39,8 +34,7 @@ A \emph{memory event} is a read or write unit that participates in coherence or 
 effect} is a result that becomes observable to another logical processor or an external system.
 
 The term \emph{ordinary} classifies an operation, such as an ordinary load or store as distinct from an atomic or
-cache-maintenance operation. It does not identify a memory type. Byte-addressed normal memory is the \texttt{AT=0}
-memory-location model, while a slot transaction is the externally acknowledged \texttt{AT=1} alternative.
+cache-maintenance operation. It does not identify a memory type.
 
 \subsection{Segmentation and Paging}
 
@@ -61,10 +55,10 @@ A \emph{bounds-only segment} is enabled with bounds-only mode set. It treats the
 and checks only that it lies inside the segment window.
 
 \emph{Page-table translation} is the optional \texttt{PTCR.PE}-controlled stage that maps a canonical linear
-address to a physical frame and applies PTE permissions, cache policy, and addressing type.
+address to a physical frame and applies PTE permissions and cache policy. PTE bit 7 is an ignored don't-care.
 
-A \emph{PFN} is a physical frame number. A byte-addressed leaf PTE at level $L$ combines its naturally aligned PFN
-base with the low $12+9(L-1)$ linear-address bits. An L1 slot leaf combines its PFN with linear-address bits 11..0.
+A \emph{PFN} is a physical frame number. A leaf PTE at level $L$ combines its naturally aligned PFN base with the
+low $12+9(L-1)$ linear-address bits to form a byte address.
 
 \subsection{Instruction Encoding}\label{section:instruction-encoding-terminology}
 
@@ -113,6 +107,13 @@ The \emph{general-purpose registers} are the sixteen 64-bit registers R0 through
 of those registers selected through the four-bit Rn operand namespace. It may hold integers, addresses, counters,
 selectors, or temporary data according to the instruction encoding.
 
+A \emph{vector register} is one of the 32 VLEN-bit registers V0 through V31.
+A \emph{predicate register} is one of P0 through P15 and contains one
+governing bit for each byte of a vector register. A \emph{logical vector lane}
+is one selected-width element; predicate bit $iE$ governs lane $i$ for an
+$E$-byte element. VLEN is the reset-stable implementation-selected vector
+register width in bits.
+
 The \emph{stack pointer register} is SP. It lies outside the four-bit Rn namespace and uses SS as the fixed segment
 for SP-relative addressing.
 
@@ -124,7 +125,7 @@ A \emph{state register} is named architectural state such as FLAGS or STATUS. \t
 \texttt{RDSTATUS}, and \texttt{WRSTATUS} access these registers.
 
 A \emph{control register} is a privileged register exposed through the CR operand class, such as PTCR, ASCR, ECR,
-SPC, SCS, and SDS.
+EPC, UCTL, and UINFO.
 
 \emph{Architectural state} is programmer-visible current state. A \emph{register image} is the complete bit
 representation read from or written to one register. A \emph{processor-state image} is an aggregate representation

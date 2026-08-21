@@ -920,11 +920,12 @@ fn stop_reply(result: &StepResult) -> String {
             Trap::IllegalInstruction { .. } | Trap::InvalidControlState { .. } => {
                 signal_stop_reply(4)
             }
-            Trap::DivideError { .. } | Trap::FloatingPointFault { .. } => signal_stop_reply(8),
-            Trap::Bus { .. }
-            | Trap::SlotTransaction { .. }
-            | Trap::AcknowledgedBusFailure { .. }
-            | Trap::PageFault { .. } => signal_stop_reply(11),
+            Trap::DivideError { .. }
+            | Trap::FloatingPointFault { .. }
+            | Trap::VectorRangeError { .. } => signal_stop_reply(8),
+            Trap::Bus { .. } | Trap::AcknowledgedBusFailure { .. } | Trap::PageFault { .. } => {
+                signal_stop_reply(11)
+            }
             Trap::Decode { .. } | Trap::PrivilegeFault { .. } => signal_stop_reply(5),
         },
     }
@@ -1182,7 +1183,7 @@ mod tests {
     use bedrock_bus::Bus;
     use bedrock_core::exception::InvalidControlCause;
     use bedrock_core::fpu::env::FpCauses;
-    use bedrock_core::{CPU_REGISTER_INFOS, StepResult, Trap};
+    use bedrock_core::{CPU_REGISTER_INFOS, StepResult, Trap, VectorRangeErrorCause};
     use bedrock_debug::Debugger;
     use bedrock_machine::Machine;
     use bedrock_machine::board::{RAM_BASE, RAM_SIZE};
@@ -1323,6 +1324,16 @@ mod tests {
         let result = StepResult::Trap(Trap::FloatingPointFault {
             pc: 0x20,
             causes: FpCauses::DZ,
+        });
+
+        assert_eq!(stop_reply(&result), "T08thread:1;");
+    }
+
+    #[test]
+    fn vector_range_fault_returns_floating_point_signal() {
+        let result = StepResult::Trap(Trap::VectorRangeError {
+            pc: 0x28,
+            cause: VectorRangeErrorCause::LaneIndex,
         });
 
         assert_eq!(stop_reply(&result), "T08thread:1;");

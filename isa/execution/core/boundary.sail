@@ -1,9 +1,10 @@
 function live_event_state_valid(state : Cpu_state) -> bool =
   if state.status[0] == bitzero then
-    state.event_depth == 0 & state.event_stack_level == 0
+    status_event_depth(state.status) == 0 & not_bool(status_user_origin(state.status))
   else state.supervisor & state.status[4] == bitone
-       & state.event_depth >= 1 & state.event_depth <= 15
-       & state.event_stack_level >= 1 & state.event_stack_level <= 3
+       & status_event_depth(state.status) >= 1 & status_event_depth(state.status) <= 15
+       & (not_bool(status_user_origin(state.status))
+          | state.controls[11][32] == bitone)
 
 function fp_static_operand_relation_valid(instruction : Decoded_instruction) -> bool =
   if instruction.form.operation != Op_FSINCOSA then true
@@ -33,6 +34,14 @@ function execute_full(instruction : Decoded_instruction, state : Cpu_state) -> E
   else if instruction.form.instruction_set == FpuTranscendentalSet
           & (not_bool(state.fp_enabled) | not_bool(state.fptrans_enabled)) then
     faulted(state, instruction.form.operation, ExtensionUnavailable, "FPTRANSA extension disabled")
+  else if instruction.form.instruction_set == VectorSet & not_bool(state.vector_enabled) then
+    faulted(state, instruction.form.operation, ExtensionUnavailable, "VECTOR extension disabled")
+  else if instruction.form.instruction_set == VectorSet
+          & vector_instruction_requires_fp(instruction) & not_bool(state.fp_enabled) then
+    faulted(state, instruction.form.operation, ExtensionUnavailable, "FP extension disabled")
+  else if instruction.form.instruction_set == VectorFpuSet
+          & (not_bool(state.vector_enabled) | not_bool(state.fp_enabled)) then
+    faulted(state, instruction.form.operation, ExtensionUnavailable, "VECTOR or FP extension disabled")
   else if instruction.form.privilege == SupervisorPrivilege & not_bool(state.supervisor) then
     faulted(state, instruction.form.operation, PrivilegeFault, "supervisor instruction")
   else match architectural_state_fault(instruction, state) {
@@ -109,13 +118,15 @@ function admitted_async_event(state : Cpu_state, ingress : Async_ingress)
   let nmi = ecr[7] == bitone;
   let interrupt = ingress.interrupt_pending;
   let max_depth = unsigned(ecr[11 .. 8]);
-  if state.machine_check_pending & ecr[0] == bitone & state.event_depth < 15 then
+  if state.machine_check_pending & ecr[0] == bitone & status_event_depth(state.status) < 15 then
     Some(machine_check_event(state))
-  else if nmi & ecr[0] == bitone & state.status[1] == bitzero & state.event_depth < 15 then
+  else if nmi & ecr[0] == bitone & state.status[1] == bitzero
+          & status_event_depth(state.status) < 15 then
     Some(make_event(EventNmi, EventFrameBasic, 0x02 @ state.nmi_latched_source,
                     6, state.pc))
   else if interrupt & ecr[0] == bitone & state.status[5] == bitone
-          & state.event_depth < max_depth & state.event_depth < 15 then
+          & status_event_depth(state.status) < max_depth
+          & status_event_depth(state.status) < 15 then
     Some(make_event(EventInterrupt, EventFrameBasic, 0x01 @ ingress.interrupt_id,
                     7, state.pc))
   else None()
@@ -131,6 +142,7 @@ function event_from_fault(result : Execution_result) -> Event_record = match res
            | fault.kind == TranslationFault | (fault.kind == AccessFault & not_bool(fault.bus_error))
         then 0x00000009
       else if fault.kind == DivideByZero | fault.kind == DivideOverflow then 0x0000000A
+      else if fault.kind == VectorRangeFault then 0x0000000B
       else if fault.kind == FloatingPointFault then 0x0000000E
       else if fault.bus_error then 0x0000001A
       else 0x0000000D;
@@ -139,7 +151,7 @@ function event_from_fault(result : Execution_result) -> Event_record = match res
       else if code == 0x0000001A then EventFrameAuxiliary
       else EventFrameError;
     var event = make_event(EventSynchronous, frame_type, code, 3, result.state.pc);
-    if code == 0x00000003 | code == 0x0000000A | code == 0x0000000D
+    if code == 0x00000003 | code == 0x0000000A | code == 0x0000000B | code == 0x0000000D
        | code == 0x0000000E then
       event.error_code = fault.error_code
     else if code == 0x00000009 then {
@@ -162,24 +174,18 @@ function event_from_fault(result : Execution_result) -> Event_record = match res
 }
 
 function execute_active_repeat(state : Cpu_state) -> Execution_result =
-  if state.repeat_state.grouped then
-    if state.repeat_state.fixed_body == [||] then faulted(
-      state, Op_REPG, InvalidControlState, "active REPG has no validated body"
-    )
-    else run_repeat_group_tail(
-      state.repeat_state.fixed_body,
-      drop_bytes(state.repeat_state.fixed_body, state.repeat_state.group_progress),
-      unsigned(state.repeat_state.body_bytes) - state.repeat_state.group_progress, state
-    )
-  else match decode_full_record(state.repeat_state.fixed_body) {
+  match decode_full_record(state.repeat_state.fixed_body) {
     Some(body) => run_repeat_single(body, state.repeat_state.fixed_body, state),
     None() => faulted(state, Op_REPcc, InvalidControlState,
                       "active REPcc has no validated body"),
   }
 
 function boundary_with_event(state : Cpu_state, event : Event_record) -> Boundary_result = {
-  let execution = start_admitted_event(event, state);
-  struct { state = execution.state, admitted = Some(event), execution = Some(execution) }
+  let admitted = if state.repeat_state.active
+    then { event with saved_pc = state.repeat_state.prefix_start }
+    else event;
+  let execution = start_admitted_event(admitted, state);
+  struct { state = execution.state, admitted = Some(admitted), execution = Some(execution) }
 }
 
 function boundary_shutdown(state : Cpu_state) -> Boundary_result = {
@@ -195,13 +201,15 @@ function execute_boundary(instruction : Decoded_instruction, state : Cpu_state,
   else if latched.machine_check_pending & not_bool(machine_check_state_valid(latched)) then
     boundary_shutdown(latched)
   else if latched.machine_check_pending
-          & (latched.controls[2][0] == bitzero | latched.event_depth >= 15) then
+          & (latched.controls[2][0] == bitzero
+             | status_event_depth(latched.status) >= 15) then
     boundary_shutdown(latched)
   else match admitted_async_event(latched, ingress) {
     Some(event) => boundary_with_event(latched, event),
     None() =>
       if latched.controls[2][7] == bitone & latched.controls[2][0] == bitone
-         & latched.status[1] == bitzero & latched.event_depth >= 15 then
+         & latched.status[1] == bitzero
+         & status_event_depth(latched.status) >= 15 then
         boundary_shutdown(latched)
       else if latched.run_state == Halted then
         struct { state = latched, admitted = None(), execution = None() }
@@ -237,14 +245,15 @@ function resume_boundary(result : Execution_result, sampled_status : bits(64),
     if latched.machine_check_pending & not_bool(machine_check_state_valid(latched)) then
       boundary_shutdown(latched)
     else if latched.machine_check_pending
-       & (latched.controls[2][0] == bitzero | latched.event_depth >= 15) then
+       & (latched.controls[2][0] == bitzero
+          | status_event_depth(latched.status) >= 15) then
       boundary_shutdown(latched)
     else if latched.machine_check_pending then boundary_with_event(latched, machine_check_event(latched))
     else match result.fault {
       Some(_) => boundary_with_event(latched, event_from_fault(result_with_state(result, latched))),
       None() => {
         let trace_unit = result.pending.boundary_class != BoundaryEventEntry
-                       & result.pending.boundary_class != BoundaryRepeatInterior;
+                       ;
         if trace_unit & sampled_status[2] == bitone & sampled_status[3] == bitzero then
           boundary_with_event(
             latched, make_event(EventDebugTrace, EventFrameBasic, 0x00000000, 5, latched.pc)
@@ -287,6 +296,15 @@ function decode_and_execute_full_outcome(bytes : list(bits(8)), state : Cpu_stat
                 & (not_bool(state.fp_enabled) | not_bool(state.fptrans_enabled)) then
           struct { decode = decoded, execution = Some(faulted(
             state, form.operation, ExtensionUnavailable, "FPTRANSA extension disabled"
+          )) }
+        else if form.instruction_set == VectorSet & not_bool(state.vector_enabled) then
+          struct { decode = decoded, execution = Some(faulted(
+            state, form.operation, ExtensionUnavailable, "VECTOR extension disabled"
+          )) }
+        else if form.instruction_set == VectorFpuSet
+                & (not_bool(state.vector_enabled) | not_bool(state.fp_enabled)) then
+          struct { decode = decoded, execution = Some(faulted(
+            state, form.operation, ExtensionUnavailable, "VECTOR or FP extension disabled"
           )) }
         else struct { decode = decoded, execution = Some(faulted(
           state, form.operation, IllegalInstruction, decoded.detail

@@ -24,6 +24,7 @@ CLASS_CONSTRUCTORS = {
     "medium": "Medium",
     "long": "Long",
     "extralong": "ExtraLong",
+    "xxlong": "Xxlong",
 }
 EXCLUDE_CONSTRUCTORS = {
     "immediate": "ExcludeImmediate",
@@ -44,6 +45,7 @@ ROUTE_CONSTRUCTORS = {
     "integer_unary": "RouteIntegerUnary",
     "system_registers": "RouteSystemRegisters",
     "tlb_and_context": "RouteTlbContext",
+    "vector": "RouteVector",
 }
 FIELD_KIND_CONSTRUCTORS = {
     "rn": "FieldRn",
@@ -103,6 +105,7 @@ INSTRUCTION_SET_CONSTRUCTORS = {
     "base": "BaseSet",
     "fpu": "FpuSet",
     "fpu.transcendental_approx": "FpuTranscendentalSet",
+    "vector": "VectorSet",
 }
 PREDICATE_CONSTRUCTORS = {
     "none": "PredicateNone",
@@ -347,7 +350,7 @@ def _render_catalog_ir(ir: decode_ir.DecodeIR) -> str:
             "instruction_set = %s, instruction_class = %s, family = %s, privilege = %s, "
             "predicate_mode = %s, "
             "has_ea_operand = %s, "
-            "repeat_rep = %s, repeat_repcc = %s, repeat_repg = %s, "
+            "repeat_rep = %s, repeat_repcc = %s, "
             "repeat_observed_kind = %s, repeat_observed_operand = %s, flag_effects = %s, "
             "exceptions = %s, encoding_class = %s, allocation_bits = %d, value = 0x%016X, "
             "mask = 0x%016X, constraints = %s, fields = %s, operands = %s, sizes = %s, "
@@ -360,7 +363,7 @@ def _render_catalog_ir(ir: decode_ir.DecodeIR) -> str:
                 PRIVILEGE_CONSTRUCTORS[control.privilege],
                 PREDICATE_CONSTRUCTORS[control.predicate_mode],
                 str(control.has_ea_operand).lower(),
-                str(repeat.rep).lower(), str(repeat.repcc).lower(), str(repeat.repg).lower(),
+                str(repeat.rep).lower(), str(repeat.repcc).lower(),
                 json.dumps(repeat.observed_kind), json.dumps(repeat.observed_operand),
                 _strings(flag_effects), _list(_exceptions(form.annotations)),
                 CLASS_CONSTRUCTORS[form.opcode_class],

@@ -32,7 +32,12 @@ Extended byte0[5:2] is L, and the encoded instruction length is 3+L bytes. The o
 byte0[1:0], continue through byte1, and then through later opcode-space bytes as required by the encoding class.
 
 An extended instruction is invalid if its encoded instruction length is shorter than the opcode-space length: 3 bytes
-for medium, 4 bytes for long, and 5 bytes for extralong.
+for medium, 4 bytes for long, 5 bytes for extralong, and 6 bytes for xxlong.
+
+The first eight allocation bits select the extended opcode space.
+The value \texttt{11111111} selects the xxlong class, whose six-byte opcode space provides 42
+allocation bits. The value \texttt{11111110} is reserved for custom extensions; it retains extralong framing and is
+unallocated by the standard ISA. All other existing selectors retain their class and allocation.
 
 \texttt{LEN n, <instruction>} requests an encoded extended instruction length of \texttt{n} bytes, where
 \texttt{3 <= n <= 18}. The requested length must cover the required instruction length. Without \texttt{LEN}, the

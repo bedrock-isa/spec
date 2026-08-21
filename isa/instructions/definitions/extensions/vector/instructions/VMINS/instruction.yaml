@@ -1,0 +1,8 @@
+mnemonic: VMINS
+title: VMINS (Vector)
+summary: Signed minimum.
+description: Signed minimum.
+attributes:
+  class: vector
+  family: vector
+  privilege: unprivileged

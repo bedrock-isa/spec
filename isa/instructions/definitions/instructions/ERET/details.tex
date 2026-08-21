@@ -1,15 +1,13 @@
 {\raggedright
 \begin{enumerate}
-\item Require supervisor mode and active architectural event state; otherwise raise \texttt{INVALID\_CONTROL\_STATE}.
-\item Read and decode FRAME\_CONTROL at SS:SP without changing SP. Accept only the defined BASIC, ERROR, PAGE\_FAULT, and AUXILIARY sizes, with all reserved bits zero.
-\item Validate the saved event depth and stack level. A saved state with EA clear must carry zero saved event depth and stack level.
+\item Classify the return source before any stack access. A staged direct user entry requires supervisor mode, EA clear, EDEPTH zero, UO clear, and UCTL.V set. An outer user-event return requires EA set, EDEPTH one, UO set, and UCTL.V set. Other active supervisor returns use the memory frame.
+\item For a U-bank return, validate UCTL, UINFO, the user segments and pointers, and the executable UPC, then atomically restore user state, clear UCTL.V, EDEPTH, UO, EA, and current DFA, and perform no stack access.
+\item For a stacked return, read and decode FRAME_CONTROL at SS:SP without changing SP. Accept only the defined BASIC, ERROR, PAGE_FAULT, and AUXILIARY sizes, with all reserved bits zero.
+\item Validate that saved STATUS.EDEPTH plus one equals the current depth and that saved and current UO preserve the outer-origin chain.
 \item Read the complete selected frame and validate FLAGS, STATUS, CS, DS, SS, SP, and an executable canonical PC without changing architectural state.
-\item When repeat state is saved, validate the repeat context in the always-present FRAME\_EXT1 slot. Otherwise,
-require FRAME\_EXT1 to be zero and prepare cleared repeat state. Frame type remains determined only by the event.
-For a saved REPG context, zero in the selected live loop-control register is valid: execution resumes at the saved
-group instruction and applies the normal REPG guarded-decrement/result rule only after the remaining
-group instructions complete.
-\item Atomically restore the validated state, event-depth state, and repeat state.
+\item Ignore the value in the fixed-header padding slot at offset +0x38.
+\item Atomically restore the validated architectural state and current DFA from FRAME_CONTROL.SAVED_DFA. Hidden repeat state remains clear;
+if SAVED\_PC identifies a repeat prefix, that prefix is decoded and executed normally after return.
 \item After restoration, admit a pending NMI before the next instruction boundary when STATUS.NI is clear and ECR.NMI\_P is set.
 \end{enumerate}
 \par}

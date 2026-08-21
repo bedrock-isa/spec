@@ -1,0 +1,8 @@
+mnemonic: PSLICE
+title: PSLICE (Vector)
+summary: Extract one typed predicate-length window from the concatenation of old `Pd` followed by `Ps`.
+description: Extract one typed predicate-length window from the concatenation of old `Pd` followed by `Ps`.
+attributes:
+  class: vector
+  family: vector
+  privilege: unprivileged

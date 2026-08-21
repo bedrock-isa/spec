@@ -1,0 +1,15 @@
+mnemonic: VFLOOR
+title: VFLOOR (Vector)
+summary: Integral FP result toward negative infinity.
+description: Integral FP result toward negative infinity.
+attributes:
+  class: vector
+  family: vector
+  privilege: unprivileged
+flag_effects:
+  FFLAGS:
+    NV: may accrue
+    DZ: may accrue
+    OF: may accrue
+    UF: may accrue
+    NX: may accrue

@@ -1,0 +1,8 @@
+mnemonic: VSUB
+title: VSUB (Vector)
+summary: Modular integer or IEEE floating-point subtraction.
+description: Modular integer or IEEE floating-point subtraction.
+attributes:
+  class: vector
+  family: vector
+  privilege: unprivileged

@@ -33,13 +33,17 @@ function response_matches_phase(phase : Continuation_phase, request : Primitive_
   PhaseEventTargetProbe => kind == ResponseTranslation,
   PhaseEventStackProbe => kind == ResponseStackRange,
   PhaseEventFrameStore => kind == ResponseEventFrame,
-  PhaseEventReturnBody => kind == ResponseRepeatFetch,
   PhaseEventReturnExecute => kind == ResponseTranslation,
   PhaseFpContractQuery => kind == ResponseCpuidQuery,
   PhaseFpSourceRead => kind == ResponseRead,
   PhaseFpDestinationProbe => kind == ResponseProbe,
   PhaseFpCompute => kind == ResponseFloatingPoint,
   PhaseFpDestinationWrite => kind == ResponseStoreAck,
+  PhaseVectorMemoryRead => kind == ResponseVectorMemory,
+  PhaseVectorMemoryWrite => kind == ResponseVectorMemory,
+  PhaseVectorFpMemoryRead => kind == ResponseVectorMemory,
+  PhaseVectorFpCompute => kind == ResponseVectorFloatingPoint,
+  PhaseVectorFpMemoryWrite => kind == ResponseVectorMemory,
   PhaseCpuidQuery => kind == ResponseCpuidQuery,
   PhasePerformanceCounter => kind == ResponsePerformanceCounter,
   PhaseControlTransition => kind == ResponseControlTransition,
@@ -61,4 +65,3 @@ function transaction_faulted(previous : Execution_result, kind : Fault_kind,
   }),
   awaiting_environment = false
 }
-

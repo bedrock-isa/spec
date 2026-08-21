@@ -2,6 +2,10 @@ function warm_reset_state(state : Cpu_state) -> Cpu_state = {
   var reset = initial_cpu();
   reset.fp_enabled = state.fp_enabled;
   reset.fptrans_enabled = state.fptrans_enabled;
+  reset.vector_enabled = state.vector_enabled;
+  reset.vector_length_bytes = state.vector_length_bytes;
+  reset.vector_registers = zero_vector_registers(state.vector_length_bytes);
+  reset.predicate_registers = zero_predicate_registers(state.vector_length_bytes);
   reset.cache_maintenance_granule = state.cache_maintenance_granule;
   reset.save_area_size = state.save_area_size;
   reset.save_fixed_size = state.save_fixed_size;
@@ -14,6 +18,13 @@ function warm_reset_state(state : Cpu_state) -> Cpu_state = {
   reset.fp_component_size = state.fp_component_size;
   reset.fp_component_alignment = state.fp_component_alignment;
   reset.fp_component_init_policy = state.fp_component_init_policy;
+  reset.vector_component_present = state.vector_component_present;
+  reset.vector_component_id = state.vector_component_id;
+  reset.vector_component_bitmap_bit = state.vector_component_bitmap_bit;
+  reset.vector_component_offset = state.vector_component_offset;
+  reset.vector_component_size = state.vector_component_size;
+  reset.vector_component_alignment = state.vector_component_alignment;
+  reset.vector_component_init_policy = state.vector_component_init_policy;
   reset.controls[23] = state.controls[23];
   reset.controls[24] = state.controls[24];
   reset.pc = state.controls[23];
@@ -23,4 +34,3 @@ function warm_reset_state(state : Cpu_state) -> Cpu_state = {
   reset.run_state = Running;
   reset
 }
-

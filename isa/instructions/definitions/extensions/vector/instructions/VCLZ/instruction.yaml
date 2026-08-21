@@ -1,0 +1,8 @@
+mnemonic: VCLZ
+title: VCLZ (Vector)
+summary: Count leading zeros.
+description: Count leading zeros.
+attributes:
+  class: vector
+  family: vector
+  privilege: unprivileged

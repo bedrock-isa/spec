@@ -73,10 +73,12 @@ result after segment pre-translation. A value not produced is zero and has its c
 
 \input{isa/system/events/invalid_control_state_causes.tex}
 
+\input{isa/system/events/vector_range_error_causes.tex}
+
 An unavailable \texttt{RDPMC} ID reports \texttt{INVALID\_SELECTOR}; an illegal
 reserved-bit update reports \texttt{RESERVED\_BITS}; an invalid segment,
 control-register, or SAVE/RESTORE image reports \texttt{INVALID\_IMAGE}; and an
-illegal \texttt{ERET}, \texttt{SYSRET}, or privilege-state transition reports
+illegal \texttt{ERET} or privilege-state transition reports
 \texttt{INVALID\_TRANSITION}.
 
 \texttt{FLOATING\_POINT\_FAULT.ERROR\_CODE[4:0]} is a cause bitmap: bits 4 through 0 are \texttt{NV},
@@ -98,8 +100,8 @@ bits 63..5 are zero.
 }
 \end{manuallistedformatdiagram}
 {\small
-The cause-code row applies to \texttt{DIVIDE\_ERROR}, \texttt{ILLEGAL\_INSTRUCTION}, and
-\texttt{INVALID\_CONTROL\_STATE}. In the floating-point row, \texttt{I}, \texttt{Z},
+The cause-code row applies to \texttt{DIVIDE\_ERROR}, \texttt{ILLEGAL\_INSTRUCTION},
+\texttt{VECTOR\_RANGE\_ERROR}, and \texttt{INVALID\_CONTROL\_STATE}. In the floating-point row, \texttt{I}, \texttt{Z},
 \texttt{O}, \texttt{U}, and \texttt{X} abbreviate \texttt{NV}, \texttt{DZ},
 \texttt{OF}, \texttt{UF}, and \texttt{NX}.
 \par}

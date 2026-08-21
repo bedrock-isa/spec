@@ -1,0 +1,8 @@
+mnemonic: VPOPCNT
+title: VPOPCNT (Vector)
+summary: Population count.
+description: Population count.
+attributes:
+  class: vector
+  family: vector
+  privilege: unprivileged

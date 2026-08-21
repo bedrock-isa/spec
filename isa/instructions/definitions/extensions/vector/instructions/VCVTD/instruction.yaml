@@ -1,0 +1,15 @@
+mnemonic: VCVTD
+title: VCVTD (Vector)
+summary: Convert H or S to D.
+description: Convert H or S to D. Signed integer to D.
+attributes:
+  class: vector
+  family: vector
+  privilege: unprivileged
+flag_effects:
+  FFLAGS:
+    NV: may accrue
+    DZ: may accrue
+    OF: may accrue
+    UF: may accrue
+    NX: may accrue

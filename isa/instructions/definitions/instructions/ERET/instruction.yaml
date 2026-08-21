@@ -1,12 +1,12 @@
 mnemonic: ERET
 title: Event Return
-summary: Return from an architectural event frame.
-description: Return from the active architectural event after validating the saved event frame and return state. ERET is valid only while event-active state is set.
+summary: Return through a staged user context or from an architectural event.
+description: Classify the return source before stack access, then atomically return through a valid staged or outer-event U bank, or restore a valid active supervisor event frame.
 attributes:
   class: system
   family: core_control
   privilege: supervisor
 exceptions:
 - event: INVALID_CONTROL_STATE
-  when: event-active state is clear or the event frame or return image fails validation
+  when: the live return-source state, selected U bank, event frame, or return image fails validation
 additional_description: details.tex

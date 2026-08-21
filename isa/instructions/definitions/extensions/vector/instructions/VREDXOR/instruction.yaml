@@ -1,0 +1,8 @@
+mnemonic: VREDXOR
+title: VREDXOR (Vector)
+summary: Bitwise XOR.
+description: Bitwise XOR.
+attributes:
+  class: vector
+  family: vector
+  privilege: unprivileged

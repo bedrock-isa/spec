@@ -1,0 +1,51 @@
+forms:
+- id: extralong.vcvth.v99
+  class: extralong
+  bits: 11111101111011010zz0ppppvvvvvwwwww
+  syntax: VCVTH.V_SD(z) Pn(p), Vn(v), Vn(w)
+  operands:
+  - name: govern
+    type: Pn
+    access: read
+    field: p
+  - name: src
+    type: Vn
+    access: read
+    field: v
+  - name: dst
+    type: Vn
+    access: read_write
+    field: w
+  fields:
+    z:
+      type: size.V_SD
+  constraints:
+  - field: z
+    allow:
+    - 0x2..0x3
+    reason: reserved_vector_element_type
+- id: extralong.vcvth.v100
+  class: extralong
+  bits: 11111101111011011zz0ppppvvvvvwwwww
+  syntax: VCVTH.V_LQ(z) Pn(p), Vn(v), Vn(w)
+  operands:
+  - name: govern
+    type: Pn
+    access: read
+    field: p
+  - name: src
+    type: Vn
+    access: read
+    field: v
+  - name: dst
+    type: Vn
+    access: read_write
+    field: w
+  fields:
+    z:
+      type: size.V_LQ
+  constraints:
+  - field: z
+    allow:
+    - 0x2..0x3
+    reason: reserved_vector_element_type

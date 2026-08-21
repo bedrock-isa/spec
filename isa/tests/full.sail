@@ -17,6 +17,10 @@ function test_full_decode() -> unit = {
   assert(verify_local_representatives(representative_form_records(), local_state) == form_count);
   let _ = verify_non_fp_routes(representative_form_records(), local_state);
   test_local_integer_boundaries();
+  test_vector_predicate_semantics();
+  test_vector_integer_semantics();
+  test_vector_memory_protocol();
+  test_vector_fp_and_reduction_semantics();
   test_divide_bounds_and_conditions();
   test_state_register_local();
   test_typed_decode_and_transactions();

@@ -128,7 +128,6 @@ LayoutOpIR = ParseEaIR | ReadPayloadIR
 class RepeatControlIR:
     rep: bool
     repcc: bool
-    repg: bool
     observed_kind: str
     observed_operand: str
 
@@ -856,7 +855,6 @@ def _build_form(
             repeat=RepeatControlIR(
                 rep="REP" in contexts,
                 repcc="REPcc" in contexts,
-                repg="REPG" in contexts,
                 observed_kind=observed.kind if observed else "",
                 observed_operand=(observed.operand or "") if observed else "",
             ),
@@ -880,7 +878,10 @@ def _derive_limits(
     return DerivedLimitsIR(
         form_count=len(forms_ir),
         mnemonic_count=len({form.mnemonic for form in forms_ir}),
-        max_opcode_width=max((form.opcode_width for form in forms_ir), default=0),
+        max_opcode_width=max(
+            (encoding_class.allocation_bits for encoding_class in ENCODING_CLASSES_BY_NAME.values()),
+            default=0,
+        ),
         max_operands=max((len(form.operands) for form in forms_ir), default=0),
         max_ea_operands=max(
             (

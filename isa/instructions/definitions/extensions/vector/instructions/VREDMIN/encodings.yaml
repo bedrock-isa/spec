@@ -1,0 +1,52 @@
+forms:
+- id: extralong.vredmin.v127
+  class: extralong
+  bits: 11111101111110110zz01pppprrrrvvvvv
+  syntax: VREDMIN.HSD(z) Pn(p), Vn(v), Fn(r)
+  operands:
+  - name: govern
+    type: Pn
+    access: read
+    field: p
+  - name: src
+    type: Vn
+    access: read
+    field: v
+  - name: dst
+    type: Fn
+    access: write
+    field: r
+  fields:
+    z:
+      type: size.HSD
+  constraints:
+  - field: z
+    allow: &id001
+    - 0x1..0x3
+    reason: reserved_vector_element_type
+- id: xxlong.vredmin.v228
+  class: xxlong
+  bits: 11111111000000101110zz01001pppprrrreeeeeee
+  syntax: VREDMIN.HSD(z) Pn(p), <ea>(e), Fn(r)
+  operands:
+  - name: govern
+    type: Pn
+    access: read
+    field: p
+  - name: src
+    type: VEA
+    access: read
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  - name: dst
+    type: Fn
+    access: write
+    field: r
+  fields:
+    z:
+      type: size.HSD
+  constraints:
+  - field: z
+    allow: *id001
+    reason: reserved_vector_element_type

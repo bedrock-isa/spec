@@ -1,0 +1,8 @@
+mnemonic: VSHR
+title: VSHR (Vector)
+summary: Logical right shift.
+description: Logical right shift.
+attributes:
+  class: vector
+  family: vector
+  privilege: unprivileged

@@ -1,0 +1,8 @@
+mnemonic: PTAIL
+title: PTAIL (Vector)
+summary: Set significant positions before `unsigned(Rcount) mod lane_count`.
+description: Set significant positions before `unsigned(Rcount) mod lane_count`.
+attributes:
+  class: vector
+  family: vector
+  privilege: unprivileged

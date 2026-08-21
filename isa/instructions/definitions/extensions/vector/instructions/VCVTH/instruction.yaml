@@ -1,0 +1,8 @@
+mnemonic: VCVTH
+title: VCVTH (Vector)
+summary: Convert S or D to H.
+description: Convert S or D to H. Signed integer to H.
+attributes:
+  class: vector
+  family: vector
+  privilege: unprivileged

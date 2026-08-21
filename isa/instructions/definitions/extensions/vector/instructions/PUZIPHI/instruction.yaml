@@ -1,0 +1,8 @@
+mnemonic: PUZIPHI
+title: PUZIPHI (Vector)
+summary: Concatenate the odd-position lanes from `Pa` and `Pb`.
+description: Concatenate the odd-position lanes from `Pa` and `Pb`.
+attributes:
+  class: vector
+  family: vector
+  privilege: unprivileged

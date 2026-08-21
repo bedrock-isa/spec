@@ -1,0 +1,8 @@
+mnemonic: RDVL
+title: RDVL (Vector)
+summary: Write VLEN in bytes to `Rn`.
+description: Write VLEN in bytes to `Rn`.
+attributes:
+  class: vector
+  family: vector
+  privilege: unprivileged

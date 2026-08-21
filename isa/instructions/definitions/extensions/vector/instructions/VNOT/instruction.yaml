@@ -1,0 +1,8 @@
+mnemonic: VNOT
+title: VNOT (Vector)
+summary: Bitwise complement.
+description: Bitwise complement.
+attributes:
+  class: vector
+  family: vector
+  privilege: unprivileged

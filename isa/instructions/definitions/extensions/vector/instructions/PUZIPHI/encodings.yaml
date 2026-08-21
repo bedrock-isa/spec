@@ -1,0 +1,21 @@
+forms:
+- id: extralong.puziphi.v133
+  class: extralong
+  bits: 11111101111111000zz100ppppqqqqhhhh
+  syntax: PUZIPHI.BWLQ(z) Pn(p), Pn(q), Pn(h)
+  operands:
+  - name: lhs
+    type: Pn
+    access: read
+    field: p
+  - name: rhs
+    type: Pn
+    access: read
+    field: q
+  - name: dst
+    type: Pn
+    access: read_write
+    field: h
+  fields:
+    z:
+      type: size.BWLQ

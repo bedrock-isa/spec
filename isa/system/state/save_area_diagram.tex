@@ -3,7 +3,8 @@
 \manualformatreserved{reserved}{12}
 \manualformatfield{STATUS}{16}
 \manualformatfield{FLAGS}{16}
-\manualformatreserved{reserved}{10}
+\manualformatreserved{reserved}{9}
+\manualformatfield{DFA}{1}
 \manualformatfield{5}{1}
 \manualformatfield{4}{1}
 \manualformatfield{3}{1}
@@ -17,7 +18,7 @@
 }
 \end{manuallistedformatdiagram}
 {\small The labels \texttt{5} through \texttt{0} are the six \texttt{GS\_VALID} bits. SAVE writes
-\texttt{GS\_VALID=0x3f} and \texttt{FMT=0}.\par}
+\texttt{GS\_VALID=0x3f} and \texttt{FMT=0}. \texttt{DFA} records the hidden current double-fault-active bit.\par}
 \begin{manuallistedstructlayout}
   {SAVE/RESTORE Fixed Base Block}
   {8}

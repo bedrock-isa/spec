@@ -1,0 +1,15 @@
+mnemonic: VMIN
+title: VMIN (Vector)
+summary: FP minimum using the scalar FMIN NaN and signed-zero rules.
+description: FP minimum using the scalar FMIN NaN and signed-zero rules.
+attributes:
+  class: vector
+  family: vector
+  privilege: unprivileged
+flag_effects:
+  FFLAGS:
+    NV: may accrue
+    DZ: may accrue
+    OF: may accrue
+    UF: may accrue
+    NX: may accrue

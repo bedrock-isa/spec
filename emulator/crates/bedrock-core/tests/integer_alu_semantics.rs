@@ -1,6 +1,6 @@
 use bedrock_bus::{Bus, Ram};
 use bedrock_core::{Cpu, EventControl, Flags, PageTableControl, StepResult};
-use bedrock_isa::{generated::GENERATED_FORMS, EncodingClass};
+use bedrock_isa::{EncodingClass, generated::GENERATED_FORMS};
 
 const PTE_P: u64 = 1 << 0;
 const PTE_W: u64 = 1 << 1;
@@ -54,7 +54,10 @@ fn encoded_form(id: &str, fields: &[(char, u64)], appended: &[u8]) -> Vec<u8> {
             bytes.push(0x80 | ((payload >> 8) as u8 & 0x3f));
             bytes.push(payload as u8);
         }
-        EncodingClass::Medium | EncodingClass::Long | EncodingClass::ExtraLong => {
+        EncodingClass::Medium
+        | EncodingClass::Long
+        | EncodingClass::ExtraLong
+        | EncodingClass::Xxlong => {
             bytes.push(
                 0xc0 | (((length - 3) as u8) << 2)
                     | ((payload >> ((opcode_bytes - 1) * 8)) as u8 & 3),

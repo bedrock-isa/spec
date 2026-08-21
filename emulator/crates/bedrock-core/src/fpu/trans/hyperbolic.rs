@@ -42,6 +42,7 @@ fn evaluate_prepared(
     }
 
     let output = TransOutput::Approximation(match format {
+        FpFormat::H => unreachable!("binary16 transcendental operations are not allocated"),
         FpFormat::S => evaluate_s(operation, input as u32) as u64,
         FpFormat::D => evaluate_d(operation, input),
     });
@@ -128,6 +129,7 @@ fn magnitude(format: FpFormat, bits: u64) -> u64 {
 
 fn positive_one(format: FpFormat) -> u64 {
     match format {
+        FpFormat::H => 0x3c00,
         FpFormat::S => 0x3f80_0000,
         FpFormat::D => 0x3ff0_0000_0000_0000,
     }
@@ -135,6 +137,7 @@ fn positive_one(format: FpFormat) -> u64 {
 
 fn minimum_normal(format: FpFormat) -> u64 {
     match format {
+        FpFormat::H => 0x0400,
         FpFormat::S => 0x0080_0000,
         FpFormat::D => 0x0010_0000_0000_0000,
     }

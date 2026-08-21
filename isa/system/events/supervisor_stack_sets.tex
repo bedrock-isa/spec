@@ -1,41 +1,18 @@
-The four supervisor stack pairs have fixed roles. SSS:SSP is the SYSCALL working stack. ISS:ISP, FSS:FSP, and
-DSS:DSP are event stack levels 1, 2, and 3.
+The configured supervisor stack pairs select only the first user-origin entry and delivery-failure recovery.
 
 \manualtablecaption{Supervisor Stack Roles}
-\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.55in}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{1.55in}>{\raggedright\arraybackslash}p{2.25in}@{}}
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{1.10in}>{\raggedright\arraybackslash}p{1.15in}>{\raggedright\arraybackslash}p{3.15in}@{}}
 \toprule
 \rowcolor{ManualHeaderFill}
-\textbf{Level} & \textbf{Pair} & \textbf{Role} & \textbf{Use}\\
+\textbf{Pair} & \textbf{Role} & \textbf{Use}\\
 \midrule
-call & \texttt{SSS:SSP} & supervisor call & SYSCALL working stack\\
-1 & \texttt{ISS:ISP} & maskable interrupt & external interrupts and IPIs\\
-2 & \texttt{FSS:FSP} & fault/exception & faults, traps, NMI, and machine check\\
-3 & \texttt{DSS:DSP} & double fault & DOUBLE\_FAULT and event-delivery failure only\\
+\texttt{SSS:SSP} & system call & first user-origin SYSTEM\_CALL\\
+\texttt{ISS:ISP} & interrupt & first user-origin maskable interrupt\\
+\texttt{FSS:FSP} & fault & first user-origin exception or NMI\\
+\texttt{DSS:DSP} & recovery & DOUBLE\_FAULT after delivery failure\\
 \bottomrule
 \end{manualtabular}
 
-The processor tracks a hidden two-bit current event stack level while STATUS.EA is set. A maskable interrupt requests
-level 1, an exception other than DOUBLE\_FAULT or an NMI requests level 2, and DOUBLE\_FAULT requests level 3. If
-entry is from a context with EA clear, hardware loads the pair assigned to the requested level. If entry is already
-event-active and the request is for a higher level, hardware moves to the higher pair. A same- or lower-level nested
-event retains the current SS:SP and appends its frame instead of reloading a configured top and overwriting an older
-frame. An interrupt-handler fault therefore moves from level 1 to level 2, while an interrupt admitted during an
-exception remains on level 2. ERET restores the saved event-active and stack-level state.
+A first user-origin entry loads the applicable configured pair. Supervisor-origin and all nested entries retain the current SS:SP and push a full frame there; event class never promotes an active handler to another configured stack. Delivery failure uses DSS:DSP when the hidden current-DFA bit is clear. Failure with current DFA set enters shutdown.
 
-\Needspace{1.8in}
-\begin{verbatim}
-if STATUS.EA == 0:
-    selected_esl = requested_esl
-    load the stack pair assigned to selected_esl
-else if requested_esl > current_esl:
-    selected_esl = requested_esl
-    load the stack pair assigned to selected_esl
-else:
-    selected_esl = current_esl
-    keep the current SS:SP
-\end{verbatim}
-
-After stack selection, hardware rounds the event payload length up to 16 bytes, adds the fixed 64-byte frame, and
-subtracts that total from the active stack pointer. For a new or higher level the active pointer is ISP, FSP, or DSP;
-for same- or lower-level nesting it is the current SP. Hardware validates and atomically stores the entire frame
-before committing the new SP. The configured stack-top register is never changed.
+For user-origin entry, hardware rounds only the event payload to 16 bytes and subtracts it from the configured top. BASIC events have zero payload and perform no stack access. For supervisor or nested entry, hardware subtracts the complete full-frame size from current SP. Each nonzero range is validated and stored atomically before the new SP commits; configured tops are never modified.

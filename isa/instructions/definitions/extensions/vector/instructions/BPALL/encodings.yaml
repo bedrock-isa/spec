@@ -1,0 +1,34 @@
+forms:
+- id: long.bpall.v28
+  class: long
+  bits: 11111010011100zz000101pppp
+  syntax: BPALL.BWLQ(z) Pn(p), <imm32s>
+  operands:
+  - name: predicate
+    type: Pn
+    access: read
+    field: p
+  - name: target
+    type: imm32s
+    access: read
+  fields:
+    z:
+      type: size.BWLQ
+- id: xxlong.bpall.v238
+  class: xxlong
+  bits: 11111111000000110000zz000000100ppppeeeeeee
+  syntax: BPALL.BWLQ(z) Pn(p), <ea>(e)
+  operands:
+  - name: predicate
+    type: Pn
+    access: read
+    field: p
+  - name: target
+    type: EA
+    access: read
+    ea_role: control_target
+    ea_width: Q
+    field: e
+  fields:
+    z:
+      type: size.BWLQ

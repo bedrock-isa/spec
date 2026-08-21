@@ -2,6 +2,7 @@
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FpFormat {
+    H,
     S,
     D,
 }
@@ -19,36 +20,42 @@ pub enum FpClass {
 impl FpFormat {
     pub const fn value_mask(self) -> u64 {
         match self {
+            Self::H => u16::MAX as u64,
             Self::S => u32::MAX as u64,
             Self::D => u64::MAX,
         }
     }
     pub const fn sign_mask(self) -> u64 {
         match self {
+            Self::H => 1 << 15,
             Self::S => 1 << 31,
             Self::D => 1 << 63,
         }
     }
     pub const fn exponent_mask(self) -> u64 {
         match self {
+            Self::H => 0x7c00,
             Self::S => 0x7f80_0000,
             Self::D => 0x7ff0_0000_0000_0000,
         }
     }
     pub const fn fraction_mask(self) -> u64 {
         match self {
+            Self::H => 0x03ff,
             Self::S => 0x007f_ffff,
             Self::D => 0x000f_ffff_ffff_ffff,
         }
     }
     pub const fn quiet_bit(self) -> u64 {
         match self {
+            Self::H => 0x0200,
             Self::S => 0x0040_0000,
             Self::D => 0x0008_0000_0000_0000,
         }
     }
     pub const fn default_nan(self) -> u64 {
         match self {
+            Self::H => 0x7e00,
             Self::S => 0x7fc0_0000,
             Self::D => 0x7ff8_0000_0000_0000,
         }

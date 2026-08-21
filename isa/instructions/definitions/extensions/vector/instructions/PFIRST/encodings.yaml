@@ -1,0 +1,17 @@
+forms:
+- id: long.pfirst.v6
+  class: long
+  bits: 11111010010100zz10rrrrpppp
+  syntax: PFIRST.BWLQ(z) Pn(p), Rn(r)
+  operands:
+  - name: predicate
+    type: Pn
+    access: read
+    field: p
+  - name: dst
+    type: Rn
+    access: write
+    field: r
+  fields:
+    z:
+      type: size.BWLQ

@@ -4,7 +4,7 @@ use core::cmp::Ordering;
 
 use rustc_apfloat::{
     Float, FloatConvert, Round, Status as ApStatus, StatusAnd,
-    ieee::{Double, Single},
+    ieee::{Double, Half, Single},
 };
 
 use crate::{
@@ -169,6 +169,7 @@ pub fn get_exponent(format: FpFormat, status: FpStatus, operand: u64) -> FpEffec
     };
     let canonical = format.canonical_bits(operand);
     let (field, bias) = match format {
+        FpFormat::H => ((canonical & format.exponent_mask()) >> 10, 15_i128),
         FpFormat::S => ((canonical & format.exponent_mask()) >> 23, 127_i128),
         FpFormat::D => ((canonical & format.exponent_mask()) >> 52, 1023_i128),
     };
@@ -194,6 +195,7 @@ pub fn get_mantissa(format: FpFormat, status: FpStatus, operand: u64) -> FpEffec
     let input = status.preprocess(format, operand);
     let result = if format.classify(input) == FpClass::Normal {
         let biased_one = match format {
+            FpFormat::H => 0x3c00,
             FpFormat::S => 0x3f80_0000,
             FpFormat::D => 0x3ff0_0000_0000_0000,
         };
@@ -290,29 +292,37 @@ pub fn convert_format(
     source_bits: u64,
 ) -> FpEffect {
     let source_format = match destination_format {
+        FpFormat::H => FpFormat::S,
         FpFormat::S => FpFormat::D,
         FpFormat::D => FpFormat::S,
     };
+    convert_format_from(destination_format, source_format, status, source_bits)
+}
+
+/// Converts between two explicitly selected IEEE binary formats.
+pub fn convert_format_from(
+    destination_format: FpFormat,
+    source_format: FpFormat,
+    status: FpStatus,
+    source_bits: u64,
+) -> FpEffect {
     let source = status.preprocess(source_format, source_bits);
     let (rounded, mut causes) = match destination_format {
-        FpFormat::S => {
-            let mut loses_info = false;
-            let result: StatusAnd<Single> = Double::from_bits(source as u128)
-                .convert_r(status.rounding.apfloat(), &mut loses_info);
-            (
-                result.value.to_bits() as u64,
-                FpCauses::from_apfloat(result.status),
-            )
-        }
-        FpFormat::D => {
-            let mut loses_info = false;
-            let result: StatusAnd<Double> = Single::from_bits(source as u128)
-                .convert_r(status.rounding.apfloat(), &mut loses_info);
-            (
-                result.value.to_bits() as u64,
-                FpCauses::from_apfloat(result.status),
-            )
-        }
+        FpFormat::H => match source_format {
+            FpFormat::H => (source, FpCauses::default()),
+            FpFormat::S => convert_float_bits::<Single, Half>(source, status.rounding.apfloat()),
+            FpFormat::D => convert_float_bits::<Double, Half>(source, status.rounding.apfloat()),
+        },
+        FpFormat::S => match source_format {
+            FpFormat::H => convert_float_bits::<Half, Single>(source, status.rounding.apfloat()),
+            FpFormat::S => (source, FpCauses::default()),
+            FpFormat::D => convert_float_bits::<Double, Single>(source, status.rounding.apfloat()),
+        },
+        FpFormat::D => match source_format {
+            FpFormat::H => convert_float_bits::<Half, Double>(source, status.rounding.apfloat()),
+            FpFormat::S => convert_float_bits::<Single, Double>(source, status.rounding.apfloat()),
+            FpFormat::D => (source, FpCauses::default()),
+        },
     };
 
     // rustc_apfloat 0.2.3 reports a directed overflow rounded to the largest
@@ -332,6 +342,19 @@ pub fn convert_format(
     finish_float(request, rounded, causes)
 }
 
+fn convert_float_bits<F, T>(source: u64, round: Round) -> (u64, FpCauses)
+where
+    F: Float + FloatConvert<T>,
+    T: Float,
+{
+    let mut loses_info = false;
+    let result: StatusAnd<T> = F::from_bits(source as u128).convert_r(round, &mut loses_info);
+    (
+        result.value.to_bits() as u64,
+        FpCauses::from_apfloat(result.status),
+    )
+}
+
 pub fn signed_integer_to_float(format: FpFormat, status: FpStatus, integer_bits: u64) -> FpEffect {
     let integer = integer_bits as i64 as i128;
     let (rounded, causes) = signed_to_float_bits(format, integer, status.rounding.apfloat());
@@ -348,6 +371,8 @@ pub fn signed_integer_to_float(format: FpFormat, status: FpStatus, integer_bits:
 
 pub fn unsigned_integer_to_float(format: FpFormat, status: FpStatus, integer: u64) -> FpEffect {
     let result = match format {
+        FpFormat::H => Half::from_u128_r(integer as u128, status.rounding.apfloat())
+            .map(|value| value.to_bits() as u64),
         FpFormat::S => Single::from_u128_r(integer as u128, status.rounding.apfloat())
             .map(|value| value.to_bits() as u64),
         FpFormat::D => Double::from_u128_r(integer as u128, status.rounding.apfloat())
@@ -365,18 +390,42 @@ pub fn unsigned_integer_to_float(format: FpFormat, status: FpStatus, integer: u6
 }
 
 pub fn float_to_signed_integer(format: FpFormat, status: FpStatus, source_bits: u64) -> FpEffect {
+    float_to_signed_integer_width(format, status, source_bits, 64)
+}
+
+pub fn float_to_signed_integer_width(
+    format: FpFormat,
+    status: FpStatus,
+    source_bits: u64,
+    integer_bits: usize,
+) -> FpEffect {
     let source = status.preprocess(format, source_bits);
     let (value, ap_status) = match format {
+        FpFormat::H => {
+            let mut exact = true;
+            let result = Half::from_bits(source as u128).to_i128_r(
+                integer_bits,
+                Round::TowardZero,
+                &mut exact,
+            );
+            (result.value as u64, result.status)
+        }
         FpFormat::S => {
             let mut exact = true;
-            let result =
-                Single::from_bits(source as u128).to_i128_r(64, Round::TowardZero, &mut exact);
+            let result = Single::from_bits(source as u128).to_i128_r(
+                integer_bits,
+                Round::TowardZero,
+                &mut exact,
+            );
             (result.value as u64, result.status)
         }
         FpFormat::D => {
             let mut exact = true;
-            let result =
-                Double::from_bits(source as u128).to_i128_r(64, Round::TowardZero, &mut exact);
+            let result = Double::from_bits(source as u128).to_i128_r(
+                integer_bits,
+                Round::TowardZero,
+                &mut exact,
+            );
             (result.value as u64, result.status)
         }
     };
@@ -384,6 +433,15 @@ pub fn float_to_signed_integer(format: FpFormat, status: FpStatus, source_bits: 
 }
 
 pub fn float_to_unsigned_integer(format: FpFormat, status: FpStatus, source_bits: u64) -> FpEffect {
+    float_to_unsigned_integer_width(format, status, source_bits, 64)
+}
+
+pub fn float_to_unsigned_integer_width(
+    format: FpFormat,
+    status: FpStatus,
+    source_bits: u64,
+    integer_bits: usize,
+) -> FpEffect {
     let source = status.preprocess(format, source_bits);
     let class = format.classify(source);
     if format.sign(source)
@@ -396,16 +454,31 @@ pub fn float_to_unsigned_integer(format: FpFormat, status: FpStatus, source_bits
     }
 
     let (value, ap_status) = match format {
+        FpFormat::H => {
+            let mut exact = true;
+            let result = Half::from_bits(source as u128).to_u128_r(
+                integer_bits,
+                Round::TowardZero,
+                &mut exact,
+            );
+            (result.value as u64, result.status)
+        }
         FpFormat::S => {
             let mut exact = true;
-            let result =
-                Single::from_bits(source as u128).to_u128_r(64, Round::TowardZero, &mut exact);
+            let result = Single::from_bits(source as u128).to_u128_r(
+                integer_bits,
+                Round::TowardZero,
+                &mut exact,
+            );
             (result.value as u64, result.status)
         }
         FpFormat::D => {
             let mut exact = true;
-            let result =
-                Double::from_bits(source as u128).to_u128_r(64, Round::TowardZero, &mut exact);
+            let result = Double::from_bits(source as u128).to_u128_r(
+                integer_bits,
+                Round::TowardZero,
+                &mut exact,
+            );
             (result.value as u64, result.status)
         }
     };
@@ -414,6 +487,9 @@ pub fn float_to_unsigned_integer(format: FpFormat, status: FpStatus, source_bits
 
 fn round_integral_bits(format: FpFormat, bits: u64, round: Round) -> (u64, FpCauses) {
     let result = match format {
+        FpFormat::H => Half::from_bits(bits as u128)
+            .round_to_integral(round)
+            .map(|value| value.to_bits() as u64),
         FpFormat::S => Single::from_bits(bits as u128)
             .round_to_integral(round)
             .map(|value| value.to_bits() as u64),
@@ -426,6 +502,7 @@ fn round_integral_bits(format: FpFormat, bits: u64, round: Round) -> (u64, FpCau
 
 fn signed_to_float_bits(format: FpFormat, value: i128, round: Round) -> (u64, FpCauses) {
     let result = match format {
+        FpFormat::H => Half::from_i128_r(value, round).map(|value| value.to_bits() as u64),
         FpFormat::S => Single::from_i128_r(value, round).map(|value| value.to_bits() as u64),
         FpFormat::D => Double::from_i128_r(value, round).map(|value| value.to_bits() as u64),
     };
@@ -434,6 +511,7 @@ fn signed_to_float_bits(format: FpFormat, value: i128, round: Round) -> (u64, Fp
 
 fn numeric_relation(format: FpFormat, lhs: u64, rhs: u64) -> FpRelation {
     let ordering = match format {
+        FpFormat::H => Half::from_bits(lhs as u128).partial_cmp(&Half::from_bits(rhs as u128)),
         FpFormat::S => Single::from_bits(lhs as u128).partial_cmp(&Single::from_bits(rhs as u128)),
         FpFormat::D => Double::from_bits(lhs as u128).partial_cmp(&Double::from_bits(rhs as u128)),
     };

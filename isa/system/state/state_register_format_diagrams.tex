@@ -32,7 +32,9 @@ reserved bit to be zero. Instruction-specific flag production and conditional us
 
 \begin{manuallistedformatdiagram}{STATUS Register Format}
 \manualformatrow{STATUS[15:0]}{%
-\manualformatreserved{reserved}{10}
+\manualformatreserved{reserved}{5}
+\manualformatfield{UO}{1}
+\manualformatfield{EDEPTH}{4}
 \manualformatfield{I}{1}
 \manualformatfield{P}{1}
 \manualformatfield{R}{1}
@@ -52,7 +54,9 @@ abbreviate \texttt{IE}, \texttt{PM}, \texttt{RF}, \texttt{TF}, \texttt{NI}, and 
 \rowcolor{ManualHeaderFill}
 \textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
 \midrule
-reserved & \texttt{15..6} & reads as zero and must be zero when written\\
+reserved & \texttt{15..11} & reads as zero and must be zero when written\\
+\texttt{UO} & \texttt{10} & outer active event originated in user mode\\
+\texttt{EDEPTH} & \texttt{9..6} & current architectural event depth\\
 \texttt{IE} & \texttt{5} & permits maskable-interrupt admission when the other admission conditions hold\\
 \texttt{PM} & \texttt{4} & selects user mode when zero and supervisor mode when one\\
 \texttt{RF} & \texttt{3} & one-shot suppression of \texttt{DEBUG\_TRACE}\\
@@ -62,9 +66,12 @@ reserved & \texttt{15..6} & reads as zero and must be zero when written\\
 \bottomrule
 \end{manualtabular}
 
+In user mode, \texttt{PM}, \texttt{EA}, \texttt{EDEPTH}, and \texttt{UO} are always observed as zero.
+
 \hyperref[instr:rdstatus]{\texttt{RDSTATUS}} is unprivileged; \hyperref[instr:wrstatus]{\texttt{WRSTATUS}} is
 supervisor-only. \texttt{WRSTATUS} atomically updates \texttt{IE}, \texttt{NI}, \texttt{TF}, and \texttt{RF};
-reserved bits must be zero, and supplied \texttt{PM} and \texttt{EA} must equal their current values. Privilege
+reserved bits must be zero, and supplied \texttt{PM}, \texttt{EA}, \texttt{EDEPTH}, and \texttt{UO} must equal
+their current values. Privilege
 transitions are defined in the \hyperref[page:privileged-execution-model]{Privileged Execution Model}; event
 admission, tracing, and event-active transitions are defined in the
 \hyperref[page:architectural-event-processing-model]{Architectural Event Processing Model}.

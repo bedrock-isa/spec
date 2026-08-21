@@ -13,16 +13,13 @@ from typing import Any
 
 from alloc_notes import allocation_note_text
 from validate_alloc import (
-    Claim,
     compact_bits,
-    entry_claims,
-    excluded_by,
-    expand_pattern,
-    field_allowed,
-    matches_pattern,
+    entries_overlap,
+    entry_claim_patterns,
     namespace_patterns,
     namespace_size,
     pattern_cardinality,
+    pattern_union_cardinality,
 )
 from encoding_architecture import ARCHITECTURE_SOURCE_PATH
 
@@ -99,55 +96,37 @@ def mnemonic_from_text(text: str, entry_id: str) -> str:
     return first
 
 
-def entry_skipped_values(
-    path: Path,
-    allocation_bits: int,
-    namespaces: list[str],
-    entry: dict[str, Any],
-) -> set[int]:
-    entry_id = str(entry["id"])
-    pattern = compact_bits(str(entry["bits"]))
-    constraints = entry.get("constraints") or []
-    if len(pattern) != allocation_bits:
-        raise ValueError(f"{entry_id}: pattern has {len(pattern)} bits, expected {allocation_bits}")
-
-    out: set[int] = set()
-    for value in expand_pattern(pattern):
-        if not any(matches_pattern(value, namespace) for namespace in namespaces):
-            raise ValueError(f"{entry_id}: value 0x{value:x} is outside class namespace")
-
-        for constraint in constraints:
-            if "allow" in constraint and not field_allowed(value, pattern, constraint):
-                out.add(value)
-                break
-            if "exclude" in constraint and excluded_by(value, pattern, constraint):
-                out.add(value)
-                break
-    return out
-
-
 def analyze_data(path: Path, data: dict[str, Any]) -> tuple[ClassReport, list[EntryReport]]:
     cls = str(data["class"])
     allocation_bits = int(data["allocation_bits"])
     namespaces = namespace_patterns(allocation_bits, data)
     total_slots = namespace_size(namespaces)
 
-    by_value: dict[int, Claim] = {}
+    prior_entries: list[tuple[dict[str, Any], str]] = []
     overlaps: list[str] = []
     class_skipped: Counter[str] = Counter()
-    allocated_values: set[int] = set()
-    skipped_values: set[int] = set()
+    legal_patterns: list[str] = []
+    raw_patterns: list[str] = []
     entry_reports: list[EntryReport] = []
 
     for entry in data.get("entries") or []:
         entry_path = Path(str(entry.get("source_path", path)))
         pattern = compact_bits(str(entry["bits"]))
         text = str(entry["syntax"]).strip()
-        claims, skipped = entry_claims(entry_path, allocation_bits, namespaces, entry)
-        class_skipped.update(skipped)
-        skipped_values.update(
-            entry_skipped_values(entry_path, allocation_bits, namespaces, entry)
+        claim_patterns, skipped, claim = entry_claim_patterns(
+            entry_path, allocation_bits, namespaces, entry
         )
+        class_skipped.update(skipped)
+        legal_patterns.extend(claim_patterns)
+        raw_patterns.append(pattern)
+
+        for previous_entry, previous_id in prior_entries:
+            witness = entries_overlap(previous_entry, entry)
+            if witness is not None:
+                overlaps.append(
+                    f"0x{witness:x}: {previous_id} overlaps {claim.entry_id}"
+                )
+        prior_entries.append((entry, claim.entry_id))
 
         entry_reports.append(
             EntryReport(
@@ -157,7 +136,7 @@ def analyze_data(path: Path, data: dict[str, Any]) -> tuple[ClassReport, list[En
                 mnemonic=mnemonic_from_text(text, str(entry["id"])),
                 bits=pattern,
                 pattern_slots=pattern_cardinality(pattern),
-                assigned_slots=len(claims),
+                assigned_slots=sum(pattern_cardinality(item) for item in claim_patterns),
                 reclaimed_slots=sum(skipped.values()),
                 reclaim_reasons=dict(sorted(skipped.items())),
                 text=text,
@@ -165,18 +144,10 @@ def analyze_data(path: Path, data: dict[str, Any]) -> tuple[ClassReport, list[En
             )
         )
 
-        for value, claim in claims:
-            previous = by_value.get(value)
-            if previous is not None:
-                overlaps.append(f"0x{value:x}: {previous.entry_id} overlaps {claim.entry_id}")
-                continue
-            by_value[value] = claim
-            allocated_values.add(value)
-
-    allocated_slots = len(allocated_values)
-    claimed_slots = len(by_value)
+    allocated_slots = pattern_union_cardinality(legal_patterns)
+    claimed_slots = allocated_slots
     unclaimed_slots = total_slots - claimed_slots
-    clean_free_slots = total_slots - len(allocated_values | skipped_values)
+    clean_free_slots = total_slots - pattern_union_cardinality(raw_patterns)
 
     return (
         ClassReport(

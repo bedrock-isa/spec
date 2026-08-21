@@ -1,0 +1,152 @@
+forms:
+- id: extralong.vcmpcc.v47.integer
+  class: extralong
+  bits: 111111010xxxccccppppqqqqvvvvvwwwww
+  syntax: VCMPcc.VTYPE(x) Pn(p), Vn(v), Vn(w), Pn(q)
+  operands:
+  - name: cc
+    type: condition
+    access: read
+    field: c
+  - name: govern
+    type: Pn
+    access: read
+    field: p
+  - name: lhs
+    type: Vn
+    access: read
+    field: v
+  - name: rhs
+    type: Vn
+    access: read
+    field: w
+  - name: dst
+    type: Pn
+    access: write
+    field: q
+  fields:
+    x:
+      type: size.VTYPE
+  constraints:
+  - field: x
+    allow: &integer_types
+    - 0x0..0x3
+    reason: reserved_vector_element_type
+  - field: c
+    allow: &integer_conditions
+    - 0x2..0x5
+    - 0xa..0xf
+    reason: reserved_vector_comparison_condition
+- id: extralong.vcmpcc.v47.fp
+  class: extralong
+  bits: 111111010xxxccccppppqqqqvvvvvwwwww
+  syntax: VCMPcc.VTYPE(x) Pn(p), Vn(v), Vn(w), Pn(q)
+  operands:
+  - name: cc
+    type: condition
+    access: read
+    field: c
+  - name: govern
+    type: Pn
+    access: read
+    field: p
+  - name: lhs
+    type: Vn
+    access: read
+    field: v
+  - name: rhs
+    type: Vn
+    access: read
+    field: w
+  - name: dst
+    type: Pn
+    access: write
+    field: q
+  fields:
+    x:
+      type: size.VTYPE
+  constraints:
+  - field: x
+    allow: &fp_types
+    - 0x5..0x7
+    reason: reserved_vector_element_type
+  - field: c
+    allow: &fp_conditions
+    - 0x2..0x3
+    - 0x8..0x9
+    - 0xc..0xf
+    reason: reserved_vector_comparison_condition
+- id: xxlong.vcmpcc.v230.integer
+  class: xxlong
+  bits: 111111110000000xxxccccppppqqqqvvvvveeeeeee
+  syntax: VCMPcc.VTYPE(x) Pn(p), Vn(v), <ea>(e), Pn(q)
+  operands:
+  - name: cc
+    type: condition
+    access: read
+    field: c
+  - name: govern
+    type: Pn
+    access: read
+    field: p
+  - name: lhs
+    type: Vn
+    access: read
+    field: v
+  - name: src
+    type: VEA
+    access: read
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  - name: dst
+    type: Pn
+    access: write
+    field: q
+  fields:
+    x:
+      type: size.VTYPE
+  constraints:
+  - field: x
+    allow: *integer_types
+    reason: reserved_vector_element_type
+  - field: c
+    allow: *integer_conditions
+    reason: reserved_vector_comparison_condition
+- id: xxlong.vcmpcc.v230.fp
+  class: xxlong
+  bits: 111111110000000xxxccccppppqqqqvvvvveeeeeee
+  syntax: VCMPcc.VTYPE(x) Pn(p), Vn(v), <ea>(e), Pn(q)
+  operands:
+  - name: cc
+    type: condition
+    access: read
+    field: c
+  - name: govern
+    type: Pn
+    access: read
+    field: p
+  - name: lhs
+    type: Vn
+    access: read
+    field: v
+  - name: src
+    type: VEA
+    access: read
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  - name: dst
+    type: Pn
+    access: write
+    field: q
+  fields:
+    x:
+      type: size.VTYPE
+  constraints:
+  - field: x
+    allow: *fp_types
+    reason: reserved_vector_element_type
+  - field: c
+    allow: *fp_conditions
+    reason: reserved_vector_comparison_condition

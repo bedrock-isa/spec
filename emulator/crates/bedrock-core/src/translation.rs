@@ -151,7 +151,6 @@ pub enum PageFaultReason {
     InvalidEntry,
     PagingFormatUnavailable,
     AtomicAlignment,
-    AddressType,
 }
 
 impl PageFaultReason {
@@ -163,7 +162,6 @@ impl PageFaultReason {
             Self::NonCanonical => 3,
             Self::SegmentBounds => 4,
             Self::AtomicAlignment => 5,
-            Self::AddressType => 6,
         }
     }
 }
@@ -190,7 +188,6 @@ pub enum PageWalkError {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TranslatedTarget {
     Byte(u64),
-    Slot(u64),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -424,12 +421,6 @@ impl MemoryTranslation {
                 {
                     return Err(page_fault(linear, PageFaultReason::Privilege).into());
                 }
-                // Slot targets cannot fetch instructions. At a structurally
-                // valid slot leaf, address type precedes execute permission.
-                if leaf && kind == AccessKind::InstructionFetch && entry & PTE_ADDRESSING_TYPE != 0
-                {
-                    return Err(page_fault(linear, PageFaultReason::AddressType).into());
-                }
                 if kind == AccessKind::Write && !effective_w {
                     return Err(page_fault(linear, PageFaultReason::ReadOnly).into());
                 }
@@ -446,15 +437,11 @@ impl MemoryTranslation {
         }
 
         let leaf_entry = traversed.last().expect("page walk has a leaf").1;
-        let target = if leaf_entry & PTE_ADDRESSING_TYPE == 0 {
-            TranslatedTarget::Byte(
-                (leaf_entry & pfn_mask) | (linear & leaf_offset_mask(leaf_level)),
-            )
-        } else {
-            TranslatedTarget::Slot((leaf_entry & pfn_mask) | (linear & 0xfff))
-        };
+        let target = TranslatedTarget::Byte(
+            (leaf_entry & pfn_mask) | (linear & leaf_offset_mask(leaf_level)),
+        );
 
-        if options.update_accessed_dirty && matches!(target, TranslatedTarget::Byte(_)) {
+        if options.update_accessed_dirty {
             let last = traversed.len() - 1;
             for (index, (address, entry)) in traversed.iter().copied().enumerate() {
                 let mut updated = entry | PTE_ACCESSED;
@@ -509,9 +496,7 @@ impl MemoryTranslation {
             },
         ) {
             Ok(walk) => {
-                let value = match walk.target {
-                    TranslatedTarget::Byte(address) | TranslatedTarget::Slot(address) => address,
-                };
+                let TranslatedTarget::Byte(value) = walk.target;
                 Ok(PageQueryResult::success(
                     value,
                     walk.user,
@@ -587,10 +572,11 @@ impl MemoryTranslation {
                 } else {
                     level > 1 && valid_table_entry(entry)
                 };
+                let query_value = entry & !PTE_IGNORED_7;
                 return Ok(if valid {
-                    PageQueryResult::success(entry, effective_u, effective_w, effective_x)
+                    PageQueryResult::success(query_value, effective_u, effective_w, effective_x)
                 } else {
-                    PageQueryResult::failure_with_value(entry)
+                    PageQueryResult::failure_with_value(query_value)
                 });
             }
             if entry & PTE_TABLE == 0 || !valid_table_entry(entry) {
@@ -609,14 +595,12 @@ const PTE_USER: u64 = 1 << 3;
 const PTE_GLOBAL: u64 = 1 << 4;
 const PTE_ACCESSED: u64 = 1 << 5;
 const PTE_DIRTY: u64 = 1 << 6;
-const PTE_ADDRESSING_TYPE: u64 = 1 << 7;
-const PTE_CP_MASK: u64 = 0b11 << 8;
-const PTE_CP_SLOT: u64 = 0b01 << 8;
+const PTE_IGNORED_7: u64 = 1 << 7;
 const PTE_TABLE: u64 = 1 << 11;
 
 const fn valid_table_entry(entry: u64) -> bool {
     entry & (PTE_PRESENT | PTE_TABLE) == (PTE_PRESENT | PTE_TABLE)
-        && entry & (PTE_DIRTY | PTE_GLOBAL | PTE_ADDRESSING_TYPE) == 0
+        && entry & (PTE_DIRTY | PTE_GLOBAL) == 0
 }
 
 const fn leaf_offset_mask(level: u8) -> u64 {
@@ -627,13 +611,7 @@ const fn valid_leaf_entry(entry: u64, level: u8) -> bool {
     if entry & PTE_PRESENT == 0 || entry & PTE_TABLE != 0 {
         return false;
     }
-    if entry & PTE_ADDRESSING_TYPE == 0 {
-        return entry & (leaf_offset_mask(level) & !0xfff) == 0;
-    }
-    level == 1
-        && entry & PTE_CP_MASK == PTE_CP_SLOT
-        && entry & PTE_EXECUTABLE == 0
-        && entry & (PTE_ACCESSED | PTE_DIRTY) == (PTE_ACCESSED | PTE_DIRTY)
+    entry & (leaf_offset_mask(level) & !0xfff) == 0
 }
 
 fn page_fault(address: u64, reason: PageFaultReason) -> TranslationFault {
@@ -651,6 +629,7 @@ mod tests {
     use bedrock_bus::{Bus, BusResult, Ram};
 
     const TABLE_PERMISSIONS: u64 = PTE_PRESENT | PTE_WRITABLE | PTE_EXECUTABLE | PTE_USER;
+    const PTE_CP_MASK: u64 = 0b11 << 8;
     const FIVE_LEVEL_ENTRY_ADDRESSES: [u64; 5] = [0x1000, 0x2000, 0x3000, 0x4000, 0x5000];
 
     struct ReadTrackingBus {
@@ -702,19 +681,6 @@ mod tests {
             ptcr: PageTableControl::from_raw(0x1000 | 1),
             ..MemoryTranslation::default()
         }
-    }
-
-    fn four_level_slot_mapping(ram: &mut Ram, leaf_bits: u64) -> MemoryTranslation {
-        four_level_mapping(
-            ram,
-            PTE_WRITABLE
-                | PTE_USER
-                | PTE_ADDRESSING_TYPE
-                | PTE_CP_SLOT
-                | PTE_ACCESSED
-                | PTE_DIRTY
-                | leaf_bits,
-        )
     }
 
     fn tracked_five_level_mapping(
@@ -926,28 +892,6 @@ mod tests {
     }
 
     #[test]
-    fn slot_leaves_are_rejected_above_level_one() {
-        let slot_leaf = PTE_PRESENT
-            | PTE_WRITABLE
-            | PTE_USER
-            | PTE_ADDRESSING_TYPE
-            | PTE_CP_SLOT
-            | PTE_ACCESSED
-            | PTE_DIRTY;
-        for level in 2..=5 {
-            assert_level_fault(
-                level,
-                |_| slot_leaf,
-                true,
-                AccessDomain::User,
-                AccessKind::Read,
-                true,
-                PageFaultReason::InvalidEntry,
-            );
-        }
-    }
-
-    #[test]
     fn translation_and_page_queries_stop_at_an_upper_leaf() {
         let leaf = 0x4000_0000 | TABLE_PERMISSIONS;
         let (translation, mut bus) = tracked_five_level_mapping(3, |_| leaf, true);
@@ -998,109 +942,7 @@ mod tests {
     }
 
     #[test]
-    fn slot_leaf_preserves_each_page_offset() {
-        let mut ram = Ram::new(0x10_000);
-        let translation = four_level_slot_mapping(&mut ram, 0);
-
-        for offset in [0, 1, 0xfff] {
-            assert_eq!(
-                translation
-                    .page_address(
-                        &mut ram,
-                        offset,
-                        AccessDomain::User,
-                        AccessKind::Read,
-                        true,
-                        true,
-                    )
-                    .unwrap()
-                    .target,
-                TranslatedTarget::Slot(0x8000 | offset)
-            );
-        }
-    }
-
-    #[test]
-    fn malformed_slot_leaf_bits_are_invalid_individually() {
-        for (name, clear, set) in [
-            ("CP", PTE_CP_MASK, 0),
-            ("X", 0, PTE_EXECUTABLE),
-            ("A", PTE_ACCESSED, 0),
-            ("D", PTE_DIRTY, 0),
-        ] {
-            let mut ram = Ram::new(0x10_000);
-            let translation = four_level_slot_mapping(&mut ram, 0);
-            let leaf = ram.read_u64(0x4000).unwrap();
-            ram.write_u64(0x4000, (leaf & !clear) | set).unwrap();
-            assert!(
-                matches!(
-                    translation.page_address(
-                        &mut ram,
-                        0,
-                        AccessDomain::Current,
-                        AccessKind::Read,
-                        true,
-                        true,
-                    ),
-                    Err(PageWalkError::Translation(TranslationFault::Page {
-                        reason: PageFaultReason::InvalidEntry,
-                        ..
-                    }))
-                ),
-                "malformed slot leaf with {name} bit"
-            );
-        }
-    }
-
-    #[test]
-    fn slot_leaf_requires_cp_one_encoding() {
-        for cp in [0, 2, 3] {
-            let mut ram = Ram::new(0x10_000);
-            let translation = four_level_slot_mapping(&mut ram, 0);
-            let leaf = ram.read_u64(0x4000).unwrap();
-            ram.write_u64(0x4000, (leaf & !PTE_CP_MASK) | (cp << 8))
-                .unwrap();
-
-            assert!(matches!(
-                translation.page_address(
-                    &mut ram,
-                    0,
-                    AccessDomain::User,
-                    AccessKind::Read,
-                    true,
-                    true,
-                ),
-                Err(PageWalkError::Translation(TranslationFault::Page {
-                    reason: PageFaultReason::InvalidEntry,
-                    ..
-                }))
-            ));
-        }
-    }
-
-    #[test]
-    fn slot_leaf_allows_global_bit() {
-        let mut ram = Ram::new(0x10_000);
-        let translation = four_level_slot_mapping(&mut ram, PTE_GLOBAL);
-
-        assert_eq!(
-            translation
-                .page_address(
-                    &mut ram,
-                    0,
-                    AccessDomain::User,
-                    AccessKind::Read,
-                    true,
-                    true,
-                )
-                .unwrap()
-                .target,
-            TranslatedTarget::Slot(0x8000)
-        );
-    }
-
-    #[test]
-    fn non_leaf_ignores_cp_but_rejects_global_dirty_and_address_type() {
+    fn non_leaf_ignores_cp_and_bit_7_but_rejects_global_and_dirty() {
         let mut ram = Ram::new(0x10_000);
         let translation = four_level_mapping(&mut ram, PTE_WRITABLE | PTE_USER);
         let entry = ram.read_u64(0x2000).unwrap();
@@ -1120,7 +962,23 @@ mod tests {
             TranslatedTarget::Byte(0x8000)
         );
 
-        for bit in [PTE_GLOBAL, PTE_DIRTY, PTE_ADDRESSING_TYPE] {
+        ram.write_u64(0x2000, entry | PTE_IGNORED_7).unwrap();
+        assert_eq!(
+            translation
+                .page_address(
+                    &mut ram,
+                    0,
+                    AccessDomain::User,
+                    AccessKind::Read,
+                    true,
+                    false,
+                )
+                .unwrap()
+                .target,
+            TranslatedTarget::Byte(0x8000)
+        );
+
+        for bit in [PTE_GLOBAL, PTE_DIRTY] {
             ram.write_u64(0x2000, entry | bit).unwrap();
             assert!(matches!(
                 translation.page_address(
@@ -1140,85 +998,51 @@ mod tests {
     }
 
     #[test]
-    fn slot_leaf_never_updates_accessed_or_dirty_bits() {
+    fn bit_7_leaf_is_byte_addressed_and_has_identical_access_behavior() {
         let mut ram = Ram::new(0x10_000);
-        let translation = four_level_slot_mapping(&mut ram, 0);
-        let before = [0x1000, 0x2000, 0x3000, 0x4000].map(|address| ram.read_u64(address).unwrap());
-
-        translation
+        let translation = four_level_mapping(
+            &mut ram,
+            PTE_WRITABLE | PTE_EXECUTABLE | PTE_USER | PTE_ACCESSED | PTE_DIRTY,
+        );
+        let leaf = ram.read_u64(0x4000).unwrap();
+        let without = translation
             .page_address(
                 &mut ram,
-                0,
+                0x123,
                 AccessDomain::User,
-                AccessKind::Write,
+                AccessKind::InstructionFetch,
                 true,
                 true,
             )
             .unwrap();
-
-        for (address, entry) in [0x1000, 0x2000, 0x3000, 0x4000].into_iter().zip(before) {
-            assert_eq!(ram.read_u64(address).unwrap(), entry);
-        }
-    }
-
-    #[test]
-    fn slot_fetch_reports_address_type_before_execute_permission() {
-        let mut ram = Ram::new(0x10_000);
-        let translation = four_level_slot_mapping(&mut ram, 0);
-
-        assert!(matches!(
-            translation.page_address(
+        let query_without = translation.query_page_entry(&mut ram, 0x123, 1).unwrap();
+        ram.write_u64(0x4000, leaf | PTE_IGNORED_7).unwrap();
+        let with = translation
+            .page_address(
                 &mut ram,
-                0,
+                0x123,
                 AccessDomain::User,
                 AccessKind::InstructionFetch,
                 true,
                 true,
-            ),
-            Err(PageWalkError::Translation(TranslationFault::Page {
-                reason: PageFaultReason::AddressType,
-                ..
-            }))
-        ));
-    }
-
-    #[test]
-    fn slot_fetch_reports_privilege_before_address_type_for_user_access() {
-        let mut ram = Ram::new(0x10_000);
-        let translation = four_level_slot_mapping(&mut ram, 0);
-        let leaf = ram.read_u64(0x4000).unwrap();
-        ram.write_u64(0x4000, leaf & !PTE_USER).unwrap();
-
-        assert!(matches!(
-            translation.page_address(
-                &mut ram,
-                0,
-                AccessDomain::Current,
-                AccessKind::InstructionFetch,
-                false,
-                true,
-            ),
-            Err(PageWalkError::Translation(TranslationFault::Page {
-                reason: PageFaultReason::Privilege,
-                ..
-            }))
-        ));
-
-        ram.write_u64(0x4000, leaf).unwrap();
-        assert!(matches!(
-            translation.page_address(
-                &mut ram,
-                0,
-                AccessDomain::Current,
-                AccessKind::InstructionFetch,
-                false,
-                true,
-            ),
-            Err(PageWalkError::Translation(TranslationFault::Page {
-                reason: PageFaultReason::AddressType,
-                ..
-            }))
-        ));
+            )
+            .unwrap();
+        assert_eq!(with.target, without.target);
+        assert_eq!(with.leaf_level, without.leaf_level);
+        assert_eq!(with.user, without.user);
+        assert_eq!(with.writable, without.writable);
+        assert_eq!(with.executable, without.executable);
+        let query_with = translation.query_page_entry(&mut ram, 0x123, 1).unwrap();
+        assert_eq!(query_with, query_without);
+        assert_eq!(query_with.value, leaf);
+        assert_eq!(with.target, TranslatedTarget::Byte(0x8123));
+        assert_eq!(
+            translation
+                .query_translation(&mut ram, 0x123)
+                .unwrap()
+                .value,
+            0x8123
+        );
     }
 
     #[test]
@@ -1442,46 +1266,6 @@ mod tests {
         assert!(!result.executable);
         for (address, entry) in [0x1000, 0x2000, 0x3000, 0x4000].into_iter().zip(before) {
             assert_eq!(ram.read_u64(address).unwrap(), entry);
-        }
-    }
-
-    #[test]
-    fn translation_and_page_queries_report_valid_slot_leaf_without_slot_access() {
-        let mut ram = Ram::new(0x10_000);
-        let translation = four_level_slot_mapping(&mut ram, PTE_GLOBAL);
-        let leaf = ram.read_u64(0x4000).unwrap();
-
-        let translated = translation.query_translation(&mut ram, 0x123).unwrap();
-        assert_eq!(translated.value, 0x8123);
-        assert!(translated.valid && translated.user && translated.writable);
-        assert!(!translated.executable);
-
-        let queried = translation.query_page_entry(&mut ram, 0x123, 1).unwrap();
-        assert_eq!(queried.value, leaf);
-        assert!(queried.valid && queried.user && queried.writable);
-        assert!(!queried.executable);
-    }
-
-    #[test]
-    fn page_query_returns_each_malformed_slot_leaf_raw_with_cleared_permissions() {
-        let malformed_fields = [
-            (PTE_CP_MASK, 0),
-            (PTE_CP_MASK, 0b10 << 8),
-            (PTE_CP_MASK, 0b11 << 8),
-            (0, PTE_EXECUTABLE),
-            (PTE_ACCESSED, 0),
-            (PTE_DIRTY, 0),
-        ];
-        for (clear, set) in malformed_fields {
-            let mut ram = Ram::new(0x10_000);
-            let translation = four_level_slot_mapping(&mut ram, 0);
-            let leaf = (ram.read_u64(0x4000).unwrap() & !clear) | set;
-            ram.write_u64(0x4000, leaf).unwrap();
-
-            assert_eq!(
-                translation.query_page_entry(&mut ram, 0, 1).unwrap(),
-                PageQueryResult::failure_with_value(leaf)
-            );
         }
     }
 

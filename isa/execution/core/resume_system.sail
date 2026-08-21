@@ -4,10 +4,7 @@ function resume_system_phase(previous : Execution_result, response : Transaction
       None() => faulted(previous.pending.before, previous.pending.operation,
                         InvalidControlState, "missing cache translation continuation"),
       Some(instruction) => {
-        if response.address_type == 1 then completed(
-          previous.pending.before, previous.pending.after, previous.pending.kind, [||]
-        )
-        else {
+        {
           let granule = unsigned(previous.request.auxiliary);
           let prefetch = instruction.form.operation == Op_PREFETCH
                        | instruction.form.operation == Op_PREFETCHNT;
@@ -22,7 +19,7 @@ function resume_system_phase(previous : Execution_result, response : Transaction
             range_end = if prefetch then add_bits(physical, 0x0000000000000001)
                         else add_bits(block_start, bits_from_int(granule)),
             range_length = if prefetch then 1 else granule,
-            address_type = response.address_type, cache_policy = response.cache_policy,
+            cache_policy = response.cache_policy,
             commit_point = true };
           continue_with_request(
             previous, PhaseCacheMaintenance, previous.pending.ordinal + 1,
@@ -54,7 +51,7 @@ function resume_system_phase(previous : Execution_result, response : Transaction
         let permissions = previous.request.auxiliary & pte_permission_bits(raw);
         let valid = pte_structurally_valid(raw, level);
         if instruction.form.operation == Op_PTQUERY & level == target_level then
-          query_result(previous, raw, valid, permissions)
+          query_result(previous, raw & 0xFFFFFFFFFFFFFF7F, valid, permissions)
         else if not_bool(valid) then query_result(
           previous, 0x0000000000000000, false, 0x0000000000000000
         )
@@ -107,10 +104,11 @@ function resume_system_phase(previous : Execution_result, response : Transaction
       };
       if byte_list_length(response.body_bytes) < 16
          | header[3 .. 0] != previous.pending.before.save_format
-         | header[19 .. 10] != 0b0000000000
+         | header[19 .. 11] != 0b000000000
          | header[63 .. 52] != 0x000
-         | (bitmap & 0xFFFFFFFFFFFFFFFE) != 0x0000000000000000
+         | (bitmap & 0xFFFFFFFFFFFFFFFC) != 0x0000000000000000
          | (bitmap[0] == bitone & not_bool(previous.pending.before.fp_component_present))
+         | (bitmap[1] == bitone & not_bool(previous.pending.before.vector_component_present))
       then faulted(previous.pending.before, Op_RESTORE,
                    InvalidControlState, "invalid RESTORE header or component bitmap")
       else {

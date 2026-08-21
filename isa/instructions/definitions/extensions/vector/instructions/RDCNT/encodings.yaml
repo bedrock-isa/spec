@@ -1,0 +1,13 @@
+forms:
+- id: long.rdcnt.v20
+  class: long
+  bits: 11111010011000zz000001rrrr
+  syntax: RDCNT.BWLQ(z) Rn(r)
+  operands:
+  - name: dst
+    type: Rn
+    access: write
+    field: r
+  fields:
+    z:
+      type: size.BWLQ

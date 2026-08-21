@@ -1,0 +1,8 @@
+mnemonic: PSEL
+title: PSEL (Vector)
+summary: Replace bits of `Pd` selected by `Pc` with bits from `Ps`.
+description: Replace bits of `Pd` selected by `Pc` with bits from `Ps`.
+attributes:
+  class: vector
+  family: vector
+  privilege: unprivileged

@@ -1,0 +1,8 @@
+mnemonic: PUNPKLO
+title: PUNPKLO (Vector)
+summary: Map the lower half of the source-width lane sequence to the doubled-width destination positions.
+description: Map the lower half of the source-width lane sequence to the doubled-width destination positions.
+attributes:
+  class: vector
+  family: vector
+  privilege: unprivileged

@@ -173,20 +173,17 @@ function test_non_fp_typed_families() -> unit = {
       let range = resume_transaction(
         target, successful_response(ResponseTranslation, 0x0000000000000000, true)
       );
-      assert(range.pending.phase == PhaseEventStackProbe);
-      assert(range.request.range_length == 64);
-      let store = resume_transaction(
-        range, successful_response(ResponseStackRange, 0x0000000000000000, true)
-      );
-      assert(store.request.kind == EventFrameAccess);
-      assert(store.pending.phase == PhaseEventFrameStore);
-      let done = resume_transaction(
-        store, successful_response(ResponseEventFrame, 0x0000000000000000, true)
-      );
-      assert(done.state.pc == state.controls[12]);
-      assert(done.state.status[4] == bitone);
-      assert(done.state.status[0] == bitone);
-      assert(done.state.event_depth == 1)
+      assert(not_bool(range.awaiting_environment));
+      assert(range.fault == None());
+      assert(range.state.pc == state.controls[12]);
+      assert(range.state.status[4] == bitone);
+      assert(range.state.status[0] == bitone);
+      assert(status_event_depth(range.state.status) == 1);
+      assert(status_user_origin(range.state.status));
+      assert(range.state.controls[6] == 0x0000000000000001);
+      assert(range.state.controls[7] == state.sp);
+      assert(range.state.controls[11][32] == bitone);
+      assert(range.state.controls[26] == 0x0000000000000002)
     },
     None() => assert(false),
   };
@@ -231,6 +228,13 @@ function test_non_fp_typed_families() -> unit = {
 function test_typed_decode_and_transactions() -> unit = {
   assert(decode_full_record_outcome([||]).stage == DecodeFetch);
   assert(decode_full_record_outcome([|0x80|]).stage == DecodeFraming);
+  assert(decode_full_record_outcome([|0xC3, 0xFC, 0x00|]).stage == DecodeFraming);
+  assert(decode_full_record_outcome([|0xC7, 0xFC, 0x00, 0x00|]).stage == DecodeFraming);
+  assert(decode_full_record_outcome([|0xCB, 0xFC, 0x00, 0x00, 0x00|]).stage == DecodeFraming);
+  assert(decode_full_record_outcome([|0xCF, 0xFC, 0x00, 0x00, 0x00, 0x00|]).stage
+         == DecodeOpcode);
+  assert(decode_full_record_outcome([|0xCB, 0xF8, 0x00, 0x00, 0x00|]).stage
+         == DecodeOpcode);
   let disabled_fpu_bad_ea = decode_and_execute_full_outcome(
     [|0xCB, 0xD5, 0x08, 0x74, 0xFF|], initial_cpu()
   );

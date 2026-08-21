@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 from collections import Counter
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 import sys
 from typing import Any, Iterable
@@ -47,6 +48,38 @@ def parse_range(value: Any) -> tuple[int, int]:
 def pattern_cardinality(pattern: str) -> int:
     count = sum(1 for ch in pattern if ch not in "01")
     return 1 << count
+
+
+def pattern_union_cardinality(patterns: Iterable[str]) -> int:
+    """Return the exact cardinality of a union of allocation-pattern cubes."""
+    compacted = tuple(
+        sorted(
+            {
+                "".join(ch if ch in "01" else "?" for ch in compact_bits(pattern))
+                for pattern in patterns
+            }
+        )
+    )
+    if not compacted:
+        return 0
+    width = len(compacted[0])
+    if any(len(pattern) != width for pattern in compacted):
+        raise ValueError("union patterns must have the same width")
+
+    @lru_cache(maxsize=None)
+    def count(index: int, active: tuple[str, ...]) -> int:
+        remaining = width - index
+        if any(pattern[index:] == "?" * remaining for pattern in active):
+            return 1 << remaining
+        if index == width:
+            return 1
+        zero = tuple(pattern for pattern in active if pattern[index] in "0?")
+        one = tuple(pattern for pattern in active if pattern[index] in "1?")
+        return (count(index + 1, zero) if zero else 0) + (
+            count(index + 1, one) if one else 0
+        )
+
+    return count(0, compacted)
 
 
 def expand_pattern(pattern: str) -> Iterable[int]:
@@ -174,6 +207,149 @@ def entry_claims(
     return claims, skipped
 
 
+def _fixed_value(pattern: str) -> int:
+    value = 0
+    for ch in pattern:
+        value = (value << 1) | (1 if ch == "1" else 0)
+    return value
+
+
+def _free_positions(pattern: str) -> set[int]:
+    return {index for index, ch in enumerate(pattern) if ch not in "01"}
+
+
+def _constraint_positions(pattern: str, constraints: list[dict[str, Any]]) -> set[int]:
+    fields = {str(constraint["field"]) for constraint in constraints}
+    return {index for index, ch in enumerate(pattern) if ch in fields}
+
+
+def _set_position(value: int, width: int, position: int, bit: int) -> int:
+    shift = width - position - 1
+    return (value | (1 << shift)) if bit else (value & ~(1 << shift))
+
+
+def _constraint_skip_reason(
+    value: int, pattern: str, constraints: list[dict[str, Any]]
+) -> str | None:
+    for constraint in constraints:
+        if "allow" in constraint and not field_allowed(value, pattern, constraint):
+            return str(constraint.get("reason", "allow_constraint"))
+        if "exclude" in constraint and excluded_by(value, pattern, constraint):
+            return str(constraint.get("reason", constraint["exclude"]))
+    return None
+
+
+def _pattern_subset_of(pattern: str, namespace: str) -> bool:
+    return all(
+        namespace_bit not in "01" or pattern_bit == namespace_bit
+        for pattern_bit, namespace_bit in zip(pattern, namespace)
+    )
+
+
+def entry_claim_summary(
+    path: Path,
+    allocation_bits: int,
+    namespaces: list[str],
+    entry: dict[str, Any],
+) -> tuple[int, Counter[str], Claim]:
+    """Return exact legal cardinality without expanding unconstrained operand bits."""
+    patterns, skipped, claim = entry_claim_patterns(
+        path, allocation_bits, namespaces, entry
+    )
+    return sum(pattern_cardinality(pattern) for pattern in patterns), skipped, claim
+
+
+def entry_claim_patterns(
+    path: Path,
+    allocation_bits: int,
+    namespaces: list[str],
+    entry: dict[str, Any],
+) -> tuple[list[str], Counter[str], Claim]:
+    """Return disjoint legal subcubes split only across constrained fields."""
+    entry_id = str(entry["id"])
+    text = str(entry.get("text", ""))
+    pattern = compact_bits(str(entry["bits"]))
+    constraints = entry.get("constraints") or []
+    if len(pattern) != allocation_bits:
+        raise ValueError(f"{entry_id}: pattern has {len(pattern)} bits, expected {allocation_bits}")
+    if not any(_pattern_subset_of(pattern, namespace) for namespace in namespaces):
+        raise ValueError(f"{entry_id}: pattern is outside class namespace")
+
+    declared_fields = entry.get("fields") or {}
+    actual_fields = field_widths(pattern)
+    for name, spec in declared_fields.items():
+        expected_width = int(spec.get("width", actual_fields.get(name, 0)))
+        actual_width = actual_fields.get(name, 0)
+        if actual_width != expected_width:
+            raise ValueError(
+                f"{entry_id}: field {name!r} width is {actual_width}, declared {expected_width}"
+            )
+
+    constrained = sorted(_constraint_positions(pattern, constraints))
+    free = _free_positions(pattern)
+    if not set(constrained) <= free:
+        # Fixed bits may be named only when another overlapping pattern fixes them;
+        # within one entry every declared field remains variable.
+        raise ValueError(f"{entry_id}: constraint field includes fixed opcode bits")
+    multiplier = 1 << (len(free) - len(constrained))
+    legal_patterns: list[str] = []
+    skipped: Counter[str] = Counter()
+    base = _fixed_value(pattern)
+    for assignment in range(1 << len(constrained)):
+        value = base
+        for bit_index, position in enumerate(constrained):
+            value = _set_position(value, allocation_bits, position, (assignment >> bit_index) & 1)
+        reason = _constraint_skip_reason(value, pattern, constraints)
+        if reason is None:
+            chars = [ch if ch in "01" else "?" for ch in pattern]
+            for position in constrained:
+                shift = allocation_bits - position - 1
+                chars[position] = "1" if value & (1 << shift) else "0"
+            legal_patterns.append("".join(chars))
+        else:
+            skipped[reason] += multiplier
+    return legal_patterns, skipped, Claim(path=path, entry_id=entry_id, text=text)
+
+
+def entries_overlap(
+    left: dict[str, Any], right: dict[str, Any]
+) -> int | None:
+    """Return the least deterministic legal witness, or None when two entries are disjoint."""
+    left_pattern = compact_bits(str(left["bits"]))
+    right_pattern = compact_bits(str(right["bits"]))
+    if len(left_pattern) != len(right_pattern):
+        return None
+    width = len(left_pattern)
+    base = 0
+    combined_free: set[int] = set()
+    for index, (left_bit, right_bit) in enumerate(zip(left_pattern, right_pattern)):
+        if left_bit in "01" and right_bit in "01" and left_bit != right_bit:
+            return None
+        fixed = left_bit if left_bit in "01" else right_bit if right_bit in "01" else None
+        if fixed is None:
+            combined_free.add(index)
+        elif fixed == "1":
+            base = _set_position(base, width, index, 1)
+
+    left_constraints = left.get("constraints") or []
+    right_constraints = right.get("constraints") or []
+    relevant = (
+        _constraint_positions(left_pattern, left_constraints)
+        | _constraint_positions(right_pattern, right_constraints)
+    ) & combined_free
+    positions = sorted(relevant)
+    for assignment in range(1 << len(positions)):
+        value = base
+        for bit_index, position in enumerate(positions):
+            value = _set_position(value, width, position, (assignment >> bit_index) & 1)
+        if (
+            _constraint_skip_reason(value, left_pattern, left_constraints) is None
+            and _constraint_skip_reason(value, right_pattern, right_constraints) is None
+        ):
+            return value
+    return None
+
+
 def validate_store(defs_root: Path) -> list[tuple[str, dict[str, int], Counter[str], list[str]]]:
     """Validate all per-instruction encodings grouped by class."""
     from encoding_store import class_entries, load_encoding_store
@@ -188,35 +364,34 @@ def validate_store(defs_root: Path) -> list[tuple[str, dict[str, int], Counter[s
             "entries": class_entries(store, encoding_class.name),
         }
         total = namespace_size(list(encoding_class.namespace))
-        by_value: dict[int, Claim] = {}
-        allocated_values: set[int] = set()
+        prior_entries: list[tuple[dict[str, Any], Claim]] = []
+        allocated_count = 0
         skipped: Counter[str] = Counter()
         overlaps: list[str] = []
         for entry in data["entries"]:
-            claims, entry_skipped = entry_claims(
+            claim_count, entry_skipped, claim = entry_claim_summary(
                 Path(str(entry.get("source_path", ARCHITECTURE_SOURCE_PATH))),
                 encoding_class.allocation_bits,
                 list(encoding_class.namespace),
                 entry,
             )
             skipped.update(entry_skipped)
-            for value, claim in claims:
-                previous = by_value.get(value)
-                if previous is not None:
+            for previous_entry, previous in prior_entries:
+                witness = entries_overlap(previous_entry, entry)
+                if witness is not None:
                     overlaps.append(
-                        f"0x{value:x}: {previous.entry_id} overlaps {claim.entry_id}"
+                        f"0x{witness:x}: {previous.entry_id} overlaps {claim.entry_id}"
                     )
-                    continue
-                by_value[value] = claim
-                allocated_values.add(value)
+            prior_entries.append((entry, claim))
+            allocated_count += claim_count
         results.append(
             (
                 encoding_class.name,
                 {
                     "total": total,
-                    "allocated": len(allocated_values),
-                    "reserved_total": total - len(allocated_values),
-                    "claimed": len(by_value),
+                    "allocated": allocated_count,
+                    "reserved_total": total - allocated_count,
+                    "claimed": allocated_count,
                     "constraint_skipped": sum(skipped.values()),
                 },
                 skipped,
@@ -240,16 +415,10 @@ def namespace_patterns(allocation_bits: int, data: dict[str, Any]) -> list[str]:
 
 
 def namespace_size(patterns: list[str]) -> int:
-    seen: set[int] = set()
-    total = 0
-    for pattern in patterns:
-        size = pattern_cardinality(pattern)
-        if size <= (1 << 22):
-            for value in expand_pattern(pattern):
-                if value in seen:
-                    raise ValueError(f"namespace overlap at 0x{value:x}")
-                seen.add(value)
-        total += size
+    total = sum(pattern_cardinality(pattern) for pattern in patterns)
+    union = pattern_union_cardinality(patterns)
+    if union != total:
+        raise ValueError("namespace patterns overlap")
     return total
 
 

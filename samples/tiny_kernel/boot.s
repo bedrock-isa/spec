@@ -14,21 +14,6 @@ trigger_privileged_read:
   rdcr PTCR, r2
   ret
 
-.globl write_spc
-write_spc:
-  wrcr r0, 0x0100
-  ret
-
-.globl write_scs
-write_scs:
-  wrcr r0, 0x0101
-  ret
-
-.globl write_sds
-write_sds:
-  wrcr r0, 0x0102
-  ret
-
 .globl write_sss
 write_sss:
   wrcr r0, 0x0200
@@ -104,12 +89,14 @@ enter_user_process:
   wrcr r4, 0x010c
   mov.q 0x100000000, r8
   wrcr r8, 0x010d
-  sysret
+  eret
 
 .balign 16
 .globl syscall_entry
 syscall_entry:
   call save_user_registers@PCREL32
+
+syscall_entry_saved:
   sub.q 48, sp
   rdcr 0x010d, r8
   mov.q r8, [sp]
@@ -143,12 +130,66 @@ syscall_entry:
   wrcr r8, 0x010d
   add.q 48, sp
   call restore_user_registers@PCREL32
-  sysret
+  eret
 
 .balign 16
 .globl event_entry
 event_entry:
   call save_user_registers@PCREL32
+  rdstatus r8
+  and.q 0x7c0, r8
+  cmp.q 0x440, r8
+  jne stacked_event_entry
+  rdcr 0x010e, r8
+  cmp.q 0x20, r8
+  jeq syscall_entry_saved
+
+  # First-level user exceptions have only their optional payload on the
+  # supervisor stack. Materialize the kernel's private C view of the frame.
+  mov.q sp, r9
+  sub.q 96, sp
+  mov.q 8, [sp]
+  mov.q r8, [sp + 8]
+  rdcr 0x0108, r8
+  mov.q r8, [sp + 16]
+  rdcr 0x0109, r8
+  mov.q r8, [sp + 24]
+  rdcr 0x010a, r8
+  mov.q r8, [sp + 32]
+  rdcr 0x010b, r8
+  mov.q r8, [sp + 40]
+  rdcr 0x010c, r8
+  mov.q r8, [sp + 48]
+  mov.q 0, [sp + 56]
+  mov.q 0, [sp + 64]
+  mov.q 0, [sp + 72]
+  mov.q 0, [sp + 80]
+  mov.q 0, [sp + 88]
+  rdcr 0x010e, r8
+  cmp.q 9, r8
+  jne dispatch_user_event
+  mov.q [r9], r8
+  mov.q r8, [sp + 64]
+  mov.q [r9 + 8], r8
+  mov.q r8, [sp + 72]
+  mov.q [r9 + 16], r8
+  mov.q r8, [sp + 80]
+  mov.q [r9 + 24], r8
+  mov.q r8, [sp + 88]
+
+dispatch_user_event:
+  lea.q [sp], r8
+  mov.q r8, r0
+  call kernel_event_dispatch@PCREL32
+  mov.q g_active_user_registers@ABS64, r8
+  mov.q r0, [r8]
+  mov.q [sp + 16], r8
+  wrcr r8, 0x0108
+  add.q 96, sp
+  call restore_user_registers@PCREL32
+  eret
+
+stacked_event_entry:
   lea.q [sp], r8
   mov.q r8, r0
   call kernel_event_dispatch@PCREL32

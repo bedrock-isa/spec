@@ -21,7 +21,16 @@ EMULATOR_ROOT = Path(__file__).resolve().parent.parent
 REPOSITORY_ROOT = EMULATOR_ROOT.parent
 
 
-CLASS_ORDER = ["extrashort", "short", "medium", "long", "extralong"]
+CLASS_ORDER = ["extrashort", "short", "medium", "long", "extralong", "xxlong"]
+
+RUST_ENCODING_CLASSES = {
+    "extrashort": "ExtraShort",
+    "short": "Short",
+    "medium": "Medium",
+    "long": "Long",
+    "extralong": "ExtraLong",
+    "xxlong": "Xxlong",
+}
 
 PREDICATE_VALUES = {
     "immediate": set(range(0x5B, 0x5F)),
@@ -31,9 +40,11 @@ FIELDLESS_OPERAND_WIDTHS = {
     "CS": 0,
     "SP": 0,
     "imm": 0,
+    "imm8": 1,
     "imm8s": 1,
-    "imm16s": 2,
     "imm16": 2,
+    "imm16s": 2,
+    "imm32": 4,
     "imm32s": 4,
     "imm64": 8,
     "fconst_id": 2,
@@ -415,6 +426,8 @@ def load_definitions(isa_design: Path) -> tuple[dict[str, dict[str, Any]], list[
         relative = path.relative_to(root)
         if relative.parts[0] == "instructions":
             instruction_set = "base"
+        elif relative.parts[0] == "extensions" and relative.parts[1] == "vector":
+            instruction_set = "vector"
         elif "transcendental_approx" in relative.parts:
             instruction_set = "fpu_transcendental"
         else:
@@ -437,8 +450,6 @@ def generated_attributes(
     flags = definition.get("flag_effects")
     if mnemonic_name == "REPCC":
         flags_mode = "Body"
-    elif mnemonic_name == "REPG":
-        flags_mode = "Grouped"
     elif isinstance(flags, dict):
         flags_mode = "Writes"
     elif flags is None:
@@ -451,7 +462,6 @@ def generated_attributes(
         f"privileged: {str(attributes.get('privilege') == 'supervisor').lower()}, "
         f"repeat_rep: {str('REP' in repeat_contexts).lower()}, "
         f"repeat_repcc: {str('REPcc' in repeat_contexts).lower()}, "
-        f"repeat_repg: {str('REPG' in repeat_contexts).lower()}, "
         f"repeat_observed: {generated_repeat_observation(definition, entry, operands)}, "
         f"flags: FlagsEffect::{flags_mode} "
         "}"
@@ -623,7 +633,7 @@ def generated_destination_overlap(
 
 def generated_ea_fields(entry: dict[str, Any], operands: list[dict[str, Any]]) -> str:
     fields = entry.get("fields") or {}
-    operand_ordinals: dict[str, tuple[int, str]] = {}
+    operand_ordinals: dict[str, tuple[int, str, bool]] = {}
     for ordinal, operand in enumerate(operands):
         field = operand.get("field")
         if field is None:
@@ -650,7 +660,11 @@ def generated_ea_fields(entry: dict[str, Any], operands: list[dict[str, Any]]) -
                 f"{entry['id']}: EA operand {operand.get('name')!r} has unknown "
                 f"profile {profile!r}"
             )
-        operand_ordinals[field] = (ordinal, profile)
+        operand_ordinals[field] = (
+            ordinal,
+            profile,
+            str(operand.get("access", "")) in {"write", "read_write"},
+        )
 
     rows: list[str] = []
     for symbol, spec in fields.items():
@@ -661,11 +675,12 @@ def generated_ea_fields(entry: dict[str, Any], operands: list[dict[str, Any]]) -
             raise ValueError(
                 f"{entry['id']}: EA field {symbol!r} has no canonical syntax operand"
             )
-        ordinal, profile = resolved
+        ordinal, profile, writes = resolved
         rows.append(
             "GeneratedEaField { "
             f"symbol: '{symbol}', syntax_operand_ordinal: {ordinal}, "
-            f"profile: crate::EffectiveAddressProfile::{rust_variant(profile)} "
+            f"profile: crate::EffectiveAddressProfile::{rust_variant(profile)}, "
+            f"writes: {str(writes).lower()} "
             "}"
         )
     return "&[" + ", ".join(rows) + "]"
@@ -808,7 +823,7 @@ def render(isa_design: Path) -> str:
                 "    GeneratedForm { "
                 f"form: FormId::{variant}, id: {rust_string(entry_id)}, "
                 f"opcode: Opcode::{opcode_variants[mnemonic_name]}, text: {rust_string(text)}, "
-                f"class: EncodingClass::{class_name.title().replace('short', 'Short').replace('long', 'Long')}, "
+                f"class: EncodingClass::{RUST_ENCODING_CLASSES[class_name]}, "
                 f"payload_bits: {payload_bits}, fixed_operand_bytes: {fixed_bytes}, "
                 f"pattern: {rust_string(pattern)}, "
                 f"mask: 0x{mask:x}, value: 0x{value:x}, fields: {fields}, ea_fields: {ea_fields}, "
@@ -852,6 +867,9 @@ def render(isa_design: Path) -> str:
         render_hierarchical_lookup("EXTRALONG", class_bits["extralong"], class_cubes["extralong"])
     )
     out.extend(
+        render_hierarchical_lookup("XXLONG", class_bits["xxlong"], class_cubes["xxlong"])
+    )
+    out.extend(
         [
             "fn walk_hierarchical_lookup(",
             "    mut edge: u32,",
@@ -885,6 +903,9 @@ def render(isa_design: Path) -> str:
             "        }",
             "        EncodingClass::ExtraLong => {",
             "            walk_hierarchical_lookup(EXTRALONG_ROOT, payload, &EXTRALONG_TABLES, &EXTRALONG_EDGES)",
+            "        }",
+            "        EncodingClass::Xxlong => {",
+            "            walk_hierarchical_lookup(XXLONG_ROOT, payload, &XXLONG_TABLES, &XXLONG_EDGES)",
             "        }",
             "    };",
             "    encoded",

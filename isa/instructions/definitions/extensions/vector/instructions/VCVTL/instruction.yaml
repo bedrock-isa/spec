@@ -1,0 +1,15 @@
+mnemonic: VCVTL
+title: VCVTL (Vector)
+summary: FP to signed L.
+description: FP to signed L.
+attributes:
+  class: vector
+  family: vector
+  privilege: unprivileged
+flag_effects:
+  FFLAGS:
+    NV: may accrue
+    DZ: may accrue
+    OF: may accrue
+    UF: may accrue
+    NX: may accrue

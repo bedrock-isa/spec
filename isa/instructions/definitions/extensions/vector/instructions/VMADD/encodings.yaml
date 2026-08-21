@@ -1,0 +1,30 @@
+forms:
+- id: extralong.vmadd.v102
+  class: extralong
+  bits: 111111011100zz0ppppvvvvvwwwwwyyyyy
+  syntax: VMADD.HSD(z) Pn(p), Vn(v), Vn(w), Vn(y)
+  operands:
+  - name: govern
+    type: Pn
+    access: read
+    field: p
+  - name: lhs
+    type: Vn
+    access: read
+    field: v
+  - name: rhs
+    type: Vn
+    access: read
+    field: w
+  - name: dst
+    type: Vn
+    access: read_write
+    field: y
+  fields:
+    z:
+      type: size.HSD
+  constraints:
+  - field: z
+    allow:
+    - 0x1..0x3
+    reason: reserved_vector_element_type

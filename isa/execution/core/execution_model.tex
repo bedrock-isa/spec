@@ -78,9 +78,9 @@ operation reads its complete range and completes any applicable destination vali
 or SP. A successful operation commits all listed stack and register effects together; a preceding fault exposes none
 of them.
 
-Architectural event entry and ERET use the event-frame layout in the Architectural Event Processing Model.
-SYSCALL and SYSRET keep their continuation in the user-return control-register bank described by the Privileged
-Execution Model.
+Architectural event entry and ERET use the return source selected by the Architectural Event Processing Model.
+SYSCALL is the SYSTEM\_CALL event; user-origin entry keeps its continuation in the user context bank described by
+the Privileged Execution Model and creates no memory frame.
 
 \subsection{Operand Evaluation and EA Defaults}
 Operands are decoded in instruction order. Source reads complete before the final destination write unless an
@@ -112,10 +112,8 @@ register-memory and memory-memory conversion stores; EXTSQ also provides registe
 extension. These operations preserve FLAGS unless a repeat rule observes a derived value. Data movement, LEA, and
 segment-address operations also preserve FLAGS unless their descriptions say otherwise.
 
-Control transfers make PC and CS changes at a single control-transfer commit point. Atomic operations require an
-addressable memory operand. An \texttt{AT=0} atomic operand must be naturally aligned and commits the
-read-modify-write as one architectural update; an \texttt{AT=1} atomic operand raises \texttt{ADDRESS\_TYPE} and has
-no byte-alignment check. TLB,
+Control transfers make PC and CS changes at a single control-transfer commit point. Atomic operations require a
+naturally aligned addressable memory operand and commit the read-modify-write as one architectural update. TLB,
 page-table context, and privileged control operations require supervisor privilege. Cache-maintenance operations
 preserve FLAGS and define their own visibility contract. Approximate transcendental floating-point operations are
 available only when CPUID reports \texttt{FPTRANSA} and marks the instruction's accuracy-contract ID present.

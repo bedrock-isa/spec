@@ -1,102 +1,31 @@
 \clearpage
 \section{Privileged Execution Model}\label{page:privileged-execution-model}
 
-The privileged programming model has two independent transition paths into supervisor execution. A supervisor call
-uses dedicated entry state, a working stack, and a user-return bank. Architectural event delivery handles exceptions,
-maskable interrupts, and NMI through the common EPC/ECS/EDS entry. The paths may nest, but they retain distinct entry
-state, return state, and return instructions.
+All exceptions, interrupts, NMI, and explicit synchronous traps enter supervisor execution through the architectural event mechanism. \texttt{SYSCALL} is the explicit \texttt{SYSTEM\_CALL} event (\texttt{EXC:0x20}); it uses the common EPC/ECS/EDS entry and returns with \texttt{ERET}.
 
-\subsection{Privilege and Transition State}
-STATUS.PM is zero in user mode and one in supervisor mode. STATUS.EA records only architectural event processing; a
-supervisor call does not set it. STATUS.EA is hardware managed, and WRSTATUS must preserve the current EA value. An
-attempted change raises \texttt{INVALID\_CONTROL\_STATE} without changing STATUS.
+\subsection{Privilege and Event State}
+STATUS.PM is zero in user mode and one in supervisor mode. STATUS.EA indicates active event processing. STATUS.EDEPTH in bits 9..6 is the active event depth, and STATUS.UO in bit 10 records that the outer event originated in user mode. PM, EA, EDEPTH, and UO are hardware managed; WRSTATUS must preserve them. User execution always observes PM=EA=EDEPTH=UO=0.
 
-The other STATUS control bits are Boolean: IE enables maskable interrupts, TF controls single-step tracing, RF marks
-exception restart, and NI inhibits nested NMI delivery. In supervisor mode, ordinary instruction memory operands use
-current-domain access. Checked user-domain access is expressed only by the supervisor-only MOVUC, MOVCU, and MOVUU
-instructions. RDCR, WRCR, translation-state changes, event-control changes, and page-table context switches require
-supervisor privilege unless an instruction explicitly says otherwise.
+IE enables maskable interrupts, TF requests single-step tracing, RF suppresses one trace boundary, and NI inhibits nested NMI admission. RDCR, WRCR, translation-state changes, event-control changes, and page-table context switches require supervisor privilege unless an instruction explicitly states otherwise.
 
-The following table summarizes the control state that distinguishes the direct supervisor-call path from an event
-nested within it.
+\subsection{User Context Bank}
+The user context bank consists of UPC, USP, UCS, UDS, USS, UCTL, and UINFO. UCTL contains saved FLAGS in bits 15..0, saved STATUS in bits 31..16, and V in bit 32. UINFO contains the 32-bit event code; its upper half is zero. A saved user STATUS image has PM, EA, EDEPTH, and UO clear.
 
-\manualtablecaption{Supervisor-Call Transition State}\label{table:supervisor-call-transition-state}
-\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{1.70in}>{\centering\arraybackslash}p{0.45in}>{\centering\arraybackslash}p{0.45in}>{\centering\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{2.20in}@{}}
-\toprule
-\rowcolor{ManualHeaderFill}
-\textbf{Context} & \textbf{PM} & \textbf{EA} & \textbf{URCTL.V} & \textbf{Matching transition}\\
-\midrule
-user execution & 0 & 0 & 0 & supervisor call enters the configured supervisor context\\
-supervisor-call context & 1 & 0 & 1 & user return restores the banked user context\\
-event during a supervisor call & 1 & 1 & 1 & event return restores the interrupted supervisor-call context\\
-\bottomrule
-\end{manualtabular}
+Software stages a context by writing UPC, USP, UCS, UDS, USS, and UINFO before writing UCTL.V=1. That final write validates the complete bank. The bank belongs to the interrupted user thread and must be saved with its supervisor context across preemption or migration.
 
-\subsection{Supervisor-Call State and Preconditions}
-The supervisor-call entry bank consists of SCS, SDS, SSS, SPC, and SSP. The user-return bank consists of URPC, URSP,
-URCS, URDS, URSS, and URCTL. The control-register formats and the rules for establishing these banks through WRCR are
-defined in the \hyperref[section:control-registers]{Control Registers} section.
+\subsection{Initial Event Stacks and Payloads}
+A first user-origin \texttt{SYSTEM\_CALL} selects SSS:SSP, a maskable interrupt selects ISS:ISP, and an exception or NMI selects FSS:FSP. BASIC events, including \texttt{SYSTEM\_CALL}, have no payload and perform no stack-memory access. ERROR events store 16 bytes; PAGE\_FAULT and AUXILIARY events store 32 bytes. The event code in UINFO defines the payload shape.
 
-A supervisor call requires user mode, STATUS.EA clear, and URCTL.V clear. SCS, SDS, and SSS must be valid supervisor
-segment images. SPC must be an exact, executable, 16-byte-aligned address under SCS. SSP must be an exact, in-bounds,
-64-byte-aligned stack pointer under SSS. These conditions are validated before the transition changes architectural
-state.
+A supervisor-origin event and every nested event push a complete event frame on the current SS:SP. They do not promote to another configured event stack. The saved SS:SP in the frame identifies the interrupted stack.
 
-\subsection{Supervisor Call Entry}
-After validation and the executable-target probe succeed, the supervisor call saves the address following the
-instruction in URPC, the user SP in URSP, the user CS, DS, and SS images in URCS, URDS, and URSS, and the user FLAGS
-and STATUS images in URCTL. The saved bank is marked valid by setting URCTL.V.
+\subsection{Event Entry and Failure}
+User-origin entry atomically saves the user context bank, optionally stores the payload, loads EPC/ECS/EDS and the selected initial stack, sets PM and EA, sets EDEPTH to one and UO to one, and clears IE, TF, and RF. Supervisor and nested entry save the prior context in the full frame and increment EDEPTH while preserving UO.
 
-The same architectural commit loads CS=SCS, DS=SDS, SS=SSS, SP=SSP, and PC=SPC and sets STATUS.PM. Entry preserves
-STATUS.EA, IE, TF, RF, and NI. It performs no memory access, creates no stack frame, and does not modify SSP.
+Delivery failure selects DSS:DSP and attempts \texttt{DOUBLE\_FAULT}. The hidden current-DFA bit is set when that entry commits. Failure while current DFA is set, or failure of the double-fault attempt, enters shutdown. A full frame saves the prior DFA state in FRAME\_CONTROL.SAVED\_DFA.
 
-\subsection{Supervisor Execution and Event Interaction}
-The active supervisor may move SP freely and may return from any supervisor stack position because the user context
-resides in the user-return bank rather than on the supervisor stack. The direct path executes user return with
-STATUS.PM=1, STATUS.EA=0, and URCTL.V=1.
+\subsection{ERET Routing and Atomicity}
+ERET classifies its source before any stack access. PM=1, EA=0, EDEPTH=0, UO=0, and UCTL.V=1 performs direct initial user entry from the bank. PM=1, EA=1, EDEPTH=1, UO=1, and UCTL.V=1 returns the outer user event from the bank. Other supervisor states with EA=1 and nonzero EDEPTH restore a full frame from the current SS:SP. Every other combination raises \texttt{INVALID\_CONTROL\_STATE}.
 
-An event taken before user return uses the event stack and memory-resident frame selected by the
-\hyperref[page:architectural-event-processing-model]{Architectural Event Processing Model}. Event entry sets
-STATUS.EA but leaves the user-return bank intact. ERET restores the interrupted supervisor-call context, including
-STATUS.EA=0; user return may then restore user execution. The following figure shows both the direct return and the
-optional event round trip. Its textual state sequence is user execution
-(PM=0, EA=0, V=0), supervisor-call context (PM=1, EA=0, V=1), optionally event context (PM=1, EA=1, V=1) followed
-by ERET to the supervisor-call context, and finally user return to user execution.
+A U-bank return validates UCTL, UINFO, the user segment images, USP, and the executable UPC before committing. It restores user execution, clears UCTL.V, EDEPTH, UO, EA, and current DFA, and never reads the stack. A stacked return validates the entire frame, requires saved STATUS.EDEPTH+1 to equal the current depth and saved UO to match the current chain, then restores STATUS and SAVED\_DFA atomically. A failed validation or target probe leaves the current context and return source unchanged.
 
-\input{isa/system/state/supervisor_call_transition_diagram.tex}
-
-\subsection{User-Return Context Ownership}
-The user-return bank is per-logical-processor architectural state. When a supervisor call blocks or is preempted and
-another software thread may run on the same logical processor, system software saves and restores the bank as part of the
-software thread's supervisor context. The bank therefore travels with the software thread whose user continuation it holds rather than
-with an event frame or the currently selected supervisor stack.
-
-Signal delivery, supervisor-call restart, tracing, and initial user-process entry may inspect or establish the bank
-through WRCR, subject to the control-register validation rules. Events do not consume, replace, or return through the
-bank.
-
-\subsection{User Return Validation and Commit}
-User return requires supervisor mode, STATUS.EA clear, and URCTL.V set. Before changing architectural state, it
-validates the saved FLAGS and STATUS fields, including their reserved fields; requires the saved STATUS image to have
-PM and EA clear; validates URCS, URDS, and URSS as user segment images; requires URSP to be in bounds under URSS; and
-probes URPC as an executable address under URCS.
-
-After all validation and target probing succeed, user return restores FLAGS, STATUS, CS, DS, SS, SP, and PC from the
-user-return bank and clears URCTL.V as one architectural commit.
-
-\subsection{Transition Failure and Atomicity}
-A supervisor-call precondition, configuration, or validation failure raises \texttt{INVALID\_CONTROL\_STATE} at
-the supervisor-call instruction boundary. A user-return precondition or saved-state validation failure raises the
-same exception through the architectural event path. A target-probe failure for either transition propagates the
-probe's defined exception through the architectural event path. Every such failure leaves the current execution
-state and the complete user-return bank unchanged; no partial transition is visible.
-
-ERET is illegal while STATUS.EA is clear, and user return is illegal while STATUS.EA is set. The event-active check
-occurs before either instruction reads its return state. Event-delivery failure and event-frame atomicity remain
-defined by the \hyperref[page:architectural-event-processing-model]{Architectural Event Processing Model}.
-
-Normative instruction-local behavior is defined by
-\hyperref[instr:syscall]{\texttt{SYSCALL}},
-\hyperref[instr:sysret]{\texttt{SYSRET}},
-\hyperref[instr:lret]{\texttt{LRET}}, and
-\hyperref[instr:eret]{\texttt{ERET}}.\par
+Normative instruction-local behavior is defined by \hyperref[instr:syscall]{\texttt{SYSCALL}} and \hyperref[instr:eret]{\texttt{ERET}}.\par

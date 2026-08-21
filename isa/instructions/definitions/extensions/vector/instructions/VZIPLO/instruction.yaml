@@ -1,0 +1,8 @@
+mnemonic: VZIPLO
+title: VZIPLO (Vector)
+summary: Interleave the lower source halves.
+description: Interleave the lower source halves.
+attributes:
+  class: vector
+  family: vector
+  privilege: unprivileged

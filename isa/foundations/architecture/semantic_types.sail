@@ -14,8 +14,10 @@ enum Semantic_route =
 | RouteIntegerUnary
 | RouteSystemRegisters
 | RouteTlbContext
+| RouteVector
 
 enum Instruction_set = BaseSet | FpuSet | FpuTranscendentalSet
+| VectorSet | VectorFpuSet
 enum Privilege_level = UserPrivilege | SupervisorPrivilege | AnyPrivilege
 
 enum Predicate_mode =
@@ -50,6 +52,7 @@ enum Fault_kind =
 | TranslationFault
 | AccessFault
 | FloatingPointFault
+| VectorRangeFault
 | EventFault
 
 enum Effect_kind =

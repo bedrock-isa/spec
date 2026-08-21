@@ -1,4 +1,4 @@
-enum Encoding_class = ExtraShort | Short | Medium | Long | ExtraLong
+enum Encoding_class = ExtraShort | Short | Medium | Long | ExtraLong | Xxlong
 
 enum Constraint_kind = AllowRanges | ExcludeImmediate
 
@@ -110,7 +110,6 @@ struct Catalog_entry = {
   has_ea_operand : bool,
   repeat_rep : bool,
   repeat_repcc : bool,
-  repeat_repg : bool,
   repeat_observed_kind : string,
   repeat_observed_operand : string,
   flag_effects : list(string),

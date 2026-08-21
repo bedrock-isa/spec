@@ -1,0 +1,8 @@
+mnemonic: VTRNHI
+title: VTRNHI (Vector)
+summary: Transpose odd-position elements from two sources.
+description: Transpose odd-position elements from two sources.
+attributes:
+  class: vector
+  family: vector
+  privilege: unprivileged

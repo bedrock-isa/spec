@@ -93,6 +93,7 @@ fn pair(
 
 fn evaluate_unary(format: FpFormat, input: u64, evaluate_s: UnaryS, evaluate_d: UnaryD) -> u64 {
     match format {
+        FpFormat::H => unreachable!("binary16 transcendental operations are not allocated"),
         FpFormat::S => u64::from(evaluate_s(SoftF32::from_bits(input as u32)).to_bits()),
         FpFormat::D => evaluate_d(SoftF64::from_bits(input)).to_bits(),
     }
@@ -100,6 +101,7 @@ fn evaluate_unary(format: FpFormat, input: u64, evaluate_s: UnaryS, evaluate_d: 
 
 fn evaluate_pair(format: FpFormat, input: u64, evaluate_s: PairS, evaluate_d: PairD) -> (u64, u64) {
     match format {
+        FpFormat::H => unreachable!("binary16 transcendental operations are not allocated"),
         FpFormat::S => {
             let (first, second) = evaluate_s(SoftF32::from_bits(input as u32));
             (u64::from(first.to_bits()), u64::from(second.to_bits()))
@@ -126,6 +128,7 @@ fn domain_contains(domain: TransDomain, format: FpFormat, input: u64) -> bool {
 
 const fn pi_over_four_floor(format: FpFormat) -> u64 {
     match format {
+        FpFormat::H => 0x3a48,
         FpFormat::S => 0x3f49_0fda,
         FpFormat::D => 0x3fe9_21fb_5444_2d18,
     }
@@ -133,6 +136,7 @@ const fn pi_over_four_floor(format: FpFormat) -> u64 {
 
 const fn one(format: FpFormat) -> u64 {
     match format {
+        FpFormat::H => 0x3c00,
         FpFormat::S => 0x3f80_0000,
         FpFormat::D => 0x3ff0_0000_0000_0000,
     }
@@ -141,6 +145,7 @@ const fn one(format: FpFormat) -> u64 {
 fn underflow_for(operation: TransOperation, format: FpFormat, input: u64) -> FpCauses {
     let magnitude = input & !format.sign_mask();
     let minimum_normal = match format {
+        FpFormat::H => 0x0400,
         FpFormat::S => 0x0080_0000,
         FpFormat::D => 0x0010_0000_0000_0000,
     };
@@ -196,6 +201,7 @@ mod tests {
 
     fn zero_and_one(format: FpFormat) -> (u64, u64) {
         match format {
+            FpFormat::H => (0x8000, 0x3c00),
             FpFormat::S => (0x8000_0000, 0x3f80_0000),
             FpFormat::D => (0x8000_0000_0000_0000, 0x3ff0_0000_0000_0000),
         }
@@ -321,6 +327,7 @@ mod tests {
             assert_eq!(
                 atan_infinity,
                 match format {
+                    FpFormat::H => 0x3e48,
                     FpFormat::S => 0x3fc9_0fdb,
                     FpFormat::D => 0x3ff9_21fb_5444_2d18,
                 }

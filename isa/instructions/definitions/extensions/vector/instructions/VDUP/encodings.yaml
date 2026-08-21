@@ -1,0 +1,94 @@
+forms:
+- id: long.vdup.v1
+  class: long
+  bits: 11111010010010zz0rrrrvvvvv
+  syntax: VDUP.BWLQ(z) Rn(r), Vn(v)
+  operands:
+  - name: src
+    type: Rn
+    access: read
+    field: r
+  - name: dst
+    type: Vn
+    access: write
+    field: v
+  fields:
+    z:
+      type: size.BWLQ
+- id: long.vdup.v2
+  class: long
+  bits: 11111010010010zz1rrrrvvvvv
+  syntax: VDUP.HSD(z) Fn(r), Vn(v)
+  operands:
+  - name: src
+    type: Fn
+    access: read
+    field: r
+  - name: dst
+    type: Vn
+    access: write
+    field: v
+  fields:
+    z:
+      type: size.HSD
+  constraints:
+  - field: z
+    allow:
+    - 0x1..0x3
+    reason: reserved_vector_element_type
+- id: long.vdup.v18.b
+  class: long
+  bits: 111110100110100000010vvvvv
+  syntax: VDUP.B <imm8>, Vn(v)
+  operands:
+  - name: immediate
+    type: imm8
+    access: read
+  - name: dst
+    type: Vn
+    access: write
+    field: v
+  sizes:
+  - B
+- id: long.vdup.v18.w
+  class: long
+  bits: 111110100110100100010vvvvv
+  syntax: VDUP.W <imm16>, Vn(v)
+  operands:
+  - name: immediate
+    type: imm16
+    access: read
+  - name: dst
+    type: Vn
+    access: write
+    field: v
+  sizes:
+  - W
+- id: long.vdup.v18.l
+  class: long
+  bits: 111110100110101000010vvvvv
+  syntax: VDUP.L <imm32>, Vn(v)
+  operands:
+  - name: immediate
+    type: imm32
+    access: read
+  - name: dst
+    type: Vn
+    access: write
+    field: v
+  sizes:
+  - L
+- id: long.vdup.v18.q
+  class: long
+  bits: 111110100110101100010vvvvv
+  syntax: VDUP.Q <imm64>, Vn(v)
+  operands:
+  - name: immediate
+    type: imm64
+    access: read
+  - name: dst
+    type: Vn
+    access: write
+    field: v
+  sizes:
+  - Q

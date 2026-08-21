@@ -1,0 +1,8 @@
+mnemonic: PTRNLO
+title: PTRNLO (Vector)
+summary: Interleave the even-position lanes from `Pa` and `Pb`.
+description: Interleave the even-position lanes from `Pa` and `Pb`.
+attributes:
+  class: vector
+  family: vector
+  privilege: unprivileged

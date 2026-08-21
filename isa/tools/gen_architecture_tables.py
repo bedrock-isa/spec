@@ -173,8 +173,9 @@ def validate_manifest(data: dict[str, Any]) -> None:
         "PAGE_FAULT",
         "ILLEGAL_INSTRUCTION",
         "INVALID_CONTROL_STATE",
+        "VECTOR_RANGE_ERROR",
     }:
-        raise ValueError("exception_causes: expected the three architected cause spaces")
+        raise ValueError("exception_causes: expected the four architected cause spaces")
     for exception, raw_entries in causes.items():
         entries = require_list(raw_entries, f"exception_causes.{exception}")
         unique_values(entries, "value", f"exception_causes.{exception}")
@@ -262,6 +263,8 @@ def validate_manifest(data: dict[str, Any]) -> None:
         "F0_F15",
         "FSTATUS",
         "FFLAGS",
+        "V0_V31",
+        "P0_P15",
         "extension_state",
         "CYCLE",
         "INSTRET",
@@ -269,8 +272,7 @@ def validate_manifest(data: dict[str, Any]) -> None:
         "ECR.NMI_P",
         "hidden_repeat_state",
         "hidden_load_reservation",
-        "hidden_current_edepth",
-        "hidden_current_event_stack_level",
+        "hidden_current_dfa",
         "local_translation_cache",
         "local_page_walk_cache",
         "local_prefetch_state",
@@ -305,6 +307,10 @@ def validate_manifest(data: dict[str, Any]) -> None:
     fp_leaf = leaf_by_selector.get((1, 1))
     if fp_leaf is None or int(fp_leaf["max_index"]) != max(contract_ids):
         raise ValueError("cpuid: FPTRANSA_ACCURACY MAX_INDEX must equal the greatest contract ID")
+    vector_leaf = leaf_by_selector.get((1, 2))
+    if vector_leaf is None or vector_leaf.get("name") != "VECTOR_PARAMETERS" \
+            or int(vector_leaf["max_index"]) != 1:
+        raise ValueError("cpuid: VECTOR_PARAMETERS must be class 1 leaf 2 with MAX_INDEX 1")
     counter_leaf = leaf_by_selector.get((2, 2))
     if counter_leaf is None or int(counter_leaf["max_index"]) != max(int(item["id"]) for item in counters):
         raise ValueError("cpuid: PERFORMANCE_COUNTERS MAX_INDEX must equal the greatest standard counter ID")
@@ -379,14 +385,19 @@ def validate_manifest(data: dict[str, Any]) -> None:
     for component in components:
         component_id = int(component["id"])
         bit = int(component["bitmap_bit"])
-        offset = int(component["offset_bytes"])
-        size = int(component["max_size_bytes"])
+        offset_raw = component["offset_bytes"]
+        size_raw = component["max_size_bytes"]
         alignment = int(component["alignment_bytes"])
         if component_id < 0 or component_id > 0xFFFF or bit < 0 or bit >= 64 * bitmap_words:
             raise ValueError("cpuid.save_area_layout: component ID or bitmap bit out of range")
-        if alignment != 64 or offset < fixed_size or offset % alignment or size <= 0 or size % alignment:
-            raise ValueError("cpuid.save_area_layout: invalid component offset, size, or alignment")
-        occupied.append((offset, offset + size, component_id))
+        if isinstance(offset_raw, int) and isinstance(size_raw, int):
+            offset = int(offset_raw)
+            size = int(size_raw)
+            if alignment != 64 or offset < fixed_size or offset % alignment or size <= 0 or size % alignment:
+                raise ValueError("cpuid.save_area_layout: invalid component offset, size, or alignment")
+            occupied.append((offset, offset + size, component_id))
+        elif component.get("name") != "VECTOR":
+            raise ValueError("cpuid.save_area_layout: symbolic layout is allowed only for VECTOR")
     for previous, current in zip(sorted(occupied), sorted(occupied)[1:]):
         if previous[1] > current[0]:
             raise ValueError(
@@ -414,6 +425,33 @@ def validate_manifest(data: dict[str, Any]) -> None:
         ("FSTATUS", 0x088, 0x008),
     ]:
         raise ValueError("cpuid.save_area_layout: invalid FP component layout")
+    vector_components = [item for item in components if item.get("name") == "VECTOR"]
+    if len(vector_components) != 1:
+        raise ValueError("cpuid.save_area_layout: expected one VECTOR component")
+    vector = vector_components[0]
+    if (
+        int(vector["id"]) != 2
+        or int(vector["bitmap_bit"]) != 1
+        or vector["offset_bytes"] != "implementation_defined_64_byte_aligned"
+        or vector["max_size_bytes"] != "align_up_34_times_vlen_bytes_to_64"
+        or int(vector["alignment_bytes"]) != 64
+        or int(vector["init_policy"]) != 1
+    ):
+        raise ValueError("cpuid.save_area_layout: invalid VECTOR component descriptor")
+    if [
+        (item.get("name"), item.get("offset"), item.get("size"))
+        for item in require_list(
+            vector.get("layout"), "cpuid.save_area_layout.components.VECTOR.layout"
+        )
+    ] != [
+        ("V0_V31", "n_times_vlen_bytes", "32_times_vlen_bytes"),
+        (
+            "P0_P15",
+            "32_times_vlen_bytes_plus_n_times_vlen_bytes_div_8",
+            "2_times_vlen_bytes",
+        ),
+    ]:
+        raise ValueError("cpuid.save_area_layout: invalid VECTOR component layout")
 
     for contract in contracts:
         mnemonic = str(contract["mnemonic"])
@@ -825,8 +863,26 @@ def render_save_area_layout(data: dict[str, Any]) -> str:
         ["1.25in", "1.20in", "X"],
         "Floating-Point SAVE Component",
     )
+    vector_table = latex_tabular(
+        ["Component Offset", "State", "Contents"],
+        [
+            [tex_code("n * B"), tex_code("Vn"), "V0 through V31; each register occupies B bytes"],
+            [
+                tex_code("32 * B + n * B/8"),
+                tex_code("Pn"),
+                "P0 through P15; each packed predicate image occupies B/8 bytes",
+            ],
+            [
+                tex_code("34 * B .. align_up(34 * B, 64) - 1"),
+                "padding",
+                "zero on SAVE and ignored on RESTORE",
+            ],
+        ],
+        ["2.20in", "0.75in", "X"],
+        "Scalable-Vector SAVE Component (B = VLEN bytes)",
+    )
     return "\n\n".join(
-        (index_table, result_diagram, descriptor_a, descriptor_b, fp_table)
+        (index_table, result_diagram, descriptor_a, descriptor_b, fp_table, vector_table)
     )
 
 
@@ -921,8 +977,6 @@ def render_exception_causes(data: dict[str, Any], exception: str) -> str:
     rows = []
     for item in data["exception_causes"][exception]:
         meaning = tex_escape(item["meaning"])
-        if item.get("address_type") == 0:
-            meaning = "misaligned byte-addressed (" + tex_code("AT=0") + ") atomic operand"
         rows.append([tex_escape(item["value"]), tex_code(item["name"]), meaning])
     if exception == "PAGE_FAULT":
         headers = ["Value", "Cause", "Detection class"]
@@ -1113,8 +1167,7 @@ def render_reset_state(data: dict[str, Any]) -> str:
     rows = []
     for item in data["reset_state"]:
         names = [str(value) for value in item["state"]]
-        state = ", ".join(names).replace("hidden_current_edepth", "hidden_current_edepth")
-        state = state.replace("hidden_current_event_stack_level", "hidden current event stack level")
+        state = ", ".join(names).replace("hidden_current_dfa", "hidden current DFA")
         state = state.replace("F0_F15", "F0--F15")
         rows.append([breakable_text(state), tex_escape(RESET_VALUE_TEXT[item["value"]])])
     contract = data["reset_contract"]
@@ -1204,6 +1257,9 @@ def output_files(data: dict[str, Any]) -> dict[Path, str]:
         ),
         ISA_ROOT / "system" / "events" / "invalid_control_state_causes.tex": generated(
             render_exception_causes(data, "INVALID_CONTROL_STATE")
+        ),
+        ISA_ROOT / "system" / "events" / "vector_range_error_causes.tex": generated(
+            render_exception_causes(data, "VECTOR_RANGE_ERROR")
         ),
         ISA_ROOT / "encoding" / "instruction" / "immediate_operand_interpretation.tex": generated(
             render_immediate_operands(data)

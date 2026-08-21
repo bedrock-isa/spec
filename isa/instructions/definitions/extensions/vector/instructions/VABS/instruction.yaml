@@ -1,0 +1,8 @@
+mnemonic: VABS
+title: VABS (Vector)
+summary: Integer signed absolute value or FP sign clear.
+description: Integer signed absolute value or FP sign clear.
+attributes:
+  class: vector
+  family: vector
+  privilege: unprivileged

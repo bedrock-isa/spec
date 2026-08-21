@@ -28,8 +28,6 @@ function legal_representative_bytes(record : Representative_record) -> list(bits
   then [|0xCB, 0xF0, 0x80, 0x08, 0x80|]
   else if record.form_id == "extralong.divmodu_x_ea_e_rn_q_rn_r"
   then [|0xCB, 0xF0, 0x80, 0x00, 0x80|]
-  else if record.form_id == "medium.repg_rn_r_ea"
-  then [|0xC8, 0x26, 0x80, 0x01, 0x00|]
   else if record.form_id == "long.fsincosa_x_fn_s_fn_d_fn_c"
   then [|0xCB, 0xF0, 0x24, 0x00, 0x01|]
   else record.bytes
@@ -38,7 +36,7 @@ function successful_response(kind : Transaction_response_kind, value : bits(64),
                              bounds : bool) -> Transaction_response = struct {
   kind = kind, success = true, fault_kind = NoFault, detail = "", value = value,
   secondary_value = 0x0000000000000000, flags = 0x0, write_flags = false,
-  generated_fflags = 0b00000, bounds_passed = bounds, address_type = 0,
+  generated_fflags = 0b00000, bounds_passed = bounds,
   cache_policy = 0, atomic_store_happened = false, body_bytes = [||],
   state_image = initial_cpu(), known = true, present = true,
   fp_response = empty_fp_response()
@@ -48,7 +46,7 @@ function failing_response(kind : Transaction_response_kind) -> Transaction_respo
   kind = kind, success = false, fault_kind = AccessFault, detail = "test access fault",
   value = 0x0000000000000000, secondary_value = 0x0000000000000000,
   flags = 0x0, write_flags = false, generated_fflags = 0b00000, bounds_passed = false,
-  address_type = 0, cache_policy = 0, atomic_store_happened = false, body_bytes = [||],
+  cache_policy = 0, atomic_store_happened = false, body_bytes = [||],
   state_image = initial_cpu(), known = false, present = false,
   fp_response = empty_fp_response()
 }

@@ -1,0 +1,26 @@
+forms:
+- id: extralong.vextzq.v76
+  class: extralong
+  bits: 11111101111001110zz1ppppvvvvvwwwww
+  syntax: VEXTZQ.BWL(z) Pn(p), Vn(v), Vn(w)
+  operands:
+  - name: govern
+    type: Pn
+    access: read
+    field: p
+  - name: src
+    type: Vn
+    access: read
+    field: v
+  - name: dst
+    type: Vn
+    access: read_write
+    field: w
+  fields:
+    z:
+      type: size.BWL
+  constraints:
+  - field: z
+    allow:
+    - 0x0..0x2
+    reason: reserved_vector_element_type

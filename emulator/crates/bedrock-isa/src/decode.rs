@@ -76,7 +76,6 @@ pub fn decode(bytes: &[u8]) -> Result<DecodedInstruction, DecodeError> {
         privileged: form.attributes.privileged,
         repeat_rep: form.attributes.repeat_rep,
         repeat_repcc: form.attributes.repeat_repcc,
-        repeat_repg: form.attributes.repeat_repg,
         repeat_observed: form.attributes.repeat_observed,
         flags: form.attributes.flags,
     };
@@ -317,25 +316,6 @@ mod tests {
     }
 
     #[test]
-    fn repg_requires_its_fieldless_body_length_operand() {
-        let form = generated_form("medium.repg_rn_r_ea");
-
-        assert_eq!(
-            decode(&extended_record(form, form.value, 4)),
-            Err(DecodeError::OperandPayload {
-                needed: 5,
-                available: 4,
-            })
-        );
-        assert_eq!(
-            decode(&extended_record(form, form.value, 5))
-                .unwrap()
-                .allocation_id,
-            form.id
-        );
-    }
-
-    #[test]
     fn extended_ea_family_fixes_descriptor_and_required_record_lengths() {
         let form = generated_form("medium.inc_x_ea");
         let opcode_bytes = form.class.opcode_bytes();
@@ -382,6 +362,47 @@ mod tests {
         ));
     }
 
+    #[test]
+    fn vcmp_condition_domains_are_reserved_at_decode_boundary() {
+        let integer_conditions = [2_u64, 3, 4, 5, 10, 11, 12, 13, 14, 15];
+        let fp_conditions = [2_u64, 3, 8, 9, 12, 13, 14, 15];
+        for prefix in ["extralong.vcmpcc.v47", "xxlong.vcmpcc.v230"] {
+            let integer_form = generated_form(&format!("{prefix}.integer"));
+            let fp_form = generated_form(&format!("{prefix}.fp"));
+            for size in 0_u64..8 {
+                for condition in 0_u64..16 {
+                    let owner = if size <= 3 {
+                        integer_form
+                    } else if size >= 5 {
+                        fp_form
+                    } else {
+                        integer_form
+                    };
+                    let payload = set_field(
+                        owner.pattern,
+                        'c',
+                        set_field(owner.pattern, 'x', owner.value, size),
+                        condition,
+                    );
+                    let result =
+                        decode(&extended_record(owner, payload, owner.class.opcode_bytes()));
+                    let legal = if size <= 3 {
+                        integer_conditions.contains(&condition)
+                    } else if size >= 5 {
+                        fp_conditions.contains(&condition)
+                    } else {
+                        false
+                    };
+                    assert_eq!(
+                        result.is_ok(),
+                        legal,
+                        "size={size} condition={condition} result={result:?}",
+                    );
+                }
+            }
+        }
+    }
+
     fn generated_form(id: &str) -> &'static GeneratedForm {
         GENERATED_FORMS
             .iter()
@@ -392,7 +413,10 @@ mod tests {
     fn extended_record(form: &GeneratedForm, payload: u64, length: usize) -> Vec<u8> {
         assert!(matches!(
             form.class,
-            EncodingClass::Medium | EncodingClass::Long | EncodingClass::ExtraLong
+            EncodingClass::Medium
+                | EncodingClass::Long
+                | EncodingClass::ExtraLong
+                | EncodingClass::Xxlong
         ));
         assert!((form.class.opcode_bytes()..=18).contains(&length));
         let opcode_bytes = form.class.opcode_bytes();
@@ -420,5 +444,13 @@ mod tests {
             payload |= bit << payload_index;
         }
         payload
+    }
+
+    #[test]
+    fn unallocated_xxlong_opcode_is_reserved_at_six_bytes() {
+        assert_eq!(
+            decode(&[0xcf, 0xff, 0xff, 0xff, 0xff, 0xff]),
+            Err(DecodeError::Reserved)
+        );
     }
 }

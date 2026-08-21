@@ -39,7 +39,10 @@ fn encoded_form(id: &str, fields: &[(char, u64)], appended: &[u8]) -> Vec<u8> {
             bytes.push(0x80 | ((payload >> 8) as u8 & 0x3f));
             bytes.push(payload as u8);
         }
-        EncodingClass::Medium | EncodingClass::Long | EncodingClass::ExtraLong => {
+        EncodingClass::Medium
+        | EncodingClass::Long
+        | EncodingClass::ExtraLong
+        | EncodingClass::Xxlong => {
             bytes.push(
                 0xc0 | (((length - 3) as u8) << 2)
                     | ((payload >> ((opcode_bytes - 1) * 8)) as u8 & 3),
@@ -172,7 +175,7 @@ fn fptransa_executes_and_cpuid_advertises_extension_and_accuracy_contract() {
 
     cpu.state_mut().r[3] = (1_u64 << 32) | 1;
     assert_eq!(cpu.step(&mut ram), StepResult::Running);
-    assert_eq!(cpu.state().r[3], 0b11);
+    assert_eq!(cpu.state().r[3], 0b111);
 
     let contract = contract_for_operation(TransOperation::Sine);
     cpu.state_mut().r[3] = (1_u64 << 32) | (1 << 16) | u64::from(contract.contract_id);
@@ -182,7 +185,7 @@ fn fptransa_executes_and_cpuid_advertises_extension_and_accuracy_contract() {
 }
 
 #[test]
-fn save_restore_round_trips_the_complete_0x180_image_including_fp_state() {
+fn save_restore_round_trips_fp_without_touching_the_vector_component() {
     let save = encoded_form("medium.save_ea_e", &[('e', 15)], &[]);
     let restore = encoded_form("medium.restore_ea_e", &[('e', 15)], &[]);
     let restore_pc = save.len() as u64;

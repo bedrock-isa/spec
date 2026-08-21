@@ -5,6 +5,7 @@ pub enum EncodingClass {
     Medium,
     Long,
     ExtraLong,
+    Xxlong,
 }
 
 impl EncodingClass {
@@ -15,6 +16,7 @@ impl EncodingClass {
             Self::Medium => 3,
             Self::Long => 4,
             Self::ExtraLong => 5,
+            Self::Xxlong => 6,
         }
     }
 
@@ -25,6 +27,7 @@ impl EncodingClass {
             Self::Medium => 18,
             Self::Long => 26,
             Self::ExtraLong => 34,
+            Self::Xxlong => 42,
         }
     }
 }
@@ -52,6 +55,7 @@ pub struct GeneratedEaField {
     pub symbol: char,
     pub syntax_operand_ordinal: u8,
     pub profile: crate::EffectiveAddressProfile,
+    pub writes: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -82,6 +86,7 @@ pub enum InstructionSet {
     Base,
     Fpu,
     FpuTranscendental,
+    Vector,
     VirtualizationAcceleration,
 }
 
@@ -90,7 +95,6 @@ pub enum FlagsEffect {
     Unchanged,
     Writes,
     Body,
-    Grouped,
     OperationDefined,
 }
 
@@ -136,7 +140,6 @@ pub struct GeneratedAttributes {
     pub privileged: bool,
     pub repeat_rep: bool,
     pub repeat_repcc: bool,
-    pub repeat_repg: bool,
     pub repeat_observed: Option<RepeatObservation>,
     pub flags: FlagsEffect,
 }
@@ -590,8 +593,14 @@ mod tests {
     fn hierarchical_tables_match_reference_for_sampled_large_class_payloads() {
         const { assert!(LONG_LOOKUP_MAX_DEPTH <= 5) };
         const { assert!(EXTRALONG_LOOKUP_MAX_DEPTH <= 6) };
+        assert_eq!(decode_form(EncodingClass::Xxlong, 0), None);
+        assert_eq!(decode_form(EncodingClass::Xxlong, (1u64 << 42) - 1), None);
         let mut random = 0x6a09_e667_f3bc_c909u64;
-        for (class, bits) in [(EncodingClass::Long, 26), (EncodingClass::ExtraLong, 34)] {
+        for (class, bits) in [
+            (EncodingClass::Long, 26),
+            (EncodingClass::ExtraLong, 34),
+            (EncodingClass::Xxlong, 42),
+        ] {
             for _ in 0..20_000 {
                 random ^= random << 13;
                 random ^= random >> 7;

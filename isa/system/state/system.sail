@@ -17,15 +17,13 @@ function control_index(selector : int) -> option(bits(5)) =
   if selector == 0 then Some(0b00000)
   else if selector == 1 then Some(0b00001)
   else if selector == 2 then Some(0b00010)
-  else if selector == 256 then Some(0b00011)
-  else if selector == 257 then Some(0b00100)
-  else if selector == 258 then Some(0b00101)
   else if selector == 264 then Some(0b00110)
   else if selector == 265 then Some(0b00111)
   else if selector == 266 then Some(0b01000)
   else if selector == 267 then Some(0b01001)
   else if selector == 268 then Some(0b01010)
   else if selector == 269 then Some(0b01011)
+  else if selector == 270 then Some(0b11010)
   else if selector == 272 then Some(0b01100)
   else if selector == 273 then Some(0b01101)
   else if selector == 274 then Some(0b01110)
@@ -45,11 +43,11 @@ function control_index(selector : int) -> option(bits(5)) =
 function write_control_locally(selector : int) -> bool = selector != 2 & selector != 272
 
 function control_segment_requires_valid_image(selector : int) -> bool =
-  selector == 273 | selector == 274 | selector == 528
+  selector == 273 | selector == 274 | selector == 512 | selector == 528
   | selector == 544 | selector == 560
 
 function control_pointer_requires_alignment(selector : int) -> bool =
-  selector == 529 | selector == 545 | selector == 561
+  selector == 513 | selector == 529 | selector == 545 | selector == 561
 
 val paging_canonical : (bits(64), bits(64)) -> bool
 
@@ -64,9 +62,68 @@ function event_control_bank_valid(state : Cpu_state) -> bool =
   & (state.controls[12] & 0x000000000000000F) == 0x0000000000000000
   & paging_canonical(state.controls[12], state.controls[0])
   & segment_point(state.controls[13], state.controls[12]).in_bounds
+  & event_stack_pair_valid(state.controls[15], state.controls[16])
   & event_stack_pair_valid(state.controls[17], state.controls[18])
   & event_stack_pair_valid(state.controls[19], state.controls[20])
   & event_stack_pair_valid(state.controls[21], state.controls[22])
+
+function uinfo_event_code_valid(value : bits(64)) -> bool = {
+  let class = unsigned(value[31 .. 24]);
+  let id = value[23 .. 0];
+  value[63 .. 32] == 0x00000000
+  & ((class == 0 & (id == 0x000000 | id == 0x000002 | id == 0x000003
+                    | id == 0x000008 | id == 0x000009 | id == 0x00000A
+                    | id == 0x00000B | id == 0x00000D | id == 0x00000E
+                    | id == 0x000018 | id == 0x000019 | id == 0x00001A
+                    | id == 0x000020))
+     | class == 1 | class == 2)
+}
+
+function user_return_bank_image_valid(state : Cpu_state) -> bool = {
+  let uctl = state.controls[11];
+  let saved_status = sail_shiftright(uctl, 16) & 0x000000000000FFFF;
+  let saved_flags = uctl & 0x000000000000FFFF;
+  uctl[32] == bitone
+  & (uctl & 0xFFFFFFFE00000000) == 0x0000000000000000
+  & (saved_status & 0xFFFFFFFFFFFFF800) == 0x0000000000000000
+  & (saved_status & 0x00000000000007D1) == 0x0000000000000000
+  & (saved_flags & 0xFFFFFFFFFFFFFFF0) == 0x0000000000000000
+  & uinfo_event_code_valid(state.controls[26])
+  & segment_image_valid(state.controls[8])
+  & segment_image_valid(state.controls[9])
+  & segment_image_valid(state.controls[10])
+  & segment_point(state.controls[10], state.controls[7]).in_bounds
+  & paging_canonical(state.controls[6], state.controls[0])
+  & segment_point(state.controls[8], state.controls[6]).in_bounds
+}
+
+function state_with_control_write(state : Cpu_state, selector : int,
+                                  value : bits(64)) -> Cpu_state = {
+  var candidate = state;
+  match control_index(selector) {
+    Some(index) => candidate.controls[unsigned(index)] = value,
+    None() => (),
+  };
+  candidate
+}
+
+function target_probe_request(ordinal : int, segment_image : bits(64), target : bits(64))
+  -> Primitive_request = {
+  let point = segment_point(segment_image, target);
+  struct {
+    kind = TranslationExecuteProbe, ordinal = ordinal, role = "control_target", domain = "CS",
+    segment = 0, segment_image = segment_image, width = 1, range_start = target,
+    range_end = add_bits(target, 0x0000000000000001), effective_address = target,
+    range_length = 1, range_wrap = false,
+    range_end_at_modulus = target == 0xFFFFFFFFFFFFFFFF,
+    linear_address = point.linear, access = AccessExecute, value = 0x0000000000000000,
+    address_translation = true, commit_point = false, memory_order = ordinal,
+    cache_policy = 0, suppress_fault = false, staged_updates = [||],
+    selector = 0x0000000000000000, expected = 0x0000000000000000,
+    desired = 0x0000000000000000, auxiliary = 0x0000000000000000, body_length = 0,
+    payload_bytes = [||], fp_request = empty_fp_request(), state_image = initial_cpu()
+  }
+}
 
 function read_state_register(instruction : Decoded_instruction, state : Cpu_state,
                              value : bits(64)) -> Execution_result =
@@ -117,8 +174,8 @@ function execute_system_local(instruction : Decoded_instruction, state : Cpu_sta
         ))
       else if operation == Op_WRSTATUS then {
         let candidate = source & 0x000000000000FFFF;
-        if (candidate & 0x000000000000FFC0) != 0x0000000000000000
-           | (candidate & 0x0000000000000011) != (state.status & 0x0000000000000011)
+        if (candidate & 0x000000000000F800) != 0x0000000000000000
+           | (candidate & 0x00000000000007D1) != (state.status & 0x00000000000007D1)
         then Some(faulted(state, operation, InvalidControlState,
                           "reserved or immutable STATUS bits"))
         else Some(local_result(
@@ -180,10 +237,12 @@ function execute_system_local(instruction : Decoded_instruction, state : Cpu_sta
     match (value_named(instruction, state, "src"), value_named(instruction, state, "cr")) {
       (Some(source), Some(raw_selector)) => {
         let selector = unsigned(raw_selector[15 .. 0]);
-        let needs_transition = selector == 0 | selector == 1 | selector == 256
+        let needs_transition = selector == 0 | selector == 1
                              | selector == 272 | selector == 4097
                              | (selector == 2 & source[0] == bitone & state.controls[2][0] == bitzero)
-                             | (selector == 269 & source[32] == bitone);
+                             | ((selector >= 264 & selector <= 270)
+                                & (state.controls[11][32] == bitone
+                                   | (selector == 269 & source[32] == bitone)));
         if needs_transition then None()
         else match control_index(selector) {
           None() => Some(faulted(
@@ -200,10 +259,13 @@ function execute_system_local(instruction : Decoded_instruction, state : Cpu_sta
                             & ((source & 0xFFFFFFFFFFFFF07E) != 0x0000000000000000
                                | (source[0] == bitone
                                   & not_bool(event_control_bank_valid(state))));
-            let urctl_invalid = selector == 269
+            let uctl_invalid = selector == 269
               & ((source & 0xFFFFFFFE00000000) != 0x0000000000000000
-                 | source[31 .. 22] != 0b0000000000 | source[15 .. 4] != 0x000);
-            if segment_invalid | stack_invalid | pmc_invalid | ecr_invalid | urctl_invalid
+                 | (source & 0x00000000FFD10000) != 0x0000000000000000
+                 | source[15 .. 4] != 0x000);
+            let uinfo_invalid = selector == 270 & source[63 .. 32] != 0x00000000;
+            if segment_invalid | stack_invalid | pmc_invalid | ecr_invalid
+               | uctl_invalid | uinfo_invalid
             then Some(faulted(state, operation, InvalidControlState,
                               "invalid control-register image"))
             else {

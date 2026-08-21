@@ -5,6 +5,28 @@ function resume_events_phase(previous : Execution_result, response : Transaction
       Some(event) =>
         if not_bool(event_stack_state_valid(event, previous.pending.before)) then
           event_delivery_failed(previous, 1)
+        else if event_uses_user_bank(previous.pending.before)
+           & event_payload_slots(event.frame_type) == 0 then {
+          var updated = committed_event_entry(
+            previous.pending.before, event,
+            event_stack_top(event, previous.pending.before),
+            event_stack_segment(event, previous.pending.before)
+          );
+          if event.kind == EventNmi then {
+            if previous.pending.before.nmi_relatched then {
+              updated.controls[2] = updated.controls[2] | 0x0000000000000080;
+              updated.nmi_latched_source = previous.pending.before.nmi_relatched_source
+            }
+            else {
+              updated.controls[2] = updated.controls[2] & 0xFFFFFFFFFFFFFF7F;
+              updated.nmi_latched_source = 0x000000
+            };
+            updated.nmi_relatched = false;
+            updated.nmi_relatched_source = 0x000000
+          } else ();
+          let done = completed(previous.pending.before, updated, CommitEvent, [||]);
+          { done with pending = { done.pending with boundary_class = BoundaryEventEntry } }
+        }
         else if not_bool(event_frame_address_valid(event, previous.pending.before)) then {
           let request = event_stack_range_request(
             event, previous.pending.before, previous.pending.ordinal + 1
@@ -30,16 +52,11 @@ function resume_events_phase(previous : Execution_result, response : Transaction
     PhaseEventFrameStore => match previous.pending.event {
       None() => event_shutdown(previous.pending.before),
       Some(event) => {
-        var updated = previous.pending.before;
-        updated.sp = previous.request.range_start;
-        updated.pc = previous.pending.before.controls[12];
-        updated.segments[0] = previous.pending.before.controls[13];
-        updated.segments[1] = previous.pending.before.controls[14];
-        updated.segments[2] = previous.request.segment_image;
-        updated.status = (previous.pending.before.status & 0x0000000000000002)
-                       | 0x0000000000000011;
+        var updated = committed_event_entry(
+          previous.pending.before, event,
+          previous.request.range_start, previous.request.segment_image
+        );
         if event.kind == EventNmi then {
-          updated.status = updated.status | 0x0000000000000002;
           if previous.pending.before.nmi_relatched then {
             updated.controls[2] = updated.controls[2] | 0x0000000000000080;
             updated.nmi_latched_source = previous.pending.before.nmi_relatched_source
@@ -59,13 +76,6 @@ function resume_events_phase(previous : Execution_result, response : Transaction
           updated.machine_check_fault_linear = 0x0000000000000000;
           updated.machine_check_event_aux = 0x0000000000000000
         } else ();
-        updated.supervisor = true;
-        updated.event_depth = previous.pending.before.event_depth + 1;
-        updated.event_stack_level = if event_retain_stack(event, previous.pending.before)
-          then previous.pending.before.event_stack_level else event_requested_level(event);
-        updated.repeat_state = { updated.repeat_state with active = false };
-        updated.run_state = Running;
-        updated.halted = false;
         let done = completed(previous.pending.before, updated, CommitEvent, [||]);
         { done with pending = { done.pending with boundary_class = BoundaryEventEntry } }
       },
@@ -95,46 +105,6 @@ function resume_events_phase(previous : Execution_result, response : Transaction
         )
       },
     PhaseEventFrame => continue_event_return(previous, response.body_bytes),
-    PhaseEventReturnBody => {
-      let repeat_state = previous.pending.after.repeat_state;
-      let bytes = if repeat_state.grouped then response.body_bytes
-                  else match decode_next_record(response.body_bytes) {
-                    Some(body) => take_bytes(response.body_bytes, body.encoded_length),
-                    None() => [||],
-                  };
-      let valid : bool = if repeat_state.grouped then
-        if byte_list_length(bytes) != unsigned(repeat_state.body_bytes) then false
-        else if not_bool(valid_repg_body(
-          bytes, unsigned(repeat_state.body_bytes), previous.pending.after
-        )) then false
-        else repg_offset_is_boundary(bytes, repeat_state.group_progress)
-      else match decode_full_record(bytes) {
-        Some(body) => {
-          let eligible : bool = if unsigned(repeat_state.condition) == 0
-            then body.form.repeat_rep else body.form.repeat_repcc;
-          if not_bool(eligible) then false
-          else if not_bool(repeat_body_available(body, previous.pending.after)) then false
-          else not_bool(repeat_body_control_forbidden(body))
-        },
-        None() => false,
-      };
-      if not_bool(valid) then faulted(
-        previous.pending.before, Op_ERET, InvalidControlState,
-        "invalid restored repeat body"
-      )
-      else {
-        var candidate = previous.pending.after;
-        candidate.repeat_state = { repeat_state with fixed_body = bytes };
-        let staged = { previous with pending = { previous.pending with after = candidate } };
-        continue_with_request(
-          staged, PhaseEventReturnExecute, previous.pending.ordinal + 1,
-          previous.pending.captured_first, previous.pending.captured_second,
-          target_probe_request(previous.pending.ordinal + 1,
-                               previous.pending.captured_second,
-                               previous.pending.captured_first)
-        )
-      }
-    },
     PhaseEventReturnExecute => completed(
       previous.pending.before, previous.pending.after, CommitEvent, [||]
     ),

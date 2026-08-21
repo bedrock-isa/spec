@@ -10,7 +10,6 @@ repeat:
   contexts:
   - REP
   - REPcc
-  - REPG
   observed:
     kind: result
     operand: low_dst

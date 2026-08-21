@@ -1,0 +1,14 @@
+forms:
+- id: long.pxor.v11
+  class: long
+  bits: 111110100101100010ppppqqqq
+  syntax: PXOR Pn(p), Pn(q)
+  operands:
+  - name: src
+    type: Pn
+    access: read
+    field: p
+  - name: dst
+    type: Pn
+    access: read_write
+    field: q

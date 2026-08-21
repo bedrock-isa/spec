@@ -9,6 +9,7 @@ const IMPLEMENTATION_CLASS: u32 = 2;
 const BASE_IDENTITY_LEAF: u16 = 0;
 const EXTENSION_DIRECTORY_LEAF: u16 = 0;
 const FPTRANSA_ACCURACY_LEAF: u16 = 1;
+const VECTOR_PARAMETERS_LEAF: u16 = 2;
 const IMPLEMENTATION_DIRECTORY_LEAF: u16 = 0;
 const CACHE_TOPOLOGY_LEAF: u16 = 1;
 const PERFORMANCE_COUNTERS_LEAF: u16 = 2;
@@ -29,7 +30,9 @@ const PROCESSOR_NAME: &[u8] = b"Bedrock Emulator";
 // reports no cache descriptors. The value is stable within its coherence domain.
 pub const MAINTENANCE_GRANULE_BYTES: u16 = 64;
 
-pub const SAVE_AREA_SIZE_BYTES: u64 = 0x0180;
+pub const VLEN_LOG2_BITS: u8 = 7;
+
+pub const SAVE_AREA_SIZE_BYTES: u64 = 0x03c0;
 pub const SAVE_FIXED_SIZE_BYTES: u16 = 0x00c0;
 pub const SAVE_BITMAP_WORDS: u16 = 1;
 pub const SAVE_FORMAT: u8 = 0;
@@ -39,6 +42,12 @@ pub const SAVE_FP_OFFSET_BYTES: u32 = 0x00c0;
 pub const SAVE_FP_MAX_SIZE_BYTES: u32 = 0x00c0;
 pub const SAVE_FP_ALIGNMENT_BYTES: u16 = 64;
 pub const SAVE_FP_INIT_POLICY: u8 = 1;
+pub const SAVE_VECTOR_COMPONENT_ID: u16 = 2;
+pub const SAVE_VECTOR_BITMAP_BIT: u8 = 1;
+pub const SAVE_VECTOR_OFFSET_BYTES: u32 = 0x0180;
+pub const SAVE_VECTOR_MAX_SIZE_BYTES: u32 = 0x0240;
+pub const SAVE_VECTOR_ALIGNMENT_BYTES: u16 = 64;
+pub const SAVE_VECTOR_INIT_POLICY: u8 = 1;
 
 /// Returns the stable 64-bit result for one CPUID selector.
 ///
@@ -62,24 +71,26 @@ pub fn query(selector: u64) -> u64 {
             name_word(PROCESSOR_NAME, usize::from(index - 11))
         }
 
-        (EXTENSION_CLASS, EXTENSION_DIRECTORY_LEAF, 0) => header_with_leaf(1, 1),
-        (EXTENSION_CLASS, EXTENSION_DIRECTORY_LEAF, 1) => (1 << 0) | (1 << 1),
+        (EXTENSION_CLASS, EXTENSION_DIRECTORY_LEAF, 0) => header_with_leaf(2, 1),
+        (EXTENSION_CLASS, EXTENSION_DIRECTORY_LEAF, 1) => (1 << 0) | (1 << 1) | (1 << 2),
         (EXTENSION_CLASS, FPTRANSA_ACCURACY_LEAF, 0) => leaf_header(MAX_CONTRACT_ID),
         (EXTENSION_CLASS, FPTRANSA_ACCURACY_LEAF, contract_id) => {
             contract_by_id(contract_id).map_or(0, |contract| contract.cpuid_result())
         }
+        (EXTENSION_CLASS, VECTOR_PARAMETERS_LEAF, 0) => leaf_header(1),
+        (EXTENSION_CLASS, VECTOR_PARAMETERS_LEAF, 1) => u64::from(VLEN_LOG2_BITS),
 
         (IMPLEMENTATION_CLASS, IMPLEMENTATION_DIRECTORY_LEAF, 0) => header_with_leaf(4, 0),
         (IMPLEMENTATION_CLASS, CACHE_TOPOLOGY_LEAF, 0) => leaf_header(1),
         (IMPLEMENTATION_CLASS, CACHE_TOPOLOGY_LEAF, 1) => MAINTENANCE_GRANULE_BYTES as u64,
         (IMPLEMENTATION_CLASS, PERFORMANCE_COUNTERS_LEAF, 0) => leaf_header(3),
         (IMPLEMENTATION_CLASS, PERFORMANCE_COUNTERS_LEAF, 1..=3) => 1,
-        (IMPLEMENTATION_CLASS, SAVE_AREA_LAYOUT_LEAF, 0) => leaf_header(4),
+        (IMPLEMENTATION_CLASS, SAVE_AREA_LAYOUT_LEAF, 0) => leaf_header(6),
         (IMPLEMENTATION_CLASS, SAVE_AREA_LAYOUT_LEAF, 1) => SAVE_AREA_SIZE_BYTES,
         (IMPLEMENTATION_CLASS, SAVE_AREA_LAYOUT_LEAF, 2) => {
             ((SAVE_FORMAT as u64) << 48)
                 | ((SAVE_BITMAP_WORDS as u64) << 32)
-                | (1_u64 << 16)
+                | (2_u64 << 16)
                 | SAVE_FIXED_SIZE_BYTES as u64
         }
         (IMPLEMENTATION_CLASS, SAVE_AREA_LAYOUT_LEAF, 3) => {
@@ -91,6 +102,16 @@ pub fn query(selector: u64) -> u64 {
             ((SAVE_FP_INIT_POLICY as u64) << 48)
                 | ((SAVE_FP_ALIGNMENT_BYTES as u64) << 32)
                 | SAVE_FP_MAX_SIZE_BYTES as u64
+        }
+        (IMPLEMENTATION_CLASS, SAVE_AREA_LAYOUT_LEAF, 5) => {
+            ((SAVE_VECTOR_OFFSET_BYTES as u64) << 32)
+                | ((SAVE_VECTOR_BITMAP_BIT as u64) << 16)
+                | SAVE_VECTOR_COMPONENT_ID as u64
+        }
+        (IMPLEMENTATION_CLASS, SAVE_AREA_LAYOUT_LEAF, 6) => {
+            ((SAVE_VECTOR_INIT_POLICY as u64) << 48)
+                | ((SAVE_VECTOR_ALIGNMENT_BYTES as u64) << 32)
+                | SAVE_VECTOR_MAX_SIZE_BYTES as u64
         }
         _ => 0,
     }
@@ -126,7 +147,9 @@ mod tests {
         MAINTENANCE_GRANULE_BYTES, PROCESSOR_NAME, SAVE_AREA_SIZE_BYTES, SAVE_BITMAP_WORDS,
         SAVE_FIXED_SIZE_BYTES, SAVE_FORMAT, SAVE_FP_ALIGNMENT_BYTES, SAVE_FP_BITMAP_BIT,
         SAVE_FP_COMPONENT_ID, SAVE_FP_INIT_POLICY, SAVE_FP_MAX_SIZE_BYTES, SAVE_FP_OFFSET_BYTES,
-        VENDOR_ID, VENDOR_NAME, query,
+        SAVE_VECTOR_ALIGNMENT_BYTES, SAVE_VECTOR_BITMAP_BIT, SAVE_VECTOR_COMPONENT_ID,
+        SAVE_VECTOR_INIT_POLICY, SAVE_VECTOR_MAX_SIZE_BYTES, SAVE_VECTOR_OFFSET_BYTES, VENDOR_ID,
+        VENDOR_NAME, VLEN_LOG2_BITS, query,
     };
     use crate::fpu::trans::contracts::{CONTRACTS, MAX_CONTRACT_ID, contract_by_id};
 
@@ -147,12 +170,13 @@ mod tests {
     fn all_defined_leaf_headers_encode_maximum_selectors() {
         let expected = [
             (selector(0, 0, 0), 0x0000_0002_0000_0012),
-            (selector(1, 0, 0), 0x0000_0000_0001_0001),
+            (selector(1, 0, 0), 0x0000_0000_0002_0001),
             (selector(1, 1, 0), 0x0000_0000_0000_0044),
+            (selector(1, 2, 0), 0x0000_0000_0000_0001),
             (selector(2, 0, 0), 0x0000_0000_0004_0000),
             (selector(2, 1, 0), 0x0000_0000_0000_0001),
             (selector(2, 2, 0), 0x0000_0000_0000_0003),
-            (selector(2, 4, 0), 0x0000_0000_0000_0004),
+            (selector(2, 4, 0), 0x0000_0000_0000_0006),
         ];
         for (selector, result) in expected {
             assert_eq!(query(selector), result);
@@ -186,7 +210,7 @@ mod tests {
 
     #[test]
     fn extension_bits_and_accuracy_results_share_the_contract_owner() {
-        assert_eq!(query(selector(1, 0, 1)), 0b11);
+        assert_eq!(query(selector(1, 0, 1)), 0b111);
         for contract in CONTRACTS {
             assert_eq!(
                 query(selector(1, 1, contract.contract_id)),
@@ -207,11 +231,11 @@ mod tests {
             selector(0, 1, 0),
             selector(1, 0, 2),
             selector(1, 1, MAX_CONTRACT_ID + 1),
-            selector(1, 2, 0),
+            selector(1, 2, 2),
             selector(2, 1, 2),
             selector(2, 2, 4),
             selector(2, 3, 0),
-            selector(2, 4, 5),
+            selector(2, 4, 7),
             selector(3, 0, 0),
             u64::MAX,
         ] {
@@ -230,8 +254,8 @@ mod tests {
     }
 
     #[test]
-    fn single_fp_save_component_has_the_authoritative_layout() {
-        assert_eq!(SAVE_AREA_SIZE_BYTES, 0x0180);
+    fn fp_and_vector_save_components_have_the_authoritative_layout() {
+        assert_eq!(SAVE_AREA_SIZE_BYTES, 0x03c0);
         assert_eq!(SAVE_FIXED_SIZE_BYTES, 0x00c0);
         assert_eq!(SAVE_BITMAP_WORDS, 1);
         assert_eq!(SAVE_FORMAT, 0);
@@ -241,10 +265,25 @@ mod tests {
         assert_eq!(SAVE_FP_MAX_SIZE_BYTES, 0x00c0);
         assert_eq!(SAVE_FP_ALIGNMENT_BYTES, 64);
         assert_eq!(SAVE_FP_INIT_POLICY, 1);
+        assert_eq!(SAVE_VECTOR_COMPONENT_ID, 2);
+        assert_eq!(SAVE_VECTOR_BITMAP_BIT, 1);
+        assert_eq!(SAVE_VECTOR_OFFSET_BYTES, 0x0180);
+        assert_eq!(SAVE_VECTOR_MAX_SIZE_BYTES, 0x0240);
+        assert_eq!(SAVE_VECTOR_ALIGNMENT_BYTES, 64);
+        assert_eq!(SAVE_VECTOR_INIT_POLICY, 1);
 
-        assert_eq!(query(selector(2, 4, 1)), 0x0000_0000_0000_0180);
-        assert_eq!(query(selector(2, 4, 2)), 0x0000_0001_0001_00c0);
+        assert_eq!(query(selector(2, 4, 1)), 0x0000_0000_0000_03c0);
+        assert_eq!(query(selector(2, 4, 2)), 0x0000_0001_0002_00c0);
         assert_eq!(query(selector(2, 4, 3)), 0x0000_00c0_0000_0001);
         assert_eq!(query(selector(2, 4, 4)), 0x0001_0040_0000_00c0);
+        assert_eq!(query(selector(2, 4, 5)), 0x0000_0180_0001_0002);
+        assert_eq!(query(selector(2, 4, 6)), 0x0001_0040_0000_0240);
+    }
+
+    #[test]
+    fn vector_parameters_report_the_fixed_emulator_vlen() {
+        assert_eq!(VLEN_LOG2_BITS, 7);
+        assert_eq!(query(selector(1, 2, 1)), 7);
+        assert_eq!(query(selector(1, 2, 1)) >> 4, 0);
     }
 }

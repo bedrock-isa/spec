@@ -10,7 +10,6 @@ repeat:
   contexts:
   - REP
   - REPcc
-  - REPG
   observed:
     kind: computed
 flag_effects:

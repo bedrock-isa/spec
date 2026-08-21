@@ -34,13 +34,13 @@ SCHEMA_DOCUMENT_PATH = (
 )
 
 PRIVILEGES = frozenset({"unprivileged", "supervisor", "any"})
-REPEAT_CONTEXTS = frozenset({"REP", "REPcc", "REPG"})
+REPEAT_CONTEXTS = frozenset({"REP", "REPcc"})
 REPEAT_OBSERVED_KINDS = frozenset({"computed", "result", "source"})
 DESTINATION_OVERLAP_RULES = frozenset({"same_value", "illegal_instruction"})
 OPERAND_ACCESS = frozenset({"read", "write", "read_write", "address"})
 OPERAND_DOMAINS = frozenset({"user"})
 EA_ROLES = frozenset({"value", "address", "control_target"})
-EA_WIDTHS = frozenset({"operation_size", "B", "W", "L", "Q"})
+EA_WIDTHS = frozenset({"operation_size", "predicate", "B", "W", "L", "Q"})
 EA_OPERAND_TYPES = frozenset({"EA", "FEA", "VEA"})
 EA_PROFILES = frozenset({"ea", "fea", "vea"})
 OPERAND_KINDS = frozenset(
@@ -562,7 +562,7 @@ class SizeRegistry:
 @dataclass(frozen=True)
 class RegisterEntry:
     name: str
-    width: int
+    width: int | str
     encoding: int | None = None
     role: str | None = None
     description: str | None = None
@@ -1583,8 +1583,15 @@ def decode_register_registry(path: Path, raw: Any) -> RegisterRegistry:
             entries.append(
                 RegisterEntry(
                     name=_string(child_map["name"], path, child_path + ".name"),
-                    width=_positive_integer(
-                        child_map["width"], path, child_path + ".width"
+                    width=(
+                        _positive_integer(child_map["width"], path, child_path + ".width")
+                        if isinstance(child_map["width"], int)
+                        else _enum_string(
+                            child_map["width"],
+                            path,
+                            child_path + ".width",
+                            frozenset({"VLEN", "VLEN_bytes"}),
+                        )
                     ),
                     encoding=(
                         _nonnegative_integer(encoding, path, child_path + ".encoding")

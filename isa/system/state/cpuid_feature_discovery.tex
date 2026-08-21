@@ -85,7 +85,8 @@ result bits are ignored by software.
 A set feature bit only permits software to use the corresponding architectural behavior; the instruction's normal
 privilege, operand, and compatibility checks still apply.
 
-The FP and FPTRANSA predicates report the base floating-point and approximate transcendental floating-point groups.
+The FP, FPTRANSA, and VECTOR predicates report the base floating-point, approximate transcendental floating-point,
+and scalable-vector groups.
 Numeric fields use names that describe their unit. \texttt{SAVE\_AREA\_SIZE\_BYTES},
 \texttt{OFFSET\_BYTES}, \texttt{MAX\_SIZE\_BYTES}, and \texttt{ALIGNMENT\_BYTES} are byte counts.
 
@@ -153,7 +154,7 @@ code point at the field boundary; consumers replace an invalid sequence rather t
 
 \subsection{Optional-Extension Directory}\label{section:cpuid-extension-directory}
 Class \texttt{0x00000001}, leaf \texttt{0x0000}, index one reports optional architectural groups. The index-zero
-header reports \texttt{MAX\_LEAF=1} and \texttt{MAX\_INDEX=1}.
+header reports \texttt{MAX\_LEAF=2} and \texttt{MAX\_INDEX=1}.
 
 @EXTENSION_DIRECTORY_DIAGRAM@
 
@@ -161,6 +162,12 @@ header reports \texttt{MAX\_LEAF=1} and \texttt{MAX\_INDEX=1}.
 
 Unlisted bits are reserved and read as zero. \texttt{FPTRANSA} requires \texttt{FP} and is set when at least one approximate
 transcendental contract is present.
+
+\subsection{Vector-Parameter Discovery}
+Class \texttt{0x00000001}, leaf \texttt{0x0002} is \texttt{VECTOR\_PARAMETERS}. Index zero reports
+\texttt{MAX\_INDEX=1}. Index one returns \texttt{VLEN\_LOG2\_BITS} in bits 3 through 0 and zero in bits 63 through
+4. The value is the base-2 logarithm of VLEN in bits and is in the range 7 through 11. Consequently VLEN is an
+implementation-selected power of two from 128 through 2048 bits. The selected value is stable until reset.
 
 \subsection{FPTRANSA Accuracy Discovery}
 Class \texttt{0x00000001}, leaf \texttt{0x0001} uses indexes 1 through \texttt{0x0044} as a sparse space of stable

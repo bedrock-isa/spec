@@ -6,15 +6,15 @@ function test_protocol_environment_group() -> unit = {
       state.floating_registers[0] = 0x3FF0000000000000;
       state.registers[15] = 0x0000000000000002;
       state.repeat_state = struct {
-        active = true, grouped = false, counter = 0xF,
+        active = true, counter = 0xF,
         remaining = 0x0000000000000002, condition = 0x0,
-        body_bytes = 0x0004, body_start = state.pc,
-        fixed_body = [|0xC7, 0xD5, 0x08, 0x10|], group_progress = 0
+        prefix_start = state.pc, body_start = state.pc,
+        fixed_body = [|0xC7, 0xD5, 0x08, 0x10|]
       };
       let source = execute_full(instruction, state);
       assert(source.pending.phase == PhaseFpSourceRead);
       let parent = attach_repeat_parent(
-        source, instruction, [|0xC7, 0xD5, 0x08, 0x10|], [||], 0, false
+        source, instruction, [|0xC7, 0xD5, 0x08, 0x10|]
       );
       let compute = resume_transaction(
         parent, successful_response(ResponseRead, 0x4000000000000000, true)
@@ -22,7 +22,6 @@ function test_protocol_environment_group() -> unit = {
       assert(compute.awaiting_environment);
       assert(compute.pending.phase == PhaseFpCompute);
       assert(compute.pending.repeat_parent_active);
-      assert(not_bool(compute.pending.repeat_parent_grouped));
       assert(compute.pending.repeat_body == Some(instruction));
       assert(compute.pending.repeat_bytes == [|0xC7, 0xD5, 0x08, 0x10|])
     },
@@ -42,23 +41,13 @@ function test_protocol_environment_group() -> unit = {
       let block = resume_transaction(
         translating, { successful_response(
           ResponseAddressTranslation, 0x000000000000A07F, true
-        ) with address_type = 0, cache_policy = 7 }
+        ) with cache_policy = 7 }
       );
       assert(block.request.kind == CacheMaintenanceBlock);
       assert(block.request.range_start == 0x000000000000A040);
       assert(block.request.range_end == 0x000000000000A080);
       assert(block.request.address_translation == false);
-      assert(block.request.address_type == 0);
       assert(block.request.cache_policy == 7);
-      let device = resume_transaction(
-        translating, { successful_response(
-          ResponseAddressTranslation, 0x000000000000B000, true
-        ) with address_type = 1, cache_policy = 3 }
-      );
-      assert(not_bool(device.awaiting_environment));
-      assert(device.fault == None());
-      assert(device.request.kind == NoPrimitiveRequest);
-      assert(device.state.pc == 0x0000000000000004)
     },
     None() => assert(false),
   };
@@ -87,9 +76,9 @@ function test_protocol_environment_group() -> unit = {
       let misaligned_l3 = resume_transaction(l3, pte_response(0x000000004000100F));
       assert(misaligned_l3.state.registers[0] == 0x0000000000000000);
       assert(misaligned_l3.state.flags == 0b0000);
-      let upper_slot = resume_transaction(l3, pte_response(0x00000000400001EB));
-      assert(upper_slot.state.registers[0] == 0x0000000000000000);
-      assert(upper_slot.state.flags == 0b0000);
+      let bit7_leaf = resume_transaction(l3, pte_response(0x000000004000008F));
+      assert(bit7_leaf.state.registers[0] == 0x0000000056789ABC);
+      assert(bit7_leaf.state.flags == 0b1111);
       let malformed_l3 = resume_transaction(l3, pte_response(0x000000000000384F));
       assert(malformed_l3.state.registers[0] == 0x0000000000000000);
       assert(malformed_l3.state.flags == 0b0000);

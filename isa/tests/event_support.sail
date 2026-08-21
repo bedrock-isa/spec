@@ -22,7 +22,7 @@ function event_test_response(kind : Transaction_response_kind,
   detail = if success then "" else "event test access fault",
   value = 0x0000000000000000, secondary_value = 0x0000000000000000,
   flags = 0x0, write_flags = false, generated_fflags = 0b00000,
-  bounds_passed = success, address_type = 0, cache_policy = 0,
+  bounds_passed = success, cache_policy = 0,
   atomic_store_happened = false, body_bytes = [||],
   state_image = initial_cpu(), known = success, present = success,
   fp_response = empty_fp_response()
@@ -56,18 +56,20 @@ function event_test_finish_entry(target : Execution_result) -> Execution_result 
   let range = resume_transaction(
     target, event_test_response(ResponseTranslation, true)
   );
-  assert(range.awaiting_environment);
-  assert(range.pending.phase == PhaseEventStackProbe);
-  let store = resume_transaction(
-    range, event_test_response(ResponseStackRange, true)
-  );
-  assert(store.awaiting_environment);
-  assert(store.pending.phase == PhaseEventFrameStore);
-  resume_transaction(store, event_test_response(ResponseEventFrame, true))
+  if range.awaiting_environment then {
+    assert(range.pending.phase == PhaseEventStackProbe);
+    let store = resume_transaction(
+      range, event_test_response(ResponseStackRange, true)
+    );
+    assert(store.awaiting_environment);
+    assert(store.pending.phase == PhaseEventFrameStore);
+    resume_transaction(store, event_test_response(ResponseEventFrame, true))
+  } else range
 }
 
 function event_test_assert_double_fault(result : Execution_result,
-                                        stage : int) -> unit =
+                                        stage : int,
+                                        failed_code : bits(64)) -> unit =
   match result.pending.event {
     Some(event) => {
       let address_bits : bits(64) = if stage >= 2
@@ -81,22 +83,21 @@ function event_test_assert_double_fault(result : Execution_result,
       assert(event.frame_type == EventFrameAuxiliary);
       assert(event.code == 0x00000018);
       assert(event.error_code == expected);
-      assert(event.event_aux == 0x0000000000000002)
+      assert(event.event_aux == failed_code)
     },
     None() => assert(false),
   }
 
 function event_test_frame(control : bits(64), event_info : bits(64),
-                          ext : bits(64), saved_pc : bits(64),
+                          saved_pc : bits(64),
                           saved_sp : bits(64), saved_cs : bits(64),
-                          saved_ds : bits(64), saved_ss : bits(64))
+                          saved_ds : bits(64), saved_ss : bits(64),
+                          padding : bits(64))
   -> list(bits(8)) = append_bytes(
   le64_bytes(control), append_bytes(
     le64_bytes(event_info), append_bytes(
-      le64_bytes(ext), append_bytes(
-        le64_bytes(saved_pc), append_bytes(
+      le64_bytes(saved_pc), append_bytes(
           le64_bytes(saved_sp), append_bytes(
             le64_bytes(saved_cs), append_bytes(
-              le64_bytes(saved_ds), le64_bytes(saved_ss)))))))
-)
-
+              le64_bytes(saved_ds), append_bytes(
+                le64_bytes(saved_ss), le64_bytes(padding))))))))

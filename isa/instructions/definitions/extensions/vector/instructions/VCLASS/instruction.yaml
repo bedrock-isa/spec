@@ -1,0 +1,15 @@
+mnemonic: VCLASS
+title: VCLASS (Vector)
+summary: Write a per-lane FP classification bitmap to a vector.
+description: Write a per-lane FP classification bitmap to a vector.
+attributes:
+  class: vector
+  family: vector
+  privilege: unprivileged
+flag_effects:
+  FFLAGS:
+    NV: may accrue
+    DZ: may accrue
+    OF: may accrue
+    UF: may accrue
+    NX: may accrue

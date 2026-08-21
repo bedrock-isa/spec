@@ -9,7 +9,6 @@ attributes:
 repeat:
   contexts:
   - REP
-  - REPG
 flag_effects:
   FFLAGS:
     NV: "may accrue from FEA source conversion"

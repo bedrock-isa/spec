@@ -1,0 +1,15 @@
+mnemonic: VMSUB
+title: VMSUB (Vector)
+summary: Fused multiply-subtract.
+description: Fused multiply-subtract.
+attributes:
+  class: vector
+  family: vector
+  privilege: unprivileged
+flag_effects:
+  FFLAGS:
+    NV: may accrue
+    DZ: may accrue
+    OF: may accrue
+    UF: may accrue
+    NX: may accrue

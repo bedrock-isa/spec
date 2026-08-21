@@ -1,0 +1,17 @@
+forms:
+- id: long.pperm.v44
+  class: long
+  bits: 11111010001000zz1ppppvvvvv
+  syntax: PPERM.BWLQ(z) Vn(v), Pn(p)
+  operands:
+  - name: index
+    type: Vn
+    access: read
+    field: v
+  - name: dst
+    type: Pn
+    access: read_write
+    field: p
+  fields:
+    z:
+      type: size.BWLQ

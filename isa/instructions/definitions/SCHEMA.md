@@ -50,7 +50,7 @@ InstructionAttributes {
 }
 
 RepeatContract {
-  contexts: non-empty list<enum(REP, REPcc, REPG), unique>
+  contexts: non-empty list<enum(REP, REPcc), unique>
   observed?: RepeatObserved
 }
 
@@ -449,12 +449,16 @@ RegisterGroup {
 
 RegisterEntry {
   name: string
-  width: int[1..]
+  width: int[1..] | enum(VLEN, VLEN_bytes)
   encoding?: int[0..]
   role?: string
   description?: string
 }
 ```
+
+The symbolic widths are used only by scalable-vector register groups:
+\texttt{VLEN} is the implementation-selected vector-register width in bits,
+and \texttt{VLEN\_bytes} is the number of predicate bits (one per vector byte).
 
 Names and present encodings are unique within a register group.
 

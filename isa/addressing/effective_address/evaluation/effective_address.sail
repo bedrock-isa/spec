@@ -31,6 +31,9 @@ function image_segment(state : Cpu_state, index : int) -> bits(64) = match index
   6 => state.segments[6], 7 => state.segments[7], _ => state.segments[8],
 }
 
+function ea_width_shift(width : int) -> int =
+  if width <= 1 then 0 else 1 + ea_width_shift(tdiv_int(width, 2))
+
 struct Segment_point = {
   in_bounds : bool,
   linear : bits(64),
@@ -92,8 +95,7 @@ function evaluate_decoded_ea(operand : Decoded_operand, ea : Decoded_ea,
     },
     None() => (),
   } else ();
-  let scaled_index = sail_shiftleft(index_value, if width == 1 then 0 else if width == 2 then 1
-                                                   else if width == 4 then 2 else 3);
+  let scaled_index = sail_shiftleft(index_value, ea_width_shift(width));
   let offset = add_bits(add_bits(base_value, scaled_index), ea_signed_payload(ea));
   if ea.update_target == "b" & ea.update_mode == "postincrement" then match base_index {
     Some(index) => {
@@ -126,6 +128,82 @@ function evaluate_decoded_ea(operand : Decoded_operand, ea : Decoded_ea,
     effective_address = point, linear_address = linear, value = direct_value,
     staged_updates = updates
   }, staged)
+}
+
+function evaluate_decoded_vector_ea(operand : Decoded_operand, ea : Decoded_ea,
+                                    image : Cpu_state, instruction_pc : bits(64),
+                                    width : int) -> (Ea_evaluation, Cpu_state) = {
+  var staged = image;
+  var updates : list(Staged_register_update) = [||];
+  let vector_stride = ea.descriptor_name == "vector_stride_descriptor";
+  let base_index = ea_field_role("base", ea.fields);
+  let index_index = if vector_stride then None() else ea_field_role("index", ea.fields);
+  var base_value : bits(64) = if ea.base == "SP" then image.sp
+    else if ea.base == "PC" then instruction_pc
+    else if ea.base == "zero" then 0x0000000000000000
+    else match base_index {
+      Some(index) => image_register(image, index), None() => 0x0000000000000000,
+    };
+  let base_amount = get_slice_int(64, image.vector_length_bytes, 0);
+  let index_amount = get_slice_int(64, tdiv_int(image.vector_length_bytes, width), 0);
+  if ea.update_target == "b" & ea.update_mode == "predecrement" then match base_index {
+    Some(index) => {
+      let reg_index = unsigned(get_slice_int(4, index, 0));
+      let changed = sub_bits(image.registers[reg_index], base_amount);
+      staged.registers[reg_index] = changed; base_value = changed;
+      updates = staged_register(index, changed)
+    },
+    None() => (),
+  } else ();
+  var index_value : bits(64) = match index_index {
+    Some(index) => image_register(image, index), None() => 0x0000000000000000,
+  };
+  if ea.update_target == "i" & ea.update_mode == "predecrement" then match index_index {
+    Some(index) => {
+      let reg_index = unsigned(get_slice_int(4, index, 0));
+      let changed = sub_bits(image.registers[reg_index], index_amount);
+      staged.registers[reg_index] = changed; index_value = changed;
+      updates = staged_register(index, changed)
+    },
+    None() => (),
+  } else ();
+  let scaled_index = sail_shiftleft(index_value, ea_width_shift(width));
+  let offset = if vector_stride then add_bits(base_value, ea_signed_payload(ea))
+               else add_bits(add_bits(base_value, scaled_index), ea_signed_payload(ea));
+  if ea.update_target == "b" & ea.update_mode == "postincrement" then match base_index {
+    Some(index) => {
+      let reg_index = unsigned(get_slice_int(4, index, 0));
+      let changed = add_bits(image.registers[reg_index], base_amount);
+      staged.registers[reg_index] = changed; updates = staged_register(index, changed)
+    },
+    None() => (),
+  } else if ea.update_target == "i" & ea.update_mode == "postincrement" then match index_index {
+    Some(index) => {
+      let reg_index = unsigned(get_slice_int(4, index, 0));
+      let changed = add_bits(image.registers[reg_index], index_amount);
+      staged.registers[reg_index] = changed; updates = staged_register(index, changed)
+    },
+    None() => (),
+  } else ();
+  let segment = ea_segment_index(ea);
+  let selected_segment = image_segment(image, segment);
+  let translated = segment_point(selected_segment, offset);
+  (struct {
+    operand_name = operand.name, kind = "memory", role = operand.ea_role,
+    domain = operand.domain, segment = segment, segment_image = selected_segment, width = width,
+    effective_address = offset, linear_address = translated.linear, value = offset,
+    staged_updates = updates
+  }, staged)
+}
+
+function evaluate_vector_instruction_ea(operands : list(Decoded_operand), image : Cpu_state,
+                                        instruction_pc : bits(64), width : int)
+  -> option((Ea_evaluation, Cpu_state)) = match operands {
+  [||] => None(),
+  operand :: tail => match operand.ea {
+    Some(ea) => Some(evaluate_decoded_vector_ea(operand, ea, image, instruction_pc, width)),
+    None() => evaluate_vector_instruction_ea(tail, image, instruction_pc, width),
+  }
 }
 
 function evaluate_ea_operands_in_order(operands : list(Decoded_operand), image : Cpu_state,

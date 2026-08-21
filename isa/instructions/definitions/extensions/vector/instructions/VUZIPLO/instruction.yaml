@@ -1,0 +1,8 @@
+mnemonic: VUZIPLO
+title: VUZIPLO (Vector)
+summary: Extract even-position elements.
+description: Extract even-position elements.
+attributes:
+  class: vector
+  family: vector
+  privilege: unprivileged

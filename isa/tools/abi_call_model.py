@@ -18,6 +18,8 @@ from typing import Any
 
 GENERAL_REGISTERS = tuple(f"R{index}" for index in range(8))
 FLOAT_REGISTERS = tuple(f"F{index}" for index in range(8))
+VECTOR_REGISTERS = tuple(f"V{index}" for index in range(8))
+PREDICATE_REGISTERS = tuple(f"P{index}" for index in range(4))
 FIRST_STACK_ARGUMENT_OFFSET = 16
 STACK_SLOT_SIZE = 16
 
@@ -29,6 +31,7 @@ GENERAL_PAIRS = {"i128", "u128"}
 FLOAT_SCALARS = {"f32", "f64", "long_double"}
 FLOAT_PAIRS = {"complex_f32", "complex_f64", "complex_long_double"}
 SCALAR_KINDS = GENERAL_SCALARS | GENERAL_PAIRS | FLOAT_SCALARS | FLOAT_PAIRS
+SCALABLE_KINDS = {"vector", "predicate"}
 DEFAULT_PROMOTIONS = {
     "bool": "i32",
     "i8": "i32",
@@ -74,7 +77,7 @@ def _argument(data: dict[str, Any], index: int) -> Argument:
     kind = data.get("kind")
     if not isinstance(name, str) or not name:
         raise ValueError(f"argument {index}: name must be a nonempty string")
-    if kind not in SCALAR_KINDS | {"aggregate"}:
+    if kind not in SCALAR_KINDS | SCALABLE_KINDS | {"aggregate", "compound_scalable"}:
         raise ValueError(f"argument {name}: unsupported kind {kind!r}")
     named = data.get("named", True)
     if not isinstance(named, bool):
@@ -86,7 +89,7 @@ def _argument(data: dict[str, Any], index: int) -> Argument:
 
 def _return_value(data: dict[str, Any]) -> ReturnValue:
     kind = data.get("kind")
-    if kind not in SCALAR_KINDS | {"aggregate", "void"}:
+    if kind not in SCALAR_KINDS | SCALABLE_KINDS | {"aggregate", "compound_scalable", "void"}:
         raise ValueError(f"return value: unsupported kind {kind!r}")
     size = data.get("size")
     _positive_aggregate_size(kind, size, "return value")
@@ -124,7 +127,9 @@ def parse_call(data: dict[str, Any]) -> Call:
 
 
 def _uses_sret(value: ReturnValue) -> bool:
-    return value.kind == "aggregate" and value.size is not None and value.size > 16
+    return value.kind == "compound_scalable" or (
+        value.kind == "aggregate" and value.size is not None and value.size > 16
+    )
 
 
 def _effective_kind(argument: Argument, force_stack: bool) -> str:
@@ -146,6 +151,12 @@ def return_location(value: ReturnValue) -> str | None:
         return "F0"
     if value.kind in FLOAT_PAIRS:
         return "F0(real)+F1(imag)"
+    if value.kind == "vector":
+        return "V0"
+    if value.kind == "predicate":
+        return "P0"
+    if value.kind == "compound_scalable":
+        return "R0"
     if value.kind == "aggregate":
         return "R1:R0" if value.size is not None and value.size <= 16 else "R0"
     raise AssertionError(f"unhandled return kind: {value.kind}")
@@ -157,8 +168,12 @@ def layout_call(call: Call) -> dict[str, Any]:
     uses_sret = _uses_sret(call.return_value)
     general_cursor = 1 if uses_sret else 0
     float_cursor = 0
+    vector_cursor = 0
+    predicate_cursor = 0
     general_exhausted = False
     float_exhausted = False
+    vector_exhausted = False
+    predicate_exhausted = False
     next_stack_offset = FIRST_STACK_ARGUMENT_OFFSET
     assignments: list[dict[str, Any]] = []
 
@@ -168,21 +183,26 @@ def layout_call(call: Call) -> dict[str, Any]:
         next_stack_offset += STACK_SLOT_SIZE
         return location
 
+    def general_location() -> str:
+        nonlocal general_cursor, general_exhausted
+        if not general_exhausted and general_cursor < len(GENERAL_REGISTERS):
+            location = GENERAL_REGISTERS[general_cursor]
+            general_cursor += 1
+            return location
+        general_exhausted = True
+        general_cursor = len(GENERAL_REGISTERS)
+        return stack_location()
+
     for argument in call.arguments:
         force_stack = not call.prototyped or (call.variadic and not argument.named)
         effective_kind = _effective_kind(argument, force_stack)
-        mode = "copy-address" if effective_kind == "aggregate" else "value"
+        indirect = effective_kind in {"aggregate", "compound_scalable"}
+        mode = "copy-address" if indirect or (force_stack and effective_kind in SCALABLE_KINDS) else "value"
 
         if force_stack:
             location = stack_location()
-        elif effective_kind == "aggregate" or effective_kind in GENERAL_SCALARS:
-            if not general_exhausted and general_cursor < len(GENERAL_REGISTERS):
-                location = GENERAL_REGISTERS[general_cursor]
-                general_cursor += 1
-            else:
-                general_exhausted = True
-                general_cursor = len(GENERAL_REGISTERS)
-                location = stack_location()
+        elif indirect or effective_kind in GENERAL_SCALARS:
+            location = general_location()
         elif effective_kind in GENERAL_PAIRS:
             pair_low = general_cursor if general_cursor % 2 == 0 else general_cursor + 1
             if not general_exhausted and pair_low + 1 < len(GENERAL_REGISTERS):
@@ -208,6 +228,24 @@ def layout_call(call: Call) -> dict[str, Any]:
                 float_exhausted = True
                 float_cursor = len(FLOAT_REGISTERS)
                 location = stack_location()
+        elif effective_kind == "vector":
+            if not vector_exhausted and vector_cursor < len(VECTOR_REGISTERS):
+                location = VECTOR_REGISTERS[vector_cursor]
+                vector_cursor += 1
+            else:
+                vector_exhausted = True
+                vector_cursor = len(VECTOR_REGISTERS)
+                mode = "copy-address"
+                location = general_location()
+        elif effective_kind == "predicate":
+            if not predicate_exhausted and predicate_cursor < len(PREDICATE_REGISTERS):
+                location = PREDICATE_REGISTERS[predicate_cursor]
+                predicate_cursor += 1
+            else:
+                predicate_exhausted = True
+                predicate_cursor = len(PREDICATE_REGISTERS)
+                mode = "copy-address"
+                location = general_location()
         else:  # pragma: no cover - parse_call keeps this unreachable.
             raise AssertionError(f"unhandled argument kind: {effective_kind}")
 
@@ -268,7 +306,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.parse_args()
     root = Path(__file__).resolve().parents[2]
-    path = root / "isa" / "abi" / "calling_convention_cases.json"
+    path = root / "isa" / "interfaces" / "abi" / "calling_convention_cases.json"
     documented = validate_cases(path)
     print(f"C ABI call model passed {len(load_cases(path)['cases'])} cases ({len(documented)} documented)")
     return 0

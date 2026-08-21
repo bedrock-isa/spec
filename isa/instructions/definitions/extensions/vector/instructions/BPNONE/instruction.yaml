@@ -1,0 +1,8 @@
+mnemonic: BPNONE
+title: BPNONE (Vector)
+summary: Branch if no bit is set.
+description: Branch if no bit is set.
+attributes:
+  class: vector
+  family: vector
+  privilege: unprivileged

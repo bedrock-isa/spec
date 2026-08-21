@@ -1,0 +1,15 @@
+mnemonic: VROUND
+title: VROUND (Vector)
+summary: Integral FP result under the current rounding mode.
+description: Integral FP result under the current rounding mode.
+attributes:
+  class: vector
+  family: vector
+  privilege: unprivileged
+flag_effects:
+  FFLAGS:
+    NV: may accrue
+    DZ: may accrue
+    OF: may accrue
+    UF: may accrue
+    NX: may accrue

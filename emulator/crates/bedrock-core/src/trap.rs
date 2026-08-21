@@ -1,6 +1,6 @@
 use crate::exception::InvalidControlCause;
 use crate::{AccessDomain, AccessKind, PageFaultReason, SegmentSelector};
-use bedrock_bus::{AcknowledgedBusFailure, BusError, SlotTransactionError};
+use bedrock_bus::{AcknowledgedBusFailure, BusError};
 use bedrock_isa::DecodeError;
 use thiserror::Error;
 
@@ -52,17 +52,19 @@ pub enum DivideErrorCause {
     SignedOverflow = 1,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u8)]
+pub enum VectorRangeErrorCause {
+    LoopOffset = 0,
+    LaneIndex = 1,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Error)]
 pub enum Trap {
     #[error("decode fault at 0x{pc:016x}: {error}")]
     Decode { pc: u64, error: DecodeError },
     #[error("bus fault at 0x{pc:016x}: {error}")]
     Bus { pc: u64, error: BusError },
-    #[error("slot transaction fault at 0x{pc:016x}: {error}")]
-    SlotTransaction {
-        pc: u64,
-        error: SlotTransactionError,
-    },
     #[error("acknowledged bus failure at 0x{pc:016x}: {context:?}")]
     AcknowledgedBusFailure { pc: u64, context: BusFaultContext },
     #[error("illegal instruction at 0x{pc:016x}: cause {cause:?}")]
@@ -74,6 +76,11 @@ pub enum Trap {
     PrivilegeFault { pc: u64 },
     #[error("divide error at 0x{pc:016x}: cause {cause:?}")]
     DivideError { pc: u64, cause: DivideErrorCause },
+    #[error("vector range error at 0x{pc:016x}: cause {cause:?}")]
+    VectorRangeError {
+        pc: u64,
+        cause: VectorRangeErrorCause,
+    },
     #[error("invalid control state at 0x{pc:016x}: cause {cause:?}")]
     InvalidControlState { pc: u64, cause: InvalidControlCause },
     #[error("floating-point fault at 0x{pc:016x}: causes {causes:?}")]

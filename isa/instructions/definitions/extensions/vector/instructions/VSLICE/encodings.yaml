@@ -1,0 +1,25 @@
+forms:
+- id: extralong.vslice.v106
+  class: extralong
+  bits: 111111011010zzppppvvvvvwwwwwiiiiii
+  syntax: VSLICE.BWLQ(z) Pn(p), Vn(v), imm6(i), Vn(w)
+  operands:
+  - name: govern
+    type: Pn
+    access: read
+    field: p
+  - name: src
+    type: Vn
+    access: read
+    field: v
+  - name: count
+    type: imm6
+    access: read
+    field: i
+  - name: dst
+    type: Vn
+    access: read_write
+    field: w
+  fields:
+    z:
+      type: size.BWLQ

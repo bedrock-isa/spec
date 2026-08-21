@@ -1,0 +1,8 @@
+mnemonic: VROR
+title: VROR (Vector)
+summary: Rotate right.
+description: Rotate right.
+attributes:
+  class: vector
+  family: vector
+  privilege: unprivileged

@@ -45,6 +45,7 @@ OWNER_SOURCE_PATHS = {
         SAIL_SOURCE_ROOT / "instructions" / "semantics" / "floating_point" / "local_execution.sail",
         SAIL_SOURCE_ROOT / "instructions" / "semantics" / "floating_point" / "transaction_inputs.sail",
         SAIL_SOURCE_ROOT / "instructions" / "semantics" / "floating_point" / "transaction_compute.sail",
+        SAIL_SOURCE_ROOT / "instructions" / "semantics" / "vector" / "vector.sail",
         SAIL_SOURCE_ROOT / "instructions" / "semantics" / "floating_point" / "transaction_flow.sail",
         SAIL_SOURCE_ROOT / "execution" / "core" / "dispatch.sail",
         SAIL_SOURCE_ROOT / "execution" / "core" / "resume_values.sail",

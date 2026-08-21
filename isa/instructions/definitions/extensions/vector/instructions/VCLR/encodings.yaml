@@ -1,0 +1,10 @@
+forms:
+- id: long.vclr.v16
+  class: long
+  bits: 111110100110100000000vvvvv
+  syntax: VCLR Vn(v)
+  operands:
+  - name: dst
+    type: Vn
+    access: write
+    field: v

@@ -1,0 +1,14 @@
+forms:
+- id: long.por.v10
+  class: long
+  bits: 111110100101100001ppppqqqq
+  syntax: POR Pn(p), Pn(q)
+  operands:
+  - name: src
+    type: Pn
+    access: read
+    field: p
+  - name: dst
+    type: Pn
+    access: read_write
+    field: q

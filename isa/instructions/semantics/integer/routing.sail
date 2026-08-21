@@ -41,7 +41,7 @@ function route_environment(instruction : Decoded_instruction, state : Cpu_state,
       else if operation == Op_SAVE then StateSaveRequest
       else if operation == Op_RESTORE then StateRestoreRequest
       else ContextSwitchRequest
-    else if operation == Op_REPcc | operation == Op_REPG then RepeatBodyFetch
+    else if operation == Op_REPcc then RepeatBodyFetch
     else if operation == Op_CPUID then CpuidQueryRequest
     else if operation == Op_RDPMC then PerformanceCounterRequest
     else if operation == Op_WRCR then ControlTransitionRequest

@@ -1,0 +1,8 @@
+mnemonic: PXOR
+title: PXOR (Vector)
+summary: 'Destructive predicate XOR: `Pd = Pd XOR Ps`.'
+description: 'Destructive predicate XOR: `Pd = Pd XOR Ps`.'
+attributes:
+  class: vector
+  family: vector
+  privilege: unprivileged

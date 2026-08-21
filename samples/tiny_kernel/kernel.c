@@ -31,9 +31,6 @@ void kernel_main(void) {
   process_init();
 
   u64 supervisor_segment = KERNEL_SEGMENT_WINDOW;
-  write_spc((u64)syscall_entry);
-  write_scs(supervisor_segment);
-  write_sds(0);
   write_sss(supervisor_segment);
   write_ssp((u64)kernel_stack_top);
   write_epc((u64)event_entry);

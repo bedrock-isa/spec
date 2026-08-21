@@ -1,0 +1,8 @@
+mnemonic: PPERM
+title: PPERM (Vector)
+summary: Destructively select predicate lanes using unsigned vector indices; an out-of-range index produces zero.
+description: Destructively select predicate lanes using unsigned vector indices; an out-of-range index produces zero.
+attributes:
+  class: vector
+  family: vector
+  privilege: unprivileged

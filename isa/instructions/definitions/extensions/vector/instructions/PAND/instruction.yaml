@@ -1,0 +1,8 @@
+mnemonic: PAND
+title: PAND (Vector)
+summary: 'Destructive predicate AND: `Pd = Pd AND Ps`.'
+description: 'Destructive predicate AND: `Pd = Pd AND Ps`.'
+attributes:
+  class: vector
+  family: vector
+  privilege: unprivileged

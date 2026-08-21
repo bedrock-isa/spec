@@ -1,2 +1,3 @@
 extensions:
 - fpu
+- vector

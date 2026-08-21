@@ -1,22 +1,3 @@
-function target_probe_request(ordinal : int, segment_image : bits(64), target : bits(64))
-  -> Primitive_request = {
-  let point = segment_point(segment_image, target);
-  struct {
-    kind = TranslationExecuteProbe, ordinal = ordinal, role = "control_target", domain = "CS",
-    segment = 0, segment_image = segment_image, width = 1, range_start = target,
-    range_end = add_bits(target, 0x0000000000000001), effective_address = target,
-    range_length = 1, range_wrap = false,
-    range_end_at_modulus = target == 0xFFFFFFFFFFFFFFFF,
-    linear_address = point.linear, access = AccessExecute, value = 0x0000000000000000,
-    address_translation = true, commit_point = false, memory_order = ordinal,
-    address_type = 0, cache_policy = 0, suppress_fault = false, staged_updates = [||]
-    , selector = 0x0000000000000000, expected = 0x0000000000000000,
-    desired = 0x0000000000000000, auxiliary = 0x0000000000000000, body_length = 0,
-    payload_bytes = [||], fp_request = empty_fp_request(),
-    state_image = initial_cpu()
-  }
-}
-
 function start_control_transaction(instruction : Decoded_instruction, state : Cpu_state)
   -> option(Execution_result) = {
   let operation = instruction.form.operation;
@@ -72,4 +53,3 @@ function start_control_transaction(instruction : Decoded_instruction, state : Cp
     }
   }
 }
-

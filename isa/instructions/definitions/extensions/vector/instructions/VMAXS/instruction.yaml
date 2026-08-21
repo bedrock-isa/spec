@@ -1,0 +1,8 @@
+mnemonic: VMAXS
+title: VMAXS (Vector)
+summary: Signed maximum.
+description: Signed maximum.
+attributes:
+  class: vector
+  family: vector
+  privilege: unprivileged

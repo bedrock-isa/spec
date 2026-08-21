@@ -6,17 +6,24 @@ function test_protocol_state_group() -> unit = {
       state.fp_enabled = true; state.fp_component_modified = true;
       state.floating_registers[0] = 0x0123456789ABCDEF;
       state.fflags = 0b10101; state.fstatus = 0x0000000000000155;
+      state.vector_component_modified = true;
+      state.vector_registers[0] = 0xAB :: zero_vector_bytes(15);
+      state.predicate_registers[0] = [|0x5A, 0xA5|];
       let pending = execute_full(instruction, state);
       assert(pending.request.kind == StateSaveRequest);
-      assert(pending.request.range_length == 384);
-      assert(byte_list_length(pending.request.payload_bytes) == 384);
+      assert(pending.request.range_length == 960);
+      assert(byte_list_length(pending.request.payload_bytes) == 960);
       match (read_le_bits(pending.request.payload_bytes, 0, 64),
              read_le_bits(pending.request.payload_bytes, 8, 64),
-             read_le_bits(pending.request.payload_bytes, 192, 64)) {
-        (Some(header), Some(bitmap), Some(f0)) => {
+             read_le_bits(pending.request.payload_bytes, 192, 64),
+             read_le_bits(pending.request.payload_bytes, 384, 64),
+             read_le_bits(pending.request.payload_bytes, 896, 16)) {
+        (Some(header), Some(bitmap), Some(f0), Some(v0), Some(p0)) => {
           assert(header == 0x0000034000A003F0);
-          assert(bitmap == 0x0000000000000001);
-          assert(f0 == state.floating_registers[0])
+          assert(bitmap == 0x0000000000000003);
+          assert(f0 == state.floating_registers[0]);
+          assert(v0 == 0x00000000000000AB);
+          assert(p0 == 0x000000000000A55A)
         },
         _ => assert(false),
       };
@@ -40,6 +47,34 @@ function test_protocol_state_group() -> unit = {
       assert(not_bool(rejected_alignment.awaiting_environment));
       assert(rejected_alignment.state == zero_alignment);
       assert(rejected_alignment.fault != None());
+      // valid_vector_length_bytes owns the 256-byte maximum at this SAVE boundary.
+      var maximum_vlen = state;
+      maximum_vlen.vector_length_bytes = 256;
+      maximum_vlen.vector_registers = zero_vector_registers(256);
+      maximum_vlen.predicate_registers = zero_predicate_registers(256);
+      maximum_vlen.vector_component_size =
+        tdiv_int(34 * maximum_vlen.vector_length_bytes + 63, 64) * 64;
+      maximum_vlen.save_area_size =
+        maximum_vlen.vector_component_offset + maximum_vlen.vector_component_size;
+      let accepted_maximum_vlen = execute_full(instruction, maximum_vlen);
+      assert(accepted_maximum_vlen.awaiting_environment);
+      assert(accepted_maximum_vlen.fault == None());
+      assert(accepted_maximum_vlen.request.kind == StateSaveRequest);
+      assert(accepted_maximum_vlen.request.range_length == maximum_vlen.save_area_size);
+      assert(byte_list_length(accepted_maximum_vlen.request.payload_bytes)
+             == maximum_vlen.save_area_size);
+      var excessive_vlen = maximum_vlen;
+      excessive_vlen.vector_length_bytes = 512;
+      excessive_vlen.vector_registers = zero_vector_registers(512);
+      excessive_vlen.predicate_registers = zero_predicate_registers(512);
+      excessive_vlen.vector_component_size =
+        tdiv_int(34 * excessive_vlen.vector_length_bytes + 63, 64) * 64;
+      excessive_vlen.save_area_size =
+        excessive_vlen.vector_component_offset + excessive_vlen.vector_component_size;
+      let rejected_excessive_vlen = execute_full(instruction, excessive_vlen);
+      assert(not_bool(rejected_excessive_vlen.awaiting_environment));
+      assert(rejected_excessive_vlen.state == excessive_vlen);
+      assert(rejected_excessive_vlen.fault != None());
       var wrapping = state;
       wrapping.registers[0] = 0xFFFFFFFFFFFFF000;
       wrapping.save_area_size = 4096;
@@ -59,6 +94,9 @@ function test_protocol_state_group() -> unit = {
       image_state.status = 0x000000000000003F;
       image_state.fp_enabled = true; image_state.fp_component_modified = true;
       image_state.floating_registers[0] = 0x9999888877776666;
+      image_state.vector_component_modified = true;
+      image_state.vector_registers[0] = 0xCD :: zero_vector_bytes(15);
+      image_state.predicate_registers[0] = [|0x96, 0x69|];
       let image = save_image_bytes(image_state);
       var state = initial_cpu(); state.registers[0] = 0x0000000000001000;
       let header = execute_full(instruction, state);
@@ -76,6 +114,8 @@ function test_protocol_state_group() -> unit = {
       assert(done.state.registers[0] == image_state.registers[0]);
       assert(done.state.status == state.status);
       assert(done.state.floating_registers[0] == image_state.floating_registers[0]);
+      assert(done.state.vector_registers[0] == image_state.vector_registers[0]);
+      assert(done.state.predicate_registers[0] == image_state.predicate_registers[0]);
       assert(done.state.sp == state.sp);
 
       var wrapping = state;

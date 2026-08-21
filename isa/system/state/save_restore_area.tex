@@ -12,8 +12,8 @@ Software obtains every extension component's offset and maximum size from CPUID
 \subsection{Fixed Architectural State}
 The fixed block contains the base header, state-block bitmap, R0 through R15, and GS0 through GS5 images.
 
-The header carries FLAGS, STATUS, format, and GS-validity state. \texttt{GS\_VALID} selects which GS images are
-meaningful.
+The header carries FLAGS, STATUS, the hidden current-DFA bit, format, and GS-validity state. \texttt{GS\_VALID}
+selects which GS images are meaningful.
 
 \subsection{Extension Components and Clean State}
 An extension component is architecturally clean when its state is known to equal its component-defined initial
@@ -26,8 +26,14 @@ When floating-point state is enabled, its component contains F0 through F15, FFL
 reported in the CPUID chapter. The floating-point component's initial state is positive zero in F0 through F15 and
 zero in FFLAGS and FSTATUS.
 
+When VECTOR is present, component ID 2 uses bitmap bit 1 and contains the complete V0 through V31 and packed P0
+through P15 images. Let $B$ be VLEN in bytes. Vn begins at component offset $nB$, and Pn begins at
+$32B+nB/8$. The reported component size is $\operatorname{align\_up}(34B,64)$. Its initial state is all zero.
+A committed vector or predicate register write marks the component modified. SAVE writes component padding as zero;
+RESTORE ignores that padding.
+
 \subsection{SAVE Responsibilities}
-SAVE writes \texttt{FMT=0}, sets \texttt{GS\_VALID=0x3f}, and records GS0 through GS5. SAVE sets bitmap bits only
+SAVE writes \texttt{FMT=0}, sets \texttt{GS\_VALID=0x3f}, records the complete STATUS image and current DFA, and records GS0 through GS5. SAVE sets bitmap bits only
 for components described by its CPUID \texttt{SAVE\_AREA\_LAYOUT} leaf.
 
 SAVE may omit an architecturally clean extension component by clearing its bitmap bit. SAVE may clear a bitmap bit
@@ -43,8 +49,10 @@ defined format and only bitmap bits that name CPUID-described components for tha
 bitmap bit does not name a CPUID-described component for that format. RESTORE of a clear, described component bit
 installs that component's initial state.
 
-User-mode RESTORE ignores saved supervisor-only STATUS state. Supervisor RESTORE validates the saved STATUS image by
-the ordinary privileged write rules before making it visible.
+User-mode RESTORE ignores saved supervisor-only STATUS and DFA state. Supervisor RESTORE is an architectural
+context transition: it restores EDEPTH, UO, and current DFA together with STATUS after validating the complete
+event-state invariants. It requires saved PM=1; UO requires a valid live U bank, DFA requires an active event, and
+inactive state requires EDEPTH=0, UO=0, and DFA=0. Ordinary WRSTATUS remains unable to change these fields.
 
 The normative instruction entries are
 \hyperref[instr:save]{\texttt{SAVE}} and

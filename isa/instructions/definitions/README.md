@@ -49,7 +49,7 @@ functions and cannot independently introduce an observable state transition,
 fault, commit, repeat, event, or memory action. Encoding prose remains
 downstream of these definitions.
 
-The five encoding classes and their order are architectural invariants in
+The six encoding classes and their order are architectural invariants in
 `isa/tools/encoding_architecture.py`. Allocation widths and opcode-space namespaces are
 derived there from instruction framing and the extended opcode selectors.
 Allocation validation, reports, documentation, and `alloc_edit.py` aggregate

@@ -20,9 +20,9 @@ The Makefile selects the LLVM tool binary directory in this order: `LLVM_BIN`,
 `BEDROCK_LLVM_BIN`, then `BEDROCK_LLVM_ROOT/build/bin`. The build fails with a
 configuration error when none of these variables is supplied.
 
-- `kernel.c` configures the `SPC` syscall entry and the common `EPC` event
-  entry, bounds-checks supervisor code and event stacks through their segment
-  images, and enables paging before entering the shell. `SDS` stays flat
+- `kernel.c` configures the common `EPC` event entry, including SYSTEM_CALL,
+  bounds-checks supervisor code and event stacks through their segment
+  images, and enables paging before entering the shell. `EDS` stays flat
   because kernel C address arithmetic can materialize non-address intermediate
   values through `LEA`.
 - `memory.c` owns a 4 KiB page allocator, four-level page-table builder, the

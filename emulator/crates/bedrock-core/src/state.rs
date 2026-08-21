@@ -3,6 +3,16 @@ use crate::{
     SegmentSelector, Status,
 };
 
+/// The emulator selects the architectural minimum VLEN of 128 bits.
+pub const VLEN_BITS: usize = 128;
+pub const VLEN_BYTES: usize = VLEN_BITS / 8;
+pub const PREDICATE_BYTES: usize = VLEN_BYTES / 8;
+pub const VECTOR_REGISTER_COUNT: usize = 32;
+pub const PREDICATE_REGISTER_COUNT: usize = 16;
+
+pub type VectorRegister = [u8; VLEN_BYTES];
+pub type PredicateRegister = [u8; PREDICATE_BYTES];
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CpuRegisterSet {
     General,
@@ -34,15 +44,13 @@ pub enum CpuRegister {
     Ptcr,
     Ascr,
     Ecr,
-    Spc,
-    Scs,
-    Sds,
-    Urpc,
-    Ursp,
-    Urcs,
-    Urds,
-    Urss,
-    Urctl,
+    Upc,
+    Usp,
+    Ucs,
+    Uds,
+    Uss,
+    Uctl,
+    Uinfo,
     Epc,
     Ecs,
     Eds,
@@ -124,15 +132,13 @@ pub const CPU_REGISTER_INFOS: &[CpuRegisterInfo] = &[
     reg!("PTCR", Control, CpuRegister::Ptcr),
     reg!("ASCR", Control, CpuRegister::Ascr),
     reg!("ECR", Control, CpuRegister::Ecr),
-    reg!("SPC", Control, CpuRegister::Spc),
-    reg!("SCS", Control, CpuRegister::Scs),
-    reg!("SDS", Control, CpuRegister::Sds),
-    reg!("URPC", Control, CpuRegister::Urpc),
-    reg!("URSP", Control, CpuRegister::Ursp),
-    reg!("URCS", Control, CpuRegister::Urcs),
-    reg!("URDS", Control, CpuRegister::Urds),
-    reg!("URSS", Control, CpuRegister::Urss),
-    reg!("URCTL", Control, CpuRegister::Urctl),
+    reg!("UPC", Control, CpuRegister::Upc),
+    reg!("USP", Control, CpuRegister::Usp),
+    reg!("UCS", Control, CpuRegister::Ucs),
+    reg!("UDS", Control, CpuRegister::Uds),
+    reg!("USS", Control, CpuRegister::Uss),
+    reg!("UCTL", Control, CpuRegister::Uctl),
+    reg!("UINFO", Control, CpuRegister::Uinfo),
     reg!("EPC", Control, CpuRegister::Epc),
     reg!("ECS", Control, CpuRegister::Ecs),
     reg!("EDS", Control, CpuRegister::Eds),
@@ -182,6 +188,8 @@ pub const CPU_REGISTER_INFOS: &[CpuRegisterInfo] = &[
 pub struct CpuState {
     pub r: [u64; 16],
     pub f: [u64; 16],
+    pub v: [VectorRegister; VECTOR_REGISTER_COUNT],
+    pub p: [PredicateRegister; PREDICATE_REGISTER_COUNT],
     pub sp: u64,
     pub pc: u64,
     pub flags: Flags,
@@ -190,15 +198,13 @@ pub struct CpuState {
     pub ptcr: PageTableControl,
     pub ascr: AddressSpaceControl,
     pub ecr: EventControl,
-    pub spc: u64,
-    pub scs: SegmentRegister,
-    pub sds: SegmentRegister,
-    pub urpc: u64,
-    pub ursp: u64,
-    pub urcs: SegmentRegister,
-    pub urds: SegmentRegister,
-    pub urss: SegmentRegister,
-    pub urctl: u64,
+    pub upc: u64,
+    pub usp: u64,
+    pub ucs: SegmentRegister,
+    pub uds: SegmentRegister,
+    pub uss: SegmentRegister,
+    pub uctl: u64,
+    pub uinfo: u64,
     pub epc: u64,
     pub ecs: SegmentRegister,
     pub eds: SegmentRegister,
@@ -216,8 +222,7 @@ pub struct CpuState {
     pub pmc: u64,
     pub fstatus: u16,
     pub fflags: u16,
-    pub hidden_current_edepth: u8,
-    pub hidden_current_esl: u8,
+    pub hidden_current_dfa: bool,
 }
 
 impl Default for CpuState {
@@ -225,6 +230,8 @@ impl Default for CpuState {
         Self {
             r: [0; 16],
             f: [0; 16],
+            v: [[0; VLEN_BYTES]; VECTOR_REGISTER_COUNT],
+            p: [[0; PREDICATE_BYTES]; PREDICATE_REGISTER_COUNT],
             sp: 0,
             pc: 0,
             flags: Flags::empty(),
@@ -233,15 +240,13 @@ impl Default for CpuState {
             ptcr: PageTableControl::disabled(),
             ascr: AddressSpaceControl::default(),
             ecr: EventControl::default(),
-            spc: 0,
-            scs: SegmentRegister::disabled(),
-            sds: SegmentRegister::disabled(),
-            urpc: 0,
-            ursp: 0,
-            urcs: SegmentRegister::disabled(),
-            urds: SegmentRegister::disabled(),
-            urss: SegmentRegister::disabled(),
-            urctl: 0,
+            upc: 0,
+            usp: 0,
+            ucs: SegmentRegister::disabled(),
+            uds: SegmentRegister::disabled(),
+            uss: SegmentRegister::disabled(),
+            uctl: 0,
+            uinfo: 0,
             epc: 0,
             ecs: SegmentRegister::disabled(),
             eds: SegmentRegister::disabled(),
@@ -259,8 +264,7 @@ impl Default for CpuState {
             pmc: 0,
             fstatus: 0,
             fflags: 0,
-            hidden_current_edepth: 0,
-            hidden_current_esl: 0,
+            hidden_current_dfa: false,
         }
     }
 }
@@ -285,15 +289,13 @@ impl CpuState {
             CpuRegister::Ptcr => self.ptcr.raw(),
             CpuRegister::Ascr => self.ascr.raw(),
             CpuRegister::Ecr => self.ecr.raw(),
-            CpuRegister::Spc => self.spc,
-            CpuRegister::Scs => self.scs.raw(),
-            CpuRegister::Sds => self.sds.raw(),
-            CpuRegister::Urpc => self.urpc,
-            CpuRegister::Ursp => self.ursp,
-            CpuRegister::Urcs => self.urcs.raw(),
-            CpuRegister::Urds => self.urds.raw(),
-            CpuRegister::Urss => self.urss.raw(),
-            CpuRegister::Urctl => self.urctl,
+            CpuRegister::Upc => self.upc,
+            CpuRegister::Usp => self.usp,
+            CpuRegister::Ucs => self.ucs.raw(),
+            CpuRegister::Uds => self.uds.raw(),
+            CpuRegister::Uss => self.uss.raw(),
+            CpuRegister::Uctl => self.uctl,
+            CpuRegister::Uinfo => self.uinfo,
             CpuRegister::Epc => self.epc,
             CpuRegister::Ecs => self.ecs.raw(),
             CpuRegister::Eds => self.eds.raw(),
@@ -325,15 +327,13 @@ impl CpuState {
             CpuRegister::Ptcr => self.ptcr = PageTableControl::from_raw(value),
             CpuRegister::Ascr => self.ascr = AddressSpaceControl::from_raw(value),
             CpuRegister::Ecr => self.ecr = EventControl::from_raw(value),
-            CpuRegister::Spc => self.spc = value,
-            CpuRegister::Scs => self.scs = SegmentRegister::from_raw(value),
-            CpuRegister::Sds => self.sds = SegmentRegister::from_raw(value),
-            CpuRegister::Urpc => self.urpc = value,
-            CpuRegister::Ursp => self.ursp = value,
-            CpuRegister::Urcs => self.urcs = SegmentRegister::from_raw(value),
-            CpuRegister::Urds => self.urds = SegmentRegister::from_raw(value),
-            CpuRegister::Urss => self.urss = SegmentRegister::from_raw(value),
-            CpuRegister::Urctl => self.urctl = value,
+            CpuRegister::Upc => self.upc = value,
+            CpuRegister::Usp => self.usp = value,
+            CpuRegister::Ucs => self.ucs = SegmentRegister::from_raw(value),
+            CpuRegister::Uds => self.uds = SegmentRegister::from_raw(value),
+            CpuRegister::Uss => self.uss = SegmentRegister::from_raw(value),
+            CpuRegister::Uctl => self.uctl = value,
+            CpuRegister::Uinfo => self.uinfo = value,
             CpuRegister::Epc => self.epc = value,
             CpuRegister::Ecs => self.ecs = SegmentRegister::from_raw(value),
             CpuRegister::Eds => self.eds = SegmentRegister::from_raw(value),
@@ -352,5 +352,26 @@ impl CpuState {
             CpuRegister::FStatus => self.fstatus = value as u16,
             CpuRegister::FFlags => self.fflags = value as u16,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn reset_clears_all_vector_and_predicate_bits_at_fixed_vlen() {
+        let mut state = CpuState::default();
+        state.v[0] = [0xa5; VLEN_BYTES];
+        state.v[VECTOR_REGISTER_COUNT - 1] = [0x5a; VLEN_BYTES];
+        state.p[0] = [0xff; PREDICATE_BYTES];
+        state.p[PREDICATE_REGISTER_COUNT - 1] = [0x81; PREDICATE_BYTES];
+
+        state.reset(0x1234);
+
+        assert_eq!(state.pc, 0x1234);
+        assert_eq!(state.v, [[0; VLEN_BYTES]; VECTOR_REGISTER_COUNT]);
+        assert_eq!(state.p, [[0; PREDICATE_BYTES]; PREDICATE_REGISTER_COUNT]);
+        assert_eq!(VLEN_BITS, 128);
     }
 }

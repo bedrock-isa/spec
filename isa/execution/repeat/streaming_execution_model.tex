@@ -1,94 +1,32 @@
 \clearpage
 \section{Repeated Scalar Execution}\label{page:repeated-scalar-execution}
 
-This section defines the architectural role of repeated scalar execution in Bedrock. The architecture exposes
-scalar register state and repeated-instruction capabilities.
+\texttt{REP Rn, (<instruction>)} and \texttt{REPcc Rn, (<instruction>)} repeat one scalar instruction. The body is
+decoded and checked for repeat eligibility before a zero-count annul is applied, then remains fixed for that repeat
+context. A body may not be a repeat operation, a repeat-control instruction, or a control transfer.
 
-\subsection{Architectural Scalar Semantics}
-REP, REPcc, REPG, and any explicitly defined repeat instruction are architecturally scalar. Their visible behavior is
-the same as executing the repeated instruction or byte-counted instruction group in program order under the selected
-counter and termination rules.
-The architectural counter, FLAGS image, memory effects, and auto-update register effects are observed as if each
-committed iteration completed before the next one began.
+Entering repeat state captures the selected Rn value as an unsigned remaining count. A valid zero count performs no
+body side effects. Otherwise each iteration evaluates operands and commits FLAGS, FFLAGS, memory, and auto-update
+effects according to the body's ordinary scalar rules. A body read of the selected counter register observes the
+iteration-start architectural value; a body write to that register is ignored.
 
-The body is decoded when repeat state is entered and remains fixed for that repeat context. Each iteration evaluates
-register and memory operands by the body's ordinary rules, including the normal scalar effects of auto-update
-effective addresses. FLAGS and FFLAGS follow the body's instruction semantics and any repeat-specific accumulation
-rule. Faults remain precise at the repeated-operation boundary.
+Each successfully committed iteration decrements the captured count before an event may be admitted at the next
+iteration boundary. A condition-false \texttt{REPcc} iteration still commits its body and decrements the count before
+repeat state is cleared. If the body faults, that iteration commits nothing and does not decrement the count; earlier
+iterations remain committed. Event entry then saves the repeat-prefix address in SAVED\_PC and clears hidden repeat
+state, so ERET returns to the prefix and re-executes it normally with the unchanged counter.
 
-\subsection{Repeat Syntax and Body Eligibility}
+The \texttt{REPcc observation} attribute identifies the value tested after the body executes. A
+\texttt{result:operand} or \texttt{source:operand} observation names an operand; \texttt{computed} names the derived
+value defined by that instruction. The temporary condition image sets Z exactly when the observed value is zero,
+sets N from its most significant bit at the observation width, and clears C and V. It does not sample or overwrite
+architectural FLAGS, although the body's own FLAGS effects commit normally. \texttt{REP} is the unconditional T
+spelling; condition F is reserved.
 
-The accepted spellings are:
-\begin{itemize}
-\item \texttt{REPcc Rn, (<instruction>)}
-\item \texttt{REP Rn, (<instruction>)}
-\item \texttt{REPG Rn, \{ <instruction>... \}}
-\item \texttt{REPGF Rn, \{ <instruction>... \}}, an assembler-only spelling that emits REPG after applying the
-additional eligibility checks described below
-\end{itemize}
-
-The processor decodes the body and checks its repeat eligibility before applying any zero-based termination rule. A
-malformed or unavailable body therefore faults even when the selected register is zero. Once a valid body has
-passed those checks, a zero captured count annuls REP or REPcc without architectural side effects. REPG has no entry
-zero-count annul; it begins the group and applies its live loop-control rule only at a successful group boundary.
-
-REPGF is an assembler-checked spelling that emits REPG after applying the additional body-eligibility checks. The
-assembler accepts only candidate bodies that do not write the selected loop-control register. The emitted encoding,
-decoded operation, and repeat-continuation state are identical to REPG.
-
-\subsection{Counter, Condition, and Control Rules}
-
-Entering REP or REPcc state captures the selected Rn value as an unsigned remaining count. Each successfully
-committed iteration decrements that captured count. A condition-false REPcc iteration still commits its body and
-performs the decrement before repeat state is cleared. A valid zero count performs no body side effects after
-decoding and eligibility checks complete.
-
-During REP and REPcc, a body read of the selected counter register observes the iteration-start architectural value,
-while a body write to that register is ignored. REPG instead uses the selected architectural Rn as its live unsigned
-loop-control value and captures no separate remaining count. REPG executes reads and writes of that register in
-normal in-group program order. At each successful whole-group boundary, it examines the current value after all body
-writes. If the value is zero, REPG leaves it unchanged and exits. Otherwise, REPG first decrements it by one and then
-uses the resulting value to select the next action: zero exits, while nonzero continues at the group start. This
-guarded decrement and resulting-value decision form the group-boundary state transition. When the body does not
-write the register, an initial zero executes one iteration and an initial positive value N executes exactly N
-iterations; both cases leave zero. Any body write controls the boundary reached by that iteration, so writing either
-zero or one terminates at that boundary. The checked REPGF spelling rejects such a write at assembly time.
-
-The \texttt{REPcc observation} attribute in every REPcc-capable instruction description specifies the value used for
-the condition test. A \texttt{result:operand} or \texttt{source:operand} observation names an actual operand. A
-\texttt{computed} observation names a derived value defined by that instruction: CMP observes its selected-width
-temporary difference, TEST observes its selected-width temporary conjunction, BTEST/BSET/BCLR/BCHG observe the old
-tested bit as a B-sized 0 or 1, the signed and unsigned bounds checks observe their violation result as a B-sized 0 or
-1, and SEGLEA observes its segment-bound failure result as a B-sized 0 or 1.
-
-REPcc constructs a temporary condition image from that value: Z is one exactly when the observed value is zero, N is
-its most significant bit at the observation width, and C and V are zero. The condition test never samples
-architectural FLAGS, and the REPcc wrapper does not write architectural FLAGS; any FLAGS effects of the body itself
-still commit normally. The observed value is captured before repeat counter-destination suppression. The first
-condition test occurs after the first body iteration. Body completion, value observation, temporary condition-image
-construction, body architectural commit, counter decrement, and continuation-PC selection form one precise atomic
-commit step. Consequently, an interrupt handler cannot change the decision for an iteration that has reached this
-step. REP is the unconditional T-condition spelling, and F is reserved for REPcc.
-
-A repeat body may not contain another repeat operation, a repeat-control instruction, or a control transfer.
-While repetition is active, PC names the current body instruction, and the initially decoded instruction or group
-remains fixed. Handler entry saves repeat state in FRAME\_EXT1 and clears the active architectural repeat state; ERET
-restores that state atomically with the saved PC and control state. TF and RF apply to the trace units defined by the
-Event Priority and Debug Trace subsection.
-
-\subsection{Fault and Restart Semantics}
-A fault during repeated execution preserves committed work and saves the state needed to resume or emulate the
-remainder. Event entry records the active repeat context in FRAME\_EXT1 and clears active repeat state. The Repeat
-Continuation subsection of the Architectural Event Processing Model defines the saved format and ERET restoration.
-
-REP and REPcc atomically commit the one-instruction body, repeat-observed value and temporary condition, counter decrement, and
-continuation-PC selection. If the body faults, that iteration does not commit and the fault is reported at the body
-instruction. Every committed iteration decrements the counter, including a condition-false iteration that terminates
-REPcc; earlier iterations remain committed.
-
-For REPG, the unsigned body byte count must describe a group that ends on an instruction boundary. Instructions in
-the group commit in program order. If an instruction faults, earlier completed instructions in the current group
-iteration remain committed and later instructions do not execute. The fault is reported at the faulting instruction;
-the live loop-control register retains every committed body effect, but the group-boundary state transition does not
-occur for the incomplete group iteration. The saved PC and repeat continuation retain the information required to
-reconstruct the group and continue the remaining work.
+While repeat state is active, architectural PC identifies the body instruction. After a successful body commit, the
+counter decrement completes before an event may be admitted between iterations. Both that event path and the
+fault path above save the repeat-prefix address in SAVED\_PC and clear hidden repeat state. ERET restores the
+ordinary saved architectural state and begins execution at that prefix address; it does not restore hidden
+repeat continuation state. The prefix is therefore decoded and executed normally, using the already-decremented
+architectural Rn value. TF and RF apply once to each committed body iteration; a zero-count annul is also one trace
+unit.

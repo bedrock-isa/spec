@@ -1,0 +1,13 @@
+forms:
+- id: long.addvl.v21
+  class: long
+  bits: 1111101001100000000010rrrr
+  syntax: ADDVL <imm8s>, Rn(r)
+  operands:
+  - name: offset
+    type: imm8s
+    access: read
+  - name: dst
+    type: Rn
+    access: read_write
+    field: r

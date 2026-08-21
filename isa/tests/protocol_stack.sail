@@ -181,34 +181,21 @@ function test_protocol_stack_group() -> unit = {
     None() => assert(false),
   };
 
-  match decode_full_record([|0x06|]) {
-    Some(instruction) => {
-      var state = initial_cpu();
-      state.supervisor = true; state.status = 0x0000000000000010;
-      state.controls[11] = 0x0000000100000000;
-      state.controls[10] = 0x0000000000001003;
-      state.controls[7] = 0x0000000000003000;
-      let rejected = execute_full(instruction, state);
-      assert(not_bool(rejected.awaiting_environment));
-      assert(rejected.fault != None());
-      assert(rejected.state == state)
-    },
-    None() => assert(false),
-  };
+  assert(decode_full_record([|0x06|]) == None());
 
   match decode_full_record([|0x01|]) {
     Some(instruction) => {
-      var inactive = initial_cpu(); inactive.event_depth = 1;
+      var inactive = initial_cpu(); inactive.status = status_with_event_state(inactive.status, 1, false);
       let rejected_inactive = execute_full(instruction, inactive);
       assert(rejected_inactive.fault != None());
       assert(rejected_inactive.state == inactive);
       var active = initial_cpu();
       active.supervisor = true; active.status = 0x0000000000000011;
-      active.event_depth = 1; active.event_stack_level = 1;
+      active.status = status_with_event_state(active.status, 1, false);
       let accepted = execute_full(instruction, active);
       assert(accepted.fault == None());
       assert(accepted.state.pc == 0x0000000000000001);
-      var invalid_active = active; invalid_active.event_stack_level = 0;
+      var invalid_active = active; invalid_active.status = status_with_event_state(active.status, 0, false);
       let rejected_active = execute_full(instruction, invalid_active);
       assert(rejected_active.fault != None());
       assert(rejected_active.state == invalid_active)

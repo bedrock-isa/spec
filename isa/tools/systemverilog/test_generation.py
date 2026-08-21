@@ -221,6 +221,8 @@ class SystemVerilogGenerationTests(unittest.TestCase):
             self.assertNotIn(" string ", text)
             self.assertNotIn("input wire", text)
         self.assertNotIn("localparam int", package)
+        self.assertIn("BEDROCK_OPCODE_BITS = 10'd42", package)
+        self.assertIn("OPCODE_CLASS_XXLONG", package)
         self.assertIn("input  logic valid_i", d0)
         self.assertIn("input  logic [BEDROCK_OPCODE_BITS-1:0] opcode_i", d0)
         self.assertIn("output d0_ea_result_t ea_result_o", d0)
@@ -888,6 +890,43 @@ class SystemVerilogGenerationTests(unittest.TestCase):
                 break
         self.assertIsNotNone(rejected)
 
+    def test_vcmp_domain_matrix_at_d0_reference_boundary(self) -> None:
+        by_class: dict[str, list[decode_ir.FormIR]] = {}
+        for form in self.ir.forms:
+            if form.mnemonic == "VCMPcc":
+                by_class.setdefault(form.opcode_class, []).append(form)
+        self.assertEqual(set(by_class), {"extralong", "xxlong"})
+
+        integer_conditions = {2, 3, 4, 5, 10, 11, 12, 13, 14, 15}
+        floating_conditions = {2, 3, 8, 9, 12, 13, 14, 15}
+        for opcode_class, forms in by_class.items():
+            self.assertEqual(len(forms), 2)
+            base = forms[0]
+            positions = {field.symbol: field.positions for field in base.fields}
+            for size in range(8):
+                for condition in range(16):
+                    opcode = _set_gather(base.opcode_value, positions["x"], size)
+                    opcode = _set_gather(opcode, positions["c"], condition)
+                    stage, form_index = generate_decoder.reference_d0(
+                        self.ir, True, opcode_class, opcode
+                    )
+                    legal = (
+                        size < 4 and condition in integer_conditions
+                    ) or (
+                        size > 4 and condition in floating_conditions
+                    )
+                    with self.subTest(
+                        opcode_class=opcode_class,
+                        size=size,
+                        condition=condition,
+                    ):
+                        if legal:
+                            self.assertEqual(stage, "success")
+                            self.assertIn(form_index, {form.index for form in forms})
+                        else:
+                            self.assertEqual(stage, "constraint_rejected")
+                            self.assertIsNone(form_index)
+
     def test_complete_compact_and_descriptor_lowering(self) -> None:
         entries = self.ir.effective_addresses.compact_entries
         self.assertEqual(tuple(item.raw for item in entries), tuple(range(128)))
@@ -1396,9 +1435,9 @@ class SystemVerilogGenerationTests(unittest.TestCase):
             "`timescale 1ns/1ps",
             "module tb;",
             "  import bedrock_decode_pkg::*;",
-            "  logic valid_i; opcode_class_e opcode_class_i; logic [33:0] opcode_i;",
+            "  logic valid_i; opcode_class_e opcode_class_i; logic [41:0] opcode_i;",
             "  d0_result_t d0; d0_ea_result_t d0_ea;",
-            "  logic direct_valid_i; opcode_class_e direct_opcode_class_i; logic [33:0] direct_opcode_i;",
+            "  logic direct_valid_i; opcode_class_e direct_opcode_class_i; logic [41:0] direct_opcode_i;",
             "  d0_result_t d0_direct; d0_ea_result_t d0_ea_direct;",
             "  logic [143:0] record_i; logic [4:0] byte_count_i;",
             "  d1_opcode_result_t d1; ea_decode_result_t ea;",
@@ -1416,7 +1455,7 @@ class SystemVerilogGenerationTests(unittest.TestCase):
             opcode = generate_decoder.representative_opcode(form)
             lines.extend(
                 [
-                    f"    valid_i = 1'b1; opcode_class_i = {names.opcode_class[form.opcode_class]}; opcode_i = 34'h{opcode:09x}; #1;",
+                    f"    valid_i = 1'b1; opcode_class_i = {names.opcode_class[form.opcode_class]}; opcode_i = 42'h{opcode:09x}; #1;",
                     f"    if (d0.status != D0_SUCCESS || d0.form != {names.form[form.key]}) $fatal(1, \"D0 {form.key}\");",
                 ]
             )
@@ -1451,7 +1490,7 @@ class SystemVerilogGenerationTests(unittest.TestCase):
                     shift = (family.descriptor_bytes - byte - 1) * 8
                     record[ea_form.opcode_space_bytes + byte] = (descriptor >> shift) & 0xFF
             lines.append(
-                f"    direct_opcode_i = 34'h{opcode:09x}; record_i = 144'h{_record_value(record):036x}; #1;"
+                f"    direct_opcode_i = 42'h{opcode:09x}; record_i = 144'h{_record_value(record):036x}; #1;"
             )
             expected_valid = 1 if entry.valid else 0
             lines.append(
@@ -1508,7 +1547,7 @@ class SystemVerilogGenerationTests(unittest.TestCase):
                     )
                 lines.extend(
                     [
-                        f"    direct_opcode_i = 34'h{opcode:09x}; record_i = 144'h{_record_value(record):036x}; byte_count_i = 5'd18; #1;",
+                        f"    direct_opcode_i = 42'h{opcode:09x}; record_i = 144'h{_record_value(record):036x}; byte_count_i = 5'd18; #1;",
                         "    if (!ea.valid || "
                         + " || ".join(checks)
                         + f") $fatal(1, \"descriptor {family.name}/{descriptor.name}\");",
@@ -1526,7 +1565,7 @@ class SystemVerilogGenerationTests(unittest.TestCase):
         lines.extend(
             [
                 f"    direct_opcode_class_i = {names.opcode_class[payload_form.opcode_class]};",
-                f"    direct_opcode_i = 34'h{generate_decoder.representative_opcode(payload_form):09x};",
+                f"    direct_opcode_i = 42'h{generate_decoder.representative_opcode(payload_form):09x};",
                 f"    record_i = 144'h{_record_value(payload_record):036x}; byte_count_i = 5'd{len(payload_record)}; #1;",
                 f"    if (!d1.valid || d1.operands[{payload_operand}].value != 64'h0000000000000010) $fatal(1, \"standalone LE payload\");",
                 f"    byte_count_i = 5'd{payload_form.opcode_space_bytes + 1}; #1;",
@@ -1578,12 +1617,12 @@ class SystemVerilogGenerationTests(unittest.TestCase):
         lines.extend(
             [
                 f"    direct_opcode_class_i = {names.opcode_class[ea_form.opcode_class]};",
-                f"    direct_opcode_i = 34'h{ext2_opcode:09x}; record_i = '0; byte_count_i = 5'd{cursor + 1}; #1;",
+                f"    direct_opcode_i = 42'h{ext2_opcode:09x}; record_i = '0; byte_count_i = 5'd{cursor + 1}; #1;",
                 "    if (ea.valid || ea.stage != D1_STAGE_EA_DESCRIPTOR) $fatal(1, \"descriptor bounds\");",
                 f"    direct_opcode_class_i = {names.opcode_class[dual_form.opcode_class]};",
-                f"    direct_opcode_i = 34'h{dual_opcode:09x}; record_i = 144'h{_record_value(dual_record):036x}; byte_count_i = 5'd7; #1;",
+                f"    direct_opcode_i = 42'h{dual_opcode:09x}; record_i = 144'h{_record_value(dual_record):036x}; byte_count_i = 5'd7; #1;",
                 "    if (!ea.valid || ea.ea_count != 2'd2 || ea.required_bytes != 6'd7 || !ea.eas[BEDROCK_EA_LOW_SLOT].valid || !ea.eas[BEDROCK_EA_ALT_SLOT].valid || ea.eas[BEDROCK_EA_ALT_SLOT].payload[7:0] != 8'h5a) $fatal(1, \"parallel dual EA\");",
-                f"    direct_opcode_i = 34'h{malformed_dual_opcode:09x}; record_i = '0; byte_count_i = 5'd18; #1;",
+                f"    direct_opcode_i = 42'h{malformed_dual_opcode:09x}; record_i = '0; byte_count_i = 5'd18; #1;",
                 f"    if (ea.valid || ea.stage != D1_STAGE_EA_DESCRIPTOR || ea.ea_count != 2'd2 || ea.required_bytes != 6'd{dual_form.opcode_space_bytes} || ea.eas[BEDROCK_EA_LOW_SLOT] != '0) $fatal(1, \"failed ALT normalizes LOW\");",
                 "    direct_valid_i = 1'b0; direct_opcode_class_i = OPCODE_CLASS_INVALID; direct_opcode_i = '0; #1;",
                 "    if (d1.valid || d1.operation != OP_INVALID || d1.operands != '0 || ea.valid || ea.eas != '0) $fatal(1, \"stale output\");",
@@ -1600,7 +1639,7 @@ class SystemVerilogGenerationTests(unittest.TestCase):
             "`timescale 1ns/1ps",
             "module tb;",
             "  import bedrock_decode_pkg::*;",
-            "  logic valid_i; opcode_class_e opcode_class_i; logic [33:0] opcode_i;",
+            "  logic valid_i; opcode_class_e opcode_class_i; logic [41:0] opcode_i;",
             "  d0_result_t d0; d0_ea_result_t d0_ea;",
             "  bedrock_decode_d0 dut(.valid_i, .opcode_class_i, .opcode_i, .result_o(d0), .ea_result_o(d0_ea));",
             "  initial begin",
@@ -1620,7 +1659,7 @@ class SystemVerilogGenerationTests(unittest.TestCase):
             alt_raw = 0
             if form.opcode_class == "medium":
                 alt_raw = (((opcode >> 14) & 0x7) << 4) | (opcode & 0xF)
-            elif form.opcode_class in ("long", "extralong"):
+            elif form.opcode_class in ("long", "extralong", "xxlong"):
                 alt_raw = (opcode >> 7) & 0x7F
             post_alt_cursor = form.opcode_space_bytes
             alt_profile_name = next(
@@ -1648,7 +1687,7 @@ class SystemVerilogGenerationTests(unittest.TestCase):
                     )
             lines.extend(
                 [
-                    f"    valid_i = 1'b1; opcode_class_i = {self.names.opcode_class[form.opcode_class]}; opcode_i = 34'h{opcode:09x}; #1;",
+                    f"    valid_i = 1'b1; opcode_class_i = {self.names.opcode_class[form.opcode_class]}; opcode_i = 42'h{opcode:09x}; #1;",
                     f"    if (d0.status != D0_SUCCESS || d0.form != {self.names.form[form.key]}) $fatal(1, \"{form.key}\");",
                     f"    if (d0.ea_layout != {generate_decoder._ea_layout(form)}) $fatal(1, \"EA layout {form.key}\");",
                     f"    if (d0.ea_widths[BEDROCK_EA_LOW_SLOT] != {low_width}) $fatal(1, \"EA low width {form.key}\");",

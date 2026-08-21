@@ -35,6 +35,24 @@ reserved & \texttt{6..1} & must be zero\\
 \bottomrule
 \end{manualtabular}
 
+\begin{manualformatdiagram}{UINFO Format}
+\manualformatrow{UINFO[63:0]}{%
+\manualformatreserved{reserved}{32}
+\manualformatfield{EVENT\_CODE}{32}
+}
+\end{manualformatdiagram}
+
+\manualtablecaption{UINFO Fields}
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{3.65in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
+\midrule
+reserved & \texttt{63..32} & must be zero\\
+\texttt{EVENT\_CODE} & \texttt{31..0} & code for the outer user-origin event and its optional payload shape\\
+\bottomrule
+\end{manualtabular}
+
 \begin{manualformatdiagram}{ASCR Format}
 \manualformatrow{ASCR[63:0]}{%
 \manualformatreserved{reserved}{32}
@@ -82,8 +100,8 @@ reserved & \texttt{6..1} & must be zero\\
 \bottomrule
 \end{manualtabular}
 
-\begin{manualformatdiagram}{URCTL Format}
-\manualformatrow{URCTL[63:0]}{%
+\begin{manualformatdiagram}{UCTL Format}
+\manualformatrow{UCTL[63:0]}{%
 \manualformatreserved{reserved}{31}
 \manualformatfield{V}{1}
 \manualformatfield{STATUS}{16}
@@ -91,7 +109,7 @@ reserved & \texttt{6..1} & must be zero\\
 }
 \end{manualformatdiagram}
 
-\manualtablecaption{URCTL Fields}
+\manualtablecaption{UCTL Fields}
 \begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{3.65in}@{}}
 \toprule
 \rowcolor{ManualHeaderFill}
@@ -123,8 +141,9 @@ reserved & \texttt{63..1} & must be zero\\
 \bottomrule
 \end{manualtabular}
 
-SPC and EPC are exact entry addresses, must be 16-byte aligned, and must be canonical and executable under SCS and
-ECS respectively. SSP, ISP, FSP, and DSP are 64-byte-aligned configured stack tops and are not modified by entry or
-return. SCS, SDS, ECS, EDS, SSS, ISS, FSS, and DSS contain validated segment images. A write that establishes
-URCTL.V validates a user STATUS image with PM, EA, and reserved bits clear; SYSRET revalidates the complete bank.
+EPC is the exact common event-entry address, must be 16-byte aligned, and must be canonical and executable under
+ECS. SSP, ISP, FSP, and DSP are 64-byte-aligned configured stack tops and are not modified by entry or return.
+ECS, EDS, SSS, ISS, FSS, and DSS contain validated segment images. Selectors 0x0100--0x0102 are reserved.
+A write that establishes UCTL.V validates the complete user bank and requires saved PM, EA, EDEPTH, and UO to be
+zero. ERET revalidates the selected return source before committing.
 BOOTPC and BOOTCFG are initialized by the platform during cold reset and preserved by RESET.

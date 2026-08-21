@@ -118,9 +118,9 @@ function execute_external_route(instruction : Decoded_instruction, state : Cpu_s
   },
   RouteFpu => start_fp_transaction(instruction, state),
   RouteFpuTranscendental => start_fp_transaction(instruction, state),
+  RouteVector => execute_vector_instruction(instruction, state),
   RouteSystemRegisters => start_system_request(instruction, state),
   RouteTlbContext => start_tlb_context_transaction(instruction, state),
   RouteControlFlow => execute_control_exact(instruction, state),
   RouteCoreControl => execute_core_exact(instruction, state),
 }
-

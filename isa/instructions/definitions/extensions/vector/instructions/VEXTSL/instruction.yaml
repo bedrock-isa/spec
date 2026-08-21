@@ -1,0 +1,8 @@
+mnemonic: VEXTSL
+title: VEXTSL (Vector)
+summary: Signed B or W to L.
+description: Signed B or W to L.
+attributes:
+  class: vector
+  family: vector
+  privilege: unprivileged

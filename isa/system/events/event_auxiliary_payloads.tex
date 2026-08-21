@@ -170,5 +170,4 @@ For \texttt{BUS\_ERROR}, the error code has this layout:
 \end{manuallongtable}
 
 A bus error during a page walk reports the level whose PTE access failed. When valid, \texttt{EVENT\_AUX}
-contains the final memory-system address available for the failed access. For a slot-addressed access, this is
-the slot address and not a byte address.
+contains the final byte address available for the failed access.

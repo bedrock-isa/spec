@@ -9,7 +9,6 @@ attributes:
 repeat:
   contexts:
   - REP
-  - REPG
 flag_effects:
   FLAGS:
     Z: "0"

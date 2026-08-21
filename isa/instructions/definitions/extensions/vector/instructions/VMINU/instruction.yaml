@@ -1,0 +1,8 @@
+mnemonic: VMINU
+title: VMINU (Vector)
+summary: Unsigned minimum.
+description: Unsigned minimum.
+attributes:
+  class: vector
+  family: vector
+  privilege: unprivileged

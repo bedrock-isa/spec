@@ -22,9 +22,12 @@ if str(TOOL_DIR) not in sys.path:
 from validate_alloc import (  # noqa: E402
     PREDICATES,
     compact_bits,
-    entry_claims,
+    entries_overlap,
+    entry_claim_patterns,
     expand_pattern,
     namespace_size,
+    pattern_cardinality,
+    pattern_union_cardinality,
     parse_range,
 )
 from defs_loader import (  # noqa: E402
@@ -262,26 +265,26 @@ def load_allocations(defs_root: Path) -> list[AllocationClass]:
         entries: list[AllocationEntry] = []
         skipped = Counter()
         overlaps: list[str] = []
-        by_value: dict[int, str] = {}
-        assigned_values: set[int] = set()
+        prior_entries: list[tuple[dict[str, Any], str]] = []
+        legal_patterns: list[str] = []
         for located in store.for_class(encoding_class.name):
             raw = allocation_entry_dict(located, store.field_types)
-            claims, entry_skipped = entry_claims(
+            claim_patterns, entry_skipped, claim = entry_claim_patterns(
                 located.path,
                 encoding_class.allocation_bits,
                 namespaces,
                 raw,
             )
             skipped.update(entry_skipped)
-            for value, claim in claims:
-                previous = by_value.get(value)
-                if previous is not None:
+            claim_count = sum(pattern_cardinality(pattern) for pattern in claim_patterns)
+            legal_patterns.extend(claim_patterns)
+            for previous_entry, previous_id in prior_entries:
+                witness = entries_overlap(previous_entry, raw)
+                if witness is not None:
                     overlaps.append(
-                        f"0x{value:x}: {previous} overlaps {claim.entry_id}"
+                        f"0x{witness:x}: {previous_id} overlaps {claim.entry_id}"
                     )
-                else:
-                    by_value[value] = claim.entry_id
-                    assigned_values.add(value)
+            prior_entries.append((raw, claim.entry_id))
             entries.append(
                 AllocationEntry(
                     path=located.path,
@@ -290,7 +293,7 @@ def load_allocations(defs_root: Path) -> list[AllocationClass]:
                     entry_id=located.form.id,
                     bits=compact_bits(located.form.bits),
                     text=located.form.syntax,
-                    assigned=len(claims),
+                    assigned=claim_count,
                     skipped=sum(entry_skipped.values()),
                     fields=raw["fields"],
                     constraints=raw["constraints"],
@@ -312,6 +315,7 @@ def load_allocations(defs_root: Path) -> list[AllocationClass]:
                 )
             )
         total = namespace_size(namespaces)
+        assigned_count = pattern_union_cardinality(legal_patterns)
         classes.append(
             AllocationClass(
                 path=ARCHITECTURE_SOURCE_PATH,
@@ -319,9 +323,9 @@ def load_allocations(defs_root: Path) -> list[AllocationClass]:
                 allocation_bits=encoding_class.allocation_bits,
                 summary={
                     "total": total,
-                    "allocated": len(assigned_values),
-                    "reserved_total": total - len(assigned_values),
-                    "claimed": len(by_value),
+                    "allocated": assigned_count,
+                    "reserved_total": total - assigned_count,
+                    "claimed": assigned_count,
                     "constraint_skipped": sum(skipped.values()),
                 },
                 skipped_by_reason=skipped,

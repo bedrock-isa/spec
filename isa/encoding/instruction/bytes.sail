@@ -46,6 +46,8 @@ function opcode_allocation(bytes : list(bits(8)), encoding_class : Encoding_clas
       Some(sail_zero_extend(byte0[1 .. 0] @ byte1 @ byte2 @ byte3, 64)),
     (ExtraLong, byte0 :: byte1 :: byte2 :: byte3 :: byte4 :: _) =>
       Some(sail_zero_extend(byte0[1 .. 0] @ byte1 @ byte2 @ byte3 @ byte4, 64)),
+    (Xxlong, byte0 :: byte1 :: byte2 :: byte3 :: byte4 :: byte5 :: _) =>
+      Some(sail_zero_extend(byte0[1 .. 0] @ byte1 @ byte2 @ byte3 @ byte4 @ byte5, 64)),
     _ => None(),
   }
 
@@ -55,6 +57,7 @@ function encoding_class_of_record(record_class : Record_class) -> Encoding_class
   ExtendedMedium => Medium,
   ExtendedLong => Long,
   ExtendedExtraLong => ExtraLong,
+  ExtendedXxlong => Xxlong,
 }
 
 function find_catalog_entry(allocation : bits(64), encoding_class : Encoding_class,

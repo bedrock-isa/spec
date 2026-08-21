@@ -1,7 +1,6 @@
 use bedrock_bus::{Bus, Ram};
 use bedrock_core::{
-    AddressSpaceControl, Cpu, EventControl, ExceptionFrameType, PageFaultReason, PageTableControl,
-    Status, StepResult,
+    AddressSpaceControl, Cpu, EventControl, PageFaultReason, PageTableControl, Status, StepResult,
 };
 
 const PTE_P: u64 = 1 << 0;
@@ -34,17 +33,13 @@ fn illegal_instruction_delivers_typed_error_frame_with_zero_padding() {
     ram.write_u8(0, 0x00).unwrap();
     let mut cpu = Cpu::new();
     cpu.reset(0);
+    cpu.state_mut().status = Status::empty();
     configure_event_entry(&mut cpu, 0x100, 0x1000);
 
     assert_eq!(cpu.step(&mut ram), StepResult::Running);
     assert_eq!(cpu.state().pc, 0x100);
-    assert_eq!(cpu.state().sp, 0xfb0);
-    assert_eq!(
-        ram.read_u64(0xfb0).unwrap() & 0xfff,
-        (u64::from(ExceptionFrameType::Error as u8) << 8) | 10
-    );
-    assert_eq!(ram.read_u64(0xfb8).unwrap(), 0x03);
-    assert_eq!(ram.read_u64(0xfc8).unwrap(), 0);
+    assert_eq!(cpu.state().sp, 0xff0);
+    assert_eq!(cpu.state().uinfo, 0x03);
     assert_eq!(ram.read_u64(0xff0).unwrap(), 4);
     assert_eq!(ram.read_u64(0xff8).unwrap(), 0);
 }
@@ -55,16 +50,15 @@ fn debug_trace_commits_the_unit_then_saves_the_next_boundary() {
     ram.write_u8(0, 0x01).unwrap();
     let mut cpu = Cpu::new();
     cpu.reset(0);
+    cpu.state_mut().status = Status::empty();
     cpu.state_mut().status.insert(Status::TF);
     configure_event_entry(&mut cpu, 0x100, 0x1000);
 
     assert_eq!(cpu.step(&mut ram), StepResult::Running);
     assert_eq!(cpu.state().pc, 0x100);
-    assert_eq!(cpu.state().sp, 0xfc0);
-    assert_eq!(ram.read_u64(0xfc0).unwrap() & 0xfff, 8);
-    assert_eq!(ram.read_u64(0xfc8).unwrap(), 0);
-    assert_eq!(ram.read_u64(0xfd8).unwrap(), 1);
-    assert_ne!((ram.read_u64(0xfc0).unwrap() >> 48) & 4, 0);
+    assert_eq!(cpu.state().sp, 0x1000);
+    assert_eq!(cpu.state().uinfo, 0);
+    assert_eq!(cpu.state().upc, 1);
     assert!(!cpu.state().status.contains(Status::TF));
 }
 
@@ -74,18 +68,18 @@ fn malformed_eret_frame_delivers_invalid_control_without_consuming_it() {
     ram.write_u8(0, 0x04).unwrap();
     let mut cpu = Cpu::new();
     cpu.reset(0);
-    cpu.state_mut().status = Status::PM | Status::EA;
-    cpu.state_mut().hidden_current_edepth = 1;
-    cpu.state_mut().hidden_current_esl = 2;
+    cpu.state_mut().status = (Status::PM | Status::EA).with_event_state(1, false);
     cpu.state_mut().sp = 0x1000;
     configure_event_entry(&mut cpu, 0x200, 0x1800);
 
     assert_eq!(cpu.step(&mut ram), StepResult::Running);
     assert_eq!(cpu.state().pc, 0x200);
     assert_eq!(cpu.state().sp, 0xfb0);
-    assert_eq!(cpu.state().hidden_current_edepth, 2);
+    assert_eq!(cpu.state().status.event_depth(), 2);
     assert_eq!(ram.read_u64(0xfb8).unwrap(), 0x0d);
-    assert_eq!(ram.read_u64(0xfc8).unwrap(), 0);
+    assert_eq!(ram.read_u64(0xfc0).unwrap(), 0);
+    assert_eq!(ram.read_u64(0xfc8).unwrap(), 0x1000);
+    assert_eq!(ram.read_u64(0xfe8).unwrap(), 0);
     assert_eq!(ram.read_u64(0xff0).unwrap(), 2);
     assert_eq!(ram.read_u64(0xff8).unwrap(), 0);
     assert_eq!(ram.read_u64(0x1000).unwrap(), 0);
@@ -112,31 +106,27 @@ fn page_fault_populates_its_frame_and_eret_restores_the_saved_state() {
 
     assert_eq!(cpu.step(&mut ram), StepResult::Running);
     assert_eq!(cpu.state().pc, 0x5000);
-    assert_eq!(cpu.state().sp, 0x6fa0);
+    assert_eq!(cpu.state().sp, 0x6fe0);
     assert!(cpu.state().status.contains(Status::PM | Status::EA));
     assert_eq!(cpu.state().r[1], 0xfeed_face);
 
-    let frame = 0xefa0;
+    let frame = 0xefe0;
+    assert_eq!(cpu.state().uinfo, 9);
+    assert_eq!(cpu.state().upc, 0);
     assert_eq!(
-        ram.read_u64(frame).unwrap() & 0xfff,
-        (u64::from(ExceptionFrameType::PageFault as u8) << 8) | 12
-    );
-    assert_eq!(ram.read_u64(frame + 8).unwrap(), 9);
-    assert_eq!(ram.read_u64(frame + 24).unwrap(), 0);
-    assert_eq!(
-        ram.read_u64(frame + 64).unwrap(),
+        ram.read_u64(frame).unwrap(),
         u64::from(PageFaultReason::NotPresent.code()) | 0x2300_0100
     );
-    assert_eq!(ram.read_u64(frame + 72).unwrap(), 0x1000);
-    assert_eq!(ram.read_u64(frame + 80).unwrap(), 0x1000);
-    assert_eq!(ram.read_u64(frame + 88).unwrap(), 0);
+    assert_eq!(ram.read_u64(frame + 8).unwrap(), 0x1000);
+    assert_eq!(ram.read_u64(frame + 16).unwrap(), 0x1000);
+    assert_eq!(ram.read_u64(frame + 24).unwrap(), 0);
 
     assert_eq!(cpu.step(&mut ram), StepResult::Running);
     assert_eq!(cpu.state().pc, 0);
     assert_eq!(cpu.state().sp, 0);
     assert_eq!(cpu.state().status, Status::empty());
-    assert_eq!(cpu.state().hidden_current_edepth, 0);
-    assert_eq!(cpu.state().hidden_current_esl, 0);
+    assert_eq!(cpu.state().status.event_depth(), 0);
+    assert!(!cpu.state().hidden_current_dfa);
 }
 
 #[test]
@@ -175,7 +165,7 @@ fn resume_flag_suppresses_exactly_one_trace_event() {
 
     assert_eq!(cpu.step(&mut ram), StepResult::Running);
     assert_eq!(cpu.state().pc, 0x100);
-    assert_eq!(ram.read_u64(0xfc8).unwrap(), 0);
-    assert_eq!(ram.read_u64(0xfd8).unwrap(), 2);
+    assert_eq!(cpu.state().uinfo, 0);
+    assert_eq!(cpu.state().upc, 2);
     assert!(!cpu.state().status.intersects(Status::TF | Status::RF));
 }

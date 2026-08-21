@@ -1,0 +1,14 @@
+forms:
+- id: long.pand.v9
+  class: long
+  bits: 111110100101100000ppppqqqq
+  syntax: PAND Pn(p), Pn(q)
+  operands:
+  - name: src
+    type: Pn
+    access: read
+    field: p
+  - name: dst
+    type: Pn
+    access: read_write
+    field: q

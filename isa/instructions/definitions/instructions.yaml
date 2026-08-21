@@ -103,7 +103,6 @@ include:
 - instructions/RDSEG
 - instructions/RDSTATUS
 - instructions/REPcc
-- instructions/REPG
 - instructions/RESET
 - instructions/RESTORE
 - instructions/RET
@@ -125,7 +124,6 @@ include:
 - instructions/SWPTA
 - instructions/SYNCCACHE
 - instructions/SYSCALL
-- instructions/SYSRET
 - instructions/TEST
 - instructions/TESTJcc
 - instructions/TRACE

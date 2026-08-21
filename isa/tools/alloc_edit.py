@@ -25,7 +25,10 @@ if str(TOOL_DIR) not in sys.path:
 from validate_alloc import (  # noqa: E402
     Claim,
     compact_bits,
+    entries_overlap,
     entry_claims,
+    entry_claim_patterns,
+    entry_claim_summary,
     excluded_by,
     expand_pattern,
     field_allowed,
@@ -33,6 +36,7 @@ from validate_alloc import (  # noqa: E402
     namespace_patterns,
     namespace_size,
     pattern_cardinality,
+    pattern_union_cardinality,
 )
 from encoding_architecture import ARCHITECTURE_SOURCE_PATH  # noqa: E402
 from encoding_architecture import ENCODING_CLASSES  # noqa: E402
@@ -98,6 +102,9 @@ class AllocationSpace:
     allocated: dict[int, Claim]
     claimed: dict[int, Claim]
     skipped: dict[int, list[SkippedSlot]]
+    allocated_count: int
+    skipped_count: int
+    unavailable_count: int
 
 
 def load_yaml(path: Path) -> dict[str, Any]:
@@ -107,7 +114,13 @@ def load_yaml(path: Path) -> dict[str, Any]:
     return data
 
 
-def load_space_data(path: Path, data: dict[str, Any]) -> AllocationSpace:
+def load_space_data(
+    path: Path,
+    data: dict[str, Any],
+    *,
+    materialize: bool = False,
+    max_enumerate: int = DEFAULT_MAX_ENUMERATE,
+) -> AllocationSpace:
     cls = str(data["class"])
     allocation_bits = int(data["allocation_bits"])
     namespaces = namespace_patterns(allocation_bits, data)
@@ -115,37 +128,57 @@ def load_space_data(path: Path, data: dict[str, Any]) -> AllocationSpace:
     allocated: dict[int, Claim] = {}
     claimed: dict[int, Claim] = {}
     skipped: dict[int, list[SkippedSlot]] = defaultdict(list)
-    overlap_count = 0
+    prior_entries: list[tuple[dict[str, Any], Claim]] = []
+    legal_patterns: list[str] = []
+    raw_patterns: list[str] = []
+    skipped_count = 0
     overlap_examples: list[str] = []
+
+    total = namespace_size(namespaces)
+    if materialize and total > max_enumerate:
+        raise ValueError(
+            f"{cls}: namespace has {total:,} slots; pass --max-enumerate above that to enumerate holes"
+        )
 
     for entry in entries:
         entry_path = Path(str(entry.get("source_path", path)))
-        claims, _entry_skipped = entry_claims(entry_path, allocation_bits, namespaces, entry)
-        for value, claim in claims:
-            previous = claimed.get(value)
-            if previous is not None:
-                overlap_count += 1
-                if len(overlap_examples) < 20:
-                    digits = (allocation_bits + 3) // 4
-                    overlap_examples.append(
-                        f"0x{value:0{digits}x}: {previous.entry_id} overlaps {claim.entry_id}"
-                    )
-                continue
-            allocated[value] = claim
-            claimed[value] = claim
-        for value, reason in skipped_values(entry_path, allocation_bits, namespaces, entry):
-            skipped[value].append(
-                SkippedSlot(
-                    entry_id=str(entry["id"]),
-                    reason=reason,
-                    text=str(entry.get("text", "")),
+        claim_patterns, entry_skipped, claim = entry_claim_patterns(
+            entry_path, allocation_bits, namespaces, entry
+        )
+        legal_patterns.extend(claim_patterns)
+        raw_patterns.append(compact_bits(str(entry["bits"])))
+        skipped_count += sum(entry_skipped.values())
+        for previous_entry, previous in prior_entries:
+            witness = entries_overlap(previous_entry, entry)
+            if witness is not None and len(overlap_examples) < 20:
+                digits = (allocation_bits + 3) // 4
+                overlap_examples.append(
+                    f"0x{witness:0{digits}x}: {previous.entry_id} overlaps {claim.entry_id}"
                 )
-            )
+        prior_entries.append((entry, claim))
 
-    if overlap_count:
+        if materialize:
+            claims, _entry_skipped = entry_claims(
+                entry_path, allocation_bits, namespaces, entry
+            )
+            for value, materialized_claim in claims:
+                allocated[value] = materialized_claim
+                claimed[value] = materialized_claim
+            for value, reason in skipped_values(
+                entry_path, allocation_bits, namespaces, entry
+            ):
+                skipped[value].append(
+                    SkippedSlot(
+                        entry_id=str(entry["id"]),
+                        reason=reason,
+                        text=str(entry.get("text", "")),
+                    )
+                )
+
+    if overlap_examples:
         detail = "\n  ".join(overlap_examples)
         raise ValueError(
-            f"{path}: {overlap_count:,} overlapping allocated slots"
+            f"{path}: overlapping allocated entries"
             + (f"; first overlaps:\n  {detail}" if detail else "")
         )
 
@@ -158,10 +191,19 @@ def load_space_data(path: Path, data: dict[str, Any]) -> AllocationSpace:
         allocated=allocated,
         claimed=claimed,
         skipped=dict(skipped),
+        allocated_count=pattern_union_cardinality(legal_patterns),
+        skipped_count=skipped_count,
+        unavailable_count=pattern_union_cardinality(raw_patterns),
     )
 
 
-def load_store_space(defs_root: Path, cls: str) -> AllocationSpace:
+def load_store_space(
+    defs_root: Path,
+    cls: str,
+    *,
+    materialize: bool = False,
+    max_enumerate: int = DEFAULT_MAX_ENUMERATE,
+) -> AllocationSpace:
     from encoding_store import class_entries, load_encoding_store
 
     store = load_encoding_store(defs_root)
@@ -176,6 +218,8 @@ def load_store_space(defs_root: Path, cls: str) -> AllocationSpace:
             "namespace": list(encoding_class.namespace),
             "entries": class_entries(store, cls),
         },
+        materialize=materialize,
+        max_enumerate=max_enumerate,
     )
 
 
@@ -586,18 +630,14 @@ def command_summary(args: argparse.Namespace) -> int:
     for encoding_class in store.classes:
         space = load_store_space(args.defs_root, encoding_class.name)
         total = namespace_size(space.namespaces)
-        allocated = len(space.allocated)
-        skipped = sum(len(items) for items in space.skipped.values())
-        unavailable = set(space.claimed)
-        unavailable.update(space.skipped)
         rows.append(
             [
                 space.cls,
                 str(space.allocation_bits),
                 f"{total:,}",
-                f"{allocated:,}",
-                f"{skipped:,}",
-                f"{total - len(unavailable):,}",
+                f"{space.allocated_count:,}",
+                f"{space.skipped_count:,}",
+                f"{total - space.unavailable_count:,}",
                 str(ARCHITECTURE_SOURCE_PATH),
             ]
         )
@@ -628,7 +668,12 @@ def command_legend(args: argparse.Namespace) -> int:
 
 
 def command_entries(args: argparse.Namespace) -> int:
-    space = load_store_space(args.defs_root, args.cls)
+    space = load_store_space(
+        args.defs_root,
+        args.cls,
+        materialize=args.show_reserved,
+        max_enumerate=args.max_enumerate,
+    )
     leading = normalize_pattern(args.leading, space.allocation_bits) if args.leading else None
     needle = args.grep.lower() if args.grep else None
     use_color = color_enabled(args)
@@ -643,7 +688,7 @@ def command_entries(args: argparse.Namespace) -> int:
         if needle and needle not in entry_id.lower() and needle not in text.lower():
             continue
         entry_path = Path(str(entry.get("source_path", space.path)))
-        claims, skipped = entry_claims(
+        assigned, skipped, _claim = entry_claim_summary(
             entry_path, space.allocation_bits, space.namespaces, entry
         )
         rows.append(
@@ -655,7 +700,7 @@ def command_entries(args: argparse.Namespace) -> int:
                     entry_id,
                     colorize_bits(bits, entry.get("fields") or {}, use_color),
                     f"{pattern_slots:,}",
-                    f"{len(claims):,}",
+                    f"{assigned:,}",
                     f"{sum(skipped.values()):,}",
                     text,
                 ],
@@ -718,6 +763,44 @@ def patterns_overlap(left: str, right: str) -> bool:
     return True
 
 
+def claims_at_value(
+    space: AllocationSpace, value: int, ignored: set[str]
+) -> tuple[Claim | None, list[SkippedSlot]]:
+    skipped: list[SkippedSlot] = []
+    for entry in space.entries:
+        entry_id = str(entry["id"])
+        if entry_id in ignored:
+            continue
+        pattern = compact_bits(str(entry["bits"]))
+        if not matches_pattern(value, pattern):
+            continue
+        reason = None
+        for constraint in entry.get("constraints") or []:
+            if "allow" in constraint and not field_allowed(value, pattern, constraint):
+                reason = str(constraint.get("reason", "allow_constraint"))
+                break
+            if "exclude" in constraint and excluded_by(value, pattern, constraint):
+                reason = str(constraint.get("reason", constraint["exclude"]))
+                break
+        if reason is None:
+            return (
+                Claim(
+                    path=Path(str(entry.get("source_path", space.path))),
+                    entry_id=entry_id,
+                    text=str(entry.get("text", "")),
+                ),
+                skipped,
+            )
+        skipped.append(
+            SkippedSlot(
+                entry_id=entry_id,
+                reason=reason,
+                text=str(entry.get("text", "")),
+            )
+        )
+    return None, skipped
+
+
 def command_check(args: argparse.Namespace) -> int:
     space = load_store_space(args.defs_root, args.cls)
     pattern = normalize_pattern(args.pattern, space.allocation_bits)
@@ -740,18 +823,12 @@ def command_check(args: argparse.Namespace) -> int:
         if not any(matches_pattern(value, namespace) for namespace in space.namespaces):
             outside += 1
             continue
-        claim = space.claimed.get(value)
+        claim, skipped = claims_at_value(space, value, ignored)
         if claim is not None:
-            if claim.entry_id in ignored:
-                clean_free += 1
-                continue
             key = claim.entry_id
             collisions[key] += 1
             collision_examples.setdefault(key, claim.text)
             continue
-        skipped = space.skipped.get(value)
-        if skipped:
-            skipped = [item for item in skipped if item.entry_id not in ignored]
         if skipped:
             for item in skipped:
                 key = f"{item.entry_id}:{item.reason}"
@@ -788,7 +865,12 @@ def command_check(args: argparse.Namespace) -> int:
 
 
 def command_holes(args: argparse.Namespace) -> int:
-    space = load_store_space(args.defs_root, args.cls)
+    space = load_store_space(
+        args.defs_root,
+        args.cls,
+        materialize=True,
+        max_enumerate=args.max_enumerate,
+    )
     all_values = namespace_values(space, args.max_enumerate)
     leading = normalize_pattern(args.leading, space.allocation_bits) if args.leading else None
 
@@ -937,22 +1019,22 @@ def validate_candidate_document(
         by_class[item.form.encoding_class].append(item)
 
     for encoding_class in store.classes:
-        claims_by_value: dict[int, Claim] = {}
+        prior_entries: list[tuple[dict[str, Any], str]] = []
         for item in by_class.get(encoding_class.name, []):
             entry = allocation_entry_dict(item, store.field_types)
-            claims, _skipped = entry_claims(
+            _count, _skipped, claim = entry_claim_summary(
                 item.path,
                 encoding_class.allocation_bits,
                 list(encoding_class.namespace),
                 entry,
             )
-            for value, claim in claims:
-                previous = claims_by_value.get(value)
-                if previous is not None:
+            for previous_entry, previous_id in prior_entries:
+                witness = entries_overlap(previous_entry, entry)
+                if witness is not None:
                     raise ValueError(
-                        f"0x{value:x}: {previous.entry_id} overlaps {claim.entry_id}"
+                        f"0x{witness:x}: {previous_id} overlaps {claim.entry_id}"
                     )
-                claims_by_value[value] = claim
+            prior_entries.append((entry, claim.entry_id))
 
 
 def preview_or_apply(

@@ -43,6 +43,18 @@ state_groups:
     definition: section:state-register-formats
     readers: floating-point execution, dedicated reads, and SAVE
     writers: floating-point results, dedicated writes, RESET, and RESTORE
+  - id: vector_registers
+    members: [V0, V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, V19, V20, V21, V22, V23, V24, V25, V26, V27, V28, V29, V30, V31]
+    fields: []
+    definition: section:vector-register-model
+    readers: vector operands, vector effective-address-independent computation, and SAVE
+    writers: vector destinations, RESET, and RESTORE
+  - id: predicate_registers
+    members: [P0, P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15]
+    fields: []
+    definition: section:vector-register-model
+    readers: governing predicates, predicate operations, predicate branches, PLOOP, and SAVE
+    writers: predicate destinations, PLOOP, RESET, and RESTORE
   - id: performance_counters
     members: [CYCLE, INSTRET, PTWALK]
     fields: []
@@ -66,14 +78,14 @@ canonical_field_groups:
   - owner: ECR
     fields: [MAX_EDEPTH, NMI_P, V]
     definition: section:control-registers
-  - owner: URCTL
+  - owner: UCTL
     fields: [V, STATUS, FLAGS]
     definition: section:control-registers
   - owner: PMC
     fields: [EN]
     definition: section:control-registers
   - owner: PTE
-    fields: [P, W, X, U, G, A, D, AT, CP, SW0, T, PFN]
+    fields: [P, W, X, U, G, A, D, ignored bit 7, CP, SW0, T, PFN]
     definition: section:page-table-entry-format
   - owner: instruction_header
     fields: [L]
@@ -89,4 +101,5 @@ revision_history:
       - Defined atomic ordering, paging boundaries, compatibility identity, stack, WAIT/HALT, and conformance contracts.
       - Unified complete-image integer FLAGS writes, retained accrued IEEE-754 FFLAGS, and made REPcc test temporary value-derived conditions.
       - Unified terminology, canonical field names, reference indexes, and revision-history navigation.
+      - Added the scalable-vector register, predicate, memory, conversion, reduction, save-state, and software-interface contracts.
   released: []

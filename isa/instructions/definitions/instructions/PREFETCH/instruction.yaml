@@ -1,7 +1,7 @@
 mnemonic: PREFETCH
 title: Prefetch
 summary: Hints that EA will be read soon; faults only under the configured prefetch-fault policy.
-description: Computes the source address without an architectural read and issues an optional temporal read-prefetch hint. An AT=1 mapping produces no slot transaction. Ignoring the hint has no architectural effect except under an explicitly configured prefetch-fault policy.
+description: Computes the byte-addressed source without an architectural read and issues an optional temporal read-prefetch hint. Ignoring the hint has no architectural effect except under an explicitly configured prefetch-fault policy.
 attributes:
   class: system
   family: cache
@@ -9,4 +9,3 @@ attributes:
 repeat:
   contexts:
   - REP
-  - REPG

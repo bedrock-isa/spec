@@ -1,0 +1,8 @@
+mnemonic: VMUL
+title: VMUL (Vector)
+summary: Low integer product or IEEE floating-point multiplication.
+description: Low integer product or IEEE floating-point multiplication.
+attributes:
+  class: vector
+  family: vector
+  privilege: unprivileged

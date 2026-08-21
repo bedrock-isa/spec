@@ -32,6 +32,10 @@ These terms are specific to the C binding. ELF and address-space terms keep the 
 \item[callee-saved register] A register whose incoming value must be preserved by the called function if the function uses it.
 \item[sret buffer] Caller-allocated storage used to receive a return value that is too large or unsuitable for the normal return registers.
 \item[addressable by-value argument] A by-value aggregate argument that is passed through caller-owned stack storage because the callee may need an address for the object.
+\item[scalable value] A target vector or predicate value whose complete object
+size is determined by the implementation-selected VLEN. Source-language
+spellings are defined by the applicable compiler extension rather than this
+calling convention.
 \end{description}
 
 \clearpage
@@ -135,6 +139,16 @@ second, each using the corresponding real type's representation. Therefore
 \texttt{double \_Complex} and \texttt{long double \_Complex} have size 16 and
 alignment 8.
 
+\paragraph{Scalable vector and predicate types.}
+When the scalable-vector extension is present, let $B$ be VLEN in bytes. A
+vector object contains exactly $B$ bytes and has 16-byte alignment. A
+predicate object contains exactly $B/8$ packed-image bytes. A private vector
+spill slot has $B$ bytes, 16-byte alignment, and $B$-byte stride. A private
+predicate spill slot has 16-byte alignment and
+$\operatorname{align\_up}(B/8,16)$-byte stride. Predicate spill tail padding
+carries no value. VLEN is stable until reset, so every object and frame in one
+execution context uses one size.
+
 \subsection{Aggregate Layout}
 Aggregate layout applies the scalar and pointer sizes and alignments defined
 above as follows:
@@ -198,6 +212,8 @@ call result to them.
 \endhead
 General registers & \texttt{R0}--\texttt{R7} & \texttt{R8}--\texttt{R15}\\
 Floating-point registers & \texttt{F0}--\texttt{F7} & \texttt{F8}--\texttt{F15}\\
+Vector registers & \texttt{V0}--\texttt{V15} & \texttt{V16}--\texttt{V31}\\
+Predicate registers & \texttt{P0}--\texttt{P7} & \texttt{P8}--\texttt{P15}\\
 Condition state & \texttt{FLAGS} & none\\
 Segment state & \texttt{GS1}--\texttt{GS5} & \texttt{CS}, \texttt{DS}, \texttt{SS}, \texttt{GS0}\\
 \bottomrule
@@ -211,6 +227,11 @@ for \texttt{F8:F9}, index 5 for \texttt{F10:F11}, index 6 for
 saved, a normal prologue pushes them in increasing pair-index order and the
 matching epilogue pops them in decreasing pair-index order. A callee need only
 save the pair containing each nonvolatile register it modifies.
+
+A callee that modifies a nonvolatile vector or predicate register shall
+restore that register's complete scalable image before returning. Saving only
+the currently active lanes, only significant predicate bits for one element
+size, or only a fixed-width prefix does not preserve the register.
 
 \subsection{Stack and Control State}
 \texttt{SP} is the architectural stack pointer, not a general C temporary. A
@@ -341,19 +362,25 @@ Frame pointers are otherwise omitted.
 51..56 & \texttt{GS0}..\texttt{GS5} & assigned\\
 57 & \texttt{FFLAGS} & assigned\\
 58 & \texttt{FSTATUS} & assigned\\
-59 and greater & --- & reserved\\
+59..63 & --- & reserved\\
+64..95 & \texttt{V0}..\texttt{V31} & assigned when VECTOR is present\\
+96..111 & \texttt{P0}..\texttt{P15} & assigned when VECTOR is present\\
+112 and greater & --- & reserved\\
 \bottomrule
 \end{manuallongtable}
 
 At call entry, the canonical frame address is entry \texttt{SP+8}; saved
 \texttt{PC} is at CFA minus 8 and \texttt{CS} has a same-value rule. Signal
 and architectural event-frame unwind conventions belong to the active OS ABI.
+An unwind description that saves a vector or predicate register describes its
+complete VLEN-dependent image. Predicate register locations contain the
+packed image without private spill padding.
 
 \Needspace{2.4in}
 \subsection{Argument Classification}
 Classification occurs after the C language has determined the effective type
 of the argument. A named argument to a prototyped function is placed in one of
-five ABI classes:
+seven ABI classes:
 
 \begin{description}[style=nextline,leftmargin=1.35in,labelwidth=1.25in,itemsep=3pt,topsep=3pt]
 \item[GENERAL] Integer types no wider than 64 bits and ordinary object or
@@ -365,10 +392,19 @@ floating-point register is required.
 \item[FLOAT-PAIR] \texttt{float \_Complex}, \texttt{double \_Complex}, and
 \texttt{long double \_Complex}. Two consecutive floating-point registers are
 required, with no even-register alignment.
+\item[VECTOR] A direct scalable vector value. One vector register is required.
+\item[PREDICATE] A direct scalable predicate value. One predicate register is
+required.
 \item[INDIRECT] Every structure or union argument, regardless of size or
 member composition. The caller creates a 16-byte-aligned by-value copy and
 passes the address of that copy as one GENERAL value.
 \end{description}
+
+A compound scalable value is INDIRECT. A scalable value that cannot use its
+direct register class is also converted to INDIRECT: the caller creates an
+object with the layout above and assigns its pointer through the GENERAL
+procedure. No scalable value is split between registers or copied directly
+into an ordinary fixed-size argument slot.
 
 Signed GENERAL values narrower than 64 bits are sign-extended when assigned to
 a register. Unsigned values and \texttt{\_Bool} are zero-extended. Plain
@@ -383,11 +419,15 @@ result without inspecting any unused register or padding byte.
 \begin{enumerate}[leftmargin=1.35em,itemsep=3pt,topsep=3pt]
 \item If the result uses an sret buffer, assign its address to \texttt{R0} and
 initialize the general-register cursor to 1. Otherwise initialize it to 0.
-Initialize the floating-point cursor to 0.
+Initialize the floating-point cursor to 0, the vector cursor to 0, and the
+predicate cursor to 0.
 \item Visit arguments in source order. GENERAL and INDIRECT arguments consume
 the register named by the current general cursor and then advance that cursor.
 FLOAT arguments analogously consume \texttt{F0} through \texttt{F7} using the
-independent floating-point cursor.
+independent floating-point cursor. VECTOR arguments consume \texttt{V0}
+through \texttt{V7} using the independent vector cursor, and PREDICATE
+arguments consume \texttt{P0} through \texttt{P3} using the independent
+predicate cursor.
 \item For a FLOAT-PAIR argument, use the current floating-point register for
 the real component and the next register for the imaginary component, then
 advance the cursor by two. No even-register alignment is applied. If both
@@ -402,16 +442,23 @@ registers of its class, place the complete argument in one stack slot and mark
 that register class exhausted. Later arguments of that class also use stack
 slots; they do not backfill a register hole. An argument is never split between
 registers and the stack.
+For VECTOR or PREDICATE, instead convert the complete argument to INDIRECT as
+specified above and assign that pointer through GENERAL; exhausting a scalable
+register class does not exhaust GENERAL.
 \item Unnamed variadic arguments and every argument of an unprototyped call are
 forced to stack slots and do not consume register cursors. Apply the default
 argument promotions before assigning those slots.
+Every scalable argument in either case is first converted to INDIRECT. Its
+GENERAL pointer is then subject to this forced-stack rule, so the variadic slot
+contains the pointer, not the scalable object.
 \item Assign stack slots to stack-bound arguments in source order beginning at
 \texttt{[SP+16]}. Consequently, a caller that constructs the outgoing area by
 stores or pushes does so from the rightmost stack-bound argument toward the
 leftmost. No register home slots are reserved.
 \end{enumerate}
 
-The general and floating-point resources exhaust independently.
+The general, floating-point, vector, and predicate resources exhaust
+independently.
 
 \subsection{C Return Values}
 Scalar results use their natural register class. A \texttt{\_\_int128} result
@@ -423,6 +470,11 @@ unspecified.
 
 A complex result places its real component in \texttt{F0} and its imaginary
 component in \texttt{F1}.
+
+A single direct vector result uses \texttt{V0}; a single direct predicate
+result uses \texttt{P0}. A compound scalable result or any result containing
+multiple scalable values uses the ordinary indirect-result procedure, even if
+its fixed fields would otherwise fit in \texttt{R0:R1}.
 
 For a larger aggregate, the caller allocates a 16-byte-aligned result buffer
 and passes its address in \texttt{R0} before ordinary argument assignment. The
@@ -714,6 +766,17 @@ so \texttt{wide} uses \texttt{R3:R2} and \texttt{R1} remains unused. The
 address of the caller-owned \texttt{pair} copy uses \texttt{R4}, and
 \texttt{bias} uses \texttt{F1}. No stack argument area is required.
 
+\manualabicase{scalable-register-classes}
+\subsection{Independent Scalable Register Classes}
+Assume \texttt{vec} and \texttt{pred} denote direct scalable vector and
+predicate extension types. For
+\texttt{vec blend(vec left, pred mask, uint64\_t count, vec right, pred
+select, double scale)}, \texttt{left} and \texttt{right} use \texttt{V0} and
+\texttt{V1}; \texttt{mask} and \texttt{select} independently use \texttt{P0}
+and \texttt{P1}; \texttt{count} uses \texttt{R0}; and \texttt{scale} uses
+\texttt{F0}. The direct vector result uses \texttt{V0}. No class advances a
+cursor belonging to another class.
+
 \manualabicase{sret-reserves-r0}
 \subsection{sret Changes Ordinary Argument Assignment}
 \begingroup\small\ttfamily
@@ -763,13 +826,8 @@ that order by adding 16 after each access.
 \subsection{Assembly Conventions}
 The assembly examples are non-normative. File directives, basic-block
 comments, and local labels that do not affect the shown control flow are
-omitted. The scalar leaf example
-presents its one-instruction counted loop with \texttt{REP}. For a grouped body
-that does not write the selected loop-control register, REPG's post-body rule
-requires an equivalent form to bypass an initial zero but permits it to supply
-N directly for a positive N; the displayed \texttt{REP} also takes N directly
-and annuls zero. Apart from that zero-case normalization, instruction order and
-operands are unchanged. If an implementation sequence conflicts with a
+omitted. The scalar leaf example presents its one-instruction counted loop with \texttt{REP}; the counter supplies
+N directly and zero annuls the body. If an implementation sequence conflicts with a
 normative rule, the rule controls.
 
 The declarations below state the ABI interfaces used by the examples.

@@ -98,23 +98,17 @@ class FixedOperandBytesGenerationTests(unittest.TestCase):
             gen_isa.fixed_operand_bytes(
                 "test.form",
                 [
+                    self.operand("imm8"),
                     self.operand("imm8s"),
-                    self.operand("imm16s"),
                     self.operand("imm16"),
+                    self.operand("imm16s"),
+                    self.operand("imm32"),
                     self.operand("imm32s"),
                     self.operand("imm64"),
                     self.operand("fconst_id"),
                 ],
             ),
-            19,
-        )
-
-    def test_repg_body_length_is_an_ordinary_fieldless_imm16(self) -> None:
-        self.assertEqual(
-            gen_isa.fixed_operand_bytes(
-                "medium.repg_rn_r_ea", [self.operand("imm16")]
-            ),
-            2,
+            24,
         )
 
     def test_encoded_operand_payload_is_not_fixed(self) -> None:

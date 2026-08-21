@@ -1,0 +1,13 @@
+forms:
+- id: long.vindex.v17
+  class: long
+  bits: 11111010011010zz00001vvvvv
+  syntax: VINDEX.BWLQ(z) Vn(v)
+  operands:
+  - name: dst
+    type: Vn
+    access: write
+    field: v
+  fields:
+    z:
+      type: size.BWLQ

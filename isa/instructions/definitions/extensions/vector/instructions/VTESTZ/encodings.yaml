@@ -1,0 +1,51 @@
+forms:
+- id: extralong.vtestz.v48
+  class: extralong
+  bits: 111111011000zz00ppppqqqqvvvvvwwwww
+  syntax: VTESTZ.BWLQ(z) Pn(p), Vn(v), Vn(w), Pn(q)
+  operands:
+  - name: govern
+    type: Pn
+    access: read
+    field: p
+  - name: lhs
+    type: Vn
+    access: read
+    field: v
+  - name: rhs
+    type: Vn
+    access: read
+    field: w
+  - name: dst
+    type: Pn
+    access: write
+    field: q
+  fields:
+    z:
+      type: size.BWLQ
+- id: xxlong.vtestz.v231
+  class: xxlong
+  bits: 11111111000000101000zzppppqqqqvvvvveeeeeee
+  syntax: VTESTZ.BWLQ(z) Pn(p), Vn(v), <ea>(e), Pn(q)
+  operands:
+  - name: govern
+    type: Pn
+    access: read
+    field: p
+  - name: lhs
+    type: Vn
+    access: read
+    field: v
+  - name: src
+    type: VEA
+    access: read
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  - name: dst
+    type: Pn
+    access: write
+    field: q
+  fields:
+    z:
+      type: size.BWLQ

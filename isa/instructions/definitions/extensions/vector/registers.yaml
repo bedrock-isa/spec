@@ -1,0 +1,53 @@
+registers:
+  vector:
+    entries:
+    - {name: V0, width: VLEN, encoding: 0}
+    - {name: V1, width: VLEN, encoding: 1}
+    - {name: V2, width: VLEN, encoding: 2}
+    - {name: V3, width: VLEN, encoding: 3}
+    - {name: V4, width: VLEN, encoding: 4}
+    - {name: V5, width: VLEN, encoding: 5}
+    - {name: V6, width: VLEN, encoding: 6}
+    - {name: V7, width: VLEN, encoding: 7}
+    - {name: V8, width: VLEN, encoding: 8}
+    - {name: V9, width: VLEN, encoding: 9}
+    - {name: V10, width: VLEN, encoding: 10}
+    - {name: V11, width: VLEN, encoding: 11}
+    - {name: V12, width: VLEN, encoding: 12}
+    - {name: V13, width: VLEN, encoding: 13}
+    - {name: V14, width: VLEN, encoding: 14}
+    - {name: V15, width: VLEN, encoding: 15}
+    - {name: V16, width: VLEN, encoding: 16}
+    - {name: V17, width: VLEN, encoding: 17}
+    - {name: V18, width: VLEN, encoding: 18}
+    - {name: V19, width: VLEN, encoding: 19}
+    - {name: V20, width: VLEN, encoding: 20}
+    - {name: V21, width: VLEN, encoding: 21}
+    - {name: V22, width: VLEN, encoding: 22}
+    - {name: V23, width: VLEN, encoding: 23}
+    - {name: V24, width: VLEN, encoding: 24}
+    - {name: V25, width: VLEN, encoding: 25}
+    - {name: V26, width: VLEN, encoding: 26}
+    - {name: V27, width: VLEN, encoding: 27}
+    - {name: V28, width: VLEN, encoding: 28}
+    - {name: V29, width: VLEN, encoding: 29}
+    - {name: V30, width: VLEN, encoding: 30}
+    - {name: V31, width: VLEN, encoding: 31}
+  predicate:
+    entries:
+    - {name: P0, width: VLEN_bytes, encoding: 0}
+    - {name: P1, width: VLEN_bytes, encoding: 1}
+    - {name: P2, width: VLEN_bytes, encoding: 2}
+    - {name: P3, width: VLEN_bytes, encoding: 3}
+    - {name: P4, width: VLEN_bytes, encoding: 4}
+    - {name: P5, width: VLEN_bytes, encoding: 5}
+    - {name: P6, width: VLEN_bytes, encoding: 6}
+    - {name: P7, width: VLEN_bytes, encoding: 7}
+    - {name: P8, width: VLEN_bytes, encoding: 8}
+    - {name: P9, width: VLEN_bytes, encoding: 9}
+    - {name: P10, width: VLEN_bytes, encoding: 10}
+    - {name: P11, width: VLEN_bytes, encoding: 11}
+    - {name: P12, width: VLEN_bytes, encoding: 12}
+    - {name: P13, width: VLEN_bytes, encoding: 13}
+    - {name: P14, width: VLEN_bytes, encoding: 14}
+    - {name: P15, width: VLEN_bytes, encoding: 15}

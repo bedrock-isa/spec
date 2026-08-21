@@ -236,6 +236,111 @@
         ],
         "stack_size": 32
       }
+    },
+    {
+      "id": "scalable-register-classes",
+      "documented": true,
+      "call": {
+        "return": {"kind": "vector"},
+        "arguments": [
+          {"name": "left", "kind": "vector"},
+          {"name": "mask", "kind": "predicate"},
+          {"name": "count", "kind": "u64"},
+          {"name": "right", "kind": "vector"},
+          {"name": "select", "kind": "predicate"},
+          {"name": "scale", "kind": "f64"}
+        ]
+      },
+      "expect": {
+        "sret": null,
+        "return_location": "V0",
+        "arguments": [
+          {"name": "left", "source_kind": "vector", "effective_kind": "vector", "mode": "value", "location": "V0"},
+          {"name": "mask", "source_kind": "predicate", "effective_kind": "predicate", "mode": "value", "location": "P0"},
+          {"name": "count", "source_kind": "u64", "effective_kind": "u64", "mode": "value", "location": "R0"},
+          {"name": "right", "source_kind": "vector", "effective_kind": "vector", "mode": "value", "location": "V1"},
+          {"name": "select", "source_kind": "predicate", "effective_kind": "predicate", "mode": "value", "location": "P1"},
+          {"name": "scale", "source_kind": "f64", "effective_kind": "f64", "mode": "value", "location": "F0"}
+        ],
+        "stack_size": 0
+      }
+    },
+    {
+      "id": "scalable-register-exhaustion-is-indirect",
+      "documented": false,
+      "call": {
+        "return": {"kind": "void"},
+        "arguments": [
+          {"name": "v0", "kind": "vector"},
+          {"name": "v1", "kind": "vector"},
+          {"name": "v2", "kind": "vector"},
+          {"name": "v3", "kind": "vector"},
+          {"name": "v4", "kind": "vector"},
+          {"name": "v5", "kind": "vector"},
+          {"name": "v6", "kind": "vector"},
+          {"name": "v7", "kind": "vector"},
+          {"name": "v8", "kind": "vector"},
+          {"name": "tail", "kind": "u64"}
+        ]
+      },
+      "expect": {
+        "sret": null,
+        "return_location": null,
+        "arguments": [
+          {"name": "v0", "source_kind": "vector", "effective_kind": "vector", "mode": "value", "location": "V0"},
+          {"name": "v1", "source_kind": "vector", "effective_kind": "vector", "mode": "value", "location": "V1"},
+          {"name": "v2", "source_kind": "vector", "effective_kind": "vector", "mode": "value", "location": "V2"},
+          {"name": "v3", "source_kind": "vector", "effective_kind": "vector", "mode": "value", "location": "V3"},
+          {"name": "v4", "source_kind": "vector", "effective_kind": "vector", "mode": "value", "location": "V4"},
+          {"name": "v5", "source_kind": "vector", "effective_kind": "vector", "mode": "value", "location": "V5"},
+          {"name": "v6", "source_kind": "vector", "effective_kind": "vector", "mode": "value", "location": "V6"},
+          {"name": "v7", "source_kind": "vector", "effective_kind": "vector", "mode": "value", "location": "V7"},
+          {"name": "v8", "source_kind": "vector", "effective_kind": "vector", "mode": "copy-address", "location": "R0"},
+          {"name": "tail", "source_kind": "u64", "effective_kind": "u64", "mode": "value", "location": "R1"}
+        ],
+        "stack_size": 0
+      }
+    },
+    {
+      "id": "variadic-scalable-is-indirect",
+      "documented": false,
+      "call": {
+        "return": {"kind": "void"},
+        "variadic": true,
+        "arguments": [
+          {"name": "format", "kind": "pointer"},
+          {"name": "payload", "kind": "vector", "named": false}
+        ]
+      },
+      "expect": {
+        "sret": null,
+        "return_location": null,
+        "arguments": [
+          {"name": "format", "source_kind": "pointer", "effective_kind": "pointer", "mode": "value", "location": "R0"},
+          {"name": "payload", "source_kind": "vector", "effective_kind": "vector", "mode": "copy-address", "location": "[SP+16]"}
+        ],
+        "stack_size": 16
+      }
+    },
+    {
+      "id": "compound-scalable-result-is-indirect",
+      "documented": false,
+      "call": {
+        "return": {"kind": "compound_scalable"},
+        "arguments": [
+          {"name": "value", "kind": "vector"},
+          {"name": "pair", "kind": "compound_scalable"}
+        ]
+      },
+      "expect": {
+        "sret": "R0",
+        "return_location": "R0",
+        "arguments": [
+          {"name": "value", "source_kind": "vector", "effective_kind": "vector", "mode": "value", "location": "V0"},
+          {"name": "pair", "source_kind": "compound_scalable", "effective_kind": "compound_scalable", "mode": "copy-address", "location": "R1"}
+        ],
+        "stack_size": 0
+      }
     }
   ]
 }

@@ -22,14 +22,86 @@ function restore_fp_file(bytes : list(bits(8)), offset : int, index : int,
     },
   }
 
+function drop_restore_bytes(bytes : list(bits(8)), count : int) -> list(bits(8)) =
+  if count <= 0 then bytes
+  else match bytes {
+    [||] => [||],
+    _head :: tail => drop_restore_bytes(tail, count - 1),
+  }
+
+function take_restore_bytes(bytes : list(bits(8)), count : int) -> list(bits(8)) =
+  if count <= 0 then [||]
+  else match bytes {
+    [||] => [||],
+    head :: tail => head :: take_restore_bytes(tail, count - 1),
+  }
+
+function restore_byte_slice(bytes : list(bits(8)), offset : int, count : int)
+  -> list(bits(8)) = take_restore_bytes(drop_restore_bytes(bytes, offset), count)
+
+function restore_vector_file(bytes : list(bits(8)), offset : int, bytes_per_register : int,
+                             index : int, registers : Vector_registers)
+  -> Vector_registers =
+  if index >= 32 then registers
+  else {
+    var updated = registers;
+    updated[unsigned(get_slice_int(5, index, 0))] =
+      restore_byte_slice(bytes, offset + index * bytes_per_register, bytes_per_register);
+    restore_vector_file(bytes, offset, bytes_per_register, index + 1, updated)
+  }
+
+function restore_predicate_file(bytes : list(bits(8)), offset : int,
+                                bytes_per_register : int, index : int,
+                                registers : Predicate_registers)
+  -> Predicate_registers =
+  if index >= 16 then registers
+  else {
+    var updated = registers;
+    updated[unsigned(get_slice_int(4, index, 0))] =
+      restore_byte_slice(bytes, offset + index * bytes_per_register, bytes_per_register);
+    restore_predicate_file(bytes, offset, bytes_per_register, index + 1, updated)
+  }
+
+function restore_vector_component_and_complete(state : Cpu_state, updated : Cpu_state,
+                                               bytes : list(bits(8)), bitmap : bits(64))
+  -> Execution_result = {
+  var candidate = updated;
+  if bitmap[1] == bitzero then {
+    if state.vector_component_present then {
+      candidate.vector_registers = zero_vector_registers(state.vector_length_bytes);
+      candidate.predicate_registers = zero_predicate_registers(state.vector_length_bytes);
+      candidate.vector_component_modified = false
+    } else ();
+    completed(state, candidate, CommitMemory, [||])
+  }
+  else {
+    let predicate_bytes = tdiv_int(state.vector_length_bytes, 8);
+    let vector_registers = restore_vector_file(
+      bytes, state.vector_component_offset, state.vector_length_bytes,
+      0, state.vector_registers
+    );
+    let predicate_registers = restore_predicate_file(
+      bytes, state.vector_component_offset + 32 * state.vector_length_bytes,
+      predicate_bytes, 0, state.predicate_registers
+    );
+    candidate.vector_registers = vector_registers;
+    candidate.predicate_registers = predicate_registers;
+    candidate.vector_component_modified =
+      vector_registers != zero_vector_registers(state.vector_length_bytes)
+      | predicate_registers != zero_predicate_registers(state.vector_length_bytes);
+    completed(state, candidate, CommitMemory, [||])
+  }
+}
+
 function restore_raw_image(previous : Execution_result, bytes : list(bits(8)),
                            header : bits(64), bitmap : bits(64)) -> Execution_result = {
   let state = previous.pending.before;
   let saved_status = sail_shiftright(header, 36) & 0x000000000000FFFF;
   let saved_flags = sail_shiftright(header, 20) & 0x000000000000FFFF;
+  let saved_dfa = header[10] == bitone;
   let invalid_status = state.supervisor
-    & (saved_status[15 .. 6] != 0b0000000000
-       | saved_status[4] != state.status[4] | saved_status[0] != state.status[0]);
+    & (saved_status[4] != bitone
+       | not_bool(restored_event_state_valid(state, saved_status, saved_dfa)));
   if byte_list_length(bytes) < state.save_area_size
      | saved_flags[15 .. 4] != 0x000 | invalid_status then
     faulted(state, Op_RESTORE, InvalidControlState, "invalid raw RESTORE image")
@@ -55,7 +127,10 @@ function restore_raw_image(previous : Execution_result, bytes : list(bits(8)),
           var updated = previous.pending.after;
           updated.registers = registers;
           updated.flags = saved_flags[3 .. 0];
-          if state.supervisor then updated.status = saved_status else ();
+          if state.supervisor then {
+            updated.status = saved_status;
+            updated.current_dfa = saved_dfa
+          } else ();
           if header[4] == bitone then updated.segments[3] = gs0 else ();
           if header[5] == bitone then updated.segments[4] = gs1 else ();
           if header[6] == bitone then updated.segments[5] = gs2 else ();
@@ -69,7 +144,7 @@ function restore_raw_image(previous : Execution_result, bytes : list(bits(8)),
               updated.fstatus = 0x0000000000000000;
               updated.fp_component_modified = false
             } else ();
-            completed(state, updated, CommitMemory, [||])
+            restore_vector_component_and_complete(state, updated, bytes, bitmap)
           }
           else match (
             restore_fp_file(bytes, state.fp_component_offset, 0,
@@ -88,7 +163,7 @@ function restore_raw_image(previous : Execution_result, bytes : list(bits(8)),
                 updated.fstatus = fstatus;
                 updated.fp_component_modified = fp_registers != zero_floating_registers()
                   | fflags != 0x0000000000000000 | fstatus != 0x0000000000000000;
-                completed(state, updated, CommitMemory, [||])
+                restore_vector_component_and_complete(state, updated, bytes, bitmap)
               },
             _ => faulted(state, Op_RESTORE, InvalidControlState,
                          "truncated RESTORE floating-point component"),
@@ -100,42 +175,6 @@ function restore_raw_image(previous : Execution_result, bytes : list(bits(8)),
   }
 }
 
-function decode_repeat_frame(control : bits(64), ext : bits(64), saved_pc : bits(64),
-                             saved_cs : bits(64), state : Cpu_state) -> option(Repeat_state) =
-  if control[18] == bitzero then
-    if ext == 0x0000000000000000 then Some({ state.repeat_state with active = false })
-    else None()
-  else {
-    let kind = unsigned(ext[9 .. 8]);
-    let delta = sail_zero_extend(ext[31 .. 16], 64);
-    let body_length = ext[47 .. 32];
-    let grouped = kind == 1;
-    let body_start = sub_bits(saved_pc, delta);
-    let grouped_location_valid = not_bool(grouped) | (
-      unsigned(delta) < unsigned(body_length)
-      & unsigned(saved_pc) >= unsigned(delta)
-      & segment_point(saved_cs, body_start).in_bounds
-      & segment_point(saved_cs, add_bits(body_start,
-          bits_from_int(unsigned(body_length) - 1))).in_bounds
-    );
-    if kind > 1 | ext[15 .. 10] != 0b000000 | ext[63 .. 48] != 0x0000
-       | (kind == 0 & ext[7 .. 4] == 0x1)
-       | (kind == 1 & ext[7 .. 4] != 0x0)
-       | (not_bool(grouped) & (delta != 0x0000000000000000 | body_length != 0x0000))
-       | (grouped & body_length == 0x0000)
-       | not_bool(grouped_location_valid) then None()
-    else {
-      let counter = ext[3 .. 0];
-      Some(struct {
-        active = true, grouped = grouped, counter = counter,
-        remaining = state.registers[unsigned(counter)], condition = ext[7 .. 4],
-        body_bytes = body_length,
-        body_start = if grouped then body_start else saved_pc,
-        fixed_body = [||], group_progress = if grouped then unsigned(delta) else 0
-      })
-    }
-  }
-
 function continue_event_return(previous : Execution_result, bytes : list(bits(8)))
   -> Execution_result = match (
     read_le_bits(bytes, 0, 64), read_le_bits(bytes, 8, 64),
@@ -143,15 +182,16 @@ function continue_event_return(previous : Execution_result, bytes : list(bits(8)
     read_le_bits(bytes, 32, 64), read_le_bits(bytes, 40, 64),
     read_le_bits(bytes, 48, 64), read_le_bits(bytes, 56, 64)
   ) {
-    (Some(control), Some(event_info), Some(ext), Some(saved_pc), Some(saved_sp),
-     Some(saved_cs), Some(saved_ds), Some(saved_ss)) => {
-      let saved_flags = sail_shiftright(control, 32) & 0x000000000000FFFF;
-      let saved_status = sail_shiftright(control, 48) & 0x000000000000FFFF;
+    (Some(control), Some(event_info), Some(saved_pc), Some(saved_sp), Some(saved_cs),
+     Some(saved_ds), Some(saved_ss), Some(_padding)) => {
+      let saved_flags = sail_shiftright(control, 32) & 0x000000000000000F;
+      let saved_status = sail_shiftright(control, 36) & 0x000000000000FFFF;
       if control != previous.pending.captured_first
          | byte_list_length(bytes) < unsigned(control[7 .. 0]) * 8
          | event_info[63 .. 32] != 0x00000000
          | saved_flags[15 .. 4] != 0x000
-         | saved_status[15 .. 6] != 0b0000000000
+         | saved_status[15 .. 11] != 0b00000
+         | saved_status[4] != bitone
          | not_bool(segment_image_valid(saved_cs))
          | not_bool(segment_image_valid(saved_ds))
          | not_bool(segment_image_valid(saved_ss))
@@ -159,11 +199,7 @@ function continue_event_return(previous : Execution_result, bytes : list(bits(8)
          | not_bool(segment_point(saved_ss, saved_sp).in_bounds) then
         faulted(previous.pending.before, Op_ERET, InvalidControlState,
                 "invalid raw event return frame")
-      else match decode_repeat_frame(control, ext, saved_pc, saved_cs,
-                                     previous.pending.before) {
-        None() => faulted(previous.pending.before, Op_ERET, InvalidControlState,
-                          "invalid FRAME_EXT1 repeat continuation"),
-        Some(repeat_state) => {
+      else {
           var candidate = previous.pending.before;
           candidate.flags = saved_flags[3 .. 0];
           candidate.status = saved_status;
@@ -173,47 +209,18 @@ function continue_event_return(previous : Execution_result, bytes : list(bits(8)
           candidate.segments[0] = saved_cs;
           candidate.segments[1] = saved_ds;
           candidate.segments[2] = saved_ss;
-          candidate.event_depth = unsigned(control[15 .. 12]);
-          candidate.event_stack_level = unsigned(control[17 .. 16]);
-          candidate.repeat_state = repeat_state;
+          candidate.current_dfa = control[12] == bitone;
+          candidate.repeat_state = { candidate.repeat_state with active = false };
           candidate.halted = false;
           candidate.run_state = Running;
           let staged = { previous with pending = { previous.pending with after = candidate } };
-          if repeat_state.active then {
-            let fetch_length = if repeat_state.grouped
-              then unsigned(repeat_state.body_bytes) else 18;
-            let request = { empty_primitive_request() with
-              kind = RepeatBodyFetch, ordinal = previous.pending.ordinal + 1,
-              role = "eret_repeat_validate", domain = "CS", segment = 0,
-              segment_image = saved_cs, width = fetch_length,
-              range_start = repeat_state.body_start,
-              range_end = add_bits(repeat_state.body_start, bits_from_int(fetch_length)),
-              range_length = fetch_length,
-              range_wrap = unsigned(add_bits(repeat_state.body_start,
-                                              bits_from_int(fetch_length)))
-                           < unsigned(repeat_state.body_start),
-              range_end_at_modulus = add_bits(repeat_state.body_start,
-                                               bits_from_int(fetch_length))
-                                     == 0x0000000000000000,
-              effective_address = repeat_state.body_start,
-              linear_address = segment_point(saved_cs, repeat_state.body_start).linear,
-              access = AccessExecute, address_translation = true,
-              commit_point = false, body_length = fetch_length,
-              state_image = previous.pending.before };
-            continue_with_request(
-              staged, PhaseEventReturnBody, previous.pending.ordinal + 1,
-              saved_pc, saved_cs, request
-            )
-          }
-          else continue_with_request(
+          continue_with_request(
             staged, PhaseEventReturnExecute, previous.pending.ordinal + 1,
             saved_pc, saved_cs,
             target_probe_request(previous.pending.ordinal + 1, saved_cs, saved_pc)
           )
-        },
       }
     },
     _ => faulted(previous.pending.before, Op_ERET, InvalidControlState,
                  "truncated event return frame"),
   }
-

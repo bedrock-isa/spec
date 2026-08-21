@@ -43,10 +43,13 @@ pub fn decode_header(bytes: &[u8]) -> Result<InstructionHeader, HeaderError> {
     let byte1 = *bytes.get(1).ok_or(HeaderError::NeedSecondByte)?;
     let length_bytes = 3 + ((byte0 >> 2) & 0x0f);
     let selector = ((byte0 & 0x03) << 4) | (byte1 >> 4);
+    let allocation_prefix = ((byte0 & 0x03) << 6) | (byte1 >> 2);
     let class = if selector < 0b111100 {
         EncodingClass::Medium
     } else if selector < 0b111111 {
         EncodingClass::Long
+    } else if allocation_prefix == 0xff {
+        EncodingClass::Xxlong
     } else {
         EncodingClass::ExtraLong
     };
@@ -71,7 +74,10 @@ pub fn opcode_payload(header: InstructionHeader, bytes: &[u8]) -> Option<u64> {
     match header.class {
         EncodingClass::ExtraShort => Some(u64::from(bytes[0] & 0x7f)),
         EncodingClass::Short => Some((u64::from(bytes[0] & 0x3f) << 8) | u64::from(bytes[1])),
-        EncodingClass::Medium | EncodingClass::Long | EncodingClass::ExtraLong => {
+        EncodingClass::Medium
+        | EncodingClass::Long
+        | EncodingClass::ExtraLong
+        | EncodingClass::Xxlong => {
             let mut payload = u64::from(bytes[0] & 0x03);
             for byte in &bytes[1..usize::from(header.opcode_bytes)] {
                 payload = (payload << 8) | u64::from(*byte);
@@ -83,7 +89,7 @@ pub fn opcode_payload(header: InstructionHeader, bytes: &[u8]) -> Option<u64> {
 
 #[cfg(test)]
 mod tests {
-    use super::{decode_header, opcode_payload};
+    use super::{HeaderError, decode_header, opcode_payload};
     use crate::EncodingClass;
 
     #[test]
@@ -105,11 +111,44 @@ mod tests {
             decode_header(&[0xcb, 0xf0]).unwrap().class,
             EncodingClass::ExtraLong
         );
+        assert_eq!(
+            decode_header(&[0xcf, 0xfc]).unwrap().class,
+            EncodingClass::Xxlong
+        );
+        assert_eq!(
+            decode_header(&[0xcb, 0xf8]).unwrap().class,
+            EncodingClass::ExtraLong
+        );
     }
 
     #[test]
     fn extracts_short_payload_in_stream_order() {
         let header = decode_header(&[0xaa, 0x55]).unwrap();
         assert_eq!(opcode_payload(header, &[0xaa, 0x55]), Some(0x2a55));
+    }
+
+    #[test]
+    fn xxlong_requires_six_bytes_and_custom_prefix_stays_extralong() {
+        for (byte0, length) in [(0xc3, 3), (0xc7, 4), (0xcb, 5)] {
+            assert_eq!(
+                decode_header(&[byte0, 0xfc]),
+                Err(HeaderError::OpcodeDoesNotFit {
+                    length,
+                    class: EncodingClass::Xxlong,
+                })
+            );
+        }
+        let xxlong = decode_header(&[0xcf, 0xfc]).unwrap();
+        assert_eq!(xxlong.class, EncodingClass::Xxlong);
+        assert_eq!(xxlong.opcode_bytes, 6);
+        assert_eq!(xxlong.payload_bits, 42);
+        assert_eq!(
+            decode_header(&[0xcb, 0xf8]).unwrap().class,
+            EncodingClass::ExtraLong
+        );
+        assert_eq!(
+            decode_header(&[0xcb, 0xf0]).unwrap().class,
+            EncodingClass::ExtraLong
+        );
     }
 }

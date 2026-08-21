@@ -9,7 +9,7 @@ width are available to software and ignored by the page-table walker.
 \manualformatfield{T}{1}
 \manualformatfield{S}{1}
 \manualformatfield{C}{2}
-\manualformatfield{M}{1}
+\manualformatfield{I}{1}
 \manualformatfield{D}{1}
 \manualformatfield{A}{1}
 \manualformatfield{G}{1}
@@ -32,8 +32,8 @@ width are available to software and ignored by the page-table walker.
 }
 \end{manuallistedformatdiagram}
 {\small
-In both rows, \texttt{S}, \texttt{C}, and \texttt{M} abbreviate
-\texttt{SW0}, \texttt{CP}, and \texttt{AT}; the other labels match the field table.
+In both rows, \texttt{S}, \texttt{C}, and \texttt{I} abbreviate
+\texttt{SW0}, \texttt{CP}, and the ignored bit 7; the other labels match the field table.
 \par}
 
 \manualtablecaption{Page-Table Entry Fields}
@@ -47,9 +47,9 @@ In both rows, \texttt{S}, \texttt{C}, and \texttt{M} abbreviate
 \texttt{X} & \texttt{2} & executable\\
 \texttt{U} & \texttt{3} & user-domain mapping\\
 \texttt{G} & \texttt{4} & global translation\\
-\texttt{A} & \texttt{5} & accessed; may be set on a consumed byte-addressed entry, including a speculative traversal; must be one for a slot leaf\\
-\texttt{D} & \texttt{6} & byte-addressed leaf dirty bit, set exactly when a store or atomic update commits; must be one for a slot leaf\\
-\texttt{AT} & \texttt{7} & 0 byte-addressed leaf; 1 externally acknowledged slot-addressed leaf\\
+\texttt{A} & \texttt{5} & accessed; may be set on a consumed entry, including a speculative traversal\\
+\texttt{D} & \texttt{6} & leaf dirty bit, set exactly when a store or atomic update commits\\
+ignored & \texttt{7} & ignored don't-care for table pointers and leaves; zero and one have identical behavior\\
 \texttt{CP} & \texttt{9..8} & 0 cacheable; 1 uncacheable; 2 write-through; 3 write-combining\\
 \texttt{SW0} & \texttt{10} & software-defined and ignored by hardware\\
 \texttt{T} & \texttt{11} & one for a non-leaf table pointer; zero for a terminating leaf\\
@@ -58,17 +58,17 @@ software & \texttt{63..PABITS} & software-defined and ignored by hardware\\
 \bottomrule
 \end{manualtabular}
 
-At every level above L1, a present entry may be either a \texttt{T=1} table pointer or a \texttt{T=0,AT=0}
-byte-addressed leaf. A table pointer must have D, G, and AT clear. At L1, a present entry must have T clear. An
-\texttt{AT=0} leaf at level $L$ must have a physical base naturally aligned to $2^{12+9(L-1)}$ bytes; nonzero PFN
+At every level above L1, a present entry may be either a \texttt{T=1} table pointer or a \texttt{T=0}
+byte-addressed leaf. A table pointer must have D and G clear. At L1, a present entry must have T clear. A
+leaf at level $L$ must have a physical base naturally aligned to $2^{12+9(L-1)}$ bytes; nonzero PFN
 bits within that alignment make the consumed entry malformed. W, X, and U permissions are accumulated across the
 walk. A reserved or malformed consumed entry raises
 \texttt{PAGE\_FAULT}. Supervisor current-domain access to a user mapping faults; the checked user-domain operations
 select the user-domain permission path explicitly.
 
-An \texttt{AT=1} leaf is valid only at L1 and must have \texttt{CP=1} (uncacheable), \texttt{X=0}, \texttt{A=1}, and \texttt{D=1}.
-Any \texttt{AT=1} leaf with inconsistent attributes is a malformed PTE. Because A and D are required to be set in a
-valid slot leaf, an access never performs a speculative A update or a commit-time D update to that leaf.
+Bit 7 is never reserved and does not participate in pointer or leaf validation, translation, permissions, A/D
+updates, cache policy, TLB identity, queries, or access behavior. Images that differ only in bit 7 are therefore
+architecturally equivalent. PTQUERY returns its PTE image with ignored bit 7 cleared.
 
 When hardware changes A or D from zero to one, it performs a conditional 64-bit atomic read-modify-write of the
 complete PTE. The update sets only the required A or D bits and preserves every other bit from the current 64-bit

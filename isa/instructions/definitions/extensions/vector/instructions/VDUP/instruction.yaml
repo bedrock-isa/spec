@@ -1,0 +1,16 @@
+mnemonic: VDUP
+title: VDUP (Vector)
+summary: Broadcast the selected Rn subfield to every lane.
+description: Broadcast the selected Rn subfield to every lane. Broadcast an immediate value. Broadcast the selected FP-format
+  value from `Fn`.
+attributes:
+  class: vector
+  family: vector
+  privilege: unprivileged
+flag_effects:
+  FFLAGS:
+    NV: may accrue
+    DZ: may accrue
+    OF: may accrue
+    UF: may accrue
+    NX: may accrue

@@ -1,0 +1,11 @@
+mnemonic: PLOOP
+title: PLOOP (Vector)
+summary: Performs the PLOOP scalable-vector operation.
+description: Implements the architected PLOOP scalable-vector operation.
+attributes:
+  class: vector
+  family: vector
+  privilege: unprivileged
+exceptions:
+- event: VECTOR_RANGE_ERROR
+  when: the architected vector range check fails

@@ -1,0 +1,69 @@
+forms:
+- id: extralong.vmulhu.v61
+  class: extralong
+  bits: 11111101111000111zz0ppppvvvvvwwwww
+  syntax: VMULHU.BWLQ(z) Pn(p), Vn(v), Vn(w)
+  operands:
+  - name: govern
+    type: Pn
+    access: read
+    field: p
+  - name: src
+    type: Vn
+    access: read
+    field: v
+  - name: dst
+    type: Vn
+    access: read_write
+    field: w
+  fields:
+    z:
+      type: size.BWLQ
+- id: xxlong.vmulhu.v162
+  class: xxlong
+  bits: 11111111000000100001zz1111ppppvvvvveeeeeee
+  syntax: VMULHU.BWLQ(z) Pn(p), <ea>(e), Vn(v)
+  operands:
+  - name: govern
+    type: Pn
+    access: read
+    field: p
+  - name: src
+    type: VEA
+    access: read
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  - name: dst
+    type: Vn
+    access: read_write
+    field: v
+  fields:
+    z:
+      type: size.BWLQ
+- id: xxlong.vmulhu.v163
+  class: xxlong
+  bits: 11111111000000100010zz0000ppppvvvvveeeeeee
+  syntax: VMULHU.BWLQ(z) Pn(p), Vn(v), <ea>(e)
+  operands:
+  - name: govern
+    type: Pn
+    access: read
+    field: p
+  - name: src
+    type: Vn
+    access: read
+    field: v
+  - name: dst
+    type: VEA
+    access: read_write
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  fields:
+    z:
+      type: size.BWLQ
+  constraints:
+  - field: e
+    exclude: immediate
+    reason: invalid_destination

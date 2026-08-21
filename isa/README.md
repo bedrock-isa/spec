@@ -81,7 +81,7 @@ directives.
 The canonical Decode IR also generates four disposable combinational
 SystemVerilog artifacts: `bedrock_decode_pkg.sv`, `bedrock_decode_d0.sv`,
 `bedrock_decode_d1.sv`, and `bedrock_decode_ea.sv`. D0 accepts a valid bit,
-generated opcode-class enum, and right-aligned 34-bit opcode, and returns a
+generated opcode-class enum, and right-aligned 42-bit opcode, and returns a
 recognition result in one of four states: invalid input, unallocated opcode,
 constraint-rejected, or success. A successful result also carries the selected
 form's two-bit EA layout and the operand width for each of two fixed EA

@@ -1,0 +1,32 @@
+forms:
+- id: xxlong.ploop.v233
+  class: xxlong
+  bits: 11111111000000101010zz0rrrrssssppppeeeeeee
+  syntax: PLOOP.BWLQ(z) Rn(r), Rn(s), Pn(p), <ea>(e)
+  operands:
+  - name: remaining
+    type: Rn
+    access: read_write
+    field: r
+  - name: offset
+    type: Rn
+    access: read_write
+    field: s
+  - name: predicate
+    type: Pn
+    access: read_write
+    field: p
+  - name: target
+    type: EA
+    access: read
+    ea_role: control_target
+    ea_width: Q
+    field: e
+  fields:
+    z:
+      type: size.BWLQ
+  destination_overlap:
+  - operands:
+    - remaining
+    - offset
+    rule: illegal_instruction

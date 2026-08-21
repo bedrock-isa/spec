@@ -1,0 +1,8 @@
+mnemonic: VCTS
+title: VCTS (Vector)
+summary: Count trailing ones.
+description: Count trailing ones.
+attributes:
+  class: vector
+  family: vector
+  privilege: unprivileged

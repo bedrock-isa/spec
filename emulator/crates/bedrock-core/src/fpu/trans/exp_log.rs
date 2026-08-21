@@ -235,6 +235,7 @@ fn underflow_cause(format: FpFormat, result: u64, exact_zero: bool) -> FpCauses 
 
 fn soft_evaluate(format: FpFormat, input: u64, operation: ExpLogOperation) -> u64 {
     match format {
+        FpFormat::H => unreachable!("binary16 transcendental operations are not allocated"),
         FpFormat::S => {
             let input = SoftF32::from_bits(input as u32);
             let result = match operation {
@@ -268,6 +269,7 @@ fn soft_evaluate(format: FpFormat, input: u64, operation: ExpLogOperation) -> u6
 
 const fn one(format: FpFormat) -> u64 {
     match format {
+        FpFormat::H => 0x3c00,
         FpFormat::S => 0x3f80_0000,
         FpFormat::D => 0x3ff0_0000_0000_0000,
     }
@@ -279,6 +281,7 @@ const fn negative_infinity(format: FpFormat) -> u64 {
 
 const fn minimum_normal(format: FpFormat) -> u64 {
     match format {
+        FpFormat::H => 0x0400,
         FpFormat::S => 0x0080_0000,
         FpFormat::D => 0x0010_0000_0000_0000,
     }
@@ -337,6 +340,7 @@ mod tests {
 
     fn constants(format: FpFormat) -> (u64, u64, u64, u64, u64, u64) {
         match format {
+            FpFormat::H => (0x8000, 0x3c00, 0x4000, 0x5640, 0x7c00, 0xfc00),
             FpFormat::S => (
                 0x8000_0000,
                 0x3f80_0000,
@@ -515,6 +519,7 @@ mod tests {
                 (1, FpCauses::UF)
             );
             let minimum_normal = match format {
+                FpFormat::H => 0x0400,
                 FpFormat::S => 0x0080_0000,
                 FpFormat::D => 0x0010_0000_0000_0000,
             };
@@ -573,6 +578,7 @@ mod tests {
             }
 
             let overflow_input = match format {
+                FpFormat::H => 0x6000,
                 FpFormat::S => 0x4300_0000,
                 FpFormat::D => 0x4090_0000_0000_0000,
             };

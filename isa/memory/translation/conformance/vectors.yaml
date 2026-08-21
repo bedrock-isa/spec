@@ -5,7 +5,6 @@ vectors:
     control: {PE: 0, PABITS_SEL: 0}
     linear_address: 0x1234000000001000
     expected:
-      address_type: byte
       memory_system_address: 0x1234000000001000
     purpose: Paging-disabled translation preserves the complete 64-bit linear address.
 
@@ -15,43 +14,42 @@ vectors:
     walk:
       - {level: 5, result: valid_table}
       - {level: 4, result: valid_table}
-      - {level: 3, result: valid_at0_leaf, physical_base: 0x0000000040000000}
+      - {level: 3, result: valid_leaf, physical_base: 0x0000000040000000}
     expected:
       memory_system_address: 0x0000000056789abc
       leaf_level: 3
       lower_pte_reads: 0
-    purpose: A naturally aligned T=0, AT=0 entry terminates an upper-level walk and uses every lower linear-address bit as its byte offset.
+    purpose: A naturally aligned T=0 entry terminates an upper-level walk and uses every lower linear-address bit as its byte offset.
 
   - id: misaligned_upper_byte_leaf
     control: {PE: 1, LA57: 0, PABITS_SEL: 0}
     linear_address: 0x0000000000000000
     walk:
       - {level: 4, result: valid_table}
-      - {level: 3, result: at0_leaf, physical_base: 0x0000000040001000}
+      - {level: 3, result: leaf, physical_base: 0x0000000040001000}
     expected:
       event: PAGE_FAULT
       cause: INVALID_ENTRY
       walk_level: 3
     purpose: A consumed upper byte leaf whose physical base is not aligned to its level-sized mapping is malformed.
 
-  - id: upper_slot_leaf_invalid
+  - id: upper_leaf_bit7_equivalent
     control: {PE: 1, LA57: 0, PABITS_SEL: 0}
     linear_address: 0x0000000000000000
     walk:
       - {level: 4, result: valid_table}
-      - {level: 3, result: at1_leaf_with_valid_slot_attributes}
+      - {level: 3, result: valid_leaf_bit7_one, physical_base: 0x0000000040000000}
     expected:
-      event: PAGE_FAULT
-      cause: INVALID_ENTRY
-      walk_level: 3
-    purpose: The 4096-slot AT=1 leaf form remains valid only at L1.
+      memory_system_address: 0x0000000040000000
+      behavior_equal_to_bit7_zero: true
+    purpose: PTE bit 7 is ignored at an upper leaf and does not change translation, permissions, A/D, TLB identity, queries, or access behavior.
 
   - id: query_stops_at_upper_leaf
     control: {PE: 1, LA57: 0, PABITS_SEL: 0}
     linear_address: 0x0000000012345123
     walk:
       - {level: 4, result: valid_table}
-      - {level: 3, result: valid_at0_leaf, physical_base: 0x0000000040000000}
+      - {level: 3, result: valid_leaf, physical_base: 0x0000000040000000}
     expected:
       VTOP: {success: true, value: 0x0000000052345123, leaf_level: 3}
       PTQUERY_L3: {success: true, result: raw_leaf}
@@ -62,7 +60,7 @@ vectors:
     control: {PE: 1, PABITS_SEL: 0}
     access: {kind: store, linear_address: 0x0000000000000ffc, width_bytes: 8}
     pages:
-      - {linear_page: 0x0000000000000000, result: valid_writable_at0}
+      - {linear_page: 0x0000000000000000, result: valid_writable}
       - {linear_page: 0x0000000000001000, result: not_present, walk_level: 1}
     expected:
       event: PAGE_FAULT
@@ -87,7 +85,7 @@ vectors:
     control: {PE: 1, PABITS_SEL: 0}
     access: {kind: store, linear_address: 0x0000000000000ffc, width_bytes: 8}
     pages:
-      - {linear_page: 0x0000000000000000, result: valid_writable_at0}
+      - {linear_page: 0x0000000000000000, result: valid_writable}
       - {linear_page: 0x0000000000001000, result: permission_fault, walk_level: 1}
     expected:
       event: PAGE_FAULT
@@ -97,24 +95,12 @@ vectors:
       changed_leaf_d_bits: 0
       earlier_consumed_a_update: permitted
 
-  - id: cross_page_second_address_type
-    control: {PE: 1, PABITS_SEL: 0}
-    access: {kind: store, linear_address: 0x0000000000000ffc, width_bytes: 8}
-    pages:
-      - {linear_page: 0x0000000000000000, result: valid_writable_at0}
-      - {linear_page: 0x0000000000001000, result: valid_writable_at1}
-    expected:
-      event: PAGE_FAULT
-      cause: ADDRESS_TYPE
-      visible_store_bytes: 0
-      changed_leaf_d_bits: 0
-
   - id: cross_page_second_bus_error
     control: {PE: 1, PABITS_SEL: 0}
     access: {kind: store, linear_address: 0x0000000000000ffc, width_bytes: 8}
     pages:
-      - {linear_page: 0x0000000000000000, result: valid_writable_at0}
-      - {linear_page: 0x0000000000001000, result: valid_writable_at0}
+      - {linear_page: 0x0000000000000000, result: valid_writable}
+      - {linear_page: 0x0000000000001000, result: valid_writable}
     data_access:
       - {linear_page: 0x0000000000000000, result: acknowledged}
       - {linear_page: 0x0000000000001000, result: bus_error}
@@ -127,7 +113,7 @@ vectors:
     control: {PE: 1, PABITS_SEL: 0}
     access: {kind: instruction_fetch, linear_address: 0x0000000000000ff8, record_bytes: 18}
     pages:
-      - {linear_page: 0x0000000000000000, result: valid_executable_at0}
+      - {linear_page: 0x0000000000000000, result: valid_executable}
       - {linear_page: 0x0000000000001000, result: execute_permission_fault, walk_level: 1}
     expected:
       event: PAGE_FAULT

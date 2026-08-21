@@ -9,8 +9,7 @@ function execute_core_exact(instruction : Decoded_instruction, state : Cpu_state
   Op_RESET => route_environment(instruction, state, ResetProcessor, CommitControl, false),
   Op_BKPT => start_event_control(instruction, state),
   Op_ERET => start_event_control(instruction, state),
-  Op_SYSCALL => start_syscall_transition(instruction, state),
-  Op_SYSRET => start_syscall_transition(instruction, state),
+  Op_SYSCALL => start_event_control(instruction, state),
   Op_NOP => completed(state, advance_pc(state, instruction), CommitControl, [||]),
   Op_WAIT => completed(
     state, advance_pc(state, instruction), CommitControl,
@@ -80,7 +79,6 @@ function execute_control_exact(instruction : Decoded_instruction, state : Cpu_st
   Op_DJcc => execute_count_jump(instruction, state),
   Op_IJcc => execute_count_jump(instruction, state),
   Op_REPcc => start_repeat_transaction(instruction, state),
-  Op_REPG => start_repeat_transaction(instruction, state),
   Op_TRACE => completed(
     state, advance_pc(state, instruction), CommitControl,
     [|typed_effect(TraceMarker, instruction, state, state.pc,
@@ -91,4 +89,3 @@ function execute_control_exact(instruction : Decoded_instruction, state : Cpu_st
   _ => faulted(state, instruction.form.operation, IllegalInstruction,
                "unhandled control-flow operation"),
 }
-

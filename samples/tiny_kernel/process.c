@@ -100,7 +100,7 @@ static const struct AppDescriptor *app_descriptor(u32 app_id) {
 static void save_context(struct UserContext *context,
                          struct UserReturnContext *return_context,
                          const struct Process *process) {
-  context->urctl = return_context->urctl;
+  context->uctl = return_context->uctl;
   context->pc = return_context->pc;
   context->sp = return_context->sp;
   context->cs = return_context->cs;
@@ -114,7 +114,7 @@ static void save_context(struct UserContext *context,
 
 static void load_user_return_context(struct UserReturnContext *return_context,
                                      const struct UserContext *context) {
-  return_context->urctl = context->urctl;
+  return_context->uctl = context->uctl;
   return_context->pc = context->pc;
   return_context->sp = context->sp;
   return_context->cs = context->cs;
@@ -130,7 +130,7 @@ static void load_event_context(struct ExceptionFrame *frame,
                                const struct UserContext *context) {
   frame->frame_control =
       (frame->frame_control & 0xffffffffULL) |
-      ((context->urctl & 0xffffffffULL) << 32);
+      ((context->uctl & 0xffffffffULL) << 32);
   frame->saved_pc = context->pc;
   frame->saved_sp = context->sp;
   frame->saved_cs = context->cs;

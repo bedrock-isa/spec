@@ -1,0 +1,8 @@
+mnemonic: VSHL
+title: VSHL (Vector)
+summary: Logical left shift.
+description: Logical left shift.
+attributes:
+  class: vector
+  family: vector
+  privilege: unprivileged

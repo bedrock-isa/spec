@@ -1,0 +1,8 @@
+mnemonic: VMULHS
+title: VMULHS (Vector)
+summary: High half of a signed product.
+description: High half of a signed product.
+attributes:
+  class: vector
+  family: vector
+  privilege: unprivileged

@@ -1,0 +1,15 @@
+mnemonic: VREDADD
+title: VREDADD (Vector)
+summary: Modular sum of active lanes to Rn.
+description: Modular sum of active lanes to Rn. Ordered active-lane FP sum to Fn.
+attributes:
+  class: vector
+  family: vector
+  privilege: unprivileged
+flag_effects:
+  FFLAGS:
+    NV: may accrue
+    DZ: may accrue
+    OF: may accrue
+    UF: may accrue
+    NX: may accrue

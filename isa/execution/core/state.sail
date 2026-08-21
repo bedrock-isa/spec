@@ -12,6 +12,31 @@ function zero_floating_registers() -> Floating_registers = [
   0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000
 ]
 
+function zero_vector_bytes(count : int) -> list(bits(8)) =
+  if count <= 0 then [||] else 0x00 :: zero_vector_bytes(count - 1)
+
+function zero_vector_registers(bytes : int) -> Vector_registers = [
+  zero_vector_bytes(bytes), zero_vector_bytes(bytes), zero_vector_bytes(bytes), zero_vector_bytes(bytes),
+  zero_vector_bytes(bytes), zero_vector_bytes(bytes), zero_vector_bytes(bytes), zero_vector_bytes(bytes),
+  zero_vector_bytes(bytes), zero_vector_bytes(bytes), zero_vector_bytes(bytes), zero_vector_bytes(bytes),
+  zero_vector_bytes(bytes), zero_vector_bytes(bytes), zero_vector_bytes(bytes), zero_vector_bytes(bytes),
+  zero_vector_bytes(bytes), zero_vector_bytes(bytes), zero_vector_bytes(bytes), zero_vector_bytes(bytes),
+  zero_vector_bytes(bytes), zero_vector_bytes(bytes), zero_vector_bytes(bytes), zero_vector_bytes(bytes),
+  zero_vector_bytes(bytes), zero_vector_bytes(bytes), zero_vector_bytes(bytes), zero_vector_bytes(bytes),
+  zero_vector_bytes(bytes), zero_vector_bytes(bytes), zero_vector_bytes(bytes), zero_vector_bytes(bytes)
+]
+
+function zero_predicate_registers(bytes : int) -> Predicate_registers = [
+  zero_vector_bytes(tdiv_int(bytes, 8)), zero_vector_bytes(tdiv_int(bytes, 8)),
+  zero_vector_bytes(tdiv_int(bytes, 8)), zero_vector_bytes(tdiv_int(bytes, 8)),
+  zero_vector_bytes(tdiv_int(bytes, 8)), zero_vector_bytes(tdiv_int(bytes, 8)),
+  zero_vector_bytes(tdiv_int(bytes, 8)), zero_vector_bytes(tdiv_int(bytes, 8)),
+  zero_vector_bytes(tdiv_int(bytes, 8)), zero_vector_bytes(tdiv_int(bytes, 8)),
+  zero_vector_bytes(tdiv_int(bytes, 8)), zero_vector_bytes(tdiv_int(bytes, 8)),
+  zero_vector_bytes(tdiv_int(bytes, 8)), zero_vector_bytes(tdiv_int(bytes, 8)),
+  zero_vector_bytes(tdiv_int(bytes, 8)), zero_vector_bytes(tdiv_int(bytes, 8))
+]
+
 function zero_segments() -> Segment_registers = [
   0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000,
   0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000,
@@ -32,6 +57,8 @@ function zero_controls() -> Control_registers = [
 function initial_cpu() -> Cpu_state = struct {
   registers = zero_registers(),
   floating_registers = zero_floating_registers(),
+  vector_registers = zero_vector_registers(16),
+  predicate_registers = zero_predicate_registers(16),
   segments = zero_segments(),
   controls = zero_controls(),
   sp = 0x0000000000000000,
@@ -43,12 +70,13 @@ function initial_cpu() -> Cpu_state = struct {
   supervisor = false,
   fp_enabled = false,
   fptrans_enabled = false,
+  vector_enabled = true,
+  vector_length_bytes = 16,
   halted = false,
   run_state = Running,
-  event_depth = 0,
-  event_stack_level = 0,
+  current_dfa = false,
   cache_maintenance_granule = 64,
-  save_area_size = 384,
+  save_area_size = 960,
   save_fixed_size = 192,
   save_format = 0x0,
   save_bitmap_words = 1,
@@ -60,10 +88,18 @@ function initial_cpu() -> Cpu_state = struct {
   fp_component_alignment = 64,
   fp_component_init_policy = 1,
   fp_component_modified = false,
+  vector_component_present = true,
+  vector_component_id = 2,
+  vector_component_bitmap_bit = 1,
+  vector_component_offset = 384,
+  vector_component_size = 576,
+  vector_component_alignment = 64,
+  vector_component_init_policy = 1,
+  vector_component_modified = false,
   repeat_state = struct {
-    active = false, grouped = false, counter = 0x0, remaining = 0x0000000000000000,
-    condition = 0x0, body_bytes = 0x0000, body_start = 0x0000000000000000,
-    fixed_body = [||], group_progress = 0
+    active = false, counter = 0x0, remaining = 0x0000000000000000,
+    condition = 0x0, prefix_start = 0x0000000000000000,
+    body_start = 0x0000000000000000, fixed_body = [||]
   },
   nmi_latched_source = 0x000000,
   nmi_relatched = false,
@@ -78,6 +114,16 @@ function initial_cpu() -> Cpu_state = struct {
 
 function next_pc(state : Cpu_state, instruction : Decoded_instruction) -> bits(64) =
   add_bits(state.pc, get_slice_int(64, instruction.encoded_length, 0))
+
+function status_event_depth(status : bits(64)) -> int = unsigned(status[9 .. 6])
+
+function status_user_origin(status : bits(64)) -> bool = status[10] == bitone
+
+function status_with_event_state(status : bits(64), depth : int, user_origin : bool)
+  -> bits(64) =
+  (status & 0xFFFFFFFFFFFFF83F)
+  | sail_shiftleft(get_slice_int(64, depth, 0), 6)
+  | (if user_origin then 0x0000000000000400 else 0x0000000000000000)
 
 function advance_pc(state : Cpu_state, instruction : Decoded_instruction) -> Cpu_state =
   { state with pc = next_pc(state, instruction) }
@@ -103,7 +149,7 @@ function empty_primitive_request() -> Primitive_request = struct {
   effective_address = 0x0000000000000000, linear_address = 0x0000000000000000,
   access = NoTransactionAccess, value = 0x0000000000000000,
   address_translation = false, commit_point = false, memory_order = 0,
-  address_type = 0, cache_policy = 0,
+  cache_policy = 0,
   suppress_fault = false, staged_updates = [||], selector = 0x0000000000000000,
   expected = 0x0000000000000000, desired = 0x0000000000000000,
   auxiliary = 0x0000000000000000, body_length = 0, payload_bytes = [||],
@@ -117,11 +163,10 @@ function empty_pending(before : Cpu_state, after : Cpu_state,
   before = before, after = after, instruction = None(), phase = ContinuationNone,
   ordinal = 0, captured_first = 0x0000000000000000,
   captured_second = 0x0000000000000000, memory_writes = [||], atomic = true
-  , repeat_prefix = None(), repeat_body = None(), repeat_bytes = [||],
-  repeat_tail = [||], repeat_tail_length = 0,
-  repeat_parent_active = false, repeat_parent_grouped = false,
+  , repeat_body = None(), repeat_bytes = [||], repeat_parent_active = false,
   event = None(), event_attempt = 0, boundary_class = BoundaryOrdinary
   , fp_pending = empty_fp_pending()
+  , vector_payload0 = [||], vector_payload1 = [||]
 }
 
 function completed(_before : Cpu_state, after : Cpu_state, kind : Commit_kind,
@@ -160,4 +205,3 @@ function faulted_with_error_code(state : Cpu_state, operation : Semantic_operati
       error_code = error_code, bus_error = false
     }) }
 }
-

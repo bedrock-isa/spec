@@ -1,0 +1,15 @@
+mnemonic: VNMSUB
+title: VNMSUB (Vector)
+summary: Negated fused multiply-subtract.
+description: Negated fused multiply-subtract.
+attributes:
+  class: vector
+  family: vector
+  privilege: unprivileged
+flag_effects:
+  FFLAGS:
+    NV: may accrue
+    DZ: may accrue
+    OF: may accrue
+    UF: may accrue
+    NX: may accrue

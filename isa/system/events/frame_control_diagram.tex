@@ -1,13 +1,11 @@
 \begin{manuallistedformatdiagram}{FRAME\_CONTROL Format}
 \manualformatrowrange{FRAME\_CONTROL[63:0]}{63}{0}{%
+\manualformatreserved{reserved}{12}
 \manualformatfield{STATUS}{16}
-\manualformatfield{FLAGS}{16}
-\manualformatreserved{reserved}{13}
-\manualformatfield{R}{1}
-\manualformatfield{L}{2}
-\manualformatfield{D}{4}
-\manualformatfield{T}{4}
+\manualformatfield{FLAGS}{4}
+\manualformatreserved{reserved}{19}
+\manualformatfield{DFA}{1}
+\manualformatfield{type}{4}
 \manualformatfield{size}{8}
 }
 \end{manuallistedformatdiagram}
-{\small\texttt{D} and \texttt{T} abbreviate \texttt{depth} and \texttt{type}.\par}

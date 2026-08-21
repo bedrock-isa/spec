@@ -1,0 +1,82 @@
+forms:
+- id: extralong.vsub.v51
+  class: extralong
+  bits: 1111110111100000xxx1ppppvvvvvwwwww
+  syntax: VSUB.VTYPE(x) Pn(p), Vn(v), Vn(w)
+  operands:
+  - name: govern
+    type: Pn
+    access: read
+    field: p
+  - name: src
+    type: Vn
+    access: read
+    field: v
+  - name: dst
+    type: Vn
+    access: read_write
+    field: w
+  fields:
+    x:
+      type: size.VTYPE
+  constraints:
+  - field: x
+    allow: &id001
+    - 0x0..0x3
+    - 0x5..0x7
+    reason: reserved_vector_element_type
+- id: xxlong.vsub.v142
+  class: xxlong
+  bits: 1111111100000010000xxx0101ppppvvvvveeeeeee
+  syntax: VSUB.VTYPE(x) Pn(p), <ea>(e), Vn(v)
+  operands:
+  - name: govern
+    type: Pn
+    access: read
+    field: p
+  - name: src
+    type: VEA
+    access: read
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  - name: dst
+    type: Vn
+    access: read_write
+    field: v
+  fields:
+    x:
+      type: size.VTYPE
+  constraints:
+  - field: x
+    allow: *id001
+    reason: reserved_vector_element_type
+- id: xxlong.vsub.v143
+  class: xxlong
+  bits: 1111111100000010000xxx0110ppppvvvvveeeeeee
+  syntax: VSUB.VTYPE(x) Pn(p), Vn(v), <ea>(e)
+  operands:
+  - name: govern
+    type: Pn
+    access: read
+    field: p
+  - name: src
+    type: Vn
+    access: read
+    field: v
+  - name: dst
+    type: VEA
+    access: read_write
+    ea_role: value
+    ea_width: operation_size
+    field: e
+  fields:
+    x:
+      type: size.VTYPE
+  constraints:
+  - field: x
+    allow: *id001
+    reason: reserved_vector_element_type
+  - field: e
+    exclude: immediate
+    reason: invalid_destination

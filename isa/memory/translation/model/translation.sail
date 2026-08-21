@@ -33,12 +33,7 @@ function paging_leaf_alignment_mask(level : int) -> bits(64) =
 function pte_structurally_valid(pte : bits(64), level : int) -> bool =
   if pte[0] == bitzero then false
   else if pte[11] == bitone then
-    level > 1 & pte[6] == bitzero & pte[4] == bitzero & pte[7] == bitzero
-  else if pte[7] == bitone then {
-    let slot = pte[7] == bitone;
-    level == 1 & slot & pte[9 .. 8] == 0b01 & pte[2] == bitzero
-               & pte[5] == bitone & pte[6] == bitone
-  }
+    level > 1 & pte[6] == bitzero & pte[4] == bitzero
   else (pte & paging_leaf_alignment_mask(level)) == 0x0000000000000000
 
 function pte_read_request(state : Cpu_state, instruction : Decoded_instruction,
@@ -190,4 +185,3 @@ function start_tlb_context_transaction(instruction : Decoded_instruction, state 
     } else request
   )
 }
-

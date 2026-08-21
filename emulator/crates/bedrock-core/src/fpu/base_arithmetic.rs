@@ -4,7 +4,7 @@ use core::cmp::Ordering;
 
 use rustc_apfloat::{
     Float, FloatConvert, Round, StatusAnd,
-    ieee::{Double, Quad, Single},
+    ieee::{Double, Half, Quad, Single},
 };
 
 use crate::fpu::{
@@ -101,6 +101,7 @@ pub fn square_root(request: FpRequest<'_>) -> FpEffect {
             finish_float(request, request.format.default_nan(), FpCauses::NV)
         }
         FpClass::Normal | FpClass::Subnormal => match request.format {
+            FpFormat::H => square_root_apfloat::<Half>(request, src, half_square_root_nearest(src)),
             FpFormat::S => square_root_apfloat::<Single>(
                 request,
                 src,
@@ -145,6 +146,7 @@ pub fn scale(request: FpRequest<'_>) -> FpEffect {
     }
 
     match request.format {
+        FpFormat::H => scale_apfloat::<Half>(request, operands),
         FpFormat::S => scale_apfloat::<Single>(request, operands),
         FpFormat::D => scale_apfloat::<Double>(request, operands),
     }
@@ -166,6 +168,7 @@ fn preprocessed<const N: usize>(request: FpRequest<'_>) -> [u64; N] {
 fn binary(request: FpRequest<'_>, operation: BinaryOperation) -> FpEffect {
     let operands = preprocessed::<2>(request);
     match request.format {
+        FpFormat::H => binary_apfloat::<Half>(request, operands, operation),
         FpFormat::S => binary_apfloat::<Single>(request, operands, operation),
         FpFormat::D => binary_apfloat::<Double>(request, operands, operation),
     }
@@ -191,6 +194,7 @@ fn binary_apfloat<F: Float>(
 fn fused(request: FpRequest<'_>, operation: FusedOperation) -> FpEffect {
     let operands = preprocessed::<3>(request);
     match request.format {
+        FpFormat::H => fused_apfloat::<Half>(request, operands, operation),
         FpFormat::S => fused_apfloat::<Single>(request, operands, operation),
         FpFormat::D => fused_apfloat::<Double>(request, operands, operation),
     }
@@ -305,6 +309,7 @@ fn numeric_less(format: FpFormat, lhs: u64, rhs: u64) -> bool {
 fn remainder(request: FpRequest<'_>, operation: RemainderOperation) -> FpEffect {
     let operands = preprocessed::<2>(request);
     match request.format {
+        FpFormat::H => remainder_apfloat::<Half>(request, operands, operation),
         FpFormat::S => remainder_apfloat::<Single>(request, operands, operation),
         FpFormat::D => remainder_apfloat::<Double>(request, operands, operation),
     }
@@ -364,6 +369,17 @@ where
     debug_assert!(converted.status.is_empty());
     debug_assert!(!loses_info);
     converted.value
+}
+
+fn half_square_root_nearest(src: u64) -> u64 {
+    let source = convert_exact::<Half, Single>(Half::from_bits(src as u128));
+    let nearest_single = Single::from_bits(
+        fpmath::sqrt(fpmath::SoftF32::from_bits(source.to_bits() as u32)).to_bits() as u128,
+    );
+    let mut loses_info = false;
+    let converted: StatusAnd<Half> =
+        nearest_single.convert_r(Round::NearestTiesToEven, &mut loses_info);
+    converted.value.to_bits() as u64
 }
 
 #[cfg(test)]

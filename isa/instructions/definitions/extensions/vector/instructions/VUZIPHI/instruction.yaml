@@ -1,0 +1,8 @@
+mnemonic: VUZIPHI
+title: VUZIPHI (Vector)
+summary: Extract odd-position elements.
+description: Extract odd-position elements.
+attributes:
+  class: vector
+  family: vector
+  privilege: unprivileged

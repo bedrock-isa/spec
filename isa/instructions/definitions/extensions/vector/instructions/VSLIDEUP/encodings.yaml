@@ -1,0 +1,21 @@
+forms:
+- id: extralong.vslideup.v112
+  class: extralong
+  bits: 11111101111100101zzppppvvvvviiiiii
+  syntax: VSLIDEUP.BWLQ(z) Pn(p), imm6(i), Vn(v)
+  operands:
+  - name: govern
+    type: Pn
+    access: read
+    field: p
+  - name: count
+    type: imm6
+    access: read
+    field: i
+  - name: dst
+    type: Vn
+    access: read_write
+    field: v
+  fields:
+    z:
+      type: size.BWLQ

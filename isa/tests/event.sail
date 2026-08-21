@@ -25,9 +25,8 @@ function test_event_boundaries() -> unit =
           assert(done.fault == None());
           assert(done.pending.kind == CommitEvent);
           assert(done.state.pc == 0x0000000000000200);
-          assert(done.state.event_depth == 1);
-          assert(done.state.event_stack_level == 2);
-          assert(done.state.sp == 0x0000000000008FA0);
+          assert(status_event_depth(done.state.status) == 1);
+          assert(done.state.sp == 0x0000000000008FE0);
           assert(not_bool(done.state.machine_check_pending));
           assert(done.state.controls[2][7] == bitone);
           assert(done.state.nmi_latched_source == 0x112233)
@@ -95,7 +94,7 @@ function test_event_boundaries() -> unit =
       var zero_max = event_test_entry_state();
       zero_max.controls[2] = 0x0000000000000001;
       let bkpt_done = event_test_finish_entry(execute_full(bkpt, zero_max));
-      assert(bkpt_done.state.event_depth == 1);
+      assert(status_event_depth(bkpt_done.state.status) == 1);
       assert(bkpt_done.state.pc == zero_max.controls[12]);
       var no_vector = event_test_entry_state();
       no_vector.controls[2] = 0x0000000000000000;
@@ -104,18 +103,16 @@ function test_event_boundaries() -> unit =
       var full_depth = event_test_entry_state();
       full_depth.supervisor = true;
       full_depth.status = 0x0000000000000011;
-      full_depth.event_depth = 15;
-      full_depth.event_stack_level = 2;
+      full_depth.status = status_with_event_state(full_depth.status, 15, false);
       full_depth.controls[2] = 0x0000000000000001;
       let depth_result = execute_full(bkpt, full_depth);
       assert(depth_result.state.run_state == Shutdown);
 
-      /* A lower-level nested interrupt retains the current SS:SP and stack level. */
+      /* A nested interrupt retains the current SS:SP. */
       var nested = event_test_entry_state();
       nested.supervisor = true;
       nested.status = 0x0000000000000031;
-      nested.event_depth = 1;
-      nested.event_stack_level = 2;
+      nested.status = status_with_event_state(nested.status, 1, false);
       nested.segments[2] = 0x0000000000000000;
       nested.sp = 0x0000000000007000;
       let nested_boundary = execute_boundary(
@@ -137,24 +134,23 @@ function test_event_boundaries() -> unit =
           let done = resume_transaction(
             store, event_test_response(ResponseEventFrame, true)
           );
-          assert(done.state.event_depth == 2);
-          assert(done.state.event_stack_level == 2);
+          assert(status_event_depth(done.state.status) == 2);
           assert(done.state.segments[2] == nested.segments[2]);
           assert(done.state.sp == 0x0000000000006FC0)
         },
         None() => assert(false),
       };
 
-      /* Target, stack-state, stack-range, and frame-store failures encode stages 0..3. */
+      /* Target, stack-state, payload-range, and payload-store failures encode stages 0..3. */
       let original = make_event(
-        EventSynchronous, EventFrameBasic, 0x00000002, 4,
+        EventSynchronous, EventFrameError, 0x00000001, 4,
         0x0000000000001001
       );
       let stage0 = resume_transaction(
         start_admitted_event(original, event_test_entry_state()),
         event_test_response(ResponseTranslation, false)
       );
-      event_test_assert_double_fault(stage0, 0);
+      event_test_assert_double_fault(stage0, 0, 0x0000000000000001);
 
       var bad_stack = event_test_entry_state();
       bad_stack.controls[20] = 0x0000000000009001;
@@ -162,7 +158,7 @@ function test_event_boundaries() -> unit =
         start_admitted_event(original, bad_stack),
         event_test_response(ResponseTranslation, true)
       );
-      event_test_assert_double_fault(stage1, 1);
+      event_test_assert_double_fault(stage1, 1, 0x0000000000000001);
 
       let stage2_range = resume_transaction(
         start_admitted_event(original, event_test_entry_state()),
@@ -171,7 +167,7 @@ function test_event_boundaries() -> unit =
       let stage2 = resume_transaction(
         stage2_range, event_test_response(ResponseStackRange, false)
       );
-      event_test_assert_double_fault(stage2, 2);
+      event_test_assert_double_fault(stage2, 2, 0x0000000000000001);
 
       let stage3_range = resume_transaction(
         start_admitted_event(original, event_test_entry_state()),
@@ -183,7 +179,7 @@ function test_event_boundaries() -> unit =
       let stage3 = resume_transaction(
         stage3_store, event_test_response(ResponseEventFrame, false)
       );
-      event_test_assert_double_fault(stage3, 3);
+      event_test_assert_double_fault(stage3, 3, 0x0000000000000001);
 
       let failed_double_fault = resume_transaction(
         stage0, event_test_response(ResponseTranslation, false)
@@ -237,16 +233,9 @@ function test_event_boundaries() -> unit =
           let range = resume_transaction(
             target, event_test_response(ResponseTranslation, true)
           );
-          assert(range.state.run_state == Halted);
-          let store = resume_transaction(
-            range, event_test_response(ResponseStackRange, true)
-          );
-          assert(store.state.run_state == Halted);
-          let awake = resume_transaction(
-            store, event_test_response(ResponseEventFrame, true)
-          );
-          assert(awake.state.run_state == Running);
-          assert(not_bool(awake.state.halted));
+          assert(not_bool(range.awaiting_environment));
+          assert(range.state.run_state == Running);
+          assert(not_bool(range.state.halted));
           let failed = resume_transaction(
             target, event_test_response(ResponseTranslation, false)
           );
@@ -256,6 +245,11 @@ function test_event_boundaries() -> unit =
       };
       var shutdown = event_test_entry_state();
       shutdown.run_state = Shutdown;
+      shutdown.vector_length_bytes = 64;
+      shutdown.vector_registers = zero_vector_registers(64);
+      shutdown.vector_registers[0] = 0x01 :: zero_vector_bytes(63);
+      shutdown.predicate_registers = zero_predicate_registers(64);
+      shutdown.predicate_registers[0] = 0x01 :: zero_vector_bytes(7);
       let no_wake = execute_boundary(nop, shutdown, all_ingress);
       assert(no_wake.execution == None());
       assert(no_wake.state.run_state == Shutdown);
@@ -263,45 +257,65 @@ function test_event_boundaries() -> unit =
       assert(reset.run_state == Running);
       assert(not_bool(reset.halted));
       assert(reset.pc == shutdown.controls[23]);
+      assert(reset.vector_length_bytes == 64);
+      assert(reset.vector_registers == zero_vector_registers(64));
+      assert(reset.predicate_registers == zero_predicate_registers(64));
 
-      /* ERET validates a saved REPG interior and resumes at its saved body offset. */
+      /* ERET ignores fixed-header padding and restores no hidden repeat state. */
       var active = event_test_entry_state();
       active.supervisor = true;
       active.status = 0x0000000000000011;
-      active.event_depth = 1;
-      active.event_stack_level = 2;
+      active.status = status_with_event_state(active.status, 1, false);
       active.sp = 0x0000000000006000;
-      active.registers[0] = 0xA5A5A5A55A5A5A5A;
-      active.registers[1] = 0x1122334455667788;
-      active.registers[2] = 0xFFEEDDCCBBAA0099;
-      active.registers[3] = 0x0000000000000002;
-      let frame_control : bits(64) = 0x0000000000040008;
-      let frame_ext1 : bits(64) = 0x0000000300010103;
+      active.repeat_state.active = true;
+      let frame_control : bits(64) = 0x0000010000000008;
       let saved_pc : bits(64) = 0x0000000000001001;
       let header = execute_full(eret, active);
       assert(header.pending.phase == PhaseEventFrameHeader);
+      /* FRAME_CONTROL bit 18 is the first bit of the reserved 18..31 range. */
+      let reserved_frame = resume_transaction(
+        header, event_test_response_bytes(
+          ResponseEventFrame, le64_bytes(frame_control | 0x0000000000040000)
+        )
+      );
+      match reserved_frame.fault {
+        Some(fault) => assert(fault.kind == InvalidControlState),
+        None() => assert(false),
+      };
+      let active_at_depth_zero = resume_transaction(
+        header, event_test_response_bytes(
+          ResponseEventFrame, le64_bytes(0x0000011000000008)
+        )
+      );
+      match active_at_depth_zero.fault {
+        Some(fault) => assert(fault.kind == InvalidControlState),
+        None() => assert(false),
+      };
+      let dfa_without_active_event = resume_transaction(
+        header, event_test_response_bytes(
+          ResponseEventFrame, le64_bytes(frame_control | 0x0000000000001000)
+        )
+      );
+      match dfa_without_active_event.fault {
+        Some(fault) => assert(fault.kind == InvalidControlState),
+        None() => assert(false),
+      };
       let frame_read = resume_transaction(
         header, event_test_response_bytes(
           ResponseEventFrame, le64_bytes(frame_control)
         )
       );
       assert(frame_read.pending.phase == PhaseEventFrame);
-      let body_probe = resume_transaction(
+      let return_probe = resume_transaction(
         frame_read, event_test_response_bytes(
           ResponseEventFrame,
           event_test_frame(
-            frame_control, 0x0000000000000002, frame_ext1, saved_pc,
+            frame_control, 0x0000000000000002, saved_pc,
             0x0000000000007000, 0x0000000000000000,
-            0x0000000000000000, 0x0000000000000000
+            0x0000000000000000, 0x0000000000000000,
+            0xA5A5A5A55A5A5A5A
           )
         )
-      );
-      assert(body_probe.pending.phase == PhaseEventReturnBody);
-      assert(body_probe.request.range_start == 0x0000000000001000);
-      assert(body_probe.request.range_length == 3);
-      let return_probe = resume_transaction(
-        body_probe,
-        event_test_response_bytes(ResponseRepeatFetch, [|0x60, 0x81, 0x12|])
       );
       assert(return_probe.pending.phase == PhaseEventReturnExecute);
       assert(return_probe.request.effective_address == saved_pc);
@@ -310,24 +324,7 @@ function test_event_boundaries() -> unit =
       );
       assert(returned.fault == None());
       assert(returned.state.pc == saved_pc);
-      assert(returned.state.repeat_state.active);
-      assert(returned.state.repeat_state.grouped);
-      assert(returned.state.repeat_state.body_start == 0x0000000000001000);
-      assert(returned.state.repeat_state.group_progress == 1);
-      let resumed = execute_boundary(
-        nop, returned.state, event_test_no_ingress()
-      );
-      match resumed.execution {
-        Some(done) => {
-          assert(done.fault == None());
-          assert(done.state.registers[0] == 0xA5A5A5A55A5A5A5A);
-          assert(done.state.registers[2] == 0x1122334455667788);
-          assert(done.state.registers[3] == 0x0000000000000001);
-          assert(done.state.pc == 0x0000000000001000);
-          assert(done.state.repeat_state.active)
-        },
-        None() => assert(false),
-      }
+      assert(not_bool(returned.state.repeat_state.active))
     },
     _ => assert(false),
   }

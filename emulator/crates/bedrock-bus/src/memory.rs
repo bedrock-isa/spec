@@ -122,7 +122,7 @@ impl Device for Ram {
 #[cfg(test)]
 mod tests {
     use super::Ram;
-    use crate::{AcknowledgedBusFailure, Bus, BusFailureCause, RetrySafety, SlotData, SlotRequest};
+    use crate::Bus;
 
     #[test]
     fn reads_and_writes_little_endian_values() {
@@ -148,25 +148,5 @@ mod tests {
         assert_eq!(ram.read_u8(0).unwrap(), 2);
         ram.rollback_transaction();
         assert_eq!(ram.read_u8(0).unwrap(), 1);
-    }
-
-    #[test]
-    fn ram_does_not_invent_slot_semantics_for_either_trait() {
-        let mut ram = Ram::new(16);
-
-        let bus_acknowledgement =
-            Bus::slot_transaction(&mut ram, SlotRequest::write(0, SlotData::B(0xff))).unwrap();
-        let device_acknowledgement =
-            crate::Device::slot_transaction(&mut ram, SlotRequest::write(0, SlotData::B(0xff)))
-                .unwrap();
-
-        let expected = Some(AcknowledgedBusFailure::new(
-            BusFailureCause::Other,
-            0,
-            RetrySafety::RetrySafe,
-        ));
-        assert_eq!(bus_acknowledgement.failure(), expected);
-        assert_eq!(device_acknowledgement.failure(), expected);
-        assert_eq!(ram.as_slice(), &[0; 16]);
     }
 }

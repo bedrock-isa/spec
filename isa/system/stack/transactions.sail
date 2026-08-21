@@ -11,7 +11,7 @@ function stack_request(kind : Primitive_request_kind, ordinal : int, state : Cpu
                            & address != 0x0000000000000000,
     effective_address = address, linear_address = point.linear, access = access, value = value,
     address_translation = true, commit_point = commit_point, memory_order = ordinal,
-    address_type = 0, cache_policy = 0, suppress_fault = false, staged_updates = [||]
+    cache_policy = 0, suppress_fault = false, staged_updates = [||]
     , selector = 0x0000000000000000, expected = 0x0000000000000000,
     desired = 0x0000000000000000, auxiliary = 0x0000000000000000, body_length = 0,
     payload_bytes = [||], fp_request = empty_fp_request(),
@@ -80,4 +80,3 @@ function start_stack_transaction(instruction : Decoded_instruction, state : Cpu_
     ))
   }
 }
-

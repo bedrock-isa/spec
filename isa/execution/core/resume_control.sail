@@ -196,7 +196,7 @@ function resume_control_phase(previous : Execution_result, response : Transactio
       None() => faulted(previous.pending.before, previous.pending.operation,
                         InvalidControlState, "missing control-register continuation"),
       Some(instruction) =>
-        if instruction.form.operation == Op_SYSCALL | instruction.form.operation == Op_SYSRET
+        if instruction.form.operation == Op_ERET
         then completed(
           previous.pending.before, previous.pending.after, CommitControl, [||]
         )

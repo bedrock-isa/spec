@@ -9,5 +9,4 @@ attributes:
 repeat:
   contexts:
   - REP
-  - REPG
 additional_description: details.tex

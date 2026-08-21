@@ -50,13 +50,17 @@ function resume_transaction_inner(previous : Execution_result, response : Transa
     PhaseEventFrameStore => resume_events_phase(previous, response),
     PhaseEventFrameHeader => resume_events_phase(previous, response),
     PhaseEventFrame => resume_events_phase(previous, response),
-    PhaseEventReturnBody => resume_events_phase(previous, response),
     PhaseEventReturnExecute => resume_events_phase(previous, response),
     PhaseFpContractQuery => resume_fp_phase(previous, response),
     PhaseFpSourceRead => resume_fp_phase(previous, response),
     PhaseFpDestinationProbe => resume_fp_phase(previous, response),
     PhaseFpCompute => resume_fp_phase(previous, response),
     PhaseFpDestinationWrite => resume_fp_phase(previous, response),
+    PhaseVectorMemoryRead => resume_vector_phase(previous, response),
+    PhaseVectorMemoryWrite => resume_vector_phase(previous, response),
+    PhaseVectorFpMemoryRead => resume_vector_phase(previous, response),
+    PhaseVectorFpCompute => resume_vector_phase(previous, response),
+    PhaseVectorFpMemoryWrite => resume_vector_phase(previous, response),
     ContinuationNone => faulted(previous.pending.before, previous.pending.operation,
       InvalidControlState, "unexpected transaction phase"),
     _ => faulted(previous.pending.before, previous.pending.operation,
@@ -71,16 +75,10 @@ function resume_transaction(previous : Execution_result, response : Transaction_
     match previous.pending.repeat_body {
       None() => faulted(previous.pending.before, previous.pending.operation,
                         InvalidControlState, "missing repeat parent body"),
-      Some(body) =>
-        if previous.pending.repeat_parent_grouped then finish_repeat_group_step(
-          previous.pending.repeat_bytes, previous.pending.repeat_tail_length,
-          previous.pending.before, result
-        )
-        else finish_repeat_single(
-          body, previous.pending.repeat_bytes, previous.pending.before,
-          result.state, previous.pending.captured_first
-        ),
+      Some(body) => finish_repeat_single(
+        body, previous.pending.repeat_bytes, previous.pending.before,
+        result.state, previous.pending.captured_first
+      ),
     }
   else result
 }
-

@@ -1,0 +1,18 @@
+forms:
+- id: extralong.psel.v129
+  class: extralong
+  bits: 1111110111111100000000ppppqqqqhhhh
+  syntax: PSEL Pn(p), Pn(q), Pn(h)
+  operands:
+  - name: select
+    type: Pn
+    access: read
+    field: p
+  - name: src
+    type: Pn
+    access: read
+    field: q
+  - name: dst
+    type: Pn
+    access: read_write
+    field: h
