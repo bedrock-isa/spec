@@ -6,3 +6,9 @@ attributes:
   class: system
   family: system_registers
   privilege: unprivileged
+flag_effects:
+  FLAGS:
+    Z: "source bit 3"
+    N: "source bit 2"
+    C: "source bit 1"
+    V: "source bit 0"

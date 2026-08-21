@@ -108,7 +108,7 @@ function execute_bounds_local(instruction : Decoded_instruction, state : Cpu_sta
                        else unsigned(narrow_bits(high, width));
       let below = if inclusive_low then tested_value < low_value else tested_value <= low_value;
       let above = if inclusive_high then tested_value > high_value else tested_value >= high_value;
-      let updated = { state with flags = set_flag_v_only(state.flags, below | above) };
+      let updated = { state with flags = flags_value(false, false, false, below | above) };
       Some(local_result(state, instruction, updated, CommitRegisters))
     },
     _ => None(),
@@ -148,4 +148,3 @@ function execute_compare_jump_local(instruction : Decoded_instruction, state : C
     },
     _ => None(),
   }
-

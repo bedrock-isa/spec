@@ -1,7 +1,7 @@
 mnemonic: CMP
 title: Compare
 summary: Computes a comparison result and updates condition codes without storing the temporary value.
-description: Subtracts the source from the destination only to derive Z, N, C, and V; the temporary difference is not written to either operand.
+description: Subtracts the source from the destination only to derive Z, N, C, and V; the temporary selected-width difference is not written to either operand. REPcc observes that temporary difference rather than architectural FLAGS.
 attributes:
   class: integer
   family: integer_alu
@@ -12,7 +12,7 @@ repeat:
   - REPcc
   - REPG
   observed:
-    kind: flags
+    kind: computed
 flag_effects:
   FLAGS:
     Z: "result == 0"

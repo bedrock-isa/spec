@@ -1,7 +1,7 @@
 mnemonic: FBNDXX
 title: Floating-Point Bounds Check Exclusive-Exclusive
 summary: Checks floating-point value membership in the exclusive-exclusive interval (lo, hi).
-description: FBNDXX treats both bounds as exclusive. It sets V when the value is unordered or outside (lo, hi); Z, N, and C are unchanged.
+description: FBNDXX treats both bounds as exclusive. It sets V when the value is unordered or outside (lo, hi) and clears Z, N, and C. IEEE-754 FFLAGS causes continue to accrue independently.
 attributes:
   class: fpu
   family: fpu
@@ -12,6 +12,9 @@ repeat:
   - REPG
 flag_effects:
   FLAGS:
+    Z: "0"
+    N: "0"
+    C: "0"
     V: "set when the value is out of bounds or unordered"
   FFLAGS:
     NV: "may accrue"

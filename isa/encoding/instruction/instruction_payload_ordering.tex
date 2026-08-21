@@ -14,11 +14,11 @@ PUSHP and POPP interpret the @PAIR_ID_WIDTH@-bit \texttt{pair\_id} as a canonica
 from @PAIR_ID_RANGE@ is valid.
 PTQUERY uses a @PT_LEVEL_WIDTH@-bit \texttt{pt\_level}; assigned levels are @PT_LEVEL_RANGE@, while encodings 0, 6, and 7
 are reserved.
-SETF and CLRF interpret the @FLAGS_BITMAP_WIDTH@-bit \texttt{flags\_bitmap} range @FLAGS_BITMAP_RANGE@ as the low FLAGS
-nibble: bit 3 selects Z, bit 2 selects N, bit 1 selects C,
-and bit 0 selects V.
+SETF interprets the @FLAGS_BITMAP_WIDTH@-bit \texttt{flags\_bitmap} range @FLAGS_BITMAP_RANGE@ as a complete FLAGS
+image: bit 3 writes Z, bit 2 writes N, bit 1 writes C, and bit 0 writes V. Each one writes the corresponding flag to
+one, and each zero writes it to zero.
 
-\begin{manuallistedformatdiagram}{SETF and CLRF Flag Bitmap}
+\begin{manuallistedformatdiagram}{SETF Flag Bitmap}
 \manualformatrowrange{flags\_bitmap[3:0]}{3}{0}{%
 \manualformatfield{Z}{1}
 \manualformatfield{N}{1}

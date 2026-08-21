@@ -140,7 +140,21 @@ function attach_repeat_parent(result : Execution_result, body : Decoded_instruct
 
 function repeat_observation_with_capture(body : Decoded_instruction, before : Cpu_state,
                                          after : Cpu_state, captured : bits(64)) -> bits(4) =
-  if body.form.repeat_observed_kind == "flags" then after.flags
+  if body.form.repeat_observed_kind == "computed" then {
+    /* Reconstruct the body-derived value inside the same precise commit; this
+       is not an architectural FLAGS observation boundary. */
+    let operation = body.form.operation;
+    if operation == Op_CMP | operation == Op_TEST then after.flags[3 .. 2] @ 0b00
+    else if operation == Op_BTEST | operation == Op_BSET
+          | operation == Op_BCLR | operation == Op_BCHG then after.flags
+    else if operation == Op_BNDSII | operation == Op_BNDSIX
+          | operation == Op_BNDSXI | operation == Op_BNDSXX
+          | operation == Op_BNDUII | operation == Op_BNDUIX
+          | operation == Op_BNDUXI | operation == Op_BNDUXX
+          | operation == Op_SEGLEA then
+      flags_value(after.flags[0] == bitzero, false, false, false)
+    else flags_value(false, false, false, false)
+  }
   else match operand_named(body, body.form.repeat_observed_operand) {
     None() => after.flags,
     Some(operand) => {
@@ -254,4 +268,3 @@ function run_repeat_group_tail(all_bytes : list(bits(8)),
       else finish_repeat_group_step(all_bytes, next_remaining, instruction_state, result)
     },
   }
-

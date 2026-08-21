@@ -1,7 +1,7 @@
 mnemonic: SBB
 title: Subtract With Borrow
 summary: Performs the subtract with borrow operation.
-description: Subtracts the selected-width source value and incoming C borrow from the destination, writes the truncated difference, and updates Z, N, C, and V.
+description: Subtracts the selected-width source value and incoming C borrow from the destination, writes the truncated difference, and updates Z, N, C, and V. REPcc observes the written destination result rather than architectural FLAGS.
 attributes:
   class: integer
   family: integer_alu
@@ -12,7 +12,8 @@ repeat:
   - REPcc
   - REPG
   observed:
-    kind: flags
+    kind: result
+    operand: dst
 flag_effects:
   FLAGS:
     Z: "result == 0"

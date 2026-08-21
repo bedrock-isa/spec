@@ -1,7 +1,7 @@
 forms:
 - id: extralong.ijcc_rn_i_rn_b_ea_e
   class: extralong
-  bits: 111111010000000cccciiiibbbbeeeeeee
+  bits: 111111000100110cccciiiibbbbeeeeeee
   syntax: IJcc Rn(i), Rn(b), <ea>(e)
   operands:
   - name: cc
@@ -30,7 +30,7 @@ forms:
     reason: condition_false_reclaimed
 - id: extralong.ijcc_rn_i_rn_b_rn_e
   class: extralong
-  bits: 111111111100000000cccciiiibbbbeeee
+  bits: 111111000000100000cccciiiibbbbeeee
   syntax: IJcc Rn(i), Rn(b), Rn(e)
   operands:
   - name: cc

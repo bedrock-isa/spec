@@ -23,7 +23,6 @@ include:
 - instructions/CLMUL
 - instructions/CLMULH
 - instructions/CLR
-- instructions/CLRF
 - instructions/CLS
 - instructions/CLZ
 - instructions/CMP

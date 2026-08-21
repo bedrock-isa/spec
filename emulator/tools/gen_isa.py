@@ -480,12 +480,12 @@ def generated_repeat_observation(
         raise ValueError(f"{entry['id']}: repeat.observed must be a mapping")
 
     kind = str(observed.get("kind", ""))
-    if kind == "flags":
+    if kind == "computed":
         if observed.get("operand") is not None:
             raise ValueError(
-                f"{entry['id']}: flags observation cannot name an operand"
+                f"{entry['id']}: computed observation cannot name an operand"
             )
-        return "Some(RepeatObservation::Flags)"
+        return "Some(RepeatObservation::Computed)"
     if kind not in {"result", "source"}:
         raise ValueError(
             f"{entry['id']}: unknown repeat observation kind {kind!r}"
@@ -684,7 +684,9 @@ def render(isa_design: Path) -> str:
     class_data = [
         {
             "class": encoding_class.name,
-            "payload_bits": encoding_class.payload_bits,
+            # GeneratedForm keeps the historical Rust-facing field name, but
+            # its value is the allocation width owned by EncodingClass.
+            "payload_bits": encoding_class.allocation_bits,
             "entries": class_entries(store, encoding_class.name),
         }
         for encoding_class in store.classes

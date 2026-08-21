@@ -111,7 +111,7 @@ pub struct RepeatObservedOperand {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RepeatObservation {
-    Flags,
+    Computed,
     Result { operand: RepeatObservedOperand },
     Source { operand: RepeatObservedOperand },
 }
@@ -289,7 +289,7 @@ mod tests {
     fn generated_forms_preserve_every_repeat_observation_kind() {
         assert_eq!(
             form("short.cmp_x_rn_s_rn_d").attributes.repeat_observed,
-            Some(RepeatObservation::Flags)
+            Some(RepeatObservation::Computed)
         );
         assert_eq!(
             form("short.add_x_rn_s_rn_d").attributes.repeat_observed,
@@ -351,7 +351,7 @@ mod tests {
                 .repeat_observed
                 .unwrap_or_else(|| panic!("{} has no repeat observation", generated_form.id));
             let operand = match observation {
-                RepeatObservation::Flags => continue,
+                RepeatObservation::Computed => continue,
                 RepeatObservation::Result { operand } | RepeatObservation::Source { operand } => {
                     operand
                 }
@@ -391,7 +391,7 @@ mod tests {
             .iter()
             .filter_map(|generated_form| {
                 let operand = match generated_form.attributes.repeat_observed? {
-                    RepeatObservation::Flags => return None,
+                    RepeatObservation::Computed => return None,
                     RepeatObservation::Result { operand }
                     | RepeatObservation::Source { operand } => operand,
                 };

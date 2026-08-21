@@ -351,7 +351,7 @@ immediate_operand_interpretation:
     value_kind: bitmap
     range_from: bit_width
     extension: none
-    applies_when: SETF/CLRF integer FLAGS masks
+    applies_when: SETF integer FLAGS image
   - operand_type: imm6
     value_kind: unsigned
     range_from: bit_width

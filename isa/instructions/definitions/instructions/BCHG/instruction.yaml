@@ -1,7 +1,7 @@
 mnemonic: BCHG
 title: Bit Change
 summary: Performs the bit change operation.
-description: Complements the destination bit selected by the low six bits of the bit index and sets Z when that bit was previously clear. A memory destination is read by an ordinary selected-width load and updated by an ordinary selected-width store.
+description: Complements the destination bit selected by the low six bits of the bit index, writes Z from whether that bit was previously clear, and clears N, C, and V. A memory destination is read by an ordinary selected-width load and updated by an ordinary selected-width store. REPcc observes the old tested bit as a B-sized 0 or 1 rather than architectural FLAGS.
 attributes:
   class: integer
   family: integer_bitfield
@@ -12,10 +12,10 @@ repeat:
   - REPcc
   - REPG
   observed:
-    kind: flags
+    kind: computed
 flag_effects:
   FLAGS:
     Z: "old_bit == 0"
-    N: "unchanged"
-    C: "unchanged"
-    V: "unchanged"
+    N: "0"
+    C: "0"
+    V: "0"

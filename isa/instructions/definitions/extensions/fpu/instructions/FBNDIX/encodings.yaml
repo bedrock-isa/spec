@@ -43,7 +43,7 @@ forms:
       type: size.SD
 - id: extralong.fbndix_x_ea_l_fn_v_ea_h
   class: extralong
-  bits: 11111110000z0001vvvvlllllllhhhhhhh
+  bits: 111111001100001zvvvvlllllllhhhhhhh
   syntax: FBNDIX.SD(z) <ea>(l), Fn(v), <ea>(h)
   operands:
   - name: lo

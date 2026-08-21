@@ -36,7 +36,6 @@ let fflags_fptransa : bits(5) = 0b11110
 
 let fp_flags_none : bits(4) = 0b0000
 let fp_flags_all : bits(4) = 0b1111
-let fp_flags_v : bits(4) = 0b0001
 
 function fp_info(path : Fp_path, source_count : int, result_policy : Fp_result_policy,
                  allowed_causes : bits(5), flags_mask : bits(4),
@@ -57,13 +56,13 @@ function fp_semantics(operation : Semantic_operation) -> option(Fp_semantics) =
     Op_FADD => Some(fp_info(FpPathR, 2, FpResultFnByFormat, 0b10111,
                             fp_flags_none, false, 0)),
     Op_FBNDII => Some(fp_info(FpPathR, 3, FpResultFlagsVOnly, fflags_nv,
-                              fp_flags_v, false, 0)),
+                              fp_flags_all, false, 0)),
     Op_FBNDIX => Some(fp_info(FpPathR, 3, FpResultFlagsVOnly, fflags_nv,
-                              fp_flags_v, false, 0)),
+                              fp_flags_all, false, 0)),
     Op_FBNDXI => Some(fp_info(FpPathR, 3, FpResultFlagsVOnly, fflags_nv,
-                              fp_flags_v, false, 0)),
+                              fp_flags_all, false, 0)),
     Op_FBNDXX => Some(fp_info(FpPathR, 3, FpResultFlagsVOnly, fflags_nv,
-                              fp_flags_v, false, 0)),
+                              fp_flags_all, false, 0)),
     Op_FCEIL => Some(fp_info(FpPathR, 1, FpResultByForm, 0b10001,
                              fp_flags_none, false, 0)),
     Op_FCLASS => Some(fp_info(FpPathR, 1, FpResultRn64, fflags_none,
@@ -263,4 +262,3 @@ function fp_form_semantics(form : Catalog_entry, width : int) -> option(Fp_seman
       Some({ semantics with path = path, result_policy = result_policy }),
     _ => None(),
   }
-

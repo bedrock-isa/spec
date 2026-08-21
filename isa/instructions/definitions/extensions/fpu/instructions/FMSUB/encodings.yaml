@@ -21,7 +21,7 @@ forms:
       type: size.SD
 - id: extralong.fmsub_x_ea_l_fn_r_fn_d
   class: extralong
-  bits: 11111100010z0000001rrrrddddlllllll
+  bits: 111111001000000z001rrrrddddlllllll
   syntax: FMSUB.SD(z) <ea>(l), Fn(r), Fn(d)
   operands:
   - name: lhs
@@ -43,7 +43,7 @@ forms:
       type: size.SD
 - id: extralong.fmsub_x_fn_l_ea_r_fn_d
   class: extralong
-  bits: 11111100010z0000101llllddddrrrrrrr
+  bits: 111111001000000z101llllddddrrrrrrr
   syntax: FMSUB.SD(z) Fn(l), <ea>(r), Fn(d)
   operands:
   - name: lhs

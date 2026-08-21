@@ -449,7 +449,6 @@ impl Cpu {
             Opcode::Repg => self.enter_group_repeat(bus, pc, next_pc, instruction),
             Opcode::Lea | Opcode::Seglea => self.execute_lea(pc, next_pc, instruction),
             Opcode::Setf
-            | Opcode::Clrf
             | Opcode::Rdflags
             | Opcode::Wrflags
             | Opcode::Rdstatus
@@ -746,7 +745,10 @@ impl Cpu {
             None
         } else {
             Some(match body.attributes.repeat_observed {
-                Some(RepeatObservation::Flags) => self.state.flags,
+                Some(RepeatObservation::Computed) => {
+                    computed_repeat_flags(body.opcode, self.state.flags)
+                        .ok_or(illegal_instruction(body_pc))?
+                }
                 Some(RepeatObservation::Result { operand }) => logical_repeat_flags(
                     self.repeat_observed_operand(&body, operand)
                         .ok_or(illegal_instruction(body_pc))?,
@@ -927,7 +929,11 @@ impl Cpu {
         };
         let old = self.read_destination(bus, pc, destination, size)?;
         let mask = 1u64 << bit;
-        self.state.flags.set(Flags::Z, old & mask == 0);
+        self.state.flags = if old & mask == 0 {
+            Flags::Z
+        } else {
+            Flags::empty()
+        };
         let result = match instruction.opcode {
             Opcode::Bset => Some(old | mask),
             Opcode::Bclr => Some(old & !mask),
@@ -1171,7 +1177,11 @@ impl Cpu {
                     }
                 })
             };
-            self.state.flags.set(Flags::V, translated.is_none());
+            self.state.flags = if translated.is_none() {
+                Flags::V
+            } else {
+                Flags::empty()
+            };
             if let Some(value) = translated {
                 self.write_r(dst, size, value);
             }
@@ -1195,14 +1205,7 @@ impl Cpu {
             .unwrap_or(0) as usize;
         match instruction.opcode {
             Opcode::Setf => {
-                self.state
-                    .flags
-                    .insert(Flags::from_bits_truncate(field(instruction, 'm') as u16))
-            }
-            Opcode::Clrf => {
-                self.state
-                    .flags
-                    .remove(Flags::from_bits_truncate(field(instruction, 'm') as u16))
+                self.state.flags = Flags::from_bits_retain(field(instruction, 'm') as u16)
             }
             Opcode::Rdflags => self.state.r[dst] = u64::from(self.state.flags.bits()),
             Opcode::Wrflags => {
@@ -1740,7 +1743,7 @@ impl Cpu {
                 value >= high
             })
         };
-        self.state.flags.set(Flags::V, outside);
+        self.state.flags = if outside { Flags::V } else { Flags::empty() };
         self.state.pc = next_pc;
         Ok(StepResult::Running)
     }
@@ -6434,6 +6437,30 @@ fn logical_repeat_flags(value: u64, size: Size) -> Flags {
     flags.set(Flags::N, value & (1_u64 << (size.bytes() * 8 - 1)) != 0);
     flags
 }
+fn computed_repeat_flags(opcode: Opcode, committed_flags: Flags) -> Option<Flags> {
+    // These complete body-written images encode the same derived value within
+    // the iteration's single commit; no architectural boundary samples FLAGS.
+    match opcode {
+        Opcode::Cmp | Opcode::Test => Some(committed_flags & (Flags::Z | Flags::N)),
+        Opcode::Btest | Opcode::Bset | Opcode::Bclr | Opcode::Bchg => {
+            Some(committed_flags & Flags::Z)
+        }
+        Opcode::Bndsii
+        | Opcode::Bndsix
+        | Opcode::Bndsxi
+        | Opcode::Bndsxx
+        | Opcode::Bnduii
+        | Opcode::Bnduix
+        | Opcode::Bnduxi
+        | Opcode::Bnduxx
+        | Opcode::Seglea => Some(if committed_flags.contains(Flags::V) {
+            Flags::empty()
+        } else {
+            Flags::Z
+        }),
+        _ => None,
+    }
+}
 const fn size_code(size: Size) -> u8 {
     match size {
         Size::Byte => 1,
@@ -7144,8 +7171,8 @@ mod tests {
     #[test]
     fn page_fault_enters_common_event_handler_and_populates_fault_frame() {
         let instruction = encoded_form(
-            "medium.mov_x_ea_e_rn_d.2",
-            &[('z', 1), ('e', 0x00), ('d', 1)],
+            "medium.mov_x_ea_e_rn_d",
+            &[('z', 3), ('e', 0x00), ('d', 1)],
             &[],
         );
         let mut ram = Ram::new(0x20_000);
@@ -8364,10 +8391,41 @@ mod tests {
             crate::SegmentRegister::from_raw(0x23_003),
         );
         cpu.state_mut().r[10] = 0xaaaa;
+        cpu.state_mut().flags = Flags::all();
 
         assert_eq!(cpu.step(&mut ram), StepResult::Running);
         assert_eq!(cpu.state().r[10], 0xaaaa);
-        assert!(cpu.state().flags.contains(Flags::V));
+        assert_eq!(cpu.state().flags, Flags::V);
+    }
+
+    #[test]
+    fn complete_image_writers_clear_formerly_preserved_flags() {
+        let setf = encoded_form("medium.setf_flags_bitmap_m", &[('m', 5)], &[]);
+        let bit = encoded_form("long.btest_imm6_i_rn_e", &[('i', 0), ('e', 1)], &[]);
+        let bounds = encoded_form(
+            "extralong.bndsii_x_rn_l_rn_v_rn_h",
+            &[('z', 0), ('l', 1), ('v', 2), ('h', 3)],
+            &[],
+        );
+        let mut program = Vec::new();
+        program.extend_from_slice(&setf);
+        program.extend_from_slice(&bit);
+        program.extend_from_slice(&bounds);
+        let mut ram = Ram::new(program.len());
+        ram.load(0, &program).unwrap();
+        let mut cpu = Cpu::new();
+        cpu.reset(0);
+        cpu.state_mut().flags = Flags::all();
+        cpu.state_mut().r[1] = 0;
+        cpu.state_mut().r[2] = 2;
+        cpu.state_mut().r[3] = 3;
+
+        assert_eq!(cpu.step(&mut ram), StepResult::Running);
+        assert_eq!(cpu.state().flags, Flags::N | Flags::V);
+        assert_eq!(cpu.step(&mut ram), StepResult::Running);
+        assert_eq!(cpu.state().flags, Flags::Z);
+        assert_eq!(cpu.step(&mut ram), StepResult::Running);
+        assert_eq!(cpu.state().flags, Flags::empty());
     }
 
     #[test]
@@ -8525,8 +8583,8 @@ mod tests {
     #[test]
     fn ext2_index_is_scaled_by_the_ea_interpretation_width() {
         let bytes = encoded_form(
-            "medium.mov_x_rn_s_ea_e.2",
-            &[('z', 1), ('s', 2), ('e', 0x68)],
+            "medium.mov_x_rn_s_ea_e",
+            &[('z', 3), ('s', 2), ('e', 0x68)],
             &[0x92, 0x13],
         ); // MOV.Q R2, [DS:R1 + R3]
         let mut ram = Ram::new(128);
@@ -8549,8 +8607,8 @@ mod tests {
         let cases = [
             ("medium.mov_x_rn_s_ea_e", 0, Size::Byte),
             ("medium.mov_x_rn_s_ea_e", 1, Size::Word),
-            ("medium.mov_x_rn_s_ea_e.2", 0, Size::Long),
-            ("medium.mov_x_rn_s_ea_e.2", 1, Size::Quad),
+            ("medium.mov_x_rn_s_ea_e", 2, Size::Long),
+            ("medium.mov_x_rn_s_ea_e", 3, Size::Quad),
         ];
         for (id, selector, size) in cases {
             let bytes = encoded_form(id, &[('z', selector), ('s', 2), ('e', 0x68)], &[0x92, 0x13]);
@@ -8577,8 +8635,8 @@ mod tests {
         for (descriptor, address, final_index) in [([0x90, 0x13], 0x50, 3), ([0x91, 0x13], 0x48, 1)]
         {
             let bytes = encoded_form(
-                "medium.mov_x_rn_s_ea_e.2",
-                &[('z', 1), ('s', 2), ('e', 0x68)],
+                "medium.mov_x_rn_s_ea_e",
+                &[('z', 3), ('s', 2), ('e', 0x68)],
                 &descriptor,
             );
             let mut ram = Ram::new(0x100);
@@ -8600,8 +8658,8 @@ mod tests {
         let cases = [
             (
                 encoded_form(
-                    "medium.add_x_rn_s_ea_e.2",
-                    &[('z', 1), ('s', 2), ('e', 0x63)],
+                    "medium.add_x_rn_s_ea_e",
+                    &[('z', 3), ('s', 2), ('e', 0x63)],
                     &[0x8c],
                 ),
                 3,
@@ -8609,7 +8667,7 @@ mod tests {
                 8,
             ),
             (
-                encoded_form("medium.inc_x_ea.2", &[('z', 1), ('e', 0x63)], &[0x8c]),
+                encoded_form("medium.inc_x_ea", &[('z', 3), ('e', 0x63)], &[0x8c]),
                 0,
                 5,
                 6,
@@ -8668,7 +8726,7 @@ mod tests {
     #[test]
     fn read_modify_write_resolves_ext2_index_once() {
         let instruction =
-            encoded_form("medium.inc_x_ea.2", &[('z', 1), ('e', 0x68)], &[0x90, 0x13]);
+            encoded_form("medium.inc_x_ea", &[('z', 3), ('e', 0x68)], &[0x90, 0x13]);
         let mut ram = Ram::new(0x200);
         ram.load(0, &instruction).unwrap();
         ram.write_u64(0x90, 5).unwrap();
@@ -8687,11 +8745,11 @@ mod tests {
     #[test]
     fn exchange_reuses_resolved_ea_and_final_register_write_wins_over_auto_update() {
         for (id, register_field, expected_memory) in [
-            ("long.xchg_x_rn_s_ea_e.2", 's', 0x80),
-            ("long.xchg_x_ea_e_rn_d.2", 'd', 0x88),
+            ("long.xchg_x_rn_s_ea_e", 's', 0x80),
+            ("long.xchg_x_ea_e_rn_d", 'd', 0x88),
         ] {
             let instruction =
-                encoded_form(id, &[('z', 1), (register_field, 2), ('e', 0x63)], &[0x94]);
+                encoded_form(id, &[('z', 3), (register_field, 2), ('e', 0x63)], &[0x94]);
             let mut ram = Ram::new(0x200);
             ram.load(0, &instruction).unwrap();
             ram.write_u64(0x80, 0x1111).unwrap();
@@ -8705,12 +8763,12 @@ mod tests {
         }
 
         for (id, register_field, expected_memory) in [
-            ("long.xchg_x_rn_s_ea_e.2", 's', 2),
-            ("long.xchg_x_ea_e_rn_d.2", 'd', 3),
+            ("long.xchg_x_rn_s_ea_e", 's', 2),
+            ("long.xchg_x_ea_e_rn_d", 'd', 3),
         ] {
             let instruction = encoded_form(
                 id,
-                &[('z', 1), (register_field, 2), ('e', 0x68)],
+                &[('z', 3), (register_field, 2), ('e', 0x68)],
                 &[0x90, 0x12],
             );
             let mut ram = Ram::new(0x200);
@@ -8798,8 +8856,8 @@ mod tests {
         for (descriptor, address, final_register) in [([0x90, 0x11], 36, 5), ([0x91, 0x11], 28, 3)]
         {
             let bytes = encoded_form(
-                "medium.mov_x_rn_s_ea_e.2",
-                &[('z', 1), ('s', 2), ('e', 0x68)],
+                "medium.mov_x_rn_s_ea_e",
+                &[('z', 3), ('s', 2), ('e', 0x68)],
                 &descriptor,
             );
             let mut ram = Ram::new(0x80);
@@ -9639,6 +9697,7 @@ mod tests {
         cpu.state_mut().f[7] = 1.0_f64.to_bits();
         cpu.state_mut().f[8] = 1.0_f64.to_bits();
         cpu.state_mut().flags = Flags::C | Flags::N;
+        cpu.state_mut().fflags = crate::fpu::env::FpCauses::NX.bits();
 
         assert_eq!(cpu.step(&mut ram), StepResult::Running);
         assert_eq!(ram.read_u32(0x100).unwrap(), 0x3fc0_0000);
@@ -9647,7 +9706,8 @@ mod tests {
         assert_eq!(cpu.step(&mut ram), StepResult::Running);
         assert_eq!(cpu.state().flags, Flags::N | Flags::C);
         assert_eq!(cpu.step(&mut ram), StepResult::Running);
-        assert_eq!(cpu.state().flags, Flags::N | Flags::C | Flags::V);
+        assert_eq!(cpu.state().flags, Flags::V);
+        assert_eq!(cpu.state().fflags, crate::fpu::env::FpCauses::NX.bits());
     }
 
     #[test]
@@ -10415,8 +10475,8 @@ mod tests {
         let after_pc = body_pc + body.len() as u64;
 
         let fix_divisor = encoded_form(
-            "medium.mov_x_rn_s_ea_e.2",
-            &[('z', 1), ('s', 4), ('e', 0x02)],
+            "medium.mov_x_rn_s_ea_e",
+            &[('z', 3), ('s', 4), ('e', 0x02)],
             &[],
         );
         let handler_pc = 0x100;
@@ -10475,30 +10535,165 @@ mod tests {
     }
 
     #[test]
-    fn repcc_flags_observes_the_post_body_flags_image() {
-        let repeat = encoded_form("medium.repcc_rn_r", &[('c', 3), ('r', 0)], &[]);
+    fn repcc_cmp_temporary_flags_clear_c_and_v_while_body_flags_commit() {
         let body = encoded_form(
             "short.cmp_x_rn_s_rn_d",
-            &[('z', 1), ('s', 1), ('d', 2)],
+            &[('z', 0), ('s', 1), ('d', 2)],
             &[],
         );
-        let body_pc = repeat.len() as u64;
-        let after_pc = body_pc + body.len() as u64;
-        let mut ram = Ram::new(64);
-        ram.load(0, &[repeat, body].concat()).unwrap();
-        let mut cpu = Cpu::new();
-        cpu.reset(0);
-        cpu.state_mut().r[0] = 3;
-        cpu.state_mut().r[1] = 0x55;
-        cpu.state_mut().r[2] = 0x55;
-        cpu.state_mut().flags = Flags::empty();
+        // C (4) must be false because temporary C=0. LT (12) must be true
+        // because temporary N=1,V=0 even though the committed body has V=1.
+        for (condition, continues) in [(4, false), (12, true)] {
+            let repeat = encoded_form(
+                "medium.repcc_rn_r",
+                &[('c', condition), ('r', 0)],
+                &[],
+            );
+            let body_pc = repeat.len() as u64;
+            let after_pc = body_pc + body.len() as u64;
+            let mut ram = Ram::new(64);
+            ram.load(0, &[repeat, body.clone()].concat()).unwrap();
+            let mut cpu = Cpu::new();
+            cpu.reset(0);
+            cpu.state_mut().r[0] = 2;
+            cpu.state_mut().r[1] = 0xffff_ffff;
+            cpu.state_mut().r[2] = 0x7fff_ffff;
+            cpu.state_mut().flags = Flags::Z;
 
-        assert_eq!(cpu.step(&mut ram), StepResult::Running);
-        assert_eq!(cpu.state().pc, body_pc);
-        assert_eq!(cpu.step(&mut ram), StepResult::Running);
-        assert_eq!(cpu.state().flags, Flags::Z);
-        assert_eq!(cpu.state().r[0], 2);
-        assert_eq!(cpu.state().pc, after_pc);
+            assert_eq!(cpu.step(&mut ram), StepResult::Running);
+            assert_eq!(cpu.state().pc, body_pc);
+            assert_eq!(cpu.step(&mut ram), StepResult::Running);
+            assert_eq!(cpu.state().flags, Flags::N | Flags::C | Flags::V);
+            assert_eq!(cpu.state().r[0], 1);
+            assert_eq!(
+                cpu.state().pc,
+                if continues { body_pc } else { after_pc },
+                "condition {condition}"
+            );
+            if continues {
+                assert_eq!(cpu.step(&mut ram), StepResult::Running);
+                assert_eq!(cpu.state().flags, Flags::N | Flags::C | Flags::V);
+                assert_eq!(cpu.state().r[0], 0);
+                assert_eq!(cpu.state().pc, after_pc);
+            }
+        }
+    }
+
+    #[test]
+    fn repcc_bit_observes_old_bit_and_commits_complete_body_flags() {
+        let body = encoded_form("long.btest_imm6_i_rn_e", &[('i', 0), ('e', 1)], &[]);
+        for (old_value, continues, expected_flags) in [
+            (0, true, Flags::Z),
+            (1, false, Flags::empty()),
+        ] {
+            // Z condition.
+            let repeat = encoded_form("medium.repcc_rn_r", &[('c', 2), ('r', 0)], &[]);
+            let body_pc = repeat.len() as u64;
+            let after_pc = body_pc + body.len() as u64;
+            let mut ram = Ram::new(64);
+            ram.load(0, &[repeat, body.clone()].concat()).unwrap();
+            let mut cpu = Cpu::new();
+            cpu.reset(0);
+            cpu.state_mut().r[0] = 2;
+            cpu.state_mut().r[1] = old_value;
+            cpu.state_mut().flags = Flags::all();
+
+            assert_eq!(cpu.step(&mut ram), StepResult::Running);
+            assert_eq!(cpu.step(&mut ram), StepResult::Running);
+            assert_eq!(cpu.state().flags, expected_flags);
+            assert_eq!(cpu.state().r[0], 1);
+            assert_eq!(cpu.state().pc, if continues { body_pc } else { after_pc });
+            if continues {
+                assert_eq!(cpu.step(&mut ram), StepResult::Running);
+                assert_eq!(cpu.state().flags, expected_flags);
+                assert_eq!(cpu.state().r[0], 0);
+                assert_eq!(cpu.state().pc, after_pc);
+            }
+        }
+    }
+
+    #[test]
+    fn repcc_bounds_observes_violation_boolean_and_commits_complete_body_flags() {
+        let body = encoded_form(
+            "extralong.bndsii_x_rn_l_rn_v_rn_h",
+            &[('z', 0), ('l', 1), ('v', 2), ('h', 3)],
+            &[],
+        );
+        for (value, continues, expected_flags) in [
+            (2, true, Flags::empty()),
+            (4, false, Flags::V),
+        ] {
+            // Z condition.
+            let repeat = encoded_form("medium.repcc_rn_r", &[('c', 2), ('r', 0)], &[]);
+            let body_pc = repeat.len() as u64;
+            let after_pc = body_pc + body.len() as u64;
+            let mut ram = Ram::new(64);
+            ram.load(0, &[repeat, body.clone()].concat()).unwrap();
+            let mut cpu = Cpu::new();
+            cpu.reset(0);
+            cpu.state_mut().r[0] = 2;
+            cpu.state_mut().r[1] = 1;
+            cpu.state_mut().r[2] = value;
+            cpu.state_mut().r[3] = 3;
+            cpu.state_mut().flags = Flags::all();
+
+            assert_eq!(cpu.step(&mut ram), StepResult::Running);
+            assert_eq!(cpu.step(&mut ram), StepResult::Running);
+            assert_eq!(cpu.state().flags, expected_flags);
+            assert_eq!(cpu.state().r[0], 1);
+            assert_eq!(cpu.state().pc, if continues { body_pc } else { after_pc });
+            if continues {
+                assert_eq!(cpu.step(&mut ram), StepResult::Running);
+                assert_eq!(cpu.state().flags, expected_flags);
+                assert_eq!(cpu.state().r[0], 0);
+                assert_eq!(cpu.state().pc, after_pc);
+            }
+        }
+    }
+
+    #[test]
+    fn repcc_seglea_observes_failure_boolean_and_commits_complete_body_flags() {
+        let body = encoded_form(
+            "long.seglea_x_ea_e_rn_d",
+            &[('z', 3), ('e', 0x5f), ('d', 10)],
+            &[0xa3, 0],
+        );
+        for (failure, continues, expected_flags) in [
+            (false, true, Flags::empty()),
+            (true, false, Flags::V),
+        ] {
+            // Z condition.
+            let repeat = encoded_form("medium.repcc_rn_r", &[('c', 2), ('r', 0)], &[]);
+            let body_pc = repeat.len() as u64;
+            let after_pc = body_pc + body.len() as u64;
+            let mut ram = Ram::new(64);
+            ram.load(0, &[repeat, body.clone()].concat()).unwrap();
+            let mut cpu = Cpu::new();
+            cpu.reset(0);
+            cpu.state_mut().r[0] = 2;
+            cpu.state_mut().r[10] = 0xaaaa;
+            cpu.state_mut().flags = Flags::all();
+            if failure {
+                cpu.state_mut().segments.set(
+                    crate::SegmentSelector::Gs0,
+                    crate::SegmentRegister::from_raw(0x23_003),
+                );
+            }
+
+            assert_eq!(cpu.step(&mut ram), StepResult::Running);
+            assert_eq!(cpu.step(&mut ram), StepResult::Running);
+            assert_eq!(cpu.state().flags, expected_flags);
+            assert_eq!(cpu.state().r[0], 1);
+            assert_eq!(cpu.state().pc, if continues { body_pc } else { after_pc });
+            if continues {
+                assert_eq!(cpu.step(&mut ram), StepResult::Running);
+                assert_eq!(cpu.state().flags, expected_flags);
+                assert_eq!(cpu.state().r[0], 0);
+                assert_eq!(cpu.state().pc, after_pc);
+            } else {
+                assert_eq!(cpu.state().r[10], 0xaaaa);
+            }
+        }
     }
 
     #[test]

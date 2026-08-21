@@ -82,14 +82,12 @@ function read_state_register(instruction : Decoded_instruction, state : Cpu_stat
 function execute_system_local(instruction : Decoded_instruction, state : Cpu_state)
   -> option(Execution_result) = {
   let operation = instruction.form.operation;
-  if operation == Op_SETF | operation == Op_CLRF then match value_named(
+  if operation == Op_SETF then match value_named(
     instruction, state, "mask"
   ) {
     Some(mask) => {
       let selected = mask[3 .. 0];
-      let flags = if operation == Op_SETF then state.flags | selected
-                  else state.flags & not_vec(selected);
-      Some(local_result(state, instruction, { state with flags = flags }, CommitRegisters))
+      Some(local_result(state, instruction, { state with flags = selected }, CommitRegisters))
     },
     None() => None(),
   }
@@ -305,4 +303,3 @@ function execute_integer_local(instruction : Decoded_instruction, state : Cpu_st
   Op_EXTSQ => execute_extend_local(instruction, state),
   _ => None(),
 }
-

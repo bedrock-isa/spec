@@ -56,6 +56,15 @@ function fp_test_fault_kind(result : Execution_result, kind : Fault_kind) -> boo
     None() => false,
   }
 
+function fp_test_representative_bytes(form_id : string,
+                                      records : list(Representative_record))
+  -> option(list(bits(8))) =
+  match records {
+    [||] => None(),
+    record :: tail => if record.form_id == form_id then Some(record.bytes)
+                      else fp_test_representative_bytes(form_id, tail),
+  }
+
 function fp_test_fp_response(request : Fp_request_image, primary : bits(64),
                              secondary : bits(64), causes : bits(5),
                              accuracy_mask : bits(2), error0 : bits(16),
@@ -67,9 +76,13 @@ function fp_test_fp_response(request : Fp_request_image, primary : bits(64),
     ) }
 
 function test_fp_architecture_local_commit() -> unit =
-  match decode_full_record([|0xC2, 0x50, 0x30|]) {
+  match fp_test_representative_bytes(
+          "medium.fabs_x_fn_s_fn_d", representative_form_records()
+        ) {
     None() => assert(false),
-    Some(instruction) => {
+    Some(bytes) => match decode_full_record(bytes) {
+      None() => assert(false),
+      Some(instruction) => {
       assert(operation_width(instruction) == 4);
       var state = initial_cpu();
       state.fp_enabled = true;
@@ -81,6 +94,7 @@ function test_fp_architecture_local_commit() -> unit =
       assert(result.state.floating_registers[0] == 0x000000003F800000);
       assert(result.state.fflags == fflags_none);
       assert(result.state.pc == 0x0000000000000003)
+      },
     },
   }
 
@@ -208,4 +222,3 @@ function test_fptrans_architecture_sequence() -> unit =
       assert(finished.state.floating_registers[0] == 0x000000003F576AA4)
     },
   }
-

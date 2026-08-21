@@ -98,6 +98,9 @@ make docs
 ```
 
 Generate allocation reports with `python3 isa/tools/gen_alloc_report.py`.
+Render the current allocation space as an interactive quadtree with
+`python3 isa/tools/gen_opcode_quadtree.py`; the standalone HTML is written to
+`build/reports/opcode_quadtree.html` by default.
 Inspect the global space with `alloc_edit.py summary`, `entries`, `check`, or
 `holes`. The write commands operate on stable form IDs:
 

@@ -308,10 +308,15 @@ mod tests {
 
     #[test]
     fn extended_ea_family_fixes_descriptor_and_required_record_lengths() {
-        let form = generated_form("medium.inc_x_ea.2");
+        let form = generated_form("medium.inc_x_ea");
         let opcode_bytes = form.class.opcode_bytes();
 
-        let ext1_payload = set_field(form.pattern, 'e', form.value, 0x63);
+        let ext1_payload = set_field(
+            form.pattern,
+            'z',
+            set_field(form.pattern, 'e', form.value, 0x63),
+            3,
+        );
         assert_eq!(
             decode(&extended_record(form, ext1_payload, opcode_bytes)),
             Err(DecodeError::OperandPayload {
@@ -321,7 +326,12 @@ mod tests {
         );
         assert!(decode(&extended_record(form, ext1_payload, opcode_bytes + 1)).is_ok());
 
-        let ext2_payload = set_field(form.pattern, 'e', form.value, 0x68);
+        let ext2_payload = set_field(
+            form.pattern,
+            'z',
+            set_field(form.pattern, 'e', form.value, 0x68),
+            3,
+        );
         let mut truncated_ext2 = extended_record(form, ext2_payload, opcode_bytes + 1);
         truncated_ext2[opcode_bytes] = 0x80;
         assert_eq!(

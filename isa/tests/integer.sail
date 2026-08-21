@@ -67,21 +67,23 @@ function test_local_integer_boundaries() -> unit = {
   match decode_full_record([|0xC7, 0xEE, 0x64, 0x00|]) {
     Some(instruction) => {
       var state = initial_cpu();
+      state.flags = 0b1111;
       state.registers[0] = 0x11223344556677A5;
       let result = execute_full(instruction, state);
       assert(not_bool(result.awaiting_environment));
       assert(result.state.registers[0] == 0x11223344556677A5);
-      assert(flag_z(result.state.flags))
+      assert(result.state.flags == 0b1000)
     },
     None() => assert(false),
   };
   match decode_full_record([|0xC7, 0xEE, 0x3F, 0x80|]) {
     Some(instruction) => {
       var state = initial_cpu();
+      state.flags = 0b1111;
       state.registers[0] = 0x80000000000000FF;
       let result = execute_full(instruction, state);
       assert(result.state.registers[0] == state.registers[0]);
-      assert(flag_z(result.state.flags))
+      assert(result.state.flags == 0b1000)
     },
     None() => assert(false),
   };
@@ -170,11 +172,11 @@ function test_divide_bounds_and_conditions() -> unit = {
       state.registers[2] = 0x0000000000000080;
       state.registers[3] = 0x000000000000007F;
       let endpoint = execute_full(instruction, state);
-      assert(endpoint.state.flags == 0b1110);
+      assert(endpoint.state.flags == 0b0000);
       state.registers[2] = 0x000000000000007F;
       state.registers[3] = 0x000000000000007E;
       let outside = execute_full(instruction, state);
-      assert(outside.state.flags == 0b1111)
+      assert(outside.state.flags == 0b0001)
     },
     None() => assert(false),
   };
@@ -206,4 +208,3 @@ function test_divide_bounds_and_conditions() -> unit = {
     None() => assert(false),
   }
 }
-

@@ -1,7 +1,7 @@
 forms:
 - id: extralong.bndsii_x_rn_l_ea_e_rn_h
   class: extralong
-  bits: 1111110000zz0000000llllhhhheeeeeee
+  bits: 11111100010000zz000llllhhhheeeeeee
   syntax: BNDSII.BWLQ(z) Rn(l), <ea>(e), Rn(h)
   operands:
   - name: lo
@@ -23,7 +23,7 @@ forms:
       type: size.BWLQ
 - id: extralong.bndsii_x_rn_l_rn_v_rn_h
   class: extralong
-  bits: 1111111110zz0000000000llllvvvvhhhh
+  bits: 11111100000000zz000000llllvvvvhhhh
   syntax: BNDSII.BWLQ(z) Rn(l), Rn(v), Rn(h)
   operands:
   - name: lo

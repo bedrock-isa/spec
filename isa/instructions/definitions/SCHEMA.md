@@ -55,7 +55,7 @@ RepeatContract {
 }
 
 RepeatObserved {
-  kind: enum(flags, result, source)
+  kind: enum(computed, result, source)
   operand?: string
 }
 
@@ -66,14 +66,18 @@ InstructionException {
 }
 ```
 
-`observed` is present exactly when `REPcc` is in `contexts`. `flags` has no
-operand; `result` and `source` require an operand name used by the instruction.
+`observed` is present exactly when `REPcc` is in `contexts`. `computed` has no
+operand and denotes the derived value named by the instruction's normative
+description; `result` and `source` require an operand name used by the instruction.
 Exception event and form references are checked against the architectural event
 manifest and the instruction's encoding forms.
 
-`FLAGS` accepts `Z`, `N`, `C`, and `V`; `FFLAGS` accepts `NV`, `DZ`, `OF`,
-`UF`, and `NX`. Each present bank is non-empty. Renderers use the listed
-architectural flag order rather than YAML mapping order.
+`FLAGS` accepts `Z`, `N`, `C`, and `V`; whenever the `FLAGS` bank is present it
+must name all four flags because integer FLAGS writes always replace the complete
+image. `FFLAGS` accepts `NV`, `DZ`, `OF`, `UF`, and `NX`, and may remain partial
+because IEEE-754 exception causes accrue independently. Each present bank is
+non-empty. Renderers use the listed architectural flag order rather than YAML
+mapping order.
 
 ## 2. `encodings.yaml`
 

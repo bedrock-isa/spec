@@ -1,5 +1,5 @@
 # Synchronized Bedrock YAML schema contract. Keep version 0 until an explicit release decision.
 version=0
 families=11
-decoder_sha256=6c8f8b27b3aea114762a601e7b38db3667f904edd3e82c49bd45fb8909409b79
-contract_sha256=d89abd2fd07299d78276eaa13e1c3c0cd5969bbdeddc4269e42041068b302aba
+decoder_sha256=ddf9c3bfa15cc1cb52994bca9edbf430642bb2d5cc2779d274b9b5e393b3cc90
+contract_sha256=85f31a8ffc641940106de0a7cb861a9f3db133b90b29d677659f286c80b96e4f

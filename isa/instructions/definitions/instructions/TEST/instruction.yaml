@@ -1,7 +1,7 @@
 mnemonic: TEST
 title: Test
 summary: Computes a bitwise conjunction and updates condition codes without storing the temporary value.
-description: Computes the selected-width bitwise conjunction only to set Z and N, clears C and V, and does not write the temporary result.
+description: Computes the selected-width bitwise conjunction only to set Z and N, clears C and V, and does not write the temporary result. REPcc observes that temporary conjunction rather than architectural FLAGS.
 attributes:
   class: integer
   family: integer_alu
@@ -12,7 +12,7 @@ repeat:
   - REPcc
   - REPG
   observed:
-    kind: flags
+    kind: computed
 flag_effects:
   FLAGS:
     Z: "result == 0"

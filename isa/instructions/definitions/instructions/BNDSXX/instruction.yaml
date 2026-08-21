@@ -1,7 +1,7 @@
 mnemonic: BNDSXX
 title: Signed Bounds Check Exclusive-Exclusive
 summary: Checks signed value membership in the exclusive-exclusive interval (lo, hi).
-description: BNDSXX treats both bounds as exclusive. It sets V when signed(value) is outside (signed(lo), signed(hi)); Z, N, and C are unchanged.
+description: BNDSXX treats both bounds as exclusive. It sets V when signed(value) is outside (signed(lo), signed(hi)) and clears Z, N, and C. REPcc observes the violation result as a B-sized 0 or 1 rather than architectural FLAGS.
 attributes:
   class: integer
   family: bounds
@@ -12,7 +12,10 @@ repeat:
   - REPcc
   - REPG
   observed:
-    kind: flags
+    kind: computed
 flag_effects:
   FLAGS:
+    Z: "0"
+    N: "0"
+    C: "0"
     V: "signed(value) is outside the selected interval"

@@ -130,7 +130,7 @@ function execute_bit_local(instruction : Decoded_instruction, state : Cpu_state)
         let selected_old = narrow_bits(old, width);
         let was_clear = (selected_old & mask) == 0x0000000000000000;
         let operation = instruction.form.operation;
-        let new_flags = set_flag_z_only(state.flags, was_clear);
+        let new_flags = flags_value(was_clear, false, false, false);
         if operation == Op_BTEST then {
           let updated = { state with flags = new_flags };
           Some(local_result(state, instruction, updated, CommitRegisters))
@@ -342,4 +342,3 @@ function execute_divmod_local(instruction : Decoded_instruction, state : Cpu_sta
     _ => None(),
   }
 }
-

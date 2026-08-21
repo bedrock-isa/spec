@@ -1,6 +1,3 @@
-function set_overflow_flag(flags : bits(4), value : bool) -> bits(4) =
-  flags[3 .. 1] @ (if value then bitone else bitzero)
-
 function execute_lea_transaction(instruction : Decoded_instruction, state : Cpu_state)
   -> option(Execution_result) = {
   let width = operation_width(instruction);
@@ -16,9 +13,9 @@ function execute_lea_transaction(instruction : Decoded_instruction, state : Cpu_
         var updated = advance_pc(evaluated.image, instruction);
         if point.in_bounds then {
           updated = write_local_destination(updated, destination, point.linear);
-          updated.flags = set_overflow_flag(updated.flags, false)
+          updated.flags = flags_value(false, false, false, false)
         }
-        else updated.flags = set_overflow_flag(updated.flags, true);
+        else updated.flags = flags_value(false, false, false, true);
         Some(completed(state, updated, CommitRegisters, [||]))
       }
       else {
@@ -30,4 +27,3 @@ function execute_lea_transaction(instruction : Decoded_instruction, state : Cpu_
     },
   }
 }
-

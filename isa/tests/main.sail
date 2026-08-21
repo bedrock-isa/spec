@@ -1,12 +1,12 @@
 function main() -> unit = {
-  expect_form(0x0000000000000060, ExtraShort, "extrashort.clr_q_rn_r");
+  expect_form(0x0000000000000070, ExtraShort, "extrashort.clr_q_rn_r");
   expect_form(0x000000000000000F, Short, "short.mov_x_rn_s_rn_d");
-  expect_form(0x0000000000006480, Medium, "medium.abs_x_ea.2");
+  expect_form(0x0000000000038010, Medium, "medium.abs_x_ea");
 
-  expect_frame([|0x60|], FixedExtraShort, 1);
+  expect_frame([|0x70|], FixedExtraShort, 1);
   expect_frame([|0x80, 0x0F|], FixedShort, 2);
   expect_invalid_frame([|0x80|]);
-  expect_invalid_frame([|0x60, 0x00|]);
+  expect_invalid_frame([|0x70, 0x00|]);
 
   expect_frame([|0xC7, 0xEF, 0x46, 0x01|], ExtendedLong, 4);
   expect_frame([|0xCB, 0xEF, 0x46, 0x01, 0xA5|], ExtendedLong, 5);
@@ -32,8 +32,6 @@ function main() -> unit = {
     None() => assert(false),
   };
 
-  expect_decoded([|0x60|], Clear, SizeQ, 0x0, 0x0);
-  expect_decoded([|0x6F|], Clear, SizeQ, 0xF, 0xF);
   expect_decoded([|0x80, 0x0F|], Move, SizeL, 0x0, 0xF);
   expect_decoded([|0x81, 0xF0|], Move, SizeQ, 0xF, 0x0);
   expect_decoded([|0x88, 0x12|], And, SizeL, 0x1, 0x2);

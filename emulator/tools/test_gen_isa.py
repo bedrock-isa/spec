@@ -47,6 +47,20 @@ class RepeatObservationGenerationTests(unittest.TestCase):
             'name: "dst", field: Some(\'d\'), location: RepeatOperandLocation::Rn } })',
         )
 
+    def test_emits_computed_observation_without_an_operand(self) -> None:
+        definition = self.definition(kind="computed")
+        del definition["repeat"]["observed"]["operand"]
+        rendered = gen_isa.generated_repeat_observation(
+            definition, self.entry(), [self.operand()]
+        )
+        self.assertEqual(rendered, "Some(RepeatObservation::Computed)")
+
+    def test_computed_observation_rejects_an_operand(self) -> None:
+        with self.assertRaisesRegex(ValueError, "cannot name an operand"):
+            gen_isa.generated_repeat_observation(
+                self.definition(kind="computed"), self.entry(), [self.operand()]
+            )
+
     def test_unknown_operand_fails(self) -> None:
         with self.assertRaisesRegex(ValueError, "unknown operand"):
             gen_isa.generated_repeat_observation(
@@ -153,6 +167,13 @@ class GeneratedOutputPathTests(unittest.TestCase):
     def test_allows_non_src_output(self) -> None:
         output = gen_isa.REPOSITORY_ROOT / "build/generated/bedrock-isa.rs"
         self.assertEqual(gen_isa.validated_output_path(output), output.resolve())
+
+
+class RepositoryGenerationTests(unittest.TestCase):
+    def test_current_encoding_architecture_renders_the_rust_catalog(self) -> None:
+        rendered = gen_isa.render(gen_isa.REPOSITORY_ROOT)
+        self.assertIn("payload_bits: 7,", rendered)
+        self.assertIn("payload_bits: 34,", rendered)
 
 
 if __name__ == "__main__":

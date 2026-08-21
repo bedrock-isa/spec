@@ -1,7 +1,7 @@
 forms:
 - id: extralong.movcc_x_rn_s_ea_e
   class: extralong
-  bits: 1111110011zz0000001ccccsssseeeeeee
+  bits: 11111100010001zz011ccccsssseeeeeee
   syntax: MOVcc.BWLQ(z) Rn(s), <ea>(e)
   operands:
   - name: cc
@@ -27,7 +27,7 @@ forms:
     reason: invalid_destination
 - id: extralong.movcc_x_ea_e_rn_d
   class: extralong
-  bits: 1111110011zz0000000ccccddddeeeeeee
+  bits: 11111100010001zz010ccccddddeeeeeee
   syntax: MOVcc.BWLQ(z) <ea>(e), Rn(d)
   operands:
   - name: cc

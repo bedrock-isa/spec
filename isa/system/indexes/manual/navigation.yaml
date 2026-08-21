@@ -87,5 +87,6 @@ revision_history:
       - Closed the CPUID, SAVE/RESTORE, floating-point, cache-maintenance, and effective-address contracts.
       - Defined reset, memory policy, translation, event, repeat, and instruction-encoding boundaries.
       - Defined atomic ordering, paging boundaries, compatibility identity, stack, WAIT/HALT, and conformance contracts.
+      - Unified complete-image integer FLAGS writes, retained accrued IEEE-754 FFLAGS, and made REPcc test temporary value-derived conditions.
       - Unified terminology, canonical field names, reference indexes, and revision-history navigation.
   released: []

@@ -35,7 +35,7 @@ SCHEMA_DOCUMENT_PATH = (
 
 PRIVILEGES = frozenset({"unprivileged", "supervisor", "any"})
 REPEAT_CONTEXTS = frozenset({"REP", "REPcc", "REPG"})
-REPEAT_OBSERVED_KINDS = frozenset({"flags", "result", "source"})
+REPEAT_OBSERVED_KINDS = frozenset({"computed", "result", "source"})
 DESTINATION_OVERLAP_RULES = frozenset({"same_value", "illegal_instruction"})
 OPERAND_ACCESS = frozenset({"read", "write", "read_write", "address"})
 OPERAND_DOMAINS = frozenset({"user"})
@@ -795,9 +795,9 @@ def decode_instruction(path: Path, raw: Any) -> InstructionDocument:
             operand = raw_observed.get("operand")
             if operand is not None:
                 operand = _string(operand, path, "repeat.observed.operand")
-            if kind == "flags" and operand is not None:
+            if kind == "computed" and operand is not None:
                 raise DecodeError(
-                    f"{_where(path, 'repeat.observed.operand')}: flags observation has no operand"
+                    f"{_where(path, 'repeat.observed.operand')}: computed observation has no operand"
                 )
             if kind in {"result", "source"} and operand is None:
                 raise DecodeError(
@@ -871,6 +871,12 @@ def decode_instruction(path: Path, raw: Any) -> InstructionDocument:
             raise DecodeError(
                 f"{_where(path, f'flag_effects.{bank}')}: unknown flags "
                 f"{', '.join(sorted(unknown_flags))}"
+            )
+        if bank == "FLAGS" and set(raw_effects) != set(valid_flags):
+            missing_flags = set(valid_flags) - raw_effects.keys()
+            raise DecodeError(
+                f"{_where(path, 'flag_effects.FLAGS')}: complete FLAGS writes must name "
+                f"Z, N, C, and V; missing {', '.join(sorted(missing_flags))}"
             )
         flag_effects[bank] = {
             flag: _string(raw_effects[flag], path, f"flag_effects.{bank}.{flag}")

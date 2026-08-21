@@ -243,8 +243,8 @@ pub fn test(format: FpFormat, status: FpStatus, operand: u64) -> FpFlagsEffect {
     )
 }
 
-/// Implements all four floating-point bounds checks. Only V is selected for
-/// update; Z, N, and C remain outside the mask.
+/// Implements all four floating-point bounds checks. The complete integer
+/// FLAGS image is replaced with V as the out-of-bounds result and Z=N=C=0.
 pub fn bounds(
     format: FpFormat,
     status: FpStatus,
@@ -272,7 +272,7 @@ pub fn bounds(
     let out_of_bounds = !low_ok || !high_ok;
     finish_flags(
         status,
-        Flags::V,
+        Flags::all(),
         if out_of_bounds {
             Flags::V
         } else {
@@ -712,7 +712,7 @@ mod tests {
     }
 
     #[test]
-    fn bounds_honor_each_endpoint_and_preserve_non_v_flags() {
+    fn bounds_honor_each_endpoint_and_replace_complete_flags_image() {
         let one = 0x3f80_0000;
         let two = 0x4000_0000;
         for (mode, low_out, high_out) in [
@@ -723,7 +723,8 @@ mod tests {
         ] {
             let at_low = bounds(FpFormat::S, status(0), one, one, two, mode);
             let at_high = bounds(FpFormat::S, status(0), one, two, two, mode);
-            assert_eq!(at_low.mask, Flags::V);
+            assert_eq!(at_low.mask, Flags::all());
+            assert_eq!(at_low.value & !Flags::V, Flags::empty());
             assert_eq!(at_low.value.contains(Flags::V), low_out);
             assert_eq!(at_high.value.contains(Flags::V), high_out);
         }

@@ -152,7 +152,7 @@ function local_operation_required(operation : Semantic_operation) -> bool = matc
   Op_ROL => true, Op_ROR => true, Op_SAR => true, Op_SBB => true,
   Op_SET => true, Op_SETcc => true, Op_SHL => true, Op_SHR => true,
   Op_SUB => true, Op_TEST => true, Op_XCHG => true, Op_XOR => true,
-  Op_CLRF => true, Op_SETF => true, Op_RDCR => true,
+  Op_SETF => true, Op_RDCR => true,
   Op_RDFLAGS => true, Op_WRFLAGS => true, Op_RDSTATUS => true, Op_WRSTATUS => true,
   Op_RDSEG => true, Op_WRSEG => true,
   Op_RDFFLAGS => true, Op_WRFFLAGS => true,

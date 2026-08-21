@@ -1,7 +1,7 @@
 forms:
 - id: extralong.fetchand_x_order_o_rn_s_ea_e
   class: extralong
-  bits: 1111110101zz00000001ooosssseeeeeee
+  bits: 11111100010010zz0001ooosssseeeeeee
   syntax: FETCHAND.BWLQ(z)/order(o) Rn(s), <ea>(e)
   operands:
   - name: order

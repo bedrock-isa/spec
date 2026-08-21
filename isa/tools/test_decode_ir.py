@@ -14,6 +14,7 @@ TOOLS_ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(TOOLS_ROOT))
 
 import decode_ir
+import defs_schema
 
 
 class DecodeIrTests(unittest.TestCase):
@@ -146,6 +147,54 @@ class DecodeIrTests(unittest.TestCase):
             for form in exceptional
             for item in form.annotations.exception_conditions
         ))
+
+    def test_flags_annotations_and_repeat_observations_follow_complete_contracts(self) -> None:
+        for form in self.ir.forms:
+            integer_flags = {
+                item.flag
+                for item in form.annotations.flag_effects
+                if item.bank == "FLAGS"
+            }
+            if integer_flags:
+                self.assertEqual(integer_flags, {"Z", "N", "C", "V"}, form.key)
+            self.assertNotEqual(form.control.repeat.observed_kind, "flags", form.key)
+        self.assertEqual(
+            self.forms["short.cmp_x_rn_s_rn_d"].control.repeat.observed_kind,
+            "computed",
+        )
+        self.assertEqual(
+            self.forms["medium.adc_x_rn_s_rn_d"].control.repeat.observed_kind,
+            "result",
+        )
+
+    def test_schema_rejects_partial_flags_and_architectural_repeat_flags(self) -> None:
+        base = {
+            "mnemonic": "SAMPLE",
+            "title": "Sample",
+            "summary": "Sample.",
+            "description": "Sample.",
+            "attributes": {
+                "class": "integer",
+                "family": "integer_alu",
+                "privilege": "unprivileged",
+            },
+        }
+        with self.assertRaisesRegex(defs_schema.DecodeError, "complete FLAGS writes"):
+            defs_schema.decode_instruction(
+                Path("sample.yaml"),
+                {**base, "flag_effects": {"FLAGS": {"Z": "result == 0"}}},
+            )
+        with self.assertRaisesRegex(defs_schema.DecodeError, "expected one of"):
+            defs_schema.decode_instruction(
+                Path("sample.yaml"),
+                {
+                    **base,
+                    "repeat": {
+                        "contexts": ["REPcc"],
+                        "observed": {"kind": "flags"},
+                    },
+                },
+            )
 
     def test_serialization_is_deterministic_and_json_friendly(self) -> None:
         first = decode_ir.decode_ir_json(self.ir)

@@ -1,7 +1,7 @@
 mnemonic: ADC
 title: Add With Carry
 summary: Performs the add with carry operation.
-description: Adds the selected-width source value and the incoming C flag to the destination, writes the truncated sum, and updates Z, N, C, and V from the complete addition.
+description: Adds the selected-width source value and the incoming C flag to the destination, writes the truncated sum, and updates Z, N, C, and V from the complete addition. REPcc observes the written destination result rather than architectural FLAGS.
 attributes:
   class: integer
   family: integer_alu
@@ -12,7 +12,8 @@ repeat:
   - REPcc
   - REPG
   observed:
-    kind: flags
+    kind: result
+    operand: dst
 flag_effects:
   FLAGS:
     Z: "result == 0"

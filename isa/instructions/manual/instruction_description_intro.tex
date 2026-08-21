@@ -29,7 +29,8 @@ outside that encoding namespace. An
 \texttt{<ea>} operand names a compact effective-address field and any appended EA payload.
 
 FLAGS, STATUS, FFLAGS, and FSTATUS are architectural state registers. Instruction descriptions state whether an
-encoding updates, preserves, reads, or ignores each status field.
+encoding updates, preserves, reads, or ignores each status register. A FLAGS update always names and replaces the
+complete ZNCV image; FFLAGS retains its accrued per-cause behavior.
 
 In instruction pseudocode, Operand Read applies the addressing mode and operation size. Operand Write stores the
 selected-size result; a sub-Q Rn write preserves upper bits unless the instruction defines another rule. EA Address

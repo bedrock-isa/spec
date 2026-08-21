@@ -1,7 +1,7 @@
 mnemonic: BTEST
 title: Bit Test
 summary: Performs the bit test operation.
-description: Tests the destination bit selected by the low six bits of the bit index and sets Z when that bit is clear without changing the destination.
+description: Tests the destination bit selected by the low six bits of the bit index and writes Z from whether that bit was clear while clearing N, C, and V, without changing the destination. REPcc observes the old tested bit as a B-sized 0 or 1 rather than architectural FLAGS.
 attributes:
   class: integer
   family: integer_bitfield
@@ -12,10 +12,10 @@ repeat:
   - REPcc
   - REPG
   observed:
-    kind: flags
+    kind: computed
 flag_effects:
   FLAGS:
     Z: "old_bit == 0"
-    N: "unchanged"
-    C: "unchanged"
-    V: "unchanged"
+    N: "0"
+    C: "0"
+    V: "0"

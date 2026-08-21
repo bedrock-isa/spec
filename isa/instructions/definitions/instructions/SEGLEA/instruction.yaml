@@ -1,7 +1,7 @@
 mnemonic: SEGLEA
 title: Segment Load Effective Address
 summary: Performs the segment load effective address operation.
-description: SEGLEA computes the source effective-address point and applies the selected segment's pre-translation to that point. The size suffix selects the index scale used during effective-address calculation. On success, SEGLEA writes the segment result to the destination and clears V. A failed segment-bound check sets V, suppresses the destination write, commits effective-address auto-update effects, and completes without an exception.
+description: SEGLEA computes the source effective-address point and applies the selected segment's pre-translation to that point. The size suffix selects the index scale used during effective-address calculation. On success, SEGLEA writes the segment result to the destination and clears FLAGS. A failed segment-bound check sets V while clearing Z, N, and C, suppresses the destination write, commits effective-address auto-update effects, and completes without an exception. REPcc observes the failure result as a B-sized 0 or 1 rather than architectural FLAGS.
 attributes:
   class: data_movement
   family: ea_utility
@@ -12,8 +12,11 @@ repeat:
   - REPcc
   - REPG
   observed:
-    kind: flags
+    kind: computed
 flag_effects:
   FLAGS:
+    Z: "0"
+    N: "0"
+    C: "0"
     V: "cleared on success; set when the segment-point bounds check fails"
 additional_description: details.tex

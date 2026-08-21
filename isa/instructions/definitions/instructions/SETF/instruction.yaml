@@ -1,14 +1,14 @@
 mnemonic: SETF
-title: Set Flags
-summary: Sets selected integer FLAGS bits.
-description: 'SETF writes the FLAGS bits selected by flags_bitmap to one and leaves unselected FLAGS bits unchanged. The assembler may provide symbolic mask aliases such as Z, N, C, V, and combinations using |. STC is an assembler alias for SETF C.'
+title: Set Flags Image
+summary: Replaces integer FLAGS from an immediate bitmap.
+description: 'SETF replaces the complete architectural integer FLAGS image from flags_bitmap. Bit 3 writes Z, bit 2 writes N, bit 1 writes C, and bit 0 writes V; a one writes the corresponding flag to one and a zero writes it to zero. The assembler may provide symbolic bitmap names such as Z, N, C, V, and combinations using |.'
 attributes:
   class: system
   family: system_registers
   privilege: unprivileged
 flag_effects:
   FLAGS:
-    Z: "set when mask bit 3 is one; otherwise unchanged"
-    N: "set when mask bit 2 is one; otherwise unchanged"
-    C: "set when mask bit 1 is one; otherwise unchanged"
-    V: "set when mask bit 0 is one; otherwise unchanged"
+    Z: "mask bit 3"
+    N: "mask bit 2"
+    C: "mask bit 1"
+    V: "mask bit 0"

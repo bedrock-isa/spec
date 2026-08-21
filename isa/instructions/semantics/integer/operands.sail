@@ -137,12 +137,6 @@ function sub_with_flags(lhs : bits(64), rhs : bits(64), borrow_in : int,
                        left < right + borrow_in, overflow))
 }
 
-function set_flag_z_only(flags : bits(4), value : bool) -> bits(4) =
-  (if value then bitone else bitzero) @ flags[2 .. 0]
-
-function set_flag_v_only(flags : bits(4), value : bool) -> bits(4) =
-  flags[3 .. 1] @ (if value then bitone else bitzero)
-
 function bit_count_from(value : bits(64), index : int, limit : int) -> int =
   if index >= limit then 0
   else (if sail_shiftright(value, index)[0] == bitone then 1 else 0)
@@ -207,4 +201,3 @@ function second_binary_operand(operands : list(Decoded_operand)) -> option(Decod
       if operand.name == "dst" | operand.name == "rhs" then Some(operand)
       else second_binary_operand(tail),
   }
-

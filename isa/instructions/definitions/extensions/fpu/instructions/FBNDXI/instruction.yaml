@@ -1,7 +1,7 @@
 mnemonic: FBNDXI
 title: Floating-Point Bounds Check Exclusive-Inclusive
 summary: Checks floating-point value membership in the exclusive-inclusive interval (lo, hi].
-description: FBNDXI treats the low bound as exclusive and the high bound as inclusive. It sets V when the value is unordered or outside (lo, hi]; Z, N, and C are unchanged.
+description: FBNDXI treats the low bound as exclusive and the high bound as inclusive. It sets V when the value is unordered or outside (lo, hi] and clears Z, N, and C. IEEE-754 FFLAGS causes continue to accrue independently.
 attributes:
   class: fpu
   family: fpu
@@ -12,6 +12,9 @@ repeat:
   - REPG
 flag_effects:
   FLAGS:
+    Z: "0"
+    N: "0"
+    C: "0"
     V: "set when the value is out of bounds or unordered"
   FFLAGS:
     NV: "may accrue"

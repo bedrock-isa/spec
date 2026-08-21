@@ -1,7 +1,7 @@
 mnemonic: DECF
 title: Decrement And Set Flags
 summary: Decrements the destination operand and updates integer FLAGS.
-description: Subtracts one from the selected-width destination, writes the modular result, and updates Z, N, C, and V.
+description: Subtracts one from the selected-width destination, writes the modular result, and updates Z, N, C, and V. REPcc observes the written destination result rather than architectural FLAGS.
 attributes:
   class: integer
   family: integer_unary
@@ -12,7 +12,8 @@ repeat:
   - REPcc
   - REPG
   observed:
-    kind: flags
+    kind: result
+    operand: dst
 flag_effects:
   FLAGS:
     Z: "result == 0"

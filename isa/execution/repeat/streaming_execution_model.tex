@@ -54,13 +54,21 @@ write the register, an initial zero executes one iteration and an initial positi
 iterations; both cases leave zero. Any body write controls the boundary reached by that iteration, so writing either
 zero or one terminates at that boundary. The checked REPGF spelling rejects such a write at assembly time.
 
-The \texttt{REPcc observation} attribute in every REPcc-capable instruction description specifies the input used for
-the condition test. A \texttt{flags} observation uses the complete post-body FLAGS image. A \texttt{result:operand} or
-\texttt{source:operand} observation derives logical Z from whether the selected-width value is zero, N from its most
-significant bit, and C and V as zero. These logical flags do not change architectural FLAGS. The observed value is
-captured before repeat counter-destination suppression. The first condition test occurs after the first body
-iteration. Body commit, condition capture, counter decrement, and continuation-PC selection form one precise
-architectural commit step. REP is the unconditional T-condition spelling, and F is reserved for REPcc.
+The \texttt{REPcc observation} attribute in every REPcc-capable instruction description specifies the value used for
+the condition test. A \texttt{result:operand} or \texttt{source:operand} observation names an actual operand. A
+\texttt{computed} observation names a derived value defined by that instruction: CMP observes its selected-width
+temporary difference, TEST observes its selected-width temporary conjunction, BTEST/BSET/BCLR/BCHG observe the old
+tested bit as a B-sized 0 or 1, the signed and unsigned bounds checks observe their violation result as a B-sized 0 or
+1, and SEGLEA observes its segment-bound failure result as a B-sized 0 or 1.
+
+REPcc constructs a temporary condition image from that value: Z is one exactly when the observed value is zero, N is
+its most significant bit at the observation width, and C and V are zero. The condition test never samples
+architectural FLAGS, and the REPcc wrapper does not write architectural FLAGS; any FLAGS effects of the body itself
+still commit normally. The observed value is captured before repeat counter-destination suppression. The first
+condition test occurs after the first body iteration. Body completion, value observation, temporary condition-image
+construction, body architectural commit, counter decrement, and continuation-PC selection form one precise atomic
+commit step. Consequently, an interrupt handler cannot change the decision for an iteration that has reached this
+step. REP is the unconditional T-condition spelling, and F is reserved for REPcc.
 
 A repeat body may not contain another repeat operation, a repeat-control instruction, or a control transfer.
 While repetition is active, PC names the current body instruction, and the initially decoded instruction or group
@@ -73,7 +81,7 @@ A fault during repeated execution preserves committed work and saves the state n
 remainder. Event entry records the active repeat context in FRAME\_EXT1 and clears active repeat state. The Repeat
 Continuation subsection of the Architectural Event Processing Model defines the saved format and ERET restoration.
 
-REP and REPcc atomically commit the one-instruction body, repeat-observed condition, counter decrement, and
+REP and REPcc atomically commit the one-instruction body, repeat-observed value and temporary condition, counter decrement, and
 continuation-PC selection. If the body faults, that iteration does not commit and the fault is reported at the body
 instruction. Every committed iteration decrements the counter, including a condition-false iteration that terminates
 REPcc; earlier iterations remain committed.
