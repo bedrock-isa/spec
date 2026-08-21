@@ -8,12 +8,16 @@ transferred by memory operands.
 Byte, word, and long operations use the low-order subfield of the selected register. Q-sized operations use the full
 64-bit register.
 
-An Rn destination write smaller than Q replaces only the selected low-order subfield; bits above the operation size
-are preserved. Q-sized Rn writes replace all 64 bits. Memory destination writes transfer only the selected number of
-bytes.
+Every Rn destination write defines all 64 bits. A Q-sized write uses the complete result. For a B-, W-, or L-sized
+write, \texttt{ABS}, \texttt{DIVS}, \texttt{MODS}, \texttt{DIVMODS}, \texttt{MINS}, \texttt{MAXS}, \texttt{SAR},
+and the explicit \texttt{EXTS} operations sign-extend the selected-width result to 64 bits. Every other integer
+operation, including \texttt{MOV}, neutral modular arithmetic, logical and bit operations, count and Boolean results,
+address results, atomic return values, and state-register reads, zero-extends the selected-width result to 64 bits.
+This result extension does not change FLAGS calculation, which continues to use the selected operation size.
 
-An instruction may explicitly define a full-register write, zero-extension, sign-extension, or another upper-bit
-rule. Such instruction-specific rules override the default subfield write rule.
+Memory destination writes transfer only the selected number of bytes. Extension-store instructions instead write
+the explicitly named W, L, or Q destination width. SP has only Q-sized writable forms and is not subject to the Rn
+result-extension rule.
 
 \manualtablecaption{Integer Data Sizes}
 \begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.45in}>{\raggedright\arraybackslash}p{0.55in}>{\raggedright\arraybackslash}p{0.45in}>{\raggedright\arraybackslash}p{0.50in}>{\raggedright\arraybackslash}p{1.55in}@{}}

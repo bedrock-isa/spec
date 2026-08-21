@@ -43,6 +43,36 @@ forms:
   fields:
     z:
       type: size.LQ
+- id: short.mov_b_rn_s_rn_d
+  class: short
+  bits: 100110ssssdddd
+  syntax: MOV.B Rn(s), Rn(d)
+  operands:
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: Rn
+    access: write
+    field: d
+  sizes:
+  - B
+- id: short.mov_w_rn_s_rn_d
+  class: short
+  bits: 100111ssssdddd
+  syntax: MOV.W Rn(s), Rn(d)
+  operands:
+  - name: src
+    type: Rn
+    access: read
+    field: s
+  - name: dst
+    type: Rn
+    access: write
+    field: d
+  sizes:
+  - W
 - id: medium.mov_x_rn_s_ea_e
   class: medium
   bits: 00000zzsssseeeeeee

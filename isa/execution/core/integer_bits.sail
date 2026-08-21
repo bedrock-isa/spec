@@ -1,14 +1,25 @@
-function merge_narrow(previous : bits(64), value : bits(64), width : int) -> bits(64) =
-  if width == 1 then previous[63 .. 8] @ value[7 .. 0]
-  else if width == 2 then previous[63 .. 16] @ value[15 .. 0]
-  else if width == 4 then previous[63 .. 32] @ value[31 .. 0]
-  else value
-
 function width_mask(width : int) -> bits(64) =
   if width == 1 then 0x00000000000000FF
   else if width == 2 then 0x000000000000FFFF
   else if width == 4 then 0x00000000FFFFFFFF
   else 0xFFFFFFFFFFFFFFFF
+
+function sign_extend_width(value : bits(64), width : int) -> bits(64) =
+  if width == 1 then sail_sign_extend(value[7 .. 0], 64)
+  else if width == 2 then sail_sign_extend(value[15 .. 0], 64)
+  else if width == 4 then sail_sign_extend(value[31 .. 0], 64)
+  else value
+
+function signed_register_result(operation : Semantic_operation) -> bool =
+  operation == Op_ABS | operation == Op_DIVS | operation == Op_MODS
+  | operation == Op_DIVMODS | operation == Op_MINS | operation == Op_MAXS
+  | operation == Op_SAR | operation == Op_EXTSW | operation == Op_EXTSL
+  | operation == Op_EXTSQ
+
+function canonical_register_result(operation : Semantic_operation, value : bits(64),
+                                   width : int) -> bits(64) =
+  if signed_register_result(operation) then sign_extend_width(value, width)
+  else value & width_mask(width)
 
 function width_sign(value : bits(64), width : int) -> bool =
   if width == 1 then value[7] == bitone
@@ -45,4 +56,3 @@ function shift_result(operation : Semantic_operation, value : bits(64), raw_coun
 
 val route_environment : (Decoded_instruction, Cpu_state, Effect_kind, Commit_kind, bool) -> Execution_result
 val start_memory_transaction : (Decoded_instruction, Cpu_state) -> option(Execution_result)
-

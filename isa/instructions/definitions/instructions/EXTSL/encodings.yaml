@@ -1,20 +1,4 @@
 forms:
-- id: short.extsl_x_rn_s_rn_d
-  class: short
-  bits: 01111zssssdddd
-  syntax: EXTSL.BW(z) Rn(s), Rn(d)
-  operands:
-  - name: src
-    type: Rn
-    access: read
-    field: s
-  - name: dst
-    type: Rn
-    access: write
-    field: d
-  fields:
-    z:
-      type: size.BW
 - id: long.extsl_b_rn_s_ea_e
   class: long
   bits: 111100110100111sssseeeeeee
@@ -36,23 +20,6 @@ forms:
   - field: e
     exclude: immediate
     reason: invalid_destination
-- id: long.extsl_b_ea_e_rn_d
-  class: long
-  bits: 111100100100111ddddeeeeeee
-  syntax: EXTSL.B <ea>(e), Rn(d)
-  operands:
-  - name: src
-    type: EA
-    access: read
-    ea_role: value
-    ea_width: operation_size
-    field: e
-  - name: dst
-    type: Rn
-    access: write
-    field: d
-  sizes:
-  - B
 - id: long.extsl_w_rn_s_ea_e
   class: long
   bits: 111100110101111sssseeeeeee
@@ -74,23 +41,6 @@ forms:
   - field: e
     exclude: immediate
     reason: invalid_destination
-- id: long.extsl_w_ea_e_rn_d
-  class: long
-  bits: 111100100101111ddddeeeeeee
-  syntax: EXTSL.W <ea>(e), Rn(d)
-  operands:
-  - name: src
-    type: EA
-    access: read
-    ea_role: value
-    ea_width: operation_size
-    field: e
-  - name: dst
-    type: Rn
-    access: write
-    field: d
-  sizes:
-  - W
 - id: long.extsl_x_ea_s_ea_d
   class: long
   bits: 11110000010zsssssssddddddd

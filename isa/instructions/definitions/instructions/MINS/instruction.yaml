@@ -1,7 +1,7 @@
 mnemonic: MINS
 title: Signed Minimum
 summary: Performs the signed minimum operation.
-description: Compares the selected-width operands as signed integers and writes the lesser value to the destination.
+description: Compares the selected-width operands as signed integers and writes the lesser value to the destination. A sub-Q Rn result is sign-extended to 64 bits.
 attributes:
   class: integer
   family: integer_alu

@@ -1,12 +1,6 @@
 val resume_transaction : (Execution_result, Transaction_response) -> Execution_result
 val execute_full : (Decoded_instruction, Cpu_state) -> Execution_result
 
-function sign_extend_width(value : bits(64), width : int) -> bits(64) =
-  if width == 1 then sail_sign_extend(value[7 .. 0], 64)
-  else if width == 2 then sail_sign_extend(value[15 .. 0], 64)
-  else if width == 4 then sail_sign_extend(value[31 .. 0], 64)
-  else value
-
 function signed_width(value : bits(64), width : int) -> int =
   signed(sign_extend_width(value, width))
 
@@ -76,17 +70,15 @@ function local_destination(operand : Decoded_operand, width : int) -> option(Com
   }
   else None()
 
-function write_local_destination(state : Cpu_state, destination : Commit_destination,
-                                 value : bits(64)) -> Cpu_state = {
+function write_local_destination(state : Cpu_state, operation : Semantic_operation,
+                                 destination : Commit_destination, value : bits(64)) -> Cpu_state = {
   var updated = state;
   if destination.kind == "Rn" then {
     let index = unsigned(destination.index);
-    updated.registers[index] = merge_narrow(
-      state.registers[index], value, destination.width
-    )
+    updated.registers[index] = canonical_register_result(operation, value, destination.width)
   }
   else if destination.kind == "SP" then
-    updated.sp = merge_narrow(state.sp, value, destination.width)
+    updated.sp = value
   else ();
   updated
 }

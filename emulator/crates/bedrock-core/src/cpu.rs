@@ -1789,8 +1789,8 @@ impl Cpu {
         } else {
             (dividend / divisor, dividend % divisor)
         };
-        self.write_r(q, size, quotient);
-        self.write_r(r, size, remainder);
+        self.write_r_result(q, size, quotient, instruction.opcode);
+        self.write_r_result(r, size, remainder, instruction.opcode);
         self.state.pc = next_pc;
         Ok(StepResult::Running)
     }
@@ -4840,7 +4840,7 @@ impl Cpu {
     ) -> Result<(), Trap> {
         match destination {
             Destination::Register(r) => {
-                self.write_r(r as usize, size, value);
+                self.write_r_result(r as usize, size, value, instruction.opcode);
                 Ok(())
             }
             Destination::Ea(ea) => self.write_resolved_ea(bus, pc, instruction, ea, size, value),
@@ -5260,7 +5260,14 @@ impl Cpu {
         self.state.r[register] & size_mask(size)
     }
     fn write_r(&mut self, register: usize, size: Size, value: u64) {
-        write_subfield(&mut self.state.r[register], size, value);
+        self.state.r[register] = value & size_mask(size);
+    }
+    fn write_r_result(&mut self, register: usize, size: Size, value: u64, opcode: Opcode) {
+        self.state.r[register] = if signed_register_result(opcode) {
+            sign_extend(value, size) as u64
+        } else {
+            value & size_mask(size)
+        };
     }
     fn push_quad<B: Bus>(&mut self, bus: &mut B, pc: u64, value: u64) -> Result<(), Trap> {
         let new_sp = self.state.sp.checked_sub(8).ok_or_else(|| {
@@ -6803,9 +6810,20 @@ fn carryless_product_high(lhs: u64, rhs: u64, width: usize) -> u64 {
     }
     ((result >> width) as u64) & mask
 }
-fn write_subfield(target: &mut u64, size: Size, value: u64) {
-    let mask = size_mask(size);
-    *target = (*target & !mask) | (value & mask);
+fn signed_register_result(opcode: Opcode) -> bool {
+    matches!(
+        opcode,
+        Opcode::Abs
+            | Opcode::Divs
+            | Opcode::Mods
+            | Opcode::Divmods
+            | Opcode::Mins
+            | Opcode::Maxs
+            | Opcode::Sar
+            | Opcode::Extsw
+            | Opcode::Extsl
+            | Opcode::Extsq
+    )
 }
 fn trailing_bytes(instruction: &DecodedInstruction) -> &[u8] {
     &instruction.bytes[usize::from(instruction.header.opcode_bytes)..]

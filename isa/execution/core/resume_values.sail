@@ -127,7 +127,9 @@ function commit_response_destination(previous : Execution_result, value : bits(6
   var updated = previous.pending.after;
   if destination.kind == "Rn" then {
     let index = unsigned(destination.index);
-    updated.registers[index] = merge_narrow(updated.registers[index], value, destination.width)
+    updated.registers[index] = canonical_register_result(
+      previous.pending.operation, value, destination.width
+    )
   }
   else if destination.kind == "Fn" then {
     let index = unsigned(destination.index);
@@ -136,7 +138,7 @@ function commit_response_destination(previous : Execution_result, value : bits(6
     ; updated.fp_component_modified = true
   }
   else if destination.kind == "SP" then
-    updated.sp = merge_narrow(updated.sp, value, destination.width)
+    updated.sp = value
   else ();
   if response.write_flags & fp_route then match fp_semantics(previous.pending.operation) {
     Some(semantics) => updated.flags = (updated.flags & not_vec(semantics.flags_mask))
@@ -149,4 +151,3 @@ function commit_response_destination(previous : Execution_result, value : bits(6
   completed(previous.state, updated, previous.pending.kind, [||])
   }
 }
-

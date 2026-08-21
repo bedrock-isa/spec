@@ -248,8 +248,8 @@ function resume_memory_phase(previous : Execution_result, response : Transaction
         let destination = previous.pending.destination;
         if destination.kind == "Rn" then {
           let index = unsigned(destination.index);
-          updated.registers[index] = merge_narrow(
-            updated.registers[index], response.value, width
+          updated.registers[index] = canonical_register_result(
+            instruction.form.operation, response.value, width
           )
         } else ();
         if instruction.form.operation == Op_CMPXCHG then

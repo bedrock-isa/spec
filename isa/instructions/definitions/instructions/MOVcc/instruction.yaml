@@ -1,7 +1,7 @@
 mnemonic: MOVcc
 title: Move Conditional
 summary: Performs the move conditional operation.
-description: Copies the source value to the destination only when the encoded condition is true.
+description: Copies the source value to the destination only when the encoded condition is true. When the condition is true, a sub-Q Rn destination receives the selected source bits zero-extended to 64 bits.
 attributes:
   class: control_flow
   family: control_flow

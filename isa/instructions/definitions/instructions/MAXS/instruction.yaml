@@ -1,7 +1,7 @@
 mnemonic: MAXS
 title: Signed Maximum
 summary: Performs the signed maximum operation.
-description: Compares the selected-width operands as signed integers and writes the greater value to the destination.
+description: Compares the selected-width operands as signed integers and writes the greater value to the destination. A sub-Q Rn result is sign-extended to 64 bits.
 attributes:
   class: integer
   family: integer_alu

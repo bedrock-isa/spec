@@ -10,12 +10,12 @@ function test_carry_record(bytes : list(bits(8)), width : int,
       let carry = execute_full(instruction, state);
       assert(not_bool(carry.awaiting_environment));
       assert(carry.fault == None());
-      assert(narrow_bits(carry.state.registers[2], width) == 0x0000000000000000);
+      assert(carry.state.registers[2] == 0x0000000000000000);
       assert(carry.state.flags == 0b1010);
 
       state.registers[2] = signed_maximum;
       let overflow = execute_full(instruction, state);
-      assert(narrow_bits(overflow.state.registers[2], width)
+      assert(overflow.state.registers[2]
              == bits_from_int(tdiv_int(width_modulus(width), 2)));
       assert(overflow.state.flags == 0b0101)
     },
@@ -33,16 +33,36 @@ function test_borrow_record(bytes : list(bits(8)), width : int,
       let result = execute_full(instruction, state);
       assert(not_bool(result.awaiting_environment));
       assert(result.fault == None());
-      assert(narrow_bits(result.state.registers[2], width) == maximum);
+      assert(result.state.registers[2] == maximum);
       assert(result.state.flags == 0b0110)
     },
   }
 
+function test_zero_count_shift_record(bytes : list(bits(8)), expected_operation : Semantic_operation,
+                                      input : bits(64), expected : bits(64)) -> unit =
+  match decode_full_record(bytes) {
+    None() => assert(false),
+    Some(instruction) => {
+      assert(instruction.form.operation == expected_operation);
+      var state = initial_cpu();
+      state.registers[1] = 0x0000000000000020;
+      state.registers[2] = input;
+      let result = execute_full(instruction, state);
+      assert(not_bool(result.awaiting_environment));
+      assert(result.fault == None());
+      assert(result.state.registers[2] == expected)
+    },
+  }
+
 function test_local_integer_boundaries() -> unit = {
-  assert(merge_narrow(0x1122334455667788, 0x0000000000000000, 1) == 0x1122334455667700);
-  assert(merge_narrow(0x1122334455667788, 0x0000000000000000, 2) == 0x1122334455660000);
-  assert(merge_narrow(0x1122334455667788, 0x0000000000000000, 4) == 0x1122334400000000);
-  assert(merge_narrow(0x1122334455667788, 0x0000000000000000, 8) == 0x0000000000000000);
+  assert(canonical_register_result(Op_MOV, 0x1122334455667788, 1)
+         == 0x0000000000000088);
+  assert(canonical_register_result(Op_MOV, 0x1122334455667788, 2)
+         == 0x0000000000007788);
+  assert(canonical_register_result(Op_MOV, 0x1122334455667788, 4)
+         == 0x0000000055667788);
+  assert(canonical_register_result(Op_SAR, 0x0000000000000080, 1)
+         == 0xFFFFFFFFFFFFFF80);
 
   test_carry_record([|0xC3, 0x08, 0x82|], 1, 0x00000000000000FF, 0x000000000000007F);
   test_carry_record([|0xC3, 0x18, 0x82|], 2, 0x000000000000FFFF, 0x0000000000007FFF);
@@ -63,6 +83,21 @@ function test_local_integer_boundaries() -> unit = {
          == 0x8000000000000001);
   assert(shift_result(Op_SAR, 0x0000000000000080, 0x0000000000000001, 1)
          == 0x00000000000000C0);
+  test_zero_count_shift_record(
+    [|0x94, 0x12|], Op_SHL, 0x1122334480000001, 0x0000000080000001
+  );
+  test_zero_count_shift_record(
+    [|0x92, 0x12|], Op_SHR, 0x1122334480000001, 0x0000000080000001
+  );
+  test_zero_count_shift_record(
+    [|0x98, 0x12|], Op_ROL, 0x1122334480000001, 0x0000000080000001
+  );
+  test_zero_count_shift_record(
+    [|0x96, 0x12|], Op_ROR, 0x1122334480000001, 0x0000000080000001
+  );
+  test_zero_count_shift_record(
+    [|0x9A, 0x12|], Op_SAR, 0x1122334480000001, 0xFFFFFFFF80000001
+  );
 
   match decode_full_record([|0xC7, 0xEE, 0x64, 0x00|]) {
     Some(instruction) => {
@@ -93,7 +128,7 @@ function test_local_integer_boundaries() -> unit = {
       var state = initial_cpu();
       state.registers[2] = 0x0123456789ABCDEF;
       let result = execute_full(instruction, state);
-      assert(result.state.registers[2] == state.registers[2])
+      assert(result.state.registers[2] == 0x0000000089ABCDEF)
     },
     None() => assert(false),
   };
@@ -129,7 +164,7 @@ function test_divide_bounds_and_conditions() -> unit = {
       state.registers[1] = 0x0000000000000003;
       state.registers[2] = 0x11223344556677F9;
       let result = execute_full(instruction, state);
-      assert(result.state.registers[2] == 0x11223344556677FE);
+      assert(result.state.registers[2] == 0xFFFFFFFFFFFFFFFE);
       state.registers[1] = 0x00000000000000FF;
       state.registers[2] = 0x1122334455667780;
       let overflow = execute_full(instruction, state);
@@ -158,8 +193,8 @@ function test_divide_bounds_and_conditions() -> unit = {
       state.registers[2] = 0x11223344556677F9;
       state.registers[3] = 0x8877665544332200;
       let result = execute_full(instruction, state);
-      assert(result.state.registers[2] == 0x11223344556677FE);
-      assert(result.state.registers[3] == 0x88776655443322FF)
+      assert(result.state.registers[2] == 0xFFFFFFFFFFFFFFFE);
+      assert(result.state.registers[3] == 0xFFFFFFFFFFFFFFFF)
     },
     None() => assert(false),
   };

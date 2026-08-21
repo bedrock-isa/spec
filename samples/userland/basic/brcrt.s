@@ -8,7 +8,7 @@ br_syscall:
 
 .globl br_exit
 br_exit:
-  extzq.l r0, r0
+  mov.l r0, r0
   mov.q 11, r1
   mov.q 32, r2
   shl.q r2, r1

@@ -6,7 +6,9 @@ function execute_setcc(instruction : Decoded_instruction, state : Cpu_state) -> 
         let value : bits(64) = if selected then 0x0000000000000001 else 0x0000000000000000;
         var updated = advance_pc(state, instruction);
         let index = unsigned(dst.value[3 .. 0]);
-        updated.registers[index] = merge_narrow(state.registers[index], value, operation_width(instruction));
+        updated.registers[index] = canonical_register_result(
+          instruction.form.operation, value, operation_width(instruction)
+        );
         completed(state, updated, CommitRegisters, [||])
       }
       else match start_memory_transaction(instruction, state) {
@@ -121,4 +123,3 @@ function execute_count_jump(instruction : Decoded_instruction, state : Cpu_state
     _ => faulted(state, Op_IJcc, IllegalInstruction, "missing IJcc operands"),
   }
 }
-

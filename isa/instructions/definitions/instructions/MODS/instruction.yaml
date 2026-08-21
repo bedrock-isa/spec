@@ -1,7 +1,7 @@
 mnemonic: MODS
 title: Signed Modulo
 summary: Performs the signed modulo operation.
-description: Interprets both selected-width operands as signed integers and writes the remainder associated with truncation-toward-zero division. Invalid signed division cases raise DIVIDE_ERROR.
+description: Interprets both selected-width operands as signed integers and writes the remainder associated with truncation-toward-zero division. A sub-Q remainder is sign-extended to 64 bits. Invalid signed division cases raise DIVIDE_ERROR.
 attributes:
   class: integer
   family: integer_mul_div

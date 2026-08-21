@@ -1,7 +1,7 @@
 mnemonic: EXTZQ
 title: Zero Extend To Quad
 summary: Performs the zero extend to quad operation.
-description: Zero-extends the source operand from the instruction size to quad size. The low source-size bytes of the source are copied into the destination, and the remaining high destination bits are filled with zero.
+description: Zero-extends the source operand from the instruction size to quad size and stores the eight-byte result to an EA destination. The low source-size bytes are copied into the result, and the remaining high result bits are filled with zero. EXTZQ has no Rn destination form; use MOV.B, MOV.W, or MOV.L for a zero-extended Rn result.
 attributes:
   class: integer
   family: integer_unary

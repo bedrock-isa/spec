@@ -8,7 +8,7 @@ br_syscall:
 
 .globl br_exit
 br_exit:
-  extzq.l r0, r0
+  mov.l r0, r0
   mov.q 11, r1
   mov.q 32, r2
   shl.q r2, r1
@@ -26,7 +26,7 @@ trigger_privileged_read:
 app_segment_read_u8:
   wrseg r0, gs1
   mov.b [gs1:0 + r1], r0
-  extzq.b r0, r0
+  mov.b r0, r0
   ret
 
 .globl app_segment_write_u8

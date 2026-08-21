@@ -20,23 +20,6 @@ forms:
   - field: e
     exclude: immediate
     reason: invalid_destination
-- id: long.extsw_b_ea_e_rn_d
-  class: long
-  bits: 111100100000111ddddeeeeeee
-  syntax: EXTSW.B <ea>(e), Rn(d)
-  operands:
-  - name: src
-    type: EA
-    access: read
-    ea_role: value
-    ea_width: operation_size
-    field: e
-  - name: dst
-    type: Rn
-    access: write
-    field: d
-  sizes:
-  - B
 - id: long.extsw_b_ea_s_ea_d
   class: long
   bits: 111100001001sssssssddddddd
@@ -60,18 +43,3 @@ forms:
   - field: d
     exclude: immediate
     reason: invalid_destination
-- id: medium.extsw_b_rn_s_rn_d
-  class: medium
-  bits: 1000000111ssssdddd
-  syntax: EXTSW.B Rn(s), Rn(d)
-  operands:
-  - name: src
-    type: Rn
-    access: read
-    field: s
-  - name: dst
-    type: Rn
-    access: write
-    field: d
-  sizes:
-  - B

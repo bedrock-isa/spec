@@ -72,7 +72,9 @@ function read_state_register(instruction : Decoded_instruction, state : Cpu_stat
                              value : bits(64)) -> Execution_result =
   match destination_named(instruction, "dst", 8) {
     Some(destination) => {
-      let updated = write_local_destination(state, destination, value);
+      let updated = write_local_destination(
+        state, instruction.form.operation, destination, value
+      );
       local_result(state, instruction, updated, CommitRegisters)
     },
     None() => faulted(state, instruction.form.operation, IllegalInstruction,
@@ -141,7 +143,9 @@ function execute_system_local(instruction : Decoded_instruction, state : Cpu_sta
     match (operand_named(instruction, "seg"), destination_named(instruction, "dst", 8)) {
       (Some(segment_operand), Some(destination)) => {
         let index = sreg_index(segment_operand);
-        let updated = write_local_destination(state, destination, state.segments[index]);
+        let updated = write_local_destination(
+          state, instruction.form.operation, destination, state.segments[index]
+        );
         Some(local_result(state, instruction, updated, CommitRegisters))
       },
       _ => None(),
@@ -222,7 +226,9 @@ function execute_tlb_local(instruction : Decoded_instruction, state : Cpu_state)
   if instruction.form.operation == Op_VTOP & state.controls[0][0] == bitzero then
     match (value_named(instruction, state, "virt"), destination_named(instruction, "phys", 8)) {
       (Some(address), Some(destination)) => {
-        var updated = write_local_destination(state, destination, address);
+        var updated = write_local_destination(
+          state, instruction.form.operation, destination, address
+        );
         updated.flags = 0b1111;
         Some(local_result(state, instruction, updated, CommitRegisters))
       },

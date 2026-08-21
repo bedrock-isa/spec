@@ -33,7 +33,8 @@ encoding updates, preserves, reads, or ignores each status register. A FLAGS upd
 complete ZNCV image; FFLAGS retains its accrued per-cause behavior.
 
 In instruction pseudocode, Operand Read applies the addressing mode and operation size. Operand Write stores the
-selected-size result; a sub-Q Rn write preserves upper bits unless the instruction defines another rule. EA Address
+selected-size result; an Rn write defines all 64 bits and extends a sub-Q result according to the common integer
+result-extension rule, while a memory write changes only the selected bytes. EA Address
 computes an address without reading memory. A control-target memory operand reads its declared-width target, while a
 control-target register or immediate operand supplies the target value directly. A selector may name an Rn register, a
 segment register, or an encoded immediate. FLAGS ZNCV refers to the integer Z, N, C, and V bits, while FFLAGS names

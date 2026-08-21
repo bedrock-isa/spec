@@ -163,7 +163,7 @@ halt_cpu:
 .globl read_user_u8
 read_user_u8:
   movuc.b [r0], r0
-  extzq.b r0, r0
+  mov.b r0, r0
   ret
 
 save_user_registers:

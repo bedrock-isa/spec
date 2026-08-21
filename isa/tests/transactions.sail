@@ -15,14 +15,14 @@ function test_non_fp_typed_families() -> unit = {
         sp = 0xFFFFFFFFFFFFFFFF
       } };
       let done = resume_transaction(pending, response);
-      assert(done.state.registers[0] == 0x1122334455667788);
+      assert(done.state.registers[0] == 0x0000000000000088);
       assert(done.state.flags == 0b1000);
       assert(done.state.sp == state.sp);
       let unequal = resume_transaction(
         pending, { successful_response(ResponseAtomic, 0x0000000000000042, true) with
                    atomic_store_happened = false }
       );
-      assert(unequal.state.registers[0] == 0x1122334455667742);
+      assert(unequal.state.registers[0] == 0x0000000000000042);
       assert(unequal.state.flags == 0b0000);
       let poison_equal = resume_transaction(
         pending, { successful_response(ResponseAtomic, 0x0000000000000088, true) with
@@ -216,16 +216,6 @@ function test_non_fp_typed_families() -> unit = {
     },
     None() => assert(false),
   };
-  match decode_full_record([|0xC2, 0x20, 0x68|]) {
-    Some(instruction) => {
-      var state = initial_cpu(); state.sp = 0x1122334455667788;
-      state.registers[0] = 0xAABBCCDDEEFF0011;
-      let done = execute_full(instruction, state);
-      assert(done.state.sp == 0x1122334455667711);
-      assert(done.state.registers[0] == 0xAABBCCDDEEFF0088)
-    },
-    None() => assert(false),
-  };
   match decode_full_record([|0xC3, 0x40, 0x10|]) {
     Some(instruction) => {
       var state = initial_cpu(); state.registers[0] = 0xFFFFFFFFFFFFFF80;
@@ -354,4 +344,3 @@ function test_typed_decode_and_transactions() -> unit = {
     None() => assert(false),
   }
 }
-

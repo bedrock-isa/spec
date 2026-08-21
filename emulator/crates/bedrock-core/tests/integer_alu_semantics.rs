@@ -1,6 +1,6 @@
 use bedrock_bus::{Bus, Ram};
 use bedrock_core::{Cpu, EventControl, Flags, PageTableControl, StepResult};
-use bedrock_isa::{EncodingClass, generated::GENERATED_FORMS};
+use bedrock_isa::{generated::GENERATED_FORMS, EncodingClass};
 
 const PTE_P: u64 = 1 << 0;
 const PTE_W: u64 = 1 << 1;
@@ -87,6 +87,74 @@ fn run_register_instruction(bytes: &[u8], registers: &[(usize, u64)], flags: Fla
     cpu
 }
 
+#[test]
+fn mov_and_extsq_define_complete_sub_quad_register_results() {
+    for (id, fields, source, expected) in [
+        (
+            "short.mov_b_rn_s_rn_d",
+            vec![('s', 1), ('d', 2)],
+            0x1122_3344_5566_7780,
+            0x80,
+        ),
+        (
+            "short.mov_w_rn_s_rn_d",
+            vec![('s', 1), ('d', 2)],
+            0x1122_3344_5566_8001,
+            0x8001,
+        ),
+        (
+            "short.mov_x_rn_s_rn_d",
+            vec![('z', 0), ('s', 1), ('d', 2)],
+            0x1122_3344_8000_0001,
+            0x8000_0001,
+        ),
+        (
+            "medium.extsq_b_rn_s_rn_d",
+            vec![('s', 1), ('d', 2)],
+            0x1122_3344_5566_7780,
+            0xffff_ffff_ffff_ff80,
+        ),
+        (
+            "medium.extsq_w_rn_s_rn_d",
+            vec![('s', 1), ('d', 2)],
+            0x1122_3344_5566_8001,
+            0xffff_ffff_ffff_8001,
+        ),
+        (
+            "short.extsq_l_rn_s_rn_d",
+            vec![('s', 1), ('d', 2)],
+            0x1122_3344_8000_0001,
+            0xffff_ffff_8000_0001,
+        ),
+    ] {
+        let bytes = encoded_form(id, &fields, &[]);
+        let cpu = run_register_instruction(
+            &bytes,
+            &[(1, source), (2, 0xaabb_ccdd_eeff_0011)],
+            Flags::all(),
+        );
+        assert_eq!(cpu.state().r[2], expected, "{id}");
+        assert_eq!(cpu.state().flags, Flags::all(), "{id}");
+    }
+}
+
+#[test]
+fn zero_effective_count_still_canonicalizes_shift_and_rotate_register_results() {
+    for (id, expected) in [
+        ("short.shl_x_rn_s_rn_d", 0x0000_0000_8000_0001),
+        ("short.shr_x_rn_s_rn_d", 0x0000_0000_8000_0001),
+        ("short.rol_x_rn_s_rn_d", 0x0000_0000_8000_0001),
+        ("short.ror_x_rn_s_rn_d", 0x0000_0000_8000_0001),
+        ("short.sar_x_rn_s_rn_d", 0xffff_ffff_8000_0001),
+    ] {
+        let bytes = encoded_form(id, &[('z', 0), ('s', 1), ('d', 2)], &[]);
+        let cpu =
+            run_register_instruction(&bytes, &[(1, 32), (2, 0x1122_3344_8000_0001)], Flags::all());
+        assert_eq!(cpu.state().r[2], expected, "{id}");
+        assert_eq!(cpu.state().flags, Flags::all(), "{id}");
+    }
+}
+
 fn expected_extract(high: u64, low: u64, bits: u32, mask: u64, offset: u32) -> u64 {
     if offset >= bits * 2 {
         0
@@ -144,7 +212,7 @@ fn parity_immediates_write_odd_even_selected_width_results_and_preserve_flags() 
             let cpu = run_register_instruction(&bytes, &[(2, destination)], initial_flags);
             assert_eq!(
                 cpu.state().r[2],
-                register_value(destination, mask, expected),
+                expected & mask,
                 "PARITY width {bits}, source {selected_source:#x}"
             );
             assert_eq!(cpu.state().flags, initial_flags, "PARITY width {bits}");
@@ -202,7 +270,7 @@ fn extract_uses_the_full_concatenation_and_unsigned_imm7_range() {
             let selected = expected_extract(high, low, bits, mask, offset);
             assert_eq!(
                 cpu.state().r[2],
-                register_value(low, mask, selected),
+                selected,
                 "EXTRACT width {bits}, offset {offset}"
             );
             assert_eq!(cpu.state().r[1], high, "EXTRACT high width {bits}");
@@ -229,11 +297,7 @@ fn extract_aliases_high_and_low_from_the_prewrite_value() {
         );
         let cpu = run_register_instruction(&bytes, &[(2, value)], flags);
         let selected = expected_extract(value, value, bits, mask, offset);
-        assert_eq!(
-            cpu.state().r[2],
-            register_value(value, mask, selected),
-            "aliased EXTRACT width {bits}"
-        );
+        assert_eq!(cpu.state().r[2], selected, "aliased EXTRACT width {bits}");
         assert_eq!(cpu.state().flags, flags);
     }
 }
@@ -258,7 +322,7 @@ fn adc_and_sbb_include_incoming_c_in_full_width_carry_and_borrow() {
             let cpu = run_carry_register(id, selector, source, destination, input_flags);
             assert_eq!(
                 cpu.state().r[2],
-                register_value(destination, mask, result),
+                result & mask,
                 "{id} width {bits}, incoming C {incoming}"
             );
             assert_eq!(
@@ -282,11 +346,7 @@ fn adc_and_sbb_set_c_for_either_constituent_carry_or_borrow() {
             adc_destination,
             Flags::empty(),
         );
-        assert_eq!(
-            adc.state().r[2],
-            register_value(adc_destination, mask, 0),
-            "ADC first carry width {bits}"
-        );
+        assert_eq!(adc.state().r[2], 0, "ADC first carry width {bits}");
         assert_eq!(adc.state().flags, Flags::C | Flags::Z);
 
         let sbb_source = register_value(0x1357_9bdf_2468_ace0, mask, 0);
@@ -298,11 +358,7 @@ fn adc_and_sbb_set_c_for_either_constituent_carry_or_borrow() {
             sbb_destination,
             Flags::C,
         );
-        assert_eq!(
-            sbb.state().r[2],
-            register_value(sbb_destination, mask, mask),
-            "SBB carry-in borrow width {bits}"
-        );
+        assert_eq!(sbb.state().r[2], mask, "SBB carry-in borrow width {bits}");
         assert_eq!(sbb.state().flags, Flags::C | Flags::N);
     }
 }
@@ -325,7 +381,7 @@ fn adc_and_sbb_detect_signed_overflow_from_the_complete_operation() {
             let cpu = run_carry_register(id, selector, source, destination, Flags::C);
             assert_eq!(
                 cpu.state().r[2],
-                register_value(destination, mask, result),
+                result & mask,
                 "{id} overflow width {bits}"
             );
             assert_eq!(cpu.state().flags, expected_flags, "{id} width {bits}");

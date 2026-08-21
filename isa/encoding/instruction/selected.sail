@@ -56,7 +56,7 @@ function execute_selected(instruction : Selected_instruction, registers : Regist
   let result = binary_result(instruction.operation, source, destination);
   var updated = registers;
   updated[unsigned(instruction.destination)] = match instruction.size {
-    SizeL => destination[63 .. 32] @ result[31 .. 0],
+    SizeL => sail_zero_extend(result[31 .. 0], 64),
     SizeQ => result,
   };
   updated

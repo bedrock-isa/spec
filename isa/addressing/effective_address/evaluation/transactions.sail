@@ -12,7 +12,9 @@ function execute_lea_transaction(instruction : Decoded_instruction, state : Cpu_
         let point = segment_point(source.segment_image, source.effective_address);
         var updated = advance_pc(evaluated.image, instruction);
         if point.in_bounds then {
-          updated = write_local_destination(updated, destination, point.linear);
+          updated = write_local_destination(
+            updated, instruction.form.operation, destination, point.linear
+          );
           updated.flags = flags_value(false, false, false, false)
         }
         else updated.flags = flags_value(false, false, false, true);
@@ -20,7 +22,8 @@ function execute_lea_transaction(instruction : Decoded_instruction, state : Cpu_
       }
       else {
         let updated = write_local_destination(
-          advance_pc(evaluated.image, instruction), destination, source.effective_address
+          advance_pc(evaluated.image, instruction), instruction.form.operation,
+          destination, source.effective_address
         );
         Some(completed(state, updated, CommitRegisters, [||]))
       }

@@ -15,7 +15,9 @@ function execute_extract_local(instruction : Decoded_instruction, state : Cpu_st
           let offset = unsigned(offset_value[6 .. 0]);
           let value : bits(64) = if offset >= width_bits(width) * 2 then 0x0000000000000000
             else sail_shiftright(concatenated_pair(high, low, width), offset)[63 .. 0];
-          let updated = write_local_destination(state, destination, narrow_bits(value, width));
+          let updated = write_local_destination(
+            state, instruction.form.operation, destination, narrow_bits(value, width)
+          );
           Some(local_result(state, instruction, updated, CommitRegisters))
         },
         _ => None(),
@@ -36,7 +38,9 @@ function execute_extend_local(instruction : Decoded_instruction, state : Cpu_sta
                            | instruction.form.operation == Op_EXTSQ;
       let value = if signed_operation then sign_extend_width(source, source_width)
                   else narrow_bits(source, source_width);
-      let updated = write_local_destination(state, destination, value);
+      let updated = write_local_destination(
+        state, instruction.form.operation, destination, value
+      );
       Some(local_result(state, instruction, updated, CommitRegisters))
     },
     _ => None(),
@@ -51,8 +55,12 @@ function execute_xchg_local(instruction : Decoded_instruction, state : Cpu_state
       match (local_operand_value(state, lhs_operand), local_operand_value(state, rhs_operand),
              local_destination(lhs_operand, width), local_destination(rhs_operand, width)) {
         (Some(lhs), Some(rhs), Some(lhs_destination), Some(rhs_destination)) => {
-          let after_lhs = write_local_destination(state, lhs_destination, rhs);
-          let updated = write_local_destination(after_lhs, rhs_destination, lhs);
+          let after_lhs = write_local_destination(
+            state, instruction.form.operation, lhs_destination, rhs
+          );
+          let updated = write_local_destination(
+            after_lhs, instruction.form.operation, rhs_destination, lhs
+          );
           Some(local_result(state, instruction, updated, CommitRegisters))
         },
         _ => None(),
@@ -66,7 +74,9 @@ function execute_set_local(instruction : Decoded_instruction, state : Cpu_state)
   let width = operation_width(instruction);
   match destination_named(instruction, "dst", width) {
     Some(destination) => {
-      let updated = write_local_destination(state, destination, 0x0000000000000001);
+      let updated = write_local_destination(
+        state, instruction.form.operation, destination, 0x0000000000000001
+      );
       Some(local_result(state, instruction, updated, CommitRegisters))
     },
     None() => None(),
@@ -79,7 +89,9 @@ function execute_move_sp_local(instruction : Decoded_instruction, state : Cpu_st
     (Some(source_operand), Some(destination_operand)) =>
       match (local_operand_value(state, source_operand), local_destination(destination_operand, 8)) {
         (Some(source), Some(destination)) => {
-          let updated = write_local_destination(state, destination, source);
+          let updated = write_local_destination(
+            state, instruction.form.operation, destination, source
+          );
           Some(local_result(state, instruction, updated, CommitRegisters))
         },
         _ => None(),

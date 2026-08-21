@@ -54,7 +54,7 @@ function expect_execution() -> unit = {
   let mov_l = execute_selected(struct {
     operation = Move, size = SizeL, source = 0x0, destination = 0x1
   }, initial);
-  assert(mov_l[1] == 0xFFEEDDCC55667788);
+  assert(mov_l[1] == 0x0000000055667788);
   assert(mov_l[0] == initial[0]);
 
   let mov_q = execute_selected(struct {
@@ -65,7 +65,7 @@ function expect_execution() -> unit = {
   let and_l = execute_selected(struct {
     operation = And, size = SizeL, source = 0x0, destination = 0x1
   }, initial);
-  assert(and_l[1] == 0xFFEEDDCC11220088);
+  assert(and_l[1] == 0x0000000011220088);
 
   let and_q = execute_selected(struct {
     operation = And, size = SizeQ, source = 0x0, destination = 0x1
@@ -75,7 +75,7 @@ function expect_execution() -> unit = {
   let or_l = execute_selected(struct {
     operation = Or, size = SizeL, source = 0x0, destination = 0x1
   }, initial);
-  assert(or_l[1] == 0xFFEEDDCCFFEE7799);
+  assert(or_l[1] == 0x00000000FFEE7799);
 
   let or_q = execute_selected(struct {
     operation = Or, size = SizeQ, source = 0x6, destination = 0x7
@@ -85,7 +85,7 @@ function expect_execution() -> unit = {
   let xor_l = execute_selected(struct {
     operation = Xor, size = SizeL, source = 0x0, destination = 0x1
   }, initial);
-  assert(xor_l[1] == 0xFFEEDDCCEECC7711);
+  assert(xor_l[1] == 0x00000000EECC7711);
 
   let xor_q = execute_selected(struct {
     operation = Xor, size = SizeQ, source = 0x6, destination = 0x7
@@ -98,7 +98,7 @@ function expect_execution() -> unit = {
   assert(alias[8] == 0x0000000000000000);
 
   match decode_and_execute([|0x80, 0x01|], initial) {
-    Some(updated) => assert(updated[1] == 0xFFEEDDCC55667788),
+    Some(updated) => assert(updated[1] == 0x0000000055667788),
     None() => assert(false),
   };
   match decode_and_execute([|0x8D, 0x88|], initial) {

@@ -1,7 +1,7 @@
 mnemonic: DIVS
 title: Signed Divide
 summary: Performs the signed divide operation.
-description: Interprets both selected-width operands as signed integers, divides the destination by the source with truncation toward zero, and writes the quotient. Division by zero and the most-negative value divided by minus one raise DIVIDE_ERROR.
+description: Interprets both selected-width operands as signed integers, divides the destination by the source with truncation toward zero, and writes the quotient. A sub-Q quotient is sign-extended to 64 bits. Division by zero and the most-negative value divided by minus one raise DIVIDE_ERROR.
 attributes:
   class: integer
   family: integer_mul_div
