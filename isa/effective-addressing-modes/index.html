@@ -8899,7 +8899,7 @@
 <p>Indexed scale is the EA interpretation width declared by the consuming instruction encoding. B, W, L, and Q widths select scales 1, 2, 4, and 8. An encoding whose width is <code>operation_size</code> uses its selected instruction size. LEA and SEGLEA use their suffix; size-less instructions with address or control-target roles use Q.</p>
 <p>For every compact or extended-descriptor PC-based EA, the PC term is the architectural PC naming byte 0 of the current instruction. The PC term remains that instruction-start value throughout operand evaluation.</p>
 <h2 id="compact-ea-addressing-modes">Compact EA Addressing Modes</h2>
-<p>Compact EA forms encode direct Rn and SP operands, common Rn/SP/PC memory operands, absolute memory operands, immediate operands, and the EXT1 and EXT2 escapes.</p>
+<p>Compact EA forms encode common Rn/SP/PC memory operands, absolute memory operands, immediate operands, and the EXT1 and EXT2 escapes.</p>
 <p>Compact memory forms that do not name SP or PC use the operation default data segment. SP memory forms are fixed to SS, and PC memory forms are fixed to CS.</p>
 <p><strong><code>Rn Memory</code></strong></p>
 <p><code>[Rn(r)]</code></p>
