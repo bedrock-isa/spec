@@ -59,7 +59,10 @@ def writable_ea_reclaim_status(store: EncodingStore) -> tuple[int, list[str]]:
     missing: list[str] = []
     for located in store.encodings:
         for operand in located.form.operands:
-            if operand.type != "EA" or operand.access not in {"write", "read_write"}:
+            if operand.type not in {"EA", "FEA", "VEA"} or operand.access not in {
+                "write",
+                "read_write",
+            }:
                 continue
             checked += 1
             if operand.field is None or not has_immediate_exclusion(located, operand.field):

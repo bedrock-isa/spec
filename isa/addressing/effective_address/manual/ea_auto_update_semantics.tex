@@ -9,6 +9,12 @@ Postincrement forms use the current temporary value and update it afterward. Pre
 value first and then use the result. A base register changes by the EA interpretation width in bytes; an index
 register changes by one element before scaling. Each REP iteration applies and commits these rules independently.
 
+When a future vector instruction consumes VEA, a base-register update changes the base by \(\pm\)VLEN bytes. A
+scalar Rn index update changes the index by \(\pm\)the instruction's number of elements before the existing
+element-size scale is applied. Predicate activity does not change either update quantity. These vector quantities
+replace the scalar per-access quantities for that VEA evaluation; the descriptor encodings and update ordering are
+otherwise unchanged.
+
 Size-less address-role instructions INVPAGE, FLSHDCACHE, INVDCACHE, INVICACHE, WRBKDCACHE, SYNCCACHE, PREFETCH,
 PREFETCHNT, PTQUERY, SAVE, and RESTORE have Q interpretation width. Size-less control-target instructions DJcc, IJcc,
 LCALL, and LJMP also have Q interpretation width. Their extended-descriptor index scale is eight and their base predecrement or

@@ -61,6 +61,14 @@ impl FpEffect {
     pub const fn should_commit(self) -> bool {
         matches!(self, Self::Commit { .. })
     }
+
+    pub const fn with_causes(self, status: FpStatus, additional: FpCauses) -> Self {
+        let causes = self.causes().union(additional);
+        match self {
+            Self::Commit { result, .. } if !status.traps(causes) => Self::Commit { result, causes },
+            Self::Commit { .. } | Self::Fault { .. } => Self::Fault { causes },
+        }
+    }
 }
 
 /// Applies DN and FTZ to an already rounded result, then makes the required pre-commit enabled-exception decision.

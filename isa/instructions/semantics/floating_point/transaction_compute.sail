@@ -85,6 +85,7 @@ function fp_start_compute(instruction : Decoded_instruction, before : Cpu_state,
          fp_derive_result_kind(instruction.form, operation_width(instruction))) {
     (Some(path), Some(result_kind)) => match fp_build_request(
       instruction.form.operation, instruction.form, path, result_kind,
+      operation_width(instruction),
       fp_pending_raw_slots(fp_pending), before.fstatus, contract_word
     ) {
       None() => faulted(before, instruction.form.operation, InvalidControlState,
@@ -139,4 +140,3 @@ function fp_continue_after_sources(instruction : Decoded_instruction,
     ),
   }
 }
-

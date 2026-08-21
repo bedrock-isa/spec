@@ -42,11 +42,12 @@ def _allocation_kind(name: str, definition: dict[str, Any]) -> str:
     named = {
         "Rn": "rn",
         "Fn": "freg",
-        "EA": "ea7",
         "condition": "condition",
     }
     if name in named:
         return named[name]
+    if definition.get("kind") == "effective_address":
+        return "ea7"
     if definition.get("kind") in {
         "ea_immediate",
         "immediate",
@@ -134,7 +135,7 @@ def _template_operand_matches(
     if operand.field is not None:
         if displayed.kind != "reference" or displayed.field != operand.field:
             return False
-        if operand.type == "EA":
+        if spec.operand_kind == "effective_address":
             return displayed.angled and displayed.name == "ea"
         return not displayed.angled and displayed.name == operand.type
     if spec.operand_kind == "fixed_register":
@@ -346,7 +347,11 @@ def resolve_encoding_form(
             )
 
     for operand in form.operands:
-        if operand.type == "EA" and operand.ea_width == "operation_size" and not effective_sizes:
+        if (
+            registry.types[operand.type].operand_kind == "effective_address"
+            and operand.ea_width == "operation_size"
+            and not effective_sizes
+        ):
             raise ValueError(
                 f"{path}: form {form.id} operand {operand.name} uses operation_size "
                 "without a size domain"

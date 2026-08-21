@@ -5,6 +5,7 @@ function test_fp_semantics() -> unit = {
   test_fp_nan_order();
   test_fp_exact_local_bits();
   test_fp_local_response();
+  test_fp_immediate_format_conversion_request();
   test_fp_response_validation();
   test_fp_finalize_trap_and_dn();
   test_fptrans_contract();

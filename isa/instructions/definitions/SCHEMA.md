@@ -104,8 +104,8 @@ EncodingOperand {
   access: enum(read, write, read_write, address)
   field?: one-character marker occurring in EncodingForm.bits
   domain?: enum(user)
-  ea_role: enum(value, address, control_target) when type = EA
-  ea_width: enum(operation_size, B, W, L, Q) when type = EA
+  ea_role: enum(value, address, control_target) when type is an effective_address
+  ea_width: enum(operation_size, B, W, L, Q) when type is an effective_address
 }
 
 EncodingField {
@@ -130,7 +130,7 @@ DestinationOverlap {
 Form IDs are unique within a document and begin with `class + "."`. Operand
 field markers are unique. Operand fields plus `fields` declare every symbolic
 marker in `bits` exactly once; `0`, `1`, and `?` are not declared markers.
-Every EA operand declares both `ea_role` and `ea_width`. `address` role uses
+Every effective-address operand declares both `ea_role` and `ea_width`. `address` role uses
 `address` access, `control_target` role uses `read` access, and `value` role
 uses `read`, `write`, or `read_write` access. Each operand or field type names
 one entry in the merged operand/size field-type registry, and its marker count
@@ -353,6 +353,7 @@ kind: effective_address {
   kind: effective_address
   bit_width: int[0..]
   encoding_ref: string
+  profile: enum(ea, fea, vea)
 }
 
 kind: enum {
@@ -481,6 +482,7 @@ unique namespace.
 EaRegistry {
   payloads: map<string, EaPayload>
   compact: CompactEaSection
+  vstride: VstrideDescriptorSection
   ext1: Ext1EaSection
   ext2: Ext2EaSection
 }
@@ -489,12 +491,30 @@ EaPayload {
   kind: string
   bit_width: int[1..]
   signed: bool
+  format?: enum(binary32, binary64)
 }
 
 CompactEaSection {
   field_width: int[1..]
+  profiles: map containing exactly ea, fea, and vea CompactEaProfile values
   forms: list<CompactEaForm>
 }
+
+CompactEaProfile {
+  operand_type: string
+  overrides: list<CompactEaOverride, unique exact pattern>
+  immediate_conversion?: enum(ieee754)
+  lane_model?: enum(contiguous)
+  base_update?: enum(vlen_bytes)
+  index_update?: enum(element_count_before_scale)
+  predicate_affects_update?: bool
+  scatter_gather?: enum(separate_instructions)
+}
+
+CompactEaOverride = {
+  pattern: exact 0/1 BitPattern of CompactEaSection.field_width bits
+  reserved: true
+} | CompactEaForm with an exact 0/1 pattern
 
 CompactEaForm {
   name: string
@@ -507,6 +527,11 @@ CompactEaForm {
   base?: string
   register?: string
   descriptor?: string
+}
+
+VstrideDescriptorSection {
+  kind: string
+  forms: list<Ext1EaForm>
 }
 
 Ext1EaSection {
@@ -551,6 +576,12 @@ EaUpdate {
 
 BitPattern = string containing only 0, 1, and lowercase markers
 ```
+
+The `EA`/`ea`, `FEA`/`fea`, and `VEA`/`vea` operand-type/profile pairs are
+fixed. Scalar EA is the unchanged `compact.forms` baseline and has no
+overrides; FEA and VEA record only exact-value differences from that baseline.
+Only `float_immediate` payloads carry `format`, and every such payload carries
+it.
 
 Every compact form with `kind: escape` names exactly one declared descriptor
 family in `descriptor`; non-escape compact forms do not name a descriptor

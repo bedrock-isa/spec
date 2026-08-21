@@ -39,7 +39,8 @@ class ExtralongPartitionTests(unittest.TestCase):
                 else "integer"
             )
             ea_count = sum(
-                operand.type == "EA" for operand in located.form.operands
+                operand.type in {"EA", "FEA", "VEA"}
+                for operand in located.form.operands
             )
             contract = (family, ea_count)
             expected_prefix = (

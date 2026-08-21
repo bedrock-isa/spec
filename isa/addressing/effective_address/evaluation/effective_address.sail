@@ -112,8 +112,10 @@ function evaluate_decoded_ea(operand : Decoded_operand, ea : Decoded_ea,
   } else ();
   let direct_value = if ea.kind == "register" then match ea_field_role("value", ea.fields) {
     Some(index) => image_register(image, index), None() => image.sp
-  } else if ea.kind == "immediate" then ea_signed_payload(ea) else offset;
-  let point = if ea.kind == "register" | ea.kind == "immediate" then direct_value else offset;
+  } else if ea.kind == "immediate" then ea_signed_payload(ea)
+    else if ea.kind == "float_immediate" then ea.payload else offset;
+  let point = if ea.kind == "register" | ea.kind == "immediate"
+                 | ea.kind == "float_immediate" then direct_value else offset;
   let segment = ea_segment_index(ea);
   let selected_segment = image_segment(image, segment);
   let translated = segment_point(selected_segment, point);
@@ -175,4 +177,3 @@ function evaluate_instruction_eas(operands : list(Decoded_operand), operation : 
     },
   }
 }
-

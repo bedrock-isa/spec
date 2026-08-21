@@ -14,14 +14,16 @@ function ea_pattern_count(patterns : list(Ea_pattern)) -> int = match patterns {
   _ :: tail => 1 + ea_pattern_count(tail),
 }
 
-function compact_ea_matches(form : Ea_form, raw : bits(16)) -> bool = match form.patterns {
-  [|pattern|] => (form.descriptor_family == "") & ((raw & pattern.mask) == pattern.value),
+function compact_ea_matches(form : Ea_form, profile : string, raw : bits(16)) -> bool = match form.patterns {
+  [|pattern|] => (form.profile == profile) & (form.descriptor_family == "")
+                 & ((raw & pattern.mask) == pattern.value),
   _ => false,
 }
 
-function find_compact_ea(raw : bits(16), forms : list(Ea_form)) -> option(Ea_form) = match forms {
+function find_compact_ea(profile : string, raw : bits(16), forms : list(Ea_form)) -> option(Ea_form) = match forms {
   [||] => None(),
-  form :: tail => if compact_ea_matches(form, raw) then Some(form) else find_compact_ea(raw, tail),
+  form :: tail => if compact_ea_matches(form, profile, raw) then Some(form)
+                  else find_compact_ea(profile, raw, tail),
 }
 
 function find_extended_ea(family : string, bytes : list(bits(8)), cursor : int,
@@ -69,10 +71,10 @@ function extracted_ea_field(payload : bits(64), positions : list(range(0, 15)), 
     ),
   }
 
-function parse_one_ea(operand_name : string, operand_width : string, raw_value : int,
+function parse_one_ea(operand_name : string, operand_width : string, profile : string, raw_value : int,
                       bytes : list(bits(8)), cursor : int)
   -> option((Ea_binding, int)) =
-  match find_compact_ea(get_slice_int(16, raw_value, 0), effective_address_catalog()) {
+  match find_compact_ea(profile, get_slice_int(16, raw_value, 0), effective_address_catalog()) {
     None() => None(),
     Some(compact) => {
       let descriptor_cursor = cursor;
@@ -111,6 +113,7 @@ function parse_one_ea(operand_name : string, operand_width : string, raw_value :
               operand_name = operand_name,
               ea = struct {
                 compact_name = compact.name,
+                profile = profile,
                 kind = resolved_kind,
                 segment = resolved_segment,
                 base = resolved_base,
@@ -138,9 +141,11 @@ function parse_ea_operands(operands : list(Catalog_operand), fields : list(Decod
   match operands {
     [||] => Some(struct { bindings = [||], cursor = cursor }),
     operand :: tail =>
-      if operand.type_name == "EA" then match find_decoded_field(operand.field_symbol, fields) {
+      if operand.ea_profile != "" then match find_decoded_field(operand.field_symbol, fields) {
         None() => None(),
-        Some(field) => match parse_one_ea(operand.name, operand.ea_width, field.value, bytes, cursor) {
+        Some(field) => match parse_one_ea(
+          operand.name, operand.ea_width, operand.ea_profile, field.value, bytes, cursor
+        ) {
           None() => None(),
           Some((binding, next_cursor)) => match parse_ea_operands(tail, fields, bytes, next_cursor) {
             None() => None(),
@@ -155,11 +160,11 @@ function ea_failure_stage(operands : list(Catalog_operand), fields : list(Decode
                           bytes : list(bits(8)), cursor : int) -> Decode_stage = match operands {
   [||] => DecodeSuccess,
   operand :: tail =>
-    if operand.type_name != "EA" then ea_failure_stage(tail, fields, bytes, cursor)
+    if operand.ea_profile == "" then ea_failure_stage(tail, fields, bytes, cursor)
     else match find_decoded_field(operand.field_symbol, fields) {
       None() => DecodeStaticLegality,
       Some(field) => match find_compact_ea(
-        get_slice_int(16, field.value, 0), effective_address_catalog()
+        operand.ea_profile, get_slice_int(16, field.value, 0), effective_address_catalog()
       ) {
         None() => DecodeEaDescriptor,
         Some(compact) => {
@@ -195,4 +200,3 @@ function find_payload(name : string, payloads : list(Catalog_payload)) -> option
     [||] => None(),
     payload :: tail => if payload.operand_name == name then Some(payload) else find_payload(name, tail),
   }
-

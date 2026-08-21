@@ -39,9 +39,80 @@ payloads:
     kind: immediate
     bit_width: 64
     signed: false
+  immsf:
+    kind: float_immediate
+    bit_width: 32
+    signed: false
+    format: binary32
+  immdf:
+    kind: float_immediate
+    bit_width: 64
+    signed: false
+    format: binary64
 
 compact:
   field_width: 7
+  profiles:
+    ea:
+      operand_type: EA
+      overrides: []
+    fea:
+      operand_type: FEA
+      immediate_conversion: ieee754
+      overrides:
+      - pattern: "1011000"
+        reserved: true
+      - pattern: "1011011"
+        reserved: true
+      - pattern: "1011100"
+        reserved: true
+      - name: immediate_sf
+        pattern: "1011101"
+        syntax: immsf
+        kind: float_immediate
+        payload: immsf
+      - name: immediate_df
+        pattern: "1011110"
+        syntax: immdf
+        kind: float_immediate
+        payload: immdf
+    vea:
+      operand_type: VEA
+      lane_model: contiguous
+      base_update: vlen_bytes
+      index_update: element_count_before_scale
+      predicate_affects_update: false
+      scatter_gather: separate_instructions
+      overrides:
+      - name: vector_stride
+        pattern: "1011000"
+        syntax: VSTRIDE
+        kind: escape
+        descriptor: vstride
+      - name: vector_stride_disp8s
+        pattern: "1011011"
+        syntax: VSTRIDE/disp8s
+        kind: escape
+        descriptor: vstride
+        payload: disp8s
+      - name: vector_stride_disp16s
+        pattern: "1011100"
+        syntax: VSTRIDE/disp16s
+        kind: escape
+        descriptor: vstride
+        payload: disp16s
+      - name: vector_stride_disp32s
+        pattern: "1011101"
+        syntax: VSTRIDE/disp32s
+        kind: escape
+        descriptor: vstride
+        payload: disp32s
+      - name: vector_stride_disp64
+        pattern: "1011110"
+        syntax: VSTRIDE/disp64
+        kind: escape
+        descriptor: vstride
+        payload: disp64
   forms:
   - name: register_indirect
     pattern: "000rrrr"
@@ -234,6 +305,18 @@ compact:
     syntax: EXT2
     kind: escape
     descriptor: ext2
+
+vstride:
+  kind: memory
+  forms:
+  - name: vector_stride_descriptor
+    pattern:
+    - "bbbbiiii"
+    syntax: "[Rn(b) + lane * signed64(Rn(i)) + displacement]"
+    fields:
+      b: {type: Rn, role: base}
+      i: {type: Rn, role: stride}
+    segment: default
 
 ext1:
   kind: memory

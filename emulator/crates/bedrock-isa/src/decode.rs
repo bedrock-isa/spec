@@ -68,7 +68,7 @@ pub fn decode(bytes: &[u8]) -> Result<DecodedInstruction, DecodeError> {
         .collect::<Vec<_>>();
     let operands = fields
         .iter()
-        .map(lower_field)
+        .map(|field| lower_field(form, field))
         .collect::<Result<Vec<_>, _>>()?;
     validate_operand_payload(form, &fields, header, record)?;
     let attributes = InstructionAttributes {
@@ -103,19 +103,17 @@ fn validate_operand_payload(
     record: &[u8],
 ) -> Result<(), DecodeError> {
     let mut cursor = usize::from(header.opcode_bytes);
-    for generated in form
-        .fields
-        .iter()
-        .filter(|field| field.kind == FieldKind::Ea7)
-    {
+    for generated in form.ea_fields {
         let value = fields
             .iter()
             .find(|field| field.symbol == generated.symbol)
             .expect("generated EA field")
             .value as u8;
-        match CompactEa::decode(value) {
+        match CompactEa::decode_for(generated.profile, value) {
             CompactEa::Reserved(value) => return Err(DecodeError::ReservedEffectiveAddress(value)),
-            ea @ (CompactEa::Ext1 { .. } | CompactEa::Ext2 { .. }) => {
+            ea @ (CompactEa::VectorStride { .. }
+            | CompactEa::Ext1 { .. }
+            | CompactEa::Ext2 { .. }) => {
                 let descriptor_bytes = ea.descriptor_bytes();
                 let descriptor_payload = record.get(cursor..cursor + descriptor_bytes).ok_or(
                     DecodeError::OperandPayload {
@@ -124,6 +122,7 @@ fn validate_operand_payload(
                     },
                 )?;
                 let valid = match ea {
+                    CompactEa::VectorStride { .. } => true,
                     CompactEa::Ext1 { .. } => {
                         ExtendedDescriptor::decode_ext1(descriptor_payload).is_some()
                     }
@@ -153,12 +152,18 @@ fn validate_operand_payload(
     Ok(())
 }
 
-fn lower_field(field: &DecodedField) -> Result<DecodedOperand, DecodeError> {
+fn lower_field(form: &GeneratedForm, field: &DecodedField) -> Result<DecodedOperand, DecodeError> {
     Ok(match field.kind {
         FieldKind::Rn => DecodedOperand::Register(field.value as u8),
         FieldKind::Freg => DecodedOperand::FloatingRegister(field.value as u8),
         FieldKind::Ea7 => {
-            let ea = CompactEa::decode(field.value as u8);
+            let profile = form
+                .ea_fields
+                .iter()
+                .find(|generated| generated.symbol == field.symbol)
+                .expect("generated EA profile")
+                .profile;
+            let ea = CompactEa::decode_for(profile, field.value as u8);
             if let CompactEa::Reserved(value) = ea {
                 return Err(DecodeError::ReservedEffectiveAddress(value));
             }
@@ -266,6 +271,30 @@ mod tests {
                 .allocation_id,
             form.id
         );
+    }
+
+    #[test]
+    fn fea_reservations_and_immediate_payload_lengths_follow_the_form_profile() {
+        let form = generated_form("long.fmov_x_ea_s_fn_d");
+        let opcode_bytes = form.class.opcode_bytes();
+        for raw in [0x58_u8, 0x5b, 0x5c] {
+            let payload = set_field(form.pattern, 'e', form.value, u64::from(raw));
+            assert_eq!(
+                decode(&extended_record(form, payload, opcode_bytes)),
+                Err(DecodeError::ReservedEffectiveAddress(raw))
+            );
+        }
+        for (raw, appended) in [(0x5d, 4), (0x5e, 8)] {
+            let payload = set_field(form.pattern, 'e', form.value, raw);
+            assert_eq!(
+                decode(&extended_record(form, payload, opcode_bytes + appended - 1)),
+                Err(DecodeError::OperandPayload {
+                    needed: opcode_bytes + appended,
+                    available: opcode_bytes + appended - 1,
+                })
+            );
+            assert!(decode(&extended_record(form, payload, opcode_bytes + appended)).is_ok());
+        }
     }
 
     #[test]

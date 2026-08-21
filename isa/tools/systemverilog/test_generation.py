@@ -64,6 +64,8 @@ def _canonical_ea(form: decode_ir.EaFormIR, raw: int) -> dict[str, object]:
         "base_register": 0,
         "index_register_valid": False,
         "index_register": 0,
+        "stride_register_valid": False,
+        "stride_register": 0,
         "segment_register_valid": False,
         "segment_register": 0,
     }
@@ -71,6 +73,7 @@ def _canonical_ea(form: decode_ir.EaFormIR, raw: int) -> dict[str, object]:
         "value": "direct_register",
         "base": "base_register",
         "index": "index_register",
+        "stride": "stride_register",
         "segment": "segment_register",
     }
     for field in form.fields:
@@ -120,29 +123,44 @@ class SystemVerilogGenerationTests(unittest.TestCase):
         end = d0.find("\n        // form ", start + 1)
         return d0[start:] if end < 0 else d0[start:end]
 
-    def compact_case_text(self, raw: int) -> str:
+    def compact_case_text(self, raw: int, profile: str = "ea") -> str:
         ea = self.outputs[self.build_dir / "bedrock_decode_ea.sv"]
-        start = ea.index(f"7'h{raw:02x}: begin")
+        marker = f"{{{self.names.ea_profile[profile]}, 7'h{raw:02x}}}: begin"
+        start = ea.index(marker)
         if raw == 0x7F:
-            end = ea.index("        default: begin end", start)
+            profile_names = [item.name for item in self.ir.effective_addresses.profiles]
+            profile_index = profile_names.index(profile)
+            if profile_index + 1 < len(profile_names):
+                next_profile = profile_names[profile_index + 1]
+                end = ea.index(
+                    f"{{{self.names.ea_profile[next_profile]}, 7'h00}}: begin",
+                    start,
+                )
+            else:
+                end = ea.index("      default: begin end", start)
         else:
-            end = ea.index(f"7'h{raw + 1:02x}: begin", start)
+            next_marker = (
+                f"{{{self.names.ea_profile[profile]}, 7'h{raw + 1:02x}}}: begin"
+            )
+            end = ea.index(next_marker, start)
         return ea[start:end]
 
-    def span_case_text(self, raw: int) -> str:
+    def span_case_text(self, raw: int, profile: str = "ea") -> str:
         d1 = self.outputs[self.build_dir / "bedrock_decode_d1.sv"]
-        start = d1.index(f"7'h{raw:02x}: begin")
+        profile_start = d1.index(f"{self.names.ea_profile[profile]}: begin")
+        start = d1.index(f"7'h{raw:02x}: begin", profile_start)
         if raw == 0x7F:
-            end = d1.index("        default: begin end", start)
+            end = d1.index("          default: begin end", start)
         else:
             end = d1.index(f"7'h{raw + 1:02x}: begin", start)
         return d1[start:end]
 
-    def d0_span_case_text(self, raw: int) -> str:
+    def d0_span_case_text(self, raw: int, profile: str = "ea") -> str:
         d0 = self.outputs[self.build_dir / "bedrock_decode_d0.sv"]
-        start = d0.index(f"7'h{raw:02x}: begin")
+        profile_start = d0.index(f"{self.names.ea_profile[profile]}: begin")
+        start = d0.index(f"7'h{raw:02x}: begin", profile_start)
         if raw == 0x7F:
-            end = d0.index("        default: begin end", start)
+            end = d0.index("          default: begin end", start)
         else:
             end = d0.index(f"7'h{raw + 1:02x}: begin", start)
         return d0[start:end]
@@ -311,7 +329,11 @@ class SystemVerilogGenerationTests(unittest.TestCase):
         )
         self.assertIn("ea_result_o.alt_raw = opcode_i[13:7];", d0)
         self.assertIn(
-            "alt_span = encoded_ea_span(ea_result_o.alt_raw);", d0
+            "alt_span = encoded_ea_span(\n"
+            "      class_selection.ea_profiles[BEDROCK_EA_ALT_SLOT],\n"
+            "      ea_result_o.alt_raw\n"
+            "    );",
+            d0,
         )
         self.assertIn(
             "if (alt_span.valid)\n"
@@ -400,6 +422,9 @@ class SystemVerilogGenerationTests(unittest.TestCase):
             low_width, alt_width = generate_decoder._ea_candidate_widths(
                 form, self.names
             )
+            low_profile, alt_profile = generate_decoder._ea_candidate_profiles(
+                form, self.names
+            )
             selection = f"form_{form.index:03d}_selection"
             self.assertIn(f"assign {selection}.ea_layout = {layout};", d0)
             self.assertIn(
@@ -410,6 +435,16 @@ class SystemVerilogGenerationTests(unittest.TestCase):
             self.assertIn(
                 f"assign {selection}.ea_widths[BEDROCK_EA_ALT_SLOT] = "
                 f"{alt_width};",
+                d0,
+            )
+            self.assertIn(
+                f"assign {selection}.ea_profiles[BEDROCK_EA_LOW_SLOT] = "
+                f"{low_profile};",
+                d0,
+            )
+            self.assertIn(
+                f"assign {selection}.ea_profiles[BEDROCK_EA_ALT_SLOT] = "
+                f"{alt_profile};",
                 d0,
             )
             d1_case = self.form_case_text(form)
@@ -718,6 +753,7 @@ class SystemVerilogGenerationTests(unittest.TestCase):
                 "value": "direct_register",
                 "base": "base_register",
                 "index": "index_register",
+                "stride": "stride_register",
                 "segment": "segment_register",
             }
             for field in form.fields:
@@ -752,12 +788,13 @@ class SystemVerilogGenerationTests(unittest.TestCase):
             assert_assignments(case, compact, "compact_raw")
 
         for family in self.ir.effective_addresses.descriptor_families:
-            compact = next(
-                item
-                for item in self.ir.effective_addresses.compact_forms
+            profile, compact = next(
+                (profile, item)
+                for profile in self.ir.effective_addresses.profiles
+                for item in profile.compact_forms
                 if item.referenced_descriptor_family == family.name
             )
-            case = self.compact_case_text(compact.value)
+            case = self.compact_case_text(compact.value, profile.name)
             for descriptor in family.forms:
                 assert_assignments(case, descriptor, "descriptor")
 
@@ -773,6 +810,7 @@ class SystemVerilogGenerationTests(unittest.TestCase):
                 continue
             stage, decoded, _ = generate_decoder.reference_ea(
                 self.ir,
+                "ea",
                 compact.value,
                 [0] * self.ir.limits.max_record_bytes,
                 self.ir.limits.max_record_bytes,
@@ -862,7 +900,10 @@ class SystemVerilogGenerationTests(unittest.TestCase):
         for entry in entries:
             self.assertIn(f"7'h{entry.raw:02x}: begin", d1)
             self.assertIn(f"7'h{entry.raw:02x}: begin", d0)
-            self.assertIn(f"7'h{entry.raw:02x}: begin", ea_decoder)
+            self.assertIn(
+                f"{{{self.names.ea_profile['ea']}, 7'h{entry.raw:02x}}}: begin",
+                ea_decoder,
+            )
             span_case = self.span_case_text(entry.raw)
             self.assertEqual(self.d0_span_case_text(entry.raw), span_case)
             if entry.valid:
@@ -885,7 +926,11 @@ class SystemVerilogGenerationTests(unittest.TestCase):
                 f"unique casez (descriptor[{family.descriptor_bytes * 8 - 1}:0])"
             )
             expected_selectors = sum(
-                entry.descriptor_family == family.name for entry in entries
+                entry.valid
+                and entry.descriptor_bytes == family.descriptor_bytes
+                and bool(entry.descriptor_family)
+                for profile in self.ir.effective_addresses.profiles
+                for entry in profile.compact_entries
             )
             self.assertEqual(ea_decoder.count(selector), expected_selectors)
             for index, first in enumerate(family.forms):
@@ -924,7 +969,7 @@ class SystemVerilogGenerationTests(unittest.TestCase):
                     shift = (family.descriptor_bytes - byte - 1) * 8
                     record[cursor + byte] = (descriptor >> shift) & 0xFF
             stage, decoded, _ = generate_decoder.reference_ea(
-                self.ir, entry.raw, record, 18, cursor
+                self.ir, "ea", entry.raw, record, 18, cursor
             )
             with self.subTest(compact=entry.raw):
                 self.assertEqual(stage, "success" if entry.valid else "ea_descriptor")
@@ -952,9 +997,10 @@ class SystemVerilogGenerationTests(unittest.TestCase):
                     self.assertEqual(decoded["payload_width"], compact.payload_width)
                     self.assertEqual(decoded["payload_signed"], compact.payload_signed)
         for family in families.values():
-            compact = next(
-                form
-                for form in self.ir.effective_addresses.compact_forms
+            profile, compact = next(
+                (profile, form)
+                for profile in self.ir.effective_addresses.profiles
+                for form in profile.compact_forms
                 if form.referenced_descriptor_family == family.name
                 and form.payload_width == 0
             )
@@ -964,7 +1010,7 @@ class SystemVerilogGenerationTests(unittest.TestCase):
                     shift = (family.descriptor_bytes - byte - 1) * 8
                     record[cursor + byte] = (descriptor_form.value >> shift) & 0xFF
                 stage, decoded, next_cursor = generate_decoder.reference_ea(
-                    self.ir, compact.value, record, 18, cursor
+                    self.ir, profile.name, compact.value, record, 18, cursor
                 )
                 with self.subTest(family=family.name, descriptor=descriptor_form.name):
                     self.assertEqual(stage, "success")
@@ -985,7 +1031,7 @@ class SystemVerilogGenerationTests(unittest.TestCase):
             record = [0] * 18
             record[cursor : cursor + payload_bytes] = range(1, payload_bytes + 1)
             stage, decoded, _ = generate_decoder.reference_ea(
-                self.ir, payload_compact.value, record, 18, cursor
+                self.ir, "ea", payload_compact.value, record, 18, cursor
             )
             with self.subTest(payload_width=payload_width):
                 self.assertEqual(stage, "success")
@@ -1013,7 +1059,7 @@ class SystemVerilogGenerationTests(unittest.TestCase):
         )
         self.assertEqual(
             generate_decoder.reference_ea(
-                self.ir, ext2.value, [0] * 18, cursor + 1, cursor
+                self.ir, "ea", ext2.value, [0] * 18, cursor + 1, cursor
             )[0],
             "ea_descriptor",
         )
@@ -1038,7 +1084,7 @@ class SystemVerilogGenerationTests(unittest.TestCase):
         self.assertEqual(ea_decoder.count(initialization), 1)
         self.assertLess(
             ea_decoder.index(initialization),
-            ea_decoder.index("      unique case (compact_raw)"),
+            ea_decoder.index("      unique case ({profile, compact_raw})"),
         )
 
         ea_form = self.forms["medium.abs_x_ea"]
@@ -1065,6 +1111,7 @@ class SystemVerilogGenerationTests(unittest.TestCase):
             )
             ea_stage, decoded_ea, next_cursor = generate_decoder.reference_ea(
                 self.ir,
+                "ea",
                 entry.raw,
                 [0] * self.ir.limits.max_record_bytes,
                 self.ir.limits.max_record_bytes,
@@ -1087,7 +1134,7 @@ class SystemVerilogGenerationTests(unittest.TestCase):
                     self.compact_case_text(entry.raw).strip(),
                     "\n".join(
                         [
-                            f"7'h{entry.raw:02x}: begin // {entry.invalid_reason}",
+                            f"{{{self.names.ea_profile['ea']}, 7'h{entry.raw:02x}}}: begin // EA {entry.invalid_reason}",
                             "        parse_one_ea.stage = D1_STAGE_EA_DESCRIPTOR;",
                             "      end",
                         ]
@@ -1316,7 +1363,10 @@ class SystemVerilogGenerationTests(unittest.TestCase):
         d0 = self.outputs[self.build_dir / "bedrock_decode_d0.sv"]
         self.assertEqual(ea_decoder.count(" = parse_one_ea("), 2)
         self.assertIn(
-            "alt_span = encoded_ea_span(ea_result_o.alt_raw);\n"
+            "alt_span = encoded_ea_span(\n"
+            "      class_selection.ea_profiles[BEDROCK_EA_ALT_SLOT],\n"
+            "      ea_result_o.alt_raw\n"
+            "    );\n"
             "    if (alt_span.valid)\n"
             "      ea_result_o.post_alt_cursor =\n"
             "        ea_result_o.base_cursor + {2'b0, alt_span.encoded_bytes};",
@@ -1416,9 +1466,15 @@ class SystemVerilogGenerationTests(unittest.TestCase):
                 and form.payload_width == 0
             )
             for family in self.ir.effective_addresses.descriptor_families
+            if any(
+                form.referenced_descriptor_family == family.name
+                for form in self.ir.effective_addresses.compact_forms
+            )
         }
         cursor = ea_form.opcode_space_bytes
         for family in self.ir.effective_addresses.descriptor_families:
+            if family.name not in family_compact:
+                continue
             compact = family_compact[family.name]
             opcode = _set_gather(base_opcode, ea_operand.source.positions, compact.value)
             for descriptor in family.forms:
@@ -1439,6 +1495,7 @@ class SystemVerilogGenerationTests(unittest.TestCase):
                     "direct_register",
                     "base_register",
                     "index_register",
+                    "stride_register",
                     "segment_register",
                 ):
                     valid = int(bool(expected[f"{member}_valid"]))
@@ -1551,13 +1608,12 @@ class SystemVerilogGenerationTests(unittest.TestCase):
             "    if (d0.status != D0_INVALID_INPUT) $fatal(1, \"invalid input\");",
             "    if (d0_ea.status != D0_INVALID_INPUT) $fatal(1, \"EA invalid input\");",
         ]
-        compact_by_name = {
-            compact.name: compact
-            for compact in self.ir.effective_addresses.compact_forms
-        }
         for form in self.ir.forms:
             opcode = generate_decoder.representative_opcode(form)
             low_width, alt_width = generate_decoder._ea_candidate_widths(
+                form, self.names
+            )
+            low_profile, alt_profile = generate_decoder._ea_candidate_profiles(
                 form, self.names
             )
             low_raw = opcode & 0x7F
@@ -1567,12 +1623,29 @@ class SystemVerilogGenerationTests(unittest.TestCase):
             elif form.opcode_class in ("long", "extralong"):
                 alt_raw = (opcode >> 7) & 0x7F
             post_alt_cursor = form.opcode_space_bytes
-            entry = self.ir.effective_addresses.compact_entries[alt_raw]
-            if entry.valid:
-                compact = compact_by_name[entry.form_name]
-                post_alt_cursor += (
-                    compact.descriptor_bytes + compact.payload_width // 8
+            alt_profile_name = next(
+                (
+                    operand.source.profile
+                    for operand in generate_decoder._ea_operands(form)
+                    if generate_decoder._ea_candidate_slot(form, operand) == 1
+                ),
+                None,
+            )
+            if alt_profile_name is not None:
+                profile = next(
+                    item
+                    for item in self.ir.effective_addresses.profiles
+                    if item.name == alt_profile_name
                 )
+                compact_by_name = {
+                    compact.name: compact for compact in profile.compact_forms
+                }
+                entry = profile.compact_entries[alt_raw]
+                if entry.valid:
+                    compact = compact_by_name[entry.form_name]
+                    post_alt_cursor += (
+                        compact.descriptor_bytes + compact.payload_width // 8
+                    )
             lines.extend(
                 [
                     f"    valid_i = 1'b1; opcode_class_i = {self.names.opcode_class[form.opcode_class]}; opcode_i = 34'h{opcode:09x}; #1;",
@@ -1580,7 +1653,9 @@ class SystemVerilogGenerationTests(unittest.TestCase):
                     f"    if (d0.ea_layout != {generate_decoder._ea_layout(form)}) $fatal(1, \"EA layout {form.key}\");",
                     f"    if (d0.ea_widths[BEDROCK_EA_LOW_SLOT] != {low_width}) $fatal(1, \"EA low width {form.key}\");",
                     f"    if (d0.ea_widths[BEDROCK_EA_ALT_SLOT] != {alt_width}) $fatal(1, \"EA alt width {form.key}\");",
-                    f"    if (d0_ea.status != d0.status || d0_ea.ea_layout != d0.ea_layout || d0_ea.ea_widths != d0.ea_widths) $fatal(1, \"EA metadata {form.key}\");",
+                    f"    if (d0.ea_profiles[BEDROCK_EA_LOW_SLOT] != {low_profile}) $fatal(1, \"EA low profile {form.key}\");",
+                    f"    if (d0.ea_profiles[BEDROCK_EA_ALT_SLOT] != {alt_profile}) $fatal(1, \"EA alt profile {form.key}\");",
+                    f"    if (d0_ea.status != d0.status || d0_ea.ea_layout != d0.ea_layout || d0_ea.ea_widths != d0.ea_widths || d0_ea.ea_profiles != d0.ea_profiles) $fatal(1, \"EA metadata {form.key}\");",
                     f"    if (d0_ea.low_raw != 7'h{low_raw:02x} || d0_ea.alt_raw != 7'h{alt_raw:02x}) $fatal(1, \"EA raw {form.key}\");",
                     f"    if (d0_ea.base_cursor != 6'd{form.opcode_space_bytes} || d0_ea.post_alt_cursor != 6'd{post_alt_cursor}) $fatal(1, \"EA cursor {form.key}\");",
                 ]

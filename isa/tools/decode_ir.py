@@ -78,6 +78,7 @@ class AppendedPayloadSourceIR:
 class EffectiveAddressSourceIR:
     field_symbol: str
     positions: tuple[int, ...]
+    profile: str
     tag: str = dataclass_field(default="effective-address", init=False)
 
 
@@ -106,6 +107,7 @@ class OperandIR:
 class ParseEaIR:
     operand_name: str
     field_symbol: str
+    profile: str
     minimum_bytes: int
     maximum_bytes: int
     tag: str = dataclass_field(default="ParseEa", init=False)
@@ -203,6 +205,7 @@ class EaPayloadIR:
     kind: str
     width: int
     signed: bool
+    format: str
 
 
 @dataclass(frozen=True)
@@ -261,11 +264,26 @@ class EaDescriptorFamilyIR:
 
 
 @dataclass(frozen=True)
+class EaProfileIR:
+    name: str
+    operand_type: str
+    compact_forms: tuple[EaFormIR, ...]
+    compact_entries: tuple[CompactEaEntryIR, ...]
+    immediate_conversion: str
+    lane_model: str
+    base_update: str
+    index_update: str
+    predicate_affects_update: bool | None
+    scatter_gather: str
+
+
+@dataclass(frozen=True)
 class EffectiveAddressIR:
     compact_width: int
     payloads: tuple[EaPayloadIR, ...]
     compact_forms: tuple[EaFormIR, ...]
     compact_entries: tuple[CompactEaEntryIR, ...]
+    profiles: tuple[EaProfileIR, ...]
     descriptor_families: tuple[EaDescriptorFamilyIR, ...]
 
 
@@ -464,10 +482,11 @@ def _normalized_operands(
     for operand in form.operands:
         raw = operand_types[operand.type]
         positions = gather_positions(form.bits, operand.field) if operand.field else ()
-        if operand.type == "EA":
+        if raw.get("kind") == "effective_address":
             source: OperandSourceIR = EffectiveAddressSourceIR(
                 field_symbol=operand.field or "",
                 positions=positions,
+                profile=str(raw["profile"]),
             )
         elif operand.field is not None:
             source = EncodedFieldSourceIR(operand.field, positions)
@@ -546,6 +565,7 @@ def _ea_form_ir(
 
 def _build_effective_addresses(ea_registry: Any, field_types: Any) -> EffectiveAddressIR:
     family_specs = (
+        ("vstride", ea_registry.vstride_kind, ea_registry.vstride_forms),
         ("ext1", ea_registry.ext1_kind, ea_registry.ext1_forms),
         ("ext2", ea_registry.ext2_kind, ea_registry.ext2_forms),
     )
@@ -555,7 +575,7 @@ def _build_effective_addresses(ea_registry: Any, field_types: Any) -> EffectiveA
         if len(pattern_lengths) != 1:
             raise ValueError(f"{name}: descriptor forms have inconsistent byte lengths")
         descriptor_lengths[name] = pattern_lengths.pop()
-    compact_forms = tuple(
+    scalar_compact_forms = tuple(
         _ea_form_ir(
             form,
             member_of_descriptor_family="",
@@ -585,54 +605,111 @@ def _build_effective_addresses(ea_registry: Any, field_types: Any) -> EffectiveA
         )
         for name, kind, forms in family_specs
     )
-    entries: list[CompactEaEntryIR] = []
-    for raw in range(1 << ea_registry.compact_field_width):
-        matches = [form for form in compact_forms if raw & form.mask == form.value]
-        if not matches:
+    profiles: list[EaProfileIR] = []
+    for profile_name, profile in ea_registry.compact_profiles.items():
+        override_by_raw = {
+            int(override.pattern, 2): override for override in profile.overrides
+        }
+        replacement_forms = tuple(
+            _ea_form_ir(
+                override.form,
+                member_of_descriptor_family="",
+                descriptor_bytes=descriptor_lengths.get(
+                    override.form.descriptor or "", 0
+                ),
+                default_kind="",
+                payloads=ea_registry.payloads,
+                field_types=field_types,
+            )
+            for override in profile.overrides
+            if override.form is not None
+        )
+        compact_forms = scalar_compact_forms + replacement_forms
+        entries: list[CompactEaEntryIR] = []
+        used_forms: dict[str, EaFormIR] = {}
+        for raw in range(1 << ea_registry.compact_field_width):
+            override = override_by_raw.get(raw)
+            if override is not None and override.reserved:
+                matches = []
+            elif override is not None:
+                matches = [
+                    form for form in replacement_forms if raw & form.mask == form.value
+                ]
+            else:
+                matches = [
+                    form for form in scalar_compact_forms if raw & form.mask == form.value
+                ]
+            if not matches:
+                entries.append(
+                    CompactEaEntryIR(
+                        raw=raw,
+                        valid=False,
+                        reserved=True,
+                        invalid_reason=f"unallocated compact {profile_name.upper()} value",
+                        form_name="",
+                        kind="invalid",
+                        descriptor_family="",
+                        descriptor_bytes=0,
+                        payload_name="",
+                        payload_width=0,
+                        payload_signed=False,
+                        consumed_bytes=0,
+                    )
+                )
+                continue
+            if len(matches) != 1:
+                raise ValueError(
+                    f"compact {profile_name.upper()} 0x{raw:02x} matches multiple forms"
+                )
+            form = matches[0]
+            used_forms[form.name] = form
             entries.append(
                 CompactEaEntryIR(
                     raw=raw,
-                    valid=False,
-                    reserved=True,
-                    invalid_reason="unallocated compact EA value",
-                    form_name="",
-                    kind="invalid",
-                    descriptor_family="",
-                    descriptor_bytes=0,
-                    payload_name="",
-                    payload_width=0,
-                    payload_signed=False,
-                    consumed_bytes=0,
+                    valid=True,
+                    reserved=False,
+                    invalid_reason="",
+                    form_name=form.name,
+                    kind=form.kind,
+                    descriptor_family=form.referenced_descriptor_family,
+                    descriptor_bytes=form.descriptor_bytes,
+                    payload_name=form.payload_name,
+                    payload_width=form.payload_width,
+                    payload_signed=form.payload_signed,
+                    consumed_bytes=form.descriptor_bytes + form.payload_width // 8,
                 )
             )
-            continue
-        if len(matches) != 1:
-            raise ValueError(f"compact EA 0x{raw:02x} matches multiple forms")
-        form = matches[0]
-        entries.append(
-            CompactEaEntryIR(
-                raw=raw,
-                valid=True,
-                reserved=False,
-                invalid_reason="",
-                form_name=form.name,
-                kind=form.kind,
-                descriptor_family=form.referenced_descriptor_family,
-                descriptor_bytes=form.descriptor_bytes,
-                payload_name=form.payload_name,
-                payload_width=form.payload_width,
-                payload_signed=form.payload_signed,
-                consumed_bytes=form.descriptor_bytes + form.payload_width // 8,
+        profiles.append(
+            EaProfileIR(
+                name=profile.name,
+                operand_type=profile.operand_type,
+                compact_forms=tuple(used_forms.values()),
+                compact_entries=tuple(entries),
+                immediate_conversion=profile.immediate_conversion or "",
+                lane_model=profile.lane_model or "",
+                base_update=profile.base_update or "",
+                index_update=profile.index_update or "",
+                predicate_affects_update=profile.predicate_affects_update,
+                scatter_gather=profile.scatter_gather or "",
             )
         )
+    profile_index = {profile.name: profile for profile in profiles}
+    scalar_profile = profile_index["ea"]
     return EffectiveAddressIR(
         compact_width=ea_registry.compact_field_width,
         payloads=tuple(
-            EaPayloadIR(name, payload.kind, payload.bit_width, payload.signed)
+            EaPayloadIR(
+                name,
+                payload.kind,
+                payload.bit_width,
+                payload.signed,
+                payload.format or "",
+            )
             for name, payload in sorted(ea_registry.payloads.items())
         ),
-        compact_forms=compact_forms,
-        compact_entries=tuple(entries),
+        compact_forms=scalar_profile.compact_forms,
+        compact_entries=scalar_profile.compact_entries,
+        profiles=tuple(profiles),
         descriptor_families=descriptor_families,
     )
 
@@ -709,19 +786,25 @@ def _build_form(
     encoding_class = store.classes_by_name[form.encoding_class]
     value, mask = pattern_value_mask(form.bits)
     operands = _normalized_operands(form, operand_types)
-    valid_consumed = [
-        entry.consumed_bytes
-        for entry in effective_addresses.compact_entries
-        if entry.valid
-    ]
-    ea_minimum = min(valid_consumed)
-    ea_maximum = max(valid_consumed)
     layout: tuple[LayoutOpIR, ...] = tuple(
         ParseEaIR(
             operand_name=operand.name,
             field_symbol=operand.source.field_symbol,
-            minimum_bytes=ea_minimum,
-            maximum_bytes=ea_maximum,
+            profile=operand.source.profile,
+            minimum_bytes=min(
+                entry.consumed_bytes
+                for profile in effective_addresses.profiles
+                if profile.name == operand.source.profile
+                for entry in profile.compact_entries
+                if entry.valid
+            ),
+            maximum_bytes=max(
+                entry.consumed_bytes
+                for profile in effective_addresses.profiles
+                if profile.name == operand.source.profile
+                for entry in profile.compact_entries
+                if entry.valid
+            ),
         )
         for operand in operands
         if isinstance(operand.source, EffectiveAddressSourceIR)
@@ -947,32 +1030,51 @@ def _validate_ea(ir: DecodeIR) -> None:
             raise ValueError(f"{context}: payload reference mismatch")
 
     expected_raw = tuple(range(1 << ea.compact_width))
-    if tuple(entry.raw for entry in ea.compact_entries) != expected_raw:
-        raise ValueError("compact EA table must contain all ordered raw values")
-    compact_names = {form.name for form in ea.compact_forms}
-    if len(compact_names) != len(ea.compact_forms):
-        raise ValueError("duplicate compact EA form name")
+    profile_names = tuple(profile.name for profile in ea.profiles)
+    if profile_names != ("ea", "fea", "vea"):
+        raise ValueError("compact profiles must be ordered EA, FEA, and VEA")
+    if tuple(profile.operand_type for profile in ea.profiles) != ("EA", "FEA", "VEA"):
+        raise ValueError("compact profile operand types do not match their profiles")
+    scalar_profile = ea.profiles[0]
+    if (
+        ea.compact_forms != scalar_profile.compact_forms
+        or ea.compact_entries != scalar_profile.compact_entries
+    ):
+        raise ValueError("scalar compact EA compatibility aliases differ from profile EA")
     family_names = tuple(family.name for family in ea.descriptor_families)
     families = {family.name: family for family in ea.descriptor_families}
-    if family_names != ("ext1", "ext2"):
-        raise ValueError("descriptor families must be exactly EXT1 and EXT2")
-    if families["ext1"].descriptor_bytes != 1 or families["ext2"].descriptor_bytes != 2:
-        raise ValueError("EXT1 and EXT2 descriptor lengths must be exactly 1 and 2 bytes")
+    if family_names != ("vstride", "ext1", "ext2"):
+        raise ValueError("descriptor families must be VSTRIDE, EXT1, and EXT2")
+    if (
+        families["vstride"].descriptor_bytes != 1
+        or families["ext1"].descriptor_bytes != 1
+        or families["ext2"].descriptor_bytes != 2
+    ):
+        raise ValueError("VSTRIDE, EXT1, and EXT2 descriptor lengths must be 1, 1, and 2")
 
-    for form in ea.compact_forms:
-        validate_form(form, f"compact EA {form.name}")
-        if form.width != ea.compact_width or len(form.patterns) != 1:
-            raise ValueError(f"compact EA {form.name}: invalid pattern width")
-        if form.member_of_descriptor_family:
-            raise ValueError(f"compact EA {form.name}: unexpected descriptor family tag")
-        if form.referenced_descriptor_family:
-            family = families.get(form.referenced_descriptor_family)
-            if family is None or form.descriptor_bytes != family.descriptor_bytes:
-                raise ValueError(
-                    f"compact EA {form.name}: descriptor length is not fixed by its family"
-                )
-        elif form.descriptor_bytes != 0:
-            raise ValueError(f"compact EA {form.name}: unexpected descriptor length")
+    for profile in ea.profiles:
+        if tuple(entry.raw for entry in profile.compact_entries) != expected_raw:
+            raise ValueError(
+                f"compact {profile.name.upper()} table must contain all ordered raw values"
+            )
+        compact_names = {form.name for form in profile.compact_forms}
+        if len(compact_names) != len(profile.compact_forms):
+            raise ValueError(f"duplicate compact {profile.name.upper()} form name")
+        for form in profile.compact_forms:
+            context = f"compact {profile.name.upper()} {form.name}"
+            validate_form(form, context)
+            if form.width != ea.compact_width or len(form.patterns) != 1:
+                raise ValueError(f"{context}: invalid pattern width")
+            if form.member_of_descriptor_family:
+                raise ValueError(f"{context}: unexpected descriptor family tag")
+            if form.referenced_descriptor_family:
+                family = families.get(form.referenced_descriptor_family)
+                if family is None or form.descriptor_bytes != family.descriptor_bytes:
+                    raise ValueError(
+                        f"{context}: descriptor length is not fixed by its family"
+                    )
+            elif form.descriptor_bytes != 0:
+                raise ValueError(f"{context}: unexpected descriptor length")
 
     for family in ea.descriptor_families:
         if len({form.name for form in family.forms}) != len(family.forms):
@@ -994,33 +1096,35 @@ def _validate_ea(ir: DecodeIR) -> None:
             ):
                 raise ValueError(f"{family.name}/{form.name}: descriptor byte pattern mismatch")
 
-    for entry in ea.compact_entries:
-        matches = [
-            form
-            for form in ea.compact_forms
-            if entry.raw & form.mask == form.value
-        ]
-        if not matches:
-            if entry.valid or not entry.reserved or not entry.invalid_reason:
-                raise ValueError(f"compact EA 0x{entry.raw:02x}: invalid entry not explicit")
-            continue
-        if len(matches) != 1:
-            raise ValueError(f"compact EA 0x{entry.raw:02x}: ambiguous form")
-        form = matches[0]
-        expected_consumed = form.descriptor_bytes + form.payload_width // 8
-        if (
-            not entry.valid
-            or entry.reserved
-            or entry.form_name != form.name
-            or entry.descriptor_family != form.referenced_descriptor_family
-            or entry.descriptor_bytes != form.descriptor_bytes
-            or entry.payload_name != form.payload_name
-            or entry.payload_width != form.payload_width
-            or entry.payload_signed != form.payload_signed
-            or entry.kind != form.kind
-            or entry.consumed_bytes != expected_consumed
-        ):
-            raise ValueError(f"compact EA 0x{entry.raw:02x}: table entry mismatch")
+    for profile in ea.profiles:
+        for entry in profile.compact_entries:
+            matches = [
+                form
+                for form in profile.compact_forms
+                if entry.raw & form.mask == form.value
+            ]
+            context = f"compact {profile.name.upper()} 0x{entry.raw:02x}"
+            if not matches:
+                if entry.valid or not entry.reserved or not entry.invalid_reason:
+                    raise ValueError(f"{context}: invalid entry not explicit")
+                continue
+            if len(matches) != 1:
+                raise ValueError(f"{context}: ambiguous form")
+            form = matches[0]
+            expected_consumed = form.descriptor_bytes + form.payload_width // 8
+            if (
+                not entry.valid
+                or entry.reserved
+                or entry.form_name != form.name
+                or entry.descriptor_family != form.referenced_descriptor_family
+                or entry.descriptor_bytes != form.descriptor_bytes
+                or entry.payload_name != form.payload_name
+                or entry.payload_width != form.payload_width
+                or entry.payload_signed != form.payload_signed
+                or entry.kind != form.kind
+                or entry.consumed_bytes != expected_consumed
+            ):
+                raise ValueError(f"{context}: table entry mismatch")
 
 
 def validate_decode_ir(ir: DecodeIR) -> None:
@@ -1038,13 +1142,9 @@ def validate_decode_ir(ir: DecodeIR) -> None:
         raise ValueError("mnemonic inventory does not match forms")
 
     _validate_ea(ir)
-    valid_ea_lengths = tuple(
-        entry.consumed_bytes
-        for entry in ir.effective_addresses.compact_entries
-        if entry.valid
-    )
-    ea_minimum = min(valid_ea_lengths)
-    ea_maximum = max(valid_ea_lengths)
+    profiles = {
+        profile.name: profile for profile in ir.effective_addresses.profiles
+    }
     for form in ir.forms:
         encoding_class = ENCODING_CLASSES_BY_NAME.get(form.opcode_class)
         if encoding_class is None:
@@ -1105,6 +1205,13 @@ def validate_decode_ir(ir: DecodeIR) -> None:
                     or field.width != operand.type_width
                 ):
                     raise ValueError(f"{form.key}/{operand.name}: source field mismatch")
+                if (
+                    isinstance(source, EffectiveAddressSourceIR)
+                    and source.profile not in profiles
+                ):
+                    raise ValueError(
+                        f"{form.key}/{operand.name}: unknown effective-address profile"
+                    )
             elif isinstance(source, AppendedPayloadSourceIR):
                 if (
                     source.width <= 0
@@ -1172,8 +1279,17 @@ def validate_decode_ir(ir: DecodeIR) -> None:
             ParseEaIR(
                 operand.name,
                 operand.source.field_symbol,
-                ea_minimum,
-                ea_maximum,
+                operand.source.profile,
+                min(
+                    entry.consumed_bytes
+                    for entry in profiles[operand.source.profile].compact_entries
+                    if entry.valid
+                ),
+                max(
+                    entry.consumed_bytes
+                    for entry in profiles[operand.source.profile].compact_entries
+                    if entry.valid
+                ),
             )
             for operand in form.operands
             if isinstance(operand.source, EffectiveAddressSourceIR)

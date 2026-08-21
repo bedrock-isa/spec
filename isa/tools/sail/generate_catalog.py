@@ -205,7 +205,8 @@ def _operands(items: tuple[decode_ir.OperandIR, ...]) -> list[str]:
         out.append(
             "struct { name = %s, type_name = %s, access = %s, field_symbol = %s, "
             "field_positions = %s, domain = %s, ea_role = %s, ea_width = %s, "
-            "has_fixed_value = %s, fixed_value = %d, fixed_identity = %s, legal_values = %s }"
+            "ea_profile = %s, has_fixed_value = %s, fixed_value = %d, "
+            "fixed_identity = %s, legal_values = %s }"
             % (
                 json.dumps(item.name),
                 json.dumps(item.type_name),
@@ -215,6 +216,11 @@ def _operands(items: tuple[decode_ir.OperandIR, ...]) -> list[str]:
                 json.dumps(item.domain),
                 json.dumps(item.ea_role),
                 json.dumps(item.ea_width),
+                json.dumps(
+                    source.profile
+                    if isinstance(source, decode_ir.EffectiveAddressSourceIR)
+                    else ""
+                ),
                 str(has_fixed_value).lower(),
                 fixed_value,
                 json.dumps(fixed_identity),
@@ -259,7 +265,7 @@ def _overlaps(items: tuple[decode_ir.DestinationOverlapIR, ...]) -> list[str]:
     ]
 
 
-def _ea_form(form: decode_ir.EaFormIR) -> str:
+def _ea_form(form: decode_ir.EaFormIR, profile: str = "") -> str:
     patterns = [
         "struct { width = %d, value = 0x%04X, mask = 0x%04X }"
         % (item.width, item.value, item.mask)
@@ -276,12 +282,13 @@ def _ea_form(form: decode_ir.EaFormIR) -> str:
         for item in form.fields
     ]
     return (
-        "  struct { name = %s, descriptor_family = %s, descriptor_bytes = %d, "
+        "  struct { name = %s, profile = %s, descriptor_family = %s, descriptor_bytes = %d, "
         "patterns = %s, kind = %s, fields = %s, "
         "segment = %s, payload = %s, payload_width = %d, payload_signed = %s, base = %s, "
         "register_name = %s, descriptor = %s, update_target = %s, update_mode = %s }"
         % (
             json.dumps(form.name),
+            json.dumps(profile),
             json.dumps(form.member_of_descriptor_family),
             form.descriptor_bytes,
             _list(patterns),
@@ -366,7 +373,11 @@ def _render_catalog_ir(ir: decode_ir.DecodeIR) -> str:
     lines.append(",\n".join(entries))
     lines.extend(["|]", "", "function effective_address_catalog() -> list(Ea_form) = [|"])
     ea = ir.effective_addresses
-    ea_forms = [_ea_form(form) for form in ea.compact_forms]
+    ea_forms = [
+        _ea_form(form, profile.name)
+        for profile in ea.profiles
+        for form in profile.compact_forms
+    ]
     ea_forms.extend(
         _ea_form(form)
         for family in ea.descriptor_families

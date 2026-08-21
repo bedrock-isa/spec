@@ -623,7 +623,7 @@ def generated_destination_overlap(
 
 def generated_ea_fields(entry: dict[str, Any], operands: list[dict[str, Any]]) -> str:
     fields = entry.get("fields") or {}
-    operand_ordinals: dict[str, int] = {}
+    operand_ordinals: dict[str, tuple[int, str]] = {}
     for ordinal, operand in enumerate(operands):
         field = operand.get("field")
         if field is None:
@@ -642,20 +642,30 @@ def generated_ea_fields(entry: dict[str, Any], operands: list[dict[str, Any]]) -
             )
         if ordinal > 0xFF:
             raise ValueError(f"{entry['id']}: syntax operand ordinal exceeds u8")
-        operand_ordinals[field] = ordinal
+        if str(fields[field].get("kind", "")).lower() != "ea7":
+            continue
+        profile = str(operand.get("profile", ""))
+        if profile not in {"ea", "fea", "vea"}:
+            raise ValueError(
+                f"{entry['id']}: EA operand {operand.get('name')!r} has unknown "
+                f"profile {profile!r}"
+            )
+        operand_ordinals[field] = (ordinal, profile)
 
     rows: list[str] = []
     for symbol, spec in fields.items():
         if str(spec.get("kind", "")).lower() != "ea7":
             continue
-        ordinal = operand_ordinals.get(str(symbol))
-        if ordinal is None:
+        resolved = operand_ordinals.get(str(symbol))
+        if resolved is None:
             raise ValueError(
                 f"{entry['id']}: EA field {symbol!r} has no canonical syntax operand"
             )
+        ordinal, profile = resolved
         rows.append(
             "GeneratedEaField { "
-            f"symbol: '{symbol}', syntax_operand_ordinal: {ordinal} "
+            f"symbol: '{symbol}', syntax_operand_ordinal: {ordinal}, "
+            f"profile: crate::EffectiveAddressProfile::{rust_variant(profile)} "
             "}"
         )
     return "&[" + ", ".join(rows) + "]"
@@ -664,11 +674,13 @@ def generated_ea_fields(entry: dict[str, Any], operands: list[dict[str, Any]]) -
 def render(isa_design: Path) -> str:
     tool_dir = isa_design / "isa" / "tools"
     sys.path.insert(0, str(tool_dir))
+    from defs_loader import load_operand_types  # type: ignore
     from encoding_store import class_entries, load_encoding_store  # type: ignore
     from validate_alloc import compact_bits, validate_store  # type: ignore
 
     defs_root = isa_design / "isa" / "instructions" / "definitions"
     store = load_encoding_store(defs_root)
+    operand_types = load_operand_types(defs_root)
     operands_by_form = {
         located.form.id: [
             {
@@ -676,6 +688,7 @@ def render(isa_design: Path) -> str:
                 "type": operand.type,
                 "access": operand.access,
                 "field": operand.field,
+                "profile": operand_types[operand.type].get("profile", ""),
             }
             for operand in located.form.operands
         ]

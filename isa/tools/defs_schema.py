@@ -41,6 +41,8 @@ OPERAND_ACCESS = frozenset({"read", "write", "read_write", "address"})
 OPERAND_DOMAINS = frozenset({"user"})
 EA_ROLES = frozenset({"value", "address", "control_target"})
 EA_WIDTHS = frozenset({"operation_size", "B", "W", "L", "Q"})
+EA_OPERAND_TYPES = frozenset({"EA", "FEA", "VEA"})
+EA_PROFILES = frozenset({"ea", "fea", "vea"})
 OPERAND_KINDS = frozenset(
     {
         "register",
@@ -517,6 +519,7 @@ class OperandType:
     register_group: str | None = None
     register: str | None = None
     encoding_ref: str | None = None
+    profile: str | None = None
     values_ref: str | None = None
     signed: bool | None = None
     operation_size_extension: str | None = None
@@ -593,6 +596,7 @@ class EaPayload:
     kind: str
     bit_width: int
     signed: bool
+    format: str | None = None
 
 
 @dataclass(frozen=True)
@@ -623,10 +627,33 @@ class EaForm:
 
 
 @dataclass(frozen=True)
+class EaProfileOverride:
+    pattern: str
+    reserved: bool
+    form: EaForm | None = None
+
+
+@dataclass(frozen=True)
+class EaProfile:
+    name: str
+    operand_type: str
+    overrides: tuple[EaProfileOverride, ...]
+    immediate_conversion: str | None = None
+    lane_model: str | None = None
+    base_update: str | None = None
+    index_update: str | None = None
+    predicate_affects_update: bool | None = None
+    scatter_gather: str | None = None
+
+
+@dataclass(frozen=True)
 class EaRegistry:
     payloads: dict[str, EaPayload]
     compact_field_width: int
     compact_forms: tuple[EaForm, ...]
+    compact_profiles: dict[str, EaProfile]
+    vstride_kind: str
+    vstride_forms: tuple[EaForm, ...]
     ext1_kind: str
     ext1_forms: tuple[EaForm, ...]
     ext2_kind: str
@@ -984,10 +1011,11 @@ def decode_encodings(path: Path, raw: Any) -> EncodingsDocument:
             )
             ea_role = operand.get("ea_role")
             ea_width = operand.get("ea_width")
-            if operand_type == "EA":
+            if operand_type in EA_OPERAND_TYPES:
                 if ea_role is None or ea_width is None:
                     raise DecodeError(
-                        f"{_where(path, operand_path)}: EA operands require ea_role and ea_width"
+                        f"{_where(path, operand_path)}: effective-address operands require "
+                        "ea_role and ea_width"
                     )
                 ea_role = _enum_string(
                     ea_role, path, operand_path + ".ea_role", EA_ROLES
@@ -1009,7 +1037,8 @@ def decode_encodings(path: Path, raw: Any) -> EncodingsDocument:
                     )
             elif ea_role is not None or ea_width is not None:
                 raise DecodeError(
-                    f"{_where(path, operand_path)}: ea_role and ea_width apply only to EA operands"
+                    f"{_where(path, operand_path)}: ea_role and ea_width apply only to "
+                    "effective-address operands"
                 )
             operands.append(
                 EncodingOperand(
@@ -1329,6 +1358,7 @@ def decode_operand_registry(path: Path, raw: Any) -> OperandRegistry:
         "register_group",
         "register",
         "encoding_ref",
+        "profile",
         "values_ref",
         "signed",
         "operation_size_extension",
@@ -1340,7 +1370,7 @@ def decode_operand_registry(path: Path, raw: Any) -> OperandRegistry:
     allowed_by_kind = {
         "register": {"register_group"},
         "fixed_register": {"register"},
-        "effective_address": {"encoding_ref"},
+        "effective_address": {"encoding_ref", "profile"},
         "enum": {"values_ref", "values", "reserved_values", "result_bits_format"},
         "ea_immediate": {"encoding_ref"},
         "bitmap": {"bits"},
@@ -1350,7 +1380,7 @@ def decode_operand_registry(path: Path, raw: Any) -> OperandRegistry:
     required_by_kind = {
         "register": {"register_group"},
         "fixed_register": {"register"},
-        "effective_address": {"encoding_ref"},
+        "effective_address": {"encoding_ref", "profile"},
         "ea_immediate": {"encoding_ref"},
         "bitmap": {"bits"},
         "immediate": {"signed"},
@@ -1421,12 +1451,27 @@ def decode_operand_registry(path: Path, raw: Any) -> OperandRegistry:
             )
 
         signed = item.get("signed")
+        profile = item.get("profile")
+        decoded_profile = (
+            _enum_string(profile, path, item_path + ".profile", EA_PROFILES)
+            if profile is not None
+            else None
+        )
+        if kind == "effective_address":
+            expected_operand_types = {"EA": "ea", "FEA": "fea", "VEA": "vea"}
+            expected_profile = expected_operand_types.get(name)
+            if expected_profile is not None and decoded_profile != expected_profile:
+                raise DecodeError(
+                    f"{_where(path, item_path + '.profile')}: {name} requires profile "
+                    f"{expected_profile}"
+                )
         operand_types[name] = OperandType(
             kind=kind,
             bit_width=bit_width,
             register_group=optional_string("register_group"),
             register=optional_string("register"),
             encoding_ref=optional_string("encoding_ref"),
+            profile=decoded_profile,
             values_ref=optional_string("values_ref"),
             signed=(
                 _boolean(signed, path, item_path + ".signed")
@@ -1724,22 +1769,54 @@ def _decode_ea_forms(
 
 def decode_ea_registry(path: Path, raw: Any) -> EaRegistry:
     data = _mapping(raw, path, "")
-    _keys(data, path, "", required=("payloads", "compact", "ext1", "ext2"))
+    _keys(
+        data,
+        path,
+        "",
+        required=("payloads", "compact", "vstride", "ext1", "ext2"),
+    )
     payloads: dict[str, EaPayload] = {}
     for name, value in _mapping(data["payloads"], path, "payloads").items():
         item_path = f"payloads.{name}"
         item = _validate_item_keys(
-            path, item_path, value, required=("kind", "bit_width", "signed")
+            path,
+            item_path,
+            value,
+            required=("kind", "bit_width", "signed"),
+            optional=("format",),
         )
+        payload_format = item.get("format")
         payloads[name] = EaPayload(
             kind=_string(item["kind"], path, item_path + ".kind"),
             bit_width=_positive_integer(
                 item["bit_width"], path, item_path + ".bit_width"
             ),
             signed=_boolean(item["signed"], path, item_path + ".signed"),
+            format=(
+                _enum_string(
+                    payload_format,
+                    path,
+                    item_path + ".format",
+                    frozenset({"binary32", "binary64"}),
+                )
+                if payload_format is not None
+                else None
+            ),
         )
+        if (payloads[name].kind == "float_immediate") != (
+            payloads[name].format is not None
+        ):
+            raise DecodeError(
+                f"{_where(path, item_path)}: float_immediate payloads require format "
+                "and no other payload kind permits it"
+            )
     compact_data = _mapping(data["compact"], path, "compact")
-    _keys(compact_data, path, "compact", required=("field_width", "forms"))
+    _keys(
+        compact_data,
+        path,
+        "compact",
+        required=("field_width", "profiles", "forms"),
+    )
     compact_width = _positive_integer(
         compact_data["field_width"], path, "compact.field_width"
     )
@@ -1749,6 +1826,156 @@ def decode_ea_registry(path: Path, raw: Any) -> EaRegistry:
         "compact.forms",
         compact=True,
         compact_width=compact_width,
+    )
+    raw_profiles = _mapping(compact_data["profiles"], path, "compact.profiles")
+    if set(raw_profiles) != {"ea", "fea", "vea"}:
+        raise DecodeError(
+            f"{_where(path, 'compact.profiles')}: expected exactly ea, fea, and vea"
+        )
+    compact_profiles: dict[str, EaProfile] = {}
+    expected_operand_types = {"ea": "EA", "fea": "FEA", "vea": "VEA"}
+    profile_optional = (
+        "immediate_conversion",
+        "lane_model",
+        "base_update",
+        "index_update",
+        "predicate_affects_update",
+        "scatter_gather",
+    )
+    for profile_name, raw_profile in raw_profiles.items():
+        profile_path = f"compact.profiles.{profile_name}"
+        profile = _mapping(raw_profile, path, profile_path)
+        _keys(
+            profile,
+            path,
+            profile_path,
+            required=("operand_type", "overrides"),
+            optional=profile_optional,
+        )
+        operand_type = _string(
+            profile["operand_type"], path, profile_path + ".operand_type"
+        )
+        if operand_type != expected_operand_types[profile_name]:
+            raise DecodeError(
+                f"{_where(path, profile_path + '.operand_type')}: expected "
+                f"{expected_operand_types[profile_name]}"
+            )
+        overrides: list[EaProfileOverride] = []
+        for index, raw_override in enumerate(
+            _list(profile["overrides"], path, profile_path + ".overrides")
+        ):
+            override_path = f"{profile_path}.overrides[{index}]"
+            override = _mapping(raw_override, path, override_path)
+            pattern = _string(override.get("pattern"), path, override_path + ".pattern")
+            if len(pattern) != compact_width or set(pattern) - {"0", "1"}:
+                raise DecodeError(
+                    f"{_where(path, override_path + '.pattern')}: profile overrides "
+                    "must select one exact compact value"
+                )
+            reserved = override.get("reserved")
+            if reserved is not None:
+                _keys(
+                    override,
+                    path,
+                    override_path,
+                    required=("pattern", "reserved"),
+                )
+                if not _boolean(reserved, path, override_path + ".reserved"):
+                    raise DecodeError(
+                        f"{_where(path, override_path + '.reserved')}: expected true"
+                    )
+                overrides.append(EaProfileOverride(pattern, True))
+            else:
+                form = _decode_ea_forms(
+                    [override],
+                    path,
+                    override_path + ".form",
+                    compact=True,
+                    compact_width=compact_width,
+                )[0]
+                overrides.append(EaProfileOverride(pattern, False, form))
+        _unique(
+            (override.pattern for override in overrides),
+            path,
+            profile_path + ".overrides.pattern",
+        )
+        compact_profiles[profile_name] = EaProfile(
+            name=profile_name,
+            operand_type=operand_type,
+            overrides=tuple(overrides),
+            immediate_conversion=(
+                _enum_string(
+                    profile["immediate_conversion"],
+                    path,
+                    profile_path + ".immediate_conversion",
+                    frozenset({"ieee754"}),
+                )
+                if "immediate_conversion" in profile
+                else None
+            ),
+            lane_model=(
+                _enum_string(
+                    profile["lane_model"],
+                    path,
+                    profile_path + ".lane_model",
+                    frozenset({"contiguous"}),
+                )
+                if "lane_model" in profile
+                else None
+            ),
+            base_update=(
+                _enum_string(
+                    profile["base_update"],
+                    path,
+                    profile_path + ".base_update",
+                    frozenset({"vlen_bytes"}),
+                )
+                if "base_update" in profile
+                else None
+            ),
+            index_update=(
+                _enum_string(
+                    profile["index_update"],
+                    path,
+                    profile_path + ".index_update",
+                    frozenset({"element_count_before_scale"}),
+                )
+                if "index_update" in profile
+                else None
+            ),
+            predicate_affects_update=(
+                _boolean(
+                    profile["predicate_affects_update"],
+                    path,
+                    profile_path + ".predicate_affects_update",
+                )
+                if "predicate_affects_update" in profile
+                else None
+            ),
+            scatter_gather=(
+                _enum_string(
+                    profile["scatter_gather"],
+                    path,
+                    profile_path + ".scatter_gather",
+                    frozenset({"separate_instructions"}),
+                )
+                if "scatter_gather" in profile
+                else None
+            ),
+        )
+    if compact_profiles["ea"].overrides:
+        raise DecodeError(
+            f"{_where(path, 'compact.profiles.ea.overrides')}: scalar EA is the "
+            "unchanged compact form baseline"
+        )
+    vstride_data = _mapping(data["vstride"], path, "vstride")
+    _keys(vstride_data, path, "vstride", required=("kind", "forms"))
+    vstride_forms = _decode_ea_forms(
+        vstride_data["forms"],
+        path,
+        "vstride.forms",
+        compact=False,
+        descriptor_bytes=1,
     )
     ext1_data = _mapping(data["ext1"], path, "ext1")
     _keys(ext1_data, path, "ext1", required=("kind", "forms"))
@@ -1760,8 +1987,14 @@ def decode_ea_registry(path: Path, raw: Any) -> EaRegistry:
     ext2_forms = _decode_ea_forms(
         ext2_data["forms"], path, "ext2.forms", compact=False, descriptor_bytes=2
     )
-    descriptor_families = {"ext1", "ext2"}
-    for form in compact_forms:
+    descriptor_families = {"vstride", "ext1", "ext2"}
+    profile_forms = [
+        override.form
+        for profile in compact_profiles.values()
+        for override in profile.overrides
+        if override.form is not None
+    ]
+    for form in (*compact_forms, *profile_forms):
         if form.payload is not None and form.payload not in payloads:
             raise DecodeError(
                 f"{_where(path, 'compact.forms')}: unknown payload {form.payload}"
@@ -1780,6 +2013,9 @@ def decode_ea_registry(path: Path, raw: Any) -> EaRegistry:
         payloads=payloads,
         compact_field_width=compact_width,
         compact_forms=compact_forms,
+        compact_profiles=compact_profiles,
+        vstride_kind=_string(vstride_data["kind"], path, "vstride.kind"),
+        vstride_forms=vstride_forms,
         ext1_kind=_string(ext1_data["kind"], path, "ext1.kind"),
         ext1_forms=ext1_forms,
         ext2_kind=_string(ext2_data["kind"], path, "ext2.kind"),

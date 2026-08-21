@@ -1,19 +1,23 @@
 \clearpage
-\section{Effective Addressing Modes}\label{page:effective-addressing-modes}
+\section{Effective-Address Profiles}\label{page:effective-addressing-modes}
 
-An effective-address field is an operand descriptor with an instruction-defined role and interpretation width. A
+EA, FEA, and VEA are seven-bit compact effective-address profiles selected by the consuming instruction's operand
+type. They share the memory address calculation rules and the EXT1 and EXT2 descriptor grammar in this section;
+the compact comparison table identifies the profile-specific encodings. An effective-address field is an operand
+descriptor with an instruction-defined role and interpretation width. A
 value role reads or writes the selected register, immediate, or memory value. An address role uses a register or
 immediate as an address value and uses a memory-form EA as the calculated address without an initial data read. A
 control-target role uses a register or immediate value directly and reads an interpretation-width target from a
 memory form. Memory forms continue into segment pre-translation and paging.
 
-Each seven-bit compact EA field is embedded in the instruction's opcode space, and all compact EA fields precede any
-appended EA payload bytes. Any displacement, absolute address, immediate, or extended descriptor bytes are appended as EA
-payload bytes. Appended EA payload sequences appear in declared instruction operand order. For two payload-bearing EA
-operands, the encoded stream is: opcode space containing EA0 and EA1 $\rightarrow$ complete EA0 payload
-sequence $\rightarrow$ complete EA1 payload sequence $\rightarrow$ any trailing padding.
+Each compact field is embedded in the instruction's opcode space, and all compact fields precede any appended
+effective-address payload bytes. Any displacement, absolute address, immediate, VSTRIDE descriptor, or extended
+descriptor bytes are appended as one operand's payload sequence. Sequences appear in declared instruction operand
+order. For two payload-bearing operands, the encoded stream is: opcode space containing operand 0 and operand 1
+$\rightarrow$ complete operand 0 payload sequence $\rightarrow$ complete operand 1 payload sequence
+$\rightarrow$ any trailing padding.
 
-Multi-byte scalar EA payloads, such as displacements, absolute addresses, and immediates, are little-endian. Payload
+Multi-byte payloads, such as displacements, absolute addresses, and immediates, are little-endian. Payload
 names ending in s are signed and are sign-extended before use; payload names without s are unsigned unless the
 consuming instruction explicitly says otherwise. Extended descriptor bytes appear in stream order, byte 0 first. Each
 descriptor byte is independently numbered from bit 7 through bit 0.
@@ -26,21 +30,48 @@ For every compact or extended-descriptor PC-based EA, the PC term is the archite
 The PC term remains that instruction-start value throughout operand evaluation.
 
 \clearpage
-\subsection{Compact EA Addressing Modes}
-Compact EA forms encode common Rn/SP/PC memory operands, absolute memory operands,
-immediate operands, and the EXT1 and EXT2 escapes.
+\subsection{Compact Profile Encodings}
+The scalar EA profile encodes common Rn/SP/PC memory operands, absolute memory operands, integer immediate operands,
+and the EXT1 and EXT2 escapes. FEA retains the scalar memory and EXT encodings except that \texttt{0x58},
+\texttt{0x5B}, and \texttt{0x5C} are reserved and \texttt{0x5D} and \texttt{0x5E} select floating-point
+immediates. VEA retains the scalar memory and EXT encodings except that \texttt{0x58} and
+\texttt{0x5B}--\texttt{0x5E} select VSTRIDE forms.
 
 Compact memory forms that do not name SP or PC use the operation default data segment. SP memory forms are fixed to
 SS, and PC memory forms are fixed to CS.
 
 \input{isa/addressing/effective_address/manual/compact_ea_reference_blocks.tex}
 
+\clearpage
 @COMPACT_EA_TABLE@
 \label{table:compact-ea-encoding}
 
+\subsubsection{Floating-Point FEA Immediate Forms}
+\texttt{immsf} carries the exact IEEE 754 binary32 interchange encoding and \texttt{immdf} carries the exact
+binary64 interchange encoding. Either source form is valid for either an S or D instruction. The payload format
+defines the source format and the instruction suffix defines the operation format. When they differ, operand
+evaluation converts the immediate to the operation format under the architectural IEEE 754 environment before the
+instruction operation. The conversion uses \texttt{FSTATUS.RM}; its floating-point exception causes are combined
+with the operation's causes and are tested and committed atomically under the ordinary precise floating-point fault
+rules. An FEA floating-point immediate is never a valid destination.
+
+\subsubsection{Vector VEA Lane Addressing}
+For an ordinary compact or EXT VEA memory form, address calculation first produces one scalar anchor using the
+shared base, scalar Rn index, scale, displacement, segment, and auto-update grammar. Lane $n$ accesses
+\texttt{anchor + n * element\_bytes}. Scatter/gather addressing is not a VEA descriptor form and is reserved for
+separate vector instructions.
+
+A VSTRIDE form appends one descriptor byte \texttt{bbbbiiii}. Field \texttt{bbbb} selects the scalar base Rn and
+\texttt{iiii} selects a scalar Rn containing a signed 64-bit byte stride. For lane $n$, before segment translation,
+the offset is
+\[
+  \texttt{Rn(base)} + n \mathbin{*} \texttt{signed64(Rn(stride))} + \texttt{displacement}.
+\]
+The compact VSTRIDE encoding selects no displacement or a signed 8-, 16-, 32-, or unsigned 64-bit displacement.
+
 \clearpage
-\subsection{Extended EA Descriptor}
-A compact EXT1 or EXT2 EA value selects both an exact descriptor length and the displacement width. The descriptor
+\subsection{Shared Extended Descriptor}
+A compact EXT1 or EXT2 value in any profile selects both an exact descriptor length and the displacement width. The descriptor
 bytes then select segment, base, index, zero-base, SP/PC indexed, and auto-update behavior within that family.
 
 Each extended descriptor selects its segment from the encoded SREG field SEG(s), the fixed SS segment for SP, the fixed CS
@@ -65,7 +96,7 @@ segment for PC, or the operation's default data segment.
 \bottomrule
 \end{manuallongtable}
 
-For a compact displacement, absolute address, or immediate, the selected payload follows the EA field at that
+For a compact displacement, absolute address, or immediate, the selected payload follows the compact field at that
 operand's payload position. Extended-descriptor construction begins with the compact escape value in the opcode
 space and exactly one EXT1 or two EXT2 descriptor bytes; a displaced form places its selected displacement after
 those descriptor bytes.

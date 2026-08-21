@@ -1,7 +1,7 @@
 function fp_source_candidate(operand : Decoded_operand) -> bool =
   (operand.access == AccessRead | operand.access == AccessReadWrite)
   & (operand.type_name == "Fn" | operand.type_name == "Rn"
-     | operand.type_name == "EA" | operand.type_name == "imm64")
+     | operand.type_name == "FEA" | operand.type_name == "imm64")
 
 function fp_source_at(operands : list(Decoded_operand), wanted : int,
                       current : int) -> option(Decoded_operand) = match operands {
@@ -31,6 +31,12 @@ function fp_operand_kind_for(instruction : Decoded_instruction,
           & fp_destination_is_fn(instruction) then
     if instruction.form.operation == Op_FCVTU then FpUnsigned64 else FpSigned64
   else if operand.type_name == "Rn" then FpRaw64
+  else if operand.type_name == "FEA" then match operand.ea {
+    Some(ea) => if ea.kind == "float_immediate" then
+      if ea.payload_width == 32 then FpBits32 else FpBits64
+      else if width == 4 then FpBits32 else FpBits64,
+    None() => if width == 4 then FpBits32 else FpBits64,
+  }
   else if width == 4 then FpBits32 else FpBits64
 
 function fp_decoded_operand_image(instruction : Decoded_instruction, state : Cpu_state,
@@ -39,9 +45,15 @@ function fp_decoded_operand_image(instruction : Decoded_instruction, state : Cpu
   let raw = if operand.type_name == "Fn" then
     state.floating_registers[unsigned(operand.value[3 .. 0])]
   else if operand.type_name == "Rn" then state.registers[unsigned(operand.value[3 .. 0])]
+  else if operand.type_name == "FEA" then match operand.ea {
+    Some(ea) => if ea.kind == "float_immediate" then ea.payload else operand.value,
+    None() => operand.value,
+  }
   else operand.value;
   let kind = fp_operand_kind_for(instruction, operand, width);
-  struct { valid = operand.type_name != "EA",
+  struct { valid = operand.type_name != "FEA" | (match operand.ea {
+             Some(ea) => ea.kind == "float_immediate", None() => false,
+           }),
            kind = kind,
            bits = if kind == FpBits32 then 0x00000000 @ raw[31 .. 0] else raw }
 }
@@ -130,4 +142,3 @@ function fp_fault_with_causes(state : Cpu_state, operation : Semantic_operation,
       error_code = sail_zero_extend(causes, 64), bus_error = false
     }) }
 }
-

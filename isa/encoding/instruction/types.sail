@@ -8,6 +8,7 @@ struct Decoded_field = {
 
 struct Decoded_ea = {
   compact_name : string,
+  profile : string,
   kind : string,
   segment : string,
   base : string,

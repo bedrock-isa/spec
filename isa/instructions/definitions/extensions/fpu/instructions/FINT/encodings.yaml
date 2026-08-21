@@ -5,7 +5,7 @@ forms:
   syntax: FINT.SD(z) <ea>(e), Fn(d)
   operands:
   - name: src
-    type: EA
+    type: FEA
     access: read
     ea_role: value
     ea_width: operation_size
@@ -43,7 +43,7 @@ forms:
     access: read
     field: s
   - name: dst
-    type: EA
+    type: FEA
     access: write
     ea_role: value
     ea_width: operation_size

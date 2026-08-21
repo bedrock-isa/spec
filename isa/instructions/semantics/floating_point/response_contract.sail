@@ -28,7 +28,7 @@ function fp_result_operand(kind : Fp_result_kind, bits : bits(64)) -> Fp_operand
 
 function fp_response_nan_origins_valid(request : Fp_request_image,
                                        response : Fp_response_image) -> bool =
-  if fp_operation_is_exact_local(request.operation)
+  if fp_request_is_exact_local(request)
      | not_bool(fp_result_kind_is_float(response.result_kind)) then
     response.primary_nan_origin == FpNotNan
     & response.secondary_nan_origin == FpNotNan
@@ -48,7 +48,7 @@ function fp_response_nan_origins_valid(request : Fp_request_image,
 
 function fp_response_signaling_nan_valid(request : Fp_request_image,
                                          response : Fp_response_image) -> bool =
-  fp_operation_is_exact_local(request.operation)
+  fp_request_is_exact_local(request)
   | not_bool(fp_request_has_signaling_nan(request))
   | (response.generated_causes & fflags_nv) == fflags_nv
 
@@ -101,7 +101,9 @@ function fp_response_valid(request : Fp_request_image,
   & (response.flags_value & response.flags_mask) == response.flags_value
   & (response.generated_causes & request.allowed_causes) == response.generated_causes
   & (not_bool(request.transcendental)
-     | (response.generated_causes & fflags_nx) == fflags_none)
+     | (response.generated_causes & fflags_nx)
+       == (response.generated_causes & fp_request_conversion_allowed_causes(request)
+           & fflags_nx))
   & fp_response_unused_valid(response)
   & fp_response_upper_zero_valid(response)
   & fp_response_nan_origins_valid(request, response)
@@ -146,7 +148,8 @@ function fp_local_pre_dn_values(request : Fp_request_image,
 
 function fp_local_response(request : Fp_request_image,
                            selector : bits(64)) -> option(Fp_response_image) =
-  match fp_local_pre_dn_values(request, selector) {
+  if not_bool(fp_request_is_exact_local(request)) then None()
+  else match fp_local_pre_dn_values(request, selector) {
     None() => None(),
     Some(values) => {
       let response : Fp_response_image = struct {
@@ -167,4 +170,3 @@ function fp_local_response(request : Fp_request_image,
       if fp_response_valid(request, response) then Some(response) else None()
     },
   }
-

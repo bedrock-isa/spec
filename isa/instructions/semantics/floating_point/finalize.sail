@@ -40,7 +40,7 @@ function fp_request_fstatus_matches(request : Fp_request_image,
 function fp_postprocess_response_values(request : Fp_request_image,
                                         response : Fp_response_image)
   -> Fp_final_values =
-  if fp_operation_is_exact_local(request.operation)
+  if fp_request_is_exact_local(request)
      | not_bool(fp_result_kind_is_float(response.result_kind)) then struct {
     primary = response.primary,
     secondary = response.secondary,

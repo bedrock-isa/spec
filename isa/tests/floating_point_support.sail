@@ -57,7 +57,7 @@ function fp_test_build_request(form_id : string, width : int,
     None() => None(),
     Some(form) => match (fp_form_path(form), fp_derive_result_kind(form, width)) {
       (Some(path), Some(result_kind)) => fp_build_request(
-        form.operation, form, path, result_kind, operands, fstatus, contract_word
+        form.operation, form, path, result_kind, width, operands, fstatus, contract_word
       ),
       _ => None(),
     },
@@ -82,4 +82,3 @@ function fp_test_response(request : Fp_request_image, primary : bits(64),
   error0_q8_8_up = error0,
   error1_q8_8_up = error1
 }
-

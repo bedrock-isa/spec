@@ -29,7 +29,7 @@ forms:
     access: read
     field: l
   - name: value
-    type: EA
+    type: FEA
     access: read
     ea_role: value
     ea_width: operation_size
@@ -47,7 +47,7 @@ forms:
   syntax: FBNDXI.SD(z) <ea>(l), Fn(v), <ea>(h)
   operands:
   - name: lo
-    type: EA
+    type: FEA
     access: read
     ea_role: value
     ea_width: operation_size
@@ -57,7 +57,7 @@ forms:
     access: read
     field: v
   - name: hi
-    type: EA
+    type: FEA
     access: read
     ea_role: value
     ea_width: operation_size

@@ -51,6 +51,7 @@ pub struct GeneratedField {
 pub struct GeneratedEaField {
     pub symbol: char,
     pub syntax_operand_ordinal: u8,
+    pub profile: crate::EffectiveAddressProfile,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

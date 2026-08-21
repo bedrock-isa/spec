@@ -5,7 +5,7 @@ forms:
   syntax: FGETEXP.SD(z) <ea>(e), Fn(d)
   operands:
   - name: src
-    type: EA
+    type: FEA
     access: read
     ea_role: value
     ea_width: operation_size

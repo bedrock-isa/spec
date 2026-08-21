@@ -191,6 +191,18 @@ def _ea_candidate_widths(
     return widths[0], widths[1]
 
 
+def _ea_candidate_profiles(
+    form: decode_ir.FormIR,
+    names: Names,
+) -> tuple[str, str]:
+    profiles = ["EA_PROFILE_INVALID", "EA_PROFILE_INVALID"]
+    for operand in _ea_operands(form):
+        source = operand.source
+        assert isinstance(source, decode_ir.EffectiveAddressSourceIR)
+        profiles[_ea_candidate_slot(form, operand)] = names.ea_profile[source.profile]
+    return profiles[0], profiles[1]
+
+
 def _set_gather(payload: int, positions: tuple[int, ...], value: int) -> int:
     for value_bit, position in zip(range(len(positions) - 1, -1, -1), positions):
         if value & (1 << value_bit):
@@ -298,18 +310,22 @@ def reference_d0(
 
 def reference_ea(
     ir: decode_ir.DecodeIR,
+    profile_name: str,
     compact_raw: int,
     record: bytes | tuple[int, ...] | list[int],
     byte_count: int,
     cursor: int,
 ) -> tuple[str, dict[str, object] | None, int]:
     """Reference one IR-owned EA parse, including descriptor and payload byte order."""
-    entry = ir.effective_addresses.compact_entries[compact_raw]
+    profile = next(
+        item for item in ir.effective_addresses.profiles if item.name == profile_name
+    )
+    entry = profile.compact_entries[compact_raw]
     if not entry.valid:
         return "ea_descriptor", None, cursor
     compact = next(
         form
-        for form in ir.effective_addresses.compact_forms
+        for form in profile.compact_forms
         if form.name == entry.form_name
     )
     descriptor_form = None
@@ -352,6 +368,8 @@ def reference_ea(
         "base_register": 0,
         "index_register_valid": False,
         "index_register": 0,
+        "stride_register_valid": False,
+        "stride_register": 0,
         "segment_register_valid": False,
         "segment_register": 0,
     }
@@ -366,6 +384,7 @@ def reference_ea(
                 "value": "direct_register",
                 "base": "base_register",
                 "index": "index_register",
+                "stride": "stride_register",
                 "segment": "segment_register",
             }[field.role]
             canonical_fields[f"{target}_valid"] = True
@@ -420,7 +439,12 @@ def reference_d1(
         operand = next(item for item in form.operands if item.name == layout.operand_name)
         if isinstance(layout, decode_ir.ParseEaIR):
             stage, decoded, next_cursor = reference_ea(
-                ir, values[operand.name] & 0x7F, record, byte_count, cursor
+                ir,
+                layout.profile,
+                values[operand.name] & 0x7F,
+                record,
+                byte_count,
+                cursor,
             )
             if stage != "success":
                 return stage, {"required_bytes": next_cursor, "values": values, "eas": eas}
@@ -456,6 +480,7 @@ class Names:
     operand_type: dict[str, str]
     access: dict[str, str]
     ea_width: dict[str, str]
+    ea_profile: dict[str, str]
     overlap_rule: dict[str, str]
     observed_kind: dict[str, str]
     ea_kind: dict[str, str]
@@ -540,7 +565,11 @@ def _render_mask_assignment(
 
 
 def _all_ea_forms(ir: decode_ir.DecodeIR) -> tuple[decode_ir.EaFormIR, ...]:
-    return ir.effective_addresses.compact_forms + tuple(
+    return tuple(
+        form
+        for profile in ir.effective_addresses.profiles
+        for form in profile.compact_forms
+    ) + tuple(
         form
         for family in ir.effective_addresses.descriptor_families
         for form in family.forms
@@ -576,6 +605,11 @@ def _render_package(ir: decode_ir.DecodeIR) -> tuple[str, Names]:
     operand_type = add("operand_type_e", "OPERAND_TYPE", _ordered(x.type_name for f in forms for x in f.operands))
     access = add("operand_access_e", "ACCESS", _ordered(x.access for f in forms for x in f.operands))
     ea_width = add("operand_ea_width_e", "EA_WIDTH", _ordered(x.ea_width for f in forms for x in f.operands))
+    ea_profile = add(
+        "ea_profile_e",
+        "EA_PROFILE",
+        (profile.name for profile in ir.effective_addresses.profiles),
+    )
     overlap_rule = add("overlap_rule_e", "OVERLAP", _ordered(x.rule for f in forms for x in f.overlaps))
     observed_kind = add("repeat_observed_e", "REPEAT_OBSERVED", _ordered(f.control.repeat.observed_kind for f in forms))
     ea_kind = add("ea_kind_e", "EA_KIND", _ordered(x.kind for x in ea_forms))
@@ -590,13 +624,17 @@ def _render_package(ir: decode_ir.DecodeIR) -> tuple[str, Names]:
         tuple(
             str(width)
             for width in sorted(
-                {item.payload_width for item in ir.effective_addresses.compact_forms}
+                {
+                    item.payload_width
+                    for profile in ir.effective_addresses.profiles
+                    for item in profile.compact_forms
+                }
             )
         ),
     )
     names = Names(
         opcode_class, form, operation, route, instruction_set, instruction_class,
-        privilege, predicate, operand_type, access, ea_width, overlap_rule,
+        privilege, predicate, operand_type, access, ea_width, ea_profile, overlap_rule,
         observed_kind, ea_kind, ea_segment, ea_base, ea_register, update_target,
         update_mode, ea_payload_width,
     )
@@ -671,12 +709,14 @@ package bedrock_decode_pkg;
     logic [BEDROCK_OPCODE_BITS-1:0] opcode;
     ea_layout_e ea_layout;
     operand_ea_width_e [BEDROCK_EA_SLOTS-1:0] ea_widths;
+    ea_profile_e [BEDROCK_EA_SLOTS-1:0] ea_profiles;
   }} d0_result_t;
 
   typedef struct packed {{
     d0_status_e status;
     ea_layout_e ea_layout;
     operand_ea_width_e [BEDROCK_EA_SLOTS-1:0] ea_widths;
+    ea_profile_e [BEDROCK_EA_SLOTS-1:0] ea_profiles;
     logic [6:0] low_raw;
     logic [6:0] alt_raw;
     logic [3:0] base_cursor;
@@ -696,6 +736,7 @@ package bedrock_decode_pkg;
 
   typedef struct packed {{
     logic valid;
+    ea_profile_e profile;
     ea_kind_e kind;
     ea_segment_e segment;
     ea_base_e base;
@@ -711,6 +752,8 @@ package bedrock_decode_pkg;
     logic [3:0] base_register;
     logic index_register_valid;
     logic [3:0] index_register;
+    logic stride_register_valid;
+    logic [3:0] stride_register;
     logic segment_register_valid;
     logic [3:0] segment_register;
     logic [63:0] payload;
@@ -901,6 +944,7 @@ def _render_d0(ir: decode_ir.DecodeIR, names: Names) -> str:
             selection_leaves.append(selection_signal)
             raw = f"((opcode_i & {_hex(34, form.opcode_mask)}) == {_hex(34, form.opcode_value)})"
             low_width, alt_width = _ea_candidate_widths(form, names)
+            low_profile, alt_profile = _ea_candidate_profiles(form, names)
             predicates = [
                 _constraint_sv(
                     constraint,
@@ -939,6 +983,8 @@ def _render_d0(ir: decode_ir.DecodeIR, names: Names) -> str:
                     f"  assign {selection_signal}.ea_layout = {_ea_layout(form)};",
                     f"  assign {selection_signal}.ea_widths[BEDROCK_EA_LOW_SLOT] = {low_width};",
                     f"  assign {selection_signal}.ea_widths[BEDROCK_EA_ALT_SLOT] = {alt_width};",
+                    f"  assign {selection_signal}.ea_profiles[BEDROCK_EA_LOW_SLOT] = {low_profile};",
+                    f"  assign {selection_signal}.ea_profiles[BEDROCK_EA_ALT_SLOT] = {alt_profile};",
                 ]
             )
         raw_declarations, raw_assignments, raw_root, raw_depth = _balanced_tree(
@@ -1017,6 +1063,7 @@ module bedrock_decode_d0
     form_id_e form;
     ea_layout_e ea_layout;
     operand_ea_width_e [BEDROCK_EA_SLOTS-1:0] ea_widths;
+    ea_profile_e [BEDROCK_EA_SLOTS-1:0] ea_profiles;
   }} d0_selection_t;
 
   logic class_raw_match;
@@ -1027,7 +1074,7 @@ module bedrock_decode_d0
 {chr(10).join(form_declarations)}
 {chr(10).join(tree_declarations)}
 
-{_render_ea_span_function(ir)}
+{_render_ea_span_function(ir, names)}
 
 {_render_opcode_class_bytes_function(ir)}
 
@@ -1053,10 +1100,6 @@ module bedrock_decode_d0
     endcase
     ea_result_o.base_cursor = opcode_class_bytes(opcode_class_i);
     ea_result_o.post_alt_cursor = ea_result_o.base_cursor;
-    alt_span = encoded_ea_span(ea_result_o.alt_raw);
-    if (alt_span.valid)
-      ea_result_o.post_alt_cursor =
-        ea_result_o.base_cursor + {{2'b0, alt_span.encoded_bytes}};
     class_raw_match = 1'b0;
     class_selection = '0;
     class_form = '0;
@@ -1064,6 +1107,14 @@ module bedrock_decode_d0
 {chr(10).join(class_cases)}
       default: begin end
     endcase
+    ea_result_o.ea_profiles = class_selection.ea_profiles;
+    alt_span = encoded_ea_span(
+      class_selection.ea_profiles[BEDROCK_EA_ALT_SLOT],
+      ea_result_o.alt_raw
+    );
+    if (alt_span.valid)
+      ea_result_o.post_alt_cursor =
+        ea_result_o.base_cursor + {{2'b0, alt_span.encoded_bytes}};
     if (valid_i) begin
       result_o.status = D0_UNALLOCATED_OPCODE;
       if (class_selection.valid) begin
@@ -1071,6 +1122,7 @@ module bedrock_decode_d0
         result_o.form = form_id_e'(class_form);
         result_o.ea_layout = class_selection.ea_layout;
         result_o.ea_widths = class_selection.ea_widths;
+        result_o.ea_profiles = class_selection.ea_profiles;
       end else if (class_raw_match) begin
         result_o.status = D0_CONSTRAINT_REJECTED;
       end
@@ -1078,6 +1130,7 @@ module bedrock_decode_d0
     ea_result_o.status = result_o.status;
     ea_result_o.ea_layout = result_o.ea_layout;
     ea_result_o.ea_widths = result_o.ea_widths;
+    ea_result_o.ea_profiles = result_o.ea_profiles;
   end
 endmodule
 """
@@ -1121,6 +1174,13 @@ def _ea_static_assignments(
                     f"{target}.index_register = 4'({value});",
                 ]
             )
+        elif field.role == "stride":
+            lines.extend(
+                [
+                    f"{target}.stride_register_valid = 1'b1;",
+                    f"{target}.stride_register = 4'({value});",
+                ]
+            )
         elif field.role == "segment":
             lines.extend(
                 [
@@ -1136,34 +1196,43 @@ def _indent(lines: Iterable[str], spaces: int) -> str:
     return "\n".join(prefix + line for line in lines)
 
 
-def _render_ea_span_function(ir: decode_ir.DecodeIR) -> str:
-    compact_by_name = {
-        item.name: item for item in ir.effective_addresses.compact_forms
-    }
-    cases = []
-    for entry in ir.effective_addresses.compact_entries:
-        lines = [
-            f"      7'h{entry.raw:02x}: begin // "
-            f"{entry.form_name or entry.invalid_reason}"
-        ]
-        if entry.valid:
-            compact = compact_by_name[entry.form_name]
-            encoded_bytes = compact.descriptor_bytes + compact.payload_width // 8
-            lines.extend(
-                [
-                    "        encoded_ea_span.valid = 1'b1;",
-                    f"        encoded_ea_span.encoded_bytes = 4'd{encoded_bytes};",
-                ]
-            )
-        lines.append("      end")
-        cases.append("\n".join(lines))
+def _render_ea_span_function(ir: decode_ir.DecodeIR, names: Names) -> str:
+    profile_cases: list[str] = []
+    for profile in ir.effective_addresses.profiles:
+        compact_by_name = {item.name: item for item in profile.compact_forms}
+        raw_cases = []
+        for entry in profile.compact_entries:
+            lines = [
+                f"          7'h{entry.raw:02x}: begin // "
+                f"{entry.form_name or entry.invalid_reason}"
+            ]
+            if entry.valid:
+                compact = compact_by_name[entry.form_name]
+                encoded_bytes = compact.descriptor_bytes + compact.payload_width // 8
+                lines.extend(
+                    [
+                        "            encoded_ea_span.valid = 1'b1;",
+                        f"            encoded_ea_span.encoded_bytes = 4'd{encoded_bytes};",
+                    ]
+                )
+            lines.append("          end")
+            raw_cases.append("\n".join(lines))
+        profile_cases.append(
+            f"      {names.ea_profile[profile.name]}: begin\n"
+            "        unique case (compact_raw)\n"
+            + "\n".join(raw_cases)
+            + "\n          default: begin end\n"
+            "        endcase\n"
+            "      end"
+        )
     return f"""  function automatic ea_span_result_t encoded_ea_span(
+    input ea_profile_e profile,
     input logic [6:0] compact_raw
   );
     begin
       encoded_ea_span = '0;
-      unique case (compact_raw)
-{chr(10).join(cases)}
+      unique case (profile)
+{chr(10).join(profile_cases)}
         default: begin end
       endcase
     end
@@ -1172,12 +1241,16 @@ def _render_ea_span_function(ir: decode_ir.DecodeIR) -> str:
 
 def _render_ea_function(ir: decode_ir.DecodeIR, names: Names) -> str:
     families = {item.name: item for item in ir.effective_addresses.descriptor_families}
-    entries = {item.raw: item for item in ir.effective_addresses.compact_entries}
-    compact_by_name = {item.name: item for item in ir.effective_addresses.compact_forms}
     cases: list[str] = []
-    for raw in range(128):
+    for profile in ir.effective_addresses.profiles:
+      entries = {item.raw: item for item in profile.compact_entries}
+      compact_by_name = {item.name: item for item in profile.compact_forms}
+      for raw in range(128):
         entry = entries[raw]
-        lines = [f"      7'h{raw:02x}: begin // {entry.form_name or entry.invalid_reason}"]
+        lines = [
+            f"      {{{names.ea_profile[profile.name]}, 7'h{raw:02x}}}: begin // "
+            f"{profile.name.upper()} {entry.form_name or entry.invalid_reason}"
+        ]
         if not entry.valid:
             lines.extend(["        parse_one_ea.stage = D1_STAGE_EA_DESCRIPTOR;", "      end"])
             cases.append("\n".join(lines))
@@ -1291,6 +1364,7 @@ def _render_ea_function(ir: decode_ir.DecodeIR, names: Names) -> str:
         )
         cases.append("\n".join(lines))
     return f"""  function automatic ea_parse_result_t parse_one_ea(
+    input ea_profile_e profile,
     input logic [6:0] compact_raw,
     input operand_ea_width_e operand_width,
     input logic [BEDROCK_RECORD_BYTES*8-1:0] record,
@@ -1304,11 +1378,12 @@ def _render_ea_function(ir: decode_ir.DecodeIR, names: Names) -> str:
       parse_one_ea = '0;
       parse_one_ea.stage = D1_STAGE_EA_DESCRIPTOR;
       parse_one_ea.next_cursor = cursor_in;
+      parse_one_ea.ea.profile = profile;
       parse_one_ea.ea.operand_width = operand_width;
       cursor = cursor_in;
       descriptor = '0;
       descriptor_match = 1'b0;
-      unique case (compact_raw)
+      unique case ({{profile, compact_raw}})
 {chr(10).join(cases)}
         default: begin end
       endcase
@@ -1409,7 +1484,7 @@ def _render_form_case(
             lines.extend(
                 [
                     "        if (!layout_failed) begin",
-                    f"          ea_span = encoded_ea_span(result_o.operands[{slot}].value[6:0]);",
+                    f"          ea_span = encoded_ea_span({names.ea_profile[layout.profile]}, result_o.operands[{slot}].value[6:0]);",
                     "          if (!ea_span.valid) begin",
                     "            layout_failed = 1'b1;",
                     "            result_o.stage = D1_STAGE_EA_DESCRIPTOR;",
@@ -1493,7 +1568,7 @@ module bedrock_decode_d1
   logic layout_failed;
   ea_span_result_t ea_span;
 
-{_render_ea_span_function(ir)}
+{_render_ea_span_function(ir, names)}
 
   always_comb begin
     result_o = '0;
@@ -1539,6 +1614,7 @@ module bedrock_decode_ea
     if (d0_i.ea_layout == EA_LAYOUT_ALT_THEN_LOW)
       low_cursor = d0_i.post_alt_cursor;
     alt_parse = parse_one_ea(
+      d0_i.ea_profiles[BEDROCK_EA_ALT_SLOT],
       d0_i.alt_raw,
       d0_i.ea_widths[BEDROCK_EA_ALT_SLOT],
       record_i,
@@ -1546,6 +1622,7 @@ module bedrock_decode_ea
       d0_i.base_cursor
     );
     low_parse = parse_one_ea(
+      d0_i.ea_profiles[BEDROCK_EA_LOW_SLOT],
       d0_i.low_raw,
       d0_i.ea_widths[BEDROCK_EA_LOW_SLOT],
       record_i,

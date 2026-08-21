@@ -25,7 +25,7 @@ forms:
   syntax: FMADD.SD(z) <ea>(l), Fn(r), Fn(d)
   operands:
   - name: lhs
-    type: EA
+    type: FEA
     access: read
     ea_role: value
     ea_width: operation_size
@@ -51,7 +51,7 @@ forms:
     access: read
     field: l
   - name: rhs
-    type: EA
+    type: FEA
     access: read
     ea_role: value
     ea_width: operation_size

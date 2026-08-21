@@ -6,6 +6,13 @@ pub enum DisplacementWidth {
     Bits64,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EffectiveAddressProfile {
+    Ea,
+    Fea,
+    Vea,
+}
+
 impl DisplacementWidth {
     pub const fn bytes(self) -> usize {
         match self {
@@ -30,6 +37,10 @@ pub enum CompactEa {
     Absolute32,
     Absolute64,
     Immediate(DisplacementWidth),
+    FloatImmediate(DisplacementWidth),
+    VectorStride {
+        displacement: Option<DisplacementWidth>,
+    },
     Ext1 {
         displacement: Option<DisplacementWidth>,
     },
@@ -107,12 +118,48 @@ impl CompactEa {
         }
     }
 
+    pub const fn decode_for(profile: EffectiveAddressProfile, value: u8) -> Self {
+        let value = value & 0x7f;
+        match profile {
+            EffectiveAddressProfile::Ea => Self::decode(value),
+            EffectiveAddressProfile::Fea => match value {
+                0x58 | 0x5b | 0x5c => Self::Reserved(value),
+                0x5d => Self::FloatImmediate(DisplacementWidth::Bits32),
+                0x5e => Self::FloatImmediate(DisplacementWidth::Bits64),
+                _ => Self::decode(value),
+            },
+            EffectiveAddressProfile::Vea => match value {
+                0x58 => Self::VectorStride { displacement: None },
+                0x5b => Self::VectorStride {
+                    displacement: Some(DisplacementWidth::Bits8),
+                },
+                0x5c => Self::VectorStride {
+                    displacement: Some(DisplacementWidth::Bits16),
+                },
+                0x5d => Self::VectorStride {
+                    displacement: Some(DisplacementWidth::Bits32),
+                },
+                0x5e => Self::VectorStride {
+                    displacement: Some(DisplacementWidth::Bits64),
+                },
+                _ => Self::decode(value),
+            },
+        }
+    }
+
     pub const fn appended_bytes(self) -> usize {
         match self {
             Self::RegisterDisplacement { width, .. }
             | Self::StackDisplacement(width)
             | Self::ProgramCounterDisplacement(width)
-            | Self::Immediate(width) => width.bytes(),
+            | Self::Immediate(width)
+            | Self::FloatImmediate(width) => width.bytes(),
+            Self::VectorStride { displacement } => {
+                1 + match displacement {
+                    Some(width) => width.bytes(),
+                    None => 0,
+                }
+            }
             Self::Absolute32 => 4,
             Self::Absolute64 => 8,
             Self::Ext1 { displacement } | Self::Ext2 { displacement } => {
@@ -128,7 +175,7 @@ impl CompactEa {
 
     pub const fn descriptor_bytes(self) -> usize {
         match self {
-            Self::Ext1 { .. } => 1,
+            Self::VectorStride { .. } | Self::Ext1 { .. } => 1,
             Self::Ext2 { .. } => 2,
             _ => 0,
         }
@@ -268,7 +315,9 @@ const fn index_auto_update(mode: u8) -> AutoUpdate {
 
 #[cfg(test)]
 mod tests {
-    use super::{AutoUpdate, CompactEa, ExtendedDescriptor};
+    use super::{
+        AutoUpdate, CompactEa, DisplacementWidth, EffectiveAddressProfile, ExtendedDescriptor,
+    };
 
     #[test]
     fn decodes_exact_length_extended_descriptors() {
@@ -299,5 +348,47 @@ mod tests {
         assert_eq!(CompactEa::decode(0x68).appended_bytes(), 2);
         assert!(matches!(CompactEa::decode(0x69), CompactEa::Reserved(0x69)));
         assert!(matches!(CompactEa::decode(0x7f), CompactEa::Reserved(0x7f)));
+    }
+
+    #[test]
+    fn compact_profiles_preserve_scalar_values_and_replace_only_owned_slots() {
+        for raw in 0_u8..=0x7f {
+            if !matches!(raw, 0x58 | 0x5b | 0x5c | 0x5d | 0x5e) {
+                assert_eq!(
+                    CompactEa::decode_for(EffectiveAddressProfile::Fea, raw),
+                    CompactEa::decode(raw)
+                );
+                assert_eq!(
+                    CompactEa::decode_for(EffectiveAddressProfile::Vea, raw),
+                    CompactEa::decode(raw)
+                );
+            }
+        }
+        for raw in [0x58, 0x5b, 0x5c] {
+            assert_eq!(
+                CompactEa::decode_for(EffectiveAddressProfile::Fea, raw),
+                CompactEa::Reserved(raw)
+            );
+        }
+        assert_eq!(
+            CompactEa::decode_for(EffectiveAddressProfile::Fea, 0x5d),
+            CompactEa::FloatImmediate(DisplacementWidth::Bits32)
+        );
+        assert_eq!(
+            CompactEa::decode_for(EffectiveAddressProfile::Fea, 0x5e),
+            CompactEa::FloatImmediate(DisplacementWidth::Bits64)
+        );
+        for (raw, displacement) in [
+            (0x58, None),
+            (0x5b, Some(DisplacementWidth::Bits8)),
+            (0x5c, Some(DisplacementWidth::Bits16)),
+            (0x5d, Some(DisplacementWidth::Bits32)),
+            (0x5e, Some(DisplacementWidth::Bits64)),
+        ] {
+            assert_eq!(
+                CompactEa::decode_for(EffectiveAddressProfile::Vea, raw),
+                CompactEa::VectorStride { displacement }
+            );
+        }
     }
 }

@@ -13,7 +13,18 @@ operand_types:
     bit_width: 0
   EA:
     kind: effective_address
-    encoding_ref: isa/addressing/effective_address/definition.yaml#compact
+    encoding_ref: isa/addressing/effective_address/definition.yaml#compact/profiles/ea
+    profile: ea
+    bit_width: 7
+  FEA:
+    kind: effective_address
+    encoding_ref: isa/addressing/effective_address/definition.yaml#compact/profiles/fea
+    profile: fea
+    bit_width: 7
+  VEA:
+    kind: effective_address
+    encoding_ref: isa/addressing/effective_address/definition.yaml#compact/profiles/vea
+    profile: vea
     bit_width: 7
   SREG:
     kind: register

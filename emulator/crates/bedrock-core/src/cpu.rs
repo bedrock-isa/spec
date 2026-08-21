@@ -2104,6 +2104,27 @@ impl Cpu {
             return Ok(StepResult::Running);
         }
         let size = fpu_size(instruction);
+        if fpu_operand_requires_conversion(instruction, 's', size) {
+            let (status, accrued) = self.fpu_environment(pc)?;
+            let source = self.read_fpu_input(bus, pc, instruction, 's', size, status)?;
+            let destination = fpu_field(instruction, 'd').ok_or(illegal_instruction(pc))?;
+            let effect = crate::fpu::effect::finish_result(
+                status,
+                crate::fpu::effect::FpResult::Float(source.bits),
+                source.causes,
+            );
+            return self.apply_fpu_effect(
+                bus,
+                pc,
+                next_pc,
+                Some(instruction),
+                size,
+                effect,
+                FpuDestination::Floating(destination),
+                None,
+                accrued,
+            );
+        }
         let source = if let Some(source) = fpu_field(instruction, 's') {
             self.state.f[source] & size_mask(size)
         } else {
@@ -2125,8 +2146,8 @@ impl Cpu {
         let size = fpu_size(instruction);
         let format = fp_format(size);
         let destination = fpu_field(instruction, 'd').ok_or(illegal_instruction(pc))?;
-        let source = self.read_fpu_operand(bus, pc, instruction, 's', size)?;
-        let operands = [source, self.state.f[destination] & size_mask(size)];
+        let source = self.read_fpu_input(bus, pc, instruction, 's', size, status)?;
+        let operands = [source.bits, self.state.f[destination] & size_mask(size)];
         let request = crate::fpu::effect::FpRequest {
             format,
             status,
@@ -2143,7 +2164,8 @@ impl Cpu {
             Opcode::Frem => crate::fpu::base_arithmetic::ieee_remainder(request),
             Opcode::Fscale => crate::fpu::base_arithmetic::scale(request),
             _ => unreachable!(),
-        };
+        }
+        .with_causes(status, source.causes);
         self.apply_fpu_effect(
             bus,
             pc,
@@ -2325,6 +2347,73 @@ impl Cpu {
 
         let size = fpu_size(instruction);
         let format = fp_format(size);
+        let conversion_required = match instruction.opcode {
+            Opcode::Fabs | Opcode::Fneg => fpu_operand_requires_conversion(instruction, 's', size),
+            Opcode::Fcopysign => {
+                fpu_operand_requires_conversion(instruction, 's', size)
+                    || fpu_operand_requires_conversion(instruction, 'm', size)
+            }
+            _ => false,
+        };
+        if conversion_required {
+            let (status, accrued) = self.fpu_environment(pc)?;
+            let (value, causes) = match instruction.opcode {
+                Opcode::Fabs => {
+                    let source = self.read_fpu_input(bus, pc, instruction, 's', size, status)?;
+                    (
+                        crate::fpu::base_convert_compare::abs_bits(format, source.bits),
+                        source.causes,
+                    )
+                }
+                Opcode::Fneg => {
+                    let source = self.read_fpu_input(bus, pc, instruction, 's', size, status)?;
+                    (
+                        crate::fpu::base_convert_compare::negate_bits(format, source.bits),
+                        source.causes,
+                    )
+                }
+                Opcode::Fcopysign => {
+                    let sign = self.read_fpu_input(bus, pc, instruction, 's', size, status)?;
+                    let magnitude = self.read_fpu_input(bus, pc, instruction, 'm', size, status)?;
+                    (
+                        crate::fpu::base_convert_compare::copy_sign_bits(
+                            format,
+                            sign.bits,
+                            magnitude.bits,
+                        ),
+                        sign.causes.union(magnitude.causes),
+                    )
+                }
+                _ => unreachable!(),
+            };
+            let destination = if let Some(destination) = fpu_field(instruction, 'd') {
+                FpuDestination::Floating(destination)
+            } else {
+                FpuDestination::Memory(self.preflight_fpu_memory_destination(
+                    bus,
+                    pc,
+                    instruction,
+                    'e',
+                    size,
+                )?)
+            };
+            let effect = crate::fpu::effect::finish_result(
+                status,
+                crate::fpu::effect::FpResult::Float(value),
+                causes,
+            );
+            return self.apply_fpu_effect(
+                bus,
+                pc,
+                next_pc,
+                Some(instruction),
+                size,
+                effect,
+                destination,
+                None,
+                accrued,
+            );
+        }
         let value = match instruction.opcode {
             Opcode::Fabs => crate::fpu::base_convert_compare::abs_bits(
                 format,
@@ -2356,9 +2445,13 @@ impl Cpu {
         let (status, accrued) = self.fpu_environment(pc)?;
         let size = fpu_size(instruction);
         let destination = fpu_field(instruction, 'd').ok_or(illegal_instruction(pc))?;
-        let lhs = self.read_fpu_operand(bus, pc, instruction, 'l', size)?;
-        let rhs = self.read_fpu_operand(bus, pc, instruction, 'r', size)?;
-        let operands = [lhs, rhs, self.state.f[destination] & size_mask(size)];
+        let lhs = self.read_fpu_input(bus, pc, instruction, 'l', size, status)?;
+        let rhs = self.read_fpu_input(bus, pc, instruction, 'r', size, status)?;
+        let operands = [
+            lhs.bits,
+            rhs.bits,
+            self.state.f[destination] & size_mask(size),
+        ];
         let request = crate::fpu::effect::FpRequest {
             format: fp_format(size),
             status,
@@ -2370,7 +2463,8 @@ impl Cpu {
             Opcode::Fnmadd => crate::fpu::base_arithmetic::fused_negated_multiply_add(request),
             Opcode::Fnmsub => crate::fpu::base_arithmetic::fused_negated_multiply_subtract(request),
             _ => unreachable!(),
-        };
+        }
+        .with_causes(status, lhs.causes.union(rhs.causes));
         self.apply_fpu_effect(
             bus,
             pc,
@@ -2394,8 +2488,8 @@ impl Cpu {
         let (status, accrued) = self.fpu_environment(pc)?;
         let size = fpu_size(instruction);
         let format = fp_format(size);
-        let source = self.read_fpu_operand(bus, pc, instruction, 's', size)?;
-        let operands = [source];
+        let source = self.read_fpu_input(bus, pc, instruction, 's', size, status)?;
+        let operands = [source.bits];
         let request = crate::fpu::effect::FpRequest {
             format,
             status,
@@ -2418,47 +2512,48 @@ impl Cpu {
             Opcode::Fint => crate::fpu::base_convert_compare::round_integral(
                 format,
                 status,
-                source,
+                source.bits,
                 IntegralRounding::Dynamic,
             ),
             Opcode::Fintrz => crate::fpu::base_convert_compare::round_integral(
                 format,
                 status,
-                source,
+                source.bits,
                 IntegralRounding::TowardZero,
             ),
             Opcode::Fround => crate::fpu::base_convert_compare::round_integral(
                 format,
                 status,
-                source,
+                source.bits,
                 IntegralRounding::NearestEven,
             ),
             Opcode::Ftrunc => crate::fpu::base_convert_compare::round_integral(
                 format,
                 status,
-                source,
+                source.bits,
                 IntegralRounding::TowardZero,
             ),
             Opcode::Fceil => crate::fpu::base_convert_compare::round_integral(
                 format,
                 status,
-                source,
+                source.bits,
                 IntegralRounding::TowardPositive,
             ),
             Opcode::Ffloor => crate::fpu::base_convert_compare::round_integral(
                 format,
                 status,
-                source,
+                source.bits,
                 IntegralRounding::TowardNegative,
             ),
             Opcode::Fgetexp => {
-                crate::fpu::base_convert_compare::get_exponent(format, status, source)
+                crate::fpu::base_convert_compare::get_exponent(format, status, source.bits)
             }
             Opcode::Fgetman => {
-                crate::fpu::base_convert_compare::get_mantissa(format, status, source)
+                crate::fpu::base_convert_compare::get_mantissa(format, status, source.bits)
             }
             _ => unreachable!(),
-        };
+        }
+        .with_causes(status, source.causes);
         self.apply_fpu_effect(
             bus,
             pc,
@@ -2483,17 +2578,22 @@ impl Cpu {
         let size = fpu_size(instruction);
         let format = fp_format(size);
         let flags_effect = if instruction.opcode == Opcode::Fcmp {
-            let source = self.read_fpu_operand(bus, pc, instruction, 's', size)?;
+            let source = self.read_fpu_input(bus, pc, instruction, 's', size, status)?;
             let destination = fpu_field(instruction, 'd').ok_or(illegal_instruction(pc))?;
-            crate::fpu::base_convert_compare::compare(
+            let mut flags_effect = crate::fpu::base_convert_compare::compare(
                 format,
                 status,
-                source,
+                source.bits,
                 self.state.f[destination],
-            )
+            );
+            flags_effect.effect = flags_effect.effect.with_causes(status, source.causes);
+            flags_effect
         } else {
-            let source = self.read_fpu_operand(bus, pc, instruction, 's', size)?;
-            crate::fpu::base_convert_compare::test(format, status, source)
+            let source = self.read_fpu_input(bus, pc, instruction, 's', size, status)?;
+            let mut flags_effect =
+                crate::fpu::base_convert_compare::test(format, status, source.bits);
+            flags_effect.effect = flags_effect.effect.with_causes(status, source.causes);
+            flags_effect
         };
         self.apply_fpu_effect(
             bus,
@@ -2517,9 +2617,9 @@ impl Cpu {
     ) -> Result<StepResult, Trap> {
         let (status, accrued) = self.fpu_environment(pc)?;
         let size = fpu_size(instruction);
-        let low = self.read_fpu_operand(bus, pc, instruction, 'l', size)?;
-        let value = self.read_fpu_operand(bus, pc, instruction, 'v', size)?;
-        let high = self.read_fpu_operand(bus, pc, instruction, 'h', size)?;
+        let low = self.read_fpu_input(bus, pc, instruction, 'l', size, status)?;
+        let value = self.read_fpu_input(bus, pc, instruction, 'v', size, status)?;
+        let high = self.read_fpu_input(bus, pc, instruction, 'h', size, status)?;
         use crate::fpu::base_convert_compare::BoundsMode;
         let mode = match instruction.opcode {
             Opcode::Fbndii => BoundsMode::InclusiveInclusive,
@@ -2531,11 +2631,15 @@ impl Cpu {
         let flags_effect = crate::fpu::base_convert_compare::bounds(
             fp_format(size),
             status,
-            low,
-            value,
-            high,
+            low.bits,
+            value.bits,
+            high.bits,
             mode,
         );
+        let mut flags_effect = flags_effect;
+        flags_effect.effect = flags_effect
+            .effect
+            .with_causes(status, low.causes.union(value.causes).union(high.causes));
         self.apply_fpu_effect(
             bus,
             pc,
@@ -2758,7 +2862,7 @@ impl Cpu {
         size: Size,
     ) -> Result<ResolvedMemoryDestination, Trap> {
         let ea = ea_field(instruction, symbol).ok_or(illegal_instruction(pc))?;
-        if matches!(ea, CompactEa::Immediate(_)) {
+        if matches!(ea, CompactEa::Immediate(_) | CompactEa::FloatImmediate(_)) {
             return Err(illegal_instruction(pc));
         }
         let (segment, offset) = self.effective_location_with_payload(
@@ -2818,6 +2922,58 @@ impl Cpu {
             'e'
         };
         self.read_ea_field(bus, pc, instruction, memory_symbol, size)
+    }
+
+    fn read_fpu_input<B: Bus>(
+        &mut self,
+        bus: &mut B,
+        pc: u64,
+        instruction: &DecodedInstruction,
+        symbol: char,
+        size: Size,
+        status: crate::fpu::env::FpStatus,
+    ) -> Result<FpuInput, Trap> {
+        if let Some(register) = fpu_field(instruction, symbol) {
+            return Ok(FpuInput {
+                bits: self.state.f[register] & size_mask(size),
+                causes: crate::fpu::env::FpCauses::default(),
+            });
+        }
+        let memory_symbol = if ea_field(instruction, symbol).is_some() {
+            symbol
+        } else {
+            'e'
+        };
+        let ea = ea_field(instruction, memory_symbol).ok_or(illegal_instruction(pc))?;
+        let CompactEa::FloatImmediate(width) = ea else {
+            return Ok(FpuInput {
+                bits: self.read_ea_field(bus, pc, instruction, memory_symbol, size)?,
+                causes: crate::fpu::env::FpCauses::default(),
+            });
+        };
+        let bits = read_unsigned(
+            ea_payload_for_symbol(instruction, memory_symbol),
+            width.bytes(),
+        );
+        if width.bytes() == size.bytes() {
+            return Ok(FpuInput {
+                bits,
+                causes: crate::fpu::env::FpCauses::default(),
+            });
+        }
+        let effect = crate::fpu::base_convert_compare::convert_format(
+            fp_format(size),
+            status.without_exception_traps(),
+            bits,
+        );
+        let crate::fpu::effect::FpEffect::Commit {
+            result: crate::fpu::effect::FpResult::Float(bits),
+            causes,
+        } = effect
+        else {
+            unreachable!("conversion with exception traps disabled must produce a float")
+        };
+        Ok(FpuInput { bits, causes })
     }
 
     fn deliver_required_event<B: Bus>(&mut self, bus: &mut B, request: EventRequest) -> StepResult {
@@ -4743,6 +4899,9 @@ impl Cpu {
             CompactEa::Immediate(width) => {
                 ResolvedEaTarget::Immediate((read_signed(payload, width) as u64) & size_mask(size))
             }
+            CompactEa::FloatImmediate(width) => {
+                ResolvedEaTarget::Immediate(read_unsigned(payload, width.bytes()) & size_mask(size))
+            }
             _ => {
                 let (segment, offset) = self
                     .effective_location_with_payload(pc, ea, payload, size)
@@ -4922,6 +5081,9 @@ impl Cpu {
             CompactEa::Immediate(width) => {
                 Ok((read_signed(payload, width) as u64) & size_mask(size))
             }
+            CompactEa::FloatImmediate(width) => {
+                Ok(read_unsigned(payload, width.bytes()) & size_mask(size))
+            }
             _ => {
                 let (segment, offset) =
                     self.effective_location_with_payload(pc, ea, payload, size)?;
@@ -4967,7 +5129,7 @@ impl Cpu {
         domain: AccessDomain,
     ) -> Result<(), Trap> {
         match ea {
-            CompactEa::Immediate(_) => Err(illegal_instruction(pc)),
+            CompactEa::Immediate(_) | CompactEa::FloatImmediate(_) => Err(illegal_instruction(pc)),
             _ => {
                 let (segment, offset) =
                     self.effective_location_with_payload(pc, ea, payload, size)?;
@@ -5952,6 +6114,12 @@ struct ResolvedMemoryDestination {
 }
 
 #[derive(Debug, Clone, Copy)]
+struct FpuInput {
+    bits: u64,
+    causes: crate::fpu::env::FpCauses,
+}
+
+#[derive(Debug, Clone, Copy)]
 enum FpuDestination {
     None,
     General(usize),
@@ -6281,7 +6449,10 @@ fn ea_operand_ordinal(instruction: &DecodedInstruction, ea: CompactEa) -> u8 {
     instruction
         .fields
         .iter()
-        .find(|field| field.kind == FieldKind::Ea7 && CompactEa::decode(field.value as u8) == ea)
+        .find(|field| {
+            field.kind == FieldKind::Ea7
+                && decode_compact_ea(instruction, field.symbol, field.value) == ea
+        })
         .map(|field| ea_field_ordinal(instruction, field.symbol))
         .unwrap_or(0)
 }
@@ -6338,7 +6509,7 @@ fn ea_field(instruction: &DecodedInstruction, symbol: char) -> Option<CompactEa>
         .fields
         .iter()
         .find(|field| field.symbol == symbol && field.kind == FieldKind::Ea7)
-        .map(|field| CompactEa::decode(field.value as u8))
+        .map(|field| decode_compact_ea(instruction, field.symbol, field.value))
 }
 fn general_field(instruction: &DecodedInstruction, symbol: char) -> Option<usize> {
     instruction
@@ -6354,12 +6525,40 @@ fn fpu_field(instruction: &DecodedInstruction, symbol: char) -> Option<usize> {
         .find(|field| field.symbol == symbol && field.kind == FieldKind::Freg)
         .map(|field| field.value as usize)
 }
+
+fn fpu_operand_requires_conversion(
+    instruction: &DecodedInstruction,
+    symbol: char,
+    size: Size,
+) -> bool {
+    let memory_symbol = if ea_field(instruction, symbol).is_some() {
+        symbol
+    } else {
+        'e'
+    };
+    matches!(
+        ea_field(instruction, memory_symbol),
+        Some(CompactEa::FloatImmediate(width)) if width.bytes() != size.bytes()
+    )
+}
+
 fn first_ea(instruction: &DecodedInstruction) -> Option<CompactEa> {
     instruction
         .fields
         .iter()
         .find(|field| field.kind == FieldKind::Ea7)
-        .map(|field| CompactEa::decode(field.value as u8))
+        .map(|field| decode_compact_ea(instruction, field.symbol, field.value))
+}
+
+fn decode_compact_ea(instruction: &DecodedInstruction, symbol: char, value: u64) -> CompactEa {
+    let profile = instruction
+        .generated_form
+        .ea_fields
+        .iter()
+        .find(|field| field.symbol == symbol)
+        .expect("generated EA profile")
+        .profile;
+    CompactEa::decode_for(profile, value as u8)
 }
 
 fn instruction_size(instruction: &DecodedInstruction) -> Size {
@@ -6619,7 +6818,7 @@ fn ea_payload(instruction: &DecodedInstruction, target: CompactEa) -> &[u8] {
         .iter()
         .filter(|field| field.kind == FieldKind::Ea7)
     {
-        let ea = CompactEa::decode(field.value as u8);
+        let ea = decode_compact_ea(instruction, field.symbol, field.value);
         if ea == target {
             return payload.get(cursor..).unwrap_or_default();
         }
@@ -6638,7 +6837,7 @@ fn ea_payload_for_symbol(instruction: &DecodedInstruction, target: char) -> &[u8
         if field.symbol == target {
             return payload.get(cursor..).unwrap_or_default();
         }
-        let ea = CompactEa::decode(field.value as u8);
+        let ea = decode_compact_ea(instruction, field.symbol, field.value);
         cursor += ea_payload_len(ea);
     }
     payload
@@ -6654,7 +6853,7 @@ fn payload_after_eas(instruction: &DecodedInstruction) -> &[u8] {
         .iter()
         .filter(|field| field.kind == FieldKind::Ea7)
     {
-        let ea = CompactEa::decode(field.value as u8);
+        let ea = decode_compact_ea(instruction, field.symbol, field.value);
         cursor += ea_payload_len(ea);
     }
     payload.get(cursor..).unwrap_or_default()
@@ -9513,6 +9712,57 @@ mod tests {
                 .union(crate::fpu::env::FpCauses::DZ)
                 .bits()
         );
+    }
+
+    #[test]
+    fn fea_immediates_convert_between_payload_and_operation_formats() {
+        let sf_to_d = encoded_form(
+            "long.fmov_x_ea_s_fn_d",
+            &[('z', 1), ('e', 0x5d), ('d', 0)],
+            &1.5_f32.to_bits().to_le_bytes(),
+        );
+        let d_to_sf = encoded_form(
+            "long.fmov_x_ea_s_fn_d",
+            &[('z', 0), ('e', 0x5e), ('d', 1)],
+            &2.25_f64.to_bits().to_le_bytes(),
+        );
+        let mut ram = Ram::new(sf_to_d.len() + d_to_sf.len());
+        ram.load(0, &sf_to_d).unwrap();
+        ram.load(sf_to_d.len() as u64, &d_to_sf).unwrap();
+        let mut cpu = Cpu::new();
+        cpu.reset(0);
+
+        assert_eq!(cpu.step(&mut ram), StepResult::Running);
+        assert_eq!(cpu.state().f[0], 1.5_f64.to_bits());
+        assert_eq!(cpu.step(&mut ram), StepResult::Running);
+        assert_eq!(cpu.state().f[1], u64::from(2.25_f32.to_bits()));
+        assert_eq!(cpu.state().fflags, 0);
+    }
+
+    #[test]
+    fn fea_conversion_and_operation_causes_fault_together_before_commit() {
+        let bytes = encoded_form(
+            "long.fadd_x_ea_s_fn_d",
+            &[('z', 0), ('e', 0x5e), ('d', 0)],
+            &f64::MAX.to_bits().to_le_bytes(),
+        );
+        let instruction = bedrock_isa::decode(&bytes).unwrap();
+        let mut ram = Ram::new(bytes.len());
+        let mut cpu = Cpu::new();
+        cpu.reset(0);
+        cpu.state_mut().f[0] = 0x7f80_0001;
+        cpu.state_mut().fstatus = crate::fpu::env::FpCauses::NV.bits();
+        cpu.state_mut().fflags = crate::fpu::env::FpCauses::DZ.bits();
+        let before = cpu.state().clone();
+        let expected = crate::fpu::env::FpCauses::NV
+            .union(crate::fpu::env::FpCauses::OF)
+            .union(crate::fpu::env::FpCauses::NX);
+
+        assert!(matches!(
+            cpu.execute(&mut ram, 0, &instruction),
+            Err(Trap::FloatingPointFault { causes, .. }) if causes == expected
+        ));
+        assert_eq!(cpu.state(), &before);
     }
 
     #[test]

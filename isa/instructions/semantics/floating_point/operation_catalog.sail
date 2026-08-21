@@ -194,14 +194,14 @@ function fp_traps(fstatus : bits(64), generated : bits(5)) -> bool =
 function fp_ea_read_count(operands : list(Catalog_operand)) -> int = match operands {
   [||] => 0,
   operand :: tail =>
-    (if operand.type_name == "EA" & operand.access == AccessRead then 1 else 0)
+    (if operand.type_name == "FEA" & operand.access == AccessRead then 1 else 0)
     + fp_ea_read_count(tail),
 }
 
 function fp_has_ea_write(operands : list(Catalog_operand)) -> bool = match operands {
   [||] => false,
   operand :: tail =>
-    (operand.type_name == "EA"
+    (operand.type_name == "FEA"
      & (operand.access == AccessWrite | operand.access == AccessReadWrite))
     | fp_has_ea_write(tail),
 }

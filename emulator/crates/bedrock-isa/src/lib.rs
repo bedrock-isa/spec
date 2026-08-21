@@ -9,7 +9,9 @@ pub mod operand;
 pub mod table;
 
 pub use decode::{DecodeError, DecodedField, DecodedInstruction, decode};
-pub use ea::{AutoUpdate, CompactEa, DisplacementWidth, ExtendedDescriptor};
+pub use ea::{
+    AutoUpdate, CompactEa, DisplacementWidth, EffectiveAddressProfile, ExtendedDescriptor,
+};
 pub use generated::{FormId, ISA_INPUT_SHA256, Opcode};
 pub use header::{HeaderError, InstructionHeader, MAX_INSTRUCTION_BYTES, decode_header};
 pub use instruction::InstructionAttributes;

@@ -33,6 +33,7 @@ struct Catalog_operand = {
   domain : string,
   ea_role : string,
   ea_width : string,
+  ea_profile : string,
   has_fixed_value : bool,
   fixed_value : int,
   fixed_identity : string,
@@ -73,6 +74,7 @@ struct Ea_field = {
 
 struct Ea_form = {
   name : string,
+  profile : string,
   descriptor_family : string,
   descriptor_bytes : int,
   patterns : list(Ea_pattern),

@@ -13,5 +13,7 @@ repeat:
 flag_effects:
   FFLAGS:
     NV: "may accrue"
+    OF: "may accrue from FEA source conversion"
+    UF: "may accrue from FEA source conversion"
     NX: "may accrue"
 additional_description: details.tex

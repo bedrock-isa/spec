@@ -529,9 +529,12 @@ def encoding_architecture_template_values() -> dict[str, str]:
     }
 
 
+EA_OPERAND_TYPES = frozenset({"EA", "FEA", "VEA"})
+
+
 def form_allows_memory_memory(operands: Any) -> bool:
     return sum(
-        isinstance(operand, dict) and operand.get("type") == "EA"
+        isinstance(operand, dict) and operand.get("type") in EA_OPERAND_TYPES
         for operand in operands
     ) >= 2
 
@@ -732,7 +735,10 @@ def operand_role(index: int, operand_count: int) -> str:
 
 def ea_operand_role(entry: AllocationEntry, symbol: str, fallback: str) -> str:
     for operand in entry.operands:
-        if operand.get("field") != symbol or operand.get("type") != "EA":
+        if (
+            operand.get("field") != symbol
+            or operand.get("type") not in EA_OPERAND_TYPES
+        ):
             continue
         role = operand.get("ea_role")
         if role == "address":
@@ -1136,12 +1142,40 @@ class EAAvailabilitySummary:
         return frozenset(reconstructed)
 
 
-def compact_ea_display_rows(ea_data: Any) -> list[CompactEaDisplayRow]:
+def resolved_compact_ea_forms(ea_data: Any, profile_name: str) -> list[dict[str, Any]]:
     if not isinstance(ea_data, dict):
         raise ValueError("missing EA metadata for addressing-mode table")
-    rows: list[CompactEaDisplayRow] = []
     compact = ea_data.get("compact") or {}
-    for item in compact.get("forms", []) or []:
+    base_forms = [item for item in compact.get("forms", []) or [] if isinstance(item, dict)]
+    profiles = compact.get("profiles") or {}
+    profile = profiles.get(profile_name) or {}
+    overrides = [
+        item for item in profile.get("overrides", []) or [] if isinstance(item, dict)
+    ]
+    override_values = {int(str(item["pattern"]), 2): item for item in overrides}
+    resolved: list[dict[str, Any]] = []
+    for item in base_forms:
+        values = set(expand_pattern(compact_bits(str(item.get("pattern", "")))))
+        replaced = values & override_values.keys()
+        if replaced and replaced != values:
+            raise ValueError(
+                f"compact {profile_name.upper()} override partially replaces "
+                f"{item.get('name', item.get('pattern'))}"
+            )
+        if not replaced:
+            resolved.append(item)
+    resolved.extend(item for item in overrides if not item.get("reserved", False))
+    return sorted(
+        resolved,
+        key=lambda item: min(expand_pattern(compact_bits(str(item.get("pattern", ""))))),
+    )
+
+
+def compact_ea_display_rows(
+    ea_data: Any, profile_name: str = "ea"
+) -> list[CompactEaDisplayRow]:
+    rows: list[CompactEaDisplayRow] = []
+    for item in resolved_compact_ea_forms(ea_data, profile_name):
         if not isinstance(item, dict):
             continue
         bits = compact_bits(str(item.get("pattern", "")))
@@ -1167,6 +1201,7 @@ def compact_ea_category(kind: str) -> str:
     categories = {
         "memory": "Memory",
         "immediate": "Immediate",
+        "float_immediate": "Immediate",
         "escape": "Extended Descriptor",
     }
     try:
@@ -1177,7 +1212,16 @@ def compact_ea_category(kind: str) -> str:
 
 def ea_availability_summary(model: IsaModel, entry: AllocationEntry, symbol: str) -> EAAvailabilitySummary:
     constraints = ea_constraints_for_field(entry, symbol)
-    rows = compact_ea_display_rows(model.metadata.get("ea"))
+    operand_type = next(
+        (
+            str(operand.get("type"))
+            for operand in entry.operands
+            if operand.get("field") == symbol
+            and operand.get("type") in EA_OPERAND_TYPES
+        ),
+        "EA",
+    )
+    rows = compact_ea_display_rows(model.metadata.get("ea"), operand_type.lower())
     allowed: set[str] = set()
     for row in rows:
         allowed_values = {value for value in row.values if ea_value_allowed(value, constraints)}
@@ -2078,11 +2122,15 @@ def latex_ea_payload_rows(data: dict[str, Any]) -> str:
             use = "absolute address payload"
         elif kind == "immediate":
             use = "immediate operand payload"
+        elif kind == "float_immediate":
+            payload_format = compact_text(spec.get("format"))
+            use = f"exact IEEE 754 {payload_format} floating-point payload"
         else:
             raise ValueError(f"unknown EA payload kind: {kind!r}")
         rows.append(f"{name} & {byte_width} & {value} & {use}\\\\")
     rows.extend(
         [
+            "VSTRIDE descriptor & 1 & encoded & one-byte vector base/stride descriptor; present only for VSTRIDE escapes\\\\",
             "EXT1 descriptor & 1 & encoded & one-byte extended EA descriptor; present only for EXT1 escapes\\\\",
             "EXT2 descriptor & 2 & encoded & two-byte extended EA descriptor; present only for EXT2 escapes\\\\",
         ]
@@ -2305,13 +2353,53 @@ def render_ea_reference_fragments(data: dict[str, Any]) -> dict[Path, str]:
 def latex_ea_section(model: IsaModel) -> str:
     data = model.metadata.get("ea") or {}
     compact = data.get("compact") or {}
-    compact_rows = []
-    for form in compact.get("forms", []) or []:
-        kind = compact_text(form.get("kind"))
-        table_class = "extended_escape" if kind == "escape" else kind
-        memory = kind == "memory" if kind in {"register", "memory", "immediate"} else ""
+    profile_forms = {
+        name: resolved_compact_ea_forms(data, name) for name in ("ea", "fea", "vea")
+    }
+
+    def form_for_raw(profile_name: str, raw: int) -> dict[str, Any] | None:
+        matches = [
+            form
+            for form in profile_forms[profile_name]
+            if raw in expand_pattern(compact_bits(str(form.get("pattern", ""))))
+        ]
+        if len(matches) > 1:
+            raise ValueError(
+                f"compact {profile_name.upper()} 0x{raw:02x} has overlapping display forms"
+            )
+        return matches[0] if matches else None
+
+    compact_rows: list[list[Any]] = []
+    covered: set[int] = set()
+    for scalar_form in compact.get("forms", []) or []:
+        if not isinstance(scalar_form, dict):
+            continue
+        pattern = compact_bits(str(scalar_form.get("pattern", "")))
+        values = sorted(expand_pattern(pattern))
+        covered.update(values)
+        rendered = []
+        for profile_name in ("ea", "fea", "vea"):
+            forms = {id(form): form for raw in values if (form := form_for_raw(profile_name, raw))}
+            if len(forms) > 1:
+                raise ValueError(
+                    f"compact {profile_name.upper()} display row {pattern} is not uniform"
+                )
+            form = next(iter(forms.values()), None)
+            if form is not None and len(forms) == 1 and all(
+                form_for_raw(profile_name, raw) is form for raw in values
+            ):
+                rendered.append(form.get("syntax", "reserved"))
+            else:
+                rendered.append("reserved")
+        value_range = (
+            f"0x{values[0]:02X}" if len(values) == 1
+            else f"0x{values[0]:02X}--0x{values[-1]:02X}"
+        )
+        compact_rows.append([f"{pattern} ({value_range})", *rendered])
+    unallocated = sorted(set(range(1 << int(compact.get("field_width", 0)))) - covered)
+    if unallocated:
         compact_rows.append(
-            [form.get("pattern", ""), form.get("syntax", table_class), table_class, display_text(memory)]
+            [f"0x{unallocated[0]:02X}--0x{unallocated[-1]:02X}", "reserved", "reserved", "reserved"]
         )
     extended_descriptor_section = render_latex_template(
         "addressing/effective_address/manual/extended_descriptor_addressing_modes.tex", {}
@@ -2323,11 +2411,11 @@ def latex_ea_section(model: IsaModel) -> str:
         "addressing/effective_address/manual/effective_address_modes.tex",
         {
             "COMPACT_EA_TABLE": latex_code_table(
-                ["Bits", "Syntax", "Class", "Memory"],
+                ["Encoding", "EA form", "FEA form", "VEA form"],
                 compact_rows,
-                ["1.10in", "2.30in", "1.0in", "0.6in"],
-                "Compact EA Encoding",
-                {0, 1},
+                ["1.35in", "1.18in", "1.18in", "1.55in"],
+                "Compact Effective-Address Profile Encoding",
+                {0, 1, 2, 3},
             ),
             "EA_PAYLOAD_ROWS": latex_ea_payload_rows(data),
             "EXTENDED_DESCRIPTOR_SECTION": extended_descriptor_section,

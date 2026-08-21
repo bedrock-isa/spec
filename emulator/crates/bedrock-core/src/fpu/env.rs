@@ -112,6 +112,13 @@ impl FpStatus {
     pub const fn traps(self, causes: FpCauses) -> bool {
         !self.enabled(causes).is_empty()
     }
+    pub const fn without_exception_traps(self) -> Self {
+        Self {
+            raw: self.raw & !31,
+            enables: FpCauses(0),
+            ..self
+        }
+    }
     pub const fn preprocess(self, format: FpFormat, bits: u64) -> u64 {
         if self.daz {
             format.daz(bits)

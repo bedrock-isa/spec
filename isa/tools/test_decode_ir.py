@@ -86,6 +86,70 @@ class DecodeIrTests(unittest.TestCase):
             if entry.valid
         ))
 
+    def test_all_compact_profiles_are_complete_and_preserve_shared_contracts(self) -> None:
+        profiles = {
+            profile.name: profile
+            for profile in self.ir.effective_addresses.profiles
+        }
+        self.assertEqual(set(profiles), {"ea", "fea", "vea"})
+        for name, profile in profiles.items():
+            with self.subTest(profile=name):
+                self.assertEqual(
+                    tuple(entry.raw for entry in profile.compact_entries),
+                    tuple(range(128)),
+                )
+
+        ea = profiles["ea"].compact_entries
+        fea = profiles["fea"].compact_entries
+        vea = profiles["vea"].compact_entries
+        for raw in range(128):
+            if raw not in {0x58, 0x5B, 0x5C, 0x5D, 0x5E}:
+                shared = (
+                    "valid", "reserved", "form_name", "kind", "payload_width",
+                    "payload_signed", "descriptor_family", "descriptor_bytes",
+                    "consumed_bytes",
+                )
+                self.assertEqual(
+                    tuple(getattr(fea[raw], field) for field in shared),
+                    tuple(getattr(ea[raw], field) for field in shared),
+                    raw,
+                )
+                self.assertEqual(
+                    tuple(getattr(vea[raw], field) for field in shared),
+                    tuple(getattr(ea[raw], field) for field in shared),
+                    raw,
+                )
+        self.assertTrue(all(not fea[raw].valid for raw in (0x58, 0x5B, 0x5C)))
+        self.assertEqual(
+            [
+                (
+                    next(
+                        form.payload_name
+                        for form in profiles["fea"].compact_forms
+                        if form.name == fea[raw].form_name
+                    ),
+                    fea[raw].payload_width,
+                )
+                for raw in (0x5D, 0x5E)
+            ],
+            [("immsf", 32), ("immdf", 64)],
+        )
+        self.assertEqual(
+            [vea[raw].form_name for raw in (0x58, 0x5B, 0x5C, 0x5D, 0x5E)],
+            [
+                "vector_stride",
+                "vector_stride_disp8s",
+                "vector_stride_disp16s",
+                "vector_stride_disp32s",
+                "vector_stride_disp64",
+            ],
+        )
+        for profile in profiles.values():
+            self.assertEqual(
+                [profile.compact_entries[raw].descriptor_family for raw in range(0x5F, 0x69)],
+                [entry.descriptor_family for entry in ea[0x5F:0x69]],
+            )
+
     def test_descriptor_families_keep_exact_lengths_and_mask_value_forms(self) -> None:
         families = {
             family.name: family
@@ -120,7 +184,10 @@ class DecodeIrTests(unittest.TestCase):
             for form in serialized_ea["compact_forms"]
             if form["name"] == compact_escape.name
         )
-        serialized_ext1 = serialized_ea["descriptor_families"][0]["forms"][0]
+        serialized_ext1 = next(
+            family for family in serialized_ea["descriptor_families"]
+            if family["name"] == "ext1"
+        )["forms"][0]
         self.assertEqual(serialized_compact["referenced_descriptor_family"], "ext1")
         self.assertEqual(serialized_compact["member_of_descriptor_family"], "")
         self.assertEqual(serialized_ext1["member_of_descriptor_family"], "ext1")
@@ -166,6 +233,20 @@ class DecodeIrTests(unittest.TestCase):
             self.forms["medium.adc_x_rn_s_rn_d"].control.repeat.observed_kind,
             "result",
         )
+
+    def test_fea_forms_expose_every_possible_conversion_cause(self) -> None:
+        conversion_causes = {"FFLAGS.NV", "FFLAGS.OF", "FFLAGS.UF", "FFLAGS.NX"}
+        fea_forms = [
+            form
+            for form in self.ir.forms
+            if any(operand.type_name == "FEA" for operand in form.operands)
+        ]
+        self.assertTrue(fea_forms)
+        for form in fea_forms:
+            self.assertTrue(
+                conversion_causes <= set(form.annotations.touched_flags),
+                form.key,
+            )
 
     def test_schema_rejects_partial_flags_and_architectural_repeat_flags(self) -> None:
         base = {
@@ -254,10 +335,18 @@ class DecodeIrTests(unittest.TestCase):
             ),
         )
 
-        ext1, ext2 = self.ir.effective_addresses.descriptor_families
+        families = {
+            family.name: family
+            for family in self.ir.effective_addresses.descriptor_families
+        }
+        ext1, ext2 = families["ext1"], families["ext2"]
         bad_length_ea = replace(
             self.ir.effective_addresses,
-            descriptor_families=(replace(ext1, descriptor_bytes=2), ext2),
+            descriptor_families=tuple(
+                replace(family, descriptor_bytes=2)
+                if family.name == "ext1" else family
+                for family in self.ir.effective_addresses.descriptor_families
+            ),
         )
         bad_descriptor_length = replace(self.ir, effective_addresses=bad_length_ea)
 
@@ -273,9 +362,10 @@ class DecodeIrTests(unittest.TestCase):
         )
         bad_field_ea = replace(
             self.ir.effective_addresses,
-            descriptor_families=(
-                ext1,
-                replace(ext2, forms=(bad_ext2_form,) + ext2.forms[1:]),
+            descriptor_families=tuple(
+                replace(family, forms=(bad_ext2_form,) + ext2.forms[1:])
+                if family.name == "ext2" else family
+                for family in self.ir.effective_addresses.descriptor_families
             ),
         )
         bad_descriptor_field = replace(self.ir, effective_addresses=bad_field_ea)

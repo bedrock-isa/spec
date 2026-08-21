@@ -139,6 +139,50 @@ function test_fp_local_response() -> unit = {
   }
 }
 
+function test_fp_immediate_format_conversion_request() -> unit = {
+  let trap_status = fp_make_fstatus(0b00, false, false, false,
+                                    fflags_of | fflags_nx);
+  match fp_test_build_request(
+    "long.fmov_x_ea_s_fn_d", 4,
+    fp_test_slots1(fp_test_operand64(0x7FEFFFFFFFFFFFFF)),
+    trap_status, 0x0000000000000000
+  ) {
+    None() => assert(false),
+    Some(request) => {
+      assert(request.operation_width == 4);
+      assert(fp_request_needs_format_conversion(request));
+      assert(request.allowed_causes == (fflags_nv | fflags_of | fflags_uf | fflags_nx));
+      assert(fp_local_response(request, 0x0000000000000000) == None());
+      let response = fp_test_response(
+        request, 0x000000007F800000, 0x0000000000000000,
+        FpNotNan, FpNotNan, fflags_of | fflags_nx,
+        0b00, 0x0000, 0x0000
+      );
+      assert(fp_response_valid(request, response));
+      let candidate = fp_finalize_response(request, response, trap_status);
+      assert(candidate.shape_valid);
+      assert(candidate.generated_causes == (fflags_of | fflags_nx));
+      assert(candidate.trap);
+      assert(candidate.trap_errors == (fflags_of | fflags_nx))
+    },
+  };
+
+  let ordinary = fp_make_fstatus(0b00, false, false, false, fflags_none);
+  match fp_test_build_request(
+    "long.ftest_x_ea_s", 8,
+    fp_test_slots1(fp_test_operand32(0x000000003F800000)),
+    ordinary, 0x0000000000000000
+  ) {
+    None() => assert(false),
+    Some(request) => {
+      assert(request.operation_width == 8);
+      assert(request.result_kind == FpResultValueFlags);
+      assert(fp_request_needs_format_conversion(request));
+      assert(request.allowed_causes == (fflags_nv | fflags_of | fflags_uf | fflags_nx))
+    },
+  }
+}
+
 function test_fp_response_validation() -> unit = {
   let fstatus = fp_make_fstatus(0b10, false, false, false, fflags_none);
   let slots = fp_test_slots2(fp_test_operand32(0x000000003F800000),
@@ -225,4 +269,3 @@ function test_fp_finalize_trap_and_dn() -> unit = {
     },
   }
 }
-

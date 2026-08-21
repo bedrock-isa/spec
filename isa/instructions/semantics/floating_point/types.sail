@@ -57,6 +57,7 @@ struct Fp_request_image = {
   operation : Semantic_operation,
   form_id : string,
   path : Fp_path,
+  operation_width : int,
   result_kind : Fp_result_kind,
   operand_count : int,
   operand0 : Fp_operand_image,
@@ -131,6 +132,7 @@ function empty_fp_request() -> Fp_request_image = struct {
   operation = Op_ILLEGAL,
   form_id = "",
   path = FpPathR,
+  operation_width = 0,
   result_kind = FpResultValueNone,
   operand_count = 0,
   operand0 = empty_fp_operand(),
@@ -187,4 +189,3 @@ function empty_fp_pending() -> Fp_pending_image = struct {
   candidate_flags = fp_flags_none,
   candidate_causes = fflags_none
 }
-

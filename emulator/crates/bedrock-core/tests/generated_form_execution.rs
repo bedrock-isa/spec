@@ -128,14 +128,10 @@ fn append_width(bytes: &mut Vec<u8>, width: DisplacementWidth, value: u64) {
 
 fn appended_operand_bytes(form: &GeneratedForm, payload: u64) -> Vec<u8> {
     let mut appended = Vec::new();
-    for field in form
-        .fields
-        .iter()
-        .filter(|field| field.kind == FieldKind::Ea7)
-    {
+    for field in form.ea_fields {
         let value = extract_pattern_field(form.pattern, field.symbol, payload)
             .expect("generated EA field") as u8;
-        match CompactEa::decode(value) {
+        match CompactEa::decode_for(field.profile, value) {
             CompactEa::RegisterIndirect(_) | CompactEa::StackIndirect => {}
             CompactEa::RegisterDisplacement { width, .. }
             | CompactEa::StackDisplacement(width)
@@ -147,6 +143,13 @@ fn appended_operand_bytes(form: &GeneratedForm, payload: u64) -> Vec<u8> {
             }
             CompactEa::Absolute64 => appended.extend_from_slice(&DATA_ADDRESS.to_le_bytes()),
             CompactEa::Immediate(width) => append_width(&mut appended, width, 1),
+            CompactEa::FloatImmediate(width) => append_width(&mut appended, width, 0),
+            CompactEa::VectorStride { displacement } => {
+                appended.push(0x00);
+                if let Some(width) = displacement {
+                    append_width(&mut appended, width, 0);
+                }
+            }
             CompactEa::Ext1 { displacement } => {
                 appended.push(0x00);
                 if let Some(width) = displacement {
