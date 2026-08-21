@@ -692,7 +692,7 @@
   <span class="md-ellipsis">
     
   
-    Effective Addressing Modes
+    Effective-Address Profiles
   
 
     
@@ -8859,6 +8859,7 @@
 <h2 id="common-floating-point-semantics">Common Floating-Point Semantics</h2>
 <p>The S and D formats are IEEE-754 binary32 and binary64. S uses sign bit 31, exponent bits 30..23, and fraction bits 22..0. D uses sign bit 63, exponent bits 62..52, and fraction bits 51..0. An all-ones exponent and nonzero fraction is a NaN. The most significant fraction bit distinguishes a quiet NaN from a signaling NaN: zero is signaling and one is quiet. The architectural default quiet NaNs are <code>0x7fc00000</code> for S and <code>0x7ff8000000000000</code> for D. Figure <a href="#fig:floating-point-register-encodings">[fig:floating-point-register-encodings]</a> shows both encodings in their 64-bit Fn register view.</p>
 <p>An S operation reads bits 31..0 of each Fn operand. Writing an S result to Fn writes the result to bits 31..0 and writes zero to bits 63..32. A D operation reads and writes all 64 bits. Operations use the selected format for their intermediate and final values. FMADD, FMSUB, FNMADD, and FNMSUB form the complete multiply-add expression with unbounded intermediate range and precision and round only the final result. Other arithmetic operations round once after computing their exact mathematical result.</p>
+<p>An encoded FEA source <code>immsf</code> is an exact IEEE 754 binary32 payload, and <code>immdf</code> is an exact binary64 payload. Either immediate may be used by either an S or D instruction. If the payload format differs from the operation format selected by the suffix, the source is converted to the operation format using the current <code>FSTATUS.RM</code> before the operation. All conversion causes, including causes from NaN handling and narrowing, are combined with the operation’s causes. The combined cause set follows the same enabled-cause fault test, FFLAGS accrual, and all-or-nothing destination commit rules below. Floating-point immediate forms are source-only.</p>
 <h3 id="input-nan-rounding-and-result-order">Input, NaN, Rounding, and Result Order</h3>
 <p>Each ordinary floating-point operation applies the following order.</p>
 <ol>

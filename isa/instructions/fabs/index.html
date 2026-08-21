@@ -692,7 +692,7 @@
   <span class="md-ellipsis">
     
   
-    Effective Addressing Modes
+    Effective-Address Profiles
   
 
     
@@ -5746,6 +5746,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#detailed-semantics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Detailed Semantics
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -8891,6 +8902,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#detailed-semantics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Detailed Semantics
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -8932,6 +8954,38 @@
 <p>Length = 3-14 bytes</p>
 <p>Feature = <code>FP</code></p>
 <p>Repeat = <code>REP</code>, <code>REPG</code></p>
+<h2 id="detailed-semantics">Detailed Semantics</h2>
+<p><strong>FFLAGS Effects</strong></p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Flag</strong></th>
+<th style="text-align: left;"><strong>Effect</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>NV</code></td>
+<td style="text-align: left;">may accrue from FEA source conversion</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>DZ</code></td>
+<td style="text-align: left;">preserved</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>OF</code></td>
+<td style="text-align: left;">may accrue from FEA source conversion</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>UF</code></td>
+<td style="text-align: left;">may accrue from FEA source conversion</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NX</code></td>
+<td style="text-align: left;">may accrue from FEA source conversion</td>
+</tr>
+</tbody>
+</table>
 <h2 id="encodings">Encodings</h2>
 <p><strong><code>FABS.SD(z) Fn(s), Fn(d)</code></strong></p>
 <p><em>Encoding class: medium; required bytes: 3 bytes; privilege: unprivileged</em></p>
