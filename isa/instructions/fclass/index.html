@@ -1511,8 +1511,6 @@
       
         
       
-        
-      
     
     
     
@@ -2195,34 +2193,6 @@
     
   
     CLR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../clrf/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CLRF
   
 
     
@@ -5983,10 +5953,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#instruction-forms" class="md-nav__link">
+  <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Instruction Forms
+        Encodings
       
     </span>
   </a>
@@ -8943,10 +8913,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#instruction-forms" class="md-nav__link">
+  <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Instruction Forms
+        Encodings
       
     </span>
   </a>
@@ -8972,7 +8942,7 @@
 
 <h1 id="fclass">FCLASS</h1>
 <h2 id="operation">Operation</h2>
-<p>Examines the selected floating-point encoding without raising a floating-point exception and writes a one-hot class bitmap to the integer destination.</p>
+<p>Examines the selected floating-point encoding without generating a floating-point exception condition and writes a one-hot class bitmap to the destination Rn register.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
 <p><code>FCLASS.SD(z) Fn(s), Rn(d)</code></p>
 <h2 id="attributes">Attributes</h2>
@@ -9036,15 +9006,15 @@
 </tr>
 </tbody>
 </table>
-<p>Bits 63..10 of the integer destination are zero. No floating-point exception flag is changed.</p>
-<h2 id="instruction-forms">Instruction Forms</h2>
+<p>Bits 63..10 of the destination Rn register are zero. No floating-point exception flag is changed.</p>
+<h2 id="encodings">Encodings</h2>
 <p><strong><code>FCLASS.SD(z) Fn(s), Rn(d)</code></strong></p>
 <p><em>Encoding class: long; required bytes: 4 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
 <p><img alt="Format — Instruction format for FCLASS.SD(z) Fn(s), Rn(d)" src="../../../assets/visuals/isa/fclass-02.svg" /></p>
 <p><strong>Format Instruction format for FCLASS.SD(z) Fn(s), Rn(d)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects S/D.</p>
 <p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
 <p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>

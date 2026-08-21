@@ -1600,8 +1600,6 @@
       
         
       
-        
-      
     
     
     
@@ -2284,34 +2282,6 @@
     
   
     CLR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/clrf/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CLRF
   
 
     
@@ -8947,22 +8917,22 @@
 <h1 id="instruction-encoding">Instruction Encoding</h1>
 <p><a href="#section-instruction-header-formats" id="section-instruction-header-formats"></a></p>
 <h2 id="instruction-stream-and-record-boundary">Instruction Stream and Record Boundary</h2>
-<p>The byte addressed by PC is byte 0 of the current instruction. Instruction decoding determines the complete instruction length before operand evaluation begins.</p>
-<p>Any remaining bytes selected by the instruction length belong to the opcode payload, EA descriptors, immediates, displacements, or instruction-specific payloads. The detailed length and opcode-class truth tables are in this chapter.</p>
-<p>The instruction boundary is fixed by byte 0 for extrashort and short forms, and by the first two bytes for extended forms, before operand evaluation begins. An encoded length that cannot contain the selected form raises <code>ILLEGAL_INSTRUCTION</code> before any architectural state is changed.</p>
-<p>The encoded length must contain every required opcode byte, descriptor, immediate, displacement, bitmap, and instruction-specific payload. For an extended instruction, every trailing byte after the selected concrete form is uninterpreted padding; every byte value is valid. Padding never extends an operand, descriptor, or opcode.</p>
+<p>The byte addressed by PC is byte 0 of the current instruction. Instruction decoding determines the complete encoded instruction length before operand evaluation begins.</p>
+<p>The opcode space begins at byte 0, includes the header, and ends immediately before the first payload. Any appended EA descriptor, displacement, immediate, bitmap, or instruction-specific value is a payload. Independently selected appended units are separate payloads. Bytes after the required instruction length are padding, not payloads.</p>
+<p>The header is byte 0 for extrashort and short instructions and the first two bytes for medium and longer instructions. It determines the encoded instruction length and selects the opcode space before operand evaluation begins. An encoded instruction length that cannot contain the selected encoding raises <code>ILLEGAL_INSTRUCTION</code> before any architectural state is changed.</p>
+<p>The required instruction length is the opcode-space length plus every required payload length. The encoded instruction length must be at least that large. For an extended instruction, every trailing byte after the required instruction length is uninterpreted padding; every byte value is valid. Padding never extends an operand, payload, descriptor, or opcode space.</p>
 <p>Before decode validation or operand evaluation, instruction fetch and permission checks cover the complete encoded record, including padding. An inaccessible padding byte therefore reports the applicable instruction-fetch fault. An undersized record raises <code>ILLEGAL_INSTRUCTION.INSUFFICIENT_LENGTH</code> before architectural state changes.</p>
 <h2 id="instruction-header-formats">Instruction Header Formats</h2>
-<p>Instruction framing is byte-oriented. Byte 0 alone identifies extrashort and short instructions; extended instructions use byte 0 and byte 1 to determine both total instruction length and opcode class.</p>
-<p>Extended byte0[5:2] is L, and the total instruction length is 3+L bytes. The opcode stream begins at byte0[1:0], continues through byte1, and then consumes later bytes as required by the opcode class.</p>
-<p>An extended instruction is invalid if its encoded total length is shorter than the opcode class minimum: 3 bytes for medium, 4 bytes for long, and 5 bytes for extralong.</p>
-<p><code>LEN n, &lt;instruction&gt;</code> requests an extended record whose total size is <code>n</code> bytes, where <code>3 &lt;= n &lt;= 18</code>. The requested size must cover the concrete form. Without <code>LEN</code>, the assembler emits the shortest valid record. It fills requested trailing padding with zero. A disassembler emits <code>LEN n,</code> for an overlong record so reassembly preserves the length; padding byte values are not preserved. Extrashort and short forms retain their fixed record lengths.</p>
-<p><img alt="Instruction Header Byte Formats" src="../../assets/visuals/isa/instruction-encoding-01.svg" /></p>
-<p><strong>Instruction Header Byte Formats</strong></p>
-<p>Figure <a href="#fig:instruction-header-byte-formats">[fig:instruction-header-byte-formats]</a> annotations are read from high to low bit. In byte 0, bit 7 distinguishes extrashort framing; bits 7..6 select short (<code>10</code>) or extended (<code>11</code>) framing. For short instructions, bits 5..2 and 1..0 continue the payload. For extended instructions, bits 5..2 are <code>L</code>, bits 1..0 begin the opcode stream, and byte 1 continues that stream. Thus <code>L</code> encodes the total length as <span class="arithmatex">\(3+L\)</span> bytes directly in Figure <a href="#fig:instruction-header-byte-formats">[fig:instruction-header-byte-formats]</a>.</p>
-<p><img alt="Opcode Payload Namespaces" src="../../assets/visuals/isa/instruction-encoding-02.svg" /></p>
-<p><strong>Opcode Payload Namespaces</strong></p>
-<p><strong>Instruction Length Truth Table</strong></p>
+<p>Instruction framing is byte-oriented. Byte 0 alone identifies extrashort and short instructions; extended instructions use byte 0 and byte 1 to determine both encoded instruction length and opcode-space selection.</p>
+<p>Extended byte0[5:2] is L, and the encoded instruction length is 3+L bytes. The opcode-space allocation bits begin at byte0[1:0], continue through byte1, and then through later opcode-space bytes as required by the encoding class.</p>
+<p>An extended instruction is invalid if its encoded instruction length is shorter than the opcode-space length: 3 bytes for medium, 4 bytes for long, and 5 bytes for extralong.</p>
+<p><code>LEN n, &lt;instruction&gt;</code> requests an encoded extended instruction length of <code>n</code> bytes, where <code>3 &lt;= n &lt;= 18</code>. The requested length must cover the required instruction length. Without <code>LEN</code>, the assembler emits that required length. It fills requested trailing padding with zero. A disassembler emits <code>LEN n,</code> when the encoded instruction length exceeds the required instruction length so reassembly preserves the length; padding byte values are not preserved. Extrashort and short encodings retain their fixed lengths.</p>
+<p><img alt="Instruction Start Byte Formats" src="../../assets/visuals/isa/instruction-encoding-01.svg" /></p>
+<p><strong>Instruction Start Byte Formats</strong></p>
+<p>Figure <a href="#fig:instruction-header-byte-formats">[fig:instruction-header-byte-formats]</a> annotations are read from high to low bit. In byte 0, bit 7 distinguishes extrashort framing; bits 7..6 select short (<code>10</code>) or extended (<code>11</code>) framing. For short instructions, bits 5..2 and 1..0 continue the opcode-space allocation bits. For extended instructions, bits 5..2 are <code>L</code>, bits 1..0 begin the opcode-space allocation bits, and byte 1 continues them. Thus <code>L</code> encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes directly in Figure <a href="#fig:instruction-header-byte-formats">[fig:instruction-header-byte-formats]</a>.</p>
+<p><img alt="Opcode-space Allocation Namespaces" src="../../assets/visuals/isa/instruction-encoding-02.svg" /></p>
+<p><strong>Opcode-space Allocation Namespaces</strong></p>
+<p><strong>Encoded Instruction Length Truth Table</strong></p>
 <table>
 <thead>
 <tr>
@@ -9069,9 +9039,9 @@
 <thead>
 <tr>
 <th style="text-align: left;"><strong>Class</strong></th>
-<th style="text-align: left;"><strong>Payload Bits</strong></th>
-<th style="text-align: left;"><strong>Header or Opcode Selector</strong></th>
-<th style="text-align: left;"><strong>Opcode Bytes</strong></th>
+<th style="text-align: left;"><strong>Allocation Bits</strong></th>
+<th style="text-align: left;"><strong>Framing or Opcode Selector</strong></th>
+<th style="text-align: left;"><strong>Opcode-space Bytes</strong></th>
 <th style="text-align: left;"><strong>Validity</strong></th>
 </tr>
 </thead>
@@ -9095,27 +9065,27 @@
 <td style="text-align: left;">18</td>
 <td style="text-align: left;"><code>0xxxxx</code>, <code>10xxxx</code>, <code>110xxx</code>, <code>1110xx</code></td>
 <td style="text-align: left;">3</td>
-<td style="text-align: left;">any extended instruction length</td>
+<td style="text-align: left;">any extended encoded instruction length</td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>long</code></td>
 <td style="text-align: left;">26</td>
 <td style="text-align: left;"><code>11110x</code>, <code>111110</code></td>
 <td style="text-align: left;">4</td>
-<td style="text-align: left;">instruction length at least 4 bytes</td>
+<td style="text-align: left;">encoded instruction length at least 4 bytes</td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>extralong</code></td>
 <td style="text-align: left;">34</td>
 <td style="text-align: left;"><code>111111</code></td>
 <td style="text-align: left;">5</td>
-<td style="text-align: left;">instruction length at least 5 bytes</td>
+<td style="text-align: left;">encoded instruction length at least 5 bytes</td>
 </tr>
 </tbody>
 </table>
 <h2 id="instruction-payload-ordering">Instruction Payload Ordering</h2>
-<p>The instruction header occupies one byte for extrashort forms, two bytes for short forms, and at least two start bytes for extended forms. If a descriptor, immediate, displacement, or bitmap follows, those payload bytes occupy increasing addresses in decode order.</p>
-<p>Signed displacement and immediate payloads use two’s-complement representation at their declared width before any sign extension performed by the consuming instruction or EA form.</p>
+<p>The instruction header is byte 0 for extrashort and short instructions and the first two bytes for medium and longer instructions. The opcode space may continue after the header. If a descriptor, immediate, displacement, or bitmap follows the opcode space, each independently determined unit is a separate payload, and the payloads occupy increasing addresses in decode order. An extended EA descriptor and a following displacement are therefore separate payloads.</p>
+<p>Signed displacement and immediate payloads use two’s-complement representation at their declared width before any sign extension performed by the consuming instruction or effective-address encoding.</p>
 <p><strong>Immediate Operand Interpretation</strong></p>
 <table>
 <thead>
@@ -9151,7 +9121,7 @@
 <td style="text-align: left;">bitmap</td>
 <td style="text-align: left;">0..15</td>
 <td style="text-align: left;">none</td>
-<td style="text-align: left;">SETF/CLRF integer FLAGS masks</td>
+<td style="text-align: left;">SETF integer FLAGS image</td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>imm6</code></td>
@@ -9159,7 +9129,7 @@
 <td style="text-align: left;">unsigned</td>
 <td style="text-align: left;">0..63</td>
 <td style="text-align: left;">zero-extend</td>
-<td style="text-align: left;">integer forms with an explicit B/W/L/Q operation size</td>
+<td style="text-align: left;">integer encodings with an explicit B/W/L/Q operation size</td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>imm7</code></td>
@@ -9167,13 +9137,13 @@
 <td style="text-align: left;">unsigned</td>
 <td style="text-align: left;">0..127</td>
 <td style="text-align: left;">zero-extend</td>
-<td style="text-align: left;">EXTRACT register-pair forms</td>
+<td style="text-align: left;">EXTRACT register-pair encodings</td>
 </tr>
 </tbody>
 </table>
-<p>PUSHP and POPP interpret the 3-bit <code>pair_id</code> as a canonical register-pair index, so every encoding from 0..7 is valid. PTQUERY uses a 3-bit <code>pt_level</code>; assigned levels are 1..5, while encodings 0, 6, and 7 are reserved. SETF and CLRF interpret the 4-bit <code>flags_bitmap</code> range 0..15 as the low FLAGS nibble: bit 3 selects Z, bit 2 selects N, bit 1 selects C, and bit 0 selects V.</p>
-<p><img alt="SETF and CLRF Flag Bitmap" src="../../assets/visuals/isa/instruction-encoding-03.svg" /></p>
-<p><strong>SETF and CLRF Flag Bitmap</strong></p>
+<p>PUSHP and POPP interpret the 3-bit <code>pair_id</code> as a canonical register-pair index, so every encoding from 0..7 is valid. PTQUERY uses a 3-bit <code>pt_level</code>; assigned levels are 1..5, while encodings 0, 6, and 7 are reserved. SETF interprets the 4-bit <code>flags_bitmap</code> range 0..15 as a complete FLAGS image: bit 3 writes Z, bit 2 writes N, bit 1 writes C, and bit 0 writes V. Each one writes the corresponding flag to one, and each zero writes it to zero.</p>
+<p><img alt="SETF Flag Bitmap" src="../../assets/visuals/isa/instruction-encoding-03.svg" /></p>
+<p><strong>SETF Flag Bitmap</strong></p>
 <p>A 6-bit <code>imm6</code> value in 0..63 is zero-extended to the selected operation size before use when that size is wider than 6 bits. EXTRACT uses the 7-bit <code>imm7</code> range 0..127 as the offset into its concatenated register pair.</p>
 <h2 id="representative-encodings">Representative Encodings</h2>
 <p><img alt="Short Encoding Layout for MOV.X(z:L/Q) Rn(s), Rn(d)" src="../../assets/visuals/isa/instruction-encoding-04.svg" /></p>

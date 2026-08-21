@@ -1511,8 +1511,6 @@
       
         
       
-        
-      
     
     
     
@@ -2195,34 +2193,6 @@
     
   
     CLR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../clrf/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CLRF
   
 
     
@@ -7661,10 +7631,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#instruction-forms" class="md-nav__link">
+  <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Instruction Forms
+        Encodings
       
     </span>
   </a>
@@ -8943,10 +8913,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#instruction-forms" class="md-nav__link">
+  <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Instruction Forms
+        Encodings
       
     </span>
   </a>
@@ -9049,18 +9019,18 @@
 <p>result is nonnegative</p>
 </li>
 </ul>
-<p>NaN, exception, trap, and commit handling follows the common FPTRANSA model in Section <a href="../fpu-transcendental-approx/#section-fptransa-common-model">3.1</a>.</p>
-<h2 id="instruction-forms">Instruction Forms</h2>
+<p>NaN handling, floating-point exception-cause generation, matching condition-enable testing, <code>FLOATING_POINT_FAULT</code> architectural-event delivery, and commit behavior follow the common FPTRANSA model in Section <a href="../fpu-transcendental-approx/#section-fptransa-common-model">3.1</a>.</p>
+<h2 id="encodings">Encodings</h2>
 <p><strong><code>FTWOTOXA.SD(z) Fn(s), Fn(d)</code></strong></p>
 <p><em>Encoding class: long; required bytes: 4 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
 <p><img alt="Format — Instruction format for FTWOTOXA.SD(z) Fn(s), Fn(d)" src="../../../assets/visuals/isa/ftwotoxa-01.svg" /></p>
 <p><strong>Format Instruction format for FTWOTOXA.SD(z) Fn(s), Fn(d)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects S/D.</p>
-<p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
 <p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
+<p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
 
 
 

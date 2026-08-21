@@ -1503,8 +1503,6 @@
       
         
       
-        
-      
     
     
     
@@ -2187,34 +2185,6 @@
     
   
     CLR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../isa/instructions/clrf/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CLRF
   
 
     
@@ -8998,7 +8968,7 @@
 <td style="text-align: left;"><code>read_code_segment</code></td>
 <td style="text-align: left;"><code>uint64_t(void)</code></td>
 <td style="text-align: left;"><code>RDSEG CS</code></td>
-<td style="text-align: left;">Unprivileged; reads the current CS image through the dedicated source-only form.</td>
+<td style="text-align: left;">Unprivileged; reads the current CS image through the dedicated source-only encoding.</td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>write_segment_register</code></td>
@@ -9178,7 +9148,7 @@
 <td style="text-align: left;"><code>restore_processor_state</code></td>
 <td style="text-align: left;"><code>void(const void *area)</code></td>
 <td style="text-align: left;"><code>RESTORE</code></td>
-<td style="text-align: left;">Readable, feature-valid, 4096-byte-aligned area; reads the complete selected state image; may define <code>R0``-``-``R15</code>, <code>FLAGS</code>, valid <code>GS</code> registers, and extension state; fully clobbers memory and prevents TLS or segmented memory accesses from moving across a restored <code>GS</code> addressing context.</td>
+<td style="text-align: left;">Readable, feature-valid, 4096-byte-aligned area; reads the complete selected processor-state image; may define <code>R0``-``-``R15</code>, <code>FLAGS</code>, valid <code>GS</code> registers, and extension state; fully clobbers memory and prevents TLS or segmented memory accesses from moving across a restored <code>GS</code> addressing context.</td>
 </tr>
 </tbody>
 </table>

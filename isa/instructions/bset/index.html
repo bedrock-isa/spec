@@ -1513,8 +1513,6 @@
       
         
       
-        
-      
     
     
     
@@ -2125,10 +2123,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#instruction-forms" class="md-nav__link">
+  <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Instruction Forms
+        Encodings
       
     </span>
   </a>
@@ -2299,34 +2297,6 @@
     
   
     CLR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../clrf/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CLRF
   
 
     
@@ -8943,10 +8913,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#instruction-forms" class="md-nav__link">
+  <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Instruction Forms
+        Encodings
       
     </span>
   </a>
@@ -8972,7 +8942,7 @@
 
 <h1 id="bset">BSET</h1>
 <h2 id="operation">Operation</h2>
-<p>Sets the destination bit selected by the low six bits of the bit index and sets Z when that bit was previously clear. A memory destination is read by an ordinary selected-width load and updated by an ordinary selected-width store.</p>
+<p>Sets the destination bit selected by the low six bits of the bit index, writes Z from whether that bit was previously clear, and clears N, C, and V. A memory destination is read by an ordinary selected-width load and updated by an ordinary selected-width store. REPcc observes the old tested bit as a B-sized 0 or 1 rather than architectural FLAGS.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
 <p><code>BSET Rn(b), Rn(e)</code></p>
 <p><code>BSET Rn(b), &lt;ea&gt;(e)</code></p>
@@ -8984,7 +8954,7 @@
 <p>Privilege = unprivileged</p>
 <p>Length = 3-14 bytes</p>
 <p>Repeat = <code>REP</code>, <code>REPcc</code>, <code>REPG</code></p>
-<p>REPcc observation = <code>flags</code></p>
+<p>REPcc observation = <code>computed</code></p>
 <h2 id="detailed-semantics">Detailed Semantics</h2>
 <p><strong>FLAGS Effects</strong></p>
 <table>
@@ -9001,26 +8971,26 @@
 </tr>
 <tr>
 <td style="text-align: left;"><code>N</code></td>
-<td style="text-align: left;">unchanged</td>
+<td style="text-align: left;"></td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>C</code></td>
-<td style="text-align: left;">unchanged</td>
+<td style="text-align: left;"></td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>V</code></td>
-<td style="text-align: left;">unchanged</td>
+<td style="text-align: left;"></td>
 </tr>
 </tbody>
 </table>
-<h2 id="instruction-forms">Instruction Forms</h2>
+<h2 id="encodings">Encodings</h2>
 <p><strong><code>BSET Rn(b), Rn(e)</code></strong></p>
 <p><em>Encoding class: medium; required bytes: 3 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
 <p><img alt="Format — Instruction format for BSET Rn(b), Rn(e)" src="../../../assets/visuals/isa/bset-01.svg" /></p>
 <p><strong>Format Instruction format for BSET Rn(b), Rn(e)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong>Register field <code>b</code></strong> — Selects the source operand.</p>
 <p><strong>Register field <code>e</code></strong> — Selects the destination operand.</p>
 <p><strong><code>BSET Rn(b), &lt;ea&gt;(e)</code></strong></p>
@@ -9029,7 +8999,7 @@
 <p><img alt="Format — Instruction format for BSET Rn(b), \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/bset-02.svg" /></p>
 <p><strong>Format Instruction format for BSET Rn(b), \&lt;ea&gt;(e)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong>Register field <code>b</code></strong> — Selects the source operand.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the read/write operand.</p>
 <p><strong>EA availability</strong></p>
@@ -9041,7 +9011,7 @@
 <p><img alt="Format — Instruction format for BSET imm6(i), \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/bset-03.svg" /></p>
 <p><strong>Format Instruction format for BSET imm6(i), \&lt;ea&gt;(e)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong>Immediate field <code>i</code></strong> — Encodes the immediate value.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the read/write operand.</p>
 <p><strong>EA availability</strong></p>
@@ -9053,7 +9023,7 @@
 <p><img alt="Format — Instruction format for BSET imm6(i), Rn(e)" src="../../../assets/visuals/isa/bset-04.svg" /></p>
 <p><strong>Format Instruction format for BSET imm6(i), Rn(e)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong>Register field <code>e</code></strong> — Selects the destination operand.</p>
 <p><strong>Immediate field <code>i</code></strong> — Encodes the immediate value.</p>
 

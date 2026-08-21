@@ -1503,8 +1503,6 @@
       
         
       
-        
-      
     
     
     
@@ -2187,34 +2185,6 @@
     
   
     CLR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../isa/instructions/clrf/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CLRF
   
 
     
@@ -9002,7 +8972,7 @@
 </table>
 <p>A callee may preserve floating-point registers with <code>FPUSHP</code> and <code>FPOPP</code> or with any sequence having the same observable effect. Each instruction operates on one canonical pair. The nonvolatile pairs are index 4 for <code>F8:F9</code>, index 5 for <code>F10:F11</code>, index 6 for <code>F12:F13</code>, and index 7 for <code>F14:F15</code>. When several pairs are saved, a normal prologue pushes them in increasing pair-index order and the matching epilogue pops them in decreasing pair-index order. A callee need only save the pair containing each nonvolatile register it modifies.</p>
 <h2 id="stack-and-control-state">Stack and Control State</h2>
-<p><code>SP</code> is the architectural stack pointer, not a general C temporary. A callee may move it while executing but shall restore the entry value before returning; Section 5 defines the additional alignment and frame rules. <code>PC</code> is the architectural instruction pointer and is visible to C code only as a control-flow target. The call and return instructions, rather than a preservation class, define its transition across a call. Condition codes in <code>FLAGS</code> are volatile and may be clobbered by every callee.</p>
+<p><code>SP</code> is the architectural stack pointer, not a general C temporary. A callee may move it while executing but shall restore the entry value before returning; Section 5 defines the additional alignment and frame rules. <code>PC</code> is the architectural program counter and is visible to C code only as a control-flow target. The call and return instructions, rather than a preservation class, define its transition across a call. Condition codes in <code>FLAGS</code> are volatile and may be clobbered by every callee.</p>
 <h2 id="segment-context">Segment Context</h2>
 <p>An ordinary C call preserves the exact incoming images of <code>CS</code>, <code>DS</code>, <code>SS</code>, and <code>GS0</code>. The first three establish the code, ordinary-data, and stack contexts. <code>GS0</code> establishes the TLS context and may use translated-window mode. <code>GS1</code> through <code>GS5</code> are caller-saved scratch segment registers; no incoming value in them is preserved across a C call.</p>
 <h2 id="c-address-space-contexts">C Address-Space Contexts</h2>
@@ -9027,7 +8997,7 @@
 <p>The active platform ABI may instead execute C code with translated <code>CS</code>, <code>DS</code>, or <code>SS</code> images. That contract owns the pointer and symbol coordinate systems; compatibility among code, ordinary data, stack-derived addresses, and TLS-derived addresses; context transitions; and adaptation at every external boundary. In particular, independently translated <code>DS</code> and <code>SS</code> contexts do not by themselves make a stack-derived pointer usable as an ordinary data pointer. Code using such a context is not interoperable with the canonical context unless the active platform contract defines the necessary compatibility and transitions.</p>
 <p>The 64-bit all-zero null-pointer representation remains unchanged in every context, and address zero is not assigned to a C object or function. Whether a null-derived access is guaranteed to fault is a mapping or guard-page policy of the active platform rather than a property of the representation.</p>
 <h2 id="status-registers">Status Registers</h2>
-<p><code>STATUS</code> is not part of the C abstract machine; ordinary C code accesses it only through target-specific intrinsics or runtime code. Low-level access to <code>FSTATUS</code> and <code>FFLAGS</code> uses <code>&lt;bedrockfpuintrin.h&gt;</code>. <code>FSTATUS</code> is callee-saved: a function returns with the incoming rounding mode, trap enables, and other control fields unless its documented interface changes the floating-point environment. <code>FFLAGS</code> is cumulative floating-point status and is caller-clobbered; floating-point operations in a callee may set accrued exception flags. An interface that requires a saved environment uses its floating-point environment runtime contract explicitly.</p>
+<p><code>STATUS</code> is not part of the C abstract machine; ordinary C code accesses it only through target-specific intrinsics or runtime code. Low-level access to <code>FSTATUS</code> and <code>FFLAGS</code> uses <code>&lt;bedrockfpuintrin.h&gt;</code>. <code>FSTATUS</code> is callee-saved: a function returns with the incoming rounding mode, floating-point exception-condition enables, and other control fields unless its documented interface changes the floating-point environment. <code>FFLAGS</code> is cumulative floating-point status and is caller-clobbered; floating-point operations in a callee may set accrued floating-point exception flags. An interface that requires a saved environment uses its floating-point environment runtime contract explicitly.</p>
 
 
 

@@ -1513,8 +1513,6 @@
       
         
       
-        
-      
     
     
     
@@ -2197,34 +2195,6 @@
     
   
     CLR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../clrf/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CLRF
   
 
     
@@ -4869,10 +4839,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#instruction-forms" class="md-nav__link">
+  <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Instruction Forms
+        Encodings
       
     </span>
   </a>
@@ -8943,10 +8913,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#instruction-forms" class="md-nav__link">
+  <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Instruction Forms
+        Encodings
       
     </span>
   </a>
@@ -8972,7 +8942,7 @@
 
 <h1 id="sbb">SBB</h1>
 <h2 id="operation">Operation</h2>
-<p>Subtracts the selected-width source value and incoming C borrow from the destination, writes the truncated difference, and updates Z, N, C, and V.</p>
+<p>Subtracts the selected-width source value and incoming C borrow from the destination, writes the truncated difference, and updates Z, N, C, and V. REPcc observes the written destination result rather than architectural FLAGS.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
 <p><code>SBB.BWLQ(z) Rn(s), Rn(d)</code></p>
 <p><code>SBB.BWLQ(z) Rn(s), &lt;ea&gt;(e)</code></p>
@@ -8983,7 +8953,7 @@
 <p>Privilege = unprivileged</p>
 <p>Length = 3-14 bytes</p>
 <p>Repeat = <code>REP</code>, <code>REPcc</code>, <code>REPG</code></p>
-<p>REPcc observation = <code>flags</code></p>
+<p>REPcc observation = <code>result</code> <code>dst</code></p>
 <h2 id="detailed-semantics">Detailed Semantics</h2>
 <p><strong>FLAGS Effects</strong></p>
 <table>
@@ -9013,14 +8983,14 @@
 </tbody>
 </table>
 <p>Let <span class="arithmatex">\(n\)</span> be the selected width, <span class="arithmatex">\(d\)</span> and <span class="arithmatex">\(s\)</span> the unsigned operand bit patterns, and <span class="arithmatex">\(b\)</span> the incoming borrow represented by the C flag. The written result is $<span class="arithmatex">\(r = (d - s - b) \bmod 2^n .\)</span>$ Z is set when <span class="arithmatex">\(r=0\)</span>, and N receives the most-significant bit of <span class="arithmatex">\(r\)</span>. C reports an unsigned borrow from either subtraction. V reports signed overflow for the complete <span class="arithmatex">\(d-s-b\)</span> operation.</p>
-<h2 id="instruction-forms">Instruction Forms</h2>
+<h2 id="encodings">Encodings</h2>
 <p><strong><code>SBB.BWLQ(z) Rn(s), Rn(d)</code></strong></p>
 <p><em>Encoding class: medium; required bytes: 3 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
 <p><img alt="Format — Instruction format for SBB.BWLQ(z) Rn(s), Rn(d)" src="../../../assets/visuals/isa/sbb-01.svg" /></p>
 <p><strong>Format Instruction format for SBB.BWLQ(z) Rn(s), Rn(d)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
 <p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
 <p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
@@ -9030,7 +9000,7 @@
 <p><img alt="Format — Instruction format for SBB.BWLQ(z) Rn(s), \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/sbb-02.svg" /></p>
 <p><strong>Format Instruction format for SBB.BWLQ(z) Rn(s), \&lt;ea&gt;(e)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
 <p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the read/write operand.</p>
@@ -9043,7 +9013,7 @@
 <p><img alt="Format — Instruction format for SBB.BWLQ(z) \&lt;ea&gt;(e), Rn(d)" src="../../../assets/visuals/isa/sbb-03.svg" /></p>
 <p><strong>Format Instruction format for SBB.BWLQ(z) \&lt;ea&gt;(e), Rn(d)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
 <p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the source operand.</p>

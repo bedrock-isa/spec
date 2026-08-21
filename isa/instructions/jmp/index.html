@@ -1513,8 +1513,6 @@
       
         
       
-        
-      
     
     
     
@@ -2197,34 +2195,6 @@
     
   
     CLR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../clrf/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CLRF
   
 
     
@@ -3458,10 +3428,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#instruction-forms" class="md-nav__link">
+  <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Instruction Forms
+        Encodings
       
     </span>
   </a>
@@ -8921,10 +8891,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#instruction-forms" class="md-nav__link">
+  <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Instruction Forms
+        Encodings
       
     </span>
   </a>
@@ -8950,7 +8920,7 @@
 
 <h1 id="jmp">JMP</h1>
 <h2 id="operation">Operation</h2>
-<p>Validates the target under the current control context and transfers execution to it. For the extended EA form, JMP.L reads the low 32-bit target from its register or memory EA and zero-extends it to the 64-bit near target; JMP.Q uses the complete 64-bit target.</p>
+<p>Validates the target under the current control context and transfers execution to it. For the extended EA encoding, JMP.L reads the low 32-bit target from its register or memory EA and zero-extends it to the 64-bit near target; JMP.Q uses the complete 64-bit target.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
 <p><code>JMP imm8s(i)</code></p>
 <p><code>JMP &lt;imm16s&gt;</code></p>
@@ -8963,7 +8933,7 @@
 <p>Privilege = unprivileged</p>
 <p>Length = 2-13 bytes</p>
 <p>Repeat = <code>none</code></p>
-<h2 id="instruction-forms">Instruction Forms</h2>
+<h2 id="encodings">Encodings</h2>
 <p><strong><code>JMP imm8s(i)</code></strong></p>
 <p><em>Encoding class: short; required bytes: 2 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
@@ -8977,21 +8947,21 @@
 <p><img alt="Format — Instruction format for JMP \&lt;imm16s&gt;" src="../../../assets/visuals/isa/jmp-02.svg" /></p>
 <p><strong>Format Instruction format for JMP \&lt;imm16s&gt;</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong><code>JMP &lt;imm32s&gt;</code></strong></p>
 <p><em>Encoding class: medium; required bytes: 7 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
 <p><img alt="Format — Instruction format for JMP \&lt;imm32s&gt;" src="../../../assets/visuals/isa/jmp-03.svg" /></p>
 <p><strong>Format Instruction format for JMP \&lt;imm32s&gt;</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong><code>JMP.LQ(z) &lt;ea&gt;(e)</code></strong></p>
 <p><em>Encoding class: medium; required bytes: 3-13 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
 <p><img alt="Format — Instruction format for JMP.LQ(z) \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/jmp-04.svg" /></p>
 <p><strong>Format Instruction format for JMP.LQ(z) \&lt;ea&gt;(e)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects L/Q.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the control target.</p>
 <p><strong>EA availability</strong></p>
@@ -9003,7 +8973,7 @@
 <p><img alt="Format — Instruction format for JMP.LQ(z) Rn(r)" src="../../../assets/visuals/isa/jmp-05.svg" /></p>
 <p><strong>Format Instruction format for JMP.LQ(z) Rn(r)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects L/Q.</p>
 <p><strong>Register field <code>r</code></strong> — Selects the operand.</p>
 

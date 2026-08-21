@@ -80,9 +80,9 @@
 <g fill="rgb(0%, 0%, 0%)" fill-opacity="1">
 <use xlink:href="#glyph-1-0" x="189.382217" y="23.77657"/>
 <use xlink:href="#glyph-1-1" x="193.487178" y="23.77657"/>
-<use xlink:href="#glyph-1-1" x="197.592138" y="23.77657"/>
+<use xlink:href="#glyph-1-0" x="197.592138" y="23.77657"/>
 <use xlink:href="#glyph-1-1" x="201.697099" y="23.77657"/>
-<use xlink:href="#glyph-1-0" x="205.802059" y="23.77657"/>
+<use xlink:href="#glyph-1-1" x="205.802059" y="23.77657"/>
 </g>
 <path fill-rule="nonzero" fill="rgb(96.998596%, 96.998596%, 96.998596%)" fill-opacity="1" stroke-width="0.3487" stroke-linecap="butt" stroke-linejoin="miter" stroke="rgb(17.999268%, 17.999268%, 17.999268%)" stroke-opacity="1" stroke-miterlimit="10" d="M 36.070488 0.00155674 L 36.070488 15.840878 L 41.222847 15.840878 L 41.222847 0.00155674 Z M 36.070488 0.00155674 " transform="matrix(0.981043, 0, 0, -0.981043, 176.898439, 29.411683)"/>
 <g fill="rgb(0%, 0%, 0%)" fill-opacity="1">

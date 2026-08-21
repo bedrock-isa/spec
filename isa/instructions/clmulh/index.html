@@ -1513,8 +1513,6 @@
       
         
       
-        
-      
     
     
     
@@ -2265,10 +2263,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#instruction-forms" class="md-nav__link">
+  <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Instruction Forms
+        Encodings
       
     </span>
   </a>
@@ -2299,34 +2297,6 @@
     
   
     CLR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../clrf/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CLRF
   
 
     
@@ -8943,10 +8913,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#instruction-forms" class="md-nav__link">
+  <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Instruction Forms
+        Encodings
       
     </span>
   </a>
@@ -8985,14 +8955,14 @@
 <p>REPcc observation = <code>result</code> <code>dst</code></p>
 <h2 id="detailed-semantics">Detailed Semantics</h2>
 <p>Treat each selected-width operand as a polynomial over <span class="arithmatex">\(\operatorname{GF}(2)\)</span>, with operand bit <span class="arithmatex">\(i\)</span> as the coefficient of <span class="arithmatex">\(x^i\)</span>. Their double-width product is $<span class="arithmatex">\(P = \bigoplus_{i=0}^{n-1} s_i (d \ll i) .\)</span>$ Addition in this expression is exclusive-or, so no carry propagates between bit positions. CLMULH writes the high <span class="arithmatex">\(n\)</span> bits of <span class="arithmatex">\(P\)</span> to the destination.</p>
-<h2 id="instruction-forms">Instruction Forms</h2>
+<h2 id="encodings">Encodings</h2>
 <p><strong><code>CLMULH.Q Rn(s), Rn(d)</code></strong></p>
 <p><em>Encoding class: medium; required bytes: 3 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
 <p><img alt="Format — Instruction format for CLMULH.Q Rn(s), Rn(d)" src="../../../assets/visuals/isa/clmulh-01.svg" /></p>
 <p><strong>Format Instruction format for CLMULH.Q Rn(s), Rn(d)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
 <p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
 <p><strong><code>CLMULH.Q &lt;ea&gt;(e), Rn(d)</code></strong></p>
@@ -9001,7 +8971,7 @@
 <p><img alt="Format — Instruction format for CLMULH.Q \&lt;ea&gt;(e), Rn(d)" src="../../../assets/visuals/isa/clmulh-02.svg" /></p>
 <p><strong>Format Instruction format for CLMULH.Q \&lt;ea&gt;(e), Rn(d)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the source operand.</p>
 <p><strong>EA availability</strong></p>

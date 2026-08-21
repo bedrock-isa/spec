@@ -1589,8 +1589,6 @@
       
         
       
-        
-      
     
     
     
@@ -2273,34 +2271,6 @@
     
   
     CLR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/clrf/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CLRF
   
 
     
@@ -8970,8 +8940,8 @@
 </tr>
 </tbody>
 </table>
-<p><img alt="Integer Register Operand Subfields" src="../../assets/visuals/isa/data-formats-01.svg" /></p>
-<p><strong>Integer Register Operand Subfields</strong></p>
+<p><img alt="Rn Register Operand Subfields" src="../../assets/visuals/isa/data-formats-01.svg" /></p>
+<p><strong>Rn Register Operand Subfields</strong></p>
 <h2 id="little-endian-memory-organization">Little-Endian Memory Organization</h2>
 <p>Integer data, immediates, displacements, and absolute address payloads are little-endian. Multi-byte numeric payloads are stored least significant byte first. The decoder consumes instruction-header fields byte by byte in instruction-stream order.</p>
 <p>For an N-byte integer value stored at byte address A, byte A contains bits 7..0, byte A+1 contains bits 15..8, and so on.</p>
@@ -8979,6 +8949,7 @@
 <p><strong>Little-Endian Byte Order for a 64-Bit Value</strong></p>
 <p><img alt="Instruction Start Bytes" src="../../assets/visuals/isa/data-formats-03.svg" /></p>
 <p><strong>Instruction Start Bytes</strong></p>
+<p>H0 and H1 denote header bytes 0 and 1; H1 belongs to the header only for medium and longer instructions.</p>
 <h2 id="floating-point-data-formats">Floating-Point Data Formats</h2>
 <p><strong>Floating-Point Scalar Sizes</strong></p>
 <table>

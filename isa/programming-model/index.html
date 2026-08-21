@@ -1633,8 +1633,6 @@
       
         
       
-        
-      
     
     
     
@@ -2317,34 +2315,6 @@
     
   
     CLR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/clrf/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CLRF
   
 
     
@@ -9012,7 +8982,7 @@
 
 <h1 id="programming-model">Programming Model</h1>
 <h2 id="register-model">Register Model <a href="#section-register-model" id="section-register-model"></a></h2>
-<p>The integer programming model exposes sixteen 64-bit Rn registers, R0 through R15. Instruction forms use these registers for integer values, addresses, counters, selectors, and temporary data.</p>
+<p>The general-purpose register set contains sixteen 64-bit registers, R0 through R15. Instruction encodings use these registers for integer values, addresses, counters, selectors, and temporary data.</p>
 <p>SP and PC are special architectural registers outside the four-bit Rn namespace. SP-relative memory forms use SS by default; PC-relative memory forms use CS by default.</p>
 <p>CS, DS, SS, and GS0 through GS5 are 64-bit architectural segment registers. Segment-qualified EA forms select them explicitly, while SP and PC forms omit the segment field because their segment association is fixed.</p>
 <p><img alt="Architectural Register Model" src="../../assets/visuals/isa/programming-model-01.svg" /></p>
@@ -9113,7 +9083,7 @@
 <h2 id="floating-point-register-model">Floating-Point Register Model <a href="#section-floating-point-register-model" id="section-floating-point-register-model"></a></h2>
 <p>The floating-point extension exposes F0 through F15 as 64-bit registers when the floating-point instruction group is implemented.</p>
 <h2 id="fflags-and-fstatus-registers">FFLAGS and FSTATUS Registers</h2>
-<p>FFLAGS holds accrued IEEE-754 exception flags. FSTATUS holds the matching trap enables, rounding mode, and optional non-default floating-point modes. Both registers are present only with the floating-point extension and reset to zero.</p>
+<p>FFLAGS holds accrued IEEE-754 floating-point exception flags. FSTATUS holds the matching exception-condition enables, rounding mode, and optional non-default floating-point modes. Both registers are present only with the floating-point extension and reset to zero.</p>
 <p><img alt="FFLAGS Register Format" src="../../assets/visuals/isa/programming-model-04.svg" /></p>
 <p><strong>FFLAGS Register Format</strong></p>
 <p><img alt="FSTATUS Register Format" src="../../assets/visuals/isa/programming-model-05.svg" /></p>
@@ -9137,7 +9107,7 @@
 <tr>
 <td style="text-align: left;"><code>NV_EN..NX_EN</code></td>
 <td style="text-align: left;"><code>4..0</code></td>
-<td style="text-align: left;">trap enables corresponding to FFLAGS.NV through FFLAGS.NX</td>
+<td style="text-align: left;">floating-point exception-condition enables corresponding to FFLAGS.NV through FFLAGS.NX</td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>RM</code></td>

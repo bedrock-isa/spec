@@ -1513,8 +1513,6 @@
       
         
       
-        
-      
     
     
     
@@ -2217,34 +2215,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../clrf/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CLRF
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../cls/" class="md-nav__link">
         
   
@@ -2601,10 +2571,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#instruction-forms" class="md-nav__link">
+  <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Instruction Forms
+        Encodings
       
     </span>
   </a>
@@ -8943,10 +8913,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#instruction-forms" class="md-nav__link">
+  <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Instruction Forms
+        Encodings
       
     </span>
   </a>
@@ -8972,7 +8942,7 @@
 
 <h1 id="decf">DECF</h1>
 <h2 id="operation">Operation</h2>
-<p>Subtracts one from the selected-width destination, writes the modular result, and updates Z, N, C, and V.</p>
+<p>Subtracts one from the selected-width destination, writes the modular result, and updates Z, N, C, and V. REPcc observes the written destination result rather than architectural FLAGS.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
 <p><code>DECF.BWLQ(z) Rn(r)</code></p>
 <h2 id="attributes">Attributes</h2>
@@ -8981,7 +8951,7 @@
 <p>Privilege = unprivileged</p>
 <p>Length = 3 bytes</p>
 <p>Repeat = <code>REP</code>, <code>REPcc</code>, <code>REPG</code></p>
-<p>REPcc observation = <code>flags</code></p>
+<p>REPcc observation = <code>result</code> <code>dst</code></p>
 <h2 id="detailed-semantics">Detailed Semantics</h2>
 <p><strong>FLAGS Effects</strong></p>
 <table>
@@ -9010,14 +8980,14 @@
 </tr>
 </tbody>
 </table>
-<h2 id="instruction-forms">Instruction Forms</h2>
+<h2 id="encodings">Encodings</h2>
 <p><strong><code>DECF.BWLQ(z) Rn(r)</code></strong></p>
 <p><em>Encoding class: medium; required bytes: 3 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
 <p><img alt="Format — Instruction format for DECF.BWLQ(z) Rn(r)" src="../../../assets/visuals/isa/decf-01.svg" /></p>
 <p><strong>Format Instruction format for DECF.BWLQ(z) Rn(r)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
 <p><strong>Register field <code>r</code></strong> — Selects the operand.</p>
 

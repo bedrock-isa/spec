@@ -532,10 +532,32 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#memory-behavior" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Memory Behavior
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#segmentation-and-paging" class="md-nav__link">
     <span class="md-ellipsis">
       
         Segmentation and Paging
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#instruction-encoding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Instruction Encoding
       
     </span>
   </a>
@@ -569,6 +591,17 @@
     <span class="md-ellipsis">
       
         Architectural State
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#floating-point-and-architectural-exceptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Floating-Point and Architectural Exceptions
       
     </span>
   </a>
@@ -1666,8 +1699,6 @@
       
         
       
-        
-      
     
     
     
@@ -2350,34 +2381,6 @@
     
   
     CLR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/clrf/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CLRF
   
 
     
@@ -8961,10 +8964,32 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#memory-behavior" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Memory Behavior
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#segmentation-and-paging" class="md-nav__link">
     <span class="md-ellipsis">
       
         Segmentation and Paging
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#instruction-encoding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Instruction Encoding
       
     </span>
   </a>
@@ -8998,6 +9023,17 @@
     <span class="md-ellipsis">
       
         Architectural State
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#floating-point-and-architectural-exceptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Floating-Point and Architectural Exceptions
       
     </span>
   </a>
@@ -9082,11 +9118,14 @@
 <p>An <em>effective address (EA)</em> is the address value or operand designator produced by an addressing mode before segment pre-translation. A memory EA produces an address, while register and immediate EAs name non-memory operands.</p>
 <p>A <em>pre-segment virtual address</em> is a virtual-address value before segment pre-translation. Segment pre-translation either converts it to a linear address or reports the architecturally defined fault.</p>
 <p>A <em>linear address</em> is the result of segment pre-translation. The page-table walker consumes it when paging is enabled; otherwise the memory system uses it directly.</p>
-<p>A <em>physical address</em> is the byte address produced by page-table translation for ordinary byte-addressed memory. With paging disabled, the linear address is used directly instead.</p>
-<p>A <em>memory-system address</em> is the value presented to the memory subsystem after every active architectural translation stage. Depending on the final access attributes, the subsystem may interpret it as an ordinary byte address or an externally acknowledged slot address.</p>
+<p>A <em>physical address</em> is the byte address produced by page-table translation for byte-addressed normal memory. With paging disabled, the linear address is used directly instead.</p>
+<p>A <em>memory-system address</em> is the value presented to the memory subsystem after every active architectural translation stage. Depending on the final access attributes, the subsystem may interpret it as a normal-memory byte address or an externally acknowledged slot address.</p>
 <p><em>Byte-addressed normal memory</em> is the coherent memory-location model selected by a final translation with <code>AT=0</code>. The PTE <code>CP</code> field selects one of its four normal-memory cache policies. Only policy <code>CP=0</code> is <em>cacheable</em>; the other three <code>CP</code> values remain byte-addressed normal memory with the allocation and propagation behavior defined by the Memory Model.</p>
 <p>A <em>slot-addressed transaction</em> is the externally acknowledged access selected by a final translation with <code>AT=1</code>. Its memory-system address is a slot address rather than a normal-memory byte address. The Memory Address Translation and Memory Model sections define its transfer, completion, and ordering rules.</p>
 <p><em>Address generation</em> is the instruction-local calculation that combines registers, displacement, index, scale, and immediate fields into an effective address. It does not by itself read memory.</p>
+<h2 id="memory-behavior">Memory Behavior <a href="#section-memory-behavior-terminology" id="section-memory-behavior-terminology"></a></h2>
+<p>A <em>memory access</em> is an individual architectural instruction-fetch, read, or write attempt. A <em>memory operation</em> is an instruction-level semantic operation that may contain one or more memory accesses or memory events. A <em>memory event</em> is a read or write unit that participates in coherence or memory ordering. A <em>memory effect</em> is a result that becomes observable to another logical processor or an external system.</p>
+<p>The term <em>ordinary</em> classifies an operation, such as an ordinary load or store as distinct from an atomic or cache-maintenance operation. It does not identify a memory type. Byte-addressed normal memory is the <code>AT=0</code> memory-location model, while a slot transaction is the externally acknowledged <code>AT=1</code> alternative.</p>
 <h2 id="segmentation-and-paging">Segmentation and Paging</h2>
 <p><em>Segment pre-translation</em> is the stage between effective-address calculation and paging. A disabled segment passes the EA through. A translated window checks an offset and adds its base, while a bounds-only window checks an already-linear address without adding the base.</p>
 <p>A <em>segment register image</em> is the 64-bit architectural value containing the segment base page, size exponent, size mantissa, and bounds-only enable bit.</p>
@@ -9095,18 +9134,28 @@
 <p>A <em>bounds-only segment</em> is enabled with bounds-only mode set. It treats the effective address as already linear and checks only that it lies inside the segment window.</p>
 <p><em>Page-table translation</em> is the optional <code>PTCR.PE</code>-controlled stage that maps a canonical linear address to a physical frame and applies PTE permissions, cache policy, and addressing type.</p>
 <p>A <em>PFN</em> is a physical frame number. A byte-addressed leaf PTE at level <span class="arithmatex">\(L\)</span> combines its naturally aligned PFN base with the low <span class="arithmatex">\(12+9(L-1)\)</span> linear-address bits. An L1 slot leaf combines its PFN with linear-address bits 11..0.</p>
+<h2 id="instruction-encoding">Instruction Encoding <a href="#section-instruction-encoding-terminology" id="section-instruction-encoding-terminology"></a></h2>
+<p>An <em>opcode</em> is the value that selects an instruction operation. The <em>opcode space</em> is the contiguous leading region of an encoded instruction, from byte 0 through the byte immediately before the first payload. It includes the header and may contain operand or control fields in addition to the opcode.</p>
+<p>The <em>header</em> is the leading byte range within the opcode space that determines the encoded instruction length and opcode-space selection. It is the first byte for extrashort and short instructions and the first two bytes for medium and longer instructions.</p>
+<p>A <em>payload</em> is an independently determined unit after the opcode space that supplies additional information and increases the required instruction length. Adjacent units are separate payloads when their presence, length, or meaning is determined independently. A <em>field</em> is a defined bit region within the opcode space or a particular payload. An undivided payload may carry its value without defining a separate field.</p>
+<p>The <em>required instruction length</em> is the opcode-space length plus the length of every payload. It excludes padding. The <em>encoded instruction length</em> is the required instruction length plus any trailing padding in the encoded record. Padding carries no information and is not a payload.</p>
 <h2 id="control-flow">Control Flow <a href="#section-control-flow-terminology" id="section-control-flow-terminology"></a></h2>
 <p>A <em>near control transfer</em> is a CALL, RET, JMP, or conditional branch that changes only PC within the current code-segment context.</p>
 <p>A <em>segment-changing control transfer</em> updates CS and PC in one architectural commit. Long jumps, long calls, and long returns belong to this category.</p>
+<p><em>Long Call</em>, <em>Long Jump</em>, and <em>Long Return</em> name the corresponding instruction families. A <em>long return frame</em> is the two-value return context created by Long Call and consumed by Long Return.</p>
 <h2 id="tracing-terms">Tracing Terms <a href="#section-tracing-terminology" id="section-tracing-terminology"></a></h2>
 <p>The <em><code>TRACE</code> instruction</em> records its immediate marker and current instruction boundary in the implementation trace stream when that stream is enabled. A <em>trace unit</em> is the execution-completion unit sampled by <code>STATUS.TF</code>. <em><code>DEBUG_TRACE</code></em> is the architectural event delivered after successful completion of a TF-selected trace unit. These names identify the marker instruction, execution boundary, and event, respectively.</p>
 <h2 id="architectural-state">Architectural State <a href="#section-architectural-state-terminology" id="section-architectural-state-terminology"></a></h2>
-<p>A <em>general-purpose register</em> is one of the sixteen 64-bit Rn integer registers, R0 through R15. Ordinary integer register fields use four bits to select R0 through R15.</p>
-<p>An <em>Rn register</em> is a general-purpose integer register selected by a four-bit Rn field. It may hold integers, addresses, counters, selectors, or temporary data according to the instruction form.</p>
+<p>A <em>logical processor</em> is an architecturally independent execution context and owns its architectural state. A software <em>thread</em> may execute on a logical processor but is not the architectural execution subject.</p>
+<p>The <em>general-purpose registers</em> are the sixteen 64-bit registers R0 through R15. An <em>Rn register</em> is one of those registers selected through the four-bit Rn operand namespace. It may hold integers, addresses, counters, selectors, or temporary data according to the instruction encoding.</p>
 <p>The <em>stack pointer register</em> is SP. It lies outside the four-bit Rn namespace and uses SS as the fixed segment for SP-relative addressing.</p>
-<p>A <em>segment register operand</em> is a 64-bit segment register exposed through the S operand class. The SREG selector table maps its eight encodings to DS, SS, and GS0 through GS5. <code>RDSEG CS</code> and <code>PUSH CS</code> read the current CS image through their fixed CS forms.</p>
+<p>A <em>segment register operand</em> is a 64-bit segment register exposed through the SREG operand class. The SREG selector table maps its eight encodings to DS, SS, and GS0 through GS5. <code>RDSEG CS</code> and <code>PUSH CS</code> read the current CS image through their fixed CS encodings.</p>
 <p>A <em>state register</em> is named architectural state such as FLAGS or STATUS. <code>RDFLAGS</code>, <code>WRFLAGS</code>, <code>RDSTATUS</code>, and <code>WRSTATUS</code> access these registers.</p>
 <p>A <em>control register</em> is a privileged register exposed through the CR operand class, such as PTCR, ASCR, ECR, SPC, SCS, and SDS.</p>
+<p><em>Architectural state</em> is programmer-visible current state. A <em>register image</em> is the complete bit representation read from or written to one register. A <em>processor-state image</em> is an aggregate representation of multiple architectural-state components, such as a SAVE area or reset-state table. <em>Processor state</em> names the complete state set and the SAVE/RESTORE facility. A working copy used during operand evaluation is <em>temporary operand-evaluation state</em>.</p>
+<p>The <em>program counter</em>, or <em>PC register</em>, is the architectural state object that selects instruction execution. An <em>instruction address</em> is the numeric address of an instruction. A <em>continuation</em>, or <em>continuation PC</em>, is a saved or selected resumption point.</p>
+<h2 id="floating-point-and-architectural-exceptions">Floating-Point and Architectural Exceptions</h2>
+<p>An <em>architectural exception</em> is a synchronous architectural event delivered as a fault or trap. A <em>floating-point exception condition</em>, or <em>floating-point exception cause</em>, is an IEEE-754 condition such as NV, DZ, OF, UF, or NX. A <em>floating-point exception flag</em> is the corresponding accrued FFLAGS bit. An enabled floating-point exception condition raises the <code>FLOATING_POINT_FAULT</code> architectural event before the instruction commits the effects suppressed by that event.</p>
 <h2 id="compatibility">Compatibility <a href="#section-compatibility-terminology" id="section-compatibility-terminology"></a></h2>
 <p><em>Reserved</em> means that software must not depend on the field’s value or behavior. <em>Must be zero</em> requires software to write zero, and <em>read-as-zero</em> means reads return zero while the field remains reserved. <em>Ignored</em> means hardware accepts the field without using it for the current operation. <em>Preserved</em> requires software to retain the previous value when rewriting the containing object.</p>
 <p><em>Software-defined</em> state is reserved for software use; hardware interpretation is limited to behavior explicitly defined by the containing structure. <em>Implementation-defined</em> behavior is selected by the implementation and published through CPUID, platform documentation, or firmware. <em>Illegal</em> use of an opcode, effective-address form, selector, or operation raises the exception named by the defining rule.</p>

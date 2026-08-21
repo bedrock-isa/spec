@@ -1513,8 +1513,6 @@
       
         
       
-        
-      
     
     
     
@@ -2197,34 +2195,6 @@
     
   
     CLR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../clrf/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CLRF
   
 
     
@@ -5216,10 +5186,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#instruction-forms" class="md-nav__link">
+  <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Instruction Forms
+        Encodings
       
     </span>
   </a>
@@ -8965,10 +8935,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#instruction-forms" class="md-nav__link">
+  <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Instruction Forms
+        Encodings
       
     </span>
   </a>
@@ -9008,7 +8978,7 @@
 <h2 id="detailed-semantics">Detailed Semantics</h2>
 <p>Execution requires supervisor mode outside event-active state and a valid URCTL bank. The instruction validates the saved FLAGS, STATUS, CS, DS, SS, SP, and executable PC before changing architectural state.</p>
 <p>On success, FLAGS, STATUS, CS, DS, SS, SP, and PC are restored as one commit and URCTL.V is cleared. A validation failure leaves both the current state and the user-return bank unchanged.</p>
-<h2 id="instruction-forms">Instruction Forms</h2>
+<h2 id="encodings">Encodings</h2>
 <p><strong><code>SYSRET</code></strong></p>
 <p><em>Encoding class: extrashort; required bytes: 1 byte; privilege: supervisor</em></p>
 <p><strong>Instruction Format:</strong></p>

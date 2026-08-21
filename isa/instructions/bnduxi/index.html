@@ -1513,8 +1513,6 @@
       
         
       
-        
-      
     
     
     
@@ -2069,10 +2067,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#instruction-forms" class="md-nav__link">
+  <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Instruction Forms
+        Encodings
       
     </span>
   </a>
@@ -2299,34 +2297,6 @@
     
   
     CLR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../clrf/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CLRF
   
 
     
@@ -8943,10 +8913,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#instruction-forms" class="md-nav__link">
+  <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Instruction Forms
+        Encodings
       
     </span>
   </a>
@@ -8972,7 +8942,7 @@
 
 <h1 id="bnduxi">BNDUXI</h1>
 <h2 id="operation">Operation</h2>
-<p>BNDUXI treats the low bound as exclusive and the high bound as inclusive. It sets V when unsigned(value) is outside (unsigned(lo), unsigned(hi)]; Z, N, and C are unchanged.</p>
+<p>BNDUXI treats the low bound as exclusive and the high bound as inclusive. It sets V when unsigned(value) is outside (unsigned(lo), unsigned(hi)] and clears Z, N, and C. REPcc observes the violation result as a B-sized 0 or 1 rather than architectural FLAGS.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
 <p><code>BNDUXI.BWLQ(z) Rn(l), &lt;ea&gt;(e), Rn(h)</code></p>
 <p><code>BNDUXI.BWLQ(z) Rn(l), Rn(v), Rn(h)</code></p>
@@ -8982,7 +8952,7 @@
 <p>Privilege = unprivileged</p>
 <p>Length = 5-15 bytes</p>
 <p>Repeat = <code>REP</code>, <code>REPcc</code>, <code>REPG</code></p>
-<p>REPcc observation = <code>flags</code></p>
+<p>REPcc observation = <code>computed</code></p>
 <h2 id="detailed-semantics">Detailed Semantics</h2>
 <p><strong>FLAGS Effects</strong></p>
 <table>
@@ -8995,15 +8965,15 @@
 <tbody>
 <tr>
 <td style="text-align: left;"><code>Z</code></td>
-<td style="text-align: left;">preserved</td>
+<td style="text-align: left;"></td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>N</code></td>
-<td style="text-align: left;">preserved</td>
+<td style="text-align: left;"></td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>C</code></td>
-<td style="text-align: left;">preserved</td>
+<td style="text-align: left;"></td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>V</code></td>
@@ -9011,14 +8981,14 @@
 </tr>
 </tbody>
 </table>
-<h2 id="instruction-forms">Instruction Forms</h2>
+<h2 id="encodings">Encodings</h2>
 <p><strong><code>BNDUXI.BWLQ(z) Rn(l), &lt;ea&gt;(e), Rn(h)</code></strong></p>
 <p><em>Encoding class: extralong; required bytes: 5-15 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
 <p><img alt="Format — Instruction format for BNDUXI.BWLQ(z) Rn(l), \&lt;ea&gt;(e), Rn(h)" src="../../../assets/visuals/isa/bnduxi-01.svg" /></p>
 <p><strong>Format Instruction format for BNDUXI.BWLQ(z) Rn(l), \&lt;ea&gt;(e), Rn(h)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
 <p><strong>Register field <code>l</code></strong> — Selects operand 1.</p>
 <p><strong>Register field <code>h</code></strong> — Selects operand 3.</p>
@@ -9032,7 +9002,7 @@
 <p><img alt="Format — Instruction format for BNDUXI.BWLQ(z) Rn(l), Rn(v), Rn(h)" src="../../../assets/visuals/isa/bnduxi-02.svg" /></p>
 <p><strong>Format Instruction format for BNDUXI.BWLQ(z) Rn(l), Rn(v), Rn(h)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
 <p><strong>Register field <code>l</code></strong> — Selects operand 1.</p>
 <p><strong>Register field <code>v</code></strong> — Selects operand 2.</p>

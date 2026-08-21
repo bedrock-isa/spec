@@ -1513,8 +1513,6 @@
       
         
       
-        
-      
     
     
     
@@ -2197,34 +2195,6 @@
     
   
     CLR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../clrf/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CLRF
   
 
     
@@ -8928,10 +8898,6 @@
 <td style="text-align: left;">Performs the clear operation.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><a href="../clrf/"><code>CLRF</code></a></td>
-<td style="text-align: left;">Clears selected integer FLAGS bits.</td>
-</tr>
-<tr>
 <td style="text-align: left;"><a href="../cls/"><code>CLS</code></a></td>
 <td style="text-align: left;">Performs the count leading set bits operation.</td>
 </tr>
@@ -9097,7 +9063,7 @@
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../lcall/"><code>LCALL</code></a></td>
-<td style="text-align: left;">Pushes a far return frame and atomically transfers control to a new CS:PC pair.</td>
+<td style="text-align: left;">Pushes a long return frame and atomically transfers control to a new CS:PC pair.</td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../lea/"><code>LEA</code></a></td>
@@ -9109,7 +9075,7 @@
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../lret/"><code>LRET</code></a></td>
-<td style="text-align: left;">Pops a far return frame and atomically restores CS:PC.</td>
+<td style="text-align: left;">Pops a long return frame and atomically restores CS:PC.</td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../maxs/"><code>MAXS</code></a></td>
@@ -9149,7 +9115,7 @@
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../movnt/"><code>MOVNT</code></a></td>
-<td style="text-align: left;">Stores an Rn value to memory with a non-temporal access hint.</td>
+<td style="text-align: left;">Stores an Rn register value to memory with a non-temporal access hint.</td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../movuc/"><code>MOVUC</code></a></td>
@@ -9221,7 +9187,7 @@
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../push/"><code>PUSH</code></a></td>
-<td style="text-align: left;">Pushes one Rn value, SREG image, or the current CS image onto the stack.</td>
+<td style="text-align: left;">Pushes one Rn register value, SREG image, or the current CS image onto the stack.</td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../pushp/"><code>PUSHP</code></a></td>
@@ -9309,7 +9275,7 @@
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../setf/"><code>SETF</code></a></td>
-<td style="text-align: left;">Sets selected integer FLAGS bits.</td>
+<td style="text-align: left;">Replaces integer FLAGS from an immediate bitmap.</td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../shl/"><code>SHL</code></a></td>
@@ -9397,7 +9363,7 @@
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../yield/"><code>YIELD</code></a></td>
-<td style="text-align: left;">Hints to the scheduler or implementation that the current thread may yield.</td>
+<td style="text-align: left;">Hints that the current logical processor may be deprioritized.</td>
 </tr>
 </tbody>
 </table>

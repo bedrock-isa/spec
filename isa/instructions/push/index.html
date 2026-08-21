@@ -1513,8 +1513,6 @@
       
         
       
-        
-      
     
     
     
@@ -2197,34 +2195,6 @@
     
   
     CLR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../clrf/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CLRF
   
 
     
@@ -4365,10 +4335,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#instruction-forms" class="md-nav__link">
+  <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Instruction Forms
+        Encodings
       
     </span>
   </a>
@@ -8943,10 +8913,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#instruction-forms" class="md-nav__link">
+  <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Instruction Forms
+        Encodings
       
     </span>
   </a>
@@ -8972,7 +8942,7 @@
 
 <h1 id="push">PUSH</h1>
 <h2 id="operation">Operation</h2>
-<p>PUSH stores one 64-bit general-register value, selected SREG image, or current CS image on the stack. The SREG form accepts DS, SS, and GS0-GS5. PUSH SS captures the old SS image and uses that same old SS as the stack context for the store.</p>
+<p>PUSH stores one 64-bit Rn register value, selected SREG image, or current CS image on the stack. The SREG encoding accepts DS, SS, and GS0-GS5. PUSH SS captures the old SS image and uses that same old SS as the stack context for the store.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
 <p><code>PUSH CS</code></p>
 <p><code>PUSH Rn(r)</code></p>
@@ -8986,7 +8956,7 @@
 <p>REPcc observation = <code>source</code> <code>reg</code></p>
 <h2 id="detailed-semantics">Detailed Semantics</h2>
 <p>PUSH captures the source value and current SS:SP before changing architectural state. After the destination stack slot has been validated, it commits the 64-bit store and decremented SP together. A fault before commit leaves memory and SP unchanged. For PUSH SS, both the captured value and the stack access use the old SS image.</p>
-<h2 id="instruction-forms">Instruction Forms</h2>
+<h2 id="encodings">Encodings</h2>
 <p><strong><code>PUSH CS</code></strong></p>
 <p><em>Encoding class: extrashort; required bytes: 1 byte; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>

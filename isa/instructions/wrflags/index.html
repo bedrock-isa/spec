@@ -1513,8 +1513,6 @@
       
         
       
-        
-      
     
     
     
@@ -2197,34 +2195,6 @@
     
   
     CLR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../clrf/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CLRF
   
 
     
@@ -5446,10 +5416,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#instruction-forms" class="md-nav__link">
+  <a href="#detailed-semantics" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Instruction Forms
+        Detailed Semantics
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#encodings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Encodings
       
     </span>
   </a>
@@ -8921,10 +8902,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#instruction-forms" class="md-nav__link">
+  <a href="#detailed-semantics" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Instruction Forms
+        Detailed Semantics
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#encodings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Encodings
       
     </span>
   </a>
@@ -8959,14 +8951,42 @@
 <p>Privilege = unprivileged</p>
 <p>Length = 3 bytes</p>
 <p>Repeat = <code>none</code></p>
-<h2 id="instruction-forms">Instruction Forms</h2>
+<h2 id="detailed-semantics">Detailed Semantics</h2>
+<p><strong>FLAGS Effects</strong></p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"><strong>Flag</strong></th>
+<th style="text-align: left;"><strong>Effect</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>Z</code></td>
+<td style="text-align: left;">source bit 3</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>N</code></td>
+<td style="text-align: left;">source bit 2</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>C</code></td>
+<td style="text-align: left;">source bit 1</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>V</code></td>
+<td style="text-align: left;">source bit 0</td>
+</tr>
+</tbody>
+</table>
+<h2 id="encodings">Encodings</h2>
 <p><strong><code>WRFLAGS Rn(s)</code></strong></p>
 <p><em>Encoding class: medium; required bytes: 3 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
 <p><img alt="Format — Instruction format for WRFLAGS Rn(s)" src="../../../assets/visuals/isa/wrflags-01.svg" /></p>
 <p><strong>Format Instruction format for WRFLAGS Rn(s)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong>Register field <code>s</code></strong> — Selects the operand.</p>
 
 

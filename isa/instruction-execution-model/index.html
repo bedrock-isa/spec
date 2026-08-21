@@ -1600,8 +1600,6 @@
       
         
       
-        
-      
     
     
     
@@ -2284,34 +2282,6 @@
     
   
     CLR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/clrf/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CLRF
   
 
     
@@ -8977,11 +8947,11 @@
 <p>Every non-suppressed operand access in architectural access order.</p>
 </li>
 <li>
-<p>Execution-stage integer and floating-point exceptions.</p>
+<p>Execution-stage integer faults and enabled floating-point exception conditions that raise <code>FLOATING_POINT_FAULT</code>.</p>
 </li>
 </ol>
 <p>A false predicate suppresses the conditional operation’s target-memory and implicit stack accesses. It does not suppress instruction framing, opcode and extension checks, encoding legality, privilege checks, or control-state validation. Explicit operands are accessed in instruction operand order unless an instruction states another order. For a memory-to-memory operation, the complete source read precedes access to the destination, so a source-access failure has priority over a destination-access failure.</p>
-<p>Implicit accesses use the order stated by the instruction. In particular, PUSH captures its source before accessing the destination stack slot; POP reads the stack slot before validating or writing its destination; PUSHP uses listed register order and POPP uses reverse listed order; CALL validates its target before accessing the return stack; RET reads the return stack before validating its target; and the far call, far return, event return, and supervisor-entry instructions use the step order in their instruction descriptions.</p>
+<p>Implicit accesses use the order stated by the instruction. In particular, PUSH captures its source before accessing the destination stack slot; POP reads the stack slot before validating or writing its destination; PUSHP uses listed register order and POPP uses reverse listed order; CALL validates its target before accessing the return stack; RET reads the return stack before validating its target; and Long Call, Long Return, Event Return, and supervisor-entry instructions use the step order in their instruction descriptions.</p>
 <h2 id="implicit-stack-operations">Implicit Stack Operations</h2>
 <p>Ordinary implicit stack operations capture the current SS and SP before their first stack access. Every stack slot is 64 bits and is addressed through the captured SS. The ranges below are expressed in terms of the captured <code>old_sp</code>; the applicable segment, translation, and complete-range checks finish before the operation commits.</p>
 <p><strong>Ordinary Implicit Stack Operations</strong></p>
@@ -8999,13 +8969,13 @@
 <td style="text-align: left;"><code>PUSH</code>, <code>CALL</code></td>
 <td style="text-align: left;"><span class="arithmatex">\([\texttt{old\_sp}-8,\texttt{old\_sp})\)</span></td>
 <td style="text-align: left;"><code>old_sp</code>-8</td>
-<td style="text-align: left;">one source value or the following-instruction return PC at <code>old_sp</code>-8</td>
+<td style="text-align: left;">one source value or the following instruction’s continuation PC at <code>old_sp</code>-8</td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>POP</code>, <code>RET</code></td>
 <td style="text-align: left;"><span class="arithmatex">\([\texttt{old\_sp},\texttt{old\_sp}+8)\)</span></td>
 <td style="text-align: left;"><code>old_sp</code>+8</td>
-<td style="text-align: left;">one destination value or return PC read at <code>old_sp</code></td>
+<td style="text-align: left;">one destination value or continuation PC read at <code>old_sp</code></td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>PUSHP</code>, <code>FPUSHP</code></td>
@@ -9023,27 +8993,27 @@
 <td style="text-align: left;"><code>LCALL</code></td>
 <td style="text-align: left;"><span class="arithmatex">\([\texttt{old\_sp}-16,\texttt{old\_sp})\)</span></td>
 <td style="text-align: left;"><code>old_sp</code>-16</td>
-<td style="text-align: left;">return PC at <code>old_sp</code>-16 and return CS image at <code>old_sp</code>-8</td>
+<td style="text-align: left;">continuation PC at <code>old_sp</code>-16 and return CS image at <code>old_sp</code>-8</td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>LRET</code></td>
 <td style="text-align: left;"><span class="arithmatex">\([\texttt{old\_sp},\texttt{old\_sp}+16)\)</span></td>
 <td style="text-align: left;"><code>old_sp</code>+16</td>
-<td style="text-align: left;">return PC at <code>old_sp</code> and return CS image at <code>old_sp</code>+8</td>
+<td style="text-align: left;">continuation PC at <code>old_sp</code> and return CS image at <code>old_sp</code>+8</td>
 </tr>
 </tbody>
 </table>
 <p>The complete range and all source values are established before a push operation changes memory or SP. A pop operation reads its complete range and completes any applicable destination validation before changing a destination or SP. A successful operation commits all listed stack and register effects together; a preceding fault exposes none of them.</p>
 <p>Architectural event entry and ERET use the event-frame layout in the Architectural Event Processing Model. SYSCALL and SYSRET keep their continuation in the user-return control-register bank described by the Privileged Execution Model.</p>
 <h2 id="operand-evaluation-and-ea-defaults">Operand Evaluation and EA Defaults</h2>
-<p>Operands are decoded in instruction order. Source reads complete before the final destination write unless an atomic form says otherwise. Effective-address calculation may produce an address without reading memory.</p>
-<p>Auto-update EA forms update a temporary operand-evaluation image. The architectural register update becomes visible only when the instruction commits.</p>
-<p>Ordinary forms accept at most one memory operand. The explicitly encoded memory-memory exceptions are CMP, EXTSL, EXTSQ, EXTSW, EXTZL, EXTZQ, EXTZW, MOV, MOVCU, MOVUC, MOVUU, FBNDII, FBNDIX, FBNDXI, FBNDXX. Repeat behavior is available only through the repeat instructions and body-eligibility rules defined in Repeated Scalar Execution.</p>
-<p>FLAGS and FFLAGS fields that an instruction does not mention remain unchanged. Operand evaluation follows instruction operand order, and an instruction has one architectural commit point unless its description explicitly defines partial completion.</p>
+<p>Operands are decoded in instruction order. Source reads complete before the final destination write unless an atomic instruction says otherwise. Effective-address calculation may produce an address without reading memory.</p>
+<p>Auto-update EA forms update temporary operand-evaluation state. The architectural register update becomes visible only when the instruction commits.</p>
+<p>Ordinary instructions accept at most one memory operand. The explicitly encoded memory-memory exceptions are CMP, EXTSL, EXTSQ, EXTSW, EXTZL, EXTZQ, EXTZW, MOV, MOVCU, MOVUC, MOVUU, FBNDII, FBNDIX, FBNDXI, FBNDXX. Repeat behavior is available only through the repeat instructions and body-eligibility rules defined in Repeated Scalar Execution.</p>
+<p>An instruction either replaces the complete Z, N, C, and V FLAGS image or preserves the complete image; partial FLAGS writes do not exist. FFLAGS remains an IEEE-754 accrued exception-cause bank, so FFLAGS fields that an instruction does not mention remain unchanged. Operand evaluation follows instruction operand order, and an instruction has one architectural commit point unless its description explicitly defines partial completion.</p>
 <h2 id="shared-side-effect-rules">Shared Side-Effect Rules</h2>
 <p>An instruction that faults before commit leaves destination registers, destination memory, and auto-update register effects unchanged unless the instruction explicitly defines partial completion.</p>
-<p>Atomic read-modify-write forms have a single architectural commit point for the memory update and any associated register result. Cache, TLB, and system-state instructions describe their own completion and visibility rules.</p>
-<p>Ordinary integer ALU forms use the common one-memory-operand rule. Compare and test forms may read two operands and update FLAGS without storing their temporary result. EXTS and EXTZ additionally provide explicitly encoded register-memory, memory-register, and memory-memory conversions; they preserve FLAGS unless a repeat rule observes a derived value. Data movement, LEA, and segment-address operations also preserve FLAGS unless their descriptions say otherwise.</p>
+<p>Atomic read-modify-write instructions have a single architectural commit point for the memory update and any associated register result. Cache, TLB, and system-state instructions describe their own completion and visibility rules.</p>
+<p>Ordinary integer ALU instructions use the common one-memory-operand rule. Compare and test instructions may read two operands and update FLAGS without storing their temporary result. EXTS and EXTZ additionally provide explicitly encoded register-memory, memory-register, and memory-memory conversions; they preserve FLAGS unless a repeat rule observes a derived value. Data movement, LEA, and segment-address operations also preserve FLAGS unless their descriptions say otherwise.</p>
 <p>Control transfers make PC and CS changes at a single control-transfer commit point. Atomic operations require an addressable memory operand. An <code>AT=0</code> atomic operand must be naturally aligned and commits the read-modify-write as one architectural update; an <code>AT=1</code> atomic operand raises <code>ADDRESS_TYPE</code> and has no byte-alignment check. TLB, page-table context, and privileged control operations require supervisor privilege. Cache-maintenance operations preserve FLAGS and define their own visibility contract. Approximate transcendental floating-point operations are available only when CPUID reports <code>FPTRANSA</code> and marks the instruction’s accuracy-contract ID present.</p>
 
 

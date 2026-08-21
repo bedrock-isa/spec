@@ -1511,8 +1511,6 @@
       
         
       
-        
-      
     
     
     
@@ -2195,34 +2193,6 @@
     
   
     CLR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../clrf/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CLRF
   
 
     
@@ -6711,10 +6681,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#instruction-forms" class="md-nav__link">
+  <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Instruction Forms
+        Encodings
       
     </span>
   </a>
@@ -8943,10 +8913,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#instruction-forms" class="md-nav__link">
+  <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Instruction Forms
+        Encodings
       
     </span>
   </a>
@@ -9016,15 +8986,15 @@
 </tbody>
 </table>
 <p>After DAZ processing, let <span class="arithmatex">\(x\)</span> be the original destination and <span class="arithmatex">\(y\)</span> the source. For finite valid operands, choose <span class="arithmatex">\(q\)</span> as <span class="arithmatex">\(x/y\)</span> rounded to the nearest integer with ties to even and compute $<span class="arithmatex">\(r = x - qy\)</span>$ with exact intermediate arithmetic. A zero result has the sign of <span class="arithmatex">\(x\)</span>.</p>
-<p>A signaling NaN accrues NV; a NaN input produces the selected quiet NaN. Infinite <span class="arithmatex">\(x\)</span> or zero <span class="arithmatex">\(y\)</span> accrues NV and produces the architectural default quiet NaN. Infinite <span class="arithmatex">\(y\)</span> with finite <span class="arithmatex">\(x\)</span> returns <span class="arithmatex">\(x\)</span>. Enabled traps raise <code>FLOATING_POINT_FAULT</code> before the destination write.</p>
-<h2 id="instruction-forms">Instruction Forms</h2>
+<p>A signaling NaN generates NV; a NaN input produces the selected quiet NaN. Infinite <span class="arithmatex">\(x\)</span> or zero <span class="arithmatex">\(y\)</span> generates NV and produces the architectural default quiet NaN. Infinite <span class="arithmatex">\(y\)</span> with finite <span class="arithmatex">\(x\)</span> returns <span class="arithmatex">\(x\)</span>. An enabled floating-point exception condition raises the <code>FLOATING_POINT_FAULT</code> architectural event before the destination write.</p>
+<h2 id="encodings">Encodings</h2>
 <p><strong><code>FREM.SD(z) Fn(s), Fn(d)</code></strong></p>
 <p><em>Encoding class: medium; required bytes: 3 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
 <p><img alt="Format — Instruction format for FREM.SD(z) Fn(s), Fn(d)" src="../../../assets/visuals/isa/frem-01.svg" /></p>
 <p><strong>Format Instruction format for FREM.SD(z) Fn(s), Fn(d)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects S/D.</p>
 <p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
 <p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
@@ -9034,7 +9004,7 @@
 <p><img alt="Format — Instruction format for FREM.SD(z) \&lt;ea&gt;(e), Fn(d)" src="../../../assets/visuals/isa/frem-02.svg" /></p>
 <p><strong>Format Instruction format for FREM.SD(z) \&lt;ea&gt;(e), Fn(d)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects S/D.</p>
 <p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the source operand.</p>

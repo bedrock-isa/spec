@@ -1600,8 +1600,6 @@
       
         
       
-        
-      
     
     
     
@@ -2284,34 +2282,6 @@
     
   
     CLR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/clrf/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CLRF
   
 
     
@@ -9059,9 +9029,9 @@
 </table>
 <p><a href="#table-condition-code-encoding" id="table-condition-code-encoding"></a></p>
 <h2 id="flag-meanings">Flag Meanings</h2>
-<p>Integer condition codes are held in FLAGS. Integer instructions leave FLAGS unchanged unless their instruction description explicitly defines a FLAGS write. Unmentioned FLAGS bits are preserved unless the instruction says otherwise.</p>
+<p>Integer condition codes are held in FLAGS. Integer instructions leave FLAGS unchanged unless their instruction description explicitly defines a FLAGS write. Every FLAGS-writing instruction replaces the complete Z, N, C, and V image; partial FLAGS writes do not exist. An instruction that does not write FLAGS preserves the complete image.</p>
 <p>For an operand width of n bits, ordinary integer ALU results are evaluated modulo 2^n unless the instruction explicitly defines a wider intermediate.</p>
-<p>Explicit FLAGS-writing integer instructions include CMP, TEST, ADC, SBB, INCF, DECF, BTEST, BSET, BCLR, BCHG, SETF, CLRF, WRFLAGS, CMPXCHG, and the bounds-check forms. CMPJcc and TESTJcc compute temporary condition flags for their branch decision and do not update architectural FLAGS. ADD, SUB, logic operations, INC, DEC, shifts, rotates, moves, extensions, min/max, and multiply/divide forms leave FLAGS unchanged.</p>
+<p>Explicit FLAGS-writing integer instructions include CMP, TEST, ADC, SBB, INCF, DECF, BTEST, BSET, BCLR, BCHG, SETF, WRFLAGS, CMPXCHG, SEGLEA, and the bounds-check instructions. CMPJcc and TESTJcc compute temporary condition flags for their branch decision and do not update architectural FLAGS. ADD, SUB, logic operations, INC, DEC, shifts, rotates, moves, extensions, min/max, and multiply/divide instructions leave FLAGS unchanged.</p>
 <p><strong>Integer Condition-Code Bits</strong></p>
 <table>
 <thead>
@@ -9095,10 +9065,10 @@
 </tbody>
 </table>
 <h2 id="conditional-consumers">Conditional Consumers</h2>
-<p>Conditional branches, calls, traps, sets, and repeat forms consume the condition-code table without recomputing FLAGS. A conditional consumer observes the FLAGS image produced by the last committed FLAGS-writing instruction.</p>
+<p>Conditional branches, calls, traps, and sets consume the condition-code table without recomputing FLAGS. An ordinary conditional consumer observes the FLAGS image produced by the last committed FLAGS-writing instruction. REPcc instead tests a temporary flag image derived from the body instruction’s repeat-observed value, as defined in Repeated Scalar Execution, and does not write architectural FLAGS merely by performing that test.</p>
 <p>A false condition suppresses the conditional action unless the instruction description explicitly defines a different commit rule, such as a repeat instruction’s terminating iteration rule.</p>
 <h2 id="floating-point-interactions">Floating-Point Interactions</h2>
-<p>Floating-point comparison instructions may update integer condition codes only when their instruction definition says so. Floating-point exception and rounding state is held in FFLAGS and FSTATUS.</p>
+<p>Floating-point comparison instructions may update integer condition codes only when their instruction definition says so. FFLAGS holds floating-point exception flags, and FSTATUS holds the corresponding exception-condition enables and rounding state. IEEE-754 FFLAGS causes accrue independently and are not subject to the complete-image FLAGS rule.</p>
 <p>Integer conditional consumers do not read FFLAGS directly; floating-point instructions that want integer control-flow consumers must materialize the selected condition into FLAGS or an Rn value.</p>
 
 

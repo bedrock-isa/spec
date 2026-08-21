@@ -1513,8 +1513,6 @@
       
         
       
-        
-      
     
     
     
@@ -2197,34 +2195,6 @@
     
   
     CLR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../clrf/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CLRF
   
 
     
@@ -5233,10 +5203,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#instruction-forms" class="md-nav__link">
+  <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Instruction Forms
+        Encodings
       
     </span>
   </a>
@@ -8943,10 +8913,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#instruction-forms" class="md-nav__link">
+  <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Instruction Forms
+        Encodings
       
     </span>
   </a>
@@ -8972,7 +8942,7 @@
 
 <h1 id="test">TEST</h1>
 <h2 id="operation">Operation</h2>
-<p>Computes the selected-width bitwise conjunction only to set Z and N, clears C and V, and does not write the temporary result.</p>
+<p>Computes the selected-width bitwise conjunction only to set Z and N, clears C and V, and does not write the temporary result. REPcc observes that temporary conjunction rather than architectural FLAGS.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
 <p><code>TEST.LQ(z) Rn(s), Rn(d)</code></p>
 <p><code>TEST.BWLQ(z) &lt;ea&gt;(e), Rn(d)</code></p>
@@ -8983,7 +8953,7 @@
 <p>Privilege = unprivileged</p>
 <p>Length = 2-14 bytes</p>
 <p>Repeat = <code>REP</code>, <code>REPcc</code>, <code>REPG</code></p>
-<p>REPcc observation = <code>flags</code></p>
+<p>REPcc observation = <code>computed</code></p>
 <h2 id="detailed-semantics">Detailed Semantics</h2>
 <p><strong>FLAGS Effects</strong></p>
 <table>
@@ -9012,7 +8982,7 @@
 </tr>
 </tbody>
 </table>
-<h2 id="instruction-forms">Instruction Forms</h2>
+<h2 id="encodings">Encodings</h2>
 <p><strong><code>TEST.LQ(z) Rn(s), Rn(d)</code></strong></p>
 <p><em>Encoding class: short; required bytes: 2 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
@@ -9028,7 +8998,7 @@
 <p><img alt="Format — Instruction format for TEST.BWLQ(z) \&lt;ea&gt;(e), Rn(d)" src="../../../assets/visuals/isa/test-02.svg" /></p>
 <p><strong>Format Instruction format for TEST.BWLQ(z) \&lt;ea&gt;(e), Rn(d)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
 <p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the source operand.</p>
@@ -9041,7 +9011,7 @@
 <p><img alt="Format — Instruction format for TEST.BWLQ(z) Rn(s), \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/test-03.svg" /></p>
 <p><strong>Format Instruction format for TEST.BWLQ(z) Rn(s), \&lt;ea&gt;(e)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
 <p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the source operand.</p>

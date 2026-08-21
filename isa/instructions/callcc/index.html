@@ -1513,8 +1513,6 @@
       
         
       
-        
-      
     
     
     
@@ -2198,10 +2196,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#instruction-forms" class="md-nav__link">
+  <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Instruction Forms
+        Encodings
       
     </span>
   </a>
@@ -2288,34 +2286,6 @@
     
   
     CLR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../clrf/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CLRF
   
 
     
@@ -8921,10 +8891,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#instruction-forms" class="md-nav__link">
+  <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Instruction Forms
+        Encodings
       
     </span>
   </a>
@@ -8950,7 +8920,7 @@
 
 <h1 id="callcc">CALLcc</h1>
 <h2 id="operation">Operation</h2>
-<p>When the encoded condition is true, pushes the next instruction address as one 64-bit stack value and transfers control to the target; otherwise execution continues without changing the stack.</p>
+<p>When the encoded condition is true, pushes the following instruction’s continuation PC as one 64-bit stack value and transfers control to the target; otherwise execution continues without changing the stack.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
 <p><code>CALLcc &lt;imm16s&gt;</code></p>
 <p><code>CALLcc &lt;imm32s&gt;</code></p>
@@ -8962,14 +8932,14 @@
 <p>Privilege = unprivileged</p>
 <p>Length = 4-14 bytes</p>
 <p>Repeat = <code>none</code></p>
-<h2 id="instruction-forms">Instruction Forms</h2>
+<h2 id="encodings">Encodings</h2>
 <p><strong><code>CALLcc &lt;imm16s&gt;</code></strong></p>
 <p><em>Encoding class: medium; required bytes: 5 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
 <p><img alt="Format — Instruction format for CALLcc \&lt;imm16s&gt;" src="../../../assets/visuals/isa/callcc-01.svg" /></p>
 <p><strong>Format Instruction format for CALLcc \&lt;imm16s&gt;</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong>Condition field <code>c</code></strong> — Selects the <a href="../../flags-and-condition-codes/#table-condition-code-encoding">condition code</a>. Allowed values: EQ, NE, ULT, UGE, MI, PL, VS, VC, ULE, UGT, LT, GE, LE, GT.</p>
 <p><strong><code>CALLcc &lt;imm32s&gt;</code></strong></p>
 <p><em>Encoding class: medium; required bytes: 7 bytes; privilege: unprivileged</em></p>
@@ -8977,7 +8947,7 @@
 <p><img alt="Format — Instruction format for CALLcc \&lt;imm32s&gt;" src="../../../assets/visuals/isa/callcc-02.svg" /></p>
 <p><strong>Format Instruction format for CALLcc \&lt;imm32s&gt;</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong>Condition field <code>c</code></strong> — Selects the <a href="../../flags-and-condition-codes/#table-condition-code-encoding">condition code</a>. Allowed values: EQ, NE, ULT, UGE, MI, PL, VS, VC, ULE, UGT, LT, GE, LE, GT.</p>
 <p><strong><code>CALLcc &lt;ea&gt;(e)</code></strong></p>
 <p><em>Encoding class: long; required bytes: 4-14 bytes; privilege: unprivileged</em></p>
@@ -8985,7 +8955,7 @@
 <p><img alt="Format — Instruction format for CALLcc \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/callcc-03.svg" /></p>
 <p><strong>Format Instruction format for CALLcc \&lt;ea&gt;(e)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong>Condition field <code>c</code></strong> — Selects the <a href="../../flags-and-condition-codes/#table-condition-code-encoding">condition code</a>. Allowed values: EQ, NE, ULT, UGE, MI, PL, VS, VC, ULE, UGT, LT, GE, LE, GT.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the source operand.</p>
 <p><strong>EA availability</strong></p>
@@ -8997,7 +8967,7 @@
 <p><img alt="Format — Instruction format for CALLcc Rn(r)" src="../../../assets/visuals/isa/callcc-04.svg" /></p>
 <p><strong>Format Instruction format for CALLcc Rn(r)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong>Condition field <code>c</code></strong> — Selects the <a href="../../flags-and-condition-codes/#table-condition-code-encoding">condition code</a>. Allowed values: EQ, NE, ULT, UGE, MI, PL, VS, VC, ULE, UGT, LT, GE, LE, GT.</p>
 <p><strong>Register field <code>r</code></strong> — Selects the operand.</p>
 

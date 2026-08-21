@@ -1513,8 +1513,6 @@
       
         
       
-        
-      
     
     
     
@@ -2181,10 +2179,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#instruction-forms" class="md-nav__link">
+  <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Instruction Forms
+        Encodings
       
     </span>
   </a>
@@ -2299,34 +2297,6 @@
     
   
     CLR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../clrf/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CLRF
   
 
     
@@ -8943,10 +8913,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#instruction-forms" class="md-nav__link">
+  <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Instruction Forms
+        Encodings
       
     </span>
   </a>
@@ -8972,7 +8942,7 @@
 
 <h1 id="call">CALL</h1>
 <h2 id="operation">Operation</h2>
-<p>Pushes the next instruction address as one 64-bit stack value and transfers control to the target. An EA memory form reads a 64-bit target; an EA register form supplies its 64-bit value directly. The stack update and control transfer use the ordinary SS:SP and target-validation rules.</p>
+<p>Pushes the following instruction’s continuation PC as one 64-bit stack value and transfers control to the target. An EA memory operand reads a 64-bit target; an EA register operand supplies its 64-bit value directly. The stack update and control transfer use the ordinary SS:SP and target-validation rules.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
 <p><code>CALL &lt;imm16s&gt;</code></p>
 <p><code>CALL &lt;imm32s&gt;</code></p>
@@ -8997,28 +8967,28 @@
 </li>
 </ol>
 <p>For CALLcc, a false condition is evaluated before target-memory or stack access and suppresses both. Encoding, extension, privilege, and control-state validation still occur. A fault before the final commit changes neither the stack nor PC.</p>
-<h2 id="instruction-forms">Instruction Forms</h2>
+<h2 id="encodings">Encodings</h2>
 <p><strong><code>CALL &lt;imm16s&gt;</code></strong></p>
 <p><em>Encoding class: medium; required bytes: 5 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
 <p><img alt="Format — Instruction format for CALL \&lt;imm16s&gt;" src="../../../assets/visuals/isa/call-01.svg" /></p>
 <p><strong>Format Instruction format for CALL \&lt;imm16s&gt;</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong><code>CALL &lt;imm32s&gt;</code></strong></p>
 <p><em>Encoding class: medium; required bytes: 7 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
 <p><img alt="Format — Instruction format for CALL \&lt;imm32s&gt;" src="../../../assets/visuals/isa/call-02.svg" /></p>
 <p><strong>Format Instruction format for CALL \&lt;imm32s&gt;</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong><code>CALL &lt;ea&gt;(e)</code></strong></p>
 <p><em>Encoding class: medium; required bytes: 3-13 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
 <p><img alt="Format — Instruction format for CALL \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/call-03.svg" /></p>
 <p><strong>Format Instruction format for CALL \&lt;ea&gt;(e)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the control target.</p>
 <p><strong>EA availability</strong></p>
 <p><strong>Allowed:</strong> Memory; Extended Descriptor</p>
@@ -9029,7 +8999,7 @@
 <p><img alt="Format — Instruction format for CALL Rn(r)" src="../../../assets/visuals/isa/call-04.svg" /></p>
 <p><strong>Format Instruction format for CALL Rn(r)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong>Register field <code>r</code></strong> — Selects the operand.</p>
 
 

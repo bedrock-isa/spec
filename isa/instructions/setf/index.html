@@ -1513,8 +1513,6 @@
       
         
       
-        
-      
     
     
     
@@ -2197,34 +2195,6 @@
     
   
     CLR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../clrf/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CLRF
   
 
     
@@ -4981,10 +4951,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#instruction-forms" class="md-nav__link">
+  <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Instruction Forms
+        Encodings
       
     </span>
   </a>
@@ -8943,10 +8913,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#instruction-forms" class="md-nav__link">
+  <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Instruction Forms
+        Encodings
       
     </span>
   </a>
@@ -8972,7 +8942,7 @@
 
 <h1 id="setf">SETF</h1>
 <h2 id="operation">Operation</h2>
-<p>SETF writes the FLAGS bits selected by flags_bitmap to one and leaves unselected FLAGS bits unchanged. The assembler may provide symbolic mask aliases such as Z, N, C, V, and combinations using . STC is an assembler alias for SETF C.</p>
+<p>SETF replaces the complete architectural integer FLAGS image from flags_bitmap. Bit 3 writes Z, bit 2 writes N, bit 1 writes C, and bit 0 writes V; a one writes the corresponding flag to one and a zero writes it to zero. The assembler may provide symbolic bitmap names such as Z, N, C, V, and combinations using .</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
 <p><code>SETF flags_bitmap(m)</code></p>
 <h2 id="attributes">Attributes</h2>
@@ -8993,30 +8963,30 @@
 <tbody>
 <tr>
 <td style="text-align: left;"><code>Z</code></td>
-<td style="text-align: left;">set when mask bit 3 is one; otherwise unchanged</td>
+<td style="text-align: left;">mask bit 3</td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>N</code></td>
-<td style="text-align: left;">set when mask bit 2 is one; otherwise unchanged</td>
+<td style="text-align: left;">mask bit 2</td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>C</code></td>
-<td style="text-align: left;">set when mask bit 1 is one; otherwise unchanged</td>
+<td style="text-align: left;">mask bit 1</td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>V</code></td>
-<td style="text-align: left;">set when mask bit 0 is one; otherwise unchanged</td>
+<td style="text-align: left;">mask bit 0</td>
 </tr>
 </tbody>
 </table>
-<h2 id="instruction-forms">Instruction Forms</h2>
+<h2 id="encodings">Encodings</h2>
 <p><strong><code>SETF flags_bitmap(m)</code></strong></p>
 <p><em>Encoding class: medium; required bytes: 3 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
 <p><img alt="Format — Instruction format for SETF flags_bitmap(m)" src="../../../assets/visuals/isa/setf-01.svg" /></p>
 <p><strong>Format Instruction format for SETF flags_bitmap(m)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong>Immediate field <code>m</code></strong> — Encodes the immediate value.</p>
 
 

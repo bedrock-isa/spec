@@ -1513,8 +1513,6 @@
       
         
       
-        
-      
     
     
     
@@ -1750,10 +1748,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#instruction-forms" class="md-nav__link">
+  <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Instruction Forms
+        Encodings
       
     </span>
   </a>
@@ -2288,34 +2286,6 @@
     
   
     CLR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../clrf/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CLRF
   
 
     
@@ -8921,10 +8891,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#instruction-forms" class="md-nav__link">
+  <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Instruction Forms
+        Encodings
       
     </span>
   </a>
@@ -8950,7 +8920,7 @@
 
 <h1 id="afence">AFENCE</h1>
 <h2 id="operation">Operation</h2>
-<p>Acts as a full cumulative fence. Every earlier memory read and write is ordered before every later memory read and write on the same hardware thread, and memory effects observed before the fence are propagated before effects ordered after it. It also requires completion of earlier slot-addressed transactions before later slot-addressed transactions. Every AFENCE participates in the single global sequentially consistent order. It performs no memory access and changes no register or flag.</p>
+<p>Acts as a full cumulative fence. Every earlier memory read and write is ordered before every later memory read and write on the same logical processor, and memory effects observed before the fence are propagated before effects ordered after it. It also requires completion of earlier slot-addressed transactions before later slot-addressed transactions. Every AFENCE participates in the single global sequentially consistent order. It performs no memory access and changes no register or flag.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
 <p><code>AFENCE</code></p>
 <h2 id="attributes">Attributes</h2>
@@ -8959,7 +8929,7 @@
 <p>Privilege = any</p>
 <p>Length = 1 byte</p>
 <p>Repeat = <code>none</code></p>
-<h2 id="instruction-forms">Instruction Forms</h2>
+<h2 id="encodings">Encodings</h2>
 <p><strong><code>AFENCE</code></strong></p>
 <p><em>Encoding class: extrashort; required bytes: 1 byte; privilege: any</em></p>
 <p><strong>Instruction Format:</strong></p>

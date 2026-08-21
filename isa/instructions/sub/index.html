@@ -1513,8 +1513,6 @@
       
         
       
-        
-      
     
     
     
@@ -2197,34 +2195,6 @@
     
   
     CLR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../clrf/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CLRF
   
 
     
@@ -5054,10 +5024,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#instruction-forms" class="md-nav__link">
+  <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Instruction Forms
+        Encodings
       
     </span>
   </a>
@@ -8921,10 +8891,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#instruction-forms" class="md-nav__link">
+  <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Instruction Forms
+        Encodings
       
     </span>
   </a>
@@ -8970,7 +8940,7 @@
 <p>Length = 1-18 bytes</p>
 <p>Repeat = <code>REP</code>, <code>REPcc</code>, <code>REPG</code></p>
 <p>REPcc observation = <code>result</code> <code>dst</code></p>
-<h2 id="instruction-forms">Instruction Forms</h2>
+<h2 id="encodings">Encodings</h2>
 <p><strong><code>SUB.Q 8, SP</code></strong></p>
 <p><em>Encoding class: extrashort; required bytes: 1 byte; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
@@ -8998,21 +8968,21 @@
 <p><img alt="Format — Instruction format for SUB.Q \&lt;imm16s&gt;, SP" src="../../../assets/visuals/isa/sub-04.svg" /></p>
 <p><strong>Format Instruction format for SUB.Q \&lt;imm16s&gt;, SP</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong><code>SUB.Q &lt;imm32s&gt;, SP</code></strong></p>
 <p><em>Encoding class: medium; required bytes: 7 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
 <p><img alt="Format — Instruction format for SUB.Q \&lt;imm32s&gt;, SP" src="../../../assets/visuals/isa/sub-05.svg" /></p>
 <p><strong>Format Instruction format for SUB.Q \&lt;imm32s&gt;, SP</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong><code>SUB.BWLQ(z) Rn(s), &lt;ea&gt;(e)</code></strong></p>
 <p><em>Encoding class: medium; required bytes: 3-13 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
 <p><img alt="Format — Instruction format for SUB.BWLQ(z) Rn(s), \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/sub-06.svg" /></p>
 <p><strong>Format Instruction format for SUB.BWLQ(z) Rn(s), \&lt;ea&gt;(e)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
 <p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the read/write operand.</p>
@@ -9025,7 +8995,7 @@
 <p><img alt="Format — Instruction format for SUB.BWLQ(z) \&lt;ea&gt;(e), Rn(d)" src="../../../assets/visuals/isa/sub-07.svg" /></p>
 <p><strong>Format Instruction format for SUB.BWLQ(z) \&lt;ea&gt;(e), Rn(d)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
 <p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the source operand.</p>
@@ -9038,7 +9008,7 @@
 <p><img alt="Format — Instruction format for SUB.Q \&lt;imm64&gt;, \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/sub-08.svg" /></p>
 <p><strong>Format Instruction format for SUB.Q \&lt;imm64&gt;, \&lt;ea&gt;(e)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the read/write operand.</p>
 <p><strong>EA availability</strong></p>
 <p><strong>Allowed:</strong> Memory; Extended Descriptor</p>
@@ -9049,7 +9019,7 @@
 <p><img alt="Format — Instruction format for SUB.BWLQ(z) \&lt;imm8s&gt;, \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/sub-09.svg" /></p>
 <p><strong>Format Instruction format for SUB.BWLQ(z) \&lt;imm8s&gt;, \&lt;ea&gt;(e)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the read/write operand.</p>
 <p><strong>EA availability</strong></p>
@@ -9061,7 +9031,7 @@
 <p><img alt="Format — Instruction format for SUB.WLQ(z) \&lt;imm16s&gt;, \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/sub-10.svg" /></p>
 <p><strong>Format Instruction format for SUB.WLQ(z) \&lt;imm16s&gt;, \&lt;ea&gt;(e)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects W/L/Q.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the read/write operand.</p>
 <p><strong>EA availability</strong></p>
@@ -9073,7 +9043,7 @@
 <p><img alt="Format — Instruction format for SUB.LQ(z) \&lt;imm32s&gt;, \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/sub-11.svg" /></p>
 <p><strong>Format Instruction format for SUB.LQ(z) \&lt;imm32s&gt;, \&lt;ea&gt;(e)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects L/Q.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the read/write operand.</p>
 <p><strong>EA availability</strong></p>

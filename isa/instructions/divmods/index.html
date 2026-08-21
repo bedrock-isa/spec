@@ -1513,8 +1513,6 @@
       
         
       
-        
-      
     
     
     
@@ -2217,34 +2215,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../clrf/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CLRF
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../cls/" class="md-nav__link">
         
   
@@ -2640,10 +2610,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#instruction-forms" class="md-nav__link">
+  <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Instruction Forms
+        Encodings
       
     </span>
   </a>
@@ -8965,10 +8935,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#instruction-forms" class="md-nav__link">
+  <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Instruction Forms
+        Encodings
       
     </span>
   </a>
@@ -9012,14 +8982,14 @@
 <p>Let <span class="arithmatex">\(n\)</span> be the selected operand width, <span class="arithmatex">\(d\)</span> the signed two’s-complement dividend, and <span class="arithmatex">\(s\)</span> the signed two’s-complement divisor. The quotient and remainder are defined by $<span class="arithmatex">\(q = \operatorname{trunc}(d/s),
   \qquad r = d - qs .\)</span>$ Thus a nonzero remainder has the sign of the dividend. The original quotient operand supplies the dividend. On success the quotient operand receives <span class="arithmatex">\(q\)</span>, and the separate remainder operand receives <span class="arithmatex">\(r\)</span>.</p>
 <p>A zero divisor and the most-negative value divided by <span class="arithmatex">\(-1\)</span> raise <code>DIVIDE_ERROR</code>; no destination is changed.</p>
-<h2 id="instruction-forms">Instruction Forms</h2>
+<h2 id="encodings">Encodings</h2>
 <p><strong><code>DIVMODS.BWLQ(z) &lt;ea&gt;(e), Rn(q), Rn(r)</code></strong></p>
 <p><em>Encoding class: extralong; required bytes: 5-15 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
 <p><img alt="Format — Instruction format for DIVMODS.BWLQ(z) \&lt;ea&gt;(e), Rn(q), Rn(r)" src="../../../assets/visuals/isa/divmods-01.svg" /></p>
 <p><strong>Format Instruction format for DIVMODS.BWLQ(z) \&lt;ea&gt;(e), Rn(q), Rn(r)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
 <p><strong>Register field <code>q</code></strong> — Selects operand 2.</p>
 <p><strong>Register field <code>r</code></strong> — Selects operand 3.</p>
@@ -9034,7 +9004,7 @@
 <p><img alt="Format — Instruction format for DIVMODS.BWLQ(z) Rn(e), Rn(q), Rn(r)" src="../../../assets/visuals/isa/divmods-02.svg" /></p>
 <p><strong>Format Instruction format for DIVMODS.BWLQ(z) Rn(e), Rn(q), Rn(r)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
 <p><strong>Register field <code>e</code></strong> — Selects operand 1.</p>
 <p><strong>Register field <code>q</code></strong> — Selects operand 2.</p>

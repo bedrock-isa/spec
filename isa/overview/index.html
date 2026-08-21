@@ -1589,8 +1589,6 @@
       
         
       
-        
-      
     
     
     
@@ -2273,34 +2271,6 @@
     
   
     CLR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/clrf/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CLRF
   
 
     
@@ -8928,13 +8898,13 @@
 <h2 id="manual-scope">Manual Scope</h2>
 <p>This manual defines programmer-visible architectural state, operand encoding, execution semantics, and instruction behavior for the Bedrock instruction set architecture.</p>
 <h2 id="architectural-profile">Architectural Profile</h2>
-<p>Bedrock defines sixteen 64-bit integer registers, R0 through R15. SP and PC are special architectural registers outside the Rn namespace, with SP-relative addressing tied to SS and PC-relative addressing tied to CS.</p>
+<p>Bedrock defines sixteen 64-bit general-purpose registers, R0 through R15. SP and PC are special architectural registers outside the Rn namespace, with SP-relative addressing tied to SS and PC-relative addressing tied to CS.</p>
 <ul>
 <li>
-<p>The PC names a byte in the instruction stream; sequential execution advances it by the decoded instruction length.</p>
+<p>The PC names a byte in the instruction stream; sequential execution advances it by the encoded instruction length determined during decoding.</p>
 </li>
 <li>
-<p>Instruction length is explicit and bounded; the base profile defines lengths from 1 to 18 bytes.</p>
+<p>Encoded instruction length is explicit and bounded; the base profile defines encoded instruction lengths from 1 to 18 bytes.</p>
 </li>
 <li>
 <p>Four integer operation sizes: B, W, L, and Q.</p>

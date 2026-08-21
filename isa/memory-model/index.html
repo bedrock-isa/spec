@@ -1655,8 +1655,6 @@
       
         
       
-        
-      
     
     
     
@@ -2339,34 +2337,6 @@
     
   
     CLR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/clrf/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CLRF
   
 
     
@@ -9057,13 +9027,13 @@
 <h1 id="memory-model">Memory Model</h1>
 <p>The memory model defines instruction fetches, loads, stores, atomic read-modify-write operations, cache maintenance, and translation-cache maintenance after EA calculation and address translation.</p>
 <h2 id="baseline-ordering">Baseline Ordering</h2>
-<p>Normal memory is coherent. Every hardware thread observes writes to a given byte in one common coherence order, and writes by one hardware thread to that byte enter the order in program order. A naturally aligned tear-free scalar store enters that order as one write event.</p>
-<p>Normal-memory writes are multi-copy atomic. When a write event becomes observable by a hardware thread other than the writer, it becomes observable to all such threads at the same architectural point. An implementation may still forward a hardware thread’s own pending store to its later loads before that store is globally observable.</p>
+<p>Normal memory is coherent. Every logical processor observes writes to a given byte in one common coherence order, and writes by one logical processor to that byte enter the order in program order. A naturally aligned tear-free scalar store enters that order as one memory write event.</p>
+<p>Normal-memory writes are multi-copy atomic. When a memory write event becomes observable by a logical processor other than the writer, it becomes observable to all such logical processors at the same architectural point. An implementation may still forward a logical processor’s own pending store to its later loads before that store is globally observable.</p>
 <p>The baseline ordering is weak. Except for same-byte coherence or ordering imposed by an atomic memory-order selector or fence, loads and stores to different locations may be issued, completed, and observed in an order different from program order. Coherence and multi-copy atomicity do not by themselves order accesses to different locations.</p>
 <h2 id="ordinary-load-values-and-preserved-order">Ordinary Load Values and Preserved Order</h2>
 <p>Each byte returned by a load comes from the initial value of that physical byte or from an actual store or successful atomic read-modify-write to that byte. A load does not obtain a value solely from a cyclic chain in which the load value is needed to produce the write that would supply it.</p>
-<p>Among writes already globally observable when a load takes its value, the load observes the latest write in the byte’s coherence order. A load may instead forward a byte from an earlier store by the same hardware thread before that store is globally observable. A store later than the load in program order cannot supply the load.</p>
-<p>Program order is preserved from an earlier read or write to a later write when their byte ranges overlap. Two loads of the same byte, with no intervening same-thread write to that byte, do not observe the byte’s coherence order moving backward. These rules apply independently to every byte of an access, including each visible portion of an unaligned access.</p>
+<p>Among writes already globally observable when a load takes its value, the load observes the latest write in the byte’s coherence order. A load may instead forward a byte from an earlier store by the same logical processor before that store is globally observable. A store later than the load in program order cannot supply the load.</p>
+<p>Program order is preserved from an earlier read or write to a later write when their byte ranges overlap. Two loads of the same byte, with no intervening write by the same logical processor to that byte, do not observe the byte’s coherence order moving backward. These rules apply independently to every byte of an access, including each visible portion of an unaligned access.</p>
 <p>A load is ordered before a later memory access whose effective address depends on the loaded value. A load is also ordered before a later store when the stored value depends on the load or when execution of that store is control-dependent on the load. Control dependence alone does not order a later load; software uses an appropriate fence when that ordering is required.</p>
 <h2 id="pte-cache-policies">PTE Cache Policies</h2>
 <p>The two-bit PTE <code>CP</code> field selects a cache policy for byte-addressed normal memory. Every policy uses the same coherence order, multi-copy atomicity, tearing rules, atomic operations, and fence semantics defined in this chapter. The policy changes allocation, retained cache state, and store combination; it does not create a separate value or ordering domain.</p>
@@ -9115,7 +9085,7 @@
 <p>An <code>AT=1</code> load or store is an acknowledged slot transaction rather than a normal-memory byte access. Multiple transactions to different slot addresses may be outstanding. Transactions to the same slot address preserve program order. A store does not retire until its acknowledgement is received.</p>
 <p>AFENCE orders completion of all earlier slot transactions before any later slot transaction and orders slot transactions with byte-addressed memory operations according to its full cumulative-fence rules. Device-specific effects of different widths at the same slot remain part of the platform or device contract.</p>
 <h2 id="access-atomicity-and-alignment">Access Atomicity and Alignment</h2>
-<p>Unaligned ordinary memory accesses are architecturally permitted. A completed unaligned load may observe bytes from multiple coherence events, and a completed unaligned store may enter coherence as separately visible portions. Each visible store portion is coherent and multi-copy atomic.</p>
+<p>Unaligned ordinary normal-memory accesses are architecturally permitted. A completed unaligned load may observe bytes from multiple memory events in coherence order, and a completed unaligned store may enter coherence as separately visible portions. Each visible store portion is coherent and multi-copy atomic.</p>
 <p>An unaligned store is nevertheless fault-atomic for synchronous faults. If any byte of the complete store range would raise a synchronous fault, no byte of the store becomes architecturally visible.</p>
 <p>Atomic read-modify-write instructions require natural alignment only for an <code>AT=0</code> byte-addressed operand. A misaligned <code>AT=0</code> atomic operand raises <code>PAGE_FAULT</code> with the <code>ATOMIC_ALIGNMENT</code> cause before any memory update or architectural result commits; it must not complete as a non-atomic update. An <code>AT=1</code> operand has no byte-alignment property and every atomic operation through it instead raises <code>ADDRESS_TYPE</code>, regardless of the numeric slot address.</p>
 <p>For every scalar size, a naturally aligned normal-memory load or store is tear-free. Unaligned accesses retain the successful-access and synchronous-fault rules above.</p>
@@ -9145,12 +9115,12 @@
 <tr>
 <td style="text-align: left;"><code>ACQUIRE</code></td>
 <td style="text-align: left;"><code>1</code></td>
-<td style="text-align: left;">Later memory operations by the same hardware thread are ordered after the atomic operation.</td>
+<td style="text-align: left;">Later memory operations by the same logical processor are ordered after the atomic operation.</td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>RELEASE</code></td>
 <td style="text-align: left;"><code>2</code></td>
-<td style="text-align: left;">Earlier memory operations by the same hardware thread are ordered before the atomic operation.</td>
+<td style="text-align: left;">Earlier memory operations by the same logical processor are ordered before the atomic operation.</td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>ACQREL</code></td>
@@ -9166,9 +9136,9 @@
 </table>
 <p><code>CMPXCHG</code>, <code>FETCHADD</code>, <code>FETCHSUB</code>, <code>FETCHAND</code>, <code>FETCHOR</code>, and <code>FETCHXOR</code> are the atomic read-modify-write instructions. Each performs its memory read, successful memory write, and architectural register result as one indivisible operation in the coherence order of the addressed physical location.</p>
 <p>A successful release or stronger atomic write heads a release sequence. The sequence continues through immediately following successful atomic read-modify-write operations to the same location in coherence order and ends before any other write. An acquire or stronger atomic operation that takes its value from any member of the sequence observes the effects ordered before its head before effects ordered after the acquiring operation.</p>
-<p>One encoded selector governs the complete <code>CMPXCHG</code> operation on both success and failure. A failed <code>CMPXCHG</code> contributes a read event. Its acquire component orders later memory operations after that read, and its release component orders earlier memory operations before that read. On success, the write event carries the selected release effect to observers of that write; on failure, the read is the operation’s memory event. A failed <code>CMPXCHG</code> contributes no write and therefore creates no release sequence. A failed <code>CMPXCHG.SEQCST</code> additionally participates in the global sequentially consistent order as an SC load.</p>
+<p>One encoded selector governs the complete <code>CMPXCHG</code> operation on both success and failure. A failed <code>CMPXCHG</code> contributes a memory read event. Its acquire component orders later memory operations after that read, and its release component orders earlier memory operations before that read. On success, the memory write event carries the selected release effect to observers of that write; on failure, the read is the operation’s memory event. A failed <code>CMPXCHG</code> contributes no write and therefore creates no release sequence. A failed <code>CMPXCHG.SEQCST</code> additionally participates in the global sequentially consistent order as an SC load.</p>
 <h2 id="fence-instructions">Fence Instructions</h2>
-<p>The table gives every ordered-before pair imposed by a fence on memory operations issued by the same hardware thread. An entry marked ordered places every earlier operation of the row kind before every later operation of the column kind.</p>
+<p>The table gives every ordered-before pair imposed by a fence on memory operations issued by the same logical processor. An entry marked ordered places every earlier operation of the row kind before every later operation of the column kind.</p>
 <p><strong>Fence Ordered-Before Pairs</strong></p>
 <table>
 <thead>
@@ -9204,9 +9174,9 @@
 </tr>
 </tbody>
 </table>
-<p>A baseline entry retains the weak-ordering rules of this chapter. <code>AFENCE</code> is cumulative: memory effects observed before the fence are propagated before effects ordered after it, including through another hardware thread. The linked instruction entries define the matching completion behavior.</p>
+<p>A baseline entry retains the weak-ordering rules of this chapter. <code>AFENCE</code> is cumulative: memory effects observed before the fence are propagated before effects ordered after it, including through another logical processor. The linked instruction entries define the matching completion behavior.</p>
 <h2 id="global-sequentially-consistent-order">Global Sequentially Consistent Order</h2>
-<p>All <code>AFENCE</code> operations and all <code>SEQCST</code> atomic operations participate in one global total order that is consistent with each hardware thread’s ordered-before relation and with per-location coherence. A failed <code>CMPXCHG.SEQCST</code> participates in that order as an SC load even though it performs no write.</p>
+<p>All <code>AFENCE</code> operations and all <code>SEQCST</code> atomic operations participate in one global total order that is consistent with each logical processor’s ordered-before relation and with per-location coherence. A failed <code>CMPXCHG.SEQCST</code> participates in that order as an SC load even though it performs no write.</p>
 <p>A naturally aligned tear-free scalar load or store also participates as an SC operation when it is the only memory access between its immediately surrounding <code>AFENCE</code> operations in memory-event order. Thus <code>AFENCE; access; AFENCE</code> is the architectural sequence for an SC scalar load or store. The access and both fences occupy their required positions in the same global order.</p>
 <p>Acquire and release operations may be strengthened with <code>AFENCE</code>; the resulting instruction sequence has the union of the ordering constraints imposed by its operations.</p>
 

@@ -1511,8 +1511,6 @@
       
         
       
-        
-      
     
     
     
@@ -2195,34 +2193,6 @@
     
   
     CLR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../clrf/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CLRF
   
 
     
@@ -7532,10 +7502,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#instruction-forms" class="md-nav__link">
+  <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Instruction Forms
+        Encodings
       
     </span>
   </a>
@@ -8965,10 +8935,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#instruction-forms" class="md-nav__link">
+  <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Instruction Forms
+        Encodings
       
     </span>
   </a>
@@ -9006,7 +8976,7 @@
 <p>Repeat = <code>REP</code>, <code>REPG</code></p>
 <h2 id="exceptions">Exceptions</h2>
 <p><code>ILLEGAL_INSTRUCTION</code>: sin_dst and cos_dst designate the same register; cause is INVALID_OPERAND_RELATION</p>
-<p><code>FLOATING_POINT_FAULT</code>: an enabled floating-point exception is raised</p>
+<p><code>FLOATING_POINT_FAULT</code>: a generated floating-point exception condition is enabled</p>
 <h2 id="detailed-semantics">Detailed Semantics</h2>
 <p><strong>FFLAGS Effects</strong></p>
 <table>
@@ -9047,7 +9017,7 @@
 <p>When the two destinations name the same F register, <code>ILLEGAL_INSTRUCTION</code> is raised before operands or floating-point state are read.</p>
 </li>
 <li>
-<p>When the source is infinite or its magnitude exceeds pi / 4, NV is accrued and both results are the architectural default quiet NaN.</p>
+<p>When the source is infinite or its magnitude exceeds pi / 4, NV is generated and both results are the architectural default quiet NaN.</p>
 </li>
 <li>
 <p>When the source is zero, the sine result preserves the source zero and the cosine result is positive one.</p>
@@ -9072,15 +9042,15 @@
 </li>
 </ul>
 <p>For nontrapping execution, the sine and cosine destinations are written atomically.</p>
-<p>NaN, exception, trap, and commit handling follows the common FPTRANSA model in Section <a href="../fpu-transcendental-approx/#section-fptransa-common-model">3.1</a>.</p>
-<h2 id="instruction-forms">Instruction Forms</h2>
+<p>NaN handling, floating-point exception-cause generation, matching condition-enable testing, <code>FLOATING_POINT_FAULT</code> architectural-event delivery, and commit behavior follow the common FPTRANSA model in Section <a href="../fpu-transcendental-approx/#section-fptransa-common-model">3.1</a>.</p>
+<h2 id="encodings">Encodings</h2>
 <p><strong><code>FSINCOSA.SD(z) Fn(s), Fn(d), Fn(c)</code></strong></p>
 <p><em>Encoding class: long; required bytes: 4 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
 <p><img alt="Format — Instruction format for FSINCOSA.SD(z) Fn(s), Fn(d), Fn(c)" src="../../../assets/visuals/isa/fsincosa-01.svg" /></p>
 <p><strong>Format Instruction format for FSINCOSA.SD(z) Fn(s), Fn(d), Fn(c)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects S/D.</p>
 <p><strong>Register field <code>s</code></strong> — Selects operand 1.</p>
 <p><strong>Register field <code>d</code></strong> — Selects operand 2.</p>

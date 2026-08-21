@@ -1511,8 +1511,6 @@
       
         
       
-        
-      
     
     
     
@@ -2195,34 +2193,6 @@
     
   
     CLR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../clrf/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CLRF
   
 
     
@@ -5871,10 +5841,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#instruction-forms" class="md-nav__link">
+  <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Instruction Forms
+        Encodings
       
     </span>
   </a>
@@ -8943,10 +8913,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#instruction-forms" class="md-nav__link">
+  <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Instruction Forms
+        Encodings
       
     </span>
   </a>
@@ -8972,7 +8942,7 @@
 
 <h1 id="fbndix">FBNDIX</h1>
 <h2 id="operation">Operation</h2>
-<p>FBNDIX treats the low bound as inclusive and the high bound as exclusive. It sets V when the value is unordered or outside [lo, hi); Z, N, and C are unchanged.</p>
+<p>FBNDIX treats the low bound as inclusive and the high bound as exclusive. It sets V when the value is unordered or outside [lo, hi) and clears Z, N, and C. IEEE-754 FFLAGS causes continue to accrue independently.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
 <p><code>FBNDIX.SD(z) Fn(l), Fn(v), Fn(h)</code></p>
 <p><code>FBNDIX.SD(z) Fn(l), &lt;ea&gt;(v), Fn(h)</code></p>
@@ -8996,15 +8966,15 @@
 <tbody>
 <tr>
 <td style="text-align: left;"><code>Z</code></td>
-<td style="text-align: left;">preserved</td>
+<td style="text-align: left;"></td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>N</code></td>
-<td style="text-align: left;">preserved</td>
+<td style="text-align: left;"></td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>C</code></td>
-<td style="text-align: left;">preserved</td>
+<td style="text-align: left;"></td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>V</code></td>
@@ -9043,25 +9013,25 @@
 </tr>
 </tbody>
 </table>
-<h2 id="instruction-forms">Instruction Forms</h2>
+<h2 id="encodings">Encodings</h2>
 <p><strong><code>FBNDIX.SD(z) Fn(l), Fn(v), Fn(h)</code></strong></p>
 <p><em>Encoding class: long; required bytes: 4 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
 <p><img alt="Format — Instruction format for FBNDIX.SD(z) Fn(l), Fn(v), Fn(h)" src="../../../assets/visuals/isa/fbndix-01.svg" /></p>
 <p><strong>Format Instruction format for FBNDIX.SD(z) Fn(l), Fn(v), Fn(h)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects S/D.</p>
 <p><strong>Register field <code>l</code></strong> — Selects operand 1.</p>
-<p><strong>Register field <code>h</code></strong> — Selects operand 3.</p>
 <p><strong>Register field <code>v</code></strong> — Selects operand 2.</p>
+<p><strong>Register field <code>h</code></strong> — Selects operand 3.</p>
 <p><strong><code>FBNDIX.SD(z) Fn(l), &lt;ea&gt;(v), Fn(h)</code></strong></p>
 <p><em>Encoding class: long; required bytes: 4-14 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
 <p><img alt="Format — Instruction format for FBNDIX.SD(z) Fn(l), \&lt;ea&gt;(v), Fn(h)" src="../../../assets/visuals/isa/fbndix-02.svg" /></p>
 <p><strong>Format Instruction format for FBNDIX.SD(z) Fn(l), \&lt;ea&gt;(v), Fn(h)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects S/D.</p>
 <p><strong>Register field <code>l</code></strong> — Selects operand 1.</p>
 <p><strong>Register field <code>h</code></strong> — Selects operand 3.</p>
@@ -9075,7 +9045,7 @@
 <p><img alt="Format — Instruction format for FBNDIX.SD(z) \&lt;ea&gt;(l), Fn(v), \&lt;ea&gt;(h)" src="../../../assets/visuals/isa/fbndix-03.svg" /></p>
 <p><strong>Format Instruction format for FBNDIX.SD(z) \&lt;ea&gt;(l), Fn(v), \&lt;ea&gt;(h)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects S/D.</p>
 <p><strong>Register field <code>v</code></strong> — Selects operand 2.</p>
 <p><strong>Effective Address field <code>l</code></strong> — Specifies the source operand.</p>

@@ -1633,8 +1633,6 @@
       
         
       
-        
-      
     
     
     
@@ -2317,34 +2315,6 @@
     
   
     CLR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/clrf/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CLRF
   
 
     
@@ -9014,7 +8984,7 @@
 <p>The privileged programming model has two independent transition paths into supervisor execution. A supervisor call uses dedicated entry state, a working stack, and a user-return bank. Architectural event delivery handles exceptions, maskable interrupts, and NMI through the common EPC/ECS/EDS entry. The paths may nest, but they retain distinct entry state, return state, and return instructions.</p>
 <h2 id="privilege-and-transition-state">Privilege and Transition State</h2>
 <p>STATUS.PM is zero in user mode and one in supervisor mode. STATUS.EA records only architectural event processing; a supervisor call does not set it. STATUS.EA is hardware managed, and WRSTATUS must preserve the current EA value. An attempted change raises <code>INVALID_CONTROL_STATE</code> without changing STATUS.</p>
-<p>The other STATUS control bits are Boolean: IE enables maskable interrupts, TF controls single-step tracing, RF marks exception restart, and NI inhibits nested NMI delivery. In supervisor mode, ordinary memory operands use current-domain access. Checked user-domain access is expressed only by the supervisor-only MOVUC, MOVCU, and MOVUU instructions. RDCR, WRCR, translation-state changes, event-control changes, and page-table context switches require supervisor privilege unless an instruction explicitly says otherwise.</p>
+<p>The other STATUS control bits are Boolean: IE enables maskable interrupts, TF controls single-step tracing, RF marks exception restart, and NI inhibits nested NMI delivery. In supervisor mode, ordinary instruction memory operands use current-domain access. Checked user-domain access is expressed only by the supervisor-only MOVUC, MOVCU, and MOVUU instructions. RDCR, WRCR, translation-state changes, event-control changes, and page-table context switches require supervisor privilege unless an instruction explicitly says otherwise.</p>
 <p>The following table summarizes the control state that distinguishes the direct supervisor-call path from an event nested within it.</p>
 <p><strong>Supervisor-Call Transition State</strong></p>
 <p><a href="#table-supervisor-call-transition-state" id="table-supervisor-call-transition-state"></a></p>
@@ -9065,7 +9035,7 @@
 <p><img alt="Supervisor Call, Optional Event, and User Return" src="../../assets/visuals/isa/privileged-execution-model-01.svg" /></p>
 <p><strong>Supervisor Call, Optional Event, and User Return</strong></p>
 <h2 id="user-return-context-ownership">User-Return Context Ownership</h2>
-<p>The user-return bank is per-logical-processor architectural state. When a supervisor call blocks or is preempted and another thread may run on the same logical processor, system software saves and restores the bank as part of the thread’s supervisor context. The bank therefore travels with the thread whose user continuation it holds rather than with an event frame or the currently selected supervisor stack.</p>
+<p>The user-return bank is per-logical-processor architectural state. When a supervisor call blocks or is preempted and another software thread may run on the same logical processor, system software saves and restores the bank as part of the software thread’s supervisor context. The bank therefore travels with the software thread whose user continuation it holds rather than with an event frame or the currently selected supervisor stack.</p>
 <p>Signal delivery, supervisor-call restart, tracing, and initial user-process entry may inspect or establish the bank through WRCR, subject to the control-register validation rules. Events do not consume, replace, or return through the bank.</p>
 <h2 id="user-return-validation-and-commit">User Return Validation and Commit</h2>
 <p>User return requires supervisor mode, STATUS.EA clear, and URCTL.V set. Before changing architectural state, it validates the saved FLAGS and STATUS fields, including their reserved fields; requires the saved STATUS image to have PM and EA clear; validates URCS, URDS, and URSS as user segment images; requires URSP to be in bounds under URSS; and probes URPC as an executable address under URCS.</p>

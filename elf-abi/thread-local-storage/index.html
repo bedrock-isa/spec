@@ -1503,8 +1503,6 @@
       
         
       
-        
-      
     
     
     
@@ -2187,34 +2185,6 @@
     
   
     CLR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../isa/instructions/clrf/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CLRF
   
 
     
@@ -9150,10 +9120,10 @@ CALL  [R0]
 <p>Relaxation is permitted only after final binding proves that <code>S</code> is non-preemptible and <code>TLS(S)</code> is a link-time constant. It replaces the entire canonical pair without changing the section size or the address of any following instruction:</p>
 <ul>
 <li>
-<p>With <code>R_BEDROCK_TLSDESC_GOTPCREL32S</code>, the original 7-byte <code>LEA.Q</code> and 4-byte <code>CALL [R0]</code> occupy 11 bytes. If <code>TLS(S)</code> fits signed 32 bits, the linker emits <code>LEN 11, MOV.Q TLS(S), R0</code>, applies <code>R_BEDROCK_TLS_OFFSET32S</code> with addend zero to its 32-bit immediate payload, and writes four zero padding bytes after the natural 7-byte form.</p>
+<p>With <code>R_BEDROCK_TLSDESC_GOTPCREL32S</code>, the original 7-byte <code>LEA.Q</code> and 4-byte <code>CALL [R0]</code> occupy 11 bytes. If <code>TLS(S)</code> fits signed 32 bits, the linker emits <code>LEN 11, MOV.Q TLS(S), R0</code>, applies <code>R_BEDROCK_TLS_OFFSET32S</code> with addend zero to its 32-bit immediate payload, and writes four zero padding bytes after the natural 7-byte encoding.</p>
 </li>
 <li>
-<p>With <code>R_BEDROCK_TLSDESC_GOTPCREL64</code>, the original 11-byte <code>LEA.Q</code> and 4-byte <code>CALL [R0]</code> occupy 15 bytes. The linker emits <code>LEN 15, MOV.Q TLS(S), R0</code>, applies <code>R_BEDROCK_TLS_OFFSET64</code> with addend zero to its 64-bit immediate payload, and writes four zero padding bytes after the natural 11-byte form.</p>
+<p>With <code>R_BEDROCK_TLSDESC_GOTPCREL64</code>, the original 11-byte <code>LEA.Q</code> and 4-byte <code>CALL [R0]</code> occupy 15 bytes. The linker emits <code>LEN 15, MOV.Q TLS(S), R0</code>, applies <code>R_BEDROCK_TLS_OFFSET64</code> with addend zero to its 64-bit immediate payload, and writes four zero padding bytes after the natural 11-byte encoding.</p>
 </li>
 </ul>
 <p>The linker consumes both code relocations. The removed call may eliminate normal caller-saved clobbers and unobservable resolver stack activity; code may not depend on either. If no unrelaxed reference remains, no descriptor is allocated.</p>

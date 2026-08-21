@@ -1513,8 +1513,6 @@
       
         
       
-        
-      
     
     
     
@@ -2197,34 +2195,6 @@
     
   
     CLR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../clrf/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CLRF
   
 
     
@@ -4337,10 +4307,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#instruction-forms" class="md-nav__link">
+  <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Instruction Forms
+        Encodings
       
     </span>
   </a>
@@ -8943,10 +8913,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#instruction-forms" class="md-nav__link">
+  <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Instruction Forms
+        Encodings
       
     </span>
   </a>
@@ -9026,14 +8996,14 @@
 </li>
 </ol>
 <p>Failure before the requested entry is read returns zero and clears all four flags. The walk ignores PTCR.PE, does not set PTE A or D, does not modify a TLB, and does not raise <code>PAGE_FAULT</code> for walk failure.</p>
-<h2 id="instruction-forms">Instruction Forms</h2>
+<h2 id="encodings">Encodings</h2>
 <p><strong><code>PTQUERY pt_level(i), &lt;ea&gt;(e), Rn(d)</code></strong></p>
 <p><em>Encoding class: long; required bytes: 4-14 bytes; privilege: supervisor</em></p>
 <p><strong>Instruction Format:</strong></p>
 <p><img alt="Format — Instruction format for PTQUERY pt_level(i), \&lt;ea&gt;(e), Rn(d)" src="../../../assets/visuals/isa/ptquery-01.svg" /></p>
 <p><strong>Format Instruction format for PTQUERY pt_level(i), \&lt;ea&gt;(e), Rn(d)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong>Immediate field <code>i</code></strong> — Encodes the immediate value.</p>
 <p><strong>Register field <code>d</code></strong> — Selects operand 3.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the address operand.</p>
@@ -9046,7 +9016,7 @@
 <p><img alt="Format — Instruction format for PTQUERY pt_level(i), Rn(s), Rn(d)" src="../../../assets/visuals/isa/ptquery-02.svg" /></p>
 <p><strong>Format Instruction format for PTQUERY pt_level(i), Rn(s), Rn(d)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong>Immediate field <code>i</code></strong> — Encodes the immediate value.</p>
 <p><strong>Register field <code>s</code></strong> — Selects operand 2.</p>
 <p><strong>Register field <code>d</code></strong> — Selects operand 3.</p>

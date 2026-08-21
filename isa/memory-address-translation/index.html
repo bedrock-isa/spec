@@ -1644,8 +1644,6 @@
       
         
       
-        
-      
     
     
     
@@ -2328,34 +2326,6 @@
     
   
     CLR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/clrf/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CLRF
   
 
     
@@ -9072,8 +9042,8 @@
 </tr>
 </tbody>
 </table>
-<p>Address validation begins by forming the starting EA and its segment-pretranslated linear value. The starting point must be within the selected segment. With paging enabled, the starting linear value must then be canonical and the starting leaf translation is resolved far enough to determine its <code>AT</code> value. That value selects the complete bounds, alignment, translation, and address-type checks described under Leaf Address Types. This ordering defines the reported result. With paging disabled, the ordinary byte-addressed range rules apply.</p>
-<p>Complete range additions are mathematical: 64-bit wraparound never makes an out-of-range access valid. A range failure raises <code>PAGE_FAULT</code> before an architectural memory transaction begins.</p>
+<p>Address validation begins by forming the starting EA and its segment-pretranslated linear value. The starting point must be within the selected segment. With paging enabled, the starting linear value must then be canonical and the starting leaf translation is resolved far enough to determine its <code>AT</code> value. That value selects the complete bounds, alignment, translation, and address-type checks described under Leaf Address Types. This ordering defines the reported result. With paging disabled, the normal-memory byte-range rules apply.</p>
+<p>Complete range additions are mathematical: 64-bit wraparound never makes an out-of-range access valid. A range failure raises <code>PAGE_FAULT</code> before the instruction’s target memory access begins.</p>
 <p>The segment result is the linear address. With PTCR.PE set, the page-table walker consumes that address and applies the selected PTE frame and attributes. With paging disabled, the memory system receives the complete 64-bit linear address directly as a byte address. <code>PABITS_SEL</code> applies to page-table geometry, while the direct address retains all 64 bits. An invalid segment image raises INVALID_CONTROL_STATE when written; a failed segment bound or canonical-address check raises PAGE_FAULT during access.</p>
 <h2 id="paging-stage">Paging Stage</h2>
 <p>Paging is enabled by <code>PTCR.PE</code> and translates the linear address produced by segment pre-translation. Before the walk can produce a translation, the linear address must be canonical for the mode selected by <code>PTCR.LA57</code>. A noncanonical address raises <code>PAGE_FAULT</code>. With paging disabled, the memory system uses the linear address directly.</p>

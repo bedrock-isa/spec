@@ -1511,8 +1511,6 @@
       
         
       
-        
-      
     
     
     
@@ -2195,34 +2193,6 @@
     
   
     CLR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../clrf/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CLRF
   
 
     
@@ -6767,10 +6737,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#instruction-forms" class="md-nav__link">
+  <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Instruction Forms
+        Encodings
       
     </span>
   </a>
@@ -8943,10 +8913,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#instruction-forms" class="md-nav__link">
+  <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Instruction Forms
+        Encodings
       
     </span>
   </a>
@@ -9015,15 +8985,15 @@
 </tr>
 </tbody>
 </table>
-<p>Let <span class="arithmatex">\(x\)</span> be the destination value after DAZ processing and let <span class="arithmatex">\(k\)</span> be the source value rounded to an integer using the current rounding mode. The mathematical result before format rounding is $<span class="arithmatex">\(x \times 2^k .\)</span>$ A NaN operand is propagated according to the common floating-point rules. Multiplying zero or infinity by the power of two preserves that value and its sign. Conversion of the scale operand to <span class="arithmatex">\(k\)</span> can accrue NX; final rounding can accrue OF, UF, or NX. Enabled exceptions trap before the destination is written.</p>
-<h2 id="instruction-forms">Instruction Forms</h2>
+<p>Let <span class="arithmatex">\(x\)</span> be the destination value after DAZ processing and let <span class="arithmatex">\(k\)</span> be the source value rounded to an integer using the current rounding mode. The mathematical result before format rounding is $<span class="arithmatex">\(x \times 2^k .\)</span>$ A NaN operand is propagated according to the common floating-point rules. Multiplying zero or infinity by the power of two preserves that value and its sign. Conversion of the scale operand to <span class="arithmatex">\(k\)</span> can generate NX; final rounding can generate OF, UF, or NX. An enabled floating-point exception condition raises the <code>FLOATING_POINT_FAULT</code> architectural event before the destination is written.</p>
+<h2 id="encodings">Encodings</h2>
 <p><strong><code>FSCALE.SD(z) Fn(s), Fn(d)</code></strong></p>
 <p><em>Encoding class: medium; required bytes: 3 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
 <p><img alt="Format — Instruction format for FSCALE.SD(z) Fn(s), Fn(d)" src="../../../assets/visuals/isa/fscale-01.svg" /></p>
 <p><strong>Format Instruction format for FSCALE.SD(z) Fn(s), Fn(d)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects S/D.</p>
 <p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
 <p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
@@ -9033,7 +9003,7 @@
 <p><img alt="Format — Instruction format for FSCALE.SD(z) \&lt;ea&gt;(e), Fn(d)" src="../../../assets/visuals/isa/fscale-02.svg" /></p>
 <p><strong>Format Instruction format for FSCALE.SD(z) \&lt;ea&gt;(e), Fn(d)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects S/D.</p>
 <p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the source operand.</p>

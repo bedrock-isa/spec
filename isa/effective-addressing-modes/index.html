@@ -1589,8 +1589,6 @@
       
         
       
-        
-      
     
     
     
@@ -2273,34 +2271,6 @@
     
   
     CLR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/clrf/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CLRF
   
 
     
@@ -8924,9 +8894,9 @@
 
 <h1 id="effective-addressing-modes">Effective Addressing Modes</h1>
 <p>An effective-address field is an operand descriptor with an instruction-defined role and interpretation width. A value role reads or writes the selected register, immediate, or memory value. An address role uses a register or immediate as an address value and uses a memory-form EA as the calculated address without an initial data read. A control-target role uses a register or immediate value directly and reads an interpretation-width target from a memory form. Memory forms continue into segment pre-translation and paging.</p>
-<p>Each seven-bit compact EA field is embedded in the concrete opcode form, and all compact EA fields precede any appended EA payload bytes. Any displacement, absolute address, immediate, or extended descriptor bytes are appended as EA payload bytes. Appended EA payload sequences appear in declared instruction operand order. For two payload-bearing EA operands, the opcode stream is: concrete opcode form containing EA0 and EA1 <span class="arithmatex">\(\rightarrow\)</span> complete EA0 payload sequence <span class="arithmatex">\(\rightarrow\)</span> complete EA1 payload sequence <span class="arithmatex">\(\rightarrow\)</span> any trailing padding.</p>
+<p>Each seven-bit compact EA field is embedded in the instruction’s opcode space, and all compact EA fields precede any appended EA payload bytes. Any displacement, absolute address, immediate, or extended descriptor bytes are appended as EA payload bytes. Appended EA payload sequences appear in declared instruction operand order. For two payload-bearing EA operands, the encoded stream is: opcode space containing EA0 and EA1 <span class="arithmatex">\(\rightarrow\)</span> complete EA0 payload sequence <span class="arithmatex">\(\rightarrow\)</span> complete EA1 payload sequence <span class="arithmatex">\(\rightarrow\)</span> any trailing padding.</p>
 <p>Multi-byte scalar EA payloads, such as displacements, absolute addresses, and immediates, are little-endian. Payload names ending in s are signed and are sign-extended before use; payload names without s are unsigned unless the consuming instruction explicitly says otherwise. Extended descriptor bytes appear in stream order, byte 0 first. Each descriptor byte is independently numbered from bit 7 through bit 0.</p>
-<p>Indexed scale is the EA interpretation width declared by the consuming form. B, W, L, and Q widths select scales 1, 2, 4, and 8. A form whose width is <code>operation_size</code> uses its selected instruction size. LEA and SEGLEA use their suffix; size-less address and control-target forms use Q.</p>
+<p>Indexed scale is the EA interpretation width declared by the consuming instruction encoding. B, W, L, and Q widths select scales 1, 2, 4, and 8. An encoding whose width is <code>operation_size</code> uses its selected instruction size. LEA and SEGLEA use their suffix; size-less instructions with address or control-target roles use Q.</p>
 <p>For every compact or extended-descriptor PC-based EA, the PC term is the architectural PC naming byte 0 of the current instruction. The PC term remains that instruction-start value throughout operand evaluation.</p>
 <h2 id="compact-ea-addressing-modes">Compact EA Addressing Modes</h2>
 <p>Compact EA forms encode direct Rn and SP operands, common Rn/SP/PC memory operands, absolute memory operands, immediate operands, and the EXT1 and EXT2 escapes.</p>
@@ -9007,7 +8977,7 @@
 <p><strong>Generation:</strong>The one-byte EXT1 descriptor selects segment, base, and auto-update behavior. The compact EA escape selects the descriptor family and displacement size.</p>
 <p><strong>Segment:</strong>Segment-qualified forms encode SREG SEG(s); default base-update forms use the operation default data segment.</p>
 <p><strong>Payload:</strong>The one descriptor byte comes first, followed by the optional displacement payload selected by the compact EA escape.</p>
-<p><strong>Update:</strong>Only forms with ++ or -- update the temporary operand-evaluation image.</p>
+<p><strong>Update:</strong>Only forms with ++ or -- update the temporary operand-evaluation state.</p>
 <p><strong><code>EXT2 Escape</code></strong></p>
 <p><code>EXT2</code></p>
 <p><code>EXT2/disp8s</code></p>
@@ -9019,7 +8989,7 @@
 <p><strong>Generation:</strong>The two-byte EXT2 descriptor selects segment, base, index, and auto-update behavior. The compact EA escape selects the descriptor family and displacement size.</p>
 <p><strong>Segment:</strong>Segment-qualified forms encode SREG SEG(s); SP and PC indexed forms use SS and CS.</p>
 <p><strong>Payload:</strong>The two descriptor bytes come first, followed by the optional displacement payload selected by the compact EA escape.</p>
-<p><strong>Update:</strong>Only forms with ++ or -- update the temporary operand-evaluation image.</p>
+<p><strong>Update:</strong>Only forms with ++ or -- update the temporary operand-evaluation state.</p>
 <p><strong>Compact EA Encoding</strong></p>
 <table>
 <thead>
@@ -9310,7 +9280,7 @@
 </tr>
 </tbody>
 </table>
-<p>For a compact displacement, absolute address, or immediate, the selected payload follows the EA field at that operand’s payload position. Extended-descriptor construction begins with the compact escape value in the concrete opcode form and exactly one EXT1 or two EXT2 descriptor bytes; a displaced form places its selected displacement after those descriptor bytes. When an instruction has more than one payload-bearing EA operand, the decoder consumes each complete appended EA payload sequence in declared instruction operand order. Each complete sequence, including any extended descriptor bytes and selected displacement, ends before the next payload-bearing EA operand’s sequence begins.</p>
+<p>For a compact displacement, absolute address, or immediate, the selected payload follows the EA field at that operand’s payload position. Extended-descriptor construction begins with the compact escape value in the opcode space and exactly one EXT1 or two EXT2 descriptor bytes; a displaced form places its selected displacement after those descriptor bytes. When an instruction has more than one payload-bearing EA operand, the decoder consumes each complete appended EA payload sequence in declared instruction operand order. Each complete sequence, including any extended descriptor bytes and selected displacement, ends before the next payload-bearing EA operand’s sequence begins.</p>
 <h2 id="extended-ea-addressing-modes">Extended EA Addressing Modes <a href="#section-extended-ea-addressing" id="section-extended-ea-addressing"></a></h2>
 <p>EXT1 and EXT2 are used when compact EA cannot express the operand: explicit segment selection, indexed addressing, zero-base addressing, SP/PC indexed addressing, or auto-update addressing. EXT1 selects exactly one descriptor byte; EXT2 selects exactly two descriptor bytes.</p>
 <p>Each extended-descriptor form selects its segment from the encoded SREG field SEG(s), the fixed SS segment for SP, the fixed CS segment for PC, or the operation’s default data segment.</p>
@@ -9362,7 +9332,7 @@
 <p><strong>Generation:</strong>offset = index_term * scale + displacement.</p>
 <p><strong>Segment:</strong>SEG(s) selects DS, SS, or GS0..GS5.</p>
 <p><strong>Payload:</strong>Two descriptor bytes plus the optional displacement selected by the compact EXT2 escape.</p>
-<p><strong>Update:</strong>Index update follows the same one-element temporary-image rule as other indexed update forms.</p>
+<p><strong>Update:</strong>Index update follows the same one-element temporary-state rule as other indexed update forms.</p>
 <p><img alt="EXT2 zero-base indexed" src="../../assets/visuals/isa/effective-addressing-modes-13.svg" /></p>
 <p><strong>EXT2 zero-base indexed</strong></p>
 <p><strong><code>EXT2 SP/PC Indexed</code></strong></p>
@@ -9389,9 +9359,9 @@
 <p><strong>Update:</strong>Postincrement uses the current temporary Rn(b), then increments it by the memory access size. Predecrement decrements temporary Rn(b) by the memory access size before use.</p>
 <p><img alt="EXT1 default-segment base auto-update" src="../../assets/visuals/isa/effective-addressing-modes-15.svg" /></p>
 <p><strong>EXT1 default-segment base auto-update</strong></p>
-<p>EA evaluation begins by copying the architectural registers into a temporary operand-evaluation image. Operands are then processed in instruction order. Within one EA, the base term is evaluated before the index term and then the displacement. Auto-update changes only the temporary image while operands are being evaluated. Memory reads and writes are collected as instruction side effects, and neither those effects nor the register updates become architecturally visible until the instruction commits. A fault before commit therefore leaves both register and memory state unchanged apart from the exception-entry transition.</p>
+<p>EA evaluation begins by copying the architectural registers into temporary operand-evaluation state. Operands are then processed in instruction order. Within one EA, the base term is evaluated before the index term and then the displacement. Auto-update changes only the temporary operand-evaluation state while operands are being evaluated. Memory reads and writes are collected as instruction side effects, and neither those effects nor the register updates become architecturally visible until the instruction commits. A fault before commit therefore leaves both register and memory state unchanged apart from the exception-entry transition.</p>
 <p>Postincrement forms use the current temporary value and update it afterward. Predecrement forms update the temporary value first and then use the result. A base register changes by the EA interpretation width in bytes; an index register changes by one element before scaling. Each REP iteration applies and commits these rules independently.</p>
-<p>Size-less address-role forms INVPAGE, FLSHDCACHE, INVDCACHE, INVICACHE, WRBKDCACHE, SYNCCACHE, PREFETCH, PREFETCHNT, PTQUERY, SAVE, and RESTORE have Q interpretation width. Size-less control-target forms DJcc, IJcc, LCALL, and LJMP also have Q interpretation width. Their extended-descriptor index scale is eight and their base predecrement or postincrement amount is eight. Cache range loops advance their explicit address by the CPUID maintenance granule, independently of this per-EA update amount.</p>
+<p>Size-less address-role instructions INVPAGE, FLSHDCACHE, INVDCACHE, INVICACHE, WRBKDCACHE, SYNCCACHE, PREFETCH, PREFETCHNT, PTQUERY, SAVE, and RESTORE have Q interpretation width. Size-less control-target instructions DJcc, IJcc, LCALL, and LJMP also have Q interpretation width. Their extended-descriptor index scale is eight and their base predecrement or postincrement amount is eight. Cache range loops advance their explicit address by the CPUID maintenance granule, independently of this per-EA update amount.</p>
 <p>When one register supplies both terms in <code>[R1 + R1++ * scale]</code>, the base and index terms use the same current temporary R1 before the index update. In <code>[R1 + ``-``-``R1 * scale]</code>, the base uses the current value; the index term then decrements temporary R1 and uses the updated value.</p>
 
 

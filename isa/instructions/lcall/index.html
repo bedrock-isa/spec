@@ -1513,8 +1513,6 @@
       
         
       
-        
-      
     
     
     
@@ -2197,34 +2195,6 @@
     
   
     CLR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../clrf/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CLRF
   
 
     
@@ -3497,10 +3467,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#instruction-forms" class="md-nav__link">
+  <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Instruction Forms
+        Encodings
       
     </span>
   </a>
@@ -8943,10 +8913,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#instruction-forms" class="md-nav__link">
+  <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Instruction Forms
+        Encodings
       
     </span>
   </a>
@@ -8972,7 +8942,7 @@
 
 <h1 id="lcall">LCALL</h1>
 <h2 id="operation">Operation</h2>
-<p>Long call is the CS-changing call instruction. It first constructs the far return frame on SS:SP, then commits the new CS and PC together. The two-operand form takes the new CS image from Rn. Its target EA has Q interpretation width: a memory form reads a 64-bit offset and a register or immediate form supplies its value directly.</p>
+<p>Long Call is a segment-changing control transfer. It first constructs the long return frame on SS:SP, then commits the new CS and PC together. The two-operand encoding takes the new CS image from an Rn register. Its target EA has Q interpretation width: a memory operand reads a 64-bit offset and a register or immediate operand supplies its value directly.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
 <p><code>LCALL Rn(s), Rn(d)</code></p>
 <p><code>LCALL Rn(r), &lt;ea&gt;(e)</code></p>
@@ -8994,22 +8964,22 @@
 <p>Validate the target offset against the new CS and probe executable translation at the resulting linear address.</p>
 </li>
 <li>
-<p>Probe both 8-byte far-return-frame stores through the old SS context.</p>
+<p>Probe both 8-byte long-return-frame stores through the old SS context.</p>
 </li>
 <li>
 <p>Commit the two frame stores, decremented SP, new CS, and new PC as one successful control-transfer operation.</p>
 </li>
 </ol>
 <p><strong>Fault atomicity.</strong> No frame word, SP, CS, or PC update is visible when any prior step faults.</p>
-<p>The far-return frame is 16 bytes in the old SS context: the return PC occupies offset 0 and the return CS image occupies offset 8. An invalid new CS image raises <code>INVALID_CONTROL_STATE</code>; target translation or either frame-store translation failure raises <code>PAGE_FAULT</code>.</p>
-<h2 id="instruction-forms">Instruction Forms</h2>
+<p>The long return frame is 16 bytes in the old SS context: the continuation PC occupies offset 0 and the return CS image occupies offset 8. An invalid new CS image raises <code>INVALID_CONTROL_STATE</code>; target translation or either frame-store translation failure raises <code>PAGE_FAULT</code>.</p>
+<h2 id="encodings">Encodings</h2>
 <p><strong><code>LCALL Rn(s), Rn(d)</code></strong></p>
 <p><em>Encoding class: medium; required bytes: 3 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
 <p><img alt="Format — Instruction format for LCALL Rn(s), Rn(d)" src="../../../assets/visuals/isa/lcall-01.svg" /></p>
 <p><strong>Format Instruction format for LCALL Rn(s), Rn(d)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong>Register field <code>s</code></strong> — Selects the source operand.</p>
 <p><strong>Register field <code>d</code></strong> — Selects the destination operand.</p>
 <p><strong><code>LCALL Rn(r), &lt;ea&gt;(e)</code></strong></p>
@@ -9018,7 +8988,7 @@
 <p><img alt="Format — Instruction format for LCALL Rn(r), \&lt;ea&gt;(e)" src="../../../assets/visuals/isa/lcall-02.svg" /></p>
 <p><strong>Format Instruction format for LCALL Rn(r), \&lt;ea&gt;(e)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
-<p><strong>Length field <code>L</code></strong> — Encodes the total instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The selected length must cover all required bytes; trailing bytes are uninterpreted padding.</p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong>Register field <code>r</code></strong> — Selects the source operand.</p>
 <p><strong>Effective Address field <code>e</code></strong> — Specifies the control target.</p>
 <p><strong>EA availability</strong></p>

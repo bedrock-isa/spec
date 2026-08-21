@@ -1677,8 +1677,6 @@
       
         
       
-        
-      
     
     
     
@@ -2361,34 +2359,6 @@
     
   
     CLR
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../instructions/clrf/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CLRF
   
 
     
@@ -9372,7 +9342,7 @@
 <tr>
 <td style="text-align: left;"><code>63</code></td>
 <td style="text-align: left;"><code>PRESENT</code></td>
-<td style="text-align: left;">the instruction and both S and D forms are available</td>
+<td style="text-align: left;">the instruction and both S and D encodings are available</td>
 </tr>
 </tbody>
 </table>
@@ -9380,7 +9350,7 @@
 <p>Software first checks <code>FP</code> and <code>FPTRANSA</code> in <code>EXTENSION_DIRECTORY</code>, then queries the intended contract ID in <code>FPTRANSA_ACCURACY</code>. It uses the instruction only when <code>PRESENT</code> is set, the returned <code>CONTRACT_REVISION</code> is 1, and the S or D bound required by the call site is no larger than its quality threshold; otherwise it uses a software fallback. For example, a D-format <code>FLOG2A</code> path requiring at most 2 ULP accepts selector <code>0x0000000100010043</code> only when the returned D field is at most <code>0x0200</code>.</p>
 <p>The selector is <span class="arithmatex">\((\texttt{0x00000001} \ll 32) \mathbin{|} (\texttt{0x0001} \ll 16) \mathbin{|}
 \textit{contract-id}\)</span>. For example, <code>FSINA</code> uses selector <code>0x0000000100010001</code>, and <code>FLOG2A</code> uses <code>0x0000000100010043</code>. An implementation that certifies <code>FSINA</code> at 1.5 ULP for S and 2 ULP for D returns <code>0x8000000102000180</code>.</p>
-<p><code>PRESENT=1</code> guarantees that the instruction and both S and D forms are architecturally usable under the returned contract. The S and D bounds are worst-case bounds over every input in the contract domain and apply to every execution on the logical processor that returned the CPUID result until reset. Executing the instruction with <code>PRESENT=0</code> raises <code>ILLEGAL_INSTRUCTION</code> before operand or floating-point-state access.</p>
+<p><code>PRESENT=1</code> guarantees that the instruction and both S and D encodings are architecturally usable under the returned contract. The S and D bounds are worst-case bounds over every input in the contract domain and apply to every execution on the logical processor that returned the CPUID result until reset. Executing the instruction with <code>PRESENT=0</code> raises <code>ILLEGAL_INSTRUCTION</code> before operand or floating-point-state access.</p>
 <p><strong>FPTRANSA Accuracy Contracts</strong></p>
 <table>
 <thead>
