@@ -143,14 +143,18 @@ u32 app_load(struct Process *process, const u8 *image, u64 len, u32 pid) {
     u64 vaddr = read64(ph + 16);
     u64 filesz = read64(ph + 32);
     u64 memsz = read64(ph + 40);
-    u64 page_flags =
-        PAGE_USER | (flags == (PF_R | PF_X) ? PAGE_EXEC : PAGE_WRITE);
+    if (flags != PF_R && flags != (PF_R | PF_W) &&
+        flags != (PF_R | PF_X))
+      return 14u;
+    u64 page_flags = PAGE_USER |
+        (flags == (PF_R | PF_X) ? PAGE_AM_RX :
+         flags == (PF_R | PF_W) ? PAGE_AM_RW : PAGE_AM_R);
     if (!map_user_range(process->ptcr, vaddr, vaddr + memsz, page_flags) ||
         !copy_to_user_frames(vaddr, image + offset, filesz))
       return 14u;
   }
   if (!map_user_range(process->ptcr, stack_start, stack_end,
-                      PAGE_USER | PAGE_WRITE))
+                      PAGE_USER | PAGE_AM_RW))
     return 14u;
 
   process->pid = pid;

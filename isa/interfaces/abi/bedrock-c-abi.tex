@@ -26,8 +26,8 @@ and semantics for target-specific C extensions are defined separately.
 \section{Terminology}\label{page:terminology}
 These terms are specific to the C binding. ELF and address-space terms keep the meanings defined by the Bedrock ELF ABI and the architecture manual.
 \begin{description}[style=nextline,leftmargin=1.45in,labelwidth=1.35in,itemsep=3pt,topsep=3pt]
-\item[object pointer] A 64-bit value that designates an object or one-past an object according to the C abstract machine. In the canonical interoperable context, the value is a pre-segment virtual address.
-\item[function pointer] A 64-bit value naming a C entry point. In the canonical interoperable context, the value is a pre-segment code address.
+\item[object pointer] A stable 64-bit pre-segment coordinate that designates an object or one-past an object according to the C abstract machine.
+\item[function pointer] A stable 64-bit pre-segment coordinate naming a C entry point.
 \item[caller-saved register] A register whose value may be overwritten by a call unless the caller saves it before the call.
 \item[callee-saved register] A register whose incoming value must be preserved by the called function if the function uses it.
 \item[sret buffer] Caller-allocated storage used to receive a return value that is too large or unsuitable for the normal return registers.
@@ -98,9 +98,8 @@ with every object-representation bit clear; true is encoded with bit 0 set and
 every other bit clear.
 
 \paragraph{Ordinary pointers.}
-An ordinary object or function pointer is 64 bits wide and 8-byte aligned. In
-the canonical interoperable context its value is a canonical pre-segment
-virtual address. Object and function pointers remain distinct C type categories
+An ordinary object or function pointer is 64 bits wide and 8-byte aligned. Its
+value is a pre-segment coordinate. Object and function pointers remain distinct C type categories
 even though their baseline representations have the same size and alignment.
 The null pointer has numeric address zero and an all-zero
 64-bit object representation. Every ordinary-pointer result with numeric
@@ -250,41 +249,36 @@ context and may use translated-window mode. \texttt{GS1} through \texttt{GS5}
 are caller-saved scratch segment registers; no incoming value in them is
 preserved across a C call.
 
-\subsection{C Address-Space Contexts}
-The canonical interoperable C context uses disabled or bounds-only
-\texttt{CS}, \texttt{DS}, and \texttt{SS}. In this context, ordinary object and
-function pointers are canonical pre-segment virtual addresses and conforming
-execution maintains all of the following invariants:
+\subsection{C Address-Space Context}
+Ordinary object and function pointers are stable 64-bit pre-segment
+coordinates. A conforming execution maintains all of the following invariants:
 
 \begin{itemize}
-\item \texttt{CS}, \texttt{DS}, and \texttt{SS} are disabled with a zero
-mantissa or are enabled in bounds-only mode.
-\item Using an ordinary pointer as an effective address preserves its numeric
-value across segment processing.
-\item \texttt{DS} is disabled or its bounds contain every address that may be
-dereferenced through an ordinary object pointer, including materialized stack
-and TLS addresses.
-\item \texttt{CS} permits near-call reachability for every ordinary function
-entry in the active linkage domain, and \texttt{SS} covers the active stack.
-\item Every C object and its one-past address must be representable as a
+\item While a pointer is live, calls, returns, register or memory preservation,
+context transitions, and ABI boundaries preserve its 64-bit coordinate.
+\item Every ABI-permitted segment path that dereferences a valid object
+pointer selects the same byte of the same C object for a given pointer value.
+This includes a stack object's address after it escapes to an ordinary data
+path, and a materialized TLS object's address.
+\item Pointer equality, subtraction, and in-object arithmetic have the same C
+result on every ABI-permitted path. A one-past pointer participates in those
+operations but is not required to designate storage and is never dereferenced.
+\item Function pointers, call entries, return continuations, ELF symbols and
+relocations, dynamic linkage, stack pointers, runtime-provided pointers, TLS
+materialization, signal and nonlocal-jump contexts, unwind records, and
+debugger-visible coordinates use this pre-segment coordinate system.
+\item Segment and page-table context transitions preserve these invariants as
+one architectural transition from the program's perspective.
+\item Every C object and its one-past coordinate must be representable as a
 nonzero 64-bit address; no object may have mathematical one-past address
 $2^{64}$.
 \end{itemize}
 
-The active platform ABI may instead execute C code with translated
-\texttt{CS}, \texttt{DS}, or \texttt{SS} images. That contract owns the
-pointer and symbol coordinate systems; compatibility among code, ordinary
-data, stack-derived addresses, and TLS-derived addresses; context transitions;
-and adaptation at every external boundary. In particular, independently
-translated \texttt{DS} and \texttt{SS} contexts do not by themselves make a
-stack-derived pointer usable as an ordinary data pointer. Code using such a
-context is not interoperable with the canonical context unless the active
-platform contract defines the necessary compatibility and transitions.
-
-The 64-bit all-zero null-pointer representation remains unchanged in every
-context, and address zero is not assigned to a C object or function. Whether a
-null-derived access is guaranteed to fault is a mapping or guard-page policy of
-the active platform rather than a property of the representation.
+The 64-bit all-zero null-pointer representation remains unchanged, and address
+zero is not assigned to a C object or function. The platform ABI defines a
+null-guard size of at least 4096 bytes. Every pointer coordinate below that
+size is invalid through each segment path that can perform an ordinary C
+access.
 
 \subsection{Status Registers}
 \texttt{STATUS} is not part of the C abstract machine; ordinary C code accesses
@@ -618,8 +612,8 @@ binary64 representation and call classification, so conversions involving
 corresponding \texttt{dc3} helper.
 
 \subsection{Pointers and External Objects}
-A C function pointer is 64 bits wide. In the canonical interoperable context,
-its value is a pre-segment near-call address. Code and data pointers have the
+A C function pointer is 64 bits wide and its value is a pre-segment near-call
+coordinate. Code and data pointers have the
 same size and alignment, but remain distinct C type categories; neither
 representation creates an interchangeable code/data address space.
 

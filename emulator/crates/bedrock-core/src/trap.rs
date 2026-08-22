@@ -1,5 +1,5 @@
 use crate::exception::InvalidControlCause;
-use crate::{AccessDomain, AccessKind, PageFaultReason, SegmentSelector};
+use crate::{AccessDomain, AccessFaultReason, AccessKind, PageFaultReason, SegmentSelector};
 use bedrock_bus::{AcknowledgedBusFailure, BusError};
 use bedrock_isa::DecodeError;
 use thiserror::Error;
@@ -9,6 +9,20 @@ pub struct PageFaultContext {
     pub effective_address: u64,
     pub linear_address: Option<u64>,
     pub reason: PageFaultReason,
+    pub access_kind: AccessKind,
+    pub access_domain: AccessDomain,
+    pub segment: Option<SegmentSelector>,
+    pub asid: u16,
+    pub access_size: Option<u8>,
+    pub operand: Option<u8>,
+    pub atomic: bool,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct AccessFaultContext {
+    pub effective_address: u64,
+    pub linear_address: Option<u64>,
+    pub reason: AccessFaultReason,
     pub access_kind: AccessKind,
     pub access_domain: AccessDomain,
     pub segment: Option<SegmentSelector>,
@@ -90,4 +104,9 @@ pub enum Trap {
     },
     #[error("page fault at 0x{address:016x} while executing 0x{pc:016x}: {reason:?}", address = context.linear_address.unwrap_or(context.effective_address), reason = context.reason)]
     PageFault { pc: u64, context: PageFaultContext },
+    #[error("access fault at 0x{address:016x} while executing 0x{pc:016x}: {reason:?}", address = context.linear_address.unwrap_or(context.effective_address), reason = context.reason)]
+    AccessFault {
+        pc: u64,
+        context: AccessFaultContext,
+    },
 }

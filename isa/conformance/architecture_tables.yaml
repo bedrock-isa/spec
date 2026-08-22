@@ -63,7 +63,7 @@ cpuid:
           summary: common header and the implementation-selected VLEN logarithm
     - id: 0x00000002
       name: Implementation properties
-      summary: cache topology, performance counters, and SAVE/RESTORE area layout
+      summary: cache topology, performance counters, address widths, and SAVE/RESTORE area layout
       leaves:
         - id: 0x0000
           name: IMPLEMENTATION_DIRECTORY
@@ -77,6 +77,10 @@ cpuid:
           name: PERFORMANCE_COUNTERS
           max_index: 3
           summary: common header and standard RDPMC-counter presence
+        - id: 0x0003
+          name: ADDRESS_WIDTHS
+          max_index: 1
+          summary: common header and the implementation physical-address width
         - id: 0x0004
           name: SAVE_AREA_LAYOUT
           max_index: n
@@ -184,13 +188,13 @@ cache_policies:
 translation_cache:
   identity:
     - {component: leaf-aligned linear mapping range, applies: every entry}
-    - {component: LA57 and PABITS_SEL, applies: every entry}
+    - {component: LA57, applies: every entry}
     - {component: ASID, applies: non-global entry while ASCR.AE is one}
   transitions:
     - operation: WRCR PTCR with changed root_page
       non_global: invalidate all current untagged entries when AE is zero; when AE is one software must invalidate the ASID before rebinding it
       global: preserve only mappings whose complete leaf attributes are identical in every context
-    - operation: WRCR PTCR with changed LA57 or PABITS_SEL
+    - operation: WRCR PTCR with changed LA57
       non_global: invalidate entries using the old translation geometry
       global: invalidate entries using the old translation geometry
     - operation: WRCR ASCR changing ASID while AE remains one
@@ -227,8 +231,8 @@ translation_cache:
 
 control_write_rules:
   - registers: [PTCR]
-    writable: root_page, PABITS_SEL, LA57, and PE; reserved bits must be zero
-    validation: PABITS_SEL is 0 or 1 and the selected root frame fits the selected physical-address width
+    writable: root_page, LA57, and PE; reserved bits must be zero
+    validation: the root frame fits the implementation PABITS value reported by CPUID ADDRESS_WIDTHS
     commit: apply the translation-cache transition selected by the changed fields
   - registers: [ASCR]
     writable: ASID and AE; reserved bits must be zero
@@ -283,7 +287,11 @@ exception_causes:
     - {value: 3, name: NONCANONICAL, meaning: noncanonical address}
     - {value: 4, name: SEGMENT_BOUNDS, meaning: segment bounds failure}
     - {value: 5, name: ATOMIC_ALIGNMENT, meaning: misaligned atomic operand}
-    - {value: 6, name: RESERVED, meaning: reserved and never generated}
+    - {value: 6, name: MEMORY_TYPE, meaning: physical Device memory is selected by a Normal leaf AM}
+  ACCESS_FAULT:
+    - {value: 0, name: PHYSICAL_ADDRESS, meaning: paging-disabled physical address exceeds implementation PABITS}
+    - {value: 1, name: MMIO_ALIGNMENT, meaning: permitted scalar MMIO operand is not naturally aligned}
+    - {value: 2, name: MMIO_OPERATION, meaning: operation class is prohibited for MMIO}
   ILLEGAL_INSTRUCTION:
     - {value: 0, name: INVALID_OPCODE, meaning: opcode is not assigned}
     - {value: 1, name: INVALID_EA_FORM, meaning: effective-address form is not legal for the instruction}
@@ -333,7 +341,7 @@ event_frames:
       frame_type: BASIC
     - events: [ILLEGAL_INSTRUCTION, DIVIDE_ERROR, VECTOR_RANGE_ERROR, INVALID_CONTROL_STATE, FLOATING_POINT_FAULT]
       frame_type: ERROR
-    - events: [PAGE_FAULT]
+    - events: [PAGE_FAULT, ACCESS_FAULT]
       frame_type: PAGE_FAULT
     - events: [DOUBLE_FAULT, MACHINE_CHECK, BUS_ERROR]
       frame_type: AUXILIARY
@@ -345,9 +353,10 @@ architectural_events:
   - {event_class: EXCEPTION, id: 0x02, name: BREAKPOINT, producer: BKPT, kind: explicit trap, saved_pc: following instruction, committed_state: BKPT completed, frame: BASIC, payload: none, priority: 4}
   - {event_class: EXCEPTION, id: 0x03, name: ILLEGAL_INSTRUCTION, producer: decode or instruction-validity check, kind: fault, saved_pc: faulting instruction, committed_state: no effects of the faulting instruction, frame: ERROR, payload: error code, priority: 3}
   - {event_class: EXCEPTION, id: 0x08, name: PRIVILEGE_FAULT, producer: privilege check, kind: fault, saved_pc: faulting instruction, committed_state: no effects of the faulting instruction, frame: BASIC, payload: none, priority: 3}
-  - {event_class: EXCEPTION, id: 0x09, name: PAGE_FAULT, producer: "segment, translation, access, or atomic-alignment check", kind: fault, saved_pc: faulting instruction, committed_state: no effects of the faulting instruction, frame: PAGE_FAULT, payload: "error code, fault EA, and linear address", priority: 3}
+  - {event_class: EXCEPTION, id: 0x09, name: PAGE_FAULT, producer: "segment, translation, memory-type, or atomic-alignment check", kind: fault, saved_pc: faulting instruction, committed_state: no effects of the faulting instruction, frame: PAGE_FAULT, payload: "error code, fault EA, and linear address", priority: 3}
   - {event_class: EXCEPTION, id: 0x0A, name: DIVIDE_ERROR, producer: integer divide operation, kind: fault, saved_pc: faulting instruction, committed_state: no effects of the faulting instruction, frame: ERROR, payload: error code, priority: 3}
   - {event_class: EXCEPTION, id: 0x0B, name: VECTOR_RANGE_ERROR, producer: PLOOP offset or vector lane-index validation, kind: fault, saved_pc: faulting instruction, committed_state: no effects of the faulting instruction, frame: ERROR, payload: error code, priority: 3}
+  - {event_class: EXCEPTION, id: 0x0C, name: ACCESS_FAULT, producer: physical-address-width or MMIO access-rule check, kind: fault, saved_pc: faulting instruction, committed_state: no effects of the faulting instruction, frame: PAGE_FAULT, payload: "error code, fault EA, and linear address", priority: 3}
   - {event_class: EXCEPTION, id: 0x0D, name: INVALID_CONTROL_STATE, producer: control-state validation, kind: fault, saved_pc: faulting instruction, committed_state: no effects of the faulting instruction, frame: ERROR, payload: error code, priority: 3}
   - {event_class: EXCEPTION, id: 0x0E, name: FLOATING_POINT_FAULT, producer: enabled floating-point exception condition, kind: fault, saved_pc: faulting instruction, committed_state: no destination or accrued-flag effects of the faulting instruction, frame: ERROR, payload: error code, priority: 3}
   - {event_class: EXCEPTION, id: 0x18, name: DOUBLE_FAULT, producer: architectural event-delivery failure, kind: delivery failure, saved_pc: interrupted event boundary, committed_state: no partial first delivery state, frame: AUXILIARY, payload: delivery-failure auxiliary state, priority: 1}

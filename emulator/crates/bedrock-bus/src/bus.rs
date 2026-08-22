@@ -1,5 +1,12 @@
 use crate::error::{BusError, BusResult};
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum PhysicalMemoryClass {
+    #[default]
+    Normal,
+    Device,
+}
+
 pub trait Bus {
     fn begin_transaction(&mut self) -> BusResult<()>;
     fn commit_transaction(&mut self);
@@ -7,6 +14,35 @@ pub trait Bus {
 
     fn read_u8(&mut self, addr: u64) -> BusResult<u8>;
     fn write_u8(&mut self, addr: u64, value: u8) -> BusResult<()>;
+
+    /// Returns the platform-owned physical memory class for `addr`.
+    ///
+    /// Byte-only buses default to Normal memory. Platform buses override this
+    /// for device apertures; page-table attributes may make a Normal address
+    /// stricter, but may not make a Device address Normal.
+    fn physical_memory_class(&self, _addr: u64) -> PhysicalMemoryClass {
+        PhysicalMemoryClass::Normal
+    }
+
+    /// Conditionally replaces one naturally aligned 64-bit PTE image.
+    ///
+    /// Implementations with concurrent bus masters override this with an
+    /// indivisible compare/exchange. The default is sufficient for the
+    /// single-threaded reference buses and still prevents stale field writeback.
+    fn compare_exchange_u64(
+        &mut self,
+        addr: u64,
+        expected: u64,
+        desired: u64,
+    ) -> BusResult<Result<u64, u64>> {
+        let observed = self.read_u64(addr)?;
+        if observed == expected {
+            self.write_u64(addr, desired)?;
+            Ok(Ok(observed))
+        } else {
+            Ok(Err(observed))
+        }
+    }
 
     fn read_u16(&mut self, addr: u64) -> BusResult<u16> {
         checked_transfer_end(addr, 2)?;

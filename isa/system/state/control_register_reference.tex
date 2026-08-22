@@ -9,16 +9,17 @@ stack, and user-return registers are per-logical-processor architectural state.
 
 \begin{manualformatdiagram}{PTCR Format}
 \manualformatrow{PTCR[63:0]}{%
-\manualformatfield{root\_page}{52}
-\manualformatfield{PS}{4}
+\manualformatreserved{reserved}{8}
+\manualformatfield{root\_page}{44}
+\manualformatreserved{res.}{4}
 \manualformatfield{L}{1}
 \manualformatreserved{reserved}{6}
 \manualformatfield{P}{1}
 }
 \end{manualformatdiagram}
 {\small
-In the diagram, \texttt{PS}, \texttt{L}, and \texttt{P} abbreviate
-\texttt{PABITS\_SEL}, \texttt{LA57}, and \texttt{PE}.
+In the diagram, \texttt{L} and \texttt{P} abbreviate
+\texttt{LA57} and \texttt{PE}.
 \par}
 
 \manualtablecaption{PTCR Fields}
@@ -27,8 +28,9 @@ In the diagram, \texttt{PS}, \texttt{L}, and \texttt{P} abbreviate
 \rowcolor{ManualHeaderFill}
 \textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
 \midrule
-\texttt{root\_page} & \texttt{63..12} & physical frame number of the page-table root\\
-\texttt{PABITS\_SEL} & \texttt{11..8} & 0 selects 48 physical bits; 1 selects 56; 2..15 are invalid\\
+reserved & \texttt{63..56} & must be zero in this page-table format\\
+\texttt{root\_page} & \texttt{55..12} & physical frame number of the page-table root; must fit implementation PABITS\\
+reserved & \texttt{11..8} & must be zero\\
 \texttt{LA57} & \texttt{7} & zero selects four levels; one selects five levels\\
 reserved & \texttt{6..1} & must be zero\\
 \texttt{PE} & \texttt{0} & page-table translation enable\\

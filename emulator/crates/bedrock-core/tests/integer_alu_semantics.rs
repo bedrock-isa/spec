@@ -3,10 +3,10 @@ use bedrock_core::{Cpu, EventControl, Flags, PageTableControl, StepResult};
 use bedrock_isa::{EncodingClass, generated::GENERATED_FORMS};
 
 const PTE_P: u64 = 1 << 0;
-const PTE_W: u64 = 1 << 1;
-const PTE_X: u64 = 1 << 2;
-const PTE_U: u64 = 1 << 3;
-const PTE_T: u64 = 1 << 11;
+const PTE_T: u64 = 1 << 1;
+const PTE_U: u64 = 1 << 5;
+const PTE_W: u64 = 1 << 62;
+const PTE_X: u64 = 1 << 63;
 
 const WIDTHS: [(u64, u32, u64); 4] = [
     (0, 8, 0xff),
@@ -168,15 +168,25 @@ fn expected_extract(high: u64, low: u64, bits: u32, mask: u64, offset: u32) -> u
 }
 
 fn install_four_level_root(ram: &mut Ram) {
-    let table_flags = PTE_P | PTE_W | PTE_X | PTE_U | PTE_T;
+    let table_flags = PTE_P | PTE_T | (1 << 2) | (1 << 3) | (1 << 4) | PTE_U;
     ram.write_u64(0x1000, 0x2000 | table_flags).unwrap();
     ram.write_u64(0x2000, 0x3000 | table_flags).unwrap();
     ram.write_u64(0x3000, 0x4000 | table_flags).unwrap();
 }
 
 fn map_low_page(ram: &mut Ram, virtual_page: u64, physical_page: u64, flags: u64) {
-    ram.write_u64(0x4000 + virtual_page * 8, physical_page | PTE_P | flags)
-        .unwrap();
+    let am = if flags & PTE_X != 0 {
+        0b100 << 2
+    } else if flags & PTE_W != 0 {
+        0b011 << 2
+    } else {
+        0
+    };
+    ram.write_u64(
+        0x4000 + virtual_page * 8,
+        physical_page | PTE_P | (flags & PTE_U) | am,
+    )
+    .unwrap();
 }
 
 fn paged_fault_fixture(bytes: &[u8], map_data_read_only: bool) -> (Cpu, Ram) {

@@ -22,6 +22,9 @@ families:
   - cross_page_qword_second_permission
   - cross_page_second_bus_error
   - cross_page_instruction_fetch_permission
+  - table_rwx_leaf_am_composition
+  - device_mapped_normal_fault
+  - mmio_operation_precedes_alignment
 - id: stack_event
   source: isa/system/events/conformance/stack_event_vectors.yaml
   required_cases:

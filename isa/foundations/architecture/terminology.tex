@@ -12,16 +12,16 @@ pre-translation either converts it to a linear address or reports the architectu
 A \emph{linear address} is the result of segment pre-translation. The page-table walker consumes it when paging is
 enabled; otherwise the memory system uses it directly.
 
-A \emph{physical address} is the byte address produced by page-table translation for byte-addressed normal memory.
-With paging disabled, the linear address is used directly instead.
+A \emph{physical address} is the byte address produced by page-table translation.
+With paging disabled, the linear address is used directly after the implementation PABITS check.
 
 A \emph{memory-system address} is the byte address presented to the memory subsystem after every active architectural
 translation stage.
 
-\emph{Byte-addressed normal memory} is the coherent memory-location model used by every final translation. The PTE
-\texttt{CP} field selects one of its four cache policies. Only policy
-\texttt{CP=0} is \emph{cacheable}; the other three \texttt{CP} values remain byte-addressed normal memory with the
-allocation and propagation behavior defined by the Memory Model.
+\emph{Normal memory} is the coherent memory-location model. \emph{Device
+memory} is the platform-owned physical class that requires MMIO execution
+rules. A leaf AM selects Normal or MMIO access semantics, while the orthogonal
+\texttt{CP} field selects one of four cache policies.
 
 \emph{Address generation} is the instruction-local calculation that combines registers, displacement, index,
 scale, and immediate fields into an effective address. It does not by itself read memory.
@@ -55,7 +55,8 @@ A \emph{bounds-only segment} is enabled with bounds-only mode set. It treats the
 and checks only that it lies inside the segment window.
 
 \emph{Page-table translation} is the optional \texttt{PTCR.PE}-controlled stage that maps a canonical linear
-address to a physical frame and applies PTE permissions and cache policy. PTE bit 7 is an ignored don't-care.
+address to a physical frame and applies effective permissions, access class,
+cache policy, and A/D state. Bit 7 is A in both descriptor layouts.
 
 A \emph{PFN} is a physical frame number. A leaf PTE at level $L$ combines its naturally aligned PFN base with the
 low $12+9(L-1)$ linear-address bits to form a byte address.

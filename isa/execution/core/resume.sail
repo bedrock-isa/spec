@@ -15,6 +15,27 @@ function resume_transaction_inner(previous : Execution_result, response : Transa
     completed(previous.pending.before, previous.pending.after, previous.pending.kind, [||])
   else if not_bool(response.success) then
     transaction_faulted(previous, response.fault_kind, response.detail)
+  else if previous.request.address_translation
+       & response.physical_class == DevicePhysical
+       & response.access_class == NormalAccess then
+    architectural_memory_fault(
+      previous, TranslationFault, 6,
+      "Normal access class selected Device physical memory"
+    )
+  else if previous.request.address_translation
+       & response.access_class == MmioAccess
+       & not_bool(mmio_scalar_request(previous))
+       & not_bool(previous.request.suppress_fault) then
+    architectural_memory_fault(
+      previous, AccessFault, 2, "operation is not permitted for MMIO"
+    )
+  else if previous.request.address_translation
+       & response.access_class == MmioAccess
+       & not_bool(mmio_naturally_aligned(previous.request))
+       & not_bool(previous.request.suppress_fault) then
+    architectural_memory_fault(
+      previous, AccessFault, 1, "MMIO scalar is not naturally aligned"
+    )
   else match previous.pending.phase {
     PhaseSourceRead => resume_memory_phase(previous, response),
     PhaseDestinationProbe => resume_memory_phase(previous, response),

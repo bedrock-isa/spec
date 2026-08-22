@@ -275,6 +275,15 @@ used only when its query reports present.
 \end{manuallistedformatdiagram}
 {\small\texttt{P} is \texttt{PRESENT}.\par}
 
+\subsection{Address-Width Discovery}
+Class \texttt{0x00000002}, leaf \texttt{0x0003} is
+\texttt{ADDRESS\_WIDTHS}. Index zero reports \texttt{MAX\_INDEX=1}. At index
+one, bits \texttt{5..0} contain the exact implementation \texttt{PABITS}
+value in the inclusive range 32 through 56; bits \texttt{63..6} are zero.
+PABITS is stable until reset, applies to page-table roots, every present PTE
+PFN, translated results, and paging-disabled physical addresses, and is not a
+page-table geometry or TLB-identity selector.
+
 \subsection{SAVE-Area Layout Discovery}
 Class \texttt{0x00000002}, leaf \texttt{0x0004} describes the memory image used by SAVE and RESTORE. Index zero is
 the common header. Indexes one and two describe the complete image and its fixed block. Each available extension

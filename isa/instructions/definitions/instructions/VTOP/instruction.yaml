@@ -1,7 +1,7 @@
 mnemonic: VTOP
 title: Virtual To Physical Query
 summary: Non-destructively queries the current translation of a linear address.
-description: With paging disabled, VTOP returns the supplied linear address unchanged. With paging enabled, it returns the current byte-address translation and reports query success and accumulated U, W, and X permissions in FLAGS without accessing the translated target. PTE bit 7 is ignored.
+description: With paging disabled, VTOP returns the supplied address when it fits implementation PABITS. With paging enabled, it returns the current physical byte-address translation without accessing the translated target. Z reports success; N, C, and V are zero. The query does not modify A or D.
 attributes:
   class: system
   family: tlb_and_context
@@ -9,7 +9,7 @@ attributes:
 flag_effects:
   FLAGS:
     Z: "translation query succeeded"
-    N: "successful translation is user-domain accessible; cleared on failure"
-    C: "successful translation is writable; cleared on failure"
-    V: "successful translation is executable; cleared on failure"
+    N: "zero"
+    C: "zero"
+    V: "zero"
 additional_description: details.tex

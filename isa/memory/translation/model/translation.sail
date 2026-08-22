@@ -4,7 +4,10 @@ function paging_canonical(linear : bits(64), ptcr : bits(64)) -> bool =
   else linear[63 .. 48] == (if linear[47] == bitone then 0xFFFF else 0x0000)
 
 function paging_pfn_mask(ptcr : bits(64)) -> bits(64) =
-  if ptcr[11 .. 8] == 0x1 then 0x00FFFFFFFFFFF000 else 0x0000FFFFFFFFF000
+  0x00FFFFFFFFFFF000
+
+function physical_address_fits_pabits(address : bits(64)) -> bool =
+  address[63 .. 56] == 0x00
 
 function paging_level_index(linear : bits(64), level : int) -> bits(64) = match level {
   5 => sail_shiftright(linear, 48) & 0x00000000000001FF,
@@ -13,11 +16,6 @@ function paging_level_index(linear : bits(64), level : int) -> bits(64) = match 
   2 => sail_shiftright(linear, 21) & 0x00000000000001FF,
   _ => sail_shiftright(linear, 12) & 0x00000000000001FF,
 }
-
-function pte_permission_bits(pte : bits(64)) -> bits(64) =
-  (if pte[3] == bitone then 0x0000000000000001 else 0x0000000000000000)
-  | (if pte[1] == bitone then 0x0000000000000002 else 0x0000000000000000)
-  | (if pte[2] == bitone then 0x0000000000000004 else 0x0000000000000000)
 
 function paging_leaf_offset_mask(level : int) -> bits(64) = match level {
   5 => 0x0000FFFFFFFFFFFF,
@@ -32,13 +30,16 @@ function paging_leaf_alignment_mask(level : int) -> bits(64) =
 
 function pte_structurally_valid(pte : bits(64), level : int) -> bool =
   if pte[0] == bitzero then false
-  else if pte[11] == bitone then
-    level > 1 & pte[6] == bitzero & pte[4] == bitzero
-  else (pte & paging_leaf_alignment_mask(level)) == 0x0000000000000000
+  else if (pte & 0xFC00000000000000) != 0x0000000000000000 then false
+  else if pte[1] == bitone then
+    level > 1 & (pte & 0x0000000000000F40) == 0x0000000000000000
+      & pte[4 .. 2] != 0b000
+  else (pte & 0x0000000000000800) == 0x0000000000000000
+    & (pte & paging_leaf_alignment_mask(level)) == 0x0000000000000000
 
 function pte_read_request(state : Cpu_state, instruction : Decoded_instruction,
                           linear : bits(64), table_base : bits(64), level : int,
-                          target_level : int, permissions : bits(64), ordinal : int)
+                          target_level : int, ordinal : int)
   -> Primitive_request = {
   let address = add_bits(table_base, sail_shiftleft(paging_level_index(linear, level), 3));
   { empty_primitive_request() with
@@ -49,20 +50,17 @@ function pte_read_request(state : Cpu_state, instruction : Decoded_instruction,
     effective_address = address, linear_address = address, access = AccessLoad,
     address_translation = false, commit_point = false, value = linear,
     selector = bits_from_int(level), expected = bits_from_int(target_level),
-    auxiliary = permissions, state_image = state }
+    auxiliary = 0x0000000000000000, state_image = state }
 }
 
-function query_result(previous : Execution_result, value : bits(64), valid : bool,
-                      permissions : bits(64)) -> Execution_result = {
+function query_result(previous : Execution_result, value : bits(64), valid : bool)
+  -> Execution_result = {
   var updated = previous.pending.after;
   let destination = previous.pending.destination;
   if destination.kind == "Rn" then
     updated.registers[unsigned(destination.index)] = value
   else ();
-  updated.flags = if valid then
-    flags_value(true, permissions[0] == bitone, permissions[1] == bitone,
-                permissions[2] == bitone)
-  else 0x0;
+  updated.flags = if valid then 0x1 else 0x0;
   completed(previous.pending.before, updated, CommitControl, [||])
 }
 
@@ -143,6 +141,16 @@ function start_tlb_context_transaction(instruction : Decoded_instruction, state 
             & not_bool(segment_point(address.segment_image,
                                      address.effective_address).in_bounds) then
       faulted(state, operation, AccessFault, "PTQUERY effective address outside segment")
+    else if operation == Op_VTOP & state.controls[0][0] == bitzero then {
+      var direct = advance_pc(evaluated.image, instruction);
+      let valid = physical_address_fits_pabits(linear);
+      if destination.kind == "Rn" then
+        direct.registers[unsigned(destination.index)] =
+          if valid then linear else 0x0000000000000000
+      else ();
+      direct.flags = if valid then 0x1 else 0x0;
+      completed(state, direct, CommitControl, [||])
+    }
     else if not_bool(paging_canonical(linear, state.controls[0]))
          | (operation == Op_PTQUERY & target_level == 5 & root_level == 4) then {
       var failed = advance_pc(evaluated.image, instruction);
@@ -156,7 +164,7 @@ function start_tlb_context_transaction(instruction : Decoded_instruction, state 
       destination, PhasePteRead, 0, linear, bits_from_int(target_level),
       pte_read_request(state, instruction, linear,
                        state.controls[0] & paging_pfn_mask(state.controls[0]),
-                       root_level, target_level, 0x0000000000000007, 0)
+                       root_level, target_level, 0)
     )
   }
   else if save_range & not_bool(save_layout_valid(state)) then

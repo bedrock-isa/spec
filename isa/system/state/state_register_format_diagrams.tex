@@ -32,9 +32,9 @@ reserved bit to be zero. Instruction-specific flag production and conditional us
 
 \begin{manuallistedformatdiagram}{STATUS Register Format}
 \manualformatrow{STATUS[15:0]}{%
-\manualformatreserved{reserved}{5}
-\manualformatfield{UO}{1}
-\manualformatfield{EDEPTH}{4}
+\manualformatreserved{res.}{5}
+\manualformatfield{U}{1}
+\manualformatfield{DEPTH}{4}
 \manualformatfield{I}{1}
 \manualformatfield{P}{1}
 \manualformatfield{R}{1}
@@ -44,8 +44,9 @@ reserved bit to be zero. Instruction-specific flag production and conditional us
 }
 \end{manuallistedformatdiagram}
 {\small
-In the diagram, \texttt{I}, \texttt{P}, \texttt{R}, \texttt{T}, \texttt{N}, and \texttt{E}
-abbreviate \texttt{IE}, \texttt{PM}, \texttt{RF}, \texttt{TF}, \texttt{NI}, and \texttt{EA}.
+In the diagram, \texttt{U}, \texttt{DEPTH}, \texttt{I}, \texttt{P}, \texttt{R}, \texttt{T}, \texttt{N}, and
+\texttt{E} abbreviate \texttt{UO}, \texttt{EDEPTH}, \texttt{IE}, \texttt{PM}, \texttt{RF}, \texttt{TF},
+\texttt{NI}, and \texttt{EA}.
 \par}
 
 \manualtablecaption{STATUS Fields}

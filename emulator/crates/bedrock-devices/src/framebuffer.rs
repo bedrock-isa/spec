@@ -1,4 +1,4 @@
-use bedrock_bus::{BusError, BusResult, Device};
+use bedrock_bus::{AccessWidth, BusError, BusResult, Device};
 use std::collections::BTreeMap;
 
 pub const DEFAULT_FRAMEBUFFER_WIDTH: u32 = 320;
@@ -68,27 +68,63 @@ impl FramebufferDevice {
     }
 
     pub fn read_vram_u8(&mut self, offset: u64) -> BusResult<u8> {
-        let index = self.vram_index(offset)?;
-        Ok(self
-            .transaction
-            .as_ref()
-            .and_then(|transaction| transaction.vram_writes.get(&index).copied())
-            .unwrap_or(self.vram[index]))
+        self.read_vram(offset, AccessWidth::Byte)
+            .map(|value| value as u8)
     }
 
     pub fn write_vram_u8(&mut self, offset: u64, value: u8) -> BusResult<()> {
-        let index = self.vram_index(offset)?;
+        self.write_vram(offset, AccessWidth::Byte, u64::from(value))
+    }
+
+    pub fn read_vram(&mut self, offset: u64, width: AccessWidth) -> BusResult<u64> {
+        let indices = self.vram_indices(offset, width)?;
+        let mut value = 0;
+        for (byte, index) in indices.into_iter().enumerate() {
+            let current = self
+                .transaction
+                .as_ref()
+                .and_then(|transaction| transaction.vram_writes.get(&index).copied())
+                .unwrap_or(self.vram[index]);
+            value |= u64::from(current) << (byte * 8);
+        }
+        Ok(value)
+    }
+
+    pub fn write_vram(&mut self, offset: u64, width: AccessWidth, value: u64) -> BusResult<()> {
+        let indices = self.vram_indices(offset, width)?;
         if let Some(transaction) = &mut self.transaction {
-            transaction.vram_writes.insert(index, value);
+            for (byte, index) in indices.into_iter().enumerate() {
+                transaction
+                    .vram_writes
+                    .insert(index, (value >> (byte * 8)) as u8);
+            }
             transaction.dirty_writes = transaction.dirty_writes.wrapping_add(1);
         } else {
-            self.vram[index] = value;
+            for (byte, index) in indices.into_iter().enumerate() {
+                self.vram[index] = (value >> (byte * 8)) as u8;
+            }
             self.dirty_seq = self.dirty_seq.wrapping_add(1);
         }
         Ok(())
     }
 
     pub fn read_register_u8(&self, offset: u64) -> BusResult<u8> {
+        self.read_register(offset, AccessWidth::Byte)
+            .map(|value| value as u8)
+    }
+
+    pub fn read_register(&self, offset: u64, width: AccessWidth) -> BusResult<u64> {
+        let mut result = 0;
+        for byte in 0..width.bytes() {
+            let current = offset
+                .checked_add(byte)
+                .ok_or(BusError::OutOfRange { addr: offset })?;
+            result |= u64::from(self.read_register_byte(current)?) << (byte * 8);
+        }
+        Ok(result)
+    }
+
+    fn read_register_byte(&self, offset: u64) -> BusResult<u8> {
         let value = match offset {
             0x00..=0x03 => self.width as u64,
             0x04..=0x07 => self.height as u64,
@@ -109,27 +145,39 @@ impl FramebufferDevice {
     }
 
     pub fn write_register_u8(&mut self, offset: u64, value: u8) -> BusResult<()> {
-        match offset {
-            0x0c..=0x0f => {
-                let shift = ((offset - 0x0c) * 8) as u32;
-                let mut control = self
-                    .transaction
-                    .as_ref()
-                    .and_then(|transaction| transaction.control)
-                    .unwrap_or(self.control);
-                control &= !(0xff << shift);
-                control |= (value as u32) << shift;
-                if let Some(transaction) = &mut self.transaction {
-                    transaction.control = Some(control);
-                } else {
-                    self.control = control;
-                    self.enabled = (self.control & 1) != 0;
+        self.write_register(offset, AccessWidth::Byte, u64::from(value))
+    }
+
+    pub fn write_register(&mut self, offset: u64, width: AccessWidth, value: u64) -> BusResult<()> {
+        for byte in 0..width.bytes() {
+            let current = offset
+                .checked_add(byte)
+                .ok_or(BusError::OutOfRange { addr: offset })?;
+            match current {
+                0x0c..=0x0f => {}
+                0x00..=0x0b | 0x10..=0x17 => {
+                    return Err(BusError::ReadOnly { addr: current });
                 }
-                Ok(())
+                _ => return Err(BusError::Unmapped { addr: current }),
             }
-            0x00..=0x0b | 0x10..=0x17 => Err(BusError::ReadOnly { addr: offset }),
-            _ => Err(BusError::Unmapped { addr: offset }),
         }
+        let mut control = self
+            .transaction
+            .as_ref()
+            .and_then(|transaction| transaction.control)
+            .unwrap_or(self.control);
+        for byte in 0..width.bytes() {
+            let shift = ((offset + byte - 0x0c) * 8) as u32;
+            control &= !(0xff << shift);
+            control |= (((value >> (byte * 8)) & 0xff) as u32) << shift;
+        }
+        if let Some(transaction) = &mut self.transaction {
+            transaction.control = Some(control);
+        } else {
+            self.control = control;
+            self.enabled = (self.control & 1) != 0;
+        }
+        Ok(())
     }
 
     pub fn rgb332_rgba(&self) -> Vec<u8> {
@@ -149,6 +197,17 @@ impl FramebufferDevice {
             return Err(BusError::Unmapped { addr: offset });
         }
         Ok(index)
+    }
+
+    fn vram_indices(&self, offset: u64, width: AccessWidth) -> BusResult<Vec<usize>> {
+        (0..width.bytes())
+            .map(|byte| {
+                offset
+                    .checked_add(byte)
+                    .ok_or(BusError::OutOfRange { addr: offset })
+                    .and_then(|current| self.vram_index(current))
+            })
+            .collect()
     }
 }
 
@@ -179,12 +238,12 @@ impl Device for FramebufferDevice {
         self.transaction = None;
     }
 
-    fn read_u8(&mut self, offset: u64) -> BusResult<u8> {
-        self.read_vram_u8(offset)
+    fn read(&mut self, offset: u64, width: AccessWidth) -> BusResult<u64> {
+        self.read_vram(offset, width)
     }
 
-    fn write_u8(&mut self, offset: u64, value: u8) -> BusResult<()> {
-        self.write_vram_u8(offset, value)
+    fn write(&mut self, offset: u64, width: AccessWidth, value: u64) -> BusResult<()> {
+        self.write_vram(offset, width, value)
     }
 }
 

@@ -88,7 +88,8 @@ u32 memory_map_page(u64 ptcr, u64 virtual_address, u64 physical_address,
   static const u32 shifts[3] = {39u, 30u, 21u};
   u64 *table = (u64 *)(ptcr & ~(PAGE_SIZE - 1u));
   const u64 table_flags =
-      PAGE_PRESENT | PAGE_WRITE | PAGE_EXEC | PAGE_USER | PAGE_TABLE;
+      PAGE_PRESENT | PAGE_TABLE | PAGE_TABLE_R | PAGE_TABLE_W | PAGE_TABLE_X |
+      PAGE_USER;
 
   if ((virtual_address & (PAGE_SIZE - 1u)) != 0u ||
       (physical_address & (PAGE_SIZE - 1u)) != 0u) {
@@ -141,7 +142,7 @@ u64 memory_create_address_space(u32 asid, u32 include_shell) {
   u64 ptcr = root | 1u;
 
   if (!map_identity_range(ptcr, (u64)__kernel_text_start,
-                          (u64)__kernel_text_end, PAGE_EXEC)) {
+                          (u64)__kernel_text_end, PAGE_AM_RX)) {
     g_kernel_stats.last_error = 1;
     return 0;
   }
@@ -151,43 +152,43 @@ u64 memory_create_address_space(u32 asid, u32 include_shell) {
     return 0;
   }
   if (!map_identity_range(ptcr, (u64)__kernel_data_start,
-                          (u64)__kernel_data_end, PAGE_WRITE)) {
+                          (u64)__kernel_data_end, PAGE_AM_RW)) {
     g_kernel_stats.last_error = 3;
     return 0;
   }
   if (!map_identity_range(ptcr, (u64)__kernel_stack_start,
-                          (u64)__kernel_stack_end, PAGE_WRITE)) {
+                          (u64)__kernel_stack_end, PAGE_AM_RW)) {
     g_kernel_stats.last_error = 4;
     return 0;
   }
-  if (!map_identity_range(ptcr, 0x000ff000ULL, 0x00100000ULL, PAGE_WRITE)) {
+  if (!map_identity_range(ptcr, 0x000ff000ULL, 0x00100000ULL, PAGE_AM_RW)) {
     g_kernel_stats.last_error = 5;
     return 0;
   }
   if (!map_identity_range(ptcr, (u64)__page_pool_start, (u64)__page_pool_end,
-                          PAGE_WRITE)) {
+                          PAGE_AM_RW)) {
     g_kernel_stats.last_error = 6;
     return 0;
   }
-  if (!map_identity_range(ptcr, FB_BASE, FB_BASE + FB_SIZE, PAGE_WRITE)) {
+  if (!map_identity_range(ptcr, FB_BASE, FB_BASE + FB_SIZE, PAGE_AM_MMIO_RW)) {
     g_kernel_stats.last_error = 7;
     return 0;
   }
   if (!map_identity_range(ptcr, KBD_BASE, KBD_BASE + KBD_REG_SIZE,
-                          PAGE_WRITE)) {
+                          PAGE_AM_MMIO_RW)) {
     g_kernel_stats.last_error = 8;
     return 0;
   }
 
   if (include_shell != 0u &&
       (!map_identity_range(ptcr, (u64)__user_text_start, (u64)__user_text_end,
-                           PAGE_EXEC | PAGE_USER) ||
+                           PAGE_AM_RX | PAGE_USER) ||
        !map_identity_range(ptcr, (u64)__user_rodata_start,
-                           (u64)__user_rodata_end, PAGE_USER) ||
+                           (u64)__user_rodata_end, PAGE_AM_R | PAGE_USER) ||
        !map_identity_range(ptcr, (u64)__tls_start, (u64)__tls_end,
-                           PAGE_WRITE | PAGE_USER) ||
+                           PAGE_AM_RW | PAGE_USER) ||
        !map_identity_range(ptcr, (u64)__user_stack_start, (u64)__user_stack_end,
-                           PAGE_WRITE | PAGE_USER))) {
+                           PAGE_AM_RW | PAGE_USER))) {
     g_kernel_stats.last_error = 9;
     return 0;
   }

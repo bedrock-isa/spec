@@ -213,11 +213,11 @@ impl Default for LinkOptions {
 #[derive(Debug, Error)]
 pub enum ToolchainError {
     #[error(
-        "neither BEDROCK_LLVM_BIN nor BEDROCK_LLVM_ROOT is set; set BEDROCK_LLVM_BIN to the LLVM tool binary directory or BEDROCK_LLVM_ROOT to the LLVM source root"
+        "neither BEDROCK_LLVM_BIN nor BEDROCK_LLVM_ROOT is set; set BEDROCK_LLVM_BIN to the LLVM tool binary directory or BEDROCK_LLVM_ROOT to the LLVM build directory"
     )]
     MissingLlvmConfiguration,
     #[error(
-        "BEDROCK_LLVM_ROOT is not set; set it to the LLVM source root for LLVM headers and libraries"
+        "BEDROCK_LLVM_ROOT is not set; set it to the LLVM build directory for LLVM headers and libraries"
     )]
     MissingLlvmRoot,
     #[error("missing LLVM Bedrock tool `{tool}` in {bin_dir:?}")]
@@ -262,7 +262,7 @@ fn llvm_bin_dir_from_config(
     }
 
     if let Some(llvm_root) = llvm_root {
-        return Ok(PathBuf::from(llvm_root).join("build").join("bin"));
+        return Ok(PathBuf::from(llvm_root).join("bin"));
     }
 
     Err(ToolchainError::MissingLlvmConfiguration)
@@ -275,19 +275,27 @@ pub fn default_llvm_root() -> Result<PathBuf, ToolchainError> {
 }
 
 pub fn default_build_dir() -> Result<PathBuf, ToolchainError> {
-    Ok(default_llvm_root()?.join("build"))
+    default_llvm_root()
 }
 
 pub fn default_lib_dir() -> Result<PathBuf, ToolchainError> {
-    Ok(default_build_dir()?.join("lib"))
+    Ok(lib_dir_from_root(&default_llvm_root()?))
 }
 
 pub fn default_lldb_source_include_dir() -> Result<PathBuf, ToolchainError> {
-    Ok(default_llvm_root()?.join("lldb").join("include"))
+    Ok(lldb_source_include_dir_from_root(&default_llvm_root()?))
 }
 
 pub fn default_lldb_build_include_dir() -> Result<PathBuf, ToolchainError> {
-    Ok(default_build_dir()?.join("include"))
+    Ok(default_llvm_root()?.join("include"))
+}
+
+fn lib_dir_from_root(root: &Path) -> PathBuf {
+    root.join("lib")
+}
+
+fn lldb_source_include_dir_from_root(root: &Path) -> PathBuf {
+    root.parent().unwrap_or(root).join("lldb").join("include")
 }
 
 fn tool_name(name: &str) -> String {
@@ -318,11 +326,25 @@ mod tests {
     }
 
     #[test]
-    fn root_configuration_derives_build_bin() {
+    fn root_configuration_derives_bin_from_build_directory() {
         let selected = llvm_bin_dir_from_config(None, Some(OsString::from("/configured/root")))
             .expect("root configuration should resolve");
 
-        assert_eq!(selected, PathBuf::from("/configured/root/build/bin"));
+        assert_eq!(selected, PathBuf::from("/configured/root/bin"));
+    }
+
+    #[test]
+    fn build_root_derives_library_and_lldb_source_paths() {
+        let root = Path::new("/checkout/build");
+
+        assert_eq!(
+            lib_dir_from_root(root),
+            PathBuf::from("/checkout/build/lib")
+        );
+        assert_eq!(
+            lldb_source_include_dir_from_root(root),
+            PathBuf::from("/checkout/lldb/include")
+        );
     }
 
     #[test]

@@ -1,4 +1,4 @@
-use bedrock_bus::{BusError, BusResult, Device};
+use bedrock_bus::{AccessWidth, BusError, BusResult, Device};
 use std::collections::VecDeque;
 
 pub const DEFAULT_KEYBOARD_CAPACITY: usize = 256;
@@ -131,60 +131,85 @@ impl Device for KeyboardDevice {
         self.transaction_active = false;
     }
 
-    fn read_u8(&mut self, offset: u64) -> BusResult<u8> {
+    fn read(&mut self, offset: u64, width: AccessWidth) -> BusResult<u64> {
+        let end = offset
+            .checked_add(width.bytes() - 1)
+            .ok_or(BusError::OutOfRange { addr: offset })?;
+        if end > 0x07 {
+            return Err(BusError::Unmapped { addr: end });
+        }
         if self.transaction_active {
             let shadow = self.ensure_shadow();
-            let value = match offset {
-                0x00..=0x03 => status_for(&shadow.queue, shadow.overflow),
-                0x04 => {
-                    shadow.read_latch = shadow.queue.pop_front().unwrap_or(0);
-                    shadow.read_latch
-                }
-                0x05..=0x07 => shadow.read_latch,
-                _ => return Err(BusError::Unmapped { addr: offset }),
-            };
-            return Ok(((value >> ((offset & 0x03) * 8)) & 0xff) as u8);
+            return Ok(read_keyboard_width(
+                &mut shadow.queue,
+                shadow.overflow,
+                &mut shadow.read_latch,
+                offset,
+                width,
+            ));
         }
-        let value = match offset {
-            0x00..=0x03 => self.status(),
-            0x04 => {
-                self.read_latch = self.queue.pop_front().unwrap_or(0);
-                self.read_latch
-            }
-            0x05..=0x07 => self.read_latch,
-            _ => return Err(BusError::Unmapped { addr: offset }),
-        };
-        Ok(((value >> ((offset & 0x03) * 8)) & 0xff) as u8)
+        Ok(read_keyboard_width(
+            &mut self.queue,
+            self.overflow,
+            &mut self.read_latch,
+            offset,
+            width,
+        ))
     }
 
-    fn write_u8(&mut self, offset: u64, value: u8) -> BusResult<()> {
+    fn write(&mut self, offset: u64, width: AccessWidth, value: u64) -> BusResult<()> {
+        let end = offset
+            .checked_add(width.bytes() - 1)
+            .ok_or(BusError::OutOfRange { addr: offset })?;
+        for current in offset..=end {
+            match current {
+                0x08..=0x0b => {}
+                0x00..=0x07 => return Err(BusError::ReadOnly { addr: current }),
+                _ => return Err(BusError::Unmapped { addr: current }),
+            }
+        }
+        let control = if offset == 0x08 {
+            Some(value as u8)
+        } else {
+            None
+        };
         if self.transaction_active {
             let shadow = self.ensure_shadow();
-            match offset {
-                0x08 => {
-                    shadow.enabled = (value & 1) != 0;
-                    if value & 0x02 != 0 {
-                        shadow.queue.clear();
-                        shadow.overflow = false;
-                        shadow.read_latch = 0;
-                    }
-                    return Ok(());
+            if let Some(control) = control {
+                shadow.enabled = (control & 1) != 0;
+                if control & 0x02 != 0 {
+                    shadow.queue.clear();
+                    shadow.overflow = false;
+                    shadow.read_latch = 0;
                 }
-                0x09..=0x0b => return Ok(()),
-                0x00..=0x07 => return Err(BusError::ReadOnly { addr: offset }),
-                _ => return Err(BusError::Unmapped { addr: offset }),
             }
+            return Ok(());
         }
-        match offset {
-            0x08 => {
-                self.apply_control(value);
-                Ok(())
-            }
-            0x09..=0x0b => Ok(()),
-            0x00..=0x07 => Err(BusError::ReadOnly { addr: offset }),
-            _ => Err(BusError::Unmapped { addr: offset }),
+        if let Some(control) = control {
+            self.apply_control(control);
         }
+        Ok(())
     }
+}
+
+fn read_keyboard_width(
+    queue: &mut VecDeque<u32>,
+    overflow: bool,
+    read_latch: &mut u32,
+    offset: u64,
+    width: AccessWidth,
+) -> u64 {
+    let status = status_for(queue, overflow);
+    if offset <= 0x04 && offset + width.bytes() > 0x04 {
+        *read_latch = queue.pop_front().unwrap_or(0);
+    }
+    let mut result = 0;
+    for byte in 0..width.bytes() {
+        let current = offset + byte;
+        let register = if current <= 0x03 { status } else { *read_latch };
+        result |= u64::from((register >> ((current & 0x03) * 8)) & 0xff) << (byte * 8);
+    }
+    result
 }
 
 fn status_for(queue: &VecDeque<u32>, overflow: bool) -> u32 {

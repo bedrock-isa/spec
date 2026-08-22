@@ -122,6 +122,7 @@ pub enum BaseException {
     PageFault = 0x09,
     DivideError = 0x0a,
     VectorRangeError = 0x0b,
+    AccessFault = 0x0c,
     InvalidControlState = 0x0d,
     FloatingPointFault = 0x0e,
     DoubleFault = 0x18,
@@ -140,6 +141,7 @@ impl BaseException {
             0x09 => Some(Self::PageFault),
             0x0a => Some(Self::DivideError),
             0x0b => Some(Self::VectorRangeError),
+            0x0c => Some(Self::AccessFault),
             0x0d => Some(Self::InvalidControlState),
             0x0e => Some(Self::FloatingPointFault),
             0x18 => Some(Self::DoubleFault),
@@ -160,7 +162,7 @@ impl BaseException {
             | Self::VectorRangeError
             | Self::InvalidControlState
             | Self::FloatingPointFault => ExceptionFrameType::Error,
-            Self::PageFault => ExceptionFrameType::PageFault,
+            Self::PageFault | Self::AccessFault => ExceptionFrameType::PageFault,
             Self::DoubleFault | Self::MachineCheck | Self::BusError => {
                 ExceptionFrameType::Auxiliary
             }
@@ -434,6 +436,7 @@ mod tests {
             (BaseException::PageFault, ExceptionFrameType::PageFault),
             (BaseException::DivideError, ExceptionFrameType::Error),
             (BaseException::VectorRangeError, ExceptionFrameType::Error),
+            (BaseException::AccessFault, ExceptionFrameType::PageFault),
             (
                 BaseException::InvalidControlState,
                 ExceptionFrameType::Error,

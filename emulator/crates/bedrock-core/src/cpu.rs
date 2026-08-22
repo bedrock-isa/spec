@@ -85,6 +85,7 @@ pub struct Cpu {
     instret_counter: Cell<u64>,
     ptwalk_counter: Cell<u64>,
     repeat_ea_result: Cell<Option<u64>>,
+    vector_memory_active: Cell<bool>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -102,6 +103,19 @@ struct RepeatState {
 struct ResolvedAddress {
     linear: u64,
     target: crate::TranslatedTarget,
+    access_class: crate::TranslationAccessClass,
+    _cache_policy: u8,
+    physical_class: bedrock_bus::PhysicalMemoryClass,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct ResolvedVectorLane {
+    lane: usize,
+    segment: SegmentSelector,
+    offset: u64,
+    linear: u64,
+    first_physical: u64,
+    last_physical: u64,
 }
 
 impl Cpu {
@@ -322,6 +336,14 @@ impl Cpu {
             error: error.into(),
         })?;
         self.checked_fetch_offset(pc, u64::from(header.length_bytes) - 1)?;
+        self.validate_virtual_range(
+            bus,
+            pc,
+            SegmentSelector::Cs,
+            pc,
+            u64::from(header.length_bytes),
+            AccessKind::InstructionFetch,
+        )?;
         let prefix_len = header_prefix.len();
         for (index, byte) in bytes
             .iter_mut()
@@ -348,7 +370,10 @@ impl Cpu {
         let next_pc = pc.wrapping_add(u64::from(instruction.length_bytes));
         self.validate_dynamic_operand_relations(pc, instruction)?;
         if instruction.generated_form.attributes.instruction_set == InstructionSet::Vector {
-            return self.execute_vector(bus, pc, next_pc, instruction);
+            self.vector_memory_active.set(true);
+            let result = self.execute_vector(bus, pc, next_pc, instruction);
+            self.vector_memory_active.set(false);
+            return result;
         }
         match instruction.opcode {
             Opcode::Illegal => Err(Trap::IllegalInstruction {
@@ -2606,26 +2631,94 @@ impl Cpu {
         let ea = first_ea(instruction).ok_or(illegal_instruction(pc))?;
         let payload = ea_payload(instruction, ea);
         let (segment, offset) = self.effective_location_with_payload(pc, ea, payload, size)?;
-        let linear = self.effective_linear_address(segment, offset, pc)?;
-        let translation = crate::MemoryTranslation {
-            segments: self.state.segments,
-            ptcr: self.state.ptcr,
-            ascr: self.state.ascr,
-        };
-        self.increment_page_walk(translation.ptcr);
-        let walk = translation
-            .page_address(
+        let last_offset = offset.checked_add(size.bytes() as u64 - 1).ok_or_else(|| {
+            page_fault_metadata(
+                range_overflow_trap(
+                    pc,
+                    offset,
+                    segment,
+                    AccessDomain::Current,
+                    AccessKind::Write,
+                    self.state.ascr.asid(),
+                ),
+                size,
+                Some(0),
+                true,
+            )
+        })?;
+        self.validate_segment_and_canonical_range(
+            pc,
+            segment,
+            offset,
+            last_offset,
+            AccessDomain::Current,
+            AccessKind::Write,
+        )
+        .map_err(|trap| page_fault_metadata(trap, size, Some(0), true))?;
+        let first = self
+            .translate_accessed_only(
                 bus,
-                linear,
+                offset,
+                segment,
                 AccessDomain::Current,
                 AccessKind::Write,
-                self.state.status.contains(Status::PM),
-                false,
+                pc,
             )
-            .map_err(|error| {
-                atomic_walk_trap(pc, error, offset, segment, size, self.state.ascr.asid())
-            })?;
-        let crate::TranslatedTarget::Byte(address) = walk.target;
+            .map_err(|trap| page_fault_metadata(trap, size, Some(0), true))?;
+        let last = if last_offset == offset {
+            first
+        } else {
+            self.translate_accessed_only(
+                bus,
+                last_offset,
+                segment,
+                AccessDomain::Current,
+                AccessKind::Write,
+                pc,
+            )
+            .map_err(|trap| page_fault_metadata(trap, size, Some(0), true))?
+        };
+        self.validate_physical_class(
+            pc,
+            offset,
+            segment,
+            AccessDomain::Current,
+            AccessKind::Write,
+            first,
+        )
+        .map_err(|trap| page_fault_metadata(trap, size, Some(0), true))?;
+        self.validate_physical_class(
+            pc,
+            offset,
+            segment,
+            AccessDomain::Current,
+            AccessKind::Write,
+            last,
+        )
+        .map_err(|trap| page_fault_metadata(trap, size, Some(0), true))?;
+        let linear = first.linear;
+        if first.access_class == crate::TranslationAccessClass::Mmio
+            || last.access_class == crate::TranslationAccessClass::Mmio
+        {
+            return Err(page_fault_metadata(
+                access_fault(
+                    pc,
+                    offset,
+                    Some(linear),
+                    crate::AccessFaultReason::MmioOperation,
+                    AccessKind::Write,
+                    AccessDomain::Current,
+                    Some(segment),
+                    Some(size_code(size)),
+                    true,
+                    self.state.ascr.asid(),
+                ),
+                size,
+                Some(0),
+                true,
+            ));
+        }
+        let crate::TranslatedTarget::Byte(address) = first.target;
         if linear % size.bytes() as u64 != 0 {
             return Err(atomic_page_fault(
                 pc,
@@ -2637,7 +2730,21 @@ impl Cpu {
                 self.state.ascr.asid(),
             ));
         }
-        let old = read_bus(bus, address, size).map_err(|error| Trap::Bus { pc, error })?;
+        let old = read_bus(bus, address, size).map_err(|error| {
+            self.bus_access_trap(
+                pc,
+                error,
+                offset,
+                Some(linear),
+                AccessKind::Write,
+                AccessDomain::Current,
+                Some(segment),
+                Some(size_code(size)),
+                Some(0),
+                true,
+                0,
+            )
+        })?;
         let value_to_store = match operands {
             RegisterOperands::CompareExchange {
                 expected,
@@ -2668,19 +2775,26 @@ impl Cpu {
         if let Some(value) = value_to_store {
             // D is exact: validate the write first, but update A/D only once the
             // atomic operation is known to commit a memory update.
-            self.increment_page_walk(translation.ptcr);
-            let commit_walk = translation
-                .page_address(
+            let commit_walk = self
+                .translate(
                     bus,
-                    linear,
+                    offset,
+                    segment,
                     AccessDomain::Current,
                     AccessKind::Write,
-                    self.state.status.contains(Status::PM),
+                    pc,
                     true,
                 )
-                .map_err(|error| {
-                    atomic_walk_trap(pc, error, offset, segment, size, self.state.ascr.asid())
-                })?;
+                .map_err(|trap| page_fault_metadata(trap, size, Some(0), true))?;
+            self.validate_physical_class(
+                pc,
+                offset,
+                segment,
+                AccessDomain::Current,
+                AccessKind::Write,
+                commit_walk,
+            )
+            .map_err(|trap| page_fault_metadata(trap, size, Some(0), true))?;
             let crate::TranslatedTarget::Byte(commit_address) = commit_walk.target;
             if commit_address != address {
                 return Err(atomic_page_fault(
@@ -2693,7 +2807,21 @@ impl Cpu {
                     self.state.ascr.asid(),
                 ));
             }
-            write_bus(bus, address, size, value).map_err(|error| Trap::Bus { pc, error })?;
+            write_bus(bus, address, size, value).map_err(|error| {
+                self.bus_access_trap(
+                    pc,
+                    error,
+                    offset,
+                    Some(linear),
+                    AccessKind::Write,
+                    AccessDomain::Current,
+                    Some(segment),
+                    Some(size_code(size)),
+                    Some(0),
+                    true,
+                    0,
+                )
+            })?;
         }
         self.state.pc = next_pc;
         Ok(StepResult::Running)
@@ -2944,14 +3072,11 @@ impl Cpu {
 
     fn write_page_query_result(&mut self, register: usize, result: crate::PageQueryResult) {
         self.state.r[register] = result.value;
-        self.state.flags.set(Flags::Z, result.valid);
-        self.state.flags.set(Flags::N, result.valid && result.user);
-        self.state
-            .flags
-            .set(Flags::C, result.valid && result.writable);
-        self.state
-            .flags
-            .set(Flags::V, result.valid && result.executable);
+        self.state.flags = if result.valid {
+            Flags::Z
+        } else {
+            Flags::empty()
+        };
     }
 
     fn execute_syscall<B: Bus>(
@@ -5312,12 +5437,7 @@ impl Cpu {
                 cause: InvalidControlCause::ReservedBits,
             });
         }
-        let Some(physical_address_bits) = image.physical_address_bits() else {
-            return Err(Trap::InvalidControlState {
-                pc,
-                cause: InvalidControlCause::InvalidImage,
-            });
-        };
+        let physical_address_bits = image.physical_address_bits();
         if image.root_table_addr() >> physical_address_bits != 0 {
             return Err(Trap::InvalidControlState {
                 pc,
@@ -6021,14 +6141,18 @@ impl Cpu {
     ) -> Result<[u8; crate::state::VLEN_BYTES], Trap> {
         let mut image = [0_u8; crate::state::VLEN_BYTES];
         let operand = ea_field_ordinal(instruction, 'e');
-        for (lane, &(segment, offset)) in locations.iter().enumerate() {
-            if !predicate_get(&predicate, lane * size.bytes()) {
-                continue;
-            }
-            let value = self
-                .read_virtual(bus, pc, segment, offset, AccessDomain::Current, size)
-                .map_err(|trap| page_fault_metadata(trap, size, Some(operand), false))?;
-            vector_lane_set(&mut image, lane, size.bytes(), value);
+        let resolved = self.resolve_vector_locations(
+            bus,
+            pc,
+            size,
+            predicate,
+            locations,
+            AccessKind::Read,
+            operand,
+        )?;
+        for lane in resolved {
+            let value = self.read_resolved_vector_lane(bus, pc, size, operand, lane)?;
+            vector_lane_set(&mut image, lane.lane, size.bytes(), value);
         }
         Ok(image)
     }
@@ -6058,22 +6182,302 @@ impl Cpu {
         locations: &[(SegmentSelector, u64)],
     ) -> Result<(), Trap> {
         let operand = ea_field_ordinal(instruction, 'e');
+        let resolved = self.resolve_vector_locations(
+            bus,
+            pc,
+            size,
+            predicate,
+            locations,
+            AccessKind::Write,
+            operand,
+        )?;
+        for lane in resolved {
+            self.write_resolved_vector_lane(
+                bus,
+                pc,
+                size,
+                operand,
+                lane,
+                vector_lane_unsigned(&image, lane.lane, size.bytes()),
+            )?;
+        }
+        Ok(())
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn resolve_vector_locations<B: Bus>(
+        &self,
+        bus: &mut B,
+        pc: u64,
+        size: Size,
+        predicate: [u8; crate::state::PREDICATE_BYTES],
+        locations: &[(SegmentSelector, u64)],
+        kind: AccessKind,
+        operand: u8,
+    ) -> Result<Vec<ResolvedVectorLane>, Trap> {
+        #[derive(Clone, Copy)]
+        struct PendingLane {
+            lane: usize,
+            segment: SegmentSelector,
+            offset: u64,
+            last_offset: u64,
+            linear: u64,
+            last_linear: u64,
+        }
+        #[derive(Clone, Copy)]
+        struct Probe {
+            pending: usize,
+            offset: u64,
+            linear: u64,
+            last: bool,
+        }
+
+        let byte_count = size.bytes() as u64;
+        let translation = crate::MemoryTranslation {
+            segments: self.state.segments,
+            ptcr: self.state.ptcr,
+            ascr: self.state.ascr,
+        };
+        let mut pending = Vec::new();
         for (lane, &(segment, offset)) in locations.iter().enumerate() {
             if !predicate_get(&predicate, lane * size.bytes()) {
                 continue;
             }
-            self.write_virtual(
-                bus,
+            let last_offset = offset.checked_add(byte_count - 1).ok_or_else(|| {
+                page_fault_metadata(
+                    range_overflow_trap(
+                        pc,
+                        offset,
+                        segment,
+                        AccessDomain::Current,
+                        kind,
+                        self.state.ascr.asid(),
+                    ),
+                    size,
+                    Some(operand),
+                    false,
+                )
+            })?;
+            self.validate_segment_and_canonical_range(
                 pc,
                 segment,
                 offset,
+                last_offset,
                 AccessDomain::Current,
-                size,
-                vector_lane_unsigned(&image, lane, size.bytes()),
+                kind,
+            )
+            .map_err(|trap| page_fault_metadata(trap, size, Some(operand), false))?;
+            let linear = translation
+                .segment_linear_address(segment, offset)
+                .expect("validated vector lane start");
+            let last_linear = translation
+                .segment_linear_address(segment, last_offset)
+                .expect("validated vector lane end");
+            pending.push(PendingLane {
+                lane,
+                segment,
+                offset,
+                last_offset,
+                linear,
+                last_linear,
+            });
+        }
+
+        let mut probes = Vec::new();
+        for (index, lane) in pending.iter().enumerate() {
+            probes.push(Probe {
+                pending: index,
+                offset: lane.offset,
+                linear: lane.linear,
+                last: false,
+            });
+            if lane.linear >> 12 != lane.last_linear >> 12 {
+                probes.push(Probe {
+                    pending: index,
+                    offset: lane.last_offset,
+                    linear: lane.last_linear,
+                    last: true,
+                });
+            }
+        }
+        probes.sort_by_key(|probe| (probe.linear, probe.pending, probe.last));
+
+        let mut endpoints = vec![(None, None); pending.len()];
+        let mut ordered = Vec::with_capacity(probes.len());
+        for probe in probes {
+            let lane = pending[probe.pending];
+            let resolved = self
+                .translate(
+                    bus,
+                    probe.offset,
+                    lane.segment,
+                    AccessDomain::Current,
+                    kind,
+                    pc,
+                    true,
+                )
+                .map_err(|trap| page_fault_metadata(trap, size, Some(operand), false))?;
+            self.require_byte_target(
+                resolved,
+                pc,
+                lane.offset,
+                lane.segment,
+                AccessDomain::Current,
+                kind,
+            )?;
+            if probe.last {
+                endpoints[probe.pending].1 = Some(resolved);
+            } else {
+                endpoints[probe.pending].0 = Some(resolved);
+            }
+            ordered.push((probe.pending, resolved));
+        }
+
+        for (index, resolved) in ordered.iter().copied() {
+            let lane = pending[index];
+            self.validate_physical_class(
+                pc,
+                lane.offset,
+                lane.segment,
+                AccessDomain::Current,
+                kind,
+                resolved,
             )
             .map_err(|trap| page_fault_metadata(trap, size, Some(operand), false))?;
         }
-        Ok(())
+        if let Some((index, resolved)) = ordered
+            .iter()
+            .copied()
+            .find(|(_, resolved)| resolved.access_class == crate::TranslationAccessClass::Mmio)
+        {
+            let lane = pending[index];
+            return Err(access_fault(
+                pc,
+                lane.offset,
+                Some(resolved.linear),
+                crate::AccessFaultReason::MmioOperation,
+                kind,
+                AccessDomain::Current,
+                Some(lane.segment),
+                Some(size_code(size)),
+                false,
+                self.state.ascr.asid(),
+            ));
+        }
+
+        let mut result = Vec::with_capacity(pending.len());
+        for (index, lane) in pending.into_iter().enumerate() {
+            let first = endpoints[index]
+                .0
+                .expect("vector lane start was translated");
+            let last = endpoints[index].1.unwrap_or(first);
+            let crate::TranslatedTarget::Byte(first_physical) = first.target;
+            let crate::TranslatedTarget::Byte(last_physical) = last.target;
+            result.push(ResolvedVectorLane {
+                lane: lane.lane,
+                segment: lane.segment,
+                offset: lane.offset,
+                linear: lane.linear,
+                first_physical,
+                last_physical: if byte_count == 1 {
+                    first_physical
+                } else if lane.linear >> 12 == lane.last_linear >> 12 {
+                    first_physical + byte_count - 1
+                } else {
+                    last_physical
+                },
+            });
+        }
+        result.sort_by_key(|lane| (lane.linear, lane.lane));
+        Ok(result)
+    }
+
+    fn read_resolved_vector_lane<B: Bus>(
+        &self,
+        bus: &mut B,
+        pc: u64,
+        size: Size,
+        operand: u8,
+        lane: ResolvedVectorLane,
+    ) -> Result<u64, Trap> {
+        let byte_count = size.bytes() as u64;
+        let access = if lane.first_physical.checked_add(byte_count - 1) == Some(lane.last_physical)
+        {
+            read_bus(bus, lane.first_physical, size)
+        } else {
+            (|| -> bedrock_bus::BusResult<u64> {
+                let first_bytes = 4096 - (lane.linear & 0xfff);
+                let mut value = 0;
+                for byte in 0..byte_count {
+                    let physical = if byte < first_bytes {
+                        lane.first_physical + byte
+                    } else {
+                        lane.last_physical - (byte_count - 1 - byte)
+                    };
+                    value |= u64::from(bus.read_u8(physical)?) << (byte * 8);
+                }
+                Ok(value)
+            })()
+        };
+        access.map_err(|error| {
+            self.bus_access_trap(
+                pc,
+                error,
+                lane.offset,
+                Some(lane.linear),
+                AccessKind::Read,
+                AccessDomain::Current,
+                Some(lane.segment),
+                Some(size_code(size)),
+                Some(operand),
+                false,
+                0,
+            )
+        })
+    }
+
+    fn write_resolved_vector_lane<B: Bus>(
+        &self,
+        bus: &mut B,
+        pc: u64,
+        size: Size,
+        operand: u8,
+        lane: ResolvedVectorLane,
+        value: u64,
+    ) -> Result<(), Trap> {
+        let byte_count = size.bytes() as u64;
+        let access = if lane.first_physical.checked_add(byte_count - 1) == Some(lane.last_physical)
+        {
+            write_bus(bus, lane.first_physical, size, value)
+        } else {
+            (|| -> bedrock_bus::BusResult<()> {
+                let first_bytes = 4096 - (lane.linear & 0xfff);
+                for byte in 0..byte_count {
+                    let physical = if byte < first_bytes {
+                        lane.first_physical + byte
+                    } else {
+                        lane.last_physical - (byte_count - 1 - byte)
+                    };
+                    bus.write_u8(physical, (value >> (byte * 8)) as u8)?;
+                }
+                Ok(())
+            })()
+        };
+        access.map_err(|error| {
+            self.bus_access_trap(
+                pc,
+                error,
+                lane.offset,
+                Some(lane.linear),
+                AccessKind::Write,
+                AccessDomain::Current,
+                Some(lane.segment),
+                Some(size_code(size)),
+                Some(operand),
+                false,
+                0,
+            )
+        })
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -6562,15 +6966,31 @@ impl Cpu {
         kind: AccessKind,
     ) -> Result<(), Trap> {
         let byte_count = size.bytes() as u64;
-        let _first = self.translate(bus, offset, segment, domain, kind, pc, true)?;
-        if byte_count == 1 {
-            return Ok(());
-        }
         let last_offset = offset.checked_add(byte_count - 1).ok_or_else(|| {
             range_overflow_trap(pc, offset, segment, domain, kind, self.state.ascr.asid())
         })?;
-        let last = self.translate(bus, last_offset, segment, domain, kind, pc, true)?;
+        self.validate_segment_and_canonical_range(pc, segment, offset, last_offset, domain, kind)?;
+        let first = self.translate(bus, offset, segment, domain, kind, pc, false)?;
+        let last = if byte_count == 1 {
+            first
+        } else {
+            self.translate(bus, last_offset, segment, domain, kind, pc, false)?
+        };
+        self.require_byte_target(first, pc, offset, segment, domain, kind)?;
         self.require_byte_target(last, pc, offset, segment, domain, kind)?;
+        self.validate_physical_class(pc, offset, segment, domain, kind, first)?;
+        self.validate_physical_class(pc, offset, segment, domain, kind, last)?;
+        self.validate_mmio_scalar(
+            pc,
+            offset,
+            first.linear,
+            segment,
+            domain,
+            size,
+            first.access_class == crate::TranslationAccessClass::Mmio
+                || last.access_class == crate::TranslationAccessClass::Mmio,
+            kind,
+        )?;
         Ok(())
     }
 
@@ -6586,8 +7006,6 @@ impl Cpu {
         if byte_count == 0 {
             return Ok(());
         }
-        let first = self.translate(bus, offset, segment, AccessDomain::Current, kind, pc, true)?;
-        self.require_byte_target(first, pc, offset, segment, AccessDomain::Current, kind)?;
         let last_offset = offset.checked_add(byte_count - 1).ok_or_else(|| {
             range_overflow_trap(
                 pc,
@@ -6598,16 +7016,108 @@ impl Cpu {
                 self.state.ascr.asid(),
             )
         })?;
-        let last = self.translate(
-            bus,
-            last_offset,
+        self.validate_segment_and_canonical_range(
+            pc,
             segment,
+            offset,
+            last_offset,
             AccessDomain::Current,
             kind,
-            pc,
-            true,
         )?;
-        self.require_byte_target(last, pc, offset, segment, AccessDomain::Current, kind)?;
+
+        let mut resolved = Vec::new();
+        let mut current = offset;
+        loop {
+            let address = self.translate(
+                bus,
+                current,
+                segment,
+                AccessDomain::Current,
+                kind,
+                pc,
+                false,
+            )?;
+            self.require_byte_target(address, pc, offset, segment, AccessDomain::Current, kind)?;
+            resolved.push(address);
+            if current == last_offset {
+                break;
+            }
+            current = current
+                .checked_add(4096 - (address.linear & 0xfff))
+                .unwrap_or(last_offset)
+                .min(last_offset);
+        }
+
+        for address in resolved.iter().copied() {
+            self.validate_physical_class(
+                pc,
+                offset,
+                segment,
+                AccessDomain::Current,
+                kind,
+                address,
+            )?;
+        }
+        if let Some(address) = resolved
+            .iter()
+            .find(|address| address.access_class == crate::TranslationAccessClass::Mmio)
+        {
+            return Err(access_fault(
+                pc,
+                offset,
+                Some(address.linear),
+                crate::AccessFaultReason::MmioOperation,
+                kind,
+                AccessDomain::Current,
+                Some(segment),
+                None,
+                false,
+                self.state.ascr.asid(),
+            ));
+        }
+        Ok(())
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn validate_segment_and_canonical_range(
+        &self,
+        pc: u64,
+        segment: SegmentSelector,
+        first_offset: u64,
+        last_offset: u64,
+        domain: AccessDomain,
+        kind: AccessKind,
+    ) -> Result<(), Trap> {
+        let translation = crate::MemoryTranslation {
+            segments: self.state.segments,
+            ptcr: self.state.ptcr,
+            ascr: self.state.ascr,
+        };
+        let map_fault = |fault| {
+            translation_trap_with_context(
+                pc,
+                fault,
+                first_offset,
+                kind,
+                domain,
+                Some(segment),
+                self.state.ascr.asid(),
+            )
+        };
+
+        // Range and wrap checks for every byte precede canonicality checks.
+        let first_linear = translation
+            .segment_linear_address(segment, first_offset)
+            .map_err(map_fault)?;
+        let last_linear = translation
+            .segment_linear_address(segment, last_offset)
+            .map_err(map_fault)?;
+        translation
+            .validate_linear_address(first_linear)
+            .map_err(map_fault)?;
+        translation
+            .validate_linear_address(last_linear)
+            .map_err(map_fault)?;
         Ok(())
     }
 
@@ -6690,10 +7200,44 @@ impl Cpu {
         size: Size,
     ) -> Result<u64, Trap> {
         let byte_count = size.bytes() as u64;
+        let last_offset = if byte_count == 1 {
+            offset
+        } else {
+            offset.checked_add(byte_count - 1).ok_or_else(|| {
+                range_overflow_trap(
+                    pc,
+                    offset,
+                    segment,
+                    domain,
+                    AccessKind::Read,
+                    self.state.ascr.asid(),
+                )
+            })?
+        };
+        self.validate_segment_and_canonical_range(
+            pc,
+            segment,
+            offset,
+            last_offset,
+            domain,
+            AccessKind::Read,
+        )?;
         let first = self.translate(bus, offset, segment, domain, AccessKind::Read, pc, true)?;
         let first_linear = first.linear;
         let crate::TranslatedTarget::Byte(first_address) = first.target;
+        let mut mmio = first.access_class == crate::TranslationAccessClass::Mmio;
         if byte_count == 1 {
+            self.validate_physical_class(pc, offset, segment, domain, AccessKind::Read, first)?;
+            self.validate_mmio_scalar(
+                pc,
+                offset,
+                first_linear,
+                segment,
+                domain,
+                size,
+                mmio,
+                AccessKind::Read,
+            )?;
             return bus.read_u8(first_address).map(u64::from).map_err(|error| {
                 self.bus_access_trap(
                     pc,
@@ -6710,16 +7254,6 @@ impl Cpu {
                 )
             });
         }
-        let last_offset = offset.checked_add(byte_count - 1).ok_or_else(|| {
-            range_overflow_trap(
-                pc,
-                offset,
-                segment,
-                domain,
-                AccessKind::Read,
-                self.state.ascr.asid(),
-            )
-        })?;
         let last = self.translate(
             bus,
             last_offset,
@@ -6731,6 +7265,19 @@ impl Cpu {
         )?;
         let last_address =
             self.require_byte_target(last, pc, offset, segment, domain, AccessKind::Read)?;
+        mmio |= last.access_class == crate::TranslationAccessClass::Mmio;
+        self.validate_physical_class(pc, offset, segment, domain, AccessKind::Read, first)?;
+        self.validate_physical_class(pc, offset, segment, domain, AccessKind::Read, last)?;
+        self.validate_mmio_scalar(
+            pc,
+            offset,
+            first_linear,
+            segment,
+            domain,
+            size,
+            mmio,
+            AccessKind::Read,
+        )?;
         if first_address.checked_add(byte_count - 1) == Some(last_address) {
             return read_bus(bus, first_address, size).map_err(|error| {
                 self.bus_access_trap(
@@ -6747,6 +7294,20 @@ impl Cpu {
                     0,
                 )
             });
+        }
+        if mmio {
+            return Err(access_fault(
+                pc,
+                offset,
+                Some(first_linear),
+                crate::AccessFaultReason::MmioOperation,
+                AccessKind::Read,
+                domain,
+                Some(segment),
+                Some(size_code(size)),
+                false,
+                self.state.ascr.asid(),
+            ));
         }
         let mut value = 0u64;
         for index in 0..byte_count {
@@ -6793,10 +7354,44 @@ impl Cpu {
         value: u64,
     ) -> Result<(), Trap> {
         let byte_count = size.bytes() as u64;
+        let last_offset = if byte_count == 1 {
+            offset
+        } else {
+            offset.checked_add(byte_count - 1).ok_or_else(|| {
+                range_overflow_trap(
+                    pc,
+                    offset,
+                    segment,
+                    domain,
+                    AccessKind::Write,
+                    self.state.ascr.asid(),
+                )
+            })?
+        };
+        self.validate_segment_and_canonical_range(
+            pc,
+            segment,
+            offset,
+            last_offset,
+            domain,
+            AccessKind::Write,
+        )?;
         let first = self.translate(bus, offset, segment, domain, AccessKind::Write, pc, true)?;
         let first_linear = first.linear;
         let crate::TranslatedTarget::Byte(first_address) = first.target;
+        let mut mmio = first.access_class == crate::TranslationAccessClass::Mmio;
         if byte_count == 1 {
+            self.validate_physical_class(pc, offset, segment, domain, AccessKind::Write, first)?;
+            self.validate_mmio_scalar(
+                pc,
+                offset,
+                first_linear,
+                segment,
+                domain,
+                size,
+                mmio,
+                AccessKind::Write,
+            )?;
             return bus.write_u8(first_address, value as u8).map_err(|error| {
                 self.bus_access_trap(
                     pc,
@@ -6813,16 +7408,6 @@ impl Cpu {
                 )
             });
         }
-        let last_offset = offset.checked_add(byte_count - 1).ok_or_else(|| {
-            range_overflow_trap(
-                pc,
-                offset,
-                segment,
-                domain,
-                AccessKind::Write,
-                self.state.ascr.asid(),
-            )
-        })?;
         let last = self.translate(
             bus,
             last_offset,
@@ -6834,6 +7419,19 @@ impl Cpu {
         )?;
         let last_address =
             self.require_byte_target(last, pc, offset, segment, domain, AccessKind::Write)?;
+        mmio |= last.access_class == crate::TranslationAccessClass::Mmio;
+        self.validate_physical_class(pc, offset, segment, domain, AccessKind::Write, first)?;
+        self.validate_physical_class(pc, offset, segment, domain, AccessKind::Write, last)?;
+        self.validate_mmio_scalar(
+            pc,
+            offset,
+            first_linear,
+            segment,
+            domain,
+            size,
+            mmio,
+            AccessKind::Write,
+        )?;
         if first_address.checked_add(byte_count - 1) == Some(last_address) {
             return write_bus(bus, first_address, size, value).map_err(|error| {
                 self.bus_access_trap(
@@ -6850,6 +7448,20 @@ impl Cpu {
                     0,
                 )
             });
+        }
+        if mmio {
+            return Err(access_fault(
+                pc,
+                offset,
+                Some(first_linear),
+                crate::AccessFaultReason::MmioOperation,
+                AccessKind::Write,
+                domain,
+                Some(segment),
+                Some(size_code(size)),
+                false,
+                self.state.ascr.asid(),
+            ));
         }
         for index in 0..byte_count {
             let resolved = self.translate(
@@ -6898,6 +7510,73 @@ impl Cpu {
         let crate::TranslatedTarget::Byte(address) = resolved.target;
         Ok(address)
     }
+
+    #[allow(clippy::too_many_arguments)]
+    fn validate_mmio_scalar(
+        &self,
+        pc: u64,
+        effective_address: u64,
+        linear: u64,
+        segment: SegmentSelector,
+        domain: AccessDomain,
+        size: Size,
+        mmio: bool,
+        access_kind: AccessKind,
+    ) -> Result<(), Trap> {
+        if !mmio {
+            return Ok(());
+        }
+        let kind = if self.vector_memory_active.get() || self.repeat.is_some() {
+            Some(crate::AccessFaultReason::MmioOperation)
+        } else if linear % size.bytes() as u64 != 0 {
+            Some(crate::AccessFaultReason::MmioAlignment)
+        } else {
+            None
+        };
+        if let Some(reason) = kind {
+            return Err(access_fault(
+                pc,
+                effective_address,
+                Some(linear),
+                reason,
+                access_kind,
+                domain,
+                Some(segment),
+                Some(size_code(size)),
+                false,
+                self.state.ascr.asid(),
+            ));
+        }
+        Ok(())
+    }
+
+    fn validate_physical_class(
+        &self,
+        pc: u64,
+        effective_address: u64,
+        segment: SegmentSelector,
+        domain: AccessDomain,
+        kind: AccessKind,
+        resolved: ResolvedAddress,
+    ) -> Result<(), Trap> {
+        if resolved.physical_class == bedrock_bus::PhysicalMemoryClass::Device
+            && resolved.access_class == crate::TranslationAccessClass::Normal
+        {
+            return Err(translation_trap_with_context(
+                pc,
+                crate::TranslationFault::Page {
+                    address: resolved.linear,
+                    reason: crate::PageFaultReason::MemoryType,
+                },
+                effective_address,
+                kind,
+                domain,
+                Some(segment),
+                self.state.ascr.asid(),
+            ));
+        }
+        Ok(())
+    }
     #[allow(clippy::too_many_arguments)]
     fn translate<B: Bus>(
         &self,
@@ -6908,6 +7587,43 @@ impl Cpu {
         kind: AccessKind,
         pc: u64,
         update_accessed_dirty: bool,
+    ) -> Result<ResolvedAddress, Trap> {
+        self.translate_with_page_updates(
+            bus,
+            offset,
+            segment,
+            domain,
+            kind,
+            pc,
+            update_accessed_dirty,
+            false,
+        )
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn translate_accessed_only<B: Bus>(
+        &self,
+        bus: &mut B,
+        offset: u64,
+        segment: SegmentSelector,
+        domain: AccessDomain,
+        kind: AccessKind,
+        pc: u64,
+    ) -> Result<ResolvedAddress, Trap> {
+        self.translate_with_page_updates(bus, offset, segment, domain, kind, pc, false, true)
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn translate_with_page_updates<B: Bus>(
+        &self,
+        bus: &mut B,
+        offset: u64,
+        segment: SegmentSelector,
+        domain: AccessDomain,
+        kind: AccessKind,
+        pc: u64,
+        update_accessed_dirty: bool,
+        update_accessed_only: bool,
     ) -> Result<ResolvedAddress, Trap> {
         let translation = crate::MemoryTranslation {
             segments: self.state.segments,
@@ -6928,8 +7644,16 @@ impl Cpu {
                 )
             })?;
         self.increment_page_walk(translation.ptcr);
-        let target = translation
-            .page_address(
+        let walk = if update_accessed_only {
+            translation.page_address_deferred_memory_class_accessed_only(
+                bus,
+                linear,
+                domain,
+                kind,
+                self.state.status.contains(Status::PM),
+            )
+        } else {
+            translation.page_address_deferred_memory_class(
                 bus,
                 linear,
                 domain,
@@ -6937,34 +7661,38 @@ impl Cpu {
                 self.state.status.contains(Status::PM),
                 update_accessed_dirty,
             )
-            .map_err(|error| match error {
-                crate::translation::PageWalkError::Translation(fault) => {
-                    translation_trap_with_context(
-                        pc,
-                        fault,
-                        offset,
-                        kind,
-                        domain,
-                        Some(segment),
-                        self.state.ascr.asid(),
-                    )
-                }
-                crate::translation::PageWalkError::Bus { error, level } => self.bus_access_trap(
-                    pc,
-                    error,
-                    offset,
-                    Some(linear),
-                    kind,
-                    domain,
-                    Some(segment),
-                    None,
-                    (kind == AccessKind::InstructionFetch).then_some(0xff),
-                    false,
-                    level,
-                ),
-            })?
-            .target;
-        Ok(ResolvedAddress { linear, target })
+        }
+        .map_err(|error| match error {
+            crate::translation::PageWalkError::Translation(fault) => translation_trap_with_context(
+                pc,
+                fault,
+                offset,
+                kind,
+                domain,
+                Some(segment),
+                self.state.ascr.asid(),
+            ),
+            crate::translation::PageWalkError::Bus { error, level } => self.bus_access_trap(
+                pc,
+                error,
+                offset,
+                Some(linear),
+                kind,
+                domain,
+                Some(segment),
+                None,
+                (kind == AccessKind::InstructionFetch).then_some(0xff),
+                false,
+                level,
+            ),
+        })?;
+        Ok(ResolvedAddress {
+            linear,
+            target: walk.target,
+            access_class: walk.access_class,
+            _cache_policy: walk.cache_policy,
+            physical_class: walk.physical_class,
+        })
     }
     fn translate_fetch<B: Bus>(&self, bus: &mut B, offset: u64, pc: u64) -> Result<u64, Trap> {
         let resolved = self.translate(
@@ -6976,6 +7704,28 @@ impl Cpu {
             pc,
             true,
         )?;
+        self.validate_physical_class(
+            pc,
+            offset,
+            SegmentSelector::Cs,
+            AccessDomain::Current,
+            AccessKind::InstructionFetch,
+            resolved,
+        )?;
+        if resolved.access_class == crate::TranslationAccessClass::Mmio {
+            return Err(access_fault(
+                pc,
+                offset,
+                Some(resolved.linear),
+                crate::AccessFaultReason::MmioOperation,
+                AccessKind::InstructionFetch,
+                AccessDomain::Current,
+                Some(SegmentSelector::Cs),
+                None,
+                false,
+                self.state.ascr.asid(),
+            ));
+        }
         self.require_byte_target(
             resolved,
             pc,
@@ -7155,6 +7905,14 @@ fn event_request_from_trap(trap: &Trap) -> Option<EventRequest> {
             fault_linear: context.linear_address.unwrap_or(0),
             event_aux: 0,
         }),
+        Trap::AccessFault { pc, context } => Some(EventRequest {
+            code: EventCode::exception(BaseException::AccessFault),
+            saved_pc: *pc,
+            error_code: access_fault_error_code(*context),
+            fault_ea: context.effective_address,
+            fault_linear: context.linear_address.unwrap_or(0),
+            event_aux: 0,
+        }),
         Trap::AcknowledgedBusFailure { pc, context } => Some(EventRequest {
             code: EventCode::exception(BaseException::BusError),
             saved_pc: *pc,
@@ -7170,7 +7928,8 @@ fn event_request_from_trap(trap: &Trap) -> Option<EventRequest> {
 fn translation_trap(pc: u64, fault: crate::TranslationFault) -> Trap {
     let effective_address = match fault {
         crate::TranslationFault::NonCanonical { address }
-        | crate::TranslationFault::Page { address, .. } => address,
+        | crate::TranslationFault::Page { address, .. }
+        | crate::TranslationFault::Access { address, .. } => address,
     };
     translation_trap_with_context(
         pc,
@@ -7224,6 +7983,74 @@ fn translation_trap_with_context(
                 operand: (access_kind == AccessKind::InstructionFetch).then_some(0xff),
                 atomic: false,
             },
+        },
+        crate::TranslationFault::Access { address, reason } => access_fault(
+            pc,
+            effective_address,
+            Some(address),
+            reason,
+            access_kind,
+            access_domain,
+            segment,
+            None,
+            false,
+            asid,
+        ),
+    }
+}
+
+fn access_fault_error_code(context: crate::AccessFaultContext) -> u64 {
+    let mut code = u64::from(context.reason.code());
+    code |= match context.access_kind {
+        AccessKind::Read => 1 << 8,
+        AccessKind::Write => 2 << 8,
+        AccessKind::InstructionFetch => 3 << 8,
+    };
+    if context.access_domain == AccessDomain::User {
+        code |= 1 << 10;
+    }
+    if context.atomic {
+        code |= 1 << 11;
+    }
+    if let Some(operand) = context.operand {
+        code |= u64::from(operand) << 16;
+    }
+    code |= 1 << 24;
+    if context.linear_address.is_some() {
+        code |= 1 << 25;
+    }
+    if let Some(size) = context.access_size {
+        code |= u64::from(size) << 27;
+    }
+    code
+}
+
+#[allow(clippy::too_many_arguments)]
+fn access_fault(
+    pc: u64,
+    effective_address: u64,
+    linear_address: Option<u64>,
+    reason: crate::AccessFaultReason,
+    access_kind: AccessKind,
+    access_domain: AccessDomain,
+    segment: Option<SegmentSelector>,
+    access_size: Option<u8>,
+    atomic: bool,
+    asid: u16,
+) -> Trap {
+    Trap::AccessFault {
+        pc,
+        context: crate::AccessFaultContext {
+            effective_address,
+            linear_address,
+            reason,
+            access_kind,
+            access_domain,
+            segment,
+            asid,
+            access_size,
+            operand: (access_kind == AccessKind::InstructionFetch).then_some(0xff),
+            atomic,
         },
     }
 }
@@ -7336,61 +8163,6 @@ fn atomic_page_fault(
     }
 }
 
-fn atomic_walk_trap(
-    pc: u64,
-    error: crate::translation::PageWalkError,
-    effective_address: u64,
-    segment: SegmentSelector,
-    size: Size,
-    asid: u16,
-) -> Trap {
-    match error {
-        crate::translation::PageWalkError::Bus { error, level } => {
-            let Some(failure) = raw_bus_failure(&error) else {
-                return Trap::Bus { pc, error };
-            };
-            Trap::AcknowledgedBusFailure {
-                pc,
-                context: crate::BusFaultContext {
-                    failure,
-                    effective_address,
-                    linear_address: None,
-                    access_kind: AccessKind::Write,
-                    access_domain: AccessDomain::Current,
-                    segment: Some(segment),
-                    asid,
-                    access_size: Some(size_code(size)),
-                    operand: Some(0),
-                    atomic: true,
-                    walk_level: level,
-                },
-            }
-        }
-        crate::translation::PageWalkError::Translation(fault) => {
-            let mut trap = translation_trap_with_context(
-                pc,
-                fault,
-                effective_address,
-                AccessKind::Write,
-                AccessDomain::Current,
-                Some(segment),
-                asid,
-            );
-            if let Trap::PageFault { context, .. } = &mut trap {
-                context.atomic = true;
-                context.operand = Some(0);
-                context.access_size = Some(match size {
-                    Size::Byte => 1,
-                    Size::Word => 2,
-                    Size::Long => 3,
-                    Size::Quad => 4,
-                });
-            }
-            trap
-        }
-    }
-}
-
 fn page_fault_metadata(mut trap: Trap, size: Size, operand: Option<u8>, atomic: bool) -> Trap {
     match &mut trap {
         Trap::PageFault { context, .. } => {
@@ -7399,6 +8171,11 @@ fn page_fault_metadata(mut trap: Trap, size: Size, operand: Option<u8>, atomic: 
             context.atomic |= atomic;
         }
         Trap::AcknowledgedBusFailure { context, .. } => {
+            context.access_size = Some(size_code(size));
+            context.operand = operand;
+            context.atomic |= atomic;
+        }
+        Trap::AccessFault { context, .. } => {
             context.access_size = Some(size_code(size));
             context.operand = operand;
             context.atomic |= atomic;
@@ -8799,27 +9576,33 @@ mod tests {
     use super::{Cpu, vector_lane_set, vector_lane_unsigned};
     use crate::exception::{FrameControl, InvalidControlCause};
     use crate::{
-        AccessDomain, AccessKind, AddressSpaceControl, ExceptionFrameType, Flags, PageFaultReason,
-        PageTableControl, SegmentRegister, SegmentSelector, Status, StepResult, Trap,
+        AccessDomain, AccessFaultReason, AccessKind, AddressSpaceControl, ExceptionFrameType,
+        Flags, PageFaultReason, PageTableControl, SegmentRegister, SegmentSelector, Status,
+        StepResult, Trap,
     };
     use bedrock_bus::{
-        AcknowledgedBusFailure, Bus, BusError, BusFailureCause, BusResult, Ram, RetrySafety,
+        AcknowledgedBusFailure, Bus, BusError, BusFailureCause, BusResult, PhysicalMemoryClass,
+        Ram, RetrySafety,
     };
     use bedrock_isa::{EncodingClass, Size, generated::GENERATED_FORMS};
 
     const PTE_P: u64 = 1 << 0;
-    const PTE_W: u64 = 1 << 1;
-    const PTE_X: u64 = 1 << 2;
-    const PTE_U: u64 = 1 << 3;
-    const PTE_A: u64 = 1 << 5;
-    const PTE_D: u64 = 1 << 6;
-    const PTE_T: u64 = 1 << 11;
+    const PTE_T: u64 = 1 << 1;
+    const PTE_TABLE_R: u64 = 1 << 2;
+    const PTE_TABLE_W: u64 = 1 << 3;
+    const PTE_TABLE_X: u64 = 1 << 4;
+    const PTE_U: u64 = 1 << 5;
+    const PTE_A: u64 = 1 << 7;
+    const PTE_D: u64 = 1 << 8;
+    const PTE_W: u64 = 1 << 62;
+    const PTE_X: u64 = 1 << 63;
 
     struct ProbeBus {
         ram: Ram,
         byte_reads: Vec<u64>,
         byte_writes: Vec<u64>,
         read_only_from: Option<u64>,
+        device_from: Option<u64>,
     }
 
     impl ProbeBus {
@@ -8829,6 +9612,7 @@ mod tests {
                 byte_reads: Vec::new(),
                 byte_writes: Vec::new(),
                 read_only_from: None,
+                device_from: None,
             }
         }
 
@@ -8863,18 +9647,36 @@ mod tests {
             }
             Bus::write_u8(&mut self.ram, address, value)
         }
+
+        fn physical_memory_class(&self, address: u64) -> PhysicalMemoryClass {
+            if self.device_from.is_some_and(|start| address >= start) {
+                PhysicalMemoryClass::Device
+            } else {
+                PhysicalMemoryClass::Normal
+            }
+        }
     }
 
     fn install_four_level_root(ram: &mut Ram) {
-        let table_flags = PTE_P | PTE_W | PTE_X | PTE_U | PTE_T;
+        let table_flags = PTE_P | PTE_T | PTE_TABLE_R | PTE_TABLE_W | PTE_TABLE_X | PTE_U;
         ram.write_u64(0x1000, 0x2000 | table_flags).unwrap();
         ram.write_u64(0x2000, 0x3000 | table_flags).unwrap();
         ram.write_u64(0x3000, 0x4000 | table_flags).unwrap();
     }
 
     fn map_low_page(ram: &mut Ram, virtual_page: u64, physical_page: u64, flags: u64) {
-        ram.write_u64(0x4000 + virtual_page * 8, physical_page | PTE_P | flags)
-            .unwrap();
+        let am = if flags & PTE_X != 0 {
+            0b100 << 2
+        } else if flags & PTE_W != 0 {
+            0b011 << 2
+        } else {
+            0
+        };
+        ram.write_u64(
+            0x4000 + virtual_page * 8,
+            physical_page | PTE_P | (flags & PTE_U) | am,
+        )
+        .unwrap();
     }
 
     fn encoded_form(id: &str, fields: &[(char, u64)], appended: &[u8]) -> Vec<u8> {
@@ -9156,6 +9958,72 @@ mod tests {
         assert_eq!(ram.read_u8(0x103).unwrap(), 0);
         assert_eq!(ram.read_u8(0x106).unwrap(), 2);
         assert_eq!(ram.read_u8(0x109).unwrap(), 0);
+    }
+
+    #[test]
+    fn vector_translation_fault_precedes_mmio_operation_from_an_earlier_lane() {
+        let mut bus = ProbeBus::new(0x10_000);
+        install_four_level_root(&mut bus.ram);
+        bus.ram
+            .write_u64(0x4040, 0xd000 | PTE_P | PTE_U | (0b101 << 2))
+            .unwrap();
+        bus.device_from = Some(0xd000);
+
+        let mut cpu = Cpu::new();
+        cpu.state_mut().ptcr = PageTableControl::from_raw(0x1001);
+        cpu.state_mut().r[1] = 0x8000;
+        cpu.state_mut().r[2] = 0x1000;
+        cpu.state_mut().p[0] = [0b0000_0011, 0];
+        let load = decoded_form(
+            "xxlong.vmov.v137",
+            &[('z', 0), ('p', 0), ('v', 3), ('e', 0x58)],
+            &[0x12],
+        );
+
+        let trap = cpu.execute_vector(&mut bus, 0x20, 0x26, &load).unwrap_err();
+        assert!(matches!(
+            trap,
+            Trap::PageFault { context, .. }
+                if context.reason == PageFaultReason::NotPresent
+                    && context.effective_address == 0x9000
+        ));
+    }
+
+    #[test]
+    fn vector_stride_translates_active_mappings_in_linear_address_order() {
+        let mut bus = ProbeBus::new(0x10_000);
+        install_four_level_root(&mut bus.ram);
+        map_low_page(&mut bus.ram, 8, 0xa000, PTE_U);
+        map_low_page(&mut bus.ram, 9, 0xb000, PTE_U);
+        bus.ram.write_u8(0xa000, 0x80).unwrap();
+        bus.ram.write_u8(0xb000, 0x90).unwrap();
+
+        let mut cpu = Cpu::new();
+        cpu.state_mut().ptcr = PageTableControl::from_raw(0x1001);
+        cpu.state_mut().r[1] = 0x9000;
+        cpu.state_mut().r[2] = (-0x1000_i64) as u64;
+        cpu.state_mut().p[0] = [0b0000_0011, 0];
+        let load = decoded_form(
+            "xxlong.vmov.v137",
+            &[('z', 0), ('p', 0), ('v', 3), ('e', 0x58)],
+            &[0x12],
+        );
+        bus.clear_log();
+
+        cpu.execute_vector(&mut bus, 0x20, 0x26, &load).unwrap();
+
+        let lower_leaf = bus
+            .byte_reads
+            .iter()
+            .position(|address| *address == 0x4040)
+            .expect("lower-address leaf was read");
+        let upper_leaf = bus
+            .byte_reads
+            .iter()
+            .position(|address| *address == 0x4048)
+            .expect("upper-address leaf was read");
+        assert!(lower_leaf < upper_leaf);
+        assert_eq!(&cpu.state().v[3][..2], &[0x90, 0x80]);
     }
 
     #[test]
@@ -9671,22 +10539,78 @@ mod tests {
         cpu.state_mut().r[1] = 0x1234;
         assert_eq!(cpu.step(&mut ram), StepResult::Running);
         assert_eq!(cpu.state().r[2], 0x9234);
-        assert_eq!(cpu.state().flags, Flags::Z | Flags::N | Flags::C);
+        assert_eq!(cpu.state().flags, Flags::Z);
         assert_eq!(ram.read_u64(0x4008).unwrap() & (PTE_A | PTE_D), 0);
     }
 
     #[test]
-    fn vtop_with_paging_disabled_is_identity_and_sets_all_query_flags() {
+    fn vtop_with_paging_disabled_checks_pabits_and_sets_only_z() {
         let instruction = encoded_form("medium.vtop_rn_v_rn_p", &[('v', 1), ('p', 2)], &[]);
         let mut ram = Ram::new(instruction.len());
         ram.load(0, &instruction).unwrap();
         let mut cpu = Cpu::new();
         cpu.reset(0);
-        cpu.state_mut().r[1] = u64::MAX;
+        cpu.state_mut().r[1] = 0x1234;
 
         assert_eq!(cpu.step(&mut ram), StepResult::Running);
-        assert_eq!(cpu.state().r[2], u64::MAX);
-        assert_eq!(cpu.state().flags, Flags::Z | Flags::N | Flags::C | Flags::V);
+        assert_eq!(cpu.state().r[2], 0x1234);
+        assert_eq!(cpu.state().flags, Flags::Z);
+    }
+
+    #[test]
+    fn direct_device_access_enforces_mmio_scalar_rules() {
+        let cpu = Cpu::new();
+        let mut bus = ProbeBus::new(16);
+        bus.device_from = Some(0);
+        bus.ram.write_u64(0, 0x1122_3344_5566_7788).unwrap();
+
+        assert_eq!(
+            cpu.read_virtual(
+                &mut bus,
+                0,
+                SegmentSelector::Ds,
+                0,
+                AccessDomain::Current,
+                Size::Quad,
+            ),
+            Ok(0x1122_3344_5566_7788)
+        );
+        assert!(matches!(
+            cpu.read_virtual(
+                &mut bus,
+                0,
+                SegmentSelector::Ds,
+                1,
+                AccessDomain::Current,
+                Size::Word,
+            ),
+            Err(Trap::AccessFault {
+                context: crate::AccessFaultContext {
+                    reason: AccessFaultReason::MmioAlignment,
+                    ..
+                },
+                ..
+            })
+        ));
+
+        cpu.vector_memory_active.set(true);
+        assert!(matches!(
+            cpu.read_virtual(
+                &mut bus,
+                0,
+                SegmentSelector::Ds,
+                0,
+                AccessDomain::Current,
+                Size::Byte,
+            ),
+            Err(Trap::AccessFault {
+                context: crate::AccessFaultContext {
+                    reason: AccessFaultReason::MmioOperation,
+                    ..
+                },
+                ..
+            })
+        ));
     }
 
     #[test]
@@ -9896,6 +10820,7 @@ mod tests {
 
         assert_eq!(cpu.step(&mut ram), StepResult::Running);
         assert_eq!(ram.read_u64(0x9000).unwrap(), 5);
+        assert_ne!(ram.read_u64(0x4008).unwrap() & PTE_A, 0);
         assert_eq!(ram.read_u64(0x4008).unwrap() & PTE_D, 0);
         assert_eq!(cpu.state().r[2], 5);
         assert!(cpu.state().flags.is_empty());
@@ -10220,8 +11145,8 @@ mod tests {
         cpu.state_mut().ptcr = PageTableControl::from_raw(0x1000);
         cpu.state_mut().r[0] = 0x1000;
         assert_eq!(cpu.step(&mut ram), StepResult::Running);
-        assert_eq!(cpu.state().r[2], 0x9000 | PTE_P | PTE_W | PTE_U);
-        assert_eq!(cpu.state().flags, Flags::Z | Flags::N | Flags::C);
+        assert_eq!(cpu.state().r[2], 0x9000 | PTE_P | PTE_U | (0b011 << 2));
+        assert_eq!(cpu.state().flags, Flags::Z);
     }
 
     #[test]
@@ -10867,8 +11792,8 @@ mod tests {
         let wrcr_ptcr = decoded_form("medium.wrcr_rn_s_ea", &[('s', 1)], &0_u16.to_le_bytes());
         for (image, cause) in [
             (1 << 1, InvalidControlCause::ReservedBits),
-            (2 << 8, InvalidControlCause::InvalidImage),
-            ((1 << 48) | 1, InvalidControlCause::InvalidImage),
+            (2 << 8, InvalidControlCause::ReservedBits),
+            ((1 << 56) | 1, InvalidControlCause::ReservedBits),
         ] {
             cpu.state_mut().r[1] = image;
             let before = cpu.state().clone();
@@ -10879,7 +11804,7 @@ mod tests {
             assert_eq!(cpu.state(), &before);
         }
 
-        let valid_wide_ptcr = (1 << 52) | (1 << 8) | 1;
+        let valid_wide_ptcr = (1 << 52) | 1;
         cpu.state_mut().r[1] = valid_wide_ptcr;
         assert_eq!(
             cpu.execute(&mut ram, 0x20, &wrcr_ptcr),
@@ -10993,7 +11918,7 @@ mod tests {
                 cpu.execute(&mut ram, 0x20, &instruction),
                 Err(Trap::InvalidControlState {
                     pc: 0x20,
-                    cause: InvalidControlCause::InvalidImage,
+                    cause: InvalidControlCause::ReservedBits,
                 })
             );
             assert_eq!(cpu.state(), &before);

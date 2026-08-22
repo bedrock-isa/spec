@@ -126,7 +126,7 @@ boundary, and zeros the padding. The frame-size unit remains one 8-byte slot.
 \input{isa/system/events/frame_type_table.tex}
 
 The delivered event determines the frame type. ERROR\_CODE is defined
-separately by each exception and has zero in every unassigned bit. PAGE\_FAULT extends that slot with
+separately by each exception and has zero in every unassigned bit. PAGE\_FAULT and ACCESS\_FAULT extend that slot with
 effective-address and linear-address context. AUXILIARY includes all four named slots and permits EVENT\_AUX to
 describe double-fault, machine-check, or bus-error state.
 

@@ -2,7 +2,7 @@ ifeq ($(strip $(LLVM_BIN)),)
 ifneq ($(strip $(BEDROCK_LLVM_BIN)),)
 LLVM_BIN := $(BEDROCK_LLVM_BIN)
 else ifneq ($(strip $(BEDROCK_LLVM_ROOT)),)
-LLVM_BIN := $(BEDROCK_LLVM_ROOT)/build/bin
+LLVM_BIN := $(BEDROCK_LLVM_ROOT)/bin
 else
 $(error set LLVM_BIN, BEDROCK_LLVM_BIN, or BEDROCK_LLVM_ROOT before building this sample)
 endif

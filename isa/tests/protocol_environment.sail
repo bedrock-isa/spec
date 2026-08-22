@@ -61,30 +61,53 @@ function test_protocol_environment_group() -> unit = {
       let l4 = execute_full(instruction, state);
       assert(l4.request.kind == PhysicalPteRead);
       assert(l4.request.range_start == 0x0000000000001120);
-      let l3 = resume_transaction(l4, pte_response(0x000000000000280F));
+      let l3 = resume_transaction(l4, pte_response(0x000000000000203F));
       assert(l3.request.range_start == 0x0000000000002688);
-      let l2 = resume_transaction(l3, pte_response(0x000000000000380F));
+      let l2 = resume_transaction(l3, pte_response(0x000000000000303F));
       assert(l2.request.range_start == 0x0000000000003598);
-      let l1 = resume_transaction(l2, pte_response(0x000000000000480F));
+      let l1 = resume_transaction(l2, pte_response(0x000000000000403F));
       assert(l1.request.range_start == 0x0000000000004C48);
-      let done = resume_transaction(l1, pte_response(0x00000000ABCDE00F));
+      let done = resume_transaction(l1, pte_response(0x00000000ABCDE02D));
       assert(done.state.registers[0] == 0x00000000ABCDEABC);
-      assert(done.state.flags == 0b1111);
-      let large_l3 = resume_transaction(l3, pte_response(0x000000004000000F));
+      assert(done.state.flags == 0b0001);
+      let large_l3 = resume_transaction(l3, pte_response(0x000000004000002D));
       assert(large_l3.state.registers[0] == 0x0000000056789ABC);
-      assert(large_l3.state.flags == 0b1111);
-      let misaligned_l3 = resume_transaction(l3, pte_response(0x000000004000100F));
+      assert(large_l3.state.flags == 0b0001);
+      let misaligned_l3 = resume_transaction(l3, pte_response(0x000000004000102D));
       assert(misaligned_l3.state.registers[0] == 0x0000000000000000);
       assert(misaligned_l3.state.flags == 0b0000);
-      let bit7_leaf = resume_transaction(l3, pte_response(0x000000004000008F));
+      let bit7_leaf = resume_transaction(l3, pte_response(0x00000000400000AD));
       assert(bit7_leaf.state.registers[0] == 0x0000000056789ABC);
-      assert(bit7_leaf.state.flags == 0b1111);
-      let malformed_l3 = resume_transaction(l3, pte_response(0x000000000000384F));
+      assert(bit7_leaf.state.flags == 0b0001);
+      let malformed_l3 = resume_transaction(l3, pte_response(0x000000000000307F));
       assert(malformed_l3.state.registers[0] == 0x0000000000000000);
       assert(malformed_l3.state.flags == 0b0000);
       let unreadable = resume_transaction(l4, failing_response(ResponsePteRead));
       assert(unreadable.fault != None());
       assert(unreadable.state == state)
+    },
+    None() => assert(false),
+  };
+
+  match decode_full_record([|0xC7, 0xEF, 0x48, 0x00|]) {
+    Some(instruction) => {
+      var direct_state = initial_cpu();
+      direct_state.supervisor = true; direct_state.status = 0x0000000000000010;
+      direct_state.controls[0] = 0x0000000000000000;
+      direct_state.registers[0] = 0x00FFFFFFFFFFFFFF;
+      let direct = execute_full(instruction, direct_state);
+      assert(not_bool(direct.awaiting_environment));
+      assert(direct.request.kind == NoPrimitiveRequest);
+      assert(direct.state.registers[0] == 0x00FFFFFFFFFFFFFF);
+      assert(direct.state.flags == 0b0001);
+
+      var outside_state = direct_state;
+      outside_state.registers[0] = 0x0100000000000000;
+      let outside = execute_full(instruction, outside_state);
+      assert(not_bool(outside.awaiting_environment));
+      assert(outside.request.kind == NoPrimitiveRequest);
+      assert(outside.state.registers[0] == 0x0000000000000000);
+      assert(outside.state.flags == 0b0000)
     },
     None() => assert(false),
   };
@@ -96,13 +119,13 @@ function test_protocol_environment_group() -> unit = {
       state.controls[0] = 0x0000000000001001;
       state.registers[0] = 0x0000123456789ABC;
       let l4 = execute_full(instruction, state);
-      let l3 = resume_transaction(l4, pte_response(0x000000000000280F));
-      let raw = resume_transaction(l3, pte_response(0x000000000000384F));
-      assert(raw.state.registers[0] == 0x000000000000384F);
+      let l3 = resume_transaction(l4, pte_response(0x000000000000203F));
+      let raw = resume_transaction(l3, pte_response(0x000000000000307F));
+      assert(raw.state.registers[0] == 0x000000000000307F);
       assert(raw.state.flags == 0b0000);
-      let large_leaf = resume_transaction(l3, pte_response(0x000000004000000F));
-      assert(large_leaf.state.registers[0] == 0x000000004000000F);
-      assert(large_leaf.state.flags == 0b1111);
+      let large_leaf = resume_transaction(l3, pte_response(0x000000004000002D));
+      assert(large_leaf.state.registers[0] == 0x000000004000002D);
+      assert(large_leaf.state.flags == 0b0001);
       let unreadable = resume_transaction(l4, failing_response(ResponsePteRead));
       assert(unreadable.fault != None());
       assert(unreadable.state == state);
@@ -124,8 +147,8 @@ function test_protocol_environment_group() -> unit = {
       state.controls[0] = 0x0000000000001001;
       state.registers[0] = 0x0000123456789ABC;
       let l4 = execute_full(instruction, state);
-      let l3 = resume_transaction(l4, pte_response(0x000000000000280F));
-      let blocked = resume_transaction(l3, pte_response(0x000000004000000F));
+      let l3 = resume_transaction(l4, pte_response(0x000000000000203F));
+      let blocked = resume_transaction(l3, pte_response(0x000000004000002D));
       assert(not_bool(blocked.awaiting_environment));
       assert(blocked.state.registers[0] == 0x0000000000000000);
       assert(blocked.state.flags == 0b0000)

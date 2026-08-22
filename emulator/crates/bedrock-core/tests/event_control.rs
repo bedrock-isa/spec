@@ -4,10 +4,10 @@ use bedrock_core::{
 };
 
 const PTE_P: u64 = 1 << 0;
-const PTE_W: u64 = 1 << 1;
-const PTE_X: u64 = 1 << 2;
-const PTE_U: u64 = 1 << 3;
-const PTE_T: u64 = 1 << 11;
+const PTE_T: u64 = 1 << 1;
+const PTE_U: u64 = 1 << 5;
+const PTE_W: u64 = 1 << 62;
+const PTE_X: u64 = 1 << 63;
 
 fn configure_event_entry(cpu: &mut Cpu, epc: u64, fsp: u64) {
     cpu.state_mut().ecr = EventControl::from_raw(1);
@@ -16,15 +16,25 @@ fn configure_event_entry(cpu: &mut Cpu, epc: u64, fsp: u64) {
 }
 
 fn install_four_level_root(ram: &mut Ram) {
-    let table_flags = PTE_P | PTE_W | PTE_X | PTE_U | PTE_T;
+    let table_flags = PTE_P | PTE_T | (1 << 2) | (1 << 3) | (1 << 4) | PTE_U;
     ram.write_u64(0x1000, 0x2000 | table_flags).unwrap();
     ram.write_u64(0x2000, 0x3000 | table_flags).unwrap();
     ram.write_u64(0x3000, 0x4000 | table_flags).unwrap();
 }
 
 fn map_low_page(ram: &mut Ram, virtual_page: u64, physical_page: u64, flags: u64) {
-    ram.write_u64(0x4000 + virtual_page * 8, physical_page | PTE_P | flags)
-        .unwrap();
+    let am = if flags & PTE_X != 0 {
+        0b100 << 2
+    } else if flags & PTE_W != 0 {
+        0b011 << 2
+    } else {
+        0
+    };
+    ram.write_u64(
+        0x4000 + virtual_page * 8,
+        physical_page | PTE_P | (flags & PTE_U) | am,
+    )
+    .unwrap();
 }
 
 #[test]

@@ -21,10 +21,15 @@ function resume_system_phase(previous : Execution_result, response : Transaction
             range_length = if prefetch then 1 else granule,
             cache_policy = response.cache_policy,
             commit_point = true };
-          continue_with_request(
-            previous, PhaseCacheMaintenance, previous.pending.ordinal + 1,
-            physical, previous.pending.captured_second, request
-          )
+          if prefetch & response.access_class == MmioAccess then
+            completed(
+              previous.pending.before, previous.pending.after,
+              previous.pending.kind, [||]
+            )
+          else continue_with_request(
+              previous, PhaseCacheMaintenance, previous.pending.ordinal + 1,
+              physical, previous.pending.captured_second, request
+            )
         }
       },
     },
@@ -48,20 +53,19 @@ function resume_system_phase(previous : Execution_result, response : Transaction
         let level = unsigned(previous.request.selector);
         let target_level = unsigned(previous.request.expected);
         let raw = response.value;
-        let permissions = previous.request.auxiliary & pte_permission_bits(raw);
         let valid = pte_structurally_valid(raw, level);
         if instruction.form.operation == Op_PTQUERY & level == target_level then
-          query_result(previous, raw & 0xFFFFFFFFFFFFFF7F, valid, permissions)
+          query_result(previous, raw, valid)
         else if not_bool(valid) then query_result(
-          previous, 0x0000000000000000, false, 0x0000000000000000
+          previous, 0x0000000000000000, false
         )
-        else if raw[11] == bitzero then {
+        else if raw[1] == bitzero then {
           if instruction.form.operation == Op_PTQUERY then
-            query_result(previous, 0x0000000000000000, false, 0x0000000000000000)
+            query_result(previous, 0x0000000000000000, false)
           else {
           let physical = (raw & paging_pfn_mask(previous.pending.before.controls[0]))
                        | (previous.request.value & paging_leaf_offset_mask(level));
-          query_result(previous, physical, true, permissions)
+          query_result(previous, physical, true)
           }
         }
         else {
@@ -71,8 +75,7 @@ function resume_system_phase(previous : Execution_result, response : Transaction
             previous, PhasePteRead, previous.pending.ordinal + 1,
             previous.pending.captured_first, previous.pending.captured_second,
             pte_read_request(previous.pending.before, instruction, previous.request.value,
-                             table, next_level, target_level, permissions,
-                             previous.pending.ordinal + 1)
+                             table, next_level, target_level, previous.pending.ordinal + 1)
           )
         }
       },

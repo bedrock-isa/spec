@@ -13,6 +13,7 @@ const VECTOR_PARAMETERS_LEAF: u16 = 2;
 const IMPLEMENTATION_DIRECTORY_LEAF: u16 = 0;
 const CACHE_TOPOLOGY_LEAF: u16 = 1;
 const PERFORMANCE_COUNTERS_LEAF: u16 = 2;
+const ADDRESS_WIDTHS_LEAF: u16 = 3;
 const SAVE_AREA_LAYOUT_LEAF: u16 = 4;
 
 // These values are the emulator's stable implementation-defined CPUID identity.
@@ -31,6 +32,7 @@ const PROCESSOR_NAME: &[u8] = b"Bedrock Emulator";
 pub const MAINTENANCE_GRANULE_BYTES: u16 = 64;
 
 pub const VLEN_LOG2_BITS: u8 = 7;
+pub const PABITS: u8 = crate::translation::IMPLEMENTATION_PABITS;
 
 pub const SAVE_AREA_SIZE_BYTES: u64 = 0x03c0;
 pub const SAVE_FIXED_SIZE_BYTES: u16 = 0x00c0;
@@ -85,6 +87,8 @@ pub fn query(selector: u64) -> u64 {
         (IMPLEMENTATION_CLASS, CACHE_TOPOLOGY_LEAF, 1) => MAINTENANCE_GRANULE_BYTES as u64,
         (IMPLEMENTATION_CLASS, PERFORMANCE_COUNTERS_LEAF, 0) => leaf_header(3),
         (IMPLEMENTATION_CLASS, PERFORMANCE_COUNTERS_LEAF, 1..=3) => 1,
+        (IMPLEMENTATION_CLASS, ADDRESS_WIDTHS_LEAF, 0) => leaf_header(1),
+        (IMPLEMENTATION_CLASS, ADDRESS_WIDTHS_LEAF, 1) => u64::from(PABITS),
         (IMPLEMENTATION_CLASS, SAVE_AREA_LAYOUT_LEAF, 0) => leaf_header(6),
         (IMPLEMENTATION_CLASS, SAVE_AREA_LAYOUT_LEAF, 1) => SAVE_AREA_SIZE_BYTES,
         (IMPLEMENTATION_CLASS, SAVE_AREA_LAYOUT_LEAF, 2) => {
@@ -144,7 +148,7 @@ fn name_word(name: &[u8], word_index: usize) -> u64 {
 mod tests {
     use super::{
         ARCHITECTURE_ID, ARCHITECTURE_REVISION, IMPLEMENTATION_ID, IMPLEMENTATION_REVISION,
-        MAINTENANCE_GRANULE_BYTES, PROCESSOR_NAME, SAVE_AREA_SIZE_BYTES, SAVE_BITMAP_WORDS,
+        MAINTENANCE_GRANULE_BYTES, PABITS, PROCESSOR_NAME, SAVE_AREA_SIZE_BYTES, SAVE_BITMAP_WORDS,
         SAVE_FIXED_SIZE_BYTES, SAVE_FORMAT, SAVE_FP_ALIGNMENT_BYTES, SAVE_FP_BITMAP_BIT,
         SAVE_FP_COMPONENT_ID, SAVE_FP_INIT_POLICY, SAVE_FP_MAX_SIZE_BYTES, SAVE_FP_OFFSET_BYTES,
         SAVE_VECTOR_ALIGNMENT_BYTES, SAVE_VECTOR_BITMAP_BIT, SAVE_VECTOR_COMPONENT_ID,
@@ -176,6 +180,7 @@ mod tests {
             (selector(2, 0, 0), 0x0000_0000_0004_0000),
             (selector(2, 1, 0), 0x0000_0000_0000_0001),
             (selector(2, 2, 0), 0x0000_0000_0000_0003),
+            (selector(2, 3, 0), 0x0000_0000_0000_0001),
             (selector(2, 4, 0), 0x0000_0000_0000_0006),
         ];
         for (selector, result) in expected {
@@ -234,7 +239,7 @@ mod tests {
             selector(1, 2, 2),
             selector(2, 1, 2),
             selector(2, 2, 4),
-            selector(2, 3, 0),
+            selector(2, 3, 2),
             selector(2, 4, 7),
             selector(3, 0, 0),
             u64::MAX,
@@ -251,6 +256,13 @@ mod tests {
         for counter_id in 1..=3 {
             assert_eq!(query(selector(2, 2, counter_id)), 1);
         }
+    }
+
+    #[test]
+    fn address_widths_report_the_implementation_pabits() {
+        assert_eq!(PABITS, 56);
+        assert_eq!(query(selector(2, 3, 1)), 56);
+        assert_eq!(query(selector(2, 3, 2)), 0);
     }
 
     #[test]

@@ -5,10 +5,14 @@ typedef int i32;
 typedef unsigned char u8;
 
 #define PAGE_PRESENT (1ULL << 0)
-#define PAGE_WRITE (1ULL << 1)
-#define PAGE_EXEC (1ULL << 2)
-#define PAGE_USER (1ULL << 3)
-#define PAGE_TABLE (1ULL << 11)
+#define PAGE_TABLE (1ULL << 1)
+#define PAGE_AM_RW (3ULL << 2)
+#define PAGE_AM_RX (4ULL << 2)
+#define PAGE_AM_MMIO_RW (7ULL << 2)
+#define PAGE_TABLE_R (1ULL << 2)
+#define PAGE_TABLE_W (1ULL << 3)
+#define PAGE_TABLE_X (1ULL << 4)
+#define PAGE_USER (1ULL << 5)
 
 #define L4 ((volatile u64 *)0x0000000000008000ULL)
 #define L3 ((volatile u64 *)0x0000000000009000ULL)
@@ -52,7 +56,7 @@ static const u8 EDGE_COLOR[12] = {
     0x1c, 0x1c, 0xff, 0xdb, 0xb7, 0x93,
 };
 
-static i32 screen_x[8];
+static i32 screen_x[8] __attribute__((aligned(4096)));
 static i32 screen_y[8];
 static volatile u32 delay_sink;
 
@@ -62,25 +66,28 @@ static void map4k(u64 va, u64 pa, u64 flags) {
   u64 l2i = (va >> 21) & 511ULL;
   u64 l1i = (va >> 12) & 511ULL;
 
-  L4[l4i] = 0x9000ULL | PAGE_PRESENT | PAGE_WRITE | PAGE_EXEC | PAGE_USER |
-            PAGE_TABLE;
-  L3[l3i] = 0xa000ULL | PAGE_PRESENT | PAGE_WRITE | PAGE_EXEC | PAGE_USER |
-            PAGE_TABLE;
-  L2[l2i] = 0xb000ULL | PAGE_PRESENT | PAGE_WRITE | PAGE_EXEC | PAGE_USER |
-            PAGE_TABLE;
+  u64 table = PAGE_PRESENT | PAGE_TABLE | PAGE_TABLE_R | PAGE_TABLE_W |
+              PAGE_TABLE_X | PAGE_USER;
+  L4[l4i] = 0x9000ULL | table;
+  L3[l3i] = 0xa000ULL | table;
+  L2[l2i] = 0xb000ULL | table;
   L1[l1i] = (pa & ~0xfffULL) | flags;
 }
 
 static void enable_paging(void) {
-  for (u32 page = 0; page < 256; page++) {
+  u64 mutable_page = ((u64)screen_x) & ~0xfffULL;
+  for (u32 page = 1; page < 256; page++) {
     u64 addr = (u64)page * 4096ULL;
-    map4k(addr, addr, PAGE_PRESENT | PAGE_WRITE | PAGE_EXEC);
+    u64 am = (addr == mutable_page || (page >= 8 && page <= 11) || page >= 240)
+                 ? PAGE_AM_RW
+                 : PAGE_AM_RX;
+    map4k(addr, addr, PAGE_PRESENT | am);
   }
 
   for (u32 page = 0; page < 16; page++) {
     map4k(HI_BASE + 0x00f00000ULL + page * 4096ULL,
           0x00f00000ULL + page * 4096ULL,
-          PAGE_PRESENT | PAGE_WRITE);
+          PAGE_PRESENT | PAGE_AM_MMIO_RW);
   }
 
   __asm__ volatile(

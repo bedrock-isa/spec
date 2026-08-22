@@ -28,7 +28,7 @@ Effective-address operands can name registers, immediates, absolute addresses, o
 
 ### Addressing and memory
 
-Address processing separates effective-address calculation, segment pre-translation, optional page-table translation, and the final byte-addressed memory-system access. `CS`, `DS`, and `SS` provide code, data, and stack contexts, while `GS0` through `GS5` provide additional selectable domains. Segment state may be disabled, translated, or used as a bounds-only window. Paging adds permissions, page geometry, cache policy, and accessed/dirty tracking; PTE bit 7 is ignored.
+Address processing separates effective-address calculation, segment pre-translation, optional page-table translation, and the final memory-system access. `CS`, `DS`, and `SS` provide code, data, and stack contexts, while `GS0` through `GS5` provide additional selectable domains. Segment state may be disabled, translated, or used as a bounds-only window. Paging uses distinct table and leaf descriptors and adds effective permissions, Normal/MMIO access class, cache policy, and accessed/dirty tracking.
 
 Normal memory is coherent and multi-copy atomic, with weak baseline ordering between different locations. Atomic operations provide relaxed, acquire, release, acquire-release, and sequentially consistent modes. Read, write, and cumulative full fences provide explicit ordering. Cache maintenance, translation-cache maintenance, and self-modifying code participate in the same ordering model.
 

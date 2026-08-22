@@ -98,13 +98,14 @@ complete LLVM checkout and build, including its headers and libraries.
 
 The LLVM toolchain discovery uses the following order:
 1. `BEDROCK_LLVM_BIN`, when set, names the LLVM tool binary directory.
-2. Otherwise, `BEDROCK_LLVM_ROOT/build/bin` is used.
+2. Otherwise, `BEDROCK_LLVM_ROOT/bin` is used.
 
-Set the LLVM source root for full-workspace builds, which need its headers and
-libraries as well as its tools:
+Set the LLVM build directory for full-workspace builds, which need its headers
+and libraries as well as its tools. The LLDB source headers are taken from the
+sibling checkout path `BEDROCK_LLVM_ROOT/../lldb/include`:
 
 ```sh
-export BEDROCK_LLVM_ROOT=/absolute/path/to/llvm
+export BEDROCK_LLVM_ROOT=/absolute/path/to/llvm/build
 ```
 
 To override only executable lookup, set the binary directory explicitly:
@@ -114,7 +115,7 @@ export BEDROCK_LLVM_BIN=/absolute/path/to/llvm/build/bin
 ```
 
 If neither variable is set, toolchain discovery returns a missing-configuration
-error. `BEDROCK_LLVM_BIN` does not provide the source root needed for LLDB
+error. `BEDROCK_LLVM_BIN` does not provide the build root needed for LLDB
 headers and LLVM libraries; those paths always derive from
 `BEDROCK_LLVM_ROOT`. The toolchain wrapper runs:
 

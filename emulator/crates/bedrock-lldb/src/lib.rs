@@ -628,7 +628,7 @@ _start:
                     && env::var_os(BEDROCK_LLVM_ROOT_ENV).is_none() =>
             {
                 eprintln!(
-                    "skipping LLDB integration test: set {BEDROCK_LLVM_ROOT_ENV} to the LLVM source root; it is required for LLDB headers and libraries. {BEDROCK_LLVM_BIN_ENV} may override executable lookup only: {err}"
+                    "skipping LLDB integration test: set {BEDROCK_LLVM_ROOT_ENV} to the LLVM build directory; it is required for LLDB headers and libraries. {BEDROCK_LLVM_BIN_ENV} may override executable lookup only: {err}"
                 );
                 None
             }

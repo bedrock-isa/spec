@@ -171,11 +171,12 @@ def validate_manifest(data: dict[str, Any]) -> None:
     causes = data["exception_causes"]
     if not isinstance(causes, dict) or set(causes) != {
         "PAGE_FAULT",
+        "ACCESS_FAULT",
         "ILLEGAL_INSTRUCTION",
         "INVALID_CONTROL_STATE",
         "VECTOR_RANGE_ERROR",
     }:
-        raise ValueError("exception_causes: expected the four architected cause spaces")
+        raise ValueError("exception_causes: expected the five architected cause spaces")
     for exception, raw_entries in causes.items():
         entries = require_list(raw_entries, f"exception_causes.{exception}")
         unique_values(entries, "value", f"exception_causes.{exception}")
@@ -1251,6 +1252,9 @@ def output_files(data: dict[str, Any]) -> dict[Path, str]:
         ),
         ISA_ROOT / "system" / "events" / "page_fault_causes.tex": generated(
             render_exception_causes(data, "PAGE_FAULT")
+        ),
+        ISA_ROOT / "system" / "events" / "access_fault_causes.tex": generated(
+            render_exception_causes(data, "ACCESS_FAULT")
         ),
         ISA_ROOT / "system" / "events" / "illegal_instruction_causes.tex": generated(
             render_exception_causes(data, "ILLEGAL_INSTRUCTION")

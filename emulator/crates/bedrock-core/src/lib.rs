@@ -18,8 +18,10 @@ pub use state::{
 };
 pub use step::StepResult;
 pub use translation::{
-    AccessDomain, AccessKind, AddressSpaceControl, MemoryTranslation, PageFaultReason,
-    PageQueryResult, PageTableControl, SegmentRegister, SegmentRegisters, SegmentSelector,
-    TranslatedTarget, TranslationFault,
+    AccessDomain, AccessFaultReason, AccessKind, AddressSpaceControl, MemoryTranslation,
+    PageFaultReason, PageQueryResult, PageTableControl, SegmentRegister, SegmentRegisters,
+    SegmentSelector, TranslatedTarget, TranslationAccessClass, TranslationFault,
 };
-pub use trap::{BusFaultContext, PageFaultContext, Trap, VectorRangeErrorCause};
+pub use trap::{
+    AccessFaultContext, BusFaultContext, PageFaultContext, Trap, VectorRangeErrorCause,
+};

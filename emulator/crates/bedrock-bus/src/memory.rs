@@ -1,5 +1,5 @@
 use crate::bus::Bus;
-use crate::device::Device;
+use crate::device::{AccessWidth, Device};
 use crate::error::{BusError, BusResult};
 use std::collections::BTreeMap;
 
@@ -110,12 +110,22 @@ impl Device for Ram {
         Bus::rollback_transaction(self)
     }
 
-    fn read_u8(&mut self, offset: u64) -> BusResult<u8> {
-        Bus::read_u8(self, offset)
+    fn read(&mut self, offset: u64, width: AccessWidth) -> BusResult<u64> {
+        match width {
+            AccessWidth::Byte => Bus::read_u8(self, offset).map(u64::from),
+            AccessWidth::Word => Bus::read_u16(self, offset).map(u64::from),
+            AccessWidth::Long => Bus::read_u32(self, offset).map(u64::from),
+            AccessWidth::Quad => Bus::read_u64(self, offset),
+        }
     }
 
-    fn write_u8(&mut self, offset: u64, value: u8) -> BusResult<()> {
-        Bus::write_u8(self, offset, value)
+    fn write(&mut self, offset: u64, width: AccessWidth, value: u64) -> BusResult<()> {
+        match width {
+            AccessWidth::Byte => Bus::write_u8(self, offset, value as u8),
+            AccessWidth::Word => Bus::write_u16(self, offset, value as u16),
+            AccessWidth::Long => Bus::write_u32(self, offset, value as u32),
+            AccessWidth::Quad => Bus::write_u64(self, offset, value),
+        }
     }
 }
 

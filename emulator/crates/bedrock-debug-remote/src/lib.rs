@@ -923,9 +923,10 @@ fn stop_reply(result: &StepResult) -> String {
             Trap::DivideError { .. }
             | Trap::FloatingPointFault { .. }
             | Trap::VectorRangeError { .. } => signal_stop_reply(8),
-            Trap::Bus { .. } | Trap::AcknowledgedBusFailure { .. } | Trap::PageFault { .. } => {
-                signal_stop_reply(11)
-            }
+            Trap::Bus { .. }
+            | Trap::AcknowledgedBusFailure { .. }
+            | Trap::PageFault { .. }
+            | Trap::AccessFault { .. } => signal_stop_reply(11),
             Trap::Decode { .. } | Trap::PrivilegeFault { .. } => signal_stop_reply(5),
         },
     }
@@ -1183,7 +1184,10 @@ mod tests {
     use bedrock_bus::Bus;
     use bedrock_core::exception::InvalidControlCause;
     use bedrock_core::fpu::env::FpCauses;
-    use bedrock_core::{CPU_REGISTER_INFOS, StepResult, Trap, VectorRangeErrorCause};
+    use bedrock_core::{
+        AccessDomain, AccessFaultContext, AccessFaultReason, AccessKind, CPU_REGISTER_INFOS,
+        StepResult, Trap, VectorRangeErrorCause,
+    };
     use bedrock_debug::Debugger;
     use bedrock_machine::Machine;
     use bedrock_machine::board::{RAM_BASE, RAM_SIZE};
@@ -1337,6 +1341,27 @@ mod tests {
         });
 
         assert_eq!(stop_reply(&result), "T08thread:1;");
+    }
+
+    #[test]
+    fn access_fault_returns_memory_access_signal() {
+        let result = StepResult::Trap(Trap::AccessFault {
+            pc: 0x30,
+            context: AccessFaultContext {
+                effective_address: 0x1000,
+                linear_address: Some(0x1000),
+                reason: AccessFaultReason::MmioOperation,
+                access_kind: AccessKind::Write,
+                access_domain: AccessDomain::Current,
+                segment: None,
+                asid: 0,
+                access_size: Some(4),
+                operand: Some(0),
+                atomic: false,
+            },
+        });
+
+        assert_eq!(stop_reply(&result), "T0bthread:1;");
     }
 
     #[test]

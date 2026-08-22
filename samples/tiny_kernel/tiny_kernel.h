@@ -50,12 +50,21 @@ typedef unsigned char u8;
 #define APP_ID_SFAULT 10u
 
 #define PAGE_PRESENT (1ULL << 0)
-#define PAGE_WRITE (1ULL << 1)
-#define PAGE_EXEC (1ULL << 2)
-#define PAGE_USER (1ULL << 3)
-#define PAGE_ACCESSED (1ULL << 5)
-#define PAGE_DIRTY (1ULL << 6)
-#define PAGE_TABLE (1ULL << 11)
+#define PAGE_TABLE (1ULL << 1)
+#define PAGE_AM_R (0ULL << 2)
+#define PAGE_AM_W (1ULL << 2)
+#define PAGE_AM_X (2ULL << 2)
+#define PAGE_AM_RW (3ULL << 2)
+#define PAGE_AM_RX (4ULL << 2)
+#define PAGE_AM_MMIO_R (5ULL << 2)
+#define PAGE_AM_MMIO_W (6ULL << 2)
+#define PAGE_AM_MMIO_RW (7ULL << 2)
+#define PAGE_TABLE_R (1ULL << 2)
+#define PAGE_TABLE_W (1ULL << 3)
+#define PAGE_TABLE_X (1ULL << 4)
+#define PAGE_USER (1ULL << 5)
+#define PAGE_ACCESSED (1ULL << 7)
+#define PAGE_DIRTY (1ULL << 8)
 
 #define SEGMENT_WINDOW(base_page, exponent, mantissa, bounds_only)             \
   ((((u64)(base_page)) << 12) | (((u64)(exponent) & 0x1fULL) << 7) |           \

@@ -118,8 +118,16 @@ read-modify-write, not an atomic operation.  A vector instruction nevertheless
 has one architectural commit point: address evaluation, all active reads,
 computation, and all active writes must succeed before any register,
 predicate, memory, auto-update, \texttt{FFLAGS}, or PC effect becomes visible.
-If more than one active lane faults, the implementation may select any one of
-those faults, but the reported fault address must identify the selected lane.
+After range, wrap, and canonicality checks, the implementation completes
+translation of every mapping covered by every active lane in increasing
+linear-address order.  Only after all such translations succeed does it apply
+physical-class checks, the vector/gather/scatter MMIO-operation prohibition,
+alignment checks, and target or bus accesses, in that order.  Consequently, a
+translation fault in a higher-address active lane takes precedence over an
+MMIO condition discovered in a lower-address active lane.  When logical lane
+order differs from address order, translation and translation-fault selection
+still follow address order.  The reported fault address identifies the lane
+whose range supplies the selected failure.
 
 \subsection{Floating-Point Exceptions, Conversions, and Reductions}
 

@@ -161,6 +161,9 @@ enum Transaction_access =
 | AccessStackWrite
 | AccessAddressOnly
 
+enum Memory_access_class = NormalAccess | MmioAccess
+enum Physical_memory_class = NormalPhysical | DevicePhysical
+
 enum Continuation_phase =
   ContinuationNone
 | PhaseSourceAddress
@@ -355,6 +358,8 @@ struct Transaction_response = {
   generated_fflags : bits(5),
   bounds_passed : bool,
   cache_policy : int,
+  access_class : Memory_access_class,
+  physical_class : Physical_memory_class,
   atomic_store_happened : bool,
   body_bytes : list(bits(8)),
   state_image : Cpu_state,

@@ -70,7 +70,7 @@ canonical_field_groups:
     fields: [IE, PM, RF, TF, NI, EA]
     definition: section:state-register-formats
   - owner: PTCR
-    fields: [root_page, PABITS_SEL, LA57, PE]
+    fields: [root_page, LA57, PE]
     definition: section:control-registers
   - owner: ASCR
     fields: [ASID, AE]
@@ -85,7 +85,7 @@ canonical_field_groups:
     fields: [EN]
     definition: section:control-registers
   - owner: PTE
-    fields: [P, W, X, U, G, A, D, ignored bit 7, CP, SW0, T, PFN]
+    fields: [P, T, AM, R, W, X, U, G, A, D, CP, SW, PFN]
     definition: section:page-table-entry-format
   - owner: instruction_header
     fields: [L]

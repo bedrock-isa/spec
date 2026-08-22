@@ -1,5 +1,5 @@
-\subsubsection{Page-Fault Error Code}
-\begin{manuallistedformatdiagram}{PAGE\_FAULT ERROR\_CODE Format}
+\subsubsection{Address-Context Error Code}
+\begin{manuallistedformatdiagram}{PAGE\_FAULT and ACCESS\_FAULT ERROR\_CODE Format}
 \manualformatrowrange{ERROR\_CODE[63:0]}{63}{0}{%
 \manualformatreserved{reserved}{34}
 \manualformatfield{SZ}{3}
@@ -22,7 +22,7 @@
 \texttt{ATOMIC} and \texttt{USER\_DOMAIN}.
 \par}
 
-\manualtablecaption{PAGE\_FAULT ERROR\_CODE Fields}
+\manualtablecaption{Address-Context ERROR\_CODE Fields}
 \begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{1.45in}>{\raggedright\arraybackslash}p{3.35in}@{}}
 \toprule
 \rowcolor{ManualHeaderFill}
@@ -35,7 +35,7 @@
 \textbf{Bits} & \textbf{Field} & \textbf{Meaning}\\
 \midrule
 \endhead
-7..0 & \texttt{CAUSE} & page-fault cause listed below\\
+7..0 & \texttt{CAUSE} & cause in the selected exception's cause space\\
 9..8 & \texttt{ACCESS} & 0 none, 1 read, 2 write, 3 execute\\
 10 & \texttt{USER\_DOMAIN} & access selected the user-domain permission path\\
 11 & \texttt{ATOMIC} & access was an atomic read-modify-write\\
@@ -52,12 +52,17 @@
 
 \input{isa/system/events/page_fault_causes.tex}
 
+\input{isa/system/events/access_fault_causes.tex}
+
 Saved \texttt{STATUS.PM} records the originating privilege. \texttt{USER\_DOMAIN} distinguishes the ordinary user
 permission path from the checked user-access path used
 by supervisor instructions such as \texttt{MOVUC}, \texttt{MOVCU}, and \texttt{MOVUU}. An atomic read-modify-write
 reports \texttt{ACCESS=write}. \texttt{NOT\_PRESENT} and \texttt{MALFORMED\_PTE} identify the actual PTE level.
 \texttt{PERMISSION} identifies the first level, in root-to-leaf walk order, whose accumulated permissions exclude the
 requested access. A cause detected before a walk reports level zero.
+Every \texttt{ACCESS\_FAULT} reports \texttt{WALK\_LEVEL=0}; translation has
+already completed for MMIO causes, while \texttt{PHYSICAL\_ADDRESS} applies
+with paging disabled.
 
 \texttt{ACCESS\_SIZE} records the architectural transfer width when one of the B, W, L, or Q widths applies. It is
 zero when no such width is available or applicable.

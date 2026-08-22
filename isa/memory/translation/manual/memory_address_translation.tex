@@ -43,9 +43,9 @@ Complete range additions are mathematical: 64-bit wraparound never makes an out-
 failure raises \texttt{PAGE\_FAULT} before the instruction's target memory access begins.
 
 The segment result is the linear address. With PTCR.PE set, the page-table walker consumes that address and applies
-the selected PTE frame and attributes. With paging disabled, the memory system receives the complete 64-bit linear
-address directly as a byte address. \texttt{PABITS\_SEL} applies to page-table geometry, while the direct address
-retains all 64 bits. An invalid segment image raises INVALID\_CONTROL\_STATE when written; a failed segment bound or
+the selected PTE frame and attributes. With paging disabled, the linear address is the physical byte address and
+must fit the implementation PABITS value. An out-of-range direct address raises
+\texttt{ACCESS\_FAULT.PHYSICAL\_ADDRESS}. An invalid segment image raises INVALID\_CONTROL\_STATE when written; a failed segment bound or
 canonical-address check raises PAGE\_FAULT during access.
 
 \input{isa/memory/translation/manual/page_walk_reference.tex}
@@ -61,7 +61,7 @@ context is invalidated when PTCR changes.
 
 \input{isa/memory/translation/manual/translation_cache_contract.tex}
 
-A global leaf ignores ASID matching. Its PFN, accumulated permissions, and \texttt{CP} attributes must
+A global leaf ignores ASID matching. Its PFN, effective permissions, AM, and \texttt{CP} attributes must
 be identical in every context in which that global entry can be used. Changing any of those attributes requires
 invalidating the global entry on every target logical processor.
 
@@ -76,11 +76,34 @@ Every leaf at level $L$ forms a byte address with $o=12+9(L-1)$:
 \[
   \mathit{byte\_address} = (\mathit{PFN}\ll12)\mathbin{|}\mathit{linear}[o-1:0].
 \]
-A width-$n$ access covers the half-open byte interval $[a,a+n)$. PTE bit 7 is ignored and cannot change translation,
-permissions, cache policy, A/D behavior, queries, TLB identity, prefetch, cache maintenance, or access semantics.
+A width-$n$ access covers the half-open byte interval $[a,a+n)$. Bit 7 records A and may be set by an ordinary walk.
 Atomics require natural byte alignment; a misaligned operand raises \texttt{ATOMIC\_ALIGNMENT} before the memory
-read or write. PTQUERY returns the selected PTE image with ignored bit 7 cleared, while VTOP reports the ordinary
-byte address.
+read or write. PTQUERY returns the raw selected descriptor, while VTOP reports the translated byte address; neither
+instruction modifies A or D.
+
+\subsection{Physical Class and MMIO Accesses}
+The platform assigns each physical address an authoritative Normal or Device
+class. A Normal leaf selecting Device physical memory raises
+\texttt{PAGE\_FAULT.MEMORY\_TYPE}. A MMIO leaf may select either physical
+class and imposes MMIO rules; paging-disabled Device accesses also use those
+rules. Paging-disabled Normal addresses are Normal accesses.
+
+A permitted MMIO operation is one naturally aligned scalar load or store of
+1, 2, 4, or 8 bytes. All complete-range and translation checks finish before
+one architectural MMIO event is produced, and that event is not split. A
+permitted scalar that is misaligned raises
+\texttt{ACCESS\_FAULT.MMIO\_ALIGNMENT}. Atomic and read-modify-write, vector,
+gather/scatter, and repeat memory operations raise
+\texttt{ACCESS\_FAULT.MMIO\_OPERATION} before alignment is considered and
+before any target effect. A prefetch to MMIO is a no-op. Instruction fetch is
+never permitted from MMIO.
+
+Within one memory operand, failures are selected in this order: segment range
+and wrap, canonicality, complete translation of all covered mappings in
+increasing address order, physical memory class, MMIO operation class, MMIO or
+atomic alignment, then the target access and bus fault. Thus a later mapping's
+translation fault precedes an MMIO condition already visible in an earlier
+mapping.
 
 \subsection{Multi-Page Accesses}
 For a byte range that intersects more than one distinct leaf mapping, translation and accumulated permission checks

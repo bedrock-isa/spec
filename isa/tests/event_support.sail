@@ -23,6 +23,7 @@ function event_test_response(kind : Transaction_response_kind,
   value = 0x0000000000000000, secondary_value = 0x0000000000000000,
   flags = 0x0, write_flags = false, generated_fflags = 0b00000,
   bounds_passed = success, cache_policy = 0,
+  access_class = NormalAccess, physical_class = NormalPhysical,
   atomic_store_happened = false, body_bytes = [||],
   state_image = initial_cpu(), known = success, present = success,
   fp_response = empty_fp_response()

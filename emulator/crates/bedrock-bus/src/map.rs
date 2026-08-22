@@ -1,5 +1,6 @@
+use crate::PhysicalMemoryClass;
 use crate::bus::Bus;
-use crate::device::Device;
+use crate::device::{AccessWidth, Device};
 use crate::error::{BusError, BusResult};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -104,6 +105,41 @@ impl MappedBus {
         }
         None
     }
+
+    fn wide_device_mut(
+        &mut self,
+        addr: u64,
+        width: AccessWidth,
+    ) -> BusResult<(&mut dyn Device, u64, u64)> {
+        let last = addr
+            .checked_add(width.bytes() - 1)
+            .ok_or(BusError::OutOfRange { addr })?;
+        for mapped in &mut self.devices {
+            if let Some(offset) = mapped.range.offset(addr) {
+                if !mapped.range.contains(last) {
+                    return Err(BusError::Unmapped {
+                        addr: mapped.range.end_exclusive,
+                    });
+                }
+                return Ok((mapped.device.as_mut(), offset, mapped.range.start));
+            }
+        }
+        Err(BusError::Unmapped { addr })
+    }
+
+    fn read_device(&mut self, addr: u64, width: AccessWidth) -> BusResult<u64> {
+        let (device, offset, base) = self.wide_device_mut(addr, width)?;
+        device
+            .read(offset, width)
+            .map_err(|error| error.rebase_or_out_of_range(base, addr))
+    }
+
+    fn write_device(&mut self, addr: u64, width: AccessWidth, value: u64) -> BusResult<()> {
+        let (device, offset, base) = self.wide_device_mut(addr, width)?;
+        device
+            .write(offset, width, value)
+            .map_err(|error| error.rebase_or_out_of_range(base, addr))
+    }
 }
 
 impl Bus for MappedBus {
@@ -143,6 +179,18 @@ impl Bus for MappedBus {
         self.transaction_active = false;
     }
 
+    fn physical_memory_class(&self, addr: u64) -> PhysicalMemoryClass {
+        if self
+            .devices
+            .iter()
+            .any(|mapped| mapped.range.contains(addr))
+        {
+            PhysicalMemoryClass::Device
+        } else {
+            PhysicalMemoryClass::Normal
+        }
+    }
+
     fn read_u8(&mut self, addr: u64) -> BusResult<u8> {
         let Some((device, offset, base)) = self.device_mut(addr) else {
             return Err(BusError::Unmapped { addr });
@@ -160,12 +208,40 @@ impl Bus for MappedBus {
             .write_u8(offset, value)
             .map_err(|error| error.rebase_or_out_of_range(base, addr))
     }
+
+    fn read_u16(&mut self, addr: u64) -> BusResult<u16> {
+        self.read_device(addr, AccessWidth::Word)
+            .map(|value| value as u16)
+    }
+
+    fn read_u32(&mut self, addr: u64) -> BusResult<u32> {
+        self.read_device(addr, AccessWidth::Long)
+            .map(|value| value as u32)
+    }
+
+    fn read_u64(&mut self, addr: u64) -> BusResult<u64> {
+        self.read_device(addr, AccessWidth::Quad)
+    }
+
+    fn write_u16(&mut self, addr: u64, value: u16) -> BusResult<()> {
+        self.write_device(addr, AccessWidth::Word, u64::from(value))
+    }
+
+    fn write_u32(&mut self, addr: u64, value: u32) -> BusResult<()> {
+        self.write_device(addr, AccessWidth::Long, u64::from(value))
+    }
+
+    fn write_u64(&mut self, addr: u64, value: u64) -> BusResult<()> {
+        self.write_device(addr, AccessWidth::Quad, value)
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::MappedBus;
-    use crate::{AddressRange, Bus, BusError, BusResult, Device};
+    use crate::{AccessWidth, AddressRange, Bus, BusError, BusResult, Device};
+    use std::cell::RefCell;
+    use std::rc::Rc;
 
     #[test]
     fn unmapped_access_returns_bus_error() {
@@ -175,6 +251,128 @@ mod tests {
             bus.read_u8(0xfeed_beef).unwrap_err(),
             BusError::Unmapped { addr: 0xfeed_beef }
         );
+    }
+
+    struct RecordingDevice(Rc<RefCell<Vec<(bool, u64, AccessWidth, u64)>>>);
+
+    impl Device for RecordingDevice {
+        fn begin_transaction(&mut self) -> BusResult<()> {
+            Ok(())
+        }
+
+        fn commit_transaction(&mut self) {}
+
+        fn rollback_transaction(&mut self) {}
+
+        fn read(&mut self, offset: u64, width: AccessWidth) -> BusResult<u64> {
+            self.0.borrow_mut().push((false, offset, width, 0));
+            Ok(0x8877_6655_4433_2211)
+        }
+
+        fn write(&mut self, offset: u64, width: AccessWidth, value: u64) -> BusResult<()> {
+            self.0.borrow_mut().push((true, offset, width, value));
+            Ok(())
+        }
+    }
+
+    fn read_width(bus: &mut MappedBus, addr: u64, width: AccessWidth) -> BusResult<u64> {
+        match width {
+            AccessWidth::Byte => bus.read_u8(addr).map(u64::from),
+            AccessWidth::Word => bus.read_u16(addr).map(u64::from),
+            AccessWidth::Long => bus.read_u32(addr).map(u64::from),
+            AccessWidth::Quad => bus.read_u64(addr),
+        }
+    }
+
+    fn write_width(
+        bus: &mut MappedBus,
+        addr: u64,
+        width: AccessWidth,
+        value: u64,
+    ) -> BusResult<()> {
+        match width {
+            AccessWidth::Byte => bus.write_u8(addr, value as u8),
+            AccessWidth::Word => bus.write_u16(addr, value as u16),
+            AccessWidth::Long => bus.write_u32(addr, value as u32),
+            AccessWidth::Quad => bus.write_u64(addr, value),
+        }
+    }
+
+    #[test]
+    fn mapped_wide_accesses_are_one_width_preserving_device_event() {
+        let events = Rc::new(RefCell::new(Vec::new()));
+        let mut bus = MappedBus::new();
+        bus.add_device(
+            AddressRange::from_start_len(0x8000, 0x100).unwrap(),
+            Box::new(RecordingDevice(events.clone())),
+        );
+
+        assert_eq!(bus.read_u16(0x8008).unwrap(), 0x2211);
+        bus.write_u16(0x800a, 0xcdef).unwrap();
+        assert_eq!(bus.read_u32(0x8010).unwrap(), 0x4433_2211);
+        bus.write_u32(0x8014, 0x89ab_cdef).unwrap();
+        assert_eq!(bus.read_u64(0x8020).unwrap(), 0x8877_6655_4433_2211);
+        bus.write_u64(0x8028, 0x0123_4567_89ab_cdef).unwrap();
+
+        assert_eq!(
+            *events.borrow(),
+            vec![
+                (false, 0x08, AccessWidth::Word, 0),
+                (true, 0x0a, AccessWidth::Word, 0xcdef),
+                (false, 0x10, AccessWidth::Long, 0),
+                (true, 0x14, AccessWidth::Long, 0x89ab_cdef),
+                (false, 0x20, AccessWidth::Quad, 0),
+                (true, 0x28, AccessWidth::Quad, 0x0123_4567_89ab_cdef),
+            ]
+        );
+    }
+
+    #[test]
+    fn mapped_wide_access_rejects_mapping_crossing_before_device_event() {
+        let events = Rc::new(RefCell::new(Vec::new()));
+        let mut bus = MappedBus::new();
+        let range = AddressRange::from_start_len(0x8000, 0x10).unwrap();
+        bus.add_device(range, Box::new(RecordingDevice(events.clone())));
+
+        for width in [AccessWidth::Word, AccessWidth::Long, AccessWidth::Quad] {
+            let addr = range.end_exclusive - width.bytes() + 1;
+            assert_eq!(
+                read_width(&mut bus, addr, width),
+                Err(BusError::Unmapped {
+                    addr: range.end_exclusive
+                })
+            );
+            assert_eq!(
+                write_width(&mut bus, addr, width, u64::MAX),
+                Err(BusError::Unmapped {
+                    addr: range.end_exclusive
+                })
+            );
+        }
+        assert!(events.borrow().is_empty());
+    }
+
+    #[test]
+    fn mapped_wide_access_rejects_address_overflow_before_device_event() {
+        let events = Rc::new(RefCell::new(Vec::new()));
+        let mut bus = MappedBus::new();
+        bus.add_device(
+            AddressRange::new(u64::MAX - 0x20, u64::MAX).unwrap(),
+            Box::new(RecordingDevice(events.clone())),
+        );
+
+        for width in [AccessWidth::Word, AccessWidth::Long, AccessWidth::Quad] {
+            let addr = u64::MAX - (width.bytes() - 2);
+            assert_eq!(
+                read_width(&mut bus, addr, width),
+                Err(BusError::OutOfRange { addr })
+            );
+            assert_eq!(
+                write_width(&mut bus, addr, width, u64::MAX),
+                Err(BusError::OutOfRange { addr })
+            );
+        }
+        assert!(events.borrow().is_empty());
     }
 
     struct ErrorByteDevice(BusError);
@@ -188,11 +386,11 @@ mod tests {
 
         fn rollback_transaction(&mut self) {}
 
-        fn read_u8(&mut self, _offset: u64) -> BusResult<u8> {
+        fn read(&mut self, _offset: u64, _width: AccessWidth) -> BusResult<u64> {
             Err(self.0.clone())
         }
 
-        fn write_u8(&mut self, _offset: u64, _value: u8) -> BusResult<()> {
+        fn write(&mut self, _offset: u64, _width: AccessWidth, _value: u64) -> BusResult<()> {
             Err(self.0.clone())
         }
     }

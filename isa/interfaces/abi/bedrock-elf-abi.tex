@@ -25,7 +25,7 @@ These terms are used by the Bedrock ELF ABI. ISA-level address, register, and ef
 \begin{description}[style=nextline,leftmargin=1.45in,labelwidth=1.35in,itemsep=3pt,topsep=3pt]
 \item[ELF ABI] The ELF, relocation, dynamic-linking, TLS, and code-model contract that is shared by language bindings and operating-system profiles.
 \item[platform/runtime environment ABI] The lower-layer execution-environment contract that defines process entry, system-call transitions, thread and TLS setup, loader handoff, signal or exception delivery, and platform segment policy.
-\item[pre-segment virtual address] The address value used by ELF symbols, relocations, ordinary function addresses, and ordinary data pointers before segment pre-translation. It is numerically identical to the resulting linear address in the disabled and bounds-only contexts that form the canonical interoperable Bedrock C context.
+\item[pre-segment virtual address] The stable coordinate used by ELF symbols, relocations, ordinary function addresses, and ordinary data pointers before segment pre-translation.
 \item[load base] The runtime address bias applied to a loaded ET\_DYN object before its symbol values and relative relocations are interpreted.
 \item[ABI-visible linkage domain] The region in which ordinary ELF code addresses are near-call entry points and do not carry an explicit CS value.
 \item[near-call entry address] A pre-segment code address that can be reached with ordinary CALL and returned from with ordinary RET inside the current linkage domain.
@@ -135,43 +135,41 @@ alignment guarantee.
 \subsection{Page Permissions}
 Every \texttt{PT\_LOAD} shall set \texttt{PF\_R}. A loader rejects a
 \texttt{PT\_LOAD} whose flags are zero or contain \texttt{PF\_W} or
-\texttt{PF\_X} without \texttt{PF\_R}. For an accepted segment,
-\texttt{PF\_W} and \texttt{PF\_X} map independently to PTE W and X as shown
-below. This restriction is required because a present Bedrock page is readable
-and cannot implement a write-only or execute-only ELF segment.
+\texttt{PF\_X} without \texttt{PF\_R}. For an accepted segment, its flags
+select one Normal leaf AM as shown below. The loader rejects
+\texttt{PF\_R|PF\_W|PF\_X} because no leaf AM grants write and execute
+together.
 
 \manualtablecaption{ELF Segment Permission Mapping}
 \begingroup\footnotesize
 \setlength{\tabcolsep}{2pt}
 \begin{longtable}{@{}p{1.2in}p{1.45in}p{2.85in}@{}}
 \toprule
-\textbf{ELF Flags} & \textbf{PTE Flags} & \textbf{Meaning}\\
+\textbf{ELF Flags} & \textbf{Leaf AM and Fields} & \textbf{Meaning}\\
 \midrule
 \endhead
-\texttt{PF\_\allowbreak{}R} & P, U & readable user page\\
-\texttt{PF\_\allowbreak{}R\textbar{}PF\_\allowbreak{}W} & P, U, W & readable writable user page\\
-\texttt{PF\_\allowbreak{}R\textbar{}PF\_\allowbreak{}X} & P, U, X & readable executable user page\\
-\texttt{PF\_\allowbreak{}R\textbar{}PF\_\allowbreak{}W\textbar{}PF\_\allowbreak{}X} & P, U, W, X & readable writable executable user page\\
+\texttt{PF\_\allowbreak{}R} & \texttt{AM=R}, P, U & readable user page\\
+\texttt{PF\_\allowbreak{}R\textbar{}PF\_\allowbreak{}W} & \texttt{AM=RW}, P, U & readable writable user page\\
+\texttt{PF\_\allowbreak{}R\textbar{}PF\_\allowbreak{}X} & \texttt{AM=RX}, P, U & readable executable user page\\
 \bottomrule
 \end{longtable}
 \endgroup
 \subsection{Execution Environment}
-The base ELF contract interprets \texttt{e\_entry}, \texttt{p\_vaddr}, symbol
-values, relocation places, and linked code and data addresses in its canonical
-pre-segment virtual-address coordinate. It is interoperable with execution
-contexts whose disabled or bounds-only \texttt{CS}, \texttt{DS}, and
-\texttt{SS} preserve those numeric values. At transfer to \texttt{e\_entry},
+The ELF contract interprets \texttt{e\_entry}, \texttt{p\_vaddr}, symbol
+values, relocation places, and linked code and data addresses in one stable
+pre-segment virtual-address coordinate. Every ABI-permitted path that consumes
+one such coordinate preserves its arithmetic and linkage meaning and resolves
+an actual access to the intended byte of the intended object. At transfer to \texttt{e\_entry},
 the code context must permit fetch from the entry address, the data context
 must cover the mapped ordinary data regions, and the stack context must permit
 reads and writes to the stack provided by the platform/runtime environment
 ABI.
 
-A platform that loads or executes an object under translated segment images
-owns the symbol and pointer coordinates, loader mappings, relocation
-interpretation, module entry and exit transitions, and adaptation to this
-canonical contract. Such an object or execution context is not compatible with
-the base ELF linkage contract unless that platform ABI defines the required
-mapping and transitions.
+The loader maps each post-segment linear range required by these coordinates
+to the intended physical pages with the AM and U permissions required by the
+ELF image. Process entry, dynamic linking, module transitions, TLS paths,
+unwind and debugger state, JIT publication, and shared pointer conventions
+preserve the same coordinate invariants.
 
 Executable images and ordinary shared objects form one ABI-visible near-call
 linkage domain. Their function symbols are pre-segment code addresses, not
@@ -350,11 +348,9 @@ interposable.
 
 \input{isa/interfaces/abi/generated/tls_relocation_families.tex}
 
-In the canonical interoperable context, taking the address of a TLS object
-linearizes its GS0-relative address at runtime and returns an ordinary
-pre-segment pointer to that thread instance. If C code executes in a translated
-context, the active platform ABI defines how that materialized address is
-converted into its ordinary-pointer coordinate. Copying a TLS pointer to
+Taking the address of a TLS object returns an ordinary pre-segment pointer to
+that thread instance. Every ABI-permitted GS0 and ordinary-data path consuming
+that coordinate resolves it to the same byte of that TLS object. Copying a TLS pointer to
 another thread does not retarget it; the pointer becomes invalid when its
 originating thread terminates or the defining shared object is unloaded.
 \subsection{Model Selection}

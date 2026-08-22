@@ -1,4 +1,4 @@
-use bedrock_bus::{Bus, BusError};
+use bedrock_bus::{Bus, BusError, PhysicalMemoryClass};
 use thiserror::Error;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -107,15 +107,11 @@ impl PageTableControl {
     pub const fn five_level(self) -> bool {
         self.0 & (1 << 7) != 0
     }
-    pub const fn physical_address_bits(self) -> Option<u8> {
-        match (self.0 >> 8) & 0xf {
-            0 => Some(48),
-            1 => Some(56),
-            _ => None,
-        }
+    pub const fn physical_address_bits(self) -> u8 {
+        IMPLEMENTATION_PABITS
     }
     pub const fn reserved_bits_clear(self) -> bool {
-        self.0 & 0x7e == 0
+        self.0 & !PTCR_DEFINED_MASK == 0
     }
     pub const fn root_table_addr(self) -> u64 {
         self.0 & !0xfff
@@ -151,6 +147,24 @@ pub enum PageFaultReason {
     InvalidEntry,
     PagingFormatUnavailable,
     AtomicAlignment,
+    MemoryType,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AccessFaultReason {
+    PhysicalAddress,
+    MmioAlignment,
+    MmioOperation,
+}
+
+impl AccessFaultReason {
+    pub const fn code(self) -> u8 {
+        match self {
+            Self::PhysicalAddress => 0,
+            Self::MmioAlignment => 1,
+            Self::MmioOperation => 2,
+        }
+    }
 }
 
 impl PageFaultReason {
@@ -162,6 +176,7 @@ impl PageFaultReason {
             Self::NonCanonical => 3,
             Self::SegmentBounds => 4,
             Self::AtomicAlignment => 5,
+            Self::MemoryType => 6,
         }
     }
 }
@@ -174,6 +189,11 @@ pub enum TranslationFault {
     Page {
         address: u64,
         reason: PageFaultReason,
+    },
+    #[error("access fault at 0x{address:016x}: {reason:?}")]
+    Access {
+        address: u64,
+        reason: AccessFaultReason,
     },
 }
 
@@ -191,6 +211,12 @@ pub enum TranslatedTarget {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TranslationAccessClass {
+    Normal,
+    Mmio,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct PageWalkResult {
     pub target: TranslatedTarget,
     pub leaf_entry: u64,
@@ -200,6 +226,10 @@ pub struct PageWalkResult {
     pub user: bool,
     pub writable: bool,
     pub executable: bool,
+    pub readable: bool,
+    pub access_class: TranslationAccessClass,
+    pub cache_policy: u8,
+    pub physical_class: PhysicalMemoryClass,
 }
 
 impl PageWalkResult {
@@ -252,8 +282,10 @@ pub struct MemoryTranslation {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct PageWalkOptions {
-    update_accessed_dirty: bool,
+    update_accessed: bool,
+    update_dirty: bool,
     enforce_permissions: bool,
+    enforce_memory_class: bool,
 }
 
 impl MemoryTranslation {
@@ -330,8 +362,57 @@ impl MemoryTranslation {
             kind,
             supervisor,
             PageWalkOptions {
-                update_accessed_dirty,
+                update_accessed: update_accessed_dirty,
+                update_dirty: update_accessed_dirty,
                 enforce_permissions: true,
+                enforce_memory_class: true,
+            },
+        )
+    }
+
+    pub fn page_address_deferred_memory_class<B: Bus>(
+        &self,
+        bus: &mut B,
+        linear: u64,
+        domain: AccessDomain,
+        kind: AccessKind,
+        supervisor: bool,
+        update_accessed_dirty: bool,
+    ) -> Result<PageWalkResult, PageWalkError> {
+        self.walk_page_address(
+            bus,
+            linear,
+            domain,
+            kind,
+            supervisor,
+            PageWalkOptions {
+                update_accessed: update_accessed_dirty,
+                update_dirty: update_accessed_dirty,
+                enforce_permissions: true,
+                enforce_memory_class: false,
+            },
+        )
+    }
+
+    pub fn page_address_deferred_memory_class_accessed_only<B: Bus>(
+        &self,
+        bus: &mut B,
+        linear: u64,
+        domain: AccessDomain,
+        kind: AccessKind,
+        supervisor: bool,
+    ) -> Result<PageWalkResult, PageWalkError> {
+        self.walk_page_address(
+            bus,
+            linear,
+            domain,
+            kind,
+            supervisor,
+            PageWalkOptions {
+                update_accessed: true,
+                update_dirty: false,
+                enforce_permissions: true,
+                enforce_memory_class: false,
             },
         )
     }
@@ -346,6 +427,13 @@ impl MemoryTranslation {
         options: PageWalkOptions,
     ) -> Result<PageWalkResult, PageWalkError> {
         if !self.ptcr.paging_enabled() {
+            if linear >> IMPLEMENTATION_PABITS != 0 {
+                return Err(TranslationFault::Access {
+                    address: linear,
+                    reason: AccessFaultReason::PhysicalAddress,
+                }
+                .into());
+            }
             return Ok(PageWalkResult {
                 target: TranslatedTarget::Byte(linear),
                 leaf_entry: 0,
@@ -355,13 +443,17 @@ impl MemoryTranslation {
                 user: true,
                 writable: true,
                 executable: true,
+                readable: true,
+                access_class: match bus.physical_memory_class(linear) {
+                    PhysicalMemoryClass::Normal => TranslationAccessClass::Normal,
+                    PhysicalMemoryClass::Device => TranslationAccessClass::Mmio,
+                },
+                cache_policy: 0,
+                physical_class: bus.physical_memory_class(linear),
             });
         }
 
-        let pabits = self
-            .ptcr
-            .physical_address_bits()
-            .ok_or_else(|| page_fault(linear, PageFaultReason::PagingFormatUnavailable))?;
+        let pabits = self.ptcr.physical_address_bits();
         let physical_mask = (1u64 << pabits) - 1;
         let root = self.ptcr.root_table_addr();
         if !self.ptcr.reserved_bits_clear() || root & !physical_mask != 0 {
@@ -375,6 +467,7 @@ impl MemoryTranslation {
         };
         let pfn_mask = physical_mask & !0xfff;
         let mut table = root;
+        let mut effective_r = true;
         let mut effective_w = true;
         let mut effective_x = true;
         let mut effective_u = true;
@@ -408,11 +501,28 @@ impl MemoryTranslation {
                 return Err(page_fault(linear, PageFaultReason::InvalidEntry).into());
             }
 
-            effective_w &= entry & PTE_WRITABLE != 0;
-            effective_x &= entry & PTE_EXECUTABLE != 0;
+            let permissions = if leaf {
+                leaf_permissions(entry)
+            } else {
+                table_permissions(entry)
+            };
+            effective_r &= permissions.0;
+            effective_w &= permissions.1;
+            effective_x &= permissions.2;
             effective_u &= entry & PTE_USER != 0;
             traversed.push((entry_address, entry));
             entries[usize::from(architectural_level - 1)] = entry;
+
+            if options.update_accessed && entry & PTE_ACCESSED == 0 {
+                if !conditional_pte_update(bus, entry_address, entry, entry | PTE_ACCESSED)
+                    .map_err(|error| PageWalkError::Bus {
+                        error,
+                        level: architectural_level,
+                    })?
+                {
+                    return self.walk_page_address(bus, linear, domain, kind, supervisor, options);
+                }
+            }
 
             if options.enforce_permissions {
                 let requires_user_mapping = domain == AccessDomain::User || !supervisor;
@@ -426,6 +536,9 @@ impl MemoryTranslation {
                 }
                 if kind == AccessKind::InstructionFetch && !effective_x {
                     return Err(page_fault(linear, PageFaultReason::Execute).into());
+                }
+                if kind == AccessKind::Read && !effective_r {
+                    return Err(page_fault(linear, PageFaultReason::ReadOnly).into());
                 }
             }
 
@@ -441,17 +554,28 @@ impl MemoryTranslation {
             (leaf_entry & pfn_mask) | (linear & leaf_offset_mask(leaf_level)),
         );
 
-        if options.update_accessed_dirty {
+        let access_class = leaf_access_class(leaf_entry);
+        let TranslatedTarget::Byte(target_address) = target;
+        let physical_class = bus.physical_memory_class(target_address);
+        if options.enforce_memory_class
+            && physical_class == PhysicalMemoryClass::Device
+            && access_class == TranslationAccessClass::Normal
+        {
+            return Err(page_fault(linear, PageFaultReason::MemoryType).into());
+        }
+
+        if options.update_dirty {
             let last = traversed.len() - 1;
             for (index, (address, entry)) in traversed.iter().copied().enumerate() {
-                let mut updated = entry | PTE_ACCESSED;
-                if index == last && kind == AccessKind::Write {
-                    updated |= PTE_DIRTY;
-                }
-                if updated != entry {
+                if index == last && kind == AccessKind::Write && entry & PTE_DIRTY == 0 {
+                    let updated = entry | PTE_ACCESSED | PTE_DIRTY;
                     let level = (shifts.len() - index) as u8;
-                    bus.write_u64(address, updated)
-                        .map_err(|error| PageWalkError::Bus { error, level })?;
+                    if !conditional_pte_update(bus, address, entry | PTE_ACCESSED, updated)
+                        .map_err(|error| PageWalkError::Bus { error, level })?
+                    {
+                        return self
+                            .walk_page_address(bus, linear, domain, kind, supervisor, options);
+                    }
                 }
             }
         }
@@ -465,6 +589,10 @@ impl MemoryTranslation {
             user: effective_u,
             writable: effective_w,
             executable: effective_x,
+            readable: effective_r,
+            access_class,
+            cache_policy: ((leaf_entry & PTE_CP_MASK) >> PTE_CP_SHIFT) as u8,
+            physical_class,
         })
     }
 
@@ -478,6 +606,9 @@ impl MemoryTranslation {
         linear: u64,
     ) -> Result<PageQueryResult, PageWalkError> {
         if !self.ptcr.paging_enabled() {
+            if linear >> IMPLEMENTATION_PABITS != 0 {
+                return Ok(PageQueryResult::failure());
+            }
             return Ok(PageQueryResult::success(linear, true, true, true));
         }
         if self.validate_linear_address(linear).is_err() {
@@ -491,8 +622,10 @@ impl MemoryTranslation {
             AccessKind::Read,
             true,
             PageWalkOptions {
-                update_accessed_dirty: false,
+                update_accessed: false,
+                update_dirty: false,
                 enforce_permissions: false,
+                enforce_memory_class: false,
             },
         ) {
             Ok(walk) => {
@@ -529,9 +662,7 @@ impl MemoryTranslation {
             return Ok(PageQueryResult::failure());
         }
 
-        let Some(pabits) = self.ptcr.physical_address_bits() else {
-            return Ok(PageQueryResult::failure());
-        };
+        let pabits = self.ptcr.physical_address_bits();
         let physical_mask = (1u64 << pabits) - 1;
         let root = self.ptcr.root_table_addr();
         if !self.ptcr.reserved_bits_clear() || root & !physical_mask != 0 {
@@ -549,9 +680,6 @@ impl MemoryTranslation {
 
         let pfn_mask = physical_mask & !0xfff;
         let mut table = root;
-        let mut effective_w = true;
-        let mut effective_x = true;
-        let mut effective_u = true;
         for (index, shift) in shifts.iter().copied().enumerate() {
             let Some(entry_address) = table
                 .checked_add(((linear >> shift) & 0x1ff) * 8)
@@ -563,20 +691,16 @@ impl MemoryTranslation {
             let entry = bus
                 .read_u64(entry_address)
                 .map_err(|error| PageWalkError::Bus { error, level })?;
-            effective_w &= entry & PTE_WRITABLE != 0;
-            effective_x &= entry & PTE_EXECUTABLE != 0;
-            effective_u &= entry & PTE_USER != 0;
             if level == requested_level {
                 let valid = if entry & PTE_TABLE == 0 {
                     valid_leaf_entry(entry, level)
                 } else {
                     level > 1 && valid_table_entry(entry)
                 };
-                let query_value = entry & !PTE_IGNORED_7;
                 return Ok(if valid {
-                    PageQueryResult::success(query_value, effective_u, effective_w, effective_x)
+                    PageQueryResult::success(entry, false, false, false)
                 } else {
-                    PageQueryResult::failure_with_value(query_value)
+                    PageQueryResult::failure_with_value(entry)
                 });
             }
             if entry & PTE_TABLE == 0 || !valid_table_entry(entry) {
@@ -588,19 +712,29 @@ impl MemoryTranslation {
     }
 }
 
+pub const IMPLEMENTATION_PABITS: u8 = 56;
+const PTCR_DEFINED_MASK: u64 = (((1u64 << IMPLEMENTATION_PABITS) - 1) & !0xfff) | (1 << 7) | 1;
 const PTE_PRESENT: u64 = 1 << 0;
-const PTE_WRITABLE: u64 = 1 << 1;
-const PTE_EXECUTABLE: u64 = 1 << 2;
-const PTE_USER: u64 = 1 << 3;
-const PTE_GLOBAL: u64 = 1 << 4;
-const PTE_ACCESSED: u64 = 1 << 5;
-const PTE_DIRTY: u64 = 1 << 6;
-const PTE_IGNORED_7: u64 = 1 << 7;
-const PTE_TABLE: u64 = 1 << 11;
+const PTE_TABLE: u64 = 1 << 1;
+const PTE_AM_SHIFT: u8 = 2;
+const PTE_AM_MASK: u64 = 0b111 << PTE_AM_SHIFT;
+const PTE_TABLE_R: u64 = 1 << 2;
+const PTE_TABLE_W: u64 = 1 << 3;
+const PTE_TABLE_X: u64 = 1 << 4;
+const PTE_USER: u64 = 1 << 5;
+const PTE_ACCESSED: u64 = 1 << 7;
+const PTE_DIRTY: u64 = 1 << 8;
+const PTE_CP_SHIFT: u8 = 9;
+const PTE_CP_MASK: u64 = 0b11 << PTE_CP_SHIFT;
+const PTE_PFN_MASK: u64 = ((1u64 << 56) - 1) & !0xfff;
+const PTE_UPPER_RESERVED_MASK: u64 = 0b11_1111 << 58;
+const PTE_LEAF_RESERVED_MASK: u64 = PTE_UPPER_RESERVED_MASK | (1 << 11);
+const PTE_TABLE_RESERVED_MASK: u64 = PTE_UPPER_RESERVED_MASK | (0xf << 8) | (1 << 6);
 
 const fn valid_table_entry(entry: u64) -> bool {
     entry & (PTE_PRESENT | PTE_TABLE) == (PTE_PRESENT | PTE_TABLE)
-        && entry & (PTE_DIRTY | PTE_GLOBAL) == 0
+        && entry & PTE_TABLE_RESERVED_MASK == 0
+        && entry & (PTE_TABLE_R | PTE_TABLE_W | PTE_TABLE_X) != 0
 }
 
 const fn leaf_offset_mask(level: u8) -> u64 {
@@ -611,7 +745,45 @@ const fn valid_leaf_entry(entry: u64, level: u8) -> bool {
     if entry & PTE_PRESENT == 0 || entry & PTE_TABLE != 0 {
         return false;
     }
-    entry & (leaf_offset_mask(level) & !0xfff) == 0
+    entry & PTE_LEAF_RESERVED_MASK == 0 && entry & (leaf_offset_mask(level) & PTE_PFN_MASK) == 0
+}
+
+const fn table_permissions(entry: u64) -> (bool, bool, bool) {
+    (
+        entry & PTE_TABLE_R != 0,
+        entry & PTE_TABLE_W != 0,
+        entry & PTE_TABLE_X != 0,
+    )
+}
+
+const fn leaf_permissions(entry: u64) -> (bool, bool, bool) {
+    match (entry & PTE_AM_MASK) >> PTE_AM_SHIFT {
+        0 | 5 => (true, false, false),
+        1 | 6 => (false, true, false),
+        2 => (false, false, true),
+        3 | 7 => (true, true, false),
+        4 => (true, false, true),
+        _ => unreachable!(),
+    }
+}
+
+const fn leaf_access_class(entry: u64) -> TranslationAccessClass {
+    if ((entry & PTE_AM_MASK) >> PTE_AM_SHIFT) >= 5 {
+        TranslationAccessClass::Mmio
+    } else {
+        TranslationAccessClass::Normal
+    }
+}
+
+fn conditional_pte_update<B: Bus>(
+    bus: &mut B,
+    address: u64,
+    expected: u64,
+    desired: u64,
+) -> Result<bool, BusError> {
+    Ok(bus
+        .compare_exchange_u64(address, expected, desired)?
+        .is_ok())
 }
 
 fn page_fault(address: u64, reason: PageFaultReason) -> TranslationFault {
@@ -628,13 +800,67 @@ mod tests {
     use super::*;
     use bedrock_bus::{Bus, BusResult, Ram};
 
-    const TABLE_PERMISSIONS: u64 = PTE_PRESENT | PTE_WRITABLE | PTE_EXECUTABLE | PTE_USER;
-    const PTE_CP_MASK: u64 = 0b11 << 8;
+    const TABLE_PERMISSIONS: u64 = PTE_PRESENT | PTE_TABLE_R | PTE_TABLE_W | PTE_TABLE_X | PTE_USER;
+    const LEAF_R: u64 = 0b000 << PTE_AM_SHIFT;
+    const LEAF_RW: u64 = 0b011 << PTE_AM_SHIFT;
+    const LEAF_RX: u64 = 0b100 << PTE_AM_SHIFT;
+    const LEAF_MMIO_RW: u64 = 0b111 << PTE_AM_SHIFT;
     const FIVE_LEVEL_ENTRY_ADDRESSES: [u64; 5] = [0x1000, 0x2000, 0x3000, 0x4000, 0x5000];
 
     struct ReadTrackingBus {
         ram: Ram,
         pte_reads: Vec<u64>,
+    }
+
+    struct DeviceTargetBus {
+        ram: Ram,
+    }
+
+    impl Bus for DeviceTargetBus {
+        fn begin_transaction(&mut self) -> BusResult<()> {
+            Bus::begin_transaction(&mut self.ram)
+        }
+
+        fn commit_transaction(&mut self) {
+            Bus::commit_transaction(&mut self.ram);
+        }
+
+        fn rollback_transaction(&mut self) {
+            Bus::rollback_transaction(&mut self.ram);
+        }
+
+        fn read_u8(&mut self, addr: u64) -> BusResult<u8> {
+            Bus::read_u8(&mut self.ram, addr)
+        }
+
+        fn write_u8(&mut self, addr: u64, value: u8) -> BusResult<()> {
+            Bus::write_u8(&mut self.ram, addr, value)
+        }
+
+        fn read_u64(&mut self, addr: u64) -> BusResult<u64> {
+            Bus::read_u64(&mut self.ram, addr)
+        }
+
+        fn write_u64(&mut self, addr: u64, value: u64) -> BusResult<()> {
+            Bus::write_u64(&mut self.ram, addr, value)
+        }
+
+        fn compare_exchange_u64(
+            &mut self,
+            addr: u64,
+            expected: u64,
+            desired: u64,
+        ) -> BusResult<Result<u64, u64>> {
+            Bus::compare_exchange_u64(&mut self.ram, addr, expected, desired)
+        }
+
+        fn physical_memory_class(&self, addr: u64) -> PhysicalMemoryClass {
+            if (0x8000..0x9000).contains(&addr) {
+                PhysicalMemoryClass::Device
+            } else {
+                PhysicalMemoryClass::Normal
+            }
+        }
     }
 
     impl Bus for ReadTrackingBus {
@@ -665,6 +891,15 @@ mod tests {
 
         fn write_u64(&mut self, addr: u64, value: u64) -> BusResult<()> {
             Bus::write_u64(&mut self.ram, addr, value)
+        }
+
+        fn compare_exchange_u64(
+            &mut self,
+            addr: u64,
+            expected: u64,
+            desired: u64,
+        ) -> BusResult<Result<u64, u64>> {
+            Bus::compare_exchange_u64(&mut self.ram, addr, expected, desired)
         }
     }
 
@@ -698,8 +933,11 @@ mod tests {
             ram.write_u64(address, next_table | TABLE_PERMISSIONS | PTE_TABLE)
                 .unwrap();
         }
-        ram.write_u64(FIVE_LEVEL_ENTRY_ADDRESSES[4], 0x8000 | TABLE_PERMISSIONS)
-            .unwrap();
+        ram.write_u64(
+            FIVE_LEVEL_ENTRY_ADDRESSES[4],
+            0x8000 | PTE_PRESENT | PTE_USER | LEAF_RW,
+        )
+        .unwrap();
 
         let index = usize::from(5 - level);
         let address = FIVE_LEVEL_ENTRY_ADDRESSES[index];
@@ -755,7 +993,7 @@ mod tests {
                 level,
                 |entry| {
                     (entry | PTE_DIRTY | PTE_TABLE)
-                        & !(PTE_PRESENT | PTE_USER | PTE_WRITABLE | PTE_EXECUTABLE)
+                        & !(PTE_PRESENT | PTE_USER | PTE_TABLE_W | PTE_TABLE_X)
                 },
                 true,
                 AccessDomain::User,
@@ -777,7 +1015,7 @@ mod tests {
                     } else {
                         entry | PTE_DIRTY
                     };
-                    structurally_invalid & !(PTE_USER | PTE_WRITABLE | PTE_EXECUTABLE)
+                    structurally_invalid & !(PTE_USER | PTE_TABLE_W | PTE_TABLE_X)
                 },
                 true,
                 AccessDomain::User,
@@ -808,7 +1046,13 @@ mod tests {
         for level in 1..=5 {
             assert_level_fault(
                 level,
-                |entry| entry & !PTE_WRITABLE,
+                |entry| {
+                    if level == 1 {
+                        (entry & !PTE_AM_MASK) | LEAF_R
+                    } else {
+                        entry & !PTE_TABLE_W
+                    }
+                },
                 true,
                 AccessDomain::User,
                 AccessKind::Write,
@@ -823,7 +1067,13 @@ mod tests {
         for level in 1..=5 {
             assert_level_fault(
                 level,
-                |entry| entry & !PTE_EXECUTABLE,
+                |entry| {
+                    if level == 1 {
+                        (entry & !PTE_AM_MASK) | LEAF_RW
+                    } else {
+                        entry & !PTE_TABLE_X
+                    }
+                },
                 true,
                 AccessDomain::User,
                 AccessKind::InstructionFetch,
@@ -845,8 +1095,11 @@ mod tests {
         for level in 1..=5 {
             let base = bases[usize::from(level - 1)];
             let offset = leaf_offset_mask(level);
-            let (translation, mut bus) =
-                tracked_five_level_mapping(level, |_| base | TABLE_PERMISSIONS, true);
+            let (translation, mut bus) = tracked_five_level_mapping(
+                level,
+                |_| base | PTE_PRESENT | PTE_USER | LEAF_RW,
+                true,
+            );
 
             let walk = translation
                 .page_address(
@@ -881,7 +1134,7 @@ mod tests {
         for level in 2..=5 {
             assert_level_fault(
                 level,
-                |_| 0x1000 | TABLE_PERMISSIONS,
+                |_| 0x1000 | PTE_PRESENT | PTE_USER | LEAF_R,
                 true,
                 AccessDomain::User,
                 AccessKind::Read,
@@ -893,18 +1146,16 @@ mod tests {
 
     #[test]
     fn translation_and_page_queries_stop_at_an_upper_leaf() {
-        let leaf = 0x4000_0000 | TABLE_PERMISSIONS;
+        let leaf = 0x4000_0000 | PTE_PRESENT | PTE_USER | LEAF_RW;
         let (translation, mut bus) = tracked_five_level_mapping(3, |_| leaf, true);
         let translated = translation.query_translation(&mut bus, 0x123).unwrap();
         assert_eq!(translated.value, 0x4000_0123);
-        assert!(
-            translated.valid && translated.user && translated.writable && translated.executable
-        );
+        assert!(translated.valid);
 
         let (translation, mut bus) = tracked_five_level_mapping(3, |_| leaf, true);
         let queried = translation.query_page_entry(&mut bus, 0x123, 3).unwrap();
         assert_eq!(queried.value, leaf);
-        assert!(queried.valid && queried.user && queried.writable && queried.executable);
+        assert!(queried.valid);
 
         let (translation, mut bus) = tracked_five_level_mapping(3, |_| leaf, true);
         assert_eq!(
@@ -919,7 +1170,7 @@ mod tests {
         let translation = MemoryTranslation::default();
         let mut ram = Ram::new(1);
 
-        for linear in [0x1234_5678, u64::MAX] {
+        for linear in [0x1234_5678] {
             assert_eq!(
                 translation
                     .page_address(
@@ -939,14 +1190,72 @@ mod tests {
                 Ok(linear)
             );
         }
+
+        assert_eq!(
+            translation
+                .page_address(
+                    &mut ram,
+                    1 << IMPLEMENTATION_PABITS,
+                    AccessDomain::Current,
+                    AccessKind::Read,
+                    true,
+                    true,
+                )
+                .unwrap_err(),
+            PageWalkError::Translation(TranslationFault::Access {
+                address: 1 << IMPLEMENTATION_PABITS,
+                reason: AccessFaultReason::PhysicalAddress,
+            })
+        );
     }
 
     #[test]
-    fn non_leaf_ignores_cp_and_bit_7_but_rejects_global_and_dirty() {
+    fn device_physical_memory_requires_an_mmio_leaf_class() {
+        let mut normal_bus = DeviceTargetBus {
+            ram: Ram::new(0x10_000),
+        };
+        let normal = four_level_mapping(&mut normal_bus.ram, LEAF_RW | PTE_USER);
+        assert_eq!(
+            normal
+                .page_address(
+                    &mut normal_bus,
+                    0,
+                    AccessDomain::Current,
+                    AccessKind::Read,
+                    false,
+                    false,
+                )
+                .unwrap_err(),
+            PageWalkError::Translation(TranslationFault::Page {
+                address: 0,
+                reason: PageFaultReason::MemoryType,
+            })
+        );
+
+        let mut mmio_bus = DeviceTargetBus {
+            ram: Ram::new(0x10_000),
+        };
+        let mmio = four_level_mapping(&mut mmio_bus.ram, LEAF_MMIO_RW | PTE_USER);
+        let walk = mmio
+            .page_address(
+                &mut mmio_bus,
+                0,
+                AccessDomain::Current,
+                AccessKind::Write,
+                false,
+                false,
+            )
+            .unwrap();
+        assert_eq!(walk.access_class, TranslationAccessClass::Mmio);
+        assert_eq!(walk.physical_class, PhysicalMemoryClass::Device);
+    }
+
+    #[test]
+    fn table_reserved_fields_fault_while_accessed_is_valid() {
         let mut ram = Ram::new(0x10_000);
-        let translation = four_level_mapping(&mut ram, PTE_WRITABLE | PTE_USER);
+        let translation = four_level_mapping(&mut ram, LEAF_RW | PTE_USER);
         let entry = ram.read_u64(0x2000).unwrap();
-        ram.write_u64(0x2000, entry | PTE_CP_MASK).unwrap();
+        ram.write_u64(0x2000, entry | PTE_ACCESSED).unwrap();
         assert_eq!(
             translation
                 .page_address(
@@ -962,23 +1271,7 @@ mod tests {
             TranslatedTarget::Byte(0x8000)
         );
 
-        ram.write_u64(0x2000, entry | PTE_IGNORED_7).unwrap();
-        assert_eq!(
-            translation
-                .page_address(
-                    &mut ram,
-                    0,
-                    AccessDomain::User,
-                    AccessKind::Read,
-                    true,
-                    false,
-                )
-                .unwrap()
-                .target,
-            TranslatedTarget::Byte(0x8000)
-        );
-
-        for bit in [PTE_GLOBAL, PTE_DIRTY] {
+        for bit in [1 << 6, PTE_DIRTY] {
             ram.write_u64(0x2000, entry | bit).unwrap();
             assert!(matches!(
                 translation.page_address(
@@ -998,12 +1291,9 @@ mod tests {
     }
 
     #[test]
-    fn bit_7_leaf_is_byte_addressed_and_has_identical_access_behavior() {
+    fn accessed_leaf_is_returned_raw_and_does_not_change_translation() {
         let mut ram = Ram::new(0x10_000);
-        let translation = four_level_mapping(
-            &mut ram,
-            PTE_WRITABLE | PTE_EXECUTABLE | PTE_USER | PTE_ACCESSED | PTE_DIRTY,
-        );
+        let translation = four_level_mapping(&mut ram, LEAF_RX | PTE_USER);
         let leaf = ram.read_u64(0x4000).unwrap();
         let without = translation
             .page_address(
@@ -1016,7 +1306,7 @@ mod tests {
             )
             .unwrap();
         let query_without = translation.query_page_entry(&mut ram, 0x123, 1).unwrap();
-        ram.write_u64(0x4000, leaf | PTE_IGNORED_7).unwrap();
+        ram.write_u64(0x4000, leaf | PTE_ACCESSED).unwrap();
         let with = translation
             .page_address(
                 &mut ram,
@@ -1034,7 +1324,7 @@ mod tests {
         assert_eq!(with.executable, without.executable);
         let query_with = translation.query_page_entry(&mut ram, 0x123, 1).unwrap();
         assert_eq!(query_with, query_without);
-        assert_eq!(query_with.value, leaf);
+        assert_eq!(query_with.value, leaf | PTE_ACCESSED);
         assert_eq!(with.target, TranslatedTarget::Byte(0x8123));
         assert_eq!(
             translation
@@ -1081,7 +1371,7 @@ mod tests {
     #[test]
     fn four_level_walk_translates_and_updates_accessed_dirty_bits() {
         let mut ram = Ram::new(0x10_000);
-        let translation = four_level_mapping(&mut ram, PTE_WRITABLE | PTE_EXECUTABLE | PTE_USER);
+        let translation = four_level_mapping(&mut ram, LEAF_RW | PTE_USER);
 
         let read = translation
             .page_address(
@@ -1116,7 +1406,7 @@ mod tests {
     #[test]
     fn access_domain_and_current_mode_require_the_matching_mapping_privilege() {
         let mut ram = Ram::new(0x10_000);
-        let supervisor_mapping = four_level_mapping(&mut ram, PTE_WRITABLE | PTE_EXECUTABLE);
+        let supervisor_mapping = four_level_mapping(&mut ram, LEAF_RW);
 
         assert_eq!(
             supervisor_mapping
@@ -1151,7 +1441,7 @@ mod tests {
             ));
         }
 
-        let user_mapping = four_level_mapping(&mut ram, PTE_WRITABLE | PTE_EXECUTABLE | PTE_USER);
+        let user_mapping = four_level_mapping(&mut ram, LEAF_RW | PTE_USER);
         assert!(matches!(
             user_mapping.page_address(
                 &mut ram,
@@ -1182,9 +1472,9 @@ mod tests {
     #[test]
     fn execute_and_write_permissions_are_accumulated_across_non_leaf_entries() {
         let mut ram = Ram::new(0x10_000);
-        let translation = four_level_mapping(&mut ram, PTE_WRITABLE | PTE_EXECUTABLE | PTE_USER);
+        let translation = four_level_mapping(&mut ram, LEAF_RW | PTE_USER);
         let l3 = ram.read_u64(0x2000).unwrap();
-        ram.write_u64(0x2000, l3 & !(PTE_WRITABLE | PTE_EXECUTABLE))
+        ram.write_u64(0x2000, l3 & !(PTE_TABLE_W | PTE_TABLE_X))
             .unwrap();
 
         assert!(matches!(
@@ -1247,17 +1537,13 @@ mod tests {
         let mut ram = Ram::new(0);
         let result = translation.query_translation(&mut ram, u64::MAX).unwrap();
 
-        assert_eq!(result.value, u64::MAX);
-        assert!(
-            result.valid && result.user && result.writable && result.executable,
-            "paging-disabled identity translation has no PTE permission restriction"
-        );
+        assert_eq!(result, PageQueryResult::failure());
     }
 
     #[test]
     fn translation_query_reports_permissions_without_accessed_or_dirty_updates() {
         let mut ram = Ram::new(0x10_000);
-        let translation = four_level_mapping(&mut ram, PTE_WRITABLE | PTE_USER);
+        let translation = four_level_mapping(&mut ram, LEAF_RW | PTE_USER);
         let before = [0x1000, 0x2000, 0x3000, 0x4000].map(|address| ram.read_u64(address).unwrap());
 
         let result = translation.query_translation(&mut ram, 0x123).unwrap();
@@ -1297,8 +1583,8 @@ mod tests {
     #[test]
     fn translation_query_turns_canonical_and_walk_failures_into_zero() {
         let mut ram = Ram::new(0x10_000);
-        let translation = four_level_mapping(&mut ram, PTE_WRITABLE | PTE_USER);
-        let malformed = ram.read_u64(0x2000).unwrap() | PTE_GLOBAL;
+        let translation = four_level_mapping(&mut ram, LEAF_RW | PTE_USER);
+        let malformed = ram.read_u64(0x2000).unwrap() | (1 << 6);
         ram.write_u64(0x2000, malformed).unwrap();
 
         for linear in [0, 1 << 48] {
@@ -1346,7 +1632,8 @@ mod tests {
 
         let result = translation.query_page_entry(&mut ram, 1 << 48, 5).unwrap();
         assert_eq!(result.value, root_entry);
-        assert!(result.valid && result.user && result.writable && result.executable);
+        assert!(result.valid);
+        assert!(!result.user && !result.writable && !result.executable);
 
         let la48 = MemoryTranslation {
             ptcr: PageTableControl::from_raw(0x1000),

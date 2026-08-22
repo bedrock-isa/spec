@@ -139,22 +139,23 @@ function event_from_fault(result : Execution_result) -> Event_record = match res
                           | fault.kind == ExtensionUnavailable then 0x00000003
       else if fault.kind == PrivilegeFault then 0x00000008
       else if fault.kind == BoundsFault | fault.kind == AlignmentFault
-           | fault.kind == TranslationFault | (fault.kind == AccessFault & not_bool(fault.bus_error))
+           | fault.kind == TranslationFault
         then 0x00000009
+      else if fault.kind == AccessFault & not_bool(fault.bus_error) then 0x0000000C
       else if fault.kind == DivideByZero | fault.kind == DivideOverflow then 0x0000000A
       else if fault.kind == VectorRangeFault then 0x0000000B
       else if fault.kind == FloatingPointFault then 0x0000000E
       else if fault.bus_error then 0x0000001A
       else 0x0000000D;
     let frame_type = if code == 0x00000008 then EventFrameBasic
-      else if code == 0x00000009 then EventFramePage
+      else if code == 0x00000009 | code == 0x0000000C then EventFramePage
       else if code == 0x0000001A then EventFrameAuxiliary
       else EventFrameError;
     var event = make_event(EventSynchronous, frame_type, code, 3, result.state.pc);
     if code == 0x00000003 | code == 0x0000000A | code == 0x0000000B | code == 0x0000000D
        | code == 0x0000000E then
       event.error_code = fault.error_code
-    else if code == 0x00000009 then {
+    else if code == 0x00000009 | code == 0x0000000C then {
       event.error_code = fault.error_code;
       if result.request.kind != NoPrimitiveRequest then {
         event.fault_ea = result.request.effective_address;

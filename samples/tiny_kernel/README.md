@@ -17,7 +17,8 @@ make -C samples/tiny_kernel disasm
 ```
 
 The Makefile selects the LLVM tool binary directory in this order: `LLVM_BIN`,
-`BEDROCK_LLVM_BIN`, then `BEDROCK_LLVM_ROOT/build/bin`. The build fails with a
+`BEDROCK_LLVM_BIN`, then `BEDROCK_LLVM_ROOT/bin`, where
+`BEDROCK_LLVM_ROOT` names the LLVM build directory. The build fails with a
 configuration error when none of these variables is supplied.
 
 - `kernel.c` configures the common `EPC` event entry, including SYSTEM_CALL,

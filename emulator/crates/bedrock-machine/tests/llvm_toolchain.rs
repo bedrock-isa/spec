@@ -7,9 +7,10 @@ const MARKERS: usize = TTY_STATE + 8;
 const SYSCALL_COUNT: usize = TTY_STATE + 0x98;
 const PRESSED: u32 = 0x0001_0000;
 const PTE_PRESENT: u64 = 1 << 0;
-const PTE_WRITE: u64 = 1 << 1;
-const PTE_EXEC: u64 = 1 << 2;
-const PTE_USER: u64 = 1 << 3;
+const PTE_AM_MASK: u64 = 0b111 << 2;
+const PTE_AM_RW: u64 = 0b011 << 2;
+const PTE_AM_RX: u64 = 0b100 << 2;
+const PTE_USER: u64 = 1 << 5;
 
 fn tiny_kernel_elf() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -119,17 +120,11 @@ fn machine_executes_tiny_kernel_sample_with_syscall_and_event_return() {
     assert!(machine.state().ascr.asid_enabled());
     assert_eq!(machine.state().ascr.asid(), 1);
     let kernel_text = leaf_pte(&machine, 0x1000);
-    assert_eq!(kernel_text & (PTE_WRITE | PTE_EXEC | PTE_USER), PTE_EXEC);
+    assert_eq!(kernel_text & (PTE_AM_MASK | PTE_USER), PTE_AM_RX);
     let shell_text = leaf_pte(&machine, machine.state().pc);
-    assert_eq!(
-        shell_text & (PTE_WRITE | PTE_EXEC | PTE_USER),
-        PTE_EXEC | PTE_USER
-    );
+    assert_eq!(shell_text & (PTE_AM_MASK | PTE_USER), PTE_AM_RX | PTE_USER);
     let shell_stack = leaf_pte(&machine, machine.state().sp - 1);
-    assert_eq!(
-        shell_stack & (PTE_WRITE | PTE_EXEC | PTE_USER),
-        PTE_WRITE | PTE_USER
-    );
+    assert_eq!(shell_stack & (PTE_AM_MASK | PTE_USER), PTE_AM_RW | PTE_USER);
 
     type_command(&mut machine, "MATH");
     run_until(&mut machine, 8_000_000, |machine| {
@@ -172,10 +167,7 @@ fn machine_executes_tiny_kernel_sample_with_syscall_and_event_return() {
     assert_eq!(machine.state().ascr.asid(), 2);
     assert_ne!(machine.state().ptcr.root_table_addr(), shell_root);
     let basic_text = leaf_pte(&machine, 0x80000);
-    assert_eq!(
-        basic_text & (PTE_WRITE | PTE_EXEC | PTE_USER),
-        PTE_EXEC | PTE_USER
-    );
+    assert_eq!(basic_text & (PTE_AM_MASK | PTE_USER), PTE_AM_RX | PTE_USER);
     let prior_exit_marker = marker(&machine, 0x78);
     type_command(&mut machine, "RUN");
     type_command(&mut machine, "EXIT");
