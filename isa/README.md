@@ -85,9 +85,13 @@ generated opcode-class enum, and right-aligned 42-bit opcode, and returns a
 recognition result in one of four states: invalid input, unallocated opcode,
 constraint-rejected, or success. A successful result also carries the selected
 form's two-bit EA layout and the operand width for each of two fixed EA
-candidates. In parallel, D0 emits a separate packed EA-front-end result carrying
-the same status/layout/widths plus the low/alternate compact fields and the
-base/post-alternate record cursors. The opcode D1 consumes the recognition
+candidates. The D0 result independently reports a prefix-derived operator
+space: extralong and xxlong use only their class-scoped upper 10 allocation
+bits, while invalid input and reserved or unallocated prefixes report `NONE`.
+This selector does not depend on the selected full-form instruction set or any
+EA layout or result. In parallel, D0 emits a separate packed EA-front-end result
+carrying the same status/layout/widths plus the low/alternate compact fields and
+the base/post-alternate record cursors. The opcode D1 consumes the recognition
 result, while the EA D1 consumes the EA-front-end result; each also accepts an
 18-byte record with byte 0 in bits `[7:0]` and a byte count.
 `bedrock_decode_d1` emits the packed opcode/form result: valid/stage,

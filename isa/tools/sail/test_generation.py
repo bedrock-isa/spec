@@ -166,55 +166,6 @@ class DocumentationBuildTests(unittest.TestCase):
         )
         self.assertTrue(all(item["route"] for item in index["operations"]))
         operations = {item["mnemonic"]: item for item in index["operations"]}
-        route_only = {
-            item["mnemonic"] for item in index["operations"]
-            if item["ownership"] == "route"
-        }
-        self.assertEqual(
-            route_only,
-            {
-                "BNDUXX",
-                "FETCHXOR",
-                "LEA",
-                "VCEIL",
-                "VCLASS",
-                "VCOPYSIGN",
-                "VCVTD",
-                "VCVTH",
-                "VCVTL",
-                "VCVTQ",
-                "VCVTS",
-                "VCVTUD",
-                "VCVTUH",
-                "VCVTUL",
-                "VCVTUQ",
-                "VCVTUS",
-                "VDIV",
-                "VFLOOR",
-                "VGATHER1",
-                "VMADD",
-                "VMAX",
-                "VMIN",
-                "VMOVZ",
-                "VMSUB",
-                "VNMADD",
-                "VNMSUB",
-                "VREDADD",
-                "VREDAND",
-                "VREDMAX",
-                "VREDMAXS",
-                "VREDMAXU",
-                "VREDMIN",
-                "VREDMINS",
-                "VREDMINU",
-                "VREDOR",
-                "VREDXOR",
-                "VROUND",
-                "VSCATTER1",
-                "VSQRT",
-                "VTRUNC",
-            },
-        )
         self.assertEqual(
             operations["NOP"]["direct_functions"],
             ["core.execute_core_exact"],

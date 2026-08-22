@@ -17,7 +17,13 @@ ISA_TOOLS = ROOT / "isa" / "tools"
 sys.path.insert(0, str(ISA_TOOLS))
 
 import decode_ir
-from encoding_architecture import ENCODING_CLASSES
+from encoding_architecture import (
+    ENCODING_CLASSES,
+    ENCODING_CLASSES_BY_NAME,
+    OPERATOR_SPACE_PREFIX_BITS,
+    OPERATOR_SPACE_PREFIXES,
+    OperatorSpacePrefix,
+)
 
 
 OUTPUT_NAMES = (
@@ -590,6 +596,16 @@ def _render_package(ir: decode_ir.DecodeIR) -> tuple[str, Names]:
 
     opcode_classes = tuple(item.name for item in ENCODING_CLASSES)
     opcode_class = add("opcode_class_e", "OPCODE_CLASS", opcode_classes)
+    operator_spaces = tuple(
+        dict.fromkeys(prefix.operator_space for prefix in OPERATOR_SPACE_PREFIXES)
+    )
+    operator_space_text, _ = _enum(
+        "operator_space_e",
+        "OPERATOR_SPACE",
+        operator_spaces,
+        invalid_name="NONE",
+    )
+    enums.append(operator_space_text)
     form = add("form_id_e", "FORM", (item.key for item in forms))
     operation = add("operation_e", "OP", ir.mnemonics)
     route = add("route_e", "ROUTE", _ordered(item.control.route for item in forms))
@@ -704,6 +720,7 @@ package bedrock_decode_pkg;
   typedef struct packed {{
     d0_status_e status;
     opcode_class_e opcode_class;
+    operator_space_e operator_space;
     form_id_e form;
     logic [BEDROCK_OPCODE_BITS-1:0] opcode;
     ea_layout_e ea_layout;
@@ -897,6 +914,49 @@ def _render_opcode_class_bytes_function(ir: decode_ir.DecodeIR) -> str:
   endfunction"""
 
 
+def _render_operator_space_function(names: Names) -> str:
+    cases: list[str] = []
+    allocations_by_class: dict[str, list[OperatorSpacePrefix]] = {}
+    for allocation in OPERATOR_SPACE_PREFIXES:
+        allocations_by_class.setdefault(allocation.encoding_class, []).append(
+            allocation
+        )
+    for encoding_class, allocations in sorted(allocations_by_class.items()):
+        allocation_bits = ENCODING_CLASSES_BY_NAME[encoding_class].allocation_bits
+        prefix_high = allocation_bits - 1
+        rows = "\n".join(
+            f"            {OPERATOR_SPACE_PREFIX_BITS}'b{allocation.pattern}: "
+            f"operator_space_from_opcode = "
+            f"OPERATOR_SPACE_{_identifier(allocation.operator_space)};"
+            for allocation in allocations
+        )
+        cases.append(
+            "\n".join(
+                [
+                    f"        {names.opcode_class[encoding_class]}: begin",
+                    f"          unique casez (opcode[{prefix_high} -: "
+                    f"{OPERATOR_SPACE_PREFIX_BITS}])",
+                    rows,
+                    "            default: begin end",
+                    "          endcase",
+                    "        end",
+                ]
+            )
+        )
+    return f"""  function automatic operator_space_e operator_space_from_opcode(
+    input opcode_class_e opcode_class,
+    input logic [BEDROCK_OPCODE_BITS-1:0] opcode
+  );
+    begin
+      operator_space_from_opcode = OPERATOR_SPACE_NONE;
+      unique case (opcode_class)
+{chr(10).join(cases)}
+        default: begin end
+      endcase
+    end
+  endfunction"""
+
+
 def _render_d0(ir: decode_ir.DecodeIR, names: Names) -> str:
     _validate_d0_accepted_exclusivity(ir)
     form_bits_type = f"logic [{_width(len(ir.forms) + 1) - 1}:0]"
@@ -1077,6 +1137,8 @@ module bedrock_decode_d0
 
 {_render_opcode_class_bytes_function(ir)}
 
+{_render_operator_space_function(names)}
+
 {chr(10).join(constraint_assignments)}
 {chr(10).join(form_assignments)}
 {chr(10).join(tree_assignments)}
@@ -1085,6 +1147,7 @@ module bedrock_decode_d0
     result_o = '0;
     result_o.status = D0_INVALID_INPUT;
     result_o.opcode_class = opcode_class_i;
+    result_o.operator_space = OPERATOR_SPACE_NONE;
     result_o.opcode = opcode_i;
     ea_result_o = '0;
     ea_result_o.low_raw = opcode_i[6:0];
@@ -1115,6 +1178,8 @@ module bedrock_decode_d0
       ea_result_o.post_alt_cursor =
         ea_result_o.base_cursor + {{2'b0, alt_span.encoded_bytes}};
     if (valid_i) begin
+      result_o.operator_space =
+        operator_space_from_opcode(opcode_class_i, opcode_i);
       result_o.status = D0_UNALLOCATED_OPCODE;
       if (class_selection.valid) begin
         result_o.status = D0_SUCCESS;

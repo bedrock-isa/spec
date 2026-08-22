@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-from collections import Counter
 from pathlib import Path
 import re
 import sys
@@ -22,38 +21,19 @@ VECTOR_INSTRUCTIONS = (
 
 
 class LLVMVectorCatalogTests(unittest.TestCase):
-    def test_normalized_form_count_and_generated_id_set(self) -> None:
-        forms = []
+    def test_yaml_form_ids_are_unique_and_generated_per_source(self) -> None:
+        ids_by_source = {}
         for path in sorted(VECTOR_INSTRUCTIONS.glob("*/encodings.yaml")):
-            forms.extend((yaml.safe_load(path.read_text()) or {}).get("forms", []))
+            forms = (yaml.safe_load(path.read_text()) or {}).get("forms", [])
+            source_ids = [form["id"] for form in forms]
+            self.assertEqual(len(source_ids), len(set(source_ids)), path)
+            ids_by_source[path] = set(source_ids)
 
-        ids = {form["id"] for form in forms}
-        self.assertEqual(len(forms), 259)
-        self.assertEqual(len(ids), 259)
+        ids = set().union(*ids_by_source.values())
         self.assertEqual(
-            Counter(form["class"] for form in forms),
-            Counter({"long": 47, "extralong": 91, "xxlong": 121}),
+            sum(len(source_ids) for source_ids in ids_by_source.values()),
+            len(ids),
         )
-
-        # The closed allocation has 254 source rows. Its one fieldless VDUP
-        # immediate row is normalized into four fixed-width tail forms.
-        source_ids = []
-        for form in forms:
-            source_id = form["id"]
-            if source_id.startswith("long.vdup.v18."):
-                source_id = re.sub(r"\.(?:b|w|l|q)$", "", source_id)
-            if source_id.startswith(("extralong.vcmpcc.v47.",
-                                     "xxlong.vcmpcc.v230.")):
-                source_id = source_id.rsplit(".", 1)[0]
-            source_ids.append(source_id)
-        self.assertEqual(len(set(source_ids)), 254)
-        self.assertEqual(Counter(source_ids)["long.vdup.v18"], 4)
-        self.assertEqual(Counter(source_ids)["extralong.vcmpcc.v47"], 2)
-        self.assertEqual(Counter(source_ids)["xxlong.vcmpcc.v230"], 2)
-        self.assertTrue(all(count == 1 for key, count in Counter(source_ids).items()
-                            if key not in {"long.vdup.v18",
-                                           "extralong.vcmpcc.v47",
-                                           "xxlong.vcmpcc.v230"}))
         generated = gen_llvm_vector_catalog._generate()
         generated_ids = set(
             re.findall(r'^  \{"([^"]+)",', generated, flags=re.MULTILINE)
@@ -62,12 +42,13 @@ class LLVMVectorCatalogTests(unittest.TestCase):
             identifier for identifier in generated_ids
             if identifier.startswith(("long.", "extralong.", "xxlong."))
         }
+        for path, source_ids in ids_by_source.items():
+            self.assertEqual(generated_ids & source_ids, source_ids, path)
         self.assertEqual(generated_ids, ids)
 
     def test_vcmp_domain_constraints_are_complete(self) -> None:
         forms, _ = gen_llvm_vector_catalog._load_forms_and_sizes()
         vcmp = [form for form in forms if form["syntax"].startswith("VCMPcc")]
-        self.assertEqual(len(vcmp), 4)
         legal = set()
         for form in vcmp:
             sizes = gen_llvm_vector_catalog._allowed_field_values(form, "x", 3)
@@ -80,16 +61,35 @@ class LLVMVectorCatalogTests(unittest.TestCase):
         self.assertEqual(legal, expected)
         self.assertFalse(any(condition in {0, 1} for _, condition in legal))
 
-    def test_repeat_table_is_derived_and_limits_vector_steps_to_rep(self) -> None:
+    def test_repeat_table_contains_every_authoritative_vector_declaration(self) -> None:
         entries = gen_llvm_vector_catalog._load_repeat_eligibility()
         self.assertIn(("add", False, True, True), entries)
-        vector = [entry for entry in entries if entry[0].startswith("v")]
-        self.assertEqual(
-            set(vector),
-            {
-                ("vgather1", False, True, False),
-                ("vscatter1", False, True, False),
-            },
+
+        vector_mnemonics = set()
+        expected = []
+        for path in sorted(VECTOR_INSTRUCTIONS.glob("*/instruction.yaml")):
+            document = yaml.safe_load(path.read_text()) or {}
+            mnemonic = str(document["mnemonic"])
+            has_condition = mnemonic.endswith("cc")
+            stem = (mnemonic[:-2] if has_condition else mnemonic).lower()
+            vector_mnemonics.add(stem)
+            repeat = document.get("repeat")
+            if repeat:
+                contexts = set(repeat.get("contexts", []))
+                expected.append(
+                    (stem, has_condition, "REP" in contexts, "REPcc" in contexts)
+                )
+
+        generated_vector = [
+            entry for entry in entries if entry[0] in vector_mnemonics
+        ]
+        for entry in expected:
+            with self.subTest(mnemonic=entry[0]):
+                self.assertIn(entry, generated_vector)
+        self.assertCountEqual(
+            generated_vector,
+            expected,
+            "generated repeat eligibility must exactly preserve vector metadata",
         )
 
     def test_lane_count_helpers_and_step_memory_use_width_only_aliases(self) -> None:

@@ -1,11 +1,30 @@
 from pathlib import Path
+import re
+import sys
 import tempfile
 import unittest
 
 if __package__:
-    from tools import gen_isa
+    from . import gen_isa
 else:
     import gen_isa
+
+ISA_TOOLS = gen_isa.REPOSITORY_ROOT / "isa" / "tools"
+sys.path.insert(0, str(ISA_TOOLS))
+
+from encoding_architecture import (
+    ENCODING_CLASSES_BY_NAME,
+    OPERATOR_SPACE_PREFIX_BITS,
+    OPERATOR_SPACE_PREFIXES,
+    operator_space_from_prefix,
+)
+
+
+def _matches_pattern(value: str, pattern: str) -> bool:
+    return all(
+        expected in "x?" or actual == expected
+        for actual, expected in zip(value, pattern, strict=True)
+    )
 
 
 class RepeatObservationGenerationTests(unittest.TestCase):
@@ -168,6 +187,64 @@ class RepositoryGenerationTests(unittest.TestCase):
         rendered = gen_isa.render(gen_isa.REPOSITORY_ROOT)
         self.assertIn("payload_bits: 7,", rendered)
         self.assertIn("payload_bits: 34,", rendered)
+
+    def test_canonical_operator_space_prefixes_drive_generated_rust_rules_and_cases(
+        self,
+    ) -> None:
+        rendered = gen_isa.render(gen_isa.REPOSITORY_ROOT)
+        generated = tuple(
+            (encoding_class, int(mask, 16), int(value, 16), operator_space)
+            for encoding_class, mask, value, operator_space in re.findall(
+                r"\(EncodingClass::(\w+), 0x([0-9a-f]+), 0x([0-9a-f]+), "
+                r"OperatorSpace::(\w+)\),",
+                rendered,
+            )
+        )
+        expected = tuple(
+            (
+                gen_isa.RUST_ENCODING_CLASSES[allocation.encoding_class],
+                *gen_isa.pattern_mask_value(allocation.pattern),
+                gen_isa.rust_variant(allocation.operator_space),
+            )
+            for allocation in OPERATOR_SPACE_PREFIXES
+        )
+        self.assertEqual(generated, expected)
+
+        generated_cases = tuple(
+            (
+                encoding_class,
+                int(prefix, 16),
+                operator_space or None,
+            )
+            for encoding_class, prefix, _expected, operator_space in re.findall(
+                r"\(EncodingClass::(\w+), 0x([0-9a-f]+), "
+                r"(None|Some\(OperatorSpace::(\w+)\))\),",
+                rendered,
+            )
+        )
+        expected_cases = []
+        for encoding_class in dict.fromkeys(
+            allocation.encoding_class for allocation in OPERATOR_SPACE_PREFIXES
+        ):
+            selectors = ENCODING_CLASSES_BY_NAME[encoding_class].selectors
+            for prefix in range(1 << OPERATOR_SPACE_PREFIX_BITS):
+                bits = f"{prefix:0{OPERATOR_SPACE_PREFIX_BITS}b}"
+                if not any(
+                    _matches_pattern(bits[: len(selector)], selector)
+                    for selector in selectors
+                ):
+                    continue
+                operator_space = operator_space_from_prefix(encoding_class, bits)
+                expected_cases.append(
+                    (
+                        gen_isa.RUST_ENCODING_CLASSES[encoding_class],
+                        prefix,
+                        None
+                        if operator_space is None
+                        else gen_isa.rust_variant(operator_space),
+                    )
+                )
+        self.assertEqual(generated_cases, tuple(expected_cases))
 
 
 if __name__ == "__main__":

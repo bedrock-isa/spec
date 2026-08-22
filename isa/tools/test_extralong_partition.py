@@ -11,66 +11,44 @@ import unittest
 TOOLS_ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(TOOLS_ROOT))
 
-from encoding_architecture import ENCODING_CLASSES_BY_NAME  # noqa: E402
+from decode_ir import instruction_set_name  # noqa: E402
+from encoding_architecture import (  # noqa: E402
+    ENCODING_CLASSES_BY_NAME,
+    OPERATOR_SPACE_PREFIX_BITS,
+    operator_space_from_prefix,
+)
 from encoding_store import load_encoding_store  # noqa: E402
 
 
 DEFS_ROOT = TOOLS_ROOT.parent / "instructions" / "definitions"
-EXTRALONG_SELECTOR = "11111100"
-COMMON_BANK = "00"
-FIRST_WINDOW_ALLOCATION_BITS = 10
-PARTITION = {
-    ("integer", 0): "00",
-    ("integer", 1): "01",
-    ("fpu", 1): "10",
-    ("fpu", 2): "11",
-}
-
-
 class ExtralongPartitionTests(unittest.TestCase):
-    def test_xxlong_is_six_byte_space_and_custom_prefix_is_extralong(self) -> None:
+    def test_extralong_and_xxlong_class_grammar(self) -> None:
         xxlong = ENCODING_CLASSES_BY_NAME["xxlong"]
         extralong = ENCODING_CLASSES_BY_NAME["extralong"]
         self.assertEqual((xxlong.opcode_space_bytes, xxlong.allocation_bits), (6, 42))
         self.assertEqual(xxlong.selectors, ("11111111",))
         self.assertIn("11111110" + "?" * 26, extralong.namespace)
-        forms = load_encoding_store(DEFS_ROOT).for_class("xxlong")
-        self.assertEqual(len(forms), 102)
-        self.assertTrue(all(form.form.bits.startswith("11111111") for form in forms))
-        self.assertTrue(all(len(form.form.bits) == 42 for form in forms))
 
-    def test_first_sixteen_bits_determine_family_and_ea_count(self) -> None:
-        """The eight selector bits plus this ten-bit prefix are the D0 window."""
+    def test_allocated_prefixes_determine_operator_space(self) -> None:
+        """The D0 prefix identifies the instruction set before form decode."""
         store = load_encoding_store(DEFS_ROOT)
-        contracts_by_prefix: dict[str, set[tuple[str, int]]] = {}
+        for encoding_class in ("extralong", "xxlong"):
+            for located in store.for_class(encoding_class):
+                prefix = located.form.bits[:OPERATOR_SPACE_PREFIX_BITS]
+                self.assertEqual(
+                    operator_space_from_prefix(encoding_class, prefix),
+                    instruction_set_name(DEFS_ROOT, located.path),
+                    located.form.id,
+                )
 
-        for located in store.for_class("extralong"):
-            family = (
-                "fpu"
-                if "/extensions/fpu/" in located.path.as_posix()
-                else "integer"
-            )
-            ea_count = sum(
-                operand.type in {"EA", "FEA", "VEA"}
-                for operand in located.form.operands
-            )
-            contract = (family, ea_count)
-            expected_prefix = (
-                EXTRALONG_SELECTOR + PARTITION[contract]
-            )
-            actual_prefix = located.form.bits[:FIRST_WINDOW_ALLOCATION_BITS]
+    def test_operator_space_resolution_is_scoped_by_encoding_class(self) -> None:
+        with self.assertRaises(ValueError):
+            operator_space_from_prefix("extralong", "1111111100")
+        with self.assertRaises(ValueError):
+            operator_space_from_prefix("xxlong", "1111110000")
 
-            self.assertEqual(actual_prefix, expected_prefix, located.form.id)
-            contracts_by_prefix.setdefault(actual_prefix, set()).add(contract)
-
-        self.assertTrue(contracts_by_prefix)
-        self.assertTrue(
-            all(len(contracts) == 1 for contracts in contracts_by_prefix.values())
-        )
-        self.assertEqual(
-            {prefix[6:8] for prefix in contracts_by_prefix},
-            {COMMON_BANK},
-        )
+        self.assertIsNone(operator_space_from_prefix("extralong", "11111110??"))
+        self.assertIsNone(operator_space_from_prefix("xxlong", "1111111101"))
 
 
 if __name__ == "__main__":

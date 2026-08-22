@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: docs-${{ github.workflow }}-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -33,9 +33,6 @@ jobs:
 
       - name: Install Python dependencies
         run: python -m pip install -r requirements.txt
-
-      - name: Validate emulator ISA generation
-        run: make emulator-isa-check
 
       - name: Install document toolchain
         run: |
@@ -87,10 +84,44 @@ jobs:
           if-no-files-found: error
           include-hidden-files: true
 
+  test:
+    name: Run PR regression and decoder checks
+    runs-on: ubuntu-latest
+    env:
+      BUILD_DIR: ${{ runner.temp }}/bedrock-build
+      EMULATOR_TARGET_DIR: ${{ runner.temp }}/bedrock-emulator-target
+      TMPDIR: ${{ runner.temp }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install Python dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Set up current stable Rust
+        run: |
+          rustup update stable --no-self-update
+          rustup default stable
+          rustup component add rustfmt --toolchain stable
+
+      - name: Install Verilator
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y verilator
+
+      - name: Run canonical PR test gate
+        run: make test-pr
+
   publish:
     name: Update gh-pages publication branch
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: build
+    needs: [build, test]
     runs-on: ubuntu-latest
     permissions:
       contents: write

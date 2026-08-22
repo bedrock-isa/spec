@@ -22,6 +22,12 @@ sys.path.insert(0, str(ISA_TOOLS))
 
 import decode_ir
 import generate_decoder
+from encoding_architecture import (
+    ENCODING_CLASSES_BY_NAME,
+    OPERATOR_SPACE_PREFIX_BITS,
+    OPERATOR_SPACE_PREFIXES,
+    operator_space_from_prefix,
+)
 
 
 def _record_value(bytes_: tuple[int, ...] | list[int]) -> int:
@@ -90,6 +96,28 @@ def _generation_temporary_directory() -> tempfile.TemporaryDirectory[str]:
     task_root = Path(raw_root)
     task_root.mkdir(parents=True, exist_ok=True)
     return tempfile.TemporaryDirectory(prefix="generation-", dir=task_root)
+
+
+def _matches_pattern(value: str, pattern: str) -> bool:
+    return all(
+        expected in "x?" or actual == expected
+        for actual, expected in zip(value, pattern, strict=True)
+    )
+
+
+def _class_operator_prefixes(encoding_class: str) -> tuple[int, ...]:
+    selectors = ENCODING_CLASSES_BY_NAME[encoding_class].selectors
+    return tuple(
+        prefix
+        for prefix in range(1 << OPERATOR_SPACE_PREFIX_BITS)
+        if any(
+            _matches_pattern(
+                f"{prefix:0{OPERATOR_SPACE_PREFIX_BITS}b}"[: len(selector)],
+                selector,
+            )
+            for selector in selectors
+        )
+    )
 
 
 class SystemVerilogGenerationTests(unittest.TestCase):
@@ -223,6 +251,20 @@ class SystemVerilogGenerationTests(unittest.TestCase):
         self.assertNotIn("localparam int", package)
         self.assertIn("BEDROCK_OPCODE_BITS = 10'd42", package)
         self.assertIn("OPCODE_CLASS_XXLONG", package)
+        operator_spaces = tuple(
+            dict.fromkeys(
+                allocation.operator_space for allocation in OPERATOR_SPACE_PREFIXES
+            )
+        )
+        operator_space_width = generate_decoder._width(len(operator_spaces) + 1)
+        self.assertIn(
+            f"OPERATOR_SPACE_NONE = {operator_space_width}'d0", package
+        )
+        for operator_space in operator_spaces:
+            self.assertIn(
+                f"OPERATOR_SPACE_{generate_decoder._identifier(operator_space)}",
+                package,
+            )
         self.assertIn("input  logic valid_i", d0)
         self.assertIn("input  logic [BEDROCK_OPCODE_BITS-1:0] opcode_i", d0)
         self.assertIn("output d0_ea_result_t ea_result_o", d0)
@@ -238,6 +280,11 @@ class SystemVerilogGenerationTests(unittest.TestCase):
         ea_result = _struct_body(package, "ea_decode_result_t")
         parse_result = _struct_body(package, "ea_parse_result_t")
         self.assertIn("ea_layout_e ea_layout;", d0_result)
+        self.assertIn("operator_space_e operator_space;", d0_result)
+        self.assertNotIn("operator_space", d0_ea_result)
+        self.assertNotIn("operator_space", d1_result)
+        self.assertNotIn("operator_space", d1)
+        self.assertNotIn("operator_space", ea_decoder)
         self.assertIn(
             "operand_ea_width_e [BEDROCK_EA_SLOTS-1:0] ea_widths;",
             d0_result,
@@ -1635,6 +1682,15 @@ class SystemVerilogGenerationTests(unittest.TestCase):
         return "\n".join(lines)
 
     def _d0_testbench(self) -> str:
+        invalid_allocation = OPERATOR_SPACE_PREFIXES[0]
+        invalid_prefix = int(
+            invalid_allocation.pattern.replace("x", "0").replace("?", "0"), 2
+        )
+        invalid_lower_bits = (
+            ENCODING_CLASSES_BY_NAME[invalid_allocation.encoding_class].allocation_bits
+            - OPERATOR_SPACE_PREFIX_BITS
+        )
+        invalid_opcode = invalid_prefix << invalid_lower_bits
         lines = [
             "`timescale 1ns/1ps",
             "module tb;",
@@ -1643,10 +1699,40 @@ class SystemVerilogGenerationTests(unittest.TestCase):
             "  d0_result_t d0; d0_ea_result_t d0_ea;",
             "  bedrock_decode_d0 dut(.valid_i, .opcode_class_i, .opcode_i, .result_o(d0), .ea_result_o(d0_ea));",
             "  initial begin",
-            "    valid_i = 1'b0; opcode_class_i = OPCODE_CLASS_INVALID; opcode_i = '0; #1;",
+            f"    valid_i = 1'b0; opcode_class_i = {self.names.opcode_class[invalid_allocation.encoding_class]}; opcode_i = 42'h{invalid_opcode:011x}; #1;",
             "    if (d0.status != D0_INVALID_INPUT) $fatal(1, \"invalid input\");",
+            "    if (d0.operator_space != OPERATOR_SPACE_NONE) $fatal(1, \"invalid operator space expected=NONE actual=%0d\", d0.operator_space);",
             "    if (d0_ea.status != D0_INVALID_INPUT) $fatal(1, \"EA invalid input\");",
         ]
+        for encoding_class in ("extrashort", "short", "medium", "long"):
+            lines.extend(
+                [
+                    f"    valid_i = 1'b1; opcode_class_i = {self.names.opcode_class[encoding_class]}; opcode_i = '0; #1;",
+                    f"    if (d0.operator_space != OPERATOR_SPACE_NONE) $fatal(1, \"operator space class={encoding_class} expected=NONE actual=%0d\", d0.operator_space);",
+                ]
+            )
+        for encoding_class in ("extralong", "xxlong"):
+            architecture_class = ENCODING_CLASSES_BY_NAME[encoding_class]
+            lower_bits = architecture_class.allocation_bits - OPERATOR_SPACE_PREFIX_BITS
+            lower_values = (0, (1 << lower_bits) - 1)
+            for prefix in _class_operator_prefixes(encoding_class):
+                prefix_bits = f"{prefix:0{OPERATOR_SPACE_PREFIX_BITS}b}"
+                operator_space = operator_space_from_prefix(
+                    encoding_class, prefix_bits
+                )
+                expected = (
+                    "OPERATOR_SPACE_NONE"
+                    if operator_space is None
+                    else f"OPERATOR_SPACE_{generate_decoder._identifier(operator_space)}"
+                )
+                for lower in lower_values:
+                    opcode = (prefix << lower_bits) | lower
+                    lines.extend(
+                        [
+                            f"    valid_i = 1'b1; opcode_class_i = {self.names.opcode_class[encoding_class]}; opcode_i = 42'h{opcode:011x}; #1;",
+                            f"    if (d0.operator_space != {expected}) $fatal(1, \"operator space class={encoding_class} prefix={prefix_bits} expected={expected} actual=%0d\", d0.operator_space);",
+                        ]
+                    )
         for form in self.ir.forms:
             opcode = generate_decoder.representative_opcode(form)
             low_width, alt_width = generate_decoder._ea_candidate_widths(

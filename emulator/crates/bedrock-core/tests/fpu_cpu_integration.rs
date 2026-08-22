@@ -1,7 +1,7 @@
 use bedrock_bus::{Bus, Ram};
 use bedrock_core::fpu::env::FpCauses;
 use bedrock_core::fpu::trans::contracts::{TransOperation, contract_for_operation};
-use bedrock_core::{Cpu, EventControl, ExceptionFrameType, Flags, Status, StepResult};
+use bedrock_core::{Cpu, EventControl, Flags, Status, StepResult};
 use bedrock_isa::{EncodingClass, generated::GENERATED_FORMS};
 
 fn encoded_form(id: &str, fields: &[(char, u64)], appended: &[u8]) -> Vec<u8> {
@@ -128,6 +128,7 @@ fn enabled_fpu_cause_delivers_event_0x0e_before_any_fpu_or_flags_commit() {
     ram.load(0, &bytes).unwrap();
     let mut cpu = Cpu::new();
     cpu.reset(0);
+    cpu.state_mut().status = Status::empty();
     configure_event_entry(&mut cpu, 0x100, 0x1000);
     cpu.state_mut().f[0] = 1.0_f64.to_bits();
     cpu.state_mut().f[1] = 0.0_f64.to_bits();
@@ -137,18 +138,15 @@ fn enabled_fpu_cause_delivers_event_0x0e_before_any_fpu_or_flags_commit() {
 
     assert_eq!(cpu.step(&mut ram), StepResult::Running);
     assert_eq!(cpu.state().pc, 0x100);
-    assert_eq!(cpu.state().sp, 0xfb0);
+    assert_eq!(cpu.state().sp, 0xff0);
+    assert_eq!(cpu.state().uinfo, 0x0e);
+    assert_eq!(cpu.state().upc, 0);
     assert_eq!(cpu.state().f[0], 1.0_f64.to_bits());
     assert_eq!(cpu.state().flags, Flags::C | Flags::Z);
     assert_eq!(cpu.state().fflags, FpCauses::NV.bits());
     assert_eq!(cpu.state().fstatus, FpCauses::DZ.bits());
-    assert_eq!(
-        ram.read_u64(0xfb0).unwrap() & 0xfff,
-        (u64::from(ExceptionFrameType::Error as u8) << 8) | 10
-    );
-    assert_eq!(ram.read_u64(0xfb8).unwrap(), 0x0e);
-    assert_eq!(ram.read_u64(0xfc8).unwrap(), 0);
     assert_eq!(ram.read_u64(0xff0).unwrap(), u64::from(FpCauses::DZ.bits()));
+    assert_eq!(ram.read_u64(0xff8).unwrap(), 0);
 }
 
 #[test]

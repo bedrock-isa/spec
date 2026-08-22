@@ -1,5 +1,7 @@
 use bedrock_bus::{Bus, Ram};
-use bedrock_core::{Cpu, EventControl, Flags, PageTableControl, StepResult};
+use bedrock_core::{
+    Cpu, EventControl, Flags, PageFaultReason, PageTableControl, Status, StepResult,
+};
 use bedrock_isa::{EncodingClass, generated::GENERATED_FORMS};
 
 const PTE_P: u64 = 1 << 0;
@@ -202,6 +204,7 @@ fn paged_fault_fixture(bytes: &[u8], map_data_read_only: bool) -> (Cpu, Ram) {
 
     let mut cpu = Cpu::new();
     cpu.reset(0);
+    cpu.state_mut().status = Status::empty();
     cpu.state_mut().ptcr = PageTableControl::from_raw(0x1001);
     cpu.state_mut().ecr = EventControl::from_raw(1);
     cpu.state_mut().epc = 0x5000;
@@ -251,7 +254,17 @@ fn parity_at0_source_fault_rolls_back_destination_flags_and_pc_effects() {
     assert_eq!(cpu.state().r[2], destination);
     assert_eq!(cpu.state().flags, flags);
     assert_eq!(cpu.state().pc, 0x5000);
-    assert_eq!(ram.read_u64(0xefa0 + 24).unwrap(), 0);
+    assert_eq!(cpu.state().sp, 0x6fe0);
+    assert_eq!(cpu.state().uinfo, 9);
+    assert_eq!(cpu.state().upc, 0);
+    let frame = 0xefe0;
+    assert_eq!(
+        ram.read_u64(frame).unwrap(),
+        u64::from(PageFaultReason::NotPresent.code()) | 0x2300_0100
+    );
+    assert_eq!(ram.read_u64(frame + 8).unwrap(), 0x1000);
+    assert_eq!(ram.read_u64(frame + 16).unwrap(), 0x1000);
+    assert_eq!(ram.read_u64(frame + 24).unwrap(), 0);
 }
 
 #[test]
@@ -420,6 +433,17 @@ fn adc_and_sbb_at0_destination_faults_roll_back_data_flags_and_pc_effects() {
         assert_eq!(cpu.state().r[1], 1, "{id}");
         assert_eq!(cpu.state().flags, flags, "{id}");
         assert_eq!(cpu.state().pc, 0x5000, "{id}");
-        assert_eq!(ram.read_u64(0xefa0 + 24).unwrap(), 0, "{id}");
+        assert_eq!(cpu.state().sp, 0x6fe0, "{id}");
+        assert_eq!(cpu.state().uinfo, 9, "{id}");
+        assert_eq!(cpu.state().upc, 0, "{id}");
+        let frame = 0xefe0;
+        assert_eq!(
+            ram.read_u64(frame).unwrap(),
+            u64::from(PageFaultReason::ReadOnly.code()) | 0x2301_0200,
+            "{id}"
+        );
+        assert_eq!(ram.read_u64(frame + 8).unwrap(), 0x1000, "{id}");
+        assert_eq!(ram.read_u64(frame + 16).unwrap(), 0x1000, "{id}");
+        assert_eq!(ram.read_u64(frame + 24).unwrap(), 0, "{id}");
     }
 }

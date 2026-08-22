@@ -686,10 +686,100 @@ def generated_ea_fields(entry: dict[str, Any], operands: list[dict[str, Any]]) -
     return "&[" + ", ".join(rows) + "]"
 
 
+def _matches_concrete_pattern(value: str, pattern: str) -> bool:
+    return all(
+        expected in "x?" or actual == expected
+        for actual, expected in zip(value, pattern, strict=True)
+    )
+
+
+def operator_space_prefix_cases(
+    prefix_bits: int,
+    prefixes: tuple[Any, ...],
+    encoding_classes_by_name: dict[str, Any],
+    resolver: Any,
+) -> tuple[tuple[str, int, str | None], ...]:
+    cases: list[tuple[str, int, str | None]] = []
+    encoding_classes = tuple(
+        dict.fromkeys(allocation.encoding_class for allocation in prefixes)
+    )
+    for encoding_class in encoding_classes:
+        selectors = encoding_classes_by_name[encoding_class].selectors
+        for prefix in range(1 << prefix_bits):
+            bits = f"{prefix:0{prefix_bits}b}"
+            if not any(
+                _matches_concrete_pattern(bits[: len(selector)], selector)
+                for selector in selectors
+            ):
+                continue
+            cases.append((encoding_class, prefix, resolver(encoding_class, bits)))
+    return tuple(cases)
+
+
+def render_operator_space_matcher(
+    prefix_bits: int,
+    prefixes: tuple[Any, ...],
+    test_cases: tuple[tuple[str, int, str | None], ...],
+) -> list[str]:
+    rules: list[str] = []
+    for allocation in prefixes:
+        mask, value = pattern_mask_value(allocation.pattern)
+        rules.append(
+            "    ("
+            f"EncodingClass::{RUST_ENCODING_CLASSES[allocation.encoding_class]}, "
+            f"0x{mask:04x}, 0x{value:04x}, "
+            f"OperatorSpace::{rust_variant(allocation.operator_space)}"
+            "),"
+        )
+    cases = [
+        "    ("
+        f"EncodingClass::{RUST_ENCODING_CLASSES[encoding_class]}, "
+        f"0x{prefix:04x}, "
+        + (
+            "None"
+            if operator_space is None
+            else f"Some(OperatorSpace::{rust_variant(operator_space)})"
+        )
+        + "),"
+        for encoding_class, prefix, operator_space in test_cases
+    ]
+    return [
+        "static OPERATOR_SPACE_PREFIX_RULES: &[(EncodingClass, u16, u16, OperatorSpace)] = &[",
+        *rules,
+        "];",
+        "",
+        "#[cfg(test)]",
+        "pub(crate) static OPERATOR_SPACE_PREFIX_CASES: &[(EncodingClass, u16, Option<OperatorSpace>)] = &[",
+        *cases,
+        "];",
+        "",
+        "pub(crate) fn operator_space_from_prefix(",
+        "    class: EncodingClass,",
+        "    prefix: u16,",
+        ") -> Option<OperatorSpace> {",
+        f"    if prefix >= (1u16 << {prefix_bits}) {{",
+        "        return None;",
+        "    }",
+        "    OPERATOR_SPACE_PREFIX_RULES.iter().find_map(",
+        "        |(rule_class, mask, value, operator_space)| {",
+        "            (*rule_class == class && prefix & *mask == *value).then_some(*operator_space)",
+        "        },",
+        "    )",
+        "}",
+        "",
+    ]
+
+
 def render(isa_design: Path) -> str:
     tool_dir = isa_design / "isa" / "tools"
     sys.path.insert(0, str(tool_dir))
     from defs_loader import load_operand_types  # type: ignore
+    from encoding_architecture import (  # type: ignore
+        ENCODING_CLASSES_BY_NAME,
+        OPERATOR_SPACE_PREFIX_BITS,
+        OPERATOR_SPACE_PREFIXES,
+        operator_space_from_prefix,
+    )
     from encoding_store import class_entries, load_encoding_store  # type: ignore
     from validate_alloc import compact_bits, validate_store  # type: ignore
 
@@ -737,7 +827,8 @@ def render(isa_design: Path) -> str:
         "use crate::table::{",
         "    ConstraintPredicate, DestinationOverlapRule, EncodingClass, FieldKind, FlagsEffect,",
         "    GeneratedAttributes, GeneratedConstraint, GeneratedDestinationOverlap, GeneratedEaField,",
-        "    GeneratedField, GeneratedForm, InstructionSet, RepeatObservation, RepeatObservedOperand,",
+        "    GeneratedField, GeneratedForm, InstructionSet, OperatorSpace, RepeatObservation,",
+        "    RepeatObservedOperand,",
         "    RepeatOperandLocation,",
         "};",
         "pub const ISA_INPUT_SHA256: &str =",
@@ -752,6 +843,18 @@ def render(isa_design: Path) -> str:
         "}",
         "",
     ])
+    out.extend(
+        render_operator_space_matcher(
+            OPERATOR_SPACE_PREFIX_BITS,
+            OPERATOR_SPACE_PREFIXES,
+            operator_space_prefix_cases(
+                OPERATOR_SPACE_PREFIX_BITS,
+                OPERATOR_SPACE_PREFIXES,
+                ENCODING_CLASSES_BY_NAME,
+                operator_space_from_prefix,
+            ),
+        )
+    )
 
     form_names: list[str] = []
     seen_form_names: set[str] = set()

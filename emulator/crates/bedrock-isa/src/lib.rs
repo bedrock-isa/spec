@@ -18,5 +18,5 @@ pub use instruction::InstructionAttributes;
 pub use operand::{DecodedOperand, Size};
 pub use table::{
     ConstraintPredicate, DestinationOverlapRule, EncodingClass, FieldKind, FlagsEffect,
-    InstructionSet, RepeatObservation, RepeatObservedOperand, RepeatOperandLocation,
+    InstructionSet, OperatorSpace, RepeatObservation, RepeatObservedOperand, RepeatOperandLocation,
 };

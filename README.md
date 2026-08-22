@@ -12,6 +12,22 @@ Repeat the scalar `ADD.Q` body `R1` times: add the 64-bit value at `DS:(R2 + R3 
 
 For an overview of the architecture, read the [Architectural Introduction](docs/introduction.md).
 
+## Testing
+
+Run `make test-pr` for the canonical local PR gate. It validates the ISA
+definitions and conformance manifest, runs every non-SystemVerilog ISA Python
+owner suite including the Sail generation checks, checks emulator ISA
+generation and Rust formatting, tests the Rust workspace except `bedrock-lldb`
+and `bedrock-gui`, and runs the SystemVerilog decoder owner suite. When
+Verilator is installed, that suite also performs its bounded package and D0
+checks.
+
+The PR gate does not run the external LLVM/LLDB-dependent workspace crates. In
+an environment configured with the Bedrock LLVM/LLDB build, run
+`make emulator-validate` for the complete emulator workspace lane. See the
+[Sail executable architecture model](isa/README.md) for Sail model typechecking
+and detailed model/test commands.
+
 ## License
 
 This project is licensed under the [Apache License 2.0](LICENSE).

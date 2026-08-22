@@ -91,6 +91,13 @@ pub enum InstructionSet {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum OperatorSpace {
+    Base,
+    Fpu,
+    Vector,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FlagsEffect {
     Unchanged,
     Writes,
