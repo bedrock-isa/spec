@@ -97,38 +97,30 @@ syscall_entry:
   call save_user_registers@PCREL32
 
 syscall_entry_saved:
-  sub.q 48, sp
+  sub.q 64, sp
   rdcr 0x010d, r8
   mov.q r8, [sp]
-  rdcr 0x0108, r8
+  rdcr 0x010e, r8
   mov.q r8, [sp + 8]
-  rdcr 0x0109, r8
+  rdcr 0x0108, r8
   mov.q r8, [sp + 16]
-  rdcr 0x010a, r8
+  rdcr 0x0109, r8
   mov.q r8, [sp + 24]
-  rdcr 0x010b, r8
+  rdcr 0x010a, r8
   mov.q r8, [sp + 32]
-  rdcr 0x010c, r8
+  rdcr 0x010b, r8
   mov.q r8, [sp + 40]
+  rdcr 0x010c, r8
+  mov.q r8, [sp + 48]
   lea.q [sp], r8
   mov.q r1, r0
   mov.q r8, r1
   call kernel_syscall_dispatch_frame@PCREL32
   mov.q g_active_user_registers@ABS64, r8
   mov.q r0, [r8]
-  mov.q [sp + 8], r8
-  wrcr r8, 0x0108
-  mov.q [sp + 16], r8
-  wrcr r8, 0x0109
-  mov.q [sp + 24], r8
-  wrcr r8, 0x010a
-  mov.q [sp + 32], r8
-  wrcr r8, 0x010b
-  mov.q [sp + 40], r8
-  wrcr r8, 0x010c
-  mov.q [sp], r8
-  wrcr r8, 0x010d
-  add.q 48, sp
+  lea.q [sp], r8
+  call write_user_return_context@PCREL32
+  add.q 64, sp
   call restore_user_registers@PCREL32
   eret
 
@@ -145,21 +137,31 @@ event_entry:
   jeq syscall_entry_saved
 
   # First-level user exceptions have only their optional payload on the
-  # supervisor stack. Materialize the kernel's private C view of the frame.
+  # supervisor stack. Materialize the kernel's private C view of the frame and
+  # a separate authoritative user return context from the U-bank.
   mov.q sp, r9
-  sub.q 96, sp
+  sub.q 160, sp
   mov.q 8, [sp]
   mov.q r8, [sp + 8]
   rdcr 0x0108, r8
   mov.q r8, [sp + 16]
+  mov.q r8, [sp + 112]
   rdcr 0x0109, r8
   mov.q r8, [sp + 24]
+  mov.q r8, [sp + 120]
   rdcr 0x010a, r8
   mov.q r8, [sp + 32]
+  mov.q r8, [sp + 128]
   rdcr 0x010b, r8
   mov.q r8, [sp + 40]
+  mov.q r8, [sp + 136]
   rdcr 0x010c, r8
   mov.q r8, [sp + 48]
+  mov.q r8, [sp + 144]
+  rdcr 0x010d, r8
+  mov.q r8, [sp + 96]
+  rdcr 0x010e, r8
+  mov.q r8, [sp + 104]
   mov.q 0, [sp + 56]
   mov.q 0, [sp + 64]
   mov.q 0, [sp + 72]
@@ -180,21 +182,54 @@ event_entry:
 dispatch_user_event:
   lea.q [sp], r8
   mov.q r8, r0
+  lea.q [sp + 96], r8
+  mov.q r8, r1
   call kernel_event_dispatch@PCREL32
   mov.q g_active_user_registers@ABS64, r8
   mov.q r0, [r8]
-  mov.q [sp + 16], r8
-  wrcr r8, 0x0108
-  add.q 96, sp
+  lea.q [sp + 96], r8
+  call write_user_return_context@PCREL32
+  add.q 160, sp
   call restore_user_registers@PCREL32
   eret
 
 stacked_event_entry:
   lea.q [sp], r8
   mov.q r8, r0
+  mov.q 0, r1
   call kernel_event_dispatch@PCREL32
   call restore_user_registers_with_result@PCREL32
   eret
+
+# A return context can select an address space disjoint from the current
+# U-bank. Stage the complete bank with paging and segment bounds disabled, then
+# reinstate the already-selected address space so no WRCR observes mixed PC/CS
+# or SP/SS pairs.
+write_user_return_context:
+  rdcr PTCR, r9
+  rdcr ASCR, r10
+  mov.q 16, r11
+  shr.q r11, r10
+  mov.q 0, r11
+  swpt r11
+  wrcr r11, 0x010a
+  wrcr r11, 0x010c
+  mov.q [r8 + 16], r12
+  wrcr r12, 0x0108
+  mov.q [r8 + 24], r12
+  wrcr r12, 0x0109
+  mov.q [r8 + 40], r12
+  wrcr r12, 0x010b
+  mov.q [r8 + 32], r12
+  wrcr r12, 0x010a
+  mov.q [r8 + 48], r12
+  wrcr r12, 0x010c
+  mov.q [r8 + 8], r12
+  wrcr r12, 0x010e
+  mov.q [r8], r12
+  wrcr r12, 0x010d
+  swpta r9, r10
+  ret
 
 .globl halt_cpu
 halt_cpu:

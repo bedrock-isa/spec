@@ -28,7 +28,7 @@ from defs_schema import (
 from encoding_store import load_encoding_store
 from encoding_fields import resolve_encoding_form
 from encoding_fields import validate_encoding_template
-from artifact_overlay import read_source, resolve_source
+from artifact_overlay import resolve_source
 
 
 ROOT = Path(__file__).resolve().parents[2] / "isa" / "instructions" / "definitions"
@@ -65,10 +65,14 @@ def iter_instruction_files(
 
 
 def validate_description_tex(path: Path) -> list[str]:
-    resolved = resolve_source(path, ROOT.parents[2])
+    repository_root = ROOT.parents[2]
+    resolved = resolve_source(path, repository_root)
+    if not resolved.is_file():
+        template = path.with_suffix(path.suffix + ".in")
+        resolved = resolve_source(template, repository_root)
     if not resolved.is_file():
         return [f"{path}: referenced TeX file does not exist"]
-    text = read_source(path, ROOT.parents[2]).strip()
+    text = resolved.read_text(encoding="utf-8").strip()
     errors: list[str] = []
     if not text:
         errors.append(f"{path}: referenced TeX file must not be empty")

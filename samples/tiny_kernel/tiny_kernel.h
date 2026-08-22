@@ -106,6 +106,7 @@ struct ExceptionFrame {
 
 struct UserReturnContext {
   u64 uctl;
+  u64 uinfo;
   u64 pc;
   u64 sp;
   u64 cs;
@@ -158,6 +159,7 @@ struct Process {
 
 struct UserContext {
   u64 uctl;
+  u64 uinfo;
   u64 pc;
   u64 sp;
   u64 cs;
@@ -238,9 +240,12 @@ void kernel_main(void);
 u64 kernel_syscall_dispatch(u64 code);
 u64 kernel_syscall_dispatch_frame(u64 code,
                                   struct UserReturnContext *context);
-u64 kernel_event_dispatch(struct ExceptionFrame *frame);
-void kernel_privilege_fault_dispatch(struct ExceptionFrame *frame);
-u64 kernel_page_fault_dispatch(struct ExceptionFrame *frame);
+u64 kernel_event_dispatch(struct ExceptionFrame *frame,
+                          struct UserReturnContext *context);
+void kernel_privilege_fault_dispatch(struct ExceptionFrame *frame,
+                                     struct UserReturnContext *context);
+u64 kernel_page_fault_dispatch(struct ExceptionFrame *frame,
+                               struct UserReturnContext *context);
 void kernel_breakpoint_dispatch(struct ExceptionFrame *frame);
 
 void user_main(void);
@@ -303,8 +308,8 @@ void process_record_yield(u32 ticket);
 void process_record_user_sum(u32 value);
 void process_record_user_result(u32 slot, u32 value);
 void process_record_fault(void);
-u64 process_recover_page_fault(struct ExceptionFrame *frame, u32 reason);
-u32 process_fault_is_recoverable(const struct ExceptionFrame *frame);
+u64 process_recover_page_fault(struct UserReturnContext *context, u32 reason);
+u32 process_fault_is_recoverable(const struct UserReturnContext *context);
 u32 process_user_range_readable(u64 address, u64 len);
 void process_mark_halted(void);
 

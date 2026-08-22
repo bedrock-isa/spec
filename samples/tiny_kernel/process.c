@@ -101,6 +101,7 @@ static void save_context(struct UserContext *context,
                          struct UserReturnContext *return_context,
                          const struct Process *process) {
   context->uctl = return_context->uctl;
+  context->uinfo = return_context->uinfo;
   context->pc = return_context->pc;
   context->sp = return_context->sp;
   context->cs = return_context->cs;
@@ -115,27 +116,12 @@ static void save_context(struct UserContext *context,
 static void load_user_return_context(struct UserReturnContext *return_context,
                                      const struct UserContext *context) {
   return_context->uctl = context->uctl;
+  return_context->uinfo = context->uinfo;
   return_context->pc = context->pc;
   return_context->sp = context->sp;
   return_context->cs = context->cs;
   return_context->ds = context->ds;
   return_context->ss = context->ss;
-  write_gs0(context->gs0);
-  for (u32 i = 0; i < 16u; i++) {
-    g_active_user_registers[i] = context->r[i];
-  }
-}
-
-static void load_event_context(struct ExceptionFrame *frame,
-                               const struct UserContext *context) {
-  frame->frame_control =
-      (frame->frame_control & 0xffffffffULL) |
-      ((context->uctl & 0xffffffffULL) << 32);
-  frame->saved_pc = context->pc;
-  frame->saved_sp = context->sp;
-  frame->saved_cs = context->cs;
-  frame->saved_ds = context->ds;
-  frame->saved_ss = context->ss;
   write_gs0(context->gs0);
   for (u32 i = 0; i < 16u; i++) {
     g_active_user_registers[i] = context->r[i];
@@ -307,18 +293,15 @@ void process_record_fault(void) {
   }
 }
 
-u32 process_fault_is_recoverable(const struct ExceptionFrame *frame) {
-  if (frame == 0 || current_process() == &g_user_process) {
-    return 0;
-  }
-  return ((frame->frame_control >> 52) & 1u) == 0u;
+u32 process_fault_is_recoverable(const struct UserReturnContext *context) {
+  return context != 0 && current_process() != &g_user_process;
 }
 
 u32 process_user_range_readable(u64 address, u64 len) {
   struct Process *process = current_process();
-  u64 end = address + len;
-  if (end < address)
+  if (len > ~address)
     return 0;
+  u64 end = address + len;
   if (address >= process->code_start && end <= process->code_end)
     return 1;
   if (address >= process->data_start && end <= process->data_end)
@@ -328,9 +311,9 @@ u32 process_user_range_readable(u64 address, u64 len) {
   return 0;
 }
 
-u64 process_recover_page_fault(struct ExceptionFrame *frame, u32 reason) {
+u64 process_recover_page_fault(struct UserReturnContext *context, u32 reason) {
   struct Process *process = current_process();
-  if (frame == 0 || process == &g_user_process) {
+  if (context == 0 || process == &g_user_process) {
     return 0xffu;
   }
 
@@ -339,7 +322,7 @@ u64 process_recover_page_fault(struct ExceptionFrame *frame, u32 reason) {
   g_current_process = &g_user_process;
   g_user_process.state = PROCESS_STATE_USER;
   memory_switch_address_space(g_user_process.ptcr, (u32)g_user_process.asid);
-  load_event_context(frame, &g_shell_context);
+  load_user_return_context(context, &g_shell_context);
   publish_process_markers();
   return 0x80u | (reason & 0x7fu);
 }

@@ -54,10 +54,14 @@ void kernel_main(void) {
   memory_switch_address_space(g_user_process.ptcr, (u32)g_user_process.asid);
 }
 
-void kernel_privilege_fault_dispatch(struct ExceptionFrame *frame) {
+void kernel_privilege_fault_dispatch(struct ExceptionFrame *frame,
+                                     struct UserReturnContext *context) {
   u64 event_code = frame->event_info;
 
-  frame->saved_pc += PRIVILEGED_READ_PROBE_BYTES;
+  if (context != 0)
+    context->pc += PRIVILEGED_READ_PROBE_BYTES;
+  else
+    frame->saved_pc += PRIVILEGED_READ_PROBE_BYTES;
   g_kernel_stats.privilege_fault_count++;
   g_kernel_stats.last_error = event_code;
   process_record_fault();
@@ -66,7 +70,8 @@ void kernel_privilege_fault_dispatch(struct ExceptionFrame *frame) {
   display_write_marker(0x63, 0x1d);
 }
 
-u64 kernel_page_fault_dispatch(struct ExceptionFrame *frame) {
+u64 kernel_page_fault_dispatch(struct ExceptionFrame *frame,
+                               struct UserReturnContext *context) {
   u32 reason = (u32)(frame->error_code & 0xffu);
   g_kernel_stats.page_fault_count++;
   if ((frame->error_code & (1u << 25)) != 0u)
@@ -79,8 +84,8 @@ u64 kernel_page_fault_dispatch(struct ExceptionFrame *frame) {
   display_write_marker(0x79, reason);
   display_write_marker(0x7a, (u8)g_kernel_stats.page_fault_count);
 
-  if (process_fault_is_recoverable(frame)) {
-    return process_recover_page_fault(frame, reason);
+  if (process_fault_is_recoverable(context)) {
+    return process_recover_page_fault(context, reason);
   }
 
   process_mark_halted();
@@ -96,14 +101,15 @@ void kernel_breakpoint_dispatch(struct ExceptionFrame *frame) {
   display_render_halt(&g_kernel_stats);
 }
 
-u64 kernel_event_dispatch(struct ExceptionFrame *frame) {
+u64 kernel_event_dispatch(struct ExceptionFrame *frame,
+                          struct UserReturnContext *context) {
   u32 event_code = (u32)frame->event_info;
   if (event_code == EVENT_PRIVILEGE_FAULT) {
-    kernel_privilege_fault_dispatch(frame);
+    kernel_privilege_fault_dispatch(frame, context);
     return g_active_user_registers[0];
   }
   if (event_code == EVENT_PAGE_FAULT)
-    return kernel_page_fault_dispatch(frame);
+    return kernel_page_fault_dispatch(frame, context);
   if (event_code == EVENT_BREAKPOINT) {
     kernel_breakpoint_dispatch(frame);
     return g_active_user_registers[0];
