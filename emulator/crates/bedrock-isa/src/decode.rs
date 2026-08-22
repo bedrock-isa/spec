@@ -110,9 +110,7 @@ fn validate_operand_payload(
             .value as u8;
         match CompactEa::decode_for(generated.profile, value) {
             CompactEa::Reserved(value) => return Err(DecodeError::ReservedEffectiveAddress(value)),
-            ea @ (CompactEa::VectorStride { .. }
-            | CompactEa::Ext1 { .. }
-            | CompactEa::Ext2 { .. }) => {
+            ea @ (CompactEa::Ext1 { .. } | CompactEa::Ext2 { .. }) => {
                 let descriptor_bytes = ea.descriptor_bytes();
                 let descriptor_payload = record.get(cursor..cursor + descriptor_bytes).ok_or(
                     DecodeError::OperandPayload {
@@ -121,7 +119,6 @@ fn validate_operand_payload(
                     },
                 )?;
                 let valid = match ea {
-                    CompactEa::VectorStride { .. } => true,
                     CompactEa::Ext1 { .. } => {
                         ExtendedDescriptor::decode_ext1(descriptor_payload).is_some()
                     }
@@ -294,6 +291,49 @@ mod tests {
             );
             assert!(decode(&extended_record(form, payload, opcode_bytes + appended)).is_ok());
         }
+    }
+
+    #[test]
+    fn vea_retired_stride_selectors_are_explicitly_reserved() {
+        let form = generated_form("xxlong.vmov.v137");
+        for raw in [0x58_u8, 0x5b, 0x5c, 0x5d, 0x5e] {
+            let payload = set_field(form.pattern, 'e', form.value, u64::from(raw));
+            assert_eq!(
+                decode(&extended_record(form, payload, form.class.opcode_bytes())),
+                Err(DecodeError::ReservedEffectiveAddress(raw))
+            );
+        }
+    }
+
+    #[test]
+    fn vector_step_payload_lengths_and_retired_long_holes_decode_exactly() {
+        assert_eq!(
+            decode(&[0xd3, 0xfc, 0x14, 0x8c, 0x08, 0x41]),
+            Err(DecodeError::Truncated {
+                needed: 7,
+                available: 6,
+            })
+        );
+        assert_eq!(
+            decode(&[0xd3, 0xfc, 0x14, 0x8c, 0x08, 0x41, 0x80])
+                .unwrap()
+                .allocation_id,
+            "xxlong.vgather1.v244"
+        );
+        assert_eq!(
+            decode(&[0xef, 0xfc, 0x1f, 0x8c, 0x08, 0x41, 0, 0, 0, 0, 0, 0, 0, 0,])
+                .unwrap()
+                .allocation_id,
+            "xxlong.vscatter1.v256"
+        );
+        assert_eq!(
+            decode(&[0xc7, 0xe9, 0x80, 0x00]),
+            Err(DecodeError::Reserved)
+        );
+        assert_eq!(
+            decode(&[0xcb, 0xe9, 0x80, 0x30, 0x00]),
+            Err(DecodeError::Reserved)
+        );
     }
 
     #[test]

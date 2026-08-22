@@ -75,6 +75,7 @@ class AssemblyTemplateOperand:
     field: str | None = None
     literal: int | None = None
     group_style: str | None = None
+    members: tuple["AssemblyTemplateOperand", ...] = ()
 
 
 @dataclass(frozen=True)
@@ -134,6 +135,38 @@ class _AssemblyTemplateParser:
         return name, angled
 
     def operand(self) -> AssemblyTemplateOperand:
+        if self.take("["):
+            members: list[AssemblyTemplateOperand] = []
+            depth = 1
+            while depth > 0:
+                if self.index >= len(self.value):
+                    self.fail("unterminated address expression")
+                if self.take("["):
+                    depth += 1
+                    continue
+                if self.take("]"):
+                    depth -= 1
+                    continue
+                if self.value[self.index].isspace() or self.value[self.index] in "+*":
+                    self.index += 1
+                    continue
+                decimal = re.match(r"[0-9]+", self.value[self.index :])
+                if decimal is not None:
+                    self.index += len(decimal.group(0))
+                    continue
+                name, angled = self.operand_reference()
+                marker = (
+                    self.field_expression()
+                    if self.index < len(self.value) and self.value[self.index] == "("
+                    else None
+                )
+                if name != "scale":
+                    members.append(
+                        AssemblyTemplateOperand(
+                            kind="reference", name=name, angled=angled, field=marker
+                        )
+                    )
+            return AssemblyTemplateOperand(kind="address", members=tuple(members))
         if self.take("{ "):
             name, angled = self.operand_reference()
             self.require("... }")
@@ -198,6 +231,20 @@ def parse_assembly_template(value: str, source: str = "assembly template") -> As
     if not isinstance(value, str) or not value:
         raise DecodeError(f"{source}: expected non-empty string")
     return _AssemblyTemplateParser(value, source).parse()
+
+
+def displayed_assembly_operands(
+    template: AssemblyTemplate,
+) -> tuple[AssemblyTemplateOperand, ...]:
+    """Return displayed operands with bracketed address members flattened in order."""
+
+    result: list[AssemblyTemplateOperand] = []
+    for operand in template.operands:
+        if operand.kind == "address":
+            result.extend(operand.members)
+        elif operand.kind != "group":
+            result.append(operand)
+    return tuple(result)
 
 
 def verify_schema_lock(lock_path: Path = SCHEMA_LOCK_PATH) -> None:
@@ -652,8 +699,6 @@ class EaRegistry:
     compact_field_width: int
     compact_forms: tuple[EaForm, ...]
     compact_profiles: dict[str, EaProfile]
-    vstride_kind: str
-    vstride_forms: tuple[EaForm, ...]
     ext1_kind: str
     ext1_forms: tuple[EaForm, ...]
     ext2_kind: str
@@ -1780,7 +1825,7 @@ def decode_ea_registry(path: Path, raw: Any) -> EaRegistry:
         data,
         path,
         "",
-        required=("payloads", "compact", "vstride", "ext1", "ext2"),
+        required=("payloads", "compact", "ext1", "ext2"),
     )
     payloads: dict[str, EaPayload] = {}
     for name, value in _mapping(data["payloads"], path, "payloads").items():
@@ -1975,15 +2020,6 @@ def decode_ea_registry(path: Path, raw: Any) -> EaRegistry:
             f"{_where(path, 'compact.profiles.ea.overrides')}: scalar EA is the "
             "unchanged compact form baseline"
         )
-    vstride_data = _mapping(data["vstride"], path, "vstride")
-    _keys(vstride_data, path, "vstride", required=("kind", "forms"))
-    vstride_forms = _decode_ea_forms(
-        vstride_data["forms"],
-        path,
-        "vstride.forms",
-        compact=False,
-        descriptor_bytes=1,
-    )
     ext1_data = _mapping(data["ext1"], path, "ext1")
     _keys(ext1_data, path, "ext1", required=("kind", "forms"))
     ext1_forms = _decode_ea_forms(
@@ -1994,7 +2030,7 @@ def decode_ea_registry(path: Path, raw: Any) -> EaRegistry:
     ext2_forms = _decode_ea_forms(
         ext2_data["forms"], path, "ext2.forms", compact=False, descriptor_bytes=2
     )
-    descriptor_families = {"vstride", "ext1", "ext2"}
+    descriptor_families = {"ext1", "ext2"}
     profile_forms = [
         override.form
         for profile in compact_profiles.values()
@@ -2021,8 +2057,6 @@ def decode_ea_registry(path: Path, raw: Any) -> EaRegistry:
         compact_field_width=compact_width,
         compact_forms=compact_forms,
         compact_profiles=compact_profiles,
-        vstride_kind=_string(vstride_data["kind"], path, "vstride.kind"),
-        vstride_forms=vstride_forms,
         ext1_kind=_string(ext1_data["kind"], path, "ext1.kind"),
         ext1_forms=ext1_forms,
         ext2_kind=_string(ext2_data["kind"], path, "ext2.kind"),

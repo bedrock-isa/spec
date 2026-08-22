@@ -1,8 +1,0 @@
-mnemonic: RDCNT
-title: RDCNT (Vector)
-summary: Write the number of elements of the selected size in one `Vn`.
-description: Write the number of elements of the selected size in one `Vn`.
-attributes:
-  class: vector
-  family: vector
-  privilege: unprivileged

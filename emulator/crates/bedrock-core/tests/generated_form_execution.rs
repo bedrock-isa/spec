@@ -59,7 +59,10 @@ fn representative_payload(form: &GeneratedForm) -> u64 {
         let preferred: &[u64] = match field.kind {
             FieldKind::Rn => match field.symbol {
                 'd' => &[2, 1, 0, 3],
-                's' | 'l' => &[1, 2, 0, 3],
+                'b' => &[3, 1, 0, 2],
+                'i' => &[2, 1, 0, 3],
+                's' => &[4, 1, 0, 3],
+                'l' => &[1, 2, 0, 3],
                 _ => &[1, 2, 0, 3],
             },
             FieldKind::Freg => match field.symbol {
@@ -143,12 +146,6 @@ fn appended_operand_bytes(form: &GeneratedForm, payload: u64) -> Vec<u8> {
             CompactEa::Absolute64 => appended.extend_from_slice(&DATA_ADDRESS.to_le_bytes()),
             CompactEa::Immediate(width) => append_width(&mut appended, width, 1),
             CompactEa::FloatImmediate(width) => append_width(&mut appended, width, 0),
-            CompactEa::VectorStride { displacement } => {
-                appended.push(0x00);
-                if let Some(width) = displacement {
-                    append_width(&mut appended, width, 0);
-                }
-            }
             CompactEa::Ext1 { displacement } => {
                 appended.push(0x00);
                 if let Some(width) = displacement {
@@ -175,6 +172,10 @@ fn appended_operand_bytes(form: &GeneratedForm, payload: u64) -> Vec<u8> {
         ("<imm32>", 4, 1_u64),
         ("<imm32s>", 4, 1_u64),
         ("<imm64>", 8, 1_u64),
+        ("<disp8s>", 1, 1_u64),
+        ("<disp16s>", 2, 1_u64),
+        ("<disp32s>", 4, 1_u64),
+        ("<disp64>", 8, 1_u64),
         ("<fconst_id>", 2, 1_u64),
     ] {
         for _ in 0..form.text.match_indices(needle).count() {

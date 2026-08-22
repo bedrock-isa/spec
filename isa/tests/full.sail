@@ -19,6 +19,7 @@ function test_full_decode() -> unit = {
   test_local_integer_boundaries();
   test_vector_predicate_semantics();
   test_vector_integer_semantics();
+  test_vector_lane_count_and_step_semantics();
   test_vector_memory_protocol();
   test_vector_fp_and_reduction_semantics();
   test_divide_bounds_and_conditions();

@@ -1,8 +1,8 @@
 forms:
-- id: long.addvl.v21
+- id: long.vlcadd.v21
   class: long
-  bits: 1111101001100000000010rrrr
-  syntax: ADDVL <imm8s>, Rn(r)
+  bits: 11111010011000zz000010rrrr
+  syntax: VLCADD.BWLQ(z) <imm8s>, Rn(r)
   operands:
   - name: offset
     type: imm8s
@@ -11,3 +11,6 @@ forms:
     type: Rn
     access: read_write
     field: r
+  fields:
+    z:
+      type: size.BWLQ

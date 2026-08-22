@@ -1,0 +1,109 @@
+forms:
+- id: xxlong.vscatter1.v248
+  class: xxlong
+  bits: 111111110000011000zz0bbbbppppiiiissssvvvvv
+  syntax: VSCATTER1.BWLQ(z) Pn(p), Vn(v), [Rn(b) + Rn(i) * Rn(s)]
+  operands:
+  - {name: govern, type: Pn, access: read, field: p}
+  - {name: src, type: Vn, access: read, field: v}
+  - {name: base, type: Rn, access: read, field: b}
+  - {name: cursor, type: Rn, access: read_write, field: i}
+  - {name: stride, type: Rn, access: read, field: s}
+  fields:
+    z: {type: size.BWLQ}
+- id: xxlong.vscatter1.v249
+  class: xxlong
+  bits: 111111110000011001000000ppppiiiivvvvvxxxxx
+  syntax: VSCATTER1.L Pn(p), Vn(v), [Vn(x)[Rn(i)]]
+  sizes: [L]
+  operands:
+  - {name: govern, type: Pn, access: read, field: p}
+  - {name: src, type: Vn, access: read, field: v}
+  - {name: address, type: Vn, access: read, field: x}
+  - {name: cursor, type: Rn, access: read_write, field: i}
+- id: xxlong.vscatter1.v250
+  class: xxlong
+  bits: 111111110000011001000001ppppiiiivvvvvxxxxx
+  syntax: VSCATTER1.Q Pn(p), Vn(v), [Vn(x)[Rn(i)]]
+  sizes: [Q]
+  operands:
+  - {name: govern, type: Pn, access: read, field: p}
+  - {name: src, type: Vn, access: read, field: v}
+  - {name: address, type: Vn, access: read, field: x}
+  - {name: cursor, type: Rn, access: read_write, field: i}
+- id: xxlong.vscatter1.v251
+  class: xxlong
+  bits: 111111110000011010zzbbbbppppiiiivvvvvxxxxx
+  syntax: VSCATTER1.BWLQ(z) Pn(p), Vn(v), [Rn(b) + Vn(x)[Rn(i)]]
+  operands:
+  - {name: govern, type: Pn, access: read, field: p}
+  - {name: src, type: Vn, access: read, field: v}
+  - {name: base, type: Rn, access: read, field: b}
+  - {name: address, type: Vn, access: read, field: x}
+  - {name: cursor, type: Rn, access: read_write, field: i}
+  fields:
+    z: {type: size.BWLQ}
+- id: xxlong.vscatter1.v252
+  class: xxlong
+  bits: 111111110000011011zzbbbbppppiiiivvvvvxxxxx
+  syntax: VSCATTER1.BWLQ(z) Pn(p), Vn(v), [Rn(b) + Vn(x)[Rn(i)] * <scale>]
+  operands:
+  - {name: govern, type: Pn, access: read, field: p}
+  - {name: src, type: Vn, access: read, field: v}
+  - {name: base, type: Rn, access: read, field: b}
+  - {name: address, type: Vn, access: read, field: x}
+  - {name: cursor, type: Rn, access: read_write, field: i}
+  fields:
+    z: {type: size.BWLQ}
+- id: xxlong.vscatter1.v253
+  class: xxlong
+  bits: 111111110000011100zzbbbbppppiiiivvvvvxxxxx
+  syntax: VSCATTER1.BWLQ(z) Pn(p), Vn(v), [Rn(b) + Vn(x)[Rn(i)] * <scale> + <disp8s>]
+  operands:
+  - {name: govern, type: Pn, access: read, field: p}
+  - {name: src, type: Vn, access: read, field: v}
+  - {name: base, type: Rn, access: read, field: b}
+  - {name: address, type: Vn, access: read, field: x}
+  - {name: cursor, type: Rn, access: read_write, field: i}
+  - {name: disp8s, type: imm8s, access: read}
+  fields:
+    z: {type: size.BWLQ}
+- id: xxlong.vscatter1.v254
+  class: xxlong
+  bits: 111111110000011101zzbbbbppppiiiivvvvvxxxxx
+  syntax: VSCATTER1.BWLQ(z) Pn(p), Vn(v), [Rn(b) + Vn(x)[Rn(i)] * <scale> + <disp16s>]
+  operands:
+  - {name: govern, type: Pn, access: read, field: p}
+  - {name: src, type: Vn, access: read, field: v}
+  - {name: base, type: Rn, access: read, field: b}
+  - {name: address, type: Vn, access: read, field: x}
+  - {name: cursor, type: Rn, access: read_write, field: i}
+  - {name: disp16s, type: imm16s, access: read}
+  fields:
+    z: {type: size.BWLQ}
+- id: xxlong.vscatter1.v255
+  class: xxlong
+  bits: 111111110000011110zzbbbbppppiiiivvvvvxxxxx
+  syntax: VSCATTER1.BWLQ(z) Pn(p), Vn(v), [Rn(b) + Vn(x)[Rn(i)] * <scale> + <disp32s>]
+  operands:
+  - {name: govern, type: Pn, access: read, field: p}
+  - {name: src, type: Vn, access: read, field: v}
+  - {name: base, type: Rn, access: read, field: b}
+  - {name: address, type: Vn, access: read, field: x}
+  - {name: cursor, type: Rn, access: read_write, field: i}
+  - {name: disp32s, type: imm32s, access: read}
+  fields:
+    z: {type: size.BWLQ}
+- id: xxlong.vscatter1.v256
+  class: xxlong
+  bits: 111111110000011111zzbbbbppppiiiivvvvvxxxxx
+  syntax: VSCATTER1.BWLQ(z) Pn(p), Vn(v), [Rn(b) + Vn(x)[Rn(i)] * <scale> + <disp64>]
+  operands:
+  - {name: govern, type: Pn, access: read, field: p}
+  - {name: src, type: Vn, access: read, field: v}
+  - {name: base, type: Rn, access: read, field: b}
+  - {name: address, type: Vn, access: read, field: x}
+  - {name: cursor, type: Rn, access: read_write, field: i}
+  - {name: disp64, type: imm64, access: read}
+  fields:
+    z: {type: size.BWLQ}

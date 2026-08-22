@@ -38,9 +38,6 @@ pub enum CompactEa {
     Absolute64,
     Immediate(DisplacementWidth),
     FloatImmediate(DisplacementWidth),
-    VectorStride {
-        displacement: Option<DisplacementWidth>,
-    },
     Ext1 {
         displacement: Option<DisplacementWidth>,
     },
@@ -129,19 +126,7 @@ impl CompactEa {
                 _ => Self::decode(value),
             },
             EffectiveAddressProfile::Vea => match value {
-                0x58 => Self::VectorStride { displacement: None },
-                0x5b => Self::VectorStride {
-                    displacement: Some(DisplacementWidth::Bits8),
-                },
-                0x5c => Self::VectorStride {
-                    displacement: Some(DisplacementWidth::Bits16),
-                },
-                0x5d => Self::VectorStride {
-                    displacement: Some(DisplacementWidth::Bits32),
-                },
-                0x5e => Self::VectorStride {
-                    displacement: Some(DisplacementWidth::Bits64),
-                },
+                0x58 | 0x5b | 0x5c | 0x5d | 0x5e => Self::Reserved(value),
                 _ => Self::decode(value),
             },
         }
@@ -154,12 +139,6 @@ impl CompactEa {
             | Self::ProgramCounterDisplacement(width)
             | Self::Immediate(width)
             | Self::FloatImmediate(width) => width.bytes(),
-            Self::VectorStride { displacement } => {
-                1 + match displacement {
-                    Some(width) => width.bytes(),
-                    None => 0,
-                }
-            }
             Self::Absolute32 => 4,
             Self::Absolute64 => 8,
             Self::Ext1 { displacement } | Self::Ext2 { displacement } => {
@@ -175,7 +154,7 @@ impl CompactEa {
 
     pub const fn descriptor_bytes(self) -> usize {
         match self {
-            Self::VectorStride { .. } | Self::Ext1 { .. } => 1,
+            Self::Ext1 { .. } => 1,
             Self::Ext2 { .. } => 2,
             _ => 0,
         }
@@ -378,16 +357,10 @@ mod tests {
             CompactEa::decode_for(EffectiveAddressProfile::Fea, 0x5e),
             CompactEa::FloatImmediate(DisplacementWidth::Bits64)
         );
-        for (raw, displacement) in [
-            (0x58, None),
-            (0x5b, Some(DisplacementWidth::Bits8)),
-            (0x5c, Some(DisplacementWidth::Bits16)),
-            (0x5d, Some(DisplacementWidth::Bits32)),
-            (0x5e, Some(DisplacementWidth::Bits64)),
-        ] {
+        for raw in [0x58, 0x5b, 0x5c, 0x5d, 0x5e] {
             assert_eq!(
                 CompactEa::decode_for(EffectiveAddressProfile::Vea, raw),
-                CompactEa::VectorStride { displacement }
+                CompactEa::Reserved(raw)
             );
         }
     }

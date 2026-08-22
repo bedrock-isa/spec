@@ -11,7 +11,7 @@ control-target role uses a register or immediate value directly and reads an int
 memory form. Memory forms continue into segment pre-translation and paging.
 
 Each compact field is embedded in the instruction's opcode space, and all compact fields precede any appended
-effective-address payload bytes. Any displacement, absolute address, immediate, VSTRIDE descriptor, or extended
+effective-address payload bytes. Any displacement, absolute address, immediate, or extended
 descriptor bytes are appended as one operand's payload sequence. Sequences appear in declared instruction operand
 order. For two payload-bearing operands, the encoded stream is: opcode space containing operand 0 and operand 1
 $\rightarrow$ complete operand 0 payload sequence $\rightarrow$ complete operand 1 payload sequence
@@ -35,7 +35,8 @@ The scalar EA profile encodes common Rn/SP/PC memory operands, absolute memory o
 and the EXT1 and EXT2 escapes. FEA retains the scalar memory and EXT encodings except that \texttt{0x58},
 \texttt{0x5B}, and \texttt{0x5C} are reserved and \texttt{0x5D} and \texttt{0x5E} select floating-point
 immediates. VEA retains the scalar memory and EXT encodings except that \texttt{0x58} and
-\texttt{0x5B}--\texttt{0x5E} select VSTRIDE forms.
+\texttt{0x5B}--\texttt{0x5E} are reserved. These values do not inherit the scalar EA forms at
+the same compact selectors.
 
 Compact memory forms that do not name SP or PC use the operation default data segment. SP memory forms are fixed to
 SS, and PC memory forms are fixed to CS.
@@ -60,14 +61,6 @@ For an ordinary compact or EXT VEA memory form, address calculation first produc
 shared base, scalar Rn index, scale, displacement, segment, and auto-update grammar. Lane $n$ accesses
 \texttt{anchor + n * element\_bytes}. Scatter/gather addressing is not a VEA descriptor form and is reserved for
 separate vector instructions.
-
-A VSTRIDE form appends one descriptor byte \texttt{bbbbiiii}. Field \texttt{bbbb} selects the scalar base Rn and
-\texttt{iiii} selects a scalar Rn containing a signed 64-bit byte stride. For lane $n$, before segment translation,
-the offset is
-\[
-  \texttt{Rn(base)} + n \mathbin{*} \texttt{signed64(Rn(stride))} + \texttt{displacement}.
-\]
-The compact VSTRIDE encoding selects no displacement or a signed 8-, 16-, 32-, or unsigned 64-bit displacement.
 
 \clearpage
 \subsection{Shared Extended Descriptor}

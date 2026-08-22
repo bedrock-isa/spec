@@ -13,6 +13,7 @@ from defs_schema import (
     EncodingConstraint,
     EncodingForm,
     EncodingOperand,
+    displayed_assembly_operands,
     parse_assembly_template,
 )
 
@@ -151,7 +152,7 @@ def _template_operand_matches(
         displayed.kind == "reference"
         and displayed.angled
         and displayed.field is None
-        and displayed.name == operand.type
+        and displayed.name in {operand.type, operand.name}
     )
 
 
@@ -243,7 +244,7 @@ def validate_encoding_template(
     represented = set(condition_operands) | set(order_operands)
     encoding_operands = [operand for operand in form.operands if operand not in represented]
     groups = [operand for operand in template.operands if operand.kind == "group"]
-    displayed = [operand for operand in template.operands if operand.kind != "group"]
+    displayed = list(displayed_assembly_operands(template))
     displayed_index = 0
     for operand in encoding_operands:
         if operand.type not in registry.types:

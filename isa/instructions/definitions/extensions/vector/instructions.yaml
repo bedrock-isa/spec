@@ -17,10 +17,10 @@ include:
 - instructions/PPACKHI
 - instructions/VCLR
 - instructions/VINDEX
-- instructions/RDVL
-- instructions/RDCNT
-- instructions/ADDVL
-- instructions/ADDPL
+- instructions/VLCNT
+- instructions/VLCADD
+- instructions/VGATHER1
+- instructions/VSCATTER1
 - instructions/PTRUE
 - instructions/PFALSE
 - instructions/PNOT

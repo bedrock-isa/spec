@@ -1,8 +1,0 @@
-mnemonic: ADDPL
-title: ADDPL (Vector)
-summary: Destructively add a signed integer multiple of the packed predicate-image size to `Rd`.
-description: Destructively add a signed integer multiple of the packed predicate-image size to `Rd`.
-attributes:
-  class: vector
-  family: vector
-  privilege: unprivileged

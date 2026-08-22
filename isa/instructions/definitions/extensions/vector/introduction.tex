@@ -39,7 +39,8 @@ destination width and signedness are part of the mnemonic.  For example,
 \texttt{VEXTZQ.B} zero-extends a byte into a quadword.  An instruction whose
 suffix controls only lane width accepts \texttt{H/S/D} as assembly aliases for
 \texttt{W/L/Q}; canonical disassembly uses \texttt{B/W/L/Q}.  Predicate
-operations, \texttt{RDCNT}, \texttt{PLOOP}, \texttt{VMOV}, \texttt{VMOVZ},
+operations, \texttt{VLCNT}, \texttt{VLCADD}, \texttt{VGATHER1},
+\texttt{VSCATTER1}, \texttt{PLOOP}, \texttt{VMOV}, \texttt{VMOVZ},
 and the permute, slide, slice, and zip families use this width-only rule.
 
 \subsection{Predicates and Destination Images}
@@ -84,27 +85,21 @@ active destination container and every inactive container remain unchanged.
 \texttt{VDUP} broadcasts a scalar register, FP register, or immediate into
 every lane.  \texttt{VEXTRACT} and \texttt{VINSERT} use a scalar lane index.  An
 index at or above the lane count raises \texttt{VECTOR\_RANGE\_ERROR} with
-error code one and commits no state.  \texttt{RDVL} returns VLEN in bytes;
-\texttt{RDCNT} returns the selected lane count.  \texttt{ADDVL} and
-\texttt{ADDPL} scale their signed immediate by VLEN bytes and packed predicate
-bytes, respectively.
+error code one and commits no state.  \texttt{VLCNT} returns VLEN in bytes
+divided by the selected element width in bytes.  \texttt{VLCADD} adds its
+signed eight-bit immediate multiplied by that lane count to its scalar
+destination modulo $2^{64}$.  Both operations preserve \texttt{FLAGS}; their
+\texttt{H/S/D} spellings are width-only aliases for \texttt{W/L/Q} and do not
+require the floating-point extension.
 
 \subsection{Vector Memory Operations}
 
 A vector memory operand uses the ordinary compact, \texttt{EXT1}, and
 \texttt{EXT2} descriptor formats in vector context.  The descriptor computes
-one scalar anchor address.  The vector-context compact table supplies
-\texttt{VSTRIDE} selectors where the scalar table has stack-relative and
-immediate forms.  A contiguous access uses
+one scalar anchor address.  A contiguous access uses
 
 \[
   address[i] = anchor + iE,
-\]
-
-and \texttt{VSTRIDE} uses
-
-\[
-  address[i] = base + i\,signed64(stride) + displacement.
 \]
 
 All arithmetic is modulo $2^{64}$.  Existing effective-address auto-update is
@@ -128,6 +123,66 @@ MMIO condition discovered in a lower-address active lane.  When logical lane
 order differs from address order, translation and translation-fault selection
 still follow address order.  The reported fault address identifies the lane
 whose range supplies the selected failure.
+
+\subsubsection{One-Lane Gather and Scatter Steps}
+
+\texttt{VGATHER1} and \texttt{VSCATTER1} are one-lane vector memory
+instructions eligible for unconditional \texttt{REP} and not for
+\texttt{REPcc}.  Their canonical operand order is
+
+\begin{verbatim}
+VGATHER1.T  Pn, [address], Vd
+VSCATTER1.T Pn, Vs, [address]
+\end{verbatim}
+
+The read-write lane cursor \texttt{Ri} appears inside every address expression.
+The vector address operand \texttt{Va} has no suffix; the instruction suffix
+selects both the transferred element width and the width of \texttt{Va[Ri]}.
+The encoded widths are \texttt{B/W/L/Q}.  The \texttt{H/S/D} spellings are
+width-only aliases for \texttt{W/L/Q}, preserve raw element bits, require no
+floating-point extension, and disassemble canonically as \texttt{W/L/Q}.
+
+For element width $E$ bytes, let $i=unsigned(Ri)$ and $N=VLEN/E$.  The range
+check precedes predicate evaluation.  If $i\mathrel{\ge}N$, the instruction
+raises \texttt{VECTOR\_RANGE\_ERROR} with error code one and commits nothing.
+Otherwise predicate bit \texttt{Pn[iE]} governs the step.  A false bit issues
+no memory transaction, increments \texttt{Ri} modulo $2^{64}$, and commits.  A
+true bit performs exactly one $E$-byte access through the default data segment.
+On success, gather replaces only lane $i$ of \texttt{Vd}, or scatter stores
+lane $i$ of \texttt{Vs}; the instruction then increments \texttt{Ri} and
+commits.  A memory fault leaves \texttt{Ri}, vector state, and memory unchanged.
+Both instructions preserve \texttt{FLAGS}.
+
+The address forms, before default-data-segment translation, are:
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+Form & Offset \\
+\midrule
+scalar stride & $Rb + unsigned(Ri)\mathbin{\cdot}signed64(Rs)$ \\
+absolute 32 & $zero\_extend_{64}(Va.L[i])$ \\
+absolute 64 & $Va.Q[i]$ \\
+vector byte displacement & $Rb + sign\_extend_{64}(Va.E[i])$ \\
+vector index & $Rb + zero\_extend_{64}(Va.E[i])\,E$ \\
+indexed plus \texttt{disp8s/16s/32s} & preceding indexed offset plus the signed payload \\
+indexed plus \texttt{disp64} & preceding indexed offset plus the exact 64-bit payload \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Address arithmetic is modulo $2^{64}$.  The absolute forms are offsets in the
+default data segment; they do not bypass segmentation.  Absolute 32 is the
+fixed \texttt{L/S} width and zero-extends \texttt{Va.L[i]}; absolute 64 is the
+fixed \texttt{Q/D} width.  In indexed syntax the scale is a literal equal to
+$E$ and is not a separately encoded field.  The signed 8-, 16-, and 32-bit
+displacements and exact 64-bit displacement are appended payloads.
+
+Every base form requires \texttt{Ri != Rb}; scalar stride also requires
+\texttt{Ri != Rs}, while \texttt{Rb == Rs} is permitted.  \texttt{Va == Vd}
+for gather and \texttt{Va == Vs} for scatter are permitted.  The existing
+vector/gather/scatter MMIO-operation prohibition applies to these one-element
+transactions.
 
 \subsection{Floating-Point Exceptions, Conversions, and Reductions}
 

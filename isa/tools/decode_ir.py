@@ -471,11 +471,12 @@ def _normalized_operands(
     form: Any,
     operand_types: dict[str, Any],
 ) -> tuple[OperandIR, ...]:
-    from defs_schema import parse_assembly_template
+    from defs_schema import displayed_assembly_operands, parse_assembly_template
 
     template = parse_assembly_template(form.syntax, form.id)
     decimal_literals = [
-        item.literal for item in template.operands if item.kind == "decimal"
+        item.literal for item in displayed_assembly_operands(template)
+        if item.kind == "decimal"
     ]
     result: list[OperandIR] = []
     for operand in form.operands:
@@ -564,7 +565,6 @@ def _ea_form_ir(
 
 def _build_effective_addresses(ea_registry: Any, field_types: Any) -> EffectiveAddressIR:
     family_specs = (
-        ("vstride", ea_registry.vstride_kind, ea_registry.vstride_forms),
         ("ext1", ea_registry.ext1_kind, ea_registry.ext1_forms),
         ("ext2", ea_registry.ext2_kind, ea_registry.ext2_forms),
     )
@@ -1044,14 +1044,13 @@ def _validate_ea(ir: DecodeIR) -> None:
         raise ValueError("scalar compact EA compatibility aliases differ from profile EA")
     family_names = tuple(family.name for family in ea.descriptor_families)
     families = {family.name: family for family in ea.descriptor_families}
-    if family_names != ("vstride", "ext1", "ext2"):
-        raise ValueError("descriptor families must be VSTRIDE, EXT1, and EXT2")
+    if family_names != ("ext1", "ext2"):
+        raise ValueError("descriptor families must be EXT1 and EXT2")
     if (
-        families["vstride"].descriptor_bytes != 1
-        or families["ext1"].descriptor_bytes != 1
+        families["ext1"].descriptor_bytes != 1
         or families["ext2"].descriptor_bytes != 2
     ):
-        raise ValueError("VSTRIDE, EXT1, and EXT2 descriptor lengths must be 1, 1, and 2")
+        raise ValueError("EXT1 and EXT2 descriptor lengths must be 1 and 2")
 
     for profile in ea.profiles:
         if tuple(entry.raw for entry in profile.compact_entries) != expected_raw:

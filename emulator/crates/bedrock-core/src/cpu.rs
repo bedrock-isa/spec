@@ -619,6 +619,9 @@ impl Cpu {
         next_pc: u64,
         instruction: &DecodedInstruction,
     ) -> Result<StepResult, Trap> {
+        if matches!(instruction.opcode, Opcode::Vgather1 | Opcode::Vscatter1) {
+            return self.execute_vector_step(bus, pc, next_pc, instruction);
+        }
         if let Some(result) = self.execute_vector_phase6(bus, pc, next_pc, instruction)? {
             return Ok(result);
         }
@@ -1031,23 +1034,14 @@ impl Cpu {
                     element_bytes,
                 );
             }
-            Opcode::Rdvl | Opcode::Rdcnt => {
+            Opcode::Vlcnt => {
                 let destination = field(instruction, 'r') as usize;
-                self.state.r[destination] = if instruction.opcode == Opcode::Rdvl {
-                    crate::state::VLEN_BYTES as u64
-                } else {
-                    lane_count as u64
-                };
+                self.state.r[destination] = lane_count as u64;
             }
-            Opcode::Addvl | Opcode::Addpl => {
+            Opcode::Vlcadd => {
                 let destination = field(instruction, 'r') as usize;
-                let scale = if instruction.opcode == Opcode::Addvl {
-                    crate::state::VLEN_BYTES
-                } else {
-                    crate::state::PREDICATE_BYTES
-                };
                 self.state.r[destination] = self.state.r[destination]
-                    .wrapping_add((signed_immediate(instruction) * scale as i64) as u64);
+                    .wrapping_add((signed_immediate(instruction) * lane_count as i64) as u64);
             }
             Opcode::Ptrue | Opcode::Pfalse | Opcode::Phead | Opcode::Ptail => {
                 let destination = field(instruction, 'p') as usize;
@@ -1269,6 +1263,118 @@ impl Cpu {
         }
         self.state.pc = next_pc;
         Ok(StepResult::Running)
+    }
+
+    fn execute_vector_step<B: Bus>(
+        &mut self,
+        bus: &mut B,
+        pc: u64,
+        next_pc: u64,
+        instruction: &DecodedInstruction,
+    ) -> Result<StepResult, Trap> {
+        let size = vector_element_size(instruction);
+        let element_bytes = size.bytes();
+        let lane_count = crate::state::VLEN_BYTES / element_bytes;
+        let cursor = field(instruction, 'i') as usize;
+        let lane = self.state.r[cursor];
+        if lane >= lane_count as u64 {
+            return Err(Trap::VectorRangeError {
+                pc,
+                cause: crate::VectorRangeErrorCause::LaneIndex,
+            });
+        }
+
+        let lane = lane as usize;
+        let predicate = self.state.p[field(instruction, 'p') as usize];
+        if !predicate_get(&predicate, lane * element_bytes) {
+            self.state.r[cursor] = self.state.r[cursor].wrapping_add(1);
+            self.state.pc = next_pc;
+            return Ok(StepResult::Running);
+        }
+
+        let address = self.vector_step_address(pc, instruction, lane, size)?;
+        let locations = [(SegmentSelector::Ds, address)];
+        let mut one_lane = [0_u8; crate::state::PREDICATE_BYTES];
+        predicate_set(&mut one_lane, 0, true);
+        if instruction.opcode == Opcode::Vgather1 {
+            let memory =
+                self.read_vector_locations(bus, pc, instruction, size, one_lane, &locations)?;
+            let value = vector_lane_unsigned(&memory, 0, element_bytes);
+            vector_lane_set(
+                &mut self.state.v[field(instruction, 'v') as usize],
+                lane,
+                element_bytes,
+                value,
+            );
+        } else {
+            let source = vector_lane_unsigned(
+                &self.state.v[field(instruction, 'v') as usize],
+                lane,
+                element_bytes,
+            );
+            let mut image = [0_u8; crate::state::VLEN_BYTES];
+            vector_lane_set(&mut image, 0, element_bytes, source);
+            self.write_vector_locations(bus, pc, instruction, size, one_lane, image, &locations)?;
+        }
+        self.state.r[cursor] = self.state.r[cursor].wrapping_add(1);
+        self.state.pc = next_pc;
+        Ok(StepResult::Running)
+    }
+
+    fn vector_step_address(
+        &self,
+        pc: u64,
+        instruction: &DecodedInstruction,
+        lane: usize,
+        size: Size,
+    ) -> Result<u64, Trap> {
+        let form = instruction.allocation_id;
+        if matches!(form, "xxlong.vgather1.v239" | "xxlong.vscatter1.v248") {
+            let base = self.state.r[field(instruction, 'b') as usize];
+            let stride = self.state.r[field(instruction, 's') as usize];
+            return Ok(base.wrapping_add((lane as u64).wrapping_mul(stride)));
+        }
+
+        let lane_value = vector_lane_unsigned(
+            &self.state.v[field(instruction, 'x') as usize],
+            lane,
+            size.bytes(),
+        );
+        if matches!(
+            form,
+            "xxlong.vgather1.v240"
+                | "xxlong.vgather1.v241"
+                | "xxlong.vscatter1.v249"
+                | "xxlong.vscatter1.v250"
+        ) {
+            return Ok(lane_value);
+        }
+
+        let base = self.state.r[field(instruction, 'b') as usize];
+        let lane_offset = if matches!(form, "xxlong.vgather1.v242" | "xxlong.vscatter1.v251") {
+            sign_extend(lane_value, size) as u64
+        } else {
+            lane_value.wrapping_mul(size.bytes() as u64)
+        };
+        let payload = payload_after_eas(instruction);
+        let displacement = match form {
+            "xxlong.vgather1.v244" | "xxlong.vscatter1.v253" => {
+                read_signed(payload, DisplacementWidth::Bits8) as u64
+            }
+            "xxlong.vgather1.v245" | "xxlong.vscatter1.v254" => {
+                read_signed(payload, DisplacementWidth::Bits16) as u64
+            }
+            "xxlong.vgather1.v246" | "xxlong.vscatter1.v255" => {
+                read_signed(payload, DisplacementWidth::Bits32) as u64
+            }
+            "xxlong.vgather1.v247" | "xxlong.vscatter1.v256" => read_unsigned(payload, 8),
+            "xxlong.vgather1.v242"
+            | "xxlong.vgather1.v243"
+            | "xxlong.vscatter1.v251"
+            | "xxlong.vscatter1.v252" => 0,
+            _ => return Err(illegal_instruction(pc)),
+        };
+        Ok(base.wrapping_add(lane_offset).wrapping_add(displacement))
     }
 
     fn execute_vector_phase6<B: Bus>(
@@ -1719,6 +1825,17 @@ impl Cpu {
             }
             let [left, right] = relation.operand_fields;
             if field(instruction, left) == field(instruction, right) {
+                return Err(Trap::IllegalInstruction {
+                    pc,
+                    cause: IllegalInstructionCause::InvalidOperandRelation,
+                });
+            }
+        }
+        if matches!(instruction.opcode, Opcode::Vgather1 | Opcode::Vscatter1) {
+            let cursor = field(instruction, 'i');
+            if optional_field(instruction, 'b').is_some_and(|base| base == cursor)
+                || optional_field(instruction, 's').is_some_and(|stride| stride == cursor)
+            {
                 return Err(Trap::IllegalInstruction {
                     pc,
                     cause: IllegalInstructionCause::InvalidOperandRelation,
@@ -5990,30 +6107,10 @@ impl Cpu {
         let ea = ea_field(instruction, 'e').ok_or(illegal_instruction(pc))?;
         let payload = ea_payload_for_symbol(instruction, 'e');
         let lanes = crate::state::VLEN_BYTES / size.bytes();
-        match ea {
-            CompactEa::VectorStride { displacement } => {
-                let descriptor = *payload.first().ok_or(illegal_instruction(pc))?;
-                let base = self.state.r[usize::from(descriptor >> 4)];
-                let stride = self.state.r[usize::from(descriptor & 0x0f)] as i64 as u64;
-                let displacement =
-                    displacement.map_or(0, |width| read_signed(&payload[1..], width) as u64);
-                Ok((0..lanes)
-                    .map(|lane| {
-                        (
-                            SegmentSelector::Ds,
-                            base.wrapping_add((lane as u64).wrapping_mul(stride))
-                                .wrapping_add(displacement),
-                        )
-                    })
-                    .collect())
-            }
-            _ => {
-                let (segment, anchor) = self.vector_anchor_with_payload(pc, ea, payload, size)?;
-                Ok((0..lanes)
-                    .map(|lane| (segment, anchor.wrapping_add((lane * size.bytes()) as u64)))
-                    .collect())
-            }
-        }
+        let (segment, anchor) = self.vector_anchor_with_payload(pc, ea, payload, size)?;
+        Ok((0..lanes)
+            .map(|lane| (segment, anchor.wrapping_add((lane * size.bytes()) as u64)))
+            .collect())
     }
 
     fn vector_anchor_with_payload(
@@ -8254,7 +8351,24 @@ fn field(instruction: &DecodedInstruction, symbol: char) -> u64 {
 }
 
 fn vector_element_bytes(instruction: &DecodedInstruction) -> usize {
-    if let Some(selector) = optional_field(instruction, 'x') {
+    if matches!(
+        instruction.allocation_id,
+        "xxlong.vgather1.v240" | "xxlong.vscatter1.v249"
+    ) {
+        return 4;
+    }
+    if matches!(
+        instruction.allocation_id,
+        "xxlong.vgather1.v241" | "xxlong.vscatter1.v250"
+    ) {
+        return 8;
+    }
+    if let Some(selector) = instruction
+        .fields
+        .iter()
+        .find(|field| field.symbol == 'x' && field.kind == FieldKind::Size)
+        .map(|field| field.value)
+    {
         return match selector {
             0 => 1,
             1 | 5 => 2,
@@ -9573,8 +9687,9 @@ fn write_bus<B: Bus>(
 
 #[cfg(test)]
 mod tests {
-    use super::{Cpu, vector_lane_set, vector_lane_unsigned};
+    use super::{Cpu, vector_element_size, vector_lane_set, vector_lane_unsigned};
     use crate::exception::{FrameControl, InvalidControlCause};
+    use crate::trap::IllegalInstructionCause;
     use crate::{
         AccessDomain, AccessFaultReason, AccessKind, AddressSpaceControl, ExceptionFrameType,
         Flags, PageFaultReason, PageTableControl, SegmentRegister, SegmentSelector, Status,
@@ -9819,17 +9934,20 @@ mod tests {
     }
 
     #[test]
-    fn vector_length_address_arithmetic_uses_bytes_and_packed_predicate_bytes() {
+    fn vector_lane_count_helpers_scale_by_selected_element_width() {
         let mut cpu = Cpu::new();
         let mut ram = Ram::new(64);
-        let rdvl = decoded_form("long.rdvl.v19", &[('r', 1)], &[]);
-        cpu.execute_vector(&mut ram, 0, 4, &rdvl).unwrap();
-        assert_eq!(cpu.state().r[1], crate::state::VLEN_BYTES as u64);
+        let flags = cpu.state().flags;
+        let vlcnt = decoded_form("long.vlcnt.v20", &[('z', 2), ('r', 1)], &[]);
+        cpu.execute_vector(&mut ram, 0, 4, &vlcnt).unwrap();
+        assert_eq!(cpu.state().r[1], 4);
+        assert_eq!(cpu.state().flags, flags);
 
         cpu.state_mut().r[2] = 10;
-        let addpl = decoded_form("long.addpl.v22", &[('r', 2)], &[0xff]);
-        cpu.execute_vector(&mut ram, 4, 9, &addpl).unwrap();
-        assert_eq!(cpu.state().r[2], 10 - crate::state::PREDICATE_BYTES as u64);
+        let vlcadd = decoded_form("long.vlcadd.v21", &[('z', 3), ('r', 2)], &[0xff]);
+        cpu.execute_vector(&mut ram, 4, 9, &vlcadd).unwrap();
+        assert_eq!(cpu.state().r[2], 8);
+        assert_eq!(cpu.state().flags, flags);
     }
 
     #[test]
@@ -9919,7 +10037,7 @@ mod tests {
     }
 
     #[test]
-    fn vector_memory_contiguous_and_stride_forms_touch_only_active_lanes() {
+    fn vector_memory_contiguous_forms_touch_only_active_lanes() {
         let mut cpu = Cpu::new();
         let mut ram = Ram::new(0x200);
         cpu.state_mut().r[1] = 0x80;
@@ -9944,20 +10062,216 @@ mod tests {
         cpu.state_mut().v[3] = [0xaa; crate::state::VLEN_BYTES];
         cpu.execute_vector(&mut ram, 6, 12, &zero_load).unwrap();
         assert_eq!(&cpu.state().v[3][..4], &[0x10, 0, 0x30, 0]);
+    }
 
-        cpu.state_mut().r[1] = 0x100;
-        cpu.state_mut().r[2] = 3;
-        cpu.state_mut().v[4] = core::array::from_fn(|index| index as u8);
-        let stride_store = decoded_form(
-            "xxlong.vmov.v138",
-            &[('z', 0), ('p', 0), ('v', 4), ('e', 0x58)],
-            &[0x12],
+    #[test]
+    fn vector_step_address_forms_apply_signed_and_scaled_offsets() {
+        let mut cpu = Cpu::new();
+        cpu.state_mut().r[2] = 2;
+        cpu.state_mut().r[3] = 0x100;
+        cpu.state_mut().r[4] = (-3_i64) as u64;
+
+        let stride = decoded_form(
+            "xxlong.vgather1.v239",
+            &[('z', 2), ('b', 3), ('p', 0), ('i', 2), ('s', 4), ('v', 2)],
+            &[],
         );
-        cpu.execute_vector(&mut ram, 12, 19, &stride_store).unwrap();
-        assert_eq!(ram.read_u8(0x100).unwrap(), 0);
-        assert_eq!(ram.read_u8(0x103).unwrap(), 0);
-        assert_eq!(ram.read_u8(0x106).unwrap(), 2);
-        assert_eq!(ram.read_u8(0x109).unwrap(), 0);
+        assert_eq!(
+            cpu.vector_step_address(0, &stride, 2, vector_element_size(&stride))
+                .unwrap(),
+            0xfa
+        );
+
+        vector_lane_set(&mut cpu.state_mut().v[1], 2, 4, u32::MAX as u64 - 3);
+        let abs32 = decoded_form(
+            "xxlong.vgather1.v240",
+            &[('p', 0), ('i', 2), ('v', 2), ('x', 1)],
+            &[],
+        );
+        assert_eq!(
+            cpu.vector_step_address(0, &abs32, 2, vector_element_size(&abs32))
+                .unwrap(),
+            0xffff_fffc
+        );
+
+        vector_lane_set(&mut cpu.state_mut().v[1], 1, 8, 0x1234_5678_9abc_def0);
+        let abs64 = decoded_form(
+            "xxlong.vgather1.v241",
+            &[('p', 0), ('i', 1), ('v', 2), ('x', 1)],
+            &[],
+        );
+        assert_eq!(
+            cpu.vector_step_address(0, &abs64, 1, vector_element_size(&abs64))
+                .unwrap(),
+            0x1234_5678_9abc_def0
+        );
+
+        vector_lane_set(&mut cpu.state_mut().v[1], 2, 4, u32::MAX as u64 - 3);
+        let signed = decoded_form(
+            "xxlong.vgather1.v242",
+            &[('z', 2), ('b', 3), ('p', 0), ('i', 2), ('v', 2), ('x', 1)],
+            &[],
+        );
+        assert_eq!(
+            cpu.vector_step_address(0, &signed, 2, vector_element_size(&signed))
+                .unwrap(),
+            0xfc
+        );
+
+        vector_lane_set(&mut cpu.state_mut().v[1], 2, 4, 3);
+        for (id, appended, expected) in [
+            ("xxlong.vgather1.v243", Vec::new(), 0x10c),
+            ("xxlong.vgather1.v244", vec![0xfe], 0x10a),
+            ("xxlong.vgather1.v245", vec![0xfe, 0xff], 0x10a),
+            ("xxlong.vgather1.v246", vec![0xfe, 0xff, 0xff, 0xff], 0x10a),
+            (
+                "xxlong.vgather1.v247",
+                vec![0xfe, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff],
+                0x10a,
+            ),
+        ] {
+            let instruction = decoded_form(
+                id,
+                &[('z', 2), ('b', 3), ('p', 0), ('i', 2), ('v', 2), ('x', 1)],
+                &appended,
+            );
+            assert_eq!(
+                cpu.vector_step_address(0, &instruction, 2, vector_element_size(&instruction),)
+                    .unwrap(),
+                expected,
+                "{id}"
+            );
+        }
+    }
+
+    #[test]
+    fn vector_step_range_predicate_memory_and_overlap_contracts_are_atomic() {
+        let gather = decoded_form(
+            "xxlong.vgather1.v243",
+            &[('z', 2), ('b', 3), ('p', 0), ('i', 2), ('v', 2), ('x', 2)],
+            &[],
+        );
+        let mut cpu = Cpu::new();
+        let mut ram = Ram::new(0x200);
+        cpu.state_mut().r[2] = 2;
+        cpu.state_mut().r[3] = 0x100;
+        cpu.state_mut().p[0] = [0, 1];
+        cpu.state_mut().v[2] = [0xaa; crate::state::VLEN_BYTES];
+        vector_lane_set(&mut cpu.state_mut().v[2], 2, 4, 3);
+        ram.load(0x10c, &[0x11, 0x22, 0x33, 0x44]).unwrap();
+        let flags = cpu.state().flags;
+        cpu.execute_vector(&mut ram, 0, 6, &gather).unwrap();
+        assert_eq!(cpu.state().r[2], 3);
+        assert_eq!(&cpu.state().v[2][8..12], &[0x11, 0x22, 0x33, 0x44]);
+        assert_eq!(cpu.state().flags, flags);
+
+        cpu.state_mut().pc = 0x20;
+        cpu.state_mut().r[2] = 1;
+        cpu.state_mut().r[3] = u64::MAX;
+        cpu.state_mut().p[0] = [0, 0];
+        let before_vector = cpu.state().v[2];
+        cpu.execute_vector(&mut ram, 0x20, 0x26, &gather).unwrap();
+        assert_eq!(cpu.state().r[2], 2);
+        assert_eq!(cpu.state().v[2], before_vector);
+
+        cpu.state_mut().pc = 0x40;
+        cpu.state_mut().r[2] = 4;
+        let before = cpu.state().clone();
+        assert_eq!(
+            cpu.execute_vector(&mut ram, 0x40, 0x46, &gather),
+            Err(Trap::VectorRangeError {
+                pc: 0x40,
+                cause: crate::VectorRangeErrorCause::LaneIndex,
+            })
+        );
+        assert_eq!(cpu.state(), &before);
+
+        let scatter = decoded_form(
+            "xxlong.vscatter1.v252",
+            &[('z', 0), ('b', 3), ('p', 0), ('i', 2), ('v', 2), ('x', 2)],
+            &[],
+        );
+        cpu.state_mut().pc = 0;
+        cpu.state_mut().r[2] = 1;
+        cpu.state_mut().r[3] = 0x20;
+        cpu.state_mut().p[0] = [0x02, 0];
+        cpu.state_mut().v[2][1] = 3;
+        cpu.execute_vector(&mut ram, 0, 6, &scatter).unwrap();
+        assert_eq!(ram.read_u8(0x23).unwrap(), 3);
+        assert_eq!(cpu.state().r[2], 2);
+
+        let base_overlap = decoded_form(
+            "xxlong.vgather1.v239",
+            &[('z', 2), ('b', 2), ('p', 0), ('i', 2), ('s', 4), ('v', 2)],
+            &[],
+        );
+        assert!(matches!(
+            cpu.validate_dynamic_operand_relations(0x60, &base_overlap),
+            Err(Trap::IllegalInstruction {
+                cause: IllegalInstructionCause::InvalidOperandRelation,
+                ..
+            })
+        ));
+        let stride_overlap = decoded_form(
+            "xxlong.vgather1.v239",
+            &[('z', 2), ('b', 3), ('p', 0), ('i', 2), ('s', 2), ('v', 2)],
+            &[],
+        );
+        assert!(
+            cpu.validate_dynamic_operand_relations(0x60, &stride_overlap)
+                .is_err()
+        );
+        let shared_base_stride = decoded_form(
+            "xxlong.vgather1.v239",
+            &[('z', 2), ('b', 3), ('p', 0), ('i', 2), ('s', 3), ('v', 2)],
+            &[],
+        );
+        assert!(
+            cpu.validate_dynamic_operand_relations(0x60, &shared_base_stride)
+                .is_ok()
+        );
+    }
+
+    #[test]
+    fn vector_step_fault_rolls_back_cursor_vector_and_memory() {
+        let gather = encoded_form(
+            "xxlong.vgather1.v243",
+            &[('z', 2), ('b', 3), ('p', 0), ('i', 2), ('v', 2), ('x', 1)],
+            &[],
+        );
+        let mut ram = Ram::new(0x80);
+        ram.load(0, &gather).unwrap();
+        let mut cpu = Cpu::new();
+        cpu.reset(0);
+        cpu.state_mut().r[2] = 1;
+        cpu.state_mut().r[3] = 0x100;
+        cpu.state_mut().p[0] = [0x10, 0];
+        cpu.state_mut().v[1][4] = 1;
+        cpu.state_mut().v[2] = [0xa5; crate::state::VLEN_BYTES];
+        let before = cpu.state().clone();
+        assert_ne!(cpu.step(&mut ram), StepResult::Running);
+        assert_eq!(cpu.state(), &before);
+
+        let scatter = encoded_form(
+            "xxlong.vscatter1.v248",
+            &[('z', 2), ('b', 3), ('p', 0), ('i', 2), ('s', 4), ('v', 2)],
+            &[],
+        );
+        let mut ram = Ram::new(0x80);
+        ram.load(0, &scatter).unwrap();
+        ram.load(0x7e, &[0xa5, 0xa5]).unwrap();
+        let mut cpu = Cpu::new();
+        cpu.reset(0);
+        cpu.state_mut().r[2] = 1;
+        cpu.state_mut().r[3] = 0x7e;
+        cpu.state_mut().r[4] = 0;
+        cpu.state_mut().p[0] = [0x10, 0];
+        cpu.state_mut().v[2] = [0x5a; crate::state::VLEN_BYTES];
+        let before = cpu.state().clone();
+        assert_ne!(cpu.step(&mut ram), StepResult::Running);
+        assert_eq!(cpu.state(), &before);
+        assert_eq!(ram.read_u8(0x7e).unwrap(), 0xa5);
+        assert_eq!(ram.read_u8(0x7f).unwrap(), 0xa5);
     }
 
     #[test]
@@ -9971,13 +10285,12 @@ mod tests {
 
         let mut cpu = Cpu::new();
         cpu.state_mut().ptcr = PageTableControl::from_raw(0x1001);
-        cpu.state_mut().r[1] = 0x8000;
-        cpu.state_mut().r[2] = 0x1000;
+        cpu.state_mut().r[1] = 0x8fff;
         cpu.state_mut().p[0] = [0b0000_0011, 0];
         let load = decoded_form(
             "xxlong.vmov.v137",
-            &[('z', 0), ('p', 0), ('v', 3), ('e', 0x58)],
-            &[0x12],
+            &[('z', 0), ('p', 0), ('v', 3), ('e', 1)],
+            &[],
         );
 
         let trap = cpu.execute_vector(&mut bus, 0x20, 0x26, &load).unwrap_err();
@@ -9987,43 +10300,6 @@ mod tests {
                 if context.reason == PageFaultReason::NotPresent
                     && context.effective_address == 0x9000
         ));
-    }
-
-    #[test]
-    fn vector_stride_translates_active_mappings_in_linear_address_order() {
-        let mut bus = ProbeBus::new(0x10_000);
-        install_four_level_root(&mut bus.ram);
-        map_low_page(&mut bus.ram, 8, 0xa000, PTE_U);
-        map_low_page(&mut bus.ram, 9, 0xb000, PTE_U);
-        bus.ram.write_u8(0xa000, 0x80).unwrap();
-        bus.ram.write_u8(0xb000, 0x90).unwrap();
-
-        let mut cpu = Cpu::new();
-        cpu.state_mut().ptcr = PageTableControl::from_raw(0x1001);
-        cpu.state_mut().r[1] = 0x9000;
-        cpu.state_mut().r[2] = (-0x1000_i64) as u64;
-        cpu.state_mut().p[0] = [0b0000_0011, 0];
-        let load = decoded_form(
-            "xxlong.vmov.v137",
-            &[('z', 0), ('p', 0), ('v', 3), ('e', 0x58)],
-            &[0x12],
-        );
-        bus.clear_log();
-
-        cpu.execute_vector(&mut bus, 0x20, 0x26, &load).unwrap();
-
-        let lower_leaf = bus
-            .byte_reads
-            .iter()
-            .position(|address| *address == 0x4040)
-            .expect("lower-address leaf was read");
-        let upper_leaf = bus
-            .byte_reads
-            .iter()
-            .position(|address| *address == 0x4048)
-            .expect("upper-address leaf was read");
-        assert!(lower_leaf < upper_leaf);
-        assert_eq!(&cpu.state().v[3][..2], &[0x90, 0x80]);
     }
 
     #[test]

@@ -827,7 +827,7 @@ def ea_payload_byte_lengths(ea_data: Any) -> tuple[int, ...]:
     return tuple(sorted(lengths))
 
 
-def fixed_form_payload_bytes(form: str, operand_types: Any) -> int:
+def fixed_form_payload_bytes(entry: AllocationEntry, operand_types: Any) -> int:
     payload_sizes = {
         str(name): int(spec["bit_width"]) // 8
         for name, spec in (operand_types or {}).items()
@@ -836,13 +836,11 @@ def fixed_form_payload_bytes(form: str, operand_types: Any) -> int:
         and int(spec["bit_width"]) > 0
         and int(spec["bit_width"]) % 8 == 0
     }
-    total = 0
-    template = parse_assembly_template(form)
-    for operand in template.operands:
-        if operand.kind != "reference" or not operand.angled or operand.name == "ea":
-            continue
-        total += named_payload_bytes(operand.name, payload_sizes)
-    return total
+    return sum(
+        payload_sizes.get(str(operand.get("type", "")), 0)
+        for operand in entry.operands
+        if not operand.get("field")
+    )
 
 
 def instruction_length(
@@ -852,7 +850,7 @@ def instruction_length(
     operand_types: Any,
 ) -> InstructionLength:
     opcode_space_bytes = allocation_opcode_space_bytes(entry)
-    required = {opcode_space_bytes + fixed_form_payload_bytes(form, operand_types)}
+    required = {opcode_space_bytes + fixed_form_payload_bytes(entry, operand_types)}
     ea_count = sum(
         1
         for field in entry.fields.values()
@@ -2134,7 +2132,6 @@ def latex_ea_payload_rows(data: dict[str, Any]) -> str:
         rows.append(f"{name} & {byte_width} & {value} & {use}\\\\")
     rows.extend(
         [
-            "VSTRIDE descriptor & 1 & encoded & one-byte vector base/stride descriptor; present only for VSTRIDE escapes\\\\",
             "EXT1 descriptor & 1 & encoded & one-byte extended EA descriptor; present only for EXT1 escapes\\\\",
             "EXT2 descriptor & 2 & encoded & two-byte extended EA descriptor; present only for EXT2 escapes\\\\",
         ]

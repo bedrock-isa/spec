@@ -783,28 +783,12 @@ function vector_memory_operand(operands : list(Decoded_operand)) -> option(Decod
     },
   }
 
-function vector_memory_stride(instruction : Decoded_instruction, state : Cpu_state,
-                              element_bytes : int) -> (bool, bits(64)) =
-  match vector_memory_operand(instruction.operands) {
-    None() => (false, get_slice_int(64, element_bytes, 0)),
-    Some(operand) => match operand.ea {
-      None() => (false, get_slice_int(64, element_bytes, 0)),
-      Some(ea) => if ea.descriptor_name == "vector_stride_descriptor" then
-        match ea_field_role("stride", ea.fields) {
-          Some(index) => (true, image_register(state, index)),
-          None() => (true, 0x0000000000000000),
-        }
-      else (false, get_slice_int(64, element_bytes, 0)),
-    },
-  }
-
 function vector_memory_request(kind : Primitive_request_kind,
                                instruction : Decoded_instruction,
                                state : Cpu_state, evaluation : Ea_evaluation,
                                predicate : list(bits(8)), values : list(bits(8)),
                                element_bytes : int, access : Transaction_access)
   -> Primitive_request = {
-  let (strided, stride) = vector_memory_stride(instruction, state, element_bytes);
   let length = if instruction.form.operation == Op_PMOV
                then tdiv_int(state.vector_length_bytes, 8)
                else state.vector_length_bytes;
@@ -822,9 +806,9 @@ function vector_memory_request(kind : Primitive_request_kind,
     value = 0x0000000000000000, address_translation = true, commit_point = true,
     memory_order = 0, cache_policy = 0, suppress_fault = false,
     staged_updates = evaluation.staged_updates,
-    selector = if strided then 0x0000000000000001 else 0x0000000000000000,
+    selector = 0x0000000000000000,
     expected = 0x0000000000000000, desired = 0x0000000000000000,
-    auxiliary = stride, body_length = length,
+    auxiliary = get_slice_int(64, element_bytes, 0), body_length = length,
     payload_bytes = append_bytes(predicate, values), fp_request = empty_fp_request(),
     state_image = state
   }
@@ -916,6 +900,169 @@ function vector_memory_direct_store_image(instruction : Decoded_instruction,
   }
 }
 
+function vector_step_operation(operation : Semantic_operation) -> bool =
+  operation == Op_VGATHER1 | operation == Op_VSCATTER1
+
+function vector_lane_bytes_loop(image : list(bits(8)), index : int, remaining : int)
+  -> list(bits(8)) =
+  if remaining <= 0 then [||]
+  else vector_byte_at(image, index) :: vector_lane_bytes_loop(image, index + 1, remaining - 1)
+
+function vector_lane_bytes(image : list(bits(8)), lane : int, element_bytes : int)
+  -> list(bits(8)) =
+  vector_lane_bytes_loop(image, lane * element_bytes, element_bytes)
+
+function vector_step_register_index(instruction : Decoded_instruction, name : string)
+  -> option(bits(4)) = match operand_named(instruction, name) {
+  Some(operand) => Some(operand.value[3 .. 0]), None() => None(),
+}
+
+function vector_step_overlap_conflict(instruction : Decoded_instruction) -> bool =
+  match vector_step_register_index(instruction, "cursor") {
+    None() => false,
+    Some(cursor) => {
+      let base_conflict : bool = match vector_step_register_index(instruction, "base") {
+        Some(base) => cursor == base, None() => false,
+      };
+      let stride_conflict : bool = match vector_step_register_index(instruction, "stride") {
+        Some(stride) => cursor == stride, None() => false,
+      };
+      base_conflict | stride_conflict
+    },
+  }
+
+function vector_step_payload(instruction : Decoded_instruction, name : string,
+                             exact : bool) -> int =
+  match operand_named(instruction, name) {
+    None() => 0,
+    Some(operand) => if exact then unsigned(immediate_value(operand))
+                     else signed(immediate_value(operand)),
+  }
+
+function vector_step_address(instruction : Decoded_instruction, state : Cpu_state,
+                             lane : int, element_bytes : int) -> option(bits(64)) = {
+  let form_id = instruction.form.form_id;
+  if form_id == "xxlong.vgather1.v239" | form_id == "xxlong.vscatter1.v248" then
+    match (vector_step_register_index(instruction, "base"),
+           vector_step_register_index(instruction, "stride")) {
+      (Some(base), Some(stride)) => Some(get_slice_int(
+        64, unsigned(state.registers[unsigned(base)])
+            + lane * signed(state.registers[unsigned(stride)]), 0
+      )),
+      _ => None(),
+    }
+  else match vector_register_index(instruction, "address") {
+    None() => None(),
+    Some(address) => {
+      let lane_value = vector_lane_unsigned(
+        state.vector_registers[unsigned(address)], lane, element_bytes
+      );
+      if form_id == "xxlong.vgather1.v240" | form_id == "xxlong.vgather1.v241"
+         | form_id == "xxlong.vscatter1.v249" | form_id == "xxlong.vscatter1.v250"
+      then Some(get_slice_int(64, lane_value, 0))
+      else match vector_step_register_index(instruction, "base") {
+        None() => None(),
+        Some(base) => {
+          let lane_offset =
+            if form_id == "xxlong.vgather1.v242" | form_id == "xxlong.vscatter1.v251"
+            then vector_signed_lane(lane_value, element_bytes)
+            else lane_value * element_bytes;
+          let displacement =
+            if form_id == "xxlong.vgather1.v244" | form_id == "xxlong.vscatter1.v253"
+            then vector_step_payload(instruction, "disp8s", false)
+            else if form_id == "xxlong.vgather1.v245" | form_id == "xxlong.vscatter1.v254"
+            then vector_step_payload(instruction, "disp16s", false)
+            else if form_id == "xxlong.vgather1.v246" | form_id == "xxlong.vscatter1.v255"
+            then vector_step_payload(instruction, "disp32s", false)
+            else if form_id == "xxlong.vgather1.v247" | form_id == "xxlong.vscatter1.v256"
+            then vector_step_payload(instruction, "disp64", true)
+            else 0;
+          Some(get_slice_int(
+            64, unsigned(state.registers[unsigned(base)]) + lane_offset + displacement, 0
+          ))
+        },
+      }
+    },
+  }
+}
+
+function vector_step_request(instruction : Decoded_instruction, state : Cpu_state,
+                             address : bits(64), element_bytes : int,
+                             values : list(bits(8))) -> Primitive_request = {
+  let operation = instruction.form.operation;
+  let segment_image = state.segments[1];
+  let point = segment_point(segment_image, address);
+  let total = unsigned(address) + element_bytes;
+  struct {
+    kind = if operation == Op_VGATHER1 then VectorMemoryRead else VectorMemoryWrite,
+    ordinal = 0, role = "value", domain = "", segment = 1,
+    segment_image = segment_image, width = element_bytes,
+    range_start = address, range_end = add_bits(address, get_slice_int(64, element_bytes, 0)),
+    range_length = element_bytes, range_wrap = total > 18446744073709551616,
+    range_end_at_modulus = total == 18446744073709551616,
+    effective_address = address, linear_address = point.linear,
+    access = if operation == Op_VGATHER1 then AccessLoad else AccessStore,
+    value = 0x0000000000000000, address_translation = true, commit_point = true,
+    memory_order = 0, cache_policy = 0, suppress_fault = false, staged_updates = [||],
+    selector = 0x0000000000000000, expected = 0x0000000000000000,
+    desired = 0x0000000000000000,
+    auxiliary = get_slice_int(64, element_bytes, 0), body_length = element_bytes,
+    payload_bytes = append_bytes([|0x01|], values), fp_request = empty_fp_request(),
+    state_image = state
+  }
+}
+
+function start_vector_step_transaction(instruction : Decoded_instruction, state : Cpu_state)
+  -> option(Execution_result) = {
+  let operation = instruction.form.operation;
+  if not_bool(vector_step_operation(operation)) then None()
+  else if vector_step_overlap_conflict(instruction) then Some(faulted(
+    state, operation, IllegalInstruction, "vector step cursor overlaps its base or stride"
+  ))
+  else match (vector_step_register_index(instruction, "cursor"),
+              predicate_register_index(instruction, "govern")) {
+    (Some(cursor), Some(govern)) => {
+      let element_bytes = operation_width(instruction);
+      let lane = unsigned(state.registers[unsigned(cursor)]);
+      let lanes = tdiv_int(state.vector_length_bytes, element_bytes);
+      if lane >= lanes then Some(faulted_with_error_code(
+        state, operation, VectorRangeFault, "vector step lane cursor exceeds the lane count",
+        0x0000000000000001
+      ))
+      else {
+        var after = advance_pc(state, instruction);
+        after.registers[unsigned(cursor)] = add_bits(
+          state.registers[unsigned(cursor)], 0x0000000000000001
+        );
+        if not_bool(predicate_bit(state.predicate_registers[unsigned(govern)], lane * element_bytes))
+        then Some(completed(state, after, CommitRegisters, [||]))
+        else match vector_step_address(instruction, state, lane, element_bytes) {
+          None() => Some(faulted(state, operation, InvalidControlState,
+                                 "missing vector step address operand")),
+          Some(address) => {
+            let values : list(bits(8)) = if operation == Op_VSCATTER1 then match
+              vector_register_index(instruction, "src") {
+                Some(source) => vector_lane_bytes(
+                  state.vector_registers[unsigned(source)], lane, element_bytes
+                ),
+                None() => [||],
+              }
+              else [||];
+            Some(vector_memory_waiting(
+              instruction, state, after,
+              if operation == Op_VGATHER1 then PhaseVectorMemoryRead
+              else PhaseVectorMemoryWrite,
+              vector_step_request(instruction, state, address, element_bytes, values)
+            ))
+          },
+        }
+      }
+    },
+    _ => Some(faulted(state, operation, InvalidControlState,
+                      "missing vector step cursor or predicate")),
+  }
+}
+
 function start_vector_memory_transaction(instruction : Decoded_instruction, state : Cpu_state)
   -> option(Execution_result) = {
   let operation = instruction.form.operation;
@@ -924,7 +1071,8 @@ function start_vector_memory_transaction(instruction : Decoded_instruction, stat
     | vector_integer_unary_operation(operation) | vector_shift_operation_p(operation)
     | vector_integer_compare_operation(operation)
     | vector_integer_reduction_operation(operation);
-  if not_bool(memory_operation) then None()
+  if vector_step_operation(operation) then start_vector_step_transaction(instruction, state)
+  else if not_bool(memory_operation) then None()
   else match vector_memory_operand(instruction.operands) {
   None() => None(),
   Some(memory_operand) => {
@@ -987,6 +1135,7 @@ function start_vector_memory_transaction(instruction : Decoded_instruction, stat
 
 function vector_response_length(instruction : Decoded_instruction, state : Cpu_state) -> int =
   if instruction.form.operation == Op_PMOV then tdiv_int(state.vector_length_bytes, 8)
+  else if instruction.form.operation == Op_VGATHER1 then operation_width(instruction)
   else state.vector_length_bytes
 
 function vector_memory_source_result(instruction : Decoded_instruction,
@@ -1235,6 +1384,23 @@ function resume_vector_phase(previous : Execution_result, response : Transaction
       if byte_count(response.body_bytes) != vector_response_length(instruction, before) then
         faulted(before, instruction.form.operation, InvalidControlState,
                 "vector memory response length mismatch")
+      else if instruction.form.operation == Op_VGATHER1 then match
+        (vector_register_index(instruction, "dst"),
+         vector_step_register_index(instruction, "cursor")) {
+        (Some(destination), Some(cursor)) => {
+          let element_bytes = operation_width(instruction);
+          let lane = unsigned(before.registers[unsigned(cursor)]);
+          var updated = previous.pending.after;
+          updated.vector_registers[unsigned(destination)] = vector_write_lane(
+            before.vector_registers[unsigned(destination)], lane, element_bytes,
+            vector_lane_unsigned(response.body_bytes, 0, element_bytes)
+          );
+          updated.vector_component_modified = true;
+          completed(before, updated, CommitMemory, [||])
+        },
+        _ => faulted(before, instruction.form.operation, InvalidControlState,
+                     "missing vector gather destination or cursor"),
+      }
       else match vector_memory_operand(instruction.operands) {
         None() => faulted(before, instruction.form.operation, InvalidControlState,
                           "missing vector memory operand"),
@@ -1510,24 +1676,22 @@ function execute_vector_predicate(instruction : Decoded_instruction, state : Cpu
       Some(vector_finish(instruction, state, updated))
     }, _ => None(),
   }
-  else if operation == Op_RDVL | operation == Op_RDCNT then match operand_named(instruction, "dst") {
+  else if operation == Op_VLCNT then match operand_named(instruction, "dst") {
     Some(dst) => {
       var updated = state;
       updated.registers[unsigned(dst.value[3 .. 0])] = get_slice_int(
-        64, if operation == Op_RDVL then state.vector_length_bytes else lanes, 0
+        64, lanes, 0
       );
       Some(vector_finish(instruction, state, updated))
     }, None() => None(),
   }
-  else if operation == Op_ADDVL | operation == Op_ADDPL then
+  else if operation == Op_VLCADD then
     match (operand_named(instruction, "offset"), operand_named(instruction, "dst")) {
       (Some(offset), Some(dst)) => {
-        let scale = if operation == Op_ADDVL then state.vector_length_bytes
-                    else tdiv_int(state.vector_length_bytes, 8);
         let index = unsigned(dst.value[3 .. 0]);
         var updated = state;
         updated.registers[index] = add_bits(
-          state.registers[index], get_slice_int(64, signed(immediate_value(offset)) * scale, 0)
+          state.registers[index], get_slice_int(64, signed(immediate_value(offset)) * lanes, 0)
         );
         Some(vector_finish(instruction, state, updated))
       }, _ => None(),

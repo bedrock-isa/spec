@@ -61,13 +61,20 @@ def _operand_kind(operand: dict) -> tuple[str, int, bool]:
 
 
 def _has_width_only_aliases(mnemonic: str, suffixes: str) -> bool:
-    if not suffixes or not all(code in "bwlq?" for code in suffixes):
+    base_mnemonic = mnemonic.split(".", 1)[0]
+    fixed_width = mnemonic.removeprefix(base_mnemonic) in {".L", ".Q"}
+    if not fixed_width and (
+        not suffixes or not all(code in "bwlq?" for code in suffixes)
+    ):
         return False
     return (
-        mnemonic.startswith("P")
-        or mnemonic in {"RDCNT", "PLOOP", "VMOV", "VMOVZ"}
+        base_mnemonic.startswith("P")
+        or base_mnemonic in {
+            "VLCNT", "VLCADD", "VGATHER1", "VSCATTER1",
+            "PLOOP", "VMOV", "VMOVZ",
+        }
         or any(
-            word in mnemonic
+            word in base_mnemonic
             for word in ("PERM", "SLIDE", "SLICE", "ZIP", "TRN")
         )
     )
@@ -180,7 +187,7 @@ def _generate() -> str:
         "  bool HasCondition;",
         "  bool HasWidthOnlyAliases;",
         "  uint8_t OperandCount;",
-        "  VectorOperandDesc Operands[5];",
+        "  VectorOperandDesc Operands[6];",
         "  int8_t DistinctOperandA;",
         "  int8_t DistinctOperandB;",
         "};",
@@ -240,7 +247,7 @@ def _generate() -> str:
             operands.append(
                 (kind, operand.get("field", "\\0"), width, allow_immediate)
             )
-        if len(operands) > 5:
+        if len(operands) > 6:
             raise ValueError(f"too many operands in {form['id']}")
         distinct_a = distinct_b = -1
         overlaps = form.get("destination_overlap", [])
@@ -258,7 +265,7 @@ def _generate() -> str:
             )
         operand_text.extend(
             ["{VectorOperandKind::None, '\\0', 0, false}"]
-            * (5 - len(operand_text))
+            * (6 - len(operand_text))
         )
         suffix_literal = "'\\0'" if suffix_field == "\\0" else f"'{suffix_field}'"
         condition_mask = sum(
@@ -322,17 +329,20 @@ def _concrete_assembly(form: dict, size_values: dict[str, dict[int, str]]) -> st
     if "cc" in head:
         head = head.replace("cc", "eq")
     suffix_match = re.search(r"\.([A-Z0-9_]+)\(([a-z])\)$", head)
+    scale = 1
     if suffix_match:
         field = suffix_match.group(2)
         values = _allowed_size_values(form, field, size_values)
-        head = head[: suffix_match.start()] + "." + values[min(values)]
+        selected = min(values)
+        head = head[: suffix_match.start()] + "." + values[selected]
+        scale = 1 << selected
 
     if not rest:
         return head.lower()
     field_numbers = {
         "p": 0, "q": 1, "h": 2,
-        "v": 1, "w": 2, "y": 3,
-        "r": 1, "s": 2, "u": 3,
+        "v": 1, "w": 2, "y": 3, "x": 1,
+        "r": 1, "s": 4, "u": 3, "b": 3, "i": 2,
     }
     def render_operand(match: re.Match[str]) -> str:
         kind, field = match.groups()
@@ -342,12 +352,13 @@ def _concrete_assembly(form: dict, size_values: dict[str, dict[int, str]]) -> st
         return prefix + str(field_numbers[field])
 
     args = re.sub(
-        r"(Pn|Vn|Rn|Fn|imm6)\(([pqhvwyrsui])\)",
+        r"(Pn|Vn|Rn|Fn|imm6)\(([a-z])\)",
         render_operand,
         rest[0],
     )
     args = re.sub(r"<ea>\(e\)", "[r3]", args)
-    args = re.sub(r"<imm(?:8|16|32|64)s?>", "1", args)
+    args = re.sub(r"<(?:imm|disp)(?:8|16|32|64)s?>", "1", args)
+    args = args.replace("<scale>", str(scale))
     return f"{head.lower()} {args.lower()}"
 
 

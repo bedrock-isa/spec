@@ -135,9 +135,8 @@ function evaluate_decoded_vector_ea(operand : Decoded_operand, ea : Decoded_ea,
                                     width : int) -> (Ea_evaluation, Cpu_state) = {
   var staged = image;
   var updates : list(Staged_register_update) = [||];
-  let vector_stride = ea.descriptor_name == "vector_stride_descriptor";
   let base_index = ea_field_role("base", ea.fields);
-  let index_index = if vector_stride then None() else ea_field_role("index", ea.fields);
+  let index_index = ea_field_role("index", ea.fields);
   var base_value : bits(64) = if ea.base == "SP" then image.sp
     else if ea.base == "PC" then instruction_pc
     else if ea.base == "zero" then 0x0000000000000000
@@ -168,8 +167,7 @@ function evaluate_decoded_vector_ea(operand : Decoded_operand, ea : Decoded_ea,
     None() => (),
   } else ();
   let scaled_index = sail_shiftleft(index_value, ea_width_shift(width));
-  let offset = if vector_stride then add_bits(base_value, ea_signed_payload(ea))
-               else add_bits(add_bits(base_value, scaled_index), ea_signed_payload(ea));
+  let offset = add_bits(add_bits(base_value, scaled_index), ea_signed_payload(ea));
   if ea.update_target == "b" & ea.update_mode == "postincrement" then match base_index {
     Some(index) => {
       let reg_index = unsigned(get_slice_int(4, index, 0));

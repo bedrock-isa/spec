@@ -134,16 +134,10 @@ class DecodeIrTests(unittest.TestCase):
             ],
             [("immsf", 32), ("immdf", 64)],
         )
-        self.assertEqual(
-            [vea[raw].form_name for raw in (0x58, 0x5B, 0x5C, 0x5D, 0x5E)],
-            [
-                "vector_stride",
-                "vector_stride_disp8s",
-                "vector_stride_disp16s",
-                "vector_stride_disp32s",
-                "vector_stride_disp64",
-            ],
-        )
+        self.assertTrue(all(
+            not vea[raw].valid and vea[raw].reserved
+            for raw in (0x58, 0x5B, 0x5C, 0x5D, 0x5E)
+        ))
         for profile in profiles.values():
             self.assertEqual(
                 [profile.compact_entries[raw].descriptor_family for raw in range(0x5F, 0x69)],
@@ -155,6 +149,7 @@ class DecodeIrTests(unittest.TestCase):
             family.name: family
             for family in self.ir.effective_addresses.descriptor_families
         }
+        self.assertEqual(set(families), {"ext1", "ext2"})
         self.assertEqual(families["ext1"].descriptor_bytes, 1)
         self.assertEqual(families["ext2"].descriptor_bytes, 2)
         for name, family in families.items():
@@ -194,6 +189,71 @@ class DecodeIrTests(unittest.TestCase):
         self.assertEqual(serialized_ext1["referenced_descriptor_family"], "")
         self.assertNotIn("descriptor_family", serialized_compact)
         self.assertNotIn("descriptor", serialized_compact)
+
+    def test_vector_memory_redesign_owns_exact_patterns_and_payload_lengths(self) -> None:
+        def pattern(form: decode_ir.FormIR) -> str:
+            by_position = {
+                position: field.symbol
+                for field in form.fields
+                for position in field.positions
+            }
+            return "".join(
+                str((form.opcode_value >> position) & 1)
+                if form.opcode_mask & (1 << position)
+                else by_position[position]
+                for position in range(form.opcode_width - 1, -1, -1)
+            )
+
+        gather = [
+            "111111110000010000zz0bbbbppppiiiissssvvvvv",
+            "111111110000010001000000ppppiiiivvvvvxxxxx",
+            "111111110000010001000001ppppiiiivvvvvxxxxx",
+            "111111110000010010zzbbbbppppiiiivvvvvxxxxx",
+            "111111110000010011zzbbbbppppiiiivvvvvxxxxx",
+            "111111110000010100zzbbbbppppiiiivvvvvxxxxx",
+            "111111110000010101zzbbbbppppiiiivvvvvxxxxx",
+            "111111110000010110zzbbbbppppiiiivvvvvxxxxx",
+            "111111110000010111zzbbbbppppiiiivvvvvxxxxx",
+        ]
+        scatter = [
+            "111111110000011000zz0bbbbppppiiiissssvvvvv",
+            "111111110000011001000000ppppiiiivvvvvxxxxx",
+            "111111110000011001000001ppppiiiivvvvvxxxxx",
+            "111111110000011010zzbbbbppppiiiivvvvvxxxxx",
+            "111111110000011011zzbbbbppppiiiivvvvvxxxxx",
+            "111111110000011100zzbbbbppppiiiivvvvvxxxxx",
+            "111111110000011101zzbbbbppppiiiivvvvvxxxxx",
+            "111111110000011110zzbbbbppppiiiivvvvvxxxxx",
+            "111111110000011111zzbbbbppppiiiivvvvvxxxxx",
+        ]
+        gather_forms = [self.forms[f"xxlong.vgather1.v{number}"] for number in range(239, 248)]
+        scatter_forms = [self.forms[f"xxlong.vscatter1.v{number}"] for number in range(248, 257)]
+        self.assertEqual([pattern(form) for form in gather_forms], gather)
+        self.assertEqual([pattern(form) for form in scatter_forms], scatter)
+        self.assertEqual(
+            [form.fixed_required_bytes for form in gather_forms],
+            [6, 6, 6, 6, 6, 7, 8, 10, 14],
+        )
+        self.assertEqual(
+            [form.fixed_required_bytes for form in scatter_forms],
+            [6, 6, 6, 6, 6, 7, 8, 10, 14],
+        )
+        self.assertTrue(all(
+            form.control.repeat.rep and not form.control.repeat.repcc
+            for form in gather_forms + scatter_forms
+        ))
+
+        self.assertEqual(
+            pattern(self.forms["long.vlcnt.v20"]),
+            "11111010011000zz000001rrrr",
+        )
+        self.assertEqual(
+            pattern(self.forms["long.vlcadd.v21"]),
+            "11111010011000zz000010rrrr",
+        )
+        self.assertEqual(self.forms["long.vlcadd.v21"].fixed_required_bytes, 5)
+        retired = {"RDVL", "RDCNT", "ADDVL", "ADDPL"}
+        self.assertTrue(retired.isdisjoint(form.mnemonic for form in self.ir.forms))
 
     def test_control_and_free_text_annotations_remain_inspectable(self) -> None:
         setcc = next(form for form in self.ir.forms if form.mnemonic == "SETcc")

@@ -1,8 +1,0 @@
-mnemonic: ADDVL
-title: ADDVL (Vector)
-summary: Destructively add a signed integer multiple of VLEN bytes to `Rd`.
-description: Destructively add a signed integer multiple of VLEN bytes to `Rd`.
-attributes:
-  class: vector
-  family: vector
-  privilege: unprivileged

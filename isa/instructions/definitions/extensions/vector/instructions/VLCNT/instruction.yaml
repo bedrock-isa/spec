@@ -1,0 +1,8 @@
+mnemonic: VLCNT
+title: Vector Lane Count
+summary: Write the number of lanes of the selected element width.
+description: Write VLEN in bytes divided by the selected element width in bytes to `Rn`.
+attributes:
+  class: vector
+  family: vector
+  privilege: unprivileged

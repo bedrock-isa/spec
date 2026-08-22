@@ -177,6 +177,7 @@ alternatives, and all repetition is expressed by recursion.
             | <operand-reference> <field-expression>
             | <decimal-literal>
             | <operand-group>
+            | <vector-address>
 
 <operand-reference> ::= <operand-name>
                       | "<" <operand-name> ">"
@@ -185,6 +186,11 @@ alternatives, and all repetition is expressed by recursion.
 
 <operand-group> ::= "(" <operand-reference> ")"
                   | "{" " " <operand-reference> "..." " " "}"
+
+<vector-address> ::= "[" <vector-address-expression> "]"
+<vector-address-expression> ::= an ordered sequence of operand references,
+                                decimal scale literals or "<scale>", nested
+                                lane-selection brackets, "+", and "*"
 
 <decimal-literal> ::= <decimal-digit>
                     | <decimal-digit> <decimal-literal>
@@ -241,9 +247,10 @@ templates:
   concrete selector is the enum name admitted for the encoded value and by the
   form's constraints. The `/order` selector follows a selected size suffix.
 - Condition and order operands are represented by the instruction head.
-  Operand-group nodes are excluded from `EncodingOperand` correspondence. Each
-  remaining displayed non-group `<operand>` corresponds one-for-one, in YAML
-  order, with one `EncodingOperand`. A field-bearing operand uses an `<operand-reference>`
+  Operand-group nodes are excluded from `EncodingOperand` correspondence.
+  Operand references inside a vector address are flattened in their displayed
+  order. Each remaining displayed operand reference corresponds one-for-one,
+  in YAML order, with one `EncodingOperand`. A field-bearing operand uses an `<operand-reference>`
   followed by a field expression with that exact marker. A fieldless operand
   uses its corresponding presentation from the next rule. Every displayed
   field-bearing encoded operand carries its field binding, and the displayed
@@ -254,7 +261,8 @@ templates:
   reference `<ea>`, whose concrete spelling is selected from
   `isa/addressing/effective_address/definition.yaml`. A
   fieldless payload supplied after the primary encoding uses an angle-bracket
-  reference naming its registered operand type. A fieldless `fixed_register`
+  reference naming either its registered operand type or its operand name when
+  the syntax needs a semantic label such as a displacement. A fieldless `fixed_register`
   operand uses a bare reference with the architectural register spelling from
   its registry entry. A decimal literal is the fixed nonnegative value of its
   corresponding fieldless operand for that form. These correspondence rules
@@ -486,7 +494,6 @@ unique namespace.
 EaRegistry {
   payloads: map<string, EaPayload>
   compact: CompactEaSection
-  vstride: VstrideDescriptorSection
   ext1: Ext1EaSection
   ext2: Ext2EaSection
 }
@@ -531,11 +538,6 @@ CompactEaForm {
   base?: string
   register?: string
   descriptor?: string
-}
-
-VstrideDescriptorSection {
-  kind: string
-  forms: list<Ext1EaForm>
 }
 
 Ext1EaSection {
