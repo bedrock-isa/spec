@@ -8263,14 +8263,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/rdvl/" class="md-nav__link">
+      <a href="../instructions/vlcnt/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    RDVL
+    VLCNT
   
 
     
@@ -8291,14 +8291,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/rdcnt/" class="md-nav__link">
+      <a href="../instructions/vlcadd/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    RDCNT
+    VLCADD
   
 
     
@@ -8319,14 +8319,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/addvl/" class="md-nav__link">
+      <a href="../instructions/vgather1/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    ADDVL
+    VGATHER1
   
 
     
@@ -8347,14 +8347,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/addpl/" class="md-nav__link">
+      <a href="../instructions/vscatter1/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    ADDPL
+    VSCATTER1
   
 
     
@@ -13059,7 +13059,7 @@
 <tr>
 <td style="text-align: left;"><code>EXC:0b</code></td>
 <td style="text-align: left;"><code>VECTOR_RANGE_ERROR</code></td>
-<td style="text-align: left;">PLOOP offset or vector lane-index validation; <a href="../instructions/ploop/"><code>PLOOP</code></a>, <a href="../instructions/vextract/"><code>VEXTRACT</code></a>, <a href="../instructions/vinsert/"><code>VINSERT</code></a></td>
+<td style="text-align: left;">PLOOP offset or vector lane-index validation; <a href="../instructions/ploop/"><code>PLOOP</code></a>, <a href="../instructions/vextract/"><code>VEXTRACT</code></a>, <a href="../instructions/vgather1/"><code>VGATHER1</code></a>, <a href="../instructions/vinsert/"><code>VINSERT</code></a>, <a href="../instructions/vscatter1/"><code>VSCATTER1</code></a></td>
 <td style="text-align: left;"><code>3</code></td>
 <td style="text-align: left;"><code>ERROR</code></td>
 <td style="text-align: left;"><a href="../architectural-event-processing-model/#section-event-code-and-sources">definition</a> (p. )</td>
@@ -13537,18 +13537,6 @@
 <tr>
 <td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>VECTOR</code></a> (p. )</td>
 <td style="text-align: left;"><code>00000001:0000:1/bit2</code></td>
-<td style="text-align: left;"><a href="../instructions/addpl/"><code>ADDPL</code></a></td>
-<td style="text-align: left;">V0, V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, V19, V20, V21, V22, V23, V24, V25, V26, V27, V28, V29, V30, V31, P0, P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, SAVE component VECTOR</td>
-</tr>
-<tr>
-<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>VECTOR</code></a> (p. )</td>
-<td style="text-align: left;"><code>00000001:0000:1/bit2</code></td>
-<td style="text-align: left;"><a href="../instructions/addvl/"><code>ADDVL</code></a></td>
-<td style="text-align: left;">V0, V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, V19, V20, V21, V22, V23, V24, V25, V26, V27, V28, V29, V30, V31, P0, P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, SAVE component VECTOR</td>
-</tr>
-<tr>
-<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>VECTOR</code></a> (p. )</td>
-<td style="text-align: left;"><code>00000001:0000:1/bit2</code></td>
 <td style="text-align: left;"><a href="../instructions/bpall/"><code>BPALL</code></a></td>
 <td style="text-align: left;">V0, V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, V19, V20, V21, V22, V23, V24, V25, V26, V27, V28, V29, V30, V31, P0, P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, SAVE component VECTOR</td>
 </tr>
@@ -13730,18 +13718,6 @@
 <td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>VECTOR</code></a> (p. )</td>
 <td style="text-align: left;"><code>00000001:0000:1/bit2</code></td>
 <td style="text-align: left;"><a href="../instructions/pziplo/"><code>PZIPLO</code></a></td>
-<td style="text-align: left;">V0, V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, V19, V20, V21, V22, V23, V24, V25, V26, V27, V28, V29, V30, V31, P0, P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, SAVE component VECTOR</td>
-</tr>
-<tr>
-<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>VECTOR</code></a> (p. )</td>
-<td style="text-align: left;"><code>00000001:0000:1/bit2</code></td>
-<td style="text-align: left;"><a href="../instructions/rdcnt/"><code>RDCNT</code></a></td>
-<td style="text-align: left;">V0, V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, V19, V20, V21, V22, V23, V24, V25, V26, V27, V28, V29, V30, V31, P0, P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, SAVE component VECTOR</td>
-</tr>
-<tr>
-<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>VECTOR</code></a> (p. )</td>
-<td style="text-align: left;"><code>00000001:0000:1/bit2</code></td>
-<td style="text-align: left;"><a href="../instructions/rdvl/"><code>RDVL</code></a></td>
 <td style="text-align: left;">V0, V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, V19, V20, V21, V22, V23, V24, V25, V26, V27, V28, V29, V30, V31, P0, P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, SAVE component VECTOR</td>
 </tr>
 <tr>
@@ -13939,6 +13915,12 @@
 <tr>
 <td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>VECTOR</code></a> (p. )</td>
 <td style="text-align: left;"><code>00000001:0000:1/bit2</code></td>
+<td style="text-align: left;"><a href="../instructions/vgather1/"><code>VGATHER1</code></a></td>
+<td style="text-align: left;">V0, V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, V19, V20, V21, V22, V23, V24, V25, V26, V27, V28, V29, V30, V31, P0, P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, SAVE component VECTOR</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>VECTOR</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit2</code></td>
 <td style="text-align: left;"><a href="../instructions/vindex/"><code>VINDEX</code></a></td>
 <td style="text-align: left;">V0, V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, V19, V20, V21, V22, V23, V24, V25, V26, V27, V28, V29, V30, V31, P0, P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, SAVE component VECTOR</td>
 </tr>
@@ -13946,6 +13928,18 @@
 <td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>VECTOR</code></a> (p. )</td>
 <td style="text-align: left;"><code>00000001:0000:1/bit2</code></td>
 <td style="text-align: left;"><a href="../instructions/vinsert/"><code>VINSERT</code></a></td>
+<td style="text-align: left;">V0, V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, V19, V20, V21, V22, V23, V24, V25, V26, V27, V28, V29, V30, V31, P0, P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, SAVE component VECTOR</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>VECTOR</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit2</code></td>
+<td style="text-align: left;"><a href="../instructions/vlcadd/"><code>VLCADD</code></a></td>
+<td style="text-align: left;">V0, V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, V19, V20, V21, V22, V23, V24, V25, V26, V27, V28, V29, V30, V31, P0, P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, SAVE component VECTOR</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>VECTOR</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit2</code></td>
+<td style="text-align: left;"><a href="../instructions/vlcnt/"><code>VLCNT</code></a></td>
 <td style="text-align: left;">V0, V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, V19, V20, V21, V22, V23, V24, V25, V26, V27, V28, V29, V30, V31, P0, P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, SAVE component VECTOR</td>
 </tr>
 <tr>
@@ -14162,6 +14156,12 @@
 <td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>VECTOR</code></a> (p. )</td>
 <td style="text-align: left;"><code>00000001:0000:1/bit2</code></td>
 <td style="text-align: left;"><a href="../instructions/vsar/"><code>VSAR</code></a></td>
+<td style="text-align: left;">V0, V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, V19, V20, V21, V22, V23, V24, V25, V26, V27, V28, V29, V30, V31, P0, P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, SAVE component VECTOR</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="../cpuid-feature-discovery/#section-cpuid-extension-directory"><code>VECTOR</code></a> (p. )</td>
+<td style="text-align: left;"><code>00000001:0000:1/bit2</code></td>
+<td style="text-align: left;"><a href="../instructions/vscatter1/"><code>VSCATTER1</code></a></td>
 <td style="text-align: left;">V0, V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15, V16, V17, V18, V19, V20, V21, V22, V23, V24, V25, V26, V27, V28, V29, V30, V31, P0, P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, SAVE component VECTOR</td>
 </tr>
 <tr>

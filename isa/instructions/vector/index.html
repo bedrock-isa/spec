@@ -8267,14 +8267,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../rdvl/" class="md-nav__link">
+      <a href="../vlcnt/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    RDVL
+    VLCNT
   
 
     
@@ -8295,14 +8295,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../rdcnt/" class="md-nav__link">
+      <a href="../vlcadd/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    RDCNT
+    VLCADD
   
 
     
@@ -8323,14 +8323,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../addvl/" class="md-nav__link">
+      <a href="../vgather1/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    ADDVL
+    VGATHER1
   
 
     
@@ -8351,14 +8351,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../addpl/" class="md-nav__link">
+      <a href="../vscatter1/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    ADDPL
+    VSCATTER1
   
 
     
@@ -12572,6 +12572,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Vector Memory Operations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#one-lane-gather-and-scatter-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        One-Lane Gather and Scatter Steps
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -12630,21 +12647,67 @@
 <h2 id="element-types-and-assembly-spelling">Element Types and Assembly Spelling</h2>
 <p>A size-bearing vector instruction has one suffix. The integer element suffixes <code>B</code>, <code>W</code>, <code>L</code>, and <code>Q</code> select 1-, 2-, 4-, and 8-byte elements. The floating-point suffixes <code>H</code>, <code>S</code>, and <code>D</code> select IEEE 754 binary16, binary32, and binary64 elements. Binary16 is part of the vector FP facility; its default quiet NaN is <code>0x7e00</code>.</p>
 <p>An opcode family that supports both integer and floating-point arithmetic uses the three-bit <code>tzz</code> selector. Values zero through three select <code>B/W/L/Q</code>, value four is invalid, and values five through seven select <code>H/S/D</code>. A family whose numeric domain is fixed by its opcode uses a two-bit <code>zz</code> selector: integer families assign all four values to <code>B/W/L/Q</code>, while FP families reserve zero and assign one through three to <code>H/S/D</code>. A reserved selector does not name another data format.</p>
-<p>The suffix is the source width for a width-changing instruction; the destination width and signedness are part of the mnemonic. For example, <code>VEXTZQ.B</code> zero-extends a byte into a quadword. An instruction whose suffix controls only lane width accepts <code>H/S/D</code> as assembly aliases for <code>W/L/Q</code>; canonical disassembly uses <code>B/W/L/Q</code>. Predicate operations, <code>RDCNT</code>, <code>PLOOP</code>, <code>VMOV</code>, <code>VMOVZ</code>, and the permute, slide, slice, and zip families use this width-only rule.</p>
+<p>The suffix is the source width for a width-changing instruction; the destination width and signedness are part of the mnemonic. For example, <code>VEXTZQ.B</code> zero-extends a byte into a quadword. An instruction whose suffix controls only lane width accepts <code>H/S/D</code> as assembly aliases for <code>W/L/Q</code>; canonical disassembly uses <code>B/W/L/Q</code>. Predicate operations, <code>VLCNT</code>, <code>VLCADD</code>, <code>VGATHER1</code>, <code>VSCATTER1</code>, <code>PLOOP</code>, <code>VMOV</code>, <code>VMOVZ</code>, and the permute, slide, slice, and zip families use this width-only rule.</p>
 <h2 id="predicates-and-destination-images">Predicates and Destination Images</h2>
 <p>For an element size of <span class="arithmatex">\(E\)</span> bytes, logical lane <span class="arithmatex">\(i\)</span> is governed by predicate bit <span class="arithmatex">\(iE\)</span>. All other predicate bits are nonsignificant for that operation. Unless an instruction explicitly produces a complete predicate image or uses zeroing movement, a false governing bit annuls that lane: it performs no memory access, produces no exception, and preserves the old destination lane.</p>
 <p>An instruction that writes a predicate result writes a complete packed predicate image. It sets or clears each significant result bit and clears all nonsignificant bits. Integer comparisons support <code>EQ</code>, <code>NE</code>, <code>ULT</code>, <code>UGE</code>, <code>ULE</code>, <code>UGT</code>, <code>LT</code>, <code>GE</code>, <code>LE</code>, and <code>GT</code>. FP comparisons support <code>EQ</code>, <code>NE</code>, <code>LT</code>, <code>LE</code>, <code>GE</code>, <code>GT</code>, <code>VS</code> for unordered, and <code>VC</code> for ordered. <code>VTESTZ</code> and <code>VTESTNZ</code> are distinct integer test operations. Vector integer operations do not update scalar <code>FLAGS</code>.</p>
 <p><code>PLOOP</code> consumes a remaining-count register and an offset register. If the remaining count is zero, it takes its encoded branch target and does not change the predicate or either register. Otherwise, an offset greater than or equal to the selected lane count raises <code>VECTOR_RANGE_ERROR</code> with error code zero and leaves the instruction uncommitted. A valid nonzero iteration activates the next <span class="arithmatex">\(\min(remaining, lane\_count-offset)\)</span> lanes, subtracts that number from the remaining count, clears the offset register, and falls through. Software advances the offset between chunks when it needs a nonzero subsequent chunk origin.</p>
 <h2 id="lane-mapping-and-scalar-bridges">Lane Mapping and Scalar Bridges</h2>
 <p>Vector bytes use increasing-address little-endian order. A same-width operation treats a vector as VLEN divided by the selected element width lanes. For widening, narrowing, FP format conversion, and integer/FP conversion, the operation container is the larger of the source and destination widths. Each active container reads the source value from its low source-width part and writes the result into its low destination-width part. Other bits of an active destination container and every inactive container remain unchanged.</p>
-<p><code>VDUP</code> broadcasts a scalar register, FP register, or immediate into every lane. <code>VEXTRACT</code> and <code>VINSERT</code> use a scalar lane index. An index at or above the lane count raises <code>VECTOR_RANGE_ERROR</code> with error code one and commits no state. <code>RDVL</code> returns VLEN in bytes; <code>RDCNT</code> returns the selected lane count. <code>ADDVL</code> and <code>ADDPL</code> scale their signed immediate by VLEN bytes and packed predicate bytes, respectively.</p>
+<p><code>VDUP</code> broadcasts a scalar register, FP register, or immediate into every lane. <code>VEXTRACT</code> and <code>VINSERT</code> use a scalar lane index. An index at or above the lane count raises <code>VECTOR_RANGE_ERROR</code> with error code one and commits no state. <code>VLCNT</code> returns VLEN in bytes divided by the selected element width in bytes. <code>VLCADD</code> adds its signed eight-bit immediate multiplied by that lane count to its scalar destination modulo <span class="arithmatex">\(2^{64}\)</span>. Both operations preserve <code>FLAGS</code>; their <code>H/S/D</code> spellings are width-only aliases for <code>W/L/Q</code> and do not require the floating-point extension.</p>
 <h2 id="vector-memory-operations">Vector Memory Operations</h2>
-<p>A vector memory operand uses the ordinary compact, <code>EXT1</code>, and <code>EXT2</code> descriptor formats in vector context. The descriptor computes one scalar anchor address. The vector-context compact table supplies <code>VSTRIDE</code> selectors where the scalar table has stack-relative and immediate forms. A contiguous access uses</p>
+<p>A vector memory operand uses the ordinary compact, <code>EXT1</code>, and <code>EXT2</code> descriptor formats in vector context. The descriptor computes one scalar anchor address. A contiguous access uses</p>
 <div class="arithmatex">\[address[i] = anchor + iE,\]</div>
-<p>and <code>VSTRIDE</code> uses</p>
-<div class="arithmatex">\[address[i] = base + i\,signed64(stride) + displacement.\]</div>
 <p>All arithmetic is modulo <span class="arithmatex">\(2^{64}\)</span>. Existing effective-address auto-update is applied once to the scalar anchor in the ordinary architectural order; it is not repeated per lane.</p>
 <p>Inactive lanes issue no memory transaction. <code>VMOV</code> merges a memory source into its destination, while <code>VMOVZ</code> writes zero to inactive destination lanes. A memory-destination arithmetic form is a lane-wise read-modify-write, not an atomic operation. A vector instruction nevertheless has one architectural commit point: address evaluation, all active reads, computation, and all active writes must succeed before any register, predicate, memory, auto-update, <code>FFLAGS</code>, or PC effect becomes visible. After range, wrap, and canonicality checks, the implementation completes translation of every mapping covered by every active lane in increasing linear-address order. Only after all such translations succeed does it apply physical-class checks, the vector/gather/scatter MMIO-operation prohibition, alignment checks, and target or bus accesses, in that order. Consequently, a translation fault in a higher-address active lane takes precedence over an MMIO condition discovered in a lower-address active lane. When logical lane order differs from address order, translation and translation-fault selection still follow address order. The reported fault address identifies the lane whose range supplies the selected failure.</p>
+<h3 id="one-lane-gather-and-scatter-steps">One-Lane Gather and Scatter Steps</h3>
+<p><code>VGATHER1</code> and <code>VSCATTER1</code> are one-lane vector memory instructions eligible for unconditional <code>REP</code> and not for <code>REPcc</code>. Their canonical operand order is</p>
+<pre><code>VGATHER1.T  Pn, [address], Vd
+VSCATTER1.T Pn, Vs, [address]
+</code></pre>
+<p>The read-write lane cursor <code>Ri</code> appears inside every address expression. The vector address operand <code>Va</code> has no suffix; the instruction suffix selects both the transferred element width and the width of <code>Va[Ri]</code>. The encoded widths are <code>B/W/L/Q</code>. The <code>H/S/D</code> spellings are width-only aliases for <code>W/L/Q</code>, preserve raw element bits, require no floating-point extension, and disassemble canonically as <code>W/L/Q</code>.</p>
+<p>For element width <span class="arithmatex">\(E\)</span> bytes, let <span class="arithmatex">\(i=unsigned(Ri)\)</span> and <span class="arithmatex">\(N=VLEN/E\)</span>. The range check precedes predicate evaluation. If <span class="arithmatex">\(i\mathrel{\ge}N\)</span>, the instruction raises <code>VECTOR_RANGE_ERROR</code> with error code one and commits nothing. Otherwise predicate bit <code>Pn[iE]</code> governs the step. A false bit issues no memory transaction, increments <code>Ri</code> modulo <span class="arithmatex">\(2^{64}\)</span>, and commits. A true bit performs exactly one <span class="arithmatex">\(E\)</span>-byte access through the default data segment. On success, gather replaces only lane <span class="arithmatex">\(i\)</span> of <code>Vd</code>, or scatter stores lane <span class="arithmatex">\(i\)</span> of <code>Vs</code>; the instruction then increments <code>Ri</code> and commits. A memory fault leaves <code>Ri</code>, vector state, and memory unchanged. Both instructions preserve <code>FLAGS</code>.</p>
+<p>The address forms, before default-data-segment translation, are:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Form</th>
+<th style="text-align: left;">Offset</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">scalar stride</td>
+<td style="text-align: left;"><span class="arithmatex">\(Rb + unsigned(Ri)\mathbin{\cdot}signed64(Rs)\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;">absolute 32</td>
+<td style="text-align: left;"><span class="arithmatex">\(zero\_extend_{64}(Va.L[i])\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;">absolute 64</td>
+<td style="text-align: left;"><span class="arithmatex">\(Va.Q[i]\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;">vector byte displacement</td>
+<td style="text-align: left;"><span class="arithmatex">\(Rb + sign\_extend_{64}(Va.E[i])\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;">vector index</td>
+<td style="text-align: left;"><span class="arithmatex">\(Rb + zero\_extend_{64}(Va.E[i])\,E\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;">indexed plus <code>disp8s/16s/32s</code></td>
+<td style="text-align: left;">preceding indexed offset plus the signed payload</td>
+</tr>
+<tr>
+<td style="text-align: left;">indexed plus <code>disp64</code></td>
+<td style="text-align: left;">preceding indexed offset plus the exact 64-bit payload</td>
+</tr>
+</tbody>
+</table>
+<p>Address arithmetic is modulo <span class="arithmatex">\(2^{64}\)</span>. The absolute forms are offsets in the default data segment; they do not bypass segmentation. Absolute 32 is the fixed <code>L/S</code> width and zero-extends <code>Va.L[i]</code>; absolute 64 is the fixed <code>Q/D</code> width. In indexed syntax the scale is a literal equal to <span class="arithmatex">\(E\)</span> and is not a separately encoded field. The signed 8-, 16-, and 32-bit displacements and exact 64-bit displacement are appended payloads.</p>
+<p>Every base form requires <code>Ri != Rb</code>; scalar stride also requires <code>Ri != Rs</code>, while <code>Rb == Rs</code> is permitted. <code>Va == Vd</code> for gather and <code>Va == Vs</code> for scatter are permitted. The existing vector/gather/scatter MMIO-operation prohibition applies to these one-element transactions.</p>
 <h2 id="floating-point-exceptions-conversions-and-reductions">Floating-Point Exceptions, Conversions, and Reductions</h2>
 <p>Each active FP lane applies the corresponding scalar rounding, NaN, signed-zero, default-NaN, denormal, and exception rules. Inactive lanes generate no cause. The instruction unions all active-lane causes before testing the enables in the original <code>FSTATUS</code>. If any generated cause is enabled, one <code>FLOATING_POINT_FAULT</code> occurs and neither a destination effect nor newly accrued <code>FFLAGS</code> becomes visible. Otherwise the union is accrued once and all destination effects commit together. FP-to-integer conversion rounds toward zero and follows the scalar saturation and invalid result rules.</p>
 <p>Integer reductions return a zero-extended result in an <code>Rn</code>. For an empty predicate, ADD, OR, and XOR return zero; AND and unsigned MIN return the all-ones value of the selected width; signed MIN returns the signed maximum; signed MAX returns the signed minimum; and unsigned MAX returns zero. FP reductions return an <code>Fn</code>. Empty FP ADD returns positive zero, empty FP MIN returns positive infinity, and empty FP MAX returns negative infinity. FP ADD visits active lanes in increasing logical-lane order and may not be reassociated.</p>
@@ -12726,20 +12789,20 @@
 <td style="text-align: left;">Write each lane’s logical index.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><a href="../rdvl/"><code>RDVL</code></a></td>
-<td style="text-align: left;">Write VLEN in bytes to ‘Rn‘.</td>
+<td style="text-align: left;"><a href="../vlcnt/"><code>VLCNT</code></a></td>
+<td style="text-align: left;">Write the number of lanes of the selected element width.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><a href="../rdcnt/"><code>RDCNT</code></a></td>
-<td style="text-align: left;">Write the number of elements of the selected size in one ‘Vn‘.</td>
+<td style="text-align: left;"><a href="../vlcadd/"><code>VLCADD</code></a></td>
+<td style="text-align: left;">Add a signed immediate multiple of the selected lane count to ‘Rn‘.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><a href="../addvl/"><code>ADDVL</code></a></td>
-<td style="text-align: left;">Destructively add a signed integer multiple of VLEN bytes to ‘Rd‘.</td>
+<td style="text-align: left;"><a href="../vgather1/"><code>VGATHER1</code></a></td>
+<td style="text-align: left;">Conditionally gather one vector lane and advance its lane cursor.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><a href="../addpl/"><code>ADDPL</code></a></td>
-<td style="text-align: left;">Destructively add a signed integer multiple of the packed predicate-image size to ‘Rd‘.</td>
+<td style="text-align: left;"><a href="../vscatter1/"><code>VSCATTER1</code></a></td>
+<td style="text-align: left;">Conditionally scatter one vector lane and advance its lane cursor.</td>
 </tr>
 <tr>
 <td style="text-align: left;"><a href="../ptrue/"><code>PTRUE</code></a></td>

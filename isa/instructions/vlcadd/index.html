@@ -11,10 +11,10 @@
       
       
       
-        <link rel="prev" href="../addvl/">
+        <link rel="prev" href="../vlcnt/">
       
       
-        <link rel="next" href="../ptrue/">
+        <link rel="next" href="../vgather1/">
       
       
         
@@ -25,7 +25,7 @@
     
     
       
-        <title>ADDPL - Bedrock Architecture</title>
+        <title>VLCADD - Bedrock Architecture</title>
       
     
     
@@ -66,7 +66,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#addpl" class="md-skip">
+        <a href="#vlcadd" class="md-skip">
           Skip to content
         </a>
       
@@ -102,7 +102,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              ADDPL
+              VLCADD
             
           </span>
         </div>
@@ -8267,70 +8267,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../rdvl/" class="md-nav__link">
+      <a href="../vlcnt/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    RDVL
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../rdcnt/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    RDCNT
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../addvl/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    ADDVL
+    VLCNT
   
 
     
@@ -8367,7 +8311,7 @@
   <span class="md-ellipsis">
     
   
-    ADDPL
+    VLCADD
   
 
     
@@ -8385,7 +8329,7 @@
   <span class="md-ellipsis">
     
   
-    ADDPL
+    VLCADD
   
 
     
@@ -8458,6 +8402,62 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../vgather1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VGATHER1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../vscatter1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VSCATTER1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -12682,11 +12682,11 @@
 
 
 
-<h1 id="addpl">ADDPL</h1>
+<h1 id="vlcadd">VLCADD</h1>
 <h2 id="operation">Operation</h2>
-<p>Destructively add a signed integer multiple of the packed predicate-image size to ‘Rd‘.</p>
+<p>Add signed ‘imm8‘ multiplied by VLEN in bytes divided by the selected element width in bytes, modulo 2^64.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
-<p><code>ADDPL &lt;imm8s&gt;, Rn(r)</code></p>
+<p><code>VLCADD.BWLQ(z) &lt;imm8s&gt;, Rn(r)</code></p>
 <h2 id="attributes">Attributes</h2>
 <p>Class = vector</p>
 <p>Family = vector</p>
@@ -12695,13 +12695,14 @@
 <p>Feature = <code>VECTOR</code></p>
 <p>Repeat = <code>none</code></p>
 <h2 id="encodings">Encodings</h2>
-<p><strong><code>ADDPL &lt;imm8s&gt;, Rn(r)</code></strong></p>
+<p><strong><code>VLCADD.BWLQ(z) &lt;imm8s&gt;, Rn(r)</code></strong></p>
 <p><em>Encoding class: long; required bytes: 5 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for ADDPL \&lt;imm8s&gt;, Rn(r)" src="../../../assets/visuals/isa/addpl-01.svg" /></p>
-<p><strong>Format Instruction format for ADDPL \&lt;imm8s&gt;, Rn(r)</strong></p>
+<p><img alt="Format — Instruction format for VLCADD.BWLQ(z) \&lt;imm8s&gt;, Rn(r)" src="../../../assets/visuals/isa/vlcadd-01.svg" /></p>
+<p><strong>Format Instruction format for VLCADD.BWLQ(z) \&lt;imm8s&gt;, Rn(r)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
+<p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
 <p><strong>Register field <code>r</code></strong> — Selects the destination operand.</p>
 
 

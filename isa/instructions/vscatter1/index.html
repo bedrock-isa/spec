@@ -11,10 +11,10 @@
       
       
       
-        <link rel="prev" href="../vindex/">
+        <link rel="prev" href="../vgather1/">
       
       
-        <link rel="next" href="../rdcnt/">
+        <link rel="next" href="../ptrue/">
       
       
         
@@ -25,7 +25,7 @@
     
     
       
-        <title>RDVL - Bedrock Architecture</title>
+        <title>VSCATTER1 - Bedrock Architecture</title>
       
     
     
@@ -66,7 +66,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#rdvl" class="md-skip">
+        <a href="#vscatter1" class="md-skip">
           Skip to content
         </a>
       
@@ -102,7 +102,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              RDVL
+              VSCATTER1
             
           </span>
         </div>
@@ -8264,6 +8264,90 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../vlcnt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VLCNT
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../vlcadd/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VLCADD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../vgather1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VGATHER1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -8283,7 +8367,7 @@
   <span class="md-ellipsis">
     
   
-    RDVL
+    VSCATTER1
   
 
     
@@ -8301,7 +8385,7 @@
   <span class="md-ellipsis">
     
   
-    RDVL
+    VSCATTER1
   
 
     
@@ -8360,6 +8444,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#exceptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Exceptions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -8374,90 +8469,6 @@
   
 </nav>
       
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../rdcnt/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    RDCNT
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../addvl/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    ADDVL
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../addpl/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    ADDPL
-  
-
-    
-  </span>
-  
-  
-
-      </a>
     </li>
   
 
@@ -12655,6 +12666,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#exceptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Exceptions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#encodings" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -12682,27 +12704,142 @@
 
 
 
-<h1 id="rdvl">RDVL</h1>
+<h1 id="vscatter1">VSCATTER1</h1>
 <h2 id="operation">Operation</h2>
-<p>Write VLEN in bytes to ‘Rn‘.</p>
+<p>Range-check the lane cursor, then conditionally store one selected element through the default data segment and advance the cursor.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
-<p><code>RDVL Rn(r)</code></p>
+<p><code>VSCATTER1.BWLQ(z) Pn(p), Vn(v), [Rn(b) + Rn(i) * Rn(s)]</code></p>
+<p><code>VSCATTER1.L Pn(p), Vn(v), [Vn(x)[Rn(i)]]</code></p>
+<p><code>VSCATTER1.Q Pn(p), Vn(v), [Vn(x)[Rn(i)]]</code></p>
+<p><code>VSCATTER1.BWLQ(z) Pn(p), Vn(v), [Rn(b) + Vn(x)[Rn(i)]]</code></p>
+<p><code>VSCATTER1.BWLQ(z) Pn(p), Vn(v), [Rn(b) + Vn(x)[Rn(i)] * &lt;scale&gt;]</code></p>
+<p><code>VSCATTER1.BWLQ(z) Pn(p), Vn(v), [Rn(b) + Vn(x)[Rn(i)] * &lt;scale&gt; + &lt;disp8s&gt;]</code></p>
+<p><code>VSCATTER1.BWLQ(z) Pn(p), Vn(v), [Rn(b) + Vn(x)[Rn(i)] * &lt;scale&gt; + &lt;disp16s&gt;]</code></p>
+<p><code>VSCATTER1.BWLQ(z) Pn(p), Vn(v), [Rn(b) + Vn(x)[Rn(i)] * &lt;scale&gt; + &lt;disp32s&gt;]</code></p>
+<p><code>VSCATTER1.BWLQ(z) Pn(p), Vn(v), [Rn(b) + Vn(x)[Rn(i)] * &lt;scale&gt; + &lt;disp64&gt;]</code></p>
 <h2 id="attributes">Attributes</h2>
 <p>Class = vector</p>
 <p>Family = vector</p>
 <p>Privilege = unprivileged</p>
-<p>Length = 4 bytes</p>
+<p>Length = 6-14 bytes</p>
 <p>Feature = <code>VECTOR</code></p>
-<p>Repeat = <code>none</code></p>
+<p>Repeat = <code>REP</code></p>
+<h2 id="exceptions">Exceptions</h2>
+<p><code>VECTOR_RANGE_ERROR</code>: the unsigned lane cursor is greater than or equal to the selected lane count</p>
 <h2 id="encodings">Encodings</h2>
-<p><strong><code>RDVL Rn(r)</code></strong></p>
-<p><em>Encoding class: long; required bytes: 4 bytes; privilege: unprivileged</em></p>
+<p><strong><code>VSCATTER1.BWLQ(z) Pn(p), Vn(v), [Rn(b) + Rn(i) * Rn(s)]</code></strong></p>
+<p><em>Encoding class: xxlong; required bytes: 6 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for RDVL Rn(r)" src="../../../assets/visuals/isa/rdvl-01.svg" /></p>
-<p><strong>Format Instruction format for RDVL Rn(r)</strong></p>
+<p><img alt="Format — Instruction format for VSCATTER1.BWLQ(z) Pn(p), Vn(v), [Rn(b) + Rn(i) * Rn(s)]" src="../../../assets/visuals/isa/vscatter1-01.svg" /></p>
+<p><strong>Format Instruction format for VSCATTER1.BWLQ(z) Pn(p), Vn(v), [Rn(b) + Rn(i) * Rn(s)]</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
-<p><strong>Register field <code>r</code></strong> — Selects the operand.</p>
+<p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
+<p><strong>Register field <code>b</code></strong> — Selects operand 3.</p>
+<p><strong>Bits field <code>p</code></strong> — Encodes the bits value.</p>
+<p><strong>Register field <code>i</code></strong> — Selects operand 3.</p>
+<p><strong>Register field <code>s</code></strong> — Selects operand 3.</p>
+<p><strong>Bits field <code>v</code></strong> — Encodes the bits value.</p>
+<p><strong><code>VSCATTER1.L Pn(p), Vn(v), [Vn(x)[Rn(i)]]</code></strong></p>
+<p><em>Encoding class: xxlong; required bytes: 6 bytes; privilege: unprivileged</em></p>
+<p><strong>Instruction Format:</strong></p>
+<p><img alt="Format — Instruction format for VSCATTER1.L Pn(p), Vn(v), [Vn(x)[Rn(i)]]" src="../../../assets/visuals/isa/vscatter1-02.svg" /></p>
+<p><strong>Format Instruction format for VSCATTER1.L Pn(p), Vn(v), [Vn(x)[Rn(i)]]</strong></p>
+<p><strong>Instruction Fields:</strong></p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
+<p><strong>Bits field <code>p</code></strong> — Encodes the bits value.</p>
+<p><strong>Register field <code>i</code></strong> — Selects operand 3.</p>
+<p><strong>Bits field <code>v</code></strong> — Encodes the bits value.</p>
+<p><strong>Bits field <code>x</code></strong> — Encodes the bits value.</p>
+<p><strong><code>VSCATTER1.Q Pn(p), Vn(v), [Vn(x)[Rn(i)]]</code></strong></p>
+<p><em>Encoding class: xxlong; required bytes: 6 bytes; privilege: unprivileged</em></p>
+<p><strong>Instruction Format:</strong></p>
+<p><img alt="Format — Instruction format for VSCATTER1.Q Pn(p), Vn(v), [Vn(x)[Rn(i)]]" src="../../../assets/visuals/isa/vscatter1-03.svg" /></p>
+<p><strong>Format Instruction format for VSCATTER1.Q Pn(p), Vn(v), [Vn(x)[Rn(i)]]</strong></p>
+<p><strong>Instruction Fields:</strong></p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
+<p><strong>Bits field <code>p</code></strong> — Encodes the bits value.</p>
+<p><strong>Register field <code>i</code></strong> — Selects operand 3.</p>
+<p><strong>Bits field <code>v</code></strong> — Encodes the bits value.</p>
+<p><strong>Bits field <code>x</code></strong> — Encodes the bits value.</p>
+<p><strong><code>VSCATTER1.BWLQ(z) Pn(p), Vn(v), [Rn(b) + Vn(x)[Rn(i)]]</code></strong></p>
+<p><em>Encoding class: xxlong; required bytes: 6 bytes; privilege: unprivileged</em></p>
+<p><strong>Instruction Format:</strong></p>
+<p><img alt="Format — Instruction format for VSCATTER1.BWLQ(z) Pn(p), Vn(v), [Rn(b) + Vn(x)[Rn(i)]]" src="../../../assets/visuals/isa/vscatter1-04.svg" /></p>
+<p><strong>Format Instruction format for VSCATTER1.BWLQ(z) Pn(p), Vn(v), [Rn(b) + Vn(x)[Rn(i)]]</strong></p>
+<p><strong>Instruction Fields:</strong></p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
+<p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
+<p><strong>Register field <code>b</code></strong> — Selects operand 3.</p>
+<p><strong>Bits field <code>p</code></strong> — Encodes the bits value.</p>
+<p><strong>Register field <code>i</code></strong> — Selects operand 3.</p>
+<p><strong>Bits field <code>v</code></strong> — Encodes the bits value.</p>
+<p><strong>Bits field <code>x</code></strong> — Encodes the bits value.</p>
+<p><strong><code>VSCATTER1.BWLQ(z) Pn(p), Vn(v), [Rn(b) + Vn(x)[Rn(i)] * &lt;scale&gt;]</code></strong></p>
+<p><em>Encoding class: xxlong; required bytes: 6 bytes; privilege: unprivileged</em></p>
+<p><strong>Instruction Format:</strong></p>
+<p><img alt="Format — Instruction format for VSCATTER1.BWLQ(z) Pn(p), Vn(v), [Rn(b) + Vn(x)[Rn(i)] * \&lt;scale&gt;]" src="../../../assets/visuals/isa/vscatter1-05.svg" /></p>
+<p><strong>Format Instruction format for VSCATTER1.BWLQ(z) Pn(p), Vn(v), [Rn(b) + Vn(x)[Rn(i)] * \&lt;scale&gt;]</strong></p>
+<p><strong>Instruction Fields:</strong></p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
+<p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
+<p><strong>Register field <code>b</code></strong> — Selects operand 3.</p>
+<p><strong>Bits field <code>p</code></strong> — Encodes the bits value.</p>
+<p><strong>Register field <code>i</code></strong> — Selects operand 3.</p>
+<p><strong>Bits field <code>v</code></strong> — Encodes the bits value.</p>
+<p><strong>Bits field <code>x</code></strong> — Encodes the bits value.</p>
+<p><strong><code>VSCATTER1.BWLQ(z) Pn(p), Vn(v), [Rn(b) + Vn(x)[Rn(i)] * &lt;scale&gt; + &lt;disp8s&gt;]</code></strong></p>
+<p><em>Encoding class: xxlong; required bytes: 7 bytes; privilege: unprivileged</em></p>
+<p><strong>Instruction Format:</strong></p>
+<p><img alt="Format — Instruction format for VSCATTER1.BWLQ(z) Pn(p), Vn(v), [Rn(b) + Vn(x)[Rn(i)] * \&lt;scale&gt; + \&lt;disp8s&gt;]" src="../../../assets/visuals/isa/vscatter1-06.svg" /></p>
+<p><strong>Format Instruction format for VSCATTER1.BWLQ(z) Pn(p), Vn(v), [Rn(b) + Vn(x)[Rn(i)] * \&lt;scale&gt; + \&lt;disp8s&gt;]</strong></p>
+<p><strong>Instruction Fields:</strong></p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
+<p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
+<p><strong>Register field <code>b</code></strong> — Selects operand 3.</p>
+<p><strong>Bits field <code>p</code></strong> — Encodes the bits value.</p>
+<p><strong>Register field <code>i</code></strong> — Selects operand 3.</p>
+<p><strong>Bits field <code>v</code></strong> — Encodes the bits value.</p>
+<p><strong>Bits field <code>x</code></strong> — Encodes the bits value.</p>
+<p><strong><code>VSCATTER1.BWLQ(z) Pn(p), Vn(v), [Rn(b) + Vn(x)[Rn(i)] * &lt;scale&gt; + &lt;disp16s&gt;]</code></strong></p>
+<p><em>Encoding class: xxlong; required bytes: 8 bytes; privilege: unprivileged</em></p>
+<p><strong>Instruction Format:</strong></p>
+<p><img alt="Format — Instruction format for VSCATTER1.BWLQ(z) Pn(p), Vn(v), [Rn(b) + Vn(x)[Rn(i)] * \&lt;scale&gt; + \&lt;disp16s&gt;]" src="../../../assets/visuals/isa/vscatter1-07.svg" /></p>
+<p><strong>Format Instruction format for VSCATTER1.BWLQ(z) Pn(p), Vn(v), [Rn(b) + Vn(x)[Rn(i)] * \&lt;scale&gt; + \&lt;disp16s&gt;]</strong></p>
+<p><strong>Instruction Fields:</strong></p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
+<p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
+<p><strong>Register field <code>b</code></strong> — Selects operand 3.</p>
+<p><strong>Bits field <code>p</code></strong> — Encodes the bits value.</p>
+<p><strong>Register field <code>i</code></strong> — Selects operand 3.</p>
+<p><strong>Bits field <code>v</code></strong> — Encodes the bits value.</p>
+<p><strong>Bits field <code>x</code></strong> — Encodes the bits value.</p>
+<p><strong><code>VSCATTER1.BWLQ(z) Pn(p), Vn(v), [Rn(b) + Vn(x)[Rn(i)] * &lt;scale&gt; + &lt;disp32s&gt;]</code></strong></p>
+<p><em>Encoding class: xxlong; required bytes: 10 bytes; privilege: unprivileged</em></p>
+<p><strong>Instruction Format:</strong></p>
+<p><img alt="Format — Instruction format for VSCATTER1.BWLQ(z) Pn(p), Vn(v), [Rn(b) + Vn(x)[Rn(i)] * \&lt;scale&gt; + \&lt;disp32s&gt;]" src="../../../assets/visuals/isa/vscatter1-08.svg" /></p>
+<p><strong>Format Instruction format for VSCATTER1.BWLQ(z) Pn(p), Vn(v), [Rn(b) + Vn(x)[Rn(i)] * \&lt;scale&gt; + \&lt;disp32s&gt;]</strong></p>
+<p><strong>Instruction Fields:</strong></p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
+<p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
+<p><strong>Register field <code>b</code></strong> — Selects operand 3.</p>
+<p><strong>Bits field <code>p</code></strong> — Encodes the bits value.</p>
+<p><strong>Register field <code>i</code></strong> — Selects operand 3.</p>
+<p><strong>Bits field <code>v</code></strong> — Encodes the bits value.</p>
+<p><strong>Bits field <code>x</code></strong> — Encodes the bits value.</p>
+<p><strong><code>VSCATTER1.BWLQ(z) Pn(p), Vn(v), [Rn(b) + Vn(x)[Rn(i)] * &lt;scale&gt; + &lt;disp64&gt;]</code></strong></p>
+<p><em>Encoding class: xxlong; required bytes: 14 bytes; privilege: unprivileged</em></p>
+<p><strong>Instruction Format:</strong></p>
+<p><img alt="Format — Instruction format for VSCATTER1.BWLQ(z) Pn(p), Vn(v), [Rn(b) + Vn(x)[Rn(i)] * \&lt;scale&gt; + \&lt;disp64&gt;]" src="../../../assets/visuals/isa/vscatter1-09.svg" /></p>
+<p><strong>Format Instruction format for VSCATTER1.BWLQ(z) Pn(p), Vn(v), [Rn(b) + Vn(x)[Rn(i)] * \&lt;scale&gt; + \&lt;disp64&gt;]</strong></p>
+<p><strong>Instruction Fields:</strong></p>
+<p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
+<p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
+<p><strong>Register field <code>b</code></strong> — Selects operand 3.</p>
+<p><strong>Bits field <code>p</code></strong> — Encodes the bits value.</p>
+<p><strong>Register field <code>i</code></strong> — Selects operand 3.</p>
+<p><strong>Bits field <code>v</code></strong> — Encodes the bits value.</p>
+<p><strong>Bits field <code>x</code></strong> — Encodes the bits value.</p>
 
 
 

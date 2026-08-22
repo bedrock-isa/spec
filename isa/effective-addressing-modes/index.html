@@ -8371,14 +8371,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/rdvl/" class="md-nav__link">
+      <a href="../instructions/vlcnt/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    RDVL
+    VLCNT
   
 
     
@@ -8399,14 +8399,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/rdcnt/" class="md-nav__link">
+      <a href="../instructions/vlcadd/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    RDCNT
+    VLCADD
   
 
     
@@ -8427,14 +8427,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/addvl/" class="md-nav__link">
+      <a href="../instructions/vgather1/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    ADDVL
+    VGATHER1
   
 
     
@@ -8455,14 +8455,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../instructions/addpl/" class="md-nav__link">
+      <a href="../instructions/vscatter1/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    ADDPL
+    VSCATTER1
   
 
     
@@ -12714,12 +12714,12 @@
 
 <h1 id="effective-address-profiles">Effective-Address Profiles</h1>
 <p>EA, FEA, and VEA are seven-bit compact effective-address profiles selected by the consuming instruction’s operand type. They share the memory address calculation rules and the EXT1 and EXT2 descriptor grammar in this section; the compact comparison table identifies the profile-specific encodings. An effective-address field is an operand descriptor with an instruction-defined role and interpretation width. A value role reads or writes the selected register, immediate, or memory value. An address role uses a register or immediate as an address value and uses a memory-form EA as the calculated address without an initial data read. A control-target role uses a register or immediate value directly and reads an interpretation-width target from a memory form. Memory forms continue into segment pre-translation and paging.</p>
-<p>Each compact field is embedded in the instruction’s opcode space, and all compact fields precede any appended effective-address payload bytes. Any displacement, absolute address, immediate, VSTRIDE descriptor, or extended descriptor bytes are appended as one operand’s payload sequence. Sequences appear in declared instruction operand order. For two payload-bearing operands, the encoded stream is: opcode space containing operand 0 and operand 1 <span class="arithmatex">\(\rightarrow\)</span> complete operand 0 payload sequence <span class="arithmatex">\(\rightarrow\)</span> complete operand 1 payload sequence <span class="arithmatex">\(\rightarrow\)</span> any trailing padding.</p>
+<p>Each compact field is embedded in the instruction’s opcode space, and all compact fields precede any appended effective-address payload bytes. Any displacement, absolute address, immediate, or extended descriptor bytes are appended as one operand’s payload sequence. Sequences appear in declared instruction operand order. For two payload-bearing operands, the encoded stream is: opcode space containing operand 0 and operand 1 <span class="arithmatex">\(\rightarrow\)</span> complete operand 0 payload sequence <span class="arithmatex">\(\rightarrow\)</span> complete operand 1 payload sequence <span class="arithmatex">\(\rightarrow\)</span> any trailing padding.</p>
 <p>Multi-byte payloads, such as displacements, absolute addresses, and immediates, are little-endian. Payload names ending in s are signed and are sign-extended before use; payload names without s are unsigned unless the consuming instruction explicitly says otherwise. Extended descriptor bytes appear in stream order, byte 0 first. Each descriptor byte is independently numbered from bit 7 through bit 0.</p>
 <p>Indexed scale is the EA interpretation width declared by the consuming instruction encoding. B, W, L, and Q widths select scales 1, 2, 4, and 8. An encoding whose width is <code>operation_size</code> uses its selected instruction size. LEA and SEGLEA use their suffix; size-less instructions with address or control-target roles use Q.</p>
 <p>For every compact or extended-descriptor PC-based EA, the PC term is the architectural PC naming byte 0 of the current instruction. The PC term remains that instruction-start value throughout operand evaluation.</p>
 <h2 id="compact-profile-encodings">Compact Profile Encodings</h2>
-<p>The scalar EA profile encodes common Rn/SP/PC memory operands, absolute memory operands, integer immediate operands, and the EXT1 and EXT2 escapes. FEA retains the scalar memory and EXT encodings except that <code>0x58</code>, <code>0x5B</code>, and <code>0x5C</code> are reserved and <code>0x5D</code> and <code>0x5E</code> select floating-point immediates. VEA retains the scalar memory and EXT encodings except that <code>0x58</code> and <code>0x5B</code>–<code>0x5E</code> select VSTRIDE forms.</p>
+<p>The scalar EA profile encodes common Rn/SP/PC memory operands, absolute memory operands, integer immediate operands, and the EXT1 and EXT2 escapes. FEA retains the scalar memory and EXT encodings except that <code>0x58</code>, <code>0x5B</code>, and <code>0x5C</code> are reserved and <code>0x5D</code> and <code>0x5E</code> select floating-point immediates. VEA retains the scalar memory and EXT encodings except that <code>0x58</code> and <code>0x5B</code>–<code>0x5E</code> are reserved. These values do not inherit the scalar EA forms at the same compact selectors.</p>
 <p>Compact memory forms that do not name SP or PC use the operation default data segment. SP memory forms are fixed to SS, and PC memory forms are fixed to CS.</p>
 <p><strong><code>Rn Memory</code></strong></p>
 <p><code>[Rn(r)]</code></p>
@@ -12903,7 +12903,7 @@
 <td style="text-align: left;"><code>1011000 (0x58)</code></td>
 <td style="text-align: left;"><code>[SP]</code></td>
 <td style="text-align: left;"><code>reserved</code></td>
-<td style="text-align: left;"><code>VSTRIDE</code></td>
+<td style="text-align: left;"><code>reserved</code></td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>1011001 (0x59)</code></td>
@@ -12921,25 +12921,25 @@
 <td style="text-align: left;"><code>1011011 (0x5B)</code></td>
 <td style="text-align: left;"><code>imm8s</code></td>
 <td style="text-align: left;"><code>reserved</code></td>
-<td style="text-align: left;"><code>VSTRIDE/disp8s</code></td>
+<td style="text-align: left;"><code>reserved</code></td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>1011100 (0x5C)</code></td>
 <td style="text-align: left;"><code>imm16s</code></td>
 <td style="text-align: left;"><code>reserved</code></td>
-<td style="text-align: left;"><code>VSTRIDE/disp16s</code></td>
+<td style="text-align: left;"><code>reserved</code></td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>1011101 (0x5D)</code></td>
 <td style="text-align: left;"><code>imm32s</code></td>
 <td style="text-align: left;"><code>immsf</code></td>
-<td style="text-align: left;"><code>VSTRIDE/disp32s</code></td>
+<td style="text-align: left;"><code>reserved</code></td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>1011110 (0x5E)</code></td>
 <td style="text-align: left;"><code>imm64</code></td>
 <td style="text-align: left;"><code>immdf</code></td>
-<td style="text-align: left;"><code>VSTRIDE/disp64</code></td>
+<td style="text-align: left;"><code>reserved</code></td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>1011111 (0x5F)</code></td>
@@ -13014,19 +13014,15 @@
 <p><code>immsf</code> carries the exact IEEE 754 binary32 interchange encoding and <code>immdf</code> carries the exact binary64 interchange encoding. Either source form is valid for either an S or D instruction. The payload format defines the source format and the instruction suffix defines the operation format. When they differ, operand evaluation converts the immediate to the operation format under the architectural IEEE 754 environment before the instruction operation. The conversion uses <code>FSTATUS.RM</code>; its floating-point exception causes are combined with the operation’s causes and are tested and committed atomically under the ordinary precise floating-point fault rules. An FEA floating-point immediate is never a valid destination.</p>
 <h3 id="vector-vea-lane-addressing">Vector VEA Lane Addressing</h3>
 <p>For an ordinary compact or EXT VEA memory form, address calculation first produces one scalar anchor using the shared base, scalar Rn index, scale, displacement, segment, and auto-update grammar. Lane <span class="arithmatex">\(n\)</span> accesses <code>anchor + n * element_bytes</code>. Scatter/gather addressing is not a VEA descriptor form and is reserved for separate vector instructions.</p>
-<p>A VSTRIDE form appends one descriptor byte <code>bbbbiiii</code>. Field <code>bbbb</code> selects the scalar base Rn and <code>iiii</code> selects a scalar Rn containing a signed 64-bit byte stride. For lane <span class="arithmatex">\(n\)</span>, before segment translation, the offset is $<span class="arithmatex">\(\texttt{Rn(base)} + n \mathbin{*} \texttt{signed64(Rn(stride))} + \texttt{displacement}.\)</span>$ The compact VSTRIDE encoding selects no displacement or a signed 8-, 16-, 32-, or unsigned 64-bit displacement.</p>
 <h2 id="shared-extended-descriptor">Shared Extended Descriptor</h2>
 <p>A compact EXT1 or EXT2 value in any profile selects both an exact descriptor length and the displacement width. The descriptor bytes then select segment, base, index, zero-base, SP/PC indexed, and auto-update behavior within that family.</p>
 <p>Each extended descriptor selects its segment from the encoded SREG field SEG(s), the fixed SS segment for SP, the fixed CS segment for PC, or the operation’s default data segment.</p>
 <p><img alt="Compact Effective-Address Field" src="../../assets/visuals/isa/effective-addressing-modes-06.svg" /></p>
 <p><strong>Compact Effective-Address Field</strong></p>
 <p><code>M</code> abbreviates mode, and <code>r/f</code> abbreviates register/form.</p>
-<p><img alt="VSTRIDE Descriptor" src="../../assets/visuals/isa/effective-addressing-modes-07.svg" /></p>
-<p><strong>VSTRIDE Descriptor</strong></p>
-<p><code>b</code> selects the scalar base Rn and <code>i</code> selects the scalar signed-64 byte-stride Rn.</p>
-<p><img alt="EXT1 Descriptor Forms" src="../../assets/visuals/isa/effective-addressing-modes-08.svg" /></p>
+<p><img alt="EXT1 Descriptor Forms" src="../../assets/visuals/isa/effective-addressing-modes-07.svg" /></p>
 <p><strong>EXT1 Descriptor Forms</strong></p>
-<p><img alt="EXT2 Descriptor Byte Layouts" src="../../assets/visuals/isa/effective-addressing-modes-09.svg" /></p>
+<p><img alt="EXT2 Descriptor Byte Layouts" src="../../assets/visuals/isa/effective-addressing-modes-08.svg" /></p>
 <p><strong>EXT2 Descriptor Byte Layouts</strong></p>
 <p><code>M</code> abbreviates mode.</p>
 <p><strong>EA Payload Names</strong></p>
@@ -13113,12 +13109,6 @@
 <td style="text-align: left;">exact IEEE 754 binary64 floating-point payload</td>
 </tr>
 <tr>
-<td style="text-align: left;">VSTRIDE descriptor</td>
-<td style="text-align: left;">1</td>
-<td style="text-align: left;">encoded</td>
-<td style="text-align: left;">one-byte vector base/stride descriptor; present only for VSTRIDE escapes</td>
-</tr>
-<tr>
 <td style="text-align: left;">EXT1 descriptor</td>
 <td style="text-align: left;">1</td>
 <td style="text-align: left;">encoded</td>
@@ -13143,7 +13133,7 @@
 <p><strong>Segment:</strong>SEG(s) selects DS, SS, or GS0..GS5.</p>
 <p><strong>Payload:</strong>One descriptor byte plus the optional displacement selected by the compact EXT1 escape.</p>
 <p><strong>Update:</strong>No auto-update.</p>
-<p><img alt="EXT1 explicit segment base" src="../../assets/visuals/isa/effective-addressing-modes-10.svg" /></p>
+<p><img alt="EXT1 explicit segment base" src="../../assets/visuals/isa/effective-addressing-modes-09.svg" /></p>
 <p><strong>EXT1 explicit segment base</strong></p>
 <p><strong><code>EXT2 Explicit Segment Indexed</code></strong></p>
 <p><code>[SEG(s):Rn(b) + Rn(i) * scale + displacement]</code></p>
@@ -13155,7 +13145,7 @@
 <p><strong>Scale:</strong>Scale is implicit in the consuming instruction. B/W/L/Q normally imply 1/2/4/8.</p>
 <p><strong>Payload:</strong>Two descriptor bytes plus the optional displacement selected by the compact EXT2 escape.</p>
 <p><strong>Update:</strong>Index postincrement uses the current temporary Rn(i), then increments it by one element. Index predecrement decrements temporary Rn(i) by one element before use.</p>
-<p><img alt="EXT2 explicit segment indexed" src="../../assets/visuals/isa/effective-addressing-modes-11.svg" /></p>
+<p><img alt="EXT2 explicit segment indexed" src="../../assets/visuals/isa/effective-addressing-modes-10.svg" /></p>
 <p><strong>EXT2 explicit segment indexed</strong></p>
 <p><strong><code>EXT1 Explicit Segment Zero Base</code></strong></p>
 <p><code>[SEG(s):0 + displacement]</code></p>
@@ -13164,7 +13154,7 @@
 <p><strong>Segment:</strong>SEG(s) selects DS, SS, or GS0..GS5.</p>
 <p><strong>Payload:</strong>One descriptor byte plus the optional displacement selected by the compact EXT1 escape.</p>
 <p><strong>Update:</strong>No auto-update.</p>
-<p><img alt="EXT1 zero-base address generation" src="../../assets/visuals/isa/effective-addressing-modes-12.svg" /></p>
+<p><img alt="EXT1 zero-base address generation" src="../../assets/visuals/isa/effective-addressing-modes-11.svg" /></p>
 <p><strong>EXT1 zero-base address generation</strong></p>
 <p><strong><code>EXT2 Explicit Segment Base Auto-Update</code></strong></p>
 <p><code>[SEG(s):Rn(b)++ + displacement]</code></p>
@@ -13174,7 +13164,7 @@
 <p><strong>Segment:</strong>SEG(s) selects DS, SS, or GS0..GS5.</p>
 <p><strong>Payload:</strong>Two descriptor bytes plus the optional displacement selected by the compact EXT2 escape.</p>
 <p><strong>Update:</strong>Base postincrement uses the current temporary Rn(b), then increments it by the memory access size. Base predecrement decrements temporary Rn(b) by the memory access size before use.</p>
-<p><img alt="EXT2 base auto-update" src="../../assets/visuals/isa/effective-addressing-modes-13.svg" /></p>
+<p><img alt="EXT2 base auto-update" src="../../assets/visuals/isa/effective-addressing-modes-12.svg" /></p>
 <p><strong>EXT2 base auto-update</strong></p>
 <p><strong><code>EXT2 Explicit Segment Zero-Base Indexed</code></strong></p>
 <p><code>[SEG(s):0 + Rn(i) * scale + displacement]</code></p>
@@ -13185,7 +13175,7 @@
 <p><strong>Segment:</strong>SEG(s) selects DS, SS, or GS0..GS5.</p>
 <p><strong>Payload:</strong>Two descriptor bytes plus the optional displacement selected by the compact EXT2 escape.</p>
 <p><strong>Update:</strong>Index update follows the same one-element temporary-state rule as other indexed update forms.</p>
-<p><img alt="EXT2 zero-base indexed" src="../../assets/visuals/isa/effective-addressing-modes-14.svg" /></p>
+<p><img alt="EXT2 zero-base indexed" src="../../assets/visuals/isa/effective-addressing-modes-13.svg" /></p>
 <p><strong>EXT2 zero-base indexed</strong></p>
 <p><strong><code>EXT2 SP/PC Indexed</code></strong></p>
 <p><code>[SP + Rn(i) * scale + displacement]</code></p>
@@ -13199,7 +13189,7 @@
 <p><strong>Segment:</strong>SP forms are fixed to SS. PC forms are fixed to CS.</p>
 <p><strong>Payload:</strong>Two descriptor bytes plus the optional displacement selected by the compact EXT2 escape.</p>
 <p><strong>Update:</strong>Auto-update applies to the Rn(i) index register.</p>
-<p><img alt="EXT2 SP/PC indexed" src="../../assets/visuals/isa/effective-addressing-modes-15.svg" /></p>
+<p><img alt="EXT2 SP/PC indexed" src="../../assets/visuals/isa/effective-addressing-modes-14.svg" /></p>
 <p><strong>EXT2 SP/PC indexed</strong></p>
 <p><strong><code>EXT1 Default-Segment Base Auto-Update</code></strong></p>
 <p><code>[Rn(b)++ + displacement]</code></p>
@@ -13209,7 +13199,7 @@
 <p><strong>Segment:</strong>Uses the operation default data segment.</p>
 <p><strong>Payload:</strong>One descriptor byte plus the optional displacement selected by the compact EXT1 escape.</p>
 <p><strong>Update:</strong>Postincrement uses the current temporary Rn(b), then increments it by the memory access size. Predecrement decrements temporary Rn(b) by the memory access size before use.</p>
-<p><img alt="EXT1 default-segment base auto-update" src="../../assets/visuals/isa/effective-addressing-modes-16.svg" /></p>
+<p><img alt="EXT1 default-segment base auto-update" src="../../assets/visuals/isa/effective-addressing-modes-15.svg" /></p>
 <p><strong>EXT1 default-segment base auto-update</strong></p>
 <p>EA evaluation begins by copying the architectural registers into temporary operand-evaluation state. Operands are then processed in instruction order. Within one EA, the base term is evaluated before the index term and then the displacement. Auto-update changes only the temporary operand-evaluation state while operands are being evaluated. Memory reads and writes are collected as instruction side effects, and neither those effects nor the register updates become architecturally visible until the instruction commits. A fault before commit therefore leaves both register and memory state unchanged apart from the exception-entry transition.</p>
 <p>Postincrement forms use the current temporary value and update it afterward. Predecrement forms update the temporary value first and then use the result. A base register changes by the EA interpretation width in bytes; an index register changes by one element before scaling. Each REP iteration applies and commits these rules independently.</p>

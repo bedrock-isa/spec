@@ -11,10 +11,10 @@
       
       
       
-        <link rel="prev" href="../rdvl/">
+        <link rel="prev" href="../vindex/">
       
       
-        <link rel="next" href="../addvl/">
+        <link rel="next" href="../vlcadd/">
       
       
         
@@ -25,7 +25,7 @@
     
     
       
-        <title>RDCNT - Bedrock Architecture</title>
+        <title>VLCNT - Bedrock Architecture</title>
       
     
     
@@ -66,7 +66,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#rdcnt" class="md-skip">
+        <a href="#vlcnt" class="md-skip">
           Skip to content
         </a>
       
@@ -102,7 +102,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              RDCNT
+              VLCNT
             
           </span>
         </div>
@@ -8264,34 +8264,6 @@
                 
   
   
-  
-  
-    <li class="md-nav__item">
-      <a href="../rdvl/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    RDVL
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
     
   
   
@@ -8311,7 +8283,7 @@
   <span class="md-ellipsis">
     
   
-    RDCNT
+    VLCNT
   
 
     
@@ -8329,7 +8301,7 @@
   <span class="md-ellipsis">
     
   
-    RDCNT
+    VLCNT
   
 
     
@@ -8414,14 +8386,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../addvl/" class="md-nav__link">
+      <a href="../vlcadd/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    ADDVL
+    VLCADD
   
 
     
@@ -8442,14 +8414,42 @@
   
   
     <li class="md-nav__item">
-      <a href="../addpl/" class="md-nav__link">
+      <a href="../vgather1/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    ADDPL
+    VGATHER1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../vscatter1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VSCATTER1
   
 
     
@@ -12682,11 +12682,11 @@
 
 
 
-<h1 id="rdcnt">RDCNT</h1>
+<h1 id="vlcnt">VLCNT</h1>
 <h2 id="operation">Operation</h2>
-<p>Write the number of elements of the selected size in one ‘Vn‘.</p>
+<p>Write VLEN in bytes divided by the selected element width in bytes to ‘Rn‘.</p>
 <h2 id="assembler-syntax">Assembler Syntax</h2>
-<p><code>RDCNT.BWLQ(z) Rn(r)</code></p>
+<p><code>VLCNT.BWLQ(z) Rn(r)</code></p>
 <h2 id="attributes">Attributes</h2>
 <p>Class = vector</p>
 <p>Family = vector</p>
@@ -12695,11 +12695,11 @@
 <p>Feature = <code>VECTOR</code></p>
 <p>Repeat = <code>none</code></p>
 <h2 id="encodings">Encodings</h2>
-<p><strong><code>RDCNT.BWLQ(z) Rn(r)</code></strong></p>
+<p><strong><code>VLCNT.BWLQ(z) Rn(r)</code></strong></p>
 <p><em>Encoding class: long; required bytes: 4 bytes; privilege: unprivileged</em></p>
 <p><strong>Instruction Format:</strong></p>
-<p><img alt="Format — Instruction format for RDCNT.BWLQ(z) Rn(r)" src="../../../assets/visuals/isa/rdcnt-01.svg" /></p>
-<p><strong>Format Instruction format for RDCNT.BWLQ(z) Rn(r)</strong></p>
+<p><img alt="Format — Instruction format for VLCNT.BWLQ(z) Rn(r)" src="../../../assets/visuals/isa/vlcnt-01.svg" /></p>
+<p><strong>Format Instruction format for VLCNT.BWLQ(z) Rn(r)</strong></p>
 <p><strong>Instruction Fields:</strong></p>
 <p><strong>Length field <code>L</code></strong> — Encodes the encoded instruction length as <span class="arithmatex">\(3+L\)</span> bytes. The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.</p>
 <p><strong>Size field <code>z</code></strong> — Selects B/W/L/Q.</p>
