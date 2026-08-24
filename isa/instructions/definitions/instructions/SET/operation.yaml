@@ -1,0 +1,37 @@
+operation: SET
+title: Set True
+summary: Writes integer one to the destination operand.
+public_instruction:
+  mnemonic: SET
+execution_route: control_flow
+privilege: unprivileged
+repeat:
+  kind: rep_and_repcc
+  observed:
+    kind: result
+    operand: dst
+operands:
+- id: dst
+  role: destination
+  access: write
+  value_domain: integer
+  profiles:
+  - Rn
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - short.set_rn_r
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags: []
+  events: []
+  sail_entry: execute_SET
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

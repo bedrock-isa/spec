@@ -1,0 +1,7 @@
+Subtracts the selected-width source value and incoming C borrow from the destination, writes the truncated difference, and updates Z, N, C, and V. REPcc observes the written destination result rather than architectural FLAGS.
+
+Let \(n\) be the selected width, \(d\) and \(s\) the unsigned operand bit patterns, and \(b\) the incoming borrow represented by the C flag. The written result is
+\[
+  r = (d - s - b) \bmod 2^n .
+\]
+Z is set when \(r=0\), and N receives the most-significant bit of \(r\). C reports an unsigned borrow from either subtraction. V reports signed overflow for the complete \(d-s-b\) operation.

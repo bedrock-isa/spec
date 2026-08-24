@@ -1,0 +1,5 @@
+The selected element size defines one significant position in Pn for each
+logical element.  Scanning from the final element toward index zero, the first
+set significant position encountered supplies its logical element index to Rn.
+If the scan finds no set position, Rn receives the full 64-bit all-ones value
+\texttt{UINT64\_MAX}.

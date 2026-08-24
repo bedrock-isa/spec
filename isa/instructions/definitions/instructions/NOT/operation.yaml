@@ -1,0 +1,39 @@
+operation: NOT
+title: Bitwise Not
+summary: Performs the bitwise not operation.
+public_instruction:
+  mnemonic: NOT
+execution_route: integer_unary
+privilege: unprivileged
+repeat:
+  kind: rep_and_repcc
+  observed:
+    kind: result
+    operand: dst
+operands:
+- id: dst
+  role: destination
+  access: read_write
+  value_domain: integer
+  profiles:
+  - Rn
+  - EA
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - short.not_x_rn_r
+    - medium.not_x_ea
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags: []
+  events: []
+  sail_entry: execute_NOT
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

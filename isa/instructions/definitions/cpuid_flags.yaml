@@ -1,0 +1,10 @@
+cpuid_flags:
+- id: FP
+  token: FP
+  location: {class: 0x00000001, leaf: 0x0000, index: 1, bit: 0}
+- id: FPTRANSA
+  token: FPTRANSA
+  location: {class: 0x00000001, leaf: 0x0000, index: 1, bit: 1}
+- id: VECTOR
+  token: VECTOR
+  location: {class: 0x00000001, leaf: 0x0000, index: 1, bit: 2}

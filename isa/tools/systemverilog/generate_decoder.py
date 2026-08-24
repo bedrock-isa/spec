@@ -502,6 +502,7 @@ class Names:
 @dataclass(frozen=True)
 class PublicLayout:
     size_order: tuple[str, ...]
+    cpuid_flag_order: tuple[str, ...]
     touched_flag_order: tuple[str, ...]
     possible_event_order: tuple[str, ...]
 
@@ -510,6 +511,7 @@ def derive_public_layout(ir: decode_ir.DecodeIR) -> PublicLayout:
     """Derive public mask orders from live IR."""
     return PublicLayout(
         size_order=tuple(sorted({size for form in ir.forms for size in form.sizes})),
+        cpuid_flag_order=tuple(flag.id for flag in ir.cpuid_flags),
         touched_flag_order=tuple(
             sorted(
                 {
@@ -569,6 +571,52 @@ def _render_mask_assignment(
             for index, value in enumerate(selected)
         ),
     ]
+
+
+def _render_availability_assignment(
+    form: decode_ir.FormIR,
+    public_layout: PublicLayout,
+) -> list[str]:
+    names = _mask_names("CPUID_FLAG", public_layout.cpuid_flag_order)
+    lines = ["        result_o.required_cpuid_flag_mask = '0;"]
+    for index, rule in enumerate(form.availability_rules):
+        conditions: list[list[str]] = []
+        for selector in rule.selectors:
+            gathered = _gather("opcode_i", selector.positions)
+            comparisons = [
+                f"{gathered} == {len(selector.positions)}'d{value}"
+                for value in selector.encoded_values
+            ]
+            conditions.append(
+                [
+                    f"({comparisons[0]}",
+                    *[f" || {comparison}" for comparison in comparisons[1:]],
+                    ")",
+                ]
+            )
+        keyword = "if" if index == 0 else "else if"
+        if not conditions:
+            lines.append(f"        {keyword} (1'b1) begin")
+        else:
+            lines.append(f"        {keyword} (")
+            for selector_index, selector_lines in enumerate(conditions):
+                for line_index, condition_line in enumerate(selector_lines):
+                    conjunction = (
+                        " &&"
+                        if selector_index + 1 < len(conditions)
+                        and line_index + 1 == len(selector_lines)
+                        else ""
+                    )
+                    lines.append(f"          {condition_line}{conjunction}")
+            lines.append("        ) begin")
+        assignment = _render_mask_assignment(
+            "result_o.required_cpuid_flag_mask",
+            rule.required_cpuid_flags,
+            names,
+        )
+        lines.extend("  " + item for item in assignment)
+        lines.append("        end")
+    return lines
 
 
 def _all_ea_forms(ir: decode_ir.DecodeIR) -> tuple[decode_ir.EaFormIR, ...]:
@@ -689,6 +737,11 @@ def _render_package(ir: decode_ir.DecodeIR) -> tuple[str, Names]:
                 "BEDROCK_SIZE_MASK_BITS", "SIZE", public_layout.size_order
             ),
             _render_mask_constants(
+                "BEDROCK_CPUID_FLAG_MASK_BITS",
+                "CPUID_FLAG",
+                public_layout.cpuid_flag_order,
+            ),
+            _render_mask_constants(
                 "BEDROCK_TOUCHED_FLAG_MASK_BITS",
                 "TOUCHED_FLAG",
                 public_layout.touched_flag_order,
@@ -708,6 +761,7 @@ package bedrock_decode_pkg;
   localparam logic [9:0] BEDROCK_OPERAND_SLOTS = 10'd{ir.limits.max_operands};
   localparam logic [9:0] BEDROCK_EA_SLOTS = 10'd{ir.limits.max_ea_operands};
   localparam logic [9:0] BEDROCK_SIZE_MASK_BITS = 10'd{len(public_layout.size_order)};
+  localparam logic [9:0] BEDROCK_CPUID_FLAG_MASK_BITS = 10'd{len(public_layout.cpuid_flag_order)};
   localparam logic [9:0] BEDROCK_TOUCHED_FLAG_MASK_BITS = 10'd{len(public_layout.touched_flag_order)};
   localparam logic [9:0] BEDROCK_POSSIBLE_EVENT_MASK_BITS = 10'd{len(public_layout.possible_event_order)};
   localparam logic [0:0] BEDROCK_EA_LOW_SLOT = 1'd0;
@@ -807,6 +861,7 @@ package bedrock_decode_pkg;
     operation_e operation;
     control_metadata_t control;
     logic [BEDROCK_SIZE_MASK_BITS-1:0] size_mask;
+    logic [BEDROCK_CPUID_FLAG_MASK_BITS-1:0] required_cpuid_flag_mask;
     logic [2:0] operand_count;
     decoded_operand_t [BEDROCK_OPERAND_SLOTS-1:0] operands;
     overlap_descriptor_t overlap;
@@ -1478,6 +1533,7 @@ def _render_form_case(
         f"        result_o.control.has_ea_operand = 1'b{int(form.control.has_ea_operand)};",
     ]
     lines.extend(_render_mask_assignment("result_o.size_mask", form.sizes, size_names))
+    lines.extend(_render_availability_assignment(form, public_layout))
     lines.extend(
         _render_mask_assignment(
             "result_o.touched_flag_mask",

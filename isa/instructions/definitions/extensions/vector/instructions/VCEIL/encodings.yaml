@@ -2,7 +2,7 @@ forms:
 - id: long.vceil.v42
   class: long
   bits: 11111010000111zz1ppppvvvvv
-  syntax: VCEIL.HSD(z) Pn(p), Vn(v)
+  syntax: VCEIL.{H|S|D}(z) Pn(p), Vn(v)
   operands:
   - name: govern
     type: Pn
@@ -23,7 +23,7 @@ forms:
 - id: xxlong.vceil.v210
   class: xxlong
   bits: 11111111000000100100zz1111ppppvvvvveeeeeee
-  syntax: VCEIL.HSD(z) Pn(p), <ea>(e), Vn(v)
+  syntax: VCEIL.{H|S|D}(z) Pn(p), <ea>(e), Vn(v)
   operands:
   - name: govern
     type: Pn
@@ -49,7 +49,7 @@ forms:
 - id: xxlong.vceil.v211
   class: xxlong
   bits: 11111111000000100101zz0100ppppvvvvveeeeeee
-  syntax: VCEIL.HSD(z) Pn(p), Vn(v), <ea>(e)
+  syntax: VCEIL.{H|S|D}(z) Pn(p), Vn(v), <ea>(e)
   operands:
   - name: govern
     type: Pn

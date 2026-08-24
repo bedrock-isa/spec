@@ -1,0 +1,57 @@
+operation: FSCALE
+title: Floating-Point Scale
+summary: Performs the floating-point scale operation.
+public_instruction:
+  mnemonic: FSCALE
+execution_route: fpu
+privilege: unprivileged
+repeat:
+  kind: rep
+operands:
+- id: src
+  role: source
+  access: read
+  value_domain: floating
+  profiles:
+  - FEA
+  - Fn
+- id: dst
+  role: destination
+  access: read_write
+  value_domain: floating
+  profiles:
+  - Fn
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - long.fscale_x_ea_s_fn_d
+    - medium.fscale_x_fn_s_fn_d
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags:
+  - bank: FFLAGS
+    completion: accrued_causes
+    effects:
+    - flag: NV
+      effect: accrue_source
+      reference: operation_cause
+    - flag: OF
+      effect: accrue_source
+      reference: operation_cause
+    - flag: UF
+      effect: accrue_source
+      reference: operation_cause
+    - flag: NX
+      effect: accrue_source
+      reference: operation_cause
+  events: []
+  sail_entry: execute_FSCALE
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

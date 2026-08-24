@@ -20,7 +20,6 @@ if str(TOOL_DIR) not in sys.path:
     sys.path.insert(0, str(TOOL_DIR))
 
 from validate_alloc import (  # noqa: E402
-    PREDICATES,
     compact_bits,
     entries_overlap,
     entry_claim_patterns,
@@ -31,10 +30,19 @@ from validate_alloc import (  # noqa: E402
     parse_range,
 )
 from defs_loader import (  # noqa: E402
+    CanonicalOperation,
+    extension_cpuid_requirements,
+    load_architectural_event_causes,
+    load_architectural_event_ids,
+    load_cpuid_flags,
+    load_operation,
     load_extensions,
+    load_flag_effect_definitions,
     load_instruction_sets,
+    load_named_values,
     load_operand_types,
     load_register_groups,
+    load_semantic_conditions,
     load_size_definitions,
     load_yaml,
 )
@@ -50,7 +58,8 @@ from encoding_architecture import (  # noqa: E402
     extended_instruction_lengths,
     extended_length_byte0_pattern,
 )
-from defs_schema import FLAG_BANKS, decode_instruction, parse_assembly_template  # noqa: E402
+from defs_schema import FLAG_BANK_FLAGS, parse_assembly_template  # noqa: E402
+from vector_diagrams import GENERATOR_KIND as VECTOR_DIAGRAM_KIND, load as load_vector_diagram, render_tikz as render_vector_tikz  # noqa: E402
 from validate_reference_navigation import validate_path as load_reference_navigation  # noqa: E402
 from gen_architecture_tables import RESET_VALUE_TEXT  # noqa: E402
 from latex_builder.common import (  # noqa: E402
@@ -68,10 +77,14 @@ ROOT = Path(__file__).resolve().parents[2]
 DEF_ROOT = ROOT / "isa" / "instructions" / "definitions"
 EA_DEFINITION_PATH = ROOT / "isa" / "addressing" / "effective_address" / "definition.yaml"
 EA_FRAGMENT_DIR = ROOT / "isa" / "addressing" / "effective_address" / "manual"
-INSTRUCTION_FILENAME = "instruction.yaml"
+INSTRUCTION_FILENAME = "operation.yaml"
 CONFORMANCE_MANIFEST_PATH = ROOT / "isa" / "conformance" / "manifest.yaml"
 ARCHITECTURE_TABLES_PATH = ROOT / "isa" / "conformance" / "architecture_tables.yaml"
 REFERENCE_NAVIGATION_PATH = ROOT / "isa" / "system" / "indexes" / "manual" / "navigation.yaml"
+
+_FLAG_EFFECT_HEADING_TABLE_NEEDSPACE_IN = 0.90
+_FLAG_EFFECT_LEGEND_NEEDSPACE_IN = 0.30
+_FLAG_EFFECT_CASE_LABEL_NEEDSPACE_IN = 0.24
 
 
 def render_latex_template(
@@ -98,9 +111,18 @@ class InstructionDef:
     instruction_set: str
     mnemonic: str
     data: dict[str, Any]
+    operation: CanonicalOperation | None = None
 
     @property
     def doc(self) -> dict[str, Any]:
+        if self.operation is not None:
+            return {
+                "title": self.operation.title,
+                "summary": self.operation.summary,
+                "description": self.operation.summary,
+                "instruction_class": "",
+                "instruction_family": "",
+            }
         attributes = self.attributes
         return {
             "title": self.data["title"],
@@ -112,21 +134,29 @@ class InstructionDef:
 
     @property
     def attributes(self) -> dict[str, Any]:
+        if self.operation is not None:
+            return {"privilege": self.operation.privilege}
         value = self.data.get("attributes")
         return value if isinstance(value, dict) else {}
 
     @property
     def details_path(self) -> Path | None:
+        if self.operation is not None:
+            return None
         relative = self.data.get("additional_description")
         return self.path.parent / relative if isinstance(relative, str) else None
 
     @property
     def additional_assembler_syntax(self) -> list[str]:
+        if self.operation is not None:
+            return []
         value = self.data.get("additional_assembler_syntax", [])
         return list(value) if isinstance(value, list) else []
 
     @property
     def flag_effects(self) -> dict[str, dict[str, str]]:
+        if self.operation is not None:
+            return {}
         value = self.data.get("flag_effects")
         if not isinstance(value, dict):
             return {}
@@ -244,16 +274,35 @@ def instruction_definition_paths(defs_root: Path) -> list[tuple[str, Path]]:
 
 
 def load_instructions(defs_root: Path) -> list[InstructionDef]:
+    extensions = load_extensions(defs_root)
+    cpuid_flags = load_cpuid_flags(defs_root)
+    operand_types = load_operand_types(defs_root, extensions)
+    size_definitions = load_size_definitions(defs_root, extensions)
+    known_cpuid_flags, requirements_by_set = extension_cpuid_requirements(
+        extensions, cpuid_flags
+    )
+    semantic_conditions = load_semantic_conditions(defs_root)
+    named_values = load_named_values(defs_root)
+    flag_effect_definitions = load_flag_effect_definitions(defs_root)
+    known_event_ids = load_architectural_event_ids(ARCHITECTURE_TABLES_PATH)
+    known_event_causes = load_architectural_event_causes(ARCHITECTURE_TABLES_PATH)
     instructions: list[InstructionDef] = []
     for instruction_set, path in instruction_definition_paths(defs_root):
-        data = load_yaml(path)
-        decoded = decode_instruction(path, data)
-        mnemonic = decoded.mnemonic
-        if path.parent.name != str(mnemonic):
-            raise ValueError(
-                f"{path}: directory name {path.parent.name!r} does not match mnemonic {mnemonic!r}"
-            )
-        instructions.append(InstructionDef(path, instruction_set, str(mnemonic), data))
+        operation = load_operation(
+            path.parent,
+            operand_types=operand_types,
+            size_definitions=size_definitions,
+            base_requirements=requirements_by_set[instruction_set],
+            known_cpuid_flags=known_cpuid_flags,
+            known_event_ids=known_event_ids,
+            known_event_causes=known_event_causes,
+            known_condition_ids=frozenset(semantic_conditions),
+            known_named_value_ids=frozenset(named_values),
+            known_diagram_kinds=frozenset({VECTOR_DIAGRAM_KIND}),
+            known_flag_effect_definitions=flag_effect_definitions,
+        )
+        mnemonic = operation.public_instruction.mnemonic
+        instructions.append(InstructionDef(path, instruction_set, mnemonic, {}, operation))
     return instructions
 
 
@@ -359,7 +408,21 @@ def load_metadata(defs_root: Path) -> dict[str, Any]:
         name: extension.data
         for name, extension in extensions.items()
     }
+    out["cpuid_flags"] = {
+        flag.id: {
+            "id": flag.id,
+            "token": flag.token,
+            "class": flag.location.selector_class,
+            "leaf": flag.location.leaf,
+            "index": flag.location.index,
+            "bit": flag.location.bit,
+        }
+        for flag in load_cpuid_flags(defs_root).values()
+    }
     out["registers"] = {"registers": load_register_groups(defs_root, extensions)}
+    out["semantic_conditions"] = load_semantic_conditions(defs_root)
+    out["named_values"] = load_named_values(defs_root)
+    out["flag_effect_definitions"] = load_flag_effect_definitions(defs_root)
     return out
 
 
@@ -379,28 +442,6 @@ def load_model(defs_root: Path) -> IsaModel:
         allocation_classes=allocation_classes,
         allocated_by_mnemonic=dict(sorted(allocated_by_mnemonic.items())),
     )
-
-
-def instruction_family(instruction: InstructionDef) -> str:
-    return label_text(instruction.doc.get("instruction_family", "-")) or "-"
-
-
-def instruction_class(instruction: InstructionDef) -> str:
-    return label_text(instruction.doc.get("instruction_class", "-")) or "-"
-
-
-def instruction_feature(model: IsaModel, inst: InstructionDef) -> str:
-    extension = (model.metadata.get("extensions") or {}).get(inst.instruction_set)
-    if not isinstance(extension, dict):
-        return ""
-    availability = extension.get("availability")
-    cpuid = availability.get("cpuid") if isinstance(availability, dict) else None
-    return compact_text(cpuid.get("feature")) if isinstance(cpuid, dict) else ""
-
-
-def instruction_repeat_contract(inst: InstructionDef) -> dict[str, Any] | None:
-    repeat = inst.data.get("repeat")
-    return repeat if isinstance(repeat, dict) else None
 
 
 def instruction_set_groups(
@@ -571,53 +612,10 @@ def latex_instruction_field(label: str, value_latex: str) -> str:
     return rf"\manualinstructionfield{{{latex_escape(label)}}}{{{value_latex}}}"
 
 
-def instruction_length_summary(inst: InstructionDef, model: IsaModel) -> str:
-    lengths: set[int] = set()
-    for entry in model.allocated_by_mnemonic.get(inst.mnemonic, []):
-        form = entry.text.strip()
-        lengths.update(
-            instruction_length(
-                entry,
-                form,
-                model.metadata.get("ea"),
-                model.metadata.get("operand_types"),
-            ).required_bytes
-        )
-    if not lengths:
-        return "variable length"
-    low, high = min(lengths), max(lengths)
-    return f"{low} byte" if low == high == 1 else (f"{low} bytes" if low == high else f"{low}-{high} bytes")
-
-
-def latex_attributes_block(inst: InstructionDef, model: IsaModel) -> str:
-    lines = [
-        rf"{latex_escape('Class')} = {latex_escape(instruction_class(inst))}",
-        rf"{latex_escape('Family')} = {latex_escape(instruction_family(inst))}",
-        rf"{latex_escape('Privilege')} = "
-        rf"{latex_escape(privilege_text(inst.attributes.get('privilege', '-'), '-'))}",
-        rf"{latex_escape('Length')} = {latex_escape(instruction_length_summary(inst, model))}",
-    ]
-    feature = instruction_feature(model, inst)
-    if feature:
-        lines.append(rf"{latex_escape('Feature')} = {tex_code(feature)}")
-    repeat = instruction_repeat_contract(inst)
-    if repeat:
-        contexts = repeat.get("contexts") or []
-        lines.append(
-            rf"{latex_escape('Repeat')} = "
-            + ", ".join(tex_code(str(context)) for context in contexts)
-        )
-        observed = repeat.get("observed")
-        if isinstance(observed, dict):
-            kind = str(observed.get("kind"))
-            operand = observed.get("operand")
-            value = tex_code(kind)
-            if operand:
-                value += " " + tex_code(str(operand))
-            lines.append(rf"{latex_escape('REPcc observation')} = {value}")
-    else:
-        lines.append(rf"{latex_escape('Repeat')} = {tex_code('none')}")
-    return latex_ragged_block(lines)
+def latex_operation_field(label: str, value_latex: str) -> str:
+    if not value_latex:
+        return ""
+    return rf"\manualoperationfield{{{latex_escape(label)}}}{{{value_latex}}}"
 
 
 def instruction_uses_operand_type(
@@ -872,17 +870,6 @@ def instruction_length(
     return InstructionLength(opcode_space_bytes, tuple(sorted(required)))
 
 
-def required_bytes_text(length: InstructionLength) -> str:
-    low = length.minimum_required_bytes
-    high = length.maximum_required_bytes
-    return str(low) if low == high else f"{low}-{high}"
-
-
-def required_bytes_label(length: InstructionLength) -> str:
-    value = required_bytes_text(length)
-    return f"{value} byte" if value == "1" else f"{value} bytes"
-
-
 def bit_label(text: str) -> str:
     if set(text) <= {"0", "1", "?"}:
         return text.replace("?", "-")
@@ -1104,46 +1091,6 @@ def field_constraint_values(
     return decimal_value_ranges(allowed)
 
 
-@dataclass(frozen=True)
-class CompactEaDisplayRow:
-    syntax: str
-    kind: str
-    mode_bits: str
-    form_bits: str
-    values: frozenset[int]
-
-
-@dataclass(frozen=True)
-class EAAvailabilityCategory:
-    name: str
-    members: tuple[str, ...]
-    allowed: tuple[str, ...]
-    mode: str
-    exceptions: tuple[str, ...] = ()
-
-
-@dataclass(frozen=True)
-class EAAvailabilitySummary:
-    """Lossless, presentation-ready summary of one form's compact-EA availability."""
-
-    categories: tuple[EAAvailabilityCategory, ...]
-    allowed_syntax: frozenset[str]
-
-    def reconstructed_allowed_syntax(self) -> frozenset[str]:
-        reconstructed: set[str] = set()
-        for category in self.categories:
-            members = set(category.members)
-            if category.mode == "all":
-                reconstructed.update(members)
-            elif category.mode == "except":
-                reconstructed.update(members - set(category.exceptions))
-            elif category.mode == "only":
-                reconstructed.update(category.exceptions)
-            elif category.mode != "none":
-                raise ValueError(f"unknown EA availability mode: {category.mode}")
-        return frozenset(reconstructed)
-
-
 def resolved_compact_ea_forms(ea_data: Any, profile_name: str) -> list[dict[str, Any]]:
     if not isinstance(ea_data, dict):
         raise ValueError("missing EA metadata for addressing-mode table")
@@ -1171,143 +1118,6 @@ def resolved_compact_ea_forms(ea_data: Any, profile_name: str) -> list[dict[str,
         resolved,
         key=lambda item: min(expand_pattern(compact_bits(str(item.get("pattern", ""))))),
     )
-
-
-def compact_ea_display_rows(
-    ea_data: Any, profile_name: str = "ea"
-) -> list[CompactEaDisplayRow]:
-    rows: list[CompactEaDisplayRow] = []
-    for item in resolved_compact_ea_forms(ea_data, profile_name):
-        if not isinstance(item, dict):
-            continue
-        bits = compact_bits(str(item.get("pattern", "")))
-        syntax = compact_text(item.get("syntax"))
-        kind = compact_text(item.get("kind"))
-        if len(bits) != 7 or ".." in bits or not syntax:
-            raise ValueError(f"invalid compact EA display form: bits={bits!r}, syntax={syntax!r}")
-        rows.append(
-            CompactEaDisplayRow(
-                syntax=syntax,
-                kind=kind,
-                mode_bits=bits[:3],
-                form_bits=bits[3:],
-                values=frozenset(expand_pattern(bits)),
-            )
-        )
-    if not rows:
-        raise ValueError("EA metadata defines no displayable compact EA forms")
-    return rows
-
-
-def compact_ea_category(kind: str) -> str:
-    categories = {
-        "memory": "Memory",
-        "immediate": "Immediate",
-        "float_immediate": "Immediate",
-        "escape": "Extended Descriptor",
-    }
-    try:
-        return categories[kind]
-    except KeyError as exc:
-        raise ValueError(f"uncategorized compact EA kind: {kind!r}") from exc
-
-
-def ea_availability_summary(model: IsaModel, entry: AllocationEntry, symbol: str) -> EAAvailabilitySummary:
-    constraints = ea_constraints_for_field(entry, symbol)
-    operand_type = next(
-        (
-            str(operand.get("type"))
-            for operand in entry.operands
-            if operand.get("field") == symbol
-            and operand.get("type") in EA_OPERAND_TYPES
-        ),
-        "EA",
-    )
-    rows = compact_ea_display_rows(model.metadata.get("ea"), operand_type.lower())
-    allowed: set[str] = set()
-    for row in rows:
-        allowed_values = {value for value in row.values if ea_value_allowed(value, constraints)}
-        if allowed_values and allowed_values != row.values:
-            raise ValueError(
-                f"{entry.path}: {entry.entry_id} partially allows EA form {row.syntax!r} for field {symbol}"
-            )
-        if allowed_values:
-            allowed.add(row.syntax)
-    categories: list[EAAvailabilityCategory] = []
-    for name in ("Memory", "Immediate", "Extended Descriptor"):
-        members = tuple(row.syntax for row in rows if compact_ea_category(row.kind) == name)
-        category_allowed = tuple(item for item in members if item in allowed)
-        excluded = tuple(item for item in members if item not in allowed)
-        if not category_allowed:
-            mode, exceptions = "none", ()
-        elif len(category_allowed) == len(members):
-            mode, exceptions = "all", ()
-        elif len(excluded) <= len(category_allowed):
-            mode, exceptions = "except", excluded
-        else:
-            mode, exceptions = "only", category_allowed
-        categories.append(EAAvailabilityCategory(name, members, category_allowed, mode, exceptions))
-    summary = EAAvailabilitySummary(tuple(categories), frozenset(allowed))
-    if summary.reconstructed_allowed_syntax() != summary.allowed_syntax:
-        raise ValueError(f"{entry.path}: lossy EA summary for {entry.entry_id} field {symbol}")
-    return summary
-
-
-def latex_ea_syntax_list(items: tuple[str, ...]) -> str:
-    return ", ".join(tex_code(item) for item in items)
-
-
-def latex_ea_availability_summary(summary: EAAvailabilitySummary) -> str:
-    allowed_terms: list[str] = []
-    for category in summary.categories:
-        if category.mode == "all":
-            allowed_terms.append(category.name)
-        elif category.mode == "except":
-            allowed_terms.append(f"{category.name} except {latex_ea_syntax_list(category.exceptions)}")
-        elif category.mode == "only":
-            allowed_terms.append(f"{category.name} only {latex_ea_syntax_list(category.exceptions)}")
-    return rf"\manualeasummary{{{'; '.join(allowed_terms) or 'none'}}}"
-
-
-def ea_constraints_for_field(entry: AllocationEntry, symbol: str) -> list[dict[str, Any]]:
-    return [
-        constraint
-        for constraint in entry.constraints
-        if constraint.get("field") == symbol
-    ]
-
-
-def ea_value_allowed(value: int, constraints: list[dict[str, Any]]) -> bool:
-    for constraint in constraints:
-        if "allow" in constraint:
-            ranges = [parse_range(item) for item in constraint.get("allow") or []]
-            if not any(low <= value <= high for low, high in ranges):
-                return False
-        if "exclude" in constraint:
-            predicate_name = str(constraint["exclude"])
-            predicate = PREDICATES.get(predicate_name)
-            if predicate is None:
-                raise ValueError(f"unknown EA constraint predicate: {predicate_name}")
-            if predicate(value):
-                return False
-    return True
-
-
-def entry_ea_fields(entry: AllocationEntry, form: str) -> list[tuple[str, str]]:
-    operand_count = len(split_form_operands(form))
-    fields: list[tuple[str, str]] = []
-    for symbol, spec in ordered_entry_fields(entry):
-        if spec.get("kind") != "ea7":
-            continue
-        operand = field_operand(form, symbol)
-        fallback = operand_role(operand[0], operand_count) if operand else "operand"
-        role = ea_operand_role(entry, symbol, fallback)
-        fields.append((symbol, role))
-    return fields
-
-
-def latex_ea_addressing_mode_tables(model: IsaModel, entry: AllocationEntry, symbol: str) -> str:
-    return latex_ea_availability_summary(ea_availability_summary(model, entry, symbol))
 
 
 def field_description_label(
@@ -1370,7 +1180,14 @@ def field_description_text(
         return latex_escape(f"Selects {choices}." if choices else "Selects the operand size.")
     if kind == "ea7":
         target = role if numbered_operand_role else f"the {role}" if role else "the operand"
-        return latex_escape(f"Specifies {target}.")
+        text = f"Specifies {target}."
+        if any(
+            constraint.get("field") == symbol
+            and constraint.get("exclude") == "immediate"
+            for constraint in entry.constraints
+        ):
+            text += " Immediate addressing is unavailable in this form."
+        return latex_escape(text)
     if kind == "sreg" or declared_operand_type == "SREG":
         target = role if numbered_operand_role else f"the {role}" if role else "a segment-register operand"
         return (
@@ -1407,14 +1224,10 @@ def latex_field_explanation_block(
             r"The encoded length must cover the required instruction length; trailing bytes are uninterpreted padding.}"
         )
     for symbol, spec in ordered_entry_fields(entry):
-        if spec.get("kind") == "ea7":
-            parts.append(r"\Needspace{1.15in}")
         parts.append(
             rf"\manualinstructionfielddescription{{{field_description_label(model, entry, symbol, spec, inst)}}}"
             rf"{{{field_description_text(model, inst, entry, form, symbol, spec)}}}"
         )
-        if spec.get("kind") == "ea7":
-            parts.append(latex_ea_addressing_mode_tables(model, entry, symbol))
     for relation in entry.destination_overlap:
         operands = relation.get("operands") or []
         if len(operands) != 2:
@@ -1448,26 +1261,11 @@ def latex_allocated_instruction_form_block(
     include_forms_heading: bool = False,
 ) -> str:
     form = entry.text.strip()
-    length = instruction_length(
-        entry,
-        form,
-        model.metadata.get("ea"),
-        model.metadata.get("operand_types"),
-    )
-    form_privilege = inst.attributes.get("privilege", "unprivileged")
-    rows = [
-        ("Encoding class", latex_escape(entry.cls)),
-        ("Required bytes", latex_escape(required_bytes_label(length))),
-        ("Privilege", latex_escape(privilege_text(form_privilege))),
-    ]
-    ea_field_count = len(entry_ea_fields(entry, form))
-    needspace = "2.75in" if ea_field_count == 0 else "3.65in"
     return "\n".join(
         [
-            rf"\begin{{manualformblock}}{{{needspace}}}",
+            r"\begin{manualformblock}{2.75in}",
             *([r"\manualinstructionformsheading"] if include_forms_heading else []),
             rf"\textbf{{{tex_code(form)}}}\par",
-            rf"\manualformmetadata{{{rows[0][1]}}}{{{rows[1][1]}}}{{{rows[2][1]}}}",
             r"\manualinstructionformatheading",
             latex_entry_bit_diagram(entry, form),
             latex_field_explanation_block(model, inst, entry, form),
@@ -1541,34 +1339,27 @@ def latex_code_table(
     return latex_longtable(headers, rendered_rows, widths, caption, style=style, listed=listed)
 
 
-def extension_directory_entries(model: IsaModel) -> list[tuple[int, int, int, int, str, str]]:
-    entries: list[tuple[int, int, int, int, str, str]] = []
-    for qualified_name, extension in (model.metadata.get("extensions") or {}).items():
-        if not isinstance(extension, dict):
-            continue
-        availability = extension.get("availability")
-        cpuid = availability.get("cpuid") if isinstance(availability, dict) else None
-        if not isinstance(cpuid, dict):
-            continue
+def extension_directory_entries(model: IsaModel) -> list[tuple[int, int, int, int, str]]:
+    entries: list[tuple[int, int, int, int, str]] = []
+    for flag in (model.metadata.get("cpuid_flags") or {}).values():
         entries.append(
             (
-                int(cpuid["class"]),
-                int(cpuid["leaf"]),
-                int(cpuid["index"]),
-                int(cpuid["bit"]),
-                str(cpuid["feature"]),
-                qualified_name,
+                int(flag["class"]),
+                int(flag["leaf"]),
+                int(flag["index"]),
+                int(flag["bit"]),
+                str(flag["token"]),
             )
         )
     if not entries:
-        raise ValueError("no extension CPUID availability entries are defined")
+        raise ValueError("no CPUID flag registry entries are defined")
     entries.sort(key=lambda entry: entry[:4])
     return entries
 
 
 def latex_extension_directory_diagram(model: IsaModel) -> str:
     grouped: dict[tuple[int, int, int], list[tuple[int, str]]] = {}
-    for class_id, leaf_id, index, bit, feature, _qualified_name in extension_directory_entries(model):
+    for class_id, leaf_id, index, bit, feature in extension_directory_entries(model):
         grouped.setdefault((class_id, leaf_id, index), []).append((bit, feature))
 
     lines = [r"\begin{manuallistedformatdiagram}{Optional-Extension Directory Result}"]
@@ -1600,14 +1391,13 @@ def latex_extension_directory_table(model: IsaModel) -> str:
             str(index),
             str(bit),
             feature,
-            qualified_name,
         ]
-        for class_id, leaf_id, index, bit, feature, qualified_name in extension_directory_entries(model)
+        for class_id, leaf_id, index, bit, feature in extension_directory_entries(model)
     ]
     return latex_code_table(
-        ["Class", "Leaf", "Index", "Bit", "Feature", "Extension"],
+        ["Class", "Leaf", "Index", "Bit", "Flag token"],
         rows,
-        ["0.75in", "0.55in", "0.45in", "0.35in", "0.80in", "2.10in"],
+        ["0.85in", "0.65in", "0.55in", "0.45in", "2.30in"],
         "Optional-Extension Feature Bits",
         {0, 1, 2, 3, 4},
     )
@@ -1859,123 +1649,6 @@ def event_index(
     )
 
 
-def extension_register_state(
-    model: IsaModel,
-    qualified_name: str,
-    architecture: dict[str, Any],
-) -> str:
-    extensions = load_extensions(model.defs_root)
-    candidates = [
-        name
-        for name in extensions
-        if qualified_name == name or qualified_name.startswith(name + ".")
-    ]
-    candidates.sort(key=len, reverse=True)
-    registers: list[str] = []
-    owner_feature = ""
-    for name in candidates:
-        extension = extensions[name]
-        availability = extension.data.get("availability")
-        cpuid = availability.get("cpuid") if isinstance(availability, dict) else None
-        if isinstance(cpuid, dict) and not owner_feature:
-            owner_feature = str(cpuid.get("feature", ""))
-        register_ref = extension.data.get("registers")
-        if not isinstance(register_ref, str):
-            continue
-        register_doc = load_yaml(extension.path.parent / register_ref)
-        groups = register_doc.get("registers") if isinstance(register_doc, dict) else None
-        if isinstance(groups, dict):
-            for group in groups.values():
-                entries = group.get("entries") if isinstance(group, dict) else None
-                if isinstance(entries, list):
-                    registers.extend(
-                        str(entry["name"])
-                        for entry in entries
-                        if isinstance(entry, dict) and "name" in entry
-                    )
-        break
-    if registers and registers == [f"F{index}" for index in range(16)]:
-        state = "F0--F15, FFLAGS, FSTATUS"
-    else:
-        state = ", ".join(registers) or owner_feature or qualified_name
-    components = architecture["cpuid"]["save_area_layout"]["components"]
-    component_names = {
-        str(item["name"]) for item in components if isinstance(item, dict)
-    }
-    matching_feature = ""
-    for name in reversed(candidates):
-        availability = extensions[name].data.get("availability")
-        cpuid = availability.get("cpuid") if isinstance(availability, dict) else None
-        if isinstance(cpuid, dict) and str(cpuid.get("feature", "")) in component_names:
-            matching_feature = str(cpuid["feature"])
-            break
-    if matching_feature:
-        state += f", SAVE component {matching_feature}"
-    return state
-
-
-def feature_index_rows(
-    model: IsaModel,
-    instructions: list[InstructionDef],
-    architecture: dict[str, Any],
-) -> list[list[str]]:
-    rows: list[list[str]] = []
-    for qualified_name, extension in sorted(
-        model.metadata["extensions"].items(),
-        key=lambda item: (
-            int(item[1]["availability"]["cpuid"]["class"]),
-            int(item[1]["availability"]["cpuid"]["leaf"]),
-            int(item[1]["availability"]["cpuid"]["index"]),
-            int(item[1]["availability"]["cpuid"]["bit"]),
-        ),
-    ):
-        cpuid = extension["availability"]["cpuid"]
-        selector = (
-            f"{int(cpuid['class']):08x}:"
-            f"{int(cpuid['leaf']):04x}:"
-            f"{int(cpuid['index'])}/bit{int(cpuid['bit'])}"
-        )
-        gated = sorted(
-            (
-                instruction
-                for instruction in instructions
-                if instruction.instruction_set == qualified_name
-            ),
-            key=lambda item: item.mnemonic,
-        )
-        related_state = extension_register_state(
-            model, qualified_name, architecture
-        )
-        for instruction in gated:
-            rows.append(
-                [
-                    navigation_code_link(
-                        "section:cpuid-extension-directory",
-                        str(cpuid["feature"]),
-                    ),
-                    tex_breakable_code(selector),
-                    rf"\hyperref[{instruction_label(instruction.mnemonic)}]"
-                    rf"{{{tex_code(instruction.mnemonic)}}}",
-                    latex_escape(related_state),
-                ]
-            )
-    return rows
-
-
-def feature_index(
-    model: IsaModel,
-    instructions: list[InstructionDef],
-    architecture: dict[str, Any],
-) -> str:
-    return latex_longtable(
-        ["Predicate", "Class:leaf:index/bit", "Gated instruction", "Related state or component"],
-        feature_index_rows(model, instructions, architecture),
-        ["1.00in", "1.45in", "1.15in", "1.75in"],
-        "CPUID Feature Index",
-        style="dense",
-    )
-
-
 def latex_reference_navigation_section(
     model: IsaModel,
     instructions: list[InstructionDef],
@@ -1988,7 +1661,6 @@ def latex_reference_navigation_section(
             "CANONICAL_FIELD_INDEX": canonical_field_index(navigation),
             "STATE_INDEX": state_index(navigation, architecture),
             "EVENT_INDEX": event_index(architecture, instructions),
-            "FEATURE_INDEX": feature_index(model, instructions, architecture),
         },
     )
 
@@ -2482,7 +2154,7 @@ def instruction_details_tex(inst: InstructionDef) -> str:
 
 def latex_instruction_flag_effects(inst: InstructionDef) -> str:
     parts: list[str] = []
-    for bank, valid_flags in FLAG_BANKS.items():
+    for bank, valid_flags in FLAG_BANK_FLAGS.items():
         effects = inst.flag_effects.get(bank)
         if not effects:
             continue
@@ -2515,10 +2187,288 @@ def latex_instruction_exceptions(inst: InstructionDef) -> str:
         condition = latex_escape(str(item.get("when", "")))
         forms = item.get("forms")
         if isinstance(forms, list) and forms:
-            form_text = ", ".join(tex_code(str(form)) for form in forms)
-            condition += rf" ({latex_escape('forms')}: {form_text})"
+            forms_text = ", ".join(tex_code(str(form)) for form in forms)
+            condition += rf" ({latex_escape('forms')}: {forms_text})"
         lines.append(event + ": " + condition)
     return latex_ragged_block(lines)
+
+
+def _operation_case_formats(case: Any) -> str:
+    selections = [
+        "/".join(selector.values) for selector in case.applies_to.selectors
+    ]
+    return ", ".join(selections)
+
+
+def latex_operation_requirements(
+    model: IsaModel, operation: CanonicalOperation
+) -> str:
+    flags = model.metadata["cpuid_flags"]
+    public_token = lambda flag_id: str(flags[flag_id]["token"])
+    resolved = [set(case.resolved_requirements) for case in operation.cases]
+    if not resolved:
+        return ""
+    common = set.intersection(*resolved)
+    lines = [tex_code(public_token(requirement)) for requirement in sorted(common)]
+    seen: set[tuple[str, tuple[str, ...]]] = set()
+    for case in operation.cases:
+        additional = tuple(sorted(set(case.resolved_requirements) - common))
+        if not additional:
+            continue
+        formats = _operation_case_formats(case)
+        label = f"{formats} cases" if formats else "Applicable cases"
+        key = (label, additional)
+        if key in seen:
+            continue
+        seen.add(key)
+        lines.append(
+            latex_escape(label)
+            + ": "
+            + ", ".join(
+                tex_code(public_token(requirement)) for requirement in additional
+            )
+        )
+    return latex_ragged_block(lines) if lines else ""
+
+
+def latex_operation_repeat(operation: CanonicalOperation) -> str:
+    if operation.repeat.kind == "not_eligible":
+        return ""
+    if operation.repeat.kind == "rep":
+        return latex_escape("Eligible as a REP body.")
+    observed = operation.repeat.observed
+    if observed is None:
+        raise ValueError(f"{operation.id}: REPcc eligibility lacks an observation")
+    if observed.kind == "computed":
+        observation = "the operation-defined completion value"
+    else:
+        operand = next(
+            item for item in (operation.operands or ()) if item.id == observed.operand
+        )
+        if observed.kind == "result" and operand.role == "destination":
+            observation = "the value written to the destination operand"
+        elif observed.kind == "source" and operand.role == "source":
+            observation = "the value read from the source operand"
+        else:
+            observation = f"the {operand.role.replace('_', ' ')} operand value"
+    return latex_escape(
+        f"Eligible as a REP or REPcc body. REPcc observes {observation}."
+    )
+
+
+def latex_operation_flag_effects(
+    model: IsaModel, operation: CanonicalOperation
+) -> str:
+    definitions = model.metadata.get("flag_effect_definitions") or {}
+    parts: list[str] = []
+    for case in operation.cases:
+        if not case.flags:
+            continue
+        formats = _operation_case_formats(case)
+        case_label = (
+            latex_escape(f"{formats} elements") + r"\par" if formats else None
+        )
+        for bank_index, bank in enumerate(case.flags):
+            nontrivial = tuple(
+                dict.fromkeys(
+                    (effect.effect, effect.reference)
+                    for effect in bank.effects
+                    if effect.effect
+                    in {"write_expression", "write_condition", "accrue_source"}
+                )
+            )
+            nontrivial_markers = {
+                effect_key: (
+                    "*" if len(nontrivial) == 1 else chr(ord("a") + index)
+                )
+                for index, effect_key in enumerate(nontrivial)
+            }
+            if len(nontrivial_markers) > 26:
+                raise ValueError(
+                    f"{operation.id}: flag table requires more than 26 nontrivial markers"
+                )
+            markers: list[str] = []
+            legends: dict[str, str] = {}
+            for effect in bank.effects:
+                if effect.effect == "preserve":
+                    markers.append("-")
+                    legends.setdefault("-", "preserved.")
+                elif effect.effect == "clear":
+                    markers.append("0")
+                    legends.setdefault("0", "writes zero.")
+                elif effect.effect == "set":
+                    markers.append("1")
+                    legends.setdefault("1", "writes one.")
+                else:
+                    effect_key = (effect.effect, effect.reference)
+                    marker = nontrivial_markers[effect_key]
+                    definition = definitions.get(effect.reference)
+                    if definition is None:
+                        raise ValueError(
+                            f"{operation.id}: unknown document flag definition "
+                            f"{effect.reference!r}"
+                        )
+                    markers.append(marker)
+                    legends.setdefault(
+                        marker, definition.reader_text.rstrip(".") + "."
+                    )
+            column_spec = "@{}" + "c" * len(bank.effects) + "@{}"
+            parts.extend(
+                [
+                    _latex_flag_effect_needspace(
+                        len(legends),
+                        has_case_label=case_label is not None and bank_index == 0,
+                    ),
+                    *([case_label] if case_label is not None and bank_index == 0 else []),
+                    rf"\textbf{{{latex_escape(bank.bank)} Effects}}\par",
+                    rf"\begin{{manualtabular}}{{{column_spec}}}",
+                    r"\toprule",
+                    " & ".join(tex_code(effect.flag) for effect in bank.effects) + r"\\",
+                    r"\midrule",
+                    " & ".join(markers) + r"\\",
+                    r"\bottomrule",
+                    r"\end{manualtabular}",
+                ]
+            )
+            for marker, explanation in legends.items():
+                parts.append(
+                    r"\par\small "
+                    + tex_code(marker)
+                    + ": "
+                    + latex_escape(explanation)
+                    + r"\normalsize\par"
+                )
+    return "\n".join(parts)
+
+
+def _latex_flag_effect_needspace(
+    legend_count: int, *, has_case_label: bool = False
+) -> str:
+    """Keep one finite flag table and all of its local legends together."""
+
+    if legend_count < 1 or legend_count > max(
+        len(flags) for flags in FLAG_BANK_FLAGS.values()
+    ):
+        raise ValueError(f"invalid flag-table legend count {legend_count}")
+    required_inches = (
+        _FLAG_EFFECT_HEADING_TABLE_NEEDSPACE_IN
+        + _FLAG_EFFECT_LEGEND_NEEDSPACE_IN * legend_count
+        + (_FLAG_EFFECT_CASE_LABEL_NEEDSPACE_IN if has_case_label else 0.0)
+    )
+    return rf"\Needspace{{{required_inches:.2f}in}}"
+
+
+def latex_operation_events(model: IsaModel, operation: CanonicalOperation) -> str:
+    condition_text = model.metadata.get("semantic_conditions") or {}
+    lines: list[str] = []
+    seen: set[tuple[str, str | None, str]] = set()
+    for case in operation.cases:
+        for event in case.events or ():
+            reader_text = condition_text.get(event.condition)
+            if not isinstance(reader_text, str) or not reader_text:
+                raise ValueError(
+                    f"{operation.id}: missing reader text for condition {event.condition!r}"
+                )
+            key = (event.event, event.cause, reader_text)
+            if key in seen:
+                continue
+            seen.add(key)
+            public_event = event.event
+            if event.cause is not None:
+                public_event += "." + event.cause
+            lines.append(tex_code(public_event) + ": " + latex_escape(reader_text))
+    return latex_ragged_block(lines) if lines else ""
+
+
+def operation_description_tex(operation: CanonicalOperation) -> str:
+    artifacts = operation.artifacts
+    if artifacts is None or artifacts.bundle_root is None:
+        raise ValueError(f"{operation.id}: document candidate lacks artifact provenance")
+    reference = artifacts.description
+    path = Path(artifacts.bundle_root) / reference.path
+    text = read_source(path, ROOT).strip()
+    if not text:
+        raise ValueError(f"{path}: operation description must not be empty")
+    if reference.kind != "tex":
+        raise ValueError(f"{path}: the TeX reference generator requires a TeX description")
+    forbidden = re.search(
+        r"\\(?:input|include|documentclass)\b|\\begin\s*\{document\}|\\end\s*\{document\}",
+        text,
+    )
+    if forbidden:
+        raise ValueError(f"{path}: description contains a forbidden document command")
+    return text
+
+
+def latex_operation_diagrams(operation: CanonicalOperation) -> str:
+    artifacts = operation.artifacts
+    if artifacts is None or artifacts.bundle_root is None:
+        raise ValueError(f"{operation.id}: document candidate lacks artifact provenance")
+    rendered: list[str] = []
+    for reference in artifacts.diagrams:
+        if reference.kind != VECTOR_DIAGRAM_KIND:
+            raise ValueError(f"{operation.id}: unsupported diagram generator {reference.kind!r}")
+        source = Path(artifacts.bundle_root) / reference.path
+        example = load_vector_diagram(source)
+        has_predicate_row = any(
+            row["role"] == "predicate" for row in example.rows
+        )
+        if example.variant == "lane-map" and has_predicate_row:
+            needspace = 2.21 + 0.48 * (len(example.rows) - 2)
+            if not example.scalable:
+                needspace += 0.22
+            needspace_text = f"{needspace:.2f}in"
+            x_scale = ".76cm"
+            y_scale = ".70cm"
+        elif example.variant == "predicate-width":
+            needspace_text = "3.20in"
+            x_scale = ".76cm"
+            y_scale = ".70cm"
+        elif example.variant == "predicate-lane-map":
+            if len(example.rows) == 3:
+                needspace_text = "2.69in" if example.scalable else "2.91in"
+            else:
+                needspace_text = "2.60in"
+            x_scale = ".76cm"
+            y_scale = ".70cm"
+        elif example.variant == "width-map" and has_predicate_row:
+            needspace_text = "3.29in"
+            x_scale = ".76cm"
+            y_scale = ".70cm"
+        elif example.variant == "predicate-range" and example.data is not None:
+            needspace_text = "3.45in"
+            x_scale = ".76cm"
+            y_scale = ".70cm"
+        elif example.variant == "scalar-bridge":
+            needspace_text = "3.25in" if len(example.data["scalars"]) > 1 else "2.50in"
+            x_scale = ".76cm"
+            y_scale = ".70cm"
+        elif example.variant == "memory-lanes":
+            needspace_text = "4.25in"
+            x_scale = ".76cm"
+            y_scale = ".70cm"
+        elif example.variant == "reduction":
+            needspace_text = "4.05in"
+            x_scale = ".76cm"
+            y_scale = ".70cm"
+        elif example.variant == "conversion-map":
+            needspace_text = "3.29in"
+            x_scale = ".76cm"
+            y_scale = ".70cm"
+        else:
+            needspace_text = "2.50in"
+            x_scale = ".94cm" if example.variant == "width-map" else "0.72cm"
+            y_scale = "0.66cm"
+        rendered.append(
+            "\n".join(
+                [
+                    rf"\begin{{BedrockVectorExample}}{{{needspace_text}}}{{{x_scale}}}{{{y_scale}}}{{{latex_escape(reference.caption)}}}{{{latex_escape(reference.alt_text)}}}",
+                    render_vector_tikz(example),
+                    r"\end{BedrockVectorExample}",
+                ]
+            )
+        )
+    return "\n".join(rendered)
 
 
 def latex_instruction_summary_table(title: str, instructions: list[InstructionDef]) -> str:
@@ -2545,29 +2495,58 @@ def latex_instruction_entry(model: IsaModel, inst: InstructionDef) -> str:
     parts.append(
         rf"\begin{{manualinstruction}}{{{latex_escape(inst.mnemonic)}}}{{{latex_escape(title)}}}{{{instruction_label(inst.mnemonic)}}}"
     )
-    description = compact_text(inst.doc.get("description", ""))
-    if not description:
-        raise ValueError(f"{inst.path}: description must be a non-empty string")
-    parts.append(latex_instruction_field("Operation", latex_escape(description)))
+    if inst.operation is not None:
+        operation_tex = latex_escape(inst.operation.summary)
+        operation_detail_tex = operation_description_tex(inst.operation)
+        structured_field = latex_operation_field
+    else:
+        description = compact_text(inst.doc.get("description", ""))
+        if not description:
+            raise ValueError(f"{inst.path}: description must be a non-empty string")
+        operation_tex = latex_escape(description)
+        operation_detail_tex = ""
+        structured_field = latex_instruction_field
+    parts.append(structured_field("Operation", operation_tex))
     syntax_lines = assembler_syntax_lines(model, inst)
     if syntax_lines:
         parts.append(
-            latex_instruction_field(
+            structured_field(
                 "Assembler Syntax",
                 latex_ragged_block([tex_code(line) for line in syntax_lines]),
             )
         )
-    parts.append(latex_instruction_field("Attributes", latex_attributes_block(inst, model)))
-    exceptions = latex_instruction_exceptions(inst)
+    if inst.operation is not None:
+        requirements = latex_operation_requirements(model, inst.operation)
+        if requirements:
+            parts.append(structured_field("Required CPUID flags", requirements))
+        repeat = latex_operation_repeat(inst.operation)
+        if repeat:
+            parts.append(structured_field("Repeat eligibility", repeat))
+        exceptions = latex_operation_events(model, inst.operation)
+    else:
+        exceptions = latex_instruction_exceptions(inst)
     if exceptions:
-        parts.append(latex_instruction_field("Exceptions", exceptions))
+        parts.append(structured_field("Exceptions", exceptions))
     operand_value_tables = latex_instruction_operand_value_tables(model, inst)
     if operand_value_tables:
         parts.append(operand_value_tables)
-    flag_effects = latex_instruction_flag_effects(inst)
+    flag_effects = (
+        latex_operation_flag_effects(model, inst.operation)
+        if inst.operation is not None
+        else latex_instruction_flag_effects(inst)
+    )
     details_tex = instruction_details_tex(inst)
-    if flag_effects or details_tex:
+    diagrams = (
+        latex_operation_diagrams(inst.operation)
+        if inst.operation is not None
+        else ""
+    )
+    if operation_detail_tex or diagrams or flag_effects or details_tex:
         parts.append(r"\manualinstructiondescriptionheading{Detailed Semantics}")
+        if operation_detail_tex:
+            parts.append(operation_detail_tex)
+        if diagrams:
+            parts.append(diagrams)
         if flag_effects:
             parts.append(flag_effects)
         if details_tex:

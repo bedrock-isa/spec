@@ -1,0 +1,5 @@
+PSLICE treats the significant predicate positions of the old destination followed by those of the source as one sequence of selected B, W, L, or Q typed lanes.
+It writes the destination from a window of the architectural typed-lane count beginning at the unsigned immediate count.
+Positions beyond that concatenated sequence become zero.
+The complete destination predicate image is written, and every nonsignificant bit is cleared.
+The operation leaves FLAGS unchanged.

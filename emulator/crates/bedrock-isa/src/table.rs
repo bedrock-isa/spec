@@ -142,6 +142,84 @@ pub struct GeneratedDestinationOverlap {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct GeneratedSelectedSize {
+    pub field: char,
+    pub values: &'static [(u8, u8)],
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct GeneratedSelectedBoolean {
+    pub field: char,
+    pub true_values: &'static [u8],
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct GeneratedAppendedImmediate {
+    pub width_bytes: u8,
+    pub signed: bool,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum GeneratedNumericDomain {
+    Integer,
+    Floating,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum GeneratedConversionBehavior {
+    Exact,
+    SignExtend,
+    ZeroExtend,
+    Convert,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct GeneratedResolvedFormat {
+    pub domain: GeneratedNumericDomain,
+    pub selector: Option<GeneratedSelectedSize>,
+    pub fixed_bytes: Option<u8>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct GeneratedConversionSignature {
+    pub source: GeneratedResolvedFormat,
+    pub destination: GeneratedResolvedFormat,
+    pub behavior: GeneratedConversionBehavior,
+    pub integer_unsigned: Option<bool>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct GeneratedCpuidFlag {
+    pub id: &'static str,
+    pub token: &'static str,
+    pub selector_class: u32,
+    pub leaf: u32,
+    pub index: u32,
+    pub bit: u8,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct GeneratedAvailabilitySelector {
+    pub domain: &'static str,
+    pub field: char,
+    pub values: &'static [u8],
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct GeneratedAvailabilityOperandProfile {
+    pub operand: &'static str,
+    pub type_names: &'static [&'static str],
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct GeneratedAvailabilityRule {
+    pub case_id: &'static str,
+    pub selectors: &'static [GeneratedAvailabilitySelector],
+    pub operand_profiles: &'static [GeneratedAvailabilityOperandProfile],
+    pub required_cpuid_flags: &'static [&'static str],
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct GeneratedAttributes {
     pub instruction_set: InstructionSet,
     pub privileged: bool,
@@ -167,6 +245,13 @@ pub struct GeneratedForm {
     pub ea_fields: &'static [GeneratedEaField],
     pub constraints: &'static [GeneratedConstraint],
     pub destination_overlap: &'static [GeneratedDestinationOverlap],
+    pub selected_sizes: &'static [GeneratedSelectedSize],
+    pub fixed_size_bytes: Option<u8>,
+    pub vector_fp_form: bool,
+    pub vector_fp_selector: Option<GeneratedSelectedBoolean>,
+    pub conversion: Option<GeneratedConversionSignature>,
+    pub availability: &'static [GeneratedAvailabilityRule],
+    pub appended_immediate: Option<GeneratedAppendedImmediate>,
     pub attributes: GeneratedAttributes,
 }
 

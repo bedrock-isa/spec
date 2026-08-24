@@ -30,7 +30,7 @@ forms:
 - id: short.mov_x_rn_s_rn_d
   class: short
   bits: 00000zssssdddd
-  syntax: MOV.LQ(z) Rn(s), Rn(d)
+  syntax: MOV.{L|Q}(z) Rn(s), Rn(d)
   operands:
   - name: src
     type: Rn
@@ -76,7 +76,7 @@ forms:
 - id: medium.mov_x_rn_s_ea_e
   class: medium
   bits: 00000zzsssseeeeeee
-  syntax: MOV.BWLQ(z) Rn(s), <ea>(e)
+  syntax: MOV.{B|W|L|Q}(z) Rn(s), <ea>(e)
   operands:
   - name: src
     type: Rn
@@ -98,7 +98,7 @@ forms:
 - id: medium.mov_x_ea_e_rn_d
   class: medium
   bits: 01000zzddddeeeeeee
-  syntax: MOV.BWLQ(z) <ea>(e), Rn(d)
+  syntax: MOV.{B|W|L|Q}(z) <ea>(e), Rn(d)
   operands:
   - name: src
     type: EA
@@ -116,7 +116,7 @@ forms:
 - id: long.mov_x_ea_s_ea_d
   class: long
   bits: 1111000100zzsssssssddddddd
-  syntax: MOV.BWLQ(z) <ea>(s), <ea>(d)
+  syntax: MOV.{B|W|L|Q}(z) <ea>(s), <ea>(d)
   operands:
   - name: src
     type: EA

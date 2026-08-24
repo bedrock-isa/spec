@@ -1,0 +1,40 @@
+operation: FCLASS
+title: Floating-Point Classify
+summary: Performs the floating-point classify operation.
+public_instruction:
+  mnemonic: FCLASS
+execution_route: fpu
+privilege: unprivileged
+repeat:
+  kind: rep
+operands:
+- id: src
+  role: source
+  access: read
+  value_domain: floating
+  profiles:
+  - Fn
+- id: dst
+  role: destination
+  access: write
+  value_domain: integer
+  profiles:
+  - Rn
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - long.fclass_x_fn_s_rn_d
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags: []
+  events: []
+  sail_entry: execute_FCLASS
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

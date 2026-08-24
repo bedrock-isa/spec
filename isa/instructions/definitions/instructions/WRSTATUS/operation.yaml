@@ -1,0 +1,36 @@
+operation: WRSTATUS
+title: Write Status
+summary: Write the processor STATUS register from an Rn register.
+public_instruction:
+  mnemonic: WRSTATUS
+execution_route: system_registers
+privilege: supervisor
+repeat:
+  kind: not_eligible
+operands:
+- id: src
+  role: source
+  access: read
+  value_domain: integer
+  profiles:
+  - Rn
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - medium.wrstatus_rn_s
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags: []
+  events:
+  - event: INVALID_CONTROL_STATE
+    condition: wrstatus_image_invalid
+  sail_entry: execute_WRSTATUS
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

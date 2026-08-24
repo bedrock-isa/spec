@@ -2,7 +2,7 @@ forms:
 - id: long.ppackhi.v15
   class: long
   bits: 11111010010111zz10ppppqqqq
-  syntax: PPACKHI.WLQ(z) Pn(p), Pn(q)
+  syntax: PPACKHI.{W|L|Q}(z) Pn(p), Pn(q)
   operands:
   - name: src
     type: Pn

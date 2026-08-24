@@ -1,9 +1,0 @@
-mnemonic: VMOV
-title: VMOV (Vector)
-summary: Copy the complete scalable register image.
-description: Copy the complete scalable register image. Replace lanes of `Vd` selected by `Pn` with lanes from `Vs`. Move
-  active memory elements into `Vd`; inactive lanes preserve `Vd`. Move active vector elements to memory.
-attributes:
-  class: vector
-  family: vector
-  privilege: unprivileged

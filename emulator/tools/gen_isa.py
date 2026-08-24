@@ -23,6 +23,8 @@ REPOSITORY_ROOT = EMULATOR_ROOT.parent
 
 CLASS_ORDER = ["extrashort", "short", "medium", "long", "extralong", "xxlong"]
 
+RUST_INSTRUCTION_SETS = {"base": "Base", "fpu": "Fpu", "fpu.transcendental_approx": "FpuTranscendental", "vector": "Vector", "virtualization_acceleration": "VirtualizationAcceleration"}
+
 RUST_ENCODING_CLASSES = {
     "extrashort": "ExtraShort",
     "short": "Short",
@@ -48,6 +50,15 @@ FIELDLESS_OPERAND_WIDTHS = {
     "imm32s": 4,
     "imm64": 8,
     "fconst_id": 2,
+}
+APPENDED_IMMEDIATE_KINDS = {
+    "imm8": (1, False),
+    "imm8s": (1, True),
+    "imm16": (2, False),
+    "imm16s": (2, True),
+    "imm32": (4, False),
+    "imm32s": (4, True),
+    "imm64": (8, False),
 }
 
 
@@ -370,11 +381,8 @@ def render_hierarchical_lookup(
 
 
 def mnemonic(text: str) -> str:
-    head = text.strip().split()[0]
-    head = head.split("(", 1)[0].split("/", 1)[0].split(".", 1)[0]
-    if not re.fullmatch(r"[A-Za-z][A-Za-z0-9]*", head):
-        raise ValueError(f"cannot derive mnemonic from {text!r}")
-    return head.upper()
+    from defs_schema import parse_assembly_template
+    return parse_assembly_template(text, "generated form syntax").mnemonic.upper()
 
 
 def fixed_operand_bytes(entry_id: str, operands: list[dict[str, Any]]) -> int:
@@ -416,25 +424,67 @@ def digest_inputs(paths: list[Path]) -> str:
 
 
 def load_definitions(isa_design: Path) -> tuple[dict[str, dict[str, Any]], list[Path]]:
+    """Project generated attributes from the canonical operation bundles."""
+    tool_dir = isa_design / "isa" / "tools"
+    sys.path.insert(0, str(tool_dir))
+    from defs_loader import (  # type: ignore
+        extension_cpuid_requirements, load_architectural_event_causes,
+        load_architectural_event_ids, load_operation,
+        load_cpuid_flags, load_extensions, load_flag_effect_definitions, load_instruction_sets,
+        load_named_values, load_operand_types, load_semantic_conditions,
+        load_size_definitions, load_yaml,
+    )
+
     root = isa_design / "isa" / "instructions" / "definitions"
+    extensions = load_extensions(root)
+    cpuid_flags = load_cpuid_flags(root)
+    operands = load_operand_types(root, extensions)
+    sizes = load_size_definitions(root, extensions)
+    known_flags, requirements = extension_cpuid_requirements(extensions, cpuid_flags)
+    event_path = isa_design / "isa" / "conformance" / "architecture_tables.yaml"
+    events = load_architectural_event_ids(event_path)
+    causes = load_architectural_event_causes(event_path)
+    conditions = frozenset(load_semantic_conditions(root))
+    values = frozenset(load_named_values(root))
+    flag_defs = load_flag_effect_definitions(root)
     definitions: dict[str, dict[str, Any]] = {}
-    paths = sorted(root.glob("**/instructions/*/instruction.yaml"))
-    for path in paths:
-        definition = yaml.safe_load(path.read_text(encoding="utf-8"))
-        if not isinstance(definition, dict) or "mnemonic" not in definition:
-            continue
-        relative = path.relative_to(root)
-        if relative.parts[0] == "instructions":
-            instruction_set = "base"
-        elif relative.parts[0] == "extensions" and relative.parts[1] == "vector":
-            instruction_set = "vector"
-        elif "transcendental_approx" in relative.parts:
-            instruction_set = "fpu_transcendental"
-        else:
-            instruction_set = "fpu"
-        item = dict(definition)
-        item["instruction_set"] = instruction_set
-        definitions[str(definition["mnemonic"]).upper()] = item
+    paths: list[Path] = []
+    for instruction_set in load_instruction_sets(root, extensions):
+        index = load_yaml(instruction_set.include)
+        for name in index.get("include", []):
+            bundle = instruction_set.include.parent / name
+            path = bundle / "operation.yaml"
+            operation = load_operation(
+                bundle, operand_types=operands, size_definitions=sizes,
+                base_requirements=requirements[instruction_set.name],
+                known_cpuid_flags=known_flags, known_event_ids=events,
+                known_event_causes=causes, known_condition_ids=conditions,
+                known_named_value_ids=values,
+                known_diagram_kinds=frozenset({"vector-example"}),
+                known_flag_effect_definitions=flag_defs,
+            )
+            kind = operation.repeat.kind
+            contexts = ([] if kind == "not_eligible" else ["REP"])
+            if kind == "rep_and_repcc":
+                contexts.append("REPcc")
+            observed = operation.repeat.observed
+            repeat: dict[str, Any] = {"contexts": contexts}
+            if observed is not None:
+                repeat["observed"] = {"kind": observed.kind, "operand": getattr(observed, "operand", None)}
+            has_flags = any(case.flags for case in operation.cases)
+            item = {
+                "mnemonic": operation.public_instruction.mnemonic,
+                "instruction_set": instruction_set.name,
+                "attributes": {"privilege": operation.privilege},
+                "repeat": repeat,
+                "flag_effects": {} if has_flags else None,
+                "operation": operation,
+            }
+            mnemonic = operation.public_instruction.mnemonic.upper()
+            if mnemonic in definitions:
+                raise ValueError(f"duplicate operation mnemonic {mnemonic}")
+            definitions[mnemonic] = item
+            paths.append(path)
     return definitions, paths
 
 
@@ -458,7 +508,7 @@ def generated_attributes(
         flags_mode = "OperationDefined"
     return (
         "GeneratedAttributes { "
-        f"instruction_set: InstructionSet::{rust_variant(str(definition.get('instruction_set', 'unknown')))}, "
+        f"instruction_set: InstructionSet::{RUST_INSTRUCTION_SETS[str(definition.get('instruction_set', 'unknown'))]}, "
         f"privileged: {str(attributes.get('privilege') == 'supervisor').lower()}, "
         f"repeat_rep: {str('REP' in repeat_contexts).lower()}, "
         f"repeat_repcc: {str('REPcc' in repeat_contexts).lower()}, "
@@ -581,6 +631,198 @@ def generated_repeat_observation(
         f"location: RepeatOperandLocation::{location} "
         "} "
         "})"
+    )
+
+
+def generated_selected_sizes(entry: dict[str, Any], size_definitions: dict[str, Any]) -> str:
+    rows: list[str] = []
+    codes = size_definitions.get("size_codes", {})
+    kinds = size_definitions.get("size_kinds", {})
+    for symbol, spec in (entry.get("fields") or {}).items():
+        type_name = str(spec.get("type", ""))
+        if not type_name.startswith("size."):
+            continue
+        kind = type_name.split(".", 1)[1]
+        raw_kind = kinds.get(kind, {})
+        values = []
+        for item in raw_kind.get("values", []):
+            code = item["code"]
+            values.append((int(item["value"]), int(codes[code]["bytes"])))
+        rows.append("GeneratedSelectedSize { field: %r, values: &[%s] }" % (symbol, ", ".join("(%d, %d)" % value for value in values)))
+    return "&[" + ", ".join(rows) + "]"
+
+
+def generated_vector_metadata(
+    definition: dict[str, Any], entry: dict[str, Any], size_definitions: dict[str, Any]
+) -> tuple[str, str]:
+    operation = definition["operation"]
+    cases = [case for case in operation.cases if entry["id"] in case.applies_to.forms]
+    fp_cases = [case for case in cases if "FP" in case.resolved_requirements]
+    vector_fp = bool(fp_cases) and len(fp_cases) == len(cases)
+    selector = "None"
+    if fp_cases and not vector_fp:
+        selected_domains = {
+            selector.domain
+            for case in fp_cases
+            for selector in case.applies_to.selectors
+        }
+        if len(selected_domains) != 1:
+            raise ValueError(
+                f"{entry['id']}: mixed FP cases must select one typed size domain"
+            )
+        domain = next(iter(selected_domains))
+        fields = [
+            (symbol, spec)
+            for symbol, spec in (entry.get("fields") or {}).items()
+            if spec.get("type") == f"size.{domain}"
+        ]
+        if len(fields) != 1:
+            raise ValueError(
+                f"{entry['id']}: mixed FP cases have no unique {domain} selector field"
+            )
+        field, _ = fields[0]
+        fp_codes = {
+            value
+            for case in fp_cases
+            for case_selector in case.applies_to.selectors
+            if case_selector.domain == domain
+            for value in case_selector.values
+        }
+        raw_values = [
+            int(item["value"], 0) if isinstance(item["value"], str) else int(item["value"])
+            for item in size_definitions["size_kinds"][domain]["values"]
+            if item["code"] in fp_codes
+        ]
+        selector = "Some(GeneratedSelectedBoolean { field: %r, true_values: &[%s] })" % (
+            field,
+            ", ".join(str(value) for value in raw_values),
+        )
+    return str(vector_fp).lower(), selector
+
+
+def generated_conversion_signature(
+    definition: dict[str, Any], entry: dict[str, Any], size_definitions: dict[str, Any]
+) -> str:
+    """Project one applicable typed conversion case without mnemonic recovery."""
+    cases = [case for case in definition["operation"].cases if entry["id"] in case.applies_to.forms]
+    conversions = [case for case in cases if case.conversion is not None]
+    if not conversions:
+        return "None"
+    if len(conversions) != 1:
+        raise ValueError(f"{entry['id']}: form has ambiguous conversion cases")
+    case = conversions[0]
+    conversion = case.conversion
+
+    def resolved_format(domain: str, formats: tuple[str, ...], side: str) -> str:
+        selector_candidates = []
+        for selector in case.applies_to.selectors:
+            if set(selector.values) != set(formats):
+                continue
+            fields = [
+                symbol for symbol, spec in (entry.get("fields") or {}).items()
+                if spec.get("type") == f"size.{selector.domain}"
+            ]
+            if len(fields) == 1:
+                selector_candidates.append((selector.domain, fields[0]))
+        if selector_candidates:
+            if len(selector_candidates) != 1:
+                raise ValueError(f"{entry['id']}: {side} conversion format has ambiguous selector")
+            selector_domain, field = selector_candidates[0]
+            values = [
+                (int(item["value"], 0) if isinstance(item["value"], str) else int(item["value"]),
+                 int(size_definitions["size_codes"][item["code"]]["bytes"]))
+                for item in size_definitions["size_kinds"][selector_domain]["values"]
+                if item["code"] in formats
+            ]
+            return (
+                "GeneratedResolvedFormat { "
+                f"domain: GeneratedNumericDomain::{rust_variant(domain)}, "
+                f"selector: Some(GeneratedSelectedSize {{ field: '{field}', values: &[{', '.join(f'({value}, {width})' for value, width in values)}] }}), "
+                "fixed_bytes: None }"
+            )
+        if len(formats) != 1:
+            raise ValueError(f"{entry['id']}: {side} conversion format lacks a typed selector")
+        code = formats[0]
+        value = size_definitions["size_codes"].get(code)
+        if value is None:
+            raise ValueError(f"{entry['id']}: unknown {side} conversion format {code}")
+        return (
+            "GeneratedResolvedFormat { "
+            f"domain: GeneratedNumericDomain::{rust_variant(domain)}, selector: None, "
+            f"fixed_bytes: Some({int(value['bytes'])}) }}"
+        )
+
+    unsigned = (
+        "None" if conversion.integer_signedness is None
+        else f"Some({str(conversion.integer_signedness == 'unsigned').lower()})"
+    )
+    return (
+        "Some(GeneratedConversionSignature { "
+        f"source: {resolved_format(conversion.source_domain, conversion.source_formats, 'source')}, "
+        f"destination: {resolved_format(conversion.destination_domain, conversion.destination_formats, 'destination')}, "
+        f"behavior: GeneratedConversionBehavior::{rust_variant(conversion.behavior)}, "
+        f"integer_unsigned: {unsigned} }})"
+    )
+
+
+def generated_availability_rules(form: Any) -> str:
+    """Render exact typed Decode-IR availability without syntax inference."""
+
+    rules: list[str] = []
+    for rule in form.availability_rules:
+        selectors = ", ".join(
+            "GeneratedAvailabilitySelector { "
+            f"domain: {rust_string(item.domain)}, field: '{item.field_symbol}', "
+            f"values: &[{', '.join(str(value) for value in item.encoded_values)}] "
+            "}"
+            for item in rule.selectors
+        )
+        profiles = ", ".join(
+            "GeneratedAvailabilityOperandProfile { "
+            f"operand: {rust_string(item.operand_name)}, "
+            f"type_names: &[{', '.join(rust_string(value) for value in item.type_names)}] "
+            "}"
+            for item in rule.operand_profiles
+        )
+        required = ", ".join(
+            rust_string(value) for value in rule.required_cpuid_flags
+        )
+        rules.append(
+            "GeneratedAvailabilityRule { "
+            f"case_id: {rust_string(rule.case_id)}, selectors: &[{selectors}], "
+            f"operand_profiles: &[{profiles}], required_cpuid_flags: &[{required}] "
+            "}"
+        )
+    return "&[" + ", ".join(rules) + "]"
+
+
+def generated_fixed_size(entry: dict[str, Any], size_definitions: dict[str, Any]) -> str:
+    from defs_schema import parse_assembly_template
+    template = parse_assembly_template(str(entry["syntax"]), str(entry["id"]))
+    if template.fixed_size_suffix is None:
+        return "None"
+    code = template.fixed_size_suffix.removeprefix(".")
+    value = size_definitions["size_codes"].get(code)
+    if value is None:
+        raise ValueError(f"{entry['id']}: unknown fixed size suffix {code}")
+    return "Some(%d)" % int(value["bytes"])
+
+
+def generated_appended_immediate(operands: list[dict[str, Any]]) -> str:
+    values = [
+        str(operand["type"])
+        for operand in operands
+        if operand.get("field") is None
+        and str(operand["type"]) in APPENDED_IMMEDIATE_KINDS
+    ]
+    if not values:
+        return "None"
+    if len(values) != 1:
+        raise ValueError("form has more than one appended immediate")
+    width_bytes, signed = APPENDED_IMMEDIATE_KINDS[values[0]]
+    return "Some(GeneratedAppendedImmediate { width_bytes: %d, signed: %s })" % (
+        width_bytes,
+        str(signed).lower(),
     )
 
 
@@ -773,7 +1015,8 @@ def render_operator_space_matcher(
 def render(isa_design: Path) -> str:
     tool_dir = isa_design / "isa" / "tools"
     sys.path.insert(0, str(tool_dir))
-    from defs_loader import load_operand_types  # type: ignore
+    from defs_loader import load_operand_types, load_extensions, load_size_definitions  # type: ignore
+    from defs_schema import parse_assembly_template  # type: ignore
     from encoding_architecture import (  # type: ignore
         ENCODING_CLASSES_BY_NAME,
         OPERATOR_SPACE_PREFIX_BITS,
@@ -781,11 +1024,14 @@ def render(isa_design: Path) -> str:
         operator_space_from_prefix,
     )
     from encoding_store import class_entries, load_encoding_store  # type: ignore
+    import decode_ir  # type: ignore
     from validate_alloc import compact_bits, validate_store  # type: ignore
 
     defs_root = isa_design / "isa" / "instructions" / "definitions"
     store = load_encoding_store(defs_root)
-    operand_types = load_operand_types(defs_root)
+    extensions = load_extensions(defs_root)
+    operand_types = load_operand_types(defs_root, extensions)
+    size_definitions = load_size_definitions(defs_root, extensions)
     operands_by_form = {
         located.form.id: [
             {
@@ -810,6 +1056,8 @@ def render(isa_design: Path) -> str:
         for encoding_class in store.classes
     ]
     definitions, definition_paths = load_definitions(isa_design)
+    decode = decode_ir.load_decode_ir(defs_root)
+    decode_forms = {form.key: form for form in decode.forms}
     opcode_variants = {name: rust_variant(name) for name in definitions}
     allocation_summaries: dict[str, dict[str, int]] = {}
     for cls, summary, _skipped, overlaps in validate_store(defs_root):
@@ -822,12 +1070,23 @@ def render(isa_design: Path) -> str:
         isa_design / "isa" / "addressing" / "effective_address" / "definition.yaml"
     )
     source_hash = digest_inputs(source_paths + definition_paths + [ea_definition])
+    availability_profile_import = (
+        "GeneratedAvailabilityOperandProfile, "
+        if any(
+            rule.operand_profiles
+            for form in decode.forms
+            for rule in form.availability_rules
+        )
+        else ""
+    )
     out = [
         "// @generated by tools/gen_isa.py; do not edit by hand.",
         "use crate::table::{",
         "    ConstraintPredicate, DestinationOverlapRule, EncodingClass, FieldKind, FlagsEffect,",
-        "    GeneratedAttributes, GeneratedConstraint, GeneratedDestinationOverlap, GeneratedEaField,",
-        "    GeneratedField, GeneratedForm, InstructionSet, OperatorSpace, RepeatObservation,",
+        "    GeneratedAttributes, "
+        f"{availability_profile_import}GeneratedAvailabilityRule, GeneratedAvailabilitySelector, "
+        "GeneratedConstraint, GeneratedCpuidFlag, GeneratedDestinationOverlap, GeneratedEaField,",
+        "    GeneratedConversionBehavior, GeneratedConversionSignature, GeneratedField, GeneratedForm, GeneratedNumericDomain, GeneratedResolvedFormat, GeneratedSelectedSize, GeneratedSelectedBoolean, GeneratedAppendedImmediate, InstructionSet, OperatorSpace, RepeatObservation,",
         "    RepeatObservedOperand,",
         "    RepeatOperandLocation,",
         "};",
@@ -835,6 +1094,22 @@ def render(isa_design: Path) -> str:
         f"    {rust_string(source_hash)};",
         "",
     ]
+
+    out.extend(
+        [
+            "pub static GENERATED_CPUID_FLAGS: &[GeneratedCpuidFlag] = &[",
+            *[
+                "    GeneratedCpuidFlag { "
+                f"id: {rust_string(flag.id)}, token: {rust_string(flag.token)}, "
+                f"selector_class: {flag.selector_class}, leaf: {flag.leaf}, "
+                f"index: {flag.index}, bit: {flag.bit} "
+                "},"
+                for flag in decode.cpuid_flags
+            ],
+            "];",
+            "",
+        ]
+    )
 
     out.extend([
         "#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]",
@@ -921,6 +1196,9 @@ def render(isa_design: Path) -> str:
             destination_overlap = generated_destination_overlap(
                 entry, operands_by_form[entry_id]
             )
+            vector_fp_form, vector_fp_selector = generated_vector_metadata(definition, entry, size_definitions)
+            conversion_signature = generated_conversion_signature(definition, entry, size_definitions)
+            availability = generated_availability_rules(decode_forms[entry_id])
 
             descriptors.append(
                 "    GeneratedForm { "
@@ -932,6 +1210,10 @@ def render(isa_design: Path) -> str:
                 f"mask: 0x{mask:x}, value: 0x{value:x}, fields: {fields}, ea_fields: {ea_fields}, "
                 f"constraints: {constraints}, "
                 f"destination_overlap: {destination_overlap}, "
+                f"selected_sizes: {generated_selected_sizes(entry, size_definitions)}, "
+                f"fixed_size_bytes: {generated_fixed_size(entry, size_definitions)}, "
+                f"vector_fp_form: {vector_fp_form}, vector_fp_selector: {vector_fp_selector}, conversion: {conversion_signature}, availability: {availability}, "
+                f"appended_immediate: {generated_appended_immediate(operands_by_form[entry_id])}, "
                 f"attributes: {generated_attributes(definition, entry, operands_by_form[entry_id])} "
                 "},"
             )

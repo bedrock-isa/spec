@@ -2,7 +2,7 @@ forms:
 - id: xxlong.vgather1.v239
   class: xxlong
   bits: 111111110000010000zz0bbbbppppiiiissssvvvvv
-  syntax: VGATHER1.BWLQ(z) Pn(p), [Rn(b) + Rn(i) * Rn(s)], Vn(v)
+  syntax: VGATHER1.{B|W|L|Q}(z) Pn(p), [Rn(b) + Rn(i) * Rn(s)], Vn(v)
   operands:
   - {name: govern, type: Pn, access: read, field: p}
   - {name: base, type: Rn, access: read, field: b}
@@ -34,7 +34,7 @@ forms:
 - id: xxlong.vgather1.v242
   class: xxlong
   bits: 111111110000010010zzbbbbppppiiiivvvvvxxxxx
-  syntax: VGATHER1.BWLQ(z) Pn(p), [Rn(b) + Vn(x)[Rn(i)]], Vn(v)
+  syntax: VGATHER1.{B|W|L|Q}(z) Pn(p), [Rn(b) + Vn(x)[Rn(i)]], Vn(v)
   operands:
   - {name: govern, type: Pn, access: read, field: p}
   - {name: base, type: Rn, access: read, field: b}
@@ -46,7 +46,7 @@ forms:
 - id: xxlong.vgather1.v243
   class: xxlong
   bits: 111111110000010011zzbbbbppppiiiivvvvvxxxxx
-  syntax: VGATHER1.BWLQ(z) Pn(p), [Rn(b) + Vn(x)[Rn(i)] * <scale>], Vn(v)
+  syntax: VGATHER1.{B|W|L|Q}(z) Pn(p), [Rn(b) + Vn(x)[Rn(i)] * <scale>], Vn(v)
   operands:
   - {name: govern, type: Pn, access: read, field: p}
   - {name: base, type: Rn, access: read, field: b}
@@ -58,7 +58,7 @@ forms:
 - id: xxlong.vgather1.v244
   class: xxlong
   bits: 111111110000010100zzbbbbppppiiiivvvvvxxxxx
-  syntax: VGATHER1.BWLQ(z) Pn(p), [Rn(b) + Vn(x)[Rn(i)] * <scale> + <disp8s>], Vn(v)
+  syntax: VGATHER1.{B|W|L|Q}(z) Pn(p), [Rn(b) + Vn(x)[Rn(i)] * <scale> + <disp8s>], Vn(v)
   operands:
   - {name: govern, type: Pn, access: read, field: p}
   - {name: base, type: Rn, access: read, field: b}
@@ -71,7 +71,7 @@ forms:
 - id: xxlong.vgather1.v245
   class: xxlong
   bits: 111111110000010101zzbbbbppppiiiivvvvvxxxxx
-  syntax: VGATHER1.BWLQ(z) Pn(p), [Rn(b) + Vn(x)[Rn(i)] * <scale> + <disp16s>], Vn(v)
+  syntax: VGATHER1.{B|W|L|Q}(z) Pn(p), [Rn(b) + Vn(x)[Rn(i)] * <scale> + <disp16s>], Vn(v)
   operands:
   - {name: govern, type: Pn, access: read, field: p}
   - {name: base, type: Rn, access: read, field: b}
@@ -84,7 +84,7 @@ forms:
 - id: xxlong.vgather1.v246
   class: xxlong
   bits: 111111110000010110zzbbbbppppiiiivvvvvxxxxx
-  syntax: VGATHER1.BWLQ(z) Pn(p), [Rn(b) + Vn(x)[Rn(i)] * <scale> + <disp32s>], Vn(v)
+  syntax: VGATHER1.{B|W|L|Q}(z) Pn(p), [Rn(b) + Vn(x)[Rn(i)] * <scale> + <disp32s>], Vn(v)
   operands:
   - {name: govern, type: Pn, access: read, field: p}
   - {name: base, type: Rn, access: read, field: b}
@@ -97,7 +97,7 @@ forms:
 - id: xxlong.vgather1.v247
   class: xxlong
   bits: 111111110000010111zzbbbbppppiiiivvvvvxxxxx
-  syntax: VGATHER1.BWLQ(z) Pn(p), [Rn(b) + Vn(x)[Rn(i)] * <scale> + <disp64>], Vn(v)
+  syntax: VGATHER1.{B|W|L|Q}(z) Pn(p), [Rn(b) + Vn(x)[Rn(i)] * <scale> + <disp64>], Vn(v)
   operands:
   - {name: govern, type: Pn, access: read, field: p}
   - {name: base, type: Rn, access: read, field: b}

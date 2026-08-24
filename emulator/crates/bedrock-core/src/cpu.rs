@@ -7,7 +7,7 @@ use crate::{AccessDomain, AccessKind, Flags, SegmentSelector, Status, StepResult
 use bedrock_bus::{AcknowledgedBusFailure, Bus, BusError, BusFailureCause, RetrySafety};
 use bedrock_isa::{
     AutoUpdate, CompactEa, DecodedInstruction, DestinationOverlapRule, DisplacementWidth,
-    ExtendedDescriptor, FieldKind, FormId, InstructionSet, MAX_INSTRUCTION_BYTES, Opcode,
+    ExtendedDescriptor, FieldKind, FormId, GeneratedResolvedFormat, InstructionSet, MAX_INSTRUCTION_BYTES, Opcode,
     RepeatObservation, RepeatObservedOperand, RepeatOperandLocation, Size, decode, decode_header,
 };
 use std::cell::Cell;
@@ -1713,46 +1713,26 @@ impl Cpu {
             );
             self.state.p[field(instruction, 'q') as usize] = image;
             self.commit_vector_fp_causes(before.clone(), pc, status, accrued, causes)?;
-        } else if matches!(
-            instruction.opcode,
-            Opcode::Vcvth
-                | Opcode::Vcvtuh
-                | Opcode::Vcvts
-                | Opcode::Vcvtus
-                | Opcode::Vcvtd
-                | Opcode::Vcvtud
-                | Opcode::Vcvtl
-                | Opcode::Vcvtul
-                | Opcode::Vcvtq
-                | Opcode::Vcvtuq
-        ) {
-            let source_bytes = 1_usize << field(instruction, 'z') as usize;
-            let destination_bytes = match instruction.opcode {
-                Opcode::Vcvth | Opcode::Vcvtuh => 2,
-                Opcode::Vcvts | Opcode::Vcvtus | Opcode::Vcvtl | Opcode::Vcvtul => 4,
-                Opcode::Vcvtd | Opcode::Vcvtud | Opcode::Vcvtq | Opcode::Vcvtuq => 8,
-                _ => unreachable!(),
-            };
+        } else if let Some(conversion) = instruction.generated_form.conversion {
+            if !matches!(
+                conversion.behavior,
+                bedrock_isa::GeneratedConversionBehavior::Convert
+            ) {
+                return Ok(None);
+            }
+            let source_bytes = resolved_conversion_bytes(instruction, conversion.source);
+            let destination_bytes = resolved_conversion_bytes(instruction, conversion.destination);
             let source_is_fp = matches!(
-                instruction.opcode,
-                Opcode::Vcvtl | Opcode::Vcvtul | Opcode::Vcvtq | Opcode::Vcvtuq
-            ) || !instruction.form_text.contains("V_LQ");
+                conversion.source.domain,
+                bedrock_isa::GeneratedNumericDomain::Floating
+            );
             let destination_is_fp = matches!(
-                instruction.opcode,
-                Opcode::Vcvth
-                    | Opcode::Vcvtuh
-                    | Opcode::Vcvts
-                    | Opcode::Vcvtus
-                    | Opcode::Vcvtd
-                    | Opcode::Vcvtud
+                conversion.destination.domain,
+                bedrock_isa::GeneratedNumericDomain::Floating
             );
-            let unsigned_integer = matches!(
-                instruction.opcode,
-                Opcode::Vcvtuh | Opcode::Vcvtus | Opcode::Vcvtud | Opcode::Vcvtul | Opcode::Vcvtuq
-            );
+            let unsigned_integer = conversion.integer_unsigned.unwrap_or(false);
             let destination = field(instruction, 'w') as usize;
             let (image, causes) = vector_fp_conversion_image(
-                instruction.opcode,
                 self.state.v[destination],
                 self.state.v[field(instruction, 'v') as usize],
                 predicate,
@@ -8390,8 +8370,11 @@ fn vector_element_size(instruction: &DecodedInstruction) -> Size {
 }
 
 fn vector_form_is_fp(instruction: &DecodedInstruction) -> bool {
-    optional_field(instruction, 'x').is_some_and(|selector| selector >= 5)
-        || instruction.form_text.contains("HSD")
+    instruction.generated_form.vector_fp_form
+        || instruction.generated_form.vector_fp_selector.is_some_and(|selector| {
+            optional_field(instruction, selector.field)
+                .is_some_and(|value| selector.true_values.contains(&(value as u8)))
+        })
 }
 
 fn vector_fp_format(element_bytes: usize) -> crate::fpu::format::FpFormat {
@@ -8659,7 +8642,6 @@ fn vector_fp_compare_image(
 }
 
 fn vector_fp_conversion_image(
-    operation: Opcode,
     mut destination: [u8; crate::state::VLEN_BYTES],
     source: [u8; crate::state::VLEN_BYTES],
     predicate: [u8; crate::state::PREDICATE_BYTES],
@@ -8724,8 +8706,22 @@ fn vector_fp_conversion_image(
         }
         causes = causes.union(lane_causes);
     }
-    let _ = operation;
     (destination, causes)
+}
+
+fn resolved_conversion_bytes(
+    instruction: &DecodedInstruction,
+    format: GeneratedResolvedFormat,
+) -> usize {
+    format.selector.and_then(|selector| {
+        optional_field(instruction, selector.field).and_then(|value| {
+            selector.values.iter().find_map(|(encoded, bytes)| {
+                (*encoded == value as u8).then_some(*bytes as usize)
+            })
+        })
+    }).or(format.fixed_bytes.map(usize::from)).expect(
+        "generated conversion signature resolves every selected format",
+    )
 }
 
 fn vector_integer_reduce(
@@ -9310,51 +9306,20 @@ fn decode_compact_ea(instruction: &DecodedInstruction, symbol: char, value: u64)
 }
 
 fn instruction_size(instruction: &DecodedInstruction) -> Size {
-    let selector = optional_field(instruction, 'z')
-        .or_else(|| {
-            optional_field(instruction, 's').filter(|_| {
-                instruction
-                    .fields
-                    .iter()
-                    .any(|field| field.symbol == 's' && field.kind == FieldKind::Size)
-            })
+    let bytes = instruction.generated_form.selected_sizes.iter().find_map(|selected| {
+        optional_field(instruction, selected.field).and_then(|value| {
+            selected.values.iter().find_map(|(encoded, bytes)| (*encoded == value as u8).then_some(*bytes))
         })
-        .unwrap_or(0) as u8;
-    let text = instruction.form_text;
-    if text.contains("BWLQ(z)") || text.contains("z:B/W/L/Q") {
-        return [Size::Byte, Size::Word, Size::Long, Size::Quad][selector as usize & 3];
-    }
-    if text.contains("LQ(z)") || text.contains("z:L/Q") {
-        return if selector & 1 == 0 {
-            Size::Long
-        } else {
-            Size::Quad
-        };
-    }
-    if text.contains("BW(z)") || text.contains("z:B/W") {
-        return if selector & 1 == 0 {
-            Size::Byte
-        } else {
-            Size::Word
-        };
-    }
-    if text.contains("WL(z)") || text.contains("z:W/L") {
-        return if selector & 1 == 0 {
-            Size::Word
-        } else {
-            Size::Long
-        };
-    }
-    if text.contains(".B") {
-        Size::Byte
-    } else if text.contains(".W") {
-        Size::Word
-    } else if text.contains(".L") {
-        Size::Long
-    } else {
-        Size::Quad
+    }).or(instruction.generated_form.fixed_size_bytes).unwrap_or(8);
+    match bytes {
+        1 => Size::Byte,
+        2 => Size::Word,
+        4 => Size::Long,
+        8 => Size::Quad,
+        _ => unreachable!("generated size metadata is validated"),
     }
 }
+
 fn fpu_size(instruction: &DecodedInstruction) -> Size {
     if optional_field(instruction, 'z').unwrap_or(1) & 1 == 0 {
         Size::Long
@@ -9613,56 +9578,32 @@ fn signed_immediate(instruction: &DecodedInstruction) -> i64 {
     if let Some(value) = optional_field(instruction, 'i') {
         return value as u8 as i8 as i64;
     }
-    let width =
-        if instruction.allocation_id.contains("imm8s") || instruction.form_text.contains("imm8s") {
-            DisplacementWidth::Bits8
-        } else if (instruction.allocation_id.contains("imm16s")
-            || instruction.form_text.contains("imm16s"))
-            || matches!(
-                instruction.form,
-                FormId::MediumAddQEaSp
-                    | FormId::MediumSubQEaSp
-                    | FormId::MediumCallEa
-                    | FormId::MediumCallccEa
-                    | FormId::MediumJmpEa
-                    | FormId::MediumJccEa
-            )
-        {
-            DisplacementWidth::Bits16
-        } else if (instruction.allocation_id.contains("imm32s")
-            || instruction.form_text.contains("imm32s"))
-            || matches!(
-                instruction.form,
-                FormId::MediumAddQEaSpN2
-                    | FormId::MediumSubQEaSpN2
-                    | FormId::MediumCallEaN2
-                    | FormId::MediumCallccEaN2
-                    | FormId::MediumJmpEaN2
-                    | FormId::MediumJccEaN2
-            )
-        {
-            DisplacementWidth::Bits32
-        } else {
-            return 0;
-        };
+    let Some(immediate) = instruction.generated_form.appended_immediate else { return 0; };
+    if !immediate.signed { return 0; }
+    let width = match immediate.width_bytes {
+        1 => DisplacementWidth::Bits8,
+        2 => DisplacementWidth::Bits16,
+        4 => DisplacementWidth::Bits32,
+        _ => return 0,
+    };
     read_signed(payload_after_eas(instruction), width)
 }
 fn binary_immediate(instruction: &DecodedInstruction) -> u64 {
     let bytes = payload_after_eas(instruction);
-    if instruction.allocation_id.contains("imm8s") || instruction.form_text.contains("imm8s") {
-        return read_signed(bytes, DisplacementWidth::Bits8) as u64;
+    let Some(immediate) = instruction.generated_form.appended_immediate else {
+        return signed_immediate(instruction) as u64;
+    };
+    if immediate.signed {
+        return match immediate.width_bytes {
+            1 => read_signed(bytes, DisplacementWidth::Bits8) as u64,
+            2 => read_signed(bytes, DisplacementWidth::Bits16) as u64,
+            4 => read_signed(bytes, DisplacementWidth::Bits32) as u64,
+            _ => signed_immediate(instruction) as u64,
+        };
     }
-    if instruction.allocation_id.contains("imm16s") || instruction.form_text.contains("imm16s") {
-        return read_signed(bytes, DisplacementWidth::Bits16) as u64;
-    }
-    if instruction.allocation_id.contains("imm32s") || instruction.form_text.contains("imm32s") {
-        return read_signed(bytes, DisplacementWidth::Bits32) as u64;
-    }
-    if instruction.allocation_id.contains("imm64") || instruction.form_text.contains("imm64") {
-        return read_unsigned(bytes, 8);
-    }
-    signed_immediate(instruction) as u64
+    read_unsigned(bytes, immediate.width_bytes as usize)
 }
+
 fn read_bus<B: Bus>(bus: &mut B, address: u64, size: Size) -> bedrock_bus::BusResult<u64> {
     match size {
         Size::Byte => bus.read_u8(address).map(u64::from),

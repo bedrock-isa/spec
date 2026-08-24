@@ -672,14 +672,17 @@ function vector_fp_result_length(instruction : Decoded_instruction,
   }
 
 function vector_fp_allowed_causes(operation : Semantic_operation) -> bits(5) =
-  if operation == Op_VCOPYSIGN | operation == Op_VCLASS
+  if operation == Op_VNEG | operation == Op_VABS
+     | operation == Op_VCOPYSIGN | operation == Op_VCLASS
+     | operation == Op_VDUP | operation == Op_VEXTRACT | operation == Op_VINSERT
      | operation == Op_VREDAND | operation == Op_VREDOR | operation == Op_VREDXOR
      | operation == Op_VREDMINS | operation == Op_VREDMINU
      | operation == Op_VREDMAXS | operation == Op_VREDMAXU then fflags_none
   else if operation == Op_VMIN | operation == Op_VMAX | operation == Op_VCMPcc
           | operation == Op_VREDMIN | operation == Op_VREDMAX then fflags_nv
   else if operation == Op_VROUND | operation == Op_VTRUNC
-          | operation == Op_VFLOOR | operation == Op_VCEIL then fflags_nv | fflags_nx
+          | operation == Op_VFLOOR | operation == Op_VCEIL
+          | operation == Op_VSQRT then fflags_nv | fflags_nx
   else if operation == Op_VDIV then fflags_all
   else 0b10111
 

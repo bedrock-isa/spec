@@ -63,7 +63,7 @@ forms:
 - id: long.jcc_x_ea_e
   class: long
   bits: 11110110001001zcccceeeeeee
-  syntax: Jcc.LQ(z) <ea>(e)
+  syntax: Jcc.{L|Q}(z) <ea>(e)
   operands:
   - name: cc
     type: condition
@@ -89,7 +89,7 @@ forms:
 - id: long.jcc_x_rn
   class: long
   bits: 11110110011000001zccccrrrr
-  syntax: Jcc.LQ(z) Rn(r)
+  syntax: Jcc.{L|Q}(z) Rn(r)
   operands:
   - name: cc
     type: condition

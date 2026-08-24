@@ -1,8 +1,0 @@
-mnemonic: VCTZ
-title: VCTZ (Vector)
-summary: Count trailing zeros.
-description: Count trailing zeros.
-attributes:
-  class: vector
-  family: vector
-  privilege: unprivileged

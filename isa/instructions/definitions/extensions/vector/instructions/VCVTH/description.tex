@@ -1,0 +1,9 @@
+Each active S or D source value is converted to H. The signed-integer forms
+convert each active L or Q source value to H. The operation container is the
+larger of the source and 16-bit destination widths. The H result replaces the
+low 16-bit field; the other bits of an active destination container and every
+inactive container retain their previous values.
+
+A completed conversion accrues generated NV, OF, UF, and NX causes in FFLAGS;
+DZ is unchanged. An enabled generated cause raises FLOATING\_POINT\_FAULT and
+suppresses destination and newly accrued FFLAGS effects.

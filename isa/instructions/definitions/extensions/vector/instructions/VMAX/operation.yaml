@@ -1,0 +1,33 @@
+operation: VMAX
+title: Vector Floating-Point Maximum
+summary: Selects the floating-point maximum in each active lane.
+public_instruction:
+  mnemonic: VMAX
+execution_route: vector
+privilege: unprivileged
+repeat:
+  kind: not_eligible
+operands:
+- {id: govern, role: governing_predicate, access: read, value_domain: predicate, profiles: [Pn]}
+- {id: src, role: source, access: read, value_domain: vector, profiles: [Vn, VEA]}
+- {id: dst, role: destination, access: read_write, value_domain: vector, profiles: [Vn, VEA]}
+cases:
+- id: all_forms
+  applies_to:
+    forms: [extralong.vmax.v69, xxlong.vmax.v178, xxlong.vmax.v179]
+    selectors:
+    - {domain: HSD, values: [H, S, D]}
+  additional_requirements: [FP]
+  predicate: {kind: none}
+  flags:
+  - bank: FFLAGS
+    completion: accrued_causes
+    effects:
+    - {flag: NV, effect: accrue_source, reference: operation_cause}
+  events:
+  - event: FLOATING_POINT_FAULT
+    condition: enabled_floating_point_exception
+  sail_entry: execute_VMAX
+artifacts:
+  semantics: {path: semantics.sail, kind: sail}
+  description: {path: description.tex, kind: tex}

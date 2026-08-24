@@ -2,7 +2,7 @@ forms:
 - id: long.fmod_x_ea_s_fn_d
   class: long
   bits: 1111100101z1010ddddeeeeeee
-  syntax: FMOD.SD(z) <ea>(e), Fn(d)
+  syntax: FMOD.{S|D}(z) <ea>(e), Fn(d)
   operands:
   - name: src
     type: FEA
@@ -20,7 +20,7 @@ forms:
 - id: medium.fmod_x_fn_s_fn_d
   class: medium
   bits: 101110z010ssssdddd
-  syntax: FMOD.SD(z) Fn(s), Fn(d)
+  syntax: FMOD.{S|D}(z) Fn(s), Fn(d)
   operands:
   - name: src
     type: Fn

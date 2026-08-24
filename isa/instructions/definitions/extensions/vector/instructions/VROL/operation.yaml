@@ -1,0 +1,28 @@
+operation: VROL
+title: VROL (Vector)
+summary: Rotate left.
+public_instruction:
+  mnemonic: VROL
+execution_route: vector
+privilege: unprivileged
+repeat:
+  kind: not_eligible
+operands:
+- {id: govern, role: governing_predicate, access: read, value_domain: predicate, profiles: [Pn]}
+- {id: src, role: source, access: read, value_domain: vector, profiles: [Vn, VEA]}
+- {id: count, role: source, access: read, value_domain: integer, profiles: [imm6]}
+- {id: dst, role: destination, access: read_write, value_domain: vector, profiles: [Vn, VEA]}
+cases:
+- id: all_forms
+  applies_to:
+    forms: [extralong.vrol.v66, extralong.vrol.v110, xxlong.vrol.v172, xxlong.vrol.v173, xxlong.vrol.v217]
+    selectors:
+    - {domain: BWLQ, values: [B, W, L, Q]}
+  additional_requirements: []
+  predicate: {kind: none}
+  flags: []
+  events: []
+  sail_entry: execute_VROL
+artifacts:
+  semantics: {path: semantics.sail, kind: sail}
+  description: {path: description.tex, kind: tex}

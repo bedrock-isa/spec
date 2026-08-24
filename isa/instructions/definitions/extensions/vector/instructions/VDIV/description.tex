@@ -1,0 +1,10 @@
+VDIV divides each active H, S, or D destination element by its corresponding
+source element and rounds the result according to the floating-point
+environment. The register form and the memory-source form write the result to
+the destination vector lane. An inactive destination lane retains its
+previous value.
+
+The memory-destination form reads each active destination element, divides it
+by the corresponding source-register element, and writes the result back to
+that memory element. Inactive memory elements retain their previous values,
+making the destination transaction a lane-wise read-modify-write.

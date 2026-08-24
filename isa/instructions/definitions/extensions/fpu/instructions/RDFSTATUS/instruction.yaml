@@ -1,8 +1,0 @@
-mnemonic: RDFSTATUS
-title: Read Floating-Point Status
-summary: Read the FPU status/control register into an Rn register.
-description: RDFSTATUS reads the architectural 16-bit FSTATUS register, zero-extends it to 64 bits, and writes the result to the destination Rn register. FSTATUS contains floating-point exception-condition enables, rounding mode, and non-default mode bits. FFLAGS holds accrued floating-point exception flags. RDFSTATUS requires the floating-point extension.
-attributes:
-  class: system
-  family: system_registers
-  privilege: unprivileged

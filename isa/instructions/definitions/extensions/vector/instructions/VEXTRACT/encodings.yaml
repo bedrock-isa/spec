@@ -2,7 +2,7 @@ forms:
 - id: extralong.vextract.v114
   class: extralong
   bits: 11111101111110000zz00rrrrssssvvvvv
-  syntax: VEXTRACT.BWLQ(z) Vn(v), Rn(r), Rn(s)
+  syntax: VEXTRACT.{B|W|L|Q}(z) Vn(v), Rn(r), Rn(s)
   operands:
   - name: src
     type: Vn
@@ -22,7 +22,7 @@ forms:
 - id: extralong.vextract.v116
   class: extralong
   bits: 11111101111110000zz10rrrrssssvvvvv
-  syntax: VEXTRACT.HSD(z) Vn(v), Rn(r), Fn(s)
+  syntax: VEXTRACT.{H|S|D}(z) Vn(v), Rn(r), Fn(s)
   operands:
   - name: src
     type: Vn

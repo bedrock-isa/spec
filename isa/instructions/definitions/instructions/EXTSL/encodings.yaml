@@ -44,7 +44,7 @@ forms:
 - id: long.extsl_x_ea_s_ea_d
   class: long
   bits: 11110000010zsssssssddddddd
-  syntax: EXTSL.BW(z) <ea>(s), <ea>(d)
+  syntax: EXTSL.{B|W}(z) <ea>(s), <ea>(d)
   operands:
   - name: src
     type: EA

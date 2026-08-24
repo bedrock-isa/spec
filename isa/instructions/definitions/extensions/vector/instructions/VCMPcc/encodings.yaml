@@ -2,7 +2,7 @@ forms:
 - id: extralong.vcmpcc.v47.integer
   class: extralong
   bits: 111111010xxxccccppppqqqqvvvvvwwwww
-  syntax: VCMPcc.VTYPE(x) Pn(p), Vn(v), Vn(w), Pn(q)
+  syntax: VCMPcc.{B|W|L|Q}(x) Pn(p), Vn(v), Vn(w), Pn(q)
   operands:
   - name: cc
     type: condition
@@ -29,18 +29,18 @@ forms:
       type: size.VTYPE
   constraints:
   - field: x
-    allow: &integer_types
+    allow: &id001
     - 0x0..0x3
     reason: reserved_vector_element_type
   - field: c
-    allow: &integer_conditions
+    allow: &id002
     - 0x2..0x5
     - 0xa..0xf
     reason: reserved_vector_comparison_condition
 - id: extralong.vcmpcc.v47.fp
   class: extralong
   bits: 111111010xxxccccppppqqqqvvvvvwwwww
-  syntax: VCMPcc.VTYPE(x) Pn(p), Vn(v), Vn(w), Pn(q)
+  syntax: VCMPcc.{H|S|D}(x) Pn(p), Vn(v), Vn(w), Pn(q)
   operands:
   - name: cc
     type: condition
@@ -67,11 +67,11 @@ forms:
       type: size.VTYPE
   constraints:
   - field: x
-    allow: &fp_types
+    allow: &id003
     - 0x5..0x7
     reason: reserved_vector_element_type
   - field: c
-    allow: &fp_conditions
+    allow: &id004
     - 0x2..0x3
     - 0x8..0x9
     - 0xc..0xf
@@ -79,7 +79,7 @@ forms:
 - id: xxlong.vcmpcc.v230.integer
   class: xxlong
   bits: 111111110000000xxxccccppppqqqqvvvvveeeeeee
-  syntax: VCMPcc.VTYPE(x) Pn(p), Vn(v), <ea>(e), Pn(q)
+  syntax: VCMPcc.{B|W|L|Q}(x) Pn(p), Vn(v), <ea>(e), Pn(q)
   operands:
   - name: cc
     type: condition
@@ -108,15 +108,15 @@ forms:
       type: size.VTYPE
   constraints:
   - field: x
-    allow: *integer_types
+    allow: *id001
     reason: reserved_vector_element_type
   - field: c
-    allow: *integer_conditions
+    allow: *id002
     reason: reserved_vector_comparison_condition
 - id: xxlong.vcmpcc.v230.fp
   class: xxlong
   bits: 111111110000000xxxccccppppqqqqvvvvveeeeeee
-  syntax: VCMPcc.VTYPE(x) Pn(p), Vn(v), <ea>(e), Pn(q)
+  syntax: VCMPcc.{H|S|D}(x) Pn(p), Vn(v), <ea>(e), Pn(q)
   operands:
   - name: cc
     type: condition
@@ -145,8 +145,8 @@ forms:
       type: size.VTYPE
   constraints:
   - field: x
-    allow: *fp_types
+    allow: *id003
     reason: reserved_vector_element_type
   - field: c
-    allow: *fp_conditions
+    allow: *id004
     reason: reserved_vector_comparison_condition

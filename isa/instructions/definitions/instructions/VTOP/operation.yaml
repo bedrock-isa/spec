@@ -1,0 +1,52 @@
+operation: VTOP
+title: Virtual To Physical Query
+summary: Non-destructively queries the current translation of a linear address.
+public_instruction:
+  mnemonic: VTOP
+execution_route: tlb_and_context
+privilege: supervisor
+repeat:
+  kind: not_eligible
+operands:
+- id: virt
+  role: source
+  access: read
+  value_domain: integer
+  profiles:
+  - Rn
+- id: phys
+  role: destination
+  access: write
+  value_domain: integer
+  profiles:
+  - Rn
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - medium.vtop_rn_v_rn_p
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags:
+  - bank: FLAGS
+    completion: complete_image
+    effects:
+    - flag: Z
+      effect: write_condition
+      reference: translation_query_succeeded
+    - flag: N
+      effect: clear
+    - flag: C
+      effect: clear
+    - flag: V
+      effect: clear
+  events: []
+  sail_entry: execute_VTOP
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

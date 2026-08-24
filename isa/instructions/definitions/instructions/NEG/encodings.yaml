@@ -2,7 +2,7 @@ forms:
 - id: short.neg_x_rn_r
   class: short
   bits: 10100z0010rrrr
-  syntax: NEG.LQ(z) Rn(r)
+  syntax: NEG.{L|Q}(z) Rn(r)
   operands:
   - name: dst
     type: Rn
@@ -14,7 +14,7 @@ forms:
 - id: medium.neg_x_ea
   class: medium
   bits: 11100zz1011eeeeeee
-  syntax: NEG.BWLQ(z) <ea>(e)
+  syntax: NEG.{B|W|L|Q}(z) <ea>(e)
   operands:
   - name: dst
     type: EA

@@ -1,0 +1,34 @@
+operation: WRBKDCACHE
+title: Write Back Data Cache
+summary: Write back one data-cache maintenance block.
+public_instruction:
+  mnemonic: WRBKDCACHE
+execution_route: cache
+privilege: supervisor
+repeat:
+  kind: not_eligible
+operands:
+- id: target
+  role: address
+  access: address
+  value_domain: integer
+  profiles:
+  - EA
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - medium.wrbkdcache_ea_e
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags: []
+  events: []
+  sail_entry: execute_WRBKDCACHE
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

@@ -1,8 +1,0 @@
-mnemonic: VSAR
-title: VSAR (Vector)
-summary: Arithmetic right shift.
-description: Arithmetic right shift.
-attributes:
-  class: vector
-  family: vector
-  privilege: unprivileged

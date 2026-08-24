@@ -2,7 +2,7 @@ forms:
 - id: extralong.vmaxs.v58
   class: extralong
   bits: 11111101111000101zz1ppppvvvvvwwwww
-  syntax: VMAXS.BWLQ(z) Pn(p), Vn(v), Vn(w)
+  syntax: VMAXS.{B|W|L|Q}(z) Pn(p), Vn(v), Vn(w)
   operands:
   - name: govern
     type: Pn
@@ -22,7 +22,7 @@ forms:
 - id: xxlong.vmaxs.v156
   class: xxlong
   bits: 11111111000000100001zz1001ppppvvvvveeeeeee
-  syntax: VMAXS.BWLQ(z) Pn(p), <ea>(e), Vn(v)
+  syntax: VMAXS.{B|W|L|Q}(z) Pn(p), <ea>(e), Vn(v)
   operands:
   - name: govern
     type: Pn
@@ -44,7 +44,7 @@ forms:
 - id: xxlong.vmaxs.v157
   class: xxlong
   bits: 11111111000000100001zz1010ppppvvvvveeeeeee
-  syntax: VMAXS.BWLQ(z) Pn(p), Vn(v), <ea>(e)
+  syntax: VMAXS.{B|W|L|Q}(z) Pn(p), Vn(v), <ea>(e)
   operands:
   - name: govern
     type: Pn

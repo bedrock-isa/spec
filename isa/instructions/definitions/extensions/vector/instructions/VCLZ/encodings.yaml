@@ -2,7 +2,7 @@ forms:
 - id: long.vclz.v32
   class: long
   bits: 11111010000010zz1ppppvvvvv
-  syntax: VCLZ.BWLQ(z) Pn(p), Vn(v)
+  syntax: VCLZ.{B|W|L|Q}(z) Pn(p), Vn(v)
   operands:
   - name: govern
     type: Pn
@@ -18,7 +18,7 @@ forms:
 - id: xxlong.vclz.v190
   class: xxlong
   bits: 11111111000000100011zz0111ppppvvvvveeeeeee
-  syntax: VCLZ.BWLQ(z) Pn(p), <ea>(e), Vn(v)
+  syntax: VCLZ.{B|W|L|Q}(z) Pn(p), <ea>(e), Vn(v)
   operands:
   - name: govern
     type: Pn
@@ -40,7 +40,7 @@ forms:
 - id: xxlong.vclz.v191
   class: xxlong
   bits: 11111111000000100011zz1000ppppvvvvveeeeeee
-  syntax: VCLZ.BWLQ(z) Pn(p), Vn(v), <ea>(e)
+  syntax: VCLZ.{B|W|L|Q}(z) Pn(p), Vn(v), <ea>(e)
   operands:
   - name: govern
     type: Pn

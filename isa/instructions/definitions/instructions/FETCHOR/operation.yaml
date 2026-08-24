@@ -1,0 +1,46 @@
+operation: FETCHOR
+title: Atomic Fetch Or
+summary: Performs the atomic fetch or operation.
+public_instruction:
+  mnemonic: FETCHOR
+execution_route: atomics
+privilege: unprivileged
+repeat:
+  kind: not_eligible
+operands:
+- id: order
+  role: source
+  access: read
+  value_domain: integer
+  profiles:
+  - memory_order
+- id: src
+  role: destination
+  access: read_write
+  value_domain: integer
+  profiles:
+  - Rn
+- id: memory
+  role: destination
+  access: read_write
+  value_domain: integer
+  profiles:
+  - EA
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - extralong.fetchor_x_order_o_rn_s_ea_e
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags: []
+  events: []
+  sail_entry: execute_FETCHOR
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

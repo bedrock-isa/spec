@@ -1,8 +1,0 @@
-mnemonic: FETCHAND
-title: Atomic Fetch And
-summary: Performs the atomic fetch and operation.
-description: Atomically replaces the memory operand with the selected-width bitwise conjunction of the old memory value and the source, and returns the old memory value in the source register.
-attributes:
-  class: system
-  family: atomics
-  privilege: unprivileged

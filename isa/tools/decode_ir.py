@@ -12,12 +12,26 @@ import sys
 from typing import Any
 
 from encoding_architecture import ENCODING_CLASSES_BY_NAME, extended_instruction_lengths
+from defs_schema import (
+    EXECUTION_ROUTES,
+    FLAG_BANK_FLAGS,
+    FLAG_EFFECT_KINDS,
+    FLAG_EFFECT_REFERENCE_KIND,
+    FormApplicability,
+    LogicalOperandDefinition,
+    OperationArtifacts,
+    OperationEventContract,
+    OperationFlagBankContract,
+    OperationRepeatEligibility,
+    PredicateContract,
+    PublicInstructionRef,
+    parse_assembly_template,
+)
 
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_DEFS_ROOT = ROOT / "isa" / "instructions" / "definitions"
 DEFAULT_EA_DEFINITION = ROOT / "isa" / "addressing" / "effective_address" / "definition.yaml"
-IR_SCHEMA_VERSION = 1
 MAX_VALUE_WIDTH = 64
 MAX_RECORD_BYTES = max(extended_instruction_lengths())
 
@@ -167,6 +181,38 @@ class AnnotationsIR:
 
 
 @dataclass(frozen=True)
+class CpuidFlagIR:
+    id: str
+    token: str
+    selector_class: int
+    leaf: int
+    index: int
+    bit: int
+
+
+@dataclass(frozen=True)
+class AvailabilitySelectorIR:
+    domain: str
+    field_symbol: str
+    positions: tuple[int, ...]
+    encoded_values: tuple[int, ...]
+
+
+@dataclass(frozen=True)
+class AvailabilityOperandProfileIR:
+    operand_name: str
+    type_names: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class AvailabilityRuleIR:
+    case_id: str
+    selectors: tuple[AvailabilitySelectorIR, ...]
+    operand_profiles: tuple[AvailabilityOperandProfileIR, ...]
+    required_cpuid_flags: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class DestinationOverlapIR:
     left: str
     right: str
@@ -192,6 +238,7 @@ class FormIR:
     overlaps: tuple[DestinationOverlapIR, ...]
     control: ControlIR
     annotations: AnnotationsIR
+    availability_rules: tuple[AvailabilityRuleIR, ...]
     fixed_required_bytes: int
     minimum_required_bytes: int
     maximum_required_bytes: int
@@ -303,9 +350,38 @@ class DerivedLimitsIR:
 
 
 @dataclass(frozen=True)
+class OperationCaseIR:
+    id: str | None
+    applies_to: FormApplicability
+    additional_requirements: tuple[str, ...]
+    resolved_requirements: tuple[str, ...]
+    predicate: PredicateContract | None
+    flags: tuple[OperationFlagBankContract, ...] | None
+    events: tuple[OperationEventContract, ...] | None
+    sail_entry: str | None
+    conversion: Any | None
+
+
+@dataclass(frozen=True)
+class OperationIR:
+    id: str
+    public_instruction: PublicInstructionRef
+    execution_route: str | None
+    privilege: str
+    base_requirements: tuple[str, ...]
+    repeat: OperationRepeatEligibility
+    logical_operand_ids: tuple[str, ...]
+    operands: tuple[LogicalOperandDefinition, ...] | None
+    forms: tuple[str, ...]
+    cases: tuple[OperationCaseIR, ...]
+    artifacts: OperationArtifacts | None
+
+
+@dataclass(frozen=True)
 class DecodeIR:
-    schema_version: int
+    cpuid_flags: tuple[CpuidFlagIR, ...]
     mnemonics: tuple[str, ...]
+    operations: tuple[OperationIR, ...]
     limits: DerivedLimitsIR
     forms: tuple[FormIR, ...]
     effective_addresses: EffectiveAddressIR
@@ -316,7 +392,9 @@ class DecodeInputs:
     store: Any
     operand_types: dict[str, Any]
     ea_registry: Any
-    documents: dict[str, Any]
+    operations: dict[str, Any]
+    cpuid_flags: dict[str, Any]
+    size_definitions: dict[str, Any]
 
 
 def pattern_value_mask(pattern: str) -> tuple[int, int]:
@@ -394,37 +472,86 @@ def instruction_set_name(defs_root: Path, encoding_path: Path) -> str:
 
 def load_decode_inputs(defs_root: Path = DEFAULT_DEFS_ROOT) -> DecodeInputs:
     """Load the existing typed schema/loader/store owners used by Decode IR."""
-    from defs_loader import load_operand_types, load_yaml
-    from defs_schema import decode_ea_registry, decode_instruction
+    from defs_loader import (
+        extension_cpuid_requirements,
+        load_cpuid_flags,
+        load_extensions,
+        load_operation,
+        load_operand_types,
+        load_size_definitions,
+        load_yaml,
+    )
+    from defs_schema import decode_ea_registry
+    from defs_loader import (
+        load_architectural_event_causes, load_architectural_event_ids,
+        load_flag_effect_definitions, load_named_values, load_semantic_conditions,
+    )
     from encoding_store import load_encoding_store
 
     resolved = defs_root.resolve()
     store = load_encoding_store(resolved)
-    operand_types = load_operand_types(resolved)
+    extensions = load_extensions(resolved)
+    cpuid_flags = load_cpuid_flags(resolved)
+    operand_types = load_operand_types(resolved, extensions)
+    size_definitions = load_size_definitions(resolved, extensions)
     ea_path = (
         DEFAULT_EA_DEFINITION
         if resolved == DEFAULT_DEFS_ROOT.resolve()
         else resolved / "ea.yaml"
     )
     ea_registry = decode_ea_registry(ea_path, load_yaml(ea_path))
-    documents: dict[str, Any] = {}
+    known_cpuid_flags, requirements_by_set = extension_cpuid_requirements(
+        extensions, cpuid_flags
+    )
+
+    known_event_ids = load_architectural_event_ids(ROOT / "isa" / "conformance" / "architecture_tables.yaml")
+    known_event_causes = load_architectural_event_causes(ROOT / "isa" / "conformance" / "architecture_tables.yaml")
+    known_conditions = frozenset(load_semantic_conditions(resolved))
+    known_named_values = frozenset(load_named_values(resolved))
+    known_flag_definitions = load_flag_effect_definitions(resolved)
+    operations: dict[str, Any] = {}
     for located in store.encodings:
-        path = located.path.with_name("instruction.yaml")
-        if located.mnemonic not in documents:
-            documents[located.mnemonic] = decode_instruction(path, load_yaml(path))
-    return DecodeInputs(store, operand_types, ea_registry, documents)
+        if located.mnemonic in operations:
+            continue
+        instruction_set = instruction_set_name(resolved, located.path)
+        operation = load_operation(
+            located.path.parent,
+            operand_types=operand_types,
+            size_definitions=load_size_definitions(resolved, extensions),
+            base_requirements=requirements_by_set[instruction_set],
+            known_cpuid_flags=known_cpuid_flags,
+            known_event_ids=known_event_ids,
+            known_event_causes=known_event_causes,
+            known_condition_ids=known_conditions,
+            known_named_value_ids=known_named_values,
+            known_diagram_kinds=frozenset({"vector-example"}),
+            known_flag_effect_definitions=known_flag_definitions,
+        )
+        operations[located.mnemonic] = operation
+    return DecodeInputs(
+        store, operand_types, ea_registry, operations, cpuid_flags, size_definitions
+    )
 
 
-def _predicate_mode(mnemonic: str, form: Any) -> str:
-    if mnemonic == "SETcc":
-        return "write_boolean"
-    if mnemonic in {"CMPJcc", "TESTJcc"}:
-        return "temporary"
-    if mnemonic in {"DJcc", "IJcc", "REPcc"}:
-        return "counter_and_condition"
-    if any(operand.type == "condition" for operand in form.operands):
-        return "annul_on_false"
-    return "none"
+def _operation_predicate_mode(operation: Any, form_id: str) -> str:
+    """Project the unique runtime predicate mode from typed covering cases."""
+    constructors = {
+        "none": "none",
+        "produce_boolean": "write_boolean",
+        "test_temporary": "temporary",
+        "counter_and_condition": "counter_and_condition",
+        "annul_on_false": "annul_on_false",
+    }
+    modes = {
+        constructors[case.predicate.kind]
+        for case in operation.cases
+        if form_id in case.applies_to.forms and case.predicate is not None
+    }
+    if len(modes) != 1:
+        raise ValueError(
+            f"{operation.id}: form {form_id} has no unique typed predicate mode: {sorted(modes)}"
+        )
+    return next(iter(modes))
 
 
 def _normalized_fields(form: Any, field_types: Any) -> tuple[FieldIR, ...]:
@@ -755,31 +882,128 @@ def build_representative_record(
     return tuple(record)
 
 
-def _annotations(document: Any) -> AnnotationsIR:
+def _operation_annotations(operation: Any, form_id: str) -> AnnotationsIR:
+    """Project one form's annotations from every typed covering operation case."""
+
+    cases = tuple(
+        case for case in operation.cases if form_id in case.applies_to.forms
+    )
     flag_effects = tuple(
-        FlagEffectAnnotationIR(bank, flag, effect)
-        for bank, effects in document.flag_effects.items()
-        for flag, effect in effects.items()
+        dict.fromkeys(
+            FlagEffectAnnotationIR(bank.bank, effect.flag, effect.effect)
+            for case in cases
+            for bank in case.flags
+            for effect in bank.effects
+            if effect.effect != "preserve"
+        )
     )
     exceptions = tuple(
-        ExceptionAnnotationIR(item.event, item.when, item.forms)
-        for item in document.exceptions
+        dict.fromkeys(
+            ExceptionAnnotationIR(
+                event.event, event.condition, case.applies_to.forms
+            )
+            for case in cases
+            for event in case.events
+        )
     )
     return AnnotationsIR(
         flag_effects=flag_effects,
         exception_conditions=exceptions,
-        touched_flags=tuple(f"{item.bank}.{item.flag}" for item in flag_effects),
+        touched_flags=tuple(
+            dict.fromkeys(f"{item.bank}.{item.flag}" for item in flag_effects)
+        ),
         possible_events=tuple(dict.fromkeys(item.event for item in exceptions)),
     )
+
+
+def _operation_repeat_control(repeat: OperationRepeatEligibility) -> RepeatControlIR:
+    observed = repeat.observed
+    return RepeatControlIR(
+        rep=repeat.kind in {"rep", "rep_and_repcc"},
+        repcc=repeat.kind == "rep_and_repcc",
+        observed_kind=observed.kind if observed is not None else "",
+        observed_operand=(getattr(observed, "operand", None) or "")
+        if observed is not None
+        else "",
+    )
+
+
+def _availability_rules(
+    operation: Any,
+    form: Any,
+    normalized_fields: tuple[FieldIR, ...],
+    size_definitions: dict[str, Any],
+) -> tuple[AvailabilityRuleIR, ...]:
+    """Project the exact typed case partition covering one encoded form."""
+
+    field_by_domain = {
+        field.type_name.removeprefix("size."): field
+        for field in normalized_fields
+        if field.type_name.startswith("size.")
+    }
+    rules: list[AvailabilityRuleIR] = []
+    for case in operation.cases:
+        if form.id not in case.applies_to.forms:
+            continue
+        selectors: list[AvailabilitySelectorIR] = []
+        for selector in case.applies_to.selectors:
+            field = field_by_domain.get(selector.domain)
+            if field is None:
+                raise ValueError(
+                    f"{operation.id}:{case.id}: selector {selector.domain!r} "
+                    f"has no encoded field on {form.id}"
+                )
+            kind = size_definitions.get("size_kinds", {}).get(selector.domain)
+            if not isinstance(kind, dict) or not isinstance(kind.get("values"), list):
+                raise ValueError(
+                    f"{operation.id}:{case.id}: unknown size domain {selector.domain!r}"
+                )
+            code_values = {
+                str(item["code"]): (
+                    int(item["value"], 0)
+                    if isinstance(item["value"], str)
+                    else int(item["value"])
+                )
+                for item in kind["values"]
+            }
+            unknown = set(selector.values) - code_values.keys()
+            if unknown:
+                raise ValueError(
+                    f"{operation.id}:{case.id}: selector {selector.domain!r} "
+                    f"has unknown values {sorted(unknown)}"
+                )
+            selectors.append(
+                AvailabilitySelectorIR(
+                    domain=selector.domain,
+                    field_symbol=field.symbol,
+                    positions=field.positions,
+                    encoded_values=tuple(code_values[value] for value in selector.values),
+                )
+            )
+        rules.append(
+            AvailabilityRuleIR(
+                case_id=case.id or "",
+                selectors=tuple(selectors),
+                operand_profiles=tuple(
+                    AvailabilityOperandProfileIR(item.operand, item.profiles)
+                    for item in case.applies_to.operand_profiles
+                ),
+                required_cpuid_flags=case.resolved_requirements,
+            )
+        )
+    if not rules:
+        raise ValueError(f"{operation.id}: form {form.id} has no availability rule")
+    return tuple(rules)
 
 
 def _build_form(
     index: int,
     located: Any,
     operand_types: dict[str, Any],
-    document: Any,
+    operation: Any,
     effective_addresses: EffectiveAddressIR,
     store: Any,
+    size_definitions: dict[str, Any],
 ) -> FormIR:
     form = located.form
     encoding_class = store.classes_by_name[form.encoding_class]
@@ -819,20 +1043,29 @@ def _build_form(
     fixed_required_bytes = encoding_class.opcode_space_bytes + sum(
         op.width // 8 for op in layout if isinstance(op, ReadPayloadIR)
     )
-    repeat = document.repeat
-    contexts = set(repeat.contexts if repeat else ())
-    observed = repeat.observed if repeat else None
+    if operation.execution_route is None:
+        raise ValueError(f"{operation.id}: Form IR requires an execution route")
+    route = operation.execution_route
+    instruction_class = ""
+    family = ""
+    privilege = operation.privilege
+    predicate_mode = _operation_predicate_mode(operation, form.id)
+    repeat_control = _operation_repeat_control(operation.repeat)
+    annotations = _operation_annotations(operation, form.id)
+    normalized_fields = _normalized_fields(form, store.field_types)
     return FormIR(
         key=form.id,
         index=index,
-        mnemonic=located.mnemonic,
+        mnemonic=parse_assembly_template(
+            form.syntax, f"{located.path}:{form.id}"
+        ).mnemonic,
         syntax=form.syntax,
         opcode_class=form.encoding_class,
         opcode_space_bytes=encoding_class.opcode_space_bytes,
         opcode_width=len(form.bits),
         opcode_value=value,
         opcode_mask=mask,
-        fields=_normalized_fields(form, store.field_types),
+        fields=normalized_fields,
         constraints=_normalized_constraints(form),
         operands=operands,
         layout=layout,
@@ -842,24 +1075,22 @@ def _build_form(
             for item in form.destination_overlap
         ),
         control=ControlIR(
-            route=document.attributes.family,
+            route=route,
             instruction_set=instruction_set_name(store.defs_root, located.path),
-            instruction_class=document.attributes.instruction_class,
-            family=document.attributes.family,
-            privilege=document.attributes.privilege,
-            predicate_mode=_predicate_mode(located.mnemonic, form),
+            instruction_class=instruction_class,
+            family=family,
+            privilege=privilege,
+            predicate_mode=predicate_mode,
             has_ea_operand=any(
                 isinstance(operand.source, EffectiveAddressSourceIR)
                 for operand in operands
             ),
-            repeat=RepeatControlIR(
-                rep="REP" in contexts,
-                repcc="REPcc" in contexts,
-                observed_kind=observed.kind if observed else "",
-                observed_operand=(observed.operand or "") if observed else "",
-            ),
+            repeat=repeat_control,
         ),
-        annotations=_annotations(document),
+        annotations=annotations,
+        availability_rules=_availability_rules(
+            operation, form, normalized_fields, size_definitions
+        ),
         fixed_required_bytes=fixed_required_bytes,
         minimum_required_bytes=fixed_required_bytes
         + sum(op.minimum_bytes for op in layout if isinstance(op, ParseEaIR)),
@@ -917,9 +1148,29 @@ def build_decode_ir(
     store: Any,
     operand_types: dict[str, Any],
     ea_registry: Any,
-    documents: dict[str, Any],
+    operations: dict[str, Any] | None = None,
+    cpuid_flags: dict[str, Any] | None = None,
+    size_definitions: dict[str, Any] | None = None,
 ) -> DecodeIR:
     """Normalize existing authoritative decoded inputs into the canonical IR."""
+    if operations is None or cpuid_flags is None or size_definitions is None:
+        inputs = load_decode_inputs(store.defs_root)
+        if operations is None:
+            operations = inputs.operations
+        if cpuid_flags is None:
+            cpuid_flags = inputs.cpuid_flags
+        if size_definitions is None:
+            size_definitions = inputs.size_definitions
+    missing_operations = {
+        located.mnemonic
+        for located in store.encodings
+        if located.mnemonic not in operations
+    }
+    if missing_operations:
+        raise ValueError(
+            "encoding forms require canonical operations: "
+            + ", ".join(sorted(missing_operations))
+        )
     effective_addresses = _build_effective_addresses(ea_registry, store.field_types)
     located_forms = sorted(store.encodings, key=lambda item: item.form.id)
     forms_ir = tuple(
@@ -927,15 +1178,56 @@ def build_decode_ir(
             index,
             located,
             operand_types,
-            documents[located.mnemonic],
+            operations[located.mnemonic],
             effective_addresses,
             store,
+            size_definitions,
         )
         for index, located in enumerate(located_forms)
     )
+    operations_ir = tuple(
+        OperationIR(
+            id=operation.id,
+            public_instruction=operation.public_instruction,
+            execution_route=operation.execution_route,
+            privilege=operation.privilege,
+            base_requirements=operation.base_requirements,
+            repeat=operation.repeat,
+            logical_operand_ids=operation.logical_operand_ids,
+            operands=operation.operands,
+            forms=operation.forms,
+            cases=tuple(
+                OperationCaseIR(
+                    id=case.id,
+                    applies_to=case.applies_to,
+                    additional_requirements=case.additional_requirements,
+                    resolved_requirements=case.resolved_requirements,
+                    predicate=case.predicate,
+                    flags=case.flags,
+                    events=case.events,
+                    sail_entry=case.sail_entry,
+                    conversion=case.conversion,
+                )
+                for case in operation.cases
+            ),
+            artifacts=operation.artifacts,
+        )
+        for operation in sorted(operations.values(), key=lambda item: item.id)
+    )
     ir = DecodeIR(
-        schema_version=IR_SCHEMA_VERSION,
-        mnemonics=tuple(sorted(documents)),
+        cpuid_flags=tuple(
+            CpuidFlagIR(
+                id=flag.id,
+                token=flag.token,
+                selector_class=flag.location.selector_class,
+                leaf=flag.location.leaf,
+                index=flag.location.index,
+                bit=flag.location.bit,
+            )
+            for flag in cpuid_flags.values()
+        ),
+        mnemonics=tuple(sorted({form.mnemonic for form in forms_ir})),
+        operations=operations_ir,
         limits=_derive_limits(forms_ir, effective_addresses),
         forms=forms_ir,
         effective_addresses=effective_addresses,
@@ -950,7 +1242,9 @@ def load_decode_ir(defs_root: Path = DEFAULT_DEFS_ROOT) -> DecodeIR:
         inputs.store,
         inputs.operand_types,
         inputs.ea_registry,
-        inputs.documents,
+        inputs.operations,
+        inputs.cpuid_flags,
+        inputs.size_definitions,
     )
 
 
@@ -1129,8 +1423,18 @@ def _validate_ea(ir: DecodeIR) -> None:
 
 def validate_decode_ir(ir: DecodeIR) -> None:
     """Validate every invariant owned by the normalized Decode IR."""
-    if ir.schema_version != IR_SCHEMA_VERSION:
-        raise ValueError(f"unsupported Decode IR schema version {ir.schema_version}")
+    cpuid_flags = {flag.id: flag for flag in ir.cpuid_flags}
+    if len(cpuid_flags) != len(ir.cpuid_flags):
+        raise ValueError("CPUID flag IDs must be unique")
+    if len({flag.token for flag in ir.cpuid_flags}) != len(ir.cpuid_flags):
+        raise ValueError("CPUID flag public tokens must be unique")
+    if len(
+        {
+            (flag.selector_class, flag.leaf, flag.index, flag.bit)
+            for flag in ir.cpuid_flags
+        }
+    ) != len(ir.cpuid_flags):
+        raise ValueError("CPUID flag locations must be unique")
     keys = tuple(form.key for form in ir.forms)
     if len(set(keys)) != len(keys) or keys != tuple(sorted(keys)):
         raise ValueError("form keys must be unique and ordered")
@@ -1140,12 +1444,214 @@ def validate_decode_ir(ir: DecodeIR) -> None:
         raise ValueError("mnemonics must be unique and ordered")
     if set(ir.mnemonics) != {form.mnemonic for form in ir.forms}:
         raise ValueError("mnemonic inventory does not match forms")
+    operation_ids = tuple(operation.id for operation in ir.operations)
+    if operation_ids != tuple(sorted(set(operation_ids))):
+        raise ValueError("operation IDs must be unique and ordered")
+    public_token_owners: dict[str, str] = {}
+    for operation in ir.operations:
+        public_tokens = (
+            operation.public_instruction.mnemonic,
+            *operation.public_instruction.aliases,
+        )
+        if len(set(public_tokens)) != len(public_tokens):
+            raise ValueError(f"{operation.id}: duplicate public instruction token")
+        for token in public_tokens:
+            previous_owner = public_token_owners.get(token)
+            if previous_owner is not None:
+                raise ValueError(
+                    f"public instruction token {token!r} belongs to both "
+                    f"{previous_owner} and {operation.id}"
+                )
+            public_token_owners[token] = operation.id
+    claimed_forms: dict[str, str] = {}
+    for operation in ir.operations:
+        if operation.execution_route not in EXECUTION_ROUTES:
+            raise ValueError(f"{operation.id}: execution route is invalid")
+        if operation.operands is None:
+            raise ValueError(
+                f"{operation.id}: operation has no logical operand definitions"
+            )
+        if (
+            operation.artifacts is None
+            or operation.artifacts.bundle_root is None
+            or operation.artifacts.manifest_path is None
+        ):
+            raise ValueError(f"{operation.id}: artifact provenance is incomplete")
+        bundle_root = Path(operation.artifacts.bundle_root)
+        manifest_path = Path(operation.artifacts.manifest_path)
+        if not bundle_root.is_absolute() or manifest_path != bundle_root / "operation.yaml":
+            raise ValueError(f"{operation.id}: artifact provenance is invalid")
+        if len(set(operation.logical_operand_ids)) != len(
+            operation.logical_operand_ids
+        ):
+            raise ValueError(f"{operation.id}: duplicate logical operand ID")
+        if operation.operands is not None and tuple(
+            operand.id for operand in operation.operands
+        ) != operation.logical_operand_ids:
+            raise ValueError(
+                f"{operation.id}: complete logical operands do not match membership"
+            )
+        repeat = operation.repeat
+        if repeat.kind not in {"not_eligible", "rep", "rep_and_repcc"}:
+            raise ValueError(f"{operation.id}: unknown repeat eligibility")
+        if (repeat.kind == "rep_and_repcc") != (repeat.observed is not None):
+            raise ValueError(f"{operation.id}: repeat observation presence is invalid")
+        if repeat.observed is not None:
+            observed_operand = getattr(repeat.observed, "operand", None)
+            if repeat.observed.kind == "computed":
+                if observed_operand is not None:
+                    raise ValueError(
+                        f"{operation.id}: computed repeat observation has a payload"
+                    )
+            elif repeat.observed.kind in {"result", "source"}:
+                if (
+                    observed_operand is None
+                    or observed_operand not in operation.logical_operand_ids
+                ):
+                    raise ValueError(
+                        f"{operation.id}: repeat observation references an unknown "
+                        "logical operand"
+                    )
+            else:
+                raise ValueError(f"{operation.id}: unknown repeat observation")
+        if len(set(operation.forms)) != len(operation.forms):
+            raise ValueError(f"{operation.id}: duplicate operation form reference")
+        if len({case.id for case in operation.cases}) != len(operation.cases):
+            raise ValueError(f"{operation.id}: duplicate operation case ID")
+        case_form_refs = {
+            form_id
+            for case in operation.cases
+            for form_id in case.applies_to.forms
+        }
+        if case_form_refs != set(operation.forms):
+            raise ValueError(f"{operation.id}: case form membership is incomplete")
+        for case in operation.cases:
+            expected_resolved = tuple(
+                sorted(
+                    set(operation.base_requirements)
+                    | set(case.additional_requirements)
+                )
+            )
+            if case.resolved_requirements != expected_resolved:
+                raise ValueError(
+                    f"{operation.id}: case CPUID requirements are not resolved"
+                )
+            unknown_requirements = set(case.resolved_requirements) - cpuid_flags.keys()
+            if unknown_requirements:
+                raise ValueError(
+                    f"{operation.id}: unknown resolved CPUID flags "
+                    f"{sorted(unknown_requirements)}"
+                )
+            if case.flags is not None:
+                bank_names = tuple(bank.bank for bank in case.flags)
+                if len(set(bank_names)) != len(bank_names):
+                    raise ValueError(f"{operation.id}: duplicate flag bank contract")
+                for bank in case.flags:
+                    expected_flags = FLAG_BANK_FLAGS.get(bank.bank)
+                    if expected_flags is None:
+                        raise ValueError(f"{operation.id}: unknown flag bank contract")
+                    if tuple(effect.flag for effect in bank.effects) != expected_flags:
+                        raise ValueError(
+                            f"{operation.id}: {bank.bank} effects are not a canonical TotalMap"
+                        )
+                    expected_completion = {
+                        "FLAGS": "complete_image",
+                        "FFLAGS": "accrued_causes",
+                    }[bank.bank]
+                    if bank.completion != expected_completion:
+                        raise ValueError(
+                            f"{operation.id}: {bank.bank} has invalid flag completion mode"
+                        )
+                    for effect in bank.effects:
+                        if effect.effect not in FLAG_EFFECT_KINDS:
+                            raise ValueError(
+                                f"{operation.id}: unknown typed flag effect"
+                            )
+                        requires_reference = (
+                            effect.effect in FLAG_EFFECT_REFERENCE_KIND
+                        )
+                        if requires_reference != (effect.reference is not None):
+                            raise ValueError(
+                                f"{operation.id}: typed flag reference shape is invalid"
+                            )
+            if (
+                case.id is None
+                or case.predicate is None
+                or case.flags is None
+                or case.events is None
+                or case.sail_entry is None
+            ):
+                raise ValueError(f"{operation.id}: case has missing contract data")
+            if case.conversion is not None and (
+                not case.conversion.source_formats
+                or not case.conversion.destination_formats
+            ):
+                raise ValueError(f"{operation.id}: conversion signature has an empty format set")
+        for form_id in operation.forms:
+            if form_id in claimed_forms:
+                raise ValueError(
+                    f"{form_id}: form belongs to both {claimed_forms[form_id]} and {operation.id}"
+                )
+            claimed_forms[form_id] = operation.id
+    if set(claimed_forms) != {form.key for form in ir.forms}:
+        raise ValueError("operation form membership does not match forms")
+    forms_by_operation: dict[str, list[FormIR]] = {
+        operation.id: [] for operation in ir.operations
+    }
+    for form in ir.forms:
+        forms_by_operation[claimed_forms[form.key]].append(form)
+    for operation in ir.operations:
+        form_operand_ids = {
+            operand.name
+            for form in forms_by_operation[operation.id]
+            for operand in form.operands
+        }
+        if set(operation.logical_operand_ids) != form_operand_ids:
+            raise ValueError(
+                f"{operation.id}: logical operand membership does not match forms"
+            )
+    for form in ir.forms:
+        operation_id = claimed_forms[form.key]
+        if public_token_owners.get(form.mnemonic) != operation_id:
+            raise ValueError(
+                f"{form.key}: form public token {form.mnemonic!r} is not owned by "
+                f"operation {operation_id}"
+            )
 
     _validate_ea(ir)
+    operations_by_id = {operation.id: operation for operation in ir.operations}
     profiles = {
         profile.name: profile for profile in ir.effective_addresses.profiles
     }
     for form in ir.forms:
+        owning_operation = operations_by_id[claimed_forms[form.key]]
+        expected_cases = tuple(
+            case
+            for case in owning_operation.cases
+            if form.key in case.applies_to.forms
+        )
+        if tuple(rule.case_id for rule in form.availability_rules) != tuple(
+            case.id for case in expected_cases
+        ):
+            raise ValueError(f"{form.key}: availability rules do not match case owners")
+        for rule, case in zip(form.availability_rules, expected_cases):
+            if rule.required_cpuid_flags != case.resolved_requirements:
+                raise ValueError(
+                    f"{form.key}/{rule.case_id}: availability requirements differ from owner"
+                )
+            if set(rule.required_cpuid_flags) - cpuid_flags.keys():
+                raise ValueError(
+                    f"{form.key}/{rule.case_id}: availability references unknown CPUID flag"
+                )
+            for selector in rule.selectors:
+                if not selector.positions or not selector.encoded_values:
+                    raise ValueError(
+                        f"{form.key}/{rule.case_id}: empty availability selector"
+                    )
+                if max(selector.encoded_values) >= 1 << len(selector.positions):
+                    raise ValueError(
+                        f"{form.key}/{rule.case_id}: availability selector value exceeds field"
+                    )
         encoding_class = ENCODING_CLASSES_BY_NAME.get(form.opcode_class)
         if encoding_class is None:
             raise ValueError(f"{form.key}: unknown opcode class")
@@ -1240,17 +1746,18 @@ def validate_decode_ir(ir: DecodeIR) -> None:
             isinstance(operand.source, EffectiveAddressSourceIR)
             for operand in form.operands
         )
+        valid_control_owner = (
+            form.control.route == owning_operation.execution_route
+            and form.control.instruction_class == ""
+            and form.control.family == ""
+            and form.control.privilege == owning_operation.privilege
+            and form.control.predicate_mode == _operation_predicate_mode(owning_operation, form.key)
+        )
         if (
             form.control.has_ea_operand != expected_has_ea
-            or form.control.route != form.control.family
-            or form.control.predicate_mode
-            not in {
-                "none",
-                "write_boolean",
-                "temporary",
-                "counter_and_condition",
-                "annul_on_false",
-            }
+            or not valid_control_owner
+            or form.control.repeat
+            != _operation_repeat_control(owning_operation.repeat)
         ):
             raise ValueError(f"{form.key}: invalid static control metadata")
         repeat = form.control.repeat
@@ -1261,19 +1768,8 @@ def validate_decode_ir(ir: DecodeIR) -> None:
             and repeat.observed_operand not in operands_by_name
         ):
             raise ValueError(f"{form.key}: invalid repeat control metadata")
-        expected_touched = tuple(
-            f"{item.bank}.{item.flag}" for item in form.annotations.flag_effects
-        )
-        expected_events = tuple(
-            dict.fromkeys(
-                item.event for item in form.annotations.exception_conditions
-            )
-        )
-        if (
-            form.annotations.touched_flags != expected_touched
-            or form.annotations.possible_events != expected_events
-        ):
-            raise ValueError(f"{form.key}: annotation summary mismatch")
+        if form.annotations != _operation_annotations(owning_operation, form.key):
+            raise ValueError(f"{form.key}: annotations do not match covering cases")
 
         expected_layout: tuple[LayoutOpIR, ...] = tuple(
             ParseEaIR(

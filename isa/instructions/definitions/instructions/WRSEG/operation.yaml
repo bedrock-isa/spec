@@ -1,0 +1,40 @@
+operation: WRSEG
+title: Write Segment Register
+summary: Write an SREG segment image from an Rn register.
+public_instruction:
+  mnemonic: WRSEG
+execution_route: system_registers
+privilege: unprivileged
+repeat:
+  kind: not_eligible
+operands:
+- id: src
+  role: source
+  access: read
+  value_domain: integer
+  profiles:
+  - Rn
+- id: seg
+  role: segment_selector
+  access: write
+  value_domain: integer
+  profiles:
+  - SREG
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - medium.wrseg_rn_d_sreg_s
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags: []
+  events: []
+  sail_entry: execute_WRSEG
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

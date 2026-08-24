@@ -2,7 +2,7 @@ forms:
 - id: long.fscale_x_ea_s_fn_d
   class: long
   bits: 1111100100z0001ddddeeeeeee
-  syntax: FSCALE.SD(z) <ea>(e), Fn(d)
+  syntax: FSCALE.{S|D}(z) <ea>(e), Fn(d)
   operands:
   - name: src
     type: FEA
@@ -20,7 +20,7 @@ forms:
 - id: medium.fscale_x_fn_s_fn_d
   class: medium
   bits: 101000z001ssssdddd
-  syntax: FSCALE.SD(z) Fn(s), Fn(d)
+  syntax: FSCALE.{S|D}(z) Fn(s), Fn(d)
   operands:
   - name: src
     type: Fn

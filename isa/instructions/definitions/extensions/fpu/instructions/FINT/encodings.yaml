@@ -2,7 +2,7 @@ forms:
 - id: long.fint_x_ea_s_fn_d
   class: long
   bits: 1111100101z0010ddddeeeeeee
-  syntax: FINT.SD(z) <ea>(e), Fn(d)
+  syntax: FINT.{S|D}(z) <ea>(e), Fn(d)
   operands:
   - name: src
     type: FEA
@@ -20,7 +20,7 @@ forms:
 - id: medium.fint_x_fn_s_fn_d
   class: medium
   bits: 101100z010ssssdddd
-  syntax: FINT.SD(z) Fn(s), Fn(d)
+  syntax: FINT.{S|D}(z) Fn(s), Fn(d)
   operands:
   - name: src
     type: Fn
@@ -36,7 +36,7 @@ forms:
 - id: long.fint_x_fn_s_ea_d
   class: long
   bits: 1111100100z1011sssseeeeeee
-  syntax: FINT.SD(z) Fn(s), <ea>(e)
+  syntax: FINT.{S|D}(z) Fn(s), <ea>(e)
   operands:
   - name: src
     type: Fn

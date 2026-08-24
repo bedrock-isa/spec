@@ -1,9 +1,0 @@
-mnemonic: RESTORE
-title: Restore Processor State
-summary: Restore processor state from a CPUID-defined save area.
-description: RESTORE reconstructs base architectural state and enabled extension state from a 4-KiB-aligned, CPUID-defined save area.
-attributes:
-  class: system
-  family: tlb_and_context
-  privilege: unprivileged
-additional_description: details.tex

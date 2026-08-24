@@ -1,0 +1,34 @@
+operation: FPOPP
+title: Floating-Point Pop Register Pair
+summary: Pops one canonical floating-point register pair selected by an inline pair index.
+public_instruction:
+  mnemonic: FPOPP
+execution_route: fpu
+privilege: unprivileged
+repeat:
+  kind: rep
+operands:
+- id: pair_id
+  role: source
+  access: read
+  value_domain: integer
+  profiles:
+  - FPAIRn
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - extrashort.fpopp_pair_id_i
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags: []
+  events: []
+  sail_entry: execute_FPOPP
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

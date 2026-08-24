@@ -2,7 +2,7 @@ forms:
 - id: extralong.vcvth.v99
   class: extralong
   bits: 11111101111011010zz0ppppvvvvvwwwww
-  syntax: VCVTH.V_SD(z) Pn(p), Vn(v), Vn(w)
+  syntax: VCVTH.{S|D}(z) Pn(p), Vn(v), Vn(w)
   operands:
   - name: govern
     type: Pn
@@ -27,7 +27,7 @@ forms:
 - id: extralong.vcvth.v100
   class: extralong
   bits: 11111101111011011zz0ppppvvvvvwwwww
-  syntax: VCVTH.V_LQ(z) Pn(p), Vn(v), Vn(w)
+  syntax: VCVTH.{L|Q}(z) Pn(p), Vn(v), Vn(w)
   operands:
   - name: govern
     type: Pn

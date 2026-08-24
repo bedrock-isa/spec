@@ -2,7 +2,7 @@ forms:
 - id: extralong.vnmsub.v105
   class: extralong
   bits: 111111011101zz1ppppvvvvvwwwwwyyyyy
-  syntax: VNMSUB.HSD(z) Pn(p), Vn(v), Vn(w), Vn(y)
+  syntax: VNMSUB.{H|S|D}(z) Pn(p), Vn(v), Vn(w), Vn(y)
   operands:
   - name: govern
     type: Pn

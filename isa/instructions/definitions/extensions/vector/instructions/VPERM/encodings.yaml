@@ -2,7 +2,7 @@ forms:
 - id: extralong.vperm.v92
   class: extralong
   bits: 11111101111010110zz1ppppvvvvvwwwww
-  syntax: VPERM.BWLQ(z) Pn(p), Vn(v), Vn(w)
+  syntax: VPERM.{B|W|L|Q}(z) Pn(p), Vn(v), Vn(w)
   operands:
   - name: govern
     type: Pn

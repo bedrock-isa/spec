@@ -2,7 +2,7 @@ forms:
 - id: extralong.divmodu_x_ea_e_rn_q_rn_r
   class: extralong
   bits: 11111100010001zz001qqqqrrrreeeeeee
-  syntax: DIVMODU.BWLQ(z) <ea>(e), Rn(q), Rn(r)
+  syntax: DIVMODU.{B|W|L|Q}(z) <ea>(e), Rn(q), Rn(r)
   operands:
   - name: src
     type: EA
@@ -27,7 +27,7 @@ forms:
 - id: extralong.divmodu_x_rn_e_rn_q_rn_r
   class: extralong
   bits: 11111100000000zz001001eeeeqqqqrrrr
-  syntax: DIVMODU.BWLQ(z) Rn(e), Rn(q), Rn(r)
+  syntax: DIVMODU.{B|W|L|Q}(z) Rn(e), Rn(q), Rn(r)
   operands:
   - name: src
     type: Rn

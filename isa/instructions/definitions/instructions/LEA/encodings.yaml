@@ -2,7 +2,7 @@ forms:
 - id: medium.lea_x_ea_rn
   class: medium
   bits: 00111zzddddeeeeeee
-  syntax: LEA.BWLQ(z) <ea>(e), Rn(d)
+  syntax: LEA.{B|W|L|Q}(z) <ea>(e), Rn(d)
   operands:
   - name: src
     type: EA
@@ -20,7 +20,7 @@ forms:
 - id: medium.lea_x_rn_s_rn_d
   class: medium
   bits: 10011zz010ssssdddd
-  syntax: LEA.BWLQ(z) Rn(s), Rn(d)
+  syntax: LEA.{B|W|L|Q}(z) Rn(s), Rn(d)
   operands:
   - name: src
     type: Rn

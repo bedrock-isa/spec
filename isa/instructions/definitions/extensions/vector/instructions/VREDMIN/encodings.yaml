@@ -2,7 +2,7 @@ forms:
 - id: extralong.vredmin.v127
   class: extralong
   bits: 11111101111110110zz01pppprrrrvvvvv
-  syntax: VREDMIN.HSD(z) Pn(p), Vn(v), Fn(r)
+  syntax: VREDMIN.{H|S|D}(z) Pn(p), Vn(v), Fn(r)
   operands:
   - name: govern
     type: Pn
@@ -27,7 +27,7 @@ forms:
 - id: xxlong.vredmin.v228
   class: xxlong
   bits: 11111111000000101110zz01001pppprrrreeeeeee
-  syntax: VREDMIN.HSD(z) Pn(p), <ea>(e), Fn(r)
+  syntax: VREDMIN.{H|S|D}(z) Pn(p), <ea>(e), Fn(r)
   operands:
   - name: govern
     type: Pn

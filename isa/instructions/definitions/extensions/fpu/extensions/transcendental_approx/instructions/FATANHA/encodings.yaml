@@ -2,7 +2,7 @@ forms:
 - id: long.fatanha_x_fn_s_fn_d
   class: long
   bits: 1111100111z0110000ssssdddd
-  syntax: FATANHA.SD(z) Fn(s), Fn(d)
+  syntax: FATANHA.{S|D}(z) Fn(s), Fn(d)
   operands:
   - name: src
     type: Fn

@@ -27,10 +27,11 @@ class CatalogGenerationTests(unittest.TestCase):
         cls.build_dir = Path(cls.temporary_directory.name)
         generate_catalog.write_outputs(cls.build_dir)
         cls.store, cls.operand_types, cls.ea_registry, cls.documents = generate_catalog._load_inputs()
+        cls.ir = generate_catalog.decode_ir.load_decode_ir()
 
     def test_every_mnemonic_has_a_generated_route(self) -> None:
         self.assertEqual(
-            {document.attributes.family for document in self.documents.values()},
+            {document.execution_route for document in self.documents.values()},
             set(generate_catalog.ROUTE_CONSTRUCTORS),
         )
         self.assertEqual(
@@ -44,6 +45,7 @@ class CatalogGenerationTests(unittest.TestCase):
             {path.relative_to(self.build_dir).as_posix() for path in outputs},
             {
                 "generated/operations.sail",
+                "generated/local_operations.sail",
                 "generated/catalog.sail",
                 "bedrock-generated.sail_project",
             },
@@ -68,6 +70,44 @@ class CatalogGenerationTests(unittest.TestCase):
         self.assertGreater(len(self.ea_registry.ext2_forms), 0)
         self.assertEqual(self.ea_registry.compact_field_width, 7)
 
+    def test_registry_and_every_form_availability_rule_reach_typed_sail_catalog(
+        self,
+    ) -> None:
+        operations = (
+            self.build_dir / "generated" / "operations.sail"
+        ).read_text(encoding="utf-8")
+        catalog = (
+            self.build_dir / "generated" / "catalog.sail"
+        ).read_text(encoding="utf-8")
+        for flag in self.ir.cpuid_flags:
+            with self.subTest(flag=flag.id):
+                self.assertIn(f"CpuidFlag_{flag.id}", operations)
+                self.assertIn(
+                    f"CpuidFlag_{flag.id} => {json.dumps(flag.token)}",
+                    operations,
+                )
+        records = {
+            match.group(1): line
+            for line in catalog.splitlines()
+            if "availability_rules =" in line
+            and (match := re.search(r'form_id = "([^"]+)"', line))
+        }
+        self.assertEqual(set(records), {form.key for form in self.ir.forms})
+        for form in self.ir.forms:
+            record = records[form.key]
+            with self.subTest(form=form.key):
+                for rule in form.availability_rules:
+                    self.assertIn(f'case_id = {json.dumps(rule.case_id)}', record)
+                    for flag in rule.required_cpuid_flags:
+                        self.assertIn(f"CpuidFlag_{flag}", record)
+                    for selector in rule.selectors:
+                        self.assertIn(
+                            f"field_symbol = {json.dumps(selector.field_symbol)}",
+                            record,
+                        )
+                        for value in selector.encoded_values:
+                            self.assertIn(str(value), record)
+
     def test_selected_primary_bytes_and_endpoints(self) -> None:
         forms = {item.form.id: item.form.bits for item in self.store.encodings}
         self.assertEqual(forms["extrashort.clr_q_rn_r"], "111rrrr")
@@ -76,6 +116,15 @@ class CatalogGenerationTests(unittest.TestCase):
         self.assertEqual(forms["short.or_x_rn_s_rn_d"], "00101zssssdddd")
         self.assertEqual(forms["short.xor_x_rn_s_rn_d"], "00110zssssdddd")
 
+    def test_operation_entry_boundary_precedes_generated_dependents(self) -> None:
+        core_types = (generate_catalog.ROOT / "isa" / "execution" / "core" / "types.sail")
+        project = (generate_catalog.ROOT / "isa" / "bedrock.sail_project")
+        self.assertIn(
+            "val execute_operation_entry : (Decoded_instruction, Cpu_state) -> Execution_result",
+            core_types.read_text(encoding="utf-8"),
+        )
+        self.assertIn("requires prelude, operations, catalog_types, catalog, decode, fp, core", generate_catalog.render_overlay_project())
+        self.assertIn("core, operation_entries", project.read_text(encoding="utf-8"))
 
 class DocumentationBuildTests(unittest.TestCase):
     @classmethod
@@ -85,6 +134,7 @@ class DocumentationBuildTests(unittest.TestCase):
         rendered_catalog = generate_catalog.render_catalog(
             store, operand_types, ea_registry, documents
         )
+        rendered_entries = generate_catalog.render_operation_entries(documents)
         operation_type = re.search(
             r"enum Semantic_operation =.*?(?=\n\nfunction semantic_route)",
             rendered_operations,
@@ -108,6 +158,18 @@ class DocumentationBuildTests(unittest.TestCase):
                 "path": ["catalog"],
             },
         }
+        declarations = list(re.finditer(
+            r"(?m)^function\s+([A-Za-z_][A-Za-z0-9_]*)\b", rendered_entries,
+        ))
+        for index, declaration in enumerate(declarations):
+            end = declarations[index + 1].start() if index + 1 < len(declarations) else len(rendered_entries)
+            functions[declaration.group(1)] = {
+                "function": {
+                    "source": rendered_entries[declaration.start():end],
+                    "path": ["operation_entries"],
+                },
+                "path": ["operation_entries"],
+            }
         for group in sorted(build_docs.OWNER_MODULES):
             for source_path in build_docs.OWNER_SOURCE_PATHS[group]:
                 text = source_path.read_text(encoding="utf-8")
@@ -166,41 +228,25 @@ class DocumentationBuildTests(unittest.TestCase):
         )
         self.assertTrue(all(item["route"] for item in index["operations"]))
         operations = {item["mnemonic"]: item for item in index["operations"]}
+        expected_entries = {
+            document.public_instruction.mnemonic: [
+                f"operation_entries.{entry}"
+                for entry in dict.fromkeys(case.sail_entry for case in document.cases)
+            ]
+            for document in documents.values()
+        }
         self.assertEqual(
-            operations["NOP"]["direct_functions"],
-            ["core.execute_core_exact"],
+            {mnemonic: item["direct_functions"] for mnemonic, item in operations.items()},
+            expected_entries,
         )
-        self.assertEqual(
-            operations["ILLEGAL"]["direct_functions"],
-            ["core.execute_core_exact"],
-        )
+        self.assertEqual(operations["NOP"]["direct_functions"], ["operation_entries.execute_NOP"])
+        self.assertEqual(operations["ILLEGAL"]["direct_functions"], ["operation_entries.execute_ILLEGAL"])
         setcc = operations["SETcc"]
         self.assertEqual(setcc["ownership"], "direct")
-        self.assertEqual(
-            setcc["direct_functions"],
-            ["core.execute_setcc", "postlude.execute_full"],
-        )
-        self.assertTrue({
-            "core.execute_route_exact",
-            "core.execute_bounds_local",
-            "core.execute_external_route",
-            "core.start_memory_transaction",
-        }.issubset(operations["BNDUXX"]["route_owner_functions"]))
-        self.assertTrue({
-            "core.execute_route_exact",
-            "core.execute_external_route",
-            "core.start_atomic_transaction",
-            "core.atomic_selector",
-        }.issubset(operations["FETCHXOR"]["route_owner_functions"]))
-        self.assertNotIn(
-            "core.route_environment",
-            operations["FETCHXOR"]["route_owner_functions"],
-        )
-        self.assertTrue({
-            "core.execute_route_exact",
-            "core.execute_external_route",
-            "core.execute_lea_transaction",
-        }.issubset(operations["LEA"]["route_owner_functions"]))
+        self.assertEqual(setcc["direct_functions"], ["operation_entries.execute_SETcc"])
+        self.assertEqual(operations["BNDUXX"]["direct_functions"], ["operation_entries.execute_BNDUXX"])
+        self.assertEqual(operations["FETCHXOR"]["direct_functions"], ["operation_entries.execute_FETCHXOR"])
+        self.assertEqual(operations["LEA"]["direct_functions"], ["operation_entries.execute_LEA"])
         self.assertTrue(all(
             "." in owner
             for item in index["operations"]
@@ -211,9 +257,9 @@ class DocumentationBuildTests(unittest.TestCase):
             for item in index["operations"]
         ))
 
-    def test_dispatch_owner_derivation_fails_closed(self) -> None:
+    def test_operation_entry_derivation_fails_closed(self) -> None:
         broken = json.loads(json.dumps(self.doc_bundle))
-        broken["functions"].pop("execute_external_route")
+        broken["functions"].pop("execute_FETCHXOR")
         with self.assertRaises(ValueError):
             build_docs.build_semantic_index(broken)
 

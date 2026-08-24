@@ -1,0 +1,59 @@
+operation: FABS
+title: Floating-Point Absolute Value
+summary: Performs the floating-point absolute value operation.
+public_instruction:
+  mnemonic: FABS
+execution_route: fpu
+privilege: unprivileged
+repeat:
+  kind: rep
+operands:
+- id: src
+  role: source
+  access: read
+  value_domain: floating
+  profiles:
+  - Fn
+  - FEA
+- id: dst
+  role: destination
+  access: write
+  value_domain: floating
+  profiles:
+  - Fn
+  - FEA
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - medium.fabs_x_fn_s_fn_d
+    - long.fabs_x_ea_s_fn_d
+    - long.fabs_x_fn_s_ea_d
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags:
+  - bank: FFLAGS
+    completion: accrued_causes
+    effects:
+    - flag: NV
+      effect: accrue_source
+      reference: fea_source_conversion
+    - flag: OF
+      effect: accrue_source
+      reference: fea_source_conversion
+    - flag: UF
+      effect: accrue_source
+      reference: fea_source_conversion
+    - flag: NX
+      effect: accrue_source
+      reference: fea_source_conversion
+  events: []
+  sail_entry: execute_FABS
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

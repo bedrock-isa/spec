@@ -2,7 +2,7 @@ forms:
 - id: extralong.vtruncw.v79
   class: extralong
   bits: 11111101111010000zz0ppppvvvvvwwwww
-  syntax: VTRUNCW.V_LQ(z) Pn(p), Vn(v), Vn(w)
+  syntax: VTRUNCW.{L|Q}(z) Pn(p), Vn(v), Vn(w)
   operands:
   - name: govern
     type: Pn

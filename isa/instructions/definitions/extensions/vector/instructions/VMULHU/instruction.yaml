@@ -1,8 +1,0 @@
-mnemonic: VMULHU
-title: VMULHU (Vector)
-summary: High half of an unsigned product.
-description: High half of an unsigned product.
-attributes:
-  class: vector
-  family: vector
-  privilege: unprivileged

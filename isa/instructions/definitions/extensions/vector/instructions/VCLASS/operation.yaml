@@ -1,0 +1,27 @@
+operation: VCLASS
+title: VCLASS (Vector)
+summary: Write a per-lane FP classification bitmap to a vector.
+public_instruction:
+  mnemonic: VCLASS
+execution_route: vector
+privilege: unprivileged
+repeat:
+  kind: not_eligible
+operands:
+- {id: govern, role: governing_predicate, access: read, value_domain: predicate, profiles: [Pn]}
+- {id: src, role: source, access: read, value_domain: vector, profiles: [Vn, VEA]}
+- {id: dst, role: destination, access: read_write, value_domain: vector, profiles: [Vn, VEA]}
+cases:
+- id: all_forms
+  applies_to:
+    forms: [long.vclass.v43, xxlong.vclass.v212, xxlong.vclass.v213]
+    selectors:
+    - {domain: HSD, values: [H, S, D]}
+  additional_requirements: [FP]
+  predicate: {kind: none}
+  flags: []
+  events: []
+  sail_entry: execute_VCLASS
+artifacts:
+  semantics: {path: semantics.sail, kind: sail}
+  description: {path: description.tex, kind: tex}

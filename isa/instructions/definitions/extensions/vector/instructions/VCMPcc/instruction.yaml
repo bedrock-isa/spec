@@ -1,8 +1,0 @@
-mnemonic: VCMPcc
-title: VCMP Conditional (Vector)
-summary: Compare active integer or FP lanes and write a complete predicate result.
-description: Compare active integer or FP lanes and write a complete predicate result.
-attributes:
-  class: vector
-  family: vector
-  privilege: unprivileged

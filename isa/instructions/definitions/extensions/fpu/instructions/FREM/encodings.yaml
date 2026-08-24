@@ -2,7 +2,7 @@ forms:
 - id: long.frem_x_ea_s_fn_d
   class: long
   bits: 1111100101z1110ddddeeeeeee
-  syntax: FREM.SD(z) <ea>(e), Fn(d)
+  syntax: FREM.{S|D}(z) <ea>(e), Fn(d)
   operands:
   - name: src
     type: FEA
@@ -20,7 +20,7 @@ forms:
 - id: medium.frem_x_fn_s_fn_d
   class: medium
   bits: 101110z110ssssdddd
-  syntax: FREM.SD(z) Fn(s), Fn(d)
+  syntax: FREM.{S|D}(z) Fn(s), Fn(d)
   operands:
   - name: src
     type: Fn

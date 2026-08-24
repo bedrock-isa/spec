@@ -1,0 +1,40 @@
+operation: RDCR
+title: Read Control Register
+summary: Read a privileged control register.
+public_instruction:
+  mnemonic: RDCR
+execution_route: system_registers
+privilege: supervisor
+repeat:
+  kind: not_eligible
+operands:
+- id: cr
+  role: source
+  access: read
+  value_domain: integer
+  profiles:
+  - imm16
+- id: dst
+  role: destination
+  access: write
+  value_domain: integer
+  profiles:
+  - Rn
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - medium.rdcr_ea_rn_d
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags: []
+  events: []
+  sail_entry: execute_RDCR
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

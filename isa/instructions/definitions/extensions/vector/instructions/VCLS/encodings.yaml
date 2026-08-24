@@ -2,7 +2,7 @@ forms:
 - id: long.vcls.v34
   class: long
   bits: 11111010000011zz1ppppvvvvv
-  syntax: VCLS.BWLQ(z) Pn(p), Vn(v)
+  syntax: VCLS.{B|W|L|Q}(z) Pn(p), Vn(v)
   operands:
   - name: govern
     type: Pn
@@ -18,7 +18,7 @@ forms:
 - id: xxlong.vcls.v194
   class: xxlong
   bits: 11111111000000100011zz1011ppppvvvvveeeeeee
-  syntax: VCLS.BWLQ(z) Pn(p), <ea>(e), Vn(v)
+  syntax: VCLS.{B|W|L|Q}(z) Pn(p), <ea>(e), Vn(v)
   operands:
   - name: govern
     type: Pn
@@ -40,7 +40,7 @@ forms:
 - id: xxlong.vcls.v195
   class: xxlong
   bits: 11111111000000100011zz1100ppppvvvvveeeeeee
-  syntax: VCLS.BWLQ(z) Pn(p), Vn(v), <ea>(e)
+  syntax: VCLS.{B|W|L|Q}(z) Pn(p), Vn(v), <ea>(e)
   operands:
   - name: govern
     type: Pn

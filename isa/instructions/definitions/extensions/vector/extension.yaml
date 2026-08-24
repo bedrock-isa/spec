@@ -4,9 +4,4 @@ operands: operands.yaml
 registers: registers.yaml
 sizes: sizes.yaml
 availability:
-  cpuid:
-    feature: VECTOR
-    class: 1
-    leaf: 0
-    index: 1
-    bit: 2
+  required_cpuid_flags: [VECTOR]

@@ -2,7 +2,7 @@ forms:
 - id: extralong.vcvtq.v89
   class: extralong
   bits: 11111101111010101zz0ppppvvvvvwwwww
-  syntax: VCVTQ.HSD(z) Pn(p), Vn(v), Vn(w)
+  syntax: VCVTQ.{H|S|D}(z) Pn(p), Vn(v), Vn(w)
   operands:
   - name: govern
     type: Pn

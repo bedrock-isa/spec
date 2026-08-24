@@ -2,7 +2,7 @@ forms:
 - id: short.test_x_rn_s_rn_d
   class: short
   bits: 00111zssssdddd
-  syntax: TEST.LQ(z) Rn(s), Rn(d)
+  syntax: TEST.{L|Q}(z) Rn(s), Rn(d)
   operands:
   - name: src
     type: Rn
@@ -18,7 +18,7 @@ forms:
 - id: long.test_x_rn_s_ea_e
   class: long
   bits: 1111001111zz010sssseeeeeee
-  syntax: TEST.BWLQ(z) Rn(s), <ea>(e)
+  syntax: TEST.{B|W|L|Q}(z) Rn(s), <ea>(e)
   operands:
   - name: lhs
     type: Rn
@@ -36,7 +36,7 @@ forms:
 - id: medium.test_x_ea_e_rn_d
   class: medium
   bits: 01111zzddddeeeeeee
-  syntax: TEST.BWLQ(z) <ea>(e), Rn(d)
+  syntax: TEST.{B|W|L|Q}(z) <ea>(e), Rn(d)
   operands:
   - name: lhs
     type: EA

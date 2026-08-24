@@ -1,0 +1,34 @@
+operation: VTRUNCB
+title: Vector Truncation to Byte
+summary: Copies the low B field from each W, L, or Q source container.
+public_instruction:
+  mnemonic: VTRUNCB
+execution_route: vector
+privilege: unprivileged
+repeat:
+  kind: not_eligible
+operands:
+- {id: govern, role: governing_predicate, access: read, value_domain: predicate, profiles: [Pn]}
+- {id: src, role: source, access: read, value_domain: vector, profiles: [Vn]}
+- {id: dst, role: destination, access: read_write, value_domain: vector, profiles: [Vn]}
+cases:
+- id: all_forms
+  applies_to:
+    forms: [extralong.vtruncb.v78]
+    selectors:
+    - {domain: WLQ, values: [W, L, Q]}
+  additional_requirements: []
+  predicate: {kind: none}
+  flags: []
+  events: []
+  sail_entry: execute_VTRUNCB
+artifacts:
+  semantics: {path: semantics.sail, kind: sail}
+  description: {path: description.tex, kind: tex}
+  diagrams:
+  - id: word-low-byte
+    path: diagrams/word-low-byte.yaml
+    kind: vector-example
+    case: all_forms
+    caption: VTRUNCB.W low-byte truncation
+    alt_text: "An illustrative W-container VTRUNCB view: each active container copies the low source byte into the low destination byte and preserves the old destination high byte; inactive containers preserve the complete old destination value."

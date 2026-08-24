@@ -2,7 +2,7 @@ forms:
 - id: medium.fadd_x_fn_s_fn_d
   class: medium
   bits: 101000z010ssssdddd
-  syntax: FADD.SD(z) Fn(s), Fn(d)
+  syntax: FADD.{S|D}(z) Fn(s), Fn(d)
   operands:
   - name: src
     type: Fn
@@ -18,7 +18,7 @@ forms:
 - id: long.fadd_x_ea_s_fn_d
   class: long
   bits: 1111100100z0010ddddeeeeeee
-  syntax: FADD.SD(z) <ea>(e), Fn(d)
+  syntax: FADD.{S|D}(z) <ea>(e), Fn(d)
   operands:
   - name: src
     type: FEA

@@ -2,7 +2,7 @@ forms:
 - id: medium.ftrunc_x_fn_s_fn_d
   class: medium
   bits: 101000z101ssssdddd
-  syntax: FTRUNC.SD(z) Fn(s), Fn(d)
+  syntax: FTRUNC.{S|D}(z) Fn(s), Fn(d)
   operands:
   - name: src
     type: Fn
@@ -18,7 +18,7 @@ forms:
 - id: long.ftrunc_x_ea_s_fn_d
   class: long
   bits: 1111100100z0101ddddeeeeeee
-  syntax: FTRUNC.SD(z) <ea>(e), Fn(d)
+  syntax: FTRUNC.{S|D}(z) <ea>(e), Fn(d)
   operands:
   - name: src
     type: FEA
@@ -36,7 +36,7 @@ forms:
 - id: long.ftrunc_x_fn_s_ea_d
   class: long
   bits: 1111100101z0111sssseeeeeee
-  syntax: FTRUNC.SD(z) Fn(s), <ea>(e)
+  syntax: FTRUNC.{S|D}(z) Fn(s), <ea>(e)
   operands:
   - name: src
     type: Fn

@@ -1,0 +1,60 @@
+operation: FDIV
+title: Floating-Point Divide
+summary: Performs the floating-point divide operation.
+public_instruction:
+  mnemonic: FDIV
+execution_route: fpu
+privilege: unprivileged
+repeat:
+  kind: rep
+operands:
+- id: src
+  role: source
+  access: read
+  value_domain: floating
+  profiles:
+  - Fn
+  - FEA
+- id: dst
+  role: destination
+  access: read_write
+  value_domain: floating
+  profiles:
+  - Fn
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - medium.fdiv_x_fn_s_fn_d
+    - long.fdiv_x_ea_s_fn_d
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags:
+  - bank: FFLAGS
+    completion: accrued_causes
+    effects:
+    - flag: NV
+      effect: accrue_source
+      reference: operation_cause
+    - flag: DZ
+      effect: accrue_source
+      reference: operation_cause
+    - flag: OF
+      effect: accrue_source
+      reference: operation_cause
+    - flag: UF
+      effect: accrue_source
+      reference: operation_cause
+    - flag: NX
+      effect: accrue_source
+      reference: operation_cause
+  events: []
+  sail_entry: execute_FDIV
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

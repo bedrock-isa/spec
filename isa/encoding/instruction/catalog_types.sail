@@ -59,6 +59,23 @@ struct Catalog_overlap = {
   rule : string,
 }
 
+struct Catalog_availability_selector = {
+  field_symbol : string,
+  values : list(int),
+}
+
+struct Catalog_availability_operand_profile = {
+  operand_name : string,
+  type_names : list(string),
+}
+
+struct Catalog_availability_rule = {
+  case_id : string,
+  selectors : list(Catalog_availability_selector),
+  operand_profiles : list(Catalog_availability_operand_profile),
+  required_flags : list(Cpuid_flag),
+}
+
 struct Ea_pattern = {
   width : int,
   value : bits(16),
@@ -124,4 +141,6 @@ struct Catalog_entry = {
   sizes : list(string),
   appended_payloads : list(Catalog_payload),
   overlaps : list(Catalog_overlap),
+  availability_rules : list(Catalog_availability_rule),
+  common_required_cpuid_flags : list(Cpuid_flag),
 }

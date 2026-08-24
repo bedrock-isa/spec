@@ -2,7 +2,7 @@ forms:
 - id: medium.fmov_x_fn_s_fn_d
   class: medium
   bits: 101110z011ssssdddd
-  syntax: FMOV.SD(z) Fn(s), Fn(d)
+  syntax: FMOV.{S|D}(z) Fn(s), Fn(d)
   operands:
   - name: src
     type: Fn
@@ -18,7 +18,7 @@ forms:
 - id: long.fmov_x_ea_s_fn_d
   class: long
   bits: 1111100101z1011ddddeeeeeee
-  syntax: FMOV.SD(z) <ea>(e), Fn(d)
+  syntax: FMOV.{S|D}(z) <ea>(e), Fn(d)
   operands:
   - name: src
     type: FEA
@@ -36,7 +36,7 @@ forms:
 - id: long.fmov_x_fn_s_ea_d
   class: long
   bits: 1111100100z1110sssseeeeeee
-  syntax: FMOV.SD(z) Fn(s), <ea>(e)
+  syntax: FMOV.{S|D}(z) Fn(s), <ea>(e)
   operands:
   - name: src
     type: Fn

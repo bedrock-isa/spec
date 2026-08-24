@@ -2,7 +2,7 @@ forms:
 - id: long.pslidedn.v46
   class: long
   bits: 11111010011111zzppppiiiiii
-  syntax: PSLIDEDN.BWLQ(z) imm6(i), Pn(p)
+  syntax: PSLIDEDN.{B|W|L|Q}(z) imm6(i), Pn(p)
   operands:
   - name: count
     type: imm6

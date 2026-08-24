@@ -1,8 +1,0 @@
-mnemonic: VCLS
-title: VCLS (Vector)
-summary: Count leading ones.
-description: Count leading ones.
-attributes:
-  class: vector
-  family: vector
-  privilege: unprivileged

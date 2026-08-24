@@ -2,7 +2,7 @@ forms:
 - id: extralong.fbndix_x_fn_l_fn_v_fn_h
   class: extralong
   bits: 111111001100101000001zllllvvvvhhhh
-  syntax: FBNDIX.SD(z) Fn(l), Fn(v), Fn(h)
+  syntax: FBNDIX.{S|D}(z) Fn(l), Fn(v), Fn(h)
   operands:
   - name: lo
     type: Fn
@@ -22,7 +22,7 @@ forms:
 - id: extralong.fbndix_x_fn_l_ea_v_fn_h
   class: extralong
   bits: 111111001100100001zllllhhhhvvvvvvv
-  syntax: FBNDIX.SD(z) Fn(l), <ea>(v), Fn(h)
+  syntax: FBNDIX.{S|D}(z) Fn(l), <ea>(v), Fn(h)
   operands:
   - name: lo
     type: Fn
@@ -44,7 +44,7 @@ forms:
 - id: extralong.fbndix_x_ea_l_fn_v_ea_h
   class: extralong
   bits: 111111001100001zvvvvlllllllhhhhhhh
-  syntax: FBNDIX.SD(z) <ea>(l), Fn(v), <ea>(h)
+  syntax: FBNDIX.{S|D}(z) <ea>(l), Fn(v), <ea>(h)
   operands:
   - name: lo
     type: FEA

@@ -1,0 +1,43 @@
+operation: VCVTUL
+title: Vector Convert to Unsigned Longword
+summary: Converts active floating-point elements to unsigned longwords.
+public_instruction:
+  mnemonic: VCVTUL
+execution_route: vector
+privilege: unprivileged
+repeat:
+  kind: not_eligible
+operands:
+- {id: govern, role: governing_predicate, access: read, value_domain: predicate, profiles: [Pn]}
+- {id: src, role: source, access: read, value_domain: vector, profiles: [Vn]}
+- {id: dst, role: destination, access: read_write, value_domain: vector, profiles: [Vn]}
+cases:
+- id: all_forms
+  applies_to:
+    forms: [extralong.vcvtul.v88]
+    selectors:
+    - {domain: HSD, values: [H, S, D]}
+  additional_requirements: [FP]
+  conversion:
+    source_domain: floating
+    source_formats: [H, S, D]
+    destination_domain: integer
+    integer_signedness: unsigned
+    destination_formats: [L]
+    behavior: convert
+  predicate: {kind: none}
+  flags:
+  - bank: FFLAGS
+    completion: accrued_causes
+    effects:
+    - {flag: NV, effect: accrue_source, reference: operation_cause}
+    - {flag: OF, effect: accrue_source, reference: operation_cause}
+    - {flag: UF, effect: accrue_source, reference: operation_cause}
+    - {flag: NX, effect: accrue_source, reference: operation_cause}
+  events:
+  - event: FLOATING_POINT_FAULT
+    condition: enabled_floating_point_exception
+  sail_entry: execute_VCVTUL
+artifacts:
+  semantics: {path: semantics.sail, kind: sail}
+  description: {path: description.tex, kind: tex}

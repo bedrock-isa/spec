@@ -157,6 +157,65 @@ function test_local_integer_boundaries() -> unit = {
          == 0x0000000000000001)
 }
 
+function test_setcc_direct_and_production() -> unit =
+  match decode_full_record([|0xA0, 0x20|]) {
+    Some(instruction) => {
+      assert(instruction.form.operation == Op_SETcc);
+      assert(instruction.form.form_id == "short.setcc_rn_r");
+      match find_operand_by_name("dst", instruction.operands) {
+        Some(destination) => {
+          let destination_index = unsigned(destination.value[3 .. 0]);
+          var state = initial_cpu();
+          state.registers[destination_index] = 0xFFFFFFFFFFFFFFFF;
+          state.flags = 0b0000;
+          assert(not_bool(predicate_holds(instruction, state)));
+          match execute_SETcc(instruction, state) {
+            Some(direct_false) => {
+              let production_false = execute_full(instruction, state);
+              assert(direct_false.fault == None());
+              assert(production_false.fault == None());
+              assert(not_bool(direct_false.awaiting_environment));
+              assert(not_bool(production_false.awaiting_environment));
+              assert(direct_false.pending.kind == CommitRegisters);
+              assert(production_false.pending.kind == direct_false.pending.kind);
+              assert(direct_false.state.registers[destination_index]
+                     == 0x0000000000000000);
+              assert(production_false.state.registers[destination_index]
+                     == direct_false.state.registers[destination_index]);
+              assert(production_false.state.pc == direct_false.state.pc);
+              assert(production_false.state.pc == next_pc(state, instruction))
+            },
+            None() => assert(false),
+          };
+
+          state.registers[destination_index] = 0xFFFFFFFFFFFFFFFF;
+          state.flags = 0b1000;
+          assert(predicate_holds(instruction, state));
+          match execute_SETcc(instruction, state) {
+            Some(direct_true) => {
+              let production_true = execute_full(instruction, state);
+              assert(direct_true.fault == None());
+              assert(production_true.fault == None());
+              assert(not_bool(direct_true.awaiting_environment));
+              assert(not_bool(production_true.awaiting_environment));
+              assert(direct_true.pending.kind == CommitRegisters);
+              assert(production_true.pending.kind == direct_true.pending.kind);
+              assert(direct_true.state.registers[destination_index]
+                     == 0x0000000000000001);
+              assert(production_true.state.registers[destination_index]
+                     == direct_true.state.registers[destination_index]);
+              assert(production_true.state.pc == direct_true.state.pc);
+              assert(production_true.state.pc == next_pc(state, instruction))
+            },
+            None() => assert(false),
+          }
+        },
+        None() => assert(false),
+      }
+    },
+    None() => assert(false),
+  }
+
 function test_divide_bounds_and_conditions() -> unit = {
   match decode_full_record([|0xC7, 0xC2, 0x29, 0x01|]) {
     Some(instruction) => {
@@ -233,13 +292,5 @@ function test_divide_bounds_and_conditions() -> unit = {
   assert(condition_holds(14, 0b1000));
   assert(condition_holds(15, 0b0000));
 
-  match decode_full_record([|0xA1, 0x32|]) {
-    Some(instruction) => {
-      var state = initial_cpu();
-      state.registers[3] = 0xFFFFFFFFFFFFFFFF;
-      let result = execute_full(instruction, state);
-      assert(result.state.registers[3] == 0x0000000000000000)
-    },
-    None() => assert(false),
-  }
+  test_setcc_direct_and_production()
 }

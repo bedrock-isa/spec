@@ -1,8 +1,0 @@
-mnemonic: VNEG
-title: VNEG (Vector)
-summary: Integer two's-complement negation or FP sign toggle.
-description: Integer two's-complement negation or FP sign toggle.
-attributes:
-  class: vector
-  family: vector
-  privilege: unprivileged

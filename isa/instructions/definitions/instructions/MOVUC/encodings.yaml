@@ -2,7 +2,7 @@ forms:
 - id: long.movuc_x_ea_s_ea_d
   class: long
   bits: 1111000110zzsssssssddddddd
-  syntax: MOVUC.BWLQ(z) <ea>(s), <ea>(d)
+  syntax: MOVUC.{B|W|L|Q}(z) <ea>(s), <ea>(d)
   operands:
   - name: src
     type: EA
@@ -30,7 +30,7 @@ forms:
 - id: medium.movuc_x_rn_s_rn_d
   class: medium
   bits: 10010zz001ssssdddd
-  syntax: MOVUC.BWLQ(z) Rn(s), Rn(d)
+  syntax: MOVUC.{B|W|L|Q}(z) Rn(s), Rn(d)
   operands:
   - name: src
     type: Rn
@@ -47,7 +47,7 @@ forms:
 - id: long.movuc_x_rn_s_ea_d
   class: long
   bits: 1111001110zz001ssssddddddd
-  syntax: MOVUC.BWLQ(z) Rn(s), <ea>(d)
+  syntax: MOVUC.{B|W|L|Q}(z) Rn(s), <ea>(d)
   operands:
   - name: src
     type: Rn
@@ -70,7 +70,7 @@ forms:
 - id: long.movuc_x_ea_s_rn_d
   class: long
   bits: 1111001010zz001ddddsssssss
-  syntax: MOVUC.BWLQ(z) <ea>(s), Rn(d)
+  syntax: MOVUC.{B|W|L|Q}(z) <ea>(s), Rn(d)
   operands:
   - name: src
     type: EA

@@ -1,8 +1,0 @@
-mnemonic: POR
-title: POR (Vector)
-summary: 'Destructive predicate OR: `Pd = Pd OR Ps`.'
-description: 'Destructive predicate OR: `Pd = Pd OR Ps`.'
-attributes:
-  class: vector
-  family: vector
-  privilege: unprivileged

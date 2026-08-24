@@ -7,8 +7,12 @@ import argparse
 import re
 from pathlib import Path
 
-from defs_loader import load_extensions, load_instruction_sets, load_yaml
-from defs_schema import decode_instruction
+from defs_loader import (
+    extension_cpuid_requirements, load_architectural_event_causes,
+    load_architectural_event_ids, load_operation, load_cpuid_flags, load_extensions,
+    load_flag_effect_definitions, load_instruction_sets, load_named_values,
+    load_operand_types, load_semantic_conditions, load_size_definitions, load_yaml,
+)
 from encoding_store import EncodingStore, LocatedEncoding, load_encoding_store
 
 
@@ -18,16 +22,36 @@ DEF_ROOT = REPOSITORY_ROOT / "isa" / "instructions" / "definitions"
 
 def definition_payloads(root: Path) -> dict[str, dict]:
     extensions = load_extensions(root)
+    cpuid_flags = load_cpuid_flags(root)
+    operand_types = load_operand_types(root, extensions)
+    size_definitions = load_size_definitions(root, extensions)
+    known_cpuid_flags, requirements_by_set = extension_cpuid_requirements(
+        extensions, cpuid_flags
+    )
+    event_path = REPOSITORY_ROOT / "isa" / "conformance" / "architecture_tables.yaml"
+    known_events = load_architectural_event_ids(event_path)
+    known_causes = load_architectural_event_causes(event_path)
+    known_conditions = frozenset(load_semantic_conditions(root))
+    known_values = frozenset(load_named_values(root))
+    flag_definitions = load_flag_effect_definitions(root)
     out: dict[str, dict] = {}
     for instruction_set in load_instruction_sets(root, extensions):
         index = load_yaml(instruction_set.include)
         for item in index.get("include", []):
-            path = instruction_set.include.parent / item / "instruction.yaml"
-            raw = load_yaml(path)
-            document = decode_instruction(path, raw)
-            if document.mnemonic in out:
-                raise ValueError(f"{path}: duplicate mnemonic {document.mnemonic}")
-            out[document.mnemonic] = raw
+            bundle = instruction_set.include.parent / item
+            operation = load_operation(
+                bundle, operand_types=operand_types, size_definitions=size_definitions,
+                base_requirements=requirements_by_set[instruction_set.name],
+                known_cpuid_flags=known_cpuid_flags, known_event_ids=known_events,
+                known_event_causes=known_causes, known_condition_ids=known_conditions,
+                known_named_value_ids=known_values,
+                known_diagram_kinds=frozenset({"vector-example"}),
+                known_flag_effect_definitions=flag_definitions,
+            )
+            mnemonic = operation.public_instruction.mnemonic
+            if mnemonic in out:
+                raise ValueError(f"{bundle}: duplicate mnemonic {mnemonic}")
+            out[mnemonic] = {"operation": operation.id}
     return out
 
 

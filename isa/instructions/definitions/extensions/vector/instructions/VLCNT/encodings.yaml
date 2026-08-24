@@ -2,7 +2,7 @@ forms:
 - id: long.vlcnt.v20
   class: long
   bits: 11111010011000zz000001rrrr
-  syntax: VLCNT.BWLQ(z) Rn(r)
+  syntax: VLCNT.{B|W|L|Q}(z) Rn(r)
   operands:
   - name: dst
     type: Rn

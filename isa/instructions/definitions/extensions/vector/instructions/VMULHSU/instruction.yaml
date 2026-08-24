@@ -1,8 +1,0 @@
-mnemonic: VMULHSU
-title: VMULHSU (Vector)
-summary: High half of signed-by-unsigned product.
-description: High half of signed-by-unsigned product.
-attributes:
-  class: vector
-  family: vector
-  privilege: unprivileged

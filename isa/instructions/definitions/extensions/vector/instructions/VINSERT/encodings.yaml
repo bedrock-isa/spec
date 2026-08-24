@@ -2,7 +2,7 @@ forms:
 - id: extralong.vinsert.v115
   class: extralong
   bits: 11111101111110000zz01rrrrssssvvvvv
-  syntax: VINSERT.BWLQ(z) Rn(r), Rn(s), Vn(v)
+  syntax: VINSERT.{B|W|L|Q}(z) Rn(r), Rn(s), Vn(v)
   operands:
   - name: src
     type: Rn
@@ -22,7 +22,7 @@ forms:
 - id: extralong.vinsert.v117
   class: extralong
   bits: 11111101111110000zz11rrrrssssvvvvv
-  syntax: VINSERT.HSD(z) Fn(r), Rn(s), Vn(v)
+  syntax: VINSERT.{H|S|D}(z) Fn(r), Rn(s), Vn(v)
   operands:
   - name: src
     type: Fn

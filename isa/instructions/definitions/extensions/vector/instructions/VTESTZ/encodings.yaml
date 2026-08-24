@@ -2,7 +2,7 @@ forms:
 - id: extralong.vtestz.v48
   class: extralong
   bits: 111111011000zz00ppppqqqqvvvvvwwwww
-  syntax: VTESTZ.BWLQ(z) Pn(p), Vn(v), Vn(w), Pn(q)
+  syntax: VTESTZ.{B|W|L|Q}(z) Pn(p), Vn(v), Vn(w), Pn(q)
   operands:
   - name: govern
     type: Pn
@@ -26,7 +26,7 @@ forms:
 - id: xxlong.vtestz.v231
   class: xxlong
   bits: 11111111000000101000zzppppqqqqvvvvveeeeeee
-  syntax: VTESTZ.BWLQ(z) Pn(p), Vn(v), <ea>(e), Pn(q)
+  syntax: VTESTZ.{B|W|L|Q}(z) Pn(p), Vn(v), <ea>(e), Pn(q)
   operands:
   - name: govern
     type: Pn

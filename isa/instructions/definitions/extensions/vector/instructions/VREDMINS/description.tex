@@ -1,0 +1,8 @@
+The governing predicate chooses which source elements participate. The Vn form
+reads those elements from the vector source. The VEA form first reads a complete
+vector-length source from memory and applies the same predicate selection.
+
+Selected elements are compared as signed B, W, L, or Q values, and the least
+value becomes the reduction result. Its selected-width bit pattern occupies the
+low bits of Rn, and all higher bits are zero. If the predicate selects no
+elements, the result is the greatest signed value at the selected width.

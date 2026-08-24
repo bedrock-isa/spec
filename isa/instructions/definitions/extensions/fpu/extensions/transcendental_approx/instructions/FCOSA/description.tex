@@ -1,0 +1,26 @@
+Computes the cos(x) reference in radians over finite x with abs(x) \textless{}= pi / 4 after DAZ and writes an implementation-bounded S- or D-format approximation under the selected FPTRANSA accuracy contract.
+
+The required FPTRANSA\_ACCURACY contract is \texttt{0x0002}. If that accuracy contract's \texttt{PRESENT} field is clear, the instruction raises \texttt{ILLEGAL\_INSTRUCTION} before reading operands or floating-point state.
+
+After FSTATUS.DAZ processing, the reference function is cos(x) in radians on finite x with abs(x) \textless{}= pi / 4. The result error is at most 4 ULP for S and 4 ULP for D.
+
+\textbf{Special values}\par
+\begin{itemize}
+\item When the source is infinite or abs(the source) \textgreater{} pi / 4, NV is generated and the result is the architectural default quiet NaN.
+\item When the source is zero, the result is positive one.
+\end{itemize}
+
+\textbf{Exact anchors}\par
+\begin{itemize}
+\item cos(+0) = +1
+\item cos(-0) = +1
+\end{itemize}
+
+\textbf{Required properties}\par
+\begin{itemize}
+\item even
+\item nondecreasing on [-pi/4, 0] and nonincreasing on [0, pi/4]
+\item result is in [sqrt(2)/2, 1]
+\end{itemize}
+
+NaN handling, floating-point exception-cause generation, matching condition-enable testing, \texttt{FLOATING\_POINT\_FAULT} architectural-event delivery, and commit behavior follow the common FPTRANSA model in Section~\ref{section:fptransa-common-model}.

@@ -1,8 +1,0 @@
-mnemonic: PSLIDEDN
-title: PSLIDEDN (Vector)
-summary: Destructively shift the typed predicate lane sequence toward lower indices, inserting zero.
-description: Destructively shift the typed predicate lane sequence toward lower indices, inserting zero.
-attributes:
-  class: vector
-  family: vector
-  privilege: unprivileged

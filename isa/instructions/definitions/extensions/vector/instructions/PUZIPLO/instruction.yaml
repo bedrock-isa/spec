@@ -1,8 +1,0 @@
-mnemonic: PUZIPLO
-title: PUZIPLO (Vector)
-summary: Concatenate the even-position lanes from `Pa` and `Pb`.
-description: Concatenate the even-position lanes from `Pa` and `Pb`.
-attributes:
-  class: vector
-  family: vector
-  privilege: unprivileged

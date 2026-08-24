@@ -4,10 +4,13 @@
 from __future__ import annotations
 
 import argparse
+from functools import cache
 from pathlib import Path
 import re
 
 import yaml
+
+from defs_schema import parse_assembly_template
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -60,26 +63,6 @@ def _operand_kind(operand: dict) -> tuple[str, int, bool]:
     raise ValueError(f"unsupported vector operand type {operand_type!r}")
 
 
-def _has_width_only_aliases(mnemonic: str, suffixes: str) -> bool:
-    base_mnemonic = mnemonic.split(".", 1)[0]
-    fixed_width = mnemonic.removeprefix(base_mnemonic) in {".L", ".Q"}
-    if not fixed_width and (
-        not suffixes or not all(code in "bwlq?" for code in suffixes)
-    ):
-        return False
-    return (
-        base_mnemonic.startswith("P")
-        or base_mnemonic in {
-            "VLCNT", "VLCADD", "VGATHER1", "VSCATTER1",
-            "PLOOP", "VMOV", "VMOVZ",
-        }
-        or any(
-            word in base_mnemonic
-            for word in ("PERM", "SLIDE", "SLICE", "ZIP", "TRN")
-        )
-    )
-
-
 def _load_forms_and_sizes() -> tuple[list[dict], dict[str, dict[int, str]]]:
     base_sizes = _load(ROOT / "isa/instructions/definitions/sizes.yaml")
     fpu_sizes = _load(
@@ -101,7 +84,13 @@ def _load_forms_and_sizes() -> tuple[list[dict], dict[str, dict[int, str]]]:
 
     forms: list[dict] = []
     for encoding_path in sorted((VECTOR / "instructions").glob("*/encodings.yaml")):
-        forms.extend(_load(encoding_path).get("forms", []))
+        operation = _load(encoding_path.with_name("operation.yaml"))
+        public = operation.get("public_instruction", {})
+        aliases = bool(public.get("width_suffix_aliases", False))
+        for form in _load(encoding_path).get("forms", []):
+            form = dict(form)
+            form["width_suffix_aliases"] = aliases
+            forms.append(form)
     return forms, size_values
 
 
@@ -119,17 +108,15 @@ def _allowed_field_values(form: dict, field: str, width: int) -> set[int]:
 def _load_repeat_eligibility() -> list[tuple[str, bool, bool, bool]]:
     entries: list[tuple[str, bool, bool, bool]] = []
     definition_root = ROOT / "isa/instructions/definitions"
-    for path in sorted(definition_root.glob("**/instruction.yaml")):
+    for path in sorted(definition_root.glob("**/operation.yaml")):
         document = _load(path)
-        repeat = document.get("repeat")
-        if not repeat:
-            continue
-        mnemonic = str(document["mnemonic"])
+        repeat = document["repeat"]
+        mnemonic = str(document["public_instruction"]["mnemonic"])
         has_condition = mnemonic.endswith("cc")
         stem = mnemonic[:-2] if has_condition else mnemonic
-        contexts = set(repeat.get("contexts", []))
+        kind = repeat["kind"]
         entries.append(
-            (stem.lower(), has_condition, "REP" in contexts, "REPcc" in contexts)
+            (stem.lower(), has_condition, kind != "not_eligible", kind == "rep_and_repcc")
         )
     return entries
 
@@ -147,6 +134,16 @@ def _allowed_size_values(
             allowed.update(_range_values(item))
         values = {value: code for value, code in values.items() if value in allowed}
     return values
+
+
+@cache
+def _condition_names() -> dict[int, str]:
+    return {
+        int(item["value"]): str(item["name"]).lower()
+        for item in _load(ROOT / "isa/instructions/definitions/conditions.yaml").get(
+            "conditions", []
+        )
+    }
 
 
 def _generate() -> str:
@@ -196,39 +193,41 @@ def _generate() -> str:
 
     class_names = {"long": "Long", "extralong": "ExtraLong", "xxlong": "Xxlong"}
     for form in forms:
-        mnemonic_template = form["syntax"].split(None, 1)[0]
-        head, dot, suffix_template = mnemonic_template.partition(".")
-        has_condition = head.endswith("cc")
-        mnemonic = head[:-2] if has_condition else head
+        template = parse_assembly_template(form["syntax"], form["id"])
+        has_condition = template.mnemonic.endswith("cc")
+        mnemonic = template.mnemonic[:-2] if has_condition else template.mnemonic
         suffix_field = "\\0"
         suffixes = ""
         allowed_mask = 1
-        if dot:
-            match = re.fullmatch(r"([A-Z0-9_]+)\(([a-z])\)", suffix_template)
-            if not match:
-                if not re.fullmatch(r"[A-Z]+", suffix_template):
-                    raise ValueError(
-                        f"unsupported vector suffix template {suffix_template!r}"
-                    )
-                mnemonic += "." + suffix_template
-            else:
-                kind, suffix_field = match.groups()
-                values = size_values[kind]
-                suffix_chars = ["?"] * (max(values) + 1)
-                for value, suffix in values.items():
+        if template.fixed_size_suffix is not None:
+            mnemonic += template.fixed_size_suffix
+        elif template.selected_size_codes:
+            if template.size_field is None:
+                raise ValueError(f"{form['id']}: selected suffix has no field")
+            suffix_field = template.size_field
+            kind = form["fields"][suffix_field]["type"].split(".", 1)[1]
+            values = size_values[kind]
+            suffix_chars = ["?"] * (max(values) + 1)
+            allowed = {
+                value
+                for value, suffix in values.items()
+                if suffix.upper() in template.selected_size_codes
+            }
+            for value, suffix in values.items():
+                if value in allowed:
                     suffix_chars[value] = suffix
-                suffixes = "".join(suffix_chars)
-                allowed = set(values)
-                for constraint in form.get("constraints", []):
-                    if (
-                        constraint.get("field") != suffix_field
-                        or "allow" not in constraint
-                    ):
-                        continue
-                    allowed = set()
-                    for item in constraint["allow"]:
-                        allowed.update(_range_values(item))
-                allowed_mask = sum(1 << value for value in allowed)
+            for constraint in form.get("constraints", []):
+                if (
+                    constraint.get("field") != suffix_field
+                    or "allow" not in constraint
+                ):
+                    continue
+                constrained: set[int] = set()
+                for item in constraint["allow"]:
+                    constrained.update(_range_values(item))
+                allowed &= constrained
+            suffixes = "".join(suffix_chars)
+            allowed_mask = sum(1 << value for value in allowed)
 
         operands = []
         explicit_index_by_name = {}
@@ -283,7 +282,7 @@ def _generate() -> str:
                 allowed_mask,
                 condition_mask,
                 str(has_condition).lower(),
-                str(_has_width_only_aliases(mnemonic, suffixes)).lower(),
+                str(bool(form["width_suffix_aliases"])).lower(),
                 len(operands),
             )
         )
@@ -324,42 +323,114 @@ def _generate() -> str:
 
 
 def _concrete_assembly(form: dict, size_values: dict[str, dict[int, str]]) -> str:
-    syntax = form["syntax"]
-    head, *rest = syntax.split(None, 1)
-    if "cc" in head:
-        head = head.replace("cc", "eq")
-    suffix_match = re.search(r"\.([A-Z0-9_]+)\(([a-z])\)$", head)
+    template = parse_assembly_template(form["syntax"], form["id"])
+    head = template.mnemonic
+    if head.endswith("cc"):
+        condition = next(
+            operand for operand in form["operands"] if operand["type"] == "condition"
+        )
+        condition_field = condition["field"]
+        condition_width = form["bits"].count(condition_field)
+        legal_conditions = _allowed_field_values(
+            form, condition_field, condition_width
+        )
+        names = _condition_names()
+        selected_condition = min(legal_conditions & names.keys())
+        head = head[:-2] + names[selected_condition]
     scale = 1
-    if suffix_match:
-        field = suffix_match.group(2)
-        values = _allowed_size_values(form, field, size_values)
-        selected = min(values)
-        head = head[: suffix_match.start()] + "." + values[selected]
+    if template.fixed_size_suffix is not None:
+        head += template.fixed_size_suffix
+    elif template.selected_size_codes:
+        if template.size_field is None:
+            raise ValueError(f"{form['id']}: selected suffix has no field")
+        values = _allowed_size_values(form, template.size_field, size_values)
+        selected_values = {
+            value: suffix
+            for value, suffix in values.items()
+            if suffix.upper() in template.selected_size_codes
+        }
+        if not selected_values:
+            raise ValueError(f"{form['id']}: no legal public suffix")
+        selected = min(selected_values)
+        head += "." + selected_values[selected]
         scale = 1 << selected
 
-    if not rest:
-        return head.lower()
-    field_numbers = {
-        "p": 0, "q": 1, "h": 2,
-        "v": 1, "w": 2, "y": 3, "x": 1,
-        "r": 1, "s": 4, "u": 3, "b": 3, "i": 2,
-    }
-    def render_operand(match: re.Match[str]) -> str:
-        kind, field = match.groups()
-        if kind == "imm6":
-            return "1"
-        prefix = {"Pn": "p", "Vn": "v", "Rn": "r", "Fn": "f"}[kind]
-        return prefix + str(field_numbers[field])
+    encoded_operands = [
+        operand
+        for operand in form.get("operands", [])
+        if operand["type"] not in {"condition", "memory_order"}
+    ]
+    operand_index = 0
+    register_counters = {"Pn": 0, "Vn": 1, "Rn": 1, "Fn": 1}
+    register_values: dict[tuple[str, str], int] = {}
 
-    args = re.sub(
-        r"(Pn|Vn|Rn|Fn|imm6)\(([a-z])\)",
-        render_operand,
-        rest[0],
-    )
-    args = re.sub(r"<ea>\(e\)", "[r3]", args)
-    args = re.sub(r"<(?:imm|disp)(?:8|16|32|64)s?>", "1", args)
-    args = args.replace("<scale>", str(scale))
-    return f"{head.lower()} {args.lower()}"
+    def consume(node: object) -> dict:
+        nonlocal operand_index
+        if operand_index >= len(encoded_operands):
+            raise ValueError(f"{form['id']}: assembly AST has an extra operand {node}")
+        operand = encoded_operands[operand_index]
+        operand_index += 1
+        field = getattr(node, "field", None)
+        if field != operand.get("field"):
+            raise ValueError(
+                f"{form['id']}: assembly AST field {field!r} does not match "
+                f"operand {operand['name']!r} field {operand.get('field')!r}"
+            )
+        return operand
+
+    def concrete_value(node: object) -> str:
+        operand = consume(node)
+        operand_type = operand["type"]
+        if operand_type in register_counters:
+            field = operand.get("field")
+            key = (operand_type, field or operand["name"])
+            if key not in register_values:
+                candidate = register_counters[operand_type]
+                if field:
+                    width = form["bits"].count(field)
+                    allowed = _allowed_field_values(form, field, width)
+                    candidate = candidate if candidate in allowed else min(allowed)
+                register_values[key] = candidate
+                register_counters[operand_type] = candidate + 1
+            prefix = {"Pn": "p", "Vn": "v", "Rn": "r", "Fn": "f"}[
+                operand_type
+            ]
+            return prefix + str(register_values[key])
+        if operand_type in {"EA", "VEA"}:
+            return "[r3]"
+        if operand_type.startswith("imm"):
+            field = operand.get("field")
+            if field:
+                width = form["bits"].count(field)
+                allowed = _allowed_field_values(form, field, width)
+                return str(1 if 1 in allowed else min(allowed))
+            return "1"
+        raise ValueError(
+            f"{form['id']}: unsupported concrete operand type {operand_type!r}"
+        )
+
+    def render(node: object) -> str:
+        kind = getattr(node, "kind")
+        if kind == "reference":
+            return concrete_value(node)
+        if kind == "decimal":
+            consume(node)
+            return str(getattr(node, "literal"))
+        if kind == "scale":
+            return str(scale)
+        if kind == "operator":
+            return f" {getattr(node, 'name')} "
+        if kind in {"address", "lane_index"}:
+            return "[" + "".join(render(member) for member in node.members) + "]"
+        raise ValueError(f"{form['id']}: unsupported assembly AST node {kind!r}")
+
+    args = ", ".join(render(operand) for operand in template.operands)
+    if operand_index != len(encoded_operands):
+        raise ValueError(
+            f"{form['id']}: assembly AST omitted "
+            f"{len(encoded_operands) - operand_index} encoded operands"
+        )
+    return head.lower() if not args else f"{head.lower()} {args.lower()}"
 
 
 def _generate_mc_test() -> str:
@@ -378,6 +449,38 @@ def _generate_mc_test() -> str:
         if operands:
             expected += "{{[ \\t]+}}" + operands[0]
         lines.extend((f"# {directive}: {expected}", f"# {form['id']}", instruction))
+
+    # Keep alias coverage tied to the same typed public alias declaration that
+    # feeds the catalog.  The selected form has the whole B/W/L/Q domain, so
+    # the three established width aliases exercise every compatibility map and
+    # prove that disassembly returns the canonical public spelling.
+    for form, canonical in zip(forms, assembly):
+        template = parse_assembly_template(form["syntax"], form["id"])
+        if not (
+            form["width_suffix_aliases"]
+            and {"B", "W", "L", "Q"}.issubset(template.selected_size_codes)
+        ):
+            continue
+        mnemonic, *operands = canonical.split(None, 1)
+        if not mnemonic.endswith(".b"):
+            continue
+        canonical_suffixes = {"h": "w", "s": "l", "d": "q"}
+        for alias, canonical_suffix in canonical_suffixes.items():
+            alias_mnemonic = mnemonic[:-1] + alias
+            expected_mnemonic = mnemonic[:-1] + canonical_suffix
+            expected = expected_mnemonic
+            if operands:
+                expected += "{{[ \\t]+}}" + operands[0]
+            lines.extend(
+                (
+                    f"# CHECK-NEXT: {expected}",
+                    f"# {form['id']} public width alias .{alias}",
+                    f"{alias_mnemonic} {operands[0]}" if operands else alias_mnemonic,
+                )
+            )
+        break
+    else:
+        raise ValueError("no full-domain vector form declares public width aliases")
     lines.append("")
     return "\n".join(lines)
 

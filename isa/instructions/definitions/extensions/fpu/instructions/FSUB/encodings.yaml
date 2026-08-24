@@ -2,7 +2,7 @@ forms:
 - id: medium.fsub_x_fn_s_fn_d
   class: medium
   bits: 101000z100ssssdddd
-  syntax: FSUB.SD(z) Fn(s), Fn(d)
+  syntax: FSUB.{S|D}(z) Fn(s), Fn(d)
   operands:
   - name: src
     type: Fn
@@ -18,7 +18,7 @@ forms:
 - id: long.fsub_x_ea_s_fn_d
   class: long
   bits: 1111100100z0100ddddeeeeeee
-  syntax: FSUB.SD(z) <ea>(e), Fn(d)
+  syntax: FSUB.{S|D}(z) <ea>(e), Fn(d)
   operands:
   - name: src
     type: FEA

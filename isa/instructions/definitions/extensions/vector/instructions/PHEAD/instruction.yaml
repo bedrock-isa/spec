@@ -1,8 +1,0 @@
-mnemonic: PHEAD
-title: PHEAD (Vector)
-summary: Set significant positions from `unsigned(Rcount) mod lane_count` through the final lane.
-description: Set significant positions from `unsigned(Rcount) mod lane_count` through the final lane.
-attributes:
-  class: vector
-  family: vector
-  privilege: unprivileged

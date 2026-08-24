@@ -2,7 +2,7 @@ forms:
 - id: long.vnot.v31
   class: long
   bits: 11111010000010zz0ppppvvvvv
-  syntax: VNOT.BWLQ(z) Pn(p), Vn(v)
+  syntax: VNOT.{B|W|L|Q}(z) Pn(p), Vn(v)
   operands:
   - name: govern
     type: Pn
@@ -18,7 +18,7 @@ forms:
 - id: xxlong.vnot.v188
   class: xxlong
   bits: 11111111000000100011zz0101ppppvvvvveeeeeee
-  syntax: VNOT.BWLQ(z) Pn(p), <ea>(e), Vn(v)
+  syntax: VNOT.{B|W|L|Q}(z) Pn(p), <ea>(e), Vn(v)
   operands:
   - name: govern
     type: Pn
@@ -40,7 +40,7 @@ forms:
 - id: xxlong.vnot.v189
   class: xxlong
   bits: 11111111000000100011zz0110ppppvvvvveeeeeee
-  syntax: VNOT.BWLQ(z) Pn(p), Vn(v), <ea>(e)
+  syntax: VNOT.{B|W|L|Q}(z) Pn(p), Vn(v), <ea>(e)
   operands:
   - name: govern
     type: Pn

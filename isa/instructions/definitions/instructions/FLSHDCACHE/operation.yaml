@@ -1,0 +1,34 @@
+operation: FLSHDCACHE
+title: Flush Data Cache
+summary: Write back and invalidate one cache-maintenance block.
+public_instruction:
+  mnemonic: FLSHDCACHE
+execution_route: cache
+privilege: supervisor
+repeat:
+  kind: not_eligible
+operands:
+- id: target
+  role: address
+  access: address
+  value_domain: integer
+  profiles:
+  - EA
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - medium.flshdcache_ea_e
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags: []
+  events: []
+  sail_entry: execute_FLSHDCACHE
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

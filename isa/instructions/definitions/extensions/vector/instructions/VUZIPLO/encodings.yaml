@@ -2,7 +2,7 @@ forms:
 - id: extralong.vuziplo.v95
   class: extralong
   bits: 11111101111011000zz0ppppvvvvvwwwww
-  syntax: VUZIPLO.BWLQ(z) Pn(p), Vn(v), Vn(w)
+  syntax: VUZIPLO.{B|W|L|Q}(z) Pn(p), Vn(v), Vn(w)
   operands:
   - name: govern
     type: Pn

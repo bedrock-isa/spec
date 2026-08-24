@@ -1,36 +1,3 @@
-function execute_route_exact(instruction : Decoded_instruction, state : Cpu_state)
-  -> Execution_result = match instruction.form.route {
-  RouteIntegerAlu => match execute_integer_local(instruction, state) {
-    Some(result) => result, None() => execute_external_route(instruction, state)
-  },
-  RouteIntegerUnary => match execute_integer_local(instruction, state) {
-    Some(result) => result, None() => execute_external_route(instruction, state)
-  },
-  RouteFpu => execute_external_route(instruction, state),
-  RouteFpuTranscendental => execute_external_route(instruction, state),
-  RouteIntegerBitfield => match execute_integer_local(instruction, state) {
-    Some(result) => result, None() => execute_external_route(instruction, state)
-  },
-  RouteIntegerMulDiv => match execute_integer_local(instruction, state) {
-    Some(result) => result, None() => execute_external_route(instruction, state)
-  },
-  RouteDataMovement => match execute_data_local(instruction, state) {
-    Some(result) => result, None() => execute_external_route(instruction, state)
-  },
-  RouteBounds => match execute_bounds_local(instruction, state) {
-    Some(result) => result, None() => execute_external_route(instruction, state)
-  },
-  RouteSystemRegisters => match execute_system_local(instruction, state) {
-    Some(result) => result, None() => execute_external_route(instruction, state)
-  },
-  RouteTlbContext => match execute_tlb_local(instruction, state) {
-    Some(result) => result, None() => execute_external_route(instruction, state)
-  },
-  RouteControlFlow => execute_control_exact(instruction, state),
-  RouteCoreControl => execute_core_exact(instruction, state),
-  _ => execute_external_route(instruction, state),
-}
-
 function architectural_state_fault(instruction : Decoded_instruction, state : Cpu_state)
   -> option(Execution_fault) = {
   let operation = instruction.form.operation;
@@ -48,4 +15,3 @@ function architectural_state_fault(instruction : Decoded_instruction, state : Cp
                   error_code = 0x0000000000000002, bus_error = false })
   else None()
 }
-

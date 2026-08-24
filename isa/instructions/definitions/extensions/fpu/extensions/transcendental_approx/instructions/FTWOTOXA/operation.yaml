@@ -1,0 +1,52 @@
+operation: FTWOTOXA
+title: Approximate Floating-Point 2 To x
+summary: Performs the approximate floating-point 2 to x operation.
+public_instruction:
+  mnemonic: FTWOTOXA
+execution_route: fpu_transcendental_approx
+privilege: unprivileged
+repeat:
+  kind: rep
+operands:
+- id: src
+  role: source
+  access: read
+  value_domain: floating
+  profiles:
+  - Fn
+- id: dst
+  role: destination
+  access: write
+  value_domain: floating
+  profiles:
+  - Fn
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - long.ftwotoxa_x_fn_s_fn_d
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags:
+  - bank: FFLAGS
+    completion: accrued_causes
+    effects:
+    - flag: NV
+      effect: accrue_source
+      reference: operation_cause
+    - flag: OF
+      effect: accrue_source
+      reference: operation_cause
+    - flag: UF
+      effect: accrue_source
+      reference: operation_cause
+  events: []
+  sail_entry: execute_FTWOTOXA
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

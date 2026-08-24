@@ -1,8 +1,0 @@
-mnemonic: FLSHDCACHE
-title: Flush Data Cache
-summary: Write back and invalidate one cache-maintenance block.
-description: Computes and translates the address-role EA without reading an operand value, selects its CPUID-sized maintenance block, writes dirty bytes from every data or unified cache copy in the coherence domain into normal-memory coherence, invalidates those copies, and retires after the block is complete.
-attributes:
-  class: system
-  family: cache
-  privilege: supervisor

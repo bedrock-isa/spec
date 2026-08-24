@@ -2,7 +2,7 @@ forms:
 - id: extralong.vslideup.v112
   class: extralong
   bits: 11111101111100101zzppppvvvvviiiiii
-  syntax: VSLIDEUP.BWLQ(z) Pn(p), imm6(i), Vn(v)
+  syntax: VSLIDEUP.{B|W|L|Q}(z) Pn(p), imm6(i), Vn(v)
   operands:
   - name: govern
     type: Pn

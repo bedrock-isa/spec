@@ -1,0 +1,27 @@
+operation: VXOR
+title: VXOR (Vector)
+summary: Applies bitwise XOR to corresponding active vector elements.
+public_instruction:
+  mnemonic: VXOR
+execution_route: vector
+privilege: unprivileged
+repeat:
+  kind: not_eligible
+operands:
+- {id: govern, role: governing_predicate, access: read, value_domain: predicate, profiles: [Pn]}
+- {id: src, role: source, access: read, value_domain: vector, profiles: [Vn, VEA]}
+- {id: dst, role: destination, access: read_write, value_domain: vector, profiles: [Vn, VEA]}
+cases:
+- id: all_forms
+  applies_to:
+    forms: [extralong.vxor.v55, xxlong.vxor.v150, xxlong.vxor.v151]
+    selectors:
+    - {domain: BWLQ, values: [B, W, L, Q]}
+  additional_requirements: []
+  predicate: {kind: none}
+  flags: []
+  events: []
+  sail_entry: execute_VXOR
+artifacts:
+  semantics: {path: semantics.sail, kind: sail}
+  description: {path: description.tex, kind: tex}

@@ -1,0 +1,14 @@
+Long Return is a segment-changing control transfer that reads the long return frame from SS:SP and commits CS and PC together. The frame contains the continuation PC Q value at the current SP and the return CS Q value at SP+8; after both values are fetched, SP is advanced by 16 bytes and the control state is committed.
+
+\begin{enumerate}
+\item Read both 8-byte long-return-frame words through the old SS context without changing SP.
+\item Validate the complete return CS image.
+\item Validate the continuation PC offset against the return CS and probe executable translation at the resulting linear address.
+\item Commit advanced SP, return CS, and continuation PC as one successful control-transfer operation.
+\end{enumerate}
+
+\textbf{Fault atomicity.} SP, CS, and PC remain unchanged when a frame read or return-target validation faults.
+
+The 16-byte long return frame is read through the old SS context: the continuation PC occupies offset 0 and the return CS
+image occupies offset 8. A frame translation or return-target translation failure raises \texttt{PAGE\_FAULT}; an
+invalid return CS image raises \texttt{INVALID\_CONTROL\_STATE}.

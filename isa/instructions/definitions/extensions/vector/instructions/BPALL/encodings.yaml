@@ -2,7 +2,7 @@ forms:
 - id: long.bpall.v28
   class: long
   bits: 11111010011100zz000101pppp
-  syntax: BPALL.BWLQ(z) Pn(p), <imm32s>
+  syntax: BPALL.{B|W|L|Q}(z) Pn(p), <imm32s>
   operands:
   - name: predicate
     type: Pn
@@ -17,7 +17,7 @@ forms:
 - id: xxlong.bpall.v238
   class: xxlong
   bits: 11111111000000110000zz000000100ppppeeeeeee
-  syntax: BPALL.BWLQ(z) Pn(p), <ea>(e)
+  syntax: BPALL.{B|W|L|Q}(z) Pn(p), <ea>(e)
   operands:
   - name: predicate
     type: Pn

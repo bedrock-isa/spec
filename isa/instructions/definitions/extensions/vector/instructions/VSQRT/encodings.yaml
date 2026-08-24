@@ -2,7 +2,7 @@ forms:
 - id: long.vsqrt.v38
   class: long
   bits: 11111010000101zz1ppppvvvvv
-  syntax: VSQRT.HSD(z) Pn(p), Vn(v)
+  syntax: VSQRT.{H|S|D}(z) Pn(p), Vn(v)
   operands:
   - name: govern
     type: Pn
@@ -23,7 +23,7 @@ forms:
 - id: xxlong.vsqrt.v202
   class: xxlong
   bits: 11111111000000100100zz0111ppppvvvvveeeeeee
-  syntax: VSQRT.HSD(z) Pn(p), <ea>(e), Vn(v)
+  syntax: VSQRT.{H|S|D}(z) Pn(p), <ea>(e), Vn(v)
   operands:
   - name: govern
     type: Pn
@@ -49,7 +49,7 @@ forms:
 - id: xxlong.vsqrt.v203
   class: xxlong
   bits: 11111111000000100100zz1000ppppvvvvveeeeeee
-  syntax: VSQRT.HSD(z) Pn(p), Vn(v), <ea>(e)
+  syntax: VSQRT.{H|S|D}(z) Pn(p), Vn(v), <ea>(e)
   operands:
   - name: govern
     type: Pn

@@ -1,0 +1,9 @@
+VMIN applies the scalar floating-point minimum rules to each active H, S, or
+D destination element and its corresponding source element. The register form
+and the memory-source form write the selected value to the destination vector
+lane. An inactive destination lane retains its previous value.
+
+The memory-destination form combines each active destination element with the
+corresponding source-register element and writes the selected value back to
+that memory element. Inactive memory elements retain their previous values,
+making the destination transaction a lane-wise read-modify-write.

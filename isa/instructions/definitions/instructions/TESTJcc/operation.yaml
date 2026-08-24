@@ -1,0 +1,56 @@
+operation: TESTJcc
+title: Test And Jump Conditional
+summary: Tests two Rn registers and branches on the selected condition without writing FLAGS.
+public_instruction:
+  mnemonic: TESTJcc
+execution_route: control_flow
+privilege: unprivileged
+repeat:
+  kind: not_eligible
+operands:
+- id: cc
+  role: source
+  access: read
+  value_domain: integer
+  profiles:
+  - condition
+- id: src
+  role: source
+  access: read
+  value_domain: integer
+  profiles:
+  - Rn
+- id: dst
+  role: source
+  access: read
+  value_domain: integer
+  profiles:
+  - Rn
+- id: target
+  role: control_target
+  access: read
+  value_domain: integer
+  profiles:
+  - imm8s
+  - imm16s
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - long.testjcc_x_rn_s_rn_d_imm8s
+    - long.testjcc_x_rn_s_rn_d_imm16s
+  additional_requirements: []
+  predicate:
+    kind: test_temporary
+    condition_operand: cc
+    observed: logical_test_temporary
+  flags: []
+  events: []
+  sail_entry: execute_TESTJcc
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

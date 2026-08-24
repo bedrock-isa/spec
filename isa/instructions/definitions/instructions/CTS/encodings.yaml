@@ -2,7 +2,7 @@ forms:
 - id: long.cts_x_ea_e_rn_d
   class: long
   bits: 1111001010zz110ddddeeeeeee
-  syntax: CTS.BWLQ(z) <ea>(e), Rn(d)
+  syntax: CTS.{B|W|L|Q}(z) <ea>(e), Rn(d)
   operands:
   - name: src
     type: EA
@@ -20,7 +20,7 @@ forms:
 - id: medium.cts_x_rn_s_rn_d
   class: medium
   bits: 10010zz110ssssdddd
-  syntax: CTS.BWLQ(z) Rn(s), Rn(d)
+  syntax: CTS.{B|W|L|Q}(z) Rn(s), Rn(d)
   operands:
   - name: src
     type: Rn

@@ -2,7 +2,7 @@ forms:
 - id: extralong.vredadd.v118
   class: extralong
   bits: 11111101111110100zz00pppprrrrvvvvv
-  syntax: VREDADD.BWLQ(z) Pn(p), Vn(v), Rn(r)
+  syntax: VREDADD.{B|W|L|Q}(z) Pn(p), Vn(v), Rn(r)
   operands:
   - name: govern
     type: Pn
@@ -22,7 +22,7 @@ forms:
 - id: extralong.vredadd.v126
   class: extralong
   bits: 11111101111110110zz00pppprrrrvvvvv
-  syntax: VREDADD.HSD(z) Pn(p), Vn(v), Fn(r)
+  syntax: VREDADD.{H|S|D}(z) Pn(p), Vn(v), Fn(r)
   operands:
   - name: govern
     type: Pn
@@ -47,7 +47,7 @@ forms:
 - id: xxlong.vredadd.v219
   class: xxlong
   bits: 11111111000000101110zz00000pppprrrreeeeeee
-  syntax: VREDADD.BWLQ(z) Pn(p), <ea>(e), Rn(r)
+  syntax: VREDADD.{B|W|L|Q}(z) Pn(p), <ea>(e), Rn(r)
   operands:
   - name: govern
     type: Pn
@@ -69,7 +69,7 @@ forms:
 - id: xxlong.vredadd.v227
   class: xxlong
   bits: 11111111000000101110zz01000pppprrrreeeeeee
-  syntax: VREDADD.HSD(z) Pn(p), <ea>(e), Fn(r)
+  syntax: VREDADD.{H|S|D}(z) Pn(p), <ea>(e), Fn(r)
   operands:
   - name: govern
     type: Pn

@@ -2,7 +2,7 @@ forms:
 - id: medium.fcmp_x_fn_s_fn_d
   class: medium
   bits: 101000z111ssssdddd
-  syntax: FCMP.SD(z) Fn(s), Fn(d)
+  syntax: FCMP.{S|D}(z) Fn(s), Fn(d)
   operands:
   - name: src
     type: Fn
@@ -18,7 +18,7 @@ forms:
 - id: long.fcmp_x_ea_s_fn_d
   class: long
   bits: 1111100100z0111ddddeeeeeee
-  syntax: FCMP.SD(z) <ea>(e), Fn(d)
+  syntax: FCMP.{S|D}(z) <ea>(e), Fn(d)
   operands:
   - name: src
     type: FEA

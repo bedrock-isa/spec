@@ -1,9 +1,0 @@
-mnemonic: RET
-title: Return
-summary: Performs the return operation.
-description: Reads one 64-bit return address from SS:SP, advances SP by eight bytes, validates the target, and transfers control to it.
-attributes:
-  class: control_flow
-  family: control_flow
-  privilege: unprivileged
-additional_description: details.tex

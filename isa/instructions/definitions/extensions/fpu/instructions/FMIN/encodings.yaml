@@ -2,7 +2,7 @@ forms:
 - id: medium.fmin_x_fn_s_fn_d
   class: medium
   bits: 101110z001ssssdddd
-  syntax: FMIN.SD(z) Fn(s), Fn(d)
+  syntax: FMIN.{S|D}(z) Fn(s), Fn(d)
   operands:
   - name: src
     type: Fn
@@ -18,7 +18,7 @@ forms:
 - id: long.fmin_x_ea_s_fn_d
   class: long
   bits: 1111100101z1001ddddeeeeeee
-  syntax: FMIN.SD(z) <ea>(e), Fn(d)
+  syntax: FMIN.{S|D}(z) <ea>(e), Fn(d)
   operands:
   - name: src
     type: FEA

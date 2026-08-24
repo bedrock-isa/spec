@@ -1,0 +1,26 @@
+operation: PTRUE
+title: PTRUE (Vector)
+summary: Set every significant position for the selected size.
+public_instruction:
+  mnemonic: PTRUE
+  width_suffix_aliases: true
+execution_route: vector
+privilege: unprivileged
+repeat:
+  kind: not_eligible
+operands:
+- {id: dst, role: destination, access: write, value_domain: predicate, profiles: [Pn]}
+cases:
+- id: all_forms
+  applies_to:
+    forms: [long.ptrue.v23]
+    selectors:
+    - {domain: BWLQ, values: [B, W, L, Q]}
+  additional_requirements: []
+  predicate: {kind: none}
+  flags: []
+  events: []
+  sail_entry: execute_PTRUE
+artifacts:
+  semantics: {path: semantics.sail, kind: sail}
+  description: {path: description.tex, kind: tex}

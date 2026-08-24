@@ -1,0 +1,9 @@
+Pushes the canonical register pair selected by the pair ID. The canonical pair sequence is pair 0 (R0, R1), pair 1 (R2, R3), pair 2 (R4, R5), pair 3 (R6, R7), pair 4 (R8, R9), pair 5 (R10, R11), pair 6 (R12, R13), and pair 7 (R14, R15). All eight pair IDs are valid and each selects one pair.
+
+PUSHP selects one canonical pair using the unsigned 3-bit pair index and captures both register values and the old
+SS:SP context. It validates the complete two-slot stack range before either slot or SP is changed. For a listed pair
+(\emph{first}, \emph{second}), the second register is stored at old SP minus 16 and the first register is stored at
+old SP minus 8. Both stores and the SP update to old SP minus 16 commit together. A preceding fault changes neither
+slot nor SP.
+
+Multiple PUSHP instructions can be used in canonical prologue order to save multiple pairs.

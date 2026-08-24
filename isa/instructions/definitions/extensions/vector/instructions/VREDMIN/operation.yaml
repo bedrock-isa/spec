@@ -1,0 +1,33 @@
+operation: VREDMIN
+title: Vector Floating-Point Minimum Reduction
+summary: Reduces active floating-point elements to one minimum value.
+public_instruction:
+  mnemonic: VREDMIN
+execution_route: vector
+privilege: unprivileged
+repeat:
+  kind: not_eligible
+operands:
+- {id: govern, role: governing_predicate, access: read, value_domain: predicate, profiles: [Pn]}
+- {id: src, role: source, access: read, value_domain: vector, profiles: [Vn, VEA]}
+- {id: dst, role: destination, access: write, value_domain: floating, profiles: [Fn]}
+cases:
+- id: all_forms
+  applies_to:
+    forms: [extralong.vredmin.v127, xxlong.vredmin.v228]
+    selectors:
+    - {domain: HSD, values: [H, S, D]}
+  additional_requirements: [FP]
+  predicate: {kind: none}
+  flags:
+  - bank: FFLAGS
+    completion: accrued_causes
+    effects:
+    - {flag: NV, effect: accrue_source, reference: operation_cause}
+  events:
+  - event: FLOATING_POINT_FAULT
+    condition: enabled_floating_point_exception
+  sail_entry: execute_VREDMIN
+artifacts:
+  semantics: {path: semantics.sail, kind: sail}
+  description: {path: description.tex, kind: tex}

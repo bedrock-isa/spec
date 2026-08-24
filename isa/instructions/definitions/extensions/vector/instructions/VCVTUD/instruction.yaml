@@ -1,8 +1,0 @@
-mnemonic: VCVTUD
-title: VCVTUD (Vector)
-summary: Unsigned integer to D.
-description: Unsigned integer to D.
-attributes:
-  class: vector
-  family: vector
-  privilege: unprivileged

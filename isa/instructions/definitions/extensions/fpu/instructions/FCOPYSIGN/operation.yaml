@@ -1,0 +1,46 @@
+operation: FCOPYSIGN
+title: Floating-Point Copy Sign
+summary: Performs the floating-point copy sign operation.
+public_instruction:
+  mnemonic: FCOPYSIGN
+execution_route: fpu
+privilege: unprivileged
+repeat:
+  kind: rep
+operands:
+- id: sign_src
+  role: source
+  access: read
+  value_domain: floating
+  profiles:
+  - Fn
+- id: magnitude_src
+  role: source
+  access: read
+  value_domain: floating
+  profiles:
+  - Fn
+- id: dst
+  role: destination
+  access: write
+  value_domain: floating
+  profiles:
+  - Fn
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - long.fcopysign_x_fn_s_fn_m_fn_d
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags: []
+  events: []
+  sail_entry: execute_FCOPYSIGN
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

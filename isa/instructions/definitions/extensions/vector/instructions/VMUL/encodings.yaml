@@ -2,7 +2,7 @@ forms:
 - id: extralong.vmul.v52
   class: extralong
   bits: 1111110111100001xxx0ppppvvvvvwwwww
-  syntax: VMUL.VTYPE(x) Pn(p), Vn(v), Vn(w)
+  syntax: VMUL.{B|W|L|Q|H|S|D}(x) Pn(p), Vn(v), Vn(w)
   operands:
   - name: govern
     type: Pn
@@ -28,7 +28,7 @@ forms:
 - id: xxlong.vmul.v144
   class: xxlong
   bits: 1111111100000010000xxx0111ppppvvvvveeeeeee
-  syntax: VMUL.VTYPE(x) Pn(p), <ea>(e), Vn(v)
+  syntax: VMUL.{B|W|L|Q|H|S|D}(x) Pn(p), <ea>(e), Vn(v)
   operands:
   - name: govern
     type: Pn
@@ -54,7 +54,7 @@ forms:
 - id: xxlong.vmul.v145
   class: xxlong
   bits: 1111111100000010000xxx1000ppppvvvvveeeeeee
-  syntax: VMUL.VTYPE(x) Pn(p), Vn(v), <ea>(e)
+  syntax: VMUL.{B|W|L|Q|H|S|D}(x) Pn(p), Vn(v), <ea>(e)
   operands:
   - name: govern
     type: Pn

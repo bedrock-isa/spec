@@ -4,10 +4,7 @@ function byte_list_length(bytes : list(bits(8))) -> int = match bytes {
 }
 
 function repeat_body_available(instruction : Decoded_instruction, state : Cpu_state) -> bool =
-  if instruction.form.instruction_set == FpuSet then state.fp_enabled
-  else if instruction.form.instruction_set == FpuTranscendentalSet
-    then state.fp_enabled & state.fptrans_enabled
-  else true
+  instruction_available(instruction, state)
 
 function repeat_body_control_forbidden(instruction : Decoded_instruction) -> bool =
   instruction.form.operation == Op_CALL | instruction.form.operation == Op_CALLcc

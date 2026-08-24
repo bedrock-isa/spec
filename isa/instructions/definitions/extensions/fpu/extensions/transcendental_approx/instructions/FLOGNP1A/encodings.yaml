@@ -2,7 +2,7 @@ forms:
 - id: long.flognp1a_x_fn_s_fn_d
   class: long
   bits: 1111100111z0100111ssssdddd
-  syntax: FLOGNP1A.SD(z) Fn(s), Fn(d)
+  syntax: FLOGNP1A.{S|D}(z) Fn(s), Fn(d)
   operands:
   - name: src
     type: Fn

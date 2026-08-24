@@ -1,0 +1,41 @@
+operation: PUSH
+title: Push
+summary: Pushes one Rn register value, SREG image, or the current CS image onto the stack.
+public_instruction:
+  mnemonic: PUSH
+execution_route: data_movement
+privilege: unprivileged
+repeat:
+  kind: rep_and_repcc
+  observed:
+    kind: source
+    operand: reg
+operands:
+- id: reg
+  role: source
+  access: read
+  value_domain: integer
+  profiles:
+  - CS
+  - Rn
+  - SREG
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - extrashort.push_cs
+    - extrashort.push_rn_r
+    - short.push_sreg_s
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags: []
+  events: []
+  sail_entry: execute_PUSH
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

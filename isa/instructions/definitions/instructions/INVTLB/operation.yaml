@@ -1,0 +1,28 @@
+operation: INVTLB
+title: Invalidate TLB
+summary: Invalidate all TLB entries.
+public_instruction:
+  mnemonic: INVTLB
+execution_route: tlb_and_context
+privilege: supervisor
+repeat:
+  kind: not_eligible
+operands: []
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - medium.invtlb
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags: []
+  events: []
+  sail_entry: execute_INVTLB
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

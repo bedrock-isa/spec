@@ -85,8 +85,10 @@ result bits are ignored by software.
 A set feature bit only permits software to use the corresponding architectural behavior; the instruction's normal
 privilege, operand, and compatibility checks still apply.
 
-The FP, FPTRANSA, and VECTOR predicates report the base floating-point, approximate transcendental floating-point,
-and scalable-vector groups.
+The \texttt{FP}, \texttt{FPTRANSA}, and \texttt{VECTOR} flag tokens report the
+base floating-point, approximate transcendental floating-point, and
+scalable-vector architectural behavior. A behavior that requires several flags
+is available only when their conjunction is set.
 Numeric fields use names that describe their unit. \texttt{SAVE\_AREA\_SIZE\_BYTES},
 \texttt{OFFSET\_BYTES}, \texttt{MAX\_SIZE\_BYTES}, and \texttt{ALIGNMENT\_BYTES} are byte counts.
 

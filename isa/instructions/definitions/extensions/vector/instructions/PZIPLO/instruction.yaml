@@ -1,8 +1,0 @@
-mnemonic: PZIPLO
-title: PZIPLO (Vector)
-summary: Interleave the lower halves of the two typed predicate lane sequences.
-description: Interleave the lower halves of the two typed predicate lane sequences.
-attributes:
-  class: vector
-  family: vector
-  privilege: unprivileged

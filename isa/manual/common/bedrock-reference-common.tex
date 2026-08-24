@@ -166,6 +166,63 @@
   \manualfigurecaption{\manualtikzdiagramcaption}%
   \end{center}%
   \endgroup}
+% Strict finite-example vector diagrams.  The fifth argument is the nonvisual
+% description used by the site extractor; the fourth remains the visible caption.
+\NewDocumentEnvironment{BedrockVectorExample}{m m m m m +b}{%
+  \begingroup
+  \Needspace{#1}%
+  \begin{center}\vspace{3pt}%
+  \begin{tikzpicture}[x=#2,y=#3,every node/.style={font=\scriptsize}]%
+  \tikzset{
+    vectorExampleCopy/.style={draw=RuleGray,fill=ManualVariableFill,line width=.45pt},
+    vectorExamplePreserve/.style={draw=RuleGray,fill=white,densely dashed,line width=.45pt},
+    vectorExampleZero/.style={draw=RuleGray,fill=ManualFixedFill,line width=.45pt},
+    vectorExampleOld/.style={draw=RuleGray,fill=ManualVariableFill,line width=.45pt},
+    vectorExampleSource/.style={draw=RuleGray,fill=ManualHeaderFill,line width=.45pt},
+    vectorExampleSelectedSource/.style={draw=RuleGray,fill=ManualHeaderFill,line width=.90pt},
+    vectorExampleDiscarded/.style={draw=RuleGray,fill=white,densely dashed,line width=.38pt},
+    vectorExampleNoAccess/.style={draw=RuleGray,fill=white,densely dashed,line width=.40pt},
+    vectorExamplePredicateOn/.style={draw=RuleGray,fill=ManualHeaderFill,line width=.45pt},
+    vectorExamplePredicateOff/.style={draw=RuleGray,fill=white,line width=.45pt},
+    vectorExampleDontCare/.style={draw=RuleGray,fill=white,line width=.38pt},
+    vectorExamplePredicateResult/.style={draw=ManualMuted,line width=.70pt},
+    vectorExampleSet/.style={draw=RuleGray,fill=ManualVariableFill,line width=.45pt},
+    vectorExampleClear/.style={draw=RuleGray,fill=ManualFixedFill,line width=.45pt},
+    vectorExampleSign-Fill/.style={draw=RuleGray,fill=ManualHeaderFill,line width=.45pt},
+    vectorExampleIgnored/.style={draw=RuleGray,fill=white,densely dashed,line width=.45pt},
+    vectorExampleLabel/.style={anchor=west,font=\scriptsize\bfseries},
+    vectorExampleCellText/.style={font=\scriptsize},
+    vectorExampleCompactText/.style={font=\tiny},
+    vectorExampleMuted/.style={font=\scriptsize,text=ManualMuted},
+    vectorExampleFixedView/.style={anchor=south,font=\scriptsize\bfseries,text=ManualMuted,draw=RuleGray,rounded corners=1pt,inner xsep=3pt,inner ysep=1.5pt},
+    vectorExampleScalar/.style={draw=RuleGray,fill=ManualHeaderFill,rounded corners=1pt,line width=.40pt,minimum width=.8cm,minimum height=.38cm,inner xsep=1.5pt,inner ysep=1pt,font=\tiny},
+    vectorExampleIndex/.style={draw=RuleGray,fill=white,rounded corners=1pt,line width=.40pt,minimum width=.55cm,minimum height=.38cm,inner xsep=1.5pt,inner ysep=1pt,font=\tiny},
+    vectorExampleStateLabel/.style={font=\scriptsize\bfseries},
+    vectorExampleRangeLabel/.style={font=\tiny,text=ManualMuted,fill=white,inner sep=1pt},
+    vectorExampleFold/.style={draw=RuleGray,rounded corners=1pt,line width=.45pt},
+    vectorExampleEquality/.style={font=\small,rotate=90,text=ManualMuted},
+    vectorExampleContinuation/.style={draw=ManualMuted,densely dashed,line width=.42pt},
+    vectorExampleLaneContinuation/.style={draw=ManualMuted,densely dashed,line width=.45pt},
+    vectorExamplePredicateLaneContinuation/.style={draw=RuleGray,densely dashed,line width=.45pt},
+    vectorExampleWidthContinuation/.style={draw=RuleGray,densely dashed,line width=.45pt},
+    vectorExampleContainer/.style={draw=ManualMuted,line width=.75pt},
+    vectorExampleExpansionGuide/.style={draw=ManualMuted,densely dotted,line width=.48pt},
+    vectorExampleRange/.style={draw=ManualMuted,line width=.55pt},
+    vectorExampleBus/.style={draw=ManualMuted,line width=.42pt},
+    vectorExampleCopyArrow/.style={-{Latex[length=1.3mm,width=.9mm]},draw=ManualMuted,line width=.42pt},
+    vectorExamplePreserveArrow/.style={-{Latex[length=1.3mm,width=.9mm]},draw=ManualMuted,line width=.65pt},
+    vectorExampleSign-FillArrow/.style={-{Latex[length=1.3mm,width=.9mm]},draw=ManualMuted,line width=.42pt},
+    vectorExampleLaneTransferArrow/.style={-{Latex[length=1.45mm,width=1.05mm]},draw=ManualMuted,line width=.42pt},
+    vectorExamplePredicateControlArrow/.style={-{Latex[length=1.25mm,width=.95mm]},draw=ManualMuted,densely dotted,line width=.38pt},
+    vectorExampleControlArrow/.style={-{Latex[length=1.25mm,width=.95mm]},draw=ManualMuted,densely dotted,line width=.38pt},
+    vectorExampleWidthTransferArrow/.style={-{Latex[length=1.45mm,width=1.05mm]},draw=ManualMuted,line width=.42pt}
+  }%
+  #6
+  \end{tikzpicture}%
+  \manualcaption{#4}%
+  \end{center}%
+  \endgroup
+}{}
 % Instruction encodings are byte-addressed records, not flat register fields.
 % Preserve their per-byte axes and byte gutter while using the shared fixed
 % physical bit-cell width.
@@ -832,13 +889,16 @@
 }{%
   \par}
 \newcommand{\manualinstructionfield}[2]{\manualblockfield{#1:}{#2}}
+\newcommand{\manualoperationfield}[2]{%
+  \par\Needspace{0.45in}%
+  \noindent\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{1.32in}@{\hspace{0.14in}}>{\raggedright\arraybackslash}X@{}}%
+  \textbf{#1:} & #2%
+  \end{tabularx}\par\vspace{2pt}}
 \newcommand{\manualinstructionstatus}[2]{\manualblockfield{#1:}{#2}}
 \newcommand{\manualinstructionlead}[1]{\par\Needspace{0.42in}{\large #1\par}\vspace{3pt}}
 \newcommand{\manualinstructiondescription}[1]{\par #1\par}
 \newcommand{\manualinstructionmetadata}[4]{%
   \par\small\textcolor{ManualMuted}{#1\enspace\textperiodcentered\enspace#2\enspace\textperiodcentered\enspace#3\enspace\textperiodcentered\enspace#4}\normalsize\par\vspace{3pt}}
-\newcommand{\manualformmetadata}[3]{%
-  \par\small\textcolor{ManualMuted}{#1\enspace\textperiodcentered\enspace#2\enspace\textperiodcentered\enspace#3}\normalsize\par\vspace{3pt}}
 \newenvironment{manualoperation}{\par\Needspace{0.72in}\textbf{Operation}\par\begin{manualcode}}{\end{manualcode}\par}
 \newenvironment{manualsyntax}{\par\Needspace{0.60in}\textbf{Assembler Syntax}\par\begin{manualcode}}{\end{manualcode}\par}
 \newenvironment{manualstatusstrip}{\par\Needspace{0.50in}\begingroup\small\noindent}{\par\endgroup\vspace{2pt}}
@@ -858,11 +918,6 @@
 \newenvironment{manualeaprofile}{\par\Needspace{1.1in}\begingroup\small\raggedright}{\par\endgroup}
 \newcommand{\manualeaprofileline}[2]{\par\hangindent=1.08in\hangafter=1\textbf{#1:}\enspace#2\par}
 \newcommand{\manualeaprofilesyntax}[1]{\par\noindent\mbox{\texttt{#1}}\par}
-\newcommand{\manualeasummary}[1]{%
-  \par\begingroup\small\leftskip=0.24in\textbf{EA availability}\par
-  \textbf{Allowed:} #1\par
-  \textbf{Encoding:} See \hyperref[table:compact-ea-encoding]{Compact EA Encoding} and the
-  \hyperref[section:extended-ea-addressing]{Extended EA Descriptor profiles}.\par\endgroup}
 \newcommand{\manualsummarymnemonic}[2]{\hyperref[#1]{\texttt{#2}}}
 \newenvironment{manualinstructionformat}{%
   \par\Needspace{1.55in}%

@@ -1,0 +1,6 @@
+Extracts the normalized significand of the selected floating-point source and writes the specified floating-point result for finite and special values.
+
+For a normal finite source, the result preserves the sign and fraction and replaces the exponent with the bias,
+producing a magnitude in \([1,2)\). A zero, subnormal, infinity, or NaN source retains its source encoding, subject
+to the architectural signaling-NaN and default-NaN rules. The S and D encodings use their native exponent and fraction
+widths.

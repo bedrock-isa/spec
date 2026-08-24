@@ -1,0 +1,60 @@
+operation: FSINCOSA
+title: Approximate Floating-Point Sine And Cosine
+summary: Performs the approximate floating-point sine and cosine operations.
+public_instruction:
+  mnemonic: FSINCOSA
+execution_route: fpu_transcendental_approx
+privilege: unprivileged
+repeat:
+  kind: rep
+operands:
+- id: src
+  role: source
+  access: read
+  value_domain: floating
+  profiles:
+  - Fn
+- id: sin_dst
+  role: destination
+  access: write
+  value_domain: floating
+  profiles:
+  - Fn
+- id: cos_dst
+  role: destination
+  access: write
+  value_domain: floating
+  profiles:
+  - Fn
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - long.fsincosa_x_fn_s_fn_d_fn_c
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags:
+  - bank: FFLAGS
+    completion: accrued_causes
+    effects:
+    - flag: NV
+      effect: accrue_source
+      reference: operation_cause
+    - flag: UF
+      effect: accrue_source
+      reference: operation_cause
+  events:
+  - event: ILLEGAL_INSTRUCTION
+    condition: destination_overlap
+    cause: INVALID_OPERAND_RELATION
+  - event: FLOATING_POINT_FAULT
+    condition: enabled_floating_point_exception
+  sail_entry: execute_FSINCOSA
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

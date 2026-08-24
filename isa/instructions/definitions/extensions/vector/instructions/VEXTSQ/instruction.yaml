@@ -1,8 +1,0 @@
-mnemonic: VEXTSQ
-title: VEXTSQ (Vector)
-summary: Signed B, W, or L to Q.
-description: Signed B, W, or L to Q.
-attributes:
-  class: vector
-  family: vector
-  privilege: unprivileged

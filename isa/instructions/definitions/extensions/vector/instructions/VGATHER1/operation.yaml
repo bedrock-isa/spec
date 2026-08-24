@@ -1,0 +1,99 @@
+operation: VGATHER1
+title: One-Lane Vector Gather Step
+summary: Conditionally gather one vector lane and advance its lane cursor.
+public_instruction:
+  mnemonic: VGATHER1
+  width_suffix_aliases: true
+execution_route: vector
+privilege: unprivileged
+repeat:
+  kind: rep
+operands:
+- id: govern
+  role: governing_predicate
+  access: read
+  value_domain: predicate
+  profiles:
+  - Pn
+- id: base
+  role: source
+  access: read
+  value_domain: integer
+  profiles:
+  - Rn
+- id: cursor
+  role: counter
+  access: read_write
+  value_domain: integer
+  profiles:
+  - Rn
+- id: stride
+  role: source
+  access: read
+  value_domain: integer
+  profiles:
+  - Rn
+- id: dst
+  role: destination
+  access: read_write
+  value_domain: vector
+  profiles:
+  - Vn
+- id: address
+  role: source
+  access: read
+  value_domain: vector
+  profiles:
+  - Vn
+- id: disp8s
+  role: source
+  access: read
+  value_domain: integer
+  profiles:
+  - imm8s
+- id: disp16s
+  role: source
+  access: read
+  value_domain: integer
+  profiles:
+  - imm16s
+- id: disp32s
+  role: source
+  access: read
+  value_domain: integer
+  profiles:
+  - imm32s
+- id: disp64
+  role: source
+  access: read
+  value_domain: integer
+  profiles:
+  - imm64
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - xxlong.vgather1.v239
+    - xxlong.vgather1.v240
+    - xxlong.vgather1.v241
+    - xxlong.vgather1.v242
+    - xxlong.vgather1.v243
+    - xxlong.vgather1.v244
+    - xxlong.vgather1.v245
+    - xxlong.vgather1.v246
+    - xxlong.vgather1.v247
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags: []
+  events:
+  - event: VECTOR_RANGE_ERROR
+    condition: vector_lane_cursor_out_of_range
+  sail_entry: execute_VGATHER1
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

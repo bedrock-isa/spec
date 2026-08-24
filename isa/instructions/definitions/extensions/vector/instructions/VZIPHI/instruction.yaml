@@ -1,8 +1,0 @@
-mnemonic: VZIPHI
-title: VZIPHI (Vector)
-summary: Interleave the upper source halves.
-description: Interleave the upper source halves.
-attributes:
-  class: vector
-  family: vector
-  privilege: unprivileged

@@ -2,7 +2,7 @@ forms:
 - id: extralong.cmpxchg_x_order_o_rn_x_rn_d_ea_e
   class: extralong
   bits: 11111100010100zzoooxxxxddddeeeeeee
-  syntax: CMPXCHG.BWLQ(z)/order(o) Rn(x), Rn(d), <ea>(e)
+  syntax: CMPXCHG.{B|W|L|Q}(z)/order(o) Rn(x), Rn(d), <ea>(e)
   operands:
   - name: order
     type: memory_order

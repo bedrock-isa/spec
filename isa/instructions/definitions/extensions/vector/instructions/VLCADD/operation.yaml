@@ -1,0 +1,41 @@
+operation: VLCADD
+title: Vector Lane-Count Add
+summary: Add a signed immediate multiple of the selected lane count to `Rn`.
+public_instruction:
+  mnemonic: VLCADD
+  width_suffix_aliases: true
+execution_route: vector
+privilege: unprivileged
+repeat:
+  kind: not_eligible
+operands:
+- id: offset
+  role: source
+  access: read
+  value_domain: integer
+  profiles:
+  - imm8s
+- id: dst
+  role: destination
+  access: read_write
+  value_domain: integer
+  profiles:
+  - Rn
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - long.vlcadd.v21
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags: []
+  events: []
+  sail_entry: execute_VLCADD
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

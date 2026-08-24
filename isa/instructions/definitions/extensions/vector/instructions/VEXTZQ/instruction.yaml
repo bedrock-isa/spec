@@ -1,8 +1,0 @@
-mnemonic: VEXTZQ
-title: VEXTZQ (Vector)
-summary: Unsigned B, W, or L to Q.
-description: Unsigned B, W, or L to Q.
-attributes:
-  class: vector
-  family: vector
-  privilege: unprivileged

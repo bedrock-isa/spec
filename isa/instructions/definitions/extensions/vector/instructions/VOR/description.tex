@@ -1,0 +1,9 @@
+The register form combines each active source lane with the corresponding old
+destination lane and writes the result to the destination. When memory is the
+source, each active memory element is combined with the corresponding old
+destination lane. In both forms, an inactive destination lane retains its
+previous value.
+
+The memory-destination form reads each active destination element, combines it
+with the corresponding source-register lane, and writes the result back to the
+same element. An inactive memory element remains unchanged.

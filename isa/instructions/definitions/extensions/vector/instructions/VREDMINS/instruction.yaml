@@ -1,8 +1,0 @@
-mnemonic: VREDMINS
-title: VREDMINS (Vector)
-summary: Signed minimum.
-description: Signed minimum.
-attributes:
-  class: vector
-  family: vector
-  privilege: unprivileged

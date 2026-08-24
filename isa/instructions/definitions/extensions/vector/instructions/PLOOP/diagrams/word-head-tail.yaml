@@ -1,0 +1,18 @@
+kind: predicate-range
+view: {visible_bytes: 16, lane_order: right-to-left, scalable: true}
+states:
+- {id: remaining, label: remaining Rr, before: '4', after: '0', anchor: end, after_side: left}
+- {id: offset, label: offset Rs, before: '2', after: '0', anchor: start, after_side: right}
+range: {start: 2, end: 6}
+result:
+  label: new Pn
+  element_bits: 16
+  groups:
+  - cells: [{value: '0', effect: zero, appearance: zero, bits: 8}, {value: '0', effect: zero, appearance: zero, bits: 8}]
+  - cells: [{value: '0', effect: zero, appearance: zero, bits: 8}, {value: '0', effect: zero, appearance: zero, bits: 8}]
+  - cells: [{value: '1', effect: copy, appearance: predicate-result, bits: 8}, {value: '0', effect: zero, appearance: zero, bits: 8}]
+  - cells: [{value: '1', effect: copy, appearance: predicate-result, bits: 8}, {value: '0', effect: zero, appearance: zero, bits: 8}]
+  - cells: [{value: '1', effect: copy, appearance: predicate-result, bits: 8}, {value: '0', effect: zero, appearance: zero, bits: 8}]
+  - cells: [{value: '1', effect: copy, appearance: predicate-result, bits: 8}, {value: '0', effect: zero, appearance: zero, bits: 8}]
+  - cells: [{value: '0', effect: zero, appearance: zero, bits: 8}, {value: '0', effect: zero, appearance: zero, bits: 8}]
+  - cells: [{value: '0', effect: zero, appearance: zero, bits: 8}, {value: '0', effect: zero, appearance: zero, bits: 8}]

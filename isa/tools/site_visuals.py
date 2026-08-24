@@ -18,6 +18,7 @@ DOCUMENT_END = r"\end{document}"
 VISUAL_ENVIRONMENTS = {
     "manualtikzdiagram": (4, False),
     "manuallistedtikzdiagram": (4, False),
+    "BedrockVectorExample": (5, False),
     "manualbitdiagram": (1, False),
     "manuallistedbitdiagram": (1, True),
     "manualformatdiagram": (1, False),
@@ -56,6 +57,7 @@ class SiteVisualError(SiteError):
 class VisualSpec:
     id: str
     title: str
+    caption_tex: str
     source: str
     marker: str
     asset: PurePosixPath
@@ -122,10 +124,25 @@ def _environment_end(text: str, environment: str, start: int) -> int:
 
 def _plain_title(value: str) -> str:
     text = value
+    # Public syntax is normally wrapped in \texttt{}.  Unwrap it with balanced
+    # TeX arguments so metasyntax grouping braces remain visible rather than
+    # being mistaken for the wrapper's closing delimiter.
+    while True:
+        command = text.find(r"\texttt{")
+        if command < 0:
+            break
+        body, end = _balanced_value(
+            text, command + len(r"\texttt"), "{", "}", "plain title texttt"
+        )
+        text = text[:command] + body + text[end:]
     replacements = {
         r"\_": "_",
+        r"\{": "{",
+        r"\}": "}",
+        r"\<": "<",
         r"\textless{}": "<",
         r"\textgreater{}": ">",
+        r"\textbar{}": "|",
         r"\textemdash{}": "—",
         "~": " ",
     }
@@ -136,7 +153,6 @@ def _plain_title(value: str) -> str:
         previous = text
         text = re.sub(r"\\[A-Za-z@]+\*?\s*\{([^{}]*)\}", r"\1", text)
     text = re.sub(r"\\[A-Za-z@]+\*?", "", text)
-    text = text.replace("{", "").replace("}", "")
     text = " ".join(text.split())
     return text or "Diagram"
 
@@ -181,7 +197,7 @@ def _label_in_snippet(snippet: str) -> str | None:
 def _environment_visual(
     text: str,
     match: re.Match[str],
-) -> tuple[int, str, str, str | None] | None:
+) -> tuple[int, str, str, str | None, str] | None:
     environment = match.group("environment")
     if environment is None:
         return None
@@ -201,9 +217,9 @@ def _environment_visual(
                 "}",
                 "direct TikZ caption",
             )
-        return end, title, snippet, _label_in_snippet(snippet)
+        return end, title, snippet, _label_in_snippet(snippet), title
     if environment == "tikzpicture":
-        return end, "Diagram", snippet, _label_in_snippet(snippet)
+        return end, "Diagram", snippet, _label_in_snippet(snippet), "Diagram"
 
     argument_count, has_optional_label = VISUAL_ENVIRONMENTS[environment]
     cursor = match.end()
@@ -218,14 +234,18 @@ def _environment_visual(
     label = None
     if has_optional_label:
         label, _ = _optional_label(text, cursor, f"{environment} label")
+    if environment == "BedrockVectorExample":
+        # The PDF caption and the image's nonvisual equivalent are separately
+        # authored.  Existing generic consumers continue to receive title=alt.
+        return end, arguments[4], snippet, label or _label_in_snippet(snippet), arguments[3]
     title = arguments[3] if environment.endswith("tikzdiagram") else arguments[0]
-    return end, title, snippet, label or _label_in_snippet(snippet)
+    return end, title, snippet, label or _label_in_snippet(snippet), title
 
 
 def _command_visual(
     text: str,
     match: re.Match[str],
-) -> tuple[int, str, str, str | None]:
+) -> tuple[int, str, str, str | None, str]:
     command = match.group("command")
     if command is None:
         raise AssertionError("visual command match has no command")
@@ -238,11 +258,19 @@ def _command_visual(
             f"{command} argument {index + 1}",
         )
         arguments.append(value)
-    return cursor, arguments[0], text[match.start() : cursor], None
+    return cursor, arguments[0], text[match.start() : cursor], None, arguments[0]
 
 
 def _replacement(visual: VisualSpec, title_tex: str) -> str:
     label = f"\\phantomsection\\label{{{visual.label}}}\n" if visual.label else ""
+    # Keep site-only reader text intact across Pandoc's LaTeX and GFM writers.
+    # Escaped ampersands become literal entity spellings in the Markdown, while
+    # the Unicode dash avoids Pandoc dropping the TeX textemdash command.
+    title_tex = (
+        title_tex.replace(r"\textless{}", r"\&lt;")
+        .replace(r"\textgreater{}", r"\&gt;")
+        .replace(r"\textemdash{}", "—")
+    )
     return (
         "\n\n"
         + label
@@ -281,7 +309,7 @@ def extract_visuals(
         if parsed is None:
             cursor = _environment_end(text, match.group("environment") or "", match.start())
             continue
-        end, title_tex, snippet, label = parsed
+        end, title_tex, snippet, label, caption_tex = parsed
         owner = _owner_at(structure, match.start())
         ordinal = owner_counts.get(owner, 0) + 1
         owner_counts[owner] = ordinal
@@ -294,6 +322,7 @@ def extract_visuals(
         visual = VisualSpec(
             id=visual_id,
             title=_plain_title(title_tex),
+            caption_tex=caption_tex,
             source=snippet,
             marker=marker,
             asset=asset,
@@ -302,7 +331,7 @@ def extract_visuals(
             label=label,
         )
         visuals.append(visual)
-        replacements.append((match.start(), end, _replacement(visual, title_tex)))
+        replacements.append((match.start(), end, _replacement(visual, caption_tex)))
         cursor = end
 
     transformed = text

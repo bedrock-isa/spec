@@ -370,6 +370,27 @@ def source_revision(env: dict[str, str]) -> str:
     return revision + ("-dirty" if dirty else "")
 
 
+def _load_and_render_isa_with_overlay(
+    store: ArtifactStore, overlay: Path
+) -> tuple[gen_docs.IsaModel, str]:
+    previous_overlay = os.environ.get(OVERLAY_ENV)
+    os.environ[OVERLAY_ENV] = str(overlay)
+    try:
+        model = gen_docs.load_model(gen_docs.DEF_ROOT)
+        store.add_all(
+            gen_docs.render_ea_reference_fragments(model.metadata.get("ea") or {}),
+            "effective-address reference",
+        )
+        store.require_absent_from_source_tree()
+        store.materialize(overlay)
+        return model, gen_docs.render_latex(model)
+    finally:
+        if previous_overlay is None:
+            os.environ.pop(OVERLAY_ENV, None)
+        else:
+            os.environ[OVERLAY_ENV] = previous_overlay
+
+
 def compile_documents(args: argparse.Namespace) -> int:
     output_root = args.output_root.resolve()
     if output_root in {Path("/").resolve(), Path.home().resolve(), ROOT.resolve()}:
@@ -392,14 +413,7 @@ def compile_documents(args: argparse.Namespace) -> int:
     for description, command in validation_commands():
         run(command, env=env, description=description)
 
-    model = gen_docs.load_model(gen_docs.DEF_ROOT)
-    store.add_all(
-        gen_docs.render_ea_reference_fragments(model.metadata.get("ea") or {}),
-        "effective-address reference",
-    )
-    store.require_absent_from_source_tree()
-    store.materialize(overlay)
-    isa_latex = gen_docs.render_latex(model)
+    model, isa_latex = _load_and_render_isa_with_overlay(store, overlay)
     isa_source = stage / "isa_reference.tex"
     isa_source.write_text(isa_latex, encoding="utf-8")
 

@@ -1,0 +1,72 @@
+operation: FCMP
+title: Floating-Point Compare
+summary: Performs the floating-point compare operation.
+public_instruction:
+  mnemonic: FCMP
+execution_route: fpu
+privilege: unprivileged
+repeat:
+  kind: rep
+operands:
+- id: src
+  role: source
+  access: read
+  value_domain: floating
+  profiles:
+  - Fn
+  - FEA
+- id: dst
+  role: source
+  access: read
+  value_domain: floating
+  profiles:
+  - Fn
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - medium.fcmp_x_fn_s_fn_d
+    - long.fcmp_x_ea_s_fn_d
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags:
+  - bank: FLAGS
+    completion: complete_image
+    effects:
+    - flag: Z
+      effect: write_condition
+      reference: comparison_equal
+    - flag: N
+      effect: write_condition
+      reference: comparison_less
+    - flag: C
+      effect: write_condition
+      reference: comparison_less
+    - flag: V
+      effect: write_condition
+      reference: comparison_unordered
+  - bank: FFLAGS
+    completion: accrued_causes
+    effects:
+    - flag: NV
+      effect: accrue_source
+      reference: operation_cause
+    - flag: OF
+      effect: accrue_source
+      reference: fea_source_conversion
+    - flag: UF
+      effect: accrue_source
+      reference: fea_source_conversion
+    - flag: NX
+      effect: accrue_source
+      reference: fea_source_conversion
+  events: []
+  sail_entry: execute_FCMP
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

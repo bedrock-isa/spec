@@ -1,0 +1,43 @@
+operation: MOVNT
+title: Move Non-Temporal
+summary: Stores an Rn register value to memory with a non-temporal access hint.
+public_instruction:
+  mnemonic: MOVNT
+execution_route: cache
+privilege: unprivileged
+repeat:
+  kind: rep_and_repcc
+  observed:
+    kind: source
+    operand: src
+operands:
+- id: src
+  role: source
+  access: read
+  value_domain: integer
+  profiles:
+  - Rn
+- id: dst
+  role: destination
+  access: write
+  value_domain: integer
+  profiles:
+  - EA
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - long.movnt_x_rn_s_ea_e
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags: []
+  events: []
+  sail_entry: execute_MOVNT
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

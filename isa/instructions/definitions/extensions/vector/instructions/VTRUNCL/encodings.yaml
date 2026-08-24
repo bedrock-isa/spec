@@ -2,7 +2,7 @@ forms:
 - id: extralong.vtruncl.v80
   class: extralong
   bits: 11111101111010000zz1ppppvvvvvwwwww
-  syntax: VTRUNCL.Q_ONLY(z) Pn(p), Vn(v), Vn(w)
+  syntax: VTRUNCL.{Q}(z) Pn(p), Vn(v), Vn(w)
   operands:
   - name: govern
     type: Pn

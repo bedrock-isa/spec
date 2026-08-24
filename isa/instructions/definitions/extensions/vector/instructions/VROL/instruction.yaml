@@ -1,8 +1,0 @@
-mnemonic: VROL
-title: VROL (Vector)
-summary: Rotate left.
-description: Rotate left.
-attributes:
-  class: vector
-  family: vector
-  privilege: unprivileged

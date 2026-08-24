@@ -1,8 +1,0 @@
-mnemonic: VREDMAXS
-title: VREDMAXS (Vector)
-summary: Signed maximum.
-description: Signed maximum.
-attributes:
-  class: vector
-  family: vector
-  privilege: unprivileged

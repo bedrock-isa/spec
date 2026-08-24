@@ -225,7 +225,59 @@ function test_non_fp_typed_families() -> unit = {
   }
 }
 
+function expect_cpuid_availability(
+  bytes : list(bits(8)),
+  fp : bool,
+  fptrans : bool,
+  vector : bool,
+  expected_available : bool
+) -> unit =
+  match decode_full_record(bytes) {
+    None() => assert(false),
+    Some(instruction) => {
+      var state = initial_cpu();
+      state.fp_enabled = fp;
+      state.fptrans_enabled = fptrans;
+      state.vector_enabled = vector;
+      let result = execute_full(instruction, state);
+      if expected_available then assert(result.fault == None())
+      else match result.fault {
+        Some(fault) => assert(fault.kind == ExtensionUnavailable),
+        None() => assert(false),
+      }
+    },
+  }
+
+function test_typed_cpuid_availability_projection() -> unit = {
+  expect_cpuid_availability([|0x01|], false, false, false, true);
+
+  expect_cpuid_availability([|0xC7, 0xE4, 0x10, 0x00|], false, false, true, false);
+  expect_cpuid_availability([|0xC7, 0xE4, 0x10, 0x00|], true, false, true, true);
+
+  expect_cpuid_availability([|0xC7, 0xE7, 0x29, 0x00|], false, false, true, false);
+  expect_cpuid_availability([|0xC7, 0xE7, 0x29, 0x00|], true, false, true, false);
+  expect_cpuid_availability([|0xC7, 0xE7, 0x29, 0x00|], true, true, true, true);
+
+  expect_cpuid_availability([|0xCB, 0xF7, 0x80, 0x00, 0x00|], false, false, true, true);
+  expect_cpuid_availability([|0xCB, 0xF7, 0x80, 0x00, 0x00|], true, true, false, false);
+  expect_cpuid_availability([|0xCB, 0xF7, 0x82, 0x80, 0x00|], false, false, true, false);
+  expect_cpuid_availability([|0xCB, 0xF7, 0x82, 0x80, 0x00|], true, false, true, true);
+  expect_cpuid_availability([|0xCB, 0xF7, 0x82, 0x80, 0x00|], true, true, false, false);
+
+  match decode_full_record([|0xC7, 0xE4, 0x10, 0x00|]) {
+    None() => assert(false),
+    Some(instruction) => {
+      var disabled = initial_cpu();
+      disabled.fp_enabled = false;
+      assert(not_bool(repeat_body_available(instruction, disabled)));
+      disabled.fp_enabled = true;
+      assert(repeat_body_available(instruction, disabled))
+    },
+  }
+}
+
 function test_typed_decode_and_transactions() -> unit = {
+  test_typed_cpuid_availability_projection();
   assert(decode_full_record_outcome([||]).stage == DecodeFetch);
   assert(decode_full_record_outcome([|0x80|]).stage == DecodeFraming);
   assert(decode_full_record_outcome([|0xC3, 0xFC, 0x00|]).stage == DecodeFraming);

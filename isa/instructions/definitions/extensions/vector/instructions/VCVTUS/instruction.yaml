@@ -1,8 +1,0 @@
-mnemonic: VCVTUS
-title: VCVTUS (Vector)
-summary: Unsigned integer to S.
-description: Unsigned integer to S.
-attributes:
-  class: vector
-  family: vector
-  privilege: unprivileged

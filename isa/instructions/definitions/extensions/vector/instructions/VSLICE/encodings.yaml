@@ -2,7 +2,7 @@ forms:
 - id: extralong.vslice.v106
   class: extralong
   bits: 111111011010zzppppvvvvvwwwwwiiiiii
-  syntax: VSLICE.BWLQ(z) Pn(p), Vn(v), imm6(i), Vn(w)
+  syntax: VSLICE.{B|W|L|Q}(z) Pn(p), Vn(v), imm6(i), Vn(w)
   operands:
   - name: govern
     type: Pn

@@ -1,8 +1,0 @@
-mnemonic: RDCR
-title: Read Control Register
-summary: Read a privileged control register.
-description: RDCR reads a selected control register in supervisor mode.
-attributes:
-  class: system
-  family: system_registers
-  privilege: supervisor

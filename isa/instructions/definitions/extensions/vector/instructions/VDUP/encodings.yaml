@@ -2,7 +2,7 @@ forms:
 - id: long.vdup.v1
   class: long
   bits: 11111010010010zz0rrrrvvvvv
-  syntax: VDUP.BWLQ(z) Rn(r), Vn(v)
+  syntax: VDUP.{B|W|L|Q}(z) Rn(r), Vn(v)
   operands:
   - name: src
     type: Rn
@@ -18,7 +18,7 @@ forms:
 - id: long.vdup.v2
   class: long
   bits: 11111010010010zz1rrrrvvvvv
-  syntax: VDUP.HSD(z) Fn(r), Vn(v)
+  syntax: VDUP.{H|S|D}(z) Fn(r), Vn(v)
   operands:
   - name: src
     type: Fn

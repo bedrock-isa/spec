@@ -22,7 +22,7 @@ forms:
 - id: long.fmovcc_x_ea_s_fn_d
   class: long
   bits: 1111100000zccccddddeeeeeee
-  syntax: FMOVcc.SD(z) <ea>(e), Fn(d)
+  syntax: FMOVcc.{S|D}(z) <ea>(e), Fn(d)
   operands:
   - name: cc
     type: condition
@@ -44,7 +44,7 @@ forms:
 - id: long.fmovcc_x_fn_s_ea_d
   class: long
   bits: 1111100001zccccsssseeeeeee
-  syntax: FMOVcc.SD(z) Fn(s), <ea>(e)
+  syntax: FMOVcc.{S|D}(z) Fn(s), <ea>(e)
   operands:
   - name: cc
     type: condition

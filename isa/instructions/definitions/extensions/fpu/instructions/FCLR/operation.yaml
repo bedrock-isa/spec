@@ -1,0 +1,34 @@
+operation: FCLR
+title: Floating-Point Clear
+summary: Performs the floating-point clear operation.
+public_instruction:
+  mnemonic: FCLR
+execution_route: fpu
+privilege: unprivileged
+repeat:
+  kind: rep
+operands:
+- id: dst
+  role: destination
+  access: write
+  value_domain: floating
+  profiles:
+  - Fn
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - medium.fclr_fn_d
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags: []
+  events: []
+  sail_entry: execute_FCLR
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

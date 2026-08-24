@@ -2,7 +2,7 @@ forms:
 - id: long.testjcc_x_rn_s_rn_d_imm8s
   class: long
   bits: 111101000010zzccccssssdddd
-  syntax: TESTJcc.BWLQ(z) Rn(s), Rn(d), <imm8s>
+  syntax: TESTJcc.{B|W|L|Q}(z) Rn(s), Rn(d), <imm8s>
   operands:
   - name: cc
     type: condition
@@ -30,7 +30,7 @@ forms:
 - id: long.testjcc_x_rn_s_rn_d_imm16s
   class: long
   bits: 111101000011zzccccssssdddd
-  syntax: TESTJcc.BWLQ(z) Rn(s), Rn(d), <imm16s>
+  syntax: TESTJcc.{B|W|L|Q}(z) Rn(s), Rn(d), <imm16s>
   operands:
   - name: cc
     type: condition

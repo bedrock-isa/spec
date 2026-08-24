@@ -12,6 +12,7 @@ const GENERATOR_INPUTS: &[&str] = &[
     "isa/tools/defs_loader.py",
     "isa/tools/encoding_fields.py",
     "isa/tools/defs_schema.py",
+    "isa/tools/decode_ir.py",
     "isa/tools/encoding_architecture.py",
 ];
 

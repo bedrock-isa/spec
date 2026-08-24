@@ -1,8 +1,0 @@
-mnemonic: INVICACHE
-title: Invalidate Instruction Cache
-summary: Invalidate one local instruction-cache maintenance block.
-description: Computes and translates the address-role EA without fetching from it, selects its CPUID-sized maintenance block, invalidates the executing logical processor's matching instruction-cache, decoded, and prefetch state, and serializes later instruction fetch.
-attributes:
-  class: system
-  family: cache
-  privilege: supervisor

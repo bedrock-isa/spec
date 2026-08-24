@@ -208,6 +208,12 @@ def _normalize_reader_macros(text: str) -> str:
     )
     text = _replace_command(
         text,
+        "manualoperationfield",
+        2,
+        lambda label, value: rf"\subsection*{{{label}}}\par {value}\par ",
+    )
+    text = _replace_command(
+        text,
         "manualinstructionstatus",
         2,
         lambda label, value: rf"\subsection*{{{label}}}\par {value}\par ",
@@ -219,15 +225,6 @@ def _normalize_reader_macros(text: str) -> str:
         lambda kind, family, privilege, length: (
             rf"\par\textit{{Class: {kind}; family: {family}; privilege: {privilege}; "
             rf"length: {length}}}\par "
-        ),
-    )
-    text = _replace_command(
-        text,
-        "manualformmetadata",
-        3,
-        lambda kind, length, privilege: (
-            rf"\par\textit{{Encoding class: {kind}; required bytes: {length}; "
-            rf"privilege: {privilege}}}\par "
         ),
     )
     text = _replace_command(
@@ -274,6 +271,9 @@ def normalize_latex_for_site(text: str) -> str:
     # ABI case IDs are compiler-validation metadata, not reader-visible content.
     # validate_abi_docs.py remains their owning consumer and quality gate.
     text = ABI_CASE_RE.sub("", text)
+    # Pandoc drops \textbar{} inside \texttt{}, which changes the authored
+    # public metasyntax.  This is a reader-boundary spelling normalization.
+    text = text.replace(r"\textbar{}", "|")
     text = _normalize_reader_macros(text)
     text = _replace_manual_terms(text)
     cursor = 0
@@ -650,7 +650,10 @@ class _PageTransformer:
         if title is None:
             return
         asset = PurePosixPath(destination).relative_to("_site_visual")
-        node["c"][1] = _plain_inlines(title)
+        # Entity spellings keep canonical angle operands reader-exact instead
+        # of making Pandoc's GFM writer emit visible backslash escapes.
+        image_text = title.replace("<", "&lt;").replace(">", "&gt;")
+        node["c"][1] = _plain_inlines(image_text)
         node["c"][2][0] = self.registry.relative_asset(
             self.page.key,
             PurePosixPath("assets") / "visuals" / asset,

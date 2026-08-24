@@ -1,0 +1,43 @@
+operation: RDPMC
+title: Read Performance Counter
+summary: Read the 64-bit performance counter selected by a constant counter ID.
+public_instruction:
+  mnemonic: RDPMC
+execution_route: system_registers
+privilege: unprivileged
+repeat:
+  kind: not_eligible
+operands:
+- id: counter_id
+  role: source
+  access: read
+  value_domain: integer
+  profiles:
+  - imm16
+- id: dst
+  role: destination
+  access: write
+  value_domain: integer
+  profiles:
+  - Rn
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - medium.rdpmc_ea_rn_d
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags: []
+  events:
+  - event: INVALID_CONTROL_STATE
+    cause: INVALID_SELECTOR
+    condition: performance_counter_selector_unavailable
+  sail_entry: execute_RDPMC
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: details.tex
+    kind: tex

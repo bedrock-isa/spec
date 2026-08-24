@@ -1,8 +1,0 @@
-mnemonic: VSLIDEDN
-title: VSLIDEDN (Vector)
-summary: Shift elements toward lower lane indices.
-description: Shift elements toward lower lane indices.
-attributes:
-  class: vector
-  family: vector
-  privilege: unprivileged

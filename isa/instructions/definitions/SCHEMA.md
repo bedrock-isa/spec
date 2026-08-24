@@ -2,13 +2,11 @@
 
 This file displays the complete Bedrock YAML schema accepted by
 `isa/tools/defs_schema.py`, including nested records and discriminated
-variants. The displayed contract is synchronized with the decoder at version
-0, and `schema.lock` pins the SHA-256 digests of both files.
+variants. `schema.lock` pins the SHA-256 digests of both files.
 
 Changing an allowed field, required field, value type, enum, path rule, or
-cross-field invariant is a schema change. Keep `SCHEMA_VERSION` at 0 until an
-explicit release or versioning decision, and synchronize this contract, its
-tests, and `schema.lock` with each deliberate schema change.
+cross-field invariant is a schema change. Synchronize this contract, its tests,
+and `schema.lock` with each deliberate schema change.
 
 ## Notation and common rules
 
@@ -27,59 +25,349 @@ Every mapping shown below is closed: any unlisted field is rejected. Required
 strings are non-empty. Relative references are normalized POSIX paths with no
 absolute path or `.`/`..` component. Lists marked unique reject duplicates.
 
-## 1. `instruction.yaml`
+The operation-bundle records use these lexical reference types:
 
 ```text
-InstructionDocument {
-  mnemonic: string matching [A-Za-z][A-Za-z0-9]*
+stable-id            string matching [A-Za-z][A-Za-z0-9_.-]*
+form-id              string matching [a-z][a-z0-9_]*\.[a-z0-9_.]+
+public-instruction-token
+                     string matching [A-Za-z][A-Za-z0-9]*
+CPUID-flag-id        stable-id registered by cpuid_flags.yaml
+execution-route-id   enum(atomics, bounds, cache, control_flow, core_control,
+                          data_movement, ea_utility, fpu,
+                          fpu_transcendental_approx, integer_alu,
+                          integer_bitfield, integer_mul_div, integer_unary,
+                          system_registers, tlb_and_context, vector)
+selector-id          stable-id naming a size-kind registry entry
+selector-value-id    stable-id naming one resolved code in that size kind
+operand-profile-id   stable-id naming an operand-type registry entry
+logical-operand-id   stable-id in the operation's logical-operand membership
+operand-value-domain enum(integer, floating, vector, predicate)
+condition-id         stable-id supplied by the semantic-condition owner
+named-value-id       stable-id supplied by named_values.yaml
+flag-effect-definition-id
+                     stable-id supplied by flag_effect_definitions.yaml
+event-id             string matching [A-Z][A-Z0-9_]* supplied by the event owner
+diagram-kind-id      stable-id supplied by the diagram-generator registry
+Sail-identifier      string matching [A-Za-z][A-Za-z0-9_]*
+```
+
+Lexical validity establishes identity syntax. The operation coordinator checks
+the registry-backed references named in the operation section below.
+
+## `operation.yaml`
+
+Each operation uses this unversioned manifest. The manifest owns typed
+cross-artifact contracts and the reader-facing index title and summary. The
+summary supplies both the instruction-set index row and the entry's concise
+`Operation` field. The required description artifact supplies the complete
+explanation under `Detailed Semantics`, immediately before any registered
+diagrams.
+Executable effects remain in Sail, natural explanation remains in the required
+description artifact, and each registered diagram source owns its example and
+layout inputs.
+
+```text
+OperationDocument {
+  operation: stable-id
   title: string
   summary: string
-  description: string
-  attributes: InstructionAttributes
-  repeat?: RepeatContract
-  exceptions?: list<InstructionException>
-  flag_effects?: map<enum(FLAGS, FFLAGS), map<flag-name, string>>
-  additional_assembler_syntax?: list<string, unique>
-  additional_description?: relative-path ending in .tex
-}
-
-InstructionAttributes {
-  class: string
-  family: string
+  public_instruction: PublicInstructionRef
+  execution_route: execution-route-id
   privilege: enum(unprivileged, supervisor, any)
+  repeat: OperationRepeatEligibility
+  operands: list<LogicalOperandDefinition, unique id>
+  cases: non-empty list<OperationCase, unique id>
+  artifacts: OperationArtifacts
 }
 
-RepeatContract {
-  contexts: non-empty list<enum(REP, REPcc), unique>
-  observed?: RepeatObserved
+PublicInstructionRef {
+  mnemonic: public-instruction-token
+  aliases?: list<public-instruction-token, unique and excluding mnemonic>
+  width_suffix_aliases?: boolean
 }
 
-RepeatObserved {
-  kind: enum(computed, result, source)
-  operand?: string
+OperationRepeatEligibility = {
+  kind: enum(not_eligible, rep)
+} | {
+  kind: rep_and_repcc
+  observed: OperationRepeatObservation
 }
 
-InstructionException {
-  event: string matching [A-Z][A-Z0-9_]*
-  when: string
-  forms?: list<form-id, unique>
+OperationRepeatObservation =
+  { kind: computed }
+  | { kind: enum(result, source), operand: logical-operand-id }
+
+LogicalOperandDefinition {
+  id: stable-id
+  role: enum(source, destination, address, control_target,
+             governing_predicate, count, bit_index, segment_selector,
+             counter, implicit)
+  access: enum(read, write, read_write, address)
+  value_domain: operand-value-domain
+  profiles: non-empty list<operand-profile-id, unique>
+}
+
+OperationCase {
+  id: stable-id
+  applies_to: FormApplicability
+  additional_requirements: list<CPUID-flag-id, unique>
+  predicate: PredicateContract
+  flags: list<FlagBankContract, unique bank>
+  events: list<EventContract, unique event/condition pair>
+  sail_entry: Sail-identifier
+  conversion?: ConversionSignature
+}
+
+ConversionSignature {
+  source_domain: enum(integer, floating)
+  source_formats: non-empty list<public-size-code, unique>
+  destination_domain: enum(integer, floating)
+  destination_formats: non-empty list<public-size-code, unique>
+  integer_signedness?: enum(signed, unsigned)
+  behavior: enum(exact, sign_extend, zero_extend, convert)
+}
+
+FormApplicability {
+  forms: non-empty list<form-id, unique>
+  selectors?: list<SelectorApplicability, unique domain>
+  operand_profiles?: list<OperandProfileApplicability, unique operand>
+}
+
+SelectorApplicability {
+  domain: selector-id
+  values: non-empty list<selector-value-id, unique>
+}
+
+OperandProfileApplicability {
+  operand: logical-operand-id
+  profiles: non-empty list<operand-profile-id, unique>
+}
+
+PredicateContract =
+  { kind: none }
+  | { kind: annul_on_false, condition_operand: logical-operand-id }
+  | { kind: produce_boolean, condition_operand: logical-operand-id,
+      destination_operand: logical-operand-id }
+  | { kind: test_temporary, condition_operand: logical-operand-id,
+      observed: named-value-id }
+  | { kind: counter_and_condition, counter_operand: logical-operand-id,
+      condition_operand: logical-operand-id }
+
+FlagBankContract {
+  bank: enum(FLAGS, FFLAGS)
+  completion: enum(complete_image, accrued_causes)
+  effects: non-empty list<FlagEffect, unique flag>
+}
+
+FlagEffect {
+  flag: a flag in the selected bank
+  effect: enum(preserve, clear, set, write_expression,
+               write_condition, accrue_source)
+  reference?: flag-effect-definition-id
+}
+
+EventContract {
+  event: event-id
+  condition: condition-id
+  cause?: cause-id in the selected event's cause space
+}
+
+OperationArtifacts {
+  semantics: { path: relative-path ending in .sail, kind: sail }
+  description: { path: relative-path ending in .tex, kind: tex }
+             | { path: relative-path ending in .md or .markdown, kind: markdown }
+  diagrams?: list<{
+    id: stable-id,
+    path: relative-path ending in .yaml,
+    kind: diagram-kind-id,
+    case?: OperationCase.id,
+    caption: reader-visible-figure-caption,
+    alt_text: nonvisual-equivalent
+  }, unique id and path>
 }
 ```
 
-`observed` is present exactly when `REPcc` is in `contexts`. `computed` has no
-operand and denotes the derived value named by the instruction's normative
-description; `result` and `source` require an operand name used by the instruction.
-Exception event and form references are checked against the architectural event
-manifest and the instruction's encoding forms.
+A diagram is an illustrative presentation artifact owned by its operation
+bundle. Its optional case reference limits the view to one declared operation
+case. `caption` labels the visible figure; `alt_text` supplies the independent
+nonvisual equivalent used by site output. Neither field defines operation
+semantics.
 
-`FLAGS` accepts `Z`, `N`, `C`, and `V`; whenever the `FLAGS` bank is present it
-must name all four flags because integer FLAGS writes always replace the complete
-image. `FFLAGS` accepts `NV`, `DZ`, `OF`, `UF`, and `NX`, and may remain partial
-because IEEE-754 exception causes accrue independently. Each present bank is
-non-empty. Renderers use the listed architectural flag order rather than YAML
-mapping order.
+`vector-example` is the current registered diagram kind. Every source fixes a
+16-byte, right-to-left view and uses one of `lane-map`, `width-map`,
+`predicate-range`, `predicate-width`, `predicate-lane-map`, `scalar-bridge`,
+`memory-lanes`, `reduction`, or `conversion-map`. Lane maps accept a boolean
+`view.scalable`; the renderer
+shows continuation beyond the finite view only when it is true. Width maps and
+predicate ranges retain scalable continuation. Lane and width maps declare
+explicit rows and complete explicit cells, exactly one `destination-after`
+row, and only the arrows intended to be visible, with bounded source and target
+row/cell references and unique result targets. An edge effect equals its target
+cell's displayed classification. Result cells remain complete even when no
+arrow is displayed, including preserved and zero cells. Lane-map and detailed
+width-map row order is authored per figure and is not normalized by the
+renderer. A `predicate` row may explicitly show predicate bits, and a closed
+cell `appearance` may select
+the old-value, source-value, zero, discarded-field, predicate-on,
+predicate-off, or don't-care presentation used by the reviewed finite example.
 
-## 2. `encodings.yaml`
+The initial width-map form retains four explicit 32-bit cells per row. A
+detailed width-map instead declares `container_bits` as 16, 32, or 64, covers
+the complete fixed view with that derived number of containers, and partitions
+each source and result container into explicit cells whose `bits` sum to the
+container width. It also declares all 16 byte positions in one predicate row.
+Its explicit connections identify source and result container/cell indices and
+select either a transfer arrow or an expansion guide; no coordinates or
+operation expressions occur in the source. Width-map results use `copy`,
+`preserve`, `sign-fill`, or `zero`. Predicate ranges declare every visible W
+position as an explicit `set` or `clear` cell.
+
+`predicate-width` is limited to the reviewed fixed 16-to-8 packing and 8-to-16
+unpacking examples. It declares source and result element widths, a complete
+result write, and one contiguous mapping. Mapping bounds use only zero,
+`source-lanes`, or `destination-lanes`: packing maps all source positions to
+one destination half, while unpacking maps one source half to all destination
+positions. The renderer derives the eight displayed transfers and clears every
+other result bit. It accepts no operation selector, coordinate, TikZ, or
+runtime expression. These sources are finite illustrations rather than
+semantic expressions.
+
+The stateful `predicate-range` form adds exactly the `remaining` and `offset`
+states, their displayed before/after values and endpoint anchors, and one
+explicit half-open W-lane range. Its eight complete 16-bit predicate groups
+must match that range. The original count/result form remains the finite PHEAD
+example. Both forms are scalable and derive their layout without coordinates.
+
+`predicate-lane-map` is limited to the reviewed W-width finite examples. It
+authors two or three rows in their displayed order, with exactly eight
+complete 16-bit predicate or vector groups per row. Predicate groups explicitly
+classify their significant value and nonsignificant bit; the one complete
+result row explicitly classifies copied or cleared significant values and
+clears every nonsignificant bit. Its ordered edge list is the complete visible
+arrow set: predicate sources use transfer arrows, vector sources use control
+arrows, and every copied result value has exactly one transfer. The renderer
+does not reorder rows or infer arrows. The source accepts no operation
+selector, coordinate, TikZ, or runtime expression.
+
+`scalar-bridge` authors one complete vector row, a unique set of scalar source,
+index, or destination roles, and only the visible transfer and index-control
+connections. An insertion and an extraction mark exactly one vector cell with
+the closed `selected-source` appearance; their single transfer and single index
+control connection address that same cell. An extraction transfers that cell
+to its scalar destination. A broadcast from one scalar source marks every
+destination cell with the ordinary source appearance and transfers to every
+cell exactly once. The renderer preserves the authored endpoint order and does
+not infer connections.
+
+`memory-lanes` authors complete address, memory, result, and byte-predicate
+rows for one element width. Every active memory lane has one corresponding
+address-control connection and one memory-to-result transfer. Its address,
+memory, result, and significant predicate positions classify the same active
+lane set. Inactive address and memory lanes use the closed `no-access`
+appearance, and their result lanes preserve the previous destination value.
+`reduction` authors a complete source and byte-predicate view, increasing
+selected lane indices, an ordered fold term list whose tail equals those source
+values, and a scalar result. Source and predicate classifications select the
+same lanes; predicate significance is derived from the element width.
+
+`conversion-map` is a separate finite widening/narrowing variant. It authors
+complete 32- or 64-bit containers for distinct 16-, 32-, or 64-bit source and
+result widths, a complete byte-predicate row, and the visible conversion
+connections. Every source container contains one copied field of the declared
+source element width. Each active result container contains one copied field of
+the declared result element width, and the significant predicate positions
+select exactly those active containers. The connections target every copied
+result field exactly once. Its renderer reuses the reviewed container
+presentation grammar; the source remains explicit and contains no operation
+selector, expression evaluator, coordinate, or TikZ fragment.
+
+The sibling `encodings.yaml` owns the operation's complete form membership.
+Each `FormApplicability.forms` list owns the relation between one case and the
+encoding forms to which it applies. The coordinator validates those references
+against the encoding-owned membership and derives the canonical operation form
+list from `encodings.yaml`.
+
+`FLAGS` uses `complete_image`; `FFLAGS` uses `accrued_causes`. A complete-image
+contract permits `preserve`, `clear`, `set`, `write_expression`, and
+`write_condition`. An accrued-causes contract permits `preserve` and
+`accrue_source`. Each reference-bearing effect carries exactly one `reference`;
+constant and preserve effects carry none. The referenced registry definition
+must have the matching expression, condition, or accrued-source kind. Predicate
+and repeat operand references name declared logical operands and are present in
+every form to which their contract applies. `computed` is a complete
+payload-free repeat observation. A temporary predicate observation names a
+registered named value.
+
+The source list may omit architectural flags. The strict operation decoder
+inserts `preserve` for each omission and orders canonical effects by
+`FLAG_BANK_FLAGS`: `Z, N, C, V` for FLAGS and `NV, DZ, OF, UF, NX` for FFLAGS.
+Every canonical `OperationFlagBankContract` is therefore a TotalMap. Renderers
+and downstream consumers read that map directly.
+
+The loader requires `operation.yaml` for every indexed operation directory.
+
+Candidate admission resolves every artifact inside the operation directory,
+checks that it is a regular file of the declared kind, derives operation form
+membership from `encodings.yaml`, and resolves every case form reference
+against that membership. For each form it enumerates legal resolved selector
+values from the size registry and encoding constraints plus the form's exact
+operand profiles. Cases partition those tuples: coverage is total and
+exclusive, and every case is reachable. Applicability is determined from exact
+form references, selector domain/value references, and operand-profile
+references.
+
+The canonical artifact projection records the resolved bundle root and
+`operation.yaml` path together with each relative artifact reference. A
+consumer locates semantics, description, and diagrams from this provenance;
+operation ID, public mnemonic, and directory spelling remain outside path
+resolution.
+
+Operation ID, directory basename, and public mnemonic are independent. Public
+instruction tokens have one global operation owner across canonical mnemonics
+and aliases. Each encoding template begins with a token declared by its
+operation; aliases participate in the same ownership and form-membership check.
+The Decode IR mnemonic inventory contains the tokens used by encoding forms.
+An owned alias may feed assembler or toolchain projection without adding a
+duplicate encoding form. Public instruction aliases are complete mnemonic
+tokens; assembly suffix aliases remain part of the suffix/toolchain contract.
+
+The CPUID flag registry owns each stable ID, public token, and architectural
+location independently of extension identity. Each extension owns only its
+local requirements. The coordinator inherits parent requirements, rejects a
+local requirement already inherited from an ancestor, validates case-specific
+IDs against the registry, rejects case entries already inherited by the
+operation, then joins the two sets.
+
+Event IDs and event-specific cause spaces resolve through
+`architecture_tables.yaml`; a cause is valid only in the selected event's
+cause space, and events without a cause space reject one. Event conditions use
+the IDs in `semantic_conditions.yaml`; the same registry owns their
+reader-facing conditional prose. A `destination_overlap` condition additionally
+requires every selected encoding form to declare an `illegal_instruction`
+`destination_overlap` relation. The renderer publishes the architectural event
+and optional cause plus registry-owned condition text, without publishing the
+condition ID. Temporary predicate observations use the named-value set.
+Reference-bearing flag effects resolve through `flag_effect_definitions.yaml`,
+which owns their kind and reader text. CPUID flags, execution routes,
+operand value domains, operand profiles, diagram kinds, and public instruction
+tokens each retain their own owner and validation boundary.
+Diagram kinds resolve through the supplied diagram-generator registry; the
+current registry contains `vector-example` for the strict finite-view variants
+defined above. The coordinator validates Sail entry lexical form.
+
+`CanonicalOperation` carries the exact `forms` and `logical_operand_ids`
+memberships derived from the encoding forms. Every operation carries the full
+`operands` tuple, including an empty tuple for an operation with no operands,
+and its IDs equal that membership. Operations carry a registered execution route and
+privilege in FormIR; its `operation_cases` predicate mode directs case-contract
+readers to OperationIR. FormIR leaves the deprecated class, family, and
+free-form annotations empty. Every case exposes the resolved CPUID conjunction
+and carries every typed contract above. Each FormIR preserves the exact covering
+case partition as typed availability rules with encoded selector values,
+operand profiles, and resolved CPUID flag IDs.
+
+## 3. `encodings.yaml`
 
 ```text
 EncodingsDocument {
@@ -130,6 +418,16 @@ DestinationOverlap {
 Form IDs are unique within a document and begin with `class + "."`. Operand
 field markers are unique. Operand fields plus `fields` declare every symbolic
 marker in `bits` exactly once; `0`, `1`, and `?` are not declared markers.
+Logical operand access records how the operation uses a value, while encoding
+operand access records how a form transports that value. These accesses match
+directly except for two closed transport pairs. A logical operand with role
+`address`, access `address`, and exactly the profiles `EA` and `Rn` accepts `EA`
+with encoding access `address` and `ea_role: address`, or `Rn` with encoding
+access `read`. A logical operand with role `destination`, access `read_write`,
+value domain `vector`, and exactly the profiles `Vn` and `VEA` accepts `Vn`
+with encoding access `read_write` and no EA role, or `VEA` with encoding access
+`write` or `read_write` and `ea_role: value`. Every other profile or access
+combination follows exact access equality.
 Every effective-address operand declares both `ea_role` and `ea_width`. `address` role uses
 `address` access, `control_target` role uses `read` access, and `value` role
 uses `read`, `write`, or `read_write` access. Each operand or field type names
@@ -149,15 +447,12 @@ has no register-direct form.
 ### Assembly-template language
 
 The following BNF and correspondence rules define canonical template values
-for `EncodingForm.syntax` and each element of
-`InstructionDocument.additional_assembler_syntax`. In the BNF, quoted strings
+for `EncodingForm.syntax`. In the BNF, quoted strings
 are literal text, angle-bracketed names are nonterminals, `|` separates
 alternatives, and all repetition is expressed by recursion.
 
 ```text
 <encoding-form-syntax> ::= <instruction-template>
-<additional-assembler-syntax> ::= <instruction-template>
-
 <instruction-template> ::= <instruction-head>
                          | <instruction-head> " " <operand-list>
 
@@ -200,8 +495,8 @@ alternatives, and all repetition is expressed by recursion.
 
 The grammar uses lexical classes owned by the existing definitions:
 
-- `<mnemonic-name>` has the lexical form of `InstructionDocument.mnemonic`.
-  Its owning mnemonic or explicitly recorded alias status is determined by the
+- `<mnemonic-name>` has the `public-instruction-token` lexical form. Its owning
+  canonical public mnemonic/full-alias relation is determined by the
   correspondence rules below.
 - `<fixed-size-suffix>` is a `SizeCode.suffix`. `<size-kind-name>` is a key in
   the merged size-kind registry. Their spelling and meaning remain owned by
@@ -225,10 +520,11 @@ operands.
 The following correspondence rules restrict the BNF to well-formed canonical
 templates:
 
-- The base `<mnemonic-name>` of an `EncodingForm.syntax` is exactly the owning
-  instruction's registered `mnemonic`. An
-  `additional_assembler_syntax` element may instead use the alias spelling
-  explicitly recorded by that element for the same instruction.
+- The base `<mnemonic-name>` of an `EncodingForm.syntax` is the operation's
+  canonical public mnemonic or an owned full-mnemonic alias. When
+  `width_suffix_aliases` is true, the toolchain additionally accepts the
+  established `.H`, `.S`, and `.D` width aliases for that operation's eligible
+  width forms; canonical output remains the registered public size code.
 - A fixed size suffix names exactly the form's one fixed registered size code,
   and the form declares that code in `sizes`. A selector-less form obtains its
   size domain from `sizes`. A selected suffix names one registered
@@ -269,7 +565,7 @@ templates:
   determine operand presentation. Encoded field binding is expressed by
   `<field-expression>`.
 
-## 3. `instructions.yaml`
+## 4. `instructions.yaml`
 
 ```text
 InstructionSetIndex {
@@ -281,7 +577,30 @@ InstructionSetIndex {
 
 The `include` sequence is also the document order.
 
-## 4. Extension documents
+## 5. CPUID flag and extension documents
+
+`cpuid_flags.yaml`:
+
+```text
+CpuidFlagRegistry {
+  cpuid_flags: list<CpuidFlag>
+}
+
+CpuidFlag {
+  id: CPUID-flag-id
+  token: string matching [A-Za-z][A-Za-z0-9]*
+  location: CpuidFlagLocation
+}
+
+CpuidFlagLocation {
+  class: int[0..]
+  leaf: int[0..]
+  index: int[0..]
+  bit: int[0..63]
+}
+```
+
+Flag IDs, public tokens, and complete locations are independently unique.
 
 `extensions.yaml`:
 
@@ -305,19 +624,14 @@ ExtensionManifest {
 }
 
 ExtensionAvailability {
-  cpuid: CpuidAvailability
-}
-
-CpuidAvailability {
-  feature: string
-  class: int[0..]
-  leaf: int[0..]
-  index: int[0..]
-  bit: int[0..63]
+  required_cpuid_flags: non-empty list<CPUID-flag-id, unique>
 }
 ```
 
-## 5. `operands.yaml`
+An extension lists only local requirements. Requirements from every ancestor
+extension are inherited in order and conjoined with local requirements.
+
+## 6. `operands.yaml`
 
 ```text
 OperandRegistry {
@@ -410,7 +724,7 @@ OperandBit {
 Enum/reserved values and names are unique within their lists and combined enum
 numeric/string values do not overlap. Bitmap bit numbers and names are unique.
 
-## 6. `sizes.yaml`
+## 7. `sizes.yaml`
 
 ```text
 SizeRegistry {
@@ -444,7 +758,7 @@ and reserved values together cover the complete encoded domain; that domain
 determines the width of `size.<SizeKind>`. Size-field markers belong to each
 encoding form rather than to the reusable size kind.
 
-## 7. `registers.yaml`
+## 8. `registers.yaml`
 
 ```text
 RegisterRegistry {
@@ -470,7 +784,7 @@ and \texttt{VLEN\_bytes} is the number of predicate bits (one per vector byte).
 
 Names and present encodings are unique within a register group.
 
-## 8. `conditions.yaml`
+## 9. `conditions.yaml`
 
 ```text
 ConditionRegistry {
@@ -488,7 +802,62 @@ ConditionDefinition {
 Condition values are unique. Every primary name and alias shares one global
 unique namespace.
 
-## 9. `isa/addressing/effective_address/definition.yaml`
+## 10. `semantic_conditions.yaml`
+
+```text
+SemanticConditionRegistry {
+  conditions: non-empty list<SemanticConditionDefinition, unique id>
+}
+
+SemanticConditionDefinition {
+  id: stable-id
+  reader_text: string
+}
+```
+
+An operation event stores the stable condition ID. Document renderers resolve
+that reference through this registry and publish `reader_text`, keeping the
+internal ID out of reader-facing event descriptions.
+
+## 11. `named_values.yaml`
+
+```text
+NamedValueRegistry {
+  values: non-empty list<NamedValueDefinition, unique id>
+}
+
+NamedValueDefinition {
+  id: stable-id
+  kind: enum(condition_code_image)
+  reader_term: string
+}
+```
+
+A temporary predicate observation stores a stable named-value ID. Each current
+value is an operation-defined condition-code image used to evaluate a branch
+condition without writing architectural FLAGS. Reader-facing consumers use the
+registry-owned term instead of publishing the internal ID.
+
+## 12. `flag_effect_definitions.yaml`
+
+```text
+FlagEffectDefinitionRegistry {
+  definitions: non-empty list<FlagEffectDefinition, unique id>
+}
+
+FlagEffectDefinition {
+  id: stable-id
+  kind: enum(expression, condition, accrued_source)
+  reader_text: string
+}
+```
+
+Reference-bearing operation flag effects resolve their internal IDs through
+this registry. `write_expression`, `write_condition`, and `accrue_source`
+require definitions of kind `expression`, `condition`, and `accrued_source`,
+respectively. Document renderers publish only the registry-owned reader text.
+
+## 13. `isa/addressing/effective_address/definition.yaml`
 
 ```text
 EaRegistry {
@@ -598,7 +967,7 @@ Form names are unique per section. Every pattern marker has exactly one field
 declaration and vice versa. Compact `payload` values reference a declared
 `payloads` key.
 
-## 10. `isa/interfaces/abi/plt_conformance_vectors.yaml`
+## 14. `isa/interfaces/abi/plt_conformance_vectors.yaml`
 
 ```text
 AbiVectorsDocument {
@@ -663,7 +1032,7 @@ AbiRelocationVector {
 }
 ```
 
-## 11. `isa/memory/ordering/formal/validation.yaml`
+## 15. `isa/memory/ordering/formal/validation.yaml`
 
 ```text
 MemoryValidationDocument {
@@ -695,11 +1064,26 @@ then enforce the following references and global invariants:
 
 - extension manifests, instruction indexes, introduction TeX, and instruction
   detail TeX references exist;
-- instruction directory name equals `mnemonic`, indexes cover every definition
-  exactly once, and mnemonics are globally unique;
+- indexes cover every definition exactly once, and public mnemonics are
+  globally unique;
+- candidate artifact references stay inside the bundle, have the declared file
+  kind, and resolve to regular files;
+- form membership is derived from `encodings.yaml`, every case form
+  reference resolves within that membership, logical operands cover referenced
+  form operands and profiles, and typed cases form a total, exclusive,
+  reachable partition of legal form/selector/profile tuples;
+- operations carry full logical operand definitions;
+- operation ID, directory name, and public mnemonic remain separate identities;
+  every public mnemonic and alias has one global operation owner, and every
+  encoding template uses a token owned by its operation;
+- CPUID, semantic-condition, named-value, event,
+  execution-route, operand-value-domain, operand-profile, and diagram-kind
+  references resolve through their distinct owners;
 - operand and size names are registered, encoding marker widths equal their
   primitive widths, and EA write destinations reclaim immediate encodings;
-- CPUID feature names and `(class, leaf, index, bit)` positions are unique;
+- CPUID flag IDs, public tokens, and `(class, leaf, index, bit)` locations are
+  unique, extension references resolve through that registry, and no local
+  requirement duplicates an inherited requirement;
 - encoding IDs are globally stable, class names and bit widths match the fixed
   grammar in `isa/tools/encoding_architecture.py`, and concrete opcode claims
   do not overlap.

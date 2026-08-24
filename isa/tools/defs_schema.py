@@ -1,4 +1,4 @@
-"""Versioned, strict dataclass decoders for every supported ISA YAML document."""
+"""Strict dataclass decoders for every supported ISA YAML document."""
 
 from __future__ import annotations
 
@@ -12,16 +12,19 @@ from typing import Any, Iterable
 import yaml
 
 
-SCHEMA_VERSION = 0
 SCHEMA_FAMILIES = (
-    "instruction",
+    "operation",
     "encodings",
     "instruction_index",
     "extension",
+    "cpuid_flags",
     "operands",
     "sizes",
     "registers",
     "conditions",
+    "semantic_conditions",
+    "named_values",
+    "flag_effect_definitions",
     "effective_address",
     "abi_vectors",
     "memory_validation",
@@ -55,10 +58,82 @@ OPERAND_KINDS = frozenset(
         "relative_immediate",
     }
 )
-FLAG_BANKS = {
+FLAG_BANK_FLAGS = {
     "FLAGS": ("Z", "N", "C", "V"),
     "FFLAGS": ("NV", "DZ", "OF", "UF", "NX"),
 }
+OPERATION_ROLES = frozenset(
+    {
+        "source",
+        "destination",
+        "address",
+        "control_target",
+        "governing_predicate",
+        "count",
+        "bit_index",
+        "segment_selector",
+        "counter",
+        "implicit",
+    }
+)
+OPERATION_REPEAT_KINDS = frozenset({"not_eligible", "rep", "rep_and_repcc"})
+EXECUTION_ROUTE_CONSTRUCTORS = {
+    "atomics": "RouteAtomics",
+    "bounds": "RouteBounds",
+    "cache": "RouteCache",
+    "control_flow": "RouteControlFlow",
+    "core_control": "RouteCoreControl",
+    "data_movement": "RouteDataMovement",
+    "ea_utility": "RouteEaUtility",
+    "fpu": "RouteFpu",
+    "fpu_transcendental_approx": "RouteFpuTranscendental",
+    "integer_alu": "RouteIntegerAlu",
+    "integer_bitfield": "RouteIntegerBitfield",
+    "integer_mul_div": "RouteIntegerMulDiv",
+    "integer_unary": "RouteIntegerUnary",
+    "system_registers": "RouteSystemRegisters",
+    "tlb_and_context": "RouteTlbContext",
+    "vector": "RouteVector",
+}
+EXECUTION_ROUTES = frozenset(EXECUTION_ROUTE_CONSTRUCTORS)
+OPERATION_VALUE_DOMAINS = frozenset(
+    {"integer", "floating", "vector", "predicate"}
+)
+NUMERIC_VALUE_DOMAINS = frozenset({"integer", "floating"})
+NUMERIC_FORMAT_CODES = frozenset({"B", "W", "L", "Q", "H", "S", "D"})
+CONVERSION_BEHAVIORS = frozenset(
+    {"exact", "sign_extend", "zero_extend", "convert"}
+)
+PREDICATE_KINDS = frozenset(
+    {
+        "none",
+        "annul_on_false",
+        "produce_boolean",
+        "test_temporary",
+        "counter_and_condition",
+    }
+)
+FLAG_BANK_COMPLETION_KINDS = frozenset({"complete_image", "accrued_causes"})
+FLAG_EFFECT_KINDS = frozenset(
+    {
+        "preserve",
+        "clear",
+        "set",
+        "write_expression",
+        "write_condition",
+        "accrue_source",
+    }
+)
+FLAG_EFFECT_DEFINITION_KINDS = frozenset(
+    {"expression", "condition", "accrued_source"}
+)
+NAMED_VALUE_KINDS = frozenset({"condition_code_image"})
+FLAG_EFFECT_REFERENCE_KIND = {
+    "write_expression": "expression",
+    "write_condition": "condition",
+    "accrue_source": "accrued_source",
+}
+DESCRIPTION_ARTIFACT_KINDS = frozenset({"tex", "markdown"})
 
 
 class DecodeError(ValueError):
@@ -84,7 +159,7 @@ class AssemblyTemplate:
 
     mnemonic: str
     fixed_size_suffix: str | None = None
-    selected_size_kind: str | None = None
+    selected_size_codes: tuple[str, ...] = ()
     size_field: str | None = None
     order_field: str | None = None
     operands: tuple[AssemblyTemplateOperand, ...] = ()
@@ -134,39 +209,53 @@ class _AssemblyTemplateParser:
             self.require(">")
         return name, angled
 
+    def address_expression(self, kind: str) -> AssemblyTemplateOperand:
+        members: list[AssemblyTemplateOperand] = []
+        while True:
+            if self.index >= len(self.value):
+                self.fail("unterminated address expression")
+            if self.take("]"):
+                return AssemblyTemplateOperand(kind=kind, members=tuple(members))
+            if self.value[self.index].isspace():
+                self.index += 1
+                continue
+            if self.take("["):
+                members.append(self.address_expression("lane_index"))
+                continue
+            if self.value[self.index] in "+*":
+                members.append(
+                    AssemblyTemplateOperand(
+                        kind="operator", name=self.value[self.index]
+                    )
+                )
+                self.index += 1
+                continue
+            decimal = re.match(r"[0-9]+", self.value[self.index :])
+            if decimal is not None:
+                spelling = decimal.group(0)
+                self.index += len(spelling)
+                members.append(
+                    AssemblyTemplateOperand(kind="decimal", literal=int(spelling, 10))
+                )
+                continue
+            name, angled = self.operand_reference()
+            marker = (
+                self.field_expression()
+                if self.index < len(self.value) and self.value[self.index] == "("
+                else None
+            )
+            members.append(
+                AssemblyTemplateOperand(
+                    kind="scale" if name == "scale" else "reference",
+                    name=name,
+                    angled=angled,
+                    field=marker,
+                )
+            )
+
     def operand(self) -> AssemblyTemplateOperand:
         if self.take("["):
-            members: list[AssemblyTemplateOperand] = []
-            depth = 1
-            while depth > 0:
-                if self.index >= len(self.value):
-                    self.fail("unterminated address expression")
-                if self.take("["):
-                    depth += 1
-                    continue
-                if self.take("]"):
-                    depth -= 1
-                    continue
-                if self.value[self.index].isspace() or self.value[self.index] in "+*":
-                    self.index += 1
-                    continue
-                decimal = re.match(r"[0-9]+", self.value[self.index :])
-                if decimal is not None:
-                    self.index += len(decimal.group(0))
-                    continue
-                name, angled = self.operand_reference()
-                marker = (
-                    self.field_expression()
-                    if self.index < len(self.value) and self.value[self.index] == "("
-                    else None
-                )
-                if name != "scale":
-                    members.append(
-                        AssemblyTemplateOperand(
-                            kind="reference", name=name, angled=angled, field=marker
-                        )
-                    )
-            return AssemblyTemplateOperand(kind="address", members=tuple(members))
+            return self.address_expression("address")
         if self.take("{ "):
             name, angled = self.operand_reference()
             self.require("... }")
@@ -193,18 +282,23 @@ class _AssemblyTemplateParser:
     def parse(self) -> AssemblyTemplate:
         mnemonic = self.identifier("mnemonic name", mnemonic=True)
         fixed_size_suffix: str | None = None
-        selected_size_kind: str | None = None
+        selected_size_codes: tuple[str, ...] = ()
         size_field: str | None = None
         order_field: str | None = None
         if self.take("."):
-            suffix_or_kind = self.identifier("size suffix or size-kind name")
-            if self.index < len(self.value) and self.value[self.index] == "(":
-                selected_size_kind = suffix_or_kind
+            if self.take("{"):
+                codes = [self.identifier("public size suffix")]
+                while self.take("|"):
+                    codes.append(self.identifier("public size suffix"))
+                self.require("}")
+                if len(set(codes)) != len(codes):
+                    self.fail("repeated public size suffix")
+                selected_size_codes = tuple(codes)
                 size_field = self.field_expression()
                 if self.take("/order"):
                     order_field = self.field_expression()
             else:
-                fixed_size_suffix = "." + suffix_or_kind
+                fixed_size_suffix = "." + self.identifier("fixed size suffix")
 
         operands: list[AssemblyTemplateOperand] = []
         if self.index < len(self.value):
@@ -218,7 +312,7 @@ class _AssemblyTemplateParser:
         return AssemblyTemplate(
             mnemonic=mnemonic,
             fixed_size_suffix=fixed_size_suffix,
-            selected_size_kind=selected_size_kind,
+            selected_size_codes=selected_size_codes,
             size_field=size_field,
             order_field=order_field,
             operands=tuple(operands),
@@ -238,10 +332,21 @@ def displayed_assembly_operands(
 ) -> tuple[AssemblyTemplateOperand, ...]:
     """Return displayed operands with bracketed address members flattened in order."""
 
+    def address_references(
+        operand: AssemblyTemplateOperand,
+    ) -> list[AssemblyTemplateOperand]:
+        result: list[AssemblyTemplateOperand] = []
+        for member in operand.members:
+            if member.kind == "reference":
+                result.append(member)
+            elif member.kind == "lane_index":
+                result.extend(address_references(member))
+        return result
+
     result: list[AssemblyTemplateOperand] = []
     for operand in template.operands:
         if operand.kind == "address":
-            result.extend(operand.members)
+            result.extend(address_references(operand))
         elif operand.kind != "group":
             result.append(operand)
     return tuple(result)
@@ -261,18 +366,13 @@ def verify_schema_lock(lock_path: Path = SCHEMA_LOCK_PATH) -> None:
         if not separator or key in values:
             raise DecodeError(f"{lock_path}: malformed schema lock line {line!r}")
         values[key] = value
-    expected_keys = {"version", "families", "decoder_sha256", "contract_sha256"}
+    expected_keys = {"families", "decoder_sha256", "diagram_decoder_sha256", "contract_sha256"}
     if set(values) != expected_keys:
         raise DecodeError(f"{lock_path}: expected fields {', '.join(sorted(expected_keys))}")
     try:
-        version = int(values["version"])
         family_count = int(values["families"])
     except ValueError as exc:
-        raise DecodeError(f"{lock_path}: version and families must be integers") from exc
-    if version != SCHEMA_VERSION:
-        raise DecodeError(
-            f"{lock_path}: lock version {version} does not match decoder {SCHEMA_VERSION}"
-        )
+        raise DecodeError(f"{lock_path}: families must be an integer") from exc
     if family_count != len(SCHEMA_FAMILIES):
         raise DecodeError(
             f"{lock_path}: lock family count {family_count} does not match "
@@ -283,14 +383,23 @@ def verify_schema_lock(lock_path: Path = SCHEMA_LOCK_PATH) -> None:
         raise DecodeError(f"{lock_path}: invalid decoder_sha256")
     if values["decoder_sha256"] != digest:
         raise DecodeError(
-            f"{lock_path}: decoder changed without updating the versioned schema lock"
+            f"{lock_path}: decoder changed without updating the schema lock"
+        )
+    diagram_digest = hashlib.sha256(
+        Path(__file__).with_name("vector_diagrams.py").read_bytes()
+    ).hexdigest()
+    if not re.fullmatch(r"[0-9a-f]{64}", values["diagram_decoder_sha256"]):
+        raise DecodeError(f"{lock_path}: invalid diagram_decoder_sha256")
+    if values["diagram_decoder_sha256"] != diagram_digest:
+        raise DecodeError(
+            f"{lock_path}: vector diagram decoder changed without updating the schema lock"
         )
     contract_digest = hashlib.sha256(SCHEMA_DOCUMENT_PATH.read_bytes()).hexdigest()
     if not re.fullmatch(r"[0-9a-f]{64}", values["contract_sha256"]):
         raise DecodeError(f"{lock_path}: invalid contract_sha256")
     if values["contract_sha256"] != contract_digest:
         raise DecodeError(
-            f"{lock_path}: displayed contract changed without updating the versioned schema lock"
+            f"{lock_path}: displayed contract changed without updating the schema lock"
         )
 
 
@@ -426,43 +535,201 @@ def _string_list(value: Any, path: Path, field_path: str) -> list[str]:
 
 
 @dataclass(frozen=True)
-class InstructionAttributes:
-    instruction_class: str
-    family: str
-    privilege: str
-
-
-@dataclass(frozen=True)
-class RepeatObserved:
-    kind: str
-    operand: str | None = None
-
-
-@dataclass(frozen=True)
-class RepeatContract:
-    contexts: tuple[str, ...]
-    observed: RepeatObserved | None = None
-
-
-@dataclass(frozen=True)
-class InstructionException:
-    event: str
-    when: str
-    forms: tuple[str, ...] = ()
-
-
-@dataclass(frozen=True)
-class InstructionDocument:
+class PublicInstructionRef:
     mnemonic: str
+    aliases: tuple[str, ...] = ()
+    width_suffix_aliases: bool = False
+
+
+@dataclass(frozen=True)
+class OperationComputedRepeatObservation:
+    kind: str = field(default="computed", init=False)
+
+
+@dataclass(frozen=True)
+class OperationResultRepeatObservation:
+    operand: str
+    kind: str = field(default="result", init=False)
+
+
+@dataclass(frozen=True)
+class OperationSourceRepeatObservation:
+    operand: str
+    kind: str = field(default="source", init=False)
+
+
+OperationRepeatObservation = (
+    OperationComputedRepeatObservation
+    | OperationResultRepeatObservation
+    | OperationSourceRepeatObservation
+)
+
+
+@dataclass(frozen=True)
+class OperationRepeatEligibility:
+    kind: str
+    observed: OperationRepeatObservation | None = None
+
+
+@dataclass(frozen=True)
+class LogicalOperandDefinition:
+    id: str
+    role: str
+    access: str
+    value_domain: str
+    profiles: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class SelectorApplicability:
+    domain: str
+    values: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class OperandProfileApplicability:
+    operand: str
+    profiles: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class FormApplicability:
+    forms: tuple[str, ...]
+    selectors: tuple[SelectorApplicability, ...] = ()
+    operand_profiles: tuple[OperandProfileApplicability, ...] = ()
+
+
+@dataclass(frozen=True)
+class PredicateContract:
+    kind: str
+    condition_operand: str | None = None
+    destination_operand: str | None = None
+    counter_operand: str | None = None
+    observed: str | None = None
+
+
+@dataclass(frozen=True)
+class OperationFlagEffect:
+    flag: str
+    effect: str
+    reference: str | None = None
+
+
+@dataclass(frozen=True)
+class OperationFlagBankContract:
+    bank: str
+    completion: str
+    effects: tuple[OperationFlagEffect, ...]
+
+
+@dataclass(frozen=True)
+class OperationEventContract:
+    event: str
+    condition: str
+    cause: str | None = None
+
+
+@dataclass(frozen=True)
+class ConversionSignature:
+    """Typed numeric conversion owned by one operation case.
+
+    Formats use the public size-code vocabulary. Selector-domain names remain
+    encoding implementation detail; the loader relates this signature to the
+    selected codes of each applicable form.
+    """
+
+    source_domain: str
+    source_formats: tuple[str, ...]
+    destination_domain: str
+    destination_formats: tuple[str, ...]
+    integer_signedness: str | None
+    behavior: str
+
+
+@dataclass(frozen=True)
+class OperationCase:
+    id: str
+    applies_to: FormApplicability
+    additional_requirements: tuple[str, ...]
+    predicate: PredicateContract
+    flags: tuple[OperationFlagBankContract, ...]
+    events: tuple[OperationEventContract, ...]
+    sail_entry: str
+    conversion: ConversionSignature | None = None
+
+
+@dataclass(frozen=True)
+class OperationArtifactRef:
+    path: str
+    kind: str
+
+
+@dataclass(frozen=True)
+class DiagramArtifactRef:
+    id: str
+    path: str
+    kind: str
+    case: str | None
+    caption: str
+    alt_text: str
+
+
+@dataclass(frozen=True)
+class OperationArtifacts:
+    semantics: OperationArtifactRef
+    description: OperationArtifactRef
+    diagrams: tuple[DiagramArtifactRef, ...] = ()
+    bundle_root: str | None = None
+    manifest_path: str | None = None
+
+
+@dataclass(frozen=True)
+class OperationDocument:
+    id: str
     title: str
     summary: str
-    description: str
-    attributes: InstructionAttributes
-    repeat: RepeatContract | None = None
-    exceptions: tuple[InstructionException, ...] = ()
-    flag_effects: dict[str, dict[str, str]] = field(default_factory=dict)
-    additional_assembler_syntax: tuple[str, ...] = ()
-    additional_description: str | None = None
+    public_instruction: PublicInstructionRef
+    execution_route: str
+    privilege: str
+    repeat: OperationRepeatEligibility
+    operands: tuple[LogicalOperandDefinition, ...]
+    cases: tuple[OperationCase, ...]
+    artifacts: OperationArtifacts
+
+
+@dataclass(frozen=True)
+class SemanticConditionDefinition:
+    id: str
+    reader_text: str
+
+
+@dataclass(frozen=True)
+class SemanticConditionRegistry:
+    conditions: tuple[SemanticConditionDefinition, ...]
+
+
+@dataclass(frozen=True)
+class NamedValueDefinition:
+    id: str
+    kind: str
+    reader_term: str
+
+
+@dataclass(frozen=True)
+class NamedValueRegistry:
+    values: tuple[NamedValueDefinition, ...]
+
+
+@dataclass(frozen=True)
+class FlagEffectDefinition:
+    id: str
+    kind: str
+    reader_text: str
+
+
+@dataclass(frozen=True)
+class FlagEffectDefinitionRegistry:
+    definitions: tuple[FlagEffectDefinition, ...]
 
 
 @dataclass(frozen=True)
@@ -521,12 +788,28 @@ class InstructionSetIndex:
 
 
 @dataclass(frozen=True)
-class CpuidAvailability:
-    feature: str
+class CpuidFlagLocation:
     selector_class: int
     leaf: int
     index: int
     bit: int
+
+
+@dataclass(frozen=True)
+class CpuidFlag:
+    id: str
+    token: str
+    location: CpuidFlagLocation
+
+
+@dataclass(frozen=True)
+class CpuidFlagRegistry:
+    cpuid_flags: tuple[CpuidFlag, ...]
+
+
+@dataclass(frozen=True)
+class ExtensionAvailability:
+    required_cpuid_flags: tuple[str, ...]
 
 
 @dataclass(frozen=True)
@@ -537,7 +820,7 @@ class ExtensionManifest:
     registers: str | None = None
     sizes: str | None = None
     extensions: tuple[str, ...] = ()
-    availability: CpuidAvailability | None = None
+    availability: ExtensionAvailability | None = None
 
 
 @dataclass(frozen=True)
@@ -792,197 +1075,710 @@ class MemoryValidationDocument:
 
 
 DecodedDocument = (
-    InstructionDocument
+    OperationDocument
     | EncodingsDocument
     | InstructionSetIndex
     | ExtensionManifest
     | ExtensionCatalog
+    | CpuidFlagRegistry
     | OperandRegistry
     | SizeRegistry
     | RegisterRegistry
     | ConditionRegistry
+    | SemanticConditionRegistry
+    | NamedValueRegistry
+    | FlagEffectDefinitionRegistry
     | EaRegistry
     | AbiVectorsDocument
     | MemoryValidationDocument
 )
 
 
-def decode_instruction(path: Path, raw: Any) -> InstructionDocument:
+def _stable_id(value: Any, path: Path, field_path: str) -> str:
+    result = _string(value, path, field_path)
+    if not re.fullmatch(r"[A-Za-z][A-Za-z0-9_.-]*", result):
+        raise DecodeError(f"{_where(path, field_path)}: invalid stable identifier")
+    return result
+
+
+def decode_operation(path: Path, raw: Any) -> OperationDocument:
+    """Strictly decode one canonical operation bundle manifest."""
+
     data = _mapping(raw, path, "")
     _keys(
         data,
         path,
         "",
-        required=("mnemonic", "title", "summary", "description", "attributes"),
-        optional=(
+        required=(
+            "operation",
+            "title",
+            "summary",
+            "public_instruction",
+            "execution_route",
+            "privilege",
             "repeat",
-            "exceptions",
-            "flag_effects",
-            "additional_assembler_syntax",
-            "additional_description",
+            "operands",
+            "cases",
+            "artifacts",
         ),
     )
-    attrs = _mapping(data["attributes"], path, "attributes")
-    _keys(
-        attrs,
-        path,
-        "attributes",
-        required=("class", "family", "privilege"),
-    )
-    repeat: RepeatContract | None = None
-    if "repeat" in data:
-        raw_repeat = _mapping(data["repeat"], path, "repeat")
-        _keys(
-            raw_repeat,
-            path,
-            "repeat",
-            required=("contexts",),
-            optional=("observed",),
-        )
-        contexts = tuple(
-            _enum_string(value, path, f"repeat.contexts[{index}]", REPEAT_CONTEXTS)
-            for index, value in enumerate(
-                _list(raw_repeat["contexts"], path, "repeat.contexts")
-            )
-        )
-        if not contexts:
-            raise DecodeError(f"{_where(path, 'repeat.contexts')}: expected non-empty list")
-        _unique(contexts, path, "repeat.contexts")
-        observed: RepeatObserved | None = None
-        if "observed" in raw_repeat:
-            raw_observed = _mapping(raw_repeat["observed"], path, "repeat.observed")
-            _keys(
-                raw_observed,
-                path,
-                "repeat.observed",
-                required=("kind",),
-                optional=("operand",),
-            )
-            kind = _enum_string(
-                raw_observed["kind"],
-                path,
-                "repeat.observed.kind",
-                REPEAT_OBSERVED_KINDS,
-            )
-            operand = raw_observed.get("operand")
-            if operand is not None:
-                operand = _string(operand, path, "repeat.observed.operand")
-            if kind == "computed" and operand is not None:
-                raise DecodeError(
-                    f"{_where(path, 'repeat.observed.operand')}: computed observation has no operand"
-                )
-            if kind in {"result", "source"} and operand is None:
-                raise DecodeError(
-                    f"{_where(path, 'repeat.observed')}: {kind} observation requires operand"
-                )
-            observed = RepeatObserved(kind, operand)
-        if ("REPcc" in contexts) != (observed is not None):
-            raise DecodeError(
-                f"{_where(path, 'repeat')}: observed is required exactly when REPcc is present"
-            )
-        repeat = RepeatContract(contexts, observed)
+    operation_id = _stable_id(data["operation"], path, "operation")
+    title = _string(data["title"], path, "title")
+    summary = _string(data["summary"], path, "summary")
 
-    exceptions: list[InstructionException] = []
-    for index, raw_exception in enumerate(
-        _list(data.get("exceptions", []), path, "exceptions")
-    ):
-        item_path = f"exceptions[{index}]"
-        item = _mapping(raw_exception, path, item_path)
+    public_raw = _mapping(data["public_instruction"], path, "public_instruction")
+    _keys(
+        public_raw,
+        path,
+        "public_instruction",
+        required=("mnemonic",),
+        optional=("aliases", "width_suffix_aliases"),
+    )
+    mnemonic = _string(public_raw["mnemonic"], path, "public_instruction.mnemonic")
+    if not re.fullmatch(r"[A-Za-z][A-Za-z0-9]*", mnemonic):
+        raise DecodeError(
+            f"{_where(path, 'public_instruction.mnemonic')}: invalid mnemonic"
+        )
+    aliases = tuple(
+        _string_list(public_raw.get("aliases", []), path, "public_instruction.aliases")
+    )
+    _unique(aliases, path, "public_instruction.aliases")
+    if mnemonic in aliases:
+        raise DecodeError(
+            f"{_where(path, 'public_instruction.aliases')}: canonical mnemonic cannot be an alias"
+        )
+    width_suffix_aliases = public_raw.get("width_suffix_aliases", False)
+    if not isinstance(width_suffix_aliases, bool):
+        raise DecodeError(
+            f"{_where(path, 'public_instruction.width_suffix_aliases')}: expected boolean"
+        )
+    for index, alias in enumerate(aliases):
+        if not re.fullmatch(r"[A-Za-z][A-Za-z0-9]*", alias):
+            raise DecodeError(
+                f"{_where(path, f'public_instruction.aliases[{index}]')}: invalid mnemonic"
+            )
+
+    repeat_raw = _mapping(data["repeat"], path, "repeat")
+    _keys(repeat_raw, path, "repeat", required=("kind",), optional=("observed",))
+    repeat_kind = _enum_string(
+        repeat_raw["kind"], path, "repeat.kind", OPERATION_REPEAT_KINDS
+    )
+    repeat_observed: OperationRepeatObservation | None = None
+    if "observed" in repeat_raw:
+        observed_raw = _mapping(repeat_raw["observed"], path, "repeat.observed")
+        _keys(
+            observed_raw,
+            path,
+            "repeat.observed",
+            required=("kind",),
+            optional=("operand",),
+        )
+        observed_kind = _enum_string(
+            observed_raw["kind"],
+            path,
+            "repeat.observed.kind",
+            REPEAT_OBSERVED_KINDS,
+        )
+        observed_operand = observed_raw.get("operand")
+        if observed_operand is not None:
+            observed_operand = _stable_id(
+                observed_operand, path, "repeat.observed.operand"
+            )
+        if observed_kind == "computed" and observed_operand is not None:
+            raise DecodeError(
+                f"{_where(path, 'repeat.observed')}: computed observation has no operand"
+            )
+        if observed_kind in {"result", "source"} and observed_operand is None:
+            raise DecodeError(
+                f"{_where(path, 'repeat.observed')}: {observed_kind} observation requires exactly operand"
+            )
+        if observed_kind == "computed":
+            repeat_observed = OperationComputedRepeatObservation()
+        elif observed_kind == "result":
+            assert observed_operand is not None
+            repeat_observed = OperationResultRepeatObservation(observed_operand)
+        else:
+            assert observed_operand is not None
+            repeat_observed = OperationSourceRepeatObservation(observed_operand)
+    if (repeat_kind == "rep_and_repcc") != (repeat_observed is not None):
+        raise DecodeError(
+            f"{_where(path, 'repeat')}: observed is required exactly for rep_and_repcc"
+        )
+
+    operands: list[LogicalOperandDefinition] = []
+    for index, raw_operand in enumerate(_list(data["operands"], path, "operands")):
+        item_path = f"operands[{index}]"
+        item = _mapping(raw_operand, path, item_path)
         _keys(
             item,
             path,
             item_path,
-            required=("event", "when"),
-            optional=("forms",),
+            required=("id", "role", "access", "value_domain", "profiles"),
         )
-        event = _string(item["event"], path, item_path + ".event")
-        if not re.fullmatch(r"[A-Z][A-Z0-9_]*", event):
-            raise DecodeError(f"{_where(path, item_path + '.event')}: invalid event name")
-        forms = tuple(
-            _string_list(item.get("forms", []), path, item_path + ".forms")
-        )
-        _unique(forms, path, item_path + ".forms")
-        exceptions.append(
-            InstructionException(
-                event=event,
-                when=_string(item["when"], path, item_path + ".when"),
-                forms=forms,
+        profiles = tuple(
+            _stable_id(value, path, f"{item_path}.profiles[{profile_index}]")
+            for profile_index, value in enumerate(
+                _list(item["profiles"], path, item_path + ".profiles")
             )
         )
-    extra_syntax = tuple(
-        _string_list(
-            data.get("additional_assembler_syntax", []),
-            path,
-            "additional_assembler_syntax",
+        if not profiles:
+            raise DecodeError(f"{_where(path, item_path + '.profiles')}: expected non-empty list")
+        _unique(profiles, path, item_path + ".profiles")
+        operands.append(
+            LogicalOperandDefinition(
+                id=_stable_id(item["id"], path, item_path + ".id"),
+                role=_enum_string(item["role"], path, item_path + ".role", OPERATION_ROLES),
+                access=_enum_string(item["access"], path, item_path + ".access", OPERAND_ACCESS),
+                value_domain=_enum_string(
+                    item["value_domain"],
+                    path,
+                    item_path + ".value_domain",
+                    OPERATION_VALUE_DOMAINS,
+                ),
+                profiles=profiles,
+            )
         )
-    )
-    _unique(extra_syntax, path, "additional_assembler_syntax")
-    for index, syntax in enumerate(extra_syntax):
-        parse_assembly_template(
-            syntax,
-            _where(path, f"additional_assembler_syntax[{index}]"),
-        )
-    raw_flag_effects = _mapping(data.get("flag_effects", {}), path, "flag_effects")
-    unknown_banks = raw_flag_effects.keys() - FLAG_BANKS.keys()
-    if unknown_banks:
+    _unique((operand.id for operand in operands), path, "operands.id")
+    operand_ids = {operand.id for operand in operands}
+    repeat_operand = getattr(repeat_observed, "operand", None)
+    if repeat_operand is not None and repeat_operand not in operand_ids:
         raise DecodeError(
-            f"{_where(path, 'flag_effects')}: unknown flag banks "
-            f"{', '.join(sorted(unknown_banks))}"
+            f"{_where(path, 'repeat.observed.operand')}: unknown logical operand"
         )
-    flag_effects: dict[str, dict[str, str]] = {}
-    for bank, valid_flags in FLAG_BANKS.items():
-        if bank not in raw_flag_effects:
-            continue
-        raw_effects = _mapping(raw_flag_effects[bank], path, f"flag_effects.{bank}")
-        if not raw_effects:
-            raise DecodeError(
-                f"{_where(path, f'flag_effects.{bank}')}: expected non-empty mapping"
-            )
-        unknown_flags = raw_effects.keys() - set(valid_flags)
-        if unknown_flags:
-            raise DecodeError(
-                f"{_where(path, f'flag_effects.{bank}')}: unknown flags "
-                f"{', '.join(sorted(unknown_flags))}"
-            )
-        if bank == "FLAGS" and set(raw_effects) != set(valid_flags):
-            missing_flags = set(valid_flags) - raw_effects.keys()
-            raise DecodeError(
-                f"{_where(path, 'flag_effects.FLAGS')}: complete FLAGS writes must name "
-                f"Z, N, C, and V; missing {', '.join(sorted(missing_flags))}"
-            )
-        flag_effects[bank] = {
-            flag: _string(raw_effects[flag], path, f"flag_effects.{bank}.{flag}")
-            for flag in valid_flags
-            if flag in raw_effects
-        }
-    additional_description = data.get("additional_description")
-    if additional_description is not None:
-        additional_description = _relative_reference(
-            additional_description, path, "additional_description"
-        )
-        if not additional_description.endswith(".tex"):
-            raise DecodeError(f"{_where(path, 'additional_description')}: expected .tex file")
-    mnemonic = _string(data["mnemonic"], path, "mnemonic")
-    if not re.fullmatch(r"[A-Za-z][A-Za-z0-9]*", mnemonic):
-        raise DecodeError(f"{_where(path, 'mnemonic')}: invalid mnemonic")
-    return InstructionDocument(
-        mnemonic=mnemonic,
-        title=_string(data["title"], path, "title"),
-        summary=_string(data["summary"], path, "summary"),
-        description=_string(data["description"], path, "description"),
-        attributes=InstructionAttributes(
-            instruction_class=_string(attrs["class"], path, "attributes.class"),
-            family=_string(attrs["family"], path, "attributes.family"),
-            privilege=_enum_string(
-                attrs["privilege"], path, "attributes.privilege", PRIVILEGES
+
+    cases: list[OperationCase] = []
+    for case_index, raw_case in enumerate(_list(data["cases"], path, "cases")):
+        case_path = f"cases[{case_index}]"
+        item = _mapping(raw_case, path, case_path)
+        _keys(
+            item,
+            path,
+            case_path,
+            required=(
+                "id",
+                "applies_to",
+                "additional_requirements",
+                "predicate",
+                "flags",
+                "events",
+                "sail_entry",
             ),
-        ),
-        repeat=repeat,
-        exceptions=tuple(exceptions),
-        flag_effects=flag_effects,
-        additional_assembler_syntax=extra_syntax,
-        additional_description=additional_description,
+            optional=("conversion",),
+        )
+        applies_raw = _mapping(item["applies_to"], path, case_path + ".applies_to")
+        _keys(
+            applies_raw,
+            path,
+            case_path + ".applies_to",
+            required=("forms",),
+            optional=("selectors", "operand_profiles"),
+        )
+        applies_forms = tuple(
+            _string(value, path, f"{case_path}.applies_to.forms[{index}]")
+            for index, value in enumerate(
+                _list(applies_raw["forms"], path, case_path + ".applies_to.forms")
+            )
+        )
+        if not applies_forms:
+            raise DecodeError(
+                f"{_where(path, case_path + '.applies_to.forms')}: expected non-empty list"
+            )
+        for form_index, form_id in enumerate(applies_forms):
+            if not re.fullmatch(r"[a-z][a-z0-9_]*\.[a-z0-9_.]+", form_id):
+                raise DecodeError(
+                    f"{_where(path, f'{case_path}.applies_to.forms[{form_index}]')}: "
+                    "invalid stable form id"
+                )
+        _unique(applies_forms, path, case_path + ".applies_to.forms")
+
+        selectors: list[SelectorApplicability] = []
+        for selector_index, raw_selector in enumerate(
+            _list(applies_raw.get("selectors", []), path, case_path + ".applies_to.selectors")
+        ):
+            selector_path = f"{case_path}.applies_to.selectors[{selector_index}]"
+            selector = _mapping(raw_selector, path, selector_path)
+            _keys(selector, path, selector_path, required=("domain", "values"))
+            values = tuple(
+                _stable_id(value, path, f"{selector_path}.values[{index}]")
+                for index, value in enumerate(
+                    _list(selector["values"], path, selector_path + ".values")
+                )
+            )
+            if not values:
+                raise DecodeError(f"{_where(path, selector_path + '.values')}: expected non-empty list")
+            _unique(values, path, selector_path + ".values")
+            selectors.append(
+                SelectorApplicability(
+                    _stable_id(selector["domain"], path, selector_path + ".domain"),
+                    values,
+                )
+            )
+        _unique((selector.domain for selector in selectors), path, case_path + ".applies_to.selectors.domain")
+
+        operand_profiles: list[OperandProfileApplicability] = []
+        for profile_index, raw_profile in enumerate(
+            _list(
+                applies_raw.get("operand_profiles", []),
+                path,
+                case_path + ".applies_to.operand_profiles",
+            )
+        ):
+            profile_path = f"{case_path}.applies_to.operand_profiles[{profile_index}]"
+            profile = _mapping(raw_profile, path, profile_path)
+            _keys(profile, path, profile_path, required=("operand", "profiles"))
+            operand = _stable_id(profile["operand"], path, profile_path + ".operand")
+            if operand not in operand_ids:
+                raise DecodeError(f"{_where(path, profile_path + '.operand')}: unknown logical operand")
+            profile_values = tuple(
+                _stable_id(value, path, f"{profile_path}.profiles[{index}]")
+                for index, value in enumerate(
+                    _list(profile["profiles"], path, profile_path + ".profiles")
+                )
+            )
+            if not profile_values:
+                raise DecodeError(f"{_where(path, profile_path + '.profiles')}: expected non-empty list")
+            _unique(profile_values, path, profile_path + ".profiles")
+            operand_profiles.append(OperandProfileApplicability(operand, profile_values))
+        _unique((selector.operand for selector in operand_profiles), path, case_path + ".applies_to.operand_profiles.operand")
+
+        predicate_raw = _mapping(item["predicate"], path, case_path + ".predicate")
+        _keys(
+            predicate_raw,
+            path,
+            case_path + ".predicate",
+            required=("kind",),
+            optional=("condition_operand", "destination_operand", "counter_operand", "observed"),
+        )
+        predicate_kind = _enum_string(
+            predicate_raw["kind"], path, case_path + ".predicate.kind", PREDICATE_KINDS
+        )
+        predicate_refs: dict[str, str | None] = {}
+        for key in ("condition_operand", "destination_operand", "counter_operand"):
+            value = predicate_raw.get(key)
+            predicate_refs[key] = (
+                _stable_id(value, path, case_path + f".predicate.{key}")
+                if value is not None
+                else None
+            )
+            if predicate_refs[key] is not None and predicate_refs[key] not in operand_ids:
+                raise DecodeError(
+                    f"{_where(path, case_path + f'.predicate.{key}')}: unknown logical operand"
+                )
+        observed_value = predicate_raw.get("observed")
+        observed_value = (
+            _stable_id(observed_value, path, case_path + ".predicate.observed")
+            if observed_value is not None
+            else None
+        )
+        required_predicate_fields = {
+            "none": set(),
+            "annul_on_false": {"condition_operand"},
+            "produce_boolean": {"condition_operand", "destination_operand"},
+            "test_temporary": {"condition_operand", "observed"},
+            "counter_and_condition": {"counter_operand", "condition_operand"},
+        }[predicate_kind]
+        present_predicate_fields = {
+            key for key, value in {**predicate_refs, "observed": observed_value}.items() if value is not None
+        }
+        if present_predicate_fields != required_predicate_fields:
+            raise DecodeError(
+                f"{_where(path, case_path + '.predicate')}: {predicate_kind} requires exactly "
+                f"{', '.join(sorted(required_predicate_fields)) or 'no reference fields'}"
+            )
+
+        flags: list[OperationFlagBankContract] = []
+        for bank_index, raw_bank in enumerate(_list(item["flags"], path, case_path + ".flags")):
+            bank_path = f"{case_path}.flags[{bank_index}]"
+            bank = _mapping(raw_bank, path, bank_path)
+            _keys(bank, path, bank_path, required=("bank", "completion", "effects"))
+            bank_name = _enum_string(
+                bank["bank"], path, bank_path + ".bank", frozenset(FLAG_BANK_FLAGS)
+            )
+            completion = _enum_string(
+                bank["completion"],
+                path,
+                bank_path + ".completion",
+                FLAG_BANK_COMPLETION_KINDS,
+            )
+            expected_completion = {
+                "FLAGS": "complete_image",
+                "FFLAGS": "accrued_causes",
+            }[bank_name]
+            if completion != expected_completion:
+                raise DecodeError(
+                    f"{_where(path, bank_path + '.completion')}: {bank_name} requires "
+                    f"{expected_completion}"
+                )
+            effects: list[OperationFlagEffect] = []
+            for effect_index, raw_effect in enumerate(
+                _list(bank["effects"], path, bank_path + ".effects")
+            ):
+                effect_path = f"{bank_path}.effects[{effect_index}]"
+                effect = _mapping(raw_effect, path, effect_path)
+                _keys(
+                    effect,
+                    path,
+                    effect_path,
+                    required=("flag", "effect"),
+                    optional=("reference",),
+                )
+                flag_name = _enum_string(
+                    effect["flag"],
+                    path,
+                    effect_path + ".flag",
+                    frozenset(FLAG_BANK_FLAGS[bank_name]),
+                )
+                effect_kind = _enum_string(
+                    effect["effect"], path, effect_path + ".effect", FLAG_EFFECT_KINDS
+                )
+                reference = effect.get("reference")
+                if reference is not None:
+                    reference = _stable_id(
+                        reference, path, effect_path + ".reference"
+                    )
+                requires_reference = effect_kind in FLAG_EFFECT_REFERENCE_KIND
+                if requires_reference != (reference is not None):
+                    raise DecodeError(
+                        f"{_where(path, effect_path)}: {effect_kind} requires exactly "
+                        f"{'reference' if requires_reference else 'no reference fields'}"
+                    )
+                allowed_effects = (
+                    {"preserve", "accrue_source"}
+                    if completion == "accrued_causes"
+                    else {
+                        "preserve",
+                        "clear",
+                        "set",
+                        "write_expression",
+                        "write_condition",
+                    }
+                )
+                if effect_kind not in allowed_effects:
+                    raise DecodeError(
+                        f"{_where(path, effect_path + '.effect')}: {effect_kind} is not "
+                        f"valid for {completion}"
+                    )
+                effects.append(OperationFlagEffect(flag_name, effect_kind, reference))
+            if not effects:
+                raise DecodeError(f"{_where(path, bank_path + '.effects')}: expected non-empty list")
+            _unique((effect.flag for effect in effects), path, bank_path + ".effects.flag")
+            effects_by_flag = {effect.flag: effect for effect in effects}
+            flags.append(
+                OperationFlagBankContract(
+                    bank_name,
+                    completion,
+                    tuple(
+                        effects_by_flag.get(
+                            flag_name,
+                            OperationFlagEffect(flag_name, "preserve"),
+                        )
+                        for flag_name in FLAG_BANK_FLAGS[bank_name]
+                    ),
+                )
+            )
+        _unique((bank.bank for bank in flags), path, case_path + ".flags.bank")
+
+        events: list[OperationEventContract] = []
+        for event_index, raw_event in enumerate(_list(item["events"], path, case_path + ".events")):
+            event_path = f"{case_path}.events[{event_index}]"
+            event = _mapping(raw_event, path, event_path)
+            _keys(
+                event,
+                path,
+                event_path,
+                required=("event", "condition"),
+                optional=("cause",),
+            )
+            event_name = _string(event["event"], path, event_path + ".event")
+            if not re.fullmatch(r"[A-Z][A-Z0-9_]*", event_name):
+                raise DecodeError(f"{_where(path, event_path + '.event')}: invalid event name")
+            cause = (
+                _string(event["cause"], path, event_path + ".cause")
+                if "cause" in event
+                else None
+            )
+            if cause is not None and not re.fullmatch(r"[A-Z][A-Z0-9_]*", cause):
+                raise DecodeError(f"{_where(path, event_path + '.cause')}: invalid cause name")
+            events.append(
+                OperationEventContract(
+                    event_name,
+                    _stable_id(event["condition"], path, event_path + ".condition"),
+                    cause,
+                )
+            )
+        _unique(
+            ((event.event, event.condition) for event in events),
+            path,
+            case_path + ".events",
+        )
+
+        requirements = tuple(
+            _stable_id(value, path, f"{case_path}.additional_requirements[{index}]")
+            for index, value in enumerate(
+                _list(item["additional_requirements"], path, case_path + ".additional_requirements")
+            )
+        )
+        _unique(requirements, path, case_path + ".additional_requirements")
+        sail_entry = _string(item["sail_entry"], path, case_path + ".sail_entry")
+        if not re.fullmatch(r"[A-Za-z][A-Za-z0-9_]*", sail_entry):
+            raise DecodeError(f"{_where(path, case_path + '.sail_entry')}: invalid Sail identifier")
+        conversion: ConversionSignature | None = None
+        if "conversion" in item:
+            conversion_raw = _mapping(item["conversion"], path, case_path + ".conversion")
+            _keys(
+                conversion_raw,
+                path,
+                case_path + ".conversion",
+                required=(
+                    "source_domain",
+                    "source_formats",
+                    "destination_domain",
+                    "destination_formats",
+                    "behavior",
+                ),
+                optional=("integer_signedness",),
+            )
+            source_formats = tuple(
+                _enum_string(
+                    value,
+                    path,
+                    f"{case_path}.conversion.source_formats[{index}]",
+                    NUMERIC_FORMAT_CODES,
+                )
+                for index, value in enumerate(
+                    _list(
+                        conversion_raw["source_formats"],
+                        path,
+                        case_path + ".conversion.source_formats",
+                    )
+                )
+            )
+            destination_formats = tuple(
+                _enum_string(
+                    value,
+                    path,
+                    f"{case_path}.conversion.destination_formats[{index}]",
+                    NUMERIC_FORMAT_CODES,
+                )
+                for index, value in enumerate(
+                    _list(
+                        conversion_raw["destination_formats"],
+                        path,
+                        case_path + ".conversion.destination_formats",
+                    )
+                )
+            )
+            if not source_formats or not destination_formats:
+                raise DecodeError(
+                    f"{_where(path, case_path + '.conversion')}: source and destination formats must be non-empty"
+                )
+            _unique(source_formats, path, case_path + ".conversion.source_formats")
+            _unique(destination_formats, path, case_path + ".conversion.destination_formats")
+            source_domain = _enum_string(
+                conversion_raw["source_domain"], path,
+                case_path + ".conversion.source_domain", NUMERIC_VALUE_DOMAINS,
+            )
+            destination_domain = _enum_string(
+                conversion_raw["destination_domain"], path,
+                case_path + ".conversion.destination_domain", NUMERIC_VALUE_DOMAINS,
+            )
+            integer_signedness = conversion_raw.get("integer_signedness")
+            if source_domain == "integer" or destination_domain == "integer":
+                integer_signedness = _enum_string(
+                    integer_signedness, path,
+                    case_path + ".conversion.integer_signedness", {"signed", "unsigned"},
+                )
+            elif integer_signedness is not None:
+                raise DecodeError(
+                    f"{_where(path, case_path + '.conversion.integer_signedness')}: "
+                    "requires an integer conversion domain"
+                )
+            conversion = ConversionSignature(
+                source_domain=source_domain,
+                source_formats=source_formats,
+                destination_domain=destination_domain,
+                destination_formats=destination_formats,
+                integer_signedness=integer_signedness,
+                behavior=_enum_string(
+                    conversion_raw["behavior"],
+                    path,
+                    case_path + ".conversion.behavior",
+                    CONVERSION_BEHAVIORS,
+                ),
+            )
+        cases.append(
+            OperationCase(
+                id=_stable_id(item["id"], path, case_path + ".id"),
+                applies_to=FormApplicability(tuple(applies_forms), tuple(selectors), tuple(operand_profiles)),
+                additional_requirements=requirements,
+                predicate=PredicateContract(
+                    predicate_kind,
+                    predicate_refs["condition_operand"],
+                    predicate_refs["destination_operand"],
+                    predicate_refs["counter_operand"],
+                    observed_value,
+                ),
+                flags=tuple(flags),
+                events=tuple(events),
+                sail_entry=sail_entry,
+                conversion=conversion,
+            )
+        )
+    if not cases:
+        raise DecodeError(f"{_where(path, 'cases')}: expected non-empty list")
+    _unique((case.id for case in cases), path, "cases.id")
+
+    artifacts_raw = _mapping(data["artifacts"], path, "artifacts")
+    _keys(
+        artifacts_raw,
+        path,
+        "artifacts",
+        required=("semantics", "description"),
+        optional=("diagrams",),
     )
+
+    def artifact_ref(field_path: str, allowed_kinds: frozenset[str]) -> OperationArtifactRef:
+        item = _mapping(artifacts_raw[field_path], path, "artifacts." + field_path)
+        _keys(item, path, "artifacts." + field_path, required=("path", "kind"))
+        return OperationArtifactRef(
+            _relative_reference(item["path"], path, "artifacts." + field_path + ".path"),
+            _enum_string(item["kind"], path, "artifacts." + field_path + ".kind", allowed_kinds),
+        )
+
+    semantics = artifact_ref("semantics", frozenset({"sail"}))
+    description = artifact_ref("description", DESCRIPTION_ARTIFACT_KINDS)
+    diagrams: list[DiagramArtifactRef] = []
+    for index, raw_diagram in enumerate(
+        _list(artifacts_raw.get("diagrams", []), path, "artifacts.diagrams")
+    ):
+        item_path = f"artifacts.diagrams[{index}]"
+        item = _mapping(raw_diagram, path, item_path)
+        _keys(
+            item,
+            path,
+            item_path,
+            required=("id", "path", "kind", "caption", "alt_text"),
+            optional=("case",),
+        )
+        diagrams.append(
+            DiagramArtifactRef(
+                _stable_id(item["id"], path, item_path + ".id"),
+                _relative_reference(item["path"], path, item_path + ".path"),
+                _stable_id(item["kind"], path, item_path + ".kind"),
+                (
+                    _stable_id(item["case"], path, item_path + ".case")
+                    if item.get("case") is not None
+                    else None
+                ),
+                _string(item["caption"], path, item_path + ".caption"),
+                _string(item["alt_text"], path, item_path + ".alt_text"),
+            )
+        )
+    _unique((diagram.id for diagram in diagrams), path, "artifacts.diagrams.id")
+    _unique((diagram.path for diagram in diagrams), path, "artifacts.diagrams.path")
+    return OperationDocument(
+        id=operation_id,
+        title=title,
+        summary=summary,
+        public_instruction=PublicInstructionRef(mnemonic, aliases, width_suffix_aliases),
+        execution_route=_enum_string(
+            data["execution_route"], path, "execution_route", EXECUTION_ROUTES
+        ),
+        privilege=_enum_string(data["privilege"], path, "privilege", PRIVILEGES),
+        repeat=OperationRepeatEligibility(repeat_kind, repeat_observed),
+        operands=tuple(operands),
+        cases=tuple(cases),
+        artifacts=OperationArtifacts(semantics, description, tuple(diagrams)),
+    )
+
+
+def decode_semantic_condition_registry(
+    path: Path, raw: Any
+) -> SemanticConditionRegistry:
+    """Decode the registry that owns operation-event condition prose."""
+
+    data = _mapping(raw, path, "")
+    _keys(data, path, "", required=("conditions",))
+    conditions: list[SemanticConditionDefinition] = []
+    for index, raw_condition in enumerate(
+        _list(data["conditions"], path, "conditions")
+    ):
+        item_path = f"conditions[{index}]"
+        item = _mapping(raw_condition, path, item_path)
+        _keys(item, path, item_path, required=("id", "reader_text"))
+        conditions.append(
+            SemanticConditionDefinition(
+                id=_stable_id(item["id"], path, item_path + ".id"),
+                reader_text=_string(
+                    item["reader_text"], path, item_path + ".reader_text"
+                ),
+            )
+        )
+    if not conditions:
+        raise DecodeError(f"{_where(path, 'conditions')}: expected non-empty list")
+    _unique((condition.id for condition in conditions), path, "conditions.id")
+    return SemanticConditionRegistry(tuple(conditions))
+
+
+def decode_named_value_registry(path: Path, raw: Any) -> NamedValueRegistry:
+    """Decode the finite registry of operation-defined semantic values."""
+
+    data = _mapping(raw, path, "")
+    _keys(data, path, "", required=("values",))
+    values: list[NamedValueDefinition] = []
+    for index, raw_value in enumerate(_list(data["values"], path, "values")):
+        item_path = f"values[{index}]"
+        item = _mapping(raw_value, path, item_path)
+        _keys(item, path, item_path, required=("id", "kind", "reader_term"))
+        values.append(
+            NamedValueDefinition(
+                id=_stable_id(item["id"], path, item_path + ".id"),
+                kind=_enum_string(
+                    item["kind"], path, item_path + ".kind", NAMED_VALUE_KINDS
+                ),
+                reader_term=_string(
+                    item["reader_term"], path, item_path + ".reader_term"
+                ),
+            )
+        )
+    if not values:
+        raise DecodeError(f"{_where(path, 'values')}: expected non-empty list")
+    _unique((value.id for value in values), path, "values.id")
+    return NamedValueRegistry(tuple(values))
+
+
+def decode_flag_effect_definition_registry(
+    path: Path, raw: Any
+) -> FlagEffectDefinitionRegistry:
+    """Decode the registry that owns typed flag-reference reader text."""
+
+    data = _mapping(raw, path, "")
+    _keys(data, path, "", required=("definitions",))
+    definitions: list[FlagEffectDefinition] = []
+    for index, raw_definition in enumerate(
+        _list(data["definitions"], path, "definitions")
+    ):
+        item_path = f"definitions[{index}]"
+        item = _mapping(raw_definition, path, item_path)
+        _keys(item, path, item_path, required=("id", "kind", "reader_text"))
+        definitions.append(
+            FlagEffectDefinition(
+                id=_stable_id(item["id"], path, item_path + ".id"),
+                kind=_enum_string(
+                    item["kind"],
+                    path,
+                    item_path + ".kind",
+                    FLAG_EFFECT_DEFINITION_KINDS,
+                ),
+                reader_text=_string(
+                    item["reader_text"], path, item_path + ".reader_text"
+                ),
+            )
+        )
+    if not definitions:
+        raise DecodeError(f"{_where(path, 'definitions')}: expected non-empty list")
+    _unique((definition.id for definition in definitions), path, "definitions.id")
+    return FlagEffectDefinitionRegistry(tuple(definitions))
 
 
 def decode_encodings(path: Path, raw: Any) -> EncodingsDocument:
@@ -1248,7 +2044,7 @@ def decode_encodings(path: Path, raw: Any) -> EncodingsDocument:
     return EncodingsDocument(tuple(forms))
 
 
-def decode_instruction_index(path: Path, raw: Any) -> InstructionSetIndex:
+def decode_instruction_set_index(path: Path, raw: Any) -> InstructionSetIndex:
     data = _mapping(raw, path, "")
     _keys(data, path, "", required=("title", "include"), optional=("introduction",))
     introduction = data.get("introduction")
@@ -1281,6 +2077,67 @@ def decode_extension_catalog(path: Path, raw: Any) -> ExtensionCatalog:
     return ExtensionCatalog(extensions)
 
 
+def decode_cpuid_flag_registry(path: Path, raw: Any) -> CpuidFlagRegistry:
+    data = _mapping(raw, path, "")
+    _keys(data, path, "", required=("cpuid_flags",))
+    flags: list[CpuidFlag] = []
+    for index, raw_flag in enumerate(
+        _list(data["cpuid_flags"], path, "cpuid_flags")
+    ):
+        flag_path = f"cpuid_flags[{index}]"
+        flag = _mapping(raw_flag, path, flag_path)
+        _keys(flag, path, flag_path, required=("id", "token", "location"))
+        token = _string(flag["token"], path, flag_path + ".token")
+        if not re.fullmatch(r"[A-Za-z][A-Za-z0-9]*", token):
+            raise DecodeError(f"{_where(path, flag_path + '.token')}: invalid public token")
+        location_path = flag_path + ".location"
+        location = _mapping(flag["location"], path, location_path)
+        _keys(
+            location,
+            path,
+            location_path,
+            required=("class", "leaf", "index", "bit"),
+        )
+        selector_class = _nonnegative_integer(
+            location["class"], path, location_path + ".class"
+        )
+        leaf = _nonnegative_integer(location["leaf"], path, location_path + ".leaf")
+        result_index = _nonnegative_integer(
+            location["index"], path, location_path + ".index"
+        )
+        bit = _nonnegative_integer(location["bit"], path, location_path + ".bit")
+        if bit >= 64:
+            raise DecodeError(f"{_where(path, location_path + '.bit')}: expected 0..63")
+        flags.append(
+            CpuidFlag(
+                id=_stable_id(flag["id"], path, flag_path + ".id"),
+                token=token,
+                location=CpuidFlagLocation(
+                    selector_class=selector_class,
+                    leaf=leaf,
+                    index=result_index,
+                    bit=bit,
+                ),
+            )
+        )
+    _unique((flag.id for flag in flags), path, "cpuid_flags.id")
+    _unique((flag.token for flag in flags), path, "cpuid_flags.token")
+    _unique(
+        (
+            (
+                flag.location.selector_class,
+                flag.location.leaf,
+                flag.location.index,
+                flag.location.bit,
+            )
+            for flag in flags
+        ),
+        path,
+        "cpuid_flags.location",
+    )
+    return CpuidFlagRegistry(tuple(flags))
+
+
 def decode_extension_manifest(path: Path, raw: Any) -> ExtensionManifest:
     data = _mapping(raw, path, "")
     _keys(
@@ -1304,29 +2161,29 @@ def decode_extension_manifest(path: Path, raw: Any) -> ExtensionManifest:
     availability = None
     if "availability" in data:
         avail = _mapping(data["availability"], path, "availability")
-        _keys(avail, path, "availability", required=("cpuid",))
-        cpuid = _mapping(avail["cpuid"], path, "availability.cpuid")
-        _keys(
-            cpuid,
-            path,
-            "availability.cpuid",
-            required=("feature", "class", "leaf", "index", "bit"),
+        _keys(avail, path, "availability", required=("required_cpuid_flags",))
+        required_cpuid_flags = tuple(
+            _stable_id(
+                value,
+                path,
+                f"availability.required_cpuid_flags[{index}]",
+            )
+            for index, value in enumerate(
+                _list(
+                    avail["required_cpuid_flags"],
+                    path,
+                    "availability.required_cpuid_flags",
+                )
+            )
         )
-        selector_class = _nonnegative_integer(
-            cpuid["class"], path, "availability.cpuid.class"
+        if not required_cpuid_flags:
+            raise DecodeError(
+                f"{_where(path, 'availability.required_cpuid_flags')}: expected non-empty list"
+            )
+        _unique(
+            required_cpuid_flags, path, "availability.required_cpuid_flags"
         )
-        leaf = _nonnegative_integer(cpuid["leaf"], path, "availability.cpuid.leaf")
-        index = _nonnegative_integer(cpuid["index"], path, "availability.cpuid.index")
-        bit = _nonnegative_integer(cpuid["bit"], path, "availability.cpuid.bit")
-        if bit >= 64:
-            raise DecodeError(f"{_where(path, 'availability.cpuid.bit')}: expected 0..63")
-        availability = CpuidAvailability(
-            feature=_string(cpuid["feature"], path, "availability.cpuid.feature"),
-            selector_class=selector_class,
-            leaf=leaf,
-            index=index,
-            bit=bit,
-        )
+        availability = ExtensionAvailability(required_cpuid_flags)
     extensions = tuple(
         _relative_reference(value, path, f"extensions[{index}]")
         for index, value in enumerate(
@@ -2285,16 +3142,25 @@ def decode_yaml(path: Path) -> DecodedDocument:
     except (OSError, yaml.YAMLError) as exc:
         raise DecodeError(f"{path}: {exc}") from exc
     name = path.name
-    if name == "instruction.yaml":
-        return decode_instruction(path, raw)
+    if "diagrams" in path.parts and path.suffix == ".yaml":
+        from vector_diagrams import VectorDiagramError, load as load_vector_diagram
+
+        try:
+            return load_vector_diagram(path)  # type: ignore[return-value]
+        except VectorDiagramError as exc:
+            raise DecodeError(str(exc)) from exc
+    if name == "operation.yaml":
+        return decode_operation(path, raw)
     if name == "encodings.yaml":
         return decode_encodings(path, raw)
     if name == "instructions.yaml":
-        return decode_instruction_index(path, raw)
+        return decode_instruction_set_index(path, raw)
     if name == "extension.yaml":
         return decode_extension_manifest(path, raw)
     if name == "extensions.yaml":
         return decode_extension_catalog(path, raw)
+    if name == "cpuid_flags.yaml":
+        return decode_cpuid_flag_registry(path, raw)
     if name == "operands.yaml":
         return decode_operand_registry(path, raw)
     if name == "sizes.yaml":
@@ -2303,6 +3169,12 @@ def decode_yaml(path: Path) -> DecodedDocument:
         return decode_register_registry(path, raw)
     if name == "conditions.yaml":
         return decode_condition_registry(path, raw)
+    if name == "semantic_conditions.yaml":
+        return decode_semantic_condition_registry(path, raw)
+    if name == "named_values.yaml":
+        return decode_named_value_registry(path, raw)
+    if name == "flag_effect_definitions.yaml":
+        return decode_flag_effect_definition_registry(path, raw)
     if name == "definition.yaml" and path.parent.name == "effective_address":
         return decode_ea_registry(path, raw)
     if path.match("*/interfaces/abi/plt_conformance_vectors.yaml"):

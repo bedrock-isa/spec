@@ -2,7 +2,7 @@ forms:
 - id: long.popcnt_x_ea_e_rn_d
   class: long
   bits: 1111001011zz111ddddeeeeeee
-  syntax: POPCNT.BWLQ(z) <ea>(e), Rn(d)
+  syntax: POPCNT.{B|W|L|Q}(z) <ea>(e), Rn(d)
   operands:
   - name: src
     type: EA
@@ -20,7 +20,7 @@ forms:
 - id: medium.popcnt_x_rn_s_rn_d
   class: medium
   bits: 10011zz111ssssdddd
-  syntax: POPCNT.BWLQ(z) Rn(s), Rn(d)
+  syntax: POPCNT.{B|W|L|Q}(z) Rn(s), Rn(d)
   operands:
   - name: src
     type: Rn

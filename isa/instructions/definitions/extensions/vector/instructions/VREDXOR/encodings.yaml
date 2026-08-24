@@ -2,7 +2,7 @@ forms:
 - id: extralong.vredxor.v125
   class: extralong
   bits: 11111101111110101zz11pppprrrrvvvvv
-  syntax: VREDXOR.BWLQ(z) Pn(p), Vn(v), Rn(r)
+  syntax: VREDXOR.{B|W|L|Q}(z) Pn(p), Vn(v), Rn(r)
   operands:
   - name: govern
     type: Pn
@@ -22,7 +22,7 @@ forms:
 - id: xxlong.vredxor.v226
   class: xxlong
   bits: 11111111000000101110zz00111pppprrrreeeeeee
-  syntax: VREDXOR.BWLQ(z) Pn(p), <ea>(e), Rn(r)
+  syntax: VREDXOR.{B|W|L|Q}(z) Pn(p), <ea>(e), Rn(r)
   operands:
   - name: govern
     type: Pn

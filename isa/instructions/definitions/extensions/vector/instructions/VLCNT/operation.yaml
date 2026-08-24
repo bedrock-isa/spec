@@ -1,0 +1,35 @@
+operation: VLCNT
+title: Vector Lane Count
+summary: Write the number of lanes of the selected element width.
+public_instruction:
+  mnemonic: VLCNT
+  width_suffix_aliases: true
+execution_route: vector
+privilege: unprivileged
+repeat:
+  kind: not_eligible
+operands:
+- id: dst
+  role: destination
+  access: write
+  value_domain: integer
+  profiles:
+  - Rn
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - long.vlcnt.v20
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags: []
+  events: []
+  sail_entry: execute_VLCNT
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

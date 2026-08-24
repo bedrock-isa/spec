@@ -2,7 +2,7 @@ forms:
 - id: xxlong.ploop.v233
   class: xxlong
   bits: 11111111000000101010zz0rrrrssssppppeeeeeee
-  syntax: PLOOP.BWLQ(z) Rn(r), Rn(s), Pn(p), <ea>(e)
+  syntax: PLOOP.{B|W|L|Q}(z) Rn(r), Rn(s), Pn(p), <ea>(e)
   operands:
   - name: remaining
     type: Rn

@@ -1,8 +1,0 @@
-mnemonic: VEXTZL
-title: VEXTZL (Vector)
-summary: Unsigned B or W to L.
-description: Unsigned B or W to L.
-attributes:
-  class: vector
-  family: vector
-  privilege: unprivileged

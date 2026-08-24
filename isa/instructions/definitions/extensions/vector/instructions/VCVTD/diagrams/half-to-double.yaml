@@ -1,0 +1,43 @@
+kind: conversion-map
+view: {visible_bytes: 16, lane_order: right-to-left, scalable: true}
+container_bits: 64
+source:
+  label: source H fields
+  element_bits: 16
+  containers:
+  - cells:
+    - {value: x0, effect: ignored, appearance: discarded, bits: 48}
+    - {value: h0, effect: copy, appearance: source, bits: 16}
+  - cells:
+    - {value: x1, effect: ignored, appearance: discarded, bits: 48}
+    - {value: h1, effect: copy, appearance: source, bits: 16}
+result:
+  label: new D containers
+  element_bits: 64
+  containers:
+  - cells:
+    - {value: 'D(h0)', effect: copy, appearance: source, bits: 64}
+  - cells:
+    - {value: d1, effect: preserve, appearance: old, bits: 64}
+predicate:
+  label: predicate Pp
+  element_bits: 8
+  cells:
+  - {value: '1', effect: set, appearance: predicate-on}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: '0', effect: clear, appearance: predicate-off}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+connections:
+- {from_row: source, from_container: 0, from_cell: 1, to_row: result, to_container: 0, to_cell: 0, effect: copy, display: transfer}

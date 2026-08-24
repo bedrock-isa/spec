@@ -1,0 +1,42 @@
+operation: JMP
+title: Jump
+summary: Transfers control to the target address.
+public_instruction:
+  mnemonic: JMP
+execution_route: control_flow
+privilege: unprivileged
+repeat:
+  kind: not_eligible
+operands:
+- id: target
+  role: control_target
+  access: read
+  value_domain: integer
+  profiles:
+  - imm8s
+  - imm16s
+  - imm32s
+  - EA
+  - Rn
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - short.jmp_imm8s_i
+    - medium.jmp_ea
+    - medium.jmp_ea.2
+    - medium.jmp_x_ea_e
+    - medium.jmp_x_rn
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags: []
+  events: []
+  sail_entry: execute_JMP
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

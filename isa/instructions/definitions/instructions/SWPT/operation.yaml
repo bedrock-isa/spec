@@ -1,0 +1,34 @@
+operation: SWPT
+title: Switch Page Table
+summary: Performs the switch page table operation.
+public_instruction:
+  mnemonic: SWPT
+execution_route: tlb_and_context
+privilege: supervisor
+repeat:
+  kind: not_eligible
+operands:
+- id: new_ptcr
+  role: source
+  access: read
+  value_domain: integer
+  profiles:
+  - Rn
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - medium.swpt_rn_p
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags: []
+  events: []
+  sail_entry: execute_SWPT
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

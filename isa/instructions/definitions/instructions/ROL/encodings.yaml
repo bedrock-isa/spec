@@ -2,7 +2,7 @@ forms:
 - id: short.rol_x_rn_s_rn_d
   class: short
   bits: 01100zssssdddd
-  syntax: ROL.LQ(z) Rn(s), Rn(d)
+  syntax: ROL.{L|Q}(z) Rn(s), Rn(d)
   operands:
   - name: count
     type: Rn
@@ -18,7 +18,7 @@ forms:
 - id: long.rol_x_rn_s_ea_e
   class: long
   bits: 1111001110zz101sssseeeeeee
-  syntax: ROL.BWLQ(z) Rn(s), <ea>(e)
+  syntax: ROL.{B|W|L|Q}(z) Rn(s), <ea>(e)
   operands:
   - name: count
     type: Rn
@@ -40,7 +40,7 @@ forms:
 - id: long.rol_x_imm6_i_ea_e
   class: long
   bits: 1111010100zz0iiiiiieeeeeee
-  syntax: ROL.BWLQ(z) imm6(i), <ea>(e)
+  syntax: ROL.{B|W|L|Q}(z) imm6(i), <ea>(e)
   operands:
   - name: count
     type: imm6

@@ -1,9 +1,0 @@
-mnemonic: LJMP
-title: Long Jump
-summary: Atomically transfers control to a new CS:PC pair.
-description: 'Long Jump is a segment-changing control transfer. It commits the new CS and PC as a single architectural control-transfer step. The two-operand encoding takes the new CS image from an Rn register. Its target EA has Q interpretation width: a memory operand reads a 64-bit offset and a register or immediate operand supplies its value directly.'
-attributes:
-  class: control_flow
-  family: control_flow
-  privilege: unprivileged
-additional_description: details.tex

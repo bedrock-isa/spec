@@ -1,0 +1,40 @@
+operation: FMOVCR
+title: Floating-Point Move Constant
+summary: Loads a named architectural binary64 constant selected by an unsigned 16-bit ID.
+public_instruction:
+  mnemonic: FMOVCR
+execution_route: fpu
+privilege: unprivileged
+repeat:
+  kind: rep
+operands:
+- id: constant_id
+  role: source
+  access: read
+  value_domain: integer
+  profiles:
+  - fconst_id
+- id: dst
+  role: destination
+  access: write
+  value_domain: floating
+  profiles:
+  - Fn
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - medium.fmovcr_x_imm16_fn_d
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags: []
+  events: []
+  sail_entry: execute_FMOVCR
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

@@ -1,8 +1,0 @@
-mnemonic: VCLR
-title: VCLR (Vector)
-summary: Clear every bit of `Vd`.
-description: Clear every bit of `Vd`.
-attributes:
-  class: vector
-  family: vector
-  privilege: unprivileged

@@ -1,8 +1,0 @@
-mnemonic: VREVBYTE
-title: VREVBYTE (Vector)
-summary: Reverse bytes within each element.
-description: Reverse bytes within each element.
-attributes:
-  class: vector
-  family: vector
-  privilege: unprivileged

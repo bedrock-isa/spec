@@ -1,8 +1,0 @@
-mnemonic: SYNCCACHE
-title: Synchronize Caches
-summary: Synchronize one cache-maintenance block for local instruction fetch.
-description: Computes and translates the address-role EA, writes dirty data for its CPUID-sized maintenance block into normal-memory coherence throughout the coherence domain, invalidates the executing logical processor's matching instruction, decoded, and prefetch state, and serializes later instruction fetch.
-attributes:
-  class: system
-  family: cache
-  privilege: supervisor

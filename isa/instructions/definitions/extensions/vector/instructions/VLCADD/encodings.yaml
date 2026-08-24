@@ -2,7 +2,7 @@ forms:
 - id: long.vlcadd.v21
   class: long
   bits: 11111010011000zz000010rrrr
-  syntax: VLCADD.BWLQ(z) <imm8s>, Rn(r)
+  syntax: VLCADD.{B|W|L|Q}(z) <imm8s>, Rn(r)
   operands:
   - name: offset
     type: imm8s

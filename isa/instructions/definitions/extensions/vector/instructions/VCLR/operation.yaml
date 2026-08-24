@@ -1,0 +1,23 @@
+operation: VCLR
+title: VCLR (Vector)
+summary: Clears the complete scalable destination image.
+public_instruction:
+  mnemonic: VCLR
+execution_route: vector
+privilege: unprivileged
+repeat:
+  kind: not_eligible
+operands:
+- {id: dst, role: destination, access: write, value_domain: vector, profiles: [Vn]}
+cases:
+- id: all_forms
+  applies_to:
+    forms: [long.vclr.v16]
+  additional_requirements: []
+  predicate: {kind: none}
+  flags: []
+  events: []
+  sail_entry: execute_VCLR
+artifacts:
+  semantics: {path: semantics.sail, kind: sail}
+  description: {path: description.tex, kind: tex}

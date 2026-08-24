@@ -1,0 +1,50 @@
+operation: DJcc
+title: Decrement And Jump Conditional
+summary: Performs the decrement and jump conditional operation.
+public_instruction:
+  mnemonic: DJcc
+execution_route: control_flow
+privilege: unprivileged
+repeat:
+  kind: not_eligible
+operands:
+- id: cc
+  role: source
+  access: read
+  value_domain: integer
+  profiles:
+  - condition
+- id: counter
+  role: counter
+  access: read_write
+  value_domain: integer
+  profiles:
+  - Rn
+- id: target
+  role: control_target
+  access: read
+  value_domain: integer
+  profiles:
+  - EA
+  - Rn
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - long.djcc_rn_r_ea_e
+    - long.djcc_rn_r_rn_e
+  additional_requirements: []
+  predicate:
+    kind: counter_and_condition
+    counter_operand: counter
+    condition_operand: cc
+  flags: []
+  events: []
+  sail_entry: execute_DJcc
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

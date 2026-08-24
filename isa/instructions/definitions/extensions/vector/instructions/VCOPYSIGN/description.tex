@@ -1,0 +1,13 @@
+For each active H, S, or D element, the result takes its magnitude bits from
+the old destination element and its sign bit from the corresponding source
+element.
+
+In the register form, the source and old destination come from corresponding
+vector lanes. With a memory source, the sign bit comes from the active memory
+element and the magnitude bits come from the old destination lane. In both
+forms, an inactive destination lane retains its previous value.
+
+The memory-destination form reads the magnitude bits from each active
+destination memory element and the sign bit from the corresponding
+source-register lane, then writes the combined result back to that element. An
+inactive memory element retains its previous value.

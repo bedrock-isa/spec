@@ -1,0 +1,11 @@
+The governing predicate selects the source elements from Vn or the
+corresponding contiguous memory locations. The B, W, L, and Q forms add the
+selected elements modulo the element width and zero-extend the result to Rn.
+An empty integer selection produces zero.
+
+The H, S, and D forms begin with positive zero and add active elements in
+increasing logical-lane order without reassociation. An empty floating-point
+selection therefore produces positive zero. A completed floating-point
+reduction accrues generated NV, OF, UF, and NX causes in FFLAGS; DZ is
+unchanged. An enabled generated cause raises FLOATING\_POINT\_FAULT and
+suppresses the scalar result and newly accrued causes.

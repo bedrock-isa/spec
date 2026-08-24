@@ -1,0 +1,56 @@
+operation: IJcc
+title: Increment And Jump Conditional
+summary: Performs the increment and jump conditional operation.
+public_instruction:
+  mnemonic: IJcc
+execution_route: control_flow
+privilege: unprivileged
+repeat:
+  kind: not_eligible
+operands:
+- id: cc
+  role: source
+  access: read
+  value_domain: integer
+  profiles:
+  - condition
+- id: index
+  role: counter
+  access: read_write
+  value_domain: integer
+  profiles:
+  - Rn
+- id: bound
+  role: source
+  access: read
+  value_domain: integer
+  profiles:
+  - Rn
+- id: target
+  role: control_target
+  access: read
+  value_domain: integer
+  profiles:
+  - EA
+  - Rn
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - extralong.ijcc_rn_i_rn_b_ea_e
+    - extralong.ijcc_rn_i_rn_b_rn_e
+  additional_requirements: []
+  predicate:
+    kind: counter_and_condition
+    counter_operand: index
+    condition_operand: cc
+  flags: []
+  events: []
+  sail_entry: execute_IJcc
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

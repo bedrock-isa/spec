@@ -1,0 +1,27 @@
+operation: VREDMINS
+title: Vector Signed Minimum Reduction
+summary: Finds the signed minimum of selected integer lanes and writes the scalar result to Rn.
+public_instruction:
+  mnemonic: VREDMINS
+execution_route: vector
+privilege: unprivileged
+repeat:
+  kind: not_eligible
+operands:
+- {id: govern, role: governing_predicate, access: read, value_domain: predicate, profiles: [Pn]}
+- {id: src, role: source, access: read, value_domain: vector, profiles: [Vn, VEA]}
+- {id: dst, role: destination, access: write, value_domain: integer, profiles: [Rn]}
+cases:
+- id: all_forms
+  applies_to:
+    forms: [extralong.vredmins.v119, xxlong.vredmins.v220]
+    selectors:
+    - {domain: BWLQ, values: [B, W, L, Q]}
+  additional_requirements: []
+  predicate: {kind: none}
+  flags: []
+  events: []
+  sail_entry: execute_VREDMINS
+artifacts:
+  semantics: {path: semantics.sail, kind: sail}
+  description: {path: description.tex, kind: tex}

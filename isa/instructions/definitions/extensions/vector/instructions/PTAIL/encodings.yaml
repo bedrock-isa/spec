@@ -2,7 +2,7 @@ forms:
 - id: long.ptail.v5
   class: long
   bits: 11111010010100zz01rrrrpppp
-  syntax: PTAIL.BWLQ(z) Rn(r), Pn(p)
+  syntax: PTAIL.{B|W|L|Q}(z) Rn(r), Pn(p)
   operands:
   - name: count
     type: Rn

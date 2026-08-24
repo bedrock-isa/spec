@@ -1,8 +1,0 @@
-mnemonic: PMOV
-title: PMOV (Vector)
-summary: Read a complete packed predicate image from memory.
-description: Read a complete packed predicate image from memory. Write a complete packed predicate image to memory.
-attributes:
-  class: vector
-  family: vector
-  privilege: unprivileged

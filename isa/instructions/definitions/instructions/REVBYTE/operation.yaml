@@ -1,0 +1,43 @@
+operation: REVBYTE
+title: Reverse Bytes
+summary: Performs the reverse bytes operation.
+public_instruction:
+  mnemonic: REVBYTE
+execution_route: integer_alu
+privilege: unprivileged
+repeat:
+  kind: rep_and_repcc
+  observed:
+    kind: result
+    operand: dst
+operands:
+- id: dst
+  role: destination
+  access: read_write
+  value_domain: integer
+  profiles:
+  - Rn
+  - EA
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - short.revbyte_w_rn_r
+    - short.revbyte_l_rn_r
+    - short.revbyte_q_rn_r
+    - medium.revbyte_w_ea
+    - medium.revbyte_l_ea
+    - medium.revbyte_q_ea
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags: []
+  events: []
+  sail_entry: execute_REVBYTE
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

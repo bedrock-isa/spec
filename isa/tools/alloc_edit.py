@@ -977,21 +977,17 @@ def validate_candidate_document(
     candidate: dict[str, Any],
 ) -> None:
     from encoding_fields import resolve_encoding_form, validate_encoding_template
-    from defs_schema import decode_encodings, decode_instruction
+    from defs_schema import decode_encodings
     from encoding_store import LocatedEncoding, allocation_entry_dict, load_encoding_store
 
     candidate_doc = decode_encodings(target_path, candidate)
     store = load_encoding_store(defs_root)
     class_names = set(store.classes_by_name)
-    instruction_path = target_path.with_name("instruction.yaml")
-    instruction = decode_instruction(instruction_path, load_yaml(instruction_path))
-    if instruction.mnemonic != target_path.parent.name:
-        raise ValueError(f"{instruction_path}: mnemonic does not match directory")
     candidate_forms = []
     for form in candidate_doc.forms:
         validate_encoding_template(
             form,
-            instruction.mnemonic,
+            target_path.parent.name,
             store.field_types,
             target_path,
         )

@@ -18,6 +18,7 @@ from encoding_architecture import (
     OPERATOR_SPACE_PREFIXES,
     operator_space_from_prefix,
 )
+import decode_ir
 
 
 def _matches_pattern(value: str, pattern: str) -> bool:
@@ -187,6 +188,37 @@ class RepositoryGenerationTests(unittest.TestCase):
         rendered = gen_isa.render(gen_isa.REPOSITORY_ROOT)
         self.assertIn("payload_bits: 7,", rendered)
         self.assertIn("payload_bits: 34,", rendered)
+
+    def test_generated_rust_preserves_registry_and_every_form_availability_rule(
+        self,
+    ) -> None:
+        rendered = gen_isa.render(gen_isa.REPOSITORY_ROOT)
+        ir = decode_ir.load_decode_ir(
+            gen_isa.REPOSITORY_ROOT / "isa" / "instructions" / "definitions"
+        )
+        for flag in ir.cpuid_flags:
+            with self.subTest(flag=flag.id):
+                self.assertIn(
+                    "GeneratedCpuidFlag { "
+                    f"id: {gen_isa.rust_string(flag.id)}, "
+                    f"token: {gen_isa.rust_string(flag.token)}, "
+                    f"selector_class: {flag.selector_class}, leaf: {flag.leaf}, "
+                    f"index: {flag.index}, bit: {flag.bit} "
+                    "}",
+                    rendered,
+                )
+        generated_forms = {
+            match.group(1): line
+            for line in rendered.splitlines()
+            if (match := re.search(r'GeneratedForm \{ .*? id: "([^"]+)"', line))
+        }
+        self.assertEqual(set(generated_forms), {form.key for form in ir.forms})
+        for form in ir.forms:
+            with self.subTest(form=form.key):
+                self.assertIn(
+                    f"availability: {gen_isa.generated_availability_rules(form)}",
+                    generated_forms[form.key],
+                )
 
     def test_canonical_operator_space_prefixes_drive_generated_rust_rules_and_cases(
         self,

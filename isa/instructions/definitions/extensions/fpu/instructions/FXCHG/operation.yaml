@@ -1,0 +1,40 @@
+operation: FXCHG
+title: Floating-Point Exchange
+summary: Performs the floating-point exchange operation.
+public_instruction:
+  mnemonic: FXCHG
+execution_route: fpu
+privilege: unprivileged
+repeat:
+  kind: rep
+operands:
+- id: lhs
+  role: destination
+  access: read_write
+  value_domain: floating
+  profiles:
+  - Fn
+- id: rhs
+  role: destination
+  access: read_write
+  value_domain: floating
+  profiles:
+  - Fn
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - medium.fxchg_fn_l_fn_r
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags: []
+  events: []
+  sail_entry: execute_FXCHG
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

@@ -1,8 +1,0 @@
-mnemonic: VSLIDEUP
-title: VSLIDEUP (Vector)
-summary: Shift elements toward higher lane indices.
-description: Shift elements toward higher lane indices.
-attributes:
-  class: vector
-  family: vector
-  privilege: unprivileged

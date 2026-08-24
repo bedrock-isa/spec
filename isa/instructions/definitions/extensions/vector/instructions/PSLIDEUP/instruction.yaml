@@ -1,8 +1,0 @@
-mnemonic: PSLIDEUP
-title: PSLIDEUP (Vector)
-summary: Destructively shift the typed predicate lane sequence toward higher indices, inserting zero.
-description: Destructively shift the typed predicate lane sequence toward higher indices, inserting zero.
-attributes:
-  class: vector
-  family: vector
-  privilege: unprivileged

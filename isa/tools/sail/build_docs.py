@@ -18,6 +18,7 @@ ROOT = TOOLS_ROOT.parents[2]
 SAIL_SOURCE_ROOT = ROOT / "isa"
 SAIL_PROJECT = SAIL_SOURCE_ROOT / "bedrock.sail_project"
 OWNER_SOURCE_PATHS = {
+    "operation_entries": (),
     "core": (
         SAIL_SOURCE_ROOT / "execution" / "core" / "types.sail",
         SAIL_SOURCE_ROOT / "execution" / "core" / "state.sail",
@@ -222,58 +223,6 @@ def _known_calls(
     }
 
 
-def _derive_route_owners(
-    routes: set[str],
-    operations_by_route: dict[str, set[str]],
-    sources: dict[str, str],
-    qualified_by_name: dict[str, str],
-) -> dict[str, list[str]]:
-    root = sources.get("postlude.execute_full")
-    entry = qualified_by_name.get("execute_route_exact")
-    if root is None or entry != "core.execute_route_exact":
-        raise ValueError("Sail dispatch ownership root is missing or ambiguous")
-    if entry not in _known_calls(root, qualified_by_name):
-        raise ValueError("postlude.execute_full does not dispatch through execute_route_exact")
-
-    result: dict[str, list[str]] = {}
-    for route in sorted(routes):
-        owners: set[str] = set()
-
-        def follow(dispatcher: str, active: set[str]) -> None:
-            if dispatcher in active:
-                raise ValueError(f"cyclic Sail route dispatch for {route}: {dispatcher}")
-            arms = _route_dispatch_arms(sources[dispatcher])
-            if arms is None:
-                raise ValueError(f"expected Sail route dispatcher: {dispatcher}")
-            body = arms.get(route, arms.get("_"))
-            if body is None:
-                raise ValueError(f"unhandled Sail route {route} in {dispatcher}")
-            calls = _known_calls(body, qualified_by_name)
-            if not calls:
-                raise ValueError(f"route {route} has no behavior root in {dispatcher}")
-            owners.add(dispatcher)
-            for callee in calls:
-                owners.add(callee)
-                if _route_dispatch_arms(sources[callee]) is not None:
-                    follow(callee, active | {dispatcher})
-
-        follow(entry, set())
-
-        selected_operations = operations_by_route[route]
-        selectors = set()
-        for owner in sorted(owners):
-            if _route_dispatch_arms(sources[owner]) is not None:
-                continue
-            for callee in _known_calls(sources[owner], qualified_by_name):
-                if _operation_discriminators(sources[callee]) & selected_operations:
-                    selectors.add(callee)
-        owners.update(selectors)
-        if not owners:
-            raise ValueError(f"Sail route has no derived owners: {route}")
-        result[route] = sorted(owners)
-    return result
-
-
 def _catalog_predicate_modes(functions: dict[str, object]) -> dict[str, set[str]]:
     catalog_record = _function_record(functions.get("primary_form_catalog"))
     if catalog_record is None:
@@ -349,20 +298,37 @@ def build_semantic_index(doc_bundle: dict[str, object]) -> dict[str, object]:
     for mnemonic, route in routes.items():
         operations_by_route.setdefault(route, set()).add(f"Op_{mnemonic}")
     expected_routes = {
-        generate_catalog.ROUTE_CONSTRUCTORS[document.attributes.family]
+        generate_catalog.ROUTE_CONSTRUCTORS[document.execution_route]
         for document in documents.values()
     }
     if set(operations_by_route) != expected_routes:
         raise ValueError("Sail route classes differ from instruction definitions")
-    route_owners = _derive_route_owners(
-        set(operations_by_route), operations_by_route, owner_sources, qualified_by_name
+    operation_entries: dict[str, tuple[str | None, ...]] = {}
+    for document in documents.values():
+        entries = tuple(dict.fromkeys(
+            qualified_by_name.get(case.sail_entry)
+            for case in document.cases
+        ))
+        operation_entries[document.public_instruction.mnemonic] = entries
+    missing_entries = sorted(
+        mnemonic for mnemonic, qualified in operation_entries.items()
+        if not qualified
+        or any(entry is None or not entry.startswith("operation_entries.") for entry in qualified)
     )
-    predicate_modes = _catalog_predicate_modes(functions)
-    if set(predicate_modes) != set(mnemonics):
-        raise ValueError(f"incomplete Sail predicate-mode inventory: {len(predicate_modes)}")
-    predicate_dispatch_owners = _predicate_dispatch_owners(
-        owner_sources, qualified_by_name
-    )
+    if missing_entries:
+        raise ValueError(
+            "Sail operation-entry dispatcher is incomplete: "
+            + ", ".join(missing_entries)
+        )
+    route_owners = {
+        route: sorted(
+            entry
+            for mnemonic in mnemonics
+            for entry in operation_entries[mnemonic]
+            if routes[mnemonic] == route
+        )
+        for route in sorted(operations_by_route)
+    }
 
     forms_by_mnemonic: dict[str, list[str]] = {mnemonic: [] for mnemonic in mnemonics}
     forms: list[dict[str, str]] = []
@@ -385,17 +351,8 @@ def build_semantic_index(doc_bundle: dict[str, object]) -> dict[str, object]:
     for mnemonic in mnemonics:
         operation = f"Op_{mnemonic}"
         route = routes[mnemonic]
-        direct_functions = {
-            qualified for qualified in route_owners[route]
-            if operation in _operation_discriminators(owner_sources[qualified])
-        }
-        if not direct_functions:
-            for mode in predicate_modes.get(mnemonic, set()):
-                direct_functions.update(predicate_dispatch_owners.get(mode, set()))
-        direct_functions = sorted(direct_functions)
+        direct_functions = list(operation_entries[mnemonic])
         owning_route_functions = route_owners[route]
-        if not direct_functions and not owning_route_functions:
-            raise ValueError(f"route-only operation has no owning function: {operation} via {route}")
         operations.append({
             "mnemonic": mnemonic,
             "operation": operation,
@@ -403,7 +360,7 @@ def build_semantic_index(doc_bundle: dict[str, object]) -> dict[str, object]:
             "form_ids": forms_by_mnemonic[mnemonic],
             "direct_functions": direct_functions,
             "route_owner_functions": owning_route_functions,
-            "ownership": "direct" if direct_functions else "route",
+            "ownership": "direct",
         })
 
     return {

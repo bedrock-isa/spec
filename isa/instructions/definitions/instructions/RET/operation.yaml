@@ -1,0 +1,28 @@
+operation: RET
+title: Return
+summary: Performs the return operation.
+public_instruction:
+  mnemonic: RET
+execution_route: control_flow
+privilege: unprivileged
+repeat:
+  kind: not_eligible
+operands: []
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - extrashort.ret
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags: []
+  events: []
+  sail_entry: execute_RET
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

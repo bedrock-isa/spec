@@ -2,7 +2,7 @@ forms:
 - id: long.fclass_x_fn_s_rn_d
   class: long
   bits: 11111000111z000000ssssdddd
-  syntax: FCLASS.SD(z) Fn(s), Rn(d)
+  syntax: FCLASS.{S|D}(z) Fn(s), Rn(d)
   operands:
   - name: src
     type: Fn

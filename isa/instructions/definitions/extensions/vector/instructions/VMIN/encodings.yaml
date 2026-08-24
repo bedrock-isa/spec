@@ -2,7 +2,7 @@ forms:
 - id: extralong.vmin.v68
   class: extralong
   bits: 11111101111001010zz1ppppvvvvvwwwww
-  syntax: VMIN.HSD(z) Pn(p), Vn(v), Vn(w)
+  syntax: VMIN.{H|S|D}(z) Pn(p), Vn(v), Vn(w)
   operands:
   - name: govern
     type: Pn
@@ -27,7 +27,7 @@ forms:
 - id: xxlong.vmin.v176
   class: xxlong
   bits: 11111111000000100010zz1101ppppvvvvveeeeeee
-  syntax: VMIN.HSD(z) Pn(p), <ea>(e), Vn(v)
+  syntax: VMIN.{H|S|D}(z) Pn(p), <ea>(e), Vn(v)
   operands:
   - name: govern
     type: Pn
@@ -53,7 +53,7 @@ forms:
 - id: xxlong.vmin.v177
   class: xxlong
   bits: 11111111000000100010zz1110ppppvvvvveeeeeee
-  syntax: VMIN.HSD(z) Pn(p), Vn(v), <ea>(e)
+  syntax: VMIN.{H|S|D}(z) Pn(p), Vn(v), <ea>(e)
   operands:
   - name: govern
     type: Pn

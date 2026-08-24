@@ -1,0 +1,5 @@
+The selected element size determines the logical lane count and the spacing of
+significant predicate positions.  Reducing unsigned Rcount modulo that lane
+count produces a boundary.  PTAIL writes a new Pd image with significant
+positions below the boundary set and all remaining positions clear.  A zero
+boundary therefore produces an all-clear image.

@@ -67,18 +67,17 @@ class LLVMVectorCatalogTests(unittest.TestCase):
 
         vector_mnemonics = set()
         expected = []
-        for path in sorted(VECTOR_INSTRUCTIONS.glob("*/instruction.yaml")):
+        for path in sorted(VECTOR_INSTRUCTIONS.glob("*/operation.yaml")):
             document = yaml.safe_load(path.read_text()) or {}
-            mnemonic = str(document["mnemonic"])
+            mnemonic = str(document["public_instruction"]["mnemonic"])
             has_condition = mnemonic.endswith("cc")
             stem = (mnemonic[:-2] if has_condition else mnemonic).lower()
             vector_mnemonics.add(stem)
-            repeat = document.get("repeat")
-            if repeat:
-                contexts = set(repeat.get("contexts", []))
-                expected.append(
-                    (stem, has_condition, "REP" in contexts, "REPcc" in contexts)
-                )
+            repeat = document["repeat"]
+            kind = repeat["kind"]
+            expected.append(
+                (stem, has_condition, kind != "not_eligible", kind == "rep_and_repcc")
+            )
 
         generated_vector = [
             entry for entry in entries if entry[0] in vector_mnemonics
@@ -107,6 +106,58 @@ class LLVMVectorCatalogTests(unittest.TestCase):
                 if line.startswith(f'  {{"{form_id}"')
             )
             self.assertRegex(line, r", false, true, [0-9]+,$", form_id)
+
+    def test_generated_mc_examples_expand_public_suffix_alternatives(self) -> None:
+        rendered = gen_llvm_vector_catalog._generate_mc_test()
+        instructions = [
+            line
+            for line in rendered.splitlines()
+            if line and not line.startswith("#")
+        ]
+        self.assertTrue(instructions)
+        for instruction in instructions:
+            mnemonic = instruction.split(None, 1)[0]
+            with self.subTest(instruction=instruction):
+                self.assertNotIn("{", mnemonic)
+                self.assertNotIn("(", mnemonic)
+                self.assertNotIn("_", mnemonic)
+
+        forms, size_values = gen_llvm_vector_catalog._load_forms_and_sizes()
+
+        def walk(node):
+            yield node
+            for member in node.members:
+                yield from walk(member)
+
+        address_forms = []
+        for form in forms:
+            template = gen_llvm_vector_catalog.parse_assembly_template(
+                form["syntax"], form["id"]
+            )
+            concrete = gen_llvm_vector_catalog._concrete_assembly(form, size_values)
+            nodes = [node for operand in template.operands for node in walk(operand)]
+            if any(node.kind == "address" for node in nodes):
+                address_forms.append(form["id"])
+            with self.subTest(form=form["id"], concrete=concrete):
+                self.assertNotIn("<", concrete)
+                self.assertNotIn(">", concrete)
+                self.assertNotIn("(", concrete)
+                self.assertNotIn("{", concrete)
+                for node in nodes:
+                    if node.kind == "operator":
+                        self.assertIn(f" {node.name} ", concrete)
+                    elif node.kind == "lane_index":
+                        self.assertGreaterEqual(concrete.count("["), 2)
+                    elif node.kind == "scale":
+                        self.assertNotIn("scale", concrete)
+        self.assertTrue(address_forms)
+
+    def test_generated_mc_aliases_cover_all_public_width_spellings(self) -> None:
+        rendered = gen_llvm_vector_catalog._generate_mc_test()
+        for alias, canonical in (("h", "w"), ("s", "l"), ("d", "q")):
+            with self.subTest(alias=alias):
+                self.assertIn(f"public width alias .{alias}", rendered)
+                self.assertRegex(rendered, rf"# CHECK-NEXT: [a-z0-9]+\.{canonical}")
 
 if __name__ == "__main__":
     unittest.main()

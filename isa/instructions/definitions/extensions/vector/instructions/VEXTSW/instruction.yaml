@@ -1,8 +1,0 @@
-mnemonic: VEXTSW
-title: VEXTSW (Vector)
-summary: Signed B to W.
-description: Signed B to W.
-attributes:
-  class: vector
-  family: vector
-  privilege: unprivileged

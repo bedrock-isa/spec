@@ -2,7 +2,7 @@ forms:
 - id: long.ppacklo.v14
   class: long
   bits: 11111010010111zz01ppppqqqq
-  syntax: PPACKLO.WLQ(z) Pn(p), Pn(q)
+  syntax: PPACKLO.{W|L|Q}(z) Pn(p), Pn(q)
   operands:
   - name: src
     type: Pn

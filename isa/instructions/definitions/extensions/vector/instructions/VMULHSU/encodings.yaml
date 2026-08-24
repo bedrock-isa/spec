@@ -2,7 +2,7 @@ forms:
 - id: extralong.vmulhsu.v62
   class: extralong
   bits: 11111101111000111zz1ppppvvvvvwwwww
-  syntax: VMULHSU.BWLQ(z) Pn(p), Vn(v), Vn(w)
+  syntax: VMULHSU.{B|W|L|Q}(z) Pn(p), Vn(v), Vn(w)
   operands:
   - name: govern
     type: Pn
@@ -22,7 +22,7 @@ forms:
 - id: xxlong.vmulhsu.v164
   class: xxlong
   bits: 11111111000000100010zz0001ppppvvvvveeeeeee
-  syntax: VMULHSU.BWLQ(z) Pn(p), <ea>(e), Vn(v)
+  syntax: VMULHSU.{B|W|L|Q}(z) Pn(p), <ea>(e), Vn(v)
   operands:
   - name: govern
     type: Pn
@@ -44,7 +44,7 @@ forms:
 - id: xxlong.vmulhsu.v165
   class: xxlong
   bits: 11111111000000100010zz0010ppppvvvvveeeeeee
-  syntax: VMULHSU.BWLQ(z) Pn(p), Vn(v), <ea>(e)
+  syntax: VMULHSU.{B|W|L|Q}(z) Pn(p), Vn(v), <ea>(e)
   operands:
   - name: govern
     type: Pn

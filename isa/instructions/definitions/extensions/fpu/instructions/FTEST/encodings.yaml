@@ -2,7 +2,7 @@ forms:
 - id: long.ftest_x_ea_s
   class: long
   bits: 111101100000000000zeeeeeee
-  syntax: FTEST.SD(z) <ea>(e)
+  syntax: FTEST.{S|D}(z) <ea>(e)
   operands:
   - name: src
     type: FEA
@@ -16,7 +16,7 @@ forms:
 - id: medium.ftest_x_fn_s
   class: medium
   bits: 11101100100z01ssss
-  syntax: FTEST.SD(z) Fn(s)
+  syntax: FTEST.{S|D}(z) Fn(s)
   operands:
   - name: src
     type: Fn

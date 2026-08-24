@@ -2,7 +2,7 @@ forms:
 - id: medium.sbb_x_rn_s_rn_d
   class: medium
   bits: 10000zz101ssssdddd
-  syntax: SBB.BWLQ(z) Rn(s), Rn(d)
+  syntax: SBB.{B|W|L|Q}(z) Rn(s), Rn(d)
   operands:
   - name: src
     type: Rn
@@ -18,7 +18,7 @@ forms:
 - id: long.sbb_x_rn_s_ea_e
   class: long
   bits: 1111001100zz101sssseeeeeee
-  syntax: SBB.BWLQ(z) Rn(s), <ea>(e)
+  syntax: SBB.{B|W|L|Q}(z) Rn(s), <ea>(e)
   operands:
   - name: src
     type: Rn
@@ -40,7 +40,7 @@ forms:
 - id: long.sbb_x_ea_e_rn_d
   class: long
   bits: 1111001000zz101ddddeeeeeee
-  syntax: SBB.BWLQ(z) <ea>(e), Rn(d)
+  syntax: SBB.{B|W|L|Q}(z) <ea>(e), Rn(d)
   operands:
   - name: src
     type: EA

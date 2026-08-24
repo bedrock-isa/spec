@@ -1,0 +1,25 @@
+operation: RESTORE
+title: Restore Processor State
+summary: Restore processor state from a CPUID-defined save area.
+public_instruction: {mnemonic: RESTORE}
+execution_route: tlb_and_context
+privilege: unprivileged
+repeat: {kind: not_eligible}
+operands:
+- id: memory
+  role: address
+  access: address
+  value_domain: integer
+  profiles: [EA, Rn]
+cases:
+- id: all_forms
+  applies_to:
+    forms: [medium.restore_ea_e, medium.restore_rn]
+  additional_requirements: []
+  predicate: {kind: none}
+  flags: []
+  events: []
+  sail_entry: execute_RESTORE
+artifacts:
+  semantics: {path: semantics.sail, kind: sail}
+  description: {path: description.tex, kind: tex}

@@ -1,8 +1,0 @@
-mnemonic: VCVTUH
-title: VCVTUH (Vector)
-summary: Unsigned integer to H.
-description: Unsigned integer to H.
-attributes:
-  class: vector
-  family: vector
-  privilege: unprivileged

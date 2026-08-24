@@ -1,8 +1,0 @@
-mnemonic: PTRNHI
-title: PTRNHI (Vector)
-summary: Interleave the odd-position lanes from `Pa` and `Pb`.
-description: Interleave the odd-position lanes from `Pa` and `Pb`.
-attributes:
-  class: vector
-  family: vector
-  privilege: unprivileged

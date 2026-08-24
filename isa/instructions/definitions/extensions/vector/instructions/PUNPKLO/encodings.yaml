@@ -2,7 +2,7 @@ forms:
 - id: long.punpklo.v12
   class: long
   bits: 11111010010110zz11ppppqqqq
-  syntax: PUNPKLO.BWL(z) Pn(p), Pn(q)
+  syntax: PUNPKLO.{B|W|L}(z) Pn(p), Pn(q)
   operands:
   - name: src
     type: Pn

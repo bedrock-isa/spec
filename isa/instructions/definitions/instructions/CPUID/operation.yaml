@@ -1,0 +1,34 @@
+operation: CPUID
+title: CPU Identification
+summary: Queries architectural discovery information through a selected Rn register.
+public_instruction:
+  mnemonic: CPUID
+execution_route: system_registers
+privilege: unprivileged
+repeat:
+  kind: not_eligible
+operands:
+- id: reg
+  role: destination
+  access: read_write
+  value_domain: integer
+  profiles:
+  - Rn
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - medium.cpuid_rn_r
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags: []
+  events: []
+  sail_entry: execute_CPUID
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

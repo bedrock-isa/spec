@@ -1,0 +1,32 @@
+operation: INVPAGE
+title: Invalidate TLB Page
+summary: Invalidate TLB mapping containing a linear address.
+public_instruction:
+  mnemonic: INVPAGE
+execution_route: tlb_and_context
+privilege: supervisor
+repeat:
+  kind: not_eligible
+operands:
+- id: page
+  role: address
+  access: address
+  value_domain: integer
+  profiles:
+  - EA
+  - Rn
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - medium.invpage_ea_e
+    - medium.invpage_rn
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags: []
+  events: []
+  sail_entry: execute_INVPAGE
+artifacts:
+  semantics: {path: semantics.sail, kind: sail}
+  description: {path: description.tex, kind: tex}

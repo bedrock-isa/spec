@@ -1,8 +1,0 @@
-mnemonic: PUNPKHI
-title: PUNPKHI (Vector)
-summary: Map the upper half of the source-width lane sequence to the doubled-width destination positions.
-description: Map the upper half of the source-width lane sequence to the doubled-width destination positions.
-attributes:
-  class: vector
-  family: vector
-  privilege: unprivileged

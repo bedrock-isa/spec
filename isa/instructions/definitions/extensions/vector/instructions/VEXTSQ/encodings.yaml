@@ -2,7 +2,7 @@ forms:
 - id: extralong.vextsq.v77
   class: extralong
   bits: 11111101111001111zz0ppppvvvvvwwwww
-  syntax: VEXTSQ.BWL(z) Pn(p), Vn(v), Vn(w)
+  syntax: VEXTSQ.{B|W|L}(z) Pn(p), Vn(v), Vn(w)
   operands:
   - name: govern
     type: Pn

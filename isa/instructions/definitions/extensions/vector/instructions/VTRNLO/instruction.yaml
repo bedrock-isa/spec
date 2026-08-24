@@ -1,8 +1,0 @@
-mnemonic: VTRNLO
-title: VTRNLO (Vector)
-summary: Transpose even-position elements from two sources.
-description: Transpose even-position elements from two sources.
-attributes:
-  class: vector
-  family: vector
-  privilege: unprivileged

@@ -2,7 +2,7 @@ forms:
 - id: long.vabs.v30
   class: long
   bits: 1111101000000xxx1ppppvvvvv
-  syntax: VABS.VTYPE(x) Pn(p), Vn(v)
+  syntax: VABS.{B|W|L|Q|H|S|D}(x) Pn(p), Vn(v)
   operands:
   - name: govern
     type: Pn
@@ -24,7 +24,7 @@ forms:
 - id: xxlong.vabs.v186
   class: xxlong
   bits: 1111111100000010010xxx0010ppppvvvvveeeeeee
-  syntax: VABS.VTYPE(x) Pn(p), <ea>(e), Vn(v)
+  syntax: VABS.{B|W|L|Q|H|S|D}(x) Pn(p), <ea>(e), Vn(v)
   operands:
   - name: govern
     type: Pn
@@ -50,7 +50,7 @@ forms:
 - id: xxlong.vabs.v187
   class: xxlong
   bits: 1111111100000010010xxx0011ppppvvvvveeeeeee
-  syntax: VABS.VTYPE(x) Pn(p), Vn(v), <ea>(e)
+  syntax: VABS.{B|W|L|Q|H|S|D}(x) Pn(p), Vn(v), <ea>(e)
   operands:
   - name: govern
     type: Pn

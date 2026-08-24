@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Strictly decode every versioned YAML document in the repository."""
+"""Strictly decode every YAML document in the repository."""
 
 from __future__ import annotations
 
 import argparse
 from pathlib import Path
 
-from defs_schema import DecodeError, SCHEMA_VERSION, decode_yaml, verify_schema_lock
+from defs_schema import DecodeError, decode_yaml, verify_schema_lock
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -52,11 +52,10 @@ def main() -> int:
         "--root",
         type=Path,
         default=ROOT,
-        help="repository root containing versioned schema documents",
+        help="repository root containing schema documents",
     )
     args = parser.parse_args()
     count, errors = validate_schema(args.root.resolve())
-    print(f"schema version: {SCHEMA_VERSION}")
     print(f"decoded documents: {count}")
     print(f"errors: {len(errors)}")
     for error in errors:

@@ -1,8 +1,0 @@
-mnemonic: VTRUNCW
-title: VTRUNCW (Vector)
-summary: Keep the low W result from L or Q.
-description: Keep the low W result from L or Q.
-attributes:
-  class: vector
-  family: vector
-  privilege: unprivileged

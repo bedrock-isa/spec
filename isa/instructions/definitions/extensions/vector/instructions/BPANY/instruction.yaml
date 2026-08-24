@@ -1,8 +1,0 @@
-mnemonic: BPANY
-title: BPANY (Vector)
-summary: Branch if any bit is set.
-description: Branch if any bit is set.
-attributes:
-  class: vector
-  family: vector
-  privilege: unprivileged

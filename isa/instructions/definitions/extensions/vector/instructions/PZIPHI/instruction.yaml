@@ -1,8 +1,0 @@
-mnemonic: PZIPHI
-title: PZIPHI (Vector)
-summary: Interleave the upper halves of the two typed predicate lane sequences.
-description: Interleave the upper halves of the two typed predicate lane sequences.
-attributes:
-  class: vector
-  family: vector
-  privilege: unprivileged

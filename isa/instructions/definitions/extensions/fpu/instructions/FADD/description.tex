@@ -1,0 +1,8 @@
+FADD adds the selected-format floating-point source to the destination and
+rounds the result according to the floating-point environment. A completed
+operation writes the rounded value to the destination and accrues any generated
+NV, OF, UF, and NX causes in FFLAGS; DZ is unchanged.
+
+If a generated floating-point exception is enabled, FADD raises
+FLOATING\_POINT\_FAULT. The faulting operation commits neither its destination
+write nor its accrued FFLAGS causes.

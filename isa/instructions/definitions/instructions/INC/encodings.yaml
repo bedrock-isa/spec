@@ -2,7 +2,7 @@ forms:
 - id: short.inc_x_rn_r
   class: short
   bits: 10100z0000rrrr
-  syntax: INC.LQ(z) Rn(r)
+  syntax: INC.{L|Q}(z) Rn(r)
   operands:
   - name: dst
     type: Rn
@@ -14,7 +14,7 @@ forms:
 - id: medium.inc_x_ea
   class: medium
   bits: 11100zz1001eeeeeee
-  syntax: INC.BWLQ(z) <ea>(e)
+  syntax: INC.{B|W|L|Q}(z) <ea>(e)
   operands:
   - name: dst
     type: EA

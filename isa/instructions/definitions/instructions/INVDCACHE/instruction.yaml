@@ -1,8 +1,0 @@
-mnemonic: INVDCACHE
-title: Invalidate Data Cache
-summary: Invalidate one data-cache maintenance block.
-description: Computes and translates the address-role EA without reading an operand value, selects its CPUID-sized maintenance block, discards every data or unified cache copy in the coherence domain without writeback, and retires after the block is complete.
-attributes:
-  class: system
-  family: cache
-  privilege: supervisor

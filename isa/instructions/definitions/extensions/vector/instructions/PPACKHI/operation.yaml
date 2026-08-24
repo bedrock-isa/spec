@@ -1,0 +1,34 @@
+operation: PPACKHI
+title: Predicate Pack to Upper Half
+summary: Packs source predicate positions into the upper half of narrower destination positions.
+public_instruction:
+  mnemonic: PPACKHI
+  width_suffix_aliases: true
+execution_route: vector
+privilege: unprivileged
+repeat:
+  kind: not_eligible
+operands:
+- {id: src, role: source, access: read, value_domain: predicate, profiles: [Pn]}
+- {id: dst, role: destination, access: read_write, value_domain: predicate, profiles: [Pn]}
+cases:
+- id: all_forms
+  applies_to:
+    forms: [long.ppackhi.v15]
+    selectors:
+    - {domain: WLQ, values: [W, L, Q]}
+  additional_requirements: []
+  predicate: {kind: none}
+  flags: []
+  events: []
+  sail_entry: execute_PPACKHI
+artifacts:
+  semantics: {path: semantics.sail, kind: sail}
+  description: {path: description.tex, kind: tex}
+  diagrams:
+  - id: word-upper-half
+    path: diagrams/word-upper-half.yaml
+    kind: vector-example
+    case: all_forms
+    caption: PPACKHI.W upper-half predicate packing
+    alt_text: "In the illustrated 16-byte instance, the significant word-predicate positions of source Pn are copied in lane order to the upper half of the byte-predicate positions of new Pq. Every other bit is cleared, and the same upper-half rule scales with VLEN."

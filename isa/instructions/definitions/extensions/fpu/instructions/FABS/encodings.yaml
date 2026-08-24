@@ -2,7 +2,7 @@ forms:
 - id: medium.fabs_x_fn_s_fn_d
   class: medium
   bits: 101000z000ssssdddd
-  syntax: FABS.SD(z) Fn(s), Fn(d)
+  syntax: FABS.{S|D}(z) Fn(s), Fn(d)
   operands:
   - name: src
     type: Fn
@@ -18,7 +18,7 @@ forms:
 - id: long.fabs_x_ea_s_fn_d
   class: long
   bits: 1111100100z0000ddddeeeeeee
-  syntax: FABS.SD(z) <ea>(e), Fn(d)
+  syntax: FABS.{S|D}(z) <ea>(e), Fn(d)
   operands:
   - name: src
     type: FEA
@@ -36,7 +36,7 @@ forms:
 - id: long.fabs_x_fn_s_ea_d
   class: long
   bits: 1111100100z1000sssseeeeeee
-  syntax: FABS.SD(z) Fn(s), <ea>(e)
+  syntax: FABS.{S|D}(z) Fn(s), <ea>(e)
   operands:
   - name: src
     type: Fn

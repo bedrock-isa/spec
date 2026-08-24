@@ -1,0 +1,9 @@
+At the selected B, W, L, or Q width, the operation computes the bitwise AND of
+each left-hand Vn element and its corresponding right-hand element. The
+register form reads the right-hand element from the corresponding Vn lane. The
+memory form reads it from the corresponding element of the complete
+vector-length VEA source.
+
+The complete result image replaces the destination predicate. A bit at an
+element's significant predicate position is set only when its governing bit is
+set and the element result is nonzero; every other predicate bit is clear.

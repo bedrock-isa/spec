@@ -1,0 +1,10 @@
+Writes the remainder of selected-width unsigned destination-by-source division. A zero divisor raises DIVIDE\_ERROR.
+
+Let \(n\) be the selected operand width, \(d\) the unsigned dividend, and \(s\) the unsigned divisor. The quotient and remainder are defined by
+\[
+  q = \lfloor d/s \rfloor,
+  \qquad r = d - qs .
+\]
+For a nonzero divisor, the remainder satisfies \(0 \le r < s\). The destination supplies the dividend and receives \(r\).
+
+A zero divisor raises \texttt{DIVIDE\_ERROR}; no destination is changed.

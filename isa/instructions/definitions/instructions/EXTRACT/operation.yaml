@@ -1,0 +1,49 @@
+operation: EXTRACT
+title: Extract From Register Pair
+summary: Extracts a selected-width value from a concatenated pair of Rn registers.
+public_instruction:
+  mnemonic: EXTRACT
+execution_route: integer_bitfield
+privilege: unprivileged
+repeat:
+  kind: rep_and_repcc
+  observed:
+    kind: result
+    operand: low_dst
+operands:
+- id: offset
+  role: source
+  access: read
+  value_domain: integer
+  profiles:
+  - imm7
+- id: high
+  role: source
+  access: read
+  value_domain: integer
+  profiles:
+  - Rn
+- id: low_dst
+  role: destination
+  access: read_write
+  value_domain: integer
+  profiles:
+  - Rn
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - extralong.extract_x_imm7_i_rn_h_rn_l
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags: []
+  events: []
+  sail_entry: execute_EXTRACT
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

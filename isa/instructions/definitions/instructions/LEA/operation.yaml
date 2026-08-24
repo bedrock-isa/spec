@@ -1,0 +1,33 @@
+operation: LEA
+title: Load Effective Address
+summary: Performs the load effective address operation.
+public_instruction:
+  mnemonic: LEA
+execution_route: ea_utility
+privilege: unprivileged
+repeat:
+  kind: rep_and_repcc
+  observed: {kind: result, operand: dst}
+operands:
+- id: src
+  role: address
+  access: address
+  value_domain: integer
+  profiles: [EA, Rn]
+- id: dst
+  role: destination
+  access: write
+  value_domain: integer
+  profiles: [Rn]
+cases:
+- id: all_forms
+  applies_to:
+    forms: [medium.lea_x_ea_rn, medium.lea_x_rn_s_rn_d]
+  additional_requirements: []
+  predicate: {kind: none}
+  flags: []
+  events: []
+  sail_entry: execute_LEA
+artifacts:
+  semantics: {path: semantics.sail, kind: sail}
+  description: {path: description.tex, kind: tex}

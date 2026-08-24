@@ -2,7 +2,7 @@ forms:
 - id: long.fintrz_x_ea_s_fn_d
   class: long
   bits: 1111100101z0011ddddeeeeeee
-  syntax: FINTRZ.SD(z) <ea>(e), Fn(d)
+  syntax: FINTRZ.{S|D}(z) <ea>(e), Fn(d)
   operands:
   - name: src
     type: FEA
@@ -20,7 +20,7 @@ forms:
 - id: medium.fintrz_x_fn_s_fn_d
   class: medium
   bits: 101100z011ssssdddd
-  syntax: FINTRZ.SD(z) Fn(s), Fn(d)
+  syntax: FINTRZ.{S|D}(z) Fn(s), Fn(d)
   operands:
   - name: src
     type: Fn
@@ -36,7 +36,7 @@ forms:
 - id: long.fintrz_x_fn_s_ea_d
   class: long
   bits: 1111100100z1101sssseeeeeee
-  syntax: FINTRZ.SD(z) Fn(s), <ea>(e)
+  syntax: FINTRZ.{S|D}(z) Fn(s), <ea>(e)
   operands:
   - name: src
     type: Fn

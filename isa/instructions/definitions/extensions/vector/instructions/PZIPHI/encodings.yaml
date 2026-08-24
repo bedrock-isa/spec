@@ -2,7 +2,7 @@ forms:
 - id: extralong.pziphi.v131
   class: extralong
   bits: 11111101111111000zz010ppppqqqqhhhh
-  syntax: PZIPHI.BWLQ(z) Pn(p), Pn(q), Pn(h)
+  syntax: PZIPHI.{B|W|L|Q}(z) Pn(p), Pn(q), Pn(h)
   operands:
   - name: lhs
     type: Pn

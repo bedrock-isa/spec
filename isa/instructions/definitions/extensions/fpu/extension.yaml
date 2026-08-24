@@ -1,11 +1,6 @@
 name: fpu
 availability:
-  cpuid:
-    feature: FP
-    class: 0x00000001
-    leaf: 0x0000
-    index: 1
-    bit: 0
+  required_cpuid_flags: [FP]
 instructions: instructions.yaml
 operands: operands.yaml
 registers: registers.yaml

@@ -2,7 +2,7 @@ forms:
 - id: extralong.vmax.v69
   class: extralong
   bits: 11111101111001011zz0ppppvvvvvwwwww
-  syntax: VMAX.HSD(z) Pn(p), Vn(v), Vn(w)
+  syntax: VMAX.{H|S|D}(z) Pn(p), Vn(v), Vn(w)
   operands:
   - name: govern
     type: Pn
@@ -27,7 +27,7 @@ forms:
 - id: xxlong.vmax.v178
   class: xxlong
   bits: 11111111000000100010zz1111ppppvvvvveeeeeee
-  syntax: VMAX.HSD(z) Pn(p), <ea>(e), Vn(v)
+  syntax: VMAX.{H|S|D}(z) Pn(p), <ea>(e), Vn(v)
   operands:
   - name: govern
     type: Pn
@@ -53,7 +53,7 @@ forms:
 - id: xxlong.vmax.v179
   class: xxlong
   bits: 11111111000000100011zz0000ppppvvvvveeeeeee
-  syntax: VMAX.HSD(z) Pn(p), Vn(v), <ea>(e)
+  syntax: VMAX.{H|S|D}(z) Pn(p), Vn(v), <ea>(e)
   operands:
   - name: govern
     type: Pn

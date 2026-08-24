@@ -7,10 +7,11 @@
 \phantomsection
 \addcontentsline{toc}{section}{Reading an Instruction Description}
 \subsection*{Entry Organization}
-Each instruction entry presents its Operation, then Assembler Syntax, Attributes, and structured status
-metadata. Detailed Semantics follows when more space is needed, before the concrete encodings. Brief
-summaries appear only in the instruction-set summary tables. Each mnemonic begins on a new page so its
-encoding diagrams, field explanations, and side-effect text stay together as one reference unit.
+Each instruction entry presents a brief Operation summary and its Assembler Syntax before applicability, repeat, event, and
+status information relevant to that instruction. Detailed Semantics contains the complete explanation and places
+illustrative diagrams directly after the explanation, before the concrete encodings. The same brief summaries appear in the instruction-set summary tables. Each mnemonic begins
+on a new page so its encoding diagrams, field explanations, and side-effect text stay together as one reference
+unit.
 
 \subsection*{Mnemonics and Suffixes}
 The B, W, L, and Q suffixes select 8-, 16-, 32-, and 64-bit integer sizes; S and D select 32- and 64-bit
@@ -31,6 +32,10 @@ outside that encoding namespace. An
 FLAGS, STATUS, FFLAGS, and FSTATUS are architectural state registers. Instruction descriptions state whether an
 encoding updates, preserves, reads, or ignores each status register. A FLAGS update always names and replaces the
 complete ZNCV image; FFLAGS retains its accrued per-cause behavior.
+
+In a transposed flag-effects table, \texttt{-} marks an unchanged flag and \texttt{0} or \texttt{1} marks a
+constant result. \texttt{*} marks the single nontrivial effect defined by that table's local legend. When a table
+contains multiple nontrivial effects, letters \texttt{a} through \texttt{z} distinguish their local legend entries.
 
 In instruction pseudocode, Operand Read applies the addressing mode and operation size. Operand Write stores the
 selected-size result; an Rn write defines all 64 bits and extends a sub-Q result according to the common integer

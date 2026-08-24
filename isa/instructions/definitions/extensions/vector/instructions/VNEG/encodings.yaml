@@ -2,7 +2,7 @@ forms:
 - id: long.vneg.v29
   class: long
   bits: 1111101000000xxx0ppppvvvvv
-  syntax: VNEG.VTYPE(x) Pn(p), Vn(v)
+  syntax: VNEG.{B|W|L|Q|H|S|D}(x) Pn(p), Vn(v)
   operands:
   - name: govern
     type: Pn
@@ -24,7 +24,7 @@ forms:
 - id: xxlong.vneg.v184
   class: xxlong
   bits: 1111111100000010010xxx0000ppppvvvvveeeeeee
-  syntax: VNEG.VTYPE(x) Pn(p), <ea>(e), Vn(v)
+  syntax: VNEG.{B|W|L|Q|H|S|D}(x) Pn(p), <ea>(e), Vn(v)
   operands:
   - name: govern
     type: Pn
@@ -50,7 +50,7 @@ forms:
 - id: xxlong.vneg.v185
   class: xxlong
   bits: 1111111100000010010xxx0001ppppvvvvveeeeeee
-  syntax: VNEG.VTYPE(x) Pn(p), Vn(v), <ea>(e)
+  syntax: VNEG.{B|W|L|Q|H|S|D}(x) Pn(p), Vn(v), <ea>(e)
   operands:
   - name: govern
     type: Pn

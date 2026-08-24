@@ -1,0 +1,15 @@
+Converts between supported signed integer and floating-point forms, or between the supported floating-point widths, according to the operand classes.
+
+The operand classes select one of three conversion families.
+
+\begin{itemize}
+\item Fn to Fn \texttt{.S} converts D to S, while \texttt{.D} converts S to D.
+\item Fn to Rn truncates toward zero and writes a signed 64-bit integer. Negative overflow and negative infinity
+produce \texttt{0x8000000000000000}; positive overflow and positive infinity produce
+\texttt{0x7fffffffffffffff}; NaN produces zero.
+\item Rn to Fn converts the full signed 64-bit source to the selected floating-point format using
+\texttt{FSTATUS.RM}.
+\end{itemize}
+An invalid Fn-to-Rn conversion generates NV without OF or NX. A valid conversion that discards a fractional part
+generates NX. Fn-to-Fn and Rn-to-Fn conversion use the common floating-point rounding, floating-point
+exception-cause generation, condition-enable testing, and commit rules.

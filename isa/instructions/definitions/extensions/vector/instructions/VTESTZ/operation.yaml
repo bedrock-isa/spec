@@ -1,0 +1,29 @@
+operation: VTESTZ
+title: VTESTZ (Vector)
+summary: Test `Va AND Vb` for zero and write a complete predicate result.
+public_instruction:
+  mnemonic: VTESTZ
+execution_route: vector
+privilege: unprivileged
+repeat:
+  kind: not_eligible
+operands:
+- {id: govern, role: governing_predicate, access: read, value_domain: predicate, profiles: [Pn]}
+- {id: lhs, role: source, access: read, value_domain: vector, profiles: [Vn]}
+- {id: rhs, role: source, access: read, value_domain: vector, profiles: [Vn]}
+- {id: src, role: source, access: read, value_domain: vector, profiles: [VEA]}
+- {id: dst, role: destination, access: write, value_domain: predicate, profiles: [Pn]}
+cases:
+- id: all_forms
+  applies_to:
+    forms: [extralong.vtestz.v48, xxlong.vtestz.v231]
+    selectors:
+    - {domain: BWLQ, values: [B, W, L, Q]}
+  additional_requirements: []
+  predicate: {kind: none}
+  flags: []
+  events: []
+  sail_entry: execute_VTESTZ
+artifacts:
+  semantics: {path: semantics.sail, kind: sail}
+  description: {path: description.tex, kind: tex}

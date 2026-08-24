@@ -2,7 +2,7 @@ forms:
 - id: extralong.vnmadd.v104
   class: extralong
   bits: 111111011101zz0ppppvvvvvwwwwwyyyyy
-  syntax: VNMADD.HSD(z) Pn(p), Vn(v), Vn(w), Vn(y)
+  syntax: VNMADD.{H|S|D}(z) Pn(p), Vn(v), Vn(w), Vn(y)
   operands:
   - name: govern
     type: Pn

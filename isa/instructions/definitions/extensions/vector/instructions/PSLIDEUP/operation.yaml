@@ -1,0 +1,34 @@
+operation: PSLIDEUP
+title: Predicate Slide Up
+summary: Move predicate lanes toward higher indices and insert zero at the low end.
+public_instruction:
+  mnemonic: PSLIDEUP
+  width_suffix_aliases: true
+execution_route: vector
+privilege: unprivileged
+repeat:
+  kind: not_eligible
+operands:
+- {id: count, role: count, access: read, value_domain: integer, profiles: [imm6]}
+- {id: dst, role: destination, access: read_write, value_domain: predicate, profiles: [Pn]}
+cases:
+- id: all_forms
+  applies_to:
+    forms: [long.pslideup.v45]
+    selectors:
+    - {domain: BWLQ, values: [B, W, L, Q]}
+  additional_requirements: []
+  predicate: {kind: none}
+  flags: []
+  events: []
+  sail_entry: execute_PSLIDEUP
+artifacts:
+  semantics: {path: semantics.sail, kind: sail}
+  description: {path: description.tex, kind: tex}
+  diagrams:
+  - id: slide-up-by-two
+    path: diagrams/slide-up-by-two.yaml
+    kind: vector-example
+    case: all_forms
+    caption: PSLIDEUP.W by two predicate lanes
+    alt_text: "Typed predicate lanes move two positions toward higher indices. The two low word-significant result positions become zero, and the rule continues through higher lanes for larger VLEN."

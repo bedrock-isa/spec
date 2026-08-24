@@ -2,7 +2,7 @@ forms:
 - id: long.pslideup.v45
   class: long
   bits: 11111010011110zzppppiiiiii
-  syntax: PSLIDEUP.BWLQ(z) imm6(i), Pn(p)
+  syntax: PSLIDEUP.{B|W|L|Q}(z) imm6(i), Pn(p)
   operands:
   - name: count
     type: imm6

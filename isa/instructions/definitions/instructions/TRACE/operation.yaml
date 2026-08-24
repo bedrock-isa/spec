@@ -1,0 +1,34 @@
+operation: TRACE
+title: Trace Stream Marker
+summary: Records a marker and instruction boundary in the implementation trace stream.
+public_instruction:
+  mnemonic: TRACE
+execution_route: control_flow
+privilege: unprivileged
+repeat:
+  kind: not_eligible
+operands:
+- id: marker
+  role: source
+  access: read
+  value_domain: integer
+  profiles:
+  - imm16
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - medium.trace_ea
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags: []
+  events: []
+  sail_entry: execute_TRACE
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

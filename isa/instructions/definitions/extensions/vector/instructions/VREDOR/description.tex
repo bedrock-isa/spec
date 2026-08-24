@@ -1,0 +1,8 @@
+The governing predicate chooses which source elements participate. The Vn form
+reads those elements from the vector source. The VEA form first reads a complete
+vector-length source from memory and applies the same predicate selection.
+
+Selected elements are combined with bitwise OR at the B, W, L, or Q element
+width. The selected-width result bit pattern occupies the low bits of Rn, and
+all higher bits are zero. If the predicate selects no elements, Rn receives
+zero.

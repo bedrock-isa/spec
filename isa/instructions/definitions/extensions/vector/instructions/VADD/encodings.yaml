@@ -2,7 +2,7 @@ forms:
 - id: extralong.vadd.v50
   class: extralong
   bits: 1111110111100000xxx0ppppvvvvvwwwww
-  syntax: VADD.VTYPE(x) Pn(p), Vn(v), Vn(w)
+  syntax: VADD.{B|W|L|Q|H|S|D}(x) Pn(p), Vn(v), Vn(w)
   operands:
   - name: govern
     type: Pn
@@ -28,7 +28,7 @@ forms:
 - id: xxlong.vadd.v140
   class: xxlong
   bits: 1111111100000010000xxx0011ppppvvvvveeeeeee
-  syntax: VADD.VTYPE(x) Pn(p), <ea>(e), Vn(v)
+  syntax: VADD.{B|W|L|Q|H|S|D}(x) Pn(p), <ea>(e), Vn(v)
   operands:
   - name: govern
     type: Pn
@@ -54,7 +54,7 @@ forms:
 - id: xxlong.vadd.v141
   class: xxlong
   bits: 1111111100000010000xxx0100ppppvvvvveeeeeee
-  syntax: VADD.VTYPE(x) Pn(p), Vn(v), <ea>(e)
+  syntax: VADD.{B|W|L|Q|H|S|D}(x) Pn(p), Vn(v), <ea>(e)
   operands:
   - name: govern
     type: Pn

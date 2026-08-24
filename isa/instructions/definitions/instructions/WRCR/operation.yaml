@@ -1,0 +1,42 @@
+operation: WRCR
+title: Write Control Register
+summary: Write a privileged control register from an Rn register.
+public_instruction:
+  mnemonic: WRCR
+execution_route: system_registers
+privilege: supervisor
+repeat:
+  kind: not_eligible
+operands:
+- id: src
+  role: source
+  access: read
+  value_domain: integer
+  profiles:
+  - Rn
+- id: cr
+  role: source
+  access: read
+  value_domain: integer
+  profiles:
+  - imm16
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - medium.wrcr_rn_s_ea
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags: []
+  events:
+  - event: INVALID_CONTROL_STATE
+    condition: wrcr_selector_rule_failure
+  sail_entry: execute_WRCR
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

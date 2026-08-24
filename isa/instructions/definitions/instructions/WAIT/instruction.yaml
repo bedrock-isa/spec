@@ -1,9 +1,0 @@
-mnemonic: WAIT
-title: Wait
-summary: Permits a finite implementation-selected delay, including zero.
-description: Retires normally with the next instruction as its continuation and permits a finite implementation-selected delay, including zero, before subsequent execution.
-attributes:
-  class: system
-  family: core_control
-  privilege: unprivileged
-additional_description: details.tex

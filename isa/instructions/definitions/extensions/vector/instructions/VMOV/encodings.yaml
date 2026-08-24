@@ -15,7 +15,7 @@ forms:
 - id: extralong.vmov.v91
   class: extralong
   bits: 11111101111010110zz0ppppvvvvvwwwww
-  syntax: VMOV.BWLQ(z) Pn(p), Vn(v), Vn(w)
+  syntax: VMOV.{B|W|L|Q}(z) Pn(p), Vn(v), Vn(w)
   operands:
   - name: govern
     type: Pn
@@ -35,7 +35,7 @@ forms:
 - id: xxlong.vmov.v137
   class: xxlong
   bits: 11111111000000100000zz0000ppppvvvvveeeeeee
-  syntax: VMOV.BWLQ(z) Pn(p), <ea>(e), Vn(v)
+  syntax: VMOV.{B|W|L|Q}(z) Pn(p), <ea>(e), Vn(v)
   operands:
   - name: govern
     type: Pn
@@ -57,7 +57,7 @@ forms:
 - id: xxlong.vmov.v138
   class: xxlong
   bits: 11111111000000100000zz0001ppppvvvvveeeeeee
-  syntax: VMOV.BWLQ(z) Pn(p), Vn(v), <ea>(e)
+  syntax: VMOV.{B|W|L|Q}(z) Pn(p), Vn(v), <ea>(e)
   operands:
   - name: govern
     type: Pn

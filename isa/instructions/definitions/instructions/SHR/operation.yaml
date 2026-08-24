@@ -1,0 +1,47 @@
+operation: SHR
+title: Shift Right
+summary: Performs the shift right operation.
+public_instruction:
+  mnemonic: SHR
+execution_route: integer_bitfield
+privilege: unprivileged
+repeat:
+  kind: rep_and_repcc
+  observed:
+    kind: result
+    operand: dst
+operands:
+- id: count
+  role: source
+  access: read
+  value_domain: integer
+  profiles:
+  - Rn
+  - imm6
+- id: dst
+  role: destination
+  access: read_write
+  value_domain: integer
+  profiles:
+  - Rn
+  - EA
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - short.shr_x_rn_s_rn_d
+    - long.shr_x_rn_s_ea_e
+    - long.shr_x_imm6_i_ea_e
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags: []
+  events: []
+  sail_entry: execute_SHR
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

@@ -1,0 +1,42 @@
+operation: RDSEG
+title: Read Segment Register
+summary: Read an SREG or the current CS image into an Rn register.
+public_instruction:
+  mnemonic: RDSEG
+execution_route: system_registers
+privilege: unprivileged
+repeat:
+  kind: not_eligible
+operands:
+- id: seg
+  role: segment_selector
+  access: read
+  value_domain: integer
+  profiles:
+  - SREG
+  - CS
+- id: dst
+  role: destination
+  access: write
+  value_domain: integer
+  profiles:
+  - Rn
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - medium.rdseg_sreg_s_rn_d
+    - medium.rdseg_cs_rn_d
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags: []
+  events: []
+  sail_entry: execute_RDSEG
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

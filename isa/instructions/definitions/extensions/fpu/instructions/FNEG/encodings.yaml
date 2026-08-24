@@ -2,7 +2,7 @@ forms:
 - id: medium.fneg_x_fn_s_fn_d
   class: medium
   bits: 101110z101ssssdddd
-  syntax: FNEG.SD(z) Fn(s), Fn(d)
+  syntax: FNEG.{S|D}(z) Fn(s), Fn(d)
   operands:
   - name: src
     type: Fn
@@ -18,7 +18,7 @@ forms:
 - id: long.fneg_x_ea_s_fn_d
   class: long
   bits: 1111100101z1101ddddeeeeeee
-  syntax: FNEG.SD(z) <ea>(e), Fn(d)
+  syntax: FNEG.{S|D}(z) <ea>(e), Fn(d)
   operands:
   - name: src
     type: FEA
@@ -36,7 +36,7 @@ forms:
 - id: long.fneg_x_fn_s_ea_d
   class: long
   bits: 1111100101z0100sssseeeeeee
-  syntax: FNEG.SD(z) Fn(s), <ea>(e)
+  syntax: FNEG.{S|D}(z) Fn(s), <ea>(e)
   operands:
   - name: src
     type: Fn

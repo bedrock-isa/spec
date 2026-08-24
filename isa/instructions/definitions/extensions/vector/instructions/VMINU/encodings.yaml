@@ -2,7 +2,7 @@ forms:
 - id: extralong.vminu.v57
   class: extralong
   bits: 11111101111000101zz0ppppvvvvvwwwww
-  syntax: VMINU.BWLQ(z) Pn(p), Vn(v), Vn(w)
+  syntax: VMINU.{B|W|L|Q}(z) Pn(p), Vn(v), Vn(w)
   operands:
   - name: govern
     type: Pn
@@ -22,7 +22,7 @@ forms:
 - id: xxlong.vminu.v154
   class: xxlong
   bits: 11111111000000100001zz0001ppppvvvvveeeeeee
-  syntax: VMINU.BWLQ(z) Pn(p), <ea>(e), Vn(v)
+  syntax: VMINU.{B|W|L|Q}(z) Pn(p), <ea>(e), Vn(v)
   operands:
   - name: govern
     type: Pn
@@ -44,7 +44,7 @@ forms:
 - id: xxlong.vminu.v155
   class: xxlong
   bits: 11111111000000100001zz0010ppppvvvvveeeeeee
-  syntax: VMINU.BWLQ(z) Pn(p), Vn(v), <ea>(e)
+  syntax: VMINU.{B|W|L|Q}(z) Pn(p), Vn(v), <ea>(e)
   operands:
   - name: govern
     type: Pn

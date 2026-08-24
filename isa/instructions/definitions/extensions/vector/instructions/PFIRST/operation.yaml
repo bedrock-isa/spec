@@ -1,0 +1,27 @@
+operation: PFIRST
+title: PFIRST (Vector)
+summary: Return the first selected element index at a significant position.
+public_instruction:
+  mnemonic: PFIRST
+  width_suffix_aliases: true
+execution_route: vector
+privilege: unprivileged
+repeat:
+  kind: not_eligible
+operands:
+- {id: predicate, role: source, access: read, value_domain: predicate, profiles: [Pn]}
+- {id: dst, role: destination, access: write, value_domain: integer, profiles: [Rn]}
+cases:
+- id: all_forms
+  applies_to:
+    forms: [long.pfirst.v6]
+    selectors:
+    - {domain: BWLQ, values: [B, W, L, Q]}
+  additional_requirements: []
+  predicate: {kind: none}
+  flags: []
+  events: []
+  sail_entry: execute_PFIRST
+artifacts:
+  semantics: {path: semantics.sail, kind: sail}
+  description: {path: description.tex, kind: tex}

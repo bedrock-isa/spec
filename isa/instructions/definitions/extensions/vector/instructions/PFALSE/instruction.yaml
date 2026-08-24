@@ -1,8 +1,0 @@
-mnemonic: PFALSE
-title: PFALSE (Vector)
-summary: Clear the complete predicate image.
-description: Clear the complete predicate image.
-attributes:
-  class: vector
-  family: vector
-  privilege: unprivileged

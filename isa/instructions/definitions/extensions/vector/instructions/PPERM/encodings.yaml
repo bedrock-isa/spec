@@ -2,7 +2,7 @@ forms:
 - id: long.pperm.v44
   class: long
   bits: 11111010001000zz1ppppvvvvv
-  syntax: PPERM.BWLQ(z) Vn(v), Pn(p)
+  syntax: PPERM.{B|W|L|Q}(z) Vn(v), Pn(p)
   operands:
   - name: index
     type: Vn

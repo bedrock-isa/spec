@@ -2,7 +2,7 @@ forms:
 - id: medium.fmovcr_x_imm16_fn_d
   class: medium
   bits: 11101100100z00dddd
-  syntax: FMOVCR.SD(z) <fconst_id>, Fn(d)
+  syntax: FMOVCR.{S|D}(z) <fconst_id>, Fn(d)
   operands:
   - name: constant_id
     type: fconst_id

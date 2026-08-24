@@ -1,8 +1,0 @@
-mnemonic: VTRUNCL
-title: VTRUNCL (Vector)
-summary: Keep the low L result from Q.
-description: Keep the low L result from Q.
-attributes:
-  class: vector
-  family: vector
-  privilege: unprivileged

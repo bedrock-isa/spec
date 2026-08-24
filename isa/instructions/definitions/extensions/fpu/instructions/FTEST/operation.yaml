@@ -1,0 +1,66 @@
+operation: FTEST
+title: Floating-Point Test
+summary: Performs the floating-point test operation.
+public_instruction:
+  mnemonic: FTEST
+execution_route: fpu
+privilege: unprivileged
+repeat:
+  kind: rep
+operands:
+- id: src
+  role: source
+  access: read
+  value_domain: floating
+  profiles:
+  - FEA
+  - Fn
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - long.ftest_x_ea_s
+    - medium.ftest_x_fn_s
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags:
+  - bank: FLAGS
+    completion: complete_image
+    effects:
+    - flag: Z
+      effect: write_condition
+      reference: comparison_equal
+    - flag: N
+      effect: write_condition
+      reference: comparison_less
+    - flag: C
+      effect: write_condition
+      reference: comparison_less
+    - flag: V
+      effect: write_condition
+      reference: comparison_unordered
+  - bank: FFLAGS
+    completion: accrued_causes
+    effects:
+    - flag: NV
+      effect: accrue_source
+      reference: operation_cause
+    - flag: OF
+      effect: accrue_source
+      reference: fea_source_conversion
+    - flag: UF
+      effect: accrue_source
+      reference: fea_source_conversion
+    - flag: NX
+      effect: accrue_source
+      reference: fea_source_conversion
+  events: []
+  sail_entry: execute_FTEST
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

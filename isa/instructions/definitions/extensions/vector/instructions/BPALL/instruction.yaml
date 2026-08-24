@@ -1,8 +1,0 @@
-mnemonic: BPALL
-title: BPALL (Vector)
-summary: Branch if every significant position for the selected size is set.
-description: Branch if every significant position for the selected size is set.
-attributes:
-  class: vector
-  family: vector
-  privilege: unprivileged

@@ -1,0 +1,13 @@
+The governing predicate selects destination elements for update. At the
+selected B, W, L, or Q width, the old destination is interpreted as a
+two's-complement signed value and the corresponding source is interpreted as an
+unsigned value. Their product is formed at twice that width, and its upper
+element-width half replaces the destination element. An unselected destination
+element retains its previous bit pattern.
+
+In the register form, the old destination-register lane is signed and the
+source-register lane is unsigned. In the memory-source form, the old
+destination-register lane is signed and the corresponding memory source is
+unsigned. In the memory-destination form, the old memory destination is signed
+and the corresponding source-register lane is unsigned; the upper half is
+written back to that memory element.

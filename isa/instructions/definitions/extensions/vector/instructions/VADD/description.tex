@@ -1,0 +1,11 @@
+VADD applies the selected integer or floating-point addition independently to
+each active vector lane. The governing predicate selects active lanes; an
+inactive destination lane retains its previous value.
+
+For B, W, L, and Q elements, each active result is the lane-width modular sum
+and no flag bank changes. For H, S, and D elements, each active result is
+rounded according to the floating-point environment, and a completed operation
+accrues any generated NV, OF, UF, and NX causes in FFLAGS; DZ is unchanged.
+If a generated floating-point exception is enabled in any active lane, VADD
+raises FLOATING\_POINT\_FAULT and commits neither destination lanes nor accrued
+FFLAGS causes from the faulting operation.

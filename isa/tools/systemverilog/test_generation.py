@@ -645,6 +645,37 @@ class SystemVerilogGenerationTests(unittest.TestCase):
     def test_public_mask_orders_are_live_derived(self) -> None:
         package = self.outputs[self.build_dir / "bedrock_decode_pkg.sv"]
         layout = generate_decoder.derive_public_layout(self.ir)
+        operations_by_form = {
+            form_id: operation
+            for operation in self.ir.operations
+            for form_id in operation.forms
+        }
+        for form in self.ir.forms:
+            operation = operations_by_form[form.key]
+            covering_cases = tuple(
+                case
+                for case in operation.cases
+                if form.key in case.applies_to.forms
+            )
+            expected_touched = tuple(
+                dict.fromkeys(
+                    f"{bank.bank}.{effect.flag}"
+                    for case in covering_cases
+                    for bank in case.flags or ()
+                    for effect in bank.effects
+                    if effect.effect != "preserve"
+                )
+            )
+            expected_events = tuple(
+                dict.fromkeys(
+                    event.event
+                    for case in covering_cases
+                    for event in case.events or ()
+                )
+            )
+            with self.subTest(form=form.key):
+                self.assertEqual(form.annotations.touched_flags, expected_touched)
+                self.assertEqual(form.annotations.possible_events, expected_events)
         expected_orders = {
             "SIZE": tuple(sorted({value for form in self.ir.forms for value in form.sizes})),
             "TOUCHED_FLAG": tuple(
@@ -669,6 +700,10 @@ class SystemVerilogGenerationTests(unittest.TestCase):
         self.assertEqual(layout.size_order, expected_orders["SIZE"])
         self.assertEqual(layout.touched_flag_order, expected_orders["TOUCHED_FLAG"])
         self.assertEqual(layout.possible_event_order, expected_orders["POSSIBLE_EVENT"])
+        self.assertEqual(
+            layout.cpuid_flag_order,
+            tuple(flag.id for flag in self.ir.cpuid_flags),
+        )
 
         dimension_names = {
             "SIZE": "BEDROCK_SIZE_MASK_BITS",
@@ -703,6 +738,7 @@ class SystemVerilogGenerationTests(unittest.TestCase):
                     f"localparam logic [{dimension}-1:0] {names[value]} = {literal}; // bit {index}: {value}",
                     package,
                 )
+
         for form in self.ir.forms:
             case = self.form_case_text(form)
             for prefix, order in expected_orders.items():
@@ -728,6 +764,39 @@ class SystemVerilogGenerationTests(unittest.TestCase):
                         ]
                     )
                 self.assertIn(assignment, case)
+
+    def test_every_form_projects_exact_typed_cpuid_availability_masks(self) -> None:
+        package = self.outputs[self.build_dir / "bedrock_decode_pkg.sv"]
+        order = tuple(flag.id for flag in self.ir.cpuid_flags)
+        self.assertIn(
+            f"BEDROCK_CPUID_FLAG_MASK_BITS = 10'd{len(order)};",
+            package,
+        )
+        names = {
+            flag: f"BEDROCK_CPUID_FLAG_MASK_{generate_decoder._identifier(flag)}"
+            for flag in order
+        }
+        for index, flag in enumerate(order):
+            self.assertIn(
+                f"{names[flag]} = {generate_decoder._hex(len(order), 1 << index)};",
+                package,
+            )
+        for form in self.ir.forms:
+            case = self.form_case_text(form)
+            with self.subTest(form=form.key):
+                self.assertIn("result_o.required_cpuid_flag_mask = '0;", case)
+                for rule in form.availability_rules:
+                    for flag in rule.required_cpuid_flags:
+                        self.assertIn(names[flag], case)
+                    for selector in rule.selectors:
+                        gather = generate_decoder._gather(
+                            "opcode_i", selector.positions
+                        )
+                        for value in selector.encoded_values:
+                            self.assertIn(
+                                f"{gather} == {len(selector.positions)}'d{value}",
+                                case,
+                            )
 
     def test_appended_payload_signedness_is_public_and_complete(self) -> None:
         package = self.outputs[self.build_dir / "bedrock_decode_pkg.sv"]

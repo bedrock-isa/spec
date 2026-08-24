@@ -1,8 +1,0 @@
-mnemonic: VMAXU
-title: VMAXU (Vector)
-summary: Unsigned maximum.
-description: Unsigned maximum.
-attributes:
-  class: vector
-  family: vector
-  privilege: unprivileged

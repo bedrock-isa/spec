@@ -2,7 +2,7 @@ forms:
 - id: extralong.vdiv.v70
   class: extralong
   bits: 11111101111001011zz1ppppvvvvvwwwww
-  syntax: VDIV.HSD(z) Pn(p), Vn(v), Vn(w)
+  syntax: VDIV.{H|S|D}(z) Pn(p), Vn(v), Vn(w)
   operands:
   - name: govern
     type: Pn
@@ -27,7 +27,7 @@ forms:
 - id: xxlong.vdiv.v180
   class: xxlong
   bits: 11111111000000100011zz0001ppppvvvvveeeeeee
-  syntax: VDIV.HSD(z) Pn(p), <ea>(e), Vn(v)
+  syntax: VDIV.{H|S|D}(z) Pn(p), <ea>(e), Vn(v)
   operands:
   - name: govern
     type: Pn
@@ -53,7 +53,7 @@ forms:
 - id: xxlong.vdiv.v181
   class: xxlong
   bits: 11111111000000100011zz0010ppppvvvvveeeeeee
-  syntax: VDIV.HSD(z) Pn(p), Vn(v), <ea>(e)
+  syntax: VDIV.{H|S|D}(z) Pn(p), Vn(v), <ea>(e)
   operands:
   - name: govern
     type: Pn

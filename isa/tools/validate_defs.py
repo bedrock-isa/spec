@@ -12,19 +12,23 @@ from typing import Any
 from defs_loader import (
     InstructionSetDef,
     load_extension_catalog,
+    extension_cpuid_requirements,
+    load_architectural_event_causes,
+    load_architectural_event_ids,
+    load_cpuid_flags,
     load_extensions,
     load_field_types,
+    load_flag_effect_definitions,
     load_instruction_sets,
+    load_operation,
+    load_named_values,
+    load_operand_types,
     load_register_groups,
+    load_semantic_conditions,
+    load_size_definitions,
     load_yaml,
 )
-from defs_schema import (
-    DecodeError,
-    decode_encodings,
-    decode_instruction,
-    decode_yaml,
-    verify_schema_lock,
-)
+from defs_schema import DecodeError, decode_encodings, decode_yaml, verify_schema_lock
 from encoding_store import load_encoding_store
 from encoding_fields import resolve_encoding_form
 from encoding_fields import validate_encoding_template
@@ -32,11 +36,11 @@ from artifact_overlay import resolve_source
 
 
 ROOT = Path(__file__).resolve().parents[2] / "isa" / "instructions" / "definitions"
-INSTRUCTION_FILENAME = "instruction.yaml"
+OPERATION_FILENAME = "operation.yaml"
 ENCODINGS_FILENAME = "encodings.yaml"
 
 
-def iter_instruction_files(
+def iter_operation_files(
     instruction_sets: list[InstructionSetDef],
 ) -> tuple[list[Path], list[str]]:
     errors: list[str] = []
@@ -56,9 +60,9 @@ def iter_instruction_files(
             if not isinstance(item, str) or not item.strip():
                 errors.append(f"{include}: instruction include entries must be non-empty strings")
                 continue
-            path = include.parent / item / INSTRUCTION_FILENAME
+            path = include.parent / item / OPERATION_FILENAME
             if not path.is_file():
-                errors.append(f"{include}: missing instruction definition {item}/{INSTRUCTION_FILENAME}")
+                errors.append(f"{include}: missing operation definition {item}/{OPERATION_FILENAME}")
                 continue
             files.append(path)
     return files, errors
@@ -108,49 +112,31 @@ def validate_defs(root: Path = ROOT) -> tuple[dict[str, Any], list[str]]:
             decode_yaml(path)
         catalog = load_extension_catalog(root)
         extensions = load_extensions(root, catalog)
+        cpuid_flags = load_cpuid_flags(root)
         register_groups = load_register_groups(root, extensions)
         instruction_sets = load_instruction_sets(root, extensions)
         field_types = load_field_types(root, extensions)
+        operand_types = load_operand_types(root, extensions)
+        size_definitions = load_size_definitions(root, extensions)
+        known_cpuid_flags, requirements_by_set = extension_cpuid_requirements(
+            extensions, cpuid_flags
+        )
+        known_event_ids = load_architectural_event_ids(architecture_path)
+        known_event_causes = load_architectural_event_causes(architecture_path)
+        known_conditions = frozenset(load_semantic_conditions(root))
+        known_named_values = frozenset(load_named_values(root))
+        known_flag_effects = load_flag_effect_definitions(root)
     except (OSError, ValueError, DecodeError) as exc:
         return {}, [str(exc)]
 
-    cpuid_positions: dict[tuple[int, int, int, int], str] = {}
-    cpuid_features: dict[str, str] = {}
-    for name, extension in extensions.items():
-        availability = extension.data.get("availability")
-        cpuid = availability.get("cpuid") if isinstance(availability, dict) else None
-        if not isinstance(cpuid, dict):
-            continue
-        position = (
-            int(cpuid["class"]),
-            int(cpuid["leaf"]),
-            int(cpuid["index"]),
-            int(cpuid["bit"]),
-        )
-        if any(value < 0 for value in position[:3]) or not 0 <= position[3] < 64:
-            errors.append(f"{extension.path}: invalid CPUID feature position {position}")
-        previous = cpuid_positions.get(position)
-        if previous is not None:
-            errors.append(
-                f"{extension.path}: CPUID position {position} duplicates extension {previous}"
-            )
-        cpuid_positions[position] = name
-        feature = str(cpuid["feature"])
-        previous = cpuid_features.get(feature)
-        if previous is not None:
-            errors.append(
-                f"{extension.path}: CPUID feature {feature} duplicates extension {previous}"
-            )
-        cpuid_features[feature] = name
-
-    instruction_files, include_errors = iter_instruction_files(instruction_sets)
+    instruction_files, include_errors = iter_operation_files(instruction_sets)
     errors.extend(include_errors)
     listed = set(instruction_files)
-    discovered = set(root.glob("**/instructions/*/instruction.yaml"))
+    discovered = set(root.glob("**/instructions/*/operation.yaml"))
     for path in sorted(discovered - listed):
-        errors.append(f"{path}: instruction definition is not listed by an instructions.yaml index")
+        errors.append(f"{path}: operation definition is not listed by an instructions.yaml index")
     for path in sorted(listed - discovered):
-        errors.append(f"{path}: listed instruction definition is outside the directory contract")
+        errors.append(f"{path}: listed operation definition is outside the directory contract")
 
     mnemonics: dict[str, Path] = {}
     instruction_families: Counter[str] = Counter()
@@ -160,22 +146,38 @@ def validate_defs(root: Path = ROOT) -> tuple[dict[str, Any], list[str]]:
 
     for path in instruction_files:
         try:
-            document = decode_instruction(path, load_yaml(path))
+            instruction_set = next(
+                item
+                for item in instruction_sets
+                if path.is_relative_to(item.include.parent)
+            )
+            document = load_operation(
+                path.parent,
+                operand_types=operand_types,
+                size_definitions=size_definitions,
+                base_requirements=requirements_by_set[instruction_set.name],
+                known_cpuid_flags=known_cpuid_flags,
+                known_event_ids=known_event_ids,
+                known_event_causes=known_event_causes,
+                known_condition_ids=known_conditions,
+                known_named_value_ids=known_named_values,
+                known_diagram_kinds=frozenset({"vector-example"}),
+                known_flag_effect_definitions=known_flag_effects,
+            )
         except (OSError, ValueError, DecodeError) as exc:
             errors.append(str(exc))
             continue
-        mnemonic = document.mnemonic
+        mnemonic = document.public_instruction.mnemonic
         if path.parent.name != mnemonic:
             errors.append(f"{path}: directory name must match mnemonic {mnemonic}")
         previous = mnemonics.get(mnemonic)
         if previous is not None:
             errors.append(f"duplicate mnemonic {mnemonic}: {previous} and {path}")
         mnemonics[mnemonic] = path
-        instruction_families[document.attributes.family] += 1
-
-        if document.additional_description is not None:
+        instruction_families[document.execution_route or "unrouted"] += 1
+        if document.artifacts is not None:
             details_count += 1
-            errors.extend(validate_description_tex(path.parent / document.additional_description))
+            errors.extend(validate_description_tex(path.parent / document.artifacts.description.path))
 
         encodings_path = path.with_name(ENCODINGS_FILENAME)
         if not encodings_path.is_file():
@@ -188,8 +190,8 @@ def validate_defs(root: Path = ROOT) -> tuple[dict[str, Any], list[str]]:
             continue
         encoding_count += len(encodings.forms)
         form_ids = {form.id for form in encodings.forms}
-        if document.repeat is not None and document.repeat.observed is not None:
-            observed_operand = document.repeat.observed.operand
+        if document.repeat.observed is not None:
+            observed_operand = getattr(document.repeat.observed, "operand", None)
             if observed_operand is not None:
                 missing_forms = [
                     form.id
@@ -201,17 +203,6 @@ def validate_defs(root: Path = ROOT) -> tuple[dict[str, Any], list[str]]:
                         f"{path}: repeat observed operand {observed_operand} is absent from "
                         f"forms {', '.join(missing_forms)}"
                     )
-        for exception in document.exceptions:
-            if exception.event not in event_names:
-                errors.append(
-                    f"{path}: exception references unknown event {exception.event}"
-                )
-            unknown_forms = set(exception.forms) - form_ids
-            if unknown_forms:
-                errors.append(
-                    f"{path}: exception {exception.event} references unknown forms "
-                    f"{', '.join(sorted(unknown_forms))}"
-                )
         valid_forms = []
         for decoded_form in encodings.forms:
             try:
@@ -228,26 +219,6 @@ def validate_defs(root: Path = ROOT) -> tuple[dict[str, Any], list[str]]:
             valid_forms.append(decoded_form)
             for operand in form.operands:
                 used_operand_types[operand.type] += 1
-        for alias in document.additional_assembler_syntax:
-            alias_errors: list[str] = []
-            for form in valid_forms:
-                try:
-                    validate_encoding_template(
-                        form,
-                        mnemonic,
-                        field_types,
-                        path,
-                        syntax=alias,
-                        alias=True,
-                    )
-                    break
-                except ValueError as exc:
-                    alias_errors.append(str(exc))
-            else:
-                errors.append(
-                    f"{path}: additional assembler syntax {alias!r} does not "
-                    "correspond to any encoding form"
-                )
 
     discovered_encoding_files = set(root.glob("**/instructions/*/encodings.yaml"))
     expected_encoding_files = {path.with_name(ENCODINGS_FILENAME) for path in instruction_files}

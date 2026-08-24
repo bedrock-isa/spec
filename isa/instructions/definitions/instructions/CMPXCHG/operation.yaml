@@ -1,0 +1,64 @@
+operation: CMPXCHG
+title: Compare And Exchange
+summary: Performs the compare and exchange operation.
+public_instruction:
+  mnemonic: CMPXCHG
+execution_route: atomics
+privilege: unprivileged
+repeat:
+  kind: not_eligible
+operands:
+- id: order
+  role: source
+  access: read
+  value_domain: integer
+  profiles:
+  - memory_order
+- id: expected
+  role: destination
+  access: read_write
+  value_domain: integer
+  profiles:
+  - Rn
+- id: desired
+  role: source
+  access: read
+  value_domain: integer
+  profiles:
+  - Rn
+- id: memory
+  role: destination
+  access: read_write
+  value_domain: integer
+  profiles:
+  - EA
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - extralong.cmpxchg_x_order_o_rn_x_rn_d_ea_e
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags:
+  - bank: FLAGS
+    completion: complete_image
+    effects:
+    - flag: Z
+      effect: write_condition
+      reference: store_succeeded
+    - flag: N
+      effect: clear
+    - flag: C
+      effect: clear
+    - flag: V
+      effect: clear
+  events: []
+  sail_entry: execute_CMPXCHG
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

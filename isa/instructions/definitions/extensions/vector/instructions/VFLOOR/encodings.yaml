@@ -2,7 +2,7 @@ forms:
 - id: long.vfloor.v41
   class: long
   bits: 11111010000111zz0ppppvvvvv
-  syntax: VFLOOR.HSD(z) Pn(p), Vn(v)
+  syntax: VFLOOR.{H|S|D}(z) Pn(p), Vn(v)
   operands:
   - name: govern
     type: Pn
@@ -23,7 +23,7 @@ forms:
 - id: xxlong.vfloor.v208
   class: xxlong
   bits: 11111111000000100100zz1101ppppvvvvveeeeeee
-  syntax: VFLOOR.HSD(z) Pn(p), <ea>(e), Vn(v)
+  syntax: VFLOOR.{H|S|D}(z) Pn(p), <ea>(e), Vn(v)
   operands:
   - name: govern
     type: Pn
@@ -49,7 +49,7 @@ forms:
 - id: xxlong.vfloor.v209
   class: xxlong
   bits: 11111111000000100100zz1110ppppvvvvveeeeeee
-  syntax: VFLOOR.HSD(z) Pn(p), Vn(v), <ea>(e)
+  syntax: VFLOOR.{H|S|D}(z) Pn(p), Vn(v), <ea>(e)
   operands:
   - name: govern
     type: Pn

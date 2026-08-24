@@ -2,7 +2,7 @@ forms:
 - id: long.punpkhi.v13
   class: long
   bits: 11111010010111zz00ppppqqqq
-  syntax: PUNPKHI.BWL(z) Pn(p), Pn(q)
+  syntax: PUNPKHI.{B|W|L}(z) Pn(p), Pn(q)
   operands:
   - name: src
     type: Pn

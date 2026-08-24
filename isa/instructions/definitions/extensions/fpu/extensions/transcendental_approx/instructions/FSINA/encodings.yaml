@@ -2,7 +2,7 @@ forms:
 - id: long.fsina_x_fn_s_fn_d
   class: long
   bits: 1111100111z0101001ssssdddd
-  syntax: FSINA.SD(z) Fn(s), Fn(d)
+  syntax: FSINA.{S|D}(z) Fn(s), Fn(d)
   operands:
   - name: src
     type: Fn

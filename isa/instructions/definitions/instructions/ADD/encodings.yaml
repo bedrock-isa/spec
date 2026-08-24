@@ -15,7 +15,7 @@ forms:
 - id: short.add_x_rn_s_rn_d
   class: short
   bits: 00001zssssdddd
-  syntax: ADD.LQ(z) Rn(s), Rn(d)
+  syntax: ADD.{L|Q}(z) Rn(s), Rn(d)
   operands:
   - name: src
     type: Rn
@@ -71,7 +71,7 @@ forms:
 - id: medium.add_x_rn_s_ea_e
   class: medium
   bits: 00001zzsssseeeeeee
-  syntax: ADD.BWLQ(z) Rn(s), <ea>(e)
+  syntax: ADD.{B|W|L|Q}(z) Rn(s), <ea>(e)
   operands:
   - name: src
     type: Rn
@@ -93,7 +93,7 @@ forms:
 - id: medium.add_x_ea_e_rn_d
   class: medium
   bits: 01001zzddddeeeeeee
-  syntax: ADD.BWLQ(z) <ea>(e), Rn(d)
+  syntax: ADD.{B|W|L|Q}(z) <ea>(e), Rn(d)
   operands:
   - name: src
     type: EA
@@ -111,7 +111,7 @@ forms:
 - id: medium.add_x_imm8s_ea_e
   class: medium
   bits: 11100zz0001eeeeeee
-  syntax: ADD.BWLQ(z) <imm8s>, <ea>(e)
+  syntax: ADD.{B|W|L|Q}(z) <imm8s>, <ea>(e)
   operands:
   - name: src
     type: imm8s
@@ -132,7 +132,7 @@ forms:
 - id: medium.add_x_imm16s_ea_e
   class: medium
   bits: 11100zz0010eeeeeee
-  syntax: ADD.WLQ(z) <imm16s>, <ea>(e)
+  syntax: ADD.{W|L|Q}(z) <imm16s>, <ea>(e)
   operands:
   - name: src
     type: imm16s
@@ -157,7 +157,7 @@ forms:
 - id: medium.add_x_imm32s_ea_e
   class: medium
   bits: 111001z0011eeeeeee
-  syntax: ADD.LQ(z) <imm32s>, <ea>(e)
+  syntax: ADD.{L|Q}(z) <imm32s>, <ea>(e)
   operands:
   - name: src
     type: imm32s

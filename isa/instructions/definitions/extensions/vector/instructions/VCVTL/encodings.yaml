@@ -2,7 +2,7 @@ forms:
 - id: extralong.vcvtl.v87
   class: extralong
   bits: 11111101111010100zz0ppppvvvvvwwwww
-  syntax: VCVTL.HSD(z) Pn(p), Vn(v), Vn(w)
+  syntax: VCVTL.{H|S|D}(z) Pn(p), Vn(v), Vn(w)
   operands:
   - name: govern
     type: Pn

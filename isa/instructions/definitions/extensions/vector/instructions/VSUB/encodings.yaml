@@ -2,7 +2,7 @@ forms:
 - id: extralong.vsub.v51
   class: extralong
   bits: 1111110111100000xxx1ppppvvvvvwwwww
-  syntax: VSUB.VTYPE(x) Pn(p), Vn(v), Vn(w)
+  syntax: VSUB.{B|W|L|Q|H|S|D}(x) Pn(p), Vn(v), Vn(w)
   operands:
   - name: govern
     type: Pn
@@ -28,7 +28,7 @@ forms:
 - id: xxlong.vsub.v142
   class: xxlong
   bits: 1111111100000010000xxx0101ppppvvvvveeeeeee
-  syntax: VSUB.VTYPE(x) Pn(p), <ea>(e), Vn(v)
+  syntax: VSUB.{B|W|L|Q|H|S|D}(x) Pn(p), <ea>(e), Vn(v)
   operands:
   - name: govern
     type: Pn
@@ -54,7 +54,7 @@ forms:
 - id: xxlong.vsub.v143
   class: xxlong
   bits: 1111111100000010000xxx0110ppppvvvvveeeeeee
-  syntax: VSUB.VTYPE(x) Pn(p), Vn(v), <ea>(e)
+  syntax: VSUB.{B|W|L|Q|H|S|D}(x) Pn(p), Vn(v), <ea>(e)
   operands:
   - name: govern
     type: Pn

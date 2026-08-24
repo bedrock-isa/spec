@@ -79,12 +79,12 @@ core {
 }
 
 postlude {
-  requires prelude, operations, catalog_types, catalog, decode, fp, core
+  requires prelude, operations, catalog_types, catalog, decode, fp, core, operation_entries
   files execution/core/boundary.sail
 }
 
 unit_tests {
-  requires prelude, operations, catalog_types, catalog, decode, fp, core, postlude
+  requires prelude, operations, catalog_types, catalog, decode, fp, core, operation_entries, postlude
   files
     tests/support.sail,
     tests/coverage.sail,

@@ -2,7 +2,7 @@ forms:
 - id: extralong.vshl.v63
   class: extralong
   bits: 11111101111001000zz0ppppvvvvvwwwww
-  syntax: VSHL.BWLQ(z) Pn(p), Vn(v), Vn(w)
+  syntax: VSHL.{B|W|L|Q}(z) Pn(p), Vn(v), Vn(w)
   operands:
   - name: govern
     type: Pn
@@ -22,7 +22,7 @@ forms:
 - id: extralong.vshl.v107
   class: extralong
   bits: 11111101111100000zzppppvvvvviiiiii
-  syntax: VSHL.BWLQ(z) Pn(p), imm6(i), Vn(v)
+  syntax: VSHL.{B|W|L|Q}(z) Pn(p), imm6(i), Vn(v)
   operands:
   - name: govern
     type: Pn
@@ -42,7 +42,7 @@ forms:
 - id: xxlong.vshl.v166
   class: xxlong
   bits: 11111111000000100010zz0011ppppvvvvveeeeeee
-  syntax: VSHL.BWLQ(z) Pn(p), <ea>(e), Vn(v)
+  syntax: VSHL.{B|W|L|Q}(z) Pn(p), <ea>(e), Vn(v)
   operands:
   - name: govern
     type: Pn
@@ -64,7 +64,7 @@ forms:
 - id: xxlong.vshl.v167
   class: xxlong
   bits: 11111111000000100010zz0100ppppvvvvveeeeeee
-  syntax: VSHL.BWLQ(z) Pn(p), Vn(v), <ea>(e)
+  syntax: VSHL.{B|W|L|Q}(z) Pn(p), Vn(v), <ea>(e)
   operands:
   - name: govern
     type: Pn
@@ -90,7 +90,7 @@ forms:
 - id: xxlong.vshl.v214
   class: xxlong
   bits: 11111111000000101100zz000ppppiiiiiieeeeeee
-  syntax: VSHL.BWLQ(z) Pn(p), imm6(i), <ea>(e)
+  syntax: VSHL.{B|W|L|Q}(z) Pn(p), imm6(i), <ea>(e)
   operands:
   - name: govern
     type: Pn

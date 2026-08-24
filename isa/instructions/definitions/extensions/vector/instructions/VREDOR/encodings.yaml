@@ -2,7 +2,7 @@ forms:
 - id: extralong.vredor.v124
   class: extralong
   bits: 11111101111110101zz10pppprrrrvvvvv
-  syntax: VREDOR.BWLQ(z) Pn(p), Vn(v), Rn(r)
+  syntax: VREDOR.{B|W|L|Q}(z) Pn(p), Vn(v), Rn(r)
   operands:
   - name: govern
     type: Pn
@@ -22,7 +22,7 @@ forms:
 - id: xxlong.vredor.v225
   class: xxlong
   bits: 11111111000000101110zz00110pppprrrreeeeeee
-  syntax: VREDOR.BWLQ(z) Pn(p), <ea>(e), Rn(r)
+  syntax: VREDOR.{B|W|L|Q}(z) Pn(p), <ea>(e), Rn(r)
   operands:
   - name: govern
     type: Pn

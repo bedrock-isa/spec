@@ -1,0 +1,42 @@
+operation: LJMP
+title: Long Jump
+summary: Atomically transfers control to a new CS:PC pair.
+public_instruction:
+  mnemonic: LJMP
+execution_route: control_flow
+privilege: unprivileged
+repeat:
+  kind: not_eligible
+operands:
+- id: new_cs
+  role: source
+  access: read
+  value_domain: integer
+  profiles:
+  - Rn
+- id: target
+  role: control_target
+  access: read
+  value_domain: integer
+  profiles:
+  - EA
+  - Rn
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - long.ljmp_rn_r_ea_e
+    - medium.ljmp_rn_s_rn_d
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags: []
+  events: []
+  sail_entry: execute_LJMP
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

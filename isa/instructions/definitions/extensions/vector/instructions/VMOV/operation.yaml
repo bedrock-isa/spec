@@ -1,0 +1,63 @@
+operation: VMOV
+title: Vector Move
+summary: Copies or merges vector elements between registers and contiguous memory.
+public_instruction:
+  mnemonic: VMOV
+  width_suffix_aliases: true
+execution_route: vector
+privilege: unprivileged
+repeat:
+  kind: not_eligible
+operands:
+- {id: govern, role: governing_predicate, access: read, value_domain: predicate, profiles: [Pn]}
+- {id: src, role: source, access: read, value_domain: vector, profiles: [Vn, VEA]}
+- {id: dst, role: destination, access: read_write, value_domain: vector, profiles: [Vn, VEA]}
+cases:
+- id: complete_register
+  applies_to:
+    forms: [long.vmov.v3]
+  additional_requirements: []
+  predicate: {kind: none}
+  flags: []
+  events: []
+  sail_entry: execute_VMOV
+- id: predicated_register
+  applies_to:
+    forms: [extralong.vmov.v91]
+    selectors:
+    - {domain: BWLQ, values: [B, W, L, Q]}
+  additional_requirements: []
+  predicate: {kind: none}
+  flags: []
+  events: []
+  sail_entry: execute_VMOV
+- id: memory_load
+  applies_to:
+    forms: [xxlong.vmov.v137]
+    selectors:
+    - {domain: BWLQ, values: [B, W, L, Q]}
+  additional_requirements: []
+  predicate: {kind: none}
+  flags: []
+  events: []
+  sail_entry: execute_VMOV
+- id: memory_store
+  applies_to:
+    forms: [xxlong.vmov.v138]
+    selectors:
+    - {domain: BWLQ, values: [B, W, L, Q]}
+  additional_requirements: []
+  predicate: {kind: none}
+  flags: []
+  events: []
+  sail_entry: execute_VMOV
+artifacts:
+  semantics: {path: semantics.sail, kind: sail}
+  description: {path: description.tex, kind: tex}
+  diagrams:
+  - id: longword-memory-load
+    path: diagrams/longword-memory-load.yaml
+    kind: vector-example
+    case: memory_load
+    caption: VMOV.L memory load with merge
+    alt_text: "The base register forms contiguous longword addresses. Active predicate lanes read memory and replace the corresponding Vd lanes; the inactive lane issues no access and retains its old value."

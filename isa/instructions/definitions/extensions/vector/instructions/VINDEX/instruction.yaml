@@ -1,8 +1,0 @@
-mnemonic: VINDEX
-title: VINDEX (Vector)
-summary: Write each lane's logical index.
-description: Write each lane's logical index.
-attributes:
-  class: vector
-  family: vector
-  privilege: unprivileged

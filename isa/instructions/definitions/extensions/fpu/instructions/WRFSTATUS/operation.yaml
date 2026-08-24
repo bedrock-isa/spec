@@ -1,0 +1,34 @@
+operation: WRFSTATUS
+title: Write Floating-Point Status
+summary: Write the FPU status/control register from an Rn register.
+public_instruction:
+  mnemonic: WRFSTATUS
+execution_route: system_registers
+privilege: unprivileged
+repeat:
+  kind: not_eligible
+operands:
+- id: src
+  role: source
+  access: read
+  value_domain: integer
+  profiles:
+  - Rn
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - medium.wrfstatus_rn_s
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags: []
+  events: []
+  sail_entry: execute_WRFSTATUS
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

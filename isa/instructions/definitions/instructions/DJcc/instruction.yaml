@@ -1,8 +1,0 @@
-mnemonic: DJcc
-title: Decrement And Jump Conditional
-summary: Performs the decrement and jump conditional operation.
-description: 'Decrements the selected counter and transfers control only when the new count is nonzero and the encoded condition is true. The target EA has Q interpretation width: a memory form reads a 64-bit target and a register or immediate form supplies its value directly.'
-attributes:
-  class: control_flow
-  family: control_flow
-  privilege: unprivileged

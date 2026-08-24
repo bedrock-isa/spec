@@ -2,7 +2,7 @@ forms:
 - id: medium.fceil_x_fn_s_fn_d
   class: medium
   bits: 101000z110ssssdddd
-  syntax: FCEIL.SD(z) Fn(s), Fn(d)
+  syntax: FCEIL.{S|D}(z) Fn(s), Fn(d)
   operands:
   - name: src
     type: Fn
@@ -18,7 +18,7 @@ forms:
 - id: long.fceil_x_ea_s_fn_d
   class: long
   bits: 1111100100z0110ddddeeeeeee
-  syntax: FCEIL.SD(z) <ea>(e), Fn(d)
+  syntax: FCEIL.{S|D}(z) <ea>(e), Fn(d)
   operands:
   - name: src
     type: FEA
@@ -36,7 +36,7 @@ forms:
 - id: long.fceil_x_fn_s_ea_d
   class: long
   bits: 1111100100z1001sssseeeeeee
-  syntax: FCEIL.SD(z) Fn(s), <ea>(e)
+  syntax: FCEIL.{S|D}(z) Fn(s), <ea>(e)
   operands:
   - name: src
     type: Fn

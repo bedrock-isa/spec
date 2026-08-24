@@ -1,0 +1,34 @@
+operation: VTRUNCW
+title: Vector Truncation to Word
+summary: Copies the low W field from each L or Q source container.
+public_instruction:
+  mnemonic: VTRUNCW
+execution_route: vector
+privilege: unprivileged
+repeat:
+  kind: not_eligible
+operands:
+- {id: govern, role: governing_predicate, access: read, value_domain: predicate, profiles: [Pn]}
+- {id: src, role: source, access: read, value_domain: vector, profiles: [Vn]}
+- {id: dst, role: destination, access: read_write, value_domain: vector, profiles: [Vn]}
+cases:
+- id: all_forms
+  applies_to:
+    forms: [extralong.vtruncw.v79]
+    selectors:
+    - {domain: V_LQ, values: [L, Q]}
+  additional_requirements: []
+  predicate: {kind: none}
+  flags: []
+  events: []
+  sail_entry: execute_VTRUNCW
+artifacts:
+  semantics: {path: semantics.sail, kind: sail}
+  description: {path: description.tex, kind: tex}
+  diagrams:
+  - id: long-low-word
+    path: diagrams/long-low-word.yaml
+    kind: vector-example
+    case: all_forms
+    caption: VTRUNCW.L low-word truncation
+    alt_text: "An illustrative L-container VTRUNCW view: each active container copies the low source word into the low destination word and preserves the old destination high word; inactive containers preserve the complete old destination value."

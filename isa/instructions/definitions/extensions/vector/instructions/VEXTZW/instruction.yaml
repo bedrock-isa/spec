@@ -1,8 +1,0 @@
-mnemonic: VEXTZW
-title: VEXTZW (Vector)
-summary: Unsigned B to W.
-description: Unsigned B to W.
-attributes:
-  class: vector
-  family: vector
-  privilege: unprivileged

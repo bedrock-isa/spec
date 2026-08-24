@@ -2,7 +2,7 @@ forms:
 - id: long.ptrue.v23
   class: long
   bits: 11111010011100zz000000pppp
-  syntax: PTRUE.BWLQ(z) Pn(p)
+  syntax: PTRUE.{B|W|L|Q}(z) Pn(p)
   operands:
   - name: dst
     type: Pn

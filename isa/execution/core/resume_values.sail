@@ -83,7 +83,7 @@ function execute_resolved_operands(instruction : Decoded_instruction, image : Cp
   let synthetic = { instruction with operands = resolved_operand_list(
     instruction.operands, first_name, first_value, second_name, second_value, scratch
   ) };
-  let result = execute_route_exact(synthetic, execution_image);
+  let result = execute_operation_entry(synthetic, execution_image);
   if result.awaiting_environment | result.fault != None() then None()
   else {
     let destination_value = image_register(result.state, scratch);

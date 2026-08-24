@@ -1,0 +1,15 @@
+For each active H, S, or D element, bits 0 through 9 of the result form a
+one-hot bitmap for negative infinity, negative normal, negative subnormal,
+negative zero, positive zero, positive subnormal, positive normal, positive
+infinity, signaling NaN, and quiet NaN, respectively. All higher bits of the
+destination element are zero.
+
+The register form classifies each old destination lane and writes the result
+back to that lane. The memory-source form classifies each active memory element
+and writes the result to the corresponding destination lane. An inactive
+destination lane retains its previous value.
+
+The memory-destination form classifies each active source-register lane and
+writes the result to the corresponding memory element. An inactive memory
+element retains its previous value, making the destination transaction a
+lane-wise read-modify-write.

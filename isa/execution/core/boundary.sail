@@ -29,29 +29,20 @@ function execute_full(instruction : Decoded_instruction, state : Cpu_state) -> E
       state, instruction.form.operation, IllegalInstruction,
       "invalid floating-point destination relation", 0x0000000000000006
     )
-  else if instruction.form.instruction_set == FpuSet & not_bool(state.fp_enabled) then
-    faulted(state, instruction.form.operation, ExtensionUnavailable, "FP extension disabled")
-  else if instruction.form.instruction_set == FpuTranscendentalSet
-          & (not_bool(state.fp_enabled) | not_bool(state.fptrans_enabled)) then
-    faulted(state, instruction.form.operation, ExtensionUnavailable, "FPTRANSA extension disabled")
-  else if instruction.form.instruction_set == VectorSet & not_bool(state.vector_enabled) then
-    faulted(state, instruction.form.operation, ExtensionUnavailable, "VECTOR extension disabled")
-  else if instruction.form.instruction_set == VectorSet
-          & vector_instruction_requires_fp(instruction) & not_bool(state.fp_enabled) then
-    faulted(state, instruction.form.operation, ExtensionUnavailable, "FP extension disabled")
-  else if instruction.form.instruction_set == VectorFpuSet
-          & (not_bool(state.vector_enabled) | not_bool(state.fp_enabled)) then
-    faulted(state, instruction.form.operation, ExtensionUnavailable, "VECTOR or FP extension disabled")
+  else if not_bool(instruction_available(instruction, state)) then
+    faulted(
+      state, instruction.form.operation, ExtensionUnavailable,
+      "required CPUID flag disabled"
+    )
   else if instruction.form.privilege == SupervisorPrivilege & not_bool(state.supervisor) then
     faulted(state, instruction.form.operation, PrivilegeFault, "supervisor instruction")
   else match architectural_state_fault(instruction, state) {
     Some(problem) => faulted(state, instruction.form.operation, problem.kind, problem.detail),
     None() =>
-      if instruction.form.predicate_mode == WriteBoolean then execute_setcc(instruction, state)
-      else if instruction.form.predicate_mode == AnnulOnFalse
+      if instruction.form.predicate_mode == AnnulOnFalse
               & not_bool(predicate_holds(instruction, state)) then
         completed(state, advance_pc(state, instruction), CommitControl, [||])
-      else execute_route_exact(instruction, state),
+      else execute_operation_entry(instruction, state),
   }
 
 function machine_check_payload_valid(error_code : bits(64), fault_ea : bits(64),
@@ -289,23 +280,9 @@ function decode_and_execute_full_outcome(bytes : list(bits(8)), state : Cpu_stat
         decode = decoded, execution = Some(execute_full(instruction, state))
       },
       None() =>
-        if form.instruction_set == FpuSet & not_bool(state.fp_enabled) then
+        if not_bool(candidate_form_available(form, state)) then
           struct { decode = decoded, execution = Some(faulted(
-            state, form.operation, ExtensionUnavailable, "FP extension disabled"
-          )) }
-        else if form.instruction_set == FpuTranscendentalSet
-                & (not_bool(state.fp_enabled) | not_bool(state.fptrans_enabled)) then
-          struct { decode = decoded, execution = Some(faulted(
-            state, form.operation, ExtensionUnavailable, "FPTRANSA extension disabled"
-          )) }
-        else if form.instruction_set == VectorSet & not_bool(state.vector_enabled) then
-          struct { decode = decoded, execution = Some(faulted(
-            state, form.operation, ExtensionUnavailable, "VECTOR extension disabled"
-          )) }
-        else if form.instruction_set == VectorFpuSet
-                & (not_bool(state.vector_enabled) | not_bool(state.fp_enabled)) then
-          struct { decode = decoded, execution = Some(faulted(
-            state, form.operation, ExtensionUnavailable, "VECTOR or FP extension disabled"
+            state, form.operation, ExtensionUnavailable, "required CPUID flag disabled"
           )) }
         else struct { decode = decoded, execution = Some(faulted(
           state, form.operation, IllegalInstruction, decoded.detail

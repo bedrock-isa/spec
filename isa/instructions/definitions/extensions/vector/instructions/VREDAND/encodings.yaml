@@ -2,7 +2,7 @@ forms:
 - id: extralong.vredand.v123
   class: extralong
   bits: 11111101111110101zz01pppprrrrvvvvv
-  syntax: VREDAND.BWLQ(z) Pn(p), Vn(v), Rn(r)
+  syntax: VREDAND.{B|W|L|Q}(z) Pn(p), Vn(v), Rn(r)
   operands:
   - name: govern
     type: Pn
@@ -22,7 +22,7 @@ forms:
 - id: xxlong.vredand.v224
   class: xxlong
   bits: 11111111000000101110zz00101pppprrrreeeeeee
-  syntax: VREDAND.BWLQ(z) Pn(p), <ea>(e), Rn(r)
+  syntax: VREDAND.{B|W|L|Q}(z) Pn(p), <ea>(e), Rn(r)
   operands:
   - name: govern
     type: Pn

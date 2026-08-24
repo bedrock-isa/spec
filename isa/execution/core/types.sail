@@ -377,6 +377,11 @@ struct Execution_result = {
   awaiting_environment : bool,
 }
 
+// Operation-local entries are generated after the core module.  Core
+// continuations resume through this declared boundary without depending on a
+// generic route dispatcher.
+val execute_operation_entry : (Decoded_instruction, Cpu_state) -> Execution_result
+
 struct Boundary_result = {
   state : Cpu_state,
   admitted : option(Event_record),

@@ -1,8 +1,0 @@
-mnemonic: VLCADD
-title: Vector Lane-Count Add
-summary: Add a signed immediate multiple of the selected lane count to `Rn`.
-description: Add signed `imm8` multiplied by VLEN in bytes divided by the selected element width in bytes, modulo 2^64.
-attributes:
-  class: vector
-  family: vector
-  privilege: unprivileged

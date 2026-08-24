@@ -1,0 +1,37 @@
+operation: VNMSUB
+title: Vector Fused Negative Multiply-Subtract
+summary: Performs fused negative multiply-subtract on corresponding active floating-point elements.
+public_instruction:
+  mnemonic: VNMSUB
+execution_route: vector
+privilege: unprivileged
+repeat:
+  kind: not_eligible
+operands:
+- {id: govern, role: governing_predicate, access: read, value_domain: predicate, profiles: [Pn]}
+- {id: lhs, role: source, access: read, value_domain: vector, profiles: [Vn]}
+- {id: rhs, role: source, access: read, value_domain: vector, profiles: [Vn]}
+- {id: dst, role: destination, access: read_write, value_domain: vector, profiles: [Vn]}
+cases:
+- id: all_forms
+  applies_to:
+    forms: [extralong.vnmsub.v105]
+    selectors:
+    - {domain: HSD, values: [H, S, D]}
+  additional_requirements: [FP]
+  predicate: {kind: none}
+  flags:
+  - bank: FFLAGS
+    completion: accrued_causes
+    effects:
+    - {flag: NV, effect: accrue_source, reference: operation_cause}
+    - {flag: OF, effect: accrue_source, reference: operation_cause}
+    - {flag: UF, effect: accrue_source, reference: operation_cause}
+    - {flag: NX, effect: accrue_source, reference: operation_cause}
+  events:
+  - event: FLOATING_POINT_FAULT
+    condition: enabled_floating_point_exception
+  sail_entry: execute_VNMSUB
+artifacts:
+  semantics: {path: semantics.sail, kind: sail}
+  description: {path: description.tex, kind: tex}

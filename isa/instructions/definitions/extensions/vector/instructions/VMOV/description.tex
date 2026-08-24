@@ -1,0 +1,9 @@
+The unsuffixed register form copies the complete source vector image to Vd.
+The predicated register form replaces each active destination lane with the
+corresponding Vn lane and retains every inactive destination lane.
+
+For a memory source, the effective address supplies the contiguous anchor and
+each active lane reads its corresponding element into Vd; inactive lanes issue
+no access and retain their old values. For a memory destination, each active
+lane stores its corresponding Vn element and each inactive lane issues no
+access.

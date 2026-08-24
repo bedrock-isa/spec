@@ -1,0 +1,34 @@
+operation: PREFETCH
+title: Prefetch
+summary: Hints that EA will be read soon; faults only under the configured prefetch-fault policy.
+public_instruction:
+  mnemonic: PREFETCH
+execution_route: cache
+privilege: unprivileged
+repeat:
+  kind: rep
+operands:
+- id: src
+  role: address
+  access: address
+  value_domain: integer
+  profiles:
+  - EA
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - medium.prefetch_ea_e
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags: []
+  events: []
+  sail_entry: execute_PREFETCH
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

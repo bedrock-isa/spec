@@ -1,8 +1,0 @@
-mnemonic: CPUID
-title: CPU Identification
-summary: Queries architectural discovery information through a selected Rn register.
-description: Queries architectural discovery information. The selected Rn register contains the CPUID query selector before execution and receives the selected 64-bit result after execution.
-attributes:
-  class: system
-  family: system_registers
-  privilege: unprivileged

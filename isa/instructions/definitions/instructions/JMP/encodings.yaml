@@ -27,7 +27,7 @@ forms:
 - id: medium.jmp_x_ea_e
   class: medium
   bits: 111001z1010eeeeeee
-  syntax: JMP.LQ(z) <ea>(e)
+  syntax: JMP.{L|Q}(z) <ea>(e)
   operands:
   - name: target
     type: EA
@@ -45,7 +45,7 @@ forms:
 - id: medium.jmp_x_rn
   class: medium
   bits: 11101100001z10rrrr
-  syntax: JMP.LQ(z) Rn(r)
+  syntax: JMP.{L|Q}(z) Rn(r)
   operands:
   - name: target
     type: Rn

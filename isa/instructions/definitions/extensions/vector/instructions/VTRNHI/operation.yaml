@@ -1,0 +1,35 @@
+operation: VTRNHI
+title: Vector Odd-Lane Transpose
+summary: Interleave odd lanes from the old destination and source by adjacent result pairs.
+public_instruction:
+  mnemonic: VTRNHI
+  width_suffix_aliases: true
+execution_route: vector
+privilege: unprivileged
+repeat:
+  kind: not_eligible
+operands:
+- {id: govern, role: governing_predicate, access: read, value_domain: predicate, profiles: [Pn]}
+- {id: src, role: source, access: read, value_domain: vector, profiles: [Vn]}
+- {id: dst, role: destination, access: read_write, value_domain: vector, profiles: [Vn]}
+cases:
+- id: all_forms
+  applies_to:
+    forms: [extralong.vtrnhi.v98]
+    selectors:
+    - {domain: BWLQ, values: [B, W, L, Q]}
+  additional_requirements: []
+  predicate: {kind: none}
+  flags: []
+  events: []
+  sail_entry: execute_VTRNHI
+artifacts:
+  semantics: {path: semantics.sail, kind: sail}
+  description: {path: description.tex, kind: tex}
+  diagrams:
+  - id: odd-lane-transpose
+    path: diagrams/odd-lane-transpose.yaml
+    kind: vector-example
+    case: all_forms
+    caption: VTRNHI odd-lane transpose
+    alt_text: "An illustrative right-to-left W-lane VTRNHI view: each active result pair takes its even-position result from the old destination odd lane and its odd-position result from the matching Vn odd lane; inactive results preserve old Vd."

@@ -1,0 +1,48 @@
+operation: MOVCU
+title: Move Current To User
+summary: Copies from a current-domain source to user-domain memory.
+public_instruction:
+  mnemonic: MOVCU
+execution_route: data_movement
+privilege: supervisor
+repeat:
+  kind: rep_and_repcc
+  observed:
+    kind: result
+    operand: dst
+operands:
+- id: src
+  role: source
+  access: read
+  value_domain: integer
+  profiles:
+  - EA
+  - Rn
+- id: dst
+  role: destination
+  access: write
+  value_domain: integer
+  profiles:
+  - EA
+  - Rn
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - long.movcu_x_ea_s_ea_d
+    - medium.movcu_x_rn_s_rn_d
+    - long.movcu_x_rn_s_ea_d
+    - long.movcu_x_ea_s_rn_d
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags: []
+  events: []
+  sail_entry: execute_MOVCU
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

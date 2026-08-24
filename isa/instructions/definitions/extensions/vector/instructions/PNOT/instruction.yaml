@@ -1,8 +1,0 @@
-mnemonic: PNOT
-title: PNOT (Vector)
-summary: Complement `Pd`.
-description: Complement `Pd`.
-attributes:
-  class: vector
-  family: vector
-  privilege: unprivileged

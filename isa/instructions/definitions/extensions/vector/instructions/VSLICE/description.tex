@@ -1,0 +1,5 @@
+Number the lanes of the old destination followed by the lanes of Vn as one
+sequence.  For each active destination lane, VSLICE selects the sequence lane
+whose index is the destination-lane index plus the unsigned count.  A sequence
+index beyond both vectors produces zero.  The governing predicate retains the
+corresponding old destination value in each inactive lane.

@@ -2,7 +2,7 @@ forms:
 - id: long.vrevbyte.v37
   class: long
   bits: 11111010000101zz0ppppvvvvv
-  syntax: VREVBYTE.WLQ(z) Pn(p), Vn(v)
+  syntax: VREVBYTE.{W|L|Q}(z) Pn(p), Vn(v)
   operands:
   - name: govern
     type: Pn
@@ -23,7 +23,7 @@ forms:
 - id: xxlong.vrevbyte.v200
   class: xxlong
   bits: 11111111000000100100zz0101ppppvvvvveeeeeee
-  syntax: VREVBYTE.WLQ(z) Pn(p), <ea>(e), Vn(v)
+  syntax: VREVBYTE.{W|L|Q}(z) Pn(p), <ea>(e), Vn(v)
   operands:
   - name: govern
     type: Pn
@@ -49,7 +49,7 @@ forms:
 - id: xxlong.vrevbyte.v201
   class: xxlong
   bits: 11111111000000100100zz0110ppppvvvvveeeeeee
-  syntax: VREVBYTE.WLQ(z) Pn(p), Vn(v), <ea>(e)
+  syntax: VREVBYTE.{W|L|Q}(z) Pn(p), Vn(v), <ea>(e)
   operands:
   - name: govern
     type: Pn

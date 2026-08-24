@@ -1,0 +1,35 @@
+operation: PZIPHI
+title: Predicate Upper-Half Interleave
+summary: Interleave the upper halves of two predicate-lane sequences.
+public_instruction:
+  mnemonic: PZIPHI
+  width_suffix_aliases: true
+execution_route: vector
+privilege: unprivileged
+repeat:
+  kind: not_eligible
+operands:
+- {id: lhs, role: source, access: read, value_domain: predicate, profiles: [Pn]}
+- {id: rhs, role: source, access: read, value_domain: predicate, profiles: [Pn]}
+- {id: dst, role: destination, access: read_write, value_domain: predicate, profiles: [Pn]}
+cases:
+- id: all_forms
+  applies_to:
+    forms: [extralong.pziphi.v131]
+    selectors:
+    - {domain: BWLQ, values: [B, W, L, Q]}
+  additional_requirements: []
+  predicate: {kind: none}
+  flags: []
+  events: []
+  sail_entry: execute_PZIPHI
+artifacts:
+  semantics: {path: semantics.sail, kind: sail}
+  description: {path: description.tex, kind: tex}
+  diagrams:
+  - id: upper-half
+    path: diagrams/upper-half.yaml
+    kind: vector-example
+    case: all_forms
+    caption: PZIPHI.W upper-half predicate interleave
+    alt_text: "In this fixed 16-byte example, new Pd alternates typed predicate lanes from the upper halves of Pa and Pb. Larger VLEN begins at half its architectural typed lane count."

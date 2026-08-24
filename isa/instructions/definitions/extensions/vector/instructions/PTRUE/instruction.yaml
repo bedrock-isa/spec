@@ -1,8 +1,0 @@
-mnemonic: PTRUE
-title: PTRUE (Vector)
-summary: Set every significant position for the selected size.
-description: Set every significant position for the selected size.
-attributes:
-  class: vector
-  family: vector
-  privilege: unprivileged

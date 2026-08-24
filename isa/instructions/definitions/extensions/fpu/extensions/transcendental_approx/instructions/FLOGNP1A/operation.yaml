@@ -1,0 +1,52 @@
+operation: FLOGNP1A
+title: Approximate Floating-Point Natural Log Plus One
+summary: Performs the approximate floating-point natural log plus one operation.
+public_instruction:
+  mnemonic: FLOGNP1A
+execution_route: fpu_transcendental_approx
+privilege: unprivileged
+repeat:
+  kind: rep
+operands:
+- id: src
+  role: source
+  access: read
+  value_domain: floating
+  profiles:
+  - Fn
+- id: dst
+  role: destination
+  access: write
+  value_domain: floating
+  profiles:
+  - Fn
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - long.flognp1a_x_fn_s_fn_d
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags:
+  - bank: FFLAGS
+    completion: accrued_causes
+    effects:
+    - flag: NV
+      effect: accrue_source
+      reference: operation_cause
+    - flag: DZ
+      effect: accrue_source
+      reference: operation_cause
+    - flag: UF
+      effect: accrue_source
+      reference: operation_cause
+  events: []
+  sail_entry: execute_FLOGNP1A
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

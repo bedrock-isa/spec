@@ -99,19 +99,18 @@ function execute_move_sp_local(instruction : Decoded_instruction, state : Cpu_st
     _ => None(),
   }
 
-function execute_bounds_local(instruction : Decoded_instruction, state : Cpu_state)
+function execute_bounds_comparison_local(
+  instruction : Decoded_instruction,
+  state : Cpu_state,
+  inclusive_low : bool,
+  inclusive_high : bool,
+  signed_operation : bool
+)
   -> option(Execution_result) = {
   let width = operation_width(instruction);
   match (value_named(instruction, state, "lo"), value_named(instruction, state, "value"),
          value_named(instruction, state, "hi")) {
     (Some(low), Some(value), Some(high)) => {
-      let operation = instruction.form.operation;
-      let inclusive_low = operation == Op_BNDSII | operation == Op_BNDSIX
-                        | operation == Op_BNDUII | operation == Op_BNDUIX;
-      let inclusive_high = operation == Op_BNDSII | operation == Op_BNDSXI
-                         | operation == Op_BNDUII | operation == Op_BNDUXI;
-      let signed_operation = operation == Op_BNDSII | operation == Op_BNDSIX
-                           | operation == Op_BNDSXI | operation == Op_BNDSXX;
       let low_value = if signed_operation then signed_width(low, width)
                       else unsigned(narrow_bits(low, width));
       let tested_value = if signed_operation then signed_width(value, width)

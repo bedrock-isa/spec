@@ -1,0 +1,40 @@
+operation: CALL
+title: Call
+summary: Performs the call operation.
+public_instruction:
+  mnemonic: CALL
+execution_route: control_flow
+privilege: unprivileged
+repeat:
+  kind: not_eligible
+operands:
+- id: target
+  role: control_target
+  access: read
+  value_domain: integer
+  profiles:
+  - imm16s
+  - imm32s
+  - EA
+  - Rn
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - medium.call_ea
+    - medium.call_ea.2
+    - medium.call_ea_e
+    - medium.call_rn
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags: []
+  events: []
+  sail_entry: execute_CALL
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

@@ -1,0 +1,34 @@
+operation: INVASID
+title: Invalidate TLB By ASID
+summary: Invalidate TLB entries for ASID.
+public_instruction:
+  mnemonic: INVASID
+execution_route: tlb_and_context
+privilege: supervisor
+repeat:
+  kind: not_eligible
+operands:
+- id: asid
+  role: source
+  access: read
+  value_domain: integer
+  profiles:
+  - imm16
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - medium.invasid_ea
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags: []
+  events: []
+  sail_entry: execute_INVASID
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

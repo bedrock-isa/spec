@@ -2,7 +2,7 @@ forms:
 - id: xxlong.vscatter1.v248
   class: xxlong
   bits: 111111110000011000zz0bbbbppppiiiissssvvvvv
-  syntax: VSCATTER1.BWLQ(z) Pn(p), Vn(v), [Rn(b) + Rn(i) * Rn(s)]
+  syntax: VSCATTER1.{B|W|L|Q}(z) Pn(p), Vn(v), [Rn(b) + Rn(i) * Rn(s)]
   operands:
   - {name: govern, type: Pn, access: read, field: p}
   - {name: src, type: Vn, access: read, field: v}
@@ -34,7 +34,7 @@ forms:
 - id: xxlong.vscatter1.v251
   class: xxlong
   bits: 111111110000011010zzbbbbppppiiiivvvvvxxxxx
-  syntax: VSCATTER1.BWLQ(z) Pn(p), Vn(v), [Rn(b) + Vn(x)[Rn(i)]]
+  syntax: VSCATTER1.{B|W|L|Q}(z) Pn(p), Vn(v), [Rn(b) + Vn(x)[Rn(i)]]
   operands:
   - {name: govern, type: Pn, access: read, field: p}
   - {name: src, type: Vn, access: read, field: v}
@@ -46,7 +46,7 @@ forms:
 - id: xxlong.vscatter1.v252
   class: xxlong
   bits: 111111110000011011zzbbbbppppiiiivvvvvxxxxx
-  syntax: VSCATTER1.BWLQ(z) Pn(p), Vn(v), [Rn(b) + Vn(x)[Rn(i)] * <scale>]
+  syntax: VSCATTER1.{B|W|L|Q}(z) Pn(p), Vn(v), [Rn(b) + Vn(x)[Rn(i)] * <scale>]
   operands:
   - {name: govern, type: Pn, access: read, field: p}
   - {name: src, type: Vn, access: read, field: v}
@@ -58,7 +58,7 @@ forms:
 - id: xxlong.vscatter1.v253
   class: xxlong
   bits: 111111110000011100zzbbbbppppiiiivvvvvxxxxx
-  syntax: VSCATTER1.BWLQ(z) Pn(p), Vn(v), [Rn(b) + Vn(x)[Rn(i)] * <scale> + <disp8s>]
+  syntax: VSCATTER1.{B|W|L|Q}(z) Pn(p), Vn(v), [Rn(b) + Vn(x)[Rn(i)] * <scale> + <disp8s>]
   operands:
   - {name: govern, type: Pn, access: read, field: p}
   - {name: src, type: Vn, access: read, field: v}
@@ -71,7 +71,7 @@ forms:
 - id: xxlong.vscatter1.v254
   class: xxlong
   bits: 111111110000011101zzbbbbppppiiiivvvvvxxxxx
-  syntax: VSCATTER1.BWLQ(z) Pn(p), Vn(v), [Rn(b) + Vn(x)[Rn(i)] * <scale> + <disp16s>]
+  syntax: VSCATTER1.{B|W|L|Q}(z) Pn(p), Vn(v), [Rn(b) + Vn(x)[Rn(i)] * <scale> + <disp16s>]
   operands:
   - {name: govern, type: Pn, access: read, field: p}
   - {name: src, type: Vn, access: read, field: v}
@@ -84,7 +84,7 @@ forms:
 - id: xxlong.vscatter1.v255
   class: xxlong
   bits: 111111110000011110zzbbbbppppiiiivvvvvxxxxx
-  syntax: VSCATTER1.BWLQ(z) Pn(p), Vn(v), [Rn(b) + Vn(x)[Rn(i)] * <scale> + <disp32s>]
+  syntax: VSCATTER1.{B|W|L|Q}(z) Pn(p), Vn(v), [Rn(b) + Vn(x)[Rn(i)] * <scale> + <disp32s>]
   operands:
   - {name: govern, type: Pn, access: read, field: p}
   - {name: src, type: Vn, access: read, field: v}
@@ -97,7 +97,7 @@ forms:
 - id: xxlong.vscatter1.v256
   class: xxlong
   bits: 111111110000011111zzbbbbppppiiiivvvvvxxxxx
-  syntax: VSCATTER1.BWLQ(z) Pn(p), Vn(v), [Rn(b) + Vn(x)[Rn(i)] * <scale> + <disp64>]
+  syntax: VSCATTER1.{B|W|L|Q}(z) Pn(p), Vn(v), [Rn(b) + Vn(x)[Rn(i)] * <scale> + <disp64>]
   operands:
   - {name: govern, type: Pn, access: read, field: p}
   - {name: src, type: Vn, access: read, field: v}

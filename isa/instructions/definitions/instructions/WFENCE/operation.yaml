@@ -1,0 +1,28 @@
+operation: WFENCE
+title: Write Fence
+summary: Order prior writes before later writes.
+public_instruction:
+  mnemonic: WFENCE
+execution_route: core_control
+privilege: any
+repeat:
+  kind: not_eligible
+operands: []
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - extrashort.wfence
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags: []
+  events: []
+  sail_entry: execute_WFENCE
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

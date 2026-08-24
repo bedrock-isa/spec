@@ -2,7 +2,7 @@ forms:
 - id: extralong.vxor.v55
   class: extralong
   bits: 11111101111000100zz0ppppvvvvvwwwww
-  syntax: VXOR.BWLQ(z) Pn(p), Vn(v), Vn(w)
+  syntax: VXOR.{B|W|L|Q}(z) Pn(p), Vn(v), Vn(w)
   operands:
   - name: govern
     type: Pn
@@ -22,7 +22,7 @@ forms:
 - id: xxlong.vxor.v150
   class: xxlong
   bits: 11111111000000100000zz1101ppppvvvvveeeeeee
-  syntax: VXOR.BWLQ(z) Pn(p), <ea>(e), Vn(v)
+  syntax: VXOR.{B|W|L|Q}(z) Pn(p), <ea>(e), Vn(v)
   operands:
   - name: govern
     type: Pn
@@ -44,7 +44,7 @@ forms:
 - id: xxlong.vxor.v151
   class: xxlong
   bits: 11111111000000100000zz1110ppppvvvvveeeeeee
-  syntax: VXOR.BWLQ(z) Pn(p), Vn(v), <ea>(e)
+  syntax: VXOR.{B|W|L|Q}(z) Pn(p), Vn(v), <ea>(e)
   operands:
   - name: govern
     type: Pn

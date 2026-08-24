@@ -2,7 +2,7 @@ forms:
 - id: short.shl_x_rn_s_rn_d
   class: short
   bits: 01010zssssdddd
-  syntax: SHL.LQ(z) Rn(s), Rn(d)
+  syntax: SHL.{L|Q}(z) Rn(s), Rn(d)
   operands:
   - name: count
     type: Rn
@@ -18,7 +18,7 @@ forms:
 - id: long.shl_x_rn_s_ea_e
   class: long
   bits: 1111001111zz000sssseeeeeee
-  syntax: SHL.BWLQ(z) Rn(s), <ea>(e)
+  syntax: SHL.{B|W|L|Q}(z) Rn(s), <ea>(e)
   operands:
   - name: count
     type: Rn
@@ -40,7 +40,7 @@ forms:
 - id: long.shl_x_imm6_i_ea_e
   class: long
   bits: 1111010101zz1iiiiiieeeeeee
-  syntax: SHL.BWLQ(z) imm6(i), <ea>(e)
+  syntax: SHL.{B|W|L|Q}(z) imm6(i), <ea>(e)
   operands:
   - name: count
     type: imm6

@@ -2,7 +2,7 @@ forms:
 - id: long.phead.v4
   class: long
   bits: 11111010010100zz00rrrrpppp
-  syntax: PHEAD.BWLQ(z) Rn(r), Pn(p)
+  syntax: PHEAD.{B|W|L|Q}(z) Rn(r), Pn(p)
   operands:
   - name: count
     type: Rn

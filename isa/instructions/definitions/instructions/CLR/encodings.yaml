@@ -24,7 +24,7 @@ forms:
 - id: medium.clr_x_ea
   class: medium
   bits: 11100zz0111eeeeeee
-  syntax: CLR.BWLQ(z) <ea>(e)
+  syntax: CLR.{B|W|L|Q}(z) <ea>(e)
   operands:
   - name: dst
     type: EA

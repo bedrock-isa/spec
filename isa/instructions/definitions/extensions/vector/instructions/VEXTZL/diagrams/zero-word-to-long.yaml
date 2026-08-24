@@ -1,0 +1,56 @@
+kind: width-map
+view: {visible_bytes: 16, lane_order: right-to-left, scalable: true}
+container_bits: 32
+rows:
+- id: source
+  label: source Vn
+  role: source
+  containers:
+  - cells:
+    - {value: x0, effect: ignored, appearance: discarded, bits: 16}
+    - {value: w0, effect: copy, appearance: source, bits: 16}
+  - cells:
+    - {value: x1, effect: ignored, appearance: discarded, bits: 16}
+    - {value: w1, effect: copy, appearance: source, bits: 16}
+  - cells:
+    - {value: x2, effect: ignored, appearance: discarded, bits: 16}
+    - {value: w2, effect: copy, appearance: source, bits: 16}
+  - cells:
+    - {value: x3, effect: ignored, appearance: discarded, bits: 16}
+    - {value: w3, effect: copy, appearance: source, bits: 16}
+- id: result
+  label: Vd
+  role: destination-after
+  containers:
+  - cells:
+    - {value: zext(w0), effect: zero, appearance: source, bits: 32}
+  - cells:
+    - {value: 'dH1:dL1', effect: preserve, appearance: old, bits: 32}
+  - cells:
+    - {value: zext(w2), effect: zero, appearance: source, bits: 32}
+  - cells:
+    - {value: 'dH3:dL3', effect: preserve, appearance: old, bits: 32}
+- id: predicate
+  label: predicate Pp
+  role: predicate
+  element_bits: 8
+  cells:
+  - {value: '1', effect: set, appearance: predicate-on}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: '0', effect: clear, appearance: predicate-off}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: '1', effect: set, appearance: predicate-on}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: '0', effect: clear, appearance: predicate-off}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+  - {value: x, effect: ignored, appearance: dont-care}
+edges:
+- {from_row: source, from_container: 0, from_cell: 1, to_row: result, to_container: 0, to_cell: 0, effect: zero, display: expansion-guide}
+- {from_row: source, from_container: 2, from_cell: 1, to_row: result, to_container: 2, to_cell: 0, effect: zero, display: expansion-guide}

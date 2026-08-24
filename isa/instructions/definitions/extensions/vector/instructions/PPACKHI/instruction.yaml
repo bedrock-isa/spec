@@ -1,8 +1,0 @@
-mnemonic: PPACKHI
-title: PPACKHI (Vector)
-summary: Map the source-width lane sequence to the upper half of the halved-width destination positions.
-description: Map the source-width lane sequence to the upper half of the halved-width destination positions.
-attributes:
-  class: vector
-  family: vector
-  privilege: unprivileged

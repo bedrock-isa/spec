@@ -1,0 +1,40 @@
+operation: SWPTA
+title: Switch Page Table With Context
+summary: Switches the page table and enables address-space context matching.
+public_instruction:
+  mnemonic: SWPTA
+execution_route: tlb_and_context
+privilege: supervisor
+repeat:
+  kind: not_eligible
+operands:
+- id: new_ptcr
+  role: source
+  access: read
+  value_domain: integer
+  profiles:
+  - Rn
+- id: asid
+  role: source
+  access: read
+  value_domain: integer
+  profiles:
+  - Rn
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - medium.swpta_rn_p_rn_a
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags: []
+  events: []
+  sail_entry: execute_SWPTA
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

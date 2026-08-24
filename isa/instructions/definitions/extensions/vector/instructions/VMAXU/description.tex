@@ -1,0 +1,11 @@
+The governing predicate selects destination elements for update. For each
+selected element, the old destination and corresponding source are interpreted
+as unsigned B, W, L, or Q values. The greater value's bit pattern replaces the
+destination element. An unselected destination element retains its previous bit
+pattern.
+
+The register form reads both operands from corresponding vector lanes. The
+memory-source form reads the source elements from memory and updates destination
+register lanes. The memory-destination form reads each selected destination
+element, compares it with the corresponding source-register lane, and writes
+the selected bit pattern back to that memory element.

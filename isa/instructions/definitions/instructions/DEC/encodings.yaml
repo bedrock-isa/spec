@@ -2,7 +2,7 @@ forms:
 - id: short.dec_x_rn_r
   class: short
   bits: 10100z0001rrrr
-  syntax: DEC.LQ(z) Rn(r)
+  syntax: DEC.{L|Q}(z) Rn(r)
   operands:
   - name: dst
     type: Rn
@@ -14,7 +14,7 @@ forms:
 - id: medium.dec_x_ea
   class: medium
   bits: 11100zz1000eeeeeee
-  syntax: DEC.BWLQ(z) <ea>(e)
+  syntax: DEC.{B|W|L|Q}(z) <ea>(e)
   operands:
   - name: dst
     type: EA

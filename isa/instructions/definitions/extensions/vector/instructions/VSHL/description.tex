@@ -1,0 +1,13 @@
+The governing predicate selects active destination elements. An immediate
+count applies to every active destination element. A vector or
+memory count source supplies the count from the lane corresponding to that
+element. VSHL takes the low six bits of each supplied count and reduces the
+value modulo the selected B, W, L, or Q element width in bits. The resulting
+count shifts the old destination element to the left and fills vacated low bits
+with zeros. An effective count of zero writes the original selected-width value
+for that active element.
+
+With a vector-register destination, active lanes are updated and inactive lanes
+retain their previous values. A memory destination is updated as an encoded
+lane-wise read-modify-write: each active element is read, shifted, and written
+back, while inactive elements retain their previous values.

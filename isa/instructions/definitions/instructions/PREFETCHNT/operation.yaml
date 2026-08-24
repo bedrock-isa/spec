@@ -1,0 +1,34 @@
+operation: PREFETCHNT
+title: Prefetch Non-Temporal
+summary: Hint that EA will be read with non-temporal locality.
+public_instruction:
+  mnemonic: PREFETCHNT
+execution_route: cache
+privilege: unprivileged
+repeat:
+  kind: rep
+operands:
+- id: src
+  role: address
+  access: address
+  value_domain: integer
+  profiles:
+  - EA
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - medium.prefetchnt_ea_e
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags: []
+  events: []
+  sail_entry: execute_PREFETCHNT
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

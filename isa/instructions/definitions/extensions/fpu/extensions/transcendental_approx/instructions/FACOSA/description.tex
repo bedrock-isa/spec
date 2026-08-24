@@ -1,0 +1,23 @@
+Computes the acos(x) reference in radians over finite x with abs(x) \textless{}= 1 after DAZ and writes an implementation-bounded S- or D-format approximation under the selected FPTRANSA accuracy contract.
+
+The required FPTRANSA\_ACCURACY contract is \texttt{0x0012}. If that accuracy contract's \texttt{PRESENT} field is clear, the instruction raises \texttt{ILLEGAL\_INSTRUCTION} before reading operands or floating-point state.
+
+After FSTATUS.DAZ processing, the reference function is acos(x) in radians on finite x with abs(x) \textless{}= 1. The result error is at most 4 ULP for S and 4 ULP for D.
+
+\textbf{Special values}\par
+\begin{itemize}
+\item When the source equals 1, the result is positive zero.
+\end{itemize}
+
+\textbf{Exact anchors}\par
+\begin{itemize}
+\item acos(+1) = +0
+\end{itemize}
+
+\textbf{Required properties}\par
+\begin{itemize}
+\item monotonically decreasing on [-1, 1]
+\item result is in [0, pi]
+\end{itemize}
+
+NaN handling, floating-point exception-cause generation, matching condition-enable testing, \texttt{FLOATING\_POINT\_FAULT} architectural-event delivery, and commit behavior follow the common FPTRANSA model in Section~\ref{section:fptransa-common-model}.

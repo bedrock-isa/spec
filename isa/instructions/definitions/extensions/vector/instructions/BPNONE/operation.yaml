@@ -1,0 +1,24 @@
+operation: BPNONE
+title: BPNONE (Vector)
+summary: Branch if no bit is set.
+public_instruction:
+  mnemonic: BPNONE
+execution_route: vector
+privilege: unprivileged
+repeat:
+  kind: not_eligible
+operands:
+- {id: predicate, role: source, access: read, value_domain: predicate, profiles: [Pn]}
+- {id: target, role: control_target, access: read, value_domain: integer, profiles: [imm32s, EA]}
+cases:
+- id: all_forms
+  applies_to:
+    forms: [long.bpnone.v27, xxlong.bpnone.v237]
+  additional_requirements: []
+  predicate: {kind: none}
+  flags: []
+  events: []
+  sail_entry: execute_BPNONE
+artifacts:
+  semantics: {path: semantics.sail, kind: sail}
+  description: {path: description.tex, kind: tex}

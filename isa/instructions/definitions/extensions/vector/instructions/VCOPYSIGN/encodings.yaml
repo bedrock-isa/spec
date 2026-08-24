@@ -2,7 +2,7 @@ forms:
 - id: extralong.vcopysign.v71
   class: extralong
   bits: 11111101111001100zz0ppppvvvvvwwwww
-  syntax: VCOPYSIGN.HSD(z) Pn(p), Vn(v), Vn(w)
+  syntax: VCOPYSIGN.{H|S|D}(z) Pn(p), Vn(v), Vn(w)
   operands:
   - name: govern
     type: Pn
@@ -27,7 +27,7 @@ forms:
 - id: xxlong.vcopysign.v182
   class: xxlong
   bits: 11111111000000100011zz0011ppppvvvvveeeeeee
-  syntax: VCOPYSIGN.HSD(z) Pn(p), <ea>(e), Vn(v)
+  syntax: VCOPYSIGN.{H|S|D}(z) Pn(p), <ea>(e), Vn(v)
   operands:
   - name: govern
     type: Pn
@@ -53,7 +53,7 @@ forms:
 - id: xxlong.vcopysign.v183
   class: xxlong
   bits: 11111111000000100011zz0100ppppvvvvveeeeeee
-  syntax: VCOPYSIGN.HSD(z) Pn(p), Vn(v), <ea>(e)
+  syntax: VCOPYSIGN.{H|S|D}(z) Pn(p), Vn(v), <ea>(e)
   operands:
   - name: govern
     type: Pn

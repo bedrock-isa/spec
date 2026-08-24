@@ -2,7 +2,7 @@ forms:
 - id: short.xchg_x_rn_s_rn_d
   class: short
   bits: 01000zssssdddd
-  syntax: XCHG.LQ(z) Rn(s), Rn(d)
+  syntax: XCHG.{L|Q}(z) Rn(s), Rn(d)
   operands:
   - name: lhs
     type: Rn
@@ -21,7 +21,7 @@ forms:
 - id: long.xchg_x_rn_s_ea_e
   class: long
   bits: 1111001111zz011sssseeeeeee
-  syntax: XCHG.BWLQ(z) Rn(s), <ea>(e)
+  syntax: XCHG.{B|W|L|Q}(z) Rn(s), <ea>(e)
   operands:
   - name: lhs
     type: Rn
@@ -43,7 +43,7 @@ forms:
 - id: long.xchg_x_ea_e_rn_d
   class: long
   bits: 1111001000zz001ddddeeeeeee
-  syntax: XCHG.BWLQ(z) <ea>(e), Rn(d)
+  syntax: XCHG.{B|W|L|Q}(z) <ea>(e), Rn(d)
   operands:
   - name: lhs
     type: EA

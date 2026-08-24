@@ -1,0 +1,30 @@
+operation: BKPT
+title: Breakpoint
+summary: Raise the breakpoint exception.
+public_instruction:
+  mnemonic: BKPT
+execution_route: core_control
+privilege: any
+repeat:
+  kind: not_eligible
+operands: []
+cases:
+- id: all_forms
+  applies_to:
+    forms:
+    - extrashort.bkpt
+  additional_requirements: []
+  predicate:
+    kind: none
+  flags: []
+  events:
+  - event: BREAKPOINT
+    condition: instruction_executes
+  sail_entry: execute_BKPT
+artifacts:
+  semantics:
+    path: semantics.sail
+    kind: sail
+  description:
+    path: description.tex
+    kind: tex

@@ -1,8 +1,0 @@
-mnemonic: VTESTZ
-title: VTESTZ (Vector)
-summary: Test `Va AND Vb` for zero and write a complete predicate result.
-description: Test `Va AND Vb` for zero and write a complete predicate result.
-attributes:
-  class: vector
-  family: vector
-  privilege: unprivileged

@@ -2,7 +2,7 @@ forms:
 - id: extralong.vextzl.v74
   class: extralong
   bits: 11111101111001101zz1ppppvvvvvwwwww
-  syntax: VEXTZL.V_BW(z) Pn(p), Vn(v), Vn(w)
+  syntax: VEXTZL.{B|W}(z) Pn(p), Vn(v), Vn(w)
   operands:
   - name: govern
     type: Pn

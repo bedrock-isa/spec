@@ -30,6 +30,7 @@ class FieldTypeSpec:
     valid_values: tuple[int | str, ...] = ()
     reserved_values: tuple[int | str, ...] = ()
     size_codes: tuple[str, ...] = ()
+    size_value_codes: tuple[tuple[int, str], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -119,6 +120,7 @@ def build_field_type_registry(
             valid_values=tuple(int(item["value"]) for item in values),
             reserved_values=tuple(int(item["value"]) for item in reserved),
             size_codes=codes,
+            size_value_codes=tuple((int(item["value"]), str(item["code"])) for item in values),
         )
     return FieldTypeRegistry(
         types=types,
@@ -181,16 +183,33 @@ def validate_encoding_template(
         for marker, field in form.fields.items()
         if field.type.startswith("size.")
     ]
-    if template.selected_size_kind is not None:
-        expected = (template.size_field, template.selected_size_kind)
-        if form.sizes or size_fields != [expected]:
+    if template.selected_size_codes:
+        if form.sizes or len(size_fields) != 1 or size_fields[0][0] != template.size_field:
             reject(
-                f"selects size kind {template.selected_size_kind} on field "
-                f"{template.size_field}, but the form declares {size_fields or form.sizes}"
+                f"selects public size suffixes on field {template.size_field}, but the "
+                f"form declares {size_fields or form.sizes}"
             )
-        spec = registry.types.get(f"size.{template.selected_size_kind}")
+        selected_size_kind = size_fields[0][1]
+        spec = registry.types.get(f"size.{selected_size_kind}")
         if spec is None or not spec.size_codes:
-            reject(f"uses unknown size kind {template.selected_size_kind}")
+            reject(f"uses unknown size kind {selected_size_kind}")
+        allowed_values = {value for value, _code in spec.size_value_codes}
+        for constraint in form.constraints:
+            if constraint.field != template.size_field or not constraint.allow:
+                continue
+            allowed_values = {
+                value for value in allowed_values
+                if _constraint_allows(constraint, value)
+            }
+        expected_codes = tuple(
+            code for value, code in spec.size_value_codes if value in allowed_values
+        )
+        public_codes = tuple(template.selected_size_codes)
+        if public_codes != expected_codes:
+            reject(
+                f"selects {public_codes}, but field {template.size_field} "
+                f"allows public suffixes {expected_codes}"
+            )
     elif template.fixed_size_suffix is not None:
         codes = [
             code
@@ -229,7 +248,7 @@ def validate_encoding_template(
         if operand.name == "order" or operand.type == "memory_order"
     ]
     if template.order_field is not None:
-        if template.selected_size_kind is None:
+        if not template.selected_size_codes:
             reject("places /order without a selected-size suffix")
         if not (
             len(order_operands) == 1

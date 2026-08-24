@@ -2,7 +2,7 @@ forms:
 - id: long.fetoxa_x_fn_s_fn_d
   class: long
   bits: 1111100111z0100010ssssdddd
-  syntax: FETOXA.SD(z) Fn(s), Fn(d)
+  syntax: FETOXA.{S|D}(z) Fn(s), Fn(d)
   operands:
   - name: src
     type: Fn

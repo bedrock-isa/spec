@@ -2,7 +2,7 @@ forms:
 - id: extralong.vcvtud.v86
   class: extralong
   bits: 11111101111010011zz1ppppvvvvvwwwww
-  syntax: VCVTUD.V_LQ(z) Pn(p), Vn(v), Vn(w)
+  syntax: VCVTUD.{L|Q}(z) Pn(p), Vn(v), Vn(w)
   operands:
   - name: govern
     type: Pn

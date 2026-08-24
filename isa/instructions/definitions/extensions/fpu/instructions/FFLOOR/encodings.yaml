@@ -2,7 +2,7 @@ forms:
 - id: medium.ffloor_x_fn_s_fn_d
   class: medium
   bits: 101010z111ssssdddd
-  syntax: FFLOOR.SD(z) Fn(s), Fn(d)
+  syntax: FFLOOR.{S|D}(z) Fn(s), Fn(d)
   operands:
   - name: src
     type: Fn
@@ -18,7 +18,7 @@ forms:
 - id: long.ffloor_x_ea_s_fn_d
   class: long
   bits: 1111100100z1111ddddeeeeeee
-  syntax: FFLOOR.SD(z) <ea>(e), Fn(d)
+  syntax: FFLOOR.{S|D}(z) <ea>(e), Fn(d)
   operands:
   - name: src
     type: FEA
@@ -36,7 +36,7 @@ forms:
 - id: long.ffloor_x_fn_s_ea_d
   class: long
   bits: 1111100100z1010sssseeeeeee
-  syntax: FFLOOR.SD(z) Fn(s), <ea>(e)
+  syntax: FFLOOR.{S|D}(z) Fn(s), <ea>(e)
   operands:
   - name: src
     type: Fn
