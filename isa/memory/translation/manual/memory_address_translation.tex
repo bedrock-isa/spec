@@ -40,7 +40,7 @@ must be within the selected segment. With paging enabled, the complete byte rang
 linear-address order after canonicality checks. With paging disabled, the same byte-range rules apply directly.
 
 Complete range additions are mathematical: 64-bit wraparound never makes an out-of-range access valid. A range
-failure raises \texttt{PAGE\_FAULT} before the instruction's target memory access begins.
+failure raises \texttt{PAGE\_FAULT} before the instruction\textquotesingle{}s target memory access begins.
 
 The segment result is the linear address. With PTCR.PE set, the page-table walker consumes that address and applies
 the selected PTE frame and attributes. With paging disabled, the linear address is the physical byte address and
@@ -54,7 +54,7 @@ canonical-address check raises PAGE\_FAULT during access.
 
 \subsection{Translation-Cache Identity and Invalidation}
 A translation-cache entry is identified by the components below, including the leaf-aligned linear range that it
-maps. PTCR \texttt{root\_page} is not a hardware tag.
+maps. Translation-cache identity excludes PTCR \texttt{root\_page}.
 While ASCR.AE is one, system software binds one ASID to one PTCR root and translation geometry; it completes the
 required shootdown before reusing that ASID for a different PTCR image. While AE is zero, the current untagged
 context is invalidated when PTCR changes.
@@ -101,14 +101,14 @@ never permitted from MMIO.
 Within one memory operand, failures are selected in this order: segment range
 and wrap, canonicality, complete translation of all covered mappings in
 increasing address order, physical memory class, MMIO operation class, MMIO or
-atomic alignment, then the target access and bus fault. Thus a later mapping's
+atomic alignment, then the target access and bus fault. Thus a later mapping\textquotesingle{}s
 translation fault precedes an MMIO condition already visible in an earlier
 mapping.
 
 \subsection{Multi-Page Accesses}
 For a byte range that intersects more than one distinct leaf mapping, translation and accumulated permission checks
 are resolved once per mapping in increasing linear-address order. Each
-mapping's walk reaches its existing not-present, structural-validity, and permission result before the next mapping
+mapping\textquotesingle{}s walk reaches its existing not-present, structural-validity, and permission result before the next mapping
 is consumed. The first mapping in that order that fails supplies the architectural fault and walk level.
 
 Every covered leaf mapping of a store is validated before any byte of the store becomes visible. A later-mapping translation,

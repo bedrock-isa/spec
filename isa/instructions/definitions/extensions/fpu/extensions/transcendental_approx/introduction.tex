@@ -12,21 +12,23 @@ exact real reference value named by its accuracy contract, and $a$ is the approx
 \]
 
 The measured error is $|a-y|/\operatorname{ulp}_F(y)$. The bound applies only to finite reference values within
-the selected format's finite range; NaN, infinity, and overflow follow the instruction's special-value rules.
+the selected format\textquotesingle{}s finite range; NaN, infinity, and overflow follow the instruction\textquotesingle{}s special-value rules.
 Every present contract guarantees at most 4 ULP for both S and D, corresponding to at least 21 and 50 worst-case
 relative precision bits respectively for nonzero normal results. CPUID may advertise a smaller certified bound.
+Each instruction names its required \texttt{FPTRANSA\_ACCURACY} contract. A clear \texttt{PRESENT} field for that
+contract raises \texttt{ILLEGAL\_INSTRUCTION} before the instruction reads operands or floating-point state.
 
 FPTRANSA applies DAZ before forming the exact reference input and measures its advertised ULP error before FTZ.
 It ignores \texttt{FSTATUS.RM} and formats its implementation-defined approximation with nearest-even rounding.
-The approximation is deterministic for the same implementation, input, format, and relevant FSTATUS mode, but need
-not be bit-identical across implementations.
+The same implementation, input, format, and relevant FSTATUS mode produce a deterministic approximation.
+Different implementations may produce different bit patterns within the applicable accuracy contract.
 
 A signaling NaN generates NV. NaN results are quieted and then processed by \texttt{FSTATUS.DN}.
 \texttt{FSTATUS.FTZ} replaces a subnormal result with the required signed zero and generates UF. Each instruction
 generates NV and DZ according to its special-value rules, and generates OF and UF when required by its exact result;
 NX is never generated, remains unchanged in FFLAGS, and cannot cause the \texttt{FLOATING\_POINT\_FAULT}
 architectural event. Overflow means that the exact result magnitude exceeds the selected
-format's maximum finite value. Underflow means that the exact nonzero result magnitude is below the selected format's
+format\textquotesingle{}s maximum finite value. Underflow means that the exact nonzero result magnitude is below the selected format\textquotesingle{}s
 minimum normal value. If any generated floating-point exception cause has its matching FSTATUS enable bit set, the
 instruction raises the \texttt{FLOATING\_POINT\_FAULT} architectural event before writing any destination. Otherwise
 it commits its result or results and accrues the generated causes in FFLAGS as one architectural commit.

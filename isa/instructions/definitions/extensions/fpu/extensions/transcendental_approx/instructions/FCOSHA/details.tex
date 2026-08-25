@@ -1,11 +1,9 @@
-The required FPTRANSA\_ACCURACY contract is \texttt{0x0022}. If that accuracy contract's \texttt{PRESENT} field is clear, the instruction raises \texttt{ILLEGAL\_INSTRUCTION} before reading operands or floating-point state.
-
-After FSTATUS.DAZ processing, the reference function is cosh(x) on all finite values and signed infinity. The result error is at most 4 ULP for S and 4 ULP for D.
+The required FPTRANSA\_ACCURACY contract is \texttt{0x0022}.
 
 \textbf{Special values}\par
 \begin{itemize}
-\item When the source is infinite, the result is +infinity.
-\item When the source is zero, the result is positive one.
+\item Infinite source: the result is +infinity.
+\item Zero source: the result is positive one.
 \end{itemize}
 
 \textbf{Exact anchors}\par
@@ -21,5 +19,3 @@ After FSTATUS.DAZ processing, the reference function is cosh(x) on all finite va
 \item nonincreasing below zero and nondecreasing above zero
 \item result is at least 1
 \end{itemize}
-
-NaN handling, floating-point exception-cause generation, matching condition-enable testing, \texttt{FLOATING\_POINT\_FAULT} architectural-event delivery, and commit behavior follow the common FPTRANSA model in Section~\ref{section:fptransa-common-model}.

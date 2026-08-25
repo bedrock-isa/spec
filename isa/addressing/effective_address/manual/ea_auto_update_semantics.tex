@@ -10,7 +10,7 @@ value first and then use the result. A base register changes by the EA interpret
 register changes by one element before scaling. Each REP iteration applies and commits these rules independently.
 
 When a future vector instruction consumes VEA, a base-register update changes the base by \(\pm\)VLEN bytes. A
-scalar Rn index update changes the index by \(\pm\)the instruction's number of elements before the existing
+scalar Rn index update changes the index by \(\pm\)the instruction\textquotesingle{}s number of elements before the existing
 element-size scale is applied. Predicate activity does not change either update quantity. These vector quantities
 replace the scalar per-access quantities for that VEA evaluation; the descriptor encodings and update ordering are
 otherwise unchanged.

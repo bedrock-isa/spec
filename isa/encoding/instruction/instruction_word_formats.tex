@@ -7,7 +7,7 @@ encoded instruction length before operand evaluation begins.
 
 The opcode space begins at byte 0, includes the header, and ends immediately before the first payload. Any appended
 EA descriptor, displacement, immediate, bitmap, or instruction-specific value is a payload. Independently selected
-appended units are separate payloads. Bytes after the required instruction length are padding, not payloads.
+appended units are separate payloads. Bytes after the required instruction length constitute padding.
 
 The header is byte 0 for extrashort and short instructions and the first two bytes for medium and longer
 instructions. It determines the encoded instruction length and selects the opcode space before operand evaluation

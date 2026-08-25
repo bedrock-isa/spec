@@ -4,7 +4,7 @@ The body instruction is fetched, decoded, and checked for repeatability before t
 the counter is zero, the decoded body is annulled and has no architectural side effects.
 
 If the counter is nonzero, the first body iteration executes before any condition check. The repeat condition is
-tested against a temporary ZNCV image derived from the body instruction's repeat-observed value: Z reports zero, N is
+tested against a temporary ZNCV image derived from the body instruction\textquotesingle{}s repeat-observed value: Z reports zero, N is
 the most significant bit at the observation width, and C and V are zero. REPcc never uses architectural FLAGS as the
 condition input and does not write architectural FLAGS beyond any ordinary FLAGS effect of the body itself.
 

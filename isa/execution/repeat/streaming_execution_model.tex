@@ -7,7 +7,7 @@ context. A body may not be a repeat operation, a repeat-control instruction, or 
 
 Entering repeat state captures the selected Rn value as an unsigned remaining count. A valid zero count performs no
 body side effects. Otherwise each iteration evaluates operands and commits FLAGS, FFLAGS, memory, and auto-update
-effects according to the body's ordinary scalar rules. A body read of the selected counter register observes the
+effects according to the body\textquotesingle{}s ordinary scalar rules. A body read of the selected counter register observes the
 iteration-start architectural value; a body write to that register is ignored.
 
 Each successfully committed iteration decrements the captured count before an event may be admitted at the next
@@ -20,7 +20,7 @@ The \texttt{REPcc observation} attribute identifies the value tested after the b
 \texttt{result:operand} or \texttt{source:operand} observation names an operand; \texttt{computed} names the derived
 value defined by that instruction. The temporary condition image sets Z exactly when the observed value is zero,
 sets N from its most significant bit at the observation width, and clears C and V. It does not sample or overwrite
-architectural FLAGS, although the body's own FLAGS effects commit normally. \texttt{REP} is the unconditional T
+architectural FLAGS, although the body\textquotesingle{}s own FLAGS effects commit normally. \texttt{REP} is the unconditional T
 spelling; condition F is reserved.
 
 While repeat state is active, architectural PC identifies the body instruction. After a successful body commit, the

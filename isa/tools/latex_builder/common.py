@@ -39,13 +39,10 @@ class TextTex:
             "|": r"\textbar{}",
             "<": r"\textless{}",
             ">": r"\textgreater{}",
+            "'": r"\textquotesingle{}",
         }
         out = "".join(replacements.get(ch, ch) for ch in text)
-        return (
-            out.replace("->", r"\ensuremath{\rightarrow{}}")
-            .replace("<-", r"\ensuremath{\leftarrow{}}")
-            .replace("=>", r"\ensuremath{\Rightarrow{}}")
-        )
+        return out
 
 
 @dataclass(frozen=True)

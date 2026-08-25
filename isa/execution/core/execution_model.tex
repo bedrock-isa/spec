@@ -22,7 +22,7 @@ the first applicable condition in the following order.
 \texttt{FLOATING\_POINT\_FAULT}.
 \end{enumerate}
 
-A false predicate suppresses the conditional operation's target-memory and implicit stack accesses. It does not
+A false predicate suppresses the conditional operation\textquotesingle{}s target-memory and implicit stack accesses. It does not
 suppress instruction framing, opcode and extension checks, encoding legality, privilege checks, or control-state
 validation. Explicit operands are accessed in instruction operand order unless an instruction states another order.
 For a memory-to-memory operation, the complete source read precedes access to the destination, so a source-access
@@ -49,7 +49,7 @@ Ordinary implicit stack operations capture the current SS and SP before their fi
 \texttt{PUSH}, \texttt{CALL} &
 $[\texttt{old\_sp}-8,\texttt{old\_sp})$ &
 \texttt{old\_sp}-8 &
-one source value or the following instruction's continuation PC at \texttt{old\_sp}-8\\
+one source value or the following instruction\textquotesingle{}s continuation PC at \texttt{old\_sp}-8\\
 \texttt{POP}, \texttt{RET} &
 $[\texttt{old\_sp},\texttt{old\_sp}+8)$ &
 \texttt{old\_sp}+8 &
@@ -57,11 +57,11 @@ one destination value or continuation PC read at \texttt{old\_sp}\\
 \texttt{PUSHP}, \texttt{FPUSHP} &
 $[\texttt{old\_sp}-16,\texttt{old\_sp})$ &
 \texttt{old\_sp}-16 &
-listed pair's second register at \texttt{old\_sp}-16 and first register at \texttt{old\_sp}-8\\
+listed pair\textquotesingle{}s second register at \texttt{old\_sp}-16 and first register at \texttt{old\_sp}-8\\
 \texttt{POPP}, \texttt{FPOPP} &
 $[\texttt{old\_sp},\texttt{old\_sp}+16)$ &
 \texttt{old\_sp}+16 &
-listed pair's second register from \texttt{old\_sp}, then first register from \texttt{old\_sp}+8\\
+listed pair\textquotesingle{}s second register from \texttt{old\_sp}, then first register from \texttt{old\_sp}+8\\
 \texttt{LCALL} &
 $[\texttt{old\_sp}-16,\texttt{old\_sp})$ &
 \texttt{old\_sp}-16 &
@@ -116,4 +116,4 @@ Control transfers make PC and CS changes at a single control-transfer commit poi
 naturally aligned addressable memory operand and commit the read-modify-write as one architectural update. TLB,
 page-table context, and privileged control operations require supervisor privilege. Cache-maintenance operations
 preserve FLAGS and define their own visibility contract. Approximate transcendental floating-point operations are
-available only when CPUID reports \texttt{FPTRANSA} and marks the instruction's accuracy-contract ID present.
+available only when CPUID reports \texttt{FPTRANSA} and marks the instruction\textquotesingle{}s accuracy-contract ID present.

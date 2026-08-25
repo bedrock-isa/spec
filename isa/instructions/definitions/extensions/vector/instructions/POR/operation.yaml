@@ -1,6 +1,6 @@
 operation: POR
 title: POR (Vector)
-summary: 'Destructive predicate OR: `Pd = Pd OR Ps`.'
+summary: 'Destructive predicate OR: Pd = Pd OR Ps.'
 public_instruction:
   mnemonic: POR
 execution_route: vector

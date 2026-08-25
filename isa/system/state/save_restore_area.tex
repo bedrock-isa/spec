@@ -4,7 +4,7 @@
 SAVE and RESTORE use a CPUID-defined memory image whose base is 4 KiB aligned.
 
 \subsection{Save-Area Layout}
-Software obtains every extension component's offset and maximum size from CPUID
+Software obtains every extension component\textquotesingle{}s offset and maximum size from CPUID
 \texttt{SAVE\_AREA\_LAYOUT}. Each component starts on a 64-byte boundary.
 
 \input{isa/system/state/save_area_diagram.tex}
@@ -23,7 +23,7 @@ modified. An implementation may mark a component clean whenever it establishes t
 equals its initial state.
 
 When floating-point state is enabled, its component contains F0 through F15, FFLAGS, and FSTATUS in the layout
-reported in the CPUID chapter. The floating-point component's initial state is positive zero in F0 through F15 and
+reported in the CPUID chapter. The floating-point component\textquotesingle{}s initial state is positive zero in F0 through F15 and
 zero in FFLAGS and FSTATUS.
 
 When VECTOR is present, component ID 2 uses bitmap bit 1 and contains the complete V0 through V31 and packed P0
@@ -47,7 +47,7 @@ RESTORE uses the state-block bitmap as authoritative when reconstructing extensi
 defined format and only bitmap bits that name CPUID-described components for that format. RESTORE raises
 \texttt{INVALID\_CONTROL\_STATE} before changing architectural state when the format is unrecognized or a set
 bitmap bit does not name a CPUID-described component for that format. RESTORE of a clear, described component bit
-installs that component's initial state.
+installs that component\textquotesingle{}s initial state.
 
 User-mode RESTORE ignores saved supervisor-only STATUS and DFA state. Supervisor RESTORE is an architectural
 context transition: it restores EDEPTH, UO, and current DFA together with STATUS after validating the complete

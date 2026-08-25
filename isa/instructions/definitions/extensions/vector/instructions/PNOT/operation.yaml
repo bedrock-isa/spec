@@ -1,6 +1,6 @@
 operation: PNOT
 title: PNOT (Vector)
-summary: Complement `Pd`.
+summary: Complement Pd.
 public_instruction:
   mnemonic: PNOT
 execution_route: vector

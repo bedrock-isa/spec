@@ -867,8 +867,8 @@
   \manualeaflowmemorytail{ptr}{-2.40}{4.48}{2.38}%
   \manualeaflowend}
 \newcommand{\manualcaption}[1]{\par\smallskip\centerline{\small\bfseries #1}\smallskip}
-\newcommand{\manualformatcaption}[1]{\manualcaption{Format \textemdash{} #1}}
-\newcommand{\manualschemacaption}[1]{\manualcaption{Schema \textemdash{} #1}}
+\newcommand{\manualformatcaption}[1]{\manualcaption{Format: #1}}
+\newcommand{\manualschemacaption}[1]{\manualcaption{Schema: #1}}
 \newcommand{\manualfigurecaption}[1]{%
   \refstepcounter{manualfigure}\phantomsection\addcontentsline{lof}{figure}{\protect\numberline{\themanualfigure}#1}%
   \par\smallskip\centerline{\small\bfseries Figure \themanualfigure. #1}\smallskip}
@@ -939,7 +939,7 @@
 \newcommand{\manualinstructionfielddescription}[2]{%
   \par\Needspace{0.36in}%
   \begingroup\leftskip=0.24in%
-  \noindent\textbf{#1}\textemdash{}#2\par\endgroup\vspace{2pt}}
+  \noindent\textbf{#1}:\enspace#2\par\endgroup\vspace{2pt}}
 \newcommand{\manualinstructiondescriptionheading}[1]{%
   \par\Needspace{0.80in}%
   \subsection*{#1}}
@@ -1003,7 +1003,7 @@
   \BedrockContractNode{standard-library}{bedrockCoreLayer}{standardlibrary}{(-1.55,3.15)}{\textbf{3. Language Standard Library ABI}}
   \BedrockContractNode{language}{bedrockCoreLayer}{language}{(-1.55,2.15)}{\textbf{2. Language ABI}}
   \BedrockContractNode{binary}{bedrockCoreLayer}{binary}{(-1.55,1.15)}{\textbf{1. Binary Format ABI}}
-  \BedrockContractNode{platform}{bedrockPlatformSpan}{platform}{(4.05,2.65)}{\textbf{Platform / OS ABI}\\[0.5mm]{\footnotesize spans layers 1--4}}
+  \BedrockContractNode{platform}{bedrockPlatformSpan}{platform}{(4.05,2.65)}{\textbf{Platform / OS ABI}\\[0.5mm]{\footnotesize spans layers 1 through 4}}
   \BedrockContractNode{foundation}{bedrockFoundation}{foundation}{(-0.10,0.15)}{\textbf{Architecture / ISA Specification}\\{\footnotesize Non-ABI foundation}}
   \draw[bedrockLayerAxis] (-5.95,0.72) -- (-5.95,4.58);
   \node[font=\footnotesize,align=right,anchor=east] at (-6.12,2.65) {higher-level\\contracts};

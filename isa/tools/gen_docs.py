@@ -1004,7 +1004,7 @@ def latex_entry_bit_diagram(entry: AllocationEntry, form: str) -> str:
     ]
     return "\n".join(
         [
-            rf"\begin{{manualbitdiagram}}{{Format \textemdash{{}} Instruction format for {latex_escape(form)}}}",
+            rf"\begin{{manualbitdiagram}}{{Format: Instruction format for {latex_escape(form)}}}",
             *rows,
             r"\end{manualbitdiagram}",
         ]
@@ -2575,11 +2575,5 @@ def latex_instruction_reference_section(model: IsaModel, instructions: list[Inst
             if not introduction.is_file():
                 raise FileNotFoundError(f"instruction-set introduction not found: {introduction}")
             parts.append(introduction.read_text(encoding="utf-8").strip())
-        parts.extend(
-            [
-                r"\subsection{Summary}",
-                latex_instruction_summary_table(f"{title} Summary (Informative)", group),
-            ]
-        )
         parts.extend(latex_instruction_entry(model, inst) for inst in group)
     return "\n".join(parts)

@@ -102,14 +102,14 @@ one scalar anchor address.  A contiguous access uses
   address[i] = anchor + iE,
 \]
 
-All arithmetic is modulo $2^{64}$.  Existing effective-address auto-update is
-applied once to the scalar anchor in the ordinary architectural order; it is
-not repeated per lane.
+All arithmetic is modulo $2^{64}$. Existing effective-address auto-update is
+applied once to the scalar anchor in the ordinary architectural order. That
+single update covers all lanes.
 
 Inactive lanes issue no memory transaction.  \texttt{VMOV} merges a memory
 source into its destination, while \texttt{VMOVZ} writes zero to inactive
-destination lanes.  A memory-destination arithmetic form is a lane-wise
-read-modify-write, not an atomic operation.  A vector instruction nevertheless
+destination lanes. A memory-destination arithmetic form uses non-atomic,
+lane-wise read-modify-write semantics. A vector instruction nevertheless
 has one architectural commit point: address evaluation, all active reads,
 computation, and all active writes must succeed before any register,
 predicate, memory, auto-update, \texttt{FFLAGS}, or PC effect becomes visible.
@@ -127,8 +127,8 @@ whose range supplies the selected failure.
 \subsubsection{One-Lane Gather and Scatter Steps}
 
 \texttt{VGATHER1} and \texttt{VSCATTER1} are one-lane vector memory
-instructions eligible for unconditional \texttt{REP} and not for
-\texttt{REPcc}.  Their canonical operand order is
+instructions whose repeat eligibility is limited to unconditional \texttt{REP}.
+Their canonical operand order is
 
 \begin{verbatim}
 VGATHER1.T  Pn, [address], Vd
@@ -174,8 +174,8 @@ indexed plus \texttt{disp64} & preceding indexed offset plus the exact 64-bit pa
 Address arithmetic is modulo $2^{64}$.  The absolute forms are offsets in the
 default data segment; they do not bypass segmentation.  Absolute 32 is the
 fixed \texttt{L/S} width and zero-extends \texttt{Va.L[i]}; absolute 64 is the
-fixed \texttt{Q/D} width.  In indexed syntax the scale is a literal equal to
-$E$ and is not a separately encoded field.  The signed 8-, 16-, and 32-bit
+fixed \texttt{Q/D} width. In indexed syntax the element width $E$ directly
+supplies the scale. The signed 8-, 16-, and 32-bit
 displacements and exact 64-bit displacement are appended payloads.
 
 Every base form requires \texttt{Ri != Rb}; scalar stride also requires

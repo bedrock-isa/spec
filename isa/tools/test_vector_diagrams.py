@@ -1379,9 +1379,9 @@ class VectorDiagramTests(unittest.TestCase):
                     collect_reader_text(child)
 
         collect_reader_text(markdown_ast["blocks"])
-        # This public prefix is owned by latex_entry_bit_diagram; the em dash is
-        # part of the observed site-caption regression boundary.
-        expected = [f"Format — Instruction format for {form}" for form in forms]
+        # This public prefix is owned by latex_entry_bit_diagram and forms part
+        # of the observed site-caption regression boundary.
+        expected = [f"Format: Instruction format for {form}" for form in forms]
         self.assertEqual(len(alt_texts), len(expected), "image alt count")
         self.assertEqual(len(caption_texts), len(expected), "caption count")
         for path, actual_texts in (

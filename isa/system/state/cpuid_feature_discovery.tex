@@ -75,14 +75,14 @@ any class, leaf 1 or greater, index 0 & reserved, zero & reserved, zero & \textt
 
 \texttt{MAX\_CLASS} is the greatest class recognized by the implementation, \texttt{MAX\_LEAF} is the greatest leaf
 recognized within the selected class, and \texttt{MAX\_INDEX} is the greatest index recognized within the selected
-leaf. Each field is a maximum selector value, not a count. A leaf may be sparse below \texttt{MAX\_INDEX}. Software
+leaf. Each field gives the greatest recognized selector value. A leaf may be sparse below \texttt{MAX\_INDEX}. Software
 ignores reserved bits in every returned value, so a later
 revision can assign them without invalidating existing discovery code.
 
 CPUID bit fields are feature predicates unless the leaf description says they encode a numeric value. Reserved
 result bits are ignored by software.
 
-A set feature bit only permits software to use the corresponding architectural behavior; the instruction's normal
+A set feature bit only permits software to use the corresponding architectural behavior; the instruction\textquotesingle{}s normal
 privilege, operand, and compatibility checks still apply.
 
 The \texttt{FP}, \texttt{FPTRANSA}, and \texttt{VECTOR} flag tokens report the
@@ -152,7 +152,7 @@ by the vendor and is compared only when both \texttt{VENDOR\_ID} and \texttt{IMP
 The name fields are UTF-8 byte strings in increasing index order. Within each 64-bit result, the first byte occupies
 bits 7..0 and subsequent bytes occupy successively higher bits. A name shorter than 64 bytes is terminated by a zero
 byte and all remaining bytes are zero. A 64-byte name has no terminator. Producers must not split a multi-byte UTF-8
-code point at the field boundary; consumers replace an invalid sequence rather than reading beyond the field.
+code point at the field boundary. Consumers stop at that boundary and replace any invalid sequence.
 
 \subsection{Optional-Extension Directory}\label{section:cpuid-extension-directory}
 Class \texttt{0x00000001}, leaf \texttt{0x0000}, index one reports optional architectural groups. The index-zero
@@ -176,8 +176,8 @@ Class \texttt{0x00000001}, leaf \texttt{0x0001} uses indexes 1 through \texttt{0
 16-bit accuracy-contract IDs. Index zero is the common header and reports \texttt{MAX\_INDEX=0x0044}.
 A contract ID identifies the reference function, input domain, special-value behavior, error metric, exact anchors,
 and mathematical properties; it is independent of instruction encoding placement. An incompatible change receives a
-new ID, and a retired ID is not reused. The contracts defined here use \texttt{CONTRACT\_REVISION=1}. Weakening
-a guarantee, changing the domain, or changing the error metric requires a new ID rather than a revision increment.
+new ID, and a retired ID is not reused. The contracts defined here use \texttt{CONTRACT\_REVISION=1}. A weakened
+guarantee, changed domain, or changed error metric requires a new ID.
 An implementation that advertises a smaller certified ULP bound strengthens the existing contract and retains the
 same ID and revision.
 
@@ -282,9 +282,9 @@ Class \texttt{0x00000002}, leaf \texttt{0x0003} is
 \texttt{ADDRESS\_WIDTHS}. Index zero reports \texttt{MAX\_INDEX=1}. At index
 one, bits \texttt{5..0} contain the exact implementation \texttt{PABITS}
 value in the inclusive range 32 through 56; bits \texttt{63..6} are zero.
-PABITS is stable until reset, applies to page-table roots, every present PTE
-PFN, translated results, and paging-disabled physical addresses, and is not a
-page-table geometry or TLB-identity selector.
+PABITS is stable until reset and applies to page-table roots, every present PTE
+PFN, translated results, and paging-disabled physical addresses. Separate
+selectors determine page-table geometry and TLB identity.
 
 \subsection{SAVE-Area Layout Discovery}
 Class \texttt{0x00000002}, leaf \texttt{0x0004} describes the memory image used by SAVE and RESTORE. Index zero is
@@ -302,7 +302,7 @@ save-image format defined by this specification.
 Each descriptor names one available extension component. Component IDs and bitmap bits are unique. Component
 regions begin at or after the fixed block, meet their reported alignment, and do not overlap. A set state-block
 bitmap bit selects the descriptor carrying the same \texttt{BITMAP\_BIT}. \texttt{INIT\_POLICY=1} means that
-RESTORE reconstructs the component-defined initial state when that component's bitmap bit is clear.
+RESTORE reconstructs the component-defined initial state when that component\textquotesingle{}s bitmap bit is clear.
 
 When the FP extension is present, component ID 1 uses bitmap bit 0, offset \texttt{0x00c0}, size
 \texttt{0x00c0}, and alignment 64. Its initial state is F0 through F15 equal to positive zero, FFLAGS equal to zero,

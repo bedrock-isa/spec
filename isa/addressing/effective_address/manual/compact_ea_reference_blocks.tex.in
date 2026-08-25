@@ -60,11 +60,11 @@
 \begin{manualeaprofile}
 @IMMEDIATE_SYNTAX@
 @IMMEDIATE_ENCODING@
-\manualeaprofileline{EA type}{immediate operand, not a memory reference.}
-\manualeaprofileline{Generation}{The operand value is decoded from the immediate payload. Signed payloads are sign-extended according to the consuming instruction's operand rule.}
+\manualeaprofileline{EA type}{immediate operand with no memory access.}
+\manualeaprofileline{Generation}{The operand value is decoded from the immediate payload. Signed payloads are sign-extended according to the consuming instruction\textquotesingle{}s operand rule.}
 \manualeaprofileline{Segment}{No segment is selected.}
 \manualeaprofileline{Payload}{The immediate payload is little-endian and has the size named by the EA form.}
-\manualeaprofileline{Update}{No auto-update. Immediate forms are not valid destinations unless an instruction explicitly defines such a form.}
+\manualeaprofileline{Update}{No auto-update. A valid immediate destination requires an explicit instruction definition.}
 \end{manualeaprofile}
 \manualeaimmediateflow{Immediate operand generation}{payload value}{IMMEDIATE VALUE}
 \end{manualformblock}

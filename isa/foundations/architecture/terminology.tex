@@ -33,8 +33,8 @@ operation} is an instruction-level semantic operation that may contain one or mo
 A \emph{memory event} is a read or write unit that participates in coherence or memory ordering. A \emph{memory
 effect} is a result that becomes observable to another logical processor or an external system.
 
-The term \emph{ordinary} classifies an operation, such as an ordinary load or store as distinct from an atomic or
-cache-maintenance operation. It does not identify a memory type.
+The term \emph{ordinary} classifies an operation, such as an ordinary load or store, within the operation taxonomy.
+Memory type is classified separately.
 
 \subsection{Segmentation and Paging}
 
@@ -78,7 +78,7 @@ payload. An undivided payload may carry its value without defining a separate fi
 
 The \emph{required instruction length} is the opcode-space length plus the length of every payload. It excludes
 padding. The \emph{encoded instruction length} is the required instruction length plus any trailing padding in the
-encoded record. Padding carries no information and is not a payload.
+encoded record. Padding carries no information. Payload accounting excludes padding.
 
 \subsection{Control Flow}\label{section:control-flow-terminology}
 
@@ -102,7 +102,8 @@ respectively.
 \subsection{Architectural State}\label{section:architectural-state-terminology}
 
 A \emph{logical processor} is an architecturally independent execution context and owns its architectural state.
-A software \emph{thread} may execute on a logical processor but is not the architectural execution subject.
+A software \emph{thread} may execute on a logical processor. The logical processor remains the architectural
+execution subject.
 
 The \emph{general-purpose registers} are the sixteen 64-bit registers R0 through R15. An \emph{Rn register} is one
 of those registers selected through the four-bit Rn operand namespace. It may hold integers, addresses, counters,
@@ -148,7 +149,7 @@ instruction commits the effects suppressed by that event.
 
 \subsection{Compatibility}\label{section:compatibility-terminology}
 
-\emph{Reserved} means that software must not depend on the field's value or behavior. \emph{Must be zero} requires
+\emph{Reserved} means that software must not depend on the field\textquotesingle{}s value or behavior. \emph{Must be zero} requires
 software to write zero, and \emph{read-as-zero} means reads return zero while the field remains reserved.
 \emph{Ignored} means hardware accepts the field without using it for the current operation. \emph{Preserved}
 requires software to retain the previous value when rewriting the containing object.

@@ -28,16 +28,17 @@ V & overflow & Set on signed overflow or an explicitly reported exceptional cond
 \subsection{Conditional Consumers}
 Conditional branches, calls, traps, and sets consume the condition-code table without recomputing FLAGS. An ordinary
 conditional consumer observes the FLAGS image produced by the last committed FLAGS-writing instruction. REPcc instead
-tests a temporary flag image derived from the body instruction's repeat-observed value, as defined in Repeated Scalar
-Execution, and does not write architectural FLAGS merely by performing that test.
+tests a temporary flag image derived from the body instruction\textquotesingle{}s repeat-observed value, as defined in Repeated Scalar
+Execution. That test leaves architectural FLAGS unchanged.
 
 A false condition suppresses the conditional action unless the instruction description explicitly defines a different
-commit rule, such as a repeat instruction's terminating iteration rule.
+commit rule, such as a repeat instruction\textquotesingle{}s terminating iteration rule.
 
 \subsection{Floating-Point Interactions}
 Floating-point comparison instructions may update integer condition codes only when their instruction definition says
 so. FFLAGS holds floating-point exception flags, and FSTATUS holds the corresponding exception-condition enables
-and rounding state. IEEE-754 FFLAGS causes accrue independently and are not subject to the complete-image FLAGS rule.
+and rounding state. IEEE-754 FFLAGS causes use independent accrued semantics. The complete-image rule applies to
+integer FLAGS.
 
 Integer conditional consumers do not read FFLAGS directly; floating-point instructions that want integer control-flow
 consumers must materialize the selected condition into FLAGS or an Rn value.

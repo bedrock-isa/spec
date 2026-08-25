@@ -1,13 +1,11 @@
 Computes the tanh(x) reference over all finite values and signed infinity after DAZ and writes an implementation-bounded S- or D-format approximation under the selected FPTRANSA accuracy contract.
 
-The required FPTRANSA\_ACCURACY contract is \texttt{0x0023}. If that accuracy contract's \texttt{PRESENT} field is clear, the instruction raises \texttt{ILLEGAL\_INSTRUCTION} before reading operands or floating-point state.
-
-After FSTATUS.DAZ processing, the reference function is tanh(x) on all finite values and signed infinity. The result error is at most 4 ULP for S and 4 ULP for D.
+The required FPTRANSA\_ACCURACY contract is \texttt{0x0023}.
 
 \textbf{Special values}\par
 \begin{itemize}
-\item When the source is infinite, the result is one with the sign of the source.
-\item When the source is zero, the result is the source.
+\item Infinite source: the result is one with the sign of the source.
+\item Zero source: the result is the source.
 \end{itemize}
 
 \textbf{Exact anchors}\par
@@ -23,5 +21,3 @@ After FSTATUS.DAZ processing, the reference function is tanh(x) on all finite va
 \item monotonically increasing
 \item result is in [-1, 1]
 \end{itemize}
-
-NaN handling, floating-point exception-cause generation, matching condition-enable testing, \texttt{FLOATING\_POINT\_FAULT} architectural-event delivery, and commit behavior follow the common FPTRANSA model in Section~\ref{section:fptransa-common-model}.

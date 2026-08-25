@@ -1,10 +1,8 @@
-The required FPTRANSA\_ACCURACY contract is \texttt{0x0013}. If that accuracy contract's \texttt{PRESENT} field is clear, the instruction raises \texttt{ILLEGAL\_INSTRUCTION} before reading operands or floating-point state.
-
-After FSTATUS.DAZ processing, the reference function is atan(x) in radians on all finite values and signed infinity. The result error is at most 4 ULP for S and 4 ULP for D.
+The required FPTRANSA\_ACCURACY contract is \texttt{0x0013}.
 
 \textbf{Special values}\par
 \begin{itemize}
-\item When the source is zero, the result is the source.
+\item Zero source: the result is the source.
 \end{itemize}
 
 \textbf{Exact anchors}\par
@@ -19,5 +17,3 @@ After FSTATUS.DAZ processing, the reference function is atan(x) in radians on al
 \item monotonically increasing
 \item finite results are in [-pi/2, pi/2]
 \end{itemize}
-
-NaN handling, floating-point exception-cause generation, matching condition-enable testing, \texttt{FLOATING\_POINT\_FAULT} architectural-event delivery, and commit behavior follow the common FPTRANSA model in Section~\ref{section:fptransa-common-model}.

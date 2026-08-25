@@ -1,3 +1,2 @@
-WAIT is a PAUSE-like execution hint. It retires as an ordinary instruction with the following instruction as its
-continuation. The implementation selects a finite delay before subsequent execution; the selected delay may be zero.
-The architectural result of WAIT is normal retirement to the recorded continuation.
+WAIT is a PAUSE-like execution hint that retires normally to the following instruction. The implementation may delay
+subsequent execution by any finite duration, including zero.

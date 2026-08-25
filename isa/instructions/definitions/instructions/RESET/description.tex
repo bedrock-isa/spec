@@ -1,4 +1,4 @@
-RESET serializes earlier memory effects, applies the complete architectural warm-reset state to the executing logical processor, and resumes execution at BOOTPC. BOOTPC and BOOTCFG are preserved.
+RESET serializes earlier memory effects, applies the complete architectural warm-reset state to the executing logical processor, and resumes execution at BOOTPC.
 
 RESET is supervisor-only and affects only the executing logical processor. Before the reset-state transition commits,
 all earlier memory effects and pending write-combining stores from that logical processor complete. No younger

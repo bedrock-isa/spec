@@ -75,7 +75,7 @@ reserved & \texttt{63..58} & must be zero\\
 
 A table pointer with \texttt{R=W=X=0}, or a table pointer at L1, is malformed.
 The walker begins with R, W, X, and U enabled, intersects each table bitmap and
-U bit, then intersects the terminating leaf's decoded AM permissions and U bit.
+U bit, then intersects the terminating leaf\textquotesingle{}s decoded AM permissions and U bit.
 The leaf alone supplies G, CP, and Normal/MMIO class. A leaf at level $L$ must
 have a physical base aligned to $2^{12+9(L-1)}$ bytes.
 

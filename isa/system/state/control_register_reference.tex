@@ -145,7 +145,7 @@ reserved & \texttt{63..1} & must be zero\\
 
 EPC is the exact common event-entry address, must be 16-byte aligned, and must be canonical and executable under
 ECS. SSP, ISP, FSP, and DSP are 64-byte-aligned configured stack tops and are not modified by entry or return.
-ECS, EDS, SSS, ISS, FSS, and DSS contain validated segment images. Selectors 0x0100--0x0102 are reserved.
+ECS, EDS, SSS, ISS, FSS, and DSS contain validated segment images. Selectors 0x0100 through 0x0102 are reserved.
 A write that establishes UCTL.V validates the complete user bank and requires saved PM, EA, EDEPTH, and UO to be
 zero. ERET revalidates the selected return source before committing.
 BOOTPC and BOOTCFG are initialized by the platform during cold reset and preserved by RESET.

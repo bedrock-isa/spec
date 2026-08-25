@@ -1,6 +1,6 @@
 operation: PXOR
 title: PXOR (Vector)
-summary: 'Destructive predicate XOR: `Pd = Pd XOR Ps`.'
+summary: 'Destructive predicate XOR: Pd = Pd XOR Ps.'
 public_instruction:
   mnemonic: PXOR
 execution_route: vector

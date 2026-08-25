@@ -1,15 +1,13 @@
 After DAZ, computes an implementation-bounded S- or D-format approximation of the ln(x) reference under the selected FPTRANSA accuracy contract. The reference domain includes positive finite values and positive infinity; signed zero is the DZ boundary.
 
-The required FPTRANSA\_ACCURACY contract is \texttt{0x0041}. If that accuracy contract's \texttt{PRESENT} field is clear, the instruction raises \texttt{ILLEGAL\_INSTRUCTION} before reading operands or floating-point state.
-
-After FSTATUS.DAZ processing, the reference function is ln(x) on positive finite values and positive infinity; signed zero is the DZ boundary. The result error is at most 4 ULP for S and 4 ULP for D.
+The required FPTRANSA\_ACCURACY contract is \texttt{0x0041}.
 
 \textbf{Special values}\par
 \begin{itemize}
-\item When the source is zero, DZ is generated and the result is -infinity.
-\item When the source \textless{} 0, NV is generated and the result is the architectural default quiet NaN.
-\item When the source is +infinity, the result is +infinity.
-\item When the source equals 1, the result is positive zero.
+\item Zero source: DZ is generated and the result is -infinity.
+\item Negative source: NV is generated and the result is the architectural default quiet NaN.
+\item Positive infinity: the result is +infinity.
+\item Unit source: the result is positive zero.
 \end{itemize}
 
 \textbf{Exact anchors}\par
@@ -23,5 +21,3 @@ After FSTATUS.DAZ processing, the reference function is ln(x) on positive finite
 \begin{itemize}
 \item strictly increasing on the positive domain
 \end{itemize}
-
-NaN handling, floating-point exception-cause generation, matching condition-enable testing, \texttt{FLOATING\_POINT\_FAULT} architectural-event delivery, and commit behavior follow the common FPTRANSA model in Section~\ref{section:fptransa-common-model}.

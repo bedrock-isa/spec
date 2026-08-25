@@ -148,7 +148,7 @@ def _root_landing(
     ]
     for document in documents:
         subtitle_suffix = (
-            f" — {document.structure.title.subtitle}"
+            f": {document.structure.title.subtitle}"
             if document.structure.title.subtitle is not None
             else ""
         )

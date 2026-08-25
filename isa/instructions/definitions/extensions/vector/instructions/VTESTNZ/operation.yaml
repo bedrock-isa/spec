@@ -1,6 +1,6 @@
 operation: VTESTNZ
 title: VTESTNZ (Vector)
-summary: Test `Va AND Vb` for nonzero and write a complete predicate result.
+summary: Test Va AND Vb for nonzero and write a complete predicate result.
 public_instruction:
   mnemonic: VTESTNZ
 execution_route: vector

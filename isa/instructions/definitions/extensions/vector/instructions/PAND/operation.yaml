@@ -1,6 +1,6 @@
 operation: PAND
 title: PAND (Vector)
-summary: 'Destructive predicate AND: `Pd = Pd AND Ps`.'
+summary: 'Destructive predicate AND: Pd = Pd AND Ps.'
 public_instruction:
   mnemonic: PAND
 execution_route: vector

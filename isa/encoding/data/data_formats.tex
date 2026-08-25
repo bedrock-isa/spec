@@ -16,8 +16,8 @@ address results, atomic return values, and state-register reads, zero-extends th
 This result extension does not change FLAGS calculation, which continues to use the selected operation size.
 
 Memory destination writes transfer only the selected number of bytes. Extension-store instructions instead write
-the explicitly named W, L, or Q destination width. SP has only Q-sized writable forms and is not subject to the Rn
-result-extension rule.
+the explicitly named W, L, or Q destination width. SP has only Q-sized writable forms. The result-extension rule
+applies to Rn destinations.
 
 \manualtablecaption{Integer Data Sizes}
 \begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.45in}>{\raggedright\arraybackslash}p{0.55in}>{\raggedright\arraybackslash}p{0.45in}>{\raggedright\arraybackslash}p{0.50in}>{\raggedright\arraybackslash}p{1.55in}@{}}

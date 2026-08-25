@@ -17,7 +17,7 @@ An encoded FEA source \texttt{immsf} is an exact IEEE 754 binary32 payload, and 
 binary64 payload. Either immediate may be used by either an S or D instruction. If the payload format differs from
 the operation format selected by the suffix, the source is converted to the operation format using the current
 \texttt{FSTATUS.RM} before the operation. All conversion causes, including causes from NaN handling and narrowing,
-are combined with the operation's causes. The combined cause set follows the same enabled-cause fault test, FFLAGS
+are combined with the operation\textquotesingle{}s causes. The combined cause set follows the same enabled-cause fault test, FFLAGS
 accrual, and all-or-nothing destination commit rules below. Floating-point immediate forms are source-only.
 
 \subsubsection{Input, NaN, Rounding, and Result Order}
@@ -57,7 +57,7 @@ value for a positive result.
 \midrule
 \texttt{NV} & an input is a signaling NaN; an arithmetic operation has no defined numeric result, including infinity minus the same infinity, zero times infinity, zero divided by zero, infinity divided by infinity, or square root of a negative nonzero value; or a floating-to-integer conversion is invalid\\
 \texttt{DZ} & a finite nonzero value is divided by zero\\
-\texttt{OF} & the rounded numeric magnitude exceeds the selected format's finite range\\
+\texttt{OF} & the rounded numeric magnitude exceeds the selected format\textquotesingle{}s finite range\\
 \texttt{UF} & the result is tiny after rounding and inexact, or FTZ flushes a nonzero subnormal result\\
 \texttt{NX} & rounding or a valid conversion changes the exact value, or OF or FTZ generates NX\\
 \bottomrule

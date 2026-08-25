@@ -11,8 +11,8 @@ value, decode result, or behavior.
 Architected registers and architectural memory structures use these defaults unless their defining section gives a
 narrower rule.
 
-Software-defined fields are not reserved fields. Software may store values in them, and hardware ignores them except
-where the containing structure explicitly says otherwise.
+Software-defined fields form a separate software-use category. Software may store values in them, and hardware
+ignores them except where the containing structure explicitly says otherwise.
 
 \input{isa/foundations/architecture/reserved_field_defaults.tex}
 
