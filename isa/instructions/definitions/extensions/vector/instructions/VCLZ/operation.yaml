@@ -1,5 +1,5 @@
 operation: VCLZ
-title: VCLZ (Vector)
+title: Vector Count Leading Zeros
 summary: Counts consecutive zero bits from the high end of each active element.
 public_instruction:
   mnemonic: VCLZ

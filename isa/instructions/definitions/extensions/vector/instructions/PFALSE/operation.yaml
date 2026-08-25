@@ -1,5 +1,5 @@
 operation: PFALSE
-title: PFALSE (Vector)
+title: Predicate Clear
 summary: Clear the complete predicate image.
 public_instruction:
   mnemonic: PFALSE

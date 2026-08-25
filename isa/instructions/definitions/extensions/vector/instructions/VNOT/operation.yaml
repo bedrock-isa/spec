@@ -1,5 +1,5 @@
 operation: VNOT
-title: VNOT (Vector)
+title: Vector Bitwise NOT
 summary: Complements every bit of each active element.
 public_instruction:
   mnemonic: VNOT

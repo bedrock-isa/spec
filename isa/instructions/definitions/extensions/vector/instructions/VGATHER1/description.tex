@@ -1,1 +1,16 @@
-Range-check the lane cursor, then conditionally load one selected element through the default data segment and advance the cursor.
+Let $i$ be the unsigned value of the lane cursor and let $E$ be the selected
+element width in bytes.  VGATHER1 checks $i$ against the selected vector lane
+count before testing the governing predicate.  An out-of-range cursor raises
+\texttt{VECTOR\_RANGE\_ERROR} with error code one and commits no state.
+
+Otherwise, predicate bit $iE$ governs the step.  A clear bit issues no memory
+transaction, leaves the destination unchanged, and increments the cursor
+modulo $2^{64}$.  A set bit reads one $E$-byte element through the default data
+segment, replaces only destination lane $i$, and increments the cursor.  The
+load, destination update, and cursor increment commit together; a memory fault
+commits none of them.
+
+The one-lane gather and scatter rules in
+Section~\ref{section:vector-register-model} define the address calculations,
+required cursor-register distinctions, and width-only aliases.  VGATHER1 is
+eligible only for unconditional \texttt{REP} and leaves FLAGS unchanged.

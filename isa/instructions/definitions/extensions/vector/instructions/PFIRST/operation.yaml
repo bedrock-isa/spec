@@ -1,5 +1,5 @@
 operation: PFIRST
-title: PFIRST (Vector)
+title: First Set Predicate Lane
 summary: Return the first selected element index at a significant position.
 public_instruction:
   mnemonic: PFIRST

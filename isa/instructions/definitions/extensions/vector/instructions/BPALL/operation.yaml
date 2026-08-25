@@ -1,5 +1,5 @@
 operation: BPALL
-title: BPALL (Vector)
+title: Branch on All Significant Predicate Positions
 summary: Branch if every significant position for the selected size is set.
 public_instruction:
   mnemonic: BPALL

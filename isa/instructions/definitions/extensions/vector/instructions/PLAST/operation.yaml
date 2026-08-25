@@ -1,5 +1,5 @@
 operation: PLAST
-title: PLAST (Vector)
+title: Last Set Predicate Lane
 summary: Return the last selected element index at a significant position.
 public_instruction:
   mnemonic: PLAST

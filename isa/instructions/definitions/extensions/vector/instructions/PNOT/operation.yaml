@@ -1,6 +1,6 @@
 operation: PNOT
-title: PNOT (Vector)
-summary: Complement Pd.
+title: Predicate Bitwise NOT
+summary: Complements every bit of the complete Pd image.
 public_instruction:
   mnemonic: PNOT
 execution_route: vector

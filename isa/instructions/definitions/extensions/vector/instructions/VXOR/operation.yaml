@@ -1,5 +1,5 @@
 operation: VXOR
-title: VXOR (Vector)
+title: Vector Bitwise XOR
 summary: Applies bitwise XOR to corresponding active vector elements.
 public_instruction:
   mnemonic: VXOR

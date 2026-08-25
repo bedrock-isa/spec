@@ -1,6 +1,6 @@
 operation: VCEIL
-title: VCEIL (Vector)
-summary: Integral FP result toward positive infinity.
+title: Vector Ceiling
+summary: Rounds each active floating-point element upward to an integral value in the same format.
 public_instruction:
   mnemonic: VCEIL
 execution_route: vector

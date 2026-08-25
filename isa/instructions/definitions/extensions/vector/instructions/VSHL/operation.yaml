@@ -1,6 +1,6 @@
 operation: VSHL
-title: VSHL (Vector)
-summary: Logical left shift.
+title: Vector Logical Shift Left
+summary: Logically shifts each active integer element left by its selected-width count.
 public_instruction:
   mnemonic: VSHL
 execution_route: vector

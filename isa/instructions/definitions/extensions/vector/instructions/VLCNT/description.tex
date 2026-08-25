@@ -1,1 +1,4 @@
-Write VLEN in bytes divided by the selected element width in bytes to \texttt{Rn}.
+VLCNT writes the selected vector lane count to the complete 64-bit \texttt{Rn}
+destination.  The count is VLEN in bytes divided by the selected element width
+in bytes.  The \texttt{H/S/D} spellings are width-only aliases for
+\texttt{W/L/Q}.  The operation leaves FLAGS unchanged.

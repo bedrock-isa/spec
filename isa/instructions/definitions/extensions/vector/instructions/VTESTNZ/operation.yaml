@@ -1,6 +1,6 @@
 operation: VTESTNZ
-title: VTESTNZ (Vector)
-summary: Test Va AND Vb for nonzero and write a complete predicate result.
+title: Vector Bitwise Test Nonzero
+summary: Sets significant result bits where the governed element-wise AND is nonzero and clears all other bits.
 public_instruction:
   mnemonic: VTESTNZ
 execution_route: vector

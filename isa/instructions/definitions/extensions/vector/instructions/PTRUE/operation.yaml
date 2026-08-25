@@ -1,5 +1,5 @@
 operation: PTRUE
-title: PTRUE (Vector)
+title: Predicate Set All
 summary: Set every significant position for the selected size.
 public_instruction:
   mnemonic: PTRUE

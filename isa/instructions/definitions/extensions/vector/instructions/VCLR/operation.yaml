@@ -1,6 +1,6 @@
 operation: VCLR
-title: VCLR (Vector)
-summary: Clears the complete scalable destination image.
+title: Vector Clear
+summary: Writes zero to every byte of the complete destination vector image.
 public_instruction:
   mnemonic: VCLR
 execution_route: vector

@@ -1,5 +1,5 @@
 operation: VCTS
-title: VCTS (Vector)
+title: Vector Count Trailing Ones
 summary: Counts consecutive one bits from the low end of each active element.
 public_instruction:
   mnemonic: VCTS

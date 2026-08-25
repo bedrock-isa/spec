@@ -1,5 +1,5 @@
 operation: VCLS
-title: VCLS (Vector)
+title: Vector Count Leading Ones
 summary: Counts consecutive one bits from the high end of each active element.
 public_instruction:
   mnemonic: VCLS

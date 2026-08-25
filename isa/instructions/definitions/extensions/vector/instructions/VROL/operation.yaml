@@ -1,6 +1,6 @@
 operation: VROL
-title: VROL (Vector)
-summary: Rotate left.
+title: Vector Rotate Left
+summary: Rotates each active integer element left by its selected-width count.
 public_instruction:
   mnemonic: VROL
 execution_route: vector

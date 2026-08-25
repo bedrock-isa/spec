@@ -1,5 +1,5 @@
 operation: PSEL
-title: PSEL (Vector)
+title: Predicate Select
 summary: Replace bits of Pd selected by Pc with bits from Ps.
 public_instruction:
   mnemonic: PSEL

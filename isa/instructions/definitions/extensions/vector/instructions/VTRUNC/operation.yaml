@@ -1,6 +1,6 @@
 operation: VTRUNC
-title: VTRUNC (Vector)
-summary: Integral FP result toward zero.
+title: Vector Truncate to Integral
+summary: Rounds each active floating-point element toward zero to an integral value in the same format.
 public_instruction:
   mnemonic: VTRUNC
 execution_route: vector

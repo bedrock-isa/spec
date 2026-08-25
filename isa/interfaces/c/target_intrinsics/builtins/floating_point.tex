@@ -12,6 +12,44 @@
 \texttt{write\_fflags} & \texttt{void(uint16\_t)} & \texttt{WRFFLAGS} & Unprivileged; reserved bits follow the ISA; writes accrued flags.\\
 \texttt{fclass\_f32} & \texttt{uint16\_t(float)} & \texttt{FCLASS.S} & FPU required; pure ten-class one-hot classification; does not update \texttt{FFLAGS}.\\
 \texttt{fclass\_f64} & \texttt{uint16\_t(double)} & \texttt{FCLASS.D} & FPU required; pure ten-class one-hot classification; does not update \texttt{FFLAGS}.\\
+\texttt{facosa\_f32} & \texttt{float(float)} & \texttt{FACOSA.S} & FP and FPTRANSA required; ISA accuracy, special-value, and floating-point event contracts apply.\\
+\texttt{facosa\_f64} & \texttt{double(double)} & \texttt{FACOSA.D} & FP and FPTRANSA required; ISA accuracy, special-value, and floating-point event contracts apply.\\
+\texttt{fasina\_f32} & \texttt{float(float)} & \texttt{FASINA.S} & FP and FPTRANSA required; ISA accuracy, special-value, and floating-point event contracts apply.\\
+\texttt{fasina\_f64} & \texttt{double(double)} & \texttt{FASINA.D} & FP and FPTRANSA required; ISA accuracy, special-value, and floating-point event contracts apply.\\
+\texttt{fatana\_f32} & \texttt{float(float)} & \texttt{FATANA.S} & FP and FPTRANSA required; ISA accuracy, special-value, and floating-point event contracts apply.\\
+\texttt{fatana\_f64} & \texttt{double(double)} & \texttt{FATANA.D} & FP and FPTRANSA required; ISA accuracy, special-value, and floating-point event contracts apply.\\
+\texttt{fatanha\_f32} & \texttt{float(float)} & \texttt{FATANHA.S} & FP and FPTRANSA required; ISA accuracy, special-value, and floating-point event contracts apply.\\
+\texttt{fatanha\_f64} & \texttt{double(double)} & \texttt{FATANHA.D} & FP and FPTRANSA required; ISA accuracy, special-value, and floating-point event contracts apply.\\
+\texttt{fcosa\_f32} & \texttt{float(float)} & \texttt{FCOSA.S} & FP and FPTRANSA required; ISA accuracy, special-value, and floating-point event contracts apply.\\
+\texttt{fcosa\_f64} & \texttt{double(double)} & \texttt{FCOSA.D} & FP and FPTRANSA required; ISA accuracy, special-value, and floating-point event contracts apply.\\
+\texttt{fcosha\_f32} & \texttt{float(float)} & \texttt{FCOSHA.S} & FP and FPTRANSA required; ISA accuracy, special-value, and floating-point event contracts apply.\\
+\texttt{fcosha\_f64} & \texttt{double(double)} & \texttt{FCOSHA.D} & FP and FPTRANSA required; ISA accuracy, special-value, and floating-point event contracts apply.\\
+\texttt{fetoxa\_f32} & \texttt{float(float)} & \texttt{FETOXA.S} & FP and FPTRANSA required; ISA accuracy, special-value, and floating-point event contracts apply.\\
+\texttt{fetoxa\_f64} & \texttt{double(double)} & \texttt{FETOXA.D} & FP and FPTRANSA required; ISA accuracy, special-value, and floating-point event contracts apply.\\
+\texttt{fetoxm1a\_f32} & \texttt{float(float)} & \texttt{FETOXM1A.S} & FP and FPTRANSA required; ISA accuracy, special-value, and floating-point event contracts apply.\\
+\texttt{fetoxm1a\_f64} & \texttt{double(double)} & \texttt{FETOXM1A.D} & FP and FPTRANSA required; ISA accuracy, special-value, and floating-point event contracts apply.\\
+\texttt{flog10a\_f32} & \texttt{float(float)} & \texttt{FLOG10A.S} & FP and FPTRANSA required; ISA accuracy, special-value, and floating-point event contracts apply.\\
+\texttt{flog10a\_f64} & \texttt{double(double)} & \texttt{FLOG10A.D} & FP and FPTRANSA required; ISA accuracy, special-value, and floating-point event contracts apply.\\
+\texttt{flog2a\_f32} & \texttt{float(float)} & \texttt{FLOG2A.S} & FP and FPTRANSA required; ISA accuracy, special-value, and floating-point event contracts apply.\\
+\texttt{flog2a\_f64} & \texttt{double(double)} & \texttt{FLOG2A.D} & FP and FPTRANSA required; ISA accuracy, special-value, and floating-point event contracts apply.\\
+\texttt{flogna\_f32} & \texttt{float(float)} & \texttt{FLOGNA.S} & FP and FPTRANSA required; ISA accuracy, special-value, and floating-point event contracts apply.\\
+\texttt{flogna\_f64} & \texttt{double(double)} & \texttt{FLOGNA.D} & FP and FPTRANSA required; ISA accuracy, special-value, and floating-point event contracts apply.\\
+\texttt{flognp1a\_f32} & \texttt{float(float)} & \texttt{FLOGNP1A.S} & FP and FPTRANSA required; ISA accuracy, special-value, and floating-point event contracts apply.\\
+\texttt{flognp1a\_f64} & \texttt{double(double)} & \texttt{FLOGNP1A.D} & FP and FPTRANSA required; ISA accuracy, special-value, and floating-point event contracts apply.\\
+\texttt{fsina\_f32} & \texttt{float(float)} & \texttt{FSINA.S} & FP and FPTRANSA required; ISA accuracy, special-value, and floating-point event contracts apply.\\
+\texttt{fsina\_f64} & \texttt{double(double)} & \texttt{FSINA.D} & FP and FPTRANSA required; ISA accuracy, special-value, and floating-point event contracts apply.\\
+\texttt{fsinha\_f32} & \texttt{float(float)} & \texttt{FSINHA.S} & FP and FPTRANSA required; ISA accuracy, special-value, and floating-point event contracts apply.\\
+\texttt{fsinha\_f64} & \texttt{double(double)} & \texttt{FSINHA.D} & FP and FPTRANSA required; ISA accuracy, special-value, and floating-point event contracts apply.\\
+\texttt{ftana\_f32} & \texttt{float(float)} & \texttt{FTANA.S} & FP and FPTRANSA required; ISA accuracy, special-value, and floating-point event contracts apply.\\
+\texttt{ftana\_f64} & \texttt{double(double)} & \texttt{FTANA.D} & FP and FPTRANSA required; ISA accuracy, special-value, and floating-point event contracts apply.\\
+\texttt{ftanha\_f32} & \texttt{float(float)} & \texttt{FTANHA.S} & FP and FPTRANSA required; ISA accuracy, special-value, and floating-point event contracts apply.\\
+\texttt{ftanha\_f64} & \texttt{double(double)} & \texttt{FTANHA.D} & FP and FPTRANSA required; ISA accuracy, special-value, and floating-point event contracts apply.\\
+\texttt{ftentoxa\_f32} & \texttt{float(float)} & \texttt{FTENTOXA.S} & FP and FPTRANSA required; ISA accuracy, special-value, and floating-point event contracts apply.\\
+\texttt{ftentoxa\_f64} & \texttt{double(double)} & \texttt{FTENTOXA.D} & FP and FPTRANSA required; ISA accuracy, special-value, and floating-point event contracts apply.\\
+\texttt{ftwotoxa\_f32} & \texttt{float(float)} & \texttt{FTWOTOXA.S} & FP and FPTRANSA required; ISA accuracy, special-value, and floating-point event contracts apply.\\
+\texttt{ftwotoxa\_f64} & \texttt{double(double)} & \texttt{FTWOTOXA.D} & FP and FPTRANSA required; ISA accuracy, special-value, and floating-point event contracts apply.\\
+\texttt{fsincosa\_f32} & \texttt{void(float, float *, float *)} & \texttt{FSINCOSA.S} & FP and FPTRANSA required; writes sine through the first result pointer and cosine through the second; ISA accuracy, special-value, and floating-point event contracts apply to both results.\\
+\texttt{fsincosa\_f64} & \texttt{void(double, double *, double *)} & \texttt{FSINCOSA.D} & FP and FPTRANSA required; writes sine through the first result pointer and cosine through the second; ISA accuracy, special-value, and floating-point event contracts apply to both results.\\
 \bottomrule
 \end{longtable}
 \endgroup

@@ -1,6 +1,6 @@
 operation: POR
-title: POR (Vector)
-summary: 'Destructive predicate OR: Pd = Pd OR Ps.'
+title: Predicate Bitwise OR
+summary: OR corresponding bits of Ps and the old Pd into the complete Pd image.
 public_instruction:
   mnemonic: POR
 execution_route: vector

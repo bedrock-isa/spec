@@ -1,5 +1,5 @@
 operation: VINDEX
-title: VINDEX (Vector)
+title: Vector Lane Indices
 summary: Writes each logical lane number to its destination element.
 public_instruction:
   mnemonic: VINDEX

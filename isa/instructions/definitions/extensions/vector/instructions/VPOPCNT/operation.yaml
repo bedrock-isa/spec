@@ -1,5 +1,5 @@
 operation: VPOPCNT
-title: VPOPCNT (Vector)
+title: Vector Population Count
 summary: Counts the set bits in each active element.
 public_instruction:
   mnemonic: VPOPCNT

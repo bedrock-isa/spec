@@ -1,5 +1,5 @@
 operation: VOR
-title: VOR (Vector)
+title: Vector Bitwise OR
 summary: Applies bitwise OR to corresponding active vector elements.
 public_instruction:
   mnemonic: VOR

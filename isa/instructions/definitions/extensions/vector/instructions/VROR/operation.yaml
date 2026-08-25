@@ -1,6 +1,6 @@
 operation: VROR
-title: VROR (Vector)
-summary: Rotate right.
+title: Vector Rotate Right
+summary: Rotates each active integer element right by its selected-width count.
 public_instruction:
   mnemonic: VROR
 execution_route: vector

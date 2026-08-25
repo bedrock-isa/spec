@@ -1,5 +1,5 @@
 operation: VMOVZ
-title: VMOVZ (Vector)
+title: Vector Zeroing Move
 summary: Loads active memory elements and clears inactive destination lanes.
 public_instruction:
   mnemonic: VMOVZ

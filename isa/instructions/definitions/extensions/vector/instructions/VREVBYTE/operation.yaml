@@ -1,5 +1,5 @@
 operation: VREVBYTE
-title: VREVBYTE (Vector)
+title: Vector Byte-Order Reverse
 summary: Reverses the byte order within each active element.
 public_instruction:
   mnemonic: VREVBYTE

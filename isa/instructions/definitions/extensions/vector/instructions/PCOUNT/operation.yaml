@@ -1,5 +1,5 @@
 operation: PCOUNT
-title: PCOUNT (Vector)
+title: Predicate Population Count
 summary: Count set significant positions for the selected element size.
 public_instruction:
   mnemonic: PCOUNT

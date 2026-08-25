@@ -1,6 +1,6 @@
 operation: PMOV
-title: PMOV (Vector)
-summary: Read a complete packed predicate image from memory.
+title: Predicate Memory Move
+summary: Transfers a complete packed predicate image between a predicate register and memory.
 public_instruction:
   mnemonic: PMOV
 execution_route: vector

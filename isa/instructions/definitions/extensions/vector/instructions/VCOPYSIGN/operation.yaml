@@ -1,6 +1,6 @@
 operation: VCOPYSIGN
-title: VCOPYSIGN (Vector)
-summary: Combine magnitude and sign operands.
+title: Vector Copy Sign
+summary: Combines each active destination magnitude with the corresponding source sign bit.
 public_instruction:
   mnemonic: VCOPYSIGN
 execution_route: vector

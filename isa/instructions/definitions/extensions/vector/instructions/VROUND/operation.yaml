@@ -1,6 +1,6 @@
 operation: VROUND
-title: VROUND (Vector)
-summary: Integral FP result under the current rounding mode.
+title: Vector Round to Integral
+summary: Rounds each active floating-point element to an integral value in the same format using the current rounding mode.
 public_instruction:
   mnemonic: VROUND
 execution_route: vector

@@ -1,6 +1,6 @@
 operation: PXOR
-title: PXOR (Vector)
-summary: 'Destructive predicate XOR: Pd = Pd XOR Ps.'
+title: Predicate Bitwise XOR
+summary: XOR corresponding bits of Ps and the old Pd into the complete Pd image.
 public_instruction:
   mnemonic: PXOR
 execution_route: vector

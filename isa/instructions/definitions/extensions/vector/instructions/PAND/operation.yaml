@@ -1,6 +1,6 @@
 operation: PAND
-title: PAND (Vector)
-summary: 'Destructive predicate AND: Pd = Pd AND Ps.'
+title: Predicate Bitwise AND
+summary: AND corresponding bits of Ps and the old Pd into the complete Pd image.
 public_instruction:
   mnemonic: PAND
 execution_route: vector

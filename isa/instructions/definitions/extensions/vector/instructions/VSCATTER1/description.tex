@@ -1,1 +1,15 @@
-Range-check the lane cursor, then conditionally store one selected element through the default data segment and advance the cursor.
+Let $i$ be the unsigned value of the lane cursor and let $E$ be the selected
+element width in bytes.  VSCATTER1 checks $i$ against the selected vector lane
+count before testing the governing predicate.  An out-of-range cursor raises
+\texttt{VECTOR\_RANGE\_ERROR} with error code one and commits no state.
+
+Otherwise, predicate bit $iE$ governs the step.  A clear bit issues no memory
+transaction and increments the cursor modulo $2^{64}$.  A set bit writes source
+lane $i$ as one $E$-byte element through the default data segment and increments
+the cursor.  The store and cursor increment commit together; a memory fault
+commits neither effect.
+
+The one-lane gather and scatter rules in
+Section~\ref{section:vector-register-model} define the address calculations,
+required cursor-register distinctions, and width-only aliases.  VSCATTER1 is
+eligible only for unconditional \texttt{REP} and leaves FLAGS unchanged.

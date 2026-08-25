@@ -1,5 +1,5 @@
 operation: PTAIL
-title: PTAIL (Vector)
+title: Predicate Tail
 summary: Set significant positions before unsigned(Rcount) mod lane_count.
 public_instruction:
   mnemonic: PTAIL

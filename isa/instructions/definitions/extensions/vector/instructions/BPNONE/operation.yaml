@@ -1,5 +1,5 @@
 operation: BPNONE
-title: BPNONE (Vector)
+title: Branch on No Predicate Bits
 summary: Branch if no bit is set.
 public_instruction:
   mnemonic: BPNONE

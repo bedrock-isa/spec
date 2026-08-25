@@ -1,5 +1,5 @@
 operation: VCTZ
-title: VCTZ (Vector)
+title: Vector Count Trailing Zeros
 summary: Counts consecutive zero bits from the low end of each active element.
 public_instruction:
   mnemonic: VCTZ

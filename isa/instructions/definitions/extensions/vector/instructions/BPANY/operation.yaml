@@ -1,5 +1,5 @@
 operation: BPANY
-title: BPANY (Vector)
+title: Branch on Any Predicate Bit
 summary: Branch if any bit is set.
 public_instruction:
   mnemonic: BPANY

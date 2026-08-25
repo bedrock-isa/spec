@@ -1,6 +1,6 @@
 operation: VSAR
-title: VSAR (Vector)
-summary: Arithmetic right shift.
+title: Vector Arithmetic Shift Right
+summary: Arithmetically shifts each active integer element right by its selected-width count.
 public_instruction:
   mnemonic: VSAR
 execution_route: vector

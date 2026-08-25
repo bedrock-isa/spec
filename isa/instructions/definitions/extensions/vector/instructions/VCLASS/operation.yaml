@@ -1,6 +1,6 @@
 operation: VCLASS
-title: VCLASS (Vector)
-summary: Write a per-lane FP classification bitmap to a vector.
+title: Vector Floating-Point Classify
+summary: Writes a floating-point classification bitmap for each active element.
 public_instruction:
   mnemonic: VCLASS
 execution_route: vector

@@ -1,5 +1,5 @@
 operation: VAND
-title: VAND (Vector)
+title: Vector Bitwise AND
 summary: Applies bitwise AND to corresponding active vector elements.
 public_instruction:
   mnemonic: VAND

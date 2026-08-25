@@ -1,1 +1,5 @@
-Add signed \texttt{imm8} multiplied by VLEN in bytes divided by the selected element width in bytes, modulo 2\textasciicircum{}64.
+VLCADD reads the old \texttt{Rn} value and adds the signed eight-bit
+immediate multiplied by the selected vector lane count.  The lane count is
+VLEN in bytes divided by the selected element width in bytes, and the addition
+is modulo $2^{64}$.  The \texttt{H/S/D} spellings are width-only aliases for
+\texttt{W/L/Q}.  The operation leaves FLAGS unchanged.

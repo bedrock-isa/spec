@@ -1,6 +1,6 @@
 operation: VFLOOR
-title: VFLOOR (Vector)
-summary: Integral FP result toward negative infinity.
+title: Vector Floor
+summary: Rounds each active floating-point element downward to an integral value in the same format.
 public_instruction:
   mnemonic: VFLOOR
 execution_route: vector
