@@ -49,7 +49,7 @@ integer, and floating-point families. \texttt{<bedrocksystemintrin.h>} is the sy
 umbrella for system-register, cache, MMU, and processor-state facilities. Any
 family header may also be included directly.
 
-\input{isa/interfaces/c/generated/target_intrinsics/header_families.tex}
+\input{isa/interfaces/c/target_intrinsics/headers/families.tex}
 
 \subsection{Common Compilation Rules}
 Family wrappers are static inline functions unless an encoded immediate or
@@ -77,19 +77,19 @@ the ISA.
 
 \subsection{Core Builtins}
 \manualfield{Header:}{\texttt{<bedrockcoreintrin.h>}}
-\input{isa/interfaces/c/generated/target_intrinsics/core.tex}
+\input{isa/interfaces/c/target_intrinsics/builtins/core.tex}
 
 \subsection{Memory Builtins}
 \manualfield{Header:}{\texttt{<bedrockmemoryintrin.h>}}
-\input{isa/interfaces/c/generated/target_intrinsics/memory.tex}
+\input{isa/interfaces/c/target_intrinsics/builtins/memory.tex}
 
 \subsection{Integer Builtins}
 \manualfield{Header:}{\texttt{<bedrockintegerintrin.h>}}
-\input{isa/interfaces/c/generated/target_intrinsics/integer.tex}
+\input{isa/interfaces/c/target_intrinsics/builtins/integer.tex}
 
 \subsection{Floating-Point Builtins}
 \manualfield{Header:}{\texttt{<bedrockfpuintrin.h>}}
-\input{isa/interfaces/c/generated/target_intrinsics/floating_point.tex}
+\input{isa/interfaces/c/target_intrinsics/builtins/floating_point.tex}
 
 \subsection{Approximate Transcendental Lowering Policy}
 A strict language-library operation shall not be lowered to an FPTRANSA
@@ -104,7 +104,7 @@ remain active.
 
 \subsection{System-Register Builtins}
 \manualfield{Header:}{\texttt{<bedrocksysregintrin.h>}}
-\input{isa/interfaces/c/generated/target_intrinsics/system_registers.tex}
+\input{isa/interfaces/c/target_intrinsics/builtins/system_registers.tex}
 
 The system-register header defines \texttt{\_\_bedrock\_control\_register\_t} constants for every published
 control-register selector. The constants are names for the architectural selector values; they do not weaken the
@@ -147,16 +147,16 @@ architectural cache-maintenance sequence is required. An implementation may
 diagnose a provably wrapping constant range. A valid range end is calculated
 mathematically, not modulo $2^{64}$.
 
-\input{isa/interfaces/c/generated/target_intrinsics/cache.tex}
+\input{isa/interfaces/c/target_intrinsics/builtins/cache.tex}
 
 \subsection{MMU Builtins}
 \manualfield{Header:}{\texttt{<bedrockmmuintrin.h>}}
-\input{isa/interfaces/c/generated/target_intrinsics/mmu.tex}
+\input{isa/interfaces/c/target_intrinsics/builtins/mmu.tex}
 
 \Needspace{2.0in}
 \subsection{Processor-State Builtins}
 \manualfield{Header:}{\texttt{<bedrockstateintrin.h>}}
-\input{isa/interfaces/c/generated/target_intrinsics/processor_state.tex}
+\input{isa/interfaces/c/target_intrinsics/builtins/processor_state.tex}
 
 Both operations are unprivileged, but restoration of \texttt{STATUS} remains
 privilege-restricted. The backend must model every restored register and the
@@ -164,6 +164,6 @@ full memory and addressing-context clobber explicitly. It must not treat
 restore as an opaque call or as only a memory effect.
 
 \section{Shared Header Types}\label{page:shared-header-types}
-\input{isa/interfaces/c/generated/target_intrinsics/shared_types.tex}
+\input{isa/interfaces/c/target_intrinsics/types/shared_types.tex}
 
 \end{document}

@@ -72,9 +72,6 @@ def validate_description_tex(path: Path) -> list[str]:
     repository_root = ROOT.parents[2]
     resolved = resolve_source(path, repository_root)
     if not resolved.is_file():
-        template = path.with_suffix(path.suffix + ".in")
-        resolved = resolve_source(template, repository_root)
-    if not resolved.is_file():
         return [f"{path}: referenced TeX file does not exist"]
     text = resolved.read_text(encoding="utf-8").strip()
     errors: list[str] = []
@@ -95,17 +92,7 @@ def validate_description_tex(path: Path) -> list[str]:
 
 def validate_defs(root: Path = ROOT) -> tuple[dict[str, Any], list[str]]:
     errors: list[str] = []
-    architecture_path = root.parent.parent / "conformance" / "architecture_tables.yaml"
-    try:
-        architecture = load_yaml(architecture_path) if architecture_path.is_file() else {}
-        event_names = {
-            str(item["name"])
-            for item in architecture.get("architectural_events", [])
-            if isinstance(item, dict) and "name" in item
-        }
-    except (OSError, ValueError, KeyError, TypeError) as exc:
-        event_names = set()
-        errors.append(f"{architecture_path}: cannot load architectural event names: {exc}")
+    event_path = root.parent.parent / "system" / "events" / "architectural_events.yaml"
     try:
         verify_schema_lock()
         for path in sorted(root.rglob("*.yaml")):
@@ -121,8 +108,8 @@ def validate_defs(root: Path = ROOT) -> tuple[dict[str, Any], list[str]]:
         known_cpuid_flags, requirements_by_set = extension_cpuid_requirements(
             extensions, cpuid_flags
         )
-        known_event_ids = load_architectural_event_ids(architecture_path)
-        known_event_causes = load_architectural_event_causes(architecture_path)
+        known_event_ids = load_architectural_event_ids(event_path)
+        known_event_causes = load_architectural_event_causes(event_path)
         known_conditions = frozenset(load_semantic_conditions(root))
         known_named_values = frozenset(load_named_values(root))
         known_flag_effects = load_flag_effect_definitions(root)

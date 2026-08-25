@@ -475,7 +475,8 @@ and passes its address in \texttt{R0} before ordinary argument assignment. The
 callee stores the result in that buffer and returns the same address in
 \texttt{R0}.
 
-\input{isa/interfaces/abi/generated/c_return_register_quick_reference.tex}
+\input{isa/interfaces/abi/c/documented_calling_convention_case_registry.tex}
+\input{isa/interfaces/abi/c/return_register_quick_reference.tex}
 
 \subsection{Aggregate Passing}
 For every by-value aggregate argument, the caller allocates distinct storage,
@@ -625,7 +626,7 @@ contract.
 \subsection{Calls, Relocations, and Relaxation}
 The relocation records the linkage path selected for a C call:
 
-\input{isa/interfaces/abi/generated/c_call_relocation_quick_reference.tex}
+\input{isa/interfaces/abi/c/call_relocation_quick_reference.tex}
 
 The assembler and linker may relax an instruction sequence, but relaxation
 must preserve the C call interface, symbol identity, and observable control
@@ -645,7 +646,7 @@ operations and ordering instructions.
 The following guarantees apply to ordinary normal-memory accesses. They do not by
 themselves establish C inter-thread ordering:
 
-\input{isa/interfaces/abi/generated/ordinary_memory_access_guarantees.tex}
+\input{isa/interfaces/abi/c/ordinary_memory_access_guarantees.tex}
 
 \subsection{Atomic Object Eligibility}
 The native lock-free set consists of integer objects and ordinary 64-bit
@@ -664,7 +665,7 @@ Once the object satisfies the width and alignment requirements above, the
 compiler uses the following primitive lowering. The ordering sequences are
 defined separately below.
 
-\input{isa/interfaces/abi/generated/native_atomic_primitive_quick_reference.tex}
+\input{isa/interfaces/abi/c/native_atomic_primitive_quick_reference.tex}
 
 \Needspace{2.6in}
 \subsection{C Atomic Memory Order Mapping}

@@ -28,7 +28,7 @@ def definition_payloads(root: Path) -> dict[str, dict]:
     known_cpuid_flags, requirements_by_set = extension_cpuid_requirements(
         extensions, cpuid_flags
     )
-    event_path = REPOSITORY_ROOT / "isa" / "conformance" / "architecture_tables.yaml"
+    event_path = REPOSITORY_ROOT / "isa" / "system" / "events" / "architectural_events.yaml"
     known_events = load_architectural_event_ids(event_path)
     known_causes = load_architectural_event_causes(event_path)
     known_conditions = frozenset(load_semantic_conditions(root))

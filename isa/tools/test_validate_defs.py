@@ -7,10 +7,8 @@ from unittest.mock import patch
 
 import validate_defs
 import artifact_overlay
-import compile_documents
 import defs_loader
 import defs_schema
-import gen_architecture_tables
 import gen_docs
 import site_markdown
 
@@ -99,20 +97,7 @@ class EncodingTransportValidationTests(unittest.TestCase):
 
 
 class DescriptionTexValidationTests(unittest.TestCase):
-    def test_generated_description_accepts_source_template(self):
-        with tempfile.TemporaryDirectory() as directory:
-            repository_root = Path(directory)
-            definitions_root = repository_root / "isa" / "instructions" / "definitions"
-            details = definitions_root / "instructions" / "RDPMC" / "details.tex"
-            details.parent.mkdir(parents=True)
-            details.with_suffix(".tex.in").write_text(
-                "Generated instruction details.\n", encoding="utf-8"
-            )
-
-            with patch.object(validate_defs, "ROOT", definitions_root):
-                self.assertEqual(validate_defs.validate_description_tex(details), [])
-
-    def test_missing_description_and_template_remains_an_error(self):
+    def test_missing_description_remains_an_error(self):
         with tempfile.TemporaryDirectory() as directory:
             repository_root = Path(directory)
             definitions_root = repository_root / "isa" / "instructions" / "definitions"
@@ -194,55 +179,9 @@ class OperationArtifactOverlayTests(unittest.TestCase):
             self.assertEqual(resolved, source.resolve())
 
 
-class CompileDocumentOverlayTests(unittest.TestCase):
-    def test_current_process_model_load_uses_materialized_generated_overlay(self):
-        with tempfile.TemporaryDirectory() as directory:
-            overlay = Path(directory) / "overlay"
-            generated = gen_architecture_tables.render_artifacts()
-            referenced_generated = []
-            for operation_path in gen_docs.DEF_ROOT.rglob("operation.yaml"):
-                operation = defs_loader.load_yaml(operation_path)
-                description = operation.get("artifacts", {}).get("description", {})
-                relative = description.get("path")
-                if not isinstance(relative, str):
-                    continue
-                artifact = operation_path.parent / relative
-                if artifact in generated and not artifact.exists():
-                    referenced_generated.append(artifact)
-            self.assertTrue(referenced_generated)
-
-            store = compile_documents.ArtifactStore()
-            store.add_all(generated, "architecture tables")
-            store.require_absent_from_source_tree()
-            store.materialize(overlay)
-
-            with patch.dict(os.environ, {}, clear=True):
-                self.assertNotIn(artifact_overlay.OVERLAY_ENV, os.environ)
-                model, rendered = compile_documents._load_and_render_isa_with_overlay(
-                    store, overlay
-                )
-                self.assertNotIn(artifact_overlay.OVERLAY_ENV, os.environ)
-
-            self.assertTrue(model.instructions)
-            for path in referenced_generated:
-                self.assertIn(generated[path].strip(), rendered)
-
-
 class OperationDocumentCandidateTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.generated_overlay = tempfile.TemporaryDirectory()
-        cls.addClassCleanup(cls.generated_overlay.cleanup)
-        overlay_root = Path(cls.generated_overlay.name)
-        for path, content in gen_architecture_tables.render_artifacts().items():
-            destination = overlay_root / path.relative_to(gen_architecture_tables.ROOT)
-            destination.parent.mkdir(parents=True, exist_ok=True)
-            destination.write_text(content, encoding="utf-8")
-        cls.overlay_environment = patch.dict(
-            os.environ, {artifact_overlay.OVERLAY_ENV: str(overlay_root)}
-        )
-        cls.overlay_environment.start()
-        cls.addClassCleanup(cls.overlay_environment.stop)
         cls.model = gen_docs.load_model(gen_docs.DEF_ROOT)
         cls.instructions = {
             instruction.mnemonic: instruction
@@ -359,31 +298,9 @@ class OperationDocumentCandidateTests(unittest.TestCase):
         directory = gen_docs.latex_extension_directory_table(self.model)
         self.assertNotIn("fpu.transcendental_approx", directory)
         self.assertNotIn("Extension &", directory)
-        reference_indexes = gen_docs.latex_reference_navigation_section(
-            self.model, self.model.instructions
-        )
+        reference_indexes = gen_docs.latex_reference_navigation_section()
         self.assertNotIn("CPUID Feature Index", reference_indexes)
         self.assertNotIn("Available instructions", reference_indexes)
-
-    def test_architecture_tables_own_event_specific_causes(self):
-        event_ids = defs_loader.load_architectural_event_ids(
-            gen_docs.ARCHITECTURE_TABLES_PATH
-        )
-        cause_spaces = defs_loader.load_architectural_event_causes(
-            gen_docs.ARCHITECTURE_TABLES_PATH
-        )
-        self.assertEqual(set(cause_spaces), set(event_ids))
-        for instruction in self.model.instructions:
-            if instruction.operation is None:
-                continue
-            for case in instruction.operation.cases:
-                for event in case.events:
-                    if event.cause is not None:
-                        self.assertIn(
-                            event.cause,
-                            cause_spaces[event.event],
-                            (instruction.mnemonic, case.id, event.event),
-                        )
 
     def test_destination_overlap_conditions_reuse_encoding_relations(self):
         for instruction in self.model.instructions:

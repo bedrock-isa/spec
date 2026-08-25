@@ -1,0 +1,19 @@
+\expandafter\def\csname bedrockabicase@known@mixed-register-classes\endcsname{}
+\expandafter\def\csname bedrockabicase@known@pair-exhausts-general-class\endcsname{}
+\expandafter\def\csname bedrockabicase@known@scalable-register-classes\endcsname{}
+\expandafter\def\csname bedrockabicase@known@sret-reserves-r0\endcsname{}
+\expandafter\def\csname bedrockabicase@known@variadic-default-promotions\endcsname{}
+\newcommand{\manualabicase}[1]{%
+  \ifcsname bedrockabicase@known@#1\endcsname
+    \expandafter\gdef\csname bedrockabicase@seen@#1\endcsname{}%
+  \else
+    \PackageError{bedrock-reference}{Unknown ABI calling-convention case `#1'}%
+      {Use an ID declared in isa/interfaces/abi/calling_convention_cases.json.}%
+  \fi}
+\AtEndDocument{%
+\ifcsname bedrockabicase@seen@mixed-register-classes\endcsname\else\PackageError{bedrock-reference}{Missing ABI calling-convention case `mixed-register-classes'}{Reference every documented calling-convention case with \string\manualabicase.}\fi
+\ifcsname bedrockabicase@seen@pair-exhausts-general-class\endcsname\else\PackageError{bedrock-reference}{Missing ABI calling-convention case `pair-exhausts-general-class'}{Reference every documented calling-convention case with \string\manualabicase.}\fi
+\ifcsname bedrockabicase@seen@scalable-register-classes\endcsname\else\PackageError{bedrock-reference}{Missing ABI calling-convention case `scalable-register-classes'}{Reference every documented calling-convention case with \string\manualabicase.}\fi
+\ifcsname bedrockabicase@seen@sret-reserves-r0\endcsname\else\PackageError{bedrock-reference}{Missing ABI calling-convention case `sret-reserves-r0'}{Reference every documented calling-convention case with \string\manualabicase.}\fi
+\ifcsname bedrockabicase@seen@variadic-default-promotions\endcsname\else\PackageError{bedrock-reference}{Missing ABI calling-convention case `variadic-default-promotions'}{Reference every documented calling-convention case with \string\manualabicase.}\fi
+}

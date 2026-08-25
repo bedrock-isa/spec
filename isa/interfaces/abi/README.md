@@ -16,12 +16,10 @@ The ISA
 reference remains generated from the architectural definition and allocation
 sources, but its generated TeX inputs the same common component.
 
-The ABI TeX documents are the normative prose sources. The ABI quick-reference
-tables are generated from `abi_tables.yaml`, whose semantic
-fields record return locations, call-relocation relationships, ordinary and
-atomic access rules, and TLS relocation families.
-The document compiler renders those tables in its build overlay. In addition,
-`calling_convention_cases.json` contains compiler-facing call-layout cases,
+The ABI TeX documents and their fragments are the normative sources. C ABI
+table fragments are maintained under `c/`, and ELF and TLS table fragments are
+maintained under `elf/`. In addition, `calling_convention_cases.json` contains
+compiler-facing call-layout cases,
 and `../../tools/abi_call_model.py` is the executable reference procedure that
 checks them. Worked examples reference those cases through a TeX macro that
 rejects unknown or missing documented IDs during compilation.

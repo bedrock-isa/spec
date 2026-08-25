@@ -1,0 +1,66 @@
+\Needspace{1.25in}
+\manualtablecaption{Architectural Event Boundaries and Priority}
+\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{1.15in}>{\raggedright\arraybackslash}p{0.85in}>{\raggedright\arraybackslash}p{2.15in}>{\raggedright\arraybackslash}p{0.50in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Code} & \textbf{Event} & \textbf{Kind} & \textbf{Saved PC} & \textbf{Priority}\\
+\midrule
+\endfirsthead
+\multicolumn{5}{@{}l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Code} & \textbf{Event} & \textbf{Kind} & \textbf{Saved PC} & \textbf{Priority}\\
+\midrule
+\endhead
+\texttt{EXC:\allowbreak{}00} & \texttt{DEBUG\_\allowbreak{}TRACE} & trap & next trace unit & 5\\
+\texttt{EXC:\allowbreak{}02} & \texttt{BREAKPOINT} & explicit trap & following instruction & 4\\
+\texttt{EXC:\allowbreak{}03} & \texttt{ILLEGAL\_\allowbreak{}INSTRUCTION} & fault & faulting instruction & 3\\
+\texttt{EXC:\allowbreak{}08} & \texttt{PRIVILEGE\_\allowbreak{}FAULT} & fault & faulting instruction & 3\\
+\texttt{EXC:\allowbreak{}09} & \texttt{PAGE\_\allowbreak{}FAULT} & fault & faulting instruction & 3\\
+\texttt{EXC:\allowbreak{}0a} & \texttt{DIVIDE\_\allowbreak{}ERROR} & fault & faulting instruction & 3\\
+\texttt{EXC:\allowbreak{}0b} & \texttt{VECTOR\_\allowbreak{}RANGE\_\allowbreak{}ERROR} & fault & faulting instruction & 3\\
+\texttt{EXC:\allowbreak{}0c} & \texttt{ACCESS\_\allowbreak{}FAULT} & fault & faulting instruction & 3\\
+\texttt{EXC:\allowbreak{}0d} & \texttt{INVALID\_\allowbreak{}CONTROL\_\allowbreak{}STATE} & fault & faulting instruction & 3\\
+\texttt{EXC:\allowbreak{}0e} & \texttt{FLOATING\_\allowbreak{}POINT\_\allowbreak{}FAULT} & fault & faulting instruction & 3\\
+\texttt{EXC:\allowbreak{}18} & \texttt{DOUBLE\_\allowbreak{}FAULT} & delivery failure & interrupted event boundary & 1\\
+\texttt{EXC:\allowbreak{}19} & \texttt{MACHINE\_\allowbreak{}CHECK} & machine check & selected by PRECISE and corrected status & 2\\
+\texttt{EXC:\allowbreak{}1a} & \texttt{BUS\_\allowbreak{}ERROR} & fault & faulting instruction & 3\\
+\texttt{EXC:\allowbreak{}20} & \texttt{SYSTEM\_\allowbreak{}CALL} & explicit trap & following instruction & 4\\
+\texttt{NMI:\allowbreak{}source} & \texttt{NMI} & asynchronous & next instruction or repeat-prefix address & 6\\
+\texttt{INTERRUPT:\allowbreak{}platform} & \texttt{INTERRUPT} & asynchronous & next instruction or repeat-prefix address & 7\\
+\bottomrule
+\end{manuallongtable}
+
+
+\Needspace{1.25in}
+\manualtablecaption{Architectural Event Producers and Delivery State}
+\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{1.25in}>{\raggedright\arraybackslash}p{1.50in}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{1.00in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Event} & \textbf{Producer} & \textbf{Committed State} & \textbf{Frame} & \textbf{Payload}\\
+\midrule
+\endfirsthead
+\multicolumn{5}{@{}l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Event} & \textbf{Producer} & \textbf{Committed State} & \textbf{Frame} & \textbf{Payload}\\
+\midrule
+\endhead
+\texttt{DEBUG\_\allowbreak{}TRACE} & completion of a TF-selected trace unit & completed trace unit & \texttt{BASIC} & none\\
+\texttt{BREAKPOINT} & BKPT & BKPT completed & \texttt{BASIC} & none\\
+\texttt{ILLEGAL\_\allowbreak{}INSTRUCTION} & decode or instruction-validity check & no effects of the faulting instruction & \texttt{ERROR} & error code\\
+\texttt{PRIVILEGE\_\allowbreak{}FAULT} & privilege check & no effects of the faulting instruction & \texttt{BASIC} & none\\
+\texttt{PAGE\_\allowbreak{}FAULT} & segment, translation, memory-type, or atomic-alignment check & no effects of the faulting instruction & \texttt{PAGE\_\allowbreak{}FAULT} & error code, fault EA, and linear address\\
+\texttt{DIVIDE\_\allowbreak{}ERROR} & integer divide operation & no effects of the faulting instruction & \texttt{ERROR} & error code\\
+\texttt{VECTOR\_\allowbreak{}RANGE\_\allowbreak{}ERROR} & PLOOP offset or vector lane-index validation & no effects of the faulting instruction & \texttt{ERROR} & error code\\
+\texttt{ACCESS\_\allowbreak{}FAULT} & physical-address-width or MMIO access-rule check & no effects of the faulting instruction & \texttt{PAGE\_\allowbreak{}FAULT} & error code, fault EA, and linear address\\
+\texttt{INVALID\_\allowbreak{}CONTROL\_\allowbreak{}STATE} & control-state validation & no effects of the faulting instruction & \texttt{ERROR} & error code\\
+\texttt{FLOATING\_\allowbreak{}POINT\_\allowbreak{}FAULT} & enabled floating-point exception condition & no destination or accrued-flag effects of the faulting instruction & \texttt{ERROR} & error code\\
+\texttt{DOUBLE\_\allowbreak{}FAULT} & architectural event-delivery failure & no partial first delivery state & \texttt{AUXILIARY} & delivery-failure auxiliary state\\
+\texttt{MACHINE\_\allowbreak{}CHECK} & processor or memory-system machine-check source & selected by PRECISE and RETRY\_SAFE & \texttt{AUXILIARY} & machine-check auxiliary state\\
+\texttt{BUS\_\allowbreak{}ERROR} & synchronous acknowledged bus failure & no architectural-state effects of the faulting instruction & \texttt{AUXILIARY} & bus-error auxiliary state\\
+\texttt{SYSTEM\_\allowbreak{}CALL} & SYSCALL & SYSCALL completed & \texttt{BASIC} & none\\
+\texttt{NMI} & admitted non-maskable interrupt source & all earlier committed state & \texttt{BASIC} & none\\
+\texttt{INTERRUPT} & admitted maskable interrupt source & all earlier committed state & \texttt{BASIC} & none\\
+\bottomrule
+\end{manuallongtable}

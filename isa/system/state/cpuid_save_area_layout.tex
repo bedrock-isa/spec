@@ -1,0 +1,131 @@
+\Needspace{1.25in}
+\manualtablecaption{SAVE-AREA-LAYOUT Indexes}
+\begingroup\footnotesize
+\setlength{\aboverulesep}{0pt}
+\setlength{\belowrulesep}{0pt}
+\setlength{\extrarowheight}{1.2pt}
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.80in}>{\raggedright\arraybackslash}X@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Index} & \textbf{Contents}\\
+\midrule
+0 & common CPUID leaf header\\
+1 & \texttt{SAVE\_AREA\_SIZE\_BYTES} in bits 63..0\\
+2 & \texttt{FIXED\_SIZE\_BYTES[15:0]}, \texttt{COMPONENT\_COUNT[31:16]}, \texttt{BITMAP\_WORDS[47:32]}, \texttt{FMT[51:48]}; bits 63..52 are zero\\
+\texttt{3+2i} & component descriptor A for zero-based component ordinal \texttt{i}\\
+\texttt{4+2i} & component descriptor B for zero-based component ordinal \texttt{i}\\
+\bottomrule
+\end{tabularx}
+\end{center}
+\endgroup
+
+
+\begin{manuallistedformatdiagram}{SAVE-Area Layout CPUID Result Formats}
+\manualformatrowrange{index 2}{63}{0}{%
+\manualformatreserved{reserved}{12}
+\manualformatfield{FMT}{4}
+\manualformatfield{BITMAP}{16}
+\manualformatfield{COUNT}{16}
+\manualformatfield{FIXED\_SIZE}{16}
+}
+\manualformatrowrange{descriptor A}{63}{0}{%
+\manualformatfield{OFFSET}{32}
+\manualformatreserved{reserved}{10}
+\manualformatfield{BIT}{6}
+\manualformatfield{ID}{16}
+}
+\manualformatrowrange{descriptor B}{63}{0}{%
+\manualformatreserved{reserved}{8}
+\manualformatfield{INIT}{8}
+\manualformatfield{ALIGN}{16}
+\manualformatfield{MAX\_SIZE}{32}
+}
+\end{manuallistedformatdiagram}
+{\small Diagram labels abbreviate the field names in the descriptor tables below; \texttt{BITMAP}, \texttt{COUNT}, and \texttt{FIXED\_SIZE} are \texttt{BITMAP\_WORDS}, \texttt{COMPONENT\_COUNT}, and \texttt{FIXED\_SIZE\_BYTES}.\par}
+
+\Needspace{2.5in}
+\Needspace{1.25in}
+\manualtablecaption{SAVE Component Descriptor A}
+\begingroup\footnotesize
+\setlength{\aboverulesep}{0pt}
+\setlength{\belowrulesep}{0pt}
+\setlength{\extrarowheight}{1.2pt}
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{1.70in}>{\raggedright\arraybackslash}X@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Bits} & \textbf{Field} & \textbf{Meaning}\\
+\midrule
+\texttt{15..0} & \texttt{COMPONENT\_ID} & stable component identifier\\
+\texttt{21..16} & \texttt{BITMAP\_BIT} & bit selecting this component\\
+\texttt{31..22} & reserved & zero\\
+\texttt{63..32} & \texttt{OFFSET\_BYTES} & offset from the save-area base\\
+\bottomrule
+\end{tabularx}
+\end{center}
+\endgroup
+
+
+\Needspace{1.25in}
+\manualtablecaption{SAVE Component Descriptor B}
+\begingroup\footnotesize
+\setlength{\aboverulesep}{0pt}
+\setlength{\belowrulesep}{0pt}
+\setlength{\extrarowheight}{1.2pt}
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{1.70in}>{\raggedright\arraybackslash}X@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Bits} & \textbf{Field} & \textbf{Meaning}\\
+\midrule
+\texttt{31..0} & \texttt{MAX\_SIZE\_BYTES} & allocated component size\\
+\texttt{47..32} & \texttt{ALIGNMENT\_BYTES} & required component alignment\\
+\texttt{55..48} & \texttt{INIT\_POLICY} & 1 restores the component-defined initial state when its bitmap bit is clear\\
+\texttt{63..56} & reserved & zero\\
+\bottomrule
+\end{tabularx}
+\end{center}
+\endgroup
+
+
+\Needspace{1.25in}
+\manualtablecaption{Floating-Point SAVE Component}
+\begingroup\footnotesize
+\setlength{\aboverulesep}{0pt}
+\setlength{\belowrulesep}{0pt}
+\setlength{\extrarowheight}{1.2pt}
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{1.25in}>{\raggedright\arraybackslash}p{1.20in}>{\raggedright\arraybackslash}X@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Component Offset} & \textbf{State} & \textbf{Contents}\\
+\midrule
+\texttt{0x000..0x07f} & \texttt{F0\_F15} & F0 through F15 in ascending register order\\
+\texttt{0x080..0x087} & \texttt{FFLAGS} & FFLAGS in bits 15..0; remaining bits zero\\
+\texttt{0x088..0x08f} & \texttt{FSTATUS} & FSTATUS in bits 15..0; remaining bits zero\\
+\bottomrule
+\end{tabularx}
+\end{center}
+\endgroup
+
+
+\Needspace{1.25in}
+\manualtablecaption{Scalable-Vector SAVE Component (B = VLEN bytes)}
+\begingroup\footnotesize
+\setlength{\aboverulesep}{0pt}
+\setlength{\belowrulesep}{0pt}
+\setlength{\extrarowheight}{1.2pt}
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{2.20in}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}X@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Component Offset} & \textbf{State} & \textbf{Contents}\\
+\midrule
+\texttt{n * B} & \texttt{Vn} & V0 through V31; each register occupies B bytes\\
+\texttt{32 * B + n * B/8} & \texttt{Pn} & P0 through P15; each packed predicate image occupies B/8 bytes\\
+\texttt{34 * B .. align\_up(34 * B, 64) - 1} & padding & zero on SAVE and ignored on RESTORE\\
+\bottomrule
+\end{tabularx}
+\end{center}
+\endgroup

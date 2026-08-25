@@ -504,8 +504,9 @@ def load_decode_inputs(defs_root: Path = DEFAULT_DEFS_ROOT) -> DecodeInputs:
         extensions, cpuid_flags
     )
 
-    known_event_ids = load_architectural_event_ids(ROOT / "isa" / "conformance" / "architecture_tables.yaml")
-    known_event_causes = load_architectural_event_causes(ROOT / "isa" / "conformance" / "architecture_tables.yaml")
+    event_path = ROOT / "isa" / "system" / "events" / "architectural_events.yaml"
+    known_event_ids = load_architectural_event_ids(event_path)
+    known_event_causes = load_architectural_event_causes(event_path)
     known_conditions = frozenset(load_semantic_conditions(resolved))
     known_named_values = frozenset(load_named_values(resolved))
     known_flag_definitions = load_flag_effect_definitions(resolved)

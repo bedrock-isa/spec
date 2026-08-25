@@ -1,0 +1,28 @@
+\Needspace{1.25in}
+\manualtablecaption{CPUID Class and Leaf Directory}
+\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{0.82in}>{\raggedright\arraybackslash}p{0.62in}>{\raggedright\arraybackslash}p{1.45in}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{1.80in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Class} & \textbf{Leaf} & \textbf{Name} & \textbf{Indexes} & \textbf{Summary}\\
+\midrule
+\endfirsthead
+\multicolumn{5}{@{}l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Class} & \textbf{Leaf} & \textbf{Name} & \textbf{Indexes} & \textbf{Summary}\\
+\midrule
+\endhead
+\texttt{0x00000000} & -- & \textit{Bedrock base ISA} & -- & base identity, architecture and implementation revisions, vendor name, and processor name\\
+\texttt{0x00000000} & \texttt{0x0000} & \texttt{BASE\_IDENTITY} & \texttt{0..18} & common header, identity, revisions, vendor name, and processor name\\
+\texttt{0x00000001} & -- & \textit{Optional extensions} & -- & optional floating-point, transcendental, and scalable-vector groups\\
+\texttt{0x00000001} & \texttt{0x0000} & \texttt{EXTENSION\_DIRECTORY} & \texttt{0..1} & common header and optional architectural-group bits\\
+\texttt{0x00000001} & \texttt{0x0001} & \texttt{FPTRANSA\_ACCURACY} & \texttt{0..0x0044} & common header and sparse per-function accuracy contracts\\
+\texttt{0x00000001} & \texttt{0x0002} & \texttt{VECTOR\_PARAMETERS} & \texttt{0..1} & common header and the implementation-selected VLEN logarithm\\
+\texttt{0x00000002} & -- & \textit{Implementation properties} & -- & cache topology, performance counters, address widths, and SAVE/RESTORE area layout\\
+\texttt{0x00000002} & \texttt{0x0000} & \texttt{IMPLEMENTATION\_DIRECTORY} & \texttt{0..0} & common implementation-class header\\
+\texttt{0x00000002} & \texttt{0x0001} & \texttt{CACHE\_TOPOLOGY} & \texttt{0..n} & common header, maintenance granule, and cache-sharing descriptors\\
+\texttt{0x00000002} & \texttt{0x0002} & \texttt{PERFORMANCE\_COUNTERS} & \texttt{0..3} & common header and standard RDPMC-counter presence\\
+\texttt{0x00000002} & \texttt{0x0003} & \texttt{ADDRESS\_WIDTHS} & \texttt{0..1} & common header and the implementation physical-address width\\
+\texttt{0x00000002} & \texttt{0x0004} & \texttt{SAVE\_AREA\_LAYOUT} & \texttt{0..n} & common header, SAVE/RESTORE sizes, bitmap, and component descriptors\\
+\bottomrule
+\end{manuallongtable}

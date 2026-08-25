@@ -1,0 +1,17 @@
+\manualtablecaption{Floating-Point Builtins}
+\begingroup\footnotesize
+\setlength{\tabcolsep}{2pt}
+\begin{longtable}{@{}p{1.25in}p{1.3in}p{0.85in}p{2.2in}@{}}
+\toprule
+\textbf{Name} & \textbf{C interface} & \textbf{Lowering} & \textbf{Availability, constraint, and effect}\\
+\midrule
+\endhead
+\texttt{read\_fstatus} & \texttt{uint16\_t(void)} & \texttt{RDFSTATUS} & Unprivileged; access to the floating-point environment.\\
+\texttt{write\_fstatus} & \texttt{void(uint16\_t)} & \texttt{WRFSTATUS} & Unprivileged; reserved bits follow the ISA; changes the floating-point environment.\\
+\texttt{read\_fflags} & \texttt{uint16\_t(void)} & \texttt{RDFFLAGS} & Unprivileged; reads accrued floating-point exception flags.\\
+\texttt{write\_fflags} & \texttt{void(uint16\_t)} & \texttt{WRFFLAGS} & Unprivileged; reserved bits follow the ISA; writes accrued flags.\\
+\texttt{fclass\_f32} & \texttt{uint16\_t(float)} & \texttt{FCLASS.S} & FPU required; pure ten-class one-hot classification; does not update \texttt{FFLAGS}.\\
+\texttt{fclass\_f64} & \texttt{uint16\_t(double)} & \texttt{FCLASS.D} & FPU required; pure ten-class one-hot classification; does not update \texttt{FFLAGS}.\\
+\bottomrule
+\end{longtable}
+\endgroup

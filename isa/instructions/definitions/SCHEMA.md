@@ -340,11 +340,11 @@ IDs against the registry, rejects case entries already inherited by the
 operation, then joins the two sets.
 
 Event IDs and event-specific cause spaces resolve through
-`architecture_tables.yaml`; a cause is valid only in the selected event's
-cause space, and events without a cause space reject one. Event conditions use
-the IDs in `semantic_conditions.yaml`; the same registry owns their
-reader-facing conditional prose. A `destination_overlap` condition additionally
-requires every selected encoding form to declare an `illegal_instruction`
+`isa/system/events/architectural_events.yaml`; a cause is valid only in the
+selected event's cause space, and events without a cause space reject one.
+Event conditions use the IDs in `semantic_conditions.yaml`; the same registry
+owns their reader-facing conditional prose. A `destination_overlap` condition
+additionally requires every selected encoding form to declare an `illegal_instruction`
 `destination_overlap` relation. The renderer publishes the architectural event
 and optional cause plus registry-owned condition text, without publishing the
 condition ID. Temporary predicate observations use the named-value set.

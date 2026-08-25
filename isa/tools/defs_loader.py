@@ -108,10 +108,6 @@ def _artifact_file(bundle_root: Path, manifest_path: Path, reference: OperationA
         )
     if logical_source.is_relative_to(REPOSITORY_ROOT.resolve()):
         resolved = resolve_source(logical_source, REPOSITORY_ROOT).resolve()
-        if not resolved.is_file() and logical_source.suffix == ".tex":
-            resolved = resolve_source(
-                logical_source.with_suffix(logical_source.suffix + ".in"), REPOSITORY_ROOT
-            ).resolve()
     else:
         resolved = logical_source
     if not resolved.is_file():
@@ -856,62 +852,105 @@ def load_flag_effect_definitions(
     return {definition.id: definition for definition in registry.definitions}
 
 
-def load_architectural_event_ids(path: Path) -> frozenset[str]:
-    """Load event IDs from the architecture event table owner."""
+def _load_architectural_event_registry(
+    path: Path,
+) -> tuple[frozenset[str], dict[str, frozenset[str]]]:
+    """Load architectural event identities and their cause namespaces."""
 
     data = load_yaml(path)
-    events = data.get("architectural_events") if isinstance(data, dict) else None
-    if not isinstance(events, list):
-        raise ValueError(f"{path}: architectural_events must be a list")
-    result: list[str] = []
-    for index, item in enumerate(events):
-        if not isinstance(item, dict):
-            raise ValueError(f"{path}: architectural_events[{index}] must be a mapping")
-        name = item.get("name")
+    if not isinstance(data, dict) or set(data) != {"schema_version", "events"}:
+        raise ValueError(f"{path}: expected schema_version and events only")
+    if data["schema_version"] != 0:
+        raise ValueError(f"{path}: schema_version must be 0")
+    events = data["events"]
+    if not isinstance(events, list) or not events:
+        raise ValueError(f"{path}: events must be a non-empty list")
+
+    event_names: list[str] = []
+    event_identities: list[tuple[str, int | str]] = []
+    cause_spaces: dict[str, frozenset[str]] = {}
+    for event_index, raw_event in enumerate(events):
+        where = f"{path}: events[{event_index}]"
+        if not isinstance(raw_event, dict) or set(raw_event) not in (
+            {"class", "id", "name"},
+            {"class", "id", "name", "causes"},
+        ):
+            raise ValueError(
+                f"{where}: expected class, id, name, and optional causes only"
+            )
+        event_class = raw_event["class"]
+        if event_class not in {"EXCEPTION", "NMI", "INTERRUPT"}:
+            raise ValueError(f"{where}.class is invalid")
+        event_id = raw_event["id"]
+        if event_class == "EXCEPTION":
+            if (
+                isinstance(event_id, bool)
+                or not isinstance(event_id, int)
+                or not 0 <= event_id <= 0xFF
+            ):
+                raise ValueError(f"{where}.id must be an unsigned 8-bit integer")
+        elif not isinstance(event_id, str) or not re.fullmatch(
+            r"[a-z][a-z0-9_]*", event_id
+        ):
+            raise ValueError(f"{where}.id must be a lower-case symbolic identity")
+        name = raw_event["name"]
         if not isinstance(name, str) or not re.fullmatch(r"[A-Z][A-Z0-9_]*", name):
-            raise ValueError(f"{path}: architectural_events[{index}].name is invalid")
-        result.append(name)
-    if len(result) != len(set(result)):
+            raise ValueError(f"{where}.name is invalid")
+        event_identities.append((event_class, event_id))
+        event_names.append(name)
+
+        raw_causes = raw_event.get("causes", [])
+        if not isinstance(raw_causes, list) or (
+            "causes" in raw_event and not raw_causes
+        ):
+            raise ValueError(f"{where}.causes must be a non-empty list when present")
+        if raw_causes and event_class != "EXCEPTION":
+            raise ValueError(f"{where}.causes are valid only for exception events")
+        cause_ids: list[int] = []
+        cause_names: list[str] = []
+        for cause_index, raw_cause in enumerate(raw_causes):
+            cause_where = f"{where}.causes[{cause_index}]"
+            if not isinstance(raw_cause, dict) or set(raw_cause) != {"id", "name"}:
+                raise ValueError(f"{cause_where}: expected id and name only")
+            cause_id = raw_cause["id"]
+            cause_name = raw_cause["name"]
+            if (
+                isinstance(cause_id, bool)
+                or not isinstance(cause_id, int)
+                or cause_id < 0
+            ):
+                raise ValueError(f"{cause_where}.id must be a non-negative integer")
+            if not isinstance(cause_name, str) or not re.fullmatch(
+                r"[A-Z][A-Z0-9_]*", cause_name
+            ):
+                raise ValueError(f"{cause_where}.name is invalid")
+            cause_ids.append(cause_id)
+            cause_names.append(cause_name)
+        if len(cause_ids) != len(set(cause_ids)):
+            raise ValueError(f"{where}.causes IDs must be unique")
+        if cause_ids != list(range(len(cause_ids))):
+            raise ValueError(f"{where}.causes IDs must be contiguous from zero")
+        if len(cause_names) != len(set(cause_names)):
+            raise ValueError(f"{where}.causes names must be unique")
+        cause_spaces[name] = frozenset(cause_names)
+
+    if len(event_identities) != len(set(event_identities)):
+        raise ValueError(f"{path}: architectural event class/ID pairs must be unique")
+    if len(event_names) != len(set(event_names)):
         raise ValueError(f"{path}: architectural event names must be unique")
-    return frozenset(result)
+    return frozenset(event_names), cause_spaces
+
+
+def load_architectural_event_ids(path: Path) -> frozenset[str]:
+    """Load event names from the architectural event identity owner."""
+
+    return _load_architectural_event_registry(path)[0]
 
 
 def load_architectural_event_causes(path: Path) -> dict[str, frozenset[str]]:
     """Load each event's finite architectural cause namespace."""
 
-    data = load_yaml(path)
-    if not isinstance(data, dict):
-        raise ValueError(f"{path}: expected mapping")
-    event_ids = load_architectural_event_ids(path)
-    raw_spaces = data.get("exception_causes")
-    if not isinstance(raw_spaces, dict):
-        raise ValueError(f"{path}: exception_causes must be a mapping")
-    unknown_events = set(raw_spaces) - event_ids
-    if unknown_events:
-        raise ValueError(
-            f"{path}: exception_causes names unknown events "
-            f"{', '.join(sorted(unknown_events))}"
-        )
-    result: dict[str, frozenset[str]] = {event: frozenset() for event in event_ids}
-    for event, raw_causes in raw_spaces.items():
-        if not isinstance(raw_causes, list):
-            raise ValueError(f"{path}: exception_causes.{event} must be a list")
-        names: list[str] = []
-        for index, raw_cause in enumerate(raw_causes):
-            if not isinstance(raw_cause, dict):
-                raise ValueError(
-                    f"{path}: exception_causes.{event}[{index}] must be a mapping"
-                )
-            name = raw_cause.get("name")
-            if not isinstance(name, str) or not re.fullmatch(r"[A-Z][A-Z0-9_]*", name):
-                raise ValueError(
-                    f"{path}: exception_causes.{event}[{index}].name is invalid"
-                )
-            names.append(name)
-        if len(names) != len(set(names)):
-            raise ValueError(f"{path}: exception_causes.{event} names must be unique")
-        result[event] = frozenset(names)
-    return result
+    return _load_architectural_event_registry(path)[1]
 
 
 def load_instruction_sets(

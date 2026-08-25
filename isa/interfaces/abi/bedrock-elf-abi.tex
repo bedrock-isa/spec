@@ -259,7 +259,7 @@ ordinary PLT slot is resolved before application entry or constructors execute.
 GOT and PLT function addresses stay inside the ABI-visible near-call linkage
 domain.
 \subsection{Relocations}
-\input{isa/interfaces/abi/generated/elf_relocation_rows.tex}
+\input{isa/interfaces/abi/elf/relocation_rows.tex}
 \manualtablecaption{Bedrock ELF Relocation Types}
 \begingroup\footnotesize
 \setlength{\tabcolsep}{2pt}
@@ -346,7 +346,7 @@ link-time constant byte offset from the GS0 base; TLSDESC supplies runtime
 resolution when the reference crosses a dynamic-object boundary or remains
 interposable.
 
-\input{isa/interfaces/abi/generated/tls_relocation_families.tex}
+\input{isa/interfaces/abi/elf/tls_relocation_families.tex}
 
 Taking the address of a TLS object returns an ordinary pre-segment pointer to
 that thread instance. Every ABI-permitted GS0 and ordinary-data path consuming

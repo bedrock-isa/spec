@@ -1,0 +1,18 @@
+\manualtablecaption{C Return Register Quick Reference}
+\begingroup\footnotesize
+\setlength{\tabcolsep}{2pt}
+\begin{longtable}{@{}p{2.15in}p{3.35in}@{}}
+\toprule
+\textbf{Result Class} & \textbf{Register Rule}\\
+\midrule
+\endhead
+General scalar & \texttt{R0}\\
+Floating-point scalar & \texttt{F0}\\
+\texttt{long double} scalar & \texttt{F0}\\
+Complex scalar & real component in \texttt{F0}, imaginary component in \texttt{F1}\\
+\texttt{\_\_int128} scalar & \texttt{R1:R0}\\
+Small aggregate & \texttt{R1:R0}\\
+Large aggregate & sret pointer in \texttt{R0}, result pointer returned in \texttt{R0}\\
+\bottomrule
+\end{longtable}
+\endgroup

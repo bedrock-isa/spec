@@ -1,0 +1,23 @@
+\Needspace{1.25in}
+\manualtablecaption{ILLEGAL\_INSTRUCTION Causes}
+\begingroup\footnotesize
+\setlength{\aboverulesep}{0pt}
+\setlength{\belowrulesep}{0pt}
+\setlength{\extrarowheight}{1.2pt}
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{2.35in}>{\raggedright\arraybackslash}X@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Value} & \textbf{Cause} & \textbf{Meaning}\\
+\midrule
+0 & \texttt{INVALID\_OPCODE} & opcode is not assigned\\
+1 & \texttt{INVALID\_EA\_FORM} & effective-address form is not legal for the instruction\\
+2 & \texttt{RESERVED\_ENCODING} & assigned instruction uses a reserved field value\\
+3 & \texttt{UNAVAILABLE\_EXTENSION} & required extension is unavailable\\
+4 & \texttt{EXPLICIT\_ILLEGAL} & architected ILLEGAL instruction\\
+5 & \texttt{INSUFFICIENT\_LENGTH} & encoded instruction length is shorter than the selected encoding requires\\
+6 & \texttt{INVALID\_OPERAND\_RELATION} & writable operands use a prohibited overlap relation\\
+\bottomrule
+\end{tabularx}
+\end{center}
+\endgroup

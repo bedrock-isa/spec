@@ -441,7 +441,7 @@ def load_definitions(isa_design: Path) -> tuple[dict[str, dict[str, Any]], list[
     operands = load_operand_types(root, extensions)
     sizes = load_size_definitions(root, extensions)
     known_flags, requirements = extension_cpuid_requirements(extensions, cpuid_flags)
-    event_path = isa_design / "isa" / "conformance" / "architecture_tables.yaml"
+    event_path = isa_design / "isa" / "system" / "events" / "architectural_events.yaml"
     events = load_architectural_event_ids(event_path)
     causes = load_architectural_event_causes(event_path)
     conditions = frozenset(load_semantic_conditions(root))

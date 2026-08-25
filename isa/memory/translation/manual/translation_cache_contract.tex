@@ -1,0 +1,73 @@
+\Needspace{1.25in}
+\manualtablecaption{Translation-Cache Entry Identity}
+\begingroup\footnotesize
+\setlength{\aboverulesep}{0pt}
+\setlength{\belowrulesep}{0pt}
+\setlength{\extrarowheight}{1.2pt}
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{2.00in}>{\raggedright\arraybackslash}X@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Identity Component} & \textbf{Applies To}\\
+\midrule
+\texttt{leaf-aligned linear mapping range} & every entry\\
+\texttt{LA57} & every entry\\
+\texttt{ASID} & non-global entry while ASCR.AE is one\\
+\bottomrule
+\end{tabularx}
+\end{center}
+\endgroup
+
+
+\Needspace{1.25in}
+\manualtablecaption{Local Translation-Cache Transitions}
+\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{1.30in}>{\raggedright\arraybackslash}p{2.25in}>{\raggedright\arraybackslash}p{1.85in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Operation} & \textbf{Non-Global Entries} & \textbf{Global Entries}\\
+\midrule
+\endfirsthead
+\multicolumn{3}{@{}l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Operation} & \textbf{Non-Global Entries} & \textbf{Global Entries}\\
+\midrule
+\endhead
+\texttt{WRCR PTCR with changed root\_\allowbreak{}page} & invalidate all current untagged entries when AE is zero; when AE is one software must invalidate the ASID before rebinding it & preserve only mappings whose complete leaf attributes are identical in every context\\
+\texttt{WRCR PTCR with changed LA57} & invalidate entries using the old translation geometry & invalidate entries using the old translation geometry\\
+\texttt{WRCR ASCR changing ASID while AE remains one} & select the new ASID-tagged entries & preserve\\
+\texttt{WRCR ASCR changing AE} & invalidate the old untagged context or select the new tagged context as applicable & preserve\\
+\texttt{SWPT} & install PTCR and invalidate the current untagged context & preserve only identical global mappings\\
+\texttt{SWPTA} & install PTCR and ASCR and select the new ASID-tagged context & preserve only identical global mappings\\
+\texttt{INVPAGE} & invalidate every mapping containing the addressed linear value for the current ASID, or the current untagged context when AE is zero & invalidate every addressed global mapping containing that linear value\\
+\texttt{INVASID} & invalidate every entry tagged with the selected ASID & preserve\\
+\texttt{INVTLB} & invalidate every local entry & invalidate every local entry\\
+\bottomrule
+\end{manuallongtable}
+
+
+\Needspace{1.25in}
+\manualtablecaption{Remote Translation Shootdown Protocol}
+\begingroup\footnotesize
+\setlength{\aboverulesep}{0pt}
+\setlength{\belowrulesep}{0pt}
+\setlength{\extrarowheight}{1.2pt}
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.45in}>{\raggedright\arraybackslash}X@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Step} & \textbf{Required Action}\\
+\midrule
+1 & PTE store\\
+2 & AFENCE\\
+3 & local invalidate\\
+4 & release shootdown request\\
+5 & target acquire and local invalidate\\
+6 & target release acknowledgement\\
+7 & updater acquire of every acknowledgement\\
+8 & AFENCE\\
+9 & reclaim or reuse\\
+\bottomrule
+\end{tabularx}
+\end{center}
+\endgroup

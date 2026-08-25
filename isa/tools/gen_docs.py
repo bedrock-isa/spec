@@ -60,8 +60,6 @@ from encoding_architecture import (  # noqa: E402
 )
 from defs_schema import FLAG_BANK_FLAGS, parse_assembly_template  # noqa: E402
 from vector_diagrams import GENERATOR_KIND as VECTOR_DIAGRAM_KIND, load as load_vector_diagram, render_tikz as render_vector_tikz  # noqa: E402
-from validate_reference_navigation import validate_path as load_reference_navigation  # noqa: E402
-from gen_architecture_tables import RESET_VALUE_TEXT  # noqa: E402
 from latex_builder.common import (  # noqa: E402
     LatexTopSection,
     TextTex,
@@ -78,9 +76,7 @@ DEF_ROOT = ROOT / "isa" / "instructions" / "definitions"
 EA_DEFINITION_PATH = ROOT / "isa" / "addressing" / "effective_address" / "definition.yaml"
 EA_FRAGMENT_DIR = ROOT / "isa" / "addressing" / "effective_address" / "manual"
 INSTRUCTION_FILENAME = "operation.yaml"
-CONFORMANCE_MANIFEST_PATH = ROOT / "isa" / "conformance" / "manifest.yaml"
-ARCHITECTURE_TABLES_PATH = ROOT / "isa" / "conformance" / "architecture_tables.yaml"
-REFERENCE_NAVIGATION_PATH = ROOT / "isa" / "system" / "indexes" / "manual" / "navigation.yaml"
+EVENT_REGISTRY_PATH = ROOT / "isa" / "system" / "events" / "architectural_events.yaml"
 
 _FLAG_EFFECT_HEADING_TABLE_NEEDSPACE_IN = 0.90
 _FLAG_EFFECT_LEGEND_NEEDSPACE_IN = 0.30
@@ -284,8 +280,8 @@ def load_instructions(defs_root: Path) -> list[InstructionDef]:
     semantic_conditions = load_semantic_conditions(defs_root)
     named_values = load_named_values(defs_root)
     flag_effect_definitions = load_flag_effect_definitions(defs_root)
-    known_event_ids = load_architectural_event_ids(ARCHITECTURE_TABLES_PATH)
-    known_event_causes = load_architectural_event_causes(ARCHITECTURE_TABLES_PATH)
+    known_event_ids = load_architectural_event_ids(EVENT_REGISTRY_PATH)
+    known_event_causes = load_architectural_event_causes(EVENT_REGISTRY_PATH)
     instructions: list[InstructionDef] = []
     for instruction_set, path in instruction_definition_paths(defs_root):
         operation = load_operation(
@@ -1313,9 +1309,7 @@ def render_latex(model: IsaModel, only_allocated: bool = False) -> str:
             "EXECUTION_MODEL_SECTION": latex_execution_model_section(model),
             "STREAMING_EXECUTION_SECTION": latex_streaming_model_section(),
             "INSTRUCTION_REFERENCE_SECTION": latex_instruction_reference_section(model, instructions),
-            "REFERENCE_NAVIGATION_SECTION": latex_reference_navigation_section(
-                model, instructions
-            ),
+            "REFERENCE_NAVIGATION_SECTION": latex_reference_navigation_section(),
         },
     ) + "\n"
 
@@ -1418,251 +1412,11 @@ def latex_save_restore_section() -> str:
 
 
 def latex_conformance_section() -> str:
-    document = load_yaml(CONFORMANCE_MANIFEST_PATH)
-    items = document.get("implementation_defined") if isinstance(document, dict) else None
-    if not isinstance(items, list):
-        raise ValueError(
-            f"{CONFORMANCE_MANIFEST_PATH}: expected implementation_defined list"
-        )
-    rows: list[str] = []
-    for index, item in enumerate(items):
-        if not isinstance(item, dict):
-            raise ValueError(
-                f"{CONFORMANCE_MANIFEST_PATH}: implementation_defined[{index}] "
-                "must be a mapping"
-            )
-        rows.append(
-            " & ".join(
-                [
-                    tex_code(item.get("id", "")),
-                    latex_escape(item.get("definition", "")),
-                    latex_escape(item.get("publication", "")),
-                ]
-            )
-            + r"\\"
-        )
-    return render_latex_template(
-        "foundations/architecture/conformance.tex",
-        {"IMPLEMENTATION_DEFINED_ROWS": "\n".join(rows)},
-    )
+    return render_latex_template("foundations/architecture/conformance.tex", {})
 
 
-def navigation_link(anchor: str, text: str = "definition") -> str:
-    return (
-        rf"\hyperref[{anchor}]{{{latex_escape(text)}}} "
-        rf"(p.~\pageref{{{anchor}}})"
-    )
-
-
-def navigation_code_link(anchor: str, text: str) -> str:
-    code = ", ".join(
-        tex_breakable_code(part) for part in text.split(", ")
-    )
-    return (
-        rf"\hyperref[{anchor}]{{{code}}} "
-        rf"(p.~\pageref{{{anchor}}})"
-    )
-
-
-def architecture_table_data() -> dict[str, Any]:
-    data = load_yaml(ARCHITECTURE_TABLES_PATH)
-    if not isinstance(data, dict):
-        raise ValueError(f"{ARCHITECTURE_TABLES_PATH}: expected mapping")
-    return data
-
-
-def canonical_field_index(navigation: dict[str, Any]) -> str:
-    rows = [
-        [
-            tex_code(group["owner"]),
-            ", ".join(tex_code(field) for field in group["fields"]),
-            navigation_link(group["definition"]),
-        ]
-        for group in navigation["canonical_field_groups"]
-    ]
-    return latex_longtable(
-        ["Owner", "Canonical fields", "Normative definition"],
-        rows,
-        ["1.15in", "2.90in", "1.30in"],
-        "Canonical Field Names",
-        style="dense",
-    )
-
-
-def reset_value_map(architecture: dict[str, Any]) -> dict[str, str]:
-    values: dict[str, str] = {}
-    for row in architecture["reset_state"]:
-        for state in row["state"]:
-            name = str(state)
-            if name == "F0_F15":
-                for index in range(16):
-                    values[f"F{index}"] = RESET_VALUE_TEXT[str(row["value"])]
-            else:
-                values[name] = RESET_VALUE_TEXT[str(row["value"])]
-    return values
-
-
-def grouped_reset_text(members: list[str], reset_values: dict[str, str]) -> str:
-    grouped: dict[str, list[str]] = defaultdict(list)
-    for member in members:
-        grouped[reset_values.get(member, "not listed")].append(member)
-    if len(grouped) == 1:
-        return latex_escape(next(iter(grouped)))
-    return "; ".join(
-        ", ".join(tex_code(name) for name in names) + ": " + latex_escape(value)
-        for value, names in grouped.items()
-    )
-
-
-def state_member_text(members: list[str]) -> str:
-    for prefix in ("R", "F"):
-        expected = [f"{prefix}{index}" for index in range(16)]
-        if members == expected:
-            return f"{prefix}0--{prefix}15"
-    return ", ".join(members)
-
-
-def state_index_rows(
-    navigation: dict[str, Any],
-    architecture: dict[str, Any],
-) -> list[list[str]]:
-    reset_values = reset_value_map(architecture)
-    rows: list[list[str]] = []
-    for group in navigation["state_groups"]:
-        members = list(group["members"])
-        fields = list(group["fields"])
-        state_text = state_member_text(members)
-        rows.append(
-            [
-                navigation_code_link(group["definition"], state_text),
-                ", ".join(tex_code(field) for field in fields) or "--",
-                latex_escape(group["readers"]),
-                latex_escape(group["writers"]),
-                grouped_reset_text(members, reset_values),
-            ]
-        )
-
-    field_groups = {
-        item["owner"]: item["fields"]
-        for item in navigation["canonical_field_groups"]
-    }
-    for control in architecture["control_registers"]:
-        name = str(control["name"])
-        rows.append(
-            [
-                navigation_code_link("section:control-registers", name),
-                ", ".join(tex_code(field) for field in field_groups.get(name, []))
-                or "--",
-                tex_code("RDCR"),
-                tex_code("WRCR") + " and named architectural transitions",
-                latex_escape(reset_values.get(name, "not listed")),
-            ]
-        )
-    return rows
-
-
-def state_index(
-    navigation: dict[str, Any],
-    architecture: dict[str, Any],
-) -> str:
-    return latex_longtable(
-        ["State", "Fields", "Readers", "Writers", "Reset"],
-        state_index_rows(navigation, architecture),
-        ["0.75in", "0.85in", "1.20in", "1.30in", "1.30in"],
-        "Architectural State Index",
-        style="dense",
-    )
-
-
-def event_instruction_producers(
-    instructions: list[InstructionDef],
-) -> dict[str, list[str]]:
-    producers: dict[str, list[str]] = defaultdict(list)
-    for instruction in instructions:
-        exceptions = instruction.data.get("exceptions")
-        if not isinstance(exceptions, list):
-            continue
-        for exception in exceptions:
-            if not isinstance(exception, dict):
-                continue
-            event = exception.get("event")
-            if isinstance(event, str) and instruction.mnemonic not in producers[event]:
-                producers[event].append(instruction.mnemonic)
-    return producers
-
-
-def event_index_rows(
-    architecture: dict[str, Any],
-    instructions: list[InstructionDef],
-) -> list[list[str]]:
-    instruction_producers = event_instruction_producers(instructions)
-    rows: list[list[str]] = []
-    for event in architecture["architectural_events"]:
-        event_class = str(event["event_class"])
-        event_id = event["id"]
-        code = (
-            f"EXC:{int(event_id):02x}"
-            if event_class == "EXCEPTION"
-            else f"{event_class}:{event_id}"
-        )
-        producer_mnemonics = sorted(
-            instruction_producers.get(str(event["name"]), [])
-        )
-        architectural_producer = str(event["producer"])
-        if architectural_producer in producer_mnemonics:
-            producer = (
-                rf"\hyperref[{instruction_label(architectural_producer)}]"
-                rf"{{{tex_code(architectural_producer)}}}"
-            )
-            producer_mnemonics.remove(architectural_producer)
-        else:
-            producer = latex_escape(architectural_producer)
-        producer_links = [
-            rf"\hyperref[{instruction_label(mnemonic)}]{{{tex_code(mnemonic)}}}"
-            for mnemonic in producer_mnemonics
-        ]
-        if producer_links:
-            producer += "; " + ", ".join(producer_links)
-        rows.append(
-            [
-                tex_breakable_code(code),
-                tex_breakable_code(str(event["name"])),
-                producer,
-                tex_code(event["priority"]),
-                tex_code(event["frame"]),
-                navigation_link("section:event-code-and-sources"),
-            ]
-        )
-    return rows
-
-
-def event_index(
-    architecture: dict[str, Any],
-    instructions: list[InstructionDef],
-) -> str:
-    return latex_longtable(
-        ["Code", "Event", "Producer", "Priority", "Frame", "Definition"],
-        event_index_rows(architecture, instructions),
-        ["0.70in", "0.85in", "1.75in", "0.45in", "0.70in", "0.85in"],
-        "Architectural Event Index",
-        style="dense",
-    )
-
-
-def latex_reference_navigation_section(
-    model: IsaModel,
-    instructions: list[InstructionDef],
-) -> str:
-    navigation = load_reference_navigation(REFERENCE_NAVIGATION_PATH)
-    architecture = architecture_table_data()
-    return render_latex_template(
-        "system/indexes/reference_navigation.tex",
-        {
-            "CANONICAL_FIELD_INDEX": canonical_field_index(navigation),
-            "STATE_INDEX": state_index(navigation, architecture),
-            "EVENT_INDEX": event_index(architecture, instructions),
-        },
-    )
+def latex_reference_navigation_section() -> str:
+    return render_latex_template("system/indexes/reference_navigation.tex", {})
 
 
 def latex_data_formats_section(model: IsaModel) -> str:

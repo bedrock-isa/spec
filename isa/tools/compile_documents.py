@@ -22,10 +22,7 @@ if str(TOOL_DIR) not in sys.path:
     sys.path.insert(0, str(TOOL_DIR))
 
 from artifact_overlay import OVERLAY_ENV  # noqa: E402
-import gen_abi_tables  # noqa: E402
-import gen_architecture_tables  # noqa: E402
 import gen_docs  # noqa: E402
-import gen_target_intrinsics  # noqa: E402
 from site_output import SiteDocument, render_site_output  # noqa: E402
 
 
@@ -218,7 +215,6 @@ def validation_commands() -> tuple[tuple[str, list[str]], ...]:
         ("ISA join validation", [python, "isa/tools/validate_isa.py"]),
         ("ABI and compiler-interface validation", [python, "isa/tools/validate_abi_docs.py"]),
         ("conformance validation", [python, "isa/tools/validate_conformance.py"]),
-        ("reference navigation validation", [python, "isa/tools/validate_reference_navigation.py"]),
     )
 
 
@@ -404,11 +400,6 @@ def compile_documents(args: argparse.Namespace) -> int:
     env = latex_environment(os.environ, overlay)
 
     store = ArtifactStore()
-    store.add_all(gen_architecture_tables.render_artifacts(), "architecture tables")
-    store.add_all(gen_abi_tables.render_artifacts(), "ABI tables")
-    store.add_all(gen_target_intrinsics.render_artifacts(), "target intrinsic tables")
-    store.require_absent_from_source_tree()
-    store.materialize(overlay)
 
     for description, command in validation_commands():
         run(command, env=env, description=description)
@@ -418,9 +409,6 @@ def compile_documents(args: argparse.Namespace) -> int:
     isa_source.write_text(isa_latex, encoding="utf-8")
 
     store.discover_consumers(source_texts(isa_latex))
-    store.mark_consumed(
-        Path("isa/instructions/definitions/instructions/RDPMC/details.tex")
-    )
     store.require_all_consumed()
 
     sources = {

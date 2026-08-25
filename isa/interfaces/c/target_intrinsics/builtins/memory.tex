@@ -1,0 +1,18 @@
+\manualtablecaption{Memory Builtins}
+\begingroup\footnotesize
+\setlength{\tabcolsep}{2pt}
+\begin{longtable}{@{}p{1.35in}p{1.3in}p{0.75in}p{2.2in}@{}}
+\toprule
+\textbf{Name} & \textbf{C interface} & \textbf{Lowering} & \textbf{Constraint and effect}\\
+\midrule
+\endhead
+\texttt{read\_fence} & \texttt{void(void)} & \texttt{RFENCE} & Compiler and hardware read-ordering barrier.\\
+\texttt{write\_fence} & \texttt{void(void)} & \texttt{WFENCE} & Compiler and hardware write-ordering barrier.\\
+\texttt{address\_fence} & \texttt{void(void)} & \texttt{AFENCE} & Full compiler memory clobber and hardware address fence.\\
+\texttt{nontemporal\_store\_u8} & \texttt{void(u8 *,u8)} & \texttt{MOVNT.B} & One writable byte; one hinted store, neither volatile nor a fence.\\
+\texttt{nontemporal\_store\_u16} & \texttt{void(u16 *,u16)} & \texttt{MOVNT.W} & One writable 16-bit object; one hinted store, neither volatile nor a fence.\\
+\texttt{nontemporal\_store\_u32} & \texttt{void(u32 *,u32)} & \texttt{MOVNT.L} & One writable 32-bit object; one hinted store, neither volatile nor a fence.\\
+\texttt{nontemporal\_store\_u64} & \texttt{void(u64 *,u64)} & \texttt{MOVNT.Q} & One writable 64-bit object; one hinted store, neither volatile nor a fence.\\
+\bottomrule
+\end{longtable}
+\endgroup

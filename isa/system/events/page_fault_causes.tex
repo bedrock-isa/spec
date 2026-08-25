@@ -1,0 +1,23 @@
+\Needspace{1.25in}
+\manualtablecaption{PAGE\_FAULT Causes}
+\begingroup\footnotesize
+\setlength{\aboverulesep}{0pt}
+\setlength{\belowrulesep}{0pt}
+\setlength{\extrarowheight}{1.2pt}
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{2.20in}>{\raggedright\arraybackslash}X@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Value} & \textbf{Cause} & \textbf{Detection class}\\
+\midrule
+0 & \texttt{NOT\_PRESENT} & required PTE is not present\\
+1 & \texttt{PERMISSION} & accumulated permission excludes the access\\
+2 & \texttt{MALFORMED\_PTE} & structurally invalid PTE\\
+3 & \texttt{NONCANONICAL} & noncanonical address\\
+4 & \texttt{SEGMENT\_BOUNDS} & segment bounds failure\\
+5 & \texttt{ATOMIC\_ALIGNMENT} & misaligned atomic operand\\
+6 & \texttt{MEMORY\_TYPE} & physical Device memory is selected by a Normal leaf AM\\
+\bottomrule
+\end{tabularx}
+\end{center}
+\endgroup

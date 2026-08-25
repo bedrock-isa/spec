@@ -13,9 +13,8 @@ import yaml
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_MANIFEST = ROOT / "isa" / "conformance" / "manifest.yaml"
 
-MANIFEST_TOP_KEYS = {"schema_version", "families", "implementation_defined"}
+MANIFEST_TOP_KEYS = {"schema_version", "families"}
 MANIFEST_FAMILY_KEYS = {"id", "source", "required_cases"}
-MANIFEST_IMPLEMENTATION_KEYS = {"id", "definition", "publication"}
 
 
 class ConformanceError(ValueError):
@@ -110,23 +109,6 @@ def validate_manifest_document(raw: Any, root: Path = ROOT) -> None:
                 f"{where}.required_cases: absent from {source}: "
                 + ", ".join(sorted(missing))
             )
-
-    implementation_ids: set[str] = set()
-    implementation_items = _list(
-        document["implementation_defined"],
-        "conformance manifest.implementation_defined",
-    )
-    for index, raw_item in enumerate(implementation_items):
-        where = f"conformance manifest.implementation_defined[{index}]"
-        item = _mapping(raw_item, where)
-        _exact_keys(item, MANIFEST_IMPLEMENTATION_KEYS, where)
-        identifier = _nonempty_string(item["id"], f"{where}.id")
-        if identifier in implementation_ids:
-            raise ConformanceError(f"{where}.id: duplicate {identifier!r}")
-        implementation_ids.add(identifier)
-        _nonempty_string(item["definition"], f"{where}.definition")
-        _nonempty_string(item["publication"], f"{where}.publication")
-
 
 def validate_paths(
     manifest_path: Path = DEFAULT_MANIFEST,

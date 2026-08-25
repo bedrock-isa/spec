@@ -1,0 +1,47 @@
+\newcommand{\bedrockelfrelocationrows}{%
+0 & \texttt{R\_\allowbreak{}BEDROCK\_\allowbreak{}NONE} & \texttt{0} & \texttt{none}\\
+1 & \texttt{R\_\allowbreak{}BEDROCK\_\allowbreak{}ABS8} & \texttt{8-bit unsigned} & \texttt{S + A}\\
+2 & \texttt{R\_\allowbreak{}BEDROCK\_\allowbreak{}ABS16} & \texttt{16-bit unsigned} & \texttt{S + A}\\
+3 & \texttt{R\_\allowbreak{}BEDROCK\_\allowbreak{}ABS32S} & \texttt{32-bit signed} & \texttt{S + A}\\
+4 & \texttt{R\_\allowbreak{}BEDROCK\_\allowbreak{}ABS64} & \texttt{64-bit unsigned} & \texttt{S + A}\\
+5 & \texttt{R\_\allowbreak{}BEDROCK\_\allowbreak{}IMM8S} & \texttt{8-bit signed} & \texttt{S + A}\\
+6 & \texttt{R\_\allowbreak{}BEDROCK\_\allowbreak{}IMM16S} & \texttt{16-bit signed} & \texttt{S + A}\\
+7 & \texttt{R\_\allowbreak{}BEDROCK\_\allowbreak{}IMM32S} & \texttt{32-bit signed} & \texttt{S + A}\\
+8 & \texttt{R\_\allowbreak{}BEDROCK\_\allowbreak{}IMM64} & \texttt{64-bit unsigned} & \texttt{S + A}\\
+9 & \texttt{R\_\allowbreak{}BEDROCK\_\allowbreak{}DISP8S} & \texttt{8-bit signed} & \texttt{S + A}\\
+10 & \texttt{R\_\allowbreak{}BEDROCK\_\allowbreak{}DISP16S} & \texttt{16-bit signed} & \texttt{S + A}\\
+11 & \texttt{R\_\allowbreak{}BEDROCK\_\allowbreak{}DISP32S} & \texttt{32-bit signed} & \texttt{S + A}\\
+12 & \texttt{R\_\allowbreak{}BEDROCK\_\allowbreak{}DISP64} & \texttt{64-bit unsigned} & \texttt{S + A}\\
+13 & \texttt{R\_\allowbreak{}BEDROCK\_\allowbreak{}PCREL8S} & \texttt{8-bit signed} & \texttt{S + A - P}\\
+14 & \texttt{R\_\allowbreak{}BEDROCK\_\allowbreak{}PCREL16S} & \texttt{16-bit signed} & \texttt{S + A - P}\\
+15 & \texttt{R\_\allowbreak{}BEDROCK\_\allowbreak{}PCREL32S} & \texttt{32-bit signed} & \texttt{S + A - P}\\
+16 & \texttt{R\_\allowbreak{}BEDROCK\_\allowbreak{}PCREL64} & \texttt{64-bit signed} & \texttt{S + A - P}\\
+17 & \texttt{R\_\allowbreak{}BEDROCK\_\allowbreak{}BRDISP8S} & \texttt{8-bit signed} & \texttt{S + A - N}\\
+18 & \texttt{R\_\allowbreak{}BEDROCK\_\allowbreak{}BRDISP16S} & \texttt{16-bit signed} & \texttt{S + A - N}\\
+19 & \texttt{R\_\allowbreak{}BEDROCK\_\allowbreak{}BRDISP32S} & \texttt{32-bit signed} & \texttt{S + A - N}\\
+20 & \texttt{R\_\allowbreak{}BEDROCK\_\allowbreak{}CALL16S} & \texttt{16-bit signed} & \texttt{S + A - N}\\
+21 & \texttt{R\_\allowbreak{}BEDROCK\_\allowbreak{}CALL32S} & \texttt{32-bit signed} & \texttt{S + A - N}\\
+22 & \texttt{R\_\allowbreak{}BEDROCK\_\allowbreak{}SECTION\_\allowbreak{}REL32} & \texttt{32-bit unsigned} & \texttt{S + A - SB}\\
+23 & \texttt{R\_\allowbreak{}BEDROCK\_\allowbreak{}SECTION\_\allowbreak{}REL64} & \texttt{64-bit unsigned} & \texttt{S + A - SB}\\
+24 & \texttt{R\_\allowbreak{}BEDROCK\_\allowbreak{}GOT64} & \texttt{64-bit unsigned} & \texttt{GOT(S) + A}\\
+25 & \texttt{R\_\allowbreak{}BEDROCK\_\allowbreak{}GOTPCREL32S} & \texttt{32-bit signed} & \texttt{GOT(S) + A - P}\\
+26 & \texttt{R\_\allowbreak{}BEDROCK\_\allowbreak{}GOTPCREL64} & \texttt{64-bit signed} & \texttt{GOT(S) + A - P}\\
+27 & \texttt{R\_\allowbreak{}BEDROCK\_\allowbreak{}GOTOFF32S} & \texttt{32-bit signed} & \texttt{S + A - GB}\\
+28 & \texttt{R\_\allowbreak{}BEDROCK\_\allowbreak{}GOTOFF64} & \texttt{64-bit signed} & \texttt{S + A - GB}\\
+29 & \texttt{R\_\allowbreak{}BEDROCK\_\allowbreak{}GOT\_\allowbreak{}BASE\_\allowbreak{}PCREL32S} & \texttt{32-bit signed} & \texttt{GB + A - P}\\
+30 & \texttt{R\_\allowbreak{}BEDROCK\_\allowbreak{}GOT\_\allowbreak{}BASE\_\allowbreak{}PCREL64} & \texttt{64-bit signed} & \texttt{GB + A - P}\\
+31 & \texttt{R\_\allowbreak{}BEDROCK\_\allowbreak{}PLT16S} & \texttt{16-bit signed} & \texttt{PLT(S) + A - N}\\
+32 & \texttt{R\_\allowbreak{}BEDROCK\_\allowbreak{}PLT32S} & \texttt{32-bit signed} & \texttt{PLT(S) + A - N}\\
+33 & \texttt{R\_\allowbreak{}BEDROCK\_\allowbreak{}PLT64} & \texttt{64-bit unsigned} & \texttt{PLT(S) + A}\\
+34 & \texttt{R\_\allowbreak{}BEDROCK\_\allowbreak{}RELATIVE} & \texttt{64-bit unsigned} & \texttt{B + A}\\
+35 & \texttt{R\_\allowbreak{}BEDROCK\_\allowbreak{}GLOB\_\allowbreak{}DAT} & \texttt{64-bit unsigned} & \texttt{S + A}\\
+36 & \texttt{R\_\allowbreak{}BEDROCK\_\allowbreak{}JUMP\_\allowbreak{}SLOT} & \texttt{64-bit unsigned} & \texttt{S + A}\\
+37 & \texttt{R\_\allowbreak{}BEDROCK\_\allowbreak{}COPY} & \texttt{variable-size} & \texttt{copy symbol size bytes}\\
+38 & \texttt{R\_\allowbreak{}BEDROCK\_\allowbreak{}IRELATIVE} & \texttt{64-bit unsigned} & \texttt{Resolver(B + A)}\\
+39 & \texttt{R\_\allowbreak{}BEDROCK\_\allowbreak{}TLS\_\allowbreak{}OFFSET32S} & \texttt{32-bit signed} & \texttt{TLS(S) + A}\\
+40 & \texttt{R\_\allowbreak{}BEDROCK\_\allowbreak{}TLS\_\allowbreak{}OFFSET64} & \texttt{64-bit signed} & \texttt{TLS(S) + A}\\
+41 & \texttt{R\_\allowbreak{}BEDROCK\_\allowbreak{}TLSDESC\_\allowbreak{}GOTPCREL32S} & \texttt{32-bit signed} & \texttt{TLSDESC(S) + A - P}\\
+42 & \texttt{R\_\allowbreak{}BEDROCK\_\allowbreak{}TLSDESC\_\allowbreak{}GOTPCREL64} & \texttt{64-bit signed} & \texttt{TLSDESC(S) + A - P}\\
+43 & \texttt{R\_\allowbreak{}BEDROCK\_\allowbreak{}TLSDESC\_\allowbreak{}CALL} & \texttt{0} & \texttt{none}\\
+44 & \texttt{R\_\allowbreak{}BEDROCK\_\allowbreak{}TLSDESC} & \texttt{2 x u64} & \texttt{write \{function, argument\} for S}\\
+}

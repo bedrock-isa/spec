@@ -1,0 +1,32 @@
+\Needspace{1.25in}
+\manualtablecaption{Architectural Event Index}
+\begin{manualdenselongtable}{@{}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{0.85in}>{\raggedright\arraybackslash}p{1.75in}>{\raggedright\arraybackslash}p{0.45in}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{0.85in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Code} & \textbf{Event} & \textbf{Producer} & \textbf{Priority} & \textbf{Frame} & \textbf{Definition}\\
+\midrule
+\endfirsthead
+\multicolumn{6}{@{}l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Code} & \textbf{Event} & \textbf{Producer} & \textbf{Priority} & \textbf{Frame} & \textbf{Definition}\\
+\midrule
+\endhead
+\texttt{EXC:\allowbreak{}00} & \texttt{DEBUG\_\allowbreak{}TRACE} & completion of a TF-selected trace unit & \texttt{5} & \texttt{BASIC} & \hyperref[section:event-code-and-sources]{definition} (p.~\pageref{section:event-code-and-sources})\\
+\texttt{EXC:\allowbreak{}02} & \texttt{BREAKPOINT} & BKPT & \texttt{4} & \texttt{BASIC} & \hyperref[section:event-code-and-sources]{definition} (p.~\pageref{section:event-code-and-sources})\\
+\texttt{EXC:\allowbreak{}03} & \texttt{ILLEGAL\_\allowbreak{}INSTRUCTION} & decode or instruction-validity check & \texttt{3} & \texttt{ERROR} & \hyperref[section:event-code-and-sources]{definition} (p.~\pageref{section:event-code-and-sources})\\
+\texttt{EXC:\allowbreak{}08} & \texttt{PRIVILEGE\_\allowbreak{}FAULT} & privilege check & \texttt{3} & \texttt{BASIC} & \hyperref[section:event-code-and-sources]{definition} (p.~\pageref{section:event-code-and-sources})\\
+\texttt{EXC:\allowbreak{}09} & \texttt{PAGE\_\allowbreak{}FAULT} & segment, translation, memory-type, or atomic-alignment check & \texttt{3} & \texttt{PAGE\_FAULT} & \hyperref[section:event-code-and-sources]{definition} (p.~\pageref{section:event-code-and-sources})\\
+\texttt{EXC:\allowbreak{}0a} & \texttt{DIVIDE\_\allowbreak{}ERROR} & integer divide operation & \texttt{3} & \texttt{ERROR} & \hyperref[section:event-code-and-sources]{definition} (p.~\pageref{section:event-code-and-sources})\\
+\texttt{EXC:\allowbreak{}0b} & \texttt{VECTOR\_\allowbreak{}RANGE\_\allowbreak{}ERROR} & PLOOP offset or vector lane-index validation & \texttt{3} & \texttt{ERROR} & \hyperref[section:event-code-and-sources]{definition} (p.~\pageref{section:event-code-and-sources})\\
+\texttt{EXC:\allowbreak{}0c} & \texttt{ACCESS\_\allowbreak{}FAULT} & physical-address-width or MMIO access-rule check & \texttt{3} & \texttt{PAGE\_FAULT} & \hyperref[section:event-code-and-sources]{definition} (p.~\pageref{section:event-code-and-sources})\\
+\texttt{EXC:\allowbreak{}0d} & \texttt{INVALID\_\allowbreak{}CONTROL\_\allowbreak{}STATE} & control-state validation & \texttt{3} & \texttt{ERROR} & \hyperref[section:event-code-and-sources]{definition} (p.~\pageref{section:event-code-and-sources})\\
+\texttt{EXC:\allowbreak{}0e} & \texttt{FLOATING\_\allowbreak{}POINT\_\allowbreak{}FAULT} & enabled floating-point exception condition & \texttt{3} & \texttt{ERROR} & \hyperref[section:event-code-and-sources]{definition} (p.~\pageref{section:event-code-and-sources})\\
+\texttt{EXC:\allowbreak{}18} & \texttt{DOUBLE\_\allowbreak{}FAULT} & architectural event-delivery failure & \texttt{1} & \texttt{AUXILIARY} & \hyperref[section:event-code-and-sources]{definition} (p.~\pageref{section:event-code-and-sources})\\
+\texttt{EXC:\allowbreak{}19} & \texttt{MACHINE\_\allowbreak{}CHECK} & processor or memory-system machine-check source & \texttt{2} & \texttt{AUXILIARY} & \hyperref[section:event-code-and-sources]{definition} (p.~\pageref{section:event-code-and-sources})\\
+\texttt{EXC:\allowbreak{}1a} & \texttt{BUS\_\allowbreak{}ERROR} & synchronous acknowledged bus failure & \texttt{3} & \texttt{AUXILIARY} & \hyperref[section:event-code-and-sources]{definition} (p.~\pageref{section:event-code-and-sources})\\
+\texttt{EXC:\allowbreak{}20} & \texttt{SYSTEM\_\allowbreak{}CALL} & SYSCALL & \texttt{4} & \texttt{BASIC} & \hyperref[section:event-code-and-sources]{definition} (p.~\pageref{section:event-code-and-sources})\\
+\texttt{NMI:\allowbreak{}source} & \texttt{NMI} & admitted non-maskable interrupt source & \texttt{6} & \texttt{BASIC} & \hyperref[section:event-code-and-sources]{definition} (p.~\pageref{section:event-code-and-sources})\\
+\texttt{INTERRUPT:\allowbreak{}platform} & \texttt{INTERRUPT} & admitted maskable interrupt source & \texttt{7} & \texttt{BASIC} & \hyperref[section:event-code-and-sources]{definition} (p.~\pageref{section:event-code-and-sources})\\
+\bottomrule
+\end{manualdenselongtable}

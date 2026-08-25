@@ -1,0 +1,20 @@
+\Needspace{1.25in}
+\manualtablecaption{Normal-Memory Cache Policies}
+\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{0.35in}>{\raggedright\arraybackslash}p{1.15in}>{\raggedright\arraybackslash}p{1.30in}>{\raggedright\arraybackslash}p{1.45in}>{\raggedright\arraybackslash}p{1.15in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{CP} & \textbf{Policy} & \textbf{Reads and Fetches} & \textbf{Stores} & \textbf{Retained State}\\
+\midrule
+\endfirsthead
+\multicolumn{5}{@{}l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{CP} & \textbf{Policy} & \textbf{Reads and Fetches} & \textbf{Stores} & \textbf{Retained State}\\
+\midrule
+\endhead
+\texttt{0} & Write-back cacheable & may allocate a coherent cache copy & may retire into a coherent dirty cache copy & clean or dirty coherent cache copies\\
+\texttt{1} & Coherent uncached & enter coherence without retaining a cache copy & enter coherence before retirement without retaining a dirty copy & no retained cache copy\\
+\texttt{2} & Coherent write-through & may allocate a coherent clean cache copy & enter coherence before retirement without retaining a dirty copy & clean coherent cache copies only\\
+\texttt{3} & Coherent write-combining & enter coherence without retaining a cache copy & may combine adjacent byte writes before entering coherence & pending combined stores, but no retained cache copy\\
+\bottomrule
+\end{manuallongtable}
