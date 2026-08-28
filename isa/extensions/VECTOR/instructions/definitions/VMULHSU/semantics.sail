@@ -1,3 +1,13 @@
+function clause register_result_extension(Op_VMULHSU) = RegisterZeroExtend
+
+function clause repeat_semantics(Op_VMULHSU) = RepeatObserveDestination
+
+function clause vector_semantics(Op_VMULHSU) =
+    {
+        vector_default_semantics() with
+        integer_binary = Some(VectorIntegerMultiplyHighSignedUnsigned),
+    }
+
 function execute_VMULHSU_primitive(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) = {
     let operation = instruction.form.operation;
     let element_bytes = operation_width(instruction);
@@ -38,8 +48,8 @@ union clause Uop_kind = UopInstruction_VMULHSU : unit
 
 function clause execute_uop(UopInstruction_VMULHSU(), _, values, instruction, before, speculative) =
     match execute_VMULHSU_primitive(instruction, speculative) {
-        Some(result) => vector_local_result_uop_step(result, instruction, before, speculative, values),
-        None() => uop_fault(
+        Some(result) => vector_uop_step_from_local_result(result, instruction, before, speculative, values),
+        None() => uop_step_fault(
             faulted(
                 before,
                 instruction.form.operation,
@@ -51,22 +61,22 @@ function clause execute_uop(UopInstruction_VMULHSU(), _, values, instruction, be
 
 function execute_VMULHSU(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) =
     Some(
-        execute_uop_program(
+        uop_program_execute(
             [|
-                make_uop(
+                uop_make(
                     UopInstruction_VMULHSU(),
-                    uop_none(),
-                    uop_none(),
-                    uop_none(),
+                    uop_location_make_none(),
+                    uop_location_make_none(),
+                    uop_location_make_none(),
                     Operand_dst,
                     operation_width(instruction),
                     CommitRegisters,
                 ),
-                make_uop(
+                uop_make(
                     UopCommit(),
-                    uop_none(),
-                    uop_none(),
-                    uop_none(),
+                    uop_location_make_none(),
+                    uop_location_make_none(),
+                    uop_location_make_none(),
                     Operand_dst,
                     operation_width(instruction),
                     CommitRegisters,

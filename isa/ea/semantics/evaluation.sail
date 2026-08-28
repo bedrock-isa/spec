@@ -217,36 +217,26 @@ function evaluate_ea_operands_in_order(operands : list(Decoded_operand), image :
   }
 }
 
-function extension_destination_width(operation : Semantic_operation) -> int =
-  if operation == Op_EXTZW | operation == Op_EXTSW then 2
-  else if operation == Op_EXTZL | operation == Op_EXTSL then 4
-  else 8
-
-function instruction_ea_width(operation : Semantic_operation, operand : Decoded_operand,
-                              default_width : int) -> int =
-  if operand.name == Operand_dst
-     & (operation == Op_EXTZW | operation == Op_EXTSW | operation == Op_EXTZL
-        | operation == Op_EXTSL | operation == Op_EXTZQ | operation == Op_EXTSQ)
-  then extension_destination_width(operation)
-  else if operand.ea_width == Some(EaWidth_B) then 1
+function instruction_ea_width(operand : Decoded_operand, default_width : int) -> int =
+  if operand.ea_width == Some(EaWidth_B) then 1
   else if operand.ea_width == Some(EaWidth_W) then 2
   else if operand.ea_width == Some(EaWidth_L) then 4
   else if operand.ea_width == Some(EaWidth_Q) then 8
   else default_width
 
-function evaluate_instruction_eas(operands : list(Decoded_operand), operation : Semantic_operation,
+function evaluate_instruction_eas(operands : list(Decoded_operand),
                                    image : Cpu_state, instruction_pc : bits(64),
                                    default_width : int) -> Ea_evaluation_set = match operands {
   [||] => struct { evaluations = [||], image = image },
   operand :: tail => match operand.ea {
-    None() => evaluate_instruction_eas(tail, operation, image, instruction_pc, default_width),
+    None() => evaluate_instruction_eas(tail, image, instruction_pc, default_width),
     Some(ea) => {
-      let width = instruction_ea_width(operation, operand, default_width);
+      let width = instruction_ea_width(operand, default_width);
       let (evaluation, next_image) = evaluate_decoded_ea(
         operand, ea, image, instruction_pc, width
       );
       let rest = evaluate_instruction_eas(
-        tail, operation, next_image, instruction_pc, default_width
+        tail, next_image, instruction_pc, default_width
       );
       struct { evaluations = evaluation :: rest.evaluations, image = rest.image }
     },

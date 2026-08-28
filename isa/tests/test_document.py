@@ -210,6 +210,36 @@ class DocumentTest(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "cyclic TeX input"):
                 processor.render(root, project)
 
+    def test_source_preprocessor_treats_style_files_as_code(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory)
+            source_root = repository / "isa"
+            style_root = repository / "style"
+            source_root.mkdir()
+            style_root.mkdir()
+            root = source_root / "root.tex"
+            style = style_root / "sample.sty"
+            root.write_text(r"\input{style/sample.sty}", encoding="utf-8")
+            style.write_text(
+                r"\PackageError{sample}{field widths are invalid}{}",
+                encoding="utf-8",
+            )
+
+            class Project:
+                pass
+
+            project = Project()
+            project.root = source_root
+            project.terminology = self.project.terminology
+            processor = LatexSourcePreprocessor(
+                DocumentFragmentPipeline(()), LatexSemanticTextRenderer()
+            )
+
+            rendered = processor.render(root, project)
+
+        self.assertIn("field widths are invalid", rendered)
+        self.assertNotIn(r"\endinput", rendered)
+
     def test_direct_term_rewriter_uses_forms_and_protects_tex_identifiers(self) -> None:
         source = (
             r"effective addresses, effective address, instruction-header, "
@@ -407,6 +437,18 @@ Allocation pattern:
             pipeline.expand("instructions: @sample@", self.project),
             f"instructions: {len(self.project.select())}",
         )
+
+    def test_default_fragment_pipeline_expands_loaded_ea_modes(self) -> None:
+        rendered = DocumentFragmentPipeline.default().expand(
+            "@EA_MODE_DIAGRAMS@", self.project
+        )
+
+        self.assertNotIn("@EA_MODE_DIAGRAMS@", rendered)
+        self.assertEqual(
+            rendered.count("% Generated from "),
+            len(self.project.catalog.ea_modes),
+        )
+        self.assertIn(r"\BedrockEAFlowStart", rendered)
 
     def test_fragment_pipeline_rejects_duplicate_placeholder_owners(self) -> None:
         with self.assertRaisesRegex(ValueError, "is owned by both"):

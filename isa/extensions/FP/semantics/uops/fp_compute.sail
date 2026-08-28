@@ -6,12 +6,12 @@ union clause Uop_kind = UopFpOperation : Semantic_operation
 union clause Uop_kind = UopFpPairMove : unit
 
 function clause execute_uop(UopFpPairMove(), uop, values, instruction, before, speculative) =
-    match (uop_location_value(uop.source0, speculative, values), uop_location_value(uop.source1, speculative, values)) {
+    match (uop_location_read(uop.source0, speculative, values), uop_location_read(uop.source1, speculative, values)) {
         (Some(first), Some(second)) => if    uop.destination.kind
                                           != UopLocationFpRegister
                                           |  uop.destination2.kind
                                           != UopLocationFpRegister then {
-            uop_fault(
+            uop_step_fault(
                 faulted(
                     before,
                     instruction.form.operation,
@@ -24,9 +24,9 @@ function clause execute_uop(UopFpPairMove(), uop, values, instruction, before, s
             updated.floating_registers[unsigned(get_slice_int(4, uop.destination.index, 0))] = first;
             updated.floating_registers[unsigned(get_slice_int(4, uop.destination2.index, 0))] = second;
             updated.fp_component_modified = true;
-            uop_continue(updated, values)
+            uop_step_continue(updated, values)
         },
-        _ => uop_fault(
+        _ => uop_step_fault(
             faulted(
                 before,
                 instruction.form.operation,
@@ -36,7 +36,7 @@ function clause execute_uop(UopFpPairMove(), uop, values, instruction, before, s
         ),
     }
 
-function fp_uop_operand(
+function fp_uop_operand_read(
     instruction : Decoded_instruction,
     state : Cpu_state,
     values : list(Uop_value),
@@ -45,7 +45,7 @@ function fp_uop_operand(
 ) -> (
     option(Fp_operand_image)
 ) =
-    match (fp_source_at(instruction.operands, source_index, 0), uop_location_value(location, state, values)) {
+    match (fp_source_at(instruction.operands, source_index, 0), uop_location_read(location, state, values)) {
         (Some(operand), Some(value)) => {
             let kind = fp_operand_kind_for(instruction, operand, operation_width(instruction));
             Some(
@@ -64,8 +64,8 @@ function fp_uop_operand(
         _ => None(),
     }
 
-function fp_uop_arithmetic_slots(
-    uop : Micro_operation,
+function fp_uop_slots_build_arithmetic(
+    uop : Uop,
     instruction : Decoded_instruction,
     state : Cpu_state,
     values : list(Uop_value),
@@ -78,17 +78,17 @@ function fp_uop_arithmetic_slots(
     };
     match (
         if source_count > 0 then {
-            fp_uop_operand(instruction, state, values, uop.source0, 0)
+            fp_uop_operand_read(instruction, state, values, uop.source0, 0)
         } else {
             Some(empty_fp_operand())
         },
         if source_count > 1 then {
-            fp_uop_operand(instruction, state, values, uop.source1, 1)
+            fp_uop_operand_read(instruction, state, values, uop.source1, 1)
         } else {
             Some(empty_fp_operand())
         },
         if source_count > 2 then {
-            fp_uop_operand(instruction, state, values, uop.source2, 2)
+            fp_uop_operand_read(instruction, state, values, uop.source2, 2)
         } else {
             Some(empty_fp_operand())
         },
@@ -100,9 +100,9 @@ function fp_uop_arithmetic_slots(
     }
 }
 
-function fp_uop_commit_result(
+function fp_uop_result_commit(
     candidate : Fp_candidate_result,
-    uop : Micro_operation,
+    uop : Uop,
     instruction : Decoded_instruction,
     before : Cpu_state,
     speculative : Cpu_state,
@@ -111,7 +111,7 @@ function fp_uop_commit_result(
     Uop_step
 ) =
     if not_bool(candidate.shape_valid) then {
-        uop_fault(
+        uop_step_fault(
             faulted(
                 before,
                 instruction.form.operation,
@@ -121,7 +121,7 @@ function fp_uop_commit_result(
         )
     } else {
         if candidate.trap then {
-            uop_fault(fp_fault_with_causes(before, instruction.form.operation, candidate.trap_errors))
+            uop_step_fault(fp_fault_with_causes(before, instruction.form.operation, candidate.trap_errors))
         } else {
             let destination_kind = fp_derive_destination_kind(instruction.form);
             if    destination_kind
@@ -134,7 +134,7 @@ function fp_uop_commit_result(
                != UopLocationRegister
                &  uop.destination.kind
                != UopLocationTemporary then {
-                uop_fault(
+                uop_step_fault(
                     faulted(
                         before,
                         instruction.form.operation,
@@ -180,7 +180,7 @@ function fp_uop_commit_result(
                                         candidate.primary;
                                     Some((state, values))
                                 } else {
-                                    uop_write_location(
+                                    uop_location_write(
                                         uop.destination,
                                         result,
                                         uop.width,
@@ -193,7 +193,7 @@ function fp_uop_commit_result(
                         }
                     };
                 match written {
-                    None() => uop_fault(
+                    None() => uop_step_fault(
                         faulted(
                             before,
                             instruction.form.operation,
@@ -208,16 +208,16 @@ function fp_uop_commit_result(
                             (updated.flags & not_vec(candidate.flags_mask)) |
                                 (candidate.flags_value & candidate.flags_mask);
                         updated.fp_component_modified = true;
-                        uop_continue(updated, written_values)
+                        uop_step_continue(updated, written_values)
                     },
                 }
             }
         }
     }
 
-function fp_execute_uop_operation(
+function fp_uop_execute(
     expected_operation : Semantic_operation,
-    uop : Micro_operation,
+    uop : Uop,
     values : list(Uop_value),
     instruction : Decoded_instruction,
     before : Cpu_state,
@@ -226,7 +226,7 @@ function fp_execute_uop_operation(
     Uop_step
 ) =
     if not_bool(fp_fstatus_valid(before.fstatus)) then {
-        uop_fault(
+        uop_step_fault(
             faulted_with_error_code(
                 before,
                 instruction.form.operation,
@@ -237,7 +237,7 @@ function fp_execute_uop_operation(
         )
     } else {
         if instruction.form.operation != expected_operation then {
-            uop_fault(
+            uop_step_fault(
                 faulted(
                     before,
                     instruction.form.operation,
@@ -247,12 +247,12 @@ function fp_execute_uop_operation(
             )
         } else {
             match (
-                fp_uop_arithmetic_slots(uop, instruction, speculative, values),
+                fp_uop_slots_build_arithmetic(uop, instruction, speculative, values),
                 fp_form_path(instruction.form),
                 fp_derive_result_kind(instruction.form, operation_width(instruction)),
             ) {
                 (Some(slots), Some(path), Some(result_kind)) => {
-                    let contract_word : bits(64) = match uop_location_value(uop.auxiliary, speculative, values) {
+                    let contract_word : bits(64) = match uop_location_read(uop.auxiliary, speculative, values) {
                         Some(value) => value,
                         None() => 0x0000000000000000,
                     };
@@ -272,7 +272,7 @@ function fp_execute_uop_operation(
                                 None() => 0x0000000000000000,
                             };
                             match fp_local_response(request, selector) {
-                                Some(response) => fp_uop_commit_result(
+                                Some(response) => fp_uop_result_commit(
                                     fp_finalize_response(request, response, before.fstatus),
                                     uop,
                                     instruction,
@@ -280,7 +280,7 @@ function fp_execute_uop_operation(
                                     speculative,
                                     values,
                                 ),
-                                None() => uop_fault(
+                                None() => uop_step_fault(
                                     faulted(
                                         before,
                                         instruction.form.operation,
@@ -290,7 +290,7 @@ function fp_execute_uop_operation(
                                 ),
                             }
                         },
-                        None() => uop_fault(
+                        None() => uop_step_fault(
                             faulted(
                                 before,
                                 instruction.form.operation,
@@ -300,7 +300,7 @@ function fp_execute_uop_operation(
                         ),
                     }
                 },
-                _ => uop_fault(
+                _ => uop_step_fault(
                     faulted(
                         before,
                         instruction.form.operation,
@@ -313,16 +313,16 @@ function fp_execute_uop_operation(
     }
 
 function clause execute_uop(UopFpArithmetic(operation), uop, values, instruction, before, speculative) =
-    fp_execute_uop_operation(fp_arithmetic_semantic_operation(operation), uop, values, instruction, before, speculative)
+    fp_uop_execute(fp_arithmetic_semantic_operation(operation), uop, values, instruction, before, speculative)
 
 function clause execute_uop(UopFpCompare(operation), uop, values, instruction, before, speculative) =
-    fp_execute_uop_operation(fp_compare_semantic_operation(operation), uop, values, instruction, before, speculative)
+    fp_uop_execute(fp_compare_semantic_operation(operation), uop, values, instruction, before, speculative)
 
 function clause execute_uop(UopFpConvert(operation), uop, values, instruction, before, speculative) =
-    fp_execute_uop_operation(fp_conversion_semantic_operation(operation), uop, values, instruction, before, speculative)
+    fp_uop_execute(fp_conversion_semantic_operation(operation), uop, values, instruction, before, speculative)
 
 function clause execute_uop(UopFpData(operation), uop, values, instruction, before, speculative) =
-    fp_execute_uop_operation(fp_data_semantic_operation(operation), uop, values, instruction, before, speculative)
+    fp_uop_execute(fp_data_semantic_operation(operation), uop, values, instruction, before, speculative)
 
 function clause execute_uop(UopFpOperation(operation), uop, values, instruction, before, speculative) =
-    fp_execute_uop_operation(operation, uop, values, instruction, before, speculative)
+    fp_uop_execute(operation, uop, values, instruction, before, speculative)

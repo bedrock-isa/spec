@@ -58,19 +58,6 @@ struct Fp_primitive_evaluation = {
   error1_q8_8_up : bits(16),
 }
 
-function fp_shared_numeric_semantic_operation(operation : Semantic_operation)
-  -> option(Semantic_operation) =
-  match fp_arithmetic_operation(operation) {
-    Some(primitive) => Some(fp_arithmetic_semantic_operation(primitive)),
-    None() => match fp_compare_operation(operation) {
-      Some(primitive) => Some(fp_compare_semantic_operation(primitive)),
-      None() => match fp_conversion_operation(operation) {
-        Some(primitive) => Some(fp_conversion_semantic_operation(primitive)),
-        None() => None(),
-      },
-    },
-  }
-
 function fp_primitive_evaluate(
   operation : Semantic_operation, width : int, result_kind : bits(8),
   control : bits(8), operand_count : int,
@@ -115,12 +102,8 @@ function fp_primitive_evaluate(
 
 function fp_primitive_response(request : Fp_request_image)
   -> option(Fp_response_image) = {
-  let operation : Semantic_operation = match fp_shared_numeric_semantic_operation(request.operation) {
-    Some(primitive_operation) => primitive_operation,
-    None() => request.operation,
-  };
   match fp_primitive_evaluate(
-    operation, request.operation_width,
+    request.operation, request.operation_width,
     fp_primitive_result_kind_code(request.result_kind),
     fp_primitive_control(request.rounding_mode, request.ftz, request.daz, request.dn),
     request.operand_count,

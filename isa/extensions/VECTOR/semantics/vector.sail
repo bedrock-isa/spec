@@ -1,3 +1,147 @@
+enum Predicate_binary_kind = { PredicateBinaryAnd, PredicateBinaryOr, PredicateBinaryXor }
+
+enum Vector_integer_binary_kind = {
+    VectorIntegerAdd,
+    VectorIntegerSubtract,
+    VectorIntegerAnd,
+    VectorIntegerOr,
+    VectorIntegerXor,
+    VectorIntegerMinimumSigned,
+    VectorIntegerMinimumUnsigned,
+    VectorIntegerMaximumSigned,
+    VectorIntegerMaximumUnsigned,
+    VectorIntegerMultiplyLow,
+    VectorIntegerMultiplyHighSigned,
+    VectorIntegerMultiplyHighUnsigned,
+    VectorIntegerMultiplyHighSignedUnsigned,
+}
+
+enum Vector_integer_reduction_kind = {
+    VectorReduceAdd,
+    VectorReduceAnd,
+    VectorReduceOr,
+    VectorReduceXor,
+    VectorReduceMinimumSigned,
+    VectorReduceMinimumUnsigned,
+    VectorReduceMaximumSigned,
+    VectorReduceMaximumUnsigned,
+}
+
+enum Vector_integer_unary_kind = {
+    VectorUnaryNegate,
+    VectorUnaryAbsolute,
+    VectorUnaryNot,
+    VectorUnaryCountLeadingZeros,
+    VectorUnaryCountTrailingZeros,
+    VectorUnaryCountLeadingSign,
+    VectorUnaryCountTrailingSign,
+    VectorUnaryPopulationCount,
+    VectorUnaryReverseBytes,
+}
+
+enum Vector_integer_compare_kind = { VectorCompareCondition, VectorTestZero, VectorTestNonzero }
+
+enum Predicate_slide_kind = { PredicateSlideUp, PredicateSlideDown, PredicateSlice }
+
+enum Predicate_pair_kind = {
+    PredicateZipLow,
+    PredicateZipHigh,
+    PredicateUnzipLow,
+    PredicateUnzipHigh,
+    PredicateTransposeLow,
+    PredicateTransposeHigh,
+}
+
+enum Vector_permute_kind = {
+    VectorPermuteIndexed,
+    VectorSlideUp,
+    VectorSlideDown,
+    VectorSlice,
+    VectorZipLow,
+    VectorZipHigh,
+    VectorUnzipLow,
+    VectorUnzipHigh,
+    VectorTransposeLow,
+    VectorTransposeHigh,
+}
+
+enum Vector_width_change_kind = { VectorExtendZero, VectorExtendSigned, VectorTruncate }
+
+enum Vector_fp_exact_kind = { VectorFpNegate, VectorFpAbsolute, VectorFpCopySign, VectorFpClassify }
+
+enum Vector_fp_reduction_identity = {
+    VectorFpReductionZero,
+    VectorFpReductionPositiveInfinity,
+    VectorFpReductionNegativeInfinity,
+}
+
+enum Vector_memory_kind = { VectorPredicateMove, VectorMoveMerge, VectorMoveReplace, VectorGatherOne, VectorScatterOne }
+
+struct Vector_semantics = {
+  predicate_binary : option(Predicate_binary_kind),
+  integer_binary : option(Vector_integer_binary_kind),
+  integer_reduction : option(Vector_integer_reduction_kind),
+  integer_unary : option(Vector_integer_unary_kind),
+  shift : option(Shift_kind),
+  integer_compare : option(Vector_integer_compare_kind),
+  predicate_slide : option(Predicate_slide_kind),
+  predicate_pair : option(Predicate_pair_kind),
+  permute : option(Vector_permute_kind),
+  width_change : option(Vector_width_change_kind),
+  width_change_destination_bytes : int,
+  fp_basic : bool,
+  fp_conversion : bool,
+  reduction : bool,
+  fp_primitive : bool,
+  fp_exact : option(Vector_fp_exact_kind),
+  fp_compare : bool,
+  fp_scalar_operation : option(Semantic_operation),
+  fp_arity : int,
+  fp_conversion_destination_bytes : int,
+  fp_conversion_destination_fp : bool,
+  fp_conversion_unsigned : bool,
+  fp_reduction_operation : option(Semantic_operation),
+  fp_reduction_identity : Vector_fp_reduction_identity,
+  fp_allowed_causes : bits(5),
+  memory : option(Vector_memory_kind),
+}
+
+function vector_default_semantics() -> Vector_semantics = struct {
+    predicate_binary = None(),
+    integer_binary = None(),
+    integer_reduction = None(),
+    integer_unary = None(),
+    shift = None(),
+    integer_compare = None(),
+    predicate_slide = None(),
+    predicate_pair = None(),
+    permute = None(),
+    width_change = None(),
+    width_change_destination_bytes = 1,
+    fp_basic = false,
+    fp_conversion = false,
+    reduction = false,
+    fp_primitive = false,
+    fp_exact = None(),
+    fp_compare = false,
+    fp_scalar_operation = None(),
+    fp_arity = 2,
+    fp_conversion_destination_bytes = 8,
+    fp_conversion_destination_fp = false,
+    fp_conversion_unsigned = false,
+    fp_reduction_operation = None(),
+    fp_reduction_identity = VectorFpReductionZero,
+    fp_allowed_causes = 0b10111,
+    memory = None(),
+}
+
+val vector_semantics : Semantic_operation -> Vector_semantics
+
+scattered function vector_semantics
+
+function clause vector_semantics(operation if semantic_route(operation) != RouteVector) =
+    vector_default_semantics()
+
 function vector_byte_at(bytes : list(bits(8)), index : int) -> bits(8) = match bytes {
     [||] => 0x00,
     head :: tail => if index <= 0 then {
@@ -81,11 +225,11 @@ function predicate_raw_binary(
     list(bits(8))
 ) =
     match (left, right) {
-        (left_head :: left_tail, right_head :: right_tail) => (if operation == Op_PAND
-                                                              then left_head & right_head
-                                                              else if operation == Op_POR
-                                                                   then left_head | right_head
-                                                                   else xor_vec(left_head, right_head)) ::
+        (left_head :: left_tail, right_head :: right_tail) => (match vector_semantics(operation).predicate_binary {
+            Some(PredicateBinaryAnd) => (left_head & right_head),
+            Some(PredicateBinaryOr) => (left_head | right_head),
+            _ => xor_vec(left_head, right_head),
+        }) ::
             predicate_raw_binary(left_tail, right_tail, operation),
         _ => [||],
     }
@@ -238,46 +382,47 @@ function vector_integer_binary_value(
     let bits = element_bytes * 8;
     let signed_destination = vector_signed_lane(destination, element_bytes);
     let signed_source = vector_signed_lane(source, element_bytes);
-    if operation == Op_VADD then {
+    let kind = vector_semantics(operation).integer_binary;
+    if kind == Some(VectorIntegerAdd) then {
         vector_normalized(destination + source, modulus)
     } else {
-        if operation == Op_VSUB then {
+        if kind == Some(VectorIntegerSubtract) then {
             vector_normalized(destination - source, modulus)
         } else {
-            if operation == Op_VAND then {
+            if kind == Some(VectorIntegerAnd) then {
                 unsigned(bits_from_int(destination) & bits_from_int(source))
             } else {
-                if operation == Op_VOR then {
+                if kind == Some(VectorIntegerOr) then {
                     unsigned(bits_from_int(destination) | bits_from_int(source))
                 } else {
-                    if operation == Op_VXOR then {
+                    if kind == Some(VectorIntegerXor) then {
                         unsigned(xor_vec(bits_from_int(destination), bits_from_int(source)))
                     } else {
-                        if operation == Op_VMINS then {
+                        if kind == Some(VectorIntegerMinimumSigned) then {
                             vector_normalized(
                                 if signed_destination < signed_source then signed_destination else signed_source,
                                 modulus,
                             )
                         } else {
-                            if operation == Op_VMINU then {
+                            if kind == Some(VectorIntegerMinimumUnsigned) then {
                                 if destination < source then { destination } else { source }
                             } else {
-                                if operation == Op_VMAXS then {
+                                if kind == Some(VectorIntegerMaximumSigned) then {
                                     vector_normalized(
                                         if signed_destination > signed_source then signed_destination else signed_source,
                                         modulus,
                                     )
                                 } else {
-                                    if operation == Op_VMAXU then {
+                                    if kind == Some(VectorIntegerMaximumUnsigned) then {
                                         if destination > source then { destination } else { source }
                                     } else {
-                                        if operation == Op_VMUL then {
+                                        if kind == Some(VectorIntegerMultiplyLow) then {
                                             tmod_int(destination * source, modulus)
                                         } else {
-                                            if operation == Op_VMULHU then {
+                                            if kind == Some(VectorIntegerMultiplyHighUnsigned) then {
                                                 tdiv_int(destination * source, modulus)
                                             } else {
-                                                if operation == Op_VMULHS then {
+                                                if kind == Some(VectorIntegerMultiplyHighSigned) then {
                                                     tdiv_int(
                                                         vector_normalized(
                                                             signed_destination * signed_source,
@@ -286,7 +431,7 @@ function vector_integer_binary_value(
                                                         modulus,
                                                     )
                                                 } else {
-                                                    if operation == Op_VMULHSU then {
+                                                    if kind == Some(VectorIntegerMultiplyHighSignedUnsigned) then {
                                                         tdiv_int(
                                                             vector_normalized(
                                                                 signed_destination * source,
@@ -349,33 +494,19 @@ function vector_integer_binary_image(
     }
 
 function vector_integer_reduction_operation(operation : Semantic_operation) -> bool =
-       operation
-    == Op_VREDADD
-    |  operation
-    == Op_VREDMINS
-    |  operation
-    == Op_VREDMINU
-    |  operation
-    == Op_VREDMAXS
-    |  operation
-    == Op_VREDMAXU
-    |  operation
-    == Op_VREDAND
-    |  operation
-    == Op_VREDOR
-    |  operation
-    == Op_VREDXOR
+    vector_semantics(operation).integer_reduction != None()
 
 function vector_integer_reduction_identity(operation : Semantic_operation, element_bytes : int) -> int = {
     let modulus : int = width_modulus(element_bytes);
     let sign : int = tdiv_int(modulus, 2);
-    if operation == Op_VREDAND | operation == Op_VREDMINU then {
+    let kind = vector_semantics(operation).integer_reduction;
+    if kind == Some(VectorReduceAnd) | kind == Some(VectorReduceMinimumUnsigned) then {
         modulus - 1
     } else {
-        if operation == Op_VREDMINS then {
+        if kind == Some(VectorReduceMinimumSigned) then {
             sign - 1
         } else {
-            if operation == Op_VREDMAXS then { sign } else { 0 }
+            if kind == Some(VectorReduceMaximumSigned) then { sign } else { 0 }
         }
     }
 }
@@ -389,19 +520,20 @@ function vector_integer_reduction_value(
     int
 ) = {
     let modulus : int = width_modulus(element_bytes);
-    if operation == Op_VREDADD then {
+    let kind = vector_semantics(operation).integer_reduction;
+    if kind == Some(VectorReduceAdd) then {
         tmod_int(accumulator + value, modulus)
     } else {
-        if operation == Op_VREDAND then {
+        if kind == Some(VectorReduceAnd) then {
             unsigned(bits_from_int(accumulator) & bits_from_int(value))
         } else {
-            if operation == Op_VREDOR then {
+            if kind == Some(VectorReduceOr) then {
                 unsigned(bits_from_int(accumulator) | bits_from_int(value))
             } else {
-                if operation == Op_VREDXOR then {
+                if kind == Some(VectorReduceXor) then {
                     unsigned(xor_vec(bits_from_int(accumulator), bits_from_int(value)))
                 } else {
-                    if operation == Op_VREDMINS then {
+                    if kind == Some(VectorReduceMinimumSigned) then {
                         vector_normalized(
                             if vector_signed_lane(accumulator, element_bytes) < vector_signed_lane(value, element_bytes)
                             then vector_signed_lane(accumulator, element_bytes)
@@ -409,10 +541,10 @@ function vector_integer_reduction_value(
                             modulus,
                         )
                     } else {
-                        if operation == Op_VREDMINU then {
+                        if kind == Some(VectorReduceMinimumUnsigned) then {
                             if accumulator < value then { accumulator } else { value }
                         } else {
-                            if operation == Op_VREDMAXS then {
+                            if kind == Some(VectorReduceMaximumSigned) then {
                                 vector_normalized(
                                     if vector_signed_lane(accumulator, element_bytes) >
                                         vector_signed_lane(value, element_bytes)
@@ -421,7 +553,7 @@ function vector_integer_reduction_value(
                                     modulus,
                                 )
                             } else {
-                                if operation == Op_VREDMAXU then {
+                                if kind == Some(VectorReduceMaximumUnsigned) then {
                                     if accumulator > value then { accumulator } else { value }
                                 } else {
                                     0
@@ -471,32 +603,33 @@ function vector_integer_unary_value(operation : Semantic_operation, value : int,
     let modulus = width_modulus(element_bytes);
     let bits = element_bytes * 8;
     let image = bits_from_int(value) & width_mask(element_bytes);
-    if operation == Op_VNEG then {
+    let kind = vector_semantics(operation).integer_unary;
+    if kind == Some(VectorUnaryNegate) then {
         vector_normalized(-value, modulus)
     } else {
-        if operation == Op_VABS then {
+        if kind == Some(VectorUnaryAbsolute) then {
             let signed_value = vector_signed_lane(value, element_bytes);
             vector_normalized(if signed_value < 0 then -signed_value else signed_value, modulus)
         } else {
-            if operation == Op_VNOT then {
+            if kind == Some(VectorUnaryNot) then {
                 unsigned(xor_vec(image, width_mask(element_bytes)))
             } else {
-                if operation == Op_VCLZ then {
+                if kind == Some(VectorUnaryCountLeadingZeros) then {
                     count_from_high(image, bits, bitzero)
                 } else {
-                    if operation == Op_VCTZ then {
+                    if kind == Some(VectorUnaryCountTrailingZeros) then {
                         count_from_low(image, 0, bits, bitzero)
                     } else {
-                        if operation == Op_VCLS then {
+                        if kind == Some(VectorUnaryCountLeadingSign) then {
                             count_from_high(image, bits, bitone)
                         } else {
-                            if operation == Op_VCTS then {
+                            if kind == Some(VectorUnaryCountTrailingSign) then {
                                 count_from_low(image, 0, bits, bitone)
                             } else {
-                                if operation == Op_VPOPCNT then {
+                                if kind == Some(VectorUnaryPopulationCount) then {
                                     bit_count_from(image, 0, bits)
                                 } else {
-                                    if operation == Op_VREVBYTE then {
+                                    if kind == Some(VectorUnaryReverseBytes) then {
                                         unsigned(reverse_bytes(image, element_bytes))
                                     } else {
                                         0
@@ -577,17 +710,6 @@ function vector_integer_unary_source_image(
         )
     }
 
-function vector_shift_operation(operation : Semantic_operation) -> Semantic_operation =
-    if operation == Op_VSHL then {
-        Op_SHL
-    } else {
-        if operation == Op_VSHR then {
-            Op_SHR
-        } else {
-            if operation == Op_VSAR then { Op_SAR } else { if operation == Op_VROL then { Op_ROL } else { Op_ROR } }
-        }
-    }
-
 function vector_shift_image(
     operation : Semantic_operation,
     destination : list(bits(8)),
@@ -610,7 +732,11 @@ function vector_shift_image(
                 scalar_count
             };
         let old = get_slice_int(64, vector_lane_unsigned(destination, lane, element_bytes), 0);
-        let shifted = shift_result(vector_shift_operation(operation), old, get_slice_int(64, count, 0), element_bytes);
+        let shift : Shift_kind = match vector_semantics(operation).shift {
+            Some(shift) => shift,
+            None() => ShiftLeft,
+        };
+        let shifted = shift_result(shift, old, get_slice_int(64, count, 0), element_bytes);
         vector_shift_image(
             operation,
             if predicate_bit(predicate, lane * element_bytes)
@@ -693,10 +819,11 @@ function vector_integer_compare_image(
         let selected = if not_bool(predicate_bit(govern, lane * element_bytes)) then {
                 false
             } else {
-                if operation == Op_VCMPcc then {
+                let kind = vector_semantics(operation).integer_compare;
+                if kind == Some(VectorCompareCondition) then {
                     vector_integer_condition(condition, lhs, rhs, element_bytes)
                 } else {
-                    if operation == Op_VTESTZ then {
+                    if kind == Some(VectorTestZero) then {
                         unsigned(bits_from_int(lhs) & bits_from_int(rhs)) == 0
                     } else {
                         unsigned(bits_from_int(lhs) & bits_from_int(rhs)) != 0
@@ -717,15 +844,7 @@ function vector_integer_compare_image(
     }
 
 function vector_width_change_destination_bytes(operation : Semantic_operation) -> int =
-    if operation == Op_VEXTZW | operation == Op_VEXTSW | operation == Op_VTRUNCW then {
-        2
-    } else {
-        if operation == Op_VEXTZL | operation == Op_VEXTSL | operation == Op_VTRUNCL then {
-            4
-        } else {
-            if operation == Op_VEXTZQ | operation == Op_VEXTSQ then { 8 } else { 1 }
-        }
-    }
+    vector_semantics(operation).width_change_destination_bytes
 
 function vector_write_at_base(
     image : list(bits(8)),
@@ -767,7 +886,7 @@ function vector_width_change_image(
     } else {
         let base = container * (if source_bytes > destination_bytes then source_bytes else destination_bytes);
         let source_value = vector_lane_unsigned_loop(source, base, source_bytes, 1, 0);
-        let result = if operation == Op_VEXTSW | operation == Op_VEXTSL | operation == Op_VEXTSQ then {
+        let result = if vector_semantics(operation).width_change == Some(VectorExtendSigned) then {
                 vector_normalized(vector_signed_lane(source_value, source_bytes), width_modulus(destination_bytes))
             } else {
                 source_value
@@ -796,8 +915,9 @@ function vector_permute_value(
     count : int,
 ) -> (
     int
-) =
-    if operation == Op_VPERM then {
+) = {
+    let kind = vector_semantics(operation).permute;
+    if kind == Some(VectorPermuteIndexed) then {
         let index = vector_lane_unsigned(source, lane, element_bytes);
         if index < lanes then {
             vector_lane_unsigned(destination, index, element_bytes)
@@ -805,21 +925,21 @@ function vector_permute_value(
             0
         }
     } else {
-        if operation == Op_VSLIDEUP then {
+        if kind == Some(VectorSlideUp) then {
             if lane >= count then {
                 vector_lane_unsigned(destination, lane - count, element_bytes)
             } else {
                 0
             }
         } else {
-            if operation == Op_VSLIDEDN then {
+            if kind == Some(VectorSlideDown) then {
                 if lane + count < lanes then {
                     vector_lane_unsigned(destination, lane + count, element_bytes)
                 } else {
                     0
                 }
             } else {
-                if operation == Op_VSLICE then {
+                if kind == Some(VectorSlice) then {
                     let index = lane + count;
                     if index < lanes then {
                         vector_lane_unsigned(destination, index, element_bytes)
@@ -831,8 +951,8 @@ function vector_permute_value(
                         }
                     }
                 } else {
-                    if operation == Op_VZIPLO | operation == Op_VZIPHI then {
-                        let base = if operation == Op_VZIPHI then {
+                    if kind == Some(VectorZipLow) | kind == Some(VectorZipHigh) then {
+                        let base = if kind == Some(VectorZipHigh) then {
                                 tdiv_int(lanes, 2)
                             } else {
                                 0
@@ -844,15 +964,15 @@ function vector_permute_value(
                             vector_lane_unsigned(source, index, element_bytes)
                         }
                     } else {
-                        if operation == Op_VUZIPLO | operation == Op_VUZIPHI then {
-                            let parity = if operation == Op_VUZIPHI then { 1 } else { 0 };
+                        if kind == Some(VectorUnzipLow) | kind == Some(VectorUnzipHigh) then {
+                            let parity = if kind == Some(VectorUnzipHigh) then { 1 } else { 0 };
                             if lane < tdiv_int(lanes, 2) then {
                                 vector_lane_unsigned(destination, 2 * lane + parity, element_bytes)
                             } else {
                                 vector_lane_unsigned(source, 2 * (lane - tdiv_int(lanes, 2)) + parity, element_bytes)
                             }
                         } else {
-                            let parity = if operation == Op_VTRNHI then { 1 } else { 0 };
+                            let parity = if kind == Some(VectorTransposeHigh) then { 1 } else { 0 };
                             let index = 2 * tdiv_int(lane, 2) + parity;
                             if tmod_int(lane, 2) == 0 then {
                                 vector_lane_unsigned(destination, index, element_bytes)
@@ -865,6 +985,7 @@ function vector_permute_value(
             }
         }
     }
+}
 
 function vector_permute_image(
     operation : Semantic_operation,
@@ -911,9 +1032,10 @@ function predicate_pair_lane(
     element_bytes : int,
 ) -> (
     bool
-) =
-    if operation == Op_PZIPLO | operation == Op_PZIPHI then {
-        let base = if operation == Op_PZIPHI then {
+) = {
+    let kind = vector_semantics(operation).predicate_pair;
+    if kind == Some(PredicateZipLow) | kind == Some(PredicateZipHigh) then {
+        let base = if kind == Some(PredicateZipHigh) then {
                 tdiv_int(lanes, 2)
             } else {
                 0
@@ -925,15 +1047,15 @@ function predicate_pair_lane(
             predicate_bit(right, source_lane * element_bytes)
         }
     } else {
-        if operation == Op_PUZIPLO | operation == Op_PUZIPHI then {
-            let parity = if operation == Op_PUZIPHI then { 1 } else { 0 };
+        if kind == Some(PredicateUnzipLow) | kind == Some(PredicateUnzipHigh) then {
+            let parity = if kind == Some(PredicateUnzipHigh) then { 1 } else { 0 };
             if output_lane < tdiv_int(lanes, 2) then {
                 predicate_bit(left, (2 * output_lane + parity) * element_bytes)
             } else {
                 predicate_bit(right, (2 * (output_lane - tdiv_int(lanes, 2)) + parity) * element_bytes)
             }
         } else {
-            let parity = if operation == Op_PTRNHI then { 1 } else { 0 };
+            let parity = if kind == Some(PredicateTransposeHigh) then { 1 } else { 0 };
             let source_lane = 2 * tdiv_int(output_lane, 2) + parity;
             if tmod_int(output_lane, 2) == 0 then {
                 predicate_bit(left, source_lane * element_bytes)
@@ -942,6 +1064,7 @@ function predicate_pair_lane(
             }
         }
     }
+}
 
 function predicate_pair_image(
     operation : Semantic_operation,
@@ -1064,14 +1187,15 @@ function predicate_slide_image(
     if lane >= lanes then {
         image
     } else {
-        let selected = if operation == Op_PSLIDEUP then {
+        let kind = vector_semantics(operation).predicate_slide;
+        let selected = if kind == Some(PredicateSlideUp) then {
                 if lane >= count then {
                     predicate_bit(destination, (lane - count) * element_bytes)
                 } else {
                     false
                 }
             } else {
-                if operation == Op_PSLIDEDN then {
+                if kind == Some(PredicateSlideDown) then {
                     if lane + count < lanes then {
                         predicate_bit(destination, (lane + count) * element_bytes)
                     } else {
@@ -1185,90 +1309,13 @@ function vector_memory_predicate(instruction : Decoded_instruction, state : Cpu_
     }
 
 function vector_fp_basic_operation(operation : Semantic_operation) -> bool =
-       operation
-    == Op_VADD
-    |  operation
-    == Op_VSUB
-    |  operation
-    == Op_VMUL
-    |  operation
-    == Op_VNEG
-    |  operation
-    == Op_VABS
-    |  operation
-    == Op_VMIN
-    |  operation
-    == Op_VMAX
-    |  operation
-    == Op_VDIV
-    |  operation
-    == Op_VMADD
-    |  operation
-    == Op_VMSUB
-    |  operation
-    == Op_VNMADD
-    |  operation
-    == Op_VNMSUB
-    |  operation
-    == Op_VSQRT
-    |  operation
-    == Op_VCOPYSIGN
-    |  operation
-    == Op_VROUND
-    |  operation
-    == Op_VTRUNC
-    |  operation
-    == Op_VFLOOR
-    |  operation
-    == Op_VCEIL
-    |  operation
-    == Op_VCLASS
-    |  operation
-    == Op_VCMPcc
+    vector_semantics(operation).fp_basic
 
 function vector_fp_convert_operation(operation : Semantic_operation) -> bool =
-       operation
-    == Op_VCVTH
-    |  operation
-    == Op_VCVTUH
-    |  operation
-    == Op_VCVTS
-    |  operation
-    == Op_VCVTUS
-    |  operation
-    == Op_VCVTD
-    |  operation
-    == Op_VCVTUD
-    |  operation
-    == Op_VCVTL
-    |  operation
-    == Op_VCVTUL
-    |  operation
-    == Op_VCVTQ
-    |  operation
-    == Op_VCVTUQ
+    vector_semantics(operation).fp_conversion
 
 function vector_reduce_operation(operation : Semantic_operation) -> bool =
-       operation
-    == Op_VREDADD
-    |  operation
-    == Op_VREDMINS
-    |  operation
-    == Op_VREDMINU
-    |  operation
-    == Op_VREDMAXS
-    |  operation
-    == Op_VREDMAXU
-    |  operation
-    == Op_VREDAND
-    |  operation
-    == Op_VREDOR
-    |  operation
-    == Op_VREDXOR
-    |  operation
-    == Op_VREDMIN
-    |  operation
-    == Op_VREDMAX
+    vector_semantics(operation).reduction
 
 function vector_fp_compute_operation(operation : Semantic_operation) -> bool =
     vector_fp_basic_operation(operation) | vector_fp_convert_operation(operation) | vector_reduce_operation(operation)
@@ -1284,64 +1331,7 @@ function vector_writable_operand(operands : list(Decoded_operand)) -> option(Dec
     }
 
 function vector_fp_allowed_causes(operation : Semantic_operation) -> bits(5) =
-    if    operation
-       == Op_VNEG
-       |  operation
-       == Op_VABS
-       |  operation
-       == Op_VCOPYSIGN
-       |  operation
-       == Op_VCLASS
-       |  operation
-       == Op_VDUP
-       |  operation
-       == Op_VEXTRACT
-       |  operation
-       == Op_VINSERT
-       |  operation
-       == Op_VREDAND
-       |  operation
-       == Op_VREDOR
-       |  operation
-       == Op_VREDXOR
-       |  operation
-       == Op_VREDMINS
-       |  operation
-       == Op_VREDMINU
-       |  operation
-       == Op_VREDMAXS
-       |  operation
-       == Op_VREDMAXU then {
-        fflags_none
-    } else {
-        if    operation
-           == Op_VMIN
-           |  operation
-           == Op_VMAX
-           |  operation
-           == Op_VCMPcc
-           |  operation
-           == Op_VREDMIN
-           |  operation
-           == Op_VREDMAX then {
-            fflags_nv
-        } else {
-            if    operation
-               == Op_VROUND
-               |  operation
-               == Op_VTRUNC
-               |  operation
-               == Op_VFLOOR
-               |  operation
-               == Op_VCEIL
-               |  operation
-               == Op_VSQRT then {
-                fflags_nv | fflags_nx
-            } else {
-                if operation == Op_VDIV then { fflags_all } else { 0b10111 }
-            }
-        }
-    }
+    vector_semantics(operation).fp_allowed_causes
 
 struct Vector_fp_reduction = {
   value : bits(64),
@@ -1354,17 +1344,12 @@ struct Vector_fp_image = {
 }
 
 function vector_fp_reduction_operation(operation : Semantic_operation) -> bool =
-    operation == Op_VREDADD | operation == Op_VREDMIN | operation == Op_VREDMAX
+    vector_semantics(operation).fp_reduction_operation != None()
 
 function vector_fp_reduction_scalar_operation(operation : Semantic_operation) -> Semantic_operation =
-    if operation == Op_VREDADD then {
-        fp_arithmetic_semantic_operation(FpArithmeticAdd)
-    } else {
-        if operation == Op_VREDMIN then {
-            fp_compare_semantic_operation(FpCompareMinimum)
-        } else {
-            fp_compare_semantic_operation(FpCompareMaximum)
-        }
+    match vector_semantics(operation).fp_reduction_operation {
+        Some(scalar_operation) => scalar_operation,
+        None() => operation,
     }
 
 function vector_fp_value_kind(element_bytes : int) -> bits(8) =
@@ -1373,11 +1358,12 @@ function vector_fp_value_kind(element_bytes : int) -> bits(8) =
 function vector_fp_result_kind(element_bytes : int) -> bits(8) =
     if element_bytes == 8 then { 0x02 } else { 0x01 }
 
-function vector_fp_reduction_identity(operation : Semantic_operation, element_bytes : int) -> bits(64) =
-    if operation == Op_VREDADD then {
+function vector_fp_reduction_identity(operation : Semantic_operation, element_bytes : int) -> bits(64) = {
+    let identity = vector_semantics(operation).fp_reduction_identity;
+    if identity == VectorFpReductionZero then {
         0x0000000000000000
     } else {
-        if operation == Op_VREDMIN then {
+        if identity == VectorFpReductionPositiveInfinity then {
             if element_bytes == 2 then {
                 0x0000000000007C00
             } else {
@@ -1391,6 +1377,7 @@ function vector_fp_reduction_identity(operation : Semantic_operation, element_by
             }
         }
     }
+}
 
 function vector_fp_reduce_lanes(
     operation : Semantic_operation,
@@ -1504,98 +1491,16 @@ function vector_fp_reduction_commit(
 }
 
 function vector_fp_scalar_operation(operation : Semantic_operation) -> Semantic_operation =
-    if operation == Op_VADD then {
-        fp_arithmetic_semantic_operation(FpArithmeticAdd)
-    } else {
-        if operation == Op_VSUB then {
-            fp_arithmetic_semantic_operation(FpArithmeticSubtract)
-        } else {
-            if operation == Op_VMUL then {
-                fp_arithmetic_semantic_operation(FpArithmeticMultiply)
-            } else {
-                if operation == Op_VDIV then {
-                    fp_arithmetic_semantic_operation(FpArithmeticDivide)
-                } else {
-                    if operation == Op_VMIN then {
-                        fp_compare_semantic_operation(FpCompareMinimum)
-                    } else {
-                        if operation == Op_VMAX then {
-                            fp_compare_semantic_operation(FpCompareMaximum)
-                        } else {
-                            if operation == Op_VMADD then {
-                                fp_arithmetic_semantic_operation(FpArithmeticFusedMultiplyAdd)
-                            } else {
-                                if operation == Op_VMSUB then {
-                                    fp_arithmetic_semantic_operation(FpArithmeticFusedMultiplySubtract)
-                                } else {
-                                    if operation == Op_VNMADD then {
-                                        fp_arithmetic_semantic_operation(FpArithmeticFusedNegatedMultiplyAdd)
-                                    } else {
-                                        if operation == Op_VNMSUB then {
-                                            fp_arithmetic_semantic_operation(FpArithmeticFusedNegatedMultiplySubtract)
-                                        } else {
-                                            if operation == Op_VSQRT then {
-                                                fp_arithmetic_semantic_operation(FpArithmeticSquareRoot)
-                                            } else {
-                                                if operation == Op_VROUND then {
-                                                    fp_conversion_semantic_operation(FpConvertRound)
-                                                } else {
-                                                    if operation == Op_VTRUNC then {
-                                                        fp_conversion_semantic_operation(FpConvertTruncate)
-                                                    } else {
-                                                        if operation == Op_VFLOOR then {
-                                                            fp_conversion_semantic_operation(FpConvertFloor)
-                                                        } else {
-                                                            fp_conversion_semantic_operation(FpConvertCeiling)
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+    match vector_semantics(operation).fp_scalar_operation {
+        Some(scalar_operation) => scalar_operation,
+        None() => operation,
     }
 
 function vector_fp_primitive_operation(operation : Semantic_operation) -> bool =
-       operation
-    == Op_VADD
-    |  operation
-    == Op_VSUB
-    |  operation
-    == Op_VMUL
-    |  operation
-    == Op_VDIV
-    |  operation
-    == Op_VMIN
-    |  operation
-    == Op_VMAX
-    |  operation
-    == Op_VMADD
-    |  operation
-    == Op_VMSUB
-    |  operation
-    == Op_VNMADD
-    |  operation
-    == Op_VNMSUB
-    |  operation
-    == Op_VSQRT
-    |  operation
-    == Op_VROUND
-    |  operation
-    == Op_VTRUNC
-    |  operation
-    == Op_VFLOOR
-    |  operation
-    == Op_VCEIL
+    vector_semantics(operation).fp_primitive
 
 function vector_fp_exact_operation(operation : Semantic_operation) -> bool =
-    operation == Op_VNEG | operation == Op_VABS | operation == Op_VCOPYSIGN | operation == Op_VCLASS
+    vector_semantics(operation).fp_exact != None()
 
 function vector_fp_lane_exact(
     operation : Semantic_operation,
@@ -1605,14 +1510,15 @@ function vector_fp_lane_exact(
     source_present : bool,
 ) -> (
     option(bits(64))
-) =
-    if operation == Op_VNEG then {
+) = {
+    let kind = vector_semantics(operation).fp_exact;
+    if kind == Some(VectorFpNegate) then {
         fp_exact_arithmetic(FpArithmeticNegate, if source_present then source else destination, element_bytes)
     } else {
-        if operation == Op_VABS then {
+        if kind == Some(VectorFpAbsolute) then {
             fp_exact_arithmetic(FpArithmeticAbsolute, if source_present then source else destination, element_bytes)
         } else {
-            if operation == Op_VCOPYSIGN then {
+            if kind == Some(VectorFpCopySign) then {
                 fp_exact_data(FpDataCopySign, source, destination, element_bytes)
             } else {
                 fp_exact_data(
@@ -1624,6 +1530,7 @@ function vector_fp_lane_exact(
             }
         }
     }
+}
 
 function vector_fp_arithmetic_lanes(
     operation : Semantic_operation,
@@ -1686,24 +1593,9 @@ function vector_fp_arithmetic_lanes(
                     ),
                 }
             } else {
-                let fused =    operation
-                            == Op_VMADD
-                            |  operation
-                            == Op_VMSUB
-                            |  operation
-                            == Op_VNMADD
-                            |  operation
-                            == Op_VNMSUB;
-                let unary =    operation
-                            == Op_VSQRT
-                            |  operation
-                            == Op_VROUND
-                            |  operation
-                            == Op_VTRUNC
-                            |  operation
-                            == Op_VFLOOR
-                            |  operation
-                            == Op_VCEIL;
+                let arity = vector_semantics(operation).fp_arity;
+                let fused = arity == 3;
+                let unary = arity == 1;
                 match fp_primitive_evaluate(
                     vector_fp_scalar_operation(operation),
                     element_bytes,
@@ -1846,29 +1738,10 @@ function vector_fp_compare_lanes(
     }
 
 function vector_fp_conversion_destination_bytes(operation : Semantic_operation) -> int =
-    if operation == Op_VCVTH | operation == Op_VCVTUH then {
-        2
-    } else {
-        if operation == Op_VCVTS | operation == Op_VCVTUS | operation == Op_VCVTL | operation == Op_VCVTUL then {
-            4
-        } else {
-            8
-        }
-    }
+    vector_semantics(operation).fp_conversion_destination_bytes
 
 function vector_fp_conversion_destination_fp(operation : Semantic_operation) -> bool =
-       operation
-    == Op_VCVTH
-    |  operation
-    == Op_VCVTUH
-    |  operation
-    == Op_VCVTS
-    |  operation
-    == Op_VCVTUS
-    |  operation
-    == Op_VCVTD
-    |  operation
-    == Op_VCVTUD
+    vector_semantics(operation).fp_conversion_destination_fp
 
 function vector_fp_conversion_source_kind(
     instruction : Decoded_instruction,
@@ -1927,16 +1800,7 @@ function vector_fp_conversion_lanes(
                 generated_causes,
             )
         } else {
-            let conversion = if    instruction.form.operation
-                                == Op_VCVTUH
-                                |  instruction.form.operation
-                                == Op_VCVTUS
-                                |  instruction.form.operation
-                                == Op_VCVTUD
-                                |  instruction.form.operation
-                                == Op_VCVTUL
-                                |  instruction.form.operation
-                                == Op_VCVTUQ then {
+            let conversion = if vector_semantics(instruction.form.operation).fp_conversion_unsigned then {
                     FpConvertUnsigned
                 } else {
                     FpConvertSigned
@@ -2064,7 +1928,7 @@ function vector_fp_evaluate_image(
         Some(image) => Some(image),
         None() => vector_fp_named_image(instruction, state, memory, Operand_src),
     };
-    if operation == Op_VCMPcc then {
+    if vector_semantics(operation).fp_compare then {
         match (vector_fp_named_image(instruction, state, memory, Operand_lhs), compare_right) {
             (Some(left), Some(right)) => {
                 let condition : int = match operand_named(instruction, Operand_cc) {
@@ -2158,7 +2022,7 @@ function vector_fp_evaluate_image(
     }
 }
 
-function execute_vector_fp_register(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) =
+function vector_fp_register_execute(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) =
     if not_bool(
         vector_fp_basic_operation(instruction.form.operation) | vector_fp_convert_operation(instruction.form.operation),
     ) then {
@@ -2174,16 +2038,16 @@ function execute_vector_fp_register(instruction : Decoded_instruction, state : C
 
 union clause Uop_kind = UopVectorFp : Semantic_operation
 
-val execute_vector_fp_uop : (
+val vector_fp_uop_execute : (
         Semantic_operation,
-        Micro_operation,
+        Uop,
         list(Uop_value),
         Decoded_instruction,
         Cpu_state,
         Cpu_state,
     ) -> Uop_step
 
-function vector_local_result_uop_step(
+function vector_uop_step_from_local_result(
     result : Execution_result,
     instruction : Decoded_instruction,
     before : Cpu_state,
@@ -2192,10 +2056,58 @@ function vector_local_result_uop_step(
 ) -> (
     Uop_step
 ) =
-    uop_local_result_step(result, speculative, values)
+    uop_step_from_local_result(result, speculative, values)
+
+union clause Uop_kind = UopVectorBranchGuard : Vector_branch_uop_operation
+union clause Uop_kind = UopVectorLoopGuard : unit
+
+function clause execute_uop(UopVectorBranchGuard(operation), _, values, instruction, before, speculative) =
+    match predicate_register_index(instruction, Operand_predicate) {
+        None() => uop_step_fault(faulted(before, instruction.form.operation, IllegalInstruction,
+                                    "vector branch predicate is unavailable")),
+        Some(source) => {
+            let element_bytes = operation_width(instruction);
+            let lanes = tdiv_int(speculative.vector_length_bytes, element_bytes);
+            let predicate = speculative.predicate_registers[unsigned(source)];
+            let take = if operation == VectorBranchAny then predicate_any(predicate)
+                       else if operation == VectorBranchNone then not_bool(predicate_any(predicate))
+                       else predicate_all_typed(predicate, 0, lanes, element_bytes);
+            if take then uop_step_continue(speculative, values) else uop_step_complete(speculative, CommitControl)
+        },
+    }
+
+function clause execute_uop(UopVectorLoopGuard(), _, values, instruction, before, speculative) =
+    match (operand_named(instruction, Operand_remaining), operand_named(instruction, Operand_offset),
+           predicate_register_index(instruction, Operand_predicate)) {
+        (Some(remaining_operand), Some(offset_operand), Some(predicate)) => {
+            let remaining_index = unsigned(remaining_operand.value[3 .. 0]);
+            let offset_index = unsigned(offset_operand.value[3 .. 0]);
+            let remaining = unsigned(speculative.registers[remaining_index]);
+            let offset = unsigned(speculative.registers[offset_index]);
+            let element_bytes = operation_width(instruction);
+            let lanes = tdiv_int(speculative.vector_length_bytes, element_bytes);
+            if remaining == 0 then uop_step_continue(speculative, values)
+            else if offset >= lanes then uop_step_fault(faulted_with_error_code(
+                before, instruction.form.operation, VectorRangeFault,
+                "PLOOP offset exceeds the lane count", 0x0000000000000000))
+            else {
+                let active = if remaining < lanes - offset then remaining else lanes - offset;
+                var updated = speculative;
+                updated.predicate_registers[unsigned(predicate)] = predicate_fill_typed(
+                    zero_vector_bytes(tdiv_int(speculative.vector_length_bytes, 8)),
+                    0, lanes, element_bytes, offset, offset + active);
+                updated.registers[remaining_index] = get_slice_int(64, remaining - active, 0);
+                updated.registers[offset_index] = 0x0000000000000000;
+                updated.vector_component_modified = true;
+                uop_step_complete(updated, CommitRegisters)
+            }
+        },
+        _ => uop_step_fault(faulted(before, instruction.form.operation, IllegalInstruction,
+                               "PLOOP operands are unavailable")),
+    }
 
 function clause execute_uop(UopVectorFp(operation), uop, values, instruction, before, speculative) =
-    execute_vector_fp_uop(operation, uop, values, instruction, before, speculative)
+    vector_fp_uop_execute(operation, uop, values, instruction, before, speculative)
 
 function vector_memory_operand(operands : list(Decoded_operand)) -> option(Decoded_operand) =
     match operands {
@@ -2218,7 +2130,8 @@ function vector_memory_request(
 ) -> (
     Primitive_request
 ) = {
-    let length = if instruction.form.operation == Op_PMOV then {
+    let predicate_move = vector_semantics(instruction.form.operation).memory == Some(VectorPredicateMove);
+    let length = if predicate_move then {
             tdiv_int(state.vector_length_bytes, 8)
         } else {
             state.vector_length_bytes
@@ -2269,9 +2182,9 @@ val vector_response_length : (Decoded_instruction, Cpu_state) -> int
 val vector_memory_source_result : (Decoded_instruction, Cpu_state, Cpu_state, list(bits(8))) -> option(Cpu_state)
 val vector_memory_destination_result : (Decoded_instruction, Cpu_state, list(bits(8))) -> option(list(bits(8)))
 
-function vector_uop_address_value(evaluation : Ea_evaluation) -> Uop_value =
+function vector_uop_value_from_address(evaluation : Ea_evaluation) -> Uop_value =
     {
-        empty_uop_value() with
+        uop_value_empty() with
         address = true,
         segment = evaluation.segment,
         segment_image = evaluation.segment_image,
@@ -2280,7 +2193,7 @@ function vector_uop_address_value(evaluation : Ea_evaluation) -> Uop_value =
         domain = request_domain_for_operand(evaluation.domain),
     }
 
-function vector_uop_memory_request(
+function vector_uop_memory_request_make(
     kind : Primitive_request_kind,
     instruction : Decoded_instruction,
     state : Cpu_state,
@@ -2290,12 +2203,13 @@ function vector_uop_memory_request(
 ) -> (
     Primitive_request
 ) = {
-    let element_bytes = if instruction.form.operation == Op_PMOV then {
+    let predicate_move = vector_semantics(instruction.form.operation).memory == Some(VectorPredicateMove);
+    let element_bytes = if predicate_move then {
             tdiv_int(state.vector_length_bytes, 8)
         } else {
             operation_width(instruction)
         };
-    let length = if instruction.form.operation == Op_PMOV then {
+    let length = if predicate_move then {
             tdiv_int(state.vector_length_bytes, 8)
         } else {
             state.vector_length_bytes
@@ -2334,9 +2248,9 @@ function vector_uop_memory_request(
 
 function clause execute_uop(UopVectorCalcEa(), uop, values, instruction, before, speculative) =
     match vector_memory_operand(instruction.operands) {
-        None() => uop_continue(speculative, values),
+        None() => uop_step_continue(speculative, values),
         Some(memory_operand) => {
-            let evaluated = if instruction.form.operation == Op_PMOV then {
+            let evaluated = if vector_semantics(instruction.form.operation).memory == Some(VectorPredicateMove) then {
                     match memory_operand.ea {
                         None() => None(),
                         Some(ea) => Some(
@@ -2358,11 +2272,11 @@ function clause execute_uop(UopVectorCalcEa(), uop, values, instruction, before,
                     )
                 };
             match evaluated {
-                Some((evaluation, evaluated_state)) => uop_continue(
+                Some((evaluation, evaluated_state)) => uop_step_continue(
                     evaluated_state,
-                    uop_value_set(values, uop.destination.index, vector_uop_address_value(evaluation)),
+                    uop_value_set(values, uop.destination.index, vector_uop_value_from_address(evaluation)),
                 ),
-                None() => uop_fault(
+                None() => uop_step_fault(
                     faulted(
                         before,
                         instruction.form.operation,
@@ -2376,7 +2290,7 @@ function clause execute_uop(UopVectorCalcEa(), uop, values, instruction, before,
 
 function clause execute_uop(UopVectorMemoryLoad(), uop, values, instruction, before, speculative) =
     match vector_memory_operand(instruction.operands) {
-        None() => uop_continue(speculative, values),
+        None() => uop_step_continue(speculative, values),
         Some(memory_operand) => {
             let memory_destination = vector_operand_writes(memory_operand.name, instruction.operands);
             let needs_read =   not_bool(memory_destination)
@@ -2384,12 +2298,12 @@ function clause execute_uop(UopVectorMemoryLoad(), uop, values, instruction, bef
                              | vector_integer_binary_operation(instruction.form.operation)
                              | vector_shift_operation_p(instruction.form.operation);
             if not_bool(needs_read) then {
-                uop_continue(speculative, values)
+                uop_step_continue(speculative, values)
             } else {
-                match uop_value_at(values, uop.source0.index) {
-                    Some(address) => uop_wait(
+                match uop_value_get(values, uop.source0.index) {
+                    Some(address) => uop_step_wait(
                         uop.destination.index,
-                        vector_uop_memory_request(
+                        vector_uop_memory_request_make(
                             VectorMemoryRead,
                             instruction,
                             speculative,
@@ -2401,7 +2315,7 @@ function clause execute_uop(UopVectorMemoryLoad(), uop, values, instruction, bef
                         ),
                         0x0000000000000000,
                     ),
-                    None() => uop_fault(
+                    None() => uop_step_fault(
                         faulted(
                             before,
                             instruction.form.operation,
@@ -2416,7 +2330,7 @@ function clause execute_uop(UopVectorMemoryLoad(), uop, values, instruction, bef
 
 function clause execute_uop(UopVectorMemoryCompute(operation), uop, values, instruction, before, speculative) =
     if instruction.form.operation != operation then {
-        uop_fault(
+        uop_step_fault(
             faulted(
                 before,
                 instruction.form.operation,
@@ -2426,29 +2340,30 @@ function clause execute_uop(UopVectorMemoryCompute(operation), uop, values, inst
         )
     } else {
         match vector_memory_operand(instruction.operands) {
-            None() => uop_fault(
+            None() => uop_step_fault(
                 faulted(before, operation, InvalidControlState, "vector memory uop has no memory operand"),
             ),
             Some(memory_operand) => {
                 let memory_destination = vector_operand_writes(memory_operand.name, instruction.operands);
                 if memory_destination then {
                     let computed = if vector_integer_binary_operation(operation) | vector_shift_operation_p(operation) then {
-                            match uop_value_at(values, uop.auxiliary.index) {
+                            match uop_value_get(values, uop.auxiliary.index) {
                                 Some(memory) => vector_memory_destination_result(instruction, before, memory.body_bytes),
                                 None() => None(),
                             }
                         } else {
-                            let predicate = if operation == Op_PMOV then {
+                            let predicate_move = vector_semantics(operation).memory == Some(VectorPredicateMove);
+                            let predicate = if predicate_move then {
                                     [||]
                                 } else {
                                     vector_memory_predicate(instruction, before)
                                 };
-                            let element_bytes = if operation == Op_PMOV then {
+                            let element_bytes = if predicate_move then {
                                     tdiv_int(before.vector_length_bytes, 8)
                                 } else {
                                     operation_width(instruction)
                                 };
-                            let lanes = if operation == Op_PMOV then {
+                            let lanes = if predicate_move then {
                                     1
                                 } else {
                                     tdiv_int(before.vector_length_bytes, element_bytes)
@@ -2456,18 +2371,18 @@ function clause execute_uop(UopVectorMemoryCompute(operation), uop, values, inst
                             vector_memory_direct_store_image(instruction, before, predicate, lanes, element_bytes)
                         };
                     match computed {
-                        Some(output) => uop_continue(
+                        Some(output) => uop_step_continue(
                             speculative,
-                            uop_value_set(values, uop.destination.index, { empty_uop_value() with body_bytes = output }),
+                            uop_value_set(values, uop.destination.index, { uop_value_empty() with body_bytes = output }),
                         ),
-                        None() => uop_fault(
+                        None() => uop_step_fault(
                             faulted(before, operation, IllegalInstruction, "unsupported vector memory destination uop"),
                         ),
                     }
                 } else {
-                    match uop_value_at(values, uop.auxiliary.index) {
+                    match uop_value_get(values, uop.auxiliary.index) {
                         Some(memory) => if byte_count(memory.body_bytes) != vector_response_length(instruction, before) then {
-                            uop_fault(
+                            uop_step_fault(
                                 faulted(
                                     before,
                                     operation,
@@ -2477,8 +2392,8 @@ function clause execute_uop(UopVectorMemoryCompute(operation), uop, values, inst
                             )
                         } else {
                             match vector_memory_source_result(instruction, before, speculative, memory.body_bytes) {
-                                Some(updated) => uop_continue(updated, values),
-                                None() => uop_fault(
+                                Some(updated) => uop_step_continue(updated, values),
+                                None() => uop_step_fault(
                                     faulted(
                                         before,
                                         operation,
@@ -2488,7 +2403,7 @@ function clause execute_uop(UopVectorMemoryCompute(operation), uop, values, inst
                                 ),
                             }
                         },
-                        None() => uop_fault(
+                        None() => uop_step_fault(
                             faulted(before, operation, InvalidControlState, "vector memory response is unavailable"),
                         ),
                     }
@@ -2497,9 +2412,9 @@ function clause execute_uop(UopVectorMemoryCompute(operation), uop, values, inst
         }
     }
 
-function vector_fp_uop_commit_image(
+function vector_fp_uop_image_commit(
     image : Vector_fp_image,
-    uop : Micro_operation,
+    uop : Uop,
     values : list(Uop_value),
     instruction : Decoded_instruction,
     before : Cpu_state,
@@ -2509,13 +2424,13 @@ function vector_fp_uop_commit_image(
 ) = {
     let operation = instruction.form.operation;
     if (image.generated_causes & vector_fp_allowed_causes(operation)) != image.generated_causes then {
-        uop_fault(faulted(before, operation, InvalidControlState, "vector FP primitive reported an impossible cause"))
+        uop_step_fault(faulted(before, operation, InvalidControlState, "vector FP primitive reported an impossible cause"))
     } else {
         if fp_traps(before.fstatus, image.generated_causes) then {
-            uop_fault(fp_fault_with_causes(before, operation, image.generated_causes))
+            uop_step_fault(fp_fault_with_causes(before, operation, image.generated_causes))
         } else {
             match vector_writable_operand(instruction.operands) {
-                None() => uop_fault(faulted(before, operation, InvalidControlState, "missing vector FP destination")),
+                None() => uop_step_fault(faulted(before, operation, InvalidControlState, "missing vector FP destination")),
                 Some(destination) => {
                     var updated = speculative;
                     updated.fflags = updated.fflags | image.generated_causes;
@@ -2525,27 +2440,27 @@ function vector_fp_uop_commit_image(
                     if destination.operand_type == OperandType_Vn then {
                         updated.vector_registers[unsigned(destination.value[4 .. 0])] = image.bytes;
                         updated.vector_component_modified = true;
-                        uop_continue(updated, values)
+                        uop_step_continue(updated, values)
                     } else {
                         if destination.operand_type == OperandType_Pn then {
                             updated.predicate_registers[unsigned(destination.value[3 .. 0])] = image.bytes;
                             updated.vector_component_modified = true;
-                            uop_continue(updated, values)
+                            uop_step_continue(updated, values)
                         } else {
                             if destination.operand_type == OperandType_VEA then {
-                                uop_continue(
+                                uop_step_continue(
                                     updated,
                                     uop_value_set(
                                         values,
                                         uop.destination.index,
                                         {
-                                            empty_uop_value() with
+                                            uop_value_empty() with
                                             body_bytes = image.bytes,
                                         },
                                     ),
                                 )
                             } else {
-                                uop_fault(
+                                uop_step_fault(
                                     faulted(before, operation, InvalidControlState, "unsupported vector FP destination"),
                                 )
                             }
@@ -2557,9 +2472,9 @@ function vector_fp_uop_commit_image(
     }
 }
 
-function execute_vector_fp_uop(
+function vector_fp_uop_execute(
     operation : Semantic_operation,
-    uop : Micro_operation,
+    uop : Uop,
     values : list(Uop_value),
     instruction : Decoded_instruction,
     before : Cpu_state,
@@ -2568,7 +2483,7 @@ function execute_vector_fp_uop(
     Uop_step
 ) =
     if instruction.form.operation != operation then {
-        uop_fault(
+        uop_step_fault(
             faulted(
                 before,
                 instruction.form.operation,
@@ -2580,7 +2495,7 @@ function execute_vector_fp_uop(
         match vector_memory_operand(instruction.operands) {
             None() => if vector_fp_reduction_operation(operation) then {
                 match vector_register_index(instruction, Operand_src) {
-                    Some(source) => vector_local_result_uop_step(
+                    Some(source) => vector_uop_step_from_local_result(
                         vector_fp_reduction_commit(
                             instruction,
                             speculative,
@@ -2592,26 +2507,26 @@ function execute_vector_fp_uop(
                         speculative,
                         values,
                     ),
-                    None() => uop_fault(
+                    None() => uop_step_fault(
                         faulted(before, operation, InvalidControlState, "missing vector FP reduction source"),
                     ),
                 }
             } else {
-                match execute_vector_fp_register(instruction, speculative) {
-                    Some(result) => vector_local_result_uop_step(result, instruction, before, speculative, values),
-                    None() => uop_fault(
+                match vector_fp_register_execute(instruction, speculative) {
+                    Some(result) => vector_uop_step_from_local_result(result, instruction, before, speculative, values),
+                    None() => uop_step_fault(
                         faulted(before, operation, InvalidControlState, "local vector FP evaluation failed"),
                     ),
                 }
             },
-            Some(_) => match uop_value_at(values, uop.auxiliary.index) {
+            Some(_) => match uop_value_get(values, uop.auxiliary.index) {
                 Some(memory_value) => if byte_count(memory_value.body_bytes) != before.vector_length_bytes then {
-                    uop_fault(
+                    uop_step_fault(
                         faulted(before, operation, InvalidControlState, "vector FP memory response length mismatch"),
                     )
                 } else {
                     if vector_fp_reduction_operation(operation) then {
-                        vector_local_result_uop_step(
+                        vector_uop_step_from_local_result(
                             vector_fp_reduction_commit(instruction, before, speculative, memory_value.body_bytes),
                             instruction,
                             before,
@@ -2620,7 +2535,7 @@ function execute_vector_fp_uop(
                         )
                     } else {
                         match vector_fp_evaluate_image(instruction, before, memory_value.body_bytes) {
-                            Some(image) => vector_fp_uop_commit_image(
+                            Some(image) => vector_fp_uop_image_commit(
                                 image,
                                 uop,
                                 values,
@@ -2628,7 +2543,7 @@ function execute_vector_fp_uop(
                                 before,
                                 speculative,
                             ),
-                            None() => uop_fault(
+                            None() => uop_step_fault(
                                 faulted(
                                     before,
                                     operation,
@@ -2639,7 +2554,7 @@ function execute_vector_fp_uop(
                         }
                     }
                 },
-                None() => uop_fault(
+                None() => uop_step_fault(
                     faulted(before, operation, InvalidControlState, "vector FP memory response is unavailable"),
                 ),
             },
@@ -2648,14 +2563,14 @@ function execute_vector_fp_uop(
 
 function clause execute_uop(UopVectorMemoryStore(), uop, values, instruction, before, speculative) =
     match vector_memory_operand(instruction.operands) {
-        None() => uop_continue(speculative, values),
+        None() => uop_step_continue(speculative, values),
         Some(memory_operand) => if not_bool(vector_operand_writes(memory_operand.name, instruction.operands)) then {
-            uop_continue(speculative, values)
+            uop_step_continue(speculative, values)
         } else {
-            match (uop_value_at(values, uop.source0.index), uop_value_at(values, uop.source1.index)) {
-                (Some(address), Some(output)) => uop_wait(
+            match (uop_value_get(values, uop.source0.index), uop_value_get(values, uop.source1.index)) {
+                (Some(address), Some(output)) => uop_step_wait(
                     0 - 1,
-                    vector_uop_memory_request(
+                    vector_uop_memory_request_make(
                         VectorMemoryWrite,
                         instruction,
                         speculative,
@@ -2665,7 +2580,7 @@ function clause execute_uop(UopVectorMemoryStore(), uop, values, instruction, be
                     ),
                     0x0000000000000000,
                 ),
-                _ => uop_fault(
+                _ => uop_step_fault(
                     faulted(
                         before,
                         instruction.form.operation,
@@ -2678,58 +2593,16 @@ function clause execute_uop(UopVectorMemoryStore(), uop, values, instruction, be
     }
 
 function vector_integer_binary_operation(operation : Semantic_operation) -> bool =
-       operation
-    == Op_VADD
-    |  operation
-    == Op_VSUB
-    |  operation
-    == Op_VAND
-    |  operation
-    == Op_VOR
-    |  operation
-    == Op_VXOR
-    |  operation
-    == Op_VMINS
-    |  operation
-    == Op_VMINU
-    |  operation
-    == Op_VMAXS
-    |  operation
-    == Op_VMAXU
-    |  operation
-    == Op_VMUL
-    |  operation
-    == Op_VMULHS
-    |  operation
-    == Op_VMULHU
-    |  operation
-    == Op_VMULHSU
+    vector_semantics(operation).integer_binary != None()
 
 function vector_integer_unary_operation(operation : Semantic_operation) -> bool =
-       operation
-    == Op_VNEG
-    |  operation
-    == Op_VABS
-    |  operation
-    == Op_VNOT
-    |  operation
-    == Op_VCLZ
-    |  operation
-    == Op_VCTZ
-    |  operation
-    == Op_VCLS
-    |  operation
-    == Op_VCTS
-    |  operation
-    == Op_VPOPCNT
-    |  operation
-    == Op_VREVBYTE
+    vector_semantics(operation).integer_unary != None()
 
 function vector_shift_operation_p(operation : Semantic_operation) -> bool =
-    operation == Op_VSHL | operation == Op_VSHR | operation == Op_VSAR | operation == Op_VROL | operation == Op_VROR
+    vector_semantics(operation).shift != None()
 
 function vector_integer_compare_operation(operation : Semantic_operation) -> bool =
-    operation == Op_VCMPcc | operation == Op_VTESTZ | operation == Op_VTESTNZ
+    vector_semantics(operation).integer_compare != None()
 
 function vector_memory_direct_store_image(
     instruction : Decoded_instruction,
@@ -2741,7 +2614,8 @@ function vector_memory_direct_store_image(
     option(list(bits(8)))
 ) = {
     let operation = instruction.form.operation;
-    if operation == Op_PMOV then {
+    let memory_kind = vector_semantics(operation).memory;
+    if memory_kind == Some(VectorPredicateMove) then {
         match predicate_register_index(instruction, Operand_src) {
             Some(index) => Some(state.predicate_registers[unsigned(index)]),
             None() => None(),
@@ -2751,7 +2625,7 @@ function vector_memory_direct_store_image(
             None() => None(),
             Some(index) => {
                 let source = state.vector_registers[unsigned(index)];
-                if operation == Op_VMOV then {
+                if memory_kind == Some(VectorMoveMerge) then {
                     Some(source)
                 } else {
                     if vector_integer_unary_operation(operation) then {
@@ -2775,8 +2649,10 @@ function vector_memory_direct_store_image(
     }
 }
 
-function vector_step_operation(operation : Semantic_operation) -> bool =
-    operation == Op_VGATHER1 | operation == Op_VSCATTER1
+function vector_step_operation(operation : Semantic_operation) -> bool = {
+    let memory_kind = vector_semantics(operation).memory;
+    memory_kind == Some(VectorGatherOne) | memory_kind == Some(VectorScatterOne)
+}
 
 function vector_lane_bytes_loop(image : list(bits(8)), index : int, remaining : int) -> list(bits(8)) =
     if remaining <= 0 then {
@@ -2930,7 +2806,8 @@ function vector_step_request(
     let point = segment_point(segment_image, address);
     let total = unsigned(address) + element_bytes;
     struct {
-        kind = if operation == Op_VGATHER1 then VectorMemoryRead else VectorMemoryWrite,
+        kind =
+            if vector_semantics(operation).memory == Some(VectorGatherOne) then VectorMemoryRead else VectorMemoryWrite,
         ordinal = 0,
         role = RequestRoleValue,
         domain = RequestDomainCurrent,
@@ -2944,7 +2821,7 @@ function vector_step_request(
         range_end_at_modulus = total == 18446744073709551616,
         effective_address = address,
         linear_address = point.linear,
-        access = if operation == Op_VGATHER1 then AccessLoad else AccessStore,
+        access = if vector_semantics(operation).memory == Some(VectorGatherOne) then AccessLoad else AccessStore,
         value = 0x0000000000000000,
         address_translation = true,
         commit_point = true,
@@ -2967,7 +2844,7 @@ union clause Uop_kind = UopVectorStepCommit : Semantic_operation
 
 function clause execute_uop(UopVectorStepPrepare(operation), uop, values, instruction, before, speculative) =
     if instruction.form.operation != operation then {
-        uop_fault(
+        uop_step_fault(
             faulted(
                 before,
                 instruction.form.operation,
@@ -2977,7 +2854,7 @@ function clause execute_uop(UopVectorStepPrepare(operation), uop, values, instru
         )
     } else {
         if vector_step_overlap_conflict(instruction) then {
-            uop_fault(faulted(before, operation, IllegalInstruction, "vector step cursor overlaps its base or stride"))
+            uop_step_fault(faulted(before, operation, IllegalInstruction, "vector step cursor overlaps its base or stride"))
         } else {
             match (
                 vector_step_register_index(instruction, Operand_cursor),
@@ -2988,7 +2865,7 @@ function clause execute_uop(UopVectorStepPrepare(operation), uop, values, instru
                     let lane = unsigned(speculative.registers[unsigned(cursor)]);
                     let lanes = tdiv_int(speculative.vector_length_bytes, element_bytes);
                     if lane >= lanes then {
-                        uop_fault(
+                        uop_step_fault(
                             faulted_with_error_code(
                                 before,
                                 operation,
@@ -3007,13 +2884,13 @@ function clause execute_uop(UopVectorStepPrepare(operation), uop, values, instru
                             speculative.registers[unsigned(cursor)],
                             0x0000000000000001,
                         );
-                        uop_continue(
+                        uop_step_continue(
                             updated,
                             uop_value_set(
                                 values,
                                 uop.destination.index,
                                 {
-                                    empty_uop_value() with
+                                    uop_value_empty() with
                                     value = get_slice_int(64, lane, 0),
                                     present = active,
                                 },
@@ -3021,7 +2898,7 @@ function clause execute_uop(UopVectorStepPrepare(operation), uop, values, instru
                         )
                     }
                 },
-                _ => uop_fault(
+                _ => uop_step_fault(
                     faulted(before, operation, InvalidControlState, "missing vector step cursor or predicate"),
                 ),
             }
@@ -3030,7 +2907,7 @@ function clause execute_uop(UopVectorStepPrepare(operation), uop, values, instru
 
 function clause execute_uop(UopVectorStepIssue(operation), uop, values, instruction, before, speculative) =
     if instruction.form.operation != operation then {
-        uop_fault(
+        uop_step_fault(
             faulted(
                 before,
                 instruction.form.operation,
@@ -3039,18 +2916,18 @@ function clause execute_uop(UopVectorStepIssue(operation), uop, values, instruct
             ),
         )
     } else {
-        match uop_value_at(values, uop.source0.index) {
+        match uop_value_get(values, uop.source0.index) {
             Some(prepared) => if not_bool(prepared.present) then {
-                uop_continue(speculative, values)
+                uop_step_continue(speculative, values)
             } else {
                 let lane = unsigned(prepared.value);
                 let element_bytes = operation_width(instruction);
                 match vector_step_address(instruction, before, lane, element_bytes) {
-                    None() => uop_fault(
+                    None() => uop_step_fault(
                         faulted(before, operation, InvalidControlState, "missing vector step address operand"),
                     ),
                     Some(address) => {
-                        let payload : list(bits(8)) = if operation == Op_VSCATTER1 then {
+                        let payload : list(bits(8)) = if vector_semantics(operation).memory == Some(VectorScatterOne) then {
                                 match vector_register_index(instruction, Operand_src) {
                                     Some(source) => vector_lane_bytes(
                                         before.vector_registers[unsigned(source)],
@@ -3062,7 +2939,7 @@ function clause execute_uop(UopVectorStepIssue(operation), uop, values, instruct
                             } else {
                                 [||]
                             };
-                        uop_wait(
+                        uop_step_wait(
                             uop.destination.index,
                             vector_step_request(instruction, before, address, element_bytes, payload),
                             0x0000000000000000,
@@ -3070,7 +2947,7 @@ function clause execute_uop(UopVectorStepIssue(operation), uop, values, instruct
                     },
                 }
             },
-            None() => uop_fault(
+            None() => uop_step_fault(
                 faulted(before, operation, InvalidControlState, "vector step preparation is unavailable"),
             ),
         }
@@ -3078,7 +2955,7 @@ function clause execute_uop(UopVectorStepIssue(operation), uop, values, instruct
 
 function clause execute_uop(UopVectorStepCommit(operation), uop, values, instruction, before, speculative) =
     if instruction.form.operation != operation then {
-        uop_fault(
+        uop_step_fault(
             faulted(
                 before,
                 instruction.form.operation,
@@ -3087,19 +2964,19 @@ function clause execute_uop(UopVectorStepCommit(operation), uop, values, instruc
             ),
         )
     } else {
-        match uop_value_at(values, uop.source0.index) {
+        match uop_value_get(values, uop.source0.index) {
             Some(prepared) => if not_bool(prepared.present) then {
-                uop_complete(speculative, CommitRegisters)
+                uop_step_complete(speculative, CommitRegisters)
             } else {
-                if operation == Op_VSCATTER1 then {
-                    uop_complete(speculative, CommitMemory)
+                if vector_semantics(operation).memory == Some(VectorScatterOne) then {
+                    uop_step_complete(speculative, CommitMemory)
                 } else {
-                    match (vector_register_index(instruction, Operand_dst), uop_value_at(values, uop.source1.index)) {
+                    match (vector_register_index(instruction, Operand_dst), uop_value_get(values, uop.source1.index)) {
                         (Some(destination), Some(response)) => {
                             let element_bytes = operation_width(instruction);
                             let lane = unsigned(prepared.value);
                             if byte_count(response.body_bytes) != element_bytes then {
-                                uop_fault(
+                                uop_step_fault(
                                     faulted(
                                         before,
                                         operation,
@@ -3116,10 +2993,10 @@ function clause execute_uop(UopVectorStepCommit(operation), uop, values, instruc
                                     vector_lane_unsigned(response.body_bytes, 0, element_bytes),
                                 );
                                 updated.vector_component_modified = true;
-                                uop_complete(updated, CommitMemory)
+                                uop_step_complete(updated, CommitMemory)
                             }
                         },
-                        _ => uop_fault(
+                        _ => uop_step_fault(
                             faulted(
                                 before,
                                 operation,
@@ -3130,22 +3007,24 @@ function clause execute_uop(UopVectorStepCommit(operation), uop, values, instruc
                     }
                 }
             },
-            None() => uop_fault(
+            None() => uop_step_fault(
                 faulted(before, operation, InvalidControlState, "vector step preparation is unavailable"),
             ),
         }
     }
 
-function vector_response_length(instruction : Decoded_instruction, state : Cpu_state) -> int =
-    if instruction.form.operation == Op_PMOV then {
+function vector_response_length(instruction : Decoded_instruction, state : Cpu_state) -> int = {
+    let memory_kind = vector_semantics(instruction.form.operation).memory;
+    if memory_kind == Some(VectorPredicateMove) then {
         tdiv_int(state.vector_length_bytes, 8)
     } else {
-        if instruction.form.operation == Op_VGATHER1 then {
+        if memory_kind == Some(VectorGatherOne) then {
             operation_width(instruction)
         } else {
             state.vector_length_bytes
         }
     }
+}
 
 function vector_memory_source_result(
     instruction : Decoded_instruction,
@@ -3156,7 +3035,8 @@ function vector_memory_source_result(
     option(Cpu_state)
 ) = {
     let operation = instruction.form.operation;
-    if operation == Op_PMOV then {
+    let memory_kind = vector_semantics(operation).memory;
+    if memory_kind == Some(VectorPredicateMove) then {
         match predicate_register_index(instruction, Operand_dst) {
             None() => None(),
             Some(destination) => {
@@ -3170,13 +3050,13 @@ function vector_memory_source_result(
         let element_bytes = operation_width(instruction);
         let lanes = tdiv_int(before.vector_length_bytes, element_bytes);
         let predicate = vector_memory_predicate(instruction, before);
-        if operation == Op_VMOV | operation == Op_VMOVZ then {
+        if memory_kind == Some(VectorMoveMerge) | memory_kind == Some(VectorMoveReplace) then {
             match vector_register_index(instruction, Operand_dst) {
                 None() => None(),
                 Some(destination) => {
                     var updated = after;
                     updated.vector_registers[unsigned(destination)] =
-                        if operation == Op_VMOVZ then {
+                        if memory_kind == Some(VectorMoveReplace) then {
                             memory
                         } else {
                             vector_merge_image(

@@ -35,18 +35,20 @@ function fp_operand_kind_for(
     width : int,
 ) -> (
     Fp_value_kind
-) =
+) = {
+    let conversion_unsigned : option(bool) = match fp_semantics(instruction.form.operation) {
+        Some(semantics) => semantics.conversion_unsigned,
+        None() => None(),
+    };
     if operand.operand_type == OperandType_Fn then {
-        if (instruction.form.operation == Op_FCVT | instruction.form.operation == Op_FCVTU) &
-            fp_destination_is_fn(instruction) then {
+        if conversion_unsigned != None() & fp_destination_is_fn(instruction) then {
             if width == 4 then { FpBits64 } else { FpBits32 }
         } else {
             if width == 4 then { FpBits32 } else { FpBits64 }
         }
     } else {
-        if (instruction.form.operation == Op_FCVT | instruction.form.operation == Op_FCVTU) &
-            fp_destination_is_fn(instruction) then {
-            if instruction.form.operation == Op_FCVTU then { FpUnsigned64 } else { FpSigned64 }
+        if conversion_unsigned != None() & fp_destination_is_fn(instruction) then {
+            if conversion_unsigned == Some(true) then { FpUnsigned64 } else { FpSigned64 }
         } else {
             if operand.operand_type == OperandType_Rn then {
                 FpRaw64
@@ -66,6 +68,7 @@ function fp_operand_kind_for(
             }
         }
     }
+}
 
 function fp_decoded_operand_image(
     instruction : Decoded_instruction,

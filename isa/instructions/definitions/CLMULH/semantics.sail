@@ -1,11 +1,25 @@
+function clause register_result_extension(Op_CLMULH) = RegisterZeroExtend
 
-function execute_CLMULH(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) = {
-    let result : Execution_result = match execute_math_local(instruction, state) {
-        Some(result) => result,
-        None() => match start_memory_transaction(instruction, state) {
-            Some(result) => result,
-            None() => faulted(state, instruction.form.operation, IllegalInstruction, "unresolved multiply/divide form"),
-        },
-    };
-    Some(result)
-}
+function clause repeat_semantics(Op_CLMULH) = RepeatObserveDestination
+
+function lower_CLMULH_uops(instruction : Decoded_instruction) -> option(list(Uop)) =
+  match (operand_named(instruction, Operand_src), operand_named(instruction, Operand_dst)) {
+    (Some(source_operand), Some(destination_operand)) => {
+      let width = operation_width(instruction);
+      let source = uop_operand_lower(source_operand, width, 0, true);
+      let destination = uop_operand_lower(destination_operand, width, source.next_temporary, true);
+      let operation = uop_make(UopIntegerMath(IntegerCarrylessMultiplyHigh), destination.value, source.value,
+        destination.value, Operand_dst, width, CommitRegisters);
+      Some(uop_program_build_operation(
+        uop_program_append(source.program, destination.program), operation, destination.value, destination,
+        Operand_dst, width, source.memory | destination.memory
+      ))
+    }, _ => None(),
+  }
+
+function execute_CLMULH(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) =
+  match lower_CLMULH_uops(instruction) {
+    Some(program) => Some(uop_program_execute(program, instruction, state)),
+    None() => Some(faulted(state, instruction.form.operation, IllegalInstruction,
+                           "CLMULH could not be lowered")),
+  }

@@ -1,32 +1,50 @@
-function uop_none() -> Uop_location = struct { kind = UopLocationNone, index = 0, immediate = 0x0000000000000000 }
+function uop_location_make_none() -> Uop_location = struct { kind = UopLocationNone, index = 0, immediate = 0x0000000000000000 }
 
-function uop_register(index : int) -> Uop_location = struct {
+function uop_location_make_register(index : int) -> Uop_location = struct {
     kind = UopLocationRegister,
     index = index,
     immediate = 0x0000000000000000,
 }
 
-function uop_fp_register(index : int) -> Uop_location = struct {
+function uop_location_make_fp_register(index : int) -> Uop_location = struct {
     kind = UopLocationFpRegister,
     index = index,
     immediate = 0x0000000000000000,
 }
 
-function uop_sp() -> Uop_location = struct { kind = UopLocationSp, index = 0, immediate = 0x0000000000000000 }
+function uop_location_make_sp() -> Uop_location = struct { kind = UopLocationSp, index = 0, immediate = 0x0000000000000000 }
 
-function uop_immediate(value : bits(64)) -> Uop_location = struct {
+function uop_location_make_segment(index : int) -> Uop_location = struct {
+    kind = UopLocationSegment, index = index, immediate = 0x0000000000000000
+}
+
+function uop_segment_write_state(state : Cpu_state, index : int, value : bits(64)) -> Cpu_state = {
+    var updated = state;
+    if index == 0 then updated.segments[0] = value
+    else if index == 1 then updated.segments[1] = value
+    else if index == 2 then updated.segments[2] = value
+    else if index == 3 then updated.segments[3] = value
+    else if index == 4 then updated.segments[4] = value
+    else if index == 5 then updated.segments[5] = value
+    else if index == 6 then updated.segments[6] = value
+    else if index == 7 then updated.segments[7] = value
+    else updated.segments[8] = value;
+    updated
+}
+
+function uop_location_make_immediate(value : bits(64)) -> Uop_location = struct {
     kind = UopLocationImmediate,
     index = 0,
     immediate = value,
 }
 
-function uop_temporary(index : int) -> Uop_location = struct {
+function uop_location_make_temporary(index : int) -> Uop_location = struct {
     kind = UopLocationTemporary,
     index = index,
     immediate = 0x0000000000000000,
 }
 
-function empty_uop_value() -> Uop_value = struct {
+function uop_value_empty() -> Uop_value = struct {
     value = 0x0000000000000000,
     secondary_value = 0x0000000000000000,
     flags = 0x0,
@@ -48,13 +66,13 @@ function empty_uop_value() -> Uop_value = struct {
     domain = RequestDomainCurrent,
 }
 
-function uop_value_at(values : list(Uop_value), index : int) -> option(Uop_value) =
+function uop_value_get(values : list(Uop_value), index : int) -> option(Uop_value) =
     match values {
         [||] => None(),
         value :: tail => if index <= 0 then {
             Some(value)
         } else {
-            uop_value_at(tail, index - 1)
+            uop_value_get(tail, index - 1)
         },
     }
 
@@ -66,7 +84,7 @@ function uop_value_set(values : list(Uop_value), index : int, value : Uop_value)
             [||] => if index == 0 then {
                 [|value|]
             } else {
-                empty_uop_value() :: uop_value_set([||], index - 1, value)
+                uop_value_empty() :: uop_value_set([||], index - 1, value)
             },
             head :: tail => if index == 0 then {
                 value :: tail
@@ -76,13 +94,7 @@ function uop_value_set(values : list(Uop_value), index : int, value : Uop_value)
         }
     }
 
-function append_uops(left : list(Micro_operation), right : list(Micro_operation)) -> list(Micro_operation) =
-    match left {
-        [||] => right,
-        head :: tail => head :: append_uops(tail, right),
-    }
-
-function uop_location_value(location : Uop_location, state : Cpu_state, values : list(Uop_value)) -> option(bits(64)) =
+function uop_location_read(location : Uop_location, state : Cpu_state, values : list(Uop_value)) -> option(bits(64)) =
     if location.kind == UopLocationRegister then {
         Some(state.registers[unsigned(get_slice_int(4, location.index, 0))])
     } else {
@@ -92,11 +104,13 @@ function uop_location_value(location : Uop_location, state : Cpu_state, values :
             if location.kind == UopLocationSp then {
                 Some(state.sp)
             } else {
-                if location.kind == UopLocationImmediate then {
+                if location.kind == UopLocationSegment then {
+                    Some(image_segment(state, location.index))
+                } else if location.kind == UopLocationImmediate then {
                     Some(location.immediate)
                 } else {
                     if location.kind == UopLocationTemporary then {
-                        match uop_value_at(values, location.index) {
+                        match uop_value_get(values, location.index) {
                             Some(value) => Some(value.value),
                             None() => None(),
                         }
@@ -108,7 +122,7 @@ function uop_location_value(location : Uop_location, state : Cpu_state, values :
         }
     }
 
-function uop_write_location(
+function uop_location_write(
     location : Uop_location,
     value : bits(64),
     width : int,
@@ -130,9 +144,13 @@ function uop_write_location(
         if location.kind == UopLocationSp then {
             updated.sp = value;
             Some((updated, values))
+        } else if location.kind == UopLocationSegment then {
+            if segment_image_valid(value) then {
+                Some((uop_segment_write_state(updated, location.index, value), values))
+            } else None()
         } else {
             if location.kind == UopLocationTemporary then {
-                Some((updated, uop_value_set(values, location.index, { empty_uop_value() with value = value })))
+                Some((updated, uop_value_set(values, location.index, { uop_value_empty() with value = value })))
             } else {
                 None()
             }
@@ -140,17 +158,17 @@ function uop_write_location(
     }
 }
 
-function uop_at(program : list(Micro_operation), cursor : int) -> option(Micro_operation) =
+function uop_program_get(program : list(Uop), cursor : int) -> option(Uop) =
     match program {
         [||] => None(),
         operation :: tail => if cursor <= 0 then {
             Some(operation)
         } else {
-            uop_at(tail, cursor - 1)
+            uop_program_get(tail, cursor - 1)
         },
     }
 
-function uop_memory_request(
+function uop_memory_request_make(
     kind : Primitive_request_kind,
     address : Uop_value,
     width : int,
@@ -191,15 +209,14 @@ function uop_memory_request(
         payload_bytes = [||],
     }
 
-function waiting_uop(
-    program : list(Micro_operation),
+function uop_program_make_waiting_result(
+    program : list(Uop),
     cursor : int,
     values : list(Uop_value),
     pending_destination : int,
     instruction : Decoded_instruction,
     before : Cpu_state,
     speculative : Cpu_state,
-    phase : Continuation_phase,
     request : Primitive_request,
     captured : bits(64),
 ) -> (
@@ -211,12 +228,13 @@ function waiting_uop(
             {
                 empty_pending(Some(speculative), instruction.form.operation, CommitMemory) with
                 instruction = Some(instruction),
-                phase = phase,
-                captured_first = captured,
-                uop_program = program,
-                uop_cursor = cursor,
-                uop_values = values,
-                uop_pending_destination = pending_destination,
+                continuation = PendingUop(struct {
+                    program = program,
+                    cursor = cursor,
+                    values = values,
+                    pending_destination = pending_destination,
+                    captured = captured,
+                }),
             },
         request = request,
         effects = [||],
@@ -224,26 +242,33 @@ function waiting_uop(
         awaiting_environment = true,
     }
 
-val run_uop_program : (list(Micro_operation), int, list(Uop_value), Decoded_instruction, Cpu_state, Cpu_state) -> Execution_result
+val uop_program_run : (list(Uop), int, list(Uop_value), Decoded_instruction, Cpu_state, Cpu_state) -> Execution_result
 
-val execute_uop : (Uop_kind, Micro_operation, list(Uop_value), Decoded_instruction, Cpu_state, Cpu_state) -> Uop_step
+val execute_uop : (Uop_kind, Uop, list(Uop_value), Decoded_instruction, Cpu_state, Cpu_state) -> Uop_step
 
 scattered function execute_uop
 
-function uop_continue(state : Cpu_state, values : list(Uop_value)) -> Uop_step =
+function uop_step_continue(state : Cpu_state, values : list(Uop_value)) -> Uop_step =
     UopContinue(struct { state = state, values = values })
 
-function uop_wait(pending_destination : int, request : Primitive_request, captured : bits(64)) -> Uop_step =
+function uop_step_wait(pending_destination : int, request : Primitive_request, captured : bits(64)) -> Uop_step =
     UopWait(struct { pending_destination = pending_destination, request = request, captured = captured })
 
-function uop_complete(state : Cpu_state, commit_kind : Commit_kind) -> Uop_step =
-    UopComplete(struct { state = state, commit_kind = commit_kind })
+function uop_step_complete(state : Cpu_state, commit_kind : Commit_kind) -> Uop_step =
+    UopComplete(struct { state = state, commit_kind = commit_kind, effects = [||], advance_pc = true })
 
-function uop_fault(result : Execution_result) -> Uop_step = UopFault(result)
+function uop_step_complete_control(state : Cpu_state, commit_kind : Commit_kind) -> Uop_step =
+    UopComplete(struct { state = state, commit_kind = commit_kind, effects = [||], advance_pc = false })
 
-function uop_delegate(result : Execution_result) -> Uop_step = UopDelegate(result)
+function uop_step_complete_with_effects(state : Cpu_state, commit_kind : Commit_kind,
+                                   effects : list(Architectural_effect)) -> Uop_step =
+    UopComplete(struct { state = state, commit_kind = commit_kind, effects = effects, advance_pc = true })
 
-function uop_local_result_step(
+function uop_step_fault(result : Execution_result) -> Uop_step = UopFault(result)
+
+function uop_step_delegate(result : Execution_result) -> Uop_step = UopDelegate(result)
+
+function uop_step_from_local_result(
     result : Execution_result,
     speculative : Cpu_state,
     values : list(Uop_value),
@@ -251,19 +276,19 @@ function uop_local_result_step(
     Uop_step
 ) =
     match result.fault {
-        Some(_) => uop_fault(result),
+        Some(_) => uop_step_fault(result),
         None() => if result.awaiting_environment then {
-            uop_delegate(result)
+            uop_step_delegate(result)
         } else {
             var updated = result.state;
             updated.pc = speculative.pc;
-            uop_continue(updated, values)
+            uop_step_continue(updated, values)
         },
     }
 
-function interpret_uop_step(
+function uop_step_interpret(
     step : Uop_step,
-    program : list(Micro_operation),
+    program : list(Uop),
     cursor : int,
     values : list(Uop_value),
     instruction : Decoded_instruction,
@@ -273,8 +298,8 @@ function interpret_uop_step(
     Execution_result
 ) =
     match step {
-        UopContinue(next) => run_uop_program(program, cursor + 1, next.values, instruction, before, next.state),
-        UopWait(wait) => waiting_uop(
+        UopContinue(next) => uop_program_run(program, cursor + 1, next.values, instruction, before, next.state),
+        UopWait(wait) => uop_program_make_waiting_result(
             program,
             cursor + 1,
             values,
@@ -282,17 +307,18 @@ function interpret_uop_step(
             instruction,
             before,
             speculative,
-            PhaseUopWait,
             wait.request,
             wait.captured,
         ),
-        UopComplete(done) => completed(before, advance_pc(done.state, instruction), done.commit_kind, [||]),
+        UopComplete(done) => completed(before,
+            if done.advance_pc then advance_pc(done.state, instruction) else done.state,
+            done.commit_kind, done.effects),
         UopDelegate(result) => result,
         UopFault(result) => result,
     }
 
-function run_uop_program(
-    program : list(Micro_operation),
+function uop_program_run(
+    program : list(Uop),
     cursor : int,
     values : list(Uop_value),
     instruction : Decoded_instruction,
@@ -301,9 +327,9 @@ function run_uop_program(
 ) -> (
     Execution_result
 ) =
-    match uop_at(program, cursor) {
+    match uop_program_get(program, cursor) {
         None() => faulted(before, instruction.form.operation, InvalidControlState, "uop program ended without commit"),
-        Some(uop) => interpret_uop_step(
+        Some(uop) => uop_step_interpret(
             execute_uop(uop.kind, uop, values, instruction, before, speculative),
             program,
             cursor,
@@ -314,16 +340,16 @@ function run_uop_program(
         ),
     }
 
-function execute_uop_program(
-    program : list(Micro_operation),
+function uop_program_execute(
+    program : list(Uop),
     instruction : Decoded_instruction,
     state : Cpu_state,
 ) -> (
     Execution_result
 ) =
-    run_uop_program(program, 0, [||], instruction, state, state)
+    uop_program_run(program, 0, [||], instruction, state, state)
 
-function preserve_uop_parent(next : Execution_result, previous : Execution_result) -> Execution_result =
+function uop_program_preserve_parent(next : Execution_result, previous : Execution_result) -> Execution_result =
     if not_bool(next.awaiting_environment) then {
         next
     } else {
@@ -332,27 +358,19 @@ function preserve_uop_parent(next : Execution_result, previous : Execution_resul
             pending =
                 {
                     next.pending with
-                    repeat_body = previous.pending.repeat_body,
-                    repeat_bytes = previous.pending.repeat_bytes,
-                    repeat_parent_active = previous.pending.repeat_parent_active,
+                    repeat_parent = previous.pending.repeat_parent,
                     boundary_class = previous.pending.boundary_class,
                 },
         }
     }
 
-function resume_uop_phase(previous : Execution_result, response : Transaction_response) -> Execution_result =
-    match previous.pending.instruction {
-        None() => faulted(
-            previous.state,
-            previous.pending.operation,
-            InvalidControlState,
-            "uop continuation has no instruction",
-        ),
-        Some(instruction) => {
-            let values = if previous.pending.uop_pending_destination >= 0 then {
+function uop_program_resume(previous : Execution_result, response : Transaction_response) -> Execution_result =
+    match (previous.pending.instruction, uop_continuation_get(previous.pending)) {
+        (Some(instruction), Some(continuation)) => {
+            let values = if continuation.pending_destination >= 0 then {
                     uop_value_set(
-                        previous.pending.uop_values,
-                        previous.pending.uop_pending_destination,
+                        continuation.values,
+                        continuation.pending_destination,
                         struct {
                             value = response.value,
                             secondary_value = response.secondary_value,
@@ -376,12 +394,12 @@ function resume_uop_phase(previous : Execution_result, response : Transaction_re
                         },
                     )
                 } else {
-                    previous.pending.uop_values
+                    continuation.values
                 };
-            preserve_uop_parent(
-                run_uop_program(
-                    previous.pending.uop_program,
-                    previous.pending.uop_cursor,
+            uop_program_preserve_parent(
+                uop_program_run(
+                    continuation.program,
+                    continuation.cursor,
                     values,
                     instruction,
                     previous.state,
@@ -390,4 +408,10 @@ function resume_uop_phase(previous : Execution_result, response : Transaction_re
                 previous,
             )
         },
+        _ => faulted(
+            previous.state,
+            previous.pending.operation,
+            InvalidControlState,
+            "uop continuation is incomplete",
+        ),
     }

@@ -1,3 +1,9 @@
+function clause register_result_extension(Op_PCOUNT) = RegisterZeroExtend
+
+function clause repeat_semantics(Op_PCOUNT) = RepeatObserveDestination
+
+function clause vector_semantics(Op_PCOUNT) = vector_default_semantics()
+
 function execute_PCOUNT_primitive(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) = {
     let operation = instruction.form.operation;
     let element_bytes = operation_width(instruction);
@@ -11,15 +17,7 @@ function execute_PCOUNT_primitive(instruction : Decoded_instruction, state : Cpu
     if true | true | true then {
         match (predicate_register_index(instruction, Operand_predicate), operand_named(instruction, Operand_dst)) {
             (Some(source), Some(destination)) => {
-                let result = if operation == Op_PCOUNT then {
-                        predicate_count(state.predicate_registers[unsigned(source)], 0, lanes, element_bytes, 0)
-                    } else {
-                        if operation == Op_PFIRST then {
-                            predicate_first(state.predicate_registers[unsigned(source)], 0, lanes, element_bytes)
-                        } else {
-                            predicate_last(state.predicate_registers[unsigned(source)], lanes - 1, element_bytes)
-                        }
-                    };
+                let result = predicate_count(state.predicate_registers[unsigned(source)], 0, lanes, element_bytes, 0);
                 var updated = state;
                 updated.registers[unsigned(destination.value[3 .. 0])] =
                     if result < 0 then {
@@ -40,8 +38,8 @@ union clause Uop_kind = UopInstruction_PCOUNT : unit
 
 function clause execute_uop(UopInstruction_PCOUNT(), _, values, instruction, before, speculative) =
     match execute_PCOUNT_primitive(instruction, speculative) {
-        Some(result) => vector_local_result_uop_step(result, instruction, before, speculative, values),
-        None() => uop_fault(
+        Some(result) => vector_uop_step_from_local_result(result, instruction, before, speculative, values),
+        None() => uop_step_fault(
             faulted(
                 before,
                 instruction.form.operation,
@@ -53,22 +51,22 @@ function clause execute_uop(UopInstruction_PCOUNT(), _, values, instruction, bef
 
 function execute_PCOUNT(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) =
     Some(
-        execute_uop_program(
+        uop_program_execute(
             [|
-                make_uop(
+                uop_make(
                     UopInstruction_PCOUNT(),
-                    uop_none(),
-                    uop_none(),
-                    uop_none(),
+                    uop_location_make_none(),
+                    uop_location_make_none(),
+                    uop_location_make_none(),
                     Operand_dst,
                     operation_width(instruction),
                     CommitRegisters,
                 ),
-                make_uop(
+                uop_make(
                     UopCommit(),
-                    uop_none(),
-                    uop_none(),
-                    uop_none(),
+                    uop_location_make_none(),
+                    uop_location_make_none(),
+                    uop_location_make_none(),
                     Operand_dst,
                     operation_width(instruction),
                     CommitRegisters,

@@ -10,6 +10,7 @@ from engine.generate_ea_diagrams import (
     render_autoupdate_diagrams,
     render_encoding_diagram,
     render_flow_diagram,
+    render_modes,
     render_mode,
 )
 
@@ -150,6 +151,18 @@ class GenerateEADiagramsTest(unittest.TestCase):
             self.assertNotIn("BedrockEAIndexedMemoryFlow", rendered)
             self.assertNotIn("BedrockEABasePostincrementMemoryFlow", rendered)
             self.assertGreater(rendered.count(r"\clearpage"), 22)
+
+    def test_loaded_mode_inventory_renders_without_catalog_reload(self) -> None:
+        modes = (
+            self.load("ea/modes/compact/register/mode.yaml"),
+            self.load("ea/modes/compact/immediate/mode.yaml"),
+        )
+
+        rendered = render_modes(modes)
+
+        self.assertEqual(rendered.count("% Generated from "), 2)
+        self.assertIn("Register memory", rendered)
+        self.assertIn("Integer immediate", rendered)
 
     def test_mode_reserves_space_for_encoding_and_flow_together(self) -> None:
         rendered = render_mode(self.load("ea/modes/compact/immediate/mode.yaml"))

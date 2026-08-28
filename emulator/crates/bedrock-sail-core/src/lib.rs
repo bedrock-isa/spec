@@ -676,6 +676,54 @@ mod tests {
     }
 
     #[test]
+    fn register_integer_alu_operations_execute_through_uops() {
+        for (opcode, expected) in [
+            (0x84, 0x24bd),
+            (0x88, 0x030c),
+            (0x8a, 0x3fcf),
+            (0x8c, 0x3cc3),
+        ] {
+            let mut core = SailCore::new().unwrap();
+            assert_eq!(core.set_register(0, 0x0f0f), SailCoreStatus::Ok);
+            assert_eq!(core.set_register(1, 0x33cc), SailCoreStatus::Ok);
+
+            assert_eq!(core.execute(&[opcode, 0x01]), SailCoreStatus::Ok);
+            assert_eq!(core.register(1), Ok(expected));
+            assert_eq!(core.pc(), Ok(2));
+        }
+    }
+
+    #[test]
+    fn register_integer_unary_operations_execute_through_uops() {
+        for (instruction, expected) in [
+            ([0xa8, 0x51], 0x0000_0000_ffff_f0f0),
+            ([0xa8, 0x21], 0x0000_0000_ffff_f0f1),
+        ] {
+            let mut core = SailCore::new().unwrap();
+            assert_eq!(core.set_register(1, 0x0f0f), SailCoreStatus::Ok);
+
+            assert_eq!(core.execute(&instruction), SailCoreStatus::Ok);
+            assert_eq!(core.register(1), Ok(expected));
+            assert_eq!(core.pc(), Ok(2));
+        }
+    }
+
+    #[test]
+    fn register_compare_and_test_commit_generated_flags() {
+        let mut compare = SailCore::new().unwrap();
+        assert_eq!(compare.set_register(0, 2), SailCoreStatus::Ok);
+        assert_eq!(compare.set_register(1, 1), SailCoreStatus::Ok);
+        assert_eq!(compare.execute(&[0x86, 0x01]), SailCoreStatus::Ok);
+        assert_eq!(compare.state().unwrap().flags, 0x6);
+
+        let mut test = SailCore::new().unwrap();
+        assert_eq!(test.set_register(0, 0x0f), SailCoreStatus::Ok);
+        assert_eq!(test.set_register(1, 0xf0), SailCoreStatus::Ok);
+        assert_eq!(test.execute(&[0x8e, 0x01]), SailCoreStatus::Ok);
+        assert_eq!(test.state().unwrap().flags, 0x8);
+    }
+
+    #[test]
     fn memory_move_resumes_the_uop_program_after_a_load() {
         const REQUEST_MEMORY_READ: i32 = 3;
         const RESPONSE_READ: i32 = 2;

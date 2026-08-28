@@ -51,6 +51,7 @@ class DocumentFragmentPipeline:
     @classmethod
     def default(cls) -> "DocumentFragmentPipeline":
         from .cpuid_reference import CpuidEntityReferenceRenderer
+        from .ea_diagram import EaDiagramFragmentRenderer
         from .event_reference import EventReferenceRenderer
         from .implementation_disclosure import ImplementationDisclosureRenderer
         from .registry_anchor import RegistryAnchorRenderer
@@ -60,6 +61,7 @@ class DocumentFragmentPipeline:
             (
                 CpuidEntityReferenceRenderer(),
                 EncodingTypeReferenceRenderer(),
+                EaDiagramFragmentRenderer(),
                 EventReferenceRenderer(),
                 ImplementationDisclosureRenderer(),
                 RegistryAnchorRenderer(),

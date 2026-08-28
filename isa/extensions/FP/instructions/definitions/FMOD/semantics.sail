@@ -1,22 +1,30 @@
+function clause fp_semantics(Op_FMOD) =
+  Some(fp_info(FpPathR, 2, FpResultFnByFormat, fflags_nv,
+                            fp_flags_none, false, 0))
 
-function lower_FMOD_uops(instruction : Decoded_instruction) -> option(list(Micro_operation)) =
-    match (lower_fp_binary_sources(instruction), operand_named(instruction, Operand_dst)) {
+
+function clause register_result_extension(Op_FMOD) = RegisterZeroExtend
+
+function clause repeat_semantics(Op_FMOD) = RepeatObserveDestination
+
+function lower_FMOD_uops(instruction : Decoded_instruction) -> option(list(Uop)) =
+    match (fp_operands_lower_binary(instruction), operand_named(instruction, Operand_dst)) {
         (Some(sources), Some(destination)) => {
             let width = operation_width(instruction);
             Some(
-                append_uops(
+                uop_program_append(
                     sources.program,
                     [|
-                        make_uop(
+                        uop_make(
                             UopFpOperation(Op_FMOD),
                             sources.source0,
                             sources.source1,
-                            direct_uop_location(destination),
+                            uop_operand_location(destination),
                             Operand_dst,
                             width,
                             CommitRegisters,
                         ),
-                        make_uop(UopCommit(), uop_none(), uop_none(), uop_none(), Operand_dst, width, CommitRegisters),
+                        uop_make(UopCommit(), uop_location_make_none(), uop_location_make_none(), uop_location_make_none(), Operand_dst, width, CommitRegisters),
                     |],
                 ),
             )
@@ -26,7 +34,7 @@ function lower_FMOD_uops(instruction : Decoded_instruction) -> option(list(Micro
 
 function execute_FMOD(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) =
     match lower_FMOD_uops(instruction) {
-        Some(program) => Some(execute_uop_program(program, instruction, state)),
+        Some(program) => Some(uop_program_execute(program, instruction, state)),
         None() => Some(
             faulted(
                 state,

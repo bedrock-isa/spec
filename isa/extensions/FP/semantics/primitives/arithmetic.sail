@@ -11,22 +11,6 @@ enum Fp_arithmetic_operation =
 | FpArithmeticFusedNegatedMultiplyAdd
 | FpArithmeticFusedNegatedMultiplySubtract
 
-function fp_arithmetic_operation(operation : Semantic_operation)
-  -> option(Fp_arithmetic_operation) = match operation {
-  Op_FABS => Some(FpArithmeticAbsolute),
-  Op_FNEG => Some(FpArithmeticNegate),
-  Op_FADD => Some(FpArithmeticAdd),
-  Op_FSUB => Some(FpArithmeticSubtract),
-  Op_FMUL => Some(FpArithmeticMultiply),
-  Op_FDIV => Some(FpArithmeticDivide),
-  Op_FSQRT => Some(FpArithmeticSquareRoot),
-  Op_FMADD => Some(FpArithmeticFusedMultiplyAdd),
-  Op_FMSUB => Some(FpArithmeticFusedMultiplySubtract),
-  Op_FNMADD => Some(FpArithmeticFusedNegatedMultiplyAdd),
-  Op_FNMSUB => Some(FpArithmeticFusedNegatedMultiplySubtract),
-  _ => None(),
-}
-
 function fp_arithmetic_semantic_operation(operation : Fp_arithmetic_operation)
   -> Semantic_operation = match operation {
   FpArithmeticAbsolute => Op_FABS,

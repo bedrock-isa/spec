@@ -1,15 +1,10 @@
+function clause register_result_extension(Op_SETF) = RegisterZeroExtend
 
-function execute_SETF(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) = {
-    let local_candidate : option(Execution_result) = match value_named(instruction, state, Operand_mask) {
-        Some(mask) => {
-            let selected = mask[3 .. 0];
-            Some(local_result(state, instruction, { state with flags = selected }, CommitRegisters))
-        },
-        None() => None(),
-    };
-    let result : Execution_result = match local_candidate {
-        Some(result) => result,
-        None() => start_system_request(instruction, state),
-    };
-    Some(result)
-}
+function clause repeat_semantics(Op_SETF) = RepeatObserveDestination
+
+function lower_SETF_uops(_ : Decoded_instruction) -> list(Uop) = [|
+  uop_make(UopSystemState(SystemSetFlags), uop_location_make_none(), uop_location_make_none(), uop_location_make_none(), Operand_mask, 8, CommitRegisters)
+|]
+
+function execute_SETF(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) =
+  Some(uop_program_execute(lower_SETF_uops(instruction), instruction, state))

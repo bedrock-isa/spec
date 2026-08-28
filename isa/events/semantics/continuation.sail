@@ -1,6 +1,6 @@
 function resume_events_phase(previous : Execution_result, response : Transaction_response)
-  -> Execution_result = match previous.pending.phase {
-    PhaseEventTargetProbe => match previous.pending.event {
+  -> Execution_result = match pending_transaction(previous.pending).phase {
+    PhaseEventTargetProbe => match pending_event_record(previous.pending) {
       None() => event_shutdown(previous.state),
       Some(event) =>
         if not_bool(event_stack_state_valid(event, previous.state)) then
@@ -29,27 +29,27 @@ function resume_events_phase(previous : Execution_result, response : Transaction
         }
         else if not_bool(event_frame_address_valid(event, previous.state)) then {
           let request = event_stack_range_request(
-            event, previous.state, previous.pending.ordinal + 1
+            event, previous.state, pending_transaction(previous.pending).ordinal + 1
           );
           event_delivery_failed({ previous with request = request }, 2)
         }
         else continue_with_request(
-          previous, PhaseEventStackProbe, previous.pending.ordinal + 1,
-          previous.pending.captured_first, previous.pending.captured_second,
+          previous, PhaseEventStackProbe, pending_transaction(previous.pending).ordinal + 1,
+          pending_transaction(previous.pending).captured_first, pending_transaction(previous.pending).captured_second,
           event_stack_range_request(event, previous.state,
-                                    previous.pending.ordinal + 1)
+                                    pending_transaction(previous.pending).ordinal + 1)
         ),
     },
-    PhaseEventStackProbe => match previous.pending.event {
+    PhaseEventStackProbe => match pending_event_record(previous.pending) {
       None() => event_shutdown(previous.state),
       Some(event) => continue_with_request(
-        previous, PhaseEventFrameStore, previous.pending.ordinal + 1,
-        previous.pending.captured_first, previous.pending.captured_second,
+        previous, PhaseEventFrameStore, pending_transaction(previous.pending).ordinal + 1,
+        pending_transaction(previous.pending).captured_first, pending_transaction(previous.pending).captured_second,
         event_frame_store_request(event, previous.state,
-                                  previous.pending.ordinal + 1)
+                                  pending_transaction(previous.pending).ordinal + 1)
       ),
     },
-    PhaseEventFrameStore => match previous.pending.event {
+    PhaseEventFrameStore => match pending_event_record(previous.pending) {
       None() => event_shutdown(previous.state),
       Some(event) => {
         var updated = committed_event_entry(
@@ -92,14 +92,14 @@ function resume_events_phase(previous : Execution_result, response : Transaction
       else {
         let frame_bytes = unsigned(control[7 .. 0]) * 8;
         let request = { stack_request(
-          EventFrameAccess, previous.pending.ordinal + 1, previous.state,
+          EventFrameAccess, pending_transaction(previous.pending).ordinal + 1, previous.state,
           previous.state.sp,
           add_bits(previous.state.sp, bits_from_int(frame_bytes)),
           AccessStackRead, 0x0000000000000000, false
         ) with selector = 0x0000000000000001, expected = control,
                width = frame_bytes, range_length = frame_bytes };
         continue_with_request(
-          previous, PhaseEventFrame, previous.pending.ordinal + 1,
+          previous, PhaseEventFrame, pending_transaction(previous.pending).ordinal + 1,
           control, 0x0000000000000000, request
         )
       },

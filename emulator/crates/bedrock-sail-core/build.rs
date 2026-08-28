@@ -11,8 +11,8 @@ const GENERATOR_INPUTS: &[&str] = &[
     "engine",
     "isa",
 ];
-const MAX_GENERATED_C_FRAME_BYTES: u64 = 64 * 1024;
-const MAX_GENERATED_C_INITIALIZER_FRAME_BYTES: u64 = 64 * 1024;
+const MAX_GENERATED_C_FRAME_BYTES: u64 = 32 * 1024;
+const MAX_GENERATED_C_INITIALIZER_FRAME_BYTES: u64 = 32 * 1024;
 const C_BUILD_CONFIGURATION: &str = "c11-o3-no-semantic-interposition-v1";
 
 fn canonicalize(path: &Path, description: &str) -> PathBuf {
@@ -125,14 +125,6 @@ fn validate_stack_usage(out_dir: &Path) {
             largest_initializer.0, largest_initializer.1, MAX_GENERATED_C_INITIALIZER_FRAME_BYTES
         );
     }
-    println!(
-        "cargo:warning=largest generated C runtime stack frame: {} bytes ({})",
-        largest_runtime.0, largest_runtime.1
-    );
-    println!(
-        "cargo:warning=largest generated C initializer stack frame: {} bytes ({})",
-        largest_initializer.0, largest_initializer.1
-    );
 }
 
 fn generate_operation_constants(header: &Path, out_dir: &Path) {

@@ -174,10 +174,29 @@ function waiting_event_transaction(state : Cpu_state, event : Event_record, atte
                                    request : Primitive_request) -> Execution_result = struct {
   state = state,
   pending = { empty_pending(Some(state), Op_NOP, CommitEvent) with
-    phase = phase, ordinal = ordinal, event = Some(event), event_attempt = attempt,
+    continuation = PendingEvent(struct {
+      transaction = {
+        empty_transaction_continuation() with
+        phase = phase, ordinal = ordinal
+      },
+      event = event,
+      attempt = attempt
+    }),
     boundary_class = BoundaryEventEntry },
   request = request, effects = [||], fault = None(), awaiting_environment = true
 }
+
+function pending_event_record(pending : Pending_commit) -> option(Event_record) =
+  match pending.continuation {
+    PendingEvent(continuation) => Some(continuation.event),
+    _ => None(),
+  }
+
+function pending_event_attempt(pending : Pending_commit) -> int =
+  match pending.continuation {
+    PendingEvent(continuation) => continuation.attempt,
+    _ => 0,
+  }
 
 val start_event_attempt : (Event_record, Cpu_state, int) -> Execution_result
 
@@ -210,7 +229,7 @@ function start_admitted_event(event : Event_record, state : Cpu_state) -> Execut
   start_event_attempt(event, state, 0)
 
 function event_delivery_failed(previous : Execution_result, stage : int) -> Execution_result =
-  match previous.pending.event {
+  match pending_event_record(previous.pending) {
     None() => event_shutdown(previous.state),
     Some(event) => {
       var failed = event;
@@ -218,7 +237,7 @@ function event_delivery_failed(previous : Execution_result, stage : int) -> Exec
         failed.fault_ea = previous.request.effective_address;
         failed.fault_linear = previous.request.linear_address
       } else ();
-      if previous.pending.event_attempt >= 1 | previous.state.current_dfa
+      if pending_event_attempt(previous.pending) >= 1 | previous.state.current_dfa
          | status_event_depth(previous.state.status) >= 15 then
         event_shutdown(previous.state)
       else start_event_attempt(double_fault_event(failed, stage), previous.state, 1)
@@ -227,14 +246,15 @@ function event_delivery_failed(previous : Execution_result, stage : int) -> Exec
 
 val start_user_return : (Decoded_instruction, Cpu_state) -> Execution_result
 
-function start_event_control(instruction : Decoded_instruction, state : Cpu_state)
+function start_event_control(operation : Event_control_uop_operation,
+                             instruction : Decoded_instruction, state : Cpu_state)
   -> Execution_result = {
-  if instruction.form.operation == Op_BKPT then
+  if operation == EventControlBreakpoint then
     start_admitted_event(
       make_event(EventSynchronous, EventFrameBasic, 0x00000002, 4,
                  next_pc(state, instruction)), state
     )
-  else if instruction.form.operation == Op_SYSCALL then
+  else if operation == EventControlSyscall then
     if state.supervisor | state.status[0] == bitone
        | status_event_depth(state.status) != 0
        | state.controls[11][32] == bitone then
@@ -243,7 +263,7 @@ function start_event_control(instruction : Decoded_instruction, state : Cpu_stat
       make_event(EventSynchronous, EventFrameBasic, 0x00000020, 4,
                  next_pc(state, instruction)), state
     )
-  else if instruction.form.operation == Op_ERET then {
+  else {
     let direct = state.supervisor & state.status[0] == bitzero
       & status_event_depth(state.status) == 0
       & not_bool(status_user_origin(state.status)) & state.controls[11][32] == bitone;
@@ -259,14 +279,12 @@ function start_event_control(instruction : Decoded_instruction, state : Cpu_stat
         EventFrameAccess, 0, state, state.sp, add_bits(state.sp, 0x0000000000000008),
         AccessStackRead, 0x0000000000000000, false
       ) with selector = 0x0000000000000000 };
-      waiting_transaction(
+      waiting_transaction(TransactionEventReturn,
         state, state, instruction, CommitEvent, empty_destination(), PhaseEventFrameHeader,
         0, 0x0000000000000000, 0x0000000000000000, request
       )
     } else faulted(state, Op_ERET, InvalidControlState, "invalid ERET source state")
   }
-  else faulted(state, instruction.form.operation, IllegalInstruction,
-               "unsupported event-control operation")
 }
 
 function valid_frame_control(control : bits(64), state : Cpu_state) -> bool = {
@@ -306,7 +324,7 @@ function start_user_return(instruction : Decoded_instruction, state : Cpu_state)
       after.controls[11] = uctl & 0xFFFFFFFEFFFFFFFF;
       let request = { target_probe_request(0, state.controls[8], state.controls[6]) with
         kind = ControlTransitionRequest, role = RequestRoleUserReturnTarget, commit_point = true };
-      waiting_transaction(
+      waiting_transaction(TransactionControl,
         state, after, instruction, CommitControl, empty_destination(), PhaseControlTransition,
         0, state.controls[6], 0x0000000000000000, request
       )

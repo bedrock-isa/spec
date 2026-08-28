@@ -1,3 +1,39 @@
+function response_matches_request(
+    request : Primitive_request,
+    kind : Transaction_response_kind,
+) -> bool =
+    match request.kind {
+        TranslationExecuteProbe => kind == ResponseTranslation,
+        MemoryProbe => kind == ResponseProbe,
+        MemoryRead => kind == ResponseRead,
+        MemoryStore => kind == ResponseStoreAck,
+        CompoundMemoryStore => kind == ResponseStoreAck,
+        NonTemporalStore => kind == ResponseStoreAck,
+        StackRange => kind == ResponseStackRange,
+        SegmentBoundsPoint => kind == ResponseSegmentBounds,
+        AtomicReadModifyWrite => kind == ResponseAtomic,
+        AddressTranslateRequest => kind == ResponseAddressTranslation,
+        PhysicalPteRead => kind == ResponsePteRead,
+        CacheMaintenanceBlock => kind == ResponseCacheMaintenance,
+        PrefetchHint => kind == ResponseCacheMaintenance,
+        FenceCompletion => kind == ResponseFenceCompletion,
+        TlbInvalidateRequest => kind == ResponseTlbOperation,
+        TranslationQueryRequest => kind == ResponseTranslationQuery,
+        ContextSwitchRequest => kind == ResponseContextSwitch,
+        StateSaveRequest => kind == ResponseStateSave,
+        StateRestoreRequest => kind == ResponseStateRestore,
+        RepeatBodyFetch => kind == ResponseRepeatFetch,
+        EventFrameAccess => kind == ResponseEventFrame,
+        CpuidQueryRequest => kind == ResponseCpuidQuery,
+        PerformanceCounterRequest => kind == ResponsePerformanceCounter,
+        ControlTransitionRequest => kind == ResponseControlTransition,
+        ResetSerializeRequest => kind == ResponseResetSerialize,
+        VectorMemoryRead => kind == ResponseVectorMemory,
+        VectorMemoryWrite => kind == ResponseVectorMemory,
+        ExternalIntegerRequest => kind == ResponseIntegerExternal,
+        NoPrimitiveRequest => false,
+    }
+
 function response_matches_phase(
     phase : Continuation_phase,
     request : Primitive_request,
@@ -26,7 +62,6 @@ function response_matches_phase(
         PhaseStackReadSecond => kind == ResponseRead,
         PhaseStackWriteFirst => kind == ResponseStoreAck,
         PhaseIntegerExternal => kind == ResponseIntegerExternal,
-        PhaseAtomicRmw => kind == ResponseAtomic,
         PhaseCacheTranslate => kind == ResponseAddressTranslation,
         PhaseCacheMaintenance => kind == ResponseCacheMaintenance,
         PhaseFenceCompletion => kind == ResponseFenceCompletion,
@@ -45,37 +80,6 @@ function response_matches_phase(
         PhaseEventStackProbe => kind == ResponseStackRange,
         PhaseEventFrameStore => kind == ResponseEventFrame,
         PhaseEventReturnExecute => kind == ResponseTranslation,
-        PhaseUopWait => match request.kind {
-            TranslationExecuteProbe => kind == ResponseTranslation,
-            MemoryProbe => kind == ResponseProbe,
-            MemoryRead => kind == ResponseRead,
-            MemoryStore => kind == ResponseStoreAck,
-            CompoundMemoryStore => kind == ResponseStoreAck,
-            NonTemporalStore => kind == ResponseStoreAck,
-            StackRange => kind == ResponseStackRange,
-            SegmentBoundsPoint => kind == ResponseSegmentBounds,
-            AtomicReadModifyWrite => kind == ResponseAtomic,
-            AddressTranslateRequest => kind == ResponseAddressTranslation,
-            PhysicalPteRead => kind == ResponsePteRead,
-            CacheMaintenanceBlock => kind == ResponseCacheMaintenance,
-            PrefetchHint => kind == ResponseCacheMaintenance,
-            FenceCompletion => kind == ResponseFenceCompletion,
-            TlbInvalidateRequest => kind == ResponseTlbOperation,
-            TranslationQueryRequest => kind == ResponseTranslationQuery,
-            ContextSwitchRequest => kind == ResponseContextSwitch,
-            StateSaveRequest => kind == ResponseStateSave,
-            StateRestoreRequest => kind == ResponseStateRestore,
-            RepeatBodyFetch => kind == ResponseRepeatFetch,
-            EventFrameAccess => kind == ResponseEventFrame,
-            CpuidQueryRequest => kind == ResponseCpuidQuery,
-            PerformanceCounterRequest => kind == ResponsePerformanceCounter,
-            ControlTransitionRequest => kind == ResponseControlTransition,
-            ResetSerializeRequest => kind == ResponseResetSerialize,
-            VectorMemoryRead => kind == ResponseVectorMemory,
-            VectorMemoryWrite => kind == ResponseVectorMemory,
-            ExternalIntegerRequest => kind == ResponseIntegerExternal,
-            NoPrimitiveRequest => false,
-        },
         PhaseCpuidQuery => kind == ResponseCpuidQuery,
         PhasePerformanceCounter => kind == ResponsePerformanceCounter,
         PhaseControlTransition => kind == ResponseControlTransition,
@@ -162,7 +166,7 @@ function architectural_memory_fault(
 
 function mmio_scalar_request(previous : Execution_result) -> bool = {
     let request = previous.request;
-       not_bool(previous.pending.repeat_parent_active)
+       previous.pending.repeat_parent == None()
     &  request.kind
     != VectorMemoryRead
     &  request.kind

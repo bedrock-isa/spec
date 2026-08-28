@@ -1,19 +1,18 @@
+function clause register_result_extension(Op_POPP) = RegisterZeroExtend
 
-function execute_POPP(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) = {
-    let result : Execution_result = match execute_integer_move_local(instruction, state) {
-        Some(result) => result,
-        None() => match start_stack_transaction(instruction, state) {
-            Some(result) => result,
-            None() => match start_memory_transaction(instruction, state) {
-                Some(result) => result,
-                None() => faulted(
-                    state,
-                    instruction.form.operation,
-                    IllegalInstruction,
-                    "unresolved data-movement form",
-                ),
-            },
-        },
-    };
-    Some(result)
-}
+function clause repeat_semantics(Op_POPP) = RepeatObserveDestination
+
+function lower_POPP_uops(instruction : Decoded_instruction) -> option(list(Uop)) =
+  match operand_named(instruction, Operand_pair_id) {
+    Some(pair) => {
+      let first = unsigned(pair.value[2 .. 0]) * 2;
+      Some(uop_program_build_stack_pair_pop(
+        uop_location_make_register(first), uop_location_make_register(first + 1), Operand_pair_id))
+    }, None() => None(),
+  }
+
+function execute_POPP(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) =
+  match lower_POPP_uops(instruction) {
+    Some(program) => Some(uop_program_execute(program, instruction, state)),
+    None() => Some(faulted(state, instruction.form.operation, IllegalInstruction, "POPP could not be lowered")),
+  }

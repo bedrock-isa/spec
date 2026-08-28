@@ -1,78 +1,28 @@
-function execute_BPNONE_primitive(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) = {
-    let operation = instruction.form.operation;
-    let element_bytes = operation_width(instruction);
-    let lanes = tdiv_int(state.vector_length_bytes, element_bytes);
-    let empty = zero_vector_bytes(tdiv_int(state.vector_length_bytes, 8));
-    let zero_vector = zero_vector_bytes(state.vector_length_bytes);
-    let fp_form : bool = match condition_size_field(instruction.fields) {
-        Some(selector) => selector >= 5,
-        None() => false,
-    };
-    if true | true | true then {
-        match predicate_register_index(instruction, Operand_predicate) {
-            None() => None(),
-            Some(source) => {
-                let any = predicate_any(state.predicate_registers[unsigned(source)]);
-                let take = if operation == Op_BPANY then {
-                        any
-                    } else {
-                        if operation == Op_BPNONE then {
-                            not_bool(any)
-                        } else {
-                            predicate_all_typed(state.predicate_registers[unsigned(source)], 0, lanes, element_bytes)
-                        }
-                    };
-                if take then {
-                    start_control_transaction(instruction, state)
-                } else {
-                    Some(completed(state, advance_pc(state, instruction), CommitControl, [||]))
-                }
-            },
-        }
-    } else {
-        None()
-    }
-}
+function clause register_result_extension(Op_BPNONE) = RegisterZeroExtend
 
-union clause Uop_kind = UopInstruction_BPNONE : unit
+function clause repeat_semantics(Op_BPNONE) = RepeatObserveDestination
 
-function clause execute_uop(UopInstruction_BPNONE(), _, values, instruction, before, speculative) =
-    match execute_BPNONE_primitive(instruction, speculative) {
-        Some(result) => vector_local_result_uop_step(result, instruction, before, speculative, values),
-        None() => uop_fault(
-            faulted(
-                before,
-                instruction.form.operation,
-                IllegalInstruction,
-                "BPNONE local vector primitive rejected its instruction",
-            ),
-        ),
-    }
+function clause vector_semantics(Op_BPNONE) = vector_default_semantics()
+
+function lower_BPNONE_uops(instruction : Decoded_instruction) -> option(list(Uop)) =
+  match operand_named(instruction, Operand_target) {
+    Some(target) => {
+      let lowered = uop_operand_lower(target, 8, 0, true);
+      let target_value = uop_location_make_temporary(lowered.next_temporary);
+      let relative = target.operand_type == OperandType_imm8s | target.operand_type == OperandType_imm16s
+                   | target.operand_type == OperandType_imm32s;
+      Some(uop_program_append([|uop_make(UopVectorBranchGuard(VectorBranchNone), uop_location_make_none(), uop_location_make_none(), uop_location_make_none(),
+                                  Operand_target, 0, CommitControl)|],
+        uop_program_append(lowered.program, [|
+          uop_make(UopControlTarget(relative), lowered.value, uop_location_make_none(), target_value, Operand_target, 8, CommitControl),
+          uop_make(UopControlProbe(), target_value, uop_location_make_segment(0), uop_location_make_none(), Operand_target, 8, CommitControl),
+          uop_make(UopControlCommit(ControlJump), target_value, uop_location_make_segment(0), uop_location_make_none(), Operand_target, 8, CommitControl)
+        |])))
+    }, None() => None(),
+  }
 
 function execute_BPNONE(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) =
-    Some(
-        execute_uop_program(
-            [|
-                make_uop(
-                    UopInstruction_BPNONE(),
-                    uop_none(),
-                    uop_none(),
-                    uop_none(),
-                    Operand_dst,
-                    operation_width(instruction),
-                    CommitControl,
-                ),
-                make_uop(
-                    UopCommit(),
-                    uop_none(),
-                    uop_none(),
-                    uop_none(),
-                    Operand_dst,
-                    operation_width(instruction),
-                    CommitControl,
-                ),
-            |],
-            instruction,
-            state,
-        ),
-    )
+  match lower_BPNONE_uops(instruction) {
+    Some(program) => Some(uop_program_execute(program, instruction, state)),
+    None() => Some(faulted(state, instruction.form.operation, IllegalInstruction, "BPNONE could not be lowered")),
+  }

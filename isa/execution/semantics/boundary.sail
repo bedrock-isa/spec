@@ -6,15 +6,6 @@ function live_event_state_valid(state : Cpu_state) -> bool =
        & (not_bool(status_user_origin(state.status))
           | state.controls[11][32] == bitone)
 
-function fp_static_operand_relation_valid(instruction : Decoded_instruction) -> bool =
-  if instruction.form.operation != Op_FSINCOSA then true
-  else match (operand_named(instruction, Operand_sin_dst),
-              operand_named(instruction, Operand_cos_dst)) {
-    (Some(sin_destination), Some(cos_destination)) =>
-      sin_destination.value[3 .. 0] != cos_destination.value[3 .. 0],
-    _ => false,
-  }
-
 function execute_full(instruction : Decoded_instruction, state : Cpu_state) -> Execution_result =
   if state.run_state != Running then
     completed(state, state, CommitNone, [||])
@@ -24,11 +15,6 @@ function execute_full(instruction : Decoded_instruction, state : Cpu_state) -> E
   else if not_bool(live_event_state_valid(state)) then
     faulted(state, instruction.form.operation, InvalidControlState,
             "STATUS.EA and live event state disagree")
-  else if not_bool(fp_static_operand_relation_valid(instruction)) then
-    faulted_with_error_code(
-      state, instruction.form.operation, IllegalInstruction,
-      "invalid floating-point destination relation", 0x0000000000000006
-    )
   else if not_bool(instruction_available(instruction, state)) then
     faulted(
       state, instruction.form.operation, ExtensionUnavailable,

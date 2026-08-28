@@ -1,14 +1,22 @@
+function clause fp_semantics(Op_FLOGNA) =
+  Some(fp_info(FpPathR, 1, FpResultFnByFormat, 0b11010,
+                              fp_flags_none, true, 65))
 
-function lower_FLOGNA_uops(instruction : Decoded_instruction) -> option(list(Micro_operation)) =
-    match lower_fp_unary_operands(instruction) {
+
+function clause register_result_extension(Op_FLOGNA) = RegisterZeroExtend
+
+function clause repeat_semantics(Op_FLOGNA) = RepeatObserveDestination
+
+function lower_FLOGNA_uops(instruction : Decoded_instruction) -> option(list(Uop)) =
+    match fp_operands_lower_unary(instruction) {
         Some(operands) => {
             let width = operation_width(instruction);
-            let contract = uop_temporary(32);
+            let contract = uop_location_make_temporary(32);
             let compute = {
-                make_uop(
+                uop_make(
                     UopFpOperation(Op_FLOGNA),
                     operands.source,
-                    uop_none(),
+                    uop_location_make_none(),
                     operands.destination,
                     Operand_dst,
                     width,
@@ -17,30 +25,30 @@ function lower_FLOGNA_uops(instruction : Decoded_instruction) -> option(list(Mic
                 auxiliary = contract,
             };
             Some(
-                append_uops(
+                uop_program_append(
                     [|
-                        make_uop(UopFpContractQuery(), uop_none(), uop_none(), contract, Operand_src, width, CommitNone),
-                        make_uop(
+                        uop_make(UopFpContractQuery(), uop_location_make_none(), uop_location_make_none(), contract, Operand_src, width, CommitNone),
+                        uop_make(
                             UopFpContractValidate(),
                             contract,
-                            uop_none(),
-                            uop_none(),
+                            uop_location_make_none(),
+                            uop_location_make_none(),
                             Operand_src,
                             width,
                             CommitNone,
                         ),
                     |],
-                    append_uops(
+                    uop_program_append(
                         operands.before_compute,
                         compute ::
-                            append_uops(
+                            uop_program_append(
                                 operands.after_compute,
                                 [|
-                                    make_uop(
+                                    uop_make(
                                         UopCommit(),
-                                        uop_none(),
-                                        uop_none(),
-                                        uop_none(),
+                                        uop_location_make_none(),
+                                        uop_location_make_none(),
+                                        uop_location_make_none(),
                                         Operand_dst,
                                         width,
                                         operands.commit_kind,
@@ -56,7 +64,7 @@ function lower_FLOGNA_uops(instruction : Decoded_instruction) -> option(list(Mic
 
 function execute_FLOGNA(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) =
     match lower_FLOGNA_uops(instruction) {
-        Some(program) => Some(execute_uop_program(program, instruction, state)),
+        Some(program) => Some(uop_program_execute(program, instruction, state)),
         None() => Some(
             faulted(
                 state,

@@ -121,32 +121,33 @@ class LatexSourcePreprocessor:
             cycle = " -> ".join(str(item) for item in (*active, path))
             raise RuntimeError(f"cyclic TeX input: {cycle}")
         text = path.read_text(encoding="utf-8")
-        migrated, replacements = rewrite_direct_terms(text, project.terminology)
-        if replacements:
-            first = _first_difference(text, migrated)
-            raise ValueError(
-                f"{path}, offset {first}: registered terminology must use "
-                "(:term:...:) escapes"
-            )
-        entities = getattr(project, "entities", None)
-        if entities is not None:
-            migrated, replacements = rewrite_direct_entity_codes(text, entities)
+        if path.suffix != ".sty":
+            migrated, replacements = rewrite_direct_terms(text, project.terminology)
             if replacements:
                 first = _first_difference(text, migrated)
                 raise ValueError(
-                    f"{path}, offset {first}: registered entity mentions must use "
-                    "(:ref:...:) escapes"
+                    f"{path}, offset {first}: registered terminology must use "
+                    "(:term:...:) escapes"
                 )
-        text = self.fragments.expand(text, project, path)
-        semantic = SemanticText.parse(text, origin=TextOrigin(path))
-        if owner is not None:
-            self.dependencies.record(owner, semantic)
-        text = self.semantic.render(
-            semantic,
-            project.terminology,
-            entities=getattr(project, "entities", None),
-            escape_literals=False,
-        )
+            entities = getattr(project, "entities", None)
+            if entities is not None:
+                migrated, replacements = rewrite_direct_entity_codes(text, entities)
+                if replacements:
+                    first = _first_difference(text, migrated)
+                    raise ValueError(
+                        f"{path}, offset {first}: registered entity mentions must use "
+                        "(:ref:...:) escapes"
+                    )
+            text = self.fragments.expand(text, project, path)
+            semantic = SemanticText.parse(text, origin=TextOrigin(path))
+            if owner is not None:
+                self.dependencies.record(owner, semantic)
+            text = self.semantic.render(
+                semantic,
+                project.terminology,
+                entities=getattr(project, "entities", None),
+                escape_literals=False,
+            )
 
         def replace(match: re.Match[str]) -> str:
             requested = match.group(1)
@@ -157,6 +158,8 @@ class LatexSourcePreprocessor:
             content = self._render(
                 included, project, repository, (*active, path), owner
             )
+            if included.suffix == ".sty":
+                content = re.sub(r"(?m)^\\endinput\s*$", "", content).rstrip()
             return (
                 f"% begin input: {requested}\n{content}\n"
                 f"% end input: {requested}"

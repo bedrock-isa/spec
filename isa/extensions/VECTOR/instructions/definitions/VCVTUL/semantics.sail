@@ -1,21 +1,34 @@
+function clause register_result_extension(Op_VCVTUL) = RegisterZeroExtend
+
+function clause repeat_semantics(Op_VCVTUL) = RepeatObserveDestination
+
+function clause vector_semantics(Op_VCVTUL) =
+    {
+        vector_default_semantics() with
+        fp_conversion = true,
+        fp_conversion_destination_bytes = 4,
+        fp_conversion_destination_fp = false,
+        fp_conversion_unsigned = true,
+    }
+
 function execute_VCVTUL(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) =
     Some(
-        execute_uop_program(
+        uop_program_execute(
             [|
-                make_uop(
+                uop_make(
                     UopVectorFp(Op_VCVTUL),
-                    uop_none(),
-                    uop_none(),
-                    uop_none(),
+                    uop_location_make_none(),
+                    uop_location_make_none(),
+                    uop_location_make_none(),
                     Operand_dst,
                     operation_width(instruction),
                     CommitRegisters,
                 ),
-                make_uop(
+                uop_make(
                     UopCommit(),
-                    uop_none(),
-                    uop_none(),
-                    uop_none(),
+                    uop_location_make_none(),
+                    uop_location_make_none(),
+                    uop_location_make_none(),
                     Operand_dst,
                     operation_width(instruction),
                     CommitRegisters,

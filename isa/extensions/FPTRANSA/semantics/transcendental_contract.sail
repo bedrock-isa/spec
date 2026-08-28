@@ -22,8 +22,9 @@ function fp_approx_contract_operation(contract_id : bits(16)) -> option(Semantic
     _ => None(),
   }
 
+
 function fp_approx_contract_id(operation : Semantic_operation) -> option(bits(16)) =
-  match fptransa_semantics(operation) {
+  match fp_semantics(operation) {
     Some(semantics) => Some(semantics.contract_id),
     None() => None(),
   }
@@ -31,7 +32,7 @@ function fp_approx_contract_id(operation : Semantic_operation) -> option(bits(16
 function fp_approx_contract_allowed_causes(contract_id : bits(16)) -> option(bits(5)) =
   match fp_approx_contract_operation(contract_id) {
     None() => None(),
-    Some(operation) => match fptransa_semantics(operation) {
+    Some(operation) => match fp_semantics(operation) {
       Some(semantics) => Some(semantics.allowed_causes),
       None() => None(),
     },
@@ -77,7 +78,7 @@ function fp_approx_contract_lookup(contract_id : bits(16), contract_word : bits(
              then FpApproxContractPresent
              else FpApproxContractMalformed,
     operation = Some(operation),
-    allowed_causes = match fptransa_semantics(operation) {
+    allowed_causes = match fp_semantics(operation) {
       Some(semantics) => semantics.allowed_causes,
       None() => fflags_none,
     },

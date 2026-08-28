@@ -1,24 +1,32 @@
+function clause fp_semantics(Op_FNMSUB) =
+  Some(fp_info(FpPathR, 3, FpResultFnByFormat, 0b10111,
+                              fp_flags_none, false, 0))
 
-function lower_FNMSUB_uops(instruction : Decoded_instruction) -> option(list(Micro_operation)) =
-    match (lower_fp_ternary_sources(instruction), operand_named(instruction, Operand_dst)) {
+
+function clause register_result_extension(Op_FNMSUB) = RegisterZeroExtend
+
+function clause repeat_semantics(Op_FNMSUB) = RepeatObserveDestination
+
+function lower_FNMSUB_uops(instruction : Decoded_instruction) -> option(list(Uop)) =
+    match (fp_operands_lower_ternary(instruction), operand_named(instruction, Operand_dst)) {
         (Some(sources), Some(destination_operand)) => {
             let width = operation_width(instruction);
-            let compute = make_uop3(
+            let compute = uop_make_ternary(
                 UopFpArithmetic(FpArithmeticFusedNegatedMultiplySubtract),
                 sources.source0,
                 sources.source1,
                 sources.source2,
-                direct_uop_location(destination_operand),
+                uop_operand_location(destination_operand),
                 Operand_dst,
                 width,
                 CommitRegisters,
             );
             Some(
-                append_uops(
+                uop_program_append(
                     sources.program,
                     [|
                         compute,
-                        make_uop(UopCommit(), uop_none(), uop_none(), uop_none(), Operand_dst, width, CommitRegisters),
+                        uop_make(UopCommit(), uop_location_make_none(), uop_location_make_none(), uop_location_make_none(), Operand_dst, width, CommitRegisters),
                     |],
                 ),
             )
@@ -28,7 +36,7 @@ function lower_FNMSUB_uops(instruction : Decoded_instruction) -> option(list(Mic
 
 function execute_FNMSUB(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) =
     match lower_FNMSUB_uops(instruction) {
-        Some(program) => Some(execute_uop_program(program, instruction, state)),
+        Some(program) => Some(uop_program_execute(program, instruction, state)),
         None() => Some(
             faulted(
                 state,

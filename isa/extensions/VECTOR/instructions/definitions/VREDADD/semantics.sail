@@ -1,21 +1,34 @@
+function clause register_result_extension(Op_VREDADD) = RegisterZeroExtend
+
+function clause repeat_semantics(Op_VREDADD) = RepeatObserveDestination
+
+function clause vector_semantics(Op_VREDADD) =
+    {
+        vector_default_semantics() with
+        integer_reduction = Some(VectorReduceAdd),
+        reduction = true,
+        fp_reduction_operation = Some(fp_arithmetic_semantic_operation(FpArithmeticAdd)),
+        fp_reduction_identity = VectorFpReductionZero,
+    }
+
 function execute_VREDADD(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) = {
     let operation = instruction.form.operation;
     let element_bytes = operation_width(instruction);
     let lanes = tdiv_int(state.vector_length_bytes, element_bytes);
     match operand_named(instruction, Operand_dst) {
         Some(destination) => if destination.operand_type == OperandType_Fn then {
-            let address = uop_temporary(40);
-            let memory = uop_temporary(41);
-            let output = uop_temporary(42);
+            let address = uop_location_make_temporary(40);
+            let memory = uop_location_make_temporary(41);
+            let output = uop_location_make_temporary(42);
             let commit_kind : Commit_kind = match vector_memory_operand(instruction.operands) {
                 Some(_) => CommitMemory,
                 None() => CommitRegisters,
             };
             let compute = {
-                make_uop(
+                uop_make(
                     UopVectorFp(Op_VREDADD),
-                    uop_none(),
-                    uop_none(),
+                    uop_location_make_none(),
+                    uop_location_make_none(),
                     output,
                     Operand_dst,
                     operation_width(instruction),
@@ -24,41 +37,41 @@ function execute_VREDADD(instruction : Decoded_instruction, state : Cpu_state) -
                 auxiliary = memory,
             };
             Some(
-                execute_uop_program(
+                uop_program_execute(
                     [|
-                        make_uop(
+                        uop_make(
                             UopVectorCalcEa(),
-                            uop_none(),
-                            uop_none(),
+                            uop_location_make_none(),
+                            uop_location_make_none(),
                             address,
                             Operand_dst,
                             operation_width(instruction),
                             CommitNone,
                         ),
-                        make_uop(
+                        uop_make(
                             UopVectorMemoryLoad(),
                             address,
-                            uop_none(),
+                            uop_location_make_none(),
                             memory,
                             Operand_dst,
                             operation_width(instruction),
                             CommitMemory,
                         ),
                         compute,
-                        make_uop(
+                        uop_make(
                             UopVectorMemoryStore(),
                             address,
                             output,
-                            uop_none(),
+                            uop_location_make_none(),
                             Operand_dst,
                             operation_width(instruction),
                             CommitMemory,
                         ),
-                        make_uop(
+                        uop_make(
                             UopCommit(),
-                            uop_none(),
-                            uop_none(),
-                            uop_none(),
+                            uop_location_make_none(),
+                            uop_location_make_none(),
+                            uop_location_make_none(),
                             Operand_dst,
                             operation_width(instruction),
                             commit_kind,

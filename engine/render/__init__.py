@@ -6,6 +6,7 @@ from .document_fragment import (
     DocumentFragmentProvider,
 )
 from .cpuid_reference import CpuidEntityReferenceRenderer
+from .ea_diagram import EaDiagramFragmentRenderer
 from .event_reference import EventReferenceRenderer
 from .implementation_disclosure import ImplementationDisclosureRenderer
 from .latex_document import (
@@ -30,6 +31,7 @@ __all__ = [
     "DocumentFragmentPipeline",
     "DocumentFragmentProvider",
     "CpuidEntityReferenceRenderer",
+    "EaDiagramFragmentRenderer",
     "EncodingTypeReferenceRenderer",
     "EventReferenceRenderer",
     "ImplementationDisclosureRenderer",

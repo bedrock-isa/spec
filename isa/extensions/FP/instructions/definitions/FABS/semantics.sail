@@ -1,29 +1,37 @@
+function clause fp_semantics(Op_FABS) =
+Some(fp_exact_info(fp_info(FpPathR, 1, FpResultByForm, fflags_none,
+                            fp_flags_none, false, 0), FpExactAbsolute))
 
-function lower_FABS_uops(instruction : Decoded_instruction) -> option(list(Micro_operation)) =
-    match lower_fp_unary_operands(instruction) {
+
+function clause register_result_extension(Op_FABS) = RegisterZeroExtend
+
+function clause repeat_semantics(Op_FABS) = RepeatObserveDestination
+
+function lower_FABS_uops(instruction : Decoded_instruction) -> option(list(Uop)) =
+    match fp_operands_lower_unary(instruction) {
         Some(operands) => {
             let width = operation_width(instruction);
-            let compute = make_uop(
+            let compute = uop_make(
                 UopFpArithmetic(FpArithmeticAbsolute),
                 operands.source,
-                uop_none(),
+                uop_location_make_none(),
                 operands.destination,
                 Operand_dst,
                 width,
                 operands.commit_kind,
             );
             Some(
-                append_uops(
+                uop_program_append(
                     operands.before_compute,
                     compute ::
-                        append_uops(
+                        uop_program_append(
                             operands.after_compute,
                             [|
-                                make_uop(
+                                uop_make(
                                     UopCommit(),
-                                    uop_none(),
-                                    uop_none(),
-                                    uop_none(),
+                                    uop_location_make_none(),
+                                    uop_location_make_none(),
+                                    uop_location_make_none(),
                                     Operand_dst,
                                     width,
                                     operands.commit_kind,
@@ -38,7 +46,7 @@ function lower_FABS_uops(instruction : Decoded_instruction) -> option(list(Micro
 
 function execute_FABS(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) =
     match lower_FABS_uops(instruction) {
-        Some(program) => Some(execute_uop_program(program, instruction, state)),
+        Some(program) => Some(uop_program_execute(program, instruction, state)),
         None() => Some(
             faulted(
                 state,

@@ -1,42 +1,5 @@
 function resume_system_phase(previous : Execution_result, response : Transaction_response)
-  -> Execution_result = match previous.pending.phase {
-    PhaseCacheTranslate => match previous.pending.instruction {
-      None() => faulted(previous.state, previous.pending.operation,
-                        InvalidControlState, "missing cache translation continuation"),
-      Some(instruction) => {
-        {
-          let granule = unsigned(previous.request.auxiliary);
-          let prefetch = instruction.form.operation == Op_PREFETCH
-                       | instruction.form.operation == Op_PREFETCHNT;
-          let physical = response.value;
-          let block_start = physical & not_vec(bits_from_int(granule - 1));
-          let request = { previous.request with
-            kind = if prefetch then PrefetchHint else CacheMaintenanceBlock,
-            role = if prefetch then RequestRolePhysicalPrefetch
-                   else RequestRolePhysicalCacheBlock,
-            ordinal = previous.pending.ordinal + 1, address_translation = false,
-            effective_address = physical, linear_address = physical,
-            range_start = if prefetch then physical else block_start,
-            range_end = if prefetch then add_bits(physical, 0x0000000000000001)
-                        else add_bits(block_start, bits_from_int(granule)),
-            range_length = if prefetch then 1 else granule,
-            cache_policy = response.cache_policy,
-            commit_point = true };
-          if prefetch & response.access_class == MmioAccess then
-            completed(
-              previous.state, pending_after(previous),
-              previous.pending.kind, [||]
-            )
-          else continue_with_request(
-              previous, PhaseCacheMaintenance, previous.pending.ordinal + 1,
-              physical, previous.pending.captured_second, request
-            )
-        }
-      },
-    },
-    PhaseCacheMaintenance => completed(
-      previous.state, pending_after(previous), previous.pending.kind, [||]
-    ),
+  -> Execution_result = match pending_transaction(previous.pending).phase {
     PhaseFenceCompletion => completed(
       previous.state, pending_after(previous), previous.pending.kind, [||]
     ),
@@ -55,13 +18,13 @@ function resume_system_phase(previous : Execution_result, response : Transaction
         let target_level = unsigned(previous.request.expected);
         let raw = response.value;
         let valid = pte_structurally_valid(raw, level);
-        if instruction.form.operation == Op_PTQUERY & level == target_level then
+        if previous.request.role == RequestRolePtqueryPte & level == target_level then
           query_result(previous, raw, valid)
         else if not_bool(valid) then query_result(
           previous, 0x0000000000000000, false
         )
         else if raw[1] == bitzero then {
-          if instruction.form.operation == Op_PTQUERY then
+          if previous.request.role == RequestRolePtqueryPte then
             query_result(previous, 0x0000000000000000, false)
           else {
           let physical = (raw & paging_pfn_mask(previous.state.controls[0]))
@@ -73,10 +36,11 @@ function resume_system_phase(previous : Execution_result, response : Transaction
           let next_level = level - 1;
           let table = raw & paging_pfn_mask(previous.state.controls[0]);
           continue_with_request(
-            previous, PhasePteRead, previous.pending.ordinal + 1,
-            previous.pending.captured_first, previous.pending.captured_second,
-            pte_read_request(previous.state, instruction, previous.request.value,
-                             table, next_level, target_level, previous.pending.ordinal + 1)
+            previous, PhasePteRead, pending_transaction(previous.pending).ordinal + 1,
+            pending_transaction(previous.pending).captured_first, pending_transaction(previous.pending).captured_second,
+            pte_read_request(previous.state, previous.request.role == RequestRolePtqueryPte,
+                             previous.request.value,
+                             table, next_level, target_level, pending_transaction(previous.pending).ordinal + 1)
           )
         }
       },
@@ -86,9 +50,9 @@ function resume_system_phase(previous : Execution_result, response : Transaction
                         InvalidControlState, "missing context-switch continuation"),
       Some(instruction) => {
         var updated = pending_after(previous);
-        updated.controls[0] = previous.pending.captured_first;
-        updated.controls[1] = if instruction.form.operation == Op_SWPTA
-          then sail_shiftleft(previous.pending.captured_second & 0x000000000000FFFF, 16)
+        updated.controls[0] = pending_transaction(previous.pending).captured_first;
+        updated.controls[1] = if previous.request.auxiliary == 0x0000000000000001
+          then sail_shiftleft(pending_transaction(previous.pending).captured_second & 0x000000000000FFFF, 16)
                | 0x0000000000000001
           else 0x0000000000000000;
         completed(previous.state, updated, CommitControl, [||])
@@ -132,7 +96,7 @@ function resume_system_phase(previous : Execution_result, response : Transaction
             & previous.request.range_start != 0x0000000000000000,
           body_length = size, commit_point = false };
         continue_with_request(
-          previous, PhaseStateRestoreRange, previous.pending.ordinal + 1,
+          previous, PhaseStateRestoreRange, pending_transaction(previous.pending).ordinal + 1,
           header, bitmap, request
         )
       }
@@ -140,13 +104,13 @@ function resume_system_phase(previous : Execution_result, response : Transaction
     PhaseStateRestoreRange => {
       let request = { previous.request with
         selector = 0x0000000000000002, access = AccessLoad, commit_point = true,
-        expected = previous.pending.captured_first,
-        desired = previous.pending.captured_second,
+        expected = pending_transaction(previous.pending).captured_first,
+        desired = pending_transaction(previous.pending).captured_second,
         range_length = previous.state.save_area_size,
         body_length = previous.state.save_area_size };
       continue_with_request(
-        previous, PhaseStateRestore, previous.pending.ordinal + 1,
-        previous.pending.captured_first, previous.pending.captured_second, request
+        previous, PhaseStateRestore, pending_transaction(previous.pending).ordinal + 1,
+        pending_transaction(previous.pending).captured_first, pending_transaction(previous.pending).captured_second, request
       )
     },
     PhaseStateRestore => {
@@ -159,8 +123,8 @@ function resume_system_phase(previous : Execution_result, response : Transaction
         None() => 0x0000000000000000,
       };
       if byte_list_length(response.body_bytes) < 16
-         | image_header != previous.pending.captured_first
-         | image_bitmap != previous.pending.captured_second then
+         | image_header != pending_transaction(previous.pending).captured_first
+         | image_bitmap != pending_transaction(previous.pending).captured_second then
         faulted(previous.state, Op_RESTORE, InvalidControlState,
                 "RESTORE image changed after header validation")
       else restore_raw_image(previous, response.body_bytes, image_header, image_bitmap)

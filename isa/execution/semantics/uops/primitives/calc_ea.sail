@@ -1,12 +1,13 @@
 union clause Uop_kind = UopCalcEa : unit
+union clause Uop_kind = UopSegmentLea : unit
 
 function clause execute_uop(UopCalcEa(), uop, values, instruction, before, speculative) =
     match operand_named(instruction, uop.operand_name) {
-        None() => uop_fault(
+        None() => uop_step_fault(
             faulted(before, instruction.form.operation, IllegalInstruction, "uop EA operand is missing"),
         ),
         Some(operand) => match operand.ea {
-            None() => uop_fault(
+            None() => uop_step_fault(
                 faulted(before, instruction.form.operation, IllegalInstruction, "uop EA operand has no decoded EA"),
             ),
             Some(ea) => {
@@ -33,7 +34,29 @@ function clause execute_uop(UopCalcEa(), uop, values, instruction, before, specu
                         linear_address = evaluation.linear_address,
                         domain = request_domain_for_operand(evaluation.domain),
                     };
-                uop_continue(speculative, uop_value_set(values, uop.destination.index, address))
+                uop_step_continue(speculative, uop_value_set(values, uop.destination.index, address))
             },
         },
+    }
+
+function clause execute_uop(UopSegmentLea(), uop, values, instruction, before, speculative) =
+    match uop_value_get(values, uop.source0.index) {
+        Some(address) => {
+            let point = segment_point(address.segment_image, address.effective_address);
+            var updated = speculative;
+            if point.in_bounds then {
+                updated.flags = flags_value(false, false, false, false);
+                match uop_location_write(uop.destination, point.linear, 8,
+                                         instruction.form.operation, updated, values) {
+                    Some((next_state, next_values)) => uop_step_continue(next_state, next_values),
+                    None() => uop_step_fault(faulted(before, instruction.form.operation,
+                        InvalidControlState, "SEGLEA destination is not writable")),
+                }
+            } else {
+                updated.flags = flags_value(false, false, false, true);
+                uop_step_continue(updated, values)
+            }
+        },
+        None() => uop_step_fault(faulted(before, instruction.form.operation,
+                                    InvalidControlState, "SEGLEA address is unavailable")),
     }

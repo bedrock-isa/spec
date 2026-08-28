@@ -1,18 +1,10 @@
+function clause register_result_extension(Op_RDCR) = RegisterZeroExtend
 
-function execute_RDCR(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) = {
-    let local_candidate : option(Execution_result) = match value_named(instruction, state, Operand_cr) {
-        None() => None(),
-        Some(raw_selector) => {
-            let selector = unsigned(raw_selector[15 .. 0]);
-            match control_index(selector) {
-                Some(index) => Some(read_state_register(instruction, state, state.controls[unsigned(index)])),
-                None() => Some(faulted(state, Op_RDCR, InvalidControlState, "unknown control-register selector")),
-            }
-        },
-    };
-    let result : Execution_result = match local_candidate {
-        Some(result) => result,
-        None() => start_system_request(instruction, state),
-    };
-    Some(result)
-}
+function clause repeat_semantics(Op_RDCR) = RepeatObserveDestination
+
+function lower_RDCR_uops(_ : Decoded_instruction) -> list(Uop) = [|
+  uop_make(UopSystemState(SystemReadControl), uop_location_make_none(), uop_location_make_none(), uop_location_make_none(), Operand_dst, 8, CommitRegisters)
+|]
+
+function execute_RDCR(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) =
+  Some(uop_program_execute(lower_RDCR_uops(instruction), instruction, state))

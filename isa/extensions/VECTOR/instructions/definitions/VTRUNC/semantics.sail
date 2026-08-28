@@ -1,16 +1,30 @@
+function clause register_result_extension(Op_VTRUNC) = RegisterZeroExtend
+
+function clause repeat_semantics(Op_VTRUNC) = RepeatObserveDestination
+
+function clause vector_semantics(Op_VTRUNC) =
+    {
+        vector_default_semantics() with
+        fp_basic = true,
+        fp_primitive = true,
+        fp_scalar_operation = Some(fp_conversion_semantic_operation(FpConvertTruncate)),
+        fp_arity = 1,
+        fp_allowed_causes = fflags_nv | fflags_nx,
+    }
+
 function execute_VTRUNC(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) = {
-    let address = uop_temporary(40);
-    let memory = uop_temporary(41);
-    let output = uop_temporary(42);
+    let address = uop_location_make_temporary(40);
+    let memory = uop_location_make_temporary(41);
+    let output = uop_location_make_temporary(42);
     let commit_kind : Commit_kind = match vector_memory_operand(instruction.operands) {
         Some(_) => CommitMemory,
         None() => CommitRegisters,
     };
     let compute = {
-        make_uop(
+        uop_make(
             UopVectorFp(Op_VTRUNC),
-            uop_none(),
-            uop_none(),
+            uop_location_make_none(),
+            uop_location_make_none(),
             output,
             Operand_dst,
             operation_width(instruction),
@@ -19,41 +33,41 @@ function execute_VTRUNC(instruction : Decoded_instruction, state : Cpu_state) ->
         auxiliary = memory,
     };
     Some(
-        execute_uop_program(
+        uop_program_execute(
             [|
-                make_uop(
+                uop_make(
                     UopVectorCalcEa(),
-                    uop_none(),
-                    uop_none(),
+                    uop_location_make_none(),
+                    uop_location_make_none(),
                     address,
                     Operand_dst,
                     operation_width(instruction),
                     CommitNone,
                 ),
-                make_uop(
+                uop_make(
                     UopVectorMemoryLoad(),
                     address,
-                    uop_none(),
+                    uop_location_make_none(),
                     memory,
                     Operand_dst,
                     operation_width(instruction),
                     CommitMemory,
                 ),
                 compute,
-                make_uop(
+                uop_make(
                     UopVectorMemoryStore(),
                     address,
                     output,
-                    uop_none(),
+                    uop_location_make_none(),
                     Operand_dst,
                     operation_width(instruction),
                     CommitMemory,
                 ),
-                make_uop(
+                uop_make(
                     UopCommit(),
-                    uop_none(),
-                    uop_none(),
-                    uop_none(),
+                    uop_location_make_none(),
+                    uop_location_make_none(),
+                    uop_location_make_none(),
                     Operand_dst,
                     operation_width(instruction),
                     commit_kind,

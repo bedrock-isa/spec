@@ -1,21 +1,30 @@
+function clause fp_semantics(Op_FSINCOSA) =
+  Some(fp_info(FpPathR, 1, FpResultFnPairByFormat, 0b10010,
+                                fp_flags_none, true, 4))
 
-function lower_FSINCOSA_uops(instruction : Decoded_instruction) -> option(list(Micro_operation)) =
+
+function clause register_result_extension(Op_FSINCOSA) = RegisterZeroExtend
+
+function clause repeat_semantics(Op_FSINCOSA) = RepeatObserveDestination
+
+function lower_FSINCOSA_uops(instruction : Decoded_instruction) -> option(list(Uop)) =
     match (
         fp_source_at(instruction.operands, 0, 0),
         operand_named(instruction, Operand_sin_dst),
         operand_named(instruction, Operand_cos_dst),
     ) {
-        (Some(source_operand), Some(sin_destination), Some(cos_destination)) => {
+        (Some(source_operand), Some(sin_destination), Some(cos_destination))
+          if sin_destination.value[3 .. 0] != cos_destination.value[3 .. 0] => {
             let width = operation_width(instruction);
-            let source = lower_uop_operand(source_operand, width, 0, true);
-            let contract = uop_temporary(32);
+            let source = uop_operand_lower(source_operand, width, 0, true);
+            let contract = uop_location_make_temporary(32);
             let compute = {
-                make_uop_pair(
+                uop_make_pair(
                     UopFpOperation(Op_FSINCOSA),
                     source.value,
-                    uop_none(),
-                    direct_uop_location(sin_destination),
-                    direct_uop_location(cos_destination),
+                    uop_location_make_none(),
+                    uop_operand_location(sin_destination),
+                    uop_operand_location(cos_destination),
                     Operand_sin_dst,
                     width,
                     CommitRegisters,
@@ -23,28 +32,28 @@ function lower_FSINCOSA_uops(instruction : Decoded_instruction) -> option(list(M
                 auxiliary = contract,
             };
             Some(
-                append_uops(
+                uop_program_append(
                     [|
-                        make_uop(UopFpContractQuery(), uop_none(), uop_none(), contract, Operand_src, width, CommitNone),
-                        make_uop(
+                        uop_make(UopFpContractQuery(), uop_location_make_none(), uop_location_make_none(), contract, Operand_src, width, CommitNone),
+                        uop_make(
                             UopFpContractValidate(),
                             contract,
-                            uop_none(),
-                            uop_none(),
+                            uop_location_make_none(),
+                            uop_location_make_none(),
                             Operand_src,
                             width,
                             CommitNone,
                         ),
                     |],
-                    append_uops(
+                    uop_program_append(
                         source.program,
                         [|
                             compute,
-                            make_uop(
+                            uop_make(
                                 UopCommit(),
-                                uop_none(),
-                                uop_none(),
-                                uop_none(),
+                                uop_location_make_none(),
+                                uop_location_make_none(),
+                                uop_location_make_none(),
                                 Operand_sin_dst,
                                 width,
                                 CommitRegisters,
@@ -59,7 +68,7 @@ function lower_FSINCOSA_uops(instruction : Decoded_instruction) -> option(list(M
 
 function execute_FSINCOSA(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) =
     match lower_FSINCOSA_uops(instruction) {
-        Some(program) => Some(execute_uop_program(program, instruction, state)),
+        Some(program) => Some(uop_program_execute(program, instruction, state)),
         None() => Some(
             faulted(
                 state,

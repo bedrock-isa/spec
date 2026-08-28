@@ -1,29 +1,37 @@
+function clause fp_semantics(Op_FXCHG) =
+Some(fp_raw_result_info(fp_exact_info(fp_info(FpPathR, 2, FpResultFnPair64, fflags_none,
+                             fp_flags_none, false, 0), FpExactExchange)))
 
-function lower_FXCHG_uops(instruction : Decoded_instruction) -> option(list(Micro_operation)) =
+
+function clause register_result_extension(Op_FXCHG) = RegisterZeroExtend
+
+function clause repeat_semantics(Op_FXCHG) = RepeatObserveDestination
+
+function lower_FXCHG_uops(instruction : Decoded_instruction) -> option(list(Uop)) =
     match (
-        lower_fp_binary_sources(instruction),
+        fp_operands_lower_binary(instruction),
         fp_writable_fn_at(instruction.operands, 0, 0),
         fp_writable_fn_at(instruction.operands, 1, 0),
     ) {
         (Some(sources), Some(first), Some(second)) => Some(
-            append_uops(
+            uop_program_append(
                 sources.program,
                 [|
-                    make_uop_pair(
+                    uop_make_pair(
                         UopFpOperation(Op_FXCHG),
                         sources.source0,
                         sources.source1,
-                        direct_uop_location(first),
-                        direct_uop_location(second),
+                        uop_operand_location(first),
+                        uop_operand_location(second),
                         Operand_lhs,
                         operation_width(instruction),
                         CommitRegisters,
                     ),
-                    make_uop(
+                    uop_make(
                         UopCommit(),
-                        uop_none(),
-                        uop_none(),
-                        uop_none(),
+                        uop_location_make_none(),
+                        uop_location_make_none(),
+                        uop_location_make_none(),
                         Operand_lhs,
                         operation_width(instruction),
                         CommitRegisters,
@@ -36,7 +44,7 @@ function lower_FXCHG_uops(instruction : Decoded_instruction) -> option(list(Micr
 
 function execute_FXCHG(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) =
     match lower_FXCHG_uops(instruction) {
-        Some(program) => Some(execute_uop_program(program, instruction, state)),
+        Some(program) => Some(uop_program_execute(program, instruction, state)),
         None() => Some(
             faulted(
                 state,

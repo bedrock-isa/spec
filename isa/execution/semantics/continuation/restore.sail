@@ -186,7 +186,7 @@ function continue_event_return(previous : Execution_result, bytes : list(bits(8)
      Some(saved_ds), Some(saved_ss), Some(_padding)) => {
       let saved_flags = sail_shiftright(control, 32) & 0x000000000000000F;
       let saved_status = sail_shiftright(control, 36) & 0x000000000000FFFF;
-      if control != previous.pending.captured_first
+      if control != pending_transaction(previous.pending).captured_first
          | byte_list_length(bytes) < unsigned(control[7 .. 0]) * 8
          | event_info[63 .. 32] != 0x00000000
          | saved_flags[15 .. 4] != 0x000
@@ -215,9 +215,9 @@ function continue_event_return(previous : Execution_result, bytes : list(bits(8)
           candidate.run_state = Running;
           let staged = { previous with pending = { previous.pending with after = Some(candidate) } };
           continue_with_request(
-            staged, PhaseEventReturnExecute, previous.pending.ordinal + 1,
+            staged, PhaseEventReturnExecute, pending_transaction(previous.pending).ordinal + 1,
             saved_pc, saved_cs,
-            target_probe_request(previous.pending.ordinal + 1, saved_cs, saved_pc)
+            target_probe_request(pending_transaction(previous.pending).ordinal + 1, saved_cs, saved_pc)
           )
       }
     },

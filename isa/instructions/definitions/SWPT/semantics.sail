@@ -1,5 +1,10 @@
+function clause register_result_extension(Op_SWPT) = RegisterZeroExtend
 
-function execute_SWPT(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) = {
-    let result : Execution_result = start_tlb_context_transaction(instruction, state);
-    Some(result)
-}
+function clause repeat_semantics(Op_SWPT) = RepeatObserveDestination
+
+function lower_SWPT_uops(_ : Decoded_instruction) -> list(Uop) = [|
+  uop_make(UopTlbContext(TlbSwitchPageTable), uop_location_make_none(), uop_location_make_none(), uop_location_make_none(), Operand_dst, 8, CommitControl)
+|]
+
+function execute_SWPT(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) =
+  Some(uop_program_execute(lower_SWPT_uops(instruction), instruction, state))

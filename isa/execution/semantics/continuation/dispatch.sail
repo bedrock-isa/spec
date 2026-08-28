@@ -2,7 +2,15 @@ function resume_transaction_inner(previous : Execution_result, response : Transa
     if not_bool(previous.awaiting_environment) then {
         previous
     } else {
-        if not_bool(response_matches_phase(previous.pending.phase, previous.request, response.kind)) then {
+        let response_matches : bool = match uop_continuation_get(previous.pending) {
+            Some(continuation) => response_matches_request(previous.request, response.kind),
+            None() => response_matches_phase(
+                pending_transaction(previous.pending).phase,
+                previous.request,
+                response.kind,
+            ),
+        };
+        if not_bool(response_matches) then {
             faulted(
                 previous.state,
                 previous.pending.operation,
@@ -10,13 +18,13 @@ function resume_transaction_inner(previous : Execution_result, response : Transa
                 "transaction response kind mismatch",
             )
         } else {
-            if not_bool(response.success) & previous.pending.phase == PhaseEventTargetProbe then {
+            if not_bool(response.success) & pending_transaction(previous.pending).phase == PhaseEventTargetProbe then {
                 event_delivery_failed(previous, 0)
             } else {
-                if not_bool(response.success) & previous.pending.phase == PhaseEventStackProbe then {
+                if not_bool(response.success) & pending_transaction(previous.pending).phase == PhaseEventStackProbe then {
                     event_delivery_failed(previous, 2)
                 } else {
-                    if not_bool(response.success) & previous.pending.phase == PhaseEventFrameStore then {
+                    if not_bool(response.success) & pending_transaction(previous.pending).phase == PhaseEventFrameStore then {
                         event_delivery_failed(previous, 3)
                     } else {
                         if not_bool(response.success) & previous.request.suppress_fault then {
@@ -70,55 +78,19 @@ function resume_transaction_inner(previous : Execution_result, response : Transa
                                                     "MMIO scalar is not naturally aligned",
                                                 )
                                             } else {
-                                                match previous.pending.phase {
-                                                    PhaseSourceRead => resume_memory_phase(previous, response),
-                                                    PhaseDestinationProbe => resume_memory_phase(previous, response),
-                                                    PhaseDestinationWrite => resume_memory_phase(previous, response),
-                                                    PhaseMemoryWriteFirst => resume_memory_phase(previous, response),
-                                                    PhaseMemoryWriteSecond => resume_memory_phase(previous, response),
-                                                    PhaseAtomicRmw => resume_memory_phase(previous, response),
-                                                    PhaseTargetRead => resume_control_phase(previous, response),
-                                                    PhaseTargetExecuteProbe => resume_control_phase(previous, response),
-                                                    PhaseStackRange => resume_control_phase(previous, response),
-                                                    PhaseStackWriteFirst => resume_control_phase(previous, response),
-                                                    PhaseStackReadFirst => resume_control_phase(previous, response),
-                                                    PhaseStackReadSecond => resume_control_phase(previous, response),
-                                                    PhaseCpuidQuery => resume_control_phase(previous, response),
-                                                    PhasePerformanceCounter => resume_control_phase(previous, response),
-                                                    PhaseControlTransition => resume_control_phase(previous, response),
-                                                    PhaseResetSerialize => resume_control_phase(previous, response),
-                                                    PhaseIntegerExternal => resume_control_phase(previous, response),
-                                                    PhaseCacheTranslate => resume_system_phase(previous, response),
-                                                    PhaseCacheMaintenance => resume_system_phase(previous, response),
-                                                    PhaseFenceCompletion => resume_system_phase(previous, response),
-                                                    PhaseTlbOperation => resume_system_phase(previous, response),
-                                                    PhaseTranslationQuery => resume_system_phase(previous, response),
-                                                    PhasePteRead => resume_system_phase(previous, response),
-                                                    PhaseContextSwitch => resume_system_phase(previous, response),
-                                                    PhaseStateSave => resume_system_phase(previous, response),
-                                                    PhaseStateRestoreHeader => resume_system_phase(previous, response),
-                                                    PhaseStateRestoreRange => resume_system_phase(previous, response),
-                                                    PhaseStateRestore => resume_system_phase(previous, response),
-                                                    PhaseRepeatFetch => resume_repeat_phase(previous, response),
-                                                    PhaseEventTargetProbe => resume_events_phase(previous, response),
-                                                    PhaseEventStackProbe => resume_events_phase(previous, response),
-                                                    PhaseEventFrameStore => resume_events_phase(previous, response),
-                                                    PhaseEventFrameHeader => resume_events_phase(previous, response),
-                                                    PhaseEventFrame => resume_events_phase(previous, response),
-                                                    PhaseEventReturnExecute => resume_events_phase(previous, response),
-                                                    PhaseUopWait => resume_uop_phase(previous, response),
-                                                    ContinuationNone => faulted(
-                                                        previous.state,
-                                                        previous.pending.operation,
-                                                        InvalidControlState,
-                                                        "unexpected transaction phase",
-                                                    ),
-                                                    _ => faulted(
-                                                        previous.state,
-                                                        previous.pending.operation,
-                                                        InvalidControlState,
-                                                        "unexpected transaction phase",
-                                                    ),
+                                                match previous.pending.continuation {
+                                                  PendingUop(_) => uop_program_resume(previous, response),
+                                                  PendingSystem(_) => resume_system_phase(previous, response),
+                                                  PendingRepeat(_) => resume_repeat_phase(previous, response),
+                                                  PendingEvent(_) => resume_events_phase(previous, response),
+                                                  PendingEventReturn(_) => resume_events_phase(previous, response),
+                                                  PendingControl(_) => resume_control_phase(previous, response),
+                                                  PendingNone(_) => faulted(
+                                                    previous.state,
+                                                    previous.pending.operation,
+                                                    InvalidControlState,
+                                                    "missing pending continuation",
+                                                  ),
                                                 }
                                             }
                                         }
@@ -137,24 +109,18 @@ function resume_transaction(previous : Execution_result, response : Transaction_
     if result.awaiting_environment | result.fault != None() then {
         result
     } else {
-        if previous.pending.repeat_parent_active then {
-            match previous.pending.repeat_body {
-                None() => faulted(
-                    previous.state,
-                    previous.pending.operation,
-                    InvalidControlState,
-                    "missing repeat parent body",
-                ),
-                Some(body) => finish_repeat_single(
-                    body,
-                    previous.pending.repeat_bytes,
+        match previous.pending.repeat_parent {
+            Some(parent) => finish_repeat_single(
+                    parent.body,
+                    parent.bytes,
                     previous.state,
                     result.state,
-                    previous.pending.captured_first,
+                    match uop_continuation_get(previous.pending) {
+                        Some(continuation) => continuation.captured,
+                        None() => pending_transaction(previous.pending).captured_first,
+                    },
                 ),
-            }
-        } else {
-            result
+            None() => result,
         }
     }
 }

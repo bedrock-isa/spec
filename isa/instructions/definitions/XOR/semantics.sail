@@ -1,26 +1,34 @@
-function execute_XOR_primitive(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) = {
-    let width = operation_width(instruction);
-    match binary_operands_local(instruction, state) {
-        None() => None(),
-        Some((source, destination, destination_ref)) => {
-            let updated = write_local_destination(
-                state,
-                instruction.form.operation,
-                destination_ref,
-                narrow_bits(xor_vec(destination, source), width),
-            );
-            Some(local_result(state, instruction, updated, CommitRegisters))
-        },
-    }
-}
+function clause register_result_extension(Op_XOR) = RegisterZeroExtend
 
-function execute_XOR(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) = {
-    let result : Execution_result = match execute_XOR_primitive(instruction, state) {
-        Some(result) => result,
-        None() => match start_memory_transaction(instruction, state) {
-            Some(result) => result,
-            None() => faulted(state, instruction.form.operation, IllegalInstruction, "unresolved integer ALU form"),
+function clause repeat_semantics(Op_XOR) = RepeatObserveDestination
+
+function xor_source_operand(instruction : Decoded_instruction) -> option(Decoded_operand) =
+    match operand_named(instruction, Operand_src) {
+        Some(source) => Some(source),
+        None() => operand_named(instruction, Operand_imm),
+    }
+
+function lower_XOR_uops(instruction : Decoded_instruction) -> option(list(Uop)) =
+    match (xor_source_operand(instruction), operand_named(instruction, Operand_dst)) {
+        (Some(source_operand), Some(destination_operand)) => {
+            let width = operation_width(instruction);
+            let source = uop_operand_lower(source_operand, width, 0, true);
+            let destination = uop_operand_lower(destination_operand, width, source.next_temporary, true);
+            let operation = uop_make(
+                UopIntegerAlu(IntegerAluXor), destination.value, source.value,
+                destination.value, Operand_dst, width, CommitRegisters
+            );
+            Some(uop_program_build_operation(
+              uop_program_append(source.program, destination.program), operation, destination.value, destination,
+              Operand_dst, width, source.memory | destination.memory
+            ))
         },
-    };
-    Some(result)
-}
+        _ => None(),
+    }
+
+function execute_XOR(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) =
+    match lower_XOR_uops(instruction) {
+        Some(program) => Some(uop_program_execute(program, instruction, state)),
+        None() => Some(faulted(state, instruction.form.operation, IllegalInstruction,
+                               "XOR could not be lowered to micro-operations")),
+    }

@@ -1,104 +1,28 @@
-function execute_PLOOP_primitive(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) = {
-    let operation = instruction.form.operation;
-    let element_bytes = operation_width(instruction);
-    let lanes = tdiv_int(state.vector_length_bytes, element_bytes);
-    let empty = zero_vector_bytes(tdiv_int(state.vector_length_bytes, 8));
-    let zero_vector = zero_vector_bytes(state.vector_length_bytes);
-    let fp_form : bool = match condition_size_field(instruction.fields) {
-        Some(selector) => selector >= 5,
-        None() => false,
-    };
-    if true then {
-        match (
-            operand_named(instruction, Operand_remaining),
-            operand_named(instruction, Operand_offset),
-            predicate_register_index(instruction, Operand_predicate),
-        ) {
-            (Some(remaining_operand), Some(offset_operand), Some(predicate)) => {
-                let remaining_index = unsigned(remaining_operand.value[3 .. 0]);
-                let offset_index = unsigned(offset_operand.value[3 .. 0]);
-                let remaining = unsigned(state.registers[remaining_index]);
-                let offset = unsigned(state.registers[offset_index]);
-                if remaining == 0 then {
-                    start_control_transaction(instruction, state)
-                } else {
-                    if offset >= lanes then {
-                        Some(
-                            faulted_with_error_code(
-                                state,
-                                operation,
-                                VectorRangeFault,
-                                "PLOOP offset exceeds the lane count",
-                                0x0000000000000000,
-                            ),
-                        )
-                    } else {
-                        let active = if remaining < lanes - offset then {
-                                remaining
-                            } else {
-                                lanes - offset
-                            };
-                        var updated = state;
-                        updated.predicate_registers[unsigned(predicate)] = predicate_fill_typed(
-                            empty,
-                            0,
-                            lanes,
-                            element_bytes,
-                            offset,
-                            offset + active,
-                        );
-                        updated.registers[remaining_index] = get_slice_int(64, remaining - active, 0);
-                        updated.registers[offset_index] = 0x0000000000000000;
-                        Some(vector_finish(instruction, state, updated))
-                    }
-                }
-            },
-            _ => None(),
-        }
-    } else {
-        None()
-    }
-}
+function clause register_result_extension(Op_PLOOP) = RegisterZeroExtend
 
-union clause Uop_kind = UopInstruction_PLOOP : unit
+function clause repeat_semantics(Op_PLOOP) = RepeatObserveDestination
 
-function clause execute_uop(UopInstruction_PLOOP(), _, values, instruction, before, speculative) =
-    match execute_PLOOP_primitive(instruction, speculative) {
-        Some(result) => vector_local_result_uop_step(result, instruction, before, speculative, values),
-        None() => uop_fault(
-            faulted(
-                before,
-                instruction.form.operation,
-                IllegalInstruction,
-                "PLOOP local vector primitive rejected its instruction",
-            ),
-        ),
-    }
+function clause vector_semantics(Op_PLOOP) = vector_default_semantics()
+
+function lower_PLOOP_uops(instruction : Decoded_instruction) -> option(list(Uop)) =
+  match operand_named(instruction, Operand_target) {
+    Some(target) => {
+      let lowered = uop_operand_lower(target, 8, 0, true);
+      let target_value = uop_location_make_temporary(lowered.next_temporary);
+      let relative = target.operand_type == OperandType_imm8s | target.operand_type == OperandType_imm16s
+                   | target.operand_type == OperandType_imm32s;
+      Some(uop_program_append([|uop_make(UopVectorLoopGuard(), uop_location_make_none(), uop_location_make_none(), uop_location_make_none(),
+                                  Operand_target, 0, CommitControl)|],
+        uop_program_append(lowered.program, [|
+          uop_make(UopControlTarget(relative), lowered.value, uop_location_make_none(), target_value, Operand_target, 8, CommitControl),
+          uop_make(UopControlProbe(), target_value, uop_location_make_segment(0), uop_location_make_none(), Operand_target, 8, CommitControl),
+          uop_make(UopControlCommit(ControlJump), target_value, uop_location_make_segment(0), uop_location_make_none(), Operand_target, 8, CommitControl)
+        |])))
+    }, None() => None(),
+  }
 
 function execute_PLOOP(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) =
-    Some(
-        execute_uop_program(
-            [|
-                make_uop(
-                    UopInstruction_PLOOP(),
-                    uop_none(),
-                    uop_none(),
-                    uop_none(),
-                    Operand_dst,
-                    operation_width(instruction),
-                    CommitControl,
-                ),
-                make_uop(
-                    UopCommit(),
-                    uop_none(),
-                    uop_none(),
-                    uop_none(),
-                    Operand_dst,
-                    operation_width(instruction),
-                    CommitControl,
-                ),
-            |],
-            instruction,
-            state,
-        ),
-    )
+  match lower_PLOOP_uops(instruction) {
+    Some(program) => Some(uop_program_execute(program, instruction, state)),
+    None() => Some(faulted(state, instruction.form.operation, IllegalInstruction, "PLOOP could not be lowered")),
+  }

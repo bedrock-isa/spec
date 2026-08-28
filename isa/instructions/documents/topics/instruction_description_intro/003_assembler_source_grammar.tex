@@ -33,10 +33,10 @@ instruction reads memory, writes memory, computes the address only, or applies a
 defined by that instruction\textquotesingle{}s operand role.
 
 The optional \texttt{: LEN n} annotation requests an encoded extended instruction length of \texttt{n} bytes. If no
-padding-byte list follows, the assembler fills every trailing padding byte with \texttt{ILLEGAL}, whose canonical
-one-byte encoding is zero. If a list is present, each item specifies one trailing padding byte in instruction-stream
-order; its item count must equal the requested length minus the required instruction length. \texttt{NOP} denotes its
-canonical one-byte encoding, and an integer padding byte must be an absolute value from 0 through 255. Padding bytes do
+padding-byte list follows, the assembler fills every trailing (:term:base.terms.padding:) byte with (:ref:base.instructions.ILLEGAL:), whose canonical
+one-byte encoding is zero. If a list is present, each item specifies one trailing (:term:base.terms.padding:) byte in instruction-stream
+order; its item count must equal the requested length minus the (:term:base.terms.required_instruction_length:). (:ref:base.instructions.NOP:) denotes its
+canonical one-byte encoding, and an integer (:term:base.terms.padding:) byte must be an absolute value from 0 through 255. Padding bytes do
 not accept expressions or relocations.
 
 Register names are recognized case-insensitively. Symbol names are case-sensitive. A bare identifier that is a

@@ -1,6 +1,7 @@
 import unittest
 from dataclasses import replace
 from pathlib import Path
+import re
 import tempfile
 
 from engine.instruction import Instruction
@@ -140,6 +141,103 @@ class SailCompositionTest(unittest.TestCase):
                 source,
             )
 
+    def test_instruction_semantics_do_not_identify_other_instructions(self) -> None:
+        for source_path in self.project.root.glob(
+            "**/instructions/definitions/*/semantics.sail"
+        ):
+            owner = source_path.parent.name
+            referenced_operations = set(
+                re.findall(r"\bOp_([A-Za-z0-9_]+)\b", source_path.read_text())
+            )
+            foreign_operations = referenced_operations - {owner}
+            self.assertEqual(
+                foreign_operations,
+                set(),
+                f"{source_path} identifies instructions owned elsewhere",
+            )
+
+    def test_repeatable_instruction_owns_its_observation_semantics(self) -> None:
+        repeat = (
+            self.project.root / "repeat/semantics/repeat.sail"
+        ).read_text()
+        continuation = (
+            self.project.root / "repeat/semantics/continuation.sail"
+        ).read_text()
+        catalog = SailCatalogRenderer().render(self.compose())
+        repeatcc_operations = set(
+            re.findall(
+                r"operation = Op_([A-Za-z0-9_]+),.*repeat_repcc = true",
+                catalog,
+            )
+        )
+
+        self.assertNotRegex(repeat, r"\bOp_[A-Za-z0-9_]+\b")
+        self.assertNotIn("repeat_body_control_forbidden", continuation)
+        self.assertTrue(repeatcc_operations)
+        for semantics_path in self.project.root.glob(
+            "**/instructions/definitions/*/semantics.sail"
+        ):
+            mnemonic = semantics_path.parent.name
+            semantics = semantics_path.read_text()
+            self.assertIn(
+                f"function clause repeat_semantics(Op_{mnemonic})",
+                semantics,
+            )
+
+    def test_instruction_owns_register_result_extension(self) -> None:
+        for semantics in self.project.root.glob(
+            "**/instructions/definitions/*/semantics.sail"
+        ):
+            mnemonic = semantics.parent.name
+            self.assertIn(
+                f"function clause register_result_extension(Op_{mnemonic})",
+                semantics.read_text(),
+                semantics,
+            )
+
+        for source in (
+            "execution/semantics/integer_bits.sail",
+            "execution/semantics/instruction_properties.sail",
+            "instructions/semantics/integer/arithmetic.sail",
+            "instructions/semantics/integer/data_control.sail",
+            "instructions/semantics/integer/routing.sail",
+        ):
+            text = (self.project.root / source).read_text()
+            self.assertNotRegex(text, r"\bOp_[A-Za-z0-9_]+\b", source)
+
+    def test_fp_instruction_owns_its_form_semantics(self) -> None:
+        catalog_path = self.project.root / "extensions/FP/semantics/operation_catalog.sail"
+        catalog = catalog_path.read_text()
+
+        self.assertNotRegex(catalog, r"\bOp_[A-Za-z0-9_]+\b")
+        self.assertNotIn("fp_base_semantics", catalog)
+        for semantics_path in self.project.root.glob(
+            "extensions/FP/instructions/definitions/*/semantics.sail"
+        ):
+            mnemonic = semantics_path.parent.name
+            self.assertIn(
+                f"function clause fp_semantics(Op_{mnemonic})",
+                semantics_path.read_text(),
+                semantics_path,
+            )
+
+        primitives = self.project.root / "extensions/FP/semantics/primitives"
+        for source_name, removed_classifier in {
+            "arithmetic.sail": "fp_arithmetic_operation",
+            "comparison.sail": "fp_compare_operation",
+            "conversion.sail": "fp_conversion_operation",
+            "data.sail": "fp_data_operation",
+        }.items():
+            self.assertNotIn(
+                f"function {removed_classifier}(",
+                (primitives / source_name).read_text(),
+            )
+
+        primitive_runtime = (
+            self.project.root / "extensions/FP/semantics/primitives.sail"
+        ).read_text()
+        self.assertNotIn("fp_shared_numeric_semantic_operation", primitive_runtime)
+
     def test_add_and_move_own_their_uop_programs(self) -> None:
         uops = (
             self.project.root / "execution/semantics/uops.sail"
@@ -156,14 +254,14 @@ class SailCompositionTest(unittest.TestCase):
                 / "semantics.sail"
             ).read_text()
             self.assertIn(f"function lower_{mnemonic}_uops", semantics)
-            self.assertIn("execute_uop_program", semantics)
+            self.assertIn("uop_program_execute", semantics)
             self.assertNotIn("start_memory_transaction", semantics)
 
             self.assertNotIn(f"lower_{mnemonic}_uops", uops)
             self.assertNotIn(f"Op_{mnemonic}", uops)
 
-        self.assertIn("ea_update_program(operand, width, true)", lowering)
-        self.assertIn("ea_update_program(operand, width, false)", lowering)
+        self.assertIn("uop_ea_update_program(operand, width, true)", lowering)
+        self.assertIn("uop_ea_update_program(operand, width, false)", lowering)
 
     def test_uop_primitives_own_scattered_tag_and_execution_clause(self) -> None:
         types = (
@@ -201,14 +299,132 @@ class SailCompositionTest(unittest.TestCase):
             self.assertNotIn(constructor, types)
 
         self.assertIn(
-            "uop_wait(",
+            "uop_step_wait(",
             (primitives / "memory_load.sail").read_text(),
         )
         self.assertIn(
-            "uop_wait(",
+            "uop_step_wait(",
             (primitives / "memory_store.sail").read_text(),
         )
-        self.assertIn("PhaseUopWait", runtime)
+        self.assertIn(
+            "union clause Uop_kind = UopIntegerAlu : Integer_alu_uop_operation",
+            (primitives / "integer_add.sail").read_text(),
+        )
+        self.assertNotIn("PhaseUopWait", types)
+        self.assertNotIn("PhaseUopWait", runtime)
+
+    def test_uop_api_uses_domain_first_names(self) -> None:
+        core_sources = [
+            self.project.root / "execution/semantics/uops.sail",
+            self.project.root / "execution/semantics/uops/lowering.sail",
+            *(self.project.root / "execution/semantics/uops/primitives").glob(
+                "*.sail"
+            ),
+        ]
+        core = "\n".join(source.read_text() for source in core_sources)
+        declarations = re.findall(
+            r"^(?:function|val)\s+(?:clause\s+)?([A-Za-z][A-Za-z0-9_]*)",
+            core,
+            re.MULTILINE,
+        )
+
+        self.assertTrue(declarations)
+        self.assertTrue(
+            all(name == "execute_uop" or name.startswith("uop_") for name in declarations)
+        )
+
+        types = (self.project.root / "execution/semantics/types.sail").read_text()
+        self.assertIn("struct Uop =", types)
+        self.assertNotIn("Micro_operation", types)
+
+        all_sail = "\n".join(
+            source.read_text() for source in self.project.root.rglob("*.sail")
+        )
+        for legacy_name in (
+            "make_uop",
+            "append_uops",
+            "lower_uop_operand",
+            "execute_uop_program",
+            "run_uop_program",
+            "resume_uop_phase",
+            "uop_complete",
+            "uop_fault",
+            "fp_execute_uop_operation",
+            "execute_vector_fp_uop",
+        ):
+            self.assertNotRegex(all_sail, rf"\b{legacy_name}\b")
+
+    def test_pending_execution_uses_typed_continuation_payloads(self) -> None:
+        types = (
+            self.project.root / "execution/semantics/types.sail"
+        ).read_text()
+        runtime = (
+            self.project.root / "execution/semantics/uops.sail"
+        ).read_text()
+        results = (
+            self.project.root / "execution/semantics/results.sail"
+        ).read_text()
+
+        self.assertIn("struct Uop_continuation", types)
+        self.assertIn("PendingUop : Uop_continuation", types)
+        self.assertNotIn("uop_program :", types)
+        self.assertNotIn("uop_cursor :", types)
+        self.assertNotIn("uop_values :", types)
+        self.assertNotIn("uop_pending_destination :", types)
+        self.assertIn("uop_continuation_get(previous.pending)", runtime)
+
+        self.assertIn("struct Repeat_continuation", types)
+        self.assertIn("repeat_parent : option(Repeat_continuation)", types)
+        self.assertNotIn("repeat_parent_active :", types)
+        self.assertNotIn("repeat_body :", types)
+        self.assertNotIn("repeat_bytes :", types)
+
+        self.assertIn("struct Event_continuation", types)
+        self.assertIn("PendingEvent : Event_continuation", types)
+        self.assertNotIn("event_attempt :", types)
+
+        self.assertIn("struct Transaction_continuation", types)
+        for variant in (
+            "PendingControl",
+            "PendingEventReturn",
+            "PendingSystem",
+            "PendingRepeat",
+        ):
+            self.assertIn(f"{variant} : Transaction_continuation", types)
+        self.assertNotIn("PendingMemory :", types)
+        self.assertNotIn("PendingTransaction :", types)
+        self.assertIn("continuation : Pending_continuation", types)
+        pending = types.split("struct Pending_commit = {", 1)[1].split("}", 1)[0]
+        self.assertNotIn("uop : option", pending)
+        self.assertNotIn("transaction : Transaction_continuation", pending)
+        self.assertNotIn("event : option", pending)
+        for flattened in (
+            "phase : Continuation_phase",
+            "ordinal : int",
+            "captured_first : bits(64)",
+            "captured_second : bits(64)",
+        ):
+            self.assertNotIn(flattened, pending)
+
+        common = (
+            self.project.root / "execution/semantics/continuation/common.sail"
+        ).read_text()
+        dispatch = (
+            self.project.root / "execution/semantics/continuation/dispatch.sail"
+        ).read_text()
+        self.assertIn("function response_matches_request", common)
+        self.assertNotIn("PhaseUopWait", common)
+        self.assertIn("uop_continuation_get(previous.pending)", dispatch)
+        self.assertNotIn("PhaseUopWait", dispatch)
+        self.assertNotIn("PendingMemory", dispatch)
+        self.assertNotIn("resume_memory_phase", dispatch)
+        self.assertIn("PendingSystem(_) => resume_system_phase", dispatch)
+        self.assertIn("PendingRepeat(_) => resume_repeat_phase", dispatch)
+        self.assertIn("PendingEvent(_) => resume_events_phase", dispatch)
+        self.assertIn("PendingEventReturn(_) => resume_events_phase", dispatch)
+        self.assertIn("PendingControl(_) => resume_control_phase", dispatch)
+        self.assertNotIn("transaction.phase == PhaseEventFrameHeader", dispatch)
+        self.assertNotIn("_ => PendingControl(transaction)", results)
 
     def test_fadd_owns_fp_arithmetic_uop_program(self) -> None:
         semantics = (
@@ -222,7 +438,7 @@ class SailCompositionTest(unittest.TestCase):
 
         self.assertIn("function lower_FADD_uops", semantics)
         self.assertIn("UopFpArithmetic(FpArithmeticAdd)", semantics)
-        self.assertIn("execute_uop_program", semantics)
+        self.assertIn("uop_program_execute", semantics)
         self.assertNotIn("start_fp_transaction", semantics)
         self.assertIn(
             "union clause Uop_kind = UopFpArithmetic",
@@ -232,6 +448,38 @@ class SailCompositionTest(unittest.TestCase):
             "function clause execute_uop(UopFpArithmetic(operation)",
             primitive,
         )
+
+    def test_basic_integer_alu_instructions_own_their_uop_programs(self) -> None:
+        operations = {
+            "SUB": "IntegerAluSubtract",
+            "AND": "IntegerAluAnd",
+            "OR": "IntegerAluOr",
+            "XOR": "IntegerAluXor",
+        }
+        for mnemonic, operation in operations.items():
+            semantics = (
+                self.project.root
+                / "instructions/definitions"
+                / mnemonic
+                / "semantics.sail"
+            ).read_text()
+            self.assertIn(f"function lower_{mnemonic}_uops", semantics)
+            self.assertIn(f"UopIntegerAlu({operation})", semantics)
+            self.assertIn("uop_program_execute", semantics)
+            self.assertNotIn("start_memory_transaction", semantics)
+
+        flags_operations = {
+            "CMP": "IntegerFlagsCompare",
+            "TEST": "IntegerFlagsTest",
+        }
+        for mnemonic, operation in flags_operations.items():
+            semantics = (
+                self.project.root / "instructions/definitions" / mnemonic / "semantics.sail"
+            ).read_text()
+            self.assertIn(f"function lower_{mnemonic}_uops", semantics)
+            self.assertIn(f"UopIntegerFlags({operation})", semantics)
+            self.assertIn("uop_program_execute", semantics)
+            self.assertNotIn("start_memory_transaction", semantics)
 
         migrated = {
             "FADD": "FpArithmeticAdd",
@@ -284,8 +532,10 @@ class SailCompositionTest(unittest.TestCase):
 
         self.assertNotIn("Op_CMPJcc", shared)
         self.assertNotIn("Op_TESTJcc", shared)
-        self.assertIn("execute_subtract_compare_jump_local", compare)
-        self.assertIn("execute_and_compare_jump_local", test)
+        self.assertIn("UopFusedJump(FusedCompareJump)", compare)
+        self.assertIn("UopFusedJump(FusedTestJump)", test)
+        self.assertIn("uop_program_execute", compare)
+        self.assertIn("uop_program_execute", test)
 
     def test_single_consumer_integer_operations_are_instruction_local(self) -> None:
         shared_primitives = "\n".join(
@@ -293,11 +543,19 @@ class SailCompositionTest(unittest.TestCase):
             for path in (self.project.root / "execution/semantics/primitives").glob("*.sail")
         )
 
-        for mnemonic in ("ABS", "ADC", "CLR", "NEG", "NOT", "OR", "SBB", "XOR"):
+        for mnemonic in ():
             semantics = (
                 self.project.root / "instructions/definitions" / mnemonic / "semantics.sail"
             ).read_text()
             self.assertIn(f"execute_{mnemonic}_primitive", semantics)
+
+        for mnemonic in ("ABS", "ADC", "CLR", "NEG", "NOT", "OR", "SBB", "XOR"):
+            semantics = (
+                self.project.root / "instructions/definitions" / mnemonic / "semantics.sail"
+            ).read_text()
+            self.assertIn(f"function lower_{mnemonic}_uops", semantics)
+            self.assertIn("uop_program_execute", semantics)
+            self.assertNotIn(f"execute_{mnemonic}_primitive", semantics)
 
         for constructor in (
             "IntegerArithmeticAddCarry",
@@ -341,7 +599,14 @@ class SailCompositionTest(unittest.TestCase):
             "FTENTOXA", "FTWOTOXA",
         ):
             self.assertNotIn(f"Op_{mnemonic}", fp_catalog)
-            self.assertIn(f"Op_{mnemonic}", fptransa_catalog)
+            self.assertNotIn(f"Op_{mnemonic}", fptransa_catalog)
+            semantics = (
+                self.project.root
+                / "extensions/FPTRANSA/instructions/definitions"
+                / mnemonic
+                / "semantics.sail"
+            ).read_text()
+            self.assertIn(f"function clause fp_semantics(Op_{mnemonic})", semantics)
 
         old_contract = (
             self.project.root
@@ -359,6 +624,12 @@ class SailCompositionTest(unittest.TestCase):
         vector = (
             self.project.root / "extensions/VECTOR/semantics/vector.sail"
         ).read_text()
+        vector_owned = vector + "\n".join(
+            path.read_text()
+            for path in (
+                self.project.root / "extensions/VECTOR/instructions/definitions"
+            ).glob("*/semantics.sail")
+        )
 
         for constructor in (
             "FpArithmeticAbsolute",
@@ -376,7 +647,7 @@ class SailCompositionTest(unittest.TestCase):
             "FpDataCopySign",
             "FpDataClassify",
         ):
-            self.assertIn(constructor, vector)
+            self.assertIn(constructor, vector_owned)
 
         for scalar_operation in (
             "Op_FADD",
@@ -387,11 +658,26 @@ class SailCompositionTest(unittest.TestCase):
         ):
             self.assertNotIn(scalar_operation, vector)
 
+        self.assertNotRegex(vector, r"\bOp_[A-Za-z0-9_]+\b")
+
         conversion_call = vector.split("function vector_fp_conversion_lanes", 1)[1]
         self.assertRegex(
             conversion_call,
             r"fp_primitive_evaluate\(\s+instruction\.form\.operation",
         )
+
+    def test_vector_instruction_owns_its_scattered_semantics_clause(self) -> None:
+        definitions = (
+            self.project.root / "extensions/VECTOR/instructions/definitions"
+        )
+        for semantics in definitions.glob("*/semantics.sail"):
+            mnemonic = semantics.parent.name
+            source = semantics.read_text()
+            self.assertIn(
+                f"function clause vector_semantics(Op_{mnemonic})",
+                source,
+                semantics,
+            )
 
     def test_fp_and_vector_instructions_use_the_common_uop_engine(self) -> None:
         for extension in ("FP", "FPTRANSA"):
@@ -400,7 +686,7 @@ class SailCompositionTest(unittest.TestCase):
             )
             for semantics in definitions.glob("*/semantics.sail"):
                 source = semantics.read_text()
-                self.assertIn("execute_uop_program", source, semantics)
+                self.assertIn("uop_program_execute", source, semantics)
                 self.assertNotIn("start_fp_transaction", source, semantics)
 
         vector_definitions = (
@@ -408,7 +694,7 @@ class SailCompositionTest(unittest.TestCase):
         )
         for semantics in vector_definitions.glob("*/semantics.sail"):
             source = semantics.read_text()
-            self.assertIn("execute_uop_program", source, semantics)
+            self.assertIn("uop_program_execute", source, semantics)
             self.assertNotIn("start_vector_", source, semantics)
 
     def test_fp_and_vector_dedicated_continuation_state_is_removed(self) -> None:
@@ -434,7 +720,8 @@ class SailCompositionTest(unittest.TestCase):
         ):
             self.assertNotIn(legacy, combined)
 
-        self.assertIn("PhaseUopWait", combined)
+        self.assertNotIn("PhaseUopWait", combined)
+        self.assertIn("PendingUop : Uop_continuation", combined)
         self.assertIn("UopVectorMemoryLoad", combined)
         self.assertIn("UopVectorStepPrepare", combined)
 
@@ -457,6 +744,25 @@ class SailCompositionTest(unittest.TestCase):
             "form_id = Form_short_abs_l_q_z_rn_r, bytes = [|0xA8, 0x40|]",
             representatives,
         )
+
+    def test_catalog_initializers_are_split_into_bounded_chunks(self) -> None:
+        catalog = SailCatalogRenderer().render(self.compose())
+        chunks = re.findall(
+            r"let primary_form_catalog_[a-z]+_chunk_\d+ : list\(Catalog_entry\) = "
+            r"\[\|(.*?)\|\]",
+            catalog,
+            re.DOTALL,
+        )
+
+        self.assertTrue(chunks)
+        self.assertTrue(
+            all(
+                chunk.count("  struct { form_id = Form_")
+                <= SailCatalogRenderer._CATALOG_CHUNK_SIZE
+                for chunk in chunks
+            )
+        )
+        self.assertIn("append_catalog_entry_chunks", catalog)
 
     def test_catalog_binds_fixed_sp_by_operand_role(self) -> None:
         catalog = SailCatalogRenderer().render(self.compose())

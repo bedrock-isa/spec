@@ -1,12 +1,22 @@
+function clause register_result_extension(Op_VMOVZ) = RegisterZeroExtend
+
+function clause repeat_semantics(Op_VMOVZ) = RepeatObserveDestination
+
+function clause vector_semantics(Op_VMOVZ) =
+    {
+        vector_default_semantics() with
+        memory = Some(VectorMoveReplace),
+    }
+
 function execute_VMOVZ(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) = {
-    let address = uop_temporary(40);
-    let memory = uop_temporary(41);
-    let output = uop_temporary(42);
+    let address = uop_location_make_temporary(40);
+    let memory = uop_location_make_temporary(41);
+    let output = uop_location_make_temporary(42);
     let compute = {
-        make_uop(
+        uop_make(
             UopVectorMemoryCompute(Op_VMOVZ),
-            uop_none(),
-            uop_none(),
+            uop_location_make_none(),
+            uop_location_make_none(),
             output,
             Operand_dst,
             operation_width(instruction),
@@ -15,41 +25,41 @@ function execute_VMOVZ(instruction : Decoded_instruction, state : Cpu_state) -> 
         auxiliary = memory,
     };
     Some(
-        execute_uop_program(
+        uop_program_execute(
             [|
-                make_uop(
+                uop_make(
                     UopVectorCalcEa(),
-                    uop_none(),
-                    uop_none(),
+                    uop_location_make_none(),
+                    uop_location_make_none(),
                     address,
                     Operand_dst,
                     operation_width(instruction),
                     CommitNone,
                 ),
-                make_uop(
+                uop_make(
                     UopVectorMemoryLoad(),
                     address,
-                    uop_none(),
+                    uop_location_make_none(),
                     memory,
                     Operand_dst,
                     operation_width(instruction),
                     CommitMemory,
                 ),
                 compute,
-                make_uop(
+                uop_make(
                     UopVectorMemoryStore(),
                     address,
                     output,
-                    uop_none(),
+                    uop_location_make_none(),
                     Operand_dst,
                     operation_width(instruction),
                     CommitMemory,
                 ),
-                make_uop(
+                uop_make(
                     UopCommit(),
-                    uop_none(),
-                    uop_none(),
-                    uop_none(),
+                    uop_location_make_none(),
+                    uop_location_make_none(),
+                    uop_location_make_none(),
                     Operand_dst,
                     operation_width(instruction),
                     CommitMemory,

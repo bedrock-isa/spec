@@ -655,6 +655,8 @@ def _render_ea_variant(program: SailProgram, variant: _EaVariant) -> str:
 class SailCatalogRenderer:
     """Project the selected typed ISA into the runtime decode catalogs."""
 
+    _CATALOG_CHUNK_SIZE = 24
+
     def render(self, program: SailProgram) -> str:
         entries_by_class = {name: [] for name in CLASS_CONSTRUCTORS}
         for bundle in program.bundles:
@@ -665,11 +667,29 @@ class SailCatalogRenderer:
                 )
         catalog_sections: list[str] = []
         for name, constructor in CLASS_CONSTRUCTORS.items():
+            entries = entries_by_class[name]
+            chunk_names: list[str] = []
+            for index, start in enumerate(
+                range(0, len(entries), self._CATALOG_CHUNK_SIZE)
+            ):
+                chunk_name = f"primary_form_catalog_{name}_chunk_{index}"
+                chunk_names.append(chunk_name)
+                catalog_sections.extend(
+                    (
+                        f"let {chunk_name} : list(Catalog_entry) = [|",
+                        ",\n".join(
+                            entries[start : start + self._CATALOG_CHUNK_SIZE]
+                        ),
+                        "|]",
+                        "",
+                    )
+                )
             catalog_sections.extend(
                 (
-                    f"let primary_form_catalog_{name}_cache : list(Catalog_entry) = [|",
-                    ",\n".join(entries_by_class[name]),
-                    "|]",
+                    f"let primary_form_catalog_{name}_cache : list(Catalog_entry) =",
+                    "  append_catalog_entry_chunks([|"
+                    + ", ".join(chunk_names)
+                    + "|])",
                     "",
                 )
             )
@@ -692,6 +712,19 @@ class SailCatalogRenderer:
         return "\n".join(
             [
                 "// Generated from the typed ISA project. Do not edit.",
+                "",
+                "function append_catalog_entries(left : list(Catalog_entry),",
+                "                                right : list(Catalog_entry)) -> list(Catalog_entry) =",
+                "  match left {",
+                "    [||] => right,",
+                "    head :: tail => head :: append_catalog_entries(tail, right),",
+                "  }",
+                "",
+                "function append_catalog_entry_chunks(chunks : list(list(Catalog_entry))) -> list(Catalog_entry) =",
+                "  match chunks {",
+                "    [||] => [||],",
+                "    chunk :: tail => append_catalog_entries(chunk, append_catalog_entry_chunks(tail)),",
+                "  }",
                 "",
                 *catalog_sections,
                 "let effective_address_catalog_cache : list(Ea_form) = [|",

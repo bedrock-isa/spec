@@ -37,13 +37,13 @@ function pte_structurally_valid(pte : bits(64), level : int) -> bool =
   else (pte & 0x0000000000000800) == 0x0000000000000000
     & (pte & paging_leaf_alignment_mask(level)) == 0x0000000000000000
 
-function pte_read_request(state : Cpu_state, instruction : Decoded_instruction,
+function pte_read_request(state : Cpu_state, ptquery : bool,
                           linear : bits(64), table_base : bits(64), level : int,
                           target_level : int, ordinal : int)
   -> Primitive_request = {
   let address = add_bits(table_base, sail_shiftleft(paging_level_index(linear, level), 3));
   { empty_primitive_request() with
-    kind = PhysicalPteRead, ordinal = ordinal, role = if instruction.form.operation == Op_PTQUERY
+    kind = PhysicalPteRead, ordinal = ordinal, role = if ptquery
       then RequestRolePtqueryPte else RequestRoleVtopPte,
     domain = RequestDomainPhysicalPageTable, width = 8, range_start = address,
     range_end = add_bits(address, 0x0000000000000008), range_length = 8,
@@ -64,11 +64,18 @@ function query_result(previous : Execution_result, value : bits(64), valid : boo
   completed(previous.state, updated, CommitControl, [||])
 }
 
-function start_tlb_context_transaction(instruction : Decoded_instruction, state : Cpu_state)
+function start_tlb_context_transaction(tlb_operation : Tlb_context_uop_operation,
+                                       instruction : Decoded_instruction, state : Cpu_state)
   -> Execution_result = {
   let operation = instruction.form.operation;
+  let ptquery = tlb_operation == TlbPageTableQuery;
+  let vtop = tlb_operation == TlbVirtualToPhysical;
+  let save = tlb_operation == TlbStateSave;
+  let restore = tlb_operation == TlbStateRestore;
+  let swpt = tlb_operation == TlbSwitchPageTable | tlb_operation == TlbSwitchPageTableAsid;
+  let swpta = tlb_operation == TlbSwitchPageTableAsid;
   let evaluated = evaluate_instruction_eas(
-    instruction.operands, operation, state, state.pc, 8
+    instruction.operands, state, state.pc, 8
   );
   let address : Ea_evaluation = match first_evaluation(evaluated.evaluations) {
     Some(value) => value, None() => struct {
@@ -78,29 +85,30 @@ function start_tlb_context_transaction(instruction : Decoded_instruction, state 
       value = 0x0000000000000000, staged_updates = [||]
     }
   };
-  let selector = if operation == Op_INVASID then match value_named(instruction, state, Operand_asid) {
+  let selector = if tlb_operation == TlbInvalidateAsid then match value_named(instruction, state, Operand_asid) {
       Some(value) => value & 0x000000000000FFFF, None() => 0x0000000000000000
     }
-    else if operation == Op_PTQUERY then match value_named(instruction, state, Operand_level) {
+    else if ptquery then match value_named(instruction, state, Operand_level) {
       Some(value) => value & 0x0000000000000007, None() => 0x0000000000000000
     }
-    else if operation == Op_SWPTA then match value_named(instruction, state, Operand_asid) {
+    else if swpta then match value_named(instruction, state, Operand_asid) {
       Some(value) => value & 0x000000000000FFFF, None() => 0x0000000000000000
     }
     else 0x0000000000000000;
-  let value = if operation == Op_VTOP then match value_named(instruction, state, Operand_virt) {
+  let value = if vtop then match value_named(instruction, state, Operand_virt) {
       Some(item) => item, None() => 0x0000000000000000
     }
-    else if operation == Op_SWPT | operation == Op_SWPTA then
+    else if swpt then
       match value_named(instruction, state, Operand_new_ptcr) {
         Some(item) => item, None() => 0x0000000000000000
       }
     else address.linear_address;
-  let kind = if operation == Op_INVASID | operation == Op_INVPAGE | operation == Op_INVTLB
+  let kind = if tlb_operation == TlbInvalidateAsid | tlb_operation == TlbInvalidatePage
+             | tlb_operation == TlbInvalidateAll
     then TlbInvalidateRequest
-    else if operation == Op_PTQUERY | operation == Op_VTOP then PhysicalPteRead
-    else if operation == Op_SAVE then StateSaveRequest
-    else if operation == Op_RESTORE then StateRestoreRequest
+    else if ptquery | vtop then PhysicalPteRead
+    else if save then StateSaveRequest
+    else if restore then StateRestoreRequest
     else ContextSwitchRequest;
   let phase = if kind == TlbInvalidateRequest then PhaseTlbOperation
     else if kind == PhysicalPteRead then PhasePteRead
@@ -108,15 +116,15 @@ function start_tlb_context_transaction(instruction : Decoded_instruction, state 
     else if kind == StateRestoreRequest then PhaseStateRestore
     else PhaseContextSwitch;
   let destination = commit_destination_for(instruction.operands, 8);
-  let save_range = operation == Op_SAVE | operation == Op_RESTORE;
+  let save_range = save | restore;
   let save_size = state.save_area_size;
   let save_end = add_bits(address.effective_address, bits_from_int(save_size));
   let base_request = request_for_evaluation(
     kind, 0, address,
-    if operation == Op_SAVE then AccessStore
-    else if operation == Op_RESTORE then AccessLoad
+    if save then AccessStore
+    else if restore then AccessLoad
     else AccessAddressOnly,
-    value, operation != Op_RESTORE
+    value, not_bool(restore)
   );
   let request = { base_request with selector = selector,
          range_length = if save_range then save_size else address.width,
@@ -131,17 +139,17 @@ function start_tlb_context_transaction(instruction : Decoded_instruction, state 
                          & address.effective_address != 0x0000000000000000
            else base_request.range_end_at_modulus,
          body_length = if save_range then save_size else 0 };
-  if operation == Op_PTQUERY | operation == Op_VTOP then {
+  if ptquery | vtop then {
     let linear = value;
-    let target_level = if operation == Op_PTQUERY then unsigned(selector[2 .. 0]) else 1;
+    let target_level = if ptquery then unsigned(selector[2 .. 0]) else 1;
     let root_level = if state.controls[0][7] == bitone then 5 else 4;
     if target_level < 1 | target_level > 5 then
       faulted(state, operation, IllegalInstruction, "invalid PTQUERY level")
-    else if operation == Op_PTQUERY
+    else if ptquery
             & not_bool(segment_point(address.segment_image,
                                      address.effective_address).in_bounds) then
       faulted(state, operation, AccessFault, "PTQUERY effective address outside segment")
-    else if operation == Op_VTOP & state.controls[0][0] == bitzero then {
+    else if vtop & state.controls[0][0] == bitzero then {
       var direct = advance_pc(evaluated.image, instruction);
       let valid = physical_address_fits_pabits(linear);
       if destination.kind == DestinationRn then
@@ -152,17 +160,17 @@ function start_tlb_context_transaction(instruction : Decoded_instruction, state 
       completed(state, direct, CommitControl, [||])
     }
     else if not_bool(paging_canonical(linear, state.controls[0]))
-         | (operation == Op_PTQUERY & target_level == 5 & root_level == 4) then {
+         | (ptquery & target_level == 5 & root_level == 4) then {
       var failed = advance_pc(evaluated.image, instruction);
       if destination.kind == DestinationRn then failed.registers[unsigned(destination.index)] = 0x0000000000000000
       else ();
       failed.flags = 0x0;
       completed(state, failed, CommitControl, [||])
     }
-    else waiting_transaction(
+    else waiting_transaction(TransactionSystem,
       state, advance_pc(evaluated.image, instruction), instruction, CommitControl,
       destination, PhasePteRead, 0, linear, bits_from_int(target_level),
-      pte_read_request(state, instruction, linear,
+      pte_read_request(state, ptquery, linear,
                        state.controls[0] & paging_pfn_mask(state.controls[0]),
                        root_level, target_level, 0)
     )
@@ -172,16 +180,16 @@ function start_tlb_context_transaction(instruction : Decoded_instruction, state 
   else if save_range & (address.effective_address & 0x0000000000000FFF)
                   != 0x0000000000000000 then
     faulted(state, operation, InvalidControlState, "SAVE/RESTORE base is not 4-KiB aligned")
-  else waiting_transaction(
+  else waiting_transaction(TransactionSystem,
     state, advance_pc(evaluated.image, instruction), instruction,
-    if operation == Op_SAVE | operation == Op_RESTORE then CommitMemory else CommitControl,
+    if save | restore then CommitMemory else CommitControl,
     destination,
-    if operation == Op_RESTORE then PhaseStateRestoreHeader else phase,
+    if restore then PhaseStateRestoreHeader else phase,
     0, value, selector,
-    if operation == Op_SAVE then { request with
+    if save then { request with
       payload_bytes = save_image_bytes(state), body_length = save_size
     }
-    else if operation == Op_RESTORE then { request with
+    else if restore then { request with
       range_end = add_bits(address.effective_address, 0x0000000000000010),
       range_length = 16,
       range_wrap = unsigned(add_bits(address.effective_address, 0x0000000000000010))
@@ -190,6 +198,6 @@ function start_tlb_context_transaction(instruction : Decoded_instruction, state 
                              == 0x0000000000000000
                              & address.effective_address != 0x0000000000000000,
       body_length = 16, selector = 0x0000000000000000, commit_point = false
-    } else request
+    } else { request with auxiliary = if swpta then 0x0000000000000001 else request.auxiliary }
   )
 }

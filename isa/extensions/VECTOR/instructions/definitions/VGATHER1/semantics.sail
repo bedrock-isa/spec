@@ -1,30 +1,40 @@
+function clause register_result_extension(Op_VGATHER1) = RegisterZeroExtend
+
+function clause repeat_semantics(Op_VGATHER1) = RepeatObserveDestination
+
+function clause vector_semantics(Op_VGATHER1) =
+    {
+        vector_default_semantics() with
+        memory = Some(VectorGatherOne),
+    }
+
 function execute_VGATHER1(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) =
     Some(
-        execute_uop_program(
+        uop_program_execute(
             [|
-                make_uop(
+                uop_make(
                     UopVectorStepPrepare(Op_VGATHER1),
-                    uop_none(),
-                    uop_none(),
-                    uop_temporary(40),
+                    uop_location_make_none(),
+                    uop_location_make_none(),
+                    uop_location_make_temporary(40),
                     Operand_cursor,
                     operation_width(instruction),
                     CommitRegisters,
                 ),
-                make_uop(
+                uop_make(
                     UopVectorStepIssue(Op_VGATHER1),
-                    uop_temporary(40),
-                    uop_none(),
-                    uop_temporary(41),
+                    uop_location_make_temporary(40),
+                    uop_location_make_none(),
+                    uop_location_make_temporary(41),
                     Operand_cursor,
                     operation_width(instruction),
                     CommitMemory,
                 ),
-                make_uop(
+                uop_make(
                     UopVectorStepCommit(Op_VGATHER1),
-                    uop_temporary(40),
-                    uop_temporary(41),
-                    uop_none(),
+                    uop_location_make_temporary(40),
+                    uop_location_make_temporary(41),
+                    uop_location_make_none(),
                     Operand_cursor,
                     operation_width(instruction),
                     CommitMemory,

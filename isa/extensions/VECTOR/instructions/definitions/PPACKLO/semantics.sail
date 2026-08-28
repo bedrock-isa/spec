@@ -1,3 +1,9 @@
+function clause register_result_extension(Op_PPACKLO) = RegisterZeroExtend
+
+function clause repeat_semantics(Op_PPACKLO) = RepeatObserveDestination
+
+function clause vector_semantics(Op_PPACKLO) = vector_default_semantics()
+
 function execute_PPACKLO_primitive(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) = {
     let operation = instruction.form.operation;
     let element_bytes = operation_width(instruction);
@@ -12,11 +18,7 @@ function execute_PPACKLO_primitive(instruction : Decoded_instruction, state : Cp
         match (predicate_register_index(instruction, Operand_src), predicate_register_index(instruction, Operand_dst)) {
             (Some(source), Some(destination)) => {
                 let source_image = state.predicate_registers[unsigned(source)];
-                let image = if operation == Op_PUNPKLO | operation == Op_PUNPKHI then {
-                        predicate_unpack_image(source_image, empty, 0, lanes, element_bytes, operation == Op_PUNPKHI)
-                    } else {
-                        predicate_pack_image(source_image, empty, 0, lanes, element_bytes, operation == Op_PPACKHI)
-                    };
+                let image = predicate_pack_image(source_image, empty, 0, lanes, element_bytes, false);
                 var updated = state;
                 updated.predicate_registers[unsigned(destination)] = image;
                 Some(vector_finish(instruction, state, updated))
@@ -32,8 +34,8 @@ union clause Uop_kind = UopInstruction_PPACKLO : unit
 
 function clause execute_uop(UopInstruction_PPACKLO(), _, values, instruction, before, speculative) =
     match execute_PPACKLO_primitive(instruction, speculative) {
-        Some(result) => vector_local_result_uop_step(result, instruction, before, speculative, values),
-        None() => uop_fault(
+        Some(result) => vector_uop_step_from_local_result(result, instruction, before, speculative, values),
+        None() => uop_step_fault(
             faulted(
                 before,
                 instruction.form.operation,
@@ -45,22 +47,22 @@ function clause execute_uop(UopInstruction_PPACKLO(), _, values, instruction, be
 
 function execute_PPACKLO(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) =
     Some(
-        execute_uop_program(
+        uop_program_execute(
             [|
-                make_uop(
+                uop_make(
                     UopInstruction_PPACKLO(),
-                    uop_none(),
-                    uop_none(),
-                    uop_none(),
+                    uop_location_make_none(),
+                    uop_location_make_none(),
+                    uop_location_make_none(),
                     Operand_dst,
                     operation_width(instruction),
                     CommitRegisters,
                 ),
-                make_uop(
+                uop_make(
                     UopCommit(),
-                    uop_none(),
-                    uop_none(),
-                    uop_none(),
+                    uop_location_make_none(),
+                    uop_location_make_none(),
+                    uop_location_make_none(),
                     Operand_dst,
                     operation_width(instruction),
                     CommitRegisters,

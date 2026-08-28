@@ -1,27 +1,27 @@
-function execute_NEG_primitive(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) = {
-    let width = operation_width(instruction);
-    match unary_operand_local(instruction, state) {
-        None() => None(),
-        Some((old, destination)) => {
-            let value = sub_bits(0x0000000000000000, old);
-            let updated = write_local_destination(
-                state,
-                instruction.form.operation,
-                destination,
-                narrow_bits(value, width),
-            );
-            Some(local_result(state, instruction, updated, CommitRegisters))
-        },
-    }
-}
+function clause register_result_extension(Op_NEG) = RegisterZeroExtend
 
-function execute_NEG(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) = {
-    let result : Execution_result = match execute_NEG_primitive(instruction, state) {
-        Some(result) => result,
-        None() => match start_memory_transaction(instruction, state) {
-            Some(result) => result,
-            None() => faulted(state, instruction.form.operation, IllegalInstruction, "unresolved integer unary form"),
+function clause repeat_semantics(Op_NEG) = RepeatObserveDestination
+
+function lower_NEG_uops(instruction : Decoded_instruction) -> option(list(Uop)) =
+    match operand_named(instruction, Operand_dst) {
+        Some(destination_operand) => {
+            let width = operation_width(instruction);
+            let destination = uop_operand_lower(destination_operand, width, 0, true);
+            let operation = uop_make(
+                UopIntegerUnary(IntegerUnaryNegate), destination.value, uop_location_make_none(),
+                destination.value, Operand_dst, width, CommitRegisters
+            );
+            Some(uop_program_build_operation(
+              destination.program, operation, destination.value, destination,
+              Operand_dst, width, destination.memory
+            ))
         },
-    };
-    Some(result)
-}
+        None() => None(),
+    }
+
+function execute_NEG(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) =
+    match lower_NEG_uops(instruction) {
+        Some(program) => Some(uop_program_execute(program, instruction, state)),
+        None() => Some(faulted(state, instruction.form.operation, IllegalInstruction,
+                               "NEG could not be lowered to micro-operations")),
+    }

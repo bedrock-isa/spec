@@ -78,7 +78,6 @@ enum Continuation_phase = {
     PhaseStackReadSecond,
     PhaseStackWriteFirst,
     PhaseIntegerExternal,
-    PhaseAtomicRmw,
     PhaseCacheTranslate,
     PhaseCacheMaintenance,
     PhaseFenceCompletion,
@@ -101,7 +100,6 @@ enum Continuation_phase = {
     PhasePerformanceCounter,
     PhaseControlTransition,
     PhaseResetSerialize,
-    PhaseUopWait,
 }
 
 enum Transaction_response_kind = {
@@ -239,6 +237,152 @@ struct Execution_fault = {
   bus_error : bool,
 }
 
+enum Integer_alu_uop_operation = {
+    IntegerAluSubtract,
+    IntegerAluAnd,
+    IntegerAluOr,
+    IntegerAluXor,
+}
+
+enum Integer_unary_uop_operation = {
+    IntegerUnaryNegate,
+    IntegerUnaryComplement,
+    IntegerUnaryIncrement,
+    IntegerUnaryDecrement,
+    IntegerUnaryIncrementFlags,
+    IntegerUnaryDecrementFlags,
+    IntegerUnaryAbsolute,
+}
+
+enum Integer_flags_uop_operation = {
+    IntegerFlagsCompare,
+    IntegerFlagsTest,
+}
+
+enum Integer_carry_uop_operation = {
+    IntegerCarryAdd,
+    IntegerCarrySubtract,
+}
+
+enum Integer_shift_uop_operation = {
+    IntegerShiftLeft,
+    IntegerShiftRight,
+    IntegerShiftArithmeticRight,
+    IntegerRotateLeft,
+    IntegerRotateRight,
+}
+
+enum Integer_bit_uop_operation = {
+    IntegerBitSet,
+    IntegerBitClear,
+    IntegerBitChange,
+    IntegerBitTest,
+}
+
+enum Integer_count_uop_operation = {
+    IntegerCountLeadingZero,
+    IntegerCountLeadingOne,
+    IntegerCountTrailingZero,
+    IntegerCountTrailingOne,
+    IntegerCountPopulation,
+    IntegerCountParity,
+    IntegerReverseBytes,
+}
+
+enum Integer_extend_uop_operation = { IntegerExtendSigned, IntegerExtendUnsigned }
+
+enum Integer_math_uop_operation = {
+    IntegerMultiplyLow,
+    IntegerMultiplyHighUnsigned,
+    IntegerMultiplyHighSigned,
+    IntegerMultiplyHighSignedUnsigned,
+    IntegerCarrylessMultiplyLow,
+    IntegerCarrylessMultiplyHigh,
+    IntegerMinimumUnsigned,
+    IntegerMaximumUnsigned,
+    IntegerMinimumSigned,
+    IntegerMaximumSigned,
+}
+
+enum Integer_divide_uop_operation = {
+    IntegerDivideUnsigned,
+    IntegerDivideSigned,
+    IntegerRemainderUnsigned,
+    IntegerRemainderSigned,
+}
+
+enum Core_action_uop_operation = {
+    CoreActionHalt,
+    CoreActionWait,
+    CoreActionYield,
+    CoreActionTrace,
+    CoreActionIllegal,
+}
+
+enum Atomic_uop_operation = {
+    AtomicCompareExchange,
+    AtomicFetchAdd,
+    AtomicFetchAnd,
+    AtomicFetchOr,
+    AtomicFetchSubtract,
+    AtomicFetchXor,
+}
+
+struct Bounds_uop_operation = {
+  inclusive_low : bool,
+  inclusive_high : bool,
+  signed_operation : bool,
+}
+
+enum Transaction_family = {
+  TransactionControl,
+  TransactionEventReturn,
+  TransactionSystem,
+  TransactionRepeat,
+}
+
+struct Environment_uop_operation = {
+  family : Transaction_family,
+  request_kind : Primitive_request_kind,
+  effect_kind : Effect_kind,
+  commit_kind : Commit_kind,
+  suppress_fault : bool,
+}
+
+enum Control_transfer_uop_operation = {
+  ControlJump,
+  ControlCall,
+  ControlFarJump,
+  ControlFarCall,
+  ControlReturn,
+  ControlFarReturn,
+}
+
+enum Fused_jump_uop_operation = { FusedCompareJump, FusedTestJump }
+
+enum Event_control_uop_operation = { EventControlBreakpoint, EventControlSyscall, EventControlReturn }
+
+enum Cache_uop_operation = {
+  CacheFlushData, CacheInvalidateData, CacheInvalidateInstruction,
+  CacheWriteBackData, CacheSynchronize, CachePrefetch, CachePrefetchNonTemporal,
+}
+
+enum System_request_uop_operation = { SystemCpuid, SystemPerformanceCounter, SystemWriteControl }
+
+enum System_state_uop_operation = {
+  SystemReadControl, SystemReadFlags, SystemReadSegment, SystemReadStatus,
+  SystemSetFlags, SystemWriteControlLocal, SystemWriteFlags, SystemWriteSegment,
+  SystemWriteStatus,
+}
+
+enum Tlb_context_uop_operation = {
+  TlbInvalidateAsid, TlbInvalidatePage, TlbInvalidateAll, TlbPageTableQuery,
+  TlbStateRestore, TlbStateSave, TlbSwitchPageTable, TlbSwitchPageTableAsid,
+  TlbVirtualToPhysical,
+}
+
+enum Vector_branch_uop_operation = { VectorBranchAny, VectorBranchAll, VectorBranchNone }
+
 scattered union Uop_kind
 
 enum Uop_location_kind = {
@@ -246,6 +390,7 @@ enum Uop_location_kind = {
     UopLocationRegister,
     UopLocationFpRegister,
     UopLocationSp,
+    UopLocationSegment,
     UopLocationImmediate,
     UopLocationTemporary,
 }
@@ -256,7 +401,7 @@ struct Uop_location = {
   immediate : bits(64),
 }
 
-struct Micro_operation = {
+struct Uop = {
   kind : Uop_kind,
   source0 : Uop_location,
   source1 : Uop_location,
@@ -291,28 +436,51 @@ struct Uop_value = {
   domain : Request_domain,
 }
 
+struct Uop_continuation = {
+  program : list(Uop),
+  cursor : int,
+  values : list(Uop_value),
+  pending_destination : int,
+  captured : bits(64),
+}
+
+struct Repeat_continuation = {
+  body : Decoded_instruction,
+  bytes : list(bits(8)),
+}
+
+struct Transaction_continuation = {
+  phase : Continuation_phase,
+  ordinal : int,
+  captured_first : bits(64),
+  captured_second : bits(64),
+}
+
+struct Event_continuation = {
+  transaction : Transaction_continuation,
+  event : Event_record,
+  attempt : int,
+}
+
+union Pending_continuation = {
+  PendingNone : unit,
+  PendingControl : Transaction_continuation,
+  PendingEventReturn : Transaction_continuation,
+  PendingSystem : Transaction_continuation,
+  PendingRepeat : Transaction_continuation,
+  PendingUop : Uop_continuation,
+  PendingEvent : Event_continuation,
+}
+
 struct Pending_commit = {
   kind : Commit_kind,
   operation : Semantic_operation,
   destination : Commit_destination,
   after : option(Cpu_state),
   instruction : option(Decoded_instruction),
-  phase : Continuation_phase,
-  ordinal : int,
-  captured_first : bits(64),
-  captured_second : bits(64),
-  memory_writes : list(Memory_write),
-  atomic : bool,
-  repeat_body : option(Decoded_instruction),
-  repeat_bytes : list(bits(8)),
-  repeat_parent_active : bool,
-  event : option(Event_record),
-  event_attempt : int,
+  continuation : Pending_continuation,
+  repeat_parent : option(Repeat_continuation),
   boundary_class : Boundary_class,
-  uop_program : list(Micro_operation),
-  uop_cursor : int,
-  uop_values : list(Uop_value),
-  uop_pending_destination : int,
 }
 
 struct Transaction_response = {
@@ -359,6 +527,8 @@ struct Uop_wait = {
 struct Uop_complete = {
   state : Cpu_state,
   commit_kind : Commit_kind,
+  effects : list(Architectural_effect),
+  advance_pc : bool,
 }
 
 union Uop_step = {
@@ -373,6 +543,10 @@ union Uop_step = {
 // continuations resume through this declared boundary without depending on a
 // generic route dispatcher.
 val execute_operation_entry : (Decoded_instruction, Cpu_state) -> Execution_result
+val start_repeat_transaction : (Decoded_instruction, Cpu_state) -> Execution_result
+val start_event_control : (Event_control_uop_operation, Decoded_instruction, Cpu_state) -> Execution_result
+val start_system_request : (System_request_uop_operation, Decoded_instruction, Cpu_state) -> Execution_result
+val start_tlb_context_transaction : (Tlb_context_uop_operation, Decoded_instruction, Cpu_state) -> Execution_result
 
 struct Boundary_result = {
   state : Cpu_state,

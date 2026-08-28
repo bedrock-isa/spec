@@ -1,27 +1,27 @@
-function execute_CMP_primitive(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) = {
-    let width = operation_width(instruction);
+function clause register_result_extension(Op_CMP) = RegisterZeroExtend
+
+function clause repeat_semantics(Op_CMP) = RepeatObserveCompareFlags
+
+function lower_CMP_uops(instruction : Decoded_instruction) -> option(list(Uop)) =
     match (first_binary_operand(instruction.operands), second_binary_operand(instruction.operands)) {
-        (Some(source_operand), Some(destination_operand)) => match (
-            local_operand_value(state, source_operand),
-            local_operand_value(state, destination_operand),
-        ) {
-            (Some(source), Some(destination)) => {
-                let (_, flags) = sub_with_flags(destination, source, 0, width);
-                Some(local_result(state, instruction, { state with flags = flags }, CommitRegisters))
-            },
-            _ => None(),
+        (Some(left_operand), Some(right_operand)) => {
+            let width = operation_width(instruction);
+            let left = uop_operand_lower(left_operand, width, 0, true);
+            let right = uop_operand_lower(right_operand, width, left.next_temporary, true);
+            let compare = uop_make(
+                UopIntegerFlags(IntegerFlagsCompare), right.value, left.value,
+                uop_location_make_none(), Operand_dst, width, CommitRegisters
+            );
+            Some(uop_program_build(uop_program_append(left.program, right.program), [|compare|],
+                Operand_dst, width,
+                if left.memory | right.memory then CommitMemory else CommitRegisters))
         },
         _ => None(),
     }
-}
 
-function execute_CMP(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) = {
-    let result : Execution_result = match execute_CMP_primitive(instruction, state) {
-        Some(result) => result,
-        None() => match start_memory_transaction(instruction, state) {
-            Some(result) => result,
-            None() => faulted(state, instruction.form.operation, IllegalInstruction, "unresolved integer ALU form"),
-        },
-    };
-    Some(result)
-}
+function execute_CMP(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) =
+    match lower_CMP_uops(instruction) {
+        Some(program) => Some(uop_program_execute(program, instruction, state)),
+        None() => Some(faulted(state, instruction.form.operation, IllegalInstruction,
+                               "CMP could not be lowered to micro-operations")),
+    }

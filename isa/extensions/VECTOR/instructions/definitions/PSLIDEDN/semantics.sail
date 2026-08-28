@@ -1,3 +1,13 @@
+function clause register_result_extension(Op_PSLIDEDN) = RegisterZeroExtend
+
+function clause repeat_semantics(Op_PSLIDEDN) = RepeatObserveDestination
+
+function clause vector_semantics(Op_PSLIDEDN) =
+    {
+        vector_default_semantics() with
+        predicate_slide = Some(PredicateSlideDown),
+    }
+
 function execute_PSLIDEDN_primitive(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) = {
     let operation = instruction.form.operation;
     let element_bytes = operation_width(instruction);
@@ -11,19 +21,11 @@ function execute_PSLIDEDN_primitive(instruction : Decoded_instruction, state : C
     if true | true | true then {
         match (predicate_register_index(instruction, Operand_dst), operand_named(instruction, Operand_count)) {
             (Some(destination), Some(count_operand)) => {
-                let source = if operation == Op_PSLICE then {
-                        match predicate_register_index(instruction, Operand_src) {
-                            Some(index) => state.predicate_registers[unsigned(index)],
-                            None() => empty,
-                        }
-                    } else {
-                        empty
-                    };
                 var updated = state;
                 updated.predicate_registers[unsigned(destination)] = predicate_slide_image(
                     operation,
                     state.predicate_registers[unsigned(destination)],
-                    source,
+                    empty,
                     empty,
                     0,
                     lanes,
@@ -43,8 +45,8 @@ union clause Uop_kind = UopInstruction_PSLIDEDN : unit
 
 function clause execute_uop(UopInstruction_PSLIDEDN(), _, values, instruction, before, speculative) =
     match execute_PSLIDEDN_primitive(instruction, speculative) {
-        Some(result) => vector_local_result_uop_step(result, instruction, before, speculative, values),
-        None() => uop_fault(
+        Some(result) => vector_uop_step_from_local_result(result, instruction, before, speculative, values),
+        None() => uop_step_fault(
             faulted(
                 before,
                 instruction.form.operation,
@@ -56,22 +58,22 @@ function clause execute_uop(UopInstruction_PSLIDEDN(), _, values, instruction, b
 
 function execute_PSLIDEDN(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) =
     Some(
-        execute_uop_program(
+        uop_program_execute(
             [|
-                make_uop(
+                uop_make(
                     UopInstruction_PSLIDEDN(),
-                    uop_none(),
-                    uop_none(),
-                    uop_none(),
+                    uop_location_make_none(),
+                    uop_location_make_none(),
+                    uop_location_make_none(),
                     Operand_dst,
                     operation_width(instruction),
                     CommitRegisters,
                 ),
-                make_uop(
+                uop_make(
                     UopCommit(),
-                    uop_none(),
-                    uop_none(),
-                    uop_none(),
+                    uop_location_make_none(),
+                    uop_location_make_none(),
+                    uop_location_make_none(),
                     Operand_dst,
                     operation_width(instruction),
                     CommitRegisters,

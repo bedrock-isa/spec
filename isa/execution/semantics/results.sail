@@ -60,6 +60,53 @@ function empty_primitive_request() -> Primitive_request = struct {
     payload_bytes = [||],
 }
 
+function empty_transaction_continuation() -> Transaction_continuation = struct {
+    phase = ContinuationNone,
+    ordinal = 0,
+    captured_first = 0x0000000000000000,
+    captured_second = 0x0000000000000000,
+}
+
+function pending_transaction(pending : Pending_commit) -> Transaction_continuation =
+    match pending.continuation {
+        PendingControl(continuation) => continuation,
+        PendingEventReturn(continuation) => continuation,
+        PendingSystem(continuation) => continuation,
+        PendingRepeat(continuation) => continuation,
+        PendingEvent(continuation) => continuation.transaction,
+        _ => empty_transaction_continuation(),
+    }
+
+function pending_for_family(
+    family : Transaction_family,
+    transaction : Transaction_continuation,
+) -> Pending_continuation =
+    match family {
+        TransactionControl => PendingControl(transaction),
+        TransactionEventReturn => PendingEventReturn(transaction),
+        TransactionSystem => PendingSystem(transaction),
+        TransactionRepeat => PendingRepeat(transaction),
+    }
+
+function pending_with_transaction(
+    pending : Pending_commit,
+    transaction : Transaction_continuation,
+) -> option(Pending_continuation) =
+    match pending.continuation {
+        PendingEvent(continuation) => Some(PendingEvent({ continuation with transaction = transaction })),
+        PendingControl(_) => Some(PendingControl(transaction)),
+        PendingEventReturn(_) => Some(PendingEventReturn(transaction)),
+        PendingSystem(_) => Some(PendingSystem(transaction)),
+        PendingRepeat(_) => Some(PendingRepeat(transaction)),
+        _ => None(),
+    }
+
+function uop_continuation_get(pending : Pending_commit) -> option(Uop_continuation) =
+    match pending.continuation {
+        PendingUop(continuation) => Some(continuation),
+        _ => None(),
+    }
+
 function empty_pending(after : option(Cpu_state), operation : Semantic_operation, kind : Commit_kind) -> Pending_commit =
     struct {
         kind = kind,
@@ -67,22 +114,9 @@ function empty_pending(after : option(Cpu_state), operation : Semantic_operation
         destination = empty_destination(),
         after = after,
         instruction = None(),
-        phase = ContinuationNone,
-        ordinal = 0,
-        captured_first = 0x0000000000000000,
-        captured_second = 0x0000000000000000,
-        memory_writes = [||],
-        atomic = true,
-        repeat_body = None(),
-        repeat_bytes = [||],
-        repeat_parent_active = false,
-        event = None(),
-        event_attempt = 0,
+        continuation = PendingNone(()),
+        repeat_parent = None(),
         boundary_class = BoundaryOrdinary,
-        uop_program = [||],
-        uop_cursor = 0,
-        uop_values = [||],
-        uop_pending_destination = 0,
     }
 
 function completed(

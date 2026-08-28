@@ -113,45 +113,32 @@ function fp_response_valid(request : Fp_request_image,
 function fp_local_pre_dn_values(request : Fp_request_image,
                                 selector : bits(64)) -> option(Fp_exchange_result) = {
   let width = fp_request_width(request);
-  if request.operation == Op_FABS then match fp_exact_arithmetic(
-    FpArithmeticAbsolute, request.operand0.bits, width
-  ) {
-    Some(value) => Some(struct { lhs = value, rhs = 0x0000000000000000 }),
-    None() => None(),
-  }
-  else if request.operation == Op_FNEG then match fp_exact_arithmetic(
-    FpArithmeticNegate, request.operand0.bits, width
-  ) {
-    Some(value) => Some(struct { lhs = value, rhs = 0x0000000000000000 }),
-    None() => None(),
-  }
-  else if request.operation == Op_FCOPYSIGN then
-    match fp_exact_data(
-      FpDataCopySign, request.operand0.bits, request.operand1.bits, width
-    ) {
-      Some(value) => Some(struct { lhs = value, rhs = 0x0000000000000000 }),
+  match fp_semantics(request.operation) {
+    Some(semantics) => match semantics.exact_operation {
+      Some(FpExactAbsolute) => match fp_exact_arithmetic(
+        FpArithmeticAbsolute, request.operand0.bits, width
+      ) { Some(value) => Some(struct { lhs = value, rhs = 0x0000000000000000 }), None() => None() },
+      Some(FpExactNegate) => match fp_exact_arithmetic(
+        FpArithmeticNegate, request.operand0.bits, width
+      ) { Some(value) => Some(struct { lhs = value, rhs = 0x0000000000000000 }), None() => None() },
+      Some(FpExactCopySign) => match fp_exact_data(
+        FpDataCopySign, request.operand0.bits, request.operand1.bits, width
+      ) { Some(value) => Some(struct { lhs = value, rhs = 0x0000000000000000 }), None() => None() },
+      Some(FpExactMove) => match fp_bitwise_fmov(request.operand0.bits, width) {
+        Some(value) => Some(struct { lhs = value, rhs = 0x0000000000000000 }), None() => None()
+      },
+      Some(FpExactClear) => Some(struct { lhs = fp_bitwise_fclr(), rhs = 0x0000000000000000 }),
+      Some(FpExactExchange) => Some(fp_bitwise_fxchg(request.operand0.bits, request.operand1.bits)),
+      Some(FpExactClassify) => match fp_exact_data(
+        FpDataClassify, request.operand0.bits, 0x0000000000000000, width
+      ) { Some(value) => Some(struct { lhs = value, rhs = 0x0000000000000000 }), None() => None() },
+      Some(FpExactMoveConstant) => match fp_fmovcr(selector[15 .. 0]) {
+        Some(value) => Some(struct { lhs = value, rhs = 0x0000000000000000 }), None() => None()
+      },
       None() => None(),
-    }
-  else if request.operation == Op_FMOV | request.operation == Op_FMOVcc then
-    match fp_bitwise_fmov(request.operand0.bits, width) {
-      Some(value) => Some(struct { lhs = value, rhs = 0x0000000000000000 }),
-      None() => None(),
-    }
-  else if request.operation == Op_FCLR then
-    Some(struct { lhs = fp_bitwise_fclr(), rhs = 0x0000000000000000 })
-  else if request.operation == Op_FXCHG then
-    Some(fp_bitwise_fxchg(request.operand0.bits, request.operand1.bits))
-  else if request.operation == Op_FCLASS then match fp_exact_data(
-    FpDataClassify, request.operand0.bits, 0x0000000000000000, width
-  ) {
-    Some(value) => Some(struct { lhs = value, rhs = 0x0000000000000000 }),
+    },
     None() => None(),
   }
-  else if request.operation == Op_FMOVCR then match fp_fmovcr(selector[15 .. 0]) {
-    Some(value) => Some(struct { lhs = value, rhs = 0x0000000000000000 }),
-    None() => None(),
-  }
-  else None()
 }
 
 function fp_local_response(request : Fp_request_image,

@@ -1,10 +1,24 @@
 function continue_with_request(previous : Execution_result, phase : Continuation_phase,
                                ordinal : int, first : bits(64), second : bits(64),
-                               request : Primitive_request) -> Execution_result = struct {
-  state = previous.state,
-  pending = { previous.pending with phase = phase, ordinal = ordinal,
-              captured_first = first, captured_second = second },
-  request = request, effects = [||], fault = None(), awaiting_environment = true
+                               request : Primitive_request) -> Execution_result = {
+  let transaction = {
+    pending_transaction(previous.pending) with
+    phase = phase, ordinal = ordinal,
+    captured_first = first, captured_second = second
+  };
+  match pending_with_transaction(previous.pending, transaction) {
+    Some(continuation) => struct {
+      state = previous.state,
+      pending = { previous.pending with continuation = continuation },
+      request = request, effects = [||], fault = None(), awaiting_environment = true
+    },
+    None() => faulted(
+      previous.state,
+      previous.pending.operation,
+      InvalidControlState,
+      "request continuation has no transaction owner",
+    ),
+  }
 }
 
 struct Resolved_execution = {

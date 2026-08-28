@@ -1,11 +1,24 @@
+function clause register_result_extension(Op_DIVMODU) = RegisterZeroExtend
 
-function execute_DIVMODU(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) = {
-    let result : Execution_result = match execute_divmod_local(instruction, state) {
-        Some(result) => result,
-        None() => match start_memory_transaction(instruction, state) {
-            Some(result) => result,
-            None() => faulted(state, instruction.form.operation, IllegalInstruction, "unresolved multiply/divide form"),
-        },
-    };
-    Some(result)
-}
+function clause repeat_semantics(Op_DIVMODU) = RepeatObserveDestination
+
+function lower_DIVMODU_uops(instruction : Decoded_instruction) -> option(list(Uop)) =
+  match (operand_named(instruction, Operand_src), operand_named(instruction, Operand_quotient),
+         operand_named(instruction, Operand_remainder)) {
+    (Some(source_operand), Some(quotient_operand), Some(remainder_operand)) => {
+      let width = operation_width(instruction);
+      let source = uop_operand_lower(source_operand, width, 0, true);
+      let quotient = uop_operand_location(quotient_operand);
+      let remainder = uop_operand_location(remainder_operand);
+      let operation = uop_make_pair(UopIntegerDivmod(false), quotient, source.value, quotient,
+                      remainder, Operand_quotient, width, CommitRegisters);
+      Some(uop_program_build(source.program, [|operation|], Operand_quotient, width,
+        if source.memory then CommitMemory else CommitRegisters))
+    }, _ => None(),
+  }
+
+function execute_DIVMODU(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) =
+  match lower_DIVMODU_uops(instruction) {
+    Some(program) => Some(uop_program_execute(program, instruction, state)),
+    None() => Some(faulted(state, instruction.form.operation, IllegalInstruction, "DIVMODU could not be lowered")),
+  }

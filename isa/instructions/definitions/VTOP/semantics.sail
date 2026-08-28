@@ -1,20 +1,10 @@
+function clause register_result_extension(Op_VTOP) = RegisterZeroExtend
 
-function execute_VTOP(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) = {
-    let local_candidate : option(Execution_result) = if state.controls[0][0] == bitzero then {
-            match (value_named(instruction, state, Operand_virt), destination_named(instruction, Operand_phys, 8)) {
-                (Some(address), Some(destination)) => {
-                    var updated = write_local_destination(state, instruction.form.operation, destination, address);
-                    updated.flags = 0b1111;
-                    Some(local_result(state, instruction, updated, CommitRegisters))
-                },
-                _ => None(),
-            }
-        } else {
-            None()
-        };
-    let result : Execution_result = match local_candidate {
-        Some(result) => result,
-        None() => start_tlb_context_transaction(instruction, state),
-    };
-    Some(result)
-}
+function clause repeat_semantics(Op_VTOP) = RepeatObserveDestination
+
+function lower_VTOP_uops(_ : Decoded_instruction) -> list(Uop) = [|
+  uop_make(UopTlbContext(TlbVirtualToPhysical), uop_location_make_none(), uop_location_make_none(), uop_location_make_none(), Operand_phys, 8, CommitControl)
+|]
+
+function execute_VTOP(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) =
+  Some(uop_program_execute(lower_VTOP_uops(instruction), instruction, state))

@@ -1,7 +1,8 @@
 function fp_operation_is_exact_local(operation : Semantic_operation) -> bool =
-  operation == Op_FABS | operation == Op_FNEG | operation == Op_FCOPYSIGN
-  | operation == Op_FMOV | operation == Op_FMOVcc | operation == Op_FCLR
-  | operation == Op_FXCHG | operation == Op_FCLASS | operation == Op_FMOVCR
+  match fp_semantics(operation) {
+    Some(semantics) => semantics.exact_operation != None(),
+    None() => false,
+  }
 
 function fp_operand_image_valid(operand : Fp_operand_image) -> bool =
   if operand.valid then match operand.kind {
@@ -82,9 +83,8 @@ function fp_fn_write_count(operands : list(Catalog_operand)) -> int = match oper
 }
 
 function fp_policy_result_kind(policy : Fp_result_policy,
-                               operation : Semantic_operation) -> option(Fp_result_kind) =
-  if operation == Op_FXCHG | operation == Op_FPOPP
-  then Some(FpResultPairRaw64)
+                               raw_result : bool) -> option(Fp_result_kind) =
+  if raw_result then Some(FpResultPairRaw64)
   else match policy {
     FpResultNone => Some(FpResultValueNone),
     FpResultFn32 => Some(FpResultBits32),
@@ -101,18 +101,21 @@ function fp_policy_result_kind(policy : Fp_result_policy,
 
 function fp_derive_result_kind(form : Catalog_entry,
                                width : int) -> option(Fp_result_kind) =
-  match fp_form_result_policy(form, width) {
-    Some(policy) => fp_policy_result_kind(policy, form.operation),
-    None() => None(),
+  match (fp_form_result_policy(form, width), fp_semantics(form.operation)) {
+    (Some(policy), Some(semantics)) => fp_policy_result_kind(policy, semantics.raw_result),
+    _ => None(),
   }
 
 function fp_derive_destination_kind(form : Catalog_entry) -> Fp_destination_kind =
   match fp_semantics(form.operation) {
     Some(semantics) =>
-      if form.operation == Op_FXCHG | form.operation == Op_FPOPP
-         | semantics.result_policy == FpResultFnPairByFormat
+      if semantics.result_policy == FpResultFnPairByFormat
+         | semantics.result_policy == FpResultFnPair32
+         | semantics.result_policy == FpResultFnPair64
       then FpDestinationFnPair
-      else if form.operation == Op_FPUSHP | fp_has_ea_write(form.operands)
+      else if semantics.result_policy == FpResultMemory32
+              | semantics.result_policy == FpResultMemory64
+              | fp_has_ea_write(form.operands)
       then FpDestinationMemory
       else if fp_has_rn_write(form.operands) then FpDestinationRn
       else
@@ -149,9 +152,8 @@ function fp_request_conversion_allowed_causes(request : Fp_request_image) -> bit
   else fflags_none
 
 function fp_result_policy_matches(kind : Fp_result_kind, policy : Fp_result_policy,
-                                  operation : Semantic_operation) -> bool =
-  if operation == Op_FXCHG | operation == Op_FPOPP
-  then kind == FpResultPairRaw64
+                                  raw_result : bool) -> bool =
+  if raw_result then kind == FpResultPairRaw64
   else match policy {
     FpResultNone => kind == FpResultValueNone,
     FpResultFn32 => kind == FpResultBits32,
@@ -212,7 +214,7 @@ function fp_request_form_valid(request : Fp_request_image) -> bool =
             request.path == form_semantics.path
             & fp_result_policy_matches(request.result_kind,
                                        form_semantics.result_policy,
-                                       request.operation),
+                                       form_semantics.raw_result),
           None() => false,
         })
     },

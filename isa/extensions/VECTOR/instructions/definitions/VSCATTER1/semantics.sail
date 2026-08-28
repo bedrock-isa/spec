@@ -1,30 +1,40 @@
+function clause register_result_extension(Op_VSCATTER1) = RegisterZeroExtend
+
+function clause repeat_semantics(Op_VSCATTER1) = RepeatObserveDestination
+
+function clause vector_semantics(Op_VSCATTER1) =
+    {
+        vector_default_semantics() with
+        memory = Some(VectorScatterOne),
+    }
+
 function execute_VSCATTER1(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) =
     Some(
-        execute_uop_program(
+        uop_program_execute(
             [|
-                make_uop(
+                uop_make(
                     UopVectorStepPrepare(Op_VSCATTER1),
-                    uop_none(),
-                    uop_none(),
-                    uop_temporary(40),
+                    uop_location_make_none(),
+                    uop_location_make_none(),
+                    uop_location_make_temporary(40),
                     Operand_cursor,
                     operation_width(instruction),
                     CommitRegisters,
                 ),
-                make_uop(
+                uop_make(
                     UopVectorStepIssue(Op_VSCATTER1),
-                    uop_temporary(40),
-                    uop_none(),
-                    uop_temporary(41),
+                    uop_location_make_temporary(40),
+                    uop_location_make_none(),
+                    uop_location_make_temporary(41),
                     Operand_cursor,
                     operation_width(instruction),
                     CommitMemory,
                 ),
-                make_uop(
+                uop_make(
                     UopVectorStepCommit(Op_VSCATTER1),
-                    uop_temporary(40),
-                    uop_temporary(41),
-                    uop_none(),
+                    uop_location_make_temporary(40),
+                    uop_location_make_temporary(41),
+                    uop_location_make_none(),
                     Operand_cursor,
                     operation_width(instruction),
                     CommitMemory,

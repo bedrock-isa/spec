@@ -1,20 +1,17 @@
+function clause register_result_extension(Op_PREFETCHNT) = RegisterZeroExtend
 
-function execute_PREFETCHNT(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) = {
-    let result : Execution_result = if instruction.form.operation == Op_MOVNT then {
-            match start_memory_transaction(instruction, state) {
-                Some(result) => result,
-                None() => faulted(state, Op_MOVNT, IllegalInstruction, "missing non-temporal store operand"),
-            }
-        } else {
-            match start_cache_transaction(instruction, state) {
-                Some(result) => result,
-                None() => faulted(
-                    state,
-                    instruction.form.operation,
-                    IllegalInstruction,
-                    "missing cache address operand",
-                ),
-            }
-        };
-    Some(result)
-}
+function clause repeat_semantics(Op_PREFETCHNT) = RepeatObserveDestination
+
+function lower_PREFETCHNT_uops(instruction : Decoded_instruction) -> option(list(Uop)) =
+  match operand_named(instruction, Operand_src) {
+    Some(operand) => {
+      let address = uop_operand_lower(operand, 8, 0, false);
+      Some(uop_program_build_cache(address, CachePrefetchNonTemporal, Operand_src))
+    }, None() => None(),
+  }
+
+function execute_PREFETCHNT(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) =
+  match lower_PREFETCHNT_uops(instruction) {
+    Some(program) => Some(uop_program_execute(program, instruction, state)),
+    None() => Some(faulted(state, instruction.form.operation, IllegalInstruction, "cache address could not be lowered")),
+  }

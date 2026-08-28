@@ -1,14 +1,10 @@
+function clause register_result_extension(Op_HALT) = RegisterZeroExtend
 
-function execute_HALT(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) = {
-    let result : Execution_result = completed(
-        state,
-        {
-            advance_pc(state, instruction) with
-            halted = true,
-            run_state = Halted,
-        },
-        CommitControl,
-        [|typed_effect(HaltProcessor, instruction, state, 0x0000000000000000, 0x0000000000000000, 0, 0, false)|],
-    );
-    Some(result)
-}
+function clause repeat_semantics(Op_HALT) = RepeatObserveDestination
+
+function lower_HALT_uops(_ : Decoded_instruction) -> list(Uop) =
+  [|uop_make(UopCoreAction(CoreActionHalt), uop_location_make_none(), uop_location_make_none(), uop_location_make_none(),
+             Operand_dst, 0, CommitControl)|]
+
+function execute_HALT(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) =
+  Some(uop_program_execute(lower_HALT_uops(instruction), instruction, state))
