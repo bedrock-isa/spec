@@ -1,0 +1,7 @@
+\subsection{Floating-Point Implicit Stack Operations}
+(:ref:FP.instructions.FPUSHP:) and (:ref:FP.instructions.FPOPP:) use the base pair-stack contract. FPUSHP writes the
+listed pair\textquotesingle{}s second register at \(SP_{\mathrm{old}}-16\) and first register at
+\(SP_{\mathrm{old}}-8\), then commits \(SP_{\mathrm{old}}-16\). FPOPP reads the listed pair\textquotesingle{}s second
+register at \(SP_{\mathrm{old}}\) and first register at \(SP_{\mathrm{old}}+8\), then commits
+\(SP_{\mathrm{old}}+16\). Both operations establish the complete 16-byte range and all values before committing any
+register or SP effect.

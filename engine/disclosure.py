@@ -5,11 +5,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
+from .extension import ExtensionSetCatalog
 from .yaml_document import SchemaValidatedYamlLoader
 
 
 @dataclass(frozen=True, slots=True)
 class ImplementationDisclosure:
+    owner: str
+    source: Path
     id: str
     item: str
     defining_rules: tuple[str, ...]
@@ -18,29 +21,42 @@ class ImplementationDisclosure:
 
 @dataclass(frozen=True, slots=True)
 class ImplementationDisclosureCatalog:
-    source: Path
+    sources: tuple[Path, ...]
     disclosures: tuple[ImplementationDisclosure, ...]
 
     @classmethod
-    def load(cls, isa_root: str | Path) -> "ImplementationDisclosureCatalog":
+    def load(
+        cls,
+        isa_root: str | Path,
+        extension_catalog: ExtensionSetCatalog | None = None,
+    ) -> "ImplementationDisclosureCatalog":
         root = Path(isa_root).resolve()
-        source = root / "implementation_disclosures.yaml"
         schema_source = root / "schemas/implementation-disclosures.yaml"
-        if not source.is_file():
-            return cls(source, ())
-        document = SchemaValidatedYamlLoader().load(source, schema_source)
+        extensions = extension_catalog or ExtensionSetCatalog.load(root)
         seen: set[str] = set()
         disclosures = []
-        for raw in document["disclosures"]:
-            if raw["id"] in seen:
-                raise ValueError(f"{source}: duplicate disclosure {raw['id']}")
-            seen.add(raw["id"])
-            disclosures.append(
-                ImplementationDisclosure(
-                    id=raw["id"],
-                    item=raw["item"],
-                    defining_rules=tuple(raw["defining_rules"]),
-                    publication=raw["publication"],
+        sources = []
+        for owner, namespace_root in (
+            ("base", root),
+            *((item, extensions.root / item) for item in extensions.declared),
+        ):
+            source = namespace_root / "implementation_disclosures.yaml"
+            if not source.is_file():
+                continue
+            sources.append(source)
+            document = SchemaValidatedYamlLoader().load(source, schema_source)
+            for raw in document["disclosures"]:
+                if raw["id"] in seen:
+                    raise ValueError(f"{source}: duplicate disclosure {raw['id']}")
+                seen.add(raw["id"])
+                disclosures.append(
+                    ImplementationDisclosure(
+                        owner=owner,
+                        source=source,
+                        id=raw["id"],
+                        item=raw["item"],
+                        defining_rules=tuple(raw["defining_rules"]),
+                        publication=raw["publication"],
+                    )
                 )
-            )
-        return cls(source, tuple(disclosures))
+        return cls(tuple(sources), tuple(disclosures))

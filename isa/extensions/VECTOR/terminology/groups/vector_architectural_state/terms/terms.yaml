@@ -1,0 +1,4 @@
+terms:
+- vector_register
+- predicate_register
+- logical_vector_lane

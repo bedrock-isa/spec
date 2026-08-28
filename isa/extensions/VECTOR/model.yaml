@@ -12,6 +12,15 @@ sail:
     - semantics/vector.sail
 documents:
   topics:
+  - id: addressing.vector-vea-lane-addressing
+    source: documents/topics/addressing/001_vector_vea_lane_addressing.tex
+    concept: ea
+  - id: cpuid.vector-parameter-discovery
+    source: documents/topics/cpuid/001_vector_parameter_discovery.tex
+    concept: cpuid
+  - id: state.vector-save-component
+    source: documents/topics/state/001_vector_save_component.tex
+    concept: state
   - id: introduction.element-types-and-assembly-spelling
     source: documents/topics/introduction/001_element_types_and_assembly_spelling.tex
     concept: vector

@@ -18,6 +18,9 @@ class ArtifactWriter:
             if not destination.is_relative_to(root):
                 raise ValueError(f"generated artifact escapes output root: {destination}")
             destination.parent.mkdir(parents=True, exist_ok=True)
-            destination.write_text(artifact.content, encoding="utf-8")
+            if isinstance(artifact.content, bytes):
+                destination.write_bytes(artifact.content)
+            else:
+                destination.write_text(artifact.content, encoding="utf-8")
             written.append(destination)
         return tuple(written)

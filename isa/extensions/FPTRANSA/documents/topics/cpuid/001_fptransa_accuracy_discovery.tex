@@ -1,4 +1,6 @@
 \subsection{FPTRANSA Accuracy Discovery}
+Class \texttt{0x00000001}, leaf \texttt{0x0000}, index one, bit one is the \texttt{FPTRANSA} discovery predicate.
+It requires \texttt{FP} and is set when at least one approximate transcendental contract is present.
 Class \texttt{0x00000001}, leaf \texttt{0x0001} uses indexes 1 through \texttt{0x0044} as a sparse space of stable
 16-bit accuracy-contract IDs. Index zero is the common (:term:base.terms.header:) and reports \texttt{MAX\_INDEX=0x0044}.
 A contract ID identifies the reference function, input domain, special-value behavior, error metric, exact anchors,

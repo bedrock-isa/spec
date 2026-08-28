@@ -1,10 +1,10 @@
 \label{section:vector-register-model}
-The scalable-vector extension provides 32 (:term:base.terms.vector_register|plural:), \texttt{V0}
-through \texttt{V31}, and 16 (:term:base.terms.predicate_register|plural:), \texttt{P0} through
-\texttt{P15}.  A (:term:base.terms.vector_register:) contains VLEN bits.  VLEN is an
+The scalable-vector extension provides 32 (:term:VECTOR.terms.vector_register|plural:), \texttt{V0}
+through \texttt{V31}, and 16 (:term:VECTOR.terms.predicate_register|plural:), \texttt{P0} through
+\texttt{P15}.  A (:term:VECTOR.terms.vector_register:) contains VLEN bits.  VLEN is an
 implementation-selected power of two from 128 through 2048 bits and remains
-stable until reset.  A (:term:base.terms.predicate_register:) contains one bit for each byte of a
-(:term:base.terms.vector_register:); its packed image therefore occupies VLEN/64 bytes.  Reset
+stable until reset.  A (:term:VECTOR.terms.predicate_register:) contains one bit for each byte of a
+(:term:VECTOR.terms.vector_register:); its packed image therefore occupies VLEN/64 bytes.  Reset
 clears every vector and predicate bit.
 
 The \texttt{VECTOR} discovery predicate and the \texttt{VECTOR\_PARAMETERS}

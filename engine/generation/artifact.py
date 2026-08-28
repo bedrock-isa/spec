@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 @dataclass(frozen=True, slots=True)
 class GeneratedArtifact:
     relative_path: Path
-    content: str
+    content: str | bytes
 
     def __post_init__(self) -> None:
         if self.relative_path.is_absolute() or ".." in self.relative_path.parts:

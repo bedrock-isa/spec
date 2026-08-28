@@ -17,6 +17,8 @@ Every present contract guarantees at most 4 ULP for both S and D, corresponding 
 relative precision bits respectively for nonzero normal results. CPUID may advertise a smaller certified bound.
 Each instruction names its required \texttt{FPTRANSA\_ACCURACY} contract. A clear \texttt{PRESENT} (:term:base.terms.field:) for that
 contract raises (:ref:base.events.EXCEPTION.INVALID_OPERAND_RELATION:) before the instruction reads operands or floating-point state.
+An approximate transcendental operation is available only when CPUID reports \texttt{FPTRANSA} and marks that
+instruction\textquotesingle{}s accuracy-contract ID present.
 
 FPTRANSA applies DAZ before forming the exact reference input and measures its advertised ULP error before FTZ.
 It ignores \texttt{FSTATUS.RM} and formats its implementation-defined approximation with nearest-even rounding.

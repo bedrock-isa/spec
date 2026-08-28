@@ -15,7 +15,3 @@ Each descriptor names one available extension component. Component IDs and bitma
 regions begin at or after the fixed block, meet their reported alignment, and do not overlap. A set state-block
 bitmap bit selects the descriptor carrying the same \texttt{BITMAP\_BIT}. \texttt{INIT\_POLICY=1} means that
 RESTORE reconstructs the component-defined initial state when that component\textquotesingle{}s bitmap bit is clear.
-
-When the FP extension is present, component ID 1 uses bitmap bit 0, offset \texttt{0x00c0}, size
-\texttt{0x00c0}, and alignment 64. Its initial state is F0 through F15 equal to positive zero, FFLAGS equal to zero,
-and FSTATUS equal to zero.

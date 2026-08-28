@@ -12,8 +12,7 @@ the first applicable condition in the following order.
 \item Selector, control-image, and other architectural-state validation.
 \item Predicate evaluation for a conditional operation.
 \item Every non-suppressed operand access in architectural access order.
-\item Execution-stage integer faults and enabled (:term:base.terms.floating_point_exception_condition|plural:) that raise
-(:ref:FP.events.EXCEPTION.FLOATING_POINT_EXCEPTION:).
+\item Execution-stage faults defined by the decoded operation.
 \end{enumerate}
 
 A false predicate suppresses the conditional operation\textquotesingle{}s target-memory and implicit stack accesses. It does not

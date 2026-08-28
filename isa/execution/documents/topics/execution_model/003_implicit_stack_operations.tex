@@ -18,11 +18,11 @@ one source value or the following instruction\textquotesingle{}s (:term:base.ter
 $[SP_{\mathrm{old}},SP_{\mathrm{old}}+8)$ &
 $SP_{\mathrm{old}}+8$ &
 one destination value or (:term:base.terms.continuation:) PC read at $SP_{\mathrm{old}}$\\
-(:ref:base.instructions.PUSHP:), (:ref:FP.instructions.FPUSHP:) &
+(:ref:base.instructions.PUSHP:) &
 $[SP_{\mathrm{old}}-16,SP_{\mathrm{old}})$ &
 $SP_{\mathrm{old}}-16$ &
 listed pair\textquotesingle{}s second register at $SP_{\mathrm{old}}-16$ and first register at $SP_{\mathrm{old}}-8$\\
-(:ref:base.instructions.POPP:), (:ref:FP.instructions.FPOPP:) &
+(:ref:base.instructions.POPP:) &
 $[SP_{\mathrm{old}},SP_{\mathrm{old}}+16)$ &
 $SP_{\mathrm{old}}+16$ &
 listed pair\textquotesingle{}s second register from $SP_{\mathrm{old}}$, then first register from $SP_{\mathrm{old}}+8$\\

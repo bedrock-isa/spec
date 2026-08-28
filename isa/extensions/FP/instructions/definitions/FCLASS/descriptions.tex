@@ -1,4 +1,4 @@
-Examines the selected floating-point encoding without generating a (:term:base.terms.floating_point_exception_condition:) and writes a one-hot class bitmap to the destination (:term:base.terms.rn_register:).
+Examines the selected floating-point encoding without generating a (:term:FP.terms.floating_point_exception_condition:) and writes a one-hot class bitmap to the destination (:term:base.terms.rn_register:).
 
 The destination is a one-hot bitmap selected directly from the sign, exponent, fraction, and NaN quiet bit of the S or D source encoding.
 
@@ -35,4 +35,4 @@ The destination is a one-hot bitmap selected directly from the sign, exponent, f
 \bottomrule
 \end{manualtabular}
 Bits 63..10 of the destination (:term:base.terms.rn_register:) are zero.
-No (:term:base.terms.floating_point_exception_flag:) is changed.
+No (:term:FP.terms.floating_point_exception_flag:) is changed.

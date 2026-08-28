@@ -14,5 +14,4 @@ segment-address operations also preserve FLAGS unless their descriptions say oth
 Control transfers make PC and CS changes at a single control-transfer commit point. Atomic operations require a
 naturally aligned addressable memory operand and commit the read-modify-write as one architectural update. TLB,
 page-table context, and privileged control operations require supervisor privilege. Cache-maintenance operations
-preserve FLAGS and define their own visibility contract. Approximate transcendental floating-point operations are
-available only when CPUID reports \texttt{FPTRANSA} and marks the instruction\textquotesingle{}s accuracy-contract ID present.
+preserve FLAGS and define their own visibility contract.

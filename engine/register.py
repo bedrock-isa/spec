@@ -18,7 +18,23 @@ except ImportError:  # Support loading engine directly on PYTHONPATH.
     from yaml_document import SchemaValidatedYamlLoader, YamlDocumentLoader
 
 
-RegisterWidth = int | str
+@dataclass(frozen=True, slots=True)
+class VariableRegisterWidth:
+    """One symbolic register width and its permitted concrete bit widths."""
+
+    expression: str
+    values: tuple[int, ...]
+
+    @property
+    def minimum(self) -> int:
+        return self.values[0]
+
+    @property
+    def maximum(self) -> int:
+        return self.values[-1]
+
+
+RegisterWidth = int | VariableRegisterWidth
 
 
 @dataclass(frozen=True, slots=True)
@@ -88,6 +104,15 @@ class RegisterInventory:
 
 
 @dataclass(frozen=True, slots=True)
+class RegisterDiagram:
+    """Document-facing placement and exceptional display policy for one namespace."""
+
+    caption: str
+    columns: tuple[tuple[str, ...], tuple[str, ...]]
+    display: Mapping[str, str]
+
+
+@dataclass(frozen=True, slots=True)
 class RegisterGroup:
     """A homogeneous architectural register group."""
 
@@ -112,6 +137,7 @@ class RegisterNamespace:
     root: Path
     group_inventory: RegisterInventory
     groups: Mapping[str, RegisterGroup]
+    diagram: RegisterDiagram | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -186,6 +212,7 @@ def _load_namespace(
 ) -> RegisterNamespace:
     groups_root = namespace_root / "registers/groups"
     inventory = _load_inventory(owner, "group", groups_root, "groups")
+    diagram = _load_diagram(inventory)
     groups: dict[str, RegisterGroup] = {}
     for group_id in inventory.declared:
         group_root = groups_root / group_id
@@ -194,7 +221,9 @@ def _load_namespace(
         group = _load_group(owner, group_root, schemas, references)
         references.groups.register(group.reference, group)
         groups[group_id] = group
-    return RegisterNamespace(owner, namespace_root, inventory, MappingProxyType(groups))
+    return RegisterNamespace(
+        owner, namespace_root, inventory, MappingProxyType(groups), diagram
+    )
 
 
 def _load_group(
@@ -211,7 +240,7 @@ def _load_group(
             f"{source}: register group ID {group_id!r} does not match directory {root.name!r}"
         )
     reference = Reference(owner, ("registers",), group_id)
-    width = raw["width"]
+    width = _decode_width(raw["width"], source)
     reset = _decode_reset(raw.get("reset"))
     layout = _load_layout(root / "layout.yaml", schemas["layout"])
     registers_root = root / "registers"
@@ -316,6 +345,22 @@ def _load_register(
     )
 
 
+def _decode_width(raw: Any, source: Path) -> RegisterWidth:
+    if isinstance(raw, int):
+        return raw
+    if not isinstance(raw, dict) or len(raw) != 1:
+        raise ValueError(
+            f"{source}: variable register width must contain exactly one expression"
+        )
+    expression, raw_values = next(iter(raw.items()))
+    values = tuple(raw_values)
+    if values != tuple(sorted(set(values))):
+        raise ValueError(
+            f"{source}: widths for {expression!r} must be unique and increasing"
+        )
+    return VariableRegisterWidth(expression, values)
+
+
 def _load_layout(source: Path, schema: Mapping[str, object]) -> RegisterLayout | None:
     if not source.is_file():
         return None
@@ -347,6 +392,71 @@ def _load_inventory(owner: str, kind: str, root: Path, key: str) -> RegisterInve
         else ()
     )
     return RegisterInventory(owner, kind, source, root, declared, actual)
+
+
+def _load_diagram(inventory: RegisterInventory) -> RegisterDiagram | None:
+    if not inventory.declared:
+        return None
+    raw = _load_mapping(inventory.source)
+    diagram = raw.get("diagram")
+    if not isinstance(diagram, Mapping):
+        raise ValueError(f"{inventory.source}: expected a diagram mapping")
+    unknown_keys = set(diagram) - {"caption", "columns", "display"}
+    if unknown_keys:
+        raise ValueError(
+            f"{inventory.source}: unknown diagram keys {sorted(unknown_keys)}"
+        )
+    caption = diagram.get("caption")
+    if not isinstance(caption, str) or not caption.strip():
+        raise ValueError(f"{inventory.source}: diagram caption must be non-empty")
+    raw_columns = diagram.get("columns")
+    if (
+        not isinstance(raw_columns, list)
+        or len(raw_columns) != 2
+        or any(
+            not isinstance(column, list)
+            or any(not isinstance(group_id, str) for group_id in column)
+            for column in raw_columns
+        )
+    ):
+        raise ValueError(
+            f"{inventory.source}: diagram columns must contain exactly two group lists"
+        )
+    columns = tuple(tuple(column) for column in raw_columns)
+    placed = tuple(group_id for column in columns for group_id in column)
+    duplicates = sorted(
+        group_id for group_id in set(placed) if placed.count(group_id) > 1
+    )
+    missing = sorted(set(inventory.declared) - set(placed))
+    unknown = sorted(set(placed) - set(inventory.declared))
+    if duplicates or missing or unknown:
+        details = []
+        if duplicates:
+            details.append(f"duplicates {duplicates}")
+        if missing:
+            details.append(f"missing {missing}")
+        if unknown:
+            details.append(f"unknown {unknown}")
+        raise ValueError(
+            f"{inventory.source}: diagram group placement has " + ", ".join(details)
+        )
+    raw_display = diagram.get("display", {})
+    if not isinstance(raw_display, Mapping) or any(
+        not isinstance(group_id, str)
+        or mode not in {"all", "compact", "summary"}
+        for group_id, mode in raw_display.items()
+    ):
+        raise ValueError(
+            f"{inventory.source}: diagram display must map group IDs to "
+            "all, compact, or summary"
+        )
+    unknown_display = sorted(set(raw_display) - set(placed))
+    if unknown_display:
+        raise ValueError(
+            f"{inventory.source}: diagram display names unplaced groups "
+            f"{unknown_display}"
+        )
+    return RegisterDiagram(caption, columns, MappingProxyType(dict(raw_display)))
 
 
 def _decode_reset(raw: object) -> ResetSpec | None:

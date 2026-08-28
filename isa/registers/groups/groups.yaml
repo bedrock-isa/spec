@@ -5,3 +5,11 @@ groups:
 - STATE
 - CONTROL
 - PERFORMANCE
+diagram:
+  caption: Base Register Model
+  columns:
+  - [GPR, SPECIAL, STATE]
+  - [SEGMENT, CONTROL, PERFORMANCE]
+  display:
+    GPR: all
+    CONTROL: summary

@@ -91,6 +91,68 @@ class GenerateEADiagramsTest(unittest.TestCase):
         self.assertIn("{displacement}{1}%", diagrams[0])
         self.assertIn("{updateop}{4.62}{0.18}{$-$}", diagrams[1])
 
+    def test_generated_mode_keeps_manual_explanation_block_format(self) -> None:
+        rendered = render_mode(
+            self.load("ea/modes/EXT2/explicit_segment_base/mode.yaml")
+        )
+
+        self.assertEqual(rendered.count(r"\begin{BedrockEAProfile}"), 2)
+        self.assertIn(
+            r"\BedrockEAProfileSyntax{[SEG(s):Rn(b)++ + displacement]}",
+            rendered,
+        )
+        self.assertIn(
+            r"\BedrockEAProfileSyntax{[SEG(s):{-}{-}Rn(b) + displacement]}",
+            rendered,
+        )
+        self.assertIn(r"\BedrockEAProfileLine{Descriptor}", rendered)
+        self.assertIn(r"\BedrockEAProfileLine{Generation}", rendered)
+        self.assertIn(r"\BedrockEAProfileLine{Segment}", rendered)
+        self.assertIn(r"\BedrockEAProfileLine{Payload}", rendered)
+        self.assertIn(r"\BedrockEAProfileLine{Update}", rendered)
+        self.assertIn("Postincrement uses the current temporary base register", rendered)
+        self.assertIn(r"Predecrement subtracts \texttt{scale}", rendered)
+        postincrement, predecrement = rendered.split(
+            r"\BedrockEAProfileTitle{EXT2 Explicit-segment base with autoupdate / predecrement}"
+        )
+        self.assertIn("Rn(b)++", postincrement)
+        self.assertNotIn(r"{-}{-}Rn(b)", postincrement)
+        self.assertIn("base postincrement", postincrement)
+        self.assertNotIn("base predecrement", postincrement)
+        self.assertIn(r"{-}{-}Rn(b)", predecrement)
+        self.assertNotIn("Rn(b)++", predecrement)
+        self.assertIn("base predecrement", predecrement)
+        self.assertNotIn("base postincrement", predecrement)
+        self.assertNotIn("/ postincrement / postincrement", rendered)
+        self.assertNotIn("/ predecrement / predecrement", rendered)
+        self.assertNotIn(r"\BedrockInstructionLead", rendered)
+        self.assertEqual(rendered.count(r"\clearpage"), 1)
+        self.assertLess(
+            rendered.index("postincrement address generation"),
+            rendered.index(r"\clearpage"),
+        )
+        self.assertGreater(
+            rendered.index("predecrement address generation"),
+            rendered.index(r"\clearpage"),
+        )
+
+    def test_plain_and_autoupdate_encodings_get_independent_blocks(self) -> None:
+        rendered = render_mode(
+            self.load("ea/modes/EXT2/explicit_segment_index/mode.yaml")
+        )
+
+        self.assertEqual(rendered.count(r"\begin{BedrockEAProfile}"), 3)
+        self.assertIn("/ plain}", rendered)
+        self.assertIn("/ postincrement}", rendered)
+        self.assertIn("/ predecrement}", rendered)
+
+    def test_non_autoupdate_mode_says_no_update(self) -> None:
+        rendered = render_mode(
+            self.load("ea/modes/EXT1/explicit_segment_base/mode.yaml")
+        )
+
+        self.assertIn(r"\BedrockEAProfileLine{Update}{No auto-update.}", rendered)
+
     def test_layout_geometry_is_derived_from_shared_grid_rules(self) -> None:
         self.assertEqual(
             _EAFlowLayout._lane_x("source"),
@@ -168,14 +230,19 @@ class GenerateEADiagramsTest(unittest.TestCase):
         rendered = render_mode(self.load("ea/modes/compact/immediate/mode.yaml"))
 
         self.assertIn(r"\par\Needspace{5.87in}%", rendered)
-        self.assertIn("EA / compact / Integer immediate", rendered)
+        self.assertIn(
+            r"\BedrockEAProfileTitle{compact Integer immediate}", rendered
+        )
 
     def test_profile_specific_mode_heading_names_the_profile(self) -> None:
         rendered = render_mode(
             self.load("extensions/FP/fea/modes/compact/immediate/mode.yaml")
         )
 
-        self.assertIn("FP FEA / compact / Floating-point immediate", rendered)
+        self.assertIn(
+            r"\BedrockEAProfileTitle{FP FEA compact Floating-point immediate}",
+            rendered,
+        )
 
 
 if __name__ == "__main__":

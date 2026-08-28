@@ -1,10 +1,9 @@
 \subsection*{Mnemonics and Suffixes}
-The B, W, L, and Q suffixes select 8-, 16-, 32-, and 64-bit integer sizes; S and D select 32- and 64-bit
-floating-point scalar sizes where defined.
+The B, W, L, and Q suffixes select 8-, 16-, 32-, and 64-bit integer sizes.
 
 When an instruction encoding includes a size selector z, its definition maps z to the suffix set shown for that encoding. A
 mnemonic without a size suffix has a single architecturally defined size or no data-size operand.
 Conditional mnemonic variants use the condition names listed in the Flags and Condition Codes chapter.
 
-CMPJcc, DJcc, IJcc, Jcc, MOVcc, SETcc, TESTJcc, and FMOVcc place the condition suffix in the mnemonic. An encoding with
+CMPJcc, DJcc, IJcc, Jcc, MOVcc, SETcc, and TESTJcc place the condition suffix in the mnemonic. An encoding with
 only one architectural size omits the size suffix.

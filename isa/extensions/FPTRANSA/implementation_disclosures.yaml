@@ -1,0 +1,7 @@
+disclosures:
+- id: FPTRANSA_APPROXIMATION_CONTRACT
+  item: FPTRANSA approximation contract
+  defining_rules:
+  - FPTRANSA Common Model
+  - CPUID accuracy contracts
+  publication: CPUID accuracy-contract discovery plus implementation documentation for the deterministic approximation

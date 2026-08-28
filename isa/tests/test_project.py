@@ -68,7 +68,7 @@ class IsaProjectTest(unittest.TestCase):
         )
         document_order = self.project.model.document_order
         self.assertEqual(
-            document_order[:20],
+            document_order[:7],
             (
                 "base.manual.part.architectural-foundations",
                 "base.architecture.overview.section",
@@ -77,19 +77,6 @@ class IsaProjectTest(unittest.TestCase):
                 "base.architecture.overview.profile",
                 "base.manual.about.normative-material",
                 "base.architecture.terminology.section",
-                "base.manual.compatibility.contract",
-                "base.manual.compatibility.reserved-fields",
-                "base.encoding.instruction.compatibility.reserved-encodings",
-                "base.cpuid.compatibility.contract",
-                "base.registers.register-model.programming-model",
-                "base.registers.register-model.register-model",
-                "base.registers.state-register-format-diagrams.flags-and-status-registers",
-                "base.registers.state-register-format-diagrams.floating-point-register-model",
-                "base.registers.state-register-format-diagrams.fflags-and-fstatus-registers",
-                "base.registers.register-model.segment-registers",
-                "base.registers.register-model.segment-register-operand-class",
-                "base.registers.register-model.control-registers",
-                "base.encoding.data.data-formats.data-formats",
             ),
         )
         ordered_landmarks = (
@@ -102,8 +89,11 @@ class IsaProjectTest(unittest.TestCase):
             "base.manual.part.instruction-set-reference",
             "base.instructions.instruction-description-intro.reading-an-instruction-description",
             "base.indexes.reference-navigation.reference-indexes",
+            "FP.registers.floating-point-register-model",
             "FP.introduction.common-floating-point-semantics",
+            "FPTRANSA.cpuid.fptransa-accuracy-discovery",
             "FPTRANSA.introduction.fptransa-common-model",
+            "VECTOR.cpuid.vector-parameter-discovery",
             "VECTOR.introduction.element-types-and-assembly-spelling",
         )
         self.assertEqual(
@@ -115,6 +105,21 @@ class IsaProjectTest(unittest.TestCase):
         )
         self.assertEqual(
             self.project.disclosures.disclosures[0].id, "HIGHER_CPUID_CLASSES"
+        )
+        self.assertEqual(
+            self.project.disclosures.disclosures[-1].owner, "FPTRANSA"
+        )
+        self.assertEqual(
+            self.project.terminology.references.terms[
+                "FP.terms.floating_point_exception_condition"
+            ].owner,
+            "FP",
+        )
+        self.assertEqual(
+            self.project.terminology.references.terms[
+                "VECTOR.terms.vector_register"
+            ].owner,
+            "VECTOR",
         )
         self.assertEqual(
             self.project.model.extensions["FP"].source,

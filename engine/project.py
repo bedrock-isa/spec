@@ -193,7 +193,9 @@ class SourceCatalog:
             extension_components, extension_catalog.declared
         )
 
-        for mode_path in cls._catalogued_ea_modes(isa_root):
+        for mode_path in cls._catalogued_ea_modes(
+            isa_root, extension_catalog.declared
+        ):
             mode = EAMode.load(mode_path, isa_root, types)
             reference = cls._ea_reference(isa_root, mode_path)
             ea_modes.register(reference, mode)
@@ -408,12 +410,27 @@ class SourceCatalog:
         return tuple(values)
 
     @classmethod
-    def _catalogued_ea_modes(cls, isa_root: Path) -> tuple[Path, ...]:
+    def _catalogued_ea_modes(
+        cls, isa_root: Path, extension_ids: tuple[str, ...] = ()
+    ) -> tuple[Path, ...]:
         paths: list[Path] = []
+        type_order = {"compact": 0, "EXT1": 1, "EXT2": 2}
+        roots = [isa_root / "ea"]
+        roots.extend(isa_root / "extensions" / item for item in extension_ids)
         catalogs = sorted(
-            path
-            for path in (isa_root / "ea").rglob("modes.yaml")
-            if path.parent.name != "modes"
+            (
+                path
+                for root in roots
+                if root.is_dir()
+                for path in root.rglob("modes.yaml")
+                if path.parent.name != "modes"
+            ),
+            key=lambda path: (
+                0 if path.is_relative_to(isa_root / "ea") else 1,
+                path.parent.parent.as_posix(),
+                type_order.get(path.parent.name, len(type_order)),
+                path.as_posix(),
+            ),
         )
         for catalog in catalogs:
             for mode in cls._load_name_list(catalog, "modes"):
@@ -422,7 +439,13 @@ class SourceCatalog:
 
     @staticmethod
     def _ea_reference(isa_root: Path, source: Path) -> Reference:
-        relative = source.parent.relative_to(isa_root / "ea")
+        try:
+            relative = source.parent.relative_to(isa_root / "ea")
+        except ValueError:
+            relative = source.parent.relative_to(isa_root / "extensions")
+            return Reference(
+                relative.parts[0], relative.parts[1:-1], relative.parts[-1]
+            )
         return Reference("base", ("ea", *relative.parts[:-1]), relative.parts[-1])
 
 
@@ -524,7 +547,7 @@ class IsaProjectLoader:
                 for extension_id, extension in catalog.extensions.items()
             },
         )
-        disclosures = ImplementationDisclosureCatalog.load(isa_root)
+        disclosures = ImplementationDisclosureCatalog.load(isa_root, extension_catalog)
         entities = EntityCatalog.build(
             isa_root,
             types,

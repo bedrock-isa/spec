@@ -1,9 +1,9 @@
 \clearpage
 \section{Effective-Address Profiles}\label{page:effective-addressing-modes}
 
-EA, FEA, and VEA are seven-bit compact effective-address profiles selected by the consuming instruction\textquotesingle{}s operand
-type. They share the memory address calculation rules and the EXT1 and EXT2 descriptor grammar in this section;
-the compact comparison table identifies the profile-specific encodings. An effective-address (:term:base.terms.field:) is an operand
+EA is the base seven-bit compact effective-address profile selected by the consuming instruction\textquotesingle{}s operand
+type. Extensions may define additional profiles that reuse the memory address calculation rules and EXT1/EXT2
+descriptor grammar in this section while assigning profile-specific compact forms. An effective-address (:term:base.terms.field:) is an operand
 descriptor with an instruction-defined role and interpretation width. A
 value role reads or writes the selected register, immediate, or memory value. An address role uses a register or
 immediate as an address value and uses a memory-form EA as the calculated address without an initial data read. A

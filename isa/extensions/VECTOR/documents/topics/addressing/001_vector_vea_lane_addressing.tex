@@ -1,0 +1,15 @@
+\subsubsection{Vector VEA Lane Addressing}
+VEA inherits the scalar memory and EXT encodings except that \texttt{0x58} and \texttt{0x5B} through \texttt{0x5E}
+are (:term:base.terms.reserved:).
+
+For an (:term:base.terms.ordinary:) compact or EXT VEA memory form, address calculation first produces one scalar anchor using the
+shared base, scalar Rn index, scale, displacement, segment, and auto-update grammar. If $E$ is the vector element
+size in bytes, lane $n$ accesses \(\mathrm{anchor} + nE\). Separate vector instructions define scatter/gather addressing outside the
+VEA descriptor forms.
+
+For a VEA auto-update form, a base-register update changes the base by \(\pm\)VLEN bytes. A scalar Rn index update
+changes the index by \(\pm\)the instruction\textquotesingle{}s number of elements before the element-size scale is
+applied. Predicate activity does not change either update quantity. Descriptor encodings and update ordering otherwise
+follow the base extended-EA rules.
+
+\clearpage

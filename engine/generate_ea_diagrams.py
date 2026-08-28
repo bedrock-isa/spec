@@ -7,6 +7,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from math import sqrt
 from pathlib import Path
+import re
 import sys
 from typing import Any
 
@@ -14,8 +15,12 @@ import yaml
 
 try:
     from .ea_mode import EAMode
+    from .entity import entity_label
+    from .reference import Reference
 except ImportError:  # Support loading engine directly on PYTHONPATH.
     from ea_mode import EAMode
+    from entity import entity_label
+    from reference import Reference
 
 
 def _tex(value: object) -> str:
@@ -450,7 +455,9 @@ def render_flow_diagram(mode: EAMode) -> str | None:
     return layout.render()
 
 
-def render_autoupdate_diagrams(mode: EAMode) -> list[str]:
+def render_autoupdate_diagrams(
+    mode: EAMode, *, embedded: bool = False
+) -> list[str]:
     """Render each autoupdate variant as an integrated address-generation flow."""
 
     if "pseudocode" not in mode:
@@ -467,7 +474,11 @@ def render_autoupdate_diagrams(mode: EAMode) -> list[str]:
         target = update["target"]
         update_type = update["type"]
         difference = _tex(update["difference"])
-        caption = _tex(f"{mode['name']} {update_type} address generation")
+        suffix = f" / {update_type}"
+        variant_name = (
+            mode["name"] if mode["name"].endswith(suffix) else mode["name"] + suffix
+        )
+        caption = _tex(f"{variant_name} address generation")
         if target == "base":
             operand = _field_operand(mode, "base")
             if operand is None:
@@ -511,10 +522,15 @@ def render_autoupdate_diagrams(mode: EAMode) -> list[str]:
             layout.connect("disp.east", "add.west")
             _add_result_and_memory(layout, 3, "EFFECTIVE ADDRESS")
             layout.connect("add.south", "ptr.north")
+            rendered = layout.render()
             diagrams.append(
-                f"\\clearpage\n\\BedrockInstructionLead{{{_tex(mode['name'])} / {update_type}}}\n"
-                "\\par\\Needspace{4.70in}%\n"
-                f"{layout.render()}"
+                rendered
+                if embedded
+                else (
+                    f"\\clearpage\n\\BedrockInstructionLead{{{_tex(variant_name)}}}\n"
+                    "\\par\\Needspace{4.70in}%\n"
+                    f"{rendered}"
+                )
             )
         elif target == "index":
             if index is None:
@@ -578,10 +594,15 @@ def render_autoupdate_diagrams(mode: EAMode) -> list[str]:
             layout.connect("mul.east", "addindex.west")
             _add_result_and_memory(layout, 5, "EFFECTIVE ADDRESS")
             layout.connect("addindex.south", "ptr.north")
+            rendered = layout.render()
             diagrams.append(
-                f"\\clearpage\n\\BedrockInstructionLead{{{_tex(mode['name'])} / {update_type}}}\n"
-                "\\par\\Needspace{6.15in}%\n"
-                f"{layout.render()}"
+                rendered
+                if embedded
+                else (
+                    f"\\clearpage\n\\BedrockInstructionLead{{{_tex(variant_name)}}}\n"
+                    "\\par\\Needspace{6.15in}%\n"
+                    f"{rendered}"
+                )
             )
         else:
             raise ValueError(f"{mode.source}: unsupported autoupdate target {target!r}")
@@ -602,6 +623,13 @@ def _block_height(mode: EAMode) -> float:
         flow_height = 2.35
     else:
         flow_height = 2.10
+    updates = [
+        encoding.get("autoupdate") for encoding in mode["encodings"]
+    ]
+    if any(update and update["target"] == "index" for update in updates):
+        return 7.55
+    if any(update for update in updates):
+        return 6.35
     return min(7.0, format_height + flow_height + 0.70)
 
 
@@ -614,32 +642,225 @@ def _mode_context(relative_source: Path) -> str:
     return relative_source.parent.as_posix()
 
 
-def render_mode(mode: EAMode) -> str:
-    relative_source = mode.source
-    try:
-        relative_source = mode.source.resolve().relative_to(mode.isa_root.resolve())
-    except ValueError:
-        pass
-    parts = [
-        f"% Generated from {relative_source.as_posix()}; do not edit this block.",
-        f"\\par\\Needspace{{{_block_height(mode):.2f}in}}%",
-        f"\\BedrockInstructionLead{{{_tex(_mode_context(relative_source))} / {_tex(mode['name'])}}}",
-        render_encoding_diagram(mode),
+def _syntax_variants(mode: EAMode) -> tuple[str, ...]:
+    syntax = mode.to_dict().get("syntax")
+    if not isinstance(syntax, str):
+        return ()
+    variants: list[str] = []
+    for encoding in mode["encodings"]:
+        rendered = syntax
+        payloads = {
+            payload["role"]: _short_type(payload["type"]).lower()
+            for payload in encoding.get("payloads", [])
+        }
+        optional_displacement = payloads.get("displacement")
+        rendered = rendered.replace(
+            "[+ displacement]",
+            f"+ {optional_displacement}" if optional_displacement else "",
+        )
+        update = encoding.get("autoupdate")
+        match = re.search(r"update\((.+)\)", rendered)
+        if match is not None:
+            operand = match.group(1)
+            if update is None:
+                replacement = operand
+            elif update["type"] == "postincrement":
+                replacement = operand + "++"
+            else:
+                replacement = "--" + operand
+            rendered = rendered[: match.start()] + replacement + rendered[match.end() :]
+        for role, payload_type in payloads.items():
+            rendered = re.sub(rf"\b{re.escape(role)}\b", payload_type, rendered)
+        rendered = re.sub(r"\s+", " ", rendered).replace(" ]", "]")
+        if rendered not in variants:
+            variants.append(rendered)
+    return tuple(variants)
+
+
+def _encoding_description(mode: EAMode) -> str:
+    descriptions = []
+    for encoding in mode["encodings"]:
+        pattern = " ".join(encoding["pattern"]) if isinstance(
+            encoding["pattern"], list
+        ) else encoding["pattern"]
+        details = []
+        update = encoding.get("autoupdate")
+        if update is not None:
+            details.append(f"{update['target']} {update['type']}")
+        payloads = encoding.get("payloads", [])
+        if payloads:
+            details.extend(_short_type(payload["type"]).lower() for payload in payloads)
+        suffix = f" ({', '.join(details)})" if details else ""
+        descriptions.append(rf"\texttt{{{_tex(pattern)}}}{_tex(suffix)}")
+    return "; ".join(descriptions) + "."
+
+
+def _segment_description(mode: EAMode) -> str:
+    segment = mode.to_dict().get("segment")
+    if segment is None:
+        return "Uses the operation default data segment."
+    if segment["source"] == "fixed":
+        return f"Fixed to {_tex(segment['register'])}."
+    return "SEG(s) selects the encoded segment register."
+
+
+def _payload_description(mode: EAMode) -> str:
+    payloads = []
+    for encoding in mode["encodings"]:
+        for payload in encoding.get("payloads", []):
+            item = (payload["role"], _short_type(payload["type"]).lower())
+            if item not in payloads:
+                payloads.append(item)
+    if payloads:
+        listed = ", ".join(
+            rf"\texttt{{{_tex(payload_type)}}} ({_tex(role)})"
+            for role, payload_type in payloads
+        )
+        return f"Appends {listed} as selected by the encoding."
+    relative = mode.source.resolve().relative_to(mode.isa_root.resolve())
+    if "modes" in relative.parts and any(
+        item in {"EXT1", "EXT2"} for item in relative.parts
+    ):
+        return "The descriptor is followed by the displacement selected by the compact EXT escape."
+    return "No appended payload bytes."
+
+
+def _update_description(mode: EAMode) -> str:
+    updates = [
+        encoding["autoupdate"]
+        for encoding in mode["encodings"]
+        if "autoupdate" in encoding
     ]
-    update_flows = render_autoupdate_diagrams(mode)
+    if not updates:
+        return "No auto-update."
+    sentences = []
+    for update in updates:
+        target = f"{update['target']} register"
+        difference = update["difference"]
+        difference_text = (
+            rf"\texttt{{{_tex(difference)}}}"
+            if isinstance(difference, str)
+            else str(difference)
+        )
+        if update["type"] == "postincrement":
+            sentences.append(
+                f"Postincrement uses the current temporary {target}, then adds {difference_text}."
+            )
+        else:
+            sentences.append(
+                f"Predecrement subtracts {difference_text} from the temporary {target} before use."
+            )
+    return " ".join(sentences)
+
+
+def render_description_block(mode: EAMode, relative_source: Path) -> str:
+    """Render the former hand-authored EA explanation block from mode data."""
+
+    context = _mode_context(relative_source)
+    if context.startswith("EA / "):
+        context = context.removeprefix("EA / ")
+    title = f"{context.replace(' / ', ' ')} {mode['name']}"
+    label = "EA encoding" if isinstance(mode["encodings"][0]["pattern"], str) else "Descriptor"
+    pseudocode = mode.to_dict().get("pseudocode")
+    generation = (
+        f"{_tex(pseudocode)}."
+        if isinstance(pseudocode, str)
+        else "Selected extension descriptor."
+    )
+    lines = [
+        r"\begin{BedrockFormBlock}{2.75in}",
+        rf"\BedrockEAProfileTitle{{{_tex(title)}}}",
+        r"\begin{BedrockEAProfile}",
+    ]
+    lines.extend(
+        rf"\BedrockEAProfileSyntax{{{_tex(syntax).replace('--', '{-}{-}')}}}"
+        for syntax in _syntax_variants(mode)
+    )
+    lines.extend(
+        (
+            rf"\BedrockEAProfileLine{{{label}}}{{{_encoding_description(mode)}}}",
+            rf"\BedrockEAProfileLine{{Generation}}{{{generation}}}",
+            rf"\BedrockEAProfileLine{{Segment}}{{{_segment_description(mode)}}}",
+            rf"\BedrockEAProfileLine{{Payload}}{{{_payload_description(mode)}}}",
+            rf"\BedrockEAProfileLine{{Update}}{{{_update_description(mode)}}}",
+            r"\end{BedrockEAProfile}",
+            r"\end{BedrockFormBlock}",
+        )
+    )
+    return "\n".join(lines)
+
+
+def _encoding_variant_mode(
+    mode: EAMode, encoding: Mapping[str, Any]
+) -> EAMode:
+    """Return a one-encoding view so each update form owns its explanation."""
+
+    data = mode.to_dict()
+    data["encodings"] = [dict(encoding)]
+    update = encoding.get("autoupdate")
+    variant = update["type"] if update is not None else "plain"
+    data["name"] = f"{data['name']} / {variant}"
+    return EAMode(
+        data,
+        mode.source,
+        mode.isa_root,
+        mode.type_system,
+    )
+
+
+def _render_mode_section(
+    mode: EAMode,
+    relative_source: Path,
+    *,
+    reference: Reference | None = None,
+) -> str:
+    parts = [f"\\par\\Needspace{{{_block_height(mode):.2f}in}}%"]
+    if reference is not None:
+        parts.append(rf"\phantomsection\label{{{entity_label(reference)}}}")
+    parts.extend(
+        (
+            render_description_block(mode, relative_source),
+            render_encoding_diagram(mode),
+        )
+    )
+    update_flows = render_autoupdate_diagrams(mode, embedded=True)
     if update_flows:
         parts.extend(update_flows)
-        if any("autoupdate" not in encoding for encoding in mode["encodings"]):
-            flow = render_flow_diagram(mode)
-            if flow:
-                parts.append(
-                    f"\\clearpage\n\\BedrockInstructionLead{{{_tex(mode['name'])} / plain}}\n{flow}"
-                )
     else:
         flow = render_flow_diagram(mode)
         if flow:
             parts.append(flow)
     return "\n\n".join(parts)
+
+
+def render_mode(mode: EAMode, reference: Reference | None = None) -> str:
+    relative_source = mode.source
+    try:
+        relative_source = mode.source.resolve().relative_to(mode.isa_root.resolve())
+    except ValueError:
+        pass
+    header = f"% Generated from {relative_source.as_posix()}; do not edit this block."
+    encodings = mode["encodings"]
+    if len(encodings) > 1 and any(
+        "autoupdate" in encoding for encoding in encodings
+    ):
+        sections = []
+        for index, encoding in enumerate(encodings):
+            variant = _encoding_variant_mode(mode, encoding)
+            section = _render_mode_section(
+                variant,
+                relative_source,
+                reference=reference if index == 0 else None,
+            )
+            sections.append(section if index == 0 else f"\\clearpage\n{section}")
+        return "\n\n".join((header, *sections))
+
+    return "\n\n".join(
+        (
+            header,
+            _render_mode_section(mode, relative_source, reference=reference),
+        )
+    )
 
 
 def catalog_mode_paths(isa_root: Path) -> list[Path]:
@@ -683,6 +904,16 @@ def render_modes(modes: Iterable[EAMode]) -> str:
     header = "% Generated by engine.generate_ea_diagrams.\n"
     separator = "\n\n\\clearpage\n\n"
     return header + separator.join(render_mode(mode) for mode in modes) + "\n"
+
+
+def render_catalog(modes: Iterable[tuple[Reference, EAMode]]) -> str:
+    """Render a loaded EA catalog with canonical entity anchors."""
+
+    header = "% Generated by engine.generate_ea_diagrams.\n"
+    separator = "\n\n\\clearpage\n\n"
+    return header + separator.join(
+        render_mode(mode, reference) for reference, mode in modes
+    ) + "\n"
 
 
 def _parser() -> argparse.ArgumentParser:

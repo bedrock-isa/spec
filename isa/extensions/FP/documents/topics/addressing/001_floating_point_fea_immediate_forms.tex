@@ -1,4 +1,8 @@
 \subsubsection{Floating-Point FEA Immediate Forms}
+FEA inherits the scalar memory and EXT encodings except that \texttt{0x58}, \texttt{0x5B}, and \texttt{0x5C} are
+(:term:base.terms.reserved:). Selectors \texttt{0x5D} and \texttt{0x5E} select \texttt{immsf} and \texttt{immdf}.
+The former appends four bytes and the latter eight bytes.
+
 \texttt{immsf} carries the exact IEEE 754 binary32 interchange encoding and \texttt{immdf} carries the exact
 binary64 interchange encoding. Either source form is valid for either an S or D instruction. The (:term:base.terms.payload:) format
 defines the source format and the instruction suffix defines the operation format. When they differ, operand

@@ -54,6 +54,7 @@ class DocumentFragmentPipeline:
         from .ea_diagram import EaDiagramFragmentRenderer
         from .event_reference import EventReferenceRenderer
         from .implementation_disclosure import ImplementationDisclosureRenderer
+        from .register_model_figure import RegisterModelFigureRenderer
         from .registry_anchor import RegistryAnchorRenderer
         from .type_reference import EncodingTypeReferenceRenderer
 
@@ -64,6 +65,7 @@ class DocumentFragmentPipeline:
                 EaDiagramFragmentRenderer(),
                 EventReferenceRenderer(),
                 ImplementationDisclosureRenderer(),
+                RegisterModelFigureRenderer(),
                 RegistryAnchorRenderer(),
             )
         )

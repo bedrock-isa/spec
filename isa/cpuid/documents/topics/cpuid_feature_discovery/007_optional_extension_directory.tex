@@ -1,36 +1,4 @@
 \subsection{Optional-Extension Directory}\label{section:cpuid-extension-directory}
-Class \texttt{0x00000001}, leaf \texttt{0x0000}, index one reports optional architectural groups. The index-zero
-(:term:base.terms.header:) reports \texttt{MAX\_LEAF=2} and \texttt{MAX\_INDEX=1}.
-
-\begin{manuallistedformatdiagram}{Optional-Extension Directory Result}
-\manualformatrowrange{index 1}{63}{0}{%
-\manualformatreserved{(:term:base.terms.reserved:)}{61}
-\manualformatfield{}{1}
-\manualformatfield{}{1}
-\manualformatfield{}{1}
-}
-\end{manuallistedformatdiagram}
-
-\Needspace{1.25in}
-\manualtablecaption{Optional-Extension Feature Bits}
-\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{0.85in}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{0.55in}>{\raggedright\arraybackslash}p{0.45in}>{\raggedright\arraybackslash}p{2.30in}@{}}
-\toprule
-\rowcolor{ManualHeaderFill}
-\textbf{Class} & \textbf{Leaf} & \textbf{Index} & \textbf{Bit} & \textbf{Flag token}\\
-\midrule
-\endfirsthead
-\multicolumn{5}{@{}l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
-\toprule
-\rowcolor{ManualHeaderFill}
-\textbf{Class} & \textbf{Leaf} & \textbf{Index} & \textbf{Bit} & \textbf{Flag token}\\
-\midrule
-\endhead
-\texttt{0x00000001} & \texttt{0x0000} & \texttt{1} & \texttt{0} & \texttt{FP}\\
-\texttt{0x00000001} & \texttt{0x0000} & \texttt{1} & \texttt{1} & \texttt{FPTRANSA}\\
-\texttt{0x00000001} & \texttt{0x0000} & \texttt{1} & \texttt{2} & \texttt{VECTOR}\\
-\bottomrule
-\end{manuallongtable}
-
-
-Unlisted bits are (:term:base.terms.reserved:) and read as zero. \texttt{FPTRANSA} requires \texttt{FP} and is set when at least one approximate
-transcendental contract is present.
+Class \texttt{0x00000001}, leaf \texttt{0x0000}, index one reports optional architectural groups. Each extension
+owns the meaning of the bit it contributes to this leaf. The index-zero (:term:base.terms.header:) reports the largest
+extension-contributed leaf and \texttt{MAX\_INDEX=1}. Unlisted bits are (:term:base.terms.reserved:) and read as zero.

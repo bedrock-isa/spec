@@ -1,4 +1,4 @@
-function clause register_result_extension(Op_DIVMODS) = RegisterZeroExtend
+function clause register_result_extension(Op_DIVMODS) = RegisterSignExtend
 
 function clause repeat_semantics(Op_DIVMODS) = RepeatObserveDestination
 

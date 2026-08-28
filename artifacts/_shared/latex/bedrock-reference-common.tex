@@ -775,97 +775,6 @@
 \NewDocumentEnvironment{manuallistedstackframediagram}{m +b}{%
   \manualrenderstackframediagram{#1}{#2}{\manualfigurecaption}%
 }{}
-\newcommand{\manualifempty}[3]{%
-  \if\relax\detokenize{#1}\relax
-    #2%
-  \else
-    #3%
-  \fi}
-\newcommand{\manualeaflowstart}[2]{%
-  \begingroup
-  \Needspace{#1}%
-  \def\manualeaflowcaption{#2}%
-  \begin{center}\vspace{2pt}%
-  \begin{tikzpicture}[x=1in,y=1in,every node/.style={font=\scriptsize},>=stealth]%
-}
-\newcommand{\manualeaflowend}{%
-  \end{tikzpicture}%
-  \manualschemacaption{\manualeaflowcaption}%
-  \end{center}%
-  \endgroup}
-\newcommand{\manualeaflowrowlabel}[4]{%
-  \node[anchor=west] at (0.02,#2) {#1};
-  \draw (#3,#2) -- (#4,#2);}
-\newcommand{\manualeaflowbox}[6]{%
-  \node[manualFlowNode,align=center,minimum width=#4in,minimum height=0.26in] (#1) at (#2,#3) {#5};
-  \ifnum#6>0
-    \node[anchor=south] at ({#2 - #4/2},{#3 + 0.16}) {63};
-    \node[anchor=south] at ({#2 + #4/2},{#3 + 0.16}) {0};
-  \fi}
-\newcommand{\manualeaflowlabeledbox}[7]{%
-  \pgfmathsetmacro{\manualeaflowleft}{#4 - #5/2}%
-  \manualeaflowrowlabel{#1}{#3}{1.55}{\manualeaflowleft}%
-  \manualeaflowbox{#2}{#4}{#3}{#5}{#6}{#7}}
-\newcommand{\manualeaflowcircle}[4]{%
-  \node[manualFlowOperation,circle,inner sep=0pt,minimum size=0.27in] (#1) at (#2,#3) {#4};}
-\newcommand{\manualeaflowmemorytail}[4]{%
-  \pgfmathsetmacro{\manualeaflowleft}{#3 - #4/2}%
-  \manualeaflowrowlabel{MEMORY}{#2}{1.55}{\manualeaflowleft}%
-  \node[manualFlowMemory,align=center,minimum width=#4in,minimum height=0.26in] (mem) at (#3,#2) {OPERAND};%
-  \draw[manualFlowArrow] (#1.south) -- node[midway,right] {POINTS TO} (mem.north);}
-\newcommand{\manualeadirectflow}[4]{%
-  \manualeaflowstart{1.55in}{#1}%
-  \manualeaflowlabeledbox{#2}{reg}{0.18}{3.82}{3.05}{#3}{1}%
-  \manualeaflowlabeledbox{OPERAND}{operand}{-0.62}{3.82}{3.05}{#4}{0}%
-  \draw[manualFlowArrow] (reg.south) -- (operand.north);%
-  \manualeaflowend}
-\newcommand{\manualeaimmediateflow}[3]{%
-  \manualeaflowstart{1.55in}{#1}%
-  \manualeaflowlabeledbox{IMMEDIATE DATA}{imm}{0.20}{3.82}{3.05}{#2}{1}%
-  \manualeaflowlabeledbox{OPERAND}{operand}{-0.62}{3.82}{3.05}{#3}{0}%
-  \draw[manualFlowArrow] (imm.south) -- (operand.north);%
-  \manualeaflowend}
-\newcommand{\manualeasimplememoryflow}[4]{%
-  \manualeaflowstart{2.10in}{#1}%
-  \manualeaflowlabeledbox{#2}{src}{0.18}{3.82}{3.05}{#3}{1}%
-  \manualeaflowlabeledbox{OPERAND POINTER}{ptr}{-0.64}{3.82}{3.05}{#4}{1}%
-  \draw[manualFlowArrow] (src.south) -- (ptr.north);%
-  \manualeaflowmemorytail{ptr}{-1.42}{3.82}{3.10}%
-  \manualeaflowend}
-\newcommand{\manualeaadditivememoryflow}[5]{%
-  \manualeaflowstart{2.35in}{#1}%
-  \manualeaflowlabeledbox{#2}{base}{0.72}{4.62}{2.25}{#3}{1}%
-  \manualeaflowlabeledbox{DISPLACEMENT}{disp}{-0.10}{3.20}{2.05}{#4}{1}%
-  \manualeaflowcircle{add}{4.62}{-0.10}{+}%
-  \manualeaflowlabeledbox{OPERAND POINTER}{ptr}{-0.94}{4.62}{2.25}{#5}{1}%
-  \draw[manualFlowArrow] (base.south) -- (add.north);%
-  \draw[manualFlowArrow] (disp.east) -- (add.west);%
-  \draw[manualFlowArrow] (add.south) -- (ptr.north);%
-  \manualeaflowmemorytail{ptr}{-1.72}{4.62}{2.25}%
-  \manualeaflowend}
-\newcommand{\manualeaindexedmemoryflow}[6]{%
-  \manualeaflowstart{3.30in}{#1}%
-  \manualeaflowlabeledbox{#2}{base}{0.92}{4.48}{2.38}{#3}{1}%
-  \manualeaflowcircle{addindex}{4.48}{-1.18}{+}%
-  \manualifempty{#4}{%
-    \draw[manualFlowArrow] (base.south) -- (addindex.north);%
-  }{%
-    \manualeaflowlabeledbox{DISPLACEMENT}{disp}{0.22}{3.22}{2.15}{#4}{1}%
-    \manualeaflowcircle{addbase}{4.48}{0.22}{+}%
-    \draw[manualFlowArrow] (base.south) -- (addbase.north);%
-    \draw[manualFlowArrow] (disp.east) -- (addbase.west);%
-    \draw[manualFlowArrow] (addbase.south) -- (addindex.north);%
-  }%
-  \manualeaflowlabeledbox{INDEX REGISTER}{idx}{-0.48}{3.42}{1.85}{#5}{1}%
-  \manualeaflowlabeledbox{SCALE}{scale}{-1.18}{2.48}{1.35}{SCALE VALUE}{0}%
-  \manualeaflowcircle{mul}{3.42}{-1.18}{x}%
-  \manualeaflowlabeledbox{OPERAND POINTER}{ptr}{-1.62}{4.48}{2.38}{#6}{1}%
-  \draw[manualFlowArrow] (idx.south) -- (mul.north);%
-  \draw[manualFlowArrow] (scale.east) -- (mul.west);%
-  \draw[manualFlowArrow] (mul.east) -- (addindex.west);%
-  \draw[manualFlowArrow] (addindex.south) -- (ptr.north);%
-  \manualeaflowmemorytail{ptr}{-2.40}{4.48}{2.38}%
-  \manualeaflowend}
 \newcommand{\manualcaption}[1]{\par\smallskip\centerline{\small\bfseries #1}\smallskip}
 \newcommand{\manualformatcaption}[1]{\manualcaption{Format: #1}}
 \newcommand{\manualschemacaption}[1]{\manualcaption{Schema: #1}}
@@ -915,9 +824,6 @@
   \par
 }
 \newcommand{\manualflageffect}[2]{\texttt{#1} & #2\\}
-\newenvironment{manualeaprofile}{\par\Needspace{1.1in}\begingroup\small\raggedright}{\par\endgroup}
-\newcommand{\manualeaprofileline}[2]{\par\hangindent=1.08in\hangafter=1\textbf{#1:}\enspace#2\par}
-\newcommand{\manualeaprofilesyntax}[1]{\par\noindent\mbox{\texttt{#1}}\par}
 \newcommand{\manualsummarymnemonic}[2]{\hyperref[#1]{\texttt{#2}}}
 \newenvironment{manualinstructionformat}{%
   \par\Needspace{1.55in}%
@@ -1010,4 +916,3 @@
   \end{tikzpicture}
   \end{center}
   \noindent\footnotesize\textbf{Current document:} \BedrockDocumentTitle. The shaded block identifies its primary contract position. The Platform / OS ABI spans and constrains the four core ABI layers; the ISA specification is their non-ABI architectural foundation.\normalsize\par}
-

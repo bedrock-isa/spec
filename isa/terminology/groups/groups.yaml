@@ -6,5 +6,5 @@ groups:
 - control_flow
 - tracing
 - architectural_state
-- floating_point_and_exceptions
+- architectural_exceptions
 - compatibility

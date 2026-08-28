@@ -10,7 +10,6 @@ CMP, EXTSL, EXTSQ, EXTSW, EXTZL, EXTZQ, EXTZW, MOV, MOVCU, MOVUC, MOVUU, FBNDII,
 rules defined in Repeated Scalar Execution.
 
 An instruction either replaces the complete Z, N, C, and V FLAGS image or preserves the complete image; partial FLAGS
-writes do not exist. FFLAGS remains an IEEE-754 accrued exception-cause bank, so FFLAGS (:term:base.terms.field|plural:) that an instruction does
-not mention remain unchanged. Operand evaluation follows
+writes do not exist. Operand evaluation follows
 instruction operand order, and an instruction has one architectural commit point unless its description explicitly
 defines partial completion.

@@ -9,6 +9,7 @@ from .cpuid_reference import CpuidEntityReferenceRenderer
 from .ea_diagram import EaDiagramFragmentRenderer
 from .event_reference import EventReferenceRenderer
 from .implementation_disclosure import ImplementationDisclosureRenderer
+from .register_model_figure import RegisterModelFigureRenderer
 from .latex_document import (
     InstructionEntryRenderer,
     LatexDocumentRenderer,
@@ -35,6 +36,7 @@ __all__ = [
     "EncodingTypeReferenceRenderer",
     "EventReferenceRenderer",
     "ImplementationDisclosureRenderer",
+    "RegisterModelFigureRenderer",
     "InstructionEntryRenderer",
     "LatexDocumentRenderer",
     "LatexSemanticTextRenderer",

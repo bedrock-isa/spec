@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 
 from engine.extension import ExtensionSetCatalog
-from engine.register import RegisterCatalog
+from engine.register import RegisterCatalog, VariableRegisterWidth
 from engine.type_system import PayloadTypeKind, TypeSystem
 
 
@@ -28,6 +28,15 @@ class RegisterCatalogTest(unittest.TestCase):
             self.catalog.references.groups["FP.registers.FPR"].source,
             self.isa_root / "extensions/FP/registers/groups/FPR/group.yaml",
         )
+        self.assertEqual(
+            self.catalog.base.diagram.columns,
+            (("GPR", "SPECIAL", "STATE"), ("SEGMENT", "CONTROL", "PERFORMANCE")),
+        )
+        self.assertEqual(self.catalog.base.diagram.caption, "Base Register Model")
+        self.assertEqual(
+            dict(self.catalog.base.diagram.display),
+            {"GPR": "all", "CONTROL": "summary"},
+        )
 
     def test_expands_regular_groups_without_member_directories(self) -> None:
         gpr = self.catalog.references.groups["base.registers.GPR"]
@@ -37,8 +46,39 @@ class RegisterCatalogTest(unittest.TestCase):
         self.assertFalse((gpr.root / "registers").exists())
         self.assertEqual(tuple(gpr.registers)[:3], ("R0", "R1", "R2"))
         self.assertEqual(gpr.registers["R15"].encoding, 15)
-        self.assertEqual(vector.registers["V31"].width, "VLEN")
+        self.assertEqual(
+            vector.registers["V31"].width,
+            VariableRegisterWidth("VLEN", (128, 256, 512, 1024, 2048)),
+        )
         self.assertEqual(vector.registers["V31"].encoding, 31)
+
+    def test_loads_variable_width_domains(self) -> None:
+        vector = self.catalog.references.groups["VECTOR.registers.VECTOR"].width
+        predicate = self.catalog.references.groups[
+            "VECTOR.registers.PREDICATE"
+        ].width
+
+        self.assertIsInstance(vector, VariableRegisterWidth)
+        self.assertEqual(vector.expression, "VLEN")
+        self.assertEqual(vector.minimum, 128)
+        self.assertEqual(vector.maximum, 2048)
+        self.assertEqual(
+            predicate,
+            VariableRegisterWidth("VLEN / 8", (16, 32, 64, 128, 256)),
+        )
+
+    def test_rejects_unordered_variable_width_domain(self) -> None:
+        with self.fixture() as directory:
+            root = Path(directory)
+            (root / "registers/groups/GPR/group.yaml").write_text(
+                "id: GPR\n"
+                "width: {VLEN: [128, 512, 256]}\n"
+                "series: {prefix: R, count: 2}\n",
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(ValueError, "unique and increasing"):
+                RegisterCatalog.load(root)
 
     def test_loads_fixed_explicit_inventory_and_layout_companions(self) -> None:
         control = self.catalog.references.groups["base.registers.CONTROL"]
@@ -88,6 +128,20 @@ class RegisterCatalogTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "exactly one"):
                 RegisterCatalog.load(root)
 
+    def test_rejects_incomplete_diagram_group_placement(self) -> None:
+        with self.fixture() as directory:
+            root = Path(directory)
+            (root / "registers/groups/groups.yaml").write_text(
+                "groups: [GPR]\n"
+                "diagram:\n"
+                "  caption: Test Register Model\n"
+                "  columns: [[], []]\n",
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(ValueError, "missing.*GPR"):
+                RegisterCatalog.load(root)
+
     def fixture(self):
         temporary = tempfile.TemporaryDirectory()
         root = Path(temporary.name)
@@ -101,7 +155,12 @@ class RegisterCatalogTest(unittest.TestCase):
         ):
             shutil.copy2(self.isa_root / "schemas" / schema, root / "schemas" / schema)
         (root / "extensions/extensions.yaml").write_text("extensions: []\n")
-        (root / "registers/groups/groups.yaml").write_text("groups: [GPR]\n")
+        (root / "registers/groups/groups.yaml").write_text(
+            "groups: [GPR]\n"
+            "diagram:\n"
+            "  caption: Test Register Model\n"
+            "  columns: [[GPR], []]\n"
+        )
         (root / "registers/groups/GPR/group.yaml").write_text(
             "id: GPR\nwidth: 64\nseries: {prefix: R, count: 2}\n"
         )

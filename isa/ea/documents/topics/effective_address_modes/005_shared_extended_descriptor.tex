@@ -5,8 +5,6 @@ bytes then select segment, base, index, zero-base, SP/PC indexed, and auto-updat
 Each extended descriptor selects its segment from the encoded SREG (:term:base.terms.field:) SEG(s), the fixed SS segment for SP, the fixed CS
 segment for PC, or the operation\textquotesingle{}s default data segment.
 
-\input{isa/ea/documents/fragments/ea_field_diagrams.tex}
-
 \manualtablecaption{EA Payload Names}
 \begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{0.95in}>{\raggedright\arraybackslash}p{0.45in}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{3.30in}@{}}
 \toprule
@@ -30,8 +28,6 @@ imm8s & 1 & signed & immediate operand (:term:base.terms.payload:)\\
 imm16s & 2 & signed & immediate operand (:term:base.terms.payload:)\\
 imm32s & 4 & signed & immediate operand (:term:base.terms.payload:)\\
 imm64 & 8 & unsigned & immediate operand (:term:base.terms.payload:)\\
-immsf & 4 & unsigned & exact IEEE 754 binary32 floating-point (:term:base.terms.payload:)\\
-immdf & 8 & unsigned & exact IEEE 754 binary64 floating-point (:term:base.terms.payload:)\\
 EXT1 descriptor & 1 & encoded & one-byte extended EA descriptor; present only for EXT1 escapes\\
 EXT2 descriptor & 2 & encoded & two-byte extended EA descriptor; present only for EXT2 escapes\\
 \bottomrule

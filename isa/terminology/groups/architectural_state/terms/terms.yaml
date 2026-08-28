@@ -3,9 +3,6 @@ terms:
 - thread
 - general_purpose_register
 - rn_register
-- vector_register
-- predicate_register
-- logical_vector_lane
 - stack_pointer_register
 - segment_register_operand
 - state_register

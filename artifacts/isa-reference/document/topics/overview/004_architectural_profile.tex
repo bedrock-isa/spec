@@ -6,7 +6,7 @@ Rn namespace, with SP-relative addressing tied to SS and PC-relative addressing 
 \item The PC names a byte in the instruction stream; sequential execution advances it by the (:term:base.terms.encoded_instruction_length:) determined during decoding.
 \item Encoded instruction length is explicit and bounded; the base profile defines encoded instruction lengths from 1 to 18 bytes.
 \item Four integer operation sizes: B, W, L, and Q.
-\item The optional scalable-vector extension provides 32 VLEN-bit (:term:base.terms.vector_register|plural:) and 16 packed (:term:base.terms.predicate_register|plural:); VLEN is a reset-stable power of two from 128 through 2048 bits.
+\item The optional scalable-vector extension provides 32 VLEN-bit (:term:VECTOR.terms.vector_register|plural:) and 16 packed (:term:VECTOR.terms.predicate_register|plural:); VLEN is a reset-stable power of two from 128 through 2048 bits.
 \item The effective-address model covers register, memory, immediate, absolute, segment-qualified, indexed, and auto-update operands.
 \item Segment pre-translation precedes optional (:term:base.terms.page_table_translation:).
 \item User and supervisor modes share the instruction set, with privileged instructions and checked user-access moves defining supervisor-only behavior.

@@ -6,8 +6,8 @@ decoded and checked for repeat eligibility before a zero-count annul is applied,
 context. A body may not be a repeat operation, a repeat-control instruction, or a control transfer.
 
 Entering repeat state captures the selected Rn value as an unsigned remaining count. A valid zero count performs no
-body side effects. Otherwise each iteration evaluates operands and commits FLAGS, FFLAGS, memory, and auto-update
-effects according to the body\textquotesingle{}s (:term:base.terms.ordinary:) scalar rules. A body read of the selected counter register observes the
+body side effects. Otherwise each iteration evaluates operands and commits the body\textquotesingle{}s register, memory, and auto-update
+effects according to its (:term:base.terms.ordinary:) scalar rules. A body read of the selected counter register observes the
 iteration-start architectural value; a body write to that register is (:term:base.terms.ignored:).
 
 Each successfully committed iteration decrements the captured count before an event may be admitted at the next

@@ -1,0 +1,14 @@
+\subsection{Floating-Point SAVE Component}
+When FP is present, component ID 1 uses bitmap bit 0, offset \texttt{0x00c0}, size \texttt{0x00c0}, and alignment
+64. Its initial and reset state is positive zero in F0 through F15 and zero in FFLAGS and FSTATUS. A committed write
+that changes any of this state marks the component modified.
+
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{1.25in}>{\raggedright\arraybackslash}p{1.20in}>{\raggedright\arraybackslash}p{3.10in}@{}}
+\toprule
+\textbf{Component Offset} & \textbf{State} & \textbf{Contents}\\
+\midrule
+\texttt{0x000..0x07f} & F0--F15 & ascending register order\\
+\texttt{0x080..0x087} & \texttt{FFLAGS} & FFLAGS in bits 15..0; remaining bits zero\\
+\texttt{0x088..0x08f} & \texttt{FSTATUS} & FSTATUS in bits 15..0; remaining bits zero\\
+\bottomrule
+\end{manualtabular}

@@ -9,8 +9,8 @@ A permitted MMIO operation is one naturally aligned scalar load or store of
 1, 2, 4, or 8 bytes. All complete-range and translation checks finish before
 one architectural MMIO event is produced, and that event is not split. A
 permitted scalar that is misaligned raises
-(:ref:base.events.EXCEPTION.MMIO_ALIGNMENT_FAULT:). Atomic and read-modify-write, vector,
-gather/scatter, and repeat (:term:base.terms.memory_operation|plural:) raise
+(:ref:base.events.EXCEPTION.MMIO_ALIGNMENT_FAULT:). Atomic, read-modify-write, repeated, and every other operation that
+is not one permitted scalar load or store raise
 (:ref:base.events.EXCEPTION.UNSUPPORTED_MMIO_OPERATION:) before alignment is considered and
 before any target effect. A prefetch to MMIO is a no-op. Instruction fetch is
 never permitted from MMIO.

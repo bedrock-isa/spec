@@ -272,6 +272,17 @@ class Generator(ArtifactGenerator):
             )
             self.assertEqual(written[0].read_text(), "value\n")
 
+    def test_writer_preserves_binary_artifacts(self) -> None:
+        artifacts = GeneratedArtifactSet(
+            (GeneratedArtifact(Path("generated/asset.bin"), b"\x00\xff\x10"),)
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "output"
+
+            written = ArtifactWriter().write(artifacts, root)
+
+            self.assertEqual(written[0].read_bytes(), b"\x00\xff\x10")
+
     def test_artifact_rejects_output_escape(self) -> None:
         for path in (Path("../outside"), Path("/absolute")):
             with self.subTest(path=path), self.assertRaisesRegex(

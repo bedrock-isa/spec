@@ -1,6 +1,7 @@
 import unittest
 import json
 from pathlib import Path
+import re
 import tempfile
 
 import yaml
@@ -75,11 +76,30 @@ class DocumentTest(unittest.TestCase):
                 "base.term_groups.control_flow",
                 "base.term_groups.tracing",
                 "base.term_groups.architectural_state",
-                "base.term_groups.floating_point_and_exceptions",
+                "base.term_groups.architectural_exceptions",
+                "FP.term_groups.floating_point_and_exceptions",
+                "VECTOR.term_groups.vector_architectural_state",
                 "base.term_groups.compatibility",
             ),
         )
         self.assertEqual(owners, ["base", *self.project.catalog.extensions])
+
+    def test_base_reader_sources_do_not_define_extension_domains(self) -> None:
+        forbidden = re.compile(
+            r"\b(?:FPTRANSA|FEA|VEA|FFLAGS|FSTATUS|VLEN|VECTOR)\b"
+            r"|floating[- ]point|scalable[- ]vector|predicate register",
+            re.IGNORECASE,
+        )
+        semantic_reference = re.compile(r"\(:(?:ref|term):(FP|FPTRANSA|VECTOR)\.")
+        violations = []
+        for path in self.root.rglob("*.tex"):
+            relative = path.relative_to(self.root)
+            if relative.parts[0] in {"extensions", "indexes"}:
+                continue
+            text = path.read_text(encoding="utf-8")
+            if forbidden.search(text) or semantic_reference.search(text):
+                violations.append(str(relative))
+        self.assertEqual(violations, [])
 
     def test_generator_renders_complete_tex_without_writing(self) -> None:
         self.assertEqual(type(self.generator).__module__, "_bedrock_artifact_isa_reference")
@@ -121,6 +141,22 @@ class DocumentTest(unittest.TestCase):
         self.assertIn(r"\emph{effective address (EA)}", artifact.content)
         self.assertIn(r"\subsection{Architectural State}", artifact.content)
         self.assertIn(r"\subsection{Compatibility}", artifact.content)
+        self.assertNotIn(r"\manualeaadditivememoryflow", artifact.content)
+        self.assertNotIn(r"\manualeaindexedmemoryflow", artifact.content)
+        self.assertNotIn("Compact Effective-Address Field", artifact.content)
+        self.assertNotIn("EXT2 Explicit Segment Base Auto-Update", artifact.content)
+        self.assertNotIn("EXT2 SP/PC Indexed", artifact.content)
+        self.assertIn("postincrement address generation", artifact.content)
+        self.assertIn("predecrement address generation", artifact.content)
+        self.assertIn("updateopfeedbackout", artifact.content)
+        self.assertIn(
+            r"\BedrockEAProfileTitle{FP FEA compact Floating-point immediate}",
+            artifact.content,
+        )
+        self.assertIn(
+            r"\BedrockEAProfileTitle{VECTOR VEA EXT2 Explicit-segment indexed / plain}",
+            artifact.content,
+        )
         self.assertNotIn(r"\input{isa/", artifact.content)
         self.assertIn(
             "% begin input: artifacts/_shared/latex/bedrock-reference-common.tex",
@@ -449,6 +485,30 @@ Allocation pattern:
             len(self.project.catalog.ea_modes),
         )
         self.assertIn(r"\BedrockEAFlowStart", rendered)
+
+    def test_default_fragment_pipeline_expands_register_model_figure(self) -> None:
+        placeholder = r"\BedrockGeneratedRegisterModelFigure"
+
+        rendered = DocumentFragmentPipeline.default().expand(
+            placeholder, self.project
+        )
+
+        self.assertNotIn(placeholder, rendered)
+        self.assertIn(r"\manualfigurecaption{Base Register Model}", rendered)
+        self.assertIn(
+            r"\manualfigurecaption{Floating-Point Register Model}", rendered
+        )
+        self.assertIn(
+            r"\manualfigurecaption{Vector and Predicate Register Model}", rendered
+        )
+        self.assertEqual(rendered.count(r"\begin{tikzpicture}"), 3)
+        self.assertIn("{R15}", rendered)
+        self.assertIn("{GS5}", rendered)
+        self.assertIn(r"{24 named\\registers}", rendered)
+        self.assertIn("{VLEN-1}", rendered)
+        self.assertIn("{127}", rendered)
+        self.assertIn("{P15}", rendered)
+        self.assertNotIn("dash pattern=on 6pt off 3pt", rendered)
 
     def test_fragment_pipeline_rejects_duplicate_placeholder_owners(self) -> None:
         with self.assertRaisesRegex(ValueError, "is owned by both"):

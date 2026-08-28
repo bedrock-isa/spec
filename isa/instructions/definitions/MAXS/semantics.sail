@@ -1,4 +1,4 @@
-function clause register_result_extension(Op_MAXS) = RegisterZeroExtend
+function clause register_result_extension(Op_MAXS) = RegisterSignExtend
 
 function clause repeat_semantics(Op_MAXS) = RepeatObserveDestination
 

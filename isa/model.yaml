@@ -139,12 +139,6 @@ documents:
   - id: registers.state-register-format-diagrams.flags-and-status-registers
     source: registers/documents/topics/state_register_format_diagrams/001_flags_and_status_registers.tex
     concept: registers
-  - id: registers.state-register-format-diagrams.floating-point-register-model
-    source: registers/documents/topics/state_register_format_diagrams/002_floating_point_register_model.tex
-    concept: registers
-  - id: registers.state-register-format-diagrams.fflags-and-fstatus-registers
-    source: registers/documents/topics/state_register_format_diagrams/003_fflags_and_fstatus_registers.tex
-    concept: registers
   - id: registers.register-model.segment-registers
     source: registers/documents/topics/register_model/003_segment_registers.tex
     concept: registers
@@ -162,9 +156,6 @@ documents:
     concept: encoding
   - id: encoding.data.data-formats.little-endian-memory-organization
     source: encoding/documents/data/topics/data_formats/003_little_endian_memory_organization.tex
-    concept: encoding
-  - id: encoding.data.data-formats.floating-point-data-formats
-    source: encoding/documents/data/topics/data_formats/004_floating_point_data_formats.tex
     concept: encoding
   - id: manual.part.encoding-addressing-and-execution
     source: artifacts/isa-reference/document/topics/002_encoding_addressing_and_execution.tex
@@ -189,12 +180,6 @@ documents:
     concept: ea
   - id: ea.effective-address-modes.compact-profile-encodings
     source: ea/documents/topics/effective_address_modes/002_compact_profile_encodings.tex
-    concept: ea
-  - id: ea.effective-address-modes.floating-point-fea-immediate-forms
-    source: ea/documents/topics/effective_address_modes/003_floating_point_fea_immediate_forms.tex
-    concept: ea
-  - id: ea.effective-address-modes.vector-vea-lane-addressing
-    source: ea/documents/topics/effective_address_modes/004_vector_vea_lane_addressing.tex
     concept: ea
   - id: ea.effective-address-modes.shared-extended-descriptor
     source: ea/documents/topics/effective_address_modes/005_shared_extended_descriptor.tex
@@ -258,9 +243,6 @@ documents:
     concept: execution
   - id: execution.condition-code-computation.conditional-consumers
     source: execution/documents/topics/condition_code_computation/002_conditional_consumers.tex
-    concept: execution
-  - id: execution.condition-code-computation.floating-point-interactions
-    source: execution/documents/topics/condition_code_computation/003_floating_point_interactions.tex
     concept: execution
   - id: memory.ordering.memory-model.memory-model
     source: memory/ordering/documents/topics/memory_model/001_memory_model.tex
@@ -375,12 +357,6 @@ documents:
     concept: cpuid
   - id: cpuid.cpuid-feature-discovery.optional-extension-directory
     source: cpuid/documents/topics/cpuid_feature_discovery/007_optional_extension_directory.tex
-    concept: cpuid
-  - id: cpuid.cpuid-feature-discovery.vector-parameter-discovery
-    source: cpuid/documents/topics/cpuid_feature_discovery/008_vector_parameter_discovery.tex
-    concept: cpuid
-  - id: cpuid.cpuid-feature-discovery.fptransa-accuracy-discovery
-    source: cpuid/documents/topics/cpuid_feature_discovery/009_fptransa_accuracy_discovery.tex
     concept: cpuid
   - id: cpuid.cpuid-feature-discovery.implementation-class-directory
     source: cpuid/documents/topics/cpuid_feature_discovery/010_implementation_class_directory.tex

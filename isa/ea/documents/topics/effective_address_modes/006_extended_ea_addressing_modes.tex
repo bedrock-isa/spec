@@ -1,13 +1,10 @@
 \subsection{Extended EA Addressing Modes}\label{section:extended-ea-addressing}
-EXT1 and EXT2 are shared unchanged by EA, FEA, and VEA when a compact form cannot express the operand: explicit segment selection, indexed addressing,
+EXT1 and EXT2 extend EA when a compact form cannot express the operand: explicit segment selection, indexed addressing,
 zero-base addressing, SP/PC indexed addressing, or auto-update addressing. EXT1 selects exactly one descriptor byte;
 EXT2 selects exactly two descriptor bytes.
 
 Each extended-descriptor form selects its segment from the encoded SREG (:term:base.terms.field:) SEG(s), the fixed SS segment for SP, the fixed CS
 segment for PC, or the operation\textquotesingle{}s default data segment.
-
-\input{isa/ea/documents/fragments/extended_descriptor_reference_blocks.tex}
-
 
 EA evaluation begins by copying the architectural registers into (:term:base.terms.temporary_operand_evaluation_state:). Operands are
 then processed in instruction order. Within one EA, the base term is evaluated before the index term and then the
@@ -19,12 +16,6 @@ memory state unchanged apart from the exception-entry transition.
 Postincrement forms use the current temporary value and update it afterward. Predecrement forms update the temporary
 value first and then use the result. A base register changes by the EA interpretation width in bytes; an index
 register changes by one element before scaling. Each REP iteration applies and commits these rules independently.
-
-When a future vector instruction consumes VEA, a base-register update changes the base by \(\pm\)VLEN bytes. A
-scalar Rn index update changes the index by \(\pm\)the instruction\textquotesingle{}s number of elements before the existing
-element-size scale is applied. Predicate activity does not change either update quantity. These vector quantities
-replace the scalar per-access quantities for that VEA evaluation; the descriptor encodings and update ordering are
-otherwise unchanged.
 
 Size-less address-role instructions INVPAGE, FLSHDCACHE, INVDCACHE, INVICACHE, WRBKDCACHE, SYNCCACHE, PREFETCH,
 PREFETCHNT, PTQUERY, SAVE, and RESTORE have Q interpretation width. Size-less control-target instructions DJcc, IJcc,

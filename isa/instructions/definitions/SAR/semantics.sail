@@ -1,4 +1,4 @@
-function clause register_result_extension(Op_SAR) = RegisterZeroExtend
+function clause register_result_extension(Op_SAR) = RegisterSignExtend
 
 function clause repeat_semantics(Op_SAR) = RepeatObserveDestination
 

@@ -1,0 +1,15 @@
+\subsection{Vector SAVE Component}
+When VECTOR is present, component ID 2 uses bitmap bit 1 and contains the complete V0 through V31 and packed P0
+through P15 images. Let \(B\) be VLEN in bytes. The reported component size is
+\(64\lceil 34B/64\rceil\), and its initial and reset state is all zero. A committed Vn or Pn write marks the component
+modified.
+
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{2.20in}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{2.50in}@{}}
+\toprule
+\textbf{Component Offset} & \textbf{State} & \textbf{Contents}\\
+\midrule
+\texttt{n * B} & \texttt{Vn} & V0 through V31; each register occupies B bytes\\
+\texttt{32 * B + n * B/8} & \texttt{Pn} & P0 through P15; each packed predicate image occupies B/8 bytes\\
+\(34B \mathbin{..} 64\lceil 34B/64\rceil - 1\) & (:term:base.terms.padding:) & zero on SAVE and (:term:base.terms.ignored:) on RESTORE\\
+\bottomrule
+\end{manualtabular}

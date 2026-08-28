@@ -4,10 +4,10 @@ Let \(x\) be the destination value after DAZ processing and let \(k\) be the sou
 \[
   x \times 2^k .
 \]
-A NaN operand is propagated according to the common floating-point rules. Multiplying zero or infinity by the power of two preserves that value and its sign. Conversion of the scale operand to \(k\) can generate NX; final rounding can generate OF, UF, or NX. An enabled (:term:base.terms.floating_point_exception_condition:) raises the (:ref:FP.events.EXCEPTION.FLOATING_POINT_EXCEPTION:) architectural event before the destination is written.
+A NaN operand is propagated according to the common floating-point rules. Multiplying zero or infinity by the power of two preserves that value and its sign. Conversion of the scale operand to \(k\) can generate NX; final rounding can generate OF, UF, or NX. An enabled (:term:FP.terms.floating_point_exception_condition:) raises the (:ref:FP.events.EXCEPTION.FLOATING_POINT_EXCEPTION:) architectural event before the destination is written.
 
 Let \(x\) be the destination value after DAZ processing and let \(k\) be the source value rounded to an integer using the current rounding mode. The mathematical result before format rounding is
 \[
   x \times 2^k .
 \]
-A NaN operand is propagated according to the common floating-point rules. Multiplying zero or infinity by the power of two preserves that value and its sign. Conversion of the scale operand to \(k\) can generate NX; final rounding can generate OF, UF, or NX. An enabled (:term:base.terms.floating_point_exception_condition:) raises the (:ref:FP.events.EXCEPTION.FLOATING_POINT_EXCEPTION:) architectural event before the destination is written.
+A NaN operand is propagated according to the common floating-point rules. Multiplying zero or infinity by the power of two preserves that value and its sign. Conversion of the scale operand to \(k\) can generate NX; final rounding can generate OF, UF, or NX. An enabled (:term:FP.terms.floating_point_exception_condition:) raises the (:ref:FP.events.EXCEPTION.FLOATING_POINT_EXCEPTION:) architectural event before the destination is written.

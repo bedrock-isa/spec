@@ -28,12 +28,12 @@ class RegistryAnchorRenderer(DocumentFragmentProvider):
             return self._architectural_registers(text, context)
         if location == "cpuid/documents/fragments/cpuid_class_leaf_directory.tex":
             return self._cpuid_directory(text, context)
-        if location == "ea/documents/fragments/compact_ea_reference_blocks.tex":
-            return self._compact_ea_modes(text, context)
-        if location == (
-            "ea/documents/fragments/extended_descriptor_reference_blocks.tex"
+        if (
+            len(relative.parts) >= 6
+            and relative.parts[0] == "extensions"
+            and relative.parts[2:5] == ("documents", "topics", "cpuid")
         ):
-            return self._extended_ea_modes(text, context)
+            return self._extension_cpuid_topic(text, context, relative.parts[1])
         return text
 
     @staticmethod
@@ -83,13 +83,13 @@ class RegistryAnchorRenderer(DocumentFragmentProvider):
         catalog = context.project.cpuid
         markers: dict[str, list[str]] = defaultdict(list)
         for cpuid_class in catalog.references.classes.values():
-            if cpuid_class.extends is not None:
+            if cpuid_class.reference.owner != "base" or cpuid_class.extends is not None:
                 continue
             assert cpuid_class.value is not None
             marker = rf"\texttt{{0x{cpuid_class.value:08X}}} & --"
             markers[marker].append(entity_label(cpuid_class.reference))
         for leaf in catalog.references.leaves.values():
-            if leaf.extends is not None:
+            if leaf.reference.owner != "base" or leaf.extends is not None:
                 continue
             cpuid_class = catalog.references.classes.resolve(
                 f"{leaf.reference.owner}.cpuid.{leaf.reference.path[-1]}"
@@ -105,61 +105,30 @@ class RegistryAnchorRenderer(DocumentFragmentProvider):
         return _inject(text, markers, context.source)
 
     @staticmethod
-    def _compact_ea_modes(text: str, context: DocumentFragmentContext) -> str:
-        markers = {
-            r"\textbf{\texttt{Rn Memory}}\par": [
-                entity_label("base.ea.modes.compact.register")
-            ],
-            r"\textbf{\texttt{SP Memory}}\par": [
-                entity_label("base.ea.modes.compact.stack_pointer_displaced"),
-                entity_label("base.ea.modes.compact.stack_pointer_indirect"),
-            ],
-            r"\textbf{\texttt{PC Memory}}\par": [
-                entity_label("base.ea.modes.compact.program_counter_displaced")
-            ],
-            r"\textbf{\texttt{Absolute Memory}}\par": [
-                entity_label("base.ea.modes.compact.absolute")
-            ],
-            r"\textbf{\texttt{Immediate}}\par": [
-                entity_label("base.ea.modes.compact.immediate")
-            ],
-            r"\textbf{\texttt{EXT1 Escape}}\par": [
-                entity_label("base.ea.modes.compact.ext1")
-            ],
-            r"\textbf{\texttt{EXT2 Escape}}\par": [
-                entity_label("base.ea.modes.compact.ext2")
-            ],
-        }
-        return _inject(text, markers, context.source)
-
-    @staticmethod
-    def _extended_ea_modes(text: str, context: DocumentFragmentContext) -> str:
-        markers = {
-            r"\textbf{\texttt{EXT1 Explicit Segment Base}}\par": [
-                entity_label("base.ea.modes.EXT1.explicit_segment_base")
-            ],
-            r"\textbf{\texttt{EXT2 Explicit Segment Indexed}}\par": [
-                entity_label("base.ea.modes.EXT2.explicit_segment_index")
-            ],
-            r"\textbf{\texttt{EXT1 Explicit Segment Zero Base}}\par": [
-                entity_label("base.ea.modes.EXT1.explicit_segment_zero_base")
-            ],
-            r"\textbf{\texttt{EXT2 Explicit Segment Base Auto-Update}}\par": [
-                entity_label("base.ea.modes.EXT2.explicit_segment_base")
-            ],
-            r"\textbf{\texttt{EXT2 Explicit Segment Zero-Base Indexed}}\par": [
-                entity_label("base.ea.modes.EXT2.explicit_segment_zero_base_index")
-            ],
-            r"\textbf{\texttt{EXT2 SP/PC Indexed}}\par": [
-                entity_label("base.ea.modes.EXT2.stack_pointer_index"),
-                entity_label("base.ea.modes.EXT2.program_counter_index"),
-            ],
-            r"\textbf{\texttt{EXT1 Default-Segment Base Auto-Update}}\par": [
-                entity_label("base.ea.modes.EXT1.default_segment_base")
-            ],
-        }
-        return _inject(text, markers, context.source)
-
+    def _extension_cpuid_topic(
+        text: str, context: DocumentFragmentContext, owner: str
+    ) -> str:
+        catalog = context.project.cpuid
+        labels = []
+        labels.extend(
+            entity_label(cpuid_class.reference)
+            for cpuid_class in catalog.references.classes.values()
+            if cpuid_class.reference.owner == owner and cpuid_class.extends is None
+        )
+        labels.extend(
+            entity_label(leaf.reference)
+            for leaf in catalog.references.leaves.values()
+            if leaf.reference.owner == owner and leaf.extends is None
+        )
+        if not labels:
+            return text
+        heading_end = text.find("\n")
+        if heading_end < 0:
+            raise ValueError(f"{context.source}: CPUID topic has no heading line")
+        anchors = "".join(
+            rf"\phantomsection\label{{{label}}}" for label in labels
+        )
+        return text[: heading_end + 1] + anchors + "\n" + text[heading_end + 1 :]
 
 def _inject(text: str, markers: dict[str, list[str]], source) -> str:
     for marker, labels in markers.items():
