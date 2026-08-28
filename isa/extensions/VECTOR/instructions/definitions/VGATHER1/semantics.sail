@@ -1,3 +1,36 @@
-function execute_VGATHER1(instruction : Decoded_instruction, state : Cpu_state)
-  -> option(Execution_result) =
-  start_vector_memory_transaction(instruction, state)
+function execute_VGATHER1(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) =
+    Some(
+        execute_uop_program(
+            [|
+                make_uop(
+                    UopVectorStepPrepare(Op_VGATHER1),
+                    uop_none(),
+                    uop_none(),
+                    uop_temporary(40),
+                    Operand_cursor,
+                    operation_width(instruction),
+                    CommitRegisters,
+                ),
+                make_uop(
+                    UopVectorStepIssue(Op_VGATHER1),
+                    uop_temporary(40),
+                    uop_none(),
+                    uop_temporary(41),
+                    Operand_cursor,
+                    operation_width(instruction),
+                    CommitMemory,
+                ),
+                make_uop(
+                    UopVectorStepCommit(Op_VGATHER1),
+                    uop_temporary(40),
+                    uop_temporary(41),
+                    uop_none(),
+                    Operand_cursor,
+                    operation_width(instruction),
+                    CommitMemory,
+                ),
+            |],
+            instruction,
+            state,
+        ),
+    )

@@ -1,3 +1,27 @@
-function execute_VNMADD(instruction : Decoded_instruction, state : Cpu_state)
-  -> option(Execution_result) =
-  start_vector_fp_transaction(instruction, state)
+function execute_VNMADD(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) =
+    Some(
+        execute_uop_program(
+            [|
+                make_uop(
+                    UopVectorFp(Op_VNMADD),
+                    uop_none(),
+                    uop_none(),
+                    uop_none(),
+                    Operand_dst,
+                    operation_width(instruction),
+                    CommitRegisters,
+                ),
+                make_uop(
+                    UopCommit(),
+                    uop_none(),
+                    uop_none(),
+                    uop_none(),
+                    Operand_dst,
+                    operation_width(instruction),
+                    CommitRegisters,
+                ),
+            |],
+            instruction,
+            state,
+        ),
+    )

@@ -1,5 +1,68 @@
 
-function execute_FATANA(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) = {
-    let result : Execution_result = start_fp_transaction(instruction, state);
-    Some(result)
-}
+function lower_FATANA_uops(instruction : Decoded_instruction) -> option(list(Micro_operation)) =
+    match lower_fp_unary_operands(instruction) {
+        Some(operands) => {
+            let width = operation_width(instruction);
+            let contract = uop_temporary(32);
+            let compute = {
+                make_uop(
+                    UopFpOperation(Op_FATANA),
+                    operands.source,
+                    uop_none(),
+                    operands.destination,
+                    Operand_dst,
+                    width,
+                    operands.commit_kind,
+                ) with
+                auxiliary = contract,
+            };
+            Some(
+                append_uops(
+                    [|
+                        make_uop(UopFpContractQuery(), uop_none(), uop_none(), contract, Operand_src, width, CommitNone),
+                        make_uop(
+                            UopFpContractValidate(),
+                            contract,
+                            uop_none(),
+                            uop_none(),
+                            Operand_src,
+                            width,
+                            CommitNone,
+                        ),
+                    |],
+                    append_uops(
+                        operands.before_compute,
+                        compute ::
+                            append_uops(
+                                operands.after_compute,
+                                [|
+                                    make_uop(
+                                        UopCommit(),
+                                        uop_none(),
+                                        uop_none(),
+                                        uop_none(),
+                                        Operand_dst,
+                                        width,
+                                        operands.commit_kind,
+                                    ),
+                                |],
+                            ),
+                    ),
+                ),
+            )
+        },
+        None() => None(),
+    }
+
+function execute_FATANA(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) =
+    match lower_FATANA_uops(instruction) {
+        Some(program) => Some(execute_uop_program(program, instruction, state)),
+        None() => Some(
+            faulted(
+                state,
+                instruction.form.operation,
+                IllegalInstruction,
+                "FATANA could not be lowered to micro-operations",
+            ),
+        ),
+    }

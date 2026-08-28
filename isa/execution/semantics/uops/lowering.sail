@@ -21,26 +21,71 @@ function make_uop(
         kind = kind,
         source0 = source0,
         source1 = source1,
+        source2 = uop_none(),
         destination = destination,
+        destination2 = uop_none(),
+        auxiliary = uop_none(),
         operand_name = operand_name,
         width = width,
         commit_kind = commit_kind,
+    }
+
+function make_uop3(
+    kind : Uop_kind,
+    source0 : Uop_location,
+    source1 : Uop_location,
+    source2 : Uop_location,
+    destination : Uop_location,
+    operand_name : Operand_id,
+    width : int,
+    commit_kind : Commit_kind,
+) -> (
+    Micro_operation
+) =
+    {
+        make_uop(kind, source0, source1, destination, operand_name, width, commit_kind) with
+        source2 = source2,
+    }
+
+function make_uop_pair(
+    kind : Uop_kind,
+    source0 : Uop_location,
+    source1 : Uop_location,
+    destination : Uop_location,
+    destination2 : Uop_location,
+    operand_name : Operand_id,
+    width : int,
+    commit_kind : Commit_kind,
+) -> (
+    Micro_operation
+) =
+    {
+        make_uop(kind, source0, source1, destination, operand_name, width, commit_kind) with
+        destination2 = destination2,
     }
 
 function direct_uop_location(operand : Decoded_operand) -> Uop_location =
     if operand.operand_type == OperandType_Rn then {
         uop_register(unsigned(operand.value[3 .. 0]))
     } else {
-        if operand.operand_type == OperandType_SP then {
-            uop_sp()
+        if operand.operand_type == OperandType_Fn then {
+            uop_fp_register(unsigned(operand.value[3 .. 0]))
         } else {
-            if operand.operand_type == OperandType_EA then {
-                match operand.ea {
-                    Some(ea) => uop_immediate(ea_signed_payload(ea)),
-                    None() => uop_none(),
-                }
+            if operand.operand_type == OperandType_SP then {
+                uop_sp()
             } else {
-                uop_immediate(immediate_value(operand))
+                if operand.operand_type == OperandType_EA then {
+                    match operand.ea {
+                        Some(ea) => if ea.kind == EaKind_float_immediate then {
+                            uop_immediate(ea.payload)
+                        } else {
+                            uop_immediate(ea_signed_payload(ea))
+                        },
+                        None() => uop_none(),
+                    }
+                } else {
+                    uop_immediate(immediate_value(operand))
+                }
             }
         }
     }

@@ -184,6 +184,7 @@ class SailCompositionTest(unittest.TestCase):
             "integer_add.sail": "UopIntegerAdd",
             "move.sail": "UopMove",
             "memory_load.sail": "UopMemoryLoad",
+            "memory_probe.sail": "UopMemoryProbe",
             "memory_store.sail": "UopMemoryStore",
             "commit.sail": "UopCommit",
         }
@@ -200,13 +201,61 @@ class SailCompositionTest(unittest.TestCase):
             self.assertNotIn(constructor, types)
 
         self.assertIn(
-            "PhaseUopMemoryRead",
+            "uop_wait(",
             (primitives / "memory_load.sail").read_text(),
         )
         self.assertIn(
-            "PhaseUopMemoryWrite",
+            "uop_wait(",
             (primitives / "memory_store.sail").read_text(),
         )
+        self.assertIn("PhaseUopWait", runtime)
+
+    def test_fadd_owns_fp_arithmetic_uop_program(self) -> None:
+        semantics = (
+            self.project.root
+            / "extensions/FP/instructions/definitions/FADD/semantics.sail"
+        ).read_text()
+        primitive = (
+            self.project.root
+            / "extensions/FP/semantics/uops/fp_compute.sail"
+        ).read_text()
+
+        self.assertIn("function lower_FADD_uops", semantics)
+        self.assertIn("UopFpArithmetic(FpArithmeticAdd)", semantics)
+        self.assertIn("execute_uop_program", semantics)
+        self.assertNotIn("start_fp_transaction", semantics)
+        self.assertIn(
+            "union clause Uop_kind = UopFpArithmetic",
+            primitive,
+        )
+        self.assertIn(
+            "function clause execute_uop(UopFpArithmetic(operation)",
+            primitive,
+        )
+
+        migrated = {
+            "FADD": "FpArithmeticAdd",
+            "FSUB": "FpArithmeticSubtract",
+            "FMUL": "FpArithmeticMultiply",
+            "FDIV": "FpArithmeticDivide",
+            "FSQRT": "FpArithmeticSquareRoot",
+            "FMADD": "FpArithmeticFusedMultiplyAdd",
+            "FMSUB": "FpArithmeticFusedMultiplySubtract",
+            "FNMADD": "FpArithmeticFusedNegatedMultiplyAdd",
+            "FNMSUB": "FpArithmeticFusedNegatedMultiplySubtract",
+            "FABS": "FpArithmeticAbsolute",
+            "FNEG": "FpArithmeticNegate",
+        }
+        for mnemonic, operation in migrated.items():
+            source = (
+                self.project.root
+                / "extensions/FP/instructions/definitions"
+                / mnemonic
+                / "semantics.sail"
+            ).read_text()
+            self.assertIn(f"function lower_{mnemonic}_uops", source)
+            self.assertIn(f"UopFpArithmetic({operation})", source)
+            self.assertNotIn("start_fp_transaction", source)
 
     def test_instruction_semantics_owns_dispatch_inputs(self) -> None:
         semantics = next(
@@ -339,10 +388,55 @@ class SailCompositionTest(unittest.TestCase):
             self.assertNotIn(scalar_operation, vector)
 
         conversion_call = vector.split("function vector_fp_conversion_lanes", 1)[1]
-        self.assertIn(
-            "fp_primitive_evaluate(\n        instruction.form.operation",
+        self.assertRegex(
             conversion_call,
+            r"fp_primitive_evaluate\(\s+instruction\.form\.operation",
         )
+
+    def test_fp_and_vector_instructions_use_the_common_uop_engine(self) -> None:
+        for extension in ("FP", "FPTRANSA"):
+            definitions = (
+                self.project.root / "extensions" / extension / "instructions/definitions"
+            )
+            for semantics in definitions.glob("*/semantics.sail"):
+                source = semantics.read_text()
+                self.assertIn("execute_uop_program", source, semantics)
+                self.assertNotIn("start_fp_transaction", source, semantics)
+
+        vector_definitions = (
+            self.project.root / "extensions/VECTOR/instructions/definitions"
+        )
+        for semantics in vector_definitions.glob("*/semantics.sail"):
+            source = semantics.read_text()
+            self.assertIn("execute_uop_program", source, semantics)
+            self.assertNotIn("start_vector_", source, semantics)
+
+    def test_fp_and_vector_dedicated_continuation_state_is_removed(self) -> None:
+        sources = [
+            self.project.root / "execution/semantics/types.sail",
+            self.project.root / "execution/semantics/results.sail",
+            self.project.root / "execution/semantics/continuation/common.sail",
+            self.project.root / "execution/semantics/continuation/dispatch.sail",
+            self.project.root / "extensions/VECTOR/semantics/vector.sail",
+        ]
+        combined = "\n".join(source.read_text() for source in sources)
+
+        for legacy in (
+            "PhaseFp",
+            "PhaseVector",
+            "fp_pending",
+            "vector_payload",
+            "start_fp_transaction",
+            "start_vector_fp_transaction",
+            "start_vector_memory_transaction",
+            "resume_fp_phase",
+            "resume_vector_phase",
+        ):
+            self.assertNotIn(legacy, combined)
+
+        self.assertIn("PhaseUopWait", combined)
+        self.assertIn("UopVectorMemoryLoad", combined)
+        self.assertIn("UopVectorStepPrepare", combined)
 
     def test_catalog_projects_every_form_and_representative_record(self) -> None:
         catalog = SailCatalogRenderer().render(self.compose())

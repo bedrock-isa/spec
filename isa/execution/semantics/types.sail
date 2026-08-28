@@ -97,20 +97,11 @@ enum Continuation_phase = {
     PhaseEventStackProbe,
     PhaseEventFrameStore,
     PhaseEventReturnExecute,
-    PhaseFpContractQuery,
-    PhaseFpSourceRead,
-    PhaseFpDestinationProbe,
-    PhaseFpDestinationWrite,
-    PhaseVectorMemoryRead,
-    PhaseVectorMemoryWrite,
-    PhaseVectorFpMemoryRead,
-    PhaseVectorFpMemoryWrite,
     PhaseCpuidQuery,
     PhasePerformanceCounter,
     PhaseControlTransition,
     PhaseResetSerialize,
-    PhaseUopMemoryRead,
-    PhaseUopMemoryWrite,
+    PhaseUopWait,
 }
 
 enum Transaction_response_kind = {
@@ -253,6 +244,7 @@ scattered union Uop_kind
 enum Uop_location_kind = {
     UopLocationNone,
     UopLocationRegister,
+    UopLocationFpRegister,
     UopLocationSp,
     UopLocationImmediate,
     UopLocationTemporary,
@@ -268,7 +260,10 @@ struct Micro_operation = {
   kind : Uop_kind,
   source0 : Uop_location,
   source1 : Uop_location,
+  source2 : Uop_location,
   destination : Uop_location,
+  destination2 : Uop_location,
+  auxiliary : Uop_location,
   operand_name : Operand_id,
   width : int,
   commit_kind : Commit_kind,
@@ -276,6 +271,18 @@ struct Micro_operation = {
 
 struct Uop_value = {
   value : bits(64),
+  secondary_value : bits(64),
+  flags : bits(4),
+  write_flags : bool,
+  generated_fflags : bits(5),
+  bounds_passed : bool,
+  cache_policy : int,
+  access_class : Memory_access_class,
+  physical_class : Physical_memory_class,
+  atomic_store_happened : bool,
+  body_bytes : list(bits(8)),
+  known : bool,
+  present : bool,
   address : bool,
   segment : int,
   segment_image : bits(64),
@@ -302,9 +309,6 @@ struct Pending_commit = {
   event : option(Event_record),
   event_attempt : int,
   boundary_class : Boundary_class,
-  fp_pending : Fp_pending_image,
-  vector_payload0 : list(bits(8)),
-  vector_payload1 : list(bits(8)),
   uop_program : list(Micro_operation),
   uop_cursor : int,
   uop_values : list(Uop_value),
@@ -339,6 +343,30 @@ struct Execution_result = {
   effects : list(Architectural_effect),
   fault : option(Execution_fault),
   awaiting_environment : bool,
+}
+
+struct Uop_continue = {
+  state : Cpu_state,
+  values : list(Uop_value),
+}
+
+struct Uop_wait = {
+  pending_destination : int,
+  request : Primitive_request,
+  captured : bits(64),
+}
+
+struct Uop_complete = {
+  state : Cpu_state,
+  commit_kind : Commit_kind,
+}
+
+union Uop_step = {
+    UopContinue : Uop_continue,
+    UopWait : Uop_wait,
+    UopComplete : Uop_complete,
+    UopDelegate : Execution_result,
+    UopFault : Execution_result,
 }
 
 // Operation-local entries are generated after the core module.  Core

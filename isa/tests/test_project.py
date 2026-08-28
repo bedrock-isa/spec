@@ -63,6 +63,7 @@ class IsaProjectTest(unittest.TestCase):
                 "base.continuations",
                 "base.boundary",
                 "FPTRANSA.contract",
+                "FPTRANSA.execution",
             ),
         )
         document_order = self.project.model.document_order

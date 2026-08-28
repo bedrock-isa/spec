@@ -1,5 +1,49 @@
 
-function execute_FINTRZ(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) = {
-    let result : Execution_result = start_fp_transaction(instruction, state);
-    Some(result)
-}
+function lower_FINTRZ_uops(instruction : Decoded_instruction) -> option(list(Micro_operation)) =
+    match lower_fp_unary_operands(instruction) {
+        Some(operands) => {
+            let width = operation_width(instruction);
+            Some(
+                append_uops(
+                    operands.before_compute,
+                    make_uop(
+                        UopFpOperation(Op_FINTRZ),
+                        operands.source,
+                        uop_none(),
+                        operands.destination,
+                        Operand_dst,
+                        width,
+                        operands.commit_kind,
+                    ) ::
+                        append_uops(
+                            operands.after_compute,
+                            [|
+                                make_uop(
+                                    UopCommit(),
+                                    uop_none(),
+                                    uop_none(),
+                                    uop_none(),
+                                    Operand_dst,
+                                    width,
+                                    operands.commit_kind,
+                                ),
+                            |],
+                        ),
+                ),
+            )
+        },
+        None() => None(),
+    }
+
+function execute_FINTRZ(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) =
+    match lower_FINTRZ_uops(instruction) {
+        Some(program) => Some(execute_uop_program(program, instruction, state)),
+        None() => Some(
+            faulted(
+                state,
+                instruction.form.operation,
+                IllegalInstruction,
+                "FINTRZ could not be lowered to micro-operations",
+            ),
+        ),
+    }

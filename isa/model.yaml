@@ -50,7 +50,9 @@ sail:
     - execution/semantics/uops/primitives/integer_add.sail
     - execution/semantics/uops/primitives/move.sail
     - execution/semantics/uops/primitives/memory_load.sail
+    - execution/semantics/uops/primitives/memory_probe.sail
     - execution/semantics/uops/primitives/memory_store.sail
+    - execution/semantics/uops/primitives/stack.sail
     - execution/semantics/uops/primitives/commit.sail
     - execution/semantics/uops/lowering.sail
     - memory/cache/semantics/evaluations.sail

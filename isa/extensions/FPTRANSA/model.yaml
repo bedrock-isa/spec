@@ -6,6 +6,17 @@ sail:
     sources:
     - semantics/operation_catalog.sail
     - semantics/transcendental_contract.sail
+  - id: execution
+    requires:
+    - base.architectural-types
+    - base.decode-types
+    - base.decode
+    - base.runtime
+    - FP.contract
+    - FP.execution
+    - FPTRANSA.contract
+    sources:
+    - semantics/uops/contract.sail
 documents:
   topics:
   - id: introduction.fptransa-common-model

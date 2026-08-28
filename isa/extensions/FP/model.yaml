@@ -29,9 +29,8 @@ sail:
     sources:
     - semantics/register_access.sail
     - semantics/transaction_inputs.sail
-    - semantics/transaction_compute.sail
-    - semantics/transaction_flow.sail
-    - semantics/continuation.sail
+    - semantics/uops/fp_compute.sail
+    - semantics/uops/lowering.sail
 documents:
   topics:
   - id: introduction.common-floating-point-semantics
