@@ -1,0 +1,18 @@
+id: immediate
+name: Integer immediate
+kind: immediate
+syntax: immediate
+encodings:
+  - pattern: "1011011"
+    payloads:
+      - {role: immediate, type: base.payload_types.IMM8S}
+  - pattern: "1011100"
+    payloads:
+      - {role: immediate, type: base.payload_types.IMM16S}
+  - pattern: "1011101"
+    payloads:
+      - {role: immediate, type: base.payload_types.IMM32S}
+  - pattern: "1011110"
+    payloads:
+      - {role: immediate, type: base.payload_types.IMM64}
+pseudocode: value = immediate

@@ -1,0 +1,8 @@
+id: BUS_NO_RESPONDER
+name: Bus No Responder
+summary: No bus target responds to the requested access.
+code: 0x70
+family: BUS_FAILURE
+frame: auxiliary
+payload: [FAULT_EA, FAULT_LINEAR, ACCESS, USER_DOMAIN, ATOMIC, WALK_LEVEL, OPERAND, ACCESS_SIZE, RETRY_SAFE, EVENT_AUX]
+

@@ -1,0 +1,21 @@
+\Needspace{1.25in}
+\manualtablecaption{Atomic Memory-Order Selectors}
+\begingroup\footnotesize
+\setlength{\aboverulesep}{0pt}
+\setlength{\belowrulesep}{0pt}
+\setlength{\extrarowheight}{1.2pt}
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.95in}>{\raggedright\arraybackslash}p{0.45in}>{\raggedright\arraybackslash}X@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Selector} & \textbf{Code} & \textbf{Architectural Ordering Effect}\\
+\midrule
+\texttt{RELAXED} & \texttt{0} & Atomicity only. No ordering is imposed on unrelated (:term:base.terms.memory_operation|plural:).\\
+\texttt{ACQUIRE} & \texttt{1} & Later (:term:base.terms.memory_operation|plural:) by the same (:term:base.terms.logical_processor:) are ordered after the atomic operation.\\
+\texttt{RELEASE} & \texttt{2} & Earlier (:term:base.terms.memory_operation|plural:) by the same (:term:base.terms.logical_processor:) are ordered before the atomic operation.\\
+\texttt{ACQREL} & \texttt{3} & Applies both acquire and release ordering.\\
+\texttt{SEQCST} & \texttt{4} & Applies acquire-release ordering and participates in the single global sequentially consistent order.\\
+\bottomrule
+\end{tabularx}
+\end{center}
+\endgroup

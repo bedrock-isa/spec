@@ -1,0 +1,48 @@
+\begin{manuallistedformatdiagram}{SAVE/RESTORE Base Header}
+\manualformatrowrange{(:term:base.terms.header:)[63:0]}{63}{0}{%
+\manualformatreserved{(:term:base.terms.reserved:)}{12}
+\manualformatfield{STATUS}{16}
+\manualformatfield{FLAGS}{16}
+\manualformatreserved{(:term:base.terms.reserved:)}{9}
+\manualformatfield{D}{1}
+\manualformatfield{5}{1}
+\manualformatfield{4}{1}
+\manualformatfield{3}{1}
+\manualformatfield{2}{1}
+\manualformatfield{1}{1}
+\manualformatfield{0}{1}
+\manualformatfield{FMT}{4}
+}
+\manualformatrowrange{bitmap[63:0]}{63}{0}{%
+\manualformatfield{state block bitmap}{64}
+}
+\end{manuallistedformatdiagram}
+{\small The labels \texttt{5} through \texttt{0} are the six \texttt{GS\_VALID} bits. SAVE writes
+\texttt{GS\_VALID=0x3f} and \texttt{FMT=0}. The label \texttt{D} denotes \texttt{DFA}, which records the hidden
+current double-fault-active bit.\par}
+\begin{manuallistedstructlayout}
+  {SAVE/RESTORE Fixed Base Block}
+  {8}
+  {offset from the 4 KiB-aligned save-area base}
+  {offsets increase downward}
+\manualstructrow{0x000--0x00f}{%
+  \manualstructheaderfield{4}{BASE HEADER\\\texttt{0x000} \textperiodcentered\ 8 bytes}
+  \manualstructheaderfield{4}{STATE BLOCK BITMAP\\\texttt{0x008} \textperiodcentered\ 8 bytes}
+}
+\manualstructrow{0x010--0x04f}{%
+  \manualstructslotseries{R}{0}{8}
+}
+\manualstructrow{0x050--0x08f}{%
+  \manualstructslotseries{R}{8}{8}
+}
+\manualstructrow{0x090--0x0bf}{%
+  \manualstructslotseries{GS}{0}{6}
+  \manualstructannotationfield{2}{RESTORE uses slots\\selected by \texttt{GS\_VALID}}
+}
+\manualstructtallrow{0x0c0+}{%
+  \manualstructextensionfield{8}{EXTENSION STATE COMPONENTS\\CPUID-defined slots \textperiodcentered\ each component starts on a 64-byte boundary}
+}
+\manualstructfooter
+  {Each \texttt{Rn} and \texttt{GSn} cell is one 8-byte slot.}
+  {\texttt{Rn}=\texttt{0x010}+8n; \texttt{GSn}=\texttt{0x090}+8n.}
+\end{manuallistedstructlayout}

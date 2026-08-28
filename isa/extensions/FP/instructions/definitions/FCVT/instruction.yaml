@@ -1,0 +1,18 @@
+mnemonic: FCVT
+name: Floating-Point Convert Signed
+summary: Performs the floating-point convert signed operation.
+route: fpu
+sail_entries:
+- execute_FCVT
+privileged: false
+repeat:
+  type: rep
+operands:
+  src:
+    role: source
+    access: read
+    value_type: floating
+  dst:
+    role: destination
+    access: write
+    value_type: floating

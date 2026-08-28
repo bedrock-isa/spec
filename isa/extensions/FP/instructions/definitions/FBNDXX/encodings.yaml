@@ -1,0 +1,49 @@
+encodings:
+  s_d_z_fn_l_fn_v_fn_h:
+    pattern: 111111001100101000011zllllvvvvhhhh
+    syntax: FBNDXX.{S|D}(z) Fn(l), Fn(v), Fn(h)
+    fields:
+      z:
+        role: size
+        type: FP.field_types.SIZE_SD
+      l:
+        role: lo
+        type: FP.field_types.Fn
+      v:
+        role: value
+        type: FP.field_types.Fn
+      h:
+        role: hi
+        type: FP.field_types.Fn
+  s_d_z_fn_l_ea_v_fn_h:
+    pattern: 111111001100100011zllllhhhhvvvvvvv
+    syntax: FBNDXX.{S|D}(z) Fn(l), <ea>(v), Fn(h)
+    fields:
+      z:
+        role: size
+        type: FP.field_types.SIZE_SD
+      l:
+        role: lo
+        type: FP.field_types.Fn
+      h:
+        role: hi
+        type: FP.field_types.Fn
+      v:
+        role: value
+        type: FP.field_types.FEA
+  s_d_z_ea_l_fn_v_ea_h:
+    pattern: 111111001100011zvvvvlllllllhhhhhhh
+    syntax: FBNDXX.{S|D}(z) <ea>(l), Fn(v), <ea>(h)
+    fields:
+      z:
+        role: size
+        type: FP.field_types.SIZE_SD
+      v:
+        role: value
+        type: FP.field_types.Fn
+      l:
+        role: lo
+        type: FP.field_types.FEA
+      h:
+        role: hi
+        type: FP.field_types.FEA

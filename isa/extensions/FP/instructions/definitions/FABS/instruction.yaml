@@ -1,0 +1,18 @@
+mnemonic: FABS
+name: Floating-Point Absolute Value
+summary: Performs the floating-point absolute value operation.
+route: fpu
+sail_entries:
+- execute_FABS
+privileged: false
+repeat:
+  type: rep
+operands:
+  src:
+    role: source
+    access: read
+    value_type: floating
+  dst:
+    role: destination
+    access: write
+    value_type: floating

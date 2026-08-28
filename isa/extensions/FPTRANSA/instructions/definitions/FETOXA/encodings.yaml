@@ -1,0 +1,14 @@
+encodings:
+  s_d_z_fn_s_fn_d:
+    pattern: 1111100111z0100010ssssdddd
+    syntax: FETOXA.{S|D}(z) Fn(s), Fn(d)
+    fields:
+      z:
+        role: size
+        type: FP.field_types.SIZE_SD
+      s:
+        role: src
+        type: FP.field_types.Fn
+      d:
+        role: dst
+        type: FP.field_types.Fn

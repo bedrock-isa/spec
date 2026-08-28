@@ -1,0 +1,8 @@
+id: program_counter
+display:
+  canonical: program counter
+article: the
+variants:
+  pc_register: PC register
+definition: >-
+  the architectural state object that selects instruction execution.

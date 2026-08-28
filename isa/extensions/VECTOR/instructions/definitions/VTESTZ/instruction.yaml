@@ -1,0 +1,29 @@
+mnemonic: VTESTZ
+name: Vector Bitwise Test Zero
+summary: Sets significant result bits where the governed element-wise AND is zero and clears all other
+  bits.
+route: vector
+sail_entries:
+- execute_VTESTZ
+privileged: false
+operands:
+  govern:
+    role: governing_predicate
+    access: read
+    value_type: predicate
+  lhs:
+    role: source
+    access: read
+    value_type: vector
+  rhs:
+    role: source
+    access: read
+    value_type: vector
+  src:
+    role: source
+    access: read
+    value_type: vector
+  dst:
+    role: destination
+    access: write
+    value_type: predicate

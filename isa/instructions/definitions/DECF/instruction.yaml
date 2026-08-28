@@ -1,0 +1,15 @@
+mnemonic: DECF
+name: Decrement And Set Flags
+summary: Decrements the destination operand and updates integer FLAGS.
+route: integer_unary
+sail_entries:
+- execute_DECF
+privileged: false
+repeat:
+  type: repcc
+  observed_value: dst
+operands:
+  dst:
+    role: destination
+    access: read_write
+    value_type: integer

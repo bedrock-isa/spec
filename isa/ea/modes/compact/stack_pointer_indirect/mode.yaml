@@ -1,0 +1,8 @@
+id: stack_pointer_indirect
+name: Stack pointer indirect
+kind: memory
+syntax: "[SP]"
+encodings:
+  - pattern: "1011000"
+segment: {source: fixed, register: SS}
+pseudocode: offset = SP

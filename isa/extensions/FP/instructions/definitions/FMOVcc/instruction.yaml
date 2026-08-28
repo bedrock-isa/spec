@@ -1,0 +1,22 @@
+mnemonic: FMOVcc
+name: Floating-Point Conditional Move
+summary: Performs the floating-point conditional move operation.
+route: fpu
+sail_entries:
+- execute_FMOVcc
+privileged: false
+repeat:
+  type: rep
+operands:
+  cc:
+    role: source
+    access: read
+    value_type: integer
+  src:
+    role: source
+    access: read
+    value_type: floating
+  dst:
+    role: destination
+    access: write
+    value_type: floating

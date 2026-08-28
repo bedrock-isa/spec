@@ -12,88 +12,62 @@ function narrow_bits(value : bits(64), width : int) -> bits(64) = value & width_
 function bits_from_int(value : int) -> bits(64) = get_slice_int(64, value, 0)
 
 function immediate_value(operand : Decoded_operand) -> bits(64) =
-  if operand.type_name == "imm8s" then sail_sign_extend(operand.value[7 .. 0], 64)
-  else if operand.type_name == "imm16s" then sail_sign_extend(operand.value[15 .. 0], 64)
-  else if operand.type_name == "imm32s" then sail_sign_extend(operand.value[31 .. 0], 64)
+  if operand.operand_type == OperandType_imm8s then sail_sign_extend(operand.value[7 .. 0], 64)
+  else if operand.operand_type == OperandType_imm16s then sail_sign_extend(operand.value[15 .. 0], 64)
+  else if operand.operand_type == OperandType_imm32s then sail_sign_extend(operand.value[31 .. 0], 64)
   else operand.value
 
-function ea_field_value(ea : Decoded_ea, symbol : string) -> option(int) =
-  match find_decoded_field(symbol, ea.fields) {
-    Some(field) => Some(field.value),
-    None() => None(),
-  }
-
 function local_ea_value(state : Cpu_state, ea : Decoded_ea) -> option(bits(64)) =
-  if ea.kind == "register" then
-    if ea.register_name == "SP" then Some(state.sp)
-    else match ea_field_value(ea, "r") {
-      Some(index) => Some(state.registers[unsigned(get_slice_int(4, index, 0))]),
-      None() => None(),
-    }
-  else if ea.kind == "immediate" then
+  if ea.kind == EaKind_immediate then
     if ea.payload_signed then Some(sign_extend_width(ea.payload, tdiv_int(ea.payload_width, 8)))
     else Some(ea.payload)
   else None()
 
 function local_operand_value(state : Cpu_state, operand : Decoded_operand) -> option(bits(64)) =
-  if operand.type_name == "Rn" then Some(state.registers[unsigned(operand.value[3 .. 0])])
-  else if operand.type_name == "SP" then Some(state.sp)
-  else if operand.type_name == "CS" then Some(state.segments[0])
-  else if operand.type_name == "SREG" then
+  if operand.operand_type == OperandType_Rn then Some(state.registers[unsigned(operand.value[3 .. 0])])
+  else if operand.operand_type == OperandType_SP then Some(state.sp)
+  else if operand.operand_type == OperandType_CS then Some(state.segments[0])
+  else if operand.operand_type == OperandType_SREG then
     Some(state.segments[unsigned(operand.value[2 .. 0]) + 1])
-  else if operand.type_name == "EA" then match operand.ea {
+  else if operand.operand_type == OperandType_EA then match operand.ea {
     Some(ea) => local_ea_value(state, ea),
     None() => None(),
   }
   else Some(immediate_value(operand))
 
 function local_destination(operand : Decoded_operand, width : int) -> option(Commit_destination) =
-  if operand.type_name == "Rn" then Some(struct {
-    kind = "Rn", index = operand.value[3 .. 0], width = width
+  if operand.operand_type == OperandType_Rn then Some(struct {
+    kind = DestinationRn, index = operand.value[3 .. 0], width = width
   })
-  else if operand.type_name == "SP" then Some(struct {
-    kind = "SP", index = 0x0, width = width
+  else if operand.operand_type == OperandType_SP then Some(struct {
+    kind = DestinationSP, index = 0x0, width = width
   })
-  else if operand.type_name == "EA" then match operand.ea {
-    Some(ea) => if ea.kind == "register" then
-      if ea.register_name == "SP" then Some(struct {
-        kind = "SP", index = 0x0, width = width
-      })
-      else match ea_field_value(ea, "r") {
-        Some(index) => Some(struct {
-          kind = "Rn", index = get_slice_int(4, index, 0), width = width
-        }),
-        None() => None(),
-      }
-    else None(),
-    None() => None(),
-  }
   else None()
 
 function write_local_destination(state : Cpu_state, operation : Semantic_operation,
                                  destination : Commit_destination, value : bits(64)) -> Cpu_state = {
   var updated = state;
-  if destination.kind == "Rn" then {
+  if destination.kind == DestinationRn then {
     let index = unsigned(destination.index);
     updated.registers[index] = canonical_register_result(operation, value, destination.width)
   }
-  else if destination.kind == "SP" then
+  else if destination.kind == DestinationSP then
     updated.sp = value
   else ();
   updated
 }
 
-function operand_named(instruction : Decoded_instruction, name : string) -> option(Decoded_operand) =
+function operand_named(instruction : Decoded_instruction, name : Operand_id) -> option(Decoded_operand) =
   find_operand_by_name(name, instruction.operands)
 
 function value_named(instruction : Decoded_instruction, state : Cpu_state,
-                     name : string) -> option(bits(64)) =
+                     name : Operand_id) -> option(bits(64)) =
   match operand_named(instruction, name) {
     Some(operand) => local_operand_value(state, operand),
     None() => None(),
   }
 
-function destination_named(instruction : Decoded_instruction, name : string,
+function destination_named(instruction : Decoded_instruction, name : Operand_id,
                            width : int) -> option(Commit_destination) =
   match operand_named(instruction, name) {
     Some(operand) => local_destination(operand, width),
@@ -181,8 +155,8 @@ function first_binary_operand(operands : list(Decoded_operand)) -> option(Decode
   match operands {
     [||] => None(),
     operand :: tail =>
-      if operand.name == "cc" then first_binary_operand(tail)
-      else if operand.name == "src" | operand.name == "lhs" then Some(operand)
+      if operand.name == Operand_cc then first_binary_operand(tail)
+      else if operand.name == Operand_src | operand.name == Operand_lhs then Some(operand)
       else first_binary_operand(tail),
   }
 
@@ -190,6 +164,6 @@ function second_binary_operand(operands : list(Decoded_operand)) -> option(Decod
   match operands {
     [||] => None(),
     operand :: tail =>
-      if operand.name == "dst" | operand.name == "rhs" then Some(operand)
+      if operand.name == Operand_dst | operand.name == Operand_rhs then Some(operand)
       else second_binary_operand(tail),
   }

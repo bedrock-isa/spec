@@ -4,7 +4,7 @@ LLVM_BIN := $(BEDROCK_LLVM_BIN)
 else ifneq ($(strip $(BEDROCK_LLVM_ROOT)),)
 LLVM_BIN := $(BEDROCK_LLVM_ROOT)/bin
 else
-$(error set LLVM_BIN, BEDROCK_LLVM_BIN, or BEDROCK_LLVM_ROOT before building this sample)
+LLVM_BIN := $(abspath ../../../../llvm-project/build/bin)
 endif
 endif
 BUILD_DIR ?= build
@@ -29,16 +29,23 @@ CFLAGS ?= $(BASIC_CFLAGS)
 BEDROCK_CFLAGS := -target bedrock-unknown-unknown -ffreestanding -nostdlib $(CFLAGS)
 BEDROCK_LDFLAGS := -m elf64bedrock -T basic.ld
 
-.PHONY: all build disasm clean
+.PHONY: all build disasm clean check-toolchain
 
 all: build
 
-build: $(ELF)
+build: check-toolchain $(ELF)
 
 disasm: $(DISASM)
 
 clean:
 	rm -rf $(BUILD_DIR)
+
+check-toolchain:
+	@test -x "$(CLANG)" || { \
+		echo "Bedrock clang not found at $(CLANG)" >&2; \
+		echo "build LLVM first or set LLVM_BIN/BEDROCK_LLVM_BIN/BEDROCK_LLVM_ROOT" >&2; \
+		exit 1; \
+	}
 
 $(BUILD_DIR)/.dir:
 	mkdir -p $(BUILD_DIR)

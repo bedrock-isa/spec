@@ -1,0 +1,18 @@
+mnemonic: PSLIDEDN
+name: Predicate Slide Down
+summary: Move predicate lanes toward lower indices and insert zero at the high end.
+route: vector
+sail_entries:
+- execute_PSLIDEDN
+privileged: false
+assembly:
+  width_suffix_aliases: true
+operands:
+  count:
+    role: count
+    access: read
+    value_type: integer
+  dst:
+    role: destination
+    access: read_write
+    value_type: predicate

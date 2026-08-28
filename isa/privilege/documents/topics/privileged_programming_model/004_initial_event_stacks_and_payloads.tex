@@ -1,0 +1,4 @@
+\subsection{Initial Event Stacks and Payloads}
+A first user-origin (:ref:base.events.EXCEPTION.SYSTEM_CALL:) selects SSS:SSP, a maskable interrupt selects ISS:ISP, and an exception or NMI selects FSS:FSP. BASIC events, including (:ref:base.events.EXCEPTION.SYSTEM_CALL:), have no (:term:base.terms.payload:) and perform no stack-memory access. ERROR events store 16 bytes; PAGE and AUXILIARY events store 32 bytes. The event code in UINFO defines the (:term:base.terms.payload:) shape.
+
+A supervisor-origin event and every nested event push a complete event frame on the current SS:SP. They do not promote to another configured event stack. The saved SS:SP in the frame identifies the interrupted stack.

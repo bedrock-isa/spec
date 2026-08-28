@@ -1,0 +1,8 @@
+id: R_BEDROCK_GLOB_DAT
+value: 35
+family: dynamic
+result:
+  kind: integer
+  width_bits: 64
+  signed: false
+calculation: symbol + addend

@@ -1,0 +1,138 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: bedrock://schemas/instruction-encodings
+title: Bedrock instruction encodings
+type: object
+additionalProperties: false
+required: [encodings]
+properties:
+  encodings:
+    type: object
+    minProperties: 1
+    propertyNames:
+      pattern: ^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$
+    additionalProperties:
+      $ref: '#/$defs/encoding'
+$defs:
+  encoding:
+    type: object
+    additionalProperties: false
+    required: [pattern, syntax]
+    properties:
+      pattern:
+        type: string
+        pattern: ^(?:[01a-z]{7}|[01a-z]{14}|[01a-z]{18}|[01a-z]{26}|[01a-z]{34}|[01a-z]{42})$
+        x-metasyntax: bedrock://schemas/encoding-metasyntax
+      syntax:
+        type: string
+        minLength: 1
+        x-metasyntax: bedrock://schemas/instruction-metasyntax
+      fields:
+        $ref: '#/$defs/fields'
+      payloads:
+        type: array
+        minItems: 1
+        uniqueItems: true
+        items:
+          $ref: '#/$defs/representation'
+      constraints:
+        type: array
+        minItems: 1
+        uniqueItems: true
+        items:
+          $ref: '#/$defs/constraint'
+      overlaps:
+        type: array
+        minItems: 1
+        uniqueItems: true
+        items:
+          $ref: '#/$defs/overlap'
+  fields:
+    type: object
+    minProperties: 1
+    propertyNames:
+      pattern: ^[a-z]$
+    additionalProperties:
+      $ref: '#/$defs/representation'
+  representation:
+    type: object
+    additionalProperties: false
+    required: [role, type]
+    properties:
+      role:
+        type: string
+        pattern: ^[a-z][a-z0-9_]*$
+      type:
+        type: string
+        pattern: '^(base|[A-Z][A-Z0-9_]*)(\.[A-Za-z][A-Za-z0-9_]*)+$'
+      access:
+        enum: [read, write, read_write, address]
+  constraint:
+    type: object
+    additionalProperties: false
+    required: [role, reason]
+    properties:
+      role:
+        type: string
+        pattern: ^[a-z][a-z0-9_]*$
+      reason:
+        type: string
+        pattern: ^[a-z][a-z0-9_]*$
+      allow:
+        type: array
+        minItems: 1
+        uniqueItems: true
+        items:
+          $ref: '#/$defs/constraint_value'
+      exclude:
+        type: array
+        minItems: 1
+        uniqueItems: true
+        items:
+          $ref: '#/$defs/constraint_value'
+    oneOf:
+      - required: [allow]
+        not:
+          required: [exclude]
+      - required: [exclude]
+        not:
+          required: [allow]
+  constraint_value:
+    oneOf:
+      - type: integer
+        minimum: 0
+      - type: string
+        pattern: '^(?:[a-z][a-z0-9_]*|(?:0|[1-9][0-9]*|0x[0-9a-f]+)\.\.(?:0|[1-9][0-9]*|0x[0-9a-f]+))$'
+  overlap:
+    type: object
+    additionalProperties: false
+    required: [operands, type]
+    properties:
+      operands:
+        type: array
+        minItems: 2
+        maxItems: 2
+        uniqueItems: true
+        items:
+          type: string
+          pattern: ^[a-z][a-z0-9_]*$
+      type:
+        enum: [same_value, illegal_instruction]
+x-interpretation-rules:
+  - Each encodings key equals InstructionMetasyntax.encoding_id for its syntax: remove the mnemonic, lowercase the remainder, normalize punctuation and whitespace to underscores, spell plus and asterisk as add and mul, collapse repeated underscores, and use plain when nothing remains.
+  - Canonical encoding IDs do not add structural words such as field, literal, operand, group, or address.
+  - Generated encoding IDs must be unique within the containing instruction.
+  - An encoding's logical reference uses its encodings key as the element name under the containing instruction path.
+  - Pattern lengths 7, 14, 18, 26, 34, and 42 select the extrashort, short, medium, long, extralong, and xxlong encoding classes respectively; class is not repeated in the encoding.
+  - A pattern contains only the allocation bits following the class framing bits and is written most-significant bit first.
+  - Pattern obeys encoding-metasyntax; syntax obeys instruction-metasyntax and names the containing instruction mnemonic.
+  - Every lowercase pattern marker has exactly one fields entry, and every fields entry occurs in the pattern.
+  - The occurrence count of a pattern marker equals the bits value of its resolved field type; marker bits need not be contiguous.
+  - Field and payload type values are fully qualified logical references resolved through the common reference index.
+  - A field or payload role either names an instruction.yaml operands key or is an encoding-only selector role such as size, condition, or memory_order.
+  - Field and payload roles are unique within one encoding; fields bind their pattern character and payloads are consumed in array order after the primary instruction bytes.
+  - Access is inherited from the logical operand and is written only when representation access differs.
+  - Fixed registers and fixed literal operands are represented only by syntax and are matched to otherwise unrepresented logical operands in display order.
+  - Effective-address purpose is derived from the logical operand role, and effective-address width is derived from the fixed or selected size suffix; neither is repeated in the encoding.
+  - A fixed size suffix directly selects its size; a selected suffix binds its field marker to a size-selector field type; sizes is not repeated in the encoding.
+  - A constraint role resolves to one field in the same encoding; allow and exclude values are interpreted in that field type's value domain.
+  - An overlap names two distinct writable field-backed logical operands; same_value permits aliasing with one value, while illegal_instruction rejects aliasing.

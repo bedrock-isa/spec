@@ -1,0 +1,19 @@
+The source operand supplies the unsigned divisor, and the quotient register Rn(q) supplies the unsigned dividend before the operation. On success, Rn(q) receives their unsigned quotient and the remainder register Rn(r) receives the unsigned remainder satisfying dividend = quotient * divisor + remainder.
+
+Let \(n\) be the selected operand width, \(d\) the unsigned dividend, and \(s\) the unsigned divisor. The quotient and remainder are defined by
+\[
+  q = \lfloor d/s \rfloor,
+  \qquad r = d - qs .
+\]
+For a nonzero divisor, the remainder satisfies \(0 \le r < s\). The original quotient operand supplies the dividend. On success the quotient operand receives \(q\), and the separate remainder operand receives \(r\).
+
+A zero divisor raises (:ref:base.events.EXCEPTION.DIVIDE_BY_ZERO:); no destination is changed.
+
+Let \(n\) be the selected operand width, \(d\) the unsigned dividend, and \(s\) the unsigned divisor. The quotient and remainder are defined by
+\[
+  q = \lfloor d/s \rfloor,
+  \qquad r = d - qs .
+\]
+For a nonzero divisor, the remainder satisfies \(0 \le r < s\). The original quotient operand supplies the dividend. On success the quotient operand receives \(q\), and the separate remainder operand receives \(r\).
+
+A zero divisor raises (:ref:base.events.EXCEPTION.DIVIDE_BY_ZERO:); no destination is changed.

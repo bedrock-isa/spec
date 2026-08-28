@@ -1,0 +1,10 @@
+id: REGISTER_CONVENTION
+title: Register Convention
+document: c-abi.tex
+label: page:register-convention
+objects:
+- abi.c:base.register_classes.GENERAL
+- abi.c:base.register_classes.FLOATING
+- abi.c:base.register_classes.VECTOR
+- abi.c:base.register_classes.PREDICATE
+- abi.elf:base.document_topics.DEBUG_UNWIND

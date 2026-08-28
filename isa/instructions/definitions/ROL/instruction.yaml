@@ -1,0 +1,19 @@
+mnemonic: ROL
+name: Rotate Left
+summary: Performs the rotate left operation.
+route: integer_bitfield
+sail_entries:
+- execute_ROL
+privileged: false
+repeat:
+  type: repcc
+  observed_value: dst
+operands:
+  count:
+    role: source
+    access: read
+    value_type: integer
+  dst:
+    role: destination
+    access: read_write
+    value_type: integer

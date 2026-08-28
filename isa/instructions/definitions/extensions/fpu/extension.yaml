@@ -1,9 +1,0 @@
-name: fpu
-availability:
-  required_cpuid_flags: [FP]
-instructions: instructions.yaml
-operands: operands.yaml
-registers: registers.yaml
-sizes: sizes.yaml
-extensions:
-- extensions/transcendental_approx/extension.yaml

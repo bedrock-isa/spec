@@ -1,0 +1,8 @@
+id: linear_address
+display:
+  canonical: linear address
+  plural: linear addresses
+article: a
+definition: >-
+  the result of segment pre-translation. The page-table walker consumes it when
+  paging is enabled; otherwise the memory system uses it directly.

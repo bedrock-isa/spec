@@ -1,0 +1,4 @@
+id: EXCHANGE
+c_operations: [atomic_exchange]
+strategy: compare_exchange_loop
+instructions: [isa:base.instructions.CMPXCHG]

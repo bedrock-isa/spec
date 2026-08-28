@@ -1,0 +1,17 @@
+encodings:
+  rn_r_instruction:
+    pattern: 1110111110ccccrrrr
+    syntax: REPcc Rn(r), (<instruction>)
+    fields:
+      c:
+        role: cc
+        type: base.field_types.CC
+      r:
+        role: counter
+        type: base.field_types.Rn
+    constraints:
+    - role: cc
+      allow:
+      - 0
+      - 0x2..0xf
+      reason: condition_false_reclaimed

@@ -1,0 +1,7 @@
+id: architectural_exception
+display:
+  canonical: architectural exception
+  plural: architectural exceptions
+article: an
+definition: >-
+  a synchronous architectural event delivered as a fault or trap.

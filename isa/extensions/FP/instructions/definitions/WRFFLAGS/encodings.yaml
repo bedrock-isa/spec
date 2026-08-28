@@ -1,0 +1,8 @@
+encodings:
+  rn_s:
+    pattern: 11101101001011ssss
+    syntax: WRFFLAGS Rn(s)
+    fields:
+      s:
+        role: src
+        type: base.field_types.Rn

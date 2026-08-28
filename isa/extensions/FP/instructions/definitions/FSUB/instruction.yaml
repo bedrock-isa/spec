@@ -1,0 +1,18 @@
+mnemonic: FSUB
+name: Floating-Point Subtract
+summary: Subtracts the source operand from the destination operand.
+route: fpu
+sail_entries:
+- execute_FSUB
+privileged: false
+repeat:
+  type: rep
+operands:
+  src:
+    role: source
+    access: read
+    value_type: floating
+  dst:
+    role: destination
+    access: read_write
+    value_type: floating

@@ -1,0 +1,8 @@
+id: segment_register_image
+display:
+  canonical: segment register image
+  plural: segment register images
+article: a
+definition: >-
+  the 64-bit architectural value containing the segment base page, size
+  exponent, size mantissa, and bounds-only enable bit.

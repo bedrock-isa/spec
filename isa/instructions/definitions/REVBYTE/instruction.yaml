@@ -1,0 +1,15 @@
+mnemonic: REVBYTE
+name: Reverse Bytes
+summary: Performs the reverse bytes operation.
+route: integer_alu
+sail_entries:
+- execute_REVBYTE
+privileged: false
+repeat:
+  type: repcc
+  observed_value: dst
+operands:
+  dst:
+    role: destination
+    access: read_write
+    value_type: integer

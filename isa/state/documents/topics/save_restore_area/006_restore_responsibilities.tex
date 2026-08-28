@@ -1,0 +1,18 @@
+\subsection{RESTORE Responsibilities}
+RESTORE replaces each GSn whose corresponding \texttt{GS\_VALID} bit is set and preserves each GSn whose bit is
+clear. It validates every selected segment image before changing (:term:base.terms.architectural_state:).
+
+RESTORE uses the state-block bitmap as authoritative when reconstructing extension state. It accepts only the
+defined format and only bitmap bits that name CPUID-described components for that format. RESTORE raises
+(:ref:base.events.EXCEPTION.INVALID_CONTROL_IMAGE:) before changing (:term:base.terms.architectural_state:) when the format is unrecognized or a set
+bitmap bit does not name a CPUID-described component for that format. RESTORE of a clear, described component bit
+installs that component\textquotesingle{}s initial state.
+
+User-mode RESTORE ignores saved supervisor-only STATUS and DFA state. Supervisor RESTORE is an architectural
+context transition: it restores EDEPTH, UO, and current DFA together with STATUS after validating the complete
+event-state invariants. It requires saved PM=1; UO requires a valid live U bank, DFA requires an active event, and
+inactive state requires EDEPTH=0, UO=0, and DFA=0. Ordinary WRSTATUS remains unable to change these (:term:base.terms.field|plural:).
+
+The normative instruction entries are
+(:ref:base.instructions.SAVE:) and
+(:ref:base.instructions.RESTORE:).\par

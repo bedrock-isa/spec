@@ -1,0 +1,7 @@
+terms:
+- near_control_transfer
+- segment_changing_control_transfer
+- long_call
+- long_jump
+- long_return
+- long_return_frame

@@ -1,0 +1,8 @@
+id: R_BEDROCK_PLT64
+value: 33
+family: plt
+result:
+  kind: integer
+  width_bits: 64
+  signed: false
+calculation: plt(symbol) + addend

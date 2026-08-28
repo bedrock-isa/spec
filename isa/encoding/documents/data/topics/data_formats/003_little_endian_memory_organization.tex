@@ -1,0 +1,9 @@
+\subsection{Little-Endian Memory Organization}
+Integer data, immediates, displacements, and absolute address (:term:base.terms.payload|plural:) are little-endian. Multi-byte numeric
+(:term:base.terms.payload|plural:) are stored least significant byte first. The decoder consumes instruction-header (:term:base.terms.field|plural:) byte by byte in
+instruction-stream order.
+
+For an N-byte integer value stored at byte address A, byte A contains bits 7..0, byte A+1 contains bits 15..8, and
+so on.
+
+\input{isa/encoding/documents/data/fragments/data_byte_order_diagrams.tex}

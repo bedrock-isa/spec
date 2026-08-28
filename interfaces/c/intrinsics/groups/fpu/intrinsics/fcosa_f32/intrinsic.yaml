@@ -1,0 +1,14 @@
+id: fcosa_f32
+owner: FPTRANSA
+description: >-
+  FP and FPTRANSA required; ISA accuracy, special-value, and floating-point event contracts apply.
+signature:
+  result: f32
+  parameters:
+  - id: value
+    type: f32
+lowering:
+  operation: isa:FPTRANSA.instructions.FCOSA
+  kind: direct
+  operands:
+    size: S

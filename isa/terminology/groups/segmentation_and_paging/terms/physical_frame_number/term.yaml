@@ -1,0 +1,11 @@
+id: physical_frame_number
+display:
+  canonical: physical frame number
+  plural: physical frame numbers
+abbreviation:
+  canonical: PFN
+article: a
+definition: >-
+  a frame identifier used by page-table entries. A leaf PTE at level L combines
+  its naturally aligned PFN base with the low 12+9(L-1) linear-address bits to
+  form a byte address.

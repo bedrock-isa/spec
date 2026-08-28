@@ -1,0 +1,24 @@
+mnemonic: VROR
+name: Vector Rotate Right
+summary: Rotates each active integer element right by its selected-width count.
+route: vector
+sail_entries:
+- execute_VROR
+privileged: false
+operands:
+  govern:
+    role: governing_predicate
+    access: read
+    value_type: predicate
+  src:
+    role: source
+    access: read
+    value_type: vector
+  count:
+    role: source
+    access: read
+    value_type: integer
+  dst:
+    role: destination
+    access: read_write
+    value_type: vector

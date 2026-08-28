@@ -1,0 +1,35 @@
+\subsection{Segment Register Operand Class}
+Instructions that take an explicit segment-register operand use the three-bit SREG encoding below.
+
+SP-relative EA forms do not carry this (:term:base.terms.field:) and use SS. PC-relative EA forms do not carry this (:term:base.terms.field:) and use CS.
+
+SREG selects DS, SS, and GS0 through GS5. Instruction fetch and fixed PC-relative addressing select CS implicitly.
+\texttt{RDSEG CS} and \texttt{PUSH CS} read the current CS image. Segment-changing control transfers update CS and
+PC together.
+
+\Needspace{1.25in}
+\manualtablecaption{Segment Register Operand Encoding}
+\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{0.60in}>{\raggedright\arraybackslash}p{0.50in}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{3.60in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Segment} & \textbf{Bits} & \textbf{Role} & \textbf{Use}\\
+\midrule
+\endfirsthead
+\multicolumn{4}{@{}l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Segment} & \textbf{Bits} & \textbf{Role} & \textbf{Use}\\
+\midrule
+\endhead
+\texttt{DS} & \texttt{000} & data & default data segment\\
+\texttt{SS} & \texttt{001} & stack & stack segment; fixed for SP-relative forms\\
+\texttt{GS0} & \texttt{010} & general & general segment register 0\\
+\texttt{GS1} & \texttt{011} & general & general segment register 1\\
+\texttt{GS2} & \texttt{100} & general & general segment register 2\\
+\texttt{GS3} & \texttt{101} & general & general segment register 3\\
+\texttt{GS4} & \texttt{110} & general & general segment register 4\\
+\texttt{GS5} & \texttt{111} & general & general segment register 5\\
+\bottomrule
+\end{manuallongtable}
+
+\label{table:sreg-encoding}

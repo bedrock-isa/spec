@@ -1,0 +1,8 @@
+id: memory_operation
+display:
+  canonical: memory operation
+  plural: memory operations
+article: a
+definition: >-
+  an instruction-level semantic operation that may contain one or more memory
+  accesses or memory events.

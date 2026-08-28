@@ -1,0 +1,24 @@
+mnemonic: IJcc
+name: Increment And Jump Conditional
+summary: Performs the increment and jump conditional operation.
+route: control_flow
+sail_entries:
+- execute_IJcc
+privileged: false
+operands:
+  cc:
+    role: source
+    access: read
+    value_type: integer
+  index:
+    role: counter
+    access: read_write
+    value_type: integer
+  bound:
+    role: source
+    access: read
+    value_type: integer
+  target:
+    role: control_target
+    access: read
+    value_type: integer

@@ -1,0 +1,8 @@
+id: PAGE_NOT_PRESENT
+name: Page Not Present
+summary: A required page-table entry is not present.
+code: 0x20
+family: ADDRESS_TRANSLATION
+frame: page
+payload: [FAULT_EA, FAULT_LINEAR, ACCESS, USER_DOMAIN, ATOMIC, WALK_LEVEL, OPERAND, ACCESS_SIZE]
+

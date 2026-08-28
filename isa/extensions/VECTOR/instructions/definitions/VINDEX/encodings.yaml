@@ -1,0 +1,11 @@
+encodings:
+  b_w_l_q_z_vn_v:
+    pattern: 11111010011010zz00001vvvvv
+    syntax: VINDEX.{B|W|L|Q}(z) Vn(v)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      v:
+        role: dst
+        type: VECTOR.field_types.Vn

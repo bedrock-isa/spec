@@ -1,0 +1,24 @@
+id: MEMORY_MODEL
+title: C Memory Model
+document: c-abi.tex
+label: page:c-memory-model
+objects:
+- abi.c:base.memory_orders.RELAXED
+- abi.c:base.memory_orders.CONSUME
+- abi.c:base.memory_orders.ACQUIRE
+- abi.c:base.memory_orders.RELEASE
+- abi.c:base.memory_orders.ACQ_REL
+- abi.c:base.memory_orders.SEQ_CST
+- abi.c:base.atomic_lowerings.LOAD
+- abi.c:base.atomic_lowerings.STORE
+- abi.c:base.atomic_lowerings.COMPARE_EXCHANGE
+- abi.c:base.atomic_lowerings.EXCHANGE
+- abi.c:base.atomic_lowerings.FETCH_ADD
+- abi.c:base.atomic_lowerings.FETCH_SUB
+- abi.c:base.atomic_lowerings.FETCH_AND
+- abi.c:base.atomic_lowerings.FETCH_OR
+- abi.c:base.atomic_lowerings.FETCH_XOR
+- isa:base.memory.ordering.memory-model.access-atomicity-and-alignment
+- isa:base.memory.ordering.memory-model.atomic-memory-order-selectors
+- isa:base.memory.ordering.memory-model.global-sequentially-consistent-order
+- interfaces.c:base.intrinsics.cache.sync_cache

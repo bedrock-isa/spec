@@ -1,0 +1,19 @@
+encodings:
+  b_w_l_q_z_rn_s_ea_e:
+    pattern: 1111001110zz100sssseeeeeee
+    syntax: MOVNT.{B|W|L|Q}(z) Rn(s), <ea>(e)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      s:
+        role: src
+        type: base.field_types.Rn
+      e:
+        role: dst
+        type: base.field_types.EA
+    constraints:
+    - role: dst
+      exclude:
+      - immediate
+      reason: invalid_destination

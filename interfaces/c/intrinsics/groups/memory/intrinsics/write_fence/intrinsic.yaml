@@ -1,0 +1,10 @@
+id: write_fence
+owner: base
+description: >-
+  Compiler and hardware write-ordering barrier.
+signature:
+  result: void
+  parameters: []
+lowering:
+  operation: isa:base.instructions.WFENCE
+  kind: direct

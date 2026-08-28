@@ -1,0 +1,9 @@
+id: emulator-core
+generator: generator.py
+depends-on:
+- sail-model
+outputs:
+- emulator/core/bedrock_core.c
+- emulator/core/bedrock_core.h
+- emulator/core/bedrock_core_abi.h
+- emulator/core/.generation-stamp

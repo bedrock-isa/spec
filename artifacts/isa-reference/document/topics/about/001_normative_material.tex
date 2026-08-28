@@ -1,0 +1,46 @@
+\subsection{Normative Material and Specificity}
+
+Architecture prose, ordered steps, architecture tables, instruction encoding diagrams, and the Operation
+and Detailed Semantics (:term:base.terms.field|plural:) of instruction entries are normative unless a section explicitly identifies material
+as a summary, example, or validation status.
+
+\noindent
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{1.55in}X@{}}
+\toprule
+\textbf{Rule set or provider} & \textbf{Covered material}\\
+\midrule
+Instruction definitions & Concrete instruction encodings, operand and effective-address grammar, extension wiring,
+and document ordering.\\
+\hyperref[page:instruction-execution-model]{Instruction Execution Model} common rules and instruction-entry Operation
+and Detailed Semantics & Executable instruction behavior, (:term:base.terms.architectural_state:) transitions, fault and commit ordering,
+repeat and architectural-event behavior, and single-logical-processor memory-access sequencing.\\
+Formal memory model & Permitted cross-logical-processor ordering and visibility.\\
+ABI specifications & ELF, C ABI, and calling-convention contracts.\\
+Compiler-interface specifications & Source-language and compiler-facing target-interface contracts.\\
+External numerical floating-point providers & Numerical results and certificates only; input validation and the resulting
+architectural trap or commit behavior follow the applicable
+\hyperref[page:instruction-execution-model]{Instruction Execution Model} common rules and instruction entry\textquotesingle{}s Operation
+and Detailed Semantics.\\
+\bottomrule
+\end{tabularx}
+
+Presented material remains normative where declared and follows the applicable
+rule set. For executable behavior, readers apply the
+\hyperref[page:instruction-execution-model]{Instruction Execution Model} common
+rules together with the applicable instruction entry\textquotesingle{}s Operation and Detailed
+Semantics. The following specificity rules govern narrowing among applicable
+rules:
+
+\begin{enumerate}
+\item Opcode-space length, (:term:base.terms.required_instruction_length:), (:term:base.terms.encoded_instruction_length:), (:term:base.terms.field:) values, and decoding validity follow the selected instruction encoding, its
+(:term:base.terms.field:) constraints, and the Instruction Encoding and Effective Addressing chapters.
+\item Execution of a decoded instruction follows its Operation and Detailed Semantics. An instruction-specific rule
+narrows the common execution, operand, flag, memory, or event rule that it names.
+\item Common architectural behavior follows the chapter that defines that behavior. A structure-specific rule
+narrows the defaults in Terminology and Compatibility.
+\item Summary tables and examples provide navigation or explanatory context
+and do not replace a normative rule.
+\end{enumerate}
+
+Two normative statements at the same specificity are required to agree. A discrepancy at that level is a
+specification defect and is resolved by correcting the normative sources and their derived tables together.

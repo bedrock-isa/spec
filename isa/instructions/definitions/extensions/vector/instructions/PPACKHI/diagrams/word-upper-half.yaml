@@ -1,9 +1,0 @@
-kind: predicate-width
-view: {lane_order: right-to-left, scalable: false, visible_bytes: 16}
-source_element_bits: 16
-source: {label: source Pn}
-result:
-  label: new Pq
-  write: complete
-  element_bits: 8
-  mapping: {source_start: 0, destination_start: source-lanes, count: source-lanes}

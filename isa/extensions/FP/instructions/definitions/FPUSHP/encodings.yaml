@@ -1,0 +1,8 @@
+encodings:
+  fpairn_i:
+    pattern: 0100iii
+    syntax: FPUSHP FPAIRn(i)
+    fields:
+      i:
+        role: pair_id
+        type: FP.field_types.FPAIRn

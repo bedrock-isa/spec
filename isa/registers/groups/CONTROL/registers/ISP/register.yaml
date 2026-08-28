@@ -1,0 +1,4 @@
+id: ISP
+encoding: 0x0211
+role: event_stack
+summary: Maskable-interrupt stack top.

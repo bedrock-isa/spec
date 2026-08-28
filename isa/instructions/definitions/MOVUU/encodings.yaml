@@ -1,0 +1,23 @@
+encodings:
+  b_w_l_q_z_ea_s_ea_d:
+    pattern: 1111000111zzsssssssddddddd
+    syntax: MOVUU.{B|W|L|Q}(z) <ea>(s), <ea>(d)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      s:
+        role: src
+        type: base.field_types.EA
+      d:
+        role: dst
+        type: base.field_types.EA
+    constraints:
+    - role: src
+      exclude:
+      - immediate
+      reason: user_source_memory_required
+    - role: dst
+      exclude:
+      - immediate
+      reason: invalid_destination

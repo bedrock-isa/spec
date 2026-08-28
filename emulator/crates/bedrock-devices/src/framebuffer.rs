@@ -250,7 +250,6 @@ impl Device for FramebufferDevice {
 #[cfg(test)]
 mod tests {
     use super::FramebufferDevice;
-    use std::time::Instant;
 
     #[test]
     fn framebuffer_vram_read_write_marks_dirty() {
@@ -272,29 +271,5 @@ mod tests {
         framebuffer.rollback_transaction();
         assert_eq!(framebuffer.vram()[4], 0);
         assert_eq!(framebuffer.dirty_seq(), 0);
-    }
-
-    #[test]
-    #[ignore]
-    fn profile_rgb332_rgba_conversion() {
-        const ITERATIONS: usize = 1_000;
-
-        let mut framebuffer = FramebufferDevice::default();
-        for index in 0..framebuffer.vram_len() as u64 {
-            framebuffer.write_vram_u8(index, index as u8).unwrap();
-        }
-
-        let started = Instant::now();
-        let mut bytes = 0;
-        for _ in 0..ITERATIONS {
-            bytes += framebuffer.rgb332_rgba().len();
-        }
-        let elapsed = started.elapsed();
-
-        eprintln!(
-            "rgb332_rgba {ITERATIONS}x {elapsed:?} ({:.3} ms/frame, {} bytes)",
-            elapsed.as_secs_f64() * 1000.0 / ITERATIONS as f64,
-            bytes
-        );
     }
 }

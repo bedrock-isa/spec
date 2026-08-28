@@ -1,0 +1,12 @@
+mnemonic: VINDEX
+name: Vector Lane Indices
+summary: Writes each logical lane number to its destination element.
+route: vector
+sail_entries:
+- execute_VINDEX
+privileged: false
+operands:
+  dst:
+    role: destination
+    access: write
+    value_type: vector

@@ -1,0 +1,10 @@
+groups:
+- address_values
+- memory_behavior
+- segmentation_and_paging
+- instruction_encoding
+- control_flow
+- tracing
+- architectural_state
+- floating_point_and_exceptions
+- compatibility

@@ -1,0 +1,11 @@
+encodings:
+  rn_p_rn_a:
+    pattern: 1100000110ppppaaaa
+    syntax: SWPTA Rn(p), Rn(a)
+    fields:
+      p:
+        role: new_ptcr
+        type: base.field_types.Rn
+      a:
+        role: asid
+        type: base.field_types.Rn

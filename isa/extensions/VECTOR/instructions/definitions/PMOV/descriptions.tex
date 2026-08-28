@@ -1,0 +1,9 @@
+PMOV transfers the complete packed image of one (:term:base.terms.predicate_register:) between
+\texttt{Pn} and contiguous memory.  The image contains VLEN/64 bytes.  The
+memory-source form replaces every bit of the destination predicate image; the
+memory-destination form stores every bit of the source predicate image.  No
+element predicate applies to either form.
+
+The effective-address calculation, complete image transfer, and any
+effective-address auto-update commit as one vector (:term:base.terms.memory_operation:).  A fault
+commits none of those effects.  The operation leaves FLAGS unchanged.

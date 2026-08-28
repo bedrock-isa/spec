@@ -1,0 +1,6 @@
+id: COMPLEX_FLOAT
+spelling: "float _Complex"
+call_kind: complex_f32
+size_bits: 64
+alignment_bytes: 4
+representation: complex_binary32

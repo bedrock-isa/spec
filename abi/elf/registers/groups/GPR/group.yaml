@@ -1,0 +1,5 @@
+id: GPR
+register_group: isa:base.registers.GPR
+dwarf:
+- first: 0
+  registers: all

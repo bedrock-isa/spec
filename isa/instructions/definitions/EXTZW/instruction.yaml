@@ -1,0 +1,19 @@
+mnemonic: EXTZW
+name: Zero Extend To Word
+summary: Performs the zero extend to word operation.
+route: integer_unary
+sail_entries:
+- execute_EXTZW
+privileged: false
+repeat:
+  type: repcc
+  observed_value: dst
+operands:
+  src:
+    role: source
+    access: read
+    value_type: integer
+  dst:
+    role: destination
+    access: write
+    value_type: integer

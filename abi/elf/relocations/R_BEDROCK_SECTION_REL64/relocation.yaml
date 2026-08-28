@@ -1,0 +1,8 @@
+id: R_BEDROCK_SECTION_REL64
+value: 23
+family: section_relative
+result:
+  kind: integer
+  width_bits: 64
+  signed: false
+calculation: symbol + addend - section_base

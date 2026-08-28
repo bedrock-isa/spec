@@ -1,0 +1,6 @@
+id: MODTI3
+symbol: __modti3
+result: base.types.INT128
+parameters:
+- base.types.INT128
+- base.types.INT128

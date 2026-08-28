@@ -1,0 +1,19 @@
+mnemonic: XOR
+name: Bitwise Xor
+summary: Computes the bitwise XOR of the source and destination operands.
+route: integer_alu
+sail_entries:
+- execute_XOR
+privileged: false
+repeat:
+  type: repcc
+  observed_value: dst
+operands:
+  src:
+    role: source
+    access: read
+    value_type: integer
+  dst:
+    role: destination
+    access: read_write
+    value_type: integer

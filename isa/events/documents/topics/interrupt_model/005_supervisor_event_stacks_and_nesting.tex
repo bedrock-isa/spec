@@ -1,0 +1,5 @@
+\subsection{Supervisor Event Stacks and Nesting}
+\input{isa/events/documents/fragments/supervisor_stack_sets.tex}
+
+Events in the \texttt{EVENT\_DELIVERY\_FAILURE} family use DSS:DSP. Supervisor-origin and nested events retain the current SS:SP;
+ERET validates and restores the saved STATUS depth and origin chain.

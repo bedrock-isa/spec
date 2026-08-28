@@ -1,0 +1,18 @@
+mnemonic: FXCHG
+name: Floating-Point Exchange
+summary: Performs the floating-point exchange operation.
+route: fpu
+sail_entries:
+- execute_FXCHG
+privileged: false
+repeat:
+  type: rep
+operands:
+  lhs:
+    role: destination
+    access: read_write
+    value_type: floating
+  rhs:
+    role: destination
+    access: read_write
+    value_type: floating

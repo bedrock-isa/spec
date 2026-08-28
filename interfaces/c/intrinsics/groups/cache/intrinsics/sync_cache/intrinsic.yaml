@@ -1,0 +1,14 @@
+id: sync_cache
+owner: base
+description: >-
+  Supervisor; applies SYNCCACHE to every CPUID maintenance block intersecting the range, serializes instruction fetch, and fully clobbers memory.
+signature:
+  result: void
+  parameters:
+  - id: address
+    type: void_pointer
+  - id: length
+    type: size
+lowering:
+  operation: isa:base.instructions.SYNCCACHE
+  kind: cache-range

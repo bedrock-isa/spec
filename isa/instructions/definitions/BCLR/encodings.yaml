@@ -1,0 +1,51 @@
+encodings:
+  rn_b_ea_e:
+    pattern: 111100110000001bbbbeeeeeee
+    syntax: BCLR Rn(b), <ea>(e)
+    fields:
+      b:
+        role: bit_index
+        type: base.field_types.Rn
+      e:
+        role: dst
+        type: base.field_types.EA
+    constraints:
+    - role: dst
+      exclude:
+      - immediate
+      reason: invalid_destination
+  imm6_i_ea_e:
+    pattern: 1111011100001iiiiiieeeeeee
+    syntax: BCLR imm6(i), <ea>(e)
+    fields:
+      i:
+        role: bit_index
+        type: base.field_types.IMM6
+      e:
+        role: dst
+        type: base.field_types.EA
+    constraints:
+    - role: dst
+      exclude:
+      - immediate
+      reason: invalid_destination
+  rn_b_rn_e:
+    pattern: 1000000001bbbbeeee
+    syntax: BCLR Rn(b), Rn(e)
+    fields:
+      b:
+        role: bit_index
+        type: base.field_types.Rn
+      e:
+        role: dst
+        type: base.field_types.Rn
+  imm6_i_rn_e:
+    pattern: 1111011001101001eeeeiiiiii
+    syntax: BCLR imm6(i), Rn(e)
+    fields:
+      e:
+        role: dst
+        type: base.field_types.Rn
+      i:
+        role: bit_index
+        type: base.field_types.IMM6

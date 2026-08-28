@@ -1,0 +1,12 @@
+mnemonic: INVDCACHE
+name: Invalidate Data Cache
+summary: Invalidate one data-cache maintenance block.
+route: cache
+sail_entries:
+- execute_INVDCACHE
+privileged: true
+operands:
+  target:
+    role: address
+    access: address
+    value_type: integer

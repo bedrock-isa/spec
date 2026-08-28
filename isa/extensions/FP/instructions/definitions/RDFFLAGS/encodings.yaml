@@ -1,0 +1,8 @@
+encodings:
+  rn_d:
+    pattern: 11101101001111dddd
+    syntax: RDFFLAGS Rn(d)
+    fields:
+      d:
+        role: dst
+        type: base.field_types.Rn

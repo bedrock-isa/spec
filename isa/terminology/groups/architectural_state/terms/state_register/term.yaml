@@ -1,0 +1,8 @@
+id: state_register
+display:
+  canonical: state register
+  plural: state registers
+article: a
+definition: >-
+  named architectural state such as FLAGS or STATUS. RDFLAGS, WRFLAGS, RDSTATUS,
+  and WRSTATUS access these registers.

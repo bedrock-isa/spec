@@ -1,0 +1,15 @@
+Concatenates Rn(high) as the upper half and the original Rn(low/dest) value as the lower half, shifts the concatenated value right by an unsigned 7-bit immediate offset, and writes the low selected-size result back to Rn(low/dest).
+
+Let \(n\) be the selected operand width and form the \(2n\)-bit concatenation
+\[
+  T = \operatorname{concat}\bigl(Rn(\mathrm{high})[n-1:0],
+                                Rn(\mathrm{low})[n-1:0]\bigr).
+\]
+The immediate is an unsigned seven-bit shift count. The destination receives the low \(n\) bits of \(T\) after a logical right shift by that count. A count greater than or equal to \(2n\) produces zero. The high register is not changed.
+
+Let \(n\) be the selected operand width and form the \(2n\)-bit concatenation
+\[
+  T = \operatorname{concat}\bigl(Rn(\mathrm{high})[n-1:0],
+                                Rn(\mathrm{low})[n-1:0]\bigr).
+\]
+The immediate is an unsigned seven-bit shift count. The destination receives the low \(n\) bits of \(T\) after a logical right shift by that count. A count greater than or equal to \(2n\) produces zero. The high register is not changed.

@@ -1,0 +1,9 @@
+id: R_BEDROCK_DISP8S
+value: 9
+family: displacement
+result:
+  kind: integer
+  width_bits: 8
+  signed: true
+calculation: symbol + addend
+field: isa:base.payload_types.DISP8S

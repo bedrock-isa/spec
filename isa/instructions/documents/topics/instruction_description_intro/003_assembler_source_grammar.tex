@@ -1,0 +1,54 @@
+\subsection*{Assembler Source Grammar}
+The assembler source language is a sequence of newline-terminated statements. Whitespace may separate tokens except
+where an instruction spelling joins a mnemonic, size or condition suffix, or modifier. A label may precede a
+statement on the same line, and a line may contain labels without an instruction or directive.
+
+\begin{verbatim}
+source              ::= { line }
+line                ::= { label ":" } [ statement ] end-of-line
+statement           ::= instruction | directive
+instruction         ::= instruction-form [ ":" "LEN" integer
+                        [ "," padding-byte-list ] ]
+instruction-form    ::= mnemonic-form [ operand-list ]
+operand-list        ::= operand { "," operand }
+padding-byte-list   ::= padding-byte { "," padding-byte }
+padding-byte        ::= integer | "ILLEGAL" | "NOP"
+operand             ::= register-name
+                      | expression
+                      | address-expression
+                      | register-mask
+                      | "(" instruction ")"
+address-expression  ::= "[" ea-expression "]"
+symbol-reference    ::= bare-identifier | quoted-identifier
+quoted-identifier   ::= "`" { quoted-character | escape } "`"
+escape              ::= "\`" | "\\"
+\end{verbatim}
+
+This grammar is an envelope, not a second declaration of the instruction set. The instruction encoding catalog is
+the sole definition of the accepted mnemonic forms, suffixes, modifiers, operand counts, operand ordering, and
+operand classes. A parenthesized instruction is accepted only where an instruction form declares an instruction
+operand. The effective-address mode catalog is the sole definition of the accepted \texttt{ea-expression} forms.
+The brackets are part of every address expression and never form a non-address operand. Whether a consuming
+instruction reads memory, writes memory, computes the address only, or applies another address-directed operation is
+defined by that instruction\textquotesingle{}s operand role.
+
+The optional \texttt{: LEN n} annotation requests an encoded extended instruction length of \texttt{n} bytes. If no
+padding-byte list follows, the assembler fills every trailing padding byte with \texttt{ILLEGAL}, whose canonical
+one-byte encoding is zero. If a list is present, each item specifies one trailing padding byte in instruction-stream
+order; its item count must equal the requested length minus the required instruction length. \texttt{NOP} denotes its
+canonical one-byte encoding, and an integer padding byte must be an absolute value from 0 through 255. Padding bytes do
+not accept expressions or relocations.
+
+Register names are recognized case-insensitively. Symbol names are case-sensitive. A bare identifier that is a
+register name denotes that register in a context that accepts it; every other bare identifier in an expression
+denotes a symbol. Backtick quoting may be applied to any symbol reference and forces the enclosed name to
+be interpreted as a symbol, so \texttt{R1} denotes the register while \texttt{`R1`} denotes the distinct symbol named
+\texttt{R1}. Within a quoted identifier, \texttt{\textbackslash\textasciigrave} denotes a literal backtick and
+\texttt{\textbackslash\textbackslash} denotes a literal backslash. No other escape is defined, and a quoted
+identifier cannot cross a newline.
+
+A relocation annotation follows the complete symbol reference and is not part of the quoted name. For example,
+\texttt{`R1`@abs64} applies \texttt{abs64} to the symbol \texttt{R1}, whereas \texttt{`R1@abs64`} names a symbol
+whose name contains the characters \texttt{@abs64}. An assembler emits an unquoted symbol when its name is a valid
+bare identifier that does not collide with a register name; otherwise it emits the canonical backtick-quoted
+form.

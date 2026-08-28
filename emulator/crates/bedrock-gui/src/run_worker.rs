@@ -1,6 +1,6 @@
-use bedrock_core::CpuState;
 use bedrock_debug::{Debugger, StepResult};
 use bedrock_devices::FramebufferDevice;
+use bedrock_machine::CpuState;
 use bedrock_machine::Machine;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
@@ -9,6 +9,9 @@ use std::thread;
 
 const UNLIMITED_CONTROL_POLL_STEPS: u64 = 64;
 const UNLIMITED_STEP_BUDGET: u64 = 0;
+// Generated Sail execution currently peaks a little above 100 KiB on arm64
+// macOS. Keep explicit headroom on the thread that now owns and calls it.
+const EXECUTION_STACK_BYTES: usize = 1024 * 1024;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum FrameStepBudget {
@@ -65,6 +68,7 @@ impl ExecutionWorker {
 
         let join_handle = thread::Builder::new()
             .name("bedrock-gui-execution".to_owned())
+            .stack_size(EXECUTION_STACK_BYTES)
             .spawn(move || {
                 run_execution_loop(
                     machine,
@@ -98,6 +102,11 @@ impl ExecutionWorker {
 
     pub(crate) fn request_pause(&self) {
         let _ = self.command_sender.send(ExecutionCommand::Pause);
+        self.worker_thread.unpark();
+    }
+
+    pub(crate) fn request_single_step(&self) {
+        let _ = self.command_sender.send(ExecutionCommand::SingleStep);
         self.worker_thread.unpark();
     }
 
@@ -141,6 +150,7 @@ impl Drop for ExecutionWorker {
 #[derive(Debug)]
 enum ExecutionCommand {
     Pause,
+    SingleStep,
     PushKeyboardEvent(u32),
 }
 
@@ -166,13 +176,14 @@ pub(crate) struct ExecutionSnapshot {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum ExecutionStopReason {
     Paused,
+    SingleStep,
     StepResult,
 }
 
 #[allow(clippy::too_many_arguments)]
 fn run_execution_loop(
     mut machine: Machine,
-    debugger: Debugger,
+    mut debugger: Debugger,
     mut total_steps: u64,
     step_budget: Arc<AtomicU64>,
     frame_steps_remaining: Arc<AtomicU64>,
@@ -191,7 +202,8 @@ fn run_execution_loop(
                     break;
                 }
 
-                if drain_commands(&mut machine, &command_receiver).pause {
+                let signals = drain_commands(&mut machine, &command_receiver);
+                if signals.pause {
                     send_stopped(
                         &event_sender,
                         machine,
@@ -199,6 +211,25 @@ fn run_execution_loop(
                         total_steps,
                         last_result,
                         ExecutionStopReason::Paused,
+                    );
+                    return;
+                }
+                if signals.single_step {
+                    let result = debugger.step(&mut machine);
+                    total_steps = total_steps.saturating_add(1);
+                    let reason = if matches!(result, StepResult::Running) {
+                        ExecutionStopReason::SingleStep
+                    } else {
+                        ExecutionStopReason::StepResult
+                    };
+                    last_result = Some(result);
+                    send_stopped(
+                        &event_sender,
+                        machine,
+                        debugger,
+                        total_steps,
+                        last_result,
+                        reason,
                     );
                     return;
                 }
@@ -324,6 +355,7 @@ fn take_frame_step_credit(frame_steps_remaining: &AtomicU64) -> Option<FrameStep
 #[derive(Debug, Clone, Copy, Default)]
 struct ControlSignals {
     pause: bool,
+    single_step: bool,
 }
 
 fn drain_commands(
@@ -347,7 +379,14 @@ fn drain_commands(
 
 fn apply_command(machine: &mut Machine, command: ExecutionCommand) -> ControlSignals {
     match command {
-        ExecutionCommand::Pause => ControlSignals { pause: true },
+        ExecutionCommand::Pause => ControlSignals {
+            pause: true,
+            single_step: false,
+        },
+        ExecutionCommand::SingleStep => ControlSignals {
+            pause: false,
+            single_step: true,
+        },
         ExecutionCommand::PushKeyboardEvent(event) => {
             machine.board_mut().keyboard_mut().push_event(event);
             ControlSignals::default()
@@ -358,6 +397,7 @@ fn apply_command(machine: &mut Machine, command: ExecutionCommand) -> ControlSig
 impl std::ops::BitOrAssign for ControlSignals {
     fn bitor_assign(&mut self, rhs: Self) {
         self.pause |= rhs.pause;
+        self.single_step |= rhs.single_step;
     }
 }
 
@@ -506,116 +546,29 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
-    fn profile_sync_vs_worker_step_throughput() {
-        const STEPS: u64 = 200_000;
-
-        let mut machine = nop_machine(STEPS);
-        let started = Instant::now();
-        for _ in 0..STEPS {
-            assert_eq!(machine.step(), StepResult::Running);
-        }
-        let machine_step_elapsed = started.elapsed();
-
-        let mut machine = nop_machine(STEPS);
-        let debugger = Debugger::default();
-        let started = Instant::now();
-        for _ in 0..STEPS {
-            assert_eq!(debugger.run_step(&mut machine), StepResult::Running);
-        }
-        let run_step_elapsed = started.elapsed();
-
-        let worker = ExecutionWorker::spawn(
-            nop_machine(STEPS),
-            Debugger::default(),
-            0,
-            FrameStepBudget::limited(STEPS),
-        )
-        .unwrap();
-        let started = Instant::now();
-        worker.request_frame_tick();
-        let snapshot = loop {
-            if let Some(ExecutionEvent::Snapshot(snapshot)) = worker.try_event() {
-                break snapshot;
-            }
-            assert!(
-                started.elapsed() < Duration::from_secs(10),
-                "worker snapshot timed out"
-            );
-            std::thread::yield_now();
-        };
-        let worker_elapsed = started.elapsed();
-        assert_eq!(snapshot.total_steps, STEPS);
-
-        eprintln!("profile steps={STEPS}");
-        eprintln!(
-            "machine.step           {:?} ({:.0} steps/s)",
-            machine_step_elapsed,
-            STEPS as f64 / machine_step_elapsed.as_secs_f64()
-        );
-        eprintln!(
-            "debugger.run_step      {:?} ({:.0} steps/s)",
-            run_step_elapsed,
-            STEPS as f64 / run_step_elapsed.as_secs_f64()
-        );
-        eprintln!(
-            "worker limited snapshot {:?} ({:.0} steps/s)",
-            worker_elapsed,
-            STEPS as f64 / worker_elapsed.as_secs_f64()
-        );
-        eprintln!(
-            "worker/run_step ratio  {:.2}x",
-            worker_elapsed.as_secs_f64() / run_step_elapsed.as_secs_f64()
-        );
-
-        let worker = ExecutionWorker::spawn(
-            nop_machine(STEPS + 1024),
-            Debugger::default(),
-            0,
-            FrameStepBudget::limited(256),
-        )
-        .unwrap();
-        let started = Instant::now();
-        let mut total_steps = 0;
-        while total_steps < STEPS {
-            worker.request_frame_tick();
-            let snapshot = loop {
-                if let Some(event) = worker.try_event() {
-                    match event {
-                        ExecutionEvent::Snapshot(snapshot) => break snapshot,
-                        ExecutionEvent::Stopped { snapshot, reason } => {
-                            panic!(
-                                "worker stopped during profile at {} steps with {:?} / {:?}",
-                                snapshot.total_steps, reason, snapshot.last_result
-                            );
-                        }
-                    }
-                }
-                assert!(
-                    started.elapsed() < Duration::from_secs(10),
-                    "worker 256-step snapshot timed out"
-                );
-                std::thread::yield_now();
-            };
-            total_steps = snapshot.total_steps;
-        }
-        let worker_frequent_snapshot_elapsed = started.elapsed();
-        eprintln!(
-            "worker 256-step snapshots {:?} ({:.0} steps/s)",
-            worker_frequent_snapshot_elapsed,
-            total_steps as f64 / worker_frequent_snapshot_elapsed.as_secs_f64()
-        );
-        eprintln!(
-            "worker 256/run_step ratio {:.2}x",
-            worker_frequent_snapshot_elapsed.as_secs_f64() / run_step_elapsed.as_secs_f64()
-        );
-    }
-
-    fn nop_machine(steps: u64) -> Machine {
+    fn single_step_returns_the_complete_machine_and_trace() {
         let mut machine = Machine::new();
-        let program = vec![0x01; steps as usize];
-        machine.load_program(0, &program).unwrap();
+        machine.load_program(0, &[0x01, 0xae, 0x00]).unwrap();
         machine.processor_reset(0);
-        machine
+
+        let worker =
+            ExecutionWorker::spawn(machine, Debugger::default(), 0, FrameStepBudget::limited(1))
+                .unwrap();
+        worker.request_single_step();
+        let deadline = Instant::now() + Duration::from_secs(2);
+
+        loop {
+            if let Some(ExecutionEvent::Stopped { snapshot, reason }) = worker.try_event() {
+                assert_eq!(reason, ExecutionStopReason::SingleStep);
+                assert_eq!(snapshot.last_result, Some(StepResult::Running));
+                assert_eq!(snapshot.total_steps, 1);
+                assert_eq!(snapshot.state.pc, 1);
+                assert_eq!(snapshot.debugger.trace().len(), 1);
+                assert_eq!(snapshot.machine.as_ref().unwrap().state().pc, 1);
+                return;
+            }
+            assert!(Instant::now() < deadline, "single-step worker timed out");
+            std::thread::sleep(Duration::from_millis(1));
+        }
     }
 }

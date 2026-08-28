@@ -1,0 +1,6 @@
+id: UMODTI3
+symbol: __umodti3
+result: base.types.UINT128
+parameters:
+- base.types.UINT128
+- base.types.UINT128

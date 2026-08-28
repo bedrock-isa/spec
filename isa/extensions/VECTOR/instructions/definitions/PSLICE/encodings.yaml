@@ -1,0 +1,17 @@
+encodings:
+  b_w_l_q_z_pn_p_imm6_i_pn_q:
+    pattern: 111111011111111000zzppppqqqqiiiiii
+    syntax: PSLICE.{B|W|L|Q}(z) Pn(p), imm6(i), Pn(q)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      p:
+        role: src
+        type: VECTOR.field_types.Pn
+      q:
+        role: dst
+        type: VECTOR.field_types.Pn
+      i:
+        role: count
+        type: base.field_types.IMM6

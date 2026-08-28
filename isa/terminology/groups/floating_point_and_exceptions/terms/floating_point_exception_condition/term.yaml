@@ -1,0 +1,11 @@
+id: floating_point_exception_condition
+display:
+  canonical: floating-point exception condition
+  plural: floating-point exception conditions
+article: a
+variants:
+  cause: floating-point exception cause
+definition: >-
+  an IEEE-754 condition such as NV, DZ, OF, UF, or NX. An enabled condition
+  raises the FLOATING_POINT_EXCEPTION architectural event before the instruction
+  commits the effects suppressed by that event.

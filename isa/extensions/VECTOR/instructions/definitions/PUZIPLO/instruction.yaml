@@ -1,0 +1,22 @@
+mnemonic: PUZIPLO
+name: Predicate Even-Lane Extraction
+summary: Concatenate even-position predicate lanes from two sources.
+route: vector
+sail_entries:
+- execute_PUZIPLO
+privileged: false
+assembly:
+  width_suffix_aliases: true
+operands:
+  lhs:
+    role: source
+    access: read
+    value_type: predicate
+  rhs:
+    role: source
+    access: read
+    value_type: predicate
+  dst:
+    role: destination
+    access: read_write
+    value_type: predicate

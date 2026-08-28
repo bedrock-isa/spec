@@ -1,0 +1,19 @@
+mnemonic: MODU
+name: Unsigned Modulo
+summary: Performs the unsigned modulo operation.
+route: integer_mul_div
+sail_entries:
+- execute_MODU
+privileged: false
+repeat:
+  type: repcc
+  observed_value: dst
+operands:
+  src:
+    role: source
+    access: read
+    value_type: integer
+  dst:
+    role: destination
+    access: read_write
+    value_type: integer

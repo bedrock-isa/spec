@@ -1,0 +1,9 @@
+terms:
+- reserved
+- must_be_zero
+- read_as_zero
+- ignored
+- preserved
+- software_defined_state
+- implementation_defined_behavior
+- illegal_use

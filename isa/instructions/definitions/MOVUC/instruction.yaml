@@ -1,0 +1,20 @@
+mnemonic: MOVUC
+name: Move User To Current
+summary: Copies from user-domain memory to a current-domain destination.
+route: data_movement
+sail_entries:
+- execute_MOVUC
+privileged: true
+repeat:
+  type: repcc
+  observed_value: dst
+operands:
+  src:
+    role: source
+    access: read
+    value_type: integer
+    domain: user
+  dst:
+    role: destination
+    access: write
+    value_type: integer

@@ -1,0 +1,4 @@
+encodings:
+  plain:
+    pattern: '0001010'
+    syntax: RFENCE

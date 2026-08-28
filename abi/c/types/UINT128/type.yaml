@@ -1,0 +1,6 @@
+id: UINT128
+spelling: "unsigned __int128"
+call_kind: u128
+size_bits: 128
+alignment_bytes: 16
+representation: unsigned_integer

@@ -1,0 +1,15 @@
+mnemonic: INCF
+name: Increment And Set Flags
+summary: Increments the destination operand and updates integer FLAGS.
+route: integer_unary
+sail_entries:
+- execute_INCF
+privileged: false
+repeat:
+  type: repcc
+  observed_value: dst
+operands:
+  dst:
+    role: destination
+    access: read_write
+    value_type: integer

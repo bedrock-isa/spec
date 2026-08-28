@@ -1,0 +1,71 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: bedrock://schemas/artifact
+title: Bedrock generated artifact definition
+type: object
+required: [id]
+additionalProperties: true
+properties:
+  id:
+    $ref: '#/$defs/id'
+  status:
+    enum: [implemented, planned]
+  summary:
+    type: string
+    minLength: 1
+  generator:
+    $ref: '#/$defs/generator-path'
+  inputs:
+    type: array
+    uniqueItems: true
+    items:
+      $ref: '#/$defs/id'
+  depends-on:
+    type: array
+    uniqueItems: true
+    items:
+      $ref: '#/$defs/id'
+  output:
+    $ref: '#/$defs/relative-path'
+  source:
+    $ref: '#/$defs/relative-path'
+  outputs:
+    oneOf:
+    - type: array
+      minItems: 1
+      uniqueItems: true
+      items:
+        $ref: '#/$defs/relative-path'
+    - type: object
+      minProperties: 1
+      additionalProperties:
+        $ref: '#/$defs/relative-path'
+allOf:
+- anyOf:
+  - required: [output]
+  - required: [outputs]
+- if:
+    required: [status]
+    properties:
+      status:
+        const: planned
+  then:
+    required: [summary, outputs]
+  else:
+    required: [generator]
+$defs:
+  id:
+    type: string
+    pattern: ^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$
+  relative-path:
+    type: string
+    pattern: ^(?!/)(?!.*(?:^|/)\.\.(?:/|$)).+$
+  generator-path:
+    allOf:
+    - $ref: '#/$defs/relative-path'
+    - pattern: \.py$
+x-interpretation-rules:
+- Every artifact directory owns one artifact.yaml and may own its generator implementation.
+- Implemented artifacts name a local generator.py entrypoint; planned artifacts reserve identity and outputs without executable code.
+- Inputs name workspace domain providers, while depends-on names generated artifacts.
+- Artifact-local generators validate their configuration and are pure projections.
+- Only ArtifactWriter mutates output trees.

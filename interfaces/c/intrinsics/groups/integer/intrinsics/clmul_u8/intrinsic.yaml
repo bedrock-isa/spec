@@ -1,0 +1,18 @@
+id: clmul_u8
+owner: base
+description: >-
+  Pure; low 8 bits of the carryless product.
+summary: Return the low eight bits of a carryless product.
+signature:
+  result: u8
+  parameters:
+  - {id: left, type: u8}
+  - {id: right, type: u8}
+lowering:
+  operation: isa:base.instructions.CLMUL
+  kind: direct
+  operands:
+    size: B
+effects:
+  c-memory: none
+  pure: true

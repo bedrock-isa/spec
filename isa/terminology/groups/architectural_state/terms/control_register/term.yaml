@@ -1,0 +1,8 @@
+id: control_register
+display:
+  canonical: control register
+  plural: control registers
+article: a
+definition: >-
+  a privileged register exposed through the CR operand class, such as PTCR,
+  ASCR, ECR, EPC, UCTL, and UINFO.

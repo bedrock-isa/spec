@@ -479,25 +479,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "bedrock-core"
-version = "0.1.0"
-dependencies = [
- "bedrock-bus",
- "bedrock-isa",
- "bitflags 2.13.0",
- "fpmath",
- "rustc_apfloat",
- "thiserror 2.0.18",
- "tracing",
-]
-
-[[package]]
 name = "bedrock-debug"
 version = "0.1.0"
 dependencies = [
  "bedrock-bus",
- "bedrock-core",
- "bedrock-isa",
  "bedrock-machine",
  "tracing",
 ]
@@ -507,7 +492,6 @@ name = "bedrock-debug-remote"
 version = "0.1.0"
 dependencies = [
  "bedrock-bus",
- "bedrock-core",
  "bedrock-debug",
  "bedrock-machine",
  "bedrock-toolchain",
@@ -527,7 +511,6 @@ dependencies = [
 name = "bedrock-gui"
 version = "0.1.0"
 dependencies = [
- "bedrock-core",
  "bedrock-debug",
  "bedrock-debug-remote",
  "bedrock-devices",
@@ -537,13 +520,6 @@ dependencies = [
  "eframe",
  "egui",
  "tracing",
-]
-
-[[package]]
-name = "bedrock-isa"
-version = "0.1.0"
-dependencies = [
- "thiserror 2.0.18",
 ]
 
 [[package]]
@@ -563,11 +539,23 @@ name = "bedrock-machine"
 version = "0.1.0"
 dependencies = [
  "bedrock-bus",
- "bedrock-core",
  "bedrock-devices",
+ "bedrock-sail-core",
  "bedrock-toolchain",
+ "bitflags 2.13.0",
  "thiserror 2.0.18",
  "tracing",
+]
+
+[[package]]
+name = "bedrock-sail-core"
+version = "0.1.0"
+dependencies = [
+ "bedrock-bus",
+ "cc",
+ "fpmath",
+ "pkg-config",
+ "rustc_apfloat",
 ]
 
 [[package]]

@@ -1,0 +1,9 @@
+id: LARGE
+placement: Code and data span the 64-bit address space.
+strategy: Full-width address materialization and indirect transfer.
+default_relocations:
+- base.relocations.R_BEDROCK_ABS64
+- base.relocations.R_BEDROCK_PCREL64
+- base.relocations.R_BEDROCK_GOTPCREL64
+- base.relocations.R_BEDROCK_PLT64
+- base.relocations.R_BEDROCK_TLSDESC_GOTPCREL64

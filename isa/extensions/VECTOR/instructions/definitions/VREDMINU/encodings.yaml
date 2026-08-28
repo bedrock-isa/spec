@@ -1,0 +1,33 @@
+encodings:
+  b_w_l_q_z_pn_p_vn_v_rn_r:
+    pattern: 11111101111110100zz10pppprrrrvvvvv
+    syntax: VREDMINU.{B|W|L|Q}(z) Pn(p), Vn(v), Rn(r)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      p:
+        role: govern
+        type: VECTOR.field_types.Pn
+      r:
+        role: dst
+        type: base.field_types.Rn
+      v:
+        role: src
+        type: VECTOR.field_types.Vn
+  b_w_l_q_z_pn_p_ea_e_rn_r:
+    pattern: 11111111000000101110zz00010pppprrrreeeeeee
+    syntax: VREDMINU.{B|W|L|Q}(z) Pn(p), <ea>(e), Rn(r)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      p:
+        role: govern
+        type: VECTOR.field_types.Pn
+      r:
+        role: dst
+        type: base.field_types.Rn
+      e:
+        role: src
+        type: VECTOR.field_types.VEA

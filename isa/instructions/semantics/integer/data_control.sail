@@ -7,8 +7,8 @@ function concatenated_pair(high : bits(64), low : bits(64), width : int) -> bits
 function execute_extract_local(instruction : Decoded_instruction, state : Cpu_state)
   -> option(Execution_result) = {
   let width = operation_width(instruction);
-  match (value_named(instruction, state, "offset"), value_named(instruction, state, "high"),
-         operand_named(instruction, "low_dst")) {
+  match (value_named(instruction, state, Operand_offset), value_named(instruction, state, Operand_high),
+         operand_named(instruction, Operand_low_dst)) {
     (Some(offset_value), Some(high), Some(low_operand)) =>
       match (local_operand_value(state, low_operand), local_destination(low_operand, width)) {
         (Some(low), Some(destination)) => {
@@ -30,8 +30,8 @@ function execute_extend_local(instruction : Decoded_instruction, state : Cpu_sta
   -> option(Execution_result) = {
   let source_width = operation_width(instruction);
   let destination_width = extension_destination_width(instruction.form.operation);
-  match (value_named(instruction, state, "src"),
-         destination_named(instruction, "dst", destination_width)) {
+  match (value_named(instruction, state, Operand_src),
+         destination_named(instruction, Operand_dst, destination_width)) {
     (Some(source), Some(destination)) => {
       let signed_operation = instruction.form.operation == Op_EXTSW
                            | instruction.form.operation == Op_EXTSL
@@ -50,7 +50,7 @@ function execute_extend_local(instruction : Decoded_instruction, state : Cpu_sta
 function execute_xchg_local(instruction : Decoded_instruction, state : Cpu_state)
   -> option(Execution_result) = {
   let width = operation_width(instruction);
-  match (operand_named(instruction, "lhs"), operand_named(instruction, "rhs")) {
+  match (operand_named(instruction, Operand_lhs), operand_named(instruction, Operand_rhs)) {
     (Some(lhs_operand), Some(rhs_operand)) =>
       match (local_operand_value(state, lhs_operand), local_operand_value(state, rhs_operand),
              local_destination(lhs_operand, width), local_destination(rhs_operand, width)) {
@@ -72,7 +72,7 @@ function execute_xchg_local(instruction : Decoded_instruction, state : Cpu_state
 function execute_set_local(instruction : Decoded_instruction, state : Cpu_state)
   -> option(Execution_result) = {
   let width = operation_width(instruction);
-  match destination_named(instruction, "dst", width) {
+  match destination_named(instruction, Operand_dst, width) {
     Some(destination) => {
       let updated = write_local_destination(
         state, instruction.form.operation, destination, 0x0000000000000001
@@ -85,9 +85,11 @@ function execute_set_local(instruction : Decoded_instruction, state : Cpu_state)
 
 function execute_move_sp_local(instruction : Decoded_instruction, state : Cpu_state)
   -> option(Execution_result) =
-  match (operand_named(instruction, "src"), operand_named(instruction, "dst")) {
+  match (operand_named(instruction, Operand_src), operand_named(instruction, Operand_dst)) {
     (Some(source_operand), Some(destination_operand)) =>
-      match (local_operand_value(state, source_operand), local_destination(destination_operand, 8)) {
+      if source_operand.operand_type != OperandType_SP
+         & destination_operand.operand_type != OperandType_SP then None()
+      else match (local_operand_value(state, source_operand), local_destination(destination_operand, 8)) {
         (Some(source), Some(destination)) => {
           let updated = write_local_destination(
             state, instruction.form.operation, destination, source
@@ -108,8 +110,8 @@ function execute_bounds_comparison_local(
 )
   -> option(Execution_result) = {
   let width = operation_width(instruction);
-  match (value_named(instruction, state, "lo"), value_named(instruction, state, "value"),
-         value_named(instruction, state, "hi")) {
+  match (value_named(instruction, state, Operand_lo), value_named(instruction, state, Operand_value),
+         value_named(instruction, state, Operand_hi)) {
     (Some(low), Some(value), Some(high)) => {
       let low_value = if signed_operation then signed_width(low, width)
                       else unsigned(narrow_bits(low, width));
@@ -128,30 +130,51 @@ function execute_bounds_comparison_local(
 
 function control_target_local(instruction : Decoded_instruction, state : Cpu_state)
   -> option(bits(64)) =
-  match operand_named(instruction, "target") {
+  match operand_named(instruction, Operand_target) {
     None() => None(),
     Some(operand) => match local_operand_value(state, operand) {
       None() => None(),
-      Some(value) => if operand.type_name == "imm8s" | operand.type_name == "imm16s"
-                        | operand.type_name == "imm32s" then
+      Some(value) => if operand.operand_type == OperandType_imm8s
+                        | operand.operand_type == OperandType_imm16s
+                        | operand.operand_type == OperandType_imm32s then
           Some(add_bits(next_pc(state, instruction), value))
         else Some(narrow_bits(value, operation_width(instruction))),
     },
   }
 
-function execute_compare_jump_local(instruction : Decoded_instruction, state : Cpu_state)
+function execute_subtract_compare_jump_local(
+  instruction : Decoded_instruction,
+  state : Cpu_state
+)
   -> option(Execution_result) =
-  match (value_named(instruction, state, "src"), value_named(instruction, state, "dst"),
-         value_named(instruction, state, "target"), condition_field(instruction.fields)) {
+  match (value_named(instruction, state, Operand_src), value_named(instruction, state, Operand_dst),
+         value_named(instruction, state, Operand_target), condition_field(instruction.fields)) {
     (Some(source), Some(destination), Some(relative), Some(condition)) => {
       let width = operation_width(instruction);
-      let temporary_flags = if instruction.form.operation == Op_CMPJcc then {
-        let (ignored, flags) = sub_with_flags(destination, source, 0, width);
-        flags
-      } else {
-        let value = narrow_bits(destination & source, width);
-        flags_value(value == 0x0000000000000000, width_sign(value, width), false, false)
-      };
+      let (_, temporary_flags) = sub_with_flags(destination, source, 0, width);
+      let pc = if condition_holds(condition, temporary_flags)
+        then add_bits(next_pc(state, instruction), relative)
+        else next_pc(state, instruction);
+      Some(completed(state, { state with pc = pc }, CommitControl, [||]))
+    },
+    _ => None(),
+  }
+
+function execute_and_compare_jump_local(
+  instruction : Decoded_instruction,
+  state : Cpu_state
+)
+  -> option(Execution_result) =
+  match (value_named(instruction, state, Operand_src), value_named(instruction, state, Operand_dst),
+         value_named(instruction, state, Operand_target), condition_field(instruction.fields)) {
+    (Some(source), Some(destination), Some(relative), Some(condition)) => {
+      let width = operation_width(instruction);
+      let value = narrow_bits(
+        integer_and_value(destination, source), width
+      );
+      let temporary_flags = flags_value(
+        value == 0x0000000000000000, width_sign(value, width), false, false
+      );
       let pc = if condition_holds(condition, temporary_flags)
         then add_bits(next_pc(state, instruction), relative)
         else next_pc(state, instruction);

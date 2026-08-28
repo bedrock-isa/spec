@@ -1,0 +1,8 @@
+id: segment_register
+owner: base
+kind: enum
+summary: Source-selectable architectural segment registers.
+values:
+  source: isa:base.registers.SEGMENT
+  require-encoding: true
+  member-prefix: __BEDROCK_SEG_

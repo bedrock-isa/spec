@@ -1,0 +1,35 @@
+sail:
+  units:
+  - id: execution
+    requires:
+    - base.architectural-types
+    - base.decode-types
+    - base.decode
+    - base.runtime
+    - FP.contract
+    - FP.execution
+    sources:
+    - semantics/vector.sail
+documents:
+  topics:
+  - id: introduction.element-types-and-assembly-spelling
+    source: documents/topics/introduction/001_element_types_and_assembly_spelling.tex
+    concept: vector
+  - id: introduction.predicates-and-destination-images
+    source: documents/topics/introduction/002_predicates_and_destination_images.tex
+    concept: vector
+  - id: introduction.lane-mapping-and-scalar-bridges
+    source: documents/topics/introduction/003_lane_mapping_and_scalar_bridges.tex
+    concept: vector
+  - id: introduction.vector-memory-operations
+    source: documents/topics/introduction/004_vector_memory_operations.tex
+    concept: vector
+  - id: introduction.one-lane-gather-and-scatter-steps
+    source: documents/topics/introduction/005_one_lane_gather_and_scatter_steps.tex
+    concept: vector
+  - id: introduction.floating-point-exceptions-conversions-and-reductions
+    source: documents/topics/introduction/006_floating_point_exceptions_conversions_and_reductions.tex
+    concept: vector
+  - id: introduction.execution-and-saved-state
+    source: documents/topics/introduction/007_execution_and_saved_state.tex
+    concept: vector

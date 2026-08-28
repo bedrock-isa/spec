@@ -1,4 +1,4 @@
-use bedrock_core::CpuState;
+use bedrock_machine::CpuState;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CpuSnapshot {

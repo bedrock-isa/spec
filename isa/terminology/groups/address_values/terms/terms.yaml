@@ -1,0 +1,9 @@
+terms:
+- effective_address
+- pre_segment_virtual_address
+- linear_address
+- physical_address
+- memory_system_address
+- normal_memory
+- device_memory
+- address_generation

@@ -1,0 +1,20 @@
+mnemonic: VEXTSQ
+name: Vector Signed Extension to Quad
+summary: Sign-extends B, W, or L source elements to Q destination elements.
+route: vector
+sail_entries:
+- execute_VEXTSQ
+privileged: false
+operands:
+  govern:
+    role: governing_predicate
+    access: read
+    value_type: predicate
+  src:
+    role: source
+    access: read
+    value_type: vector
+  dst:
+    role: destination
+    access: read_write
+    value_type: vector

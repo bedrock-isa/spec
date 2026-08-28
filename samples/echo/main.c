@@ -81,11 +81,11 @@ void _start(void) {
         PAGE_PRESENT | PAGE_AM_MMIO_RW);
 
   __asm__ volatile(
-      "MOV.Q 32769, D0\n"
-      "SWPT.D D0"
+      "MOV.Q 32769, R0\n"
+      "SWPT R0"
       :
       :
-      : "D0", "memory");
+      : "r0", "memory");
 
   u32 x = 0;
   u32 y = 0;

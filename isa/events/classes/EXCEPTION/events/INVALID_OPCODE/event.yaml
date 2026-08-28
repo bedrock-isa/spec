@@ -1,0 +1,7 @@
+id: INVALID_OPCODE
+name: Invalid Opcode
+summary: The instruction opcode is not assigned to an architectural instruction form.
+code: 0x10
+family: INSTRUCTION_VALIDATION
+frame: basic
+

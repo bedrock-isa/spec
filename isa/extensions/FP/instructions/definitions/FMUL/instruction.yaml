@@ -1,0 +1,18 @@
+mnemonic: FMUL
+name: Floating-Point Multiply
+summary: Performs the floating-point multiply operation.
+route: fpu
+sail_entries:
+- execute_FMUL
+privileged: false
+repeat:
+  type: rep
+operands:
+  src:
+    role: source
+    access: read
+    value_type: floating
+  dst:
+    role: destination
+    access: read_write
+    value_type: floating

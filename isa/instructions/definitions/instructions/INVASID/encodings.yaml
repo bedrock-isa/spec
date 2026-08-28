@@ -1,9 +1,0 @@
-forms:
-- id: medium.invasid_ea
-  class: medium
-  bits: '111011110000000100'
-  syntax: INVASID <imm16>
-  operands:
-  - name: asid
-    type: imm16
-    access: read

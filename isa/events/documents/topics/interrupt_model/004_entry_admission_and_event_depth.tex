@@ -1,0 +1,14 @@
+\subsection{Entry Admission and Event Depth}
+The event-entry state is usable only while ECR.V is set. A maskable interrupt is admitted only when ECR.V,
+STATUS.IE, and the depth limit all permit it: the current event depth must be less than ECR.MAX\_EDEPTH. Otherwise the
+interrupt remains pending at the interrupt controller. A synchronous exception that requires delivery while ECR.V is
+clear cannot be deferred and enters SHUTDOWN. An NMI observed while ECR.V is clear sets the hardware-managed
+ECR.NMI\_P latch and is not admitted. After ECR.V becomes one, hardware admits that pending NMI before the next
+instruction boundary when STATUS.NI is clear. While STATUS.NI remains set, the NMI remains pending. Multiple NMI
+observations coalesce in ECR.NMI\_P.
+
+Event depth is zero outside event handling. A successful entry saves STATUS in the selected return context and
+increments STATUS.EDEPTH. ECR.MAX\_EDEPTH equal to zero prevents maskable interrupt admission; values 1 through 15 limit
+only maskable interrupts and do not suppress synchronous exceptions or NMI. Depth 15 is representable but terminal:
+any further event requirement enters SHUTDOWN. At depth 14 or less, a delivery failure can still create an
+\texttt{EVENT\_DELIVERY\_FAILURE} family frame; at depth 15 there is no representable child frame.

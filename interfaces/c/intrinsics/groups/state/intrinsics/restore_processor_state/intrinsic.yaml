@@ -1,0 +1,12 @@
+id: restore_processor_state
+owner: base
+description: >-
+  Readable, feature-valid, 4096-byte-aligned area; reads the complete selected processor-state image; may define \texttt{R0{-}{-}R15}, \texttt{FLAGS}, valid \texttt{GS} registers, and extension state; fully clobbers memory and prevents TLS or segmented memory accesses from moving across a restored \texttt{GS} addressing context.
+signature:
+  result: void
+  parameters:
+  - id: area
+    type: const_void_pointer
+lowering:
+  operation: isa:base.instructions.RESTORE
+  kind: direct

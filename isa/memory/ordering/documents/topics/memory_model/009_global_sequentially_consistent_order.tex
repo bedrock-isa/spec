@@ -1,0 +1,18 @@
+\subsection{Global Sequentially Consistent Order}
+All (:ref:base.instructions.AFENCE:) operations and all \texttt{SEQCST} atomic operations participate in one global total order that is
+consistent with each (:term:base.terms.logical_processor:)\textquotesingle{}s ordered-before relation and with per-location coherence. A failed
+\texttt{CMPXCHG.SEQCST} participates in that order as an SC load even though it performs no write.
+
+A naturally aligned tear-free scalar load or store also participates as an SC operation when it is the only memory
+access between its immediately surrounding (:ref:base.instructions.AFENCE:) operations in memory-event order. Thus
+\texttt{AFENCE; access; AFENCE} is the architectural sequence for an SC scalar load or store. The access and both
+fences occupy their required positions in the same global order.
+
+Acquire and release operations may be strengthened with (:ref:base.instructions.AFENCE:); the resulting instruction sequence has the
+union of the ordering constraints imposed by its operations.
+Leaf AM and CP are orthogonal. An MMIO access retains its non-speculative,
+operation-class, alignment, and ordering rules under every CP value. MMIO
+accesses from one (:term:base.terms.logical_processor:) are observed in program order relative to
+other MMIO accesses from that (:term:base.terms.logical_processor:). Normal-memory and MMIO
+accesses retain the baseline weak ordering between classes; (:ref:base.instructions.AFENCE:)
+orders earlier accesses before later accesses across that boundary.

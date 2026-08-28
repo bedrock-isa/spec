@@ -1,0 +1,11 @@
+encodings:
+  pn_p_pn_q:
+    pattern: 111110100101100010ppppqqqq
+    syntax: PXOR Pn(p), Pn(q)
+    fields:
+      p:
+        role: src
+        type: VECTOR.field_types.Pn
+      q:
+        role: dst
+        type: VECTOR.field_types.Pn

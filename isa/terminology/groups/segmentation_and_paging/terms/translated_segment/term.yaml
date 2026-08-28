@@ -1,0 +1,8 @@
+id: translated_segment
+display:
+  canonical: translated segment
+  plural: translated segments
+article: a
+definition: >-
+  an enabled segment with bounds-only mode clear. It checks the effective
+  address as an offset within the segment span and then adds the segment base.

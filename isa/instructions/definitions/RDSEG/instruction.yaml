@@ -1,0 +1,16 @@
+mnemonic: RDSEG
+name: Read Segment Register
+summary: Read an SREG or the current CS image into an Rn register.
+route: system_registers
+sail_entries:
+- execute_RDSEG
+privileged: false
+operands:
+  seg:
+    role: segment_selector
+    access: read
+    value_type: integer
+  dst:
+    role: destination
+    access: write
+    value_type: integer

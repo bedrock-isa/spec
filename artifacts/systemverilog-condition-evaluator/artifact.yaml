@@ -1,0 +1,8 @@
+id: systemverilog-condition-evaluator
+generator: generator.py
+inputs:
+- isa
+depends-on:
+- systemverilog-package
+outputs:
+- rtl/bedrock_condition_eval.sv

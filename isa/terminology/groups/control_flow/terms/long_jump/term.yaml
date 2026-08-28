@@ -1,0 +1,6 @@
+id: long_jump
+display:
+  canonical: Long Jump
+definition: >-
+  the instruction family that changes the code segment and program counter
+  without creating a return context.

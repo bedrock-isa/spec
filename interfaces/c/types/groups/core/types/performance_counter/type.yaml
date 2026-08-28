@@ -1,0 +1,8 @@
+id: performance_counter
+owner: base
+kind: enum
+summary: Architectural performance-counter selectors.
+values:
+  source: isa:base.registers.PERFORMANCE
+  require-encoding: true
+  member-prefix: __BEDROCK_PMC_

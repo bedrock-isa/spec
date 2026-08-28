@@ -1,0 +1,16 @@
+id: SPECIAL
+register_group: isa:base.registers.SPECIAL
+dwarf:
+- first: 16
+  registers: [SP]
+- first: 17
+  registers: [PC]
+  condition: CIE return-address register
+entry:
+  SP:
+    role: stack_pointer
+    alignment_bytes: 16
+    permissions: [read, write]
+  PC:
+    role: entry_point
+    source: e_entry

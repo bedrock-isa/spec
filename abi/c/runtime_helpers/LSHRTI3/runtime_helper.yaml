@@ -1,0 +1,6 @@
+id: LSHRTI3
+symbol: __lshrti3
+result: base.types.UINT128
+parameters:
+- base.types.UINT128
+- base.types.INT

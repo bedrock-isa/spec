@@ -1,0 +1,36 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: bedrock://schemas/register
+title: Bedrock architectural register
+type: object
+additionalProperties: false
+required: [id]
+properties:
+  id:
+    type: string
+    pattern: ^[A-Z][A-Z0-9_]*$
+  encoding:
+    type: integer
+    minimum: 0
+  role:
+    type: string
+    pattern: ^[a-z][a-z0-9_]*$
+  summary:
+    type: string
+    minLength: 1
+  reset:
+    oneOf:
+    - type: integer
+      minimum: 0
+    - type: object
+      additionalProperties: false
+      required: [from]
+      properties:
+        from:
+          type: string
+          pattern: ^(?:base|[A-Z][A-Z0-9_]*)\.registers\.[A-Z][A-Z0-9_]*\.[A-Z][A-Z0-9_]*$
+    - type: object
+      additionalProperties: false
+      required: [cold, warm]
+      properties:
+        cold: {enum: [platform]}
+        warm: {enum: [preserve]}

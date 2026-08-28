@@ -1,0 +1,11 @@
+id: DIRECTORY
+name: Extension Directory
+value: 0x0000
+queries:
+- id: HEADER
+  index: 0
+  fields:
+  - {id: MAX_INDEX, lsb: 0, bits: 16}
+  - {id: MAX_LEAF, lsb: 16, bits: 16}
+- id: FEATURES
+  index: 1

@@ -1,0 +1,4 @@
+id: PERFORMANCE
+width: 64
+summary: Architecturally defined performance counters.
+reset: 0

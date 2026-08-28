@@ -16,13 +16,17 @@ SV_BUILD_DIR ?= $(BUILD_DIR)/systemverilog-decoder
 SV_TEST_ROOT ?= $(SV_BUILD_DIR)/tests
 EMULATOR_MANIFEST := emulator/Cargo.toml
 EMULATOR_TARGET_DIR ?= $(abspath $(BUILD_DIR)/emulator-target)
-ISA_PYTHON_TEST_PATHS := $(shell find isa/tools -type f -name 'test_*.py' ! -path '*/systemverilog/*' -print)
+ISA_PYTHON_TEST_PATHS := $(shell test ! -d isa/tools || find isa/tools -type f -name 'test_*.py' ! -path '*/systemverilog/*' -print)
 ISA_PYTHON_TEST_MODULES := $(sort $(subst /,.,$(patsubst %.py,%,$(ISA_PYTHON_TEST_PATHS))))
+LLVM_PROJECT_ROOT ?= $(abspath ../llvm-project)
+LLVM_BUILD_DIR ?= $(LLVM_PROJECT_ROOT)/build
+LLVM_BIN ?= $(LLVM_BUILD_DIR)/bin
 
 .PHONY: all isa sail emulator sv-decoder
 .PHONY: docs docs-pdf docs-site sail-docs
 .PHONY: emulator-isa-generate emulator-isa-check emulator-format emulator-test emulator-validate
 .PHONY: test-fast test-hardware test-pr
+.PHONY: llvm-sync llvm samples samples-check tiny-kernel clean-samples
 
 all: isa sail emulator
 
@@ -80,3 +84,22 @@ test-hardware:
 test-pr:
 	+$(MAKE) -j1 test-fast
 	+$(MAKE) -j1 test-hardware
+
+llvm-sync:
+	$(PYTHON) tools/sync_llvm_artifacts.py "$(LLVM_PROJECT_ROOT)"
+
+llvm: llvm-sync
+	$(MAKE) -C "$(LLVM_BUILD_DIR)" bin/clang bin/llc bin/lld \
+		bin/llvm-mc bin/llvm-objcopy bin/llvm-objdump bin/llvm-readelf
+
+samples:
+	$(MAKE) -C samples LLVM_BIN="$(LLVM_BIN)" PYTHON="$(PYTHON)" all
+
+samples-check:
+	$(MAKE) -C samples LLVM_BIN="$(LLVM_BIN)" PYTHON="$(PYTHON)" check
+
+tiny-kernel:
+	$(MAKE) -C samples/tiny_kernel LLVM_BIN="$(LLVM_BIN)" PYTHON="$(PYTHON)" build
+
+clean-samples:
+	$(MAKE) -C samples clean

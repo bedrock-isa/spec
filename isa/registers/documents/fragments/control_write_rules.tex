@@ -1,0 +1,28 @@
+\Needspace{1.25in}
+\manualtablecaption{WRCR Selector Rules}
+\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{1.45in}>{\raggedright\arraybackslash}p{1.55in}>{\raggedright\arraybackslash}p{1.35in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Register} & \textbf{Writable Image} & \textbf{Validation} & \textbf{Commit and Side Effect}\\
+\midrule
+\endfirsthead
+\multicolumn{4}{@{}l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Register} & \textbf{Writable Image} & \textbf{Validation} & \textbf{Commit and Side Effect}\\
+\midrule
+\endhead
+\texttt{PTCR} & root\_page, LA57, and PE; (:term:base.terms.reserved:) bits (:term:base.terms.must_be_zero:) & the root frame fits the implementation PABITS value reported by CPUID ADDRESS\_WIDTHS & apply the translation-cache transition selected by the changed (:term:base.terms.field|plural:)\\
+\texttt{ASCR} & ASID and AE; (:term:base.terms.reserved:) bits (:term:base.terms.must_be_zero:) & the complete ASCR image is validated before commit & apply the translation-cache transition selected by the changed (:term:base.terms.field|plural:)\\
+\texttt{ECR} & MAX\_EDEPTH and V; NMI\_P is hardware managed and the supplied value is (:term:base.terms.ignored:) & setting V validates EPC, ECS, EDS, and all configured event stack pairs & replace the complete writable image atomically\\
+\texttt{EPC} & complete 64-bit entry address & 16-byte aligned, canonical, and executable under the matching code-segment image & replace the selected register atomically\\
+\texttt{ECS}, \texttt{EDS}, \texttt{SSS}, \texttt{ISS}, \texttt{FSS}, \texttt{DSS} & complete 64-bit segment image & apply the architectural segment-image validity rule & replace the selected register atomically\\
+\texttt{SSP}, \texttt{ISP}, \texttt{FSP}, \texttt{DSP} & complete 64-bit configured stack top & 64-byte aligned & replace the selected register atomically\\
+\texttt{UPC}, \texttt{USP}, \texttt{UCS}, \texttt{UDS}, \texttt{USS} & complete 64-bit saved user-return value & defer complete-bank validation until UCTL.V is set & replace the selected register atomically\\
+\texttt{UINFO} & EVENT\_CODE in bits 31 through 0; bits 63 through 32 (:term:base.terms.must_be_zero:) & reject a nonzero (:term:base.terms.reserved:) bit; validate the event-code-dependent bank when UCTL.V is set & replace UINFO atomically\\
+\texttt{UCTL} & V, STATUS, and FLAGS; (:term:base.terms.reserved:) bits (:term:base.terms.must_be_zero:) & setting V validates the complete user-return bank and requires saved PM, EA, EDEPTH, and UO to be zero & replace UCTL atomically after complete-bank validation\\
+\texttt{BOOTPC} & complete 64-bit warm-reset target & the value is used as the exact PC after warm RESET & replace BOOTPC atomically\\
+\texttt{BOOTCFG} & complete opaque 64-bit platform boot configuration & no image transformation & replace BOOTCFG atomically\\
+\texttt{PMC} & EN; (:term:base.terms.reserved:) bits (:term:base.terms.must_be_zero:) & EN is Boolean & replace PMC atomically\\
+\bottomrule
+\end{manuallongtable}

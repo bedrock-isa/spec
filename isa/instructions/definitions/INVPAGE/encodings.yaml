@@ -1,0 +1,16 @@
+encodings:
+  ea_e:
+    pattern: 11101000110eeeeeee
+    syntax: INVPAGE <ea>(e)
+    fields:
+      e:
+        role: page
+        type: base.field_types.EA
+  rn_r:
+    pattern: 11101101000110rrrr
+    syntax: INVPAGE Rn(r)
+    fields:
+      r:
+        role: page
+        type: base.field_types.Rn
+        access: read

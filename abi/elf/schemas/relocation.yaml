@@ -1,0 +1,60 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: bedrock://schemas/elf-relocation
+title: Bedrock ELF relocation
+type: object
+additionalProperties: false
+required: [id, value, result, calculation]
+properties:
+  id:
+    type: string
+    pattern: ^R_BEDROCK_[A-Z0-9_]+$
+  value:
+    type: integer
+    minimum: 0
+    maximum: 44
+  family:
+    type: string
+    pattern: ^[a-z][a-z0-9_]*$
+  result:
+    type: object
+    additionalProperties: false
+    required: [kind]
+    properties:
+      kind: {enum: [none, integer, bytes, pair]}
+      width_bits:
+        type: integer
+        minimum: 1
+      signed: {type: boolean}
+    allOf:
+    - if:
+        properties: {kind: {const: integer}}
+      then:
+        required: [width_bits, signed]
+    - if:
+        properties: {kind: {const: pair}}
+      then:
+        required: [width_bits]
+    - if:
+        properties: {kind: {enum: [none, bytes]}}
+      then:
+        not:
+          anyOf:
+          - required: [width_bits]
+          - required: [signed]
+  calculation:
+    type: string
+    minLength: 1
+    x-metasyntax: bedrock://schemas/elf-relocation-metasyntax
+  field:
+    type: string
+    pattern: ^[a-z][a-z0-9]*(?:\.[a-z][a-z0-9]*)*:(?:base|[A-Z][A-Z0-9_]*)(?:\.[A-Za-z][A-Za-z0-9_-]*)+$
+  relaxations:
+    type: array
+    uniqueItems: true
+    items:
+      type: string
+      pattern: ^(?:base|[A-Z][A-Z0-9_]*)\.relocations\.R_BEDROCK_[A-Z0-9_]+$
+x-interpretation-rules:
+- calculation obeys the ELF relocation metasyntax.
+- value is unique within one ELF ABI namespace.
+- field names an ISA field or payload type when the relocation patches an instruction representation.

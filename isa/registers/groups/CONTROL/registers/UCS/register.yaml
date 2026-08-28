@@ -1,0 +1,4 @@
+id: UCS
+encoding: 0x010a
+role: user_return
+summary: User-return code-segment image.

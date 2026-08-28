@@ -1,0 +1,43 @@
+Computes the cos(x) reference in radians over finite x with abs(x) \textless{}= pi / 4 after DAZ and writes an implementation-bounded S- or D-format approximation under the selected FPTRANSA accuracy contract.
+
+The required FPTRANSA\_ACCURACY contract is \texttt{0x0002}.
+
+\textbf{Special values}\par
+\begin{itemize}
+\item Infinite source or source magnitude above pi / 4: NV is generated and the result is the architectural default quiet NaN.
+\item Zero source: the result is positive one.
+\end{itemize}
+
+\textbf{Exact anchors}\par
+\begin{itemize}
+\item cos(+0) = +1
+\item cos(-0) = +1
+\end{itemize}
+
+\textbf{Required properties}\par
+\begin{itemize}
+\item even
+\item nondecreasing on [-pi/4, 0] and nonincreasing on [0, pi/4]
+\item result is in [sqrt(2)/2, 1]
+\end{itemize}
+
+The required FPTRANSA\_ACCURACY contract is \texttt{0x0002}.
+
+\textbf{Special values}\par
+\begin{itemize}
+\item Infinite source or source magnitude above pi / 4: NV is generated and the result is the architectural default quiet NaN.
+\item Zero source: the result is positive one.
+\end{itemize}
+
+\textbf{Exact anchors}\par
+\begin{itemize}
+\item cos(+0) = +1
+\item cos(-0) = +1
+\end{itemize}
+
+\textbf{Required properties}\par
+\begin{itemize}
+\item even
+\item nondecreasing on [-pi/4, 0] and nonincreasing on [0, pi/4]
+\item result is in [sqrt(2)/2, 1]
+\end{itemize}

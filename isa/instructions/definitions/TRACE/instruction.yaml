@@ -1,0 +1,12 @@
+mnemonic: TRACE
+name: Trace Stream Marker
+summary: Records a marker and instruction boundary in the implementation trace stream.
+route: control_flow
+sail_entries:
+- execute_TRACE
+privileged: false
+operands:
+  marker:
+    role: source
+    access: read
+    value_type: integer

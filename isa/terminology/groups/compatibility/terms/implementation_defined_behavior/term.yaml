@@ -1,0 +1,6 @@
+id: implementation_defined_behavior
+display:
+  canonical: implementation-defined behavior
+definition: >-
+  behavior selected by the implementation and published through CPUID, platform
+  documentation, or firmware.

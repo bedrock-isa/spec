@@ -1,0 +1,4 @@
+id: USP
+encoding: 0x0109
+role: user_return
+summary: User-return stack pointer.

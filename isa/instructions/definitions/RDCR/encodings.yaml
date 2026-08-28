@@ -1,0 +1,11 @@
+encodings:
+  imm16_rn_d:
+    pattern: 11101101000001dddd
+    syntax: RDCR <imm16>, Rn(d)
+    fields:
+      d:
+        role: dst
+        type: base.field_types.Rn
+    payloads:
+    - role: cr
+      type: base.payload_types.CR

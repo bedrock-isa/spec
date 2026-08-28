@@ -1,0 +1,151 @@
+RDCR and WRCR use a 16-bit selector and transfer a 64-bit (:term:base.terms.register_image:). Both instructions are supervisor-only.
+Selectors not listed below raise (:ref:base.events.EXCEPTION.INVALID_CONTROL_SELECTOR:). Reserved register bits read as zero, and a write
+with a nonzero (:term:base.terms.reserved:) bit raises (:ref:base.events.EXCEPTION.RESERVED_CONTROL_BITS:) without changing the register. The entry,
+stack, and user-return registers are per-logical-processor (:term:base.terms.architectural_state:).
+
+\input{isa/registers/documents/fragments/control_register_selectors.tex}
+
+\input{isa/registers/documents/fragments/control_write_rules.tex}
+
+\begin{manualformatdiagram}{PTCR Format}
+\manualformatrow{PTCR[63:0]}{%
+\manualformatreserved{(:term:base.terms.reserved:)}{8}
+\manualformatfield{root\_page}{44}
+\manualformatreserved{res.}{4}
+\manualformatfield{L}{1}
+\manualformatreserved{(:term:base.terms.reserved:)}{6}
+\manualformatfield{P}{1}
+}
+\end{manualformatdiagram}
+{\small
+In the diagram, \texttt{L} and \texttt{P} abbreviate
+\texttt{LA57} and \texttt{PE}.
+\par}
+
+\manualtablecaption{PTCR Fields}
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{3.65in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
+\midrule
+(:term:base.terms.reserved:) & \texttt{63..56} & (:term:base.terms.must_be_zero:) in this page-table format\\
+\texttt{root\_page} & \texttt{55..12} & (:term:base.terms.physical_frame_number:) of the page-table root; must fit implementation PABITS\\
+(:term:base.terms.reserved:) & \texttt{11..8} & (:term:base.terms.must_be_zero:)\\
+\texttt{LA57} & \texttt{7} & zero selects four levels; one selects five levels\\
+(:term:base.terms.reserved:) & \texttt{6..1} & (:term:base.terms.must_be_zero:)\\
+\texttt{PE} & \texttt{0} & (:term:base.terms.page_table_translation:) enable\\
+\bottomrule
+\end{manualtabular}
+
+\begin{manualformatdiagram}{UINFO Format}
+\manualformatrow{UINFO[63:0]}{%
+\manualformatreserved{(:term:base.terms.reserved:)}{32}
+\manualformatfield{EVENT\_CODE}{32}
+}
+\end{manualformatdiagram}
+
+\manualtablecaption{UINFO Fields}
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{3.65in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
+\midrule
+(:term:base.terms.reserved:) & \texttt{63..32} & (:term:base.terms.must_be_zero:)\\
+\texttt{EVENT\_CODE} & \texttt{31..0} & code for the outer user-origin event and its optional (:term:base.terms.payload:) shape\\
+\bottomrule
+\end{manualtabular}
+
+\begin{manualformatdiagram}{ASCR Format}
+\manualformatrow{ASCR[63:0]}{%
+\manualformatreserved{(:term:base.terms.reserved:)}{32}
+\manualformatfield{ASID}{16}
+\manualformatreserved{(:term:base.terms.reserved:)}{15}
+\manualformatfield{A}{1}
+}
+\end{manualformatdiagram}
+{\small\texttt{A} abbreviates \texttt{AE} in the diagram.\par}
+
+\manualtablecaption{ASCR Fields}
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{3.65in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
+\midrule
+(:term:base.terms.reserved:) & \texttt{63..32} & (:term:base.terms.must_be_zero:)\\
+\texttt{ASID} & \texttt{31..16} & current address-space identifier\\
+(:term:base.terms.reserved:) & \texttt{15..1} & (:term:base.terms.must_be_zero:)\\
+\texttt{AE} & \texttt{0} & address-space identifier matching enable\\
+\bottomrule
+\end{manualtabular}
+
+\begin{manualformatdiagram}{ECR Format}
+\manualformatrow{ECR[63:0]}{%
+\manualformatreserved{(:term:base.terms.reserved:)}{52}
+\manualformatfield{MAX}{4}
+\manualformatfield{P}{1}
+\manualformatreserved{(:term:base.terms.reserved:)}{6}
+\manualformatfield{V}{1}
+}
+\end{manualformatdiagram}
+
+\manualtablecaption{ECR Fields}
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{3.65in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
+\midrule
+(:term:base.terms.reserved:) & \texttt{63..12} & (:term:base.terms.must_be_zero:)\\
+\texttt{MAX\_EDEPTH} & \texttt{11..8} & maximum depth at which a maskable interrupt may be admitted\\
+\texttt{NMI\_P} & \texttt{7} & hardware-managed coalesced pending-NMI state while entry is invalid or NI is set; WRCR ignores the supplied bit\\
+(:term:base.terms.reserved:) & \texttt{6..1} & (:term:base.terms.must_be_zero:)\\
+\texttt{V} & \texttt{0} & architectural event-entry state is valid\\
+\bottomrule
+\end{manualtabular}
+
+\begin{manualformatdiagram}{UCTL Format}
+\manualformatrow{UCTL[63:0]}{%
+\manualformatreserved{(:term:base.terms.reserved:)}{31}
+\manualformatfield{V}{1}
+\manualformatfield{STATUS}{16}
+\manualformatfield{FLAGS}{16}
+}
+\end{manualformatdiagram}
+
+\manualtablecaption{UCTL Fields}
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{3.65in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
+\midrule
+(:term:base.terms.reserved:) & \texttt{63..33} & (:term:base.terms.must_be_zero:)\\
+\texttt{V} & \texttt{32} & complete user-return bank contains a valid return context\\
+\texttt{STATUS} & \texttt{31..16} & saved user STATUS image\\
+\texttt{FLAGS} & \texttt{15..0} & saved user FLAGS image\\
+\bottomrule
+\end{manualtabular}
+
+\begin{manualformatdiagram}{PMC Format}
+\manualformatrow{PMC[63:0]}{%
+\manualformatreserved{(:term:base.terms.reserved:)}{63}
+\manualformatfield{E}{1}
+}
+\end{manualformatdiagram}
+{\small\texttt{E} abbreviates \texttt{EN} in the diagram.\par}
+
+\manualtablecaption{PMC Fields}
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{3.65in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
+\midrule
+(:term:base.terms.reserved:) & \texttt{63..1} & (:term:base.terms.must_be_zero:)\\
+\texttt{EN} & \texttt{0} & enable performance-counter increments when set\\
+\bottomrule
+\end{manualtabular}
+
+EPC is the exact common event-entry address, must be 16-byte aligned, and must be canonical and executable under
+ECS. SSP, ISP, FSP, and DSP are 64-byte-aligned configured stack tops and are not modified by entry or return.
+ECS, EDS, SSS, ISS, FSS, and DSS contain validated segment images. Selectors 0x0100 through 0x0102 are (:term:base.terms.reserved:).
+A write that establishes UCTL.V validates the complete user bank and requires saved PM, EA, EDEPTH, and UO to be
+zero. ERET revalidates the selected return source before committing.
+BOOTPC and BOOTCFG are initialized by the platform during cold reset and (:term:base.terms.preserved:) by RESET.

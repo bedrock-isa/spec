@@ -1,0 +1,20 @@
+mnemonic: VEXTSW
+name: Vector Signed Extension to Word
+summary: Sign-extends B source elements to W destination elements.
+route: vector
+sail_entries:
+- execute_VEXTSW
+privileged: false
+operands:
+  govern:
+    role: governing_predicate
+    access: read
+    value_type: predicate
+  src:
+    role: source
+    access: read
+    value_type: vector
+  dst:
+    role: destination
+    access: read_write
+    value_type: vector

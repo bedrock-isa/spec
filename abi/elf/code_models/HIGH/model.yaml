@@ -1,0 +1,9 @@
+id: HIGH
+placement: A static high image keeps internal references within a signed 32-bit displacement window.
+strategy: Image-base or PC-relative access with full-width fallback.
+default_relocations:
+- base.relocations.R_BEDROCK_BRDISP32S
+- base.relocations.R_BEDROCK_CALL32S
+- base.relocations.R_BEDROCK_GOTPCREL32S
+- base.relocations.R_BEDROCK_ABS64
+- base.relocations.R_BEDROCK_DISP64

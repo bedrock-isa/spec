@@ -1,0 +1,15 @@
+id: TLSDESC
+selection: TLS symbol binding crosses dynamic object boundaries or supports interposition.
+base_register: isa:base.registers.SEGMENT.GS0
+protocol: base.linkage_protocols.TLSDESC_CALL
+relocations:
+- base.relocations.R_BEDROCK_TLSDESC_GOTPCREL32S
+- base.relocations.R_BEDROCK_TLSDESC_GOTPCREL64
+- base.relocations.R_BEDROCK_TLSDESC_CALL
+- base.relocations.R_BEDROCK_TLSDESC
+descriptor:
+  size_bytes: 16
+  alignment_bytes: 16
+  fields:
+  - {id: function, offset_bytes: 0, type: u64}
+  - {id: argument, offset_bytes: 8, type: u64}

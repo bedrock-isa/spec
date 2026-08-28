@@ -1,0 +1,4 @@
+encodings:
+  plain:
+    pattern: '111011110000000101'
+    syntax: INVTLB

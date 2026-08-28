@@ -1,0 +1,18 @@
+\subsection{Ordinary Load Values and Preserved Order}
+Each byte returned by a load comes from the initial value of that physical byte or from an actual store or successful
+atomic read-modify-write to that byte. A load does not obtain a value solely from a cyclic chain in which the load
+value is needed to produce the write that would supply it.
+
+Among writes already globally observable when a load takes its value, the load observes the latest write in the
+byte\textquotesingle{}s coherence order. A load may instead forward a byte from an earlier store by the same (:term:base.terms.logical_processor:) before
+that store is globally observable. A store later than the load in program order cannot supply the load.
+
+Program order is (:term:base.terms.preserved:) from an earlier read or write to a later write when their byte ranges overlap. Two loads
+of the same byte, with no intervening write by the same (:term:base.terms.logical_processor:) to that byte, do not observe the byte\textquotesingle{}s coherence order moving
+backward. These rules apply independently to every byte of an access, including each visible portion of an unaligned
+access.
+
+A load is ordered before a later (:term:base.terms.memory_access:) whose (:term:base.terms.effective_address:) depends on the loaded value. A load is also
+ordered before a later store when the stored value depends on the load or when execution of that store is
+control-dependent on the load. Control dependence alone does not order a later load; software uses an appropriate
+fence when that ordering is required.

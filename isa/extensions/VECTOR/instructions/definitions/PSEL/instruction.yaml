@@ -1,0 +1,20 @@
+mnemonic: PSEL
+name: Predicate Select
+summary: Replace bits of Pd selected by Pc with bits from Ps.
+route: vector
+sail_entries:
+- execute_PSEL
+privileged: false
+operands:
+  select:
+    role: governing_predicate
+    access: read
+    value_type: predicate
+  src:
+    role: source
+    access: read
+    value_type: predicate
+  dst:
+    role: destination
+    access: read_write
+    value_type: predicate

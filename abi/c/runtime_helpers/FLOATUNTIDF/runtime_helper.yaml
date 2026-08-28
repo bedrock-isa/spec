@@ -1,0 +1,5 @@
+id: FLOATUNTIDF
+symbol: __floatuntidf
+result: base.types.DOUBLE
+parameters:
+- base.types.UINT128

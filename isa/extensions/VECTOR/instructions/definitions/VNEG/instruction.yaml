@@ -1,0 +1,21 @@
+mnemonic: VNEG
+name: Vector Negate
+summary: Negates active integer elements or toggles the sign of active floating-point elements.
+route: vector
+sail_entries:
+- execute_VNEG_integer
+- execute_VNEG_floating
+privileged: false
+operands:
+  govern:
+    role: governing_predicate
+    access: read
+    value_type: predicate
+  src:
+    role: source
+    access: read
+    value_type: vector
+  dst:
+    role: destination
+    access: read_write
+    value_type: vector

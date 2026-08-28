@@ -1,0 +1,7 @@
+id: STATE
+register_group: isa:base.registers.STATE
+dwarf:
+- first: 18
+  registers: [FLAGS, STATUS]
+entry:
+  FLAGS: {role: cleared}

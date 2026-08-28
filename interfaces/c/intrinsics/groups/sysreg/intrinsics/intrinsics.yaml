@@ -1,0 +1,7 @@
+intrinsics:
+- read_code_segment
+- read_control_register
+- read_segment_register
+- write_control_register
+- write_segment_register
+- write_status

@@ -1,0 +1,11 @@
+id: R_BEDROCK_PCREL64
+value: 16
+family: pc_relative
+result:
+  kind: integer
+  width_bits: 64
+  signed: true
+calculation: symbol + addend - place
+field: isa:base.payload_types.DISP64
+relaxations:
+- base.relocations.R_BEDROCK_PCREL32S

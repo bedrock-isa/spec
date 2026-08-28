@@ -1,0 +1,58 @@
+encodings:
+  w_rn_r:
+    pattern: 1011000001rrrr
+    syntax: REVBYTE.W Rn(r)
+    fields:
+      r:
+        role: dst
+        type: base.field_types.Rn
+  l_rn_r:
+    pattern: 1011000010rrrr
+    syntax: REVBYTE.L Rn(r)
+    fields:
+      r:
+        role: dst
+        type: base.field_types.Rn
+  q_rn_r:
+    pattern: 1011000011rrrr
+    syntax: REVBYTE.Q Rn(r)
+    fields:
+      r:
+        role: dst
+        type: base.field_types.Rn
+  w_ea_e:
+    pattern: 11101001011eeeeeee
+    syntax: REVBYTE.W <ea>(e)
+    fields:
+      e:
+        role: dst
+        type: base.field_types.EA
+    constraints:
+    - role: dst
+      exclude:
+      - immediate
+      reason: invalid_destination
+  l_ea_e:
+    pattern: 11101001100eeeeeee
+    syntax: REVBYTE.L <ea>(e)
+    fields:
+      e:
+        role: dst
+        type: base.field_types.EA
+    constraints:
+    - role: dst
+      exclude:
+      - immediate
+      reason: invalid_destination
+  q_ea_e:
+    pattern: 11101001101eeeeeee
+    syntax: REVBYTE.Q <ea>(e)
+    fields:
+      e:
+        role: dst
+        type: base.field_types.EA
+    constraints:
+    - role: dst
+      exclude:
+      - immediate
+      reason: invalid_destination

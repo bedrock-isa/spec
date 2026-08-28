@@ -1,0 +1,50 @@
+encodings:
+  l_q_z_rn_s_rn_d:
+    pattern: 01011zssssdddd
+    syntax: ROR.{L|Q}(z) Rn(s), Rn(d)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_LQ
+      s:
+        role: count
+        type: base.field_types.Rn
+      d:
+        role: dst
+        type: base.field_types.Rn
+  b_w_l_q_z_rn_s_ea_e:
+    pattern: 1111001110zz110sssseeeeeee
+    syntax: ROR.{B|W|L|Q}(z) Rn(s), <ea>(e)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      s:
+        role: count
+        type: base.field_types.Rn
+      e:
+        role: dst
+        type: base.field_types.EA
+    constraints:
+    - role: dst
+      exclude:
+      - immediate
+      reason: invalid_destination
+  b_w_l_q_z_imm6_i_ea_e:
+    pattern: 1111010100zz1iiiiiieeeeeee
+    syntax: ROR.{B|W|L|Q}(z) imm6(i), <ea>(e)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      i:
+        role: count
+        type: base.field_types.IMM6
+      e:
+        role: dst
+        type: base.field_types.EA
+    constraints:
+    - role: dst
+      exclude:
+      - immediate
+      reason: invalid_destination

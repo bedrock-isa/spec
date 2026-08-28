@@ -1,0 +1,26 @@
+mnemonic: PLOOP
+name: Predicate Loop Chunk
+summary: Builds the next predicate chunk from a remaining count and lane offset.
+route: vector
+sail_entries:
+- execute_PLOOP
+privileged: false
+assembly:
+  width_suffix_aliases: true
+operands:
+  remaining:
+    role: counter
+    access: read_write
+    value_type: integer
+  offset:
+    role: counter
+    access: read_write
+    value_type: integer
+  predicate:
+    role: destination
+    access: read_write
+    value_type: predicate
+  target:
+    role: control_target
+    access: read
+    value_type: integer

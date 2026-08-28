@@ -1,0 +1,44 @@
+\label{section:vector-register-model}
+The scalable-vector extension provides 32 (:term:base.terms.vector_register|plural:), \texttt{V0}
+through \texttt{V31}, and 16 (:term:base.terms.predicate_register|plural:), \texttt{P0} through
+\texttt{P15}.  A (:term:base.terms.vector_register:) contains VLEN bits.  VLEN is an
+implementation-selected power of two from 128 through 2048 bits and remains
+stable until reset.  A (:term:base.terms.predicate_register:) contains one bit for each byte of a
+(:term:base.terms.vector_register:); its packed image therefore occupies VLEN/64 bytes.  Reset
+clears every vector and predicate bit.
+
+The \texttt{VECTOR} discovery predicate and the \texttt{VECTOR\_PARAMETERS}
+CPUID leaf report the extension and VLEN.  Integer and raw-bit vector forms
+require \texttt{VECTOR}.  A form whose selected element type is \texttt{H},
+\texttt{S}, or \texttt{D} additionally requires the base floating-point
+extension.  The requirement follows the decoded element type, including a
+shared integer/floating-point (:term:base.terms.opcode:); disabling FP does not disable the
+integer forms of that (:term:base.terms.opcode:).  Vector floating-point operations use the
+(:term:base.terms.ordinary:) \texttt{FSTATUS} environment and accrue active-lane causes into
+\texttt{FFLAGS}.
+
+\subsection{Element Types and Assembly Spelling}
+
+A size-bearing vector instruction has one suffix.  The integer element
+suffixes \texttt{B}, \texttt{W}, \texttt{L}, and \texttt{Q} select 1-, 2-,
+4-, and 8-byte elements.  The floating-point suffixes \texttt{H}, \texttt{S},
+and \texttt{D} select IEEE 754 binary16, binary32, and binary64 elements.
+Binary16 is part of the vector FP facility; its default quiet NaN is
+\texttt{0x7e00}.
+
+An (:term:base.terms.opcode:) family that supports both integer and floating-point arithmetic
+uses the three-bit \texttt{tzz} selector.  Values zero through three select
+\texttt{B/W/L/Q}, value four is invalid, and values five through seven select
+\texttt{H/S/D}.  A family whose numeric domain is fixed by its (:term:base.terms.opcode:) uses a
+two-bit \texttt{zz} selector: integer families assign all four values to
+\texttt{B/W/L/Q}, while FP families reserve zero and assign one through three
+to \texttt{H/S/D}.  A (:term:base.terms.reserved:) selector does not name another data format.
+
+The suffix is the source width for a width-changing instruction; the
+destination width and signedness are part of the mnemonic.  For example,
+\texttt{VEXTZQ.B} zero-extends a byte into a quadword.  An instruction whose
+suffix controls only lane width accepts \texttt{H/S/D} as assembly aliases for
+\texttt{W/L/Q}; canonical disassembly uses \texttt{B/W/L/Q}.  Predicate
+operations, (:ref:VECTOR.instructions.VLCNT:), (:ref:VECTOR.instructions.VLCADD:), (:ref:VECTOR.instructions.VGATHER1:),
+(:ref:VECTOR.instructions.VSCATTER1:), (:ref:VECTOR.instructions.PLOOP:), (:ref:VECTOR.instructions.VMOV:), (:ref:VECTOR.instructions.VMOVZ:),
+and the permute, slide, slice, and zip families use this width-only rule.

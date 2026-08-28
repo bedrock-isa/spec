@@ -1,0 +1,9 @@
+groups:
+- GPR
+- SPECIAL
+- STATE
+- FPR
+- SEGMENT
+- FP_STATE
+- VECTOR
+- PREDICATE

@@ -1,5 +1,0 @@
-forms:
-- id: short.halt
-  class: short
-  bits: '10111000000000'
-  syntax: HALT

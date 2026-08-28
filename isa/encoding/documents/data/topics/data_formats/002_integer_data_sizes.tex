@@ -1,0 +1,32 @@
+\subsection{Integer Data Sizes}
+Integer operands use size suffixes to select the low-order subfield of an (:term:base.terms.rn_register:) and the number of bytes
+transferred by memory operands.
+
+Byte, word, and long operations use the low-order subfield of the selected register. Q-sized operations use the full
+64-bit register.
+
+Every Rn destination write defines all 64 bits. A Q-sized write uses the complete result. For a B-, W-, or L-sized
+write, (:ref:base.instructions.ABS:), (:ref:base.instructions.DIVS:), (:ref:base.instructions.MODS:), (:ref:base.instructions.DIVMODS:), (:ref:base.instructions.MINS:), (:ref:base.instructions.MAXS:), (:ref:base.instructions.SAR:),
+and the explicit \texttt{EXTS} operations sign-extend the selected-width result to 64 bits. Every other integer
+operation, including (:ref:base.instructions.MOV:), neutral modular arithmetic, logical and bit operations, count and Boolean results,
+address results, atomic return values, and state-register reads, zero-extends the selected-width result to 64 bits.
+This result extension does not change FLAGS calculation, which continues to use the selected operation size.
+
+Memory destination writes transfer only the selected number of bytes. Extension-store instructions instead write
+the explicitly named W, L, or Q destination width. SP has only Q-sized writable forms. The result-extension rule
+applies to Rn destinations.
+
+\manualtablecaption{Integer Data Sizes}
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.45in}>{\raggedright\arraybackslash}p{0.55in}>{\raggedright\arraybackslash}p{0.45in}>{\raggedright\arraybackslash}p{0.50in}>{\raggedright\arraybackslash}p{1.55in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Code} & \textbf{Suffix} & \textbf{Bits} & \textbf{Bytes} & \textbf{Name}\\
+\midrule
+\texttt{B} & \texttt{.B} & 8 & 1 & Byte\\
+\texttt{W} & \texttt{.W} & 16 & 2 & Word\\
+\texttt{L} & \texttt{.L} & 32 & 4 & Long\\
+\texttt{Q} & \texttt{.Q} & 64 & 8 & Quad\\
+\bottomrule
+\end{manualtabular}
+
+\input{isa/encoding/documents/data/fragments/integer_register_subfield_diagram.tex}

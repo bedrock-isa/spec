@@ -1,0 +1,6 @@
+id: CHAR32_T
+spelling: "char32_t"
+call_kind: u32
+size_bits: 32
+alignment_bytes: 4
+representation: unsigned_integer

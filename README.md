@@ -12,6 +12,28 @@ Repeat the scalar `ADD.Q` body `R1` times: add the 64-bit value at `DS:(R2 + R3 
 
 For an overview of the architecture, read the [Architectural Introduction](docs/introduction.md).
 
+## LLVM and samples
+
+The default workspace layout places `spec` and `llvm-project` next to each
+other, with LLVM configured in `llvm-project/build`. Override
+`LLVM_PROJECT_ROOT`, `LLVM_BUILD_DIR`, or `LLVM_BIN` for another layout.
+
+```sh
+python3 -m pip install -r requirements.txt
+make llvm             # synchronize generated inputs and build Bedrock LLVM tools
+make samples-check    # build samples and validate their ELF outputs
+make tiny-kernel      # build samples/tiny_kernel/build/tiny_kernel.elf
+```
+
+The tiny-kernel emulator acceptance test uses the same Python interpreter for
+catalog generation:
+
+```sh
+PYTHON=/path/to/python \
+BEDROCK_LLVM_ROOT=../llvm-project/build \
+make -C samples/tiny_kernel test
+```
+
 ## Testing
 
 Run `make test-pr` for the canonical local PR gate. It validates the ISA

@@ -1,0 +1,14 @@
+\subsection*{Encodings}
+In an encoding diagram, fixed 0 and 1 (:term:base.terms.field|plural:) identify framing, opcode-selection, or (:term:base.terms.reserved:) values, and the notes
+below decode lettered (:term:base.terms.field|plural:). An <ea> (:term:base.terms.field:) is the compact effective-address (:term:base.terms.field:) and may select one or more
+independently determined EA (:term:base.terms.payload|plural:) in operand order.
+
+In each instruction entry, Encodings presents the encoding variants, operand and
+effective-address grammar, and size selectors.
+
+For an extended encoding, the four-bit L (:term:base.terms.field:) selects a 3+L-byte (:term:base.terms.encoded_instruction_length:). The required
+instruction length is the opcode-space length plus the selected operand (:term:base.terms.payload:) lengths. Every larger encoded
+instruction length through 18 bytes is valid, and the trailing bytes are uninterpreted (:term:base.terms.padding:). The
+\texttt{LEN n,} spelling records an explicit (:term:base.terms.encoded_instruction_length:).
+\endgroup
+\clearpage

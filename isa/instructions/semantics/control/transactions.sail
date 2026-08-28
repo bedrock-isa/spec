@@ -2,7 +2,7 @@ function start_control_transaction(instruction : Decoded_instruction, state : Cp
   -> option(Execution_result) = {
   let operation = instruction.form.operation;
   let far_jump = operation == Op_LCALL | operation == Op_LJMP;
-  let proposed_cs = if far_jump then match value_named(instruction, state, "new_cs") {
+  let proposed_cs = if far_jump then match value_named(instruction, state, Operand_new_cs) {
     Some(value) => value, None() => state.segments[0]
   } else state.segments[0];
   if operation == Op_RET | operation == Op_LRET then {
@@ -20,9 +20,9 @@ function start_control_transaction(instruction : Decoded_instruction, state : Cp
     let evaluated = evaluate_instruction_eas(
       instruction.operands, instruction.form.operation, state, state.pc, 8
     );
-    match evaluation_named("target", evaluated.evaluations) {
+    match evaluation_named(Operand_target, evaluated.evaluations) {
       Some(target_ea) =>
-        if target_ea.kind == "memory" then Some(waiting_transaction(
+        if target_ea.kind == EaKind_memory then Some(waiting_transaction(
           state, evaluated.image, instruction, CommitControl, empty_destination(), PhaseTargetRead, 0,
           0x0000000000000000, 0x0000000000000000,
           request_for_evaluation(MemoryRead, 0, target_ea, AccessLoad,

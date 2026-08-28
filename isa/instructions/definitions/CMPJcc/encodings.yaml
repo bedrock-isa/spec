@@ -1,0 +1,49 @@
+encodings:
+  b_w_l_q_z_rn_s_rn_d_imm8s:
+    pattern: 111101000000zzccccssssdddd
+    syntax: CMPJcc.{B|W|L|Q}(z) Rn(s), Rn(d), <imm8s>
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      c:
+        role: cc
+        type: base.field_types.CC
+      s:
+        role: src
+        type: base.field_types.Rn
+      d:
+        role: dst
+        type: base.field_types.Rn
+    payloads:
+    - role: target
+      type: base.payload_types.DISP8S
+    constraints:
+    - role: cc
+      allow:
+      - 0x2..0xf
+      reason: condition_true_false_reclaimed
+  b_w_l_q_z_rn_s_rn_d_imm16s:
+    pattern: 111101000001zzccccssssdddd
+    syntax: CMPJcc.{B|W|L|Q}(z) Rn(s), Rn(d), <imm16s>
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      c:
+        role: cc
+        type: base.field_types.CC
+      s:
+        role: src
+        type: base.field_types.Rn
+      d:
+        role: dst
+        type: base.field_types.Rn
+    payloads:
+    - role: target
+      type: base.payload_types.DISP16S
+    constraints:
+    - role: cc
+      allow:
+      - 0x2..0xf
+      reason: condition_true_false_reclaimed

@@ -1,0 +1,22 @@
+mnemonic: FBNDXI
+name: Floating-Point Bounds Check Exclusive-Inclusive
+summary: Checks floating-point value membership in the exclusive-inclusive interval (lo, hi].
+route: fpu
+sail_entries:
+- execute_FBNDXI
+privileged: false
+repeat:
+  type: rep
+operands:
+  lo:
+    role: source
+    access: read
+    value_type: floating
+  value:
+    role: source
+    access: read
+    value_type: floating
+  hi:
+    role: source
+    access: read
+    value_type: floating

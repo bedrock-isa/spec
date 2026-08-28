@@ -1,5 +1,5 @@
 # Local build products
-/build/
+/output/
 /samples/**/build/
 /a.out
 *.o

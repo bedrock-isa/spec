@@ -1,0 +1,8 @@
+id: NONCANONICAL_ADDRESS
+name: Noncanonical Address
+summary: Address formation produces a linear address outside the canonical address space.
+code: 0x23
+family: ADDRESS_TRANSLATION
+frame: page
+payload: [FAULT_EA, FAULT_LINEAR, ACCESS, USER_DOMAIN, ATOMIC, OPERAND, ACCESS_SIZE]
+

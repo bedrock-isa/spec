@@ -1,0 +1,18 @@
+id: fclass_f32
+owner: FP
+description: >-
+  FPU required; pure ten-class one-hot classification; does not update \texttt{FFLAGS}.
+summary: Classify a single-precision floating-point value.
+signature:
+  result: u16
+  parameters:
+  - {id: value, type: f32}
+lowering:
+  operation: isa:FP.instructions.FCLASS
+  kind: direct
+  operands:
+    size: S
+effects:
+  c-memory: none
+  pure: true
+  writes-fflags: false

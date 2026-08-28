@@ -1,0 +1,5 @@
+id: RELAXED
+instruction_order: relaxed
+load: [access]
+store: [access]
+thread_fence: []

@@ -1,0 +1,12 @@
+mnemonic: INVASID
+name: Invalidate TLB By ASID
+summary: Invalidate TLB entries for ASID.
+route: tlb_and_context
+sail_entries:
+- execute_INVASID
+privileged: true
+operands:
+  asid:
+    role: source
+    access: read
+    value_type: integer

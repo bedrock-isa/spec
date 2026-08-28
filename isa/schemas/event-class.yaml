@@ -1,0 +1,37 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: bedrock://schemas/event-class
+title: Bedrock architectural event class
+type: object
+additionalProperties: false
+required: [id]
+oneOf:
+- required: [name, value, selector]
+- required: [extends]
+properties:
+  id:
+    type: string
+    pattern: ^[A-Z][A-Z0-9_]*$
+  name:
+    type: string
+    minLength: 1
+  value:
+    type: integer
+    minimum: 0
+    maximum: 255
+  selector:
+    type: object
+    additionalProperties: false
+    required: [kind, bits]
+    properties:
+      kind:
+        enum: [fixed, platform, source]
+      bits:
+        const: 24
+  extends:
+    type: string
+    pattern: ^(?:base|[A-Z][A-Z0-9_]*)\.events\.[A-Z][A-Z0-9_]*$
+x-interpretation-rules:
+- A definition owns an 8-bit architectural event class value and its 24-bit selector policy.
+- An extension overlay contributes events to an existing class and owns no second class allocation.
+- An overlay ID must match the class named by extends.
+

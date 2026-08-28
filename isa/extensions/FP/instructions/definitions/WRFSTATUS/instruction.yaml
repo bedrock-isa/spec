@@ -1,0 +1,12 @@
+mnemonic: WRFSTATUS
+name: Write Floating-Point Status
+summary: Write the FPU status/control register from an Rn register.
+route: system_registers
+sail_entries:
+- execute_WRFSTATUS
+privileged: false
+operands:
+  src:
+    role: source
+    access: read
+    value_type: integer

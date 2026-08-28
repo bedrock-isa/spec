@@ -1,0 +1,43 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesFile{bedrock-reference/ea-flow.sty}[2026/08/26 Bedrock reference ea-flow commands]
+
+\newcommand{\BedrockIfEmpty}[3]{%
+  \if\relax\detokenize{#1}\relax
+    #2%
+  \else
+    #3%
+  \fi}
+\newcommand{\BedrockEAFlowStart}[2]{%
+  \begingroup
+  \Needspace{#1}%
+  \def\BedrockEAFlowCaption{#2}%
+  \begin{center}\vspace{2pt}%
+  \begin{tikzpicture}[x=1in,y=1in,every node/.style={font=\scriptsize},>=stealth]%
+}
+\newcommand{\BedrockEAFlowEnd}{%
+  \end{tikzpicture}%
+  \BedrockSchemaCaption{\BedrockEAFlowCaption}%
+  \end{center}%
+  \endgroup}
+\newcommand{\BedrockEAFlowRowLabel}[4]{%
+  \node[anchor=west] at (0.02,#2) {#1};
+  \draw (#3,#2) -- (#4,#2);}
+\newcommand{\BedrockEAFlowBox}[6]{%
+  \node[manualFlowNode,align=center,minimum width=#4in,minimum height=0.26in] (#1) at (#2,#3) {#5};
+  \ifnum#6>0
+    \node[anchor=south] at ({#2 - #4/2},{#3 + 0.16}) {63};
+    \node[anchor=south] at ({#2 + #4/2},{#3 + 0.16}) {0};
+  \fi}
+\newcommand{\BedrockEAFlowLabeledBox}[7]{%
+  \pgfmathsetmacro{\BedrockEAFlowLeft}{#4 - #5/2}%
+  \BedrockEAFlowRowLabel{#1}{#3}{1.55}{\BedrockEAFlowLeft}%
+  \BedrockEAFlowBox{#2}{#4}{#3}{#5}{#6}{#7}}
+\newcommand{\BedrockEAFlowCircle}[4]{%
+  \node[manualFlowOperation,circle,inner sep=0pt,minimum size=0.27in] (#1) at (#2,#3) {#4};}
+\newcommand{\BedrockEAFlowMemoryTail}[4]{%
+  \pgfmathsetmacro{\BedrockEAFlowLeft}{#3 - #4/2}%
+  \BedrockEAFlowRowLabel{MEMORY}{#2}{1.55}{\BedrockEAFlowLeft}%
+  \node[manualFlowMemory,align=center,minimum width=#4in,minimum height=0.26in] (mem) at (#3,#2) {OPERAND};%
+  \draw[manualFlowArrow] (#1.south) -- node[midway,right] {POINTS TO} (mem.north);}
+
+\endinput

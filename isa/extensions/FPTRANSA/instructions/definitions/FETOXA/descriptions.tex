@@ -1,0 +1,45 @@
+Computes the e ** x reference over all finite values and signed infinity after DAZ and writes an implementation-bounded S- or D-format approximation under the selected FPTRANSA accuracy contract.
+
+The required FPTRANSA\_ACCURACY contract is \texttt{0x0031}.
+
+\textbf{Special values}\par
+\begin{itemize}
+\item Positive infinity: the result is +infinity.
+\item Negative infinity: the result is positive zero.
+\item Zero source: the result is positive one.
+\end{itemize}
+
+\textbf{Exact anchors}\par
+\begin{itemize}
+\item e ** signed 0 = +1
+\item e ** +infinity = +infinity
+\item e ** -infinity = +0
+\end{itemize}
+
+\textbf{Required properties}\par
+\begin{itemize}
+\item strictly increasing for finite inputs
+\item result is nonnegative
+\end{itemize}
+
+The required FPTRANSA\_ACCURACY contract is \texttt{0x0031}.
+
+\textbf{Special values}\par
+\begin{itemize}
+\item Positive infinity: the result is +infinity.
+\item Negative infinity: the result is positive zero.
+\item Zero source: the result is positive one.
+\end{itemize}
+
+\textbf{Exact anchors}\par
+\begin{itemize}
+\item e ** signed 0 = +1
+\item e ** +infinity = +infinity
+\item e ** -infinity = +0
+\end{itemize}
+
+\textbf{Required properties}\par
+\begin{itemize}
+\item strictly increasing for finite inputs
+\item result is nonnegative
+\end{itemize}

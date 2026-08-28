@@ -1,0 +1,11 @@
+encodings:
+  q_rn_s_rn_d:
+    pattern: 1100011100ssssdddd
+    syntax: MULHSU.Q Rn(s), Rn(d)
+    fields:
+      s:
+        role: src
+        type: base.field_types.Rn
+      d:
+        role: dst
+        type: base.field_types.Rn

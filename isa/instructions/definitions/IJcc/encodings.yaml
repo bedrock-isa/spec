@@ -1,0 +1,45 @@
+encodings:
+  rn_i_rn_b_ea_e:
+    pattern: 111111000100110cccciiiibbbbeeeeeee
+    syntax: IJcc Rn(i), Rn(b), <ea>(e)
+    fields:
+      c:
+        role: cc
+        type: base.field_types.CC
+      i:
+        role: index
+        type: base.field_types.Rn
+      b:
+        role: bound
+        type: base.field_types.Rn
+      e:
+        role: target
+        type: base.field_types.EA
+    constraints:
+    - role: cc
+      allow:
+      - 0
+      - 0x2..0xf
+      reason: condition_false_reclaimed
+  rn_i_rn_b_rn_e:
+    pattern: 111111000000100000cccciiiibbbbeeee
+    syntax: IJcc Rn(i), Rn(b), Rn(e)
+    fields:
+      c:
+        role: cc
+        type: base.field_types.CC
+      i:
+        role: index
+        type: base.field_types.Rn
+      b:
+        role: bound
+        type: base.field_types.Rn
+      e:
+        role: target
+        type: base.field_types.Rn
+    constraints:
+    - role: cc
+      allow:
+      - 0
+      - 0x2..0xf
+      reason: condition_false_reclaimed

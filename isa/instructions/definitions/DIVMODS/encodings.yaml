@@ -1,0 +1,43 @@
+encodings:
+  b_w_l_q_z_ea_e_rn_q_rn_r:
+    pattern: 11111100010001zz000qqqqrrrreeeeeee
+    syntax: DIVMODS.{B|W|L|Q}(z) <ea>(e), Rn(q), Rn(r)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      q:
+        role: quotient
+        type: base.field_types.Rn
+      r:
+        role: remainder
+        type: base.field_types.Rn
+      e:
+        role: src
+        type: base.field_types.EA
+    overlaps:
+    - operands:
+      - quotient
+      - remainder
+      type: illegal_instruction
+  b_w_l_q_z_rn_e_rn_q_rn_r:
+    pattern: 11111100000000zz001000eeeeqqqqrrrr
+    syntax: DIVMODS.{B|W|L|Q}(z) Rn(e), Rn(q), Rn(r)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      e:
+        role: src
+        type: base.field_types.Rn
+      q:
+        role: quotient
+        type: base.field_types.Rn
+      r:
+        role: remainder
+        type: base.field_types.Rn
+    overlaps:
+    - operands:
+      - quotient
+      - remainder
+      type: illegal_instruction

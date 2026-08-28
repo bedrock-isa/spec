@@ -1,0 +1,7 @@
+encodings:
+  imm16:
+    pattern: '111011110000000100'
+    syntax: INVASID <imm16>
+    payloads:
+    - role: asid
+      type: base.payload_types.IMM16

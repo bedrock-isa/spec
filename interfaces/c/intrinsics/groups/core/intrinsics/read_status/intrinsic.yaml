@@ -1,0 +1,10 @@
+id: read_status
+owner: base
+description: >-
+  Unprivileged; reads \texttt{STATUS} and not C memory.
+signature:
+  result: u16
+  parameters: []
+lowering:
+  operation: isa:base.instructions.RDSTATUS
+  kind: direct

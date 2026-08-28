@@ -1,0 +1,8 @@
+id: memory_system_address
+display:
+  canonical: memory-system address
+  plural: memory-system addresses
+article: a
+definition: >-
+  the byte address presented to the memory subsystem after every active
+  architectural translation stage.

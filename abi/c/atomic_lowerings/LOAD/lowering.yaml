@@ -1,0 +1,4 @@
+id: LOAD
+c_operations: [atomic_load]
+strategy: aligned_access
+instructions: [isa:base.instructions.MOV]

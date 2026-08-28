@@ -1,0 +1,633 @@
+"""SystemVerilog projections for non-decoder architectural contracts."""
+
+from __future__ import annotations
+
+import re
+
+from engine.generation import (
+    ArtifactDefinition,
+    ArtifactGenerationContext,
+    ArtifactGenerator,
+    GeneratedArtifact,
+    GeneratedArtifactSet,
+)
+
+
+def _identifier(value: object) -> str:
+    text = re.sub(r"[^A-Za-z0-9]+", "_", str(value)).strip("_").upper()
+    if not text:
+        raise ValueError(f"cannot form a SystemVerilog identifier from {value!r}")
+    return f"N_{text}" if text[0].isdigit() else text
+
+
+def _mask(lsb: int, bits: int) -> int:
+    return ((1 << bits) - 1) << lsb
+
+
+def _generated(body: str) -> str:
+    return (
+        "// Generated from canonical Bedrock ISA definitions. Do not edit.\n"
+        + body.rstrip()
+        + "\n"
+    )
+
+
+class _Generator(ArtifactGenerator):
+    expected_id: str
+
+    def __init__(self, definition: ArtifactDefinition) -> None:
+        super().__init__(definition)
+        if definition.id != self.expected_id:
+            raise ValueError(
+                f"{definition.source}: expected artifact id {self.expected_id!r}"
+            )
+
+    def _outputs(self, contents: dict[str, str]) -> GeneratedArtifactSet:
+        declared = {path.name: path for path in self.definition.declared_outputs}
+        if set(declared) != set(contents):
+            raise ValueError(
+                f"{self.definition.source}: declared outputs {sorted(declared)} do not "
+                f"match rendered outputs {sorted(contents)}"
+            )
+        return GeneratedArtifactSet(
+            tuple(
+                GeneratedArtifact(declared[name], _generated(content))
+                for name, content in contents.items()
+            ),
+            self.artifact_id,
+        )
+
+
+class ConditionEvaluatorGenerator(_Generator):
+    expected_id = "systemverilog-condition-evaluator"
+
+    def generate(self, context: ArtifactGenerationContext) -> GeneratedArtifactSet:
+        context.require_provider("isa")
+        body = """module bedrock_condition_eval (
+  input  logic [3:0] condition_i,
+  input  logic [3:0] flags_i,
+  output logic       holds_o
+);
+  logic flag_z;
+  logic flag_n;
+  logic flag_c;
+  logic flag_v;
+
+  always_comb begin
+    flag_z = flags_i[3];
+    flag_n = flags_i[2];
+    flag_c = flags_i[1];
+    flag_v = flags_i[0];
+    unique case (condition_i)
+      4'h0: holds_o = 1'b1;
+      4'h1: holds_o = 1'b0;
+      4'h2: holds_o = flag_z;
+      4'h3: holds_o = !flag_z;
+      4'h4: holds_o = flag_c;
+      4'h5: holds_o = !flag_c;
+      4'h6: holds_o = flag_n;
+      4'h7: holds_o = !flag_n;
+      4'h8: holds_o = flag_v;
+      4'h9: holds_o = !flag_v;
+      4'ha: holds_o = flag_c || flag_z;
+      4'hb: holds_o = !flag_c && !flag_z;
+      4'hc: holds_o = flag_n != flag_v;
+      4'hd: holds_o = flag_n == flag_v;
+      4'he: holds_o = flag_z || (flag_n != flag_v);
+      4'hf: holds_o = !flag_z && (flag_n == flag_v);
+    endcase
+  end
+endmodule"""
+        return self._outputs({"bedrock_condition_eval.sv": body})
+
+
+def _resolve_cpuid_class(catalog, item):
+    current = item
+    seen = set()
+    while current.value is None:
+        if current.reference in seen or current.extends is None:
+            raise ValueError(f"unresolved CPUID class {item.reference}")
+        seen.add(current.reference)
+        current = catalog.references.classes.resolve(current.extends)
+    return current
+
+
+def _resolve_cpuid_leaf(catalog, item):
+    current = item
+    seen = set()
+    while current.value is None:
+        if current.reference in seen or current.extends is None:
+            raise ValueError(f"unresolved CPUID leaf {item.reference}")
+        seen.add(current.reference)
+        current = catalog.references.leaves.resolve(current.extends)
+    return current
+
+
+class CpuidGenerator(_Generator):
+    expected_id = "systemverilog-cpuid"
+
+    def generate(self, context: ArtifactGenerationContext) -> GeneratedArtifactSet:
+        project = context.require_provider("isa")
+        constants: list[str] = []
+        for owner, namespace in project.cpuid.namespaces.items():
+            for cpuid_class in namespace.classes.values():
+                root_class = _resolve_cpuid_class(project.cpuid, cpuid_class)
+                prefix = f"CPUID_{_identifier(owner)}_{_identifier(cpuid_class.id)}"
+                constants.append(
+                    f"  localparam logic [31:0] {prefix}_CLASS = 32'h{root_class.value:08x};"
+                )
+                for leaf in cpuid_class.leaves.values():
+                    root_leaf = _resolve_cpuid_leaf(project.cpuid, leaf)
+                    leaf_prefix = f"{prefix}_{_identifier(leaf.id)}"
+                    constants.append(
+                        f"  localparam logic [15:0] {leaf_prefix}_LEAF = 16'h{root_leaf.value:04x};"
+                    )
+                    for query in leaf.queries:
+                        query_prefix = f"{leaf_prefix}_{_identifier(query.id)}"
+                        constants.extend(
+                            (
+                                f"  localparam logic [15:0] {query_prefix}_FIRST = 16'h{query.indexes.first:04x};",
+                                f"  localparam logic [15:0] {query_prefix}_LAST = 16'h{query.indexes.last:04x};",
+                                f"  localparam logic [15:0] {query_prefix}_STRIDE = 16'd{query.indexes.stride};",
+                            )
+                        )
+                        for field in query.fields:
+                            field_prefix = f"{query_prefix}_{_identifier(field.id)}"
+                            constants.extend(
+                                (
+                                    f"  localparam logic [6:0] {field_prefix}_LSB = 7'd{field.lsb};",
+                                    f"  localparam logic [6:0] {field_prefix}_BITS = 7'd{field.bits};",
+                                    f"  localparam logic [63:0] {field_prefix}_MASK = 64'h{_mask(field.lsb, field.bits):016x};",
+                                )
+                            )
+
+        package = (
+            """package bedrock_cpuid_pkg;
+  typedef struct packed {
+    logic [31:0] class_id;
+    logic [15:0] leaf_id;
+    logic [15:0] index;
+  } bedrock_cpuid_selector_t;
+
+"""
+            + "\n".join(constants)
+            + "\nendpackage"
+        )
+
+        rom = """module bedrock_cpuid_rom #(
+  parameter integer ENTRY_COUNT = 1,
+  parameter logic [63:0] ENTRY_SELECTOR [ENTRY_COUNT] = '{default: 64'h0},
+  parameter logic [63:0] ENTRY_MASK [ENTRY_COUNT] = '{default: 64'hffffffffffffffff},
+  parameter logic [63:0] ENTRY_DATA [ENTRY_COUNT] = '{default: 64'h0}
+) (
+  input  logic [63:0] selector_i,
+  output logic        valid_o,
+  output logic [63:0] data_o
+);
+  integer entry;
+  always_comb begin
+    valid_o = 1'b0;
+    data_o = '0;
+    for (entry = 0; entry < ENTRY_COUNT; entry = entry + 1) begin
+      if (!valid_o &&
+          ((selector_i & ENTRY_MASK[entry]) ==
+           (ENTRY_SELECTOR[entry] & ENTRY_MASK[entry]))) begin
+        valid_o = 1'b1;
+        data_o = ENTRY_DATA[entry];
+      end
+    end
+  end
+endmodule"""
+        return self._outputs(
+            {"bedrock_cpuid_pkg.sv": package, "bedrock_cpuid_rom.sv": rom}
+        )
+
+
+_FRAME_VALUES = {
+    "basic": (0, 8),
+    "error": (1, 10),
+    "page": (2, 12),
+    "auxiliary": (3, 12),
+}
+
+
+class EventCodecGenerator(_Generator):
+    expected_id = "systemverilog-event-codec"
+
+    def generate(self, context: ArtifactGenerationContext) -> GeneratedArtifactSet:
+        project = context.require_provider("isa")
+        resolved = project.events.resolved_events()
+        payload_names = sorted(
+            {name for item in resolved for name in item.event.payload}
+        )
+        payload_bits = {name: bit for bit, name in enumerate(payload_names)}
+        constants: list[str] = []
+        cases: list[str] = []
+        class_frames: dict[int, str] = {}
+        for item in resolved:
+            owner = _identifier(item.owner)
+            name = _identifier(item.event.id)
+            frame_name = f"EVENT_FRAME_{_identifier(item.event.frame)}"
+            if item.code.selector.kind != "fixed":
+                class_frames.setdefault(item.code.class_value, frame_name)
+            if item.code.value is None:
+                continue
+            constant = f"EVENT_{owner}_{name}"
+            payload_mask = sum(1 << payload_bits[value] for value in item.event.payload)
+            constants.append(
+                f"  localparam logic [31:0] {constant} = 32'h{item.code.value:08x};"
+            )
+            cases.append(
+                f"      {constant}: begin frame_o = {frame_name}; payload_mask_o = "
+                f"{max(1, len(payload_names))}'h{payload_mask:x}; end"
+            )
+        for name, bit in payload_bits.items():
+            constants.append(
+                f"  localparam logic [{max(1, len(payload_names)) - 1}:0] "
+                f"EVENT_PAYLOAD_{_identifier(name)} = {max(1, len(payload_names))}'h{1 << bit:x};"
+            )
+        enum_items = ",\n".join(
+            f"    EVENT_FRAME_{_identifier(name)} = 2'd{value[0]}"
+            for name, value in _FRAME_VALUES.items()
+        )
+        package = f"""package bedrock_event_pkg;
+  localparam integer BEDROCK_EVENT_PAYLOAD_KINDS = {max(1, len(payload_names))};
+  typedef enum logic [1:0] {{
+{enum_items}
+  }} bedrock_event_frame_type_e;
+  typedef struct packed {{
+    logic [7:0] class_id;
+    logic [23:0] selector;
+  }} bedrock_event_code_t;
+
+{chr(10).join(constants)}
+endpackage"""
+
+        dynamic_cases = "\n".join(
+            f"      8'h{class_value:02x}: frame_o = {frame};"
+            for class_value, frame in sorted(class_frames.items())
+        )
+        codec = f"""module bedrock_event_codec
+  import bedrock_event_pkg::*;
+(
+  input  logic [31:0] code_i,
+  output logic        known_o,
+  output bedrock_event_frame_type_e frame_o,
+  output logic [BEDROCK_EVENT_PAYLOAD_KINDS-1:0] payload_mask_o
+);
+  always_comb begin
+    known_o = 1'b1;
+    frame_o = EVENT_FRAME_BASIC;
+    payload_mask_o = '0;
+    unique case (code_i)
+{chr(10).join(cases)}
+      default: begin
+        unique case (code_i[31:24])
+{dynamic_cases}
+          default: known_o = 1'b0;
+        endcase
+      end
+    endcase
+  end
+endmodule"""
+
+        frame = """module bedrock_event_frame
+  import bedrock_event_pkg::*;
+(
+  input  bedrock_event_frame_type_e frame_type_i,
+  input  logic saved_dfa_i,
+  input  logic [3:0] flags_i,
+  input  logic [15:0] status_i,
+  input  logic [31:0] event_code_i,
+  input  logic [63:0] saved_pc_i,
+  input  logic [63:0] saved_sp_i,
+  input  logic [63:0] saved_cs_i,
+  input  logic [63:0] saved_ds_i,
+  input  logic [63:0] saved_ss_i,
+  input  logic [63:0] error_code_i,
+  input  logic [63:0] fault_ea_i,
+  input  logic [63:0] fault_linear_i,
+  input  logic [63:0] event_aux_i,
+  output logic [7:0] frame_slots_o,
+  output logic [12*64-1:0] frame_o
+);
+  always_comb begin
+    frame_o = '0;
+    unique case (frame_type_i)
+      EVENT_FRAME_BASIC:     frame_slots_o = 8;
+      EVENT_FRAME_ERROR:     frame_slots_o = 10;
+      EVENT_FRAME_PAGE,
+      EVENT_FRAME_AUXILIARY: frame_slots_o = 12;
+    endcase
+    frame_o[0*64 +: 64] = {12'b0, status_i, flags_i, 19'b0,
+                            saved_dfa_i, 2'b0, frame_type_i, frame_slots_o};
+    frame_o[1*64 +: 64] = {32'b0, event_code_i};
+    frame_o[2*64 +: 64] = saved_pc_i;
+    frame_o[3*64 +: 64] = saved_sp_i;
+    frame_o[4*64 +: 64] = saved_cs_i;
+    frame_o[5*64 +: 64] = saved_ds_i;
+    frame_o[6*64 +: 64] = saved_ss_i;
+    frame_o[7*64 +: 64] = '0;
+    if (frame_type_i != EVENT_FRAME_BASIC)
+      frame_o[8*64 +: 64] = error_code_i;
+    if (frame_type_i == EVENT_FRAME_PAGE ||
+        frame_type_i == EVENT_FRAME_AUXILIARY) begin
+      frame_o[9*64 +: 64] = fault_ea_i;
+      frame_o[10*64 +: 64] = fault_linear_i;
+      frame_o[11*64 +: 64] = event_aux_i;
+    end
+  end
+endmodule"""
+        return self._outputs(
+            {
+                "bedrock_event_pkg.sv": package,
+                "bedrock_event_codec.sv": codec,
+                "bedrock_event_frame.sv": frame,
+            }
+        )
+
+
+def _register_width_kind(width: object) -> int:
+    if isinstance(width, int):
+        return 0
+    if str(width).strip() == "VLEN":
+        return 1
+    if str(width).replace(" ", "") == "VLEN/8":
+        return 2
+    return 3
+
+
+class RegisterContractsGenerator(_Generator):
+    expected_id = "systemverilog-register-contracts"
+
+    def generate(self, context: ArtifactGenerationContext) -> GeneratedArtifactSet:
+        project = context.require_provider("isa")
+        groups: list[tuple[str, object]] = []
+        registers: list[tuple[str, str, object]] = []
+        for owner, namespace in project.registers.namespaces.items():
+            for group in namespace.groups.values():
+                group_name = (
+                    f"REGISTER_GROUP_{_identifier(owner)}_{_identifier(group.id)}"
+                )
+                groups.append((group_name, group))
+                for register in group.registers.values():
+                    if register.encoding is not None:
+                        registers.append((group_name, owner, register))
+        group_width = max(1, (len(groups) - 1).bit_length())
+        group_enum = ",\n".join(
+            f"    {name} = {group_width}'d{index}"
+            for index, (name, _) in enumerate(groups)
+        )
+        constants: list[str] = []
+        cases: list[str] = []
+        for group_name, owner, register in registers:
+            prefix = f"REGISTER_{_identifier(owner)}_{_identifier(register.group)}_{_identifier(register.id)}"
+            constants.append(
+                f"  localparam logic [15:0] {prefix} = 16'h{register.encoding:04x};"
+            )
+            if register.layout is None:
+                writable_mask = (1 << 64) - 1
+            else:
+                writable_mask = sum(
+                    _mask(field.lsb, field.bits) for field in register.layout.fields
+                )
+                for field in register.layout.fields:
+                    field_prefix = f"{prefix}_{_identifier(field.id)}"
+                    constants.extend(
+                        (
+                            f"  localparam logic [6:0] {field_prefix}_LSB = 7'd{field.lsb};",
+                            f"  localparam logic [63:0] {field_prefix}_MASK = 64'h{_mask(field.lsb, field.bits):016x};",
+                        )
+                    )
+            reset_known = (
+                register.reset is not None and register.reset.value is not None
+            )
+            reset_value = register.reset.value if reset_known else 0
+            width_value = register.width if isinstance(register.width, int) else 0
+            cases.append(
+                f"      {{{group_name}, {prefix}}}: begin\n"
+                f"        valid_o = 1'b1; width_kind_o = 2'd{_register_width_kind(register.width)};\n"
+                f"        fixed_width_o = 16'd{width_value}; writable_mask_o = 64'h{writable_mask:016x};\n"
+                f"        reset_known_o = 1'b{int(reset_known)}; reset_value_o = 64'h{reset_value:016x};\n"
+                "      end"
+            )
+        package = f"""package bedrock_register_pkg;
+  typedef enum logic [{group_width - 1}:0] {{
+{group_enum}
+  }} bedrock_register_group_e;
+
+{chr(10).join(constants)}
+endpackage"""
+        contracts = f"""module bedrock_register_contracts
+  import bedrock_register_pkg::*;
+(
+  input  bedrock_register_group_e group_i,
+  input  logic [15:0] encoding_i,
+  input  logic [63:0] write_data_i,
+  output logic valid_o,
+  output logic [1:0] width_kind_o,
+  output logic [15:0] fixed_width_o,
+  output logic [63:0] writable_mask_o,
+  output logic reserved_zero_o,
+  output logic reset_known_o,
+  output logic [63:0] reset_value_o
+);
+  always_comb begin
+    valid_o = 1'b0;
+    width_kind_o = '0;
+    fixed_width_o = '0;
+    writable_mask_o = '0;
+    reset_known_o = 1'b0;
+    reset_value_o = '0;
+    unique case ({{group_i, encoding_i}})
+{chr(10).join(cases)}
+      default: begin end
+    endcase
+    reserved_zero_o = valid_o && ((write_data_i & ~writable_mask_o) == 64'b0);
+  end
+endmodule"""
+        return self._outputs(
+            {
+                "bedrock_register_pkg.sv": package,
+                "bedrock_register_contracts.sv": contracts,
+            }
+        )
+
+
+class VectorGeometryGenerator(_Generator):
+    expected_id = "systemverilog-vector-geometry"
+
+    def generate(self, context: ArtifactGenerationContext) -> GeneratedArtifactSet:
+        project = context.require_provider("isa")
+        vector_namespace = project.registers.namespaces.get("VECTOR")
+        if vector_namespace is None:
+            raise ValueError("VECTOR register namespace is required")
+        vector_count = len(vector_namespace.groups["VECTOR"].registers)
+        predicate_count = len(vector_namespace.groups["PREDICATE"].registers)
+        package = f"""package bedrock_vector_geometry_pkg;
+  localparam integer BEDROCK_VECTOR_REGISTER_COUNT = {vector_count};
+  localparam integer BEDROCK_PREDICATE_REGISTER_COUNT = {predicate_count};
+  typedef enum logic [2:0] {{
+    VECTOR_PERMUTE_ZIP_LO,
+    VECTOR_PERMUTE_ZIP_HI,
+    VECTOR_PERMUTE_UNZIP_LO,
+    VECTOR_PERMUTE_UNZIP_HI,
+    VECTOR_PERMUTE_TRANSPOSE_LO,
+    VECTOR_PERMUTE_TRANSPOSE_HI
+  }} bedrock_vector_permute_e;
+
+  function automatic integer bedrock_vector_lane_count(
+    input integer vlen_bits,
+    input integer element_bytes
+  );
+    bedrock_vector_lane_count = vlen_bits / (8 * element_bytes);
+  endfunction
+
+  function automatic integer bedrock_predicate_bit_index(
+    input integer lane,
+    input integer element_bytes
+  );
+    bedrock_predicate_bit_index = lane * element_bytes;
+  endfunction
+endpackage"""
+        permute = """module bedrock_vector_permute
+  import bedrock_vector_geometry_pkg::*;
+#(
+  parameter integer VLEN = 256
+) (
+  input  bedrock_vector_permute_e operation_i,
+  input  logic [3:0] element_bytes_i,
+  input  logic [VLEN-1:0] left_i,
+  input  logic [VLEN-1:0] right_i,
+  output logic valid_o,
+  output logic [VLEN-1:0] result_o
+);
+  localparam integer VLEN_BYTES = VLEN / 8;
+  integer output_byte;
+  integer output_lane;
+  integer lane_byte;
+  integer lane_count;
+  integer element_bytes;
+  integer source_lane;
+  integer source_byte;
+  logic source_right;
+
+  always_comb begin
+    result_o = '0;
+    element_bytes = {28'b0, element_bytes_i};
+    output_lane = 0;
+    lane_byte = 0;
+    source_lane = 0;
+    source_byte = 0;
+    source_right = 1'b0;
+    valid_o = (element_bytes == 1 || element_bytes == 2 ||
+               element_bytes == 4 || element_bytes == 8);
+    if (valid_o)
+      valid_o = ((VLEN_BYTES % element_bytes) == 0);
+    lane_count = valid_o ? VLEN_BYTES / element_bytes : 0;
+    for (output_byte = 0; output_byte < VLEN_BYTES; output_byte = output_byte + 1) begin
+      output_lane = valid_o ? output_byte / element_bytes : 0;
+      lane_byte = valid_o ? output_byte % element_bytes : 0;
+      source_lane = 0;
+      source_right = 1'b0;
+      if (valid_o) begin
+        unique case (operation_i)
+          VECTOR_PERMUTE_ZIP_LO: begin
+            source_right = output_lane[0];
+            source_lane = output_lane / 2;
+          end
+          VECTOR_PERMUTE_ZIP_HI: begin
+            source_right = output_lane[0];
+            source_lane = lane_count / 2 + output_lane / 2;
+          end
+          VECTOR_PERMUTE_UNZIP_LO: begin
+            source_right = (2 * output_lane) >= lane_count;
+            source_lane = (2 * output_lane) % lane_count;
+          end
+          VECTOR_PERMUTE_UNZIP_HI: begin
+            source_right = (2 * output_lane + 1) >= lane_count;
+            source_lane = (2 * output_lane + 1) % lane_count;
+          end
+          VECTOR_PERMUTE_TRANSPOSE_LO: begin
+            source_right = output_lane >= lane_count / 2;
+            source_lane = 2 * (output_lane % (lane_count / 2));
+          end
+          VECTOR_PERMUTE_TRANSPOSE_HI: begin
+            source_right = output_lane >= lane_count / 2;
+            source_lane = 2 * (output_lane % (lane_count / 2)) + 1;
+          end
+          default: valid_o = 1'b0;
+        endcase
+        source_byte = source_lane * element_bytes + lane_byte;
+        if (valid_o && source_byte < VLEN_BYTES)
+          result_o[output_byte*8 +: 8] = source_right
+            ? right_i[source_byte*8 +: 8]
+            : left_i[source_byte*8 +: 8];
+      end
+    end
+  end
+endmodule"""
+        return self._outputs(
+            {
+                "bedrock_vector_geometry_pkg.sv": package,
+                "bedrock_vector_permute.sv": permute,
+            }
+        )
+
+
+class AssertionsGenerator(_Generator):
+    expected_id = "systemverilog-assertions"
+
+    def generate(self, context: ArtifactGenerationContext) -> GeneratedArtifactSet:
+        context.require_provider("isa")
+        decode = """module bedrock_decode_assertions
+  import bedrock_decode_pkg::*;
+(
+  input logic clk_i,
+  input logic reset_i,
+  input d0_result_t d0_i,
+  input d1_opcode_result_t d1_i,
+  input ea_decode_result_t ea_i
+);
+  default clocking cb @(posedge clk_i); endclocking
+  default disable iff (reset_i);
+
+  assert property (d0_i.status == D0_SUCCESS |-> d0_i.form != FORM_INVALID);
+  assert property (d0_i.status == D0_SUCCESS |-> $onehot(d0_i.form_high_decode));
+  assert property (d0_i.status == D0_SUCCESS |-> $onehot(d0_i.form_low_decode));
+  assert property (d1_i.valid |-> d1_i.stage == D1_STAGE_SUCCESS);
+  assert property (ea_i.valid |-> ea_i.stage == D1_STAGE_SUCCESS);
+  assert property (d1_i.valid |-> d1_i.form == d0_i.form);
+  cover property (d1_i.valid && ea_i.valid);
+endmodule"""
+        architecture = """module bedrock_architecture_assertions
+  import bedrock_event_pkg::*;
+(
+  input logic clk_i,
+  input logic reset_i,
+  input logic register_valid_i,
+  input logic register_reserved_zero_i,
+  input logic register_write_i,
+  input logic event_known_i,
+  input bedrock_event_frame_type_e event_frame_i,
+  input logic [7:0] event_frame_slots_i
+);
+  default clocking cb @(posedge clk_i); endclocking
+  default disable iff (reset_i);
+
+  assert property (register_valid_i && register_write_i |-> register_reserved_zero_i);
+  assert property (event_known_i && event_frame_i == EVENT_FRAME_BASIC
+                   |-> event_frame_slots_i == 8);
+  assert property (event_known_i && event_frame_i == EVENT_FRAME_ERROR
+                   |-> event_frame_slots_i == 10);
+  assert property (event_known_i &&
+                   (event_frame_i == EVENT_FRAME_PAGE ||
+                    event_frame_i == EVENT_FRAME_AUXILIARY)
+                   |-> event_frame_slots_i == 12);
+endmodule"""
+        return self._outputs(
+            {
+                "bedrock_decode_assertions.sv": decode,
+                "bedrock_architecture_assertions.sv": architecture,
+            }
+        )

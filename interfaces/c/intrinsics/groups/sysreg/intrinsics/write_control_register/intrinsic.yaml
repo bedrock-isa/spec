@@ -1,0 +1,17 @@
+id: write_control_register
+owner: base
+description: >-
+  Supervisor; defined constant selector required; writes the register and clobbers memory.
+signature:
+  result: void
+  parameters:
+  - id: selector
+    type: base.types.sysreg.control_register
+    constant: true
+  - id: value
+    type: u64
+lowering:
+  operation: isa:base.instructions.WRCR
+  kind: direct
+wrapper:
+  kind: macro

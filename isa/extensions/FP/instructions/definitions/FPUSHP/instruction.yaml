@@ -1,0 +1,14 @@
+mnemonic: FPUSHP
+name: Floating-Point Push Register Pair
+summary: Pushes one canonical floating-point register pair selected by an inline pair index.
+route: fpu
+sail_entries:
+- execute_FPUSHP
+privileged: false
+repeat:
+  type: rep
+operands:
+  pair_id:
+    role: source
+    access: read
+    value_type: integer

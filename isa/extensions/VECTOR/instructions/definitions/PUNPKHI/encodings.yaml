@@ -1,0 +1,19 @@
+encodings:
+  b_w_l_z_pn_p_pn_q:
+    pattern: 11111010010111zz00ppppqqqq
+    syntax: PUNPKHI.{B|W|L}(z) Pn(p), Pn(q)
+    fields:
+      z:
+        role: size
+        type: VECTOR.field_types.SIZE_BWL
+      p:
+        role: src
+        type: VECTOR.field_types.Pn
+      q:
+        role: dst
+        type: VECTOR.field_types.Pn
+    constraints:
+    - role: size
+      allow:
+      - 0x0..0x2
+      reason: reserved_vector_element_type

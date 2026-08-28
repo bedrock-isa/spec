@@ -1,0 +1,5 @@
+id: FLOATTIDF
+symbol: __floattidf
+result: base.types.DOUBLE
+parameters:
+- base.types.INT128

@@ -1,0 +1,16 @@
+id: explicit_segment_index
+name: Explicit-segment indexed
+kind: memory
+syntax: "[SEG(s):Rn(b) + update(Rn(i)) * scale + displacement]"
+fields:
+  s: {role: segment, type: base.field_types.SREG}
+  b: {role: base, type: base.field_types.Rn}
+  i: {role: index, type: base.field_types.Rn}
+encodings:
+  - pattern: [1sss0000, bbbbiiii]
+    autoupdate: {target: index, type: postincrement, difference: element_count}
+  - pattern: [1sss0001, bbbbiiii]
+    autoupdate: {target: index, type: predecrement, difference: element_count}
+  - pattern: [1sss0010, bbbbiiii]
+segment: {source: field, role: segment}
+pseudocode: offset = base + index * scale + displacement

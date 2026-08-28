@@ -1,0 +1,15 @@
+id: read_segment_register
+owner: base
+description: >-
+  Unprivileged; selector is a compile-time \texttt{\_\_bedrock\_segment\_register\_t}.
+signature:
+  result: u64
+  parameters:
+  - id: selector
+    type: base.types.sysreg.segment_register
+    constant: true
+lowering:
+  operation: isa:base.instructions.RDSEG
+  kind: direct
+wrapper:
+  kind: macro

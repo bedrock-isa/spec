@@ -1,0 +1,41 @@
+encodings:
+  rn_b_ea_e:
+    pattern: 111100110000011bbbbeeeeeee
+    syntax: BTEST Rn(b), <ea>(e)
+    fields:
+      b:
+        role: bit_index
+        type: base.field_types.Rn
+      e:
+        role: dst
+        type: base.field_types.EA
+  imm6_i_ea_e:
+    pattern: 1111011100011iiiiiieeeeeee
+    syntax: BTEST imm6(i), <ea>(e)
+    fields:
+      i:
+        role: bit_index
+        type: base.field_types.IMM6
+      e:
+        role: dst
+        type: base.field_types.EA
+  rn_b_rn_e:
+    pattern: 1000000011bbbbeeee
+    syntax: BTEST Rn(b), Rn(e)
+    fields:
+      b:
+        role: bit_index
+        type: base.field_types.Rn
+      e:
+        role: dst
+        type: base.field_types.Rn
+  imm6_i_rn_e:
+    pattern: 1111011001101011eeeeiiiiii
+    syntax: BTEST imm6(i), Rn(e)
+    fields:
+      e:
+        role: dst
+        type: base.field_types.Rn
+      i:
+        role: bit_index
+        type: base.field_types.IMM6

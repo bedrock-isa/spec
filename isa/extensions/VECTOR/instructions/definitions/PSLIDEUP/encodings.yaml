@@ -1,0 +1,14 @@
+encodings:
+  b_w_l_q_z_imm6_i_pn_p:
+    pattern: 11111010011110zzppppiiiiii
+    syntax: PSLIDEUP.{B|W|L|Q}(z) imm6(i), Pn(p)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      p:
+        role: dst
+        type: VECTOR.field_types.Pn
+      i:
+        role: count
+        type: base.field_types.IMM6

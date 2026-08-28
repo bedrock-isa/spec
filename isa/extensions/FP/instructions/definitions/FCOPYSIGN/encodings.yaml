@@ -1,0 +1,17 @@
+encodings:
+  s_d_z_fn_s_fn_m_fn_d:
+    pattern: 1111100110z100ssssmmmmdddd
+    syntax: FCOPYSIGN.{S|D}(z) Fn(s), Fn(m), Fn(d)
+    fields:
+      z:
+        role: size
+        type: FP.field_types.SIZE_SD
+      s:
+        role: sign_src
+        type: FP.field_types.Fn
+      m:
+        role: magnitude_src
+        type: FP.field_types.Fn
+      d:
+        role: dst
+        type: FP.field_types.Fn

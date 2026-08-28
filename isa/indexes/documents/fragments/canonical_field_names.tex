@@ -1,0 +1,25 @@
+\Needspace{1.25in}
+\manualtablecaption{Canonical Field Names}
+\begin{manualdenselongtable}{@{}>{\raggedright\arraybackslash}p{1.15in}>{\raggedright\arraybackslash}p{2.90in}>{\raggedright\arraybackslash}p{1.30in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Owner} & \textbf{Canonical (:term:base.terms.field|plural:)} & \textbf{Normative definition}\\
+\midrule
+\endfirsthead
+\multicolumn{3}{@{}l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Owner} & \textbf{Canonical (:term:base.terms.field|plural:)} & \textbf{Normative definition}\\
+\midrule
+\endhead
+\texttt{FLAGS} & \texttt{Z}, \texttt{N}, \texttt{C}, \texttt{V} & \hyperref[section:state-register-formats]{definition} (p.~\pageref{section:state-register-formats})\\
+\texttt{STATUS} & \texttt{IE}, \texttt{PM}, \texttt{RF}, \texttt{TF}, \texttt{NI}, \texttt{EA} & \hyperref[section:state-register-formats]{definition} (p.~\pageref{section:state-register-formats})\\
+\texttt{PTCR} & \texttt{root\_page}, \texttt{LA57}, \texttt{PE} & \hyperref[section:control-registers]{definition} (p.~\pageref{section:control-registers})\\
+\texttt{ASCR} & \texttt{ASID}, \texttt{AE} & \hyperref[section:control-registers]{definition} (p.~\pageref{section:control-registers})\\
+\texttt{ECR} & \texttt{MAX\_EDEPTH}, \texttt{NMI\_P}, \texttt{V} & \hyperref[section:control-registers]{definition} (p.~\pageref{section:control-registers})\\
+\texttt{UCTL} & \texttt{V}, \texttt{STATUS}, \texttt{FLAGS} & \hyperref[section:control-registers]{definition} (p.~\pageref{section:control-registers})\\
+\texttt{PMC} & \texttt{EN} & \hyperref[section:control-registers]{definition} (p.~\pageref{section:control-registers})\\
+\texttt{PTE} & \texttt{P}, \texttt{T}, \texttt{AM}, \texttt{R}, \texttt{W}, \texttt{X}, \texttt{U}, \texttt{G}, \texttt{A}, \texttt{D}, \texttt{CP}, \texttt{SW}, \texttt{PFN} & \hyperref[section:page-table-entry-format]{definition} (p.~\pageref{section:page-table-entry-format})\\
+\texttt{instruction\_header} & \texttt{L} & \hyperref[section:instruction-header-formats]{definition} (p.~\pageref{section:instruction-header-formats})\\
+\bottomrule
+\end{manualdenselongtable}

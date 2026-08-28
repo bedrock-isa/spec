@@ -1,0 +1,12 @@
+id: write_fflags
+owner: FP
+description: >-
+  Unprivileged; reserved bits follow the ISA; writes accrued flags.
+signature:
+  result: void
+  parameters:
+  - id: value
+    type: u16
+lowering:
+  operation: isa:FP.instructions.WRFFLAGS
+  kind: direct

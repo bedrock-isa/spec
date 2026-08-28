@@ -1,0 +1,6 @@
+id: required_instruction_length
+display:
+  canonical: required instruction length
+article: the
+definition: >-
+  the opcode-space length plus the length of every payload. It excludes padding.

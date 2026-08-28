@@ -1,0 +1,11 @@
+encodings:
+  rn_s_imm16:
+    pattern: 11101101010001ssss
+    syntax: WRCR Rn(s), <imm16>
+    fields:
+      s:
+        role: src
+        type: base.field_types.Rn
+    payloads:
+    - role: cr
+      type: base.payload_types.CR

@@ -1,0 +1,35 @@
+\Needspace{1.25in}
+\manualtablecaption{FPTRANSA Accuracy Contracts}
+\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{0.72in}>{\raggedright\arraybackslash}p{0.78in}>{\raggedright\arraybackslash}p{1.20in}>{\raggedright\arraybackslash}p{2.05in}>{\raggedright\arraybackslash}p{0.90in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Contract ID} & \textbf{Mnemonic} & \textbf{Reference} & \textbf{Domain} & \textbf{ISA maximum}\\
+\midrule
+\endfirsthead
+\multicolumn{5}{@{}l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Contract ID} & \textbf{Mnemonic} & \textbf{Reference} & \textbf{Domain} & \textbf{ISA maximum}\\
+\midrule
+\endhead
+\texttt{0x0001} & (:ref:FPTRANSA.instructions.FSINA:) & sin(x) in radians & finite x with abs(x) $\leq$ pi / 4 after DAZ & S $\leq$ 4 ULP; D $\leq$ 4 ULP\\
+\texttt{0x0002} & (:ref:FPTRANSA.instructions.FCOSA:) & cos(x) in radians & finite x with abs(x) $\leq$ pi / 4 after DAZ & S $\leq$ 4 ULP; D $\leq$ 4 ULP\\
+\texttt{0x0003} & (:ref:FPTRANSA.instructions.FTANA:) & tan(x) in radians & finite x with abs(x) $\leq$ pi / 4 after DAZ & S $\leq$ 4 ULP; D $\leq$ 4 ULP\\
+\texttt{0x0004} & (:ref:FPTRANSA.instructions.FSINCOSA:) & paired sin(x) and cos(x) in radians & finite x with abs(x) $\leq$ pi / 4 after DAZ & S $\leq$ 4 ULP; D $\leq$ 4 ULP\\
+\texttt{0x0011} & (:ref:FPTRANSA.instructions.FASINA:) & asin(x) in radians & finite x with abs(x) $\leq$ 1 after DAZ & S $\leq$ 4 ULP; D $\leq$ 4 ULP\\
+\texttt{0x0012} & (:ref:FPTRANSA.instructions.FACOSA:) & acos(x) in radians & finite x with abs(x) $\leq$ 1 after DAZ & S $\leq$ 4 ULP; D $\leq$ 4 ULP\\
+\texttt{0x0013} & (:ref:FPTRANSA.instructions.FATANA:) & atan(x) in radians & all finite values and signed infinity after DAZ & S $\leq$ 4 ULP; D $\leq$ 4 ULP\\
+\texttt{0x0021} & (:ref:FPTRANSA.instructions.FSINHA:) & sinh(x) & all finite values and signed infinity after DAZ & S $\leq$ 4 ULP; D $\leq$ 4 ULP\\
+\texttt{0x0022} & (:ref:FPTRANSA.instructions.FCOSHA:) & cosh(x) & all finite values and signed infinity after DAZ & S $\leq$ 4 ULP; D $\leq$ 4 ULP\\
+\texttt{0x0023} & (:ref:FPTRANSA.instructions.FTANHA:) & tanh(x) & all finite values and signed infinity after DAZ & S $\leq$ 4 ULP; D $\leq$ 4 ULP\\
+\texttt{0x0024} & (:ref:FPTRANSA.instructions.FATANHA:) & atanh(x) & finite x with abs(x) $\leq$ 1 after DAZ & S $\leq$ 4 ULP; D $\leq$ 4 ULP\\
+\texttt{0x0031} & (:ref:FPTRANSA.instructions.FETOXA:) & $e^x$ & all finite values and signed infinity after DAZ & S $\leq$ 4 ULP; D $\leq$ 4 ULP\\
+\texttt{0x0032} & (:ref:FPTRANSA.instructions.FETOXM1A:) & $e^x-1$ without an intermediate rounded exponential & all finite values and signed infinity after DAZ & S $\leq$ 4 ULP; D $\leq$ 4 ULP\\
+\texttt{0x0033} & (:ref:FPTRANSA.instructions.FTWOTOXA:) & $2^x$ & all finite values and signed infinity after DAZ & S $\leq$ 4 ULP; D $\leq$ 4 ULP\\
+\texttt{0x0034} & (:ref:FPTRANSA.instructions.FTENTOXA:) & $10^x$ & all finite values and signed infinity after DAZ & S $\leq$ 4 ULP; D $\leq$ 4 ULP\\
+\texttt{0x0041} & (:ref:FPTRANSA.instructions.FLOGNA:) & ln(x) & positive finite values and positive infinity after DAZ; signed zero is the DZ boundary & S $\leq$ 4 ULP; D $\leq$ 4 ULP\\
+\texttt{0x0042} & (:ref:FPTRANSA.instructions.FLOGNP1A:) & ln(1 + x) without an intermediate rounded addition & finite x $\geq -1$ and positive infinity after DAZ; $-1$ is the DZ boundary & S $\leq$ 4 ULP; D $\leq$ 4 ULP\\
+\texttt{0x0043} & (:ref:FPTRANSA.instructions.FLOG2A:) & log2(x) & positive finite values and positive infinity after DAZ; signed zero is the DZ boundary & S $\leq$ 4 ULP; D $\leq$ 4 ULP\\
+\texttt{0x0044} & (:ref:FPTRANSA.instructions.FLOG10A:) & log10(x) & positive finite values and positive infinity after DAZ; signed zero is the DZ boundary & S $\leq$ 4 ULP; D $\leq$ 4 ULP\\
+\bottomrule
+\end{manuallongtable}

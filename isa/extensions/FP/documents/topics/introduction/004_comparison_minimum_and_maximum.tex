@@ -1,0 +1,22 @@
+\subsubsection{Comparison, Minimum, and Maximum}
+
+FCMP and FTEST write \texttt{Z,N,C,V} as follows.
+
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{1.35in}>{\centering\arraybackslash}p{0.55in}>{\centering\arraybackslash}p{0.55in}>{\centering\arraybackslash}p{0.55in}>{\centering\arraybackslash}p{0.55in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Relation} & \textbf{Z} & \textbf{N} & \textbf{C} & \textbf{V}\\
+\midrule
+greater & 0 & 0 & 0 & 0\\
+equal & 1 & 0 & 0 & 0\\
+less & 0 & 1 & 1 & 0\\
+unordered & 0 & 0 & 0 & 1\\
+\bottomrule
+\end{manualtabular}
+
+A quiet NaN produces unordered without NV. A signaling NaN produces unordered and NV. FTEST compares its operand
+with positive zero under these rules.
+
+For FMIN and FMAX, when exactly one operand is a NaN the numeric operand is the result. When both operands are NaNs,
+the common NaN-selection rule supplies the result. A signaling NaN generates NV even when the other operand is
+numeric. Between positive and negative zero, FMIN selects negative zero and FMAX selects positive zero.

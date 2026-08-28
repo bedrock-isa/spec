@@ -1,0 +1,4 @@
+encodings:
+  plain:
+    pattern: '0000011'
+    syntax: LRET

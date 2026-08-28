@@ -1,0 +1,6 @@
+id: preserved
+display:
+  canonical: preserved
+definition: >-
+  a requirement that software retain the previous value when rewriting the
+  containing object.

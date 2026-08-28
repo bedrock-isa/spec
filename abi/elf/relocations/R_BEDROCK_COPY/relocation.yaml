@@ -1,0 +1,6 @@
+id: R_BEDROCK_COPY
+value: 37
+family: dynamic
+result:
+  kind: bytes
+calculation: copy(symbol, symbol_size)

@@ -1,0 +1,27 @@
+encodings:
+  b_w_l_q_z_pn_p_imm32s:
+    pattern: 11111010011100zz000101pppp
+    syntax: BPALL.{B|W|L|Q}(z) Pn(p), <imm32s>
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      p:
+        role: predicate
+        type: VECTOR.field_types.Pn
+    payloads:
+    - role: target
+      type: base.payload_types.DISP32S
+  b_w_l_q_z_pn_p_ea_e:
+    pattern: 11111111000000110000zz000000100ppppeeeeeee
+    syntax: BPALL.{B|W|L|Q}(z) Pn(p), <ea>(e)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      p:
+        role: predicate
+        type: VECTOR.field_types.Pn
+      e:
+        role: target
+        type: base.field_types.EA

@@ -1,0 +1,8 @@
+encodings:
+  pairn_i:
+    pattern: 0010iii
+    syntax: PUSHP PAIRn(i)
+    fields:
+      i:
+        role: pair_id
+        type: base.field_types.PAIRn

@@ -1,5 +1,0 @@
-forms:
-- id: short.reset
-  class: short
-  bits: '10111000000001'
-  syntax: RESET

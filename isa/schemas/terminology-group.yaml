@@ -1,0 +1,17 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: bedrock://schemas/terminology-group
+title: Bedrock terminology group
+type: object
+additionalProperties: false
+required: [id, title]
+properties:
+  id:
+    type: string
+    pattern: ^[a-z][a-z0-9_]*$
+  title:
+    type: string
+    minLength: 1
+x-interpretation-rules:
+- A terminology group is a semantic collection independent of any output format.
+- The current ISA reference manual renders each group as one subsection.
+- Group and term order are declared by their colocated closed-world inventories.

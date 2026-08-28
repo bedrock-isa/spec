@@ -1,0 +1,3 @@
+// Generated from canonical Decode IR. Do not edit.
+package bedrock_decode_pkg;
+@@PACKAGE_DECLARATIONS@@endpackage

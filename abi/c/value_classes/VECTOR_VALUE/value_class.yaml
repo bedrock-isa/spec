@@ -1,0 +1,12 @@
+id: VECTOR_VALUE
+kinds:
+- vector
+argument:
+  mode: value
+  register_class: base.register_classes.VECTOR
+  units: 1
+  fallback: indirect
+result:
+  mode: value
+  register_class: base.register_classes.VECTOR
+  units: 1

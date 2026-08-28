@@ -1,0 +1,14 @@
+mnemonic: FPOPP
+name: Floating-Point Pop Register Pair
+summary: Pops one canonical floating-point register pair selected by an inline pair index.
+route: fpu
+sail_entries:
+- execute_FPOPP
+privileged: false
+repeat:
+  type: rep
+operands:
+  pair_id:
+    role: source
+    access: read
+    value_type: integer

@@ -1,0 +1,10 @@
+id: yield
+owner: base
+description: >-
+  Any privilege; scheduling hint, not a compiler or memory barrier.
+signature:
+  result: void
+  parameters: []
+lowering:
+  operation: isa:base.instructions.YIELD
+  kind: direct

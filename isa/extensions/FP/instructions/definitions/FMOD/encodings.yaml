@@ -1,0 +1,27 @@
+encodings:
+  s_d_z_ea_e_fn_d:
+    pattern: 1111100101z1010ddddeeeeeee
+    syntax: FMOD.{S|D}(z) <ea>(e), Fn(d)
+    fields:
+      z:
+        role: size
+        type: FP.field_types.SIZE_SD
+      d:
+        role: dst
+        type: FP.field_types.Fn
+      e:
+        role: src
+        type: FP.field_types.FEA
+  s_d_z_fn_s_fn_d:
+    pattern: 101110z010ssssdddd
+    syntax: FMOD.{S|D}(z) Fn(s), Fn(d)
+    fields:
+      z:
+        role: size
+        type: FP.field_types.SIZE_SD
+      s:
+        role: src
+        type: FP.field_types.Fn
+      d:
+        role: dst
+        type: FP.field_types.Fn

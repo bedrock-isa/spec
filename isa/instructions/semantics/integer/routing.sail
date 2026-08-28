@@ -42,18 +42,17 @@ function route_environment(instruction : Decoded_instruction, state : Cpu_state,
     else PhaseIntegerExternal;
   struct {
     state = state,
-    pending = { empty_pending(state, advance_pc(state, instruction),
+    pending = { empty_pending(Some(advance_pc(state, instruction)),
                               instruction.form.operation, commit_kind) with
       destination = commit_destination_for(instruction.operands, width),
       instruction = Some(instruction), phase = phase },
     request = { empty_primitive_request() with
-      kind = kind, role = instruction.form.family, width = width,
+      kind = kind, role = RequestRoleNone, width = width,
       access = NoTransactionAccess, commit_point = true, suppress_fault = suppress_fault,
       selector = if operation == Op_RESET then 0x000000000000003F
                  else 0x0000000000000000,
       expected = if operation == Op_RESET then state.controls[23]
-                 else 0x0000000000000000,
-      state_image = state },
+                 else 0x0000000000000000 },
     effects = [|typed_effect(effect_kind, instruction, state, address, 0x0000000000000000,
                             width, 0, suppress_fault)|],
     fault = None(),
@@ -68,7 +67,7 @@ function execute_count_jump(instruction : Decoded_instruction, state : Cpu_state
   let condition : int = match condition_field(instruction.fields) {
     Some(value) => value, None() => 0
   };
-  if instruction.form.operation == Op_DJcc then match operand_named(instruction, "counter") {
+  if instruction.form.operation == Op_DJcc then match operand_named(instruction, Operand_counter) {
     None() => faulted(state, Op_DJcc, IllegalInstruction, "missing DJcc counter"),
     Some(counter_operand) => {
       let index = unsigned(counter_operand.value[3 .. 0]);
@@ -77,14 +76,13 @@ function execute_count_jump(instruction : Decoded_instruction, state : Cpu_state
       staged.registers[index] = count;
       if count != 0x0000000000000000 & condition_holds(condition, state.flags) then
         match start_control_transaction(instruction, staged) {
-          Some(result) => { result with state = state,
-            pending = { result.pending with before = state } },
+          Some(result) => { result with state = state },
           None() => faulted(state, Op_DJcc, IllegalInstruction, "missing DJcc target"),
         }
       else completed(state, { staged with pc = next_pc(state, instruction) }, CommitControl, [||])
     },
   }
-  else match (operand_named(instruction, "index"), operand_named(instruction, "bound")) {
+  else match (operand_named(instruction, Operand_index), operand_named(instruction, Operand_bound)) {
     (Some(index_operand), Some(bound_operand)) => {
       let index = unsigned(index_operand.value[3 .. 0]);
       let bound = unsigned(bound_operand.value[3 .. 0]);
@@ -93,8 +91,7 @@ function execute_count_jump(instruction : Decoded_instruction, state : Cpu_state
       staged.registers[index] = index_value;
       if index_value != state.registers[bound] & condition_holds(condition, state.flags) then
         match start_control_transaction(instruction, staged) {
-          Some(result) => { result with state = state,
-            pending = { result.pending with before = state } },
+          Some(result) => { result with state = state },
           None() => faulted(state, Op_IJcc, IllegalInstruction, "missing IJcc target"),
         }
       else completed(state, { staged with pc = next_pc(state, instruction) }, CommitControl, [||])

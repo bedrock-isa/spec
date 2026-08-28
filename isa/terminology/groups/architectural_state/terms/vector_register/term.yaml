@@ -1,0 +1,7 @@
+id: vector_register
+display:
+  canonical: vector register
+  plural: vector registers
+article: a
+definition: >-
+  one of the 32 VLEN-bit registers V0 through V31.

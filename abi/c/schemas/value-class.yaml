@@ -1,0 +1,40 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: bedrock://schemas/c-value-class
+title: Bedrock C calling-convention value class
+type: object
+additionalProperties: false
+required: [id, kinds, argument, result]
+properties:
+  id: {type: string, pattern: '^[A-Z][A-Z0-9_]*$'}
+  kinds:
+    type: array
+    minItems: 1
+    uniqueItems: true
+    items: {type: string, pattern: '^[a-z][a-z0-9_]*$'}
+  argument: {$ref: '#/$defs/location-policy'}
+  result: {$ref: '#/$defs/location-policy'}
+$defs:
+  location-policy:
+    type: object
+    additionalProperties: false
+    required: [mode]
+    properties:
+      mode: {enum: [value, copy_address, size_dependent, sret]}
+      register_class:
+        type: string
+        pattern: '^(?:base|[A-Z][A-Z0-9_]*)(?:\.[A-Za-z][A-Za-z0-9_-]*)+$'
+      units: {type: integer, minimum: 1}
+      alignment_units: {type: integer, minimum: 1}
+      direct_maximum_bytes: {type: integer, minimum: 1}
+      fallback: {enum: [stack, indirect, sret]}
+    allOf:
+    - if:
+        properties: {mode: {enum: [value, copy_address, sret]}}
+      then:
+        required: [register_class, units]
+    - if:
+        properties: {mode: {const: size_dependent}}
+      then:
+        required: [register_class, units, direct_maximum_bytes, fallback]
+        properties:
+          fallback: {const: sret}

@@ -1,0 +1,16 @@
+id: nontemporal_store_u8
+owner: base
+description: >-
+  One writable byte; one hinted store, neither volatile nor a fence.
+signature:
+  result: void
+  parameters:
+  - id: destination
+    type: u8_pointer
+  - id: value
+    type: u8
+lowering:
+  operation: isa:base.instructions.MOVNT
+  kind: direct
+  operands:
+    size: B

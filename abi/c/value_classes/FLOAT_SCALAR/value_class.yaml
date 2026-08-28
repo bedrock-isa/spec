@@ -1,0 +1,13 @@
+id: FLOAT_SCALAR
+kinds:
+- f32
+- f64
+- long_double
+argument:
+  mode: value
+  register_class: base.register_classes.FLOATING
+  units: 1
+result:
+  mode: value
+  register_class: base.register_classes.FLOATING
+  units: 1

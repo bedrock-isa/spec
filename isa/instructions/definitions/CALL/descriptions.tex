@@ -1,0 +1,21 @@
+Pushes the following instruction\textquotesingle{}s (:term:base.terms.continuation:) PC as one 64-bit stack value and transfers control to the target. An EA memory operand reads a 64-bit target; an EA register operand supplies its 64-bit value directly. The stack update and control transfer use the (:term:base.terms.ordinary:) SS:SP and target-validation rules.
+
+\begin{enumerate}
+\item Evaluate the target operand in the old architectural context and validate the target under the current CS.
+\item Probe the 8-byte return-address store through the old SS:SP context.
+\item Commit the return-address store, decremented SP, and new PC as one successful control-transfer operation.
+\end{enumerate}
+
+For CALLcc, a false condition is evaluated before target-memory or stack access and suppresses both. Encoding,
+extension, privilege, and control-state validation still occur. A fault before the final commit changes neither the
+stack nor PC.
+
+\begin{enumerate}
+\item Evaluate the target operand in the old architectural context and validate the target under the current CS.
+\item Probe the 8-byte return-address store through the old SS:SP context.
+\item Commit the return-address store, decremented SP, and new PC as one successful control-transfer operation.
+\end{enumerate}
+
+For CALLcc, a false condition is evaluated before target-memory or stack access and suppresses both. Encoding,
+extension, privilege, and control-state validation still occur. A fault before the final commit changes neither the
+stack nor PC.

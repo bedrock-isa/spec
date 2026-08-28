@@ -1,0 +1,16 @@
+mnemonic: BPALL
+name: Branch on All Significant Predicate Positions
+summary: Branch if every significant position for the selected size is set.
+route: vector
+sail_entries:
+- execute_BPALL
+privileged: false
+operands:
+  predicate:
+    role: source
+    access: read
+    value_type: predicate
+  target:
+    role: control_target
+    access: read
+    value_type: integer

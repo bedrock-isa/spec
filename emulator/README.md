@@ -1,27 +1,22 @@
 # Bedrock Emulator
 
 This directory contains a Rust workspace for a Bedrock CPU emulator. It
-includes the CPU core, ISA decoder, memory bus, memory-mapped
+includes the Sail core bridge, memory bus, memory-mapped
 framebuffer/keyboard devices, concrete machine wiring, debugger support, CLI,
 GUI, LLVM toolchain integration, and executable samples.
 
 The emulator is a non-owning executable consumer of the surrounding ISA
-repository. Static instruction definitions come from
-`../isa/instructions/definitions`, and EA grammar comes from
-`../isa/addressing/effective_address/definition.yaml`;
-handwritten Sail under `../sail` owns executable architectural behavior. The
-Rust decode table is generated into Cargo's build output from the definitions
-and does not independently define the ISA. No generated Rust source is checked
-into a crate `src` directory.
+repository. Handwritten Sail under `../sail` owns executable architectural
+behavior. `../artifacts/emulator-core` generates the stable C ABI consumed by
+the Rust `bedrock-sail-core` bridge; the emulator has no independent Rust ISA
+decoder or execution core.
 
 ## Workspace Layout
 
-- `bedrock-isa`: instruction word, prefix, operand, and decode skeletons.
 - `bedrock-bus`: byte-addressed bus, RAM, devices, and address-map helpers.
-- `bedrock-core`: CPU state, memory translation, exception delivery, integer
-  execution, and the executable FPU subset used by the samples.
+- `bedrock-sail-core`: Rust bridge to the generated Sail emulator core.
 - `bedrock-devices`: framebuffer and keyboard MMIO devices.
-- `bedrock-machine`: concrete MVP board wiring.
+- `bedrock-machine`: concrete MVP board wiring and frontend architecture types.
 - `bedrock-debug`: breakpoint, watchpoint, trace, and snapshot types.
 - `bedrock-toolchain`: LLVM Bedrock toolchain process wrapper.
 - `bedrock-cli`: headless ELF runner and GDB remote server entrypoint.
@@ -30,17 +25,16 @@ into a crate `src` directory.
 
 ## Checks
 
-From the ISA repository root, check the generator and the complete emulator:
+From the ISA repository root, validate the complete emulator:
 
 ```sh
-make emulator-isa-check
 make emulator-validate
 ```
 
-Generation requires Python 3 and PyYAML. Cargo invokes the generator
-automatically for direct builds, checks, and tests; set `PYTHON` to override
-the default `python3` executable. From this directory, the equivalent direct
-Cargo checks are:
+Sail artifact generation requires Python 3 and PyYAML. The Sail bridge invokes
+the artifact generator when its declared inputs change; set `PYTHON` to
+override the default `python3` executable. From this directory, the equivalent
+direct Cargo checks are:
 
 ```sh
 cargo check --workspace

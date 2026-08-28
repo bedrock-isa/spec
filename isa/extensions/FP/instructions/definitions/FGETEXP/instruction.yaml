@@ -1,0 +1,18 @@
+mnemonic: FGETEXP
+name: Floating-Point Get Exponent
+summary: Performs the floating-point get exponent operation.
+route: fpu
+sail_entries:
+- execute_FGETEXP
+privileged: false
+repeat:
+  type: rep
+operands:
+  src:
+    role: source
+    access: read
+    value_type: floating
+  dst:
+    role: destination
+    access: write
+    value_type: floating

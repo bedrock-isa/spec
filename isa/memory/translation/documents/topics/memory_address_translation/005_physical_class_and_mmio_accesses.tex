@@ -1,0 +1,23 @@
+\subsection{Physical Class and MMIO Accesses}
+The platform assigns each (:term:base.terms.physical_address:) an authoritative Normal or Device
+class. A Normal leaf selecting Device physical memory raises
+(:ref:base.events.EXCEPTION.MEMORY_TYPE_FAULT:). A MMIO leaf may select either physical
+class and imposes MMIO rules; paging-disabled Device accesses also use those
+rules. Paging-disabled Normal addresses are Normal accesses.
+
+A permitted MMIO operation is one naturally aligned scalar load or store of
+1, 2, 4, or 8 bytes. All complete-range and translation checks finish before
+one architectural MMIO event is produced, and that event is not split. A
+permitted scalar that is misaligned raises
+(:ref:base.events.EXCEPTION.MMIO_ALIGNMENT_FAULT:). Atomic and read-modify-write, vector,
+gather/scatter, and repeat (:term:base.terms.memory_operation|plural:) raise
+(:ref:base.events.EXCEPTION.UNSUPPORTED_MMIO_OPERATION:) before alignment is considered and
+before any target effect. A prefetch to MMIO is a no-op. Instruction fetch is
+never permitted from MMIO.
+
+Within one memory operand, failures are selected in this order: segment range
+and wrap, canonicality, complete translation of all covered mappings in
+increasing address order, physical memory class, MMIO operation class, MMIO or
+atomic alignment, then the target access and bus fault. Thus a later mapping\textquotesingle{}s
+translation fault precedes an MMIO condition already visible in an earlier
+mapping.

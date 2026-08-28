@@ -1,0 +1,8 @@
+id: physical_address
+display:
+  canonical: physical address
+  plural: physical addresses
+article: a
+definition: >-
+  the byte address produced by page-table translation. With paging disabled,
+  the linear address is used directly after the implementation PABITS check.

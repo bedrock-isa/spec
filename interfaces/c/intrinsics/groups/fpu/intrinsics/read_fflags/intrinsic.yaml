@@ -1,0 +1,10 @@
+id: read_fflags
+owner: FP
+description: >-
+  Unprivileged; reads accrued floating-point exception flags.
+signature:
+  result: u16
+  parameters: []
+lowering:
+  operation: isa:FP.instructions.RDFFLAGS
+  kind: direct

@@ -1,0 +1,15 @@
+id: VECTOR
+arguments:
+- isa:VECTOR.registers.VECTOR.V0
+- isa:VECTOR.registers.VECTOR.V1
+- isa:VECTOR.registers.VECTOR.V2
+- isa:VECTOR.registers.VECTOR.V3
+- isa:VECTOR.registers.VECTOR.V4
+- isa:VECTOR.registers.VECTOR.V5
+- isa:VECTOR.registers.VECTOR.V6
+- isa:VECTOR.registers.VECTOR.V7
+results:
+- isa:VECTOR.registers.VECTOR.V0
+allocation: ascending
+tuple_alignment: 1
+exhaustion: indirect

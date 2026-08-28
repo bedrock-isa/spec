@@ -1,0 +1,14 @@
+id: switch_page_table_asid
+owner: base
+description: >-
+  Supervisor; valid image and low 16-bit ASID; changes address space and fully clobbers memory.
+signature:
+  result: void
+  parameters:
+  - id: ptcr
+    type: u64
+  - id: asid
+    type: u16
+lowering:
+  operation: isa:base.instructions.SWPTA
+  kind: direct

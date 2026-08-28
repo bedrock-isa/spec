@@ -1,8 +1,0 @@
-Let \(a\) be the source effective address before a memory read. The
-\hyperref[page:effective-addressing-modes]{effective-address form} selects the segment image, which supplies the
-\(\mathit{base}\), \(\mathit{span}\), and \(\mathit{limit}\) quantities defined in
-\hyperref[section:segment-registers]{Segment Registers}.
-A zero mantissa disables bounds and returns \(a\). In translated mode, \(a\) must satisfy
-\(0 \le a < \mathit{span}\) and the result is \(\mathit{base}+a\). In bounds-only mode, \(a\) must satisfy
-\(\mathit{base} \le a < \mathit{limit}\) and the result remains \(a\). An out-of-bounds address writes FLAGS as
-Z=N=C=0 and V=1, in which case the destination is not written. A successful address writes FLAGS as Z=N=C=V=0.

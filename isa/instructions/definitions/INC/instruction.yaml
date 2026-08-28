@@ -1,0 +1,15 @@
+mnemonic: INC
+name: Increment
+summary: Performs the increment operation.
+route: integer_unary
+sail_entries:
+- execute_INC
+privileged: false
+repeat:
+  type: repcc
+  observed_value: dst
+operands:
+  dst:
+    role: destination
+    access: read_write
+    value_type: integer

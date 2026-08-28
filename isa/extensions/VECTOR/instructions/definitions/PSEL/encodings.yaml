@@ -1,0 +1,14 @@
+encodings:
+  pn_p_pn_q_pn_h:
+    pattern: 1111110111111100000000ppppqqqqhhhh
+    syntax: PSEL Pn(p), Pn(q), Pn(h)
+    fields:
+      p:
+        role: select
+        type: VECTOR.field_types.Pn
+      q:
+        role: src
+        type: VECTOR.field_types.Pn
+      h:
+        role: dst
+        type: VECTOR.field_types.Pn

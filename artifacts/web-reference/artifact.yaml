@@ -1,0 +1,6 @@
+id: web-reference
+status: planned
+summary: Browsable ISA reference site generated from the project model and authored topics.
+outputs:
+- site/index.html
+- site/assets/reference.json

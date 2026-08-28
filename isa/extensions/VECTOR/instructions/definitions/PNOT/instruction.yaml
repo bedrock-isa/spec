@@ -1,0 +1,12 @@
+mnemonic: PNOT
+name: Predicate Bitwise NOT
+summary: Complements every bit of the complete Pd image.
+route: vector
+sail_entries:
+- execute_PNOT
+privileged: false
+operands:
+  dst:
+    role: destination
+    access: read_write
+    value_type: predicate

@@ -1,0 +1,7 @@
+id: memory_access
+display:
+  canonical: memory access
+  plural: memory accesses
+article: a
+definition: >-
+  an individual architectural instruction-fetch, read, or write attempt.

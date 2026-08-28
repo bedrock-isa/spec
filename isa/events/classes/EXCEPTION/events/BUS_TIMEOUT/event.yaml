@@ -1,0 +1,8 @@
+id: BUS_TIMEOUT
+name: Bus Timeout
+summary: The requested bus access does not complete within the architecturally admitted response interval.
+code: 0x72
+family: BUS_FAILURE
+frame: auxiliary
+payload: [FAULT_EA, FAULT_LINEAR, ACCESS, USER_DOMAIN, ATOMIC, WALK_LEVEL, OPERAND, ACCESS_SIZE, RETRY_SAFE, EVENT_AUX]
+

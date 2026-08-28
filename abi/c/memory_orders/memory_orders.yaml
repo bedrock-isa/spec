@@ -1,0 +1,7 @@
+memory_orders:
+- RELAXED
+- CONSUME
+- ACQUIRE
+- RELEASE
+- ACQ_REL
+- SEQ_CST

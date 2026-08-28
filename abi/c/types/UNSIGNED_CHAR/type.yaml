@@ -1,0 +1,6 @@
+id: UNSIGNED_CHAR
+spelling: "unsigned char"
+call_kind: u8
+size_bits: 8
+alignment_bytes: 1
+representation: unsigned_integer

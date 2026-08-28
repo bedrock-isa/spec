@@ -1,0 +1,8 @@
+encodings:
+  pn_p:
+    pattern: 1111101001110000000001pppp
+    syntax: PFALSE Pn(p)
+    fields:
+      p:
+        role: dst
+        type: VECTOR.field_types.Pn

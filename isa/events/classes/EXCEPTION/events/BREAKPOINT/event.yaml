@@ -1,0 +1,7 @@
+id: BREAKPOINT
+name: Breakpoint
+summary: A breakpoint instruction requests an architected debug trap after the instruction boundary.
+code: 0x01
+family: DEBUG
+frame: basic
+

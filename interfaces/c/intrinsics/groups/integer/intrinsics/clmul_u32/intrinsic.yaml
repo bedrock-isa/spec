@@ -1,0 +1,16 @@
+id: clmul_u32
+owner: base
+description: >-
+  Pure; low 32 bits of the carryless product.
+signature:
+  result: u32
+  parameters:
+  - id: left
+    type: u32
+  - id: right
+    type: u32
+lowering:
+  operation: isa:base.instructions.CLMUL
+  kind: direct
+  operands:
+    size: L

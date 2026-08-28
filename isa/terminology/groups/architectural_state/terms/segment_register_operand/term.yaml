@@ -1,0 +1,9 @@
+id: segment_register_operand
+display:
+  canonical: segment register operand
+  plural: segment register operands
+article: a
+definition: >-
+  a 64-bit segment register exposed through the SREG operand class. The SREG
+  selector table maps its eight encodings to DS, SS, and GS0 through GS5. RDSEG
+  CS and PUSH CS read the current CS image through their fixed CS encodings.

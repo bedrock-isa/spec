@@ -1,0 +1,9 @@
+id: opcode_space
+display:
+  canonical: opcode space
+  plural: opcode spaces
+article: the
+definition: >-
+  the contiguous leading region of an encoded instruction, from byte 0 through
+  the byte immediately before the first payload. It includes the header and may
+  contain operand or control fields in addition to the opcode.

@@ -1,0 +1,15 @@
+id: invalidate_asid
+owner: base
+description: >-
+  Supervisor; ASID is a constant in 0 through 65535 and the operation fully clobbers memory.
+signature:
+  result: void
+  parameters:
+  - id: asid
+    type: u16
+    constant: true
+lowering:
+  operation: isa:base.instructions.INVASID
+  kind: direct
+wrapper:
+  kind: macro

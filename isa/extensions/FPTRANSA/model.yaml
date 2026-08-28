@@ -1,0 +1,13 @@
+sail:
+  units:
+  - id: contract
+    requires:
+    - FP.contract
+    sources:
+    - semantics/operation_catalog.sail
+    - semantics/transcendental_contract.sail
+documents:
+  topics:
+  - id: introduction.fptransa-common-model
+    source: documents/topics/introduction/001_fptransa_common_model.tex
+    concept: fptransa

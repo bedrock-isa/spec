@@ -1,0 +1,7 @@
+id: instruction_address
+display:
+  canonical: instruction address
+  plural: instruction addresses
+article: an
+definition: >-
+  the numeric address of an instruction.

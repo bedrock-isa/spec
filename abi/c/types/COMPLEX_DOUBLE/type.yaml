@@ -1,0 +1,6 @@
+id: COMPLEX_DOUBLE
+spelling: "double _Complex"
+call_kind: complex_f64
+size_bits: 128
+alignment_bytes: 8
+representation: complex_binary64

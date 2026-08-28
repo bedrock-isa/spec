@@ -1,0 +1,4 @@
+id: FSS
+encoding: 0x0220
+role: event_stack
+summary: Fault and exception stack-segment image.

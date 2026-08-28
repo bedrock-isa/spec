@@ -1,0 +1,3 @@
+id: STATE
+width: 16
+summary: Base processor-state registers with dedicated access instructions.

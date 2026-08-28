@@ -1,0 +1,5 @@
+register_classes:
+- GENERAL
+- FLOATING
+- VECTOR
+- PREDICATE

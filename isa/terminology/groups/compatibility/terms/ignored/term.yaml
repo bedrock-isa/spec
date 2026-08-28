@@ -1,0 +1,6 @@
+id: ignored
+display:
+  canonical: ignored
+definition: >-
+  a rule under which hardware accepts the field without using it for the current
+  operation.

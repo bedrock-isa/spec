@@ -1,0 +1,19 @@
+field_types:
+  Fn:
+    type: register_selector
+    register_group: FP.registers.FPR
+    bits: 4
+  FEA:
+    type: effective_address
+    profile: fea
+    bits: 7
+  FPAIRn:
+    type: register_pair_selector
+    register_group: FP.registers.FPR
+    bits: 3
+  SIZE_SD:
+    type: size_selector
+    bits: 1
+    values:
+      - {value: 0, code: S}
+      - {value: 1, code: D}

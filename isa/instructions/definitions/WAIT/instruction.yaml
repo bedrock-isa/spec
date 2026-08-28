@@ -1,0 +1,8 @@
+mnemonic: WAIT
+name: Wait
+summary: Permits a finite implementation-selected delay, including zero.
+route: core_control
+sail_entries:
+- execute_WAIT
+privileged: false
+operands: {}

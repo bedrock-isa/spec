@@ -1,0 +1,21 @@
+\subsection{Common Floating-Point Semantics}
+
+The S and D formats are IEEE-754 binary32 and binary64. S uses sign bit 31, exponent bits 30..23, and fraction bits
+22..0. D uses sign bit 63, exponent bits 62..52, and fraction bits 51..0. An all-ones exponent and nonzero fraction
+is a NaN. The most significant fraction bit distinguishes a quiet NaN from a signaling NaN: zero is signaling and
+one is quiet. The architectural default quiet NaNs are \texttt{0x7fc00000} for S and
+\texttt{0x7ff8000000000000} for D. Figure~\ref{fig:floating-point-register-encodings} shows both encodings in their
+64-bit Fn register view.
+
+An S operation reads bits 31..0 of each Fn operand. Writing an S result to Fn writes the result to bits 31..0 and
+writes zero to bits 63..32. A D operation reads and writes all 64 bits. Operations use the selected format for their
+intermediate and final values. FMADD, FMSUB, FNMADD, and FNMSUB form the complete multiply-add expression with
+unbounded intermediate range and precision and round only the final result. Other arithmetic operations round once
+after computing their exact mathematical result.
+
+An encoded FEA source \texttt{immsf} is an exact IEEE 754 binary32 (:term:base.terms.payload:), and \texttt{immdf} is an exact
+binary64 (:term:base.terms.payload:). Either immediate may be used by either an S or D instruction. If the (:term:base.terms.payload:) format differs from
+the operation format selected by the suffix, the source is converted to the operation format using the current
+\texttt{FSTATUS.RM} before the operation. All conversion causes, including causes from NaN handling and narrowing,
+are combined with the operation\textquotesingle{}s causes. The combined cause set follows the same enabled-cause fault test, FFLAGS
+accrual, and all-or-nothing destination commit rules below. Floating-point immediate forms are source-only.

@@ -1,0 +1,7 @@
+id: general_purpose_register
+display:
+  canonical: general-purpose register
+  plural: general-purpose registers
+article: a
+definition: >-
+  one of the sixteen 64-bit registers R0 through R15.

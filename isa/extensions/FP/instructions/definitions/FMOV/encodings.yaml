@@ -1,0 +1,45 @@
+encodings:
+  s_d_z_fn_s_fn_d:
+    pattern: 101110z011ssssdddd
+    syntax: FMOV.{S|D}(z) Fn(s), Fn(d)
+    fields:
+      z:
+        role: size
+        type: FP.field_types.SIZE_SD
+      s:
+        role: src
+        type: FP.field_types.Fn
+      d:
+        role: dst
+        type: FP.field_types.Fn
+  s_d_z_ea_e_fn_d:
+    pattern: 1111100101z1011ddddeeeeeee
+    syntax: FMOV.{S|D}(z) <ea>(e), Fn(d)
+    fields:
+      z:
+        role: size
+        type: FP.field_types.SIZE_SD
+      d:
+        role: dst
+        type: FP.field_types.Fn
+      e:
+        role: src
+        type: FP.field_types.FEA
+  s_d_z_fn_s_ea_e:
+    pattern: 1111100100z1110sssseeeeeee
+    syntax: FMOV.{S|D}(z) Fn(s), <ea>(e)
+    fields:
+      z:
+        role: size
+        type: FP.field_types.SIZE_SD
+      s:
+        role: src
+        type: FP.field_types.Fn
+      e:
+        role: dst
+        type: FP.field_types.FEA
+    constraints:
+    - role: dst
+      exclude:
+      - immediate
+      reason: invalid_destination

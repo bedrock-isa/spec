@@ -1,0 +1,17 @@
+id: page_table_query
+owner: base
+description: >-
+  Supervisor; level is an integer constant expression in 1 through 5; wrapper atomically returns value and \texttt{FLAGS}; page walk without access to the queried C object.
+signature:
+  result: base.types.mmu.query_result
+  parameters:
+  - id: level
+    type: u32
+    constant: true
+  - id: address
+    type: u64
+lowering:
+  operation: isa:base.instructions.PTQUERY
+  kind: direct
+wrapper:
+  kind: aggregate-result-macro

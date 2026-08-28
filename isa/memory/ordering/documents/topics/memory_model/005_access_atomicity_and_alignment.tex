@@ -1,0 +1,20 @@
+\subsection{Access Atomicity and Alignment}
+Unaligned (:term:base.terms.ordinary:) normal-memory accesses are architecturally permitted. A completed unaligned load may observe bytes from
+multiple (:term:base.terms.memory_event|plural:) in coherence order, and a completed unaligned store may enter coherence as separately visible portions. Each
+visible store portion is coherent and multi-copy atomic.
+
+An unaligned store is nevertheless fault-atomic for synchronous faults. If any byte of the complete store range
+would raise a synchronous fault, no byte of the store becomes architecturally visible.
+
+Atomic read-modify-write instructions require natural byte alignment. A misaligned atomic operand raises
+(:ref:base.events.EXCEPTION.ATOMIC_ALIGNMENT_FAULT:) before any memory update or architectural result
+commits; it must not complete as a non-atomic update.
+
+For every scalar size, a naturally aligned normal-memory load or store is tear-free. Unaligned accesses retain the
+successful-access and synchronous-fault rules above.
+
+Natural alignment equals the operand width in bytes: B is one byte and may use any byte address; W, L, and Q are
+two, four, and eight bytes and require addresses divisible by two, four, and eight respectively.
+
+Stores to memory that is later executed as instructions are (:term:base.terms.ordinary:) data stores until an explicit synchronization
+sequence makes the modified bytes visible to instruction fetch.

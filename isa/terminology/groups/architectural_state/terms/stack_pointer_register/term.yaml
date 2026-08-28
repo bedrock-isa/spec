@@ -1,0 +1,7 @@
+id: stack_pointer_register
+display:
+  canonical: stack pointer register
+article: the
+definition: >-
+  SP. It lies outside the four-bit Rn namespace and uses SS as the fixed segment
+  for SP-relative addressing.

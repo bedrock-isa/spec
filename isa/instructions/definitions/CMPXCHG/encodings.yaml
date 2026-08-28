@@ -1,0 +1,29 @@
+encodings:
+  b_w_l_q_z_order_o_rn_x_rn_d_ea_e:
+    pattern: 11111100010100zzoooxxxxddddeeeeeee
+    syntax: CMPXCHG.{B|W|L|Q}(z)/order(o) Rn(x), Rn(d), <ea>(e)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      o:
+        role: order
+        type: base.field_types.MORDER
+      x:
+        role: expected
+        type: base.field_types.Rn
+      d:
+        role: desired
+        type: base.field_types.Rn
+      e:
+        role: memory
+        type: base.field_types.EA
+    constraints:
+    - role: order
+      allow:
+      - 0x0..0x4
+      reason: memory_order_reserved_reclaimed
+    - role: memory
+      exclude:
+      - immediate
+      reason: memory_operand_required

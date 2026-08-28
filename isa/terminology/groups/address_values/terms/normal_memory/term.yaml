@@ -1,0 +1,5 @@
+id: normal_memory
+display:
+  canonical: normal memory
+definition: >-
+  the coherent memory-location model.

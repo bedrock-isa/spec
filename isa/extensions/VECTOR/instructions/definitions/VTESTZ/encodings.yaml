@@ -1,0 +1,39 @@
+encodings:
+  b_w_l_q_z_pn_p_vn_v_vn_w_pn_q:
+    pattern: 111111011000zz00ppppqqqqvvvvvwwwww
+    syntax: VTESTZ.{B|W|L|Q}(z) Pn(p), Vn(v), Vn(w), Pn(q)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      p:
+        role: govern
+        type: VECTOR.field_types.Pn
+      q:
+        role: dst
+        type: VECTOR.field_types.Pn
+      v:
+        role: lhs
+        type: VECTOR.field_types.Vn
+      w:
+        role: rhs
+        type: VECTOR.field_types.Vn
+  b_w_l_q_z_pn_p_vn_v_ea_e_pn_q:
+    pattern: 11111111000000101000zzppppqqqqvvvvveeeeeee
+    syntax: VTESTZ.{B|W|L|Q}(z) Pn(p), Vn(v), <ea>(e), Pn(q)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      p:
+        role: govern
+        type: VECTOR.field_types.Pn
+      q:
+        role: dst
+        type: VECTOR.field_types.Pn
+      v:
+        role: lhs
+        type: VECTOR.field_types.Vn
+      e:
+        role: src
+        type: VECTOR.field_types.VEA

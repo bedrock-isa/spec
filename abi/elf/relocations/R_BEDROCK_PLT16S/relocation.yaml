@@ -1,0 +1,9 @@
+id: R_BEDROCK_PLT16S
+value: 31
+family: plt
+result:
+  kind: integer
+  width_bits: 16
+  signed: true
+calculation: plt(symbol) + addend - next_pc
+field: isa:base.payload_types.DISP16S

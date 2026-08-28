@@ -1,0 +1,13 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: bedrock://schemas/elf-process-entry
+title: Bedrock ELF language-independent process-entry contract
+type: object
+additionalProperties: false
+required: [readiness, payload_owner]
+properties:
+  readiness:
+    type: array
+    minItems: 1
+    uniqueItems: true
+    items: {enum: [relocations_complete, executable_bytes_published]}
+  payload_owner: {const: external-process-entry-abi}

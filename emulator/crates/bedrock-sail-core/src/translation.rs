@@ -1,0 +1,324 @@
+use bedrock_bus::{Bus, BusError, PhysicalMemoryClass};
+
+pub(crate) const FAULT_TRANSLATION: i32 = 9;
+pub(crate) const FAULT_ACCESS: i32 = 10;
+
+const IMPLEMENTATION_PABITS: u32 = 56;
+const PHYSICAL_MASK: u64 = (1u64 << IMPLEMENTATION_PABITS) - 1;
+const PTCR_DEFINED_MASK: u64 = (PHYSICAL_MASK & !0xfff) | (1 << 7) | 1;
+const PTE_PRESENT: u64 = 1 << 0;
+const PTE_TABLE: u64 = 1 << 1;
+const PTE_AM_MASK: u64 = 0b111 << 2;
+const PTE_TABLE_R: u64 = 1 << 2;
+const PTE_TABLE_W: u64 = 1 << 3;
+const PTE_TABLE_X: u64 = 1 << 4;
+const PTE_USER: u64 = 1 << 5;
+const PTE_ACCESSED: u64 = 1 << 7;
+const PTE_DIRTY: u64 = 1 << 8;
+const PTE_CP_MASK: u64 = 0b11 << 9;
+const PTE_PFN_MASK: u64 = PHYSICAL_MASK & !0xfff;
+const PTE_UPPER_RESERVED_MASK: u64 = 0b11_1111 << 58;
+const PTE_LEAF_RESERVED_MASK: u64 = PTE_UPPER_RESERVED_MASK | (1 << 11);
+const PTE_TABLE_RESERVED_MASK: u64 = PTE_UPPER_RESERVED_MASK | (0xf << 8) | (1 << 6);
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum TranslationAccess {
+    Read,
+    Write,
+    Execute,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct TranslationFault {
+    pub kind: i32,
+    pub cause: i64,
+    pub detail: String,
+}
+
+#[derive(Debug)]
+pub(crate) enum TranslationError {
+    Fault(TranslationFault),
+    Bus(BusError),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) struct TranslationResult {
+    pub address: u64,
+    pub access_class: i32,
+    pub physical_class: i32,
+    pub cache_policy: i64,
+}
+
+pub(crate) fn segment_linear(image: u64, effective: u64) -> Result<u64, TranslationFault> {
+    let mantissa = (image >> 1) & 0x3f;
+    if mantissa == 0 {
+        return Ok(effective);
+    }
+    let base = u128::from((image >> 12) << 12);
+    let span = (u128::from(mantissa) << ((image >> 7) & 0x1f)) * 4096;
+    let point = u128::from(effective);
+    let in_bounds = if image & 1 != 0 {
+        base <= point && point < base + span
+    } else {
+        point < span
+    };
+    if !in_bounds {
+        return Err(TranslationFault {
+            kind: FAULT_TRANSLATION,
+            cause: 4,
+            detail: format!("address 0x{effective:016x} is outside the segment"),
+        });
+    }
+    Ok(if image & 1 != 0 {
+        effective
+    } else {
+        base.wrapping_add(point) as u64
+    })
+}
+
+pub(crate) fn translate(
+    bus: &mut impl Bus,
+    linear: u64,
+    ptcr: u64,
+    access: TranslationAccess,
+    user_domain: bool,
+    supervisor: bool,
+) -> Result<TranslationResult, TranslationError> {
+    if ptcr & 1 == 0 {
+        if linear >> IMPLEMENTATION_PABITS != 0 {
+            return Err(access_fault(format!(
+                "physical address 0x{linear:016x} exceeds PABITS"
+            )));
+        }
+        return Ok(direct_result(bus, linear));
+    }
+    if !is_canonical(linear, if ptcr & (1 << 7) != 0 { 57 } else { 48 }) {
+        return Err(page_fault(
+            3,
+            format!("non-canonical address 0x{linear:016x}"),
+        ));
+    }
+    let root = ptcr & !0xfff;
+    if ptcr & !PTCR_DEFINED_MASK != 0 || root & !PHYSICAL_MASK != 0 {
+        return Err(page_fault(2, "invalid PTCR paging format"));
+    }
+
+    let shifts: &[u8] = if ptcr & (1 << 7) != 0 {
+        &[48, 39, 30, 21, 12]
+    } else {
+        &[39, 30, 21, 12]
+    };
+    let mut table = root;
+    let mut readable = true;
+    let mut writable = true;
+    let mut executable = true;
+    let mut user = true;
+
+    for (index, shift) in shifts.iter().copied().enumerate() {
+        let level = (shifts.len() - index) as u8;
+        let entry_address = table
+            .checked_add(((linear >> shift) & 0x1ff) * 8)
+            .filter(|address| address & !PHYSICAL_MASK == 0)
+            .ok_or_else(|| page_fault(2, "page-table entry address exceeds PABITS"))?;
+        let mut entry = bus.read_u64(entry_address).map_err(TranslationError::Bus)?;
+        if entry & PTE_PRESENT == 0 {
+            return Err(page_fault(0, format!("level-{level} PTE is not present")));
+        }
+        let leaf = entry & PTE_TABLE == 0;
+        let valid = if leaf {
+            valid_leaf_entry(entry, level)
+        } else {
+            level > 1 && valid_table_entry(entry)
+        };
+        if !valid {
+            return Err(page_fault(2, format!("invalid level-{level} PTE")));
+        }
+
+        let permissions = if leaf {
+            leaf_permissions(entry)
+        } else {
+            table_permissions(entry)
+        };
+        readable &= permissions.0;
+        writable &= permissions.1;
+        executable &= permissions.2;
+        user &= entry & PTE_USER != 0;
+        let requires_user = user_domain || !supervisor;
+        if (requires_user && !user) || (!requires_user && leaf && user) {
+            return Err(page_fault(1, "page privilege violation"));
+        }
+        if access == TranslationAccess::Write && !writable {
+            return Err(page_fault(1, "write to read-only page"));
+        }
+        if access == TranslationAccess::Execute && !executable {
+            return Err(page_fault(1, "execution from non-executable page"));
+        }
+        if access == TranslationAccess::Read && !readable {
+            return Err(page_fault(1, "read from non-readable page"));
+        }
+
+        let mut desired = entry | PTE_ACCESSED;
+        if leaf && access == TranslationAccess::Write {
+            desired |= PTE_DIRTY;
+        }
+        if desired != entry {
+            match bus
+                .compare_exchange_u64(entry_address, entry, desired)
+                .map_err(TranslationError::Bus)?
+            {
+                Ok(_) => entry = desired,
+                Err(_) => return translate(bus, linear, ptcr, access, user_domain, supervisor),
+            }
+        }
+
+        if leaf {
+            let address = (entry & PTE_PFN_MASK) | (linear & leaf_offset_mask(level));
+            return Ok(TranslationResult {
+                address,
+                access_class: i32::from(((entry & PTE_AM_MASK) >> 2) >= 5),
+                physical_class: physical_class(bus.physical_memory_class(address)),
+                cache_policy: ((entry & PTE_CP_MASK) >> 9) as i64,
+            });
+        }
+        table = entry & PTE_PFN_MASK;
+    }
+    Err(page_fault(2, "page walk did not reach a leaf PTE"))
+}
+
+fn direct_result(bus: &impl Bus, address: u64) -> TranslationResult {
+    let class = physical_class(bus.physical_memory_class(address));
+    TranslationResult {
+        address,
+        access_class: class,
+        physical_class: class,
+        cache_policy: 0,
+    }
+}
+
+fn physical_class(class: PhysicalMemoryClass) -> i32 {
+    match class {
+        PhysicalMemoryClass::Normal => 0,
+        PhysicalMemoryClass::Device => 1,
+    }
+}
+
+fn page_fault(cause: i64, detail: impl Into<String>) -> TranslationError {
+    TranslationError::Fault(TranslationFault {
+        kind: FAULT_TRANSLATION,
+        cause,
+        detail: detail.into(),
+    })
+}
+
+fn access_fault(detail: impl Into<String>) -> TranslationError {
+    TranslationError::Fault(TranslationFault {
+        kind: FAULT_ACCESS,
+        cause: 0,
+        detail: detail.into(),
+    })
+}
+
+const fn valid_table_entry(entry: u64) -> bool {
+    entry & (PTE_PRESENT | PTE_TABLE) == (PTE_PRESENT | PTE_TABLE)
+        && entry & PTE_TABLE_RESERVED_MASK == 0
+        && entry & (PTE_TABLE_R | PTE_TABLE_W | PTE_TABLE_X) != 0
+}
+
+const fn valid_leaf_entry(entry: u64, level: u8) -> bool {
+    entry & PTE_PRESENT != 0
+        && entry & PTE_TABLE == 0
+        && entry & PTE_LEAF_RESERVED_MASK == 0
+        && entry & (leaf_offset_mask(level) & PTE_PFN_MASK) == 0
+}
+
+const fn table_permissions(entry: u64) -> (bool, bool, bool) {
+    (
+        entry & PTE_TABLE_R != 0,
+        entry & PTE_TABLE_W != 0,
+        entry & PTE_TABLE_X != 0,
+    )
+}
+
+const fn leaf_permissions(entry: u64) -> (bool, bool, bool) {
+    match (entry & PTE_AM_MASK) >> 2 {
+        0 | 5 => (true, false, false),
+        1 | 6 => (false, true, false),
+        2 => (false, false, true),
+        3 | 7 => (true, true, false),
+        4 => (true, false, true),
+        _ => unreachable!(),
+    }
+}
+
+const fn leaf_offset_mask(level: u8) -> u64 {
+    (1u64 << (12 + 9 * (level - 1))) - 1
+}
+
+fn is_canonical(address: u64, bits: u8) -> bool {
+    let shift = 64 - bits;
+    (((address << shift) as i64) >> shift) as u64 == address
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use bedrock_bus::{Bus, Ram};
+
+    const TABLE: u64 = PTE_PRESENT | PTE_TABLE | PTE_TABLE_R | PTE_TABLE_W | PTE_TABLE_X;
+    const LEAF_RW: u64 = PTE_PRESENT | (0b011 << 2);
+
+    fn mapped_ram() -> Ram {
+        let mut ram = Ram::new(0x10_000);
+        ram.write_u64(0x1000, 0x2000 | TABLE).unwrap();
+        ram.write_u64(0x2000, 0x3000 | TABLE).unwrap();
+        ram.write_u64(0x3000, 0x4000 | TABLE).unwrap();
+        ram.write_u64(0x4040, 0x9000 | LEAF_RW).unwrap();
+        ram
+    }
+
+    #[test]
+    fn four_level_write_walk_sets_accessed_and_dirty() {
+        let mut ram = mapped_ram();
+
+        let result = translate(
+            &mut ram,
+            0x8000,
+            0x1001,
+            TranslationAccess::Write,
+            false,
+            true,
+        )
+        .unwrap();
+
+        assert_eq!(result.address, 0x9000);
+        assert_eq!(result.access_class, 0);
+        assert_eq!(
+            ram.read_u64(0x4040).unwrap() & (PTE_ACCESSED | PTE_DIRTY),
+            0x180
+        );
+    }
+
+    #[test]
+    fn noncanonical_address_reports_architectural_cause() {
+        let mut ram = mapped_ram();
+
+        let error = translate(
+            &mut ram,
+            0x0001_0000_0000_0000,
+            0x1001,
+            TranslationAccess::Read,
+            false,
+            true,
+        )
+        .unwrap_err();
+
+        assert!(matches!(
+            error,
+            TranslationError::Fault(TranslationFault {
+                kind: FAULT_TRANSLATION,
+                cause: 3,
+                ..
+            })
+        ));
+    }
+}

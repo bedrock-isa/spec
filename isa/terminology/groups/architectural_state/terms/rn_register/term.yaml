@@ -1,0 +1,9 @@
+id: rn_register
+display:
+  canonical: Rn register
+  plural: Rn registers
+article: an
+definition: >-
+  a general-purpose register selected through the four-bit Rn operand namespace.
+  It may hold integers, addresses, counters, selectors, or temporary data
+  according to the instruction encoding.

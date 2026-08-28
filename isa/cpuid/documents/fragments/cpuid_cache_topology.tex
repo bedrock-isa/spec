@@ -1,0 +1,62 @@
+\begin{manuallistedformatdiagram}{Cache-Maintenance Properties Result}
+\manualformatrowrange{index 1 result[63:0]}{63}{0}{%
+\manualformatreserved{(:term:base.terms.reserved:)}{48}
+\manualformatfield{GRANULE}{16}
+}
+\end{manuallistedformatdiagram}
+{\small\texttt{GRANULE} is \texttt{MAINTENANCE\_GRANULE\_BYTES}.\par}
+
+\Needspace{1.25in}
+\manualtablecaption{Cache-Maintenance Properties}
+\begingroup\footnotesize
+\setlength{\aboverulesep}{0pt}
+\setlength{\belowrulesep}{0pt}
+\setlength{\extrarowheight}{1.2pt}
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.45in}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{2.20in}>{\raggedright\arraybackslash}X@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Index} & \textbf{Bits} & \textbf{Field} & \textbf{Meaning}\\
+\midrule
+1 & \texttt{15..0} & \texttt{MAINTENANCE\_GRANULE\_BYTES} & one-block cache-maintenance granule in bytes\\
+1 & \texttt{63..16} & (:term:base.terms.reserved:) & zero\\
+\bottomrule
+\end{tabularx}
+\end{center}
+\endgroup
+
+
+\begin{manuallistedformatdiagram}{Cache-Topology Descriptor Format}
+\manualformatrowrange{descriptor[63:0]}{63}{0}{%
+\manualformatfield{SID}{32}
+\manualformatfield{LP-1}{16}
+\manualformatfield{SL}{4}
+\manualformatfield{LL2}{6}
+\manualformatfield{LV}{4}
+\manualformatfield{T}{2}
+}
+\end{manuallistedformatdiagram}
+{\small\texttt{SID}, \texttt{LP-1}, \texttt{SL}, \texttt{LL2}, \texttt{LV}, and \texttt{T} denote \texttt{SHARING\_ID}, \texttt{SHARING\_LP\_COUNT\_MINUS1}, \texttt{SHARING\_LEVEL}, \texttt{LINE\_LOG2}, \texttt{LEVEL}, and \texttt{TYPE}.\par}
+
+\Needspace{1.25in}
+\manualtablecaption{Cache-Topology Descriptor}
+\begingroup\footnotesize
+\setlength{\aboverulesep}{0pt}
+\setlength{\belowrulesep}{0pt}
+\setlength{\extrarowheight}{1.2pt}
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{2.10in}>{\raggedright\arraybackslash}X@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Bits} & \textbf{Field} & \textbf{Meaning}\\
+\midrule
+\texttt{1..0} & \texttt{TYPE} & 1 data; 2 instruction; 3 unified\\
+\texttt{5..2} & \texttt{LEVEL} & cache level, in the range 1 through 15\\
+\texttt{11..6} & \texttt{LINE\_LOG2} & cache-line bytes are 1 shifted left by this value\\
+\texttt{15..12} & \texttt{SHARING\_LEVEL} & nested cache-sharing scope; zero is one (:term:base.terms.logical_processor:)\\
+\texttt{31..16} & \texttt{SHARING\_LP\_COUNT\_MINUS1} & logical-processor count in the sharing scope, minus one\\
+\texttt{63..32} & \texttt{SHARING\_ID} & identifier of the processor set at the reported sharing level\\
+\bottomrule
+\end{tabularx}
+\end{center}
+\endgroup

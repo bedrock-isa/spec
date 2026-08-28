@@ -1,0 +1,21 @@
+encodings:
+  pn_p_imm32s:
+    pattern: 1111101001110000000011pppp
+    syntax: BPANY Pn(p), <imm32s>
+    fields:
+      p:
+        role: predicate
+        type: VECTOR.field_types.Pn
+    payloads:
+    - role: target
+      type: base.payload_types.DISP32S
+  pn_p_ea_e:
+    pattern: 1111111100000011000000000000010ppppeeeeeee
+    syntax: BPANY Pn(p), <ea>(e)
+    fields:
+      p:
+        role: predicate
+        type: VECTOR.field_types.Pn
+      e:
+        role: target
+        type: base.field_types.EA

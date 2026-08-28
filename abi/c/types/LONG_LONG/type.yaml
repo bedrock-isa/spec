@@ -1,0 +1,6 @@
+id: LONG_LONG
+spelling: "long long"
+call_kind: i64
+size_bits: 64
+alignment_bytes: 8
+representation: twos_complement

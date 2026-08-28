@@ -1,0 +1,8 @@
+id: predicate_register
+display:
+  canonical: predicate register
+  plural: predicate registers
+article: a
+definition: >-
+  one of P0 through P15 and contains one governing bit for each byte of a vector
+  register.

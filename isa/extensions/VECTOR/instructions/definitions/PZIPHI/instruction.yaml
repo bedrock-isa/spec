@@ -1,0 +1,22 @@
+mnemonic: PZIPHI
+name: Predicate Upper-Half Interleave
+summary: Interleave the upper halves of two predicate-lane sequences.
+route: vector
+sail_entries:
+- execute_PZIPHI
+privileged: false
+assembly:
+  width_suffix_aliases: true
+operands:
+  lhs:
+    role: source
+    access: read
+    value_type: predicate
+  rhs:
+    role: source
+    access: read
+    value_type: predicate
+  dst:
+    role: destination
+    access: read_write
+    value_type: predicate

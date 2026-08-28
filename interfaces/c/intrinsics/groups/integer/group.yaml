@@ -1,0 +1,5 @@
+id: integer
+title: Integer Intrinsics
+exposure: nonportable integer operations
+includes:
+- stdint.h

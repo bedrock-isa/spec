@@ -1,0 +1,8 @@
+id: reference-graph
+generator: generator.py
+summary: Standalone Obsidian-style visualization of workspace entities and their relationships.
+inputs:
+- isa
+outputs:
+  view: reference/graph.html
+  data: reference/graph.json

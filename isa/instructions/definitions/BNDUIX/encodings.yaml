@@ -1,0 +1,33 @@
+encodings:
+  b_w_l_q_z_rn_l_ea_e_rn_h:
+    pattern: 11111100010000zz101llllhhhheeeeeee
+    syntax: BNDUIX.{B|W|L|Q}(z) Rn(l), <ea>(e), Rn(h)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      l:
+        role: lo
+        type: base.field_types.Rn
+      h:
+        role: hi
+        type: base.field_types.Rn
+      e:
+        role: value
+        type: base.field_types.EA
+  b_w_l_q_z_rn_l_rn_v_rn_h:
+    pattern: 11111100000000zz000101llllvvvvhhhh
+    syntax: BNDUIX.{B|W|L|Q}(z) Rn(l), Rn(v), Rn(h)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      l:
+        role: lo
+        type: base.field_types.Rn
+      v:
+        role: value
+        type: base.field_types.Rn
+      h:
+        role: hi
+        type: base.field_types.Rn

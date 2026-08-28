@@ -1,0 +1,14 @@
+id: explicit_segment_base
+name: Explicit-segment base with autoupdate
+kind: memory
+syntax: "[SEG(s):update(Rn(b)) + displacement]"
+fields:
+  s: {role: segment, type: base.field_types.SREG}
+  b: {role: base, type: base.field_types.Rn}
+encodings:
+  - pattern: [1sss1000, bbbb0000]
+    autoupdate: {target: base, type: postincrement, difference: scale}
+  - pattern: [1sss1000, bbbb0001]
+    autoupdate: {target: base, type: predecrement, difference: scale}
+segment: {source: field, role: segment}
+pseudocode: offset = base + displacement

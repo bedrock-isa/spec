@@ -1,0 +1,7 @@
+id: opcode
+display:
+  canonical: opcode
+  plural: opcodes
+article: an
+definition: >-
+  the value that selects an instruction operation.

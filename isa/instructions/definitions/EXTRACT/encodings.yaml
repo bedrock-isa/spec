@@ -1,0 +1,17 @@
+encodings:
+  b_w_l_q_z_imm7_i_rn_h_rn_l:
+    pattern: 11111100000001zz000hhhhlllliiiiiii
+    syntax: EXTRACT.{B|W|L|Q}(z) imm7(i), Rn(h), Rn(l)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      h:
+        role: high
+        type: base.field_types.Rn
+      l:
+        role: low_dst
+        type: base.field_types.Rn
+      i:
+        role: offset
+        type: base.field_types.IMM7

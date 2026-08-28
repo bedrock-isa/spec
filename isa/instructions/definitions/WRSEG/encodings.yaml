@@ -1,0 +1,11 @@
+encodings:
+  rn_d_sreg_s:
+    pattern: 11101111110sssdddd
+    syntax: WRSEG Rn(d), SREG(s)
+    fields:
+      s:
+        role: seg
+        type: base.field_types.SREG
+      d:
+        role: src
+        type: base.field_types.Rn

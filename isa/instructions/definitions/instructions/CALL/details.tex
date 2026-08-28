@@ -1,9 +1,0 @@
-\begin{enumerate}
-\item Evaluate the target operand in the old architectural context and validate the target under the current CS.
-\item Probe the 8-byte return-address store through the old SS:SP context.
-\item Commit the return-address store, decremented SP, and new PC as one successful control-transfer operation.
-\end{enumerate}
-
-For CALLcc, a false condition is evaluated before target-memory or stack access and suppresses both. Encoding,
-extension, privilege, and control-state validation still occur. A fault before the final commit changes neither the
-stack nor PC.

@@ -1,0 +1,8 @@
+id: BUS_OTHER_ERROR
+name: Other Bus Error
+summary: The bus reports a precise synchronous failure outside the other architected bus-failure families.
+code: 0x74
+family: BUS_FAILURE
+frame: auxiliary
+payload: [FAULT_EA, FAULT_LINEAR, ACCESS, USER_DOMAIN, ATOMIC, WALK_LEVEL, OPERAND, ACCESS_SIZE, RETRY_SAFE, EVENT_AUX]
+

@@ -1,0 +1,19 @@
+mnemonic: SAR
+name: Shift Arithmetic Right
+summary: Performs the shift arithmetic right operation.
+route: integer_bitfield
+sail_entries:
+- execute_SAR
+privileged: false
+repeat:
+  type: repcc
+  observed_value: dst
+operands:
+  count:
+    role: source
+    access: read
+    value_type: integer
+  dst:
+    role: destination
+    access: read_write
+    value_type: integer

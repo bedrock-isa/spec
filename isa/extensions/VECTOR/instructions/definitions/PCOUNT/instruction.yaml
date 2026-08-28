@@ -1,0 +1,18 @@
+mnemonic: PCOUNT
+name: Predicate Population Count
+summary: Count set significant positions for the selected element size.
+route: vector
+sail_entries:
+- execute_PCOUNT
+privileged: false
+assembly:
+  width_suffix_aliases: true
+operands:
+  predicate:
+    role: source
+    access: read
+    value_type: predicate
+  dst:
+    role: destination
+    access: write
+    value_type: integer

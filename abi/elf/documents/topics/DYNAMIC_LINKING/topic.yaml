@@ -1,0 +1,9 @@
+id: DYNAMIC_LINKING
+title: Dynamic Linking
+document: elf-abi.tex
+label: page:dynamic-linking
+objects:
+- abi.elf:base.linkage_protocols.ORDINARY_PLT
+- abi.elf:base.relocations.R_BEDROCK_GOTPCREL64
+- abi.elf:base.relocations.R_BEDROCK_JUMP_SLOT
+- abi.elf:base.relocations.R_BEDROCK_IRELATIVE

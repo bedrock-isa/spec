@@ -1,0 +1,26 @@
+encodings:
+  b_w_l_q_z_order_o_rn_s_ea_e:
+    pattern: 11111100010010zz0011ooosssseeeeeee
+    syntax: FETCHSUB.{B|W|L|Q}(z)/order(o) Rn(s), <ea>(e)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      o:
+        role: order
+        type: base.field_types.MORDER
+      s:
+        role: src
+        type: base.field_types.Rn
+      e:
+        role: memory
+        type: base.field_types.EA
+    constraints:
+    - role: order
+      allow:
+      - 0x0..0x4
+      reason: memory_order_reserved_reclaimed
+    - role: memory
+      exclude:
+      - immediate
+      reason: memory_operand_required

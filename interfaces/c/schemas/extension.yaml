@@ -1,0 +1,23 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: bedrock://interfaces/c/schemas/extension
+type: object
+additionalProperties: false
+required: [id, requires, requires-isa]
+properties:
+  id:
+    type: string
+    pattern: ^[A-Z][A-Z0-9_]*$
+  requires:
+    type: array
+    items:
+      type: string
+      pattern: ^[A-Z][A-Z0-9_]*$
+    uniqueItems: true
+  requires-isa:
+    type: array
+    items:
+      type: string
+      pattern: ^[A-Z][A-Z0-9_]*$
+    uniqueItems: true
+  compiler-features:
+    type: object

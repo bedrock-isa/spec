@@ -1,0 +1,6 @@
+id: FPTRANSA
+name: Approximate Transcendental Floating-Point Extension
+requires:
+- FP
+required_cpuid_flags:
+- FPTRANSA.cpuid.EXTENSIONS.DIRECTORY.FEATURES.FPTRANSA

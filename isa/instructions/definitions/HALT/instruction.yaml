@@ -1,0 +1,8 @@
+mnemonic: HALT
+name: Halt
+summary: Halt the executing logical processor until an asynchronous architectural event is admitted.
+route: core_control
+sail_entries:
+- execute_HALT
+privileged: true
+operands: {}

@@ -1,0 +1,22 @@
+id: CACHE_TOPOLOGY
+name: Cache Topology
+value: 0x0001
+layouts:
+  LEAF_HEADER:
+    fields:
+    - {id: MAX_INDEX, lsb: 0, bits: 16}
+queries:
+- {id: HEADER, index: 0, layout: LEAF_HEADER}
+- id: MAINTENANCE_PROPERTIES
+  index: 1
+  fields:
+  - {id: MAINTENANCE_GRANULE_BYTES, lsb: 0, bits: 16}
+- id: DESCRIPTOR
+  index: {first: 2, last: 65535}
+  fields:
+  - {id: TYPE, lsb: 0, bits: 2}
+  - {id: LEVEL, lsb: 2, bits: 4}
+  - {id: LINE_LOG2, lsb: 6, bits: 6}
+  - {id: SHARING_LEVEL, lsb: 12, bits: 4}
+  - {id: SHARING_LP_COUNT_MINUS1, lsb: 16, bits: 16}
+  - {id: SHARING_ID, lsb: 32, bits: 32}

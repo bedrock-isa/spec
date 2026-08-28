@@ -1,0 +1,14 @@
+id: stack_pointer_index
+name: Stack-pointer indexed
+kind: memory
+syntax: "[SP + update(Rn(i)) * scale + displacement]"
+fields:
+  i: {role: index, type: base.field_types.Rn}
+encodings:
+  - pattern: ["10001010", 0000iiii]
+    autoupdate: {target: index, type: postincrement, difference: element_count}
+  - pattern: ["10001010", 0001iiii]
+    autoupdate: {target: index, type: predecrement, difference: element_count}
+  - pattern: ["10001010", 0010iiii]
+segment: {source: fixed, register: SS}
+pseudocode: offset = SP + index * scale + displacement

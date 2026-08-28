@@ -1,0 +1,4 @@
+id: FSP
+encoding: 0x0221
+role: event_stack
+summary: Fault and exception stack top.

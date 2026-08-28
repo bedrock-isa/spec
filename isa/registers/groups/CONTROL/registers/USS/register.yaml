@@ -1,0 +1,4 @@
+id: USS
+encoding: 0x010c
+role: user_return
+summary: User-return stack-segment image.

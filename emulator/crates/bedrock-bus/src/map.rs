@@ -253,7 +253,9 @@ mod tests {
         );
     }
 
-    struct RecordingDevice(Rc<RefCell<Vec<(bool, u64, AccessWidth, u64)>>>);
+    type RecordedAccess = (bool, u64, AccessWidth, u64);
+
+    struct RecordingDevice(Rc<RefCell<Vec<RecordedAccess>>>);
 
     impl Device for RecordingDevice {
         fn begin_transaction(&mut self) -> BusResult<()> {

@@ -1,0 +1,31 @@
+id: SAVE_AREA_LAYOUT
+name: Processor-State Save Area Layout
+value: 0x0004
+queries:
+- id: HEADER
+  index: 0
+  fields:
+  - {id: MAX_INDEX, lsb: 0, bits: 16}
+- id: SAVE_AREA_SIZE
+  index: 1
+  fields:
+  - {id: SAVE_AREA_SIZE_BYTES, lsb: 0, bits: 64}
+- id: LAYOUT
+  index: 2
+  fields:
+  - {id: FIXED_SIZE_BYTES, lsb: 0, bits: 16}
+  - {id: COMPONENT_COUNT, lsb: 16, bits: 16}
+  - {id: BITMAP_WORDS, lsb: 32, bits: 16}
+  - {id: FMT, lsb: 48, bits: 4}
+- id: COMPONENT_DESCRIPTOR_A
+  index: {first: 3, last: 65535, stride: 2}
+  fields:
+  - {id: COMPONENT_ID, lsb: 0, bits: 16}
+  - {id: BITMAP_BIT, lsb: 16, bits: 6}
+  - {id: OFFSET_BYTES, lsb: 32, bits: 32}
+- id: COMPONENT_DESCRIPTOR_B
+  index: {first: 4, last: 65534, stride: 2}
+  fields:
+  - {id: MAX_SIZE_BYTES, lsb: 0, bits: 32}
+  - {id: ALIGNMENT_BYTES, lsb: 32, bits: 16}
+  - {id: INIT_POLICY, lsb: 48, bits: 8}

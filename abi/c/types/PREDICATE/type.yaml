@@ -1,0 +1,6 @@
+id: PREDICATE
+spelling: "scalable predicate"
+call_kind: predicate
+size_bits: "VLEN"
+alignment_bytes: 16
+representation: packed_predicate

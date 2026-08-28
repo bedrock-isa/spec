@@ -1,0 +1,10 @@
+id: address_fence
+owner: base
+description: >-
+  Full compiler memory clobber and hardware address fence.
+signature:
+  result: void
+  parameters: []
+lowering:
+  operation: isa:base.instructions.AFENCE
+  kind: direct

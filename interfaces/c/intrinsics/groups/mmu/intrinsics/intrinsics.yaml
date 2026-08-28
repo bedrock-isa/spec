@@ -1,0 +1,8 @@
+intrinsics:
+- invalidate_asid
+- invalidate_page
+- invalidate_tlb
+- page_table_query
+- switch_page_table
+- switch_page_table_asid
+- virtual_to_physical

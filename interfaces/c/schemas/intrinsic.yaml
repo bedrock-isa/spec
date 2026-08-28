@@ -1,0 +1,50 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: bedrock://interfaces/c/schemas/intrinsic
+type: object
+additionalProperties: false
+required: [id, owner, signature, lowering]
+properties:
+  id:
+    type: string
+    pattern: ^[a-z][a-z0-9_]*$
+  owner:
+    type: string
+    pattern: ^(?:base|[A-Z][A-Z0-9_]*)$
+  summary:
+    type: string
+    minLength: 1
+  description:
+    type: string
+    minLength: 1
+  signature:
+    type: object
+    required: [result, parameters]
+    properties:
+      result: {type: string, minLength: 1}
+      parameters:
+        type: array
+        items:
+          type: object
+          required: [id, type]
+          properties:
+            id: {type: string, pattern: '^[a-z][a-z0-9_]*$'}
+            type: {type: string, minLength: 1}
+            constant: {type: boolean}
+          additionalProperties: false
+    additionalProperties: false
+  lowering:
+    type: object
+    required: [operation]
+    properties:
+      operation:
+        type: string
+        pattern: ^isa:(?:base|[A-Z][A-Z0-9_]*)\..+$
+      kind: {type: string, pattern: '^[a-z][a-z0-9_-]*$'}
+      operands: {type: object}
+    additionalProperties: false
+  effects:
+    type: object
+  binding:
+    type: object
+  wrapper:
+    type: object

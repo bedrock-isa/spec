@@ -1,0 +1,20 @@
+mnemonic: VEXTSL
+name: Vector Signed Extension to Long
+summary: Sign-extends B or W source elements to L destination elements.
+route: vector
+sail_entries:
+- execute_VEXTSL
+privileged: false
+operands:
+  govern:
+    role: governing_predicate
+    access: read
+    value_type: predicate
+  src:
+    role: source
+    access: read
+    value_type: vector
+  dst:
+    role: destination
+    access: read_write
+    value_type: vector

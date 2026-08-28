@@ -1,0 +1,15 @@
+\subsection{Event Payloads}
+Payload starts at offset +0x40. Hardware allocates only the defined (:term:base.terms.payload:) prefix, rounds it up to a 16-byte
+boundary, and zeros the (:term:base.terms.padding:). The frame-size unit remains one 8-byte slot.
+
+\input{isa/events/documents/fragments/frame_type_table.tex}
+
+The delivered leaf event determines the frame type. ERROR\_CODE is defined
+separately by each event that uses it and has zero in every unassigned bit. PAGE frames extend that slot with
+effective-address and linear-address context. AUXILIARY includes all four named slots and permits EVENT\_AUX to
+describe delivery-failure, machine-check, or bus-failure state.
+
+A misaligned atomic memory operand raises (:ref:base.events.EXCEPTION.ATOMIC_ALIGNMENT_FAULT:) and uses the PAGE frame.
+FAULT\_EA identifies the misaligned effective-address operand and FAULT\_LINEAR contains
+its segment-pretranslated starting address. The fault is reported before the atomic instruction performs a memory
+read, memory write, or architectural result update.

@@ -1,0 +1,22 @@
+encodings:
+  s_d_z_fn_s_fn_d_fn_c:
+    pattern: 1111100111z001ssssddddcccc
+    syntax: FSINCOSA.{S|D}(z) Fn(s), Fn(d), Fn(c)
+    fields:
+      z:
+        role: size
+        type: FP.field_types.SIZE_SD
+      s:
+        role: src
+        type: FP.field_types.Fn
+      d:
+        role: sin_dst
+        type: FP.field_types.Fn
+      c:
+        role: cos_dst
+        type: FP.field_types.Fn
+    overlaps:
+    - operands:
+      - sin_dst
+      - cos_dst
+      type: illegal_instruction

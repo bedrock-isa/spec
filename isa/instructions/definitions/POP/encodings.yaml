@@ -1,0 +1,15 @@
+encodings:
+  rn_r:
+    pattern: 100rrrr
+    syntax: POP Rn(r)
+    fields:
+      r:
+        role: reg
+        type: base.field_types.Rn
+  sreg_s:
+    pattern: 10111000010sss
+    syntax: POP SREG(s)
+    fields:
+      s:
+        role: reg
+        type: base.field_types.SREG

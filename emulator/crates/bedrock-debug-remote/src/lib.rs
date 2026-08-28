@@ -1,8 +1,8 @@
 use bedrock_bus::Bus;
-use bedrock_core::{
+use bedrock_debug::Debugger;
+use bedrock_machine::{
     CPU_REGISTER_INFOS, CpuRegister, CpuRegisterInfo, CpuRegisterSet, StepResult, Trap,
 };
-use bedrock_debug::Debugger;
 use bedrock_machine::{ElfLoadOptions, Machine};
 use bedrock_toolchain::BEDROCK_TRIPLE;
 use std::fmt::Write as FmtWrite;
@@ -578,7 +578,7 @@ impl<'a, O: RemoteObserver> RemoteProtocol<'a, O> {
         if !command.is_empty()
             && let Ok(pc) = parse_hex_u64(command)
         {
-            self.machine.cpu_mut().state_mut().pc = pc;
+            let _ = self.machine.set_pc(pc);
         }
 
         if self
@@ -618,7 +618,7 @@ impl<'a, O: RemoteObserver> RemoteProtocol<'a, O> {
         if !command.is_empty()
             && let Ok(pc) = parse_hex_u64(command)
         {
-            self.machine.cpu_mut().state_mut().pc = pc;
+            let _ = self.machine.set_pc(pc);
         }
         let result = self.debugger.step_ignore_breakpoints(self.machine);
         self.notify_machine_updated();
@@ -700,9 +700,9 @@ impl<'a, O: RemoteObserver> RemoteProtocol<'a, O> {
         if bytes.len() != register_size(index) {
             return Err(());
         }
-        let state = self.machine.cpu_mut().state_mut();
-        state.write_register(info.register, read_le_register_value(bytes));
-        Ok(())
+        self.machine
+            .write_register(info.register, read_le_register_value(bytes))
+            .map_err(|_| ())
     }
 
     fn read_memory(&mut self, command: &str) -> String {
@@ -1182,15 +1182,13 @@ mod tests {
         RemoteSessionConfig, hex_encode, run_tcp_listener_with_observer_until, stop_reply,
     };
     use bedrock_bus::Bus;
-    use bedrock_core::exception::InvalidControlCause;
-    use bedrock_core::fpu::env::FpCauses;
-    use bedrock_core::{
-        AccessDomain, AccessFaultContext, AccessFaultReason, AccessKind, CPU_REGISTER_INFOS,
-        StepResult, Trap, VectorRangeErrorCause,
-    };
     use bedrock_debug::Debugger;
     use bedrock_machine::Machine;
     use bedrock_machine::board::{RAM_BASE, RAM_SIZE};
+    use bedrock_machine::{
+        AccessDomain, AccessFaultContext, AccessFaultReason, AccessKind, CPU_REGISTER_INFOS,
+        CpuRegister, FpCauses, InvalidControlCause, StepResult, Trap, VectorRangeErrorCause,
+    };
     use std::net::TcpListener;
     use std::sync::mpsc;
 
@@ -1394,7 +1392,9 @@ mod tests {
         let mut machine = Machine::new();
         machine.load_program(0x20, &[0xaa]).unwrap();
         machine.processor_reset(0x20);
-        machine.cpu_mut().state_mut().r[0] = 0xfeed;
+        machine
+            .write_register(CpuRegister::General(0), 0xfeed)
+            .unwrap();
         let mut debugger = Debugger::default();
         debugger.breakpoints_mut().add(0x20);
         let mut updates = Vec::new();
@@ -1510,7 +1510,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "sandbox may disallow loopback listeners"]
     fn listener_can_be_cancelled_before_debugger_connects() {
         let listener = TcpListener::bind(("127.0.0.1", 0)).unwrap();
         let mut machine = Machine::new();

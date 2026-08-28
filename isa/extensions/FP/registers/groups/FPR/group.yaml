@@ -1,0 +1,5 @@
+id: FPR
+width: 64
+summary: Floating-point data registers.
+reset: 0
+series: {prefix: F, count: 16}

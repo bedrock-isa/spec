@@ -1,0 +1,24 @@
+\subsubsection{Conversions}
+
+For Fn-to-Fn FCVT or FCVTU, the \texttt{.S} encoding converts D to S and the \texttt{.D} encoding converts S to D. The two
+mnemonics have identical behavior for this conversion family. Rn-to-Fn FCVT interprets all 64 source bits as a
+signed integer; FCVTU interprets them as an unsigned integer. Integer-to-floating conversion uses
+\texttt{FSTATUS.RM}.
+
+Fn-to-Rn conversion truncates toward zero. FCVT produces a signed 64-bit result and FCVTU produces an unsigned
+64-bit result. A valid conversion that discards a fractional part generates NX. An invalid conversion generates NV
+without OF or NX. When NV is not enabled, the committed invalid result is:
+
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{1.15in}>{\raggedright\arraybackslash}p{2.05in}>{\raggedright\arraybackslash}p{2.20in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Instruction} & \textbf{Input} & \textbf{Result}\\
+\midrule
+(:ref:FP.instructions.FCVT:) & negative overflow or negative infinity & \texttt{0x8000000000000000}\\
+(:ref:FP.instructions.FCVT:) & positive overflow or positive infinity & \texttt{0x7fffffffffffffff}\\
+(:ref:FP.instructions.FCVT:) & NaN & \texttt{0x0000000000000000}\\
+(:ref:FP.instructions.FCVTU:) & negative value or negative infinity & \texttt{0x0000000000000000}\\
+(:ref:FP.instructions.FCVTU:) & positive overflow or positive infinity & \texttt{0xffffffffffffffff}\\
+(:ref:FP.instructions.FCVTU:) & NaN & \texttt{0x0000000000000000}\\
+\bottomrule
+\end{manualtabular}

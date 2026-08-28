@@ -1,0 +1,19 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: bedrock://schemas/encoding-metasyntax
+title: Bedrock binary encoding metasyntax
+type: string
+minLength: 1
+pattern: ^[01a-z]+$
+x-ebnf: |
+  encoding_pattern = encoding_bit, {encoding_bit} ;
+  encoding_bit = FIXED_BIT | FIELD_MARKER ;
+x-lexer:
+  FIXED_BIT: '[01]'
+  FIELD_MARKER: '[a-z]'
+x-interpretation-rules:
+  - An encoding pattern is written most-significant bit first and contains no whitespace or separators.
+  - A FIXED_BIT requires the encoded bit at that position to have the written value.
+  - A FIELD_MARKER denotes one bit of the field named by that lowercase character.
+  - Repeated occurrences of one FIELD_MARKER form one logical field in most-significant-bit-first occurrence order and need not be contiguous.
+  - The containing schema determines the required total width and whether a pattern is stored as one string or as an ordered sequence of fixed-width chunks.
+  - When a containing schema uses chunks, concatenating them in array order produces the encoding pattern governed by this grammar.

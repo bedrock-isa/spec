@@ -1,0 +1,17 @@
+HALT retires with the following instruction as its (:term:base.terms.continuation:), then applies the Architectural Event Processing
+Model\textquotesingle{}s event priority and admission rules at that instruction boundary. If the model selects an event, it
+delivers that event with the (:term:base.terms.continuation:) as its saved PC before entering the halted state.
+
+Otherwise, the executing (:term:base.terms.logical_processor:) stops instruction fetch. When an asynchronous architectural event later
+becomes admissible, the (:term:base.terms.logical_processor:) leaves the halted state by delivering that event with the (:term:base.terms.continuation:) as
+its saved PC. Event delivery precedes execution of the (:term:base.terms.continuation:). Only the executing (:term:base.terms.logical_processor:) enters
+the halted state.
+
+HALT retires with the following instruction as its (:term:base.terms.continuation:), then applies the Architectural Event Processing
+Model\textquotesingle{}s event priority and admission rules at that instruction boundary. If the model selects an event, it
+delivers that event with the (:term:base.terms.continuation:) as its saved PC before entering the halted state.
+
+Otherwise, the executing (:term:base.terms.logical_processor:) stops instruction fetch. When an asynchronous architectural event later
+becomes admissible, the (:term:base.terms.logical_processor:) leaves the halted state by delivering that event with the (:term:base.terms.continuation:) as
+its saved PC. Event delivery precedes execution of the (:term:base.terms.continuation:). Only the executing (:term:base.terms.logical_processor:) enters
+the halted state.

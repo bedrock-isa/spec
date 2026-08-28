@@ -1,0 +1,65 @@
+encodings:
+  imm16s:
+    pattern: 11101110000000cccc
+    syntax: CALLcc <imm16s>
+    fields:
+      c:
+        role: cc
+        type: base.field_types.CC
+    payloads:
+    - role: target
+      type: base.payload_types.DISP16S
+    constraints:
+    - role: cc
+      allow:
+      - 0x2..0xf
+      reason: condition_true_false_reclaimed
+  imm32s:
+    pattern: 11101110000001cccc
+    syntax: CALLcc <imm32s>
+    fields:
+      c:
+        role: cc
+        type: base.field_types.CC
+    payloads:
+    - role: target
+      type: base.payload_types.DISP32S
+    constraints:
+    - role: cc
+      allow:
+      - 0x2..0xf
+      reason: condition_true_false_reclaimed
+  ea_e:
+    pattern: 111101100010000cccceeeeeee
+    syntax: CALLcc <ea>(e)
+    fields:
+      c:
+        role: cc
+        type: base.field_types.CC
+      e:
+        role: target
+        type: base.field_types.EA
+    constraints:
+    - role: cc
+      allow:
+      - 0x2..0xf
+      reason: condition_true_false_reclaimed
+    - role: target
+      exclude:
+      - immediate
+      reason: canonical_form_reclaim
+  rn_r:
+    pattern: 111101100110000000ccccrrrr
+    syntax: CALLcc Rn(r)
+    fields:
+      c:
+        role: cc
+        type: base.field_types.CC
+      r:
+        role: target
+        type: base.field_types.Rn
+    constraints:
+    - role: cc
+      allow:
+      - 0x2..0xf
+      reason: condition_true_false_reclaimed

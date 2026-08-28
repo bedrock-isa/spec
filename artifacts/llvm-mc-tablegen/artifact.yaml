@@ -1,0 +1,7 @@
+id: llvm-mc-tablegen
+summary: Canonical instruction-form catalog for the LLVM Bedrock MC layer.
+generator: generator.py
+inputs:
+- isa
+outputs:
+- BedrockGenISACatalog.td

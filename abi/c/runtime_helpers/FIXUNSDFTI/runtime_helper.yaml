@@ -1,0 +1,5 @@
+id: FIXUNSDFTI
+symbol: __fixunsdfti
+result: base.types.UINT128
+parameters:
+- base.types.DOUBLE

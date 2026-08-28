@@ -1,0 +1,19 @@
+mnemonic: CLMULH
+name: Carryless Multiply High
+summary: Performs the carryless multiply high operation.
+route: integer_mul_div
+sail_entries:
+- execute_CLMULH
+privileged: false
+repeat:
+  type: repcc
+  observed_value: dst
+operands:
+  src:
+    role: source
+    access: read
+    value_type: integer
+  dst:
+    role: destination
+    access: read_write
+    value_type: integer

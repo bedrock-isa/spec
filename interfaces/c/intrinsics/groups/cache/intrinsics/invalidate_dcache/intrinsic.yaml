@@ -1,0 +1,14 @@
+id: invalidate_dcache
+owner: base
+description: >-
+  Supervisor; applies INVDCACHE to every CPUID maintenance block intersecting the range and fully clobbers memory.
+signature:
+  result: void
+  parameters:
+  - id: address
+    type: void_pointer
+  - id: length
+    type: size
+lowering:
+  operation: isa:base.instructions.INVDCACHE
+  kind: cache-range

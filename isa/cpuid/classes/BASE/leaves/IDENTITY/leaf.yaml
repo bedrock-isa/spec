@@ -1,0 +1,31 @@
+id: IDENTITY
+name: Base Identity
+value: 0x0000
+layouts:
+  NAME_BYTES:
+    fields:
+    - {id: UTF8_BYTES, lsb: 0, bits: 64}
+queries:
+- id: HEADER
+  index: 0
+  fields:
+  - {id: MAX_INDEX, lsb: 0, bits: 16}
+  - {id: MAX_LEAF, lsb: 16, bits: 16}
+  - {id: MAX_CLASS, lsb: 32, bits: 32}
+- id: IDENTITY
+  index: 1
+  fields:
+  - {id: IMPLEMENTATION_ID, lsb: 0, bits: 32}
+  - {id: ARCHITECTURE_ID, lsb: 32, bits: 16}
+  - {id: VENDOR_ID, lsb: 48, bits: 16}
+- id: REVISIONS
+  index: 2
+  fields:
+  - {id: ARCHITECTURE_REVISION, lsb: 0, bits: 16}
+  - {id: IMPLEMENTATION_REVISION, lsb: 16, bits: 16}
+- id: VENDOR_NAME
+  index: {first: 3, last: 10}
+  layout: NAME_BYTES
+- id: PROCESSOR_NAME
+  index: {first: 11, last: 18}
+  layout: NAME_BYTES

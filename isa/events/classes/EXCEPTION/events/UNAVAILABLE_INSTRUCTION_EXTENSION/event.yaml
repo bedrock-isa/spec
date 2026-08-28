@@ -1,0 +1,7 @@
+id: UNAVAILABLE_INSTRUCTION_EXTENSION
+name: Unavailable Instruction Extension
+summary: The decoded instruction requires an architectural extension that is not available.
+code: 0x13
+family: INSTRUCTION_VALIDATION
+frame: basic
+

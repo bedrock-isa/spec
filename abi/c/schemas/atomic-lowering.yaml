@@ -1,0 +1,20 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: bedrock://schemas/c-atomic-lowering
+title: Bedrock C atomic-operation lowering
+type: object
+additionalProperties: false
+required: [id, c_operations, strategy, instructions]
+properties:
+  id: {type: string, pattern: '^[A-Z][A-Z0-9_]*$'}
+  c_operations:
+    type: array
+    minItems: 1
+    uniqueItems: true
+    items: {type: string, minLength: 1}
+  strategy: {enum: [aligned_access, instruction, compare_exchange_loop]}
+  instructions:
+    type: array
+    uniqueItems: true
+    items:
+      type: string
+      pattern: '^isa:(?:base|[A-Z][A-Z0-9_]*)\.instructions\.[A-Z][A-Z0-9_]*$'

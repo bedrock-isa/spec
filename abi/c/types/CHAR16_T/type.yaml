@@ -1,0 +1,6 @@
+id: CHAR16_T
+spelling: "char16_t"
+call_kind: u16
+size_bits: 16
+alignment_bytes: 2
+representation: unsigned_integer

@@ -1,0 +1,8 @@
+id: BUS_DATA_ERROR
+name: Bus Data Error
+summary: The bus reports corrupted or otherwise invalid transfer data.
+code: 0x73
+family: BUS_FAILURE
+frame: auxiliary
+payload: [FAULT_EA, FAULT_LINEAR, ACCESS, USER_DOMAIN, ATOMIC, WALK_LEVEL, OPERAND, ACCESS_SIZE, RETRY_SAFE, EVENT_AUX]
+

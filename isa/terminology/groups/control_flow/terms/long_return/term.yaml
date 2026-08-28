@@ -1,0 +1,6 @@
+id: long_return
+display:
+  canonical: Long Return
+definition: >-
+  the instruction family that consumes a two-value return context to restore the
+  code segment and program counter.

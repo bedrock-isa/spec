@@ -1,0 +1,17 @@
+encodings:
+  b_w_l_q_z_pn_p_ea_e_vn_v:
+    pattern: 11111111000000100000zz0010ppppvvvvveeeeeee
+    syntax: VMOVZ.{B|W|L|Q}(z) Pn(p), <ea>(e), Vn(v)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      p:
+        role: govern
+        type: VECTOR.field_types.Pn
+      v:
+        role: dst
+        type: VECTOR.field_types.Vn
+      e:
+        role: src
+        type: VECTOR.field_types.VEA

@@ -1,0 +1,18 @@
+\subsection{Cache-Topology Discovery}
+Class \texttt{0x00000002}, leaf \texttt{0x0001} reports the cache-maintenance granule and the cache instances visible
+to the current (:term:base.terms.logical_processor:). Index zero is the common (:term:base.terms.header:). Index one is the maintenance-properties result,
+and indexes 2 through \texttt{MAX\_INDEX} are a dense array of cache descriptors. With $N$ descriptors,
+\texttt{MAX\_INDEX=1+N}.
+
+\input{isa/cpuid/documents/fragments/cpuid_cache_topology.tex}
+
+\texttt{MAINTENANCE\_GRANULE\_BYTES} is a nonzero power of two no greater than 4096 and has the same value on every
+(:term:base.terms.logical_processor:) in one normal-memory coherence domain. Every reported cache-line size divides the maintenance
+granule. A descriptor has \texttt{TYPE} 1, 2, or 3 and a nonzero \texttt{LEVEL}. Descriptors are
+ordered by increasing cache level, cache type, sharing level, and sharing ID.
+
+\texttt{SHARING\_LEVEL} values describe strictly nested processor sets. The pair
+\texttt{(SHARING\_LEVEL, SHARING\_ID)} is equal exactly when two descriptors name the same logical-processor set.
+At sharing level zero, \texttt{SHARING\_LP\_COUNT\_MINUS1} is zero. At a greater sharing level, the count (:term:base.terms.field:)
+equals the number of (:term:base.terms.logical_processor|plural:) in that set minus one. The tuple of cache type, cache level, sharing level,
+and sharing ID is unique within the leaf.

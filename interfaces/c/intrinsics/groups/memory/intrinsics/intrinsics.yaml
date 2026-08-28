@@ -1,0 +1,8 @@
+intrinsics:
+- address_fence
+- nontemporal_store_u16
+- nontemporal_store_u32
+- nontemporal_store_u64
+- nontemporal_store_u8
+- read_fence
+- write_fence

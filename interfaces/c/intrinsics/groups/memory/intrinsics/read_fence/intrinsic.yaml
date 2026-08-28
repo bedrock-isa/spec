@@ -1,0 +1,10 @@
+id: read_fence
+owner: base
+description: >-
+  Compiler and hardware read-ordering barrier.
+signature:
+  result: void
+  parameters: []
+lowering:
+  operation: isa:base.instructions.RFENCE
+  kind: direct

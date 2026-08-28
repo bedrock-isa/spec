@@ -1,0 +1,7 @@
+id: thread
+display:
+  canonical: thread
+  plural: threads
+article: a
+definition: >-
+  a software execution context that may execute on a logical processor.

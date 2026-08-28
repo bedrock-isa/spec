@@ -1,0 +1,8 @@
+id: disabled_segment
+display:
+  canonical: disabled segment
+  plural: disabled segments
+article: a
+definition: >-
+  a segment with a zero size mantissa. It performs no segment-window check or
+  base addition and passes the effective address through as the linear address.

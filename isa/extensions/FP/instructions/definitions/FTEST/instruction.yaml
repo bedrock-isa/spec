@@ -1,0 +1,14 @@
+mnemonic: FTEST
+name: Floating-Point Test
+summary: Performs the floating-point test operation.
+route: fpu
+sail_entries:
+- execute_FTEST
+privileged: false
+repeat:
+  type: rep
+operands:
+  src:
+    role: source
+    access: read
+    value_type: floating

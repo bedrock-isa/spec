@@ -1,0 +1,8 @@
+id: R_BEDROCK_RELATIVE
+value: 34
+family: dynamic
+result:
+  kind: integer
+  width_bits: 64
+  signed: false
+calculation: load_base + addend

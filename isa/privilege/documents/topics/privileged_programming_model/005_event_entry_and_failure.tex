@@ -1,0 +1,4 @@
+\subsection{Event Entry and Failure}
+User-origin entry atomically saves the user context bank, optionally stores the (:term:base.terms.payload:), loads EPC/ECS/EDS and the selected initial stack, sets PM and EA, sets EDEPTH to one and UO to one, and clears IE, TF, and RF. Supervisor and nested entry save the prior context in the full frame and increment EDEPTH while preserving UO.
+
+Delivery failure selects DSS:DSP and attempts the corresponding \texttt{EVENT\_DELIVERY\_FAILURE} leaf event. The hidden current-DFA bit is set when that entry commits. Failure while current DFA is set, or failure of that delivery attempt, enters shutdown. A full frame saves the prior DFA state in FRAME\_CONTROL.SAVED\_DFA.

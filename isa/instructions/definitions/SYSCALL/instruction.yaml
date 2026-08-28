@@ -1,0 +1,8 @@
+mnemonic: SYSCALL
+name: System Call
+summary: Raise the SYSTEM_CALL architectural event.
+route: core_control
+sail_entries:
+- execute_SYSCALL
+privileged: false
+operands: {}

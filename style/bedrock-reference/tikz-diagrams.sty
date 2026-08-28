@@ -1,0 +1,29 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesFile{bedrock-reference/tikz-diagrams.sty}[2026/08/26 Bedrock reference tikz-diagrams commands]
+
+\newenvironment{BedrockTikzDiagram}[4]{%
+  \begingroup
+  \Needspace{#1}%
+  \def\BedrockTikzDiagramCaption{#4}%
+  \begin{center}\vspace{3pt}%
+  \begin{tikzpicture}[x=#2,y=#3,every node/.style={font=\scriptsize}]%
+}{%
+  \end{tikzpicture}%
+  \BedrockCaption{\BedrockTikzDiagramCaption}%
+  \end{center}%
+  \endgroup}
+\newenvironment{BedrockListedTikzDiagram}[4]{%
+  \begingroup
+  \Needspace{#1}%
+  \def\BedrockTikzDiagramCaption{#4}%
+  \begin{center}\vspace{3pt}%
+  \begin{tikzpicture}[x=#2,y=#3,every node/.style={font=\scriptsize}]%
+}{%
+  \end{tikzpicture}%
+  \BedrockFigureCaption{\BedrockTikzDiagramCaption}%
+  \end{center}%
+  \endgroup}
+% Strict finite-example vector diagrams.  The fifth argument is the nonvisual
+% description used by the site extractor; the fourth remains the visible caption.
+
+\endinput

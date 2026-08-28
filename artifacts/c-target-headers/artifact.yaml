@@ -1,0 +1,16 @@
+id: c-target-headers
+generator: generator.py
+inputs:
+- isa
+- interfaces.c
+outputs:
+  core: include/bedrockcoreintrin.h
+  memory: include/bedrockmemoryintrin.h
+  integer: include/bedrockintegerintrin.h
+  fpu: include/bedrockfpuintrin.h
+  sysreg: include/bedrocksysregintrin.h
+  cache: include/bedrockcacheintrin.h
+  mmu: include/bedrockmmuintrin.h
+  state: include/bedrockstateintrin.h
+  public: include/bedrockintrin.h
+  system: include/bedrocksystemintrin.h

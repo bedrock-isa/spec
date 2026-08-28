@@ -1,0 +1,4 @@
+id: sysreg
+title: System-Register Interface Types
+includes:
+- stdint.h

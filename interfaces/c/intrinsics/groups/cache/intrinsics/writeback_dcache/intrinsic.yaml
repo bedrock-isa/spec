@@ -1,0 +1,14 @@
+id: writeback_dcache
+owner: base
+description: >-
+  Supervisor; applies WRBKDCACHE to every CPUID maintenance block intersecting the range and fully clobbers memory.
+signature:
+  result: void
+  parameters:
+  - id: address
+    type: void_pointer
+  - id: length
+    type: size
+lowering:
+  operation: isa:base.instructions.WRBKDCACHE
+  kind: cache-range

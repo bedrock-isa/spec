@@ -1,0 +1,12 @@
+mnemonic: INVPAGE
+name: Invalidate TLB Page
+summary: Invalidate TLB mapping containing a linear address.
+route: tlb_and_context
+sail_entries:
+- execute_INVPAGE
+privileged: true
+operands:
+  page:
+    role: address
+    access: address
+    value_type: integer

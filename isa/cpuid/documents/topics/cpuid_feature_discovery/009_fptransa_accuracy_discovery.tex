@@ -1,0 +1,67 @@
+\subsection{FPTRANSA Accuracy Discovery}
+Class \texttt{0x00000001}, leaf \texttt{0x0001} uses indexes 1 through \texttt{0x0044} as a sparse space of stable
+16-bit accuracy-contract IDs. Index zero is the common (:term:base.terms.header:) and reports \texttt{MAX\_INDEX=0x0044}.
+A contract ID identifies the reference function, input domain, special-value behavior, error metric, exact anchors,
+and mathematical properties; it is independent of instruction encoding placement. An incompatible change receives a
+new ID, and a retired ID is not reused. The contracts defined here use \texttt{CONTRACT\_REVISION=1}. A weakened
+guarantee, changed domain, or changed error metric requires a new ID.
+An implementation that advertises a smaller certified ULP bound strengthens the existing contract and retains the
+same ID and revision.
+
+The sparse ID space reserves \texttt{0x0001..0x000F} for reduced-domain circular trigonometric functions,
+\texttt{0x0010..0x001F} for inverse trigonometric functions, \texttt{0x0020..0x002F} for hyperbolic and inverse
+hyperbolic functions, \texttt{0x0030..0x003F} for exponential functions, and
+\texttt{0x0040..0x004F} for logarithmic functions. The low-nibble-zero selector of each family is unassigned, and
+actual contracts in each family begin at low nibble one.
+
+\begin{manuallistedformatdiagram}{FPTRANSA Accuracy Result Format}
+\manualformatrowrange{result[63:0]}{63}{0}{%
+\manualformatfield{P}{1}
+\manualformatreserved{(:term:base.terms.reserved:)}{23}
+\manualformatfield{REV}{8}
+\manualformatfield{D ULP}{16}
+\manualformatfield{S ULP}{16}
+}
+\end{manuallistedformatdiagram}
+{\small
+\texttt{P} is \texttt{PRESENT}; \texttt{REV} is \texttt{CONTRACT\_REVISION}; the D and S ULP
+(:term:base.terms.field|plural:) use unsigned Q8.8.
+\par}
+
+\manualtablecaption{FPTRANSA Accuracy Result}
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.78in}>{\raggedright\arraybackslash}p{1.20in}>{\raggedright\arraybackslash}p{3.55in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Bits} & \textbf{Field} & \textbf{Meaning}\\
+\midrule
+\texttt{0..15} & \texttt{S\_MAX\_ULP\_Q8\_8} & certified worst-case S-format ULP bound, rounded upward to unsigned Q8.8\\
+\texttt{16..31} & \texttt{D\_MAX\_ULP\_Q8\_8} & certified worst-case D-format ULP bound, rounded upward to unsigned Q8.8\\
+\texttt{32..39} & \texttt{CONTRACT\_REVISION} & value 1 for the contracts defined here\\
+\texttt{40..62} & (:term:base.terms.reserved:) & zero\\
+\texttt{63} & \texttt{PRESENT} & the instruction and both S and D encodings are available\\
+\bottomrule
+\end{manualtabular}
+
+For a certified bound $K$, the (:term:base.terms.field:) value is $\lceil 256K\rceil$ and the advertised bound is the (:term:base.terms.field:) divided by
+256. Thus 0.5, 1, 1.5, 2, and 4 ULP encode as \texttt{0x0080}, \texttt{0x0100}, \texttt{0x0180},
+\texttt{0x0200}, and \texttt{0x0400}. A present contract has both (:term:base.terms.field|plural:) in \texttt{0x0001..0x0400}.
+Software that does not recognize the returned revision uses its fallback path.
+
+Software first checks \texttt{FP} and \texttt{FPTRANSA} in \texttt{EXTENSION\_DIRECTORY}, then queries the intended
+contract ID in \texttt{FPTRANSA\_ACCURACY}. It uses the instruction only when \texttt{PRESENT} is set, the returned
+\texttt{CONTRACT\_REVISION} is 1, and the S or D bound required by the call site is no larger than its quality
+threshold; otherwise it
+uses a software fallback. For example, a D-format (:ref:FPTRANSA.instructions.FLOG2A:) path requiring at most 2 ULP accepts selector
+\texttt{0x0000000100010043} only when the returned D (:term:base.terms.field:) is at most \texttt{0x0200}.
+
+The selector is $(\texttt{0x00000001} \ll 32) \mathbin{|} (\texttt{0x0001} \ll 16) \mathbin{|}
+\textit{contract-id}$. For example, (:ref:FPTRANSA.instructions.FSINA:) uses selector \texttt{0x0000000100010001}, and
+(:ref:FPTRANSA.instructions.FLOG2A:) uses \texttt{0x0000000100010043}. An implementation that certifies (:ref:FPTRANSA.instructions.FSINA:) at 1.5 ULP for
+S and 2 ULP for D returns \texttt{0x8000000102000180}.
+
+\texttt{PRESENT=1} guarantees that the instruction and both S and D encodings are architecturally usable under the
+returned contract. The S and D bounds are worst-case bounds over every input in the contract domain and apply to
+every execution on the (:term:base.terms.logical_processor:) that returned the CPUID result until reset. Executing the instruction with
+\texttt{PRESENT=0} raises (:ref:base.events.EXCEPTION.UNAVAILABLE_INSTRUCTION_EXTENSION:) before operand or floating-point-state access.
+
+\input{isa/extensions/FPTRANSA/cpuid/documents/fragments/fptransa_accuracy_contracts.tex}

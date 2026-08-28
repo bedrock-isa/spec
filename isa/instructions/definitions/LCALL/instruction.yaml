@@ -1,0 +1,16 @@
+mnemonic: LCALL
+name: Long Call
+summary: Pushes a long return frame and atomically transfers control to a new CS:PC pair.
+route: control_flow
+sail_entries:
+- execute_LCALL
+privileged: false
+operands:
+  new_cs:
+    role: source
+    access: read
+    value_type: integer
+  target:
+    role: control_target
+    access: read
+    value_type: integer

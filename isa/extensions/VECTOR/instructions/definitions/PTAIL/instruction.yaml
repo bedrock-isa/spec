@@ -1,0 +1,18 @@
+mnemonic: PTAIL
+name: Predicate Tail
+summary: Set significant positions before unsigned(Rcount) mod lane_count.
+route: vector
+sail_entries:
+- execute_PTAIL
+privileged: false
+assembly:
+  width_suffix_aliases: true
+operands:
+  count:
+    role: count
+    access: read
+    value_type: integer
+  dst:
+    role: destination
+    access: write
+    value_type: predicate

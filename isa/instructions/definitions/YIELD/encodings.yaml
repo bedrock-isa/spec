@@ -1,0 +1,4 @@
+encodings:
+  plain:
+    pattern: '0001001'
+    syntax: YIELD

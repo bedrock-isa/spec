@@ -1,0 +1,5 @@
+id: INTERRUPT
+name: Platform Interrupt
+summary: An opaque platform-assigned global interrupt source is admitted for delivery.
+frame: basic
+

@@ -1,0 +1,63 @@
+\subsection{Compact Profile Encodings}
+The scalar EA profile encodes common Rn/SP/PC memory operands, absolute memory operands, integer immediate operands,
+and the EXT1 and EXT2 escapes. FEA retains the scalar memory and EXT encodings except that \texttt{0x58},
+\texttt{0x5B}, and \texttt{0x5C} are (:term:base.terms.reserved:) and \texttt{0x5D} and \texttt{0x5E} select floating-point
+immediates. VEA retains the scalar memory and EXT encodings except that \texttt{0x58} and
+\texttt{0x5B} through \texttt{0x5E} are (:term:base.terms.reserved:). These values do not inherit the scalar EA forms at
+the same compact selectors.
+
+Compact memory forms that do not name SP or PC use the operation default data segment. SP memory forms are fixed to
+SS, and PC memory forms are fixed to CS.
+
+\input{isa/ea/documents/fragments/compact_ea_reference_blocks.tex}
+
+\clearpage
+\Needspace{1.25in}
+\manualtablecaption{Compact Effective-Address Profile Encoding}
+\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{1.35in}>{\raggedright\arraybackslash}p{1.18in}>{\raggedright\arraybackslash}p{1.18in}>{\raggedright\arraybackslash}p{1.55in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Encoding} & \textbf{EA form} & \textbf{FEA form} & \textbf{VEA form}\\
+\midrule
+\endfirsthead
+\multicolumn{4}{@{}l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Encoding} & \textbf{EA form} & \textbf{FEA form} & \textbf{VEA form}\\
+\midrule
+\endhead
+\texttt{000rrrr (0x00{-}{-}0x0F)} & \texttt{[Rn(r)]} & \texttt{[Rn(r)]} & \texttt{[Rn(r)]}\\
+\texttt{001rrrr (0x10{-}{-}0x1F)} & \texttt{[Rn(r) + disp8s]} & \texttt{[Rn(r) + disp8s]} & \texttt{[Rn(r) + disp8s]}\\
+\texttt{010rrrr (0x20{-}{-}0x2F)} & \texttt{[Rn(r) + disp16s]} & \texttt{[Rn(r) + disp16s]} & \texttt{[Rn(r) + disp16s]}\\
+\texttt{011rrrr (0x30{-}{-}0x3F)} & \texttt{[Rn(r) + disp32s]} & \texttt{[Rn(r) + disp32s]} & \texttt{[Rn(r) + disp32s]}\\
+\texttt{100rrrr (0x40{-}{-}0x4F)} & \texttt{[Rn(r) + disp64]} & \texttt{[Rn(r) + disp64]} & \texttt{[Rn(r) + disp64]}\\
+\texttt{1010000 (0x50)} & \texttt{[SP + disp8s]} & \texttt{[SP + disp8s]} & \texttt{[SP + disp8s]}\\
+\texttt{1010001 (0x51)} & \texttt{[SP + disp16s]} & \texttt{[SP + disp16s]} & \texttt{[SP + disp16s]}\\
+\texttt{1010010 (0x52)} & \texttt{[SP + disp32s]} & \texttt{[SP + disp32s]} & \texttt{[SP + disp32s]}\\
+\texttt{1010011 (0x53)} & \texttt{[SP + disp64]} & \texttt{[SP + disp64]} & \texttt{[SP + disp64]}\\
+\texttt{1010100 (0x54)} & \texttt{[PC + disp8s]} & \texttt{[PC + disp8s]} & \texttt{[PC + disp8s]}\\
+\texttt{1010101 (0x55)} & \texttt{[PC + disp16s]} & \texttt{[PC + disp16s]} & \texttt{[PC + disp16s]}\\
+\texttt{1010110 (0x56)} & \texttt{[PC + disp32s]} & \texttt{[PC + disp32s]} & \texttt{[PC + disp32s]}\\
+\texttt{1010111 (0x57)} & \texttt{[PC + disp64]} & \texttt{[PC + disp64]} & \texttt{[PC + disp64]}\\
+\texttt{1011000 (0x58)} & \texttt{[SP]} & \texttt{reserved} & \texttt{reserved}\\
+\texttt{1011001 (0x59)} & \texttt{[abs32s]} & \texttt{[abs32s]} & \texttt{[abs32s]}\\
+\texttt{1011010 (0x5A)} & \texttt{[abs64]} & \texttt{[abs64]} & \texttt{[abs64]}\\
+\texttt{1011011 (0x5B)} & \texttt{imm8s} & \texttt{reserved} & \texttt{reserved}\\
+\texttt{1011100 (0x5C)} & \texttt{imm16s} & \texttt{reserved} & \texttt{reserved}\\
+\texttt{1011101 (0x5D)} & \texttt{imm32s} & \texttt{immsf} & \texttt{reserved}\\
+\texttt{1011110 (0x5E)} & \texttt{imm64} & \texttt{immdf} & \texttt{reserved}\\
+\texttt{1011111 (0x5F)} & \texttt{EXT1/disp8s} & \texttt{EXT1/disp8s} & \texttt{EXT1/disp8s}\\
+\texttt{1100000 (0x60)} & \texttt{EXT1/disp16s} & \texttt{EXT1/disp16s} & \texttt{EXT1/disp16s}\\
+\texttt{1100001 (0x61)} & \texttt{EXT1/disp32s} & \texttt{EXT1/disp32s} & \texttt{EXT1/disp32s}\\
+\texttt{1100010 (0x62)} & \texttt{EXT1/disp64} & \texttt{EXT1/disp64} & \texttt{EXT1/disp64}\\
+\texttt{1100011 (0x63)} & \texttt{EXT1} & \texttt{EXT1} & \texttt{EXT1}\\
+\texttt{1100100 (0x64)} & \texttt{EXT2/disp8s} & \texttt{EXT2/disp8s} & \texttt{EXT2/disp8s}\\
+\texttt{1100101 (0x65)} & \texttt{EXT2/disp16s} & \texttt{EXT2/disp16s} & \texttt{EXT2/disp16s}\\
+\texttt{1100110 (0x66)} & \texttt{EXT2/disp32s} & \texttt{EXT2/disp32s} & \texttt{EXT2/disp32s}\\
+\texttt{1100111 (0x67)} & \texttt{EXT2/disp64} & \texttt{EXT2/disp64} & \texttt{EXT2/disp64}\\
+\texttt{1101000 (0x68)} & \texttt{EXT2} & \texttt{EXT2} & \texttt{EXT2}\\
+\texttt{0x69{-}{-}0x7F} & \texttt{reserved} & \texttt{reserved} & \texttt{reserved}\\
+\bottomrule
+\end{manuallongtable}
+
+\label{table:compact-ea-encoding}

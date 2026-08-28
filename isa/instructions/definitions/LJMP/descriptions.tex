@@ -1,0 +1,25 @@
+(:term:base.terms.long_jump:) is a (:term:base.terms.segment_changing_control_transfer:). It commits the new CS and PC as a single architectural control-transfer step. The two-operand encoding takes the new CS image from an (:term:base.terms.rn_register:). Its target EA has Q interpretation width: a memory operand reads a 64-bit offset and a register or immediate operand supplies its value directly.
+
+\begin{enumerate}
+\item Evaluate the target operand completely in the old architectural context.
+\item Validate the complete new CS image.
+\item Validate the target offset against the new CS and probe executable translation at the resulting (:term:base.terms.linear_address:).
+\item Commit new CS and new PC as one successful control-transfer operation.
+\end{enumerate}
+
+\textbf{Fault atomicity.} CS and PC remain unchanged when operand evaluation or target validation faults.
+
+An invalid new CS image raises (:ref:base.events.EXCEPTION.INVALID_CONTROL_IMAGE:); target translation failure raises the applicable
+\texttt{ADDRESS\_TRANSLATION} family event.
+
+\begin{enumerate}
+\item Evaluate the target operand completely in the old architectural context.
+\item Validate the complete new CS image.
+\item Validate the target offset against the new CS and probe executable translation at the resulting (:term:base.terms.linear_address:).
+\item Commit new CS and new PC as one successful control-transfer operation.
+\end{enumerate}
+
+\textbf{Fault atomicity.} CS and PC remain unchanged when operand evaluation or target validation faults.
+
+An invalid new CS image raises (:ref:base.events.EXCEPTION.INVALID_CONTROL_IMAGE:); target translation failure raises the applicable
+\texttt{ADDRESS\_TRANSLATION} family event.

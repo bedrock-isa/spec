@@ -1,0 +1,7 @@
+id: MEMORY_TYPE_FAULT
+name: Memory Type Fault
+summary: A Normal-memory page-table leaf selects physical Device memory.
+code: 0x26
+family: ADDRESS_TRANSLATION
+frame: page
+payload: [FAULT_EA, FAULT_LINEAR, ACCESS, USER_DOMAIN, ATOMIC, WALK_LEVEL, OPERAND, ACCESS_SIZE]

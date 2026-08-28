@@ -1,0 +1,14 @@
+encodings:
+  b_w_l_q_z_vn_v_pn_p:
+    pattern: 11111010001000zz1ppppvvvvv
+    syntax: PPERM.{B|W|L|Q}(z) Vn(v), Pn(p)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      p:
+        role: dst
+        type: VECTOR.field_types.Pn
+      v:
+        role: index
+        type: VECTOR.field_types.Vn

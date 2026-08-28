@@ -1,0 +1,18 @@
+mnemonic: XCHG
+name: Exchange
+summary: Performs the exchange operation.
+route: data_movement
+sail_entries:
+- execute_XCHG
+privileged: false
+repeat:
+  type: rep
+operands:
+  lhs:
+    role: destination
+    access: read_write
+    value_type: integer
+  rhs:
+    role: destination
+    access: read_write
+    value_type: integer

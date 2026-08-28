@@ -1,0 +1,22 @@
+mnemonic: VZIPHI
+name: Vector Upper-Half Interleave
+summary: Interleave the upper halves of the old destination and source.
+route: vector
+sail_entries:
+- execute_VZIPHI
+privileged: false
+assembly:
+  width_suffix_aliases: true
+operands:
+  govern:
+    role: governing_predicate
+    access: read
+    value_type: predicate
+  src:
+    role: source
+    access: read
+    value_type: vector
+  dst:
+    role: destination
+    access: read_write
+    value_type: vector

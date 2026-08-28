@@ -1,0 +1,6 @@
+id: SHORT
+spelling: "short"
+call_kind: i16
+size_bits: 16
+alignment_bytes: 2
+representation: twos_complement

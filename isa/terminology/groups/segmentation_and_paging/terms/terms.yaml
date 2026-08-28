@@ -1,0 +1,8 @@
+terms:
+- segment_pre_translation
+- segment_register_image
+- disabled_segment
+- translated_segment
+- bounds_only_segment
+- page_table_translation
+- physical_frame_number

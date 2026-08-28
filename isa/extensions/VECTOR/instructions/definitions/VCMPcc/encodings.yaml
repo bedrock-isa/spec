@@ -1,0 +1,124 @@
+encodings:
+  b_w_l_q_x_pn_p_vn_v_vn_w_pn_q:
+    pattern: 111111010xxxccccppppqqqqvvvvvwwwww
+    syntax: VCMPcc.{B|W|L|Q}(x) Pn(p), Vn(v), Vn(w), Pn(q)
+    fields:
+      x:
+        role: size
+        type: VECTOR.field_types.SIZE_VTYPE
+      c:
+        role: cc
+        type: base.field_types.CC
+      p:
+        role: govern
+        type: VECTOR.field_types.Pn
+      q:
+        role: dst
+        type: VECTOR.field_types.Pn
+      v:
+        role: lhs
+        type: VECTOR.field_types.Vn
+      w:
+        role: rhs
+        type: VECTOR.field_types.Vn
+    constraints:
+    - role: size
+      allow: &id001
+      - 0x0..0x3
+      reason: reserved_vector_element_type
+    - role: cc
+      allow: &id002
+      - 0x2..0x5
+      - 0xa..0xf
+      reason: reserved_vector_comparison_condition
+  h_s_d_x_pn_p_vn_v_vn_w_pn_q:
+    pattern: 111111010xxxccccppppqqqqvvvvvwwwww
+    syntax: VCMPcc.{H|S|D}(x) Pn(p), Vn(v), Vn(w), Pn(q)
+    fields:
+      x:
+        role: size
+        type: VECTOR.field_types.SIZE_VTYPE
+      c:
+        role: cc
+        type: base.field_types.CC
+      p:
+        role: govern
+        type: VECTOR.field_types.Pn
+      q:
+        role: dst
+        type: VECTOR.field_types.Pn
+      v:
+        role: lhs
+        type: VECTOR.field_types.Vn
+      w:
+        role: rhs
+        type: VECTOR.field_types.Vn
+    constraints:
+    - role: size
+      allow: &id003
+      - 0x5..0x7
+      reason: reserved_vector_element_type
+    - role: cc
+      allow: &id004
+      - 0x2..0x3
+      - 0x8..0x9
+      - 0xc..0xf
+      reason: reserved_vector_comparison_condition
+  b_w_l_q_x_pn_p_vn_v_ea_e_pn_q:
+    pattern: 111111110000000xxxccccppppqqqqvvvvveeeeeee
+    syntax: VCMPcc.{B|W|L|Q}(x) Pn(p), Vn(v), <ea>(e), Pn(q)
+    fields:
+      x:
+        role: size
+        type: VECTOR.field_types.SIZE_VTYPE
+      c:
+        role: cc
+        type: base.field_types.CC
+      p:
+        role: govern
+        type: VECTOR.field_types.Pn
+      q:
+        role: dst
+        type: VECTOR.field_types.Pn
+      v:
+        role: lhs
+        type: VECTOR.field_types.Vn
+      e:
+        role: src
+        type: VECTOR.field_types.VEA
+    constraints:
+    - role: size
+      allow: *id001
+      reason: reserved_vector_element_type
+    - role: cc
+      allow: *id002
+      reason: reserved_vector_comparison_condition
+  h_s_d_x_pn_p_vn_v_ea_e_pn_q:
+    pattern: 111111110000000xxxccccppppqqqqvvvvveeeeeee
+    syntax: VCMPcc.{H|S|D}(x) Pn(p), Vn(v), <ea>(e), Pn(q)
+    fields:
+      x:
+        role: size
+        type: VECTOR.field_types.SIZE_VTYPE
+      c:
+        role: cc
+        type: base.field_types.CC
+      p:
+        role: govern
+        type: VECTOR.field_types.Pn
+      q:
+        role: dst
+        type: VECTOR.field_types.Pn
+      v:
+        role: lhs
+        type: VECTOR.field_types.Vn
+      e:
+        role: src
+        type: VECTOR.field_types.VEA
+    constraints:
+    - role: size
+      allow: *id003
+      reason: reserved_vector_element_type
+    - role: cc
+      allow: *id004
+      reason: reserved_vector_comparison_condition

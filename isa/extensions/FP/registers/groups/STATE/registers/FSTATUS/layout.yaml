@@ -1,0 +1,11 @@
+bits: 16
+fields:
+- {id: DN, lsb: 9, bits: 1, summary: Default-NaN mode.}
+- {id: DAZ, lsb: 8, bits: 1, summary: Denormals-are-zero input mode.}
+- {id: FTZ, lsb: 7, bits: 1, summary: Flush-to-zero result mode.}
+- {id: RM, lsb: 5, bits: 2, summary: Floating-point rounding mode.}
+- {id: NV_EN, lsb: 4, bits: 1, summary: Invalid-operation exception enable.}
+- {id: DZ_EN, lsb: 3, bits: 1, summary: Divide-by-zero exception enable.}
+- {id: OF_EN, lsb: 2, bits: 1, summary: Overflow exception enable.}
+- {id: UF_EN, lsb: 1, bits: 1, summary: Underflow exception enable.}
+- {id: NX_EN, lsb: 0, bits: 1, summary: Inexact exception enable.}

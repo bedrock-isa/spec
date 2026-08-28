@@ -1,0 +1,17 @@
+encodings:
+  b_w_l_q_z_pn_p_pn_q_pn_h:
+    pattern: 11111101111111000zz101ppppqqqqhhhh
+    syntax: PTRNLO.{B|W|L|Q}(z) Pn(p), Pn(q), Pn(h)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      p:
+        role: lhs
+        type: VECTOR.field_types.Pn
+      q:
+        role: rhs
+        type: VECTOR.field_types.Pn
+      h:
+        role: dst
+        type: VECTOR.field_types.Pn

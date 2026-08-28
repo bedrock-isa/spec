@@ -1,0 +1,97 @@
+encodings:
+  q_rn_r_sp:
+    pattern: 101rrrr
+    syntax: MOV.Q Rn(r), SP
+    fields:
+      r:
+        role: src
+        type: base.field_types.Rn
+  q_sp_rn_r:
+    pattern: 110rrrr
+    syntax: MOV.Q SP, Rn(r)
+    fields:
+      r:
+        role: dst
+        type: base.field_types.Rn
+  l_q_z_rn_s_rn_d:
+    pattern: 00000zssssdddd
+    syntax: MOV.{L|Q}(z) Rn(s), Rn(d)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_LQ
+      s:
+        role: src
+        type: base.field_types.Rn
+      d:
+        role: dst
+        type: base.field_types.Rn
+  b_rn_s_rn_d:
+    pattern: 100110ssssdddd
+    syntax: MOV.B Rn(s), Rn(d)
+    fields:
+      s:
+        role: src
+        type: base.field_types.Rn
+      d:
+        role: dst
+        type: base.field_types.Rn
+  w_rn_s_rn_d:
+    pattern: 100111ssssdddd
+    syntax: MOV.W Rn(s), Rn(d)
+    fields:
+      s:
+        role: src
+        type: base.field_types.Rn
+      d:
+        role: dst
+        type: base.field_types.Rn
+  b_w_l_q_z_rn_s_ea_e:
+    pattern: 00000zzsssseeeeeee
+    syntax: MOV.{B|W|L|Q}(z) Rn(s), <ea>(e)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      s:
+        role: src
+        type: base.field_types.Rn
+      e:
+        role: dst
+        type: base.field_types.EA
+    constraints:
+    - role: dst
+      exclude:
+      - immediate
+      reason: invalid_destination
+  b_w_l_q_z_ea_e_rn_d:
+    pattern: 01000zzddddeeeeeee
+    syntax: MOV.{B|W|L|Q}(z) <ea>(e), Rn(d)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      d:
+        role: dst
+        type: base.field_types.Rn
+      e:
+        role: src
+        type: base.field_types.EA
+  b_w_l_q_z_ea_s_ea_d:
+    pattern: 1111000100zzsssssssddddddd
+    syntax: MOV.{B|W|L|Q}(z) <ea>(s), <ea>(d)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      s:
+        role: src
+        type: base.field_types.EA
+      d:
+        role: dst
+        type: base.field_types.EA
+    constraints:
+    - role: dst
+      exclude:
+      - immediate
+      reason: invalid_destination

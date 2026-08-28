@@ -1,0 +1,16 @@
+\subsection{Machine-Check and Bus-Error Continuation}
+A corrected (:ref:base.events.EXCEPTION.MACHINE_CHECK:) is a trap, has both \texttt{PRECISE} and \texttt{RETRY\_SAFE} clear, and saves
+the following instruction. A recoverable machine check uses the valid combinations in the auxiliary-payload table.
+When \texttt{PRECISE} is one, the saved PC identifies the responsible instruction boundary and logical-processor
+(:term:base.terms.architectural_state:) is the state from before that instruction. When it is zero, the saved PC is the next instruction that would
+execute at the delivery boundary and (:term:base.terms.architectural_state:) corresponds to that boundary; neither identifies the responsible
+operation. \texttt{RETRY\_SAFE} may be one only with \texttt{PRECISE=1} and additionally guarantees that returning
+to the responsible boundary cannot duplicate an external effect. A fatal machine check always clears
+\texttt{RETRY\_SAFE}; \texttt{PRECISE} then describes diagnostic location quality and never guarantees reliable
+(:term:base.terms.continuation:).
+
+Every event in the \texttt{BUS\_FAILURE} family is a synchronous precise fault. Logical-processor (:term:base.terms.architectural_state:) remains uncommitted and the saved PC
+identifies the responsible instruction boundary. Its separate \texttt{RETRY\_SAFE} bit states whether an external
+effect might already have occurred. Page-walk and (:term:base.terms.ordinary:) memory bus errors are retry-safe.
+
+Software interprets the machine-check (:term:base.terms.continuation:) (:term:base.terms.field|plural:) before choosing a return or recovery action.

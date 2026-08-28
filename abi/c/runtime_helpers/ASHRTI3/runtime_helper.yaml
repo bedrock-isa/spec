@@ -1,0 +1,6 @@
+id: ASHRTI3
+symbol: __ashrti3
+result: base.types.INT128
+parameters:
+- base.types.INT128
+- base.types.INT

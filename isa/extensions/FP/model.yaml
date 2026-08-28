@@ -1,0 +1,51 @@
+sail:
+  units:
+  - id: contract
+    requires:
+    - base.decode-types
+    - base.decode
+    sources:
+    - semantics/operation_catalog.sail
+    - semantics/approximation_contract.sail
+    - semantics/register_pairs.sail
+    - semantics/types.sail
+    - semantics/environment.sail
+    - semantics/primitives/arithmetic.sail
+    - semantics/primitives/comparison.sail
+    - semantics/primitives/conversion.sail
+    - semantics/primitives/data.sail
+    - semantics/local_operations.sail
+    - semantics/primitives.sail
+    - semantics/request_contract.sail
+    - semantics/response_contract.sail
+    - semantics/finalize.sail
+  - id: execution
+    requires:
+    - base.architectural-types
+    - base.decode-types
+    - base.decode
+    - FP.contract
+    - base.runtime
+    sources:
+    - semantics/register_access.sail
+    - semantics/transaction_inputs.sail
+    - semantics/transaction_compute.sail
+    - semantics/transaction_flow.sail
+    - semantics/continuation.sail
+documents:
+  topics:
+  - id: introduction.common-floating-point-semantics
+    source: documents/topics/introduction/001_common_floating_point_semantics.tex
+    concept: fp
+  - id: introduction.input-nan-rounding-and-result-order
+    source: documents/topics/introduction/002_input_nan_rounding_and_result_order.tex
+    concept: fp
+  - id: introduction.floating-point-exception-causes-and-commit
+    source: documents/topics/introduction/003_floating_point_exception_causes_and_commit.tex
+    concept: fp
+  - id: introduction.comparison-minimum-and-maximum
+    source: documents/topics/introduction/004_comparison_minimum_and_maximum.tex
+    concept: fp
+  - id: introduction.conversions
+    source: documents/topics/introduction/005_conversions.tex
+    concept: fp

@@ -1,0 +1,63 @@
+encodings:
+  b_w_l_q_z_ea_s_ea_d:
+    pattern: 1111000101zzsssssssddddddd
+    syntax: MOVCU.{B|W|L|Q}(z) <ea>(s), <ea>(d)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      s:
+        role: src
+        type: base.field_types.EA
+      d:
+        role: dst
+        type: base.field_types.EA
+    constraints:
+    - role: dst
+      exclude:
+      - immediate
+      reason: invalid_destination
+  b_w_l_q_z_rn_s_rn_d:
+    pattern: 10010zz000ssssdddd
+    syntax: MOVCU.{B|W|L|Q}(z) Rn(s), Rn(d)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      s:
+        role: src
+        type: base.field_types.Rn
+      d:
+        role: dst
+        type: base.field_types.Rn
+  b_w_l_q_z_rn_s_ea_d:
+    pattern: 1111001110zz000ssssddddddd
+    syntax: MOVCU.{B|W|L|Q}(z) Rn(s), <ea>(d)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      s:
+        role: src
+        type: base.field_types.Rn
+      d:
+        role: dst
+        type: base.field_types.EA
+    constraints:
+    - role: dst
+      exclude:
+      - immediate
+      reason: invalid_destination
+  b_w_l_q_z_ea_s_rn_d:
+    pattern: 1111001010zz000ddddsssssss
+    syntax: MOVCU.{B|W|L|Q}(z) <ea>(s), Rn(d)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      d:
+        role: dst
+        type: base.field_types.Rn
+      s:
+        role: src
+        type: base.field_types.EA

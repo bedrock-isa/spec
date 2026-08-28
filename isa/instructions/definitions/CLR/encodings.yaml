@@ -1,0 +1,30 @@
+encodings:
+  q_rn_r:
+    pattern: 111rrrr
+    syntax: CLR.Q Rn(r)
+    fields:
+      r:
+        role: dst
+        type: base.field_types.Rn
+  l_rn_r:
+    pattern: 1011000000rrrr
+    syntax: CLR.L Rn(r)
+    fields:
+      r:
+        role: dst
+        type: base.field_types.Rn
+  b_w_l_q_z_ea_e:
+    pattern: 11100zz0111eeeeeee
+    syntax: CLR.{B|W|L|Q}(z) <ea>(e)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      e:
+        role: dst
+        type: base.field_types.EA
+    constraints:
+    - role: dst
+      exclude:
+      - immediate
+      reason: invalid_destination

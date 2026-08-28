@@ -1,7 +1,6 @@
 use crate::breakpoint::BreakpointSet;
 use crate::trace::TraceEvent;
-use bedrock_core::StepResult;
-use bedrock_machine::Machine;
+use bedrock_machine::{Machine, StepResult};
 use std::collections::VecDeque;
 
 #[derive(Debug, Clone)]
@@ -73,8 +72,7 @@ impl Debugger {
 #[cfg(test)]
 mod tests {
     use super::Debugger;
-    use bedrock_core::StepResult;
-    use bedrock_machine::Machine;
+    use bedrock_machine::{Machine, StepResult};
 
     #[test]
     fn run_step_checks_breakpoints_without_recording_trace() {

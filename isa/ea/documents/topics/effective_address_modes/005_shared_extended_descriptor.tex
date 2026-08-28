@@ -1,0 +1,48 @@
+\subsection{Shared Extended Descriptor}
+A compact EXT1 or EXT2 value in any profile selects both an exact descriptor length and the displacement width. The descriptor
+bytes then select segment, base, index, zero-base, SP/PC indexed, and auto-update behavior within that family.
+
+Each extended descriptor selects its segment from the encoded SREG (:term:base.terms.field:) SEG(s), the fixed SS segment for SP, the fixed CS
+segment for PC, or the operation\textquotesingle{}s default data segment.
+
+\input{isa/ea/documents/fragments/ea_field_diagrams.tex}
+
+\manualtablecaption{EA Payload Names}
+\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{0.95in}>{\raggedright\arraybackslash}p{0.45in}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{3.30in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Payload} & \textbf{Bytes} & \textbf{Value} & \textbf{Use}\\
+\midrule
+\endfirsthead
+\multicolumn{4}{l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Payload} & \textbf{Bytes} & \textbf{Value} & \textbf{Use}\\
+\midrule
+\endhead
+disp8s & 1 & signed & displacement added to base/index expression\\
+disp16s & 2 & signed & displacement added to base/index expression\\
+disp32s & 4 & signed & displacement added to base/index expression\\
+disp64 & 8 & unsigned & displacement added to base/index expression\\
+abs32s & 4 & signed & absolute address, sign-extended before use\\
+abs64 & 8 & unsigned & absolute address (:term:base.terms.payload:)\\
+imm8s & 1 & signed & immediate operand (:term:base.terms.payload:)\\
+imm16s & 2 & signed & immediate operand (:term:base.terms.payload:)\\
+imm32s & 4 & signed & immediate operand (:term:base.terms.payload:)\\
+imm64 & 8 & unsigned & immediate operand (:term:base.terms.payload:)\\
+immsf & 4 & unsigned & exact IEEE 754 binary32 floating-point (:term:base.terms.payload:)\\
+immdf & 8 & unsigned & exact IEEE 754 binary64 floating-point (:term:base.terms.payload:)\\
+EXT1 descriptor & 1 & encoded & one-byte extended EA descriptor; present only for EXT1 escapes\\
+EXT2 descriptor & 2 & encoded & two-byte extended EA descriptor; present only for EXT2 escapes\\
+\bottomrule
+\end{manuallongtable}
+
+For a compact displacement, absolute address, or immediate, the selected (:term:base.terms.payload:) follows the compact (:term:base.terms.field:) at that
+operand\textquotesingle{}s (:term:base.terms.payload:) position. Extended-descriptor construction begins with the compact escape value in the (:term:base.terms.opcode:)
+space and exactly one EXT1 or two EXT2 descriptor bytes; a displaced form places its selected displacement after
+those descriptor bytes.
+When an instruction has more than one payload-bearing EA operand, the decoder consumes each complete appended EA
+(:term:base.terms.payload:) sequence in declared instruction operand order. Each complete sequence, including any extended descriptor bytes
+and selected displacement, ends before the next payload-bearing EA operand\textquotesingle{}s sequence begins.
+
+\clearpage

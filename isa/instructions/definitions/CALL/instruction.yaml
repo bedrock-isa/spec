@@ -1,0 +1,12 @@
+mnemonic: CALL
+name: Call
+summary: Performs the call operation.
+route: control_flow
+sail_entries:
+- execute_CALL
+privileged: false
+operands:
+  target:
+    role: control_target
+    access: read
+    value_type: integer

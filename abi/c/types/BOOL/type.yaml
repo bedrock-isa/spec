@@ -1,0 +1,6 @@
+id: BOOL
+spelling: "_Bool"
+call_kind: bool
+size_bits: 8
+alignment_bytes: 1
+representation: zero_or_one

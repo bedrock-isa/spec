@@ -1,5 +1,4 @@
-use bedrock_core::StepResult;
-use bedrock_machine::{ElfLoadOptions, Machine};
+use bedrock_machine::{ElfLoadOptions, Machine, Status, StepResult};
 use std::path::PathBuf;
 
 const TTY_STATE: usize = 0x0002_2000;
@@ -64,9 +63,16 @@ fn run_until(machine: &mut Machine, limit: u64, mut done: impl FnMut(&Machine) -
                 let tty_row =
                     u32::from_le_bytes(ram[TTY_STATE + 4..TTY_STATE + 8].try_into().unwrap());
                 panic!(
-                    "tiny kernel stopped at pc={pc:#x}: {result:?}; recent={recent:?}; registers={:?}; sp={sp:#x}; stack={:?}; return={return_pc:?}; tty={tty_col},{tty_row}",
+                    "tiny kernel stopped at pc={pc:#x}: {result:?}; recent={recent:?}; registers={:?}; sp={sp:#x}; stack={:?}; return={return_pc:?}; status={:?}; ecr={:?}; epc={:#x}; ecs={:?}; eds={:?}; sss={:?}; ssp={:#x}; tty={tty_col},{tty_row}",
                     &machine.state().r,
                     ram.get(sp..sp.saturating_add(96)),
+                    machine.state().status,
+                    machine.state().ecr,
+                    machine.state().epc,
+                    machine.state().ecs,
+                    machine.state().eds,
+                    machine.state().sss,
+                    machine.state().ssp,
                 )
             }
         }
@@ -113,7 +119,7 @@ fn machine_executes_tiny_kernel_sample_with_syscall_and_event_return() {
         .expect("load tiny kernel ELF");
 
     run_until(&mut machine, 1_500_000, |machine| {
-        !machine.state().status.contains(bedrock_core::Status::PM)
+        !machine.state().status.contains(Status::PM)
     });
     let shell_root = machine.state().ptcr.root_table_addr();
     assert!(machine.state().ptcr.paging_enabled());

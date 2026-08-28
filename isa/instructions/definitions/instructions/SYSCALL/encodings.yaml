@@ -1,5 +1,0 @@
-forms:
-- id: extrashort.syscall
-  class: extrashort
-  bits: '0000101'
-  syntax: SYSCALL

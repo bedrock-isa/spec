@@ -1,0 +1,8 @@
+encodings:
+  rn_s:
+    pattern: 11101101001101ssss
+    syntax: WRFSTATUS Rn(s)
+    fields:
+      s:
+        role: src
+        type: base.field_types.Rn

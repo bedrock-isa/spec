@@ -1,0 +1,8 @@
+id: ATOMIC_ALIGNMENT_FAULT
+name: Atomic Alignment Fault
+summary: An atomic read-modify-write operand does not satisfy its architectural alignment requirement.
+code: 0x25
+family: ADDRESS_TRANSLATION
+frame: page
+payload: [FAULT_EA, FAULT_LINEAR, ACCESS, USER_DOMAIN, OPERAND, ACCESS_SIZE]
+

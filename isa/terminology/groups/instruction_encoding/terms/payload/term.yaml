@@ -1,0 +1,10 @@
+id: payload
+display:
+  canonical: payload
+  plural: payloads
+article: a
+definition: >-
+  an independently determined unit after the opcode space that supplies
+  additional information and increases the required instruction length.
+  Adjacent units are separate payloads when their presence, length, or meaning
+  is determined independently.

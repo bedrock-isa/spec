@@ -1,0 +1,8 @@
+id: PAGE_PERMISSION_VIOLATION
+name: Page Permission Violation
+summary: Accumulated page-table permissions exclude the requested access.
+code: 0x21
+family: ADDRESS_TRANSLATION
+frame: page
+payload: [FAULT_EA, FAULT_LINEAR, ACCESS, USER_DOMAIN, ATOMIC, WALK_LEVEL, OPERAND, ACCESS_SIZE]
+

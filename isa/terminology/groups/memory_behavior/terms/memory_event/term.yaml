@@ -1,0 +1,7 @@
+id: memory_event
+display:
+  canonical: memory event
+  plural: memory events
+article: a
+definition: >-
+  a read or write unit that participates in coherence or memory ordering.

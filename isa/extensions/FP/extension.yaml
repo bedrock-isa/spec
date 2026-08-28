@@ -1,0 +1,4 @@
+id: FP
+name: Floating-Point Extension
+required_cpuid_flags:
+- FP.cpuid.EXTENSIONS.DIRECTORY.FEATURES.FP

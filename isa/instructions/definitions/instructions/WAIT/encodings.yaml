@@ -1,5 +1,0 @@
-forms:
-- id: extrashort.wait
-  class: extrashort
-  bits: '0001000'
-  syntax: WAIT

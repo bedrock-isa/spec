@@ -1,0 +1,28 @@
+\subsection{Predicates and Destination Images}
+
+For an element size of $E$ bytes, logical lane $i$ is governed by predicate
+bit $iE$.  All other predicate bits are nonsignificant for that operation.
+Unless an instruction explicitly produces a complete predicate image or uses
+zeroing movement, a false governing bit annuls that lane: it performs no
+(:term:base.terms.memory_access:), produces no exception, and preserves the old destination lane.
+
+An instruction that writes a predicate result writes a complete packed
+predicate image.  It sets or clears each significant result bit and clears
+all nonsignificant bits.  Integer comparisons support \texttt{EQ},
+\texttt{NE}, \texttt{ULT}, \texttt{UGE}, \texttt{ULE}, \texttt{UGT},
+\texttt{LT}, \texttt{GE}, \texttt{LE}, and \texttt{GT}.  FP comparisons
+support \texttt{EQ}, \texttt{NE}, \texttt{LT}, \texttt{LE}, \texttt{GE},
+\texttt{GT}, \texttt{VS} for unordered, and \texttt{VC} for ordered.
+(:ref:VECTOR.instructions.VTESTZ:) and (:ref:VECTOR.instructions.VTESTNZ:) are distinct integer test operations.
+Vector integer operations do not update scalar \texttt{FLAGS}.
+
+(:ref:VECTOR.instructions.PLOOP:) consumes a remaining-count register and an offset register.  If
+the remaining count is zero, it takes its encoded branch target and does not
+change the predicate or either register.  Otherwise, an offset greater than
+or equal to the selected lane count raises (:ref:VECTOR.events.EXCEPTION.VECTOR_LANE_INDEX_OUT_OF_RANGE:) with
+error code zero and leaves the instruction uncommitted.  A valid nonzero
+iteration activates the next
+$\min(remaining, lane\_count-offset)$ lanes, subtracts that number from the
+remaining count, clears the offset register, and falls through.  Software
+advances the offset between chunks when it needs a nonzero subsequent chunk
+origin.

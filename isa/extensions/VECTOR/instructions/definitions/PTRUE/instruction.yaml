@@ -1,0 +1,14 @@
+mnemonic: PTRUE
+name: Predicate Set All
+summary: Set every significant position for the selected size.
+route: vector
+sail_entries:
+- execute_PTRUE
+privileged: false
+assembly:
+  width_suffix_aliases: true
+operands:
+  dst:
+    role: destination
+    access: write
+    value_type: predicate

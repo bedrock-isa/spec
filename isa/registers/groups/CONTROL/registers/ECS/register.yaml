@@ -1,0 +1,4 @@
+id: ECS
+encoding: 0x0111
+role: event_entry
+summary: Architectural event-entry code-segment image.

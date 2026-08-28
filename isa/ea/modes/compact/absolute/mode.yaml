@@ -1,0 +1,12 @@
+id: absolute
+name: Absolute memory
+kind: memory
+syntax: "[absolute]"
+encodings:
+  - pattern: "1011001"
+    payloads:
+      - {role: absolute, type: base.payload_types.ABS32S}
+  - pattern: "1011010"
+    payloads:
+      - {role: absolute, type: base.payload_types.ABS64}
+pseudocode: offset = absolute

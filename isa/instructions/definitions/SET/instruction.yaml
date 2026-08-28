@@ -1,0 +1,15 @@
+mnemonic: SET
+name: Set True
+summary: Writes integer one to the destination operand.
+route: control_flow
+sail_entries:
+- execute_SET
+privileged: false
+repeat:
+  type: repcc
+  observed_value: dst
+operands:
+  dst:
+    role: destination
+    access: write
+    value_type: integer

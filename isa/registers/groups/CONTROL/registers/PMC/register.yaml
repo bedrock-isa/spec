@@ -1,0 +1,4 @@
+id: PMC
+encoding: 0x1100
+role: performance
+summary: Performance-monitor enable.

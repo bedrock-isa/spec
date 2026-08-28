@@ -1,0 +1,8 @@
+id: SEGMENT_BOUNDS_VIOLATION
+name: Segment Bounds Violation
+summary: Segment pre-translation places the requested access outside the selected segment bounds.
+code: 0x24
+family: ADDRESS_TRANSLATION
+frame: page
+payload: [FAULT_EA, FAULT_LINEAR, ACCESS, USER_DOMAIN, ATOMIC, OPERAND, ACCESS_SIZE]
+

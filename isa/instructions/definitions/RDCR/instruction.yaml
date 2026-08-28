@@ -1,0 +1,16 @@
+mnemonic: RDCR
+name: Read Control Register
+summary: Read a privileged control register.
+route: system_registers
+sail_entries:
+- execute_RDCR
+privileged: true
+operands:
+  cr:
+    role: source
+    access: read
+    value_type: integer
+  dst:
+    role: destination
+    access: write
+    value_type: integer

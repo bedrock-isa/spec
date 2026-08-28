@@ -1,0 +1,7 @@
+id: VECTOR
+requires: []
+requires-isa:
+- VECTOR
+compiler-features:
+  clang:
+  - vector

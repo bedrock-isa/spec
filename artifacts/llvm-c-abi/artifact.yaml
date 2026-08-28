@@ -1,0 +1,9 @@
+id: llvm-c-abi
+summary: Canonical Bedrock C ABI catalog for LLVM and Clang.
+generator: generator.py
+inputs:
+- isa
+- abi.c
+outputs:
+- BedrockGenCallingConv.td
+- BedrockGenCABI.inc

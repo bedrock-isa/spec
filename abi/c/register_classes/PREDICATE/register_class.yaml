@@ -1,0 +1,11 @@
+id: PREDICATE
+arguments:
+- isa:VECTOR.registers.PREDICATE.P0
+- isa:VECTOR.registers.PREDICATE.P1
+- isa:VECTOR.registers.PREDICATE.P2
+- isa:VECTOR.registers.PREDICATE.P3
+results:
+- isa:VECTOR.registers.PREDICATE.P0
+allocation: ascending
+tuple_alignment: 1
+exhaustion: indirect

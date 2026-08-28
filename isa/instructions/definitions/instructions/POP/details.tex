@@ -1,5 +1,0 @@
-POP reads and validates the stack value without changing architectural state. For an SREG destination, segment-image
-validation completes before commit. It then updates the destination and SP together; any preceding access or
-validation fault leaves both unchanged.
-
-POP SS performs the read using the old SS and exposes the new SS only at the final commit.

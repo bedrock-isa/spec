@@ -1,0 +1,13 @@
+id: GENERAL_PAIR
+kinds:
+- i128
+- u128
+argument:
+  mode: value
+  register_class: base.register_classes.GENERAL
+  units: 2
+  alignment_units: 2
+result:
+  mode: value
+  register_class: base.register_classes.GENERAL
+  units: 2

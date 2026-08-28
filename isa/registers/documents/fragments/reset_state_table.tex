@@ -1,0 +1,58 @@
+\Needspace{1.25in}
+\manualtablecaption{Warm RESET Contract}
+\begingroup\footnotesize
+\setlength{\aboverulesep}{0pt}
+\setlength{\belowrulesep}{0pt}
+\setlength{\extrarowheight}{1.2pt}
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{1.35in}>{\raggedright\arraybackslash}X@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Property} & \textbf{Architectural Rule}\\
+\midrule
+Scope & executing (:term:base.terms.logical_processor:)\\
+Required privilege & supervisor\\
+Serialization & complete prior (:term:base.terms.memory_effect|plural:) and pending write-combining stores before reset state commits\\
+Restart & running at BOOTPC after instruction-fetch synchronization\\
+Other (:term:base.terms.logical_processor|plural:) & unchanged\\
+\bottomrule
+\end{tabularx}
+\end{center}
+\endgroup
+
+
+\Needspace{1.25in}
+\manualtablecaption{Architectural Reset State}
+\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{2.00in}>{\raggedright\arraybackslash}p{2.40in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{State} & \textbf{Reset Value}\\
+\midrule
+\endfirsthead
+\multicolumn{2}{@{}l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{State} & \textbf{Reset Value}\\
+\midrule
+\endhead
+R0,\allowbreak{} R1,\allowbreak{} R2,\allowbreak{} R3,\allowbreak{} R4,\allowbreak{} R5,\allowbreak{} R6,\allowbreak{} R7,\allowbreak{} R8,\allowbreak{} R9,\allowbreak{} R10,\allowbreak{} R11,\allowbreak{} R12,\allowbreak{} R13,\allowbreak{} R14,\allowbreak{} R15,\allowbreak{} SP & 0\\
+FLAGS & 0\\
+STATUS & PM=1; all other STATUS bits 0\\
+CS,\allowbreak{} DS,\allowbreak{} SS,\allowbreak{} GS0,\allowbreak{} GS1,\allowbreak{} GS2,\allowbreak{} GS3,\allowbreak{} GS4,\allowbreak{} GS5 & 0\\
+PC & BOOTPC\\
+PTCR,\allowbreak{} ASCR,\allowbreak{} ECR & 0\\
+EPC,\allowbreak{} ECS,\allowbreak{} EDS & 0\\
+UPC,\allowbreak{} USP,\allowbreak{} UCS,\allowbreak{} UDS,\allowbreak{} USS,\allowbreak{} UCTL,\allowbreak{} UINFO & 0\\
+SSS,\allowbreak{} SSP,\allowbreak{} ISS,\allowbreak{} ISP,\allowbreak{} FSS,\allowbreak{} FSP,\allowbreak{} DSS,\allowbreak{} DSP & 0\\
+PMC,\allowbreak{} CYCLE,\allowbreak{} INSTRET,\allowbreak{} PTWALK & 0\\
+Floating-point registers F0--F15,\allowbreak{} FSTATUS,\allowbreak{} FFLAGS,\allowbreak{} and floating-point extension state & 0\\
+Vector registers V0--V31 and (:term:base.terms.predicate_register|plural:) P0--P15 & 0\\
+Hidden repeat state and hidden load-reservation state & invalid\\
+hidden current DFA & 0\\
+ECR.\allowbreak{}NMI\_\allowbreak{}P & 0\\
+Local translation and page-walk caches; local prefetch state & invalid\\
+Coherent data- and instruction-cache contents & retained as coherent contents\\
+Processor execution state & running at BOOTPC\\
+BOOTPC,\allowbreak{} BOOTCFG & platform supplied on cold reset; (:term:base.terms.preserved:) by warm RESET\\
+\bottomrule
+\end{manuallongtable}

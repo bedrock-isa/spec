@@ -1,0 +1,6 @@
+id: software_defined_state
+display:
+  canonical: software-defined state
+definition: >-
+  state reserved for software use. Hardware interpretation is limited to
+  behavior explicitly defined by the containing structure.

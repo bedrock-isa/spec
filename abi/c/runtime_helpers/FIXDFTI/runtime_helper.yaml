@@ -1,0 +1,5 @@
+id: FIXDFTI
+symbol: __fixdfti
+result: base.types.INT128
+parameters:
+- base.types.DOUBLE

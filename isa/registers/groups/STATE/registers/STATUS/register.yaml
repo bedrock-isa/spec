@@ -1,0 +1,3 @@
+id: STATUS
+summary: Processor privilege, event, interrupt, and tracing state.
+reset: 0x0010

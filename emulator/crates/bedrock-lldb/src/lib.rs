@@ -513,7 +513,6 @@ _start:
     }
 
     #[test]
-    #[ignore = "sandbox may disallow loopback listeners"]
     fn lldb_attaches_to_bedrock_remote_and_runs_commands() {
         let Some(toolchain) = discover_toolchain() else {
             return;

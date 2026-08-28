@@ -1,0 +1,12 @@
+mnemonic: SYNCCACHE
+name: Synchronize Caches
+summary: Synchronize one cache-maintenance block for local instruction fetch.
+route: cache
+sail_entries:
+- execute_SYNCCACHE
+privileged: true
+operands:
+  target:
+    role: address
+    access: address
+    value_type: integer

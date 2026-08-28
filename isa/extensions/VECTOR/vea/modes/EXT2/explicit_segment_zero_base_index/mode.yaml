@@ -1,0 +1,15 @@
+id: explicit_segment_zero_base_index
+name: Explicit-segment zero-base indexed
+kind: memory
+syntax: "[SEG(s):0 + update(Rn(i)) * scale + displacement]"
+fields:
+  s: {role: segment, type: base.field_types.SREG}
+  i: {role: index, type: base.field_types.Rn}
+encodings:
+  - pattern: [1sss1001, 0000iiii]
+    autoupdate: {target: index, type: postincrement, difference: element_count}
+  - pattern: [1sss1001, 0001iiii]
+    autoupdate: {target: index, type: predecrement, difference: element_count}
+  - pattern: [1sss1001, 0010iiii]
+segment: {source: field, role: segment}
+pseudocode: offset = 0 + index * scale + displacement

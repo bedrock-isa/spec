@@ -1,0 +1,6 @@
+id: reserved
+display:
+  canonical: reserved
+definition: >-
+  a classification meaning that software must not depend on the field's value or
+  behavior.

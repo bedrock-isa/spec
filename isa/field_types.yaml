@@ -1,0 +1,73 @@
+field_types:
+  Rn:
+    type: register_selector
+    register_group: base.registers.GPR
+    bits: 4
+  EA:
+    type: effective_address
+    profile: ea
+    bits: 7
+  SREG:
+    type: register
+    register_group: base.registers.SEGMENT
+    bits: 3
+  CC:
+    type: enum_condition
+    bits: 4
+  PAIRn:
+    type: register_pair_selector
+    register_group: base.registers.GPR
+    bits: 3
+  PTLVL:
+    type: page_table_level
+    bits: 3
+  FLBMP:
+    type: flags
+    bits: 4
+  IMM6:
+    type: immediate
+    value_type: unsigned_integer
+    bits: 6
+  IMM7:
+    type: immediate
+    value_type: unsigned_integer
+    bits: 7
+  IMM8:
+    type: immediate
+    value_type: unsigned_integer
+    bits: 8
+  IMM8S:
+    type: immediate
+    value_type: signed_integer
+    bits: 8
+  MORDER:
+    type: memory_order
+    bits: 3
+  SIZE_BWLQ:
+    type: size_selector
+    bits: 2
+    values:
+      - {value: 0, code: B}
+      - {value: 1, code: W}
+      - {value: 2, code: L}
+      - {value: 3, code: Q}
+  SIZE_LQ:
+    type: size_selector
+    bits: 1
+    values:
+      - {value: 0, code: L}
+      - {value: 1, code: Q}
+  SIZE_BW:
+    type: size_selector
+    bits: 1
+    values:
+      - {value: 0, code: B}
+      - {value: 1, code: W}
+  SIZE_WLQ:
+    type: size_selector
+    bits: 2
+    values:
+      - {value: 1, code: W}
+      - {value: 2, code: L}
+      - {value: 3, code: Q}
+  

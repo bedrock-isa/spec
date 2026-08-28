@@ -1,0 +1,39 @@
+encodings:
+  rn_r_ea_e:
+    pattern: 11110110100ccccrrrreeeeeee
+    syntax: DJcc Rn(r), <ea>(e)
+    fields:
+      c:
+        role: cc
+        type: base.field_types.CC
+      r:
+        role: counter
+        type: base.field_types.Rn
+      e:
+        role: target
+        type: base.field_types.EA
+    constraints:
+    - role: cc
+      allow:
+      - 0
+      - 0x2..0xf
+      reason: condition_false_reclaimed
+  rn_r_rn_e:
+    pattern: 11110100010000ccccrrrreeee
+    syntax: DJcc Rn(r), Rn(e)
+    fields:
+      c:
+        role: cc
+        type: base.field_types.CC
+      r:
+        role: counter
+        type: base.field_types.Rn
+      e:
+        role: target
+        type: base.field_types.Rn
+    constraints:
+    - role: cc
+      allow:
+      - 0
+      - 0x2..0xf
+      reason: condition_false_reclaimed

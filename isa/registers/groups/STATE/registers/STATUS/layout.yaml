@@ -1,0 +1,10 @@
+bits: 16
+fields:
+- {id: UO, lsb: 10, bits: 1, summary: Outer event originated in user mode.}
+- {id: EDEPTH, lsb: 6, bits: 4, summary: Current architectural event depth.}
+- {id: IE, lsb: 5, bits: 1, summary: Maskable-interrupt enable.}
+- {id: PM, lsb: 4, bits: 1, summary: Privilege mode.}
+- {id: RF, lsb: 3, bits: 1, summary: One-shot trace suppression.}
+- {id: TF, lsb: 2, bits: 1, summary: Post-success trace request.}
+- {id: NI, lsb: 1, bits: 1, summary: NMI inhibition.}
+- {id: EA, lsb: 0, bits: 1, summary: Architectural event-active state.}

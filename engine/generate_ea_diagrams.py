@@ -1,0 +1,718 @@
+"""Generate LaTeX encoding and address-flow diagrams from EA mode YAML."""
+
+from __future__ import annotations
+
+import argparse
+from collections.abc import Iterable, Mapping, Sequence
+from dataclasses import dataclass
+from math import sqrt
+from pathlib import Path
+import sys
+from typing import Any
+
+import yaml
+
+try:
+    from .ea_mode import EAMode
+except ImportError:  # Support loading engine directly on PYTHONPATH.
+    from ea_mode import EAMode
+
+
+def _tex(value: object) -> str:
+    """Escape plain YAML text for use as LaTeX macro content."""
+
+    replacements = {
+        "\\": r"\textbackslash{}",
+        "{": r"\{",
+        "}": r"\}",
+        "#": r"\#",
+        "$": r"\$",
+        "%": r"\%",
+        "&": r"\&",
+        "_": r"\_",
+        "^": r"\textasciicircum{}",
+        "~": r"\textasciitilde{}",
+    }
+    return "".join(replacements.get(character, character) for character in str(value))
+
+
+def _flat_pattern(pattern: str | Sequence[str]) -> str:
+    return pattern if isinstance(pattern, str) else "".join(pattern)
+
+
+def _format_fields(pattern: str | Sequence[str]) -> list[str]:
+    commands: list[str] = []
+    flat = _flat_pattern(pattern)
+    start = 0
+    while start < len(flat):
+        fixed = flat[start] in "01"
+        end = start + 1
+        while end < len(flat):
+            if fixed:
+                if flat[end] not in "01":
+                    break
+            elif flat[end] != flat[start]:
+                break
+            end += 1
+        run = flat[start:end]
+        if fixed:
+            commands.append(f"  \\BedrockFormatFixed{{{run}}}{{{len(run)}}}")
+        else:
+            commands.append(f"  \\BedrockFormatFieldCode{{{run[0]}}}{{{len(run)}}}")
+        start = end
+    return commands
+
+
+def _short_type(reference: str) -> str:
+    return reference.rsplit(".", 1)[-1]
+
+
+def _encoding_label(encoding: Mapping[str, Any]) -> str:
+    parts: list[str] = []
+    update = encoding.get("autoupdate")
+    if update:
+        parts.append(f"{update['target']} {update['type']}")
+    parts.extend(_short_type(payload["type"]) for payload in encoding.get("payloads", []))
+    return " + ".join(parts) if parts else "plain"
+
+
+def render_encoding_diagram(mode: EAMode) -> str:
+    """Render the wire encodings of one EA mode as a Bedrock format diagram."""
+
+    lines = [f"\\begin{{BedrockFormatDiagram}}{{{_tex(mode['name'])} encodings}}"]
+    for encoding in mode["encodings"]:
+        lines.append(f"\\BedrockFormatRow{{{_tex(_encoding_label(encoding))}}}{{%")
+        lines.extend(_format_fields(encoding["pattern"]))
+        lines.append("}")
+    lines.append("\\end{BedrockFormatDiagram}")
+    return "\n".join(lines)
+
+
+def _field_operand(mode: EAMode, role: str) -> str | None:
+    for symbol, definition in mode.to_dict().get("fields", {}).items():
+        if definition["role"] == role:
+            return f"Rn({symbol})"
+    return None
+
+
+def _expression(mode: EAMode) -> str:
+    return mode["pseudocode"].split("=", 1)[1].strip()
+
+
+def _base_operand(mode: EAMode, expression: str) -> tuple[str, str]:
+    field = _field_operand(mode, "base")
+    if field:
+        return "BASE REGISTER", field
+    for register, label in (("SP", "STACK POINTER"), ("PC", "PROGRAM COUNTER")):
+        if register in expression.split():
+            return label, register
+    if "absolute" in expression.split():
+        return "ABSOLUTE ADDRESS", "absolute"
+    return "ZERO BASE", "0"
+
+
+@dataclass(frozen=True)
+class _FlowNode:
+    """A semantic flow node before it is converted to TikZ geometry."""
+
+    node_id: str
+    kind: str
+    row: int
+    lane: str
+    text: str
+    row_label: str = ""
+    width_class: str = "word"
+    show_bits: bool = False
+
+
+class _EAFlowLayout:
+    """Lay out an EA data-flow graph on a regular semantic grid.
+
+    Diagram builders name rows and lanes only.  All dimensions, coordinates,
+    box widths, and feedback ports are derived here so individual EA modes
+    cannot accumulate hand-tuned geometry.
+    """
+
+    ROW_PITCH = 0.72
+    TOP_Y = 0.90
+    MAIN_X = 4.62
+    WORD_WIDTH = 2.20
+    AUX_WIDTH = 1.12
+    OP_RADIUS = 0.135
+    MILLIMETERS_PER_INCH = 25.4
+    ARROW_HEAD_LENGTH = 2.0 / MILLIMETERS_PER_INCH
+    EDGE_CLEARANCE = 0.06
+    OP_GAP = ARROW_HEAD_LENGTH + EDGE_CLEARANCE
+    FEEDBACK_PORT_OFFSET = 0.07
+    FEEDBACK_INSET = 0.20
+
+    def __init__(self, caption: str, row_count: int) -> None:
+        self.caption = caption
+        self.row_count = row_count
+        self.nodes: dict[str, _FlowNode] = {}
+        self.edges: list[str] = []
+        self.memory_tail: tuple[str, int] | None = None
+
+    @classmethod
+    def _width(cls, width_class: str) -> float:
+        if width_class == "word":
+            return cls.WORD_WIDTH
+        if width_class == "aux":
+            return cls.AUX_WIDTH
+        raise ValueError(f"unsupported EA flow width class: {width_class}")
+
+    @classmethod
+    def _lane_x(cls, lane: str, width_class: str = "word") -> float:
+        width = cls._width(width_class)
+        if lane == "main":
+            return cls.MAIN_X
+        if lane == "source":
+            return cls.MAIN_X - cls.OP_RADIUS - cls.OP_GAP - width / 2
+        if lane == "secondary":
+            return cls._lane_x("source", "word")
+        if lane == "side":
+            secondary = cls._lane_x("secondary")
+            return secondary - cls.OP_RADIUS - cls.OP_GAP - width / 2
+        if lane == "merge":
+            secondary = cls._lane_x("secondary")
+            return (secondary + cls.MAIN_X) / 2
+        if lane == "feedback":
+            return cls.MAIN_X - cls.WORD_WIDTH / 2 + cls.FEEDBACK_INSET
+        raise ValueError(f"unsupported EA flow lane: {lane}")
+
+    @classmethod
+    def _row_y(cls, row: int) -> float:
+        return cls.TOP_Y - row * cls.ROW_PITCH
+
+    @staticmethod
+    def _number(value: float) -> str:
+        rendered = f"{value:.3f}".rstrip("0").rstrip(".")
+        return "0" if rendered == "-0" else rendered
+
+    def add_box(
+        self,
+        node_id: str,
+        row: int,
+        lane: str,
+        text: str,
+        *,
+        row_label: str,
+        width_class: str = "word",
+        show_bits: bool = False,
+    ) -> None:
+        self.nodes[node_id] = _FlowNode(
+            node_id,
+            "box",
+            row,
+            lane,
+            text,
+            row_label,
+            width_class,
+            show_bits,
+        )
+
+    def add_operation(self, node_id: str, row: int, lane: str, text: str) -> None:
+        self.nodes[node_id] = _FlowNode(node_id, "operation", row, lane, text)
+
+    def connect(self, source: str, target: str) -> None:
+        if source.endswith(".east") and target.endswith(".west"):
+            source_id = source.removesuffix(".east")
+            target_id = target.removesuffix(".west")
+            source_node = self.nodes[source_id]
+            target_node = self.nodes[target_id]
+            source_half_width = (
+                self.OP_RADIUS
+                if source_node.kind == "operation"
+                else self._width(source_node.width_class) / 2
+            )
+            target_half_width = (
+                self.OP_RADIUS
+                if target_node.kind == "operation"
+                else self._width(target_node.width_class) / 2
+            )
+            source_right = (
+                self._lane_x(source_node.lane, source_node.width_class)
+                + source_half_width
+            )
+            target_left = (
+                self._lane_x(target_node.lane, target_node.width_class)
+                - target_half_width
+            )
+            if target_left - source_right + 1e-9 < self.OP_GAP:
+                raise ValueError(
+                    f"{source_id} -> {target_id}: horizontal edge gap "
+                    f"{target_left - source_right:.3f} is smaller than "
+                    f"{self.OP_GAP:.3f}"
+                )
+        self.edges.append(f"  \\draw[manualFlowArrow] ({source}) -- ({target});%")
+
+    def connect_feedback(self, register_id: str, operation_id: str) -> None:
+        register = self.nodes[register_id]
+        operation = self.nodes[operation_id]
+        register_x = self._lane_x(register.lane, register.width_class)
+        register_width = self._width(register.width_class)
+        operation_x = self._lane_x(operation.lane)
+        offset = self.FEEDBACK_PORT_OFFSET
+        if not register_x - register_width / 2 < operation_x - offset:
+            raise ValueError(f"{operation_id}: feedback output misses {register_id}")
+        if not operation_x + offset < register_x + register_width / 2:
+            raise ValueError(f"{operation_id}: feedback input misses {register_id}")
+        register_y = self._row_y(register.row) - 0.13
+        operation_y = self._row_y(operation.row)
+        operation_port_y = operation_y + sqrt(self.OP_RADIUS**2 - offset**2)
+        out_id = f"{operation_id}feedbackout"
+        in_id = f"{operation_id}feedbackin"
+        op_in_id = f"{operation_id}in"
+        op_out_id = f"{operation_id}out"
+        number = self._number
+        self.edges.extend(
+            [
+                f"  \\coordinate ({out_id}) at ({number(operation_x - offset)},{number(register_y)});%",
+                f"  \\coordinate ({in_id}) at ({number(operation_x + offset)},{number(register_y)});%",
+                f"  \\coordinate ({op_in_id}) at ({number(operation_x - offset)},{number(operation_port_y)});%",
+                f"  \\coordinate ({op_out_id}) at ({number(operation_x + offset)},{number(operation_port_y)});%",
+                f"  \\draw[manualFlowArrow] ({out_id}) -- ({op_in_id});%",
+                f"  \\draw[manualFlowArrow] ({op_out_id}) -- ({in_id});%",
+            ]
+        )
+
+    def connect_box_port_to_operation(
+        self, box_id: str, operation_id: str, lane: str
+    ) -> None:
+        box = self.nodes[box_id]
+        operation = self.nodes[operation_id]
+        x = self._lane_x(lane)
+        box_y = self._row_y(box.row) - 0.13
+        number = self._number
+        port_id = f"{box_id}to{operation_id}"
+        self.edges.append(
+            f"  \\coordinate ({port_id}) at ({number(x)},{number(box_y)});%"
+        )
+        self.connect(port_id, f"{operation_id}.north")
+
+    def add_memory_tail(self, pointer_id: str, row: int) -> None:
+        self.memory_tail = (pointer_id, row)
+
+    def render(self) -> str:
+        number = self._number
+        height = 0.70 + max(0, self.row_count - 1) * self.ROW_PITCH
+        lines = [
+            f"\\BedrockEAFlowStart{{{number(height)}in}}{{{self.caption}}}%"
+        ]
+        for node in self.nodes.values():
+            x = self._lane_x(node.lane, node.width_class)
+            y = self._row_y(node.row)
+            if node.kind == "operation":
+                lines.append(
+                    f"  \\BedrockEAFlowCircle{{{node.node_id}}}"
+                    f"{{{number(x)}}}{{{number(y)}}}{{{node.text}}}%"
+                )
+            else:
+                width = self._width(node.width_class)
+                lines.append(
+                    f"  \\BedrockEAFlowLabeledBox{{{node.row_label}}}"
+                    f"{{{node.node_id}}}{{{number(y)}}}{{{number(x)}}}"
+                    f"{{{number(width)}}}{{{node.text}}}"
+                    f"{{{1 if node.show_bits else 0}}}%"
+                )
+        lines.extend(self.edges)
+        if self.memory_tail is not None:
+            pointer_id, row = self.memory_tail
+            y = self._row_y(row)
+            lines.append(
+                f"  \\BedrockEAFlowMemoryTail{{{pointer_id}}}"
+                f"{{{number(y)}}}{{{number(self.MAIN_X)}}}"
+                f"{{{number(self.WORD_WIDTH)}}}%"
+            )
+        lines.append("  \\BedrockEAFlowEnd")
+        return "\n".join(lines)
+
+
+def _add_result_and_memory(
+    layout: _EAFlowLayout, result_row: int, result_text: str
+) -> None:
+    layout.add_box(
+        "ptr",
+        result_row,
+        "main",
+        result_text,
+        row_label="OPERAND POINTER",
+        show_bits=True,
+    )
+    layout.add_memory_tail("ptr", result_row + 1)
+
+
+def render_flow_diagram(mode: EAMode) -> str | None:
+    """Render one plain EA mode through the semantic grid layout engine."""
+
+    if "pseudocode" not in mode:
+        return None
+
+    generated_value = "operand" if mode["kind"] == "immediate" else "address"
+    name = _tex(f"{mode['name']} {generated_value} generation")
+    expression = _expression(mode)
+    if mode["kind"] == "immediate":
+        layout = _EAFlowLayout(name, 2)
+        layout.add_box(
+            "imm",
+            0,
+            "main",
+            "immediate",
+            row_label="IMMEDIATE DATA",
+            show_bits=True,
+        )
+        layout.add_box(
+            "operand",
+            1,
+            "main",
+            "IMMEDIATE VALUE",
+            row_label="OPERAND",
+        )
+        layout.connect("imm.south", "operand.north")
+        return layout.render()
+
+    source_label, base = _base_operand(mode, expression)
+    index = _field_operand(mode, "index")
+    if index and "scale" in expression.split():
+        displacement = "displacement" if "displacement" in expression.split() else ""
+        has_displacement = bool(displacement)
+        index_row = 2 if has_displacement else 1
+        merge_row = index_row + 1
+        layout = _EAFlowLayout(name, merge_row + 3)
+        layout.add_box(
+            "base", 0, "main", _tex(base), row_label=_tex(source_label), show_bits=True
+        )
+        if has_displacement:
+            layout.add_box(
+                "disp",
+                1,
+                "source",
+                "displacement",
+                row_label="DISPLACEMENT",
+                show_bits=True,
+            )
+            layout.add_operation("addbase", 1, "main", "+")
+            layout.connect("base.south", "addbase.north")
+            layout.connect("disp.east", "addbase.west")
+            main_source = "addbase.south"
+        else:
+            main_source = "base.south"
+        layout.add_box(
+            "idx",
+            index_row,
+            "secondary",
+            _tex(index),
+            row_label="INDEX REGISTER",
+            show_bits=True,
+        )
+        layout.add_box(
+            "scale",
+            merge_row,
+            "side",
+            "SCALE VALUE",
+            row_label="SCALE",
+            width_class="aux",
+        )
+        layout.add_operation("mul", merge_row, "secondary", "x")
+        layout.add_operation("addindex", merge_row, "main", "+")
+        layout.connect(main_source, "addindex.north")
+        layout.connect("idx.south", "mul.north")
+        layout.connect("scale.east", "mul.west")
+        layout.connect("mul.east", "addindex.west")
+        _add_result_and_memory(layout, merge_row + 1, "EFFECTIVE ADDRESS")
+        layout.connect("addindex.south", "ptr.north")
+        return layout.render()
+    if "displacement" in expression.split():
+        layout = _EAFlowLayout(name, 4)
+        layout.add_box(
+            "base", 0, "main", _tex(base), row_label=_tex(source_label), show_bits=True
+        )
+        layout.add_box(
+            "disp",
+            1,
+            "source",
+            "displacement",
+            row_label="DISPLACEMENT",
+            show_bits=True,
+        )
+        layout.add_operation("add", 1, "main", "+")
+        layout.connect("base.south", "add.north")
+        layout.connect("disp.east", "add.west")
+        _add_result_and_memory(layout, 2, "EFFECTIVE ADDRESS")
+        layout.connect("add.south", "ptr.north")
+        return layout.render()
+    layout = _EAFlowLayout(name, 3)
+    layout.add_box(
+        "src", 0, "main", _tex(base), row_label=_tex(source_label), show_bits=True
+    )
+    _add_result_and_memory(layout, 1, "EFFECTIVE ADDRESS")
+    layout.connect("src.south", "ptr.north")
+    return layout.render()
+
+
+def render_autoupdate_diagrams(mode: EAMode) -> list[str]:
+    """Render each autoupdate variant as an integrated address-generation flow."""
+
+    if "pseudocode" not in mode:
+        return []
+    expression = _expression(mode)
+    source_label, base = _base_operand(mode, expression)
+    displacement = "displacement" if "displacement" in expression.split() else ""
+    index = _field_operand(mode, "index")
+    diagrams: list[str] = []
+    for encoding in mode["encodings"]:
+        update = encoding.get("autoupdate")
+        if not update:
+            continue
+        target = update["target"]
+        update_type = update["type"]
+        difference = _tex(update["difference"])
+        caption = _tex(f"{mode['name']} {update_type} address generation")
+        if target == "base":
+            operand = _field_operand(mode, "base")
+            if operand is None:
+                raise ValueError(f"{mode.source}: base autoupdate requires a base field")
+            layout = _EAFlowLayout(caption, 5)
+            layout.add_box(
+                "base",
+                0,
+                "main",
+                _tex(operand),
+                row_label=_tex(source_label),
+                show_bits=True,
+            )
+            operation_lane = "feedback" if update_type == "postincrement" else "main"
+            layout.add_box(
+                "update",
+                1,
+                "side",
+                difference,
+                row_label="UPDATE DIFFERENCE",
+                width_class="aux",
+            )
+            layout.add_operation(
+                "updateop", 1, operation_lane, "+" if update_type == "postincrement" else "$-$"
+            )
+            layout.add_box(
+                "disp",
+                2,
+                "source",
+                _tex(displacement),
+                row_label="DISPLACEMENT",
+                show_bits=True,
+            )
+            layout.add_operation("add", 2, "main", "+")
+            layout.connect("update.east", "updateop.west")
+            layout.connect_feedback("base", "updateop")
+            if update_type == "postincrement":
+                layout.connect("base.south", "add.north")
+            else:
+                layout.connect("updateop.south", "add.north")
+            layout.connect("disp.east", "add.west")
+            _add_result_and_memory(layout, 3, "EFFECTIVE ADDRESS")
+            layout.connect("add.south", "ptr.north")
+            diagrams.append(
+                f"\\clearpage\n\\BedrockInstructionLead{{{_tex(mode['name'])} / {update_type}}}\n"
+                "\\par\\Needspace{4.70in}%\n"
+                f"{layout.render()}"
+            )
+        elif target == "index":
+            if index is None:
+                raise ValueError(f"{mode.source}: index autoupdate requires an index field")
+            layout = _EAFlowLayout(caption, 7)
+            layout.add_box(
+                "base", 0, "main", _tex(base), row_label=_tex(source_label), show_bits=True
+            )
+            layout.add_box(
+                "disp",
+                1,
+                "source",
+                _tex(displacement),
+                row_label="DISPLACEMENT",
+                show_bits=True,
+            )
+            layout.add_operation("addbase", 1, "main", "+")
+            layout.add_box(
+                "idx",
+                2,
+                "secondary",
+                _tex(index),
+                row_label="INDEX REGISTER",
+                show_bits=True,
+            )
+            layout.add_box(
+                "update",
+                3,
+                "side",
+                difference,
+                row_label="INDEX UPDATE",
+                width_class="aux",
+            )
+            layout.add_operation(
+                "updateop",
+                3,
+                "secondary",
+                "+" if update_type == "postincrement" else "$-$",
+            )
+            layout.add_box(
+                "scale",
+                4,
+                "side",
+                "SCALE VALUE",
+                row_label="SCALE",
+                width_class="aux",
+            )
+            multiply_lane = "merge" if update_type == "postincrement" else "secondary"
+            layout.add_operation("mul", 4, multiply_lane, "x")
+            layout.add_operation("addindex", 4, "main", "+")
+            layout.connect("base.south", "addbase.north")
+            layout.connect("disp.east", "addbase.west")
+            layout.connect("addbase.south", "addindex.north")
+            layout.connect("update.east", "updateop.west")
+            layout.connect_feedback("idx", "updateop")
+            if update_type == "postincrement":
+                layout.connect_box_port_to_operation("idx", "mul", "merge")
+            else:
+                layout.connect("updateop.south", "mul.north")
+            layout.connect("scale.east", "mul.west")
+            layout.connect("mul.east", "addindex.west")
+            _add_result_and_memory(layout, 5, "EFFECTIVE ADDRESS")
+            layout.connect("addindex.south", "ptr.north")
+            diagrams.append(
+                f"\\clearpage\n\\BedrockInstructionLead{{{_tex(mode['name'])} / {update_type}}}\n"
+                "\\par\\Needspace{6.15in}%\n"
+                f"{layout.render()}"
+            )
+        else:
+            raise ValueError(f"{mode.source}: unsupported autoupdate target {target!r}")
+    return diagrams
+
+
+def _block_height(mode: EAMode) -> float:
+    """Estimate the space used by the format diagram and its optional flow."""
+
+    format_height = 0.90 + 0.68 * len(mode["encodings"])
+    if "pseudocode" not in mode:
+        flow_height = 0.0
+    elif mode["kind"] == "immediate":
+        flow_height = 1.55
+    elif _field_operand(mode, "index") and "scale" in _expression(mode).split():
+        flow_height = 3.30
+    elif "displacement" in _expression(mode).split():
+        flow_height = 2.35
+    else:
+        flow_height = 2.10
+    return min(7.0, format_height + flow_height + 0.70)
+
+
+def _mode_context(relative_source: Path) -> str:
+    parts = relative_source.parts
+    if len(parts) >= 5 and parts[:2] == ("ea", "modes"):
+        return f"EA / {parts[2]}"
+    if len(parts) >= 7 and parts[0] == "extensions" and parts[3] == "modes":
+        return f"{parts[1]} {parts[2].upper()} / {parts[4]}"
+    return relative_source.parent.as_posix()
+
+
+def render_mode(mode: EAMode) -> str:
+    relative_source = mode.source
+    try:
+        relative_source = mode.source.resolve().relative_to(mode.isa_root.resolve())
+    except ValueError:
+        pass
+    parts = [
+        f"% Generated from {relative_source.as_posix()}; do not edit this block.",
+        f"\\par\\Needspace{{{_block_height(mode):.2f}in}}%",
+        f"\\BedrockInstructionLead{{{_tex(_mode_context(relative_source))} / {_tex(mode['name'])}}}",
+        render_encoding_diagram(mode),
+    ]
+    update_flows = render_autoupdate_diagrams(mode)
+    if update_flows:
+        parts.extend(update_flows)
+        if any("autoupdate" not in encoding for encoding in mode["encodings"]):
+            flow = render_flow_diagram(mode)
+            if flow:
+                parts.append(
+                    f"\\clearpage\n\\BedrockInstructionLead{{{_tex(mode['name'])} / plain}}\n{flow}"
+                )
+    else:
+        flow = render_flow_diagram(mode)
+        if flow:
+            parts.append(flow)
+    return "\n\n".join(parts)
+
+
+def catalog_mode_paths(isa_root: Path) -> list[Path]:
+    """Return concrete mode paths in each profile catalog's declared order."""
+
+    paths: list[Path] = []
+    type_order = {"compact": 0, "EXT1": 1, "EXT2": 2}
+    catalogs = sorted(
+        (
+            path
+            for path in isa_root.rglob("modes.yaml")
+            if path.parent.name != "modes"
+        ),
+        key=lambda path: (
+            path.parent.parent.as_posix(),
+            type_order.get(path.parent.name, len(type_order)),
+            path.as_posix(),
+        ),
+    )
+    for catalog in catalogs:
+        data = yaml.safe_load(catalog.read_text(encoding="utf-8"))
+        if not isinstance(data, Mapping) or not isinstance(data.get("modes"), list):
+            raise ValueError(f"{catalog}: expected a modes list")
+        for mode_id in data["modes"]:
+            if not isinstance(mode_id, str):
+                raise ValueError(f"{catalog}: mode names must be strings")
+            paths.append(catalog.parent / mode_id / "mode.yaml")
+    return paths
+
+
+def render_paths(paths: Iterable[Path], isa_root: Path) -> str:
+    modes = [EAMode.load(path, isa_root) for path in paths]
+    header = "% Generated by engine.generate_ea_diagrams.\n"
+    separator = "\n\n\\clearpage\n\n"
+    return header + separator.join(render_mode(mode) for mode in modes) + "\n"
+
+
+def _parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "modes",
+        metavar="MODE_YAML",
+        nargs="*",
+        type=Path,
+        help="mode.yaml files to render; defaults to every catalogued EA mode",
+    )
+    parser.add_argument(
+        "--isa-root",
+        type=Path,
+        default=Path(__file__).resolve().parents[1] / "isa",
+        help="ISA definition root (default: repository/isa)",
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        type=Path,
+        help="write the TeX fragment here instead of stdout",
+    )
+    return parser
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    args = _parser().parse_args(argv)
+    isa_root = args.isa_root.resolve()
+    paths = args.modes or catalog_mode_paths(isa_root)
+    rendered = render_paths(paths, isa_root)
+    if args.output:
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(rendered, encoding="utf-8")
+    else:
+        sys.stdout.write(rendered)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

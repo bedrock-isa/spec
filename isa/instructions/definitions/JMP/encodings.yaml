@@ -1,0 +1,45 @@
+encodings:
+  imm8s_i:
+    pattern: 100100iiiiiiii
+    syntax: JMP imm8s(i)
+    fields:
+      i:
+        role: target
+        type: base.field_types.IMM8S
+  imm16s:
+    pattern: '111011110000000110'
+    syntax: JMP <imm16s>
+    payloads:
+    - role: target
+      type: base.payload_types.DISP16S
+  imm32s:
+    pattern: '111011110000000111'
+    syntax: JMP <imm32s>
+    payloads:
+    - role: target
+      type: base.payload_types.DISP32S
+  l_q_z_ea_e:
+    pattern: 111001z1010eeeeeee
+    syntax: JMP.{L|Q}(z) <ea>(e)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_LQ
+      e:
+        role: target
+        type: base.field_types.EA
+    constraints:
+    - role: target
+      exclude:
+      - immediate
+      reason: canonical_form_reclaim
+  l_q_z_rn_r:
+    pattern: 11101100001z10rrrr
+    syntax: JMP.{L|Q}(z) Rn(r)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_LQ
+      r:
+        role: target
+        type: base.field_types.Rn

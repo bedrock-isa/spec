@@ -1,0 +1,23 @@
+mnemonic: EXTRACT
+name: Extract From Register Pair
+summary: Extracts a selected-width value from a concatenated pair of Rn registers.
+route: integer_bitfield
+sail_entries:
+- execute_EXTRACT
+privileged: false
+repeat:
+  type: repcc
+  observed_value: low_dst
+operands:
+  offset:
+    role: source
+    access: read
+    value_type: integer
+  high:
+    role: source
+    access: read
+    value_type: integer
+  low_dst:
+    role: destination
+    access: read_write
+    value_type: integer

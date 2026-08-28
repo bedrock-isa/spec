@@ -1,0 +1,4 @@
+groups:
+- core
+- mmu
+- sysreg

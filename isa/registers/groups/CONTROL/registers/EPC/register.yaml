@@ -1,0 +1,4 @@
+id: EPC
+encoding: 0x0110
+role: event_entry
+summary: Common architectural event-entry program counter.

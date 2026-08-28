@@ -1,0 +1,19 @@
+mnemonic: BCHG
+name: Bit Change
+summary: Performs the bit change operation.
+route: integer_bitfield
+sail_entries:
+- execute_BCHG
+privileged: false
+repeat:
+  type: repcc
+  observed_value: computed
+operands:
+  bit_index:
+    role: source
+    access: read
+    value_type: integer
+  dst:
+    role: destination
+    access: read_write
+    value_type: integer

@@ -1,0 +1,18 @@
+\subsection{Shared Side-Effect Rules}
+An instruction that faults before commit leaves destination registers, destination memory, and auto-update
+register effects unchanged unless the instruction explicitly defines partial completion.
+
+Atomic read-modify-write instructions have a single architectural commit point for the memory update and any associated
+register result. Cache, TLB, and system-state instructions describe their own completion and visibility rules.
+
+Ordinary integer ALU instructions use the common one-memory-operand rule. Compare and test instructions may read two operands and
+update FLAGS without storing their temporary result. EXTS and EXTZ additionally provide explicitly encoded
+register-memory and memory-memory conversion stores; EXTSQ also provides register-register and memory-register sign
+extension. These operations preserve FLAGS unless a repeat rule observes a derived value. Data movement, LEA, and
+segment-address operations also preserve FLAGS unless their descriptions say otherwise.
+
+Control transfers make PC and CS changes at a single control-transfer commit point. Atomic operations require a
+naturally aligned addressable memory operand and commit the read-modify-write as one architectural update. TLB,
+page-table context, and privileged control operations require supervisor privilege. Cache-maintenance operations
+preserve FLAGS and define their own visibility contract. Approximate transcendental floating-point operations are
+available only when CPUID reports \texttt{FPTRANSA} and marks the instruction\textquotesingle{}s accuracy-contract ID present.

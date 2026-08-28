@@ -1,0 +1,18 @@
+mnemonic: FLOG10A
+name: Approximate Floating-Point Log Base 10
+summary: Performs the approximate floating-point log base 10 operation.
+route: fpu_transcendental_approx
+sail_entries:
+- execute_FLOG10A
+privileged: false
+repeat:
+  type: rep
+operands:
+  src:
+    role: source
+    access: read
+    value_type: floating
+  dst:
+    role: destination
+    access: write
+    value_type: floating

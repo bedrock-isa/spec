@@ -1,0 +1,47 @@
+\subsection{Implicit Stack Operations}
+Ordinary implicit stack operations capture the current SS and SP before their first stack access. Every stack slot is
+64 bits and is addressed through the captured SS. The ranges below are expressed in terms of the captured
+$SP_{\mathrm{old}}$; the applicable segment, translation, and complete-range checks finish before the operation commits.
+
+\Needspace{3.4in}
+\manualtablecaption{Ordinary Implicit Stack Operations}
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.92in}>{\raggedright\arraybackslash}p{1.18in}>{\raggedright\arraybackslash}p{0.78in}>{\raggedright\arraybackslash}p{2.72in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Operation} & \textbf{Stack range} & \textbf{Committed SP} & \textbf{Slot layout or value order}\\
+\midrule
+(:ref:base.instructions.PUSH:), (:ref:base.instructions.CALL:) &
+$[SP_{\mathrm{old}}-8,SP_{\mathrm{old}})$ &
+$SP_{\mathrm{old}}-8$ &
+one source value or the following instruction\textquotesingle{}s (:term:base.terms.continuation:) PC at $SP_{\mathrm{old}}-8$\\
+(:ref:base.instructions.POP:), (:ref:base.instructions.RET:) &
+$[SP_{\mathrm{old}},SP_{\mathrm{old}}+8)$ &
+$SP_{\mathrm{old}}+8$ &
+one destination value or (:term:base.terms.continuation:) PC read at $SP_{\mathrm{old}}$\\
+(:ref:base.instructions.PUSHP:), (:ref:FP.instructions.FPUSHP:) &
+$[SP_{\mathrm{old}}-16,SP_{\mathrm{old}})$ &
+$SP_{\mathrm{old}}-16$ &
+listed pair\textquotesingle{}s second register at $SP_{\mathrm{old}}-16$ and first register at $SP_{\mathrm{old}}-8$\\
+(:ref:base.instructions.POPP:), (:ref:FP.instructions.FPOPP:) &
+$[SP_{\mathrm{old}},SP_{\mathrm{old}}+16)$ &
+$SP_{\mathrm{old}}+16$ &
+listed pair\textquotesingle{}s second register from $SP_{\mathrm{old}}$, then first register from $SP_{\mathrm{old}}+8$\\
+(:ref:base.instructions.LCALL:) &
+$[SP_{\mathrm{old}}-16,SP_{\mathrm{old}})$ &
+$SP_{\mathrm{old}}-16$ &
+(:term:base.terms.continuation:) PC at $SP_{\mathrm{old}}-16$ and return CS image at $SP_{\mathrm{old}}-8$\\
+(:ref:base.instructions.LRET:) &
+$[SP_{\mathrm{old}},SP_{\mathrm{old}}+16)$ &
+$SP_{\mathrm{old}}+16$ &
+(:term:base.terms.continuation:) PC at $SP_{\mathrm{old}}$ and return CS image at $SP_{\mathrm{old}}+8$\\
+\bottomrule
+\end{manualtabular}
+
+The complete range and all source values are established before a push operation changes memory or SP. A pop
+operation reads its complete range and completes any applicable destination validation before changing a destination
+or SP. A successful operation commits all listed stack and register effects together; a preceding fault exposes none
+of them.
+
+Architectural event entry and ERET use the return source selected by the Architectural Event Processing Model.
+SYSCALL is the SYSTEM\_CALL event; user-origin entry keeps its (:term:base.terms.continuation:) in the user context bank described by
+the Privileged Execution Model and creates no memory frame.

@@ -1,0 +1,16 @@
+mnemonic: PAND
+name: Predicate Bitwise AND
+summary: AND corresponding bits of Ps and the old Pd into the complete Pd image.
+route: vector
+sail_entries:
+- execute_PAND
+privileged: false
+operands:
+  src:
+    role: source
+    access: read
+    value_type: predicate
+  dst:
+    role: destination
+    access: read_write
+    value_type: predicate

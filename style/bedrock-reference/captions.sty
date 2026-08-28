@@ -1,0 +1,16 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesFile{bedrock-reference/captions.sty}[2026/08/26 Bedrock reference captions commands]
+
+\newcommand{\BedrockCaption}[1]{\par\smallskip\centerline{\small\bfseries #1}\smallskip}
+\newcommand{\BedrockFormatCaption}[1]{\BedrockCaption{Format: #1}}
+\newcommand{\BedrockSchemaCaption}[1]{\BedrockCaption{Schema: #1}}
+\newcommand{\BedrockFigureCaption}[1]{%
+  \refstepcounter{BedrockFigure}\phantomsection\addcontentsline{lof}{figure}{\protect\numberline{\theBedrockFigure}#1}%
+  \par\smallskip\centerline{\small\bfseries Figure \theBedrockFigure. #1}\smallskip}
+\newcommand{\BedrockFigureCaptionAndLabel}[2]{%
+  \BedrockFigureCaption{#2}\label{#1}}
+\newcommand{\BedrockTableCaption}[1]{%
+  \refstepcounter{BedrockTable}\phantomsection\addcontentsline{lot}{table}{\protect\numberline{\theBedrockTable}#1}%
+  \par\smallskip\centerline{\small\bfseries Table \theBedrockTable. #1}\smallskip}
+
+\endinput

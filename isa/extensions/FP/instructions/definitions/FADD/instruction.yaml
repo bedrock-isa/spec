@@ -1,0 +1,18 @@
+mnemonic: FADD
+name: Floating-Point Add
+summary: Adds the source operand to the destination operand.
+route: fpu
+sail_entries:
+- execute_FADD
+privileged: false
+repeat:
+  type: rep
+operands:
+  src:
+    role: source
+    access: read
+    value_type: floating
+  dst:
+    role: destination
+    access: read_write
+    value_type: floating

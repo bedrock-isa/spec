@@ -1,0 +1,22 @@
+mnemonic: FSINCOSA
+name: Approximate Floating-Point Sine And Cosine
+summary: Performs the approximate floating-point sine and cosine operations.
+route: fpu_transcendental_approx
+sail_entries:
+- execute_FSINCOSA
+privileged: false
+repeat:
+  type: rep
+operands:
+  src:
+    role: source
+    access: read
+    value_type: floating
+  sin_dst:
+    role: destination
+    access: write
+    value_type: floating
+  cos_dst:
+    role: destination
+    access: write
+    value_type: floating

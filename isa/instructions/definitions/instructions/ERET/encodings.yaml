@@ -1,5 +1,0 @@
-forms:
-- id: extrashort.eret
-  class: extrashort
-  bits: '0000100'
-  syntax: ERET

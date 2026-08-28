@@ -1,0 +1,18 @@
+mnemonic: FCMP
+name: Floating-Point Compare
+summary: Performs the floating-point compare operation.
+route: fpu
+sail_entries:
+- execute_FCMP
+privileged: false
+repeat:
+  type: rep
+operands:
+  src:
+    role: source
+    access: read
+    value_type: floating
+  dst:
+    role: source
+    access: read
+    value_type: floating

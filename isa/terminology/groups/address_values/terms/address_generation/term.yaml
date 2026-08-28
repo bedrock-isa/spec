@@ -1,0 +1,7 @@
+id: address_generation
+display:
+  canonical: address generation
+definition: >-
+  the instruction-local calculation that combines registers, displacement,
+  index, scale, and immediate fields into an effective address. It does not by
+  itself read memory.

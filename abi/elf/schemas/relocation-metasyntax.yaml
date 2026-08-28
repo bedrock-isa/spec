@@ -1,0 +1,13 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: bedrock://schemas/elf-relocation-metasyntax
+title: Bedrock ELF relocation calculation metasyntax
+type: string
+minLength: 1
+x-grammar: |
+  expression = unary, { ("+" | "-"), unary } ;
+  unary = [ "-" ], primary ;
+  primary = identifier | integer | "(", expression, ")" | call ;
+  call = identifier, "(", [ expression, { ",", expression } ], ")" ;
+x-interpretation-rules:
+- Identifiers name terms supplied by the ELF relocation evaluation context.
+- Function names select ELF-defined address or loader operations.

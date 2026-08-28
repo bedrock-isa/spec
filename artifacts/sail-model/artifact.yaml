@@ -1,0 +1,13 @@
+id: sail-model
+generator: generator.py
+inputs:
+- isa
+extensions:
+- FP
+- FPTRANSA
+- VECTOR
+outputs:
+  registry: generated/registry.sail
+  catalog: generated/catalog.sail
+  dispatch: generated/dispatch.sail
+  project: bedrock-model.sail_project

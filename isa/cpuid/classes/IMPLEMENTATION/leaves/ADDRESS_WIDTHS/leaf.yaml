@@ -1,0 +1,12 @@
+id: ADDRESS_WIDTHS
+name: Address Widths
+value: 0x0003
+queries:
+- id: HEADER
+  index: 0
+  fields:
+  - {id: MAX_INDEX, lsb: 0, bits: 16}
+- id: PARAMETERS
+  index: 1
+  fields:
+  - {id: PABITS, lsb: 0, bits: 6}

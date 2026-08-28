@@ -1,0 +1,12 @@
+id: systemverilog-assertions
+generator: generator.py
+inputs:
+- isa
+depends-on:
+- systemverilog-instruction-decoder
+- systemverilog-ea-decoder
+- systemverilog-register-contracts
+- systemverilog-event-codec
+outputs:
+- formal/bedrock_decode_assertions.sv
+- formal/bedrock_architecture_assertions.sv

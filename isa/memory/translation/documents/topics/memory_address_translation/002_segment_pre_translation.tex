@@ -1,0 +1,33 @@
+\subsection{Segment Pre-Translation}\label{section:segment-pre-translation}
+
+Segment pre-translation interprets the selected 64-bit segment image before paging. The segment (:term:base.terms.field|plural:), derived
+quantities, and image-validity condition are defined in
+\hyperref[section:segment-registers]{Segment Registers}. A (:term:base.terms.disabled_segment:) passes the (:term:base.terms.effective_address:) through.
+An enabled segment either checks the (:term:base.terms.effective_address:) as an offset and adds the base, or checks an already-linear
+address in bounds-only mode.
+
+\Needspace{2.3in}
+\manualtablecaption{Segment Pre-Translation Modes}
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.90in}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{1.95in}>{\raggedright\arraybackslash}p{1.50in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Mode} & \textbf{Segment State} & \textbf{Check} & \textbf{Linear Address}\\
+\midrule
+disabled & m = 0 & no segment-window check & linear = EA\\
+translated window & m != 0, b = 0 & complete byte range lies within $0 \le \mathrm{EA}<\mathrm{span}$ & linear = base + EA\\
+bounds-only window & m != 0, b = 1 & complete byte range lies within $\mathrm{base}\le\mathrm{EA}<\mathrm{limit}$ & linear = EA\\
+\bottomrule
+\end{manualtabular}
+
+Address validation begins by forming the starting EA and its segment-pretranslated linear value. The starting point
+must be within the selected segment. With paging enabled, the complete byte range is translated in increasing
+linear-address order after canonicality checks. With paging disabled, the same byte-range rules apply directly.
+
+Complete range additions are mathematical: 64-bit wraparound never makes an out-of-range access valid. A range
+failure raises (:ref:base.events.EXCEPTION.SEGMENT_BOUNDS_VIOLATION:) before the instruction\textquotesingle{}s target (:term:base.terms.memory_access:) begins.
+
+The segment result is the (:term:base.terms.linear_address:). With PTCR.PE set, the page-table walker consumes that address and applies
+the selected PTE frame and attributes. With paging disabled, the (:term:base.terms.linear_address:) is the physical byte address and
+must fit the implementation PABITS value. An out-of-range direct address raises
+(:ref:base.events.EXCEPTION.PHYSICAL_ADDRESS_FAULT:). An invalid segment image raises (:ref:base.events.EXCEPTION.INVALID_CONTROL_IMAGE:) when written; a failed segment bound or
+canonical-address check raises (:ref:base.events.EXCEPTION.SEGMENT_BOUNDS_VIOLATION:) or (:ref:base.events.EXCEPTION.NONCANONICAL_ADDRESS:), respectively, during access.

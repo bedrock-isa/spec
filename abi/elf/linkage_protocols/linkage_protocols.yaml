@@ -1,0 +1,3 @@
+linkage_protocols:
+- ORDINARY_PLT
+- TLSDESC_CALL

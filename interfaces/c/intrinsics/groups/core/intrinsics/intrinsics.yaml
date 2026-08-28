@@ -1,0 +1,8 @@
+intrinsics:
+- breakpoint
+- cpuid
+- rdpmc
+- read_status
+- trace
+- wait
+- yield

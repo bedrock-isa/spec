@@ -1,0 +1,7 @@
+id: TRUNCATED_INSTRUCTION
+name: Truncated Instruction
+summary: The encoded instruction length is shorter than the selected instruction form requires.
+code: 0x15
+family: INSTRUCTION_VALIDATION
+frame: basic
+

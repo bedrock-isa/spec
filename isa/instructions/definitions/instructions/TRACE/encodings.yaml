@@ -1,9 +1,0 @@
-forms:
-- id: medium.trace_ea
-  class: medium
-  bits: '111011110000001010'
-  syntax: TRACE <imm16>
-  operands:
-  - name: marker
-    type: imm16
-    access: read

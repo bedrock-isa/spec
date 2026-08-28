@@ -1,0 +1,7 @@
+id: PREDICATE
+register_group: isa:VECTOR.registers.PREDICATE
+dwarf:
+- first: 96
+  registers: all
+  status: extension
+  condition: VECTOR extension present

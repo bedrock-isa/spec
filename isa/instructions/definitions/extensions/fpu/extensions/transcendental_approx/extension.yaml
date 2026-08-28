@@ -1,4 +1,0 @@
-name: transcendental_approx
-availability:
-  required_cpuid_flags: [FPTRANSA]
-instructions: instructions.yaml

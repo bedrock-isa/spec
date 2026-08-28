@@ -1,0 +1,31 @@
+\subsection{Vector Memory Operations}
+
+A vector memory operand uses the (:term:base.terms.ordinary:) compact, \texttt{EXT1}, and
+\texttt{EXT2} descriptor formats in vector context.  The descriptor computes
+one scalar anchor address.  A contiguous access uses
+
+\[
+  address[i] = anchor + iE,
+\]
+
+All arithmetic is modulo $2^{64}$. Existing effective-address auto-update is
+applied once to the scalar anchor in the (:term:base.terms.ordinary:) architectural order. That
+single update covers all lanes.
+
+Inactive lanes issue no memory transaction.  (:ref:VECTOR.instructions.VMOV:) merges a memory
+source into its destination, while (:ref:VECTOR.instructions.VMOVZ:) writes zero to inactive
+destination lanes. A memory-destination arithmetic form uses non-atomic,
+lane-wise read-modify-write semantics. A vector instruction nevertheless
+has one architectural commit point: address evaluation, all active reads,
+computation, and all active writes must succeed before any register,
+predicate, memory, auto-update, \texttt{FFLAGS}, or PC effect becomes visible.
+After range, wrap, and canonicality checks, the implementation completes
+translation of every mapping covered by every active lane in increasing
+linear-address order.  Only after all such translations succeed does it apply
+physical-class checks, the vector/gather/scatter MMIO-operation prohibition,
+alignment checks, and target or bus accesses, in that order.  Consequently, a
+translation fault in a higher-address active lane takes precedence over an
+MMIO condition discovered in a lower-address active lane.  When logical lane
+order differs from address order, translation and translation-fault selection
+still follow address order.  The reported fault address identifies the lane
+whose range supplies the selected failure.

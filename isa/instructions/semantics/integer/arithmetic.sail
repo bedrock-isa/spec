@@ -1,64 +1,86 @@
-function execute_binary_local(instruction : Decoded_instruction, state : Cpu_state)
-  -> option(Execution_result) = {
+function binary_operands_local(
+  instruction : Decoded_instruction,
+  state : Cpu_state
+) -> option((bits(64), bits(64), Commit_destination)) = {
   let width = operation_width(instruction);
-  let operation = instruction.form.operation;
-  if not_bool(operation == Op_CMP | operation == Op_TEST | operation == Op_ADC
-              | operation == Op_SBB | operation == Op_ADD | operation == Op_SUB
-              | operation == Op_AND | operation == Op_OR | operation == Op_XOR
-              | operation == Op_MOV | operation == Op_MOVCU | operation == Op_MOVUC
-              | operation == Op_MOVUU | operation == Op_MOVcc) then None()
-  else match (first_binary_operand(instruction.operands), second_binary_operand(instruction.operands)) {
+  match (first_binary_operand(instruction.operands), second_binary_operand(instruction.operands)) {
     (Some(source_operand), Some(destination_operand)) =>
       match (local_operand_value(state, source_operand),
-             local_operand_value(state, destination_operand)) {
-        (Some(source), Some(destination)) => {
-          if operation == Op_CMP then {
-            let (ignored, flags) = sub_with_flags(destination, source, 0, width);
-            let updated = { state with flags = flags };
-            Some(local_result(state, instruction, updated, CommitRegisters))
-          }
-          else if operation == Op_TEST then {
-            let value = narrow_bits(destination & source, width);
-            let updated = { state with flags = flags_value(
-              value == 0x0000000000000000, width_sign(value, width), false, false
-            ) };
-            Some(local_result(state, instruction, updated, CommitRegisters))
-          }
-          else match local_destination(destination_operand, width) {
-            None() => None(),
-            Some(destination_ref) => {
-              let (value, flags) = if operation == Op_ADC then
-                add_with_flags(destination, source, if flag_c(state.flags) then 1 else 0, width)
-              else if operation == Op_SBB then
-                sub_with_flags(destination, source, if flag_c(state.flags) then 1 else 0, width)
-              else if operation == Op_ADD then
-                (bits_from_int(unsigned(narrow_bits(destination, width))
-                               + unsigned(narrow_bits(source, width))), state.flags)
-              else if operation == Op_SUB then
-                (bits_from_int(unsigned(narrow_bits(destination, width))
-                               - unsigned(narrow_bits(source, width))), state.flags)
-              else if operation == Op_AND then (destination & source, state.flags)
-              else if operation == Op_OR then (destination | source, state.flags)
-              else if operation == Op_XOR then (xor_vec(destination, source), state.flags)
-              else (source, state.flags);
-              var updated = write_local_destination(state, operation, destination_ref,
-                                                      narrow_bits(value, width));
-              updated.flags = flags;
-              Some(local_result(state, instruction, updated, CommitRegisters))
-            },
-          }
-        },
+             local_operand_value(state, destination_operand),
+             local_destination(destination_operand, width)) {
+        (Some(source), Some(destination), Some(destination_ref)) =>
+          Some((source, destination, destination_ref)),
         _ => None(),
       },
     _ => None(),
   }
 }
 
-function execute_sp_arithmetic_local(instruction : Decoded_instruction, state : Cpu_state)
+function execute_integer_arithmetic_local(
+  instruction : Decoded_instruction,
+  state : Cpu_state,
+  operation : Integer_arithmetic_operation
+) -> option(Execution_result) = {
+  let width = operation_width(instruction);
+  match binary_operands_local(instruction, state) {
+    None() => None(),
+    Some((source, destination, destination_ref)) => {
+      let value : bits(64) = if operation == IntegerArithmeticAdd then
+          (bits_from_int(unsigned(narrow_bits(destination, width))
+                         + unsigned(narrow_bits(source, width))))
+        else
+          (bits_from_int(unsigned(narrow_bits(destination, width))
+                         - unsigned(narrow_bits(source, width))));
+      let updated = write_local_destination(
+        state, instruction.form.operation, destination_ref, narrow_bits(value, width)
+      );
+      Some(local_result(state, instruction, updated, CommitRegisters))
+    },
+  }
+}
+
+function execute_integer_and_local(
+  instruction : Decoded_instruction,
+  state : Cpu_state
+) -> option(Execution_result) = {
+  let width = operation_width(instruction);
+  match binary_operands_local(instruction, state) {
+    None() => None(),
+    Some((source, destination, destination_ref)) => {
+      let value = integer_and_value(destination, source);
+      let updated = write_local_destination(
+        state, instruction.form.operation, destination_ref, narrow_bits(value, width)
+      );
+      Some(local_result(state, instruction, updated, CommitRegisters))
+    },
+  }
+}
+
+function execute_integer_move_local(
+  instruction : Decoded_instruction,
+  state : Cpu_state
+) -> option(Execution_result) = {
+  let width = operation_width(instruction);
+  match binary_operands_local(instruction, state) {
+    None() => None(),
+    Some((source, _, destination_ref)) => {
+      let updated = write_local_destination(
+        state, instruction.form.operation, destination_ref, narrow_bits(source, width)
+      );
+      Some(local_result(state, instruction, updated, CommitRegisters))
+    },
+  }
+}
+
+function execute_sp_arithmetic_local(
+  instruction : Decoded_instruction,
+  state : Cpu_state,
+  operation : Integer_arithmetic_operation
+)
   -> option(Execution_result) =
-  match (value_named(instruction, state, "imm"), destination_named(instruction, "dst", 8)) {
-    (Some(source), Some(destination)) => if destination.kind == "SP" then {
-      let value = if instruction.form.operation == Op_ADD
+  match (value_named(instruction, state, Operand_imm), destination_named(instruction, Operand_dst, 8)) {
+    (Some(source), Some(destination)) => if destination.kind == DestinationSP then {
+      let value = if operation == IntegerArithmeticAdd
         then add_bits(state.sp, source) else sub_bits(state.sp, source);
       let updated = write_local_destination(
         state, instruction.form.operation, destination, value
@@ -68,38 +90,48 @@ function execute_sp_arithmetic_local(instruction : Decoded_instruction, state : 
     _ => None(),
   }
 
-function execute_unary_local(instruction : Decoded_instruction, state : Cpu_state)
-  -> option(Execution_result) = {
+function unary_operand_local(
+  instruction : Decoded_instruction,
+  state : Cpu_state
+) -> option((bits(64), Commit_destination)) = {
   let width = operation_width(instruction);
-  let operation = instruction.form.operation;
-  if not_bool(operation == Op_CLR | operation == Op_INC | operation == Op_INCF
-              | operation == Op_DEC | operation == Op_DECF | operation == Op_NEG
-              | operation == Op_ABS | operation == Op_NOT) then None()
-  else match operand_named(instruction, "dst") {
+  match operand_named(instruction, Operand_dst) {
     None() => None(),
     Some(operand) => match (local_operand_value(state, operand), local_destination(operand, width)) {
-      (Some(old), Some(destination)) => {
-        let value = if operation == Op_CLR then 0x0000000000000000
-          else if operation == Op_INC | operation == Op_INCF then add_bits(old, 0x0000000000000001)
-          else if operation == Op_DEC | operation == Op_DECF then sub_bits(old, 0x0000000000000001)
-          else if operation == Op_NEG then sub_bits(0x0000000000000000, old)
-          else if operation == Op_ABS then
-            if width_sign(old, width) then sub_bits(0x0000000000000000, old) else old
-          else not_vec(old);
-        var updated = write_local_destination(state, operation, destination,
-                                              narrow_bits(value, width));
-        if operation == Op_INCF then {
+      (Some(old), Some(destination)) => Some((old, destination)),
+      _ => None(),
+    },
+  }
+}
+
+function execute_integer_single_operand_arithmetic_local(
+  instruction : Decoded_instruction,
+  state : Cpu_state,
+  operation : Integer_arithmetic_operation,
+  update_flags : bool
+) -> option(Execution_result) = {
+  let width = operation_width(instruction);
+  match unary_operand_local(instruction, state) {
+    None() => None(),
+    Some((old, destination)) => {
+        let value : bits(64) = if operation == IntegerArithmeticAdd then
+            add_bits(old, 0x0000000000000001)
+          else if operation == IntegerArithmeticSubtract then
+            sub_bits(old, 0x0000000000000001)
+          else sub_bits(old, 0x0000000000000001);
+        var updated = write_local_destination(
+          state, instruction.form.operation, destination, narrow_bits(value, width)
+        );
+        if update_flags & operation == IntegerArithmeticAdd then {
           let (ignored, flags) = add_with_flags(old, 0x0000000000000001, 0, width);
           updated.flags = flags
         }
-        else if operation == Op_DECF then {
+        else if update_flags & operation == IntegerArithmeticSubtract then {
           let (ignored, flags) = sub_with_flags(old, 0x0000000000000001, 0, width);
           updated.flags = flags
         }
         else ();
         Some(local_result(state, instruction, updated, CommitRegisters))
-      },
-      _ => None(),
     },
   }
 }
@@ -107,7 +139,7 @@ function execute_unary_local(instruction : Decoded_instruction, state : Cpu_stat
 function execute_shift_local(instruction : Decoded_instruction, state : Cpu_state)
   -> option(Execution_result) = {
   let width = operation_width(instruction);
-  match (value_named(instruction, state, "count"), operand_named(instruction, "dst")) {
+  match (value_named(instruction, state, Operand_count), operand_named(instruction, Operand_dst)) {
     (Some(count), Some(operand)) =>
       match (local_operand_value(state, operand), local_destination(operand, width)) {
         (Some(old), Some(destination)) => {
@@ -126,7 +158,7 @@ function execute_shift_local(instruction : Decoded_instruction, state : Cpu_stat
 function execute_bit_local(instruction : Decoded_instruction, state : Cpu_state)
   -> option(Execution_result) = {
   let width = operation_width(instruction);
-  match (value_named(instruction, state, "bit_index"), operand_named(instruction, "dst")) {
+  match (value_named(instruction, state, Operand_bit_index), operand_named(instruction, Operand_dst)) {
     (Some(raw_index), Some(operand)) => match local_operand_value(state, operand) {
       None() => None(),
       Some(old) => {
@@ -160,7 +192,7 @@ function execute_bit_local(instruction : Decoded_instruction, state : Cpu_state)
 function execute_count_local(instruction : Decoded_instruction, state : Cpu_state)
   -> option(Execution_result) = {
   let width = operation_width(instruction);
-  match (value_named(instruction, state, "src"), operand_named(instruction, "dst")) {
+  match (value_named(instruction, state, Operand_src), operand_named(instruction, Operand_dst)) {
     (Some(source), Some(operand)) => match local_destination(operand, 8) {
       None() => None(),
       Some(destination) => {
@@ -188,7 +220,7 @@ function execute_count_local(instruction : Decoded_instruction, state : Cpu_stat
 function execute_parity_local(instruction : Decoded_instruction, state : Cpu_state)
   -> option(Execution_result) = {
   let width = operation_width(instruction);
-  match (value_named(instruction, state, "src"), destination_named(instruction, "dst", width)) {
+  match (value_named(instruction, state, Operand_src), destination_named(instruction, Operand_dst, width)) {
     (Some(source), Some(destination)) => {
       let parity = tmod_int(bit_count_from(narrow_bits(source, width), 0, width_bits(width)), 2);
       let updated = write_local_destination(
@@ -203,7 +235,7 @@ function execute_parity_local(instruction : Decoded_instruction, state : Cpu_sta
 function execute_revbyte_local(instruction : Decoded_instruction, state : Cpu_state)
   -> option(Execution_result) = {
   let width = operation_width(instruction);
-  match operand_named(instruction, "dst") {
+  match operand_named(instruction, Operand_dst) {
     Some(operand) => match (local_operand_value(state, operand), local_destination(operand, width)) {
       (Some(old), Some(destination)) => {
         let updated = write_local_destination(
@@ -236,7 +268,7 @@ function execute_math_local(instruction : Decoded_instruction, state : Cpu_state
               | operation == Op_MULHSU | operation == Op_CLMUL | operation == Op_CLMULH
               | operation == Op_MINU | operation == Op_MAXU | operation == Op_MINS
               | operation == Op_MAXS) then None()
-  else match (value_named(instruction, state, "src"), operand_named(instruction, "dst")) {
+  else match (value_named(instruction, state, Operand_src), operand_named(instruction, Operand_dst)) {
     (Some(source), Some(operand)) =>
       match (local_operand_value(state, operand), local_destination(operand, width)) {
         (Some(old), Some(destination)) => {
@@ -272,7 +304,7 @@ function execute_math_local(instruction : Decoded_instruction, state : Cpu_state
 function execute_divide_local(instruction : Decoded_instruction, state : Cpu_state)
   -> option(Execution_result) = {
   let width = operation_width(instruction);
-  match (value_named(instruction, state, "src"), operand_named(instruction, "dst")) {
+  match (value_named(instruction, state, Operand_src), operand_named(instruction, Operand_dst)) {
     (Some(source), Some(operand)) =>
       match (local_operand_value(state, operand), local_destination(operand, width)) {
         (Some(dividend), Some(destination)) => {
@@ -313,8 +345,8 @@ function execute_divide_local(instruction : Decoded_instruction, state : Cpu_sta
 function execute_divmod_local(instruction : Decoded_instruction, state : Cpu_state)
   -> option(Execution_result) = {
   let width = operation_width(instruction);
-  match (value_named(instruction, state, "src"), operand_named(instruction, "quotient"),
-         operand_named(instruction, "remainder")) {
+  match (value_named(instruction, state, Operand_src), operand_named(instruction, Operand_quotient),
+         operand_named(instruction, Operand_remainder)) {
     (Some(source), Some(quotient_operand), Some(remainder_operand)) =>
       match (local_operand_value(state, quotient_operand),
              local_destination(quotient_operand, width),

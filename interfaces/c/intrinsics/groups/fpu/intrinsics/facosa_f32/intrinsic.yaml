@@ -1,0 +1,17 @@
+id: facosa_f32
+owner: FPTRANSA
+description: >-
+  FP and FPTRANSA required; ISA accuracy, special-value, and floating-point event contracts apply.
+summary: Approximate single-precision arccosine.
+signature:
+  result: f32
+  parameters:
+  - {id: value, type: f32}
+lowering:
+  operation: isa:FPTRANSA.instructions.FACOSA
+  kind: direct
+  operands:
+    size: S
+effects:
+  c-memory: none
+  floating-point-environment: read-write

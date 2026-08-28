@@ -1,0 +1,12 @@
+id: immediate
+name: Floating-point immediate
+kind: immediate
+syntax: immediate
+encodings:
+  - pattern: "1011101"
+    payloads:
+      - {role: immediate, type: FP.payload_types.IMMSF}
+  - pattern: "1011110"
+    payloads:
+      - {role: immediate, type: FP.payload_types.IMMDF}
+pseudocode: value = immediate

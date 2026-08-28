@@ -1,0 +1,8 @@
+\subsection{Reserved Encodings}
+Reserved instruction (:term:base.terms.opcode|plural:), (:term:base.terms.reserved:) extension (:term:base.terms.opcode|plural:), (:term:base.terms.reserved:) effective-address forms, and optional
+instruction-group encodings whose CPUID feature bit is clear raise (:ref:base.events.EXCEPTION.UNAVAILABLE_INSTRUCTION_EXTENSION:) during decode.
+
+Noncanonical encodings are invalid unless an instruction description explicitly defines an alias or priority rule.
+Assemblers emit canonical encodings by default; disassemblers prefer canonical spellings.
+
+\Needspace{3.6in}

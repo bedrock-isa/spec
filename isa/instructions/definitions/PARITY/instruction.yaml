@@ -1,0 +1,19 @@
+mnemonic: PARITY
+name: Parity Test
+summary: Computes operand parity and writes the predicate to an Rn register.
+route: integer_bitfield
+sail_entries:
+- execute_PARITY
+privileged: false
+repeat:
+  type: repcc
+  observed_value: dst
+operands:
+  src:
+    role: source
+    access: read
+    value_type: integer
+  dst:
+    role: destination
+    access: write
+    value_type: integer

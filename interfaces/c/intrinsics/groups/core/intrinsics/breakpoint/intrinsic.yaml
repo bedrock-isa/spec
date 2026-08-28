@@ -1,0 +1,10 @@
+id: breakpoint
+owner: base
+description: >-
+  Any privilege; always raises the architectural breakpoint/debug exception.
+signature:
+  result: void
+  parameters: []
+lowering:
+  operation: isa:base.instructions.BKPT
+  kind: direct

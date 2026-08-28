@@ -1,0 +1,8 @@
+id: field
+display:
+  canonical: field
+  plural: fields
+article: a
+definition: >-
+  a defined bit region within the opcode space or a particular payload. An
+  undivided payload may carry its value without defining a separate field.

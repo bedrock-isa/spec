@@ -91,11 +91,11 @@ static void enable_paging(void) {
   }
 
   __asm__ volatile(
-      "MOV.Q 32769, D0\n"
-      "SWPT.D D0"
+      "MOV.Q 32769, R0\n"
+      "SWPT R0"
       :
       :
-      : "D0", "memory");
+      : "r0", "memory");
 }
 
 static i32 abs_i32(i32 value) {

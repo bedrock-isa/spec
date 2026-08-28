@@ -1,0 +1,18 @@
+mnemonic: PLAST
+name: Last Set Predicate Lane
+summary: Return the last selected element index at a significant position.
+route: vector
+sail_entries:
+- execute_PLAST
+privileged: false
+assembly:
+  width_suffix_aliases: true
+operands:
+  predicate:
+    role: source
+    access: read
+    value_type: predicate
+  dst:
+    role: destination
+    access: write
+    value_type: integer

@@ -1,0 +1,12 @@
+\subsection{Event Reset and Context State}
+\input{isa/registers/documents/fragments/reset_state_table.tex}
+
+\Needspace{1.8in}
+Warm RESET applies the (:term:base.terms.processor_state_image:) shown in the preceding table to the executing (:term:base.terms.logical_processor:) only. Cold
+reset initializes BOOTPC and BOOTCFG before applying the same (:term:base.terms.processor_state_image:) to each (:term:base.terms.logical_processor:) selected
+by the platform reset event. Software initializes entry segments, exact entry PCs, and configured stack tops before setting ECR.V
+or entering user mode.
+
+ECR, entry and stack registers, STATUS.EDEPTH/UO, hidden current DFA, and the user context bank are
+per-logical-processor state. System software includes the applicable state when switching supervisor contexts.
+Payloads and full event frames reside in byte-addressed (:term:base.terms.normal_memory:) owned by the interrupted context.

@@ -1,0 +1,6 @@
+bits: 64
+fields:
+- {id: BASE_PAGE, lsb: 12, bits: 52, summary: Unsigned 4-KiB base page number.}
+- {id: E, lsb: 7, bits: 5, summary: Span exponent.}
+- {id: M, lsb: 1, bits: 6, summary: Span mantissa; zero selects a disabled image.}
+- {id: B, lsb: 0, bits: 1, summary: Bounds-only mode selector.}

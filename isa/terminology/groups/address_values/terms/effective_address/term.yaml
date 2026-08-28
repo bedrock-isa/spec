@@ -1,0 +1,11 @@
+id: effective_address
+display:
+  canonical: effective address
+  plural: effective addresses
+abbreviation:
+  canonical: EA
+article: an
+definition: >-
+  the address value or operand designator produced by an addressing mode before
+  segment pre-translation. A memory EA produces an address, while register and
+  immediate EAs name non-memory operands.

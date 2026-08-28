@@ -1,0 +1,12 @@
+id: default_segment_base
+name: Default-segment base with autoupdate
+kind: memory
+syntax: "[update(Rn(b)) + displacement]"
+fields:
+  b: {role: base, type: base.field_types.Rn}
+encodings:
+  - pattern: [1bbbb100]
+    autoupdate: {target: base, type: postincrement, difference: vlen_bytes}
+  - pattern: [1bbbb101]
+    autoupdate: {target: base, type: predecrement, difference: vlen_bytes}
+pseudocode: offset = base + displacement

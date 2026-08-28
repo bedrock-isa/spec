@@ -1,0 +1,9 @@
+groups:
+- cache
+- core
+- fpu
+- integer
+- memory
+- mmu
+- state
+- sysreg

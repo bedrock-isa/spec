@@ -1,0 +1,25 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: bedrock://schemas/c-register-class
+title: Bedrock C calling-convention register class
+type: object
+additionalProperties: false
+required: [id, arguments, results, allocation, exhaustion]
+properties:
+  id: {type: string, pattern: '^[A-Z][A-Z0-9_]*$'}
+  arguments:
+    type: array
+    minItems: 1
+    uniqueItems: true
+    items: {$ref: '#/$defs/register-reference'}
+  results:
+    type: array
+    minItems: 1
+    uniqueItems: true
+    items: {$ref: '#/$defs/register-reference'}
+  allocation: {enum: [ascending, descending]}
+  tuple_alignment: {type: integer, minimum: 1}
+  exhaustion: {enum: [permanent, indirect]}
+$defs:
+  register-reference:
+    type: string
+    pattern: '^isa:(?:base|[A-Z][A-Z0-9_]*)\.registers\.[A-Z][A-Z0-9_]*\.[A-Z][A-Z0-9_]*$'

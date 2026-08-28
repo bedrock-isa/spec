@@ -1,0 +1,8 @@
+id: FP_STATE
+register_group: isa:FP.registers.STATE
+dwarf:
+- first: 57
+  registers: [FFLAGS, FSTATUS]
+entry:
+  FFLAGS: {role: cleared}
+  FSTATUS: {role: cleared}

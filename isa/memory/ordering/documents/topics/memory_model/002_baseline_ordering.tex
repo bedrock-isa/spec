@@ -1,0 +1,12 @@
+\subsection{Baseline Ordering}
+Normal memory is coherent. Every (:term:base.terms.logical_processor:) observes writes to a given byte in one common coherence order, and
+writes by one (:term:base.terms.logical_processor:) to that byte enter the order in program order. A naturally aligned tear-free scalar
+store enters that order as one memory write event.
+
+Normal-memory writes are multi-copy atomic. When a memory write event becomes observable by a (:term:base.terms.logical_processor:) other than
+the writer, it becomes observable to all such (:term:base.terms.logical_processor|plural:) at the same architectural point. An implementation may still
+forward a (:term:base.terms.logical_processor:)\textquotesingle{}s own pending store to its later loads before that store is globally observable.
+
+The baseline ordering is weak. Except for same-byte coherence or ordering imposed by an atomic memory-order selector
+or fence, loads and stores to different locations may be issued, completed, and observed in an order different from
+program order. Coherence and multi-copy atomicity do not by themselves order accesses to different locations.

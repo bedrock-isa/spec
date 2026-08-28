@@ -1,0 +1,21 @@
+\subsection{Cache-Maintenance Blocks}
+CPUID \texttt{CACHE\_TOPOLOGY} reports a cache-maintenance granule $G$. A cache-maintenance instruction computes and
+translates its address-role EA without reading an operand value, then selects the physical byte interval
+$[\lfloor A/G\rfloor G,\lfloor A/G\rfloor G+G)$ containing the translated (:term:base.terms.physical_address:) $A$. One instruction
+operates on exactly that block. Because $G$ is at most 4096 bytes, the selected physical block does not cross a
+4 KiB page boundary.
+
+FLSHDCACHE, INVDCACHE, and WRBKDCACHE apply to every data or unified cache copy of the selected block in its
+normal-memory coherence domain. FLSHDCACHE writes dirty bytes into normal-memory coherence and invalidates the
+copies. INVDCACHE discards the copies without writeback. WRBKDCACHE writes dirty bytes into normal-memory coherence
+and retains clean copies. Each operation completes the selected block before retirement.
+
+INVICACHE invalidates the selected block in the executing (:term:base.terms.logical_processor:)\textquotesingle{}s instruction cache, decoded
+instruction state, and instruction-prefetch state. SYNCCACHE first completes the data writeback for the block
+throughout the coherence domain, then performs the same local instruction-side invalidation, and finally serializes
+later instruction fetch so that it observes the synchronized bytes. To publish modified code to another logical
+processor, software completes SYNCCACHE on the publisher, performs a release/acquire rendezvous, and executes
+INVICACHE for the block on every receiving (:term:base.terms.logical_processor:) before branching to the modified bytes.
+
+Address translation and permission checks precede a block\textquotesingle{}s cache effects. A fault leaves that instruction\textquotesingle{}s
+selected block unchanged.

@@ -1,0 +1,14 @@
+\subsection{Multi-Page Accesses}
+For a byte range that intersects more than one distinct leaf mapping, translation and accumulated permission checks
+are resolved once per mapping in increasing linear-address order. Each
+mapping\textquotesingle{}s walk reaches its existing not-present, structural-validity, and permission result before the next mapping
+is consumed. The first mapping in that order that fails supplies the architectural fault and walk level.
+
+Every covered leaf mapping of a store is validated before any byte of the store becomes visible. A later-mapping translation,
+permission or synchronous data-access fault leaves every destination byte and every leaf D bit
+unchanged. A updates completed while consuming an earlier valid entry retain the speculative-A rule and may remain
+set when a later mapping faults.
+
+Instruction-record fetch uses the same increasing-address rule for all bytes required by the encoded record. A fault
+in a later mapping completes as an instruction-fetch fault before decode or operand evaluation, while earlier
+instruction-cache and PTE A effects retain their (:term:base.terms.ordinary:) rules.

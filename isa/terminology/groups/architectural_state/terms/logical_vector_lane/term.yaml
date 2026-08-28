@@ -1,0 +1,9 @@
+id: logical_vector_lane
+display:
+  canonical: logical vector lane
+  plural: logical vector lanes
+article: a
+definition: >-
+  one selected-width element. Predicate bit iE governs lane i for an E-byte
+  element. VLEN is the reset-stable implementation-selected vector register
+  width in bits.

@@ -1,0 +1,18 @@
+mnemonic: FSINA
+name: Approximate Floating-Point Sine
+summary: Performs the approximate floating-point sine operation.
+route: fpu_transcendental_approx
+sail_entries:
+- execute_FSINA
+privileged: false
+repeat:
+  type: rep
+operands:
+  src:
+    role: source
+    access: read
+    value_type: floating
+  dst:
+    role: destination
+    access: write
+    value_type: floating

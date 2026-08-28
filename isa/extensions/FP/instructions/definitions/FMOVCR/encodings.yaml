@@ -1,0 +1,14 @@
+encodings:
+  s_d_z_fconst_id_fn_d:
+    pattern: 11101100100z00dddd
+    syntax: FMOVCR.{S|D}(z) <fconst_id>, Fn(d)
+    fields:
+      z:
+        role: size
+        type: FP.field_types.SIZE_SD
+      d:
+        role: dst
+        type: FP.field_types.Fn
+    payloads:
+    - role: constant_id
+      type: FP.payload_types.FCONSTID

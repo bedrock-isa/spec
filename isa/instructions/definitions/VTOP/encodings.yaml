@@ -1,0 +1,11 @@
+encodings:
+  rn_v_rn_p:
+    pattern: 1100000111vvvvpppp
+    syntax: VTOP Rn(v), Rn(p)
+    fields:
+      v:
+        role: virt
+        type: base.field_types.Rn
+      p:
+        role: phys
+        type: base.field_types.Rn

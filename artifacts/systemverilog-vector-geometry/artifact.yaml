@@ -1,0 +1,9 @@
+id: systemverilog-vector-geometry
+generator: generator.py
+inputs:
+- isa
+depends-on:
+- systemverilog-package
+outputs:
+- rtl/bedrock_vector_geometry_pkg.sv
+- rtl/bedrock_vector_permute.sv

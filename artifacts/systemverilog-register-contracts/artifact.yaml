@@ -1,0 +1,9 @@
+id: systemverilog-register-contracts
+generator: generator.py
+inputs:
+- isa
+depends-on:
+- systemverilog-package
+outputs:
+- rtl/bedrock_register_pkg.sv
+- rtl/bedrock_register_contracts.sv

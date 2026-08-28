@@ -1,0 +1,7 @@
+id: illegal_use
+display:
+  canonical: illegal use
+article: an
+definition: >-
+  use of an opcode, effective-address form, selector, or operation that raises
+  the exception named by the defining rule.

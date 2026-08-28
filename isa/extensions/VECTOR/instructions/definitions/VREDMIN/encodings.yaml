@@ -1,0 +1,42 @@
+encodings:
+  h_s_d_z_pn_p_vn_v_fn_r:
+    pattern: 11111101111110110zz01pppprrrrvvvvv
+    syntax: VREDMIN.{H|S|D}(z) Pn(p), Vn(v), Fn(r)
+    fields:
+      z:
+        role: size
+        type: VECTOR.field_types.SIZE_HSD
+      p:
+        role: govern
+        type: VECTOR.field_types.Pn
+      r:
+        role: dst
+        type: FP.field_types.Fn
+      v:
+        role: src
+        type: VECTOR.field_types.Vn
+    constraints:
+    - role: size
+      allow: &id001
+      - 0x1..0x3
+      reason: reserved_vector_element_type
+  h_s_d_z_pn_p_ea_e_fn_r:
+    pattern: 11111111000000101110zz01001pppprrrreeeeeee
+    syntax: VREDMIN.{H|S|D}(z) Pn(p), <ea>(e), Fn(r)
+    fields:
+      z:
+        role: size
+        type: VECTOR.field_types.SIZE_HSD
+      p:
+        role: govern
+        type: VECTOR.field_types.Pn
+      r:
+        role: dst
+        type: FP.field_types.Fn
+      e:
+        role: src
+        type: VECTOR.field_types.VEA
+    constraints:
+    - role: size
+      allow: *id001
+      reason: reserved_vector_element_type

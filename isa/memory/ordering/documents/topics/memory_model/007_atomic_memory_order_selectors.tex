@@ -1,0 +1,19 @@
+\subsection{Atomic Memory-Order Selectors}
+\input{isa/memory/ordering/documents/fragments/atomic_memory_order_selectors.tex}
+
+(:ref:base.instructions.CMPXCHG:), (:ref:base.instructions.FETCHADD:), (:ref:base.instructions.FETCHSUB:), (:ref:base.instructions.FETCHAND:), (:ref:base.instructions.FETCHOR:), and
+(:ref:base.instructions.FETCHXOR:) are the atomic read-modify-write instructions. Each performs its memory read, successful memory
+write, and architectural register result as one indivisible operation in the coherence order of the addressed
+physical location.
+
+A successful release or stronger atomic write heads a release sequence. The sequence continues through immediately
+following successful atomic read-modify-write operations to the same location in coherence order and ends before any
+other write. An acquire or stronger atomic operation that takes its value from any member of the sequence observes
+the effects ordered before its head before effects ordered after the acquiring operation.
+
+One encoded selector governs the complete (:ref:base.instructions.CMPXCHG:) operation on both success and failure. A failed
+(:ref:base.instructions.CMPXCHG:) contributes a memory read event. Its acquire component orders later (:term:base.terms.memory_operation|plural:) after that read, and
+its release component orders earlier (:term:base.terms.memory_operation|plural:) before that read. On success, the memory write event carries the
+selected release effect to observers of that write; on failure, the read is the operation\textquotesingle{}s (:term:base.terms.memory_event:). A failed
+(:ref:base.instructions.CMPXCHG:) contributes no write and therefore creates no release sequence. A failed
+\texttt{CMPXCHG.SEQCST} additionally participates in the global sequentially consistent order as an SC load.

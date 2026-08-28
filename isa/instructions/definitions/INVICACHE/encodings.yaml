@@ -1,0 +1,8 @@
+encodings:
+  ea_e:
+    pattern: 11101000101eeeeeee
+    syntax: INVICACHE <ea>(e)
+    fields:
+      e:
+        role: target
+        type: base.field_types.EA

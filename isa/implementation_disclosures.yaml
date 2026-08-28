@@ -1,0 +1,25 @@
+disclosures:
+- id: HIGHER_CPUID_CLASSES
+  item: Higher CPUID classes
+  defining_rules:
+  - CPUID Feature Discovery
+  - Base Identity
+  - Leaf Directory
+  publication: CPUID class and leaf directories plus implementation documentation for the class payload
+- id: PERFORMANCE_COUNTER_IDENTIFIERS
+  item: Performance-counter identifiers
+  defining_rules:
+  - CPUID Performance-Counter Discovery
+  - RDPMC
+  publication: CPUID PERFORMANCE_COUNTERS presence results plus implementation documentation naming each counter event
+- id: AUXILIARY_EVENT_SYNDROME
+  item: Auxiliary event syndrome
+  defining_rules:
+  - Machine-check EVENT_AUX payload
+  publication: Platform documentation or firmware interface documentation for the event source
+- id: FPTRANSA_APPROXIMATION_CONTRACT
+  item: FPTRANSA approximation contract
+  defining_rules:
+  - FPTRANSA Common Model
+  - CPUID accuracy contracts
+  publication: CPUID accuracy-contract discovery plus implementation documentation for the deterministic approximation

@@ -1,0 +1,7 @@
+id: trace_unit
+display:
+  canonical: trace unit
+  plural: trace units
+article: a
+definition: >-
+  the execution-completion unit sampled by STATUS.TF.

@@ -1,0 +1,12 @@
+id: VECTOR_PARAMETERS
+name: Vector Parameters
+value: 0x0002
+queries:
+- id: HEADER
+  index: 0
+  fields:
+  - {id: MAX_INDEX, lsb: 0, bits: 16}
+- id: PARAMETERS
+  index: 1
+  fields:
+  - {id: VLEN_LOG2_BITS, lsb: 0, bits: 4}

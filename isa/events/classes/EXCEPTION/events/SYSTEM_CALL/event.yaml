@@ -1,0 +1,7 @@
+id: SYSTEM_CALL
+name: System Call
+summary: A valid user-mode system-call operation requests entry to its supervisor handler.
+code: 0x03
+family: CONTROL_TRANSFER
+frame: basic
+

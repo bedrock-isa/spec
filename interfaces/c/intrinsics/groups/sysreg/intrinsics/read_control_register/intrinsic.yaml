@@ -1,0 +1,19 @@
+id: read_control_register
+owner: base
+description: >-
+  Supervisor; selector is a constant in 0 through 65535 naming a defined register.
+summary: Read an architecturally defined control register.
+signature:
+  result: u64
+  parameters:
+  - id: selector
+    type: base.types.sysreg.control_register
+    constant: true
+lowering:
+  operation: isa:base.instructions.RDCR
+  kind: direct
+effects:
+  c-memory: none
+  side-effect: true
+wrapper:
+  kind: macro

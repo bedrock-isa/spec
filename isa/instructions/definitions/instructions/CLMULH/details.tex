@@ -1,5 +1,0 @@
-Treat each selected-width operand as a polynomial over \(\operatorname{GF}(2)\), with operand bit \(i\) as the coefficient of \(x^i\). Their double-width product is
-\[
-  P = \bigoplus_{i=0}^{n-1} s_i (d \ll i) .
-\]
-Addition in this expression is exclusive-or, so no carry propagates between bit positions. CLMULH writes the high \(n\) bits of \(P\) to the destination.

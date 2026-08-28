@@ -1,0 +1,22 @@
+\manualtablecaption{FRAME\_CONTROL Fields}
+\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{1.10in}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{3.65in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
+\midrule
+\endfirsthead
+\multicolumn{3}{l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Field} & \textbf{Bits} & \textbf{Meaning}\\
+\midrule
+\endhead
+frame\_size & 0..7 & total allocated frame size in 8-byte units\\
+frame\_type & 8..11 & optional (:term:base.terms.payload:) layout code; it does not classify the event\\
+saved\_dfa & 12 & prior hidden delivery-failure-active state\\
+(:term:base.terms.reserved:) & 13..31 & (:term:base.terms.reserved:); (:term:base.terms.must_be_zero:)\\
+flags & 32..35 & saved FLAGS image\\
+status & 36..51 & saved STATUS image, including EDEPTH and UO\\
+(:term:base.terms.reserved:) & 52..63 & (:term:base.terms.reserved:); (:term:base.terms.must_be_zero:)\\
+\bottomrule
+\end{manuallongtable}

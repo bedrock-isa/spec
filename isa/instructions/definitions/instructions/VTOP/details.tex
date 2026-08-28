@@ -1,3 +1,0 @@
-The source address is checked for canonicality before the page-table walk. The walk begins at the PTCR root and follows the active LA48 or LA57 hierarchy using the virtual page number.
-
-Every continuing entry must be a valid table pointer. R, W, X, and U are intersected across table pointers and the terminating leaf AM. A valid leaf at level $L$ combines its naturally aligned physical base with the original low $12+9(L-1)$ address bits to form a byte address. Success sets Z and clears N, C, and V. Any canonicality, PABITS, or walk failure returns zero and clears all four flags without raising an access exception, setting PTE A or D, or modifying the TLB.

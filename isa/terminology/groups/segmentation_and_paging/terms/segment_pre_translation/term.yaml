@@ -1,0 +1,8 @@
+id: segment_pre_translation
+display:
+  canonical: segment pre-translation
+definition: >-
+  the stage between effective-address calculation and paging. A disabled
+  segment passes the EA through. A translated window checks an offset and adds
+  its base, while a bounds-only window checks an already-linear address without
+  adding the base.

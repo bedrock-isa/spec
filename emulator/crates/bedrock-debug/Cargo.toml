@@ -6,7 +6,5 @@ license.workspace = true
 
 [dependencies]
 bedrock-bus.workspace = true
-bedrock-core.workspace = true
-bedrock-isa.workspace = true
 bedrock-machine.workspace = true
 tracing.workspace = true

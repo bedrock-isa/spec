@@ -1,0 +1,7 @@
+encodings:
+  imm16:
+    pattern: '111011110000001010'
+    syntax: TRACE <imm16>
+    payloads:
+    - role: marker
+      type: base.payload_types.IMM16

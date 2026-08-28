@@ -1,0 +1,20 @@
+\subsection{Fence Instructions}
+The table gives every ordered-before pair imposed by a fence on (:term:base.terms.memory_operation|plural:) issued by the same logical
+processor. An entry marked ordered places every earlier operation of the row kind before every later operation of the
+column kind.
+
+\manualtablecaption{Fence Ordered-Before Pairs}
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.85in}>{\raggedright\arraybackslash}p{1.10in}>{\raggedright\arraybackslash}p{1.10in}>{\raggedright\arraybackslash}p{1.10in}>{\raggedright\arraybackslash}p{1.10in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Fence} & \textbf{read to read} & \textbf{read to write} & \textbf{write to read} & \textbf{write to write}\\
+\midrule
+(:ref:base.instructions.RFENCE:) & ordered & baseline & baseline & baseline\\
+(:ref:base.instructions.WFENCE:) & baseline & baseline & baseline & ordered\\
+(:ref:base.instructions.AFENCE:) & ordered & ordered & ordered & ordered\\
+\bottomrule
+\end{manualtabular}
+
+A baseline entry retains the weak-ordering rules of this chapter. (:ref:base.instructions.AFENCE:) is cumulative: (:term:base.terms.memory_effect|plural:)
+observed before the fence are propagated before effects ordered after it, including through another (:term:base.terms.logical_processor:).
+The linked instruction entries define the matching completion behavior.

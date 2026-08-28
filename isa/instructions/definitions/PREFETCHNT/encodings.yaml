@@ -1,0 +1,8 @@
+encodings:
+  ea_e:
+    pattern: 11101001001eeeeeee
+    syntax: PREFETCHNT <ea>(e)
+    fields:
+      e:
+        role: src
+        type: base.field_types.EA

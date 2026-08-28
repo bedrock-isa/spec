@@ -1,0 +1,5 @@
+id: memory
+title: Memory Intrinsics
+exposure: user ordering and access hints
+includes:
+- stdint.h

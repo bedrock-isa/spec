@@ -1,0 +1,57 @@
+payload_types:
+  CR:
+    type: register_selector
+    register_group: base.registers.CONTROL
+    bytes: 2
+  PMC:
+    type: register_selector
+    register_group: base.registers.PERFORMANCE
+    bytes: 2
+  IMM8:
+    type: immediate
+    value_type: unsigned_integer
+    bytes: 1
+  IMM8S:
+    type: immediate
+    value_type: signed_integer
+    bytes: 1
+  IMM16:
+    type: immediate
+    value_type: unsigned_integer
+    bytes: 2
+  IMM16S:
+    type: immediate
+    value_type: signed_integer
+    bytes: 2
+  IMM32:
+    type: immediate
+    value_type: unsigned_integer
+    bytes: 4
+  IMM32S:
+    type: immediate
+    value_type: signed_integer
+    bytes: 4
+  IMM64:
+    type: immediate
+    value_type: unsigned_integer
+    bytes: 8
+  DISP8S:
+    type: pc_displacement
+    bytes: 1
+  DISP16S:
+    type: pc_displacement
+    bytes: 2
+  DISP32S:
+    type: pc_displacement
+    bytes: 4
+  DISP64:
+    type: pc_displacement
+    bytes: 8
+  ABS32S:
+    type: pc_absolute
+    signed: true
+    bytes: 4
+  ABS64:
+    type: pc_absolute
+    signed: false
+    bytes: 8

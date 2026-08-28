@@ -1,0 +1,43 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesFile{bedrock-reference/byte-order-diagram.sty}[2026/08/26 Bedrock reference byte-order-diagram commands]
+
+\newif\ifBedrockByteOrderMeasuring
+\newcount\BedrockByteOrderCells
+\newcount\BedrockByteOrderCellIndex
+\newcommand{\BedrockByteCell}[2]{%
+  \ifBedrockByteOrderMeasuring
+    \advance\BedrockByteOrderCells by 1
+  \else
+    \draw ({\the\BedrockByteOrderCellIndex},0) rectangle
+      ({\the\numexpr\BedrockByteOrderCellIndex+1\relax},1);
+    \node at ({\the\BedrockByteOrderCellIndex + 0.5},0.62) {#1};
+    \node[anchor=north] at ({\the\BedrockByteOrderCellIndex + 0.5},-0.04) {\texttt{#2}};
+    \advance\BedrockByteOrderCellIndex by 1
+  \fi}
+\newcommand{\BedrockRenderByteOrderDiagram}[8]{%
+  \begingroup
+  \BedrockByteOrderCells=0
+  \BedrockByteOrderMeasuringtrue#7\BedrockByteOrderMeasuringfalse
+  \pgfmathsetmacro{\BedrockByteOrderXScale}{min(0.72, 4.70/\the\BedrockByteOrderCells)}
+  \Needspace{1.35in}%
+  \begin{center}\vspace{3pt}%
+  \begin{tikzpicture}[x=\BedrockByteOrderXScale in,y=0.34in,every node/.style={font=\scriptsize}]%
+  \BedrockByteOrderCellIndex=0
+  #7
+  \node[anchor=east] at (-0.15,0.62) {#2};
+  \node[anchor=east] at (-0.15,-0.20) {#3};
+  \draw[manualFlowArrow] (0,-0.70) -- node[below] {#4} (\the\BedrockByteOrderCells,-0.70);
+  \node[anchor=west] at (0,1.22) {#5};
+  \node[anchor=east] at (\the\BedrockByteOrderCells,1.22) {#6};
+  \end{tikzpicture}%
+  #8{#1}%
+  \end{center}%
+  \endgroup}
+\NewDocumentEnvironment{BedrockByteOrderDiagram}{m m m m m m +b}{%
+  \BedrockRenderByteOrderDiagram{#1}{#2}{#3}{#4}{#5}{#6}{#7}{\BedrockCaption}%
+}{}
+\NewDocumentEnvironment{BedrockListedByteOrderDiagram}{m m m m m m +b}{%
+  \BedrockRenderByteOrderDiagram{#1}{#2}{#3}{#4}{#5}{#6}{#7}{\BedrockFigureCaption}%
+}{}
+
+\endinput

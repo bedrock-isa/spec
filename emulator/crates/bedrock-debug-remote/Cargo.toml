@@ -6,7 +6,6 @@ license.workspace = true
 
 [dependencies]
 bedrock-bus.workspace = true
-bedrock-core.workspace = true
 bedrock-debug.workspace = true
 bedrock-machine.workspace = true
 bedrock-toolchain.workspace = true

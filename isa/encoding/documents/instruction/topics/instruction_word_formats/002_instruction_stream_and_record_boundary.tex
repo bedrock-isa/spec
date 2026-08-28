@@ -1,0 +1,21 @@
+\subsection{Instruction Stream and Record Boundary}
+The byte addressed by PC is byte 0 of the current instruction. Instruction decoding determines the complete
+(:term:base.terms.encoded_instruction_length:) before operand evaluation begins.
+
+The (:term:base.terms.opcode_space:) begins at byte 0, includes the (:term:base.terms.header:), and ends immediately before the first (:term:base.terms.payload:). Any appended
+EA descriptor, displacement, immediate, bitmap, or instruction-specific value is a (:term:base.terms.payload:). Independently selected
+appended units are separate (:term:base.terms.payload|plural:). Bytes after the (:term:base.terms.required_instruction_length:) constitute (:term:base.terms.padding:).
+
+The (:term:base.terms.header:) is byte 0 for extrashort and short instructions and the first two bytes for medium and longer
+instructions. It determines the (:term:base.terms.encoded_instruction_length:) and selects the (:term:base.terms.opcode_space:) before operand evaluation
+begins. An (:term:base.terms.encoded_instruction_length:) that cannot contain the selected encoding raises
+(:ref:base.events.EXCEPTION.TRUNCATED_INSTRUCTION:) before any (:term:base.terms.architectural_state:) is changed.
+
+The (:term:base.terms.required_instruction_length:) is the opcode-space length plus every required (:term:base.terms.payload:) length. The encoded
+instruction length must be at least that large. For an extended instruction, every trailing byte after the required
+instruction length is uninterpreted (:term:base.terms.padding:); every byte value is valid. Padding never extends an operand, (:term:base.terms.payload:),
+descriptor, or (:term:base.terms.opcode_space:).
+
+Before decode validation or operand evaluation, instruction fetch and permission checks cover the complete encoded
+record, including (:term:base.terms.padding:). An inaccessible (:term:base.terms.padding:) byte therefore reports the applicable instruction-fetch fault.
+An undersized record raises (:ref:base.events.EXCEPTION.TRUNCATED_INSTRUCTION:) before (:term:base.terms.architectural_state:) changes.

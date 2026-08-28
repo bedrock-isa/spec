@@ -1,0 +1,82 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: bedrock://schemas/model
+title: Bedrock owner-local Sail and document manifest
+type: object
+additionalProperties: false
+anyOf:
+- required: [sail]
+- required: [documents]
+properties:
+  sail:
+    type: object
+    additionalProperties: false
+    required: [units]
+    properties:
+      units:
+        type: array
+        items:
+          $ref: '#/$defs/sail-unit'
+  documents:
+    type: object
+    additionalProperties: false
+    required: [topics]
+    properties:
+      topics:
+        type: array
+        items:
+          $ref: '#/$defs/document-topic'
+$defs:
+  id:
+    type: string
+    pattern: ^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$
+  owner-source:
+    type: string
+    pattern: ^(?:[A-Za-z0-9_.-]+/)*[A-Za-z0-9_.-]+$
+  sail-unit:
+    type: object
+    additionalProperties: false
+    required: [id, sources]
+    properties:
+      id:
+        $ref: '#/$defs/id'
+      sources:
+        type: array
+        minItems: 1
+        uniqueItems: true
+        items:
+          allOf:
+          - $ref: '#/$defs/owner-source'
+          - pattern: \.sail$
+      requires:
+        type: array
+        uniqueItems: true
+        items:
+          type: string
+          pattern: ^(?:base|[A-Z][A-Z0-9_]*)\.[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$
+  document-topic:
+    type: object
+    additionalProperties: false
+    required: [id, source]
+    properties:
+      id:
+        $ref: '#/$defs/id'
+      source:
+        allOf:
+        - $ref: '#/$defs/owner-source'
+        - pattern: \.tex$
+      artifact:
+        type: string
+        pattern: ^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$
+      concept:
+        type: string
+        pattern: ^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$
+x-interpretation-rules:
+- model.yaml is owned by the directory containing it and contains two independent projections.
+- Every declared base or extension namespace has a model.yaml; absence is an error rather than an empty namespace.
+- sail.units are executable dependency nodes; each owns one or more ordered Sail sources.
+- documents.topics are reader-ordered TeX sources; each file owns one subtopic in the compiled document.
+- Every document topic source contains exactly one sectioning command and is included without generated splitting.
+- artifact partitions independent compiled documents without coupling their topic order to Sail.
+- Sail units and document topics have no cardinality or colocated-file constraint.
+- Base sources must remain outside extensions, and extension sources must remain below their owning extension root.
+- Sail unit dependencies form one explicit project graph across base and extension namespaces.

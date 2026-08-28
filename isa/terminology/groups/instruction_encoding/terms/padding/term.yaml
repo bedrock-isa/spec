@@ -1,0 +1,6 @@
+id: padding
+display:
+  canonical: padding
+definition: >-
+  trailing encoded-record content that carries no information. Payload
+  accounting excludes padding.

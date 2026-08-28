@@ -1,8 +1,7 @@
 [workspace]
 members = [
-    "crates/bedrock-isa",
     "crates/bedrock-bus",
-    "crates/bedrock-core",
+    "crates/bedrock-sail-core",
     "crates/bedrock-devices",
     "crates/bedrock-machine",
     "crates/bedrock-debug",
@@ -19,9 +18,8 @@ edition = "2024"
 license = "Apache-2.0"
 
 [workspace.dependencies]
-bedrock-isa = { path = "crates/bedrock-isa" }
 bedrock-bus = { path = "crates/bedrock-bus" }
-bedrock-core = { path = "crates/bedrock-core" }
+bedrock-sail-core = { path = "crates/bedrock-sail-core" }
 bedrock-devices = { path = "crates/bedrock-devices" }
 bedrock-machine = { path = "crates/bedrock-machine" }
 bedrock-debug = { path = "crates/bedrock-debug" }

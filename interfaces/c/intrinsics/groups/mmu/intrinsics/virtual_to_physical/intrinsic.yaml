@@ -1,0 +1,20 @@
+id: virtual_to_physical
+owner: base
+description: >-
+  Supervisor; wrapper returns value and operation-defined \texttt{FLAGS} captured atomically; page walk without access to the translated C object.
+summary: Query the physical translation and architectural result flags.
+signature:
+  result: base.types.mmu.query_result
+  parameters:
+  - {id: address, type: u64}
+lowering:
+  operation: isa:base.instructions.VTOP
+  kind: result-adapter
+effects:
+  c-memory: none
+  translation-state: read
+wrapper:
+  kind: aggregate-result
+  output-arguments:
+  - value
+  - flags

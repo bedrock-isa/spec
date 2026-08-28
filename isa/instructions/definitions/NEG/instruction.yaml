@@ -1,0 +1,15 @@
+mnemonic: NEG
+name: Negate
+summary: Performs the negate operation.
+route: integer_unary
+sail_entries:
+- execute_NEG
+privileged: false
+repeat:
+  type: repcc
+  observed_value: dst
+operands:
+  dst:
+    role: destination
+    access: read_write
+    value_type: integer

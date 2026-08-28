@@ -1,0 +1,22 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: bedrock://interfaces/c/schemas/utility
+type: object
+additionalProperties: false
+required: [id, owner, kind, body]
+properties:
+  id:
+    type: string
+    pattern: ^[a-z][a-z0-9_]*$
+  owner:
+    type: string
+    pattern: ^(?:base|[A-Z][A-Z0-9_]*)$
+  kind:
+    enum: [object-macro, function-macro]
+  parameters:
+    type: array
+    items:
+      type: string
+      pattern: ^[a-z][a-z0-9_]*$
+  body:
+    type: string
+    minLength: 1

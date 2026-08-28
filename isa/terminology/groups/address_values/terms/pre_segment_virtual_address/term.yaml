@@ -1,0 +1,9 @@
+id: pre_segment_virtual_address
+display:
+  canonical: pre-segment virtual address
+  plural: pre-segment virtual addresses
+article: a
+definition: >-
+  a virtual-address value before segment pre-translation. Segment
+  pre-translation either converts it to a linear address or reports the
+  architecturally defined fault.

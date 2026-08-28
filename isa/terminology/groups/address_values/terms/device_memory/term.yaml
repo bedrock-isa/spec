@@ -1,0 +1,7 @@
+id: device_memory
+display:
+  canonical: device memory
+definition: >-
+  the platform-owned physical class that requires MMIO execution rules. A leaf
+  AM selects Normal or MMIO access semantics, while the orthogonal CP field
+  selects one of four cache policies.

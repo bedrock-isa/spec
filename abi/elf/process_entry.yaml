@@ -1,0 +1,2 @@
+readiness: [relocations_complete, executable_bytes_published]
+payload_owner: external-process-entry-abi

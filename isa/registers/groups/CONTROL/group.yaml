@@ -1,0 +1,4 @@
+id: CONTROL
+width: 64
+summary: Privileged control registers selected by RDCR and WRCR.
+reset: 0

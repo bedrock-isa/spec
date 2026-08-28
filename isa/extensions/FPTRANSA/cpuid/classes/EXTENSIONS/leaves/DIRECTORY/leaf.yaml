@@ -1,0 +1,8 @@
+id: DIRECTORY
+name: Extension Directory
+extends: base.cpuid.EXTENSIONS.DIRECTORY
+queries:
+- id: FEATURES
+  index: 1
+  fields:
+  - {id: FPTRANSA, lsb: 1, bits: 1}

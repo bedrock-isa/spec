@@ -1,7 +1,0 @@
-\begin{enumerate}
-\item Read the 8-byte return address through the old SS:SP context without changing SP.
-\item Validate that address as an executable target under the current CS.
-\item Commit advanced SP and the new PC as one successful control-transfer operation.
-\end{enumerate}
-
-A stack-read or target-validation fault leaves SP and PC unchanged.

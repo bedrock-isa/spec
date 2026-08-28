@@ -1,0 +1,20 @@
+terms:
+- logical_processor
+- thread
+- general_purpose_register
+- rn_register
+- vector_register
+- predicate_register
+- logical_vector_lane
+- stack_pointer_register
+- segment_register_operand
+- state_register
+- control_register
+- architectural_state
+- register_image
+- processor_state_image
+- processor_state
+- temporary_operand_evaluation_state
+- program_counter
+- instruction_address
+- continuation

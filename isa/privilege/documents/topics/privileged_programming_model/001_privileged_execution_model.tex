@@ -1,0 +1,4 @@
+\clearpage
+\section{Privileged Execution Model}\label{page:privileged-execution-model}
+
+All exceptions, interrupts, NMI, and explicit synchronous traps enter supervisor execution through the architectural event mechanism. (:ref:base.instructions.SYSCALL:) is the explicit (:ref:base.events.EXCEPTION.SYSTEM_CALL:) event (\texttt{0x00000003}); it uses the common EPC/ECS/EDS entry and returns with (:ref:base.instructions.ERET:).

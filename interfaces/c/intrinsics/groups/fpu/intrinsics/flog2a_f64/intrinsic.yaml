@@ -1,0 +1,14 @@
+id: flog2a_f64
+owner: FPTRANSA
+description: >-
+  FP and FPTRANSA required; ISA accuracy, special-value, and floating-point event contracts apply.
+signature:
+  result: f64
+  parameters:
+  - id: value
+    type: f64
+lowering:
+  operation: isa:FPTRANSA.instructions.FLOG2A
+  kind: direct
+  operands:
+    size: D

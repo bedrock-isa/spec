@@ -1,0 +1,8 @@
+encodings:
+  rn_r:
+    pattern: 11101101000000rrrr
+    syntax: CPUID Rn(r)
+    fields:
+      r:
+        role: reg
+        type: base.field_types.Rn

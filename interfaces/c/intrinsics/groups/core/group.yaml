@@ -1,0 +1,5 @@
+id: core
+title: Core Intrinsics
+exposure: unprivileged core operations
+includes:
+- stdint.h

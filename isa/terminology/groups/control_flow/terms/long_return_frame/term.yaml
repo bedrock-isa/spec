@@ -1,0 +1,7 @@
+id: long_return_frame
+display:
+  canonical: long return frame
+  plural: long return frames
+article: a
+definition: >-
+  the two-value return context created by Long Call and consumed by Long Return.

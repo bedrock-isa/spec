@@ -1,0 +1,12 @@
+PLOOP reads an unsigned remaining count and an unsigned lane offset. Let $N$
+denote the number of lanes for the selected element width. If the remaining
+count is zero, PLOOP transfers control to the encoded target and leaves the
+predicate and both scalar registers unchanged.
+
+For a nonzero remaining count, an offset at or above the selected element count
+raises VECTOR\_LOOP\_OFFSET\_OUT\_OF\_RANGE and commits no state. A
+valid iteration sets the next
+$\min(\operatorname{remaining},\,N-\operatorname{offset})$ significant
+predicate positions,
+clears every other predicate bit, subtracts the number of set positions from
+the remaining count, clears the offset register, and falls through.

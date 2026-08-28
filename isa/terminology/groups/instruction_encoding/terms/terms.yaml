@@ -1,0 +1,9 @@
+terms:
+- opcode
+- opcode_space
+- header
+- payload
+- field
+- required_instruction_length
+- encoded_instruction_length
+- padding

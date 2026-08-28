@@ -1,0 +1,91 @@
+encodings:
+  b_rn_s_ea_e:
+    pattern: 111100110100000sssseeeeeee
+    syntax: EXTZQ.B Rn(s), <ea>(e)
+    fields:
+      s:
+        role: src
+        type: base.field_types.Rn
+      e:
+        role: dst
+        type: base.field_types.EA
+    constraints:
+    - role: dst
+      exclude:
+      - immediate
+      reason: invalid_destination
+  w_rn_s_ea_e:
+    pattern: 111100110101000sssseeeeeee
+    syntax: EXTZQ.W Rn(s), <ea>(e)
+    fields:
+      s:
+        role: src
+        type: base.field_types.Rn
+      e:
+        role: dst
+        type: base.field_types.EA
+    constraints:
+    - role: dst
+      exclude:
+      - immediate
+      reason: invalid_destination
+  l_rn_s_ea_e:
+    pattern: 111100110110000sssseeeeeee
+    syntax: EXTZQ.L Rn(s), <ea>(e)
+    fields:
+      s:
+        role: src
+        type: base.field_types.Rn
+      e:
+        role: dst
+        type: base.field_types.EA
+    constraints:
+    - role: dst
+      exclude:
+      - immediate
+      reason: invalid_destination
+  b_ea_s_ea_d:
+    pattern: 111100001100sssssssddddddd
+    syntax: EXTZQ.B <ea>(s), <ea>(d)
+    fields:
+      s:
+        role: src
+        type: base.field_types.EA
+      d:
+        role: dst
+        type: base.field_types.EA
+    constraints:
+    - role: dst
+      exclude:
+      - immediate
+      reason: invalid_destination
+  w_ea_s_ea_d:
+    pattern: 111100001101sssssssddddddd
+    syntax: EXTZQ.W <ea>(s), <ea>(d)
+    fields:
+      s:
+        role: src
+        type: base.field_types.EA
+      d:
+        role: dst
+        type: base.field_types.EA
+    constraints:
+    - role: dst
+      exclude:
+      - immediate
+      reason: invalid_destination
+  l_ea_s_ea_d:
+    pattern: 111100001110sssssssddddddd
+    syntax: EXTZQ.L <ea>(s), <ea>(d)
+    fields:
+      s:
+        role: src
+        type: base.field_types.EA
+      d:
+        role: dst
+        type: base.field_types.EA
+    constraints:
+    - role: dst
+      exclude:
+      - immediate
+      reason: invalid_destination

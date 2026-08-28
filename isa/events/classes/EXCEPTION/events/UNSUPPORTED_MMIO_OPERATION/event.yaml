@@ -1,0 +1,8 @@
+id: UNSUPPORTED_MMIO_OPERATION
+name: Unsupported MMIO Operation
+summary: The requested operation class is prohibited for Device memory.
+code: 0x32
+family: PHYSICAL_ACCESS
+frame: page
+payload: [FAULT_EA, FAULT_LINEAR, ACCESS, USER_DOMAIN, ATOMIC, OPERAND, ACCESS_SIZE]
+

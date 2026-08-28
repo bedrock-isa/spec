@@ -1,0 +1,48 @@
+\subsection{Base Identity}
+Class \texttt{0x00000000}, leaf \texttt{0x0000} reports \texttt{MAX\_LEAF=0} and \texttt{MAX\_INDEX=18} in its
+index-zero (:term:base.terms.header:). An implementation recognizing only the classes defined by this specification reports
+\texttt{MAX\_CLASS=2}; an implementation that recognizes a higher implementation-defined class reports the highest
+such selector. The base-identity (:term:base.terms.payload:) is:
+
+\begin{manuallistedformatdiagram}{CPUID Base Identity Result Formats}
+\manualformatrowrange{index 1}{63}{0}{%
+\manualformatfield{VENDOR\_ID}{16}
+\manualformatfield{ARCHITECTURE\_ID}{16}
+\manualformatfield{IMPLEMENTATION\_ID}{32}
+}
+\manualformatrowrange{index 2}{63}{0}{%
+\manualformatfield{zero}{32}
+\manualformatfield{IMPL\_REV}{16}
+\manualformatfield{ARCH\_REV}{16}
+}
+\end{manuallistedformatdiagram}
+
+\manualtablecaption{Base Identity Indexes}
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{4.95in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Index} & \textbf{Contents}\\
+\midrule
+1 & bits 31..0 \texttt{IMPLEMENTATION\_ID}; bits 47..32 \texttt{ARCHITECTURE\_ID}; bits 63..48 \texttt{VENDOR\_ID}\\
+2 & bits 15..0 \texttt{ARCHITECTURE\_REVISION}; bits 31..16 \texttt{IMPLEMENTATION\_REVISION}; bits 63..32 zero\\
+3--10 & 64-byte vendor name\\
+11--18 & 64-byte processor name\\
+\bottomrule
+\end{manualtabular}
+
+\texttt{VENDOR\_ID} selects the vendor namespace in which \texttt{IMPLEMENTATION\_ID} is interpreted.
+\texttt{IMPLEMENTATION\_ID} is assigned within that \texttt{VENDOR\_ID} namespace.
+\texttt{ARCHITECTURE\_ID} selects the base architectural contract, so the
+\texttt{(VENDOR\_ID, IMPLEMENTATION\_ID)} pair identifies an implementation and
+\texttt{ARCHITECTURE\_ID} identifies the ISA contract it implements.
+
+\texttt{ARCHITECTURE\_REVISION} is a monotonically increasing unsigned 16-bit compatibility level within one
+\texttt{ARCHITECTURE\_ID}. A processor reporting revision \(N\) implements the base architectural behavior of every
+defined revision less than or equal to \(N\). Optional instruction groups, state, and parameterized contracts are
+selected from their CPUID leaves and feature bits. \texttt{IMPLEMENTATION\_REVISION} is an unsigned revision assigned
+by the vendor and is compared only when both \texttt{VENDOR\_ID} and \texttt{IMPLEMENTATION\_ID} match.
+
+The name (:term:base.terms.field|plural:) are UTF-8 byte strings in increasing index order. Within each 64-bit result, the first byte occupies
+bits 7..0 and subsequent bytes occupy successively higher bits. A name shorter than 64 bytes is terminated by a zero
+byte and all remaining bytes are zero. A 64-byte name has no terminator. Producers must not split a multi-byte UTF-8
+code point at the (:term:base.terms.field:) boundary. Consumers stop at that boundary and replace any invalid sequence.

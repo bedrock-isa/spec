@@ -1,0 +1,22 @@
+mnemonic: VUZIPHI
+name: Vector Odd-Lane Deinterleave
+summary: Gather odd lanes from the old destination and source into separate result halves.
+route: vector
+sail_entries:
+- execute_VUZIPHI
+privileged: false
+assembly:
+  width_suffix_aliases: true
+operands:
+  govern:
+    role: governing_predicate
+    access: read
+    value_type: predicate
+  src:
+    role: source
+    access: read
+    value_type: vector
+  dst:
+    role: destination
+    access: read_write
+    value_type: vector

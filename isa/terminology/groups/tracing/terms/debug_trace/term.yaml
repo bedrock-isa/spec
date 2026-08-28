@@ -1,0 +1,6 @@
+id: debug_trace
+display:
+  canonical: DEBUG_TRACE
+definition: >-
+  the architectural event delivered after successful completion of a
+  TF-selected trace unit.

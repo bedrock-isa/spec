@@ -1,0 +1,49 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: bedrock://schemas/register-group
+title: Bedrock architectural register group
+type: object
+additionalProperties: false
+required: [id, width]
+properties:
+  id:
+    type: string
+    pattern: ^[A-Z][A-Z0-9_]*$
+  width:
+    oneOf:
+    - type: integer
+      minimum: 1
+    - enum: [VLEN, VLEN / 8]
+  summary:
+    type: string
+    minLength: 1
+  reset:
+    $ref: '#/$defs/reset'
+  series:
+    type: object
+    additionalProperties: false
+    required: [prefix, count]
+    properties:
+      prefix:
+        type: string
+        pattern: ^[A-Z][A-Z0-9_]*$
+      count:
+        type: integer
+        minimum: 1
+$defs:
+  reset:
+    oneOf:
+    - type: integer
+      minimum: 0
+    - type: object
+      additionalProperties: false
+      required: [from]
+      properties:
+        from:
+          type: string
+          pattern: ^(?:base|[A-Z][A-Z0-9_]*)\.registers\.[A-Z][A-Z0-9_]*\.[A-Z][A-Z0-9_]*$
+    - type: object
+      additionalProperties: false
+      required: [cold, warm]
+      properties:
+        cold: {enum: [platform]}
+        warm: {enum: [preserve]}

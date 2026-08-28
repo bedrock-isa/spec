@@ -1,0 +1,16 @@
+mnemonic: REPcc
+name: Repeat Conditional
+summary: Repeats the next instruction while the counter and condition remain active.
+route: control_flow
+sail_entries:
+- execute_REPcc
+privileged: false
+operands:
+  cc:
+    role: source
+    access: read
+    value_type: integer
+  counter:
+    role: counter
+    access: read_write
+    value_type: integer

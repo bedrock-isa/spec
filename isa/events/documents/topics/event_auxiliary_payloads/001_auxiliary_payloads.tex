@@ -1,0 +1,160 @@
+\subsubsection{Auxiliary Payloads}
+For an AUXILIARY frame, \texttt{ERROR\_CODE} bit 26 is \texttt{EVENT\_AUX\_VALID}. Bits 24 and 25 are
+\texttt{FAULT\_EA\_VALID} and \texttt{FAULT\_LINEAR\_VALID} when the event can supply those addresses. Every
+unassigned bit is zero, and an auxiliary or address value not produced is zero with its validity bit clear.
+
+Delivery-failure stages are independently allocated leaf events. Their EVENT\_CODE identifies the failed stage; the
+auxiliary (:term:base.terms.payload:) records the event whose delivery failed.
+
+\begin{manuallistedformatdiagram}{Delivery-Failure Auxiliary Format}
+\manualformatrowrange{ERROR\_CODE[63:0]}{63}{0}{%
+\manualformatreserved{(:term:base.terms.reserved:)}{37}
+\manualformatfield{E}{1}
+\manualformatfield{L}{1}
+\manualformatfield{F}{1}
+\manualformatreserved{(:term:base.terms.reserved:)}{24}
+}
+\manualformatrowrange{EVENT\_AUX[63:0]}{63}{0}{%
+\manualformatfield{zero}{32}
+\manualformatfield{failed event code}{32}
+}
+\end{manuallistedformatdiagram}
+{\small
+\texttt{E}, \texttt{L}, and \texttt{F} are \texttt{EVENT\_AUX\_VALID},
+\texttt{FAULT\_LINEAR\_VALID}, and \texttt{FAULT\_EA\_VALID}.
+\par}
+
+When valid, \texttt{EVENT\_AUX[31:0]} contains the event code whose delivery failed and bits 63..32 are zero. A
+(:ref:base.events.EXCEPTION.EVENT_FRAME_ADDRESS_FAILURE:) or (:ref:base.events.EXCEPTION.EVENT_FRAME_STORE_FAILURE:) supplies \texttt{FAULT\_EA} and \texttt{FAULT\_LINEAR}
+when those values were produced.
+
+For (:ref:base.events.EXCEPTION.MACHINE_CHECK:), the error code has this layout:
+
+\begin{manuallistedformatdiagram}{MACHINE\_CHECK ERROR\_CODE Format}
+\manualformatrowrange{ERROR\_CODE[63:0]}{63}{0}{%
+\manualformatreserved{(:term:base.terms.reserved:)}{37}
+\manualformatfield{E}{1}
+\manualformatfield{L}{1}
+\manualformatfield{F}{1}
+\manualformatreserved{(:term:base.terms.reserved:)}{12}
+\manualformatfield{R}{1}
+\manualformatfield{P}{1}
+\manualformatfield{SV}{2}
+\manualformatfield{SRC}{8}
+}
+\end{manuallistedformatdiagram}
+{\small
+\texttt{E}, \texttt{L}, and \texttt{F} are \texttt{EVENT\_AUX\_VALID},
+\texttt{FAULT\_LINEAR\_VALID}, and \texttt{FAULT\_EA\_VALID};
+\texttt{P}, \texttt{R}, \texttt{SV}, and \texttt{SRC} denote \texttt{PRECISE},
+\texttt{RETRY\_SAFE}, \texttt{SEVERITY}, and \texttt{SOURCE}.
+\par}
+
+\manualtablecaption{MACHINE\_CHECK ERROR\_CODE Fields}
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{1.35in}>{\raggedright\arraybackslash}p{3.45in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Bits} & \textbf{Field} & \textbf{Meaning}\\
+\midrule
+7..0 & \texttt{SOURCE} & 0 unknown; 1 core; 2 cache; 3 translation; 4 memory; 5 interconnect\\
+9..8 & \texttt{SEVERITY} & 0 corrected; 1 recoverable; 2 fatal; 3 (:term:base.terms.reserved:)\\
+10 & \texttt{PRECISE} & saved PC identifies the responsible instruction and saved (:term:base.terms.architectural_state:) precedes it\\
+11 & \texttt{RETRY\_SAFE} & retry at that precise boundary cannot duplicate an external effect\\
+23..12 & (:term:base.terms.reserved:) & zero\\
+24 & \texttt{FAULT\_EA\_VALID} & \texttt{FAULT\_EA} was produced\\
+25 & \texttt{FAULT\_LINEAR\_VALID} & \texttt{FAULT\_LINEAR} was produced\\
+26 & \texttt{EVENT\_AUX\_VALID} & \texttt{EVENT\_AUX} was produced\\
+63..27 & (:term:base.terms.reserved:) & zero\\
+\bottomrule
+\end{manualtabular}
+
+When valid, \texttt{EVENT\_AUX} contains an implementation-defined syndrome. Associated effective and linear
+addresses are supplied when available.
+
+\texttt{RETRY\_SAFE=1} requires \texttt{PRECISE=1}. The valid severity and (:term:base.terms.continuation:) combinations are:
+
+\manualtablecaption{MACHINE\_CHECK Valid Continuation Combinations}
+\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{0.95in}>{\raggedright\arraybackslash}p{0.55in}>{\raggedright\arraybackslash}p{0.75in}>{\raggedright\arraybackslash}p{3.25in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Severity} & \textbf{PRECISE} & \textbf{RETRY\_SAFE} & \textbf{Saved PC and (:term:base.terms.continuation:) meaning}\\
+\midrule
+\endfirsthead
+\multicolumn{4}{l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Severity} & \textbf{PRECISE} & \textbf{RETRY\_SAFE} & \textbf{Saved PC and (:term:base.terms.continuation:) meaning}\\
+\midrule
+\endhead
+corrected & 0 & 0 & Trap; saved PC is the instruction following the corrected operation.\\
+recoverable & 0 & 0 & Saved PC is the next instruction that would execute at the delivery boundary; saved (:term:base.terms.architectural_state:) is the state at that boundary. It does not identify the responsible operation.\\
+recoverable & 1 & 0 & Saved PC identifies the responsible instruction and (:term:base.terms.architectural_state:) precedes it; retry may duplicate an external effect.\\
+recoverable & 1 & 1 & Saved PC identifies the responsible instruction and (:term:base.terms.architectural_state:) precedes it; retry cannot duplicate an external effect.\\
+fatal & 0 & 0 & Saved PC is the next instruction at the delivery boundary and is diagnostic only.\\
+fatal & 1 & 0 & Saved PC identifies the responsible instruction and pre-instruction (:term:base.terms.architectural_state:) for diagnosis only.\\
+\bottomrule
+\end{manuallongtable}
+
+All other combinations are invalid and are not generated. In particular, corrected machine checks never set either
+bit, \texttt{PRECISE=0, RETRY\_SAFE=1} is invalid for every severity, fatal machine checks never set
+\texttt{RETRY\_SAFE}, and severity 3 is (:term:base.terms.reserved:). A fatal event provides no reliable (:term:base.terms.continuation:) even when its
+diagnostic state is precise.
+
+For an event in the \texttt{BUS\_FAILURE} family, the error code has this layout:
+
+\begin{manuallistedformatdiagram}{BUS\_FAILURE ERROR\_CODE Format}
+\manualformatrowrange{ERROR\_CODE[63:0]}{63}{0}{%
+\manualformatreserved{(:term:base.terms.reserved:)}{33}
+\manualformatfield{R}{1}
+\manualformatfield{SZ}{3}
+\manualformatfield{E}{1}
+\manualformatfield{L}{1}
+\manualformatfield{F}{1}
+\manualformatfield{OP}{8}
+\manualformatreserved{0}{1}
+\manualformatfield{LVL}{3}
+\manualformatfield{A}{1}
+\manualformatfield{U}{1}
+\manualformatfield{AC}{2}
+\manualformatreserved{(:term:base.terms.reserved:)}{8}
+}
+\end{manuallistedformatdiagram}
+{\small
+\texttt{E}, \texttt{L}, and \texttt{F} are \texttt{EVENT\_AUX\_VALID},
+\texttt{FAULT\_LINEAR\_VALID}, and \texttt{FAULT\_EA\_VALID};
+\texttt{SZ}, \texttt{OP}, \texttt{LVL}, and \texttt{AC} denote \texttt{ACCESS\_SIZE},
+\texttt{OPERAND}, \texttt{WALK\_LEVEL}, and \texttt{ACCESS}; \texttt{A}, \texttt{U}, and
+\texttt{R} denote \texttt{ATOMIC}, \texttt{USER\_DOMAIN}, and \texttt{RETRY\_SAFE}.
+\par}
+
+\manualtablecaption{BUS\_FAILURE ERROR\_CODE Fields}
+\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{0.70in}>{\raggedright\arraybackslash}p{1.35in}>{\raggedright\arraybackslash}p{3.45in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Bits} & \textbf{Field} & \textbf{Meaning}\\
+\midrule
+\endfirsthead
+\multicolumn{3}{l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Bits} & \textbf{Field} & \textbf{Meaning}\\
+\midrule
+\endhead
+7..0 & (:term:base.terms.reserved:) & zero; failure identity is carried by EVENT\_CODE\\
+9..8 & \texttt{ACCESS} & 0 none, 1 read, 2 write, 3 execute\\
+10 & \texttt{USER\_DOMAIN} & access selected the user-domain permission path\\
+11 & \texttt{ATOMIC} & access was an atomic read-modify-write\\
+14..12 & \texttt{WALK\_LEVEL} & 0 outside a walk; 1 through 5 identify the PTE level\\
+15 & (:term:base.terms.reserved:) & zero\\
+23..16 & \texttt{OPERAND} & zero-based explicit operand ordinal; \texttt{0xff} for implicit fetch or stack access\\
+24 & \texttt{FAULT\_EA\_VALID} & \texttt{FAULT\_EA} was produced\\
+25 & \texttt{FAULT\_LINEAR\_VALID} & \texttt{FAULT\_LINEAR} was produced\\
+26 & \texttt{EVENT\_AUX\_VALID} & \texttt{EVENT\_AUX} was produced\\
+29..27 & \texttt{ACCESS\_SIZE} & 0 unavailable or inapplicable; 1 B; 2 W; 3 L; 4 Q\\
+30 & \texttt{RETRY\_SAFE} & retry cannot duplicate an external effect\\
+63..31 & (:term:base.terms.reserved:) & zero\\
+\bottomrule
+\end{manuallongtable}
+
+A bus error during a page walk reports the level whose PTE access failed. When valid, \texttt{EVENT\_AUX}
+contains the final byte address available for the failed access.

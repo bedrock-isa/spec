@@ -1,0 +1,19 @@
+\subsection{Lane Mapping and Scalar Bridges}
+
+Vector bytes use increasing-address little-endian order.  A same-width
+operation treats a vector as VLEN divided by the selected element width lanes.
+For widening, narrowing, FP format conversion, and integer/FP conversion, the
+operation container is the larger of the source and destination widths.  Each
+active container reads the source value from its low source-width part and
+writes the result into its low destination-width part.  Other bits of an
+active destination container and every inactive container remain unchanged.
+
+(:ref:VECTOR.instructions.VDUP:) broadcasts a scalar register, FP register, or immediate into
+every lane.  (:ref:VECTOR.instructions.VEXTRACT:) and (:ref:VECTOR.instructions.VINSERT:) use a scalar lane index.  An
+index at or above the lane count raises (:ref:VECTOR.events.EXCEPTION.VECTOR_LANE_INDEX_OUT_OF_RANGE:) with
+error code one and commits no state.  (:ref:VECTOR.instructions.VLCNT:) returns VLEN in bytes
+divided by the selected element width in bytes.  (:ref:VECTOR.instructions.VLCADD:) adds its
+signed eight-bit immediate multiplied by that lane count to its scalar
+destination modulo $2^{64}$.  Both operations preserve \texttt{FLAGS}; their
+\texttt{H/S/D} spellings are width-only aliases for \texttt{W/L/Q} and do not
+require the floating-point extension.

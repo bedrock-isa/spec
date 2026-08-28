@@ -1,0 +1,8 @@
+id: processor_state_image
+display:
+  canonical: processor-state image
+  plural: processor-state images
+article: a
+definition: >-
+  an aggregate representation of multiple architectural-state components, such
+  as a SAVE area or reset-state table.

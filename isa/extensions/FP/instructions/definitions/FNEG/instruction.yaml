@@ -1,0 +1,18 @@
+mnemonic: FNEG
+name: Floating-Point Negate
+summary: Performs the floating-point negate operation.
+route: fpu
+sail_entries:
+- execute_FNEG
+privileged: false
+repeat:
+  type: rep
+operands:
+  src:
+    role: source
+    access: read
+    value_type: floating
+  dst:
+    role: destination
+    access: write
+    value_type: floating

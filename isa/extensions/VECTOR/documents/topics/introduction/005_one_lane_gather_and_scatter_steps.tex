@@ -1,0 +1,59 @@
+\subsubsection{One-Lane Gather and Scatter Steps}
+
+(:ref:VECTOR.instructions.VGATHER1:) and (:ref:VECTOR.instructions.VSCATTER1:) are one-lane vector memory
+instructions whose repeat eligibility is limited to unconditional \texttt{REP}.
+Their canonical operand order is
+
+\begin{verbatim}
+VGATHER1.T  Pn, [address], Vd
+VSCATTER1.T Pn, Vs, [address]
+\end{verbatim}
+
+The read-write lane cursor \texttt{Ri} appears inside every address expression.
+The vector address operand \texttt{Va} has no suffix; the instruction suffix
+selects both the transferred element width and the width of \texttt{Va[Ri]}.
+The encoded widths are \texttt{B/W/L/Q}.  The \texttt{H/S/D} spellings are
+width-only aliases for \texttt{W/L/Q}, preserve raw element bits, require no
+floating-point extension, and disassemble canonically as \texttt{W/L/Q}.
+
+For element width $E$ bytes, let $i=unsigned(Ri)$ and $N=VLEN/E$.  The range
+check precedes predicate evaluation.  If $i\mathrel{\ge}N$, the instruction
+raises (:ref:VECTOR.events.EXCEPTION.VECTOR_LANE_INDEX_OUT_OF_RANGE:) and commits nothing.
+Otherwise predicate bit \texttt{Pn[iE]} governs the step.  A false bit issues
+no memory transaction, increments \texttt{Ri} modulo $2^{64}$, and commits.  A
+true bit performs exactly one $E$-byte access through the default data segment.
+On success, gather replaces only lane $i$ of \texttt{Vd}, or scatter stores
+lane $i$ of \texttt{Vs}; the instruction then increments \texttt{Ri} and
+commits.  A memory fault leaves \texttt{Ri}, vector state, and memory unchanged.
+Both instructions preserve \texttt{FLAGS}.
+
+The address forms, before default-data-segment translation, are:
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+Form & Offset \\
+\midrule
+scalar stride & $Rb + unsigned(Ri)\mathbin{\cdot}signed64(Rs)$ \\
+absolute 32 & $zero\_extend_{64}(Va.L[i])$ \\
+absolute 64 & $Va.Q[i]$ \\
+vector byte displacement & $Rb + sign\_extend_{64}(Va.E[i])$ \\
+vector index & $Rb + zero\_extend_{64}(Va.E[i])\,E$ \\
+indexed plus \texttt{disp8s/16s/32s} & preceding indexed offset plus the signed (:term:base.terms.payload:) \\
+indexed plus \texttt{disp64} & preceding indexed offset plus the exact 64-bit (:term:base.terms.payload:) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Address arithmetic is modulo $2^{64}$.  The absolute forms are offsets in the
+default data segment; they do not bypass segmentation.  Absolute 32 is the
+fixed \texttt{L/S} width and zero-extends \texttt{Va.L[i]}; absolute 64 is the
+fixed \texttt{Q/D} width. In indexed syntax the element width $E$ directly
+supplies the scale. The signed 8-, 16-, and 32-bit
+displacements and exact 64-bit displacement are appended (:term:base.terms.payload|plural:).
+
+Every base form requires \texttt{Ri != Rb}; scalar stride also requires
+\texttt{Ri != Rs}, while \texttt{Rb == Rs} is permitted.  \texttt{Va == Vd}
+for gather and \texttt{Va == Vs} for scatter are permitted.  The existing
+vector/gather/scatter MMIO-operation prohibition applies to these one-element
+transactions.

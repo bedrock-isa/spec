@@ -1,0 +1,5 @@
+id: processor_state
+display:
+  canonical: processor state
+definition: >-
+  the complete state set and the SAVE/RESTORE facility.

@@ -1,0 +1,8 @@
+id: systemverilog-ea-decoder
+generator: generator.py
+inputs:
+- isa
+depends-on:
+- systemverilog-package
+outputs:
+- rtl/bedrock_decode_ea.sv

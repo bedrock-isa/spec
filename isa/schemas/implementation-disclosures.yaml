@@ -1,0 +1,35 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: bedrock://schemas/implementation-disclosures
+title: Bedrock implementation-defined disclosure registry
+type: object
+additionalProperties: false
+required: [disclosures]
+properties:
+  disclosures:
+    type: array
+    minItems: 1
+    items:
+      type: object
+      additionalProperties: false
+      required: [id, item, defining_rules, publication]
+      properties:
+        id:
+          type: string
+          pattern: ^[A-Z][A-Z0-9_]*$
+        item:
+          type: string
+          minLength: 1
+        defining_rules:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            type: string
+            minLength: 1
+        publication:
+          type: string
+          minLength: 1
+x-interpretation-rules:
+- Every entry names one implementation-defined selection that software may need to discover or obtain from implementation documentation.
+- Defining rules are reader-facing rule names, not a second ownership or dependency graph.
+- Publication states the minimum channel through which an implementation exposes the selected value or behavior.

@@ -1,0 +1,816 @@
+\documentclass[10pt,twoside]{article}
+\newcommand{\BedrockArchitectureName}{Bedrock}
+\newcommand{\BedrockDocumentTitle}{Bedrock C ABI}
+\newcommand{\BedrockRunningTitle}{C ABI}
+\newcommand{\BedrockFooterTitle}{BEDROCK ARCHITECTURE}
+\input{artifacts/_shared/latex/bedrock-reference-common.tex}
+\begin{document}
+\BedrockMakeTitlePage{Bedrock C ABI}{C Language Binding and Calling Convention}{Draft}
+\BedrockFrontMatter
+
+\clearpage
+\section{Scope}\label{page:scope}
+This document defines the Bedrock C data model, register convention, calling
+convention, aggregate and variadic rules, compiler-runtime helper ABI, and C
+memory-model lowering. The Bedrock ELF ABI and ISA supply the referenced
+binary-format and architectural objects. Target-specific C extensions own
+their source syntax and semantics.
+
+\subsection{Contract Position}
+\BedrockContractDiagram{language}
+
+\subsection{Profile}
+\manualfield{Profile:}{\texttt{bedrock-c}}
+
+\clearpage
+\section{Terminology}\label{page:terminology}
+These terms are specific to the C binding. ELF and address-space terms keep the meanings defined by the Bedrock ELF ABI and the architecture manual.
+\begin{description}[style=nextline,leftmargin=1.45in,labelwidth=1.35in,itemsep=3pt,topsep=3pt]
+\item[object pointer] A stable 64-bit pre-segment coordinate that designates an object or one-past an object according to the C abstract machine.
+\item[function pointer] A stable 64-bit pre-segment coordinate naming a C entry point.
+\item[caller-saved register] A register whose live incoming value the caller preserves across a call.
+\item[callee-saved register] A register whose incoming value must be preserved by the called function if the function uses it.
+\item[sret buffer] Caller-allocated storage used to receive a return value that is too large or unsuitable for the normal return registers.
+\item[addressable by-value argument] A by-value aggregate argument that is passed through caller-owned stack storage because the callee may need an address for the object.
+\item[scalable value] A target vector or predicate value whose complete object
+size is determined by the implementation-selected VLEN. Source-language
+spellings belong to the applicable compiler extension; this calling convention
+defines their binary interface.
+\end{description}
+
+\clearpage
+\section{Data Model}\label{page:data-model}
+\manualfield{Model:}{LP64}
+\manualfield{Byte Order:}{little endian}
+\manualfield{Internal SP:}{8-byte aligned}
+\manualfield{Function Entry:}{2-byte aligned}
+\manualfield{Before CALL:}{SP mod 16 = 8}
+\manualfield{Aggregate Maximum Alignment:}{16 bytes}
+\subsection{Scalar Types}
+\manualtablecaption{Reference C Data Model}
+\begingroup\footnotesize
+\setlength{\tabcolsep}{2pt}
+\begin{longtable}{@{}p{2.1in}p{1.0in}p{1.0in}@{}}
+\toprule
+\textbf{Type} & \textbf{Bits} & \textbf{Align}\\
+\midrule
+\endhead
+\texttt{\_\allowbreak{}Bool} & 8 & 1\\
+\texttt{char} & 8 & 1\\
+\texttt{signed char} & 8 & 1\\
+\texttt{unsigned char} & 8 & 1\\
+\texttt{short} & 16 & 2\\
+\texttt{int} & 32 & 4\\
+\texttt{long} & 64 & 8\\
+\texttt{long long} & 64 & 8\\
+\texttt{\_\allowbreak{}\_\allowbreak{}int128} & 128 & 16\\
+\texttt{unsigned \_\allowbreak{}\_\allowbreak{}int128} & 128 & 16\\
+\texttt{ordinary pointer} & 64 & 8\\
+\texttt{size\_\allowbreak{}t} & 64 & 8\\
+\texttt{ptrdiff\_\allowbreak{}t} & 64 & 8\\
+\texttt{wchar\_\allowbreak{}t} & 32 & 4\\
+\texttt{char16\_\allowbreak{}t} & 16 & 2\\
+\texttt{char32\_\allowbreak{}t} & 32 & 4\\
+\texttt{float} & 32 & 4\\
+\texttt{double} & 64 & 8\\
+\texttt{long double} & 64 & 8\\
+\texttt{float \_Complex} & 64 & 4\\
+\texttt{double \_Complex} & 128 & 8\\
+\texttt{long double \_Complex} & 128 & 8\\
+\bottomrule
+\end{longtable}
+\endgroup
+\subsection{Scalar Type Semantics}
+The widths and natural alignments of scalar types are given in
+Table~3-1. The following rules define the type identities and representations
+that supplement those two values.
+
+\paragraph{Integer types and aliases.}
+Plain \texttt{char} is signed. \texttt{size\_t} is an alias for
+\texttt{unsigned long}, and \texttt{ptrdiff\_t} is an alias for
+\texttt{long}. \texttt{wchar\_t} is a signed 32-bit integer;
+\texttt{char16\_t} and \texttt{char32\_t} are unsigned 16-bit and 32-bit
+integers, respectively. In the absence of a separate enum extension, an enum
+has the representation, size, and alignment of \texttt{int}.
+
+A stored \texttt{\_Bool} has the integer value zero or one. False is encoded
+with every object-representation bit clear; true is encoded with bit 0 set and
+every other bit clear.
+
+\paragraph{Ordinary pointers.}
+An ordinary object or function pointer is 64 bits wide and 8-byte aligned. Its
+value is a pre-segment coordinate. Object and function pointers remain distinct C type categories
+even though their baseline representations have the same size and alignment.
+The null pointer has numeric address zero and an all-zero
+64-bit object representation. Every ordinary-pointer result with numeric
+address zero is the null pointer.
+
+\paragraph{128-bit integers.}
+The types \texttt{\_\_int128} and \texttt{unsigned \_\_int128} are 16-byte,
+16-byte-aligned integers. Their little-endian object representation places the
+low 64-bit word at the lower address. When the calling convention assigns one
+to a GENERAL-PAIR, the low word occupies the lower-numbered even register and
+the high word occupies the following odd register. A returned 128-bit integer
+therefore uses \texttt{R0} for the low word and \texttt{R1} for the high word.
+Its stack slot is 16-byte aligned.
+
+An ordinary 128-bit load or store may use two 64-bit memory operations. The
+baseline C atomic object set contains the naturally aligned 1-, 2-, 4-, and
+8-byte integer and pointer types.
+
+\paragraph{Floating-point profile.}
+The \texttt{bedrock-c} profile requires the base floating-point extension.
+Floating-point helpers may replace
+unavailable operations only when the \texttt{F0}--\texttt{F15} register calling
+convention remains available.
+
+\paragraph{Long double.}
+\texttt{long double} is a distinct C type with the IEEE-754 binary64 object
+representation, 8-byte size, and 8-byte alignment. It uses the floating-point
+argument class and returns in \texttt{F0}, making its call representation
+ABI-compatible with \texttt{double}. In a variadic call it occupies one
+16-byte slot containing its 8-byte binary64 representation.
+
+\paragraph{Complex types.}
+A complex object contains its real component first and its imaginary component
+second, each using the corresponding real type's representation. Therefore
+\texttt{float \_Complex} has size 8 and alignment 4, while
+\texttt{double \_Complex} and \texttt{long double \_Complex} have size 16 and
+alignment 8.
+
+\paragraph{Scalable vector and predicate types.}
+When the scalable-vector extension is present, let $B$ be VLEN in bytes. A
+vector object contains exactly $B$ bytes and has 16-byte alignment. A
+predicate object contains exactly $B/8$ packed-image bytes. A private vector
+spill slot has $B$ bytes, 16-byte alignment, and $B$-byte stride. A private
+predicate spill slot has 16-byte alignment and
+$\operatorname{align\_up}(B/8,16)$-byte stride. Predicate spill tail padding
+has unspecified contents. VLEN is stable until reset, so every object and frame in one
+execution context uses one size.
+
+\subsection{Aggregate Layout}
+Aggregate layout applies the scalar and pointer sizes and alignments defined
+above as follows:
+\begin{itemize}
+\item Struct fields are laid out in declaration order with natural alignment up to the aggregate maximum.
+\item A union's alignment is the greatest alignment required by any member. Its size is the greatest ABI size of any
+member, rounded up to a multiple of the union alignment.
+\item Arrays store elements contiguously with each element using the ABI size of its type.
+\item Aggregate object size is rounded up to the aggregate object's alignment.
+\end{itemize}
+
+\paragraph{Bit-fields.}
+A bit-field allocation unit has the size and alignment of its declared base
+type. Within the little-endian unit, allocation begins at the low bit. A field
+remains within one allocation-unit boundary, and only consecutive fields whose
+base types are identical after typedef expansion may share a unit. A base-type
+change or insufficient remaining space closes the current unit and begins a new
+naturally aligned unit. A field width is at most the representation width of
+its base type.
+
+An externally visible bit-field base type shall be \texttt{\_Bool},
+\texttt{signed int}, \texttt{unsigned int}, or a typedef of one of those types.
+A plain \texttt{int} bit-field has the value range and representation of
+\texttt{signed int}. Other base types are target extensions and cross an
+external ABI boundary under a separately documented compatible extension ABI.
+
+An unnamed nonzero-width field consumes space normally. A zero-width field
+closes the current unit and advances layout to the next boundary for its base
+type while contributing zero storage bytes. Ordinary aggregate alignment,
+tail-padding, and size-rounding rules still apply after bit-field allocation.
+
+\paragraph{Flexible arrays and extension layout facilities.}
+A flexible array member contributes zero element-storage bytes to \texttt{sizeof} its
+containing structure. Its offset is aligned for the element type, and that
+element alignment participates in the structure's alignment calculation.
+
+The baseline ABI uses the natural aggregate layout above. An extension may
+define packed aggregates, \texttt{\#pragma pack}, empty structures, or
+zero-length arrays, and types using those facilities cross external ABI
+boundaries under a separately documented compatible extension ABI.
+
+\section{Register Convention}\label{page:register-convention}
+This section defines which architectural state survives an ordinary C call.
+Argument and result locations are defined by the assignment procedure in
+Section~5; that procedure is their sole definition.
+
+\subsection{Register Preservation}
+The caller shall preserve any live value held in a volatile register before a
+call. A callee that modifies a nonvolatile register shall restore its exact
+incoming value before returning. Volatile registers carry explicitly assigned
+call results and caller-managed live values across the call.
+
+\manualtablecaption{C Call Preservation Sets}
+\begin{manuallongtable}{@{}p{1.35in}p{2.0in}p{2.05in}@{}}
+\toprule
+\textbf{State} & \textbf{Volatile across a call} & \textbf{Preserved by the callee}\\
+\midrule
+\endhead
+General registers & \texttt{R0}--\texttt{R7} & \texttt{R8}--\texttt{R15}\\
+Floating-point registers & \texttt{F0}--\texttt{F7} & \texttt{F8}--\texttt{F15}\\
+Vector registers & \texttt{V0}--\texttt{V15} & \texttt{V16}--\texttt{V31}\\
+Predicate registers & \texttt{P0}--\texttt{P7} & \texttt{P8}--\texttt{P15}\\
+Condition state & \texttt{FLAGS} & none\\
+Segment state & \texttt{GS1}--\texttt{GS5} & \texttt{CS}, \texttt{DS}, \texttt{SS}, \texttt{GS0}\\
+\bottomrule
+\end{manuallongtable}
+
+A callee may preserve floating-point registers with \texttt{FPUSHP} and
+\texttt{FPOPP} or with any sequence having the same observable effect. Each
+instruction operates on one canonical pair. The nonvolatile pairs are index 4
+for \texttt{F8:F9}, index 5 for \texttt{F10:F11}, index 6 for
+\texttt{F12:F13}, and index 7 for \texttt{F14:F15}. When several pairs are
+saved, a normal prologue pushes them in increasing pair-index order and the
+matching epilogue pops them in decreasing pair-index order. A callee need only
+save the pair containing each nonvolatile register it modifies.
+
+A callee that modifies a nonvolatile vector or predicate register shall
+restore that register's complete scalable image before returning. Saving only
+the currently active lanes, only significant predicate bits for one element
+size, or a fixed-width prefix represents a partial save; preservation requires
+the complete scalable image.
+
+\subsection{Stack and Control State}
+\texttt{SP} is the dedicated architectural stack pointer. A
+callee may move it while executing but shall restore the entry value before
+returning; Section~5 defines the additional alignment and frame rules.
+\texttt{PC} is the architectural program counter and is visible to C code
+only as a control-flow target. The call and return instructions define its
+transition across a call. Condition codes in
+\texttt{FLAGS} are volatile and may be clobbered by every callee.
+
+\subsection{Segment Context}
+An ordinary C call preserves the exact incoming images of \texttt{CS},
+\texttt{DS}, \texttt{SS}, and \texttt{GS0}. The first three establish the
+code, ordinary-data, and stack contexts. \texttt{GS0} establishes the TLS
+context and may use translated-window mode. \texttt{GS1} through \texttt{GS5}
+are caller-saved scratch segment registers; callers preserve any live incoming
+values they hold.
+
+\subsection{C Address-Space Context}
+Ordinary object and function pointers are stable 64-bit pre-segment
+coordinates. Every C ABI execution path maintains the following invariants:
+
+\begin{itemize}
+\item While a pointer is live, calls, returns, register or memory preservation,
+context transitions, and ABI boundaries preserve its 64-bit coordinate.
+\item Every ABI-permitted segment path that dereferences a valid object
+pointer selects the same byte of the same C object for a given pointer value.
+This includes a stack object's address after it escapes to an ordinary data
+path, and a materialized TLS object's address.
+\item Pointer equality, subtraction, and in-object arithmetic have the same C
+result on every ABI-permitted path. A one-past pointer participates in those
+operations and is an arithmetic boundary sentinel. Storage accesses use
+coordinates within the object.
+\item Function pointers, call entries, return continuations, ELF symbols and
+relocations, dynamic linkage, stack pointers, runtime-provided pointers, TLS
+materialization, signal and nonlocal-jump contexts, unwind records, and
+debugger-visible coordinates use this pre-segment coordinate system.
+\item Segment and page-table context transitions preserve these invariants as
+one architectural transition from the program's perspective.
+\item Every C object and its one-past coordinate must be representable as a
+nonzero 64-bit address, including its one-past coordinate. The greatest
+representable one-past coordinate is $2^{64}-1$.
+\end{itemize}
+
+The 64-bit all-zero null-pointer representation designates the null pointer.
+Every C object and function occupies a nonzero address.
+
+\subsection{Status Registers}
+Target-specific intrinsics and runtime code provide C access to
+\texttt{STATUS}. Low-level access to
+\texttt{FSTATUS} and \texttt{FFLAGS} uses
+\texttt{<bedrockfpuintrin.h>}. \texttt{FSTATUS} is callee-saved: a function
+returns with the incoming rounding mode, floating-point exception-condition enables, and other control fields.
+A documented floating-point-environment interface instead specifies its
+outgoing environment explicitly.
+\texttt{FFLAGS} is cumulative floating-point status and is caller-clobbered;
+floating-point operations in a callee may set accrued floating-point exception flags. An
+interface that requires a saved environment uses its floating-point environment
+runtime contract explicitly.
+
+\section{Calling Convention}\label{page:calling-convention}
+This section is normative. A caller and callee conform when they independently
+apply the classification and assignment procedure below and therefore agree on
+every argument location, return location, and stack boundary. Register lists
+are summaries; the assignment procedure remains authoritative.
+
+\subsection{Stack and Calls}
+The stack grows downward. An architectural \texttt{CALL} pushes an
+8-byte return address at \texttt{[SP]}, and
+callers align \texttt{SP} before the call so callee entry observes
+16-byte alignment. Between ABI call boundaries, a function
+may adjust \texttt{SP} while keeping it aligned to at least
+8 bytes. Immediately before \texttt{CALL}, the stack
+pointer satisfies SP modulo 16 equals 8 before return address push. After \texttt{CALL} pushes the
+return address, it satisfies SP modulo 16 equals 0 at callee entry.
+
+Each object observes its declared type alignment. In particular, relaxing
+the internal stack-pointer invariant preserves the 16-byte alignment of
+\texttt{\_\_int128} objects or other objects whose declared alignment is 16
+bytes. Both the red-zone size and fixed outgoing-argument-area size are zero. A
+callee that dynamically realigns the stack restores the incoming stack
+pointer before returning.
+
+The first stack argument begins at \texttt{[SP+16]} at callee entry. The eight
+bytes at \texttt{[SP+8]} are alignment padding. Argument values begin at
+\texttt{[SP+16]}.
+Each subsequent stack argument occupies the next 16-byte slot.
+
+\begin{manuallistedstackframediagram}{Near-call stack frame at callee entry}
+\manualstackframespslot{+0}{saved return \texttt{PC}}
+\manualstackframeslot{+8}{8-byte alignment padding}
+\manualstackframepayload{+16}{first stack argument, if present}
+\end{manuallistedstackframediagram}
+
+\subsection{Frame Pointer}
+A function that maintains a frame pointer uses callee-saved \texttt{R15}.
+Other functions retain \texttt{R15} as an ordinary callee-saved register.
+
+\subsection{C Unwind Frame}
+The Bedrock ELF ABI owns the language-independent DWARF register-number
+assignment. C unwind descriptions use that assignment with the following
+calling-convention frame rule.
+At call entry, the canonical frame address is entry \texttt{SP+8}; saved
+\texttt{PC} is at CFA minus 8 and \texttt{CS} has a same-value rule.
+
+\Needspace{2.4in}
+\subsection{Argument Classification}
+Classification occurs after the C language has determined the effective type
+of the argument. A named argument to a prototyped function is placed in one of
+seven ABI classes:
+
+\begin{description}[style=nextline,leftmargin=1.35in,labelwidth=1.25in,itemsep=3pt,topsep=3pt]
+\item[GENERAL] Integer types up to 64 bits wide and ordinary object or
+function pointers. One general-register location is required.
+\item[GENERAL-PAIR] Signed and unsigned \texttt{\_\_int128}. Two consecutive
+general registers beginning at an even-numbered register are required.
+\item[FLOAT] \texttt{float}, \texttt{double}, and \texttt{long double}. One
+floating-point register is required.
+\item[FLOAT-PAIR] \texttt{float \_Complex}, \texttt{double \_Complex}, and
+\texttt{long double \_Complex}. Two consecutive floating-point registers are
+required with unit register alignment.
+\item[VECTOR] A direct scalable vector value. One vector register is required.
+\item[PREDICATE] A direct scalable predicate value. One predicate register is
+required.
+\item[INDIRECT] Every structure or union argument, regardless of size or
+member composition. The caller creates a 16-byte-aligned by-value copy and
+passes the address of that copy as one GENERAL value.
+\end{description}
+
+A compound scalable value is INDIRECT. Exhaustion of a scalable value's
+direct register class also converts it to INDIRECT: the caller creates an
+object with the layout above and assigns its pointer through the GENERAL
+procedure. Each scalable value travels wholly in its register or through an
+indirect copy.
+
+Signed GENERAL values narrower than 64 bits are sign-extended when assigned to
+a register. Unsigned values and \texttt{\_Bool} are zero-extended. Plain
+\texttt{char} follows its signed ABI type. A stack slot contains the effective
+type's object representation at its low address; bytes after that
+representation are unspecified.
+
+\subsection{Assignment Procedure}
+The caller shall apply the following procedure. The callee may rely on the
+result solely from assigned registers and value bytes.
+
+\begin{enumerate}[leftmargin=1.35em,itemsep=3pt,topsep=3pt]
+\item If the result uses an sret buffer, assign its address to \texttt{R0} and
+initialize the general-register cursor to 1. Otherwise initialize it to 0.
+Initialize the floating-point cursor to 0, the vector cursor to 0, and the
+predicate cursor to 0.
+\item Visit arguments in source order. GENERAL and INDIRECT arguments consume
+the register named by the current general cursor and then advance that cursor.
+FLOAT arguments analogously consume \texttt{F0} through \texttt{F7} using the
+independent floating-point cursor. VECTOR arguments consume \texttt{V0}
+through \texttt{V7} using the independent vector cursor, and PREDICATE
+arguments consume \texttt{P0} through \texttt{P3} using the independent
+predicate cursor.
+\item For a FLOAT-PAIR argument, use the current floating-point register for
+the real component and the next register for the imaginary component, then
+advance the cursor by two with unit register alignment. If fewer than two
+registers remain, place the complete complex value in one stack
+slot and mark the floating-point class exhausted.
+\item For a GENERAL-PAIR argument, round the general cursor upward to an even
+register number. If that register and its successor both exist, place the low
+64 bits in the even register, the high 64 bits in the odd register, and advance
+the cursor past the pair. A skipped odd register remains unused.
+\item If the remaining registers of a class have insufficient capacity for an
+argument, place the complete argument in one stack slot and mark
+that register class exhausted. Later arguments of that class also use stack
+slots, while register holes remain unassigned. Each argument occupies one
+complete register location or one complete stack slot.
+For VECTOR or PREDICATE, instead convert the complete argument to INDIRECT as
+specified above and assign that pointer through GENERAL; exhausting a scalable
+register class leaves GENERAL independently available.
+\item Unnamed variadic arguments and every argument of an unprototyped call are
+forced to stack slots and leave register cursors unchanged. Apply the default
+argument promotions before assigning those slots.
+Every scalable argument in either case is first converted to INDIRECT. Its
+GENERAL pointer is then subject to this forced-stack rule, so the variadic slot
+contains the pointer exclusively.
+\item Assign stack slots to stack-bound arguments in source order beginning at
+\texttt{[SP+16]}. Consequently, a caller that constructs the outgoing area by
+stores or pushes does so from the rightmost stack-bound argument toward the
+leftmost. The reserved register-home-slot count is zero.
+\end{enumerate}
+
+The general, floating-point, vector, and predicate resources exhaust
+independently.
+
+\subsection{C Return Values}
+Scalar results use their natural register class. A \texttt{\_\_int128} result
+places its low word in \texttt{R0} and high word in \texttt{R1}. A structure
+or union of at most 16 bytes is returned as raw object bytes: increasing object
+addresses map first to \texttt{R0} and then to \texttt{R1}. Bytes beyond the
+object size and padding bytes with C-unspecified values are
+unspecified.
+
+A complex result places its real component in \texttt{F0} and its imaginary
+component in \texttt{F1}.
+
+A single direct vector result uses \texttt{V0}; a single direct predicate
+result uses \texttt{P0}. A compound scalable result or any result containing
+multiple scalable values uses the ordinary indirect-result procedure, even if
+its fixed fields would otherwise fit in \texttt{R0:R1}.
+
+For a larger aggregate, the caller allocates a 16-byte-aligned result buffer
+and passes its address in \texttt{R0} before ordinary argument assignment. The
+callee stores the result in that buffer and returns the same address in
+\texttt{R0}.
+
+\BedrockGeneratedCReturnRegisterTable
+
+\subsection{Aggregate Passing}
+For every by-value aggregate argument, the caller allocates distinct storage,
+aligns its start to 16 bytes, initializes it with the argument value, and keeps
+it alive until the call returns. The GENERAL procedure assigns the address
+exclusively. If GENERAL registers are exhausted, the
+stack argument slot contains that address exclusively.
+
+The copy gives the callee an addressable object with the declared aggregate
+type. Modifications to the private copy remain isolated from the caller's
+source object. Baseline aggregates containing bit-fields and mixed
+integer/floating aggregates use the same INDIRECT rule; their member
+composition preserves the INDIRECT classification. An extension aggregate with
+packed or unaligned members crosses this external ABI boundary under a
+separate extension ABI.
+
+\subsection{Variadic Calls}
+Fixed named arguments use the ordinary assignment procedure. Every unnamed
+argument is first subject to the C default argument promotions and is then
+placed in a 16-byte stack slot. In particular, \texttt{float} becomes
+\texttt{double}, and \texttt{\_Bool}, \texttt{char}, \texttt{short}, and their
+signed or unsigned variants promote to \texttt{int} when \texttt{int} can
+represent all values of the source type. \texttt{long double} remains the
+Bedrock binary64 \texttt{long double} type. An aggregate slot contains the
+address of the caller-owned by-value copy described above.
+
+The baseline \texttt{va\_list} representation is one 64-bit pointer to the next
+unnamed argument slot. \texttt{va\_start} initializes it to the first unnamed
+slot after any stack-assigned named arguments. \texttt{va\_arg} reads the
+promoted representation from the low bytes of the current slot, or follows the
+copy address for an aggregate, and then advances the pointer by 16 bytes.
+\texttt{va\_copy} copies the pointer value and \texttt{va\_end} has a
+zero-instruction machine effect.
+
+An unprototyped call applies the same promotions and places every argument on
+the stack. As required by C, the callee type must be compatible with the
+promoted types.
+
+\section{Freestanding C Binding}\label{page:freestanding-c-binding}
+This section defines the compiler-runtime and ELF linkage obligations of the
+freestanding C profile. It covers compiler-generated helper calls, C symbols,
+and ELF linkage.
+
+\subsection{Compiler Runtime Helpers}
+The compiler lowers addition, subtraction, negation, bitwise operations,
+comparisons, truncation, and extension of 128-bit integers inline. It may call
+one of the helpers below for 128-bit multiplication,
+division, remainder, and shifts; conversion between a 128-bit integer and a
+supported floating-point type; or complex multiplication and division.
+
+Every compiler-runtime helper is an ordinary \texttt{bedrock-c} function. Its
+arguments and results therefore follow Section~5, including the
+\texttt{R1:R0} return convention for \texttt{\_\_int128}.
+
+The tables below are the complete baseline helper set. A compiler emits
+implicit references from this set or from a target extension that defines the
+symbol and its ABI. A runtime may export additional symbols as explicit
+interfaces.
+
+In the signature column, \texttt{i128} means \texttt{\_\_int128},
+\texttt{u128} means \texttt{unsigned \_\_int128}, \texttt{c32} means
+\texttt{float \_Complex}, and \texttt{c64} means
+\texttt{double \_Complex}. The signatures use ordinary C parameter and result
+classification; a shift count has type \texttt{int}.
+
+\Needspace{2.7in}
+\manualtablecaption{\texttt{\_\_int128} Arithmetic and Shift Helpers}
+\begingroup\footnotesize
+\setlength{\tabcolsep}{2pt}
+\begin{longtable}{@{}p{1.55in}p{1.55in}p{2.45in}@{}}
+\toprule
+\textbf{Operation} & \textbf{Helper} & \textbf{Signature}\\
+\midrule
+\endhead
+Multiply & \texttt{\_\allowbreak{}\_\allowbreak{}multi3} & \texttt{i128(i128, i128)}\\
+Signed divide & \texttt{\_\allowbreak{}\_\allowbreak{}divti3} & \texttt{i128(i128, i128)}\\
+Unsigned divide & \texttt{\_\allowbreak{}\_\allowbreak{}udivti3} & \texttt{u128(u128, u128)}\\
+Signed remainder & \texttt{\_\allowbreak{}\_\allowbreak{}modti3} & \texttt{i128(i128, i128)}\\
+Unsigned remainder & \texttt{\_\allowbreak{}\_\allowbreak{}umodti3} & \texttt{u128(u128, u128)}\\
+Shift left & \texttt{\_\allowbreak{}\_\allowbreak{}ashlti3} & \texttt{i128(i128, int)}\\
+Arithmetic shift right & \texttt{\_\allowbreak{}\_\allowbreak{}ashrti3} & \texttt{i128(i128, int)}\\
+Logical shift right & \texttt{\_\allowbreak{}\_\allowbreak{}lshrti3} & \texttt{u128(u128, int)}\\
+\bottomrule
+\end{longtable}
+\endgroup
+
+\manualtablecaption{\texttt{\_\_int128} and Floating-Point Conversion Helpers}
+\begingroup\footnotesize
+\setlength{\tabcolsep}{2pt}
+\begin{longtable}{@{}p{1.55in}p{1.55in}p{2.45in}@{}}
+\toprule
+\textbf{Conversion} & \textbf{Helper} & \textbf{Signature}\\
+\midrule
+\endhead
+Signed to binary32 & \texttt{\_\allowbreak{}\_\allowbreak{}floattisf} & \texttt{float(i128)}\\
+Signed to binary64 & \texttt{\_\allowbreak{}\_\allowbreak{}floattidf} & \texttt{double(i128)}\\
+Unsigned to binary32 & \texttt{\_\allowbreak{}\_\allowbreak{}floatuntisf} & \texttt{float(u128)}\\
+Unsigned to binary64 & \texttt{\_\allowbreak{}\_\allowbreak{}floatuntidf} & \texttt{double(u128)}\\
+Binary32 to signed & \texttt{\_\allowbreak{}\_\allowbreak{}fixsfti} & \texttt{i128(float)}\\
+Binary64 to signed & \texttt{\_\allowbreak{}\_\allowbreak{}fixdfti} & \texttt{i128(double)}\\
+Binary32 to unsigned & \texttt{\_\allowbreak{}\_\allowbreak{}fixunssfti} & \texttt{u128(float)}\\
+Binary64 to unsigned & \texttt{\_\allowbreak{}\_\allowbreak{}fixunsdfti} & \texttt{u128(double)}\\
+\bottomrule
+\end{longtable}
+\endgroup
+
+\manualtablecaption{Complex Arithmetic Helpers}
+\begingroup\footnotesize
+\setlength{\tabcolsep}{2pt}
+\begin{longtable}{@{}p{1.55in}p{1.55in}p{2.45in}@{}}
+\toprule
+\textbf{Operation} & \textbf{Helper} & \textbf{Signature}\\
+\midrule
+\endhead
+Binary32 multiply & \texttt{\_\allowbreak{}\_\allowbreak{}mulsc3} & \texttt{c32(float, float, float, float)}\\
+Binary32 divide & \texttt{\_\allowbreak{}\_\allowbreak{}divsc3} & \texttt{c32(float, float, float, float)}\\
+Binary64 multiply & \texttt{\_\allowbreak{}\_\allowbreak{}muldc3} & \texttt{c64(double, double, double, double)}\\
+Binary64 divide & \texttt{\_\allowbreak{}\_\allowbreak{}divdc3} & \texttt{c64(double, double, double, double)}\\
+\bottomrule
+\end{longtable}
+\endgroup
+
+The four scalar arguments to a complex helper are the real and imaginary parts
+of its two operands, in operand order. Bedrock \texttt{long double} has the
+binary64 representation and call classification, so conversions involving
+\texttt{long double} use the corresponding \texttt{df} helper and
+\texttt{long double \_Complex} multiplication or division uses the
+corresponding \texttt{dc3} helper.
+
+\subsection{Pointers and External Objects}
+A C function pointer is 64 bits wide and its value is a pre-segment near-call
+coordinate. Code and data pointers have the
+same size and alignment, while their distinct C type categories preserve
+separate code and data address spaces.
+
+A common symbol has the ABI alignment of its declared type. An external
+object retains its declared alignment up to the 16-byte aggregate maximum.
+An explicit extension owns stronger placement requirements.
+
+\subsection{Calls, Relocations, and Relaxation}
+The relocation records the linkage path selected for a C call:
+
+\input{abi/c/documents/fragments/call_relocation_quick_reference.tex}
+
+The assembler and linker may relax an instruction sequence, but relaxation
+must preserve the C call interface, symbol identity, and observable control
+transfer defined by the original relocation. The relaxed sequence remains part
+of the same C calling convention.
+
+\subsection{TLS Relationship}
+The Bedrock ELF ABI defines TLS models, symbols, relocations, and the
+\texttt{GS0}-relative materialization protocols consumed by C code.
+
+\section{C Memory Model}\label{page:c-memory-model}
+This section defines how the baseline C memory model maps to Bedrock memory
+operations and ordering instructions.
+
+The ISA memory model owns access atomicity, alignment, instruction-order
+selectors, and the global sequentially consistent order. This C ABI owns
+atomic-object eligibility and the lowering of C operations into those ISA
+contracts.
+
+\subsection{Atomic Object Eligibility}
+The native lock-free set consists of integer objects and ordinary 64-bit
+pointer objects whose size is 1, 2, 4, or 8 bytes and whose address satisfies
+the natural alignment for that size. An unaligned atomic object requires the
+target constraint diagnostic below. Accordingly, \texttt{\_\_atomic\_always\_lock\_free} returns true
+only for those naturally aligned sizes.
+
+The baseline accepts an atomic object only when it belongs to that native
+lock-free set. Any other atomic object---including a floating-point, aggregate,
+128-bit integer, unsupported-width, or insufficiently aligned
+object---is a target constraint violation.
+
+\subsection{Native Atomic Primitives}
+Once the object satisfies the width and alignment requirements above, the
+compiler uses the following primitive lowering. The ordering sequences are
+defined separately below.
+
+\BedrockGeneratedCAtomicPrimitiveTable
+
+\Needspace{2.6in}
+\subsection{C Atomic Memory Order Mapping}
+\BedrockGeneratedCMemoryOrderTable
+
+For C compare-exchange, the compiler selects the join of the success and
+failure orders through the order lattice, independently of their numeric encodings. Consume is
+treated as acquire, acquire joined with release is acquire-release, and
+sequential consistency dominates every other order. A failure performs a
+read-only operation. Release-sequence effects arise from successful writes,
+while a failed
+\texttt{CMPXCHG.SEQCST} still participates in the global SC order as an SC
+load.
+
+The relaxed C thread fence emits a zero-instruction sequence. Consume,
+acquire, release, acquire-release, and sequentially consistent thread fences
+emit \texttt{AFENCE}.
+
+\subsection{Volatile, Device, and Executable Memory}
+Volatile accesses preserve the observable access count and order. C atomic
+operations and fences provide the inter-thread ordering defined above.
+The C target interface owns the executable-byte publication operation. A
+relocation agent completes that operation before transferring control to
+patched instructions.
+
+\Needspace{2.0in}
+\subsection{C Fetch RMW Lowering}
+\BedrockGeneratedCFetchRmwTable
+
+\clearpage
+\section{Calling Convention Examples}\label{page:calling-convention-examples}
+The examples apply the normative assignment procedure above.
+
+\subsection{Independent Register Classes and Pair Alignment}
+\begingroup\small\ttfamily
+\begin{tabularx}{\linewidth}{@{}X@{}}
+struct pair \{ uint64\_t lo, hi; \};\tabularnewline
+uint64\_t mixed(uint64\_t count, double scale,\tabularnewline
+\hspace{1.2em}unsigned \_\_int128 wide, struct pair pair, float bias);\tabularnewline
+\end{tabularx}
+\endgroup
+The general cursor begins at 0 and the floating-point cursor begins at 0.
+\texttt{count} consumes \texttt{R0}; \texttt{scale} independently consumes
+\texttt{F0}. The GENERAL-PAIR argument rounds the general cursor from 1 to 2,
+so \texttt{wide} uses \texttt{R3:R2} and \texttt{R1} remains unused. The
+address of the caller-owned \texttt{pair} copy uses \texttt{R4}, and
+\texttt{bias} uses \texttt{F1}. The stack argument area has size zero.
+
+\subsection{Independent Scalable Register Classes}
+Assume \texttt{vec} and \texttt{pred} denote direct scalable vector and
+predicate extension types. For
+\texttt{vec blend(vec left, pred mask, uint64\_t count, vec right, pred
+select, double scale)}, \texttt{left} and \texttt{right} use \texttt{V0} and
+\texttt{V1}; \texttt{mask} and \texttt{select} independently use \texttt{P0}
+and \texttt{P1}; \texttt{count} uses \texttt{R0}; and \texttt{scale} uses
+\texttt{F0}. The direct vector result uses \texttt{V0}. Each class advances
+its own cursor exclusively.
+
+\subsection{sret Changes Ordinary Argument Assignment}
+\begingroup\small\ttfamily
+\begin{tabularx}{\linewidth}{@{}X@{}}
+struct triple \{ uint64\_t x, y, z; \};\tabularnewline
+struct triple build(uint64\_t tag, signed \_\_int128 wide,\tabularnewline
+\hspace{1.2em}double factor);\tabularnewline
+\end{tabularx}
+\endgroup
+Because the result is 24 bytes, its buffer address occupies \texttt{R0} and
+the general cursor begins at 1. Thus \texttt{tag} uses \texttt{R1},
+\texttt{wide} uses \texttt{R3:R2}, and \texttt{factor} uses \texttt{F0}.
+The callee stores the result through the entry value of \texttt{R0} and returns
+the same address in \texttt{R0}.
+
+\subsection{Pair Exhaustion of the General Class}
+\begingroup\small\ttfamily
+\begin{tabularx}{\linewidth}{@{}X@{}}
+void pressure(uint64\_t a0, uint64\_t a1, uint64\_t a2,\tabularnewline
+\hspace{1.2em}uint64\_t a3, uint64\_t a4, uint64\_t a5, uint64\_t a6,\tabularnewline
+\hspace{1.2em}unsigned \_\_int128 wide, uint64\_t tail);\tabularnewline
+\end{tabularx}
+\endgroup
+Arguments \texttt{a0} through \texttt{a6} use \texttt{R0} through
+\texttt{R6}. The next even pair would begin past \texttt{R7}, so
+\texttt{wide} is placed completely at \texttt{[SP+16]} and the GENERAL class
+becomes exhausted. \texttt{tail} therefore uses \texttt{[SP+32]}, while
+\texttt{R7} remains unassigned.
+
+\subsection{Variadic Promotions and Slot Traversal}
+\begingroup\small\ttfamily
+\begin{tabularx}{\linewidth}{@{}X@{}}
+int trace(const char *format, ...);\tabularnewline
+trace("example", (signed char)-1, (float)1.5, pair);\tabularnewline
+\end{tabularx}
+\endgroup
+The named \texttt{format} argument uses \texttt{R0}. The signed character is
+promoted to \texttt{int} and stored at \texttt{[SP+16]}; the \texttt{float} is
+promoted to \texttt{double} and stored at \texttt{[SP+32]}. The caller creates
+the aggregate copy and stores its address at \texttt{[SP+48]}. A
+\texttt{va\_list} initialized by \texttt{va\_start} visits those three slots in
+that order by adding 16 after each access.
+
+\Needspace{1.8in}
+\subsection{Assembly Conventions}
+The assembly examples illustrate the normative rules. They present the
+directives, comments, and labels that determine the shown control flow. The
+scalar leaf example presents its one-instruction counted loop with \texttt{REP}; the counter supplies
+N directly and zero annuls the body. If an implementation sequence conflicts with a
+normative rule, the rule controls.
+
+The declarations below state the ABI interfaces used by the examples.
+
+% ABI-ASM-EXAMPLE: scalar-leaf
+\subsection{Scalar Leaf Function}
+\begingroup\small\ttfamily
+\begin{tabularx}{\linewidth}{@{}X@{}}
+int sum(int *p, int n);\tabularnewline
+\end{tabularx}
+\endgroup
+
+On entry, \texttt{p} is in \texttt{R0} and the sign-extended value of
+\texttt{n} is in \texttt{R1}. The function uses only volatile
+registers, preserves the entry \texttt{SP}, and returns the integer sum in
+\texttt{R0}.
+
+\begin{manualformblock}{2.45in}
+\begingroup\small\ttfamily
+\begin{tabularx}{\linewidth}{@{}X@{}}
+sum:\tabularnewline
+\hspace{1.2em}mov.q\hspace{0.9em}r0, r2\tabularnewline
+\hspace{1.2em}clr.q\hspace{0.9em}r0\tabularnewline
+\hspace{1.2em}maxs.q\hspace{0.65em}r0, r1\tabularnewline
+\hspace{1.2em}rep\hspace{1.05em}r1, add.l [r2++], r0\tabularnewline
+\hspace{1.2em}ret\tabularnewline
+\end{tabularx}
+\endgroup
+\manualfigurecaption{Scalar leaf function}
+\end{manualformblock}
+
+% ABI-ASM-EXAMPLE: nonleaf-preservation
+\subsection{Non-Leaf Preservation and Call Alignment}
+\begingroup\small\ttfamily
+\begin{tabularx}{\linewidth}{@{}X@{}}
+int mf\_pipeline(int *tmp, int *dst, int *src, int n,\tabularnewline
+\hspace{1.2em}int ca, int cb, int cc);\tabularnewline
+\end{tabularx}
+\endgroup
+
+The seven arguments occupy \texttt{R0} through \texttt{R6} in source order.
+The function keeps \texttt{n}, \texttt{dst}, \texttt{tmp}, and the
+first intermediate result live in nonvolatile \texttt{R8} through
+\texttt{R11}. It therefore saves and restores both canonical register pairs.
+
+\Needspace{5.0in}
+\begingroup\scriptsize\ttfamily
+\begin{tabularx}{\linewidth}{@{}X@{}}
+mf\_pipeline:\tabularnewline
+\hspace{1.2em}pushp\hspace{0.9em}4\tabularnewline
+\hspace{1.2em}pushp\hspace{0.9em}5\tabularnewline
+\hspace{1.2em}sub.q\hspace{0.9em}8, sp\tabularnewline
+\hspace{1.2em}mov.q\hspace{0.9em}r3, r8\tabularnewline
+\hspace{1.2em}mov.q\hspace{0.9em}r1, r9\tabularnewline
+\hspace{1.2em}mov.q\hspace{0.9em}r0, r10\tabularnewline
+\hspace{1.2em}mov.q\hspace{0.9em}r2, r1\tabularnewline
+\hspace{1.2em}mov.q\hspace{0.9em}r8, r2\tabularnewline
+\hspace{1.2em}mov.q\hspace{0.9em}r4, r3\tabularnewline
+\hspace{1.2em}mov.q\hspace{0.9em}r5, r4\tabularnewline
+\hspace{1.2em}mov.q\hspace{0.9em}r6, r5\tabularnewline
+\hspace{1.2em}call\hspace{1.05em}mf\_fir\_three\tabularnewline
+\hspace{1.2em}mov.q\hspace{0.9em}r0, r11\tabularnewline
+\hspace{1.2em}mov.q\hspace{0.9em}r9, r0\tabularnewline
+\hspace{1.2em}mov.q\hspace{0.9em}r10, r1\tabularnewline
+\hspace{1.2em}mov.q\hspace{0.9em}r8, r2\tabularnewline
+\hspace{1.2em}call\hspace{1.05em}mf\_scale\_store\tabularnewline
+\hspace{1.2em}add.l\hspace{0.9em}r11, r0\tabularnewline
+\hspace{1.2em}mov.l\hspace{0.55em}r0, r2\tabularnewline
+\hspace{1.2em}mov.q\hspace{0.9em}r9, r0\tabularnewline
+\hspace{1.2em}mov.q\hspace{0.9em}r8, r1\tabularnewline
+\hspace{1.2em}add.q\hspace{0.9em}8, sp\tabularnewline
+\hspace{1.2em}popp\hspace{1.0em}5\tabularnewline
+\hspace{1.2em}popp\hspace{1.0em}4\tabularnewline
+\hspace{1.2em}jmp\hspace{1.15em}mf\_bias\_sum\tabularnewline
+\end{tabularx}
+\endgroup
+\manualfigurecaption{Non-leaf function with a tail transfer}
+
+Each \texttt{PUSHP} saves 16 bytes, so the pair saves leave the entry alignment
+unchanged. The additional 8-byte subtraction establishes \texttt{SP mod 16 =
+8} before each \texttt{CALL}; the pushed return address therefore gives the
+callee a 16-byte-aligned entry stack. The epilogue removes the padding and
+restores \texttt{R10:R11} before \texttt{R8:R9}. The final \texttt{JMP} is a
+legal tail transfer because the frame and nonvolatile state have already been
+restored, the outgoing arguments have the ordinary ABI layout, and the target's
+\texttt{R0} result is also the result required by \texttt{mf\_pipeline}.
+
+\end{document}

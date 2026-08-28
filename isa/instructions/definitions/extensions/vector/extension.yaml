@@ -1,7 +1,0 @@
-name: vector
-instructions: instructions.yaml
-operands: operands.yaml
-registers: registers.yaml
-sizes: sizes.yaml
-availability:
-  required_cpuid_flags: [VECTOR]

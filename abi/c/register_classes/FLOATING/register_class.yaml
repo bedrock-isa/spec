@@ -1,0 +1,16 @@
+id: FLOATING
+arguments:
+- isa:FP.registers.FPR.F0
+- isa:FP.registers.FPR.F1
+- isa:FP.registers.FPR.F2
+- isa:FP.registers.FPR.F3
+- isa:FP.registers.FPR.F4
+- isa:FP.registers.FPR.F5
+- isa:FP.registers.FPR.F6
+- isa:FP.registers.FPR.F7
+results:
+- isa:FP.registers.FPR.F0
+- isa:FP.registers.FPR.F1
+allocation: ascending
+tuple_alignment: 1
+exhaustion: permanent

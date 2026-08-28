@@ -1,0 +1,18 @@
+mnemonic: FMOD
+name: Floating-Point Modulo
+summary: Performs the floating-point modulo operation.
+route: fpu
+sail_entries:
+- execute_FMOD
+privileged: false
+repeat:
+  type: rep
+operands:
+  src:
+    role: source
+    access: read
+    value_type: floating
+  dst:
+    role: destination
+    access: read_write
+    value_type: floating

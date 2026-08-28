@@ -1,0 +1,19 @@
+mnemonic: CLS
+name: Count Leading Set Bits
+summary: Performs the count leading set bits operation.
+route: integer_bitfield
+sail_entries:
+- execute_CLS
+privileged: false
+repeat:
+  type: repcc
+  observed_value: dst
+operands:
+  src:
+    role: source
+    access: read
+    value_type: integer
+  dst:
+    role: destination
+    access: read_write
+    value_type: integer

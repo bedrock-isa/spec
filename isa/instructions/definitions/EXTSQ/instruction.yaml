@@ -1,0 +1,19 @@
+mnemonic: EXTSQ
+name: Sign Extend To Quad
+summary: Performs the sign extend to quad operation.
+route: integer_unary
+sail_entries:
+- execute_EXTSQ
+privileged: false
+repeat:
+  type: repcc
+  observed_value: dst
+operands:
+  src:
+    role: source
+    access: read
+    value_type: integer
+  dst:
+    role: destination
+    access: write
+    value_type: integer

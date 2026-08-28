@@ -1,0 +1,22 @@
+mnemonic: FMADD
+name: Floating-Point Fused Multiply Add
+summary: Performs the floating-point fused multiply add operation.
+route: fpu
+sail_entries:
+- execute_FMADD
+privileged: false
+repeat:
+  type: rep
+operands:
+  lhs:
+    role: source
+    access: read
+    value_type: floating
+  rhs:
+    role: source
+    access: read
+    value_type: floating
+  dst:
+    role: destination
+    access: read_write
+    value_type: floating

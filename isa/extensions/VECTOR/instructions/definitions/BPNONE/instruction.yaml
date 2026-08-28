@@ -1,0 +1,16 @@
+mnemonic: BPNONE
+name: Branch on No Predicate Bits
+summary: Branch if no bit is set.
+route: vector
+sail_entries:
+- execute_BPNONE
+privileged: false
+operands:
+  predicate:
+    role: source
+    access: read
+    value_type: predicate
+  target:
+    role: control_target
+    access: read
+    value_type: integer

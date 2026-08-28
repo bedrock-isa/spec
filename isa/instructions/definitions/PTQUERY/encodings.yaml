@@ -1,0 +1,28 @@
+encodings:
+  pt_level_i_ea_e_rn_d:
+    pattern: 111101101100iiiddddeeeeeee
+    syntax: PTQUERY pt_level(i), <ea>(e), Rn(d)
+    fields:
+      i:
+        role: level
+        type: base.field_types.PTLVL
+      d:
+        role: dst
+        type: base.field_types.Rn
+      e:
+        role: src
+        type: base.field_types.EA
+  pt_level_i_rn_s_rn_d:
+    pattern: 111101100111000iiissssdddd
+    syntax: PTQUERY pt_level(i), Rn(s), Rn(d)
+    fields:
+      i:
+        role: level
+        type: base.field_types.PTLVL
+      s:
+        role: src
+        type: base.field_types.Rn
+        access: read
+      d:
+        role: dst
+        type: base.field_types.Rn

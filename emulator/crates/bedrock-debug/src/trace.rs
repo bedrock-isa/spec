@@ -1,4 +1,4 @@
-use bedrock_core::StepResult;
+use bedrock_machine::StepResult;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TraceEvent {

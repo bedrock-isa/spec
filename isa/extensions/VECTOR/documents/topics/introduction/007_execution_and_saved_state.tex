@@ -1,0 +1,14 @@
+\subsection{Execution and Saved State}
+
+The vector SAVE/RESTORE component contains the complete scalable vector and
+packed predicate images.  A committed \texttt{Vn} or \texttt{Pn} write marks
+that component modified.  Architectural event entry does not otherwise change
+vector state.
+
+An implementation may internally coalesce eligible scalar \texttt{REP} or
+(:ref:base.instructions.REPcc:) iterations into vector-sized work.  This permission creates no
+vector instruction, predicate, or additional repeat state.  The observable
+counter, condition, \texttt{FLAGS}, memory, auto-update, fault, event, and
+restart behavior must equal the scalar iteration sequence, and only the
+scalar prefix preceding the first fault or terminating (:ref:base.instructions.REPcc:)
+observation may commit.

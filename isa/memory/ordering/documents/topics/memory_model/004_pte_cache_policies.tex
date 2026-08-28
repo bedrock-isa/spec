@@ -1,0 +1,17 @@
+\subsection{PTE Cache Policies}
+The two-bit PTE \texttt{CP} (:term:base.terms.field:) selects a cache policy for byte-addressed (:term:base.terms.normal_memory:). Every policy uses the
+same coherence order, multi-copy atomicity, tearing rules, atomic operations, and fence semantics defined in this
+chapter. The policy changes allocation, retained cache state, and store combination; it does not create a separate
+value or ordering domain.
+
+\input{isa/memory/ordering/documents/fragments/cache_policies.tex}
+
+Aliases of one physical byte with different \texttt{CP} values participate in the same coherence order. A load,
+instruction fetch, or atomic operation through any alias observes the same physical value subject to (:term:base.terms.ordinary:)
+ordering, and atomic operations serialize at the physical location. CP2 stores enter coherence before retirement
+and leave no dirty cache copy. CP3 combined stores preserve the byte writes and their per-location program order.
+
+(:ref:base.instructions.WFENCE:) and (:ref:base.instructions.AFENCE:) complete earlier pending CP3 stores. WRBKDCACHE, FLSHDCACHE, and SYNCCACHE
+complete pending CP3 stores for their selected block before performing their named cache action. The
+data-write, cache-maintenance, rendezvous, and local instruction-cache sequence below applies without regard to the
+\texttt{CP} value used by the modified code mapping.

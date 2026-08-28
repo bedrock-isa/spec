@@ -1,0 +1,8 @@
+id: EVENT_STACK_STATE_FAILURE
+name: Event Stack State Failure
+summary: Delivery fails while validating the selected event-stack state.
+code: 0x79
+family: EVENT_DELIVERY_FAILURE
+frame: auxiliary
+payload: [FAILED_EVENT_CODE]
+

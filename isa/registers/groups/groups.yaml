@@ -1,0 +1,7 @@
+groups:
+- GPR
+- SPECIAL
+- SEGMENT
+- STATE
+- CONTROL
+- PERFORMANCE

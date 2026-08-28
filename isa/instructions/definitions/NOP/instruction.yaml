@@ -1,0 +1,8 @@
+mnemonic: NOP
+name: No Operation
+summary: No architectural state change.
+route: core_control
+sail_entries:
+- execute_NOP
+privileged: false
+operands: {}

@@ -1,0 +1,4 @@
+encodings:
+  plain:
+    pattern: '10111000000001'
+    syntax: RESET

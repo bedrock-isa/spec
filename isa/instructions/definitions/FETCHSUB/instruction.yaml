@@ -1,0 +1,20 @@
+mnemonic: FETCHSUB
+name: Atomic Fetch Subtract
+summary: Performs the atomic fetch subtract operation.
+route: atomics
+sail_entries:
+- execute_FETCHSUB
+privileged: false
+operands:
+  order:
+    role: source
+    access: read
+    value_type: integer
+  src:
+    role: destination
+    access: read_write
+    value_type: integer
+  memory:
+    role: destination
+    access: read_write
+    value_type: integer

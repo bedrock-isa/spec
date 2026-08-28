@@ -1,0 +1,10 @@
+id: invalidate_tlb
+owner: base
+description: >-
+  Supervisor; translation-state side effect and full memory clobber.
+signature:
+  result: void
+  parameters: []
+lowering:
+  operation: isa:base.instructions.INVTLB
+  kind: direct

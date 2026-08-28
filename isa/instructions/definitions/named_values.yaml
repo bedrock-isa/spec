@@ -1,7 +1,0 @@
-values:
-- id: compare_temporary
-  kind: condition_code_image
-  reader_term: temporary compare result
-- id: logical_test_temporary
-  kind: condition_code_image
-  reader_term: temporary logical-test result

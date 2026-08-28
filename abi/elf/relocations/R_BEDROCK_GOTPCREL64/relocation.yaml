@@ -1,0 +1,11 @@
+id: R_BEDROCK_GOTPCREL64
+value: 26
+family: got
+result:
+  kind: integer
+  width_bits: 64
+  signed: true
+calculation: got(symbol) + addend - place
+field: isa:base.payload_types.DISP64
+relaxations:
+- base.relocations.R_BEDROCK_GOTPCREL32S

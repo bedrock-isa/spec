@@ -1,0 +1,5 @@
+bits: 64
+fields:
+- {id: V, lsb: 32, bits: 1, summary: Complete user-return bank validity.}
+- {id: STATUS, lsb: 16, bits: 16, summary: Saved user STATUS image.}
+- {id: FLAGS, lsb: 0, bits: 16, summary: Saved user FLAGS image.}

@@ -1,0 +1,10 @@
+id: header
+display:
+  canonical: header
+  plural: headers
+article: the
+definition: >-
+  the leading byte range within the opcode space that determines the encoded
+  instruction length and opcode-space selection. It is the first byte for
+  extrashort and short instructions and the first two bytes for medium and
+  longer instructions.

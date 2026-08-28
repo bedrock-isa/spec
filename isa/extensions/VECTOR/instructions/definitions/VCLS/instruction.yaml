@@ -1,0 +1,20 @@
+mnemonic: VCLS
+name: Vector Count Leading Ones
+summary: Counts consecutive one bits from the high end of each active element.
+route: vector
+sail_entries:
+- execute_VCLS
+privileged: false
+operands:
+  govern:
+    role: governing_predicate
+    access: read
+    value_type: predicate
+  src:
+    role: source
+    access: read
+    value_type: vector
+  dst:
+    role: destination
+    access: read_write
+    value_type: vector

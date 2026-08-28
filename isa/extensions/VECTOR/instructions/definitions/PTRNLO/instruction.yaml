@@ -1,0 +1,22 @@
+mnemonic: PTRNLO
+name: Predicate Even-Lane Transpose
+summary: Interleave even-position predicate lanes from two sources.
+route: vector
+sail_entries:
+- execute_PTRNLO
+privileged: false
+assembly:
+  width_suffix_aliases: true
+operands:
+  lhs:
+    role: source
+    access: read
+    value_type: predicate
+  rhs:
+    role: source
+    access: read
+    value_type: predicate
+  dst:
+    role: destination
+    access: read_write
+    value_type: predicate

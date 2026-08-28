@@ -1,0 +1,15 @@
+mnemonic: NOT
+name: Bitwise Not
+summary: Performs the bitwise not operation.
+route: integer_unary
+sail_entries:
+- execute_NOT
+privileged: false
+repeat:
+  type: repcc
+  observed_value: dst
+operands:
+  dst:
+    role: destination
+    access: read_write
+    value_type: integer

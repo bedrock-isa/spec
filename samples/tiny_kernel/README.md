@@ -17,9 +17,9 @@ make -C samples/tiny_kernel disasm
 ```
 
 The Makefile selects the LLVM tool binary directory in this order: `LLVM_BIN`,
-`BEDROCK_LLVM_BIN`, then `BEDROCK_LLVM_ROOT/bin`, where
-`BEDROCK_LLVM_ROOT` names the LLVM build directory. The build fails with a
-configuration error when none of these variables is supplied.
+`BEDROCK_LLVM_BIN`, then `BEDROCK_LLVM_ROOT/bin`. With none set it uses the
+sibling checkout at `../llvm-project/build/bin`. Set `PYTHON` when artifact
+generation needs a Python environment other than `python3`.
 
 - `kernel.c` configures the common `EPC` event entry, including SYSTEM_CALL,
   bounds-checks supervisor code and event stacks through their segment

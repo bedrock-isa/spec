@@ -1,0 +1,63 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesFile{bedrock-reference/stack-frame-diagram.sty}[2026/08/26 Bedrock reference stack-frame-diagram commands]
+
+\newif\ifBedrockStackFrameMeasuring
+\newcount\BedrockStackFrameRows
+\newcount\BedrockStackFrameRowIndex
+\newcommand{\BedrockStackFrameWidth}{3.25}
+\newcommand{\BedrockStackFrameRowHeight}{0.50}
+\newcommand{\BedrockStackFrameSlotBody}[4]{%
+  \ifBedrockStackFrameMeasuring
+    \advance\BedrockStackFrameRows by 1
+  \else
+    \pgfmathsetmacro{\BedrockStackFrameY}{-\BedrockStackFrameRowHeight*\the\BedrockStackFrameRowIndex}%
+    \pgfmathsetmacro{\BedrockStackFrameMidY}{\BedrockStackFrameY - \BedrockStackFrameRowHeight/2}%
+    \ifnum#4>0
+      \node[anchor=east] at (-0.44,\BedrockStackFrameMidY) {SP};%
+      \draw[manualFlowArrow] (-0.40,\BedrockStackFrameMidY) -- (-0.02,\BedrockStackFrameMidY);%
+    \else
+      \node[anchor=east] at (-0.08,\BedrockStackFrameMidY) {\texttt{#1}};%
+    \fi
+    \ifnum#3>0
+      \path[draw=RuleGray,fill=ManualReservedFill,densely dashed,line width=0.35pt] (0,{\BedrockStackFrameY - \BedrockStackFrameRowHeight}) -- (0,\BedrockStackFrameY) -- (\BedrockStackFrameWidth,\BedrockStackFrameY) -- (\BedrockStackFrameWidth,{\BedrockStackFrameY - \BedrockStackFrameRowHeight});%
+    \else
+      \path[draw=RuleGray,fill=ManualVariableFill,line width=0.35pt] (0,\BedrockStackFrameY) rectangle (\BedrockStackFrameWidth,{\BedrockStackFrameY - \BedrockStackFrameRowHeight});%
+    \fi
+    \node at ({\BedrockStackFrameWidth/2},\BedrockStackFrameMidY) {#2};%
+    \advance\BedrockStackFrameRowIndex by 1
+  \fi}
+\newcommand{\BedrockStackFrameSlot}[2]{\BedrockStackFrameSlotBody{#1}{#2}{0}{0}}
+\newcommand{\BedrockStackFrameSPSlot}[2]{\BedrockStackFrameSlotBody{#1}{#2}{0}{1}}
+\newcommand{\BedrockStackFramePayload}[2]{\BedrockStackFrameSlotBody{#1}{#2}{1}{0}}
+\newcommand{\BedrockRenderStackFrameDiagram}[3]{%
+  \begingroup
+  \BedrockStackFrameRows=0
+  \BedrockStackFrameMeasuringtrue#2\BedrockStackFrameMeasuringfalse
+  \pgfmathsetmacro{\BedrockStackFrameNeedSpace}{1.04 + 0.18*\the\BedrockStackFrameRows}%
+  \Needspace{\BedrockStackFrameNeedSpace in}%
+  \begin{center}\vspace{3pt}%
+  \begin{tikzpicture}[x=1in,y=0.30in,every node/.style={font=\scriptsize}]%
+  \node[anchor=south] at (0.00,0.26) {63};%
+  \node[anchor=south] at (\BedrockStackFrameWidth,0.26) {0};%
+  \node[anchor=south west,text=ManualMuted] at (0,0.68) {higher addresses};%
+  \node[anchor=north west,text=ManualMuted] at (0,{0.06-\BedrockStackFrameRowHeight*\the\BedrockStackFrameRows}) {lower addresses};%
+  \draw[manualFlowArrow] ({\BedrockStackFrameWidth+0.42},0.36) --
+    node[right,align=left] {stack grows\\toward lower addresses}
+    ({\BedrockStackFrameWidth+0.42},{0.06-\BedrockStackFrameRowHeight*\the\BedrockStackFrameRows});%
+  \node[anchor=north west,text=ManualMuted] at
+    (0,{-0.24-\BedrockStackFrameRowHeight*\the\BedrockStackFrameRows})
+    {8-byte slots; payload: 16-byte aligned};%
+  \BedrockStackFrameRowIndex=0
+  #2
+  \end{tikzpicture}%
+  #3{#1}%
+  \end{center}%
+  \endgroup}
+\NewDocumentEnvironment{BedrockStackFrameDiagram}{m +b}{%
+  \BedrockRenderStackFrameDiagram{#1}{#2}{\BedrockCaption}%
+}{}
+\NewDocumentEnvironment{BedrockListedStackFrameDiagram}{m +b}{%
+  \BedrockRenderStackFrameDiagram{#1}{#2}{\BedrockFigureCaption}%
+}{}
+
+\endinput

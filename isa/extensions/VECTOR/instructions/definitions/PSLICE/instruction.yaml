@@ -1,0 +1,22 @@
+mnemonic: PSLICE
+name: Predicate Slice
+summary: Extract a predicate-lane window from the old destination followed by a source predicate.
+route: vector
+sail_entries:
+- execute_PSLICE
+privileged: false
+assembly:
+  width_suffix_aliases: true
+operands:
+  src:
+    role: source
+    access: read
+    value_type: predicate
+  count:
+    role: count
+    access: read
+    value_type: integer
+  dst:
+    role: destination
+    access: read_write
+    value_type: predicate

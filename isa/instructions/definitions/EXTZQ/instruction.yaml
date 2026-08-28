@@ -1,0 +1,19 @@
+mnemonic: EXTZQ
+name: Zero Extend To Quad
+summary: Performs the zero extend to quad operation.
+route: integer_unary
+sail_entries:
+- execute_EXTZQ
+privileged: false
+repeat:
+  type: repcc
+  observed_value: dst
+operands:
+  src:
+    role: source
+    access: read
+    value_type: integer
+  dst:
+    role: destination
+    access: write
+    value_type: integer

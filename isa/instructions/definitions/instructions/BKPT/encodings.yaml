@@ -1,5 +1,0 @@
-forms:
-- id: extrashort.bkpt
-  class: extrashort
-  bits: '0000111'
-  syntax: BKPT

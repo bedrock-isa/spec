@@ -1,0 +1,22 @@
+mnemonic: FNMSUB
+name: Floating-Point Fused Negative Multiply Subtract
+summary: Performs the floating-point fused negative multiply subtract operation.
+route: fpu
+sail_entries:
+- execute_FNMSUB
+privileged: false
+repeat:
+  type: rep
+operands:
+  lhs:
+    role: source
+    access: read
+    value_type: floating
+  rhs:
+    role: source
+    access: read
+    value_type: floating
+  dst:
+    role: destination
+    access: read_write
+    value_type: floating

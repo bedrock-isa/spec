@@ -1,0 +1,9 @@
+id: R_BEDROCK_BRDISP8S
+value: 17
+family: branch
+result:
+  kind: integer
+  width_bits: 8
+  signed: true
+calculation: symbol + addend - next_pc
+field: isa:base.payload_types.DISP8S

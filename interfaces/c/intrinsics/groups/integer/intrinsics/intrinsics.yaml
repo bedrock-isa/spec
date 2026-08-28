@@ -1,0 +1,5 @@
+intrinsics:
+- clmul_u16
+- clmul_u32
+- clmul_u64
+- clmul_u8

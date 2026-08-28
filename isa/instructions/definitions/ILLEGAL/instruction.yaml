@@ -1,0 +1,8 @@
+mnemonic: ILLEGAL
+name: Illegal Instruction
+summary: Raise illegal-instruction exception.
+route: core_control
+sail_entries:
+- execute_ILLEGAL
+privileged: false
+operands: {}

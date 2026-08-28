@@ -1,0 +1,27 @@
+\subsubsection{Input, NaN, Rounding, and Result Order}
+
+Each (:term:base.terms.ordinary:) floating-point operation applies the following order.
+
+\begin{enumerate}
+\item Read all operands and classify zero, subnormal, normal, infinity, quiet NaN, and signaling NaN.
+\item If \texttt{FSTATUS.DAZ} is set, replace each subnormal input with a zero having the same sign.
+\item Determine signaling-NaN and operation-specific floating-point exception causes and form the exact mathematical result.
+\item For a NaN result, select the first signaling NaN in source-operand order, or the first quiet NaN when there is
+no signaling NaN, and set its quiet bit. If the operation produces a NaN without a NaN operand, use the default
+quiet NaN. When \texttt{FSTATUS.DN} is set, replace the selected NaN with the default quiet NaN.
+\item Round a numeric result to the selected format using \texttt{FSTATUS.RM}, except where an instruction names a
+fixed rounding direction.
+\item Detect overflow and tininess after rounding. UF is generated when the rounded result is tiny and inexact.
+\item If \texttt{FSTATUS.FTZ} is set and the rounded result is a nonzero subnormal, replace it with a zero of the
+same sign and generate both UF and NX.
+\item Test all generated causes against their FSTATUS enable bits and then perform the architectural commit.
+\end{enumerate}
+
+A signaling NaN generates NV. A quiet NaN does not generate NV unless the operation itself is invalid. When two
+NaN operands have the same priority, source-operand order determines the selected sign and (:term:base.terms.payload:). Quieting sets
+the quiet bit and preserves the remaining selected sign and (:term:base.terms.payload:) bits.
+
+Overflow generates OF and NX. Nearest-even produces signed infinity. Toward zero produces the signed maximum finite
+value. Toward positive produces positive infinity for a positive result and the negative maximum finite value for a
+negative result. Toward negative produces negative infinity for a negative result and the positive maximum finite
+value for a positive result.

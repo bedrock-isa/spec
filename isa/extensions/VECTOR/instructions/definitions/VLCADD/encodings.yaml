@@ -1,0 +1,14 @@
+encodings:
+  b_w_l_q_z_imm8s_rn_r:
+    pattern: 11111010011000zz000010rrrr
+    syntax: VLCADD.{B|W|L|Q}(z) <imm8s>, Rn(r)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      r:
+        role: dst
+        type: base.field_types.Rn
+    payloads:
+    - role: offset
+      type: base.payload_types.IMM8S

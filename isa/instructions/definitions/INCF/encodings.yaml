@@ -1,0 +1,11 @@
+encodings:
+  b_w_l_q_z_rn_r:
+    pattern: 1110110000zz01rrrr
+    syntax: INCF.{B|W|L|Q}(z) Rn(r)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      r:
+        role: dst
+        type: base.field_types.Rn

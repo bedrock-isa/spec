@@ -1,0 +1,8 @@
+encodings:
+  flags_bitmap_m:
+    pattern: 11101110010001mmmm
+    syntax: SETF flags_bitmap(m)
+    fields:
+      m:
+        role: mask
+        type: base.field_types.FLBMP

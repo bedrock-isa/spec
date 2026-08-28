@@ -1,0 +1,11 @@
+id: R_BEDROCK_TLS_OFFSET64
+value: 40
+family: tls
+result:
+  kind: integer
+  width_bits: 64
+  signed: true
+calculation: tls(symbol) + addend
+field: isa:base.payload_types.IMM64
+relaxations:
+- base.relocations.R_BEDROCK_TLS_OFFSET32S

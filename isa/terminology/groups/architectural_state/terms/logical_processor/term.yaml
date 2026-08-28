@@ -1,0 +1,8 @@
+id: logical_processor
+display:
+  canonical: logical processor
+  plural: logical processors
+article: a
+definition: >-
+  an architecturally independent execution context that owns its architectural
+  state and remains the architectural execution subject.

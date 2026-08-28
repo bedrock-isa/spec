@@ -1,0 +1,19 @@
+encodings:
+  w_l_q_z_pn_p_pn_q:
+    pattern: 11111010010111zz01ppppqqqq
+    syntax: PPACKLO.{W|L|Q}(z) Pn(p), Pn(q)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_WLQ
+      p:
+        role: src
+        type: VECTOR.field_types.Pn
+      q:
+        role: dst
+        type: VECTOR.field_types.Pn
+    constraints:
+    - role: size
+      allow:
+      - 0x1..0x3
+      reason: reserved_vector_element_type

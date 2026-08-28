@@ -1,0 +1,5 @@
+id: PREDICATE
+width: VLEN / 8
+summary: Packed vector predicate registers.
+reset: 0
+series: {prefix: P, count: 16}

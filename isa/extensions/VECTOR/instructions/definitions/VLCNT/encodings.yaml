@@ -1,0 +1,11 @@
+encodings:
+  b_w_l_q_z_rn_r:
+    pattern: 11111010011000zz000001rrrr
+    syntax: VLCNT.{B|W|L|Q}(z) Rn(r)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      r:
+        role: dst
+        type: base.field_types.Rn

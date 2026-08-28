@@ -1,0 +1,151 @@
+encodings:
+  b_rn_s_rn_d:
+    pattern: 1000100110ssssdddd
+    syntax: EXTSQ.B Rn(s), Rn(d)
+    fields:
+      s:
+        role: src
+        type: base.field_types.Rn
+      d:
+        role: dst
+        type: base.field_types.Rn
+  w_rn_s_rn_d:
+    pattern: 1000101110ssssdddd
+    syntax: EXTSQ.W Rn(s), Rn(d)
+    fields:
+      s:
+        role: src
+        type: base.field_types.Rn
+      d:
+        role: dst
+        type: base.field_types.Rn
+  l_rn_s_rn_d:
+    pattern: 100010ssssdddd
+    syntax: EXTSQ.L Rn(s), Rn(d)
+    fields:
+      s:
+        role: src
+        type: base.field_types.Rn
+      d:
+        role: dst
+        type: base.field_types.Rn
+  b_rn_s_ea_e:
+    pattern: 111100110000110sssseeeeeee
+    syntax: EXTSQ.B Rn(s), <ea>(e)
+    fields:
+      s:
+        role: src
+        type: base.field_types.Rn
+      e:
+        role: dst
+        type: base.field_types.EA
+    constraints:
+    - role: dst
+      exclude:
+      - immediate
+      reason: invalid_destination
+  b_ea_e_rn_d:
+    pattern: 1101100ddddeeeeeee
+    syntax: EXTSQ.B <ea>(e), Rn(d)
+    fields:
+      d:
+        role: dst
+        type: base.field_types.Rn
+      e:
+        role: src
+        type: base.field_types.EA
+  w_rn_s_ea_e:
+    pattern: 111100110001110sssseeeeeee
+    syntax: EXTSQ.W Rn(s), <ea>(e)
+    fields:
+      s:
+        role: src
+        type: base.field_types.Rn
+      e:
+        role: dst
+        type: base.field_types.EA
+    constraints:
+    - role: dst
+      exclude:
+      - immediate
+      reason: invalid_destination
+  w_ea_e_rn_d:
+    pattern: 1101101ddddeeeeeee
+    syntax: EXTSQ.W <ea>(e), Rn(d)
+    fields:
+      d:
+        role: dst
+        type: base.field_types.Rn
+      e:
+        role: src
+        type: base.field_types.EA
+  l_rn_s_ea_e:
+    pattern: 111100110010110sssseeeeeee
+    syntax: EXTSQ.L Rn(s), <ea>(e)
+    fields:
+      s:
+        role: src
+        type: base.field_types.Rn
+      e:
+        role: dst
+        type: base.field_types.EA
+    constraints:
+    - role: dst
+      exclude:
+      - immediate
+      reason: invalid_destination
+  l_ea_e_rn_d:
+    pattern: 1101110ddddeeeeeee
+    syntax: EXTSQ.L <ea>(e), Rn(d)
+    fields:
+      d:
+        role: dst
+        type: base.field_types.Rn
+      e:
+        role: src
+        type: base.field_types.EA
+  b_ea_s_ea_d:
+    pattern: 111100000110sssssssddddddd
+    syntax: EXTSQ.B <ea>(s), <ea>(d)
+    fields:
+      s:
+        role: src
+        type: base.field_types.EA
+      d:
+        role: dst
+        type: base.field_types.EA
+    constraints:
+    - role: dst
+      exclude:
+      - immediate
+      reason: invalid_destination
+  w_ea_s_ea_d:
+    pattern: 111100000111sssssssddddddd
+    syntax: EXTSQ.W <ea>(s), <ea>(d)
+    fields:
+      s:
+        role: src
+        type: base.field_types.EA
+      d:
+        role: dst
+        type: base.field_types.EA
+    constraints:
+    - role: dst
+      exclude:
+      - immediate
+      reason: invalid_destination
+  l_ea_s_ea_d:
+    pattern: 111100001000sssssssddddddd
+    syntax: EXTSQ.L <ea>(s), <ea>(d)
+    fields:
+      s:
+        role: src
+        type: base.field_types.EA
+      d:
+        role: dst
+        type: base.field_types.EA
+    constraints:
+    - role: dst
+      exclude:
+      - immediate
+      reason: invalid_destination

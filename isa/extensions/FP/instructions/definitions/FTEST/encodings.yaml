@@ -1,0 +1,21 @@
+encodings:
+  s_d_z_ea_e:
+    pattern: 111101100000000000zeeeeeee
+    syntax: FTEST.{S|D}(z) <ea>(e)
+    fields:
+      z:
+        role: size
+        type: FP.field_types.SIZE_SD
+      e:
+        role: src
+        type: FP.field_types.FEA
+  s_d_z_fn_s:
+    pattern: 11101100100z01ssss
+    syntax: FTEST.{S|D}(z) Fn(s)
+    fields:
+      z:
+        role: size
+        type: FP.field_types.SIZE_SD
+      s:
+        role: src
+        type: FP.field_types.Fn

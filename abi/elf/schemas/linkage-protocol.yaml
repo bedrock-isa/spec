@@ -1,0 +1,40 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: bedrock://schemas/elf-linkage-protocol
+title: Bedrock ELF linkage protocol
+type: object
+additionalProperties: true
+required: [id, steps]
+properties:
+  id:
+    type: string
+    pattern: ^[A-Z][A-Z0-9_]*$
+  steps:
+    type: array
+    minItems: 1
+    items:
+      type: object
+      additionalProperties: false
+      required: [instruction]
+      properties:
+        instruction:
+          type: string
+          pattern: ^isa:(?:base|[A-Z][A-Z0-9_]*)\.instructions\.[A-Z][A-Z0-9_]*$
+        form: {type: string, minLength: 1}
+        relocation:
+          type: string
+          pattern: ^abi\.elf:(?:base|[A-Z][A-Z0-9_]*)\.relocations\.R_BEDROCK_[A-Z0-9_]+$
+  state:
+    type: array
+    items:
+      type: object
+      additionalProperties: false
+      required: [registers, disposition]
+      properties:
+        registers:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            type: string
+            pattern: '^isa:(?:base|[A-Z][A-Z0-9_]*)\.registers\.[A-Z][A-Z0-9_]*\.[A-Z][A-Z0-9_]*$'
+        disposition: {enum: [input, output, scratch, preserve]}

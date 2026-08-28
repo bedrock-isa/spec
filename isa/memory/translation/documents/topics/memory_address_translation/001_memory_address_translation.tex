@@ -1,0 +1,15 @@
+\clearpage
+\section{Memory Address Translation}\label{page:memory-address-translation}\label{section:memory-address-translation}
+
+Memory address translation is a separate pipeline after effective-address calculation. Effective-address evaluation
+produces an address value or operand designator; segmentation optionally turns that value into a (:term:base.terms.linear_address:), and
+paging optionally turns the (:term:base.terms.linear_address:) into a (:term:base.terms.memory_system_address:).
+
+Instruction fetches use CS, stack accesses use SS, and (:term:base.terms.ordinary:) data accesses use the operation default data segment
+unless an effective-address form explicitly selects another segment. SP and PC forms use their fixed segments.
+
+(:ref:base.instructions.SEGLEA:) exposes the (:term:base.terms.linear_address:) produced by (:term:base.terms.segment_pre_translation:) when
+software explicitly needs it. Its instruction description defines the point check, FLAGS result, destination
+suppression, and auto-update commit behavior. SEGLEA applies (:term:base.terms.segment_pre_translation:) to the computed starting point.
+
+\input{isa/memory/translation/documents/fragments/address_translation_pipeline_figure.tex}

@@ -1,0 +1,19 @@
+mnemonic: SETcc
+name: Set Conditional
+summary: Performs the set conditional operation.
+route: control_flow
+sail_entries:
+- execute_SETcc
+privileged: false
+repeat:
+  type: repcc
+  observed_value: dst
+operands:
+  cc:
+    role: source
+    access: read
+    value_type: integer
+  dst:
+    role: destination
+    access: write
+    value_type: integer

@@ -1,0 +1,12 @@
+mnemonic: RDFSTATUS
+name: Read Floating-Point Status
+summary: Read the FPU status/control register into an Rn register.
+route: system_registers
+sail_entries:
+- execute_RDFSTATUS
+privileged: false
+operands:
+  dst:
+    role: destination
+    access: write
+    value_type: integer

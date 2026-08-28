@@ -1,0 +1,7 @@
+id: PRIVILEGE_VIOLATION
+name: Privilege Violation
+summary: An operation is attempted from a privilege mode that is not permitted to execute it.
+code: 0x02
+family: PRIVILEGE
+frame: basic
+

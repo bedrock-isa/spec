@@ -1,6 +1,6 @@
-use bedrock_core::{CPU_REGISTER_INFOS, CpuRegisterSet, CpuState};
 use bedrock_debug::Debugger;
 use bedrock_machine::Machine;
+use bedrock_machine::{CPU_REGISTER_INFOS, CpuRegisterSet, CpuState};
 
 pub fn show(ui: &mut egui::Ui, machine: &Machine, debugger: &mut Debugger, controls_enabled: bool) {
     let state = machine.state();

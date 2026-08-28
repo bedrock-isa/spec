@@ -1,0 +1,12 @@
+payload_types:
+  FCONSTID:
+    type: floating_point_constant_id
+    bytes: 2
+  IMMSF:
+    type: immediate
+    value_type: ieee754_binary32
+    bytes: 4
+  IMMDF:
+    type: immediate
+    value_type: ieee754_binary64
+    bytes: 8

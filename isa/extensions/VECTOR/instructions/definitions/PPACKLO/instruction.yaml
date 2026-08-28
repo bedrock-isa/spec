@@ -1,0 +1,18 @@
+mnemonic: PPACKLO
+name: Predicate Pack to Lower Half
+summary: Packs source predicate positions into the lower half of narrower destination positions.
+route: vector
+sail_entries:
+- execute_PPACKLO
+privileged: false
+assembly:
+  width_suffix_aliases: true
+operands:
+  src:
+    role: source
+    access: read
+    value_type: predicate
+  dst:
+    role: destination
+    access: read_write
+    value_type: predicate

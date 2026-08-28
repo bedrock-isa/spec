@@ -1,0 +1,12 @@
+mnemonic: WRBKDCACHE
+name: Write Back Data Cache
+summary: Write back one data-cache maintenance block.
+route: cache
+sail_entries:
+- execute_WRBKDCACHE
+privileged: true
+operands:
+  target:
+    role: address
+    access: address
+    value_type: integer

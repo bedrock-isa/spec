@@ -1,0 +1,15 @@
+mnemonic: CLR
+name: Clear
+summary: Performs the clear operation.
+route: integer_unary
+sail_entries:
+- execute_CLR
+privileged: false
+repeat:
+  type: repcc
+  observed_value: dst
+operands:
+  dst:
+    role: destination
+    access: write
+    value_type: integer

@@ -1,0 +1,30 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: bedrock://schemas/cpuid-class
+title: Bedrock CPUID class fragment
+type: object
+additionalProperties: false
+required: [id, name]
+properties:
+  id:
+    type: string
+    pattern: ^[A-Z][A-Z0-9_]*$
+  name:
+    type: string
+    minLength: 1
+  value:
+    type: integer
+    minimum: 0
+    maximum: 4294967295
+  extends:
+    type: string
+    pattern: ^(?:base|[A-Z][A-Z0-9_]*)\.cpuid\.[A-Z][A-Z0-9_]*$
+oneOf:
+  - required: [value]
+    not: {required: [extends]}
+  - required: [extends]
+    not: {required: [value]}
+x-interpretation-rules:
+  - The containing directory name equals id.
+  - value allocates a new 32-bit CPUID class value.
+  - extends reopens an existing class without repeating its numeric value.
+  - The fragment reference is derived from its owner and id as <owner>.cpuid.<class>.

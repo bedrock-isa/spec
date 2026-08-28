@@ -1,0 +1,12 @@
+mnemonic: SAVE
+name: Save Processor State
+summary: Saves processor state to a CPUID-defined save area.
+route: tlb_and_context
+sail_entries:
+- execute_SAVE
+privileged: false
+operands:
+  memory:
+    role: address
+    access: address
+    value_type: integer

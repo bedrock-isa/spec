@@ -1,0 +1,6 @@
+id: UNSIGNED_INT
+spelling: "unsigned int"
+call_kind: u32
+size_bits: 32
+alignment_bytes: 4
+representation: unsigned_integer

@@ -1,0 +1,29 @@
+\subsection{Architectural Result Priority}
+When one instruction could encounter more than one exceptional condition, the architecturally reported result is
+the first applicable condition in the following order.
+
+\begin{enumerate}
+\item Instruction fetch and fetch translation.
+\item Instruction framing and acquisition of the complete instruction record.
+\item Opcode recognition.
+\item Availability of every extension required by the decoded operation.
+\item Fixed-field, reserved-field, and effective-address-form legality.
+\item Privilege checks.
+\item Selector, control-image, and other architectural-state validation.
+\item Predicate evaluation for a conditional operation.
+\item Every non-suppressed operand access in architectural access order.
+\item Execution-stage integer faults and enabled (:term:base.terms.floating_point_exception_condition|plural:) that raise
+(:ref:FP.events.EXCEPTION.FLOATING_POINT_EXCEPTION:).
+\end{enumerate}
+
+A false predicate suppresses the conditional operation\textquotesingle{}s target-memory and implicit stack accesses. It does not
+suppress instruction framing, (:term:base.terms.opcode:) and extension checks, encoding legality, privilege checks, or control-state
+validation. Explicit operands are accessed in instruction operand order unless an instruction states another order.
+For a memory-to-memory operation, the complete source read precedes access to the destination, so a source-access
+failure has priority over a destination-access failure.
+
+Implicit accesses use the order stated by the instruction. In particular, PUSH captures its source before accessing
+the destination stack slot; POP reads the stack slot before validating or writing its destination; PUSHP uses listed
+register order and POPP uses reverse listed order; CALL validates its target before accessing the return stack; RET
+reads the return stack before validating its target; and (:term:base.terms.long_call:), (:term:base.terms.long_return:), Event Return, and supervisor-entry
+instructions use the step order in their instruction descriptions.

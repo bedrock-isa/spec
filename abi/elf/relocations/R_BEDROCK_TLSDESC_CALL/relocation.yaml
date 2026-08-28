@@ -1,0 +1,6 @@
+id: R_BEDROCK_TLSDESC_CALL
+value: 43
+family: tlsdesc
+result:
+  kind: none
+calculation: "0"

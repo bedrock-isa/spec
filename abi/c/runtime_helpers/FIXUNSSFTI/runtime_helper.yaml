@@ -1,0 +1,5 @@
+id: FIXUNSSFTI
+symbol: __fixunssfti
+result: base.types.UINT128
+parameters:
+- base.types.FLOAT

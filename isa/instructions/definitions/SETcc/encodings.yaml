@@ -1,0 +1,16 @@
+encodings:
+  rn_r:
+    pattern: 100000ccccrrrr
+    syntax: SETcc Rn(r)
+    fields:
+      c:
+        role: cc
+        type: base.field_types.CC
+      r:
+        role: dst
+        type: base.field_types.Rn
+    constraints:
+    - role: cc
+      allow:
+      - 0x2..0xf
+      reason: condition_true_false_reclaimed

@@ -1,0 +1,22 @@
+\subsection{Floating-Point Data Formats}
+\manualtablecaption{Floating-Point Scalar Sizes}
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.45in}>{\raggedright\arraybackslash}p{0.55in}>{\raggedright\arraybackslash}p{0.45in}>{\raggedright\arraybackslash}p{0.50in}>{\raggedright\arraybackslash}p{1.55in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Code} & \textbf{Suffix} & \textbf{Bits} & \textbf{Bytes} & \textbf{Name}\\
+\midrule
+\texttt{S} & \texttt{.S} & 32 & 4 & Single\\
+\texttt{D} & \texttt{.D} & 64 & 8 & Double\\
+\bottomrule
+\end{manualtabular}
+
+Floating-point scalar formats are little-endian in memory as well. S is IEEE-754 binary32 with 24 bits of
+significand precision, minimum normal exponent $-126$, and minimum subnormal quantum $2^{-149}$. D is IEEE-754
+binary64 with 53 bits of significand precision, minimum normal exponent $-1022$, and minimum subnormal quantum
+$2^{-1074}$.
+
+\input{isa/encoding/documents/data/fragments/floating_point_format_diagram.tex}
+
+The bit-level floating-point encoding, NaN policy, exception flags, and rounding behavior are defined by the
+floating-point instruction and state descriptions; their memory byte order follows the same
+least-significant-byte-first rule as integer data.

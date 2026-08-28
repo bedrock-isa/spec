@@ -1,0 +1,5 @@
+id: mmu
+title: MMU Intrinsics
+exposure: supervisor translation operations
+includes:
+- stdint.h

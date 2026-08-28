@@ -1,0 +1,18 @@
+mnemonic: FFLOOR
+name: Floating-Point Floor
+summary: Performs the floating-point floor operation.
+route: fpu
+sail_entries:
+- execute_FFLOOR
+privileged: false
+repeat:
+  type: rep
+operands:
+  src:
+    role: source
+    access: read
+    value_type: floating
+  dst:
+    role: destination
+    access: write
+    value_type: floating

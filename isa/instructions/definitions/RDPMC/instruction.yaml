@@ -1,0 +1,16 @@
+mnemonic: RDPMC
+name: Read Performance Counter
+summary: Read the 64-bit performance counter selected by a constant counter ID.
+route: system_registers
+sail_entries:
+- execute_RDPMC
+privileged: false
+operands:
+  counter_id:
+    role: source
+    access: read
+    value_type: integer
+  dst:
+    role: destination
+    access: write
+    value_type: integer

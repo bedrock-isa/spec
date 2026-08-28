@@ -1,0 +1,6 @@
+bits: 16
+fields:
+- {id: Z, lsb: 3, bits: 1, summary: Zero result.}
+- {id: N, lsb: 2, bits: 1, summary: Negative result.}
+- {id: C, lsb: 1, bits: 1, summary: Unsigned carry or borrow.}
+- {id: V, lsb: 0, bits: 1, summary: Signed overflow or exceptional condition.}

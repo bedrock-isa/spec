@@ -1,0 +1,17 @@
+\clearpage
+\section{Architectural Event Processing Model}\label{page:architectural-event-processing-model}
+
+An \emph{architectural event} is a synchronous or asynchronous condition delivered through the common event-entry
+mechanism. Synchronous exceptions are faults or traps. Asynchronous events are maskable interrupts or NMIs. Fault
+and trap are the two exception subtypes. SYSCALL produces the explicit synchronous
+(:ref:base.events.EXCEPTION.SYSTEM_CALL:) exception (event code \texttt{0x00000003}) and uses this same mechanism.
+
+Every event transfers to the exact (:term:base.terms.program_counter:) in EPC after loading ECS and EDS. Hardware supplies an event code
+and either a user-bank (:term:base.terms.payload:) or a full supervisor frame whose layout is fixed by the event source. Software begins at one
+common entry point and dispatches by the event code.
+
+Related normative instruction entries are
+(:ref:base.instructions.BKPT:),
+(:ref:base.instructions.SYSCALL:),
+(:ref:base.instructions.ERET:), and
+(:ref:base.instructions.RESET:).\par

@@ -1,0 +1,17 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: bedrock://schemas/c-runtime-helper
+title: Bedrock C compiler runtime helper
+type: object
+additionalProperties: false
+required: [id, symbol, result, parameters]
+properties:
+  id: {type: string, pattern: '^[A-Z][A-Z0-9_]*$'}
+  symbol: {type: string, minLength: 1}
+  result:
+    type: string
+    pattern: '^(?:base|[A-Z][A-Z0-9_]*)(?:\.[A-Za-z][A-Za-z0-9_-]*)+$'
+  parameters:
+    type: array
+    items:
+      type: string
+      pattern: '^(?:base|[A-Z][A-Z0-9_]*)(?:\.[A-Za-z][A-Za-z0-9_-]*)+$'

@@ -1,0 +1,72 @@
+encodings:
+  b_w_l_q_z_rn_r_vn_v:
+    pattern: 11111010010010zz0rrrrvvvvv
+    syntax: VDUP.{B|W|L|Q}(z) Rn(r), Vn(v)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      r:
+        role: src
+        type: base.field_types.Rn
+      v:
+        role: dst
+        type: VECTOR.field_types.Vn
+  h_s_d_z_fn_r_vn_v:
+    pattern: 11111010010010zz1rrrrvvvvv
+    syntax: VDUP.{H|S|D}(z) Fn(r), Vn(v)
+    fields:
+      z:
+        role: size
+        type: VECTOR.field_types.SIZE_HSD
+      r:
+        role: src
+        type: FP.field_types.Fn
+      v:
+        role: dst
+        type: VECTOR.field_types.Vn
+    constraints:
+    - role: size
+      allow:
+      - 0x1..0x3
+      reason: reserved_vector_element_type
+  b_imm8_vn_v:
+    pattern: 111110100110100000010vvvvv
+    syntax: VDUP.B <imm8>, Vn(v)
+    fields:
+      v:
+        role: dst
+        type: VECTOR.field_types.Vn
+    payloads:
+    - role: immediate
+      type: base.payload_types.IMM8
+  w_imm16_vn_v:
+    pattern: 111110100110100100010vvvvv
+    syntax: VDUP.W <imm16>, Vn(v)
+    fields:
+      v:
+        role: dst
+        type: VECTOR.field_types.Vn
+    payloads:
+    - role: immediate
+      type: base.payload_types.IMM16
+  l_imm32_vn_v:
+    pattern: 111110100110101000010vvvvv
+    syntax: VDUP.L <imm32>, Vn(v)
+    fields:
+      v:
+        role: dst
+        type: VECTOR.field_types.Vn
+    payloads:
+    - role: immediate
+      type: base.payload_types.IMM32
+  q_imm64_vn_v:
+    pattern: 111110100110101100010vvvvv
+    syntax: VDUP.Q <imm64>, Vn(v)
+    fields:
+      v:
+        role: dst
+        type: VECTOR.field_types.Vn
+    payloads:
+    - role: immediate
+      type: base.payload_types.IMM64

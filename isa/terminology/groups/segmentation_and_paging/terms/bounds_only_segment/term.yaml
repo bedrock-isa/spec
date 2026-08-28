@@ -1,0 +1,8 @@
+id: bounds_only_segment
+display:
+  canonical: bounds-only segment
+  plural: bounds-only segments
+article: a
+definition: >-
+  an enabled segment with bounds-only mode set. It treats the effective address
+  as already linear and checks only that it lies inside the segment window.

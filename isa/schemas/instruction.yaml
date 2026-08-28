@@ -1,0 +1,122 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: bedrock://schemas/instruction
+title: Bedrock instruction
+type: object
+additionalProperties: false
+required: [mnemonic, name, summary, route, sail_entries, privileged, operands]
+properties:
+  mnemonic:
+    type: string
+    pattern: ^[A-Za-z][A-Za-z0-9]*$
+  name:
+    type: string
+    minLength: 1
+  summary:
+    type: string
+    minLength: 1
+  route:
+    enum:
+      - atomics
+      - bounds
+      - cache
+      - control_flow
+      - core_control
+      - data_movement
+      - ea_utility
+      - fpu
+      - fpu_transcendental_approx
+      - integer_alu
+      - integer_bitfield
+      - integer_mul_div
+      - integer_unary
+      - system_registers
+      - tlb_and_context
+      - vector
+  sail_entries:
+    type: array
+    minItems: 1
+    uniqueItems: true
+    items:
+      type: string
+      pattern: ^execute_[A-Za-z][A-Za-z0-9_]*$
+  privileged:
+    type: boolean
+  assembly:
+    type: object
+    additionalProperties: false
+    properties:
+      width_suffix_aliases:
+        type: boolean
+  repeat:
+    $ref: '#/$defs/repeat'
+  additional_cpuid_flags:
+    type: array
+    minItems: 1
+    uniqueItems: true
+    items:
+      type: string
+      pattern: '^(?:base|[A-Z][A-Z0-9_]*)\.cpuid\.[A-Z][A-Z0-9_]*\.[A-Z][A-Z0-9_]*\.[A-Z][A-Z0-9_]*\.[A-Z][A-Z0-9_]*$'
+  operands:
+    $ref: '#/$defs/operands'
+$defs:
+  repeat:
+    oneOf:
+      - type: object
+        additionalProperties: false
+        required: [type]
+        properties:
+          type: {const: rep}
+      - type: object
+        additionalProperties: false
+        required: [type, observed_value]
+        properties:
+          type: {const: repcc}
+          observed_value:
+            type: string
+            pattern: ^[a-z][a-z0-9_]*$
+  operands:
+    type: object
+    propertyNames:
+      pattern: ^[a-z][a-z0-9_]*$
+    additionalProperties:
+      $ref: '#/$defs/operand'
+  operand:
+    type: object
+    additionalProperties: false
+    required: [role, access, value_type]
+    properties:
+      role:
+        enum:
+          - source
+          - destination
+          - address
+          - control_target
+          - governing_predicate
+          - count
+          - bit_index
+          - segment_selector
+          - counter
+          - implicit
+      access:
+        enum: [read, write, read_write, address]
+      value_type:
+        enum: [integer, floating, vector, predicate]
+      domain:
+        enum: [user]
+x-interpretation-rules:
+  - The instruction directory name must equal mnemonic.
+  - route selects the shared execution protocol used by this instruction; extension-specific route constructors are generated only when their owning extension is active.
+  - sail_entries lists the ordered entry functions exported by semantics.sail; dispatch tries each entry until one accepts the decoded form.
+  - privileged true means the instruction requires supervisor privilege; false means it does not.
+  - assembly.width_suffix_aliases permits the width-equivalent H, S, and D spellings for W, L, and Q encodings without changing the selected value domain.
+  - Omitting repeat means that the instruction is not eligible for repetition.
+  - additional_cpuid_flags lists one-bit CPUID fields conjoined with the requirements inherited from the owning extension.
+  - repeat type rep permits REP but not REPCC and does not declare observed_value.
+  - repeat type repcc permits REP and REPCC and requires observed_value.
+  - observed_value computed is reserved for a value explicitly produced by semantics.sail; every other observed_value names an operands key.
+  - An observed operand value is taken after instruction execution; a read-only operand therefore retains its input value, while a written operand denotes its result value.
+  - Every encoding operand role resolves to an operands key; encoding-only selector roles do not.
+  - An encoding inherits access from its logical operand and declares an access override only when representation access differs.
+  - The set of encoding field, payload, and fixed operand types used for an operand is derived from encodings.yaml and is not repeated here.
+  - domain is a semantic restriction of the logical operand and is not repeated by individual encodings.
+  - semantics.sail and descriptions.tex are fixed companion files and are not declared as artifacts.

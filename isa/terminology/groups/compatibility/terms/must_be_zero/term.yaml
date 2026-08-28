@@ -1,0 +1,5 @@
+id: must_be_zero
+display:
+  canonical: must be zero
+definition: >-
+  a requirement that software write zero.

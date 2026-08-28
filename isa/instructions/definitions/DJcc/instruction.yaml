@@ -1,0 +1,20 @@
+mnemonic: DJcc
+name: Decrement And Jump Conditional
+summary: Performs the decrement and jump conditional operation.
+route: control_flow
+sail_entries:
+- execute_DJcc
+privileged: false
+operands:
+  cc:
+    role: source
+    access: read
+    value_type: integer
+  counter:
+    role: counter
+    access: read_write
+    value_type: integer
+  target:
+    role: control_target
+    access: read
+    value_type: integer

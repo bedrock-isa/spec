@@ -1,0 +1,9 @@
+id: LOW
+placement: Static code and data addresses occupy 0x00000000 through 0x7fffffff.
+strategy: Signed 32-bit absolute data references and direct transfers.
+default_relocations:
+- base.relocations.R_BEDROCK_ABS32S
+- base.relocations.R_BEDROCK_IMM32S
+- base.relocations.R_BEDROCK_DISP32S
+- base.relocations.R_BEDROCK_BRDISP32S
+- base.relocations.R_BEDROCK_CALL32S

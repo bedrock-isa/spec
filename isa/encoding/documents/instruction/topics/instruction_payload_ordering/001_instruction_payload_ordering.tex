@@ -1,0 +1,32 @@
+\subsection{Instruction Payload Ordering}
+The instruction (:term:base.terms.header:) is byte 0 for extrashort and short instructions and the first two bytes for medium and
+longer instructions. The (:term:base.terms.opcode_space:) may continue after the (:term:base.terms.header:). If a descriptor, immediate, displacement, or
+bitmap follows the (:term:base.terms.opcode_space:), each independently determined unit is a separate (:term:base.terms.payload:), and the (:term:base.terms.payload|plural:) occupy
+increasing addresses in decode order. An extended EA descriptor and a following displacement are therefore separate
+(:term:base.terms.payload|plural:).
+
+Signed displacement and immediate (:term:base.terms.payload|plural:) use two\textquotesingle{}s-complement representation at their declared width before any
+sign extension performed by the consuming instruction or effective-address encoding.
+
+\input{isa/encoding/documents/instruction/fragments/immediate_operand_interpretation.tex}
+
+PUSHP and POPP interpret their 3-bit operand as a canonical register-pair index, so every encoding
+from 0..7 is valid.
+PTQUERY uses a 3-bit page-table level; assigned levels are 1..5, while encodings 0, 6, and 7
+are (:term:base.terms.reserved:).
+SETF interprets its 4-bit bitmap range 0..15 as a complete FLAGS
+image: bit 3 writes Z, bit 2 writes N, bit 1 writes C, and bit 0 writes V. Each one writes the corresponding flag to
+one, and each zero writes it to zero.
+
+\begin{manuallistedformatdiagram}{SETF Flag Bitmap}
+\manualformatrowrange{flag bitmap[3:0]}{3}{0}{%
+\manualformatfield{Z}{1}
+\manualformatfield{N}{1}
+\manualformatfield{C}{1}
+\manualformatfield{V}{1}
+}
+\end{manuallistedformatdiagram}
+
+A 6-bit \texttt{imm6} value in 0..63 is zero-extended to the selected operation size before use when
+that size is wider than 6 bits. EXTRACT uses the 7-bit \texttt{imm7} range 0..127 as the
+offset into its concatenated register pair.

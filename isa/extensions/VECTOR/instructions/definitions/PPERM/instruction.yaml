@@ -1,0 +1,18 @@
+mnemonic: PPERM
+name: Predicate Permute
+summary: Select predicate lanes using unsigned vector indices.
+route: vector
+sail_entries:
+- execute_PPERM
+privileged: false
+assembly:
+  width_suffix_aliases: true
+operands:
+  index:
+    role: source
+    access: read
+    value_type: vector
+  dst:
+    role: destination
+    access: read_write
+    value_type: predicate

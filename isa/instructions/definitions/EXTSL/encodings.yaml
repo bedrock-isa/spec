@@ -1,0 +1,49 @@
+encodings:
+  b_rn_s_ea_e:
+    pattern: 111100110100111sssseeeeeee
+    syntax: EXTSL.B Rn(s), <ea>(e)
+    fields:
+      s:
+        role: src
+        type: base.field_types.Rn
+      e:
+        role: dst
+        type: base.field_types.EA
+    constraints:
+    - role: dst
+      exclude:
+      - immediate
+      reason: invalid_destination
+  w_rn_s_ea_e:
+    pattern: 111100110101111sssseeeeeee
+    syntax: EXTSL.W Rn(s), <ea>(e)
+    fields:
+      s:
+        role: src
+        type: base.field_types.Rn
+      e:
+        role: dst
+        type: base.field_types.EA
+    constraints:
+    - role: dst
+      exclude:
+      - immediate
+      reason: invalid_destination
+  b_w_z_ea_s_ea_d:
+    pattern: 11110000010zsssssssddddddd
+    syntax: EXTSL.{B|W}(z) <ea>(s), <ea>(d)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BW
+      s:
+        role: src
+        type: base.field_types.EA
+      d:
+        role: dst
+        type: base.field_types.EA
+    constraints:
+    - role: dst
+      exclude:
+      - immediate
+      reason: invalid_destination

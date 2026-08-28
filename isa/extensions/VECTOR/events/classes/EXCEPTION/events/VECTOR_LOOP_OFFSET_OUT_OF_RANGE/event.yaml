@@ -1,0 +1,7 @@
+id: VECTOR_LOOP_OFFSET_OUT_OF_RANGE
+name: Vector Loop Offset Out of Range
+summary: PLOOP receives an unsigned logical-lane offset or index outside the selected lane count.
+code: 0x50
+family: VECTOR_RANGE
+frame: basic
+

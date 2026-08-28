@@ -1,0 +1,8 @@
+mnemonic: WFENCE
+name: Write Fence
+summary: Order prior writes before later writes.
+route: core_control
+sail_entries:
+- execute_WFENCE
+privileged: false
+operands: {}

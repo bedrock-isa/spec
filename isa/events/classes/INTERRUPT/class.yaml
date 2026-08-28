@@ -1,0 +1,5 @@
+id: INTERRUPT
+name: Platform Interrupt
+value: 0x01
+selector: {kind: platform, bits: 24}
+

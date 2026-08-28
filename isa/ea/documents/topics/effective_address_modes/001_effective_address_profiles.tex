@@ -1,0 +1,31 @@
+\clearpage
+\section{Effective-Address Profiles}\label{page:effective-addressing-modes}
+
+EA, FEA, and VEA are seven-bit compact effective-address profiles selected by the consuming instruction\textquotesingle{}s operand
+type. They share the memory address calculation rules and the EXT1 and EXT2 descriptor grammar in this section;
+the compact comparison table identifies the profile-specific encodings. An effective-address (:term:base.terms.field:) is an operand
+descriptor with an instruction-defined role and interpretation width. A
+value role reads or writes the selected register, immediate, or memory value. An address role uses a register or
+immediate as an address value and uses a memory-form EA as the calculated address without an initial data read. A
+control-target role uses a register or immediate value directly and reads an interpretation-width target from a
+memory form. Memory forms continue into (:term:base.terms.segment_pre_translation:) and paging.
+
+Each compact (:term:base.terms.field:) is embedded in the instruction\textquotesingle{}s (:term:base.terms.opcode_space:), and all compact (:term:base.terms.field|plural:) precede any appended
+effective-address (:term:base.terms.payload:) bytes. Any displacement, absolute address, immediate, or extended
+descriptor bytes are appended as one operand\textquotesingle{}s (:term:base.terms.payload:) sequence. Sequences appear in declared instruction operand
+order. For two payload-bearing operands, the encoded stream contains the (:term:base.terms.opcode_space:) for both operands, the complete
+operand 0 (:term:base.terms.payload:) sequence, the complete operand 1 (:term:base.terms.payload:) sequence, and any trailing (:term:base.terms.padding:), in that order.
+
+Multi-byte (:term:base.terms.payload|plural:), such as displacements, absolute addresses, and immediates, are little-endian. Payload
+names ending in s are signed and are sign-extended before use; (:term:base.terms.payload:) names without s are unsigned unless the
+consuming instruction explicitly says otherwise. Extended descriptor bytes appear in stream order, byte 0 first. Each
+descriptor byte is independently numbered from bit 7 through bit 0.
+
+Indexed scale is the EA interpretation width declared by the consuming instruction encoding. B, W, L, and Q widths select scales 1,
+2, 4, and 8. An encoding without a fixed width uses its selected instruction size. LEA and SEGLEA use
+their suffix; size-less instructions with address or control-target roles use Q.
+
+For every compact or extended-descriptor PC-based EA, the PC term is the architectural PC naming byte 0 of the current instruction.
+The PC term remains that instruction-start value throughout operand evaluation.
+
+\clearpage

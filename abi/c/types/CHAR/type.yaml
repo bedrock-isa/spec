@@ -1,0 +1,6 @@
+id: CHAR
+spelling: "char"
+call_kind: i8
+size_bits: 8
+alignment_bytes: 1
+representation: twos_complement

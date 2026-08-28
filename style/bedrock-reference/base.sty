@@ -1,0 +1,97 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesFile{bedrock-reference/base.sty}[2026/08/26 Bedrock reference base commands]
+
+\RequirePackage[T1]{fontenc}
+\RequirePackage[utf8]{inputenc}
+\RequirePackage{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+\RequirePackage{geometry}
+\geometry{paperwidth=6.93in,paperheight=9.11in,inner=0.56in,outer=0.46in,top=0.66in,bottom=0.66in,headheight=14pt}
+\RequirePackage{amsmath}
+\RequirePackage{array}
+\RequirePackage{booktabs}
+\RequirePackage{longtable}
+\RequirePackage{tabularx}
+\RequirePackage[table]{xcolor}
+\RequirePackage{tikz}
+\usetikzlibrary{arrows.meta,decorations.pathreplacing,decorations.pathmorphing}
+\RequirePackage{multicol}
+\RequirePackage{fancyhdr}
+\RequirePackage{titlesec}
+\RequirePackage{enumitem}
+\RequirePackage{etoolbox}
+\RequirePackage{needspace}
+\RequirePackage{hyperref}
+\providecommand{\BedrockArchitectureName}{Bedrock}
+\providecommand{\BedrockDocumentTitle}{Bedrock Reference}
+\providecommand{\BedrockRunningTitle}{REFERENCE}
+\providecommand{\BedrockFooterTitle}{BEDROCK ARCHITECTURE}
+\hypersetup{colorlinks=true,linkcolor=black,urlcolor=black,pdfauthor={Bedrock Architecture},pdftitle={\BedrockDocumentTitle}}
+\makeatletter
+\renewcommand{\@pnumwidth}{2.2em}
+\renewcommand{\@tocrmarg}{3.0em}
+\renewcommand*{\l@subsection}{\@dottedtocline{2}{1.5em}{3.2em}}
+\renewcommand*{\l@figure}{\@dottedtocline{1}{1.5em}{3.5em}}
+\let\l@table\l@figure
+\makeatother
+\definecolor{RuleGray}{gray}{0.18}
+\definecolor{LightRule}{gray}{0.80}
+\definecolor{ManualMuted}{gray}{0.38}
+\definecolor{ManualHeaderFill}{gray}{0.93}
+\definecolor{ManualFixedFill}{gray}{0.86}
+\definecolor{ManualVariableFill}{gray}{0.97}
+\definecolor{ManualReservedFill}{gray}{0.94}
+\tikzset{
+  manualFlowNode/.style={draw=RuleGray,fill=ManualVariableFill,line width=0.35pt},
+  manualFlowOperation/.style={draw=RuleGray,fill=ManualFixedFill,line width=0.60pt},
+  manualFlowMemory/.style={draw=RuleGray,fill=ManualHeaderFill,line width=0.35pt},
+  manualFlowArrow/.style={-{Latex[length=2.0mm,width=1.5mm]},draw=RuleGray,line width=0.35pt},
+  manualLayoutHeader/.style={draw=RuleGray,fill=ManualFixedFill,line width=0.45pt},
+  manualLayoutSlot/.style={draw=RuleGray,fill=ManualVariableFill,line width=0.35pt},
+  manualLayoutOptional/.style={draw=RuleGray,fill=ManualHeaderFill,line width=0.35pt},
+  manualLayoutReserved/.style={draw=RuleGray,fill=ManualReservedFill,densely dashed,line width=0.35pt},
+  manualLayoutExtension/.style={draw=RuleGray,fill=ManualVariableFill,dashed,line width=0.45pt}
+}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{4pt}
+\setlength{\tabcolsep}{2pt}
+\sloppy
+\emergencystretch=2em
+\clubpenalty=10000
+\widowpenalty=10000
+\displaywidowpenalty=10000
+\brokenpenalty=10000
+\raggedbottom
+\setlist[itemize]{leftmargin=1.0em,itemsep=1pt,topsep=2pt}
+\renewcommand{\arraystretch}{1.12}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[LE]{\small \BedrockArchitectureName}
+\fancyhead[RO]{\small \BedrockRunningTitle}
+\fancyfoot[LE,RO]{\small\thepage}
+\fancyfoot[LO,RE]{\small \BedrockFooterTitle}
+\renewcommand{\headrulewidth}{0.35pt}
+\renewcommand{\footrulewidth}{0pt}
+\newcommand{\BedrockPartLabel}{%
+  \parbox{\textwidth}{%
+    \color{RuleGray}\bfseries\fontsize{22}{26}\selectfont
+    \MakeUppercase{\partname}\ \thepart
+    \hfill\color{ManualMuted}\normalfont\small
+    \MakeUppercase{\BedrockArchitectureName}\ ARCHITECTURE\par}}
+\titleformat{\part}[display]
+  {\raggedright\normalfont}
+  {\BedrockPartLabel}
+  {1.20em}
+  {\color{RuleGray}\bfseries\fontsize{30}{34}\selectfont}
+  [\vspace{1.05em}{\color{RuleGray}\rule{\textwidth}{0.65pt}}]
+\titleformat{\section}{\large\bfseries\MakeUppercase}{\thesection}{0.7em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{0.6em}{}
+\titlespacing*{\part}{0pt}{0pt}{0pt}
+\titlespacing*{\section}{0pt}{1.2em}{0.7em}
+\titlespacing*{\subsection}{0pt}{1.0em}{0.45em}
+\newcounter{BedrockFigure}[section]
+\newcounter{BedrockTable}[section]
+\renewcommand{\theBedrockFigure}{\thesection-\arabic{BedrockFigure}}
+\renewcommand{\theBedrockTable}{\thesection-\arabic{BedrockTable}}
+
+\endinput

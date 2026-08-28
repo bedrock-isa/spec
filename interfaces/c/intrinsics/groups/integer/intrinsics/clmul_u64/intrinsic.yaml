@@ -1,0 +1,16 @@
+id: clmul_u64
+owner: base
+description: >-
+  Pure; low 64 bits of the carryless product.
+signature:
+  result: u64
+  parameters:
+  - id: left
+    type: u64
+  - id: right
+    type: u64
+lowering:
+  operation: isa:base.instructions.CLMUL
+  kind: direct
+  operands:
+    size: Q

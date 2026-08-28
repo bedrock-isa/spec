@@ -1,5 +1,0 @@
-forms:
-- id: medium.invtlb
-  class: medium
-  bits: '111011110000000101'
-  syntax: INVTLB

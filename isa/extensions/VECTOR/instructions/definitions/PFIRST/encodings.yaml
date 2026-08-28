@@ -1,0 +1,14 @@
+encodings:
+  b_w_l_q_z_pn_p_rn_r:
+    pattern: 11111010010100zz10rrrrpppp
+    syntax: PFIRST.{B|W|L|Q}(z) Pn(p), Rn(r)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      r:
+        role: dst
+        type: base.field_types.Rn
+      p:
+        role: predicate
+        type: VECTOR.field_types.Pn

@@ -1,0 +1,6 @@
+\subsection{SAVE Responsibilities}
+SAVE writes \texttt{FMT=0}, sets \texttt{GS\_VALID=0x3f}, records the complete STATUS image and current DFA, and records GS0 through GS5. SAVE sets bitmap bits only
+for components described by its CPUID \texttt{SAVE\_AREA\_LAYOUT} leaf.
+
+SAVE may omit an architecturally clean extension component by clearing its bitmap bit. SAVE may clear a bitmap bit
+only for a clean component. SAVE does not change clean or modified state.

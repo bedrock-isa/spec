@@ -1,0 +1,12 @@
+id: invalidate_page
+owner: base
+description: >-
+  Supervisor; argument supplies a linear address and invalidates any matching cached leaf mapping containing it; the operation fully clobbers memory.
+signature:
+  result: void
+  parameters:
+  - id: page
+    type: const_void_pointer
+lowering:
+  operation: isa:base.instructions.INVPAGE
+  kind: direct

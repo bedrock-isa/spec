@@ -1,0 +1,16 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: bedrock://schemas/c-abi-type
+title: Bedrock C ABI type
+type: object
+additionalProperties: false
+required: [id, spelling, call_kind, size_bits, alignment_bytes]
+properties:
+  id: {type: string, pattern: '^[A-Z][A-Z0-9_]*$'}
+  spelling: {type: string, minLength: 1}
+  call_kind: {type: string, pattern: '^[a-z][a-z0-9_]*$'}
+  size_bits:
+    oneOf:
+    - {type: integer, minimum: 1}
+    - {type: string, minLength: 1}
+  alignment_bytes: {type: integer, minimum: 1}
+  representation: {type: string, pattern: '^[a-z][a-z0-9_]*$'}

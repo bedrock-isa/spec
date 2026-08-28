@@ -1,0 +1,11 @@
+id: R_BEDROCK_DISP64
+value: 12
+family: displacement
+result:
+  kind: integer
+  width_bits: 64
+  signed: false
+calculation: symbol + addend
+field: isa:base.payload_types.DISP64
+relaxations:
+- base.relocations.R_BEDROCK_DISP32S

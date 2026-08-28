@@ -1,0 +1,8 @@
+\subsection{Delivery Failure and Shutdown}
+Failure to validate the common entry context, establish the selected stack, or store a complete event frame is
+delivered as the corresponding \texttt{EVENT\_DELIVERY\_FAILURE} leaf event on DSS:DSP. Failure while such an event is already being delivered enters SHUTDOWN.
+SHUTDOWN retires no further instructions and can be exited only by a platform reset.
+The frame save and all architectural entry state remain atomic, so a failed attempt never exposes a partially stored
+frame or partially changed execution context.
+
+\Needspace{4.0in}

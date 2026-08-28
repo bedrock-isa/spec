@@ -1,0 +1,11 @@
+id: R_BEDROCK_IMM16S
+value: 6
+family: immediate
+result:
+  kind: integer
+  width_bits: 16
+  signed: true
+calculation: symbol + addend
+field: isa:base.payload_types.IMM16S
+relaxations:
+- base.relocations.R_BEDROCK_IMM8S

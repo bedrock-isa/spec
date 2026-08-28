@@ -1,0 +1,11 @@
+id: R_BEDROCK_DISP16S
+value: 10
+family: displacement
+result:
+  kind: integer
+  width_bits: 16
+  signed: true
+calculation: symbol + addend
+field: isa:base.payload_types.DISP16S
+relaxations:
+- base.relocations.R_BEDROCK_DISP8S

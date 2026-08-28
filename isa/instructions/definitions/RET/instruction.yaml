@@ -1,0 +1,8 @@
+mnemonic: RET
+name: Return
+summary: Performs the return operation.
+route: control_flow
+sail_entries:
+- execute_RET
+privileged: false
+operands: {}

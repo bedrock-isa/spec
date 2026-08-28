@@ -1,0 +1,9 @@
+id: continuation
+display:
+  canonical: continuation
+  plural: continuations
+article: a
+variants:
+  continuation_pc: continuation PC
+definition: >-
+  a saved or selected resumption point.

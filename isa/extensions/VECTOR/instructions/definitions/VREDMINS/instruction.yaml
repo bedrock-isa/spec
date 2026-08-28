@@ -1,0 +1,20 @@
+mnemonic: VREDMINS
+name: Vector Signed Minimum Reduction
+summary: Finds the signed minimum of selected integer lanes and writes the scalar result to Rn.
+route: vector
+sail_entries:
+- execute_VREDMINS
+privileged: false
+operands:
+  govern:
+    role: governing_predicate
+    access: read
+    value_type: predicate
+  src:
+    role: source
+    access: read
+    value_type: vector
+  dst:
+    role: destination
+    access: write
+    value_type: integer

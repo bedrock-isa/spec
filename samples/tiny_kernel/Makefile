@@ -4,10 +4,11 @@ LLVM_BIN := $(BEDROCK_LLVM_BIN)
 else ifneq ($(strip $(BEDROCK_LLVM_ROOT)),)
 LLVM_BIN := $(BEDROCK_LLVM_ROOT)/bin
 else
-$(error set LLVM_BIN, BEDROCK_LLVM_BIN, or BEDROCK_LLVM_ROOT before building this sample)
+LLVM_BIN := $(abspath ../../../llvm-project/build/bin)
 endif
 endif
 BUILD_DIR ?= build
+PYTHON ?= python3
 
 CLANG := $(LLVM_BIN)/clang
 LLVM_MC := $(LLVM_BIN)/llvm-mc
@@ -47,19 +48,26 @@ APP_CFLAGS ?= -O2
 APP_BEDROCK_CFLAGS := -target bedrock-unknown-unknown -ffreestanding -nostdlib $(APP_CFLAGS)
 BEDROCK_LDFLAGS := -m elf64bedrock -T tiny_kernel.ld
 
-.PHONY: all build disasm clean test
+.PHONY: all build disasm clean test check-toolchain
 
 all: build
 
-build: $(ELF)
+build: check-toolchain $(ELF)
 
 disasm: $(DISASM)
 
 test: build
-	cargo test --release --manifest-path ../../emulator/Cargo.toml -p bedrock-machine --test llvm_toolchain machine_executes_tiny_kernel_sample_with_syscall_and_event_return -- --ignored --nocapture
+	PYTHON="$(PYTHON)" cargo test --release --manifest-path ../../emulator/Cargo.toml -p bedrock-machine --test llvm_toolchain machine_executes_tiny_kernel_sample_with_syscall_and_event_return -- --ignored --nocapture
 
 clean:
 	rm -rf $(BUILD_DIR)
+
+check-toolchain:
+	@test -x "$(CLANG)" || { \
+		echo "Bedrock clang not found at $(CLANG)" >&2; \
+		echo "build LLVM first or set LLVM_BIN/BEDROCK_LLVM_BIN/BEDROCK_LLVM_ROOT" >&2; \
+		exit 1; \
+	}
 
 $(BUILD_DIR)/.dir:
 	mkdir -p $(BUILD_DIR)
@@ -99,7 +107,7 @@ $(BASIC_PACKED_ELF): $(BASIC_ELF)
 	$(OBJCOPY) --strip-all $< $@
 
 $(BASIC_IMAGE_C): $(BASIC_PACKED_ELF) ../common/bin2c.py
-	python3 ../common/bin2c.py $< g_basic_app_elf > $@
+	$(PYTHON) ../common/bin2c.py $< g_basic_app_elf > $@
 
 $(BASIC_IMAGE_OBJECT): $(BASIC_IMAGE_C) tiny_kernel.h | $(BUILD_DIR)/.dir
 	$(CLANG) $(BEDROCK_CFLAGS) -I. -c $< -o $@
@@ -121,7 +129,7 @@ $(BUILD_DIR)/$(1)-packed.elf: $(BUILD_DIR)/$(1).elf
 	$$(OBJCOPY) --strip-all $$< $$@
 
 $(BUILD_DIR)/$(1)_image.c: $(BUILD_DIR)/$(1)-packed.elf ../common/bin2c.py
-	python3 ../common/bin2c.py $$< g_$(1)_app_elf > $$@
+	$$(PYTHON) ../common/bin2c.py $$< g_$(1)_app_elf > $$@
 
 $(BUILD_DIR)/$(1)-image.o: $(BUILD_DIR)/$(1)_image.c tiny_kernel.h | $$(BUILD_DIR)/.dir
 	$$(CLANG) $$(BEDROCK_CFLAGS) -I. -c $$< -o $$@

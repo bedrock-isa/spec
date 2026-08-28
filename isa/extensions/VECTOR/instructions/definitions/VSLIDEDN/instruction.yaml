@@ -1,0 +1,22 @@
+mnemonic: VSLIDEDN
+name: Vector Slide Down
+summary: Move old destination lanes toward lower indices and zero vacated lanes.
+route: vector
+sail_entries:
+- execute_VSLIDEDN
+privileged: false
+assembly:
+  width_suffix_aliases: true
+operands:
+  govern:
+    role: governing_predicate
+    access: read
+    value_type: predicate
+  count:
+    role: count
+    access: read
+    value_type: integer
+  dst:
+    role: destination
+    access: read_write
+    value_type: vector

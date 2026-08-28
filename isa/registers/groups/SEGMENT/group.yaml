@@ -1,0 +1,4 @@
+id: SEGMENT
+width: 64
+summary: Architectural segment registers.
+reset: 0

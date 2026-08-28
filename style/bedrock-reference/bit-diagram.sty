@@ -1,0 +1,170 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesFile{bedrock-reference/bit-diagram.sty}[2026/08/26 Bedrock reference bit-diagram commands]
+
+\newif\ifBedrockBitDiagramMeasuring
+\newif\ifBedrockBitRowMeasuring
+\newcount\BedrockBitDiagramRows
+\newcount\BedrockBitDiagramMaxBits
+\newcount\BedrockBitRowBits
+\newcount\BedrockBitRowIndex
+\newcount\BedrockBitFieldX
+\newcount\BedrockBitFieldWidth
+\newcount\BedrockByteRowCount
+\newbox\BedrockBitLabelBox
+\newbox\BedrockBitRowLabelBox
+\newdimen\BedrockBitFieldAvailable
+\newdimen\BedrockBitDiagramWidth
+\newdimen\BedrockBitMaxRowLabelWidth
+\newdimen\BedrockBitRowLabelWidth
+\def\BedrockBitDiagramXScale{0.0715625}
+\newcommand{\BedrockBitFieldStyled}[3]{%
+  \BedrockBitFieldWidth=#2\relax
+  \ifnum\BedrockBitFieldWidth<1
+    \PackageError{bedrock-reference}{Instruction bit-field width must be positive}
+      {Field `#1' has width #2.}%
+  \fi
+  \ifBedrockBitRowMeasuring
+    \advance\BedrockBitRowBits by \BedrockBitFieldWidth
+  \else
+    \path[#3] ({\the\BedrockBitFieldX},{\BedrockBitRowY}) rectangle
+      ({\the\numexpr\BedrockBitFieldX+\BedrockBitFieldWidth\relax},{\BedrockBitRowY + 1});
+    \setbox\BedrockBitLabelBox=\hbox{%
+      \pgfinterruptpicture
+      \BedrockFormatFieldFont #1%
+      \endpgfinterruptpicture}%
+    \pgfmathsetlength{\BedrockBitFieldAvailable}
+      {\the\BedrockBitFieldWidth*\BedrockBitDiagramXScale in}%
+    \ifdim\wd\BedrockBitLabelBox>\BedrockBitFieldAvailable
+      \PackageError{bedrock-reference}{Instruction bit-field label `#1' does not fit its #2-bit field}
+        {Use an explicit short display label and expand it in the adjacent prose or field table.}%
+    \fi
+    \node[font=\BedrockFormatFieldFont,inner sep=0pt]
+      at ({\the\BedrockBitFieldX + #2/2},{\BedrockBitRowY + 0.5}) {#1};
+    \advance\BedrockBitFieldX by \BedrockBitFieldWidth
+  \fi}
+\newcommand{\BedrockBitField}[2]{%
+  \BedrockBitFieldStyled{#1}{#2}{draw=RuleGray,fill=ManualVariableFill,line width=0.35pt}}
+\newcommand{\BedrockBitFixed}[2]{%
+  \BedrockBitFieldStyled{#1}{#2}{draw=RuleGray,fill=ManualFixedFill,line width=0.60pt}}
+\newcommand{\BedrockBitVariable}[2]{\BedrockBitField{#1}{#2}}
+\newcommand{\BedrockBitReserved}[2]{%
+  \BedrockBitFieldStyled{#1}{#2}{draw=RuleGray,fill=ManualReservedFill,densely dashed,line width=0.35pt}}
+\newcommand{\BedrockBitGap}[1]{%
+  \BedrockBitFieldWidth=#1\relax
+  \ifnum\BedrockBitFieldWidth<1
+    \PackageError{bedrock-reference}{Instruction bit-field gap width must be positive}
+      {Gap width is #1.}%
+  \fi
+  \ifBedrockBitRowMeasuring
+    \advance\BedrockBitRowBits by \BedrockBitFieldWidth
+  \else
+    \advance\BedrockBitFieldX by \BedrockBitFieldWidth
+  \fi}
+\newcommand{\BedrockBitFieldCode}[2]{\BedrockBitVariable{#1}{#2}}
+\newcommand{\BedrockBitFieldText}[2]{\BedrockBitField{#1}{#2}}
+\newcommand{\BedrockBitLabel}[1]{%
+  \ifBedrockBitRowMeasuring\else
+    \pgfmathsetmacro{\BedrockBitLabelX}{\the\BedrockBitRowBits-(#1)-0.5}%
+    \node[anchor=south,font=\BedrockFormatPositionFont,inner sep=0pt]
+      at ({\BedrockBitLabelX},{\BedrockBitRowY + 1.18}) {#1};%
+  \fi}
+\newcommand{\BedrockBitDefaultLabels}{%
+  \node[anchor=south,font=\BedrockFormatPositionFont,inner sep=0pt]
+    at (0.5,{\BedrockBitRowY + 1.18}) {\the\numexpr\BedrockBitRowBits-1\relax};%
+  \node[anchor=south,font=\BedrockFormatPositionFont,inner sep=0pt]
+    at ({\the\BedrockBitRowBits - 0.5},{\BedrockBitRowY + 1.18}) {0};%
+}
+\newcommand{\BedrockByteRowLabels}[2]{%
+  \BedrockByteRowCount=#2\relax
+  \ifnum\BedrockByteRowCount<1
+    \PackageError{bedrock-reference}{Instruction byte row must contain at least one byte}
+      {The requested row starts at byte #1 and contains #2 bytes.}%
+  \fi
+  \ifnum\BedrockByteRowCount>8
+    \PackageError{bedrock-reference}{Instruction byte row exceeds the eight-byte limit}
+      {Split the encoded bytes at an eight-byte boundary.}%
+  \fi
+  \foreach \BedrockByteOffset in {1,...,\the\BedrockByteRowCount} {%
+    \pgfmathsetmacro{\BedrockByteOrigin}{9*(\BedrockByteOffset-1)}%
+    \pgfmathtruncatemacro{\BedrockByteNumber}{#1+\BedrockByteOffset-1}%
+    \node[anchor=south,font=\BedrockFormatPositionFont,inner sep=0pt]
+      at ({\BedrockByteOrigin + 0.5},{\BedrockBitRowY + 1.18}) {7};%
+    \node[anchor=south,font=\BedrockFormatPositionFont,inner sep=0pt]
+      at ({\BedrockByteOrigin + 7.5},{\BedrockBitRowY + 1.18}) {0};%
+    \node[anchor=north,font=\BedrockFormatPositionFont,inner sep=0pt]
+      at ({\BedrockByteOrigin + 4},{\BedrockBitRowY - 0.16}) {byte \BedrockByteNumber};%
+  }%
+}
+\newcommand{\BedrockBytePairBitLabels}{%
+  \node[anchor=south,font=\BedrockFormatPositionFont,inner sep=0pt] at (0.5,{\BedrockBitRowY + 1.18}) {7};%
+  \node[anchor=south,font=\BedrockFormatPositionFont,inner sep=0pt] at (7.5,{\BedrockBitRowY + 1.18}) {0};%
+  \node[anchor=south,font=\BedrockFormatPositionFont,inner sep=0pt] at (9.5,{\BedrockBitRowY + 1.18}) {7};%
+  \node[anchor=south,font=\BedrockFormatPositionFont,inner sep=0pt] at (16.5,{\BedrockBitRowY + 1.18}) {0};%
+}
+\newcommand{\BedrockBitRowBody}[4]{%
+  \BedrockBitRowBits=0
+  \BedrockBitRowMeasuringtrue#3\BedrockBitRowMeasuringfalse
+  \ifBedrockBitDiagramMeasuring
+    \advance\BedrockBitDiagramRows by 1
+    \ifnum\BedrockBitRowBits>\BedrockBitDiagramMaxBits
+      \BedrockBitDiagramMaxBits=\BedrockBitRowBits
+    \fi
+    \setbox\BedrockBitRowLabelBox=\hbox{\BedrockFormatPositionFont #1}%
+    \BedrockBitRowLabelWidth=\wd\BedrockBitRowLabelBox
+    \ifdim\BedrockBitRowLabelWidth>\BedrockBitMaxRowLabelWidth
+      \BedrockBitMaxRowLabelWidth=\BedrockBitRowLabelWidth
+    \fi
+  \else
+    \pgfmathsetmacro{\BedrockBitRowY}{-2.60*\the\BedrockBitRowIndex}
+    \node[anchor=east,font=\BedrockFormatPositionFont,inner sep=0pt]
+      at (-0.35,{\BedrockBitRowY + 0.5}) {#1};
+    #2
+    \ifnum#4>0
+      \ifnum\BedrockBitRowBits>15
+        \foreach \BedrockBitTick in {4,8,...,\the\numexpr\BedrockBitRowBits-1\relax} {%
+          \draw[LightRule,line width=0.20pt] (\BedrockBitTick,\BedrockBitRowY) -- (\BedrockBitTick,{\BedrockBitRowY + 1});}
+      \fi
+    \fi
+    \BedrockBitFieldX=0
+    #3
+    \advance\BedrockBitRowIndex by 1
+  \fi}
+\newcommand{\BedrockBitRowWithLabels}[3]{\BedrockBitRowBody{#1}{#2}{#3}{1}}
+\newcommand{\BedrockBitFieldRow}[3]{\BedrockBitRowBody{#1}{#2}{#3}{0}}
+\newcommand{\BedrockBitRow}[2]{\BedrockBitRowWithLabels{#1}{\BedrockBitDefaultLabels}{#2}}
+\newcommand{\BedrockRenderBitDiagram}[3]{%
+  \begingroup
+  \BedrockBitDiagramRows=0
+  \BedrockBitDiagramMaxBits=0
+  \BedrockBitMaxRowLabelWidth=0pt
+  \BedrockBitDiagramMeasuringtrue#2\BedrockBitDiagramMeasuringfalse
+  \pgfmathsetmacro{\BedrockBitDiagramNeedSpace}{0.90 + 0.58*\the\BedrockBitDiagramRows}
+  \pgfmathsetlength{\BedrockBitDiagramWidth}
+    {\the\BedrockBitDiagramMaxBits*\BedrockBitDiagramXScale in}%
+  \advance\BedrockBitDiagramWidth by \BedrockBitMaxRowLabelWidth
+  \advance\BedrockBitDiagramWidth by .25in
+  \ifdim\BedrockBitDiagramWidth>\linewidth
+    \PackageError{bedrock-reference}{Instruction bit-field diagram `#1' exceeds the available line width}
+      {Shorten the row label or split the diagram; bit cells are never scaled.}%
+  \fi
+  \Needspace{\BedrockBitDiagramNeedSpace in}%
+  \begin{center}\vspace{3pt}%
+  \begin{tikzpicture}[x=\BedrockBitDiagramXScale in,y=0.22in,every node/.style={font=\BedrockFormatPositionFont}]%
+  \BedrockBitRowIndex=0
+  #2
+  \end{tikzpicture}%
+  #3{#1}%
+  \end{center}%
+  \endgroup}
+\NewDocumentEnvironment{BedrockBitDiagram}{m +b}{%
+  \BedrockRenderBitDiagram{#1}{#2}{\BedrockCaption}%
+}{}
+\NewDocumentEnvironment{BedrockListedBitDiagram}{m o +b}{%
+  \IfValueTF{#2}{%
+    \BedrockRenderBitDiagram{#1}{#3}{\BedrockFigureCaptionAndLabel{#2}}%
+  }{%
+    \BedrockRenderBitDiagram{#1}{#3}{\BedrockFigureCaption}%
+  }%
+}{}
+
+\endinput

@@ -1,0 +1,165 @@
+id: isa-reference
+generator: generator.py
+inputs:
+- isa
+output: tex/isa-reference.tex
+dependency-graph: graphs/isa-reference-dependencies.json
+preamble: artifacts/isa-reference/document/fragments/document_preamble.tex
+title-page: artifacts/isa-reference/document/fragments/title_page.tex
+body:
+- topic: base.manual.part.architectural-foundations
+- topic: base.architecture.overview.section
+- topic: base.architecture.overview.contract-position
+- topic: base.architecture.overview.manual-scope
+- topic: base.architecture.overview.profile
+- topic: base.manual.about.normative-material
+- topic: base.architecture.terminology.section
+- term-group: base.term_groups.address_values
+- term-group: base.term_groups.memory_behavior
+- term-group: base.term_groups.segmentation_and_paging
+- term-group: base.term_groups.instruction_encoding
+- term-group: base.term_groups.control_flow
+- term-group: base.term_groups.tracing
+- term-group: base.term_groups.architectural_state
+- term-group: base.term_groups.floating_point_and_exceptions
+- term-group: base.term_groups.compatibility
+- topic: base.manual.compatibility.contract
+- topic: base.manual.compatibility.reserved-fields
+- topic: base.encoding.instruction.compatibility.reserved-encodings
+- topic: base.cpuid.compatibility.contract
+- topic: base.registers.register-model.programming-model
+- topic: base.registers.register-model.register-model
+- topic: base.registers.state-register-format-diagrams.flags-and-status-registers
+- topic: base.registers.state-register-format-diagrams.floating-point-register-model
+- topic: base.registers.state-register-format-diagrams.fflags-and-fstatus-registers
+- topic: base.registers.register-model.segment-registers
+- topic: base.registers.register-model.segment-register-operand-class
+- topic: base.registers.register-model.control-registers
+- topic: base.encoding.data.data-formats.data-formats
+- topic: base.encoding.data.data-formats.integer-data-sizes
+- topic: base.encoding.data.data-formats.little-endian-memory-organization
+- topic: base.encoding.data.data-formats.floating-point-data-formats
+- topic: base.manual.part.encoding-addressing-and-execution
+- topic: base.encoding.instruction.instruction-word-formats.instruction-encoding
+- topic: base.encoding.instruction.instruction-word-formats.instruction-stream-and-record-boundary
+- topic: base.encoding.instruction.instruction-word-formats.instruction-header-formats
+- topic: base.encoding.instruction.instruction-payload-ordering.instruction-payload-ordering
+- topic: base.encoding.instruction.representative-instruction-encodings.representative-encodings
+- topic: base.ea.effective-address-modes.effective-address-profiles
+- topic: base.ea.effective-address-modes.compact-profile-encodings
+- topic: base.ea.effective-address-modes.floating-point-fea-immediate-forms
+- topic: base.ea.effective-address-modes.vector-vea-lane-addressing
+- topic: base.ea.effective-address-modes.shared-extended-descriptor
+- topic: base.ea.effective-address-modes.extended-ea-addressing-modes
+- topic: base.memory.translation.memory-address-translation.memory-address-translation
+- topic: base.memory.translation.memory-address-translation.segment-pre-translation
+- topic: base.memory.translation.page-walk-reference.paging-stage
+- topic: base.memory.translation.page-walk-reference.la48-four-level-paging
+- topic: base.memory.translation.page-walk-reference.la57-five-level-paging
+- topic: base.memory.translation.page-table-entry-reference.page-table-entry-format
+- topic: base.memory.translation.memory-address-translation.translation-cache-identity-and-invalidation
+- topic: base.memory.translation.memory-address-translation.leaf-byte-addresses-and-access-ranges
+- topic: base.memory.translation.memory-address-translation.physical-class-and-mmio-accesses
+- topic: base.memory.translation.memory-address-translation.multi-page-accesses
+- topic: base.execution.execution-model.instruction-execution-model
+- topic: base.execution.execution-model.architectural-result-priority
+- topic: base.execution.execution-model.implicit-stack-operations
+- topic: base.execution.execution-model.operand-evaluation-and-ea-defaults
+- topic: base.execution.execution-model.shared-side-effect-rules
+- topic: base.execution.condition-codes.flags-and-condition-codes
+- topic: base.execution.condition-codes.condition-encoding
+- topic: base.execution.condition-code-computation.flag-meanings
+- topic: base.execution.condition-code-computation.conditional-consumers
+- topic: base.execution.condition-code-computation.floating-point-interactions
+- topic: base.memory.ordering.memory-model.memory-model
+- topic: base.memory.ordering.memory-model.baseline-ordering
+- topic: base.memory.ordering.memory-model.ordinary-load-values-and-preserved-order
+- topic: base.memory.ordering.memory-model.pte-cache-policies
+- topic: base.memory.ordering.memory-model.access-atomicity-and-alignment
+- topic: base.memory.ordering.memory-model.cache-maintenance-blocks
+- topic: base.memory.ordering.memory-model.atomic-memory-order-selectors
+- topic: base.memory.ordering.memory-model.fence-instructions
+- topic: base.memory.ordering.memory-model.global-sequentially-consistent-order
+- topic: base.repeat.streaming-execution-model.repeated-scalar-execution
+- topic: base.manual.part.system-programming
+- topic: base.privilege.privileged-programming-model.privileged-execution-model
+- topic: base.privilege.privileged-programming-model.privilege-and-event-state
+- topic: base.privilege.privileged-programming-model.user-context-bank
+- topic: base.privilege.privileged-programming-model.initial-event-stacks-and-payloads
+- topic: base.privilege.privileged-programming-model.event-entry-and-failure
+- topic: base.privilege.privileged-programming-model.eret-routing-and-atomicity
+- topic: base.events.interrupt-model.architectural-event-processing-model
+- topic: base.events.interrupt-model.event-code-and-sources
+- topic: base.events.interrupt-model.event-priority-and-debug-trace
+- topic: base.events.interrupt-model.entry-admission-and-event-depth
+- topic: base.events.interrupt-model.supervisor-event-stacks-and-nesting
+- topic: base.events.interrupt-model.event-entry-state
+- topic: base.events.interrupt-model.architectural-event-frame
+- topic: base.events.interrupt-model.event-payloads
+- topic: base.events.event-error-codes.address-context-error-code
+- topic: base.events.event-error-codes.other-exception-error-codes
+- topic: base.events.event-auxiliary-payloads.auxiliary-payloads
+- topic: base.events.interrupt-model.machine-check-and-bus-error-continuation
+- topic: base.events.interrupt-model.delivery-failure-and-shutdown
+- topic: base.events.interrupt-model.event-reset-and-context-state
+- topic: base.cpuid.cpuid-feature-discovery.cpuid-feature-discovery
+- topic: base.cpuid.cpuid-feature-discovery.overview
+- topic: base.cpuid.cpuid-feature-discovery.query-model
+- topic: base.cpuid.cpuid-feature-discovery.discovery-classes
+- topic: base.cpuid.cpuid-feature-discovery.leaf-directory
+- topic: base.cpuid.cpuid-feature-discovery.base-identity
+- topic: base.cpuid.cpuid-feature-discovery.optional-extension-directory
+- topic: base.cpuid.cpuid-feature-discovery.vector-parameter-discovery
+- topic: base.cpuid.cpuid-feature-discovery.fptransa-accuracy-discovery
+- topic: base.cpuid.cpuid-feature-discovery.implementation-class-directory
+- topic: base.cpuid.cpuid-feature-discovery.cache-topology-discovery
+- topic: base.cpuid.cpuid-feature-discovery.performance-counter-discovery
+- topic: base.cpuid.cpuid-feature-discovery.address-width-discovery
+- topic: base.cpuid.cpuid-feature-discovery.save-area-layout-discovery
+- topic: base.state.save-restore-area.processor-state-save-and-restore
+- topic: base.state.save-restore-area.save-area-layout
+- topic: base.state.save-restore-area.fixed-architectural-state
+- topic: base.state.save-restore-area.extension-components-and-clean-state
+- topic: base.state.save-restore-area.save-responsibilities
+- topic: base.state.save-restore-area.restore-responsibilities
+- topic: base.manual.part.instruction-set-reference
+- topic: base.instructions.instruction-description-intro.reading-an-instruction-description
+- topic: base.instructions.instruction-description-intro.entry-organization
+- topic: base.instructions.instruction-description-intro.assembler-source-grammar
+- topic: base.instructions.instruction-description-intro.mnemonics-and-suffixes
+- topic: base.instructions.instruction-description-intro.operand-and-status-notation
+- topic: base.instructions.instruction-description-intro.encodings
+- instruction-set:
+    owner: base
+    title: General Instructions
+- instruction-set:
+    owner: FP
+    title: Floating-Point Instructions
+    introduction:
+    - FP.introduction.common-floating-point-semantics
+    - FP.introduction.input-nan-rounding-and-result-order
+    - FP.introduction.floating-point-exception-causes-and-commit
+    - FP.introduction.comparison-minimum-and-maximum
+    - FP.introduction.conversions
+- instruction-set:
+    owner: FPTRANSA
+    title: Approximate Floating-Point Transcendental Instructions
+    introduction:
+    - FPTRANSA.introduction.fptransa-common-model
+- instruction-set:
+    owner: VECTOR
+    title: Scalable-Vector Instructions
+    introduction:
+    - VECTOR.introduction.element-types-and-assembly-spelling
+    - VECTOR.introduction.predicates-and-destination-images
+    - VECTOR.introduction.lane-mapping-and-scalar-bridges
+    - VECTOR.introduction.vector-memory-operations
+    - VECTOR.introduction.one-lane-gather-and-scatter-steps
+    - VECTOR.introduction.floating-point-exceptions-conversions-and-reductions
+    - VECTOR.introduction.execution-and-saved-state
+- topic: base.indexes.reference-navigation.reference-indexes
+- topic: base.indexes.reference-navigation.canonical-field-names
+- topic: base.indexes.reference-navigation.architectural-state-index
+- topic: base.indexes.reference-navigation.architectural-event-index
+- topic: base.indexes.reference-navigation.implementation-defined-disclosures
+postamble: artifacts/isa-reference/document/fragments/document_end.tex

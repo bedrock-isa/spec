@@ -1,0 +1,7 @@
+id: INVALID_CONTROL_TRANSITION
+name: Invalid Control Transition
+summary: A requested event return or privilege-state transition is illegal.
+code: 0x43
+family: CONTROL_STATE
+frame: basic
+

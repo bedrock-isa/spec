@@ -1,0 +1,18 @@
+id: fsincosa_f32
+owner: FPTRANSA
+description: >-
+  FP and FPTRANSA required; writes sine through the first result pointer and cosine through the second; ISA accuracy, special-value, and floating-point event contracts apply to both results.
+signature:
+  result: void
+  parameters:
+  - id: value
+    type: f32
+  - id: sin_result
+    type: f32_pointer
+  - id: cos_result
+    type: f32_pointer
+lowering:
+  operation: isa:FPTRANSA.instructions.FSINCOSA
+  kind: direct
+  operands:
+    size: S

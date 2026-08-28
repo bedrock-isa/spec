@@ -1,0 +1,14 @@
+id: read_code_segment
+owner: base
+description: >-
+  Unprivileged; reads the current CS image through the dedicated source-only encoding.
+signature:
+  result: u64
+  parameters: []
+lowering:
+  operation: isa:base.instructions.RDSEG
+  kind: direct
+  operands:
+    source: CS
+wrapper:
+  kind: macro

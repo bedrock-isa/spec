@@ -1,0 +1,34 @@
+id: FPTRANSA_ACCURACY
+name: Approximate Transcendental Accuracy Contracts
+value: 0x0001
+layouts:
+  ACCURACY:
+    fields:
+    - {id: S_MAX_ULP_Q8_8, lsb: 0, bits: 16}
+    - {id: D_MAX_ULP_Q8_8, lsb: 16, bits: 16}
+    - {id: CONTRACT_REVISION, lsb: 32, bits: 8}
+    - {id: PRESENT, lsb: 63, bits: 1}
+queries:
+- id: HEADER
+  index: 0
+  fields:
+  - {id: MAX_INDEX, lsb: 0, bits: 16}
+- {id: FSINA, index: 0x0001, layout: ACCURACY}
+- {id: FCOSA, index: 0x0002, layout: ACCURACY}
+- {id: FTANA, index: 0x0003, layout: ACCURACY}
+- {id: FSINCOSA, index: 0x0004, layout: ACCURACY}
+- {id: FASINA, index: 0x0011, layout: ACCURACY}
+- {id: FACOSA, index: 0x0012, layout: ACCURACY}
+- {id: FATANA, index: 0x0013, layout: ACCURACY}
+- {id: FSINHA, index: 0x0021, layout: ACCURACY}
+- {id: FCOSHA, index: 0x0022, layout: ACCURACY}
+- {id: FTANHA, index: 0x0023, layout: ACCURACY}
+- {id: FATANHA, index: 0x0024, layout: ACCURACY}
+- {id: FETOXA, index: 0x0031, layout: ACCURACY}
+- {id: FETOXM1A, index: 0x0032, layout: ACCURACY}
+- {id: FTWOTOXA, index: 0x0033, layout: ACCURACY}
+- {id: FTENTOXA, index: 0x0034, layout: ACCURACY}
+- {id: FLOGNA, index: 0x0041, layout: ACCURACY}
+- {id: FLOGNP1A, index: 0x0042, layout: ACCURACY}
+- {id: FLOG2A, index: 0x0043, layout: ACCURACY}
+- {id: FLOG10A, index: 0x0044, layout: ACCURACY}

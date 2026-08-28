@@ -1,0 +1,16 @@
+id: nontemporal_store_u16
+owner: base
+description: >-
+  One writable 16-bit object; one hinted store, neither volatile nor a fence.
+signature:
+  result: void
+  parameters:
+  - id: destination
+    type: u16_pointer
+  - id: value
+    type: u16
+lowering:
+  operation: isa:base.instructions.MOVNT
+  kind: direct
+  operands:
+    size: W

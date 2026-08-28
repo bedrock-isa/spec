@@ -1,0 +1,16 @@
+id: nontemporal_store_u32
+owner: base
+description: >-
+  One writable 32-bit object; one hinted store, neither volatile nor a fence.
+signature:
+  result: void
+  parameters:
+  - id: destination
+    type: u32_pointer
+  - id: value
+    type: u32
+lowering:
+  operation: isa:base.instructions.MOVNT
+  kind: direct
+  operands:
+    size: L

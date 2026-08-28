@@ -1,0 +1,86 @@
+encodings:
+  imm8s_i:
+    pattern: 11cccciiiiiiii
+    syntax: Jcc imm8s(i)
+    fields:
+      c:
+        role: cc
+        type: base.field_types.CC
+      i:
+        role: target
+        type: base.field_types.IMM8S
+    constraints:
+    - role: cc
+      allow:
+      - 0x2..0xf
+      reason: condition_true_false_reclaimed
+  imm16s:
+    pattern: 11101110000010cccc
+    syntax: Jcc <imm16s>
+    fields:
+      c:
+        role: cc
+        type: base.field_types.CC
+    payloads:
+    - role: target
+      type: base.payload_types.DISP16S
+    constraints:
+    - role: cc
+      allow:
+      - 0x2..0xf
+      reason: condition_true_false_reclaimed
+  imm32s:
+    pattern: 11101110000011cccc
+    syntax: Jcc <imm32s>
+    fields:
+      c:
+        role: cc
+        type: base.field_types.CC
+    payloads:
+    - role: target
+      type: base.payload_types.DISP32S
+    constraints:
+    - role: cc
+      allow:
+      - 0x2..0xf
+      reason: condition_true_false_reclaimed
+  l_q_z_ea_e:
+    pattern: 11110110001001zcccceeeeeee
+    syntax: Jcc.{L|Q}(z) <ea>(e)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_LQ
+      c:
+        role: cc
+        type: base.field_types.CC
+      e:
+        role: target
+        type: base.field_types.EA
+    constraints:
+    - role: cc
+      allow:
+      - 0x2..0xf
+      reason: condition_true_false_reclaimed
+    - role: target
+      exclude:
+      - immediate
+      reason: canonical_form_reclaim
+  l_q_z_rn_r:
+    pattern: 11110110011000001zccccrrrr
+    syntax: Jcc.{L|Q}(z) Rn(r)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_LQ
+      c:
+        role: cc
+        type: base.field_types.CC
+      r:
+        role: target
+        type: base.field_types.Rn
+    constraints:
+    - role: cc
+      allow:
+      - 0x2..0xf
+      reason: condition_true_false_reclaimed

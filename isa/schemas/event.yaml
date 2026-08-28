@@ -1,0 +1,36 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: bedrock://schemas/event
+title: Bedrock leaf architectural event
+type: object
+additionalProperties: false
+required: [id, name, summary, frame]
+properties:
+  id:
+    type: string
+    pattern: ^[A-Z][A-Z0-9_]*$
+  name:
+    type: string
+    minLength: 1
+  summary:
+    type: string
+    minLength: 1
+  code:
+    type: integer
+    minimum: 0
+    maximum: 16777215
+  family:
+    type: string
+    pattern: ^[A-Z][A-Z0-9_]*$
+  frame:
+    enum: [basic, error, page, auxiliary]
+  payload:
+    type: array
+    uniqueItems: true
+    items:
+      type: string
+      pattern: ^[A-Z][A-Z0-9_]*$
+x-interpretation-rules:
+- Every file defines one deliverable leaf event; event causes are not a second registry level.
+- Fixed-selector classes require code, while source and platform classes derive it externally.
+- family groups related leaf events but is neither delivered nor encoded.
+- payload names runtime values carried by the selected frame and never identifies an event subtype.

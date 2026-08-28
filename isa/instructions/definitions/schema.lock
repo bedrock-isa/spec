@@ -1,5 +1,0 @@
-# Synchronized Bedrock YAML schema contract.
-families=15
-decoder_sha256=cfcb087d9d3dfbc0754a8736d43e8115aebfb8372250a11fd7e73165c290fcfc
-diagram_decoder_sha256=7250d26fafeb73430d5669075add853740c37899ebc75957f658c96df0e58d2d
-contract_sha256=feda0ff72330035a25e1ca0cf0ec413d36e8cf5d3bd7e94495970be2af2c1194

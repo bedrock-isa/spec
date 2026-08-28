@@ -1,0 +1,8 @@
+encodings:
+  rn_r:
+    pattern: 1000000000rrrr
+    syntax: SET Rn(r)
+    fields:
+      r:
+        role: dst
+        type: base.field_types.Rn

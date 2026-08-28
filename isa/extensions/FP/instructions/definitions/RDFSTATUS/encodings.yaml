@@ -1,0 +1,8 @@
+encodings:
+  rn_d:
+    pattern: 11101101000100dddd
+    syntax: RDFSTATUS Rn(d)
+    fields:
+      d:
+        role: dst
+        type: base.field_types.Rn

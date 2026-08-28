@@ -1,0 +1,8 @@
+id: c-target-intrinsics
+generator: generator.py
+inputs:
+- isa
+- abi.c
+- interfaces.c
+source: interfaces/c/documents/target-intrinsics.tex
+output: tex/bedrock-target-intrinsics.tex

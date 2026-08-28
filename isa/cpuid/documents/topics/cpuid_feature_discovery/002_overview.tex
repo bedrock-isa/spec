@@ -1,0 +1,10 @@
+\subsection{Overview}
+CPUID is the architectural discovery interface for optional instruction groups, processor-state save areas,
+implementation properties, and feature-specific parameters.
+
+The CPUID instruction uses a selected (:term:base.terms.rn_register:) as both query selector and result register. Software writes the
+selector before execution and reads the returned 64-bit value after execution.
+
+CPUID exposes program-visible architectural information.
+
+The normative instruction entry is (:ref:base.instructions.CPUID:).\par

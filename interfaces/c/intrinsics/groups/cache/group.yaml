@@ -1,0 +1,5 @@
+id: cache
+title: Cache-Management Intrinsics
+exposure: cache management
+includes:
+- stddef.h

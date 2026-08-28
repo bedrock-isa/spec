@@ -1,0 +1,48 @@
+id: ORDINARY_PLT
+entry:
+  size_bytes: 32
+  alignment_bytes: 16
+steps:
+- instruction: isa:base.instructions.JMP
+  form: qword_pc_relative_indirect
+  relocation: abi.elf:base.relocations.R_BEDROCK_GOTPCREL64
+state:
+- disposition: preserve
+  registers:
+  - isa:base.registers.GPR.R0
+  - isa:base.registers.GPR.R1
+  - isa:base.registers.GPR.R2
+  - isa:base.registers.GPR.R3
+  - isa:base.registers.GPR.R4
+  - isa:base.registers.GPR.R5
+  - isa:base.registers.GPR.R6
+  - isa:base.registers.GPR.R7
+  - isa:FP.registers.FPR.F0
+  - isa:FP.registers.FPR.F1
+  - isa:FP.registers.FPR.F2
+  - isa:FP.registers.FPR.F3
+  - isa:FP.registers.FPR.F4
+  - isa:FP.registers.FPR.F5
+  - isa:FP.registers.FPR.F6
+  - isa:FP.registers.FPR.F7
+  - isa:base.registers.SEGMENT.CS
+  - isa:base.registers.SEGMENT.DS
+  - isa:base.registers.SEGMENT.SS
+  - isa:base.registers.SEGMENT.GS0
+  - isa:base.registers.SEGMENT.GS1
+  - isa:base.registers.SEGMENT.GS2
+  - isa:base.registers.SEGMENT.GS3
+  - isa:base.registers.SEGMENT.GS4
+  - isa:base.registers.SEGMENT.GS5
+  - isa:base.registers.STATE.FLAGS
+layout:
+  instruction_offset_bytes: 0
+  relocation_field_offset_bytes: 4
+  relocation_addend: 4
+  padding_offset_bytes: 12
+  padding_size_bytes: 20
+  padding_byte: 0x01
+got_slot:
+  size_bytes: 8
+  alignment_bytes: 8
+  publication: immutable

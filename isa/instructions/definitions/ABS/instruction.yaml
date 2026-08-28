@@ -1,0 +1,15 @@
+mnemonic: ABS
+name: Absolute Value
+summary: Performs the absolute value operation.
+route: integer_unary
+sail_entries:
+- execute_ABS
+privileged: false
+repeat:
+  type: repcc
+  observed_value: dst
+operands:
+  dst:
+    role: destination
+    access: read_write
+    value_type: integer

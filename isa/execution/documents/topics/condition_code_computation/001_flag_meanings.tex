@@ -1,0 +1,26 @@
+\clearpage
+\subsection{Flag Meanings}
+Integer condition codes are held in FLAGS. Integer instructions leave FLAGS unchanged unless their instruction
+description explicitly defines a FLAGS write. Every FLAGS-writing instruction replaces the complete Z, N, C, and V
+image; partial FLAGS writes do not exist. An instruction that does not write FLAGS preserves the complete image.
+
+For an operand width of n bits, (:term:base.terms.ordinary:) integer ALU results are evaluated modulo 2\textasciicircum{}n unless the
+instruction explicitly defines a wider intermediate.
+
+Explicit FLAGS-writing integer instructions include CMP, TEST, ADC, SBB, INCF, DECF, BTEST, BSET, BCLR, BCHG,
+SETF, WRFLAGS, CMPXCHG, SEGLEA, and the bounds-check instructions. CMPJcc and TESTJcc compute temporary condition flags
+for their branch decision and do not update architectural FLAGS. ADD, SUB, logic operations, INC, DEC, shifts,
+rotates, moves, extensions, min/max, and multiply/divide instructions leave FLAGS unchanged.
+
+\manualtablecaption{Integer Condition-Code Bits}
+\begin{manualtabular}{@{}>{\raggedright\arraybackslash}p{0.45in}>{\raggedright\arraybackslash}p{1.05in}>{\raggedright\arraybackslash}p{3.90in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Bit} & \textbf{Name} & \textbf{Meaning}\\
+\midrule
+Z & zero & Set when the result value is zero.\\
+N & negative & Set from the most significant result bit at the operand size.\\
+C & carry/borrow & Set on unsigned carry out for addition or unsigned borrow for subtraction.\\
+V & overflow & Set on signed overflow or an explicitly reported exceptional condition.\\
+\bottomrule
+\end{manualtabular}

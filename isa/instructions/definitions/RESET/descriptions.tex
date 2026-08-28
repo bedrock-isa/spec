@@ -1,0 +1,21 @@
+RESET serializes earlier (:term:base.terms.memory_effect|plural:), applies the complete architectural warm-reset state to the executing (:term:base.terms.logical_processor:), and resumes execution at BOOTPC.
+
+RESET is supervisor-only and affects only the executing (:term:base.terms.logical_processor:). Before the reset-state transition commits,
+all earlier (:term:base.terms.memory_effect|plural:) and pending write-combining stores from that (:term:base.terms.logical_processor:) complete. No younger
+instruction effect becomes visible.
+
+The instruction installs the complete Architectural Reset State table. R0 through R15 and SP become zero, PC becomes
+BOOTPC, STATUS contains only PM set, and BOOTPC and BOOTCFG retain their values. Architectural repeat state, the load
+reservation, translation and page-walk caches, decoded instruction state, and prefetch state are invalidated.
+Coherent data- and instruction-cache contents remain coherent. Instruction-fetch synchronization completes before the
+first instruction at BOOTPC is fetched.
+
+RESET is supervisor-only and affects only the executing (:term:base.terms.logical_processor:). Before the reset-state transition commits,
+all earlier (:term:base.terms.memory_effect|plural:) and pending write-combining stores from that (:term:base.terms.logical_processor:) complete. No younger
+instruction effect becomes visible.
+
+The instruction installs the complete Architectural Reset State table. R0 through R15 and SP become zero, PC becomes
+BOOTPC, STATUS contains only PM set, and BOOTPC and BOOTCFG retain their values. Architectural repeat state, the load
+reservation, translation and page-walk caches, decoded instruction state, and prefetch state are invalidated.
+Coherent data- and instruction-cache contents remain coherent. Instruction-fetch synchronization completes before the
+first instruction at BOOTPC is fetched.

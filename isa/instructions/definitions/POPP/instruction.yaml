@@ -1,0 +1,14 @@
+mnemonic: POPP
+name: Pop Register Pair
+summary: Pops one canonical Rn register pair selected by an inline pair index.
+route: data_movement
+sail_entries:
+- execute_POPP
+privileged: false
+repeat:
+  type: rep
+operands:
+  pair_id:
+    role: source
+    access: read
+    value_type: integer

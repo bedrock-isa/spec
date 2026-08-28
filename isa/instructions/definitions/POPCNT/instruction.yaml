@@ -1,0 +1,19 @@
+mnemonic: POPCNT
+name: Population Count
+summary: Performs the population count operation.
+route: integer_bitfield
+sail_entries:
+- execute_POPCNT
+privileged: false
+repeat:
+  type: repcc
+  observed_value: dst
+operands:
+  src:
+    role: source
+    access: read
+    value_type: integer
+  dst:
+    role: destination
+    access: read_write
+    value_type: integer

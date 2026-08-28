@@ -1,0 +1,72 @@
+type Registers = vector(16, inc, bits(64))
+
+type Floating_registers = vector(16, inc, bits(64))
+type Vector_registers = vector(32, inc, list(bits(8)))
+type Predicate_registers = vector(16, inc, list(bits(8)))
+type Segment_registers = vector(9, inc, bits(64))
+type Control_registers = vector(32, inc, bits(64))
+
+enum Run_state = Running | Halted | Shutdown
+struct Repeat_state = {
+  active : bool,
+  counter : bits(4),
+  remaining : bits(64),
+  condition : bits(4),
+  prefix_start : bits(64),
+  body_start : bits(64),
+  fixed_body : list(bits(8)),
+}
+
+struct Cpu_state = {
+  registers : Registers,
+  floating_registers : Floating_registers,
+  vector_registers : Vector_registers,
+  predicate_registers : Predicate_registers,
+  segments : Segment_registers,
+  controls : Control_registers,
+  sp : bits(64),
+  pc : bits(64),
+  flags : bits(4),
+  status : bits(64),
+  fflags : bits(5),
+  fstatus : bits(64),
+  supervisor : bool,
+  fp_enabled : bool,
+  fptrans_enabled : bool,
+  vector_enabled : bool,
+  vector_length_bytes : int,
+  halted : bool,
+  run_state : Run_state,
+  current_dfa : bool,
+  cache_maintenance_granule : bits(64),
+  save_area_size : int,
+  save_fixed_size : int,
+  save_format : bits(4),
+  save_bitmap_words : bits(64),
+  fp_component_present : bool,
+  fp_component_id : bits(64),
+  fp_component_bitmap_bit : bits(64),
+  fp_component_offset : int,
+  fp_component_size : int,
+  fp_component_alignment : bits(64),
+  fp_component_init_policy : bits(64),
+  fp_component_modified : bool,
+  vector_component_present : bool,
+  vector_component_id : bits(64),
+  vector_component_bitmap_bit : bits(64),
+  vector_component_offset : int,
+  vector_component_size : int,
+  vector_component_alignment : bits(64),
+  vector_component_init_policy : bits(64),
+  vector_component_modified : bool,
+  repeat_state : Repeat_state,
+  nmi_latched_source : bits(24),
+  nmi_relatched : bool,
+  nmi_relatched_source : bits(24),
+  machine_check_pending : bool,
+  machine_check_payload : bits(32),
+  machine_check_error_code : bits(64),
+  machine_check_fault_ea : bits(64),
+  machine_check_fault_linear : bits(64),
+  machine_check_event_aux : bits(64),
+}

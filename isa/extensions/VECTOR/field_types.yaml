@@ -1,0 +1,78 @@
+field_types:
+  Vn:
+    type: register_selector
+    register_group: VECTOR.registers.VECTOR
+    bits: 5
+  Pn:
+    type: register_selector
+    register_group: VECTOR.registers.PREDICATE
+    bits: 4
+  VEA:
+    type: effective_address
+    profile: vea
+    bits: 7
+  SIZE_VTYPE:
+    type: size_selector
+    bits: 3
+    values:
+      - {value: 0, code: B}
+      - {value: 1, code: W}
+      - {value: 2, code: L}
+      - {value: 3, code: Q}
+      - {value: 5, code: H}
+      - {value: 6, code: S}
+      - {value: 7, code: D}
+  SIZE_HSD:
+    type: size_selector
+    bits: 2
+    values:
+      - {value: 1, code: H}
+      - {value: 2, code: S}
+      - {value: 3, code: D}
+  SIZE_BWL:
+    type: size_selector
+    bits: 2
+    values:
+      - {value: 0, code: B}
+      - {value: 1, code: W}
+      - {value: 2, code: L}
+  SIZE_V_BW:
+    type: size_selector
+    bits: 2
+    values:
+      - {value: 0, code: B}
+      - {value: 1, code: W}
+  SIZE_V_LQ:
+    type: size_selector
+    bits: 2
+    values:
+      - {value: 2, code: L}
+      - {value: 3, code: Q}
+  SIZE_HD:
+    type: size_selector
+    bits: 2
+    values:
+      - {value: 1, code: H}
+      - {value: 3, code: D}
+  SIZE_HS:
+    type: size_selector
+    bits: 2
+    values:
+      - {value: 1, code: H}
+      - {value: 2, code: S}
+  SIZE_V_SD:
+    type: size_selector
+    bits: 2
+    values:
+      - {value: 2, code: S}
+      - {value: 3, code: D}
+  SIZE_B_ONLY:
+    type: size_selector
+    bits: 2
+    values:
+      - {value: 0, code: B}
+  SIZE_Q_ONLY:
+    type: size_selector
+    bits: 2
+    values:
+      - {value: 3, code: Q}

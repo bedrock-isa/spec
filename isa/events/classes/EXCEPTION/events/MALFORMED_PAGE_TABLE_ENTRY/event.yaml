@@ -1,0 +1,8 @@
+id: MALFORMED_PAGE_TABLE_ENTRY
+name: Malformed Page-Table Entry
+summary: A page-table entry is structurally invalid at the reported walk level.
+code: 0x22
+family: ADDRESS_TRANSLATION
+frame: page
+payload: [FAULT_EA, FAULT_LINEAR, ACCESS, USER_DOMAIN, ATOMIC, WALK_LEVEL, OPERAND, ACCESS_SIZE]
+

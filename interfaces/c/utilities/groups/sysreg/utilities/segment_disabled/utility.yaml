@@ -1,0 +1,4 @@
+id: segment_disabled
+owner: base
+kind: object-macro
+body: UINT64_C(0)

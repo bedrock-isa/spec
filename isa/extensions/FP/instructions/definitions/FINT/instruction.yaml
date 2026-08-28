@@ -1,0 +1,18 @@
+mnemonic: FINT
+name: Floating-Point Integral Value
+summary: Performs the floating-point integral value operation.
+route: fpu
+sail_entries:
+- execute_FINT
+privileged: false
+repeat:
+  type: rep
+operands:
+  src:
+    role: source
+    access: read
+    value_type: floating
+  dst:
+    role: destination
+    access: write
+    value_type: floating

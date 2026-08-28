@@ -1,0 +1,12 @@
+mnemonic: FLSHDCACHE
+name: Flush Data Cache
+summary: Write back and invalidate one cache-maintenance block.
+route: cache
+sail_entries:
+- execute_FLSHDCACHE
+privileged: true
+operands:
+  target:
+    role: address
+    access: address
+    value_type: integer

@@ -1,0 +1,7 @@
+id: R_BEDROCK_TLSDESC
+value: 44
+family: tlsdesc
+result:
+  kind: pair
+  width_bits: 128
+calculation: tls_descriptor(symbol)

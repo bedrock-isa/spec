@@ -1,0 +1,20 @@
+\subsection{Event Code and Sources}\label{section:event-code-and-sources}
+Every delivered event carries a 32-bit code. The high byte is the event class and the low 24 bits are an ID in that
+class\textquotesingle{}s namespace.
+
+\BedrockGeneratedEventCodeReference
+
+\BedrockGeneratedArchitecturalEvents
+
+Unassigned base-profile exception IDs are (:term:base.terms.reserved:). External interrupt IDs do not share a namespace with exception
+IDs. Interrupt-controller routing,
+native-ID mapping, ownership, acknowledgement, trigger mode, masking, and end-of-interrupt signaling belong to the
+platform ABI. An interrupt ID unknown to software still reaches the common entry;
+the platform dispatcher applies its unhandled or spurious-interrupt policy.
+
+A restartable fault saves the faulting instruction or its architecturally defined restart point. A trap saves the
+following instruction. An interrupt or NMI saves the next instruction that would otherwise execute. A faulting repeat
+iteration rolls back without decrementing its counter, then saves the repeat-prefix address. After a successful repeat
+iteration, the counter decrement commits before an event may be admitted between iterations; that event also saves
+the repeat-prefix address. Event entry clears hidden repeat state, and ERET executes the saved prefix normally without
+restoring repeat (:term:base.terms.continuation:).

@@ -1,0 +1,7 @@
+id: encoded_instruction_length
+display:
+  canonical: encoded instruction length
+article: the
+definition: >-
+  the required instruction length plus any trailing padding in the encoded
+  record.

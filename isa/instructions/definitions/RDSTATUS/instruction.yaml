@@ -1,0 +1,12 @@
+mnemonic: RDSTATUS
+name: Read Status
+summary: Read the processor STATUS register into an Rn register.
+route: system_registers
+sail_entries:
+- execute_RDSTATUS
+privileged: false
+operands:
+  dst:
+    role: destination
+    access: write
+    value_type: integer

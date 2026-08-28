@@ -1,0 +1,58 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: bedrock://schemas/term
+title: Bedrock terminology entry
+type: object
+additionalProperties: false
+required: [id, display, definition]
+properties:
+  id:
+    $ref: '#/$defs/id'
+  display:
+    type: object
+    additionalProperties: false
+    required: [canonical]
+    properties:
+      canonical: {$ref: '#/$defs/non-empty-string'}
+      plural: {$ref: '#/$defs/non-empty-string'}
+      adjective: {$ref: '#/$defs/non-empty-string'}
+  abbreviation:
+    type: object
+    additionalProperties: false
+    required: [canonical]
+    properties:
+      canonical: {$ref: '#/$defs/non-empty-string'}
+  article:
+    enum: [a, an, the]
+  definition:
+    $ref: '#/$defs/non-empty-string'
+  variants:
+    type: object
+    propertyNames:
+      $ref: '#/$defs/id'
+    additionalProperties:
+      $ref: '#/$defs/non-empty-string'
+  relations:
+    type: object
+    additionalProperties: false
+    properties:
+      broader: {$ref: '#/$defs/reference-list'}
+      related: {$ref: '#/$defs/reference-list'}
+$defs:
+  id:
+    type: string
+    pattern: ^[a-z][a-z0-9_]*$
+  non-empty-string:
+    type: string
+    minLength: 1
+  reference-list:
+    type: array
+    uniqueItems: true
+    items:
+      type: string
+      pattern: ^(?:base|[A-Z][A-Z0-9_]*)\.terms\.[a-z][a-z0-9_]*$
+x-interpretation-rules:
+- The term ID is stable identity and is independent of every display spelling.
+- Display strings are plain text and cannot contain semantic escapes.
+- Definition is SemanticText and may use (:ref:...:) and (:term:...:) escapes.
+- Article is present only when the rendered defining phrase requires one.
+- Requested display forms have no implicit fallback; absent forms are invalid to use.

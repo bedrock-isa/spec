@@ -1,0 +1,6 @@
+id: SIZE_T
+spelling: "size_t"
+call_kind: u64
+size_bits: 64
+alignment_bytes: 8
+representation: unsigned_integer

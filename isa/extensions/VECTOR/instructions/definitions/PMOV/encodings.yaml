@@ -1,0 +1,26 @@
+encodings:
+  ea_e_pn_p:
+    pattern: 1111111100000011000000000000000ppppeeeeeee
+    syntax: PMOV <ea>(e), Pn(p)
+    fields:
+      p:
+        role: dst
+        type: VECTOR.field_types.Pn
+      e:
+        role: src
+        type: base.field_types.EA
+  pn_p_ea_e:
+    pattern: 1111111100000011000000000000001ppppeeeeeee
+    syntax: PMOV Pn(p), <ea>(e)
+    fields:
+      p:
+        role: src
+        type: VECTOR.field_types.Pn
+      e:
+        role: dst
+        type: base.field_types.EA
+    constraints:
+    - role: dst
+      exclude:
+      - immediate
+      reason: invalid_destination

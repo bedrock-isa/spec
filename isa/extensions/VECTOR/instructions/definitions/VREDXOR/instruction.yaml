@@ -1,0 +1,20 @@
+mnemonic: VREDXOR
+name: Vector Bitwise XOR Reduction
+summary: Reduces selected integer lanes with bitwise XOR and writes the scalar result to Rn.
+route: vector
+sail_entries:
+- execute_VREDXOR
+privileged: false
+operands:
+  govern:
+    role: governing_predicate
+    access: read
+    value_type: predicate
+  src:
+    role: source
+    access: read
+    value_type: vector
+  dst:
+    role: destination
+    access: write
+    value_type: integer

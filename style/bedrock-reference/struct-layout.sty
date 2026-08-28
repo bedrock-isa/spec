@@ -1,0 +1,94 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesFile{bedrock-reference/struct-layout.sty}[2026/08/26 Bedrock reference struct-layout commands]
+
+\newif\ifBedrockStructMeasuring
+\newcount\BedrockStructTotalUnits
+\newcount\BedrockStructTotalHeight
+\newcount\BedrockStructRowTopUnits
+\newcount\BedrockStructFieldX
+\newcount\BedrockStructFieldSpan
+\newcount\BedrockStructSeriesIndex
+\newcount\BedrockStructSeriesRemaining
+\newcommand{\BedrockStructWidth}{5.04}
+\newcommand{\BedrockStructFieldBody}[3]{%
+  \BedrockStructFieldSpan=#2\relax
+  \pgfmathsetmacro{\BedrockStructFieldLeft}{\the\BedrockStructFieldX*\BedrockStructSlotWidth}%
+  \pgfmathsetmacro{\BedrockStructFieldRight}{(\the\BedrockStructFieldX+\the\BedrockStructFieldSpan)*\BedrockStructSlotWidth}%
+  \pgfmathsetmacro{\BedrockStructFieldMiddle}{(\the\BedrockStructFieldX+\the\BedrockStructFieldSpan/2)*\BedrockStructSlotWidth}%
+  \path[#1] (\BedrockStructFieldLeft,\BedrockStructYTop) rectangle (\BedrockStructFieldRight,\BedrockStructYBottom);%
+  \node[align=center] at (\BedrockStructFieldMiddle,\BedrockStructYMiddle) {#3};%
+  \advance\BedrockStructFieldX by \BedrockStructFieldSpan}
+\newcommand{\BedrockStructHeaderField}[2]{\BedrockStructFieldBody{manualLayoutHeader}{#1}{#2}}
+\newcommand{\BedrockStructSlotField}[2]{\BedrockStructFieldBody{manualLayoutSlot}{#1}{#2}}
+\newcommand{\BedrockStructOptionalField}[2]{\BedrockStructFieldBody{manualLayoutOptional}{#1}{#2}}
+\newcommand{\BedrockStructReservedField}[2]{\BedrockStructFieldBody{manualLayoutReserved}{#1}{#2}}
+\newcommand{\BedrockStructExtensionField}[2]{\BedrockStructFieldBody{manualLayoutExtension}{#1}{#2}}
+\newcommand{\BedrockStructAnnotationField}[2]{%
+  \BedrockStructFieldSpan=#1\relax
+  \pgfmathsetmacro{\BedrockStructAnnotationX}{(\the\BedrockStructFieldX+0.18)*\BedrockStructSlotWidth}%
+  \node[anchor=west,align=left,text=ManualMuted] at (\BedrockStructAnnotationX,\BedrockStructYMiddle) {#2};%
+  \advance\BedrockStructFieldX by \BedrockStructFieldSpan}
+\newcommand{\BedrockStructSeriesBody}[4]{%
+  \BedrockStructSeriesIndex=#3\relax
+  \BedrockStructSeriesRemaining=#4\relax
+  \def\BedrockStructSeriesField{#1}%
+  \def\BedrockStructSeriesPrefix{#2}%
+  \BedrockStructSeriesNext}
+\newcommand{\BedrockStructSeriesNext}{%
+  \ifnum\BedrockStructSeriesRemaining>0
+    \BedrockStructSeriesField{1}{\texttt{\BedrockStructSeriesPrefix\the\BedrockStructSeriesIndex}}%
+    \advance\BedrockStructSeriesIndex by 1
+    \advance\BedrockStructSeriesRemaining by -1
+    \expandafter\BedrockStructSeriesNext
+  \fi}
+\newcommand{\BedrockStructSlotSeries}[3]{\BedrockStructSeriesBody{\BedrockStructSlotField}{#1}{#2}{#3}}
+\newcommand{\BedrockStructOptionalSeries}[3]{\BedrockStructSeriesBody{\BedrockStructOptionalField}{#1}{#2}{#3}}
+\newcommand{\BedrockStructRowBody}[3]{%
+  \ifBedrockStructMeasuring
+    \advance\BedrockStructTotalHeight by #2\relax
+  \else
+    \pgfmathsetmacro{\BedrockStructYTop}{-\the\BedrockStructRowTopUnits/100}%
+    \pgfmathsetmacro{\BedrockStructYBottom}{-(\the\BedrockStructRowTopUnits+#2)/100}%
+    \pgfmathsetmacro{\BedrockStructYMiddle}{-(\the\BedrockStructRowTopUnits+#2/2)/100}%
+    \node[anchor=east] at (-0.12,\BedrockStructYMiddle) {\texttt{#1}};%
+    \BedrockStructFieldX=0
+    #3%
+    \ifnum\BedrockStructFieldX=\BedrockStructTotalUnits\else
+      \PackageError{bedrock-reference-common}{StructLayout row #1 spans \the\BedrockStructFieldX\space units; expected \the\BedrockStructTotalUnits}{Adjust the field spans in this StructLayout row.}%
+    \fi
+    \advance\BedrockStructRowTopUnits by #2\relax
+  \fi}
+\newcommand{\BedrockStructRow}[2]{\BedrockStructRowBody{#1}{80}{#2}}
+\newcommand{\BedrockStructTallRow}[2]{\BedrockStructRowBody{#1}{104}{#2}}
+\newcommand{\BedrockStructFooter}[2]{%
+  \ifBedrockStructMeasuring\else
+    \pgfmathsetmacro{\BedrockStructFooterY}{-\the\BedrockStructRowTopUnits/100-0.31}%
+    \node[anchor=west,text=ManualMuted] at (0,\BedrockStructFooterY) {#1};%
+    \node[anchor=east,text=ManualMuted] at (\BedrockStructWidth,\BedrockStructFooterY) {#2};%
+  \fi}
+\newcommand{\BedrockRenderStructLayout}[6]{%
+  \begingroup
+  \BedrockStructTotalUnits=#2\relax
+  \BedrockStructTotalHeight=0
+  \BedrockStructMeasuringtrue#5\BedrockStructMeasuringfalse
+  \pgfmathsetmacro{\BedrockStructNeedSpace}{0.95 + 0.004*\the\BedrockStructTotalHeight}%
+  \Needspace{\BedrockStructNeedSpace in}%
+  #6{#1}%
+  \begin{center}%
+  \begin{tikzpicture}[x=1in,y=0.40in,every node/.style={font=\scriptsize}]%
+  \pgfmathsetmacro{\BedrockStructSlotWidth}{\BedrockStructWidth/\the\BedrockStructTotalUnits}%
+  \node[anchor=west,font=\scriptsize\bfseries] at (0,0.34) {#3};%
+  \node[anchor=east,text=ManualMuted] at (\BedrockStructWidth,0.34) {#4};%
+  \BedrockStructRowTopUnits=0
+  #5%
+  \end{tikzpicture}%
+  \end{center}%
+  \endgroup}
+\NewDocumentEnvironment{BedrockStructLayout}{m m m m +b}{%
+  \BedrockRenderStructLayout{#1}{#2}{#3}{#4}{#5}{\BedrockCaption}%
+}{}
+\NewDocumentEnvironment{BedrockListedStructLayout}{m m m m +b}{%
+  \BedrockRenderStructLayout{#1}{#2}{#3}{#4}{#5}{\BedrockTableCaption}%
+}{}
+
+\endinput

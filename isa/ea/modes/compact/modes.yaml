@@ -1,0 +1,9 @@
+modes:
+  - register
+  - stack_pointer_displaced
+  - program_counter_displaced
+  - stack_pointer_indirect
+  - absolute
+  - immediate
+  - ext1
+  - ext2

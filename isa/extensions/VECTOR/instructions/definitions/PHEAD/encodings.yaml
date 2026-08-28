@@ -1,0 +1,14 @@
+encodings:
+  b_w_l_q_z_rn_r_pn_p:
+    pattern: 11111010010100zz00rrrrpppp
+    syntax: PHEAD.{B|W|L|Q}(z) Rn(r), Pn(p)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      r:
+        role: count
+        type: base.field_types.Rn
+      p:
+        role: dst
+        type: VECTOR.field_types.Pn

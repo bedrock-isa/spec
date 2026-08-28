@@ -1,0 +1,52 @@
+mnemonic: VGATHER1
+name: One-Lane Vector Gather Step
+summary: Conditionally gather one vector lane and advance its lane cursor.
+route: vector
+sail_entries:
+- execute_VGATHER1
+privileged: false
+assembly:
+  width_suffix_aliases: true
+repeat:
+  type: rep
+operands:
+  govern:
+    role: governing_predicate
+    access: read
+    value_type: predicate
+  base:
+    role: source
+    access: read
+    value_type: integer
+  cursor:
+    role: counter
+    access: read_write
+    value_type: integer
+  stride:
+    role: source
+    access: read
+    value_type: integer
+  dst:
+    role: destination
+    access: read_write
+    value_type: vector
+  address:
+    role: source
+    access: read
+    value_type: vector
+  disp8s:
+    role: source
+    access: read
+    value_type: integer
+  disp16s:
+    role: source
+    access: read
+    value_type: integer
+  disp32s:
+    role: source
+    access: read
+    value_type: integer
+  disp64:
+    role: source
+    access: read
+    value_type: integer

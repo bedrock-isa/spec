@@ -1,0 +1,5 @@
+id: VECTOR
+width: VLEN
+summary: Scalable vector data registers.
+reset: 0
+series: {prefix: V, count: 32}

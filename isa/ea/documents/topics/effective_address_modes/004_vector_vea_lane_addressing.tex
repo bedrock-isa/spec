@@ -1,0 +1,7 @@
+\subsubsection{Vector VEA Lane Addressing}
+For an (:term:base.terms.ordinary:) compact or EXT VEA memory form, address calculation first produces one scalar anchor using the
+shared base, scalar Rn index, scale, displacement, segment, and auto-update grammar. If $E$ is the vector element
+size in bytes, lane $n$ accesses \(\mathrm{anchor} + nE\). Separate vector instructions define scatter/gather addressing outside the
+VEA descriptor forms.
+
+\clearpage

@@ -1,0 +1,12 @@
+mnemonic: WRFFLAGS
+name: Write Floating-Point Flags
+summary: Write the accrued floating-point exception flags from an Rn register.
+route: system_registers
+sail_entries:
+- execute_WRFFLAGS
+privileged: false
+operands:
+  src:
+    role: source
+    access: read
+    value_type: integer

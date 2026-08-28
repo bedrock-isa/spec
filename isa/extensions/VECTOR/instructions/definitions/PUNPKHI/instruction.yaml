@@ -1,0 +1,18 @@
+mnemonic: PUNPKHI
+name: Predicate Unpack from Upper Half
+summary: Unpacks the upper half of source predicate positions into wider destination positions.
+route: vector
+sail_entries:
+- execute_PUNPKHI
+privileged: false
+assembly:
+  width_suffix_aliases: true
+operands:
+  src:
+    role: source
+    access: read
+    value_type: predicate
+  dst:
+    role: destination
+    access: read_write
+    value_type: predicate

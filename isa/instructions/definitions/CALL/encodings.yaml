@@ -1,0 +1,32 @@
+encodings:
+  imm16s:
+    pattern: '111011110000000010'
+    syntax: CALL <imm16s>
+    payloads:
+    - role: target
+      type: base.payload_types.DISP16S
+  imm32s:
+    pattern: '111011110000000011'
+    syntax: CALL <imm32s>
+    payloads:
+    - role: target
+      type: base.payload_types.DISP32S
+  ea_e:
+    pattern: 11101000010eeeeeee
+    syntax: CALL <ea>(e)
+    fields:
+      e:
+        role: target
+        type: base.field_types.EA
+    constraints:
+    - role: target
+      exclude:
+      - immediate
+      reason: canonical_form_reclaim
+  rn_r:
+    pattern: 11101101000010rrrr
+    syntax: CALL Rn(r)
+    fields:
+      r:
+        role: target
+        type: base.field_types.Rn

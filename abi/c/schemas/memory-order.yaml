@@ -1,0 +1,21 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: bedrock://schemas/c-memory-order
+title: Bedrock C atomic memory-order mapping
+type: object
+additionalProperties: false
+required: [id, instruction_order, thread_fence]
+properties:
+  id: {type: string, pattern: '^[A-Z][A-Z0-9_]*$'}
+  instruction_order:
+    enum: [relaxed, acquire, release, acqrel, seqcst]
+  load: {$ref: '#/$defs/sequence'}
+  store: {$ref: '#/$defs/sequence'}
+  thread_fence: {$ref: '#/$defs/sequence'}
+$defs:
+  sequence:
+    type: array
+    items:
+      oneOf:
+      - const: access
+      - type: string
+        pattern: '^isa:(?:base|[A-Z][A-Z0-9_]*)\.instructions\.[A-Z][A-Z0-9_]*$'

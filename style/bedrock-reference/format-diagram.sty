@@ -1,0 +1,204 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesFile{bedrock-reference/format-diagram.sty}[2026/08/26 Bedrock reference format-diagram commands]
+
+\newif\ifBedrockFormatDiagramMeasuring
+\newif\ifBedrockFormatRowMeasuring
+\newcount\BedrockFormatDiagramRows
+\newcount\BedrockFormatDiagramMaxBits
+\newcount\BedrockFormatRowBits
+\newcount\BedrockFormatRowIndex
+\newcount\BedrockFormatFieldBits
+\newcount\BedrockFormatFieldX
+\newcount\BedrockFormatFieldHigh
+\newcount\BedrockFormatRowLow
+\newcount\BedrockFormatLastFieldBits
+\newcount\BedrockFormatRowExpectedBits
+\newbox\BedrockFormatLabelBox
+\newbox\BedrockFormatRowLabelBox
+\newdimen\BedrockFormatLabelCenter
+\newdimen\BedrockFormatLabelLeft
+\newdimen\BedrockFormatLabelRight
+\newdimen\BedrockFormatLaneOneRight
+\newdimen\BedrockFormatLaneTwoRight
+\newdimen\BedrockFormatFieldAvailable
+\newdimen\BedrockFormatDiagramCellWidth
+\newdimen\BedrockFormatDiagramLeftOverhang
+\newdimen\BedrockFormatDiagramRightEdge
+\newdimen\BedrockFormatDiagramWidth
+\newdimen\BedrockFormatRowFieldWidth
+\newdimen\BedrockFormatRowLabelWidth
+\BedrockFormatDiagramCellWidth=.087in
+\newcommand{\BedrockFormatPositionFont}{%
+  \usefont{T1}{phv}{m}{n}\fontsize{7}{8}\selectfont}
+\newcommand{\BedrockFormatBitPositionFont}{%
+  \usefont{T1}{phv}{c}{n}\fontsize{5.8}{6.8}\selectfont}
+\newcommand{\BedrockFormatFieldFont}{%
+  \usefont{T1}{pcr}{m}{n}\fontsize{7}{8}\selectfont}
+\newcommand{\BedrockFormatBitPositionLabel}[3]{%
+  \setbox\BedrockFormatLabelBox=\hbox{%
+    \pgfinterruptpicture
+    \BedrockFormatBitPositionFont #1%
+    \endpgfinterruptpicture}%
+  \pgfmathsetlength{\BedrockFormatLabelCenter}{(#2)*\BedrockFormatDiagramCellWidth}%
+  \BedrockFormatLabelLeft=\BedrockFormatLabelCenter
+  \advance\BedrockFormatLabelLeft by -.5\wd\BedrockFormatLabelBox
+  \BedrockFormatLabelRight=\BedrockFormatLabelCenter
+  \advance\BedrockFormatLabelRight by .5\wd\BedrockFormatLabelBox
+  \ifdim\BedrockFormatLabelLeft>\dimexpr\BedrockFormatLaneOneRight+.9pt\relax
+    \node[anchor=south,font=\BedrockFormatBitPositionFont,inner sep=0pt] at ({#2},{#3}) {#1};
+    \BedrockFormatLaneOneRight=\BedrockFormatLabelRight
+  \else
+    \ifdim\BedrockFormatLabelLeft>\dimexpr\BedrockFormatLaneTwoRight+.9pt\relax
+      \node[anchor=south,font=\BedrockFormatBitPositionFont,inner sep=0pt] at ({#2},{#3 + 0.52}) {#1};
+      \BedrockFormatLaneTwoRight=\BedrockFormatLabelRight
+    \else
+      \PackageError{bedrock-reference}{Bit-position labels collide at bit #1}
+        {Use a wider semantic interval or fewer explicit labels; label text is never shrunk.}%
+    \fi
+  \fi}
+\newcommand{\BedrockFormatFieldStyled}[3]{%
+  \BedrockFormatFieldBits=#2\relax
+  \ifnum\BedrockFormatFieldBits<1
+    \PackageError{bedrock-reference}{Bit-field width must be positive}
+      {Field `#1' has width #2.}%
+  \fi
+  \ifBedrockFormatRowMeasuring
+    \advance\BedrockFormatRowBits by \BedrockFormatFieldBits
+  \else
+    \ifnum\BedrockFormatFieldBits=1
+      \BedrockFormatBitPositionLabel{\the\BedrockFormatFieldHigh}
+        {\the\BedrockFormatFieldX + 0.5}{\BedrockFormatRowY + 1.18}
+    \else
+      \ifnum\BedrockFormatFieldHigh>\BedrockFormatRowLow
+        \BedrockFormatBitPositionLabel{\the\BedrockFormatFieldHigh}
+          {\the\BedrockFormatFieldX + 0.5}{\BedrockFormatRowY + 1.18}
+      \fi
+    \fi
+    \path[#3] ({\the\BedrockFormatFieldX},{\BedrockFormatRowY}) rectangle
+      ({\the\numexpr\BedrockFormatFieldX+\BedrockFormatFieldBits\relax},{\BedrockFormatRowY + 1});
+    \setbox\BedrockFormatLabelBox=\hbox{%
+      \pgfinterruptpicture
+      \BedrockFormatFieldFont #1%
+      \endpgfinterruptpicture}%
+    \BedrockFormatFieldAvailable=\BedrockFormatDiagramCellWidth
+    \multiply\BedrockFormatFieldAvailable by \BedrockFormatFieldBits
+    \ifdim\wd\BedrockFormatLabelBox>\BedrockFormatFieldAvailable
+      \PackageError{bedrock-reference}{Bit-field label `#1' does not fit its #2-bit field}
+        {Use an explicit short display label and expand it in the adjacent prose or field table.}%
+    \fi
+    \node[font=\BedrockFormatFieldFont,inner sep=0pt]
+      at ({\the\BedrockFormatFieldX + \the\BedrockFormatFieldBits/2},{\BedrockFormatRowY + 0.5}) {#1};
+    \BedrockFormatLastFieldBits=\BedrockFormatFieldBits
+    \advance\BedrockFormatFieldX by \BedrockFormatFieldBits
+    \advance\BedrockFormatFieldHigh by -\BedrockFormatFieldBits
+  \fi}
+\newcommand{\BedrockFormatField}[2]{%
+  \BedrockFormatFieldStyled{#1}{#2}{draw=RuleGray,fill=ManualVariableFill,line width=0.35pt}}
+\newcommand{\BedrockFormatFieldCode}[2]{\BedrockFormatField{#1}{#2}}
+\newcommand{\BedrockFormatFixed}[2]{%
+  \BedrockFormatFieldStyled{#1}{#2}{draw=RuleGray,fill=ManualFixedFill,line width=0.60pt}}
+\newcommand{\BedrockFormatReserved}[2]{%
+  \BedrockFormatFieldStyled{#1}{#2}{draw=RuleGray,fill=ManualReservedFill,densely dashed,line width=0.35pt}}
+\newcommand{\BedrockFormatAnnotationBelow}[2]{%
+  \ifBedrockFormatRowMeasuring\else
+    \node[anchor=north,font=\BedrockFormatPositionFont] at (#1,{\BedrockFormatRowY - 0.16}) {#2};
+  \fi}
+\newcommand{\BedrockFormatRowRange}[4]{%
+  \BedrockFormatRowBits=0
+  \BedrockFormatRowMeasuringtrue#4\BedrockFormatRowMeasuringfalse
+  \BedrockFormatRowExpectedBits=#2\relax
+  \advance\BedrockFormatRowExpectedBits by -#3\relax
+  \advance\BedrockFormatRowExpectedBits by 1
+  \ifnum\BedrockFormatRowBits=\BedrockFormatRowExpectedBits\else
+    \PackageError{bedrock-reference}
+      {Bit-field row `#1' has \the\BedrockFormatRowBits\space bits; expected \the\BedrockFormatRowExpectedBits}
+      {Make the field widths sum to high-low+1.}%
+  \fi
+  \ifBedrockFormatDiagramMeasuring
+    \advance\BedrockFormatDiagramRows by 1
+    \ifnum\BedrockFormatRowBits>\BedrockFormatDiagramMaxBits
+      \BedrockFormatDiagramMaxBits=\BedrockFormatRowBits
+    \fi
+    \setbox\BedrockFormatRowLabelBox=\hbox{\BedrockFormatPositionFont #1}%
+    \BedrockFormatRowLabelWidth=\wd\BedrockFormatRowLabelBox
+    \BedrockFormatRowFieldWidth=\BedrockFormatDiagramCellWidth
+    \multiply\BedrockFormatRowFieldWidth by \BedrockFormatRowBits
+    \BedrockFormatLabelLeft=\BedrockFormatRowFieldWidth
+    \advance\BedrockFormatLabelLeft by -\BedrockFormatRowLabelWidth
+    \divide\BedrockFormatLabelLeft by 2
+    \ifdim\BedrockFormatLabelLeft<0pt
+      \multiply\BedrockFormatLabelLeft by -1
+      \ifdim\BedrockFormatLabelLeft>\BedrockFormatDiagramLeftOverhang
+        \BedrockFormatDiagramLeftOverhang=\BedrockFormatLabelLeft
+      \fi
+    \fi
+    \BedrockFormatLabelRight=\BedrockFormatRowFieldWidth
+    \advance\BedrockFormatLabelRight by \BedrockFormatRowLabelWidth
+    \divide\BedrockFormatLabelRight by 2
+    \ifdim\BedrockFormatRowFieldWidth>\BedrockFormatLabelRight
+      \BedrockFormatLabelRight=\BedrockFormatRowFieldWidth
+    \fi
+    \ifdim\BedrockFormatLabelRight>\BedrockFormatDiagramRightEdge
+      \BedrockFormatDiagramRightEdge=\BedrockFormatLabelRight
+    \fi
+  \else
+    \pgfmathsetmacro{\BedrockFormatRowY}{-3.10*\the\BedrockFormatRowIndex}
+    \node[anchor=north,font=\BedrockFormatPositionFont]
+      at ({\the\BedrockFormatRowBits/2},{\BedrockFormatRowY - 0.16}) {#1};
+    \BedrockFormatFieldX=0
+    \BedrockFormatRowLow=#3\relax
+    \BedrockFormatFieldHigh=#2\relax
+    \BedrockFormatLastFieldBits=0
+    \BedrockFormatLaneOneRight=-1000pt
+    \BedrockFormatLaneTwoRight=-1000pt
+    #4
+    \ifnum\BedrockFormatLastFieldBits=1\else
+      \BedrockFormatBitPositionLabel{#3}
+        {\the\BedrockFormatFieldX - 0.5}{\BedrockFormatRowY + 1.18}
+    \fi
+    \advance\BedrockFormatRowIndex by 1
+  \fi}
+\newcommand{\BedrockFormatRow}[2]{%
+  \BedrockFormatRowBits=0
+  \BedrockFormatRowMeasuringtrue#2\BedrockFormatRowMeasuringfalse
+  \BedrockFormatRowRange{#1}{\number\numexpr\BedrockFormatRowBits-1\relax}{0}{#2}}
+\newcommand{\BedrockRenderFormatDiagram}[3]{%
+  \begingroup
+  \BedrockFormatDiagramRows=0
+  \BedrockFormatDiagramMaxBits=0
+  \BedrockFormatDiagramLeftOverhang=0pt
+  \BedrockFormatDiagramRightEdge=0pt
+  \BedrockFormatDiagramMeasuringtrue#2\BedrockFormatDiagramMeasuringfalse
+  \ifnum\BedrockFormatDiagramMaxBits<1
+    \PackageError{bedrock-reference}{Bit-field diagram `#1' has no fields}
+      {Add a nonempty format row.}%
+  \fi
+  \pgfmathsetmacro{\BedrockFormatDiagramNeedSpace}{0.90 + 0.68*\the\BedrockFormatDiagramRows}
+  \BedrockFormatDiagramWidth=\BedrockFormatDiagramLeftOverhang
+  \advance\BedrockFormatDiagramWidth by \BedrockFormatDiagramRightEdge
+  \advance\BedrockFormatDiagramWidth by .02in
+  \ifdim\BedrockFormatDiagramWidth>\linewidth
+    \PackageError{bedrock-reference}{Bit-field diagram `#1' exceeds the available line width}
+      {Shorten the row label or split the diagram; bit cells are never scaled.}%
+  \fi
+  \Needspace{\BedrockFormatDiagramNeedSpace in}%
+  \begin{center}\vspace{3pt}%
+  \begin{tikzpicture}[x=\BedrockFormatDiagramCellWidth,y=0.22in,every node/.style={font=\scriptsize}]%
+  \BedrockFormatRowIndex=0
+  #2
+  \end{tikzpicture}%
+  #3{#1}%
+  \end{center}%
+  \endgroup}
+\NewDocumentEnvironment{BedrockFormatDiagram}{m +b}{%
+  \BedrockRenderFormatDiagram{#1}{#2}{\BedrockCaption}%
+}{}
+\NewDocumentEnvironment{BedrockListedFormatDiagram}{m o +b}{%
+  \IfValueTF{#2}{%
+    \BedrockRenderFormatDiagram{#1}{#3}{\BedrockFigureCaptionAndLabel{#2}}%
+  }{%
+    \BedrockRenderFormatDiagram{#1}{#3}{\BedrockFigureCaption}%
+  }%
+}{}
+
+\endinput

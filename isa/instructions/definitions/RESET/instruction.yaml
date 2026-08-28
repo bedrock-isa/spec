@@ -1,0 +1,8 @@
+mnemonic: RESET
+name: Reset
+summary: Perform warm reset; preserve BOOTPC and BOOTCFG.
+route: core_control
+sail_entries:
+- execute_RESET
+privileged: true
+operands: {}

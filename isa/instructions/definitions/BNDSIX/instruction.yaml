@@ -1,0 +1,23 @@
+mnemonic: BNDSIX
+name: Signed Bounds Check Inclusive-Exclusive
+summary: Checks signed value membership in the inclusive-exclusive interval [lo, hi).
+route: bounds
+sail_entries:
+- execute_BNDSIX
+privileged: false
+repeat:
+  type: repcc
+  observed_value: computed
+operands:
+  lo:
+    role: source
+    access: read
+    value_type: integer
+  value:
+    role: source
+    access: read
+    value_type: integer
+  hi:
+    role: source
+    access: read
+    value_type: integer

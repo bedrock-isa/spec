@@ -1,0 +1,17 @@
+id: write_segment_register
+owner: base
+description: >-
+  Unprivileged; validates the SREG image, changes address interpretation, and fully clobbers memory.
+signature:
+  result: void
+  parameters:
+  - id: selector
+    type: base.types.sysreg.segment_register
+    constant: true
+  - id: image
+    type: u64
+lowering:
+  operation: isa:base.instructions.WRSEG
+  kind: direct
+wrapper:
+  kind: macro

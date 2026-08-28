@@ -1,0 +1,12 @@
+mnemonic: WRFLAGS
+name: Write Flags
+summary: Write the integer condition-code flags from an Rn register.
+route: system_registers
+sail_entries:
+- execute_WRFLAGS
+privileged: false
+operands:
+  src:
+    role: source
+    access: read
+    value_type: integer

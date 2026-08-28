@@ -1,0 +1,10 @@
+id: systemverilog-event-codec
+generator: generator.py
+inputs:
+- isa
+depends-on:
+- systemverilog-package
+outputs:
+- rtl/bedrock_event_pkg.sv
+- rtl/bedrock_event_codec.sv
+- rtl/bedrock_event_frame.sv

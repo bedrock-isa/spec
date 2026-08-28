@@ -1,0 +1,8 @@
+mnemonic: BKPT
+name: Breakpoint
+summary: Raise the breakpoint exception.
+route: core_control
+sail_entries:
+- execute_BKPT
+privileged: false
+operands: {}

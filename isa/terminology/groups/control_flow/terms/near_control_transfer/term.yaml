@@ -1,0 +1,8 @@
+id: near_control_transfer
+display:
+  canonical: near control transfer
+  plural: near control transfers
+article: a
+definition: >-
+  a CALL, RET, JMP, or conditional branch that changes only PC within the
+  current code-segment context.

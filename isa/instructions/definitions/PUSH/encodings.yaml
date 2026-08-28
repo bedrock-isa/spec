@@ -1,0 +1,18 @@
+encodings:
+  cs:
+    pattern: '0001101'
+    syntax: PUSH CS
+  rn_r:
+    pattern: 011rrrr
+    syntax: PUSH Rn(r)
+    fields:
+      r:
+        role: reg
+        type: base.field_types.Rn
+  sreg_s:
+    pattern: 10111000001sss
+    syntax: PUSH SREG(s)
+    fields:
+      s:
+        role: reg
+        type: base.field_types.SREG

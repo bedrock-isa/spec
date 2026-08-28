@@ -1,0 +1,8 @@
+\subsection{Address-Width Discovery}
+Class \texttt{0x00000002}, leaf \texttt{0x0003} is
+\texttt{ADDRESS\_WIDTHS}. Index zero reports \texttt{MAX\_INDEX=1}. At index
+one, bits \texttt{5..0} contain the exact implementation \texttt{PABITS}
+value in the inclusive range 32 through 56; bits \texttt{63..6} are zero.
+PABITS is stable until reset and applies to page-table roots, every present PTE
+PFN, translated results, and paging-disabled (:term:base.terms.physical_address|plural:). Separate
+selectors determine page-table geometry and TLB identity.

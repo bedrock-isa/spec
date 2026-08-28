@@ -1,0 +1,6 @@
+id: systemverilog-package
+generator: generator.py
+inputs:
+- isa
+outputs:
+- rtl/bedrock_decode_pkg.sv

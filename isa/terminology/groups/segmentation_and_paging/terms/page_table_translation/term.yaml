@@ -1,0 +1,7 @@
+id: page_table_translation
+display:
+  canonical: page-table translation
+definition: >-
+  the optional PTCR.PE-controlled stage that maps a canonical linear address to
+  a physical frame and applies effective permissions, access class, cache
+  policy, and A/D state. Bit 7 is A in both descriptor layouts.

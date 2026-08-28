@@ -1,0 +1,7 @@
+id: register_image
+display:
+  canonical: register image
+  plural: register images
+article: a
+definition: >-
+  the complete bit representation read from or written to one register.

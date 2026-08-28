@@ -1,0 +1,6 @@
+id: FUNCTION_POINTER
+spelling: "ordinary function pointer"
+call_kind: function_pointer
+size_bits: 64
+alignment_bytes: 8
+representation: near_call_entry

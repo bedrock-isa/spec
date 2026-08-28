@@ -1,0 +1,16 @@
+encodings:
+  ea_e:
+    pattern: 11101001110eeeeeee
+    syntax: SAVE <ea>(e)
+    fields:
+      e:
+        role: memory
+        type: base.field_types.EA
+  rn_r:
+    pattern: 11101101001110rrrr
+    syntax: SAVE Rn(r)
+    fields:
+      r:
+        role: memory
+        type: base.field_types.Rn
+        access: read

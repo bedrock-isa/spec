@@ -1,0 +1,18 @@
+mnemonic: FTWOTOXA
+name: Approximate Floating-Point 2 To x
+summary: Performs the approximate floating-point 2 to x operation.
+route: fpu_transcendental_approx
+sail_entries:
+- execute_FTWOTOXA
+privileged: false
+repeat:
+  type: rep
+operands:
+  src:
+    role: source
+    access: read
+    value_type: floating
+  dst:
+    role: destination
+    access: write
+    value_type: floating

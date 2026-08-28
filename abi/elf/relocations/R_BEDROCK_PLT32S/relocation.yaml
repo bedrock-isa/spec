@@ -1,0 +1,11 @@
+id: R_BEDROCK_PLT32S
+value: 32
+family: plt
+result:
+  kind: integer
+  width_bits: 32
+  signed: true
+calculation: plt(symbol) + addend - next_pc
+field: isa:base.payload_types.DISP32S
+relaxations:
+- base.relocations.R_BEDROCK_PLT16S

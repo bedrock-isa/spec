@@ -1,0 +1,162 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: bedrock://schemas/ea-mode-compact
+title: Bedrock compact effective-address mode
+type: object
+additionalProperties: false
+required: [id, name, kind, encodings]
+properties:
+  id:
+    type: string
+    pattern: ^[a-z][a-z0-9_]*$
+  name:
+    type: string
+    minLength: 1
+  kind:
+    enum: [immediate, memory, extension]
+  extension:
+    $ref: '#/$defs/extension'
+  encodings:
+    type: array
+    minItems: 1
+    items:
+      $ref: '#/$defs/encoding'
+  syntax:
+    type: string
+    minLength: 1
+  fields:
+    $ref: '#/$defs/fields'
+  segment:
+    $ref: '#/$defs/segment'
+  pseudocode:
+    type: string
+    minLength: 1
+    x-ebnf: |
+      pseudocode = result, "=", expression ;
+      result = "offset" | "value" ;
+      expression = term, {("+" | "-"), term} ;
+      term = factor, {"*", factor} ;
+      factor = INTEGER | IDENTIFIER | "-", factor | "(", expression, ")" ;
+    x-lexer:
+      IDENTIFIER: '[a-z][a-z0-9_]*|[A-Z][A-Z0-9_]*'
+      INTEGER: '0|[1-9][0-9]*'
+      WHITESPACE: '\s+'
+allOf:
+  - if:
+      properties:
+        kind: {const: extension}
+      required: [kind]
+    then:
+      required: [extension]
+      allOf:
+        - not:
+            required: [syntax]
+        - not:
+            required: [pseudocode]
+    else:
+      required: [syntax, pseudocode]
+      not:
+        required: [extension]
+$defs:
+  encoding:
+    type: object
+    additionalProperties: false
+    required: [pattern]
+    properties:
+      pattern:
+        type: string
+        pattern: ^[01a-z]+$
+        x-width-from: active_ea_profile_field_type.bits
+      payloads:
+        type: array
+        minItems: 1
+        items:
+          $ref: '#/$defs/payload'
+      autoupdate:
+        $ref: '#/$defs/autoupdate'
+  extension:
+    type: object
+    additionalProperties: false
+    required: [id, bytes]
+    properties:
+      id:
+        type: string
+        pattern: ^[A-Z][A-Z0-9_]*$
+      bytes:
+        type: integer
+        minimum: 1
+  fields:
+    type: object
+    minProperties: 1
+    propertyNames:
+      pattern: ^[a-z]$
+    additionalProperties:
+      type: object
+      additionalProperties: false
+      required: [role, type]
+      properties:
+        role:
+          enum: [base, index, segment]
+        type:
+          type: string
+          pattern: '^(base|[A-Z][A-Z0-9_]*)(\.[A-Za-z][A-Za-z0-9_]*)+$'
+  payload:
+    type: object
+    additionalProperties: false
+    required: [role, type]
+    properties:
+      role:
+        enum: [displacement, absolute, immediate]
+      type:
+        type: string
+        pattern: '^(base|[A-Z][A-Z0-9_]*)(\.[A-Za-z][A-Za-z0-9_]*)+$'
+  autoupdate:
+    type: object
+    additionalProperties: false
+    required: [target, type, difference]
+    properties:
+      target:
+        enum: [base, index]
+      type:
+        enum: [predecrement, postincrement]
+      difference:
+        oneOf:
+          - type: integer
+            minimum: 1
+          - type: string
+            minLength: 1
+  segment:
+    oneOf:
+      - type: object
+        additionalProperties: false
+        required: [source, register]
+        properties:
+          source: {const: fixed}
+          register:
+            type: string
+            minLength: 1
+      - type: object
+        additionalProperties: false
+        required: [source, role]
+        properties:
+          source: {const: field}
+          role: {const: segment}
+x-interpretation-rules:
+  - The containing compact/modes.yaml is a closed-world catalog; unlisted encodings are reserved.
+  - Each encodings entry is one wire encoding variant of the same semantic mode; listing the mode in a catalog activates all of its variants.
+  - Each encoding pattern is one compact selector, written most-significant bit first.
+  - Each encoding pattern length must equal the bits value of the effective-address field type for the active EA profile.
+  - Each lowercase pattern character denotes the field with the same key; constants are 0 or 1.
+  - Every encoding variant has the same pattern-field set; every pattern character has exactly one fields entry, and every fields entry occurs in every pattern.
+  - In every encoding pattern, the number of occurrences of each pattern character must equal the bits value of its resolved field type.
+  - Field roles are unique within a mode, and payload roles are unique within each encoding variant.
+  - Field and payload type values are fully qualified logical references resolved through the common reference index.
+  - An encoding variant's payloads are consumed in array order after the compact selector and, for extension modes, after the extension descriptor.
+  - Pseudocode may reference the union of payload roles declared by the mode's encoding variants; an absent displacement role has the implicit value zero.
+  - An extension mode resolves extension.id in the active profile's modes directory, falling back to isa/ea/modes, consumes extension.bytes descriptor bytes, decodes them there, and then consumes payloads.
+  - Omitting segment selects the consuming operation's implicit default segment.
+  - A field-sourced segment role resolves to the unique field with that role.
+  - autoupdate type predecrement subtracts the positive difference before evaluation; postincrement adds it after evaluation.
+  - autoupdate target resolves to the unique field with the named role.
+  - pseudocode may use field roles, payload roles, scale, and explicit architectural register names as identifiers.
+  - memory modes assign one expression to offset; immediate modes assign one expression to value; compact extension modes declare neither syntax nor pseudocode.
+  - The active catalog location selects the EA profile; profile identity is not repeated in the mode.

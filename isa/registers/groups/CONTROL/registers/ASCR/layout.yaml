@@ -1,0 +1,4 @@
+bits: 64
+fields:
+- {id: ASID, lsb: 16, bits: 16, summary: Current address-space identifier.}
+- {id: AE, lsb: 0, bits: 1, summary: Address-space identifier matching enable.}

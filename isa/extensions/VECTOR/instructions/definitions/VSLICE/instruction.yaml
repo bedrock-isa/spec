@@ -1,0 +1,26 @@
+mnemonic: VSLICE
+name: Vector Slice
+summary: Extract a lane window from the old destination followed by a source vector.
+route: vector
+sail_entries:
+- execute_VSLICE
+privileged: false
+assembly:
+  width_suffix_aliases: true
+operands:
+  govern:
+    role: governing_predicate
+    access: read
+    value_type: predicate
+  src:
+    role: source
+    access: read
+    value_type: vector
+  count:
+    role: count
+    access: read
+    value_type: integer
+  dst:
+    role: destination
+    access: read_write
+    value_type: vector

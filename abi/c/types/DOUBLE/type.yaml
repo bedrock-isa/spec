@@ -1,0 +1,6 @@
+id: DOUBLE
+spelling: "double"
+call_kind: f64
+size_bits: 64
+alignment_bytes: 8
+representation: binary64

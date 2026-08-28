@@ -1,0 +1,12 @@
+mnemonic: SWPT
+name: Switch Page Table
+summary: Performs the switch page table operation.
+route: tlb_and_context
+sail_entries:
+- execute_SWPT
+privileged: true
+operands:
+  new_ptcr:
+    role: source
+    access: read
+    value_type: integer

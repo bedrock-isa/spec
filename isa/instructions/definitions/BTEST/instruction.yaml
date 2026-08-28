@@ -1,0 +1,19 @@
+mnemonic: BTEST
+name: Bit Test
+summary: Performs the bit test operation.
+route: integer_bitfield
+sail_entries:
+- execute_BTEST
+privileged: false
+repeat:
+  type: repcc
+  observed_value: computed
+operands:
+  bit_index:
+    role: source
+    access: read
+    value_type: integer
+  dst:
+    role: source
+    access: read
+    value_type: integer

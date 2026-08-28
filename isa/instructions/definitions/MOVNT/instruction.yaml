@@ -1,0 +1,19 @@
+mnemonic: MOVNT
+name: Move Non-Temporal
+summary: Stores an Rn register value to memory with a non-temporal access hint.
+route: cache
+sail_entries:
+- execute_MOVNT
+privileged: false
+repeat:
+  type: repcc
+  observed_value: src
+operands:
+  src:
+    role: source
+    access: read
+    value_type: integer
+  dst:
+    role: destination
+    access: write
+    value_type: integer

@@ -1,5 +1,0 @@
-forms:
-- id: extrashort.illegal
-  class: extrashort
-  bits: '0000000'
-  syntax: ILLEGAL

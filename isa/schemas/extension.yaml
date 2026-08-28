@@ -1,0 +1,32 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: bedrock://schemas/extension
+title: Bedrock ISA extension
+type: object
+additionalProperties: false
+required: [id, name]
+properties:
+  id:
+    type: string
+    pattern: ^[A-Z][A-Z0-9_]*$
+  name:
+    type: string
+    minLength: 1
+  requires:
+    type: array
+    uniqueItems: true
+    items:
+      type: string
+      pattern: ^[A-Z][A-Z0-9_]*$
+  required_cpuid_flags:
+    type: array
+    minItems: 1
+    uniqueItems: true
+    items:
+      type: string
+      pattern: '^(?:base|[A-Z][A-Z0-9_]*)\.cpuid\.[A-Z][A-Z0-9_]*\.[A-Z][A-Z0-9_]*\.[A-Z][A-Z0-9_]*\.[A-Z][A-Z0-9_]*$'
+x-interpretation-rules:
+  - The extension directory name must equal id.
+  - requires lists extension IDs that must also be implemented.
+  - required_cpuid_flags lists this extension's local one-bit CPUID field requirements; requirements from required extensions are inherited.
+  - The instructions directory and its instructions.yaml file are fixed companions and are not declared here.
+  - model.yaml is the fixed manifest for shared Sail semantics and TeX documents owned by this extension.

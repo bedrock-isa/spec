@@ -1,0 +1,72 @@
+encodings:
+  b_w_l_q_z_ea_s_ea_d:
+    pattern: 1111000110zzsssssssddddddd
+    syntax: MOVUC.{B|W|L|Q}(z) <ea>(s), <ea>(d)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      s:
+        role: src
+        type: base.field_types.EA
+      d:
+        role: dst
+        type: base.field_types.EA
+    constraints:
+    - role: src
+      exclude:
+      - immediate
+      reason: user_source_memory_required
+    - role: dst
+      exclude:
+      - immediate
+      reason: invalid_destination
+  b_w_l_q_z_rn_s_rn_d:
+    pattern: 10010zz001ssssdddd
+    syntax: MOVUC.{B|W|L|Q}(z) Rn(s), Rn(d)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      s:
+        role: src
+        type: base.field_types.Rn
+      d:
+        role: dst
+        type: base.field_types.Rn
+  b_w_l_q_z_rn_s_ea_d:
+    pattern: 1111001110zz001ssssddddddd
+    syntax: MOVUC.{B|W|L|Q}(z) Rn(s), <ea>(d)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      s:
+        role: src
+        type: base.field_types.Rn
+      d:
+        role: dst
+        type: base.field_types.EA
+    constraints:
+    - role: dst
+      exclude:
+      - immediate
+      reason: invalid_destination
+  b_w_l_q_z_ea_s_rn_d:
+    pattern: 1111001010zz001ddddsssssss
+    syntax: MOVUC.{B|W|L|Q}(z) <ea>(s), Rn(d)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      d:
+        role: dst
+        type: base.field_types.Rn
+      s:
+        role: src
+        type: base.field_types.EA
+    constraints:
+    - role: src
+      exclude:
+      - immediate
+      reason: user_source_memory_required

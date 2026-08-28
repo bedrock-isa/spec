@@ -1,0 +1,8 @@
+id: MULSC3
+symbol: __mulsc3
+result: base.types.COMPLEX_FLOAT
+parameters:
+- base.types.FLOAT
+- base.types.FLOAT
+- base.types.FLOAT
+- base.types.FLOAT

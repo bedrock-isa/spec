@@ -1,0 +1,18 @@
+mnemonic: FINTRZ
+name: Floating-Point Integral Toward Zero
+summary: Performs the floating-point integral toward zero operation.
+route: fpu
+sail_entries:
+- execute_FINTRZ
+privileged: false
+repeat:
+  type: rep
+operands:
+  src:
+    role: source
+    access: read
+    value_type: floating
+  dst:
+    role: destination
+    access: write
+    value_type: floating

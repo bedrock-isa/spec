@@ -1,0 +1,20 @@
+mnemonic: PTQUERY
+name: Page Table Query
+summary: Non-destructively reads the selected raw page-table descriptor.
+route: tlb_and_context
+sail_entries:
+- execute_PTQUERY
+privileged: true
+operands:
+  level:
+    role: source
+    access: read
+    value_type: integer
+  src:
+    role: address
+    access: address
+    value_type: integer
+  dst:
+    role: destination
+    access: write
+    value_type: integer

@@ -1,0 +1,16 @@
+\subsection{Extension Components and Clean State}
+An extension component is architecturally clean when its state is known to equal its component-defined initial
+state. Reset and RESTORE of a clear component bit make that component clean. A committed write that can make a
+component differ from its initial state makes it modified; RESTORE of a non-initial component image also makes it
+modified. An implementation may mark a component clean whenever it establishes that the complete component again
+equals its initial state.
+
+When floating-point state is enabled, its component contains F0 through F15, FFLAGS, and FSTATUS in the layout
+reported in the CPUID chapter. The floating-point component\textquotesingle{}s initial state is positive zero in F0 through F15 and
+zero in FFLAGS and FSTATUS.
+
+When VECTOR is present, component ID 2 uses bitmap bit 1 and contains the complete V0 through V31 and packed P0
+through P15 images. Let $B$ be VLEN in bytes. Vn begins at component offset $nB$, and Pn begins at
+$32B+nB/8$. The reported component size is $64\lceil 34B/64\rceil$. Its initial state is all zero.
+A committed vector or (:term:base.terms.predicate_register:) write marks the component modified. SAVE writes component (:term:base.terms.padding:) as zero;
+RESTORE ignores that (:term:base.terms.padding:).

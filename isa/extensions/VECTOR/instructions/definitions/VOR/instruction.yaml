@@ -1,0 +1,20 @@
+mnemonic: VOR
+name: Vector Bitwise OR
+summary: Applies bitwise OR to corresponding active vector elements.
+route: vector
+sail_entries:
+- execute_VOR
+privileged: false
+operands:
+  govern:
+    role: governing_predicate
+    access: read
+    value_type: predicate
+  src:
+    role: source
+    access: read
+    value_type: vector
+  dst:
+    role: destination
+    access: read_write
+    value_type: vector

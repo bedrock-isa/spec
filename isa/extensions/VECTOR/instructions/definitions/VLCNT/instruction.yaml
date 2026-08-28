@@ -1,0 +1,14 @@
+mnemonic: VLCNT
+name: Vector Lane Count
+summary: Write the number of lanes of the selected element width.
+route: vector
+sail_entries:
+- execute_VLCNT
+privileged: false
+assembly:
+  width_suffix_aliases: true
+operands:
+  dst:
+    role: destination
+    access: write
+    value_type: integer

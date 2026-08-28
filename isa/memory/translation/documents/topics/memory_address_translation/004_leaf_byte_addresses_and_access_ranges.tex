@@ -1,0 +1,9 @@
+\subsection{Leaf Byte Addresses and Access Ranges}
+Every leaf at level $L$ forms a byte address with $o=12+9(L-1)$:
+\[
+  \mathit{byte\_address} = (\mathit{PFN}\ll12)\mathbin{|}\mathit{linear}[o-1:0].
+\]
+A width-$n$ access covers the half-open byte interval $[a,a+n)$. Bit 7 records A and may be set by an (:term:base.terms.ordinary:) walk.
+Atomics require natural byte alignment; a misaligned operand raises \texttt{ATOMIC\_ALIGNMENT} before the memory
+read or write. PTQUERY returns the raw selected descriptor, while VTOP reports the translated byte address; neither
+instruction modifies A or D.

@@ -1,0 +1,20 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: bedrock://schemas/elf-dwarf
+title: Bedrock ELF DWARF register namespace
+type: object
+additionalProperties: false
+required: [reserved_ranges]
+properties:
+  reserved_ranges:
+    type: array
+    minItems: 1
+    items:
+      type: object
+      additionalProperties: false
+      required: [first, last]
+      properties:
+        first: {type: integer, minimum: 0}
+        last:
+          oneOf:
+          - {type: integer, minimum: 0}
+          - {const: unbounded}

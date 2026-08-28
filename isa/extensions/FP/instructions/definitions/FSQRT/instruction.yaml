@@ -1,0 +1,18 @@
+mnemonic: FSQRT
+name: Floating-Point Square Root
+summary: Performs the floating-point square root operation.
+route: fpu
+sail_entries:
+- execute_FSQRT
+privileged: false
+repeat:
+  type: rep
+operands:
+  src:
+    role: source
+    access: read
+    value_type: floating
+  dst:
+    role: destination
+    access: write
+    value_type: floating

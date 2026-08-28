@@ -1,0 +1,16 @@
+mnemonic: WRSEG
+name: Write Segment Register
+summary: Write an SREG segment image from an Rn register.
+route: system_registers
+sail_entries:
+- execute_WRSEG
+privileged: false
+operands:
+  src:
+    role: source
+    access: read
+    value_type: integer
+  seg:
+    role: segment_selector
+    access: write
+    value_type: integer

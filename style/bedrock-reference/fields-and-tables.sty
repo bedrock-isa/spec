@@ -1,0 +1,59 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesFile{bedrock-reference/fields-and-tables.sty}[2026/08/26 Bedrock reference fields-and-tables commands]
+
+\newcommand{\BedrockField}[2]{%
+  \par\noindent\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{1.46in}X@{}}%
+  \textbf{#1} & #2%
+  \end{tabularx}\par\vspace{2pt}}
+\newcommand{\BedrockBlockField}[2]{%
+  \par\Needspace{0.45in}%
+  \begin{description}[style=multiline,leftmargin=1.46in,labelwidth=1.32in,labelsep=0.14in,%
+    topsep=0pt,partopsep=0pt,itemsep=0pt,parsep=0pt]%
+  \item[\textbf{#1}] \raggedright #2%
+  \end{description}\vspace{2pt}}
+\newenvironment{BedrockRaggedBlock}{%
+  \begingroup\raggedright
+}{%
+  \par\endgroup}
+\newenvironment{BedrockLongTable}[1]{%
+  \begingroup\footnotesize
+  \setlength{\aboverulesep}{0pt}%
+  \setlength{\belowrulesep}{0pt}%
+  \setlength{\extrarowheight}{1.2pt}%
+  \setlength{\LTpre}{2pt}%
+  \setlength{\LTpost}{2pt}%
+  \begin{longtable}{#1}%
+}{%
+  \end{longtable}%
+  \endgroup}
+\newenvironment{BedrockDenseLongTable}[1]{%
+  \begingroup\scriptsize
+  \setlength{\tabcolsep}{2pt}%
+  \setlength{\aboverulesep}{0pt}%
+  \setlength{\belowrulesep}{0pt}%
+  \setlength{\extrarowheight}{0.9pt}%
+  \setlength{\LTpre}{2pt}%
+  \setlength{\LTpost}{2pt}%
+  \begin{longtable}{#1}%
+}{%
+  \end{longtable}%
+  \endgroup}
+\newenvironment{BedrockTabular}[1]{%
+  \Needspace{1.25in}%
+  \begingroup\footnotesize
+  \setlength{\aboverulesep}{0pt}%
+  \setlength{\belowrulesep}{0pt}%
+  \setlength{\extrarowheight}{1.2pt}%
+  \begin{center}%
+  \begin{tabular}{#1}%
+}{%
+  \end{tabular}%
+  \end{center}%
+  \endgroup}
+\newenvironment{BedrockFormBlock}[1]{%
+  \Needspace{#1}%
+  \par\vspace{7pt}\noindent\begin{minipage}{\linewidth}\footnotesize
+}{%
+  \par\end{minipage}\par}
+
+\endinput

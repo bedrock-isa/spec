@@ -1,0 +1,5 @@
+id: fpu
+title: Floating-Point Intrinsics
+exposure: floating-point environment, classification, and approximate operations
+includes:
+- stdint.h

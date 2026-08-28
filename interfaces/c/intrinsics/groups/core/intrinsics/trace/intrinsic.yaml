@@ -1,0 +1,15 @@
+id: trace
+owner: base
+description: >-
+  Unprivileged; marker is a constant in 0 through 65535; emits a marker when enabled and otherwise acts as a NOP.
+signature:
+  result: void
+  parameters:
+  - id: marker
+    type: u32
+    constant: true
+lowering:
+  operation: isa:base.instructions.TRACE
+  kind: direct
+wrapper:
+  kind: macro

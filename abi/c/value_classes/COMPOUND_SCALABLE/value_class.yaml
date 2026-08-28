@@ -1,0 +1,11 @@
+id: COMPOUND_SCALABLE
+kinds:
+- compound_scalable
+argument:
+  mode: copy_address
+  register_class: base.register_classes.GENERAL
+  units: 1
+result:
+  mode: sret
+  register_class: base.register_classes.GENERAL
+  units: 1

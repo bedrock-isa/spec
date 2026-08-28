@@ -1,0 +1,9 @@
+Each active H or D source value is converted to S. The signed-integer forms
+convert each active L or Q source value to S. The operation container is the
+larger of the source and 32-bit destination widths. The S result replaces the
+low 32-bit (:term:base.terms.field:); the other bits of an active destination container and every
+inactive container retain their previous values.
+
+A completed conversion accrues generated NV, OF, UF, and NX causes in FFLAGS;
+DZ is unchanged. An enabled generated cause raises FLOATING\_POINT\_EXCEPTION and
+suppresses destination and newly accrued FFLAGS effects.

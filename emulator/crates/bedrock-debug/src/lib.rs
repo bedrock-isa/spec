@@ -4,7 +4,7 @@ pub mod snapshot;
 pub mod trace;
 pub mod watchpoint;
 
-pub use bedrock_core::StepResult;
+pub use bedrock_machine::StepResult;
 pub use breakpoint::{Breakpoint, BreakpointSet};
 pub use debugger::Debugger;
 pub use snapshot::CpuSnapshot;

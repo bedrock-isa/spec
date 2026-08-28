@@ -1,0 +1,19 @@
+mnemonic: LEA
+name: Load Effective Address
+summary: Performs the load effective address operation.
+route: ea_utility
+sail_entries:
+- execute_LEA
+privileged: false
+repeat:
+  type: repcc
+  observed_value: dst
+operands:
+  src:
+    role: address
+    access: address
+    value_type: integer
+  dst:
+    role: destination
+    access: write
+    value_type: integer

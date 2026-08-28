@@ -1,0 +1,9 @@
+id: R_BEDROCK_GOTPCREL32S
+value: 25
+family: got
+result:
+  kind: integer
+  width_bits: 32
+  signed: true
+calculation: got(symbol) + addend - place
+field: isa:base.payload_types.DISP32S

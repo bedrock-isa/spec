@@ -1,0 +1,18 @@
+mnemonic: PFIRST
+name: First Set Predicate Lane
+summary: Return the first selected element index at a significant position.
+route: vector
+sail_entries:
+- execute_PFIRST
+privileged: false
+assembly:
+  width_suffix_aliases: true
+operands:
+  predicate:
+    role: source
+    access: read
+    value_type: predicate
+  dst:
+    role: destination
+    access: write
+    value_type: integer

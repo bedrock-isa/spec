@@ -1,0 +1,27 @@
+encodings:
+  b_w_l_q_z_ea_e_rn_d:
+    pattern: 1111001011zz000ddddeeeeeee
+    syntax: DIVS.{B|W|L|Q}(z) <ea>(e), Rn(d)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      d:
+        role: dst
+        type: base.field_types.Rn
+      e:
+        role: src
+        type: base.field_types.EA
+  b_w_l_q_z_rn_s_rn_d:
+    pattern: 10011zz000ssssdddd
+    syntax: DIVS.{B|W|L|Q}(z) Rn(s), Rn(d)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      s:
+        role: src
+        type: base.field_types.Rn
+      d:
+        role: dst
+        type: base.field_types.Rn

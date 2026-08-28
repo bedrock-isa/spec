@@ -1,0 +1,4 @@
+id: FETCH_XOR
+c_operations: [atomic_fetch_xor]
+strategy: instruction
+instructions: [isa:base.instructions.FETCHXOR]

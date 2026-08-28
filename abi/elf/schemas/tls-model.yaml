@@ -1,0 +1,9 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: bedrock://schemas/elf-tls-model
+title: Bedrock ELF TLS model
+type: object
+additionalProperties: true
+required: [id, selection]
+properties:
+  id: {type: string, pattern: '^[A-Z][A-Z0-9_]*$'}
+  selection: {type: string, minLength: 1}

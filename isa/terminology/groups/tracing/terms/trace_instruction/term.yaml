@@ -1,0 +1,8 @@
+id: trace_instruction
+display:
+  canonical: TRACE instruction
+article: the
+definition: >-
+  the marker instruction that records its immediate marker and current
+  instruction boundary in the implementation trace stream when that stream is
+  enabled.

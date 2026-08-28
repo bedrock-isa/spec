@@ -1,0 +1,9 @@
+id: systemverilog-cpuid
+generator: generator.py
+inputs:
+- isa
+depends-on:
+- systemverilog-package
+outputs:
+- rtl/bedrock_cpuid_pkg.sv
+- rtl/bedrock_cpuid_rom.sv

@@ -1,0 +1,12 @@
+mnemonic: INVICACHE
+name: Invalidate Instruction Cache
+summary: Invalidate one local instruction-cache maintenance block.
+route: cache
+sail_entries:
+- execute_INVICACHE
+privileged: true
+operands:
+  target:
+    role: address
+    access: address
+    value_type: integer

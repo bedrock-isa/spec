@@ -1,0 +1,8 @@
+encodings:
+  fn_d:
+    pattern: 11101101100000dddd
+    syntax: FCLR Fn(d)
+    fields:
+      d:
+        role: dst
+        type: FP.field_types.Fn

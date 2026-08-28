@@ -1,0 +1,19 @@
+mnemonic: BSET
+name: Bit Set
+summary: Performs the bit set operation.
+route: integer_bitfield
+sail_entries:
+- execute_BSET
+privileged: false
+repeat:
+  type: repcc
+  observed_value: computed
+operands:
+  bit_index:
+    role: source
+    access: read
+    value_type: integer
+  dst:
+    role: destination
+    access: read_write
+    value_type: integer

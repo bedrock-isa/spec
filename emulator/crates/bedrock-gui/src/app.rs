@@ -1,6 +1,8 @@
 use crate::panels::{self, controls::ControlActions};
 use crate::parse::parse_u64;
-use crate::run_worker::{ExecutionEvent, ExecutionSnapshot, ExecutionStopReason, ExecutionWorker};
+use crate::run_worker::{
+    ExecutionEvent, ExecutionSnapshot, ExecutionStopReason, ExecutionWorker, FrameStepBudget,
+};
 use bedrock_debug::{Debugger, StepResult};
 use bedrock_debug_remote::ResetImage;
 use bedrock_lldb::{CommandResult, LldbEvent, ProcessState};
@@ -571,6 +573,10 @@ impl BedrockGuiApp {
             self.running = false;
             self.status = match reason {
                 ExecutionStopReason::Paused => "Paused".to_owned(),
+                ExecutionStopReason::SingleStep => self
+                    .last_result
+                    .as_ref()
+                    .map_or_else(|| "Stepped".to_owned(), |result| format!("{result:?}")),
                 ExecutionStopReason::StepResult => self
                     .last_result
                     .as_ref()
@@ -600,7 +606,7 @@ impl BedrockGuiApp {
         if let Some(machine) = snapshot.machine {
             self.machine = machine;
         } else {
-            *self.machine.cpu_mut().state_mut() = snapshot.state;
+            self.machine.set_observer_state(snapshot.state);
             *self.machine.board_mut().framebuffer_mut() = snapshot.framebuffer;
         }
         self.debugger = snapshot.debugger;
@@ -813,10 +819,22 @@ impl BedrockGuiApp {
     }
 
     fn step_once(&mut self) {
-        let result = self.debugger.step(&mut self.machine);
-        self.total_steps = self.total_steps.saturating_add(1);
-        self.last_result = Some(result.clone());
-        self.status = format!("{result:?}");
+        match ExecutionWorker::spawn(
+            self.machine.clone(),
+            self.debugger.clone(),
+            self.total_steps,
+            FrameStepBudget::limited(1),
+        ) {
+            Ok(worker) => {
+                worker.request_single_step();
+                self.execution_worker = Some(worker);
+                self.running = false;
+                self.status = "Stepping".to_owned();
+            }
+            Err(error) => {
+                self.status = format!("Failed to start single-step worker: {error}");
+            }
+        }
     }
 
     fn start_execution_worker(&mut self) {

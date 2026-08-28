@@ -1,0 +1,18 @@
+mnemonic: FGETMAN
+name: Floating-Point Get Mantissa
+summary: Performs the floating-point get mantissa operation.
+route: fpu
+sail_entries:
+- execute_FGETMAN
+privileged: false
+repeat:
+  type: rep
+operands:
+  src:
+    role: source
+    access: read
+    value_type: floating
+  dst:
+    role: destination
+    access: write
+    value_type: floating

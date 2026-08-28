@@ -1,0 +1,5 @@
+id: GPR
+width: 64
+summary: General-purpose integer registers.
+reset: 0
+series: {prefix: R, count: 16}

@@ -1,0 +1,8 @@
+id: c-abi
+generator: generator.py
+inputs:
+- isa
+- abi.elf
+- abi.c
+source: abi/c/documents/c-abi.tex
+output: tex/bedrock-c-abi.tex

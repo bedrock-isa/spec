@@ -1,0 +1,58 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: bedrock://schemas/elf-register-group
+title: Bedrock ELF ABI register-group overlay
+type: object
+additionalProperties: false
+required: [id, register_group]
+properties:
+  id: {type: string, pattern: '^[A-Z][A-Z0-9_]*$'}
+  register_group:
+    type: string
+    pattern: '^isa:(?:base|[A-Z][A-Z0-9_]*)\.registers\.[A-Z][A-Z0-9_]*$'
+  dwarf:
+    type: array
+    minItems: 1
+    items:
+      type: object
+      additionalProperties: false
+      required: [first, registers]
+      properties:
+        first: {type: integer, minimum: 0}
+        registers:
+          oneOf:
+          - {const: all}
+          - type: array
+            minItems: 1
+            uniqueItems: true
+            items: {type: string, pattern: '^[A-Z][A-Z0-9_]*$'}
+        status: {enum: [assigned, extension]}
+        condition: {type: string, minLength: 1}
+  entry:
+    type: object
+    propertyNames: {pattern: '^[A-Z][A-Z0-9_]*$'}
+    additionalProperties:
+      oneOf:
+      - type: object
+        additionalProperties: false
+        required: [role, source]
+        properties:
+          role: {const: entry_point}
+          source: {const: e_entry}
+      - type: object
+        additionalProperties: false
+        required: [role, alignment_bytes, permissions]
+        properties:
+          role: {const: stack_pointer}
+          alignment_bytes: {type: integer, minimum: 1}
+          permissions: {const: [read, write]}
+      - type: object
+        additionalProperties: false
+        required: [role, context]
+        properties:
+          role: {const: segment_context}
+          context: {enum: [code, data, stack]}
+      - type: object
+        additionalProperties: false
+        required: [role]
+        properties:
+          role: {enum: [tls_base, cleared]}

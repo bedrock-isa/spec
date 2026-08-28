@@ -1,5 +1,0 @@
-forms:
-- id: extrashort.rfence
-  class: extrashort
-  bits: '0001010'
-  syntax: RFENCE

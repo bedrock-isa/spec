@@ -1,0 +1,19 @@
+mnemonic: MODS
+name: Signed Modulo
+summary: Performs the signed modulo operation.
+route: integer_mul_div
+sail_entries:
+- execute_MODS
+privileged: false
+repeat:
+  type: repcc
+  observed_value: dst
+operands:
+  src:
+    role: source
+    access: read
+    value_type: integer
+  dst:
+    role: destination
+    access: read_write
+    value_type: integer

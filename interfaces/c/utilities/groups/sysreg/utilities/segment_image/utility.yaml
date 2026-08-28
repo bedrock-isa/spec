@@ -1,0 +1,5 @@
+id: segment_image
+owner: base
+kind: function-macro
+parameters: [base_page, exponent, mantissa, bounds_only]
+body: '((((uint64_t)(base_page)) << 12) | (((uint64_t)(exponent) & 0x1f) << 7) | (((uint64_t)(mantissa) & 0x3f) << 1) | ((bounds_only) ? UINT64_C(1) : UINT64_C(0)))'

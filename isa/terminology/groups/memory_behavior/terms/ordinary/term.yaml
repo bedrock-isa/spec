@@ -1,0 +1,6 @@
+id: ordinary
+display:
+  canonical: ordinary
+definition: >-
+  the classification of an operation, such as an ordinary load or store,
+  within the operation taxonomy. Memory type is classified separately.

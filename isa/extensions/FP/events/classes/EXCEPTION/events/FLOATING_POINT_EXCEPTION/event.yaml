@@ -1,0 +1,8 @@
+id: FLOATING_POINT_EXCEPTION
+name: Floating-Point Exception
+summary: One or more enabled floating-point exception conditions are raised by an operation.
+code: 0x60
+family: FLOATING_POINT
+frame: error
+payload: [FP_EXCEPTION_FLAGS]
+

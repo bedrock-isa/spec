@@ -1,0 +1,23 @@
+mnemonic: DIVMODS
+name: Signed Divide With Remainder
+summary: Performs the signed divide with remainder operation.
+route: integer_mul_div
+sail_entries:
+- execute_DIVMODS
+privileged: false
+repeat:
+  type: repcc
+  observed_value: quotient
+operands:
+  src:
+    role: source
+    access: read
+    value_type: integer
+  quotient:
+    role: destination
+    access: read_write
+    value_type: integer
+  remainder:
+    role: destination
+    access: write
+    value_type: integer

@@ -1,0 +1,8 @@
+id: segment_changing_control_transfer
+display:
+  canonical: segment-changing control transfer
+  plural: segment-changing control transfers
+article: a
+definition: >-
+  a transfer that updates CS and PC in one architectural commit. Long jumps,
+  long calls, and long returns belong to this category.

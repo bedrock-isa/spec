@@ -1,0 +1,13 @@
+id: FLOAT_PAIR
+kinds:
+- complex_f32
+- complex_f64
+- complex_long_double
+argument:
+  mode: value
+  register_class: base.register_classes.FLOATING
+  units: 2
+result:
+  mode: value
+  register_class: base.register_classes.FLOATING
+  units: 2

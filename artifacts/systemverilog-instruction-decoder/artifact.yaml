@@ -1,0 +1,9 @@
+id: systemverilog-instruction-decoder
+generator: generator.py
+inputs:
+- isa
+depends-on:
+- systemverilog-package
+outputs:
+- rtl/bedrock_decode_d0.sv
+- rtl/bedrock_decode_d1.sv

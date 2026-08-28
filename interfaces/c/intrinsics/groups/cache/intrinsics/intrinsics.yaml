@@ -1,0 +1,6 @@
+intrinsics:
+- flush_dcache
+- invalidate_dcache
+- invalidate_icache
+- sync_cache
+- writeback_dcache

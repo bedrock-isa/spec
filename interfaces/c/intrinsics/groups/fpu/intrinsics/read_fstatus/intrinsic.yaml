@@ -1,0 +1,10 @@
+id: read_fstatus
+owner: FP
+description: >-
+  Unprivileged; access to the floating-point environment.
+signature:
+  result: u16
+  parameters: []
+lowering:
+  operation: isa:FP.instructions.RDFSTATUS
+  kind: direct

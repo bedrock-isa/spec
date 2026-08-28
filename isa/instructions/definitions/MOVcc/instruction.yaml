@@ -1,0 +1,22 @@
+mnemonic: MOVcc
+name: Move Conditional
+summary: Performs the move conditional operation.
+route: control_flow
+sail_entries:
+- execute_MOVcc
+privileged: false
+repeat:
+  type: rep
+operands:
+  cc:
+    role: source
+    access: read
+    value_type: integer
+  src:
+    role: source
+    access: read
+    value_type: integer
+  dst:
+    role: destination
+    access: write
+    value_type: integer

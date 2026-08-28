@@ -1,0 +1,8 @@
+id: MMIO_ALIGNMENT_FAULT
+name: MMIO Alignment Fault
+summary: A permitted scalar MMIO operand is not naturally aligned.
+code: 0x31
+family: PHYSICAL_ACCESS
+frame: page
+payload: [FAULT_EA, FAULT_LINEAR, ACCESS, USER_DOMAIN, ATOMIC, OPERAND, ACCESS_SIZE]
+

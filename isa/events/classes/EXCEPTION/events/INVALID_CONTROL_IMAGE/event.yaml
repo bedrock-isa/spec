@@ -1,0 +1,7 @@
+id: INVALID_CONTROL_IMAGE
+name: Invalid Control Image
+summary: A supplied segment, control-register, or processor-state image is invalid.
+code: 0x42
+family: CONTROL_STATE
+frame: basic
+

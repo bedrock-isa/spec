@@ -1,0 +1,18 @@
+mnemonic: FMIN
+name: Floating-Point Minimum
+summary: Performs the floating-point minimum operation.
+route: fpu
+sail_entries:
+- execute_FMIN
+privileged: false
+repeat:
+  type: rep
+operands:
+  src:
+    role: source
+    access: read
+    value_type: floating
+  dst:
+    role: destination
+    access: read_write
+    value_type: floating

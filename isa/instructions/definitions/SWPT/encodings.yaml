@@ -1,0 +1,8 @@
+encodings:
+  rn_p:
+    pattern: 11101101001001pppp
+    syntax: SWPT Rn(p)
+    fields:
+      p:
+        role: new_ptcr
+        type: base.field_types.Rn

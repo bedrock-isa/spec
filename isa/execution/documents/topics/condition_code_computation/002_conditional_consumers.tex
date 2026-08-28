@@ -1,0 +1,8 @@
+\subsection{Conditional Consumers}
+Conditional branches, calls, traps, and sets consume the condition-code table without recomputing FLAGS. An (:term:base.terms.ordinary:)
+conditional consumer observes the FLAGS image produced by the last committed FLAGS-writing instruction. REPcc instead
+tests a temporary flag image derived from the body instruction\textquotesingle{}s repeat-observed value, as defined in Repeated Scalar
+Execution. That test leaves architectural FLAGS unchanged.
+
+A false condition suppresses the conditional action unless the instruction description explicitly defines a different
+commit rule, such as a repeat instruction\textquotesingle{}s terminating iteration rule.

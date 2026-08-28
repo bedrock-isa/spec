@@ -1,0 +1,18 @@
+mnemonic: FMOV
+name: Floating-Point Move
+summary: Copies the source operand to the destination operand.
+route: fpu
+sail_entries:
+- execute_FMOV
+privileged: false
+repeat:
+  type: rep
+operands:
+  src:
+    role: source
+    access: read
+    value_type: floating
+  dst:
+    role: destination
+    access: write
+    value_type: floating

@@ -1,0 +1,20 @@
+mnemonic: VREDADD
+name: Vector Add Reduction
+summary: Reduces active integer or floating-point elements to one scalar sum.
+route: vector
+sail_entries:
+- execute_VREDADD
+privileged: false
+operands:
+  govern:
+    role: governing_predicate
+    access: read
+    value_type: predicate
+  src:
+    role: source
+    access: read
+    value_type: vector
+  dst:
+    role: destination
+    access: write
+    value_type: integer

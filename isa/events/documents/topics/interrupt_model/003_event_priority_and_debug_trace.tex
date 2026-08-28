@@ -1,0 +1,18 @@
+\subsection{Event Priority and Debug Trace}\label{section:event-priority-and-debug-trace}
+When events compete at one architectural boundary, delivery failure is selected before machine check, current
+synchronous faults, explicit traps, (:ref:base.events.EXCEPTION.DEBUG_TRACE:), NMI, and maskable interrupt, in that order. An
+asynchronous event that is not selected remains pending.
+
+A (:term:base.terms.trace_unit:) is one (:term:base.terms.ordinary:) committed instruction or one committed REP or REPcc body iteration. Completion of a
+zero-count REP or REPcc is also one (:term:base.terms.trace_unit:). TF is sampled at the start of
+the unit. If sampled TF is one and sampled RF is zero, successful completion commits the unit and then
+delivers DEBUG\_TRACE with the following trace-unit boundary as its saved PC.
+
+The (:ref:base.instructions.TRACE:) marker instruction is an (:term:base.terms.ordinary:) instruction for this trace-unit rule
+and separately records the marker described by its instruction entry. The
+\hyperref[term-group:base-term-groups-tracing]{tracing terminology} distinguishes the instruction, (:term:base.terms.trace_unit:), and event.
+
+RF is a one-shot DEBUG\_TRACE suppressor. If sampled RF is one, successful trace-unit completion clears RF and does
+not produce DEBUG\_TRACE. A synchronous fault or asynchronous event before that completion preserves RF. WRSTATUS,
+ERET changes to TF or RF apply to the next (:term:base.terms.trace_unit:). Event entry saves the old STATUS image and then
+clears live TF and RF. RF does not suppress an explicit trap such as BKPT.

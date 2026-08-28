@@ -1,0 +1,9 @@
+id: R_BEDROCK_PCREL8S
+value: 13
+family: pc_relative
+result:
+  kind: integer
+  width_bits: 8
+  signed: true
+calculation: symbol + addend - place
+field: isa:base.payload_types.DISP8S

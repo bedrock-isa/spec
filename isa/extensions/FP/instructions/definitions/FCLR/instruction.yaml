@@ -1,0 +1,14 @@
+mnemonic: FCLR
+name: Floating-Point Clear
+summary: Performs the floating-point clear operation.
+route: fpu
+sail_entries:
+- execute_FCLR
+privileged: false
+repeat:
+  type: rep
+operands:
+  dst:
+    role: destination
+    access: write
+    value_type: floating

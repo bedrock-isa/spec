@@ -1,0 +1,5 @@
+id: FLOATTISF
+symbol: __floattisf
+result: base.types.FLOAT
+parameters:
+- base.types.INT128

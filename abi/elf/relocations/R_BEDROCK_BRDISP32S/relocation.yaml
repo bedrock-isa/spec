@@ -1,0 +1,11 @@
+id: R_BEDROCK_BRDISP32S
+value: 19
+family: branch
+result:
+  kind: integer
+  width_bits: 32
+  signed: true
+calculation: symbol + addend - next_pc
+field: isa:base.payload_types.DISP32S
+relaxations:
+- base.relocations.R_BEDROCK_BRDISP16S

@@ -1,0 +1,6 @@
+modes:
+  - explicit_segment_index
+  - explicit_segment_base
+  - explicit_segment_zero_base_index
+  - stack_pointer_index
+  - program_counter_index

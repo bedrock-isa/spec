@@ -1,0 +1,18 @@
+mnemonic: PSLIDEUP
+name: Predicate Slide Up
+summary: Move predicate lanes toward higher indices and insert zero at the low end.
+route: vector
+sail_entries:
+- execute_PSLIDEUP
+privileged: false
+assembly:
+  width_suffix_aliases: true
+operands:
+  count:
+    role: count
+    access: read
+    value_type: integer
+  dst:
+    role: destination
+    access: read_write
+    value_type: predicate

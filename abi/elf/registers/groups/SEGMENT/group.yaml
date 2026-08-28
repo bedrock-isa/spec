@@ -1,0 +1,10 @@
+id: SEGMENT
+register_group: isa:base.registers.SEGMENT
+dwarf:
+- first: 48
+  registers: [CS, DS, SS, GS0, GS1, GS2, GS3, GS4, GS5]
+entry:
+  CS: {role: segment_context, context: code}
+  DS: {role: segment_context, context: data}
+  SS: {role: segment_context, context: stack}
+  GS0: {role: tls_base}

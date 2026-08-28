@@ -1,0 +1,20 @@
+mnemonic: FETCHXOR
+name: Atomic Fetch Xor
+summary: Performs the atomic fetch xor operation.
+route: atomics
+sail_entries:
+- execute_FETCHXOR
+privileged: false
+operands:
+  order:
+    role: source
+    access: read
+    value_type: integer
+  src:
+    role: destination
+    access: read_write
+    value_type: integer
+  memory:
+    role: destination
+    access: read_write
+    value_type: integer

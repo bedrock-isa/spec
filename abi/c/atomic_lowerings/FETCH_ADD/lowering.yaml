@@ -1,0 +1,4 @@
+id: FETCH_ADD
+c_operations: [atomic_fetch_add]
+strategy: instruction
+instructions: [isa:base.instructions.FETCHADD]

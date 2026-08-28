@@ -1,0 +1,18 @@
+mnemonic: FDIV
+name: Floating-Point Divide
+summary: Performs the floating-point divide operation.
+route: fpu
+sail_entries:
+- execute_FDIV
+privileged: false
+repeat:
+  type: rep
+operands:
+  src:
+    role: source
+    access: read
+    value_type: floating
+  dst:
+    role: destination
+    access: read_write
+    value_type: floating

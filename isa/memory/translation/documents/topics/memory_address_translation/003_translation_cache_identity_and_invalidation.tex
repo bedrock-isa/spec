@@ -1,0 +1,18 @@
+\subsection{Translation-Cache Identity and Invalidation}
+A translation-cache entry is identified by the components below, including the leaf-aligned linear range that it
+maps. Translation-cache identity excludes PTCR \texttt{root\_page}.
+While ASCR.AE is one, system software binds one ASID to one PTCR root and translation geometry; it completes the
+required shootdown before reusing that ASID for a different PTCR image. While AE is zero, the current untagged
+context is invalidated when PTCR changes.
+
+\input{isa/memory/translation/documents/fragments/translation_cache_contract.tex}
+
+A global leaf ignores ASID matching. Its PFN, effective permissions, AM, and \texttt{CP} attributes must
+be identical in every context in which that global entry can be used. Changing any of those attributes requires
+invalidating the global entry on every target (:term:base.terms.logical_processor:).
+
+The page-table walker reads page tables as CP0 coherent (:term:base.terms.normal_memory:). Each 64-bit PTE read observes one coherence
+version; it does not combine (:term:base.terms.field|plural:) from different writes. An in-progress walk may complete with the old or new
+coherence version, so the updater does not reclaim the old mapping until the complete shootdown protocol finishes.
+The local invalidation instructions affect only the executing (:term:base.terms.logical_processor:); the request and acknowledgement
+steps are (:term:base.terms.ordinary:) shared-memory communication ordered by the stated release, acquire, and AFENCE operations.

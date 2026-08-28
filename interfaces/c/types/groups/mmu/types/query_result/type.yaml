@@ -1,0 +1,16 @@
+id: query_result
+owner: base
+kind: struct
+summary: Value and architectural flags returned by MMU queries.
+fields:
+- id: value
+  type: u64
+- id: flags
+  type: u16
+- id: reserved
+  type: u16
+  count: 3
+  role: reserved
+layout:
+  size: 16
+  alignment: 8

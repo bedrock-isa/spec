@@ -1,0 +1,1550 @@
+"""Relational validation for the complete ISA authoring model."""
+
+from __future__ import annotations
+
+from abc import ABC, abstractmethod
+from collections.abc import Iterable, Iterator, Mapping
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+
+try:
+    from .allocation import AllocationCube, forms_overlap, numeric_bounds
+    from .cpuid import CpuidCatalog, CpuidClass, CpuidLeaf, CpuidQuery
+    from .diagnostics import Diagnostic, DiagnosticBag, RelatedLocation, Severity
+    from .encoding import OperandConstraint
+    from .encoding_architecture import ENCODING_CLASSES_BY_WIDTH
+    from .event import EventCatalog, EventClass
+    from .project import IsaProject, InstructionBundle
+    from .reference import Reference, ReferenceError
+    from .register import RegisterCatalog, RegisterGroup, RegisterInventory
+    from .semantic_text import TermReferenceText
+    from .terminology import Term, TermCatalog, TerminologyInventory
+    from .type_system import FieldTypeKind, PayloadTypeKind, TypeSystem
+    from .validation import SailEntryValidator
+except ImportError:  # Support loading engine directly on PYTHONPATH.
+    from allocation import AllocationCube, forms_overlap, numeric_bounds
+    from cpuid import CpuidCatalog, CpuidClass, CpuidLeaf, CpuidQuery
+    from diagnostics import Diagnostic, DiagnosticBag, RelatedLocation, Severity
+    from encoding import OperandConstraint
+    from encoding_architecture import ENCODING_CLASSES_BY_WIDTH
+    from event import EventCatalog, EventClass
+    from project import IsaProject, InstructionBundle
+    from reference import Reference, ReferenceError
+    from register import RegisterCatalog, RegisterGroup, RegisterInventory
+    from semantic_text import TermReferenceText
+    from terminology import Term, TermCatalog, TerminologyInventory
+    from type_system import FieldTypeKind, PayloadTypeKind, TypeSystem
+    from validation import SailEntryValidator
+
+
+def _error(
+    code: str,
+    source: Path,
+    message: str,
+    *path: str | int,
+    related: tuple[RelatedLocation, ...] = (),
+) -> Diagnostic:
+    return Diagnostic(Severity.ERROR, code, source, message, tuple(path), related)
+
+
+class BundleValidator:
+    """Validate relationships owned by one instruction bundle."""
+
+    def validate(
+        self, bundle: InstructionBundle, project: IsaProject
+    ) -> Iterator[Diagnostic]:
+        source = bundle.encodings.source
+        mnemonic = bundle.instruction.mnemonic
+        operands: Mapping[str, Mapping[str, Any]] = bundle.instruction["operands"]
+
+        for companion, path in (
+            ("semantics", bundle.artifacts.semantics),
+            ("description", bundle.artifacts.description),
+        ):
+            if not path.is_file():
+                yield _error(
+                    "artifact.missing",
+                    path,
+                    f"{mnemonic} has no required {companion} artifact",
+                )
+
+        for entry in SailEntryValidator().missing(bundle):
+            yield _error(
+                "sail.entry",
+                bundle.instruction.source,
+                f"declared Sail entry {entry!r} is not defined by "
+                f"{bundle.artifacts.semantics}",
+                "sail_entries",
+            )
+
+        for form in bundle.encodings.forms:
+            base = ("encodings", form.id)
+            owner = ENCODING_CLASSES_BY_WIDTH.get(form.pattern.bit_width)
+            if owner is None:
+                yield _error(
+                    "allocation.class",
+                    source,
+                    f"pattern width {form.pattern.bit_width} has no encoding class",
+                    *base,
+                    "pattern",
+                )
+            else:
+                raw_cube = AllocationCube.from_encoding(form)
+                namespaces = tuple(
+                    AllocationCube.parse(pattern) for pattern in owner.namespace
+                )
+                if not any(namespace.contains(raw_cube) for namespace in namespaces):
+                    yield _error(
+                        "allocation.namespace",
+                        source,
+                        f"pattern is outside the {owner.name} namespace",
+                        *base,
+                        "pattern",
+                    )
+            if form.syntax.mnemonic != mnemonic:
+                yield _error(
+                    "syntax.mnemonic",
+                    source,
+                    f"syntax names {form.syntax.mnemonic}, expected {mnemonic}",
+                    *base,
+                    "syntax",
+                )
+            if form.syntax.encoding_id != form.id:
+                yield _error(
+                    "syntax.encoding-id",
+                    source,
+                    f"syntax derives encoding ID {form.syntax.encoding_id!r}",
+                    *base,
+                    "syntax",
+                )
+
+            markers = frozenset(field.marker for field in form.fields)
+            if markers != form.pattern.fields:
+                yield _error(
+                    "pattern.fields",
+                    source,
+                    f"pattern fields {sorted(form.pattern.fields)} do not match "
+                    f"bindings {sorted(markers)}",
+                    *base,
+                    "fields",
+                )
+
+            representation_roles = [
+                *(field.role for field in form.fields),
+                *(payload.role for payload in form.payloads),
+            ]
+            duplicates = sorted(
+                role
+                for role in set(representation_roles)
+                if representation_roles.count(role) > 1
+            )
+            for role in duplicates:
+                yield _error(
+                    "representation.duplicate-role",
+                    source,
+                    f"role {role!r} has more than one field or payload representation",
+                    *base,
+                )
+
+            for field in form.fields:
+                definition = project.types.field_types.resolve(field.type)
+                width = definition.bits
+                actual = form.pattern.field_width(field.marker)
+                if width != actual:
+                    yield _error(
+                        "field.width",
+                        source,
+                        f"field {field.marker!r} occupies {actual} bits but "
+                        f"{field.type} declares {width}",
+                        *base,
+                        "fields",
+                        field.marker,
+                    )
+                yield from self._validate_representation_access(
+                    source, base, field.role, field.access, operands
+                )
+
+            for payload_index, payload in enumerate(form.payloads):
+                yield from self._validate_representation_access(
+                    source, base, payload.role, payload.access, operands, payload_index
+                )
+
+            for displayed in form.syntax.displayed_operands:
+                if displayed.field is not None and displayed.field not in markers:
+                    yield _error(
+                        "syntax.unknown-field",
+                        source,
+                        f"syntax references field {displayed.field!r} with no binding",
+                        *base,
+                        "syntax",
+                    )
+
+            if form.syntax.size_field is not None:
+                size_binding = form.field_for_marker(form.syntax.size_field)
+                if size_binding is None or size_binding.role != "size":
+                    yield _error(
+                        "syntax.size-field",
+                        source,
+                        f"selected size field {form.syntax.size_field!r} is not bound "
+                        "to role 'size'",
+                        *base,
+                        "syntax",
+                    )
+                elif size_binding is not None:
+                    definition = project.types.field_types.resolve(size_binding.type)
+                    declared_codes = tuple(value.code for value in definition.values)
+                    if not set(form.syntax.selected_size_codes).issubset(
+                        declared_codes
+                    ):
+                        yield _error(
+                            "syntax.size-codes",
+                            source,
+                            f"size alternatives {form.syntax.selected_size_codes} are not "
+                            f"a subset of {size_binding.type} values {declared_codes}",
+                            *base,
+                            "syntax",
+                        )
+
+            constraint_roles: set[str] = set()
+            for index, constraint in enumerate(form.constraints):
+                field = form.field_for_role(constraint.role)
+                if field is None:
+                    yield _error(
+                        "constraint.role",
+                        source,
+                        f"constraint role {constraint.role!r} does not resolve to a field",
+                        *base,
+                        "constraints",
+                        index,
+                        "role",
+                    )
+                    continue
+                if constraint.role in constraint_roles:
+                    yield _error(
+                        "constraint.duplicate-role",
+                        source,
+                        f"role {constraint.role!r} has multiple constraints",
+                        *base,
+                        "constraints",
+                        index,
+                    )
+                constraint_roles.add(constraint.role)
+                yield from self._validate_constraint_values(
+                    source,
+                    base,
+                    index,
+                    constraint,
+                    form.pattern.field_width(field.marker),
+                )
+
+            for index, overlap in enumerate(form.overlaps):
+                for role in overlap.operands:
+                    operand = operands.get(role)
+                    field = form.field_for_role(role)
+                    if operand is None or field is None:
+                        yield _error(
+                            "overlap.operand",
+                            source,
+                            f"overlap operand {role!r} must be a field-backed logical operand",
+                            *base,
+                            "overlaps",
+                            index,
+                        )
+                    elif operand["access"] not in {"write", "read_write"}:
+                        yield _error(
+                            "overlap.access",
+                            source,
+                            f"overlap operand {role!r} is not writable",
+                            *base,
+                            "overlaps",
+                            index,
+                        )
+
+    @staticmethod
+    def _validate_representation_access(
+        source: Path,
+        base: tuple[str, str],
+        role: str,
+        access: str | None,
+        operands: Mapping[str, Mapping[str, Any]],
+        payload_index: int | None = None,
+    ) -> Iterator[Diagnostic]:
+        operand = operands.get(role)
+        if operand is None:
+            if role != "size":
+                location: tuple[str | int, ...] = (
+                    (*base, "fields")
+                    if payload_index is None
+                    else (*base, "payloads", payload_index)
+                )
+                yield _error(
+                    "representation.role",
+                    source,
+                    f"role {role!r} is neither an instruction operand nor a known selector",
+                    *location,
+                )
+            return
+        if access is not None and access == operand["access"]:
+            yield _error(
+                "representation.redundant-access",
+                source,
+                f"role {role!r} repeats inherited access {access!r}",
+                *base,
+            )
+
+    @staticmethod
+    def _validate_constraint_values(
+        source: Path,
+        base: tuple[str, str],
+        index: int,
+        constraint: OperandConstraint,
+        width: int,
+    ) -> Iterator[Diagnostic]:
+        limit = 1 << width
+        for value in (*constraint.allow, *constraint.exclude):
+            bounds = numeric_bounds(value)
+            if bounds is None:
+                continue
+            lower, upper = bounds
+            if lower > upper or lower < 0 or upper >= limit:
+                yield _error(
+                    "constraint.range",
+                    source,
+                    f"constraint value {value!r} is outside unsigned {width}-bit range",
+                    *base,
+                    "constraints",
+                    index,
+                )
+
+
+class CatalogValidator:
+    """Validate declared inventories and cross-form opcode allocation."""
+
+    def validate(
+        self,
+        project: IsaProject,
+        selected: tuple[InstructionBundle, ...],
+        *,
+        complete: bool,
+    ) -> Iterator[Diagnostic]:
+        if complete:
+            extension_catalog = project.catalog.extension_catalog
+            declared_extensions = set(extension_catalog.declared)
+            actual_extensions = set(extension_catalog.actual)
+            for missing in sorted(declared_extensions - actual_extensions):
+                yield _error(
+                    "extension.missing-directory",
+                    extension_catalog.source,
+                    f"declared extension {missing!r} has no directory",
+                )
+            for undeclared in sorted(actual_extensions - declared_extensions):
+                yield _error(
+                    "extension.undeclared-directory",
+                    extension_catalog.root / undeclared,
+                    f"extension directory {undeclared!r} is not in "
+                    f"{extension_catalog.source.name}",
+                )
+            duplicate_extensions = sorted(
+                extension_id
+                for extension_id in declared_extensions
+                if extension_catalog.declared.count(extension_id) > 1
+            )
+            for duplicate in duplicate_extensions:
+                yield _error(
+                    "extension.duplicate",
+                    extension_catalog.source,
+                    f"extension {duplicate!r} is listed more than once",
+                )
+
+            instruction_sets = (
+                project.catalog.base,
+                *(
+                    extension.instruction_set
+                    for extension in project.catalog.extensions.values()
+                ),
+            )
+            for instruction_set in instruction_sets:
+                catalog = instruction_set.catalog
+                declared = set(catalog.declared)
+                actual = set(catalog.actual)
+                for missing in sorted(declared - actual):
+                    yield _error(
+                        "catalog.missing-directory",
+                        catalog.source,
+                        f"declared instruction {missing!r} has no directory",
+                    )
+                for undeclared in sorted(actual - declared):
+                    yield _error(
+                        "catalog.undeclared-directory",
+                        catalog.root / undeclared,
+                        f"instruction directory {undeclared!r} is not in {catalog.source.name}",
+                    )
+                duplicates = sorted(
+                    name for name in declared if catalog.declared.count(name) > 1
+                )
+                for duplicate in duplicates:
+                    yield _error(
+                        "catalog.duplicate",
+                        catalog.source,
+                        f"instruction {duplicate!r} is listed more than once",
+                    )
+
+        selected_refs = {bundle.reference for bundle in selected}
+        all_forms = [
+            (bundle, form)
+            for bundle in project.select()
+            for form in bundle.encodings.forms
+        ]
+        for index, (left_bundle, left) in enumerate(all_forms):
+            for right_bundle, right in all_forms[index + 1 :]:
+                if (
+                    left_bundle.reference not in selected_refs
+                    and right_bundle.reference not in selected_refs
+                ):
+                    continue
+                if not left.pattern.overlaps(right.pattern):
+                    continue
+                if not forms_overlap(left, right):
+                    continue
+                related = (
+                    RelatedLocation(
+                        right_bundle.encodings.source,
+                        f"conflicts with {right_bundle.instruction.mnemonic}.{right.id}",
+                        ("encodings", right.id, "pattern"),
+                    ),
+                )
+                yield _error(
+                    "allocation.overlap",
+                    left_bundle.encodings.source,
+                    f"{left_bundle.instruction.mnemonic}.{left.id} overlaps "
+                    f"{right_bundle.instruction.mnemonic}.{right.id}",
+                    "encodings",
+                    left.id,
+                    "pattern",
+                    related=related,
+                )
+
+
+class CpuidValidator:
+    """Validate distributed CPUID catalogs, overlays, and allocations."""
+
+    def validate(self, catalog: CpuidCatalog) -> Iterator[Diagnostic]:
+        yield from self._validate_inventories(catalog)
+        class_values, class_roots, class_diagnostics = self._resolve_classes(catalog)
+        yield from class_diagnostics
+        leaf_values, leaf_roots, leaf_diagnostics = self._resolve_leaves(
+            catalog, class_values, class_roots
+        )
+        yield from leaf_diagnostics
+        yield from self._validate_class_allocations(catalog)
+        yield from self._validate_leaf_allocations(catalog, class_values)
+        yield from self._validate_query_allocations(catalog, leaf_values, leaf_roots)
+
+    @staticmethod
+    def _validate_inventories(catalog: CpuidCatalog) -> Iterator[Diagnostic]:
+        for namespace in catalog.namespaces.values():
+            inventories = [namespace.class_inventory]
+            inventories.extend(
+                cpuid_class.leaf_inventory for cpuid_class in namespace.classes.values()
+            )
+            for inventory in inventories:
+                declared = set(inventory.declared)
+                actual = set(inventory.actual)
+                kind = "class" if inventory.source.name == "classes.yaml" else "leaf"
+                for missing in sorted(declared - actual):
+                    yield _error(
+                        f"cpuid.{kind}.missing-directory",
+                        inventory.source,
+                        f"declared CPUID {kind} {missing!r} has no directory",
+                    )
+                for undeclared in sorted(actual - declared):
+                    yield _error(
+                        f"cpuid.{kind}.undeclared-directory",
+                        inventory.root / undeclared,
+                        f"CPUID {kind} directory {undeclared!r} is not in "
+                        f"{inventory.source.name}",
+                    )
+                duplicates = sorted(
+                    item for item in declared if inventory.declared.count(item) > 1
+                )
+                for duplicate in duplicates:
+                    yield _error(
+                        f"cpuid.{kind}.duplicate",
+                        inventory.source,
+                        f"CPUID {kind} {duplicate!r} is listed more than once",
+                    )
+
+    @staticmethod
+    def _resolve_classes(
+        catalog: CpuidCatalog,
+    ) -> tuple[
+        dict[Reference, int],
+        dict[Reference, Reference],
+        tuple[Diagnostic, ...],
+    ]:
+        values: dict[Reference, int] = {}
+        roots: dict[Reference, Reference] = {}
+        diagnostics: list[Diagnostic] = []
+        active: list[Reference] = []
+
+        def resolve(cpuid_class: CpuidClass) -> tuple[int, Reference] | None:
+            if cpuid_class.reference in values:
+                return values[cpuid_class.reference], roots[cpuid_class.reference]
+            if cpuid_class.reference in active:
+                cycle = (
+                    *active[active.index(cpuid_class.reference) :],
+                    cpuid_class.reference,
+                )
+                diagnostics.append(
+                    _error(
+                        "cpuid.class.extend-cycle",
+                        cpuid_class.source,
+                        "circular CPUID class overlay: " + " -> ".join(map(str, cycle)),
+                    )
+                )
+                return None
+            if cpuid_class.value is not None:
+                result = (cpuid_class.value, cpuid_class.reference)
+            else:
+                assert cpuid_class.extends is not None
+                try:
+                    target = catalog.references.classes.resolve(cpuid_class.extends)
+                except ValueError:
+                    diagnostics.append(
+                        _error(
+                            "cpuid.class.unknown-extends",
+                            cpuid_class.source,
+                            f"unknown CPUID class overlay target {cpuid_class.extends}",
+                            "extends",
+                        )
+                    )
+                    return None
+                if cpuid_class.id != target.id:
+                    diagnostics.append(
+                        _error(
+                            "cpuid.class.extend-id",
+                            cpuid_class.source,
+                            f"class ID {cpuid_class.id!r} does not match overlay target "
+                            f"ID {target.id!r}",
+                            "id",
+                        )
+                    )
+                active.append(cpuid_class.reference)
+                result = resolve(target)
+                active.pop()
+                if result is None:
+                    return None
+            values[cpuid_class.reference], roots[cpuid_class.reference] = result
+            return result
+
+        for cpuid_class in catalog.references.classes.values():
+            resolve(cpuid_class)
+        return values, roots, tuple(diagnostics)
+
+    @staticmethod
+    def _resolve_leaves(
+        catalog: CpuidCatalog,
+        class_values: Mapping[Reference, int],
+        class_roots: Mapping[Reference, Reference],
+    ) -> tuple[
+        dict[Reference, tuple[int, int]],
+        dict[Reference, Reference],
+        tuple[Diagnostic, ...],
+    ]:
+        values: dict[Reference, tuple[int, int]] = {}
+        roots: dict[Reference, Reference] = {}
+        diagnostics: list[Diagnostic] = []
+        active: list[Reference] = []
+
+        leaf_parents = {
+            leaf.reference: cpuid_class.reference
+            for namespace in catalog.namespaces.values()
+            for cpuid_class in namespace.classes.values()
+            for leaf in cpuid_class.leaves.values()
+        }
+
+        def resolve(leaf: CpuidLeaf) -> tuple[tuple[int, int], Reference] | None:
+            if leaf.reference in values:
+                return values[leaf.reference], roots[leaf.reference]
+            if leaf.reference in active:
+                cycle = (*active[active.index(leaf.reference) :], leaf.reference)
+                diagnostics.append(
+                    _error(
+                        "cpuid.leaf.extend-cycle",
+                        leaf.source,
+                        "circular CPUID leaf overlay: " + " -> ".join(map(str, cycle)),
+                    )
+                )
+                return None
+            parent = leaf_parents[leaf.reference]
+            class_value = class_values.get(parent)
+            if class_value is None:
+                return None
+            if leaf.value is not None:
+                result = ((class_value, leaf.value), leaf.reference)
+            else:
+                assert leaf.extends is not None
+                try:
+                    target = catalog.references.leaves.resolve(leaf.extends)
+                except ValueError:
+                    diagnostics.append(
+                        _error(
+                            "cpuid.leaf.unknown-extends",
+                            leaf.source,
+                            f"unknown CPUID leaf overlay target {leaf.extends}",
+                            "extends",
+                        )
+                    )
+                    return None
+                if leaf.id != target.id:
+                    diagnostics.append(
+                        _error(
+                            "cpuid.leaf.extend-id",
+                            leaf.source,
+                            f"leaf ID {leaf.id!r} does not match overlay target "
+                            f"ID {target.id!r}",
+                            "id",
+                        )
+                    )
+                active.append(leaf.reference)
+                resolved_target = resolve(target)
+                active.pop()
+                if resolved_target is None:
+                    return None
+                target_value, target_root = resolved_target
+                if target_value[0] != class_value:
+                    diagnostics.append(
+                        _error(
+                            "cpuid.leaf.extend-class",
+                            leaf.source,
+                            f"leaf overlay target {target.reference} belongs to a different "
+                            "numeric class",
+                            "extends",
+                        )
+                    )
+                result = (target_value, target_root)
+            values[leaf.reference], roots[leaf.reference] = result
+            return result
+
+        for leaf in catalog.references.leaves.values():
+            resolve(leaf)
+        return values, roots, tuple(diagnostics)
+
+    @staticmethod
+    def _validate_class_allocations(catalog: CpuidCatalog) -> Iterator[Diagnostic]:
+        definitions = [
+            cpuid_class
+            for cpuid_class in catalog.references.classes.values()
+            if cpuid_class.value is not None
+        ]
+        for index, left in enumerate(definitions):
+            for right in definitions[index + 1 :]:
+                if left.value != right.value:
+                    continue
+                yield _error(
+                    "cpuid.class.value-overlap",
+                    left.source,
+                    f"class value 0x{left.value:08x} is also allocated by {right.reference}",
+                    "value",
+                    related=(
+                        RelatedLocation(right.source, "conflicting class allocation"),
+                    ),
+                )
+
+    @staticmethod
+    def _validate_leaf_allocations(
+        catalog: CpuidCatalog,
+        class_values: Mapping[Reference, int],
+    ) -> Iterator[Diagnostic]:
+        definitions: list[tuple[int, CpuidLeaf]] = []
+        for namespace in catalog.namespaces.values():
+            for cpuid_class in namespace.classes.values():
+                class_value = class_values.get(cpuid_class.reference)
+                if class_value is None:
+                    continue
+                definitions.extend(
+                    (class_value, leaf)
+                    for leaf in cpuid_class.leaves.values()
+                    if leaf.value is not None
+                )
+        for index, (left_class, left) in enumerate(definitions):
+            for right_class, right in definitions[index + 1 :]:
+                if left_class != right_class or left.value != right.value:
+                    continue
+                yield _error(
+                    "cpuid.leaf.value-overlap",
+                    left.source,
+                    f"leaf value 0x{left.value:04x} in class 0x{left_class:08x} "
+                    f"is also allocated by {right.reference}",
+                    "value",
+                    related=(
+                        RelatedLocation(right.source, "conflicting leaf allocation"),
+                    ),
+                )
+
+    @staticmethod
+    def _validate_query_allocations(
+        catalog: CpuidCatalog,
+        leaf_values: Mapping[Reference, tuple[int, int]],
+        leaf_roots: Mapping[Reference, Reference],
+    ) -> Iterator[Diagnostic]:
+        entries: list[tuple[tuple[int, int], Reference, CpuidQuery]] = []
+        for namespace in catalog.namespaces.values():
+            for cpuid_class in namespace.classes.values():
+                for leaf in cpuid_class.leaves.values():
+                    selector = leaf_values.get(leaf.reference)
+                    root = leaf_roots.get(leaf.reference)
+                    if selector is None or root is None:
+                        continue
+                    for query in leaf.queries:
+                        for field in query.fields:
+                            if field.msb > 63:
+                                yield _error(
+                                    "cpuid.field.range",
+                                    field.source,
+                                    f"field {field.id!r} occupies bits "
+                                    f"{field.msb}..{field.lsb} outside a 64-bit result",
+                                    "queries",
+                                )
+                        for field_index, left_field in enumerate(query.fields):
+                            for right_field in query.fields[field_index + 1 :]:
+                                if left_field.overlaps(right_field):
+                                    yield _error(
+                                        "cpuid.field.overlap",
+                                        left_field.source,
+                                        f"fields {left_field.id!r} and {right_field.id!r} overlap",
+                                        "queries",
+                                    )
+                        entries.append((selector, root, query))
+
+        for index, (left_selector, left_root, left) in enumerate(entries):
+            for right_selector, right_root, right in entries[index + 1 :]:
+                if left_selector != right_selector or not left.indexes.overlaps(
+                    right.indexes
+                ):
+                    continue
+                same_overlay_query = (
+                    left_root == right_root
+                    and left.id == right.id
+                    and left.indexes == right.indexes
+                )
+                if not same_overlay_query:
+                    yield _error(
+                        "cpuid.query.index-overlap",
+                        left.source,
+                        f"query {left.reference} overlaps {right.reference} in "
+                        f"class 0x{left_selector[0]:08x}, leaf 0x{left_selector[1]:04x}",
+                        "queries",
+                        related=(
+                            RelatedLocation(
+                                right.source, "conflicting query allocation"
+                            ),
+                        ),
+                    )
+                    continue
+                for left_field in left.fields:
+                    for right_field in right.fields:
+                        if left_field.overlaps(right_field):
+                            yield _error(
+                                "cpuid.field.overlay-overlap",
+                                left_field.source,
+                                f"field {left_field.reference} overlaps "
+                                f"{right_field.reference} in a shared query",
+                                "queries",
+                                related=(
+                                    RelatedLocation(
+                                        right_field.source,
+                                        "conflicting result-field allocation",
+                                    ),
+                                ),
+                            )
+
+
+class EventValidator:
+    """Validate distributed event inventories, overlays, and code allocation."""
+
+    def validate(self, catalog: EventCatalog) -> Iterator[Diagnostic]:
+        yield from self._validate_inventories(catalog)
+        roots, diagnostics = self._resolve_classes(catalog)
+        yield from diagnostics
+        yield from self._validate_class_values(catalog)
+        yield from self._validate_events(catalog, roots)
+
+    @staticmethod
+    def _validate_inventories(catalog: EventCatalog) -> Iterator[Diagnostic]:
+        for namespace in catalog.namespaces.values():
+            inventories = [namespace.class_inventory]
+            inventories.extend(
+                event_class.event_inventory
+                for event_class in namespace.classes.values()
+            )
+            for inventory in inventories:
+                declared = set(inventory.declared)
+                actual = set(inventory.actual)
+                kind = "class" if inventory.source.name == "classes.yaml" else "event"
+                for missing in sorted(declared - actual):
+                    yield _error(
+                        f"event.{kind}.missing-directory",
+                        inventory.source,
+                        f"declared event {kind} {missing!r} has no directory",
+                    )
+                for undeclared in sorted(actual - declared):
+                    yield _error(
+                        f"event.{kind}.undeclared-directory",
+                        inventory.root / undeclared,
+                        f"event {kind} directory {undeclared!r} is not in "
+                        f"{inventory.source.name}",
+                    )
+                duplicates = sorted(
+                    item for item in declared if inventory.declared.count(item) > 1
+                )
+                for duplicate in duplicates:
+                    yield _error(
+                        f"event.{kind}.duplicate",
+                        inventory.source,
+                        f"event {kind} {duplicate!r} is listed more than once",
+                    )
+
+    @staticmethod
+    def _resolve_classes(
+        catalog: EventCatalog,
+    ) -> tuple[dict[Reference, EventClass], tuple[Diagnostic, ...]]:
+        roots: dict[Reference, EventClass] = {}
+        diagnostics: list[Diagnostic] = []
+        active: list[Reference] = []
+
+        def resolve(event_class: EventClass) -> EventClass | None:
+            if event_class.reference in roots:
+                return roots[event_class.reference]
+            if event_class.reference in active:
+                cycle = (
+                    *active[active.index(event_class.reference) :],
+                    event_class.reference,
+                )
+                diagnostics.append(
+                    _error(
+                        "event.class.extend-cycle",
+                        event_class.source,
+                        "circular event class overlay: " + " -> ".join(map(str, cycle)),
+                    )
+                )
+                return None
+            if event_class.extends is None:
+                roots[event_class.reference] = event_class
+                return event_class
+            try:
+                target = catalog.references.classes.resolve(event_class.extends)
+            except ValueError:
+                diagnostics.append(
+                    _error(
+                        "event.class.unknown-extends",
+                        event_class.source,
+                        f"unknown event class overlay target {event_class.extends}",
+                        "extends",
+                    )
+                )
+                return None
+            if event_class.id != target.id:
+                diagnostics.append(
+                    _error(
+                        "event.class.extend-id",
+                        event_class.source,
+                        f"class ID {event_class.id!r} does not match overlay target "
+                        f"ID {target.id!r}",
+                        "extends",
+                    )
+                )
+            active.append(event_class.reference)
+            root = resolve(target)
+            active.pop()
+            if root is not None:
+                roots[event_class.reference] = root
+            return root
+
+        for event_class in catalog.references.classes.values():
+            resolve(event_class)
+        return roots, tuple(diagnostics)
+
+    @staticmethod
+    def _validate_class_values(catalog: EventCatalog) -> Iterator[Diagnostic]:
+        definitions = [
+            event_class
+            for event_class in catalog.references.classes.values()
+            if event_class.extends is None
+        ]
+        for event_class in definitions:
+            if event_class.value is None or event_class.selector is None:
+                yield _error(
+                    "event.class.incomplete",
+                    event_class.source,
+                    "event class definition has no value or selector policy",
+                )
+        for index, left in enumerate(definitions):
+            for right in definitions[index + 1 :]:
+                if left.value != right.value:
+                    continue
+                yield _error(
+                    "event.class.value-overlap",
+                    left.source,
+                    f"class value 0x{left.value:02x} is also allocated by {right.reference}",
+                    "value",
+                    related=(
+                        RelatedLocation(right.source, "conflicting class allocation"),
+                    ),
+                )
+
+    @staticmethod
+    def _validate_events(
+        catalog: EventCatalog, roots: Mapping[Reference, EventClass]
+    ) -> Iterator[Diagnostic]:
+        allocated: dict[tuple[Reference, int], Any] = {}
+        event_ids: dict[str, Any] = {}
+        for event_class in catalog.references.classes.values():
+            root = roots.get(event_class.reference)
+            if root is None or root.selector is None:
+                continue
+            for event in event_class.events.values():
+                previous_id = event_ids.get(event.id)
+                if previous_id is not None:
+                    yield _error(
+                        "event.id-overlap",
+                        event.source,
+                        f"event ID {event.id!r} is also used by {previous_id.reference}",
+                        "id",
+                        related=(
+                            RelatedLocation(previous_id.source, "conflicting event ID"),
+                        ),
+                    )
+                else:
+                    event_ids[event.id] = event
+
+                if root.selector.kind == "fixed":
+                    if event.code is None:
+                        yield _error(
+                            "event.code.missing",
+                            event.source,
+                            f"event in fixed-selector class {root.id} requires a code",
+                            "code",
+                        )
+                        continue
+                    if event.code >= 1 << root.selector.bits:
+                        yield _error(
+                            "event.code.range",
+                            event.source,
+                            f"event code 0x{event.code:x} exceeds the "
+                            f"{root.selector.bits}-bit selector space",
+                            "code",
+                        )
+                        continue
+                    key = (root.reference, event.code)
+                    previous = allocated.get(key)
+                    if previous is not None:
+                        yield _error(
+                            "event.code.overlap",
+                            event.source,
+                            f"event code 0x{event.code:06x} is also allocated by "
+                            f"{previous.reference}",
+                            "code",
+                            related=(
+                                RelatedLocation(
+                                    previous.source, "conflicting event code"
+                                ),
+                            ),
+                        )
+                    else:
+                        allocated[key] = event
+                elif event.code is not None:
+                    yield _error(
+                        "event.code.external-selector",
+                        event.source,
+                        f"{root.selector.kind}-selected event must not fix a code",
+                        "code",
+                    )
+
+                if event.frame == "basic" and event.payload:
+                    yield _error(
+                        "event.payload.basic-frame",
+                        event.source,
+                        "basic event frame cannot carry an event payload",
+                        "payload",
+                    )
+
+
+class RegisterValidator:
+    """Validate register inventories, layouts, reset state, and type bindings."""
+
+    def validate(
+        self, catalog: RegisterCatalog, types: TypeSystem
+    ) -> Iterator[Diagnostic]:
+        yield from self._validate_inventories(catalog)
+        yield from self._validate_groups(catalog)
+        yield from self._validate_resets(catalog)
+        yield from self._validate_types(catalog, types)
+
+    @staticmethod
+    def _validate_inventories(catalog: RegisterCatalog) -> Iterator[Diagnostic]:
+        for namespace in catalog.namespaces.values():
+            inventories = [namespace.group_inventory]
+            inventories.extend(
+                group.register_inventory
+                for group in namespace.groups.values()
+                if group.register_inventory is not None
+            )
+            for inventory in inventories:
+                yield from RegisterValidator._validate_inventory(inventory)
+
+    @staticmethod
+    def _validate_inventory(inventory: RegisterInventory) -> Iterator[Diagnostic]:
+        declared = set(inventory.declared)
+        actual = set(inventory.actual)
+        for missing in sorted(declared - actual):
+            yield _error(
+                f"register.{inventory.kind}.missing-directory",
+                inventory.source,
+                f"declared register {inventory.kind} {missing!r} has no directory",
+            )
+        for undeclared in sorted(actual - declared):
+            yield _error(
+                f"register.{inventory.kind}.undeclared-directory",
+                inventory.root / undeclared,
+                f"register {inventory.kind} directory {undeclared!r} is not in "
+                f"{inventory.source.name}",
+            )
+        duplicates = sorted(
+            item for item in declared if inventory.declared.count(item) > 1
+        )
+        for duplicate in duplicates:
+            yield _error(
+                f"register.{inventory.kind}.duplicate",
+                inventory.source,
+                f"register {inventory.kind} {duplicate!r} is listed more than once",
+            )
+
+    @staticmethod
+    def _validate_groups(catalog: RegisterCatalog) -> Iterator[Diagnostic]:
+        for namespace in catalog.namespaces.values():
+            for group in namespace.groups.values():
+                encodings: dict[int, object] = {}
+                for register in group.registers.values():
+                    if register.encoding is not None:
+                        previous = encodings.get(register.encoding)
+                        if previous is not None:
+                            yield _error(
+                                "register.encoding.duplicate",
+                                register.source,
+                                f"encoding {register.encoding} in group {group.reference} "
+                                "is allocated more than once",
+                                "encoding",
+                                related=(
+                                    RelatedLocation(
+                                        previous.source, "conflicting register encoding"
+                                    ),
+                                ),
+                            )
+                        else:
+                            encodings[register.encoding] = register
+                    layout = register.layout
+                    if layout is None:
+                        continue
+                    if (
+                        isinstance(register.width, int)
+                        and layout.bits != register.width
+                    ):
+                        yield _error(
+                            "register.layout.width",
+                            layout.source,
+                            f"layout has {layout.bits} bits but {register.reference} "
+                            f"has width {register.width}",
+                            "bits",
+                        )
+                    for field in layout.fields:
+                        if field.msb >= layout.bits:
+                            yield _error(
+                                "register.layout.field-range",
+                                layout.source,
+                                f"field {field.id!r} occupies bits {field.msb}..{field.lsb} "
+                                f"outside a {layout.bits}-bit layout",
+                                "fields",
+                            )
+                    for index, left in enumerate(layout.fields):
+                        for right in layout.fields[index + 1 :]:
+                            if left.overlaps(right):
+                                yield _error(
+                                    "register.layout.field-overlap",
+                                    layout.source,
+                                    f"fields {left.id!r} and {right.id!r} overlap",
+                                    "fields",
+                                )
+
+    @staticmethod
+    def _validate_resets(catalog: RegisterCatalog) -> Iterator[Diagnostic]:
+        active: list[Reference] = []
+        resolved: set[Reference] = set()
+
+        def resolve(register: object) -> Iterator[Diagnostic]:
+            reference = register.reference
+            if reference in resolved:
+                return
+            reset = register.reset
+            if reset is not None and reset.value is not None:
+                if (
+                    isinstance(register.width, int)
+                    and reset.value >= 1 << register.width
+                ):
+                    yield _error(
+                        "register.reset.range",
+                        register.source,
+                        f"reset value {reset.value} does not fit {register.width}-bit "
+                        f"register {reference}",
+                        "reset",
+                    )
+            if reset is not None and reset.source is not None:
+                try:
+                    target = catalog.references.registers.resolve(reset.source)
+                except (ReferenceError, ValueError):
+                    yield _error(
+                        "register.reset.unknown-source",
+                        register.source,
+                        f"unknown reset source {reset.source}",
+                        "reset",
+                    )
+                else:
+                    if target.width != register.width:
+                        yield _error(
+                            "register.reset.width",
+                            register.source,
+                            f"reset source {target.reference} has width {target.width}, "
+                            f"expected {register.width}",
+                            "reset",
+                        )
+                    if target.reference in active:
+                        cycle = (
+                            *active[active.index(target.reference) :],
+                            target.reference,
+                        )
+                        yield _error(
+                            "register.reset.cycle",
+                            register.source,
+                            "register reset cycle: "
+                            + " -> ".join(str(item) for item in cycle),
+                            "reset",
+                        )
+                    else:
+                        active.append(reference)
+                        yield from resolve(target)
+                        active.pop()
+            resolved.add(reference)
+
+        for register in catalog.references.registers.values():
+            yield from resolve(register)
+
+    @staticmethod
+    def _validate_types(
+        catalog: RegisterCatalog, types: TypeSystem
+    ) -> Iterator[Diagnostic]:
+        register_field_kinds = {
+            FieldTypeKind.REGISTER,
+            FieldTypeKind.REGISTER_SELECTOR,
+            FieldTypeKind.REGISTER_PAIR_SELECTOR,
+        }
+        for field in types.field_types.values():
+            if field.kind not in register_field_kinds:
+                continue
+            assert field.register_group is not None
+            group = RegisterValidator._resolve_group(
+                catalog, field.register_group, field.source, field.reference
+            )
+            if group is None:
+                yield _error(
+                    "register.group.unknown",
+                    field.source,
+                    f"field type {field.reference} uses unknown register group "
+                    f"{field.register_group!r}",
+                    "field_types",
+                    field.reference.element,
+                    "register_group",
+                )
+                continue
+            if field.kind == FieldTypeKind.REGISTER_PAIR_SELECTOR:
+                yield from RegisterValidator._validate_pair_type(
+                    group, field.bits, field.source
+                )
+            else:
+                yield from RegisterValidator._validate_direct_type(
+                    group,
+                    field.bits,
+                    field.source,
+                    require_complete=field.kind == FieldTypeKind.REGISTER_SELECTOR,
+                )
+
+        for payload in types.payload_types.values():
+            if payload.kind != PayloadTypeKind.REGISTER_SELECTOR:
+                continue
+            assert payload.register_group is not None
+            group = RegisterValidator._resolve_group(
+                catalog, payload.register_group, payload.source, payload.reference
+            )
+            if group is None:
+                yield _error(
+                    "register.group.unknown",
+                    payload.source,
+                    f"payload type {payload.reference} uses unknown register group "
+                    f"{payload.register_group!r}",
+                    "payload_types",
+                    payload.reference.element,
+                    "register_group",
+                )
+                continue
+            yield from RegisterValidator._validate_direct_type(
+                group, payload.bytes * 8, payload.source, require_complete=True
+            )
+
+    @staticmethod
+    def _resolve_group(
+        catalog: RegisterCatalog,
+        raw_reference: str,
+        source: Path,
+        type_reference: Reference,
+    ) -> RegisterGroup | None:
+        try:
+            return catalog.references.groups.resolve(raw_reference)
+        except (ReferenceError, ValueError):
+            return None
+
+    @staticmethod
+    def _validate_direct_type(
+        group: RegisterGroup,
+        bits: int,
+        source: Path,
+        *,
+        require_complete: bool,
+    ) -> Iterator[Diagnostic]:
+        limit = 1 << bits
+        for register in group.registers.values():
+            if register.encoding is None:
+                if require_complete:
+                    yield _error(
+                        "register.encoding.missing",
+                        register.source,
+                        f"register {register.reference} has no encoding for the "
+                        f"selector declared in {source}",
+                        "encoding",
+                    )
+                continue
+            if register.encoding >= limit:
+                yield _error(
+                    "register.encoding.range",
+                    register.source,
+                    f"register {register.reference} encoding {register.encoding} does "
+                    f"not fit the {bits}-bit selector declared in {source}",
+                    "encoding",
+                )
+
+    @staticmethod
+    def _validate_pair_type(
+        group: RegisterGroup, bits: int, source: Path
+    ) -> Iterator[Diagnostic]:
+        encodings = sorted(
+            register.encoding
+            for register in group.registers.values()
+            if register.encoding is not None
+        )
+        if len(encodings) != len(group.registers) or encodings != list(
+            range(len(group.registers))
+        ):
+            yield _error(
+                "register.pair.layout",
+                group.source,
+                f"pair-selected group {group.reference} must use contiguous "
+                "zero-based member encodings",
+            )
+            return
+        if len(group.registers) % 2:
+            yield _error(
+                "register.pair.odd-count",
+                group.source,
+                f"pair-selected group {group.reference} has an odd member count",
+            )
+        if (len(group.registers) + 1) // 2 > 1 << bits:
+            yield _error(
+                "register.pair.range",
+                group.source,
+                f"register pairs in {group.reference} do not fit the {bits}-bit "
+                f"selector declared in {source}",
+            )
+
+
+class TerminologyValidator:
+    """Validate terminology inventories, references, forms, and relations."""
+
+    def validate(self, catalog: TermCatalog) -> Iterator[Diagnostic]:
+        yield from self._validate_inventories(catalog)
+        yield from self._validate_references(catalog)
+        yield from self._validate_spellings(catalog)
+        yield from self._validate_broader_relations(catalog)
+
+    @staticmethod
+    def _validate_inventories(catalog: TermCatalog) -> Iterator[Diagnostic]:
+        for namespace in catalog.namespaces.values():
+            yield from TerminologyValidator._validate_inventory(
+                namespace.group_inventory
+            )
+            for group in namespace.groups.values():
+                yield from TerminologyValidator._validate_inventory(
+                    group.term_inventory
+                )
+
+    @staticmethod
+    def _validate_inventory(
+        inventory: TerminologyInventory,
+    ) -> Iterator[Diagnostic]:
+        declared = set(inventory.declared)
+        actual = set(inventory.actual)
+        for missing in sorted(declared - actual):
+            yield _error(
+                f"terminology.{inventory.kind}.missing-directory",
+                inventory.source,
+                f"declared terminology {inventory.kind} {missing!r} has no directory",
+            )
+        for undeclared in sorted(actual - declared):
+            yield _error(
+                f"terminology.{inventory.kind}.undeclared-directory",
+                inventory.root / undeclared,
+                f"terminology {inventory.kind} directory {undeclared!r} is not in "
+                f"{inventory.source.name}",
+            )
+        for duplicate in sorted(
+            item for item in declared if inventory.declared.count(item) > 1
+        ):
+            yield _error(
+                f"terminology.{inventory.kind}.duplicate",
+                inventory.source,
+                f"terminology {inventory.kind} {duplicate!r} is listed more than once",
+            )
+
+    @staticmethod
+    def _validate_references(catalog: TermCatalog) -> Iterator[Diagnostic]:
+        terms = catalog.references.terms
+        for term in terms.values():
+            for relation_name, references in (
+                ("broader", term.relations.broader),
+                ("related", term.relations.related),
+            ):
+                for index, reference in enumerate(references):
+                    if reference not in terms:
+                        yield _error(
+                            "terminology.relation.unknown",
+                            term.source,
+                            f"{relation_name} relation names unknown term {reference}",
+                            "relations",
+                            relation_name,
+                            index,
+                        )
+            for part in term.definition.parts:
+                if not isinstance(part, TermReferenceText):
+                    continue
+                if part.reference not in terms:
+                    yield _error(
+                        "terminology.definition.unknown-term",
+                        term.source,
+                        f"definition names unknown term {part.reference}",
+                        "definition",
+                    )
+                    continue
+                target = terms.resolve(part.reference)
+                if not target.forms.supports(part.form, target.abbreviation):
+                    yield _error(
+                        "terminology.definition.unavailable-form",
+                        term.source,
+                        f"term {part.reference} does not define form "
+                        f"{part.form.value!r}",
+                        "definition",
+                    )
+
+    @staticmethod
+    def _validate_spellings(catalog: TermCatalog) -> Iterator[Diagnostic]:
+        for spellings in catalog.spellings.values():
+            references = {item.reference for item in spellings}
+            if len(references) < 2:
+                continue
+            first = catalog.references.terms[spellings[0].reference]
+            conflicting = catalog.references.terms[spellings[1].reference]
+            yield _error(
+                "terminology.spelling.conflict",
+                conflicting.source,
+                f"spelling {spellings[1].value!r} is also owned by {first.reference}",
+                related=(
+                    RelatedLocation(first.source, "conflicting terminology spelling"),
+                ),
+            )
+
+    @staticmethod
+    def _validate_broader_relations(catalog: TermCatalog) -> Iterator[Diagnostic]:
+        terms = catalog.references.terms
+        complete: set[Reference] = set()
+        active: list[Reference] = []
+
+        def visit(term: Term) -> Iterator[Diagnostic]:
+            if term.reference in complete:
+                return
+            if term.reference in active:
+                start = active.index(term.reference)
+                cycle = (*active[start:], term.reference)
+                yield _error(
+                    "terminology.relation.broader-cycle",
+                    term.source,
+                    "circular broader relation: " + " -> ".join(map(str, cycle)),
+                    "relations",
+                    "broader",
+                )
+                return
+            active.append(term.reference)
+            for reference in term.relations.broader:
+                if reference in terms:
+                    yield from visit(terms.resolve(reference))
+            active.pop()
+            complete.add(term.reference)
+
+        for term in terms.values():
+            yield from visit(term)
+
+
+@dataclass(frozen=True, slots=True)
+class ValidationScope:
+    """One complete or targeted project-validation request."""
+
+    project: IsaProject
+    selected: tuple[InstructionBundle, ...]
+    complete: bool
+
+
+class ValidationRule(ABC):
+    """Extensible project-level validation rule contract."""
+
+    @abstractmethod
+    def validate(self, scope: ValidationScope) -> Iterator[Diagnostic]:
+        """Yield diagnostics applicable to this validation scope."""
+
+
+class BundleValidationRule(ValidationRule):
+    def __init__(self, validator: BundleValidator | None = None) -> None:
+        self.validator = validator or BundleValidator()
+
+    def validate(self, scope: ValidationScope) -> Iterator[Diagnostic]:
+        for bundle in scope.selected:
+            yield from self.validator.validate(bundle, scope.project)
+
+
+class CatalogValidationRule(ValidationRule):
+    def __init__(self, validator: CatalogValidator | None = None) -> None:
+        self.validator = validator or CatalogValidator()
+
+    def validate(self, scope: ValidationScope) -> Iterator[Diagnostic]:
+        yield from self.validator.validate(
+            scope.project, scope.selected, complete=scope.complete
+        )
+
+
+class CpuidValidationRule(ValidationRule):
+    def __init__(self, validator: CpuidValidator | None = None) -> None:
+        self.validator = validator or CpuidValidator()
+
+    def validate(self, scope: ValidationScope) -> Iterator[Diagnostic]:
+        if scope.complete:
+            yield from self.validator.validate(scope.project.cpuid)
+
+
+class EventValidationRule(ValidationRule):
+    def __init__(self, validator: EventValidator | None = None) -> None:
+        self.validator = validator or EventValidator()
+
+    def validate(self, scope: ValidationScope) -> Iterator[Diagnostic]:
+        if scope.complete:
+            yield from self.validator.validate(scope.project.events)
+
+
+class RegisterValidationRule(ValidationRule):
+    def __init__(self, validator: RegisterValidator | None = None) -> None:
+        self.validator = validator or RegisterValidator()
+
+    def validate(self, scope: ValidationScope) -> Iterator[Diagnostic]:
+        if scope.complete and scope.project.registers.references.groups:
+            yield from self.validator.validate(
+                scope.project.registers, scope.project.types
+            )
+
+
+class TerminologyValidationRule(ValidationRule):
+    def __init__(self, validator: TerminologyValidator | None = None) -> None:
+        self.validator = validator or TerminologyValidator()
+
+    def validate(self, scope: ValidationScope) -> Iterator[Diagnostic]:
+        if scope.complete:
+            yield from self.validator.validate(scope.project.terminology)
+
+
+class DocumentSourceValidationRule(ValidationRule):
+    """Render manual sources in memory so preprocessing failures are diagnostics."""
+
+    def validate(self, scope: ValidationScope) -> Iterator[Diagnostic]:
+        if not scope.complete:
+            return
+        project = scope.project
+        artifact_root = project.root.parent / "artifacts"
+        if not artifact_root.is_dir() or not (artifact_root / "schema.yaml").is_file():
+            return
+        try:
+            from .generation import (
+                ArtifactGenerationContext,
+                ArtifactGeneratorRegistry,
+            )
+        except ImportError:
+            from generation import ArtifactGenerationContext, ArtifactGeneratorRegistry
+
+        try:
+            registry = ArtifactGeneratorRegistry.discover(project)
+        except (OSError, RuntimeError, ValueError) as error:
+            yield _error("document.source", artifact_root, str(error))
+            return
+        context = ArtifactGenerationContext.create(project, project.root / ".check")
+        for artifact_id in registry.implemented_ids:
+            generator = registry.generator(artifact_id)
+            if not any(
+                output.suffix == ".tex"
+                for output in generator.definition.declared_outputs
+            ):
+                continue
+            try:
+                generator.generate(context)
+            except (OSError, RuntimeError, ValueError) as error:
+                yield _error(
+                    "document.source", generator.definition.source, str(error)
+                )
+
+
+class CheckService:
+    """Apply an ordered set of validation rules to one project scope."""
+
+    def __init__(self, rules: tuple[ValidationRule, ...] | None = None) -> None:
+        self.rules = rules or (
+            BundleValidationRule(),
+            CatalogValidationRule(),
+            CpuidValidationRule(),
+            EventValidationRule(),
+            RegisterValidationRule(),
+            TerminologyValidationRule(),
+            DocumentSourceValidationRule(),
+        )
+
+    def check(
+        self,
+        project: IsaProject,
+        targets: Iterable[str | Path] = (),
+    ) -> DiagnosticBag:
+        requested = tuple(targets)
+        scope = ValidationScope(project, project.select(requested), not requested)
+        diagnostics = DiagnosticBag()
+        for rule in self.rules:
+            diagnostics.extend(rule.validate(scope))
+        return diagnostics

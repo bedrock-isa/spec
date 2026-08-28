@@ -1,0 +1,19 @@
+mnemonic: BCLR
+name: Bit Clear
+summary: Performs the bit clear operation.
+route: integer_bitfield
+sail_entries:
+- execute_BCLR
+privileged: false
+repeat:
+  type: repcc
+  observed_value: computed
+operands:
+  bit_index:
+    role: source
+    access: read
+    value_type: integer
+  dst:
+    role: destination
+    access: read_write
+    value_type: integer

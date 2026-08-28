@@ -1,0 +1,7 @@
+id: MACHINE_CHECK
+name: Machine Check
+summary: The implementation reports a corrected, recoverable, or fatal machine-check condition.
+code: 0x7c
+family: MACHINE_STATE
+frame: auxiliary
+payload: [SOURCE, SEVERITY, PRECISE, RETRY_SAFE, FAULT_EA, FAULT_LINEAR, EVENT_AUX]

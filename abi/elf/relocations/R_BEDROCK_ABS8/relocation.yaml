@@ -1,0 +1,8 @@
+id: R_BEDROCK_ABS8
+value: 1
+family: absolute
+result:
+  kind: integer
+  width_bits: 8
+  signed: false
+calculation: symbol + addend

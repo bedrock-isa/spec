@@ -1,0 +1,35 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesFile{bedrock-reference/document.sty}[2026/08/26 Bedrock reference document commands]
+
+\newcommand{\BedrockMakeTitlePage}[3]{%
+  \pagenumbering{roman}
+  \begin{titlepage}
+  \centering
+  \vspace*{0.75in}
+  {\Large \MakeUppercase{\BedrockArchitectureName} ARCHITECTURE\par}
+  \vspace{0.25in}
+  {\Huge\bfseries #1\par}
+  \if\relax\detokenize{#2}\relax\else
+    \vspace{0.35in}{\large #2\par}
+  \fi
+  \if\relax\detokenize{#3}\relax\else
+    \vspace{0.20in}{\large #3\par}
+  \fi
+  \vfill
+  \end{titlepage}}
+
+\newif\ifBedrockDocumentHasFigures
+\BedrockDocumentHasFigurestrue
+\newcommand{\BedrockFrontMatter}{%
+  \tableofcontents
+  \clearpage
+  \listoftables
+  \clearpage
+  \ifBedrockDocumentHasFigures
+    \listoffigures
+    \clearpage
+  \fi
+  \pagenumbering{arabic}}
+
+
+\endinput

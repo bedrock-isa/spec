@@ -1,0 +1,25 @@
+encodings:
+  b_w_l_q_z_rn_r_rn_s_pn_p_ea_e:
+    pattern: 11111111000000101010zz0rrrrssssppppeeeeeee
+    syntax: PLOOP.{B|W|L|Q}(z) Rn(r), Rn(s), Pn(p), <ea>(e)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      r:
+        role: remaining
+        type: base.field_types.Rn
+      s:
+        role: offset
+        type: base.field_types.Rn
+      p:
+        role: predicate
+        type: VECTOR.field_types.Pn
+      e:
+        role: target
+        type: base.field_types.EA
+    overlaps:
+    - operands:
+      - remaining
+      - offset
+      type: illegal_instruction

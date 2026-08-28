@@ -1,0 +1,24 @@
+mnemonic: CMPXCHG
+name: Compare And Exchange
+summary: Performs the compare and exchange operation.
+route: atomics
+sail_entries:
+- execute_CMPXCHG
+privileged: false
+operands:
+  order:
+    role: source
+    access: read
+    value_type: integer
+  expected:
+    role: destination
+    access: read_write
+    value_type: integer
+  desired:
+    role: source
+    access: read
+    value_type: integer
+  memory:
+    role: destination
+    access: read_write
+    value_type: integer

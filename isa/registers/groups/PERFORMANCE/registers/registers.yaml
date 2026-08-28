@@ -1,0 +1,4 @@
+registers:
+- CYCLE
+- INSTRET
+- PTWALK

@@ -1,0 +1,8 @@
+id: memory_effect
+display:
+  canonical: memory effect
+  plural: memory effects
+article: a
+definition: >-
+  a result that becomes observable to another logical processor or an external
+  system.

@@ -1,0 +1,7 @@
+id: INVALID_ADDRESSING_FORM
+name: Invalid Addressing Form
+summary: The selected effective-address form is not legal for the instruction.
+code: 0x11
+family: INSTRUCTION_VALIDATION
+frame: basic
+

@@ -1,5 +1,0 @@
-forms:
-- id: extrashort.yield
-  class: extrashort
-  bits: '0001001'
-  syntax: YIELD

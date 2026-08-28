@@ -1,0 +1,22 @@
+mnemonic: VCLASS
+name: Vector Floating-Point Classify
+summary: Writes a floating-point classification bitmap for each active element.
+route: vector
+sail_entries:
+- execute_VCLASS
+privileged: false
+additional_cpuid_flags:
+- FP.cpuid.EXTENSIONS.DIRECTORY.FEATURES.FP
+operands:
+  govern:
+    role: governing_predicate
+    access: read
+    value_type: predicate
+  src:
+    role: source
+    access: read
+    value_type: vector
+  dst:
+    role: destination
+    access: read_write
+    value_type: vector

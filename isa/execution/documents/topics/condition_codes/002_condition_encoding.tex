@@ -1,0 +1,41 @@
+\subsection{Condition Encoding}
+
+Conditional instructions encode a four-bit condition code. The zero-valued condition is T, which is also used for
+canonical aliases such as JMP for Jcc.T.
+
+The condition-code bits are the low four meaningful bits of FLAGS, as shown in the Programming Model section.
+
+\Needspace{1.25in}
+\manualtablecaption{Condition Code Encoding}
+\begin{manuallongtable}{@{}>{\raggedright\arraybackslash}p{0.65in}>{\raggedright\arraybackslash}p{0.55in}>{\raggedright\arraybackslash}p{0.85in}>{\raggedright\arraybackslash}p{3.0in}@{}}
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Bits} & \textbf{Name} & \textbf{Aliases} & \textbf{Expression}\\
+\midrule
+\endfirsthead
+\multicolumn{4}{@{}l}{\scriptsize\itshape Table \themanualtable\ (continued)}\\
+\toprule
+\rowcolor{ManualHeaderFill}
+\textbf{Bits} & \textbf{Name} & \textbf{Aliases} & \textbf{Expression}\\
+\midrule
+\endhead
+\texttt{0000} & \texttt{T} & \texttt{-} & true\\
+\texttt{0001} & \texttt{F} & \texttt{-} & false\\
+\texttt{0010} & \texttt{EQ} & \texttt{Z} & Z == 1\\
+\texttt{0011} & \texttt{NE} & \texttt{NZ} & Z == 0\\
+\texttt{0100} & \texttt{ULT} & \texttt{C} & C == 1\\
+\texttt{0101} & \texttt{UGE} & \texttt{NC} & C == 0\\
+\texttt{0110} & \texttt{MI} & \texttt{N} & N == 1\\
+\texttt{0111} & \texttt{PL} & \texttt{NN} & N == 0\\
+\texttt{1000} & \texttt{VS} & \texttt{V} & V == 1\\
+\texttt{1001} & \texttt{VC} & \texttt{NV} & V == 0\\
+\texttt{1010} & \texttt{ULE} & \texttt{-} & C == 1 \textbar{}\textbar{} Z == 1\\
+\texttt{1011} & \texttt{UGT} & \texttt{-} & C == 0 \&\& Z == 0\\
+\texttt{1100} & \texttt{LT} & \texttt{-} & N != V\\
+\texttt{1101} & \texttt{GE} & \texttt{-} & N == V\\
+\texttt{1110} & \texttt{LE} & \texttt{-} & Z == 1 \textbar{}\textbar{} N != V\\
+\texttt{1111} & \texttt{GT} & \texttt{-} & Z == 0 \&\& N == V\\
+\bottomrule
+\end{manuallongtable}
+
+\label{table:condition-code-encoding}

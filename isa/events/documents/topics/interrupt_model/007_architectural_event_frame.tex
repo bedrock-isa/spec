@@ -1,0 +1,21 @@
+\subsection{Architectural Event Frame}
+Every event frame begins with exactly eight 64-bit slots. EVENT\_INFO contains the event code in bits 31 through 0;
+its upper half is zero. FRAME\_CONTROL contains only frame shape, saved nesting state, saved FLAGS, and saved STATUS.
+Event classification is carried exclusively by EVENT\_INFO.
+
+\input{isa/events/documents/fragments/supervisor_stack_frame_diagram.tex}
+
+\input{isa/events/documents/fragments/stack_frame_table.tex}
+
+\input{isa/events/documents/fragments/frame_control_diagram.tex}
+
+\input{isa/events/documents/fragments/frame_control_table.tex}
+
+ERET first validates the frame shape and nesting metadata. BASIC requires frame\_size 8, ERROR requires 10, and
+PAGE and AUXILIARY require 12. It requires saved STATUS.PM=1, saved STATUS.EDEPTH plus one to equal the
+current depth, and saved STATUS.UO to match the active outer-origin chain.
+
+Only after those checks does ERET validate the saved control state, segment images, SP, and PC.
+On success it restores FLAGS, STATUS, CS, DS, SS, SP, PC, and current DFA as one commit. It ignores the
+fixed-header (:term:base.terms.padding:) slot at +0x38 and restores no hidden repeat state. EVENT\_INFO and the event-specific (:term:base.terms.payload:)
+remain available to software.

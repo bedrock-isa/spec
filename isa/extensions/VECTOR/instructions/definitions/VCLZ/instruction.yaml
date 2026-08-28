@@ -1,0 +1,20 @@
+mnemonic: VCLZ
+name: Vector Count Leading Zeros
+summary: Counts consecutive zero bits from the high end of each active element.
+route: vector
+sail_entries:
+- execute_VCLZ
+privileged: false
+operands:
+  govern:
+    role: governing_predicate
+    access: read
+    value_type: predicate
+  src:
+    role: source
+    access: read
+    value_type: vector
+  dst:
+    role: destination
+    access: read_write
+    value_type: vector

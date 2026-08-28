@@ -1,0 +1,6 @@
+id: temporary_operand_evaluation_state
+display:
+  canonical: temporary operand-evaluation state
+article: a
+definition: >-
+  a working copy used during operand evaluation.

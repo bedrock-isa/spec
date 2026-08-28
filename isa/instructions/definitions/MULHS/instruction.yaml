@@ -1,0 +1,19 @@
+mnemonic: MULHS
+name: Signed Multiply High
+summary: Performs the signed multiply high operation.
+route: integer_mul_div
+sail_entries:
+- execute_MULHS
+privileged: false
+repeat:
+  type: repcc
+  observed_value: dst
+operands:
+  src:
+    role: source
+    access: read
+    value_type: integer
+  dst:
+    role: destination
+    access: read_write
+    value_type: integer

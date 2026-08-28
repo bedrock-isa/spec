@@ -1,0 +1,11 @@
+id: R_BEDROCK_TLSDESC_GOTPCREL64
+value: 42
+family: tlsdesc
+result:
+  kind: integer
+  width_bits: 64
+  signed: true
+calculation: tlsdesc(symbol) + addend - place
+field: isa:base.payload_types.DISP64
+relaxations:
+- base.relocations.R_BEDROCK_TLSDESC_GOTPCREL32S

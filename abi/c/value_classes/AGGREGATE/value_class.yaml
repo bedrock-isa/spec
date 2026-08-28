@@ -1,0 +1,13 @@
+id: AGGREGATE
+kinds:
+- aggregate
+argument:
+  mode: copy_address
+  register_class: base.register_classes.GENERAL
+  units: 1
+result:
+  mode: size_dependent
+  register_class: base.register_classes.GENERAL
+  units: 2
+  direct_maximum_bytes: 16
+  fallback: sret

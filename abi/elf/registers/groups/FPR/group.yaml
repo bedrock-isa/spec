@@ -1,0 +1,5 @@
+id: FPR
+register_group: isa:FP.registers.FPR
+dwarf:
+- first: 32
+  registers: all

@@ -1,0 +1,6 @@
+id: long_call
+display:
+  canonical: Long Call
+definition: >-
+  the instruction family that creates a two-value return context while changing
+  the code segment and program counter.

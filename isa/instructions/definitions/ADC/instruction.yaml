@@ -1,0 +1,19 @@
+mnemonic: ADC
+name: Add With Carry
+summary: Performs the add with carry operation.
+route: integer_alu
+sail_entries:
+- execute_ADC
+privileged: false
+repeat:
+  type: repcc
+  observed_value: dst
+operands:
+  src:
+    role: source
+    access: read
+    value_type: integer
+  dst:
+    role: destination
+    access: read_write
+    value_type: integer

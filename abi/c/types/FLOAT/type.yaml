@@ -1,0 +1,6 @@
+id: FLOAT
+spelling: "float"
+call_kind: f32
+size_bits: 32
+alignment_bytes: 4
+representation: binary32

@@ -1,0 +1,5 @@
+id: read_as_zero
+display:
+  canonical: read-as-zero
+definition: >-
+  a rule under which reads return zero while the field remains reserved.

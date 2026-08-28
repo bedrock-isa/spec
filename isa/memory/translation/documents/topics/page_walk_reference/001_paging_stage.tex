@@ -1,0 +1,50 @@
+\subsection{Paging Stage}
+
+Paging is enabled by \texttt{PTCR.PE} and translates the (:term:base.terms.linear_address:) produced by (:term:base.terms.segment_pre_translation:). Before
+the walk can produce a translation, the (:term:base.terms.linear_address:) must be canonical for the mode selected by
+\texttt{PTCR.LA57}. A noncanonical address raises (:ref:base.events.EXCEPTION.NONCANONICAL_ADDRESS:). With paging disabled, the memory system uses
+the (:term:base.terms.linear_address:) directly.
+
+Each page-table level uses a nine-bit address (:term:base.terms.field:) to select one of 512 64-bit entries in a 4-KiB table page. For a
+table-page base address (B) and index (i), the selected entry is at (B + 8i). The walker starts at the physical
+table page named by \texttt{PTCR.root\_page}. At each active level, a present selected entry with \texttt{T=1} points to the
+next table page; this form is valid only above L1. A selected entry with \texttt{T=0} terminates the walk. A
+terminating entry is a byte-addressed leaf at any active level. If its level is $L$, its naturally
+aligned physical base is combined with the low $12+9(L-1)$ linear-address bits:
+
+\[
+  \mathit{byte\_address} = (\mathit{leaf\_PFN} \ll 12) +
+  \mathit{linear}[12+9(L-1)-1:0].
+\]
+
+The resulting L1 through L5 leaf sizes are 4 KiB, 2 MiB, 1 GiB, 512 GiB, and 256 TiB. Bit 7 is the A (:term:base.terms.field:) in both
+descriptor layouts and does not participate in address formation.
+
+The walker intersects table-pointer R/W/X/U (:term:base.terms.field|plural:) while descending. The
+terminating leaf supplies decoded AM permissions, U, the final frame number,
+G, CP, and the Normal/MMIO class. The detailed entry-validity,
+permission, accessed, and dirty rules are specified under Page-Table Entry Format. At each consumed level, result
+priority is not-present first, structural validity second, and effective permission third; the walker resolves
+those results before consuming a lower level.
+
+\begin{manuallistedformatdiagram}{Linear-Address Paging Fields}
+\manualformatrowrange{LA48 linear[63:0]}{63}{0}{%
+\manualformatfield{sign extension}{16}
+\manualformatfield{L4}{9}
+\manualformatfield{L3}{9}
+\manualformatfield{L2}{9}
+\manualformatfield{L1}{9}
+\manualformatfield{offset}{12}
+}
+\manualformatrowrange{LA57 linear[63:0]}{63}{0}{%
+\manualformatfield{SEXT}{7}
+\manualformatfield{L5}{9}
+\manualformatfield{L4}{9}
+\manualformatfield{L3}{9}
+\manualformatfield{L2}{9}
+\manualformatfield{L1}{9}
+\manualformatfield{offset}{12}
+}
+\end{manuallistedformatdiagram}
+
+\clearpage

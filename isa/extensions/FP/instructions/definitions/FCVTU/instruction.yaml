@@ -1,0 +1,18 @@
+mnemonic: FCVTU
+name: Floating-Point Convert Unsigned
+summary: Performs the floating-point convert unsigned operation.
+route: fpu
+sail_entries:
+- execute_FCVTU
+privileged: false
+repeat:
+  type: rep
+operands:
+  src:
+    role: source
+    access: read
+    value_type: floating
+  dst:
+    role: destination
+    access: write
+    value_type: floating
