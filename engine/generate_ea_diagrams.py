@@ -11,16 +11,16 @@ import re
 import sys
 from typing import Any
 
-import yaml
-
 try:
-    from .ea_mode import EAMode
+    from .ea_mode import EAMode, EAModeCatalog
     from .entity import entity_label
     from .reference import Reference
+    from .type_system import TypeSystem
 except ImportError:  # Support loading engine directly on PYTHONPATH.
-    from ea_mode import EAMode
+    from ea_mode import EAMode, EAModeCatalog
     from entity import entity_label
     from reference import Reference
+    from type_system import TypeSystem
 
 
 def _tex(value: object) -> str:
@@ -337,7 +337,6 @@ class _EAFlowLayout:
         self, box_id: str, operation_id: str, lane: str
     ) -> None:
         box = self.nodes[box_id]
-        operation = self.nodes[operation_id]
         x = self._lane_x(lane)
         box_y = self._row_y(box.row) - 0.13
         number = self._number
@@ -685,21 +684,6 @@ def _block_height(mode: EAMode) -> float:
     return min(7.0, format_height + flow_height + 0.70)
 
 
-def _mode_context(reference: Reference) -> str:
-    """Build a display context from the mode's logical identity."""
-
-    if len(reference.path) != 2:
-        raise ValueError(
-            f"{reference}: EA mode reference must contain address space and mode type"
-        )
-    address_space, mode_type = reference.path
-    components = []
-    if reference.owner != "base":
-        components.extend((reference.owner, address_space.upper()))
-    components.append(mode_type)
-    return " ".join(components)
-
-
 def _syntax_variants(mode: EAMode) -> tuple[str, ...]:
     syntax = mode.to_dict().get("syntax")
     if not isinstance(syntax, str):
@@ -811,7 +795,7 @@ def _update_description(mode: EAMode) -> str:
 def render_description_block(mode: EAMode, reference: Reference) -> str:
     """Render the former hand-authored EA explanation block from mode data."""
 
-    title = _title_case(f"{_mode_context(reference)} {mode['name']}")
+    title = _title_case(f"{mode.catalog.name} {mode['name']}")
     label = "EA encoding" if isinstance(mode["encodings"][0]["pattern"], str) else "Descriptor"
     pseudocode = mode.to_dict().get("pseudocode")
     generation = (
@@ -857,6 +841,7 @@ def _encoding_variant_mode(
         mode.source,
         mode.isa_root,
         mode.type_system,
+        catalog=mode.catalog,
     )
 
 
@@ -916,29 +901,12 @@ def render_mode(mode: EAMode, reference: Reference | None = None) -> str:
 def catalog_mode_paths(isa_root: Path) -> list[Path]:
     """Return concrete mode paths in each profile catalog's declared order."""
 
-    paths: list[Path] = []
-    type_order = {"compact": 0, "EXT1": 1, "EXT2": 2}
-    catalogs = sorted(
-        (
-            path
-            for path in isa_root.rglob("modes.yaml")
-            if path.parent.name != "modes"
-        ),
-        key=lambda path: (
-            path.parent.parent.as_posix(),
-            type_order.get(path.parent.name, len(type_order)),
-            path.as_posix(),
-        ),
-    )
-    for catalog in catalogs:
-        data = yaml.safe_load(catalog.read_text(encoding="utf-8"))
-        if not isinstance(data, Mapping) or not isinstance(data.get("modes"), list):
-            raise ValueError(f"{catalog}: expected a modes list")
-        for mode_id in data["modes"]:
-            if not isinstance(mode_id, str):
-                raise ValueError(f"{catalog}: mode names must be strings")
-            paths.append(catalog.parent / mode_id / "mode.yaml")
-    return paths
+    types = TypeSystem.load(isa_root)
+    return [
+        catalog.mode_path(mode_id)
+        for catalog in EAModeCatalog.discover(isa_root, types)
+        for mode_id in catalog.modes
+    ]
 
 
 def render_paths(paths: Iterable[Path], isa_root: Path) -> str:

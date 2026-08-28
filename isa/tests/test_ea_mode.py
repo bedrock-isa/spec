@@ -3,7 +3,8 @@ from pathlib import Path
 
 import yaml
 
-from engine.ea_mode import EAMode
+from engine.ea_mode import EAMode, EAModeCatalog
+from engine.type_system import TypeSystem
 
 
 class EAModeTest(unittest.TestCase):
@@ -21,6 +22,21 @@ class EAModeTest(unittest.TestCase):
         for path in paths:
             with self.subTest(path=path):
                 EAMode.load(path, self.isa_root)
+
+    def test_catalog_name_is_explicit_reader_text(self) -> None:
+        catalogs = EAModeCatalog.discover(
+            self.isa_root,
+            TypeSystem.load(self.isa_root),
+        )
+        fp = next(catalog for catalog in catalogs if catalog.owner == "FP")
+
+        self.assertEqual(fp.name, "FP FEA compact")
+        self.assertEqual(fp.profile, "fea")
+        self.assertEqual(fp.mode_type, "compact")
+        self.assertEqual(
+            str(fp.reference("immediate")),
+            "FP.fea.modes.compact.immediate",
+        )
 
     def test_unqualified_type_reference_is_rejected(self) -> None:
         path = self.isa_root / "ea/modes/compact/register/mode.yaml"

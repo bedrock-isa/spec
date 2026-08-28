@@ -1,3 +1,4 @@
+name: EXT1
 modes:
   - explicit_segment_base
   - explicit_segment_zero_base

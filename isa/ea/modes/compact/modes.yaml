@@ -1,3 +1,4 @@
+name: compact
 modes:
   - register
   - stack_pointer_displaced

@@ -10,7 +10,7 @@ from types import MappingProxyType
 try:
     from .cpuid import CpuidCatalog, CpuidField
     from .disclosure import ImplementationDisclosureCatalog
-    from .ea_mode import EAMode
+    from .ea_mode import EAMode, EAModeCatalog
     from .encoding import EncodingCatalog
     from .entity import EntityCatalog
     from .event import EventCatalog
@@ -25,7 +25,7 @@ try:
 except ImportError:  # Support loading engine directly on PYTHONPATH.
     from cpuid import CpuidCatalog, CpuidField
     from disclosure import ImplementationDisclosureCatalog
-    from ea_mode import EAMode
+    from ea_mode import EAMode, EAModeCatalog
     from encoding import EncodingCatalog
     from entity import EntityCatalog
     from event import EventCatalog
@@ -193,12 +193,16 @@ class SourceCatalog:
             extension_components, extension_catalog.declared
         )
 
-        for mode_path in cls._catalogued_ea_modes(
-            isa_root, extension_catalog.declared
-        ):
-            mode = EAMode.load(mode_path, isa_root, types)
-            reference = cls._ea_reference(isa_root, mode_path)
-            ea_modes.register(reference, mode)
+        owners = ("base", *extension_catalog.declared)
+        for catalog in EAModeCatalog.discover(isa_root, types, owners):
+            for mode_id in catalog.modes:
+                mode = EAMode.load(
+                    catalog.mode_path(mode_id),
+                    isa_root,
+                    types,
+                    catalog=catalog,
+                )
+                ea_modes.register(mode.reference, mode)
 
         return cls(
             instructions=instructions,
@@ -408,46 +412,6 @@ class SourceCatalog:
         if any(not isinstance(value, str) for value in values):
             raise ValueError(f"{path}: {key} entries must be strings")
         return tuple(values)
-
-    @classmethod
-    def _catalogued_ea_modes(
-        cls, isa_root: Path, extension_ids: tuple[str, ...] = ()
-    ) -> tuple[Path, ...]:
-        paths: list[Path] = []
-        type_order = {"compact": 0, "EXT1": 1, "EXT2": 2}
-        roots = [isa_root / "ea"]
-        roots.extend(isa_root / "extensions" / item for item in extension_ids)
-        catalogs = sorted(
-            (
-                path
-                for root in roots
-                if root.is_dir()
-                for path in root.rglob("modes.yaml")
-                if path.parent.name != "modes"
-            ),
-            key=lambda path: (
-                0 if path.is_relative_to(isa_root / "ea") else 1,
-                path.parent.parent.as_posix(),
-                type_order.get(path.parent.name, len(type_order)),
-                path.as_posix(),
-            ),
-        )
-        for catalog in catalogs:
-            for mode in cls._load_name_list(catalog, "modes"):
-                paths.append(catalog.parent / mode / "mode.yaml")
-        return tuple(paths)
-
-    @staticmethod
-    def _ea_reference(isa_root: Path, source: Path) -> Reference:
-        try:
-            relative = source.parent.relative_to(isa_root / "ea")
-        except ValueError:
-            relative = source.parent.relative_to(isa_root / "extensions")
-            return Reference(
-                relative.parts[0], relative.parts[1:-1], relative.parts[-1]
-            )
-        return Reference("base", ("ea", *relative.parts[:-1]), relative.parts[-1])
-
 
 @dataclass(frozen=True, slots=True)
 class IsaProject:

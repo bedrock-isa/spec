@@ -5,6 +5,7 @@ from __future__ import annotations
 import ast
 from collections.abc import Iterator, Mapping, MutableMapping
 from copy import deepcopy
+from dataclasses import dataclass
 from pathlib import Path
 import re
 from typing import Any
@@ -22,6 +23,133 @@ except ImportError:  # Support loading engine directly on PYTHONPATH.
     from type_system import FieldType, FieldTypeKind, TypeSystem
 
 
+def _load_name_list(path: Path, key: str) -> tuple[str, ...]:
+    with path.open("r", encoding="utf-8") as stream:
+        raw = yaml.safe_load(stream)
+    values = raw.get(key) if isinstance(raw, Mapping) else None
+    if not isinstance(values, list) or any(not isinstance(item, str) for item in values):
+        raise ValueError(f"{path}: expected a {key} list of names")
+    if len(set(values)) != len(values):
+        raise ValueError(f"{path}: {key} must not contain duplicates")
+    return tuple(values)
+
+
+@dataclass(frozen=True, slots=True)
+class EAModeCatalog:
+    """One explicitly named EA mode catalog in the architectural namespace."""
+
+    source: Path
+    owner: str
+    profile: str
+    mode_type: str
+    name: str
+    modes: tuple[str, ...]
+
+    @classmethod
+    def load(
+        cls,
+        source: str | Path,
+        *,
+        owner: str,
+        profile: str,
+        mode_type: str,
+    ) -> "EAModeCatalog":
+        path = Path(source)
+        with path.open("r", encoding="utf-8") as stream:
+            raw = yaml.safe_load(stream)
+        if not isinstance(raw, Mapping) or set(raw) != {"name", "modes"}:
+            raise ValueError(f"{path}: expected exactly name and modes")
+        name = raw["name"]
+        modes = raw["modes"]
+        if not isinstance(name, str) or not name.strip():
+            raise ValueError(f"{path}: name must be a non-empty string")
+        if not isinstance(modes, list) or any(not isinstance(item, str) for item in modes):
+            raise ValueError(f"{path}: modes must be a list of names")
+        if len(set(modes)) != len(modes):
+            raise ValueError(f"{path}: modes must not contain duplicates")
+        try:
+            for mode_id in modes or ("placeholder",):
+                Reference(owner, (profile, "modes", mode_type), mode_id)
+        except ReferenceError as error:
+            raise ValueError(f"{path}: invalid EA catalog identity: {error}") from error
+        return cls(path, owner, profile, mode_type, name.strip(), tuple(modes))
+
+    @classmethod
+    def discover(
+        cls,
+        isa_root: str | Path,
+        type_system: TypeSystem,
+        owners: tuple[str, ...] | None = None,
+    ) -> tuple["EAModeCatalog", ...]:
+        root = Path(isa_root).resolve()
+        profiles: dict[str, str] = {}
+        for reference, definition in type_system.field_types.items():
+            if definition.kind != FieldTypeKind.EFFECTIVE_ADDRESS:
+                continue
+            if reference.owner in profiles:
+                raise ValueError(
+                    f"{root}: owner {reference.owner!r} has multiple EA profiles"
+                )
+            assert definition.profile is not None
+            profiles[reference.owner] = definition.profile
+        owner_order = owners or tuple(profiles)
+        catalogs: list[EAModeCatalog] = []
+        for owner in owner_order:
+            profile = profiles.get(owner)
+            if profile is None:
+                continue
+            profile_root = (
+                root / profile
+                if owner == "base"
+                else root / "extensions" / owner / profile
+            )
+            modes_root = profile_root / "modes"
+            mode_types = _load_name_list(modes_root / "mode_types.yaml", "mode_types")
+            for mode_type in mode_types:
+                catalogs.append(
+                    cls.load(
+                        modes_root / mode_type / "modes.yaml",
+                        owner=owner,
+                        profile=profile,
+                        mode_type=mode_type,
+                    )
+                )
+        return tuple(catalogs)
+
+    @classmethod
+    def containing(
+        cls,
+        mode_path: str | Path,
+        isa_root: str | Path,
+        type_system: TypeSystem,
+    ) -> "EAModeCatalog":
+        source = Path(mode_path).resolve()
+        matches = [
+            catalog
+            for catalog in cls.discover(isa_root, type_system)
+            if source
+            in {
+                (catalog.source.parent / mode_id / "mode.yaml").resolve()
+                for mode_id in catalog.modes
+            }
+        ]
+        if len(matches) != 1:
+            raise ValueError(
+                f"{mode_path}: expected exactly one declaring EA catalog, found "
+                f"{len(matches)}"
+            )
+        return matches[0]
+
+    def reference(self, mode_id: str) -> Reference:
+        if mode_id not in self.modes:
+            raise ValueError(f"{self.source}: undeclared EA mode {mode_id!r}")
+        return Reference(self.owner, (self.profile, "modes", self.mode_type), mode_id)
+
+    def mode_path(self, mode_id: str) -> Path:
+        self.reference(mode_id)
+        return self.source.parent / mode_id / "mode.yaml"
+
+
 class EAMode(MutableMapping[str, Any]):
     """Encapsulate and validate one compact or extended ``mode.yaml``."""
 
@@ -31,6 +159,8 @@ class EAMode(MutableMapping[str, Any]):
         source: str | Path,
         isa_root: str | Path | None = None,
         type_system: TypeSystem | None = None,
+        *,
+        catalog: EAModeCatalog | None = None,
     ) -> None:
         self._data = deepcopy(dict(data))
         self.source = Path(source)
@@ -38,7 +168,10 @@ class EAMode(MutableMapping[str, Any]):
             Path(isa_root) if isa_root is not None else self._find_isa_root()
         )
         self.type_system = type_system or TypeSystem.load(self.isa_root)
-        self.reference = self._reference_from_source()
+        self.catalog = catalog or EAModeCatalog.containing(
+            self.source, self.isa_root, self.type_system
+        )
+        self.reference = self.catalog.reference(str(self._data.get("id", "")))
         self.validate()
 
     @classmethod
@@ -47,6 +180,8 @@ class EAMode(MutableMapping[str, Any]):
         path: str | Path,
         isa_root: str | Path | None = None,
         type_system: TypeSystem | None = None,
+        *,
+        catalog: EAModeCatalog | None = None,
     ) -> "EAMode":
         """Load and validate a mode YAML file."""
 
@@ -55,12 +190,11 @@ class EAMode(MutableMapping[str, Any]):
             data = yaml.safe_load(stream)
         if not isinstance(data, Mapping):
             raise ValueError(f"{source}: expected a YAML mapping")
-        return cls(data, source, isa_root, type_system)
+        return cls(data, source, isa_root, type_system, catalog=catalog)
 
     def validate(self) -> None:
         """Validate this file without performing catalog-wide checks."""
 
-        self._validate_mode_type_membership()
         raw_encodings = self._data.get("encodings")
         first_encoding = (
             raw_encodings[0]
@@ -187,7 +321,10 @@ class EAMode(MutableMapping[str, Any]):
 
         self.validate()
         destination = Path(path) if path is not None else self.source
-        destination_reference = self._reference_from_source(destination)
+        destination_catalog = EAModeCatalog.containing(
+            destination, self.isa_root, self.type_system
+        )
+        destination_reference = destination_catalog.reference(self._data["id"])
         if destination_reference.element != self._data["id"]:
             raise ValueError(
                 f"{destination}: mode id {self._data['id']!r} does not match "
@@ -202,6 +339,7 @@ class EAMode(MutableMapping[str, Any]):
                 default_flow_style=False,
             )
         self.source = destination
+        self.catalog = destination_catalog
         self.reference = destination_reference
 
     def to_dict(self) -> dict[str, Any]:
@@ -247,61 +385,6 @@ class EAMode(MutableMapping[str, Any]):
             ).is_file():
                 return parent
         raise ValueError(f"{self.source}: cannot locate ISA root")
-
-    def _reference_from_source(self, path: str | Path | None = None) -> Reference:
-        source_path = Path(path) if path is not None else self.source
-        source = source_path.resolve()
-        isa_root = self.isa_root.resolve()
-        try:
-            relative = source.relative_to(isa_root)
-        except ValueError as error:
-            raise ValueError(
-                f"{source_path}: mode is outside ISA root {self.isa_root}"
-            ) from error
-
-        parts = relative.parts
-        if len(parts) < 4 or parts[-1] != "mode.yaml":
-            raise ValueError(
-                f"{source_path}: expected a mode.yaml below a modes directory"
-            )
-        if parts[0] == "extensions":
-            if len(parts) < 6:
-                raise ValueError(f"{source_path}: incomplete extension mode path")
-            owner = parts[1]
-            logical_parts = list(parts[2:-1])
-        else:
-            owner = "base"
-            logical_parts = list(parts[:-1])
-
-        try:
-            logical_parts.remove("modes")
-        except ValueError as error:
-            raise ValueError(f"{source_path}: expected a modes directory") from error
-        if len(logical_parts) < 2:
-            raise ValueError(f"{source_path}: mode reference has no logical path")
-        try:
-            return Reference(owner, tuple(logical_parts[:-1]), logical_parts[-1])
-        except ReferenceError as error:
-            raise ValueError(f"{source_path}: {error}") from error
-
-    def _validate_mode_type_membership(self) -> None:
-        mode_type = self.reference.path[-1]
-        isa_root = self.isa_root.resolve()
-        for parent in self.source.resolve().parents:
-            if parent == isa_root.parent:
-                break
-            catalog = parent / "mode_types.yaml"
-            if not catalog.is_file():
-                continue
-            mode_types = self._load_mapping(catalog).get("mode_types")
-            if not isinstance(mode_types, list) or not all(
-                isinstance(name, str) for name in mode_types
-            ):
-                raise ValueError(f"{catalog}: mode_types must be a list of names")
-            if mode_type not in mode_types:
-                raise ValueError(f"{catalog}: unlisted mode type {mode_type!r}")
-            return
-        raise ValueError(f"{self.source}: cannot locate mode_types.yaml")
 
     def _profile_field_type(
         self, field_types: Mapping[Reference, FieldType]

@@ -1,3 +1,4 @@
+name: EXT2
 modes:
   - explicit_segment_index
   - explicit_segment_base

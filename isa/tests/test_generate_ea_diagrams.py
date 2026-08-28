@@ -5,7 +5,6 @@ from pathlib import Path
 from engine.ea_mode import EAMode
 from engine.generate_ea_diagrams import (
     _EAFlowLayout,
-    _mode_context,
     _title_case,
     catalog_mode_paths,
     main,
@@ -15,7 +14,6 @@ from engine.generate_ea_diagrams import (
     render_modes,
     render_mode,
 )
-from engine.reference import Reference
 
 
 class GenerateEADiagramsTest(unittest.TestCase):
@@ -175,13 +173,15 @@ class GenerateEADiagramsTest(unittest.TestCase):
             "EXT2 Explicit-Segment Base with Autoupdate",
         )
 
-    def test_mode_heading_context_uses_logical_reference(self) -> None:
+    def test_mode_heading_context_uses_catalog_name(self) -> None:
         self.assertEqual(
-            _mode_context(Reference("base", ("ea", "compact"), "immediate")),
+            self.load("ea/modes/compact/immediate/mode.yaml").catalog.name,
             "compact",
         )
         self.assertEqual(
-            _mode_context(Reference("FP", ("fea", "compact"), "immediate")),
+            self.load(
+                "extensions/FP/fea/modes/compact/immediate/mode.yaml"
+            ).catalog.name,
             "FP FEA compact",
         )
 
