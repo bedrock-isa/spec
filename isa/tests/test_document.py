@@ -146,15 +146,15 @@ class DocumentTest(unittest.TestCase):
         self.assertNotIn("Compact Effective-Address Field", artifact.content)
         self.assertNotIn("EXT2 Explicit Segment Base Auto-Update", artifact.content)
         self.assertNotIn("EXT2 SP/PC Indexed", artifact.content)
-        self.assertIn("postincrement address generation", artifact.content)
-        self.assertIn("predecrement address generation", artifact.content)
+        self.assertIn("Postincrement Address Generation", artifact.content)
+        self.assertIn("Predecrement Address Generation", artifact.content)
         self.assertIn("updateopfeedbackout", artifact.content)
         self.assertIn(
-            r"\BedrockEAProfileTitle{FP FEA compact Floating-point immediate}",
+            r"\BedrockEAProfileTitle{FP FEA Compact Floating-Point Immediate}",
             artifact.content,
         )
         self.assertIn(
-            r"\BedrockEAProfileTitle{VECTOR VEA EXT2 Explicit-segment indexed / plain}",
+            r"\BedrockEAProfileTitle{VECTOR VEA EXT2 Explicit-Segment Indexed / Plain}",
             artifact.content,
         )
         self.assertNotIn(r"\input{isa/", artifact.content)

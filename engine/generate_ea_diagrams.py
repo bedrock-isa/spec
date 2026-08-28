@@ -41,6 +41,57 @@ def _tex(value: object) -> str:
     return "".join(replacements.get(character, character) for character in str(value))
 
 
+_TITLE_MINOR_WORDS = frozenset(
+    {
+        "a",
+        "an",
+        "and",
+        "as",
+        "at",
+        "but",
+        "by",
+        "for",
+        "in",
+        "nor",
+        "of",
+        "on",
+        "or",
+        "per",
+        "the",
+        "to",
+        "via",
+        "with",
+    }
+)
+
+
+def _title_case(value: object) -> str:
+    """Title-case a display heading while preserving acronyms and numeric IDs."""
+
+    text = str(value)
+    matches = list(re.finditer(r"[A-Za-z0-9]+", text))
+    if not matches:
+        return text
+    parts: list[str] = []
+    cursor = 0
+    for index, match in enumerate(matches):
+        parts.append(text[cursor : match.start()])
+        word = match.group(0)
+        lowered = word.lower()
+        if word.isupper() or any(character.isdigit() for character in word):
+            rendered = word
+        elif any(character.isupper() for character in word[1:]):
+            rendered = word
+        elif lowered in _TITLE_MINOR_WORDS and index not in {0, len(matches) - 1}:
+            rendered = lowered
+        else:
+            rendered = lowered.capitalize()
+        parts.append(rendered)
+        cursor = match.end()
+    parts.append(text[cursor:])
+    return "".join(parts)
+
+
 def _flat_pattern(pattern: str | Sequence[str]) -> str:
     return pattern if isinstance(pattern, str) else "".join(pattern)
 
@@ -84,7 +135,8 @@ def _encoding_label(encoding: Mapping[str, Any]) -> str:
 def render_encoding_diagram(mode: EAMode) -> str:
     """Render the wire encodings of one EA mode as a Bedrock format diagram."""
 
-    lines = [f"\\begin{{BedrockFormatDiagram}}{{{_tex(mode['name'])} encodings}}"]
+    caption = _title_case(f"{mode['name']} encodings")
+    lines = [f"\\begin{{BedrockFormatDiagram}}{{{_tex(caption)}}}"]
     for encoding in mode["encodings"]:
         lines.append(f"\\BedrockFormatRow{{{_tex(_encoding_label(encoding))}}}{{%")
         lines.extend(_format_fields(encoding["pattern"]))
@@ -354,7 +406,7 @@ def render_flow_diagram(mode: EAMode) -> str | None:
         return None
 
     generated_value = "operand" if mode["kind"] == "immediate" else "address"
-    name = _tex(f"{mode['name']} {generated_value} generation")
+    name = _tex(_title_case(f"{mode['name']} {generated_value} generation"))
     expression = _expression(mode)
     if mode["kind"] == "immediate":
         layout = _EAFlowLayout(name, 2)
@@ -478,7 +530,7 @@ def render_autoupdate_diagrams(
         variant_name = (
             mode["name"] if mode["name"].endswith(suffix) else mode["name"] + suffix
         )
-        caption = _tex(f"{variant_name} address generation")
+        caption = _tex(_title_case(f"{variant_name} address generation"))
         if target == "base":
             operand = _field_operand(mode, "base")
             if operand is None:
@@ -527,7 +579,7 @@ def render_autoupdate_diagrams(
                 rendered
                 if embedded
                 else (
-                    f"\\clearpage\n\\BedrockInstructionLead{{{_tex(variant_name)}}}\n"
+                    f"\\clearpage\n\\BedrockInstructionLead{{{_tex(_title_case(variant_name))}}}\n"
                     "\\par\\Needspace{4.70in}%\n"
                     f"{rendered}"
                 )
@@ -599,7 +651,7 @@ def render_autoupdate_diagrams(
                 rendered
                 if embedded
                 else (
-                    f"\\clearpage\n\\BedrockInstructionLead{{{_tex(variant_name)}}}\n"
+                    f"\\clearpage\n\\BedrockInstructionLead{{{_tex(_title_case(variant_name))}}}\n"
                     "\\par\\Needspace{6.15in}%\n"
                     f"{rendered}"
                 )
@@ -633,13 +685,19 @@ def _block_height(mode: EAMode) -> float:
     return min(7.0, format_height + flow_height + 0.70)
 
 
-def _mode_context(relative_source: Path) -> str:
-    parts = relative_source.parts
-    if len(parts) >= 5 and parts[:2] == ("ea", "modes"):
-        return f"EA / {parts[2]}"
-    if len(parts) >= 7 and parts[0] == "extensions" and parts[3] == "modes":
-        return f"{parts[1]} {parts[2].upper()} / {parts[4]}"
-    return relative_source.parent.as_posix()
+def _mode_context(reference: Reference) -> str:
+    """Build a display context from the mode's logical identity."""
+
+    if len(reference.path) != 2:
+        raise ValueError(
+            f"{reference}: EA mode reference must contain address space and mode type"
+        )
+    address_space, mode_type = reference.path
+    components = []
+    if reference.owner != "base":
+        components.extend((reference.owner, address_space.upper()))
+    components.append(mode_type)
+    return " ".join(components)
 
 
 def _syntax_variants(mode: EAMode) -> tuple[str, ...]:
@@ -717,10 +775,7 @@ def _payload_description(mode: EAMode) -> str:
             for role, payload_type in payloads
         )
         return f"Appends {listed} as selected by the encoding."
-    relative = mode.source.resolve().relative_to(mode.isa_root.resolve())
-    if "modes" in relative.parts and any(
-        item in {"EXT1", "EXT2"} for item in relative.parts
-    ):
+    if isinstance(mode["encodings"][0]["pattern"], list):
         return "The descriptor is followed by the displacement selected by the compact EXT escape."
     return "No appended payload bytes."
 
@@ -753,13 +808,10 @@ def _update_description(mode: EAMode) -> str:
     return " ".join(sentences)
 
 
-def render_description_block(mode: EAMode, relative_source: Path) -> str:
+def render_description_block(mode: EAMode, reference: Reference) -> str:
     """Render the former hand-authored EA explanation block from mode data."""
 
-    context = _mode_context(relative_source)
-    if context.startswith("EA / "):
-        context = context.removeprefix("EA / ")
-    title = f"{context.replace(' / ', ' ')} {mode['name']}"
+    title = _title_case(f"{_mode_context(reference)} {mode['name']}")
     label = "EA encoding" if isinstance(mode["encodings"][0]["pattern"], str) else "Descriptor"
     pseudocode = mode.to_dict().get("pseudocode")
     generation = (
@@ -810,7 +862,6 @@ def _encoding_variant_mode(
 
 def _render_mode_section(
     mode: EAMode,
-    relative_source: Path,
     *,
     reference: Reference | None = None,
 ) -> str:
@@ -819,7 +870,7 @@ def _render_mode_section(
         parts.append(rf"\phantomsection\label{{{entity_label(reference)}}}")
     parts.extend(
         (
-            render_description_block(mode, relative_source),
+            render_description_block(mode, mode.reference),
             render_encoding_diagram(mode),
         )
     )
@@ -849,7 +900,6 @@ def render_mode(mode: EAMode, reference: Reference | None = None) -> str:
             variant = _encoding_variant_mode(mode, encoding)
             section = _render_mode_section(
                 variant,
-                relative_source,
                 reference=reference if index == 0 else None,
             )
             sections.append(section if index == 0 else f"\\clearpage\n{section}")
@@ -858,7 +908,7 @@ def render_mode(mode: EAMode, reference: Reference | None = None) -> str:
     return "\n\n".join(
         (
             header,
-            _render_mode_section(mode, relative_source, reference=reference),
+            _render_mode_section(mode, reference=reference),
         )
     )
 

@@ -5,6 +5,8 @@ from pathlib import Path
 from engine.ea_mode import EAMode
 from engine.generate_ea_diagrams import (
     _EAFlowLayout,
+    _mode_context,
+    _title_case,
     catalog_mode_paths,
     main,
     render_autoupdate_diagrams,
@@ -13,6 +15,7 @@ from engine.generate_ea_diagrams import (
     render_modes,
     render_mode,
 )
+from engine.reference import Reference
 
 
 class GenerateEADiagramsTest(unittest.TestCase):
@@ -65,7 +68,7 @@ class GenerateEADiagramsTest(unittest.TestCase):
         )
 
         self.assertIsNotNone(rendered)
-        self.assertIn("Integer immediate operand generation", rendered)
+        self.assertIn("Integer Immediate Operand Generation", rendered)
 
     def test_index_autoupdate_variants_are_integrated_into_address_flows(self) -> None:
         diagrams = render_autoupdate_diagrams(
@@ -74,8 +77,8 @@ class GenerateEADiagramsTest(unittest.TestCase):
 
         self.assertEqual(len(diagrams), 2)
         self.assertTrue(diagrams[0].startswith(r"\clearpage"))
-        self.assertIn("postincrement address generation", diagrams[0])
-        self.assertIn("predecrement address generation", diagrams[1])
+        self.assertIn("Postincrement Address Generation", diagrams[0])
+        self.assertIn("Predecrement Address Generation", diagrams[1])
         self.assertIn("{INDEX UPDATE}{update}", diagrams[0])
         self.assertIn("{1}{0}%", diagrams[0])
         self.assertIn("updateopfeedbackout", diagrams[0])
@@ -113,7 +116,7 @@ class GenerateEADiagramsTest(unittest.TestCase):
         self.assertIn("Postincrement uses the current temporary base register", rendered)
         self.assertIn(r"Predecrement subtracts \texttt{scale}", rendered)
         postincrement, predecrement = rendered.split(
-            r"\BedrockEAProfileTitle{EXT2 Explicit-segment base with autoupdate / predecrement}"
+            r"\BedrockEAProfileTitle{EXT2 Explicit-Segment Base with Autoupdate / Predecrement}"
         )
         self.assertIn("Rn(b)++", postincrement)
         self.assertNotIn(r"{-}{-}Rn(b)", postincrement)
@@ -128,13 +131,26 @@ class GenerateEADiagramsTest(unittest.TestCase):
         self.assertNotIn(r"\BedrockInstructionLead", rendered)
         self.assertEqual(rendered.count(r"\clearpage"), 1)
         self.assertLess(
-            rendered.index("postincrement address generation"),
+            rendered.index("Postincrement Address Generation"),
             rendered.index(r"\clearpage"),
         )
         self.assertGreater(
-            rendered.index("predecrement address generation"),
+            rendered.index("Predecrement Address Generation"),
             rendered.index(r"\clearpage"),
         )
+
+    def test_ea_style_uses_heading_title_and_plain_flow_caption(self) -> None:
+        style_root = self.isa_root.parent / "style" / "bedrock-reference"
+        instruction = (style_root / "instruction.sty").read_text(encoding="utf-8")
+        flow = (style_root / "ea-flow.sty").read_text(encoding="utf-8")
+
+        title_definition = instruction.split(
+            r"\newcommand{\BedrockEAProfileTitle}", 1
+        )[1].split(r"\newcommand", 1)[0]
+        self.assertIn(r"\large\bfseries", title_definition)
+        self.assertNotIn(r"\texttt", title_definition)
+        self.assertIn(r"\BedrockCaption{\BedrockEAFlowCaption}", flow)
+        self.assertNotIn(r"\BedrockSchemaCaption{\BedrockEAFlowCaption}", flow)
 
     def test_plain_and_autoupdate_encodings_get_independent_blocks(self) -> None:
         rendered = render_mode(
@@ -142,9 +158,32 @@ class GenerateEADiagramsTest(unittest.TestCase):
         )
 
         self.assertEqual(rendered.count(r"\begin{BedrockEAProfile}"), 3)
-        self.assertIn("/ plain}", rendered)
-        self.assertIn("/ postincrement}", rendered)
-        self.assertIn("/ predecrement}", rendered)
+        self.assertIn("/ Plain}", rendered)
+        self.assertIn("/ Postincrement}", rendered)
+        self.assertIn("/ Predecrement}", rendered)
+
+    def test_title_case_is_shared_and_preserves_architecture_tokens(self) -> None:
+        self.assertEqual(
+            _title_case("compact integer immediate"), "Compact Integer Immediate"
+        )
+        self.assertEqual(
+            _title_case("FP FEA compact floating-point immediate"),
+            "FP FEA Compact Floating-Point Immediate",
+        )
+        self.assertEqual(
+            _title_case("EXT2 explicit-segment base with autoupdate"),
+            "EXT2 Explicit-Segment Base with Autoupdate",
+        )
+
+    def test_mode_heading_context_uses_logical_reference(self) -> None:
+        self.assertEqual(
+            _mode_context(Reference("base", ("ea", "compact"), "immediate")),
+            "compact",
+        )
+        self.assertEqual(
+            _mode_context(Reference("FP", ("fea", "compact"), "immediate")),
+            "FP FEA compact",
+        )
 
     def test_non_autoupdate_mode_says_no_update(self) -> None:
         rendered = render_mode(
@@ -223,15 +262,15 @@ class GenerateEADiagramsTest(unittest.TestCase):
         rendered = render_modes(modes)
 
         self.assertEqual(rendered.count("% Generated from "), 2)
-        self.assertIn("Register memory", rendered)
-        self.assertIn("Integer immediate", rendered)
+        self.assertIn("Register Memory", rendered)
+        self.assertIn("Integer Immediate", rendered)
 
     def test_mode_reserves_space_for_encoding_and_flow_together(self) -> None:
         rendered = render_mode(self.load("ea/modes/compact/immediate/mode.yaml"))
 
         self.assertIn(r"\par\Needspace{5.87in}%", rendered)
         self.assertIn(
-            r"\BedrockEAProfileTitle{compact Integer immediate}", rendered
+            r"\BedrockEAProfileTitle{Compact Integer Immediate}", rendered
         )
 
     def test_profile_specific_mode_heading_names_the_profile(self) -> None:
@@ -240,7 +279,7 @@ class GenerateEADiagramsTest(unittest.TestCase):
         )
 
         self.assertIn(
-            r"\BedrockEAProfileTitle{FP FEA compact Floating-point immediate}",
+            r"\BedrockEAProfileTitle{FP FEA Compact Floating-Point Immediate}",
             rendered,
         )
 
