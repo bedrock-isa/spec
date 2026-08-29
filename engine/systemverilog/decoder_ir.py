@@ -172,7 +172,7 @@ class AvailabilityRuleIR:
 
 
 @dataclass(frozen=True)
-class DestinationOverlapIR:
+class OperandOverlapIR:
     left: str
     right: str
     rule: str
@@ -194,7 +194,7 @@ class FormIR:
     operands: tuple[OperandIR, ...]
     layout: tuple[LayoutOpIR, ...]
     sizes: tuple[str, ...]
-    overlaps: tuple[DestinationOverlapIR, ...]
+    overlaps: tuple[OperandOverlapIR, ...]
     control: ControlIR
     availability_rules: tuple[AvailabilityRuleIR, ...]
     fixed_required_bytes: int
@@ -298,6 +298,7 @@ class DerivedLimitsIR:
     max_opcode_width: int
     max_operands: int
     max_ea_operands: int
+    max_overlaps: int
     max_fields: int
     max_layout_ops: int
     max_fixed_required_bytes: int
@@ -370,6 +371,7 @@ def _derive_limits(
             )
             for form in forms_ir
         ),
+        max_overlaps=max(len(form.overlaps) for form in forms_ir),
         max_fields=max(len(form.fields) for form in forms_ir),
         max_layout_ops=max(len(form.layout) for form in forms_ir),
         max_fixed_required_bytes=max(form.fixed_required_bytes for form in forms_ir),
@@ -940,7 +942,10 @@ def _form_ir(project: Any, bundle: Any, form: Any, index: int) -> FormIR:
         operands,
         layout,
         tuple(sizes),
-        tuple(DestinationOverlapIR(item.operands[0], item.operands[1], item.type) for item in form.overlaps),
+        tuple(
+            OperandOverlapIR(item.operands[0], item.operands[1], item.type)
+            for item in form.overlaps
+        ),
         ControlIR(
             bundle.instruction.route,
             {

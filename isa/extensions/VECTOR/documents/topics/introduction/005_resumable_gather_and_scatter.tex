@@ -1,0 +1,99 @@
+\subsubsection{Resumable Gather and Scatter}
+
+(:ref:VECTOR.instructions.VGATHER:) and (:ref:VECTOR.instructions.VSCATTER:)
+are full-vector memory instructions with an explicit completion predicate.
+Their canonical operand orders are illustrated below; $T$ denotes the selected
+\texttt{B/W/L/Q} element width.
+
+\begin{verbatim}
+VGATHER.T  Pg, Ps, [address], Vd
+VSCATTER.T Pg, Ps, Vs, [address]
+\end{verbatim}
+
+\paragraph{Typed completion image.}
+For element width $E$ bytes, let $N=VLEN/E$.  Define $G=typed_E(Pg)$ by
+copying \texttt{Pg[iE]} to bit $iE$ for every $0\leq i<N$ and clearing every
+other predicate bit.  At each entry or re-entry, the instruction performs the
+architectural normalization
+
+\[
+  Ps \leftarrow typed_E(Ps) \mathbin{\&} G,
+  \qquad pending = G \mathbin{\&} \mathop{\sim}Ps.
+\]
+
+\texttt{Pg} and \texttt{Ps} shall be distinct.  The normalization is committed
+before a lane memory transaction is issued and remains visible if that
+transaction faults.  Consequently inactive completion bits and all
+nonsignificant bits are zero.  If \texttt{pending} is empty, the instruction
+retires without a memory transaction and its normal postcondition is
+\texttt{Ps == G}.
+
+Otherwise the implementation selects any pending lane $i$.  VGATHER performs
+one $E$-byte load and, on success, writes only \texttt{Vd[i]} before setting
+\texttt{Ps[iE]}.  VSCATTER performs one $E$-byte store of \texttt{Vs[i]} and,
+on success, sets \texttt{Ps[iE]}.  Every successful lane therefore has one
+completion bit that journals its externally visible work.  VGATHER requires
+its vector address register to differ from \texttt{Vd}; VSCATTER permits its
+vector address register and \texttt{Vs} to be the same register.
+
+\paragraph{Lane-completion boundary.}
+After a successful lane, destination or memory state and the corresponding
+completion bit commit together.  If another lane is pending, the PC remains at
+the gather or scatter instruction and an asynchronous event may be admitted.
+This progress boundary is not architectural instruction retirement, does not
+increment an architectural retired-instruction count, and does not itself
+generate a debug-trace event.  The final empty-pending transition advances the
+PC and forms the (:term:base.terms.ordinary:) retirement and trace boundary.
+
+An event handler may emulate or waive a faulting lane by setting its completion
+bit.  For VGATHER, emulation shall first write the lane's destination value;
+for VSCATTER, it shall first perform or explicitly waive the store.  Returning
+to the saved PC is sufficient to continue: no hidden cursor or implementation
+token is part of (:term:base.terms.architectural_state:).
+
+\paragraph{Address forms.}
+The lane number $i$ is implicit and does not appear in assembly syntax.  Before
+default-data-segment translation, the address forms are:
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Canonical address & Constraint & Lane offset \\
+\midrule
+\texttt{[Rb + Rs]} & any $T$ & $Rb+i\mathbin{\cdot}signed64(Rs)$ \\
+\texttt{[Va]} & \texttt{L} & $zero\_extend_{64}(Va.L[i])$ \\
+\texttt{[Va]} & \texttt{Q} & $Va.Q[i]$ \\
+\texttt{[Rb + Va]} & any $T$ & $Rb+sign\_extend_{64}(Va.T[i])$ \\
+\texttt{[Rb + Va * scale]} & any $T$ & $Rb+zero\_extend_{64}(Va.T[i])E$ \\
+\texttt{[Rb + Va * scale + disp]} & any $T$ & preceding indexed address plus \texttt{disp} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+In the scalar-stride form, \texttt{Rs} supplies the signed lane stride even
+though the canonical spelling is the familiar-looking \texttt{[Rb + Rs]}.
+In vector-index forms, the assembler token \texttt{scale} is fixed by $T$ to
+$E$; it is not an additional operand.  The \texttt{disp8s}, \texttt{disp16s},
+and \texttt{disp32s} (:term:base.terms.payload|plural:) are sign-extended, while \texttt{disp64} contributes
+its exact 64-bit bit pattern.  All address arithmetic is modulo $2^{64}$.  The
+absolute forms are still offsets through the default data segment and do not
+bypass segmentation.
+
+\paragraph{Ordering, overlap, and failures.}
+Lane selection and memory-access order are not architecturally specified.
+Each successful lane access is nevertheless one (:term:base.terms.ordinary:), naturally sized
+$E$-byte normal-memory access and obeys the baseline memory-ordering rules.
+If two VSCATTER lanes target overlapping physical bytes, which lane supplies
+the final value of each overlapping byte is unspecified.  This does not merge,
+drop, or widen either access: each successful lane still performs its own
+$E$-byte store and sets its own completion bit.
+
+A load fault or a scatter failure reported before the store point of no return
+leaves the selected lane pending and raises the (:term:base.terms.ordinary:) precise synchronous
+fault.  An (:term:base.terms.ordinary:) memory bus failure in this state is retry-safe.  If a
+scatter store has become irrevocable, the implementation sets the lane's
+completion bit and shall not report a restartable synchronous failure for that
+lane.  Any later report is an imprecise, non-retry-safe
+(:ref:base.events.EXCEPTION.MACHINE_CHECK:) at a subsequent lane or retirement
+boundary.  These instructions are not permitted for MMIO, including when only
+one lane is active.  Both preserve FLAGS.

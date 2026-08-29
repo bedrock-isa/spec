@@ -770,6 +770,7 @@ def _render_package(ir: decode_ir.DecodeIR) -> tuple[str, Names]:
   localparam logic [9:0] BEDROCK_FORM_COUNT = 10'd{ir.limits.form_count};
   localparam logic [9:0] BEDROCK_OPERAND_SLOTS = 10'd{ir.limits.max_operands};
   localparam logic [9:0] BEDROCK_EA_SLOTS = 10'd{ir.limits.max_ea_operands};
+  localparam logic [9:0] BEDROCK_OVERLAP_SLOTS = 10'd{ir.limits.max_overlaps};
   localparam logic [9:0] BEDROCK_SIZE_MASK_BITS = 10'd{len(public_layout.size_order)};
   localparam logic [9:0] BEDROCK_CPUID_FLAG_MASK_BITS = 10'd{len(public_layout.cpuid_flag_order)};
   localparam logic [0:0] BEDROCK_EA_LOW_SLOT = 1'd0;
@@ -879,7 +880,8 @@ def _render_package(ir: decode_ir.DecodeIR) -> tuple[str, Names]:
     logic [BEDROCK_CPUID_FLAG_MASK_BITS-1:0] required_cpuid_flag_mask;
     logic [2:0] operand_count;
     decoded_operand_t [BEDROCK_OPERAND_SLOTS-1:0] operands;
-    overlap_descriptor_t overlap;
+    logic [1:0] overlap_count;
+    overlap_descriptor_t [BEDROCK_OVERLAP_SLOTS-1:0] overlaps;
     logic [5:0] required_bytes;
     logic [4:0] encoded_bytes;
   }} d1_opcode_result_t;
@@ -1881,16 +1883,17 @@ def _render_form_case(
                 ]
             )
     if form.overlaps:
-        overlap = form.overlaps[0]
         slots = {operand.name: index for index, operand in enumerate(form.operands)}
-        lines.extend(
-            [
-                "        decoded_result.overlap.valid = 1'b1;",
-                f"        decoded_result.overlap.rule = {names.overlap_rule[overlap.rule]};",
-                f"        decoded_result.overlap.left_operand = 2'd{slots[overlap.left]};",
-                f"        decoded_result.overlap.right_operand = 2'd{slots[overlap.right]};",
-            ]
-        )
+        lines.append(f"        decoded_result.overlap_count = 2'd{len(form.overlaps)};")
+        for index, overlap in enumerate(form.overlaps):
+            lines.extend(
+                [
+                    f"        decoded_result.overlaps[{index}].valid = 1'b1;",
+                    f"        decoded_result.overlaps[{index}].rule = {names.overlap_rule[overlap.rule]};",
+                    f"        decoded_result.overlaps[{index}].left_operand = 2'd{slots[overlap.left]};",
+                    f"        decoded_result.overlaps[{index}].right_operand = 2'd{slots[overlap.right]};",
+                ]
+            )
     operand_slots = {operand.name: index for index, operand in enumerate(form.operands)}
     lines.extend(
         [

@@ -228,7 +228,7 @@ function resume_boundary(result : Execution_result, sampled_status : bits(64),
       Some(_) => boundary_with_event(latched, event_from_fault(result_with_state(result, latched))),
       None() => {
         let trace_unit = result.pending.boundary_class != BoundaryEventEntry
-                       ;
+                       & result.pending.boundary_class != BoundaryVectorLane;
         if trace_unit & sampled_status[2] == bitone & sampled_status[3] == bitzero then
           boundary_with_event(
             latched, make_event(EventDebugTrace, EventFrameBasic, 0x00000000, 5, latched.pc)

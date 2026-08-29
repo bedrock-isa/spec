@@ -251,7 +251,8 @@ class Generator(ArtifactGenerator):
         abi = artifacts.artifact(outputs[2]).content
         self.assertIn("generated C", core)
         self.assertIn("bedrock_core_execute", core)
-        self.assertIn("#define BEDROCK_CORE_ABI_VERSION 5u", abi)
+        self.assertIn("#define BEDROCK_CORE_ABI_VERSION 6u", abi)
+        self.assertIn("BEDROCK_CORE_VECTOR_LANE = 7", abi)
         self.assertIn("typedef struct bedrock_core bedrock_core;", abi)
         self.assertIn("typedef struct bedrock_core_request", abi)
         self.assertIn("int32_t operation;", abi)

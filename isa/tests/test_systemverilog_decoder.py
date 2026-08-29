@@ -47,6 +47,7 @@ class SystemVerilogDecoderTest(unittest.TestCase):
             f"BEDROCK_FORM_COUNT = 10'd{form_count}",
             "BEDROCK_OPERAND_SLOTS = 10'd6",
             "BEDROCK_EA_SLOTS = 10'd2",
+            "BEDROCK_OVERLAP_SLOTS = 10'd2",
             "} d0_result_t;",
             "} d0_ea_result_t;",
             "} d1_opcode_result_t;",
@@ -100,6 +101,14 @@ class SystemVerilogDecoderTest(unittest.TestCase):
         self.assertNotIn(
             "descriptor_end_cursor = alt_descriptor_parse.next_cursor", ea
         )
+
+    def test_d1_emits_every_operand_overlap_constraint(self) -> None:
+        d1 = self.outputs[Path("bedrock_decode_d1.sv")]
+        gather = self._form("VECTOR.instructions.VGATHER.l_pn_p_pn_c_vn_x_vn_v")
+        self.assertEqual(len(gather.overlaps), 2)
+        self.assertIn("decoded_result.overlap_count = 2'd2;", d1)
+        self.assertIn("decoded_result.overlaps[0].valid = 1'b1;", d1)
+        self.assertIn("decoded_result.overlaps[1].valid = 1'b1;", d1)
 
     def test_reference_decoder_consumes_all_ea_descriptors_before_payloads(
         self,

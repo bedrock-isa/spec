@@ -1,35 +1,33 @@
-mnemonic: VGATHER1
-name: One-Lane Vector Gather Step
-summary: Conditionally gather one vector lane and advance its lane cursor.
+mnemonic: VSCATTER
+name: Resumable Vector Scatter
+summary: Scatter governed vector lanes while journaling completed lanes in a predicate.
 route: vector
 sail_entries:
-- execute_VGATHER1
+- execute_VSCATTER
 privileged: false
 assembly:
   width_suffix_aliases: true
-repeat:
-  type: rep
 operands:
   govern:
     role: governing_predicate
     access: read
     value_type: predicate
+  completion:
+    role: destination
+    access: read_write
+    value_type: predicate
+  src:
+    role: source
+    access: read
+    value_type: vector
   base:
     role: source
     access: read
-    value_type: integer
-  cursor:
-    role: counter
-    access: read_write
     value_type: integer
   stride:
     role: source
     access: read
     value_type: integer
-  dst:
-    role: destination
-    access: read_write
-    value_type: vector
   address:
     role: source
     access: read

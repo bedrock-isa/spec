@@ -136,6 +136,9 @@ static bedrock_core_status bedrock_core_accept_execution(
     core->request.payload_length =
         bedrock_core_byte_list_length(request->zpayload_bytes);
     core->last_status = BEDROCK_CORE_NEEDS_ENVIRONMENT;
+  } else if (execution->zpending.zboundary_class == zBoundaryVectorLane) {
+    bedrock_core_discard_pending(core);
+    core->last_status = BEDROCK_CORE_VECTOR_LANE;
   } else {
     bedrock_core_discard_pending(core);
   }

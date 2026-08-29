@@ -3,8 +3,7 @@ name: Vector Conditional Compare
 summary: Compares active integer or floating-point lanes and writes a complete predicate image.
 route: vector
 sail_entries:
-- execute_VCMPcc_integer
-- execute_VCMPcc_floating
+- execute_VCMPcc
 privileged: false
 operands:
   cc:

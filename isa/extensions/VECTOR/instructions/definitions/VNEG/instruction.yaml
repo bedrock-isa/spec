@@ -3,8 +3,7 @@ name: Vector Negate
 summary: Negates active integer elements or toggles the sign of active floating-point elements.
 route: vector
 sail_entries:
-- execute_VNEG_integer
-- execute_VNEG_floating
+- execute_VNEG
 privileged: false
 operands:
   govern:

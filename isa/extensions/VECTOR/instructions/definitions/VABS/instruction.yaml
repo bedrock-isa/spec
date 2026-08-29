@@ -4,8 +4,7 @@ summary: Computes the absolute value of active integer elements or clears the si
   elements.
 route: vector
 sail_entries:
-- execute_VABS_integer
-- execute_VABS_floating
+- execute_VABS
 privileged: false
 operands:
   govern:

@@ -8,7 +8,7 @@ mod platform;
 mod translation;
 pub use bus::SailBusExecutionError;
 
-const ABI_VERSION: u32 = 5;
+const ABI_VERSION: u32 = 6;
 pub const MAX_INSTRUCTION_BYTES: usize = 18;
 pub const REGISTER_COUNT: usize = 16;
 pub const FLOATING_REGISTER_COUNT: usize = 16;
@@ -37,6 +37,7 @@ pub enum SailCoreStatus {
     BadArgument = 4,
     OutOfMemory = 5,
     BadState = 6,
+    VectorLane = 7,
 }
 
 impl SailCoreStatus {
@@ -49,6 +50,7 @@ impl SailCoreStatus {
             4 => Self::BadArgument,
             5 => Self::OutOfMemory,
             6 => Self::BadState,
+            7 => Self::VectorLane,
             _ => panic!("emulator-core returned unknown status {raw}"),
         }
     }
@@ -623,6 +625,12 @@ mod ffi {
 mod tests {
     use super::{SailCore, SailCoreResponse, SailCoreStatus};
 
+    const RESPONSE_VECTOR_MEMORY: i32 = 19;
+    const REQUEST_VECTOR_MEMORY_READ: i32 = 26;
+    const REQUEST_VECTOR_MEMORY_WRITE: i32 = 27;
+    const VGATHER_B_SCALAR_STRIDE: [u8; 6] = [0xcf, 0xfc, 0x10, 0x02, 0x02, 0x43];
+    const VSCATTER_B_SCALAR_STRIDE: [u8; 6] = [0xcf, 0xfc, 0x18, 0x02, 0x02, 0x43];
+
     #[test]
     fn executes_generated_nop_and_exposes_register_state() {
         let mut core = SailCore::new().unwrap();
@@ -852,6 +860,139 @@ mod tests {
         assert_eq!(core.execute(&[0x01]), SailCoreStatus::Ok);
         assert_eq!(core.pc(), Ok(1));
         assert_eq!(core.sp(), Ok(0x1000));
+    }
+
+    #[test]
+    fn resumable_gather_commits_one_lane_at_each_vector_boundary() {
+        let mut core = SailCore::new().unwrap();
+        let mut state = core.state().unwrap();
+        state.registers[1] = 0x100;
+        state.registers[2] = 1;
+        state.predicate_registers[0] = [0x05, 0x00];
+        state.predicate_registers[1] = [0xf2, 0xff];
+        state.vector_registers[3].fill(0xcc);
+        assert_eq!(core.set_state(state), SailCoreStatus::Ok);
+
+        assert_eq!(
+            core.execute(&VGATHER_B_SCALAR_STRIDE),
+            SailCoreStatus::NeedsEnvironment
+        );
+        let first = core.last_request().unwrap();
+        assert_eq!(first.kind, REQUEST_VECTOR_MEMORY_READ);
+        assert_eq!(first.effective_address, 0x100);
+        assert_eq!(first.width, 1);
+        assert_eq!(first.body_length, 1);
+        assert!(first.payload.is_empty());
+        assert_eq!(core.state().unwrap().predicate_registers[1], [0x00, 0x00]);
+
+        assert_eq!(
+            core.resume(SailCoreResponse {
+                kind: RESPONSE_VECTOR_MEMORY,
+                success: true,
+                body: vec![0x11],
+                known: true,
+                present: true,
+                ..SailCoreResponse::default()
+            }),
+            SailCoreStatus::VectorLane
+        );
+        let state = core.state().unwrap();
+        assert_eq!(state.vector_registers[3][0], 0x11);
+        assert_eq!(state.vector_registers[3][2], 0xcc);
+        assert_eq!(state.predicate_registers[1], [0x01, 0x00]);
+        assert_eq!(state.pc, 0);
+
+        assert_eq!(
+            core.execute(&VGATHER_B_SCALAR_STRIDE),
+            SailCoreStatus::NeedsEnvironment
+        );
+        let second = core.last_request().unwrap();
+        assert_eq!(second.kind, REQUEST_VECTOR_MEMORY_READ);
+        assert_eq!(second.effective_address, 0x102);
+        assert_eq!(
+            core.resume(SailCoreResponse {
+                kind: RESPONSE_VECTOR_MEMORY,
+                success: true,
+                body: vec![0x33],
+                known: true,
+                present: true,
+                ..SailCoreResponse::default()
+            }),
+            SailCoreStatus::Ok
+        );
+        let state = core.state().unwrap();
+        assert_eq!(state.vector_registers[3][0], 0x11);
+        assert_eq!(state.vector_registers[3][2], 0x33);
+        assert_eq!(state.predicate_registers[1], [0x05, 0x00]);
+        assert_eq!(state.pc, VGATHER_B_SCALAR_STRIDE.len() as u64);
+    }
+
+    #[test]
+    fn resumable_scatter_distinguishes_pre_and_post_store_failures() {
+        let mut retryable = SailCore::new().unwrap();
+        let mut state = retryable.state().unwrap();
+        state.registers[1] = 0x100;
+        state.registers[2] = 1;
+        state.predicate_registers[0] = [0x01, 0x00];
+        state.predicate_registers[1] = [0xfe, 0xff];
+        state.vector_registers[3][0] = 0xa5;
+        assert_eq!(retryable.set_state(state), SailCoreStatus::Ok);
+
+        assert_eq!(
+            retryable.execute(&VSCATTER_B_SCALAR_STRIDE),
+            SailCoreStatus::NeedsEnvironment
+        );
+        let request = retryable.last_request().unwrap();
+        assert_eq!(request.kind, REQUEST_VECTOR_MEMORY_WRITE);
+        assert_eq!(request.effective_address, 0x100);
+        assert_eq!(request.selector, 1);
+        assert_eq!(request.payload, vec![0xa5]);
+        assert_eq!(
+            retryable.resume(SailCoreResponse {
+                kind: RESPONSE_VECTOR_MEMORY,
+                success: false,
+                fault_kind: 10,
+                fault_cause: 7,
+                detail: "store failed before the point of no return".to_owned(),
+                ..SailCoreResponse::default()
+            }),
+            SailCoreStatus::Fault
+        );
+        let state = retryable.state().unwrap();
+        assert_eq!(state.predicate_registers[1], [0x00, 0x00]);
+        assert_eq!(state.machine_check_pending, 0);
+        assert_eq!(state.pc, 0);
+
+        let mut irrevocable = SailCore::new().unwrap();
+        let mut state = irrevocable.state().unwrap();
+        state.registers[1] = 0x100;
+        state.registers[2] = 1;
+        state.predicate_registers[0] = [0x01, 0x00];
+        state.vector_registers[3][0] = 0x5a;
+        assert_eq!(irrevocable.set_state(state), SailCoreStatus::Ok);
+        assert_eq!(
+            irrevocable.execute(&VSCATTER_B_SCALAR_STRIDE),
+            SailCoreStatus::NeedsEnvironment
+        );
+        assert_eq!(
+            irrevocable.resume(SailCoreResponse {
+                kind: RESPONSE_VECTOR_MEMORY,
+                success: false,
+                fault_kind: 10,
+                fault_cause: 7,
+                detail: "store failed after the point of no return".to_owned(),
+                atomic_store_happened: true,
+                ..SailCoreResponse::default()
+            }),
+            SailCoreStatus::Ok
+        );
+        let state = irrevocable.state().unwrap();
+        assert_eq!(state.predicate_registers[1], [0x01, 0x00]);
+        assert_eq!(state.machine_check_pending, 1);
+        assert_eq!(state.machine_check_error_code, 0x0000_0000_0700_0104);
+        assert_eq!(state.machine_check_fault_ea, 0x100);
+        assert_eq!(state.machine_check_payload, 7);
+        assert_eq!(state.pc, VSCATTER_B_SCALAR_STRIDE.len() as u64);
     }
 
     #[test]

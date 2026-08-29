@@ -124,3 +124,9 @@ function empty_fp_response() -> Fp_response_image = struct {
     error0_q8_8_up = 0x0000,
     error1_q8_8_up = 0x0000,
 }
+enum Fp_state_uop_operation = {
+    FpStateReadFlags,
+    FpStateReadStatus,
+    FpStateWriteFlags,
+    FpStateWriteStatus,
+}

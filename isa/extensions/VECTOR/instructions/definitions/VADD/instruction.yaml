@@ -3,8 +3,7 @@ name: Vector Add
 summary: Adds corresponding active vector elements using integer or floating-point arithmetic.
 route: vector
 sail_entries:
-- execute_VADD_integer
-- execute_VADD_floating
+- execute_VADD
 privileged: false
 operands:
   govern:

@@ -30,6 +30,7 @@ sail:
     - semantics/register_access.sail
     - semantics/transaction_inputs.sail
     - semantics/uops/fp_compute.sail
+    - semantics/uops/fp_state.sail
     - semantics/uops/lowering.sail
 documents:
   topics:

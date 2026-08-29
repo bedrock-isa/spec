@@ -3,8 +3,7 @@ name: Vector Multiply
 summary: Multiplies corresponding active integer or floating-point elements.
 route: vector
 sail_entries:
-- execute_VMUL_integer
-- execute_VMUL_floating
+- execute_VMUL
 privileged: false
 operands:
   govern:

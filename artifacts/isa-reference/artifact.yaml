@@ -161,7 +161,7 @@ body:
     - VECTOR.introduction.predicates-and-destination-images
     - VECTOR.introduction.lane-mapping-and-scalar-bridges
     - VECTOR.introduction.vector-memory-operations
-    - VECTOR.introduction.one-lane-gather-and-scatter-steps
+    - VECTOR.introduction.resumable-gather-and-scatter
     - VECTOR.introduction.floating-point-exceptions-conversions-and-reductions
     - VECTOR.introduction.execution-and-saved-state
 - topic: base.indexes.reference-navigation.reference-indexes

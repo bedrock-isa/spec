@@ -9,7 +9,27 @@ sail:
     - FP.contract
     - FP.execution
     sources:
-    - semantics/vector.sail
+    - semantics/catalog.sail
+    - semantics/images.sail
+    - semantics/integer.sail
+    - semantics/permutation.sail
+    - semantics/predicate.sail
+    - semantics/runtime.sail
+    - semantics/fp/reduction.sail
+    - semantics/fp/arithmetic.sail
+    - semantics/fp/conversion.sail
+    - semantics/uops/control.sail
+    - semantics/uops/memory_access.sail
+    - semantics/uops/fp_compute.sail
+    - semantics/uops/compute.sail
+    - semantics/uops/step_request.sail
+    - semantics/uops/step_execute.sail
+    - semantics/uops/step_response.sail
+    - semantics/uops/register_integer.sail
+    - semantics/uops/register_predicate.sail
+    - semantics/uops/register_predicate_special.sail
+    - semantics/uops/register_transfer.sail
+    - semantics/uops/register_dispatch.sail
 documents:
   topics:
   - id: addressing.vector-vea-lane-addressing
@@ -33,8 +53,8 @@ documents:
   - id: introduction.vector-memory-operations
     source: documents/topics/introduction/004_vector_memory_operations.tex
     concept: vector
-  - id: introduction.one-lane-gather-and-scatter-steps
-    source: documents/topics/introduction/005_one_lane_gather_and_scatter_steps.tex
+  - id: introduction.resumable-gather-and-scatter
+    source: documents/topics/introduction/005_resumable_gather_and_scatter.tex
     concept: vector
   - id: introduction.floating-point-exceptions-conversions-and-reductions
     source: documents/topics/introduction/006_floating_point_exceptions_conversions_and_reductions.tex

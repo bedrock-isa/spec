@@ -89,6 +89,8 @@ class CheckServiceTest(unittest.TestCase):
                 "instruction.yaml",
                 "instruction-encodings.yaml",
                 "model.yaml",
+                "ea-mode-compact.yaml",
+                "ea-mode-extended.yaml",
             ):
                 shutil.copy2(
                     self.isa_root / "schemas" / filename,
@@ -96,6 +98,7 @@ class CheckServiceTest(unittest.TestCase):
                 )
             for filename in ("field_types.yaml", "payload_types.yaml"):
                 shutil.copy2(self.isa_root / filename, root / filename)
+            shutil.copytree(self.isa_root / "ea/modes", root / "ea/modes")
             (root / "instructions/definitions/instructions.yaml").write_text(
                 yaml.safe_dump({"instructions": ["MISSING"]}), encoding="utf-8"
             )

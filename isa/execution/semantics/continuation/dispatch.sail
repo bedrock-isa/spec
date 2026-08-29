@@ -1,3 +1,31 @@
+function irrevocable_resumable_scatter_failure(
+    previous : Execution_result,
+    response : Transaction_response,
+) -> (
+    bool
+) =
+       not_bool(response.success)
+    &  previous.request.kind == VectorMemoryWrite
+    &  previous.request.selector == 0x0000000000000001
+    &  response.atomic_store_happened
+
+function latch_resumable_scatter_machine_check(
+    result : Execution_result,
+    previous : Execution_result,
+    response : Transaction_response,
+) -> (
+    Execution_result
+) = {
+    var updated = result.state;
+    updated.machine_check_pending = true;
+    updated.machine_check_payload = get_slice_int(32, response.fault_cause, 0);
+    updated.machine_check_error_code = 0x0000000007000104;
+    updated.machine_check_fault_ea = previous.request.effective_address;
+    updated.machine_check_fault_linear = previous.request.linear_address;
+    updated.machine_check_event_aux = get_slice_int(64, response.fault_cause, 0);
+    { result with state = updated }
+}
+
 function resume_transaction_inner(previous : Execution_result, response : Transaction_response) -> Execution_result =
     if not_bool(previous.awaiting_environment) then {
         previous
@@ -29,6 +57,12 @@ function resume_transaction_inner(previous : Execution_result, response : Transa
                     } else {
                         if not_bool(response.success) & previous.request.suppress_fault then {
                             completed(previous.state, pending_after(previous), previous.pending.kind, [||])
+                        } else if irrevocable_resumable_scatter_failure(previous, response) then {
+                            latch_resumable_scatter_machine_check(
+                                uop_program_resume(previous, response),
+                                previous,
+                                response,
+                            )
                         } else {
                             if not_bool(response.success) &
                                 (response.fault_kind == TranslationFault | response.fault_kind == AccessFault) then {

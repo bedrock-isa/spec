@@ -251,11 +251,14 @@ class BundleValidator:
                             "overlaps",
                             index,
                         )
-                    elif operand["access"] not in {"write", "read_write"}:
+                    elif (
+                        overlap.type == "same_value"
+                        and operand["access"] not in {"write", "read_write"}
+                    ):
                         yield _error(
                             "overlap.access",
                             source,
-                            f"overlap operand {role!r} is not writable",
+                            f"same_value overlap operand {role!r} is not writable",
                             *base,
                             "overlaps",
                             index,

@@ -3,8 +3,7 @@ name: Vector Subtract
 summary: Subtracts corresponding active integer or floating-point elements.
 route: vector
 sail_entries:
-- execute_VSUB_integer
-- execute_VSUB_floating
+- execute_VSUB
 privileged: false
 operands:
   govern:

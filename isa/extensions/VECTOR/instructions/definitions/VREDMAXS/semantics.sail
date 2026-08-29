@@ -10,75 +10,43 @@ function clause vector_semantics(Op_VREDMAXS) =
         fp_allowed_causes = fflags_none,
     }
 
-function execute_VREDMAXS_primitive(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) = {
-    let operation = instruction.form.operation;
-    let element_bytes = operation_width(instruction);
-    let lanes = tdiv_int(state.vector_length_bytes, element_bytes);
-    match (
-        vector_register_index(instruction, Operand_src),
-        predicate_register_index(instruction, Operand_govern),
-        operand_named(instruction, Operand_dst),
-    ) {
-        (Some(source), Some(predicate), Some(destination)) => {
-            var updated = state;
-            updated.registers[unsigned(destination.value[3 .. 0])] = get_slice_int(
-                64,
-                vector_integer_reduction_image(
-                    operation,
-                    state.vector_registers[unsigned(source)],
-                    state.predicate_registers[unsigned(predicate)],
-                    0,
-                    lanes,
-                    element_bytes,
-                    vector_integer_reduction_identity(operation, element_bytes),
-                ),
-                0,
-            );
-            Some(vector_finish(instruction, state, updated))
-        },
-        _ => None(),
-    }
+
+function lower_VREDMAXS_uops(instruction : Decoded_instruction) -> option(list(Uop)) = {
+    let address = uop_location_make_temporary(40);
+    let memory = uop_location_make_temporary(41);
+    let output = uop_location_make_temporary(42);
+    let commit_kind : Commit_kind = match vector_memory_operand(instruction.operands) {
+        Some(_) => CommitMemory,
+        None() => CommitRegisters,
+    };
+    let compute = {
+        uop_make(
+            UopVectorCompute(Op_VREDMAXS),
+            uop_location_make_none(),
+            uop_location_make_none(),
+            output,
+            Operand_dst,
+            operation_width(instruction),
+            commit_kind,
+        ) with
+        auxiliary = memory,
+    };
+    Some([|
+        uop_make(UopVectorCalcEa(), uop_location_make_none(), uop_location_make_none(), address,
+                 Operand_dst, operation_width(instruction), CommitNone),
+        uop_make(UopVectorMemoryLoad(), address, uop_location_make_none(), memory,
+                 Operand_dst, operation_width(instruction), CommitMemory),
+        compute,
+        uop_make(UopVectorMemoryStore(), address, output, uop_location_make_none(),
+                 Operand_dst, operation_width(instruction), CommitMemory),
+        uop_make(UopCommit(), uop_location_make_none(), uop_location_make_none(), uop_location_make_none(),
+                 Operand_dst, operation_width(instruction), commit_kind),
+    |])
 }
 
-union clause Uop_kind = UopInstruction_VREDMAXS : unit
-
-function clause execute_uop(UopInstruction_VREDMAXS(), _, values, instruction, before, speculative) =
-    match execute_VREDMAXS_primitive(instruction, speculative) {
-        Some(result) => vector_uop_step_from_local_result(result, instruction, before, speculative, values),
-        None() => uop_step_fault(
-            faulted(
-                before,
-                instruction.form.operation,
-                IllegalInstruction,
-                "VREDMAXS local vector primitive rejected its instruction",
-            ),
-        ),
-    }
-
 function execute_VREDMAXS(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) =
-    Some(
-        uop_program_execute(
-            [|
-                uop_make(
-                    UopInstruction_VREDMAXS(),
-                    uop_location_make_none(),
-                    uop_location_make_none(),
-                    uop_location_make_none(),
-                    Operand_dst,
-                    operation_width(instruction),
-                    CommitRegisters,
-                ),
-                uop_make(
-                    UopCommit(),
-                    uop_location_make_none(),
-                    uop_location_make_none(),
-                    uop_location_make_none(),
-                    Operand_dst,
-                    operation_width(instruction),
-                    CommitRegisters,
-                ),
-            |],
-            instruction,
-            state,
-        ),
-    )
+    match lower_VREDMAXS_uops(instruction) {
+        Some(program) => Some(uop_program_execute(program, instruction, state)),
+        None() => Some(faulted(state, instruction.form.operation, IllegalInstruction,
+                               "VREDMAXS could not be lowered to micro-operations")),
+    }

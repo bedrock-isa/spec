@@ -116,6 +116,12 @@ impl From<BusError> for SailBusExecutionError {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum SailBusCompletion {
+    Retired,
+    VectorLane,
+}
+
 impl SailCore {
     /// Fetches and executes one instruction at the current PC.
     pub fn step_on_bus(&mut self, bus: &mut impl Bus) -> Result<(), SailBusExecutionError> {
@@ -129,16 +135,16 @@ impl SailCore {
             let bytes = fetch_virtual_instruction(self, bus, pc)?;
             self.execute_bus_transaction(bus, &bytes)
         })();
-        if result.is_ok() {
+        if let Ok(completion) = &result {
             bus.commit_transaction();
-            if monitoring_enabled {
+            if monitoring_enabled && *completion == SailBusCompletion::Retired {
                 self.environment.retired_instruction_counter =
                     self.environment.retired_instruction_counter.wrapping_add(1);
             }
         } else {
             bus.rollback_transaction();
         }
-        result
+        result.map(|_| ())
     }
 
     /// Executes one already-framed instruction inside one bus transaction.
@@ -155,19 +161,20 @@ impl SailCore {
         } else {
             bus.rollback_transaction();
         }
-        result
+        result.map(|_| ())
     }
 
     fn execute_bus_transaction(
         &mut self,
         bus: &mut impl Bus,
         bytes: &[u8],
-    ) -> Result<(), SailBusExecutionError> {
+    ) -> Result<SailBusCompletion, SailBusExecutionError> {
         let mut status = self.execute(bytes);
         let mut active_request = None;
         loop {
             match status {
-                SailCoreStatus::Ok => return Ok(()),
+                SailCoreStatus::Ok => return Ok(SailBusCompletion::Retired),
+                SailCoreStatus::VectorLane => return Ok(SailBusCompletion::VectorLane),
                 SailCoreStatus::NeedsEnvironment => {
                     let request = self.last_request().map_err(SailBusExecutionError::Core)?;
                     active_request = Some(Box::new(request.clone()));
@@ -495,6 +502,13 @@ fn service_request(
             }),
         },
         REQUEST_EVENT_FRAME_ACCESS => service_blob_access(bus, address, request, &mut response),
+        REQUEST_VECTOR_MEMORY_WRITE if request.selector == 1 && request.access == ACCESS_STORE => {
+            let result = write_payload(bus, address, &request.payload);
+            if result.is_ok() {
+                response.atomic_store_happened = true;
+            }
+            result
+        }
         REQUEST_VECTOR_MEMORY_READ | REQUEST_VECTOR_MEMORY_WRITE => {
             service_blob_access(bus, address, request, &mut response)
         }
@@ -938,5 +952,44 @@ mod tests {
 
         assert_eq!(core.register(1), Ok(2));
         assert_eq!(core.environment.retired_instruction_counter, 2);
+    }
+
+    #[test]
+    fn resumable_scatter_stores_one_lane_per_step_and_retires_once() {
+        const VSCATTER_B_SCALAR_STRIDE: [u8; 6] = [0xcf, 0xfc, 0x18, 0x02, 0x02, 0x43];
+
+        let mut core = SailCore::new().unwrap();
+        let mut ram = Ram::new(0x200);
+        ram.load(0, &VSCATTER_B_SCALAR_STRIDE).unwrap();
+        ram.load(0x100, &[0xa0, 0xa1, 0xa2, 0xa3, 0xa4]).unwrap();
+        let mut state = core.state().unwrap();
+        state.controls[25] = 1;
+        state.registers[1] = 0x100;
+        state.registers[2] = 1;
+        state.predicate_registers[0] = [0x05, 0x00];
+        state.predicate_registers[1] = [0xf2, 0xff];
+        state.vector_registers[3][0] = 0x11;
+        state.vector_registers[3][2] = 0x33;
+        assert_eq!(core.set_state(state), SailCoreStatus::Ok);
+
+        core.step_on_bus(&mut ram).unwrap();
+
+        assert_eq!(
+            &ram.as_slice()[0x100..0x105],
+            &[0x11, 0xa1, 0xa2, 0xa3, 0xa4]
+        );
+        assert_eq!(core.pc(), Ok(0));
+        assert_eq!(core.state().unwrap().predicate_registers[1], [0x01, 0x00]);
+        assert_eq!(core.environment.retired_instruction_counter, 0);
+
+        core.step_on_bus(&mut ram).unwrap();
+
+        assert_eq!(
+            &ram.as_slice()[0x100..0x105],
+            &[0x11, 0xa1, 0x33, 0xa3, 0xa4]
+        );
+        assert_eq!(core.pc(), Ok(VSCATTER_B_SCALAR_STRIDE.len() as u64));
+        assert_eq!(core.state().unwrap().predicate_registers[1], [0x05, 0x00]);
+        assert_eq!(core.environment.retired_instruction_counter, 1);
     }
 }

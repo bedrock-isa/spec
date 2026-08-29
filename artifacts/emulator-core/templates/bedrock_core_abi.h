@@ -8,7 +8,7 @@
 extern "C" {
 #endif
 
-#define BEDROCK_CORE_ABI_VERSION 5u
+#define BEDROCK_CORE_ABI_VERSION 6u
 #define BEDROCK_CORE_MAX_INSTRUCTION_BYTES 18u
 #define BEDROCK_CORE_REGISTER_COUNT 16u
 #define BEDROCK_CORE_FLOATING_REGISTER_COUNT 16u
@@ -28,7 +28,8 @@ typedef enum bedrock_core_status {
   BEDROCK_CORE_FAULT = 3,
   BEDROCK_CORE_BAD_ARGUMENT = 4,
   BEDROCK_CORE_OUT_OF_MEMORY = 5,
-  BEDROCK_CORE_BAD_STATE = 6
+  BEDROCK_CORE_BAD_STATE = 6,
+  BEDROCK_CORE_VECTOR_LANE = 7
 } bedrock_core_status;
 
 typedef struct bedrock_core_fault {

@@ -1,0 +1,25 @@
+Let $E$ be the selected element width in bytes, $N=VLEN/E$, and $G$ be
+the typed governing-predicate image whose significant bits are
+\texttt{Pg[iE]} for $0\leq i<N$.  \texttt{Pg} and \texttt{Ps} shall name
+different (:term:VECTOR.terms.predicate_register|plural:).  Before attempting a lane, VGATHER replaces
+\texttt{Ps} by its typed image \texttt{Ps AND G}; all nonsignificant bits are
+cleared.  Thus completed lanes that are no longer governed are discarded.
+
+If \texttt{G AND NOT Ps} is empty, the instruction completes normally with
+\texttt{Ps == G}.  Otherwise it selects one pending lane $i$, calculates that
+lane's address as specified by the resumable gather/scatter rules in
+Section~\ref{section:vector-register-model}, and issues exactly one $E$-byte
+normal-memory load through the default data segment.  On success it replaces
+only destination lane $i$, sets \texttt{Ps[iE]}, and commits those effects at
+a lane-completion boundary.  If more lanes remain pending, the PC continues to
+identify this VGATHER and execution may admit an asynchronous event before
+another lane is attempted.  A lane-completion boundary is not an instruction
+retirement or a debug-trace boundary.
+
+A synchronous memory fault commits no destination value and does not set the
+faulting lane's completion bit; the typed normalization of \texttt{Ps} remains
+committed, so retrying at the saved PC does not repeat an already completed
+lane.  Software emulation of a faulting lane shall write the destination lane
+before setting its completion bit.  The vector address and destination
+operands shall not name the same (:term:VECTOR.terms.vector_register:).  VGATHER preserves FLAGS and
+is not permitted for MMIO.

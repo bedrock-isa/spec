@@ -219,11 +219,12 @@ function uop_program_make_waiting_result(
     speculative : Cpu_state,
     request : Primitive_request,
     captured : bits(64),
+    commit_state : bool,
 ) -> (
     Execution_result
 ) =
     struct {
-        state = before,
+        state = if commit_state then speculative else before,
         pending =
             {
                 empty_pending(Some(speculative), instruction.form.operation, CommitMemory) with
@@ -252,39 +253,73 @@ function uop_step_continue(state : Cpu_state, values : list(Uop_value)) -> Uop_s
     UopContinue(struct { state = state, values = values })
 
 function uop_step_wait(pending_destination : int, request : Primitive_request, captured : bits(64)) -> Uop_step =
-    UopWait(struct { pending_destination = pending_destination, request = request, captured = captured })
+    UopWait(struct {
+        pending_destination = pending_destination,
+        request = request,
+        captured = captured,
+        commit_state = false,
+    })
+
+function uop_step_wait_committed(
+    pending_destination : int,
+    request : Primitive_request,
+    captured : bits(64),
+) -> (
+    Uop_step
+) =
+    UopWait(struct {
+        pending_destination = pending_destination,
+        request = request,
+        captured = captured,
+        commit_state = true,
+    })
 
 function uop_step_complete(state : Cpu_state, commit_kind : Commit_kind) -> Uop_step =
-    UopComplete(struct { state = state, commit_kind = commit_kind, effects = [||], advance_pc = true })
+    UopComplete(struct {
+        state = state,
+        commit_kind = commit_kind,
+        effects = [||],
+        advance_pc = true,
+        boundary_class = BoundaryOrdinary,
+    })
 
 function uop_step_complete_control(state : Cpu_state, commit_kind : Commit_kind) -> Uop_step =
-    UopComplete(struct { state = state, commit_kind = commit_kind, effects = [||], advance_pc = false })
+    UopComplete(struct {
+        state = state,
+        commit_kind = commit_kind,
+        effects = [||],
+        advance_pc = false,
+        boundary_class = BoundaryOrdinary,
+    })
+
+function uop_step_complete_boundary(
+    state : Cpu_state,
+    commit_kind : Commit_kind,
+    boundary_class : Boundary_class,
+) -> (
+    Uop_step
+) =
+    UopComplete(struct {
+        state = state,
+        commit_kind = commit_kind,
+        effects = [||],
+        advance_pc = false,
+        boundary_class = boundary_class,
+    })
 
 function uop_step_complete_with_effects(state : Cpu_state, commit_kind : Commit_kind,
                                    effects : list(Architectural_effect)) -> Uop_step =
-    UopComplete(struct { state = state, commit_kind = commit_kind, effects = effects, advance_pc = true })
+    UopComplete(struct {
+        state = state,
+        commit_kind = commit_kind,
+        effects = effects,
+        advance_pc = true,
+        boundary_class = BoundaryOrdinary,
+    })
 
 function uop_step_fault(result : Execution_result) -> Uop_step = UopFault(result)
 
 function uop_step_delegate(result : Execution_result) -> Uop_step = UopDelegate(result)
-
-function uop_step_from_local_result(
-    result : Execution_result,
-    speculative : Cpu_state,
-    values : list(Uop_value),
-) -> (
-    Uop_step
-) =
-    match result.fault {
-        Some(_) => uop_step_fault(result),
-        None() => if result.awaiting_environment then {
-            uop_step_delegate(result)
-        } else {
-            var updated = result.state;
-            updated.pc = speculative.pc;
-            uop_step_continue(updated, values)
-        },
-    }
 
 function uop_step_interpret(
     step : Uop_step,
@@ -309,10 +344,17 @@ function uop_step_interpret(
             speculative,
             wait.request,
             wait.captured,
+            wait.commit_state,
         ),
-        UopComplete(done) => completed(before,
-            if done.advance_pc then advance_pc(done.state, instruction) else done.state,
-            done.commit_kind, done.effects),
+        UopComplete(done) => {
+            let result = completed(
+                before,
+                if done.advance_pc then advance_pc(done.state, instruction) else done.state,
+                done.commit_kind,
+                done.effects,
+            );
+            { result with pending = { result.pending with boundary_class = done.boundary_class } }
+        },
         UopDelegate(result) => result,
         UopFault(result) => result,
     }

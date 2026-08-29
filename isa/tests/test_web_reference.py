@@ -83,7 +83,7 @@ class WebReferenceTest(unittest.TestCase):
             (11, 8, 5),
         )
         self.assertEqual(len(self.site.registry.pages), 382)
-        self.assertEqual(len(self.site.registry.targets), 1041)
+        self.assertEqual(len(self.site.registry.targets), 1048)
 
     def test_current_style_wrappers_are_lowered_at_the_pandoc_boundary(self) -> None:
         normalized = normalize_latex_for_site(

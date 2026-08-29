@@ -1,0 +1,244 @@
+encodings:
+  b_w_l_q_z_pn_p_pn_c_vn_v_rn_b_add_rn_s:
+    pattern: 111111110000011000zz0bbbbppppccccssssvvvvv
+    syntax: VSCATTER.{B|W|L|Q}(z) Pn(p), Pn(c), Vn(v), [Rn(b) + Rn(s)]
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      b:
+        role: base
+        type: base.field_types.Rn
+      p:
+        role: govern
+        type: VECTOR.field_types.Pn
+      c:
+        role: completion
+        type: VECTOR.field_types.Pn
+      s:
+        role: stride
+        type: base.field_types.Rn
+      v:
+        role: src
+        type: VECTOR.field_types.Vn
+    overlaps:
+    - operands:
+      - govern
+      - completion
+      type: illegal_instruction
+  l_pn_p_pn_c_vn_v_vn_x:
+    pattern: 111111110000011001000000ppppccccvvvvvxxxxx
+    syntax: VSCATTER.L Pn(p), Pn(c), Vn(v), [Vn(x)]
+    fields:
+      p:
+        role: govern
+        type: VECTOR.field_types.Pn
+      c:
+        role: completion
+        type: VECTOR.field_types.Pn
+      v:
+        role: src
+        type: VECTOR.field_types.Vn
+      x:
+        role: address
+        type: VECTOR.field_types.Vn
+    overlaps:
+    - operands:
+      - govern
+      - completion
+      type: illegal_instruction
+  q_pn_p_pn_c_vn_v_vn_x:
+    pattern: 111111110000011001000001ppppccccvvvvvxxxxx
+    syntax: VSCATTER.Q Pn(p), Pn(c), Vn(v), [Vn(x)]
+    fields:
+      p:
+        role: govern
+        type: VECTOR.field_types.Pn
+      c:
+        role: completion
+        type: VECTOR.field_types.Pn
+      v:
+        role: src
+        type: VECTOR.field_types.Vn
+      x:
+        role: address
+        type: VECTOR.field_types.Vn
+    overlaps:
+    - operands:
+      - govern
+      - completion
+      type: illegal_instruction
+  b_w_l_q_z_pn_p_pn_c_vn_v_rn_b_add_vn_x:
+    pattern: 111111110000011010zzbbbbppppccccvvvvvxxxxx
+    syntax: VSCATTER.{B|W|L|Q}(z) Pn(p), Pn(c), Vn(v), [Rn(b) + Vn(x)]
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      b:
+        role: base
+        type: base.field_types.Rn
+      p:
+        role: govern
+        type: VECTOR.field_types.Pn
+      c:
+        role: completion
+        type: VECTOR.field_types.Pn
+      v:
+        role: src
+        type: VECTOR.field_types.Vn
+      x:
+        role: address
+        type: VECTOR.field_types.Vn
+    overlaps:
+    - operands:
+      - govern
+      - completion
+      type: illegal_instruction
+  b_w_l_q_z_pn_p_pn_c_vn_v_rn_b_add_vn_x_mul_scale:
+    pattern: 111111110000011011zzbbbbppppccccvvvvvxxxxx
+    syntax: VSCATTER.{B|W|L|Q}(z) Pn(p), Pn(c), Vn(v), [Rn(b) + Vn(x) * <scale>]
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      b:
+        role: base
+        type: base.field_types.Rn
+      p:
+        role: govern
+        type: VECTOR.field_types.Pn
+      c:
+        role: completion
+        type: VECTOR.field_types.Pn
+      v:
+        role: src
+        type: VECTOR.field_types.Vn
+      x:
+        role: address
+        type: VECTOR.field_types.Vn
+    overlaps:
+    - operands:
+      - govern
+      - completion
+      type: illegal_instruction
+  b_w_l_q_z_pn_p_pn_c_vn_v_rn_b_add_vn_x_mul_scale_add_disp8s:
+    pattern: 111111110000011100zzbbbbppppccccvvvvvxxxxx
+    syntax: VSCATTER.{B|W|L|Q}(z) Pn(p), Pn(c), Vn(v), [Rn(b) + Vn(x) * <scale> + <disp8s>]
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      b:
+        role: base
+        type: base.field_types.Rn
+      p:
+        role: govern
+        type: VECTOR.field_types.Pn
+      c:
+        role: completion
+        type: VECTOR.field_types.Pn
+      v:
+        role: src
+        type: VECTOR.field_types.Vn
+      x:
+        role: address
+        type: VECTOR.field_types.Vn
+    payloads:
+    - role: disp8s
+      type: base.payload_types.DISP8S
+    overlaps:
+    - operands:
+      - govern
+      - completion
+      type: illegal_instruction
+  b_w_l_q_z_pn_p_pn_c_vn_v_rn_b_add_vn_x_mul_scale_add_disp16s:
+    pattern: 111111110000011101zzbbbbppppccccvvvvvxxxxx
+    syntax: VSCATTER.{B|W|L|Q}(z) Pn(p), Pn(c), Vn(v), [Rn(b) + Vn(x) * <scale> + <disp16s>]
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      b:
+        role: base
+        type: base.field_types.Rn
+      p:
+        role: govern
+        type: VECTOR.field_types.Pn
+      c:
+        role: completion
+        type: VECTOR.field_types.Pn
+      v:
+        role: src
+        type: VECTOR.field_types.Vn
+      x:
+        role: address
+        type: VECTOR.field_types.Vn
+    payloads:
+    - role: disp16s
+      type: base.payload_types.DISP16S
+    overlaps:
+    - operands:
+      - govern
+      - completion
+      type: illegal_instruction
+  b_w_l_q_z_pn_p_pn_c_vn_v_rn_b_add_vn_x_mul_scale_add_disp32s:
+    pattern: 111111110000011110zzbbbbppppccccvvvvvxxxxx
+    syntax: VSCATTER.{B|W|L|Q}(z) Pn(p), Pn(c), Vn(v), [Rn(b) + Vn(x) * <scale> + <disp32s>]
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      b:
+        role: base
+        type: base.field_types.Rn
+      p:
+        role: govern
+        type: VECTOR.field_types.Pn
+      c:
+        role: completion
+        type: VECTOR.field_types.Pn
+      v:
+        role: src
+        type: VECTOR.field_types.Vn
+      x:
+        role: address
+        type: VECTOR.field_types.Vn
+    payloads:
+    - role: disp32s
+      type: base.payload_types.DISP32S
+    overlaps:
+    - operands:
+      - govern
+      - completion
+      type: illegal_instruction
+  b_w_l_q_z_pn_p_pn_c_vn_v_rn_b_add_vn_x_mul_scale_add_disp64:
+    pattern: 111111110000011111zzbbbbppppccccvvvvvxxxxx
+    syntax: VSCATTER.{B|W|L|Q}(z) Pn(p), Pn(c), Vn(v), [Rn(b) + Vn(x) * <scale> + <disp64>]
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      b:
+        role: base
+        type: base.field_types.Rn
+      p:
+        role: govern
+        type: VECTOR.field_types.Pn
+      c:
+        role: completion
+        type: VECTOR.field_types.Pn
+      v:
+        role: src
+        type: VECTOR.field_types.Vn
+      x:
+        role: address
+        type: VECTOR.field_types.Vn
+    payloads:
+    - role: disp64
+      type: base.payload_types.DISP64
+    overlaps:
+    - operands:
+      - govern
+      - completion
+      type: illegal_instruction

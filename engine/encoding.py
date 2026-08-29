@@ -55,7 +55,7 @@ class OperandConstraint:
 
 @dataclass(frozen=True, slots=True)
 class OperandOverlap:
-    """The architectural relation between two writable operands."""
+    """The architectural aliasing relation between two encoded operands."""
 
     operands: tuple[str, str]
     type: str

@@ -135,4 +135,4 @@ x-interpretation-rules:
   - Effective-address purpose is derived from the logical operand role, and effective-address width is derived from the fixed or selected size suffix; neither is repeated in the encoding.
   - A fixed size suffix directly selects its size; a selected suffix binds its field marker to a size-selector field type; sizes is not repeated in the encoding.
   - A constraint role resolves to one field in the same encoding; allow and exclude values are interpreted in that field type's value domain.
-  - An overlap names two distinct writable field-backed logical operands; same_value permits aliasing with one value, while illegal_instruction rejects aliasing.
+  - An overlap names two distinct field-backed logical operands; same_value requires writable operands and permits aliasing with one value, while illegal_instruction may constrain any operands and rejects aliasing.

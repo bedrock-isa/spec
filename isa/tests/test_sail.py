@@ -111,14 +111,37 @@ class SailCompositionTest(unittest.TestCase):
         self.assertIn("Event_VECTOR_LANE_INDEX_OUT_OF_RANGE", vector)
         self.assertNotIn("Event_FLOATING_POINT_EXCEPTION", vector)
 
-    def test_dispatch_preserves_ordered_multi_entry_fallback(self) -> None:
-        dispatch = SailDispatchRenderer().render(self.compose())
+    def test_every_instruction_has_one_typed_uop_lowering_entry(self) -> None:
+        program = self.compose()
 
-        self.assertIn(
-            "match execute_VADD_integer(instruction, state) { Some(result) => result, "
-            "None() => match execute_VADD_floating(instruction, state)",
-            dispatch,
+        for semantics in program.instruction_semantics:
+            mnemonic = semantics.bundle.instruction.mnemonic
+            source = semantics.source.read_text()
+            self.assertEqual(
+                semantics.entries,
+                (f"execute_{mnemonic}",),
+                f"{mnemonic} still has split or fallback execution entries",
+            )
+            self.assertIn(
+                f"function lower_{mnemonic}_uops",
+                source,
+                f"{mnemonic} does not own a uop lowering hook",
+            )
+            self.assertIn(
+                f"function execute_{mnemonic}",
+                source,
+                f"{mnemonic} does not expose its canonical execution entry",
+            )
+            self.assertIn("uop_program_execute(", source)
+            self.assertNotIn("UopInstruction_", source)
+            self.assertNotRegex(source, rf"function execute_{re.escape(mnemonic)}_primitive\b")
+
+        all_sail = "\n".join(
+            source.read_text() for source in self.project.root.rglob("*.sail")
         )
+        self.assertNotIn("UopInstruction_", all_sail)
+        self.assertNotIn("uop_step_from_local_result", all_sail)
+        self.assertNotIn("vector_uop_step_from_local_result", all_sail)
 
     def test_single_entry_dispatch_does_not_require_local_ownership_guards(self) -> None:
         program = self.compose()
@@ -308,7 +331,7 @@ class SailCompositionTest(unittest.TestCase):
         )
         self.assertIn(
             "union clause Uop_kind = UopIntegerAlu : Integer_alu_uop_operation",
-            (primitives / "integer_add.sail").read_text(),
+            (primitives / "integer_alu.sail").read_text(),
         )
         self.assertNotIn("PhaseUopWait", types)
         self.assertNotIn("PhaseUopWait", runtime)
@@ -621,9 +644,12 @@ class SailCompositionTest(unittest.TestCase):
         )
 
     def test_vector_reuses_fp_owned_primitives(self) -> None:
-        vector = (
-            self.project.root / "extensions/VECTOR/semantics/vector.sail"
-        ).read_text()
+        vector = "\n".join(
+            path.read_text()
+            for path in (
+                self.project.root / "extensions/VECTOR/semantics"
+            ).rglob("*.sail")
+        )
         vector_owned = vector + "\n".join(
             path.read_text()
             for path in (
@@ -703,7 +729,9 @@ class SailCompositionTest(unittest.TestCase):
             self.project.root / "execution/semantics/results.sail",
             self.project.root / "execution/semantics/continuation/common.sail",
             self.project.root / "execution/semantics/continuation/dispatch.sail",
-            self.project.root / "extensions/VECTOR/semantics/vector.sail",
+            *(
+                self.project.root / "extensions/VECTOR/semantics"
+            ).rglob("*.sail"),
         ]
         combined = "\n".join(source.read_text() for source in sources)
 

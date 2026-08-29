@@ -40,16 +40,16 @@ class InstructionMetasyntaxTest(unittest.TestCase):
 
     def test_parses_and_flattens_vector_address(self) -> None:
         syntax = InstructionMetasyntax(
-            "VGATHER1.{B|W|L|Q}(z) Pn(p), "
-            "[Rn(b) + Vn(x)[Rn(i)] * <scale> + <disp16s>], Vn(v)"
+            "VGATHER.{B|W|L|Q}(z) Pn(p), Pn(c), "
+            "[Rn(b) + Vn(x) * <scale> + <disp16s>], Vn(v)"
         )
 
-        address = syntax.operands[1]
+        address = syntax.operands[2]
         self.assertEqual(address.kind, "address")
-        self.assertIn("lane_index", [member.kind for member in address.members])
+        self.assertNotIn("lane_index", [member.kind for member in address.members])
         self.assertEqual(
             [operand.name for operand in syntax.displayed_operands],
-            ["Pn", "Rn", "Vn", "Rn", "disp16s", "Vn"],
+            ["Pn", "Pn", "Rn", "Vn", "disp16s", "Vn"],
         )
 
     def test_parse_is_idempotent(self) -> None:

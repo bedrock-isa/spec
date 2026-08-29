@@ -1,4 +1,4 @@
-enum Boundary_class = { BoundaryOrdinary, BoundaryRepeatIteration, BoundaryEventEntry }
+enum Boundary_class = { BoundaryOrdinary, BoundaryRepeatIteration, BoundaryVectorLane, BoundaryEventEntry }
 struct Architectural_effect = {
   kind : Effect_kind,
   operation : Semantic_operation,
@@ -522,6 +522,7 @@ struct Uop_wait = {
   pending_destination : int,
   request : Primitive_request,
   captured : bits(64),
+  commit_state : bool,
 }
 
 struct Uop_complete = {
@@ -529,6 +530,7 @@ struct Uop_complete = {
   commit_kind : Commit_kind,
   effects : list(Architectural_effect),
   advance_pc : bool,
+  boundary_class : Boundary_class,
 }
 
 union Uop_step = {

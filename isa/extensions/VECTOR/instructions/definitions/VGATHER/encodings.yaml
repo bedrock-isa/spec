@@ -1,0 +1,276 @@
+encodings:
+  b_w_l_q_z_pn_p_pn_c_rn_b_add_rn_s_vn_v:
+    pattern: 111111110000010000zz0bbbbppppccccssssvvvvv
+    syntax: VGATHER.{B|W|L|Q}(z) Pn(p), Pn(c), [Rn(b) + Rn(s)], Vn(v)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      b:
+        role: base
+        type: base.field_types.Rn
+      p:
+        role: govern
+        type: VECTOR.field_types.Pn
+      c:
+        role: completion
+        type: VECTOR.field_types.Pn
+      s:
+        role: stride
+        type: base.field_types.Rn
+      v:
+        role: dst
+        type: VECTOR.field_types.Vn
+    overlaps:
+    - operands:
+      - govern
+      - completion
+      type: illegal_instruction
+  l_pn_p_pn_c_vn_x_vn_v:
+    pattern: 111111110000010001000000ppppccccvvvvvxxxxx
+    syntax: VGATHER.L Pn(p), Pn(c), [Vn(x)], Vn(v)
+    fields:
+      p:
+        role: govern
+        type: VECTOR.field_types.Pn
+      c:
+        role: completion
+        type: VECTOR.field_types.Pn
+      v:
+        role: dst
+        type: VECTOR.field_types.Vn
+      x:
+        role: address
+        type: VECTOR.field_types.Vn
+    overlaps:
+    - operands:
+      - govern
+      - completion
+      type: illegal_instruction
+    - operands:
+      - address
+      - dst
+      type: illegal_instruction
+  q_pn_p_pn_c_vn_x_vn_v:
+    pattern: 111111110000010001000001ppppccccvvvvvxxxxx
+    syntax: VGATHER.Q Pn(p), Pn(c), [Vn(x)], Vn(v)
+    fields:
+      p:
+        role: govern
+        type: VECTOR.field_types.Pn
+      c:
+        role: completion
+        type: VECTOR.field_types.Pn
+      v:
+        role: dst
+        type: VECTOR.field_types.Vn
+      x:
+        role: address
+        type: VECTOR.field_types.Vn
+    overlaps:
+    - operands:
+      - govern
+      - completion
+      type: illegal_instruction
+    - operands:
+      - address
+      - dst
+      type: illegal_instruction
+  b_w_l_q_z_pn_p_pn_c_rn_b_add_vn_x_vn_v:
+    pattern: 111111110000010010zzbbbbppppccccvvvvvxxxxx
+    syntax: VGATHER.{B|W|L|Q}(z) Pn(p), Pn(c), [Rn(b) + Vn(x)], Vn(v)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      b:
+        role: base
+        type: base.field_types.Rn
+      p:
+        role: govern
+        type: VECTOR.field_types.Pn
+      c:
+        role: completion
+        type: VECTOR.field_types.Pn
+      v:
+        role: dst
+        type: VECTOR.field_types.Vn
+      x:
+        role: address
+        type: VECTOR.field_types.Vn
+    overlaps:
+    - operands:
+      - govern
+      - completion
+      type: illegal_instruction
+    - operands:
+      - address
+      - dst
+      type: illegal_instruction
+  b_w_l_q_z_pn_p_pn_c_rn_b_add_vn_x_mul_scale_vn_v:
+    pattern: 111111110000010011zzbbbbppppccccvvvvvxxxxx
+    syntax: VGATHER.{B|W|L|Q}(z) Pn(p), Pn(c), [Rn(b) + Vn(x) * <scale>], Vn(v)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      b:
+        role: base
+        type: base.field_types.Rn
+      p:
+        role: govern
+        type: VECTOR.field_types.Pn
+      c:
+        role: completion
+        type: VECTOR.field_types.Pn
+      v:
+        role: dst
+        type: VECTOR.field_types.Vn
+      x:
+        role: address
+        type: VECTOR.field_types.Vn
+    overlaps:
+    - operands:
+      - govern
+      - completion
+      type: illegal_instruction
+    - operands:
+      - address
+      - dst
+      type: illegal_instruction
+  b_w_l_q_z_pn_p_pn_c_rn_b_add_vn_x_mul_scale_add_disp8s_vn_v:
+    pattern: 111111110000010100zzbbbbppppccccvvvvvxxxxx
+    syntax: VGATHER.{B|W|L|Q}(z) Pn(p), Pn(c), [Rn(b) + Vn(x) * <scale> + <disp8s>], Vn(v)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      b:
+        role: base
+        type: base.field_types.Rn
+      p:
+        role: govern
+        type: VECTOR.field_types.Pn
+      c:
+        role: completion
+        type: VECTOR.field_types.Pn
+      v:
+        role: dst
+        type: VECTOR.field_types.Vn
+      x:
+        role: address
+        type: VECTOR.field_types.Vn
+    payloads:
+    - role: disp8s
+      type: base.payload_types.DISP8S
+    overlaps:
+    - operands:
+      - govern
+      - completion
+      type: illegal_instruction
+    - operands:
+      - address
+      - dst
+      type: illegal_instruction
+  b_w_l_q_z_pn_p_pn_c_rn_b_add_vn_x_mul_scale_add_disp16s_vn_v:
+    pattern: 111111110000010101zzbbbbppppccccvvvvvxxxxx
+    syntax: VGATHER.{B|W|L|Q}(z) Pn(p), Pn(c), [Rn(b) + Vn(x) * <scale> + <disp16s>], Vn(v)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      b:
+        role: base
+        type: base.field_types.Rn
+      p:
+        role: govern
+        type: VECTOR.field_types.Pn
+      c:
+        role: completion
+        type: VECTOR.field_types.Pn
+      v:
+        role: dst
+        type: VECTOR.field_types.Vn
+      x:
+        role: address
+        type: VECTOR.field_types.Vn
+    payloads:
+    - role: disp16s
+      type: base.payload_types.DISP16S
+    overlaps:
+    - operands:
+      - govern
+      - completion
+      type: illegal_instruction
+    - operands:
+      - address
+      - dst
+      type: illegal_instruction
+  b_w_l_q_z_pn_p_pn_c_rn_b_add_vn_x_mul_scale_add_disp32s_vn_v:
+    pattern: 111111110000010110zzbbbbppppccccvvvvvxxxxx
+    syntax: VGATHER.{B|W|L|Q}(z) Pn(p), Pn(c), [Rn(b) + Vn(x) * <scale> + <disp32s>], Vn(v)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      b:
+        role: base
+        type: base.field_types.Rn
+      p:
+        role: govern
+        type: VECTOR.field_types.Pn
+      c:
+        role: completion
+        type: VECTOR.field_types.Pn
+      v:
+        role: dst
+        type: VECTOR.field_types.Vn
+      x:
+        role: address
+        type: VECTOR.field_types.Vn
+    payloads:
+    - role: disp32s
+      type: base.payload_types.DISP32S
+    overlaps:
+    - operands:
+      - govern
+      - completion
+      type: illegal_instruction
+    - operands:
+      - address
+      - dst
+      type: illegal_instruction
+  b_w_l_q_z_pn_p_pn_c_rn_b_add_vn_x_mul_scale_add_disp64_vn_v:
+    pattern: 111111110000010111zzbbbbppppccccvvvvvxxxxx
+    syntax: VGATHER.{B|W|L|Q}(z) Pn(p), Pn(c), [Rn(b) + Vn(x) * <scale> + <disp64>], Vn(v)
+    fields:
+      z:
+        role: size
+        type: base.field_types.SIZE_BWLQ
+      b:
+        role: base
+        type: base.field_types.Rn
+      p:
+        role: govern
+        type: VECTOR.field_types.Pn
+      c:
+        role: completion
+        type: VECTOR.field_types.Pn
+      v:
+        role: dst
+        type: VECTOR.field_types.Vn
+      x:
+        role: address
+        type: VECTOR.field_types.Vn
+    payloads:
+    - role: disp64
+      type: base.payload_types.DISP64
+    overlaps:
+    - operands:
+      - govern
+      - completion
+      type: illegal_instruction
+    - operands:
+      - address
+      - dst
+      type: illegal_instruction

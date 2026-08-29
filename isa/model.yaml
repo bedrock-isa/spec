@@ -48,12 +48,34 @@ sail:
     - execution/semantics/uops.sail
     - execution/semantics/uops/primitives/calc_ea.sail
     - execution/semantics/uops/primitives/integer_add.sail
+    - execution/semantics/uops/primitives/integer_alu.sail
+    - execution/semantics/uops/primitives/integer_unary.sail
+    - execution/semantics/uops/primitives/integer_flags.sail
+    - execution/semantics/uops/primitives/integer_carry.sail
+    - execution/semantics/uops/primitives/integer_shift.sail
+    - execution/semantics/uops/primitives/integer_bit.sail
+    - execution/semantics/uops/primitives/integer_count.sail
+    - execution/semantics/uops/primitives/integer_extend.sail
+    - execution/semantics/uops/primitives/integer_math.sail
+    - execution/semantics/uops/primitives/integer_divide.sail
+    - execution/semantics/uops/primitives/integer_divmod.sail
+    - execution/semantics/uops/primitives/integer_extract.sail
+    - execution/semantics/uops/primitives/bounds_compare.sail
     - execution/semantics/uops/primitives/move.sail
     - execution/semantics/uops/primitives/memory_load.sail
     - execution/semantics/uops/primitives/memory_probe.sail
+    - execution/semantics/uops/primitives/cache.sail
+    - execution/semantics/uops/primitives/atomic.sail
     - execution/semantics/uops/primitives/memory_store.sail
     - execution/semantics/uops/primitives/stack.sail
+    - execution/semantics/uops/primitives/guard.sail
+    - execution/semantics/uops/primitives/control.sail
+    - execution/semantics/uops/primitives/repeat_event.sail
     - execution/semantics/uops/primitives/commit.sail
+    - execution/semantics/uops/primitives/core_action.sail
+    - execution/semantics/uops/primitives/environment.sail
+    - execution/semantics/uops/primitives/system_state.sail
+    - execution/semantics/uops/primitives/tlb_context.sail
     - execution/semantics/uops/lowering.sail
     - memory/cache/semantics/evaluations.sail
     - state/semantics/save_restore.sail

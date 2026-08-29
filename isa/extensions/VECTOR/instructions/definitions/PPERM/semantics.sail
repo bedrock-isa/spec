@@ -2,78 +2,46 @@ function clause register_result_extension(Op_PPERM) = RegisterZeroExtend
 
 function clause repeat_semantics(Op_PPERM) = RepeatObserveDestination
 
-function clause vector_semantics(Op_PPERM) = vector_default_semantics()
+function clause vector_semantics(Op_PPERM) =
+    { vector_default_semantics() with special = Some(VectorSpecialPredicatePermute) }
 
-function execute_PPERM_primitive(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) = {
-    let operation = instruction.form.operation;
-    let element_bytes = operation_width(instruction);
-    let lanes = tdiv_int(state.vector_length_bytes, element_bytes);
-    let empty = zero_vector_bytes(tdiv_int(state.vector_length_bytes, 8));
-    let zero_vector = zero_vector_bytes(state.vector_length_bytes);
-    let fp_form : bool = match condition_size_field(instruction.fields) {
-        Some(selector) => selector >= 5,
-        None() => false,
+
+function lower_PPERM_uops(instruction : Decoded_instruction) -> option(list(Uop)) = {
+    let address = uop_location_make_temporary(40);
+    let memory = uop_location_make_temporary(41);
+    let output = uop_location_make_temporary(42);
+    let commit_kind : Commit_kind = match vector_memory_operand(instruction.operands) {
+        Some(_) => CommitMemory,
+        None() => CommitRegisters,
     };
-    if true then {
-        match (vector_register_index(instruction, Operand_index), predicate_register_index(instruction, Operand_dst)) {
-            (Some(indices), Some(destination)) => {
-                var updated = state;
-                updated.predicate_registers[unsigned(destination)] = predicate_permute_image(
-                    state.predicate_registers[unsigned(destination)],
-                    state.vector_registers[unsigned(indices)],
-                    empty,
-                    0,
-                    lanes,
-                    element_bytes,
-                );
-                Some(vector_finish(instruction, state, updated))
-            },
-            _ => None(),
-        }
-    } else {
-        None()
-    }
+    let compute = {
+        uop_make(
+            UopVectorCompute(Op_PPERM),
+            uop_location_make_none(),
+            uop_location_make_none(),
+            output,
+            Operand_dst,
+            operation_width(instruction),
+            commit_kind,
+        ) with
+        auxiliary = memory,
+    };
+    Some([|
+        uop_make(UopVectorCalcEa(), uop_location_make_none(), uop_location_make_none(), address,
+                 Operand_dst, operation_width(instruction), CommitNone),
+        uop_make(UopVectorMemoryLoad(), address, uop_location_make_none(), memory,
+                 Operand_dst, operation_width(instruction), CommitMemory),
+        compute,
+        uop_make(UopVectorMemoryStore(), address, output, uop_location_make_none(),
+                 Operand_dst, operation_width(instruction), CommitMemory),
+        uop_make(UopCommit(), uop_location_make_none(), uop_location_make_none(), uop_location_make_none(),
+                 Operand_dst, operation_width(instruction), commit_kind),
+    |])
 }
 
-union clause Uop_kind = UopInstruction_PPERM : unit
-
-function clause execute_uop(UopInstruction_PPERM(), _, values, instruction, before, speculative) =
-    match execute_PPERM_primitive(instruction, speculative) {
-        Some(result) => vector_uop_step_from_local_result(result, instruction, before, speculative, values),
-        None() => uop_step_fault(
-            faulted(
-                before,
-                instruction.form.operation,
-                IllegalInstruction,
-                "PPERM local vector primitive rejected its instruction",
-            ),
-        ),
-    }
-
 function execute_PPERM(instruction : Decoded_instruction, state : Cpu_state) -> option(Execution_result) =
-    Some(
-        uop_program_execute(
-            [|
-                uop_make(
-                    UopInstruction_PPERM(),
-                    uop_location_make_none(),
-                    uop_location_make_none(),
-                    uop_location_make_none(),
-                    Operand_dst,
-                    operation_width(instruction),
-                    CommitRegisters,
-                ),
-                uop_make(
-                    UopCommit(),
-                    uop_location_make_none(),
-                    uop_location_make_none(),
-                    uop_location_make_none(),
-                    Operand_dst,
-                    operation_width(instruction),
-                    CommitRegisters,
-                ),
-            |],
-            instruction,
-            state,
-        ),
-    )
+    match lower_PPERM_uops(instruction) {
+        Some(program) => Some(uop_program_execute(program, instruction, state)),
+        None() => Some(faulted(state, instruction.form.operation, IllegalInstruction,
+                               "PPERM could not be lowered to micro-operations")),
+    }
