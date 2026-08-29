@@ -12,9 +12,12 @@ memory form. Memory forms continue into (:term:base.terms.segment_pre_translatio
 
 Each compact (:term:base.terms.field:) is embedded in the instruction\textquotesingle{}s (:term:base.terms.opcode_space:), and all compact (:term:base.terms.field|plural:) precede any appended
 effective-address (:term:base.terms.payload:) bytes. Any displacement, absolute address, immediate, or extended
-descriptor bytes are appended as one operand\textquotesingle{}s (:term:base.terms.payload:) sequence. Sequences appear in declared instruction operand
-order. For two payload-bearing operands, the encoded stream contains the (:term:base.terms.opcode_space:) for both operands, the complete
-operand 0 (:term:base.terms.payload:) sequence, the complete operand 1 (:term:base.terms.payload:) sequence, and any trailing (:term:base.terms.padding:), in that order.
+descriptor bytes are appended as separate (:term:base.terms.payload|plural:). All extended descriptor bytes appear first, ordered according to the
+declared instruction operand order of the operands that select them. All remaining effective-address (:term:base.terms.payload|plural:) follow, also in
+declared instruction operand order.
+For two payload-bearing operands, the encoded stream contains the (:term:base.terms.opcode_space:) for both operands, any extended descriptor for
+operand 0, any extended descriptor for operand 1, the remaining operand 0 (:term:base.terms.payload|plural:), the remaining operand 1
+(:term:base.terms.payload|plural:), and any trailing (:term:base.terms.padding:), in that order.
 
 Multi-byte (:term:base.terms.payload|plural:), such as displacements, absolute addresses, and immediates, are little-endian. Payload
 names ending in s are signed and are sign-extended before use; (:term:base.terms.payload:) names without s are unsigned unless the

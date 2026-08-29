@@ -107,7 +107,7 @@ class GenerateEADiagramsTest(unittest.TestCase):
             rendered,
         )
         self.assertIn(r"\BedrockEAProfileLine{Descriptor}", rendered)
-        self.assertIn(r"\BedrockEAProfileLine{Generation}", rendered)
+        self.assertNotIn(r"\BedrockEAProfileLine{Generation}", rendered)
         self.assertIn(r"\BedrockEAProfileLine{Segment}", rendered)
         self.assertIn(r"\BedrockEAProfileLine{Payload}", rendered)
         self.assertIn(r"\BedrockEAProfileLine{Update}", rendered)
@@ -185,12 +185,12 @@ class GenerateEADiagramsTest(unittest.TestCase):
             "FP FEA compact",
         )
 
-    def test_non_autoupdate_mode_says_no_update(self) -> None:
+    def test_non_autoupdate_mode_omits_update_line(self) -> None:
         rendered = render_mode(
             self.load("ea/modes/EXT1/explicit_segment_base/mode.yaml")
         )
 
-        self.assertIn(r"\BedrockEAProfileLine{Update}{No auto-update.}", rendered)
+        self.assertNotIn(r"\BedrockEAProfileLine{Update}", rendered)
 
     def test_layout_geometry_is_derived_from_shared_grid_rules(self) -> None:
         self.assertEqual(

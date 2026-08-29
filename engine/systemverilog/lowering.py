@@ -168,6 +168,42 @@ def _ea_candidate_profiles(
     return profiles[0], profiles[1]
 
 
+def _ea_static_payload_prefix_bytes(
+    form: decode_ir.FormIR,
+) -> tuple[int, int]:
+    prefixes = [0, 0]
+    appended_bytes = 0
+    for operand in form.operands:
+        source = operand.source
+        if isinstance(source, decode_ir.AppendedPayloadSourceIR):
+            appended_bytes += source.width // 8
+        elif isinstance(source, decode_ir.EffectiveAddressSourceIR):
+            prefixes[_ea_candidate_slot(form, operand)] = appended_bytes
+    return prefixes[0], prefixes[1]
+
+
+def _standalone_payload_cursor_expression(
+    form: decode_ir.FormIR,
+    target: decode_ir.ReadPayloadIR,
+) -> str:
+    terms = ["{2'b0, d0_i.base_cursor}"]
+    for operand in _ea_operands(form):
+        span = "low_span" if _ea_candidate_slot(form, operand) == 0 else "alt_span"
+        terms.append(f"{{2'b0, {span}.descriptor_bytes}}")
+    for layout in form.layout:
+        if layout is target:
+            break
+        if isinstance(layout, decode_ir.ParseEaIR):
+            operand = next(
+                item for item in form.operands if item.name == layout.operand_name
+            )
+            span = "low_span" if _ea_candidate_slot(form, operand) == 0 else "alt_span"
+            terms.append(f"{{2'b0, {span}.payload_bytes}}")
+        else:
+            terms.append(f"6'd{layout.width // 8}")
+    return " + ".join(terms)
+
+
 def _set_gather(payload: int, positions: tuple[int, ...], value: int) -> int:
     for value_bit, position in zip(range(len(positions) - 1, -1, -1), positions):
         if value & (1 << value_bit):
@@ -281,7 +317,24 @@ def reference_ea(
     byte_count: int,
     cursor: int,
 ) -> tuple[str, dict[str, object] | None, int]:
-    """Reference one IR-owned EA parse, including descriptor and payload byte order."""
+    """Reference one standalone EA parse using descriptor-then-payload order."""
+    stage, decoded, payload_cursor = reference_ea_descriptor(
+        ir, profile_name, compact_raw, record, byte_count, cursor
+    )
+    if stage != "success" or decoded is None:
+        return stage, decoded, payload_cursor
+    return reference_ea_payload(ir, decoded, record, byte_count, payload_cursor)
+
+
+def reference_ea_descriptor(
+    ir: decode_ir.DecodeIR,
+    profile_name: str,
+    compact_raw: int,
+    record: bytes | tuple[int, ...] | list[int],
+    byte_count: int,
+    cursor: int,
+) -> tuple[str, dict[str, object] | None, int]:
+    """Decode one EA descriptor without consuming its trailing payload."""
     profile = next(
         item for item in ir.effective_addresses.profiles if item.name == profile_name
     )
@@ -302,29 +355,20 @@ def reference_ea(
             for item in ir.effective_addresses.descriptor_families
             if item.name == compact.referenced_descriptor_family
         )
-        if next_cursor + family.descriptor_bytes > byte_count or next_cursor + family.descriptor_bytes > ir.limits.max_record_bytes:
+        if (
+            next_cursor + family.descriptor_bytes > byte_count
+            or next_cursor + family.descriptor_bytes > ir.limits.max_record_bytes
+        ):
             return "ea_descriptor", None, next_cursor + family.descriptor_bytes
         for byte in record[next_cursor : next_cursor + family.descriptor_bytes]:
             descriptor = (descriptor << 8) | byte
         descriptor_form = next(
-            (
-                form
-                for form in family.forms
-                if descriptor & form.mask == form.value
-            ),
+            (form for form in family.forms if descriptor & form.mask == form.value),
             None,
         )
         if descriptor_form is None:
             return "ea_descriptor", None, cursor
         next_cursor += family.descriptor_bytes
-    payload_bytes = compact.payload_width // 8
-    if next_cursor + payload_bytes > byte_count or next_cursor + payload_bytes > ir.limits.max_record_bytes:
-        return "ea_payload", None, next_cursor + payload_bytes
-    payload = sum(
-        record[next_cursor + offset] << (offset * 8)
-        for offset in range(payload_bytes)
-    )
-    next_cursor += payload_bytes
     canonical_form = descriptor_form or compact
     canonical_fields = {
         "direct_register_valid": False,
@@ -360,7 +404,7 @@ def reference_ea(
             "compact_form": compact.name,
             "descriptor_form": descriptor_form.name if descriptor_form else "",
             "descriptor": descriptor,
-            "payload": payload,
+            "payload": 0,
             "payload_width": compact.payload_width,
             "payload_signed": compact.payload_signed,
             "kind": canonical_form.kind,
@@ -373,6 +417,25 @@ def reference_ea(
         },
         next_cursor,
     )
+
+
+def reference_ea_payload(
+    ir: decode_ir.DecodeIR,
+    decoded: dict[str, object],
+    record: bytes | tuple[int, ...] | list[int],
+    byte_count: int,
+    cursor: int,
+) -> tuple[str, dict[str, object] | None, int]:
+    """Consume one previously resolved EA's payload."""
+    payload_bytes = int(decoded["payload_width"]) // 8
+    next_cursor = cursor + payload_bytes
+    if next_cursor > byte_count or next_cursor > ir.limits.max_record_bytes:
+        return "ea_payload", None, next_cursor
+    result = dict(decoded)
+    result["payload"] = sum(
+        record[cursor + offset] << (offset * 8) for offset in range(payload_bytes)
+    )
+    return "success", result, next_cursor
 
 
 def reference_d1(
@@ -399,14 +462,35 @@ def reference_d1(
             values[operand.name] = source.value or 0
         else:
             values[operand.name] = 0
-    cursor = form.opcode_space_bytes
+    descriptor_cursor = form.opcode_space_bytes
     for layout in form.layout:
-        operand = next(item for item in form.operands if item.name == layout.operand_name)
+        if not isinstance(layout, decode_ir.ParseEaIR):
+            continue
+        operand = next(
+            item for item in form.operands if item.name == layout.operand_name
+        )
+        stage, decoded, next_cursor = reference_ea_descriptor(
+            ir,
+            layout.profile,
+            values[operand.name] & 0x7F,
+            record,
+            byte_count,
+            descriptor_cursor,
+        )
+        if stage != "success":
+            return stage, {"required_bytes": next_cursor, "values": values, "eas": eas}
+        eas[operand.name] = decoded or {}
+        descriptor_cursor = next_cursor
+
+    cursor = descriptor_cursor
+    for layout in form.layout:
+        operand = next(
+            item for item in form.operands if item.name == layout.operand_name
+        )
         if isinstance(layout, decode_ir.ParseEaIR):
-            stage, decoded, next_cursor = reference_ea(
+            stage, decoded, next_cursor = reference_ea_payload(
                 ir,
-                layout.profile,
-                values[operand.name] & 0x7F,
+                eas[operand.name],
                 record,
                 byte_count,
                 cursor,
@@ -719,6 +803,7 @@ def _render_package(ir: decode_ir.DecodeIR) -> tuple[str, Names]:
     logic [6:0] alt_raw;
     logic [3:0] base_cursor;
     logic [3:0] post_alt_cursor;
+    logic [BEDROCK_EA_SLOTS-1:0][4:0] ea_static_payload_prefix_bytes;
   }} d0_ea_result_t;
 
   typedef struct packed {{
@@ -780,6 +865,8 @@ def _render_package(ir: decode_ir.DecodeIR) -> tuple[str, Names]:
   typedef struct packed {{
     logic valid;
     logic [3:0] encoded_bytes;
+    logic [3:0] descriptor_bytes;
+    logic [3:0] payload_bytes;
   }} ea_span_result_t;
 
   typedef struct packed {{
@@ -984,6 +1071,7 @@ def _render_d0(ir: decode_ir.DecodeIR, names: Names) -> str:
             )
             low_width, alt_width = _ea_candidate_widths(form, names)
             low_profile, alt_profile = _ea_candidate_profiles(form, names)
+            low_static_prefix, alt_static_prefix = _ea_static_payload_prefix_bytes(form)
             predicates = [
                 _constraint_sv(
                     constraint,
@@ -1024,6 +1112,8 @@ def _render_d0(ir: decode_ir.DecodeIR, names: Names) -> str:
                     f"  assign {selection_signal}.ea_widths[BEDROCK_EA_ALT_SLOT] = {alt_width};",
                     f"  assign {selection_signal}.ea_profiles[BEDROCK_EA_LOW_SLOT] = {low_profile};",
                     f"  assign {selection_signal}.ea_profiles[BEDROCK_EA_ALT_SLOT] = {alt_profile};",
+                    f"  assign {selection_signal}.ea_static_payload_prefix_bytes[BEDROCK_EA_LOW_SLOT] = 5'd{low_static_prefix};",
+                    f"  assign {selection_signal}.ea_static_payload_prefix_bytes[BEDROCK_EA_ALT_SLOT] = 5'd{alt_static_prefix};",
                 ]
             )
         raw_declarations, raw_assignments, raw_root, raw_depth = _balanced_tree(
@@ -1236,6 +1326,8 @@ def _render_ea_span_function(ir: decode_ir.DecodeIR, names: Names) -> str:
                     [
                         "            encoded_ea_span.valid = 1'b1;",
                         f"            encoded_ea_span.encoded_bytes = 4'd{encoded_bytes};",
+                        f"            encoded_ea_span.descriptor_bytes = 4'd{compact.descriptor_bytes};",
+                        f"            encoded_ea_span.payload_bytes = 4'd{compact.payload_width // 8};",
                     ]
                 )
             lines.append("          end")
@@ -1263,29 +1355,31 @@ def _render_ea_span_function(ir: decode_ir.DecodeIR, names: Names) -> str:
 
 
 def _render_compact_ea_span_function(ir: decode_ir.DecodeIR, names: Names) -> str:
-    universal: dict[int, int] = {}
+    universal: dict[int, tuple[int, int]] = {}
     for profile in ir.effective_addresses.profiles:
         compact_by_name = {item.name: item for item in profile.compact_forms}
         for entry in profile.compact_entries:
             if entry.valid:
                 compact = compact_by_name[entry.form_name]
-                encoded_bytes = compact.descriptor_bytes + compact.payload_width // 8
-                previous = universal.setdefault(entry.raw, encoded_bytes)
-                if previous != encoded_bytes:
+                spans = (compact.descriptor_bytes, compact.payload_width // 8)
+                previous = universal.setdefault(entry.raw, spans)
+                if previous != spans:
                     raise ValueError(
                         f"EA raw {entry.raw} has profile-dependent encoded span"
                     )
 
-    by_span: dict[int, set[int]] = {}
-    for raw, encoded_bytes in universal.items():
-        by_span.setdefault(encoded_bytes, set()).add(raw)
+    by_span: dict[tuple[int, int], set[int]] = {}
+    for raw, spans in universal.items():
+        by_span.setdefault(spans, set()).add(raw)
     raw_cases = []
-    for encoded_bytes, raw_values in sorted(by_span.items()):
+    for (descriptor_bytes, payload_bytes), raw_values in sorted(by_span.items()):
         for pattern in _minimized_bit_patterns(raw_values, 7):
             raw_cases.append(
                 f"        {pattern}: begin\n"
                 "          encoded_ea_span.valid = 1'b1;\n"
-                f"          encoded_ea_span.encoded_bytes = 4'd{encoded_bytes};\n"
+                f"          encoded_ea_span.encoded_bytes = 4'd{descriptor_bytes + payload_bytes};\n"
+                f"          encoded_ea_span.descriptor_bytes = 4'd{descriptor_bytes};\n"
+                f"          encoded_ea_span.payload_bytes = 4'd{payload_bytes};\n"
                 "        end"
             )
 
@@ -1536,7 +1630,6 @@ def _render_ea_function(ir: decode_ir.DecodeIR, names: Names) -> str:
         payload_cases.append("\n".join(lines))
 
     descriptor_parse_cases: list[str] = []
-    payload_cursor_cases: list[str] = []
     for family in families:
         descriptor_bytes = family.descriptor_bytes
         descriptor_signal = f"{_identifier(family.name).lower()}_decode"
@@ -1556,10 +1649,16 @@ def _render_ea_function(ir: decode_ir.DecodeIR, names: Names) -> str:
         end
       end"""
         )
-        payload_cursor_cases.append(
-            f"      {family_names[family.name]}: "
-            f"ea_payload_cursor = cursor_in + {descriptor_bytes};"
-        )
+    payload_byte_count_cases = [
+        f"      {names.ea_payload_width[str(payload_width)]}: "
+        f"ea_payload_byte_count = 6'd{payload_width // 8};"
+        for payload_width in payload_widths
+    ]
+    descriptor_byte_count_cases = [
+        f"      {family_names[family.name]}: "
+        f"ea_descriptor_byte_count = 2'd{family.descriptor_bytes};"
+        for family in families
+    ]
     descriptor_inputs = "\n".join(
         f"    input descriptor_decode_t {_identifier(family.name).lower()}_decode,"
         for family in families
@@ -1648,14 +1747,25 @@ def _render_ea_function(ir: decode_ir.DecodeIR, names: Names) -> str:
     end
   endfunction
 
-  function automatic logic [5:0] ea_payload_cursor(
-    input compact_ea_decode_t compact_decode,
-    input logic [5:0] cursor_in
+  function automatic logic [5:0] ea_payload_byte_count(
+    input decoded_ea_t ea_in
   );
     begin
-      ea_payload_cursor = cursor_in;
+      ea_payload_byte_count = 6'd0;
+      unique case (ea_in.payload_width)
+{chr(10).join(payload_byte_count_cases)}
+        default: begin end
+      endcase
+    end
+  endfunction
+
+  function automatic logic [1:0] ea_descriptor_byte_count(
+    input compact_ea_decode_t compact_decode
+  );
+    begin
+      ea_descriptor_byte_count = 2'd0;
       unique case (compact_decode.descriptor_family)
-{chr(10).join(payload_cursor_cases)}
+{chr(10).join(descriptor_byte_count_cases)}
         default: begin end
       endcase
     end
@@ -1793,6 +1903,7 @@ def _render_form_case(
     if payload_layout is not None:
         slot = operand_slots[payload_layout.operand_name]
         byte_width = payload_layout.width // 8
+        payload_cursor = _standalone_payload_cursor_expression(form, payload_layout)
         lines.extend(
             [
                 "        if (!layout_failed) begin",
@@ -1806,7 +1917,7 @@ def _render_form_case(
         for byte in range(byte_width):
             lines.append(
                 f"            decoded_result.operands[{slot}].value[{byte * 8} +: 8] = "
-                f"record_i[((layout_cursor + {byte}) * 8) +: 8];"
+                f"record_i[((({payload_cursor}) + {byte}) * 8) +: 8];"
             )
         lines.extend(["          end", "        end"])
     for slot, operand in enumerate(form.operands):

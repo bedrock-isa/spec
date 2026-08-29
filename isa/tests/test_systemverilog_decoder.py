@@ -3,6 +3,7 @@ from pathlib import Path
 
 from engine.generation import ArtifactGeneratorRegistry
 from engine.project import IsaProject
+from engine.systemverilog import decoder_ir, lowering
 from engine.systemverilog.generate_decoder import OUTPUT_NAMES, render_outputs
 
 
@@ -11,7 +12,20 @@ class SystemVerilogDecoderTest(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.root = Path(__file__).parents[1]
         cls.project = IsaProject.load(cls.root)
+        cls.ir = decoder_ir.load_decode_ir()
         cls.outputs = render_outputs(Path("."))
+
+    @staticmethod
+    def _set_field(opcode: int, positions: tuple[int, ...], value: int) -> int:
+        for value_bit, position in zip(range(len(positions) - 1, -1, -1), positions):
+            if value & (1 << value_bit):
+                opcode |= 1 << position
+            else:
+                opcode &= ~(1 << position)
+        return opcode
+
+    def _form(self, key: str) -> decoder_ir.FormIR:
+        return next(form for form in self.ir.forms if form.key == key)
 
     def test_current_outputs_and_interfaces_are_well_formed(self) -> None:
         self.assertEqual(
@@ -72,6 +86,59 @@ class SystemVerilogDecoderTest(unittest.TestCase):
   output ea_decode_result_t result_o""",
             ea,
         )
+        self.assertIn("alt_span.descriptor_bytes", d0)
+        self.assertIn("descriptor_end_cursor", ea)
+        self.assertIn("ea_static_payload_prefix_bytes", ea)
+        self.assertIn("ea_payload_byte_count", ea)
+        self.assertIn("ea_descriptor_byte_count", ea)
+        for offset in range(3):
+            self.assertIn(f"descriptor_ext1_{offset}", ea)
+            self.assertIn(f"descriptor_ext2_{offset}", ea)
+        self.assertNotIn(
+            "descriptor_end_cursor = low_descriptor_parse.next_cursor", ea
+        )
+        self.assertNotIn(
+            "descriptor_end_cursor = alt_descriptor_parse.next_cursor", ea
+        )
+
+    def test_reference_decoder_consumes_all_ea_descriptors_before_payloads(
+        self,
+    ) -> None:
+        form = self._form("base.instructions.MOV.b_w_l_q_z_ea_s_ea_d")
+        opcode = lowering.representative_opcode(form)
+        for operand in form.operands:
+            if isinstance(operand.source, decoder_ir.EffectiveAddressSourceIR):
+                opcode = self._set_field(opcode, operand.source.positions, 0x5F)
+
+        record = [0] * form.opcode_space_bytes + [0x01, 0x02, 0xF1, 0xF2]
+        stage, decoded = lowering.reference_d1(
+            self.ir, form, opcode, record, len(record)
+        )
+
+        self.assertEqual(stage, "success")
+        self.assertEqual(decoded["eas"]["src"]["descriptor"], 0x01)
+        self.assertEqual(decoded["eas"]["dst"]["descriptor"], 0x02)
+        self.assertEqual(decoded["eas"]["src"]["payload"], 0xF1)
+        self.assertEqual(decoded["eas"]["dst"]["payload"], 0xF2)
+
+    def test_reference_decoder_uses_operand_order_after_descriptor_prefix(self) -> None:
+        form = self._form("base.instructions.ADD.b_w_l_q_z_imm8s_ea_e")
+        opcode = lowering.representative_opcode(form)
+        destination = next(
+            operand for operand in form.operands if operand.name == "dst"
+        )
+        self.assertIsInstance(destination.source, decoder_ir.EffectiveAddressSourceIR)
+        opcode = self._set_field(opcode, destination.source.positions, 0x5F)
+
+        record = [0] * form.opcode_space_bytes + [0x01, 0x7A, 0x5C]
+        stage, decoded = lowering.reference_d1(
+            self.ir, form, opcode, record, len(record)
+        )
+
+        self.assertEqual(stage, "success")
+        self.assertEqual(decoded["values"]["src"], 0x7A)
+        self.assertEqual(decoded["eas"]["dst"]["descriptor"], 0x01)
+        self.assertEqual(decoded["eas"]["dst"]["payload"], 0x5C)
 
     def test_generation_is_deterministic(self) -> None:
         self.assertEqual(self.outputs, render_outputs(Path(".")))

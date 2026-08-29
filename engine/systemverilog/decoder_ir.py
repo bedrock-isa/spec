@@ -889,12 +889,17 @@ def _form_ir(project: Any, bundle: Any, form: Any, index: int) -> FormIR:
             0,
             10,
         )
-        for operand in operands
         if isinstance(operand.source, EffectiveAddressSourceIR)
-    ) + tuple(
-        ReadPayloadIR(operand.name, operand.source.width, operand.source.signed)
+        else ReadPayloadIR(
+            operand.name,
+            operand.source.width,
+            operand.source.signed,
+        )
         for operand in operands
-        if isinstance(operand.source, AppendedPayloadSourceIR)
+        if isinstance(
+            operand.source,
+            (EffectiveAddressSourceIR, AppendedPayloadSourceIR),
+        )
     )
     repeat = bundle.instruction.to_dict().get("repeat")
     if repeat is None:

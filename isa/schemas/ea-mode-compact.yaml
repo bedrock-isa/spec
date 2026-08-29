@@ -150,9 +150,9 @@ x-interpretation-rules:
   - In every encoding pattern, the number of occurrences of each pattern character must equal the bits value of its resolved field type.
   - Field roles are unique within a mode, and payload roles are unique within each encoding variant.
   - Field and payload type values are fully qualified logical references resolved through the common reference index.
-  - An encoding variant's payloads are consumed in array order after the compact selector and, for extension modes, after the extension descriptor.
+  - An encoding variant's payloads are consumed in array order after the compact selector and every extended EA descriptor selected by the instruction.
   - Pseudocode may reference the union of payload roles declared by the mode's encoding variants; an absent displacement role has the implicit value zero.
-  - An extension mode resolves extension.id in the active profile's modes directory, falling back to isa/ea/modes, consumes extension.bytes descriptor bytes, decodes them there, and then consumes payloads.
+  - An extension mode resolves extension.id in the active profile's modes directory, falling back to isa/ea/modes, contributes extension.bytes descriptor bytes to the instruction-wide descriptor prefix, decodes them there, and consumes its payloads after that prefix.
   - Omitting segment selects the consuming operation's implicit default segment.
   - A field-sourced segment role resolves to the unique field with that role.
   - autoupdate type predecrement subtracts the positive difference before evaluation; postincrement adds it after evaluation.

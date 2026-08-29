@@ -2,8 +2,10 @@
 The instruction (:term:base.terms.header:) is byte 0 for extrashort and short instructions and the first two bytes for medium and
 longer instructions. The (:term:base.terms.opcode_space:) may continue after the (:term:base.terms.header:). If a descriptor, immediate, displacement, or
 bitmap follows the (:term:base.terms.opcode_space:), each independently determined unit is a separate (:term:base.terms.payload:), and the (:term:base.terms.payload|plural:) occupy
-increasing addresses in decode order. An extended EA descriptor and a following displacement are therefore separate
-(:term:base.terms.payload|plural:).
+increasing addresses in decode order. All extended EA descriptors precede every other (:term:base.terms.payload:), and multiple
+extended EA descriptors appear in declared instruction operand order. The remaining (:term:base.terms.payload|plural:) then appear in declared
+instruction operand order. An extended EA descriptor and a following displacement are therefore separate (:term:base.terms.payload|plural:),
+and the displacement follows every extended EA descriptor in the instruction.
 
 Signed displacement and immediate (:term:base.terms.payload|plural:) use two\textquotesingle{}s-complement representation at their declared width before any
 sign extension performed by the consuming instruction or effective-address encoding.

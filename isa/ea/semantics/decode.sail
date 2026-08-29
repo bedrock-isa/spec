@@ -71,8 +71,8 @@ function extracted_ea_field(payload : bits(64), positions : list(range(0, 15)), 
     ),
   }
 
-function parse_one_ea(operand_name : Operand_id, operand_width : option(Ea_width), profile : Ea_profile, raw_value : int,
-                      bytes : list(bits(8)), cursor : int)
+function parse_one_ea_descriptor(operand_name : Operand_id, operand_width : option(Ea_width), profile : Ea_profile,
+                                 raw_value : int, bytes : list(bits(8)), cursor : int)
   -> option((Ea_binding, int)) =
   match find_compact_ea(profile, get_slice_int(16, raw_value, 0), effective_address_catalog()) {
     None() => None(),
@@ -90,80 +90,74 @@ function parse_one_ea(operand_name : Operand_id, operand_width : option(Ea_width
       };
       if descriptor_bytes < 0 | not_bool(descriptor_valid) then None()
       else {
-        let payload_cursor = cursor + descriptor_bytes;
-        match read_le_bits(bytes, payload_cursor, compact.payload_width) {
-          None() => None(),
-          Some(payload) => {
-            let descriptor_name : option(Ea_form_id) = match descriptor {
-              Some(form) => Some(form.name), None() => None()
-            };
-            let descriptor_fields : list(Decoded_field) = match descriptor {
-              Some(form) => decode_ea_fields(bytes, descriptor_cursor, form),
-              None() => [||],
-            };
-            let update_target : option(Ea_update_target) = match descriptor {
-              Some(form) => form.update_target, None() => None()
-            };
-            let update_mode : option(Ea_update_mode) = match descriptor {
-              Some(form) => form.update_mode, None() => None()
-            };
-            let resolved_kind : Ea_kind = match descriptor {
-              Some(form) => form.kind, None() => compact.kind
-            };
-            let resolved_segment : option(Ea_segment) = match descriptor {
-              Some(form) => form.segment, None() => compact.segment
-            };
-            let resolved_base : option(Ea_base) = match descriptor {
-              Some(form) => form.base, None() => compact.base
-            };
-            let compact_fields = decode_ea_field_list(
-              sail_zero_extend(get_slice_int(16, raw_value, 0), 64), compact.fields
-            );
-            Some((struct {
-              operand_name = operand_name,
-              ea = struct {
-                compact_name = compact.name,
-                profile = profile,
-                kind = resolved_kind,
-                segment = resolved_segment,
-                base = resolved_base,
-                operand_width = operand_width,
-                descriptor_name = descriptor_name,
-                raw = raw_value,
-                descriptor_bytes = descriptor_bytes,
-                fields = append_decoded_fields(compact_fields, descriptor_fields),
-                payload = payload,
-                payload_width = compact.payload_width,
-                payload_signed = compact.payload_signed,
-                update_target = update_target,
-                update_mode = update_mode
-              }
-            }, payload_cursor + tdiv_int(compact.payload_width, 8)))
-          },
-        }
+        let descriptor_name : option(Ea_form_id) = match descriptor {
+          Some(form) => Some(form.name), None() => None()
+        };
+        let descriptor_fields : list(Decoded_field) = match descriptor {
+          Some(form) => decode_ea_fields(bytes, descriptor_cursor, form),
+          None() => [||],
+        };
+        let update_target : option(Ea_update_target) = match descriptor {
+          Some(form) => form.update_target, None() => None()
+        };
+        let update_mode : option(Ea_update_mode) = match descriptor {
+          Some(form) => form.update_mode, None() => None()
+        };
+        let resolved_kind : Ea_kind = match descriptor {
+          Some(form) => form.kind, None() => compact.kind
+        };
+        let resolved_segment : option(Ea_segment) = match descriptor {
+          Some(form) => form.segment, None() => compact.segment
+        };
+        let resolved_base : option(Ea_base) = match descriptor {
+          Some(form) => form.base, None() => compact.base
+        };
+        let compact_fields = decode_ea_field_list(
+          sail_zero_extend(get_slice_int(16, raw_value, 0), 64), compact.fields
+        );
+        Some((struct {
+          operand_name = operand_name,
+          ea = struct {
+            compact_name = compact.name,
+            profile = profile,
+            kind = resolved_kind,
+            segment = resolved_segment,
+            base = resolved_base,
+            operand_width = operand_width,
+            descriptor_name = descriptor_name,
+            raw = raw_value,
+            descriptor_bytes = descriptor_bytes,
+            fields = append_decoded_fields(compact_fields, descriptor_fields),
+            payload = 0x0000000000000000,
+            payload_width = compact.payload_width,
+            payload_signed = compact.payload_signed,
+            update_target = update_target,
+            update_mode = update_mode
+          }
+        }, cursor + descriptor_bytes))
       }
     },
   }
 
-function parse_ea_operands(operands : list(Catalog_operand), fields : list(Decoded_field),
-                           bytes : list(bits(8)), cursor : int) -> option(Ea_parse) =
+function parse_ea_descriptors(operands : list(Catalog_operand), fields : list(Decoded_field),
+                              bytes : list(bits(8)), cursor : int) -> option(Ea_parse) =
   match operands {
     [||] => Some(struct { bindings = [||], cursor = cursor }),
     operand :: tail =>
       match (operand.ea_profile, operand.field_symbol) {
         (Some(profile), Some(symbol)) => match find_decoded_field(symbol, fields) {
           None() => None(),
-          Some(field) => match parse_one_ea(
+          Some(field) => match parse_one_ea_descriptor(
             operand.name, operand.ea_width, profile, field.value, bytes, cursor
           ) {
             None() => None(),
-            Some((binding, next_cursor)) => match parse_ea_operands(tail, fields, bytes, next_cursor) {
+            Some((binding, next_cursor)) => match parse_ea_descriptors(tail, fields, bytes, next_cursor) {
               None() => None(),
               Some(parsed) => Some(struct { bindings = binding :: parsed.bindings, cursor = parsed.cursor }),
             },
           },
         },
-        _ => parse_ea_operands(tail, fields, bytes, cursor),
+        _ => parse_ea_descriptors(tail, fields, bytes, cursor),
       },
   }
 
@@ -192,9 +186,7 @@ function ea_failure_stage(operands : list(Catalog_operand), fields : list(Decode
             };
             if not_bool(descriptor_valid) then DecodeEaDescriptor
             else {
-              let payload_end = cursor + descriptor_bytes + tdiv_int(compact.payload_width, 8);
-              if byte_count(bytes) < payload_end then DecodeEaPayload
-              else ea_failure_stage(tail, fields, bytes, payload_end)
+              ea_failure_stage(tail, fields, bytes, cursor + descriptor_bytes)
             }
           }
         },

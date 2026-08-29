@@ -36,9 +36,8 @@ EXT2 descriptor & 2 & encoded & two-byte extended EA descriptor; present only fo
 For a compact displacement, absolute address, or immediate, the selected (:term:base.terms.payload:) follows the compact (:term:base.terms.field:) at that
 operand\textquotesingle{}s (:term:base.terms.payload:) position. Extended-descriptor construction begins with the compact escape value in the (:term:base.terms.opcode:)
 space and exactly one EXT1 or two EXT2 descriptor bytes; a displaced form places its selected displacement after
-those descriptor bytes.
-When an instruction has more than one payload-bearing EA operand, the decoder consumes each complete appended EA
-(:term:base.terms.payload:) sequence in declared instruction operand order. Each complete sequence, including any extended descriptor bytes
-and selected displacement, ends before the next payload-bearing EA operand\textquotesingle{}s sequence begins.
+all extended descriptor bytes in the instruction. When an instruction has more than one extended EA operand, the decoder consumes
+their complete descriptors in declared instruction operand order. It then consumes every remaining appended EA (:term:base.terms.payload:),
+including any selected displacement, in declared instruction operand order.
 
 \clearpage

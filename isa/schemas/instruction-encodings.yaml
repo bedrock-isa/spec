@@ -129,7 +129,7 @@ x-interpretation-rules:
   - The occurrence count of a pattern marker equals the bits value of its resolved field type; marker bits need not be contiguous.
   - Field and payload type values are fully qualified logical references resolved through the common reference index.
   - A field or payload role either names an instruction.yaml operands key or is an encoding-only selector role such as size, condition, or memory_order.
-  - Field and payload roles are unique within one encoding; fields bind their pattern character and payloads are consumed in array order after the primary instruction bytes.
+  - Field and payload roles are unique within one encoding; fields bind their pattern character, and payloads are consumed in array order after the primary instruction bytes and every extended EA descriptor.
   - Access is inherited from the logical operand and is written only when representation access differs.
   - Fixed registers and fixed literal operands are represented only by syntax and are matched to otherwise unrepresented logical operands in display order.
   - Effective-address purpose is derived from the logical operand role, and effective-address width is derived from the fixed or selected size suffix; neither is repeated in the encoding.

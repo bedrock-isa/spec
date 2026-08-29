@@ -11,12 +11,12 @@ module bedrock_decode_ea
 
   compact_ea_decode_t low_compact;
   compact_ea_decode_t alt_compact;
-  descriptor_decode_t low_base_ext1;
-  descriptor_decode_t low_base_ext2;
-  descriptor_decode_t alt_base_ext1;
-  descriptor_decode_t alt_base_ext2;
-  descriptor_decode_t low_post_alt_ext1;
-  descriptor_decode_t low_post_alt_ext2;
+  descriptor_decode_t descriptor_ext1_0;
+  descriptor_decode_t descriptor_ext1_1;
+  descriptor_decode_t descriptor_ext1_2;
+  descriptor_decode_t descriptor_ext2_0;
+  descriptor_decode_t descriptor_ext2_1;
+  descriptor_decode_t descriptor_ext2_2;
   descriptor_decode_t low_selected_ext1;
   descriptor_decode_t low_selected_ext2;
   ea_parse_result_t low_descriptor_parse;
@@ -26,8 +26,12 @@ module bedrock_decode_ea
   ea_parse_result_t low_parse;
   ea_parse_result_t alt_parse;
   logic [5:0] low_cursor;
+  logic [5:0] descriptor_end_cursor;
   logic [5:0] low_payload_cursor;
   logic [5:0] alt_payload_cursor;
+  logic [1:0] low_descriptor_offset;
+  logic [1:0] low_descriptor_bytes;
+  logic [1:0] alt_descriptor_bytes;
 
   always_comb begin
     result_o = '0;
@@ -40,46 +44,52 @@ module bedrock_decode_ea
       d0_i.ea_profiles[BEDROCK_EA_ALT_SLOT],
       d0_i.alt_raw
     );
-    low_base_ext1 = decode_ext1_descriptor(
+    descriptor_ext1_0 = decode_ext1_descriptor(
       record_i[(d0_i.base_cursor * 8) +: 8]
     );
-    low_base_ext2 = decode_ext2_descriptor({
+    descriptor_ext1_1 = decode_ext1_descriptor(
+      record_i[((d0_i.base_cursor + 1) * 8) +: 8]
+    );
+    descriptor_ext1_2 = decode_ext1_descriptor(
+      record_i[((d0_i.base_cursor + 2) * 8) +: 8]
+    );
+    descriptor_ext2_0 = decode_ext2_descriptor({
       record_i[(d0_i.base_cursor * 8) +: 8],
       record_i[((d0_i.base_cursor + 1) * 8) +: 8]
     });
-    alt_base_ext1 = decode_ext1_descriptor(
-      record_i[(d0_i.base_cursor * 8) +: 8]
-    );
-    alt_base_ext2 = decode_ext2_descriptor({
-      record_i[(d0_i.base_cursor * 8) +: 8],
-      record_i[((d0_i.base_cursor + 1) * 8) +: 8]
+    descriptor_ext2_1 = decode_ext2_descriptor({
+      record_i[((d0_i.base_cursor + 1) * 8) +: 8],
+      record_i[((d0_i.base_cursor + 2) * 8) +: 8]
     });
-    low_post_alt_ext1 = decode_ext1_descriptor(
-      record_i[(d0_i.post_alt_cursor * 8) +: 8]
-    );
-    low_post_alt_ext2 = decode_ext2_descriptor({
-      record_i[(d0_i.post_alt_cursor * 8) +: 8],
-      record_i[((d0_i.post_alt_cursor + 1) * 8) +: 8]
+    descriptor_ext2_2 = decode_ext2_descriptor({
+      record_i[((d0_i.base_cursor + 2) * 8) +: 8],
+      record_i[((d0_i.base_cursor + 3) * 8) +: 8]
     });
-    low_selected_ext1 = low_base_ext1;
-    low_selected_ext2 = low_base_ext2;
-    low_cursor = d0_i.base_cursor;
-    if (d0_i.ea_layout == EA_LAYOUT_ALT_THEN_LOW) begin
-      low_selected_ext1 = low_post_alt_ext1;
-      low_selected_ext2 = low_post_alt_ext2;
-      low_cursor = d0_i.post_alt_cursor;
-    end
-    low_payload_cursor = ea_payload_cursor(low_compact, low_cursor);
-    alt_payload_cursor = ea_payload_cursor(
-      alt_compact,
-      d0_i.base_cursor
-    );
+    low_descriptor_bytes = ea_descriptor_byte_count(low_compact);
+    alt_descriptor_bytes = ea_descriptor_byte_count(alt_compact);
+    low_descriptor_offset = 2'd0;
+    if (d0_i.ea_layout == EA_LAYOUT_ALT_THEN_LOW)
+      low_descriptor_offset = alt_descriptor_bytes;
+    low_selected_ext1 = descriptor_ext1_0;
+    low_selected_ext2 = descriptor_ext2_0;
+    unique case (low_descriptor_offset)
+      2'd1: begin
+        low_selected_ext1 = descriptor_ext1_1;
+        low_selected_ext2 = descriptor_ext2_1;
+      end
+      2'd2: begin
+        low_selected_ext1 = descriptor_ext1_2;
+        low_selected_ext2 = descriptor_ext2_2;
+      end
+      default: begin end
+    endcase
+    low_cursor = {2'b0, d0_i.base_cursor} + {4'b0, low_descriptor_offset};
     alt_descriptor_parse = resolve_ea_descriptor(
       d0_i.ea_profiles[BEDROCK_EA_ALT_SLOT],
       d0_i.ea_widths[BEDROCK_EA_ALT_SLOT],
       alt_compact,
-      alt_base_ext1,
-      alt_base_ext2,
+      descriptor_ext1_0,
+      descriptor_ext2_0,
       byte_count_i,
       d0_i.base_cursor
     );
@@ -92,6 +102,26 @@ module bedrock_decode_ea
       byte_count_i,
       low_cursor
     );
+    descriptor_end_cursor = {2'b0, d0_i.base_cursor};
+    unique case (d0_i.ea_layout)
+      EA_LAYOUT_LOW:
+        descriptor_end_cursor = descriptor_end_cursor +
+          {4'b0, low_descriptor_bytes};
+      EA_LAYOUT_ALT:
+        descriptor_end_cursor = descriptor_end_cursor +
+          {4'b0, alt_descriptor_bytes};
+      EA_LAYOUT_ALT_THEN_LOW:
+        descriptor_end_cursor = descriptor_end_cursor +
+          {4'b0, alt_descriptor_bytes} + {4'b0, low_descriptor_bytes};
+      default: begin end
+    endcase
+    alt_payload_cursor = descriptor_end_cursor +
+      {1'b0, d0_i.ea_static_payload_prefix_bytes[BEDROCK_EA_ALT_SLOT]};
+    low_payload_cursor = descriptor_end_cursor +
+      {1'b0, d0_i.ea_static_payload_prefix_bytes[BEDROCK_EA_LOW_SLOT]};
+    if (d0_i.ea_layout == EA_LAYOUT_ALT_THEN_LOW)
+      low_payload_cursor = low_payload_cursor +
+        ea_payload_byte_count(alt_compact.ea);
     alt_payload_parse = parse_ea_payload(
       alt_compact.ea,
       record_i,

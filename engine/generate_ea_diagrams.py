@@ -764,14 +764,14 @@ def _payload_description(mode: EAMode) -> str:
     return "No appended payload bytes."
 
 
-def _update_description(mode: EAMode) -> str:
+def _update_description(mode: EAMode) -> str | None:
     updates = [
         encoding["autoupdate"]
         for encoding in mode["encodings"]
         if "autoupdate" in encoding
     ]
     if not updates:
-        return "No auto-update."
+        return None
     sentences = []
     for update in updates:
         target = f"{update['target']} register"
@@ -797,12 +797,6 @@ def render_description_block(mode: EAMode, reference: Reference) -> str:
 
     title = _title_case(f"{mode.catalog.name} {mode['name']}")
     label = "EA encoding" if isinstance(mode["encodings"][0]["pattern"], str) else "Descriptor"
-    pseudocode = mode.to_dict().get("pseudocode")
-    generation = (
-        f"{_tex(pseudocode)}."
-        if isinstance(pseudocode, str)
-        else "Selected extension descriptor."
-    )
     lines = [
         r"\begin{BedrockFormBlock}{2.75in}",
         rf"\BedrockEAProfileTitle{{{_tex(title)}}}",
@@ -815,14 +809,14 @@ def render_description_block(mode: EAMode, reference: Reference) -> str:
     lines.extend(
         (
             rf"\BedrockEAProfileLine{{{label}}}{{{_encoding_description(mode)}}}",
-            rf"\BedrockEAProfileLine{{Generation}}{{{generation}}}",
             rf"\BedrockEAProfileLine{{Segment}}{{{_segment_description(mode)}}}",
             rf"\BedrockEAProfileLine{{Payload}}{{{_payload_description(mode)}}}",
-            rf"\BedrockEAProfileLine{{Update}}{{{_update_description(mode)}}}",
-            r"\end{BedrockEAProfile}",
-            r"\end{BedrockFormBlock}",
         )
     )
+    update = _update_description(mode)
+    if update is not None:
+        lines.append(rf"\BedrockEAProfileLine{{Update}}{{{update}}}")
+    lines.extend((r"\end{BedrockEAProfile}", r"\end{BedrockFormBlock}"))
     return "\n".join(lines)
 
 

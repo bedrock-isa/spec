@@ -10,7 +10,10 @@ function decode_operand_list(operands : list(Catalog_operand), payloads : list(C
         None() => None(),
       };
       let appended = find_payload(operand.name, payloads);
-      let width : int = match appended { Some(item) => item.width, None() => 0 };
+      let width : int = match ea {
+        Some(item) => item.payload_width,
+        None() => match appended { Some(item) => item.width, None() => 0 },
+      };
       let value_result : option(bits(64)) = match (field, appended) {
         (Some(item), _) => Some(get_slice_int(64, item.value, 0)),
         (_, Some(_)) => read_le_bits(bytes, cursor, width),
@@ -18,9 +21,12 @@ function decode_operand_list(operands : list(Catalog_operand), payloads : list(C
              then Some(get_slice_int(64, operand.fixed_value, 0))
              else Some(0x0000000000000000),
       };
-      match value_result {
-        None() => None(),
-        Some(value) => match decode_operand_list(
+      let ea_payload_result : option(bits(64)) = match ea {
+        Some(_) => read_le_bits(bytes, cursor, width),
+        None() => Some(0x0000000000000000),
+      };
+      match (value_result, ea_payload_result) {
+        (Some(value), Some(ea_payload)) => match decode_operand_list(
           tail, payloads, fields, bindings, bytes, cursor + tdiv_int(width, 8)
         ) {
           None() => None(),
@@ -33,14 +39,38 @@ function decode_operand_list(operands : list(Catalog_operand), payloads : list(C
               ea_role = operand.ea_role,
               ea_width = operand.ea_width,
               value = value,
-              ea = ea
+              ea = match ea {
+                Some(item) => Some({ item with payload = ea_payload }),
+                None() => None(),
+              }
             } :: parsed.operands,
             cursor = parsed.cursor
           }),
         },
+        _ => None(),
       }
     },
   }
+
+function operand_payload_failure_stage(operands : list(Catalog_operand), payloads : list(Catalog_payload),
+                                       bindings : list(Ea_binding), bytes : list(bits(8)), cursor : int)
+  -> Decode_stage = match operands {
+  [||] => DecodeSuccess,
+  operand :: tail => {
+    let ea = find_ea_binding(operand.name, bindings);
+    let appended = find_payload(operand.name, payloads);
+    let width : int = match ea {
+      Some(item) => item.payload_width,
+      None() => match appended { Some(item) => item.width, None() => 0 },
+    };
+    let next_cursor = cursor + tdiv_int(width, 8);
+    if byte_count(bytes) < next_cursor then match ea {
+      Some(_) => DecodeEaPayload,
+      None() => DecodeStandalonePayload,
+    }
+    else operand_payload_failure_stage(tail, payloads, bindings, bytes, next_cursor)
+  },
+}
 
 function int_member(value : int, values : list(int)) -> bool = match values {
   [||] => false,
@@ -99,7 +129,7 @@ function decode_full_record_execution_outcome(bytes : list(bits(8))) -> Decode_o
           Some(form) => {
             let fields = decode_fields(allocation, form.fields);
             let opcode_space_bytes = class_minimum(frame.record_class);
-            match parse_ea_operands(form.operands, fields, bytes, opcode_space_bytes) {
+            match parse_ea_descriptors(form.operands, fields, bytes, opcode_space_bytes) {
               None() => {
                 struct {
                   stage = ea_failure_stage(form.operands, fields, bytes, opcode_space_bytes),
@@ -110,9 +140,11 @@ function decode_full_record_execution_outcome(bytes : list(bits(8))) -> Decode_o
                 form.operands, form.appended_payloads, fields, eas.bindings, bytes, eas.cursor
               ) {
                 None() => struct {
-                  stage = DecodeStandalonePayload, instruction = None(),
+                  stage = operand_payload_failure_stage(
+                    form.operands, form.appended_payloads, eas.bindings, bytes, eas.cursor
+                  ), instruction = None(),
                   candidate_form = Some(form),
-                  detail = "standalone operand payload"
+                  detail = "operand payload"
                 },
                 Some(operands) => decode_success(form, allocation, fields, operands, frame, bytes),
               },

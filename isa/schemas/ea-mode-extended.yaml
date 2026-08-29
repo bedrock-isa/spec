@@ -152,7 +152,7 @@ x-interpretation-rules:
   - In every encoding pattern, the number of occurrences of each pattern character across all descriptor bytes must equal the bits value of its resolved field type.
   - Field roles are unique within a mode, and payload roles are unique within each encoding variant.
   - Field and payload type values are fully qualified logical references resolved through the common reference index.
-  - An encoding variant's payloads are consumed in array order after all descriptor bytes.
+  - An encoding variant's payloads are consumed in array order after every extended EA descriptor selected by the instruction.
   - An extended mode inherits payload roles from its selecting compact extension mode; an omitted displacement role has the implicit value zero.
   - Omitting segment selects the consuming operation's implicit default segment.
   - A field-sourced segment role resolves to the unique field with that role.

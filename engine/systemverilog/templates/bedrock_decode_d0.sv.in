@@ -14,6 +14,7 @@ module bedrock_decode_d0
     ea_layout_e ea_layout;
     operand_ea_width_e [BEDROCK_EA_SLOTS-1:0] ea_widths;
     ea_profile_e [BEDROCK_EA_SLOTS-1:0] ea_profiles;
+    logic [BEDROCK_EA_SLOTS-1:0][4:0] ea_static_payload_prefix_bytes;
   } d0_selection_t;
 
   logic class_raw_match;
@@ -69,7 +70,7 @@ module bedrock_decode_d0
     );
     if (alt_span.valid)
       ea_result_o.post_alt_cursor =
-        ea_result_o.base_cursor + {2'b0, alt_span.encoded_bytes};
+        ea_result_o.base_cursor + {2'b0, alt_span.descriptor_bytes};
     if (valid_i) begin
       result_o.form_high_decode = 32'h00000001 << class_form[9:5];
       result_o.form_low_decode = 32'h00000001 << class_form[4:0];
@@ -90,5 +91,7 @@ module bedrock_decode_d0
     ea_result_o.ea_layout = result_o.ea_layout;
     ea_result_o.ea_widths = result_o.ea_widths;
     ea_result_o.ea_profiles = result_o.ea_profiles;
+    ea_result_o.ea_static_payload_prefix_bytes =
+      class_selection.ea_static_payload_prefix_bytes;
   end
 endmodule
